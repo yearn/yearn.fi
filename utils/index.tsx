@@ -2,8 +2,9 @@ import {BigNumber, ethers} from 'ethers';
 import axios from 'axios';
 import {format, toAddress} from '@yearn-finance/web-lib/utils';
 
-import type {TNormalizedBN} from 'types/types.d';
-import type {TYearnVaultWrapper} from 'types/yearn.d';
+import type {TDict} from '@yearn-finance/web-lib/utils';
+import type {TNormalizedBN} from 'types/types';
+import type {TYearnVault} from 'types/yearn';
 
 export function	max(input: BigNumber, balance: BigNumber): BigNumber {
 	if (input.gt(balance)) {
@@ -38,7 +39,7 @@ export function	getCounterValueRaw(amount: number | string, price: number): stri
 	return (`${format.amount(value, 2, 2)}`);
 }
 
-export function getVaultAPY(vaults: TYearnVaultWrapper, vaultAddress: string): string {
+export function getVaultAPY(vaults: TDict<TYearnVault | undefined>, vaultAddress: string): string {
 	if (!vaults?.[toAddress(vaultAddress)]) {
 		return '';
 	}
@@ -55,7 +56,7 @@ export function getVaultAPY(vaults: TYearnVaultWrapper, vaultAddress: string): s
 	return 'APY 0.00%';
 }
 
-export function getVaultRawAPY(vaults: TYearnVaultWrapper, vaultAddress: string): number {
+export function getVaultRawAPY(vaults: TDict<TYearnVault | undefined>, vaultAddress: string): number {
 	if (!vaults?.[toAddress(vaultAddress)]) {
 		return 0;
 	}

@@ -11,7 +11,7 @@ import {deposit} from 'utils/actions/deposit';
 import {zap} from 'utils/actions/zap';
 import {LEGACY_OPTIONS_FROM, LEGACY_OPTIONS_TO} from 'utils/zapOptions';
 
-import type {TDropdownOption, TNormalizedBN} from 'types/types.d';
+import type {TDropdownOption, TNormalizedBN} from 'types/types';
 
 type TCardTransactor = {
 	selectedOptionFrom: TDropdownOption,
@@ -28,6 +28,7 @@ type TCardTransactor = {
 	set_amount: (amount: TNormalizedBN) => void,
 	set_hasTypedSomething: (hasTypedSomething: boolean) => void,
 	onApproveFrom: () => Promise<void>,
+	onIncreaseCRVAllowance: () => Promise<void>,
 	onZap: () => Promise<void>
 }
 
@@ -46,7 +47,8 @@ const		CardTransactorContext = createContext<TCardTransactor>({
 	set_amount: (): void => undefined,
 	set_hasTypedSomething: (): void => undefined,
 	onApproveFrom: (): any => undefined,
-	onZap: (): any => undefined
+	onZap: (): any => undefined,
+	onIncreaseCRVAllowance: (): any => undefined
 });
 
 function	CardTransactorContextApp({
@@ -150,6 +152,27 @@ function	CardTransactorContextApp({
 	}
 
 	/* 🔵 - Yearn Finance ******************************************************
+	** CRV token require the allowance to be reset to 0 before being able to
+	** increase it. This function is called when the user wants to increase the
+	** allowance of the CRV token.
+	**************************************************************************/
+	async function	onIncreaseCRVAllowance(): Promise<void> {
+		await new Transaction(provider, approveERC20, set_txStatusApprove).populate(
+			toAddress(selectedOptionFrom.value),
+			selectedOptionFrom.zapVia,
+			0
+		).perform();
+
+		new Transaction(provider, approveERC20, set_txStatusApprove).populate(
+			toAddress(selectedOptionFrom.value),
+			selectedOptionFrom.zapVia,
+			ethers.constants.MaxUint256
+		).onSuccess(async (): Promise<void> => {
+			await refresh();
+		}).perform();
+	}
+
+	/* 🔵 - Yearn Finance ******************************************************
 	** Execute a zap using the ZAP contract to migrate from a token A to a
 	** supported token B.
 	**************************************************************************/
@@ -214,6 +237,7 @@ function	CardTransactorContextApp({
 				set_amount,
 				set_hasTypedSomething,
 				onApproveFrom,
+				onIncreaseCRVAllowance,
 				onZap
 			}}>
 			{children}

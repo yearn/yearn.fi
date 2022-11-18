@@ -2,7 +2,7 @@ import React from 'react';
 import Image from 'next/image';
 import {toAddress} from '@yearn-finance/web-lib/utils';
 
-import type {TDropdownOption} from 'types/types.d';
+import type {TDropdownOption} from 'types/types';
 
 const	LEGACY_OPTIONS_FROM: TDropdownOption[] = [
 	{

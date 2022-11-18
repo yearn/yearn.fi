@@ -14,7 +14,7 @@ import {LEGACY_OPTIONS_FROM, LEGACY_OPTIONS_TO} from 'utils/zapOptions';
 
 import CardTransactorContextApp, {useCardTransactor} from './CardTransactorWrapper';
 
-import type {TDropdownOption} from 'types/types.d';
+import type {TDropdownOption} from 'types/types';
 
 function	CardMigrateLegacy(): ReactElement {
 	const	{isActive} = useWeb3();

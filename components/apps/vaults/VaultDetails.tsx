@@ -9,7 +9,7 @@ import {useYearn} from 'contexts/useYearn';
 import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
 import {baseFetcher} from 'utils';
 
-import type {TSettingsForNetwork, TYDaemonHarvests, TYearnVault} from 'types/yearn.d';
+import type {TSettingsForNetwork, TYDaemonHarvests, TYearnVault} from 'types/yearn';
 
 function	VaultDetailsAbout({currentVault}: {currentVault: TYearnVault}): ReactElement {
 	const	{data: harvests} = useSWR(`${process.env.YDAEMON_BASE_URI}/1/vaults/harvests/${currentVault.address}`, baseFetcher);

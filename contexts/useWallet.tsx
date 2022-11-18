@@ -8,13 +8,15 @@ import {useClientEffect} from '@yearn-finance/web-lib/hooks';
 import {useBalances} from '@yearn-finance/web-lib/hooks/useBalances';
 import {ABI, format, performBatchedUpdates, providers, toAddress} from '@yearn-finance/web-lib/utils';
 import {useYearn} from 'contexts/useYearn';
-import {TYearnVault} from 'types/yearn.d';
+import {TYearnVault} from 'types/yearn';
 import {allowanceKey} from 'utils';
 import YVECRV_ABI from 'utils/abi/yveCRV.abi';
 import {ETH_TOKEN_ADDRESS} from 'utils/constants';
 
 import type {TBalanceData, TUseBalancesTokens} from '@yearn-finance/web-lib/hooks/types';
-import type {Dict, TClaimable} from 'types/types.d';
+import type {TDict} from '@yearn-finance/web-lib/utils';
+import type {TClaimable} from 'types/types';
+
 
 export type	TBalances = {
 	[address: string]: {
@@ -34,7 +36,7 @@ export type	TWalletContext = {
 	cumulatedValueInVaults: number,
 	yveCRVClaimable: TClaimable;
 	useWalletNonce: number,
-	refresh: () => Promise<Dict<TBalanceData>>,
+	refresh: () => Promise<TDict<TBalanceData>>,
 	slippage: number,
 	set_slippage: (slippage: number) => void,
 }
@@ -45,7 +47,7 @@ const	defaultProps = {
 	cumulatedValueInVaults: 0,
 	yveCRVClaimable: {raw: ethers.constants.Zero, normalized: 0},
 	useWalletNonce: 0,
-	refresh: async (): Promise<Dict<TBalanceData>> => ({}),
+	refresh: async (): Promise<TDict<TBalanceData>> => ({}),
 	slippage: 0.6,
 	set_slippage: (): void => undefined
 };
@@ -181,7 +183,7 @@ export const WalletContextApp = ({children}: {children: ReactElement}): ReactEle
 				cumulatedValueInVaults,
 				yveCRVClaimable,
 				allowances,
-				refresh: async (): Promise<Dict<TBalanceData>> => {
+				refresh: async (): Promise<TDict<TBalanceData>> => {
 					const [updatedBalances] = await Promise.all([
 						updateBalances(),
 						getExtraData()

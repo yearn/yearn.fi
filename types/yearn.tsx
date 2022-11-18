@@ -1,7 +1,3 @@
-export type TYearnVaultWrapper = {
-	[key: string]: TYearnVault | undefined
-}
-
 export type TYearnVault = {
     inception: number,
     address: string,
@@ -138,10 +134,6 @@ export type	TSettingsForNetwork = {
 	partnerContractAddress?: string
 }
 
-export type TYDaemonPricesWrapper = {
-	[key: string]: string
-}
-
 export type TYDaemonToken = {
 	address: string,
 	name: string,
@@ -153,10 +145,6 @@ export type TYDaemonToken = {
 	description: string,
 	website: string,
 	categories: string[],
-}
-
-export type TYDaemonTokensWrapper = {
-	[key: string]: TYDaemonToken
 }
 
 export type TYDaemonHarvests = {

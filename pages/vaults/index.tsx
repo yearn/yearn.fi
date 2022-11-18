@@ -8,7 +8,7 @@ import {useWallet} from 'contexts/useWallet';
 import {useYearn} from 'contexts/useYearn';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS} from 'utils/constants';
 
-import type {TYearnVault} from 'types/yearn.d';
+import type {TYearnVault} from 'types/yearn';
 
 function	Index(): ReactElement {
 	const	{balances, cumulatedValueInVaults} = useWallet();

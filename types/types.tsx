@@ -1,10 +1,7 @@
 import {ReactElement} from 'react';
 import {BigNumber} from 'ethers';
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
-export type Dict<T> = {
-	[key: string]: T
-}
+import type {TDict} from '@yearn-finance/web-lib/utils';
 
 export type	TClaimable = {
 	raw: BigNumber,
@@ -35,13 +32,13 @@ export type TDropdownProps = {
 	onSelect:
 		| React.Dispatch<React.SetStateAction<TDropdownOption>>
 		| ((option: TDropdownOption) => void);
-	balances?: Dict<TSimplifiedBalanceData>
+	balances?: TDict<TSimplifiedBalanceData>
 };
 
 export type TDropdownItemProps = {
 	option: TDropdownOption;
 	onSelect: (option: TDropdownOption) => void;
-	balances?: Dict<TSimplifiedBalanceData>;
+	balances?: TDict<TSimplifiedBalanceData>;
 	buttonRef: React.RefObject<HTMLButtonElement>;
 };
 

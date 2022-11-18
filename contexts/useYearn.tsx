@@ -4,12 +4,14 @@ import useSWR from 'swr';
 import {toAddress} from '@yearn-finance/web-lib/utils';
 import {baseFetcher} from 'utils';
 
-import type {TYDaemonHarvests, TYDaemonPricesWrapper, TYearnVault, TYearnVaultWrapper} from 'types/yearn.d';
+import type {TDict} from '@yearn-finance/web-lib/utils';
+import type {TYDaemonHarvests, TYearnVault} from 'types/yearn';
+
 
 export type	TYearnContext = {
 	yCRVHarvests: TYDaemonHarvests[],
-	prices: TYDaemonPricesWrapper,
-	vaults: TYearnVaultWrapper
+	prices: TDict<string>,
+	vaults: TDict<TYearnVault | undefined>
 }
 const	defaultProps: TYearnContext = {
 	yCRVHarvests: [],

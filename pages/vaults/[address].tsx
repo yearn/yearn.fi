@@ -19,8 +19,8 @@ import {deposit} from 'utils/actions/deposit';
 import {ZAP_OPTIONS_FROM, ZAP_OPTIONS_TO} from 'utils/zapOptions';
 
 import type {NextPageContext} from 'next';
-import type {TDropdownOption, TNormalizedBN} from 'types/types.d';
-import type {TYearnVault} from 'types/yearn.d';
+import type {TDropdownOption, TNormalizedBN} from 'types/types';
+import type {TYearnVault} from 'types/yearn';
 
 const transition = {duration: 0.3, ease: 'easeInOut'};
 const variants = {

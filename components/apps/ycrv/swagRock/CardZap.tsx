@@ -14,7 +14,7 @@ import {ZAP_OPTIONS_FROM, ZAP_OPTIONS_TO} from 'utils/zapOptions';
 
 import CardTransactorContextApp, {useCardTransactor} from './CardTransactorWrapper';
 
-import type {TDropdownOption} from 'types/types.d';
+import type {TDropdownOption} from 'types/types';
 
 function	CardZap(): ReactElement {
 	const	{isActive} = useWeb3();
@@ -27,7 +27,7 @@ function	CardZap(): ReactElement {
 		amount, set_amount,
 		set_hasTypedSomething,
 		fromVaultAPY, toVaultAPY, expectedOutWithSlippage,
-		allowanceFrom, onApproveFrom, onZap
+		allowanceFrom, onApproveFrom, onZap, onIncreaseCRVAllowance
 	} = useCardTransactor();
 
 	const	ycrvPrice = useMemo((): number => (
@@ -61,8 +61,24 @@ function	CardZap(): ReactElement {
 	function	renderButton(): ReactElement {
 		const	balanceForInputToken = balances?.[toAddress(selectedOptionFrom.value)]?.raw || ethers.constants.Zero;
 		const	isAboveBalance = amount.raw.gt(balanceForInputToken) || balanceForInputToken.eq(ethers.constants.Zero);
+		const	isAboveAllowance = (amount.raw).gt(allowanceFrom);
 
-		if (txStatusApprove.pending || (amount.raw).gt(allowanceFrom)) {
+		if (txStatusApprove.pending || isAboveAllowance) {
+			if (allowanceFrom.gt(ethers.constants.Zero) && toAddress(selectedOptionFrom.value) === toAddress(process.env.CRV_TOKEN_ADDRESS)) {
+				return (
+					<Button
+						onClick={onIncreaseCRVAllowance}
+						className={'w-full'}
+						isBusy={txStatusApprove.pending}
+						isDisabled={
+							!isActive
+							|| (amount.raw).isZero()
+							|| isAboveBalance
+						}>
+						{'Increase Allowance'}
+					</Button>
+				);	
+			}
 			return (
 				<Button
 					onClick={onApproveFrom}

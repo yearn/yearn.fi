@@ -2,7 +2,7 @@ import React, {createContext, useContext} from 'react';
 import axios from 'axios';
 import useSWR from 'swr';
 
-import type {TCurveGauges} from 'types/curves.d';
+import type {TCurveGauges} from 'types/curves';
 
 export type TCurveContext = {
 	curveWeeklyFees: any,
