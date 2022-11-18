@@ -1,0 +1,160 @@
+/* This will load Tailwindcss + all the overwrite from Yearn lib */
+@import '@yearn-finance/web-lib/style.next.css';
+
+#swap {
+	@apply scroll-mt-12 mb-0 md:mb-44;
+}
+
+:root {
+	& .yveCRV--nav-link {
+		@apply relative cursor-pointer transition-colors text-neutral-500 hover:text-neutral-900 font-normal;
+
+		&.active {
+			@apply text-neutral-900 font-bold;
+		}
+	}
+	& .yveCRV--dropdown-menu {
+		--dropdown-bg-color: hsl(var(--color-neutral-300));
+		--dropdown-bg-color-active: hsl(var(--color-neutral-600));
+		--dropdown-border-width: 0px;
+		--dropdown-border-color: transparent;
+
+		@apply flex overflow-y-auto absolute left-0 flex-col mt-1 w-full min-w-fit max-h-60 scrollbar-none text-neutral-400 border border-neutral-600 bg-neutral-200;
+	}
+	& .yveCRV--dropdown-menu-item {
+		@apply w-full flex flex-row items-center cursor-pointer py-2 pr-4 pl-3 transition-colors;
+		&[data-active='true'] {
+			@apply bg-neutral-100;
+		}
+	}
+	& .mobile-nav-item {
+		@apply flex flex-col items-start justify-between rounded bg-good-ol-grey-100;
+		& > p {
+			@apply p-2 text-base font-bold text-neutral-900;
+		}
+	}
+	& .yearn--button-smaller {
+		@apply h-8 text-xs py-2 w-22 px-2;
+	}
+
+	& .tab {
+		@apply font-normal text-neutral-600 transition-colors hover:text-neutral-900 cursor-pointer border-b-2 border-transparent pb-4 z-20;
+		&[aria-selected='true'] {
+			@apply font-bold text-neutral-900 border-neutral-900;
+		}
+	}
+
+
+	& .recharts-tooltip-wrapper {
+		@apply !bg-neutral-100 text-neutral-900;
+	}
+	& .recharts-default-tooltip {
+		@apply !bg-neutral-100 text-neutral-900;
+	}
+
+}
+
+.wordWrapper {
+	display: inline-block;
+	vertical-align: top;
+	margin: 0;
+}
+.word {
+	@apply absolute text-neutral-900 font-bold text-5xl md:text-8xl uppercase text-center flex justify-center items-center w-[300px] md:w-[600px];
+	opacity: 0;
+}
+.wordCenter {
+	@apply absolute text-center flex justify-center items-center;
+	opacity: 0;
+}
+.wordLeft {
+	@apply absolute text-left flex justify-start items-center;
+	opacity: 0;
+}
+.letter {
+	display: inline-block;
+	position: relative;
+	float: left;
+	transform: translateZ(25px);
+	transform-origin: 50% 50% 25px;
+}
+.letter.out {
+	transform: rotateX(90deg);
+	transition: transform 0.32s cubic-bezier(0.55, 0.055, 0.675, 0.19);
+}
+.letter.behind {
+	transform: rotateX(-90deg);
+}
+.letter.in {
+	transform: rotateX(0deg);
+	transition: transform 0.38s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+[type='text']:focus,
+[type='email']:focus,
+[type='url']:focus,
+[type='password']:focus,
+[type='number']:focus,
+[type='date']:focus,
+[type='datetime-local']:focus,
+[type='month']:focus,
+[type='search']:focus,
+[type='tel']:focus,
+[type='time']:focus,
+[type='week']:focus,
+[multiple]:focus,
+textarea:focus,
+select:focus {
+	outline: none;
+	box-shadow: none;
+}
+
+
+.hover-fix::before {
+    display: block;
+    content: attr(title);
+    font-weight: bold;
+    height: 0;
+    overflow: hidden;
+    visibility: hidden;
+}
+
+.activeDot {
+	stroke: hsl(var(--color-neutral-900));
+	fill: hsl(var(--color-neutral-0));
+}
+
+.recharts-cartesian-axis-line {
+	stroke: hsl(var(--color-neutral-300));
+}
+
+.recharts-cartesian-axis-tick-line {
+	stroke: hsl(var(--color-neutral-300));
+}
+
+.recharts-tooltip {
+	@apply p-2 bg-neutral-0 flex flex-col w-40;
+	box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.16);
+}
+
+details > summary {
+	list-style: none;
+}
+details > summary::-webkit-details-marker {
+	display: none;
+}
+details {
+	@apply border-b border-neutral-300;
+
+	& > summary {
+		@apply px-6 py-8 cursor-pointer flex flex-row items-center justify-between;
+	}
+	
+	& > summary .summary-chevron {
+		@apply h-6 w-6 -rotate-90 text-neutral-900 transition-all;
+	}
+	&[open] > summary .summary-chevron {
+		@apply rotate-0;
+	}
+}
+  

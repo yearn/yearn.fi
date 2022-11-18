@@ -1,0 +1,54 @@
+name: IPFS
+
+on:
+  workflow_dispatch:
+  push: #uncomment to enable
+    branches: ["next"] #uncomment to enable
+
+jobs:
+  deploy-ipfs:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ['16.x']
+        os: ['ubuntu-latest']
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install project dependencies
+        run: yarn --prefer-offline
+        id: install
+
+      - run: IPFS_BUILD=true yarn export
+
+      - name: Upload to IPFS
+        uses: aquiladev/ipfs-action@v0.3.0-alpha.1
+        id: ipfs
+        with:
+          path: './ipfs/'
+          host: ${{ secrets.IPFS_HOST }}
+          port: ${{ secrets.IPFS_PORT }}
+          protocol: http
+
+      - name: Get Timestamp Action
+        uses: nanzm/get-time-action@v1.1
+        id: time
+        with:
+          format: 'YYYYMMDDHHmmss'
+
+      - name: Create Release
+        uses: Hs1r1us/Release-AIO@v1.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: "${{ steps.time.outputs.time }}/${{ steps.ipfs.outputs.hash }}"
+          release_name: ${{ steps.ipfs.outputs.hash }}
+          body: '[ipfs://${{ steps.ipfs.outputs.hash }}](ipfs://${{ steps.ipfs.outputs.hash }}) - [ipfs.io](https://ipfs.io/ipfs/${{ steps.ipfs.outputs.hash }})'
