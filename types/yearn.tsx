@@ -8,6 +8,7 @@ export type TYearnVault = {
     display_name: string,
     formated_name: string,
     icon: string,
+	category: string,
     token: {
         address: string,
         name: string,

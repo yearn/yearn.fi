@@ -32,25 +32,30 @@ function	Index(): ReactElement {
 	}, [cumulatedValueInVaults]);
 
 	const	curveVaults = useMemo((): TYearnVault[] => {
-		return (Object.values(vaults || {}).filter((vault): boolean => (vault?.token?.display_name || '').includes('Curve')) as TYearnVault[]);
+		return (Object.values(vaults || {}).filter((vault): boolean => (vault?.category === 'Curve')) as TYearnVault[]);
 	}, [vaults]);
-
-	const	notCurveVaults = useMemo((): TYearnVault[] => {
-		return (Object.values(vaults || {}).filter((vault): boolean => !(vault?.token?.display_name || '').includes('Curve')) as TYearnVault[]);
+	const	stablesVaults = useMemo((): TYearnVault[] => {
+		return (Object.values(vaults || {}).filter((vault): boolean => (vault?.category === 'Stablecoin')) as TYearnVault[]);
+	}, [vaults]);
+	const	balancerVaults = useMemo((): TYearnVault[] => {
+		return (Object.values(vaults || {}).filter((vault): boolean => (vault?.category === 'Balancer')) as TYearnVault[]);
+	}, [vaults]);
+	const	cryptoVaults = useMemo((): TYearnVault[] => {
+		return (Object.values(vaults || {}).filter((vault): boolean => (vault?.category === 'Volatile')) as TYearnVault[]);
 	}, [vaults]);
 
 	const	vaultsToDisplay = useMemo((): TYearnVault[] => {
-		if (category === 'easy-curve') {
+		if (category === 'curve') {
 			return curveVaults;
+		} else if (category === 'balancer') {
+			return balancerVaults;
+		} else if (category === 'stables') {
+			return stablesVaults;
+		} else if (category === 'crypto') {
+			return cryptoVaults;
 		}
-		if (category === 'all') {
-			return Object.values(vaults || {}) as TYearnVault[];
-		}
-		if (category === 'simple-saver') {
-			return notCurveVaults;
-		}
-		return [];
-	}, [category, curveVaults, notCurveVaults, vaults]);
+		return Object.values(vaults || {}) as TYearnVault[];
+	}, [category, curveVaults, stablesVaults, balancerVaults, cryptoVaults, vaults]);
 
 	const	sortedVaultsToDisplay = useMemo((): TYearnVault[] => {
 		if (sortBy === 'apy') {
@@ -140,34 +145,34 @@ function	Index(): ReactElement {
 					</div>
 					<div className={'flex flex-row space-x-4'}>
 						<Button
+							onClick={(): void => set_category('stables')}
+							variant={category === 'stables' ? 'filled' : 'outlined'}
+							className={'yearn--button-smaller'}>
+							{'Stables'}
+						</Button>
+						<Button
+							onClick={(): void => set_category('crypto')}
+							variant={category === 'crypto' ? 'filled' : 'outlined'}
+							className={'yearn--button-smaller'}>
+							{'Crypto'}
+						</Button>
+						<Button
+							onClick={(): void => set_category('curve')}
+							variant={category === 'curve' ? 'filled' : 'outlined'}
+							className={'yearn--button-smaller'}>
+							{'Curve'}
+						</Button>
+						<Button
+							onClick={(): void => set_category('balancer')}
+							variant={category === 'balancer' ? 'filled' : 'outlined'}
+							className={'yearn--button-smaller'}>
+							{'Balancer'}
+						</Button>
+						<Button
 							onClick={(): void => set_category('all')}
 							variant={category === 'all' ? 'filled' : 'outlined'}
 							className={'yearn--button-smaller'}>
 							{'All'}
-						</Button>
-						<Button
-							onClick={(): void => set_category('simple-saver')}
-							variant={category === 'simple-saver' ? 'filled' : 'outlined'}
-							className={'yearn--button-smaller'}>
-							{'Simple Saver'}
-						</Button>
-						<Button
-							onClick={(): void => set_category('usd-stable')}
-							variant={category === 'usd-stable' ? 'filled' : 'outlined'}
-							className={'yearn--button-smaller'}>
-							{'USD Stable'}
-						</Button>
-						<Button
-							onClick={(): void => set_category('blue-chip')}
-							variant={category === 'blue-chip' ? 'filled' : 'outlined'}
-							className={'yearn--button-smaller'}>
-							{'Blue Chip'}
-						</Button>
-						<Button
-							onClick={(): void => set_category('easy-curve')}
-							variant={category === 'easy-curve' ? 'filled' : 'outlined'}
-							className={'yearn--button-smaller'}>
-							{'Easy Curve'}
 						</Button>
 					</div>
 				</div>

@@ -420,9 +420,7 @@ function	ActionButton({
 
 function	Index({router, vaultData}: {router: NextRouter, vaultData: TYearnVault}): ReactElement {
 	const	{vaults} = useYearn();
-	const	currentVault = useRef<TYearnVault>(vaults[toAddress(router.query.address as string)] as TYearnVault || vaultData);
-
-	console.log(currentVault);
+	const	currentVault = useRef<TYearnVault>(vaults[toAddress(router.query.address as string)] as TYearnVault || {current: vaultData});
 
 	return (
 		<>
@@ -434,7 +432,7 @@ function	Index({router, vaultData}: {router: NextRouter, vaultData: TYearnVault}
 					variants={variants}
 					className={'absolute z-50 -mt-36 cursor-pointer'}>
 					<ImageWithFallback
-						src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${toAddress(router.query.address as string)}/logo-128.png`}
+						src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${toAddress(currentVault.current.token.address)}/logo-128.png`}
 						alt={''}
 						width={72}
 						height={72} />
