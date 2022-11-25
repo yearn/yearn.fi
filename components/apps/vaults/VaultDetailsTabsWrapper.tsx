@@ -364,7 +364,7 @@ function	VaultDetailsStrategies({currentVault}: {currentVault: TYearnVault}): Re
 	);
 }
 
-function	VaultDetailsWrapper({currentVault}: {currentVault: TYearnVault}): ReactElement {
+function	VaultDetailsTabsWrapper({currentVault}: {currentVault: TYearnVault}): ReactElement {
 	const	{provider, safeChainID} = useWeb3();
 	const	{networks} = useSettings();
 	const	[selectedAboutTabIndex, set_selectedAboutTabIndex] = useState(0);
@@ -455,4 +455,4 @@ function	VaultDetailsWrapper({currentVault}: {currentVault: TYearnVault}): React
 	);
 }
 
-export default VaultDetailsWrapper;
+export {VaultDetailsTabsWrapper};

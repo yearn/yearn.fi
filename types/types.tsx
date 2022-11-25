@@ -37,9 +37,7 @@ export type TDropdownProps = {
 
 export type TDropdownItemProps = {
 	option: TDropdownOption;
-	onSelect: (option: TDropdownOption) => void;
 	balances?: TDict<TSimplifiedBalanceData>;
-	buttonRef: React.RefObject<HTMLButtonElement>;
 };
 
 export type	TNormalizedBN = {

@@ -38,6 +38,7 @@ module.exports = {
 				'14': 'repeat(14, minmax(0, 1fr))'
 			},
 			fontSize: {
+				'xxs': ['10px', '16px'],
 				'3xl': ['32px', '40px'],
 				'7xl': ['64px', '72px'],
 				'8xl': ['88px', '104px']

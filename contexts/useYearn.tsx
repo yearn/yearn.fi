@@ -1,7 +1,8 @@
 import React, {createContext, useContext, useMemo} from 'react';
 import {ethers} from 'ethers';
 import useSWR from 'swr';
-import {toAddress} from '@yearn-finance/web-lib/utils';
+import {useWeb3} from '@yearn-finance/web-lib/contexts';
+import {TAddress, toAddress} from '@yearn-finance/web-lib/utils';
 import {baseFetcher} from 'utils';
 
 import type {TDict} from '@yearn-finance/web-lib/utils';
@@ -9,11 +10,13 @@ import type {TYDaemonHarvests, TYearnVault} from 'types/yearn';
 
 
 export type	TYearnContext = {
+	currentPartner: TAddress,
 	yCRVHarvests: TYDaemonHarvests[],
 	prices: TDict<string>,
 	vaults: TDict<TYearnVault | undefined>
 }
 const	defaultProps: TYearnContext = {
+	currentPartner: toAddress(process.env.PARTNER_ID_ADDRESS as string),
 	yCRVHarvests: [],
 	prices: {},
 	vaults: {[ethers.constants.AddressZero]: undefined}
@@ -25,6 +28,8 @@ type TYearnVaultsMap = {
 
 const	YearnContext = createContext<TYearnContext>(defaultProps);
 export const YearnContextApp = ({children}: {children: React.ReactElement}): React.ReactElement => {
+	const	{currentPartner} = useWeb3();
+
 	/* 🔵 - Yearn Finance ******************************************************
 	**	We will play with the some Yearn vaults. To correctly play with them,
 	**	we need to fetch the data from the API, especially to get the
@@ -58,6 +63,7 @@ export const YearnContextApp = ({children}: {children: React.ReactElement}): Rea
 	return (
 		<YearnContext.Provider
 			value={{
+				currentPartner: currentPartner?.id ? toAddress(currentPartner.id) : toAddress(process.env.PARTNER_ID_ADDRESS as string),
 				prices,
 				yCRVHarvests,
 				vaults: {...vaultsObject}

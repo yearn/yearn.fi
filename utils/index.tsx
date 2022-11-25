@@ -106,3 +106,11 @@ export function handleInputChange(
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const baseFetcher = async (url: string): Promise<any> => axios.get(url).then((res): any => res.data);
+
+export function getVaultName(vault: TYearnVault): string {
+	const baseName = vault.display_name || vault.name || vault.formated_name || 'unknown';
+	if (baseName.includes(' yVault')) {
+		return baseName.replace(' yVault', '');
+	}
+	return baseName;
+}

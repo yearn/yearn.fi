@@ -6,12 +6,11 @@ import NProgress from 'nprogress';
 import {useWeb3} from '@yearn-finance/web-lib/contexts';
 import {useClientEffect} from '@yearn-finance/web-lib/hooks';
 import {useBalances} from '@yearn-finance/web-lib/hooks/useBalances';
-import {ABI, format, performBatchedUpdates, providers, toAddress} from '@yearn-finance/web-lib/utils';
+import {ABI, ETH_TOKEN_ADDRESS, format, performBatchedUpdates, providers, toAddress} from '@yearn-finance/web-lib/utils';
 import {useYearn} from 'contexts/useYearn';
 import {TYearnVault} from 'types/yearn';
 import {allowanceKey} from 'utils';
 import YVECRV_ABI from 'utils/abi/yveCRV.abi';
-import {ETH_TOKEN_ADDRESS} from 'utils/constants';
 
 import type {TBalanceData, TUseBalancesTokens} from '@yearn-finance/web-lib/hooks/types';
 import type {TDict} from '@yearn-finance/web-lib/utils';
@@ -79,7 +78,7 @@ export const WalletContextApp = ({children}: {children: ReactElement}): ReactEle
 	}, [vaults]);
 
 	const	{data: balances, update: updateBalances, isLoading} = useBalances({
-		key: 'nonce',
+		key: 0,
 		provider: provider || providers.getProvider(1),
 		tokens: [
 			...availableTokens,

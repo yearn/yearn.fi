@@ -1,7 +1,8 @@
-import React, {ReactElement, ReactNode, useMemo, useState} from 'react';
+import React, {ChangeEvent, ReactElement, ReactNode, useMemo, useState} from 'react';
 import {Button} from '@yearn-finance/web-lib/components';
 import {format, performBatchedUpdates, toAddress} from '@yearn-finance/web-lib/utils';
-import {VaultRow, VaultRowHead} from 'components/apps/vaults/VaultRow';
+import {VaultTableHead} from 'components/apps/vaults/VaultTableHead';
+import {VaultTableRow} from 'components/apps/vaults/VaultTableRow';
 import Wrapper from 'components/apps/vaults/Wrapper';
 import ValueAnimation from 'components/common/ValueAnimation';
 import {useWallet} from 'contexts/useWallet';
@@ -13,7 +14,8 @@ import type {TYearnVault} from 'types/yearn';
 function	Index(): ReactElement {
 	const	{balances, cumulatedValueInVaults} = useWallet();
 	const	{vaults} = useYearn();
-	const	[category, set_category] = useState('all');
+	const	[category, set_category] = useState('Crypto Vaults');
+	const	[searchValue, set_searchValue] = useState('');
 	const	[sortBy, set_sortBy] = useState('apy');
 	const	[sortDirection, set_sortDirection] = useState('desc');
 
@@ -45,21 +47,33 @@ function	Index(): ReactElement {
 	}, [vaults]);
 
 	const	vaultsToDisplay = useMemo((): TYearnVault[] => {
-		if (category === 'curve') {
+		if (category === 'Curve Vaults') {
 			return curveVaults;
-		} else if (category === 'balancer') {
+		} else if (category === 'Balancer Vaults') {
 			return balancerVaults;
-		} else if (category === 'stables') {
+		} else if (category === 'Stables Vaults') {
 			return stablesVaults;
-		} else if (category === 'crypto') {
+		} else if (category === 'Crypto Vaults') {
 			return cryptoVaults;
 		}
 		return Object.values(vaults || {}) as TYearnVault[];
 	}, [category, curveVaults, stablesVaults, balancerVaults, cryptoVaults, vaults]);
 
+	const	searchedVaultsToDisplay = useMemo((): TYearnVault[] => {
+		const	vaultsToUse = [...vaultsToDisplay];
+	
+		if (searchValue === '') {
+			return vaultsToUse;
+		}
+		return vaultsToUse.filter((vault): boolean => {
+			const	searchString = `${vault.name} ${vault.display_name} ${vault.symbol}`;
+			return searchString.toLowerCase().includes(searchValue.toLowerCase());
+		});
+	}, [vaultsToDisplay, searchValue]);
+
 	const	sortedVaultsToDisplay = useMemo((): TYearnVault[] => {
 		if (sortBy === 'apy') {
-			return vaultsToDisplay.sort((a, b): number => {
+			return searchedVaultsToDisplay.sort((a, b): number => {
 				if (sortDirection === 'desc') {
 					return (b.apy?.net_apy || 0) - (a.apy?.net_apy || 0);
 				}
@@ -67,7 +81,7 @@ function	Index(): ReactElement {
 			});
 		}
 		if (sortBy === 'available') {
-			return vaultsToDisplay.sort((a, b): number => {
+			return searchedVaultsToDisplay.sort((a, b): number => {
 				let	aBalance = (balances[toAddress(a.token.address)]?.normalized || 0);
 				let	bBalance = (balances[toAddress(b.token.address)]?.normalized || 0);
 
@@ -95,7 +109,7 @@ function	Index(): ReactElement {
 			});
 		}
 		if (sortBy === 'deposited') {
-			return vaultsToDisplay.sort((a, b): number => {
+			return searchedVaultsToDisplay.sort((a, b): number => {
 				if (sortDirection === 'asc') {
 					return (balances[toAddress(a.address)]?.normalized || 0) - (balances[toAddress(b.address)]?.normalized || 0);
 				}
@@ -103,7 +117,7 @@ function	Index(): ReactElement {
 			});
 		}
 		if (sortBy === 'tvl') {
-			return vaultsToDisplay.sort((a, b): number => {
+			return searchedVaultsToDisplay.sort((a, b): number => {
 				if (sortDirection === 'desc') {
 					return (b.tvl.tvl || 0) - (a.tvl.tvl || 0);
 				}
@@ -111,8 +125,9 @@ function	Index(): ReactElement {
 			});
 		}
 
-		return vaultsToDisplay;
-	}, [sortBy, vaultsToDisplay, sortDirection, balances]);
+		return searchedVaultsToDisplay;
+	}, [sortBy, searchedVaultsToDisplay, sortDirection, balances]);
+
 
 	return (
 		<section className={'mt-4 grid w-full grid-cols-12 gap-y-10 pb-10 md:mt-20 md:gap-x-10 md:gap-y-20'}>
@@ -139,45 +154,104 @@ function	Index(): ReactElement {
 			</div>
 
 			<div className={'col-span-12 flex w-full flex-col bg-neutral-100'}>
-				<div className={'flex flex-row items-center justify-between px-10 pt-10 pb-8'}>
-					<div>
-						<h2 className={'text-3xl font-bold'}>{'Standard Vaults'}</h2>
+				<div className={'flex flex-col items-start justify-between space-x-6 px-4 pt-4 pb-2 md:space-x-0 md:px-10 md:pt-10 md:pb-8'}>
+					<div className={'mb-6'}>
+						<h2 className={'text-lg font-bold md:text-3xl'}>{category}</h2>
 					</div>
-					<div className={'flex flex-row space-x-4'}>
-						<Button
-							onClick={(): void => set_category('stables')}
-							variant={category === 'stables' ? 'filled' : 'outlined'}
-							className={'yearn--button-smaller'}>
-							{'Stables'}
-						</Button>
-						<Button
-							onClick={(): void => set_category('crypto')}
-							variant={category === 'crypto' ? 'filled' : 'outlined'}
-							className={'yearn--button-smaller'}>
-							{'Crypto'}
-						</Button>
-						<Button
-							onClick={(): void => set_category('curve')}
-							variant={category === 'curve' ? 'filled' : 'outlined'}
-							className={'yearn--button-smaller'}>
-							{'Curve'}
-						</Button>
-						<Button
-							onClick={(): void => set_category('balancer')}
-							variant={category === 'balancer' ? 'filled' : 'outlined'}
-							className={'yearn--button-smaller'}>
-							{'Balancer'}
-						</Button>
-						<Button
-							onClick={(): void => set_category('all')}
-							variant={category === 'all' ? 'filled' : 'outlined'}
-							className={'yearn--button-smaller'}>
-							{'All'}
-						</Button>
+
+					<div className={'hidden w-full flex-row items-center justify-between space-x-4 md:flex'}>
+						<div className={'w-full'}>
+							<label className={'text-neutral-600'}>{'Search'}</label>
+							<div className={'mt-1 flex h-10 w-full items-center border border-neutral-0 bg-neutral-0 p-2 md:w-2/3'}>
+								<div className={'relative flex h-10 w-full flex-row items-center justify-between'}>
+									<input
+										className={'h-10 w-full overflow-x-scroll border-none bg-transparent py-2 px-0 text-base outline-none scrollbar-none placeholder:text-neutral-400'}
+										type={'text'}
+										placeholder={'YFI Vault'}
+										value={searchValue}
+										onChange={(e: ChangeEvent<HTMLInputElement>): void => {
+											set_searchValue(e.target.value);
+										}} />
+									<div className={'absolute right-0 text-neutral-400'}>
+										<svg
+											width={'20'}
+											height={'20'}
+											viewBox={'0 0 24 24'}
+											fill={'none'}
+											xmlns={'http://www.w3.org/2000/svg'}>
+											<path
+												fillRule={'evenodd'}
+												clipRule={'evenodd'}
+												d={'M10 1C5.02972 1 1 5.02972 1 10C1 14.9703 5.02972 19 10 19C12.1249 19 14.0779 18.2635 15.6176 17.0318L21.2929 22.7071C21.6834 23.0976 22.3166 23.0976 22.7071 22.7071C23.0976 22.3166 23.0976 21.6834 22.7071 21.2929L17.0318 15.6176C18.2635 14.0779 19 12.1249 19 10C19 5.02972 14.9703 1 10 1ZM3 10C3 6.13428 6.13428 3 10 3C13.8657 3 17 6.13428 17 10C17 13.8657 13.8657 17 10 17C6.13428 17 3 13.8657 3 10Z'}
+												fill={'currentcolor'}/>
+										</svg>
+									</div>
+
+								</div>
+							</div>
+						</div>
+						<div>
+							<label className={'text-neutral-600'}>&nbsp;</label>
+							<div className={'mt-1 flex flex-row space-x-0 divide-x border-x border-neutral-900'}>
+								<Button
+									onClick={(): void => set_category('Crypto Vaults')}
+									variant={category === 'Crypto Vaults' ? 'filled' : 'outlined'}
+									className={'yearn--button-smaller'}>
+									{'Crypto'}
+								</Button>
+								<Button
+									onClick={(): void => set_category('Stables Vaults')}
+									variant={category === 'Stables Vaults' ? 'filled' : 'outlined'}
+									className={'yearn--button-smaller'}>
+									{'Stables'}
+								</Button>
+								<Button
+									onClick={(): void => set_category('Curve Vaults')}
+									variant={category === 'Curve Vaults' ? 'filled' : 'outlined'}
+									className={'yearn--button-smaller'}>
+									{'Curve'}
+								</Button>
+								<Button
+									onClick={(): void => set_category('Balancer Vaults')}
+									variant={category === 'Balancer Vaults' ? 'filled' : 'outlined'}
+									className={'yearn--button-smaller'}>
+									{'Balancer'}
+								</Button>
+								<Button
+									onClick={(): void => set_category('All Vaults')}
+									variant={category === 'All Vaults' ? 'filled' : 'outlined'}
+									className={'yearn--button-smaller'}>
+									{'All'}
+								</Button>
+							</div>
+						</div>
+					</div>
+					<div className={'flex w-2/3 flex-row space-x-2 md:hidden'}>
+						<select
+							className={'yearn--button-smaller !w-[120%] border-none bg-neutral-900 text-neutral-0'}
+							onChange={(e): void => set_category(e.target.value)}>
+							<option value={'Stables Vaults'}>{'Stables'}</option>
+							<option value={'Crypto Vaults'}>{'Crypto'}</option>
+							<option value={'Curve Vaults'}>{'Curve'}</option>
+							<option value={'Balancer Vaults'}>{'Balancer'}</option>
+							<option value={'All Vaults'}>{'All'}</option>
+						</select>
+						<div className={'flex h-8 items-center border border-neutral-0 bg-neutral-0 p-2'}>
+							<div className={'flex h-8 w-full flex-row items-center justify-between py-2 px-0'}>
+								<input
+									className={'w-full overflow-x-scroll border-none bg-transparent py-2 px-0 text-xs outline-none scrollbar-none'}
+									type={'text'}
+									placeholder={'Search'}
+									value={searchValue}
+									onChange={(e: ChangeEvent<HTMLInputElement>): void => {
+										set_searchValue(e.target.value);
+									}} />
+							</div>
+						</div>
 					</div>
 				</div>
 				<div className={'grid w-full grid-cols-1'}>
-					<VaultRowHead
+					<VaultTableHead
 						sortBy={sortBy}
 						sortDirection={sortDirection}
 						onSort={(_sortBy: string, _sortDirection: string): void => {
@@ -196,7 +270,7 @@ function	Index(): ReactElement {
 						if (!vault) {
 							return (null);
 						}
-						return <VaultRow key={vault.address} currentVault={vault} />;
+						return <VaultTableRow key={vault.address} currentVault={vault} />;
 					})}
 
 				</div>

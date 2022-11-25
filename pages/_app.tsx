@@ -22,7 +22,7 @@ function	WithLayout(props: AppProps): ReactElement {
 
 	return (
 		<div id={'app'} className={'mx-auto mb-0 flex max-w-6xl'}>
-			<div className={'flex min-h-[100vh] w-full flex-col'}>
+			<div className={'block min-h-[100vh] w-full'}>
 				<Header />
 				<AnimatePresence mode={'wait'}>
 					<motion.div
