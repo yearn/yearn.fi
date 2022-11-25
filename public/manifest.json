@@ -1,11 +1,11 @@
 {
-	"name": "yCRV",
-	"short_name": "yCRV",
-	"description": "The best crv yields in defi. *mic drop*",
+	"name": "Yearn",
+	"short_name": "Yearn",
+	"description": "The yield protocol for digital assets",
 	"iconPath": "./favicons/favicon.svg",
 	"locale": "en-US",
-	"uri": "https://ycrvdev.yearn.farm/",
-	"og": "https://ycrvdev.yearn.farm/og.png",
+	"uri": "https://ydraft-majorfi-ycorpo.vercel.app/vaults/",
+	"og": "https://ydraft-majorfi-ycorpo.vercel.app/vaults/og.png",
 	"twitter": "@iearnfinance",
 	"github": "https://github.com/Majorfi/yCRV",
 	"icons": [
