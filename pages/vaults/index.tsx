@@ -133,7 +133,7 @@ function	Index(): ReactElement {
 		<section className={'mt-4 grid w-full grid-cols-12 gap-y-10 pb-10 md:mt-20 md:gap-x-10 md:gap-y-20'}>
 
 			<div className={'col-span-12 w-full md:col-span-8'}>
-				<p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl'}>{'You have'}</p>
+				<p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl'}>{'Deposited'}</p>
 				<b className={'text-4xl tabular-nums text-neutral-900 md:text-7xl'}>
 					<ValueAnimation
 						identifier={'youHave'}
@@ -143,7 +143,7 @@ function	Index(): ReactElement {
 				</b>
 			</div>
 			<div className={'col-span-12 w-full md:col-span-4'}>
-				<p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl'}>{'You earned'}</p>
+				<p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl'}>{'Earnings'}</p>
 				<b className={'text-3xl tabular-nums text-neutral-900 md:text-7xl'}>
 					<ValueAnimation
 						identifier={'youEarned'}

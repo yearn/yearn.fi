@@ -48,12 +48,12 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 			<div className={'grid grid-cols-4 gap-12'}>
 				<div className={'flex flex-col items-center justify-center space-y-2'}>
 					<p className={'text-xs text-neutral-600'}>
-						{`Total stacked, ${currentVault?.symbol || 'token'}`}
+						{`Total staked, ${currentVault?.symbol || 'token'}`}
 					</p>
 					<b className={'text-3xl'} suppressHydrationWarning>
 						{format.amount(format.toNormalizedValue(currentVault?.tvl?.total_assets, currentVault?.decimals), 2, 2)}
 					</b>
-					<legend className={'text-xs text-neutral-600'}>
+					<legend className={'text-xs text-neutral-600'} suppressHydrationWarning>
 						{`$ ${format.amount(currentVault?.tvl?.tvl, 2, 2)}`}
 					</legend>
 				</div>
@@ -75,7 +75,7 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 					<b className={'text-3xl'} suppressHydrationWarning>
 						{format.amount(normalizedVaultBalance, 2, 2)}
 					</b>
-					<legend className={'text-xs text-neutral-600'}>
+					<legend className={'text-xs text-neutral-600'} suppressHydrationWarning>
 						{getCounterValue(normalizedVaultBalance || 0, vaultPrice)}
 					</legend>
 				</div>
@@ -87,7 +87,7 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 					<b className={'text-3xl'} suppressHydrationWarning>
 						{format.amount(normalizedVaultEarned, 2, 2)}
 					</b>
-					<legend className={'text-xs text-neutral-600'}>
+					<legend className={'text-xs text-neutral-600'} suppressHydrationWarning>
 						{getCounterValue(normalizedVaultEarned || 0, vaultPrice)}
 					</legend>
 				</div>

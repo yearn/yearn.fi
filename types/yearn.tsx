@@ -1,3 +1,51 @@
+export type TYearnVaultStrategy = {
+	address: string,
+	name: string,
+	description: string,
+	details: {
+		keeper: string,
+		strategist: string,
+		rewards: string,
+		healthCheck: string,
+		totalDebt: string,
+		totalLoss: string,
+		totalGain: string,
+		minDebtPerHarvest: string,
+		maxDebtPerHarvest: string,
+		estimatedTotalAssets: string,
+		creditAvailable: string,
+		debtOutstanding: string,
+		expectedReturn: string,
+		delegatedAssets: string,
+		delegatedValue: string,
+		protocols: string[],
+		version: string,
+		apr: number,
+		performanceFee: number,
+		lastReport: number,
+		activation: number,
+		keepCRV: number,
+		debtRatio: number,
+		debtLimit: number,
+		withdrawalQueuePosition: number,
+		doHealthCheck: boolean,
+		inQueue: boolean,
+		emergencyExit: boolean,
+		isActive: boolean,
+	}
+	risk: {
+		riskGroup: string,
+		TVLImpact: number,
+		auditScore: number,
+		codeReviewScore: number,
+		complexityScore: number,
+		longevityImpact: number,
+		protocolSafetyScore: number,
+		teamKnowledgeScore: number,
+		testingScore: number,
+	}
+}
+
 export type TYearnVault = {
     inception: number,
     address: string,
@@ -48,53 +96,7 @@ export type TYearnVault = {
             rewards_apr: number
         }
     },
-    strategies: [{
-		address: string,
-		name: string,
-		description: string,
-		details: {
-			keeper: string,
-			strategist: string,
-			rewards: string,
-			healthCheck: string,
-			totalDebt: string,
-			totalLoss: string,
-			totalGain: string,
-			minDebtPerHarvest: string,
-			maxDebtPerHarvest: string,
-			estimatedTotalAssets: string,
-			creditAvailable: string,
-			debtOutstanding: string,
-			expectedReturn: string,
-			delegatedAssets: string,
-			delegatedValue: string,
-			protocols: string[],
-			version: string,
-			apr: number,
-			performanceFee: number,
-			lastReport: number,
-			activation: number,
-			keepCRV: number,
-			debtRatio: number,
-			debtLimit: number,
-			withdrawalQueuePosition: number,
-			doHealthCheck: boolean,
-			inQueue: boolean,
-			emergencyExit: boolean,
-			isActive: boolean,
-		}
-		risk: {
-			riskGroup: string,
-			TVLImpact: number,
-			auditScore: number,
-			codeReviewScore: number,
-			complexityScore: number,
-			longevityImpact: number,
-			protocolSafetyScore: number,
-			teamKnowledgeScore: number,
-			testingScore: number,
-		}
-    }],
+    strategies: TYearnVaultStrategy[],
 	details: {
 		management: string,
 		governance: string,
@@ -157,4 +159,21 @@ export type TYDaemonHarvests = {
 	profitValue: number,
 	loss: string,
 	lossValue: number,
+}
+
+export type TYDaemonReports = {
+	debtAdded: string,
+	debtLimit: string,
+	totalDebt: string,
+	gain: string,
+	totalGain: string,
+	loss: string,
+	totalLoss: string,
+	debtPaid: string,
+	timestamp: string,
+	results: [{
+		duration: string,
+		durationPR: string,
+		APR: string
+	}]
 }

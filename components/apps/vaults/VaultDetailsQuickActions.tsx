@@ -532,7 +532,7 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 			</div>
 
 			<div className={'w-50 space-y-2'}>
-				<label className={'text-base text-neutral-600'}>{'You will get'}</label>
+				<label className={'text-base text-neutral-600'}>{'You will receive'}</label>
 				<div className={'flex h-10 items-center bg-neutral-300 p-2'}>
 					<div className={'flex h-10 w-full flex-row items-center justify-between py-4 px-0'}>
 						<input
