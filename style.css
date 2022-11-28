@@ -47,6 +47,15 @@
 		@apply h-8 text-xs py-2 w-16 px-2 border-l-0 border-r-0;
 	}
 
+	& .mobile-nav-item {
+		@apply rounded-none border-b border-neutral-300 bg-neutral-100/60;
+	}
+	& .yearn--modalMobileMenu-childrenWrapper > a {
+		&:last-child > .mobile-nav-item {
+			@apply border-b-0;
+		}
+	}
+
 	& .tab {
 		@apply font-normal text-neutral-600 transition-colors hover:text-neutral-900 cursor-pointer border-b-2 border-transparent pb-4 z-20;
 		&[aria-selected='true'] {
@@ -171,3 +180,32 @@ details {
 	}
 }
   
+.appBox {
+	--x-px: calc(var(--x) * 1px);
+	--y-px: calc(var(--y) * 1px);
+	--opacity: var(--opacity);
+	--color: hsl(var(--color-neutral-300));
+	@apply relative flex aspect-video h-full w-full cursor-pointer flex-col items-center rounded-[3px] border border-neutral-300/50 p-6 shadow shadow-transparent transition-all duration-[400ms];
+
+	&:before,
+	&:after {
+		@apply pointer-events-none block absolute inset-[0px] z-[-1] rounded-[3px];
+		content: "";
+		z-index: -1;
+		opacity: var(--opacity);
+		background: radial-gradient(
+			1200px circle at var(--x-px) var(--y-px),
+			var(--color),
+			transparent 40%
+		);
+		transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+	}
+	&:before {
+		@apply pointer-events-none z-[-1];
+	}
+}
+
+:root.dark .appBox {
+	--color: hsl(var(--color-neutral-100));
+	@apply border-neutral-100/30;
+}

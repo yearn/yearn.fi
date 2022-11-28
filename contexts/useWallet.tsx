@@ -35,8 +35,9 @@ export type	TWalletContext = {
 	cumulatedValueInVaults: number,
 	yveCRVClaimable: TClaimable;
 	useWalletNonce: number,
-	refresh: () => Promise<TDict<TBalanceData>>,
 	slippage: number,
+	isLoading: boolean,
+	refresh: () => Promise<TDict<TBalanceData>>,
 	set_slippage: (slippage: number) => void,
 }
 
@@ -46,8 +47,9 @@ const	defaultProps = {
 	cumulatedValueInVaults: 0,
 	yveCRVClaimable: {raw: ethers.constants.Zero, normalized: 0},
 	useWalletNonce: 0,
-	refresh: async (): Promise<TDict<TBalanceData>> => ({}),
 	slippage: 0.6,
+	isLoading: true,
+	refresh: async (): Promise<TDict<TBalanceData>> => ({}),
 	set_slippage: (): void => undefined
 };
 
@@ -182,6 +184,7 @@ export const WalletContextApp = ({children}: {children: ReactElement}): ReactEle
 				cumulatedValueInVaults,
 				yveCRVClaimable,
 				allowances,
+				isLoading,
 				refresh: async (): Promise<TDict<TBalanceData>> => {
 					const [updatedBalances] = await Promise.all([
 						updateBalances(),

@@ -10,7 +10,7 @@ type TGraphForVaultTVLProps = {
 	height?: number,
 }
 
-function	GraphForVaultTVL({messariData, height = 312}: TGraphForVaultTVLProps): ReactElement {
+function	GraphForVaultTVL({messariData, height = 312}: TGraphForVaultTVLProps): ReactElement {	
 	return (
 		<ResponsiveContainer width={'100%'} height={height}>
 			<LineChart
