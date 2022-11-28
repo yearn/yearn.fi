@@ -6,6 +6,7 @@ import {AnimatePresence, motion} from 'framer-motion';
 import {Popover, Transition} from '@headlessui/react';
 import {ModalMobileMenu} from '@yearn-finance/web-lib/components';
 import {useWeb3} from '@yearn-finance/web-lib/contexts';
+import IconWallet from '@yearn-finance/web-lib/icons/IconWallet';
 import {toAddress, truncateHex} from '@yearn-finance/web-lib/utils';
 import LogoYearn from 'components/icons/LogoYearn';
 
@@ -195,7 +196,7 @@ const solutions = [
 function	Header(): ReactElement {
 	const	{isActive, address, ens, openLoginModal, onDesactivate, onSwitchChain} = useWeb3();
 	const	[hasMobileMenu, set_hasMobileMenu] = useState(false);
-	const	[walletIdentity, set_walletIdentity] = useState('Connect Wallet');
+	const	[walletIdentity, set_walletIdentity] = useState<string | undefined>(undefined);
 
 	useEffect((): void => {
 		if (!isActive && address) {
@@ -205,7 +206,7 @@ function	Header(): ReactElement {
 		} else if (address) {
 			set_walletIdentity(truncateHex(address, 4));
 		} else {
-			set_walletIdentity('Connect Wallet');
+			set_walletIdentity(undefined);
 		}
 	}, [ens, address, isActive]);
 
@@ -248,7 +249,8 @@ function	Header(): ReactElement {
 							}
 						}}>
 						<p className={'yveCRV--nav-link text-sm'}>
-							{walletIdentity}
+							{walletIdentity ? walletIdentity : <IconWallet className={'yveCRV--nav-link mt-0.5 h-4 w-4'} />
+							}
 						</p>
 					</div>
 					{isActive ? (

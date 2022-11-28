@@ -2,7 +2,8 @@ import React, {Fragment, ReactElement} from 'react';
 import Image from 'next/image';
 import {Popover, Transition} from '@headlessui/react';
 import {useWeb3} from '@yearn-finance/web-lib/contexts';
-import {AddToMetamask, Wallet} from '@yearn-finance/web-lib/icons';
+import {AddToMetamask} from '@yearn-finance/web-lib/icons';
+import IconWallet from '@yearn-finance/web-lib/icons/IconWallet';
 import {format, TMetamaskInjectedProvider, toAddress} from '@yearn-finance/web-lib/utils';
 import {useWallet} from 'contexts/useWallet';
 
@@ -31,7 +32,7 @@ export default function BalanceReminderPopover(): ReactElement {
 			{(): ReactElement => (
 				<>
 					<Popover.Button>
-						<Wallet className={'yveCRV--nav-link mt-0.5 h-4 w-4'} />
+						<IconWallet className={'yveCRV--nav-link mt-0.5 h-4 w-4'} />
 					</Popover.Button>
 					<Transition
 						as={Fragment}

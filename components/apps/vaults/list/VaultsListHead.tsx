@@ -2,7 +2,7 @@ import React, {ReactElement} from 'react';
 import IconChevronPlain from 'components/icons/IconChevronPlain';
 
 
-function	VaultTableHead({
+function	VaultsListHead({
 	sortBy,
 	sortDirection,
 	onSort
@@ -77,4 +77,4 @@ function	VaultTableHead({
 	);
 }
 
-export {VaultTableHead};
+export {VaultsListHead};

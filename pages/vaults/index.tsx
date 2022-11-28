@@ -1,8 +1,8 @@
 import React, {ChangeEvent, ReactElement, ReactNode, useMemo, useState} from 'react';
 import {Button} from '@yearn-finance/web-lib/components';
 import {format, performBatchedUpdates, toAddress} from '@yearn-finance/web-lib/utils';
-import {VaultTableHead} from 'components/apps/vaults/VaultTableHead';
-import {VaultTableRow} from 'components/apps/vaults/VaultTableRow';
+import {VaultsListHead} from 'components/apps/vaults/list/VaultsListHead';
+import {VaultsListRow} from 'components/apps/vaults/list/VaultsListRow';
 import Wrapper from 'components/apps/vaults/Wrapper';
 import ValueAnimation from 'components/common/ValueAnimation';
 import {useWallet} from 'contexts/useWallet';
@@ -165,7 +165,7 @@ function	Index(): ReactElement {
 			</div>
 
 			<div className={'col-span-12 flex w-full flex-col bg-neutral-100'}>
-				<div className={'flex flex-col items-start justify-between space-x-6 px-4 pt-4 pb-2 md:space-x-0 md:px-10 md:pt-10 md:pb-8'}>
+				<div className={'flex flex-col items-start justify-between space-x-0 px-4 pt-4 pb-2 md:px-10 md:pt-10 md:pb-8'}>
 					<div className={'mb-6'}>
 						<h2 className={'text-lg font-bold md:text-3xl'}>{category}</h2>
 					</div>
@@ -237,7 +237,7 @@ function	Index(): ReactElement {
 							</div>
 						</div>
 					</div>
-					<div className={'flex w-2/3 flex-row space-x-2 md:hidden'}>
+					<div className={'flex w-full flex-row space-x-2 md:hidden md:w-2/3'}>
 						<select
 							className={'yearn--button-smaller !w-[120%] border-none bg-neutral-900 text-neutral-0'}
 							onChange={(e): void => set_category(e.target.value)}>
@@ -247,7 +247,7 @@ function	Index(): ReactElement {
 							<option value={'Balancer Vaults'}>{'Balancer'}</option>
 							<option value={'All Vaults'}>{'All'}</option>
 						</select>
-						<div className={'flex h-8 items-center border border-neutral-0 bg-neutral-0 p-2'}>
+						<div className={'flex h-8 w-full items-center border border-neutral-0 bg-neutral-0 p-2 md:w-auto'}>
 							<div className={'flex h-8 w-full flex-row items-center justify-between py-2 px-0'}>
 								<input
 									className={'w-full overflow-x-scroll border-none bg-transparent py-2 px-0 text-xs outline-none scrollbar-none'}
@@ -261,8 +261,8 @@ function	Index(): ReactElement {
 						</div>
 					</div>
 				</div>
-				<div className={'grid w-full grid-cols-1'}>
-					<VaultTableHead
+				<div className={'mt-4 grid w-full grid-cols-1 md:mt-0'}>
+					<VaultsListHead
 						sortBy={sortBy}
 						sortDirection={sortDirection}
 						onSort={(_sortBy: string, _sortDirection: string): void => {
@@ -275,13 +275,12 @@ function	Index(): ReactElement {
 						<div className={'flex h-96 w-full flex-col items-center justify-center py-2 px-10'}>
 							<b className={'text-lg'}>{'Andre\'s Fault'}</b>
 							<p className={'text-neutral-600'}>{'No vaults available. What a shame. What are the dev doing. Bouuuuuh.'}</p>
-
 						</div>
 					) : sortedVaultsToDisplay.map((vault): ReactNode => {
 						if (!vault) {
 							return (null);
 						}
-						return <VaultTableRow key={vault.address} currentVault={vault} />;
+						return <VaultsListRow key={vault.address} currentVault={vault} />;
 					})}
 
 				</div>
