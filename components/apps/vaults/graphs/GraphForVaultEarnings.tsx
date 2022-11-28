@@ -48,7 +48,6 @@ function	GraphForVaultEarnings({currentVault, harvestData, height = 312, isCumul
 					hide />
 				<YAxis
 					orientation={'right'}
-					padding={{top: 8}} 
 					domain={['dataMin', 'auto']}
 					hide={false}
 					tick={(e): ReactElement => {

@@ -34,7 +34,7 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVau
 					</div>
 				</div>
 
-				<div className={'grid grid-cols-12 gap-4 pb-8 md:gap-24'}>
+				<div className={'grid grid-cols-12 gap-4 pb-8 md:gap-10 lg:gap-24'}>
 					<div className={'col-span-12 w-full space-y-4 md:col-span-6'}>
 						<div className={'grid grid-cols-4 gap-4'}>
 							<div className={'col-span-2 flex flex-col space-y-2 bg-neutral-200 p-2 md:p-4'}>

@@ -54,7 +54,6 @@ function	GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height =
 					hide />
 				<YAxis
 					orientation={'right'}
-					padding={{top: 8}} 
 					hide={false} 
 					tick={(e): ReactElement => {
 						const {payload: {value}} = e;

@@ -32,7 +32,6 @@ function	GraphForVaultTVL({messariData, height = 312}: TGraphForVaultTVLProps): 
 					hide />
 				<YAxis
 					orientation={'right'}
-					padding={{top: 8}} 
 					domain={['dataMin', 'auto']}
 					hide={false} 
 					tick={(e): ReactElement => {

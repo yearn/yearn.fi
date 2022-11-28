@@ -443,8 +443,8 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 			aria-label={'Quick Deposit'}
 			className={'col-span-12 mb-4 mt-10 flex flex-col space-x-0 space-y-2 bg-neutral-200 p-4 md:mt-20 md:flex-row md:space-x-4 md:space-y-0 md:p-8'}>
 
-			<section aria-label={'FROM'} className={'flex flex-col space-x-0 md:flex-row md:space-x-4'}>
-				<div className={'relative z-10 w-full space-y-2 md:w-54'}>
+			<section aria-label={'FROM'} className={'flex w-full flex-col space-x-0 md:flex-row md:space-x-4'}>
+				<div className={'relative z-10 w-full space-y-2'}>
 					<div className={'flex flex-row items-baseline justify-between'}>
 						<label className={'text-base text-neutral-600'}>
 							{isDepositing ? 'From wallet' : 'From vault'}
@@ -476,7 +476,7 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 						{`You have ${format.amount(balances[selectedOptionFrom?.value || '']?.normalized || 0, 2, 2)} ${selectedOptionFrom?.symbol || 'tokens'}`}
 					</legend>
 				</div>
-				<div className={'w-full space-y-2 md:w-50'}>
+				<div className={'w-full space-y-2'}>
 					<label className={'hidden text-base text-neutral-600 md:inline'}>{'Amount'}</label>
 					<div className={'flex h-10 items-center bg-neutral-100 p-2'}>
 						<div className={'flex h-10 w-full flex-row items-center justify-between py-4 px-0'}>
@@ -516,8 +516,8 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 				<legend className={'hidden text-xs md:inline'}>&nbsp;</legend>
 			</div>
 
-			<section aria-label={'TO'} className={'flex flex-col space-x-0 md:flex-row md:space-x-4'}>
-				<div className={'relative z-10 w-full space-y-2 md:w-54'}>
+			<section aria-label={'TO'} className={'flex w-full flex-col space-x-0 md:flex-row md:space-x-4'}>
+				<div className={'relative z-10 w-full space-y-2'}>
 					<div className={'flex flex-row items-baseline justify-between'}>
 						<label className={'text-base text-neutral-600'}>
 							{isDepositing ? 'To vault' : 'To wallet'}
@@ -549,7 +549,7 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 					</legend>
 				</div>
 
-				<div className={'w-full space-y-2 md:w-50'}>
+				<div className={'w-full space-y-2'}>
 					<label className={'hidden text-base text-neutral-600 md:inline'}>{'You will receive'}</label>
 					<div className={'flex h-10 items-center bg-neutral-300 p-2'}>
 						<div className={'flex h-10 w-full flex-row items-center justify-between py-4 px-0'}>
@@ -566,7 +566,7 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 				</div>
 			</section>
 
-			<div className={'w-full space-y-0 md:w-42 md:space-y-2'}>
+			<div className={'w-full space-y-0 md:w-42 md:min-w-42 md:space-y-2'}>
 				<label className={'hidden text-base md:inline'}>&nbsp;</label>
 				<div>
 					<ActionButton

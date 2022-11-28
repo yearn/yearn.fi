@@ -27,6 +27,13 @@ module.exports = {
 				'50': '12.5rem',
 				'54': '13.5rem'
 			},
+			minWidth: {
+				'42': '10.5rem'
+			},
+			maxWidth: {
+				'50': '12.5rem',
+				'54': '13.5rem'
+			},
 			height: {
 				'inherit': 'inherit'
 			},
