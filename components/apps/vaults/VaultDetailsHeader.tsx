@@ -12,7 +12,11 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 	const	{address} = useWeb3();
 	const	{balances} = useWallet();
 	const	{prices} = useYearn();
-	const	{data: earned} = useSWR(currentVault.address && address ? `${process.env.YDAEMON_BASE_URI}/1/earned/${address}/${currentVault.address}` : null, baseFetcher);
+	const	{data: earned} = useSWR(
+		currentVault.address && address ? `${process.env.YDAEMON_BASE_URI}/1/earned/${address}/${currentVault.address}` : null,
+		baseFetcher,
+		{revalidateOnFocus: false}
+	);
 
 	const	normalizedVaultBalance = useMemo((): number => (
 		format.toNormalizedValue(
@@ -39,13 +43,13 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 
 	return (
 		<div aria-label={'Vault Header'} className={'col-span-12 flex w-full flex-col items-center justify-center'}>
-			<b className={'mx-auto flex w-full flex-row items-center justify-center text-center text-8xl tabular-nums text-neutral-900'}>
+			<b className={'mx-auto flex w-full flex-row items-center justify-center text-center text-6xl tabular-nums text-neutral-900 md:text-8xl'}>
 				&nbsp;{vaultName}&nbsp;
 			</b>
-			<div className={'mt-10 mb-14'}>
+			<div className={'mt-4 mb-10 md:mt-10 md:mb-14'}>
 				{currentVault?.address ? <p className={'text-xs text-neutral-500'}>{currentVault.address}</p> : <p className={'text-xs text-neutral-500'}>&nbsp;</p>}
 			</div>
-			<div className={'grid grid-cols-4 gap-12'}>
+			<div className={'grid grid-cols-2 gap-12 md:grid-cols-4'}>
 				<div className={'flex flex-col items-center justify-center space-y-2'}>
 					<p className={'text-xs text-neutral-600'}>
 						{`Total staked, ${currentVault?.symbol || 'token'}`}

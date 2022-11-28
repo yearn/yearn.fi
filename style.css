@@ -22,6 +22,16 @@
 		@apply flex overflow-y-auto absolute left-0 flex-col mt-1 w-full min-w-fit max-h-60 scrollbar-none text-neutral-400 border border-neutral-300 bg-neutral-100;
 	}
 	& .yearn--dropdown-menu-item {
+		@apply w-40 md:w-full flex flex-row items-center cursor-pointer py-2 pr-4 pl-3 transition-colors;
+		&[data-active='true'] {
+			@apply bg-neutral-0/40;
+		}
+	}
+	& .yearn--listbox-menu {
+		@apply flex overflow-y-auto absolute left-0 flex-col mt-1 w-full min-w-fit max-h-60 scrollbar-none text-neutral-900 bg-neutral-0;
+		box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.16);
+	}
+	& .yearn--listbox-menu-item {
 		@apply w-full flex flex-row items-center cursor-pointer py-2 pr-4 pl-3 transition-colors;
 		&[data-active='true'] {
 			@apply bg-neutral-0/40;
@@ -44,6 +54,9 @@
 		}
 	}
 
+	& .recharts-surface {
+		overflow: visible;
+	}
 
 	& .recharts-tooltip-wrapper {
 		@apply !bg-neutral-100 text-neutral-900;
@@ -133,7 +146,7 @@ select:focus {
 }
 
 .recharts-tooltip {
-	@apply p-2 bg-neutral-0 flex flex-col w-40;
+	@apply p-2 bg-neutral-0 flex flex-col min-w-[160px];
 	box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.16);
 }
 
@@ -147,7 +160,7 @@ details {
 	@apply border-b border-neutral-300;
 
 	& > summary {
-		@apply px-6 py-8 cursor-pointer flex flex-row items-center justify-between;
+		@apply px-4 md:px-6 py-6 md:py-8 cursor-pointer flex flex-row items-center justify-between;
 	}
 	
 	& > summary .summary-chevron {

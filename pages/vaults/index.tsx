@@ -7,6 +7,7 @@ import Wrapper from 'components/apps/vaults/Wrapper';
 import ValueAnimation from 'components/common/ValueAnimation';
 import {useWallet} from 'contexts/useWallet';
 import {useYearn} from 'contexts/useYearn';
+import {getVaultName} from 'utils';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS} from 'utils/constants';
 
 import type {TYearnVault} from 'types/yearn';
@@ -66,12 +67,22 @@ function	Index(): ReactElement {
 			return vaultsToUse;
 		}
 		return vaultsToUse.filter((vault): boolean => {
-			const	searchString = `${vault.name} ${vault.display_name} ${vault.symbol}`;
+			const	searchString = getVaultName(vault);
 			return searchString.toLowerCase().includes(searchValue.toLowerCase());
 		});
 	}, [vaultsToDisplay, searchValue]);
 
 	const	sortedVaultsToDisplay = useMemo((): TYearnVault[] => {
+		if (sortBy === 'token') {
+			return searchedVaultsToDisplay.sort((a, b): number => {
+				const	aName = getVaultName(a);
+				const	bName = getVaultName(b);
+				if (sortDirection === 'desc') {
+					return aName.localeCompare(bName);
+				}
+				return bName.localeCompare(aName);
+			});
+		}
 		if (sortBy === 'apy') {
 			return searchedVaultsToDisplay.sort((a, b): number => {
 				if (sortDirection === 'desc') {

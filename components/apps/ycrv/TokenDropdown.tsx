@@ -68,17 +68,18 @@ function Dropdown({
 				{({open}): ReactElement => (
 					<>
 						<Listbox.Button
-							className={'flex h-10 w-full items-center justify-between bg-neutral-100 p-2 px-3 text-base text-neutral-900'}>
+							className={'flex h-10 w-full items-center justify-between bg-neutral-100 p-2 px-2 text-base text-neutral-900 md:px-3'}>
 							<div className={'relative flex flex-row items-center'}>
-								<div className={'h-4 w-4 rounded-full md:h-6 md:w-6'}>
-									{selected?.icon ? cloneElement(selected.icon) : <div className={'h-4 w-4 rounded-full bg-neutral-500 md:h-6 md:w-6'} />}
+								<div className={'h-6 w-6 rounded-full'}>
+									{selected?.icon ? cloneElement(selected.icon) : <div className={'h-6 w-6 rounded-full bg-neutral-500'} />}
 								</div>
-								<p className={`pl-2 ${(!selected?.symbol && !defaultOption?.symbol) ? 'text-neutral-400' : 'text-neutral-900'} max-w-[75%] overflow-x-hidden text-ellipsis whitespace-nowrap font-normal scrollbar-none md:max-w-full`}>
+								<p className={`pl-2 ${(!selected?.symbol && !defaultOption?.symbol) ? 'text-neutral-400' : 'text-neutral-900'} max-w-[90%] overflow-x-hidden text-ellipsis whitespace-nowrap font-normal scrollbar-none md:max-w-full`}>
 									{selected?.symbol || defaultOption?.symbol || placeholder}
 								</p>
 							</div>
 							<div className={'absolute right-2 md:right-3'}>
-								<IconChevron className={`h-4 w-4 transition-transform md:h-6 md:w-6 ${open ? '-rotate-180' : 'rotate-0'}`} />
+								<IconChevron
+									className={`h-6 w-6 transition-transform ${open ? '-rotate-180' : 'rotate-0'}`} />
 							</div>
 						</Listbox.Button>
 						<Transition

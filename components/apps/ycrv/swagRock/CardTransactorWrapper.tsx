@@ -131,11 +131,15 @@ function	CardTransactorContextApp({
 	** amount. This hook is called every 10s or when amount/in or out changes.
 	** Calls the expectedOutFetcher callback.
 	**************************************************************************/
-	const	{data: expectedOut} = useSWR(isActive && amount.raw.gt(0) ? [
-		selectedOptionFrom.value,
-		selectedOptionTo.value,
-		amount.raw
-	] : null, expectedOutFetcher, {refreshInterval: 10000, shouldRetryOnError: false});
+	const	{data: expectedOut} = useSWR(
+		isActive && amount.raw.gt(0) ? [
+			selectedOptionFrom.value,
+			selectedOptionTo.value,
+			amount.raw
+		] : null,
+		expectedOutFetcher,
+		{refreshInterval: 30000, shouldRetryOnError: false, revalidateOnFocus: false}
+	);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Approve the spending of token A by the corresponding ZAP contract to

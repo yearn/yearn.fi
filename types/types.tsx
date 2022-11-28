@@ -44,3 +44,14 @@ export type	TNormalizedBN = {
 	raw: BigNumber,
 	normalized: number | string,
 }
+
+export type TGraphData = {
+	name: string;
+	value: number;
+}
+
+export type TMessariGraphData = {
+	name: string;
+	tvl: number;
+	pps: number;
+}

@@ -35,9 +35,23 @@ export const YearnContextApp = ({children}: {children: React.ReactElement}): Rea
 	**	we need to fetch the data from the API, especially to get the
 	**	apy.net_apy
 	***************************************************************************/
-	const	{data: prices} = useSWR(`${process.env.YDAEMON_BASE_URI}/1/prices/all`, baseFetcher);
-	const	{data: vaults} = useSWR(`${process.env.YDAEMON_BASE_URI}/1/vaults/all?hideAlways=true&orderBy=apy.net_apy&orderDirection=desc&strategiesDetails=withDetails&strategiesRisk=withRisk`, baseFetcher);
-	const	{data: yCRVHarvests} = useSWR(`${process.env.YDAEMON_BASE_URI}/1/vaults/harvests/${process.env.STYCRV_TOKEN_ADDRESS},${process.env.LPYCRV_TOKEN_ADDRESS}`, baseFetcher);
+	const	{data: prices} = useSWR(
+		`${process.env.YDAEMON_BASE_URI}/1/prices/all`,
+		baseFetcher,
+		{revalidateOnFocus: false}
+	);
+
+	const	{data: vaults} = useSWR(
+		`${process.env.YDAEMON_BASE_URI}/1/vaults/all?hideAlways=true&orderBy=apy.net_apy&orderDirection=desc&strategiesDetails=withDetails&strategiesRisk=withRisk`,
+		baseFetcher,
+		{revalidateOnFocus: false}
+	);
+
+	const	{data: yCRVHarvests} = useSWR(
+		`${process.env.YDAEMON_BASE_URI}/1/vaults/harvests/${process.env.STYCRV_TOKEN_ADDRESS},${process.env.LPYCRV_TOKEN_ADDRESS}`,
+		baseFetcher,
+		{revalidateOnFocus: false}
+	);
 
 	const	vaultsObject = useMemo((): TYearnVaultsMap => {
 		const	_vaultsObject = (vaults || []).reduce((acc: TYearnVaultsMap, vault: TYearnVault): TYearnVaultsMap => {

@@ -30,9 +30,16 @@ export const CurveContextApp = ({children}: {children: React.ReactElement}): Rea
 	/* 🔵 - Yearn Finance ******************************************************
 	**	Fetch all the CurveGauges to be able to create some new if required
 	***************************************************************************/
-	// const	{data} = useSWR('https://api.curve.fi/api/getGauges', curveFetcher);
-	const	{data: curveWeeklyFees} = useSWR('https://api.curve.fi/api/getWeeklyFees', curveFetcher);
-	const	{data: cgPrices} = useSWR('https://api.coingecko.com/api/v3/simple/price?ids=curve-dao-token&vs_currencies=usd', fetcher);
+	const	{data: curveWeeklyFees} = useSWR(
+		'https://api.curve.fi/api/getWeeklyFees',
+		curveFetcher,
+		{revalidateOnFocus: false}
+	);
+	const	{data: cgPrices} = useSWR(
+		'https://api.coingecko.com/api/v3/simple/price?ids=curve-dao-token&vs_currencies=usd',
+		fetcher,
+		{revalidateOnFocus: false}
+	);
 	
 	/* 🔵 - Yearn Finance ******************************************************
 	**	Setup and render the Context provider to use in the app.

@@ -24,7 +24,16 @@ function	VaultTableHead({
 
 	return (
 		<div className={'mb-2 hidden w-full grid-cols-8 px-10 md:grid'}>
-			<p className={'col-span-3 text-start text-base text-neutral-400'}>{'Token'}</p>
+			<div className={'col-span-3'}>
+				<button
+					onClick={(): void => onSort('token', sortBy === 'token' ? (sortDirection === 'desc' ? 'asc' : 'desc') : 'desc')}
+					className={'group col-span-1 flex flex-row items-center justify-start space-x-1'}>
+					<p className={'text-start text-base text-neutral-400'}>
+						{'Token'}
+					</p>
+					{renderChevron(sortBy === 'token', sortDirection)}
+				</button>
+			</div>
 			<div className={'col-span-5 grid grid-cols-8'}>
 				<button
 					onClick={(): void => onSort('apy', sortBy === 'apy' ? (sortDirection === 'desc' ? 'asc' : 'desc') : 'desc')}

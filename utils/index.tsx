@@ -1,6 +1,7 @@
 import {BigNumber, ethers} from 'ethers';
 import axios from 'axios';
 import {format, toAddress} from '@yearn-finance/web-lib/utils';
+import request from 'graphql-request';
 
 import type {TDict} from '@yearn-finance/web-lib/utils';
 import type {TNormalizedBN} from 'types/types';
@@ -107,10 +108,30 @@ export function handleInputChange(
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const baseFetcher = async (url: string): Promise<any> => axios.get(url).then((res): any => res.data);
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const graphFetcher = async (url: string, query: string): Promise<any> => request(url, query);
+
 export function getVaultName(vault: TYearnVault): string {
 	const baseName = vault.display_name || vault.name || vault.formated_name || 'unknown';
 	if (baseName.includes(' yVault')) {
 		return baseName.replace(' yVault', '');
 	}
 	return baseName;
+}
+
+export function formatWithUnit(amount: number, minimumFractionDigits = 2, maximumFractionDigits = 2): string {
+	let		locale = 'fr-FR';
+	if (typeof(navigator) !== 'undefined') {
+		locale = navigator.language || 'fr-FR';
+	}
+	if (maximumFractionDigits < minimumFractionDigits) {
+		maximumFractionDigits = minimumFractionDigits;
+	}
+	return (new Intl.NumberFormat([locale, 'en-US'], {
+		minimumFractionDigits,
+		maximumFractionDigits,
+		notation: 'compact',
+		compactDisplay: 'short',
+		unitDisplay: 'short'
+	}).format(amount));
 }

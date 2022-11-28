@@ -72,7 +72,7 @@ function	Holdings(): ReactElement {
 			[toAddress(process.env.VECRV_YEARN_TREASURY_ADDRESS)]: veCRVBalance
 		});
 	}, [provider]);
-	const	{data} = useSWR('numbers', numbersFetchers, {refreshInterval: 10000, shouldRetryOnError: false});
+	const	{data} = useSWR('numbers', numbersFetchers, {refreshInterval: 10000, shouldRetryOnError: false, revalidateOnFocus: false});
 
 	const	stCRVRawAPY = useMemo((): number => getVaultRawAPY(vaults, process.env.STYCRV_TOKEN_ADDRESS as string), [vaults]);
 	const	lpCRVAPY = useMemo((): string => getVaultAPY(vaults, process.env.LPYCRV_TOKEN_ADDRESS as string), [vaults]);
