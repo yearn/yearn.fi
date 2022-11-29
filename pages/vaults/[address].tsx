@@ -57,7 +57,7 @@ export default Index;
 
 Index.getInitialProps = async ({query}: NextPageContext): Promise<unknown> => {
 	const	address = toAddress((query?.address as string)?.split('/').pop() || '');
-	const	res = await fetch(`${process.env.YDAEMON_BASE_URI}/1/vaults/${address}?hideAlways=true&orderBy=apy.net_apy&orderDirection=desc&strategiesDetails=withDetails&strategiesRisk=withRisk`);
+	const	res = await fetch(`${process.env.YDAEMON_BASE_URI}/1/vaults/${address}?hideAlways=true&orderBy=apy.net_apy&orderDirection=desc&strategiesDetails=withDetails&strategiesRisk=withRisk&strategiesCondition=inQueue`);
 	const	json = await res.json();
 
 	return {vaultData: json};

@@ -44,7 +44,7 @@
 		}
 	}
 	& .yearn--button-smaller {
-		@apply h-8 text-xs py-2 w-16 px-2 border-l-0 border-r-0;
+		@apply h-8 text-xs py-2 w-16 px-2;
 	}
 
 	& .mobile-nav-item {
@@ -166,7 +166,7 @@ details > summary::-webkit-details-marker {
 	display: none;
 }
 details {
-	@apply border-b border-neutral-300;
+	@apply border-b border-neutral-300 last-of-type:border-b-0;
 
 	& > summary {
 		@apply px-4 md:px-6 py-6 md:py-8 cursor-pointer flex flex-row items-center justify-between;

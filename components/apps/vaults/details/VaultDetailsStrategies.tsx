@@ -38,7 +38,9 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVau
 					<div className={'col-span-12 w-full space-y-4 md:col-span-6'}>
 						<div className={'grid grid-cols-4 gap-4'}>
 							<div className={'col-span-2 flex flex-col space-y-2 bg-neutral-200 p-2 md:p-4'}>
-								<p className={'text-base text-neutral-600'}>{'Total Debt'}</p>
+								<p className={'text-base text-neutral-600'}>
+									{'Capital Allocation'}
+								</p>
 								<b className={'text-lg tabular-nums text-neutral-900'}>
 									{`${format.amount(format.toNormalizedValue(format.BN(strategy?.details?.totalDebt), currentVault?.decimals), 0, 0)} ${currentVault.token.symbol}`}
 								</b>
@@ -56,7 +58,7 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVau
 						</div>
 
 						<div className={'flex flex-col space-y-4 bg-neutral-200 p-2 md:p-4'}>
-							<p className={'text-base text-neutral-600'}>{'Stats'}</p>
+							<p className={'text-base text-neutral-600'}>{'Trust score'}</p>
 							<div className={'mt-0 grid grid-cols-1 gap-x-12 gap-y-2 md:grid-cols-2'}>
 								<div className={'flex flex-row items-center justify-between'}>
 									<p className={'text-sm text-neutral-500'}>{'TVL Impact'}</p>
@@ -103,7 +105,9 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVau
 							</div>
 
 							<div className={'col-span-2 flex flex-col space-y-0 md:space-y-2'}>
-								<p className={'text-xxs text-neutral-600 md:text-xs'}>{'Debt Ratio'}</p>
+								<p className={'text-xxs text-neutral-600 md:text-xs'}>
+									{'Allocation'}
+								</p>
 								<b className={'text-xl tabular-nums text-neutral-900'}>
 									{`${format.amount((strategy?.details?.debtRatio || 0) / 100, 0, 2)} %`}
 								</b>

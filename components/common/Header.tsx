@@ -57,6 +57,11 @@ function	Navbar(): ReactElement {
 						{'Vaults'}
 					</p>
 				</Link>
+				<Link href={'/vaults/about'}>
+					<p className={`yveCRV--nav-link ${router.pathname === '/vaults/about' ? 'active' : '' }`}>
+						{'About'}
+					</p>
+				</Link>
 			</nav>
 		);
 	}

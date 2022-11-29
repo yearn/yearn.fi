@@ -545,7 +545,7 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 						</div>
 					)}
 					<legend className={'hidden text-xs tabular-nums text-neutral-600 md:inline'} suppressHydrationWarning>
-						{`APY ${isDepositing ? format.amount((currentVault?.apy?.net_apy || 0) * 100, 2, 2) : '0.00'} %`}
+						{isDepositing ? `APY ${format.amount((currentVault?.apy?.net_apy || 0) * 100, 2, 2)} %` : ''}
 					</legend>
 				</div>
 

@@ -12,14 +12,11 @@ function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYearnVau
 				<div>
 					<b className={'text-neutral-900'}>{'Description'}</b>
 					<p className={'mt-4 text-neutral-600'}>
-						{'Yearn Finance is a suite of products in Decentralized Finance (DeFi) that provides yield aggregation, a decentralized money market, and several other DeFi building blocks on the Ethereum blockchain. The protocol is maintained by various independent developers and is governed by YFI holders.'}
+						{currentVault?.token?.description || 'Yearn Finance is a suite of products in Decentralized Finance (DeFi) that provides yield aggregation, a decentralized money market, and several other DeFi building blocks on the Ethereum blockchain. The protocol is maintained by various independent developers and is governed by YFI holders.'}
 					</p>
 				</div>
 				<div>
 					<b className={'text-neutral-900'}>{'Trust score: 6.9'}</b>
-					<p className={'mt-4 text-neutral-600'}>
-						{'Yearn Finance is a suite of products in Decentralized Finance (DeFi) that provides yield aggregation, a decentralized money market, and several other DeFi building blocks on the Ethereum blockchain. The protocol is maintained by various independent developers and is governed by YFI holders.'}
-					</p>
 				</div>
 			</div>
 			<div className={'col-span-1 w-full space-y-8'}>

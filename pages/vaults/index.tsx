@@ -46,6 +46,11 @@ function	Index(): ReactElement {
 	const	cryptoVaults = useMemo((): TYearnVault[] => {
 		return (Object.values(vaults || {}).filter((vault): boolean => (vault?.category === 'Volatile')) as TYearnVault[]);
 	}, [vaults]);
+	const	holdingsVaults = useMemo((): TYearnVault[] => {
+		return (Object.values(vaults || {}).filter((vault): boolean => (
+			balances?.[toAddress(vault?.address)]?.raw.gt(0)
+		)) as TYearnVault[]);
+	}, [vaults, balances]);
 
 	const	vaultsToDisplay = useMemo((): TYearnVault[] => {
 		if (category === 'Curve Vaults') {
@@ -56,9 +61,11 @@ function	Index(): ReactElement {
 			return stablesVaults;
 		} else if (category === 'Crypto Vaults') {
 			return cryptoVaults;
+		} else if (category === 'Holdings') {
+			return holdingsVaults;
 		}
 		return Object.values(vaults || {}) as TYearnVault[];
-	}, [category, curveVaults, stablesVaults, balancerVaults, cryptoVaults, vaults]);
+	}, [category, curveVaults, stablesVaults, balancerVaults, cryptoVaults, vaults, holdingsVaults]);
 
 	const	searchedVaultsToDisplay = useMemo((): TYearnVault[] => {
 		const	vaultsToUse = [...vaultsToDisplay];
@@ -139,7 +146,6 @@ function	Index(): ReactElement {
 		return searchedVaultsToDisplay;
 	}, [sortBy, searchedVaultsToDisplay, sortDirection, balances]);
 
-
 	return (
 		<section className={'mt-4 grid w-full grid-cols-12 gap-y-10 pb-10 md:mt-20 md:gap-x-10 md:gap-y-20'}>
 
@@ -203,36 +209,45 @@ function	Index(): ReactElement {
 						</div>
 						<div>
 							<label className={'text-neutral-600'}>&nbsp;</label>
-							<div className={'mt-1 flex flex-row space-x-0 divide-x border-x border-neutral-900'}>
+							<div className={'mt-1 flex flex-row space-x-4'}>
+								<div className={'flex flex-row space-x-0 divide-x border-x border-neutral-900'}>
+									<Button
+										onClick={(): void => set_category('Crypto Vaults')}
+										variant={category === 'Crypto Vaults' ? 'filled' : 'outlined'}
+										className={'yearn--button-smaller !border-l-0'}>
+										{'Crypto'}
+									</Button>
+									<Button
+										onClick={(): void => set_category('Stables Vaults')}
+										variant={category === 'Stables Vaults' ? 'filled' : 'outlined'}
+										className={'yearn--button-smaller !border-x-0'}>
+										{'Stables'}
+									</Button>
+									<Button
+										onClick={(): void => set_category('Curve Vaults')}
+										variant={category === 'Curve Vaults' ? 'filled' : 'outlined'}
+										className={'yearn--button-smaller !border-x-0'}>
+										{'Curve'}
+									</Button>
+									<Button
+										onClick={(): void => set_category('Balancer Vaults')}
+										variant={category === 'Balancer Vaults' ? 'filled' : 'outlined'}
+										className={'yearn--button-smaller !border-x-0'}>
+										{'Balancer'}
+									</Button>
+									<Button
+										onClick={(): void => set_category('All Vaults')}
+										variant={category === 'All Vaults' ? 'filled' : 'outlined'}
+										className={'yearn--button-smaller !border-r-0'}>
+										{'All'}
+									</Button>
+								</div>
+
 								<Button
-									onClick={(): void => set_category('Crypto Vaults')}
-									variant={category === 'Crypto Vaults' ? 'filled' : 'outlined'}
+									onClick={(): void => set_category('Holdings')}
+									variant={category === 'Holdings' ? 'filled' : 'outlined'}
 									className={'yearn--button-smaller'}>
-									{'Crypto'}
-								</Button>
-								<Button
-									onClick={(): void => set_category('Stables Vaults')}
-									variant={category === 'Stables Vaults' ? 'filled' : 'outlined'}
-									className={'yearn--button-smaller'}>
-									{'Stables'}
-								</Button>
-								<Button
-									onClick={(): void => set_category('Curve Vaults')}
-									variant={category === 'Curve Vaults' ? 'filled' : 'outlined'}
-									className={'yearn--button-smaller'}>
-									{'Curve'}
-								</Button>
-								<Button
-									onClick={(): void => set_category('Balancer Vaults')}
-									variant={category === 'Balancer Vaults' ? 'filled' : 'outlined'}
-									className={'yearn--button-smaller'}>
-									{'Balancer'}
-								</Button>
-								<Button
-									onClick={(): void => set_category('All Vaults')}
-									variant={category === 'All Vaults' ? 'filled' : 'outlined'}
-									className={'yearn--button-smaller'}>
-									{'All'}
+									{'Holdings'}
 								</Button>
 							</div>
 						</div>
@@ -246,6 +261,7 @@ function	Index(): ReactElement {
 							<option value={'Curve Vaults'}>{'Curve'}</option>
 							<option value={'Balancer Vaults'}>{'Balancer'}</option>
 							<option value={'All Vaults'}>{'All'}</option>
+							<option value={'Holdings'}>{'Holdings'}</option>
 						</select>
 						<div className={'flex h-8 w-full items-center border border-neutral-0 bg-neutral-0 p-2 md:w-auto'}>
 							<div className={'flex h-8 w-full flex-row items-center justify-between py-2 px-0'}>

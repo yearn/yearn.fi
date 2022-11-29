@@ -52,7 +52,7 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 			<div className={'grid grid-cols-2 gap-12 md:grid-cols-4'}>
 				<div className={'flex flex-col items-center justify-center space-y-2'}>
 					<p className={'text-center text-xs text-neutral-600'}>
-						{`Total staked, ${currentVault?.symbol || 'token'}`}
+						{`Total deposited, ${currentVault?.symbol || 'token'}`}
 					</p>
 					<b className={'text-3xl tabular-nums'} suppressHydrationWarning>
 						{format.amount(format.toNormalizedValue(currentVault?.tvl?.total_assets, currentVault?.decimals), 2, 2)}

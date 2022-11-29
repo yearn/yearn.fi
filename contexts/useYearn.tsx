@@ -46,7 +46,7 @@ export const YearnContextApp = ({children}: {children: React.ReactElement}): Rea
 	);
 
 	const	{data: vaults} = useSWR(
-		`${process.env.YDAEMON_BASE_URI}/1/vaults/all?hideAlways=true&orderBy=apy.net_apy&orderDirection=desc&strategiesDetails=withDetails&strategiesRisk=withRisk`,
+		`${process.env.YDAEMON_BASE_URI}/1/vaults/all?hideAlways=true&orderBy=apy.net_apy&orderDirection=desc&strategiesDetails=withDetails&strategiesRisk=withRisk&strategiesCondition=inQueue`,
 		baseFetcher,
 		{revalidateOnFocus: false}
 	);

@@ -46,19 +46,19 @@ function	VaultDetailsHistorical({currentVault, harvestData}: {currentVault: TYea
 					<Button
 						onClick={(): void => set_selectedViewIndex(0)}
 						variant={selectedViewIndex === 0 ? 'filled' : 'outlined'}
-						className={'yearn--button-smaller'}>
+						className={'yearn--button-smaller !border-l-0'}>
 						{'TVL'}
 					</Button>
 					<Button
 						onClick={(): void => set_selectedViewIndex(1)}
 						variant={selectedViewIndex === 1 ? 'filled' : 'outlined'}
-						className={'yearn--button-smaller'}>
+						className={'yearn--button-smaller !border-x-0'}>
 						{'Growth'}
 					</Button>
 					<Button
 						onClick={(): void => set_selectedViewIndex(2)}
 						variant={selectedViewIndex === 2 ? 'filled' : 'outlined'}
-						className={'yearn--button-smaller'}>
+						className={'yearn--button-smaller !border-r-0'}>
 						{'Earnings'}
 					</Button>
 				</div>
