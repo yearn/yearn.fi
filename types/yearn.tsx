@@ -1,3 +1,5 @@
+import {TDict} from '@yearn-finance/web-lib/utils';
+
 export type TYearnVaultStrategy = {
 	address: string,
 	name: string,
@@ -176,4 +178,15 @@ export type TYDaemonReports = {
 		durationPR: string,
 		APR: string
 	}]
+}
+
+export type TYdaemonEarned = {
+	earned: TDict<{
+		realizedGains: string,
+		unrealizedGains: string,
+		realizedGainsUSD: number,
+		unrealizedGainsUSD: number
+	}>,
+	totalRealizedGainsUSD: number,
+	totalUnrealizedGainsUSD: number,
 }

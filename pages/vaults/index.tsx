@@ -14,7 +14,7 @@ import type {TYearnVault} from 'types/yearn';
 
 function	Index(): ReactElement {
 	const	{balances, cumulatedValueInVaults} = useWallet();
-	const	{vaults} = useYearn();
+	const	{vaults, earned} = useYearn();
 	const	[category, set_category] = useState('Crypto Vaults');
 	const	[searchValue, set_searchValue] = useState('');
 	const	[sortBy, set_sortBy] = useState('apy');
@@ -28,11 +28,11 @@ function	Index(): ReactElement {
 	}, [cumulatedValueInVaults]);
 
 	const	formatedYouEarned = useMemo((): string => {
-		if (cumulatedValueInVaults) {
-			return format.amount(cumulatedValueInVaults / 97, 2, 2);
+		if (earned?.totalUnrealizedGainsUSD) {
+			return format.amount(earned?.totalUnrealizedGainsUSD, 2, 2);
 		}
 		return '';
-	}, [cumulatedValueInVaults]);
+	}, [earned]);
 
 	const	curveVaults = useMemo((): TYearnVault[] => {
 		return (Object.values(vaults || {}).filter((vault): boolean => (vault?.category === 'Curve')) as TYearnVault[]);

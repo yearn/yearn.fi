@@ -249,7 +249,12 @@ function	Header(): ReactElement {
 							}
 						}}>
 						<p className={'yveCRV--nav-link text-sm'}>
-							{walletIdentity ? walletIdentity : <IconWallet className={'yveCRV--nav-link mt-0.5 h-4 w-4'} />
+							{walletIdentity ? walletIdentity : (
+								<span>
+									<IconWallet className={'yveCRV--nav-link mt-0.5 block h-4 w-4 md:hidden'} />
+									<span className={'hidden md:block'}>{'Connect wallet'}</span>
+								</span>
+							)
 							}
 						</p>
 					</div>

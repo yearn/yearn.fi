@@ -6,18 +6,22 @@ import {TAddress, toAddress} from '@yearn-finance/web-lib/utils';
 import {baseFetcher} from 'utils';
 
 import type {TDict} from '@yearn-finance/web-lib/utils';
-import type {TYDaemonHarvests, TYearnVault} from 'types/yearn';
+import type {TYdaemonEarned, TYearnVault} from 'types/yearn';
 
 
 export type	TYearnContext = {
 	currentPartner: TAddress,
-	yCRVHarvests: TYDaemonHarvests[],
+	earned: TYdaemonEarned,
 	prices: TDict<string>,
 	vaults: TDict<TYearnVault | undefined>
 }
 const	defaultProps: TYearnContext = {
 	currentPartner: toAddress(process.env.PARTNER_ID_ADDRESS as string),
-	yCRVHarvests: [],
+	earned: {
+		earned: {},
+		totalRealizedGainsUSD: 0,
+		totalUnrealizedGainsUSD: 0
+	},
 	prices: {},
 	vaults: {[ethers.constants.AddressZero]: undefined}
 };
@@ -28,7 +32,7 @@ type TYearnVaultsMap = {
 
 const	YearnContext = createContext<TYearnContext>(defaultProps);
 export const YearnContextApp = ({children}: {children: React.ReactElement}): React.ReactElement => {
-	const	{currentPartner} = useWeb3();
+	const	{address, currentPartner} = useWeb3();
 
 	/* 🔵 - Yearn Finance ******************************************************
 	**	We will play with the some Yearn vaults. To correctly play with them,
@@ -47,8 +51,8 @@ export const YearnContextApp = ({children}: {children: React.ReactElement}): Rea
 		{revalidateOnFocus: false}
 	);
 
-	const	{data: yCRVHarvests} = useSWR(
-		`${process.env.YDAEMON_BASE_URI}/1/vaults/harvests/${process.env.STYCRV_TOKEN_ADDRESS},${process.env.LPYCRV_TOKEN_ADDRESS}`,
+	const	{data: earned} = useSWR(
+		address ? `${process.env.YDAEMON_BASE_URI}/1/earned/${address}` : null,
 		baseFetcher,
 		{revalidateOnFocus: false}
 	);
@@ -79,7 +83,7 @@ export const YearnContextApp = ({children}: {children: React.ReactElement}): Rea
 			value={{
 				currentPartner: currentPartner?.id ? toAddress(currentPartner.id) : toAddress(process.env.PARTNER_ID_ADDRESS as string),
 				prices,
-				yCRVHarvests,
+				earned,
 				vaults: {...vaultsObject}
 			}}>
 			{children}

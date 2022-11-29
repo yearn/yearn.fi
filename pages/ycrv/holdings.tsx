@@ -10,6 +10,7 @@ import {ImageWithFallback} from 'components/common/ImageWithFallback';
 import ValueAnimation from 'components/common/ValueAnimation';
 import {useCurve} from 'contexts/useCurve';
 import {useWallet} from 'contexts/useWallet';
+import {useYCRV} from 'contexts/useYCRV';
 import {useYearn} from 'contexts/useYearn';
 import {getCounterValue, getCounterValueRaw, getVaultAPY, getVaultRawAPY} from 'utils';
 import CURVE_CRV_YCRV_LP_ABI from 'utils/abi/curveCrvYCrvLp.abi';
@@ -21,7 +22,8 @@ import type {TYDaemonHarvests} from 'types/yearn';
 function	Holdings(): ReactElement {
 	const	{provider} = useWeb3();
 	const	{balances} = useWallet();
-	const	{vaults, prices, yCRVHarvests} = useYearn();
+	const	{vaults, prices} = useYearn();
+	const	{yCRVHarvests} = useYCRV();
 	const	{curveWeeklyFees, cgPrices} = useCurve();
 
 	/* 🔵 - Yearn Finance ******************************************************

@@ -11,7 +11,7 @@
 		"lint": "eslint . --ext .js,.jsx,.ts,.tsx"
 	},
 	"dependencies": {
-		"@yearn-finance/web-lib": "^0.16.19",
+		"@yearn-finance/web-lib": "^0.16.23",
 		"axios": "^1.2.0",
 		"ethcall": "^4.8.11",
 		"ethers": "^5.7.2",

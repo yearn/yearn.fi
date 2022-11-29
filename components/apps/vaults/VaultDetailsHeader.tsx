@@ -6,13 +6,13 @@ import {useWallet} from 'contexts/useWallet';
 import {useYearn} from 'contexts/useYearn';
 import {baseFetcher, getCounterValue, getVaultName} from 'utils';
 
-import type {TYearnVault} from 'types/yearn';
+import type {TYdaemonEarned, TYearnVault} from 'types/yearn';
 
 function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactElement {
 	const	{address} = useWeb3();
 	const	{balances} = useWallet();
 	const	{prices} = useYearn();
-	const	{data: earned} = useSWR(
+	const	{data: earned} = useSWR<TYdaemonEarned>(
 		currentVault.address && address ? `${process.env.YDAEMON_BASE_URI}/1/earned/${address}/${currentVault.address}` : null,
 		baseFetcher,
 		{revalidateOnFocus: false}
@@ -27,7 +27,7 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 
 	const	normalizedVaultEarned = useMemo((): number => (
 		format.toNormalizedValue(
-			(earned?.[toAddress(currentVault?.address)]?.realizedGains || 0) + (earned?.[toAddress(currentVault?.address)]?.unrealizedGains || 0),
+			(earned?.earned?.[toAddress(currentVault?.address)]?.unrealizedGains || '0'),
 			currentVault?.decimals
 		)
 	), [earned, currentVault]);
