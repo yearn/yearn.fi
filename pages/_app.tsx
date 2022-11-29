@@ -6,6 +6,7 @@ import Header from 'components/common/Header';
 import Meta from 'components/common/Meta';
 import {WalletContextApp} from 'contexts/useWallet';
 import {YearnContextApp} from 'contexts/useYearn';
+import meta from 'public/manifest.json';
 
 import	'../style.css';
 
@@ -54,7 +55,7 @@ function	MyApp(props: AppProps): ReactElement {
 			<YearnContextApp>
 				<WalletContextApp>
 					<>
-						<Meta />
+						<Meta meta={meta} />
 						<WithLayout
 							Component={Component}
 							pageProps={pageProps}
