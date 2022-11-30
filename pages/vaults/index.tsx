@@ -1,16 +1,17 @@
-import React, {ChangeEvent, ReactElement, ReactNode, useMemo, useState} from 'react';
+import React, {useMemo, useState} from 'react';
+import {VaultsListHead} from '@vaults/components/list/VaultsListHead';
+import {VaultsListRow} from '@vaults/components/list/VaultsListRow';
+import Wrapper from '@vaults/Wrapper';
 import {Button} from '@yearn-finance/web-lib/components';
 import {format, performBatchedUpdates, toAddress} from '@yearn-finance/web-lib/utils';
-import {VaultsListHead} from 'components/apps/vaults/list/VaultsListHead';
-import {VaultsListRow} from 'components/apps/vaults/list/VaultsListRow';
-import Wrapper from 'components/apps/vaults/Wrapper';
-import ValueAnimation from 'components/common/ValueAnimation';
-import {useWallet} from 'contexts/useWallet';
-import {useYearn} from 'contexts/useYearn';
-import {getVaultName} from 'utils';
-import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS} from 'utils/constants';
+import ValueAnimation from '@common/components/ValueAnimation';
+import {useWallet} from '@common/contexts/useWallet';
+import {useYearn} from '@common/contexts/useYearn';
+import {getVaultName} from '@common/utils';
+import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS} from '@common/utils/constants';
 
-import type {TYearnVault} from 'types/yearn';
+import type {ChangeEvent, ReactElement, ReactNode} from 'react';
+import type {TYearnVault} from '@common/types/yearn';
 
 function	Index(): ReactElement {
 	const	{balances, cumulatedValueInVaults} = useWallet();
@@ -105,17 +106,17 @@ function	Index(): ReactElement {
 
 				if (toAddress(a.token.address) === WETH_TOKEN_ADDRESS) {
 					const	ethPlusWEth = (
-						(balances[toAddress(WETH_TOKEN_ADDRESS)]?.normalized || 0)
+						(balances[WETH_TOKEN_ADDRESS]?.normalized || 0)
 						+
-						(balances[toAddress(ETH_TOKEN_ADDRESS)]?.normalized || 0)
+						(balances[ETH_TOKEN_ADDRESS]?.normalized || 0)
 					);
 					aBalance = ethPlusWEth;
 				}
 				if (toAddress(b.token.address) === WETH_TOKEN_ADDRESS) {
 					const	ethPlusWEth = (
-						(balances[toAddress(WETH_TOKEN_ADDRESS)]?.normalized || 0)
+						(balances[WETH_TOKEN_ADDRESS]?.normalized || 0)
 						+
-						(balances[toAddress(ETH_TOKEN_ADDRESS)]?.normalized || 0)
+						(balances[ETH_TOKEN_ADDRESS]?.normalized || 0)
 					);
 					bBalance = ethPlusWEth;
 				}
@@ -140,6 +141,14 @@ function	Index(): ReactElement {
 					return (b.tvl.tvl || 0) - (a.tvl.tvl || 0);
 				}
 				return (a.tvl.tvl || 0) - (b.tvl.tvl || 0);
+			});
+		}
+		if (sortBy === 'risk') {
+			return searchedVaultsToDisplay.sort((a, b): number => {
+				if (sortDirection === 'desc') {
+					return (b.safetyScore || 0) - (a.safetyScore || 0);
+				}
+				return (a.safetyScore || 0) - (b.safetyScore || 0);
 			});
 		}
 

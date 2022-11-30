@@ -1,10 +1,12 @@
-import React, {ReactElement} from 'react';
+import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import {useClientEffect} from '@yearn-finance/web-lib/hooks';
-import {toAddress} from '@yearn-finance/web-lib/utils';
-import LogoYearn from 'components/icons/LogoYearn';
-import LogoYearnBlue from 'components/icons/LogoYearnBlue';
+import LogoYearn from '@common/icons/LogoYearn';
+import LogoYearnBlue from '@common/icons/LogoYearnBlue';
+import {YCRV_TOKEN_ADDRESS} from '@common/utils/constants';
+
+import type {ReactElement} from 'react';
 
 const	apps = [
 	{
@@ -20,7 +22,7 @@ const	apps = [
 			alt={'yCRV'}
 			width={100}
 			height={100}
-			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${toAddress(process.env.YCRV_TOKEN_ADDRESS)}/logo-128.png`}
+			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YCRV_TOKEN_ADDRESS}/logo-128.png`}
 			loading={'eager'}
 			priority />
 	}, {

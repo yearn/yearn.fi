@@ -1,16 +1,17 @@
-import React, {ReactElement, useRef} from 'react';
-import {NextRouter} from 'next/router';
+import React, {useRef} from 'react';
 import {motion} from 'framer-motion';
+import {VaultDetailsHeader} from '@vaults/components/VaultDetailsHeader';
+import {VaultDetailsQuickActions} from '@vaults/components/VaultDetailsQuickActions';
+import {VaultDetailsTabsWrapper} from '@vaults/components/VaultDetailsTabsWrapper';
+import Wrapper from '@vaults/Wrapper';
 import {toAddress} from '@yearn-finance/web-lib/utils';
-import {VaultDetailsHeader} from 'components/apps/vaults/VaultDetailsHeader';
-import {VaultDetailsQuickActions} from 'components/apps/vaults/VaultDetailsQuickActions';
-import {VaultDetailsTabsWrapper} from 'components/apps/vaults/VaultDetailsTabsWrapper';
-import Wrapper from 'components/apps/vaults/Wrapper';
-import {ImageWithFallback} from 'components/common/ImageWithFallback';
-import {useYearn} from 'contexts/useYearn';
+import {ImageWithFallback} from '@common/components/ImageWithFallback';
+import {useYearn} from '@common/contexts/useYearn';
 
 import type {NextPageContext} from 'next';
-import type {TYearnVault} from 'types/yearn';
+import type {NextRouter} from 'next/router';
+import type {ReactElement} from 'react';
+import type {TYearnVault} from '@common/types/yearn';
 
 const transition = {duration: 0.3, ease: 'easeInOut'};
 const variants = {

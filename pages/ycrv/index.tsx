@@ -1,9 +1,11 @@
-import React, {ReactElement} from 'react';
+import React from 'react';
 import {Button} from '@yearn-finance/web-lib/components';
 import {useClientEffect} from '@yearn-finance/web-lib/hooks';
-import CardMigrateLegacy from 'components/apps/ycrv/swagRock/CardMigrateLegacy';
-import CardZap from 'components/apps/ycrv/swagRock/CardZap';
-import Wrapper from 'components/apps/ycrv/Wrapper';
+import CardMigrateLegacy from '@yCRV/components/CardMigrateLegacy';
+import CardZap from '@yCRV/components/CardZap';
+import Wrapper from '@yCRV/Wrapper';
+
+import type {ReactElement} from 'react';
 
 function	TextAnimation(): ReactElement {
 	function	onStartAnimation(): void {

@@ -1,7 +1,9 @@
-import React, {ReactElement, useState} from 'react';
+import React, {useState} from 'react';
 import {Button} from '@yearn-finance/web-lib/components';
-import Wrapper from 'components/apps/ycrv/Wrapper';
-import {useWallet} from 'contexts/useWallet';
+import {useWallet} from '@common/contexts/useWallet';
+import Wrapper from '@yCRV/Wrapper';
+
+import type {ReactElement} from 'react';
 
 function	About(): ReactElement {
 	const	{slippage, set_slippage} = useWallet();

@@ -5,10 +5,9 @@ const defaultTheme = require('tailwindcss/defaultTheme');
 module.exports = {
 	presets: [require('@yearn-finance/web-lib/tailwind.config.cjs')],
 	content: [
-		join(__dirname, 'pages', '**', '*.{js,jsx,ts,tsx}'),
-		join(__dirname, 'components', 'icons', '**', '*.{js,jsx,ts,tsx}'),
-		join(__dirname, 'components', '**', '*.{js,jsx,ts,tsx}'),
-		join(__dirname, 'utils', '**', '*.{js,jsx,ts,tsx}'),
+		'./app/**/*.{js,ts,jsx,tsx}',
+		'./pages/**/*.{js,ts,jsx,tsx}',
+		'./apps/**/*.{js,ts,jsx,tsx}',
 		join(__dirname, 'node_modules', '@yearn-finance', 'web-lib', 'layouts', '**', '*.js'),
 		join(__dirname, 'node_modules', '@yearn-finance', 'web-lib', 'components', '**', '*.js'),
 		join(__dirname, 'node_modules', '@yearn-finance', 'web-lib', 'contexts', '**', '*.js'),

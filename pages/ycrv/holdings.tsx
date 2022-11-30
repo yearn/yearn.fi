@@ -1,23 +1,26 @@
-import React, {ReactElement, useCallback, useMemo} from 'react';
+import React, {useCallback, useMemo} from 'react';
 import {Contract} from 'ethcall';
-import {BigNumber, ethers} from 'ethers';
+import {ethers} from 'ethers';
 import useSWR from 'swr';
 import {useWeb3} from '@yearn-finance/web-lib/contexts';
 import IconLinkOut from '@yearn-finance/web-lib/icons/IconLinkOut';
 import {format, providers, toAddress, truncateHex} from '@yearn-finance/web-lib/utils';
-import Wrapper from 'components/apps/ycrv/Wrapper';
-import {ImageWithFallback} from 'components/common/ImageWithFallback';
-import ValueAnimation from 'components/common/ValueAnimation';
-import {useCurve} from 'contexts/useCurve';
-import {useWallet} from 'contexts/useWallet';
-import {useYCRV} from 'contexts/useYCRV';
-import {useYearn} from 'contexts/useYearn';
-import {getCounterValue, getCounterValueRaw, getVaultAPY, getVaultRawAPY} from 'utils';
-import CURVE_CRV_YCRV_LP_ABI from 'utils/abi/curveCrvYCrvLp.abi';
-import STYCRV_ABI from 'utils/abi/styCRV.abi';
-import YVECRV_ABI from 'utils/abi/yveCRV.abi';
+import {ImageWithFallback} from '@common/components/ImageWithFallback';
+import ValueAnimation from '@common/components/ValueAnimation';
+import {useCurve} from '@common/contexts/useCurve';
+import {useWallet} from '@common/contexts/useWallet';
+import {useYCRV} from '@common/contexts/useYCRV';
+import {useYearn} from '@common/contexts/useYearn';
+import {getCounterValue, getCounterValueRaw, getVaultAPY, getVaultRawAPY} from '@common/utils';
+import {LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, VECRV_ADDRESS, VECRV_YEARN_TREASURY_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YCRV_TOKEN_ADDRESS, YVECRV_TOKEN_ADDRESS} from '@common/utils/constants';
+import CURVE_CRV_YCRV_LP_ABI from '@yCRV/utils/abi/curveCrvYCrvLp.abi';
+import STYCRV_ABI from '@yCRV/utils/abi/styCRV.abi';
+import YVECRV_ABI from '@yCRV/utils/abi/yveCRV.abi';
+import Wrapper from '@yCRV/Wrapper';
 
-import type {TYDaemonHarvests} from 'types/yearn';
+import type {BigNumber} from 'ethers';
+import type {ReactElement} from 'react';
+import type {TYDaemonHarvests} from '@common/types/yearn';
 
 function	Holdings(): ReactElement {
 	const	{provider} = useWeb3();
@@ -35,12 +38,12 @@ function	Holdings(): ReactElement {
 		const	currentProvider = provider || providers.getProvider(1);
 		const	ethcallProvider = await providers.newEthCallProvider(currentProvider);
 
-		const	yCRVContract = new Contract(process.env.YCRV_TOKEN_ADDRESS as string, YVECRV_ABI);
-		const	styCRVContract = new Contract(process.env.STYCRV_TOKEN_ADDRESS as string, STYCRV_ABI);
-		const	lpyCRVContract = new Contract(process.env.LPYCRV_TOKEN_ADDRESS as string, YVECRV_ABI);
-		const	yveCRVContract = new Contract(process.env.YVECRV_TOKEN_ADDRESS as string, YVECRV_ABI);
-		const	veEscrowContract = new Contract(process.env.VECRV_ADDRESS as string, YVECRV_ABI);
-		const	crvYCRVLpContract = new Contract(process.env.YCRV_CURVE_POOL_ADDRESS as string, CURVE_CRV_YCRV_LP_ABI);
+		const	yCRVContract = new Contract(YCRV_TOKEN_ADDRESS, YVECRV_ABI);
+		const	styCRVContract = new Contract(STYCRV_TOKEN_ADDRESS, STYCRV_ABI);
+		const	lpyCRVContract = new Contract(LPYCRV_TOKEN_ADDRESS, YVECRV_ABI);
+		const	yveCRVContract = new Contract(YVECRV_TOKEN_ADDRESS, YVECRV_ABI);
+		const	veEscrowContract = new Contract(VECRV_ADDRESS, YVECRV_ABI);
+		const	crvYCRVLpContract = new Contract(YCRV_CURVE_POOL_ADDRESS, CURVE_CRV_YCRV_LP_ABI);
 
 		const	[
 			yveCRVTotalSupply,
@@ -53,8 +56,8 @@ function	Holdings(): ReactElement {
 			crvYCRVPeg
 		] = await ethcallProvider.tryAll([
 			yveCRVContract.totalSupply(),
-			yveCRVContract.balanceOf(process.env.YCRV_TOKEN_ADDRESS),
-			veEscrowContract.balanceOf(process.env.VECRV_YEARN_TREASURY_ADDRESS),
+			yveCRVContract.balanceOf(YCRV_TOKEN_ADDRESS),
+			veEscrowContract.balanceOf(VECRV_YEARN_TREASURY_ADDRESS),
 			veEscrowContract.totalSupply(),
 			yCRVContract.totalSupply(),
 			styCRVContract.totalAssets(),
@@ -71,13 +74,13 @@ function	Holdings(): ReactElement {
 			['crvYCRVPeg']: crvYCRVPeg,
 			['boostMultiplier']: veCRVBalance.mul(1e4).div(styCRVTotalSupply),
 			['veCRVTotalSupply']: veCRVTotalSupply,
-			[toAddress(process.env.VECRV_YEARN_TREASURY_ADDRESS)]: veCRVBalance
+			[VECRV_YEARN_TREASURY_ADDRESS]: veCRVBalance
 		});
 	}, [provider]);
 	const	{data} = useSWR('numbers', numbersFetchers, {refreshInterval: 10000, shouldRetryOnError: false, revalidateOnFocus: false});
 
-	const	stCRVRawAPY = useMemo((): number => getVaultRawAPY(vaults, process.env.STYCRV_TOKEN_ADDRESS as string), [vaults]);
-	const	lpCRVAPY = useMemo((): string => getVaultAPY(vaults, process.env.LPYCRV_TOKEN_ADDRESS as string), [vaults]);
+	const	stCRVRawAPY = useMemo((): number => getVaultRawAPY(vaults, STYCRV_TOKEN_ADDRESS), [vaults]);
+	const	lpCRVAPY = useMemo((): string => getVaultAPY(vaults, LPYCRV_TOKEN_ADDRESS), [vaults]);
 
 	const	formatBigNumberOver10K = useCallback((v: BigNumber): string => {
 		if (v.gt(ethers.constants.WeiPerEther.mul(10000))) {
@@ -94,16 +97,16 @@ function	Holdings(): ReactElement {
 	}, []);
 
 	const	formatedYearnHas = useMemo((): string => (
-		data?.[toAddress(process.env.VECRV_YEARN_TREASURY_ADDRESS)] ?
-			format.amount(format.toNormalizedValue(data[toAddress(process.env.VECRV_YEARN_TREASURY_ADDRESS)], 18), 0, 0)
+		data?.[VECRV_YEARN_TREASURY_ADDRESS] ?
+			format.amount(format.toNormalizedValue(data[VECRV_YEARN_TREASURY_ADDRESS], 18), 0, 0)
 			: ''
 	), [data]);
 
 	const	formatedYouHave = useMemo((): string => (
 		getCounterValueRaw(
-			(Number(balances[toAddress(process.env.STYCRV_TOKEN_ADDRESS)]?.normalized) || 0) * (vaults?.[toAddress(process.env.STYCRV_TOKEN_ADDRESS)]?.tvl?.price || 0)
+			(Number(balances[STYCRV_TOKEN_ADDRESS]?.normalized) || 0) * (vaults?.[STYCRV_TOKEN_ADDRESS]?.tvl?.price || 0)
 			+
-			(Number(balances[toAddress(process.env.LPYCRV_TOKEN_ADDRESS)]?.normalized) || 0) * (vaults?.[toAddress(process.env.LPYCRV_TOKEN_ADDRESS)]?.tvl?.price || 0),
+			(Number(balances[LPYCRV_TOKEN_ADDRESS]?.normalized) || 0) * (vaults?.[LPYCRV_TOKEN_ADDRESS]?.tvl?.price || 0),
 			1
 		)
 	), [balances, vaults]);
@@ -134,7 +137,7 @@ function	Holdings(): ReactElement {
 
 	const	ycrvPrice = useMemo((): number => (
 		format.toNormalizedValue(
-			format.BN(prices?.[toAddress(process.env.YCRV_TOKEN_ADDRESS as string)] || 0),
+			format.BN(prices?.[YCRV_TOKEN_ADDRESS] || 0),
 			6
 		)
 	), [prices]);
@@ -225,7 +228,7 @@ function	Holdings(): ReactElement {
 							<p className={'text-base tabular-nums text-neutral-900'}>
 								{data?.styCRVSupply ? getCounterValue(
 									format.toNormalizedValue(data?.styCRVSupply || ethers.constants.Zero, 18),
-									vaults?.[toAddress(process.env.STYCRV_TOKEN_ADDRESS)]?.tvl?.price || 0
+									vaults?.[STYCRV_TOKEN_ADDRESS]?.tvl?.price || 0
 								) : '0.00'}
 							</p>
 						</div>
@@ -239,14 +242,14 @@ function	Holdings(): ReactElement {
 							<span className={'inline text-sm font-normal text-neutral-400 md:hidden'}>{'My Balance: '}</span>
 							<div>
 								<p className={'text-base tabular-nums text-neutral-900'}>
-									{balances[toAddress(process.env.STYCRV_TOKEN_ADDRESS)]?.normalized ? (
-										formatNumberOver10K(balances[toAddress(process.env.STYCRV_TOKEN_ADDRESS)]?.normalized || 0)
+									{balances[STYCRV_TOKEN_ADDRESS]?.normalized ? (
+										formatNumberOver10K(balances[STYCRV_TOKEN_ADDRESS]?.normalized || 0)
 									) : '0.00'}
 								</p>
 								<p className={'text-xs tabular-nums text-neutral-600'}>
-									{balances[toAddress(process.env.STYCRV_TOKEN_ADDRESS)] ? getCounterValue(
-										balances[toAddress(process.env.STYCRV_TOKEN_ADDRESS)]?.normalized,
-										vaults?.[toAddress(process.env.STYCRV_TOKEN_ADDRESS)]?.tvl?.price || 0
+									{balances[STYCRV_TOKEN_ADDRESS] ? getCounterValue(
+										balances[STYCRV_TOKEN_ADDRESS]?.normalized,
+										vaults?.[STYCRV_TOKEN_ADDRESS]?.tvl?.price || 0
 									) : '0.00'}
 								</p>
 							</div>
@@ -271,7 +274,7 @@ function	Holdings(): ReactElement {
 							<p className={'text-base tabular-nums text-neutral-900'}>
 								{data?.lpyCRVSupply ? getCounterValue(
 									format.toNormalizedValue(data?.lpyCRVSupply || ethers.constants.Zero, 18),
-									vaults?.[toAddress(process.env.LPYCRV_TOKEN_ADDRESS)]?.tvl?.price || 0
+									vaults?.[LPYCRV_TOKEN_ADDRESS]?.tvl?.price || 0
 								) : '0.00'}
 							</p>
 						</div>
@@ -285,14 +288,14 @@ function	Holdings(): ReactElement {
 							<span className={'inline text-sm font-normal text-neutral-400 md:hidden'}>{'My Balance: '}</span>
 							<div>
 								<p className={'text-base tabular-nums text-neutral-900'}>
-									{balances[toAddress(process.env.LPYCRV_TOKEN_ADDRESS)]?.normalized ? (
-										formatNumberOver10K(balances[toAddress(process.env.LPYCRV_TOKEN_ADDRESS)]?.normalized || 0)
+									{balances[LPYCRV_TOKEN_ADDRESS]?.normalized ? (
+										formatNumberOver10K(balances[LPYCRV_TOKEN_ADDRESS]?.normalized || 0)
 									) : '0.00'}
 								</p>
 								<p className={'text-xs tabular-nums text-neutral-600'}>
-									{balances[toAddress(process.env.LPYCRV_TOKEN_ADDRESS)] ? getCounterValue(
-										balances[toAddress(process.env.LPYCRV_TOKEN_ADDRESS)]?.normalized,
-										vaults?.[toAddress(process.env.LPYCRV_TOKEN_ADDRESS)]?.tvl?.price || 0
+									{balances[LPYCRV_TOKEN_ADDRESS] ? getCounterValue(
+										balances[LPYCRV_TOKEN_ADDRESS]?.normalized,
+										vaults?.[LPYCRV_TOKEN_ADDRESS]?.tvl?.price || 0
 									) : '0.00'}
 								</p>
 							</div>
@@ -372,7 +375,7 @@ function	Holdings(): ReactElement {
 									<div className={'flex flex-row items-center space-x-0 md:space-x-4'}>
 										<div className={'hidden h-8 w-8 rounded-full bg-neutral-200 md:flex md:h-9 md:w-9'}>
 											<ImageWithFallback
-												alt={toAddress(harvest.vaultAddress) === toAddress(process.env.STYCRV_TOKEN_ADDRESS) ? 'st-yCRV' : 'lp-yCRV'}
+												alt={toAddress(harvest.vaultAddress) === STYCRV_TOKEN_ADDRESS ? 'st-yCRV' : 'lp-yCRV'}
 												width={36}
 												height={36}
 												quality={90}
@@ -380,7 +383,7 @@ function	Holdings(): ReactElement {
 												loading={'eager'} />
 										</div>
 										<b>
-											{toAddress(harvest.vaultAddress) === toAddress(process.env.STYCRV_TOKEN_ADDRESS) ? 'st-yCRV' : 'lp-yCRV'}
+											{toAddress(harvest.vaultAddress) === STYCRV_TOKEN_ADDRESS ? 'st-yCRV' : 'lp-yCRV'}
 										</b>
 									</div>
 									<div className={'flex md:hidden'}>

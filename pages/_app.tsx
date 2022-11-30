@@ -1,12 +1,14 @@
-import React, {ReactElement} from 'react';
-import {AppProps} from 'next/app';
+import React from 'react';
+import meta from 'public/manifest.json';
 import {AnimatePresence, motion} from 'framer-motion';
 import {WithYearn} from '@yearn-finance/web-lib/contexts';
-import Header from 'components/common/Header';
-import Meta from 'components/common/Meta';
-import {WalletContextApp} from 'contexts/useWallet';
-import {YearnContextApp} from 'contexts/useYearn';
-import meta from 'public/manifest.json';
+import Header from '@common/components/Header';
+import Meta from '@common/components/Meta';
+import {WalletContextApp} from '@common/contexts/useWallet';
+import {YearnContextApp} from '@common/contexts/useYearn';
+
+import type {AppProps} from 'next/app';
+import type {ReactElement} from 'react';
 
 import	'../style.css';
 
@@ -47,9 +49,11 @@ function	MyApp(props: AppProps): ReactElement {
 	return (
 		<WithYearn
 			options={{
+				baseSettings: {
+					yDaemonBaseURI: process.env.YDAEMON_BASE_URI as string
+				},
 				ui: {
-					shouldUseThemes: false,
-					shouldUseDefaultToaster: true
+					shouldUseThemes: false
 				}
 			}}>
 			<YearnContextApp>
