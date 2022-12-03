@@ -1,6 +1,7 @@
 /* eslint-disable no-irregular-whitespace */
 import React, {useRef} from 'react';
 import {useClientEffect} from '@yearn-finance/web-lib/hooks';
+import {format} from '@yearn-finance/web-lib/utils';
 
 import type {ReactElement} from 'react';
 
@@ -91,7 +92,7 @@ function	ValueAnimation({
 		initZero();
 	}, []);
 	useClientEffect((): void => {
-		if (value && !hasBeenTriggerd.current) {
+		if (value && value !== format.amount(0, 2, 2) && !hasBeenTriggerd.current) {
 			onStartAnimation();
 		}
 	}, [value, hasBeenTriggerd.current]);
@@ -100,8 +101,8 @@ function	ValueAnimation({
 		<>
 			<div className={'text'}>
 				<p className={'wordWrapper'}> 
-					<span className={`${className} ${identifier}`}>{`${prefix ? `${prefix} ` : ''}${defaultValue}${suffix ? ` ${suffix}` : ''}`}</span>
-					<span className={`${className} ${identifier}`}>{`${prefix ? `${prefix} ` : ''}${value}${suffix ? ` ${suffix}` : ''}`}</span>
+					<span suppressHydrationWarning className={`${className} ${identifier}`}>{`${prefix ? `${prefix} ` : ''}${defaultValue}${suffix ? ` ${suffix}` : ''}`}</span>
+					<span suppressHydrationWarning className={`${className} ${identifier}`}>{`${prefix ? `${prefix} ` : ''}${value}${suffix ? ` ${suffix}` : ''}`}</span>
 				</p>
 			</div>
 		</>

@@ -70,6 +70,7 @@ function	AppBox({app}: {app: typeof apps[0]}): ReactElement {
 
 	return (
 		<Link
+			prefetch={false}
 			key={app.href}
 			href={app.href}>
 			<div id={app.href} className={'appBox'}>
@@ -88,7 +89,7 @@ function	AppBox({app}: {app: typeof apps[0]}): ReactElement {
 function	Index(): ReactElement {
 	return (
 		<>
-			<div className={'mx-auto mt-20 mb-44 flex w-full max-w-6xl flex-col items-center justify-center'}>
+			<div className={'mx-auto mt-6 mb-10 flex w-full max-w-6xl flex-col items-center justify-center md:mb-44 md:mt-20'}>
 				<div className={'relative h-12 w-[300px] md:h-[104px] md:w-[600px]'}>
 					<p className={'wordWrapper'}> 
 						<span className={'word'} style={{opacity: 100}}>{'YEARN'}</span>

@@ -3,7 +3,9 @@ import useSWR from 'swr';
 import {GraphForVaultEarnings} from '@vaults/components/graphs/GraphForVaultEarnings';
 import {GraphForVaultPPSGrowth} from '@vaults/components/graphs/GraphForVaultPPSGrowth';
 import {GraphForVaultTVL} from '@vaults/components/graphs/GraphForVaultTVL';
+import {getMessariSubgraphEndpoint} from '@vaults/utils';
 import {Button} from '@yearn-finance/web-lib/components';
+import {useWeb3} from '@yearn-finance/web-lib/contexts';
 import {format} from '@yearn-finance/web-lib/utils';
 import {graphFetcher} from '@common/utils';
 
@@ -12,10 +14,11 @@ import type {TGraphData, TMessariGraphData} from '@common/types/types';
 import type {TYearnVault} from '@common/types/yearn';
 
 function	VaultDetailsHistorical({currentVault, harvestData}: {currentVault: TYearnVault, harvestData: TGraphData[]}): ReactElement {
+	const	{safeChainID} = useWeb3();
 	const	[selectedViewIndex, set_selectedViewIndex] = useState(0);
 	
 	const	{data: messariMixedData} = useSWR(currentVault.address ? [
-		'https://api.thegraph.com/subgraphs/name/messari/yearn-v2-ethereum',
+		getMessariSubgraphEndpoint(safeChainID),
 		`{
 			vaultDailySnapshots(
 				where: {vault: "${currentVault.address.toLowerCase()}"}
@@ -47,7 +50,7 @@ function	VaultDetailsHistorical({currentVault, harvestData}: {currentVault: TYea
 					<Button
 						onClick={(): void => set_selectedViewIndex(0)}
 						variant={selectedViewIndex === 0 ? 'filled' : 'outlined'}
-						className={'yearn--button-smaller !border-l-0'}>
+						className={'yearn--button-smaller !border-x-0'}>
 						{'TVL'}
 					</Button>
 					<Button
@@ -59,7 +62,7 @@ function	VaultDetailsHistorical({currentVault, harvestData}: {currentVault: TYea
 					<Button
 						onClick={(): void => set_selectedViewIndex(2)}
 						variant={selectedViewIndex === 2 ? 'filled' : 'outlined'}
-						className={'yearn--button-smaller !border-r-0'}>
+						className={'yearn--button-smaller !border-x-0'}>
 						{'Earnings'}
 					</Button>
 				</div>

@@ -1,4 +1,5 @@
 import React, {useMemo, useState} from 'react';
+import {ethers} from 'ethers';
 import {VaultsListHead} from '@vaults/components/list/VaultsListHead';
 import {VaultsListRow} from '@vaults/components/list/VaultsListRow';
 import Wrapper from '@vaults/Wrapper';
@@ -15,7 +16,7 @@ import type {TYearnVault} from '@common/types/yearn';
 
 function	Index(): ReactElement {
 	const	{balances, cumulatedValueInVaults} = useWallet();
-	const	{vaults, earned} = useYearn();
+	const	{vaults, earned, isLoadingVaultList} = useYearn();
 	const	[category, set_category] = useState('Crypto Vaults');
 	const	[searchValue, set_searchValue] = useState('');
 	const	[sortBy, set_sortBy] = useState('apy');
@@ -25,14 +26,14 @@ function	Index(): ReactElement {
 		if (cumulatedValueInVaults) {
 			return format.amount(cumulatedValueInVaults, 2, 2);
 		}
-		return '';
+		return format.amount(0, 2, 2);
 	}, [cumulatedValueInVaults]);
 
 	const	formatedYouEarned = useMemo((): string => {
 		if (earned?.totalUnrealizedGainsUSD) {
 			return format.amount(earned?.totalUnrealizedGainsUSD, 2, 2);
 		}
-		return '';
+		return format.amount(0, 2, 2);
 	}, [earned]);
 
 	const	curveVaults = useMemo((): TYearnVault[] => {
@@ -49,7 +50,7 @@ function	Index(): ReactElement {
 	}, [vaults]);
 	const	holdingsVaults = useMemo((): TYearnVault[] => {
 		return (Object.values(vaults || {}).filter((vault): boolean => (
-			balances?.[toAddress(vault?.address)]?.raw.gt(0)
+			(balances?.[toAddress(vault?.address)]?.raw || ethers.constants.Zero)?.gt(0)
 		)) as TYearnVault[]);
 	}, [vaults, balances]);
 
@@ -223,7 +224,7 @@ function	Index(): ReactElement {
 									<Button
 										onClick={(): void => set_category('Crypto Vaults')}
 										variant={category === 'Crypto Vaults' ? 'filled' : 'outlined'}
-										className={'yearn--button-smaller !border-l-0'}>
+										className={'yearn--button-smaller !border-x-0'}>
 										{'Crypto'}
 									</Button>
 									<Button
@@ -247,7 +248,7 @@ function	Index(): ReactElement {
 									<Button
 										onClick={(): void => set_category('All Vaults')}
 										variant={category === 'All Vaults' ? 'filled' : 'outlined'}
-										className={'yearn--button-smaller !border-r-0'}>
+										className={'yearn--button-smaller !border-x-0'}>
 										{'All'}
 									</Button>
 								</div>
@@ -296,10 +297,15 @@ function	Index(): ReactElement {
 								set_sortDirection(_sortDirection);
 							});
 						}} />
-					{sortedVaultsToDisplay.length === 0 ? (
+					{isLoadingVaultList && sortedVaultsToDisplay.length === 0 ? (
 						<div className={'flex h-96 w-full flex-col items-center justify-center py-2 px-10'}>
-							<b className={'text-lg'}>{'Andre\'s Fault'}</b>
-							<p className={'text-neutral-600'}>{'No vaults available. What a shame. What are the dev doing. Bouuuuuh.'}</p>
+							<b className={'text-center text-lg'}>{'Loading data'}</b>
+							<p className={'text-center text-neutral-600'}>{'We are retrieving the vault list for you.'}</p>
+						</div>
+					) : !isLoadingVaultList && sortedVaultsToDisplay.length === 0 ? (
+						<div className={'flex h-96 w-full flex-col items-center justify-center py-2 px-10'}>
+							<b className={'text-center text-lg'}>{'No data, reeeeeeeeeeee'}</b>
+							<p className={'text-center text-neutral-600'}>{'There doesn’t seem to be anything here. It might be because you searched for a token in the wrong category - or because there’s a rodent infestation in our server room. You check the search box, we’ll check the rodents. Deal?'}</p>
 						</div>
 					) : sortedVaultsToDisplay.map((vault): ReactNode => {
 						if (!vault) {

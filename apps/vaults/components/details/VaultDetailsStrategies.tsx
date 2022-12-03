@@ -59,7 +59,7 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVau
 						</div>
 
 						<div className={'flex flex-col space-y-4 bg-neutral-200 p-2 md:p-4'}>
-							<p className={'text-base text-neutral-600'}>{'Trust score'}</p>
+							<p className={'text-base text-neutral-600'}>{'Risk score'}</p>
 							<div className={'mt-0 grid grid-cols-1 gap-x-12 gap-y-2 md:grid-cols-2'}>
 								<div className={'flex flex-row items-center justify-between'}>
 									<p className={'text-sm text-neutral-500'}>{'TVL Impact'}</p>

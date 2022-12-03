@@ -10,11 +10,11 @@ import type {ReactElement} from 'react';
 import type {TYdaemonEarned, TYearnVault} from '@common/types/yearn';
 
 function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactElement {
-	const	{address} = useWeb3();
+	const	{address, safeChainID} = useWeb3();
 	const	{balances} = useWallet();
 	const	{prices} = useYearn();
 	const	{data: earned} = useSWR<TYdaemonEarned>(
-		currentVault.address && address ? `${process.env.YDAEMON_BASE_URI}/1/earned/${address}/${currentVault.address}` : null,
+		currentVault.address && address ? `${process.env.YDAEMON_BASE_URI}/${safeChainID}/earned/${address}/${currentVault.address}` : null,
 		baseFetcher,
 		{revalidateOnFocus: false}
 	);

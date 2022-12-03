@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/explicit-function-return-type */
+/** @type {import('tailwindcss').Config} \*/
 const {join} = require('path');
 const defaultTheme = require('tailwindcss/defaultTheme');
 
@@ -17,7 +17,7 @@ module.exports = {
 	theme: {
 		extend: {
 			fontFamily: {
-				aeonik: ['Aeonik', ...defaultTheme.fontFamily.sans],
+				aeonik: ['var(--font-aeonik)', ...defaultTheme.fontFamily.sans],
 				mono: ['Aeonik Mono', ...defaultTheme.fontFamily.mono]
 			},
 			width: {

@@ -13,11 +13,11 @@ function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYearnVau
 				<div>
 					<b className={'text-neutral-900'}>{'Description'}</b>
 					<p className={'mt-4 text-neutral-600'}>
-						{currentVault?.token?.description || 'Yearn Finance is a suite of products in Decentralized Finance (DeFi) that provides yield aggregation, a decentralized money market, and several other DeFi building blocks on the Ethereum blockchain. The protocol is maintained by various independent developers and is governed by YFI holders.'}
+						{currentVault?.token?.description || 'Sorry, we don’t have a description for this asset right now. But did you know the correct word for a blob of toothpaste is a “nurdle”. Fascinating! We’ll work on updating the asset description, but at least you learnt something interesting. Catch ya later nurdles.'}
 					</p>
 				</div>
 				<div>
-					<b className={'text-neutral-900'}>{`Trust score: ${format.amount(currentVault.safetyScore)}`}</b>
+					<b className={'text-neutral-900'}>{`Risk score: ${format.amount(currentVault.safetyScore)}`}</b>
 				</div>
 			</div>
 			<div className={'col-span-1 w-full space-y-8'}>

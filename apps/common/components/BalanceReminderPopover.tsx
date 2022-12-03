@@ -1,5 +1,6 @@
 import React, {Fragment, useMemo} from 'react';
 import Image from 'next/image';
+import {ethers} from 'ethers';
 import {Popover, Transition} from '@headlessui/react';
 import {useWeb3} from '@yearn-finance/web-lib/contexts';
 import {AddToMetamask} from '@yearn-finance/web-lib/icons';
@@ -10,9 +11,9 @@ import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 
 import type {ReactElement} from 'react';
-import type {TYearnVault} from '@common/types/yearn';
 import type {TBalanceData} from '@yearn-finance/web-lib/hooks/types';
 import type {TAddress, TDict, TMetamaskInjectedProvider} from '@yearn-finance/web-lib/utils';
+import type {TYearnVault} from '@common/types/yearn';
 
 type TBalanceReminderElement = {
 	address: TAddress,
@@ -23,7 +24,7 @@ type TBalanceReminderElement = {
 
 export default function BalanceReminderPopover(): ReactElement {
 	const	{balances, isLoading} = useWallet();
-	const	{address, ens, isActive, provider, onDesactivate} = useWeb3();
+	const	{address, ens, isActive, provider, onDesactivate, safeChainID} = useWeb3();
 	const	{vaults} = useYearn();
 
 	async function addTokenToMetamask(address: string, symbol: string, decimals: number, image: string): Promise<void> {
@@ -44,7 +45,7 @@ export default function BalanceReminderPopover(): ReactElement {
 
 	const	nonNullBalances = useMemo((): TDict<TBalanceData> => {
 		const	nonNullBalances = Object.entries(balances).reduce((acc, [address, balance]): TDict<TBalanceData> => {
-			if (!balance.raw.isZero()) {
+			if (!(balance?.raw || ethers.constants.Zero).isZero()) {
 				acc[toAddress(address)] = balance;
 			}
 			return acc;
@@ -54,7 +55,7 @@ export default function BalanceReminderPopover(): ReactElement {
 
 	const	nonNullBalancesForVault = useMemo((): TBalanceReminderElement[] => {
 		const	nonNullBalancesForVault = Object.entries(nonNullBalances).reduce((acc, [address, balance]): TBalanceReminderElement[] => {
-			if (vaults[toAddress(address)]) {
+			if (vaults?.[toAddress(address)]) {
 				acc.push({
 					address: toAddress(address),
 					normalizedBalance: balance.normalized,
@@ -72,7 +73,7 @@ export default function BalanceReminderPopover(): ReactElement {
 			{(): ReactElement => (
 				<>
 					<Popover.Button>
-						<IconWallet className={'yveCRV--nav-link mt-0.5 h-4 w-4'} />
+						<IconWallet className={'yearn--header-nav-item mt-0.5 h-4 w-4'} />
 					</Popover.Button>
 					<Transition
 						as={Fragment}
@@ -127,7 +128,7 @@ export default function BalanceReminderPopover(): ReactElement {
 																width={32}
 																height={32}
 																quality={90}
-																src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${toAddress(vault.address)}/logo-128.png`} />
+																src={`${process.env.BASE_YEARN_ASSETS_URI}/${safeChainID}/${toAddress(vault.address)}/logo-128.png`} />
 														</div>
 														<span className={'ml-2'}>{vault.symbol}</span>
 													</span>
@@ -141,7 +142,7 @@ export default function BalanceReminderPopover(): ReactElement {
 																	vault.address as string,
 																	vault.symbol,
 																	vault.decimals,
-																	`${process.env.BASE_YEARN_ASSETS_URI}/1/${toAddress(vault.address)}/logo-128.png`
+																	`${process.env.BASE_YEARN_ASSETS_URI}/${safeChainID}/${toAddress(vault.address)}/logo-128.png`
 																);
 															}}
 															className={'ml-4 h-4 w-4 cursor-pointer text-neutral-400 transition-colors hover:text-neutral-900'} />

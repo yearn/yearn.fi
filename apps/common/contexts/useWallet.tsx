@@ -1,11 +1,10 @@
-import React, {createContext, useCallback, useContext, useEffect, useMemo, useState} from 'react';
+import React, {createContext, memo, useCallback, useContext, useEffect, useMemo, useState} from 'react';
 import {Contract} from 'ethcall';
 import {ethers} from 'ethers';
 // eslint-disable-next-line import/no-named-as-default
 import NProgress from 'nprogress';
 import {useWeb3} from '@yearn-finance/web-lib/contexts';
-import {useClientEffect} from '@yearn-finance/web-lib/hooks';
-import {useBalances} from '@yearn-finance/web-lib/hooks/useBalances';
+import {useBalances, useClientEffect} from '@yearn-finance/web-lib/hooks';
 import {ABI, ETH_TOKEN_ADDRESS, format, performBatchedUpdates, providers, toAddress} from '@yearn-finance/web-lib/utils';
 import {useYearn} from '@common/contexts/useYearn';
 import {allowanceKey} from '@common/utils';
@@ -14,10 +13,10 @@ import YVECRV_ABI from '@yCRV/utils/abi/yveCRV.abi';
 
 import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
-import type {TClaimable} from '@common/types/types';
-import type {TYearnVault} from '@common/types/yearn';
 import type {TBalanceData, TUseBalancesTokens} from '@yearn-finance/web-lib/hooks/types';
 import type {TDict} from '@yearn-finance/web-lib/utils';
+import type {TClaimable} from '@common/types/types';
+import type {TYearnVault} from '@common/types/yearn';
 
 
 export type	TBalances = {
@@ -62,15 +61,18 @@ const	defaultProps = {
 ** interact with our app, aka mostly the balances and the token prices.
 ******************************************************************************/
 const	WalletContext = createContext<TWalletContext>(defaultProps);
-export const WalletContextApp = ({children}: {children: ReactElement}): ReactElement => {
+export const WalletContextApp = memo(function WalletContextApp({children}: {children: ReactElement}): ReactElement {
 	const	[nonce, set_nonce] = useState<number>(0);
 	const	{provider, address, isActive} = useWeb3();
-	const	{vaults, prices} = useYearn();
+	const	{vaults, isLoadingVaultList, prices} = useYearn();
 	const	[yveCRVClaimable, set_yveCRVClaimable] = useState<TClaimable>({raw: ethers.constants.Zero, normalized: 0});
 	const	[allowances, set_allowances] = useState<{[key: string]: BigNumber}>({[ethers.constants.AddressZero]: ethers.constants.Zero});
 	const	[slippage, set_slippage] = useState<number>(1);
 
 	const	availableTokens = useMemo((): TUseBalancesTokens[] => {
+		if (isLoadingVaultList) {
+			return [];
+		}
 		const	tokens: TUseBalancesTokens[] = [];
 		Object.values(vaults || {}).map((vault?: TYearnVault): void => {
 			if (!vault) {
@@ -79,32 +81,35 @@ export const WalletContextApp = ({children}: {children: ReactElement}): ReactEle
 			tokens.push({token: vault?.address});
 			tokens.push({token: vault.token.address});
 		});
+		tokens.push({token: ETH_TOKEN_ADDRESS});
 		return tokens;
-	}, [vaults]);
+	}, [vaults, isLoadingVaultList]);
 
-	const	{data: balances, update: updateBalances, isLoading} = useBalances({
+	const	{data: balances, update: updateBalances, isLoading: isLoadingBalances} = useBalances({
 		key: 0,
 		provider: provider || providers.getProvider(1),
-		tokens: [
-			...availableTokens,
-			availableTokens.length > 0 ? {token: ETH_TOKEN_ADDRESS} : {}
-		] as TUseBalancesTokens[],
+		tokens: availableTokens,
 		prices,
-		effectDependencies: [vaults]
+		effectDependencies: []
 	});
 
-	const	cumulatedValueInVaults = useMemo((): number => (
-		Object.entries(balances).reduce((acc, [token, balance]): number => {
-			const	vault = vaults[toAddress(token)];
-			if (vault) {
-				acc += balance.normalizedValue;
-			}
-			return acc;
-		}, 0)
-	), [vaults, balances]);
+	const	cumulatedValueInVaults = useMemo((): number => {
+		if (isLoadingVaultList || isLoadingBalances) {
+			return 0;
+		}
+		return (
+			Object.entries(balances).reduce((acc, [token, balance]): number => {
+				const	vault = vaults?.[toAddress(token)] ;
+				if (vault) {
+					acc += balance.normalizedValue;
+				}
+				return acc;
+			}, 0)
+		);
+	}, [vaults, balances, isLoadingVaultList, isLoadingBalances]);
 
 	useClientEffect((): () => void => {
-		if (isLoading) {
+		if (isLoadingBalances) {
 			if (!balances) {
 				set_nonce(nonce + 1);
 			}
@@ -113,7 +118,7 @@ export const WalletContextApp = ({children}: {children: ReactElement}): ReactEle
 			NProgress.done();
 		}
 		return (): unknown => NProgress.done();
-	}, [isLoading]);
+	}, [isLoadingBalances]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	**	Once the wallet is connected and a provider is available, we can fetch
@@ -187,7 +192,7 @@ export const WalletContextApp = ({children}: {children: ReactElement}): ReactEle
 				cumulatedValueInVaults,
 				yveCRVClaimable,
 				allowances,
-				isLoading,
+				isLoading: isLoadingBalances,
 				refresh: async (): Promise<TDict<TBalanceData>> => {
 					const [updatedBalances] = await Promise.all([
 						updateBalances(),
@@ -202,7 +207,7 @@ export const WalletContextApp = ({children}: {children: ReactElement}): ReactEle
 			{children}
 		</WalletContext.Provider>
 	);
-};
+});
 
 
 export const useWallet = (): TWalletContext => useContext(WalletContext);

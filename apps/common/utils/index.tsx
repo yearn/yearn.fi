@@ -2,13 +2,12 @@ import {ethers} from 'ethers';
 import request from 'graphql-request';
 import axios from 'axios';
 import {format, toAddress} from '@yearn-finance/web-lib/utils';
-
-import {LPYCRV_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YVBOOST_TOKEN_ADDRESS, YVECRV_TOKEN_ADDRESS} from './constants';
+import {LPYCRV_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YVBOOST_TOKEN_ADDRESS, YVECRV_TOKEN_ADDRESS} from '@common/utils/constants';
 
 import type {BigNumber} from 'ethers';
+import type {TDict} from '@yearn-finance/web-lib/utils';
 import type {TNormalizedBN} from '@common/types/types';
 import type {TYearnVault} from '@common/types/yearn';
-import type {TDict} from '@yearn-finance/web-lib/utils';
 
 export function	max(input: BigNumber, balance: BigNumber): BigNumber {
 	if (input.gt(balance)) {
@@ -50,14 +49,14 @@ export function getVaultAPY(vaults: TDict<TYearnVault | undefined>, vaultAddress
 
 	if (toAddress(vaultAddress) === YVECRV_TOKEN_ADDRESS
 		|| toAddress(vaultAddress) === YVBOOST_TOKEN_ADDRESS) {
-		return 'APY 0.00%';
+		return `APY ${format.amount(0, 2, 2)}%`;
 	}
 
 	if (vaults?.[toAddress(vaultAddress)]?.apy?.net_apy) {
 		return `APY ${format.amount((vaults?.[toAddress(vaultAddress)]?.apy?.net_apy || 0) * 100, 2, 2)}%`;
 	}
 
-	return 'APY 0.00%';
+	return `APY ${format.amount(0, 2, 2)}%`;
 }
 
 export function getVaultRawAPY(vaults: TDict<TYearnVault | undefined>, vaultAddress: string): number {

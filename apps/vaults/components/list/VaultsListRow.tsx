@@ -1,5 +1,6 @@
 import React, {useMemo} from 'react';
 import Link from 'next/link';
+import {useWeb3} from '@yearn-finance/web-lib/contexts';
 import {format, toAddress} from '@yearn-finance/web-lib/utils';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useWallet} from '@common/contexts/useWallet';
@@ -30,6 +31,7 @@ export function	HumanizeRisk({risk}: {risk: number}): ReactElement {
 
 function	VaultsListRow({currentVault}: {currentVault: TYearnVault}): ReactElement {
 	const	{balances} = useWallet();
+	const	{safeChainID} = useWeb3();
 
 	const	availableToDeposit = useMemo((): number => {
 		if (toAddress(currentVault.token.address) === WETH_TOKEN_ADDRESS) {
@@ -59,7 +61,7 @@ function	VaultsListRow({currentVault}: {currentVault: TYearnVault}): ReactElemen
 	}, [currentVault.details.depositLimit, currentVault.token.decimals, currentVault.tvl.total_assets]);
 
 	return (
-		<Link key={`${currentVault.address}`} href={`/vaults/${toAddress(currentVault.address)}`}>
+		<Link key={`${currentVault.address}`} href={`/vaults/${safeChainID}/${toAddress(currentVault.address)}`}>
 			<div className={'grid w-full cursor-pointer grid-cols-1 border-t border-neutral-200 py-2 px-4 transition-colors hover:bg-neutral-300 md:grid-cols-8 md:border-none md:px-10'}>
 				<div className={'col-span-3 mb-2 flex flex-row items-center justify-between py-4 md:mb-0 md:py-0'}>
 					<div className={'flex flex-row items-center space-x-4 md:space-x-6'}>
@@ -69,7 +71,7 @@ function	VaultsListRow({currentVault}: {currentVault: TYearnVault}): ReactElemen
 								width={40}
 								height={40}
 								quality={90}
-								src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${toAddress(currentVault.token.address)}/logo-128.png`}
+								src={`${process.env.BASE_YEARN_ASSETS_URI}/${safeChainID}/${toAddress(currentVault.token.address)}/logo-128.png`}
 								loading={'eager'} />
 						</div>
 						<p>{vaultName}</p>

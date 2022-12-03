@@ -27,13 +27,13 @@ import type {TYearnVault} from '@common/types/yearn';
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const		ARE_ZAP_ENABLED = false;
 
-function	setZapOption(name: string, symbol: string, address: string): TDropdownOption {
+function	setZapOption(name: string, symbol: string, address: string, safeChainID: number): TDropdownOption {
 	return ({
 		label: name,
 		symbol: symbol,
 		value: address,
 		icon: <ImageWithFallback
-			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${address}/logo-128.png`}
+			src={`${process.env.BASE_YEARN_ASSETS_URI}/${safeChainID}/${address}/logo-128.png`}
 			alt={name}
 			width={36}
 			height={36} />
@@ -309,20 +309,21 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 		if (isDepositing) {
 			if (currentVault && toAddress(currentVault.token.address) === WETH_TOKEN_ADDRESS) {
 				set_possibleOptionsFrom([
-					setZapOption('ETH', 'ETH', ETH_TOKEN_ADDRESS),
-					setZapOption('wETH', 'wETH', WETH_TOKEN_ADDRESS)
+					setZapOption('ETH', 'ETH', ETH_TOKEN_ADDRESS, safeChainID),
+					setZapOption('wETH', 'wETH', WETH_TOKEN_ADDRESS, safeChainID)
 				]);
 			} else {
 				set_possibleOptionsFrom([
 					setZapOption(
 						currentVault?.token?.display_name || currentVault?.token?.name,
 						currentVault?.token?.symbol,
-						toAddress(currentVault.token.address)
+						toAddress(currentVault.token.address),
+						safeChainID
 					)
 				]);
 			}
 		}
-	}, [currentVault, isDepositing]);
+	}, [currentVault, isDepositing, safeChainID]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** Init selectedOptionFrom and selectedOptionTo with the tokens matching this vault. Only
@@ -333,19 +334,21 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 			const	_selectedFrom = setZapOption(
 				currentVault?.token?.display_name || currentVault?.token?.name,
 				currentVault?.token?.symbol,
-				toAddress(currentVault.token.address)
+				toAddress(currentVault.token.address),
+				safeChainID
 			);
 			const	_selectedTo = setZapOption(
 				currentVault?.display_name || currentVault?.name || currentVault.formated_name,
 				currentVault?.display_symbol || currentVault.symbol,
-				toAddress(currentVault.address)
+				toAddress(currentVault.address),
+				safeChainID
 			);
 			performBatchedUpdates((): void => {
 				set_selectedOptionFrom(_selectedFrom);
 				set_selectedOptionTo(_selectedTo);
 			});
 		}
-	}, [selectedOptionFrom, selectedOptionTo, currentVault]);
+	}, [selectedOptionFrom, selectedOptionTo, currentVault, safeChainID]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** Grab the price of the input token to be able to perform price calculations
