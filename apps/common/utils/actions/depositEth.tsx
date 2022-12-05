@@ -1,6 +1,6 @@
 import	{ethers} from 'ethers';
-import ZAP_ETH_TO_YVETH_ABI from '@common/utils/abi/zapEthToYvEth.abi';
-import {ZAP_ETH_WETH_CONTRACT} from '@common/utils/constants';
+import {ZAP_ETH_TO_YVETH_ABI} from '@yearn-finance/web-lib/utils/abi';
+import {ZAP_ETH_WETH_CONTRACT} from '@yearn-finance/web-lib/utils/constants';
 
 import type {ContractInterface} from 'ethers';
 

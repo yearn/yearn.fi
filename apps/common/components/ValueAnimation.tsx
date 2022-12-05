@@ -1,7 +1,7 @@
 /* eslint-disable no-irregular-whitespace */
 import React, {useRef} from 'react';
 import {useClientEffect} from '@yearn-finance/web-lib/hooks';
-import {format} from '@yearn-finance/web-lib/utils';
+import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 
 import type {ReactElement} from 'react';
 
@@ -92,7 +92,7 @@ function	ValueAnimation({
 		initZero();
 	}, []);
 	useClientEffect((): void => {
-		if (value && value !== format.amount(0, 2, 2) && !hasBeenTriggerd.current) {
+		if (value && value !== formatAmount(0, 2, 2) && !hasBeenTriggerd.current) {
 			onStartAnimation();
 		}
 	}, [value, hasBeenTriggerd.current]);

@@ -4,11 +4,14 @@ import {ethers} from 'ethers';
 import useSWR from 'swr';
 import {Button} from '@yearn-finance/web-lib/components';
 import {useWeb3} from '@yearn-finance/web-lib/contexts';
-import {ABI, defaultTxStatus, format, isZeroAddress, providers, toAddress, Transaction} from '@yearn-finance/web-lib/utils';
+import {ABI, defaultTxStatus, providers, Transaction} from '@yearn-finance/web-lib/utils';
+import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {CURVE_BRIBE_V3_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {useYearn} from '@common/contexts/useYearn';
-import {getCounterValue, handleInputChange} from '@common/utils';
+import {handleInputChange} from '@common/utils';
 import {approveERC20} from '@common/utils/actions/approveToken';
-import {CURVE_BRIBE_V3_ADDRESS} from '@common/utils/constants';
 import {useBribes} from '@yBribe/contexts/useBribes';
 import {addReward} from '@yBribe/utils/actions/addReward';
 
@@ -54,7 +57,7 @@ function	GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauges, o
 			symbol,
 			decimals,
 			raw: balance,
-			normalized: format.toNormalizedValue(balance, decimals),
+			normalized: formatToNormalizedValue(balance, decimals),
 			allowance
 		});
 	}, [safeChainID, provider, address]);
@@ -219,7 +222,7 @@ function	GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauges, o
 								{'Value'}
 							</p>
 							<p className={'text-base tabular-nums text-neutral-900'}>
-								{selectedToken ? getCounterValue(amount?.normalized || 0, (Number(prices?.[toAddress(tokenAddress)] || 0) / 1000000)) : '-'}
+								{selectedToken ? formatCounterValue(amount?.normalized || 0, (Number(prices?.[toAddress(tokenAddress)] || 0) / 1000000)) : '-'}
 							</p>
 						</div>
 						<div className={'flex flex-row items-center justify-between'}>

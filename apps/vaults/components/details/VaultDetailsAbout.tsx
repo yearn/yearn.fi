@@ -1,6 +1,6 @@
 import React from 'react';
 import {GraphForVaultEarnings} from '@vaults/components/graphs/GraphForVaultEarnings';
-import {format} from '@yearn-finance/web-lib/utils';
+import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 
 import type {ReactElement} from 'react';
 import type {TGraphData} from '@common/types/types';
@@ -17,7 +17,7 @@ function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYearnVau
 					</p>
 				</div>
 				<div>
-					<b className={'text-neutral-900'}>{`Risk score: ${format.amount(currentVault.safetyScore)}`}</b>
+					<b className={'text-neutral-900'}>{`Risk score: ${formatAmount(currentVault.riskScore, 0, 2)}`}</b>
 				</div>
 			</div>
 			<div className={'col-span-1 w-full space-y-8'}>
@@ -30,11 +30,11 @@ function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYearnVau
 						</div>
 						<div className={'flex flex-col space-y-0 md:space-y-2'}>
 							<p className={'text-xxs text-neutral-600 md:text-xs'}>{'Management fee'}</p>
-							<b className={'text-xl tabular-nums text-neutral-900'}>{`${format.amount((currentVault?.apy?.fees?.management || 0) * 100, 0, 2)} %`}</b>
+							<b className={'text-xl tabular-nums text-neutral-900'}>{`${formatAmount((currentVault?.apy?.fees?.management || 0) * 100, 0, 2)} %`}</b>
 						</div>
 						<div className={'flex flex-col space-y-0 md:space-y-2'}>
 							<p className={'text-xxs text-neutral-600 md:text-xs'}>{'Perfomance fee'}</p>
-							<b className={'text-xl tabular-nums text-neutral-500'}>{`${format.amount((currentVault?.apy?.fees?.performance || 0) * 100, 0, 2)} %`}</b>
+							<b className={'text-xl tabular-nums text-neutral-500'}>{`${formatAmount((currentVault?.apy?.fees?.performance || 0) * 100, 0, 2)} %`}</b>
 						</div>
 					</div>
 				</div>

@@ -1,7 +1,11 @@
 import React from 'react';
 import {GraphForStrategyReports} from '@vaults/components/graphs/GraphForStrategyReports';
 import IconCopy from '@yearn-finance/web-lib/icons/IconCopy';
-import {copyToClipboard, format, parseMarkdown, toAddress} from '@yearn-finance/web-lib/utils';
+import {copyToClipboard, parseMarkdown} from '@yearn-finance/web-lib/utils';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
+import {formatDuration} from '@yearn-finance/web-lib/utils/format.time';
 import IconChevron from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
@@ -31,7 +35,7 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVau
 						<p
 							className={'text-neutral-600'}
 							dangerouslySetInnerHTML={{__html: parseMarkdown(strategy.description.replaceAll('{{token}}', currentVault.token.symbol))}} />
-						<p className={'text-neutral-600'}>{`Last report ${format.duration((strategy?.details?.lastReport * 1000) - new Date().valueOf(), true)}.`}</p>
+						<p className={'text-neutral-600'}>{`Last report ${formatDuration((strategy?.details?.lastReport * 1000) - new Date().valueOf(), true)}.`}</p>
 					</div>
 				</div>
 
@@ -43,15 +47,15 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVau
 									{'Capital Allocation'}
 								</p>
 								<b className={'text-lg tabular-nums text-neutral-900'}>
-									{`${format.amount(format.toNormalizedValue(format.BN(strategy?.details?.totalDebt), currentVault?.decimals), 0, 0)} ${currentVault.token.symbol}`}
+									{`${formatAmount(formatToNormalizedValue(formatBN(strategy?.details?.totalDebt), currentVault?.decimals), 0, 0)} ${currentVault.token.symbol}`}
 								</b>
 							</div>
 
 							<div className={'col-span-2 flex flex-col space-y-2 bg-neutral-200 p-2 md:p-4'}>
 								<p className={'text-base text-neutral-600'}>{'Total Gain'}</p>
 								<b className={'text-lg tabular-nums text-neutral-900'}>
-									{`${format.amount(format.toNormalizedValue(
-										format.BN(strategy?.details?.totalGain).sub(format.BN(strategy?.details?.totalLoss)),
+									{`${formatAmount(formatToNormalizedValue(
+										formatBN(strategy?.details?.totalGain).sub(formatBN(strategy?.details?.totalLoss)),
 										currentVault?.decimals
 									), 0, 0)} ${currentVault.token.symbol}`}
 								</b>
@@ -101,7 +105,7 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVau
 							<div className={'col-span-2 flex flex-col space-y-0 md:space-y-2'}>
 								<p className={'text-xxs text-neutral-600 md:text-xs'}>{'APR'}</p>
 								<b className={'text-xl tabular-nums text-neutral-900'}>
-									{`${format.amount((strategy?.details?.apr || 0), 0, 2)} %`}
+									{`${formatAmount((strategy?.details?.apr || 0), 0, 2)} %`}
 								</b>
 							</div>
 
@@ -110,14 +114,14 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVau
 									{'Allocation'}
 								</p>
 								<b className={'text-xl tabular-nums text-neutral-900'}>
-									{`${format.amount((strategy?.details?.debtRatio || 0) / 100, 0, 2)} %`}
+									{`${formatAmount((strategy?.details?.debtRatio || 0) / 100, 0, 2)} %`}
 								</b>
 							</div>
 
 							<div className={'col-span-2 flex flex-col space-y-0 md:space-y-2'}>
 								<p className={'text-xxs text-neutral-600 md:text-xs'}>{'Perfomance fee'}</p>
 								<b className={'text-xl tabular-nums text-neutral-600'}>
-									{`${format.amount((strategy?.details?.performanceFee || 0) * 100, 0, 2)} %`}
+									{`${formatAmount((strategy?.details?.performanceFee || 0) * 100, 0, 2)} %`}
 								</b>
 							</div>
 						</div>

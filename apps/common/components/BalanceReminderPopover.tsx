@@ -6,13 +6,15 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts';
 import {AddToMetamask} from '@yearn-finance/web-lib/icons';
 import IconCross from '@yearn-finance/web-lib/icons/IconCross';
 import IconWallet from '@yearn-finance/web-lib/icons/IconWallet';
-import {format, toAddress, truncateHex} from '@yearn-finance/web-lib/utils';
+import {toAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
+import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 
 import type {ReactElement} from 'react';
 import type {TBalanceData} from '@yearn-finance/web-lib/hooks/types';
-import type {TAddress, TDict, TMetamaskInjectedProvider} from '@yearn-finance/web-lib/utils';
+import type {TDict, TMetamaskInjectedProvider} from '@yearn-finance/web-lib/utils';
+import type {TAddress} from '@yearn-finance/web-lib/utils/address';
 import type {TYearnVault} from '@common/types/yearn';
 
 type TBalanceReminderElement = {
@@ -133,7 +135,7 @@ export default function BalanceReminderPopover(): ReactElement {
 														<span className={'ml-2'}>{vault.symbol}</span>
 													</span>
 													<span className={'flex flex-row items-center justify-center tabular-nums text-neutral-900'}>
-														{format.amount(balances[toAddress(vault.address)]?.normalized || 0, 2, 4)}
+														{formatAmount(balances[toAddress(vault.address)]?.normalized || 0, 2, 4)}
 														<AddToMetamask
 															onClick={(e): void => {
 																e.preventDefault();

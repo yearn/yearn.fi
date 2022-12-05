@@ -2,7 +2,9 @@ import React, {useMemo, useState} from 'react';
 import {ethers} from 'ethers';
 import {Button, Modal} from '@yearn-finance/web-lib/components';
 import {useWeb3} from '@yearn-finance/web-lib/contexts';
-import {format, toAddress} from '@yearn-finance/web-lib/utils';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useYearn} from '@common/contexts/useYearn';
 import {GaugeBribeModal} from '@yBribe/components/bribe/GaugeBribeModal';
@@ -20,16 +22,16 @@ function	GaugeRowItemWithExtraData({address, value}: {address: string, value: Bi
 	const	tokenPrice = prices?.[address];
 	const	decimals = tokenInfo?.decimals || 18;
 	const	symbol = tokenInfo?.symbol || '???';
-	const	bribeAmount = format.toNormalizedValue(format.BN(value), decimals);
+	const	bribeAmount = formatToNormalizedValue(formatBN(value), decimals);
 	const	bribeValue = bribeAmount * (Number(tokenPrice || 0) / 100);
 
 	return (
 		<div className={'flex h-auto flex-col items-end pt-0 md:h-16 md:pt-6'}>
 			<p className={'inline-flex items-baseline text-base tabular-nums text-neutral-900'}>
-				{`$ ${format.amount(bribeValue, 5, 5)}`}
+				{`$ ${formatAmount(bribeValue, 5, 5)}`}
 			</p>
 			<p className={'inline-flex items-baseline text-right text-xs tabular-nums text-neutral-400'}>
-				{format.amount(bribeAmount, 5, 5)}
+				{formatAmount(bribeAmount, 5, 5)}
 				&nbsp;
 				<span>{`${symbol}`}</span>
 			</p>
@@ -51,7 +53,7 @@ function	GaugeTableRow({currentGauge}: {currentGauge: TCurveGauges}): ReactEleme
 	}, [currentGauge.gauge, nextRewards]);
 
 	const	gaugeRelativeWeight = useMemo((): number => {
-		return format.toNormalizedValue(format.BN(String(currentGauge?.gauge_controller?.gauge_relative_weight) || ethers.constants.Zero), 18);
+		return formatToNormalizedValue(formatBN(String(currentGauge?.gauge_controller?.gauge_relative_weight) || ethers.constants.Zero), 18);
 	}, [currentGauge]);
 
 	const	currentRewardsForCurrentGaugeMap = Object.entries(currentRewardsForCurrentGauge || {}) || [];
@@ -89,7 +91,7 @@ function	GaugeTableRow({currentGauge}: {currentGauge: TCurveGauges}): ReactEleme
 				<div className={'col-span-8 flex h-16 flex-row justify-between pt-6 md:col-span-2 md:justify-end'}>
 					<label className={'block text-sm leading-6 text-neutral-400 md:hidden'}>{'Weight'}</label>
 					<p className={'text-end text-base tabular-nums text-neutral-900'}>
-						{`${format.amount(gaugeRelativeWeight * 100, 2, 2)}%`}
+						{`${formatAmount(gaugeRelativeWeight * 100, 2, 2)}%`}
 					</p>
 				</div>
 

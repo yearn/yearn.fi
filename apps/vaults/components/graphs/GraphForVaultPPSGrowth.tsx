@@ -1,6 +1,6 @@
 import React from 'react';
 import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
-import {format} from '@yearn-finance/web-lib/utils';
+import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 
 import type {ReactElement} from 'react';
 import type {TMessariGraphData} from '@common/types/types';
@@ -39,7 +39,7 @@ function	GraphForVaultPPSGrowth({messariData, height = 312}: TGraphForVaultPPSGr
 						e.fill = '#5B5B5B';
 						e.class = 'text-xxs md:text-xs tabular-nums';
 						e.alignmentBaseline = 'middle';
-						const	formatedValue = format.amount(value, 3, 3);
+						const	formatedValue = formatAmount(value, 3, 3);
 						return <text {...e}>{formatedValue}</text>;
 					}} />
 				<Tooltip
@@ -59,7 +59,7 @@ function	GraphForVaultPPSGrowth({messariData, height = 312}: TGraphForVaultPPSGr
 									<div className={'flex flex-row items-center justify-between'}>
 										<p className={'text-xs text-neutral-600'}>{'Growth'}</p>
 										<b className={'text-xs font-bold tabular-nums text-neutral-900'}>
-											{`${format.amount(Number(value) - 1, 4, 4)}%`}
+											{`${formatAmount(Number(value) - 1, 4, 4)}%`}
 										</b>
 									</div>
 								</div>

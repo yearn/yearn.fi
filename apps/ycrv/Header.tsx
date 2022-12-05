@@ -3,8 +3,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import {useRouter} from 'next/router';
 import {motion} from 'framer-motion';
+import {YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {variants} from '@common/utils/animations';
-import {YCRV_TOKEN_ADDRESS} from '@common/utils/constants';
 
 import type {ReactElement} from 'react';
 

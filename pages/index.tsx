@@ -2,9 +2,9 @@ import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import {useClientEffect} from '@yearn-finance/web-lib/hooks';
+import {YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import LogoYearn from '@common/icons/LogoYearn';
 import LogoYearnBlue from '@common/icons/LogoYearnBlue';
-import {YCRV_TOKEN_ADDRESS} from '@common/utils/constants';
 
 import type {ReactElement} from 'react';
 

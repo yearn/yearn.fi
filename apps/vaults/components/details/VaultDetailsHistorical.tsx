@@ -6,8 +6,9 @@ import {GraphForVaultTVL} from '@vaults/components/graphs/GraphForVaultTVL';
 import {getMessariSubgraphEndpoint} from '@vaults/utils';
 import {Button} from '@yearn-finance/web-lib/components';
 import {useWeb3} from '@yearn-finance/web-lib/contexts';
-import {format} from '@yearn-finance/web-lib/utils';
-import {graphFetcher} from '@common/utils';
+import {graphFetcher} from '@yearn-finance/web-lib/utils/fetchers';
+import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
 
 import type {ReactElement} from 'react';
 import type {TGraphData, TMessariGraphData} from '@common/types/types';
@@ -36,9 +37,9 @@ function	VaultDetailsHistorical({currentVault, harvestData}: {currentVault: TYea
 		const	_messariMixedData = [...(messariMixedData?.vaultDailySnapshots || [])];
 		return (
 			_messariMixedData?.map((elem): TMessariGraphData => ({
-				name: format.date(Number(elem.timestamp) * 1000),
+				name: formatDate(Number(elem.timestamp) * 1000),
 				tvl: Number(elem.totalValueLockedUSD),
-				pps: format.toNormalizedValue(format.BN(elem.pricePerShare), currentVault.decimals)
+				pps: formatToNormalizedValue(formatBN(elem.pricePerShare), currentVault.decimals)
 			}))
 		);
 	}, [currentVault.decimals, messariMixedData?.vaultDailySnapshots]);

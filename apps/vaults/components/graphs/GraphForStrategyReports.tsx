@@ -2,12 +2,14 @@ import React, {useMemo} from 'react';
 import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
 import useSWR from 'swr';
 import {useWeb3} from '@yearn-finance/web-lib/contexts';
-import {format} from '@yearn-finance/web-lib/utils';
-import {baseFetcher} from '@common/utils';
+import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
+import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
+import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
 
 import type {ReactElement} from 'react';
+import type {SWRResponse} from 'swr';
 import type {TYDaemonReports, TYearnVaultStrategy} from '@common/types/yearn';
-
 
 type TGraphForStrategyReportsProps = {
 	strategy: TYearnVaultStrategy,
@@ -22,7 +24,7 @@ function	GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height =
 		`${process.env.YDAEMON_BASE_URI}/${safeChainID}/reports/${strategy.address}`,
 		baseFetcher,
 		{revalidateOnFocus: false}
-	);
+	) as SWRResponse;
 
 	const	strategyData = useMemo((): {name: number; value: number, gain: string, loss: string}[] => {
 		const	_reports = [...(reports || [])];
@@ -64,7 +66,7 @@ function	GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height =
 						e.fill = '#5B5B5B';
 						e.class = 'text-xxs md:text-xs tabular-nums z-10 ';
 						e.alignmentBaseline = 'middle';
-						const	formatedValue = format.amount(value, 2, 2);
+						const	formatedValue = formatAmount(value, 2, 2);
 						return <text {...e}>{`${formatedValue}%`}</text>;
 					}} />
 				<Tooltip
@@ -76,26 +78,26 @@ function	GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height =
 						if (payload.length > 0) {
 							const [{value, payload: innerPayload}] = payload;
 							const	{gain, loss} = innerPayload;
-							const	diff = format.BN(gain).sub(format.BN(loss));
-							const	normalizedDiff = format.toNormalizedValue(diff, vaultDecimals);
+							const	diff = formatBN(gain).sub(formatBN(loss));
+							const	normalizedDiff = formatToNormalizedValue(diff, vaultDecimals);
 							
 							return (
 								<div className={'recharts-tooltip'}>
 									<div className={'mb-4'}>
 										<p className={'text-xs'}>
-											{format.date(label)}
+											{formatDate(label)}
 										</p>
 									</div>
 									<div className={'flex flex-row items-center justify-between'}>
 										<p className={'text-xs text-neutral-600'}>{'APR'}</p>
 										<b className={'text-xs font-bold tabular-nums text-neutral-900'}>
-											{`${format.amount(Number(value), 2, 2)} %`}
+											{`${formatAmount(Number(value), 2, 2)} %`}
 										</b>
 									</div>
 									<div className={'flex flex-row items-center justify-between'}>
 										<p className={'text-xs text-neutral-600'}>{normalizedDiff > 0 ? 'Gain' : 'Loss'}</p>
 										<b className={'text-xs font-bold tabular-nums text-neutral-900'}>
-											{`${format.amount(normalizedDiff, 2, 2)} ${vaultTicker}`}
+											{`${formatAmount(normalizedDiff, 2, 2)} ${vaultTicker}`}
 										</b>
 									</div>
 								</div>

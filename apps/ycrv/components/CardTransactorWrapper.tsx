@@ -2,13 +2,15 @@ import React, {createContext, useCallback, useContext, useEffect, useMemo, useSt
 import {ethers} from 'ethers';
 import useSWR from 'swr';
 import {useWeb3} from '@yearn-finance/web-lib/contexts';
-import {defaultTxStatus, performBatchedUpdates, providers, toAddress, Transaction} from '@yearn-finance/web-lib/utils';
+import {defaultTxStatus, performBatchedUpdates, providers, Transaction} from '@yearn-finance/web-lib/utils';
+import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {LPYCRV_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
-import {allowanceKey, getAmountWithSlippage, getVaultAPY} from '@common/utils';
+import {getAmountWithSlippage, getVaultAPY} from '@common/utils';
 import {approveERC20} from '@common/utils/actions/approveToken';
 import {deposit} from '@common/utils/actions/deposit';
-import {LPYCRV_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@common/utils/constants';
+import {useYCRV} from '@yCRV/contexts/useYCRV';
 import {zap} from '@yCRV/utils/actions/zap';
 import {LEGACY_OPTIONS_FROM, LEGACY_OPTIONS_TO} from '@yCRV/utils/zapOptions';
 
@@ -60,7 +62,8 @@ function	CardTransactorContextApp({
 	children = <div />
 }): ReactElement {
 	const	{provider, isActive} = useWeb3();
-	const	{allowances, useWalletNonce, balances, refresh, slippage} = useWallet();
+	const	{allowances} = useYCRV();
+	const	{useWalletNonce, balances, refresh, slippage} = useWallet();
 	const	{vaults} = useYearn();
 	const	[txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
 	const	[txStatusZap, set_txStatusZap] = useState(defaultTxStatus);
@@ -224,7 +227,7 @@ function	CardTransactorContextApp({
 
 	const	allowanceFrom = useMemo((): BigNumber => {
 		useWalletNonce; // remove warning
-		return allowances[allowanceKey(selectedOptionFrom.value, selectedOptionFrom.zapVia)] || ethers.constants.Zero;
+		return allowances?.[allowanceKey(selectedOptionFrom.value, selectedOptionFrom.zapVia)] || ethers.constants.Zero;
 	}, [useWalletNonce, allowances, selectedOptionFrom.value, selectedOptionFrom.zapVia]);
 
 	return (

@@ -16,12 +16,12 @@ function	VaultsListHead({
 
 	function	renderChevron(shouldSortBy: boolean, _sortDirection: string): ReactElement {
 		if (shouldSortBy && _sortDirection === 'desc') {
-			return <IconChevronPlain className={'h-4 w-4 min-w-[16px] cursor-pointer text-neutral-500'} />;
+			return <IconChevronPlain className={'yearn--sort-chevron'} />;
 		}
 		if (shouldSortBy && _sortDirection === 'asc') {
-			return <IconChevronPlain className={'h-4 w-4 min-w-[16px] rotate-180 cursor-pointer text-neutral-500'} />;
+			return <IconChevronPlain className={'yearn--sort-chevron rotate-180'} />;
 		}
-		return <IconChevronPlain className={'h-4 w-4 min-w-[16px] cursor-pointer text-neutral-200/40 transition-colors group-hover:text-neutral-500'} />;
+		return <IconChevronPlain className={'yearn--sort-chevron--off text-neutral-300 group-hover:text-neutral-500'} />;
 	}
 
 	return (

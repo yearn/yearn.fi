@@ -2,11 +2,13 @@ import React, {createContext, memo, useContext, useMemo} from 'react';
 import {ethers} from 'ethers';
 import useSWR from 'swr';
 import {useWeb3} from '@yearn-finance/web-lib/contexts';
-import {toAddress} from '@yearn-finance/web-lib/utils';
-import {baseFetcher} from '@common/utils';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 
 import type {ReactElement} from 'react';
-import type {TAddress, TDict} from '@yearn-finance/web-lib/utils';
+import type {SWRResponse} from 'swr';
+import type {TDict} from '@yearn-finance/web-lib/utils';
+import type {TAddress} from '@yearn-finance/web-lib/utils/address';
 import type {TYdaemonEarned, TYDaemonToken, TYearnVault} from '@common/types/yearn';
 
 
@@ -48,25 +50,25 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 		`${process.env.YDAEMON_BASE_URI}/${safeChainID}/prices/all`,
 		baseFetcher,
 		{revalidateOnFocus: false}
-	);
+	) as SWRResponse;
 
 	const	{data: tokens} = useSWR(
 		`${process.env.YDAEMON_BASE_URI}/${safeChainID}/tokens/all`,
 		baseFetcher,
 		{revalidateOnFocus: false}
-	);
+	) as SWRResponse;
 
 	const	{data: vaults, isValidating: isLoadingVaultList} = useSWR(
 		`${process.env.YDAEMON_BASE_URI}/${safeChainID}/vaults/all?hideAlways=true&orderBy=apy.net_apy&orderDirection=desc&strategiesDetails=withDetails&strategiesRisk=withRisk&strategiesCondition=inQueue`,
 		baseFetcher,
 		{revalidateOnFocus: false}
-	);
+	) as SWRResponse;
 
 	const	{data: earned} = useSWR(
 		address ? `${process.env.YDAEMON_BASE_URI}/${safeChainID}/earned/${address}` : null,
 		baseFetcher,
 		{revalidateOnFocus: false}
-	);
+	) as SWRResponse;
 
 	const	vaultsObject = useMemo((): TYearnVaultsMap => {
 		const	_vaultsObject = (vaults || []).reduce((acc: TYearnVaultsMap, vault: TYearnVault): TYearnVaultsMap => {

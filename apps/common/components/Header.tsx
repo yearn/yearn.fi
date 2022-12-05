@@ -7,12 +7,12 @@ import {Listbox, Popover, Transition} from '@headlessui/react';
 import {LogoVaults, MenuVaults} from '@vaults/Header';
 import {useWeb3} from '@yearn-finance/web-lib/contexts';
 import IconWallet from '@yearn-finance/web-lib/icons/IconWallet';
-import {truncateHex} from '@yearn-finance/web-lib/utils';
+import {truncateHex} from '@yearn-finance/web-lib/utils/address';
+import {YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {useMenu} from '@common/contexts/useMenu';
 import IconChevron from '@common/icons/IconChevron';
 import LogoYearn from '@common/icons/LogoYearn';
 import {variants} from '@common/utils/animations';
-import {YCRV_TOKEN_ADDRESS} from '@common/utils/constants';
 import {LogoYBribe, MenuYBribe} from '@yBribe/Header';
 import {LogoYCRV, MenuYCRV} from '@yCRV/Header';
 
@@ -139,8 +139,8 @@ function	NetworkSelector(): ReactElement {
 					<>
 						<Listbox.Button
 							className={'yearn--header-nav-item hidden flex-row items-center border-0 p-0 text-sm md:flex'}>
-							<div className={'relative flex flex-row items-center'}>
-								{currentNetwork.label}
+							<div suppressHydrationWarning className={'relative flex flex-row items-center'}>
+								{currentNetwork?.label || 'Ethereum'}
 							</div>
 							<div className={'ml-2'}>
 								<IconChevron
@@ -163,7 +163,7 @@ function	NetworkSelector(): ReactElement {
 											<div
 												data-active={active}
 												className={'yearn--listbox-menu-item text-sm'}>
-												{network.label}
+												{network?.label || 'Ethereum'}
 											</div>
 										)}
 									</Listbox.Option>

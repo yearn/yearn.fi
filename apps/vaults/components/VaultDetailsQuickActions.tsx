@@ -3,20 +3,24 @@ import {ethers} from 'ethers';
 import useSWR from 'swr';
 import {Button} from '@yearn-finance/web-lib/components';
 import {useSettings, useWeb3} from '@yearn-finance/web-lib/contexts';
-import {defaultTxStatus, ETH_TOKEN_ADDRESS, format, isZeroAddress, performBatchedUpdates, providers, toAddress, Transaction, WETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils';
+import {defaultTxStatus, performBatchedUpdates, providers, Transaction} from '@yearn-finance/web-lib/utils';
+import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, ZAP_ETH_WETH_CONTRACT} from '@yearn-finance/web-lib/utils/constants';
+import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
+import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {Dropdown} from '@common/components/TokenDropdown';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import IconArrowRight from '@common/icons/IconArrowRight';
-import {getCounterValue, handleInputChange} from '@common/utils';
+import {handleInputChange} from '@common/utils';
 import {approveERC20} from '@common/utils/actions/approveToken';
 import {deposit} from '@common/utils/actions/deposit';
 import {depositETH} from '@common/utils/actions/depositEth';
 import {depositViaPartner} from '@common/utils/actions/depositViaPartner';
 import {withdrawETH} from '@common/utils/actions/withdrawEth';
 import {withdrawShare} from '@common/utils/actions/withdrawShare';
-import {ZAP_ETH_WETH_CONTRACT} from '@common/utils/constants';
 
 import type {BigNumber} from 'ethers';
 import type {ChangeEvent, ReactElement} from 'react';
@@ -92,7 +96,7 @@ function	ActionButton({
 			const	tokenAllowance = await contract.allowance(address, spender) || ethers.constants.Zero;
 			const	effectiveAllowance = ({
 				raw: tokenAllowance,
-				normalized: format.toNormalizedValue(tokenAllowance || ethers.constants.Zero, currentVault?.decimals)
+				normalized: formatToNormalizedValue(tokenAllowance || ethers.constants.Zero, currentVault?.decimals)
 			});
 			return effectiveAllowance;
 		} catch (error) {
@@ -354,8 +358,8 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 	** Grab the price of the input token to be able to perform price calculations
 	**********************************************************************************************/
 	const	selectedOptionFromPricePerToken = useMemo((): number => (
-		format.toNormalizedValue(
-			format.BN(prices?.[toAddress(selectedOptionFrom?.value)] || 0),
+		formatToNormalizedValue(
+			formatBN(prices?.[toAddress(selectedOptionFrom?.value)] || 0),
 			6
 		)
 	), [prices, selectedOptionFrom]);
@@ -364,8 +368,8 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 	** Grab the price of the output token to be able to perform price calculations
 	**********************************************************************************************/
 	const	selectedOptionToPricePerToken = useMemo((): number => (
-		format.toNormalizedValue(
-			format.BN(prices?.[toAddress(selectedOptionTo?.value)] || 0),
+		formatToNormalizedValue(
+			formatBN(prices?.[toAddress(selectedOptionTo?.value)] || 0),
 			6
 		)
 	), [prices, selectedOptionTo]);
@@ -396,13 +400,13 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 				const	expectedOutFetched = _amountIn.mul(ethers.constants.WeiPerEther).div(pps);
 				return ({
 					raw: expectedOutFetched,
-					normalized: format.toNormalizedValue(expectedOutFetched || ethers.constants.Zero, currentVault?.decimals)
+					normalized: formatToNormalizedValue(expectedOutFetched || ethers.constants.Zero, currentVault?.decimals)
 				});
 			} else {
 				const	expectedOutFetched = _amountIn.mul(pps).div(ethers.constants.WeiPerEther);
 				return ({
 					raw: expectedOutFetched,
-					normalized: format.toNormalizedValue(expectedOutFetched || ethers.constants.Zero, currentVault?.decimals)
+					normalized: formatToNormalizedValue(expectedOutFetched || ethers.constants.Zero, currentVault?.decimals)
 				});
 			}
 		} catch (error) {
@@ -456,7 +460,7 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 							{isDepositing ? 'From wallet' : 'From vault'}
 						</label>
 						<legend className={'inline text-xs tabular-nums text-neutral-600 md:hidden'} suppressHydrationWarning>
-							{`You have ${format.amount(balances[selectedOptionFrom?.value || '']?.normalized || 0, 2, 2)} ${selectedOptionFrom?.symbol || 'tokens'}`}
+							{`You have ${formatAmount(balances[selectedOptionFrom?.value || '']?.normalized || 0, 2, 2)} ${selectedOptionFrom?.symbol || 'tokens'}`}
 						</legend>
 					</div>
 					{(ARE_ZAP_ENABLED || possibleOptionsFrom.length > 1) ? (
@@ -479,7 +483,7 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 						</div>
 					)}
 					<legend className={'hidden text-xs tabular-nums text-neutral-600 md:inline'} suppressHydrationWarning>
-						{`You have ${format.amount(balances[selectedOptionFrom?.value || '']?.normalized || 0, 2, 2)} ${selectedOptionFrom?.symbol || 'tokens'}`}
+						{`You have ${formatAmount(balances[selectedOptionFrom?.value || '']?.normalized || 0, 2, 2)} ${selectedOptionFrom?.symbol || 'tokens'}`}
 					</legend>
 				</div>
 				<div className={'w-full space-y-2'}>
@@ -509,16 +513,24 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 						</div>
 					</div>
 					<legend className={'mr-1 text-end text-xs tabular-nums text-neutral-600 md:mr-0 md:text-start'}>
-						{getCounterValue(amount?.normalized || 0, selectedOptionFromPricePerToken)}
+						{formatCounterValue(amount?.normalized || 0, selectedOptionFromPricePerToken)}
 					</legend>
 				</div>
 			</section>
 
 			<div className={'mx-auto flex w-full justify-center space-y-0 md:mx-none md:block md:w-14 md:space-y-2'}>
 				<label className={'hidden text-base md:inline'}>&nbsp;</label>
-				<Button onClick={onSwitchFromTo} className={'flex h-6 w-6 rotate-90 items-center justify-center bg-neutral-900 p-0 md:h-10 md:w-14 md:rotate-0'}>
-					<IconArrowRight className={'w-4 text-neutral-0 md:w-[25px]'} />
-				</Button>
+
+				<div className={'tooltip top'}>
+					<Button onClick={onSwitchFromTo} className={'flex h-6 w-6 rotate-90 items-center justify-center bg-neutral-900 p-0 md:h-10 md:w-14 md:rotate-0'}>
+						<IconArrowRight className={'w-4 text-neutral-0 md:w-[25px]'} />
+					</Button>
+					<span
+						className={'tooltiptext'}
+						style={{width: 120, marginRight: 'calc(-62px + 50%)'}}>
+						<p>{'Deposit / Withdraw'}</p>
+					</span>
+				</div>
 				<legend className={'hidden text-xs md:inline'}>&nbsp;</legend>
 			</div>
 
@@ -529,7 +541,7 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 							{isDepositing ? 'To vault' : 'To wallet'}
 						</label>
 						<legend className={'inline text-xs tabular-nums text-neutral-600 md:hidden'} suppressHydrationWarning>
-							{`APY ${isDepositing ? format.amount((currentVault?.apy?.net_apy || 0) * 100, 2, 2) : '0.00'} %`}
+							{`APY ${isDepositing ? formatAmount((currentVault?.apy?.net_apy || 0) * 100, 2, 2) : '0.00'} %`}
 						</legend>
 					</div>
 					{(ARE_ZAP_ENABLED || possibleOptionsTo.length > 1) ? (
@@ -551,7 +563,7 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 						</div>
 					)}
 					<legend className={'hidden text-xs tabular-nums text-neutral-600 md:inline'} suppressHydrationWarning>
-						{isDepositing ? `APY ${format.amount((currentVault?.apy?.net_apy || 0) * 100, 2, 2)} %` : ''}
+						{isDepositing ? `APY ${formatAmount((currentVault?.apy?.net_apy || 0) * 100, 2, 2)} %` : ''}
 					</legend>
 				</div>
 
@@ -569,7 +581,7 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 						</div>
 					</div>
 					<legend className={'mr-1 text-end text-xs tabular-nums text-neutral-600 md:mr-0 md:text-start'}>
-						{getCounterValue(expectedOut?.normalized || 0, selectedOptionToPricePerToken)}
+						{formatCounterValue(expectedOut?.normalized || 0, selectedOptionToPricePerToken)}
 					</legend>
 				</div>
 			</section>

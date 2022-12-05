@@ -1,7 +1,6 @@
 import React, {useMemo} from 'react';
 import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
-import {format} from '@yearn-finance/web-lib/utils';
-import {formatWithUnit} from '@common/utils';
+import {formatAmount, formatWithUnit} from '@yearn-finance/web-lib/utils/format.number';
 
 import type {ReactElement} from 'react';
 import type {TGraphData} from '@common/types/types';
@@ -76,7 +75,7 @@ function	GraphForVaultEarnings({currentVault, harvestData, height = 312, isCumul
 									<div className={'flex flex-row items-center justify-between'}>
 										<p className={'text-xs text-neutral-600'}>{'Earnings'}</p>
 										<b className={'text-xs font-bold tabular-nums text-neutral-900'}>
-											{`${format.amount(Number(value), 2, 2)} ${currentVault.token.symbol}`}
+											{`${formatAmount(Number(value), 2, 2)} ${currentVault.token.symbol}`}
 										</b>
 									</div>
 								</div>

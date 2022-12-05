@@ -7,11 +7,13 @@ import {VaultDetailsStrategies} from '@vaults/components/details/VaultDetailsStr
 import {useSettings, useWeb3} from '@yearn-finance/web-lib/contexts';
 import IconAddToMetamask from '@yearn-finance/web-lib/icons/IconAddToMetamask';
 import IconLinkOut from '@yearn-finance/web-lib/icons/IconLinkOut';
-import {format} from '@yearn-finance/web-lib/utils';
+import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
+import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
 import IconChevron from '@common/icons/IconChevron';
-import {baseFetcher} from '@common/utils';
 
 import type {ReactElement} from 'react';
+import type {SWRResponse} from 'swr';
 import type {TSettingsForNetwork, TYearnVault} from '@common/types/yearn';
 
 function	Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: {
@@ -49,7 +51,7 @@ function	Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: {
 							<Listbox.Button
 								className={'flex h-10 w-40 flex-row items-center border-0 border-b-2 border-neutral-900 bg-neutral-100 p-0 font-bold focus:border-neutral-900 md:hidden'}>
 								<div className={'relative flex flex-row items-center'}>
-									{tabs[selectedAboutTabIndex].label}
+									{tabs[selectedAboutTabIndex]?.label || 'Menu'}
 								</div>
 								<div className={'absolute right-0'}>
 									<IconChevron
@@ -110,14 +112,14 @@ function	VaultDetailsTabsWrapper({currentVault}: {currentVault: TYearnVault}): R
 		`${process.env.YDAEMON_BASE_URI}/${safeChainID}/vaults/harvests/${currentVault.address}`,
 		baseFetcher,
 		{revalidateOnFocus: false}
-	);
+	) as SWRResponse;
 
 	const	harvestData = useMemo((): {name: string; value: number}[] => {
 		const	_yDaemonHarvestsData = [...(yDaemonHarvestsData || [])].reverse();
 		return (
 			_yDaemonHarvestsData?.map((harvest): {name: string; value: number} => ({
-				name: format.date(Number(harvest.timestamp) * 1000),
-				value: format.toNormalizedValue(format.BN(harvest.profit).sub(format.BN(harvest.loss)), currentVault.decimals)
+				name: formatDate(Number(harvest.timestamp) * 1000),
+				value: formatToNormalizedValue(formatBN(harvest.profit).sub(formatBN(harvest.loss)), currentVault.decimals)
 			}))
 		);
 	}, [currentVault.decimals, yDaemonHarvestsData]);	

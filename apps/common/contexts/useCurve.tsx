@@ -1,8 +1,9 @@
 import React, {createContext, useContext, useMemo} from 'react';
 import axios from 'axios';
 import useSWR from 'swr';
-import {baseFetcher} from '@common/utils';
+import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 
+import type {SWRResponse} from 'swr';
 import type {TCurveGauges} from '@common/types/curves';
 
 export type TCurveContext = {
@@ -38,7 +39,7 @@ export const CurveContextApp = ({children}: {children: React.ReactElement}): Rea
 		'https://api.coingecko.com/api/v3/simple/price?ids=curve-dao-token&vs_currencies=usd',
 		baseFetcher,
 		{revalidateOnFocus: false}
-	);
+	) as SWRResponse;
 
 	const	{data: gaugesWrapper} = useSWR(
 		'https://api.curve.fi/api/getGauges?blockchainId=ethereum',

@@ -3,13 +3,17 @@ import Image from 'next/image';
 import {ethers} from 'ethers';
 import {Button} from '@yearn-finance/web-lib/components';
 import IconLinkOut from '@yearn-finance/web-lib/icons/IconLinkOut';
-import {format, toAddress, truncateHex} from '@yearn-finance/web-lib/utils';
+import {toAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
+import {LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
+import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
+import {formatCounterValue, formatCounterValueRaw} from '@yearn-finance/web-lib/utils/format.value';
 import ValueAnimation from '@common/components/ValueAnimation';
 import {useCurve} from '@common/contexts/useCurve';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
-import {getCounterValue, getCounterValueRaw, getVaultAPY} from '@common/utils';
-import {LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS} from '@common/utils/constants';
+import {getVaultAPY} from '@common/utils';
 import {useYCRV} from '@yCRV/contexts/useYCRV';
 import Wrapper from '@yCRV/Wrapper';
 
@@ -89,27 +93,27 @@ function	Harvests(): ReactElement {
 								</div>
 								<div className={'flex md:hidden'}>
 									<p className={'text-sm tabular-nums text-neutral-400 md:text-base md:text-neutral-900'}>
-										{format.date(Number(harvest.timestamp) * 1000)}
+										{formatDate(Number(harvest.timestamp) * 1000)}
 									</p>
 								</div>
 							</div>
 							<div className={'flex h-9 flex-row items-center justify-between'}>
 								<span className={'inline text-sm font-normal text-neutral-400 md:hidden'}>{'Gain: '}</span>
 								<p className={'text-base tabular-nums text-neutral-900'}>
-									{format.amount(format.toNormalizedValue(format.BN(harvest.profit).sub(format.BN(harvest.loss)), 18), 2, 2)}
+									{formatAmount(formatToNormalizedValue(formatBN(harvest.profit).sub(formatBN(harvest.loss)), 18), 2, 2)}
 								</p>
 							</div>
 
 							<div className={'flex h-9 flex-row items-center justify-between'}>
 								<span className={'inline text-sm font-normal text-neutral-400 md:hidden'}>{'Value: '}</span>
 								<p className={'text-base tabular-nums text-neutral-900'}>
-									{`$ ${format.amount(Number(harvest.profitValue) - Number(harvest.lossValue), 2, 2)}`}
+									{`$ ${formatAmount(Number(harvest.profitValue) - Number(harvest.lossValue), 2, 2)}`}
 								</p>
 							</div>
 
 							<div className={'hidden h-9 items-center md:flex'}>
 								<p className={'text-base tabular-nums text-neutral-900'}>
-									{format.date(Number(harvest.timestamp) * 1000)}
+									{formatDate(Number(harvest.timestamp) * 1000)}
 								</p>
 							</div>
 
@@ -144,34 +148,34 @@ function	Holdings(): ReactElement {
 	const	lpCRVAPY = useMemo((): string => getVaultAPY(vaults, LPYCRV_TOKEN_ADDRESS), [vaults]);
 
 	const	ycrvPrice = useMemo((): number => (
-		format.toNormalizedValue(
-			format.BN(prices?.[YCRV_TOKEN_ADDRESS] || 0),
+		formatToNormalizedValue(
+			formatBN(prices?.[YCRV_TOKEN_ADDRESS] || 0),
 			6
 		)
 	), [prices]);
 
 	const	formatBigNumberOver10K = useCallback((v: BigNumber): string => {
 		if (v.gt(ethers.constants.WeiPerEther.mul(10000))) {
-			return format.amount(format.toNormalizedValue(v || 0, 18), 0, 0);
+			return formatAmount(formatToNormalizedValue(v || 0, 18), 0, 0);
 		}
-		return format.amount(format.toNormalizedValue(v || 0, 18), 2, 2);
+		return formatAmount(formatToNormalizedValue(v || 0, 18), 2, 2);
 	}, []);
 
 	const	formatNumberOver10K = useCallback((v: number): string => {
 		if (v >= 10000) {
-			return format.amount(v, 0, 0);
+			return formatAmount(v, 0, 0);
 		}
-		return format.amount(v, 2, 2);
+		return formatAmount(v, 2, 2);
 	}, []);
 
 	const	formatedYearnHas = useMemo((): string => (
 		holdings?.veCRVBalance ?
-			format.amount(format.toNormalizedValue(holdings.veCRVBalance, 18), 0, 0)
+			formatAmount(formatToNormalizedValue(holdings.veCRVBalance, 18), 0, 0)
 			: ''
 	), [holdings]);
 
 	const	formatedYouHave = useMemo((): string => (
-		getCounterValueRaw(
+		formatCounterValueRaw(
 			(Number(balances[STYCRV_TOKEN_ADDRESS]?.normalized) || 0) * (vaults?.[STYCRV_TOKEN_ADDRESS]?.tvl?.price || 0)
 			+
 			(Number(balances[LPYCRV_TOKEN_ADDRESS]?.normalized) || 0) * (vaults?.[LPYCRV_TOKEN_ADDRESS]?.tvl?.price || 0),
@@ -190,7 +194,7 @@ function	Holdings(): ReactElement {
 	const	currentVeCRVAPY = useMemo((): number => {
 		return (
 			latestCurveFeesValue / (
-				format.toNormalizedValue(format.BN(holdings?.veCRVTotalSupply), 18) * cgPrices?.['curve-dao-token']?.usd
+				formatToNormalizedValue(formatBN(holdings?.veCRVTotalSupply), 18) * cgPrices?.['curve-dao-token']?.usd
 			) * 52 * 100
 		);
 	}, [holdings, latestCurveFeesValue, cgPrices]);
@@ -254,11 +258,11 @@ function	Holdings(): ReactElement {
 								suppressHydrationWarning
 								className={'text-lg text-neutral-500'}>
 								{`(Price = $${(
-									ycrvPrice ? format.amount(ycrvPrice, 2, 2) : '0.00'
+									ycrvPrice ? formatAmount(ycrvPrice, 2, 2) : '0.00'
 								)} | Peg = ${(
 									holdings?.crvYCRVPeg ? (
-										format.amount(
-											(format.toNormalizedValue(holdings?.crvYCRVPeg || ethers.constants.Zero, 18) + 0.0015) * 100, 2, 2)
+										formatAmount(
+											(formatToNormalizedValue(holdings?.crvYCRVPeg || ethers.constants.Zero, 18) + 0.0015) * 100, 2, 2)
 									): '0.0000'
 								)}%)`}
 							</p>
@@ -287,7 +291,7 @@ function	Holdings(): ReactElement {
 							<b
 								suppressHydrationWarning
 								className={'text-base tabular-nums text-neutral-900'}>
-								{styCRVAPY ? `${format.amount(styCRVAPY, 2, 2)}%*` : '0.00%'}
+								{styCRVAPY ? `${formatAmount(styCRVAPY, 2, 2)}%*` : '0.00%'}
 							</b>
 						</div>
 						<div className={'flex flex-row items-center justify-between'}>
@@ -295,8 +299,8 @@ function	Holdings(): ReactElement {
 							<p
 								suppressHydrationWarning
 								className={'text-base tabular-nums text-neutral-900'}>
-								{holdings?.styCRVSupply ? getCounterValue(
-									format.toNormalizedValue(holdings.styCRVSupply || ethers.constants.Zero, 18),
+								{holdings?.styCRVSupply ? formatCounterValue(
+									formatToNormalizedValue(holdings.styCRVSupply || ethers.constants.Zero, 18),
 									vaults?.[STYCRV_TOKEN_ADDRESS]?.tvl?.price || 0
 								) : '0.00'}
 							</p>
@@ -322,7 +326,7 @@ function	Holdings(): ReactElement {
 								<p
 									suppressHydrationWarning
 									className={'text-xs tabular-nums text-neutral-600'}>
-									{balances[STYCRV_TOKEN_ADDRESS] ? getCounterValue(
+									{balances[STYCRV_TOKEN_ADDRESS] ? formatCounterValue(
 										balances[STYCRV_TOKEN_ADDRESS]?.normalized,
 										vaults?.[STYCRV_TOKEN_ADDRESS]?.tvl?.price || 0
 									) : '0.00'}
@@ -351,8 +355,8 @@ function	Holdings(): ReactElement {
 							<p
 								suppressHydrationWarning
 								className={'text-base tabular-nums text-neutral-900'}>
-								{holdings?.lpyCRVSupply ? getCounterValue(
-									format.toNormalizedValue(holdings?.lpyCRVSupply || ethers.constants.Zero, 18),
+								{holdings?.lpyCRVSupply ? formatCounterValue(
+									formatToNormalizedValue(holdings?.lpyCRVSupply || ethers.constants.Zero, 18),
 									vaults?.[LPYCRV_TOKEN_ADDRESS]?.tvl?.price || 0
 								) : '0.00'}
 							</p>
@@ -378,7 +382,7 @@ function	Holdings(): ReactElement {
 								<p
 									suppressHydrationWarning
 									className={'text-xs tabular-nums text-neutral-600'}>
-									{balances[LPYCRV_TOKEN_ADDRESS] ? getCounterValue(
+									{balances[LPYCRV_TOKEN_ADDRESS] ? formatCounterValue(
 										balances[LPYCRV_TOKEN_ADDRESS]?.normalized,
 										vaults?.[LPYCRV_TOKEN_ADDRESS]?.tvl?.price || 0
 									) : '0.00'}
@@ -429,22 +433,22 @@ function	Holdings(): ReactElement {
 						<p
 							suppressHydrationWarning
 							className={'text-sm tabular-nums text-neutral-400 md:text-base'}>
-							{styCRVAPY ? `*${format.amount(styCRVAPY, 2, 2)}% APY: ` : '*0.00% APY: '}
+							{styCRVAPY ? `*${formatAmount(styCRVAPY, 2, 2)}% APY: ` : '*0.00% APY: '}
 						</p>
 						<p
 							suppressHydrationWarning
 							className={'text-sm tabular-nums text-neutral-400 md:text-base'}>
-							{`∙ ${curveAdminFeePercent ? format.amount(curveAdminFeePercent, 2, 2) : '0.00'}% Curve Admin Fees (${format.amount(Number(holdings?.boostMultiplier) / 10000, 2, 2)}x boost)`}
+							{`∙ ${curveAdminFeePercent ? formatAmount(curveAdminFeePercent, 2, 2) : '0.00'}% Curve Admin Fees (${formatAmount(Number(holdings?.boostMultiplier) / 10000, 2, 2)}x boost)`}
 						</p>
 						<p
 							suppressHydrationWarning
 							className={'text-sm tabular-nums text-neutral-400 md:text-base'}>
-							{`∙ ${styCRVAPY && curveAdminFeePercent ? format.amount(styCRVAPY - curveAdminFeePercent, 2, 2) : '0.00'}% Gauge Voting Bribes`}
+							{`∙ ${styCRVAPY && curveAdminFeePercent ? formatAmount(styCRVAPY - curveAdminFeePercent, 2, 2) : '0.00'}% Gauge Voting Bribes`}
 						</p>
 						<p
 							suppressHydrationWarning
 							className={'text-sm tabular-nums text-neutral-400 md:text-base'}>
-							{`∙ ${styCRVMegaBoost ? format.amount(styCRVMegaBoost * 100, 2, 2) : '0.00'}% Mega Boost`}
+							{`∙ ${styCRVMegaBoost ? formatAmount(styCRVMegaBoost * 100, 2, 2) : '0.00'}% Mega Boost`}
 						</p>
 					</div>
 				</div>

@@ -1,5 +1,8 @@
 import React, {useMemo} from 'react';
-import {format, toAddress, truncateHex} from '@yearn-finance/web-lib/utils';
+import {toAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
+import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
+import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useCurve} from '@common/contexts/useCurve';
 import {useYearn} from '@common/contexts/useYearn';
@@ -19,16 +22,16 @@ function	RewardFeedRowItemWithExtraData({
 	const	tokenPrice = Number(prices?.[address]) / 1000000;
 	const	decimals = tokenInfo?.decimals || 18;
 	const	symbol = tokenInfo?.symbol || '???';
-	const	bribeAmount = format.toNormalizedValue(format.BN(value), decimals);
+	const	bribeAmount = formatToNormalizedValue(formatBN(value), decimals);
 	const	bribeValue = bribeAmount * (Number(tokenPrice || 0));
 
 	return (
 		<div className={'flex h-auto flex-col items-end'}>
 			<div className={'inline-flex items-baseline text-base tabular-nums text-neutral-900'}>
-				{`$ ${format.amount(bribeValue, 2, 2)}`}
+				{`$ ${formatAmount(bribeValue, 2, 2)}`}
 			</div>
 			<p className={'inline-flex items-baseline text-right text-xs tabular-nums text-neutral-400'}>
-				{format.amount(bribeAmount, 2, 2)}
+				{formatAmount(bribeAmount, 2, 2)}
 				&nbsp;
 				<span>{`${symbol}`}</span>
 			</p>
@@ -81,7 +84,7 @@ function	RewardFeedTableRow({currentRewardAdded}: {currentRewardAdded: TYDaemonG
 			<div className={'col-span-1 flex h-20 w-full justify-end'}>
 				<div className={'flex flex-row pt-6'}>
 					<p className={'items-baseline text-end text-sm tabular-nums leading-6 text-neutral-400'}>
-						{format.date(Number(currentRewardAdded.timestamp) * 1000)}
+						{formatDate(Number(currentRewardAdded.timestamp) * 1000)}
 					</p>
 				</div>
 			</div>
@@ -91,7 +94,7 @@ function	RewardFeedTableRow({currentRewardAdded}: {currentRewardAdded: TYDaemonG
 					<label className={'block text-sm leading-6 text-neutral-400 md:hidden'}>{'Current Rewards per veCRV'}</label>
 					<RewardFeedRowItemWithExtraData
 						address={toAddress(currentRewardAdded.rewardToken)}
-						value={format.BN(currentRewardAdded.amount)} />
+						value={formatBN(currentRewardAdded.amount)} />
 
 				</div>
 			</div>

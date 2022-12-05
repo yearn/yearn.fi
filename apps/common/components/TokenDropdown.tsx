@@ -1,7 +1,8 @@
 import React, {cloneElement, Fragment, useMemo} from 'react';
 import {Listbox, Transition} from '@headlessui/react';
 import {useWeb3} from '@yearn-finance/web-lib/contexts';
-import {format, toAddress} from '@yearn-finance/web-lib/utils';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import IconChevron from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
@@ -25,7 +26,7 @@ function DropdownItem({
 							{option.symbol}
 						</p>
 						<p className={`${option.icon ? 'pl-2' : 'pl-0'} text-xxs font-normal text-neutral-600`}>
-							{`${format.amount(balance?.normalized || 0, 2, 2)} ${option.symbol}`}
+							{`${formatAmount(balance?.normalized || 0, 2, 2)} ${option.symbol}`}
 						</p>
 					</div>
 				</div>

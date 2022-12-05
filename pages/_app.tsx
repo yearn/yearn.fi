@@ -8,6 +8,7 @@ import Meta from '@common/components/Meta';
 import {MenuContextApp} from '@common/contexts/useMenu';
 import {WalletContextApp} from '@common/contexts/useWallet';
 import {YearnContextApp} from '@common/contexts/useYearn';
+import {variants} from '@common/utils/animations';
 
 import type {AppProps} from 'next/app';
 import type {ReactElement} from 'react';
@@ -28,13 +29,6 @@ const aeonik = localFont({
 		}
 	]
 });
-
-const transition = {duration: 0, ease: [0.17, 0.67, 0.83, 0.67]};
-const variants = {
-	initial: {y: 20, opacity: 0},
-	enter: {y: 0, opacity: 1, transition},
-	exit: {y: -20, opacity: 0, transition}
-};
 
 const WithLayout = memo (function WithLayout(props: AppProps): ReactElement {
 	const	{Component, pageProps, router} = props;

@@ -1,10 +1,13 @@
 import React, {useMemo, useState} from 'react';
 import {Button} from '@yearn-finance/web-lib/components';
 import {useWeb3} from '@yearn-finance/web-lib/contexts';
-import {defaultTxStatus, format, toAddress, Transaction} from '@yearn-finance/web-lib/utils';
+import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {CRV_TOKEN_ADDRESS, CURVE_BRIBE_V2_ADDRESS, CURVE_BRIBE_V3_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useYearn} from '@common/contexts/useYearn';
-import {CRV_TOKEN_ADDRESS, CURVE_BRIBE_V2_ADDRESS, CURVE_BRIBE_V3_ADDRESS} from '@common/utils/constants';
 import {useBribes} from '@yBribe/contexts/useBribes';
 import {claimReward} from '@yBribe/utils/actions/claimReward';
 
@@ -25,13 +28,13 @@ function	GaugeRowItemWithExtraData({
 	const	tokenPrice = Number(prices?.[address]) / 1000000;
 	const	decimals = tokenInfo?.decimals || 18;
 	const	symbol = tokenInfo?.symbol || '???';
-	const	bribeAmount = format.toNormalizedValue(format.BN(value), decimals);
+	const	bribeAmount = formatToNormalizedValue(formatBN(value), decimals);
 	const	bribeValue = bribeAmount * (Number(tokenPrice || 0));
 
 	return (
 		<div className={'flex h-auto flex-col items-end pt-0 md:h-16 md:pt-6'}>
 			<div className={`${isV2 ? 'tooltip' : ''} inline-flex items-baseline text-base tabular-nums text-neutral-900`}>
-				{`$ ${format.amount(bribeValue, minDecimals, minDecimals)}`}
+				{`$ ${formatAmount(bribeValue, minDecimals, minDecimals)}`}
 				<span className={'absolute -right-2 text-sm text-neutral-400'}>
 					{`${isV2 ? '*' : ''}`}
 				</span>
@@ -43,7 +46,7 @@ function	GaugeRowItemWithExtraData({
 				) : null}
 			</div>
 			<p className={'inline-flex items-baseline text-right text-xs tabular-nums text-neutral-400'}>
-				{format.amount(bribeAmount, minDecimals, minDecimals)}
+				{formatAmount(bribeAmount, minDecimals, minDecimals)}
 				&nbsp;
 				<span>{`${symbol}`}</span>
 			</p>
@@ -71,15 +74,15 @@ function	GaugeRowItemAPR({address, value, isV2}: {address: string, value: BigNum
 			return 0;
 		}
 		if (isV2) {
-			return format.toNormalizedValue(value, decimals) / 126144000 * tokenPrice / crvPrice * 52 * 100;
+			return formatToNormalizedValue(value, decimals) / 126144000 * tokenPrice / crvPrice * 52 * 100;
 		}
-		return format.toNormalizedValue(value, decimals) * tokenPrice / crvPrice * 52 * 100;
+		return formatToNormalizedValue(value, decimals) * tokenPrice / crvPrice * 52 * 100;
 	}, [address, crvPrice, isV2, tokenPrice, tokens, value]);
 
 	return (
 		<div className={'flex h-auto flex-col items-end pt-0 md:h-16 md:pt-6'}>
 			<b className={'inline-flex items-baseline whitespace-nowrap text-base tabular-nums text-neutral-900'}>
-				{`${format.amount(APR, 2, 2)} %`}
+				{`${formatAmount(APR, 2, 2)} %`}
 			</b>
 		</div>
 	);

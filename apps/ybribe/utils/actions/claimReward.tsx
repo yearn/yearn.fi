@@ -1,5 +1,5 @@
 import {ethers} from 'ethers';
-import {CURVE_BRIBE_V3_ADDRESS} from '@common/utils/constants';
+import {CURVE_BRIBE_V3_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 
 export async function	claimReward(
 	provider: ethers.providers.Web3Provider,

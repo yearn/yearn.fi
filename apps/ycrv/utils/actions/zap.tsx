@@ -1,5 +1,5 @@
 import {ethers} from 'ethers';
-import {ZAP_YEARN_VE_CRV_ADDRESS} from '@common/utils/constants';
+import {ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 
 import type {BigNumber} from 'ethers';
 

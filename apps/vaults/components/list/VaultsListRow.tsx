@@ -1,32 +1,25 @@
 import React, {useMemo} from 'react';
 import Link from 'next/link';
 import {useWeb3} from '@yearn-finance/web-lib/contexts';
-import {format, toAddress} from '@yearn-finance/web-lib/utils';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useWallet} from '@common/contexts/useWallet';
 import {getVaultName} from '@common/utils';
-import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS} from '@common/utils/constants';
 
 import type {ReactElement} from 'react';
 import type {TYearnVault} from '@common/types/yearn';
 
-export function	HumanizeRisk({risk}: {risk: number}): ReactElement {
-	if (risk === 0) {
-		return <p className={'text-base'}>{'None'}</p>;
+function	HumanizeRisk({risk}: {risk: number}): ReactElement {
+	if (risk < 2) {
+		return <span className={'text-neutral-600'}>{'Low'}</span>;
+	} else if (risk < 4) {
+		return <span className={'text-neutral-600'}>{'Medium'}</span>;
+	} else {
+		return <span className={'text-neutral-600'}>{'High'}</span>;
 	}
-	if (risk <= 1) {
-		return <b className={'text-base'}>{'Low'}</b>;
-	}
-	if (risk <= 2) {
-		return <b className={'text-base text-yellow-900'}>{'Medium'}</b>;
-	}
-	if (risk <= 3) {
-		return <b className={'text-base text-pink-900'}>{'Severe'}</b>;
-	}
-	if (risk <= 4) {
-		return <b className={'text-base text-pink-900'}>{'High'}</b>;
-	}
-	return <b className={'text-base text-red-900'}>{'Critical'}</b>;
 }
 
 function	VaultsListRow({currentVault}: {currentVault: TYearnVault}): ReactElement {
@@ -55,8 +48,8 @@ function	VaultsListRow({currentVault}: {currentVault: TYearnVault}): ReactElemen
 		if (currentVault.details.depositLimit === '0') {
 			return 100;
 		}
-		const	normalizedTotalAssets = format.toNormalizedValue(currentVault.tvl.total_assets, currentVault.token.decimals);
-		const	normalizedDepositLimit = format.toNormalizedValue(currentVault.details.depositLimit, currentVault.token.decimals);
+		const	normalizedTotalAssets = formatToNormalizedValue(currentVault.tvl.total_assets, currentVault.token.decimals);
+		const	normalizedDepositLimit = formatToNormalizedValue(currentVault.details.depositLimit, currentVault.token.decimals);
 		return (normalizedTotalAssets / normalizedDepositLimit * 100);
 	}, [currentVault.details.depositLimit, currentVault.token.decimals, currentVault.tvl.total_assets]);
 
@@ -82,34 +75,34 @@ function	VaultsListRow({currentVault}: {currentVault: TYearnVault}): ReactElemen
 					<div className={'row col-span-1 flex h-8 flex-row justify-between pt-0 md:h-14 md:justify-end md:pt-4'}>
 						<p className={'inline text-start text-neutral-500 md:hidden'}>{'APY'}</p>
 						<b className={'text-end text-base tabular-nums text-neutral-900'}>
-							{`${format.amount((currentVault.apy?.net_apy || 0) * 100, 2, 2)}%`}
+							{`${formatAmount((currentVault.apy?.net_apy || 0) * 100, 2, 2)}%`}
 						</b>
 					</div>
 
 					<div className={'row col-span-1 flex h-8 flex-row justify-between px-0 pt-0 md:col-span-2 md:h-14 md:justify-end md:px-7 md:pt-4'}>
 						<p className={'inline text-start text-neutral-500 md:hidden'}>{'Available'}</p>
 						<p className={`text-base tabular-nums ${availableToDeposit === 0 ? 'text-neutral-400' : 'text-neutral-900'}`}>
-							{`${format.amount(availableToDeposit, 2, 2)}`}
+							{`${formatAmount(availableToDeposit, 2, 2)}`}
 						</p>
 					</div>
 
 					<div className={'row col-span-1 flex h-8 flex-row justify-between px-0 pt-0 md:col-span-2 md:h-14 md:justify-end md:pt-4 md:pl-7 md:pr-12'}>
 						<p className={'inline text-start text-neutral-500 md:hidden'}>{'Deposited'}</p>
 						<p className={`text-base tabular-nums ${deposited === 0 ? 'text-neutral-400' : 'text-neutral-900'}`}>
-							{`${format.amount(deposited, 2, 2)}`}
+							{`${formatAmount(deposited, 2, 2)}`}
 						</p>
 					</div>
 
 					<div className={'row col-span-1 flex h-8 flex-row justify-between px-0 pt-0 md:col-span-2 md:hidden md:h-14 md:justify-end md:pt-4 md:pl-7 md:pr-12'}>
 						<p className={'inline text-start text-neutral-500 md:hidden'}>{'TVL'}</p>
 						<p className={'text-end text-base tabular-nums text-neutral-900'}>
-							{`$ ${format.amount(currentVault.tvl?.tvl || 0, 0, 0)}`}
+							{`$ ${formatAmount(currentVault.tvl?.tvl || 0, 0, 0)}`}
 						</p>
 					</div>
 
 					<div className={'col-span-1 hidden h-8 flex-col items-end px-0 pt-0 md:col-span-2 md:flex md:h-14 md:px-7 md:pt-4'}>
 						<p className={'text-base tabular-nums text-neutral-900'}>
-							{`$ ${format.amount(currentVault.tvl?.tvl || 0, 0, 0)}`}
+							{`$ ${formatAmount(currentVault.tvl?.tvl || 0, 0, 0)}`}
 						</p>
 						<div className={'relative mt-1 h-1 w-full bg-neutral-400'}>
 							<div
@@ -121,7 +114,7 @@ function	VaultsListRow({currentVault}: {currentVault: TYearnVault}): ReactElemen
 					<div className={'col-span-1 flex h-8 flex-row items-center justify-between md:h-14 md:justify-end'}>
 						<p className={'inline text-start text-neutral-500 md:hidden'}>{'Risk'}</p>
 						<div className={'flex flex-row space-x-4'}>
-							{format.amount(currentVault.safetyScore, 2, 2)}
+							<HumanizeRisk risk={currentVault.riskScore} />
 						</div>
 					</div>
 				</div>

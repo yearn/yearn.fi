@@ -59,7 +59,7 @@ export type TYearnVault = {
     formated_name: string,
     icon: string,
 	category: string,
-	safetyScore: number,
+	riskScore: number,
     token: {
         address: string,
         name: string,

@@ -5,7 +5,7 @@ import {VaultDetailsQuickActions} from '@vaults/components/VaultDetailsQuickActi
 import {VaultDetailsTabsWrapper} from '@vaults/components/VaultDetailsTabsWrapper';
 import Wrapper from '@vaults/Wrapper';
 import {useWeb3} from '@yearn-finance/web-lib/contexts';
-import {toAddress} from '@yearn-finance/web-lib/utils';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useYearn} from '@common/contexts/useYearn';
 import {variants} from '@common/utils/animations';

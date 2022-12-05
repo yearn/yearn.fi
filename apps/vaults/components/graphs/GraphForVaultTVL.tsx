@@ -1,7 +1,6 @@
 import React from 'react';
 import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
-import {format} from '@yearn-finance/web-lib/utils';
-import {formatWithUnit} from '@common/utils';
+import {formatAmount, formatWithUnit} from '@yearn-finance/web-lib/utils/format.number';
 
 import type {ReactElement} from 'react';
 import type {TMessariGraphData} from '@common/types/types';
@@ -60,7 +59,7 @@ function	GraphForVaultTVL({messariData, height = 312}: TGraphForVaultTVLProps): 
 									<div className={'flex flex-row items-center justify-between'}>
 										<p className={'text-xs text-neutral-600'}>{'TVL'}</p>
 										<b className={'text-xs font-bold tabular-nums text-neutral-900'}>
-											{`${format.amount(Number(value), 2, 2)} $`}
+											{`${formatAmount(Number(value), 2, 2)} $`}
 										</b>
 									</div>
 								</div>

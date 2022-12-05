@@ -1,41 +1,47 @@
 import React, {useMemo} from 'react';
 import useSWR from 'swr';
 import {useWeb3} from '@yearn-finance/web-lib/contexts';
-import {format, toAddress} from '@yearn-finance/web-lib/utils';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
+import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
+import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
-import {baseFetcher, getCounterValue, getVaultName} from '@common/utils';
+import {getVaultName} from '@common/utils';
 
 import type {ReactElement} from 'react';
+import type {SWRResponse} from 'swr';
 import type {TYdaemonEarned, TYearnVault} from '@common/types/yearn';
+
 
 function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactElement {
 	const	{address, safeChainID} = useWeb3();
 	const	{balances} = useWallet();
 	const	{prices} = useYearn();
-	const	{data: earned} = useSWR<TYdaemonEarned>(
+	const	{data: earned} = useSWR(
 		currentVault.address && address ? `${process.env.YDAEMON_BASE_URI}/${safeChainID}/earned/${address}/${currentVault.address}` : null,
 		baseFetcher,
 		{revalidateOnFocus: false}
-	);
+	) as SWRResponse as {data: TYdaemonEarned};
 
 	const	normalizedVaultBalance = useMemo((): number => (
-		format.toNormalizedValue(
+		formatToNormalizedValue(
 			balances[toAddress(currentVault?.address)]?.raw || 0,
 			currentVault?.decimals
 		)
 	), [balances, currentVault]);
 
 	const	normalizedVaultEarned = useMemo((): number => (
-		format.toNormalizedValue(
+		formatToNormalizedValue(
 			(earned?.earned?.[toAddress(currentVault?.address)]?.unrealizedGains || '0'),
 			currentVault?.decimals
 		)
 	), [earned, currentVault]);
 
 	const	vaultPrice = useMemo((): number => (
-		format.toNormalizedValue(
-			format.BN(prices?.[toAddress(currentVault?.address)] || 0),
+		formatToNormalizedValue(
+			formatBN(prices?.[toAddress(currentVault?.address)] || 0),
 			6
 		)
 	), [currentVault?.address, prices]);
@@ -56,10 +62,10 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 						{`Total deposited, ${currentVault?.symbol || 'token'}`}
 					</p>
 					<b className={'text-3xl tabular-nums'} suppressHydrationWarning>
-						{format.amount(format.toNormalizedValue(currentVault?.tvl?.total_assets, currentVault?.decimals), 2, 2)}
+						{formatAmount(formatToNormalizedValue(currentVault?.tvl?.total_assets, currentVault?.decimals), 2, 2)}
 					</b>
 					<legend className={'text-xs tabular-nums text-neutral-600'} suppressHydrationWarning>
-						{`$ ${format.amount(currentVault?.tvl?.tvl, 2, 2)}`}
+						{`$ ${formatAmount(currentVault?.tvl?.tvl, 2, 2)}`}
 					</legend>
 				</div>
 
@@ -68,7 +74,7 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 						{'Net APY'}
 					</p>
 					<b className={'text-3xl tabular-nums'} suppressHydrationWarning>
-						{`${format.amount((currentVault?.apy?.net_apy || 0) * 100, 2, 2)} %`}
+						{`${formatAmount((currentVault?.apy?.net_apy || 0) * 100, 2, 2)} %`}
 					</b>
 					<legend className={'text-xs text-neutral-600'}>&nbsp;</legend>
 				</div>
@@ -78,10 +84,10 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 						{`Balance, ${currentVault?.symbol || 'token'}`}
 					</p>
 					<b className={'text-3xl tabular-nums'} suppressHydrationWarning>
-						{format.amount(normalizedVaultBalance, 2, 2)}
+						{formatAmount(normalizedVaultBalance, 2, 2)}
 					</b>
 					<legend className={'text-xs tabular-nums text-neutral-600'} suppressHydrationWarning>
-						{getCounterValue(normalizedVaultBalance || 0, vaultPrice)}
+						{formatCounterValue(normalizedVaultBalance || 0, vaultPrice)}
 					</legend>
 				</div>
 
@@ -90,10 +96,10 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 						{`Earned, ${currentVault?.token?.symbol || 'token'}`}
 					</p>
 					<b className={'text-3xl tabular-nums'} suppressHydrationWarning>
-						{format.amount(normalizedVaultEarned, 2, 2)}
+						{formatAmount(normalizedVaultEarned, 2, 2)}
 					</b>
 					<legend className={'text-xs tabular-nums text-neutral-600'} suppressHydrationWarning>
-						{getCounterValue(normalizedVaultEarned || 0, vaultPrice)}
+						{formatCounterValue(normalizedVaultEarned || 0, vaultPrice)}
 					</legend>
 				</div>
 			</div>

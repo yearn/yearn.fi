@@ -1,5 +1,5 @@
 import {ethers} from 'ethers';
-import VAULT_ABI from '@common/utils/abi/vault.abi';
+import {VAULT_ABI} from '@yearn-finance/web-lib/utils/abi';
 
 import type {ContractInterface} from 'ethers';
 

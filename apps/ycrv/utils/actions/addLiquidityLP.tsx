@@ -1,5 +1,5 @@
 import {ethers} from 'ethers';
-import {YVECRV_POOL_LP_ADDRESS} from '@common/utils/constants';
+import {YVECRV_POOL_LP_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 
 import type {BigNumber} from 'ethers';
 

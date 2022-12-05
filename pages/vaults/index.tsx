@@ -1,15 +1,18 @@
 import React, {useMemo, useState} from 'react';
 import {ethers} from 'ethers';
+import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
 import {VaultsListHead} from '@vaults/components/list/VaultsListHead';
 import {VaultsListRow} from '@vaults/components/list/VaultsListRow';
 import Wrapper from '@vaults/Wrapper';
 import {Button} from '@yearn-finance/web-lib/components';
-import {format, performBatchedUpdates, toAddress} from '@yearn-finance/web-lib/utils';
+import {performBatchedUpdates} from '@yearn-finance/web-lib/utils';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import ValueAnimation from '@common/components/ValueAnimation';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import {getVaultName} from '@common/utils';
-import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS} from '@common/utils/constants';
 
 import type {ChangeEvent, ReactElement, ReactNode} from 'react';
 import type {TYearnVault} from '@common/types/yearn';
@@ -24,16 +27,16 @@ function	Index(): ReactElement {
 
 	const	formatedYouHave = useMemo((): string => {
 		if (cumulatedValueInVaults) {
-			return format.amount(cumulatedValueInVaults, 2, 2);
+			return formatAmount(cumulatedValueInVaults, 2, 2);
 		}
-		return format.amount(0, 2, 2);
+		return formatAmount(0, 2, 2);
 	}, [cumulatedValueInVaults]);
 
 	const	formatedYouEarned = useMemo((): string => {
 		if (earned?.totalUnrealizedGainsUSD) {
-			return format.amount(earned?.totalUnrealizedGainsUSD, 2, 2);
+			return formatAmount(earned?.totalUnrealizedGainsUSD, 2, 2);
 		}
-		return format.amount(0, 2, 2);
+		return formatAmount(0, 2, 2);
 	}, [earned]);
 
 	const	curveVaults = useMemo((): TYearnVault[] => {
@@ -147,9 +150,9 @@ function	Index(): ReactElement {
 		if (sortBy === 'risk') {
 			return searchedVaultsToDisplay.sort((a, b): number => {
 				if (sortDirection === 'desc') {
-					return (b.safetyScore || 0) - (a.safetyScore || 0);
+					return (b.riskScore || 0) - (a.riskScore || 0);
 				}
-				return (a.safetyScore || 0) - (b.safetyScore || 0);
+				return (a.riskScore || 0) - (b.riskScore || 0);
 			});
 		}
 
@@ -297,16 +300,8 @@ function	Index(): ReactElement {
 								set_sortDirection(_sortDirection);
 							});
 						}} />
-					{isLoadingVaultList && sortedVaultsToDisplay.length === 0 ? (
-						<div className={'flex h-96 w-full flex-col items-center justify-center py-2 px-10'}>
-							<b className={'text-center text-lg'}>{'Loading data'}</b>
-							<p className={'text-center text-neutral-600'}>{'We are retrieving the vault list for you.'}</p>
-						</div>
-					) : !isLoadingVaultList && sortedVaultsToDisplay.length === 0 ? (
-						<div className={'flex h-96 w-full flex-col items-center justify-center py-2 px-10'}>
-							<b className={'text-center text-lg'}>{'No data, reeeeeeeeeeee'}</b>
-							<p className={'text-center text-neutral-600'}>{'There doesn’t seem to be anything here. It might be because you searched for a token in the wrong category - or because there’s a rodent infestation in our server room. You check the search box, we’ll check the rodents. Deal?'}</p>
-						</div>
+					{isLoadingVaultList || sortedVaultsToDisplay.length === 0 ? (
+						<VaultsListEmpty sortedVaultsToDisplay={sortedVaultsToDisplay} currentCategory={category} />
 					) : sortedVaultsToDisplay.map((vault): ReactNode => {
 						if (!vault) {
 							return (null);

@@ -3,13 +3,16 @@ import {ethers} from 'ethers';
 import {motion} from 'framer-motion';
 import {Button} from '@yearn-finance/web-lib/components';
 import {useWeb3} from '@yearn-finance/web-lib/contexts';
-import {format, performBatchedUpdates, toAddress} from '@yearn-finance/web-lib/utils';
+import {performBatchedUpdates} from '@yearn-finance/web-lib/utils';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {YCRV_CURVE_POOL_ADDRESS, YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {Dropdown} from '@common/components/TokenDropdown';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import ArrowDown from '@common/icons/ArrowDown';
-import {getCounterValue, handleInputChange} from '@common/utils';
-import {YCRV_CURVE_POOL_ADDRESS, YCRV_TOKEN_ADDRESS} from '@common/utils/constants';
+import {handleInputChange} from '@common/utils';
 import CardTransactorContextApp, {useCardTransactor} from '@yCRV/components/CardTransactorWrapper';
 import {CardVariants, CardVariantsInner} from '@yCRV/utils/animations';
 import {LEGACY_OPTIONS_FROM, LEGACY_OPTIONS_TO} from '@yCRV/utils/zapOptions';
@@ -32,14 +35,14 @@ function	CardMigrateLegacy(): ReactElement {
 	} = useCardTransactor();
 
 	const	ycrvPrice = useMemo((): number => (
-		format.toNormalizedValue(
-			format.BN(prices?.[YCRV_TOKEN_ADDRESS] || 0),
+		formatToNormalizedValue(
+			formatBN(prices?.[YCRV_TOKEN_ADDRESS] || 0),
 			6
 		)
 	), [prices]);
 	const	ycrvCurvePoolPrice = useMemo((): number => (
-		format.toNormalizedValue(
-			format.BN(prices?.[YCRV_CURVE_POOL_ADDRESS] || 0),
+		formatToNormalizedValue(
+			formatBN(prices?.[YCRV_CURVE_POOL_ADDRESS] || 0),
 			6
 		)
 	), [prices]);
@@ -137,7 +140,7 @@ function	CardMigrateLegacy(): ReactElement {
 						</div>
 					</div>
 					<p className={'pl-2 text-xs font-normal text-neutral-600'}>
-						{getCounterValue(
+						{formatCounterValue(
 							amount?.normalized || 0,
 							toAddress(selectedOptionFrom.value) === YCRV_TOKEN_ADDRESS
 								? ycrvPrice || 0
@@ -183,7 +186,7 @@ function	CardMigrateLegacy(): ReactElement {
 						</b>
 					</div>
 					<p className={'pl-2 text-xs font-normal text-neutral-600'}>
-						{getCounterValue(
+						{formatCounterValue(
 							expectedOutWithSlippage,
 							toAddress(selectedOptionTo.value) === YCRV_TOKEN_ADDRESS
 								? ycrvPrice || 0
