@@ -26,7 +26,7 @@ const	apps = [
 			loading={'eager'}
 			priority />
 	}, {
-		href: '/veyfi',
+		href: 'https://vote.yearn.finance/vaults',
 		title: 'veYFI',
 		description: 'stake your YFI to recieve\nrewards and boost gauges.',
 		icon: <LogoYearn className={'h-[100px] w-[100px]'} />
