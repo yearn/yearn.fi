@@ -89,3 +89,4 @@ function	GraphForVaultEarnings({currentVault, harvestData, height = 312, isCumul
 }
 
 export {GraphForVaultEarnings};
+export default GraphForVaultEarnings;

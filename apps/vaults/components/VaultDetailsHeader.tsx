@@ -1,6 +1,7 @@
 import React, {useMemo} from 'react';
 import useSWR from 'swr';
 import {useWeb3} from '@yearn-finance/web-lib/contexts';
+import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -16,7 +17,8 @@ import type {TYdaemonEarned, TYearnVault} from '@common/types/yearn';
 
 
 function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactElement {
-	const	{address, safeChainID} = useWeb3();
+	const {safeChainID} = useChainID();
+	const	{address} = useWeb3();
 	const	{balances} = useWallet();
 	const	{prices} = useYearn();
 	const	{data: earned} = useSWR(

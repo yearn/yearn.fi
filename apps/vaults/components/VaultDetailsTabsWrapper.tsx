@@ -5,6 +5,7 @@ import {VaultDetailsAbout} from '@vaults/components/details/VaultDetailsAbout';
 import {VaultDetailsHistorical} from '@vaults/components/details/VaultDetailsHistorical';
 import {VaultDetailsStrategies} from '@vaults/components/details/VaultDetailsStrategies';
 import {useSettings, useWeb3} from '@yearn-finance/web-lib/contexts';
+import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import IconAddToMetamask from '@yearn-finance/web-lib/icons/IconAddToMetamask';
 import IconLinkOut from '@yearn-finance/web-lib/icons/IconLinkOut';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
@@ -87,10 +88,11 @@ function	Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: {
 }
 
 function	VaultDetailsTabsWrapper({currentVault}: {currentVault: TYearnVault}): ReactElement {
-	const	{provider, safeChainID} = useWeb3();
-	const	{networks} = useSettings();
-	const	[selectedAboutTabIndex, set_selectedAboutTabIndex] = useState(0);
-	const	networkSettings = useMemo((): TSettingsForNetwork => networks[safeChainID], [networks, safeChainID]);
+	const {provider} = useWeb3();
+	const {safeChainID} = useChainID();
+	const {networks} = useSettings();
+	const [selectedAboutTabIndex, set_selectedAboutTabIndex] = useState(0);
+	const networkSettings = useMemo((): TSettingsForNetwork => networks[safeChainID], [networks, safeChainID]);
 
 	async function onAddTokenToMetamask(address: string, symbol: string, decimals: number, image: string): Promise<void> {
 		try {

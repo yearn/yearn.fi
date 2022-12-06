@@ -3,6 +3,7 @@ import Image from 'next/image';
 import {ethers} from 'ethers';
 import {Popover, Transition} from '@headlessui/react';
 import {useWeb3} from '@yearn-finance/web-lib/contexts';
+import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {AddToMetamask} from '@yearn-finance/web-lib/icons';
 import IconCross from '@yearn-finance/web-lib/icons/IconCross';
 import IconWallet from '@yearn-finance/web-lib/icons/IconWallet';
@@ -26,8 +27,9 @@ type TBalanceReminderElement = {
 
 export default function BalanceReminderPopover(): ReactElement {
 	const	{balances, isLoading} = useWallet();
-	const	{address, ens, isActive, provider, onDesactivate, safeChainID} = useWeb3();
+	const	{address, ens, isActive, provider, onDesactivate} = useWeb3();
 	const	{vaults} = useYearn();
+	const	{safeChainID} = useChainID();
 
 	async function addTokenToMetamask(address: string, symbol: string, decimals: number, image: string): Promise<void> {
 		try {

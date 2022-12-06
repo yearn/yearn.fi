@@ -3,6 +3,7 @@ import {ethers} from 'ethers';
 import useSWR from 'swr';
 import {Button} from '@yearn-finance/web-lib/components';
 import {useSettings, useWeb3} from '@yearn-finance/web-lib/contexts';
+import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {defaultTxStatus, performBatchedUpdates, providers, Transaction} from '@yearn-finance/web-lib/utils';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, ZAP_ETH_WETH_CONTRACT} from '@yearn-finance/web-lib/utils/constants';
@@ -59,16 +60,18 @@ function	ActionButton({
 	selectedOptionTo?: TDropdownOption;
 	onSuccess: VoidFunction;
 }): ReactElement {
-	const	{networks} = useSettings();
-	const	{isActive, address, provider, safeChainID} = useWeb3();
-	const	{currentPartner} = useYearn();
-	const	[txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
-	const	[txStatusDeposit, set_txStatusDeposit] = useState(defaultTxStatus);
+	const {networks} = useSettings();
+	const {isActive, address, provider} = useWeb3();
+	const {safeChainID} = useChainID();
 
-	const	isInputTokenEth = selectedOptionFrom?.value === ETH_TOKEN_ADDRESS;
-	const	isOutputTokenEth = selectedOptionTo?.value === ETH_TOKEN_ADDRESS;
-	const	isPartnerAddressValid = useMemo((): boolean => !isZeroAddress(toAddress(networks?.[safeChainID]?.partnerContractAddress)), [networks, safeChainID]);
-	const	isUsingPartnerContract = useMemo((): boolean => ((process?.env?.SHOULD_USE_PARTNER_CONTRACT || true) === true && isPartnerAddressValid), [isPartnerAddressValid]);
+	const {currentPartner} = useYearn();
+	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
+	const [txStatusDeposit, set_txStatusDeposit] = useState(defaultTxStatus);
+
+	const isInputTokenEth = selectedOptionFrom?.value === ETH_TOKEN_ADDRESS;
+	const isOutputTokenEth = selectedOptionTo?.value === ETH_TOKEN_ADDRESS;
+	const isPartnerAddressValid = useMemo((): boolean => !isZeroAddress(toAddress(networks?.[safeChainID]?.partnerContractAddress)), [networks, safeChainID]);
+	const isUsingPartnerContract = useMemo((): boolean => ((process?.env?.SHOULD_USE_PARTNER_CONTRACT || true) === true && isPartnerAddressValid), [isPartnerAddressValid]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** Perform a smartContract call to the deposit contract to get the allowance for the deposit
@@ -289,16 +292,17 @@ function	ActionButton({
 }
 
 function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): ReactElement {
-	const	{isActive, provider, safeChainID} = useWeb3();
-	const	{balances, refresh} = useWallet();
-	const	{prices} = useYearn();
+	const {isActive, provider} = useWeb3();
+	const {safeChainID} = useChainID();
+	const {balances, refresh} = useWallet();
+	const {prices} = useYearn();
 
-	const	[possibleOptionsFrom, set_possibleOptionsFrom] = useState<TDropdownOption[]>([]);
-	const	[possibleOptionsTo, set_possibleOptionsTo] = useState<TDropdownOption[]>([]);
+	const [possibleOptionsFrom, set_possibleOptionsFrom] = useState<TDropdownOption[]>([]);
+	const [possibleOptionsTo, set_possibleOptionsTo] = useState<TDropdownOption[]>([]);
 
-	const	[selectedOptionFrom, set_selectedOptionFrom] = useState<TDropdownOption | undefined>();
-	const	[selectedOptionTo, set_selectedOptionTo] = useState<TDropdownOption | undefined>();
-	const	[amount, set_amount] = useState<TNormalizedBN>({raw: ethers.constants.Zero, normalized: 0});
+	const [selectedOptionFrom, set_selectedOptionFrom] = useState<TDropdownOption | undefined>();
+	const [selectedOptionTo, set_selectedOptionTo] = useState<TDropdownOption | undefined>();
+	const [amount, set_amount] = useState<TNormalizedBN>({raw: ethers.constants.Zero, normalized: 0});
 
 	const	isDepositing = useMemo((): boolean => (
 		!selectedOptionTo?.value ? true : toAddress(selectedOptionTo.value) === toAddress(currentVault.address)

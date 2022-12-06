@@ -1,7 +1,7 @@
 import React, {useMemo} from 'react';
 import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
 import useSWR from 'swr';
-import {useWeb3} from '@yearn-finance/web-lib/contexts';
+import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
@@ -19,8 +19,8 @@ type TGraphForStrategyReportsProps = {
 }
 
 function	GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height = 127}: TGraphForStrategyReportsProps): ReactElement {
-	const	{safeChainID} = useWeb3();
-	const	{data: reports} = useSWR(
+	const {safeChainID} = useChainID();
+	const {data: reports} = useSWR(
 		`${process.env.YDAEMON_BASE_URI}/${safeChainID}/reports/${strategy.address}`,
 		baseFetcher,
 		{revalidateOnFocus: false}
@@ -111,3 +111,4 @@ function	GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height =
 }
 
 export {GraphForStrategyReports};
+export default GraphForStrategyReports;

@@ -73,3 +73,4 @@ function	GraphForVaultTVL({messariData, height = 312}: TGraphForVaultTVLProps): 
 }
 
 export {GraphForVaultTVL};
+export default GraphForVaultTVL;

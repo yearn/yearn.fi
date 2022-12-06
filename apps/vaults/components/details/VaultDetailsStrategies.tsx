@@ -1,5 +1,4 @@
-import React from 'react';
-import {GraphForStrategyReports} from '@vaults/components/graphs/GraphForStrategyReports';
+import React, {lazy, Suspense} from 'react';
 import IconCopy from '@yearn-finance/web-lib/icons/IconCopy';
 import {copyToClipboard, parseMarkdown} from '@yearn-finance/web-lib/utils';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -10,6 +9,8 @@ import IconChevron from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
 import type {TYearnVault, TYearnVaultStrategy} from '@common/types/yearn';
+
+const GraphForStrategyReports = lazy(async (): Promise<any> => import('@vaults/components/graphs/GraphForStrategyReports'));
 
 function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVault, strategy: TYearnVaultStrategy}): ReactElement {
 	return (
@@ -129,10 +130,12 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVau
 						<div className={'mt-auto pt-8'}>
 							<p className={'text-neutral-600'}>{'Historical APR'}</p>
 							<div className={'mt-4 flex flex-row border-b border-l border-neutral-300'}>
-								<GraphForStrategyReports
-									vaultDecimals={currentVault.decimals}
-									vaultTicker={currentVault?.token?.symbol || 'token'}
-									strategy={strategy} />
+								<Suspense>
+									<GraphForStrategyReports
+										vaultDecimals={currentVault.decimals}
+										vaultTicker={currentVault?.token?.symbol || 'token'}
+										strategy={strategy} />
+								</Suspense>
 							</div>
 						</div>
 					</div>

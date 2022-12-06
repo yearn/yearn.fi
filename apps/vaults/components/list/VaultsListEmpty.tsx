@@ -1,5 +1,5 @@
 
-import {useWeb3} from '@yearn-finance/web-lib/contexts';
+import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import CHAINS from '@yearn-finance/web-lib/utils/web3/chains';
 import {useYearn} from '@common/contexts/useYearn';
 
@@ -7,8 +7,8 @@ import type {ReactElement} from 'react';
 import type {TYearnVault} from '@common/types/yearn';
 
 function	VaultsListEmpty({sortedVaultsToDisplay, currentCategory}: {sortedVaultsToDisplay: TYearnVault[], currentCategory: string}): ReactElement {
-	const	{safeChainID} = useWeb3();
-	const	{isLoadingVaultList} = useYearn();
+	const {safeChainID} = useChainID();
+	const {isLoadingVaultList} = useYearn();
 
 	if (isLoadingVaultList && sortedVaultsToDisplay.length === 0) {
 		return (

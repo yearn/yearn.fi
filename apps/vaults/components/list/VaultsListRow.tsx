@@ -1,6 +1,6 @@
 import React, {useMemo} from 'react';
 import Link from 'next/link';
-import {useWeb3} from '@yearn-finance/web-lib/contexts';
+import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -23,10 +23,10 @@ function	HumanizeRisk({risk}: {risk: number}): ReactElement {
 }
 
 function	VaultsListRow({currentVault}: {currentVault: TYearnVault}): ReactElement {
-	const	{balances} = useWallet();
-	const	{safeChainID} = useWeb3();
+	const {balances} = useWallet();
+	const {safeChainID} = useChainID();
 
-	const	availableToDeposit = useMemo((): number => {
+	const availableToDeposit = useMemo((): number => {
 		if (toAddress(currentVault.token.address) === WETH_TOKEN_ADDRESS) {
 			const	ethPlusWEth = (
 				(balances[WETH_TOKEN_ADDRESS]?.normalized || 0)
@@ -38,13 +38,13 @@ function	VaultsListRow({currentVault}: {currentVault: TYearnVault}): ReactElemen
 		return balances[toAddress(currentVault.token.address)]?.normalized || 0;
 	}, [balances, currentVault.token.address]);
 
-	const	deposited = useMemo((): number => {
+	const deposited = useMemo((): number => {
 		return balances[toAddress(currentVault.address)]?.normalized || 0;
 	}, [balances, currentVault.address]);
 
-	const	vaultName = useMemo((): string => getVaultName(currentVault), [currentVault]);
+	const vaultName = useMemo((): string => getVaultName(currentVault), [currentVault]);
 	
-	const	availableToDepositRatio = useMemo((): number => {
+	const availableToDepositRatio = useMemo((): number => {
 		if (currentVault.details.depositLimit === '0') {
 			return 100;
 		}

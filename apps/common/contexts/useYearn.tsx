@@ -2,6 +2,7 @@ import React, {createContext, memo, useContext, useMemo} from 'react';
 import {ethers} from 'ethers';
 import useSWR from 'swr';
 import {useWeb3} from '@yearn-finance/web-lib/contexts';
+import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 
@@ -39,7 +40,8 @@ type TYearnVaultsMap = {
 
 const	YearnContext = createContext<TYearnContext>(defaultProps);
 export const YearnContextApp = memo(function YearnContextApp({children}: {children: ReactElement}): ReactElement {
-	const	{address, currentPartner, safeChainID} = useWeb3();
+	const {safeChainID} = useChainID();
+	const	{address, currentPartner} = useWeb3();
 
 	/* 🔵 - Yearn Finance ******************************************************
 	**	We will play with the some Yearn vaults. To correctly play with them,

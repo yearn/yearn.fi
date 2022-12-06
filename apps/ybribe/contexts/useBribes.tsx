@@ -4,6 +4,7 @@ import {ethers} from 'ethers';
 import axios from 'axios';
 import useSWR from 'swr';
 import {useSettings, useWeb3} from '@yearn-finance/web-lib/contexts';
+import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {performBatchedUpdates, providers} from '@yearn-finance/web-lib/utils';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {CURVE_BRIBE_V2_ADDRESS, CURVE_BRIBE_V3_ADDRESS, CURVE_BRIBE_V3_HELPER_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
@@ -53,23 +54,24 @@ const baseFetcher = async (url: string): Promise<any> => axios.get(url).then((re
 
 const	BribesContext = createContext<TBribesContext>(defaultProps);
 export const BribesContextApp = ({children}: {children: React.ReactElement}): React.ReactElement => {
-	const	{gauges} = useCurve();
-	const	{provider, address, safeChainID} = useWeb3();
-	const	[currentRewards, set_currentRewards] = useState<TCurveGaugeVersionRewards>({v2: {}, v3: {}});
-	const	[nextRewards, set_nextRewards] = useState<TCurveGaugeVersionRewards>({v2: {}, v3: {}});
-	const	[claimable, set_claimable] = useState<TCurveGaugeVersionRewards>({v2: {}, v3: {}});
-	const	[isLoading, set_isLoading] = useState<boolean>(true);
-	const	[currentPeriod, set_currentPeriod] = useState<number>(getLastThursday());
-	const	[nextPeriod, set_nextPeriod] = useState<number>(getNextThursday());
-	const	{settings:baseAPISettings} = useSettings();
+	const {gauges} = useCurve();
+	const {provider, address} = useWeb3();
+	const {safeChainID} = useChainID();
+	const [currentRewards, set_currentRewards] = useState<TCurveGaugeVersionRewards>({v2: {}, v3: {}});
+	const [nextRewards, set_nextRewards] = useState<TCurveGaugeVersionRewards>({v2: {}, v3: {}});
+	const [claimable, set_claimable] = useState<TCurveGaugeVersionRewards>({v2: {}, v3: {}});
+	const [isLoading, set_isLoading] = useState<boolean>(true);
+	const [currentPeriod, set_currentPeriod] = useState<number>(getLastThursday());
+	const [nextPeriod, set_nextPeriod] = useState<number>(getNextThursday());
+	const {settings:baseAPISettings} = useSettings();
 
-	const	{data: feed} = useSWR(`${baseAPISettings.yDaemonBaseURI}/1/bribes/newRewardFeed`, baseFetcher);
+	const {data: feed} = useSWR(`${baseAPISettings.yDaemonBaseURI}/1/bribes/newRewardFeed`, baseFetcher);
 
 	/* 🔵 - Yearn Finance ******************************************************
-	**	getSharedStuffFromBribes will help you retrieved some elements from the
-	** 	Bribe contracts, not related to the user.
+	** getSharedStuffFromBribes will help you retrieved some elements from the
+	**  Bribe contracts, not related to the user.
 	***************************************************************************/
-	const	getSharedStuffFromBribes = useCallback(async (): Promise<void> => {
+	const getSharedStuffFromBribes = useCallback(async (): Promise<void> => {
 		const	currentProvider = safeChainID === 1 ? provider || providers.getProvider(1) : providers.getProvider(1);
 		const	ethcallProvider = await providers.newEthCallProvider(currentProvider);
 		const	curveBribeV3Contract = new Contract(CURVE_BRIBE_V3_ADDRESS, CURVE_BRIBE_V3);

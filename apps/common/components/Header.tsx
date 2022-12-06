@@ -6,6 +6,7 @@ import {AnimatePresence, motion} from 'framer-motion';
 import {Listbox, Popover, Transition} from '@headlessui/react';
 import {LogoVaults, MenuVaults} from '@vaults/Header';
 import {useWeb3} from '@yearn-finance/web-lib/contexts';
+import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import IconWallet from '@yearn-finance/web-lib/icons/IconWallet';
 import {truncateHex} from '@yearn-finance/web-lib/utils/address';
 import {YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
@@ -124,7 +125,8 @@ const networks = [
 	{value: 42161, label: 'Arbitrum'}
 ];
 function	NetworkSelector(): ReactElement {
-	const {safeChainID, onSwitchChain} = useWeb3();
+	const {safeChainID} = useChainID();
+	const {onSwitchChain} = useWeb3();
 
 	const	currentNetwork = useMemo((): any => (
 		networks.find((network): boolean => network.value === safeChainID)

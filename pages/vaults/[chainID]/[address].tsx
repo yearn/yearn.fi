@@ -4,7 +4,7 @@ import {VaultDetailsHeader} from '@vaults/components/VaultDetailsHeader';
 import {VaultDetailsQuickActions} from '@vaults/components/VaultDetailsQuickActions';
 import {VaultDetailsTabsWrapper} from '@vaults/components/VaultDetailsTabsWrapper';
 import Wrapper from '@vaults/Wrapper';
-import {useWeb3} from '@yearn-finance/web-lib/contexts';
+import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useYearn} from '@common/contexts/useYearn';
@@ -15,10 +15,10 @@ import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
 import type {TYearnVault} from '@common/types/yearn';
 
-function	Index({router, vaultData}: {router: NextRouter, vaultData: TYearnVault}): ReactElement {
-	const	{safeChainID} = useWeb3();
-	const	{vaults} = useYearn();
-	const	currentVault = useRef<TYearnVault>(vaults[toAddress(router.query.address as string)] as TYearnVault || vaultData);
+function Index({router, vaultData}: {router: NextRouter, vaultData: TYearnVault}): ReactElement {
+	const {safeChainID} = useChainID();
+	const {vaults} = useYearn();
+	const currentVault = useRef<TYearnVault>(vaults[toAddress(router.query.address as string)] as TYearnVault || vaultData);
 
 	return (
 		<>

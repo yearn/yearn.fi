@@ -1,22 +1,23 @@
-import React, {useMemo, useState} from 'react';
+import React, {lazy, Suspense, useMemo, useState} from 'react';
 import useSWR from 'swr';
-import {GraphForVaultEarnings} from '@vaults/components/graphs/GraphForVaultEarnings';
-import {GraphForVaultPPSGrowth} from '@vaults/components/graphs/GraphForVaultPPSGrowth';
-import {GraphForVaultTVL} from '@vaults/components/graphs/GraphForVaultTVL';
 import {getMessariSubgraphEndpoint} from '@vaults/utils';
 import {Button} from '@yearn-finance/web-lib/components';
-import {useWeb3} from '@yearn-finance/web-lib/contexts';
-import {graphFetcher} from '@yearn-finance/web-lib/utils/fetchers';
+import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
+import {graphFetcher} from '@common/utils';
 
 import type {ReactElement} from 'react';
 import type {TGraphData, TMessariGraphData} from '@common/types/types';
 import type {TYearnVault} from '@common/types/yearn';
 
+const GraphForVaultTVL = lazy(async (): Promise<any> => import('@vaults/components/graphs/GraphForVaultTVL'));
+const GraphForVaultPPSGrowth = lazy(async (): Promise<any> => import('@vaults/components/graphs/GraphForVaultPPSGrowth'));
+const GraphForVaultEarnings = lazy(async (): Promise<any> => import('@vaults/components/graphs/GraphForVaultEarnings'));
+
 function	VaultDetailsHistorical({currentVault, harvestData}: {currentVault: TYearnVault, harvestData: TGraphData[]}): ReactElement {
-	const	{safeChainID} = useWeb3();
-	const	[selectedViewIndex, set_selectedViewIndex] = useState(0);
+	const {safeChainID} = useChainID();
+	const [selectedViewIndex, set_selectedViewIndex] = useState(0);
 	
 	const	{data: messariMixedData} = useSWR(currentVault.address ? [
 		getMessariSubgraphEndpoint(safeChainID),
@@ -69,9 +70,21 @@ function	VaultDetailsHistorical({currentVault, harvestData}: {currentVault: TYea
 				</div>
 			</div>
 			<div className={'mt-4 flex flex-row space-x-8 border-b border-l border-neutral-300'}>
-				{selectedViewIndex === 0 ? <GraphForVaultTVL messariData={messariData} /> : null}
-				{selectedViewIndex === 1 ? <GraphForVaultPPSGrowth messariData={messariData} /> : null}
-				{selectedViewIndex === 2 ? <GraphForVaultEarnings currentVault={currentVault} harvestData={harvestData} /> : null}
+				{selectedViewIndex === 0 ?(
+					<Suspense>
+						<GraphForVaultTVL messariData={messariData} />
+					</Suspense>
+				) : null}
+				{selectedViewIndex === 1 ? (
+					<Suspense>
+						<GraphForVaultPPSGrowth messariData={messariData} />
+					</Suspense>
+				) : null}
+				{selectedViewIndex === 2 ? (
+					<Suspense>
+						<GraphForVaultEarnings currentVault={currentVault} harvestData={harvestData} />
+					</Suspense>
+				) : null}
 			</div>
 		</div>
 	);

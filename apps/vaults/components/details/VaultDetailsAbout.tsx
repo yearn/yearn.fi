@@ -1,10 +1,11 @@
-import React from 'react';
-import {GraphForVaultEarnings} from '@vaults/components/graphs/GraphForVaultEarnings';
+import React, {lazy, Suspense} from 'react';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 
 import type {ReactElement} from 'react';
 import type {TGraphData} from '@common/types/types';
 import type {TYearnVault} from '@common/types/yearn';
+
+const GraphForVaultEarnings = lazy(async (): Promise<any> => import('@vaults/components/graphs/GraphForVaultEarnings'));
 
 function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYearnVault, harvestData: TGraphData[]}): ReactElement {
 	return (
@@ -41,10 +42,12 @@ function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYearnVau
 				<div>
 					<b className={'text-neutral-900'}>{'Cumulative Earnings'}</b>
 					<div className={'-mx-2 mt-4 flex flex-row border-b border-l border-neutral-300 md:mx-0'}>
-						<GraphForVaultEarnings
-							currentVault={currentVault}
-							harvestData={harvestData}
-							height={160} />
+						<Suspense>
+							<GraphForVaultEarnings
+								currentVault={currentVault}
+								harvestData={harvestData}
+								height={160} />
+						</Suspense>
 					</div>
 				</div>
 			</div>

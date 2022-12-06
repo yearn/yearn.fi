@@ -4,6 +4,7 @@ import {ethers} from 'ethers';
 import useSWR from 'swr';
 import {Button} from '@yearn-finance/web-lib/components';
 import {useWeb3} from '@yearn-finance/web-lib/contexts';
+import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {ABI, defaultTxStatus, providers, Transaction} from '@yearn-finance/web-lib/utils';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {CURVE_BRIBE_V3_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
@@ -22,13 +23,14 @@ import type {TNormalizedBN} from '@common/types/types';
 
 
 function	GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauges, onClose: VoidFunction}): ReactElement {
-	const	{chainID, address, provider, isActive, openLoginModal, onSwitchChain, safeChainID} = useWeb3();
-	const	{refresh} = useBribes();
-	const	{prices} = useYearn();
-	const	[amount, set_amount] = useState<TNormalizedBN>({raw: ethers.constants.Zero, normalized: 0});
-	const	[tokenAddress, set_tokenAddress] = useState<string>('');
-	const	[txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
-	const	[txStatusAddReward, set_txStatusAddReward] = useState(defaultTxStatus);
+	const {chainID, safeChainID} = useChainID();
+	const {address, provider, isActive, openLoginModal, onSwitchChain} = useWeb3();
+	const {refresh} = useBribes();
+	const {prices} = useYearn();
+	const [amount, set_amount] = useState<TNormalizedBN>({raw: ethers.constants.Zero, normalized: 0});
+	const [tokenAddress, set_tokenAddress] = useState<string>('');
+	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
+	const [txStatusAddReward, set_txStatusAddReward] = useState(defaultTxStatus);
 
 	const expectedOutFetcher = useCallback(async (
 		_tokenAddress: string
