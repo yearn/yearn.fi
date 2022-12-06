@@ -2,7 +2,7 @@ import React, {useMemo} from 'react';
 import Link from 'next/link';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
@@ -27,6 +27,7 @@ function	VaultsListRow({currentVault}: {currentVault: TYearnVault}): ReactElemen
 	const {safeChainID} = useChainID();
 
 	const availableToDeposit = useMemo((): number => {
+		// Handle ETH native coin
 		if (toAddress(currentVault.token.address) === WETH_TOKEN_ADDRESS) {
 			const	ethPlusWEth = (
 				(balances[WETH_TOKEN_ADDRESS]?.normalized || 0)
@@ -34,6 +35,16 @@ function	VaultsListRow({currentVault}: {currentVault: TYearnVault}): ReactElemen
 				(balances[ETH_TOKEN_ADDRESS]?.normalized || 0)
 			);
 			return ethPlusWEth;
+		}
+		
+		// Handle FTM native coin
+		if (toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS) {
+			const	ftmPlusWFtm = (
+				(balances[WFTM_TOKEN_ADDRESS]?.normalized || 0)
+				+
+				(balances[ETH_TOKEN_ADDRESS]?.normalized || 0)
+			);
+			return ftmPlusWFtm;
 		}
 		return balances[toAddress(currentVault.token.address)]?.normalized || 0;
 	}, [balances, currentVault.token.address]);

@@ -1,19 +1,29 @@
 import {ethers} from 'ethers';
+import {getEthZapperContract} from '@vaults/utils';
 import {ZAP_ETH_TO_YVETH_ABI} from '@yearn-finance/web-lib/utils/abi';
-import {ZAP_ETH_WETH_CONTRACT} from '@yearn-finance/web-lib/utils/constants';
+
+import ZAP_FTM_TO_YVFTM_ABI from '../abi/zapFtmToYvFTM.abi';
 
 import type {ContractInterface} from 'ethers';
 
 export async function	withdrawETH(
 	provider: ethers.providers.Web3Provider,
+	chainID: number,
 	amount: ethers.BigNumber
 ): Promise<boolean> {
 	const	signer = provider.getSigner();
 
 	try {
+		const	contractAddress = getEthZapperContract(chainID);
+		let		contractABI = ZAP_ETH_TO_YVETH_ABI as ContractInterface;
+		if (chainID === 250) {
+			contractABI = ZAP_FTM_TO_YVFTM_ABI as ContractInterface;
+		}
+
+
 		const	contract = new ethers.Contract(
-			ZAP_ETH_WETH_CONTRACT,
-			ZAP_ETH_TO_YVETH_ABI as ContractInterface,
+			contractAddress,
+			contractABI,
 			signer
 		);
 		const	transaction = await contract.withdraw(amount);

@@ -1,12 +1,13 @@
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {ethers} from 'ethers';
 import useSWR from 'swr';
+import {getEthZapperContract} from '@vaults/utils';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, ZAP_ETH_WETH_CONTRACT} from '@yearn-finance/web-lib/utils/constants';
+import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
@@ -65,8 +66,7 @@ function	ActionButton({
 }): ReactElement {
 	const {networks} = useSettings();
 	const {isActive, address, provider} = useWeb3();
-	const {safeChainID} = useChainID();
-
+	const {chainID, safeChainID} = useChainID();
 	const {currentPartner} = useYearn();
 	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
 	const [txStatusDeposit, set_txStatusDeposit] = useState(defaultTxStatus);
@@ -95,7 +95,7 @@ function	ActionButton({
 			spender = toAddress(networks?.[safeChainID]?.partnerContractAddress);
 		}
 		if (!isDepositing && isOutputTokenEth) {
-			spender = ZAP_ETH_WETH_CONTRACT;
+			spender = getEthZapperContract(chainID);
 		}
 
 		try {
@@ -108,7 +108,7 @@ function	ActionButton({
 		} catch (error) {
 			return ({raw: ethers.constants.Zero, normalized: 0});
 		}
-	}, [address, currentVault?.decimals, isDepositing, isOutputTokenEth, isUsingPartnerContract, networks, provider, safeChainID]);
+	}, [address, currentVault?.decimals, isDepositing, isOutputTokenEth, isUsingPartnerContract, networks, provider, safeChainID, chainID]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** SWR hook to get the expected out for a given in/out pair with a specific amount. This hook is
@@ -151,7 +151,8 @@ function	ActionButton({
 	}
 
 	/* 🔵 - Yearn Finance ******************************************************
-	** TODO
+	** When we want to withdraw a yvWrappedCoin to the base chain coin, we first
+	** need to approve the yvWrappedCoin to be used by the zap contract.
 	**************************************************************************/
 	async function	onApproveTo(): Promise<void> {
 		if (!selectedOptionTo || !selectedOptionFrom) {
@@ -160,7 +161,7 @@ function	ActionButton({
 
 		new Transaction(provider, approveERC20, set_txStatusApprove).populate(
 			toAddress(selectedOptionFrom.value), //token to approve
-			ZAP_ETH_WETH_CONTRACT,
+			getEthZapperContract(chainID),
 			ethers.constants.MaxUint256 //amount
 		).onSuccess(async (): Promise<void> => {
 			await mutateAllowance();
@@ -209,6 +210,7 @@ function	ActionButton({
 			return;
 		}
 		new Transaction(provider, depositETH, set_txStatusDeposit).populate(
+			chainID,
 			amount.raw //amount
 		).onSuccess(async (): Promise<void> => {
 			await onSuccess();
@@ -225,6 +227,7 @@ function	ActionButton({
 			return;
 		}
 		new Transaction(provider, withdrawETH, set_txStatusDeposit).populate(
+			chainID,
 			amount.raw //amount
 		).onSuccess(async (): Promise<void> => {
 			await onSuccess();
@@ -318,10 +321,15 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 	**********************************************************************************************/
 	useEffect((): void => {
 		if (isDepositing) {
-			if (currentVault && toAddress(currentVault.token.address) === WETH_TOKEN_ADDRESS) {
+			if (safeChainID === 1 && currentVault && toAddress(currentVault.token.address) === WETH_TOKEN_ADDRESS) {
 				set_possibleOptionsFrom([
 					setZapOption('ETH', 'ETH', ETH_TOKEN_ADDRESS, safeChainID),
 					setZapOption('wETH', 'wETH', WETH_TOKEN_ADDRESS, safeChainID)
+				]);
+			} else if (safeChainID === 250 && currentVault && toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS) {
+				set_possibleOptionsFrom([
+					setZapOption('FTM', 'FTM', ETH_TOKEN_ADDRESS, safeChainID),
+					setZapOption('wFTM', 'wFTM', WFTM_TOKEN_ADDRESS, safeChainID)
 				]);
 			} else {
 				set_possibleOptionsFrom([

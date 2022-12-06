@@ -6,7 +6,7 @@ import {VaultsListRow} from '@vaults/components/list/VaultsListRow';
 import Wrapper from '@vaults/Wrapper';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import ValueAnimation from '@common/components/ValueAnimation';
@@ -108,6 +108,7 @@ function	Index(): ReactElement {
 				let	aBalance = (balances[toAddress(a.token.address)]?.normalized || 0);
 				let	bBalance = (balances[toAddress(b.token.address)]?.normalized || 0);
 
+				// Handle ETH native coin
 				if (toAddress(a.token.address) === WETH_TOKEN_ADDRESS) {
 					const	ethPlusWEth = (
 						(balances[WETH_TOKEN_ADDRESS]?.normalized || 0)
@@ -123,6 +124,24 @@ function	Index(): ReactElement {
 						(balances[ETH_TOKEN_ADDRESS]?.normalized || 0)
 					);
 					bBalance = ethPlusWEth;
+				}
+
+				// Handle FTM native coin
+				if (toAddress(a.token.address) === WFTM_TOKEN_ADDRESS) {
+					const	ftmPlusWFtm = (
+						(balances[WFTM_TOKEN_ADDRESS]?.normalized || 0)
+						+
+						(balances[ETH_TOKEN_ADDRESS]?.normalized || 0)
+					);
+					aBalance = ftmPlusWFtm;
+				}
+				if (toAddress(b.token.address) === WFTM_TOKEN_ADDRESS) {
+					const	ftmPlusWFtm = (
+						(balances[WFTM_TOKEN_ADDRESS]?.normalized || 0)
+						+
+						(balances[ETH_TOKEN_ADDRESS]?.normalized || 0)
+					);
+					bBalance = ftmPlusWFtm;
 				}
 
 				if (sortDirection === 'asc') {
