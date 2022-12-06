@@ -1,4 +1,4 @@
-import React, {Suspense} from 'react';
+import React from 'react';
 import dynamic from 'next/dynamic';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 
@@ -6,7 +6,7 @@ import type {ReactElement} from 'react';
 import type {TGraphData} from '@common/types/types';
 import type {TYearnVault} from '@common/types/yearn';
 
-const GraphForVaultEarnings = dynamic(async (): Promise<any> => import('@vaults/components/graphs/GraphForVaultEarnings'), {suspense: true, ssr: false}) as any;
+const GraphForVaultEarnings = dynamic(async (): Promise<any> => import('@vaults/components/graphs/GraphForVaultEarnings'), {ssr: false}) as any;
 
 function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYearnVault, harvestData: TGraphData[]}): ReactElement {
 	return (
@@ -42,13 +42,11 @@ function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYearnVau
 				</div>
 				<div>
 					<b className={'text-neutral-900'}>{'Cumulative Earnings'}</b>
-					<div className={'-mx-2 mt-4 flex flex-row border-b border-l border-neutral-300 md:mx-0'}>
-						<Suspense>
-							<GraphForVaultEarnings
-								currentVault={currentVault}
-								harvestData={harvestData}
-								height={160} />
-						</Suspense>
+					<div className={'-mx-2 mt-4 flex flex-row border-b border-l border-neutral-300 md:mx-0'} style={{height: 160}}>
+						<GraphForVaultEarnings
+							currentVault={currentVault}
+							harvestData={harvestData}
+							height={160} />
 					</div>
 				</div>
 			</div>

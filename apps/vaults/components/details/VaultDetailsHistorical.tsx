@@ -1,4 +1,4 @@
-import React, {Suspense, useMemo, useState} from 'react';
+import React, {useMemo, useState} from 'react';
 import dynamic from 'next/dynamic';
 import useSWR from 'swr';
 import {getMessariSubgraphEndpoint} from '@vaults/utils';
@@ -12,9 +12,9 @@ import type {ReactElement} from 'react';
 import type {TGraphData, TMessariGraphData} from '@common/types/types';
 import type {TYearnVault} from '@common/types/yearn';
 
-const GraphForVaultTVL = dynamic((): any => import('@vaults/components/graphs/GraphForVaultTVL'), {suspense: true, ssr: false}) as any;
-const GraphForVaultPPSGrowth = dynamic((): any => import('@vaults/components/graphs/GraphForVaultPPSGrowth'), {suspense: true, ssr: false}) as any;
-const GraphForVaultEarnings = dynamic((): any => import('@vaults/components/graphs/GraphForVaultEarnings'), {suspense: true, ssr: false}) as any;
+const GraphForVaultTVL = dynamic((): any => import('@vaults/components/graphs/GraphForVaultTVL'), {ssr: false}) as any;
+const GraphForVaultPPSGrowth = dynamic((): any => import('@vaults/components/graphs/GraphForVaultPPSGrowth'), {ssr: false}) as any;
+const GraphForVaultEarnings = dynamic((): any => import('@vaults/components/graphs/GraphForVaultEarnings'), {ssr: false}) as any;
 
 function	VaultDetailsHistorical({currentVault, harvestData}: {currentVault: TYearnVault, harvestData: TGraphData[]}): ReactElement {
 	const {safeChainID} = useChainID();
@@ -70,21 +70,15 @@ function	VaultDetailsHistorical({currentVault, harvestData}: {currentVault: TYea
 					</Button>
 				</div>
 			</div>
-			<div className={'mt-4 flex flex-row space-x-8 border-b border-l border-neutral-300'}>
+			<div className={'mt-4 flex flex-row space-x-8 border-b border-l border-neutral-300'} style={{height: 312}}>
 				{selectedViewIndex === 0 ?(
-					<Suspense>
-						<GraphForVaultTVL messariData={messariData} />
-					</Suspense>
+					<GraphForVaultTVL messariData={messariData} />
 				) : null}
 				{selectedViewIndex === 1 ? (
-					<Suspense>
-						<GraphForVaultPPSGrowth messariData={messariData} />
-					</Suspense>
+					<GraphForVaultPPSGrowth messariData={messariData} />
 				) : null}
 				{selectedViewIndex === 2 ? (
-					<Suspense>
-						<GraphForVaultEarnings currentVault={currentVault} harvestData={harvestData} />
-					</Suspense>
+					<GraphForVaultEarnings currentVault={currentVault} harvestData={harvestData} />
 				) : null}
 			</div>
 		</div>

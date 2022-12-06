@@ -1,4 +1,4 @@
-import React, {useMemo} from 'react';
+import React, {Fragment, useMemo} from 'react';
 import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
 import {formatAmount, formatWithUnit} from '@yearn-finance/web-lib/utils/format.number';
 
@@ -27,6 +27,13 @@ function	GraphForVaultEarnings({currentVault, harvestData, height = 312, isCumul
 		);
 	}, [harvestData]);
 
+
+	if (isCumulative && cumulativeData?.length === 0) {
+		return <Fragment />;
+	}
+	if (!isCumulative && harvestData?.length === 0) {
+		return <Fragment />;
+	}
 	return (
 		<ResponsiveContainer width={'100%'} height={height}>
 			<LineChart

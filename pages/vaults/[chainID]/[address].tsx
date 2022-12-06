@@ -28,7 +28,7 @@ function Index({router, vaultData}: {router: NextRouter, vaultData: TYearnVault}
 					initial={'initial'}
 					animate={'enter'}
 					variants={variants}
-					className={'absolute z-50 mt-0 h-12 w-12 cursor-pointer md:-mt-36 md:h-20 md:w-20'}>
+					className={'absolute z-50 mt-0 h-12 w-12 cursor-pointer md:-mt-36 md:h-[72px] md:w-[72px]'}>
 					<ImageWithFallback
 						src={`${process.env.BASE_YEARN_ASSETS_URI}/${safeChainID}/${toAddress(currentVault.current.token.address)}/logo-128.png`}
 						alt={''}

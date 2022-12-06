@@ -1,4 +1,4 @@
-import React, {useMemo} from 'react';
+import React, {Fragment, useMemo} from 'react';
 import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
 import useSWR from 'swr';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
@@ -38,6 +38,10 @@ function	GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height =
 		);
 		return reportsForGraph;
 	}, [reports]);
+
+	if (!strategyData || strategyData?.length === 0) {
+		return <Fragment />;
+	}
 
 	return (
 		<ResponsiveContainer width={'100%'} height={height}>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {Fragment} from 'react';
 import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
 import {formatAmount, formatWithUnit} from '@yearn-finance/web-lib/utils/format.number';
 
@@ -11,6 +11,10 @@ type TGraphForVaultTVLProps = {
 }
 
 function	GraphForVaultTVL({messariData, height = 312}: TGraphForVaultTVLProps): ReactElement {	
+	if (messariData?.length === 0) {
+		return <Fragment />;
+	}
+
 	return (
 		<ResponsiveContainer width={'100%'} height={height}>
 			<LineChart
