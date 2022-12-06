@@ -1,6 +1,6 @@
 import React, {useMemo, useState} from 'react';
-import {Button} from '@yearn-finance/web-lib/components';
-import {useSettings} from '@yearn-finance/web-lib/contexts';
+import {Button} from '@yearn-finance/web-lib/components/Button';
+import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {GaugeTableEmpty} from '@yBribe/components/bribe/GaugeTableEmpty';
 import {RewardFeedTableHead} from '@yBribe/components/rewardFeed/RewardFeedTableHead';
 import {RewardFeedTableRow} from '@yBribe/components/rewardFeed/RewardFeedTableRow';

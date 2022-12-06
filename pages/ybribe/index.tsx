@@ -1,10 +1,10 @@
 import React, {useCallback, useMemo, useState} from 'react';
 import Link from 'next/link';
 import {BigNumber} from 'ethers';
-import {Button} from '@yearn-finance/web-lib/components';
-import {performBatchedUpdates} from '@yearn-finance/web-lib/utils';
+import {Button} from '@yearn-finance/web-lib/components/Button';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {useCurve} from '@common/contexts/useCurve';
 import {useYearn} from '@common/contexts/useYearn';
 import {GaugeTableEmpty} from '@yBribe/components/claim/GaugeTableEmpty';

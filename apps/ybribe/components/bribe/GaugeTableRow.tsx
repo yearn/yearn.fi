@@ -1,7 +1,8 @@
 import React, {useMemo, useState} from 'react';
 import {ethers} from 'ethers';
-import {Button, Modal} from '@yearn-finance/web-lib/components';
-import {useWeb3} from '@yearn-finance/web-lib/contexts';
+import {Button} from '@yearn-finance/web-lib/components/Button';
+import {Modal} from '@yearn-finance/web-lib/components/Modal';
+import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
@@ -12,7 +13,7 @@ import {useBribes} from '@yBribe/contexts/useBribes';
 
 import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
-import type {TDict} from '@yearn-finance/web-lib/utils';
+import type {TDict} from '@yearn-finance/web-lib/utils/types';
 import type {TCurveGauges} from '@common/types/curves';
 
 function	GaugeRowItemWithExtraData({address, value}: {address: string, value: BigNumber}): ReactElement {

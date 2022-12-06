@@ -2,7 +2,7 @@ import React, {createContext, useContext, useState} from 'react';
 import Link from 'next/link';
 import {useRouter} from 'next/router';
 import {MenuVaultsOptions} from '@vaults/Header';
-import {ModalMobileMenu} from '@yearn-finance/web-lib/components';
+import {ModalMobileMenu} from '@yearn-finance/web-lib/components/ModalMobileMenu';
 import {MenuYCRVOptions} from '@yCRV/Header';
 
 import type {ReactElement} from 'react';

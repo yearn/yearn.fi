@@ -1,11 +1,12 @@
-import React, {lazy, Suspense} from 'react';
+import React, {Suspense} from 'react';
+import dynamic from 'next/dynamic';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 
 import type {ReactElement} from 'react';
 import type {TGraphData} from '@common/types/types';
 import type {TYearnVault} from '@common/types/yearn';
 
-const GraphForVaultEarnings = lazy(async (): Promise<any> => import('@vaults/components/graphs/GraphForVaultEarnings'));
+const GraphForVaultEarnings = dynamic(async (): Promise<any> => import('@vaults/components/graphs/GraphForVaultEarnings'), {suspense: true, ssr: false}) as any;
 
 function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYearnVault, harvestData: TGraphData[]}): ReactElement {
 	return (

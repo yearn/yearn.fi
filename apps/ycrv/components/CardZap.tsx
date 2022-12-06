@@ -1,13 +1,13 @@
 import React, {useMemo} from 'react';
 import {ethers} from 'ethers';
 import {motion} from 'framer-motion';
-import {Button} from '@yearn-finance/web-lib/components';
-import {useWeb3} from '@yearn-finance/web-lib/contexts';
-import {performBatchedUpdates} from '@yearn-finance/web-lib/utils';
+import {Button} from '@yearn-finance/web-lib/components/Button';
+import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {CRV_TOKEN_ADDRESS, LPYCRV_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
+import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {Dropdown} from '@common/components/TokenDropdown';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';

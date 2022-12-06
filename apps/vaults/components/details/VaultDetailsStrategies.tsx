@@ -1,16 +1,17 @@
-import React, {lazy, Suspense} from 'react';
+import React, {Suspense} from 'react';
+import dynamic from 'next/dynamic';
 import IconCopy from '@yearn-finance/web-lib/icons/IconCopy';
-import {copyToClipboard, parseMarkdown} from '@yearn-finance/web-lib/utils';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {formatDuration} from '@yearn-finance/web-lib/utils/format.time';
+import {copyToClipboard, parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
 import IconChevron from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
 import type {TYearnVault, TYearnVaultStrategy} from '@common/types/yearn';
 
-const GraphForStrategyReports = lazy(async (): Promise<any> => import('@vaults/components/graphs/GraphForStrategyReports'));
+const GraphForStrategyReports = dynamic(async (): Promise<any> => import('@vaults/components/graphs/GraphForStrategyReports'), {suspense: true, ssr: false}) as any;
 
 function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVault, strategy: TYearnVaultStrategy}): ReactElement {
 	return (

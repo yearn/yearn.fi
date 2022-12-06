@@ -1,4 +1,4 @@
-import type {TDict} from '@yearn-finance/web-lib/utils';
+import type {TDict} from '@yearn-finance/web-lib/utils/types';
 
 export type TYearnVaultStrategy = {
 	address: string,

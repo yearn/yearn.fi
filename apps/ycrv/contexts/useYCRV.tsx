@@ -2,13 +2,13 @@ import React, {createContext, useCallback, useContext, useMemo} from 'react';
 import {Contract} from 'ethcall';
 import {ethers} from 'ethers';
 import useSWR from 'swr';
-import {useWeb3} from '@yearn-finance/web-lib/contexts';
-import {providers} from '@yearn-finance/web-lib/utils';
+import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
 import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
 import {CRV_TOKEN_ADDRESS, LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, VECRV_ADDRESS, VECRV_YEARN_TREASURY_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YCRV_TOKEN_ADDRESS, YVBOOST_TOKEN_ADDRESS, YVECRV_POOL_LP_ADDRESS, YVECRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import {formatUnits} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import CURVE_CRV_YCRV_LP_ABI from '@yCRV/utils/abi/curveCrvYCrvLp.abi';
 import STYCRV_ABI from '@yCRV/utils/abi/styCRV.abi';
 import YVECRV_ABI from '@yCRV/utils/abi/yveCRV.abi';
@@ -16,7 +16,7 @@ import YVECRV_ABI from '@yCRV/utils/abi/yveCRV.abi';
 import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
-import type {TDict} from '@yearn-finance/web-lib/utils';
+import type {TDict} from '@yearn-finance/web-lib/utils/types';
 import type {TYDaemonHarvests} from '@common/types/yearn';
 
 type THoldings = {
@@ -79,8 +79,8 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 	** SWR hook to get the holdings data for the yCRV ecosystem.
 	**************************************************************************/
 	const numbersFetchers = useCallback(async (): Promise<TDict<BigNumber>> => {
-		const	currentProvider = provider || providers.getProvider(1);
-		const	ethcallProvider = await providers.newEthCallProvider(currentProvider);
+		const	currentProvider = provider || getProvider(1);
+		const	ethcallProvider = await newEthCallProvider(currentProvider);
 
 		const	yCRVContract = new Contract(YCRV_TOKEN_ADDRESS as string, YVECRV_ABI);
 		const	styCRVContract = new Contract(STYCRV_TOKEN_ADDRESS as string, STYCRV_ABI);
@@ -133,8 +133,8 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 		if (!isActive || !provider) {
 			return {};
 		}
-		const	currentProvider = provider || providers.getProvider(1);
-		const	ethcallProvider = await providers.newEthCallProvider(currentProvider);
+		const	currentProvider = provider || getProvider(1);
+		const	ethcallProvider = await newEthCallProvider(currentProvider);
 		const	userAddress = address;
 		const	yCRVContract = new Contract(YCRV_TOKEN_ADDRESS as string, YVECRV_ABI);
 		const	styCRVContract = new Contract(STYCRV_TOKEN_ADDRESS as string, YVECRV_ABI);

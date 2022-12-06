@@ -1,15 +1,18 @@
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {ethers} from 'ethers';
 import useSWR from 'swr';
-import {Button} from '@yearn-finance/web-lib/components';
-import {useSettings, useWeb3} from '@yearn-finance/web-lib/contexts';
+import {Button} from '@yearn-finance/web-lib/components/Button';
+import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
+import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {defaultTxStatus, performBatchedUpdates, providers, Transaction} from '@yearn-finance/web-lib/utils';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, ZAP_ETH_WETH_CONTRACT} from '@yearn-finance/web-lib/utils/constants';
 import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
+import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
+import {getProvider} from '@yearn-finance/web-lib/utils/web3/providers';
+import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {Dropdown} from '@common/components/TokenDropdown';
 import {useWallet} from '@common/contexts/useWallet';
@@ -80,7 +83,7 @@ function	ActionButton({
 	** render.
 	**********************************************************************************************/
 	const allowanceFetcher = useCallback(async (inputToken: string, outputToken: string): Promise<{raw: BigNumber, normalized: number}> => {
-		const	currentProvider = provider || providers.getProvider(safeChainID);
+		const	currentProvider = provider || getProvider(safeChainID);
 		const	contract = new ethers.Contract(
 			inputToken,
 			['function allowance(address _owner, address _spender) public view returns (uint256)'],
@@ -392,7 +395,7 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 			return ({raw: ethers.constants.Zero, normalized: 0});
 		}
 		
-		const	currentProvider = provider || providers.getProvider(safeChainID);
+		const	currentProvider = provider || getProvider(safeChainID);
 		const	contract = new ethers.Contract(
 			isDepositing ? selectedOptionTo.value : selectedOptionFrom.value,
 			['function pricePerShare() public view returns (uint256)'],

@@ -3,11 +3,13 @@ import {Contract} from 'ethcall';
 import {ethers} from 'ethers';
 import axios from 'axios';
 import useSWR from 'swr';
-import {useSettings, useWeb3} from '@yearn-finance/web-lib/contexts';
+import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
+import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {performBatchedUpdates, providers} from '@yearn-finance/web-lib/utils';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {CURVE_BRIBE_V2_ADDRESS, CURVE_BRIBE_V3_ADDRESS, CURVE_BRIBE_V3_HELPER_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
+import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import {useCurve} from '@common/contexts/useCurve';
 import {getLastThursday, getNextThursday} from '@yBribe/utils';
 import CURVE_BRIBE_V2 from '@yBribe/utils/abi/curveBribeV2.abi';
@@ -15,7 +17,7 @@ import CURVE_BRIBE_V3 from '@yBribe/utils/abi/curveBribeV3.abi';
 import CURVE_BRIBE_V3_HELPER from '@yBribe/utils/abi/curveBribeV3Helper.abi';
 
 import type {BigNumber} from 'ethers';
-import type {TDict} from '@yearn-finance/web-lib/utils';
+import type {TDict} from '@yearn-finance/web-lib/utils/types';
 import type {TCurveGaugeVersionRewards} from '@common/types/curves';
 import type {TYDaemonGaugeRewardsFeed} from '@common/types/yearn';
 
@@ -72,8 +74,8 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 	**  Bribe contracts, not related to the user.
 	***************************************************************************/
 	const getSharedStuffFromBribes = useCallback(async (): Promise<void> => {
-		const	currentProvider = safeChainID === 1 ? provider || providers.getProvider(1) : providers.getProvider(1);
-		const	ethcallProvider = await providers.newEthCallProvider(currentProvider);
+		const	currentProvider = safeChainID === 1 ? provider || getProvider(1) : getProvider(1);
+		const	ethcallProvider = await newEthCallProvider(currentProvider);
 		const	curveBribeV3Contract = new Contract(CURVE_BRIBE_V3_ADDRESS, CURVE_BRIBE_V3);
 		const	[_currentPeriod] = await ethcallProvider.tryAll([curveBribeV3Contract.current_period()]) as [number];	
 
@@ -95,7 +97,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 		currentProvider: ethers.providers.Provider,
 		contract: Contract
 	): Promise<string[][]> => {
-		const	ethcallProvider = await providers.newEthCallProvider(currentProvider);
+		const	ethcallProvider = await newEthCallProvider(currentProvider);
 		const	rewardsPerGaugesCalls = [];
 
 		for (const gauge of gauges) {
@@ -119,7 +121,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 			return ({rewardsList: [], multicallResult: []});
 		}
 		const	userAddress = address || ethers.constants.AddressZero;
-		const	ethcallProvider = await providers.newEthCallProvider(currentProvider);
+		const	ethcallProvider = await newEthCallProvider(currentProvider);
 		const	rewardsPerTokensPerGaugesCalls = [];
 		const	rewardsList: string[] = [];
 
@@ -249,7 +251,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 	**	getBribes will start the process to retrieve the bribe information.
 	***************************************************************************/
 	const	getBribes = useCallback(async (): Promise<void> => {
-		const	currentProvider = safeChainID === 1 ? provider || providers.getProvider(1) : providers.getProvider(1);
+		const	currentProvider = safeChainID === 1 ? provider || getProvider(1) : getProvider(1);
 		const	curveBribeV2Contract = new Contract(CURVE_BRIBE_V2_ADDRESS, CURVE_BRIBE_V2);
 		const	curveBribeV3Contract = new Contract(CURVE_BRIBE_V3_ADDRESS, CURVE_BRIBE_V3);
 

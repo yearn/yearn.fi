@@ -1,10 +1,12 @@
 import React, {createContext, useCallback, useContext, useEffect, useMemo, useState} from 'react';
 import {ethers} from 'ethers';
 import useSWR from 'swr';
-import {useWeb3} from '@yearn-finance/web-lib/contexts';
-import {defaultTxStatus, performBatchedUpdates, providers, Transaction} from '@yearn-finance/web-lib/utils';
+import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {LPYCRV_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
+import {getProvider} from '@yearn-finance/web-lib/utils/web3/providers';
+import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import {getAmountWithSlippage, getVaultAPY} from '@common/utils';
@@ -100,7 +102,7 @@ function	CardTransactorContextApp({
 		_outputToken: string,
 		_amountIn: BigNumber
 	): Promise<BigNumber> => {
-		const	currentProvider = provider || providers.getProvider(1);
+		const	currentProvider = provider || getProvider(1);
 
 		if (_inputToken === YCRV_CURVE_POOL_ADDRESS) {
 			// Direct deposit to vault from crv/yCRV Curve LP Token to lp-yCRV Vault

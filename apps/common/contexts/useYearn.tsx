@@ -1,15 +1,15 @@
 import React, {createContext, memo, useContext, useMemo} from 'react';
 import {ethers} from 'ethers';
 import useSWR from 'swr';
-import {useWeb3} from '@yearn-finance/web-lib/contexts';
+import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 
 import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
-import type {TDict} from '@yearn-finance/web-lib/utils';
 import type {TAddress} from '@yearn-finance/web-lib/utils/address';
+import type {TDict} from '@yearn-finance/web-lib/utils/types';
 import type {TYdaemonEarned, TYDaemonToken, TYearnVault} from '@common/types/yearn';
 
 

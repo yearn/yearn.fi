@@ -1,6 +1,6 @@
 /* eslint-disable no-irregular-whitespace */
 import React, {useRef} from 'react';
-import {useClientEffect} from '@yearn-finance/web-lib/hooks';
+import {useClientEffect} from '@yearn-finance/web-lib/hooks/useClientEffect';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 
 import type {ReactElement} from 'react';

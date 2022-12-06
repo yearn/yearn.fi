@@ -2,14 +2,16 @@ import React, {useCallback, useState} from 'react';
 import {Contract} from 'ethcall';
 import {ethers} from 'ethers';
 import useSWR from 'swr';
-import {Button} from '@yearn-finance/web-lib/components';
-import {useWeb3} from '@yearn-finance/web-lib/contexts';
+import {Button} from '@yearn-finance/web-lib/components/Button';
+import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {ABI, defaultTxStatus, providers, Transaction} from '@yearn-finance/web-lib/utils';
+import {ERC20_ABI} from '@yearn-finance/web-lib/utils/abi';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {CURVE_BRIBE_V3_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
+import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
+import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
 import {handleInputChange} from '@common/utils';
 import {approveERC20} from '@common/utils/actions/approveToken';
@@ -42,9 +44,9 @@ function	GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauges, o
 		raw: BigNumber,
 		allowance: BigNumber,
 	}> => {
-		const	currentProvider = safeChainID === 1 ? provider || providers.getProvider(1) : providers.getProvider(1);
-		const	ethcallProvider = await providers.newEthCallProvider(currentProvider);
-		const	erc20Contract = new Contract(_tokenAddress, ABI.ERC20_ABI);
+		const	currentProvider = safeChainID === 1 ? provider || getProvider(1) : getProvider(1);
+		const	ethcallProvider = await newEthCallProvider(currentProvider);
+		const	erc20Contract = new Contract(_tokenAddress, ERC20_ABI);
 
 		const	[name, symbol, decimals, balance, allowance] = await ethcallProvider.tryAll([
 			erc20Contract.name(),

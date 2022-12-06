@@ -2,7 +2,7 @@ import React, {Fragment, memo} from 'react';
 import meta from 'public/manifest.json';
 import {AnimatePresence, motion} from 'framer-motion';
 import localFont from '@next/font/local';
-import {WithYearn} from '@yearn-finance/web-lib/contexts';
+import {WithYearn} from '@yearn-finance/web-lib/contexts/WithYearn';
 import Header from '@common/components/Header';
 import Meta from '@common/components/Meta';
 import {MenuContextApp} from '@common/contexts/useMenu';

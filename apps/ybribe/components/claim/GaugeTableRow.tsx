@@ -1,11 +1,11 @@
 import React, {useMemo, useState} from 'react';
-import {Button} from '@yearn-finance/web-lib/components';
-import {useWeb3} from '@yearn-finance/web-lib/contexts';
-import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils';
+import {Button} from '@yearn-finance/web-lib/components/Button';
+import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {CRV_TOKEN_ADDRESS, CURVE_BRIBE_V2_ADDRESS, CURVE_BRIBE_V3_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
+import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useYearn} from '@common/contexts/useYearn';
 import {useBribes} from '@yBribe/contexts/useBribes';
@@ -13,7 +13,7 @@ import {claimReward} from '@yBribe/utils/actions/claimReward';
 
 import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
-import type {TDict} from '@yearn-finance/web-lib/utils';
+import type {TDict} from '@yearn-finance/web-lib/utils/types';
 import type {TCurveGauges} from '@common/types/curves';
 
 function	GaugeRowItemWithExtraData({

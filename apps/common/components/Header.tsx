@@ -5,7 +5,7 @@ import {useRouter} from 'next/router';
 import {AnimatePresence, motion} from 'framer-motion';
 import {Listbox, Popover, Transition} from '@headlessui/react';
 import {LogoVaults, MenuVaults} from '@vaults/Header';
-import {useWeb3} from '@yearn-finance/web-lib/contexts';
+import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import IconWallet from '@yearn-finance/web-lib/icons/IconWallet';
 import {truncateHex} from '@yearn-finance/web-lib/utils/address';

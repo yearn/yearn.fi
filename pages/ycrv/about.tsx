@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {Button} from '@yearn-finance/web-lib/components';
+import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWallet} from '@common/contexts/useWallet';
 import Wrapper from '@yCRV/Wrapper';
 

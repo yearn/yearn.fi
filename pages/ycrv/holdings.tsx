@@ -1,7 +1,7 @@
 import React, {useCallback, useMemo, useState} from 'react';
 import Image from 'next/image';
 import {ethers} from 'ethers';
-import {Button} from '@yearn-finance/web-lib/components';
+import {Button} from '@yearn-finance/web-lib/components/Button';
 import IconLinkOut from '@yearn-finance/web-lib/icons/IconLinkOut';
 import {toAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
 import {LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';

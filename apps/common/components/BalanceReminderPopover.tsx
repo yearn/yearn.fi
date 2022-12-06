@@ -2,9 +2,9 @@ import React, {Fragment, useMemo} from 'react';
 import Image from 'next/image';
 import {ethers} from 'ethers';
 import {Popover, Transition} from '@headlessui/react';
-import {useWeb3} from '@yearn-finance/web-lib/contexts';
+import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {AddToMetamask} from '@yearn-finance/web-lib/icons';
+import IconAddToMetamask from '@yearn-finance/web-lib/icons/IconAddToMetamask';
 import IconCross from '@yearn-finance/web-lib/icons/IconCross';
 import IconWallet from '@yearn-finance/web-lib/icons/IconWallet';
 import {toAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
@@ -14,8 +14,8 @@ import {useYearn} from '@common/contexts/useYearn';
 
 import type {ReactElement} from 'react';
 import type {TBalanceData} from '@yearn-finance/web-lib/hooks/types';
-import type {TDict, TMetamaskInjectedProvider} from '@yearn-finance/web-lib/utils';
 import type {TAddress} from '@yearn-finance/web-lib/utils/address';
+import type {TDict, TMetamaskInjectedProvider} from '@yearn-finance/web-lib/utils/types';
 import type {TYearnVault} from '@common/types/yearn';
 
 type TBalanceReminderElement = {
@@ -138,7 +138,7 @@ export default function BalanceReminderPopover(): ReactElement {
 													</span>
 													<span className={'flex flex-row items-center justify-center tabular-nums text-neutral-900'}>
 														{formatAmount(balances[toAddress(vault.address)]?.normalized || 0, 2, 4)}
-														<AddToMetamask
+														<IconAddToMetamask
 															onClick={(e): void => {
 																e.preventDefault();
 																e.stopPropagation();

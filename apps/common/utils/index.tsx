@@ -7,7 +7,7 @@ import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 
 import type {BigNumber} from 'ethers';
 import type {GraphQLResponse} from 'graphql-request/dist/types';
-import type {TDict} from '@yearn-finance/web-lib/utils';
+import type {TDict} from '@yearn-finance/web-lib/utils/types';
 import type {TNormalizedBN} from '@common/types/types';
 import type {TYearnVault} from '@common/types/yearn';
 

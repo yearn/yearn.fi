@@ -1,6 +1,6 @@
 import React, {cloneElement, Fragment, useMemo} from 'react';
 import {Listbox, Transition} from '@headlessui/react';
-import {useWeb3} from '@yearn-finance/web-lib/contexts';
+import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import IconChevron from '@common/icons/IconChevron';

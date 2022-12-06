@@ -1,6 +1,6 @@
 import React, {useMemo} from 'react';
 import useSWR from 'swr';
-import {useWeb3} from '@yearn-finance/web-lib/contexts';
+import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
