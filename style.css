@@ -5,55 +5,69 @@
 	@apply scroll-mt-12 mb-0 md:mb-44;
 }
 
-:root {
-	& .yveCRV--nav-link {
-		@apply relative cursor-pointer transition-colors text-neutral-500 hover:text-neutral-900 font-normal;
+/* 🔵 - Yearn Finance ******************************************************************************
+** AppBox is the style used to make the nices animations on the home page feel nice and smooth
+** A custom overwrite is required for dark/light mode
+***************************************************************************************************/
+.appBox {
+	--x-px: calc(var(--x) * 1px);
+	--y-px: calc(var(--y) * 1px);
+	--opacity: var(--opacity);
+	--color: hsl(var(--color-neutral-300));
+	@apply relative flex aspect-video h-full w-full cursor-pointer flex-col items-center rounded-[3px] border border-neutral-300/50 p-6 shadow shadow-transparent transition-all duration-[400ms];
 
-		&.active {
-			@apply text-neutral-900 font-bold;
-		}
+	&:before,
+	&:after {
+		@apply pointer-events-none block absolute inset-[0px] z-[-1] rounded-[3px];
+		content: "";
+		z-index: -1;
+		opacity: var(--opacity);
+		background: radial-gradient(
+			1200px circle at var(--x-px) var(--y-px),
+			var(--color),
+			transparent 40%
+		);
+		transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 	}
-	& .yveCRV--dropdown-menu {
-		--dropdown-bg-color: hsl(var(--color-neutral-300));
-		--dropdown-bg-color-active: hsl(var(--color-neutral-600));
-		--dropdown-border-width: 0px;
-		--dropdown-border-color: transparent;
-
-		@apply flex overflow-y-auto absolute left-0 flex-col mt-1 w-full min-w-fit max-h-60 scrollbar-none text-neutral-400 border border-neutral-600 bg-neutral-200;
+	&:before {
+		@apply pointer-events-none z-[-1];
 	}
-	& .yveCRV--dropdown-menu-item {
-		@apply w-full flex flex-row items-center cursor-pointer py-2 pr-4 pl-3 transition-colors;
-		&[data-active='true'] {
-			@apply bg-neutral-100;
-		}
+}
+:root.dark {
+	& .appBox {
+		--color: hsl(var(--color-neutral-100));
+		@apply border-neutral-100/30;
 	}
-	& .mobile-nav-item {
-		@apply flex flex-col items-start justify-between rounded bg-good-ol-grey-100;
-		& > p {
-			@apply p-2 text-base font-bold text-neutral-900;
-		}
-	}
-	& .yearn--button-smaller {
-		@apply h-8 text-xs py-2 w-22 px-2;
-	}
-
-	& .tab {
-		@apply font-normal text-neutral-600 transition-colors hover:text-neutral-900 cursor-pointer border-b-2 border-transparent pb-4 z-20;
-		&[aria-selected='true'] {
-			@apply font-bold text-neutral-900 border-neutral-900;
-		}
-	}
-
-
-	& .recharts-tooltip-wrapper {
-		@apply !bg-neutral-100 text-neutral-900;
-	}
-	& .recharts-default-tooltip {
-		@apply !bg-neutral-100 text-neutral-900;
-	}
-
 }
 
+/* 🔵 - Yearn Finance ******************************************************************************
+** Details and summary nice styles.
+***************************************************************************************************/
+details > summary {
+	list-style: none;
+}
+details > summary::-webkit-details-marker {
+	display: none;
+}
+details {
+	@apply border-b border-neutral-300 last-of-type:border-b-0;
+
+	& > summary {
+		@apply px-4 md:px-6 py-6 md:py-8 cursor-pointer flex flex-row items-center justify-between;
+	}
+	
+	& > summary .summary-chevron {
+		@apply h-6 w-6 -rotate-90 text-neutral-900 transition-all;
+	}
+	&[open] > summary .summary-chevron {
+		@apply rotate-0;
+	}
+}
+
+/* 🔵 - Yearn Finance ******************************************************************************
+** The WordWrapper css is used for the animation with the text in the header. This animation require
+** letters to be splitted and a custom css is required to make it work.
+***************************************************************************************************/
 .wordWrapper {
 	display: inline-block;
 	vertical-align: top;
@@ -90,71 +104,107 @@
 	transition: transform 0.38s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-[type='text']:focus,
-[type='email']:focus,
-[type='url']:focus,
-[type='password']:focus,
-[type='number']:focus,
-[type='date']:focus,
-[type='datetime-local']:focus,
-[type='month']:focus,
-[type='search']:focus,
-[type='tel']:focus,
-[type='time']:focus,
-[type='week']:focus,
-[multiple]:focus,
-textarea:focus,
-select:focus {
-	outline: none;
-	box-shadow: none;
+
+/* 🔵 - Yearn Finance ******************************************************************************
+** Recharts custom css overwrite, mostly used to make the chart works with our light/dark mode
+***************************************************************************************************/
+.recharts-surface {
+	overflow: visible;
 }
-
-
-.hover-fix::before {
-    display: block;
-    content: attr(title);
-    font-weight: bold;
-    height: 0;
-    overflow: hidden;
-    visibility: hidden;
+.recharts-tooltip-wrapper {
+	@apply !bg-neutral-100 text-neutral-900;
 }
-
+.recharts-default-tooltip {
+	@apply !bg-neutral-100 text-neutral-900;
+}
+.recharts-cartesian-axis-line {
+	stroke: hsl(var(--color-neutral-300));
+}
+.recharts-cartesian-axis-tick-line {
+	stroke: hsl(var(--color-neutral-300));
+}
+.recharts-tooltip {
+	@apply p-2 bg-neutral-0 flex flex-col min-w-[160px];
+	box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.16);
+}
 .activeDot {
 	stroke: hsl(var(--color-neutral-900));
 	fill: hsl(var(--color-neutral-0));
 }
 
-.recharts-cartesian-axis-line {
-	stroke: hsl(var(--color-neutral-300));
-}
 
-.recharts-cartesian-axis-tick-line {
-	stroke: hsl(var(--color-neutral-300));
+/* 🔵 - Yearn Finance ******************************************************************************
+** Tooltip
+** In some place we need a tooltip to display some information on hover. This style controls the
+** display of that tooltip.
+**
+** Usage:
+**	<div className={'tooltip'}>
+**		{'Something displayed'}
+** 		<span className={'tooltiptext text-xs'}>
+** 			<p>{'Tooltip content'}</p>
+** 		</span>
+** 	</div>
+***************************************************************************************************/
+.tooltip {
+	@apply relative;
 }
-
-.recharts-tooltip {
-	@apply p-2 bg-neutral-0 flex flex-col w-40;
+.tooltip .tooltiptext {
+	@apply text-xs text-center invisible bg-neutral-0 text-neutral-900 absolute z-50 right-1 opacity-0 transition-opacity p-2;
+	width: 15rem;
+	top: 110%;
+	margin-right: calc(-122px + 50%);
 	box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.16);
 }
+.tooltip:hover .tooltiptext {
+	@apply visible opacity-100;
+}
+.tooltip .tooltiptext::after {
+	content: "";
+	position: absolute;
+	bottom: 98%;
+	right: 50%;
+	margin-right: -5px;
+	border-width: 5px;
+	border-style: solid;
+	border-color: hsl(var(--color-neutral-0)) transparent transparent transparent;
+	transform: rotate(180deg);
+}
 
-details > summary {
-	list-style: none;
+.tooltip.top .tooltiptext {
+	top: -105%;
+	bottom: unset;
 }
-details > summary::-webkit-details-marker {
-	display: none;
+.tooltip.top .tooltiptext::after {
+	top: 98%;
+	transform: rotate(0deg);
 }
-details {
-	@apply border-b border-neutral-300;
 
-	& > summary {
-		@apply px-6 py-8 cursor-pointer flex flex-row items-center justify-between;
-	}
-	
-	& > summary .summary-chevron {
-		@apply h-6 w-6 -rotate-90 text-neutral-900 transition-all;
-	}
-	&[open] > summary .summary-chevron {
-		@apply rotate-0;
-	}
+/* 🔵 - Yearn Finance ******************************************************************************
+** Loader
+** Custom style for the loader icon
+***************************************************************************************************/
+.loader {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #fff;
+  box-shadow: 16px 0 #fff, -16px 0 #fff;
+  position: relative;
+  animation: flash 1s ease-out infinite alternate;
 }
-  
+
+@keyframes flash {
+  0% {
+    background-color: #FFF2;
+    box-shadow: 12px 0 #FFF2, -12px 0 #FFF;
+  }
+  50% {
+    background-color: #FFF;
+    box-shadow: 12px 0 #FFF2, -12px 0 #FFF2;
+  }
+  100% {
+    background-color: #FFF2;
+    box-shadow: 12px 0 #FFF, -12px 0 #FFF2;
+  }
+}

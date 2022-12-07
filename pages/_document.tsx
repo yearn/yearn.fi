@@ -1,5 +1,8 @@
-import React, {ReactElement} from 'react';
-import Document, {DocumentContext, DocumentInitialProps, Head, Html, Main, NextScript} from 'next/document';
+import React from 'react';
+import Document, {Head, Html, Main, NextScript} from 'next/document';
+
+import type {DocumentContext, DocumentInitialProps} from 'next/document';
+import type {ReactElement} from 'react';
 
 const modeScript = `
   let darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
@@ -38,11 +41,6 @@ class MyDocument extends Document {
 		return (
 			<Html lang={'en'}>
 				<Head>
-					<link
-						rel={'preconnect'}
-						href={'https://brand.yearn.finance'}
-						crossOrigin={'true'} />
-					<link href={'https://brand.yearn.finance/fonts/fonts.css'} rel={'stylesheet'} />
 					<script dangerouslySetInnerHTML={{__html: modeScript}} />
 				</Head>
 				<body className={'bg-neutral-0 transition-colors duration-150'}>
