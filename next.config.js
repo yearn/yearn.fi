@@ -2,8 +2,8 @@
 const {PHASE_EXPORT} = require('next/constants');
 const withPWA = require('@ducanh2912/next-pwa').default({
 	dest: 'public',
-	scope: '/'
-	// disable: process.env.NODE_ENV !== 'production'
+	register: true,
+	skipWaiting: true
 });
 const withBundleAnalyzer = require('@next/bundle-analyzer')({
 	enabled: process.env.ANALYZE === 'true'
