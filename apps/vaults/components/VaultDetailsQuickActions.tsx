@@ -476,7 +476,6 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 			<div
 				aria-label={'Quick Deposit'}
 				className={'col-span-12 mb-4 flex flex-col space-x-0 space-y-2 bg-neutral-200 p-4 md:flex-row md:space-x-4 md:space-y-0 md:p-8'}>
-
 				<section aria-label={'FROM'} className={'flex w-full flex-col space-x-0 md:flex-row md:space-x-4'}>
 					<div className={'relative z-10 w-full space-y-2'}>
 						<div className={'flex flex-row items-baseline justify-between'}>

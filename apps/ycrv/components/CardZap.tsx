@@ -147,10 +147,15 @@ function	CardZap(): ReactElement {
 					</p>
 				</label>
 				<div className={'flex flex-col space-y-1'}>
-					<p className={'text-base text-neutral-600'}>{'Amount'}</p>
-					<div className={'flex h-10 items-center bg-neutral-300 p-2'}>
-						<div className={'flex h-10 flex-row items-center justify-between bg-neutral-300 py-4 px-0'}>
+					<label
+						htmlFor={'amount'}
+						className={'text-base text-neutral-600'}>
+						{'Amount'}
+					</label>
+					<div className={'flex h-10 items-center bg-neutral-100 p-2'}>
+						<div className={'flex h-10 w-full flex-row items-center justify-between py-4 px-0'}>
 							<input
+								id={'amount'}
 								className={`w-full overflow-x-scroll border-none bg-transparent py-4 px-0 font-bold outline-none scrollbar-none ${isActive ? '' : 'cursor-not-allowed'}`}
 								type={'text'}
 								disabled={!isActive}
@@ -258,11 +263,11 @@ function	CardZapWrapper(): ReactElement {
 				<motion.div
 					variants={CardVariantsInner as never}
 					custom={!txStatusApprove.none || !txStatusZap.none}
-					className={'h-[701px] w-[560px] bg-neutral-100 p-12'}>
+					className={'h-[701px] w-[560px] bg-neutral-200 p-12'}>
 					<CardZap />
 				</motion.div>
 			</motion.div>
-			<div className={'w-full bg-neutral-100 p-4 md:p-8 lg:hidden'}>
+			<div className={'w-full bg-neutral-200 p-4 md:p-8 lg:hidden'}>
 				<CardZap />
 			</div>
 		</div>
