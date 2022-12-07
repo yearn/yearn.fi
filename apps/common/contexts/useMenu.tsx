@@ -35,13 +35,22 @@ export const MenuContextApp = ({children}: {children: React.ReactElement}): Reac
 	const onOpenMenu = useCallback((): void => {
 		if (router.pathname.startsWith('/ycrv')) {
 			set_menu({app: MenuYCRVOptions, isOpen: true});
-		}
-		if (router.pathname.startsWith('/vaults')) {
+		} else if (router.pathname.startsWith('/vaults')) {
 			set_menu({app: MenuVaultsOptions, isOpen: true});
-		}
-		if (router.pathname.startsWith('/ybribe')) {
+		} else if (router.pathname.startsWith('/ybribe')) {
 			set_menu({app: MenuYCRVOptions, isOpen: true});
+		} else {
+			set_menu({
+				app: [
+					{path: '/', label: 'Home'},
+					{path: 'https://gov.yearn.finance/', label: 'Governance'},
+					{path: 'https://blog.yearn.finance/', label: 'Blog'},
+					{path: 'https://docs.yearn.finance/', label: 'Docs'}
+				],
+				isOpen: true
+			});
 		}
+
 	}, [router.pathname]);
 
 	/* 🔵 - Yearn Finance ******************************************************

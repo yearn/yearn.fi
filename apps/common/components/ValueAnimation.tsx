@@ -91,6 +91,7 @@ function	ValueAnimation({
 	useClientEffect((): void => {
 		initZero();
 	}, []);
+
 	useClientEffect((): void => {
 		if (value && value !== formatAmount(0, 2, 2) && !hasBeenTriggerd.current) {
 			onStartAnimation();

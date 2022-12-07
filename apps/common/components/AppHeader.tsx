@@ -138,7 +138,12 @@ export function	AppHeader(): ReactElement {
 	const	{isActive} = useWeb3();
 	const	{onOpenMenu} = useMenu();
 	const	navMenu = useMemo((): TMenu[] => {
-		let	menu: TMenu[] = [];
+		let	menu = [
+			{path: '/', label: 'Home'},
+			{path: 'https://gov.yearn.finance/', label: 'Governance'},
+			{path: 'https://blog.yearn.finance/', label: 'Blog'},
+			{path: 'https://docs.yearn.finance/', label: 'Docs'}
+		];
 
 		if (router.pathname.startsWith('/ycrv')) {
 			menu = [{path: '/', label: 'Home'}, ...MenuYCRVOptions];
