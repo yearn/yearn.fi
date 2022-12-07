@@ -15,14 +15,12 @@ import {variants} from '@common/utils/animations';
 import {LogoYBribe, MenuYBribeOptions} from '@yBribe/Header';
 import {LogoYCRV, MenuYCRVOptions} from '@yCRV/Header';
 
-// import Header from './Header.tsxs';
 import type {ReactElement} from 'react';
 import type {TMenu} from '@yearn-finance/web-lib/layouts/Header.next';
 
 const Apps = [
 	{
 		name: 'Vaults',
-		description: 'deposit tokens and recieve yield.',
 		href: '/vaults',
 		icon: <LogoYearn
 			className={'h-8 w-8'}
@@ -31,7 +29,6 @@ const Apps = [
 	},
 	{
 		name: 'yCRV',
-		description: 'get the best CRV yields in DeFi.',
 		href: '/ycrv',
 		icon: (
 			<Image
@@ -45,8 +42,15 @@ const Apps = [
 	},
 	{
 		name: 'veYFI',
-		description: 'stake your YFI to recieve\nrewards and boost gauges.',
-		href: '#',
+		href: 'https://pr-771.d27dgpz01hmbvx.amplifyapp.com/' || 'https://vote.yearn.finance/vaults',
+		icon: <LogoYearn
+			className={'h-8 w-8'}
+			back={'text-primary'}
+			front={'text-white'} />
+	},
+	{
+		name: 'yBribe',
+		href: '/ybribe',
 		icon: <LogoYearn
 			className={'h-8 w-8'}
 			back={'text-neutral-900'}
