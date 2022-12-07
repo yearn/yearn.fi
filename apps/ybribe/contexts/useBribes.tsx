@@ -1,4 +1,4 @@
-import React, {createContext, useCallback, useContext, useEffect, useState} from 'react';
+import React, {createContext, useCallback, useContext, useEffect, useMemo, useState} from 'react';
 import {Contract} from 'ethcall';
 import {ethers} from 'ethers';
 import axios from 'axios';
@@ -278,24 +278,26 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 		getBribes();
 	}, [getBribes]);
 
+	const	onRefresh = useCallback(async (): Promise<void> => {
+		await getBribes();
+	}, [getBribes]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	**	Setup and render the Context provider to use in the app.
 	***************************************************************************/
+	const	contextValue = useMemo((): TBribesContext => ({
+		currentRewards: currentRewards || {},
+		nextRewards: nextRewards || {},
+		claimable: claimable || {},
+		isLoading: isLoading,
+		currentPeriod,
+		nextPeriod,
+		feed: (feed || []) as TYDaemonGaugeRewardsFeed[],
+		refresh: onRefresh
+	}), [currentRewards, nextRewards, claimable, isLoading, currentPeriod, nextPeriod, feed, onRefresh]);
+
 	return (
-		<BribesContext.Provider
-			value={{
-				currentRewards: currentRewards || {},
-				nextRewards: nextRewards || {},
-				claimable: claimable || {},
-				isLoading: isLoading,
-				currentPeriod,
-				nextPeriod,
-				feed: (feed || []) as TYDaemonGaugeRewardsFeed[],
-				refresh: async (): Promise<void> => {
-					await getBribes();
-				}
-			}}>
+		<BribesContext.Provider value={contextValue}>
 			{children}
 		</BribesContext.Provider>
 	);

@@ -2,7 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import {useRouter} from 'next/router';
 import {motion} from 'framer-motion';
-import LogoYearnBlue from '@common/icons/LogoYearnBlue';
+import LogoYearn from '@common/icons/LogoYearn';
 import {variants} from '@common/utils/animations';
 
 import type {ReactElement} from 'react';
@@ -39,7 +39,10 @@ export function LogoVaults(): ReactElement {
 			animate={!isVaultPage && router.pathname.startsWith('/vaults') ? 'enter' : 'exit'}
 			variants={variants}
 			className={'absolute cursor-pointer'}>
-			<LogoYearnBlue className={'h-8 w-8'} />
+			<LogoYearn
+				className={'h-8 w-8'}
+				back={'text-pink-400'}
+				front={'text-white'} />
 		</motion.div>
 	);
 }

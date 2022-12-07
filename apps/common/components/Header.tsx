@@ -10,15 +10,13 @@ import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import IconWallet from '@yearn-finance/web-lib/icons/IconWallet';
 import {truncateHex} from '@yearn-finance/web-lib/utils/address';
 import {YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import BalanceReminderPopover from '@common/components/BalanceReminderPopover';
 import {useMenu} from '@common/contexts/useMenu';
 import IconChevron from '@common/icons/IconChevron';
 import LogoYearn from '@common/icons/LogoYearn';
 import {variants} from '@common/utils/animations';
 import {LogoYBribe, MenuYBribe} from '@yBribe/Header';
 import {LogoYCRV, MenuYCRV} from '@yCRV/Header';
-
-import LogoYearnBlue from '../icons/LogoYearnBlue';
-import BalanceReminderPopover from './BalanceReminderPopover';
 
 import type {ReactElement} from 'react';
 
@@ -59,7 +57,10 @@ function	Logo(): ReactElement {
 				animate={router.pathname === '/' ? 'enter' : 'exit'}
 				variants={variants}
 				className={'absolute cursor-pointer'}>
-				<LogoYearn className={'h-8 w-8'} />
+				<LogoYearn
+					className={'h-8 w-8'}
+					back={'text-neutral-900'}
+					front={'text-neutral-0'} />
 			</motion.div>
 		</>
 	);
@@ -226,7 +227,10 @@ const solutions = [
 		name: 'Vaults',
 		description: 'deposit tokens and recieve yield.',
 		href: '/vaults',
-		icon: <LogoYearnBlue className={'h-8 w-8'} />
+		icon: <LogoYearn
+			className={'h-8 w-8'}
+			back={'text-pink-400'}
+			front={'text-white'} />
 	},
 	{
 		name: 'yCRV',
@@ -246,7 +250,10 @@ const solutions = [
 		name: 'veYFI',
 		description: 'stake your YFI to recieve\nrewards and boost gauges.',
 		href: '#',
-		icon: <LogoYearn className={'h-8 w-8'} />
+		icon: <LogoYearn
+			className={'h-8 w-8'}
+			back={'text-neutral-900'}
+			front={'text-neutral-0'} />
 	}
 ];
 function	Header(): ReactElement {

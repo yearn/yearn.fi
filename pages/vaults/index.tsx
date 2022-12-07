@@ -1,10 +1,11 @@
-import React, {useMemo, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {ethers} from 'ethers';
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
 import {VaultsListHead} from '@vaults/components/list/VaultsListHead';
 import {VaultsListRow} from '@vaults/components/list/VaultsListRow';
 import Wrapper from '@vaults/Wrapper';
 import {Button} from '@yearn-finance/web-lib/components/Button';
+import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
@@ -20,6 +21,7 @@ import type {TYearnVault} from '@common/types/yearn';
 function	Index(): ReactElement {
 	const	{balances, cumulatedValueInVaults} = useWallet();
 	const	{vaults, earned, isLoadingVaultList} = useYearn();
+	const	{safeChainID} = useChainID();
 	const	[category, set_category] = useState('Crypto Vaults');
 	const	[searchValue, set_searchValue] = useState('');
 	const	[sortBy, set_sortBy] = useState('apy');
@@ -177,6 +179,13 @@ function	Index(): ReactElement {
 
 		return searchedVaultsToDisplay;
 	}, [sortBy, searchedVaultsToDisplay, sortDirection, balances]);
+
+	useEffect((): void => {
+		if (safeChainID === 10 || safeChainID === 42161) {
+			set_category('All Vaults');
+		}
+	}, [safeChainID]);
+	
 
 	return (
 		<section className={'mt-4 grid w-full grid-cols-12 gap-y-10 pb-10 md:mt-20 md:gap-x-10 md:gap-y-20'}>

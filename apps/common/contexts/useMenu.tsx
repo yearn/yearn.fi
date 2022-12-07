@@ -1,4 +1,4 @@
-import React, {createContext, useContext, useState} from 'react';
+import React, {createContext, useCallback, useContext, useMemo, useState} from 'react';
 import Link from 'next/link';
 import {useRouter} from 'next/router';
 import {MenuVaultsOptions} from '@vaults/Header';
@@ -32,7 +32,7 @@ export const MenuContextApp = ({children}: {children: React.ReactElement}): Reac
 	const	router = useRouter();
 	const	[menu, set_menu] = useState<TCurrentMenu>(defaultProps.menu);
 
-	function	onOpenMenu(): void {
+	const onOpenMenu = useCallback((): void => {
 		if (router.pathname.startsWith('/ycrv')) {
 			set_menu({app: MenuYCRVOptions, isOpen: true});
 		}
@@ -42,13 +42,18 @@ export const MenuContextApp = ({children}: {children: React.ReactElement}): Reac
 		if (router.pathname.startsWith('/ybribe')) {
 			set_menu({app: MenuYCRVOptions, isOpen: true});
 		}
-	}
+	}, [router.pathname]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	**	Setup and render the Context provider to use in the app.
 	***************************************************************************/
+	const	contextValue = useMemo((): TMenu => ({
+		menu,
+		onOpenMenu
+	}), [menu, onOpenMenu]);
+
 	return (
-		<MenuContext.Provider value={{menu, onOpenMenu}}>
+		<MenuContext.Provider value={contextValue}>
 			{children}
 			<ModalMobileMenu
 				shouldUseWallets={true}

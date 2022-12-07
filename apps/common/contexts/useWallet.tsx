@@ -1,4 +1,4 @@
-import React, {createContext, memo, useContext, useMemo, useState} from 'react';
+import React, {createContext, memo, useCallback, useContext, useMemo, useState} from 'react';
 // eslint-disable-next-line import/no-named-as-default
 import NProgress from 'nprogress';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -100,6 +100,11 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 		);
 	}, [vaults, balances, isLoadingVaultList, isLoadingBalances]);
 
+	const	onRefresh = useCallback(async (): Promise<TDict<TBalanceData>> => {
+		const updatedBalances = await updateBalances();
+		return updatedBalances;
+	}, [updateBalances]);
+
 	useClientEffect((): () => void => {
 		if (isLoadingBalances) {
 			if (!balances) {
@@ -116,20 +121,18 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 	/* 🔵 - Yearn Finance ******************************************************
 	**	Setup and render the Context provider to use in the app.
 	***************************************************************************/
+	const	contextValue = useMemo((): TWalletContext => ({
+		balances: balances,
+		cumulatedValueInVaults,
+		isLoading: isLoadingBalances,
+		refresh: onRefresh,
+		useWalletNonce: nonce,
+		slippage,
+		set_slippage
+	}), [balances, cumulatedValueInVaults, isLoadingBalances, onRefresh, nonce, slippage, set_slippage]);
+
 	return (
-		<WalletContext.Provider
-			value={{
-				balances: balances,
-				cumulatedValueInVaults,
-				isLoading: isLoadingBalances,
-				refresh: async (): Promise<TDict<TBalanceData>> => {
-					const updatedBalances = await updateBalances();
-					return updatedBalances;
-				},
-				useWalletNonce: nonce,
-				slippage,
-				set_slippage
-			}}>
+		<WalletContext.Provider value={contextValue}>
 			{children}
 		</WalletContext.Provider>
 	);

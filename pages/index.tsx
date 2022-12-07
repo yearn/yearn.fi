@@ -4,7 +4,6 @@ import Link from 'next/link';
 import {useClientEffect} from '@yearn-finance/web-lib/hooks/useClientEffect';
 import {YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import LogoYearn from '@common/icons/LogoYearn';
-import LogoYearnBlue from '@common/icons/LogoYearnBlue';
 
 import type {ReactElement} from 'react';
 
@@ -13,7 +12,10 @@ const	apps = [
 		href: '/vaults',
 		title: 'Vaults',
 		description: 'deposit tokens and recieve yield.',
-		icon: <LogoYearnBlue className={'h-[100px] w-[100px]'} />
+		icon: <LogoYearn
+			className={'h-[100px] w-[100px]'}
+			back={'text-pink-400'}
+			front={'text-white'} />
 	}, {
 		href: '/ycrv',
 		title: 'yCRV',
@@ -26,15 +28,21 @@ const	apps = [
 			loading={'eager'}
 			priority />
 	}, {
-		href: 'https://vote.yearn.finance/vaults',
+		href: 'https://pr-771.d27dgpz01hmbvx.amplifyapp.com/' || 'https://vote.yearn.finance/vaults',
 		title: 'veYFI',
 		description: 'stake your YFI to recieve\nrewards and boost gauges.',
-		icon: <LogoYearn className={'h-[100px] w-[100px]'} />
+		icon: <LogoYearn
+			className={'h-[100px] w-[100px]'}
+			back={'text-primary'}
+			front={'text-white'} />
 	}, {
 		href: '/ybribe',
 		title: 'yBribe',
 		description: 'Sell votes, or buy them.\nJust like democracy.',
-		icon: <LogoYearn className={'h-[100px] w-[100px]'} />
+		icon: <LogoYearn
+			className={'h-[100px] w-[100px]'}
+			back={'text-neutral-900'}
+			front={'text-neutral-0'} />
 	}
 ];
 

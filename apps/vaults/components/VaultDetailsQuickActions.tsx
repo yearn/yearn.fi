@@ -1,4 +1,5 @@
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import Link from 'next/link';
 import {ethers} from 'ethers';
 import useSWR from 'swr';
 import {getEthZapperContract} from '@vaults/utils';
@@ -464,161 +465,170 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 	}, [possibleOptionsFrom, possibleOptionsTo, selectedOptionFrom, selectedOptionTo, isDepositing, balances]);
 
 	return (
-		<div
-			aria-label={'Quick Deposit'}
-			className={'col-span-12 mb-4 mt-10 flex flex-col space-x-0 space-y-2 bg-neutral-200 p-4 md:mt-20 md:flex-row md:space-x-4 md:space-y-0 md:p-8'}>
+		<>
+			<nav className={'mt-10 mb-2 w-full md:mt-20'}>
+				<Link href={'/vaults'}>
+					<p className={'yearn--header-nav-item opacity-30'}>
+						{'Back to vaults'}
+					</p>
+				</Link>
+			</nav>
+			<div
+				aria-label={'Quick Deposit'}
+				className={'col-span-12 mb-4 flex flex-col space-x-0 space-y-2 bg-neutral-200 p-4 md:flex-row md:space-x-4 md:space-y-0 md:p-8'}>
 
-			<section aria-label={'FROM'} className={'flex w-full flex-col space-x-0 md:flex-row md:space-x-4'}>
-				<div className={'relative z-10 w-full space-y-2'}>
-					<div className={'flex flex-row items-baseline justify-between'}>
-						<label className={'text-base text-neutral-600'}>
-							{isDepositing ? 'From wallet' : 'From vault'}
-						</label>
-						<legend className={'inline text-xs tabular-nums text-neutral-600 md:hidden'} suppressHydrationWarning>
+				<section aria-label={'FROM'} className={'flex w-full flex-col space-x-0 md:flex-row md:space-x-4'}>
+					<div className={'relative z-10 w-full space-y-2'}>
+						<div className={'flex flex-row items-baseline justify-between'}>
+							<label className={'text-base text-neutral-600'}>
+								{isDepositing ? 'From wallet' : 'From vault'}
+							</label>
+							<legend className={'inline text-xs tabular-nums text-neutral-600 md:hidden'} suppressHydrationWarning>
+								{`You have ${formatAmount(balances[selectedOptionFrom?.value || '']?.normalized || 0, 2, 2)} ${selectedOptionFrom?.symbol || 'tokens'}`}
+							</legend>
+						</div>
+						{(ARE_ZAP_ENABLED || possibleOptionsFrom.length > 1) ? (
+							<Dropdown
+								defaultOption={possibleOptionsFrom[0]}
+								options={possibleOptionsFrom}
+								selected={selectedOptionFrom}
+								balances={balances}
+								onSelect={(option: TDropdownOption): void => set_selectedOptionFrom(option)} />
+						) : (
+							<div className={'flex h-10 w-full items-center justify-between bg-neutral-100 px-2 text-base text-neutral-900 md:px-3'}>
+								<div className={'relative flex flex-row items-center'}>
+									<div className={'h-6 w-6 rounded-full'}>
+										{selectedOptionFrom?.icon}
+									</div>
+									<p className={'overflow-x-hidden text-ellipsis whitespace-nowrap pl-2 font-normal text-neutral-900 scrollbar-none'}>
+										{selectedOptionFrom?.symbol}
+									</p>
+								</div>
+							</div>
+						)}
+						<legend className={'hidden text-xs tabular-nums text-neutral-600 md:inline'} suppressHydrationWarning>
 							{`You have ${formatAmount(balances[selectedOptionFrom?.value || '']?.normalized || 0, 2, 2)} ${selectedOptionFrom?.symbol || 'tokens'}`}
 						</legend>
 					</div>
-					{(ARE_ZAP_ENABLED || possibleOptionsFrom.length > 1) ? (
-						<Dropdown
-							defaultOption={possibleOptionsFrom[0]}
-							options={possibleOptionsFrom}
-							selected={selectedOptionFrom}
-							balances={balances}
-							onSelect={(option: TDropdownOption): void => set_selectedOptionFrom(option)} />
-					) : (
-						<div className={'flex h-10 w-full items-center justify-between bg-neutral-100 px-2 text-base text-neutral-900 md:px-3'}>
-							<div className={'relative flex flex-row items-center'}>
-								<div className={'h-6 w-6 rounded-full'}>
-									{selectedOptionFrom?.icon}
-								</div>
-								<p className={'overflow-x-hidden text-ellipsis whitespace-nowrap pl-2 font-normal text-neutral-900 scrollbar-none'}>
-									{selectedOptionFrom?.symbol}
-								</p>
+					<div className={'w-full space-y-2'}>
+						<label className={'hidden text-base text-neutral-600 md:inline'}>{'Amount'}</label>
+						<div className={'flex h-10 items-center bg-neutral-100 p-2'}>
+							<div className={'flex h-10 w-full flex-row items-center justify-between py-4 px-0'}>
+								<input
+									className={`w-full overflow-x-scroll border-none bg-transparent py-4 px-0 font-bold outline-none scrollbar-none ${isActive ? '' : 'cursor-not-allowed'}`}
+									type={'text'}
+									disabled={!isActive}
+									value={amount.normalized}
+									onChange={(e: ChangeEvent<HTMLInputElement>): void => {
+										performBatchedUpdates((): void => {
+											set_amount(handleInputChange(e, balances?.[toAddress(selectedOptionFrom?.value)]?.decimals || 18));
+										});
+									}} />
+								<button
+									onClick={(): void => {
+										set_amount({
+											raw: balances?.[toAddress(selectedOptionFrom?.value)]?.raw || ethers.constants.Zero,
+											normalized: balances?.[toAddress(selectedOptionFrom?.value)]?.normalized || 0
+										});
+									}}
+									className={'ml-2 cursor-pointer bg-neutral-900 px-2 py-1 text-xs text-neutral-0 transition-colors hover:bg-neutral-700'}>
+									{'Max'}
+								</button>
 							</div>
 						</div>
-					)}
-					<legend className={'hidden text-xs tabular-nums text-neutral-600 md:inline'} suppressHydrationWarning>
-						{`You have ${formatAmount(balances[selectedOptionFrom?.value || '']?.normalized || 0, 2, 2)} ${selectedOptionFrom?.symbol || 'tokens'}`}
-					</legend>
-				</div>
-				<div className={'w-full space-y-2'}>
-					<label className={'hidden text-base text-neutral-600 md:inline'}>{'Amount'}</label>
-					<div className={'flex h-10 items-center bg-neutral-100 p-2'}>
-						<div className={'flex h-10 w-full flex-row items-center justify-between py-4 px-0'}>
-							<input
-								className={`w-full overflow-x-scroll border-none bg-transparent py-4 px-0 font-bold outline-none scrollbar-none ${isActive ? '' : 'cursor-not-allowed'}`}
-								type={'text'}
-								disabled={!isActive}
-								value={amount.normalized}
-								onChange={(e: ChangeEvent<HTMLInputElement>): void => {
-									performBatchedUpdates((): void => {
-										set_amount(handleInputChange(e, balances?.[toAddress(selectedOptionFrom?.value)]?.decimals || 18));
-									});
-								}} />
-							<button
-								onClick={(): void => {
-									set_amount({
-										raw: balances?.[toAddress(selectedOptionFrom?.value)]?.raw || ethers.constants.Zero,
-										normalized: balances?.[toAddress(selectedOptionFrom?.value)]?.normalized || 0
-									});
-								}}
-								className={'ml-2 cursor-pointer bg-neutral-900 px-2 py-1 text-xs text-neutral-0 transition-colors hover:bg-neutral-700'}>
-								{'Max'}
-							</button>
-						</div>
-					</div>
-					<legend className={'mr-1 text-end text-xs tabular-nums text-neutral-600 md:mr-0 md:text-start'}>
-						{formatCounterValue(amount?.normalized || 0, selectedOptionFromPricePerToken)}
-					</legend>
-				</div>
-			</section>
-
-			<div className={'mx-auto flex w-full justify-center space-y-0 md:mx-none md:block md:w-14 md:space-y-2'}>
-				<label className={'hidden text-base md:inline'}>&nbsp;</label>
-
-				<div className={'tooltip top'}>
-					<Button onClick={onSwitchFromTo} className={'flex h-6 w-6 rotate-90 items-center justify-center bg-neutral-900 p-0 md:h-10 md:w-14 md:rotate-0'}>
-						<IconArrowRight className={'w-4 text-neutral-0 md:w-[25px]'} />
-					</Button>
-					<span
-						className={'tooltiptext'}
-						style={{width: 120, marginRight: 'calc(-62px + 50%)'}}>
-						<p>{'Deposit / Withdraw'}</p>
-					</span>
-				</div>
-				<legend className={'hidden text-xs md:inline'}>&nbsp;</legend>
-			</div>
-
-			<section aria-label={'TO'} className={'flex w-full flex-col space-x-0 md:flex-row md:space-x-4'}>
-				<div className={'relative z-10 w-full space-y-2'}>
-					<div className={'flex flex-row items-baseline justify-between'}>
-						<label className={'text-base text-neutral-600'}>
-							{isDepositing ? 'To vault' : 'To wallet'}
-						</label>
-						<legend className={'inline text-xs tabular-nums text-neutral-600 md:hidden'} suppressHydrationWarning>
-							{`APY ${isDepositing ? formatAmount((currentVault?.apy?.net_apy || 0) * 100, 2, 2) : '0.00'} %`}
+						<legend className={'mr-1 text-end text-xs tabular-nums text-neutral-600 md:mr-0 md:text-start'}>
+							{formatCounterValue(amount?.normalized || 0, selectedOptionFromPricePerToken)}
 						</legend>
 					</div>
-					{(ARE_ZAP_ENABLED || possibleOptionsTo.length > 1) ? (
-						<Dropdown
-							defaultOption={possibleOptionsTo[0]}
-							options={possibleOptionsTo}
-							selected={selectedOptionTo}
-							onSelect={(option: TDropdownOption): void => set_selectedOptionTo(option)} />
-					) : (
-						<div className={'flex h-10 w-full items-center justify-between bg-neutral-100 px-2 text-base text-neutral-900 md:px-3'}>
-							<div className={'relative flex flex-row items-center'}>
-								<div className={'h-6 w-6 rounded-full'}>
-									{selectedOptionTo?.icon}
+				</section>
+
+				<div className={'mx-auto flex w-full justify-center space-y-0 md:mx-none md:block md:w-14 md:space-y-2'}>
+					<label className={'hidden text-base md:inline'}>&nbsp;</label>
+
+					<div className={'tooltip top'}>
+						<Button onClick={onSwitchFromTo} className={'flex h-6 w-6 rotate-90 items-center justify-center bg-neutral-900 p-0 md:h-10 md:w-14 md:rotate-0'}>
+							<IconArrowRight className={'w-4 text-neutral-0 md:w-[25px]'} />
+						</Button>
+						<span
+							className={'tooltiptext'}
+							style={{width: 120, marginRight: 'calc(-62px + 50%)'}}>
+							<p>{'Deposit / Withdraw'}</p>
+						</span>
+					</div>
+					<legend className={'hidden text-xs md:inline'}>&nbsp;</legend>
+				</div>
+
+				<section aria-label={'TO'} className={'flex w-full flex-col space-x-0 md:flex-row md:space-x-4'}>
+					<div className={'relative z-10 w-full space-y-2'}>
+						<div className={'flex flex-row items-baseline justify-between'}>
+							<label className={'text-base text-neutral-600'}>
+								{isDepositing ? 'To vault' : 'To wallet'}
+							</label>
+							<legend className={'inline text-xs tabular-nums text-neutral-600 md:hidden'} suppressHydrationWarning>
+								{`APY ${isDepositing ? formatAmount((currentVault?.apy?.net_apy || 0) * 100, 2, 2) : '0.00'} %`}
+							</legend>
+						</div>
+						{(ARE_ZAP_ENABLED || possibleOptionsTo.length > 1) ? (
+							<Dropdown
+								defaultOption={possibleOptionsTo[0]}
+								options={possibleOptionsTo}
+								selected={selectedOptionTo}
+								onSelect={(option: TDropdownOption): void => set_selectedOptionTo(option)} />
+						) : (
+							<div className={'flex h-10 w-full items-center justify-between bg-neutral-100 px-2 text-base text-neutral-900 md:px-3'}>
+								<div className={'relative flex flex-row items-center'}>
+									<div className={'h-6 w-6 rounded-full'}>
+										{selectedOptionTo?.icon}
+									</div>
+									<p className={'overflow-x-hidden text-ellipsis whitespace-nowrap pl-2 font-normal text-neutral-900 scrollbar-none'}>
+										{selectedOptionTo?.symbol}
+									</p>
 								</div>
-								<p className={'overflow-x-hidden text-ellipsis whitespace-nowrap pl-2 font-normal text-neutral-900 scrollbar-none'}>
-									{selectedOptionTo?.symbol}
-								</p>
+							</div>
+						)}
+						<legend className={'hidden text-xs tabular-nums text-neutral-600 md:inline'} suppressHydrationWarning>
+							{isDepositing ? `APY ${formatAmount((currentVault?.apy?.net_apy || 0) * 100, 2, 2)} %` : ''}
+						</legend>
+					</div>
+
+					<div className={'w-full space-y-2'}>
+						<label className={'hidden text-base text-neutral-600 md:inline'}>
+							{'You will receive'}
+						</label>
+						<div className={'flex h-10 items-center bg-neutral-300 p-2'}>
+							<div className={'flex h-10 w-full flex-row items-center justify-between py-4 px-0'}>
+								<input
+									className={'w-full cursor-default overflow-x-scroll border-none bg-transparent py-4 px-0 font-bold outline-none scrollbar-none'}
+									type={'text'}
+									disabled
+									value={expectedOut?.normalized || 0} />
 							</div>
 						</div>
-					)}
-					<legend className={'hidden text-xs tabular-nums text-neutral-600 md:inline'} suppressHydrationWarning>
-						{isDepositing ? `APY ${formatAmount((currentVault?.apy?.net_apy || 0) * 100, 2, 2)} %` : ''}
-					</legend>
-				</div>
-
-				<div className={'w-full space-y-2'}>
-					<label className={'hidden text-base text-neutral-600 md:inline'}>
-						{'You will receive'}
-					</label>
-					<div className={'flex h-10 items-center bg-neutral-300 p-2'}>
-						<div className={'flex h-10 w-full flex-row items-center justify-between py-4 px-0'}>
-							<input
-								className={'w-full cursor-default overflow-x-scroll border-none bg-transparent py-4 px-0 font-bold outline-none scrollbar-none'}
-								type={'text'}
-								disabled
-								value={expectedOut?.normalized || 0} />
-						</div>
+						<legend className={'mr-1 text-end text-xs tabular-nums text-neutral-600 md:mr-0 md:text-start'}>
+							{formatCounterValue(expectedOut?.normalized || 0, selectedOptionToPricePerToken)}
+						</legend>
 					</div>
-					<legend className={'mr-1 text-end text-xs tabular-nums text-neutral-600 md:mr-0 md:text-start'}>
-						{formatCounterValue(expectedOut?.normalized || 0, selectedOptionToPricePerToken)}
-					</legend>
-				</div>
-			</section>
+				</section>
 
-			<div className={'w-full space-y-0 md:w-42 md:min-w-42 md:space-y-2'}>
-				<label className={'hidden text-base md:inline'}>&nbsp;</label>
-				<div>
-					<ActionButton
-						isDepositing={isDepositing}
-						currentVault={currentVault}
-						amount={amount}
-						selectedOptionFrom={selectedOptionFrom}
-						selectedOptionTo={selectedOptionTo}
-						onSuccess={async (): Promise<void> => {
-							set_amount({raw: ethers.constants.Zero, normalized: 0});
-							await refresh();
-						}}
-					/>
+				<div className={'w-full space-y-0 md:w-42 md:min-w-42 md:space-y-2'}>
+					<label className={'hidden text-base md:inline'}>&nbsp;</label>
+					<div>
+						<ActionButton
+							isDepositing={isDepositing}
+							currentVault={currentVault}
+							amount={amount}
+							selectedOptionFrom={selectedOptionFrom}
+							selectedOptionTo={selectedOptionTo}
+							onSuccess={async (): Promise<void> => {
+								set_amount({raw: ethers.constants.Zero, normalized: 0});
+								await refresh();
+							}}
+						/>
+					</div>
+					<legend className={'hidden text-xs md:inline'}>&nbsp;</legend>
 				</div>
-				<legend className={'hidden text-xs md:inline'}>&nbsp;</legend>
 			</div>
-		</div>
+		</>
 	);
 }
 

@@ -65,13 +65,14 @@ export const CurveContextApp = ({children}: {children: React.ReactElement}): Rea
 	/* 🔵 - Yearn Finance ******************************************************
 	**	Setup and render the Context provider to use in the app.
 	***************************************************************************/
+	const	contextValue = useMemo((): TCurveContext => ({
+		curveWeeklyFees,
+		cgPrices,
+		gauges: gauges || []
+	}), [curveWeeklyFees, cgPrices, gauges]);
+
 	return (
-		<CurveContext.Provider
-			value={{
-				curveWeeklyFees,
-				cgPrices,
-				gauges: gauges || []
-			}}>
+		<CurveContext.Provider value={contextValue}>
 			{children}
 		</CurveContext.Provider>
 	);

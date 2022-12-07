@@ -203,15 +203,16 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 	/* 🔵 - Yearn Finance ******************************************************
 	**	Setup and render the Context provider to use in the app.
 	***************************************************************************/
+	const	contextValue = useMemo((): TYCRVContext => ({
+		harvests: yCRVHarvests,
+		holdings: holdings as THoldings,
+		allowances: allowances as TDict<BigNumber>,
+		styCRVAPY,
+		styCRVMegaBoost
+	}), [yCRVHarvests, holdings, allowances, styCRVAPY, styCRVMegaBoost]);
+
 	return (
-		<YCRVContext.Provider
-			value={{
-				harvests: yCRVHarvests,
-				holdings: holdings as THoldings,
-				allowances: allowances as TDict<BigNumber>,
-				styCRVAPY,
-				styCRVMegaBoost
-			}}>
+		<YCRVContext.Provider value={contextValue}>
 			{children}
 		</YCRVContext.Provider>
 	);

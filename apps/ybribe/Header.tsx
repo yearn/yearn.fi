@@ -39,7 +39,10 @@ export function LogoYBribe(): ReactElement {
 			animate={router.pathname.startsWith('/ybribe') ? 'enter' : 'exit'}
 			variants={variants}
 			className={'absolute cursor-pointer'}>
-			<LogoYearn className={'h-8 w-8'} />
+			<LogoYearn
+				className={'h-8 w-8'}
+				back={'text-neutral-900'}
+				front={'text-neutral-0'} />
 		</motion.div>
 	);
 }

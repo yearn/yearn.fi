@@ -93,16 +93,17 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 	/* 🔵 - Yearn Finance ******************************************************
 	**	Setup and render the Context provider to use in the app.
 	***************************************************************************/
+	const	contextValue = useMemo((): TYearnContext => ({
+		currentPartner: currentPartner?.id ? toAddress(currentPartner.id) : toAddress(process.env.PARTNER_ID_ADDRESS as string),
+		prices,
+		tokens,
+		earned,
+		vaults: {...vaultsObject},
+		isLoadingVaultList
+	}), [currentPartner?.id, prices, tokens, earned, vaultsObject, isLoadingVaultList]);
+
 	return (
-		<YearnContext.Provider
-			value={{
-				currentPartner: currentPartner?.id ? toAddress(currentPartner.id) : toAddress(process.env.PARTNER_ID_ADDRESS as string),
-				prices,
-				tokens,
-				earned,
-				vaults: {...vaultsObject},
-				isLoadingVaultList
-			}}>
+		<YearnContext.Provider value={contextValue}>
 			{children}
 		</YearnContext.Provider>
 	);
