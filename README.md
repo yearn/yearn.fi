@@ -1,4 +1,4 @@
-# y
+# yearn.fi
 ![](./public/og.png)
 
 Why?
