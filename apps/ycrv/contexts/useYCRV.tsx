@@ -18,7 +18,7 @@ import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
 import type {TDict} from '@yearn-finance/web-lib/utils/types';
-import type {TYDaemonHarvests} from '@common/types/yearn';
+import type {TYDaemonHarvests, TYearnVault} from '@common/types/yearn';
 
 type THoldings = {
 	legacy: BigNumber;
@@ -62,14 +62,21 @@ const	defaultProps = {
 ******************************************************************************/
 const	YCRVContext = createContext<TYCRVContext>(defaultProps);
 export const YCRVContextApp = ({children}: {children: ReactElement}): ReactElement => {
-	const	{provider, address, isActive} = useWeb3();
+	const {provider, address, isActive} = useWeb3();
 	const {settings: baseAPISettings} = useSettings();
 
-	const	{data: styCRVExperimentalAPY} = useSWR(
-		`${baseAPISettings.yDaemonBaseURI}/1/vaults/apy/${STYCRV_TOKEN_ADDRESS}`,
+	// const	{data: styCRVExperimentalAPY} = useSWR(
+	// 	`${baseAPISettings.yDaemonBaseURI}/1/vaults/apy/${STYCRV_TOKEN_ADDRESS}`,
+	// 	baseFetcher,
+	// 	{revalidateOnFocus: false}
+	// ) as SWRResponse;
+
+	const	{data: styCRVVault} = useSWR(
+		`${baseAPISettings.yDaemonBaseURI}/1/vaults/${STYCRV_TOKEN_ADDRESS}`,
 		baseFetcher,
 		{revalidateOnFocus: false}
 	) as SWRResponse;
+
 
 	const	{data: yCRVHarvests} = useSWR(
 		`${baseAPISettings.yDaemonBaseURI}/1/vaults/harvests/${STYCRV_TOKEN_ADDRESS},${LPYCRV_TOKEN_ADDRESS}`,
@@ -199,8 +206,9 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 	** Compute the styCRV APY based on the experimental APY and the mega boost.
 	**************************************************************************/
 	const	styCRVAPY = useMemo((): number => {
-		return (styCRVExperimentalAPY * 100) + (styCRVMegaBoost * 100);
-	}, [styCRVExperimentalAPY, styCRVMegaBoost]);
+		return (((styCRVVault as TYearnVault)?.apy?.net_apy || 0) * 100) + (styCRVMegaBoost * 100);
+		// return (styCRVExperimentalAPY * 100) + (styCRVMegaBoost * 100);
+	}, [styCRVVault, styCRVMegaBoost]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	**	Setup and render the Context provider to use in the app.
