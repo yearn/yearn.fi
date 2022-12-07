@@ -138,14 +138,14 @@ export function	AppHeader(): ReactElement {
 	const	{isActive} = useWeb3();
 	const	{onOpenMenu} = useMenu();
 	const	navMenu = useMemo((): TMenu[] => {
-		let	menu = [{path: '/', label: 'Home'}];
+		let	menu: TMenu[] = [];
 
 		if (router.pathname.startsWith('/ycrv')) {
-			menu = [...menu, ...MenuYCRVOptions];
+			menu = [{path: '/', label: 'Home'}, ...MenuYCRVOptions];
 		} else if (router.pathname.startsWith('/vaults')) {
-			menu = [...menu, ...MenuVaultsOptions];
+			menu = [{path: '/', label: 'Home'}, ...MenuVaultsOptions];
 		} else if (router.pathname.startsWith('/ybribe')) {
-			menu = [...menu, ...MenuYBribeOptions];
+			menu = [{path: '/', label: 'Home'}, ...MenuYBribeOptions];
 		}
 		return menu as TMenu[];
 	}, [router]);

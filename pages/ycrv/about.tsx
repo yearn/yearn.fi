@@ -119,10 +119,15 @@ function	About(): ReactElement {
 					</p>
 				</div>
 				<div className={'mt-8'}>
-					<p className={'pb-1 text-neutral-900'}>{'Slippage tolerance'}</p>
+					<label
+						htmlFor={'slippageTolerance'}
+						className={'pb-1 text-neutral-900'}>
+						{'Slippage tolerance'}
+					</label>
 					<div className={'flex flex-row space-x-2'}>
 						<div className={'flex h-10 w-40 min-w-[160px] items-center border-2 border-neutral-700 bg-neutral-0 py-4 px-0'}>
 							<input
+								id={'slippageTolerance'}
 								type={'number'}
 								min={0}
 								step={0.1}
