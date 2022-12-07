@@ -329,7 +329,9 @@ function	Index(): ReactElement {
 							});
 						}} />
 					{isLoadingVaultList || sortedVaultsToDisplay.length === 0 ? (
-						<VaultsListEmpty sortedVaultsToDisplay={sortedVaultsToDisplay} currentCategory={category} />
+						<VaultsListEmpty
+							sortedVaultsToDisplay={sortedVaultsToDisplay}
+							currentCategory={category} />
 					) : sortedVaultsToDisplay.map((vault): ReactNode => {
 						if (!vault) {
 							return (null);

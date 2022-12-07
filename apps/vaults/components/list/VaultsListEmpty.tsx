@@ -20,6 +20,15 @@ function	VaultsListEmpty({sortedVaultsToDisplay, currentCategory}: {sortedVaults
 				</div>
 			</div>
 		);
+	} else if (!isLoadingVaultList && sortedVaultsToDisplay.length === 0 && currentCategory === 'Holdings') {
+		return (
+			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center py-2 px-10 md:w-3/4'}>
+				<b className={'text-center text-lg'}>{'Well this is awkward...'}</b>
+				<p className={'text-center text-neutral-600'}>
+					{'You don\'t appear to have any deposits in our Vaults. There\'s an easy way to change that 😏'}
+				</p>
+			</div>
+		);
 	} else if (!isLoadingVaultList && sortedVaultsToDisplay.length === 0 && safeChainID !== 1) {
 		const	chainName = (CHAINS as any)[safeChainID]?.name || 'this network';
 		return (
