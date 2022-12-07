@@ -193,6 +193,7 @@ function	Index(): ReactElement {
 				</div>
 				<div className={'my-8'}>
 					<p className={'text-center text-lg md:text-2xl'}>
+						{'With '}
 						<b>{'Yearn'}</b>
 						{'. The Yield Protocol.'}
 					</p>

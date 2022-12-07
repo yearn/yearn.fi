@@ -69,35 +69,35 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVau
 							<div className={'mt-0 grid grid-cols-1 gap-x-12 gap-y-2 md:grid-cols-2'}>
 								<div className={'flex flex-row items-center justify-between'}>
 									<p className={'text-sm text-neutral-500'}>{'TVL Impact'}</p>
-									<p className={'text-sm tabular-nums text-neutral-900'}>{strategy?.risk?.TVLImpact}</p>
+									<p className={'text-sm tabular-nums text-neutral-900'}>{strategy?.risk?.riskDetails?.TVLImpact}</p>
 								</div>
 								<div className={'flex flex-row items-center justify-between'}>
 									<p className={'text-sm text-neutral-500'}>{'Audit Score'}</p>
-									<p className={'text-sm tabular-nums text-neutral-900'}>{strategy?.risk?.auditScore}</p>
+									<p className={'text-sm tabular-nums text-neutral-900'}>{strategy?.risk?.riskDetails?.auditScore}</p>
 								</div>
 								<div className={'flex flex-row items-center justify-between'}>
 									<p className={'text-sm text-neutral-500'}>{'Code Review Score'}</p>
-									<p className={'text-sm tabular-nums text-neutral-900'}>{strategy?.risk?.codeReviewScore}</p>
+									<p className={'text-sm tabular-nums text-neutral-900'}>{strategy?.risk?.riskDetails?.codeReviewScore}</p>
 								</div>
 								<div className={'flex flex-row items-center justify-between'}>
 									<p className={'text-sm text-neutral-500'}>{'Complexity Score'}</p>
-									<p className={'text-sm tabular-nums text-neutral-900'}>{strategy?.risk?.complexityScore}</p>
+									<p className={'text-sm tabular-nums text-neutral-900'}>{strategy?.risk?.riskDetails?.complexityScore}</p>
 								</div>
 								<div className={'flex flex-row items-center justify-between'}>
 									<p className={'text-sm text-neutral-500'}>{'Longevity Impact'}</p>
-									<p className={'text-sm tabular-nums text-neutral-900'}>{strategy?.risk?.longevityImpact}</p>
+									<p className={'text-sm tabular-nums text-neutral-900'}>{strategy?.risk?.riskDetails?.longevityImpact}</p>
 								</div>
 								<div className={'flex flex-row items-center justify-between'}>
 									<p className={'text-sm text-neutral-500'}>{'Protocol Safety Score'}</p>
-									<p className={'text-sm tabular-nums text-neutral-900'}>{strategy?.risk?.protocolSafetyScore}</p>
+									<p className={'text-sm tabular-nums text-neutral-900'}>{strategy?.risk?.riskDetails?.protocolSafetyScore}</p>
 								</div>
 								<div className={'flex flex-row items-center justify-between'}>
 									<p className={'text-sm text-neutral-500'}>{'Team Knowledge Score'}</p>
-									<p className={'text-sm tabular-nums text-neutral-900'}>{strategy?.risk?.teamKnowledgeScore}</p>
+									<p className={'text-sm tabular-nums text-neutral-900'}>{strategy?.risk?.riskDetails?.teamKnowledgeScore}</p>
 								</div>
 								<div className={'flex flex-row items-center justify-between'}>
 									<p className={'text-sm text-neutral-500'}>{'Testing Score'}</p>
-									<p className={'text-sm tabular-nums text-neutral-900'}>{strategy?.risk?.testingScore}</p>
+									<p className={'text-sm tabular-nums text-neutral-900'}>{strategy?.risk?.riskDetails?.testingScore}</p>
 								</div>
 							</div>
 						</div>

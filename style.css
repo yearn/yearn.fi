@@ -14,11 +14,11 @@
 	--y-px: calc(var(--y) * 1px);
 	--opacity: var(--opacity);
 	--color: hsl(var(--color-neutral-300));
-	@apply relative flex aspect-video h-full w-full cursor-pointer flex-col items-center rounded-[3px] border border-neutral-300/50 p-6 shadow shadow-transparent transition-all duration-[400ms];
+	@apply relative flex aspect-video h-full w-full cursor-pointer flex-col items-center border border-neutral-300/50 p-6 shadow shadow-transparent transition-all duration-[400ms];
 
 	&:before,
 	&:after {
-		@apply pointer-events-none block absolute inset-[0px] z-[-1] rounded-[3px];
+		@apply pointer-events-none block absolute inset-[0px] z-[-1];
 		content: "";
 		z-index: -1;
 		opacity: var(--opacity);

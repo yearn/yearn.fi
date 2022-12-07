@@ -37,14 +37,16 @@ export type TYearnVaultStrategy = {
 	}
 	risk: {
 		riskGroup: string,
-		TVLImpact: number,
-		auditScore: number,
-		codeReviewScore: number,
-		complexityScore: number,
-		longevityImpact: number,
-		protocolSafetyScore: number,
-		teamKnowledgeScore: number,
-		testingScore: number,
+		riskDetails: {
+			TVLImpact: number,
+			auditScore: number,
+			codeReviewScore: number,
+			complexityScore: number,
+			longevityImpact: number,
+			protocolSafetyScore: number,
+			teamKnowledgeScore: number,
+			testingScore: number,
+		}
 	}
 }
 
