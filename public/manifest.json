@@ -4,10 +4,10 @@
 	"description": "The yield protocol for digital assets",
 	"iconPath": "./favicons/favicon.svg",
 	"locale": "en-US",
-	"uri": "https://ydraft-majorfi-ycorpo.vercel.app/",
-	"og": "https://ydraft-majorfi-ycorpo.vercel.app/og.png",
+	"uri": "https://yearn.fi/",
+	"og": "https://yearn.fi/og.png",
 	"twitter": "@iearnfinance",
-	"github": "https://github.com/Majorfi/yCRV",
+	"github": "https://github.com/yearn/yearn.fi",
 	"icons": [
 		{
 			"src": "./favicons/android-icon-192x192.png",
