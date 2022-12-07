@@ -67,5 +67,5 @@
     ".eslintrc.js",
     "apps/common/contexts/eeeetypes.d.tsxs",
     ".next/types/**/*.ts"
-  ]
+, "apps/common/components/Header.tsxs", "apps/common/components/Header.tsxs", "apps/common/components/Header.tsxs"  ]
 }

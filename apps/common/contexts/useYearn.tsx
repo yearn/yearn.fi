@@ -1,6 +1,7 @@
 import React, {createContext, memo, useContext, useMemo} from 'react';
 import {ethers} from 'ethers';
 import useSWR from 'swr';
+import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -41,7 +42,8 @@ type TYearnVaultsMap = {
 const	YearnContext = createContext<TYearnContext>(defaultProps);
 export const YearnContextApp = memo(function YearnContextApp({children}: {children: ReactElement}): ReactElement {
 	const {safeChainID} = useChainID();
-	const	{address, currentPartner} = useWeb3();
+	const {settings: baseAPISettings} = useSettings();
+	const {address, currentPartner} = useWeb3();
 
 	/* 🔵 - Yearn Finance ******************************************************
 	**	We will play with the some Yearn vaults. To correctly play with them,
@@ -49,25 +51,25 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 	**	apy.net_apy
 	***************************************************************************/
 	const	{data: prices} = useSWR(
-		`${process.env.YDAEMON_BASE_URI}/${safeChainID}/prices/all`,
+		`${baseAPISettings.yDaemonBaseURI}/${safeChainID}/prices/all`,
 		baseFetcher,
 		{revalidateOnFocus: false}
 	) as SWRResponse;
 
 	const	{data: tokens} = useSWR(
-		`${process.env.YDAEMON_BASE_URI}/${safeChainID}/tokens/all`,
+		`${baseAPISettings.yDaemonBaseURI}/${safeChainID}/tokens/all`,
 		baseFetcher,
 		{revalidateOnFocus: false}
 	) as SWRResponse;
 
 	const	{data: vaults, isValidating: isLoadingVaultList} = useSWR(
-		`${process.env.YDAEMON_BASE_URI}/${safeChainID}/vaults/all?hideAlways=true&orderBy=apy.net_apy&orderDirection=desc&strategiesDetails=withDetails&strategiesRisk=withRisk&strategiesCondition=inQueue`,
+		`${baseAPISettings.yDaemonBaseURI}/${safeChainID}/vaults/all?hideAlways=true&orderBy=apy.net_apy&orderDirection=desc&strategiesDetails=withDetails&strategiesRisk=withRisk&strategiesCondition=inQueue`,
 		baseFetcher,
 		{revalidateOnFocus: false}
 	) as SWRResponse;
 
 	const	{data: earned} = useSWR(
-		address ? `${process.env.YDAEMON_BASE_URI}/${safeChainID}/earned/${address}` : null,
+		address ? `${baseAPISettings.yDaemonBaseURI}/${safeChainID}/earned/${address}` : null,
 		baseFetcher,
 		{revalidateOnFocus: false}
 	) as SWRResponse;

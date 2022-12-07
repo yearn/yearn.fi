@@ -1,5 +1,6 @@
 import React, {useState} from 'react';
 import {Button} from '@yearn-finance/web-lib/components/Button';
+import SettingsOverwrite from '@common/components/SettingsOverwrite';
 import {useWallet} from '@common/contexts/useWallet';
 import Wrapper from '@yCRV/Wrapper';
 
@@ -106,12 +107,12 @@ function	About(): ReactElement {
 					<p className={'pb-4 text-neutral-600'}>
 						{'For advanced apes users worried about MEV we advise using '}
 						<a
-							href={'https://docs.flashbots.net/flashbots-protect/rpc/quick-start/'}
+							href={'https://securerpc.com/'}
 							target={'_blank'}
 							className={'text-neutral-900 underline'}
-							rel={'noreferrer'}>{'flashbots'}
+							rel={'noreferrer'}>{'SecureRpc'}
 						</a>
-						{' rpc.'}
+						{'.'}
 					</p>
 					<p className={'text-neutral-600'}>
 						{'If the above sentence causes your brain to wrinkle and eyes to glaze over, then you do not need to worry about this step. '}
@@ -173,6 +174,9 @@ function	About(): ReactElement {
 					</p>
 				</div>
 			</div>
+
+			<SettingsOverwrite />
+
 		</section>
 	);
 }

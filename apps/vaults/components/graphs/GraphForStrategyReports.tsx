@@ -1,6 +1,7 @@
 import React, {Fragment, useMemo} from 'react';
 import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
 import useSWR from 'swr';
+import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -20,8 +21,9 @@ type TGraphForStrategyReportsProps = {
 
 function	GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height = 127}: TGraphForStrategyReportsProps): ReactElement {
 	const {safeChainID} = useChainID();
+	const {settings: baseAPISettings} = useSettings();
 	const {data: reports} = useSWR(
-		`${process.env.YDAEMON_BASE_URI}/${safeChainID}/reports/${strategy.address}`,
+		`${baseAPISettings.yDaemonBaseURI}/${safeChainID}/reports/${strategy.address}`,
 		baseFetcher,
 		{revalidateOnFocus: false}
 	) as SWRResponse;

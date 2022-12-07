@@ -1,5 +1,6 @@
 import React, {useMemo} from 'react';
 import useSWR from 'swr';
+import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -21,8 +22,9 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 	const {address} = useWeb3();
 	const {balances} = useWallet();
 	const {prices} = useYearn();
+	const {settings: baseAPISettings} = useSettings();
 	const {data: earned} = useSWR(
-		currentVault.address && address ? `${process.env.YDAEMON_BASE_URI}/${safeChainID}/earned/${address}/${currentVault.address}` : null,
+		currentVault.address && address ? `${baseAPISettings.yDaemonBaseURI}/${safeChainID}/earned/${address}/${currentVault.address}` : null,
 		baseFetcher,
 		{revalidateOnFocus: false}
 	) as SWRResponse as {data: TYdaemonEarned};

@@ -59,13 +59,13 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 	const {gauges} = useCurve();
 	const {provider, address} = useWeb3();
 	const {safeChainID} = useChainID();
+	const {settings: baseAPISettings} = useSettings();
 	const [currentRewards, set_currentRewards] = useState<TCurveGaugeVersionRewards>({v2: {}, v3: {}});
 	const [nextRewards, set_nextRewards] = useState<TCurveGaugeVersionRewards>({v2: {}, v3: {}});
 	const [claimable, set_claimable] = useState<TCurveGaugeVersionRewards>({v2: {}, v3: {}});
 	const [isLoading, set_isLoading] = useState<boolean>(true);
 	const [currentPeriod, set_currentPeriod] = useState<number>(getLastThursday());
 	const [nextPeriod, set_nextPeriod] = useState<number>(getNextThursday());
-	const {settings:baseAPISettings} = useSettings();
 
 	const {data: feed} = useSWR(`${baseAPISettings.yDaemonBaseURI}/1/bribes/newRewardFeed`, baseFetcher);
 

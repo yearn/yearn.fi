@@ -2,6 +2,7 @@ import React, {createContext, useCallback, useContext, useMemo} from 'react';
 import {Contract} from 'ethcall';
 import {ethers} from 'ethers';
 import useSWR from 'swr';
+import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
 import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
@@ -62,15 +63,16 @@ const	defaultProps = {
 const	YCRVContext = createContext<TYCRVContext>(defaultProps);
 export const YCRVContextApp = ({children}: {children: ReactElement}): ReactElement => {
 	const	{provider, address, isActive} = useWeb3();
+	const {settings: baseAPISettings} = useSettings();
 
 	const	{data: styCRVExperimentalAPY} = useSWR(
-		`${process.env.YDAEMON_BASE_URI}/1/vaults/apy/${STYCRV_TOKEN_ADDRESS}`,
+		`${baseAPISettings.yDaemonBaseURI}/1/vaults/apy/${STYCRV_TOKEN_ADDRESS}`,
 		baseFetcher,
 		{revalidateOnFocus: false}
 	) as SWRResponse;
 
 	const	{data: yCRVHarvests} = useSWR(
-		`${process.env.YDAEMON_BASE_URI}/1/vaults/harvests/${STYCRV_TOKEN_ADDRESS},${LPYCRV_TOKEN_ADDRESS}`,
+		`${baseAPISettings.yDaemonBaseURI}/1/vaults/harvests/${STYCRV_TOKEN_ADDRESS},${LPYCRV_TOKEN_ADDRESS}`,
 		baseFetcher,
 		{revalidateOnFocus: false}
 	) as SWRResponse;

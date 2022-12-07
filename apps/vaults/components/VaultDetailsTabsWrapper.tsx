@@ -91,7 +91,7 @@ function	Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: {
 function	VaultDetailsTabsWrapper({currentVault}: {currentVault: TYearnVault}): ReactElement {
 	const {provider} = useWeb3();
 	const {safeChainID} = useChainID();
-	const {networks} = useSettings();
+	const {settings: baseAPISettings, networks} = useSettings();
 	const [selectedAboutTabIndex, set_selectedAboutTabIndex] = useState(0);
 	const networkSettings = useMemo((): TSettingsForNetwork => networks[safeChainID], [networks, safeChainID]);
 
@@ -112,7 +112,7 @@ function	VaultDetailsTabsWrapper({currentVault}: {currentVault: TYearnVault}): R
 	}
 
 	const	{data: yDaemonHarvestsData} = useSWR(
-		`${process.env.YDAEMON_BASE_URI}/${safeChainID}/vaults/harvests/${currentVault.address}`,
+		`${baseAPISettings.yDaemonBaseURI}/${safeChainID}/vaults/harvests/${currentVault.address}`,
 		baseFetcher,
 		{revalidateOnFocus: false}
 	) as SWRResponse;

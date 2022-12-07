@@ -1,6 +1,5 @@
 import React from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
 import {useRouter} from 'next/router';
 import {motion} from 'framer-motion';
 import {YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
@@ -9,29 +8,10 @@ import {variants} from '@common/utils/animations';
 import type {ReactElement} from 'react';
 
 export 	const	MenuYCRVOptions = [
-	{path: '/', label: 'Main'},
 	{path: '/ycrv', label: 'yCRV'},
 	{path: '/ycrv/holdings', label: 'Holdings'},
 	{path: '/ycrv/about', label: 'About'}
 ];
-
-export function MenuYCRV(): ReactElement {
-	const	router = useRouter();
-
-	return (
-		<nav className={'yearn--nav'}>
-			{MenuYCRVOptions.map((option): ReactElement => (
-				<Link
-					key={option.path}
-					href={option.path}>
-					<p className={`yearn--header-nav-item ${router.pathname === option.path ? 'active' : '' }`}>
-						{option.label}
-					</p>
-				</Link>
-			))}
-		</nav>
-	);
-}
 
 export function LogoYCRV(): ReactElement {
 	const	router = useRouter();

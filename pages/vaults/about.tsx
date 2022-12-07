@@ -1,5 +1,6 @@
 import React from 'react';
 import Wrapper from '@vaults/Wrapper';
+import SettingsOverwrite from '@common/components/SettingsOverwrite';
 
 import type {ReactElement} from 'react';
 
@@ -96,6 +97,9 @@ function	About(): ReactElement {
 					</p>
 				</div>
 			</div>
+
+			<SettingsOverwrite />
+
 		</section>
 	);
 }

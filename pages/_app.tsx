@@ -3,7 +3,7 @@ import meta from 'public/manifest.json';
 import {AnimatePresence, motion} from 'framer-motion';
 import localFont from '@next/font/local';
 import {WithYearn} from '@yearn-finance/web-lib/contexts/WithYearn';
-import Header from '@common/components/Header';
+import {AppHeader} from '@common/components/AppHeader';
 import Meta from '@common/components/Meta';
 import {MenuContextApp} from '@common/contexts/useMenu';
 import {WalletContextApp} from '@common/contexts/useWallet';
@@ -30,14 +30,14 @@ const aeonik = localFont({
 	]
 });
 
-const WithLayout = memo (function WithLayout(props: AppProps): ReactElement {
+const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 	const	{Component, pageProps, router} = props;
 	const	getLayout = (Component as any).getLayout || ((page: ReactElement): ReactElement => page);
 
 	return (
 		<div id={'app'} className={'mx-auto mb-0 flex max-w-6xl'}>
 			<div className={'block min-h-[100vh] w-full'}>
-				<Header />
+				<AppHeader />
 				<AnimatePresence mode={'wait'}>
 					<motion.div
 						key={router.asPath}
