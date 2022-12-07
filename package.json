@@ -11,7 +11,6 @@
 		"lint": "eslint . --ext .js,.jsx,.ts,.tsx"
 	},
 	"dependencies": {
-		"@ducanh2912/next-pwa": "^7.0.2",
 		"@next/bundle-analyzer": "^13.0.6",
 		"@next/font": "^13.0.6",
 		"@yearn-finance/web-lib": "^0.17.19",
@@ -23,6 +22,7 @@
 		"graphql": "^16.6.0",
 		"graphql-request": "^5.0.0",
 		"next": "^13.0.5",
+		"next-pwa": "^5.4.0",
 		"next-seo": "^5.14.1",
 		"nprogress": "^0.2.0",
 		"react": "^18.2.0",

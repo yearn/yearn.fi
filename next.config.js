@@ -1,18 +1,19 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
-const {PHASE_EXPORT} = require('next/constants');
-const withPWA = require('@ducanh2912/next-pwa').default({
-	dest: 'public',
+const runtimeCaching = require('next-pwa/cache');
+
+const withPWA = require('next-pwa')({
+	dest: './public/',
 	register: true,
-	skipWaiting: true
+	skipWaiting: true,
+	runtimeCaching,
+	buildExcludes: [/middleware-manifest.json$/]
 });
 const withBundleAnalyzer = require('@next/bundle-analyzer')({
 	enabled: process.env.ANALYZE === 'true'
 });
 
-module.exports = (phase) => withBundleAnalyzer(withPWA({
-	assetPrefix: process.env.IPFS_BUILD === 'true' || phase === PHASE_EXPORT ? './' : '/',
+module.exports = withBundleAnalyzer(withPWA({
 	images: {
-		unoptimized: process.env.IPFS_BUILD === 'true' || phase === PHASE_EXPORT, //Exporting image does not support optimization
 		domains: [
 			'rawcdn.githack.com',
 			'raw.githubusercontent.com'

@@ -145,12 +145,14 @@ function	VaultDetailsTabsWrapper({currentVault}: {currentVault: TYearnVault}): R
 							);
 						}
 						}>
+						<span className={'sr-only'}>{'Add to wallet'}</span>
 						<IconAddToMetamask className={'h-5 w-5 text-neutral-600 transition-colors hover:text-neutral-900 md:h-6 md:w-6'} />
 					</button>
 					<a
 						href={networkSettings?.explorerBaseURI as string}
 						target={'_blank'}
 						rel={'noopener noreferrer'}>
+						<span className={'sr-only'}>{'Open in explorer'}</span>
 						<IconLinkOut className={'h-5 w-5 cursor-alias text-neutral-600 transition-colors hover:text-neutral-900 md:h-6 md:w-6'} />
 					</a>
 				</div>

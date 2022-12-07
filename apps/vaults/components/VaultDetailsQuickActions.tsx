@@ -511,10 +511,15 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 						</legend>
 					</div>
 					<div className={'w-full space-y-2'}>
-						<label className={'hidden text-base text-neutral-600 md:inline'}>{'Amount'}</label>
+						<label
+							htmlFor={'fromAmount'}
+							className={'hidden text-base text-neutral-600 md:inline'}>
+							{'Amount'}
+						</label>
 						<div className={'flex h-10 items-center bg-neutral-100 p-2'}>
 							<div className={'flex h-10 w-full flex-row items-center justify-between py-4 px-0'}>
 								<input
+									id={'fromAmount'}
 									className={`w-full overflow-x-scroll border-none bg-transparent py-4 px-0 font-bold outline-none scrollbar-none ${isActive ? '' : 'cursor-not-allowed'}`}
 									type={'text'}
 									disabled={!isActive}
@@ -547,6 +552,7 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 
 					<div className={'tooltip top'}>
 						<Button onClick={onSwitchFromTo} className={'flex h-6 w-6 rotate-90 items-center justify-center bg-neutral-900 p-0 md:h-10 md:w-14 md:rotate-0'}>
+							<span className={'sr-only'}>{'Deposit / Withdraw'}</span>
 							<IconArrowRight className={'w-4 text-neutral-0 md:w-[25px]'} />
 						</Button>
 						<span
@@ -592,12 +598,15 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 					</div>
 
 					<div className={'w-full space-y-2'}>
-						<label className={'hidden text-base text-neutral-600 md:inline'}>
+						<label
+							htmlFor={'toAmount'}
+							className={'hidden text-base text-neutral-600 md:inline'}>
 							{'You will receive'}
 						</label>
 						<div className={'flex h-10 items-center bg-neutral-300 p-2'}>
 							<div className={'flex h-10 w-full flex-row items-center justify-between py-4 px-0'}>
 								<input
+									id={'toAmount'}
 									className={'w-full cursor-default overflow-x-scroll border-none bg-transparent py-4 px-0 font-bold outline-none scrollbar-none'}
 									type={'text'}
 									disabled
