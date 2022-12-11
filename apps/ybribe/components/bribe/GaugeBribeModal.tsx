@@ -34,9 +34,7 @@ function	GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauges, o
 	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
 	const [txStatusAddReward, set_txStatusAddReward] = useState(defaultTxStatus);
 
-	const expectedOutFetcher = useCallback(async (
-		_tokenAddress: string
-	): Promise<{
+	const expectedOutFetcher = useCallback(async (args: [string]): Promise<{
 		name: string;
 		symbol: string;
 		decimals: number;
@@ -44,6 +42,7 @@ function	GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauges, o
 		raw: BigNumber,
 		allowance: BigNumber,
 	}> => {
+		const	[_tokenAddress] = args;
 		const	currentProvider = safeChainID === 1 ? provider || getProvider(1) : getProvider(1);
 		const	ethcallProvider = await newEthCallProvider(currentProvider);
 		const	erc20Contract = new Contract(_tokenAddress, ERC20_ABI);

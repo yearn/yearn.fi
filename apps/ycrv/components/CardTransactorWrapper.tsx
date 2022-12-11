@@ -98,11 +98,8 @@ function	CardTransactorContextApp({
 	** out for a given in/out pair with a specific amount. This callback is
 	** called every 10s or when amount/in or out changes.
 	**************************************************************************/
-	const expectedOutFetcher = useCallback(async (
-		_inputToken: string,
-		_outputToken: string,
-		_amountIn: BigNumber
-	): Promise<BigNumber> => {
+	const expectedOutFetcher = useCallback(async (args: [string, string, BigNumber]): Promise<BigNumber> => {
+		const [_inputToken, _outputToken, _amountIn] = args;
 		const	currentProvider = provider || getProvider(1);
 
 		if (_inputToken === YCRV_CURVE_POOL_ADDRESS) {

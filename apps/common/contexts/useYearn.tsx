@@ -62,7 +62,7 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 		{revalidateOnFocus: false}
 	) as SWRResponse;
 
-	const	{data: vaults, isValidating: isLoadingVaultList} = useSWR(
+	const	{data: vaults, isLoading: isLoadingVaultList} = useSWR(
 		`${baseAPISettings.yDaemonBaseURI}/${safeChainID}/vaults/all?hideAlways=true&orderBy=apy.net_apy&orderDirection=desc&strategiesDetails=withDetails&strategiesRisk=withRisk&strategiesCondition=inQueue`,
 		baseFetcher,
 		{revalidateOnFocus: false}

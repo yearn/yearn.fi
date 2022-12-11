@@ -83,7 +83,8 @@ function	ActionButton({
 	** current state allowance. Default state allowance is 0, so it will be refreshed on the first
 	** render.
 	**********************************************************************************************/
-	const allowanceFetcher = useCallback(async (inputToken: string, outputToken: string): Promise<{raw: BigNumber, normalized: number}> => {
+	const allowanceFetcher = useCallback(async (args: [string, string]): Promise<{raw: BigNumber, normalized: number}> => {
+		const	[inputToken, outputToken] = args;
 		const	currentProvider = provider || getProvider(safeChainID);
 		const	contract = new ethers.Contract(
 			inputToken,
@@ -115,7 +116,7 @@ function	ActionButton({
 	** SWR hook to get the expected out for a given in/out pair with a specific amount. This hook is
 	** called every 10s or when amount/in or out changes. Calls the allowanceFetcher callback.
 	**********************************************************************************************/
-	const	{data: allowanceFrom, isValidating: isValidatingAllowance, mutate: mutateAllowance} = useSWR(
+	const	{data: allowanceFrom, isLoading: isValidatingAllowance, mutate: mutateAllowance} = useSWR(
 		isActive && amount.raw.gt(0) && selectedOptionFrom && selectedOptionTo && (
 			(isDepositing && !isInputTokenEth) || (!isDepositing && isOutputTokenEth)
 		) ? [selectedOptionFrom.value, selectedOptionTo.value] : null,
@@ -395,18 +396,15 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 	** in/out pair with a specific amount. This callback is called every 10s or when amount/in or
 	** out changes.
 	**********************************************************************************************/
-	const expectedOutFetcher = useCallback(async (
-		_inputToken: string,
-		_outputToken: string,
-		_amountIn: BigNumber
-	): Promise<{raw: BigNumber, normalized: number}> => {
-		if (!selectedOptionFrom || !selectedOptionTo) {
+	const expectedOutFetcher = useCallback(async (args: [string, string, BigNumber]): Promise<{raw: BigNumber, normalized: number}> => {
+		const [_inputToken, _outputToken, _amountIn] = args;
+		if (!_inputToken || !_outputToken) {
 			return ({raw: ethers.constants.Zero, normalized: 0});
 		}
 		
 		const	currentProvider = provider || getProvider(safeChainID);
 		const	contract = new ethers.Contract(
-			isDepositing ? selectedOptionTo.value : selectedOptionFrom.value,
+			isDepositing ? _outputToken : _inputToken,
 			['function pricePerShare() public view returns (uint256)'],
 			currentProvider
 		);
@@ -429,7 +427,7 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 			return ({raw: ethers.constants.Zero, normalized: 0});
 		}
 		
-	}, [selectedOptionFrom, selectedOptionTo, provider, safeChainID, currentVault?.decimals, isDepositing]);
+	}, [provider, safeChainID, currentVault?.decimals, isDepositing]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** SWR hook to get the expected out for a given in/out pair with a specific amount. This hook is
