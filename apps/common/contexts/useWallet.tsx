@@ -10,42 +10,25 @@ import {ETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {getProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import {useYearn} from '@common/contexts/useYearn';
 
-import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
 import type {TBalanceData, TUseBalancesTokens} from '@yearn-finance/web-lib/hooks/types';
 import type {TDict} from '@yearn-finance/web-lib/utils/types';
 import type {TYearnVault} from '@common/types/yearn';
 
-export type	TBalances = {
-	[address: string]: {
-		decimals: number,
-		symbol: string,
-		raw: BigNumber,
-		rawPrice: BigNumber,
-		normalized: number,
-		normalizedPrice: number,
-		normalizedValue: number
-	}
-}
-
 export type	TWalletContext = {
-	balances: TBalances,
+	balances: TDict<TBalanceData>,
 	cumulatedValueInVaults: number,
 	useWalletNonce: number,
-	slippage: number,
 	isLoading: boolean,
 	refresh: () => Promise<TDict<TBalanceData>>,
-	set_slippage: (slippage: number) => void,
 }
 
 const	defaultProps = {
 	balances: {},
 	cumulatedValueInVaults: 0,
 	useWalletNonce: 0,
-	slippage: 0.6,
 	isLoading: true,
-	refresh: async (): Promise<TDict<TBalanceData>> => ({}),
-	set_slippage: (): void => undefined
+	refresh: async (): Promise<TDict<TBalanceData>> => ({})
 };
 
 
@@ -59,7 +42,6 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 	const	{provider} = useWeb3();
 	const	{vaults, isLoadingVaultList, prices} = useYearn();
 	const	{chainID} = useChainID();
-	const	[slippage, set_slippage] = useState<number>(1);
 
 	const	availableTokens = useMemo((): TUseBalancesTokens[] => {
 		if (isLoadingVaultList) {
@@ -81,8 +63,7 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 		key: chainID,
 		provider: provider || getProvider(1),
 		tokens: availableTokens,
-		prices,
-		effectDependencies: []
+		prices
 	});
 
 	const	cumulatedValueInVaults = useMemo((): number => {
@@ -126,10 +107,8 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 		cumulatedValueInVaults,
 		isLoading: isLoadingBalances,
 		refresh: onRefresh,
-		useWalletNonce: nonce,
-		slippage,
-		set_slippage
-	}), [balances, cumulatedValueInVaults, isLoadingBalances, onRefresh, nonce, slippage, set_slippage]);
+		useWalletNonce: nonce
+	}), [balances, cumulatedValueInVaults, isLoadingBalances, onRefresh, nonce]);
 
 	return (
 		<WalletContext.Provider value={contextValue}>

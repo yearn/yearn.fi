@@ -1,4 +1,4 @@
-import React, {createContext, useCallback, useContext, useMemo} from 'react';
+import React, {createContext, useCallback, useContext, useMemo, useState} from 'react';
 import {Contract} from 'ethcall';
 import {ethers} from 'ethers';
 import useSWR from 'swr';
@@ -13,6 +13,7 @@ import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3
 import CURVE_CRV_YCRV_LP_ABI from '@yCRV/utils/abi/curveCrvYCrvLp.abi';
 import STYCRV_ABI from '@yCRV/utils/abi/styCRV.abi';
 import YVECRV_ABI from '@yCRV/utils/abi/yveCRV.abi';
+import {CVXCRV_TOKEN_ADDRESS} from '@yCRV/utils/constants';
 
 import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
@@ -34,9 +35,11 @@ type THoldings = {
 type TYCRVContext = {
 	styCRVMegaBoost: number,
 	styCRVAPY: number,
+	slippage: number,
 	allowances: TDict<BigNumber>,
 	holdings: THoldings,
 	harvests: TYDaemonHarvests[],
+	set_slippage: (slippage: number) => void,
 }
 
 const	defaultProps = {
@@ -44,6 +47,8 @@ const	defaultProps = {
 	styCRVAPY: 0,
 	harvests: [],
 	allowances: {},
+	slippage: 0.6,
+	set_slippage: (): void => undefined,
 	holdings: {
 		legacy: ethers.constants.Zero,
 		treasury: ethers.constants.Zero,
@@ -64,6 +69,7 @@ const	YCRVContext = createContext<TYCRVContext>(defaultProps);
 export const YCRVContextApp = ({children}: {children: ReactElement}): ReactElement => {
 	const {provider, address, isActive} = useWeb3();
 	const {settings: baseAPISettings} = useSettings();
+	const [slippage, set_slippage] = useState<number>(0.6);
 
 	// const	{data: styCRVExperimentalAPY} = useSWR(
 	// 	`${baseAPISettings.yDaemonBaseURI}/1/vaults/apy/${STYCRV_TOKEN_ADDRESS}`,
@@ -152,10 +158,12 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 		const	crvContract = new Contract(CRV_TOKEN_ADDRESS as string, ERC20_ABI);
 		const	yvBoostContract = new Contract(YVBOOST_TOKEN_ADDRESS as string, ERC20_ABI);
 		const	yCRVPoolContract = new Contract(YCRV_CURVE_POOL_ADDRESS as string, YVECRV_ABI);
+		const	cvxCRVContract = new Contract(CVXCRV_TOKEN_ADDRESS as string, ERC20_ABI);
 
 		const	[
 			yCRVAllowanceZap, styCRVAllowanceZap, lpyCRVAllowanceZap,
 			yveCRVAllowanceZap, crvAllowanceZap, yvBoostAllowanceZap,
+			cvxCRVAllowanceZap,
 			yveCRVAllowanceLP, crvAllowanceLP,
 			yCRVPoolAllowanceVault
 		] = await ethcallProvider.tryAll([
@@ -165,16 +173,18 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 			yveCRVContract.allowance(userAddress, ZAP_YEARN_VE_CRV_ADDRESS),
 			crvContract.allowance(userAddress, ZAP_YEARN_VE_CRV_ADDRESS),
 			yvBoostContract.allowance(userAddress, ZAP_YEARN_VE_CRV_ADDRESS),
+			cvxCRVContract.allowance(userAddress, ZAP_YEARN_VE_CRV_ADDRESS),
 			yveCRVContract.allowance(userAddress, YVECRV_POOL_LP_ADDRESS),
 			crvContract.allowance(userAddress, YVECRV_POOL_LP_ADDRESS),
 			yCRVPoolContract.allowance(userAddress, LPYCRV_TOKEN_ADDRESS)
-		]) as [BigNumber, BigNumber, BigNumber, BigNumber, BigNumber, BigNumber, BigNumber, BigNumber, BigNumber, BigNumber, BigNumber];
+		]) as BigNumber[];
 
 		return ({
 			// YCRV ECOSYSTEM
 			[allowanceKey(YCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS)]: yCRVAllowanceZap,
 			[allowanceKey(STYCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS)]: styCRVAllowanceZap,
 			[allowanceKey(LPYCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS)]: lpyCRVAllowanceZap,
+			[allowanceKey(CVXCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS)]: cvxCRVAllowanceZap,
 			[allowanceKey(YCRV_CURVE_POOL_ADDRESS, LPYCRV_TOKEN_ADDRESS)]: yCRVPoolAllowanceVault,
 			// CRV ECOSYSTEM
 			[allowanceKey(YVECRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS)]: yveCRVAllowanceZap,
@@ -218,8 +228,10 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 		holdings: holdings as THoldings,
 		allowances: allowances as TDict<BigNumber>,
 		styCRVAPY,
-		styCRVMegaBoost
-	}), [yCRVHarvests, holdings, allowances, styCRVAPY, styCRVMegaBoost]);
+		styCRVMegaBoost,
+		slippage,
+		set_slippage
+	}), [yCRVHarvests, holdings, allowances, styCRVAPY, styCRVMegaBoost, slippage, set_slippage]);
 
 	return (
 		<YCRVContext.Provider value={contextValue}>

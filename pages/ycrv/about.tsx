@@ -1,13 +1,13 @@
 import React, {useState} from 'react';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import SettingsOverwrite from '@common/components/SettingsOverwrite';
-import {useWallet} from '@common/contexts/useWallet';
+import {useYCRV} from '@yCRV/contexts/useYCRV';
 import Wrapper from '@yCRV/Wrapper';
 
 import type {ReactElement} from 'react';
 
 function	About(): ReactElement {
-	const	{slippage, set_slippage} = useWallet();
+	const	{slippage, set_slippage} = useYCRV();
 	const	[localSlippage, set_localSlippage] = useState(slippage);
 
 	return (

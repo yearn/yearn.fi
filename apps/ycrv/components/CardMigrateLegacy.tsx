@@ -9,11 +9,11 @@ import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/fo
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {Dropdown} from '@common/components/TokenDropdown';
-import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import ArrowDown from '@common/icons/ArrowDown';
 import {handleInputChange} from '@common/utils';
 import CardTransactorContextApp, {useCardTransactor} from '@yCRV/components/CardTransactorWrapper';
+import {useExtendedWallet} from '@yCRV/contexts/useExtendedWallet';
 import {CardVariants, CardVariantsInner} from '@yCRV/utils/animations';
 import {LEGACY_OPTIONS_FROM, LEGACY_OPTIONS_TO} from '@yCRV/utils/zapOptions';
 
@@ -22,7 +22,7 @@ import type {TDropdownOption} from '@common/types/types';
 
 function	CardMigrateLegacy(): ReactElement {
 	const	{isActive} = useWeb3();
-	const	{balances} = useWallet();
+	const	{balances} = useExtendedWallet();
 	const	{vaults, prices} = useYearn();
 	const	{
 		txStatusApprove, txStatusZap,
@@ -99,6 +99,7 @@ function	CardMigrateLegacy(): ReactElement {
 						defaultOption={LEGACY_OPTIONS_FROM[0]}
 						options={LEGACY_OPTIONS_FROM}
 						selected={selectedOptionFrom}
+						balances={balances}
 						onSelect={(option: TDropdownOption): void => {
 							performBatchedUpdates((): void => {
 								set_selectedOptionFrom(option);
@@ -174,6 +175,7 @@ function	CardMigrateLegacy(): ReactElement {
 					<Dropdown
 						defaultOption={LEGACY_OPTIONS_TO[0]}
 						options={LEGACY_OPTIONS_TO}
+						balances={balances}
 						selected={selectedOptionTo}
 						onSelect={(option: TDropdownOption): void => set_selectedOptionTo(option)} />
 					<p className={'pl-2 !text-xs font-normal !text-green-600'}>

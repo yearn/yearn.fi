@@ -9,11 +9,11 @@ import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/fo
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {Dropdown} from '@common/components/TokenDropdown';
-import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import ArrowDown from '@common/icons/ArrowDown';
 import {handleInputChange} from '@common/utils';
 import CardTransactorContextApp, {useCardTransactor} from '@yCRV/components/CardTransactorWrapper';
+import {useExtendedWallet} from '@yCRV/contexts/useExtendedWallet';
 import {CardVariants, CardVariantsInner} from '@yCRV/utils/animations';
 import {ZAP_OPTIONS_FROM, ZAP_OPTIONS_TO} from '@yCRV/utils/zapOptions';
 
@@ -22,7 +22,7 @@ import type {TDropdownOption} from '@common/types/types';
 
 function	CardZap(): ReactElement {
 	const	{isActive} = useWeb3();
-	const	{balances} = useWallet();
+	const	{balances} = useExtendedWallet();
 	const	{vaults, prices} = useYearn();
 	const	{
 		txStatusApprove, txStatusZap,
@@ -130,6 +130,7 @@ function	CardZap(): ReactElement {
 						defaultOption={ZAP_OPTIONS_FROM[0]}
 						options={ZAP_OPTIONS_FROM}
 						selected={selectedOptionFrom}
+						balances={balances}
 						onSelect={(option: TDropdownOption): void => {
 							performBatchedUpdates((): void => {
 								if (option.value === selectedOptionTo.value) {
@@ -209,6 +210,7 @@ function	CardZap(): ReactElement {
 						defaultOption={possibleTo[0]}
 						options={possibleTo}
 						selected={selectedOptionTo}
+						balances={balances}
 						onSelect={(option: TDropdownOption): void => set_selectedOptionTo(option)} />
 					<p className={'pl-2 !text-xs font-normal !text-green-600'}>
 						{toVaultAPY}

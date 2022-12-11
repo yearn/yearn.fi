@@ -8,11 +8,11 @@ import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {getProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
-import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import {getAmountWithSlippage, getVaultAPY} from '@common/utils';
 import {approveERC20} from '@common/utils/actions/approveToken';
 import {deposit} from '@common/utils/actions/deposit';
+import {useExtendedWallet} from '@yCRV/contexts/useExtendedWallet';
 import {useYCRV} from '@yCRV/contexts/useYCRV';
 import {zap} from '@yCRV/utils/actions/zap';
 import {LEGACY_OPTIONS_FROM, LEGACY_OPTIONS_TO} from '@yCRV/utils/zapOptions';
@@ -65,8 +65,8 @@ function	CardTransactorContextApp({
 	children = <div />
 }): ReactElement {
 	const	{provider, isActive} = useWeb3();
-	const	{styCRVAPY, allowances} = useYCRV();
-	const	{useWalletNonce, balances, refresh, slippage} = useWallet();
+	const	{styCRVAPY, allowances, slippage} = useYCRV();
+	const	{useWalletNonce, balances, refresh} = useExtendedWallet();
 	const	{vaults} = useYearn();
 	const	[txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
 	const	[txStatusZap, set_txStatusZap] = useState(defaultTxStatus);
@@ -100,8 +100,11 @@ function	CardTransactorContextApp({
 	**************************************************************************/
 	const expectedOutFetcher = useCallback(async (args: [string, string, BigNumber]): Promise<BigNumber> => {
 		const [_inputToken, _outputToken, _amountIn] = args;
-		const	currentProvider = provider || getProvider(1);
+		if (_amountIn.isZero()) {
+			return (ethers.constants.Zero);
+		}
 
+		const	currentProvider = provider || getProvider(1);
 		if (_inputToken === YCRV_CURVE_POOL_ADDRESS) {
 			// Direct deposit to vault from crv/yCRV Curve LP Token to lp-yCRV Vault
 			const	contract = new ethers.Contract(
@@ -138,7 +141,7 @@ function	CardTransactorContextApp({
 	** Calls the expectedOutFetcher callback.
 	**************************************************************************/
 	const	{data: expectedOut} = useSWR(
-		isActive && amount.raw.gt(0) ? [
+		isActive ? [
 			selectedOptionFrom.value,
 			selectedOptionTo.value,
 			amount.raw

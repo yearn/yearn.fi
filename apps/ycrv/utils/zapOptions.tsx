@@ -2,6 +2,8 @@ import React from 'react';
 import Image from 'next/image';
 import {CRV_TOKEN_ADDRESS, LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YCRV_TOKEN_ADDRESS, YVBOOST_TOKEN_ADDRESS, YVECRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 
+import {CVXCRV_TOKEN_ADDRESS} from './constants';
+
 import type {TDropdownOption} from '@common/types/types';
 
 const	LEGACY_OPTIONS_FROM: TDropdownOption[] = [
@@ -109,6 +111,19 @@ const	ZAP_OPTIONS_FROM: TDropdownOption[] = [
 		)
 	},
 	...LEGACY_OPTIONS_TO,
+	{
+		label: 'cvxCRV',
+		symbol: 'cvxCRV',
+		value: CVXCRV_TOKEN_ADDRESS,
+		zapVia: ZAP_YEARN_VE_CRV_ADDRESS,
+		icon: (
+			<Image
+				alt={'cvxCRV'}
+				width={24}
+				height={24}
+				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${CVXCRV_TOKEN_ADDRESS}/logo-128.png`} />
+		)
+	},
 	{
 		label: 'Curve CRV/yCRV',
 		symbol: 'CRV/yCRV',
