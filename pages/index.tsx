@@ -28,7 +28,7 @@ const	apps = [
 			loading={'eager'}
 			priority />
 	}, {
-		href: 'https://pr-771.d27dgpz01hmbvx.amplifyapp.com/' || 'https://vote.yearn.finance/vaults',
+		href: 'https://vote.yearn.finance',
 		title: 'veYFI',
 		description: 'stake your YFI to recieve\nrewards and boost gauges.',
 		icon: <LogoYearn
