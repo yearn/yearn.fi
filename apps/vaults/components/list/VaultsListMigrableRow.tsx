@@ -1,20 +1,27 @@
-import React, {useMemo} from 'react';
-import Link from 'next/link';
+import React, {useMemo, useState} from 'react';
+import {ethers} from 'ethers';
+import {useMigrableWallet} from '@vaults/contexts/useMigrableWallet';
+import {Button} from '@yearn-finance/web-lib/components/Button';
+import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
+import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
-import {useWallet} from '@common/contexts/useWallet';
 import {formatPercent, getVaultName} from '@common/utils';
+import {approveERC20, isApprovedERC20} from '@common/utils/actions/approveToken';
+import {migrateShares} from '@common/utils/actions/migrateShares';
 
 import type {ReactElement} from 'react';
 import type {TYearnVault} from '@common/types/yearn';
 
-function	VaultsListRow({currentVault}: {currentVault: TYearnVault}): ReactElement {
-	const {balances} = useWallet();
+function	VaultsListMigrableRow({currentVault}: {currentVault: TYearnVault}): ReactElement {
+	const {isActive, provider} = useWeb3();
+	const {balances, refresh} = useMigrableWallet();
 	const {safeChainID} = useChainID();
+	const [txStatus, set_txStatus] = useState(defaultTxStatus);
 
 	const availableToDeposit = useMemo((): number => {
 		// Handle ETH native coin
@@ -54,9 +61,36 @@ function	VaultsListRow({currentVault}: {currentVault: TYearnVault}): ReactElemen
 		return (normalizedTotalAssets / normalizedDepositLimit * 100);
 	}, [currentVault.details.depositLimit, currentVault.token.decimals, currentVault.tvl.total_assets]);
 
+	async function onMigrateFlow(): Promise<void> {
+		const	isApproved = await isApprovedERC20(
+			provider as ethers.providers.Web3Provider, 
+			toAddress(currentVault.address), //from
+			toAddress(currentVault.migration.contract), //migrator
+			balances[toAddress(currentVault.address)]?.raw || ethers.constants.Zero
+		);
+
+		if (isApproved) {
+			new Transaction(provider, migrateShares, set_txStatus).populate(
+				toAddress(currentVault.migration.contract), //migrator
+				toAddress(currentVault.address), //from
+				toAddress(currentVault.migration.address) //to
+			).onSuccess(async (): Promise<void> => {
+				await refresh();
+			}).perform();
+		} else {
+			new Transaction(provider, approveERC20, set_txStatus).populate(
+				toAddress(currentVault.address), //from
+				toAddress(currentVault.migration.contract), //migrator
+				ethers.constants.MaxUint256 //amount
+			).onSuccess(async (): Promise<void> => {
+				await onMigrateFlow();
+			}).perform();
+		}
+	}
+
 	return (
-		<Link key={`${currentVault.address}`} href={`/vaults/${safeChainID}/${toAddress(currentVault.address)}`}>
-			<div className={'yearn--table-wrapper cursor-pointer transition-colors hover:bg-neutral-300'}>
+		<button onClick={onMigrateFlow}>
+			<div className={'yearn--table-wrapper'}>
 				<div className={'yearn--table-token-section'}>
 					<div className={'yearn--table-token-section-item'}>
 						<div className={'yearn--table-token-section-item-image'}>
@@ -76,14 +110,14 @@ function	VaultsListRow({currentVault}: {currentVault: TYearnVault}): ReactElemen
 					<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
 						<label className={'yearn--table-data-section-item-label'}>{'APY'}</label>
 						<b className={'yearn--table-data-section-item-value'}>
-							{formatPercent((currentVault.apy?.net_apy || 0) * 100)}
+							{formatPercent(0)}
 						</b>
 					</div>
 
 					<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
 						<label className={'yearn--table-data-section-item-label'}>{'Available'}</label>
 						<p className={`yearn--table-data-section-item-value ${availableToDeposit === 0 ? 'text-neutral-400' : 'text-neutral-900'}`}>
-							{formatAmount(availableToDeposit)}
+							{formatAmount(0)}
 						</p>
 					</div>
 
@@ -105,18 +139,25 @@ function	VaultsListRow({currentVault}: {currentVault: TYearnVault}): ReactElemen
 						<p className={'yearn--table-data-section-item-value'}>
 							{`$ ${formatAmount(currentVault.tvl?.tvl || 0, 0, 0)}`}
 						</p>
-						<div className={'mt-1 w-2/3'}>
-							<div className={'relative h-1 w-full bg-neutral-400'}>
-								<div
-									className={'absolute left-0 top-0 h-1 w-full bg-neutral-900'}
-									style={{width: `${availableToDepositRatio}%`}} />
-							</div>
+						<div className={'relative mt-1 h-1 w-full bg-neutral-400'}>
+							<div
+								className={'absolute left-0 top-0 h-1 w-full bg-neutral-900'}
+								style={{width: formatPercent(availableToDepositRatio)}} />
 						</div>
+					</div>
+
+					<div className={'col-span-1 flex h-8 flex-row items-center justify-between md:h-14 md:justify-end'}>
+						<Button
+							className={'yearn--button-smaller !w-full'}
+							isBusy={txStatus.pending}
+							isDisabled={!isActive}>
+							{'Migrate'}
+						</Button>
 					</div>
 				</div>
 			</div>
-		</Link>
+		</button>
 	);
 }
 
-export {VaultsListRow};
+export {VaultsListMigrableRow};

@@ -7,6 +7,7 @@ import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
+import {formatPercent} from '@common/utils';
 
 import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
@@ -70,10 +71,10 @@ function	GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height =
 					tick={(e): ReactElement => {
 						const {payload: {value}} = e;
 						e.fill = '#5B5B5B';
-						e.class = 'text-xxs md:text-xs tabular-nums z-10 ';
+						e.class = 'text-xxs md:text-xs font-number z-10 ';
 						e.alignmentBaseline = 'middle';
-						const	formatedValue = formatAmount(value, 2, 2);
-						return <text {...e}>{`${formatedValue}%`}</text>;
+						const	formatedValue = formatPercent(value);
+						return <text {...e}>{formatedValue}</text>;
 					}} />
 				<Tooltip
 					content={(e): ReactElement => {
@@ -96,14 +97,14 @@ function	GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height =
 									</div>
 									<div className={'flex flex-row items-center justify-between'}>
 										<p className={'text-xs text-neutral-600'}>{'APR'}</p>
-										<b className={'text-xs font-bold tabular-nums text-neutral-900'}>
-											{`${formatAmount(Number(value), 2, 2)} %`}
+										<b className={'font-number text-xs font-bold text-neutral-900'}>
+											{formatPercent(Number(value))}
 										</b>
 									</div>
 									<div className={'flex flex-row items-center justify-between'}>
 										<p className={'text-xs text-neutral-600'}>{normalizedDiff > 0 ? 'Gain' : 'Loss'}</p>
-										<b className={'text-xs font-bold tabular-nums text-neutral-900'}>
-											{`${formatAmount(normalizedDiff, 2, 2)} ${vaultTicker}`}
+										<b className={'font-number text-xs font-bold text-neutral-900'}>
+											{`${formatAmount(normalizedDiff)} ${vaultTicker}`}
 										</b>
 									</div>
 								</div>

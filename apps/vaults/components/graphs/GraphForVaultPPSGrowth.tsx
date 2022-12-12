@@ -1,6 +1,7 @@
 import React, {Fragment} from 'react';
 import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
+import {formatPercent} from '@common/utils';
 
 import type {ReactElement} from 'react';
 import type {TMessariGraphData} from '@common/types/types';
@@ -41,7 +42,7 @@ function	GraphForVaultPPSGrowth({messariData, height = 312}: TGraphForVaultPPSGr
 					tick={(e): ReactElement => {
 						const {payload: {value}} = e;
 						e.fill = '#5B5B5B';
-						e.class = 'text-xxs md:text-xs tabular-nums';
+						e.class = 'text-xxs md:text-xs font-number';
 						e.alignmentBaseline = 'middle';
 						const	formatedValue = formatAmount(value, 3, 3);
 						return <text {...e}>{formatedValue}</text>;
@@ -62,8 +63,8 @@ function	GraphForVaultPPSGrowth({messariData, height = 312}: TGraphForVaultPPSGr
 									</div>
 									<div className={'flex flex-row items-center justify-between'}>
 										<p className={'text-xs text-neutral-600'}>{'Growth'}</p>
-										<b className={'text-xs font-bold tabular-nums text-neutral-900'}>
-											{`${formatAmount(Number(value) - 1, 4, 4)}%`}
+										<b className={'font-number text-xs font-bold text-neutral-900'}>
+											{formatPercent(Number(value) - 1, 4, 4)}
 										</b>
 									</div>
 								</div>

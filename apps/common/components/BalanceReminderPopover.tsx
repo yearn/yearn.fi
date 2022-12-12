@@ -136,7 +136,7 @@ export default function BalanceReminderPopover(): ReactElement {
 														</div>
 														<span className={'ml-2'}>{vault.symbol}</span>
 													</span>
-													<span className={'flex flex-row items-center justify-center tabular-nums text-neutral-900'}>
+													<span className={'font-number flex flex-row items-center justify-center text-neutral-900'}>
 														{formatAmount(balances[toAddress(vault.address)]?.normalized || 0, 2, 4)}
 														<IconAddToMetamask
 															onClick={(e): void => {

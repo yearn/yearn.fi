@@ -8,7 +8,7 @@ import type {ReactElement} from 'react';
 function	ValueAnimation({
 	identifier,
 	value,
-	defaultValue = '0.00',
+	defaultValue = formatAmount(0),
 	prefix = '',
 	suffix = '',
 	className = 'wordLeft'
@@ -93,7 +93,7 @@ function	ValueAnimation({
 	}, []);
 
 	useClientEffect((): void => {
-		if (value && value !== formatAmount(0, 2, 2) && !hasBeenTriggerd.current) {
+		if (value && value !== formatAmount(0) && !hasBeenTriggerd.current) {
 			onStartAnimation();
 		}
 	}, [value, hasBeenTriggerd.current]);

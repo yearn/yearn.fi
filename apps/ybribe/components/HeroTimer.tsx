@@ -46,7 +46,7 @@ function	HeroTimer(): ReactElement {
 	}, []);
 
 	return (
-		<b className={'tabular-nums'} suppressHydrationWarning={true}>
+		<b className={'font-number'} suppressHydrationWarning={true}>
 			{time ? formatTimestamp(time) : '00H 00M 00S'}
 		</b>
 	);

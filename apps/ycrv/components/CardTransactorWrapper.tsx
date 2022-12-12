@@ -4,12 +4,11 @@ import useSWR from 'swr';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {getProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
-import {getAmountWithSlippage, getVaultAPY} from '@common/utils';
+import {formatPercent, getAmountWithSlippage, getVaultAPY} from '@common/utils';
 import {approveERC20} from '@common/utils/actions/approveToken';
 import {deposit} from '@common/utils/actions/deposit';
 import {useExtendedWallet} from '@yCRV/contexts/useExtendedWallet';
@@ -220,14 +219,14 @@ function	CardTransactorContextApp({
 	**************************************************************************/
 	const	fromVaultAPY = useMemo((): string => {
 		if (toAddress(selectedOptionFrom.value) === STYCRV_TOKEN_ADDRESS) {
-			return `APY ${formatAmount(styCRVAPY, 2, 2)} %`;
+			return `APY ${formatPercent(styCRVAPY)}`;
 		}
 		return getVaultAPY(vaults, selectedOptionFrom.value);
 	}, [vaults, selectedOptionFrom, styCRVAPY]);
 
 	const	toVaultAPY = useMemo((): string => {
 		if (toAddress(selectedOptionTo.value) === STYCRV_TOKEN_ADDRESS) {
-			return `APY ${formatAmount(styCRVAPY, 2, 2)} %`;
+			return `APY ${formatPercent(styCRVAPY)}`;
 		}
 		return getVaultAPY(vaults, selectedOptionTo.value);
 	}, [vaults, selectedOptionTo, styCRVAPY]);

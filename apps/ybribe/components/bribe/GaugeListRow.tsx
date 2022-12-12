@@ -8,6 +8,7 @@ import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/fo
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useYearn} from '@common/contexts/useYearn';
+import {formatPercent} from '@common/utils';
 import {GaugeBribeModal} from '@yBribe/components/bribe/GaugeBribeModal';
 import {useBribes} from '@yBribe/contexts/useBribes';
 
@@ -27,11 +28,11 @@ function	GaugeRowItemWithExtraData({address, value}: {address: string, value: Bi
 	const	bribeValue = bribeAmount * (Number(tokenPrice || 0) / 100);
 
 	return (
-		<div className={'flex h-auto flex-col items-end pt-0 md:h-16 md:pt-6'}>
-			<p className={'inline-flex items-baseline text-base tabular-nums text-neutral-900'}>
+		<div className={'flex h-auto flex-col items-end pt-0 md:h-14'}>
+			<p className={'yearn--table-data-section-item-value'}>
 				{`$ ${formatAmount(bribeValue, 5, 5)}`}
 			</p>
-			<p className={'inline-flex items-baseline text-right text-xs tabular-nums text-neutral-400'}>
+			<p className={'font-number inline-flex items-baseline text-right text-xs text-neutral-400'}>
 				{formatAmount(bribeAmount, 5, 5)}
 				&nbsp;
 				<span>{`${symbol}`}</span>
@@ -40,7 +41,7 @@ function	GaugeRowItemWithExtraData({address, value}: {address: string, value: Bi
 	);
 }
 
-function	GaugeTableRow({currentGauge}: {currentGauge: TCurveGauges}): ReactElement {
+function	GaugeListRow({currentGauge}: {currentGauge: TCurveGauges}): ReactElement {
 	const	{isActive} = useWeb3();
 	const	{currentRewards, nextRewards} = useBribes();
 	const	[hasModal, set_hasModal] = useState(false);
@@ -61,10 +62,10 @@ function	GaugeTableRow({currentGauge}: {currentGauge: TCurveGauges}): ReactEleme
 	const	nextRewardsForCurrentGaugeMap = Object.entries(nextRewardsForCurrentGauge || {}) || [];
 
 	return (
-		<div className={'grid w-full grid-cols-2 border-t border-neutral-200 px-4 pb-6 md:grid-cols-7 md:border-none md:px-10'}>
-			<div className={'col-span-2 mb-2 flex h-16 flex-row items-center justify-between pt-6 md:col-span-2 md:mb-0'}>
-				<div className={'flex flex-row items-center space-x-2 md:space-x-6'}>
-					<div className={'flex h-6 w-6 rounded-full md:flex md:h-10 md:w-10'}>
+		<div className={'yearn--table-wrapper cursor-pointer transition-colors hover:bg-neutral-300'}>
+			<div className={'yearn--table-token-section'}>
+				<div className={'yearn--table-token-section-item'}>
+					<div className={'yearn--table-token-section-item-image'}>
 						<ImageWithFallback
 							alt={''}
 							width={40}
@@ -87,24 +88,24 @@ function	GaugeTableRow({currentGauge}: {currentGauge: TCurveGauges}): ReactEleme
 				</div>
 			</div>
 
-			<div className={'col-span-2 grid grid-cols-8 gap-0 md:col-span-5 md:grid-cols-10 md:gap-10'}>
 
-				<div className={'col-span-8 flex h-16 flex-row justify-between pt-6 md:col-span-2 md:justify-end'}>
-					<label className={'block text-sm leading-6 text-neutral-400 md:hidden'}>{'Weight'}</label>
-					<p className={'text-end text-base tabular-nums text-neutral-900'}>
-						{`${formatAmount(gaugeRelativeWeight * 100, 2, 2)}%`}
+			<div className={'yearn--table-data-section grid-cols-9'}>
+				<div className={'yearn--table-data-section-item'} datatype={'number'}>
+					<label className={'yearn--table-data-section-item-label'}>{'Weight'}</label>
+					<p className={'yearn--table-data-section-item-value'}>
+						{formatPercent(gaugeRelativeWeight * 100)}
 					</p>
 				</div>
 
-				<div className={'col-span-8 flex flex-row justify-between pt-4 md:col-span-3 md:flex-col md:justify-start md:pt-0'}>
-					<label className={'block text-sm leading-6 text-neutral-400 md:hidden'}>{'Current Bribes'}</label>
+				<div className={'yearn--table-data-section-item md:col-span-3'} datatype={'number'}>
+					<label className={'yearn--table-data-section-item-label'}>{'Current Bribes'}</label>
 					{
 						!currentRewardsForCurrentGaugeMap || currentRewardsForCurrentGaugeMap.length === 0 ? (
-							<div className={'flex h-auto flex-col items-end pt-0 md:h-16 md:pt-6'}>
-								<p className={'inline-flex items-baseline text-base tabular-nums text-neutral-900'}>
-									{'$ 0.00000'}
+							<div className={'flex h-auto flex-col items-end pt-0 md:h-14'}>
+								<p className={'yearn--table-data-section-item-value'}>
+									{`$ ${formatAmount(0, 5, 5)}`}
 								</p>
-								<p className={'inline-flex items-baseline text-right text-xs tabular-nums text-neutral-400'}>
+								<p className={'font-number inline-flex items-baseline text-right text-xs text-neutral-400'}>
 									{'-'}
 								</p>
 							</div>
@@ -117,15 +118,15 @@ function	GaugeTableRow({currentGauge}: {currentGauge: TCurveGauges}): ReactEleme
 					}
 				</div>
 
-				<div className={'col-span-8 flex flex-row justify-between pt-4 md:col-span-3 md:flex-col md:justify-start md:pt-0'}>
-					<label className={'block text-sm leading-6 text-neutral-400 md:hidden'}>{'Current Bribes'}</label>
+				<div className={'yearn--table-data-section-item md:col-span-3'} datatype={'number'}>
+					<label className={'yearn--table-data-section-item-label'}>{'Current Bribes'}</label>
 					{
 						!nextRewardsForCurrentGaugeMap || nextRewardsForCurrentGaugeMap.length === 0 ? (
-							<div className={'flex h-auto flex-col items-end pt-0 md:h-16 md:pt-6'}>
-								<p className={'inline-flex items-baseline text-base tabular-nums text-neutral-900'}>
-									{'$ 0.00000'}
+							<div className={'flex h-auto flex-col items-end pt-0 md:h-14'}>
+								<p className={'yearn--table-data-section-item-value'}>
+									{`$ ${formatAmount(0, 5, 5)}`}
 								</p>
-								<p className={'inline-flex items-baseline text-right text-xs tabular-nums text-neutral-400'}>
+								<p className={'font-number inline-flex items-baseline text-right text-xs text-neutral-400'}>
 									{'-'}
 								</p>
 							</div>
@@ -138,8 +139,8 @@ function	GaugeTableRow({currentGauge}: {currentGauge: TCurveGauges}): ReactEleme
 					}
 				</div>
 
-				<div className={'col-span-2 hidden flex-col items-end md:flex'}>
-					<div className={'h-16 pt-7'}>
+				<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
+					<div className={'h-14 pt-0'}>
 						<Button
 							className={'yearn--button-smaller w-full'}
 							isDisabled={!isActive}
@@ -162,4 +163,4 @@ function	GaugeTableRow({currentGauge}: {currentGauge: TCurveGauges}): ReactEleme
 	);
 }
 
-export {GaugeTableRow};
+export {GaugeListRow};

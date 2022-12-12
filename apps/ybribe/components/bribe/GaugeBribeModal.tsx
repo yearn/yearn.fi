@@ -224,7 +224,7 @@ function	GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauges, o
 							<p className={'text-sm text-neutral-400'}>
 								{'Value'}
 							</p>
-							<p className={'text-base tabular-nums text-neutral-900'}>
+							<p className={'font-number text-base text-neutral-900'}>
 								{selectedToken ? formatCounterValue(amount?.normalized || 0, (Number(prices?.[toAddress(tokenAddress)] || 0) / 1000000)) : '-'}
 							</p>
 						</div>
@@ -232,7 +232,7 @@ function	GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauges, o
 							<p className={'text-sm text-neutral-400'}>
 								{'Amount'}
 							</p>
-							<p className={'font-mono text-sm tabular-nums text-neutral-900'}>
+							<p className={'font-number text-sm text-neutral-900'}>
 								{selectedToken ? `${amount.raw.toString()}` : '-'}
 							</p>
 						</div>
@@ -240,7 +240,7 @@ function	GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauges, o
 							<p className={'text-sm text-neutral-400'}>
 								{'Gauge'}
 							</p>
-							<p className={'font-mono text-sm tabular-nums text-neutral-900'}>
+							<p className={'font-number text-sm text-neutral-900'}>
 								{toAddress(currentGauge.gauge)}
 							</p>
 						</div>

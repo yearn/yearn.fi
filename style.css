@@ -1,14 +1,51 @@
 /* This will load Tailwindcss + all the overwrite from Yearn lib */
-@import '@yearn-finance/web-lib/style.next.css';
+@import "@yearn-finance/web-lib/style.next.css";
+
+@font-face {
+	font-family: "Aeonik Mono";
+	src: url("public/fonts/AeonikMono-Regular.eot");
+	src: local("Aeonik Mono Regular"), local("AeonikMono-Regular"),
+		url("public/fonts/AeonikMono-Regular.eot?#iefix")
+			format("embedded-opentype"),
+		url("public/fonts/AeonikMono-Regular.woff2") format("woff2"),
+		url("public/fonts/AeonikMono-Regular.woff") format("woff"),
+		url("public/fonts/AeonikMono-Regular.ttf") format("truetype"),
+		url("public/fonts/AeonikMono-Regular.svg#AeonikMono-Regular")
+			format("svg");
+	font-weight: normal;
+	font-style: normal;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: "Aeonik Mono";
+	src: url("public/fonts/AeonikMono-Bold.eot");
+	src: local("Aeonik Mono Bold"), local("AeonikMono-Bold"),
+		url("public/fonts/AeonikMono-Bold.eot?#iefix")
+			format("embedded-opentype"),
+		url("public/fonts/AeonikMono-Bold.woff2") format("woff2"),
+		url("public/fonts/AeonikMono-Bold.woff") format("woff"),
+		url("public/fonts/AeonikMono-Bold.ttf") format("truetype"),
+		url("public/fonts/AeonikMono-Bold.svg#AeonikMono-Bold") format("svg");
+	font-weight: bold;
+	font-style: normal;
+	font-display: swap;
+}
+
+@layer base {
 
 #swap {
 	@apply scroll-mt-12 mb-0 md:mb-44;
 }
 
+.font-number {
+	@apply font-mono tabular-nums;
+}
+
 /* 🔵 - Yearn Finance ******************************************************************************
-** AppBox is the style used to make the nices animations on the home page feel nice and smooth
-** A custom overwrite is required for dark/light mode
-***************************************************************************************************/
+	** AppBox is the style used to make the nices animations on the home page feel nice and smooth
+	** A custom overwrite is required for dark/light mode
+	***************************************************************************************************/
 .appBox {
 	--x-px: calc(var(--x) * 1px);
 	--y-px: calc(var(--y) * 1px);
@@ -41,8 +78,68 @@
 }
 
 /* 🔵 - Yearn Finance ******************************************************************************
-** Details and summary nice styles.
+** Table
+** Fake table properties
 ***************************************************************************************************/
+.yearn--table-head-wrapper {
+	@apply mb-2 hidden w-full grid-cols-8 px-10 md:grid;
+}
+.yearn--table-head-token-section {
+	@apply col-span-3;
+}
+.yearn--table-head-data-section {
+	@apply col-span-5 grid grid-cols-8 gap-x-7;
+}
+.yearn--table-head-label {
+	@apply text-start text-base text-neutral-400;
+}
+.yearn--table-head-label-wrapper {
+	@apply col-span-1 flex flex-row items-center justify-start space-x-1;
+	&[datatype="number"] {
+		@apply justify-end;
+		& > .yearn--table-head-label {
+			@apply text-end;
+		}
+	}
+}
+
+.yearn--table-wrapper {
+	@apply grid w-full grid-cols-1 border-t border-neutral-200 py-2 px-4 md:grid-cols-8 md:border-none md:px-10;
+}
+.yearn--table-token-section {
+	@apply col-span-3 mb-2 flex flex-row items-center justify-between py-4 md:mb-0 md:py-0;
+}
+.yearn--table-token-section-item {
+	@apply flex flex-row items-center space-x-4 md:space-x-6;
+}
+.yearn--table-token-section-item-image {
+	@apply h-8 min-h-[32px] w-8 min-w-[32px] rounded-full bg-neutral-200 md:flex md:h-10 md:w-10;
+}
+.yearn--table-data-section {
+	@apply col-span-5 grid grid-cols-1 gap-x-0 md:gap-x-7 md:grid-cols-8 gap-y-4 md:gap-y-0;
+}
+.yearn--table-data-section-item-label {
+	@apply inline text-start text-neutral-500 md:hidden;
+}
+.yearn--table-data-section-item-value {
+	@apply text-neutral-900;
+}
+.yearn--table-data-section-item {
+	@apply col-span-1 flex h-8 flex-row justify-between pt-0 px-0 md:h-14 md:pt-4;
+	&[datatype="number"] {
+		@apply md:justify-end font-number;
+		& > .yearn--table-data-section-item-value {
+			@apply font-number text-end;
+		}
+	}
+}
+.yearn--table-label {
+	@apply inline text-start text-neutral-500 md:hidden;
+}
+
+/* 🔵 - Yearn Finance ******************************************************************************
+	** Details and summary nice styles.
+	***************************************************************************************************/
 details > summary {
 	list-style: none;
 }
@@ -55,7 +152,7 @@ details {
 	& > summary {
 		@apply px-4 md:px-6 py-6 md:py-8 cursor-pointer flex flex-row items-center justify-between;
 	}
-	
+
 	& > summary .summary-chevron {
 		@apply h-6 w-6 -rotate-90 text-neutral-900 transition-all;
 	}
@@ -65,9 +162,9 @@ details {
 }
 
 /* 🔵 - Yearn Finance ******************************************************************************
-** The WordWrapper css is used for the animation with the text in the header. This animation require
-** letters to be splitted and a custom css is required to make it work.
-***************************************************************************************************/
+	** The WordWrapper css is used for the animation with the text in the header. This animation require
+	** letters to be splitted and a custom css is required to make it work.
+	***************************************************************************************************/
 .wordWrapper {
 	display: inline-block;
 	vertical-align: top;
@@ -104,10 +201,9 @@ details {
 	transition: transform 0.38s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-
 /* 🔵 - Yearn Finance ******************************************************************************
-** Recharts custom css overwrite, mostly used to make the chart works with our light/dark mode
-***************************************************************************************************/
+	** Recharts custom css overwrite, mostly used to make the chart works with our light/dark mode
+	***************************************************************************************************/
 .recharts-surface {
 	overflow: visible;
 }
@@ -132,20 +228,19 @@ details {
 	fill: hsl(var(--color-neutral-0));
 }
 
-
 /* 🔵 - Yearn Finance ******************************************************************************
-** Tooltip
-** In some place we need a tooltip to display some information on hover. This style controls the
-** display of that tooltip.
-**
-** Usage:
-**	<div className={'tooltip'}>
-**		{'Something displayed'}
-** 		<span className={'tooltiptext text-xs'}>
-** 			<p>{'Tooltip content'}</p>
-** 		</span>
-** 	</div>
-***************************************************************************************************/
+	** Tooltip
+	** In some place we need a tooltip to display some information on hover. This style controls the
+	** display of that tooltip.
+	**
+	** Usage:
+	**	<div className={'tooltip'}>
+	**		{'Something displayed'}
+	** 		<span className={'tooltiptext text-xs'}>
+	** 			<p>{'Tooltip content'}</p>
+	** 		</span>
+	** 	</div>
+	***************************************************************************************************/
 .tooltip {
 	@apply relative;
 }
@@ -167,7 +262,8 @@ details {
 	margin-right: -5px;
 	border-width: 5px;
 	border-style: solid;
-	border-color: hsl(var(--color-neutral-0)) transparent transparent transparent;
+	border-color: hsl(var(--color-neutral-0)) transparent transparent
+		transparent;
 	transform: rotate(180deg);
 }
 
@@ -181,30 +277,31 @@ details {
 }
 
 /* 🔵 - Yearn Finance ******************************************************************************
-** Loader
-** Custom style for the loader icon
-***************************************************************************************************/
+	** Loader
+	** Custom style for the loader icon
+	***************************************************************************************************/
 .loader {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: #fff;
-  box-shadow: 16px 0 #fff, -16px 0 #fff;
-  position: relative;
-  animation: flash 1s ease-out infinite alternate;
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background-color: #fff;
+	box-shadow: 16px 0 #fff, -16px 0 #fff;
+	position: relative;
+	animation: flash 1s ease-out infinite alternate;
 }
 
 @keyframes flash {
-  0% {
-    background-color: #FFF2;
-    box-shadow: 12px 0 #FFF2, -12px 0 #FFF;
-  }
-  50% {
-    background-color: #FFF;
-    box-shadow: 12px 0 #FFF2, -12px 0 #FFF2;
-  }
-  100% {
-    background-color: #FFF2;
-    box-shadow: 12px 0 #FFF, -12px 0 #FFF2;
-  }
+	0% {
+		background-color: #fff2;
+		box-shadow: 12px 0 #fff2, -12px 0 #fff;
+	}
+	50% {
+		background-color: #fff;
+		box-shadow: 12px 0 #fff2, -12px 0 #fff2;
+	}
+	100% {
+		background-color: #fff2;
+		box-shadow: 12px 0 #fff, -12px 0 #fff2;
+	}
+}
 }

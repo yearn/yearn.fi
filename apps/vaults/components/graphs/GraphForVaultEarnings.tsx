@@ -60,7 +60,7 @@ function	GraphForVaultEarnings({currentVault, harvestData, height = 312, isCumul
 					tick={(e): ReactElement => {
 						const {payload: {value}} = e;
 						e.fill = '#5B5B5B';
-						e.class = 'text-xxs md:text-xs tabular-nums';
+						e.class = 'text-xxs md:text-xs font-number';
 						e.alignmentBaseline = 'middle';
 						const	formatedValue = formatWithUnit(value, 0, 0);
 						return <text {...e}>{formatedValue}</text>;
@@ -81,8 +81,8 @@ function	GraphForVaultEarnings({currentVault, harvestData, height = 312, isCumul
 									</div>
 									<div className={'flex flex-row items-center justify-between'}>
 										<p className={'text-xs text-neutral-600'}>{'Earnings'}</p>
-										<b className={'text-xs font-bold tabular-nums text-neutral-900'}>
-											{`${formatAmount(Number(value), 2, 2)} ${currentVault.token.symbol}`}
+										<b className={'font-number text-xs font-bold text-neutral-900'}>
+											{`${formatAmount(Number(value))} ${currentVault.token.symbol}`}
 										</b>
 									</div>
 								</div>

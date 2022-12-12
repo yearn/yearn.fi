@@ -20,13 +20,13 @@ import {Dropdown} from '@common/components/TokenDropdown';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import IconArrowRight from '@common/icons/IconArrowRight';
-import {handleInputChange} from '@common/utils';
+import {formatPercent, handleInputChange} from '@common/utils';
 import {approveERC20} from '@common/utils/actions/approveToken';
 import {deposit} from '@common/utils/actions/deposit';
 import {depositETH} from '@common/utils/actions/depositEth';
 import {depositViaPartner} from '@common/utils/actions/depositViaPartner';
 import {withdrawETH} from '@common/utils/actions/withdrawEth';
-import {withdrawShare} from '@common/utils/actions/withdrawShare';
+import {withdrawShares} from '@common/utils/actions/withdrawShares';
 
 import type {BigNumber} from 'ethers';
 import type {ChangeEvent, ReactElement} from 'react';
@@ -240,11 +240,11 @@ function	ActionButton({
 	** Trigger a withdraw web3 action using the vault contract to take back
 	** some underlying token from this specific vault.
 	**************************************************************************/
-	async function	onWithdrawShare(): Promise<void> {
+	async function	onWithdrawShares(): Promise<void> {
 		if (!selectedOptionFrom) {
 			return;
 		}
-		new Transaction(provider, withdrawShare, set_txStatusDeposit).populate(
+		new Transaction(provider, withdrawShares, set_txStatusDeposit).populate(
 			toAddress(selectedOptionFrom.value), //vault address
 			amount.raw //amount
 		).onSuccess(async (): Promise<void> => {
@@ -268,7 +268,7 @@ function	ActionButton({
 			if (isOutputTokenEth) {
 				await onWithdrawEth();
 			} else {
-				await onWithdrawShare();
+				await onWithdrawShares();
 			}
 		}
 	}
@@ -480,8 +480,8 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 							<label className={'text-base text-neutral-600'}>
 								{isDepositing ? 'From wallet' : 'From vault'}
 							</label>
-							<legend className={'inline text-xs tabular-nums text-neutral-600 md:hidden'} suppressHydrationWarning>
-								{`You have ${formatAmount(balances[selectedOptionFrom?.value || '']?.normalized || 0, 2, 2)} ${selectedOptionFrom?.symbol || 'tokens'}`}
+							<legend className={'font-number inline text-xs text-neutral-600 md:hidden'} suppressHydrationWarning>
+								{`You have ${formatAmount(balances[selectedOptionFrom?.value || '']?.normalized || 0)} ${selectedOptionFrom?.symbol || 'tokens'}`}
 							</legend>
 						</div>
 						{(ARE_ZAP_ENABLED || possibleOptionsFrom.length > 1) ? (
@@ -503,8 +503,8 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 								</div>
 							</div>
 						)}
-						<legend className={'hidden text-xs tabular-nums text-neutral-600 md:inline'} suppressHydrationWarning>
-							{`You have ${formatAmount(balances[selectedOptionFrom?.value || '']?.normalized || 0, 2, 2)} ${selectedOptionFrom?.symbol || 'tokens'}`}
+						<legend className={'font-number hidden text-xs text-neutral-600 md:inline'} suppressHydrationWarning>
+							{`You have ${formatAmount(balances[selectedOptionFrom?.value || '']?.normalized || 0)} ${selectedOptionFrom?.symbol || 'tokens'}`}
 						</legend>
 					</div>
 					<div className={'w-full space-y-2'}>
@@ -538,7 +538,7 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 								</button>
 							</div>
 						</div>
-						<legend className={'mr-1 text-end text-xs tabular-nums text-neutral-600 md:mr-0 md:text-start'}>
+						<legend className={'font-number mr-1 text-end text-xs text-neutral-600 md:mr-0 md:text-start'}>
 							{formatCounterValue(amount?.normalized || 0, selectedOptionFromPricePerToken)}
 						</legend>
 					</div>
@@ -567,8 +567,8 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 							<label className={'text-base text-neutral-600'}>
 								{isDepositing ? 'To vault' : 'To wallet'}
 							</label>
-							<legend className={'inline text-xs tabular-nums text-neutral-600 md:hidden'} suppressHydrationWarning>
-								{`APY ${isDepositing ? formatAmount((currentVault?.apy?.net_apy || 0) * 100, 2, 2) : '0.00'} %`}
+							<legend className={'font-number inline text-xs text-neutral-600 md:hidden'} suppressHydrationWarning>
+								{`APY ${formatPercent((isDepositing ? currentVault?.apy?.net_apy || 0 : 0) * 100)}`}
 							</legend>
 						</div>
 						{(ARE_ZAP_ENABLED || possibleOptionsTo.length > 1) ? (
@@ -589,8 +589,8 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 								</div>
 							</div>
 						)}
-						<legend className={'hidden text-xs tabular-nums text-neutral-600 md:inline'} suppressHydrationWarning>
-							{isDepositing ? `APY ${formatAmount((currentVault?.apy?.net_apy || 0) * 100, 2, 2)} %` : ''}
+						<legend className={'font-number hidden text-xs text-neutral-600 md:inline'} suppressHydrationWarning>
+							{isDepositing ? `APY ${formatPercent((currentVault?.apy?.net_apy || 0) * 100)}` : ''}
 						</legend>
 					</div>
 
@@ -610,7 +610,7 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 									value={expectedOut?.normalized || 0} />
 							</div>
 						</div>
-						<legend className={'mr-1 text-end text-xs tabular-nums text-neutral-600 md:mr-0 md:text-start'}>
+						<legend className={'font-number mr-1 text-end text-xs text-neutral-600 md:mr-0 md:text-start'}>
 							{formatCounterValue(expectedOut?.normalized || 0, selectedOptionToPricePerToken)}
 						</legend>
 					</div>

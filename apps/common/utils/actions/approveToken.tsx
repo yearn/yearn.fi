@@ -15,7 +15,8 @@ export async function	isApprovedERC20(
 			['function allowance(address _owner, address _spender) public view returns (uint256)'],
 			provider
 		);
-		return await contract.allowance(address, spender).gte(amount);
+		const value = await contract.allowance(address, spender);
+		return value.gte(amount);
 	} catch (error) {
 		return false;
 	}

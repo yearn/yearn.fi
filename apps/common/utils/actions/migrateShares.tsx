@@ -1,22 +1,24 @@
 import {ethers} from 'ethers';
-import {VAULT_ABI} from '@yearn-finance/web-lib/utils/abi';
+import VAULT_MIGRATOR_ABI from '@vaults/utils/abi/vaultMigrator.abi';
 
 import type {ContractInterface} from 'ethers';
+import type {TAddress} from '@yearn-finance/web-lib/utils/address';
 
-export async function	withdrawShare(
+export async function	migrateShares(
 	provider: ethers.providers.Web3Provider,
-	vaultAddress: string,
-	maxShares: ethers.BigNumber
+	migratorAddress: TAddress,
+	fromVault: TAddress,
+	toVault: TAddress
 ): Promise<boolean> {
 	const	signer = provider.getSigner();
 
 	try {
 		const	contract = new ethers.Contract(
-			vaultAddress,
-			VAULT_ABI as ContractInterface,
+			migratorAddress,
+			VAULT_MIGRATOR_ABI as ContractInterface,
 			signer
 		);
-		const	transaction = await contract.withdraw(maxShares);
+		const	transaction = await contract.migrateAll(fromVault, toVault);
 		const	transactionResult = await transaction.wait();
 		if (transactionResult.status === 0) {
 			console.error('Fail to perform transaction');

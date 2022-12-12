@@ -1,4 +1,4 @@
-import React, {useCallback, useMemo} from 'react';
+import React, {Fragment, useCallback, useMemo} from 'react';
 import {ethers} from 'ethers';
 import {LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -8,13 +8,57 @@ import ValueAnimation from '@common/components/ValueAnimation';
 import {useCurve} from '@common/contexts/useCurve';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
-import {getVaultAPY} from '@common/utils';
+import {formatPercent, getVaultAPY} from '@common/utils';
 import {Harvests} from '@yCRV/components/Harvests';
 import {useYCRV} from '@yCRV/contexts/useYCRV';
 import Wrapper from '@yCRV/Wrapper';
 
 import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
+
+function	HeaderPosition(): ReactElement {
+	const	{balances} = useWallet();
+	const	{holdings} = useYCRV();
+	const	{vaults} = useYearn();
+
+	const	formatedYearnHas = useMemo((): string => (
+		holdings?.veCRVBalance ?
+			formatAmount(formatToNormalizedValue(holdings.veCRVBalance, 18), 0, 0)
+			: ''
+	), [holdings]);
+
+	const	formatedYouHave = useMemo((): string => (
+		formatCounterValueRaw(
+			(Number(balances[STYCRV_TOKEN_ADDRESS]?.normalized) || 0) * (vaults?.[STYCRV_TOKEN_ADDRESS]?.tvl?.price || 0)
+			+
+			(Number(balances[LPYCRV_TOKEN_ADDRESS]?.normalized) || 0) * (vaults?.[LPYCRV_TOKEN_ADDRESS]?.tvl?.price || 0),
+			1
+		)
+	), [balances, vaults]);
+
+	return (
+		<Fragment>
+			<div className={'col-span-12 w-full md:col-span-8'}>
+				<p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl'}>{'Yearn has'}</p>
+				<b className={'font-number text-4xl text-neutral-900 md:text-7xl'}>
+					<ValueAnimation
+						identifier={'veCRVTreasury'}
+						value={formatedYearnHas}
+						suffix={'veCRV'} />
+				</b>
+			</div>
+			<div className={'col-span-12 w-full md:col-span-4'}>
+				<p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl'}>{'You have'}</p>
+				<b className={'font-number text-3xl text-neutral-900 md:text-7xl'}>
+					<ValueAnimation
+						identifier={'youHave'}
+						value={formatedYouHave ? formatedYouHave : ''}
+						prefix={'$'} />
+				</b>
+			</div>
+		</Fragment>
+	);
+}
 
 function	Holdings(): ReactElement {
 	const	{balances} = useWallet();
@@ -32,33 +76,18 @@ function	Holdings(): ReactElement {
 	), [prices]);
 
 	const	formatBigNumberOver10K = useCallback((v: BigNumber): string => {
-		if (v.gt(ethers.constants.WeiPerEther.mul(10000))) {
+		if ((v || ethers.constants.Zero)?.gt(ethers.constants.WeiPerEther.mul(10000))) {
 			return formatAmount(formatToNormalizedValue(v || 0, 18), 0, 0);
 		}
-		return formatAmount(formatToNormalizedValue(v || 0, 18), 2, 2);
+		return formatAmount(formatToNormalizedValue(v || 0, 18));
 	}, []);
 
 	const	formatNumberOver10K = useCallback((v: number): string => {
 		if (v >= 10000) {
 			return formatAmount(v, 0, 0);
 		}
-		return formatAmount(v, 2, 2);
+		return formatAmount(v);
 	}, []);
-
-	const	formatedYearnHas = useMemo((): string => (
-		holdings?.veCRVBalance ?
-			formatAmount(formatToNormalizedValue(holdings.veCRVBalance, 18), 0, 0)
-			: ''
-	), [holdings]);
-
-	const	formatedYouHave = useMemo((): string => (
-		formatCounterValueRaw(
-			(Number(balances[STYCRV_TOKEN_ADDRESS]?.normalized) || 0) * (vaults?.[STYCRV_TOKEN_ADDRESS]?.tvl?.price || 0)
-			+
-			(Number(balances[LPYCRV_TOKEN_ADDRESS]?.normalized) || 0) * (vaults?.[LPYCRV_TOKEN_ADDRESS]?.tvl?.price || 0),
-			1
-		)
-	), [balances, vaults]);
 
 	const	latestCurveFeesValue = useMemo((): number => {
 		if (curveWeeklyFees?.weeklyFeesTable?.[0]?.rawFees > 0) {
@@ -83,24 +112,7 @@ function	Holdings(): ReactElement {
 	return (
 		<section className={'mt-4 grid w-full grid-cols-12 gap-y-10 pb-10 md:mt-20 md:gap-x-10 md:gap-y-20'}>
 
-			<div className={'col-span-12 w-full md:col-span-8'}>
-				<p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl'}>{'Yearn has'}</p>
-				<b className={'text-4xl tabular-nums text-neutral-900 md:text-7xl'}>
-					<ValueAnimation
-						identifier={'veCRVTreasury'}
-						value={formatedYearnHas}
-						suffix={'veCRV'} />
-				</b>
-			</div>
-			<div className={'col-span-12 w-full md:col-span-4'}>
-				<p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl'}>{'You have'}</p>
-				<b className={'text-3xl tabular-nums text-neutral-900 md:text-7xl'}>
-					<ValueAnimation
-						identifier={'youHave'}
-						value={formatedYouHave ? formatedYouHave : ''}
-						prefix={'$'} />
-				</b>
-			</div>
+			<HeaderPosition />
 
 			<div className={'col-span-12 flex w-full flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4'}>
 				<div className={'w-full bg-neutral-100 p-6 md:w-[412px] md:min-w-[412px]'}>
@@ -108,40 +120,37 @@ function	Holdings(): ReactElement {
 						<div>
 							<b
 								suppressHydrationWarning
-								className={'pb-2 text-3xl tabular-nums text-neutral-900'}>
+								className={'font-number pb-2 text-3xl text-neutral-900'}>
 								{holdings?.treasury ? `${formatBigNumberOver10K(holdings?.treasury || 0)} ` : '- '}
-								<span className={'text-base tabular-nums text-neutral-600 md:text-3xl md:text-neutral-900'}>{'veCRV'}</span>
+								<span className={'font-number text-base text-neutral-600 md:text-3xl md:text-neutral-900'}>{'veCRV'}</span>
 							</b>
 							<p className={'text-lg text-neutral-500'}>{'Yearn Treasury'}</p>
 						</div>
 						<div>
 							<b
 								suppressHydrationWarning
-								className={'pb-2 text-3xl tabular-nums text-neutral-900'}>
+								className={'font-number pb-2 text-3xl text-neutral-900'}>
 								{holdings?.legacy ? `${formatBigNumberOver10K(holdings?.legacy || 0)} ` : '- '}
-								<span className={'text-base tabular-nums text-neutral-600 md:text-3xl md:text-neutral-900'}>{'yveCRV'}</span>
+								<span className={'font-number text-base text-neutral-600 md:text-3xl md:text-neutral-900'}>{'yveCRV'}</span>
 							</b>
 							<p className={'text-lg text-neutral-500'}>{'Legacy system'}</p>
 						</div>
 						<div>
 							<b
 								suppressHydrationWarning
-								className={'pb-2 text-3xl tabular-nums text-neutral-900'}>
+								className={'font-number pb-2 text-3xl text-neutral-900'}>
 								{holdings?.yCRVSupply ? `${formatBigNumberOver10K(holdings?.yCRVSupply || 0)} ` : '- '}
-								<span className={'text-base tabular-nums text-neutral-600 md:text-3xl md:text-neutral-900'}>{'yCRV'}</span>
+								<span className={'font-number text-base text-neutral-600 md:text-3xl md:text-neutral-900'}>{'yCRV'}</span>
 							</b>
 
 							<p
 								suppressHydrationWarning
 								className={'text-lg text-neutral-500'}>
-								{`(Price = $${(
-									ycrvPrice ? formatAmount(ycrvPrice, 2, 2) : '0.00'
-								)} | Peg = ${(
-									holdings?.crvYCRVPeg ? (
-										formatAmount(
-											(formatToNormalizedValue(holdings?.crvYCRVPeg || ethers.constants.Zero, 18) + 0.0015) * 100, 2, 2)
-									): '0.0000'
-								)}%)`}
+								{`(Price = $${(formatAmount(ycrvPrice || 0))} | Peg = ${(
+									holdings?.crvYCRVPeg ? (formatPercent(
+										(formatToNormalizedValue(holdings?.crvYCRVPeg || ethers.constants.Zero, 18) + 0.0015) * 100)
+									): formatPercent(0)
+								)})`}
 							</p>
 						</div>
 					</div>
@@ -167,27 +176,27 @@ function	Holdings(): ReactElement {
 							<span className={'mr-auto inline font-normal text-neutral-400 md:hidden'}>{'APY: '}</span>
 							<b
 								suppressHydrationWarning
-								className={'text-base tabular-nums text-neutral-900'}>
-								{styCRVAPY ? `${formatAmount(styCRVAPY, 2, 2)}%*` : '0.00%'}
+								className={'font-number text-base text-neutral-900'}>
+								{styCRVAPY ? `${formatPercent(styCRVAPY)}*` : `${formatPercent(0)}`}
 							</b>
 						</div>
 						<div className={'flex flex-row items-center justify-between'}>
 							<span className={'inline text-sm font-normal text-neutral-400 md:hidden'}>{'Total Assets: '}</span>
 							<p
 								suppressHydrationWarning
-								className={'text-base tabular-nums text-neutral-900'}>
+								className={'font-number text-base text-neutral-900'}>
 								{holdings?.styCRVSupply ? formatCounterValue(
 									formatToNormalizedValue(holdings.styCRVSupply || ethers.constants.Zero, 18),
 									vaults?.[STYCRV_TOKEN_ADDRESS]?.tvl?.price || 0
-								) : '0.00'}
+								) : formatAmount(0)}
 							</p>
 						</div>
 						<div className={'flex flex-row items-center justify-between'}>
 							<span className={'inline text-sm font-normal text-neutral-400 md:hidden'}>{'yCRV Deposits: '}</span>
 							<p
 								suppressHydrationWarning
-								className={'text-base tabular-nums text-neutral-900'}>
-								{holdings?.styCRVSupply ? `${formatBigNumberOver10K(holdings?.styCRVSupply || 0)} ` : '0.00'}
+								className={'font-number text-base text-neutral-900'}>
+								{formatBigNumberOver10K(holdings?.styCRVSupply || 0)}
 							</p>
 						</div>
 						<div className={'flex flex-row items-baseline justify-between'}>
@@ -195,18 +204,16 @@ function	Holdings(): ReactElement {
 							<div>
 								<p
 									suppressHydrationWarning
-									className={'text-base tabular-nums text-neutral-900'}>
-									{balances[STYCRV_TOKEN_ADDRESS]?.normalized ? (
-										formatNumberOver10K(balances[STYCRV_TOKEN_ADDRESS]?.normalized || 0)
-									) : '0.00'}
+									className={'font-number text-base text-neutral-900'}>
+									{formatNumberOver10K(balances[STYCRV_TOKEN_ADDRESS]?.normalized || 0)}
 								</p>
 								<p
 									suppressHydrationWarning
-									className={'text-xs tabular-nums text-neutral-600'}>
+									className={'font-number text-xs text-neutral-600'}>
 									{balances[STYCRV_TOKEN_ADDRESS] ? formatCounterValue(
 										balances[STYCRV_TOKEN_ADDRESS]?.normalized,
 										vaults?.[STYCRV_TOKEN_ADDRESS]?.tvl?.price || 0
-									) : '0.00'}
+									) : formatAmount(0)}
 								</p>
 							</div>
 						</div>
@@ -223,27 +230,27 @@ function	Holdings(): ReactElement {
 							<span className={'mr-auto inline font-normal text-neutral-400 md:hidden'}>{'APY: '}</span>
 							<b
 								suppressHydrationWarning
-								className={'text-base tabular-nums text-neutral-900'}>
-								{lpCRVAPY ? `${(lpCRVAPY || '').replace('APY', '')}` : '0.00%'}
+								className={'font-number text-base text-neutral-900'}>
+								{lpCRVAPY ? `${(lpCRVAPY || '').replace('APY', '')}` : `${formatPercent(0)}`}
 							</b>
 						</div>
 						<div className={'flex flex-row items-center justify-between'}>
 							<span className={'inline text-sm font-normal text-neutral-400 md:hidden'}>{'Total Assets: '}</span>
 							<p
 								suppressHydrationWarning
-								className={'text-base tabular-nums text-neutral-900'}>
+								className={'font-number text-base text-neutral-900'}>
 								{holdings?.lpyCRVSupply ? formatCounterValue(
 									formatToNormalizedValue(holdings?.lpyCRVSupply || ethers.constants.Zero, 18),
 									vaults?.[LPYCRV_TOKEN_ADDRESS]?.tvl?.price || 0
-								) : '0.00'}
+								) : formatAmount(0)}
 							</p>
 						</div>
 						<div className={'flex flex-row items-center justify-between'}>
 							<span className={'inline text-sm font-normal text-neutral-400 md:hidden'}>{'yCRV Deposits: '}</span>
 							<p
 								suppressHydrationWarning
-								className={'text-base tabular-nums text-neutral-900'}>
-								{holdings?.lpyCRVSupply ? `${formatBigNumberOver10K(holdings?.lpyCRVSupply || 0)} ` : '0.00'}
+								className={'font-number text-base text-neutral-900'}>
+								{formatBigNumberOver10K(holdings?.lpyCRVSupply || 0)}
 							</p>
 						</div>
 						<div className={'flex flex-row items-baseline justify-between'}>
@@ -251,18 +258,16 @@ function	Holdings(): ReactElement {
 							<div>
 								<p
 									suppressHydrationWarning
-									className={'text-base tabular-nums text-neutral-900'}>
-									{balances[LPYCRV_TOKEN_ADDRESS]?.normalized ? (
-										formatNumberOver10K(balances[LPYCRV_TOKEN_ADDRESS]?.normalized || 0)
-									) : '0.00'}
+									className={'font-number text-base text-neutral-900'}>
+									{formatNumberOver10K(balances[LPYCRV_TOKEN_ADDRESS]?.normalized || 0)}
 								</p>
 								<p
 									suppressHydrationWarning
-									className={'text-xs tabular-nums text-neutral-600'}>
+									className={'font-number text-xs text-neutral-600'}>
 									{balances[LPYCRV_TOKEN_ADDRESS] ? formatCounterValue(
 										balances[LPYCRV_TOKEN_ADDRESS]?.normalized,
 										vaults?.[LPYCRV_TOKEN_ADDRESS]?.tvl?.price || 0
-									) : '0.00'}
+									) : formatAmount(0)}
 								</p>
 							</div>
 						</div>
@@ -277,29 +282,29 @@ function	Holdings(): ReactElement {
 						</div>
 						<div className={'flex flex-row items-center justify-between'}>
 							<span className={'mr-auto inline font-normal text-neutral-400 md:hidden'}>{'APY: '}</span>
-							<b className={'text-base tabular-nums text-neutral-900'}>
+							<b className={'font-number text-base text-neutral-900'}>
 								{'N/A'}
 							</b>
 						</div>
 						<div className={'flex flex-row items-center justify-between'}>
 							<span className={'inline text-sm font-normal text-neutral-400 md:hidden'}>{'Total Assets: '}</span>
-							<p className={'text-base tabular-nums text-neutral-900'}>
+							<p className={'font-number text-base text-neutral-900'}>
 								{'N/A'}
 							</p>
 						</div>
 						<div className={'flex flex-row items-center justify-between'}>
 							<span className={'inline text-sm font-normal text-neutral-400 md:hidden'}>{'yCRV Deposits: '}</span>
-							<p className={'text-base tabular-nums text-neutral-900'}>
+							<p className={'font-number text-base text-neutral-900'}>
 								{'N/A'}
 							</p>
 						</div>
 						<div className={'flex flex-row items-baseline justify-between'}>
 							<span className={'inline text-sm font-normal text-neutral-400 md:hidden'}>{'My Balance: '}</span>
 							<div>
-								<p className={'text-base tabular-nums text-neutral-900'}>
+								<p className={'font-number text-base text-neutral-900'}>
 									{'N/A'}
 								</p>
-								<p className={'text-xs tabular-nums text-neutral-600'}>
+								<p className={'font-number text-xs text-neutral-600'}>
 									{'N/A'}
 								</p>
 							</div>
@@ -309,23 +314,23 @@ function	Holdings(): ReactElement {
 					<div>
 						<p
 							suppressHydrationWarning
-							className={'text-sm tabular-nums text-neutral-400 md:text-base'}>
-							{styCRVAPY ? `*${formatAmount(styCRVAPY, 2, 2)}% APY: ` : '*0.00% APY: '}
+							className={'font-number text-sm text-neutral-400 md:text-base'}>
+							{styCRVAPY ? `*${formatPercent(styCRVAPY)} APY: ` : `*${formatPercent(0)} APY: `}
 						</p>
 						<p
 							suppressHydrationWarning
-							className={'text-sm tabular-nums text-neutral-400 md:text-base'}>
-							{`∙ ${curveAdminFeePercent ? formatAmount(curveAdminFeePercent, 2, 2) : '0.00'}% Curve Admin Fees (${formatAmount(Number(holdings?.boostMultiplier) / 10000, 2, 2)}x boost)`}
+							className={'font-number text-sm text-neutral-400 md:text-base'}>
+							{`∙ ${curveAdminFeePercent ? formatPercent(curveAdminFeePercent) : formatPercent(0)} Curve Admin Fees (${formatAmount(Number(holdings?.boostMultiplier) / 10000)}x boost)`}
 						</p>
 						<p
 							suppressHydrationWarning
-							className={'text-sm tabular-nums text-neutral-400 md:text-base'}>
-							{`∙ ${styCRVAPY && curveAdminFeePercent ? formatAmount(styCRVAPY - curveAdminFeePercent, 2, 2) : '0.00'}% Gauge Voting Bribes`}
+							className={'font-number text-sm text-neutral-400 md:text-base'}>
+							{`∙ ${styCRVAPY && curveAdminFeePercent ? formatPercent(styCRVAPY - curveAdminFeePercent) : formatPercent(0)} Gauge Voting Bribes`}
 						</p>
 						<p
 							suppressHydrationWarning
-							className={'text-sm tabular-nums text-neutral-400 md:text-base'}>
-							{`∙ ${styCRVMegaBoost ? formatAmount(styCRVMegaBoost * 100, 2, 2) : '0.00'}% Mega Boost`}
+							className={'font-number text-sm text-neutral-400 md:text-base'}>
+							{`∙ ${styCRVMegaBoost ? formatPercent(styCRVMegaBoost * 100) : formatPercent(0)} Mega Boost`}
 						</p>
 					</div>
 				</div>

@@ -25,14 +25,14 @@ export function getVaultAPY(vaults: TDict<TYearnVault | undefined>, vaultAddress
 
 	if (toAddress(vaultAddress) === YVECRV_TOKEN_ADDRESS
 		|| toAddress(vaultAddress) === YVBOOST_TOKEN_ADDRESS) {
-		return `APY ${formatAmount(0, 2, 2)}%`;
+		return `APY ${formatPercent(0)}`;
 	}
 
 	if (vaults?.[toAddress(vaultAddress)]?.apy?.net_apy) {
-		return `APY ${formatAmount((vaults?.[toAddress(vaultAddress)]?.apy?.net_apy || 0) * 100, 2, 2)}%`;
+		return `APY ${formatPercent((vaults?.[toAddress(vaultAddress)]?.apy?.net_apy || 0) * 100)}`;
 	}
 
-	return `APY ${formatAmount(0, 2, 2)}%`;
+	return `APY ${formatPercent(0)}`;
 }
 
 export function getVaultRawAPY(vaults: TDict<TYearnVault | undefined>, vaultAddress: string): number {
@@ -92,3 +92,5 @@ export function getVaultName(vault: TYearnVault): string {
 }
 
 export const graphFetcher = async (url: string, query: string): Promise<GraphQLResponse> => request(url, query);
+
+export const formatPercent = (n: number, min = 2, max = 2): string => `${formatAmount(n, min, max)}%`;

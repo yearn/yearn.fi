@@ -7,6 +7,7 @@ import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {formatDuration} from '@yearn-finance/web-lib/utils/format.time';
 import {copyToClipboard, parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
 import IconChevron from '@common/icons/IconChevron';
+import {formatPercent} from '@common/utils';
 
 import type {ReactElement} from 'react';
 import type {TYearnVault, TYearnVaultStrategy} from '@common/types/yearn';
@@ -48,14 +49,14 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVau
 								<p className={'text-base text-neutral-600'}>
 									{'Capital Allocation'}
 								</p>
-								<b className={'text-lg tabular-nums text-neutral-900'}>
+								<b className={'font-number text-lg text-neutral-900'}>
 									{`${formatAmount(formatToNormalizedValue(formatBN(strategy?.details?.totalDebt), currentVault?.decimals), 0, 0)} ${currentVault.token.symbol}`}
 								</b>
 							</div>
 
 							<div className={'col-span-2 flex flex-col space-y-2 bg-neutral-200 p-2 md:p-4'}>
 								<p className={'text-base text-neutral-600'}>{'Total Gain'}</p>
-								<b className={'text-lg tabular-nums text-neutral-900'}>
+								<b className={'font-number text-lg text-neutral-900'}>
 									{`${formatAmount(formatToNormalizedValue(
 										formatBN(strategy?.details?.totalGain).sub(formatBN(strategy?.details?.totalLoss)),
 										currentVault?.decimals
@@ -69,35 +70,35 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVau
 							<div className={'mt-0 grid grid-cols-1 gap-x-12 gap-y-2 md:grid-cols-2'}>
 								<div className={'flex flex-row items-center justify-between'}>
 									<p className={'text-sm text-neutral-500'}>{'TVL Impact'}</p>
-									<p className={'text-sm tabular-nums text-neutral-900'}>{strategy?.risk?.riskDetails?.TVLImpact}</p>
+									<p className={'font-number text-sm text-neutral-900'}>{strategy?.risk?.riskDetails?.TVLImpact}</p>
 								</div>
 								<div className={'flex flex-row items-center justify-between'}>
 									<p className={'text-sm text-neutral-500'}>{'Audit Score'}</p>
-									<p className={'text-sm tabular-nums text-neutral-900'}>{strategy?.risk?.riskDetails?.auditScore}</p>
+									<p className={'font-number text-sm text-neutral-900'}>{strategy?.risk?.riskDetails?.auditScore}</p>
 								</div>
 								<div className={'flex flex-row items-center justify-between'}>
 									<p className={'text-sm text-neutral-500'}>{'Code Review Score'}</p>
-									<p className={'text-sm tabular-nums text-neutral-900'}>{strategy?.risk?.riskDetails?.codeReviewScore}</p>
+									<p className={'font-number text-sm text-neutral-900'}>{strategy?.risk?.riskDetails?.codeReviewScore}</p>
 								</div>
 								<div className={'flex flex-row items-center justify-between'}>
 									<p className={'text-sm text-neutral-500'}>{'Complexity Score'}</p>
-									<p className={'text-sm tabular-nums text-neutral-900'}>{strategy?.risk?.riskDetails?.complexityScore}</p>
+									<p className={'font-number text-sm text-neutral-900'}>{strategy?.risk?.riskDetails?.complexityScore}</p>
 								</div>
 								<div className={'flex flex-row items-center justify-between'}>
 									<p className={'text-sm text-neutral-500'}>{'Longevity Impact'}</p>
-									<p className={'text-sm tabular-nums text-neutral-900'}>{strategy?.risk?.riskDetails?.longevityImpact}</p>
+									<p className={'font-number text-sm text-neutral-900'}>{strategy?.risk?.riskDetails?.longevityImpact}</p>
 								</div>
 								<div className={'flex flex-row items-center justify-between'}>
 									<p className={'text-sm text-neutral-500'}>{'Protocol Safety Score'}</p>
-									<p className={'text-sm tabular-nums text-neutral-900'}>{strategy?.risk?.riskDetails?.protocolSafetyScore}</p>
+									<p className={'font-number text-sm text-neutral-900'}>{strategy?.risk?.riskDetails?.protocolSafetyScore}</p>
 								</div>
 								<div className={'flex flex-row items-center justify-between'}>
 									<p className={'text-sm text-neutral-500'}>{'Team Knowledge Score'}</p>
-									<p className={'text-sm tabular-nums text-neutral-900'}>{strategy?.risk?.riskDetails?.teamKnowledgeScore}</p>
+									<p className={'font-number text-sm text-neutral-900'}>{strategy?.risk?.riskDetails?.teamKnowledgeScore}</p>
 								</div>
 								<div className={'flex flex-row items-center justify-between'}>
 									<p className={'text-sm text-neutral-500'}>{'Testing Score'}</p>
-									<p className={'text-sm tabular-nums text-neutral-900'}>{strategy?.risk?.riskDetails?.testingScore}</p>
+									<p className={'font-number text-sm text-neutral-900'}>{strategy?.risk?.riskDetails?.testingScore}</p>
 								</div>
 							</div>
 						</div>
@@ -106,8 +107,8 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVau
 						<div className={'grid grid-cols-6 gap-6 md:gap-8'}>
 							<div className={'col-span-2 flex flex-col space-y-0 md:space-y-2'}>
 								<p className={'text-xxs text-neutral-600 md:text-xs'}>{'APR'}</p>
-								<b className={'text-xl tabular-nums text-neutral-900'}>
-									{`${formatAmount((strategy?.details?.apr || 0), 0, 2)} %`}
+								<b className={'font-number text-xl text-neutral-900'}>
+									{formatPercent((strategy?.details?.apr || 0), 0)}
 								</b>
 							</div>
 
@@ -115,15 +116,15 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVau
 								<p className={'text-xxs text-neutral-600 md:text-xs'}>
 									{'Allocation'}
 								</p>
-								<b className={'text-xl tabular-nums text-neutral-900'}>
-									{`${formatAmount((strategy?.details?.debtRatio || 0) / 100, 0, 2)} %`}
+								<b className={'font-number text-xl text-neutral-900'}>
+									{formatPercent((strategy?.details?.debtRatio || 0) / 100, 0)}
 								</b>
 							</div>
 
 							<div className={'col-span-2 flex flex-col space-y-0 md:space-y-2'}>
 								<p className={'text-xxs text-neutral-600 md:text-xs'}>{'Perfomance fee'}</p>
-								<b className={'text-xl tabular-nums text-neutral-600'}>
-									{`${formatAmount((strategy?.details?.performanceFee || 0) * 100, 0, 2)} %`}
+								<b className={'font-number text-xl text-neutral-600'}>
+									{formatPercent((strategy?.details?.performanceFee || 0) * 100, 0)}
 								</b>
 							</div>
 						</div>

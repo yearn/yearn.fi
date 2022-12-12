@@ -26,7 +26,7 @@ function DropdownItem({
 							{option.symbol}
 						</p>
 						<p className={`${option.icon ? 'pl-2' : 'pl-0'} text-xxs font-normal text-neutral-600`}>
-							{`${formatAmount(balance?.normalized || 0, 2, 2)} ${option.symbol}`}
+							{`${formatAmount(balance?.normalized || 0)} ${option.symbol}`}
 						</p>
 					</div>
 				</div>

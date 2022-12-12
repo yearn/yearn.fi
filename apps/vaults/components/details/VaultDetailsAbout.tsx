@@ -1,6 +1,7 @@
 import React from 'react';
 import dynamic from 'next/dynamic';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
+import {formatPercent} from '@common/utils';
 
 import type {ReactElement} from 'react';
 import type {TGraphData} from '@common/types/types';
@@ -28,15 +29,21 @@ function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYearnVau
 					<div className={'mt-4 flex flex-row space-x-6 md:space-x-8'}>
 						<div className={'flex flex-col space-y-0 md:space-y-2'}>
 							<p className={'text-xxs text-neutral-600 md:text-xs'}>{'Deposit/Withdrawal fee'}</p>
-							<b className={'text-xl tabular-nums text-neutral-900'}>{'0 %'}</b>
+							<b className={'font-number text-xl text-neutral-900'}>
+								{formatPercent(0, 0, 0)}
+							</b>
 						</div>
 						<div className={'flex flex-col space-y-0 md:space-y-2'}>
 							<p className={'text-xxs text-neutral-600 md:text-xs'}>{'Management fee'}</p>
-							<b className={'text-xl tabular-nums text-neutral-900'}>{`${formatAmount((currentVault?.apy?.fees?.management || 0) * 100, 0, 2)} %`}</b>
+							<b className={'font-number text-xl text-neutral-900'}>
+								{formatPercent((currentVault?.apy?.fees?.management || 0) * 100, 0)}
+							</b>
 						</div>
 						<div className={'flex flex-col space-y-0 md:space-y-2'}>
 							<p className={'text-xxs text-neutral-600 md:text-xs'}>{'Perfomance fee'}</p>
-							<b className={'text-xl tabular-nums text-neutral-500'}>{`${formatAmount((currentVault?.apy?.fees?.performance || 0) * 100, 0, 2)} %`}</b>
+							<b className={'font-number text-xl text-neutral-500'}>
+								{formatPercent((currentVault?.apy?.fees?.performance || 0) * 100, 0)}
+							</b>
 						</div>
 					</div>
 				</div>

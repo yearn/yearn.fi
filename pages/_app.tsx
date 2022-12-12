@@ -35,7 +35,7 @@ const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 	const	getLayout = (Component as any).getLayout || ((page: ReactElement): ReactElement => page);
 
 	return (
-		<div id={'app'} className={'mx-auto mb-0 flex max-w-6xl'}>
+		<div id={'app'} className={'mx-auto mb-0 flex max-w-6xl font-aeonik'}>
 			<div className={'block min-h-[100vh] w-full'}>
 				<AppHeader />
 				<AnimatePresence mode={'wait'}>

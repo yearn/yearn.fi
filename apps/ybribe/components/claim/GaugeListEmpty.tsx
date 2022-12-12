@@ -1,10 +1,12 @@
 import React from 'react';
+import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useBribes} from '@yBribe/contexts/useBribes';
 
 import type {ReactElement} from 'react';
 
-function	GaugeTableEmpty(): ReactElement {
+function	GaugeListEmpty({category}: {category: string}): ReactElement {
 	const	{isLoading} = useBribes();
+	const	{isActive} = useWeb3();
 
 	if (isLoading) {
 		return (
@@ -14,6 +16,22 @@ function	GaugeTableEmpty(): ReactElement {
 				<div className={'flex h-10 items-center justify-center'}>
 					<span className={'loader'} />
 				</div>
+			</div>
+		);	
+	}
+	if (category === 'claimable') {
+		if (!isActive) {
+			return (
+				<div className={'flex h-96 w-full flex-col items-center justify-center py-2 px-10'}>
+					<b className={'text-lg'}>{'Connect your wallet'}</b>
+					<p className={'text-neutral-600'}>{'Please connect your wallet to load the gauges.'}</p>
+				</div>
+			);	
+		}
+		return (
+			<div className={'flex h-96 w-full flex-col items-center justify-center py-2 px-10'}>
+				<b className={'text-lg'}>{'No reward'}</b>
+				<p className={'text-neutral-600'}>{'You have nothing to claim.'}</p>
 			</div>
 		);	
 	}
@@ -27,4 +45,4 @@ function	GaugeTableEmpty(): ReactElement {
 	);	
 }
 
-export {GaugeTableEmpty};
+export {GaugeListEmpty};

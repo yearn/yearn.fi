@@ -11,7 +11,7 @@ import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUp
 import {Dropdown} from '@common/components/TokenDropdown';
 import {useYearn} from '@common/contexts/useYearn';
 import ArrowDown from '@common/icons/ArrowDown';
-import {handleInputChange} from '@common/utils';
+import {formatPercent, handleInputChange} from '@common/utils';
 import CardTransactorContextApp, {useCardTransactor} from '@yCRV/components/CardTransactorWrapper';
 import {useExtendedWallet} from '@yCRV/contexts/useExtendedWallet';
 import {CardVariants, CardVariantsInner} from '@yCRV/utils/animations';
@@ -110,7 +110,7 @@ function	CardMigrateLegacy(): ReactElement {
 							});
 						}} />
 					<p className={'pl-2 !text-xs font-normal text-green-600'}>
-						{'APY 0.00%'}
+						{`APY ${formatPercent(0)}`}
 					</p>
 				</label>
 				<div className={'flex flex-col space-y-1'}>

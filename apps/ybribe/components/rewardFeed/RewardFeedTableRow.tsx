@@ -27,11 +27,11 @@ function	RewardFeedRowItemWithExtraData({
 
 	return (
 		<div className={'flex h-auto flex-col items-end'}>
-			<div className={'inline-flex items-baseline text-base tabular-nums text-neutral-900'}>
-				{`$ ${formatAmount(bribeValue, 2, 2)}`}
+			<div className={'font-number inline-flex items-baseline text-base text-neutral-900'}>
+				{`$ ${formatAmount(bribeValue)}`}
 			</div>
-			<p className={'inline-flex items-baseline text-right text-xs tabular-nums text-neutral-400'}>
-				{formatAmount(bribeAmount, 2, 2)}
+			<p className={'font-number inline-flex items-baseline text-right text-xs text-neutral-400'}>
+				{formatAmount(bribeAmount)}
 				&nbsp;
 				<span>{`${symbol}`}</span>
 			</p>
@@ -75,7 +75,7 @@ function	RewardFeedTableRow({currentRewardAdded}: {currentRewardAdded: TYDaemonG
 						href={`https://etherscan.io/address/${gaugeItem.gauge}`}
 						target={'_blank'}
 						rel={'noreferrer'}
-						className={'inline-flex cursor-alias items-baseline text-right text-xs tabular-nums text-neutral-400 transition-colors hover:text-neutral-900'}>
+						className={'font-number inline-flex cursor-alias items-baseline text-right text-xs text-neutral-400 transition-colors hover:text-neutral-900'}>
 						{truncateHex(gaugeItem.gauge, 6)}
 					</a>
 				</div>
@@ -83,7 +83,7 @@ function	RewardFeedTableRow({currentRewardAdded}: {currentRewardAdded: TYDaemonG
 
 			<div className={'col-span-1 flex h-20 w-full justify-end'}>
 				<div className={'flex flex-row pt-6'}>
-					<p className={'items-baseline text-end text-sm tabular-nums leading-6 text-neutral-400'}>
+					<p className={'font-number items-baseline text-end text-sm leading-6 text-neutral-400'}>
 						{formatDate(Number(currentRewardAdded.timestamp) * 1000)}
 					</p>
 				</div>

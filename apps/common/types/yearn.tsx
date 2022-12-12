@@ -128,6 +128,7 @@ export type TYearnVault = {
     migration: {
         available: boolean,
         address: string,
+        contract: string,
     }
 }
 

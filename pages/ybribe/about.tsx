@@ -1,6 +1,6 @@
 import React, {useMemo} from 'react';
 import SettingsOverwrite from '@common/components/SettingsOverwrite';
-import {GaugeTableEmpty} from '@yBribe/components/bribe/GaugeTableEmpty';
+import {GaugeListEmpty} from '@yBribe/components/bribe/GaugeListEmpty';
 import {RewardFeedTableHead} from '@yBribe/components/rewardFeed/RewardFeedTableHead';
 import {RewardFeedTableRow} from '@yBribe/components/rewardFeed/RewardFeedTableRow';
 import {useBribes} from '@yBribe/contexts/useBribes';
@@ -64,7 +64,7 @@ function	About(): ReactElement {
 					<div className={'grid w-full grid-cols-1 pb-2 md:pb-4'}>
 						<RewardFeedTableHead />
 						{feed.length === 0 ? (
-							<GaugeTableEmpty />
+							<GaugeListEmpty />
 						) : sortedFeed.map((item): ReactNode => {
 							if (!item) {
 								return (null);
