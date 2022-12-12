@@ -31,7 +31,6 @@ export type TDropdownProps = {
 	onSelect:
 		| React.Dispatch<React.SetStateAction<TDropdownOption>>
 		| ((option: TDropdownOption) => void);
-	balances?: TDict<TSimplifiedBalanceData>
 };
 
 export type TDropdownItemProps = {

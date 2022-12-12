@@ -11,6 +11,7 @@ import {toAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
+import {useBalance} from '@common/hooks/useBalance';
 
 import type {ReactElement} from 'react';
 import type {TBalanceData} from '@yearn-finance/web-lib/hooks/types';
@@ -25,11 +26,10 @@ type TBalanceReminderElement = {
 	symbol: string,
 }
 
-export default function BalanceReminderPopover(): ReactElement {
-	const	{balances, isLoading} = useWallet();
-	const	{address, ens, isActive, provider, onDesactivate} = useWeb3();
-	const	{vaults} = useYearn();
+function	TokenItem({element}: {element: TBalanceReminderElement}): ReactElement {
+	const	{provider} = useWeb3();
 	const	{safeChainID} = useChainID();
+	const	balance = useBalance(element.address);
 
 	async function addTokenToMetamask(address: string, symbol: string, decimals: number, image: string): Promise<void> {
 		try {
@@ -46,6 +46,50 @@ export default function BalanceReminderPopover(): ReactElement {
 			// Token has not been added to MetaMask.
 		}
 	}
+
+	return (
+		<a
+			key={element.address}
+			href={`https://etherscan.io/address/${element.address}`}
+			target={'_blank'}
+			rel={'noreferrer'}
+			className={'flow-root cursor-alias p-2 transition-colors hover:bg-neutral-200 md:p-4'}>
+			<span className={'flex flex-row items-center justify-between'}>
+				<span className={'flex items-center text-neutral-900'}>
+					<div className={'flex w-12'}>
+						<Image
+							alt={element.symbol}
+							width={32}
+							height={32}
+							quality={90}
+							src={`${process.env.BASE_YEARN_ASSETS_URI}/${safeChainID}/${toAddress(element.address)}/logo-128.png`} />
+					</div>
+					<span className={'ml-2'}>{element.symbol}</span>
+				</span>
+				<span className={'font-number flex flex-row items-center justify-center text-neutral-900'}>
+					{formatAmount(balance.normalized, 2, 4)}
+					<IconAddToMetamask
+						onClick={(e): void => {
+							e.preventDefault();
+							e.stopPropagation();
+							addTokenToMetamask(
+								element.address as string,
+								element.symbol,
+								element.decimals,
+								`${process.env.BASE_YEARN_ASSETS_URI}/${safeChainID}/${toAddress(element.address)}/logo-128.png`
+							);
+						}}
+						className={'ml-4 h-4 w-4 cursor-pointer text-neutral-400 transition-colors hover:text-neutral-900'} />
+				</span>
+			</span>
+		</a>
+	);
+}
+
+export default function BalanceReminderPopover(): ReactElement {
+	const	{balances, isLoading} = useWallet();
+	const	{address, ens, isActive, onDesactivate} = useWeb3();
+	const	{vaults} = useYearn();
 
 	const	nonNullBalances = useMemo((): TDict<TBalanceData> => {
 		const	nonNullBalances = Object.entries(balances).reduce((acc, [address, balance]): TDict<TBalanceData> => {
@@ -117,42 +161,10 @@ export default function BalanceReminderPopover(): ReactElement {
 											<div className={'py-4 text-center text-sm text-neutral-400'}>
 												{'No position in Yearn found.'}
 											</div>
-										) : nonNullBalancesForVault.map((vault): ReactElement => (
-											<a
-												key={vault.address}
-												href={`https://etherscan.io/address/${vault.address}`}
-												target={'_blank'}
-												rel={'noreferrer'}
-												className={'flow-root cursor-alias p-2 transition-colors hover:bg-neutral-200 md:p-4'}>
-												<span className={'flex flex-row items-center justify-between'}>
-													<span className={'flex items-center text-neutral-900'}>
-														<div className={'flex w-12'}>
-															<Image
-																alt={vault.symbol}
-																width={32}
-																height={32}
-																quality={90}
-																src={`${process.env.BASE_YEARN_ASSETS_URI}/${safeChainID}/${toAddress(vault.address)}/logo-128.png`} />
-														</div>
-														<span className={'ml-2'}>{vault.symbol}</span>
-													</span>
-													<span className={'font-number flex flex-row items-center justify-center text-neutral-900'}>
-														{formatAmount(balances[toAddress(vault.address)]?.normalized || 0, 2, 4)}
-														<IconAddToMetamask
-															onClick={(e): void => {
-																e.preventDefault();
-																e.stopPropagation();
-																addTokenToMetamask(
-																	vault.address as string,
-																	vault.symbol,
-																	vault.decimals,
-																	`${process.env.BASE_YEARN_ASSETS_URI}/${safeChainID}/${toAddress(vault.address)}/logo-128.png`
-																);
-															}}
-															className={'ml-4 h-4 w-4 cursor-pointer text-neutral-400 transition-colors hover:text-neutral-900'} />
-													</span>
-												</span>
-											</a>
+										) : nonNullBalancesForVault.map((element): ReactElement => (
+											<TokenItem
+												key={element.address}
+												element={element} />
 										))
 									}
 								</div>

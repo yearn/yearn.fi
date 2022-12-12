@@ -19,6 +19,7 @@ import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {Dropdown} from '@common/components/TokenDropdown';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
+import {useBalance} from '@common/hooks/useBalance';
 import IconArrowRight from '@common/icons/IconArrowRight';
 import {formatPercent, handleInputChange} from '@common/utils';
 import {approveERC20} from '@common/utils/actions/approveToken';
@@ -312,6 +313,8 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 	const [selectedOptionTo, set_selectedOptionTo] = useState<TDropdownOption | undefined>();
 	const [amount, set_amount] = useState<TNormalizedBN>({raw: ethers.constants.Zero, normalized: 0});
 
+	const	selectedFromBalance = useBalance(toAddress(selectedOptionFrom?.value));
+
 	const	isDepositing = useMemo((): boolean => (
 		!selectedOptionTo?.value ? true : toAddress(selectedOptionTo.value) === toAddress(currentVault.address)
 	), [selectedOptionTo, currentVault]);
@@ -462,6 +465,7 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 		});
 	}, [possibleOptionsFrom, possibleOptionsTo, selectedOptionFrom, selectedOptionTo, isDepositing, balances]);
 
+
 	return (
 		<>
 			<nav className={'mt-10 mb-2 w-full md:mt-20'}>
@@ -481,7 +485,7 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 								{isDepositing ? 'From wallet' : 'From vault'}
 							</label>
 							<legend className={'font-number inline text-xs text-neutral-600 md:hidden'} suppressHydrationWarning>
-								{`You have ${formatAmount(balances[selectedOptionFrom?.value || '']?.normalized || 0)} ${selectedOptionFrom?.symbol || 'tokens'}`}
+								{`You have ${formatAmount(selectedFromBalance.normalized)} ${selectedOptionFrom?.symbol || 'tokens'}`}
 							</legend>
 						</div>
 						{(ARE_ZAP_ENABLED || possibleOptionsFrom.length > 1) ? (
@@ -489,7 +493,6 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 								defaultOption={possibleOptionsFrom[0]}
 								options={possibleOptionsFrom}
 								selected={selectedOptionFrom}
-								balances={balances}
 								onSelect={(option: TDropdownOption): void => set_selectedOptionFrom(option)} />
 						) : (
 							<div className={'flex h-10 w-full items-center justify-between bg-neutral-100 px-2 text-base text-neutral-900 md:px-3'}>
@@ -504,7 +507,7 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 							</div>
 						)}
 						<legend className={'font-number hidden text-xs text-neutral-600 md:inline'} suppressHydrationWarning>
-							{`You have ${formatAmount(balances[selectedOptionFrom?.value || '']?.normalized || 0)} ${selectedOptionFrom?.symbol || 'tokens'}`}
+							{`You have ${formatAmount(selectedFromBalance.normalized)} ${selectedOptionFrom?.symbol || 'tokens'}`}
 						</legend>
 					</div>
 					<div className={'w-full space-y-2'}>

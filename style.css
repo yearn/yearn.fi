@@ -77,6 +77,14 @@
 	}
 }
 
+.yearn--button {
+	&[data-variant="reverted"] {
+		@apply text-neutral-900 bg-neutral-0 font-normal border border-transparent;
+		&:disabled {@apply bg-neutral-200 opacity-40;}
+		&:not(:disabled):not([aria-busy="true"]):hover {@apply bg-neutral-200;}
+	}
+}
+
 /* 🔵 - Yearn Finance ******************************************************************************
 ** Table
 ** Fake table properties

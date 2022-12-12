@@ -7,12 +7,11 @@ import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {CURVE_BRIBE_V2_ADDRESS, CURVE_BRIBE_V3_ADDRESS, CURVE_BRIBE_V3_HELPER_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {CURVE_BRIBE_V3_ADDRESS, CURVE_BRIBE_V3_HELPER_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import {useCurve} from '@common/contexts/useCurve';
 import {getLastThursday, getNextThursday} from '@yBribe/utils';
-import CURVE_BRIBE_V2 from '@yBribe/utils/abi/curveBribeV2.abi';
 import CURVE_BRIBE_V3 from '@yBribe/utils/abi/curveBribeV3.abi';
 import CURVE_BRIBE_V3_HELPER from '@yBribe/utils/abi/curveBribeV3Helper.abi';
 
@@ -33,15 +32,12 @@ export type	TBribesContext = {
 }
 const	defaultProps: TBribesContext = {
 	currentRewards: {
-		v2: {},
 		v3: {}
 	},
 	nextRewards: {
-		v2: {},
 		v3: {}
 	},
 	claimable: {
-		v2: {},
 		v3: {}
 	},
 	feed: [],
@@ -60,9 +56,9 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 	const {provider, address} = useWeb3();
 	const {safeChainID} = useChainID();
 	const {settings: baseAPISettings} = useSettings();
-	const [currentRewards, set_currentRewards] = useState<TCurveGaugeVersionRewards>({v2: {}, v3: {}});
-	const [nextRewards, set_nextRewards] = useState<TCurveGaugeVersionRewards>({v2: {}, v3: {}});
-	const [claimable, set_claimable] = useState<TCurveGaugeVersionRewards>({v2: {}, v3: {}});
+	const [currentRewards, set_currentRewards] = useState<TCurveGaugeVersionRewards>({v3: {}});
+	const [nextRewards, set_nextRewards] = useState<TCurveGaugeVersionRewards>({v3: {}});
+	const [claimable, set_claimable] = useState<TCurveGaugeVersionRewards>({v3: {}});
 	const [isLoading, set_isLoading] = useState<boolean>(true);
 	const [currentPeriod, set_currentPeriod] = useState<number>(getLastThursday());
 	const [nextPeriod, set_nextPeriod] = useState<number>(getNextThursday());
@@ -252,24 +248,17 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 	***************************************************************************/
 	const	getBribes = useCallback(async (): Promise<void> => {
 		const	currentProvider = safeChainID === 1 ? provider || getProvider(1) : getProvider(1);
-		const	curveBribeV2Contract = new Contract(CURVE_BRIBE_V2_ADDRESS, CURVE_BRIBE_V2);
 		const	curveBribeV3Contract = new Contract(CURVE_BRIBE_V3_ADDRESS, CURVE_BRIBE_V3);
 
-		const	[rewardsPerGaugesV2, rewardsPerGaugesV3] = await Promise.all([
-			getRewardsPerGauges(currentProvider, curveBribeV2Contract),
-			getRewardsPerGauges(currentProvider, curveBribeV3Contract)
-		]);
-		const	[rewardsPerUserV2, rewardsPerUserV3, nextPeriodRewardsV3] = await Promise.all([
-			getRewardsPerUser(currentProvider, curveBribeV2Contract, rewardsPerGaugesV2),
+		const	[rewardsPerGaugesV3] = await Promise.all([getRewardsPerGauges(currentProvider, curveBribeV3Contract)]);
+		const	[rewardsPerUserV3, nextPeriodRewardsV3] = await Promise.all([
 			getRewardsPerUser(currentProvider, curveBribeV3Contract, rewardsPerGaugesV3),
 			getNextPeriodRewards(currentProvider, rewardsPerGaugesV3)
 		]);
 
-		const	{rewardsList: rewardsListV2, multicallResult: multicallResultV2} = rewardsPerUserV2;
 		const	{rewardsList: rewardsListV3, multicallResult: multicallResultV3} = rewardsPerUserV3;
 		const	{rewardsList: nextRewardsListV3, multicallResult: nextMulticallResultV3} = nextPeriodRewardsV3;
 		performBatchedUpdates((): void => {
-			assignBribes('v2', rewardsListV2, multicallResultV2);
 			assignBribes('v3', rewardsListV3, multicallResultV3);
 			assignNextRewards('v3', nextRewardsListV3, nextMulticallResultV3);
 		});

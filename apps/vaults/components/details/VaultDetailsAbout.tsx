@@ -1,6 +1,5 @@
 import React from 'react';
 import dynamic from 'next/dynamic';
-import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {formatPercent} from '@common/utils';
 
 import type {ReactElement} from 'react';
@@ -18,9 +17,6 @@ function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYearnVau
 					<p className={'mt-4 text-neutral-600'}>
 						{currentVault?.token?.description || 'Sorry, we don’t have a description for this asset right now. But did you know the correct word for a blob of toothpaste is a “nurdle”. Fascinating! We’ll work on updating the asset description, but at least you learnt something interesting. Catch ya later nurdles.'}
 					</p>
-				</div>
-				<div>
-					<b className={'text-neutral-900'}>{`Risk score: ${formatAmount(currentVault.riskScore, 0, 2)}`}</b>
 				</div>
 			</div>
 			<div className={'col-span-1 w-full space-y-8'}>

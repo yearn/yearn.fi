@@ -6,44 +6,27 @@ import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-
 import {formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
-import {useWallet} from '@common/contexts/useWallet';
+import {useBalance} from '@common/hooks/useBalance';
 import {formatPercent, getVaultName} from '@common/utils';
 
 import type {ReactElement} from 'react';
 import type {TYearnVault} from '@common/types/yearn';
 
 function	VaultsListRow({currentVault}: {currentVault: TYearnVault}): ReactElement {
-	const {balances} = useWallet();
 	const {safeChainID} = useChainID();
+	const balanceOfWant = useBalance(currentVault.token.address);
+	const balanceOfCoin = useBalance(ETH_TOKEN_ADDRESS);
+	const balanceOfWrappedCoin = useBalance(toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS ? WFTM_TOKEN_ADDRESS : WETH_TOKEN_ADDRESS);
+	const deposited = useBalance(currentVault.address)?.normalized;
+	const vaultName = useMemo((): string => getVaultName(currentVault), [currentVault]);
 
 	const availableToDeposit = useMemo((): number => {
 		// Handle ETH native coin
-		if (toAddress(currentVault.token.address) === WETH_TOKEN_ADDRESS) {
-			const	ethPlusWEth = (
-				(balances[WETH_TOKEN_ADDRESS]?.normalized || 0)
-				+
-				(balances[ETH_TOKEN_ADDRESS]?.normalized || 0)
-			);
-			return ethPlusWEth;
+		if ((toAddress(currentVault.token.address) === WETH_TOKEN_ADDRESS) || (toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS)) {
+			return (balanceOfWrappedCoin.normalized + balanceOfCoin.normalized);
 		}
-		
-		// Handle FTM native coin
-		if (toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS) {
-			const	ftmPlusWFtm = (
-				(balances[WFTM_TOKEN_ADDRESS]?.normalized || 0)
-				+
-				(balances[ETH_TOKEN_ADDRESS]?.normalized || 0)
-			);
-			return ftmPlusWFtm;
-		}
-		return balances[toAddress(currentVault.token.address)]?.normalized || 0;
-	}, [balances, currentVault.token.address]);
-
-	const deposited = useMemo((): number => {
-		return balances[toAddress(currentVault.address)]?.normalized || 0;
-	}, [balances, currentVault.address]);
-
-	const vaultName = useMemo((): string => getVaultName(currentVault), [currentVault]);
+		return balanceOfWant.normalized;
+	}, [balanceOfCoin.normalized, balanceOfWant.normalized, balanceOfWrappedCoin.normalized, currentVault.token.address]);
 	
 	const availableToDepositRatio = useMemo((): number => {
 		if (currentVault.details.depositLimit === '0') {

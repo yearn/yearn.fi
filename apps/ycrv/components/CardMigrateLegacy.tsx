@@ -99,7 +99,6 @@ function	CardMigrateLegacy(): ReactElement {
 						defaultOption={LEGACY_OPTIONS_FROM[0]}
 						options={LEGACY_OPTIONS_FROM}
 						selected={selectedOptionFrom}
-						balances={balances}
 						onSelect={(option: TDropdownOption): void => {
 							performBatchedUpdates((): void => {
 								set_selectedOptionFrom(option);
@@ -175,7 +174,6 @@ function	CardMigrateLegacy(): ReactElement {
 					<Dropdown
 						defaultOption={LEGACY_OPTIONS_TO[0]}
 						options={LEGACY_OPTIONS_TO}
-						balances={balances}
 						selected={selectedOptionTo}
 						onSelect={(option: TDropdownOption): void => set_selectedOptionTo(option)} />
 					<p className={'pl-2 !text-xs font-normal !text-green-600'}>

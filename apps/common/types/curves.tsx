@@ -27,6 +27,5 @@ export type TCurveGauges = {
 }
 
 export type TCurveGaugeVersionRewards = {
-	v2: TDict<TDict<BigNumber>>,
 	v3: TDict<TDict<BigNumber>>,
 }

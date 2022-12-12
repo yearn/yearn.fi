@@ -8,6 +8,8 @@ import ValueAnimation from '@common/components/ValueAnimation';
 import {useCurve} from '@common/contexts/useCurve';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
+import {useBalance} from '@common/hooks/useBalance';
+import {useTokenPrice} from '@common/hooks/useTokenPrice';
 import {formatPercent, getVaultAPY} from '@common/utils';
 import {Harvests} from '@yCRV/components/Harvests';
 import {useYCRV} from '@yCRV/contexts/useYCRV';
@@ -17,9 +19,10 @@ import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
 
 function	HeaderPosition(): ReactElement {
-	const	{balances} = useWallet();
-	const	{holdings} = useYCRV();
-	const	{vaults} = useYearn();
+	const {holdings} = useYCRV();
+	const {vaults} = useYearn();
+	const balanceOfStyCRV = useBalance(STYCRV_TOKEN_ADDRESS);
+	const balanceOfLpyCRV = useBalance(LPYCRV_TOKEN_ADDRESS);
 
 	const	formatedYearnHas = useMemo((): string => (
 		holdings?.veCRVBalance ?
@@ -29,12 +32,12 @@ function	HeaderPosition(): ReactElement {
 
 	const	formatedYouHave = useMemo((): string => (
 		formatCounterValueRaw(
-			(Number(balances[STYCRV_TOKEN_ADDRESS]?.normalized) || 0) * (vaults?.[STYCRV_TOKEN_ADDRESS]?.tvl?.price || 0)
+			(balanceOfStyCRV.normalized * (vaults?.[STYCRV_TOKEN_ADDRESS]?.tvl?.price || 0))
 			+
-			(Number(balances[LPYCRV_TOKEN_ADDRESS]?.normalized) || 0) * (vaults?.[LPYCRV_TOKEN_ADDRESS]?.tvl?.price || 0),
+			(balanceOfLpyCRV.normalized * (vaults?.[LPYCRV_TOKEN_ADDRESS]?.tvl?.price || 0)),
 			1
 		)
-	), [balances, vaults]);
+	), [balanceOfStyCRV, balanceOfLpyCRV, vaults]);
 
 	return (
 		<Fragment>
@@ -61,19 +64,15 @@ function	HeaderPosition(): ReactElement {
 }
 
 function	Holdings(): ReactElement {
-	const	{balances} = useWallet();
-	const	{holdings, styCRVMegaBoost, styCRVAPY} = useYCRV();
-	const	{vaults, prices} = useYearn();
-	const	{curveWeeklyFees, cgPrices} = useCurve();
+	const {balances} = useWallet();
+	const {holdings, styCRVMegaBoost, styCRVAPY} = useYCRV();
+	const {vaults} = useYearn();
+	const {curveWeeklyFees, cgPrices} = useCurve();
 
-	const	lpCRVAPY = useMemo((): string => getVaultAPY(vaults, LPYCRV_TOKEN_ADDRESS), [vaults]);
-
-	const	ycrvPrice = useMemo((): number => (
-		formatToNormalizedValue(
-			formatBN(prices?.[YCRV_TOKEN_ADDRESS] || 0),
-			6
-		)
-	), [prices]);
+	const lpCRVAPY = useMemo((): string => getVaultAPY(vaults, LPYCRV_TOKEN_ADDRESS), [vaults]);
+	const ycrvPrice = useTokenPrice(YCRV_TOKEN_ADDRESS);
+	const balanceOfStyCRV = useBalance(STYCRV_TOKEN_ADDRESS);
+	const balanceOfLpyCRV = useBalance(LPYCRV_TOKEN_ADDRESS);
 
 	const	formatBigNumberOver10K = useCallback((v: BigNumber): string => {
 		if ((v || ethers.constants.Zero)?.gt(ethers.constants.WeiPerEther.mul(10000))) {
@@ -210,10 +209,10 @@ function	Holdings(): ReactElement {
 								<p
 									suppressHydrationWarning
 									className={'font-number text-xs text-neutral-600'}>
-									{balances[STYCRV_TOKEN_ADDRESS] ? formatCounterValue(
-										balances[STYCRV_TOKEN_ADDRESS]?.normalized,
+									{formatCounterValue(
+										balanceOfStyCRV.normalized,
 										vaults?.[STYCRV_TOKEN_ADDRESS]?.tvl?.price || 0
-									) : formatAmount(0)}
+									)}
 								</p>
 							</div>
 						</div>
@@ -264,10 +263,10 @@ function	Holdings(): ReactElement {
 								<p
 									suppressHydrationWarning
 									className={'font-number text-xs text-neutral-600'}>
-									{balances[LPYCRV_TOKEN_ADDRESS] ? formatCounterValue(
-										balances[LPYCRV_TOKEN_ADDRESS]?.normalized,
+									{formatCounterValue(
+										balanceOfLpyCRV?.normalized,
 										vaults?.[LPYCRV_TOKEN_ADDRESS]?.tvl?.price || 0
-									) : formatAmount(0)}
+									)}
 								</p>
 							</div>
 						</div>

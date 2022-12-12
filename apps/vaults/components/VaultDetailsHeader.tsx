@@ -5,36 +5,26 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
-import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
-import {useWallet} from '@common/contexts/useWallet';
-import {useYearn} from '@common/contexts/useYearn';
+import {useBalance} from '@common/hooks/useBalance';
+import {useTokenPrice} from '@common/hooks/useTokenPrice';
 import {formatPercent, getVaultName} from '@common/utils';
 
 import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
 import type {TYdaemonEarned, TYearnVault} from '@common/types/yearn';
 
-
 function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactElement {
 	const {safeChainID} = useChainID();
 	const {address} = useWeb3();
-	const {balances} = useWallet();
-	const {prices} = useYearn();
 	const {settings: baseAPISettings} = useSettings();
 	const {data: earned} = useSWR(
 		currentVault.address && address ? `${baseAPISettings.yDaemonBaseURI}/${safeChainID}/earned/${address}/${currentVault.address}` : null,
 		baseFetcher,
 		{revalidateOnFocus: false}
 	) as SWRResponse as {data: TYdaemonEarned};
-
-	const	normalizedVaultBalance = useMemo((): number => (
-		formatToNormalizedValue(
-			balances[toAddress(currentVault?.address)]?.raw || 0,
-			currentVault?.decimals
-		)
-	), [balances, currentVault]);
 
 	const	normalizedVaultEarned = useMemo((): number => (
 		formatToNormalizedValue(
@@ -43,13 +33,8 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 		)
 	), [earned, currentVault]);
 
-	const	vaultPrice = useMemo((): number => (
-		formatToNormalizedValue(
-			formatBN(prices?.[toAddress(currentVault?.address)] || 0),
-			6
-		)
-	), [currentVault?.address, prices]);
-
+	const	vaultBalance = useBalance(currentVault?.address)?.normalized;
+	const	vaultPrice = useTokenPrice(currentVault?.address);
 	const	vaultName = useMemo((): string => getVaultName(currentVault), [currentVault]);
 
 	return (
@@ -88,10 +73,10 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 						{`Balance, ${currentVault?.symbol || 'token'}`}
 					</p>
 					<b className={'font-number text-3xl'} suppressHydrationWarning>
-						{formatAmount(normalizedVaultBalance)}
+						{formatAmount(vaultBalance)}
 					</b>
 					<legend className={'font-number text-xs text-neutral-600'} suppressHydrationWarning>
-						{formatCounterValue(normalizedVaultBalance || 0, vaultPrice)}
+						{formatCounterValue(vaultBalance, vaultPrice)}
 					</legend>
 				</div>
 

@@ -1,18 +1,15 @@
-import React, {cloneElement, Fragment, useMemo} from 'react';
+import React, {cloneElement, Fragment} from 'react';
 import {Listbox, Transition} from '@headlessui/react';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
+import {useBalance} from '@common/hooks/useBalance';
 import IconChevron from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
-import type {TDropdownItemProps, TDropdownProps, TSimplifiedBalanceData} from '@common/types/types';
+import type {TDropdownItemProps, TDropdownProps} from '@common/types/types';
 
-function DropdownItem({
-	option,
-	balances
-}: TDropdownItemProps): ReactElement {
-	const	balance = useMemo((): TSimplifiedBalanceData | null => balances?.[toAddress(option.value)] || null, [balances, option.value]);
+function DropdownItem({option}: TDropdownItemProps): ReactElement {
+	const	balance = useBalance(option.value);
 
 	return (
 		<Listbox.Option value={option}>
@@ -26,7 +23,7 @@ function DropdownItem({
 							{option.symbol}
 						</p>
 						<p className={`${option.icon ? 'pl-2' : 'pl-0'} text-xxs font-normal text-neutral-600`}>
-							{`${formatAmount(balance?.normalized || 0)} ${option.symbol}`}
+							{`${formatAmount(balance.normalized)} ${option.symbol}`}
 						</p>
 					</div>
 				</div>
@@ -61,8 +58,7 @@ function Dropdown({
 	defaultOption,
 	selected,
 	onSelect,
-	placeholder = '',
-	balances
+	placeholder = ''
 }: TDropdownProps): ReactElement {
 	return (
 		<div>
@@ -100,8 +96,7 @@ function Dropdown({
 									options.map((option, index): ReactElement => (
 										<DropdownItem 
 											key={option?.label || index}
-											option={option}
-											balances={balances} />
+											option={option} />
 									)
 									))}
 							</Listbox.Options>

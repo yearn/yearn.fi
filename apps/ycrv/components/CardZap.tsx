@@ -130,7 +130,6 @@ function	CardZap(): ReactElement {
 						defaultOption={ZAP_OPTIONS_FROM[0]}
 						options={ZAP_OPTIONS_FROM}
 						selected={selectedOptionFrom}
-						balances={balances}
 						onSelect={(option: TDropdownOption): void => {
 							performBatchedUpdates((): void => {
 								if (option.value === selectedOptionTo.value) {
@@ -210,7 +209,6 @@ function	CardZap(): ReactElement {
 						defaultOption={possibleTo[0]}
 						options={possibleTo}
 						selected={selectedOptionTo}
-						balances={balances}
 						onSelect={(option: TDropdownOption): void => set_selectedOptionTo(option)} />
 					<p className={'pl-2 !text-xs font-normal !text-green-600'}>
 						{toVaultAPY}

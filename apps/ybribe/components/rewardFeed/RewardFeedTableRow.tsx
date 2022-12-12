@@ -15,7 +15,7 @@ import type {TYDaemonGaugeRewardsFeed} from '@common/types/yearn';
 function	RewardFeedRowItemWithExtraData({
 	address,
 	value
-}: {address: string, value: BigNumber, minDecimals?: number, isV2?: boolean}): ReactElement {
+}: {address: string, value: BigNumber, minDecimals?: number}): ReactElement {
 	const	{tokens, prices} = useYearn();
 
 	const	tokenInfo = tokens?.[address];

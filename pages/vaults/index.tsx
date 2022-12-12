@@ -1,24 +1,24 @@
-import React, {Fragment, useEffect, useMemo, useState} from 'react';
-import {ethers} from 'ethers';
+import React, {Fragment, useCallback, useEffect, useMemo, useState} from 'react';
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
-import {VaultsListHead} from '@vaults/components/list/VaultsListHead';
 import {VaultsListMigrableRow} from '@vaults/components/list/VaultsListMigrableRow';
 import {VaultsListRow} from '@vaults/components/list/VaultsListRow';
 import {useMigrable} from '@vaults/contexts/useMigrable';
 import {useMigrableWallet} from '@vaults/contexts/useMigrableWallet';
+import {useFilteredVaults} from '@vaults/hooks/useFilteredVaults';
 import Wrapper from '@vaults/Wrapper';
-import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
+import ListHead from '@common/components/ListHead';
+import ListHero from '@common/components/ListHero';
 import ValueAnimation from '@common/components/ValueAnimation';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import {getVaultName} from '@common/utils';
 
-import type {ChangeEvent, ReactElement, ReactNode} from 'react';
+import type {ReactElement, ReactNode} from 'react';
 import type {TYearnVault} from '@common/types/yearn';
 
 function	HeaderUserPosition(): ReactElement {
@@ -54,127 +54,6 @@ function	HeaderUserPosition(): ReactElement {
 	);
 }
 
-function	TableHeader({category, set_category, searchValue, set_searchValue}: {
-	category: string;
-	set_category: (category: string) => void;
-	searchValue: string;
-	set_searchValue: (searchValue: string) => void;
-}): ReactElement {
-	return (
-		<div className={'flex flex-col items-start justify-between space-x-0 px-4 pt-4 pb-2 md:px-10 md:pt-10 md:pb-8'}>
-			<div className={'mb-6'}>
-				<h2 className={'text-lg font-bold md:text-3xl'}>{category}</h2>
-			</div>
-
-			<div className={'hidden w-full flex-row items-center justify-between space-x-4 md:flex'}>
-				<div className={'w-full'}>
-					<label className={'text-neutral-600'}>{'Search'}</label>
-					<div className={'mt-1 flex h-10 w-full items-center border border-neutral-0 bg-neutral-0 p-2 md:w-2/3'}>
-						<div className={'relative flex h-10 w-full flex-row items-center justify-between'}>
-							<input
-								className={'h-10 w-full overflow-x-scroll border-none bg-transparent py-2 px-0 text-base outline-none scrollbar-none placeholder:text-neutral-400'}
-								type={'text'}
-								placeholder={'YFI Vault'}
-								value={searchValue}
-								onChange={(e: ChangeEvent<HTMLInputElement>): void => {
-									set_searchValue(e.target.value);
-								}} />
-							<div className={'absolute right-0 text-neutral-400'}>
-								<svg
-									width={'20'}
-									height={'20'}
-									viewBox={'0 0 24 24'}
-									fill={'none'}
-									xmlns={'http://www.w3.org/2000/svg'}>
-									<path
-										fillRule={'evenodd'}
-										clipRule={'evenodd'}
-										d={'M10 1C5.02972 1 1 5.02972 1 10C1 14.9703 5.02972 19 10 19C12.1249 19 14.0779 18.2635 15.6176 17.0318L21.2929 22.7071C21.6834 23.0976 22.3166 23.0976 22.7071 22.7071C23.0976 22.3166 23.0976 21.6834 22.7071 21.2929L17.0318 15.6176C18.2635 14.0779 19 12.1249 19 10C19 5.02972 14.9703 1 10 1ZM3 10C3 6.13428 6.13428 3 10 3C13.8657 3 17 6.13428 17 10C17 13.8657 13.8657 17 10 17C6.13428 17 3 13.8657 3 10Z'}
-										fill={'currentcolor'}/>
-								</svg>
-							</div>
-
-						</div>
-					</div>
-				</div>
-				<div>
-					<label className={'text-neutral-600'}>&nbsp;</label>
-					<div className={'mt-1 flex flex-row space-x-4'}>
-						<div className={'flex flex-row space-x-0 divide-x border-x border-neutral-900'}>
-							<Button
-								onClick={(): void => set_category('Crypto Vaults')}
-								variant={category === 'Crypto Vaults' ? 'filled' : 'outlined'}
-								className={'yearn--button-smaller !border-x-0'}>
-								{'Crypto'}
-							</Button>
-							<Button
-								onClick={(): void => set_category('Stables Vaults')}
-								variant={category === 'Stables Vaults' ? 'filled' : 'outlined'}
-								className={'yearn--button-smaller !border-x-0'}>
-								{'Stables'}
-							</Button>
-							<Button
-								onClick={(): void => set_category('Curve Vaults')}
-								variant={category === 'Curve Vaults' ? 'filled' : 'outlined'}
-								className={'yearn--button-smaller !border-x-0'}>
-								{'Curve'}
-							</Button>
-							<Button
-								onClick={(): void => set_category('Balancer Vaults')}
-								variant={category === 'Balancer Vaults' ? 'filled' : 'outlined'}
-								className={'yearn--button-smaller !border-x-0'}>
-								{'Balancer'}
-							</Button>
-							<Button
-								onClick={(): void => set_category('All Vaults')}
-								variant={category === 'All Vaults' ? 'filled' : 'outlined'}
-								className={'yearn--button-smaller !border-x-0'}>
-								{'All'}
-							</Button>
-						</div>
-
-						<Button
-							onClick={(): void => set_category('Holdings')}
-							variant={category === 'Holdings' ? 'filled' : 'outlined'}
-							className={'yearn--button-smaller relative'}>
-							<span className={'absolute -top-1 -right-1 flex h-2 w-2'}>
-								<span className={'absolute inline-flex h-full w-full animate-ping rounded-full bg-pink-600/80'}></span>
-								<span className={'relative inline-flex h-2 w-2 rounded-full bg-pink-600'}></span>
-							</span>
-
-							{'Holdings'}
-						</Button>
-					</div>
-				</div>
-			</div>
-			<div className={'flex w-full flex-row space-x-2 md:hidden md:w-2/3'}>
-				<select
-					className={'yearn--button-smaller !w-[120%] border-none bg-neutral-900 text-neutral-0'}
-					onChange={(e): void => set_category(e.target.value)}>
-					<option value={'Stables Vaults'}>{'Stables'}</option>
-					<option value={'Crypto Vaults'}>{'Crypto'}</option>
-					<option value={'Curve Vaults'}>{'Curve'}</option>
-					<option value={'Balancer Vaults'}>{'Balancer'}</option>
-					<option value={'All Vaults'}>{'All'}</option>
-					<option value={'Holdings'}>{'Holdings'}</option>
-				</select>
-				<div className={'flex h-8 w-full items-center border border-neutral-0 bg-neutral-0 p-2 md:w-auto'}>
-					<div className={'flex h-8 w-full flex-row items-center justify-between py-2 px-0'}>
-						<input
-							className={'w-full overflow-x-scroll border-none bg-transparent py-2 px-0 text-xs outline-none scrollbar-none'}
-							type={'text'}
-							placeholder={'Search'}
-							value={searchValue}
-							onChange={(e: ChangeEvent<HTMLInputElement>): void => {
-								set_searchValue(e.target.value);
-							}} />
-					</div>
-				</div>
-			</div>
-		</div>
-	);
-}
-
 function	Index(): ReactElement {
 	const	{balances} = useWallet();
 	const	{vaults, isLoadingVaultList} = useYearn();
@@ -186,30 +65,33 @@ function	Index(): ReactElement {
 	const	[sortBy, set_sortBy] = useState('apy');
 	const	[sortDirection, set_sortDirection] = useState('desc');
 
-	const	curveVaults = useMemo((): TYearnVault[] => {
-		return (Object.values(vaults || {}).filter((vault): boolean => (vault?.category === 'Curve')) as TYearnVault[]);
-	}, [vaults]);
-	const	stablesVaults = useMemo((): TYearnVault[] => {
-		return (Object.values(vaults || {}).filter((vault): boolean => (vault?.category === 'Stablecoin')) as TYearnVault[]);
-	}, [vaults]);
-	const	balancerVaults = useMemo((): TYearnVault[] => {
-		return (Object.values(vaults || {}).filter((vault): boolean => (vault?.category === 'Balancer')) as TYearnVault[]);
-	}, [vaults]);
-	const	cryptoVaults = useMemo((): TYearnVault[] => {
-		return (Object.values(vaults || {}).filter((vault): boolean => (vault?.category === 'Volatile')) as TYearnVault[]);
-	}, [vaults]);
-	const	holdingsVaults = useMemo((): TYearnVault[] => {
-		return (Object.values(vaults || {}).filter((vault): boolean => (
-			(balances?.[toAddress(vault?.address)]?.raw || ethers.constants.Zero)?.gt(0)
-		)) as TYearnVault[]);
-	}, [vaults, balances]);
-	const	migratableVaults = useMemo((): TYearnVault[] => {
-		return (Object.values(migrable || {}).filter((vault): boolean => (
-			(migrableBalance?.[toAddress(vault?.address)]?.raw || ethers.constants.Zero)?.gt(0)
-		)) as TYearnVault[]);
-	}, [migrableBalance, migrable]);
+	/* 🔵 - Yearn Finance **************************************************************************
+	**	It's best to memorize the filtered vaults, which saves a lot of processing time by only
+	**	performing the filtering once.
+	**********************************************************************************************/
+	const	curveVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Curve');
+	const	stablesVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Stablecoin');
+	const	balancerVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Balancer');
+	const	cryptoVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Volatile');
+	const	holdingsVaults = useFilteredVaults(vaults, ({address}): boolean => (balances?.[toAddress(address)]?.raw)?.gt(0));
+	const	migrableVaults = useFilteredVaults(migrable, ({address}): boolean => (migrableBalance?.[toAddress(address)]?.raw)?.gt(0));
 
 
+	/* 🔵 - Yearn Finance **************************************************************************
+	**	As the sidechains have a low number of vaults, we will display all of them by default.
+	**********************************************************************************************/
+	useEffect((): void => {
+		if (safeChainID === 10 || safeChainID === 42161) {
+			set_category('All Vaults');
+		}
+	}, [safeChainID]);
+	
+
+	/* 🔵 - Yearn Finance **************************************************************************
+	**	First, we need to determine in which category we are. The vaultsToDisplay function will
+	**	decide which vaults to display based on the category. No extra filters are applied.
+	**	The possible lists are memoized to avoid unnecessary re-renders.
+	**********************************************************************************************/
 	const	vaultsToDisplay = useMemo((): TYearnVault[] => {
 		if (category === 'Curve Vaults') {
 			return curveVaults;
@@ -225,6 +107,11 @@ function	Index(): ReactElement {
 		return Object.values(vaults || {}) as TYearnVault[];
 	}, [category, curveVaults, stablesVaults, balancerVaults, cryptoVaults, vaults, holdingsVaults]);
 
+
+	/* 🔵 - Yearn Finance **************************************************************************
+	**	Then, on the vaultsToDisplay list, we apply the search filter. The search filter is
+	**	implemented as a simple string.includes() on the vault name.
+	**********************************************************************************************/
 	const	searchedVaultsToDisplay = useMemo((): TYearnVault[] => {
 		const	vaultsToUse = [...vaultsToDisplay];
 	
@@ -237,8 +124,15 @@ function	Index(): ReactElement {
 		});
 	}, [vaultsToDisplay, searchValue]);
 
+
+	/* 🔵 - Yearn Finance **************************************************************************
+	**	Then, once we have reduced the list of vaults to display, we can sort them. The sorting
+	**	is done via a custom method that will sort the vaults based on the sortBy and
+	**	sortDirection values.
+	**	TODO: Refactor this to use a custom hook.
+	**********************************************************************************************/
 	const	sortedVaultsToDisplay = useMemo((): TYearnVault[] => {
-		if (sortBy === 'token') {
+		if (sortBy === 'name') {
 			return searchedVaultsToDisplay.sort((a, b): number => {
 				const	aName = getVaultName(a);
 				const	bName = getVaultName(b);
@@ -247,16 +141,14 @@ function	Index(): ReactElement {
 				}
 				return bName.localeCompare(aName);
 			});
-		}
-		if (sortBy === 'apy') {
+		} else if (sortBy === 'apy') {
 			return searchedVaultsToDisplay.sort((a, b): number => {
 				if (sortDirection === 'desc') {
 					return (b.apy?.net_apy || 0) - (a.apy?.net_apy || 0);
 				}
 				return (a.apy?.net_apy || 0) - (b.apy?.net_apy || 0);
 			});
-		}
-		if (sortBy === 'available') {
+		} else if (sortBy === 'available') {
 			return searchedVaultsToDisplay.sort((a, b): number => {
 				let	aBalance = (balances[toAddress(a.token.address)]?.normalized || 0);
 				let	bBalance = (balances[toAddress(b.token.address)]?.normalized || 0);
@@ -302,24 +194,21 @@ function	Index(): ReactElement {
 				}
 				return (bBalance) - (aBalance);
 			});
-		}
-		if (sortBy === 'deposited') {
+		} else if (sortBy === 'deposited') {
 			return searchedVaultsToDisplay.sort((a, b): number => {
 				if (sortDirection === 'asc') {
 					return (balances[toAddress(a.address)]?.normalized || 0) - (balances[toAddress(b.address)]?.normalized || 0);
 				}
 				return (balances[toAddress(b.address)]?.normalized || 0) - (balances[toAddress(a.address)]?.normalized || 0);
 			});
-		}
-		if (sortBy === 'tvl') {
+		} else if (sortBy === 'tvl') {
 			return searchedVaultsToDisplay.sort((a, b): number => {
 				if (sortDirection === 'desc') {
 					return (b.tvl.tvl || 0) - (a.tvl.tvl || 0);
 				}
 				return (a.tvl.tvl || 0) - (b.tvl.tvl || 0);
 			});
-		}
-		if (sortBy === 'risk') {
+		} else if (sortBy === 'risk') {
 			return searchedVaultsToDisplay.sort((a, b): number => {
 				if (sortDirection === 'desc') {
 					return (b.riskScore || 0) - (a.riskScore || 0);
@@ -331,40 +220,24 @@ function	Index(): ReactElement {
 		return searchedVaultsToDisplay;
 	}, [sortBy, searchedVaultsToDisplay, sortDirection, balances]);
 
-	useEffect((): void => {
-		if (safeChainID === 10 || safeChainID === 42161) {
-			set_category('All Vaults');
-		}
-	}, [safeChainID]);
-	
 
-	function	renderList(): ReactNode {
-		if (category === 'Holdings') {
-			if (isLoadingVaultList || (sortedVaultsToDisplay.length === 0 && migratableVaults.length === 0)) {
-				return (
-					<VaultsListEmpty
-						sortedVaultsToDisplay={sortedVaultsToDisplay}
-						currentCategory={category} />
-				);	
-			}
-			console.log(migratableVaults);
-			return (
-				<Fragment>
-					{migratableVaults.map((vault): ReactNode => {
-						if (!vault) {
-							return (null);
-						}
-						return <VaultsListMigrableRow key={vault.address} currentVault={vault} />;
-					})}
-					{sortedVaultsToDisplay.map((vault): ReactNode => {
-						if (!vault) {
-							return (null);
-						}
-						return <VaultsListRow key={vault.address} currentVault={vault} />;
-					})}
-				</Fragment>
-			);
-		}
+	/* 🔵 - Yearn Finance **************************************************************************
+	**	Callback method used to sort the vaults list.
+	**	The use of useCallback() is to prevent the method from being re-created on every render.
+	**********************************************************************************************/
+	const	onSort = useCallback((newSortBy: string, newSortDirection: string): void => {
+		performBatchedUpdates((): void => {
+			set_sortBy(newSortBy);
+			set_sortDirection(newSortDirection);
+		});
+	}, []);
+
+
+	/* 🔵 - Yearn Finance **************************************************************************
+	**	The VaultList component is memoized to prevent it from being re-created on every render.
+	**	It contains either the list of vaults, is some are available, or a message to the user.
+	**********************************************************************************************/
+	const	VaultList = useMemo((): ReactNode => {
 		if (isLoadingVaultList || sortedVaultsToDisplay.length === 0) {
 			return (
 				<VaultsListEmpty
@@ -373,16 +246,14 @@ function	Index(): ReactElement {
 			);	
 		}
 		return (
-			<Fragment>
-				{sortedVaultsToDisplay.map((vault): ReactNode => {
-					if (!vault) {
-						return (null);
-					}
-					return <VaultsListRow key={vault.address} currentVault={vault} />;
-				})}
-			</Fragment>
+			sortedVaultsToDisplay.map((vault): ReactNode => {
+				if (!vault) {
+					return (null);
+				}
+				return <VaultsListRow key={vault.address} currentVault={vault} />;
+			})
 		);
-	}
+	}, [category, sortedVaultsToDisplay, isLoadingVaultList]);
 
 	return (
 		<section className={'mt-4 grid w-full grid-cols-12 gap-y-10 pb-10 md:mt-20 md:gap-x-10 md:gap-y-20'}>
@@ -390,23 +261,63 @@ function	Index(): ReactElement {
 			<HeaderUserPosition />
 
 			<div className={'col-span-12 flex w-full flex-col bg-neutral-100'}>
-				<TableHeader
-					category={category}
-					set_category={set_category}
+				<ListHero
+					headLabel={category}
+					searchPlaceholder={'YFI Vault'}
+					categories={[
+						[
+							{value: 'Crypto Vaults', label: 'Crypto', isSelected: category === 'Crypto Vaults'},
+							{value: 'Stables Vaults', label: 'Stables', isSelected: category === 'Stables Vaults'},
+							{value: 'Curve Vaults', label: 'Curve', isSelected: category === 'Curve Vaults'},
+							{value: 'Balancer Vaults', label: 'Balancer', isSelected: category === 'Balancer Vaults'},
+							{value: 'All Vaults', label: 'All', isSelected: category === 'All Vaults'}
+						],
+						[
+							{
+								value: 'Holdings',
+								label: 'Holdings',
+								isSelected: category === 'Holdings',
+								node: (
+									<Fragment>
+										{'Holdings'}
+										<span className={`absolute -top-1 -right-1 flex h-2 w-2 ${category === 'Holdings' || migrableVaults?.length === 0 ? 'opacity-0' : 'opacity-100'}`}>
+											<span className={'absolute inline-flex h-full w-full animate-ping rounded-full bg-pink-600 opacity-75'}></span>
+											<span className={'relative inline-flex h-2 w-2 rounded-full bg-pink-500'}></span>
+										</span>
+									</Fragment>
+								)
+							}
+						]
+					]}
+					onSelect={set_category}
 					searchValue={searchValue}
 					set_searchValue={set_searchValue} />
-				<div className={'mt-4 grid w-full grid-cols-1 md:mt-0'}>
-					<VaultsListHead
-						sortBy={sortBy}
-						sortDirection={sortDirection}
-						onSort={(_sortBy: string, _sortDirection: string): void => {
-							performBatchedUpdates((): void => {
-								set_sortBy(_sortBy);
-								set_sortDirection(_sortDirection);
-							});
-						}} />
-					{renderList()}
-				</div>
+
+				{category === 'Holdings' && migrableVaults?.length > 0 ? (
+					<div className={'my-4'}>
+						{migrableVaults.map((vault): ReactNode => {
+							if (!vault) {
+								return (null);
+							}
+							return (
+								<VaultsListMigrableRow key={vault.address} currentVault={vault} />
+							);
+						})}
+					</div>
+				) : null}
+
+				<ListHead
+					sortBy={sortBy}
+					sortDirection={sortDirection}
+					onSort={onSort}
+					items={[
+						{label: 'Token', value: 'name', sortable: true},
+						{label: 'APY', value: 'apy', sortable: true, className: 'col-span-2'},
+						{label: 'Available', value: 'available', sortable: true, className: 'col-span-2'},
+						{label: 'Deposited', value: 'deposited', sortable: true, className: 'col-span-2'},
+						{label: 'TVL', value: 'tvl', sortable: true, className: 'col-span-2'}
+					]} />
+				{VaultList}
 			</div>
 
 		</section>
