@@ -13,7 +13,6 @@ import type {TAddress} from '@yearn-finance/web-lib/utils/address';
 import type {TDict} from '@yearn-finance/web-lib/utils/types';
 import type {TYdaemonEarned, TYDaemonToken, TYearnVault} from '@common/types/yearn';
 
-
 export type	TYearnContext = {
 	currentPartner: TAddress,
 	earned: TYdaemonEarned,

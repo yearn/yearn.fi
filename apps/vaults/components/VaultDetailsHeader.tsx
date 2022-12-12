@@ -10,7 +10,7 @@ import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {useBalance} from '@common/hooks/useBalance';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
-import {formatPercent, getVaultName} from '@common/utils';
+import {formatPercent, formatUSD, getVaultName} from '@common/utils';
 
 import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
@@ -54,7 +54,7 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 						{formatAmount(formatToNormalizedValue(currentVault?.tvl?.total_assets, currentVault?.decimals))}
 					</b>
 					<legend className={'font-number text-xs text-neutral-600'} suppressHydrationWarning>
-						{`$ ${formatAmount(currentVault?.tvl?.tvl)}`}
+						{formatUSD(currentVault?.tvl?.tvl)}
 					</legend>
 				</div>
 

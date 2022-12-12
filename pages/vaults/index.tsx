@@ -5,10 +5,10 @@ import {VaultsListRow} from '@vaults/components/list/VaultsListRow';
 import {useMigrable} from '@vaults/contexts/useMigrable';
 import {useMigrableWallet} from '@vaults/contexts/useMigrableWallet';
 import {useFilteredVaults} from '@vaults/hooks/useFilteredVaults';
+import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import Wrapper from '@vaults/Wrapper';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import ListHead from '@common/components/ListHead';
@@ -20,6 +20,7 @@ import {getVaultName} from '@common/utils';
 
 import type {ReactElement, ReactNode} from 'react';
 import type {TYearnVault} from '@common/types/yearn';
+import type {TPossibleSortBy, TPossibleSortDirection} from '@vaults/hooks/useSortVaults';
 
 function	HeaderUserPosition(): ReactElement {
 	const	{cumulatedValueInVaults} = useWallet();
@@ -62,8 +63,8 @@ function	Index(): ReactElement {
 	const	{safeChainID} = useChainID();
 	const	[category, set_category] = useState('Crypto Vaults');
 	const	[searchValue, set_searchValue] = useState('');
-	const	[sortBy, set_sortBy] = useState('apy');
-	const	[sortDirection, set_sortDirection] = useState('desc');
+	const	[sortBy, set_sortBy] = useState<TPossibleSortBy>('apy');
+	const	[sortDirection, set_sortDirection] = useState<TPossibleSortDirection>('desc');
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	**	It's best to memorize the filtered vaults, which saves a lot of processing time by only
@@ -131,104 +132,17 @@ function	Index(): ReactElement {
 	**	sortDirection values.
 	**	TODO: Refactor this to use a custom hook.
 	**********************************************************************************************/
-	const	sortedVaultsToDisplay = useMemo((): TYearnVault[] => {
-		if (sortBy === 'name') {
-			return searchedVaultsToDisplay.sort((a, b): number => {
-				const	aName = getVaultName(a);
-				const	bName = getVaultName(b);
-				if (sortDirection === 'desc') {
-					return aName.localeCompare(bName);
-				}
-				return bName.localeCompare(aName);
-			});
-		} else if (sortBy === 'apy') {
-			return searchedVaultsToDisplay.sort((a, b): number => {
-				if (sortDirection === 'desc') {
-					return (b.apy?.net_apy || 0) - (a.apy?.net_apy || 0);
-				}
-				return (a.apy?.net_apy || 0) - (b.apy?.net_apy || 0);
-			});
-		} else if (sortBy === 'available') {
-			return searchedVaultsToDisplay.sort((a, b): number => {
-				let	aBalance = (balances[toAddress(a.token.address)]?.normalized || 0);
-				let	bBalance = (balances[toAddress(b.token.address)]?.normalized || 0);
+	const	sortedVaultsToDisplay = useSortVaults(searchedVaultsToDisplay, sortBy, sortDirection);
 
-				// Handle ETH native coin
-				if (toAddress(a.token.address) === WETH_TOKEN_ADDRESS) {
-					const	ethPlusWEth = (
-						(balances[WETH_TOKEN_ADDRESS]?.normalized || 0)
-						+
-						(balances[ETH_TOKEN_ADDRESS]?.normalized || 0)
-					);
-					aBalance = ethPlusWEth;
-				}
-				if (toAddress(b.token.address) === WETH_TOKEN_ADDRESS) {
-					const	ethPlusWEth = (
-						(balances[WETH_TOKEN_ADDRESS]?.normalized || 0)
-						+
-						(balances[ETH_TOKEN_ADDRESS]?.normalized || 0)
-					);
-					bBalance = ethPlusWEth;
-				}
-
-				// Handle FTM native coin
-				if (toAddress(a.token.address) === WFTM_TOKEN_ADDRESS) {
-					const	ftmPlusWFtm = (
-						(balances[WFTM_TOKEN_ADDRESS]?.normalized || 0)
-						+
-						(balances[ETH_TOKEN_ADDRESS]?.normalized || 0)
-					);
-					aBalance = ftmPlusWFtm;
-				}
-				if (toAddress(b.token.address) === WFTM_TOKEN_ADDRESS) {
-					const	ftmPlusWFtm = (
-						(balances[WFTM_TOKEN_ADDRESS]?.normalized || 0)
-						+
-						(balances[ETH_TOKEN_ADDRESS]?.normalized || 0)
-					);
-					bBalance = ftmPlusWFtm;
-				}
-
-				if (sortDirection === 'asc') {
-					return (aBalance) - (bBalance);
-				}
-				return (bBalance) - (aBalance);
-			});
-		} else if (sortBy === 'deposited') {
-			return searchedVaultsToDisplay.sort((a, b): number => {
-				if (sortDirection === 'asc') {
-					return (balances[toAddress(a.address)]?.normalized || 0) - (balances[toAddress(b.address)]?.normalized || 0);
-				}
-				return (balances[toAddress(b.address)]?.normalized || 0) - (balances[toAddress(a.address)]?.normalized || 0);
-			});
-		} else if (sortBy === 'tvl') {
-			return searchedVaultsToDisplay.sort((a, b): number => {
-				if (sortDirection === 'desc') {
-					return (b.tvl.tvl || 0) - (a.tvl.tvl || 0);
-				}
-				return (a.tvl.tvl || 0) - (b.tvl.tvl || 0);
-			});
-		} else if (sortBy === 'risk') {
-			return searchedVaultsToDisplay.sort((a, b): number => {
-				if (sortDirection === 'desc') {
-					return (b.riskScore || 0) - (a.riskScore || 0);
-				}
-				return (a.riskScore || 0) - (b.riskScore || 0);
-			});
-		}
-
-		return searchedVaultsToDisplay;
-	}, [sortBy, searchedVaultsToDisplay, sortDirection, balances]);
-
-
+	
 	/* 🔵 - Yearn Finance **************************************************************************
 	**	Callback method used to sort the vaults list.
 	**	The use of useCallback() is to prevent the method from being re-created on every render.
 	**********************************************************************************************/
 	const	onSort = useCallback((newSortBy: string, newSortDirection: string): void => {
 		performBatchedUpdates((): void => {
-			set_sortBy(newSortBy);
-			set_sortDirection(newSortDirection);
+			set_sortBy(newSortBy as TPossibleSortBy);
+			set_sortDirection(newSortDirection as TPossibleSortDirection);
 		});
 	}, []);
 

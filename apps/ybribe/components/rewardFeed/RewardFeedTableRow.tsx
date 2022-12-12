@@ -6,6 +6,7 @@ import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useCurve} from '@common/contexts/useCurve';
 import {useYearn} from '@common/contexts/useYearn';
+import {formatUSD} from '@common/utils';
 
 import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
@@ -28,7 +29,7 @@ function	RewardFeedRowItemWithExtraData({
 	return (
 		<div className={'flex h-auto flex-col items-end'}>
 			<div className={'font-number inline-flex items-baseline text-base text-neutral-900'}>
-				{`$ ${formatAmount(bribeValue)}`}
+				{formatUSD(bribeValue)}
 			</div>
 			<p className={'font-number inline-flex items-baseline text-right text-xs text-neutral-400'}>
 				{formatAmount(bribeAmount)}

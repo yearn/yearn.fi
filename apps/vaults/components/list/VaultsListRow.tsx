@@ -7,7 +7,7 @@ import {formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNu
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useBalance} from '@common/hooks/useBalance';
-import {formatPercent, getVaultName} from '@common/utils';
+import {formatPercent, formatUSD, getVaultName} from '@common/utils';
 
 import type {ReactElement} from 'react';
 import type {TYearnVault} from '@common/types/yearn';
@@ -80,13 +80,13 @@ function	VaultsListRow({currentVault}: {currentVault: TYearnVault}): ReactElemen
 					<div className={'yearn--table-data-section-item md:hidden'} datatype={'number'}>
 						<label className={'yearn--table-data-section-item-label'}>{'TVL'}</label>
 						<p className={'yearn--table-data-section-item-value'}>
-							{`$ ${formatAmount(currentVault.tvl?.tvl || 0, 0, 0)}`}
+							{formatUSD(currentVault.tvl?.tvl || 0, 0, 0)}
 						</p>
 					</div>
 
 					<div className={'col-span-1 hidden h-8 flex-col items-end px-0 pt-0 md:col-span-2 md:flex md:h-14 md:pt-4'}>
-						<p className={'yearn--table-data-section-item-value'}>
-							{`$ ${formatAmount(currentVault.tvl?.tvl || 0, 0, 0)}`}
+						<p className={'yearn--table-data-section-item-value font-number text-end'}>
+							{formatUSD(currentVault.tvl?.tvl || 0, 0, 0)}
 						</p>
 						<div className={'mt-1 w-2/3'}>
 							<div className={'relative h-1 w-full bg-neutral-400'}>

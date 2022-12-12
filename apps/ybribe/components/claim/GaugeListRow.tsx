@@ -8,7 +8,7 @@ import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useYearn} from '@common/contexts/useYearn';
-import {formatPercent} from '@common/utils';
+import {formatPercent, formatUSD} from '@common/utils';
 import {useBribes} from '@yBribe/contexts/useBribes';
 import {claimReward} from '@yBribe/utils/actions/claimReward';
 
@@ -34,7 +34,7 @@ function	GaugeRowItemWithExtraData({
 	return (
 		<div className={'flex h-auto flex-col items-end pt-0 md:h-14'}>
 			<div className={'yearn--table-data-section-item-value'}>
-				{`$ ${formatAmount(bribeValue, minDecimals, minDecimals)}`}
+				{formatUSD(bribeValue, minDecimals, minDecimals)}
 			</div>
 			<p className={'font-number inline-flex items-baseline text-right text-xs text-neutral-400'}>
 				{formatAmount(bribeAmount, minDecimals, minDecimals)}
@@ -151,7 +151,7 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 								!currentRewardsForCurrentGaugeMap || currentRewardsForCurrentGaugeMap.length === 0 ? (
 									<div className={'flex h-auto flex-col items-end pt-0 md:h-14'}>
 										<p className={'yearn--table-data-section-item-value'}>
-											{`$ ${formatAmount(0, 5, 5)}`}
+											{formatUSD(0, 5, 5)}
 										</p>
 										<p className={'font-number inline-flex items-baseline text-right text-xs text-neutral-400'}>
 											{'-'}
@@ -171,7 +171,7 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 								!nextRewardsForCurrentGaugeMap || nextRewardsForCurrentGaugeMap.length === 0 ? (
 									<div className={'flex h-auto flex-col items-end pt-0 md:h-14'}>
 										<p className={'yearn--table-data-section-item-value'}>
-											{`$ ${formatAmount(0, 5, 5)}`}
+											{formatUSD(0, 5, 5)}
 										</p>
 										<p className={'font-number inline-flex items-baseline text-right text-xs text-neutral-400'}>
 											{'-'}
@@ -236,7 +236,7 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 								!claimableForCurrentGaugeMap || claimableForCurrentGaugeMap.length === 0 ? (
 									<div className={'flex h-auto flex-col items-end pt-0 md:h-14'}>
 										<p className={'font-number inline-flex items-baseline text-base text-neutral-900'}>
-											{`$ ${formatAmount(0, 5, 5)}`}
+											{formatUSD(0, 5, 5)}
 										</p>
 										<p className={'font-number inline-flex items-baseline text-right text-xs text-neutral-400'}>
 											{'-'}

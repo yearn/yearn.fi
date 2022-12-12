@@ -8,7 +8,7 @@ import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/fo
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useYearn} from '@common/contexts/useYearn';
-import {formatPercent} from '@common/utils';
+import {formatPercent, formatUSD} from '@common/utils';
 import {GaugeBribeModal} from '@yBribe/components/bribe/GaugeBribeModal';
 import {useBribes} from '@yBribe/contexts/useBribes';
 
@@ -30,7 +30,7 @@ function	GaugeRowItemWithExtraData({address, value}: {address: string, value: Bi
 	return (
 		<div className={'flex h-auto flex-col items-end pt-0 md:h-14'}>
 			<p className={'yearn--table-data-section-item-value'}>
-				{`$ ${formatAmount(bribeValue, 5, 5)}`}
+				{formatUSD(bribeValue, 5, 5)}
 			</p>
 			<p className={'font-number inline-flex items-baseline text-right text-xs text-neutral-400'}>
 				{formatAmount(bribeAmount, 5, 5)}
@@ -103,7 +103,7 @@ function	GaugeListRow({currentGauge}: {currentGauge: TCurveGauges}): ReactElemen
 						!currentRewardsForCurrentGaugeMap || currentRewardsForCurrentGaugeMap.length === 0 ? (
 							<div className={'flex h-auto flex-col items-end pt-0 md:h-14'}>
 								<p className={'yearn--table-data-section-item-value'}>
-									{`$ ${formatAmount(0, 5, 5)}`}
+									{formatUSD(0, 5, 5)}
 								</p>
 								<p className={'font-number inline-flex items-baseline text-right text-xs text-neutral-400'}>
 									{'-'}
@@ -124,7 +124,7 @@ function	GaugeListRow({currentGauge}: {currentGauge: TCurveGauges}): ReactElemen
 						!nextRewardsForCurrentGaugeMap || nextRewardsForCurrentGaugeMap.length === 0 ? (
 							<div className={'flex h-auto flex-col items-end pt-0 md:h-14'}>
 								<p className={'yearn--table-data-section-item-value'}>
-									{`$ ${formatAmount(0, 5, 5)}`}
+									{formatUSD(0, 5, 5)}
 								</p>
 								<p className={'font-number inline-flex items-baseline text-right text-xs text-neutral-400'}>
 									{'-'}

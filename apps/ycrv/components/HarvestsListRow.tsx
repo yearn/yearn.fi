@@ -6,6 +6,7 @@ import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/fo
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
+import {formatUSD} from '@common/utils';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonHarvests} from '@common/types/yearn';
@@ -41,7 +42,7 @@ function	HarvestListRow({harvest}: {harvest: TYDaemonHarvests}): ReactElement {
 				<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
 					<p className={'yearn--table-data-section-item-label'}>{'Value'}</p>
 					<p className={'yearn--table-data-section-item-value'}>
-						{`$ ${formatAmount(Number(harvest.profitValue) - Number(harvest.lossValue))}`}
+						{formatUSD(Number(harvest.profitValue) - Number(harvest.lossValue))}
 					</p>
 				</div>
 
