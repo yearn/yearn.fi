@@ -42,7 +42,7 @@ const Apps = [
 	},
 	{
 		name: 'veYFI',
-		href: 'https://pr-771.d27dgpz01hmbvx.amplifyapp.com/' || 'https://vote.yearn.finance/vaults',
+		href: 'https://vote.yearn.finance',
 		icon: <LogoYearn
 			className={'h-8 w-8'}
 			back={'text-primary'}
