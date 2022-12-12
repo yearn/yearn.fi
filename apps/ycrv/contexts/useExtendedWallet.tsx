@@ -5,6 +5,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useBalances} from '@yearn-finance/web-lib/hooks/useBalances';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {useClientEffect} from '@yearn-finance/web-lib/hooks/useClientEffect';
+import {CRV_TOKEN_ADDRESS, LPYCRV_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS, YVBOOST_TOKEN_ADDRESS, YVECRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {getProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
@@ -44,7 +45,14 @@ export const ExtendedWalletContextApp = memo(function ExtendedWalletContextApp({
 	const	{data: extendedBalances, update: updateBalances, isLoading: isLoadingExtendedBalances} = useBalances({
 		key: chainID,
 		provider: provider || getProvider(1),
-		tokens: [{token: CVXCRV_TOKEN_ADDRESS}],
+		tokens: [
+			{token: YCRV_TOKEN_ADDRESS},
+			{token: LPYCRV_TOKEN_ADDRESS},
+			{token: CRV_TOKEN_ADDRESS},
+			{token: YVBOOST_TOKEN_ADDRESS},
+			{token: YVECRV_TOKEN_ADDRESS},
+			{token: CVXCRV_TOKEN_ADDRESS}
+		],
 		prices
 	});
 
