@@ -20,6 +20,7 @@ import {Dropdown} from '@common/components/TokenDropdown';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import {useBalance} from '@common/hooks/useBalance';
+import {useTokenPrice} from '@common/hooks/useTokenPrice';
 import IconArrowRight from '@common/icons/IconArrowRight';
 import {formatPercent, handleInputChange} from '@common/utils';
 import {approveERC20} from '@common/utils/actions/approveToken';
@@ -55,6 +56,7 @@ function	ActionButton({
 	isDepositing,
 	currentVault,
 	amount,
+	max,
 	selectedOptionFrom,
 	selectedOptionTo,
 	onSuccess
@@ -62,6 +64,7 @@ function	ActionButton({
 	isDepositing: boolean,
 	currentVault: TYearnVault,
 	amount: TNormalizedBN;
+	max: TNormalizedBN;
 	selectedOptionFrom?: TDropdownOption;
 	selectedOptionTo?: TDropdownOption;
 	onSuccess: VoidFunction;
@@ -213,7 +216,7 @@ function	ActionButton({
 			return;
 		}
 		new Transaction(provider, depositETH, set_txStatusDeposit).populate(
-			chainID,
+			safeChainID,
 			amount.raw //amount
 		).onSuccess(async (): Promise<void> => {
 			await onSuccess();
@@ -281,7 +284,7 @@ function	ActionButton({
 			<Button
 				className={'w-full'}
 				isBusy={txStatusApprove.pending || isValidatingAllowance}
-				isDisabled={!isActive || amount.raw.isZero()}
+				isDisabled={!isActive || amount.raw.isZero() || (amount.raw).gt(max.raw)}
 				onClick={isOutputTokenEth ? onApproveTo : onApproveFrom}>
 				{'Approve'}
 			</Button>
@@ -293,7 +296,7 @@ function	ActionButton({
 			onClick={onDepositOrWithdraw}
 			className={'w-full'}
 			isBusy={txStatusDeposit.pending}
-			isDisabled={!isActive || amount.raw.isZero()}>
+			isDisabled={!isActive || amount.raw.isZero() || (amount.raw).gt(max.raw)}>
 			{isDepositing ? 'Deposit' : 'Withdraw'}
 		</Button>
 	);
@@ -304,16 +307,32 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 	const {isActive, provider} = useWeb3();
 	const {safeChainID} = useChainID();
 	const {balances, refresh} = useWallet();
-	const {prices} = useYearn();
 
 	const [possibleOptionsFrom, set_possibleOptionsFrom] = useState<TDropdownOption[]>([]);
 	const [possibleOptionsTo, set_possibleOptionsTo] = useState<TDropdownOption[]>([]);
-
 	const [selectedOptionFrom, set_selectedOptionFrom] = useState<TDropdownOption | undefined>();
 	const [selectedOptionTo, set_selectedOptionTo] = useState<TDropdownOption | undefined>();
 	const [amount, set_amount] = useState<TNormalizedBN>({raw: ethers.constants.Zero, normalized: 0});
 
-	const	selectedFromBalance = useBalance(toAddress(selectedOptionFrom?.value));
+	const selectedFromBalance = useBalance(toAddress(selectedOptionFrom?.value));
+	const selectedOptionFromPricePerToken = useTokenPrice(toAddress(selectedOptionFrom?.value));
+	const selectedOptionToPricePerToken = useTokenPrice(toAddress(selectedOptionTo?.value));
+
+	const maxDepositPossible = useMemo((): TNormalizedBN => {
+		const	vaultDepositLimit = formatBN(currentVault.details.depositLimit) || ethers.constants.Zero;
+		const	userBalance = balances?.[toAddress(selectedOptionFrom?.value)]?.raw || ethers.constants.Zero;
+		if (userBalance.gt(vaultDepositLimit)) {
+			return ({
+				raw: vaultDepositLimit,
+				normalized: formatToNormalizedValue(vaultDepositLimit, currentVault.token.decimals)
+			});
+		} else {
+			return ({
+				raw: userBalance,
+				normalized: balances?.[toAddress(selectedOptionFrom?.value)]?.normalized || 0
+			});
+		}
+	}, [balances, currentVault.details.depositLimit, currentVault.token.decimals, selectedOptionFrom?.value]);
 
 	const	isDepositing = useMemo((): boolean => (
 		!selectedOptionTo?.value ? true : toAddress(selectedOptionTo.value) === toAddress(currentVault.address)
@@ -373,26 +392,6 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 			});
 		}
 	}, [selectedOptionFrom, selectedOptionTo, currentVault, safeChainID]);
-
-	/* 🔵 - Yearn Finance **************************************************************************
-	** Grab the price of the input token to be able to perform price calculations
-	**********************************************************************************************/
-	const	selectedOptionFromPricePerToken = useMemo((): number => (
-		formatToNormalizedValue(
-			formatBN(prices?.[toAddress(selectedOptionFrom?.value)] || 0),
-			6
-		)
-	), [prices, selectedOptionFrom]);
-
-	/* 🔵 - Yearn Finance **************************************************************************
-	** Grab the price of the output token to be able to perform price calculations
-	**********************************************************************************************/
-	const	selectedOptionToPricePerToken = useMemo((): number => (
-		formatToNormalizedValue(
-			formatBN(prices?.[toAddress(selectedOptionTo?.value)] || 0),
-			6
-		)
-	), [prices, selectedOptionTo]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** Perform a smartContract call to the deposit contract to get the expected out for a given
@@ -457,13 +456,10 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 			if (isDepositing) {
 				set_amount({raw: ethers.constants.Zero, normalized: 0});
 			} else {
-				set_amount({
-					raw: balances?.[toAddress(_selectedOptionTo?.value)]?.raw || ethers.constants.Zero,
-					normalized: balances?.[toAddress(_selectedOptionTo?.value)]?.normalized || 0
-				});
+				set_amount(maxDepositPossible);
 			}
 		});
-	}, [possibleOptionsFrom, possibleOptionsTo, selectedOptionFrom, selectedOptionTo, isDepositing, balances]);
+	}, [selectedOptionTo, possibleOptionsTo, selectedOptionFrom, possibleOptionsFrom, isDepositing, maxDepositPossible]);
 
 
 	return (
@@ -530,12 +526,7 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 										});
 									}} />
 								<button
-									onClick={(): void => {
-										set_amount({
-											raw: balances?.[toAddress(selectedOptionFrom?.value)]?.raw || ethers.constants.Zero,
-											normalized: balances?.[toAddress(selectedOptionFrom?.value)]?.normalized || 0
-										});
-									}}
+									onClick={(): void => set_amount(maxDepositPossible)}
 									className={'ml-2 cursor-pointer bg-neutral-900 px-2 py-1 text-xs text-neutral-0 transition-colors hover:bg-neutral-700'}>
 									{'Max'}
 								</button>
@@ -626,6 +617,7 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 							isDepositing={isDepositing}
 							currentVault={currentVault}
 							amount={amount}
+							max={maxDepositPossible}
 							selectedOptionFrom={selectedOptionFrom}
 							selectedOptionTo={selectedOptionTo}
 							onSuccess={async (): Promise<void> => {
