@@ -2,14 +2,14 @@ import React, {createContext, useCallback, useContext, useEffect, useMemo, useSt
 import {ethers} from 'ethers';
 import useSWR from 'swr';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-// import {useToast} from '@yearn-finance/web-lib/hooks/useToast';
+import {useToast} from '@yearn-finance/web-lib/hooks/useToast';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {getProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
-// import {useAddToken} from '@common/hooks/useAddToken';
+import {useAddToken} from '@common/hooks/useAddToken';
 import {formatPercent, getAmountWithSlippage, getVaultAPY} from '@common/utils';
 import {approveERC20} from '@common/utils/actions/approveToken';
 import {deposit} from '@common/utils/actions/deposit';
@@ -75,8 +75,8 @@ function	CardTransactorContextApp({
 	const	[selectedOptionTo, set_selectedOptionTo] = useState(defaultOptionTo);
 	const	[amount, set_amount] = useState<TNormalizedBN>({raw: ethers.constants.Zero, normalized: 0});
 	const	[hasTypedSomething, set_hasTypedSomething] = useState(false);
-	// const	addToken = useAddToken();
-	// const 	toast = useToast();
+	const	addToken = useAddToken();
+	const 	toast = useToast();
 	
 	/* 🔵 - Yearn Finance ******************************************************
 	** useEffect to set the amount to the max amount of the selected token once
@@ -193,6 +193,21 @@ function	CardTransactorContextApp({
 	** supported token B.
 	**************************************************************************/
 	async function	onZap(): Promise<void> {
+		const addToMetamaskToast = {
+			type: 'info' as const,
+			content: `Add ${selectedOptionTo.symbol} to Metamask?`,
+			duration: Infinity,
+			cta: {
+				label: 'Add +',
+				onClick: (): void => addToken({
+					address: selectedOptionTo.value,
+					symbol: selectedOptionTo.symbol,
+					decimals: selectedOptionTo.decimals,
+					image: selectedOptionTo.icon?.props.src
+				})
+			}
+		};
+
 		if (selectedOptionFrom.zapVia === LPYCRV_TOKEN_ADDRESS) {
 			// Direct deposit to vault from crv/yCRV Curve LP Token to lp-yCRV Vault
 			new Transaction(provider, deposit, set_txStatusZap).populate(
@@ -201,19 +216,7 @@ function	CardTransactorContextApp({
 			).onSuccess(async (): Promise<void> => {
 				set_amount({raw: ethers.constants.Zero, normalized: 0});
 				await refresh();
-				// toast({
-				// 	type: 'info',
-				// 	content: 'Add x to Metamask?',
-				// 	cta: {
-				// 		label: 'Add +',
-				// 		onClick: (): void => addToken({
-				// 			address: '0x',
-				// 			symbol: '',
-				// 			decimals: 18,
-				// 			image: ''
-				// 		})
-				// 	}
-				// });
+				toast(addToMetamaskToast);
 			}).perform();
 		} else {
 			// Zap in
@@ -226,19 +229,7 @@ function	CardTransactorContextApp({
 			).onSuccess(async (): Promise<void> => {
 				set_amount({raw: ethers.constants.Zero, normalized: 0});
 				await refresh();
-				// toast({
-				// 	type: 'info',
-				// 	content: 'Add x to Metamask?',
-				// 	cta: {
-				// 		label: 'Add +',
-				// 		onClick: (): void => addToken({
-				// 			address: selectedOptionFrom.value,
-				// 			symbol: selectedOptionFrom.symbol,
-				// 			decimals: 18,
-				// 			image: selectedOptionFrom.icon?.props.src
-				// 		})
-				// 	}
-				// });
+				toast(addToMetamaskToast);
 			}).perform();
 		}
 	}

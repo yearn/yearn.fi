@@ -10,6 +10,7 @@ const	LEGACY_OPTIONS_FROM: TDropdownOption[] = [
 	{
 		label: 'yvBOOST',
 		symbol: 'yvBOOST',
+		decimals: 18,
 		value: YVBOOST_TOKEN_ADDRESS,
 		zapVia: ZAP_YEARN_VE_CRV_ADDRESS,
 		icon: (
@@ -22,6 +23,7 @@ const	LEGACY_OPTIONS_FROM: TDropdownOption[] = [
 	}, {
 		label: 'yveCRV',
 		symbol: 'yveCRV',
+		decimals: 18,
 		value: YVECRV_TOKEN_ADDRESS,
 		zapVia: ZAP_YEARN_VE_CRV_ADDRESS,
 		icon: (
@@ -40,6 +42,7 @@ const	LEGACY_OPTIONS_TO: TDropdownOption[] = [
 	{
 		label: 'st-yCRV',
 		symbol: 'st-yCRV',
+		decimals: 18,
 		value: STYCRV_TOKEN_ADDRESS,
 		zapVia: ZAP_YEARN_VE_CRV_ADDRESS,
 		icon: (
@@ -54,6 +57,7 @@ const	LEGACY_OPTIONS_TO: TDropdownOption[] = [
 	}, {
 		label: 'yCRV',
 		symbol: 'yCRV',
+		decimals: 18,
 		value: YCRV_TOKEN_ADDRESS,
 		zapVia: ZAP_YEARN_VE_CRV_ADDRESS,
 		icon: (
@@ -69,6 +73,7 @@ const	LEGACY_OPTIONS_TO: TDropdownOption[] = [
 	{
 		label: 'lp-yCRV',
 		symbol: 'lp-yCRV',
+		decimals: 18,
 		value: LPYCRV_TOKEN_ADDRESS,
 		zapVia: ZAP_YEARN_VE_CRV_ADDRESS,
 		icon: (
@@ -100,6 +105,7 @@ const	ZAP_OPTIONS_FROM: TDropdownOption[] = [
 	{
 		label: 'CRV',
 		symbol: 'CRV',
+		decimals: 18,
 		value: CRV_TOKEN_ADDRESS,
 		zapVia: ZAP_YEARN_VE_CRV_ADDRESS,
 		icon: (
@@ -114,6 +120,7 @@ const	ZAP_OPTIONS_FROM: TDropdownOption[] = [
 	{
 		label: 'cvxCRV',
 		symbol: 'cvxCRV',
+		decimals: 18,
 		value: CVXCRV_TOKEN_ADDRESS,
 		zapVia: ZAP_YEARN_VE_CRV_ADDRESS,
 		icon: (
@@ -127,6 +134,7 @@ const	ZAP_OPTIONS_FROM: TDropdownOption[] = [
 	{
 		label: 'Curve CRV/yCRV',
 		symbol: 'CRV/yCRV',
+		decimals: 18,
 		value: YCRV_CURVE_POOL_ADDRESS,
 		zapVia: LPYCRV_TOKEN_ADDRESS,
 		icon: (

@@ -1,4 +1,4 @@
-// import {useToast} from '@yearn-finance/web-lib/hooks/useToast';
+import {useToast} from '@yearn-finance/web-lib/hooks/useToast';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 declare let window: any;
@@ -11,7 +11,7 @@ type TWatchAssetOptions = {
 }
 
 export function useAddToken(): (options: TWatchAssetOptions) => void {
-	// const 	toast = useToast();
+	const 	toast = useToast();
     
 	return (options: TWatchAssetOptions): void => {
 
@@ -24,15 +24,9 @@ export function useAddToken(): (options: TWatchAssetOptions) => void {
 		})
 			.then((success: boolean): void => {
 				if (success) {
-					// toast({
-					// 	type: 'success',
-					// 	content: `${options.symbol} successfully added to wallet`
-					// });
+					toast({type: 'success', content: `${options.symbol} successfully added to wallet`});
 				} else {
-					// toast({
-					// 	type: 'error',
-					// 	content: `${options.symbol} failed to be added to wallet`
-					// });
+					toast({type: 'error', content: `${options.symbol} failed to be added to wallet`});
 				}
 			})
 			.catch(console.error);
