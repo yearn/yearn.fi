@@ -1,8 +1,8 @@
 import React, {createContext, useCallback, useContext, useEffect, useMemo, useState} from 'react';
 import {ethers} from 'ethers';
 import useSWR from 'swr';
+import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {useToast} from '@yearn-finance/web-lib/hooks/useToast';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
@@ -10,6 +10,7 @@ import {getProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
 import {useAddToken} from '@common/hooks/useAddToken';
+import {useDismissToasts} from '@common/hooks/useDismissToasts';
 import {formatPercent, getAmountWithSlippage, getVaultAPY} from '@common/utils';
 import {approveERC20} from '@common/utils/actions/approveToken';
 import {deposit} from '@common/utils/actions/deposit';
@@ -76,7 +77,8 @@ function	CardTransactorContextApp({
 	const	[amount, set_amount] = useState<TNormalizedBN>({raw: ethers.constants.Zero, normalized: 0});
 	const	[hasTypedSomething, set_hasTypedSomething] = useState(false);
 	const	addToken = useAddToken();
-	const 	toast = useToast();
+	const 	{dismissAllToasts} = useDismissToasts();
+	const 	{toast} = yToast();
 	
 	/* 🔵 - Yearn Finance ******************************************************
 	** useEffect to set the amount to the max amount of the selected token once
@@ -193,6 +195,8 @@ function	CardTransactorContextApp({
 	** supported token B.
 	**************************************************************************/
 	async function	onZap(): Promise<void> {
+		dismissAllToasts();
+
 		const addToMetamaskToast = {
 			type: 'info' as const,
 			content: `Add ${selectedOptionTo.symbol} to Metamask?`,
