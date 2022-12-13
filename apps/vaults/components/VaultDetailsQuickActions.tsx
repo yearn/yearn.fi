@@ -44,6 +44,7 @@ function	setZapOption(name: string, symbol: string, address: string, safeChainID
 		label: name,
 		symbol: symbol,
 		value: address,
+		decimals: 18, // TODO
 		icon: <ImageWithFallback
 			src={`${process.env.BASE_YEARN_ASSETS_URI}/${safeChainID}/${address}/logo-128.png`}
 			alt={name}
