@@ -1,5 +1,6 @@
 import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
+import type {TBalanceData} from '@yearn-finance/web-lib/hooks/types';
 import type {TDict} from '@yearn-finance/web-lib/utils/types';
 
 export type	TClaimable = {
@@ -16,12 +17,17 @@ export type	TSimplifiedBalanceData = {
 }
 
 export type TDropdownOption = {
-	icon?: ReactElement;
 	label: string;
 	symbol: string;
 	decimals: number;
 	value: string;
+	icon?: ReactElement;
 	zapVia?: string;
+	balanceSource?: string;
+	settings?: {
+		shouldForbidOut?: boolean;
+		shouldHideIfZero?: boolean
+	}
 };
 
 export type TDropdownProps = {
@@ -32,11 +38,12 @@ export type TDropdownProps = {
 	onSelect:
 		| React.Dispatch<React.SetStateAction<TDropdownOption>>
 		| ((option: TDropdownOption) => void);
+	balanceSource?: TDict<TBalanceData>;
 };
 
 export type TDropdownItemProps = {
 	option: TDropdownOption;
-	balances?: TDict<TSimplifiedBalanceData>;
+	balanceSource?: TDict<TBalanceData>;
 };
 
 export type	TNormalizedBN = {

@@ -2,6 +2,10 @@ import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import Link from 'next/link';
 import {ethers} from 'ethers';
 import useSWR from 'swr';
+import {QuickActionFromBox} from '@vaults/components/actions/QuickActionFromBox';
+import {QuickActionSwitch} from '@vaults/components/actions/QuickActionSwitch';
+import {QuickActionToBox} from '@vaults/components/actions/QuickActionToBox';
+import {useExtendedWallet} from '@vaults/contexts/useExtendedWallet';
 import {getEthZapperContract} from '@vaults/utils';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
@@ -10,19 +14,11 @@ import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
-import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {getProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
-import {Dropdown} from '@common/components/TokenDropdown';
-import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
-import {useBalance} from '@common/hooks/useBalance';
-import {useTokenPrice} from '@common/hooks/useTokenPrice';
-import IconArrowRight from '@common/icons/IconArrowRight';
-import {formatPercent, handleInputChange} from '@common/utils';
 import {approveERC20} from '@common/utils/actions/approveToken';
 import {deposit} from '@common/utils/actions/deposit';
 import {depositETH} from '@common/utils/actions/depositEth';
@@ -31,7 +27,7 @@ import {withdrawETH} from '@common/utils/actions/withdrawEth';
 import {withdrawShares} from '@common/utils/actions/withdrawShares';
 
 import type {BigNumber} from 'ethers';
-import type {ChangeEvent, ReactElement} from 'react';
+import type {ReactElement} from 'react';
 import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
 import type {TYearnVault} from '@common/types/yearn';
 
@@ -41,12 +37,10 @@ type TSetZapOptionProps = {
 	address: string;
 	safeChainID: number;
 	decimals: number;
+	rest?: { [key: string]: unknown };
 }
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
-const		ARE_ZAP_ENABLED = false;
-
-function	setZapOption({name, symbol, address, safeChainID, decimals}: TSetZapOptionProps): TDropdownOption {
+function	setZapOption({name, symbol, address, safeChainID, decimals, rest}: TSetZapOptionProps): TDropdownOption {
 	return ({
 		label: name,
 		symbol,
@@ -56,7 +50,8 @@ function	setZapOption({name, symbol, address, safeChainID, decimals}: TSetZapOpt
 			src={`${process.env.BASE_YEARN_ASSETS_URI}/${safeChainID}/${address}/logo-128.png`}
 			alt={name}
 			width={36}
-			height={36} />
+			height={36} />,
+		...rest
 	});
 }
 
@@ -314,17 +309,12 @@ function	ActionButton({
 function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): ReactElement {
 	const {isActive, provider} = useWeb3();
 	const {safeChainID} = useChainID();
-	const {balances, refresh} = useWallet();
-
+	const {balances, refresh} = useExtendedWallet();
 	const [possibleOptionsFrom, set_possibleOptionsFrom] = useState<TDropdownOption[]>([]);
 	const [possibleOptionsTo, set_possibleOptionsTo] = useState<TDropdownOption[]>([]);
 	const [selectedOptionFrom, set_selectedOptionFrom] = useState<TDropdownOption | undefined>();
 	const [selectedOptionTo, set_selectedOptionTo] = useState<TDropdownOption | undefined>();
 	const [amount, set_amount] = useState<TNormalizedBN>({raw: ethers.constants.Zero, normalized: 0});
-
-	const selectedFromBalance = useBalance(toAddress(selectedOptionFrom?.value));
-	const selectedOptionFromPricePerToken = useTokenPrice(toAddress(selectedOptionFrom?.value));
-	const selectedOptionToPricePerToken = useTokenPrice(toAddress(selectedOptionTo?.value));
 
 	const maxDepositPossible = useMemo((): TNormalizedBN => {
 		const	vaultDepositLimit = formatBN(currentVault.details.depositLimit) || ethers.constants.Zero;
@@ -409,7 +399,7 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 	** in/out pair with a specific amount. This callback is called every 10s or when amount/in or
 	** out changes.
 	**********************************************************************************************/
-	const expectedOutFetcher = useCallback(async (args: [string, string, BigNumber]): Promise<{raw: BigNumber, normalized: number}> => {
+	const expectedOutFetcher = useCallback(async (args: [string, string, BigNumber]): Promise<TNormalizedBN> => {
 		const [_inputToken, _outputToken, _amountIn] = args;
 		if (!_inputToken || !_outputToken) {
 			return ({raw: ethers.constants.Zero, normalized: 0});
@@ -460,10 +450,20 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 		performBatchedUpdates((): void => {
 			const _selectedOptionTo = selectedOptionTo;
 			const _possibleOptionsTo = possibleOptionsTo;
-			set_selectedOptionTo(selectedOptionFrom);
+			
+			//If from is a token you cannot withdraw to, we need to find another one, otherwise we just switch
+			if (isDepositing && selectedOptionFrom?.settings?.shouldForbidOut) {
+				set_selectedOptionTo(possibleOptionsFrom.find((option): boolean => !option?.settings?.shouldForbidOut));
+			} else {
+				set_selectedOptionTo(selectedOptionFrom);
+			}
+
+			// We switch the possible options
 			set_selectedOptionFrom(_selectedOptionTo);
 			set_possibleOptionsTo(possibleOptionsFrom);
 			set_possibleOptionsFrom(_possibleOptionsTo);
+
+			// If we are depositing, we set the amount to the max deposit possible, otherwise we set it to 0
 			if (isDepositing) {
 				set_amount({raw: ethers.constants.Zero, normalized: 0});
 			} else {
@@ -485,141 +485,25 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 			<div
 				aria-label={'Quick Deposit'}
 				className={'col-span-12 mb-4 flex flex-col space-x-0 space-y-2 bg-neutral-200 p-4 md:flex-row md:space-x-4 md:space-y-0 md:p-8'}>
-				<section aria-label={'FROM'} className={'flex w-full flex-col space-x-0 md:flex-row md:space-x-4'}>
-					<div className={'relative z-10 w-full space-y-2'}>
-						<div className={'flex flex-row items-baseline justify-between'}>
-							<label className={'text-base text-neutral-600'}>
-								{isDepositing ? 'From wallet' : 'From vault'}
-							</label>
-							<legend className={'font-number inline text-xs text-neutral-600 md:hidden'} suppressHydrationWarning>
-								{`You have ${formatAmount(selectedFromBalance.normalized)} ${selectedOptionFrom?.symbol || 'tokens'}`}
-							</legend>
-						</div>
-						{(ARE_ZAP_ENABLED || possibleOptionsFrom.length > 1) ? (
-							<Dropdown
-								defaultOption={possibleOptionsFrom[0]}
-								options={possibleOptionsFrom}
-								selected={selectedOptionFrom}
-								onSelect={(option: TDropdownOption): void => set_selectedOptionFrom(option)} />
-						) : (
-							<div className={'flex h-10 w-full items-center justify-between bg-neutral-100 px-2 text-base text-neutral-900 md:px-3'}>
-								<div className={'relative flex flex-row items-center'}>
-									<div className={'h-6 w-6 rounded-full'}>
-										{selectedOptionFrom?.icon}
-									</div>
-									<p className={'overflow-x-hidden text-ellipsis whitespace-nowrap pl-2 font-normal text-neutral-900 scrollbar-none'}>
-										{selectedOptionFrom?.symbol}
-									</p>
-								</div>
-							</div>
-						)}
-						<legend className={'font-number hidden text-xs text-neutral-600 md:inline'} suppressHydrationWarning>
-							{`You have ${formatAmount(selectedFromBalance.normalized)} ${selectedOptionFrom?.symbol || 'tokens'}`}
-						</legend>
-					</div>
-					<div className={'w-full space-y-2'}>
-						<label
-							htmlFor={'fromAmount'}
-							className={'hidden text-base text-neutral-600 md:inline'}>
-							{'Amount'}
-						</label>
-						<div className={'flex h-10 items-center bg-neutral-100 p-2'}>
-							<div className={'flex h-10 w-full flex-row items-center justify-between py-4 px-0'}>
-								<input
-									id={'fromAmount'}
-									className={`w-full overflow-x-scroll border-none bg-transparent py-4 px-0 font-bold outline-none scrollbar-none ${isActive ? '' : 'cursor-not-allowed'}`}
-									type={'text'}
-									disabled={!isActive}
-									value={amount.normalized}
-									onChange={(e: ChangeEvent<HTMLInputElement>): void => {
-										performBatchedUpdates((): void => {
-											set_amount(handleInputChange(e, balances?.[toAddress(selectedOptionFrom?.value)]?.decimals || 18));
-										});
-									}} />
-								<button
-									onClick={(): void => set_amount(maxDepositPossible)}
-									className={'ml-2 cursor-pointer bg-neutral-900 px-2 py-1 text-xs text-neutral-0 transition-colors hover:bg-neutral-700'}>
-									{'Max'}
-								</button>
-							</div>
-						</div>
-						<legend className={'font-number mr-1 text-end text-xs text-neutral-600 md:mr-0 md:text-start'}>
-							{formatCounterValue(amount?.normalized || 0, selectedOptionFromPricePerToken)}
-						</legend>
-					</div>
-				</section>
 
-				<div className={'mx-auto flex w-full justify-center space-y-0 md:mx-none md:block md:w-14 md:space-y-2'}>
-					<label className={'hidden text-base md:inline'}>&nbsp;</label>
+				<QuickActionFromBox
+					isDepositing={isDepositing}
+					amount={amount}
+					selectedOptionFrom={selectedOptionFrom}
+					possibleOptionsFrom={possibleOptionsFrom}
+					onSelectFrom={set_selectedOptionFrom}
+					onSetAmount={set_amount}
+					onSetMaxAmount={(): void => set_amount(maxDepositPossible)} />
 
-					<div className={'tooltip top'}>
-						<Button onClick={onSwitchFromTo} className={'flex h-6 w-6 rotate-90 items-center justify-center bg-neutral-900 p-0 md:h-10 md:w-14 md:rotate-0'}>
-							<span className={'sr-only'}>{'Deposit / Withdraw'}</span>
-							<IconArrowRight className={'w-4 text-neutral-0 md:w-[25px]'} />
-						</Button>
-						<span
-							className={'tooltiptext'}
-							style={{width: 120, marginRight: 'calc(-62px + 50%)'}}>
-							<p>{'Deposit / Withdraw'}</p>
-						</span>
-					</div>
-					<legend className={'hidden text-xs md:inline'}>&nbsp;</legend>
-				</div>
+				<QuickActionSwitch onSwitchFromTo={onSwitchFromTo} />
 
-				<section aria-label={'TO'} className={'flex w-full flex-col space-x-0 md:flex-row md:space-x-4'}>
-					<div className={'relative z-10 w-full space-y-2'}>
-						<div className={'flex flex-row items-baseline justify-between'}>
-							<label className={'text-base text-neutral-600'}>
-								{isDepositing ? 'To vault' : 'To wallet'}
-							</label>
-							<legend className={'font-number inline text-xs text-neutral-600 md:hidden'} suppressHydrationWarning>
-								{`APY ${formatPercent((isDepositing ? currentVault?.apy?.net_apy || 0 : 0) * 100)}`}
-							</legend>
-						</div>
-						{(ARE_ZAP_ENABLED || possibleOptionsTo.length > 1) ? (
-							<Dropdown
-								defaultOption={possibleOptionsTo[0]}
-								options={possibleOptionsTo}
-								selected={selectedOptionTo}
-								onSelect={(option: TDropdownOption): void => set_selectedOptionTo(option)} />
-						) : (
-							<div className={'flex h-10 w-full items-center justify-between bg-neutral-100 px-2 text-base text-neutral-900 md:px-3'}>
-								<div className={'relative flex flex-row items-center'}>
-									<div className={'h-6 w-6 rounded-full'}>
-										{selectedOptionTo?.icon}
-									</div>
-									<p className={'overflow-x-hidden text-ellipsis whitespace-nowrap pl-2 font-normal text-neutral-900 scrollbar-none'}>
-										{selectedOptionTo?.symbol}
-									</p>
-								</div>
-							</div>
-						)}
-						<legend className={'font-number hidden text-xs text-neutral-600 md:inline'} suppressHydrationWarning>
-							{isDepositing ? `APY ${formatPercent((currentVault?.apy?.net_apy || 0) * 100)}` : ''}
-						</legend>
-					</div>
-
-					<div className={'w-full space-y-2'}>
-						<label
-							htmlFor={'toAmount'}
-							className={'hidden text-base text-neutral-600 md:inline'}>
-							{'You will receive'}
-						</label>
-						<div className={'flex h-10 items-center bg-neutral-300 p-2'}>
-							<div className={'flex h-10 w-full flex-row items-center justify-between py-4 px-0'}>
-								<input
-									id={'toAmount'}
-									className={'w-full cursor-default overflow-x-scroll border-none bg-transparent py-4 px-0 font-bold outline-none scrollbar-none'}
-									type={'text'}
-									disabled
-									value={expectedOut?.normalized || 0} />
-							</div>
-						</div>
-						<legend className={'font-number mr-1 text-end text-xs text-neutral-600 md:mr-0 md:text-start'}>
-							{formatCounterValue(expectedOut?.normalized || 0, selectedOptionToPricePerToken)}
-						</legend>
-					</div>
-				</section>
+				<QuickActionToBox
+					currentVault={currentVault}
+					isDepositing={isDepositing}
+					expectedOut={expectedOut}
+					selectedOptionTo={selectedOptionTo}
+					possibleOptionsTo={possibleOptionsTo}
+					onSelectTo={set_selectedOptionTo} />
 
 				<div className={'w-full space-y-0 md:w-42 md:min-w-42 md:space-y-2'}>
 					<label className={'hidden text-base md:inline'}>&nbsp;</label>
