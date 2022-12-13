@@ -48,11 +48,20 @@ function	SettingsOverwrite(): ReactElement {
 	return (
 		<div className={'bg-neutral-100 p-10'}>
 			<div className={'flex w-full flex-row justify-between pb-6'}>
-				<h2 className={'text-3xl font-bold'}>{'Settings'}</h2>
+				<h2 className={'text-3xl font-bold'}>
+					{'Settings'}
+				</h2>
 			</div>
 			<div className={'text-justify'}>
 				<p className={'pb-6'}>
-					{'Configure the default settings for this application, such as the yDaemon API base URI and the default network.'}
+					{'Configure the default settings for this application, such as the '}
+					<a
+						href={'https://ydaemon.yearn.farm'}
+						target={'_blank'}
+						className={'text-neutral-900 underline'}
+						rel={'noreferrer'}>{'yDaemon API'}
+					</a>
+					{' base URI and the default network.'}
 				</p>
 				<div className={'grid grid-cols-1 gap-4'}>
 					<WrappedInput

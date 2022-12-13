@@ -91,7 +91,10 @@ export function getVaultName(vault: TYearnVault): string {
 	return baseName;
 }
 
-export const graphFetcher = async (url: string, query: string): Promise<GraphQLResponse> => request(url, query);
+export const graphFetcher = async (args: [string, string]): Promise<GraphQLResponse> => {
+	const [url, query] = args;
+	return request(url, query);
+};
 
 export const formatPercent = (n: number, min = 2, max = 2): string => `${formatAmount(n || 0, min, max)}%`;
 

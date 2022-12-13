@@ -13,7 +13,7 @@
 	"dependencies": {
 		"@next/bundle-analyzer": "^13.0.6",
 		"@next/font": "^13.0.6",
-		"@yearn-finance/web-lib": "^0.17.23",
+		"@yearn-finance/web-lib": "^0.17.32",
 		"axios": "^1.2.1",
 		"dayjs": "^1.11.7",
 		"ethcall": "^4.8.12",
