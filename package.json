@@ -65,6 +65,7 @@
 		"framer-motion": "7.6.15",
 		"ethereumjs-util": "6.1.0",
 		"schema-utils": "4.0.0",
-		"tr46": "1.0.1"
+		"tr46": "1.0.1",
+		"d3-color": "^3.1.0"
 	}
 }
