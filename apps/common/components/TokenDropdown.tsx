@@ -8,8 +8,8 @@ import IconChevron from '@common/icons/IconChevron';
 import type {ReactElement} from 'react';
 import type {TDropdownItemProps, TDropdownProps} from '@common/types/types';
 
-function DropdownItem({option}: TDropdownItemProps): ReactElement {
-	const	balance = useBalance(option.value);
+function DropdownItem({option, balanceSource}: TDropdownItemProps): ReactElement {
+	const	balance = useBalance(option.value, balanceSource);
 
 	return (
 		<Listbox.Option value={option}>
@@ -58,7 +58,8 @@ function Dropdown({
 	defaultOption,
 	selected,
 	onSelect,
-	placeholder = ''
+	placeholder = '',
+	balanceSource
 }: TDropdownProps): ReactElement {
 	return (
 		<div>
@@ -68,7 +69,7 @@ function Dropdown({
 						<Listbox.Button
 							className={'flex h-10 w-full items-center justify-between bg-neutral-100 p-2 text-base text-neutral-900 md:px-3'}>
 							<div className={'relative flex flex-row items-center'}>
-								<div className={'h-6 w-6 rounded-full'}>
+								<div key={selected?.value} className={'h-6 w-6 rounded-full'}>
 									{selected?.icon ? cloneElement(selected.icon) : <div className={'h-6 w-6 rounded-full bg-neutral-500'} />}
 								</div>
 								<p className={`pl-2 ${(!selected?.symbol && !defaultOption?.symbol) ? 'text-neutral-400' : 'text-neutral-900'} max-w-[90%] overflow-x-hidden text-ellipsis whitespace-nowrap font-normal scrollbar-none md:max-w-full`}>
@@ -93,12 +94,14 @@ function Dropdown({
 								{options.length === 0 ? (
 									<DropdownEmpty />
 								): (
-									options.map((option, index): ReactElement => (
-										<DropdownItem 
-											key={option?.label || index}
-											option={option} />
-									)
-									))}
+									options
+										.map((option): ReactElement => (
+											<DropdownItem 
+												key={option.value}
+												option={option}
+												balanceSource={balanceSource} />
+										)
+										))}
 							</Listbox.Options>
 						</Transition>
 					</>
