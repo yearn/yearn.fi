@@ -16,7 +16,8 @@ module.exports = withBundleAnalyzer(withPWA({
 	images: {
 		domains: [
 			'rawcdn.githack.com',
-			'raw.githubusercontent.com'
+			'raw.githubusercontent.com',
+			'placehold.co'
 		]
 	},
 	env: {
