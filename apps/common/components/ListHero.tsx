@@ -23,7 +23,7 @@ function	SearchBar({searchPlaceholder, searchValue, set_searchValue}: Partial<TL
 	return (
 		<div className={'w-full'}>
 			<label htmlFor={'search'} className={'text-neutral-600'}>{'Search'}</label>
-			<div className={'mt-1 flex h-10 w-full items-center border border-neutral-0 bg-neutral-0 p-2 md:w-2/3'}>
+			<div className={'mt-1 flex h-10 w-full max-w-md items-center border border-neutral-0 bg-neutral-0 p-2 md:w-2/3'}>
 				<div className={'relative flex h-10 w-full flex-row items-center justify-between'}>
 					<input
 						id={'search'}

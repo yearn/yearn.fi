@@ -1,4 +1,5 @@
 import React, {Fragment, useCallback, useEffect, useMemo, useState} from 'react';
+import VaultListExternalMigration from '@vaults/components/list/VaultListExternalMigration';
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
 import {VaultsListMigrableRow} from '@vaults/components/list/VaultsListMigrableRow';
 import {VaultsListRow} from '@vaults/components/list/VaultsListRow';
@@ -232,6 +233,13 @@ function	Index(): ReactElement {
 						{label: 'TVL', value: 'tvl', sortable: true, className: 'col-span-2'}
 					]} />
 				{VaultList}
+			</div>
+
+
+			<div className={'col-span-12 flex w-full flex-col bg-neutral-100'}>
+				{category === 'Holdings' ? (
+					<VaultListExternalMigration />
+				) : null}
 			</div>
 
 		</section>

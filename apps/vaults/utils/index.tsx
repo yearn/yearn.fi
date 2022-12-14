@@ -1,5 +1,8 @@
 import {ethers} from 'ethers';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ZAP_ETH_WETH_CONTRACT, ZAP_FTM_WFTM_CONTRACT} from '@yearn-finance/web-lib/utils/constants';
+
+import type {TAddress} from '@yearn-finance/web-lib/utils/address';
 
 export function getMessariSubgraphEndpoint(chainID: number): string {
 	switch (chainID) {
@@ -14,17 +17,17 @@ export function getMessariSubgraphEndpoint(chainID: number): string {
 	}
 }
 
-export function getEthZapperContract(chainID: number): string {
+export function getEthZapperContract(chainID: number): TAddress {
 	switch (chainID) {
 	case 1:
 		return ZAP_ETH_WETH_CONTRACT;
 	case 10:
-		return ethers.constants.AddressZero;
+		return toAddress(ethers.constants.AddressZero);
 	case 250:
 		return ZAP_FTM_WFTM_CONTRACT;
 	case 42161:
-		return ethers.constants.AddressZero;
+		return toAddress(ethers.constants.AddressZero);
 	default:
-		return ethers.constants.AddressZero;
+		return toAddress(ethers.constants.AddressZero);
 	}
 }
