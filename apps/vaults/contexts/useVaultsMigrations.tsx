@@ -11,17 +11,17 @@ import type {SWRResponse} from 'swr';
 import type {TDict} from '@yearn-finance/web-lib/utils/types';
 import type {TYearnVault} from '@common/types/yearn';
 
-export type	TMigratableContext = {
-	migratable: TDict<TYearnVault | undefined>,
-	isLoadingMigratableList: boolean,
+export type	TVaultsMigrationsContext = {
+	possibleVaultsMigrations: TDict<TYearnVault | undefined>,
+	isLoading: boolean,
 }
-const	defaultProps: TMigratableContext = {
-	migratable: {[ethers.constants.AddressZero]: undefined},
-	isLoadingMigratableList: false
+const	defaultProps: TVaultsMigrationsContext = {
+	possibleVaultsMigrations: {[ethers.constants.AddressZero]: undefined},
+	isLoading: false
 };
 
-const	MigratableContext = createContext<TMigratableContext>(defaultProps);
-export const MigratableContextApp = memo(function MigratableContextApp({children}: {children: ReactElement}): ReactElement {
+const	VaultMigrationContext = createContext<TVaultsMigrationsContext>(defaultProps);
+export const VaultMigrationContextApp = memo(function VaultMigrationContextApp({children}: {children: ReactElement}): ReactElement {
 	const {safeChainID} = useChainID();
 	const {settings: baseAPISettings} = useSettings();
 
@@ -47,17 +47,17 @@ export const MigratableContextApp = memo(function MigratableContextApp({children
 	/* 🔵 - Yearn Finance ******************************************************
 	**	Setup and render the Context provider to use in the app.
 	***************************************************************************/
-	const	contextValue = useMemo((): TMigratableContext => ({
-		migratable: {...migratableVaultsObject},
-		isLoadingMigratableList
+	const	contextValue = useMemo((): TVaultsMigrationsContext => ({
+		possibleVaultsMigrations: {...migratableVaultsObject},
+		isLoading: isLoadingMigratableList
 	}), [migratableVaultsObject, isLoadingMigratableList]);
 
 	return (
-		<MigratableContext.Provider value={contextValue}>
+		<VaultMigrationContext.Provider value={contextValue}>
 			{children}
-		</MigratableContext.Provider>
+		</VaultMigrationContext.Provider>
 	);
 });
 
-export const useMigratable = (): TMigratableContext => useContext(MigratableContext);
-export default useMigratable;
+export const useVaultsMigrations = (): TVaultsMigrationsContext => useContext(VaultMigrationContext);
+export default useVaultsMigrations;

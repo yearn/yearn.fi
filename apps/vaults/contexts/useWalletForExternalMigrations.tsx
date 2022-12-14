@@ -1,7 +1,7 @@
 import React, {createContext, memo, useCallback, useContext, useMemo, useState} from 'react';
 // eslint-disable-next-line import/no-named-as-default
 import NProgress from 'nprogress';
-import {useVaultsMigrations} from '@vaults/contexts/useVaultsMigrations';
+import {migrationTable} from '@vaults/utils/migrationTable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useBalances} from '@yearn-finance/web-lib/hooks/useBalances';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
@@ -12,9 +12,9 @@ import {useYearn} from '@common/contexts/useYearn';
 import type {ReactElement} from 'react';
 import type {TBalanceData, TUseBalancesTokens} from '@yearn-finance/web-lib/hooks/types';
 import type {TDict} from '@yearn-finance/web-lib/utils/types';
-import type {TYearnVault} from '@common/types/yearn';
+import type {TMigrationTable} from '@vaults/utils/migrationTable';
 
-export type	TWalletForInternalMigrations = {
+export type	TWalletForExternalMigrations = {
 	balances: TDict<TBalanceData>,
 	useWalletNonce: number,
 	isLoading: boolean,
@@ -33,27 +33,22 @@ const	defaultProps = {
 ** This context controls most of the user's wallet data we may need to
 ** interact with our app, aka mostly the balances and the token prices.
 ******************************************************************************/
-const	WalletForInternalMigrations = createContext<TWalletForInternalMigrations>(defaultProps);
-export const WalletForInternalMigrationsApp = memo(function WalletForInternalMigrationsApp({children}: {children: ReactElement}): ReactElement {
+const	WalletForExternalMigrations = createContext<TWalletForExternalMigrations>(defaultProps);
+export const WalletForExternalMigrationsApp = memo(function WalletForExternalMigrationsApp({children}: {children: ReactElement}): ReactElement {
 	const	[nonce, set_nonce] = useState<number>(0);
 	const	{provider} = useWeb3();
 	const	{prices} = useYearn();
 	const	{chainID} = useChainID();
-	const	{possibleVaultsMigrations, isLoading} = useVaultsMigrations();
 
 	const	availableTokens = useMemo((): TUseBalancesTokens[] => {
-		if (isLoading) {
-			return [];
-		}
 		const	tokens: TUseBalancesTokens[] = [];
-		Object.values(possibleVaultsMigrations || {}).forEach((vault?: TYearnVault): void => {
-			if (!vault) {
-				return;
+		Object.values(migrationTable || {}).forEach((possibleMigrations: TMigrationTable[]): void => {
+			for (const element of possibleMigrations) {
+				tokens.push({token: element.migrableToken});
 			}
-			tokens.push({token: vault?.address});
 		});
 		return tokens;
-	}, [possibleVaultsMigrations, isLoading]);
+	}, []);
 
 	const	{data: balances, update: updateBalances, isLoading: isLoadingBalances} = useBalances({
 		key: chainID,
@@ -79,10 +74,12 @@ export const WalletForInternalMigrationsApp = memo(function WalletForInternalMig
 		return (): unknown => NProgress.done();
 	}, [isLoadingBalances]);
 
+
+	console.warn({balances});
 	/* 🔵 - Yearn Finance ******************************************************
 	**	Setup and render the Context provider to use in the app.
 	***************************************************************************/
-	const	contextValue = useMemo((): TWalletForInternalMigrations => ({
+	const	contextValue = useMemo((): TWalletForExternalMigrations => ({
 		balances: balances,
 		isLoading: isLoadingBalances,
 		refresh: onRefresh,
@@ -90,11 +87,12 @@ export const WalletForInternalMigrationsApp = memo(function WalletForInternalMig
 	}), [balances, isLoadingBalances, onRefresh, nonce]);
 
 	return (
-		<WalletForInternalMigrations.Provider value={contextValue}>
+		<WalletForExternalMigrations.Provider value={contextValue}>
 			{children}
-		</WalletForInternalMigrations.Provider>
+		</WalletForExternalMigrations.Provider>
 	);
 });
 
-export const useWalletForInternalMigrations = (): TWalletForInternalMigrations => useContext(WalletForInternalMigrations);
-export default useWalletForInternalMigrations;
+
+export const useWalletForExternalMigrations = (): TWalletForExternalMigrations => useContext(WalletForExternalMigrations);
+export default useWalletForExternalMigrations;

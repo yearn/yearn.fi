@@ -6,8 +6,8 @@ import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
 import {VaultsListMigratableRow} from '@vaults/components/list/VaultsListMigratableRow';
 import {VaultsListRow} from '@vaults/components/list/VaultsListRow';
 import {useAppSettings} from '@vaults/contexts/useAppSettings';
-import {useMigratable} from '@vaults/contexts/useMigratable';
-import {useMigratableWallet} from '@vaults/contexts/useMigratableWallet';
+import {useVaultsMigrations} from '@vaults/contexts/useVaultsMigrations';
+import {useWalletForInternalMigrations} from '@vaults/contexts/useWalletForInternalMigrations';
 import {useFilteredVaults} from '@vaults/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import Wrapper from '@vaults/Wrapper';
@@ -62,8 +62,8 @@ function	HeaderUserPosition(): ReactElement {
 function	Index(): ReactElement {
 	const	{balances} = useWallet();
 	const	{vaults, isLoadingVaultList} = useYearn();
-	const	{migratable, isLoadingMigratableList} = useMigratable();
-	const	{balances: migratableBalance} = useMigratableWallet();
+	const	{possibleVaultsMigrations, isLoading: isLoadingVaultsMigrations} = useVaultsMigrations();
+	const	{balances: internalMigrationsBalances} = useWalletForInternalMigrations();
 	const	{safeChainID} = useChainID();
 	const	[sortBy, set_sortBy] = useState<TPossibleSortBy>('apy');
 	const	[sortDirection, set_sortDirection] = useState<TPossibleSortDirection>('');
@@ -77,7 +77,7 @@ function	Index(): ReactElement {
 	const	stablesVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Stablecoin');
 	const	balancerVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Balancer');
 	const	cryptoVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Volatile');
-	const	migratableVaults = useFilteredVaults(migratable, ({address}): boolean => (migratableBalance?.[toAddress(address)]?.raw)?.gt(0));
+	const	migratableVaults = useFilteredVaults(possibleVaultsMigrations, ({address}): boolean => (internalMigrationsBalances?.[toAddress(address)]?.raw)?.gt(0));
 	const	holdingsVaults = useFilteredVaults(vaults, ({address}): boolean => {
 		const	holding = balances?.[toAddress(address)];
 		const	hasValidBalance = (holding?.raw || ethers.constants.Zero).gt(0);
@@ -171,10 +171,10 @@ function	Index(): ReactElement {
 	**	It contains either the list of vaults, is some are available, or a message to the user.
 	**********************************************************************************************/
 	const	VaultList = useMemo((): ReactNode => {
-		if (isLoadingMigratableList && category === 'Holdings') {
+		if (isLoadingVaultsMigrations && category === 'Holdings') {
 			return (
 				<VaultsListEmpty
-					isLoading={isLoadingMigratableList}
+					isLoading={isLoadingVaultsMigrations}
 					sortedVaultsToDisplay={sortedVaultsToDisplay}
 					currentCategory={category} />
 			);
@@ -195,7 +195,7 @@ function	Index(): ReactElement {
 				return <VaultsListRow key={vault.address} currentVault={vault} />;
 			})
 		);
-	}, [isLoadingMigratableList, category, isLoadingVaultList, sortedVaultsToDisplay]);
+	}, [isLoadingVaultsMigrations, category, isLoadingVaultList, sortedVaultsToDisplay]);
 
 	return (
 		<section className={'mt-4 grid w-full grid-cols-12 gap-y-10 pb-10 md:mt-20 md:gap-x-10 md:gap-y-20'}>

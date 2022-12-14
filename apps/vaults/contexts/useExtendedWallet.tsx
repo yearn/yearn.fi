@@ -1,5 +1,5 @@
 import React, {createContext, memo, useCallback, useContext, useMemo} from 'react';
-import {useMigrableFromDeFiWallet} from '@vaults/contexts/useMigratableFromDeFi';
+import {useWalletForExternalMigrations} from '@vaults/contexts/useWalletForExternalMigrations';
 import {useWallet} from '@common/contexts/useWallet';
 
 import type {ReactElement} from 'react';
@@ -28,7 +28,7 @@ const	defaultProps = {
 const	ExtendedWalletContext = createContext<TExtendedWalletContext>(defaultProps);
 export const ExtendedWalletContextApp = memo(function ExtendedWalletContextApp({children}: {children: ReactElement}): ReactElement {
 	const	{balances, isLoading, refresh} = useWallet();
-	const	{balances: defiBalances, isLoading: isLoadingDefiBalances, refresh: refreshDefiBalances} = useMigrableFromDeFiWallet();
+	const	{balances: defiBalances, isLoading: isLoadingDefiBalances, refresh: refreshDefiBalances} = useWalletForExternalMigrations();
 
 	const	onRefresh = useCallback(async (): Promise<TDict<TBalanceData>> => {
 		const [updatedBalances, updatedDefiBalances] = await Promise.all([
