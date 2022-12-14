@@ -59,7 +59,11 @@ function	VaultsListRow({currentVault}: {currentVault: TYearnVault}): ReactElemen
 					<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
 						<label className={'yearn--table-data-section-item-label'}>{'APY'}</label>
 						<b className={'yearn--table-data-section-item-value'}>
-							{formatPercent((currentVault.apy?.net_apy || 0) * 100)}
+							{(currentVault.apy?.type === 'new' && currentVault.apy?.net_apy == 0) ? (
+								'New'
+							) : (
+								formatPercent((currentVault.apy?.net_apy || 0) * 100)
+							)}
 						</b>
 					</div>
 
