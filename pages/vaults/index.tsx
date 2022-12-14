@@ -3,8 +3,8 @@ import VaultListExternalMigration from '@vaults/components/list/VaultListExterna
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
 import {VaultsListMigrableRow} from '@vaults/components/list/VaultsListMigrableRow';
 import {VaultsListRow} from '@vaults/components/list/VaultsListRow';
-import {useMigrable} from '@vaults/contexts/useMigrable';
-import {useMigrableWallet} from '@vaults/contexts/useMigrableWallet';
+import {useVaultsMigrations} from '@vaults/contexts/useVaultsMigrations';
+import {useWalletForInternalMigrations} from '@vaults/contexts/useWalletForInternalMigrations';
 import {useFilteredVaults} from '@vaults/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import Wrapper from '@vaults/Wrapper';
@@ -59,8 +59,8 @@ function	HeaderUserPosition(): ReactElement {
 function	Index(): ReactElement {
 	const	{balances} = useWallet();
 	const	{vaults, isLoadingVaultList} = useYearn();
-	const	{migrable} = useMigrable();
-	const	{balances: migrableBalance} = useMigrableWallet();
+	const	{possibleVaultsMigrations} = useVaultsMigrations();
+	const	{balances: internalMigrationsBalances} = useWalletForInternalMigrations();
 	const	{safeChainID} = useChainID();
 	const	[category, set_category] = useState('Crypto Vaults');
 	const	[searchValue, set_searchValue] = useState('');
@@ -76,8 +76,7 @@ function	Index(): ReactElement {
 	const	balancerVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Balancer');
 	const	cryptoVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Volatile');
 	const	holdingsVaults = useFilteredVaults(vaults, ({address}): boolean => (balances?.[toAddress(address)]?.raw)?.gt(0));
-	const	migrableVaults = useFilteredVaults(migrable, ({address}): boolean => (migrableBalance?.[toAddress(address)]?.raw)?.gt(0));
-
+	const	migrableVaults = useFilteredVaults(possibleVaultsMigrations, ({address}): boolean => (internalMigrationsBalances?.[toAddress(address)]?.raw)?.gt(0));
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	**	As the sidechains have a low number of vaults, we will display all of them by default.

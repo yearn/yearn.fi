@@ -11,17 +11,17 @@ import type {SWRResponse} from 'swr';
 import type {TDict} from '@yearn-finance/web-lib/utils/types';
 import type {TYearnVault} from '@common/types/yearn';
 
-export type	TMigrableContext = {
-	migrable: TDict<TYearnVault | undefined>,
-	isLoadingMigrableList: boolean,
+export type	TVaultsMigrationsContext = {
+	possibleVaultsMigrations: TDict<TYearnVault | undefined>,
+	isLoading: boolean,
 }
-const	defaultProps: TMigrableContext = {
-	migrable: {[ethers.constants.AddressZero]: undefined},
-	isLoadingMigrableList: false
+const	defaultProps: TVaultsMigrationsContext = {
+	possibleVaultsMigrations: {[ethers.constants.AddressZero]: undefined},
+	isLoading: false
 };
 
-const	MigrableContext = createContext<TMigrableContext>(defaultProps);
-export const MigrableContextApp = memo(function MigrableContextApp({children}: {children: ReactElement}): ReactElement {
+const	VaultMigrationContext = createContext<TVaultsMigrationsContext>(defaultProps);
+export const VaultMigrationContextApp = memo(function VaultMigrationContextApp({children}: {children: ReactElement}): ReactElement {
 	const {safeChainID} = useChainID();
 	const {settings: baseAPISettings} = useSettings();
 
@@ -30,7 +30,7 @@ export const MigrableContextApp = memo(function MigrableContextApp({children}: {
 	**	we need to fetch the data from the API, especially to get the
 	**	apy.net_apy
 	***************************************************************************/
-	const	{data: migrableVaults, isLoading: isLoadingMigrableList} = useSWR(
+	const	{data: migrableVaults, isLoading} = useSWR(
 		`${baseAPISettings.yDaemonBaseURI}/${safeChainID}/vaults/all?migrable=nodust`,
 		baseFetcher,
 		{revalidateOnFocus: false}
@@ -47,17 +47,17 @@ export const MigrableContextApp = memo(function MigrableContextApp({children}: {
 	/* 🔵 - Yearn Finance ******************************************************
 	**	Setup and render the Context provider to use in the app.
 	***************************************************************************/
-	const	contextValue = useMemo((): TMigrableContext => ({
-		migrable: {...migrableVaultsObject},
-		isLoadingMigrableList
-	}), [migrableVaultsObject, isLoadingMigrableList]);
+	const	contextValue = useMemo((): TVaultsMigrationsContext => ({
+		possibleVaultsMigrations: {...migrableVaultsObject},
+		isLoading
+	}), [migrableVaultsObject, isLoading]);
 
 	return (
-		<MigrableContext.Provider value={contextValue}>
+		<VaultMigrationContext.Provider value={contextValue}>
 			{children}
-		</MigrableContext.Provider>
+		</VaultMigrationContext.Provider>
 	);
 });
 
-export const useMigrable = (): TMigrableContext => useContext(MigrableContext);
-export default useMigrable;
+export const useVaultsMigrations = (): TVaultsMigrationsContext => useContext(VaultMigrationContext);
+export default useVaultsMigrations;

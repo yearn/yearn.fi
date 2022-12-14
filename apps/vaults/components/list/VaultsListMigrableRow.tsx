@@ -1,6 +1,6 @@
 import React, {useMemo, useState} from 'react';
 import {ethers} from 'ethers';
-import {useMigrableWallet} from '@vaults/contexts/useMigrableWallet';
+import {useMigrableWallet} from '@vaults/contexts/useWalletForInternalMigrations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';

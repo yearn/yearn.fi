@@ -14,7 +14,7 @@ import type {TBalanceData, TUseBalancesTokens} from '@yearn-finance/web-lib/hook
 import type {TDict} from '@yearn-finance/web-lib/utils/types';
 import type {TMigrationTable} from '@vaults/utils/migrationTable';
 
-export type	TMigrableFromDeFiWalletContext = {
+export type	TWalletForExternalMigrations = {
 	balances: TDict<TBalanceData>,
 	useWalletNonce: number,
 	isLoading: boolean,
@@ -33,8 +33,8 @@ const	defaultProps = {
 ** This context controls most of the user's wallet data we may need to
 ** interact with our app, aka mostly the balances and the token prices.
 ******************************************************************************/
-const	MigrableFromDeFiWalletContext = createContext<TMigrableFromDeFiWalletContext>(defaultProps);
-export const MigrableFromDeFiWalletContextApp = memo(function MigrableFromDeFiWalletContextApp({children}: {children: ReactElement}): ReactElement {
+const	WalletForExternalMigrations = createContext<TWalletForExternalMigrations>(defaultProps);
+export const WalletForExternalMigrationsApp = memo(function WalletForExternalMigrationsApp({children}: {children: ReactElement}): ReactElement {
 	const	[nonce, set_nonce] = useState<number>(0);
 	const	{provider} = useWeb3();
 	const	{prices} = useYearn();
@@ -79,7 +79,7 @@ export const MigrableFromDeFiWalletContextApp = memo(function MigrableFromDeFiWa
 	/* 🔵 - Yearn Finance ******************************************************
 	**	Setup and render the Context provider to use in the app.
 	***************************************************************************/
-	const	contextValue = useMemo((): TMigrableFromDeFiWalletContext => ({
+	const	contextValue = useMemo((): TWalletForExternalMigrations => ({
 		balances: balances,
 		isLoading: isLoadingBalances,
 		refresh: onRefresh,
@@ -87,12 +87,12 @@ export const MigrableFromDeFiWalletContextApp = memo(function MigrableFromDeFiWa
 	}), [balances, isLoadingBalances, onRefresh, nonce]);
 
 	return (
-		<MigrableFromDeFiWalletContext.Provider value={contextValue}>
+		<WalletForExternalMigrations.Provider value={contextValue}>
 			{children}
-		</MigrableFromDeFiWalletContext.Provider>
+		</WalletForExternalMigrations.Provider>
 	);
 });
 
 
-export const useMigrableFromDeFiWallet = (): TMigrableFromDeFiWalletContext => useContext(MigrableFromDeFiWalletContext);
-export default useMigrableFromDeFiWallet;
+export const useWalletForExternalMigrations = (): TWalletForExternalMigrations => useContext(WalletForExternalMigrations);
+export default useWalletForExternalMigrations;

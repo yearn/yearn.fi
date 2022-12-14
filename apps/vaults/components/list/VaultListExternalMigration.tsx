@@ -1,6 +1,6 @@
 import React, {Fragment, useCallback, useMemo, useState} from 'react';
 import {ethers} from 'ethers';
-import {useMigrableFromDeFiWallet} from '@vaults/contexts/useMigrableFromDeFi';
+import {useWalletForExternalMigrations} from '@vaults/contexts/useWalletForExternalMigrations';
 import {migrationTable} from '@vaults/utils/migrationTable';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -25,7 +25,7 @@ function	VaultListExternalMigrationRow(
 	{element}: {element: TMigrationTable}
 ): ReactElement {
 	const {isActive, provider} = useWeb3();
-	const {balances, refresh: refreshMigrableFromDefi} = useMigrableFromDeFiWallet();
+	const {balances, refresh: refreshMigrableFromDefi} = useWalletForExternalMigrations();
 	const {refresh} = useWallet();
 	const {safeChainID} = useChainID();
 	const [txStatus, set_txStatus] = useState(defaultTxStatus);
@@ -123,7 +123,7 @@ function	VaultListExternalMigrationRow(
 
 
 function	VaultListExternalMigration(): ReactElement {
-	const	{balances} = useMigrableFromDeFiWallet();
+	const	{balances} = useWalletForExternalMigrations();
 	const	[sortBy, set_sortBy] = useState<TPossibleSortBy>('apy');
 	const	[sortDirection, set_sortDirection] = useState<TPossibleSortDirection>('desc');
 	

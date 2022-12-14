@@ -5,9 +5,7 @@ import useSWR from 'swr';
 import {QuickActionFromBox} from '@vaults/components/actions/QuickActionFromBox';
 import {QuickActionSwitch} from '@vaults/components/actions/QuickActionSwitch';
 import {QuickActionToBox} from '@vaults/components/actions/QuickActionToBox';
-import {useExtendedWallet} from '@vaults/contexts/useExtendedWallet';
 import {getEthZapperContract} from '@vaults/utils';
-import {migrationTable} from '@vaults/utils/migrationTable';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -19,11 +17,11 @@ import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUp
 import {getProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
+import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import {approveERC20} from '@common/utils/actions/approveToken';
 import {deposit} from '@common/utils/actions/deposit';
 import {depositETH} from '@common/utils/actions/depositEth';
-import {depositVia} from '@common/utils/actions/depositVia';
 import {depositViaPartner} from '@common/utils/actions/depositViaPartner';
 import {withdrawETH} from '@common/utils/actions/withdrawEth';
 import {withdrawShares} from '@common/utils/actions/withdrawShares';
@@ -80,7 +78,6 @@ function	ActionButton({
 
 	const isInputTokenEth = selectedOptionFrom?.value === ETH_TOKEN_ADDRESS;
 	const isOutputTokenEth = selectedOptionTo?.value === ETH_TOKEN_ADDRESS;
-	const isUsingZapVia = selectedOptionFrom?.zapVia && !isZeroAddress(selectedOptionFrom.zapVia);
 	const isPartnerAddressValid = useMemo((): boolean => !isZeroAddress(toAddress(networks?.[safeChainID]?.partnerContractAddress)), [networks, safeChainID]);
 	const isUsingPartnerContract = useMemo((): boolean => ((process?.env?.SHOULD_USE_PARTNER_CONTRACT || true) === true && isPartnerAddressValid), [isPartnerAddressValid]);
 
@@ -88,21 +85,18 @@ function	ActionButton({
 	** This memo will be used to determine the spender address for the transactions based on the
 	** from and to options selected:
 	** - By default, the spender is the vault itself, aka a direct deposit
-	** - If a zapVia address is provided, spender is this contract
 	** - If we are depositing and using the partner contract, spender is the partner contract
 	** - If we are not depositing and we want to withdraw eth, spender is the eth zapper contract	
 	**********************************************************************************************/
 	const spender = useMemo((): TAddress => {
 		let	spender = toAddress(selectedOptionTo?.value || ethers.constants.AddressZero);
-		if (isUsingZapVia) {
-			spender = toAddress(selectedOptionFrom.zapVia);
-		} else if (isDepositing && isUsingPartnerContract) { 
+		if (isDepositing && isUsingPartnerContract) { 
 			spender = toAddress(networks?.[safeChainID]?.partnerContractAddress);
 		} else if (!isDepositing && isOutputTokenEth) {
 			spender = getEthZapperContract(chainID);
 		}
 		return spender;
-	}, [chainID, isDepositing, isOutputTokenEth, isUsingPartnerContract, isUsingZapVia, networks, safeChainID, selectedOptionFrom?.zapVia, selectedOptionTo?.value]);	
+	}, [chainID, isDepositing, isOutputTokenEth, isUsingPartnerContract, networks, safeChainID, selectedOptionTo?.value]);	
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** Perform a smartContract call to the deposit contract to get the allowance for the deposit
@@ -199,23 +193,6 @@ function	ActionButton({
 		
 	}
 
-
-	/* 🔵 - Yearn Finance ******************************************************
-	** Trigger a deposit web3 action, simply trying to deposit `amount` tokens
-	** via an arbitrary contract, to the selected vault.
-	**************************************************************************/
-	async function	onDepositVia(): Promise<void> {
-		new Transaction(provider, depositVia, set_txStatusDeposit).populate(
-			selectedOptionFrom?.zapVia,
-			selectedOptionFrom?.settings?.serviceID,
-			toAddress(selectedOptionFrom?.value),
-			toAddress(selectedOptionTo?.value),
-			amount.raw
-		).onSuccess(async (): Promise<void> => {
-			await onSuccess();
-		}).perform();
-	}
-
 	/* 🔵 - Yearn Finance ******************************************************
 	** Trigger a deposit web3 action, simply trying to deposit `amount` tokens
 	** via the Partner Contract, to the selected vault.
@@ -286,9 +263,7 @@ function	ActionButton({
 	**************************************************************************/
 	async function	onDepositOrWithdraw(): Promise<void> {
 		if (isDepositing) {
-			if (isUsingZapVia) {
-				await onDepositVia();
-			} else if (isInputTokenEth) {
+			if (isInputTokenEth) {
 				await onDepositEth();
 			} else if (isUsingPartnerContract) {
 				await onDepositViaPartner();
@@ -333,7 +308,7 @@ function	ActionButton({
 function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): ReactElement {
 	const {isActive, provider} = useWeb3();
 	const {safeChainID} = useChainID();
-	const {balances, refresh} = useExtendedWallet();
+	const {balances, refresh} = useWallet();
 	const [possibleOptionsFrom, set_possibleOptionsFrom] = useState<TDropdownOption[]>([]);
 	const [possibleOptionsTo, set_possibleOptionsTo] = useState<TDropdownOption[]>([]);
 	const [selectedOptionFrom, set_selectedOptionFrom] = useState<TDropdownOption | undefined>();
@@ -377,35 +352,6 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 					setZapOption('FTM', 'FTM', ETH_TOKEN_ADDRESS, safeChainID),
 					setZapOption('wFTM', 'wFTM', WFTM_TOKEN_ADDRESS, safeChainID)
 				]);
-			} else if (migrationTable[toAddress(currentVault?.token?.address)]) {
-				const	possibleMigrations = migrationTable[toAddress(currentVault?.token?.address)];
-				const	possibleOptionsFromArr = [
-					setZapOption(
-						currentVault?.token?.display_name || currentVault?.token?.name,
-						currentVault?.token?.symbol,
-						toAddress(currentVault.token.address),
-						safeChainID
-					)
-				];
-
-				for (const element of possibleMigrations) {
-					possibleOptionsFromArr.push(
-						setZapOption(
-							element.symbol,
-							element.symbol,
-							element.migrableToken,
-							safeChainID, {
-								zapVia: element.zapVia,
-								settings: {
-									serviceID: element.service,
-									shouldNotBeWithdrawTarget: true,
-									shouldHideIfZero: true
-								}
-							}
-						)
-					);
-				}
-				set_possibleOptionsFrom(possibleOptionsFromArr);
 			} else {
 				set_possibleOptionsFrom([
 					setZapOption(
@@ -500,15 +446,9 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 		performBatchedUpdates((): void => {
 			const _selectedOptionTo = selectedOptionTo;
 			const _possibleOptionsTo = possibleOptionsTo;
-			
-			//If from is a token you cannot withdraw to, we need to find another one, otherwise we just switch
-			if (isDepositing && selectedOptionFrom?.settings?.shouldNotBeWithdrawTarget) {
-				set_selectedOptionTo(possibleOptionsFrom.find((option): boolean => !option?.settings?.shouldNotBeWithdrawTarget));
-			} else {
-				set_selectedOptionTo(selectedOptionFrom);
-			}
 
 			// We switch the possible options
+			set_selectedOptionFrom(_selectedOptionTo);
 			set_selectedOptionFrom(_selectedOptionTo);
 			set_possibleOptionsTo(possibleOptionsFrom);
 			set_possibleOptionsFrom(_possibleOptionsTo);
@@ -520,7 +460,7 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 				set_amount(maxDepositPossible);
 			}
 		});
-	}, [selectedOptionTo, possibleOptionsTo, selectedOptionFrom, possibleOptionsFrom, isDepositing, maxDepositPossible]);
+	}, [selectedOptionTo, possibleOptionsTo, possibleOptionsFrom, isDepositing, maxDepositPossible]);
 
 
 	return (
