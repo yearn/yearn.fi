@@ -74,7 +74,6 @@ const App = memo(function App(props: AppProps): ReactElement {
 	);
 });
 
-
 function	MyApp(props: AppProps): ReactElement {
 	return (
 		<main className={aeonik.className}>
