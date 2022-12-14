@@ -1,5 +1,6 @@
 import React, {Fragment, useCallback, useEffect, useMemo, useState} from 'react';
 import {ethers} from 'ethers';
+import {BeefyVaultsListRow} from '@vaults/components/list/BeefyVaultsListRow';
 import VaultListExternalMigration from '@vaults/components/list/VaultListExternalMigration';
 import VaultListOptions from '@vaults/components/list/VaultListOptions';
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
@@ -8,6 +9,7 @@ import {VaultsListRow} from '@vaults/components/list/VaultsListRow';
 import {useAppSettings} from '@vaults/contexts/useAppSettings';
 import {useVaultsMigrations} from '@vaults/contexts/useVaultsMigrations';
 import {useWalletForInternalMigrations} from '@vaults/contexts/useWalletForInternalMigrations';
+import {useBeefyVaults} from '@vaults/hooks/useBeefyVaults';
 import {useFilteredVaults} from '@vaults/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import Wrapper from '@vaults/Wrapper';
@@ -64,6 +66,7 @@ function	Index(): ReactElement {
 	const	{vaults, isLoadingVaultList} = useYearn();
 	const	{possibleVaultsMigrations, isLoading: isLoadingVaultsMigrations} = useVaultsMigrations();
 	const	{balances: internalMigrationsBalances} = useWalletForInternalMigrations();
+	const 	{vaults: beefyVaults} = useBeefyVaults();
 	const	{safeChainID} = useChainID();
 	const	[sortBy, set_sortBy] = useState<TPossibleSortBy>('apy');
 	const	[sortDirection, set_sortDirection] = useState<TPossibleSortDirection>('');
@@ -221,6 +224,7 @@ function	Index(): ReactElement {
 							{value: 'Crypto Vaults', label: 'Crypto', isSelected: category === 'Crypto Vaults'},
 							{value: 'Stables Vaults', label: 'Stables', isSelected: category === 'Stables Vaults'},
 							{value: 'Curve Vaults', label: 'Curve', isSelected: category === 'Curve Vaults'},
+							{value: 'Beefy Vaults', label: 'Beefy', isSelected: category === 'Beefy Vaults'},
 							{value: 'Balancer Vaults', label: 'Balancer', isSelected: category === 'Balancer Vaults'},
 							{value: 'All Vaults', label: 'All', isSelected: category === 'All Vaults'}
 						],
@@ -269,7 +273,12 @@ function	Index(): ReactElement {
 						{label: 'Deposited', value: 'deposited', sortable: true, className: 'col-span-2'},
 						{label: 'TVL', value: 'tvl', sortable: true, className: 'col-span-2'}
 					]} />
-				{VaultList}
+				{category === 'Beefy Vaults' ? beefyVaults?.map((vault): ReactNode => {
+					if (!vault) {
+						return (null);
+					}
+					return <BeefyVaultsListRow key={vault.tokenAddress} currentVault={vault} />;
+				}) : VaultList}
 			</div>
 
 

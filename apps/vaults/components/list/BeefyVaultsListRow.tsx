@@ -1,0 +1,86 @@
+import React from 'react';
+import Link from 'next/link';
+import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
+import {ImageWithFallback} from '@common/components/ImageWithFallback';
+import {formatPercent, formatUSD} from '@common/utils';
+
+import type {ReactElement} from 'react';
+import type {TBeefyVault} from '@vaults/hooks/useBeefyVaults';
+
+function	BeefyVaultsListRow({currentVault}: {currentVault: TBeefyVault}): ReactElement | null {
+	const {safeChainID} = useChainID();
+	// const deposited = useBalance(currentVault.address)?.normalized;
+	// const vaultName = useMemo((): string => getVaultName(currentVault), [currentVault]);
+
+	if (!currentVault.tokenAddress) {
+		return null;
+	}
+
+	return (
+		<Link key={`${currentVault.tokenAddress}`} href={`/vaults/${safeChainID}/${toAddress(currentVault.tokenAddress)}`}>
+			<div className={'yearn--table-wrapper cursor-pointer transition-colors hover:bg-neutral-300'}>
+				<div className={'yearn--table-token-section'}>
+					<div className={'yearn--table-token-section-item'}>
+						<div className={'yearn--table-token-section-item-image'}>
+							<ImageWithFallback
+								alt={currentVault.name}
+								width={40}
+								height={40}
+								quality={90}
+								src={'https://placehold.co/128'}
+								loading={'eager'} />
+						</div>
+						<p>{currentVault.name}</p>
+					</div>
+				</div>
+
+				<div className={'yearn--table-data-section'}>
+					<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
+						<label className={'yearn--table-data-section-item-label'}>{'APY'}</label>
+						<b className={'yearn--table-data-section-item-value'}>
+							{formatPercent((0) * 100)}
+						</b>
+					</div>
+
+					<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
+						<label className={'yearn--table-data-section-item-label'}>{'Available'}</label>
+						<p className={'yearn--table-data-section-item-value text-neutral-400'}>
+							{formatAmount(0)}
+						</p>
+					</div>
+
+					<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
+						<label className={'yearn--table-data-section-item-label'}>{'Deposited'}</label>
+						<p className={'yearn--table-data-section-item-value text-neutral-400'}>
+							{formatAmount(0)}
+						</p>
+					</div>
+
+					<div className={'yearn--table-data-section-item md:hidden'} datatype={'number'}>
+						<label className={'yearn--table-data-section-item-label'}>{'TVL'}</label>
+						<p className={'yearn--table-data-section-item-value'}>
+							{formatUSD(0, 0, 0)}
+						</p>
+					</div>
+
+					<div className={'col-span-1 hidden h-8 flex-col items-end px-0 pt-0 md:col-span-2 md:flex md:h-14 md:pt-4'}>
+						<p className={'yearn--table-data-section-item-value font-number text-end'}>
+							{formatUSD(0, 0, 0)}
+						</p>
+						<div className={'mt-1 w-2/3'}>
+							<div className={'relative h-1 w-full bg-neutral-400'}>
+								<div
+									className={'absolute left-0 top-0 h-1 w-full bg-neutral-900'}
+									style={{width: `${0}%`}} />
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</Link>
+	);
+}
+
+export {BeefyVaultsListRow};
