@@ -27,8 +27,9 @@ export function	QuickActionToBox({
 	onSelectTo
 }: TQuickActionToBox): ReactElement {
 	const selectedOptionToPricePerToken = useTokenPrice(toAddress(selectedOptionTo?.value));
-	const possibleOptionsToNotForbidden = useMemo((): TDropdownOption[] => (
-		possibleOptionsTo.filter((option): boolean => !option?.settings?.canWithdrawTo)
+
+	const filteredPossibleOptionsTo = useMemo((): TDropdownOption[] => (
+		possibleOptionsTo.filter((option): boolean => !option?.settings?.shouldNotBeWithdrawTarget)
 	), [possibleOptionsTo]);
 	
 	return (
@@ -42,10 +43,10 @@ export function	QuickActionToBox({
 						{`APY ${formatPercent((isDepositing ? currentVault?.apy?.net_apy || 0 : 0) * 100)}`}
 					</legend>
 				</div>
-				{(possibleOptionsToNotForbidden.length > 1) ? (
+				{(filteredPossibleOptionsTo.length > 1) ? (
 					<Dropdown
-						defaultOption={possibleOptionsToNotForbidden[0]}
-						options={possibleOptionsToNotForbidden}
+						defaultOption={filteredPossibleOptionsTo[0]}
+						options={filteredPossibleOptionsTo}
 						selected={selectedOptionTo}
 						onSelect={(option: TDropdownOption): void => onSelectTo(option)} />
 				) : (

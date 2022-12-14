@@ -1,5 +1,6 @@
 
 import {useMemo} from 'react';
+import {ethers} from 'ethers';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {useWallet} from '@common/contexts/useWallet';
 
@@ -15,9 +16,9 @@ function	useBalance(
 
 	const	balance = useMemo((): TBalanceData => {
 		if (source) {
-			return source?.[toAddress(address)] || {normalized: 0, raw: '0'};
+			return source?.[toAddress(address)] || {normalized: 0, raw: ethers.constants.Zero};
 		}
-		return balances?.[toAddress(address)] || {normalized: 0, raw: '0'};
+		return balances?.[toAddress(address)] || {normalized: 0, raw: ethers.constants.Zero};
 	}, [source, balances, address]);
 
 	return balance;

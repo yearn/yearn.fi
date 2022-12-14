@@ -2,6 +2,7 @@ import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
 import type {TBalanceData} from '@yearn-finance/web-lib/hooks/types';
 import type {TDict} from '@yearn-finance/web-lib/utils/types';
+import type {EXTERNAL_SERVICE_PROVIDER} from '@vaults/utils/migrationTable';
 
 export type	TClaimable = {
 	raw: BigNumber,
@@ -25,7 +26,8 @@ export type TDropdownOption = {
 	zapVia?: string;
 	balanceSource?: string;
 	settings?: {
-		canWithdrawTo?: boolean;
+		serviceID?: EXTERNAL_SERVICE_PROVIDER
+		shouldNotBeWithdrawTarget?: boolean;
 		shouldHideIfZero?: boolean
 	}
 };
