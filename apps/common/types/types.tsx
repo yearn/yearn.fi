@@ -24,7 +24,7 @@ export type TDropdownOption = {
 	zapVia?: string;
 	balanceSource?: string;
 	settings?: {
-		shouldForbidOut?: boolean;
+		canWithdrawTo?: boolean;
 		shouldHideIfZero?: boolean
 	}
 };

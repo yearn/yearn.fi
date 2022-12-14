@@ -28,7 +28,7 @@ export function	QuickActionToBox({
 }: TQuickActionToBox): ReactElement {
 	const selectedOptionToPricePerToken = useTokenPrice(toAddress(selectedOptionTo?.value));
 	const possibleOptionsToNotForbidden = useMemo((): TDropdownOption[] => (
-		possibleOptionsTo.filter((option): boolean => !option?.settings?.shouldForbidOut)
+		possibleOptionsTo.filter((option): boolean => !option?.settings?.canWithdrawTo)
 	), [possibleOptionsTo]);
 	
 	return (
