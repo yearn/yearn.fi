@@ -452,8 +452,8 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 			const _possibleOptionsTo = possibleOptionsTo;
 			
 			//If from is a token you cannot withdraw to, we need to find another one, otherwise we just switch
-			if (isDepositing && selectedOptionFrom?.settings?.shouldForbidOut) {
-				set_selectedOptionTo(possibleOptionsFrom.find((option): boolean => !option?.settings?.shouldForbidOut));
+			if (isDepositing && selectedOptionFrom?.settings?.canWithdrawTo) {
+				set_selectedOptionTo(possibleOptionsFrom.find((option): boolean => !option?.settings?.canWithdrawTo));
 			} else {
 				set_selectedOptionTo(selectedOptionFrom);
 			}
