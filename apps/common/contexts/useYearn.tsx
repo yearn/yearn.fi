@@ -81,9 +81,9 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 			}
 
 			//Hide vaults with APY 0
-			if (vault.apy.net_apy === 0) {
-				return acc;
-			}
+			// if (vault.apy.net_apy === 0) {
+			// 	return acc;
+			// }
 
 			acc[toAddress(vault.address)] = vault;
 			return acc;
