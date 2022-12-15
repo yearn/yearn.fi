@@ -91,7 +91,7 @@ function	ActionButton({
 	const spender = useMemo((): TAddress => {
 		let	spender = toAddress(selectedOptionTo?.value || ethers.constants.AddressZero);
 		if (isDepositing && isUsingPartnerContract) { 
-			spender = toAddress(networks[safeChainID].partnerContractAddress);
+			spender = toAddress(networks[safeChainID]?.partnerContractAddress);
 		} else if (!isDepositing && isOutputTokenEth) {
 			spender = getEthZapperContract(chainID);
 		}
