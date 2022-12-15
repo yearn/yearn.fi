@@ -106,7 +106,8 @@ function	Index(): ReactElement {
 			return holdingsVaults;
 		} else if (category === 'Featured Vaults') {
 			const vaultList = [...Object.values(vaults || {}) as TYearnVault[]];
-			return vaultList.sort((a, b): number => ((b.tvl.tvl || 0) * (b?.apy?.net_apy || 0)) - ((a.tvl.tvl || 0) * (a?.apy?.net_apy || 0)));
+			vaultList.sort((a, b): number => ((b.tvl.tvl || 0) * (b?.apy?.net_apy || 0)) - ((a.tvl.tvl || 0) * (a?.apy?.net_apy || 0)));
+			return vaultList.slice(0, 10);
 		}
 		return Object.values(vaults || {}) as TYearnVault[];
 	}, [category, curveVaults, stablesVaults, balancerVaults, cryptoVaults, vaults, holdingsVaults]);
