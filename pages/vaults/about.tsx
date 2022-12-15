@@ -5,8 +5,9 @@ import SettingsOverwrite from '@common/components/SettingsOverwrite';
 import type {ReactElement} from 'react';
 
 function	About(): ReactElement {
-	const	[showDust, set_showDust] = useState(false);
-	const	[showLowTVLVaults, set_showLowTVLVaults] = useState(false);
+	const	[shouldShowDust, set_shouldShowDust] = useState(false);
+	const	[shouldShowLowTVLVaults, set_shouldShowLowTVLVaults] = useState(false);
+
 	return (
 		<section className={'mt-4 grid w-full grid-cols-1 gap-10 pb-10 md:mt-20 md:grid-cols-2'}>
 			<div className={'w-full bg-neutral-100 p-10'}>
@@ -115,14 +116,14 @@ function	About(): ReactElement {
 					<div className={'flex flex-row space-x-2'}>
 						<input
 							type={'checkbox'}
-							id={'showLowTVLVaults'}
+							id={'shouldShowLowTVLVaults'}
 							className={'h-4 w-4'}
-							checked={showLowTVLVaults}
-							onChange={(): void => set_showLowTVLVaults(!showLowTVLVaults)}
+							checked={shouldShowLowTVLVaults}
+							onChange={(): void => set_shouldShowLowTVLVaults(!shouldShowLowTVLVaults)}
 						/>
 					</div>
 					<label
-						htmlFor={'showLowTVLVaults'}
+						htmlFor={'shouldShowLowTVLVaults'}
 						className={'text-neutral-900'}>
 						{'Show low TVL vaults'}
 					</label>
@@ -132,14 +133,14 @@ function	About(): ReactElement {
 					<div className={'flex flex-row space-x-2'}>
 						<input
 							type={'checkbox'}
-							id={'showDust'}
+							id={'shouldShowDust'}
 							className={'h-4 w-4'}
-							checked={showDust}
-							onChange={(): void => set_showDust(!showDust)}
+							checked={shouldShowDust}
+							onChange={(): void => set_shouldShowDust(!shouldShowDust)}
 						/>
 					</div>
 					<label
-						htmlFor={'showDust'}
+						htmlFor={'shouldShowDust'}
 						className={'text-neutral-900'}>
 						{'Show dust'}
 					</label>
