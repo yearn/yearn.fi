@@ -36,7 +36,7 @@ function	VaultsListEmpty({
 			</div>
 		);
 	} else if (!isLoading && sortedVaultsToDisplay.length === 0 && safeChainID !== 1) {
-		const	chainName = (CHAINS as any)[safeChainID]?.name || 'this network';
+		const	chainName = CHAINS[safeChainID]?.name || 'this network';
 		return (
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center py-2 px-10 md:w-3/4'}>
 				<b className={'text-center text-lg'}>{'👀 Where Vaults ser?'}</b>
