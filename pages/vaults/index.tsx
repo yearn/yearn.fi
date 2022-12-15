@@ -1,6 +1,5 @@
 import React, {Fragment, useCallback, useEffect, useMemo, useState} from 'react';
 import {ethers} from 'ethers';
-import VaultListExternalMigration from '@vaults/components/list/VaultListExternalMigration';
 import VaultListOptions from '@vaults/components/list/VaultListOptions';
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
 import {VaultsListMigratableRow} from '@vaults/components/list/VaultsListMigratableRow';
@@ -265,21 +264,13 @@ function	Index(): ReactElement {
 					onSort={onSort}
 					items={[
 						{label: 'Token', value: 'name', sortable: true},
-						...(category !== 'Migrations' ? [{label: 'APY', value: 'apy', sortable: true, className: 'col-span-2'}] : []),
 						{label: 'Available', value: 'available', sortable: true, className: 'col-span-2'},
-						{label: 'Deposited', value: 'deposited', sortable: true, className: 'col-span-2'},
-						...(category !== 'Migrations' ? [{label: 'TVL', value: 'tvl', sortable: true, className: 'col-span-2'}] : [])
+						{label: 'Deposited', value: 'deposited', sortable: true, className: 'col-span-2'}
 					]} />
 
 				{VaultList}
 			</div>
 
-
-			<div className={'col-span-12 flex w-full flex-col bg-neutral-100'}>
-				{category === 'Holdings' ? (
-					<VaultListExternalMigration />
-				) : null}
-			</div>
 		</section>
 	);
 }

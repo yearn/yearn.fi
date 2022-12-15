@@ -11,6 +11,7 @@ export type TMigrationTable = {
 	zapVia: TAddress;
 	migrableToken: TAddress;
 	underlyingToken: TAddress;
+	sourceAPY?: number;
 }
 
 export enum EXTERNAL_SERVICE_PROVIDER {

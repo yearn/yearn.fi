@@ -1,6 +1,8 @@
-import React, {useCallback, useMemo, useState} from 'react';
+import React, {Fragment, useCallback, useMemo, useState} from 'react';
 import {ethers} from 'ethers';
 import {useWalletForExternalMigrations} from '@vaults/contexts/useWalletForExternalMigrations';
+import {useBeefyVaults} from '@vaults/hooks/useBeefyVaults';
+import {useFindVault} from '@vaults/hooks/useFindVault';
 import {migrationTable} from '@vaults/utils/migrationTable';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -12,6 +14,7 @@ import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/tr
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import ListHead from '@common/components/ListHead';
 import {useWallet} from '@common/contexts/useWallet';
+import {useYearn} from '@common/contexts/useYearn';
 import {useBalance} from '@common/hooks/useBalance';
 import {formatPercent} from '@common/utils';
 import {approveERC20, isApprovedERC20} from '@common/utils/actions/approveToken';
@@ -23,18 +26,23 @@ import type {ReactElement} from 'react';
 import type {TPossibleSortBy, TPossibleSortDirection} from '@vaults/hooks/useSortVaults';
 import type {TMigrationTable} from '@vaults/utils/migrationTable';
 
-function	VaultListExternalMigrationRow(
-	{element}: {element: TMigrationTable}
-): ReactElement {
+function	VaultListExternalMigrationRow({element}: {element: TMigrationTable}): ReactElement {
+	const {vaults} = useYearn();
 	const {isActive, provider} = useWeb3();
 	const {balances, refresh: refreshMigrableFromDefi} = useWalletForExternalMigrations();
 	const {refresh} = useWallet();
 	const {safeChainID} = useChainID();
 	const [txStatus, set_txStatus] = useState(defaultTxStatus);
 
+	const	yearnVault = useFindVault(vaults, ({token}): boolean => toAddress(token.address) === toAddress(element.underlyingToken));
 	const	balance = useBalance(element.migrableToken, balances);
-	const	oldAPY = 0.004;
-	const	newAPY = 0.04;
+	const	oldAPY = element?.sourceAPY || 0;
+	const	newAPY = yearnVault?.apy?.net_apy || 0;
+
+	//TODO: Move away from this component to be able to display empty state 
+	if (!yearnVault) {
+		return <Fragment />;
+	}
 
 	async function onMigrateFlow(): Promise<void> {
 		const	isApproved = await isApprovedERC20(
@@ -128,6 +136,8 @@ function	VaultListExternalMigration(): ReactElement {
 	const	[sortBy, set_sortBy] = useState<TPossibleSortBy>('apy');
 	const	[sortDirection, set_sortDirection] = useState<TPossibleSortDirection>('desc');
 	
+	const 	{vaults: beefyVaults} = useBeefyVaults();
+	
 	/* 🔵 - Yearn Finance **************************************************************************
 	**	Callback method used to sort the vaults list.
 	**	The use of useCallback() is to prevent the method from being re-created on every render.
@@ -140,13 +150,12 @@ function	VaultListExternalMigration(): ReactElement {
 	}, []);
 
 
-	const	possibleMigrations = useMemo((): TMigrationTable[] => {
+	const	possibleBowswapMigrations = useMemo((): TMigrationTable[] => {
 		const	migration: TMigrationTable[] = [];
 		
-		Object.values(migrationTable || {}).forEach((possibleMigrations: TMigrationTable[]): void => {
-			for (const element of possibleMigrations) {
-				console.log(element);
-				if ((balances[toAddress(element.migrableToken)]?.raw || ethers.constants.Zero).gt(0)) {
+		Object.values(migrationTable || {}).forEach((possibleBowswapMigrations: TMigrationTable[]): void => {
+			for (const element of possibleBowswapMigrations) {
+				if ((balances[toAddress(element.migrableToken)]?.raw || ethers.constants.Zero).gte(0)) {
 					migration.push(element);
 				}
 			}
@@ -155,6 +164,22 @@ function	VaultListExternalMigration(): ReactElement {
 		return migration;
 	}, [balances]);
 
+	const	possibleBeefyMigrations = useMemo((): TMigrationTable[] => {
+		return beefyVaults.reduce((migratableVaults, bVault): TMigrationTable[] => {
+			if (!bVault.tokenAddress) {
+				return migratableVaults; 
+			}
+			const	element: TMigrationTable = {
+				service: 3,
+				symbol: bVault.name,
+				zapVia: toAddress(ethers.constants.AddressZero),
+				migrableToken: toAddress(bVault.tokenAddress),
+				underlyingToken: toAddress(bVault.tokenAddress),
+				sourceAPY: bVault.apy
+			};
+			return [...migratableVaults, element];
+		}, [] as TMigrationTable[]);
+	}, [beefyVaults]);
 
 	return (
 		<div className={'col-span-12 flex w-full flex-col bg-neutral-100'}>
@@ -182,16 +207,26 @@ function	VaultListExternalMigration(): ReactElement {
 
 			<div>
 				{
-					possibleMigrations.length === 0 ? (
+					possibleBowswapMigrations.length === 0 && possibleBeefyMigrations.length === 0 ? (
 						<VaultsListEmpty
 							sortedVaultsToDisplay={[]}
 							currentCategory={''} />
-					) : possibleMigrations.map((element: TMigrationTable): ReactElement => (
-						<VaultListExternalMigrationRow
-							key={`${element.migrableToken}_${element.service}`}
-							element={element} />
-					))
+					) : (
+						<Fragment>
+							{possibleBowswapMigrations.map((element: TMigrationTable): ReactElement => (
+								<VaultListExternalMigrationRow
+									key={`${element.migrableToken}_${element.service}`}
+									element={element} />
+							))}
+							{possibleBeefyMigrations.map((element: TMigrationTable): ReactElement => (
+								<VaultListExternalMigrationRow
+									key={`${element.migrableToken}_${element.service}`}
+									element={element} />
+							))}
+						</Fragment>
+					)
 				}
+
 			</div>
 		</div>
 	);
