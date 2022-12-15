@@ -31,7 +31,7 @@ export function MigratableVaultListRow({vault}: TProps): ReactElement | null {
 								width={40}
 								height={40}
 								quality={90}
-								src={'https://placehold.co/128'}
+								src={`${process.env.BASE_YEARN_ASSETS_URI}/${safeChainID}/${toAddress(vault.address)}/logo-128.png`}
 								loading={'eager'} />
 						</div>
 						<p>{vault.name}</p>
