@@ -16,7 +16,6 @@ import Wrapper from '@yBribe/Wrapper';
 
 import type {ReactElement, ReactNode} from 'react';
 import type {TBribeOfferListHeroCategory} from '@yBribe/utils/types';
-import type {TListHeroCategory} from '@common/components/ListHero';
 import type {TCurveGauges} from '@common/types/curves';
 
 function	GaugeList(): ReactElement {
@@ -116,7 +115,7 @@ function	GaugeList(): ReactElement {
 	return (
 		<section className={'mt-4 mb-20 grid w-full grid-cols-12 pb-10 md:mb-40 md:mt-20'}>
 			<div className={'col-span-12 flex w-full flex-col bg-neutral-100'}>
-				<ListHero
+				<ListHero<TBribeOfferListHeroCategory>
 					headLabel={'Offer Bribe'}
 					searchPlaceholder={'f-yfieth'}
 					categories={[
@@ -125,7 +124,7 @@ function	GaugeList(): ReactElement {
 							{value: 'factory', label: 'Factory', isSelected: category === 'factory'},
 							{value: 'all', label: 'All', isSelected: category === 'all'}
 						]
-					] as TListHeroCategory<TBribeOfferListHeroCategory>[][]}
+					]}
 					onSelect={set_category}
 					searchValue={searchValue}
 					set_searchValue={set_searchValue} />

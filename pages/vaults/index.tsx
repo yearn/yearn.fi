@@ -23,7 +23,6 @@ import {useYearn} from '@common/contexts/useYearn';
 import {getVaultName} from '@common/utils';
 
 import type {ReactElement, ReactNode} from 'react';
-import type {TListHeroCategory} from '@common/components/ListHero';
 import type {TYearnVault} from '@common/types/yearn';
 import type {TPossibleSortBy, TPossibleSortDirection} from '@vaults/hooks/useSortVaults';
 import type {TVaultListHeroCategory} from '@vaults/utils/types';
@@ -241,15 +240,8 @@ function	Index(): ReactElement {
 									</Fragment>
 								)
 							}
-						],
-						[
-							{
-								value: 'Migrations',
-								label: 'Migrations',
-								isSelected: category === 'Migrations'
-							}
 						]
-					] as TListHeroCategory<TVaultListHeroCategory>[][]}
+					]}
 					onSelect={set_category}
 					searchValue={searchValue}
 					set_searchValue={set_searchValue} />

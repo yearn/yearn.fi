@@ -1,4 +1,5 @@
 import React from 'react';
+import {isValidCategory} from '@vaults/utils/types';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 
 import type {ChangeEvent, ReactElement, ReactNode} from 'react';
@@ -8,8 +9,8 @@ export type TListHeroCategory<T> = {
 	node?: ReactNode;
 	value: T;
 	isSelected?: boolean,
-   }
-   
+}
+
 export type TListHero<T> = {
 	headLabel: string;
 	searchPlaceholder: string;
@@ -18,7 +19,7 @@ export type TListHero<T> = {
 	searchValue: string;
 	set_searchValue: (searchValue: string) => void;
 }
-   
+
 export type TListHeroSearchBar = {
 	searchPlaceholder: string;
 	searchValue: string;
@@ -80,12 +81,7 @@ function	DesktopCategories<T>({categories, onSelect}: TListHeroDesktopCategories
 						{currentCategory.map((item): ReactElement => (
 							<Button
 								key={item.label}
-								onClick={(): void => {
-									const	isPossibleValue = categories.flat().find(({value}): boolean => value === item.value);
-									if (isPossibleValue) {
-										onSelect(item.value);
-									}
-								}}
+								onClick={(): void => onSelect(item.value)}
 								variant={item.isSelected ? 'filled' : 'outlined'}
 								className={'yearn--button-smaller relative !border-x-0'}>
 								{item?.node || item.label}
@@ -98,7 +94,7 @@ function	DesktopCategories<T>({categories, onSelect}: TListHeroDesktopCategories
 	);
 }
 
-function	ListHero<T>({
+function	ListHero<T extends string>({
 	headLabel,
 	searchPlaceholder,
 	categories,
@@ -127,9 +123,8 @@ function	ListHero<T>({
 				<select
 					className={'yearn--button-smaller !w-[120%] border-none bg-neutral-900 text-neutral-0'}
 					onChange={({target: {value}}): void => {
-						const	isPossibleValue = categories.flat().find(({value}): boolean => value === value);
-						if (isPossibleValue) {
-							onSelect(value as T);
+						if (isValidCategory<T>(value)) {
+							onSelect(value);
 						}
 					}}>
 					{categories.map((currentCategory): ReactNode => (
