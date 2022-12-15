@@ -1,8 +1,7 @@
 import {ethers} from 'ethers';
 import {getEthZapperContract} from '@vaults/utils';
 import {ZAP_ETH_TO_YVETH_ABI} from '@yearn-finance/web-lib/utils/abi';
-
-import ZAP_FTM_TO_YVFTM_ABI from '../abi/zapFtmToYvFTM.abi';
+import ZAP_FTM_TO_YVFTM_ABI from '@common/utils/abi/zapFtmToYvFTM.abi';
 
 import type {ContractInterface} from 'ethers';
 

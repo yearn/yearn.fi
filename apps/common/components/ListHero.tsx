@@ -1,27 +1,36 @@
 import React from 'react';
-import {isVaultCategory} from 'pages/vaults/types';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 
-import type {TVaultCategory} from 'pages/vaults/types';
 import type {ChangeEvent, ReactElement, ReactNode} from 'react';
 
-export type TListHeroCategory = {
+export type TListHeroCategory<T> = {
 	label: string;
 	node?: ReactNode;
-	value: TVaultCategory;
+	value: T;
 	isSelected?: boolean,
-}
-
-export type TListHero = {
+   }
+   
+export type TListHero<T> = {
 	headLabel: string;
 	searchPlaceholder: string;
-	categories: TListHeroCategory[][];
-	onSelect: (category: TVaultCategory) => void;
+	categories: TListHeroCategory<T>[][];
+	onSelect: (category: T) => void;
+	searchValue: string;
+	set_searchValue: (searchValue: string) => void;
+}
+   
+export type TListHeroSearchBar = {
+	searchPlaceholder: string;
 	searchValue: string;
 	set_searchValue: (searchValue: string) => void;
 }
 
-function	SearchBar({searchPlaceholder, searchValue, set_searchValue}: Partial<TListHero>): ReactElement {
+export type TListHeroDesktopCategories<T> = {
+	categories: TListHeroCategory<T>[][];
+	onSelect: (category: T) => void;
+}
+
+function	SearchBar({searchPlaceholder, searchValue, set_searchValue}: TListHeroSearchBar): ReactElement {
 	return (
 		<div className={'w-full'}>
 			<label htmlFor={'search'} className={'text-neutral-600'}>{'Search'}</label>
@@ -59,20 +68,21 @@ function	SearchBar({searchPlaceholder, searchValue, set_searchValue}: Partial<TL
 	);	
 }
 
-function	DesktopCategories({categories, onSelect}: Partial<TListHero>): ReactElement {
+function	DesktopCategories<T>({categories, onSelect}: TListHeroDesktopCategories<T>): ReactElement {
 	return (
 		<div>
 			<label className={'text-neutral-600'}>&nbsp;</label>
 			<div className={'mt-1 flex flex-row space-x-4'}>
-				{(categories || []).map((currentCategory: TListHeroCategory[], index: number): ReactElement => (
+				{(categories || []).map((currentCategory, index: number): ReactElement => (
 					<div
 						key={index}
 						className={'flex flex-row space-x-0 divide-x border-x border-neutral-900'}>
-						{currentCategory.map((item: TListHeroCategory): ReactElement => (
+						{currentCategory.map((item): ReactElement => (
 							<Button
-								key={item.value}
+								key={item.label}
 								onClick={(): void => {
-									if (onSelect) {
+									const	isPossibleValue = categories.flat().find(({value}): boolean => value === item.value);
+									if (isPossibleValue) {
 										onSelect(item.value);
 									}
 								}}
@@ -88,12 +98,14 @@ function	DesktopCategories({categories, onSelect}: Partial<TListHero>): ReactEle
 	);
 }
 
-function	ListHero({
-	headLabel, searchPlaceholder,
+function	ListHero<T>({
+	headLabel,
+	searchPlaceholder,
 	categories,
 	onSelect,
-	searchValue, set_searchValue
-}: TListHero): ReactElement {
+	searchValue,
+	set_searchValue
+}: TListHero<T>): ReactElement {
 	return (
 		<div className={'flex flex-col items-start justify-between space-x-0 px-4 pt-4 pb-2 md:px-10 md:pt-10 md:pb-8'}>
 			<div className={'mb-6'}>
@@ -115,13 +127,14 @@ function	ListHero({
 				<select
 					className={'yearn--button-smaller !w-[120%] border-none bg-neutral-900 text-neutral-0'}
 					onChange={({target: {value}}): void => {
-						if (isVaultCategory(value)) {
-							onSelect(value);
+						const	isPossibleValue = categories.flat().find(({value}): boolean => value === value);
+						if (isPossibleValue) {
+							onSelect(value as T);
 						}
 					}}>
-					{categories.map((currentCategory: TListHeroCategory[]): ReactNode => (
-						currentCategory.map((item: TListHeroCategory): ReactElement => (
-							<option key={item.value} value={item.value}>
+					{categories.map((currentCategory): ReactNode => (
+						currentCategory.map((item): ReactElement => (
+							<option key={item.value as string} value={item.value as string}>
 								{item.label}
 							</option>
 						))

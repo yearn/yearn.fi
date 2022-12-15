@@ -15,6 +15,8 @@ import {useBribes} from '@yBribe/contexts/useBribes';
 import Wrapper from '@yBribe/Wrapper';
 
 import type {ReactElement, ReactNode} from 'react';
+import type {TBribeListHeroCategory} from '@yBribe/utils/types';
+import type {TListHeroCategory} from '@common/components/ListHero';
 import type {TCurveGauges} from '@common/types/curves';
 
 function	GaugeList(): ReactElement {
@@ -126,7 +128,7 @@ function	GaugeList(): ReactElement {
 							{value: 'claimable', label: 'Claimable', isSelected: category === 'claimable'},
 							{value: 'all', label: 'All', isSelected: category === 'all'}
 						]
-					]}
+					] as TListHeroCategory<TBribeListHeroCategory>[][]}
 					onSelect={set_category}
 					searchValue={searchValue}
 					set_searchValue={set_searchValue} />

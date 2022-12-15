@@ -2,8 +2,8 @@
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import CHAINS from '@yearn-finance/web-lib/utils/web3/chains';
 
-import type {TMigratableVault} from 'pages/vaults/types';
 import type {ReactElement} from 'react';
+import type {TMigratableVault} from '@vaults/utils/types';
 
 type TProps = {
 	migratableVaultsToDisplay: TMigratableVault[];

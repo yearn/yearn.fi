@@ -6,8 +6,8 @@ import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {formatUSD} from '@common/utils';
 
-import type {TMigratableVault} from 'pages/vaults/types';
 import type {ReactElement} from 'react';
+import type {TMigratableVault} from '@vaults/utils/types';
 
 type TProps = {
 	vault: TMigratableVault;
