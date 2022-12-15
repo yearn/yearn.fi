@@ -78,7 +78,7 @@ function	ActionButton({
 
 	const isInputTokenEth = selectedOptionFrom?.value === ETH_TOKEN_ADDRESS;
 	const isOutputTokenEth = selectedOptionTo?.value === ETH_TOKEN_ADDRESS;
-	const isPartnerAddressValid = useMemo((): boolean => !isZeroAddress(toAddress(networks[safeChainID].partnerContractAddress)), [networks, safeChainID]);
+	const isPartnerAddressValid = useMemo((): boolean => !isZeroAddress(toAddress(networks[safeChainID]?.partnerContractAddress)), [networks, safeChainID]);
 	const isUsingPartnerContract = useMemo((): boolean => ((process?.env?.SHOULD_USE_PARTNER_CONTRACT || true) === true && isPartnerAddressValid), [isPartnerAddressValid]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
