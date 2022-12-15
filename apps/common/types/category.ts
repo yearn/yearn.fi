@@ -17,5 +17,9 @@ const VAULT_CATEGORIES = [
 export type TVaultListHeroCategory = typeof VAULT_CATEGORIES[number];
 
 export function isValidCategory<T extends string>(input: string): input is T {
-	return VAULT_CATEGORIES.includes(input as TVaultListHeroCategory) || BRIBE_CATEGORIES.includes(input as TBribeListHeroCategory);
+	return (
+		VAULT_CATEGORIES.includes(input as TVaultListHeroCategory) ||
+		BRIBE_CATEGORIES.includes(input as TBribeListHeroCategory) ||
+		BRIBE_OFFER_CATEGORIES.includes(input as TBribeOfferListHeroCategory)
+	);
 }
