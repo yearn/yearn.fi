@@ -183,6 +183,10 @@ function	Index(): ReactElement {
 	**	It contains either the list of vaults, is some are available, or a message to the user.
 	**********************************************************************************************/
 	const	VaultList = useMemo((): ReactNode => {
+		if (category === 'Migrations') {
+			return MigratableVaultList;
+		}
+
 		if (isLoadingVaultList || sortedVaultsToDisplay.length === 0) {
 			return (
 				<VaultsListEmpty
@@ -198,7 +202,7 @@ function	Index(): ReactElement {
 				return <VaultsListRow key={vault.address} currentVault={vault} />;
 			})
 		);
-	}, [category, sortedVaultsToDisplay, isLoadingVaultList]);
+	}, [category, isLoadingVaultList, sortedVaultsToDisplay, MigratableVaultList]);
 
 	return (
 		<section className={'mt-4 grid w-full grid-cols-12 gap-y-10 pb-10 md:mt-20 md:gap-x-10 md:gap-y-20'}>
@@ -270,7 +274,7 @@ function	Index(): ReactElement {
 						...(category !== 'Migrations' ? [{label: 'TVL', value: 'tvl', sortable: true, className: 'col-span-2'}] : [])
 					]} />
 
-				{category !== 'Migrations' ? VaultList : MigratableVaultList}
+				{VaultList}
 			</div>
 
 
