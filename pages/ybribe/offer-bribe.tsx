@@ -15,7 +15,7 @@ import {useBribes} from '@yBribe/contexts/useBribes';
 import Wrapper from '@yBribe/Wrapper';
 
 import type {ReactElement, ReactNode} from 'react';
-import type {TBribeOfferListHeroCategory} from '@yBribe/utils/types';
+import type {TBribeOfferListHeroCategory} from '@common/types/category';
 import type {TCurveGauges} from '@common/types/curves';
 
 function	GaugeList(): ReactElement {

@@ -1,6 +1,6 @@
 import React from 'react';
-import {isValidCategory} from '@vaults/utils/types';
 import {Button} from '@yearn-finance/web-lib/components/Button';
+import {isValidCategory} from '@common/types/category';
 
 import type {ChangeEvent, ReactElement, ReactNode} from 'react';
 

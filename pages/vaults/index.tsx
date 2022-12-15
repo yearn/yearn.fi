@@ -22,9 +22,9 @@ import {useYearn} from '@common/contexts/useYearn';
 import {getVaultName} from '@common/utils';
 
 import type {ReactElement, ReactNode} from 'react';
+import type {TVaultListHeroCategory} from '@common/types/category';
 import type {TYearnVault} from '@common/types/yearn';
 import type {TPossibleSortBy, TPossibleSortDirection} from '@vaults/hooks/useSortVaults';
-import type {TVaultListHeroCategory} from '@vaults/utils/types';
 
 function	HeaderUserPosition(): ReactElement {
 	const	{cumulatedValueInVaults} = useWallet();
