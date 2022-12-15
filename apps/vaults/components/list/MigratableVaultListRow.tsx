@@ -6,33 +6,35 @@ import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {formatPercent, formatUSD} from '@common/utils';
 
+import type {TMigratableVault} from 'pages/vaults/types';
 import type {ReactElement} from 'react';
-import type {TBeefyVault} from '@vaults/hooks/useBeefyVaults';
 
-function	BeefyVaultsListRow({currentVault}: {currentVault: TBeefyVault}): ReactElement | null {
+type TProps = {
+	vault: TMigratableVault;
+}
+
+export function MigratableVaultListRow({vault}: TProps): ReactElement | null {
 	const {safeChainID} = useChainID();
-	// const deposited = useBalance(currentVault.address)?.normalized;
-	// const vaultName = useMemo((): string => getVaultName(currentVault), [currentVault]);
 
-	if (!currentVault.tokenAddress) {
+	if (!vault.address) {
 		return null;
 	}
 
 	return (
-		<Link key={`${currentVault.tokenAddress}`} href={`/vaults/${safeChainID}/${toAddress(currentVault.tokenAddress)}`}>
+		<Link key={`${vault.address}`} href={`/vaults/${safeChainID}/${toAddress(vault.address)}`}>
 			<div className={'yearn--table-wrapper cursor-pointer transition-colors hover:bg-neutral-300'}>
 				<div className={'yearn--table-token-section'}>
 					<div className={'yearn--table-token-section-item'}>
 						<div className={'yearn--table-token-section-item-image'}>
 							<ImageWithFallback
-								alt={currentVault.name}
+								alt={vault.name}
 								width={40}
 								height={40}
 								quality={90}
 								src={'https://placehold.co/128'}
 								loading={'eager'} />
 						</div>
-						<p>{currentVault.name}</p>
+						<p>{vault.name}</p>
 					</div>
 				</div>
 
@@ -82,5 +84,3 @@ function	BeefyVaultsListRow({currentVault}: {currentVault: TBeefyVault}): ReactE
 		</Link>
 	);
 }
-
-export {BeefyVaultsListRow};

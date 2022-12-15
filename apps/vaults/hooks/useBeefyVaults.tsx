@@ -49,7 +49,7 @@ export type TBeefyVault = {
 }
 
 type TBeefyVaultResponse = {
-  vaults?: TBeefyVault[];
+  vaults: TBeefyVault[];
   isLoading: boolean;
   hasError: boolean;
   error: unknown;
