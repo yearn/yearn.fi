@@ -81,24 +81,11 @@ function	VaultsListRow({currentVault}: {currentVault: TYearnVault}): ReactElemen
 						</p>
 					</div>
 
-					<div className={'yearn--table-data-section-item md:hidden'} datatype={'number'}>
+					<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
 						<label className={'yearn--table-data-section-item-label'}>{'TVL'}</label>
 						<p className={'yearn--table-data-section-item-value'}>
 							{formatUSD(currentVault.tvl?.tvl || 0, 0, 0)}
 						</p>
-					</div>
-
-					<div className={'col-span-1 hidden h-8 flex-col items-end px-0 pt-0 md:col-span-2 md:flex md:h-14 md:pt-4'}>
-						<p className={'yearn--table-data-section-item-value font-number text-end'}>
-							{formatUSD(currentVault.tvl?.tvl || 0, 0, 0)}
-						</p>
-						<div className={'mt-1 w-2/3'}>
-							<div className={'relative h-1 w-full bg-neutral-400'}>
-								<div
-									className={'absolute left-0 top-0 h-1 w-full bg-neutral-900'}
-									style={{width: `${availableToDepositRatio}%`}} />
-							</div>
-						</div>
 					</div>
 				</div>
 			</div>
