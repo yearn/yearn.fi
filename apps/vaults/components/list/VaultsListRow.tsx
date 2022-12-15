@@ -3,7 +3,6 @@ import Link from 'next/link';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useBalance} from '@common/hooks/useBalance';
@@ -28,15 +27,6 @@ function	VaultsListRow({currentVault}: {currentVault: TYearnVault}): ReactElemen
 		return balanceOfWant.normalized;
 	}, [balanceOfCoin.normalized, balanceOfWant.normalized, balanceOfWrappedCoin.normalized, currentVault.token.address]);
 	
-	const availableToDepositRatio = useMemo((): number => {
-		if (currentVault.details.depositLimit === '0') {
-			return 100;
-		}
-		const	normalizedTotalAssets = formatToNormalizedValue(currentVault.tvl.total_assets, currentVault.token.decimals);
-		const	normalizedDepositLimit = formatToNormalizedValue(currentVault.details.depositLimit, currentVault.token.decimals);
-		return (normalizedTotalAssets / normalizedDepositLimit * 100);
-	}, [currentVault.details.depositLimit, currentVault.token.decimals, currentVault.tvl.total_assets]);
-
 	return (
 		<Link key={`${currentVault.address}`} href={`/vaults/${safeChainID}/${toAddress(currentVault.address)}`}>
 			<div className={'yearn--table-wrapper cursor-pointer transition-colors hover:bg-neutral-300'}>
