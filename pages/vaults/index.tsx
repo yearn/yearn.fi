@@ -61,7 +61,7 @@ function	Index(): ReactElement {
 	const	{migrable} = useMigrable();
 	const	{balances: migrableBalance} = useMigrableWallet();
 	const	{safeChainID} = useChainID();
-	const	[category, set_category] = useState('Popular Vaults');
+	const	[category, set_category] = useState('Featured Vaults');
 	const	[searchValue, set_searchValue] = useState('');
 	const	[sortBy, set_sortBy] = useState<TPossibleSortBy>('apy');
 	const	[sortDirection, set_sortDirection] = useState<TPossibleSortDirection>('');
@@ -104,7 +104,7 @@ function	Index(): ReactElement {
 			return cryptoVaults;
 		} else if (category === 'Holdings') {
 			return holdingsVaults;
-		} else if (category === 'Popular Vaults') {
+		} else if (category === 'Featured Vaults') {
 			const vaultList = [...Object.values(vaults || {}) as TYearnVault[]];
 			return vaultList.sort((a, b): number => ((b.tvl.tvl || 0) * (b?.apy?.net_apy || 0)) - ((a.tvl.tvl || 0) * (a?.apy?.net_apy || 0)));
 		}
@@ -181,7 +181,7 @@ function	Index(): ReactElement {
 					searchPlaceholder={'YFI Vault'}
 					categories={[
 						[
-							{value: 'Popular Vaults', label: 'Popular', isSelected: category === 'Popular Vaults'},
+							{value: 'Featured Vaults', label: 'Featured', isSelected: category === 'Featured Vaults'},
 							{value: 'Crypto Vaults', label: 'Crypto', isSelected: category === 'Crypto Vaults'},
 							{value: 'Stables Vaults', label: 'Stables', isSelected: category === 'Stables Vaults'},
 							{value: 'Curve Vaults', label: 'Curve', isSelected: category === 'Curve Vaults'},
