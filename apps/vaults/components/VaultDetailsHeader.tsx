@@ -8,6 +8,7 @@ import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import {formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
+import {copyToClipboard} from '@yearn-finance/web-lib/utils/helpers';
 import {useBalance} from '@common/hooks/useBalance';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
 import {formatPercent, formatUSD, getVaultName} from '@common/utils';
@@ -43,7 +44,11 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 				&nbsp;{vaultName}&nbsp;
 			</b>
 			<div className={'mt-4 mb-10 md:mt-10 md:mb-14'}>
-				{currentVault?.address ? <p className={'font-number text-xs text-neutral-500'}>{currentVault.address}</p> : <p className={'text-xs text-neutral-500'}>&nbsp;</p>}
+				{currentVault?.address ? (
+					<button onClick={(): void => copyToClipboard(currentVault.address)}>
+						<p className={'font-number text-xs text-neutral-500'}>{currentVault.address}</p>
+					</button>
+				): <p className={'text-xs text-neutral-500'}>&nbsp;</p>}
 			</div>
 			<div className={'grid grid-cols-2 gap-12 md:grid-cols-4'}>
 				<div className={'flex flex-col items-center justify-center space-y-2'}>
