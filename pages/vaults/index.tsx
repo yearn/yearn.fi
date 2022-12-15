@@ -271,10 +271,10 @@ function	Index(): ReactElement {
 					onSort={onSort}
 					items={[
 						{label: 'Token', value: 'name', sortable: true},
-						{label: 'APY', value: 'apy', sortable: true, className: 'col-span-2'},
+						...(category !== 'Migrations' ? [{label: 'APY', value: 'apy', sortable: true, className: 'col-span-2'}] : []),
 						{label: 'Available', value: 'available', sortable: true, className: 'col-span-2'},
 						{label: 'Deposited', value: 'deposited', sortable: true, className: 'col-span-2'},
-						{label: 'TVL', value: 'tvl', sortable: true, className: 'col-span-2'}
+						...(category !== 'Migrations' ? [{label: 'TVL', value: 'tvl', sortable: true, className: 'col-span-2'}] : [])
 					]} />
 
 				{VaultList}

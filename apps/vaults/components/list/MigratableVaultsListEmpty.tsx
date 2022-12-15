@@ -25,8 +25,6 @@ function	MigratableVaultsListEmpty({migratableVaultsToDisplay, isLoadingMigratab
 		);
 	}
 
-	console.log(CHAINS);
-	
 	if (!isLoadingMigratableVaultList && migratableVaultsToDisplay.length === 0 && safeChainID !== 1) {
 		const	chainName = (CHAINS as any)[safeChainID]?.name || 'this network';
 		return (
