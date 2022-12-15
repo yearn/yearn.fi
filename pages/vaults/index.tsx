@@ -61,7 +61,7 @@ function	Index(): ReactElement {
 	const	{migrable} = useMigrable();
 	const	{balances: migrableBalance} = useMigrableWallet();
 	const	{safeChainID} = useChainID();
-	const	[category, set_category] = useState('Crypto Vaults');
+	const	[category, set_category] = useState('Popular Vaults');
 	const	[searchValue, set_searchValue] = useState('');
 	const	[sortBy, set_sortBy] = useState<TPossibleSortBy>('apy');
 	const	[sortDirection, set_sortDirection] = useState<TPossibleSortDirection>('');
