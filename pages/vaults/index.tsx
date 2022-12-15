@@ -77,7 +77,6 @@ function	Index(): ReactElement {
 	const	stablesVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Stablecoin');
 	const	balancerVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Balancer');
 	const	cryptoVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Volatile');
-	const	migratableVaults = useFilteredVaults(possibleVaultsMigrations, ({address}): boolean => (internalMigrationsBalances?.[toAddress(address)]?.raw)?.gt(0));
 	const	holdingsVaults = useFilteredVaults(vaults, ({address}): boolean => {
 		const	holding = balances?.[toAddress(address)];
 		const	hasValidBalance = (holding?.raw || ethers.constants.Zero).gt(0);
@@ -85,12 +84,19 @@ function	Index(): ReactElement {
 		if (shouldHideDust && balanceValue < 0.01) {
 			return false;
 		} else if (hasValidBalance) {
-			console.log('SHOULD BE DISPLAYED', address, balanceValue);
 			return true;
 		}
 		return false;
 	});
-
+	const	migratableVaults = useFilteredVaults(possibleVaultsMigrations, ({address}): boolean => {
+		const	holding = internalMigrationsBalances?.[toAddress(address)];
+		const	hasValidPrice = (holding?.rawPrice || ethers.constants.Zero).gt(0);
+		const	hasValidBalance = (holding?.raw || ethers.constants.Zero).gt(0);
+		if (hasValidBalance && (hasValidPrice ? (holding?.normalizedValue || 0) >= 0.01 : true)) {
+			return true;
+		}
+		return false;
+	});
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	**	As the sidechains have a low number of vaults, we will display all of them by default.

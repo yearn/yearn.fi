@@ -1,12 +1,11 @@
-import React, {useMemo} from 'react';
-import {ethers} from 'ethers';
-import {useExtendedWallet} from '@vaults/contexts/useExtendedWallet';
+import React from 'react';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {Dropdown} from '@common/components/TokenDropdown';
+import {useWallet} from '@common/contexts/useWallet';
 import {useBalance} from '@common/hooks/useBalance';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
 import {handleInputChange} from '@common/utils';
@@ -34,20 +33,10 @@ export function	QuickActionFromBox({
 	onSetMaxAmount
 }: TQuickActionFromBox): ReactElement {
 	const {isActive} = useWeb3();
-	const {balances} = useExtendedWallet();
+	const {balances} = useWallet();
 
 	const selectedFromBalance = useBalance(toAddress(selectedOptionFrom?.value), balances);
 	const selectedOptionFromPricePerToken = useTokenPrice(toAddress(selectedOptionFrom?.value));
-
-	const filteredPossibleOptionsFrom = useMemo((): TDropdownOption[] => (
-		possibleOptionsFrom.filter((option): boolean => {
-			if (option.settings?.shouldHideIfZero) {
-				const balance = balances[toAddress(option.value)]?.raw || ethers.constants.Zero;
-				return !balance.isZero();
-			}
-			return true;
-		})
-	), [possibleOptionsFrom, balances]);
 
 	return (
 		<section aria-label={'FROM'} className={'flex w-full flex-col space-x-0 md:flex-row md:space-x-4'}>
@@ -60,10 +49,10 @@ export function	QuickActionFromBox({
 						{`You have ${formatAmount(selectedFromBalance.normalized)} ${selectedOptionFrom?.symbol || 'tokens'}`}
 					</legend>
 				</div>
-				{(filteredPossibleOptionsFrom.length > 1) ? (
+				{(possibleOptionsFrom.length > 1) ? (
 					<Dropdown
-						defaultOption={filteredPossibleOptionsFrom[0]}
-						options={filteredPossibleOptionsFrom}
+						defaultOption={possibleOptionsFrom[0]}
+						options={possibleOptionsFrom}
 						selected={selectedOptionFrom}
 						balanceSource={balances}
 						onSelect={(option: TDropdownOption): void => onSelectFrom(option)} />

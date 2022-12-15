@@ -1,9 +1,9 @@
 import React, {Fragment, useMemo, useState} from 'react';
 import useSWR from 'swr';
 import {Listbox, Transition} from '@headlessui/react';
-import {VaultDetailsAbout} from '@vaults/components/details/VaultDetailsAbout';
-import {VaultDetailsHistorical} from '@vaults/components/details/VaultDetailsHistorical';
-import {VaultDetailsStrategies} from '@vaults/components/details/VaultDetailsStrategies';
+import {VaultDetailsAbout} from '@vaults/components/details/VaultDetailsTabAbout';
+import {VaultDetailsHistorical} from '@vaults/components/details/VaultDetailsTabHistorical';
+import {VaultDetailsStrategies} from '@vaults/components/details/VaultDetailsTabStrategies';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';

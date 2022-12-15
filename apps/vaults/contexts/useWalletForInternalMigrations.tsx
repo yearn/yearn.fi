@@ -30,8 +30,8 @@ const	defaultProps = {
 
 
 /* 🔵 - Yearn Finance **********************************************************
-** This context controls most of the user's wallet data we may need to
-** interact with our app, aka mostly the balances and the token prices.
+** This context is used to fetch the balances for the internal migrations,
+** aka the migrations between two Yearn vaults.
 ******************************************************************************/
 const	WalletForInternalMigrations = createContext<TWalletForInternalMigrations>(defaultProps);
 export const WalletForInternalMigrationsApp = memo(function WalletForInternalMigrationsApp({children}: {children: ReactElement}): ReactElement {

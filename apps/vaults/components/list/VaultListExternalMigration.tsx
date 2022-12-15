@@ -1,4 +1,4 @@
-import React, {Fragment, useCallback, useMemo, useState} from 'react';
+import React, {useCallback, useMemo, useState} from 'react';
 import {ethers} from 'ethers';
 import {useWalletForExternalMigrations} from '@vaults/contexts/useWalletForExternalMigrations';
 import {migrationTable} from '@vaults/utils/migrationTable';
@@ -16,6 +16,8 @@ import {useBalance} from '@common/hooks/useBalance';
 import {formatPercent} from '@common/utils';
 import {approveERC20, isApprovedERC20} from '@common/utils/actions/approveToken';
 import {depositVia} from '@common/utils/actions/depositVia';
+
+import {VaultsListEmpty} from './VaultsListEmpty';
 
 import type {ReactElement} from 'react';
 import type {TPossibleSortBy, TPossibleSortDirection} from '@vaults/hooks/useSortVaults';
@@ -67,57 +69,56 @@ function	VaultListExternalMigrationRow(
 	}
 
 	return (
-		<button onClick={onMigrateFlow} className={'w-full'}>
-			<div className={'yearn--table-wrapper'}>
-				<div className={'yearn--table-token-section'}>
-					<div className={'yearn--table-token-section-item'}>
-						<div className={'yearn--table-token-section-item-image'}>
-							<ImageWithFallback
-								alt={''}
-								width={40}
-								height={40}
-								quality={90}
-								src={`${process.env.BASE_YEARN_ASSETS_URI}/${safeChainID}/${element.underlyingToken}/logo-128.png`}
-								loading={'eager'} />
-						</div>
-						<p>{element.symbol}</p>
+		<div className={'yearn--table-wrapper group'}>
+			<div className={'yearn--table-token-section'}>
+				<div className={'yearn--table-token-section-item'}>
+					<div className={'yearn--table-token-section-item-image'}>
+						<ImageWithFallback
+							alt={''}
+							width={40}
+							height={40}
+							quality={90}
+							src={`${process.env.BASE_YEARN_ASSETS_URI}/${safeChainID}/${element.underlyingToken}/logo-128.png`}
+							loading={'eager'} />
 					</div>
-				</div>
-
-
-				<div className={'yearn--table-data-section'}>
-					<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
-						<label className={'yearn--table-data-section-item-label'}>{'APY'}</label>
-						<p className={'yearn--table-data-section-item-value'}>
-							{formatPercent((oldAPY || 0) * 100)}
-						</p>
-					</div>
-
-					<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
-						<label className={'yearn--table-data-section-item-label'}>{'APY'}</label>
-						<b className={'yearn--table-data-section-item-value'}>
-							{formatPercent((newAPY || 0) * 100)}
-						</b>
-					</div>
-
-					<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
-						<label className={'yearn--table-data-section-item-label'}>{'Deposited'}</label>
-						<p className={`yearn--table-data-section-item-value ${balance.raw.isZero() ? 'text-neutral-400' : 'text-neutral-900'}`}>
-							{formatAmount(balance.normalized)}
-						</p>
-					</div>
-
-					<div className={'col-span-1 hidden h-8 flex-col items-end px-0 pt-0 md:col-span-2 md:flex md:h-14 md:pt-4'}>
-						<Button
-							className={'yearn--button-smaller !w-full'}
-							isBusy={txStatus.pending}
-							isDisabled={!isActive}>
-							{'Migrate'}
-						</Button>
-					</div>
+					<p>{element.symbol}</p>
 				</div>
 			</div>
-		</button>
+
+
+			<div className={'yearn--table-data-section'}>
+				<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
+					<label className={'yearn--table-data-section-item-label'}>{'APY'}</label>
+					<p className={'yearn--table-data-section-item-value'}>
+						{formatPercent((oldAPY || 0) * 100)}
+					</p>
+				</div>
+
+				<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
+					<label className={'yearn--table-data-section-item-label'}>{'APY'}</label>
+					<b className={'yearn--table-data-section-item-value'}>
+						{formatPercent((newAPY || 0) * 100)}
+					</b>
+				</div>
+
+				<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
+					<label className={'yearn--table-data-section-item-label'}>{'Deposited'}</label>
+					<p className={`yearn--table-data-section-item-value ${balance.raw.isZero() ? 'text-neutral-400' : 'text-neutral-900'}`}>
+						{formatAmount(balance.normalized)}
+					</p>
+				</div>
+
+				<div className={'col-span-1 hidden h-8 flex-col items-end px-0 pt-0 md:col-span-2 md:flex md:h-14 md:pt-4'}>
+					<Button
+						className={'yearn--button-smaller !w-full'}
+						isBusy={txStatus.pending}
+						isDisabled={!isActive}
+						onClick={onMigrateFlow}>
+						{'Migrate'}
+					</Button>
+				</div>
+			</div>
+		</div>
 	);
 }
 
@@ -155,10 +156,6 @@ function	VaultListExternalMigration(): ReactElement {
 	}, [balances]);
 
 
-	if (possibleMigrations.length === 0) {
-		return <Fragment />;
-	}
-
 	return (
 		<div className={'col-span-12 flex w-full flex-col bg-neutral-100'}>
 			<div className={'flex flex-col items-start justify-between space-x-0 px-4 pt-4 pb-2 md:px-10 md:pt-10 md:pb-8'}>
@@ -183,9 +180,13 @@ function	VaultListExternalMigration(): ReactElement {
 					{label: '', value: '', sortable: false, className: 'col-span-2'}
 				]} />
 
-			<div className={'my-4'}>
+			<div>
 				{
-					possibleMigrations.map((element: TMigrationTable): ReactElement => (
+					possibleMigrations.length === 0 ? (
+						<VaultsListEmpty
+							sortedVaultsToDisplay={[]}
+							currentCategory={''} />
+					) : possibleMigrations.map((element: TMigrationTable): ReactElement => (
 						<VaultListExternalMigrationRow
 							key={`${element.migrableToken}_${element.service}`}
 							element={element} />
