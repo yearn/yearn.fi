@@ -10,6 +10,7 @@ const VAULT_CATEGORIES = [
 	'Stables Vaults',
 	'Crypto Vaults',
 	'Holdings',
+	'Popular Vaults',
 	'Migrations',
 	'All Vaults',
 	'Featured Vaults'

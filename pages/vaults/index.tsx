@@ -154,13 +154,14 @@ function	Index(): ReactElement {
 		});
 	}, [vaultsToDisplay, searchValue]);
 
+	console.warn({searchedVaultsToDisplay});
 	/* 🔵 - Yearn Finance **************************************************************************
 	**	Then, once we have reduced the list of vaults to display, we can sort them. The sorting
 	**	is done via a custom method that will sort the vaults based on the sortBy and
 	**	sortDirection values.
 	**********************************************************************************************/
-	const	sortedVaultsToDisplay = useSortVaults(searchedVaultsToDisplay, sortBy, sortDirection);
-	
+	const	sortedVaultsToDisplay = useSortVaults([...searchedVaultsToDisplay], sortBy, sortDirection);
+
 	/* 🔵 - Yearn Finance **************************************************************************
 	**	Callback method used to sort the vaults list.
 	**	The use of useCallback() is to prevent the method from being re-created on every render.
@@ -264,8 +265,10 @@ function	Index(): ReactElement {
 					onSort={onSort}
 					items={[
 						{label: 'Token', value: 'name', sortable: true},
+						{label: 'APY', value: 'apy', sortable: true, className: 'col-span-2'},
 						{label: 'Available', value: 'available', sortable: true, className: 'col-span-2'},
-						{label: 'Deposited', value: 'deposited', sortable: true, className: 'col-span-2'}
+						{label: 'Deposited', value: 'deposited', sortable: true, className: 'col-span-2'},
+						{label: 'TVL', value: 'tvl', sortable: true, className: 'col-span-2'}
 					]} />
 
 				{VaultList}

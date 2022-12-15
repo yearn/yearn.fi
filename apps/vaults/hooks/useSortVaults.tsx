@@ -72,8 +72,9 @@ function	useSortVaults(
 		});
 	}, [balances, sortDirection, vaultList]);
 
+	const	stringifiedVaultList = JSON.stringify(vaultList);
 	const	sortedVaults = useMemo((): TYearnVault[] => {
-		const	sortResult = vaultList;
+		const	sortResult = JSON.parse(stringifiedVaultList);
 		if (sortDirection === '') {
 			return sortResult;
 		}
@@ -90,7 +91,7 @@ function	useSortVaults(
 		}
 
 		return sortResult;
-	}, [sortBy, sortDirection, sortedByAPY, sortedByAvailable, sortedByDeposited, sortedByName, sortedByTVL, vaultList]);
+	}, [sortBy, sortDirection, sortedByAPY, sortedByAvailable, sortedByDeposited, sortedByName, sortedByTVL, stringifiedVaultList]);
 
 	return (sortedVaults);	
 }

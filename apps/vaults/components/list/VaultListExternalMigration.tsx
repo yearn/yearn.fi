@@ -20,7 +20,7 @@ import {formatPercent} from '@common/utils';
 import {approveERC20, isApprovedERC20} from '@common/utils/actions/approveToken';
 import {depositVia} from '@common/utils/actions/depositVia';
 
-import {VaultsListEmpty} from './VaultsListEmpty';
+import {VaultListExternalMigrationEmpty} from './VaultListExternalMigrationEmpty';
 
 import type {ReactElement} from 'react';
 import type {TPossibleSortBy, TPossibleSortDirection} from '@vaults/hooks/useSortVaults';
@@ -155,7 +155,7 @@ function	VaultListExternalMigration(): ReactElement {
 		
 		Object.values(migrationTable || {}).forEach((possibleBowswapMigrations: TMigrationTable[]): void => {
 			for (const element of possibleBowswapMigrations) {
-				if ((balances[toAddress(element.migrableToken)]?.raw || ethers.constants.Zero).gte(0)) {
+				if ((balances[toAddress(element.migrableToken)]?.raw || ethers.constants.Zero).gt(0)) {
 					migration.push(element);
 				}
 			}
@@ -189,7 +189,7 @@ function	VaultListExternalMigration(): ReactElement {
 				</div>
 
 				<div className={'hidden w-full flex-row items-center justify-between space-x-4 md:flex'}>
-					<p>{'You can move your assets from other DeFi platforms to Yearn in order to access higher yields and auto-compounding. When you migrate your assets to Yearn, you are supporting the DeFi ecosystem by helping to keep other platforms active. Overall, the migration feature is a convenient way for you to maximize your returns on your DeFi assets.'}</p>
+					<p>{'We looked in your wallet to see if you\'ve got tokens deposited somewhere in the DeFi ecosystem that could be earning more with Yearn. To enjoy the best risk adjusted yields in DeFi, benefit from auto-compounding, and live the good life. Click migrate.'}</p>
 				</div>
 			</div>
 
@@ -207,10 +207,8 @@ function	VaultListExternalMigration(): ReactElement {
 
 			<div>
 				{
-					possibleBowswapMigrations.length === 0 && possibleBeefyMigrations.length === 0 ? (
-						<VaultsListEmpty
-							sortedVaultsToDisplay={[]}
-							currentCategory={''} />
+					possibleBowswapMigrations.length === 0 && possibleBeefyMigrations.length >= 0 ? (
+						<VaultListExternalMigrationEmpty />
 					) : (
 						<Fragment>
 							{possibleBowswapMigrations.map((element: TMigrationTable): ReactElement => (
