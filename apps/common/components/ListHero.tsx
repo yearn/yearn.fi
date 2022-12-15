@@ -1,12 +1,14 @@
 import React from 'react';
+import {isVaultCategory} from 'pages/vaults/types';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 
+import type {TVaultCategory} from 'pages/vaults/types';
 import type {ChangeEvent, ReactElement, ReactNode} from 'react';
 
 export type TListHeroCategory = {
 	label: string;
 	node?: ReactNode;
-	value: string;
+	value: TVaultCategory;
 	isSelected?: boolean,
 }
 
@@ -14,7 +16,7 @@ export type TListHero = {
 	headLabel: string;
 	searchPlaceholder: string;
 	categories: TListHeroCategory[][];
-	onSelect: (category: string) => void;
+	onSelect: (category: TVaultCategory) => void;
 	searchValue: string;
 	set_searchValue: (searchValue: string) => void;
 }
@@ -112,7 +114,11 @@ function	ListHero({
 			<div className={'flex w-full flex-row space-x-2 md:hidden md:w-2/3'}>
 				<select
 					className={'yearn--button-smaller !w-[120%] border-none bg-neutral-900 text-neutral-0'}
-					onChange={(e): void => onSelect(e.target.value)}>
+					onChange={({target: {value}}): void => {
+						if (isVaultCategory(value)) {
+							onSelect(value);
+						}
+					}}>
 					{categories.map((currentCategory: TListHeroCategory[]): ReactNode => (
 						currentCategory.map((item: TListHeroCategory): ReactElement => (
 							<option key={item.value} value={item.value}>
