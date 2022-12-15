@@ -4,7 +4,7 @@ import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
-import {formatPercent, formatUSD} from '@common/utils';
+import {formatUSD} from '@common/utils';
 
 import type {TMigratableVault} from 'pages/vaults/types';
 import type {ReactElement} from 'react';
@@ -40,13 +40,6 @@ export function MigratableVaultListRow({vault}: TProps): ReactElement | null {
 
 				<div className={'yearn--table-data-section'}>
 					<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
-						<label className={'yearn--table-data-section-item-label'}>{'APY'}</label>
-						<b className={'yearn--table-data-section-item-value'}>
-							{formatPercent((0) * 100)}
-						</b>
-					</div>
-
-					<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
 						<label className={'yearn--table-data-section-item-label'}>{'Available'}</label>
 						<p className={'yearn--table-data-section-item-value text-neutral-400'}>
 							{formatAmount(0)}
@@ -57,13 +50,6 @@ export function MigratableVaultListRow({vault}: TProps): ReactElement | null {
 						<label className={'yearn--table-data-section-item-label'}>{'Deposited'}</label>
 						<p className={'yearn--table-data-section-item-value text-neutral-400'}>
 							{formatAmount(0)}
-						</p>
-					</div>
-
-					<div className={'yearn--table-data-section-item md:hidden'} datatype={'number'}>
-						<label className={'yearn--table-data-section-item-label'}>{'TVL'}</label>
-						<p className={'yearn--table-data-section-item-value'}>
-							{formatUSD(0, 0, 0)}
 						</p>
 					</div>
 
