@@ -64,7 +64,7 @@ function	Index(): ReactElement {
 	const	[category, set_category] = useState('Crypto Vaults');
 	const	[searchValue, set_searchValue] = useState('');
 	const	[sortBy, set_sortBy] = useState<TPossibleSortBy>('apy');
-	const	[sortDirection, set_sortDirection] = useState<TPossibleSortDirection>('desc');
+	const	[sortDirection, set_sortDirection] = useState<TPossibleSortDirection>('');
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	**	It's best to memorize the filtered vaults, which saves a lot of processing time by only
@@ -104,6 +104,9 @@ function	Index(): ReactElement {
 			return cryptoVaults;
 		} else if (category === 'Holdings') {
 			return holdingsVaults;
+		} else if (category === 'Popular Vaults') {
+			const vaultList = [...Object.values(vaults || {}) as TYearnVault[]];
+			return vaultList.sort((a, b): number => ((b.tvl.tvl || 0) * (b?.apy?.net_apy || 0)) - ((a.tvl.tvl || 0) * (a?.apy?.net_apy || 0)));
 		}
 		return Object.values(vaults || {}) as TYearnVault[];
 	}, [category, curveVaults, stablesVaults, balancerVaults, cryptoVaults, vaults, holdingsVaults]);
@@ -130,7 +133,6 @@ function	Index(): ReactElement {
 	**	Then, once we have reduced the list of vaults to display, we can sort them. The sorting
 	**	is done via a custom method that will sort the vaults based on the sortBy and
 	**	sortDirection values.
-	**	TODO: Refactor this to use a custom hook.
 	**********************************************************************************************/
 	const	sortedVaultsToDisplay = useSortVaults(searchedVaultsToDisplay, sortBy, sortDirection);
 
@@ -145,7 +147,6 @@ function	Index(): ReactElement {
 			set_sortDirection(newSortDirection as TPossibleSortDirection);
 		});
 	}, []);
-
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	**	The VaultList component is memoized to prevent it from being re-created on every render.
@@ -180,6 +181,7 @@ function	Index(): ReactElement {
 					searchPlaceholder={'YFI Vault'}
 					categories={[
 						[
+							{value: 'Popular Vaults', label: 'Popular', isSelected: category === 'Popular Vaults'},
 							{value: 'Crypto Vaults', label: 'Crypto', isSelected: category === 'Crypto Vaults'},
 							{value: 'Stables Vaults', label: 'Stables', isSelected: category === 'Stables Vaults'},
 							{value: 'Curve Vaults', label: 'Curve', isSelected: category === 'Curve Vaults'},

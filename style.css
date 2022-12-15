@@ -313,3 +313,9 @@ details {
 	}
 }
 }
+
+[type='checkbox'],
+[type='checkbox']:focus {
+	@apply outline-none focus:border-0 focus:outline-none focus:ring-0 active:border-0 active:ring-0;
+	box-shadow: none !important;
+}

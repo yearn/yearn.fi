@@ -33,7 +33,9 @@ function	ListHead({items, dataClassName, sortBy, sortDirection, onSort}: TListHe
 			<div className={'yearn--table-head-wrapper'}>
 				<div className={'yearn--table-head-token-section'}>
 					<button
-						onClick={(): void => onSort(first.value, sortBy === first.value ? (sortDirection === 'desc' ? 'asc' : 'desc') : 'desc')}
+						onClick={(): void => onSort(first.value, sortBy === first.value ? (
+							sortDirection === '' ? 'desc' : sortDirection === 'desc' ? 'asc' : ''
+						) : 'desc')}
 						className={'yearn--table-head-label-wrapper group'}>
 						<p className={'yearn--table-head-label'}>
 							{first.label}
@@ -46,7 +48,9 @@ function	ListHead({items, dataClassName, sortBy, sortDirection, onSort}: TListHe
 					{rest.map((item): ReactElement => (
 						<button
 							key={item.value}
-							onClick={(): void => onSort(item.value, sortBy === item.value ? (sortDirection === 'desc' ? 'asc' : 'desc') : 'desc')}
+							onClick={(): void => onSort(item.value, sortBy === item.value ? (
+								sortDirection === '' ? 'desc' : sortDirection === 'desc' ? 'asc' : ''
+							) : 'desc')}
 							disabled={!item.sortable}
 							className={`yearn--table-head-label-wrapper group ${item.className}`}
 							datatype={'number'}>

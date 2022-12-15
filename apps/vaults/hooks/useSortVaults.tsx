@@ -7,7 +7,7 @@ import {getVaultName} from '@common/utils';
 import type {TYearnVault} from '@common/types/yearn';
 
 export type TPossibleSortBy = 'apy' | 'tvl' | 'name' | 'deposited' | 'available';
-export type TPossibleSortDirection = 'asc' | 'desc';
+export type TPossibleSortDirection = 'asc' | 'desc' | '';
 
 function	useSortVaults(
 	vaultList: TYearnVault[],
@@ -74,6 +74,9 @@ function	useSortVaults(
 
 	const	sortedVaults = useMemo((): TYearnVault[] => {
 		const	sortResult = vaultList;
+		if (sortDirection === '') {
+			return sortResult;
+		}
 		if (sortBy === 'name') {
 			return sortedByName();
 		} else if (sortBy === 'apy') {
@@ -87,7 +90,7 @@ function	useSortVaults(
 		}
 
 		return sortResult;
-	}, [sortBy, sortedByAPY, sortedByAvailable, sortedByDeposited, sortedByName, sortedByTVL, vaultList]);
+	}, [sortBy, sortDirection, sortedByAPY, sortedByAvailable, sortedByDeposited, sortedByName, sortedByTVL, vaultList]);
 
 	return (sortedVaults);	
 }
