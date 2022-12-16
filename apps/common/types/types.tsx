@@ -19,6 +19,7 @@ export type TDropdownOption = {
 	icon?: ReactElement;
 	label: string;
 	symbol: string;
+	decimals: number;
 	value: string;
 	zapVia?: string;
 };

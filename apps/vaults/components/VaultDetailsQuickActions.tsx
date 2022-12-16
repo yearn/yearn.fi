@@ -35,15 +35,23 @@ import type {ChangeEvent, ReactElement} from 'react';
 import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
 import type {TYearnVault} from '@common/types/yearn';
 
+type TSetZapOptionProps = {
+	name: string;
+	symbol: string;
+	address: string;
+	safeChainID: number;
+	decimals: number;
+}
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const		ARE_ZAP_ENABLED = false;
 
-function	setZapOption(name: string, symbol: string, address: string, safeChainID: number): TDropdownOption {
+function	setZapOption({name, symbol, address, safeChainID, decimals}: TSetZapOptionProps): TDropdownOption {
 	return ({
 		label: name,
-		symbol: symbol,
+		symbol,
 		value: address,
+		decimals,
 		icon: <ImageWithFallback
 			src={`${process.env.BASE_YEARN_ASSETS_URI}/${safeChainID}/${address}/logo-128.png`}
 			alt={name}
@@ -347,22 +355,23 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 		if (isDepositing) {
 			if (safeChainID === 1 && currentVault && toAddress(currentVault.token.address) === WETH_TOKEN_ADDRESS) {
 				set_possibleOptionsFrom([
-					setZapOption('ETH', 'ETH', ETH_TOKEN_ADDRESS, safeChainID),
-					setZapOption('wETH', 'wETH', WETH_TOKEN_ADDRESS, safeChainID)
+					setZapOption({name: 'ETH', symbol: 'ETH', address: ETH_TOKEN_ADDRESS, safeChainID, decimals: 18}),
+					setZapOption({name: 'wETH', symbol: 'wETH', address: WETH_TOKEN_ADDRESS, safeChainID, decimals: 18})
 				]);
 			} else if (safeChainID === 250 && currentVault && toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS) {
 				set_possibleOptionsFrom([
-					setZapOption('FTM', 'FTM', ETH_TOKEN_ADDRESS, safeChainID),
-					setZapOption('wFTM', 'wFTM', WFTM_TOKEN_ADDRESS, safeChainID)
+					setZapOption({name: 'FTM', symbol: 'FTM', address: ETH_TOKEN_ADDRESS, safeChainID, decimals: 18}),
+					setZapOption({name: 'wFTM', symbol: 'wFTM', address: WFTM_TOKEN_ADDRESS, safeChainID, decimals: 18})
 				]);
 			} else {
 				set_possibleOptionsFrom([
-					setZapOption(
-						currentVault?.token?.display_name || currentVault?.token?.name,
-						currentVault?.token?.symbol,
-						toAddress(currentVault.token.address),
-						safeChainID
-					)
+					setZapOption({
+						name: currentVault?.token?.display_name || currentVault?.token?.name,
+						symbol: currentVault?.token?.symbol,
+						address: toAddress(currentVault.token.address),
+						safeChainID,
+						decimals: 18
+					})
 				]);
 			}
 		}
@@ -374,18 +383,20 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 	**********************************************************************************************/
 	useEffect((): void => {
 		if (currentVault && !selectedOptionFrom && !selectedOptionTo) {
-			const	_selectedFrom = setZapOption(
-				currentVault?.token?.display_name || currentVault?.token?.name,
-				currentVault?.token?.symbol,
-				toAddress(currentVault.token.address),
-				safeChainID
-			);
-			const	_selectedTo = setZapOption(
-				currentVault?.display_name || currentVault?.name || currentVault.formated_name,
-				currentVault?.display_symbol || currentVault.symbol,
-				toAddress(currentVault.address),
-				safeChainID
-			);
+			const	_selectedFrom = setZapOption({
+				name: currentVault?.token?.display_name || currentVault?.token?.name,
+				symbol: currentVault?.token?.symbol,
+				address: toAddress(currentVault.token.address),
+				safeChainID,
+				decimals: 18
+			});
+			const	_selectedTo = setZapOption({
+				name: currentVault?.display_name || currentVault?.name || currentVault.formated_name,
+				symbol: currentVault?.display_symbol || currentVault.symbol,
+				address: toAddress(currentVault.address),
+				safeChainID,
+				decimals: 18
+			});
 			performBatchedUpdates((): void => {
 				set_selectedOptionFrom(_selectedFrom);
 				set_selectedOptionTo(_selectedTo);
