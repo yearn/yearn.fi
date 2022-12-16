@@ -18,7 +18,7 @@ export type	TWalletForInternalMigrations = {
 	balances: TDict<TBalanceData>,
 	useWalletNonce: number,
 	isLoading: boolean,
-	refresh: () => Promise<TDict<TBalanceData>>
+	refresh: (tokenList?: TUseBalancesTokens[]) => Promise<TDict<TBalanceData>>,
 }
 
 const	defaultProps = {
@@ -55,17 +55,22 @@ export const WalletForInternalMigrationsApp = memo(function WalletForInternalMig
 		return tokens;
 	}, [possibleVaultsMigrations, isLoading]);
 
-	const	{data: balances, update: updateBalances, isLoading: isLoadingBalances} = useBalances({
+	const	{data: balances, update: updateBalances, updateSome: updateSomeBalances, isLoading: isLoadingBalances} = useBalances({
 		key: chainID,
 		provider: provider || getProvider(1),
 		tokens: availableTokens,
 		prices
 	});
 
-	const	onRefresh = useCallback(async (): Promise<TDict<TBalanceData>> => {
-		const updatedBalances = await updateBalances();
-		return updatedBalances;
-	}, [updateBalances]);
+	const	onRefresh = useCallback(async (tokenToUpdate?: TUseBalancesTokens[]): Promise<TDict<TBalanceData>> => {
+		if (tokenToUpdate) {
+			const updatedBalances = await updateSomeBalances(tokenToUpdate);
+			return updatedBalances;
+		} else {
+			const updatedBalances = await updateBalances();
+			return updatedBalances;
+		}
+	}, [updateBalances, updateSomeBalances]);
 
 	useClientEffect((): () => void => {
 		if (isLoadingBalances) {

@@ -1,13 +1,16 @@
 import React, {useMemo, useState} from 'react';
 import {ethers} from 'ethers';
 import {useWalletForInternalMigrations} from '@vaults/contexts/useWalletForInternalMigrations';
+import {zap} from '@vaults/utils/actions/migrateVeCRV';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
+import {useWallet} from '@common/contexts/useWallet';
 import {useBalance} from '@common/hooks/useBalance';
 import {getVaultName} from '@common/utils';
 import {approveERC20, isApprovedERC20} from '@common/utils/actions/approveToken';
@@ -18,7 +21,8 @@ import type {TYearnVault} from '@common/types/yearn';
 
 function	VaultsListMigratableRow({currentVault}: {currentVault: TYearnVault}): ReactElement {
 	const {isActive, provider} = useWeb3();
-	const {balances, refresh} = useWalletForInternalMigrations();
+	const {balances, refresh: refreshInternalMigrations} = useWalletForInternalMigrations();
+	const {refresh} = useWallet();
 	const {safeChainID} = useChainID();
 	const [txStatus, set_txStatus] = useState(defaultTxStatus);
 
@@ -34,26 +38,45 @@ function	VaultsListMigratableRow({currentVault}: {currentVault: TYearnVault}): R
 		);
 
 		if (isApproved) {
-			new Transaction(provider, migrateShares, set_txStatus).populate(
-				toAddress(currentVault.migration.contract), //migrator
-				toAddress(currentVault.address), //from
-				toAddress(currentVault.migration.address) //to
-			).onSuccess(async (): Promise<void> => {
-				await refresh();
-			}).perform();
+			if (toAddress(currentVault.migration.contract) === ZAP_YEARN_VE_CRV_ADDRESS) {
+				// yveCRV or yvBOOST migration
+				await new Transaction(provider, zap, set_txStatus).populate(
+					toAddress(currentVault.address), //_input_token
+					toAddress(currentVault.migration.address), //_output_token
+					balanceToMigrate.raw || ethers.constants.MaxUint256 //_amount
+				).onSuccess(async (): Promise<void> => {
+					await Promise.all([
+						refresh([{token: toAddress(currentVault.migration.address)}]),
+						refreshInternalMigrations([{token: toAddress(currentVault.address)}])
+					]);
+				}).perform();
+			} else {
+				// using provided migration contract
+				await new Transaction(provider, migrateShares, set_txStatus).populate(
+					toAddress(currentVault.migration.contract), //migrator
+					toAddress(currentVault.address), //from
+					toAddress(currentVault.migration.address) //to
+				).onSuccess(async (): Promise<void> => {
+					await Promise.all([
+						refreshInternalMigrations(),
+						refresh()
+					]);
+				}).perform();
+			}
 		} else {
-			new Transaction(provider, approveERC20, set_txStatus).populate(
+			const	isSuccess = await new Transaction(provider, approveERC20, set_txStatus, {shouldIgnoreSuccessTxStatusChange: true}).populate(
 				toAddress(currentVault.address), //from
 				toAddress(currentVault.migration.contract), //migrator
 				ethers.constants.MaxUint256 //amount
-			).onSuccess(async (): Promise<void> => {
-				await onMigrateFlow();
-			}).perform();
+			).perform();
+			if (isSuccess) {
+				onMigrateFlow();
+			}
 		}
 	}
 
 	return (
-		<button onClick={onMigrateFlow} className={'w-full'}>
+		<div className={'w-full'}>
 			<div className={'yearn--table-wrapper bg-neutral-900 text-neutral-0'}>
 				<div className={'yearn--table-token-section'}>
 					<div className={'yearn--table-token-section-item'}>
@@ -66,7 +89,10 @@ function	VaultsListMigratableRow({currentVault}: {currentVault: TYearnVault}): R
 								src={`${process.env.BASE_YEARN_ASSETS_URI}/${safeChainID}/${toAddress(currentVault.token.address)}/logo-128.png`}
 								loading={'eager'} />
 						</div>
-						<p>{vaultName}</p>
+						<div className={'text-left'}>
+							<p>{vaultName}</p>
+							<p className={'font-number text-xs'}>{`${formatAmount(balanceToMigrate.normalized)} ${currentVault.token.symbol}`}</p>
+						</div>
 					</div>
 				</div>
 
@@ -79,14 +105,15 @@ function	VaultsListMigratableRow({currentVault}: {currentVault: TYearnVault}): R
 						<Button
 							variant={'reverted'}
 							className={'yearn--button-smaller !w-full'}
+							onClick={onMigrateFlow}
 							isBusy={txStatus.pending}
 							isDisabled={!isActive}>
-							{`Migrate ${formatAmount(balanceToMigrate.normalized)} ${currentVault.token.symbol}`}
+							{'Migrate'}
 						</Button>
 					</div>
 				</div>
 			</div>
-		</button>
+		</div>
 	);
 }
 

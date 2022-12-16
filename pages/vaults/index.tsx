@@ -154,7 +154,6 @@ function	Index(): ReactElement {
 		});
 	}, [vaultsToDisplay, searchValue]);
 
-	console.warn({searchedVaultsToDisplay});
 	/* 🔵 - Yearn Finance **************************************************************************
 	**	Then, once we have reduced the list of vaults to display, we can sort them. The sorting
 	**	is done via a custom method that will sort the vaults based on the sortBy and

@@ -20,7 +20,7 @@ export type	TWalletContext = {
 	cumulatedValueInVaults: number,
 	useWalletNonce: number,
 	isLoading: boolean,
-	refresh: () => Promise<TDict<TBalanceData>>,
+	refresh: (tokenList?: TUseBalancesTokens[]) => Promise<TDict<TBalanceData>>,
 }
 
 const	defaultProps = {
@@ -59,7 +59,7 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 		return tokens;
 	}, [vaults, isLoadingVaultList]);
 
-	const	{data: balances, update: updateBalances, isLoading: isLoadingBalances} = useBalances({
+	const	{data: balances, update: updateBalances, updateSome: updateSomeBalances, isLoading: isLoadingBalances} = useBalances({
 		key: chainID,
 		provider: provider || getProvider(1),
 		tokens: availableTokens,
@@ -81,10 +81,15 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 		);
 	}, [vaults, balances, isLoadingVaultList, isLoadingBalances]);
 
-	const	onRefresh = useCallback(async (): Promise<TDict<TBalanceData>> => {
-		const updatedBalances = await updateBalances();
-		return updatedBalances;
-	}, [updateBalances]);
+	const	onRefresh = useCallback(async (tokenToUpdate?: TUseBalancesTokens[]): Promise<TDict<TBalanceData>> => {
+		if (tokenToUpdate) {
+			const updatedBalances = await updateSomeBalances(tokenToUpdate);
+			return updatedBalances;
+		} else {
+			const updatedBalances = await updateBalances();
+			return updatedBalances;
+		}
+	}, [updateBalances, updateSomeBalances]);
 
 	useClientEffect((): () => void => {
 		if (isLoadingBalances) {
@@ -97,7 +102,6 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 		}
 		return (): unknown => NProgress.done();
 	}, [isLoadingBalances]);
-
 
 	/* 🔵 - Yearn Finance ******************************************************
 	**	Setup and render the Context provider to use in the app.
