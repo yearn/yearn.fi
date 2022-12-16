@@ -74,8 +74,6 @@ export const WalletForExternalMigrationsApp = memo(function WalletForExternalMig
 		return (): unknown => NProgress.done();
 	}, [isLoadingBalances]);
 
-
-	console.warn({balances});
 	/* 🔵 - Yearn Finance ******************************************************
 	**	Setup and render the Context provider to use in the app.
 	***************************************************************************/

@@ -18,6 +18,45 @@ function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYearnVau
 						{currentVault?.token?.description || 'Sorry, we don’t have a description for this asset right now. But did you know the correct word for a blob of toothpaste is a “nurdle”. Fascinating! We’ll work on updating the asset description, but at least you learnt something interesting. Catch ya later nurdles.'}
 					</p>
 				</div>
+				<div>
+					<b className={'text-neutral-900'}>{'APY'}</b>
+					<div className={'mt-4 grid grid-cols-1 gap-x-12 md:grid-cols-2'}>
+						<div className={'space-y-2'}>
+							<div className={'flex flex-row items-center justify-between'}>
+								<p className={'text-sm text-neutral-500'}>{'Weekly APY'}</p>
+								<p className={'font-number text-sm text-neutral-900'}>
+									{formatPercent((currentVault?.apy?.points?.week_ago || 0) * 100)}
+								</p>
+							</div>
+							<div className={'flex flex-row items-center justify-between'}>
+								<p className={'text-sm text-neutral-500'}>{'Monthly APY'}</p>
+								<p className={'font-number text-sm text-neutral-900'}>
+									{formatPercent((currentVault?.apy?.points?.month_ago || 0) * 100)}
+								</p>
+							</div>
+							<div className={'flex flex-row items-center justify-between'}>
+								<p className={'text-sm text-neutral-500'}>{'Inception APY'}</p>
+								<p className={'font-number text-sm text-neutral-900'}>
+									{formatPercent((currentVault?.apy?.points?.inception || 0) * 100)}
+								</p>
+							</div>
+						</div>
+						<div className={'space-y-2'}>
+							<div className={'flex flex-row items-center justify-between'}>
+								<p className={'text-sm text-neutral-500'}>{'Gross APR'}</p>
+								<p className={'font-number text-sm text-neutral-900'}>
+									{formatPercent((currentVault?.apy?.gross_apr || 0) * 100)}
+								</p>
+							</div>
+							<div className={'flex flex-row items-center justify-between'}>
+								<p className={'text-sm text-neutral-500'}>{'Net APY'}</p>
+								<p className={'font-number text-sm text-neutral-900'}>
+									{formatPercent((currentVault?.apy?.net_apy || 0) * 100)}
+								</p>
+							</div>
+						</div>
+					</div>
+				</div>
 			</div>
 			<div className={'col-span-1 w-full space-y-8'}>
 				<div>
