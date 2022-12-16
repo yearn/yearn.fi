@@ -5,6 +5,7 @@ import localFont from '@next/font/local';
 import {WithYearn} from '@yearn-finance/web-lib/contexts/WithYearn';
 import {AppHeader} from '@common/components/AppHeader';
 import Meta from '@common/components/Meta';
+import {FilterContextProvider} from '@common/contexts/FilterContext';
 import {MenuContextApp} from '@common/contexts/useMenu';
 import {WalletContextApp} from '@common/contexts/useWallet';
 import {YearnContextApp} from '@common/contexts/useYearn';
@@ -61,13 +62,15 @@ const App = memo(function App(props: AppProps): ReactElement {
 		<MenuContextApp>
 			<YearnContextApp>
 				<WalletContextApp>
-					<Fragment>
-						<Meta meta={meta} />
-						<WithLayout
-							Component={Component}
-							pageProps={pageProps}
-							router={props.router} />
-					</Fragment>
+					<FilterContextProvider>
+						<Fragment>
+							<Meta meta={meta} />
+							<WithLayout
+								Component={Component}
+								pageProps={pageProps}
+								router={props.router} />
+						</Fragment>
+					</FilterContextProvider>
 				</WalletContextApp>
 			</YearnContextApp>
 		</MenuContextApp>
