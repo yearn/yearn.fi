@@ -64,11 +64,9 @@ function	Index(): ReactElement {
 	const	{migrable, isLoadingMigrableList} = useMigrable();
 	const	{balances: migrableBalance} = useMigrableWallet();
 	const	{safeChainID} = useChainID();
-	const	[category, set_category] = useState('Featured Vaults');
-	const	[searchValue, set_searchValue] = useState('');
 	const	[sortBy, set_sortBy] = useState<TPossibleSortBy>('apy');
 	const	[sortDirection, set_sortDirection] = useState<TPossibleSortDirection>('');
-	const	{shouldHideDust, shouldHideLowTVLVaults} = useAppSettings();
+	const	{shouldHideDust, shouldHideLowTVLVaults, category, searchValue, set_category, set_searchValue} = useAppSettings();
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	**	It's best to memorize the filtered vaults, which saves a lot of processing time by only
