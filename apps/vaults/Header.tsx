@@ -5,8 +5,9 @@ import LogoYearn from '@common/icons/LogoYearn';
 import {variants} from '@common/utils/animations';
 
 import type {ReactElement} from 'react';
+import type {TMenu} from '@yearn-finance/web-lib/layouts/Header.next';
 
-export 	const	MenuVaultsOptions = [
+export 	const	MenuVaultsOptions: TMenu[] = [
 	{path: '/vaults', label: 'Vaults'},
 	{
 		path: '/vaults/migrate',

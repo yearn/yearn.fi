@@ -6,8 +6,9 @@ import {YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {variants} from '@common/utils/animations';
 
 import type {ReactElement} from 'react';
+import type {TMenu} from '@yearn-finance/web-lib/layouts/Header.next';
 
-export 	const	MenuYCRVOptions = [
+export 	const	MenuYCRVOptions: TMenu[] = [
 	{path: '/ycrv', label: 'yCRV'},
 	{path: '/ycrv/holdings', label: 'Holdings'},
 	{path: '/ycrv/about', label: 'About'}

@@ -11,7 +11,7 @@ import type {ReactElement} from 'react';
 export type TCurrentMenu = {
 	app: {
 		path: string;
-		label: string;
+		label: ReactElement | string;
 	}[],
 	isOpen: boolean,
 }

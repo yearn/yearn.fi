@@ -138,7 +138,7 @@ export function	AppHeader(): ReactElement {
 	const	{isActive} = useWeb3();
 	const	{onOpenMenu} = useMenu();
 	const	navMenu = useMemo((): TMenu[] => {
-		let	menu = [
+		let	menu: TMenu[] = [
 			{path: '/', label: 'Home'},
 			{path: 'https://gov.yearn.finance/', label: 'Governance'},
 			{path: 'https://blog.yearn.finance/', label: 'Blog'},

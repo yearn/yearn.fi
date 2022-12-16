@@ -5,8 +5,9 @@ import LogoYearn from '@common/icons/LogoYearn';
 import {variants} from '@common/utils/animations';
 
 import type {ReactElement} from 'react';
+import type {TMenu} from '@yearn-finance/web-lib/layouts/Header.next';
 
-export const	MenuYBribeOptions = [
+export const	MenuYBribeOptions: TMenu[] = [
 	{path: '/ybribe', label: 'Claim bribe'},
 	{path: '/ybribe/offer-bribe', label: 'Offer bribe'},
 	{path: '/ybribe/about', label: 'About'}
