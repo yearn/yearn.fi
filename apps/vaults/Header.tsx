@@ -1,4 +1,4 @@
-import React, {Fragment} from 'react';
+import React from 'react';
 import {useRouter} from 'next/router';
 import {motion} from 'framer-motion';
 import LogoYearn from '@common/icons/LogoYearn';
@@ -9,18 +9,7 @@ import type {TMenu} from '@yearn-finance/web-lib/layouts/Header.next';
 
 export 	const	MenuVaultsOptions: TMenu[] = [
 	{path: '/vaults', label: 'Vaults'},
-	{
-		path: '/vaults/migrate',
-		label: (
-			<Fragment>
-				{'Migrate'}
-				<span className={'absolute -top-0 -right-2 flex h-2 w-2'}>
-					<span className={'absolute inline-flex h-full w-full animate-ping rounded-full bg-pink-600 opacity-75'}></span>
-					<span className={'relative inline-flex h-2 w-2 rounded-full bg-pink-500'}></span>
-				</span>
-			</Fragment>
-		)
-	},
+	// {path: '/vaults/migrate', label: 'Migrate'},
 	{path: '/vaults/about', label: 'About'}
 ];
 
