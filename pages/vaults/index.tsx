@@ -1,4 +1,4 @@
-import React, {Fragment, useCallback, useContext, useEffect, useMemo, useState} from 'react';
+import React, {Fragment, useCallback, useEffect, useMemo, useState} from 'react';
 import {ethers} from 'ethers';
 import VaultListOptions from '@vaults/components/list/VaultListOptions';
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
@@ -17,7 +17,6 @@ import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUp
 import ListHead from '@common/components/ListHead';
 import ListHero from '@common/components/ListHero';
 import ValueAnimation from '@common/components/ValueAnimation';
-import {FilterContext} from '@common/contexts/FilterContext';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import {getVaultName} from '@common/utils';
@@ -65,10 +64,9 @@ function	Index(): ReactElement {
 	const	{migrable, isLoadingMigrableList} = useMigrable();
 	const	{balances: migrableBalance} = useMigrableWallet();
 	const	{safeChainID} = useChainID();
-	const 	{category, searchValue, set_category, set_searchValue} = useContext(FilterContext);
 	const	[sortBy, set_sortBy] = useState<TPossibleSortBy>('apy');
 	const	[sortDirection, set_sortDirection] = useState<TPossibleSortDirection>('');
-	const	{shouldHideDust, shouldHideLowTVLVaults} = useAppSettings();
+	const	{shouldHideDust, shouldHideLowTVLVaults, category, searchValue, set_category, set_searchValue} = useAppSettings();
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	**	It's best to memorize the filtered vaults, which saves a lot of processing time by only
