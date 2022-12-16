@@ -23,18 +23,18 @@ function	ValueAnimation({
 	const	hasBeenTriggerd = useRef<boolean>(false);
 
 	function	initZero(): void {
-		const words = document.getElementsByClassName(identifier) as any;
-		words[0].style.opacity = 1;
+		const words = document.getElementsByClassName(identifier) as HTMLCollectionOf<HTMLSpanElement>;
+		words[0].style.opacity = '1';
 	}
 
 	function	onStartAnimation(): void {
 		hasBeenTriggerd.current = true;
-		const words = document.getElementsByClassName(identifier) as any;
-		const wordArray: any[] = [];
+		const words = document.getElementsByClassName(identifier) as HTMLCollectionOf<HTMLSpanElement>;
+		const wordArray: HTMLSpanElement[][] = [];
 		let currentWord = 0;
 
-		words[currentWord].style.opacity = 1;
-		for (const word of words) {
+		words[currentWord].style.opacity = '1';
+		for (const word of Array.from(words)) {
 			splitLetters(word);
 		}
 
@@ -51,26 +51,26 @@ function	ValueAnimation({
 			for (let i = 0; i < nw.length; i++) {
 				nw[i].className = 'letter behind';
 				if (nw?.[0]?.parentElement?.style) {
-					nw[0].parentElement.style.opacity = 1;
+					nw[0].parentElement.style.opacity = '1';
 				}
 				animateLetterIn(nw, i);
 			}
 			currentWord = (currentWord == wordArray.length-1) ? 0 : currentWord+1;
 		}
 
-		function animateLetterOut(cw: any, i: number): void {
+		function animateLetterOut(cw: HTMLSpanElement[], i: number): void {
 			setTimeout((): void => {
 				cw[i].className = 'letter out';
 			}, i*80);
 		}
 
-		function animateLetterIn(nw: any, i: number): void {
+		function animateLetterIn(nw: HTMLSpanElement[], i: number): void {
 			setTimeout((): void => {
 				nw[i].className = 'letter in';
 			}, 340+(i*80));
 		}
 
-		function splitLetters(word: any): void {
+		function splitLetters(word: HTMLSpanElement): void {
 			const content = word.innerHTML;
 			word.innerHTML = '';
 			const letters = [];

@@ -1,15 +1,28 @@
 import React, {createContext, useContext, useMemo} from 'react';
-import axios from 'axios';
 import useSWR from 'swr';
-import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
+import {baseFetcher, curveFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 
 import type {SWRResponse} from 'swr';
+import type {TDict} from '@yearn-finance/web-lib/utils/types';
 import type {TCurveGauges} from '@common/types/curves';
 
+type TCurveWeeklyFees = {
+	weeklyFeesTable: {
+		date: string;
+		ts: number;
+		rawFees: number;
+	}[];
+	totalFees: {
+		fees: number
+	}
+}
+type TCoinGeckoPrices = {
+	usd: number
+}
 export type TCurveContext = {
-	curveWeeklyFees: any,
+	curveWeeklyFees: TCurveWeeklyFees,
 	gauges: TCurveGauges[],
-	cgPrices: {[key: string]: {usd: number}}
+	cgPrices: TDict<TCoinGeckoPrices>
 }
 const	defaultProps: TCurveContext = {
 	curveWeeklyFees: {
@@ -22,10 +35,8 @@ const	defaultProps: TCurveContext = {
 	gauges: []
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const	curveFetcher = async (url: string): Promise<any> => axios.get(url).then((res): any => res.data?.data);
 
-const	CurveContext = createContext<TCurveContext>(defaultProps);
+const CurveContext = createContext<TCurveContext>(defaultProps);
 export const CurveContextApp = ({children}: {children: React.ReactElement}): React.ReactElement => {
 	/* 🔵 - Yearn Finance ******************************************************
 	**	Fetch all the CurveGauges to be able to create some new if required
@@ -34,18 +45,19 @@ export const CurveContextApp = ({children}: {children: React.ReactElement}): Rea
 		'https://api.curve.fi/api/getWeeklyFees',
 		curveFetcher,
 		{revalidateOnFocus: false}
-	);
+	) as SWRResponse<TCurveWeeklyFees>;
+
 	const	{data: cgPrices} = useSWR(
 		'https://api.coingecko.com/api/v3/simple/price?ids=curve-dao-token&vs_currencies=usd',
 		baseFetcher,
 		{revalidateOnFocus: false}
-	) as SWRResponse;
+	) as SWRResponse<TDict<TCoinGeckoPrices>>;
 
 	const	{data: gaugesWrapper} = useSWR(
 		'https://api.curve.fi/api/getGauges?blockchainId=ethereum',
 		curveFetcher,
 		{revalidateOnFocus: false}
-	);
+	) as SWRResponse<{gauges: TDict<TCurveGauges>}>;
 
 	const	gauges = useMemo((): TCurveGauges[] => {
 		const	_gaugesForMainnet: TCurveGauges[] = [];
@@ -66,9 +78,9 @@ export const CurveContextApp = ({children}: {children: React.ReactElement}): Rea
 	**	Setup and render the Context provider to use in the app.
 	***************************************************************************/
 	const	contextValue = useMemo((): TCurveContext => ({
-		curveWeeklyFees,
-		cgPrices,
-		gauges: gauges || []
+		curveWeeklyFees: curveWeeklyFees || defaultProps.curveWeeklyFees,
+		cgPrices: cgPrices || defaultProps.cgPrices,
+		gauges: gauges || defaultProps.gauges
 	}), [curveWeeklyFees, cgPrices, gauges]);
 
 	return (

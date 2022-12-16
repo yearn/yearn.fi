@@ -6,6 +6,7 @@ import type {ReactElement} from 'react';
 import type {TGraphData} from '@common/types/types';
 import type {TYearnVault} from '@common/types/yearn';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const GraphForVaultEarnings = dynamic(async (): Promise<any> => import('@vaults/components/graphs/GraphForVaultEarnings'), {ssr: false}) as any;
 
 function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYearnVault, harvestData: TGraphData[]}): ReactElement {

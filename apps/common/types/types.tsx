@@ -1,6 +1,7 @@
 import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
 import type {TBalanceData} from '@yearn-finance/web-lib/hooks/types';
+import type {TAddress} from '@yearn-finance/web-lib/utils/address';
 import type {TDict} from '@yearn-finance/web-lib/utils/types';
 import type {EXTERNAL_SERVICE_PROVIDER} from '@vaults/utils/migrationTable';
 
@@ -23,7 +24,7 @@ export type TDropdownOption = {
 	decimals: number;
 	value: string;
 	icon?: ReactElement;
-	zapVia?: string;
+	zapVia?: TAddress;
 	balanceSource?: string;
 	settings?: {
 		serviceID?: EXTERNAL_SERVICE_PROVIDER

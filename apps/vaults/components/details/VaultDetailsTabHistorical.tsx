@@ -12,8 +12,11 @@ import type {ReactElement} from 'react';
 import type {TGraphData, TMessariGraphData} from '@common/types/types';
 import type {TYearnVault} from '@common/types/yearn';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const GraphForVaultTVL = dynamic((): any => import('@vaults/components/graphs/GraphForVaultTVL'), {ssr: false}) as any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const GraphForVaultPPSGrowth = dynamic((): any => import('@vaults/components/graphs/GraphForVaultPPSGrowth'), {ssr: false}) as any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const GraphForVaultEarnings = dynamic((): any => import('@vaults/components/graphs/GraphForVaultEarnings'), {ssr: false}) as any;
 
 function	VaultDetailsHistorical({currentVault, harvestData}: {currentVault: TYearnVault, harvestData: TGraphData[]}): ReactElement {

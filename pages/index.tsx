@@ -47,7 +47,7 @@ const	apps = [
 ];
 
 function	AppBox({app}: {app: typeof apps[0]}): ReactElement {
-	useClientEffect((): void => {
+	useClientEffect((): VoidFunction => {
 		const featuresEl = document.getElementById(app.href);
 		if (featuresEl) {
 			const	cleanup = (): void => {
@@ -55,7 +55,7 @@ function	AppBox({app}: {app: typeof apps[0]}): ReactElement {
 				featuresEl.removeEventListener('pointerleave', pointerleave);
 			};
 
-			const	pointermove = (ev: any): void => {
+			const	pointermove = (ev: MouseEvent): void => {
 				const rect = featuresEl.getBoundingClientRect();
 				if (featuresEl?.style) {
 					featuresEl.style.setProperty('--opacity', '0.3');
@@ -72,8 +72,9 @@ function	AppBox({app}: {app: typeof apps[0]}): ReactElement {
 
 			featuresEl.addEventListener('pointermove', pointermove);
 			featuresEl.addEventListener('pointerleave', pointerleave);
-			return cleanup as any;
+			return cleanup;
 		}
+		return (): void => undefined;
 	}, []);
 
 	return (
@@ -99,12 +100,12 @@ function	TextAnimation(): ReactElement {
 
 	function	onStartAnimation(): void {	
 		hasBeenTriggerd.current = true;
-		const words = document.getElementsByClassName('word') as any;
-		const wordArray: any[] = [];
+		const words = document.getElementsByClassName('word') as HTMLCollectionOf<HTMLSpanElement>;
+		const wordArray: HTMLSpanElement[][] = [];
 		let currentWord = 0;
 
-		words[currentWord].style.opacity = 1;
-		for (const word of words) {
+		words[currentWord].style.opacity = '1';
+		for (const word of Array.from(words)) {
 			splitLetters(word);
 		}
 
@@ -121,26 +122,26 @@ function	TextAnimation(): ReactElement {
 			for (let i = 0; i < nw.length; i++) {
 				nw[i].className = 'letter behind';
 				if (nw?.[0]?.parentElement?.style) {
-					nw[0].parentElement.style.opacity = 1;
+					nw[0].parentElement.style.opacity = '1';
 				}
 				animateLetterIn(nw, i);
 			}
 			currentWord = (currentWord == wordArray.length-1) ? 0 : currentWord+1;
 		}
 
-		function animateLetterOut(cw: any, i: number): void {
+		function animateLetterOut(cw: HTMLSpanElement[], i: number): void {
 			setTimeout((): void => {
 				cw[i].className = 'letter out';
 			}, i*80);
 		}
 
-		function animateLetterIn(nw: any, i: number): void {
+		function animateLetterIn(nw: HTMLSpanElement[], i: number): void {
 			setTimeout((): void => {
 				nw[i].className = 'letter in';
 			}, 340+(i*80));
 		}
 
-		function splitLetters(word: any): void {
+		function splitLetters(word: HTMLSpanElement): void {
 			const content = word.innerHTML;
 			word.innerHTML = '';
 			const letters = [];

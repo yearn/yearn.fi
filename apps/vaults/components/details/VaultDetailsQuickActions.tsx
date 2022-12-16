@@ -33,9 +33,9 @@ import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
 import type {TYearnVault} from '@common/types/yearn';
 
 type TSetZapOptionProps = {
+	address: TAddress;
 	name: string;
 	symbol: string;
-	address: string;
 	safeChainID: number;
 	decimals: number;
 	rest?: { [key: string]: unknown };

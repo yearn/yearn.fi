@@ -1,14 +1,15 @@
+import type {TAddress} from '@yearn-finance/web-lib/utils/address';
 import type {TDict} from '@yearn-finance/web-lib/utils/types';
 
 export type TYearnVaultStrategy = {
-	address: string,
+	address: TAddress,
 	name: string,
 	description: string,
 	details: {
-		keeper: string,
-		strategist: string,
-		rewards: string,
-		healthCheck: string,
+		keeper: TAddress,
+		strategist: TAddress,
+		rewards: TAddress,
+		healthCheck: TAddress,
 		totalDebt: string,
 		totalLoss: string,
 		totalGain: string,
@@ -52,7 +53,7 @@ export type TYearnVaultStrategy = {
 
 export type TYearnVault = {
     inception: number,
-    address: string,
+    address: TAddress,
     symbol: string,
     display_symbol: string,
     formated_symbol: string,
@@ -63,7 +64,7 @@ export type TYearnVault = {
 	category: string,
 	riskScore: number,
     token: {
-        address: string,
+        address: TAddress,
         name: string,
         display_name: string,
         symbol: string,
@@ -103,10 +104,10 @@ export type TYearnVault = {
     },
     strategies: TYearnVaultStrategy[],
 	details: {
-		management: string,
-		governance: string,
-		guardian: string,
-		rewards: string,
+		management: TAddress,
+		governance: TAddress,
+		guardian: TAddress,
+		rewards: TAddress,
 		depositLimit: string,
 		comment: string,
 		apyTypeOverride: string,
@@ -127,8 +128,8 @@ export type TYearnVault = {
     updated: number,
     migration: {
         available: boolean,
-        address: string,
-        contract: string,
+        address: TAddress,
+        contract: TAddress,
     }
 }
 
@@ -139,12 +140,12 @@ export type	TSettingsForNetwork = {
 	metaURI?: string,
 	apiURI?: string,
 	explorerBaseURI?: string,
-	lensAddress?: string,
-	partnerContractAddress?: string
+	lensAddress?: TAddress,
+	partnerContractAddress?: TAddress
 }
 
 export type TYDaemonToken = {
-	address: string,
+	address: TAddress,
 	name: string,
 	symbol: string,
 	price: number,
@@ -157,8 +158,8 @@ export type TYDaemonToken = {
 }
 
 export type TYDaemonHarvests = {
-	vaultAddress: string,
-	strategyAddress: string,
+	vaultAddress: TAddress,
+	strategyAddress: TAddress,
 	txHash: string,
 	timestamp: string,
 	profit: string,
@@ -196,10 +197,10 @@ export type TYdaemonEarned = {
 }
 
 export type TYDaemonGaugeRewardsFeed = {
+	briber: TAddress;
+	gauge: TAddress;
+	rewardToken: TAddress;
 	amount: string;
-	briber: string;
-	gauge: string;
-	rewardToken: string;
 	txHash: string;
 	timestamp: string;
 	blockNumber: string;

@@ -21,7 +21,7 @@ export async function	depositVia(
 	try {
 		let abi: ContractInterface = PARTNER_VAULT_ABI;
 		let	method = 'deposit';
-		let params: any[] = [];
+		let params: unknown[] = [];
 
 		if ([
 			EXTERNAL_SERVICE_PROVIDER.COMPOUND,
@@ -45,7 +45,7 @@ export async function	depositVia(
 		}
 
 		return true;
-	} catch(error: any) {
+	} catch(error) {
 		console.error(error);
 		return false;
 	}

@@ -1,9 +1,6 @@
 import React, {createContext, useCallback, useContext, useEffect, useMemo, useState} from 'react';
 import {Contract} from 'ethcall';
 import {ethers} from 'ethers';
-import axios from 'axios';
-import useSWR from 'swr';
-import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -18,13 +15,11 @@ import CURVE_BRIBE_V3_HELPER from '@yBribe/utils/abi/curveBribeV3Helper.abi';
 import type {BigNumber} from 'ethers';
 import type {TDict} from '@yearn-finance/web-lib/utils/types';
 import type {TCurveGaugeVersionRewards} from '@common/types/curves';
-import type {TYDaemonGaugeRewardsFeed} from '@common/types/yearn';
 
 export type	TBribesContext = {
 	currentRewards: TCurveGaugeVersionRewards,
 	nextRewards: TCurveGaugeVersionRewards,
 	claimable: TCurveGaugeVersionRewards,
-	feed: TYDaemonGaugeRewardsFeed[],
 	currentPeriod: number,
 	nextPeriod: number,
 	isLoading: boolean,
@@ -40,22 +35,17 @@ const	defaultProps: TBribesContext = {
 	claimable: {
 		v3: {}
 	},
-	feed: [],
 	currentPeriod: 0,
 	nextPeriod: 0,
 	isLoading: true,
 	refresh: async (): Promise<void> => undefined
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const baseFetcher = async (url: string): Promise<any> => axios.get(url).then((res): any => res.data);
-
 const	BribesContext = createContext<TBribesContext>(defaultProps);
 export const BribesContextApp = ({children}: {children: React.ReactElement}): React.ReactElement => {
 	const {gauges} = useCurve();
 	const {provider, address} = useWeb3();
 	const {safeChainID} = useChainID();
-	const {settings: baseAPISettings} = useSettings();
 	const [currentRewards, set_currentRewards] = useState<TCurveGaugeVersionRewards>({v3: {}});
 	const [nextRewards, set_nextRewards] = useState<TCurveGaugeVersionRewards>({v3: {}});
 	const [claimable, set_claimable] = useState<TCurveGaugeVersionRewards>({v3: {}});
@@ -63,7 +53,6 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 	const [currentPeriod, set_currentPeriod] = useState<number>(getLastThursday());
 	const [nextPeriod, set_nextPeriod] = useState<number>(getNextThursday());
 
-	const {data: feed} = useSWR(`${baseAPISettings.yDaemonBaseURI}/1/bribes/newRewardFeed`, baseFetcher);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** getSharedStuffFromBribes will help you retrieved some elements from the
@@ -112,7 +101,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 		currentProvider: ethers.providers.Provider,
 		contract: Contract,
 		rewardsPerGauges: string[][]
-	): Promise<{rewardsList: string[], multicallResult: any[]}> => {
+	): Promise<{rewardsList: string[], multicallResult: BigNumber[]}> => {
 		if ((rewardsPerGauges || []).length === 0) {
 			return ({rewardsList: [], multicallResult: []});
 		}
@@ -152,7 +141,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 	const getNextPeriodRewards = useCallback(async (
 		currentProvider: ethers.providers.Provider,
 		rewardsPerGauges: string[][]
-	): Promise<{rewardsList: string[], multicallResult: any[]}> => {
+	): Promise<{rewardsList: string[], multicallResult: BigNumber[]}> => {
 		if ((rewardsPerGauges || []).length === 0) {
 			return ({rewardsList: [], multicallResult: []});
 		}
@@ -171,7 +160,10 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 			}
 		}
 
-		const	multicallResult = await Promise.all(rewardsPerTokensPerGaugesCalls.map((pair): any => contract.callStatic.getNewRewardPerToken(...pair))) as BigNumber[];
+		const	multicallResult = await Promise.all(
+			rewardsPerTokensPerGaugesCalls.map((pair): unknown => contract.callStatic.getNewRewardPerToken(...pair))
+		) as BigNumber[];
+
 		return ({rewardsList, multicallResult: [...multicallResult]});
 	}, [gauges]);
 
@@ -182,7 +174,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 	const assignBribes = useCallback(async (
 		version: string,
 		rewardsList: string[],
-		multicallResult: any[]
+		multicallResult: BigNumber[]
 	): Promise<void> => {
 		if (!multicallResult || multicallResult.length === 0 || rewardsList.length === 0) {
 			return;
@@ -223,7 +215,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 	**	assignNextRewards will save the next period rewards values for each
 	**	gauge/token to the state to be used by the UI.
 	***************************************************************************/
-	const assignNextRewards = useCallback(async (version: string, rewardsList: string[], multicallResult: any[]): Promise<void> => {
+	const assignNextRewards = useCallback(async (version: string, rewardsList: string[], multicallResult: BigNumber[]): Promise<void> => {
 		if (!multicallResult || multicallResult.length === 0 || rewardsList.length === 0) {
 			return;
 		}
@@ -281,9 +273,8 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 		isLoading: isLoading,
 		currentPeriod,
 		nextPeriod,
-		feed: (feed || []) as TYDaemonGaugeRewardsFeed[],
 		refresh: onRefresh
-	}), [currentRewards, nextRewards, claimable, isLoading, currentPeriod, nextPeriod, feed, onRefresh]);
+	}), [currentRewards, nextRewards, claimable, isLoading, currentPeriod, nextPeriod, onRefresh]);
 
 	return (
 		<BribesContext.Provider value={contextValue}>

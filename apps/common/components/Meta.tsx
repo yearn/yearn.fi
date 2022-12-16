@@ -4,7 +4,31 @@ import {DefaultSeo} from 'next-seo';
 
 import type {ReactElement} from 'react';
 
-function	Meta({meta}: {meta: any}): ReactElement {
+export type TMetaFile = {
+	name: string;
+	short_name: string;
+	description: string;
+	iconPath: string;
+	locale: string;
+	uri: string;
+	og: string;
+	twitter: string;
+	github: string;
+	icons: {
+		src: string;
+		sizes: string;
+		type: string;
+		purpose?: string;
+	}[];
+	theme_color: string;
+	background_color: string;
+	title_color: string;
+	start_url: string;
+	display: string;
+	orientation: string;
+}
+
+function	Meta({meta}: {meta: TMetaFile}): ReactElement {
 	return (
 		<>
 			<Head>

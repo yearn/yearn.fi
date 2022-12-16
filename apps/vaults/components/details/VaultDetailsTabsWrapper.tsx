@@ -16,13 +16,20 @@ import IconChevron from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
+import type {TMetamaskInjectedProvider} from '@yearn-finance/web-lib/utils/types';
 import type {TSettingsForNetwork, TYearnVault} from '@common/types/yearn';
 
-function	Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: {
+type TTabsOptions = {
+	value: number;
+	label: string;
+}
+type TTabs = {
 	selectedAboutTabIndex: number,
-	set_selectedAboutTabIndex: (arg0: number) => void
-}): ReactElement {
-	const tabs = [
+	set_selectedAboutTabIndex: (arg0: number) => void	
+}
+
+function	Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactElement {
+	const tabs: TTabsOptions[] = [
 		{value: 0, label: 'About'},
 		{value: 1, label: 'Strategies'},
 		{value: 2, label: 'Historical rates'}
@@ -47,7 +54,7 @@ function	Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: {
 			<div className={'relative z-50'}>
 				<Listbox
 					value={selectedAboutTabIndex}
-					onChange={(value: any): void => set_selectedAboutTabIndex(value.value)}>
+					onChange={(value): void => set_selectedAboutTabIndex(value)}>
 					{({open}): ReactElement => (
 						<>
 							<Listbox.Button
@@ -74,7 +81,7 @@ function	Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: {
 										<Listbox.Option
 											className={'yearn--listbox-menu-item'}
 											key={tab.value}
-											value={tab}>
+											value={tab.value}>
 											{tab.label}
 										</Listbox.Option>
 									))}
@@ -97,7 +104,7 @@ function	VaultDetailsTabsWrapper({currentVault}: {currentVault: TYearnVault}): R
 
 	async function onAddTokenToMetamask(address: string, symbol: string, decimals: number, image: string): Promise<void> {
 		try {
-			await (provider as any).send('wallet_watchAsset', {
+			await (provider as TMetamaskInjectedProvider).send('wallet_watchAsset', {
 				type: 'ERC20',
 				options: {
 					address,

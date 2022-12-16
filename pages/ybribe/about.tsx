@@ -1,19 +1,26 @@
 import React, {useMemo} from 'react';
+import useSWR from 'swr';
+import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
+import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import SettingsOverwrite from '@common/components/SettingsOverwrite';
 import {GaugeListEmpty} from '@yBribe/components/bribe/GaugeListEmpty';
 import {RewardFeedTableHead} from '@yBribe/components/rewardFeed/RewardFeedTableHead';
 import {RewardFeedTableRow} from '@yBribe/components/rewardFeed/RewardFeedTableRow';
-import {useBribes} from '@yBribe/contexts/useBribes';
 import Wrapper from '@yBribe/Wrapper';
 
 import type {ReactElement, ReactNode} from 'react';
+import type {SWRResponse} from 'swr';
 import type {TYDaemonGaugeRewardsFeed} from '@common/types/yearn';
 
 function	About(): ReactElement {
-	const	{feed} = useBribes();
+	const {settings: baseAPISettings} = useSettings();
+	const {data: feed} = useSWR(
+		`${baseAPISettings.yDaemonBaseURI}/1/bribes/newRewardFeed`,
+		baseFetcher
+	) as SWRResponse<TYDaemonGaugeRewardsFeed[]>;
 
 	const	sortedFeed = useMemo((): TYDaemonGaugeRewardsFeed[] => {
-		return feed.sort((a, b): number => {
+		return (feed || []).sort((a, b): number => {
 			return Number(b.timestamp) - Number(a.timestamp);
 		});
 	}, [feed]);
@@ -63,7 +70,7 @@ function	About(): ReactElement {
 					</div>
 					<div className={'grid w-full grid-cols-1 pb-2 md:pb-4'}>
 						<RewardFeedTableHead />
-						{feed.length === 0 ? (
+						{(feed || []).length === 0 ? (
 							<GaugeListEmpty />
 						) : sortedFeed.map((item): ReactNode => {
 							if (!item) {

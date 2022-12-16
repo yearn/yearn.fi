@@ -12,6 +12,7 @@ import {formatPercent} from '@common/utils';
 import type {ReactElement} from 'react';
 import type {TYearnVault, TYearnVaultStrategy} from '@common/types/yearn';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const GraphForStrategyReports = dynamic(async (): Promise<any> => import('@vaults/components/graphs/GraphForStrategyReports'), {ssr: false}) as any;
 
 function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVault, strategy: TYearnVaultStrategy}): ReactElement {

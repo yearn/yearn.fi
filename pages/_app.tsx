@@ -10,6 +10,7 @@ import {WalletContextApp} from '@common/contexts/useWallet';
 import {YearnContextApp} from '@common/contexts/useYearn';
 import {variants} from '@common/utils/animations';
 
+import type {NextComponentType} from 'next';
 import type {AppProps} from 'next/app';
 import type {ReactElement} from 'react';
 
@@ -32,7 +33,7 @@ const aeonik = localFont({
 
 const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 	const	{Component, pageProps, router} = props;
-	const	getLayout = (Component as any).getLayout || ((page: ReactElement): ReactElement => page);
+	const	getLayout = (Component as NextComponentType & {getLayout: (p: ReactElement) => ReactElement}).getLayout || ((page: ReactElement): ReactElement => page);
 
 	return (
 		<div id={'app'} className={'mx-auto mb-0 flex max-w-6xl font-aeonik'}>

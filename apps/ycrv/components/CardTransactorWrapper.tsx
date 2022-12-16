@@ -56,9 +56,9 @@ const		CardTransactorContext = createContext<TCardTransactor>({
 	set_selectedOptionTo: (): void => undefined,
 	set_amount: (): void => undefined,
 	set_hasTypedSomething: (): void => undefined,
-	onApproveFrom: (): any => undefined,
-	onZap: (): any => undefined,
-	onIncreaseCRVAllowance: (): any => undefined
+	onApproveFrom: async (): Promise<void> => undefined,
+	onZap: async (): Promise<void> => undefined,
+	onIncreaseCRVAllowance: async (): Promise<void> => undefined
 });
 
 function	CardTransactorContextApp({

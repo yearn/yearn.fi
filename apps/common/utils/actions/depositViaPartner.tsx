@@ -32,9 +32,9 @@ export async function	depositViaPartner(
 		}
 
 		return true;
-	} catch(error: any) {
+	} catch(error) {
 		console.error(error);
-		const	errorCode = error?.code || '';
+		const	errorCode = (error as {code: ethers.errors})?.code || '';
 		if (errorCode === 'UNPREDICTABLE_GAS_LIMIT' && gasLimit !== -1) {
 			depositViaPartner(
 				provider,
