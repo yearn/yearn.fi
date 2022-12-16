@@ -1,7 +1,10 @@
 import React, {Fragment, useCallback, useEffect, useMemo, useState} from 'react';
+import {ethers} from 'ethers';
+import VaultListOptions from '@vaults/components/list/VaultListOptions';
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
 import {VaultsListMigrableRow} from '@vaults/components/list/VaultsListMigrableRow';
 import {VaultsListRow} from '@vaults/components/list/VaultsListRow';
+import {useAppSettings} from '@vaults/contexts/useAppSettings';
 import {useMigrable} from '@vaults/contexts/useMigrable';
 import {useMigrableWallet} from '@vaults/contexts/useMigrableWallet';
 import {useFilteredVaults} from '@vaults/hooks/useFilteredVaults';
@@ -58,13 +61,14 @@ function	HeaderUserPosition(): ReactElement {
 function	Index(): ReactElement {
 	const	{balances} = useWallet();
 	const	{vaults, isLoadingVaultList} = useYearn();
-	const	{migrable} = useMigrable();
+	const	{migrable, isLoadingMigrableList} = useMigrable();
 	const	{balances: migrableBalance} = useMigrableWallet();
 	const	{safeChainID} = useChainID();
 	const	[category, set_category] = useState('Featured Vaults');
 	const	[searchValue, set_searchValue] = useState('');
 	const	[sortBy, set_sortBy] = useState<TPossibleSortBy>('apy');
 	const	[sortDirection, set_sortDirection] = useState<TPossibleSortDirection>('');
+	const	{shouldHideDust, shouldHideLowTVLVaults} = useAppSettings();
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	**	It's best to memorize the filtered vaults, which saves a lot of processing time by only
@@ -74,8 +78,19 @@ function	Index(): ReactElement {
 	const	stablesVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Stablecoin');
 	const	balancerVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Balancer');
 	const	cryptoVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Volatile');
-	const	holdingsVaults = useFilteredVaults(vaults, ({address}): boolean => (balances?.[toAddress(address)]?.raw)?.gt(0));
 	const	migrableVaults = useFilteredVaults(migrable, ({address}): boolean => (migrableBalance?.[toAddress(address)]?.raw)?.gt(0));
+	const	holdingsVaults = useFilteredVaults(vaults, ({address}): boolean => {
+		const	holding = balances?.[toAddress(address)];
+		const	hasValidBalance = (holding?.raw || ethers.constants.Zero).gt(0);
+		const	balanceValue = holding?.normalizedValue || 0;
+		if (shouldHideDust && balanceValue < 0.01) {
+			return false;
+		} else if (hasValidBalance) {
+			console.log('SHOULD BE DISPLAYED', address, balanceValue);
+			return true;
+		}
+		return false;
+	});
 
 
 	/* 🔵 - Yearn Finance **************************************************************************
@@ -94,24 +109,29 @@ function	Index(): ReactElement {
 	**	The possible lists are memoized to avoid unnecessary re-renders.
 	**********************************************************************************************/
 	const	vaultsToDisplay = useMemo((): TYearnVault[] => {
-		if (category === 'Curve Vaults') {
-			return curveVaults;
-		} else if (category === 'Balancer Vaults') {
-			return balancerVaults;
-		} else if (category === 'Stables Vaults') {
-			return stablesVaults;
-		} else if (category === 'Crypto Vaults') {
-			return cryptoVaults;
-		} else if (category === 'Holdings') {
-			return holdingsVaults;
-		} else if (category === 'Featured Vaults') {
-			const vaultList = [...Object.values(vaults || {}) as TYearnVault[]];
-			vaultList.sort((a, b): number => ((b.tvl.tvl || 0) * (b?.apy?.net_apy || 0)) - ((a.tvl.tvl || 0) * (a?.apy?.net_apy || 0)));
-			return vaultList.slice(0, 10);
-		}
-		return Object.values(vaults || {}) as TYearnVault[];
-	}, [category, curveVaults, stablesVaults, balancerVaults, cryptoVaults, vaults, holdingsVaults]);
+		let	_vaultList: TYearnVault[] = [...Object.values(vaults || {})] as TYearnVault[];
 
+		if (category === 'Curve Vaults') {
+			_vaultList = curveVaults;
+		} else if (category === 'Balancer Vaults') {
+			_vaultList = balancerVaults;
+		} else if (category === 'Stables Vaults') {
+			_vaultList = stablesVaults;
+		} else if (category === 'Crypto Vaults') {
+			_vaultList = cryptoVaults;
+		} else if (category === 'Holdings') {
+			_vaultList = holdingsVaults;
+		} else if (category === 'Featured Vaults') {
+			_vaultList.sort((a, b): number => ((b.tvl.tvl || 0) * (b?.apy?.net_apy || 0)) - ((a.tvl.tvl || 0) * (a?.apy?.net_apy || 0)));
+			_vaultList = _vaultList.slice(0, 10);
+		}
+
+		if (shouldHideLowTVLVaults && category !== 'Holdings') {
+			_vaultList = _vaultList.filter((vault): boolean => (vault?.tvl?.tvl || 0) > 10_000);
+		}
+
+		return _vaultList;
+	}, [vaults, category, shouldHideLowTVLVaults, curveVaults, balancerVaults, stablesVaults, cryptoVaults, holdingsVaults]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	**	Then, on the vaultsToDisplay list, we apply the search filter. The search filter is
@@ -129,14 +149,12 @@ function	Index(): ReactElement {
 		});
 	}, [vaultsToDisplay, searchValue]);
 
-
 	/* 🔵 - Yearn Finance **************************************************************************
 	**	Then, once we have reduced the list of vaults to display, we can sort them. The sorting
 	**	is done via a custom method that will sort the vaults based on the sortBy and
 	**	sortDirection values.
 	**********************************************************************************************/
 	const	sortedVaultsToDisplay = useSortVaults(searchedVaultsToDisplay, sortBy, sortDirection);
-
 	
 	/* 🔵 - Yearn Finance **************************************************************************
 	**	Callback method used to sort the vaults list.
@@ -154,9 +172,18 @@ function	Index(): ReactElement {
 	**	It contains either the list of vaults, is some are available, or a message to the user.
 	**********************************************************************************************/
 	const	VaultList = useMemo((): ReactNode => {
+		if (isLoadingMigrableList && category === 'Holdings') {
+			return (
+				<VaultsListEmpty
+					isLoading={isLoadingMigrableList}
+					sortedVaultsToDisplay={sortedVaultsToDisplay}
+					currentCategory={category} />
+			);
+		}
 		if (isLoadingVaultList || sortedVaultsToDisplay.length === 0) {
 			return (
 				<VaultsListEmpty
+					isLoading={isLoadingVaultList}
 					sortedVaultsToDisplay={sortedVaultsToDisplay}
 					currentCategory={category} />
 			);	
@@ -169,14 +196,17 @@ function	Index(): ReactElement {
 				return <VaultsListRow key={vault.address} currentVault={vault} />;
 			})
 		);
-	}, [category, sortedVaultsToDisplay, isLoadingVaultList]);
+	}, [isLoadingMigrableList, category, isLoadingVaultList, sortedVaultsToDisplay]);
 
 	return (
 		<section className={'mt-4 grid w-full grid-cols-12 gap-y-10 pb-10 md:mt-20 md:gap-x-10 md:gap-y-20'}>
 
 			<HeaderUserPosition />
 
-			<div className={'col-span-12 flex w-full flex-col bg-neutral-100'}>
+			<div className={'relative col-span-12 flex w-full flex-col bg-neutral-100'}>
+				<div className={'absolute top-8 right-8'}>
+					<VaultListOptions />
+				</div>
 				<ListHero
 					headLabel={category}
 					searchPlaceholder={'YFI Vault'}

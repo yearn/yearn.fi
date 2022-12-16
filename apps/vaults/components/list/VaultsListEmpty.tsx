@@ -1,16 +1,22 @@
 
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import CHAINS from '@yearn-finance/web-lib/utils/web3/chains';
-import {useYearn} from '@common/contexts/useYearn';
 
 import type {ReactElement} from 'react';
 import type {TYearnVault} from '@common/types/yearn';
 
-function	VaultsListEmpty({sortedVaultsToDisplay, currentCategory}: {sortedVaultsToDisplay: TYearnVault[], currentCategory: string}): ReactElement {
+function	VaultsListEmpty({
+	sortedVaultsToDisplay,
+	currentCategory,
+	isLoading
+}: {
+	sortedVaultsToDisplay: TYearnVault[],
+	currentCategory: string,
+	isLoading: boolean
+}): ReactElement {
 	const {safeChainID} = useChainID();
-	const {isLoadingVaultList} = useYearn();
 
-	if (isLoadingVaultList && sortedVaultsToDisplay.length === 0) {
+	if (isLoading && sortedVaultsToDisplay.length === 0) {
 		return (
 			<div className={'flex h-96 w-full flex-col items-center justify-center py-2 px-10'}>
 				<b className={'text-lg'}>{'Fetching Vaults'}</b>
@@ -20,7 +26,7 @@ function	VaultsListEmpty({sortedVaultsToDisplay, currentCategory}: {sortedVaults
 				</div>
 			</div>
 		);
-	} else if (!isLoadingVaultList && sortedVaultsToDisplay.length === 0 && currentCategory === 'Holdings') {
+	} else if (!isLoading && sortedVaultsToDisplay.length === 0 && currentCategory === 'Holdings') {
 		return (
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center py-2 px-10 md:w-3/4'}>
 				<b className={'text-center text-lg'}>{'Well this is awkward...'}</b>
@@ -29,7 +35,7 @@ function	VaultsListEmpty({sortedVaultsToDisplay, currentCategory}: {sortedVaults
 				</p>
 			</div>
 		);
-	} else if (!isLoadingVaultList && sortedVaultsToDisplay.length === 0 && safeChainID !== 1) {
+	} else if (!isLoading && sortedVaultsToDisplay.length === 0 && safeChainID !== 1) {
 		const	chainName = (CHAINS as any)[safeChainID]?.name || 'this network';
 		return (
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center py-2 px-10 md:w-3/4'}>
@@ -39,7 +45,7 @@ function	VaultsListEmpty({sortedVaultsToDisplay, currentCategory}: {sortedVaults
 				</p>
 			</div>
 		);
-	} else if (!isLoadingVaultList && sortedVaultsToDisplay.length === 0) {
+	} else if (!isLoading && sortedVaultsToDisplay.length === 0) {
 		return (
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center py-2 px-10 md:w-3/4'}>
 				<b className={'text-center text-lg'}>{'No data, reeeeeeeeeeee'}</b>
