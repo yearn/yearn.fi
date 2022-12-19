@@ -1,4 +1,4 @@
-import {quote as widoQuote} from 'wido';
+import {quote} from 'quote';
 
 import type {QuoteRequest as TWidoRequest, QuoteResult as TWidoResult} from 'wido';
 
@@ -21,9 +21,13 @@ type TPortalsResult = {
 
 export type TPortalsQuote = { req: { type: 'portals'; request: TPortalsRequest }; res: TPortalsResult };
 
+// TODO
+export type TCowQuote = { req: { type: 'cow'; request: unknown }; res: unknown };
+
 type TExternalService<T> =
     T extends 'wido' ? TWidoQuote :
     T extends 'portals' ? TPortalsQuote :
+    T extends 'cow' ? TCowQuote :
 	never;
 
 export async function useExternalQuote<T>({type, request}: TExternalService<T>['req']): Promise<TExternalService<T>['res']> {
@@ -32,13 +36,23 @@ export async function useExternalQuote<T>({type, request}: TExternalService<T>['
 		return widoQuote(request);
 	case 'portals':
 		return portalsQuote(request);
+	case 'cow':
+		return cowQuote(request);
 	default:
 		throw new Error(`Unknown service ${type}`);
 	}
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-async function portalsQuote(request: TPortalsRequest): Promise<TPortalsQuote['res']> {
+async function widoQuote(request: TWidoQuote['req']['request']): Promise<TWidoQuote['res']> {
+	return quote(request);
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars, unused-imports/no-unused-vars
+async function portalsQuote(_request: TPortalsQuote['req']['request']): Promise<TPortalsQuote['res']> {
 	throw new Error('Function not implemented.');
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars, unused-imports/no-unused-vars
+async function cowQuote(_request: TCowQuote['req']['request']): Promise<TCowQuote['res']> {
+	throw new Error('Function not implemented.');
+}
