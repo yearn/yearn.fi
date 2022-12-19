@@ -19,6 +19,7 @@ import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/tr
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
+import {useExternalServiceQuote} from '@common/hooks/useExternalQuote';
 import {approveERC20} from '@common/utils/actions/approveToken';
 import {deposit} from '@common/utils/actions/deposit';
 import {depositETH} from '@common/utils/actions/depositEth';
@@ -85,22 +86,35 @@ function	ActionButton({
 	const isPartnerAddressValid = useMemo((): boolean => !isZeroAddress(toAddress(networks[safeChainID]?.partnerContractAddress)), [networks, safeChainID]);
 	const isUsingPartnerContract = useMemo((): boolean => ((process?.env?.SHOULD_USE_PARTNER_CONTRACT || true) === true && isPartnerAddressValid), [isPartnerAddressValid]);
 
+
+	const	cowQuote = useExternalServiceQuote<'cowswap'>({
+		type: 'cowswap',
+		request: {
+			from: toAddress(address || ''),
+			sellToken: toAddress(selectedOptionFrom?.value),
+			buyToken: toAddress(selectedOptionTo?.value),
+			sellAmount: amount.raw
+		}
+	});
+
+	console.log(cowQuote);
+
 	/* 🔵 - Yearn Finance **************************************************************************
 	** This memo will be used to determine the spender address for the transactions based on the
 	** from and to options selected:
 	** - By default, the spender is the vault itself, aka a direct deposit
 	** - If we are depositing and using the partner contract, spender is the partner contract
-	** - If we are not depositing and we want to withdraw eth, spender is the eth zapper contract	
+	** - If we are not depositing and we want to withdraw eth, spender is the eth zapper contract
 	**********************************************************************************************/
 	const spender = useMemo((): TAddress => {
 		let	spender = toAddress(selectedOptionTo?.value || ethers.constants.AddressZero);
-		if (isDepositing && isUsingPartnerContract) { 
+		if (isDepositing && isUsingPartnerContract) {
 			spender = toAddress(networks[safeChainID]?.partnerContractAddress);
 		} else if (!isDepositing && isOutputTokenEth) {
 			spender = toAddress(getEthZapperContract(chainID));
 		}
 		return spender;
-	}, [chainID, isDepositing, isOutputTokenEth, isUsingPartnerContract, networks, safeChainID, selectedOptionTo?.value]);	
+	}, [chainID, isDepositing, isOutputTokenEth, isUsingPartnerContract, networks, safeChainID, selectedOptionTo?.value]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** Perform a smartContract call to the deposit contract to get the allowance for the deposit
@@ -194,7 +208,7 @@ function	ActionButton({
 		).onSuccess(async (): Promise<void> => {
 			await onSuccess();
 		}).perform();
-		
+
 	}
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -329,7 +343,7 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 		const	userBalance = balances?.[toAddress(selectedOptionFrom?.value)]?.raw || ethers.constants.Zero;
 		if (userBalance.gt(vaultDepositLimit) && isDepositing) {
 			return (toNormalizedBN(vaultDepositLimit, currentVault.token.decimals));
-		} 
+		}
 		return (toNormalizedBN(userBalance, currentVault.token.decimals));
 	}, [balances, balancesNonce, currentVault.details.depositLimit, currentVault.token.decimals, isDepositing, selectedOptionFrom?.value]);
 
@@ -401,7 +415,7 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 		if (!_inputToken || !_outputToken) {
 			return ({raw: ethers.constants.Zero, normalized: 0});
 		}
-		
+
 		const	currentProvider = provider || getProvider(chainID);
 		const	contract = new ethers.Contract(
 			toAddress(isDepositing ? _outputToken.value : _inputToken.value),
@@ -416,18 +430,18 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 					raw: expectedOutFetched,
 					normalized: formatToNormalizedValue(expectedOutFetched || ethers.constants.Zero, _outputToken?.decimals || currentVault?.decimals)
 				});
-			} 
+			}
 			const	expectedOutFetched = _amountIn.mul(pps).div(formatBN(10).pow(_outputToken?.decimals));
 			return ({
 				raw: expectedOutFetched,
 				normalized: formatToNormalizedValue(expectedOutFetched || ethers.constants.Zero, _outputToken?.decimals || currentVault?.decimals)
 			});
-			
+
 		} catch (error) {
 			console.error(error);
 			return ({raw: ethers.constants.Zero, normalized: 0});
 		}
-		
+
 	}, [provider, chainID, currentVault?.decimals, isDepositing]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
