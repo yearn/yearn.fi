@@ -2,11 +2,11 @@ import React, {Fragment, useCallback, useEffect, useMemo, useState} from 'react'
 import {ethers} from 'ethers';
 import VaultListOptions from '@vaults/components/list/VaultListOptions';
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
-import {VaultsListMigrableRow} from '@vaults/components/list/VaultsListMigrableRow';
+import {VaultsListMigratableRow} from '@vaults/components/list/VaultsListMigratableRow';
 import {VaultsListRow} from '@vaults/components/list/VaultsListRow';
 import {useAppSettings} from '@vaults/contexts/useAppSettings';
-import {useMigrable} from '@vaults/contexts/useMigrable';
-import {useMigrableWallet} from '@vaults/contexts/useMigrableWallet';
+import {useMigratable} from '@vaults/contexts/useMigratable';
+import {useMigratableWallet} from '@vaults/contexts/useMigratableWallet';
 import {useFilteredVaults} from '@vaults/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import Wrapper from '@vaults/Wrapper';
@@ -61,8 +61,8 @@ function	HeaderUserPosition(): ReactElement {
 function	Index(): ReactElement {
 	const	{balances} = useWallet();
 	const	{vaults, isLoadingVaultList} = useYearn();
-	const	{migrable, isLoadingMigrableList} = useMigrable();
-	const	{balances: migrableBalance} = useMigrableWallet();
+	const	{migratable, isLoadingMigratableList} = useMigratable();
+	const	{balances: migratableBalance} = useMigratableWallet();
 	const	{safeChainID} = useChainID();
 	const	[sortBy, set_sortBy] = useState<TPossibleSortBy>('apy');
 	const	[sortDirection, set_sortDirection] = useState<TPossibleSortDirection>('');
@@ -76,7 +76,7 @@ function	Index(): ReactElement {
 	const	stablesVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Stablecoin');
 	const	balancerVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Balancer');
 	const	cryptoVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Volatile');
-	const	migrableVaults = useFilteredVaults(migrable, ({address}): boolean => (migrableBalance?.[toAddress(address)]?.raw)?.gt(0));
+	const	migratableVaults = useFilteredVaults(migratable, ({address}): boolean => (migratableBalance?.[toAddress(address)]?.raw)?.gt(0));
 	const	holdingsVaults = useFilteredVaults(vaults, ({address}): boolean => {
 		const	holding = balances?.[toAddress(address)];
 		const	hasValidBalance = (holding?.raw || ethers.constants.Zero).gt(0);
@@ -170,10 +170,10 @@ function	Index(): ReactElement {
 	**	It contains either the list of vaults, is some are available, or a message to the user.
 	**********************************************************************************************/
 	const	VaultList = useMemo((): ReactNode => {
-		if (isLoadingMigrableList && category === 'Holdings') {
+		if (isLoadingMigratableList && category === 'Holdings') {
 			return (
 				<VaultsListEmpty
-					isLoading={isLoadingMigrableList}
+					isLoading={isLoadingMigratableList}
 					sortedVaultsToDisplay={sortedVaultsToDisplay}
 					currentCategory={category} />
 			);
@@ -194,7 +194,7 @@ function	Index(): ReactElement {
 				return <VaultsListRow key={vault.address} currentVault={vault} />;
 			})
 		);
-	}, [isLoadingMigrableList, category, isLoadingVaultList, sortedVaultsToDisplay]);
+	}, [isLoadingMigratableList, category, isLoadingVaultList, sortedVaultsToDisplay]);
 
 	return (
 		<section className={'mt-4 grid w-full grid-cols-12 gap-y-10 pb-10 md:mt-20 md:gap-x-10 md:gap-y-20'}>
@@ -225,7 +225,7 @@ function	Index(): ReactElement {
 								node: (
 									<Fragment>
 										{'Holdings'}
-										<span className={`absolute -top-1 -right-1 flex h-2 w-2 ${category === 'Holdings' || migrableVaults?.length === 0 ? 'opacity-0' : 'opacity-100'}`}>
+										<span className={`absolute -top-1 -right-1 flex h-2 w-2 ${category === 'Holdings' || migratableVaults?.length === 0 ? 'opacity-0' : 'opacity-100'}`}>
 											<span className={'absolute inline-flex h-full w-full animate-ping rounded-full bg-pink-600 opacity-75'}></span>
 											<span className={'relative inline-flex h-2 w-2 rounded-full bg-pink-500'}></span>
 										</span>
@@ -238,14 +238,14 @@ function	Index(): ReactElement {
 					searchValue={searchValue}
 					set_searchValue={set_searchValue} />
 
-				{category === 'Holdings' && migrableVaults?.length > 0 ? (
+				{category === 'Holdings' && migratableVaults?.length > 0 ? (
 					<div className={'my-4'}>
-						{migrableVaults.map((vault): ReactNode => {
+						{migratableVaults.map((vault): ReactNode => {
 							if (!vault) {
 								return (null);
 							}
 							return (
-								<VaultsListMigrableRow key={vault.address} currentVault={vault} />
+								<VaultsListMigratableRow key={vault.address} currentVault={vault} />
 							);
 						})}
 					</div>

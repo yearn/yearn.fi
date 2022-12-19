@@ -1,8 +1,8 @@
 import React from 'react';
 import meta from 'public/apps/vaults-manifest.json';
 import {AppSettingsContextApp} from '@vaults/contexts/useAppSettings';
-import {MigrableContextApp} from '@vaults/contexts/useMigrable';
-import {MigrableWalletContextApp} from '@vaults/contexts/useMigrableWallet';
+import {MigratableContextApp} from '@vaults/contexts/useMigratable';
+import {MigratableWalletContextApp} from '@vaults/contexts/useMigratableWallet';
 import Meta from '@common/components/Meta';
 
 import type {ReactElement} from 'react';
@@ -12,11 +12,11 @@ export default function Wrapper({children}: {children: ReactElement}): ReactElem
 		<>
 			<Meta meta={meta} />
 			<AppSettingsContextApp>
-				<MigrableContextApp>
-					<MigrableWalletContextApp>
+				<MigratableContextApp>
+					<MigratableWalletContextApp>
 						{children}
-					</MigrableWalletContextApp>
-				</MigrableContextApp>
+					</MigratableWalletContextApp>
+				</MigratableContextApp>
 			</AppSettingsContextApp>
 		</>
 	);

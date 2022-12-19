@@ -1,6 +1,6 @@
 import React, {useMemo, useState} from 'react';
 import {ethers} from 'ethers';
-import {useMigrableWallet} from '@vaults/contexts/useMigrableWallet';
+import {useMigratableWallet} from '@vaults/contexts/useMigratableWallet';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
@@ -16,9 +16,9 @@ import {migrateShares} from '@common/utils/actions/migrateShares';
 import type {ReactElement} from 'react';
 import type {TYearnVault} from '@common/types/yearn';
 
-function	VaultsListMigrableRow({currentVault}: {currentVault: TYearnVault}): ReactElement {
+function	VaultsListMigratableRow({currentVault}: {currentVault: TYearnVault}): ReactElement {
 	const {isActive, provider} = useWeb3();
-	const {balances, refresh} = useMigrableWallet();
+	const {balances, refresh} = useMigratableWallet();
 	const {safeChainID} = useChainID();
 	const [txStatus, set_txStatus] = useState(defaultTxStatus);
 
@@ -90,4 +90,4 @@ function	VaultsListMigrableRow({currentVault}: {currentVault: TYearnVault}): Rea
 	);
 }
 
-export {VaultsListMigrableRow};
+export {VaultsListMigratableRow};
