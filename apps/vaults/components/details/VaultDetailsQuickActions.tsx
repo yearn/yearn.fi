@@ -19,6 +19,7 @@ import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/tr
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
+import {useExternalServiceQuote} from '@common/hooks/useExternalQuote';
 import {approveERC20} from '@common/utils/actions/approveToken';
 import {deposit} from '@common/utils/actions/deposit';
 import {depositETH} from '@common/utils/actions/depositEth';
@@ -84,6 +85,19 @@ function	ActionButton({
 	const isOutputTokenEth = selectedOptionTo?.value === ETH_TOKEN_ADDRESS;
 	const isPartnerAddressValid = useMemo((): boolean => !isZeroAddress(toAddress(networks[safeChainID]?.partnerContractAddress)), [networks, safeChainID]);
 	const isUsingPartnerContract = useMemo((): boolean => ((process?.env?.SHOULD_USE_PARTNER_CONTRACT || true) === true && isPartnerAddressValid), [isPartnerAddressValid]);
+
+
+	const	cowQuote = useExternalServiceQuote<'cowswap'>({
+		type: 'cowswap',
+		request: {
+			from: toAddress(address || ''),
+			sellToken: toAddress(selectedOptionFrom?.value),
+			buyToken: toAddress(selectedOptionTo?.value),
+			sellAmount: amount.raw
+		}
+	});
+
+	console.log(cowQuote);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** This memo will be used to determine the spender address for the transactions based on the
@@ -328,10 +342,9 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 		const	vaultDepositLimit = formatBN(currentVault.details.depositLimit) || ethers.constants.Zero;
 		const	userBalance = balances?.[toAddress(selectedOptionFrom?.value)]?.raw || ethers.constants.Zero;
 		if (userBalance.gt(vaultDepositLimit) && isDepositing) {
-			return (toNormalizedBN(vaultDepositLimit.toString(), currentVault.token.decimals));
+			return (toNormalizedBN(vaultDepositLimit, currentVault.token.decimals));
 		}
-		return (toNormalizedBN(userBalance.toString(), currentVault.token.decimals));
-
+		return (toNormalizedBN(userBalance, currentVault.token.decimals));
 	}, [balances, balancesNonce, currentVault.details.depositLimit, currentVault.token.decimals, isDepositing, selectedOptionFrom?.value]);
 
 

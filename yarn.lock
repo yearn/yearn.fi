@@ -1342,6 +1342,11 @@
     "@ethersproject/properties" "^5.7.0"
     "@ethersproject/strings" "^5.7.0"
 
+"@gnosis.pm/gp-v2-contracts@^1.1.2":
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/@gnosis.pm/gp-v2-contracts/-/gp-v2-contracts-1.1.2.tgz#0453bb097377dc63cf46ee195f7e521d429f7e22"
+  integrity sha512-BvZMNS+fwITb+qs+trs2fyvYksa6MPjjLze9AOXPnvcKVYFEGwG6cfsecBswEMo+xevLIQNDyF7HZRhN7ply8w==
+
 "@gnosis.pm/safe-apps-provider@^0.11.3":
   version "0.11.3"
   resolved "https://registry.yarnpkg.com/@gnosis.pm/safe-apps-provider/-/safe-apps-provider-0.11.3.tgz#9e1ec2fb69a7fae8127631330f630662bd07a580"
