@@ -31,6 +31,10 @@ type TExternalService<T> =
 	never;
 
 export async function useExternalQuote<T>({type, request}: TExternalService<T>['req']): Promise<TExternalService<T>['res']> {
+	const {quote: widoQuote} = useWidoQuote();
+	const {quote: portalsQuote} = usePortalsQuote();
+	const {quote: cowQuote} = useCowQuote();
+
 	switch (type) {
 	case 'wido':
 		return widoQuote(request);
@@ -43,16 +47,16 @@ export async function useExternalQuote<T>({type, request}: TExternalService<T>['
 	}
 }
 
-async function widoQuote(request: TWidoQuote['req']['request']): Promise<TWidoQuote['res']> {
-	return quote(request);
+function useWidoQuote(): { quote: (req: TWidoQuote['req']['request']) => Promise<TWidoQuote['res']>} {
+	return {quote: async (request): Promise<TWidoResult> => quote(request)};
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars, unused-imports/no-unused-vars
-async function portalsQuote(_request: TPortalsQuote['req']['request']): Promise<TPortalsQuote['res']> {
+function usePortalsQuote(): { quote: (req: TPortalsQuote['req']['request']) => Promise<TPortalsQuote['res']>} {
 	throw new Error('Function not implemented.');
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars, unused-imports/no-unused-vars
-async function cowQuote(_request: TCowQuote['req']['request']): Promise<TCowQuote['res']> {
+function useCowQuote(): { quote: (req: TCowQuote['req']['request']) => Promise<TCowQuote['res']>} {
 	throw new Error('Function not implemented.');
 }
