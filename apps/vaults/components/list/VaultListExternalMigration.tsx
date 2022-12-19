@@ -29,13 +29,13 @@ import type {TMigrationTable} from '@vaults/utils/migrationTable';
 function	VaultListExternalMigrationRow({element}: {element: TMigrationTable}): ReactElement {
 	const {vaults} = useYearn();
 	const {isActive, provider} = useWeb3();
-	const {balances, refresh: refreshMigrableFromDefi} = useWalletForExternalMigrations();
+	const {balances, refresh: refreshExternalMigrations} = useWalletForExternalMigrations();
 	const {refresh} = useWallet();
 	const {safeChainID} = useChainID();
 	const [txStatus, set_txStatus] = useState(defaultTxStatus);
 
 	const	yearnVault = useFindVault(vaults, ({token}): boolean => toAddress(token.address) === toAddress(element.underlyingToken));
-	const	balance = useBalance(element.migrableToken, balances);
+	const	balance = useBalance(element.tokenToMigrate, balances);
 	const	oldAPY = element?.sourceAPY || 0;
 	const	newAPY = yearnVault?.apy?.net_apy || 0;
 
@@ -47,7 +47,7 @@ function	VaultListExternalMigrationRow({element}: {element: TMigrationTable}): R
 	async function onMigrateFlow(): Promise<void> {
 		const	isApproved = await isApprovedERC20(
 			provider as ethers.providers.Web3Provider, 
-			toAddress(element.migrableToken), //from
+			toAddress(element.tokenToMigrate), //from
 			toAddress(element.zapVia), //migrator
 			balance.raw
 		);
@@ -56,18 +56,18 @@ function	VaultListExternalMigrationRow({element}: {element: TMigrationTable}): R
 			new Transaction(provider, depositVia, set_txStatus).populate(
 				toAddress(element.zapVia),
 				element.service,
-				toAddress(element.migrableToken)
+				toAddress(element.tokenToMigrate)
 				// toAddress(selectedOptionTo?.value),
 				// amount.raw
 			).onSuccess(async (): Promise<void> => {
 				await Promise.all([
 					refresh(),
-					refreshMigrableFromDefi()
+					refreshExternalMigrations()
 				]);
 			}).perform();
 		} else {
 			new Transaction(provider, approveERC20, set_txStatus).populate(
-				toAddress(element.migrableToken), //from
+				toAddress(element.tokenToMigrate), //from
 				toAddress(element.zapVia), //migrator
 				ethers.constants.MaxUint256 //amount
 			).onSuccess(async (): Promise<void> => {
@@ -155,7 +155,7 @@ function	VaultListExternalMigration(): ReactElement {
 		
 		Object.values(migrationTable || {}).forEach((possibleBowswapMigrations: TMigrationTable[]): void => {
 			for (const element of possibleBowswapMigrations) {
-				if ((balances[toAddress(element.migrableToken)]?.raw || ethers.constants.Zero).gt(0)) {
+				if ((balances[toAddress(element.tokenToMigrate)]?.raw || ethers.constants.Zero).gt(0)) {
 					migration.push(element);
 				}
 			}
@@ -173,7 +173,7 @@ function	VaultListExternalMigration(): ReactElement {
 				service: 3,
 				symbol: bVault.name,
 				zapVia: toAddress(ethers.constants.AddressZero),
-				migrableToken: toAddress(bVault.tokenAddress),
+				tokenToMigrate: toAddress(bVault.tokenAddress),
 				underlyingToken: toAddress(bVault.tokenAddress),
 				sourceAPY: bVault.apy
 			};
@@ -213,12 +213,12 @@ function	VaultListExternalMigration(): ReactElement {
 						<Fragment>
 							{possibleBowswapMigrations.map((element: TMigrationTable): ReactElement => (
 								<VaultListExternalMigrationRow
-									key={`${element.migrableToken}_${element.service}`}
+									key={`${element.tokenToMigrate}_${element.service}`}
 									element={element} />
 							))}
 							{possibleBeefyMigrations.map((element: TMigrationTable): ReactElement => (
 								<VaultListExternalMigrationRow
-									key={`${element.migrableToken}_${element.service}`}
+									key={`${element.tokenToMigrate}_${element.service}`}
 									element={element} />
 							))}
 						</Fragment>

@@ -44,7 +44,7 @@ export const WalletForExternalMigrationsApp = memo(function WalletForExternalMig
 		const	tokens: TUseBalancesTokens[] = [];
 		Object.values(migrationTable || {}).forEach((possibleMigrations: TMigrationTable[]): void => {
 			for (const element of possibleMigrations) {
-				tokens.push({token: element.migrableToken});
+				tokens.push({token: element.tokenToMigrate});
 			}
 		});
 		return tokens;
