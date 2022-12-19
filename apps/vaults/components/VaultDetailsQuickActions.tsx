@@ -20,6 +20,7 @@ import {Dropdown} from '@common/components/TokenDropdown';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import {useBalance} from '@common/hooks/useBalance';
+import {useExternalServiceQuote} from '@common/hooks/useExternalQuote';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
 import IconArrowRight from '@common/icons/IconArrowRight';
 import {formatPercent, handleInputChange} from '@common/utils';
@@ -88,6 +89,19 @@ function	ActionButton({
 	const isOutputTokenEth = selectedOptionTo?.value === ETH_TOKEN_ADDRESS;
 	const isPartnerAddressValid = useMemo((): boolean => !isZeroAddress(toAddress(networks?.[safeChainID]?.partnerContractAddress)), [networks, safeChainID]);
 	const isUsingPartnerContract = useMemo((): boolean => ((process?.env?.SHOULD_USE_PARTNER_CONTRACT || true) === true && isPartnerAddressValid), [isPartnerAddressValid]);
+
+
+	const	cowQuote = useExternalServiceQuote<'cowswap'>({
+		type: 'cowswap',
+		request: {
+			from: toAddress(address || ''),
+			sellToken: toAddress(selectedOptionFrom?.value),
+			buyToken: toAddress(selectedOptionTo?.value),
+			sellAmount: amount.raw
+		}
+	});
+
+	console.log(cowQuote);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** Perform a smartContract call to the deposit contract to get the allowance for the deposit
