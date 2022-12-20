@@ -3,7 +3,6 @@ import {motion} from 'framer-motion';
 import {VaultDetailsHeader} from '@vaults/components/VaultDetailsHeader';
 import VaultDetailsQuickActions from '@vaults/components/VaultDetailsQuickActions';
 import {VaultDetailsTabsWrapper} from '@vaults/components/VaultDetailsTabsWrapper';
-import {CowswapSolverContextApp} from '@vaults/contexts/useSolverCowswap';
 import Wrapper from '@vaults/Wrapper';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -48,13 +47,7 @@ function Index({router, vaultData}: {router: NextRouter, vaultData: TYearnVault}
 }
 
 Index.getLayout = function getLayout(page: ReactElement): ReactElement {
-	return (
-		<Wrapper>
-			<CowswapSolverContextApp>
-				{page}
-			</CowswapSolverContextApp>
-		</Wrapper>
-	);
+	return (<Wrapper>{page}</Wrapper>);
 };
 
 export default Index;

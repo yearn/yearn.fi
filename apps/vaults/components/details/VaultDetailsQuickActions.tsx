@@ -1,10 +1,10 @@
 import React, {createContext, useCallback, useContext, useEffect, useMemo, useState} from 'react';
 import Link from 'next/link';
 import {ethers} from 'ethers';
-import useCowswap from '@vaults/contexts/useSolverCowswap';
+import {useCowswap} from '@vaults/hooks/useSolverCowswap';
 import {setZapOption} from '@vaults/utils/zapOptions';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
-import useWeb3 from '@yearn-finance/web-lib/contexts/useWeb3';
+import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
@@ -32,6 +32,85 @@ export enum	Solvers {
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const	DEBUG_WITH_COWSWAP = true;
 
+export type TWithSolver = {
+	currentSolver: Solvers;
+	expectedOut: TNormalizedBN;
+	isLoadingExpectedOut: boolean;
+	approve: (...props: never) => Promise<boolean>;
+	execute: (...props: never) => Promise<boolean>;
+}
+const	DefaultWithSolverContext: TWithSolver = {
+	currentSolver: Solvers.VANILLA,
+	expectedOut: {raw: ethers.constants.Zero, normalized: 0},
+	isLoadingExpectedOut: false,
+	approve: async (): Promise<boolean> => Promise.resolve(false),
+	execute: async (): Promise<boolean> => Promise.resolve(false)
+};
+const	WithSolverContext = createContext<TWithSolver>(DefaultWithSolverContext);
+function	WithSolver({children, solver}: {children: React.ReactElement, solver: Solvers}): React.ReactElement {
+	const {address} = useWeb3();
+	const {selectedOptionFrom, selectedOptionTo, amount} = useQuickAction();
+	const {quote, approve, execute, initCowswap} = useCowswap();
+
+	useEffect((): void => {
+		if (solver === Solvers.COWSWAP) {
+			console.warn('hwew');
+			initCowswap({
+				from: toAddress(address || ''),
+				sellToken: toAddress(selectedOptionFrom?.value),
+				buyToken: toAddress(selectedOptionTo?.value),
+				sellAmount: amount.raw,
+				buyTokenDecimals: Number(selectedOptionTo?.decimals || 18),
+				sellTokenDecimals: Number(selectedOptionFrom?.decimals || 18)
+			});
+		}
+	}, [solver, initCowswap, address, selectedOptionFrom?.value, selectedOptionFrom?.decimals, selectedOptionTo?.value, selectedOptionTo?.decimals, amount.raw]);
+
+	const expectedOut = useMemo((): TNormalizedBN => {
+		if (!selectedOptionTo || !selectedOptionFrom || !amount.raw) {
+			return {raw: ethers.constants.Zero, normalized: 0};
+		}
+		if (solver === Solvers.COWSWAP) {
+			return ({
+				raw: formatBN(quote?.result?.quote?.buyAmount || ethers.constants.Zero),
+				normalized: formatBigNumberAsAmount(formatBN(quote?.result?.quote?.buyAmount || 0), selectedOptionTo?.decimals)
+			});
+		}
+		return {raw: ethers.constants.Zero, normalized: 0};
+	}, [amount.raw, quote?.result?.quote?.buyAmount, selectedOptionFrom, selectedOptionTo, solver]);
+
+	const	contextValue = useMemo((): TWithSolver => ({
+		currentSolver: solver,
+		expectedOut,
+		isLoadingExpectedOut: quote?.isLoading || false,
+		approve,
+		execute
+	}), [approve, execute, expectedOut, quote?.isLoading, solver]);
+
+	switch (solver) {
+	case Solvers.COWSWAP:
+		return (
+			<WithSolverContext.Provider value={contextValue}>
+				{children}
+			</WithSolverContext.Provider>
+		);
+	default:
+		return children;
+	}
+}
+export const useSolver = (): TWithSolver => useContext(WithSolverContext);
+
+
+
+
+
+
+///////////////////
+
+
+
+
+
 type	TQuickActionContext = {
 	currentVault: TYearnVault;
 	possibleOptionsFrom: TDropdownOption[];
@@ -44,9 +123,7 @@ type	TQuickActionContext = {
 	onUpdateSelectedOptionTo: (option: TDropdownOption) => void;
 	onSwitchSelectedOptions: () => void;
 	isDepositing: boolean;
-	isLoadingExpectedOut: boolean;
 	maxDepositPossible: TNormalizedBN;
-	expectedOut: TNormalizedBN;
 	currentSolver: Solvers;
 }
 const	DefaultQuickActionContext: TQuickActionContext = {
@@ -61,14 +138,11 @@ const	DefaultQuickActionContext: TQuickActionContext = {
 	onUpdateSelectedOptionTo: (): void => undefined,
 	onSwitchSelectedOptions: (): void => undefined,
 	isDepositing: true,
-	isLoadingExpectedOut: false,
 	maxDepositPossible: {raw: ethers.constants.Zero, normalized: 0},
-	expectedOut: {raw: ethers.constants.Zero, normalized: 0},
 	currentSolver: Solvers.VANILLA
 };
 const	QuickActionContext = createContext<TQuickActionContext>(DefaultQuickActionContext);
 export const QuickActionContextComponent = ({currentVault}: {currentVault: TYearnVault}): React.ReactElement => {
-	const {address} = useWeb3();
 	const {balances} = useWallet();
 	const {safeChainID} = useChainID();
 	const {networks} = useSettings();
@@ -79,7 +153,6 @@ export const QuickActionContextComponent = ({currentVault}: {currentVault: TYear
 	const [selectedOptionTo, set_selectedOptionTo] = useState<TDropdownOption | undefined>();
 	const [amount, set_amount] = useState<TNormalizedBN>({raw: ethers.constants.Zero, normalized: 0});
 
-	const	{quote, initCowswap} = useCowswap();
 
 
 	const isDepositing = useMemo((): boolean => (
@@ -112,14 +185,6 @@ export const QuickActionContextComponent = ({currentVault}: {currentVault: TYear
 
 	const currentSolver = useMemo((): Solvers => {
 		if (DEBUG_WITH_COWSWAP) {
-			initCowswap({
-				from: toAddress(address || ''),
-				sellToken: toAddress(selectedOptionFrom?.value),
-				buyToken: toAddress(selectedOptionTo?.value),
-				sellAmount: amount.raw,
-				buyTokenDecimals: Number(selectedOptionTo?.decimals || 18),
-				sellTokenDecimals: Number(selectedOptionFrom?.decimals || 18)
-			});
 			return Solvers.COWSWAP;
 		}
 
@@ -131,7 +196,7 @@ export const QuickActionContextComponent = ({currentVault}: {currentVault: TYear
 			return Solvers.PARTNER_CONTRACT;
 		} 
 		return Solvers.VANILLA;
-	}, [address, amount.raw, initCowswap, isDepositing, isUsingPartnerContract, selectedOptionFrom?.decimals, selectedOptionFrom?.value, selectedOptionTo?.decimals, selectedOptionTo?.value]);
+	}, [isDepositing, isUsingPartnerContract, selectedOptionFrom?.value, selectedOptionTo?.value]);
 
 
 	const onSwitchSelectedOptions = useCallback((): void => {
@@ -208,20 +273,6 @@ export const QuickActionContextComponent = ({currentVault}: {currentVault: TYear
 		}
 	}, [selectedOptionFrom, selectedOptionTo, currentVault, safeChainID]);
 	
-	const expectedOut = useMemo((): TNormalizedBN => {
-		console.warn({amount: quote?.result?.quote?.buyAmount});
-		if (!selectedOptionTo || !selectedOptionFrom || !amount.raw) {
-			return {raw: ethers.constants.Zero, normalized: 0};
-		}
-		if (DEBUG_WITH_COWSWAP) {
-			return ({
-				raw: formatBN(quote?.result?.quote?.buyAmount || ethers.constants.Zero),
-				normalized: formatBigNumberAsAmount(formatBN(quote?.result?.quote?.buyAmount || 0), selectedOptionTo?.decimals)
-			});
-		}
-		return {raw: ethers.constants.Zero, normalized: 0};
-	}, [amount.raw, quote?.result?.quote?.buyAmount, selectedOptionFrom, selectedOptionTo]);
-
 	/* 🔵 - Yearn Finance ******************************************************
 	**	Setup and render the Context provider to use in the app.
 	***************************************************************************/
@@ -237,11 +288,9 @@ export const QuickActionContextComponent = ({currentVault}: {currentVault: TYear
 		onUpdateSelectedOptionTo: set_selectedOptionTo,
 		onSwitchSelectedOptions: onSwitchSelectedOptions,
 		isDepositing,
-		isLoadingExpectedOut: quote?.isLoading || false,
 		maxDepositPossible,
-		expectedOut,
 		currentSolver
-	}), [currentVault, possibleOptionsFrom, possibleOptionsTo, selectedOptionFrom, selectedOptionTo, amount, onSwitchSelectedOptions, isDepositing, maxDepositPossible, expectedOut, currentSolver, quote?.isLoading]);
+	}), [currentVault, possibleOptionsFrom, possibleOptionsTo, selectedOptionFrom, selectedOptionTo, amount, onSwitchSelectedOptions, isDepositing, maxDepositPossible, currentSolver]);
 
 	return (
 		<QuickActionContext.Provider value={contextValue}>
@@ -252,20 +301,23 @@ export const QuickActionContextComponent = ({currentVault}: {currentVault: TYear
 					</p>
 				</Link>
 			</nav>
-			<div
-				aria-label={'Quick Deposit'}
-				className={'col-span-12 mb-4 flex flex-col space-x-0 space-y-2 bg-neutral-200 p-4 md:flex-row md:space-x-4 md:space-y-0 md:p-8'}>
-				<VaultDetailsQuickActionsFrom />
-				<VaultDetailsQuickActionsSwitch />
-				<VaultDetailsQuickActionsTo />
-				<div className={'w-full space-y-0 md:w-42 md:min-w-42 md:space-y-2'}>
-					<label className={'hidden text-base md:inline'}>&nbsp;</label>
-					<div>
-						<VaultDetailsQuickActionsButtons />
+
+			<WithSolver solver={currentSolver}> 
+				<div
+					aria-label={'Quick Deposit'}
+					className={'col-span-12 mb-4 flex flex-col space-x-0 space-y-2 bg-neutral-200 p-4 md:flex-row md:space-x-4 md:space-y-0 md:p-8'}>
+					<VaultDetailsQuickActionsFrom />
+					<VaultDetailsQuickActionsSwitch />
+					<VaultDetailsQuickActionsTo />
+					<div className={'w-full space-y-0 md:w-42 md:min-w-42 md:space-y-2'}>
+						<label className={'hidden text-base md:inline'}>&nbsp;</label>
+						<div>
+							<VaultDetailsQuickActionsButtons />
+						</div>
+						<legend className={'hidden text-xs md:inline'}>&nbsp;</legend>
 					</div>
-					<legend className={'hidden text-xs md:inline'}>&nbsp;</legend>
 				</div>
-			</div>
+			</WithSolver>
 		</QuickActionContext.Provider>
 	);
 };
