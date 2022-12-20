@@ -11,7 +11,7 @@ import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/tr
 import {useYearn} from '@common/contexts/useYearn';
 import {useAddToken} from '@common/hooks/useAddToken';
 import {useDismissToasts} from '@common/hooks/useDismissToasts';
-import {formatPercent, getAmountWithSlippage, getVaultAPY} from '@common/utils';
+import {DefaultTNormalizedBN, formatPercent, getAmountWithSlippage, getVaultAPY} from '@common/utils';
 import {approveERC20} from '@common/utils/actions/approveToken';
 import {deposit} from '@common/utils/actions/deposit';
 import {useExtendedWallet} from '@yCRV/contexts/useExtendedWallet';
@@ -45,7 +45,7 @@ type TCardTransactor = {
 const		CardTransactorContext = createContext<TCardTransactor>({
 	selectedOptionFrom: LEGACY_OPTIONS_FROM[0],
 	selectedOptionTo: LEGACY_OPTIONS_TO[0],
-	amount: {raw: ethers.constants.Zero, normalized: 0},
+	amount: DefaultTNormalizedBN,
 	txStatusApprove: defaultTxStatus,
 	txStatusZap: defaultTxStatus,
 	allowanceFrom: ethers.constants.Zero,
@@ -74,7 +74,7 @@ function	CardTransactorContextApp({
 	const	[txStatusZap, set_txStatusZap] = useState(defaultTxStatus);
 	const	[selectedOptionFrom, set_selectedOptionFrom] = useState(defaultOptionFrom);
 	const	[selectedOptionTo, set_selectedOptionTo] = useState(defaultOptionTo);
-	const	[amount, set_amount] = useState<TNormalizedBN>({raw: ethers.constants.Zero, normalized: 0});
+	const	[amount, set_amount] = useState<TNormalizedBN>(DefaultTNormalizedBN);
 	const	[hasTypedSomething, set_hasTypedSomething] = useState(false);
 	const	addToken = useAddToken();
 	const 	{dismissAllToasts} = useDismissToasts();
@@ -92,7 +92,7 @@ function	CardTransactorContextApp({
 			});
 		} else if (!isActive && amount.raw.gt(0)) {
 			performBatchedUpdates((): void => {
-				set_amount({raw: ethers.constants.Zero, normalized: 0});
+				set_amount(DefaultTNormalizedBN);
 				set_hasTypedSomething(false);
 			});
 		}
@@ -218,7 +218,7 @@ function	CardTransactorContextApp({
 				toAddress(selectedOptionTo.value), //destination vault
 				amount.raw //amount_in
 			).onSuccess(async (): Promise<void> => {
-				set_amount({raw: ethers.constants.Zero, normalized: 0});
+				set_amount(DefaultTNormalizedBN);
 				await refresh();
 				toast(addToMetamaskToast);
 			}).perform();
@@ -231,7 +231,7 @@ function	CardTransactorContextApp({
 				expectedOut, //_min_out
 				slippage
 			).onSuccess(async (): Promise<void> => {
-				set_amount({raw: ethers.constants.Zero, normalized: 0});
+				set_amount(DefaultTNormalizedBN);
 				await refresh();
 				toast(addToMetamaskToast);
 			}).perform();

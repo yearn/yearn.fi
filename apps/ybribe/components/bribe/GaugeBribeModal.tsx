@@ -13,7 +13,7 @@ import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
-import {handleInputChange} from '@common/utils';
+import {DefaultTNormalizedBN, handleInputChange} from '@common/utils';
 import {approveERC20} from '@common/utils/actions/approveToken';
 import {useBribes} from '@yBribe/contexts/useBribes';
 import {addReward} from '@yBribe/utils/actions/addReward';
@@ -29,7 +29,7 @@ function	GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauges, o
 	const {address, provider, isActive, openLoginModal, onSwitchChain} = useWeb3();
 	const {refresh} = useBribes();
 	const {prices} = useYearn();
-	const [amount, set_amount] = useState<TNormalizedBN>({raw: ethers.constants.Zero, normalized: 0});
+	const [amount, set_amount] = useState<TNormalizedBN>(DefaultTNormalizedBN);
 	const [tokenAddress, set_tokenAddress] = useState<string>('');
 	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
 	const [txStatusAddReward, set_txStatusAddReward] = useState(defaultTxStatus);

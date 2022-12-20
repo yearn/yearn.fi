@@ -3,19 +3,26 @@ import {BigNumber, ethers} from 'ethers';
 import axios from 'axios';
 import useSWRMutation from 'swr/mutation';
 import {domain, OrderKind, SigningScheme, signOrder} from '@gnosis.pm/gp-v2-contracts';
+import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatBigNumberAsAmount, formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {DefaultTNormalizedBN} from '@common/utils';
 
-import type {Order, QuoteQuery, Timestamp} from '@gnosis.pm/gp-v2-contracts';
-import type {TCowAPIResult, TCowRequest, TCowResult, TCowswapSolverContext} from '@vaults/types/solvers.cow';
+import type {AxiosError} from 'axios';
+import type {TNormalizedBN} from '@common/types/types';
+import type {ApiError, Order, QuoteQuery, Timestamp} from '@gnosis.pm/gp-v2-contracts';
+import type {TSolverContext} from '@vaults/types/solvers';
+import type {TCowAPIResult, TCowRequest, TCowResult} from '@vaults/types/solvers.cowswap';
 
 function useCowswapQuote(): [TCowResult, (request: TCowRequest) => Promise<void>] {
-	const fetchCowQuote = useCallback(async(url: string, data: {arg: unknown}): Promise<TCowAPIResult> => {
-		return (await axios.post(url, data.arg)).data;
+	const 	{toast} = yToast();
+	const fetchlatestQuote = useCallback(async(url: string, data: {arg: unknown}): Promise<TCowAPIResult> => {
+		const req = await axios.post(url, data.arg);
+		return req.data;
 	}, []);
 
-	const {data, error, trigger, isMutating} = useSWRMutation('https://api.cow.fi/mainnet/api/v1/quote', fetchCowQuote);
+	const {data, error, trigger, isMutating} = useSWRMutation('https://api.cow.fi/mainnet/api/v1/quote', fetchlatestQuote);
 
 	const getQuote = useCallback(async (request: TCowRequest): Promise<void> => {
 		const	YEARN_APP_DATA = '0x2B8694ED30082129598720860E8E972F07AA10D9B81CAE16CA0E2CFB24743E24';
@@ -31,11 +38,18 @@ function useCowswapQuote(): [TCowResult, (request: TCowRequest) => Promise<void>
 			sellAmountBeforeFee: formatBN(request?.sellAmount || 0).toString() // amount to sell, in wei
 		});
 
-		const canExecuteFetch = !(isZeroAddress(quote.from) || isZeroAddress(quote.sellToken) || isZeroAddress(quote.buyToken)) && !formatBN(request?.sellAmount || 0).isZero();
-		console.warn({canExecuteFetch});
+		const canExecuteFetch = (
+			!(isZeroAddress(quote.from) || isZeroAddress(quote.sellToken) || isZeroAddress(quote.buyToken))
+			&& !formatBN(request?.sellAmount || 0).isZero()
+		);
 		if (canExecuteFetch) {
 			quote.validTo = Math.round((new Date().setMinutes(new Date().getMinutes() + 10) / 1000));
-			trigger(quote, {revalidate: false});
+			try {
+				await trigger(quote, {revalidate: false});
+			} catch (error) {
+				const	_error = error as AxiosError<ApiError>;
+				toast({type: 'error', content: _error?.response?.data?.description || 'Error while fetching quote from Cowswap'});
+			}
 		}
 	}, [trigger]);
 
@@ -49,12 +63,12 @@ function useCowswapQuote(): [TCowResult, (request: TCowRequest) => Promise<void>
 	];
 }
 
-export function useSolverCowswap(): TCowswapSolverContext {
+export function useSolverCowswap(): TSolverContext {
 	const {provider} = useWeb3();
 	const shouldUsePresign = false; //Debug only
 	const DEFAULT_SLIPPAGE_COWSWAP = 0.01; // 1%
 	const [request, set_request] = useState<TCowRequest>();
-	const [cowQuote, getQuote] = useCowswapQuote();
+	const [latestQuote, getQuote] = useCowswapQuote();
 	const [signature, set_signature] = useState<string>('');
 
 	/* 🔵 - Yearn Finance **************************************************************************
@@ -63,14 +77,14 @@ export function useSolverCowswap(): TCowswapSolverContext {
 	** original buyAmount.
 	**********************************************************************************************/
 	const buyAmountWithSlippage = useMemo((): BigNumber => {
-		if (cowQuote?.result === undefined || cowQuote?.result?.quote === undefined || !request?.buyTokenDecimals) {
+		if (latestQuote?.result === undefined || latestQuote?.result?.quote === undefined || !request?.buyTokenDecimals) {
 			return formatBN(0);
 		}
-		const	{quote} = cowQuote.result;
+		const	{quote} = latestQuote.result;
 		const	buyAmount = Number(ethers.utils.formatUnits(quote.buyAmount, request.buyTokenDecimals));
 		const	withSlippage = ethers.utils.parseUnits((buyAmount * (1 - Number(DEFAULT_SLIPPAGE_COWSWAP))).toFixed(request.buyTokenDecimals), request.buyTokenDecimals);
 		return withSlippage;
-	}, [cowQuote.result, request?.buyTokenDecimals]);
+	}, [latestQuote.result, request?.buyTokenDecimals]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** init will be called when the cowswap solver should be used to perform the desired swap.
@@ -90,7 +104,7 @@ export function useSolverCowswap(): TCowswapSolverContext {
 	**********************************************************************************************/
 	const	signCowswapOrder = useCallback(async (quote: Order): Promise<string> => {
 		if (shouldUsePresign) {
-			return toAddress(cowQuote?.result?.from);
+			return toAddress(latestQuote?.result?.from);
 		}
 
 		const	signer = (provider as ethers.providers.Web3Provider).getSigner();
@@ -102,7 +116,7 @@ export function useSolverCowswap(): TCowswapSolverContext {
 		);
 		const signature = ethers.utils.joinSignature(rawSignature.data);
 		return signature;
-	}, [cowQuote?.result?.from, provider, shouldUsePresign]);
+	}, [latestQuote?.result?.from, provider, shouldUsePresign]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** refreshQuote can be called by the user to refresh the quote. The same parameters are used
@@ -114,29 +128,29 @@ export function useSolverCowswap(): TCowswapSolverContext {
 			return;
 		}
 		getQuote({
-			from: toAddress(cowQuote?.result?.from),
-			sellToken: toAddress(cowQuote.result?.quote.sellToken),
-			buyToken: toAddress(cowQuote.result?.quote.buyToken),
-			sellAmount: BigNumber.from(cowQuote.result?.quote.sellAmount),
+			from: toAddress(latestQuote?.result?.from),
+			sellToken: toAddress(latestQuote.result?.quote.sellToken),
+			buyToken: toAddress(latestQuote.result?.quote.buyToken),
+			sellAmount: BigNumber.from(latestQuote.result?.quote.sellAmount),
 			sellTokenDecimals: request?.sellTokenDecimals,
 			buyTokenDecimals: request?.buyTokenDecimals
 		});
-	}, [request, getQuote, cowQuote.result?.from, cowQuote.result?.quote.sellToken, cowQuote.result?.quote.buyToken, cowQuote.result?.quote.sellAmount]);
+	}, [request, getQuote, latestQuote.result?.from, latestQuote.result?.quote.sellToken, latestQuote.result?.quote.buyToken, latestQuote.result?.quote.sellAmount]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** approve is a method that approves an order for the CowSwap exchange. It returns a boolean
 	** value indicating whether the approval was successful or not.
-	** This method tries to sign the quote object contained within the cowQuote.result object using
+	** This method tries to sign the quote object contained within the latestQuote.result object using
 	** the signCowswapOrder method described above. The buyAmount field of the quote object is set
 	** to the value of the buyAmountWithSlippage variable before it is passed to the
 	** signCowswapOrder method.
 	**********************************************************************************************/
 	const	approve = useCallback(async (): Promise<boolean> => {
-		if (cowQuote?.result === undefined || cowQuote?.result?.quote === undefined) {
+		if (latestQuote?.result === undefined || latestQuote?.result?.quote === undefined) {
 			return false;
 		}
 
-		const	{quote} = cowQuote.result;
+		const	{quote} = latestQuote.result;
 		try {
 			const	signature = await signCowswapOrder({
 				...quote,
@@ -148,7 +162,7 @@ export function useSolverCowswap(): TCowswapSolverContext {
 			console.error(_error);
 			return false;
 		}
-	}, [cowQuote.result, signCowswapOrder, buyAmountWithSlippage]);
+	}, [latestQuote.result, signCowswapOrder, buyAmountWithSlippage]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** Cowswap orders have a validity period and the return value on submit is not the execution
@@ -180,10 +194,10 @@ export function useSolverCowswap(): TCowswapSolverContext {
 	** not.
 	**********************************************************************************************/
 	const execute = useCallback(async (): Promise<boolean> => {
-		if (cowQuote?.result === undefined || cowQuote?.result?.quote === undefined) {
+		if (latestQuote?.result === undefined || latestQuote?.result?.quote === undefined) {
 			return false;
 		}
-		const	{quote, from, id} = cowQuote.result;
+		const	{quote, from, id} = latestQuote.result;
 		try {
 			const	{data: orderUID} = await axios.post('https://api.cow.fi/mainnet/api/v1/orders', {
 				...quote,
@@ -205,14 +219,26 @@ export function useSolverCowswap(): TCowswapSolverContext {
 			return false;
 		}
 		return false;
-	}, [buyAmountWithSlippage, cowQuote.result, shouldUsePresign, signature]);
+	}, [buyAmountWithSlippage, latestQuote.result, shouldUsePresign, signature]);
 
-	return useMemo((): TCowswapSolverContext => ({
-		quote: cowQuote,
+	const expectedOut = useMemo((): TNormalizedBN => {
+		if (!latestQuote?.result?.quote?.buyAmount) {
+			return (DefaultTNormalizedBN);
+		}
+		return ({
+			raw: formatBN(latestQuote?.result?.quote?.buyAmount || ethers.constants.Zero),
+			normalized: formatBigNumberAsAmount(formatBN(latestQuote?.result?.quote?.buyAmount || 0), request?.buyTokenDecimals)
+		});
+	}, [latestQuote?.result?.quote?.buyAmount, request?.buyTokenDecimals]);
+
+	return useMemo((): TSolverContext => ({
+		quote: expectedOut,
 		getQuote: getQuote,
 		refreshQuote,
 		init,
+		isLoadingQuote: latestQuote?.isLoading || false,
 		approve,
-		execute
-	}), [approve, cowQuote, getQuote, refreshQuote, execute, init]);
+		executeDeposit: execute,
+		executeWithdraw: execute
+	}), [expectedOut, getQuote, refreshQuote, init, latestQuote?.isLoading, approve, execute]);
 }

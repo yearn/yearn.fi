@@ -99,3 +99,5 @@ export const graphFetcher = async (args: [string, string]): Promise<GraphQLRespo
 export const formatPercent = (n: number, min = 2, max = 2): string => `${formatAmount(n || 0, min, max)}%`;
 
 export const formatUSD = (n: number, min = 2, max = 2): string => `$ ${formatAmount(n || 0, min, max)}`;
+
+export const DefaultTNormalizedBN: TNormalizedBN = {raw: ethers.constants.Zero, normalized: 0};
