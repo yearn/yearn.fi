@@ -1,8 +1,9 @@
 import React, {useEffect, useRef} from 'react';
 import {motion} from 'framer-motion';
-import {VaultDetailsHeader} from '@vaults/components/details/VaultDetailsHeader';
-import {VaultDetailsQuickActions} from '@vaults/components/details/VaultDetailsQuickActions';
-import {VaultDetailsTabsWrapper} from '@vaults/components/details/VaultDetailsTabsWrapper';
+import {VaultDetailsHeader} from '@vaults/components/VaultDetailsHeader';
+import VaultDetailsQuickActions from '@vaults/components/VaultDetailsQuickActions';
+import {VaultDetailsTabsWrapper} from '@vaults/components/VaultDetailsTabsWrapper';
+import {CowswapSolverContextApp} from '@vaults/contexts/useSolverCowswap';
 import Wrapper from '@vaults/Wrapper';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
@@ -64,7 +65,13 @@ function Index({router, vaultData}: {router: NextRouter, vaultData: TYearnVault}
 }
 
 Index.getLayout = function getLayout(page: ReactElement, router: NextRouter): ReactElement {
-	return <Wrapper router={router}>{page}</Wrapper>;
+	return (
+		<Wrapper router={router}>
+			<CowswapSolverContextApp>
+				{page}
+			</CowswapSolverContextApp>
+		</Wrapper>
+	);
 };
 
 export default Index;
