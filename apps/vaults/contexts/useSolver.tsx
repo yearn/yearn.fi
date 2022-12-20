@@ -42,7 +42,7 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 	useEffect((): void => {
 		switch (currentSolver) {
 		case Solvers.COWSWAP:
-			cowswap?.init({
+			cowswap.init({
 				from: toAddress(address || ''),
 				sellToken: toAddress(selectedOptionFrom?.value),
 				buyToken: toAddress(selectedOptionTo?.value),
@@ -52,12 +52,12 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 			});
 			break;
 		default:
-			vanilla?.init({
-				inputToken: toAddress(selectedOptionFrom?.value),
-				outputToken: toAddress(selectedOptionTo?.value)
+			vanilla.init({
+				inputToken: selectedOptionFrom,
+				outputToken: selectedOptionTo
 			});
 		}
-	}, [currentSolver, cowswap.init, address, selectedOptionFrom?.value, selectedOptionFrom?.decimals, selectedOptionTo?.value, selectedOptionTo?.decimals, amount.raw, cowswap, vanilla]);
+	}, [address, selectedOptionFrom, selectedOptionTo, amount.raw, currentSolver, cowswap?.init, vanilla?.init]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** Based on the currentSolver, we extract the current expectedOut from the solver to be able
@@ -96,16 +96,50 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 		}
 	}, [selectedOptionTo, selectedOptionFrom, amount.raw, currentSolver, cowswap?.quote?.isLoading, vanilla?.quote?.isLoading]);
 
+	/* 🔵 - Yearn Finance **************************************************************************
+	** Based on the currentSolver, we need to use the corresponding approve function.
+	**********************************************************************************************/
+	const approve = useMemo((): (...props: never) => Promise<boolean> => {
+		switch (currentSolver) {
+		case Solvers.COWSWAP:
+			return (cowswap?.approve);
+		default:
+			return (vanilla?.approve);
+		}
+	}, [currentSolver, cowswap?.approve, vanilla?.approve]);
 
+	/* 🔵 - Yearn Finance **************************************************************************
+	** Based on the currentSolver, we need to use the corresponding deposit function.
+	**********************************************************************************************/
+	const executeDeposit = useMemo((): (...props: never) => Promise<boolean> => {
+		switch (currentSolver) {
+		case Solvers.COWSWAP:
+			return (cowswap?.execute);
+		default:
+			return (vanilla?.executeDeposit);
+		}
+	}, [cowswap?.execute, currentSolver, vanilla?.executeDeposit]);
+
+	/* 🔵 - Yearn Finance **************************************************************************
+	** Based on the currentSolver, we need to use the corresponding withdraw function.
+	**********************************************************************************************/
+	const executeWithdraw = useMemo((): (...props: never) => Promise<boolean> => {
+		switch (currentSolver) {
+		case Solvers.COWSWAP:
+			return (cowswap?.execute);
+		default:
+			return (vanilla?.executeWithdraw);
+		}
+	}, [cowswap?.execute, currentSolver, vanilla?.executeWithdraw]);
 	
 	const	contextValue = useMemo((): TWithSolver => ({
 		currentSolver: currentSolver,
 		expectedOut,
 		isLoadingExpectedOut: isLoadingExpectedOut,
-		approve: cowswap.approve,
-		executeDeposit: cowswap.execute,
-		executeWithdraw: cowswap.execute
-	}), [currentSolver, expectedOut, isLoadingExpectedOut, cowswap.approve, cowswap.execute]);
+		approve: approve,
+		executeDeposit: executeDeposit,
+		executeWithdraw: executeWithdraw
+	}), [currentSolver, expectedOut, isLoadingExpectedOut, approve, executeDeposit, executeWithdraw]);
 
 	return (
 		<WithSolverContext.Provider value={contextValue}>

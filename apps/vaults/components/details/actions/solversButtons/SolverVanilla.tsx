@@ -1,14 +1,11 @@
 import React, {useState} from 'react';
-import {ethers} from 'ethers';
 import useSWR from 'swr';
+import {useSolver} from '@vaults/contexts/useSolver';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useAllowanceFetcher} from '@common/hooks/useAllowanceFetcher';
-import {approveERC20} from '@common/utils/actions/approveToken';
-import {deposit} from '@common/utils/actions/deposit';
-import {withdrawShares} from '@common/utils/actions/withdrawShares';
 
 import type {ReactElement} from 'react';
 import type {TAllowanceFetcher} from '@common/hooks/useAllowanceFetcher';
@@ -35,6 +32,7 @@ function	SolverVanilla({
 	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
 	const [txStatusDeposit, set_txStatusDeposit] = useState(defaultTxStatus);
 	const retrieveAllowance = useAllowanceFetcher();
+	const {approve, executeDeposit, executeWithdraw} = useSolver();
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** SWR hook to get the expected out for a given in/out pair with a specific amount. This hook is
@@ -57,13 +55,13 @@ function	SolverVanilla({
 		if (!selectedOptionFrom || !selectedOptionTo) {
 			return;
 		}
-		new Transaction(provider, approveERC20, set_txStatusApprove).populate(
-			toAddress(selectedOptionFrom.value), // token to approve
-			toAddress(selectedOptionTo.value), // destination vault
-			ethers.constants.MaxUint256 //amount
-		).onSuccess(async (): Promise<void> => {
-			await mutateAllowance();
-		}).perform();
+
+		new Transaction(provider, approve, set_txStatusApprove)
+			.populate()
+			.onSuccess(async (): Promise<void> => {
+				await mutateAllowance();
+			})
+			.perform();
 	}
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -74,7 +72,7 @@ function	SolverVanilla({
 		if (!selectedOptionTo) {
 			return;
 		}
-		new Transaction(provider, deposit, set_txStatusDeposit).populate(
+		new Transaction(provider, executeDeposit, set_txStatusDeposit).populate(
 			toAddress(selectedOptionTo.value), //destination vault
 			amount.raw //amount
 		).onSuccess(async (): Promise<void> => {
@@ -91,7 +89,7 @@ function	SolverVanilla({
 		if (!selectedOptionFrom) {
 			return;
 		}
-		new Transaction(provider, withdrawShares, set_txStatusDeposit).populate(
+		new Transaction(provider, executeWithdraw, set_txStatusDeposit).populate(
 			toAddress(selectedOptionFrom.value), //vault address
 			amount.raw //amount
 		).onSuccess(async (): Promise<void> => {
