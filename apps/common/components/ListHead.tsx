@@ -45,9 +45,9 @@ function	ListHead({items, dataClassName, sortBy, sortDirection, onSort}: TListHe
 				</div>
 
 				<div className={`yearn--table-head-data-section ${dataClassName || ''}`}>
-					{rest.map((item): ReactElement => (
+					{rest.map((item, index): ReactElement => (
 						<button
-							key={item.value}
+							key={`${index}_${item.value}`}
 							onClick={(): void => onSort(item.value, sortBy === item.value ? (
 								sortDirection === '' ? 'desc' : sortDirection === 'desc' ? 'asc' : ''
 							) : 'desc')}

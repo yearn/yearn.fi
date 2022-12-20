@@ -1,13 +1,10 @@
-import React, {useState} from 'react';
+import React from 'react';
 import Wrapper from '@vaults/Wrapper';
 import SettingsOverwrite from '@common/components/SettingsOverwrite';
 
 import type {ReactElement} from 'react';
 
 function	About(): ReactElement {
-	const	[shouldShowDust, set_shouldShowDust] = useState(false);
-	const	[shouldShowLowTVLVaults, set_shouldShowLowTVLVaults] = useState(false);
-
 	return (
 		<section className={'mt-4 grid w-full grid-cols-1 gap-10 pb-10 md:mt-20 md:grid-cols-2'}>
 			<div className={'w-full bg-neutral-100 p-10'}>
@@ -102,52 +99,6 @@ function	About(): ReactElement {
 			</div>
 
 			<SettingsOverwrite />
-
-			<div className={'w-full bg-neutral-100 p-10'}>
-				<div className={'flex flex-col pb-6'}>
-					<h2 className={'text-3xl font-bold'}>{'Some more settings'}</h2>
-				</div>
-				<div aria-label={'Don’t get caught slippin’ details'}>
-					<p className={'pb-4 text-neutral-600'}>
-						{'More settings for the braves'}
-					</p>
-				</div>
-				<div className={'mt-8 flex flex-row items-center space-x-4'}>
-					<div className={'flex flex-row space-x-2'}>
-						<input
-							type={'checkbox'}
-							id={'shouldShowLowTVLVaults'}
-							className={'h-4 w-4'}
-							checked={shouldShowLowTVLVaults}
-							onChange={(): void => set_shouldShowLowTVLVaults(!shouldShowLowTVLVaults)}
-						/>
-					</div>
-					<label
-						htmlFor={'shouldShowLowTVLVaults'}
-						className={'text-neutral-900'}>
-						{'Show low TVL vaults'}
-					</label>
-				</div>
-
-				<div className={'mt-2 flex flex-row items-center space-x-4'}>
-					<div className={'flex flex-row space-x-2'}>
-						<input
-							type={'checkbox'}
-							id={'shouldShowDust'}
-							className={'h-4 w-4'}
-							checked={shouldShowDust}
-							onChange={(): void => set_shouldShowDust(!shouldShowDust)}
-						/>
-					</div>
-					<label
-						htmlFor={'shouldShowDust'}
-						className={'text-neutral-900'}>
-						{'Show dust'}
-					</label>
-				</div>
-			</div>
-
-
 		</section>
 	);
 }

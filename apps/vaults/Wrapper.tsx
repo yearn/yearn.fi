@@ -2,7 +2,6 @@ import React from 'react';
 import meta from 'public/apps/vaults-manifest.json';
 import {AppSettingsContextApp} from '@vaults/contexts/useAppSettings';
 import {VaultMigrationContextApp} from '@vaults/contexts/useVaultsMigrations';
-import {WalletForExternalMigrationsApp} from '@vaults/contexts/useWalletForExternalMigrations';
 import {WalletForInternalMigrationsApp} from '@vaults/contexts/useWalletForInternalMigrations';
 import Meta from '@common/components/Meta';
 
@@ -15,9 +14,9 @@ export default function Wrapper({children}: {children: ReactElement}): ReactElem
 			<AppSettingsContextApp>
 				<VaultMigrationContextApp>
 					<WalletForInternalMigrationsApp>
-						<WalletForExternalMigrationsApp>
-							{children}
-						</WalletForExternalMigrationsApp>
+						{/* <WalletForExternalMigrationsApp> */}
+						{children}
+						{/* </WalletForExternalMigrationsApp> */}
 					</WalletForInternalMigrationsApp>
 				</VaultMigrationContextApp>
 			</AppSettingsContextApp>

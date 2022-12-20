@@ -254,6 +254,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 			assignBribes('v3', rewardsListV3, multicallResultV3);
 			assignNextRewards('v3', nextRewardsListV3, nextMulticallResultV3);
 		});
+
 	}, [safeChainID, provider, getRewardsPerGauges, getRewardsPerUser, getNextPeriodRewards, assignBribes, assignNextRewards]);
 	useEffect((): void => {
 		getBribes();

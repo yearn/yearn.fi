@@ -51,7 +51,7 @@ export const CurveContextApp = ({children}: {children: React.ReactElement}): Rea
 		'https://api.coingecko.com/api/v3/simple/price?ids=curve-dao-token&vs_currencies=usd',
 		baseFetcher,
 		{revalidateOnFocus: false}
-	) as SWRResponse<TDict<TCoinGeckoPrices>>;
+	) as unknown as SWRResponse<TDict<TCoinGeckoPrices>>;
 
 	const	{data: gaugesWrapper} = useSWR(
 		'https://api.curve.fi/api/getGauges?blockchainId=ethereum',

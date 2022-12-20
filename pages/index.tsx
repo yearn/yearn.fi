@@ -11,7 +11,7 @@ const	apps = [
 	{
 		href: '/vaults',
 		title: 'Vaults',
-		description: 'deposit tokens and recieve yield.',
+		description: 'deposit tokens and receive yield.',
 		icon: <LogoYearn
 			className={'h-[100px] w-[100px]'}
 			back={'text-pink-400'}
@@ -30,7 +30,7 @@ const	apps = [
 	}, {
 		href: 'https://vote.yearn.finance',
 		title: 'veYFI',
-		description: 'stake your YFI to recieve\nrewards and boost gauges.',
+		description: 'stake your YFI to receive\nrewards and boost gauges.',
 		icon: <LogoYearn
 			className={'h-[100px] w-[100px]'}
 			back={'text-primary'}
@@ -205,7 +205,7 @@ function	Index(): ReactElement {
 					</p>
 				</div>
 			</div>
-			<section className={'grid grid-cols-1 gap-10 md:grid-cols-3'}>
+			<section className={'grid grid-cols-1 gap-10 md:grid-cols-3 lg:grid-cols-4'}>
 				{apps.map((app): ReactElement => <AppBox key={app.href} app={app} />)}
 			</section>
 		</>
