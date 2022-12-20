@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {ethers} from 'ethers';
-import {useCowswap} from '@vaults/contexts/useSolverCowswap';
+import {useSolver} from '@vaults/components/VaultDetailsQuickActions';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -31,7 +31,7 @@ function	SolverCowswap({
 	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
 	const [txStatusDeposit, set_txStatusDeposit] = useState(defaultTxStatus);
 	const [allowanceFrom, set_allowanceFrom] = useState<TNormalizedBN>();
-	const {approve, execute} = useCowswap();
+	const {approve, execute} = useSolver();
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Trigger an approve web3 action, simply trying to approve `amount` tokens
