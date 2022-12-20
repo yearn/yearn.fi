@@ -11,11 +11,11 @@ import {useWido} from './useWido';
 import type {TAddress} from '@yearn-finance/web-lib/utils/address';
 import type {TDict} from '@yearn-finance/web-lib/utils/types';
 import type {Order, QuoteQuery} from '@gnosis.pm/gp-v2-contracts';
-import type {TUseWido, TWidoResult} from './useWido';
+import type {TUseWido} from './useWido';
 
-export type TPossibleExternalServices = 'wido' | 'portals' | 'cowswap';
-
-export type TWidoQuote = { req: { type: 'wido'; request: TUseWido['getWidoQuote'] }; res: TWidoResult };
+export type TWidoQuote = { req: { type: 'wido'; request: TUseWido['getWidoQuote'] }; res: TUseWido['widoQuote'] };
+export type TPortalsQuote = { req: { type: 'portals'; request: TPortalsRequest }; res: TPortalsResult };
+export type TCowQuote = { req: { type: 'cowswap'; request: TCowRequest }; res: TCowResult };
 
 type TPortalsRequest = {
     network: string; // The network to use (ethereum, avalanche, etc.)
@@ -30,19 +30,12 @@ type TPortalsResult = {
     minBuyAmount: string;
     buyTokenDecimals: number;
 }
-export type TPortalsQuote = { req: { type: 'portals'; request: TPortalsRequest }; res: TPortalsResult };
 
 type TExternalService<T> =
     T extends 'wido' ? TWidoQuote :
     T extends 'portals' ? TPortalsQuote :
 	T extends 'cowswap' ? TCowQuote :
 	never;
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function usePortalsQuote(request: TPortalsRequest, provider?: string): TPortalsResult {
-	throw new Error('Function not implemented.');
-}
-
 
 /* 🔵 - Yearn Finance ******************************************************
 **	Cowswap Solver
@@ -64,7 +57,6 @@ type TCowResult = {
 	isLoading: boolean,
 	error: Error | undefined
 }
-export type TCowQuote = { req: { type: 'cowswap'; request: TCowRequest }; res: TCowResult };
 
 async function fetchCowQuote(url: string, data: {arg: unknown}): Promise<TCowAPIResult> {
 	return (await axios.post(url, data.arg)).data;
