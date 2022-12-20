@@ -46,6 +46,7 @@ export function	useAllowanceFetcher(): (args: TAllowanceFetcher) => Promise<TNor
 		if (isOutputTokenEth) {
 			spender = toAddress(getEthZapperContract(chainID));
 		}
+		console.warn(address, spender);
 
 		try {
 			const	tokenAllowance = await contract.allowance(address, spender) || ethers.constants.Zero;
@@ -55,6 +56,7 @@ export function	useAllowanceFetcher(): (args: TAllowanceFetcher) => Promise<TNor
 			});
 			return effectiveAllowance;
 		} catch (error) {
+			console.error(error);
 			return ({raw: ethers.constants.Zero, normalized: 0});
 		}
 	}, [address, chainID, isUsingPartnerContract, networks, provider, safeChainID]);

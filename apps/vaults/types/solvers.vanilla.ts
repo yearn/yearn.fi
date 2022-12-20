@@ -1,4 +1,5 @@
 
+import type {TAddress} from '@yearn-finance/web-lib/utils/address';
 import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
 
 /* 🔵 - Yearn Finance ******************************************************
