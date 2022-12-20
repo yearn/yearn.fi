@@ -101,13 +101,13 @@ export function useCowQuote(): [TCowResult, CallableFunction] {
 export function useExternalServiceQuote<T>({type, request}: TExternalService<T>['req']): TExternalService<T>['res'] {
 	const {widoQuote, getWidoQuote} = useWido();
 	const {portalsQuote, getPortalsQuote} = usePortals();
-	const [cowQuote, getCowQuote] = useCowQuote();
+	// const [cowQuote, getCowQuote] = useCowQuote();
 
-	const quoteMapping = useMemo((): TDict<[TExternalService<T>['res'], CallableFunction]> => ({
-		'wido': [widoQuote, getWidoQuote],
-		'portals': [portalsQuote, getPortalsQuote],
-		'cowswap': [cowQuote, getCowQuote]
-	}), [cowQuote, getCowQuote, getPortalsQuote, getWidoQuote, portalsQuote, widoQuote]);
+	const quoteMapping = useMemo((): TDict<{quote: TExternalService<T>['res'], getQuote: CallableFunction}> => ({
+		'wido': {quote: widoQuote, getQuote: getWidoQuote},
+		'portals': {quote: portalsQuote, getQuote: getPortalsQuote}
+		// 'cowswap': [cowQuote, getCowQuote]
+	}), [getPortalsQuote, getWidoQuote, portalsQuote, widoQuote]);
 
 	const stringifiedRequest = JSON.stringify(request);
 	useEffect((): void => {
@@ -118,13 +118,14 @@ export function useExternalServiceQuote<T>({type, request}: TExternalService<T>[
 			return value;
 		});
 
-		const	[, fetcher] = quoteMapping[type];
-		if (fetcher) {
-			fetcher(parsedRequest);
-		} else {
+		const {getQuote} = quoteMapping[type];
+		if (!getQuote) {
 			throw new Error(`Unknown service ${type}`);
 		}
+		getQuote(parsedRequest);
 	}, [quoteMapping, stringifiedRequest, type]);
 
-	return quoteMapping[type][0];
+	const {quote} = quoteMapping[type];
+
+	return quote;
 }
