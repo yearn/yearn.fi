@@ -38,7 +38,7 @@ const	apps = [
 	}, {
 		href: '/ybribe',
 		title: 'yBribe',
-		description: 'Sell votes, or buy them.\nJust like democracy.',
+		description: 'sell votes, or buy them.\nJust like democracy.',
 		icon: <LogoYearn
 			className={'h-[100px] w-[100px]'}
 			back={'text-neutral-900'}
