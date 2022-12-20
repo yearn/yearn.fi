@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {ethers} from 'ethers';
-import {useSolver} from '@vaults/components/VaultDetailsQuickActions';
+import {useSolver} from '@vaults/contexts/useSolver';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';

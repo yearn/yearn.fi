@@ -1,5 +1,6 @@
 import React from 'react';
-import {useQuickAction, useSolver} from '@vaults/components/VaultDetailsQuickActions';
+import {useActionFlow} from '@vaults/contexts/useActionFlow';
+import {useSolver} from '@vaults/contexts/useSolver';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {Dropdown} from '@common/components/TokenDropdown';
@@ -14,7 +15,7 @@ function	VaultDetailsQuickActionsTo(): ReactElement {
 		currentVault,
 		possibleOptionsTo, selectedOptionTo, onUpdateSelectedOptionTo,
 		isDepositing
-	} = useQuickAction();
+	} = useActionFlow();
 	const {expectedOut, isLoadingExpectedOut} = useSolver();
 
 	const selectedOptionToPricePerToken = useTokenPrice(toAddress(selectedOptionTo?.value));

@@ -10,7 +10,7 @@ import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import type {Order, QuoteQuery, Timestamp} from '@gnosis.pm/gp-v2-contracts';
 import type {TCowAPIResult, TCowRequest, TCowResult, TCowswapSolverContext} from '@vaults/types/solvers.cow';
 
-export function useCowswapQuote(): [TCowResult, (request: TCowRequest) => Promise<void>] {
+function useCowswapQuote(): [TCowResult, (request: TCowRequest) => Promise<void>] {
 	const fetchCowQuote = useCallback(async(url: string, data: {arg: unknown}): Promise<TCowAPIResult> => {
 		return (await axios.post(url, data.arg)).data;
 	}, []);
@@ -49,12 +49,12 @@ export function useCowswapQuote(): [TCowResult, (request: TCowRequest) => Promis
 	];
 }
 
-export function useCowswap(): TCowswapSolverContext {
+export function useSolverCowswap(): TCowswapSolverContext {
 	const {provider} = useWeb3();
 	const shouldUsePresign = false; //Debug only
 	const DEFAULT_SLIPPAGE_COWSWAP = 0.01; // 1%
 	const [request, set_request] = useState<TCowRequest>();
-	const [cowQuote, getCowQuote] = useCowswapQuote();
+	const [cowQuote, getQuote] = useCowswapQuote();
 	const [signature, set_signature] = useState<string>('');
 
 	/* 🔵 - Yearn Finance **************************************************************************
@@ -75,12 +75,12 @@ export function useCowswap(): TCowswapSolverContext {
 	/* 🔵 - Yearn Finance **************************************************************************
 	** init will be called when the cowswap solver should be used to perform the desired swap.
 	** It will set the request to the provided value, as it's required to get the quote, and will
-	** call getCowQuote to get the current quote for the provided request.
+	** call getQuote to get the current quote for the provided request.
 	**********************************************************************************************/
 	const init = useCallback(async (_request: TCowRequest): Promise<void> => {
 		set_request(_request);
-		getCowQuote(_request);
-	}, [getCowQuote]);
+		getQuote(_request);
+	}, [getQuote]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** signCowswapOrder is used to sign the order with the user's wallet. The signature is used
@@ -113,7 +113,7 @@ export function useCowswap(): TCowswapSolverContext {
 		if (!request) {
 			return;
 		}
-		getCowQuote({
+		getQuote({
 			from: toAddress(cowQuote?.result?.from),
 			sellToken: toAddress(cowQuote.result?.quote.sellToken),
 			buyToken: toAddress(cowQuote.result?.quote.buyToken),
@@ -121,7 +121,7 @@ export function useCowswap(): TCowswapSolverContext {
 			sellTokenDecimals: request?.sellTokenDecimals,
 			buyTokenDecimals: request?.buyTokenDecimals
 		});
-	}, [request, getCowQuote, cowQuote.result?.from, cowQuote.result?.quote.sellToken, cowQuote.result?.quote.buyToken, cowQuote.result?.quote.sellAmount]);
+	}, [request, getQuote, cowQuote.result?.from, cowQuote.result?.quote.sellToken, cowQuote.result?.quote.buyToken, cowQuote.result?.quote.sellAmount]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** approve is a method that approves an order for the CowSwap exchange. It returns a boolean
@@ -209,10 +209,10 @@ export function useCowswap(): TCowswapSolverContext {
 
 	return useMemo((): TCowswapSolverContext => ({
 		quote: cowQuote,
-		getQuote: getCowQuote,
-		refreshQuote: refreshQuote,
-		initCowswap: init,
+		getQuote: getQuote,
+		refreshQuote,
+		init,
 		approve,
 		execute
-	}), [approve, cowQuote, getCowQuote, refreshQuote, execute, init]);
+	}), [approve, cowQuote, getQuote, refreshQuote, execute, init]);
 }
