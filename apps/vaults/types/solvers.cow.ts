@@ -35,7 +35,7 @@ export type TCowswapSolverContext = {
 	quote: TCowResult;
 	getQuote: CallableFunction;
 	refreshQuote: CallableFunction;
-	initCowswap: CallableFunction;
+	init: CallableFunction;
 	approve: (...props: never) => Promise<boolean>;
 	execute: (...props: never) => Promise<boolean>;
 }

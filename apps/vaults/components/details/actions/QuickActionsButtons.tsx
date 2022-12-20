@@ -4,7 +4,8 @@ import {SolverChainCoin} from '@vaults/components/details/actions/solversButtons
 import {SolverCowswap} from '@vaults/components/details/actions/solversButtons/SolverCowswap';
 import {SolverPartnerContract} from '@vaults/components/details/actions/solversButtons/SolverPartnerContract';
 import {SolverVanilla} from '@vaults/components/details/actions/solversButtons/SolverVanilla';
-import {Solvers, useQuickAction} from '@vaults/components/VaultDetailsQuickActions';
+import {useActionFlow} from '@vaults/contexts/useActionFlow';
+import {Solvers} from '@vaults/contexts/useSolver';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {useWallet} from '@common/contexts/useWallet';
 
@@ -18,7 +19,7 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 		selectedOptionFrom, selectedOptionTo,
 		amount, onChangeAmount,
 		maxDepositPossible, isDepositing
-	} = useQuickAction();
+	} = useActionFlow();
 
 	const onSuccess = useCallback(async (): Promise<void> => {
 		onChangeAmount({raw: ethers.constants.Zero, normalized: 0});

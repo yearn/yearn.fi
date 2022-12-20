@@ -1,12 +1,12 @@
 import React from 'react';
-import {useQuickAction} from '@vaults/components/VaultDetailsQuickActions';
+import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import IconArrowRight from '@common/icons/IconArrowRight';
 
 import type {ReactElement} from 'react';
 
 function	VaultDetailsQuickActionsSwitch(): ReactElement {
-	const {onSwitchSelectedOptions} = useQuickAction();
+	const {onSwitchSelectedOptions} = useActionFlow();
 
 	return (
 		<div className={'mx-auto flex w-full justify-center space-y-0 md:mx-none md:block md:w-14 md:space-y-2'}>

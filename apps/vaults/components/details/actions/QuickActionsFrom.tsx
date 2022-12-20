@@ -1,5 +1,5 @@
 import React from 'react';
-import {useQuickAction} from '@vaults/components/VaultDetailsQuickActions';
+import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
@@ -20,7 +20,7 @@ function	VaultDetailsQuickActionsFrom(): ReactElement {
 		possibleOptionsFrom, selectedOptionFrom, onUpdateSelectedOptionFrom,
 		amount, onChangeAmount,
 		maxDepositPossible, isDepositing
-	} = useQuickAction();
+	} = useActionFlow();
 
 	const selectedFromBalance = useBalance(toAddress(selectedOptionFrom?.value));
 	const selectedOptionFromPricePerToken = useTokenPrice(toAddress(selectedOptionFrom?.value));
