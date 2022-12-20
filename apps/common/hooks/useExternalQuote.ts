@@ -6,30 +6,18 @@ import {OrderKind} from '@gnosis.pm/gp-v2-contracts';
 import {isZeroAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 
+import {usePortals} from './usePortals';
 import {useWido} from './useWido';
 
 import type {TAddress} from '@yearn-finance/web-lib/utils/address';
 import type {TDict} from '@yearn-finance/web-lib/utils/types';
 import type {Order, QuoteQuery} from '@gnosis.pm/gp-v2-contracts';
+import type {TUsePortals} from './usePortals';
 import type {TUseWido} from './useWido';
 
 export type TWidoQuote = { req: { type: 'wido'; request: TUseWido['getWidoQuote'] }; res: TUseWido['widoQuote'] };
-export type TPortalsQuote = { req: { type: 'portals'; request: TPortalsRequest }; res: TPortalsResult };
+export type TPortalsQuote = { req: { type: 'portals'; request: TUsePortals['getPortalsQuote'] }; res: TUsePortals['portalsQuote'] };
 export type TCowQuote = { req: { type: 'cowswap'; request: TCowRequest }; res: TCowResult };
-
-type TPortalsRequest = {
-    network: string; // The network to use (ethereum, avalanche, etc.)
-    sellToken: string; // The ERC20 token address to spend
-    sellAmount: string; // The quantity of `sellToken` to spend
-    buyToken: string; // The ERC20 token address to buy (e.g. a Curve or Sushiswap pool, or a basic token like DAI). Use address(0) for the network token
-    slippagePercentage: number; // The maximum acceptable slippage for the portal. Must be a number between 0 and 1 (e.g. 0.005 for 0.5%)
-}
-type TPortalsResult = {
-    buyToken: string;
-    buyAmount: string;
-    minBuyAmount: string;
-    buyTokenDecimals: number;
-}
 
 type TExternalService<T> =
     T extends 'wido' ? TWidoQuote :
@@ -112,7 +100,7 @@ export function useCowQuote(): [TCowResult, CallableFunction] {
 
 export function useExternalServiceQuote<T>({type, request}: TExternalService<T>['req']): TExternalService<T>['res'] {
 	const {widoQuote, getWidoQuote} = useWido();
-	const [portalsQuote, getPortalsQuote] = useCowQuote()/*usePortalsQuote()*/;
+	const {portalsQuote, getPortalsQuote} = usePortals();
 	const [cowQuote, getCowQuote] = useCowQuote();
 
 	const quoteMapping = useMemo((): TDict<[TExternalService<T>['res'], CallableFunction]> => ({
