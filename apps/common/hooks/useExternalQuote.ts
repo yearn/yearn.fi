@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useMemo} from 'react';
+import {useCallback, useEffect, useMemo, useState} from 'react';
 import {BigNumber} from 'ethers';
 import axios from 'axios';
 import useSWRMutation from 'swr/mutation';
@@ -98,10 +98,12 @@ export function useCowQuote(): [TCowResult, CallableFunction] {
 // 	throw new Error('Function not implemented.');
 // }
 
-export function useExternalServiceQuote<T>({type, request}: TExternalService<T>['req']): TExternalService<T>['res'] {
+type TUseExternalServiceQuoteResult<T> = {quote: TExternalService<T>['res'], getQuote: CallableFunction, parsedRequest: unknown};
+export function useExternalServiceQuote<T>({type, request}: TExternalService<T>['req']): TUseExternalServiceQuoteResult<T> {
 	const {widoQuote, getWidoQuote} = useWido();
 	const {portalsQuote, getPortalsQuote} = usePortals();
 	// const [cowQuote, getCowQuote] = useCowQuote();
+	const [parsedRequest, set_parsedRequest] = useState();
 
 	const quoteMapping = useMemo((): TDict<{quote: TExternalService<T>['res'], getQuote: CallableFunction}> => ({
 		'wido': {quote: widoQuote, getQuote: getWidoQuote},
@@ -117,15 +119,13 @@ export function useExternalServiceQuote<T>({type, request}: TExternalService<T>[
 			}
 			return value;
 		});
+		set_parsedRequest(parsedRequest);
 
 		const {getQuote} = quoteMapping[type];
 		if (!getQuote) {
 			throw new Error(`Unknown service ${type}`);
 		}
-		getQuote(parsedRequest);
 	}, [quoteMapping, stringifiedRequest, type]);
 
-	const {quote} = quoteMapping[type];
-
-	return quote;
+	return {...quoteMapping[type], parsedRequest};
 }
