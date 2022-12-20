@@ -137,6 +137,7 @@ export function	AppHeader(): ReactElement {
 	const	router = useRouter();
 	const	{isActive} = useWeb3();
 	const	{onOpenMenu} = useMenu();
+	
 	const	navMenu = useMemo((): TMenu[] => {
 		let	menu: TMenu[] = [
 			{path: '/', label: 'Home'},
@@ -155,12 +156,24 @@ export function	AppHeader(): ReactElement {
 		return menu as TMenu[];
 	}, [router]);
 
+	const	supportedNetworks = useMemo((): number[] => {
+		let	networks: number[] = [1, 10, 250, 42161];
+
+		if (router.pathname.startsWith('/ycrv')) {
+			networks = [1];
+		} else if (router.pathname.startsWith('/ybribe')) {
+			networks = [1];
+		}
+		return networks;
+	}, [router]);
+
 	return (
 		<Header
 			linkComponent={<Link href={''} />}
 			currentPathName={router.pathname}
 			onOpenMenuMobile={onOpenMenu}
 			nav={navMenu}
+			supportedNetworks={supportedNetworks}
 			logo={(
 				<AnimatePresence mode={'wait'}>
 					<LogoPopover />
