@@ -104,9 +104,9 @@ function	LogoPopover(): ReactElement {
 				leave={'transition ease-in duration-150'}
 				leaveFrom={'opacity-100 translate-y-0'}
 				leaveTo={'opacity-0 translate-y-1'}>
-				<Popover.Panel className={'absolute left-1/2 z-10 mt-6 w-80 -translate-x-1/2 px-4 pt-4 sm:px-0'}>
+				<Popover.Panel className={'absolute left-1/2 z-10 mt-6 w-80 -translate-x-1/2 px-4 pt-4 sm:px-0 md:w-96'}>
 					<div className={'overflow-hidden border border-neutral-200 shadow-lg'}>
-						<div className={'relative grid bg-neutral-0 md:grid-cols-3'}>
+						<div className={'relative grid grid-cols-2 bg-neutral-0 md:grid-cols-4'}>
 							{Apps.map((item): ReactElement => (
 								<Link
 									prefetch={false}
