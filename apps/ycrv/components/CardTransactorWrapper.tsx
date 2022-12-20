@@ -47,7 +47,7 @@ type TCardTransactor = {
 const		CardTransactorContext = createContext<TCardTransactor>({
 	selectedOptionFrom: LEGACY_OPTIONS_FROM[0],
 	selectedOptionTo: LEGACY_OPTIONS_TO[0],
-	amount: {raw: ethers.constants.Zero, normalized: 0},
+	amount: toNormalizedBN(0),
 	txStatusApprove: defaultTxStatus,
 	txStatusZap: defaultTxStatus,
 	allowanceFrom: ethers.constants.Zero,
@@ -76,12 +76,12 @@ function	CardTransactorContextApp({
 	const	[txStatusZap, set_txStatusZap] = useState(defaultTxStatus);
 	const	[selectedOptionFrom, set_selectedOptionFrom] = useState(defaultOptionFrom);
 	const	[selectedOptionTo, set_selectedOptionTo] = useState(defaultOptionTo);
-	const	[amount, set_amount] = useState<TNormalizedBN>({raw: ethers.constants.Zero, normalized: 0});
+	const	[amount, set_amount] = useState<TNormalizedBN>(toNormalizedBN(0));
 	const	[hasTypedSomething, set_hasTypedSomething] = useState(false);
 	const	addToken = useAddToken();
 	const 	{dismissAllToasts} = useDismissToasts();
 	const 	{toast} = yToast();
-	
+
 	/* 🔵 - Yearn Finance ******************************************************
 	** useEffect to set the amount to the max amount of the selected token once
 	** the wallet is connected, or to 0 if the wallet is disconnected.
@@ -218,7 +218,7 @@ function	CardTransactorContextApp({
 				toAddress(selectedOptionTo.value), //destination vault
 				amount.raw //amount_in
 			).onSuccess(async (): Promise<void> => {
-				set_amount({raw: ethers.constants.Zero, normalized: 0});
+				set_amount(toNormalizedBN(0));
 				await refresh();
 				toast(addToMetamaskToast);
 			}).perform();
@@ -231,7 +231,7 @@ function	CardTransactorContextApp({
 				expectedOut, //_min_out
 				slippage
 			).onSuccess(async (): Promise<void> => {
-				set_amount({raw: ethers.constants.Zero, normalized: 0});
+				set_amount(toNormalizedBN(0));
 				await refresh();
 				toast(addToMetamaskToast);
 			}).perform();

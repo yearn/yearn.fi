@@ -1,5 +1,4 @@
 import React, {useCallback} from 'react';
-import {ethers} from 'ethers';
 import {SolverChainCoin} from '@vaults/components/details/actions/solversButtons/SolverChainCoin';
 import {SolverCowswap} from '@vaults/components/details/actions/solversButtons/SolverCowswap';
 import {SolverPartnerContract} from '@vaults/components/details/actions/solversButtons/SolverPartnerContract';
@@ -8,6 +7,7 @@ import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {Solvers} from '@vaults/contexts/useSolver';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {useWallet} from '@common/contexts/useWallet';
+import {DefaultTNormalizedBN} from '@common/utils';
 
 import type {ReactElement} from 'react';
 
@@ -22,7 +22,7 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 	} = useActionFlow();
 
 	const onSuccess = useCallback(async (): Promise<void> => {
-		onChangeAmount({raw: ethers.constants.Zero, normalized: 0});
+		onChangeAmount(DefaultTNormalizedBN);
 		await refresh();
 	}, [onChangeAmount, refresh]);
 	
