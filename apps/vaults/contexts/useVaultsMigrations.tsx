@@ -38,7 +38,9 @@ export const VaultMigrationContextApp = memo(function VaultMigrationContextApp({
 
 	const	migratableVaultsObject = useMemo((): TDict<TYearnVault> => {
 		const	_migratableVaultsObject = (migratableVaults || []).reduce((acc: TDict<TYearnVault>, vault: TYearnVault): TDict<TYearnVault> => {
-			acc[toAddress(vault.address)] = vault;
+			if (toAddress(vault.address) !== toAddress(vault.migration?.address)) {
+				acc[toAddress(vault.address)] = vault;
+			}
 			return acc;
 		}, {});
 		return _migratableVaultsObject;
