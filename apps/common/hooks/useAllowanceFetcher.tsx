@@ -7,7 +7,7 @@ import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {getProvider} from '@yearn-finance/web-lib/utils/web3/providers';
+import {DefaultTNormalizedBN} from '@common/utils';
 
 import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
 
@@ -18,7 +18,7 @@ export type TAllowanceFetcher = [
 
 export function	useAllowanceFetcher(): (args: TAllowanceFetcher) => Promise<TNormalizedBN> {
 	const {networks} = useSettings();
-	const {address, provider} = useWeb3();
+	const {provider} = useWeb3();
 	const {chainID, safeChainID} = useChainID();
 	
 	const isPartnerAddressValid = useMemo((): boolean => (
@@ -31,13 +31,17 @@ export function	useAllowanceFetcher(): (args: TAllowanceFetcher) => Promise<TNor
 
 	const retrieveAllowance = useCallback(async (args: TAllowanceFetcher): Promise<TNormalizedBN> => {
 		const	[inputToken, outputToken] = args;
+		if (!inputToken || !outputToken || !provider) {
+			return (DefaultTNormalizedBN);
+		}
 		const	isOutputTokenEth = toAddress(outputToken.value) === ETH_TOKEN_ADDRESS;
-		const	currentProvider = provider || getProvider(safeChainID);
+		const	currentProvider = provider;
 		const	contract = new ethers.Contract(
 			toAddress(inputToken.value),
 			['function allowance(address _owner, address _spender) public view returns (uint256)'],
 			currentProvider
 		);
+		const	address = await (provider as ethers.providers.Web3Provider).getSigner().getAddress();
 
 		let	spender = toAddress(outputToken.value);
 		if (isUsingPartnerContract) {
@@ -46,7 +50,6 @@ export function	useAllowanceFetcher(): (args: TAllowanceFetcher) => Promise<TNor
 		if (isOutputTokenEth) {
 			spender = toAddress(getEthZapperContract(chainID));
 		}
-		console.warn(address, spender);
 
 		try {
 			const	tokenAllowance = await contract.allowance(address, spender) || ethers.constants.Zero;
@@ -57,9 +60,9 @@ export function	useAllowanceFetcher(): (args: TAllowanceFetcher) => Promise<TNor
 			return effectiveAllowance;
 		} catch (error) {
 			console.error(error);
-			return ({raw: ethers.constants.Zero, normalized: 0});
+			return (DefaultTNormalizedBN);
 		}
-	}, [address, chainID, isUsingPartnerContract, networks, provider, safeChainID]);
+	}, [chainID, isUsingPartnerContract, networks, provider, safeChainID]);
 
 	return retrieveAllowance;
 }

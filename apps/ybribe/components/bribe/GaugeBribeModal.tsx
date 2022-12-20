@@ -8,7 +8,7 @@ import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {ERC20_ABI} from '@yearn-finance/web-lib/utils/abi';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {CURVE_BRIBE_V3_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatToNormalizedValue, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
@@ -29,7 +29,7 @@ function	GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauges, o
 	const {address, provider, isActive, openLoginModal, onSwitchChain} = useWeb3();
 	const {refresh} = useBribes();
 	const {prices} = useYearn();
-	const [amount, set_amount] = useState<TNormalizedBN>({raw: ethers.constants.Zero, normalized: 0});
+	const [amount, set_amount] = useState<TNormalizedBN>(toNormalizedBN(0));
 	const [tokenAddress, set_tokenAddress] = useState<string>('');
 	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
 	const [txStatusAddReward, set_txStatusAddReward] = useState(defaultTxStatus);
@@ -84,7 +84,7 @@ function	GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauges, o
 			mutate();
 		}).perform();
 	}
-	
+
 	function	onAddReward(): void {
 		new Transaction(provider, addReward, set_txStatusAddReward).populate(
 			currentGauge.gauge,
@@ -184,7 +184,7 @@ function	GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauges, o
 							</div>
 						</div>
 					</label>
-			
+
 					<label className={'flex flex-col space-y-1'}>
 						<p className={'text-base text-neutral-600'}>{'Reward Amount'}</p>
 						<div className={'flex h-10 items-center bg-neutral-100 p-2'}>
@@ -210,7 +210,7 @@ function	GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauges, o
 							</div>
 						</div>
 					</label>
-				
+
 					<div className={'space-y-1 border-t border-neutral-200 bg-neutral-0 py-6'}>
 						<div className={'flex flex-row items-center justify-between'}>
 							<p className={'text-sm text-neutral-400'}>

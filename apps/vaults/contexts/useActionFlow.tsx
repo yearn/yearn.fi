@@ -9,6 +9,7 @@ import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-
 import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {useWallet} from '@common/contexts/useWallet';
+import {DefaultTNormalizedBN} from '@common/utils';
 
 import type {ReactNode} from 'react';
 import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
@@ -38,13 +39,13 @@ const	DefaultActionFlowContext: TActionFlowContext = {
 	possibleOptionsTo: [],
 	selectedOptionFrom: undefined,
 	selectedOptionTo: undefined,
-	amount: {raw: ethers.constants.Zero, normalized: 0},
+	amount: DefaultTNormalizedBN,
 	onChangeAmount: (): void => undefined,
 	onUpdateSelectedOptionFrom: (): void => undefined,
 	onUpdateSelectedOptionTo: (): void => undefined,
 	onSwitchSelectedOptions: (): void => undefined,
 	isDepositing: true,
-	maxDepositPossible: {raw: ethers.constants.Zero, normalized: 0},
+	maxDepositPossible: DefaultTNormalizedBN,
 	currentSolver: Solvers.VANILLA
 };
 
@@ -58,7 +59,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 	const [possibleOptionsTo, set_possibleOptionsTo] = useState<TDropdownOption[]>([]);
 	const [selectedOptionFrom, set_selectedOptionFrom] = useState<TDropdownOption | undefined>();
 	const [selectedOptionTo, set_selectedOptionTo] = useState<TDropdownOption | undefined>();
-	const [amount, set_amount] = useState<TNormalizedBN>({raw: ethers.constants.Zero, normalized: 0});
+	const [amount, set_amount] = useState<TNormalizedBN>(DefaultTNormalizedBN);
 
 	const isDepositing = useMemo((): boolean => (
 		!selectedOptionTo?.value ? true : toAddress(selectedOptionTo.value) === toAddress(currentVault.address)
@@ -96,8 +97,8 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 		const isInputTokenEth = selectedOptionFrom?.value === ETH_TOKEN_ADDRESS;
 		const isOutputTokenEth = selectedOptionTo?.value === ETH_TOKEN_ADDRESS;
 		if (isInputTokenEth || isOutputTokenEth) {
-			return Solvers.COWSWAP;
-			// return Solvers.CHAIN_COIN;
+			// return Solvers.COWSWAP;
+			return Solvers.CHAIN_COIN;
 		} else if (isDepositing && isUsingPartnerContract) {
 			return Solvers.PARTNER_CONTRACT;
 		} 
@@ -114,7 +115,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 			set_possibleOptionsTo(possibleOptionsFrom);
 			set_possibleOptionsFrom(_possibleOptionsTo);
 			if (isDepositing) {
-				set_amount({raw: ethers.constants.Zero, normalized: 0});
+				set_amount(DefaultTNormalizedBN);
 			} else {
 				set_amount(maxDepositPossible);
 			}

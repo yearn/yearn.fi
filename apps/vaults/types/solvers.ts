@@ -14,3 +14,14 @@ export type TWithSolver = {
 	executeDeposit: (...props: never) => Promise<boolean>;
 	executeWithdraw: (...props: never) => Promise<boolean>;
 }
+
+export type TSolverContext = {
+	quote: TNormalizedBN;
+	getQuote: CallableFunction;
+	refreshQuote: CallableFunction;
+	init: CallableFunction;
+	isLoadingQuote: boolean;
+	approve: (...props: never) => Promise<boolean>;
+	executeDeposit: (...props: never) => Promise<boolean>;
+	executeWithdraw: (...props: never) => Promise<boolean>;
+}

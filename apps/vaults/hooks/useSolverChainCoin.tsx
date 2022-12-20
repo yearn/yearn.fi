@@ -7,17 +7,17 @@ import {formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNu
 import {getProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import {DefaultTNormalizedBN} from '@common/utils';
 import {approveERC20} from '@common/utils/actions/approveToken';
-import {deposit} from '@common/utils/actions/deposit';
-import {withdrawShares} from '@common/utils/actions/withdrawShares';
+import {depositETH} from '@common/utils/actions/depositEth';
+import {withdrawETH} from '@common/utils/actions/withdrawEth';
 
 import type {TNormalizedBN} from '@common/types/types';
 import type {TSolverContext} from '@vaults/types/solvers';
-import type {TVanillaAPIRequest, TVanillaRequest, TVanillaResult} from '@vaults/types/solvers.vanilla';
+import type {TChainCoinAPIRequest, TChainCoinRequest, TChainCoinResult} from '@vaults/types/solvers.chainCoin';
 
-function useVanillaQuote(): [TVanillaResult, (request: TVanillaRequest) => Promise<void>] {
+function useChainCoinQuote(): [TChainCoinResult, (request: TChainCoinRequest) => Promise<void>] {
 	const {provider, chainID} = useWeb3();
 
-	const fetchAllowance = useCallback(async(_url: string, data: {arg: TVanillaAPIRequest}): Promise<TNormalizedBN> => {
+	const fetchAllowance = useCallback(async(_url: string, data: {arg: TChainCoinAPIRequest}): Promise<TNormalizedBN> => {
 		const	[inputToken, outputToken, inputAmount, isDepositing] = data.arg;
 		if (isZeroAddress(inputToken?.value) || isZeroAddress(outputToken?.value) || inputAmount?.raw?.isZero()) {
 			return (DefaultTNormalizedBN);
@@ -45,13 +45,14 @@ function useVanillaQuote(): [TVanillaResult, (request: TVanillaRequest) => Promi
 				});
 			}
 		} catch (error) {
+			console.log(error);
 			return (DefaultTNormalizedBN);
 		}
 	}, [chainID, provider]);
 
-	const {data, error, trigger, isMutating} = useSWRMutation('vanillaQuote', fetchAllowance);
+	const {data, error, trigger, isMutating} = useSWRMutation('chainCoinQuote', fetchAllowance);
 
-	const getQuote = useCallback(async (request: TVanillaRequest): Promise<void> => {
+	const getQuote = useCallback(async (request: TChainCoinRequest): Promise<void> => {
 		const canExecuteFetch = (
 			!request.inputToken || !request.outputToken || !request.inputAmount ||
 			!(isZeroAddress(request.inputToken.value) || isZeroAddress(request.outputToken.value) || request.inputAmount.raw.isZero())
@@ -63,7 +64,7 @@ function useVanillaQuote(): [TVanillaResult, (request: TVanillaRequest) => Promi
 	}, [trigger]);
 
 	return [
-		useMemo((): TVanillaResult => ({
+		useMemo((): TChainCoinResult => ({
 			result: data || DefaultTNormalizedBN,
 			isLoading: isMutating,
 			error
@@ -72,16 +73,16 @@ function useVanillaQuote(): [TVanillaResult, (request: TVanillaRequest) => Promi
 	];
 }
 
-export function useSolverVanilla(): TSolverContext {
-	const [request, set_request] = useState<TVanillaRequest>();
-	const [latestQuote, getQuote] = useVanillaQuote();
+export function useSolverChainCoin(): TSolverContext {
+	const [request, set_request] = useState<TChainCoinRequest>();
+	const [latestQuote, getQuote] = useChainCoinQuote();
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** init will be called when the cowswap solver should be used to perform the desired swap.
 	** It will set the request to the provided value, as it's required to get the quote, and will
 	** call getQuote to get the current quote for the provided request.
 	**********************************************************************************************/
-	const init = useCallback(async (_request: TVanillaRequest): Promise<void> => {
+	const init = useCallback(async (_request: TChainCoinRequest): Promise<void> => {
 		set_request(_request);
 		getQuote(_request);
 	}, [getQuote]);
@@ -105,7 +106,7 @@ export function useSolverVanilla(): TSolverContext {
 		init,
 		isLoadingQuote: latestQuote?.isLoading || false,
 		approve: approveERC20,
-		executeDeposit: deposit,
-		executeWithdraw: withdrawShares
-	}), [latestQuote, getQuote, refreshQuote, init]);
+		executeDeposit: depositETH,
+		executeWithdraw: withdrawETH
+	}), [latestQuote?.result, latestQuote?.isLoading, getQuote, refreshQuote, init]);
 }

@@ -30,12 +30,3 @@ export type TCowResult = {
 	isLoading: boolean,
 	error: Error | undefined
 }
-
-export type TCowswapSolverContext = {
-	quote: TCowResult;
-	getQuote: CallableFunction;
-	refreshQuote: CallableFunction;
-	init: CallableFunction;
-	approve: (...props: never) => Promise<boolean>;
-	execute: (...props: never) => Promise<boolean>;
-}

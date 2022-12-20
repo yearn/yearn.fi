@@ -2,23 +2,23 @@
 import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
 
 /* 🔵 - Yearn Finance ******************************************************
-**	Theses types are used to define the request and response of the Vanilla
-**	Quote hook`.
-**	TVanillaRequest is the requirement to execute a quote request.
+**	Theses types are used to define the request and response of the
+**	ChainCoin Quote hook`.
+**	TChainCoinRequest is the requirement to execute a quote request.
 ***************************************************************************/
-export type TVanillaRequest = {
+export type TChainCoinRequest = {
     inputToken: TDropdownOption;
     outputToken: TDropdownOption;
 	inputAmount: TNormalizedBN;
 	isDepositing: boolean;
 }
-export type TVanillaAPIRequest = [
+export type TChainCoinAPIRequest = [
     inputToken: TDropdownOption,
     outputToken: TDropdownOption,
 	inputAmount: TNormalizedBN,
 	isDepositing: boolean
 ]
-export type TVanillaResult = {
+export type TChainCoinResult = {
 	result: TNormalizedBN,
 	isLoading: boolean,
 	error: Error | undefined
