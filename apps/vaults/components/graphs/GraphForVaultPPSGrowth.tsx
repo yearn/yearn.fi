@@ -64,7 +64,7 @@ function	GraphForVaultPPSGrowth({messariData, height = 312}: TGraphForVaultPPSGr
 									<div className={'flex flex-row items-center justify-between'}>
 										<p className={'text-xs text-neutral-600'}>{'Growth'}</p>
 										<b className={'font-number text-xs font-bold text-neutral-900'}>
-											{formatPercent(Number(value) - 1, 4, 4)}
+											{formatPercent((Number(value) - 1) * 100, 4, 4)}
 										</b>
 									</div>
 								</div>
