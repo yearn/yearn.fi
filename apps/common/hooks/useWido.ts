@@ -1,16 +1,47 @@
+import {useCallback, useMemo} from 'react';
 import {BigNumber, constants} from 'ethers';
 import {getTokenAllowance, quote} from 'wido';
+import useSWRMutation from 'swr/mutation';
+import {isZeroAddress} from '@yearn-finance/web-lib/utils/address';
+import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 
 import type {ethers} from 'ethers';
 import type {QuoteRequest, QuoteResult, TokenAllowanceRequest} from 'wido';
 
 type TUseWido = {
     allowance: (request: TokenAllowanceRequest) => Promise<BigNumber>;
-    quote: (request: QuoteRequest) => Promise<QuoteResult>;
+	widoQuote: TWidoResult;
+    getWidoQuote: (request: QuoteRequest) => Promise<void>;
     zap: (provider: ethers.providers.Web3Provider, request: QuoteRequest) => Promise<boolean>;
 }
 
+type TWidoResult = {
+	isLoading: boolean,
+	result?: QuoteResult,
+	error?: Error
+}
+
+export function useWidoQuote(): Pick<TUseWido, 'widoQuote' | 'getWidoQuote'> {
+	const defaultProps: QuoteRequest = {fromChainId: 1, fromToken: '', toChainId: 1, toToken: ''};
+	const {data: result, error, trigger, isMutating: isLoading} = useSWRMutation(defaultProps, quote, {});
+
+	const	getWidoQuote = useCallback(async (request: QuoteRequest): Promise<void> => {
+		const {fromToken, toToken, amount} = request;
+		const canExecuteFetch = !(isZeroAddress(fromToken) || isZeroAddress(toToken) && !formatBN(amount || 0).isZero());
+		if (canExecuteFetch) {
+			trigger(request, {revalidate: false});
+		}
+	}, [trigger]);
+
+	return {
+		widoQuote: useMemo((): TWidoResult => ({result, isLoading, error}), [error, isLoading, result]),
+		getWidoQuote
+	};
+}
+
 export function useWido(): TUseWido {
+	const {widoQuote, getWidoQuote} = useWidoQuote();
+
 	async function allowance(request: TokenAllowanceRequest): Promise<BigNumber> {
 		try {
 			const {allowance} = await getTokenAllowance(request);
@@ -37,5 +68,5 @@ export function useWido(): TUseWido {
 		}
 	}
     
-	return {quote, allowance, zap};
+	return {allowance, widoQuote, getWidoQuote, zap};
 }
