@@ -6,14 +6,16 @@ import {OrderKind} from '@gnosis.pm/gp-v2-contracts';
 import {isZeroAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 
-import type {QuoteRequest as TWidoRequest, QuoteResult as TWidoResult} from 'wido';
+import {useWido} from './useWido';
+
 import type {TAddress} from '@yearn-finance/web-lib/utils/address';
 import type {TDict} from '@yearn-finance/web-lib/utils/types';
 import type {Order, QuoteQuery} from '@gnosis.pm/gp-v2-contracts';
+import type {TUseWido, TWidoResult} from './useWido';
 
 export type TPossibleExternalServices = 'wido' | 'portals' | 'cowswap';
 
-export type TWidoQuote = { req: { type: 'wido'; request: TWidoRequest }; res: TWidoResult };
+export type TWidoQuote = { req: { type: 'wido'; request: TUseWido['getWidoQuote'] }; res: TWidoResult };
 
 type TPortalsRequest = {
     network: string; // The network to use (ethereum, avalanche, etc.)
@@ -117,7 +119,7 @@ export function useCowQuote(): [TCowResult, CallableFunction] {
 // }
 
 export function useExternalServiceQuote<T>({type, request}: TExternalService<T>['req']): TExternalService<T>['res'] {
-	const [widoQuote, getWidoQuote] = useCowQuote()/*useWidoQuote()*/;
+	const {widoQuote, getWidoQuote} = useWido();
 	const [portalsQuote, getPortalsQuote] = useCowQuote()/*usePortalsQuote()*/;
 	const [cowQuote, getCowQuote] = useCowQuote();
 
@@ -142,7 +144,7 @@ export function useExternalServiceQuote<T>({type, request}: TExternalService<T>[
 		} else {
 			throw new Error(`Unknown service ${type}`);
 		}
-	}, [stringifiedRequest, type]);
+	}, [quoteMapping, stringifiedRequest, type]);
 
 	return quoteMapping[type][0];
 }

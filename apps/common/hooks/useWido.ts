@@ -8,14 +8,14 @@ import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import type {ethers} from 'ethers';
 import type {QuoteRequest, QuoteResult, TokenAllowanceRequest} from 'wido';
 
-type TUseWido = {
+export type TUseWido = {
     allowance: (request: TokenAllowanceRequest) => Promise<BigNumber>;
 	widoQuote: TWidoResult;
     getWidoQuote: (request: QuoteRequest) => Promise<void>;
     zap: (provider: ethers.providers.Web3Provider, request: QuoteRequest) => Promise<boolean>;
 }
 
-type TWidoResult = {
+export type TWidoResult = {
 	isLoading: boolean,
 	result?: QuoteResult,
 	error?: Error
