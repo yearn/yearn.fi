@@ -39,7 +39,7 @@ module.exports = withBundleAnalyzer(withPWA({
 		ALCHEMY_KEY: process.env.ALCHEMY_KEY,
 		INFURA_KEY: process.env.INFURA_KEY,
 
-		PARTNER_ID_ADDRESS: '0x5b555B6fC357434eb7bA572A87F3AcA30AB5D272',
+		PARTNER_ID_ADDRESS: '0xFEB4acf3df3cDEA7399794D0869ef76A6EfAff52',
 		SHOULD_USE_PARTNER_CONTRACT: true,
 		// YDAEMON_BASE_URI: 'https://api.ycorpo.com',
 		YDAEMON_BASE_URI: 'https://ydaemon.yearn.finance',
