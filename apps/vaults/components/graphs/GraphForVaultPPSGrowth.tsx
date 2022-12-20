@@ -42,7 +42,7 @@ function	GraphForVaultPPSGrowth({messariData, height = 312}: TGraphForVaultPPSGr
 					tick={(e): ReactElement => {
 						const {payload: {value}} = e;
 						e.fill = '#5B5B5B';
-						e.class = 'text-xxs md:text-xs font-number';
+						e.className = 'text-xxs md:text-xs font-number';
 						e.alignmentBaseline = 'middle';
 						const	formatedValue = formatAmount(value, 3, 3);
 						return <text {...e}>{formatedValue}</text>;

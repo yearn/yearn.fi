@@ -311,7 +311,7 @@ function	ActionButton({
 
 function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): ReactElement {
 	const {isActive, provider} = useWeb3();
-	const {safeChainID} = useChainID();
+	const {chainID, safeChainID} = useChainID();
 	const {balances, refresh} = useWallet();
 	const [possibleOptionsFrom, set_possibleOptionsFrom] = useState<TDropdownOption[]>([]);
 	const [possibleOptionsTo, set_possibleOptionsTo] = useState<TDropdownOption[]>([]);
@@ -363,7 +363,7 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 						symbol: currentVault?.token?.symbol,
 						address: toAddress(currentVault.token.address),
 						safeChainID,
-						decimals: 18
+						decimals: currentVault.decimals
 					})
 				]);
 			}
@@ -381,14 +381,14 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 				symbol: currentVault?.token?.symbol,
 				address: toAddress(currentVault.token.address),
 				safeChainID,
-				decimals: 18
+				decimals: currentVault?.decimals || 18
 			});
 			const	_selectedTo = setZapOption({
 				name: currentVault?.display_name || currentVault?.name || currentVault.formated_name,
 				symbol: currentVault?.display_symbol || currentVault.symbol,
 				address: toAddress(currentVault.address),
 				safeChainID,
-				decimals: 18
+				decimals: currentVault?.token?.decimals || 18
 			});
 			performBatchedUpdates((): void => {
 				set_selectedOptionFrom(_selectedFrom);
@@ -402,38 +402,39 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 	** in/out pair with a specific amount. This callback is called every 10s or when amount/in or
 	** out changes.
 	**********************************************************************************************/
-	const expectedOutFetcher = useCallback(async (args: [string, string, BigNumber]): Promise<TNormalizedBN> => {
+	const expectedOutFetcher = useCallback(async (args: [TDropdownOption, TDropdownOption, BigNumber]): Promise<TNormalizedBN> => {
 		const [_inputToken, _outputToken, _amountIn] = args;
 		if (!_inputToken || !_outputToken) {
 			return ({raw: ethers.constants.Zero, normalized: 0});
 		}
 		
-		const	currentProvider = provider || getProvider(safeChainID);
+		const	currentProvider = provider || getProvider(chainID);
 		const	contract = new ethers.Contract(
-			isDepositing ? _outputToken : _inputToken,
+			toAddress(isDepositing ? _outputToken.value : _inputToken.value),
 			['function pricePerShare() public view returns (uint256)'],
 			currentProvider
 		);
 		try {
 			const	pps = await contract.pricePerShare() || ethers.constants.Zero;
 			if (isDepositing) {
-				const	expectedOutFetched = _amountIn.mul(ethers.constants.WeiPerEther).div(pps);
+				const	expectedOutFetched = _amountIn.mul(formatBN(10).pow(_outputToken?.decimals)).div(pps);
 				return ({
 					raw: expectedOutFetched,
-					normalized: formatToNormalizedValue(expectedOutFetched || ethers.constants.Zero, currentVault?.decimals)
+					normalized: formatToNormalizedValue(expectedOutFetched || ethers.constants.Zero, _outputToken?.decimals || currentVault?.decimals)
 				});
 			} else {
-				const	expectedOutFetched = _amountIn.mul(pps).div(ethers.constants.WeiPerEther);
+				const	expectedOutFetched = _amountIn.div(formatBN(10).pow(_outputToken?.decimals)).mul(pps);
 				return ({
 					raw: expectedOutFetched,
-					normalized: formatToNormalizedValue(expectedOutFetched || ethers.constants.Zero, currentVault?.decimals)
+					normalized: formatToNormalizedValue(expectedOutFetched || ethers.constants.Zero, _outputToken?.decimals || currentVault?.decimals)
 				});
 			}
 		} catch (error) {
+			console.error(error);
 			return ({raw: ethers.constants.Zero, normalized: 0});
 		}
 		
-	}, [provider, safeChainID, currentVault?.decimals, isDepositing]);
+	}, [provider, chainID, currentVault?.decimals, isDepositing]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** SWR hook to get the expected out for a given in/out pair with a specific amount. This hook is
@@ -441,8 +442,8 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 	**********************************************************************************************/
 	const	{data: expectedOut} = useSWR(
 		isActive && amount.raw.gt(0) && selectedOptionFrom && selectedOptionTo ? [
-			selectedOptionFrom.value,
-			selectedOptionTo.value,
+			selectedOptionFrom,
+			selectedOptionTo,
 			amount.raw
 		] : null,
 		expectedOutFetcher,

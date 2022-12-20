@@ -71,7 +71,7 @@ function	GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height =
 					tick={(e): ReactElement => {
 						const {payload: {value}} = e;
 						e.fill = '#5B5B5B';
-						e.class = 'text-xxs md:text-xs font-number z-10 ';
+						e.className = 'text-xxs md:text-xs font-number z-10 ';
 						e.alignmentBaseline = 'middle';
 						const	formatedValue = formatPercent(value);
 						return <text {...e}>{formatedValue}</text>;

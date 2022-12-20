@@ -41,7 +41,7 @@ function	GraphForVaultTVL({messariData, height = 312}: TGraphForVaultTVLProps): 
 					tick={(e): ReactElement => {
 						const {payload: {value}} = e;
 						e.fill = '#5B5B5B';
-						e.class = 'text-xxs md:text-xs font-number';
+						e.className = 'text-xxs md:text-xs font-number';
 						e.alignmentBaseline = 'middle';
 						const	formatedValue = formatWithUnit(value, 0, 0);
 						return <text {...e}>{formatedValue}</text>;
