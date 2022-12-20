@@ -140,9 +140,9 @@ export function	AppHeader(): ReactElement {
 	const	navMenu = useMemo((): TMenu[] => {
 		let	menu: TMenu[] = [
 			{path: '/', label: 'Home'},
-			{path: 'https://gov.yearn.finance/', label: 'Governance'},
-			{path: 'https://blog.yearn.finance/', label: 'Blog'},
-			{path: 'https://docs.yearn.finance/', label: 'Docs'}
+			{path: 'https://gov.yearn.finance/', label: 'Governance', target: '_blank'},
+			{path: 'https://blog.yearn.finance/', label: 'Blog', target: '_blank'},
+			{path: 'https://docs.yearn.finance/', label: 'Docs', target: '_blank'}
 		];
 
 		if (router.pathname.startsWith('/ycrv')) {
