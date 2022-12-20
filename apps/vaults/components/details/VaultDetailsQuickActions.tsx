@@ -97,7 +97,7 @@ function	ActionButton({
 		if (isDepositing && isUsingPartnerContract) { 
 			spender = toAddress(networks[safeChainID]?.partnerContractAddress);
 		} else if (!isDepositing && isOutputTokenEth) {
-			spender = getEthZapperContract(chainID);
+			spender = toAddress(getEthZapperContract(chainID));
 		}
 		return spender;
 	}, [chainID, isDepositing, isOutputTokenEth, isUsingPartnerContract, networks, safeChainID, selectedOptionTo?.value]);	
@@ -453,22 +453,17 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 		performBatchedUpdates((): void => {
 			const _selectedOptionTo = selectedOptionTo;
 			const _possibleOptionsTo = possibleOptionsTo;
-
-			// We switch the possible options
-			set_selectedOptionFrom(_selectedOptionTo);
+			set_selectedOptionTo(selectedOptionFrom);
 			set_selectedOptionFrom(_selectedOptionTo);
 			set_possibleOptionsTo(possibleOptionsFrom);
 			set_possibleOptionsFrom(_possibleOptionsTo);
-
-			// If we are depositing, we set the amount to the max deposit possible, otherwise we set it to 0
 			if (isDepositing) {
 				set_amount({raw: ethers.constants.Zero, normalized: 0});
 			} else {
 				set_amount(maxDepositPossible);
 			}
 		});
-	}, [selectedOptionTo, possibleOptionsTo, possibleOptionsFrom, isDepositing, maxDepositPossible]);
-
+	}, [selectedOptionTo, possibleOptionsTo, selectedOptionFrom, possibleOptionsFrom, isDepositing, maxDepositPossible]);
 
 	return (
 		<>
