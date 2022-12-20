@@ -1,4 +1,4 @@
-import React, {Fragment, useCallback, useEffect, useMemo, useState} from 'react';
+import React, {Fragment, useCallback, useMemo, useState} from 'react';
 import {ethers} from 'ethers';
 import VaultListOptions from '@vaults/components/list/VaultListOptions';
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
@@ -96,16 +96,6 @@ function	Index(): ReactElement {
 		}
 		return false;
 	});
-
-	/* 🔵 - Yearn Finance **************************************************************************
-	**	As the sidechains have a low number of vaults, we will display all of them by default.
-	**********************************************************************************************/
-	useEffect((): void => {
-		if (safeChainID === 10 || safeChainID === 42161) {
-			set_category('All Vaults');
-		}
-	}, [safeChainID]);
-	
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	**	First, we need to determine in which category we are. The vaultsToDisplay function will
