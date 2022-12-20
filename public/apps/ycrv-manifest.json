@@ -4,8 +4,8 @@
 	"description": "The best crv yields in defi. *mic drop*",
 	"iconPath": "./favicons/favicon.svg",
 	"locale": "en-US",
-	"uri": "https://ydraft-majorfi-ycorpo.vercel.app/ycrv/",
-	"og": "https://ydraft-majorfi-ycorpo.vercel.app/apps/ycrv-og.png",
+	"uri": "https://yearn.finance/ycrv/",
+	"og": "https://yearn.finance/apps/ycrv-og.png",
 	"twitter": "@iearnfinance",
 	"github": "https://github.com/Majorfi/y",
 	"icons": [

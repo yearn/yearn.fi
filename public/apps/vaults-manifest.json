@@ -4,8 +4,8 @@
 	"description": "Let your assets work for you with the best risk-adjusted yields in DeFi.",
 	"iconPath": "./favicons/favicon.svg",
 	"locale": "en-US",
-	"uri": "https://ydraft-majorfi-ycorpo.vercel.app/vaults/",
-	"og": "https://ydraft-majorfi-ycorpo.vercel.app/apps/vaults-og.png",
+	"uri": "https://yearn.finance/vaults/",
+	"og": "https://yearn.finance/apps/vaults-og.png",
 	"twitter": "@iearnfinance",
 	"github": "https://github.com/Majorfi/y",
 	"icons": [
