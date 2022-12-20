@@ -1,4 +1,4 @@
-import {createContext, useCallback, useContext, useMemo, useState} from 'react';
+import {useCallback, useMemo, useState} from 'react';
 import {BigNumber, ethers} from 'ethers';
 import axios from 'axios';
 import useSWRMutation from 'swr/mutation';
@@ -7,41 +7,17 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 
-import type {TAddress} from '@yearn-finance/web-lib/utils/address';
 import type {Order, QuoteQuery, Timestamp} from '@gnosis.pm/gp-v2-contracts';
+import type {TCowAPIResult, TCowRequest, TCowResult, TCowswapSolverContext} from '@vaults/types/solvers.cow';
 
-/* 🔵 - Yearn Finance ******************************************************
-**	Cowswap Solver
-***************************************************************************/
-export type TCowRequest = {
-	from: TAddress,
-    sellToken: TAddress;
-    buyToken: TAddress;
-    sellAmount: BigNumber;
-	sellTokenDecimals: number;
-	buyTokenDecimals: number;
-}
-type TCowAPIResult = {
-	quote: Order;
-	from: string;
-	expiration: string;
-	id: number;
-}
-type TCowResult = {
-	result: TCowAPIResult | undefined,
-	isLoading: boolean,
-	error: Error | undefined
-}
-export type TCowQuote = { req: { type: 'cowswap'; request: TCowRequest }; res: TCowResult };
+export function useCowswapQuote(): [TCowResult, (request: TCowRequest) => Promise<void>] {
+	const fetchCowQuote = useCallback(async(url: string, data: {arg: unknown}): Promise<TCowAPIResult> => {
+		return (await axios.post(url, data.arg)).data;
+	}, []);
 
-async function fetchCowQuote(url: string, data: {arg: unknown}): Promise<TCowAPIResult> {
-	return (await axios.post(url, data.arg)).data;
-}
-
-export function useCowQuote(): [TCowResult, (request: TCowRequest) => Promise<void>] {
 	const {data, error, trigger, isMutating} = useSWRMutation('https://api.cow.fi/mainnet/api/v1/quote', fetchCowQuote);
 
-	const	getQuote = useCallback(async (request: TCowRequest): Promise<void> => {
+	const getQuote = useCallback(async (request: TCowRequest): Promise<void> => {
 		const	YEARN_APP_DATA = '0x2B8694ED30082129598720860E8E972F07AA10D9B81CAE16CA0E2CFB24743E24';
 		const	quote: QuoteQuery = ({
 			from: request.from, // receiver
@@ -73,32 +49,12 @@ export function useCowQuote(): [TCowResult, (request: TCowRequest) => Promise<vo
 	];
 }
 
-
-
-type TCowswapSolverContext = {
-	quote: TCowResult;
-	getQuote: CallableFunction;
-	refreshQuote: CallableFunction;
-	initCowswap: CallableFunction;
-	approve: (...props: never) => Promise<boolean>;
-	execute: (...props: never) => Promise<boolean>;
-}
-const	defaultProps: TCowswapSolverContext = {
-	quote: {} as TCowResult, // eslint-disable-line @typescript-eslint/consistent-type-assertions
-	getQuote: (): void => undefined,
-	refreshQuote: (): void => undefined,
-	initCowswap: (): void => undefined,
-	approve: async (): Promise<boolean> => Promise.resolve(false),
-	execute: async (): Promise<boolean> => Promise.resolve(false)
-};
-
-const	CowswapSolverContext = createContext<TCowswapSolverContext>(defaultProps);
-export const CowswapSolverContextApp = ({children}: {children: React.ReactElement}): React.ReactElement => {
+export function useCowswap(): TCowswapSolverContext {
 	const {provider} = useWeb3();
 	const shouldUsePresign = false; //Debug only
 	const DEFAULT_SLIPPAGE_COWSWAP = 0.01; // 1%
 	const [request, set_request] = useState<TCowRequest>();
-	const [cowQuote, getCowQuote] = useCowQuote();
+	const [cowQuote, getCowQuote] = useCowswapQuote();
 	const [signature, set_signature] = useState<string>('');
 
 	/* 🔵 - Yearn Finance **************************************************************************
@@ -251,7 +207,7 @@ export const CowswapSolverContextApp = ({children}: {children: React.ReactElemen
 		return false;
 	}, [buyAmountWithSlippage, cowQuote.result, shouldUsePresign, signature]);
 
-	const contextValue = useMemo((): TCowswapSolverContext => ({
+	return useMemo((): TCowswapSolverContext => ({
 		quote: cowQuote,
 		getQuote: getCowQuote,
 		refreshQuote: refreshQuote,
@@ -259,13 +215,4 @@ export const CowswapSolverContextApp = ({children}: {children: React.ReactElemen
 		approve,
 		execute
 	}), [approve, cowQuote, getCowQuote, refreshQuote, execute, init]);
-
-	return (
-		<CowswapSolverContext.Provider value={contextValue}>
-			{children}
-		</CowswapSolverContext.Provider>
-	);
-};
-
-export const useCowswap = (): TCowswapSolverContext => useContext(CowswapSolverContext);
-export default useCowswap;
+}
