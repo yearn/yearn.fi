@@ -23,7 +23,7 @@ function useVanillaQuote(): [TVanillaResult, (request: TVanillaRequest) => Promi
 	const getQuote = useCallback(async (request: TVanillaRequest): Promise<void> => {
 		const canExecuteFetch = request.inputToken !== undefined && request.outputToken !== undefined && !isZeroAddress(request.inputToken?.value) && !isZeroAddress(request.outputToken?.value);
 		if (canExecuteFetch) {
-			trigger([request.inputToken, request.outputToken], {revalidate: false});
+			trigger([request.inputToken, request.outputToken]);
 		}
 	}, [trigger]);
 

@@ -89,14 +89,15 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 	}, [balances, currentVault.details.depositLimit, currentVault.token.decimals, selectedOptionFrom?.value]);
 
 	const currentSolver = useMemo((): Solvers => {
-		if (DEBUG_WITH_COWSWAP) {
-			return Solvers.COWSWAP;
-		}
+		// if (DEBUG_WITH_COWSWAP) {
+		// 	return Solvers.COWSWAP;
+		// }
 
 		const isInputTokenEth = selectedOptionFrom?.value === ETH_TOKEN_ADDRESS;
 		const isOutputTokenEth = selectedOptionTo?.value === ETH_TOKEN_ADDRESS;
 		if (isInputTokenEth || isOutputTokenEth) {
-			return Solvers.CHAIN_COIN;
+			return Solvers.COWSWAP;
+			// return Solvers.CHAIN_COIN;
 		} else if (isDepositing && isUsingPartnerContract) {
 			return Solvers.PARTNER_CONTRACT;
 		} 

@@ -3,9 +3,7 @@ import {ethers} from 'ethers';
 import {useSolver} from '@vaults/contexts/useSolver';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
-import {withdrawShares} from '@common/utils/actions/withdrawShares';
 
 import type {ReactElement} from 'react';
 import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
@@ -31,7 +29,7 @@ function	SolverCowswap({
 	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
 	const [txStatusDeposit, set_txStatusDeposit] = useState(defaultTxStatus);
 	const [allowanceFrom, set_allowanceFrom] = useState<TNormalizedBN>();
-	const {approve, execute} = useSolver();
+	const {approve, executeDeposit, executeWithdraw} = useSolver();
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Trigger an approve web3 action, simply trying to approve `amount` tokens
@@ -64,7 +62,7 @@ function	SolverCowswap({
 		if (!selectedOptionTo) {
 			return;
 		}
-		new Transaction(provider, execute, set_txStatusDeposit)
+		new Transaction(provider, executeDeposit, set_txStatusDeposit)
 			.populate()
 			.onSuccess(async (): Promise<void> => {
 				await onSuccess();
@@ -80,12 +78,11 @@ function	SolverCowswap({
 		if (!selectedOptionFrom) {
 			return;
 		}
-		new Transaction(provider, withdrawShares, set_txStatusDeposit).populate(
-			toAddress(selectedOptionFrom.value), //vault address
-			amount.raw //amount
-		).onSuccess(async (): Promise<void> => {
-			await onSuccess();
-		}).perform();
+		new Transaction(provider, executeWithdraw, set_txStatusDeposit)
+			.populate()
+			.onSuccess(async (): Promise<void> => {
+				await onSuccess();
+			}).perform();
 	}
 
 	/* 🔵 - Yearn Finance ******************************************************
