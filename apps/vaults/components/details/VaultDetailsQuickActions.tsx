@@ -470,7 +470,7 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 		<>
 			<nav className={'mt-10 mb-2 w-full md:mt-20'}>
 				<Link href={'/vaults'}>
-					<p className={'yearn--header-nav-item opacity-30'}>
+					<p className={'yearn--header-nav-item w-full whitespace-nowrap opacity-30'}>
 						{'Back to vaults'}
 					</p>
 				</Link>

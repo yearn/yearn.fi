@@ -46,53 +46,53 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 			<div className={'mt-4 mb-10 md:mt-10 md:mb-14'}>
 				{currentVault?.address ? (
 					<button onClick={(): void => copyToClipboard(currentVault.address)}>
-						<p className={'font-number text-xs text-neutral-500'}>{currentVault.address}</p>
+						<p className={'font-number text-xxs text-neutral-500 md:text-xs'}>{currentVault.address}</p>
 					</button>
-				): <p className={'text-xs text-neutral-500'}>&nbsp;</p>}
+				): <p className={'text-xxs text-neutral-500 md:text-xs'}>&nbsp;</p>}
 			</div>
-			<div className={'grid grid-cols-2 gap-12 md:grid-cols-4'}>
-				<div className={'flex flex-col items-center justify-center space-y-2'}>
-					<p className={'text-center text-xs text-neutral-600'}>
+			<div className={'grid grid-cols-2 gap-6 md:grid-cols-4 md:gap-12'}>
+				<div className={'flex flex-col items-center justify-center space-y-1 md:space-y-2'}>
+					<p className={'text-center text-xxs text-neutral-600 md:text-xs'}>
 						{`Total deposited, ${currentVault?.symbol || 'token'}`}
 					</p>
-					<b className={'font-number text-3xl'} suppressHydrationWarning>
+					<b className={'font-number text-lg md:text-3xl'} suppressHydrationWarning>
 						{formatAmount(formatToNormalizedValue(currentVault?.tvl?.total_assets, currentVault?.decimals))}
 					</b>
-					<legend className={'font-number text-xs text-neutral-600'} suppressHydrationWarning>
+					<legend className={'font-number text-xxs text-neutral-600 md:text-xs'} suppressHydrationWarning>
 						{formatUSD(currentVault?.tvl?.tvl)}
 					</legend>
 				</div>
 
-				<div className={'flex flex-col items-center justify-center space-y-2'}>
-					<p className={'text-center text-xs text-neutral-600'}>
+				<div className={'flex flex-col items-center justify-center space-y-1 md:space-y-2'}>
+					<p className={'text-center text-xxs text-neutral-600 md:text-xs'}>
 						{'Net APY'}
 					</p>
-					<b className={'font-number text-3xl'} suppressHydrationWarning>
+					<b className={'font-number text-lg md:text-3xl'} suppressHydrationWarning>
 						{formatPercent((currentVault?.apy?.net_apy || 0) * 100)}
 					</b>
-					<legend className={'text-xs text-neutral-600'}>&nbsp;</legend>
+					<legend className={'text-xxs text-neutral-600 md:text-xs'}>&nbsp;</legend>
 				</div>
 
-				<div className={'flex flex-col items-center justify-center space-y-2'}>
-					<p className={'text-center text-xs text-neutral-600'}>
+				<div className={'flex flex-col items-center justify-center space-y-1 md:space-y-2'}>
+					<p className={'text-center text-xxs text-neutral-600 md:text-xs'}>
 						{`Balance, ${currentVault?.symbol || 'token'}`}
 					</p>
-					<b className={'font-number text-3xl'} suppressHydrationWarning>
+					<b className={'font-number text-lg md:text-3xl'} suppressHydrationWarning>
 						{formatAmount(vaultBalance)}
 					</b>
-					<legend className={'font-number text-xs text-neutral-600'} suppressHydrationWarning>
+					<legend className={'font-number text-xxs text-neutral-600 md:text-xs'} suppressHydrationWarning>
 						{formatCounterValue(vaultBalance, vaultPrice)}
 					</legend>
 				</div>
 
-				<div className={'flex flex-col items-center justify-center space-y-2'}>
-					<p className={'text-center text-xs text-neutral-600'}>
+				<div className={'flex flex-col items-center justify-center space-y-1 md:space-y-2'}>
+					<p className={'text-center text-xxs text-neutral-600 md:text-xs'}>
 						{`Earned, ${currentVault?.token?.symbol || 'token'}`}
 					</p>
-					<b className={'font-number text-3xl'} suppressHydrationWarning>
+					<b className={'font-number text-lg md:text-3xl'} suppressHydrationWarning>
 						{formatAmount(normalizedVaultEarned)}
 					</b>
-					<legend className={'font-number text-xs text-neutral-600'} suppressHydrationWarning>
+					<legend className={'font-number text-xxs text-neutral-600 md:text-xs'} suppressHydrationWarning>
 						{formatCounterValue(normalizedVaultEarned || 0, vaultPrice)}
 					</legend>
 				</div>
