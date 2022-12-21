@@ -125,7 +125,7 @@ function	About(): ReactElement {
 						{'Slippage tolerance'}
 					</label>
 					<div className={'flex flex-row space-x-2'}>
-						<div className={'flex h-10 w-40 min-w-[160px] items-center border-2 border-neutral-700 bg-neutral-0 py-4 px-0'}>
+						<div className={'flex h-10 w-40 min-w-[72px] items-center border-2 border-neutral-700 bg-neutral-0 py-4 px-0 md:min-w-[160px]'}>
 							<input
 								id={'slippageTolerance'}
 								type={'number'}
