@@ -47,7 +47,7 @@ function	VaultsListRow({currentVault}: {currentVault: TYearnVault}): ReactElemen
 
 				<div className={'yearn--table-data-section'}>
 					<div className={'yearn--table-data-section-item md:col-span-2'}>
-						<label className={'yearn--table-data-section-item-label'}>{'APY2'}</label>
+						<label className={'yearn--table-data-section-item-label'}>{'APY'}</label>
 						<b className={'yearn--table-data-section-item-value'} datatype={'number'}>
 							{(currentVault.apy?.type === 'new' && currentVault.apy?.net_apy == 0) ? (
 								'New'
