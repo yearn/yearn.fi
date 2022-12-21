@@ -417,13 +417,13 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 		try {
 			const	pps = await contract.pricePerShare() || ethers.constants.Zero;
 			if (isDepositing) {
-				const	expectedOutFetched = _amountIn.mul(formatBN(10).pow(_outputToken?.decimals)).div(pps);
+				const	expectedOutFetched = _amountIn.div(pps).mul(formatBN(10).pow(_outputToken?.decimals));
 				return ({
 					raw: expectedOutFetched,
 					normalized: formatToNormalizedValue(expectedOutFetched || ethers.constants.Zero, _outputToken?.decimals || currentVault?.decimals)
 				});
 			} else {
-				const	expectedOutFetched = _amountIn.div(formatBN(10).pow(_outputToken?.decimals)).mul(pps);
+				const	expectedOutFetched = _amountIn.mul(pps).div(formatBN(10).pow(_outputToken?.decimals));
 				return ({
 					raw: expectedOutFetched,
 					normalized: formatToNormalizedValue(expectedOutFetched || ethers.constants.Zero, _outputToken?.decimals || currentVault?.decimals)
