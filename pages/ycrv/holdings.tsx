@@ -20,9 +20,10 @@ import type {ReactElement} from 'react';
 
 function	HeaderPosition(): ReactElement {
 	const {holdings} = useYCRV();
-	const {vaults} = useYearn();
 	const balanceOfStyCRV = useBalance(STYCRV_TOKEN_ADDRESS);
 	const balanceOfLpyCRV = useBalance(LPYCRV_TOKEN_ADDRESS);
+	const stycrvPrice = useTokenPrice(STYCRV_TOKEN_ADDRESS);
+	const lpycrvPrice = useTokenPrice(LPYCRV_TOKEN_ADDRESS);
 
 	const	formatedYearnHas = useMemo((): string => (
 		holdings?.veCRVBalance ?
@@ -32,12 +33,12 @@ function	HeaderPosition(): ReactElement {
 
 	const	formatedYouHave = useMemo((): string => (
 		formatCounterValueRaw(
-			(balanceOfStyCRV.normalized * (vaults?.[STYCRV_TOKEN_ADDRESS]?.tvl?.price || 0))
+			(balanceOfStyCRV.normalized * stycrvPrice)
 			+
-			(balanceOfLpyCRV.normalized * (vaults?.[LPYCRV_TOKEN_ADDRESS]?.tvl?.price || 0)),
+			(balanceOfLpyCRV.normalized * lpycrvPrice),
 			1
 		)
-	), [balanceOfStyCRV, balanceOfLpyCRV, vaults]);
+	), [balanceOfStyCRV.normalized, stycrvPrice, balanceOfLpyCRV.normalized, lpycrvPrice]);
 
 	return (
 		<Fragment>
@@ -71,6 +72,8 @@ function	Holdings(): ReactElement {
 
 	const lpCRVAPY = useMemo((): string => getVaultAPY(vaults, LPYCRV_TOKEN_ADDRESS), [vaults]);
 	const ycrvPrice = useTokenPrice(YCRV_TOKEN_ADDRESS);
+	const stycrvPrice = useTokenPrice(STYCRV_TOKEN_ADDRESS);
+	const lpycrvPrice = useTokenPrice(LPYCRV_TOKEN_ADDRESS);
 	const balanceOfStyCRV = useBalance(STYCRV_TOKEN_ADDRESS);
 	const balanceOfLpyCRV = useBalance(LPYCRV_TOKEN_ADDRESS);
 
@@ -186,7 +189,7 @@ function	Holdings(): ReactElement {
 								className={'font-number text-base text-neutral-900'}>
 								{holdings?.styCRVSupply ? formatCounterValue(
 									formatToNormalizedValue(holdings.styCRVSupply || ethers.constants.Zero, 18),
-									vaults?.[STYCRV_TOKEN_ADDRESS]?.tvl?.price || 0
+									stycrvPrice
 								) : formatAmount(0)}
 							</p>
 						</div>
@@ -209,10 +212,7 @@ function	Holdings(): ReactElement {
 								<p
 									suppressHydrationWarning
 									className={'font-number text-xs text-neutral-600'}>
-									{formatCounterValue(
-										balanceOfStyCRV.normalized,
-										vaults?.[STYCRV_TOKEN_ADDRESS]?.tvl?.price || 0
-									)}
+									{formatCounterValue(balanceOfStyCRV.normalized, stycrvPrice)}
 								</p>
 							</div>
 						</div>
@@ -240,7 +240,7 @@ function	Holdings(): ReactElement {
 								className={'font-number text-base text-neutral-900'}>
 								{holdings?.lpyCRVSupply ? formatCounterValue(
 									formatToNormalizedValue(holdings?.lpyCRVSupply || ethers.constants.Zero, 18),
-									vaults?.[LPYCRV_TOKEN_ADDRESS]?.tvl?.price || 0
+									lpycrvPrice
 								) : formatAmount(0)}
 							</p>
 						</div>
@@ -265,7 +265,7 @@ function	Holdings(): ReactElement {
 									className={'font-number text-xs text-neutral-600'}>
 									{formatCounterValue(
 										balanceOfLpyCRV?.normalized,
-										vaults?.[LPYCRV_TOKEN_ADDRESS]?.tvl?.price || 0
+										lpycrvPrice
 									)}
 								</p>
 							</div>
