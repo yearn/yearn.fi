@@ -2368,9 +2368,9 @@
     eventemitter3 "^4.0.7"
 
 "@yearn-finance/web-lib@^0.17.66":
-  version "0.17.66"
-  resolved "https://registry.yarnpkg.com/@yearn-finance/web-lib/-/web-lib-0.17.66.tgz#de4898a8eb6dbd6d50fe5858b51dc9ea78577c40"
-  integrity sha512-zO6pLD45hD3o3hiE9RUdpqjerSDoh5dyC9B+Jdhn0wGam+dRIeFtR7iLXkXsMmRGaJOmGZWZ3Uxlqm5ND7V2nQ==
+  version "0.17.68"
+  resolved "https://registry.yarnpkg.com/@yearn-finance/web-lib/-/web-lib-0.17.68.tgz#4dc4bf1565de04e0fe33e02f9cb715cbdd7096fc"
+  integrity sha512-X9OZU/sognFdIDA2Ij92UznkloiT111UISDScKyCdcG7rJ2zY7l94hwhUMejNAcMMYmNpFNyZcEvhlGtA/scWA==
   dependencies:
     "@coinbase/wallet-sdk" "^3.5.4"
     "@ethersproject/experimental" "^5.7.0"
@@ -5258,6 +5258,13 @@ next-seo@^5.15.0:
   version "5.15.0"
   resolved "https://registry.yarnpkg.com/next-seo/-/next-seo-5.15.0.tgz#b1a90508599774982909ea44803323c6fb7b50f4"
   integrity sha512-LGbcY91yDKGMb7YI+28n3g+RuChUkt6pXNpa8FkfKkEmNiJkeRDEXTnnjVtwT9FmMhG6NH8qwHTelGrlYm9rgg==
+
+next-transpile-modules@^10.0.0:
+  version "10.0.0"
+  resolved "https://registry.yarnpkg.com/next-transpile-modules/-/next-transpile-modules-10.0.0.tgz#7152880048835acb64d05fc7aa34910cbe7994da"
+  integrity sha512-FyeJ++Lm2Fq31gbThiRCrJlYpIY9QaI7A3TjuhQLzOix8ChQrvn5ny4MhfIthS5cy6+uK1AhDRvxVdW17y3Xdw==
+  dependencies:
+    enhanced-resolve "^5.10.0"
 
 next@^13.0.7:
   version "13.0.7"

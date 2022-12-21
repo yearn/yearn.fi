@@ -12,7 +12,9 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
 	enabled: process.env.ANALYZE === 'true'
 });
 
-module.exports = withBundleAnalyzer(withPWA({
+const withTM = require('next-transpile-modules')(['@yearn-finance/web-lib'], {resolveSymlinks: false});
+
+module.exports = withTM(withBundleAnalyzer(withPWA({
 	images: {
 		domains: [
 			'rawcdn.githack.com',
@@ -47,5 +49,5 @@ module.exports = withBundleAnalyzer(withPWA({
 		// YDAEMON_BASE_URI: 'http://localhost:8080',
 		BASE_YEARN_ASSETS_URI: 'https://raw.githubusercontent.com/yearn/yearn-assets/master/icons/multichain-tokens/'
 	}
-}));
+})));
 
