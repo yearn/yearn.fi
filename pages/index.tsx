@@ -30,7 +30,7 @@ const	apps = [
 	}, {
 		href: 'https://vote.yearn.finance',
 		title: 'veYFI',
-		description: 'stake your YFI to receive\nrewards and boost gauges.',
+		description: 'stake YFI to take part in governance.',
 		icon: <LogoYearn
 			className={'h-[100px] w-[100px]'}
 			back={'text-primary'}
