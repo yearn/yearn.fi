@@ -128,10 +128,10 @@
 	@apply h-8 min-h-[32px] w-8 min-w-[32px] rounded-full bg-neutral-200 md:flex md:h-10 md:w-10;
 }
 .yearn--table-data-section {
-	@apply col-span-5 grid grid-cols-1 gap-x-0 md:gap-x-7 md:grid-cols-8 gap-y-4 md:gap-y-0;
+	@apply col-span-5 grid grid-cols-1 gap-x-0 md:gap-x-7 md:grid-cols-8 gap-y-0;
 }
 .yearn--table-data-section-item-label {
-	@apply inline text-start text-neutral-500 md:hidden;
+	@apply inline text-start text-neutral-500 md:hidden text-sm;
 }
 .yearn--table-data-section-item-value {
 	@apply text-neutral-900;
