@@ -1,12 +1,11 @@
 import React from 'react';
 import Link from 'next/link';
+import VaultDetailsQuickActionsButtons from '@vaults/components/details/actions/QuickActionsButtons';
+import VaultDetailsQuickActionsFrom from '@vaults/components/details/actions/QuickActionsFrom';
+import VaultDetailsQuickActionsSwitch from '@vaults/components/details/actions/QuickActionsSwitch';
+import VaultDetailsQuickActionsTo from '@vaults/components/details/actions/QuickActionsTo';
 import ActionFlowContextApp from '@vaults/contexts/useActionFlow';
 import {WithSolverContextApp} from '@vaults/contexts/useSolver';
-
-import VaultDetailsQuickActionsButtons from './details/actions/QuickActionsButtons';
-import VaultDetailsQuickActionsFrom from './details/actions/QuickActionsFrom';
-import VaultDetailsQuickActionsSwitch from './details/actions/QuickActionsSwitch';
-import VaultDetailsQuickActionsTo from './details/actions/QuickActionsTo';
 
 import type {TYearnVault} from '@common/types/yearn';
 
