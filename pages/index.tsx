@@ -189,7 +189,7 @@ function	Index(): ReactElement {
 	return (
 		<>
 			<div className={'mx-auto mt-6 mb-10 flex w-full max-w-6xl flex-col items-center justify-center md:mt-20 md:mb-14'}>
-				<div className={'relative h-12 w-[300px] md:h-[104px] md:w-[600px]'}>
+				<div className={'relative h-20 w-[300px] overflow-hidden py-4 md:h-[104px] md:w-[600px] md:overflow-auto md:py-0'}>
 					<TextAnimation />
 				</div>
 				<div className={'my-8'}>

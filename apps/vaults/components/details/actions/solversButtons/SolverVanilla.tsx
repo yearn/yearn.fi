@@ -27,7 +27,7 @@ function	SolverVanilla({
 	selectedOptionTo,
 	onSuccess
 }: TSolver): ReactElement {
-	console.warn('SolverVanilla');
+	console.warn('Fetching quote via SolverVanilla');
 	const {isActive, provider} = useWeb3();
 	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
 	const [txStatusDeposit, set_txStatusDeposit] = useState(defaultTxStatus);

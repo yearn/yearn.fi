@@ -24,7 +24,7 @@ function	SolverCowswap({
 	selectedOptionTo,
 	onSuccess
 }: TSolver): ReactElement {
-	console.warn('SolverCowswap');
+	console.warn('Fetching quote via SolverCowswap');
 	const {isActive, provider} = useWeb3();
 	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
 	const [txStatusDeposit, set_txStatusDeposit] = useState(defaultTxStatus);
