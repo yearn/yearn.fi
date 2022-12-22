@@ -10,7 +10,6 @@ import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
 
 export type TAllowanceFetcher = [
 	inputToken: TDropdownOption,
-	outputToken: TDropdownOption,
 	spender: TAddress
 ]
 
@@ -18,8 +17,8 @@ export function	useAllowanceFetcher(): (args: TAllowanceFetcher) => Promise<TNor
 	const {provider} = useWeb3();
 	
 	const retrieveAllowance = useCallback(async (args: TAllowanceFetcher): Promise<TNormalizedBN> => {
-		const	[inputToken, outputToken, spender] = args;
-		if (!inputToken || !outputToken || !provider) {
+		const	[inputToken, spender] = args;
+		if (!inputToken || !provider) {
 			return (DefaultTNormalizedBN);
 		}
 		const	currentProvider = provider;
@@ -34,7 +33,7 @@ export function	useAllowanceFetcher(): (args: TAllowanceFetcher) => Promise<TNor
 			const	tokenAllowance = await contract.allowance(address, spender) || ethers.constants.Zero;
 			const	effectiveAllowance = ({
 				raw: tokenAllowance,
-				normalized: formatToNormalizedValue(tokenAllowance || ethers.constants.Zero, outputToken.decimals)
+				normalized: formatToNormalizedValue(tokenAllowance || ethers.constants.Zero, inputToken.decimals)
 			});
 			return effectiveAllowance;
 		} catch (error) {
