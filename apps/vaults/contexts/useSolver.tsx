@@ -1,4 +1,4 @@
-import React, {createContext, useContext, useEffect, useMemo} from 'react';
+import React, {createContext, useCallback, useContext, useEffect, useMemo, useState} from 'react';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useSolverChainCoin} from '@vaults/hooks/useSolverChainCoin';
 import {useSolverCowswap} from '@vaults/hooks/useSolverCowswap';
@@ -6,8 +6,10 @@ import {useSolverPartnerContract} from '@vaults/hooks/useSolverPartnerContract';
 import {useSolverVanilla} from '@vaults/hooks/useSolverVanilla';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {DefaultTNormalizedBN} from '@common/utils';
 
+import type {TNormalizedBN} from '@common/types/types';
 import type {TWithSolver} from '@vaults/types/solvers';
 
 export enum	Solvers {
@@ -36,62 +38,87 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 	const vanilla = useSolverVanilla();
 	const chainCoin = useSolverChainCoin();
 	const partnerContract = useSolverPartnerContract();
-	const currentSolverRef = React.useRef(vanilla);
+	const [currentSolverState, set_currentSolverState] = useState(vanilla);
+	const [isLoading, set_isLoading] = useState(false);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** Based on the currentSolver, we initialize the solver with the required parameters.
 	**********************************************************************************************/
-	useEffect((): void => {
+	const	onUpdateSolver = useCallback(async (): Promise<void> => {
+		set_isLoading(true);
+		if (!selectedOptionFrom || !selectedOptionTo || !amount) {
+			return;
+		}
+
+		let quote: TNormalizedBN = DefaultTNormalizedBN;
 		switch (currentSolver) {
 		case Solvers.COWSWAP:
-			cowswap.init({
+			quote = await cowswap.init({
 				from: toAddress(address || ''),
-				sellToken: toAddress(selectedOptionFrom?.value),
-				buyToken: toAddress(selectedOptionTo?.value),
-				sellAmount: amount.raw,
-				buyTokenDecimals: Number(selectedOptionTo?.decimals || 18),
-				sellTokenDecimals: Number(selectedOptionFrom?.decimals || 18)
+				inputToken: selectedOptionFrom,
+				outputToken: selectedOptionTo,
+				inputAmount: amount.raw,
+				isDepositing: isDepositing
 			});
-			currentSolverRef.current = cowswap;
+			performBatchedUpdates((): void => {
+				set_currentSolverState({...cowswap, quote});
+				set_isLoading(false);
+			});
 			break;
 		case Solvers.CHAIN_COIN:
-			chainCoin.init({
+			quote = await chainCoin.init({
+				from: toAddress(address || ''),
 				inputToken: selectedOptionFrom,
 				outputToken: selectedOptionTo,
-				inputAmount: amount,
+				inputAmount: amount.raw,
 				isDepositing: isDepositing
 			});
-			currentSolverRef.current = chainCoin;
+			performBatchedUpdates((): void => {
+				set_currentSolverState({...chainCoin, quote});
+				set_isLoading(false);
+			});
 			break;
 		case Solvers.PARTNER_CONTRACT:
-			chainCoin.init({
+			quote = await partnerContract.init({
+				from: toAddress(address || ''),
 				inputToken: selectedOptionFrom,
 				outputToken: selectedOptionTo,
-				inputAmount: amount,
+				inputAmount: amount.raw,
 				isDepositing: isDepositing
 			});
-			currentSolverRef.current = partnerContract;
+			performBatchedUpdates((): void => {
+				set_currentSolverState({...partnerContract, quote});
+				set_isLoading(false);
+			});
 			break;
 		default:
-			vanilla.init({
+			quote = await vanilla.init({
+				from: toAddress(address || ''),
 				inputToken: selectedOptionFrom,
 				outputToken: selectedOptionTo,
-				inputAmount: amount,
+				inputAmount: amount.raw,
 				isDepositing: isDepositing
 			});
-			currentSolverRef.current = vanilla;
+			performBatchedUpdates((): void => {
+				set_currentSolverState({...vanilla, quote});
+				set_isLoading(false);
+			});
 		}
 	}, [address, selectedOptionFrom, selectedOptionTo, amount.raw, currentSolver, cowswap.init, vanilla.init, amount, isDepositing]); //Some issues
+
+	useEffect((): void => {
+		onUpdateSolver();
+	}, [onUpdateSolver]);
 
 
 	const	contextValue = useMemo((): TWithSolver => ({
 		currentSolver: currentSolver,
-		expectedOut: currentSolverRef.current.quote,
-		isLoadingExpectedOut: currentSolverRef.current.isLoadingQuote,
-		approve: currentSolverRef.current.approve,
-		executeDeposit: currentSolverRef.current.executeDeposit,
-		executeWithdraw: currentSolverRef.current.executeWithdraw
-	}), [currentSolver]);
+		expectedOut: currentSolverState?.quote || DefaultTNormalizedBN,
+		isLoadingExpectedOut: isLoading,
+		approve: currentSolverState.approve,
+		executeDeposit: currentSolverState.executeDeposit,
+		executeWithdraw: currentSolverState.executeWithdraw
+	}), [currentSolver, currentSolverState, isLoading]);
 
 	return (
 		<WithSolverContext.Provider value={contextValue}>

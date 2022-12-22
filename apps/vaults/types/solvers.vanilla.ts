@@ -6,12 +6,6 @@ import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
 **	Quote hook`.
 **	TVanillaRequest is the requirement to execute a quote request.
 ***************************************************************************/
-export type TVanillaRequest = {
-    inputToken: TDropdownOption;
-    outputToken: TDropdownOption;
-	inputAmount: TNormalizedBN;
-	isDepositing: boolean;
-}
 export type TVanillaAPIRequest = [
     inputToken: TDropdownOption,
     outputToken: TDropdownOption,
