@@ -39,6 +39,5 @@ export const VaultDetailsQuickActions = ({currentVault}: {currentVault: TYearnVa
 		</ActionFlowContextApp>
 	);
 };
-export const useQuickAction = (): TQuickActionContext => useContext(QuickActionContext);
 
-export default QuickActionContextComponent;
+export default VaultDetailsQuickActions;

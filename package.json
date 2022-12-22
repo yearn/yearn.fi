@@ -11,10 +11,10 @@
 		"lint": "eslint . --ext .js,.jsx,.ts,.tsx"
 	},
 	"dependencies": {
+		"@gnosis.pm/gp-v2-contracts": "^1.1.2",
 		"@next/bundle-analyzer": "^13.0.7",
 		"@next/font": "^13.0.7",
 		"@yearn-finance/web-lib": "^0.17.70",
-		"@gnosis.pm/gp-v2-contracts": "^1.1.2",
 		"axios": "^1.2.1",
 		"dayjs": "^1.11.7",
 		"ethcall": "^4.8.13",
