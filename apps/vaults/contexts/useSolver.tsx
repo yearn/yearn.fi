@@ -25,9 +25,9 @@ const	DefaultWithSolverContext: TWithSolver = {
 	currentSolver: Solvers.VANILLA,
 	expectedOut: DefaultTNormalizedBN,
 	isLoadingExpectedOut: false,
-	approve: async (): Promise<boolean> => Promise.resolve(false),
-	executeDeposit: async (): Promise<boolean> => Promise.resolve(false),
-	executeWithdraw: async (): Promise<boolean> => Promise.resolve(false)
+	onApprove: async (): Promise<void> => undefined,
+	onExecuteDeposit: async (): Promise<void> => undefined,
+	onExecuteWithdraw: async (): Promise<void> => undefined
 };
 
 const		WithSolverContext = createContext<TWithSolver>(DefaultWithSolverContext);
@@ -104,7 +104,7 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 				set_isLoading(false);
 			});
 		}
-	}, [address, selectedOptionFrom, selectedOptionTo, amount.raw, currentSolver, cowswap.init, vanilla.init, amount, isDepositing]); //Some issues
+	}, [address, selectedOptionFrom, selectedOptionTo, amount.raw, currentSolver, cowswap.init, vanilla.init, amount, isDepositing]); //Ignore the warning, it's a false positive
 
 	useEffect((): void => {
 		onUpdateSolver();
@@ -115,9 +115,9 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 		currentSolver: currentSolver,
 		expectedOut: currentSolverState?.quote || DefaultTNormalizedBN,
 		isLoadingExpectedOut: isLoading,
-		approve: currentSolverState.approve,
-		executeDeposit: currentSolverState.executeDeposit,
-		executeWithdraw: currentSolverState.executeWithdraw
+		onApprove: currentSolverState.onApprove,
+		onExecuteDeposit: currentSolverState.onExecuteDeposit,
+		onExecuteWithdraw: currentSolverState.onExecuteWithdraw
 	}), [currentSolver, currentSolverState, isLoading]);
 
 	return (

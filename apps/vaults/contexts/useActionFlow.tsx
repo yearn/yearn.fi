@@ -10,14 +10,11 @@ import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUp
 import {useWallet} from '@common/contexts/useWallet';
 import {DefaultTNormalizedBN} from '@common/utils';
 
-import useWalletForZap from './useWalletForZaps';
+import {useWalletForZap} from './useWalletForZaps';
 
 import type {ReactNode} from 'react';
 import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
 import type {TYearnVault} from '@common/types/yearn';
-
-// eslint-disable-next-line @typescript-eslint/naming-convention
-const	DEBUG_WITH_COWSWAP = true;
 
 export enum	Solvers {
 	VANILLA = 'vanilla',
@@ -113,7 +110,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 		} else if (isDepositing && isUsingPartnerContract) {
 			return Solvers.PARTNER_CONTRACT;
 		} 
-		return Solvers.COWSWAP;
+		// return Solvers.COWSWAP;
 		return Solvers.VANILLA;
 	}, [isDepositing, isUsingPartnerContract, selectedOptionFrom?.value, selectedOptionTo?.value]);
 

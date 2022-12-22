@@ -1,12 +1,16 @@
-import {useCallback, useMemo, useState} from 'react';
+import {useCallback, useMemo, useRef} from 'react';
+import {ethers} from 'ethers';
 import useSWRMutation from 'swr/mutation';
 import {useVaultEstimateOutFetcher} from '@vaults/hooks/useVaultEstimateOutFetcher';
-import {isZeroAddress} from '@yearn-finance/web-lib/utils/address';
+import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
+import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {DefaultTNormalizedBN} from '@common/utils';
 import {approveERC20} from '@common/utils/actions/approveToken';
 import {deposit} from '@common/utils/actions/deposit';
 import {withdrawShares} from '@common/utils/actions/withdrawShares';
 
+import type {TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TNormalizedBN} from '@common/types/types';
 import type {TVaultEstimateOutFetcher} from '@vaults/hooks/useVaultEstimateOutFetcher';
 import type {TInitSolverArgs, TSolverContext, TVanillaLikeResult} from '@vaults/types/solvers';
@@ -43,8 +47,9 @@ function useVanillaQuote(): [TVanillaLikeResult, (request: TInitSolverArgs) => P
 
 
 export function useSolverVanilla(): TSolverContext {
-	const [request, set_request] = useState<TInitSolverArgs>();
+	const {provider} = useWeb3();
 	const [latestQuote, getQuote] = useVanillaQuote();
+	const request = useRef<TInitSolverArgs>();
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** init will be called when the cowswap solver should be used to perform the desired swap.
@@ -52,7 +57,7 @@ export function useSolverVanilla(): TSolverContext {
 	** call getQuote to get the current quote for the provided request.
 	**********************************************************************************************/
 	const init = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN> => {
-		set_request(_request);
+		request.current = _request;
 		return await getQuote(_request);
 	}, [getQuote]);
 
@@ -62,19 +67,85 @@ export function useSolverVanilla(): TSolverContext {
 	** init should be called first to initialize the request.
 	**********************************************************************************************/
 	const	refreshQuote = useCallback(async (): Promise<void> => {
-		if (!request) {
+		if (request.current) {
+			getQuote(request.current);
+		}
+	}, [request, getQuote]);
+
+	/* 🔵 - Yearn Finance ******************************************************
+	** Trigger an approve web3 action, simply trying to approve `amount` tokens
+	** to be used by the final vault, in charge of depositing the tokens.
+	** This approve can not be triggered if the wallet is not active
+	** (not connected) or if the tx is still pending.
+	**************************************************************************/
+	const onApprove = useCallback(async (
+		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
+		onSuccess: () => Promise<void>
+	): Promise<void> => {
+		if (!request?.current?.inputToken || !request?.current?.outputToken || !request?.current?.inputAmount) {
 			return;
 		}
-		getQuote(request);
-	}, [request, getQuote]);
+
+		new Transaction(provider, approveERC20, txStatusSetter)
+			.populate(
+				toAddress(request.current.inputToken.value), //token to approve
+				toAddress(request.current.outputToken.value), //partner contract 
+				ethers.constants.MaxUint256 //amount
+			)
+			.onSuccess(onSuccess)
+			.perform();
+	}, [provider]);
+
+	/* 🔵 - Yearn Finance ******************************************************
+	** Trigger a deposit web3 action, simply trying to deposit `amount` tokens to
+	** the selected vault.
+	**************************************************************************/
+	const onExecuteDeposit = useCallback(async (
+		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
+		onSuccess: () => Promise<void>
+	): Promise<void> => {
+		if (!request?.current?.inputToken || !request?.current?.outputToken || !request?.current?.inputAmount) {
+			return;
+		}
+
+		new Transaction(provider, deposit, txStatusSetter)
+			.populate(
+				toAddress(request.current.outputToken.value),
+				request.current.inputAmount //amount
+			)
+			.onSuccess(onSuccess)
+			.perform();
+	}, [provider]);
+
+	/* 🔵 - Yearn Finance ******************************************************
+	** Trigger a withdraw web3 action using the vault contract to take back
+	** some underlying token from this specific vault.
+	**************************************************************************/
+	const onExecuteWithdraw = useCallback(async (
+		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
+		onSuccess: () => Promise<void>
+	): Promise<void> => {
+		if (!request?.current?.inputToken || !request?.current?.outputToken || !request?.current?.inputAmount) {
+			return;
+		}
+
+		new Transaction(provider, withdrawShares, txStatusSetter)
+			.populate(
+				toAddress(request.current.inputToken.value), //vault address
+				request.current.inputAmount //amount
+			)
+			.onSuccess(onSuccess)
+			.perform();
+	}, [provider]);
+
 
 	return useMemo((): TSolverContext => ({
 		quote: latestQuote?.result || DefaultTNormalizedBN,
 		getQuote: getQuote,
 		refreshQuote: refreshQuote,
 		init,
-		approve: approveERC20,
-		executeDeposit: deposit,
-		executeWithdraw: withdrawShares
-	}), [latestQuote, getQuote, refreshQuote, init]);
+		onApprove: onApprove,
+		onExecuteDeposit: onExecuteDeposit,
+		onExecuteWithdraw: onExecuteWithdraw
+	}), [latestQuote?.result, getQuote, refreshQuote, init, onApprove, onExecuteDeposit, onExecuteWithdraw]);
 }

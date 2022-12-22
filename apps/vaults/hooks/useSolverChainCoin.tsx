@@ -1,12 +1,18 @@
-import {useCallback, useMemo, useState} from 'react';
+import {useCallback, useMemo, useRef} from 'react';
+import {ethers} from 'ethers';
 import useSWRMutation from 'swr/mutation';
 import {useVaultEstimateOutFetcher} from '@vaults/hooks/useVaultEstimateOutFetcher';
-import {isZeroAddress} from '@yearn-finance/web-lib/utils/address';
+import {getEthZapperContract} from '@vaults/utils';
+import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
+import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
+import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {DefaultTNormalizedBN} from '@common/utils';
 import {approveERC20} from '@common/utils/actions/approveToken';
 import {depositETH} from '@common/utils/actions/depositEth';
 import {withdrawETH} from '@common/utils/actions/withdrawEth';
 
+import type {TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TNormalizedBN} from '@common/types/types';
 import type {TVaultEstimateOutFetcher} from '@vaults/hooks/useVaultEstimateOutFetcher';
 import type {TInitSolverArgs, TSolverContext, TVanillaLikeResult} from '@vaults/types/solvers';
@@ -42,8 +48,10 @@ function useChainCoinQuote(): [TVanillaLikeResult, (request: TInitSolverArgs) =>
 }
 
 export function useSolverChainCoin(): TSolverContext {
-	const [request, set_request] = useState<TInitSolverArgs>();
+	const {provider} = useWeb3();
+	const {safeChainID} = useChainID();
 	const [latestQuote, getQuote] = useChainCoinQuote();
+	const request = useRef<TInitSolverArgs>();
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** init will be called when the cowswap solver should be used to perform the desired swap.
@@ -51,7 +59,7 @@ export function useSolverChainCoin(): TSolverContext {
 	** call getQuote to get the current quote for the provided request.
 	**********************************************************************************************/
 	const init = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN> => {
-		set_request(_request);
+		request.current = _request;
 		return await getQuote(_request);
 	}, [getQuote]);
 
@@ -61,19 +69,85 @@ export function useSolverChainCoin(): TSolverContext {
 	** init should be called first to initialize the request.
 	**********************************************************************************************/
 	const	refreshQuote = useCallback(async (): Promise<void> => {
-		if (!request) {
+		if (request.current) {
+			getQuote(request.current);
+		}
+	}, [request, getQuote]);
+
+
+	/* 🔵 - Yearn Finance ******************************************************
+	** When we want to withdraw a yvWrappedCoin to the base chain coin, we first
+	** need to approve the yvWrappedCoin to be used by the zap contract.
+	**************************************************************************/
+	const onApprove = useCallback(async (
+		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
+		onSuccess: () => Promise<void>
+	): Promise<void> => {
+		if (!request?.current?.inputToken || !request?.current?.outputToken || !request?.current?.inputAmount) {
 			return;
 		}
-		getQuote(request);
-	}, [request, getQuote]);
+
+		new Transaction(provider, approveERC20, txStatusSetter)
+			.populate(
+				toAddress(request.current.inputToken.value), // Token to approve (wrapped coin)
+				getEthZapperContract(safeChainID), // Coin Zap Contract
+				ethers.constants.MaxUint256 //amount
+			)
+			.onSuccess(onSuccess)
+			.perform();
+	}, [provider, safeChainID]);
+
+	/* 🔵 - Yearn Finance ******************************************************
+	** Trigger a deposit web3 action using the ETH zap contract to deposit ETH
+	** to the selected yvETH vault. The contract will first convert ETH to WETH,
+	** aka the vault underlying token, and then deposit it to the vault.
+	**************************************************************************/
+	const onExecuteDeposit = useCallback(async (
+		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
+		onSuccess: () => Promise<void>
+	): Promise<void> => {
+		if (!request?.current?.inputToken || !request?.current?.outputToken || !request?.current?.inputAmount) {
+			return;
+		}
+
+		new Transaction(provider, depositETH, txStatusSetter)
+			.populate(
+				safeChainID, //ChainID to get the correct zap contract
+				request.current.inputAmount //amount
+			)
+			.onSuccess(onSuccess)
+			.perform();
+	}, [provider, safeChainID]);
+
+	/* 🔵 - Yearn Finance ******************************************************
+	** Trigger a withdraw web3 action using the ETH zap contract to take back
+	** some ETH from the selected yvETH vault. The contract will first convert
+	** yvETH to wETH, unwrap the wETH and send them to the user.
+	**************************************************************************/
+	const onExecuteWithdraw = useCallback(async (
+		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
+		onSuccess: () => Promise<void>
+	): Promise<void> => {
+		if (!request?.current?.inputToken || !request?.current?.outputToken || !request?.current?.inputAmount) {
+			return;
+		}
+
+		new Transaction(provider, withdrawETH, txStatusSetter)
+			.populate(
+				safeChainID, //ChainID to get the correct zap contract
+				request.current.inputAmount //amount
+			)
+			.onSuccess(onSuccess)
+			.perform();
+	}, [provider, safeChainID]);
 
 	return useMemo((): TSolverContext => ({
 		quote: latestQuote?.result || DefaultTNormalizedBN,
 		getQuote: getQuote,
 		refreshQuote: refreshQuote,
 		init,
-		approve: approveERC20,
-		executeDeposit: depositETH,
-		executeWithdraw: withdrawETH
-	}), [latestQuote?.result, getQuote, refreshQuote, init]);
+		onApprove: onApprove,
+		onExecuteDeposit: onExecuteDeposit,
+		onExecuteWithdraw: onExecuteWithdraw
+	}), [latestQuote?.result, getQuote, refreshQuote, init, onApprove, onExecuteDeposit, onExecuteWithdraw]);
 }
