@@ -37,15 +37,14 @@ const	WalletForZap = createContext<TWalletForZap>(defaultProps);
 export const WalletForZapApp = memo(function WalletForZapApp({children}: {children: ReactElement}): ReactElement {
 	const {address, provider} = useWeb3();
 	const {prices} = useYearn();
-	const {chainID, safeChainID} = useChainID();
+	const {safeChainID} = useChainID();
 	const {settings: baseAPISettings} = useSettings();
-
 
 	/* 🔵 - Yearn Finance ******************************************************
 	**	Fetching, for this user, the list of tokens available for zaps
 	***************************************************************************/
 	const	{data: tokensList, isLoading} = useSWR(
-		address ? `${'http://localhost:8080' || baseAPISettings.yDaemonBaseURI}/${safeChainID}/tokenlistbalances/${address}` : null,
+		address ? `${baseAPISettings.yDaemonBaseURI}/${safeChainID}/tokenlistbalances/${address}` : null,
 		baseFetcher,
 		{revalidateOnFocus: false}
 	) as SWRResponse<TDict<TYDaemonTokensList>>;
@@ -55,16 +54,16 @@ export const WalletForZapApp = memo(function WalletForZapApp({children}: {childr
 	const	availableTokens = useMemo((): TUseBalancesTokens[] => {
 		const	tokens: TUseBalancesTokens[] = [];
 		Object.values(tokensList || {}).forEach((token): void => {
-			if (token.chainID !== chainID) {
+			if (token.chainID !== safeChainID) {
 				return;
 			}
 			tokens.push({token: token.address});
 		});
 		return tokens;
-	}, [tokensList, chainID]);
+	}, [tokensList, safeChainID]);
 
 	const	{data: balances, update: updateBalances, isLoading: isLoadingBalances} = useBalances({
-		key: chainID,
+		key: safeChainID,
 		provider: provider || getProvider(1),
 		tokens: availableTokens,
 		prices
