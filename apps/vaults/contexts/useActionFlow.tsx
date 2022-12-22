@@ -10,20 +10,12 @@ import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUp
 import {useWallet} from '@common/contexts/useWallet';
 import {DefaultTNormalizedBN} from '@common/utils';
 
+import {Solvers} from './useSolver';
 import {useWalletForZap} from './useWalletForZaps';
 
 import type {ReactNode} from 'react';
 import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
 import type {TYearnVault} from '@common/types/yearn';
-
-export enum	Solvers {
-	VANILLA = 'vanilla',
-	PARTNER_CONTRACT = 'partnerContract',
-	CHAIN_COIN = 'chainCoin',
-	COWSWAP = 'cowswap',
-	WIDO = 'wido',
-	PORTALS = 'portals'
-}
 
 type	TActionFlowContext = {
 	currentVault: TYearnVault;
@@ -99,20 +91,17 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 	}, [balances, currentVault.details.depositLimit, currentVault.token.decimals, selectedOptionFrom?.value]);
 
 	const currentSolver = useMemo((): Solvers => {
-		// if (DEBUG_WITH_COWSWAP) {
-		// 	return Solvers.COWSWAP;
-		// }
-
 		const isInputTokenEth = selectedOptionFrom?.value === ETH_TOKEN_ADDRESS;
 		const isOutputTokenEth = selectedOptionTo?.value === ETH_TOKEN_ADDRESS;
 		if (isInputTokenEth || isOutputTokenEth) {
 			return Solvers.CHAIN_COIN;
+		} else if (selectedOptionFrom?.solveVia === Solvers.COWSWAP) {
+			return Solvers.COWSWAP;			
 		} else if (isDepositing && isUsingPartnerContract) {
 			return Solvers.PARTNER_CONTRACT;
-		} 
-		// return Solvers.COWSWAP;
+		}
 		return Solvers.VANILLA;
-	}, [isDepositing, isUsingPartnerContract, selectedOptionFrom?.value, selectedOptionTo?.value]);
+	}, [isDepositing, isUsingPartnerContract, selectedOptionFrom?.solveVia, selectedOptionFrom?.value, selectedOptionTo?.value]);
 
 	const onSwitchSelectedOptions = useCallback((): void => {
 		performBatchedUpdates((): void => {
@@ -172,7 +161,8 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 					symbol: tokenListData?.symbol,
 					address: toAddress(tokenListData?.address),
 					safeChainID,
-					decimals: tokenListData?.decimals
+					decimals: tokenListData?.decimals,
+					solveVia: Solvers.COWSWAP //Should handle multiple
 				})
 			);
 		});

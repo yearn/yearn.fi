@@ -1,4 +1,4 @@
-import {useCallback, useMemo, useRef, useState} from 'react';
+import {useCallback, useMemo, useRef} from 'react';
 import {ethers} from 'ethers';
 import axios from 'axios';
 import useSWRMutation from 'swr/mutation';
@@ -18,8 +18,8 @@ import type {ApiError, Order, QuoteQuery, Timestamp} from '@gnosis.pm/gp-v2-cont
 import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
 import type {TCowAPIResult, TCowResult} from '@vaults/types/solvers.cowswap';
 
-function useCowswapQuote(): [TCowResult, (request: TInitSolverArgs) => Promise<Order | undefined>] {
-	const 	{toast} = yToast();
+function useCowswapQuote(): [TCowResult, (request: TInitSolverArgs) => Promise<TCowAPIResult | undefined>] {
+	const {toast} = yToast();
 	const {data, error, trigger, isMutating} = useSWRMutation(
 		'https://api.cow.fi/mainnet/api/v1/quote',
 		async (url: string, data: {arg: unknown}): Promise<TCowAPIResult> => {
@@ -28,7 +28,7 @@ function useCowswapQuote(): [TCowResult, (request: TInitSolverArgs) => Promise<O
 		}
 	);
 
-	const getQuote = useCallback(async (request: TInitSolverArgs): Promise<Order | undefined> => {
+	const getQuote = useCallback(async (request: TInitSolverArgs): Promise<TCowAPIResult | undefined> => {
 		const	YEARN_APP_DATA = '0x2B8694ED30082129598720860E8E972F07AA10D9B81CAE16CA0E2CFB24743E24';
 		const	quote: QuoteQuery = ({
 			from: request.from, // receiver
@@ -50,7 +50,7 @@ function useCowswapQuote(): [TCowResult, (request: TInitSolverArgs) => Promise<O
 			quote.validTo = Math.round((new Date().setMinutes(new Date().getMinutes() + 10) / 1000));
 			try {
 				const result = await trigger(quote, {revalidate: false});
-				return (result?.quote);
+				return (result);
 			} catch (error) {
 				const	_error = error as AxiosError<ApiError>;
 				toast({type: 'error', content: _error?.response?.data?.description || 'Error while fetching quote from Cowswap'});
@@ -71,27 +71,29 @@ function useCowswapQuote(): [TCowResult, (request: TInitSolverArgs) => Promise<O
 }
 
 export function useSolverCowswap(): TSolverContext {
-	const {provider} = useWeb3();
-	const shouldUsePresign = false; //Debug only
+	const {address, provider} = useWeb3();
+	const maxIterations = 1000; // 1000 * up to 3 seconds = 3000 seconds = 50 minutes
+	const shouldUsePresign = true; //Debug only
 	const DEFAULT_SLIPPAGE_COWSWAP = 0.01; // 1%
-	const [latestQuote, getQuote] = useCowswapQuote();
-	const [signature, set_signature] = useState<string>('');
+	const [, getQuote] = useCowswapQuote();
 	const request = useRef<TInitSolverArgs>();
+	const latestQuote = useRef<TCowAPIResult>();
+	const signature = useRef<string>('');
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** A slippage of 1% per default is set to avoid the transaction to fail due to price
 	** fluctuations. The buyAmountWithSlippage is used to request this amount instead of the
 	** original buyAmount.
 	**********************************************************************************************/
-	const buyAmountWithSlippage = useMemo((): BigNumber => {
-		if (latestQuote?.result === undefined || latestQuote?.result?.quote === undefined || !request?.current?.outputToken?.decimals) {
-			return formatBN(0);
+	function getBuyAmountWithSlippage(currentQuote: TCowAPIResult, decimals: number): BigNumber {
+		if (!currentQuote) {
+			return ethers.constants.Zero;
 		}
-		const	{quote} = latestQuote.result;
-		const	buyAmount = Number(ethers.utils.formatUnits(quote.buyAmount, request.current.outputToken.decimals));
-		const	withSlippage = ethers.utils.parseUnits((buyAmount * (1 - Number(DEFAULT_SLIPPAGE_COWSWAP))).toFixed(request.current.outputToken.decimals), request.current.outputToken.decimals);
+		const	{quote} = currentQuote;
+		const	buyAmount = Number(ethers.utils.formatUnits(quote.buyAmount, decimals));
+		const	withSlippage = ethers.utils.parseUnits((buyAmount * (1 - Number(DEFAULT_SLIPPAGE_COWSWAP))).toFixed(decimals), decimals);
 		return withSlippage;
-	}, [latestQuote.result]);
+	}
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** init will be called when the cowswap solver should be used to perform the desired swap.
@@ -101,10 +103,14 @@ export function useSolverCowswap(): TSolverContext {
 	const init = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN> => {
 		request.current = _request;
 		const quote = await getQuote(_request);
-		return ({
-			raw: formatBN(quote?.buyAmount || ethers.constants.Zero),
-			normalized: formatToNormalizedValue(formatBN(quote?.buyAmount || 0), request?.current?.outputToken?.decimals || 18)
-		});
+		if (quote) {
+			latestQuote.current = quote;
+			return ({
+				raw: formatBN(quote?.quote?.buyAmount || ethers.constants.Zero),
+				normalized: formatToNormalizedValue(formatBN(quote?.quote.buyAmount || 0), request?.current?.outputToken?.decimals || 18)
+			});
+		}
+		return DefaultTNormalizedBN;
 	}, [getQuote]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
@@ -115,7 +121,7 @@ export function useSolverCowswap(): TSolverContext {
 	**********************************************************************************************/
 	const	signCowswapOrder = useCallback(async (quote: Order): Promise<string> => {
 		if (shouldUsePresign) {
-			return toAddress(latestQuote?.result?.from);
+			return toAddress(address || '');
 		}
 
 		const	signer = (provider as ethers.providers.Web3Provider).getSigner();
@@ -125,9 +131,8 @@ export function useSolverCowswap(): TSolverContext {
 			signer,
 			SigningScheme.EIP712
 		);
-		const signature = ethers.utils.joinSignature(rawSignature.data);
-		return signature;
-	}, [latestQuote?.result?.from, provider, shouldUsePresign]);
+		return ethers.utils.joinSignature(rawSignature.data);
+	}, [provider, shouldUsePresign, address]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** refreshQuote can be called by the user to refresh the quote. The same parameters are used
@@ -149,23 +154,24 @@ export function useSolverCowswap(): TSolverContext {
 	** signCowswapOrder method.
 	**********************************************************************************************/
 	const	approve = useCallback(async (): Promise<boolean> => {
-		if (latestQuote?.result === undefined || latestQuote?.result?.quote === undefined) {
+		if (!latestQuote?.current || !latestQuote?.current?.quote || !request?.current) {
 			return false;
 		}
 
-		const	{quote} = latestQuote.result;
+		const	{quote} = latestQuote.current;
 		try {
-			const	signature = await signCowswapOrder({
+			const	buyAmountWithSlippage = getBuyAmountWithSlippage(latestQuote.current, request.current.outputToken.decimals);
+			const	_signature = await signCowswapOrder({
 				...quote,
 				buyAmount: buyAmountWithSlippage.toString()
 			});
-			set_signature(signature);
+			signature.current = _signature;
 			return true;
 		} catch (_error) {
 			console.error(_error);
 			return false;
 		}
-	}, [latestQuote.result, signCowswapOrder, buyAmountWithSlippage]);
+	}, [latestQuote, signCowswapOrder]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** Cowswap orders have a validity period and the return value on submit is not the execution
@@ -174,7 +180,6 @@ export function useSolverCowswap(): TSolverContext {
 	** It will timeout once the order is no longer valid or after 50 minutes (max should be 30mn)
 	**********************************************************************************************/
 	async function checkOrderStatus(orderUID: string, validTo: Timestamp): Promise<{isSuccessful: boolean, error: Error | undefined}> {
-		const	maxIterations = 1000; // 1000 * up to 3 seconds = 3000 seconds = 50 minutes
 		for (let i = 0; i < maxIterations; i++) {
 			const {data: order} = await axios.get(`https://api.cow.fi/mainnet/api/v1/orders/${orderUID}`);
 			if (order?.status === 'fulfilled') {
@@ -197,23 +202,25 @@ export function useSolverCowswap(): TSolverContext {
 	** not.
 	**********************************************************************************************/
 	const execute = useCallback(async (): Promise<boolean> => {
-		if (latestQuote?.result === undefined || latestQuote?.result?.quote === undefined) {
+		if (!latestQuote?.current || !latestQuote?.current?.quote || !request.current) {
 			return false;
 		}
-		const	{quote, from, id} = latestQuote.result;
+		const	{quote, from, id} = latestQuote.current;
 		try {
+			const	buyAmountWithSlippage = getBuyAmountWithSlippage(latestQuote.current, request.current.outputToken.decimals);
 			const	{data: orderUID} = await axios.post('https://api.cow.fi/mainnet/api/v1/orders', {
 				...quote,
 				buyAmount: buyAmountWithSlippage.toString(),
 				from: from,
 				quoteId: id,
-				signature: signature,
+				signature: signature.current,
 				signingScheme: String(shouldUsePresign ? 'presign' : 'eip712')
 			});
 			if (orderUID) {
 				const {isSuccessful, error} = await checkOrderStatus(orderUID, quote.validTo);
 				if (error) {
 					console.error(error);
+					return false;
 				}
 				return isSuccessful;
 			}
@@ -222,17 +229,17 @@ export function useSolverCowswap(): TSolverContext {
 			return false;
 		}
 		return false;
-	}, [buyAmountWithSlippage, latestQuote.result, shouldUsePresign, signature]);
+	}, [latestQuote, shouldUsePresign, signature]);
 
 	const expectedOut = useMemo((): TNormalizedBN => {
-		if (!latestQuote?.result?.quote?.buyAmount) {
+		if (!latestQuote?.current?.quote?.buyAmount) {
 			return (DefaultTNormalizedBN);
 		}
 		return ({
-			raw: formatBN(latestQuote?.result?.quote?.buyAmount || ethers.constants.Zero),
-			normalized: formatToNormalizedValue(formatBN(latestQuote?.result?.quote?.buyAmount || 0), request?.current?.outputToken?.decimals || 18)
+			raw: formatBN(latestQuote?.current?.quote?.buyAmount || ethers.constants.Zero),
+			normalized: formatToNormalizedValue(formatBN(latestQuote?.current?.quote?.buyAmount || 0), request?.current?.outputToken?.decimals || 18)
 		});
-	}, [latestQuote?.result?.quote?.buyAmount]);
+	}, [latestQuote]);
 
 
 	/* 🔵 - Yearn Finance ******************************************************
