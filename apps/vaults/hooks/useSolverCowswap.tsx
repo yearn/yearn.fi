@@ -1,4 +1,4 @@
-import {useCallback, useMemo, useState} from 'react';
+import {useCallback, useMemo, useRef, useState} from 'react';
 import {ethers} from 'ethers';
 import axios from 'axios';
 import useSWRMutation from 'swr/mutation';
@@ -7,10 +7,12 @@ import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {DefaultTNormalizedBN} from '@common/utils';
 
 import type {AxiosError} from 'axios';
 import type {BigNumber} from 'ethers';
+import type {TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TNormalizedBN} from '@common/types/types';
 import type {ApiError, Order, QuoteQuery, Timestamp} from '@gnosis.pm/gp-v2-contracts';
 import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
@@ -72,9 +74,9 @@ export function useSolverCowswap(): TSolverContext {
 	const {provider} = useWeb3();
 	const shouldUsePresign = false; //Debug only
 	const DEFAULT_SLIPPAGE_COWSWAP = 0.01; // 1%
-	const [request, set_request] = useState<TInitSolverArgs>();
 	const [latestQuote, getQuote] = useCowswapQuote();
 	const [signature, set_signature] = useState<string>('');
+	const request = useRef<TInitSolverArgs>();
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** A slippage of 1% per default is set to avoid the transaction to fail due to price
@@ -82,28 +84,28 @@ export function useSolverCowswap(): TSolverContext {
 	** original buyAmount.
 	**********************************************************************************************/
 	const buyAmountWithSlippage = useMemo((): BigNumber => {
-		if (latestQuote?.result === undefined || latestQuote?.result?.quote === undefined || !request?.outputToken?.decimals) {
+		if (latestQuote?.result === undefined || latestQuote?.result?.quote === undefined || !request?.current?.outputToken?.decimals) {
 			return formatBN(0);
 		}
 		const	{quote} = latestQuote.result;
-		const	buyAmount = Number(ethers.utils.formatUnits(quote.buyAmount, request.outputToken.decimals));
-		const	withSlippage = ethers.utils.parseUnits((buyAmount * (1 - Number(DEFAULT_SLIPPAGE_COWSWAP))).toFixed(request.outputToken.decimals), request.outputToken.decimals);
+		const	buyAmount = Number(ethers.utils.formatUnits(quote.buyAmount, request.current.outputToken.decimals));
+		const	withSlippage = ethers.utils.parseUnits((buyAmount * (1 - Number(DEFAULT_SLIPPAGE_COWSWAP))).toFixed(request.current.outputToken.decimals), request.current.outputToken.decimals);
 		return withSlippage;
-	}, [latestQuote.result, request?.outputToken.decimals]);
+	}, [latestQuote.result]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** init will be called when the cowswap solver should be used to perform the desired swap.
 	** It will set the request to the provided value, as it's required to get the quote, and will
-	** call getQuote to get the current quote for the provided request.
+	** call getQuote to get the current quote for the provided request.current.
 	**********************************************************************************************/
 	const init = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN> => {
-		set_request(_request);
+		request.current = _request;
 		const quote = await getQuote(_request);
 		return ({
 			raw: formatBN(quote?.buyAmount || ethers.constants.Zero),
-			normalized: formatToNormalizedValue(formatBN(quote?.buyAmount || 0), request?.outputToken?.decimals || 18)
+			normalized: formatToNormalizedValue(formatBN(quote?.buyAmount || 0), request?.current?.outputToken?.decimals || 18)
 		});
-	}, [getQuote, request?.outputToken?.decimals]);
+	}, [getQuote]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** signCowswapOrder is used to sign the order with the user's wallet. The signature is used
@@ -130,13 +132,12 @@ export function useSolverCowswap(): TSolverContext {
 	/* 🔵 - Yearn Finance **************************************************************************
 	** refreshQuote can be called by the user to refresh the quote. The same parameters are used
 	** as in the initial request and it will fails if request is not set.
-	** init should be called first to initialize the request.
+	** init should be called first to initialize the request.current.
 	**********************************************************************************************/
 	const	refreshQuote = useCallback(async (): Promise<void> => {
-		if (!request) {
-			return;
+		if (request.current) {
+			getQuote(request.current);
 		}
-		getQuote(request);
 	}, [request, getQuote]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
@@ -229,17 +230,64 @@ export function useSolverCowswap(): TSolverContext {
 		}
 		return ({
 			raw: formatBN(latestQuote?.result?.quote?.buyAmount || ethers.constants.Zero),
-			normalized: formatToNormalizedValue(formatBN(latestQuote?.result?.quote?.buyAmount || 0), request?.outputToken?.decimals || 18)
+			normalized: formatToNormalizedValue(formatBN(latestQuote?.result?.quote?.buyAmount || 0), request?.current?.outputToken?.decimals || 18)
 		});
-	}, [latestQuote?.result?.quote?.buyAmount, request?.outputToken?.decimals]);
+	}, [latestQuote?.result?.quote?.buyAmount]);
+
+
+	/* 🔵 - Yearn Finance ******************************************************
+	** Trigger an signature to approve the token to be used by the Cowswap
+	** solver. A single signature is required, which will allow the spending
+	** of the token by the Cowswap solver.
+	**************************************************************************/
+	const onApprove = useCallback(async (
+		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
+		onSuccess: () => Promise<void>
+	): Promise<void> => {
+		new Transaction(provider, approve, txStatusSetter)
+			.populate()
+			.onSuccess(onSuccess)
+			.perform();
+	}, [approve, provider]);
+
+	/* 🔵 - Yearn Finance ******************************************************
+	** This execute function is not an actual deposit, but a swap using the
+	** Cowswap solver. The deposit will be executed by the Cowswap solver by
+	** simply swapping the input token for the output token.
+	**************************************************************************/
+	const onExecuteDeposit = useCallback(async (
+		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
+		onSuccess: () => Promise<void>
+	): Promise<void> => {
+		new Transaction(provider, execute, txStatusSetter)
+			.populate()
+			.onSuccess(onSuccess)
+			.perform();
+	}, [execute, provider]);
+
+	/* 🔵 - Yearn Finance ******************************************************
+	** This execute function is not an actual withdraw, but a swap using the
+	** Cowswap solver. The withdraw will be executed by the Cowswap solver by
+	** simply swapping the input token for the output token.
+	**************************************************************************/
+	const onExecuteWithdraw = useCallback(async (
+		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
+		onSuccess: () => Promise<void>
+	): Promise<void> => {
+		new Transaction(provider, execute, txStatusSetter)
+			.populate()
+			.onSuccess(onSuccess)
+			.perform();
+	}, [execute, provider]);
+
 
 	return useMemo((): TSolverContext => ({
 		quote: expectedOut,
 		getQuote: getQuote,
 		refreshQuote,
 		init,
-		approve,
-		executeDeposit: execute,
-		executeWithdraw: execute
-	}), [expectedOut, getQuote, refreshQuote, init, approve, execute]);
+		onApprove: onApprove,
+		onExecuteDeposit: onExecuteDeposit,
+		onExecuteWithdraw: onExecuteWithdraw
+	}), [expectedOut, getQuote, refreshQuote, init, onApprove, onExecuteDeposit, onExecuteWithdraw]);
 }

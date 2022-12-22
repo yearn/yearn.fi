@@ -1,6 +1,7 @@
 
 import type {BigNumber} from 'ethers';
 import type {TAddress} from '@yearn-finance/web-lib/utils/address';
+import type {TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
 import type {Solvers} from '@vaults/contexts/useSolver';
 
@@ -12,9 +13,18 @@ export type TWithSolver = {
 	currentSolver: Solvers;
 	expectedOut: TNormalizedBN;
 	isLoadingExpectedOut: boolean;
-	approve: (...props: never) => Promise<boolean>;
-	executeDeposit: (...props: never) => Promise<boolean>;
-	executeWithdraw: (...props: never) => Promise<boolean>;
+	onApprove: (
+		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
+		onSuccess: () => Promise<void>
+	) => Promise<void>;
+	onExecuteDeposit: (
+		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
+		onSuccess: () => Promise<void>
+	) => Promise<void>;
+	onExecuteWithdraw: (
+		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
+		onSuccess: () => Promise<void>
+	) => Promise<void>;
 }
 
 export type TInitSolverArgs = {
@@ -30,9 +40,18 @@ export type TSolverContext = {
 	getQuote: CallableFunction;
 	refreshQuote: CallableFunction;
 	init: (args: TInitSolverArgs) => Promise<TNormalizedBN>;
-	approve: (...props: never) => Promise<boolean>;
-	executeDeposit: (...props: never) => Promise<boolean>;
-	executeWithdraw: (...props: never) => Promise<boolean>;
+	onApprove: (
+		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
+		onSuccess: () => Promise<void>
+	) => Promise<void>;
+	onExecuteDeposit: (
+		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
+		onSuccess: () => Promise<void>
+	) => Promise<void>;
+	onExecuteWithdraw: (
+		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
+		onSuccess: () => Promise<void>
+	) => Promise<void>;
 }
 
 /* 🔵 - Yearn Finance ******************************************************
