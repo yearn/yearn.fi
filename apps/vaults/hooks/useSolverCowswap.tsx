@@ -1,56 +1,61 @@
 import {useCallback, useMemo, useState} from 'react';
-import {BigNumber, ethers} from 'ethers';
+import {ethers} from 'ethers';
 import axios from 'axios';
 import useSWRMutation from 'swr/mutation';
 import {domain, OrderKind, SigningScheme, signOrder} from '@gnosis.pm/gp-v2-contracts';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatBigNumberAsAmount, formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {DefaultTNormalizedBN} from '@common/utils';
 
 import type {AxiosError} from 'axios';
+import type {BigNumber} from 'ethers';
 import type {TNormalizedBN} from '@common/types/types';
 import type {ApiError, Order, QuoteQuery, Timestamp} from '@gnosis.pm/gp-v2-contracts';
-import type {TSolverContext} from '@vaults/types/solvers';
-import type {TCowAPIResult, TCowRequest, TCowResult} from '@vaults/types/solvers.cowswap';
+import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
+import type {TCowAPIResult, TCowResult} from '@vaults/types/solvers.cowswap';
 
-function useCowswapQuote(): [TCowResult, (request: TCowRequest) => Promise<void>] {
+function useCowswapQuote(): [TCowResult, (request: TInitSolverArgs) => Promise<Order | undefined>] {
 	const 	{toast} = yToast();
-	const fetchlatestQuote = useCallback(async(url: string, data: {arg: unknown}): Promise<TCowAPIResult> => {
-		const req = await axios.post(url, data.arg);
-		return req.data;
-	}, []);
+	const {data, error, trigger, isMutating} = useSWRMutation(
+		'https://api.cow.fi/mainnet/api/v1/quote',
+		async (url: string, data: {arg: unknown}): Promise<TCowAPIResult> => {
+			const req = await axios.post(url, data.arg);
+			return req.data;
+		}
+	);
 
-	const {data, error, trigger, isMutating} = useSWRMutation('https://api.cow.fi/mainnet/api/v1/quote', fetchlatestQuote);
-
-	const getQuote = useCallback(async (request: TCowRequest): Promise<void> => {
+	const getQuote = useCallback(async (request: TInitSolverArgs): Promise<Order | undefined> => {
 		const	YEARN_APP_DATA = '0x2B8694ED30082129598720860E8E972F07AA10D9B81CAE16CA0E2CFB24743E24';
 		const	quote: QuoteQuery = ({
 			from: request.from, // receiver
-			sellToken: request.sellToken, // token to spend
-			buyToken: request.buyToken, // token to receive
+			sellToken: toAddress(request.inputToken.value), // token to spend
+			buyToken: toAddress(request.outputToken.value), // token to receive
 			receiver: request.from, // always the same as from
 			appData: YEARN_APP_DATA, // Always this
 			kind: OrderKind.SELL, // always sell
 			partiallyFillable: false, // always false
 			validTo: 0,
-			sellAmountBeforeFee: formatBN(request?.sellAmount || 0).toString() // amount to sell, in wei
+			sellAmountBeforeFee: formatBN(request?.inputAmount || 0).toString() // amount to sell, in wei
 		});
 
 		const canExecuteFetch = (
 			!(isZeroAddress(quote.from) || isZeroAddress(quote.sellToken) || isZeroAddress(quote.buyToken))
-			&& !formatBN(request?.sellAmount || 0).isZero()
+			&& !formatBN(request?.inputAmount || 0).isZero()
 		);
 		if (canExecuteFetch) {
 			quote.validTo = Math.round((new Date().setMinutes(new Date().getMinutes() + 10) / 1000));
 			try {
-				await trigger(quote, {revalidate: false});
+				const result = await trigger(quote, {revalidate: false});
+				return (result?.quote);
 			} catch (error) {
 				const	_error = error as AxiosError<ApiError>;
 				toast({type: 'error', content: _error?.response?.data?.description || 'Error while fetching quote from Cowswap'});
+				return undefined;
 			}
 		}
+		return undefined;
 	}, [trigger]);
 
 	return [
@@ -67,7 +72,7 @@ export function useSolverCowswap(): TSolverContext {
 	const {provider} = useWeb3();
 	const shouldUsePresign = false; //Debug only
 	const DEFAULT_SLIPPAGE_COWSWAP = 0.01; // 1%
-	const [request, set_request] = useState<TCowRequest>();
+	const [request, set_request] = useState<TInitSolverArgs>();
 	const [latestQuote, getQuote] = useCowswapQuote();
 	const [signature, set_signature] = useState<string>('');
 
@@ -77,24 +82,28 @@ export function useSolverCowswap(): TSolverContext {
 	** original buyAmount.
 	**********************************************************************************************/
 	const buyAmountWithSlippage = useMemo((): BigNumber => {
-		if (latestQuote?.result === undefined || latestQuote?.result?.quote === undefined || !request?.buyTokenDecimals) {
+		if (latestQuote?.result === undefined || latestQuote?.result?.quote === undefined || !request?.outputToken?.decimals) {
 			return formatBN(0);
 		}
 		const	{quote} = latestQuote.result;
-		const	buyAmount = Number(ethers.utils.formatUnits(quote.buyAmount, request.buyTokenDecimals));
-		const	withSlippage = ethers.utils.parseUnits((buyAmount * (1 - Number(DEFAULT_SLIPPAGE_COWSWAP))).toFixed(request.buyTokenDecimals), request.buyTokenDecimals);
+		const	buyAmount = Number(ethers.utils.formatUnits(quote.buyAmount, request.outputToken.decimals));
+		const	withSlippage = ethers.utils.parseUnits((buyAmount * (1 - Number(DEFAULT_SLIPPAGE_COWSWAP))).toFixed(request.outputToken.decimals), request.outputToken.decimals);
 		return withSlippage;
-	}, [latestQuote.result, request?.buyTokenDecimals]);
+	}, [latestQuote.result, request?.outputToken.decimals]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** init will be called when the cowswap solver should be used to perform the desired swap.
 	** It will set the request to the provided value, as it's required to get the quote, and will
 	** call getQuote to get the current quote for the provided request.
 	**********************************************************************************************/
-	const init = useCallback(async (_request: TCowRequest): Promise<void> => {
+	const init = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN> => {
 		set_request(_request);
-		getQuote(_request);
-	}, [getQuote]);
+		const quote = await getQuote(_request);
+		return ({
+			raw: formatBN(quote?.buyAmount || ethers.constants.Zero),
+			normalized: formatToNormalizedValue(formatBN(quote?.buyAmount || 0), request?.outputToken?.decimals || 18)
+		});
+	}, [getQuote, request?.outputToken?.decimals]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** signCowswapOrder is used to sign the order with the user's wallet. The signature is used
@@ -127,15 +136,8 @@ export function useSolverCowswap(): TSolverContext {
 		if (!request) {
 			return;
 		}
-		getQuote({
-			from: toAddress(latestQuote?.result?.from),
-			sellToken: toAddress(latestQuote.result?.quote.sellToken),
-			buyToken: toAddress(latestQuote.result?.quote.buyToken),
-			sellAmount: BigNumber.from(latestQuote.result?.quote.sellAmount),
-			sellTokenDecimals: request?.sellTokenDecimals,
-			buyTokenDecimals: request?.buyTokenDecimals
-		});
-	}, [request, getQuote, latestQuote.result?.from, latestQuote.result?.quote.sellToken, latestQuote.result?.quote.buyToken, latestQuote.result?.quote.sellAmount]);
+		getQuote(request);
+	}, [request, getQuote]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** approve is a method that approves an order for the CowSwap exchange. It returns a boolean
@@ -227,18 +229,17 @@ export function useSolverCowswap(): TSolverContext {
 		}
 		return ({
 			raw: formatBN(latestQuote?.result?.quote?.buyAmount || ethers.constants.Zero),
-			normalized: formatBigNumberAsAmount(formatBN(latestQuote?.result?.quote?.buyAmount || 0), request?.buyTokenDecimals)
+			normalized: formatToNormalizedValue(formatBN(latestQuote?.result?.quote?.buyAmount || 0), request?.outputToken?.decimals || 18)
 		});
-	}, [latestQuote?.result?.quote?.buyAmount, request?.buyTokenDecimals]);
+	}, [latestQuote?.result?.quote?.buyAmount, request?.outputToken?.decimals]);
 
 	return useMemo((): TSolverContext => ({
 		quote: expectedOut,
 		getQuote: getQuote,
 		refreshQuote,
 		init,
-		isLoadingQuote: latestQuote?.isLoading || false,
 		approve,
 		executeDeposit: execute,
 		executeWithdraw: execute
-	}), [expectedOut, getQuote, refreshQuote, init, latestQuote?.isLoading, approve, execute]);
+	}), [expectedOut, getQuote, refreshQuote, init, approve, execute]);
 }

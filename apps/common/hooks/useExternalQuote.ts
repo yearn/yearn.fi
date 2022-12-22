@@ -72,7 +72,6 @@ export function useCowQuote(): [TCowResult, CallableFunction] {
 	const {data, error, trigger, isMutating} = useSWRMutation('https://api.cow.fi/mainnet/api/v1/quote', fetchCowQuote);
 
 	const	getQuote = useCallback(async (request: TCowRequest): Promise<void> => {
-		console.warn('TIME TO FETCH SOME DATA');
 		const	YEARN_APP_DATA = '0x2B8694ED30082129598720860E8E972F07AA10D9B81CAE16CA0E2CFB24743E24';
 		const	quote: QuoteQuery = ({
 			from: request.from, // receiver

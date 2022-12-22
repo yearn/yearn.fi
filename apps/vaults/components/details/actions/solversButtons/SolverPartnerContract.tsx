@@ -33,7 +33,7 @@ function	SolverPartnerContract({
 	selectedOptionTo,
 	onSuccess
 }: TSolver): ReactElement {
-	console.warn('SolverPartnerContract');
+	console.warn('Fetching quote via SolverPartnerContract');
 	const {networks} = useSettings();
 	const {isActive, provider} = useWeb3();
 	const {safeChainID} = useChainID();

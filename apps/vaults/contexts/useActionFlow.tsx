@@ -1,6 +1,5 @@
 import React, {createContext, useCallback, useContext, useEffect, useMemo, useState} from 'react';
 import {ethers} from 'ethers';
-import {Solvers} from '@vaults/contexts/useSolver';
 import {setZapOption} from '@vaults/utils/zapOptions';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
@@ -11,12 +10,23 @@ import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUp
 import {useWallet} from '@common/contexts/useWallet';
 import {DefaultTNormalizedBN} from '@common/utils';
 
+import useWalletForZap from './useWalletForZaps';
+
 import type {ReactNode} from 'react';
 import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
 import type {TYearnVault} from '@common/types/yearn';
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 const	DEBUG_WITH_COWSWAP = true;
+
+export enum	Solvers {
+	VANILLA = 'vanilla',
+	PARTNER_CONTRACT = 'partnerContract',
+	CHAIN_COIN = 'chainCoin',
+	COWSWAP = 'cowswap',
+	WIDO = 'wido',
+	PORTALS = 'portals'
+}
 
 type	TActionFlowContext = {
 	currentVault: TYearnVault;
@@ -54,8 +64,10 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 	const {balances} = useWallet();
 	const {safeChainID} = useChainID();
 	const {networks} = useSettings();
+	const {balances: zapBalances, tokensList} = useWalletForZap();
 
 	const [possibleOptionsFrom, set_possibleOptionsFrom] = useState<TDropdownOption[]>([]);
+	const [possibleZapOptionsFrom, set_possibleZapOptionsFrom] = useState<TDropdownOption[]>([]);
 	const [possibleOptionsTo, set_possibleOptionsTo] = useState<TDropdownOption[]>([]);
 	const [selectedOptionFrom, set_selectedOptionFrom] = useState<TDropdownOption | undefined>();
 	const [selectedOptionTo, set_selectedOptionTo] = useState<TDropdownOption | undefined>();
@@ -70,7 +82,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 	), [networks, safeChainID]);
 
 	const isUsingPartnerContract = useMemo((): boolean => (
-		(process?.env?.SHOULD_USE_PARTNER_CONTRACT || true) === true && isPartnerAddressValid
+		(process?.env?.SHOULD_USE_PARTNER_CONTRACT === undefined ? true : Boolean(process?.env?.SHOULD_USE_PARTNER_CONTRACT)) && isPartnerAddressValid
 	), [isPartnerAddressValid]);
 
 	const maxDepositPossible = useMemo((): TNormalizedBN => {
@@ -97,14 +109,13 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 		const isInputTokenEth = selectedOptionFrom?.value === ETH_TOKEN_ADDRESS;
 		const isOutputTokenEth = selectedOptionTo?.value === ETH_TOKEN_ADDRESS;
 		if (isInputTokenEth || isOutputTokenEth) {
-			// return Solvers.COWSWAP;
 			return Solvers.CHAIN_COIN;
 		} else if (isDepositing && isUsingPartnerContract) {
 			return Solvers.PARTNER_CONTRACT;
 		} 
+		return Solvers.COWSWAP;
 		return Solvers.VANILLA;
 	}, [isDepositing, isUsingPartnerContract, selectedOptionFrom?.value, selectedOptionTo?.value]);
-
 
 	const onSwitchSelectedOptions = useCallback((): void => {
 		performBatchedUpdates((): void => {
@@ -146,12 +157,30 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 						symbol: currentVault?.token?.symbol,
 						address: toAddress(currentVault.token.address),
 						safeChainID,
-						decimals: 18
+						decimals: currentVault?.token?.decimals || 18
 					})
 				]);
 			}
 		}
 	}, [currentVault, isDepositing, safeChainID]);
+
+
+	useEffect((): void => {
+		const	_possibleZapOptionsFrom: TDropdownOption[] = [];
+		Object.entries(zapBalances || {}).forEach(([tokenAddress]): void => {
+			const	tokenListData = tokensList[toAddress(tokenAddress)];
+			_possibleZapOptionsFrom.push(
+				setZapOption({
+					name: tokenListData?.name,
+					symbol: tokenListData?.symbol,
+					address: toAddress(tokenListData?.address),
+					safeChainID,
+					decimals: tokenListData?.decimals
+				})
+			);
+		});
+		set_possibleZapOptionsFrom(_possibleZapOptionsFrom);
+	}, [safeChainID, tokensList, zapBalances]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** Init selectedOptionFrom and selectedOptionTo with the tokens matching this vault. Only
@@ -164,14 +193,14 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 				symbol: currentVault?.token?.symbol,
 				address: toAddress(currentVault.token.address),
 				safeChainID,
-				decimals: 18
+				decimals: currentVault?.token?.decimals || 18
 			});
 			const	_selectedTo = setZapOption({
 				name: currentVault?.display_name || currentVault?.name || currentVault.formated_name,
 				symbol: currentVault?.display_symbol || currentVault.symbol,
 				address: toAddress(currentVault.address),
 				safeChainID,
-				decimals: 18
+				decimals: currentVault?.decimals || 18
 			});
 			performBatchedUpdates((): void => {
 				set_selectedOptionFrom(_selectedFrom);
@@ -185,7 +214,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 	***************************************************************************/
 	const	contextValue = useMemo((): TActionFlowContext => ({
 		currentVault,
-		possibleOptionsFrom,
+		possibleOptionsFrom: [...possibleOptionsFrom, ...possibleZapOptionsFrom],
 		possibleOptionsTo,
 		selectedOptionFrom,
 		selectedOptionTo,
@@ -197,7 +226,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 		isDepositing,
 		maxDepositPossible,
 		currentSolver
-	}), [currentVault, possibleOptionsFrom, possibleOptionsTo, selectedOptionFrom, selectedOptionTo, amount, onSwitchSelectedOptions, isDepositing, maxDepositPossible, currentSolver]);
+	}), [currentVault, possibleOptionsFrom, possibleOptionsTo, selectedOptionFrom, selectedOptionTo, amount, onSwitchSelectedOptions, isDepositing, maxDepositPossible, currentSolver, possibleZapOptionsFrom]);
 
 	return (
 		<ActionFlowContext.Provider value={contextValue}>

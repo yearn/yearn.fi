@@ -33,7 +33,7 @@ function	SolverChainCoin({
 	selectedOptionTo,
 	onSuccess
 }: TSolver): ReactElement {
-	console.warn('SolverChainCoin');
+	console.warn('Fetching quote via SolverChainCoin');
 	const {isActive, provider} = useWeb3();
 	const {chainID, safeChainID} = useChainID();
 	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
@@ -110,14 +110,10 @@ function	SolverChainCoin({
 	** Wrapper to decide if we should use the partner contract or not
 	**************************************************************************/
 	async function	onDepositOrWithdraw(): Promise<void> {
-		if (isDepositing) {
-			if (isInputTokenEth) {
-				await onDeposit();
-			}
-		} else {
-			if (isOutputTokenEth) {
-				await onWithdraw();
-			}
+		if (isDepositing && isInputTokenEth) {
+			await onDeposit();
+		} else if (isOutputTokenEth) {
+			await onWithdraw();
 		}
 	}
 
