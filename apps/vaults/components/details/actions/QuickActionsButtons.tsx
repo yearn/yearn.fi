@@ -56,7 +56,7 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 	**********************************************************************************************/
 	const	{data: vanillAllowanceFrom, isLoading: isValidatingAllowance, mutate: mutateAllowance} = useSWR(
 		canInteract && !isInputTokenEth && shouldUseVanillaAllowance ?
-		[selectedOptionFrom, selectedOptionTo, spender] as TAllowanceFetcher : null,
+		[selectedOptionFrom, spender] as TAllowanceFetcher : null,
 		retrieveAllowance,
 		{revalidateOnFocus: false}
 	);
