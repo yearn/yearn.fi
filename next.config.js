@@ -20,6 +20,17 @@ module.exports = withBundleAnalyzer(withPWA({
 			'placehold.co'
 		]
 	},
+	rewrites() {
+		return {
+			beforeFiles: [
+				{
+					source: '/:path*',
+					has: [{type: 'host', value: 'yearn.fi'}],
+					destination: '/vaults/:path*'
+				}
+			]
+		};
+	},
 	env: {
 		/* 🔵 - Yearn Finance **************************************************
 		** Config over the RPC
