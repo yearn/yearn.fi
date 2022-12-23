@@ -1,3 +1,6 @@
+# 0.1.3
+- Fix the open in explorer button not redirecting to the correct page
+
 # 0.1.2
 - Update web-lib to `0.17.73`
 - Fix lint issues related to `no-else-return`
