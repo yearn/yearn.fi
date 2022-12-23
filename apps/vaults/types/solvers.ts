@@ -3,14 +3,14 @@ import type {BigNumber} from 'ethers';
 import type {TAddress} from '@yearn-finance/web-lib/utils/address';
 import type {TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
-import type {Solvers} from '@vaults/contexts/useSolver';
+import type {Solver} from '@vaults/contexts/useSolver';
 
 /* 🔵 - Yearn Finance ******************************************************
 **	Generic type of the WithSolver interface.
 **	All solvers should implement this interface.
 ***************************************************************************/
 export type TWithSolver = {
-	currentSolver: Solvers;
+	currentSolver: Solver;
 	expectedOut: TNormalizedBN;
 	isLoadingExpectedOut: boolean;
 	onApprove: (
