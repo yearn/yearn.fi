@@ -3,9 +3,9 @@ import Balancer from 'react-wrap-balancer';
 import Link from 'next/link';
 import {BigNumber} from 'ethers';
 import {Button} from '@yearn-finance/web-lib/components/Button';
+import {useSessionStorage} from '@yearn-finance/web-lib/hooks/useSessionStorage';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import ListHead from '@common/components/ListHead';
 import ListHero from '@common/components/ListHero';
 import {useCurve} from '@common/contexts/useCurve';
@@ -18,6 +18,7 @@ import Wrapper from '@yBribe/Wrapper';
 import type {NextRouter} from 'next/router';
 import type {ReactElement, ReactNode} from 'react';
 import type {TCurveGauges} from '@common/types/curves';
+import type {TPossibleSortDirection} from '@vaults/hooks/useSortVaults';
 
 function	GaugeList(): ReactElement {
 	const	{tokens, prices} = useYearn();
@@ -25,8 +26,9 @@ function	GaugeList(): ReactElement {
 	const	{gauges} = useCurve();
 	const	[category, set_category] = useState('all');
 	const	[searchValue, set_searchValue] = useState('');
-	const	[sortBy, set_sortBy] = useState('');
-	const	[sortDirection, set_sortDirection] = useState('desc');
+	const 	[sort, set_sort] = useSessionStorage<{sortBy: string, sortDirection: TPossibleSortDirection}>(
+		'yGaugeListBribeSorting', {sortBy: '', sortDirection: 'desc'}
+	);
 
 	const	getRewardValue = useCallback((address: string, value: BigNumber): number => {
 		const	tokenInfo = tokens?.[address];
@@ -64,15 +66,15 @@ function	GaugeList(): ReactElement {
 	}, [filteredGauges, searchValue]);
 
 	const	sortedGauges = useMemo((): TCurveGauges[] => {
-		if (sortBy === 'name') {
+		if (sort.sortBy === 'name') {
 			return searchedGauges.sort((a, b): number => {
-				if (sortDirection === 'desc') {
+				if (sort.sortDirection === 'desc') {
 					return a.name.localeCompare(b.name);
 				}
 				return b.name.localeCompare(a.name);
 			});
 		}
-		if (sortBy === 'rewards') {
+		if (sort.sortBy === 'rewards') {
 			return searchedGauges.sort((a, b): number => {
 				const allARewards = Object.entries(currentRewards?.v3?.[toAddress(a.gauge)] || {}).reduce((acc, [address, value]): number => {
 					const aBribeValue = getRewardValue(address, value || BigNumber.from(0));
@@ -84,13 +86,13 @@ function	GaugeList(): ReactElement {
 					return acc + aBribeValue;
 				}, 0);
 
-				if (sortDirection === 'desc') {
+				if (sort.sortDirection === 'desc') {
 					return allBRewards - allARewards;
 				}
 				return allARewards - allBRewards;
 			});
 		}
-		if (sortBy === 'pendingRewards') {
+		if (sort.sortBy === 'pendingRewards') {
 			return searchedGauges.sort((a, b): number => {
 				const allARewards = Object.entries(nextRewards?.v3?.[toAddress(a.gauge)] || {}).reduce((acc, [address, value]): number => {
 					const aBribeValue = getRewardValue(address, value || BigNumber.from(0));
@@ -102,7 +104,7 @@ function	GaugeList(): ReactElement {
 					return acc + aBribeValue;
 				}, 0);
 
-				if (sortDirection === 'desc') {
+				if (sort.sortDirection === 'desc') {
 					return allBRewards - allARewards;
 				}
 				return allARewards - allBRewards;
@@ -110,14 +112,11 @@ function	GaugeList(): ReactElement {
 		}
 
 		return searchedGauges;
-	}, [sortBy, searchedGauges, sortDirection, currentRewards, nextRewards, getRewardValue]);
+	}, [sort.sortBy, sort.sortDirection, searchedGauges, currentRewards?.v3, getRewardValue, nextRewards?.v3]);
 	
 	const	onSort = useCallback((newSortBy: string, newSortDirection: string): void => {
-		performBatchedUpdates((): void => {
-			set_sortBy(newSortBy);
-			set_sortDirection(newSortDirection);
-		});
-	}, []);
+		set_sort({sortBy: newSortBy, sortDirection: newSortDirection as TPossibleSortDirection});
+	}, [set_sort]);
 
 	return (
 		<section className={'mt-4 mb-20 grid w-full grid-cols-12 pb-10 md:mb-40 md:mt-20'}>
@@ -136,8 +135,8 @@ function	GaugeList(): ReactElement {
 					searchValue={searchValue}
 					set_searchValue={set_searchValue} />
 				<ListHead
-					sortBy={sortBy}
-					sortDirection={sortDirection}
+					sortBy={sort.sortBy}
+					sortDirection={sort.sortDirection}
 					onSort={onSort}
 					dataClassName={'grid-cols-5'}
 					items={[
