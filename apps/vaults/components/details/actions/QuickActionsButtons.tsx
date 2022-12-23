@@ -96,39 +96,13 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 	}
 
 	/* 🔵 - Yearn Finance ******************************************************
-	** Trigger a deposit web3 action, simply trying to deposit `amount` tokens to
-	** the selected vault.
-	**************************************************************************/
-	async function	onDepositToVault(): Promise<void> {
-		onExecuteDeposit(
-			set_txStatusDeposit,
-			async (): Promise<void> => {
-				await onSuccess();
-			}
-		);
-	}
-
-	/* 🔵 - Yearn Finance ******************************************************
-	** Trigger a withdraw web3 action using the vault contract to take back
-	** some underlying token from this specific vault.
-	**************************************************************************/
-	async function	onWithdrawShares(): Promise<void> {
-		onExecuteWithdraw(
-			set_txStatusDeposit,
-			async (): Promise<void> => {
-				await onSuccess();
-			}
-		);
-	}
-	
-	/* 🔵 - Yearn Finance ******************************************************
 	** Wrapper to decide if we should use the partner contract or not
 	**************************************************************************/
 	function	onDepositOrWithdraw(): void {
 		if (isDepositing) {
-			onDepositToVault();
+			onExecuteDeposit(set_txStatusDeposit, onSuccess);
 		} else {
-			onWithdrawShares();
+			onExecuteWithdraw(set_txStatusDeposit, onSuccess);
 		}
 	}
 
