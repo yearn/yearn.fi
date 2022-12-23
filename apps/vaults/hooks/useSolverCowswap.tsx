@@ -215,7 +215,7 @@ export function useSolverCowswap(): TSolverContext {
 				from: from,
 				quoteId: id,
 				signature: signature.current,
-				signingScheme: String(shouldUsePresign ? 'presign' : 'eip712')
+				signingScheme: shouldUsePresign ? 'presign' : 'eip712'
 			});
 			if (orderUID) {
 				const {isSuccessful, error} = await checkOrderStatus(orderUID, quote.validTo);
