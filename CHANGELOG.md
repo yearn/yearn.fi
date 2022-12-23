@@ -1,5 +1,7 @@
 # 0.1.4
-- Write a redirection from `yearn.fi/*` to `yearn.finance/vaults/*` as test
+- Write a redirection from `yearn.fi/*` to `yearn.finance/vaults/*`
+- Write a redirection from `yearn.finance/*` to `yearn.finance/ycrv/*`
+- Write a redirection from `ybribe.com/*` to `yearn.finance/ybribe/*`
 
 # 0.1.3
 - Fix the open in explorer button not redirecting to the correct page

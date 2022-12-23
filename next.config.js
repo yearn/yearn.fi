@@ -20,16 +20,27 @@ module.exports = withBundleAnalyzer(withPWA({
 			'placehold.co'
 		]
 	},
-	rewrites() {
-		return {
-			beforeFiles: [
-				{
-					source: '/:path*',
-					has: [{type: 'host', value: 'yearn.fi'}],
-					destination: '/vaults/:path*'
-				}
-			]
-		};
+	redirects() {
+		return [
+			{
+				source: '/:path*',
+				has: [{type: 'host', value: 'yearn.fi'}],
+				destination: 'https://yearn.finance/vaults/:path*',
+				permanent: true
+			},
+			{
+				source: '/:path*',
+				has: [{type: 'host', value: 'y.finance'}],
+				destination: 'https://yearn.finance/ycrv/:path*',
+				permanent: true
+			},
+			{
+				source: '/:path*',
+				has: [{type: 'host', value: 'ybribe.com'}],
+				destination: 'https://yearn.finance/ybribe/:path*',
+				permanent: true
+			}
+		];
 	},
 	env: {
 		/* 🔵 - Yearn Finance **************************************************
