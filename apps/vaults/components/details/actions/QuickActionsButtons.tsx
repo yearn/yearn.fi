@@ -19,6 +19,11 @@ import type {ReactElement} from 'react';
 import type {TAddress} from '@yearn-finance/web-lib/utils/address';
 import type {TNormalizedBN} from '@common/types/types';
 
+
+function	shouldUseVanillaAllowance(solver: Solver, isInputTokenEth: boolean): boolean {
+	return ([Solver.VANILLA, Solver.CHAIN_COIN, Solver.PARTNER_CONTRACT].includes(solver) && !isInputTokenEth);
+}
+
 function	VaultDetailsQuickActionsButtons(): ReactElement {
 	const {refresh} = useWallet();
 	const {isActive} = useWeb3();
@@ -35,12 +40,12 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 	const {onApprove, onExecuteDeposit, onExecuteWithdraw, currentSolver} = useSolver();
 	const retrieveAllowance = useAllowanceFetcher();
 
-	const shouldUseVanillaAllowance = [Solver.VANILLA, Solver.CHAIN_COIN, Solver.PARTNER_CONTRACT].includes(currentSolver);
-	const isInputTokenEth = selectedOptionFrom?.value === ETH_TOKEN_ADDRESS;
-	const isOutputTokenEth = selectedOptionTo?.value === ETH_TOKEN_ADDRESS;
+	const withVanillaAllowance = shouldUseVanillaAllowance(currentSolver, selectedOptionFrom?.value === ETH_TOKEN_ADDRESS);
 	const canInteract = isActive && amount.raw.gt(0) && selectedOptionFrom && selectedOptionTo;
 
 	const spender = useMemo((): TAddress => {
+		const isOutputTokenEth = selectedOptionTo?.value === ETH_TOKEN_ADDRESS;
+
 		if (currentSolver === Solver.CHAIN_COIN && isOutputTokenEth) {
 			return (toAddress(getEthZapperContract(safeChainID)));
 		}
@@ -48,24 +53,24 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 			return (toAddress(networks?.[safeChainID]?.partnerContractAddress));
 		}
 		return (toAddress(selectedOptionTo?.value));
-	}, [currentSolver, isOutputTokenEth, networks, safeChainID, selectedOptionTo?.value]);
+	}, [currentSolver, networks, safeChainID, selectedOptionTo?.value]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** SWR hook to get the expected out for a given in/out pair with a specific amount. This hook is
 	** called every 10s or when amount/in or out changes. Calls the allowanceFetcher callback.
 	**********************************************************************************************/
 	const	{data: vanillAllowanceFrom, isLoading: isValidatingAllowance, mutate: mutateAllowance} = useSWR(
-		canInteract && !isInputTokenEth && shouldUseVanillaAllowance ?
+		canInteract && withVanillaAllowance ?
 			[selectedOptionFrom, spender] : null,
 		retrieveAllowance,
 		{revalidateOnFocus: false}
 	);
 
 	useEffect((): void => {
-		if (shouldUseVanillaAllowance && vanillAllowanceFrom) {
+		if (withVanillaAllowance) {
 			set_allowanceFrom(vanillAllowanceFrom);
 		}
-	}, [vanillAllowanceFrom, shouldUseVanillaAllowance]);
+	}, [vanillAllowanceFrom, withVanillaAllowance]);
 
 	const onSuccess = useCallback(async (): Promise<void> => {
 		onChangeAmount(DefaultTNormalizedBN);
