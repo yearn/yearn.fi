@@ -11,11 +11,7 @@ import type {ReactElement} from 'react';
 import type {TDropdownOption} from '@common/types/types';
 
 function	VaultDetailsQuickActionsTo(): ReactElement {
-	const {
-		currentVault,
-		possibleOptionsTo, selectedOptionTo, onUpdateSelectedOptionTo,
-		isDepositing
-	} = useActionFlow();
+	const {currentVault, possibleOptionsTo, selectedOptionTo, onUpdateSelectedOptionTo, isDepositing} = useActionFlow();
 	const {expectedOut, isLoadingExpectedOut} = useSolver();
 
 	const selectedOptionToPricePerToken = useTokenPrice(toAddress(selectedOptionTo?.value));
