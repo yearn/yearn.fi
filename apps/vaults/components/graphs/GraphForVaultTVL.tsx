@@ -5,7 +5,7 @@ import {formatAmount, formatWithUnit} from '@yearn-finance/web-lib/utils/format.
 import type {ReactElement} from 'react';
 import type {TMessariGraphData} from '@common/types/types';
 
-type TGraphForVaultTVLProps = {
+export type TGraphForVaultTVLProps = {
 	messariData: TMessariGraphData[],
 	height?: number,
 }
