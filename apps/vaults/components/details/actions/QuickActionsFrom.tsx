@@ -11,7 +11,6 @@ import {useTokenPrice} from '@common/hooks/useTokenPrice';
 import {handleInputChange} from '@common/utils';
 
 import type {ChangeEvent, ReactElement} from 'react';
-import type {TDropdownOption} from '@common/types/types';
 
 function	VaultDetailsQuickActionsFrom(): ReactElement {
 	const {isActive} = useWeb3();
@@ -41,7 +40,7 @@ function	VaultDetailsQuickActionsFrom(): ReactElement {
 						defaultOption={possibleOptionsFrom[0]}
 						options={possibleOptionsFrom}
 						selected={selectedOptionFrom}
-						onSelect={(option: TDropdownOption): void => onUpdateSelectedOptionFrom(option)} />
+						onSelect={onUpdateSelectedOptionFrom} />
 				) : (
 					<div className={'flex h-10 w-full items-center justify-between bg-neutral-100 px-2 text-base text-neutral-900 md:px-3'}>
 						<div className={'relative flex flex-row items-center'}>
