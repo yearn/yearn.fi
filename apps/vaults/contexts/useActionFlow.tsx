@@ -81,12 +81,12 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 				raw: vaultDepositLimit,
 				normalized: formatToNormalizedValue(vaultDepositLimit, currentVault.token.decimals)
 			});
-		} else {
-			return ({
-				raw: userBalance,
-				normalized: balances?.[toAddress(selectedOptionFrom?.value)]?.normalized || 0
-			});
-		}
+		} 
+		return ({
+			raw: userBalance,
+			normalized: balances?.[toAddress(selectedOptionFrom?.value)]?.normalized || 0
+		});
+		
 	}, [balances, currentVault.details.depositLimit, currentVault.token.decimals, selectedOptionFrom?.value]);
 
 	const currentSolver = useMemo((): Solver => {
