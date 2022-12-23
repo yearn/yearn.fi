@@ -11,7 +11,6 @@ import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {DefaultTNormalizedBN} from '@common/utils';
 
 import type {AxiosError} from 'axios';
-import type {BigNumber} from 'ethers';
 import type {TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TNormalizedBN} from '@common/types/types';
 import type {ApiError, Order, QuoteQuery, Timestamp} from '@gnosis.pm/gp-v2-contracts';
@@ -85,14 +84,14 @@ export function useSolverCowswap(): TSolverContext {
 	** fluctuations. The buyAmountWithSlippage is used to request this amount instead of the
 	** original buyAmount.
 	**********************************************************************************************/
-	function getBuyAmountWithSlippage(currentQuote: TCowAPIResult, decimals: number): BigNumber {
+	function getBuyAmountWithSlippage(currentQuote: TCowAPIResult, decimals: number): string {
 		if (!currentQuote) {
-			return ethers.constants.Zero;
+			return '0';
 		}
-		const	{quote} = currentQuote;
-		const	buyAmount = Number(ethers.utils.formatUnits(quote.buyAmount, decimals));
-		const	withSlippage = ethers.utils.parseUnits((buyAmount * (1 - Number(DEFAULT_SLIPPAGE_COWSWAP))).toFixed(decimals), decimals);
-		return withSlippage;
+		const {quote} = currentQuote;
+		const buyAmount = Number(ethers.utils.formatUnits(quote.buyAmount, decimals));
+		const withSlippage = ethers.utils.parseUnits((buyAmount * (1 - Number(DEFAULT_SLIPPAGE_COWSWAP))).toFixed(decimals), decimals);
+		return withSlippage.toString();
 	}
 
 	/* 🔵 - Yearn Finance **************************************************************************
@@ -163,7 +162,7 @@ export function useSolverCowswap(): TSolverContext {
 			const	buyAmountWithSlippage = getBuyAmountWithSlippage(latestQuote.current, request.current.outputToken.decimals);
 			const	_signature = await signCowswapOrder({
 				...quote,
-				buyAmount: buyAmountWithSlippage.toString()
+				buyAmount: buyAmountWithSlippage
 			});
 			signature.current = _signature;
 			return true;
@@ -211,7 +210,7 @@ export function useSolverCowswap(): TSolverContext {
 			const	buyAmountWithSlippage = getBuyAmountWithSlippage(latestQuote.current, request.current.outputToken.decimals);
 			const	{data: orderUID} = await axios.post('https://api.cow.fi/mainnet/api/v1/orders', {
 				...quote,
-				buyAmount: buyAmountWithSlippage.toString(),
+				buyAmount: buyAmountWithSlippage,
 				from: from,
 				quoteId: id,
 				signature: signature.current,
