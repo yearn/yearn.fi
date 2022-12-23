@@ -13,7 +13,7 @@ import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
 import type {TYDaemonReports, TYearnVaultStrategy} from '@common/types/yearn';
 
-type TGraphForStrategyReportsProps = {
+export type TGraphForStrategyReportsProps = {
 	strategy: TYearnVaultStrategy,
 	vaultDecimals: number,
 	vaultTicker: string

@@ -9,11 +9,12 @@ import {copyToClipboard, parseMarkdown} from '@yearn-finance/web-lib/utils/helpe
 import IconChevron from '@common/icons/IconChevron';
 import {formatPercent} from '@common/utils';
 
+import type {LoaderComponent} from 'next/dynamic';
 import type {ReactElement} from 'react';
 import type {TYearnVault, TYearnVaultStrategy} from '@common/types/yearn';
+import type {TGraphForStrategyReportsProps} from '@vaults/components/graphs/GraphForStrategyReports';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const GraphForStrategyReports = dynamic(async (): Promise<any> => import('@vaults/components/graphs/GraphForStrategyReports'), {ssr: false}) as any;
+const GraphForStrategyReports = dynamic<TGraphForStrategyReportsProps>(async (): LoaderComponent<TGraphForStrategyReportsProps> => import('@vaults/components/graphs/GraphForStrategyReports'), {ssr: false});
 
 function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVault, strategy: TYearnVaultStrategy}): ReactElement {
 	return (
