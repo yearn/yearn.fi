@@ -106,7 +106,6 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 		}
 	}
 
-	console.warn(currentSolver);
 	if (
 		(currentSolver === Solver.VANILLA && (isDepositing &&( txStatusApprove.pending || amount.raw.gt(allowanceFrom?.raw || 0))))
 		|| (currentSolver === Solver.COWSWAP && (txStatusApprove.pending || amount.raw.gt(allowanceFrom?.raw || 0)))
