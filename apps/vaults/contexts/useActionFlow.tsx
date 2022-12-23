@@ -94,9 +94,11 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 		const isOutputTokenEth = selectedOptionTo?.value === ETH_TOKEN_ADDRESS;
 		if (isInputTokenEth || isOutputTokenEth) {
 			return Solver.CHAIN_COIN;
-		} else if (selectedOptionFrom?.solveVia === Solver.COWSWAP) {
+		}
+		if (selectedOptionFrom?.solveVia === Solver.COWSWAP) {
 			return Solver.COWSWAP;			
-		} else if (isDepositing && isUsingPartnerContract) {
+		}
+		if (isDepositing && isUsingPartnerContract) {
 			return Solver.PARTNER_CONTRACT;
 		}
 		return Solver.VANILLA;
