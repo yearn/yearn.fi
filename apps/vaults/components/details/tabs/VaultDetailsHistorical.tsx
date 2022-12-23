@@ -8,16 +8,17 @@ import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/fo
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
 import {graphFetcher} from '@common/utils';
 
+import type {LoaderComponent} from 'next/dynamic';
 import type {ReactElement} from 'react';
 import type {TGraphData, TMessariGraphData} from '@common/types/types';
 import type {TYearnVault} from '@common/types/yearn';
+import type {TGraphForVaultEarningsProps} from '@vaults/components/graphs/GraphForVaultEarnings';
+import type {TGraphForVaultPPSGrowthProps} from '@vaults/components/graphs/GraphForVaultPPSGrowth';
+import type {TGraphForVaultTVLProps} from '@vaults/components/graphs/GraphForVaultTVL';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const GraphForVaultTVL = dynamic((): any => import('@vaults/components/graphs/GraphForVaultTVL'), {ssr: false}) as any;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const GraphForVaultPPSGrowth = dynamic((): any => import('@vaults/components/graphs/GraphForVaultPPSGrowth'), {ssr: false}) as any;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const GraphForVaultEarnings = dynamic((): any => import('@vaults/components/graphs/GraphForVaultEarnings'), {ssr: false}) as any;
+const GraphForVaultTVL = dynamic<TGraphForVaultTVLProps>(async (): LoaderComponent<TGraphForVaultTVLProps> => import('@vaults/components/graphs/GraphForVaultTVL'), {ssr: false});
+const GraphForVaultPPSGrowth = dynamic<TGraphForVaultPPSGrowthProps>(async (): LoaderComponent<TGraphForVaultPPSGrowthProps> => import('@vaults/components/graphs/GraphForVaultPPSGrowth'), {ssr: false});
+const GraphForVaultEarnings = dynamic<TGraphForVaultEarningsProps>(async (): LoaderComponent<TGraphForVaultEarningsProps> => import('@vaults/components/graphs/GraphForVaultEarnings'), {ssr: false});
 
 function	VaultDetailsHistorical({currentVault, harvestData}: {currentVault: TYearnVault, harvestData: TGraphData[]}): ReactElement {
 	const {safeChainID} = useChainID();

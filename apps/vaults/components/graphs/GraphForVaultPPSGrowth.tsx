@@ -6,7 +6,7 @@ import {formatPercent} from '@common/utils';
 import type {ReactElement} from 'react';
 import type {TMessariGraphData} from '@common/types/types';
 
-type TGraphForVaultPPSGrowthProps = {
+export type TGraphForVaultPPSGrowthProps = {
 	messariData: TMessariGraphData[],
 	height?: number,
 }

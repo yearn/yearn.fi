@@ -6,7 +6,7 @@ import type {ReactElement} from 'react';
 import type {TGraphData} from '@common/types/types';
 import type {TYearnVault} from '@common/types/yearn';
 
-type TGraphForVaultEarningsProps = {
+export type TGraphForVaultEarningsProps = {
 	currentVault: TYearnVault,
 	harvestData: TGraphData[],
 	height?: number,
