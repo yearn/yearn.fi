@@ -39,13 +39,13 @@ export function	useVaultEstimateOutFetcher(): (args: TVaultEstimateOutFetcher) =
 					raw: expectedOutFetched,
 					normalized: formatToNormalizedValue(expectedOutFetched || ethers.constants.Zero, outputToken?.decimals || 18)
 				});
-			} else {
-				const	expectedOutFetched = inputAmount.mul(pps).div(formatBN(10).pow(outputToken?.decimals));
-				return ({
-					raw: expectedOutFetched,
-					normalized: formatToNormalizedValue(expectedOutFetched || ethers.constants.Zero, outputToken?.decimals || 18)
-				});
-			}
+			} 
+			const	expectedOutFetched = inputAmount.mul(pps).div(formatBN(10).pow(outputToken?.decimals));
+			return ({
+				raw: expectedOutFetched,
+				normalized: formatToNormalizedValue(expectedOutFetched || ethers.constants.Zero, outputToken?.decimals || 18)
+			});
+			
 		} catch (error) {
 			console.log(error);
 			return (DefaultTNormalizedBN);
