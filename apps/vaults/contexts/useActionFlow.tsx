@@ -112,11 +112,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 			set_selectedOptionFrom(_selectedOptionTo);
 			set_possibleOptionsTo(possibleOptionsFrom);
 			set_possibleOptionsFrom(_possibleOptionsTo);
-			if (isDepositing) {
-				set_amount(DefaultTNormalizedBN);
-			} else {
-				set_amount(maxDepositPossible);
-			}
+			set_amount(isDepositing ? DefaultTNormalizedBN : maxDepositPossible);
 		});
 	}, [selectedOptionTo, possibleOptionsTo, selectedOptionFrom, possibleOptionsFrom, isDepositing, maxDepositPossible]);
 
