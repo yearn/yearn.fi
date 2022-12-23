@@ -44,7 +44,8 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 	const spender = useMemo((): TAddress => {
 		if (currentSolver === Solver.CHAIN_COIN && isOutputTokenEth) {
 			return (toAddress(getEthZapperContract(safeChainID)));
-		} else if (currentSolver === Solver.PARTNER_CONTRACT) {
+		}
+		if (currentSolver === Solver.PARTNER_CONTRACT) {
 			return (toAddress(networks?.[safeChainID]?.partnerContractAddress));
 		}
 		return (toAddress(selectedOptionTo?.value));
