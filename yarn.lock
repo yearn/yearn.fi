@@ -2367,10 +2367,10 @@
     "@web3-react/types" "^8.0.20-beta.0"
     eventemitter3 "^4.0.7"
 
-"@yearn-finance/web-lib@^0.17.70":
-  version "0.17.70"
-  resolved "https://registry.yarnpkg.com/@yearn-finance/web-lib/-/web-lib-0.17.70.tgz#9fbbba7d47ac2baf55c0e31d906c4bd3ac5d1d24"
-  integrity sha512-2Lg7uyGkZVkd516gTcmbRsLTz6E/dGkyoAXnfyyy6KOLxc5fBEyAR6P0bN2VDKOIbeqZzStXjvje5T8PO6iCuA==
+"@yearn-finance/web-lib@^0.17.73":
+  version "0.17.73"
+  resolved "https://registry.yarnpkg.com/@yearn-finance/web-lib/-/web-lib-0.17.73.tgz#58e64ca1d51089d1e12944165a0a78c9405e03fa"
+  integrity sha512-pAm6qYQ2kC02BS7HgOxDl3YEoi43a3MyghDOyKtaD+C7QwZkf9wHKDHy9JdB/tT4A8YZTtCEA+BODf/R+7I8Eg==
   dependencies:
     "@coinbase/wallet-sdk" "^3.5.4"
     "@ethersproject/experimental" "^5.7.0"
@@ -2917,6 +2917,11 @@ builtin-modules@^3.1.0:
   version "3.3.0"
   resolved "https://registry.yarnpkg.com/builtin-modules/-/builtin-modules-3.3.0.tgz#cae62812b89801e9656336e46223e030386be7b6"
   integrity sha512-zhaCDicdLuWN5UbN5IMnFqNMhNfo919sH85y2/ea+5Yg9TsTkeZxpL+JLbp6cgYFS4sRLp3YV4S6yDuqVWHYOw==
+
+bump@^0.2.5:
+  version "0.2.5"
+  resolved "https://registry.yarnpkg.com/bump/-/bump-0.2.5.tgz#16d5567b75e77ea6597a805c10294c578495b47b"
+  integrity sha512-d4CZYvcP317+twjo7PhGd+EptYjvw83itgaxbJtJnHE64qH29qMtqAQ5vb3x3Su7WuaPjow88GBgp0FDBxbm8w==
 
 call-bind@^1.0.0, call-bind@^1.0.2:
   version "1.0.2"

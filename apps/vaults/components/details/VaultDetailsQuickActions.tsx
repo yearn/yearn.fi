@@ -327,12 +327,12 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 				raw: vaultDepositLimit,
 				normalized: formatToNormalizedValue(vaultDepositLimit, currentVault.token.decimals)
 			});
-		} else {
-			return ({
-				raw: userBalance,
-				normalized: balances?.[toAddress(selectedOptionFrom?.value)]?.normalized || 0
-			});
-		}
+		} 
+		return ({
+			raw: userBalance,
+			normalized: balances?.[toAddress(selectedOptionFrom?.value)]?.normalized || 0
+		});
+		
 	}, [balances, currentVault.details.depositLimit, currentVault.token.decimals, selectedOptionFrom?.value]);
 
 	const	isDepositing = useMemo((): boolean => (
@@ -422,13 +422,13 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 					raw: expectedOutFetched,
 					normalized: formatToNormalizedValue(expectedOutFetched || ethers.constants.Zero, _outputToken?.decimals || currentVault?.decimals)
 				});
-			} else {
-				const	expectedOutFetched = _amountIn.mul(pps).div(formatBN(10).pow(_outputToken?.decimals));
-				return ({
-					raw: expectedOutFetched,
-					normalized: formatToNormalizedValue(expectedOutFetched || ethers.constants.Zero, _outputToken?.decimals || currentVault?.decimals)
-				});
-			}
+			} 
+			const	expectedOutFetched = _amountIn.mul(pps).div(formatBN(10).pow(_outputToken?.decimals));
+			return ({
+				raw: expectedOutFetched,
+				normalized: formatToNormalizedValue(expectedOutFetched || ethers.constants.Zero, _outputToken?.decimals || currentVault?.decimals)
+			});
+			
 		} catch (error) {
 			console.error(error);
 			return ({raw: ethers.constants.Zero, normalized: 0});

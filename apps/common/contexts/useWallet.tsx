@@ -83,10 +83,10 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 		if (tokenToUpdate) {
 			const updatedBalances = await updateSomeBalances(tokenToUpdate);
 			return updatedBalances;
-		} else {
-			const updatedBalances = await updateBalances();
-			return updatedBalances;
-		}
+		} 
+		const updatedBalances = await updateBalances();
+		return updatedBalances;
+		
 	}, [updateBalances, updateSomeBalances]);
 
 	useClientEffect((): () => void => {
