@@ -2,7 +2,7 @@ import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {ethers} from 'ethers';
 import useSWR from 'swr';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
-import {Solvers, useSolver} from '@vaults/contexts/useSolver';
+import {Solver, useSolver} from '@vaults/contexts/useSolver';
 import {getEthZapperContract} from '@vaults/utils';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
@@ -36,15 +36,15 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 	const {onApprove, onExecuteDeposit, onExecuteWithdraw, currentSolver} = useSolver();
 	const retrieveAllowance = useAllowanceFetcher();
 
-	const shouldUseVanillaAllowance = [Solvers.VANILLA, Solvers.CHAIN_COIN, Solvers.PARTNER_CONTRACT].includes(currentSolver);
+	const shouldUseVanillaAllowance = [Solver.VANILLA, Solver.CHAIN_COIN, Solver.PARTNER_CONTRACT].includes(currentSolver);
 	const isInputTokenEth = selectedOptionFrom?.value === ETH_TOKEN_ADDRESS;
 	const isOutputTokenEth = selectedOptionTo?.value === ETH_TOKEN_ADDRESS;
 	const canInteract = isActive && amount.raw.gt(0) && selectedOptionFrom && selectedOptionTo;
 
 	const spender = useMemo((): TAddress => {
-		if (currentSolver === Solvers.CHAIN_COIN && isOutputTokenEth) {
+		if (currentSolver === Solver.CHAIN_COIN && isOutputTokenEth) {
 			return (toAddress(getEthZapperContract(safeChainID)));
-		} else if (currentSolver === Solvers.PARTNER_CONTRACT) {
+		} else if (currentSolver === Solver.PARTNER_CONTRACT) {
 			return (toAddress(networks?.[safeChainID]?.partnerContractAddress));
 		}
 		return (toAddress(selectedOptionTo?.value));
@@ -83,7 +83,7 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 		onApprove(
 			set_txStatusApprove,
 			async (): Promise<void> => {
-				if (currentSolver === Solvers.COWSWAP) {
+				if (currentSolver === Solver.COWSWAP) {
 					set_allowanceFrom({
 						raw: ethers.constants.MaxUint256,
 						normalized: Infinity
@@ -134,10 +134,10 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 
 	console.warn(currentSolver);
 	if (
-		(currentSolver === Solvers.VANILLA && (isDepositing &&( txStatusApprove.pending || amount.raw.gt(allowanceFrom?.raw || 0))))
-		|| (currentSolver === Solvers.COWSWAP && (txStatusApprove.pending || amount.raw.gt(allowanceFrom?.raw || 0)))
-		|| (currentSolver === Solvers.CHAIN_COIN && (!isDepositing && (txStatusApprove.pending || amount.raw.gt(allowanceFrom?.raw || 0))))
-		|| (currentSolver === Solvers.PARTNER_CONTRACT && ((txStatusApprove.pending || amount.raw.gt(allowanceFrom?.raw || 0))))
+		(currentSolver === Solver.VANILLA && (isDepositing &&( txStatusApprove.pending || amount.raw.gt(allowanceFrom?.raw || 0))))
+		|| (currentSolver === Solver.COWSWAP && (txStatusApprove.pending || amount.raw.gt(allowanceFrom?.raw || 0)))
+		|| (currentSolver === Solver.CHAIN_COIN && (!isDepositing && (txStatusApprove.pending || amount.raw.gt(allowanceFrom?.raw || 0))))
+		|| (currentSolver === Solver.PARTNER_CONTRACT && ((txStatusApprove.pending || amount.raw.gt(allowanceFrom?.raw || 0))))
 	) {
 		return (
 			<Button

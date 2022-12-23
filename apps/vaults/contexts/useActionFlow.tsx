@@ -1,5 +1,7 @@
 import React, {createContext, useCallback, useContext, useEffect, useMemo, useState} from 'react';
 import {ethers} from 'ethers';
+import {Solver} from '@vaults/contexts/useSolver';
+import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
 import {setZapOption} from '@vaults/utils/zapOptions';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
@@ -9,9 +11,6 @@ import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/fo
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {useWallet} from '@common/contexts/useWallet';
 import {DefaultTNormalizedBN} from '@common/utils';
-
-import {Solvers} from './useSolver';
-import {useWalletForZap} from './useWalletForZaps';
 
 import type {ReactNode} from 'react';
 import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
@@ -30,7 +29,7 @@ type	TActionFlowContext = {
 	onSwitchSelectedOptions: () => void;
 	isDepositing: boolean;
 	maxDepositPossible: TNormalizedBN;
-	currentSolver: Solvers;
+	currentSolver: Solver;
 }
 const	DefaultActionFlowContext: TActionFlowContext = {
 	currentVault: {} as TYearnVault, // eslint-disable-line @typescript-eslint/consistent-type-assertions
@@ -45,7 +44,7 @@ const	DefaultActionFlowContext: TActionFlowContext = {
 	onSwitchSelectedOptions: (): void => undefined,
 	isDepositing: true,
 	maxDepositPossible: DefaultTNormalizedBN,
-	currentSolver: Solvers.VANILLA
+	currentSolver: Solver.VANILLA
 };
 
 const ActionFlowContext = createContext<TActionFlowContext>(DefaultActionFlowContext);
@@ -90,17 +89,17 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 		}
 	}, [balances, currentVault.details.depositLimit, currentVault.token.decimals, selectedOptionFrom?.value]);
 
-	const currentSolver = useMemo((): Solvers => {
+	const currentSolver = useMemo((): Solver => {
 		const isInputTokenEth = selectedOptionFrom?.value === ETH_TOKEN_ADDRESS;
 		const isOutputTokenEth = selectedOptionTo?.value === ETH_TOKEN_ADDRESS;
 		if (isInputTokenEth || isOutputTokenEth) {
-			return Solvers.CHAIN_COIN;
-		} else if (selectedOptionFrom?.solveVia === Solvers.COWSWAP) {
-			return Solvers.COWSWAP;			
+			return Solver.CHAIN_COIN;
+		} else if (selectedOptionFrom?.solveVia === Solver.COWSWAP) {
+			return Solver.COWSWAP;			
 		} else if (isDepositing && isUsingPartnerContract) {
-			return Solvers.PARTNER_CONTRACT;
+			return Solver.PARTNER_CONTRACT;
 		}
-		return Solvers.VANILLA;
+		return Solver.VANILLA;
 	}, [isDepositing, isUsingPartnerContract, selectedOptionFrom?.solveVia, selectedOptionFrom?.value, selectedOptionTo?.value]);
 
 	const onSwitchSelectedOptions = useCallback((): void => {
@@ -162,7 +161,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 					address: toAddress(tokenListData?.address),
 					safeChainID,
 					decimals: tokenListData?.decimals,
-					solveVia: Solvers.COWSWAP //Should handle multiple
+					solveVia: Solver.COWSWAP //Should handle multiple
 				})
 			);
 		});

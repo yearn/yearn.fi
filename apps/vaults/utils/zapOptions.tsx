@@ -2,7 +2,7 @@ import React from 'react';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 
 import type {TDropdownOption} from '@common/types/types';
-import type {Solvers} from '@vaults/contexts/useSolver';
+import type {Solver} from '@vaults/contexts/useSolver';
 
 type TSetZapOptionProps = {
 	name: string;
@@ -10,7 +10,7 @@ type TSetZapOptionProps = {
 	address: string;
 	safeChainID: number;
 	decimals: number;
-	solveVia?: Solvers
+	solveVia?: Solver
 }
 export function	setZapOption({
 	name,

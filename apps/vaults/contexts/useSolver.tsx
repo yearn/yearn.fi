@@ -12,7 +12,7 @@ import {DefaultTNormalizedBN} from '@common/utils';
 import type {TNormalizedBN} from '@common/types/types';
 import type {TWithSolver} from '@vaults/types/solvers';
 
-export enum	Solvers {
+export enum	Solver {
 	VANILLA = 'vanilla',
 	PARTNER_CONTRACT = 'partnerContract',
 	CHAIN_COIN = 'chainCoin',
@@ -22,7 +22,7 @@ export enum	Solvers {
 }
 
 const	DefaultWithSolverContext: TWithSolver = {
-	currentSolver: Solvers.VANILLA,
+	currentSolver: Solver.VANILLA,
 	expectedOut: DefaultTNormalizedBN,
 	isLoadingExpectedOut: false,
 	onApprove: async (): Promise<void> => undefined,
@@ -52,7 +52,7 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 
 		let quote: TNormalizedBN = DefaultTNormalizedBN;
 		switch (currentSolver) {
-		case Solvers.COWSWAP:
+		case Solver.COWSWAP:
 			quote = await cowswap.init({
 				from: toAddress(address || ''),
 				inputToken: selectedOptionFrom,
@@ -65,7 +65,7 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 				set_isLoading(false);
 			});
 			break;
-		case Solvers.CHAIN_COIN:
+		case Solver.CHAIN_COIN:
 			quote = await chainCoin.init({
 				from: toAddress(address || ''),
 				inputToken: selectedOptionFrom,
@@ -78,7 +78,7 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 				set_isLoading(false);
 			});
 			break;
-		case Solvers.PARTNER_CONTRACT:
+		case Solver.PARTNER_CONTRACT:
 			quote = await partnerContract.init({
 				from: toAddress(address || ''),
 				inputToken: selectedOptionFrom,
