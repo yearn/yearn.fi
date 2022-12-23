@@ -6,6 +6,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useBalances} from '@yearn-finance/web-lib/hooks/useBalances';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {useClientEffect} from '@yearn-finance/web-lib/hooks/useClientEffect';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {getProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import {useYearn} from '@common/contexts/useYearn';
 
@@ -16,6 +17,7 @@ import type {TYearnVault} from '@common/types/yearn';
 
 export type	TWalletForInternalMigrations = {
 	balances: TDict<TBalanceData>,
+	cumulatedValueInVaults: number,
 	useWalletNonce: number,
 	isLoading: boolean,
 	refresh: (tokenList?: TUseBalancesTokens[]) => Promise<TDict<TBalanceData>>,
@@ -23,6 +25,7 @@ export type	TWalletForInternalMigrations = {
 
 const	defaultProps = {
 	balances: {},
+	cumulatedValueInVaults: 0,
 	useWalletNonce: 0,
 	isLoading: true,
 	refresh: async (): Promise<TDict<TBalanceData>> => ({})
@@ -39,10 +42,10 @@ export const WalletForInternalMigrationsApp = memo(function WalletForInternalMig
 	const	{provider} = useWeb3();
 	const	{prices} = useYearn();
 	const	{chainID} = useChainID();
-	const	{possibleVaultsMigrations, isLoading} = useVaultsMigrations();
+	const	{possibleVaultsMigrations, isLoading: isLoadingVaultList} = useVaultsMigrations();
 
 	const	availableTokens = useMemo((): TUseBalancesTokens[] => {
-		if (isLoading) {
+		if (isLoadingVaultList) {
 			return [];
 		}
 		const	tokens: TUseBalancesTokens[] = [];
@@ -53,7 +56,7 @@ export const WalletForInternalMigrationsApp = memo(function WalletForInternalMig
 			tokens.push({token: vault?.address});
 		});
 		return tokens;
-	}, [possibleVaultsMigrations, isLoading]);
+	}, [possibleVaultsMigrations, isLoadingVaultList]);
 
 	const	{data: balances, update: updateBalances, updateSome: updateSomeBalances, isLoading: isLoadingBalances} = useBalances({
 		key: chainID,
@@ -61,6 +64,21 @@ export const WalletForInternalMigrationsApp = memo(function WalletForInternalMig
 		tokens: availableTokens,
 		prices
 	});
+
+	const	cumulatedValueInVaults = useMemo((): number => {
+		if (isLoadingVaultList || isLoadingBalances) {
+			return 0;
+		}
+		return (
+			Object.entries(balances).reduce((acc, [token, balance]): number => {
+				const	vault = possibleVaultsMigrations?.[toAddress(token)] ;
+				if (vault) {
+					acc += balance.normalizedValue;
+				}
+				return acc;
+			}, 0)
+		);
+	}, [possibleVaultsMigrations, balances, isLoadingVaultList, isLoadingBalances]);
 
 	const	onRefresh = useCallback(async (tokenToUpdate?: TUseBalancesTokens[]): Promise<TDict<TBalanceData>> => {
 		if (tokenToUpdate) {
@@ -89,10 +107,11 @@ export const WalletForInternalMigrationsApp = memo(function WalletForInternalMig
 	***************************************************************************/
 	const	contextValue = useMemo((): TWalletForInternalMigrations => ({
 		balances: balances,
+		cumulatedValueInVaults,
 		isLoading: isLoadingBalances,
 		refresh: onRefresh,
 		useWalletNonce: nonce
-	}), [balances, isLoadingBalances, onRefresh, nonce]);
+	}), [balances, cumulatedValueInVaults, isLoadingBalances, onRefresh, nonce]);
 
 	return (
 		<WalletForInternalMigrations.Provider value={contextValue}>

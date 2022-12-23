@@ -26,10 +26,13 @@ import type {TPossibleSortBy, TPossibleSortDirection} from '@vaults/hooks/useSor
 
 function	HeaderUserPosition(): ReactElement {
 	const	{cumulatedValueInVaults} = useWallet();
+	const	{cumulatedValueInVaults: cumulatedValueInDeprecatedVaults} = useWalletForInternalMigrations();
 	const	{earned} = useYearn();
 
-	const	formatedYouHave = useMemo((): string => formatAmount(cumulatedValueInVaults || 0), [cumulatedValueInVaults]);
 	const	formatedYouEarned = useMemo((): string => formatAmount(earned?.totalUnrealizedGainsUSD || 0), [earned]);
+	const	formatedYouHave = useMemo((): string => (
+		formatAmount(cumulatedValueInVaults + cumulatedValueInDeprecatedVaults)
+	), [cumulatedValueInVaults, cumulatedValueInDeprecatedVaults]);
 
 	return (
 		<Fragment>
