@@ -30,16 +30,19 @@ function	RiskScoreElement({label, value}: TRiskScoreElementProps): ReactElement 
 }
 
 function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVault, strategy: TYearnVaultStrategy}): ReactElement {
-	const	riskScoreElementsMap = useMemo((): TRiskScoreElementProps[] => ([
-		{label: 'TVL Impact', value: strategy?.risk?.riskDetails?.TVLImpact},
-		{label: 'Audit Score', value: strategy?.risk?.riskDetails?.auditScore},
-		{label: 'Code Review Score', value: strategy?.risk?.riskDetails?.codeReviewScore},
-		{label: 'Complexity Score', value: strategy?.risk?.riskDetails?.complexityScore},
-		{label: 'Longevity Impact', value: strategy?.risk?.riskDetails?.longevityImpact},
-		{label: 'Protocol Safety Score', value: strategy?.risk?.riskDetails?.protocolSafetyScore},
-		{label: 'Team Knowledge Score', value: strategy?.risk?.riskDetails?.teamKnowledgeScore},
-		{label: 'Testing Score', value: strategy?.risk?.riskDetails?.testingScore}
-	]), [strategy]);
+	const	riskScoreElementsMap = useMemo((): TRiskScoreElementProps[] => {
+		const {riskDetails} = strategy?.risk || {};
+		return ([
+			{label: 'TVL Impact', value: riskDetails?.TVLImpact || 0},
+			{label: 'Audit Score', value: riskDetails?.auditScore || 0},
+			{label: 'Code Review Score', value: riskDetails?.codeReviewScore || 0},
+			{label: 'Complexity Score', value: riskDetails?.complexityScore || 0},
+			{label: 'Longevity Impact', value: riskDetails?.longevityImpact || 0},
+			{label: 'Protocol Safety Score', value: riskDetails?.protocolSafetyScore || 0},
+			{label: 'Team Knowledge Score', value: riskDetails?.teamKnowledgeScore || 0},
+			{label: 'Testing Score', value: riskDetails?.testingScore || 0}
+		]);
+	}, [strategy]);
 
 	return (
 		<details className={'p-0'}>
