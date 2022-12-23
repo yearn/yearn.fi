@@ -16,6 +16,7 @@ import {useAllowanceFetcher} from '@common/hooks/useAllowanceFetcher';
 import {DefaultTNormalizedBN} from '@common/utils';
 
 import type {ReactElement} from 'react';
+import type {SWRResponse} from 'swr';
 import type {TAddress} from '@yearn-finance/web-lib/utils/address';
 import type {TNormalizedBN} from '@common/types/types';
 
@@ -30,13 +31,10 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 	const {safeChainID} = useChainID();
 	const {networks} = useSettings();
 	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
-	const [txStatusExecute, set_txStatusExecute] = useState(defaultTxStatus);
-	const [allowanceFrom, set_allowanceFrom] = useState<TNormalizedBN>();
-	const {
-		selectedOptionFrom, selectedOptionTo,
-		amount, onChangeAmount,
-		maxDepositPossible, isDepositing
-	} = useActionFlow();
+	const [txStatusExecuteDeposit, set_txStatusExecuteDeposit] = useState(defaultTxStatus);
+	const [txStatusExecuteWithdraw, set_txStatusExecuteWithdraw] = useState(defaultTxStatus);
+	const [allowanceFrom, set_allowanceFrom] = useState<TNormalizedBN>(DefaultTNormalizedBN);
+	const {selectedOptionFrom, selectedOptionTo, amount, onChangeAmount, maxDepositPossible, isDepositing} = useActionFlow();
 	const {onApprove, onExecuteDeposit, onExecuteWithdraw, currentSolver} = useSolver();
 	const retrieveAllowance = useAllowanceFetcher();
 
@@ -64,11 +62,11 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 			[selectedOptionFrom, spender] : null,
 		retrieveAllowance,
 		{revalidateOnFocus: false}
-	);
+	) as SWRResponse<TNormalizedBN>;
 
 	useEffect((): void => {
 		if (withVanillaAllowance) {
-			set_allowanceFrom(vanillAllowanceFrom);
+			set_allowanceFrom(vanillAllowanceFrom || DefaultTNormalizedBN);
 		}
 	}, [vanillAllowanceFrom, withVanillaAllowance]);
 
@@ -104,33 +102,43 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 	** Wrapper to decide if we should use the partner contract or not
 	**************************************************************************/
 	if (
-		(currentSolver === Solver.VANILLA && (isDepositing &&( txStatusApprove.pending || amount.raw.gt(allowanceFrom?.raw || 0))))
-		|| (currentSolver === Solver.COWSWAP && (txStatusApprove.pending || amount.raw.gt(allowanceFrom?.raw || 0)))
-		|| (currentSolver === Solver.CHAIN_COIN && (!isDepositing && (txStatusApprove.pending || amount.raw.gt(allowanceFrom?.raw || 0))))
-		|| (currentSolver === Solver.PARTNER_CONTRACT && ((txStatusApprove.pending || amount.raw.gt(allowanceFrom?.raw || 0))))
+		txStatusApprove.pending || amount.raw.gt(allowanceFrom.raw) && (
+			(currentSolver === Solver.VANILLA && isDepositing)
+			|| (currentSolver === Solver.CHAIN_COIN && !isDepositing)
+			|| (currentSolver === Solver.COWSWAP)
+			|| (currentSolver === Solver.PARTNER_CONTRACT)
+		)
 	) {
 		return (
 			<Button
 				className={'w-full'}
 				isBusy={txStatusApprove.pending || isValidatingAllowance}
-				isDisabled={!isActive || amount.raw.isZero() || (amount.raw).gt(maxDepositPossible.raw)}
+				isDisabled={!isActive || amount.raw.isZero() || amount.raw.gt(maxDepositPossible.raw)}
 				onClick={onApproveFrom}>
 				{'Approve'}
 			</Button>
 		);
 	}
 
+	if (isDepositing) {
+		return (
+			<Button
+				onClick={async (): Promise<void> => onExecuteDeposit(set_txStatusExecuteDeposit, onSuccess)}
+				className={'w-full'}
+				isBusy={txStatusExecuteDeposit.pending}
+				isDisabled={!isActive || amount.raw.isZero() || amount.raw.gt(maxDepositPossible.raw)}>
+				{'Deposit'}
+			</Button>
+		);	
+	}
+
 	return (
 		<Button
-			onClick={async (): Promise<void> => (
-				isDepositing ?
-					onExecuteDeposit(set_txStatusExecute, onSuccess) :
-					onExecuteWithdraw(set_txStatusExecute, onSuccess)
-			)}
+			onClick={async (): Promise<void> => onExecuteWithdraw(set_txStatusExecuteWithdraw, onSuccess)}
 			className={'w-full'}
-			isBusy={txStatusExecute.pending}
-			isDisabled={!isActive || amount.raw.isZero() || (amount.raw).gt(maxDepositPossible.raw)}>
-			{isDepositing ? 'Deposit' : 'Withdraw'}
+			isBusy={txStatusExecuteWithdraw.pending}
+			isDisabled={!isActive || amount.raw.isZero() || amount.raw.gt(maxDepositPossible.raw)}>
+			{'Withdraw'}
 		</Button>
 	);
 
