@@ -8,7 +8,6 @@ import {useTokenPrice} from '@common/hooks/useTokenPrice';
 import {formatPercent} from '@common/utils';
 
 import type {ReactElement} from 'react';
-import type {TDropdownOption} from '@common/types/types';
 
 function	VaultDetailsQuickActionsTo(): ReactElement {
 	const {currentVault, possibleOptionsTo, selectedOptionTo, onUpdateSelectedOptionTo, isDepositing} = useActionFlow();
@@ -32,7 +31,7 @@ function	VaultDetailsQuickActionsTo(): ReactElement {
 						defaultOption={possibleOptionsTo[0]}
 						options={possibleOptionsTo}
 						selected={selectedOptionTo}
-						onSelect={(option: TDropdownOption): void => onUpdateSelectedOptionTo(option)} />
+						onSelect={onUpdateSelectedOptionTo} />
 				) : (
 					<div className={'flex h-10 w-full items-center justify-between bg-neutral-100 px-2 text-base text-neutral-900 md:px-3'}>
 						<div className={'relative flex flex-row items-center'}>
