@@ -179,11 +179,11 @@ export function useSolverCowswap(): TSolverContext {
 	** boolean value indicating whether the order was successful or not.
 	** It will timeout once the order is no longer valid or after 50 minutes (max should be 30mn)
 	**********************************************************************************************/
-	async function checkOrderStatus(orderUID: string, validTo: Timestamp): Promise<{isSuccessful: boolean, error: Error | undefined}> {
+	async function checkOrderStatus(orderUID: string, validTo: Timestamp): Promise<{isSuccessful: boolean, error?: Error}> {
 		for (let i = 0; i < maxIterations; i++) {
 			const {data: order} = await axios.get(`https://api.cow.fi/mainnet/api/v1/orders/${orderUID}`);
 			if (order?.status === 'fulfilled') {
-				return ({isSuccessful: true, error: undefined});
+				return ({isSuccessful: true});
 			}
 			if (order?.status === 'cancelled' || order?.status === 'expired') {
 				return ({isSuccessful: false, error: new Error('TX fail because the order was not fulfilled')});
