@@ -25,7 +25,7 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 	const {safeChainID} = useChainID();
 	const {networks} = useSettings();
 	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
-	const [txStatusDeposit, set_txStatusDeposit] = useState(defaultTxStatus);
+	const [txStatusExecute, set_txStatusExecute] = useState(defaultTxStatus);
 	const [allowanceFrom, set_allowanceFrom] = useState<TNormalizedBN>();
 	const {
 		selectedOptionFrom, selectedOptionTo,
@@ -119,11 +119,11 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 		<Button
 			onClick={async (): Promise<void> => (
 				isDepositing ?
-					onExecuteDeposit(set_txStatusDeposit, onSuccess) :
-					onExecuteWithdraw(set_txStatusDeposit, onSuccess)
+					onExecuteDeposit(set_txStatusExecute, onSuccess) :
+					onExecuteWithdraw(set_txStatusExecute, onSuccess)
 			)}
 			className={'w-full'}
-			isBusy={txStatusDeposit.pending}
+			isBusy={txStatusExecute.pending}
 			isDisabled={!isActive || amount.raw.isZero() || (amount.raw).gt(maxDepositPossible.raw)}>
 			{isDepositing ? 'Deposit' : 'Withdraw'}
 		</Button>
