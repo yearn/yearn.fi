@@ -324,7 +324,7 @@ function	Holdings(): ReactElement {
 						<p
 							suppressHydrationWarning
 							className={'font-number text-sm text-neutral-400 md:text-base'}>
-							{`∙ ${styCRVAPY && curveAdminFeePercent ? formatPercent(styCRVAPY - curveAdminFeePercent) : formatPercent(0)} Gauge Voting Bribes`}
+							{`∙ ${styCRVAPY && curveAdminFeePercent && styCRVMegaBoost ? formatAmount(styCRVAPY - (curveAdminFeePercent + (styCRVMegaBoost * 100)), 2, 2) : '0.00'}% Gauge Voting Bribes`}
 						</p>
 						<p
 							suppressHydrationWarning
