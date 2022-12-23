@@ -21,7 +21,7 @@ import type {TAddress} from '@yearn-finance/web-lib/utils/address';
 import type {TNormalizedBN} from '@common/types/types';
 
 
-function	shouldUseVanillaAllowance(solver: Solver, isInputTokenEth: boolean): boolean {
+function	shouldUseVanillaAllowance({solver, isInputTokenEth}: {solver: Solver, isInputTokenEth: boolean}): boolean {
 	return ([Solver.VANILLA, Solver.CHAIN_COIN, Solver.PARTNER_CONTRACT].includes(solver) && !isInputTokenEth);
 }
 
@@ -38,7 +38,10 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 	const {onApprove, onExecuteDeposit, onExecuteWithdraw, currentSolver} = useSolver();
 	const retrieveAllowance = useAllowanceFetcher();
 
-	const withVanillaAllowance = shouldUseVanillaAllowance(currentSolver, selectedOptionFrom?.value === ETH_TOKEN_ADDRESS);
+	const withVanillaAllowance = shouldUseVanillaAllowance({
+		solver: currentSolver,
+		isInputTokenEth: selectedOptionFrom?.value === ETH_TOKEN_ADDRESS
+	});
 	const canInteract = isActive && amount.raw.gt(0) && selectedOptionFrom && selectedOptionTo;
 
 	const spender = useMemo((): TAddress => {
