@@ -98,14 +98,6 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 	/* 🔵 - Yearn Finance ******************************************************
 	** Wrapper to decide if we should use the partner contract or not
 	**************************************************************************/
-	function	onDepositOrWithdraw(): void {
-		if (isDepositing) {
-			onExecuteDeposit(set_txStatusDeposit, onSuccess);
-		} else {
-			onExecuteWithdraw(set_txStatusDeposit, onSuccess);
-		}
-	}
-
 	if (
 		(currentSolver === Solver.VANILLA && (isDepositing &&( txStatusApprove.pending || amount.raw.gt(allowanceFrom?.raw || 0))))
 		|| (currentSolver === Solver.COWSWAP && (txStatusApprove.pending || amount.raw.gt(allowanceFrom?.raw || 0)))
@@ -125,7 +117,11 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 
 	return (
 		<Button
-			onClick={onDepositOrWithdraw}
+			onClick={async (): Promise<void> => (
+				isDepositing ?
+					onExecuteDeposit(set_txStatusDeposit, onSuccess) :
+					onExecuteWithdraw(set_txStatusDeposit, onSuccess)
+			)}
 			className={'w-full'}
 			isBusy={txStatusDeposit.pending}
 			isDisabled={!isActive || amount.raw.isZero() || (amount.raw).gt(maxDepositPossible.raw)}>
