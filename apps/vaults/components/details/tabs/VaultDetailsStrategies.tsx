@@ -33,14 +33,14 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVau
 	const	riskScoreElementsMap = useMemo((): TRiskScoreElementProps[] => {
 		const {riskDetails} = strategy?.risk || {};
 		return ([
-			{label: 'TVL Impact', value: riskDetails?.TVLImpact || 0},
-			{label: 'Audit Score', value: riskDetails?.auditScore || 0},
-			{label: 'Code Review Score', value: riskDetails?.codeReviewScore || 0},
-			{label: 'Complexity Score', value: riskDetails?.complexityScore || 0},
-			{label: 'Longevity Impact', value: riskDetails?.longevityImpact || 0},
-			{label: 'Protocol Safety Score', value: riskDetails?.protocolSafetyScore || 0},
-			{label: 'Team Knowledge Score', value: riskDetails?.teamKnowledgeScore || 0},
-			{label: 'Testing Score', value: riskDetails?.testingScore || 0}
+			{label: 'TVL Impact', value: riskDetails?.TVLImpact},
+			{label: 'Audit Score', value: riskDetails?.auditScore},
+			{label: 'Code Review Score', value: riskDetails?.codeReviewScore},
+			{label: 'Complexity Score', value: riskDetails?.complexityScore},
+			{label: 'Longevity Impact', value: riskDetails?.longevityImpact},
+			{label: 'Protocol Safety Score', value: riskDetails?.protocolSafetyScore},
+			{label: 'Team Knowledge Score', value: riskDetails?.teamKnowledgeScore},
+			{label: 'Testing Score', value: riskDetails?.testingScore}
 		]);
 	}, [strategy]);
 
@@ -101,7 +101,7 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVau
 									<RiskScoreElement
 										key={label}
 										label={label}
-										value={value} />
+										value={value || 0} />
 								))}
 							</div>
 						</div>
