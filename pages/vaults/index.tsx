@@ -1,4 +1,4 @@
-import React, {Fragment, useCallback, useMemo, useState} from 'react';
+import React, {Fragment, useCallback, useMemo} from 'react';
 import {ethers} from 'ethers';
 import VaultListOptions from '@vaults/components/list/VaultListOptions';
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
@@ -10,9 +10,9 @@ import {useWalletForInternalMigrations} from '@vaults/contexts/useWalletForInter
 import {useFilteredVaults} from '@vaults/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import Wrapper from '@vaults/Wrapper';
+import {useSessionStorage} from '@yearn-finance/web-lib/hooks/useSessionStorage';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
-import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import ListHead from '@common/components/ListHead';
 import ListHero from '@common/components/ListHero';
 import ValueAnimation from '@common/components/ValueAnimation';
@@ -66,8 +66,9 @@ function	Index(): ReactElement {
 	const	{vaults, isLoadingVaultList} = useYearn();
 	const	{possibleVaultsMigrations, isLoading: isLoadingVaultsMigrations} = useVaultsMigrations();
 	const	{balances: internalMigrationsBalances} = useWalletForInternalMigrations();
-	const	[sortBy, set_sortBy] = useState<TPossibleSortBy>('apy');
-	const	[sortDirection, set_sortDirection] = useState<TPossibleSortDirection>('');
+	const 	[sort, set_sort] = useSessionStorage<{sortBy: TPossibleSortBy, sortDirection: TPossibleSortDirection}>(
+		'yVaultsSorting', {sortBy: 'apy', sortDirection: 'desc'}
+	);
 	const	{shouldHideDust, shouldHideLowTVLVaults, category, searchValue, set_category, set_searchValue} = useAppSettings();
 
 	/* 🔵 - Yearn Finance **************************************************************************
@@ -151,18 +152,15 @@ function	Index(): ReactElement {
 	**	is done via a custom method that will sort the vaults based on the sortBy and
 	**	sortDirection values.
 	**********************************************************************************************/
-	const	sortedVaultsToDisplay = useSortVaults([...searchedVaultsToDisplay], sortBy, sortDirection);
+	const	sortedVaultsToDisplay = useSortVaults([...searchedVaultsToDisplay], sort.sortBy, sort.sortDirection);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	**	Callback method used to sort the vaults list.
 	**	The use of useCallback() is to prevent the method from being re-created on every render.
 	**********************************************************************************************/
 	const	onSort = useCallback((newSortBy: string, newSortDirection: string): void => {
-		performBatchedUpdates((): void => {
-			set_sortBy(newSortBy as TPossibleSortBy);
-			set_sortDirection(newSortDirection as TPossibleSortDirection);
-		});
-	}, []);
+		set_sort({sortBy: newSortBy as TPossibleSortBy, sortDirection: newSortDirection as TPossibleSortDirection});
+	}, [set_sort]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	**	The VaultList component is memoized to prevent it from being re-created on every render.
@@ -252,8 +250,8 @@ function	Index(): ReactElement {
 				) : null}
 
 				<ListHead
-					sortBy={sortBy}
-					sortDirection={sortDirection}
+					sortBy={sort.sortBy}
+					sortDirection={sort.sortDirection}
 					onSort={onSort}
 					items={[
 						{label: 'Token', value: 'name', sortable: true},
