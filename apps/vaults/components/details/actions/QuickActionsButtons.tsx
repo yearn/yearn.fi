@@ -17,7 +17,6 @@ import {DefaultTNormalizedBN} from '@common/utils';
 
 import type {ReactElement} from 'react';
 import type {TAddress} from '@yearn-finance/web-lib/utils/address';
-import type {TAllowanceFetcher} from '@common/hooks/useAllowanceFetcher';
 import type {TNormalizedBN} from '@common/types/types';
 
 function	VaultDetailsQuickActionsButtons(): ReactElement {
@@ -57,7 +56,7 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 	**********************************************************************************************/
 	const	{data: vanillAllowanceFrom, isLoading: isValidatingAllowance, mutate: mutateAllowance} = useSWR(
 		canInteract && !isInputTokenEth && shouldUseVanillaAllowance ?
-		[selectedOptionFrom, spender] as TAllowanceFetcher : null,
+			[selectedOptionFrom, spender] : null,
 		retrieveAllowance,
 		{revalidateOnFocus: false}
 	);
