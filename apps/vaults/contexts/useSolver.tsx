@@ -45,10 +45,10 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 	** Based on the currentSolver, we initialize the solver with the required parameters.
 	**********************************************************************************************/
 	const	onUpdateSolver = useCallback(async (): Promise<void> => {
-		set_isLoading(true);
 		if (!selectedOptionFrom || !selectedOptionTo || !amount) {
 			return;
 		}
+		set_isLoading(true);
 
 		let quote: TNormalizedBN = DefaultTNormalizedBN;
 		switch (currentSolver) {
