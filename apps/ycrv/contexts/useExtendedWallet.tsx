@@ -1,6 +1,5 @@
 import React, {createContext, memo, useCallback, useContext, useMemo, useState} from 'react';
-// eslint-disable-next-line import/no-named-as-default
-import NProgress from 'nprogress';
+import {useUI} from '@yearn-finance/web-lib/contexts/useUI';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useBalances} from '@yearn-finance/web-lib/hooks/useBalances';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
@@ -41,6 +40,7 @@ export const ExtendedWalletContextApp = memo(function ExtendedWalletContextApp({
 	const	{prices} = useYearn();
 	const	{balances, isLoading: isLoadingBalances, refresh} = useWallet();
 	const	{chainID} = useChainID();
+	const	{onLoadStart, onLoadDone} = useUI();
 
 	const	{data: extendedBalances, update: updateBalances, isLoading: isLoadingExtendedBalances} = useBalances({
 		key: chainID,
@@ -69,11 +69,11 @@ export const ExtendedWalletContextApp = memo(function ExtendedWalletContextApp({
 			if (!balances) {
 				set_nonce(nonce + 1);
 			}
-			NProgress.start();
+			onLoadStart();
 		} else {
-			NProgress.done();
+			onLoadDone();
 		}
-		return (): unknown => NProgress.done();
+		return (): unknown => onLoadDone();
 	}, [isLoadingBalances, isLoadingExtendedBalances]);
 
 	const	mergedBalances = useMemo((): TDict<TBalanceData> => {

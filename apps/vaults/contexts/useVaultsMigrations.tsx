@@ -30,7 +30,7 @@ export const VaultMigrationContextApp = memo(function VaultMigrationContextApp({
 	**	we need to fetch the data from the API, especially to get the
 	**	apy.net_apy
 	***************************************************************************/
-	const	{data: migratableVaults, isLoading: isLoadingMigratableList} = useSWR(
+	const	{data: migratableVaults, isLoading: isLoadingVaultList} = useSWR(
 		`${baseAPISettings.yDaemonBaseURI}/${safeChainID}/vaults/all?migratable=nodust`,
 		baseFetcher,
 		{revalidateOnFocus: false}
@@ -51,8 +51,8 @@ export const VaultMigrationContextApp = memo(function VaultMigrationContextApp({
 	***************************************************************************/
 	const	contextValue = useMemo((): TVaultsMigrationsContext => ({
 		possibleVaultsMigrations: {...migratableVaultsObject},
-		isLoading: isLoadingMigratableList
-	}), [migratableVaultsObject, isLoadingMigratableList]);
+		isLoading: isLoadingVaultList
+	}), [migratableVaultsObject, isLoadingVaultList]);
 
 	return (
 		<VaultMigrationContext.Provider value={contextValue}>
