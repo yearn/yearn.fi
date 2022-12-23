@@ -20,7 +20,8 @@ function	ListHead({items, dataClassName, sortBy, sortDirection, onSort}: TListHe
 	const	renderChevron = useCallback((shouldSortBy: boolean): ReactElement => {
 		if (shouldSortBy && sortDirection === 'desc') {
 			return <IconChevronPlain className={'yearn--sort-chevron'} />;
-		} if (shouldSortBy && sortDirection === 'asc') {
+		}
+		if (shouldSortBy && sortDirection === 'asc') {
 			return <IconChevronPlain className={'yearn--sort-chevron rotate-180'} />;
 		}
 		return <IconChevronPlain className={'yearn--sort-chevron--off text-neutral-300 group-hover:text-neutral-500'} />;

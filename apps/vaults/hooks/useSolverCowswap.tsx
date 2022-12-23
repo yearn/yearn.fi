@@ -184,7 +184,8 @@ export function useSolverCowswap(): TSolverContext {
 			const {data: order} = await axios.get(`https://api.cow.fi/mainnet/api/v1/orders/${orderUID}`);
 			if (order?.status === 'fulfilled') {
 				return ({isSuccessful: true, error: undefined});
-			} else if (order?.status === 'cancelled' || order?.status === 'expired') {
+			}
+			if (order?.status === 'cancelled' || order?.status === 'expired') {
 				return ({isSuccessful: false, error: new Error('TX fail because the order was not fulfilled')});
 			}
 			if (validTo < (new Date().valueOf() / 1000)) {

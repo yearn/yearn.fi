@@ -71,7 +71,8 @@ function	GaugeList(): ReactElement {
 				}
 				return b.name.localeCompare(a.name);
 			});
-		} if (sortBy === 'rewards') {
+		}
+		if (sortBy === 'rewards') {
 			return searchedGauges.sort((a, b): number => {
 				const allARewards = Object.entries(currentRewards?.v3?.[toAddress(a.gauge)] || {}).reduce((acc, [address, value]): number => {
 					const aBribeValue = getRewardValue(address, value || BigNumber.from(0));
@@ -88,7 +89,8 @@ function	GaugeList(): ReactElement {
 				}
 				return allARewards - allBRewards;
 			});
-		} if (sortBy === 'pendingRewards') {
+		}
+		if (sortBy === 'pendingRewards') {
 			return searchedGauges.sort((a, b): number => {
 				const allARewards = Object.entries(nextRewards?.v3?.[toAddress(a.gauge)] || {}).reduce((acc, [address, value]): number => {
 					const aBribeValue = getRewardValue(address, value || BigNumber.from(0));

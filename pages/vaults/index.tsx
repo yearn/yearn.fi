@@ -84,7 +84,8 @@ function	Index(): ReactElement {
 		const	balanceValue = holding?.normalizedValue || 0;
 		if (shouldHideDust && balanceValue < 0.01) {
 			return false;
-		} if (hasValidBalance) {
+		}
+		if (hasValidBalance) {
 			return true;
 		}
 		return false;

@@ -42,7 +42,12 @@ function	GaugeList(): ReactElement {
 	const	filteredGauges = useMemo((): TCurveGauges[] => {
 		if (category === 'standard') {
 			return standardGauges;
+<<<<<<< HEAD
 		} if (category === 'factory') {
+=======
+		}
+		if (category === 'factory') {
+>>>>>>> 924842e (fix: lint rule to avoid elseif return)
 			return factoryGauges;
 		}
 		return gauges;
@@ -68,7 +73,12 @@ function	GaugeList(): ReactElement {
 				}
 				return b.name.localeCompare(a.name);
 			});
+<<<<<<< HEAD
 		} if (sortBy === 'rewards') {
+=======
+		}
+		if (sortBy === 'rewards') {
+>>>>>>> 924842e (fix: lint rule to avoid elseif return)
 			return searchedGauges.sort((a, b): number => {
 				const allARewards = Object.entries(currentRewards?.v3?.[toAddress(a.gauge)] || {}).reduce((acc, [address, value]): number => {
 					const aBribeValue = getRewardValue(address, value || BigNumber.from(0));
@@ -85,7 +95,12 @@ function	GaugeList(): ReactElement {
 				}
 				return allARewards - allBRewards;
 			});
+<<<<<<< HEAD
 		} if (sortBy === 'pendingRewards') {
+=======
+		}
+		if (sortBy === 'pendingRewards') {
+>>>>>>> 924842e (fix: lint rule to avoid elseif return)
 			return searchedGauges.sort((a, b): number => {
 				const allARewards = Object.entries(nextRewards?.v3?.[toAddress(a.gauge)] || {}).reduce((acc, [address, value]): number => {
 					const aBribeValue = getRewardValue(address, value || BigNumber.from(0));
