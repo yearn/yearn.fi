@@ -13,7 +13,7 @@
   "dependencies": {
     "@next/bundle-analyzer": "^13.0.7",
     "@next/font": "^13.0.7",
-    "@yearn-finance/web-lib": "^0.17.73",
+    "@yearn-finance/web-lib": "^0.17.77",
     "axios": "^1.2.1",
     "dayjs": "^1.11.7",
     "ethcall": "^4.8.13",
@@ -40,6 +40,7 @@
     "@typescript-eslint/parser": "^5.47.0",
     "autoprefixer": "^10.4.13",
     "babel-loader": "^9.1.0",
+    "bump": "^0.2.5",
     "eslint": "8.30.0",
     "eslint-config-next": ">=13.0.7",
     "eslint-import-resolver-typescript": ">=3.5.2",
@@ -50,14 +51,14 @@
     "eslint-plugin-simple-import-sort": ">= 8.0.0",
     "eslint-plugin-tailwindcss": ">=3.7.1",
     "eslint-plugin-unused-imports": ">= 2.0.0",
+    "next-transpile-modules": "^10.0.0",
     "postcss": "^8.4.20",
     "postcss-import": "^15.1.0",
     "postcss-nesting": "^10.2.0",
     "sass": "^1.57.1",
     "sharp": "^0.31.2",
     "ts-loader": "^9.4.2",
-    "typescript": "^4.9.4",
-    "bump": "^0.2.5"
+    "typescript": "^4.9.4"
   },
   "resolutions": {
     "bn.js": "5.2.1",
