@@ -24,7 +24,7 @@ Why?
   git remote add upstream https://github.com/yearn/yearn.fi.git
   ```
 
-- Create `.env` file in root directory of repo then copy contents of `.env.example` to `.env` and replace values with your own keys.
+- Optional: Create `.env` file in root directory of repo then copy contents of `.env.example` to `.env` and replace values with your own keys. If you do not do this the default values from `next.config.js` will be used.
 
   ```
   cp .env.example .env
