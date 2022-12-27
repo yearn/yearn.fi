@@ -1,6 +1,6 @@
 {
   "name": "yearnfi",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "scripts": {
     "dev": "next",
     "dev:ts": "tsc --watch",
@@ -13,7 +13,7 @@
   "dependencies": {
     "@next/bundle-analyzer": "^13.0.7",
     "@next/font": "^13.0.7",
-    "@yearn-finance/web-lib": "^0.17.77",
+    "@yearn-finance/web-lib": "^0.17.79",
     "axios": "^1.2.1",
     "dayjs": "^1.11.7",
     "ethcall": "^4.8.13",

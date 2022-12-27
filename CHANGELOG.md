@@ -1,3 +1,5 @@
+# 0.1.6
+- Update the web-lib to `0.17.79` to fix a crash with Gnosis Safe
 # 0.1.5
 - Fix an hydratation warning in the vault page (dev only)
 - Update the web-lib to `0.17.77` to use `onLoadStart` and `onLoadDone` from the `useUI` context, allowing to show a loading bar for multiple load actions
