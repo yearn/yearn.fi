@@ -5,6 +5,7 @@ import {useRouter} from 'next/router';
 import {AnimatePresence, motion} from 'framer-motion';
 import {Popover, Transition} from '@headlessui/react';
 import {LogoVaults, MenuVaultsOptions} from '@vaults/Header';
+import {LogoVeYFI, MenuVeYFIOptions} from '@veYFI/Header';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import Header from '@yearn-finance/web-lib/layouts/Header.next';
 import {YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
@@ -42,7 +43,7 @@ const Apps = [
 	},
 	{
 		name: 'veYFI',
-		href: 'https://vote.yearn.finance',
+		href: '/veyfi',
 		icon: <LogoYearn
 			className={'h-8 w-8'}
 			back={'text-primary'}
@@ -65,6 +66,7 @@ function	Logo(): ReactElement {
 		<>
 			<LogoYCRV />
 			<LogoVaults />
+			<LogoVeYFI />
 			<LogoYBribe />
 			<motion.div
 				key={'yearn'}
@@ -150,6 +152,8 @@ export function	AppHeader(): ReactElement {
 			menu = [{path: '/', label: 'Home'}, ...MenuYCRVOptions];
 		} else if (router.pathname.startsWith('/vaults')) {
 			menu = [{path: '/', label: 'Home'}, ...MenuVaultsOptions];
+		} else if (router.pathname.startsWith('/veyfi')) {
+			menu = [{path: '/', label: 'Home'}, ...MenuVeYFIOptions];
 		} else if (router.pathname.startsWith('/ybribe')) {
 			menu = [{path: '/', label: 'Home'}, ...MenuYBribeOptions];
 		}
@@ -160,6 +164,8 @@ export function	AppHeader(): ReactElement {
 		let	networks: number[] = [1, 10, 250, 42161];
 
 		if (router.pathname.startsWith('/ycrv')) {
+			networks = [1];
+		} else if (router.pathname.startsWith('/veyfi')) {
 			networks = [1];
 		} else if (router.pathname.startsWith('/ybribe')) {
 			networks = [1];
