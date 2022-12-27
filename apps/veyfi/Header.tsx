@@ -5,6 +5,7 @@ import LogoYearn from '@common/icons/LogoYearn';
 import {variants} from '@common/utils/animations';
 
 import type {ReactElement} from 'react';
+<<<<<<< HEAD
 import type {TMenu} from '@yearn-finance/web-lib/layouts/Header.next';
 
 export 	const	MenuVeYFIOptions: TMenu[] = [
@@ -14,6 +15,13 @@ export 	const	MenuVeYFIOptions: TMenu[] = [
 
 export function LogoVeYFI(): ReactElement {
 	const router = useRouter();
+=======
+
+export 	const	MenuVeYFIOptions = [{path: 'https://docs.yearn.finance/contributing/governance/veyfi', label: 'Docs'}];
+
+export function LogoVeYFI(): ReactElement {
+	const	router = useRouter();
+>>>>>>> 85b5769 (feat: add veyfi navigation)
 
 	return (
 		<motion.div
@@ -28,4 +36,8 @@ export function LogoVeYFI(): ReactElement {
 				front={'text-white'} />
 		</motion.div>
 	);
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 85b5769 (feat: add veyfi navigation)
