@@ -1,6 +1,6 @@
 import React, {Fragment, memo} from 'react';
 import meta from 'public/manifest.json';
-import {AnimatePresence, motion} from 'framer-motion';
+import {AnimatePresence, domAnimation, LazyMotion, motion} from 'framer-motion';
 import localFont from '@next/font/local';
 import {WithYearn} from '@yearn-finance/web-lib/contexts/WithYearn';
 import {AppHeader} from '@common/components/AppHeader';
@@ -12,6 +12,7 @@ import {variants} from '@common/utils/animations';
 
 import type {NextComponentType} from 'next';
 import type {AppProps} from 'next/app';
+import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
 
 import	'../style.css';
@@ -31,25 +32,35 @@ const aeonik = localFont({
 	]
 });
 
+type TGetLayout = NextComponentType & {getLayout: (p: ReactElement, router: NextRouter) => ReactElement}
 const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 	const	{Component, pageProps, router} = props;
-	const	getLayout = (Component as NextComponentType & {getLayout: (p: ReactElement) => ReactElement}).getLayout || ((page: ReactElement): ReactElement => page);
+	const	getLayout = (Component as TGetLayout).getLayout || ((page: ReactElement): ReactElement => page);
+
+	const	currentApp = (
+		router.pathname.startsWith('/ycrv') ? 'yCRV' :
+			router.pathname.startsWith('/vaults') ? 'Vaults' :
+				router.pathname.startsWith('/ybribe') ? 'yBribe' :
+					'Home'
+	);
 
 	return (
 		<div id={'app'} className={'mx-auto mb-0 flex max-w-6xl font-aeonik'}>
 			<div className={'block min-h-[100vh] w-full'}>
 				<AppHeader />
-				<AnimatePresence mode={'wait'}>
-					<motion.div
-						key={router.asPath}
-						initial={'initial'}
-						animate={'enter'}
-						exit={'exit'}
-						className={'my-0 h-full md:mb-0 md:mt-16'}
-						variants={variants}>
-						{getLayout(<Component router={props.router} {...pageProps} />)}
-					</motion.div>
-				</AnimatePresence>
+				<LazyMotion features={domAnimation}>
+					<AnimatePresence mode={'wait'}>
+						<motion.div
+							key={currentApp}
+							initial={'initial'}
+							animate={'enter'}
+							exit={'exit'}
+							className={'rooooot my-0 h-full md:mb-0 md:mt-16'}
+							variants={variants}>
+							{getLayout(<Component pageProps={pageProps} />, router)}
+						</motion.div>
+					</AnimatePresence>
+				</LazyMotion>
 			</div>
 		</div>
 	);

@@ -46,8 +46,8 @@ function Index({router, vaultData}: {router: NextRouter, vaultData: TYearnVault}
 	);
 }
 
-Index.getLayout = function getLayout(page: ReactElement): ReactElement {
-	return <Wrapper>{page}</Wrapper>;
+Index.getLayout = function getLayout(page: ReactElement, router: NextRouter): ReactElement {
+	return <Wrapper router={router}>{page}</Wrapper>;
 };
 
 export default Index;
