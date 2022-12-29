@@ -19,7 +19,7 @@ import {migrateShares} from '@common/utils/actions/migrateShares';
 import type {ReactElement} from 'react';
 import type {TYearnVault} from '@common/types/yearn';
 
-function	VaultsListMigratableRow({currentVault}: {currentVault: TYearnVault}): ReactElement {
+function	VaultsListInternalMigrationRow({currentVault}: {currentVault: TYearnVault}): ReactElement {
 	const {isActive, provider} = useWeb3();
 	const {balances, refresh: refreshInternalMigrations} = useWalletForInternalMigrations();
 	const {refresh} = useWallet();
@@ -58,8 +58,8 @@ function	VaultsListMigratableRow({currentVault}: {currentVault: TYearnVault}): R
 					toAddress(currentVault.migration.address) //to
 				).onSuccess(async (): Promise<void> => {
 					await Promise.all([
-						refreshInternalMigrations(),
-						refresh()
+						refresh([{token: toAddress(currentVault.migration.address)}]),
+						refreshInternalMigrations([{token: toAddress(currentVault.address)}])
 					]);
 				}).perform();
 			}
@@ -117,4 +117,4 @@ function	VaultsListMigratableRow({currentVault}: {currentVault: TYearnVault}): R
 	);
 }
 
-export {VaultsListMigratableRow};
+export {VaultsListInternalMigrationRow};

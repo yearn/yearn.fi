@@ -4,6 +4,7 @@ import SettingsOverwrite from '@common/components/SettingsOverwrite';
 import {useYCRV} from '@yCRV/contexts/useYCRV';
 import Wrapper from '@yCRV/Wrapper';
 
+import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
 
 function	About(): ReactElement {
@@ -186,8 +187,8 @@ function	About(): ReactElement {
 	);
 }
 
-About.getLayout = function getLayout(page: ReactElement): ReactElement {
-	return <Wrapper>{page}</Wrapper>;
+About.getLayout = function getLayout(page: ReactElement, router: NextRouter): ReactElement {
+	return <Wrapper router={router}>{page}</Wrapper>;
 };
 
 export default About;
