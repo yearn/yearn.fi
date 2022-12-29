@@ -1,3 +1,6 @@
+# 0.1.8
+- Fix vault access crash
+
 # 0.1.7
 - Update the `AnimatePresence`/`motion.div`/`Wrapper` setup to keep the inner app contexts between the inner app pages
 - Rename `VaultsListMigratableRow.tsx` to `VaultsListInternalMigrationRow.tsx` to match external pattern

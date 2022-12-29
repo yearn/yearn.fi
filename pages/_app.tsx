@@ -57,7 +57,7 @@ const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 							exit={'exit'}
 							className={'rooooot my-0 h-full md:mb-0 md:mt-16'}
 							variants={variants}>
-							{getLayout(<Component pageProps={pageProps} />, router)}
+							{getLayout(<Component router={props.router} {...pageProps} />, router)}
 						</motion.div>
 					</AnimatePresence>
 				</LazyMotion>
