@@ -17,13 +17,14 @@ type TItem = {
 
 type TTabsProps = {
 	items: TItem[],
+	className?: string,
 }
 
-function Tabs({items}: TTabsProps): ReactElement {
+function Tabs({items, className}: TTabsProps): ReactElement {
 	const [selectedTabId, set_selectedTabId] = useState(items[0]?.id);
 
 	return (
-		<div className={'w-full bg-neutral-100'}>
+		<div className={`w-full bg-neutral-100 ${className}`}>
 			<div className={'align-center flex h-14 w-full justify-center border-b-2 border-neutral-300 text-center'}>
 				{items.map(({id, label}): ReactElement => (
 					<div
@@ -39,7 +40,7 @@ function Tabs({items}: TTabsProps): ReactElement {
 					</div>
 				))}
 			</div>
-			<AnimatePresence exitBeforeEnter>
+			<AnimatePresence mode={'wait'}>
 				<motion.div
 					key={selectedTabId}
 					initial={'initial'}
