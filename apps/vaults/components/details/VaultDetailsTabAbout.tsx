@@ -76,7 +76,7 @@ function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYearnVau
 							</b>
 						</div>
 						<div className={'flex flex-col space-y-0 md:space-y-2'}>
-							<p className={'text-xxs text-neutral-600 md:text-xs'}>{'Perfomance fee'}</p>
+							<p className={'text-xxs text-neutral-600 md:text-xs'}>{'Performance fee'}</p>
 							<b className={'font-number text-xl text-neutral-500'}>
 								{formatPercent((currentVault?.apy?.fees?.performance || 0) * 100, 0)}
 							</b>
