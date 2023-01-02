@@ -1,5 +1,6 @@
 import React, {createContext, memo, useCallback, useContext, useMemo} from 'react';
 import {Contract} from 'ethcall';
+import {FixedNumber} from 'ethers';
 import useSWR from 'swr';
 import VEYFI_ABI from '@veYFI/utils/abi/veYFI.abi';
 import VEYFI_POSITION_HELPER_ABI from '@veYFI/utils/abi/veYFIPositionHelper.abi';
@@ -33,7 +34,8 @@ export type TVotingEscrowPosition = {
 	// yield?: TPosition,
 	unlockTime?: number,
 	penalty?: string,
-	// penaltyRatio?: number;
+	penaltyRatio?: number,
+	withdrawable?: string,
 }
 
 export type	TVotingEscrowContext = {
@@ -113,8 +115,9 @@ export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({chil
 		return {
 			deposit: depositPosition,
 			unlockTime: toMilliseconds((positionDetails.unlockTime as BigNumber).toNumber()),
-			penalty: (positionDetails.penalty as BigNumber).toString()
-			// penaltyRatio: ,
+			penalty: (positionDetails.penalty as BigNumber).toString(),
+			penaltyRatio: (positionDetails.depositAmount as BigNumber).gt(0) ? FixedNumber.from(positionDetails.penalty).divUnsafe(FixedNumber.from(positionDetails.depositAmount)).toUnsafeFloat() : 0,
+			withdrawable: (positionDetails.withdrawable as BigNumber).toString()
 		};
 	}, [isActive, address]);
 	const {data: positions, mutate: refreshPositions, isLoading: isLoadingPositions} = useSWR(isActive && provider ? 'positions' : null, positionsFetcher, {shouldRetryOnError: false});
