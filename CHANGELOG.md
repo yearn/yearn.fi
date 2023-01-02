@@ -1,3 +1,6 @@
+# 0.1.9
+- Bump dependencies
+- Set resolution for `json5` to `>= 2.2.2` to fix a low impact vulnerability: the parse method of the JSON5 library before and including version 2.2.1 does not restrict parsing of keys named __proto__, allowing specially crafted strings to pollute the prototype of the resulting object.
 # 0.1.8
 - Fix vault access crash
 
