@@ -8,6 +8,7 @@ import {RewardFeedTableHead} from '@yBribe/components/rewardFeed/RewardFeedTable
 import {RewardFeedTableRow} from '@yBribe/components/rewardFeed/RewardFeedTableRow';
 import Wrapper from '@yBribe/Wrapper';
 
+import type {NextRouter} from 'next/router';
 import type {ReactElement, ReactNode} from 'react';
 import type {SWRResponse} from 'swr';
 import type {TYDaemonGaugeRewardsFeed} from '@common/types/yearn';
@@ -87,8 +88,8 @@ function	About(): ReactElement {
 	);
 }
 
-About.getLayout = function getLayout(page: ReactElement): ReactElement {
-	return <Wrapper>{page}</Wrapper>;
+About.getLayout = function getLayout(page: ReactElement, router: NextRouter): ReactElement {
+	return <Wrapper router={router}>{page}</Wrapper>;
 };
 
 export default About;

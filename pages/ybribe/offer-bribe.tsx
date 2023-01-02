@@ -14,6 +14,7 @@ import {GaugeListRow} from '@yBribe/components/bribe/GaugeListRow';
 import {useBribes} from '@yBribe/contexts/useBribes';
 import Wrapper from '@yBribe/Wrapper';
 
+import type {NextRouter} from 'next/router';
 import type {ReactElement, ReactNode} from 'react';
 import type {TCurveGauges} from '@common/types/curves';
 
@@ -182,9 +183,8 @@ function	OfferBribe(): ReactElement {
 	);
 }
 
-
-OfferBribe.getLayout = function getLayout(page: ReactElement): ReactElement {
-	return <Wrapper>{page}</Wrapper>;
+OfferBribe.getLayout = function getLayout(page: ReactElement, router: NextRouter): ReactElement {
+	return <Wrapper router={router}>{page}</Wrapper>;
 };
 
 export default OfferBribe;

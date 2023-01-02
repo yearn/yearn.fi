@@ -16,6 +16,7 @@ import {useYCRV} from '@yCRV/contexts/useYCRV';
 import Wrapper from '@yCRV/Wrapper';
 
 import type {BigNumber} from 'ethers';
+import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
 
 function	HeaderPosition(): ReactElement {
@@ -341,8 +342,8 @@ function	Holdings(): ReactElement {
 	);
 }
 
-Holdings.getLayout = function getLayout(page: ReactElement): ReactElement {
-	return <Wrapper>{page}</Wrapper>;
+Holdings.getLayout = function getLayout(page: ReactElement, router: NextRouter): ReactElement {
+	return <Wrapper router={router}>{page}</Wrapper>;
 };
 
 
