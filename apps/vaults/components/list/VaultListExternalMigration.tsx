@@ -1,5 +1,6 @@
 import React, {Fragment, useCallback, useMemo, useState} from 'react';
 import {ethers} from 'ethers';
+import {VaultListEmptyExternalMigration} from '@vaults/components/list/VaultsListEmpty';
 import {useWalletForExternalMigrations} from '@vaults/contexts/useWalletForExternalMigrations';
 import {useBeefyVaults} from '@vaults/hooks/useBeefyVaults';
 import {useFindVault} from '@vaults/hooks/useFindVault';
@@ -19,8 +20,6 @@ import {useBalance} from '@common/hooks/useBalance';
 import {formatPercent} from '@common/utils';
 import {approveERC20, isApprovedERC20} from '@common/utils/actions/approveToken';
 import {depositVia} from '@common/utils/actions/depositVia';
-
-import {VaultListExternalMigrationEmpty} from './VaultListExternalMigrationEmpty';
 
 import type {ReactElement} from 'react';
 import type {TPossibleSortBy, TPossibleSortDirection} from '@vaults/hooks/useSortVaults';
@@ -208,7 +207,7 @@ function	VaultListExternalMigration(): ReactElement {
 			<div>
 				{
 					possibleBowswapMigrations.length === 0 && possibleBeefyMigrations.length >= 0 ? (
-						<VaultListExternalMigrationEmpty />
+						<VaultListEmptyExternalMigration />
 					) : (
 						<Fragment>
 							{possibleBowswapMigrations.map((element: TMigrationTable): ReactElement => (
