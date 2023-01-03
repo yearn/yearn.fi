@@ -49,6 +49,32 @@ export type TDropdownItemProps = {
 	balanceSource?: TDict<TBalanceData>;
 };
 
+
+
+export type TDropdownGaugeOption = {
+	label: string;
+	icon?: ReactElement;
+	value: {
+		name: string,
+		tokenAddress: TAddress,
+		poolAddress: TAddress,
+		gaugeAddress: TAddress,
+	};
+};
+export type TDropdownGaugeProps = {
+	options: TDropdownGaugeOption[];
+	defaultOption: TDropdownGaugeOption;
+	selected?: TDropdownGaugeOption;
+	placeholder?: string;
+	onSelect:
+		| React.Dispatch<React.SetStateAction<TDropdownGaugeOption>>
+		| ((option: TDropdownGaugeOption) => void);
+};
+
+export type TDropdownGaugeItemProps = {
+	option: TDropdownGaugeOption;
+};
+
 export type	TNormalizedBN = {
 	raw: BigNumber,
 	normalized: number | string,
