@@ -8,6 +8,7 @@ import Wrapper from '@veYFI/Wrapper';
 import {SummaryData} from '@common/components/SummaryData';
 import {Tabs} from '@common/components/Tabs';
 
+import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
 
 function Index(): ReactElement {
@@ -40,8 +41,8 @@ function Index(): ReactElement {
 	);
 }
 
-Index.getLayout = function getLayout(page: ReactElement): ReactElement {
-	return <Wrapper>{page}</Wrapper>;
+Index.getLayout = function getLayout(page: ReactElement, router: NextRouter): ReactElement {
+	return <Wrapper router={router}>{page}</Wrapper>;
 };
 
 export default Index;
