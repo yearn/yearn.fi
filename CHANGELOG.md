@@ -1,3 +1,16 @@
+# 0.1.11
+- Add a `GaugeDropdown` component using Combobox. To replicate to the default `TokenDropdown` component.
+- Fix background color for the inputs in the `vaults/[chainID]/[address]` page from `neutral-100` to `neutral-0`
+- Add the `Factory` nav item for the Vaults app
+- Remove unused `apps/vaults/components/list/MigratableVaultListRow.tsx`
+- Remove unused `apps/vaults/components/list/MigratableVaultsListEmpty.tsx`
+- Merge `apps/vaults/components/list/VaultListExternalMigrationEmpty.tsx` in `apps/vaults/components/list/VaultListEmpty.tsx`
+- Create an `useAsync` hook to be able to use it like we could use `useSWR` to get some values. It require a `callbackFunction` which will be triggered and a `defaultValue`, which will be returned until the desired value from the `callbackFunction` is loaded.
+- Add the possibility to create a Vault from the Factory page with the `createVaultFromFactory` action and the Factory page
+- Add the `VAULT_FACTORY_ADDRESS` to address [`0x21b1FC8A52f179757bf555346130bF27c0C2A17A`](https://etherscan.io/address/0x21b1FC8A52f179757bf555346130bF27c0C2A17A)
+
+
+
 # 0.1.10
 - Add `.env` example and update `readme` from @patcito
 - Fix typos from @engn33r

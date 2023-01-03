@@ -64,7 +64,6 @@ function DropdownEmpty({query}: {query: string}): ReactElement {
 
 function Dropdown({
 	options,
-	defaultOption,
 	selected,
 	onSelect,
 	placeholder = ''

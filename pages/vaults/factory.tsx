@@ -149,7 +149,6 @@ function	Factory(): ReactElement {
 						<label className={'yearn--input relative z-10 col-span-2'}>
 							<p className={'text-neutral-600'}>{'Available Curve pools'}</p>
 							<Dropdown
-								defaultOption={defaultOption}
 								placeholder={'Select Curve Pool'}
 								options={gaugesOptions}
 								selected={selectedOption}

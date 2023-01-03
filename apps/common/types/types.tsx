@@ -63,7 +63,6 @@ export type TDropdownGaugeOption = {
 };
 export type TDropdownGaugeProps = {
 	options: TDropdownGaugeOption[];
-	defaultOption: TDropdownGaugeOption;
 	selected?: TDropdownGaugeOption;
 	placeholder?: string;
 	onSelect:
