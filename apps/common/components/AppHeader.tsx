@@ -23,9 +23,9 @@ function	Logo(): ReactElement {
 
 	return (
 		<>
+			<YCrvHeader />
 			<VaultsHeader pathname={pathname} />
 			<YBribeHeader />
-			<YCrvHeader />
 			<motion.div
 				key={'yearn'}
 				initial={'initial'}
