@@ -6,10 +6,10 @@ import {variants} from '@common/utils/animations';
 
 import type {ReactElement} from 'react';
 
-export 	const	MenuVeYFIOptions = [{path: 'https://docs.yearn.finance/contributing/governance/veyfi', label: 'Docs'}];
+export const MenuVeYFIOptions = [{path: 'https://docs.yearn.finance/contributing/governance/veyfi', label: 'Docs'}];
 
 export function LogoVeYFI(): ReactElement {
-	const	router = useRouter();
+	const router = useRouter();
 
 	return (
 		<motion.div
