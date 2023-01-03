@@ -1,19 +1,21 @@
 import React from 'react';
-import meta from 'public/apps/vaults-manifest.json';
 import {AnimatePresence, motion} from 'framer-motion';
 import {AppSettingsContextApp} from '@vaults/contexts/useAppSettings';
 import {VaultMigrationContextApp} from '@vaults/contexts/useVaultsMigrations';
 import {WalletForInternalMigrationsApp} from '@vaults/contexts/useWalletForInternalMigrations';
 import Meta from '@common/components/Meta';
+import {useCurrentApp} from '@common/hooks/useCurrentApp';
 import {variants} from '@common/utils/animations';
 
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
 
 export default function Wrapper({children, router}: {children: ReactElement, router: NextRouter}): ReactElement {
+	const {manifest} = useCurrentApp(router);
+	
 	return (
 		<>
-			<Meta meta={meta} />
+			<Meta meta={manifest} />
 			<AppSettingsContextApp>
 				<VaultMigrationContextApp>
 					<WalletForInternalMigrationsApp>

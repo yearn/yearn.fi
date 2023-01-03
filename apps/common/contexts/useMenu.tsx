@@ -1,12 +1,10 @@
 import React, {createContext, useCallback, useContext, useMemo, useState} from 'react';
 import Link from 'next/link';
 import {useRouter} from 'next/router';
-import {MenuVaultsOptions} from '@vaults/Header';
 import {ModalMobileMenu} from '@yearn-finance/web-lib/components/ModalMobileMenu';
-import {MenuYCRVOptions} from '@yCRV/Header';
+import {useAllApps} from '@common/hooks/useAllApps';
 
 import type {ReactElement} from 'react';
-
 
 export type TCurrentMenu = {
 	app: {
@@ -29,16 +27,17 @@ const	defaultProps: TMenu = {
 
 const	MenuContext = createContext<TMenu>(defaultProps);
 export const MenuContextApp = ({children}: {children: React.ReactElement}): React.ReactElement => {
-	const	router = useRouter();
+	const	{pathname} = useRouter();
 	const	[menu, set_menu] = useState<TCurrentMenu>(defaultProps.menu);
+	const	{menus} = useAllApps(pathname);
 
 	const onOpenMenu = useCallback((): void => {
-		if (router.pathname.startsWith('/ycrv')) {
-			set_menu({app: MenuYCRVOptions, isOpen: true});
-		} else if (router.pathname.startsWith('/vaults')) {
-			set_menu({app: MenuVaultsOptions, isOpen: true});
-		} else if (router.pathname.startsWith('/ybribe')) {
-			set_menu({app: MenuYCRVOptions, isOpen: true});
+		if (pathname.startsWith('/ycrv')) {
+			set_menu({app: menus.yCrv, isOpen: true});
+		} else if (pathname.startsWith('/vaults')) {
+			set_menu({app: menus.vaults, isOpen: true});
+		} else if (pathname.startsWith('/ybribe')) {
+			set_menu({app: menus.yBribe, isOpen: true});
 		} else {
 			set_menu({
 				app: [
@@ -51,7 +50,7 @@ export const MenuContextApp = ({children}: {children: React.ReactElement}): Reac
 			});
 		}
 
-	}, [router.pathname]);
+	}, [menus.vaults, menus.yBribe, menus.yCrv, pathname]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	**	Setup and render the Context provider to use in the app.

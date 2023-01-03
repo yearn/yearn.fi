@@ -1,5 +1,4 @@
 import React, {Fragment, memo} from 'react';
-import meta from 'public/manifest.json';
 import {AnimatePresence, domAnimation, LazyMotion, motion} from 'framer-motion';
 import localFont from '@next/font/local';
 import {WithYearn} from '@yearn-finance/web-lib/contexts/WithYearn';
@@ -8,6 +7,7 @@ import Meta from '@common/components/Meta';
 import {MenuContextApp} from '@common/contexts/useMenu';
 import {WalletContextApp} from '@common/contexts/useWallet';
 import {YearnContextApp} from '@common/contexts/useYearn';
+import {useCurrentApp} from '@common/hooks/useCurrentApp';
 import {variants} from '@common/utils/animations';
 
 import type {NextComponentType} from 'next';
@@ -36,13 +36,7 @@ type TGetLayout = NextComponentType & {getLayout: (p: ReactElement, router: Next
 const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 	const	{Component, pageProps, router} = props;
 	const	getLayout = (Component as TGetLayout).getLayout || ((page: ReactElement): ReactElement => page);
-
-	const	currentApp = (
-		router.pathname.startsWith('/ycrv') ? 'yCRV' :
-			router.pathname.startsWith('/vaults') ? 'Vaults' :
-				router.pathname.startsWith('/ybribe') ? 'yBribe' :
-					'Home'
-	);
+	const	{name} = useCurrentApp(router);
 
 	return (
 		<div id={'app'} className={'mx-auto mb-0 flex max-w-6xl font-aeonik'}>
@@ -51,7 +45,7 @@ const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 				<LazyMotion features={domAnimation}>
 					<AnimatePresence mode={'wait'}>
 						<motion.div
-							key={currentApp}
+							key={name}
 							initial={'initial'}
 							animate={'enter'}
 							exit={'exit'}
@@ -67,14 +61,15 @@ const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 });
 
 const App = memo(function App(props: AppProps): ReactElement {
-	const	{Component, pageProps} = props;
+	const	{Component, pageProps, router} = props;
+	const	{manifest} = useCurrentApp(router);
 	
 	return (
 		<MenuContextApp>
 			<YearnContextApp>
 				<WalletContextApp>
 					<Fragment>
-						<Meta meta={meta} />
+						<Meta meta={manifest} />
 						<WithLayout
 							Component={Component}
 							pageProps={pageProps}
