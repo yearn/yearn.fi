@@ -57,7 +57,7 @@ export function	QuickActionFromBox({
 						balanceSource={balances}
 						onSelect={(option: TDropdownOption): void => onSelectFrom(option)} />
 				) : (
-					<div className={'flex h-10 w-full items-center justify-between bg-neutral-100 px-2 text-base text-neutral-900 md:px-3'}>
+					<div className={'flex h-10 w-full items-center justify-between bg-neutral-0 px-2 text-base text-neutral-900 md:px-3'}>
 						<div className={'relative flex flex-row items-center'}>
 							<div key={selectedOptionFrom?.value} className={'h-6 w-6 rounded-full'}>
 								{selectedOptionFrom?.icon}
@@ -78,7 +78,7 @@ export function	QuickActionFromBox({
 					className={'hidden text-base text-neutral-600 md:inline'}>
 					{'Amount'}
 				</label>
-				<div className={'flex h-10 items-center bg-neutral-100 p-2'}>
+				<div className={'flex h-10 items-center bg-neutral-0 p-2'}>
 					<div className={'flex h-10 w-full flex-row items-center justify-between py-4 px-0'}>
 						<input
 							id={'fromAmount'}

@@ -67,7 +67,7 @@ function Dropdown({
 				{({open}): ReactElement => (
 					<>
 						<Listbox.Button
-							className={'flex h-10 w-full items-center justify-between bg-neutral-100 p-2 text-base text-neutral-900 md:px-3'}>
+							className={'flex h-10 w-full items-center justify-between bg-neutral-0 p-2 text-base text-neutral-900 md:px-3'}>
 							<div className={'relative flex flex-row items-center'}>
 								<div key={selected?.value} className={'h-6 w-6 rounded-full'}>
 									{selected?.icon ? cloneElement(selected.icon) : <div className={'h-6 w-6 rounded-full bg-neutral-500'} />}

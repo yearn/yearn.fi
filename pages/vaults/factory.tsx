@@ -271,25 +271,23 @@ function	Factory(): ReactElement {
 		}).perform();
 	}
 
-
 	return (
 		<section>
-			<div className={'mb-4 w-full bg-neutral-200 p-4 md:p-8'}>
-				<div aria-label={'new vault card title'} className={'flex flex-col pb-6'}>
-					<h2 className={'pb-2 text-3xl font-bold'}>{'Create new Vault'}</h2>
-					<div className={'w-3/4'}>
-						<p>{'Deploy a new auto-compounding Vault for any pool with an existing gauge on curve. User deployed vaults have 0% management fee and a flat 10% performance fee. Permissionless finance just got permissionless-er.'}</p>
-						<p>{'To learn more, check our docs.'}</p>
+			<div className={'mb-4 w-full bg-neutral-100 p-4 md:p-8'}>
+				<div aria-label={'new vault card title'} className={'flex flex-col pb-8'}>
+					<h2 className={'pb-4 text-3xl font-bold'}>{'Create new Vault'}</h2>
+					<div className={'w-7/12'}>
+						<p>{'Deploy a new auto-compounding Vault for any pool with an existing gauge on curve. User deployed vaults have 0% management fee and a flat 10% performance fee. Permissionless finance just got permissionless-er. To learn more, check our docs.'}</p>
 					</div>
 				</div>
 
-				<div aria-label={'vault selection'} className={'flex flex-col pb-[52px]'}>
+				<div aria-label={'Available Curve pools'} className={'flex flex-col pb-[52px]'}>
 					<div className={'grid grid-cols-1 gap-x-0 gap-y-5 md:grid-cols-6 md:gap-x-8'}>
 						<label className={'yearn--input relative z-10 col-span-2'}>
-							<p className={'text-base text-neutral-600'}>{'Select token'}</p>
+							<p className={'text-neutral-600'}>{'Available Curve pools'}</p>
 							<Dropdown
 								defaultOption={defaultOption}
-								placeholder={'Select token'}
+								placeholder={'Select Curve Pool'}
 								options={gaugesOptions}
 								selected={selectedOption}
 								onSelect={(option: TDropdownGaugeOption): void => {
@@ -299,47 +297,51 @@ function	Factory(): ReactElement {
 
 						<div className={'col-span-2 w-full space-y-1'}>
 							<p className={'text-neutral-600'}>{'Vault name'}</p>
-							<div className={'h-10 bg-neutral-100 p-2'}>
+							<div className={'h-10 bg-neutral-200 p-2 text-neutral-600'}>
 								{selectedOption.value.name === '' ? '-' : `Curve ${selectedOption.value.name} Factory yVault`}
 							</div>
 						</div>
 
 						<div className={'col-span-2 w-full space-y-1'}>
 							<p className={'text-neutral-600'}>{'Symbol'}</p>
-							<div className={'h-10 bg-neutral-100 p-2'}>
+							<div className={'h-10 bg-neutral-200 p-2 text-neutral-600'}>
 								{selectedOption.value.name === '' ? '-' : `yvCurve-${selectedOption.value.name}-f`}
 							</div>
 						</div>
 
 						<div className={'col-span-3 w-full space-y-1'}>
-							<p className={'text-base text-neutral-600'}>{'Pool address'}</p>
-							<div className={'flex h-10 flex-row items-center justify-between bg-neutral-100 p-2 font-mono'}>
+							<p className={'text-neutral-600'}>{'Pool address'}</p>
+							<div className={'flex h-10 flex-row items-center justify-between bg-neutral-200 p-2 font-mono'}>
 								{selectedOption.value.poolAddress !== toAddress() ? (
 									<>
-										<p className={'overflow-hidden text-ellipsis'}>{selectedOption.value.poolAddress}</p>
+										<p className={'overflow-hidden text-ellipsis text-neutral-600'}>
+											{selectedOption.value.poolAddress}
+										</p>
 										<a
 											href={`${networks[1].explorerBaseURI}/address/${selectedOption.value.poolAddress}`}
 											target={'_blank'}
 											rel={'noreferrer'}
-											className={'ml-4 cursor-pointer text-neutral-400 transition-colors hover:text-neutral-900'}>
-											<LinkOut className={'h-4 w-4'} />
+											className={'ml-4 cursor-pointer text-neutral-900'}>
+											<LinkOut className={'h-6 w-6'} />
 										</a>
 									</>
 								) : ''}
 							</div>
 						</div>
 						<div className={'col-span-3 w-full space-y-1'}>
-							<p className={'text-base text-neutral-600'}>{'Gauge address'}</p>
-							<div className={'flex h-10 flex-row items-center justify-between bg-neutral-100 p-2 font-mono'}>
+							<p className={'text-neutral-600'}>{'Gauge address'}</p>
+							<div className={'flex h-10 flex-row items-center justify-between bg-neutral-200 p-2 font-mono'}>
 								{selectedOption.value.gaugeAddress !== toAddress() ? (
 									<>
-										<p className={'overflow-hidden text-ellipsis'}>{selectedOption.value.gaugeAddress}</p>
+										<p className={'overflow-hidden text-ellipsis text-neutral-600'}>
+											{selectedOption.value.gaugeAddress}
+										</p>
 										<a
 											href={`${networks[1].explorerBaseURI}/address/${selectedOption.value.gaugeAddress}`}
 											target={'_blank'}
 											rel={'noreferrer'}
-											className={'ml-4 cursor-pointer text-neutral-400 transition-colors hover:text-neutral-900'}>
-											<LinkOut className={'h-4 w-4'} />
+											className={'ml-4 cursor-pointer text-neutral-900'}>
+											<LinkOut className={'h-6 w-6'} />
 										</a>
 									</>
 								) : ''}
@@ -349,7 +351,7 @@ function	Factory(): ReactElement {
 					</div>
 				</div>
 
-				<div aria-label={'actions'} className={'flex flex-row items-center space-x-4'}>
+				<div aria-label={'actions'} className={'flex flex-row items-center space-x-6'}>
 					<div>
 						<Button
 							onClick={onCreateNewVault}
