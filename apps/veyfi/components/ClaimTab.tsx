@@ -6,6 +6,7 @@ import {getTimeUntil} from '@veYFI/utils/time';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {BN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {useWallet} from '@common/contexts/useWallet';
 
 import {AmountInput} from '../../common/components/AmountInput';
 
@@ -14,8 +15,10 @@ import type {ReactElement} from 'react';
 
 function ClaimTab(): ReactElement {
 	const {provider, address} = useWeb3();
+	const {refresh: refreshBalances} = useWallet();
 	const {votingEscrow, positions, refresh: refreshVotingEscrow} = useVotingEscrow();
-	const [withdrawUnlocked, withdrawUnlockedStatus] = useTransaction(VotingEscrowActions.withdrawUnlocked, refreshVotingEscrow);
+	const refreshData = (): unknown => Promise.all([refreshVotingEscrow(), refreshBalances()]);
+	const [withdrawUnlocked, withdrawUnlockedStatus] = useTransaction(VotingEscrowActions.withdrawUnlocked, refreshData);
 
 	const web3Provider = provider as ethers.providers.Web3Provider;
 	const hasLockedAmount = BN(positions?.deposit?.balance).gt(0);
