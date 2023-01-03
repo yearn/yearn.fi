@@ -71,6 +71,13 @@ function	Factory(): ReactElement {
 		return gauges.filter((_gauge: TCurveGauges, index: number): boolean => canCreateVaults[index]);
 	}, [gauges, provider, safeChainID]);
 	const	filteredGauges = useAsync(fetchAlreadyCreatedGauges, [], gauges);
+	
+
+	/* 🔵 - Yearn Finance ******************************************************
+	** We need to create the possible elements for the dropdown by removing all
+	** the extra impossible gauges and formating them to the expected 
+	** TDropdownGaugeOption type
+	**************************************************************************/
 	const	gaugesOptions = useMemo((): TDropdownGaugeOption[] => {
 		return (
 			(filteredGauges || [])
@@ -108,7 +115,8 @@ function	Factory(): ReactElement {
 			set_hasError(true);
 			return ethers.constants.Zero;
 		}
-	}, [provider]);
+		//eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [provider]); //toast is a false negative error
 
 	const	{data: estimate} = useSWR(
 		(!isActive || selectedOption.value.gaugeAddress === toAddress(ethers.constants.AddressZero) || safeChainID !== 1) ?
