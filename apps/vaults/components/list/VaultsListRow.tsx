@@ -46,9 +46,9 @@ function	VaultsListRow({currentVault}: {currentVault: TYearnVault}): ReactElemen
 				</div>
 
 				<div className={'yearn--table-data-section'}>
-					<div className={'yearn--table-data-section-item md:col-span-2'}>
-						<label className={'yearn--table-data-section-item-label'}>{'APY'}</label>
-						<b className={'yearn--table-data-section-item-value'} datatype={'number'}>
+					<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
+						<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'APY'}</label>
+						<b className={'yearn--table-data-section-item-value'}>
 							{(currentVault.apy?.type === 'new' && currentVault.apy?.net_apy == 0) ? (
 								'New'
 							) : (
@@ -57,23 +57,23 @@ function	VaultsListRow({currentVault}: {currentVault: TYearnVault}): ReactElemen
 						</b>
 					</div>
 
-					<div className={'yearn--table-data-section-item md:col-span-2'}>
-						<label className={'yearn--table-data-section-item-label'}>{'Available'}</label>
-						<p className={`yearn--table-data-section-item-value ${availableToDeposit === 0 ? 'text-neutral-400' : 'text-neutral-900'}`} datatype={'number'}>
+					<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
+						<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Available'}</label>
+						<p className={`yearn--table-data-section-item-value ${availableToDeposit === 0 ? 'text-neutral-400' : 'text-neutral-900'}`}>
 							{formatAmount(availableToDeposit)}
 						</p>
 					</div>
 
-					<div className={'yearn--table-data-section-item md:col-span-2'}>
-						<label className={'yearn--table-data-section-item-label'}>{'Deposited'}</label>
-						<p className={`yearn--table-data-section-item-value ${deposited === 0 ? 'text-neutral-400' : 'text-neutral-900'}`} datatype={'number'}>
+					<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
+						<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Deposited'}</label>
+						<p className={`yearn--table-data-section-item-value ${deposited === 0 ? 'text-neutral-400' : 'text-neutral-900'}`}>
 							{formatAmount(deposited)}
 						</p>
 					</div>
 
-					<div className={'yearn--table-data-section-item md:col-span-2'}>
-						<label className={'yearn--table-data-section-item-label'}>{'TVL'}</label>
-						<p className={'yearn--table-data-section-item-value'} datatype={'number'}>
+					<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
+						<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'TVL'}</label>
+						<p className={'yearn--table-data-section-item-value'}>
 							{formatUSD(currentVault.tvl?.tvl || 0, 0, 0)}
 						</p>
 					</div>

@@ -216,7 +216,8 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 	** Compute the styCRV APY based on the experimental APY and the mega boost.
 	**************************************************************************/
 	const	styCRVAPY = useMemo((): number => {
-		return (((styCRVVault as TYearnVault)?.apy?.net_apy || 0) * 100) + (styCRVMegaBoost * 100);
+		return (((styCRVVault as TYearnVault)?.apy?.net_apy || 0) * 100);
+		// return (((styCRVVault as TYearnVault)?.apy?.net_apy || 0) * 100) + (styCRVMegaBoost * 100);
 		// return (styCRVExperimentalAPY * 100) + (styCRVMegaBoost * 100);
 	}, [styCRVVault, styCRVMegaBoost]);
 

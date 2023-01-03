@@ -26,7 +26,7 @@ function	VaultsListEmpty({
 				</div>
 			</div>
 		);
-	} else if (!isLoading && sortedVaultsToDisplay.length === 0 && currentCategory === 'Holdings') {
+	} if (!isLoading && sortedVaultsToDisplay.length === 0 && currentCategory === 'Holdings') {
 		return (
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center py-2 px-10 md:w-3/4'}>
 				<b className={'text-center text-lg'}>{'Well this is awkward...'}</b>
@@ -35,7 +35,7 @@ function	VaultsListEmpty({
 				</p>
 			</div>
 		);
-	} else if (!isLoading && sortedVaultsToDisplay.length === 0 && safeChainID !== 1) {
+	} if (!isLoading && sortedVaultsToDisplay.length === 0 && safeChainID !== 1) {
 		const	chainName = CHAINS[safeChainID]?.name || 'this network';
 		return (
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center py-2 px-10 md:w-3/4'}>
@@ -45,7 +45,7 @@ function	VaultsListEmpty({
 				</p>
 			</div>
 		);
-	} else if (!isLoading && sortedVaultsToDisplay.length === 0) {
+	} if (!isLoading && sortedVaultsToDisplay.length === 0) {
 		return (
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center py-2 px-10 md:w-3/4'}>
 				<b className={'text-center text-lg'}>{'No data, reeeeeeeeeeee'}</b>

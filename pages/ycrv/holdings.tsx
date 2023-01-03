@@ -16,6 +16,7 @@ import {useYCRV} from '@yCRV/contexts/useYCRV';
 import Wrapper from '@yCRV/Wrapper';
 
 import type {BigNumber} from 'ethers';
+import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
 
 function	HeaderPosition(): ReactElement {
@@ -94,9 +95,9 @@ function	Holdings(): ReactElement {
 	const	latestCurveFeesValue = useMemo((): number => {
 		if (curveWeeklyFees?.weeklyFeesTable?.[0]?.rawFees > 0) {
 			return curveWeeklyFees.weeklyFeesTable[0].rawFees;
-		} else {
-			return curveWeeklyFees?.weeklyFeesTable?.[1]?.rawFees || 0;
-		}
+		} 
+		return curveWeeklyFees?.weeklyFeesTable?.[1]?.rawFees || 0;
+		
 	}, [curveWeeklyFees]);
 
 	const	currentVeCRVAPY = useMemo((): number => {
@@ -324,7 +325,7 @@ function	Holdings(): ReactElement {
 						<p
 							suppressHydrationWarning
 							className={'font-number text-sm text-neutral-400 md:text-base'}>
-							{`∙ ${styCRVAPY && curveAdminFeePercent ? formatPercent(styCRVAPY - curveAdminFeePercent) : formatPercent(0)} Gauge Voting Bribes`}
+							{`∙ ${styCRVAPY && curveAdminFeePercent && styCRVMegaBoost ? formatAmount(styCRVAPY - (curveAdminFeePercent + (styCRVMegaBoost * 100)), 2, 2) : '0.00'}% Gauge Voting Bribes`}
 						</p>
 						<p
 							suppressHydrationWarning
@@ -341,8 +342,8 @@ function	Holdings(): ReactElement {
 	);
 }
 
-Holdings.getLayout = function getLayout(page: ReactElement): ReactElement {
-	return <Wrapper>{page}</Wrapper>;
+Holdings.getLayout = function getLayout(page: ReactElement, router: NextRouter): ReactElement {
+	return <Wrapper router={router}>{page}</Wrapper>;
 };
 
 

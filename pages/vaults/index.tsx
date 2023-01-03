@@ -2,7 +2,7 @@ import React, {Fragment, useCallback, useMemo, useState} from 'react';
 import {ethers} from 'ethers';
 import VaultListOptions from '@vaults/components/list/VaultListOptions';
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
-import {VaultsListMigratableRow} from '@vaults/components/list/VaultsListMigratableRow';
+import {VaultsListInternalMigrationRow} from '@vaults/components/list/VaultsListInternalMigrationRow';
 import {VaultsListRow} from '@vaults/components/list/VaultsListRow';
 import {useAppSettings} from '@vaults/contexts/useAppSettings';
 import {useVaultsMigrations} from '@vaults/contexts/useVaultsMigrations';
@@ -20,16 +20,20 @@ import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import {getVaultName} from '@common/utils';
 
+import type {NextRouter} from 'next/router';
 import type {ReactElement, ReactNode} from 'react';
 import type {TYearnVault} from '@common/types/yearn';
 import type {TPossibleSortBy, TPossibleSortDirection} from '@vaults/hooks/useSortVaults';
 
 function	HeaderUserPosition(): ReactElement {
 	const	{cumulatedValueInVaults} = useWallet();
+	const	{cumulatedValueInVaults: cumulatedValueInDeprecatedVaults} = useWalletForInternalMigrations();
 	const	{earned} = useYearn();
 
-	const	formatedYouHave = useMemo((): string => formatAmount(cumulatedValueInVaults || 0), [cumulatedValueInVaults]);
 	const	formatedYouEarned = useMemo((): string => formatAmount(earned?.totalUnrealizedGainsUSD || 0), [earned]);
+	const	formatedYouHave = useMemo((): string => (
+		formatAmount(cumulatedValueInVaults + cumulatedValueInDeprecatedVaults)
+	), [cumulatedValueInVaults, cumulatedValueInDeprecatedVaults]);
 
 	return (
 		<Fragment>
@@ -80,7 +84,7 @@ function	Index(): ReactElement {
 		const	balanceValue = holding?.normalizedValue || 0;
 		if (shouldHideDust && balanceValue < 0.01) {
 			return false;
-		} else if (hasValidBalance) {
+		} if (hasValidBalance) {
 			return true;
 		}
 		return false;
@@ -239,7 +243,7 @@ function	Index(): ReactElement {
 								return (null);
 							}
 							return (
-								<VaultsListMigratableRow key={vault.address} currentVault={vault} />
+								<VaultsListInternalMigrationRow key={vault.address} currentVault={vault} />
 							);
 						})}
 					</div>
@@ -264,8 +268,8 @@ function	Index(): ReactElement {
 	);
 }
 
-Index.getLayout = function getLayout(page: ReactElement): ReactElement {
-	return <Wrapper>{page}</Wrapper>;
+Index.getLayout = function getLayout(page: ReactElement, router: NextRouter): ReactElement {
+	return <Wrapper router={router}>{page}</Wrapper>;
 };
 
 export default Index;

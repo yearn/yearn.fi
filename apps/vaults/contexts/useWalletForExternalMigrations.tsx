@@ -1,7 +1,6 @@
 import React, {createContext, memo, useCallback, useContext, useMemo, useState} from 'react';
-// eslint-disable-next-line import/no-named-as-default
-import NProgress from 'nprogress';
 import {migrationTable} from '@vaults/utils/migrationTable';
+import {useUI} from '@yearn-finance/web-lib/contexts/useUI';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useBalances} from '@yearn-finance/web-lib/hooks/useBalances';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
@@ -39,6 +38,7 @@ export const WalletForExternalMigrationsApp = memo(function WalletForExternalMig
 	const	{provider} = useWeb3();
 	const	{prices} = useYearn();
 	const	{chainID} = useChainID();
+	const	{onLoadStart, onLoadDone} = useUI();
 
 	const	availableTokens = useMemo((): TUseBalancesTokens[] => {
 		const	tokens: TUseBalancesTokens[] = [];
@@ -50,7 +50,7 @@ export const WalletForExternalMigrationsApp = memo(function WalletForExternalMig
 		return tokens;
 	}, []);
 
-	const	{data: balances, update: updateBalances, isLoading: isLoadingBalances} = useBalances({
+	const	{data: balances, update: updateBalances, isLoading} = useBalances({
 		key: chainID,
 		provider: provider || getProvider(1),
 		tokens: availableTokens,
@@ -63,26 +63,26 @@ export const WalletForExternalMigrationsApp = memo(function WalletForExternalMig
 	}, [updateBalances]);
 
 	useClientEffect((): () => void => {
-		if (isLoadingBalances) {
+		if (isLoading) {
 			if (!balances) {
 				set_nonce(nonce + 1);
 			}
-			NProgress.start();
+			onLoadStart();
 		} else {
-			NProgress.done();
+			onLoadDone();
 		}
-		return (): unknown => NProgress.done();
-	}, [isLoadingBalances]);
+		return (): unknown => onLoadDone();
+	}, [isLoading]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	**	Setup and render the Context provider to use in the app.
 	***************************************************************************/
 	const	contextValue = useMemo((): TWalletForExternalMigrations => ({
 		balances: balances,
-		isLoading: isLoadingBalances,
+		isLoading: isLoading,
 		refresh: onRefresh,
 		useWalletNonce: nonce
-	}), [balances, isLoadingBalances, onRefresh, nonce]);
+	}), [balances, isLoading, onRefresh, nonce]);
 
 	return (
 		<WalletForExternalMigrations.Provider value={contextValue}>

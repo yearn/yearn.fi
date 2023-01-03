@@ -14,6 +14,7 @@ import {GaugeListRow} from '@yBribe/components/claim/GaugeListRow';
 import {useBribes} from '@yBribe/contexts/useBribes';
 import Wrapper from '@yBribe/Wrapper';
 
+import type {NextRouter} from 'next/router';
 import type {ReactElement, ReactNode} from 'react';
 import type {TCurveGauges} from '@common/types/curves';
 
@@ -69,7 +70,7 @@ function	GaugeList(): ReactElement {
 				}
 				return b.name.localeCompare(a.name);
 			});
-		} else if (sortBy === 'rewards') {
+		} if (sortBy === 'rewards') {
 			return searchedGauges.sort((a, b): number => {
 				const allARewards = Object.entries(currentRewards?.v3?.[toAddress(a.gauge)] || {}).reduce((acc, [address, value]): number => {
 					const aBribeValue = getRewardValue(address, value || BigNumber.from(0));
@@ -86,7 +87,7 @@ function	GaugeList(): ReactElement {
 				}
 				return allARewards - allBRewards;
 			});
-		} else if (sortBy === 'pendingRewards') {
+		} if (sortBy === 'pendingRewards') {
 			return searchedGauges.sort((a, b): number => {
 				const allARewards = Object.entries(nextRewards?.v3?.[toAddress(a.gauge)] || {}).reduce((acc, [address, value]): number => {
 					const aBribeValue = getRewardValue(address, value || BigNumber.from(0));
@@ -189,8 +190,8 @@ function	Index(): ReactElement {
 	);
 }
 
-Index.getLayout = function getLayout(page: ReactElement): ReactElement {
-	return <Wrapper>{page}</Wrapper>;
+Index.getLayout = function getLayout(page: ReactElement, router: NextRouter): ReactElement {
+	return <Wrapper router={router}>{page}</Wrapper>;
 };
 
 export default Index;

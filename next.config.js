@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 const runtimeCaching = require('next-pwa/cache');
 
+const withTM = require('next-transpile-modules')(['@yearn-finance/web-lib'], {resolveSymlinks: false});
 const withPWA = require('next-pwa')({
 	dest: './public/',
 	register: true,
@@ -12,13 +13,35 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
 	enabled: process.env.ANALYZE === 'true'
 });
 
-module.exports = withBundleAnalyzer(withPWA({
+module.exports = withTM(withBundleAnalyzer(withPWA({
 	images: {
 		domains: [
 			'rawcdn.githack.com',
 			'raw.githubusercontent.com',
 			'placehold.co'
 		]
+	},
+	redirects() {
+		return [
+			{
+				source: '/:path*',
+				has: [{type: 'host', value: 'yearn.fi'}],
+				destination: 'https://yearn.finance/vaults/:path*',
+				permanent: true
+			},
+			{
+				source: '/:path*',
+				has: [{type: 'host', value: 'y.finance'}],
+				destination: 'https://yearn.finance/ycrv/:path*',
+				permanent: true
+			},
+			{
+				source: '/:path*',
+				has: [{type: 'host', value: 'ybribe.com'}],
+				destination: 'https://yearn.finance/ybribe/:path*',
+				permanent: true
+			}
+		];
 	},
 	env: {
 		/* 🔵 - Yearn Finance **************************************************
@@ -41,11 +64,11 @@ module.exports = withBundleAnalyzer(withPWA({
 
 		PARTNER_ID_ADDRESS: '0xFEB4acf3df3cDEA7399794D0869ef76A6EfAff52',
 		SHOULD_USE_PARTNER_CONTRACT: true,
-		// YDAEMON_BASE_URI: 'https://api.ycorpo.com',
 		YDAEMON_BASE_URI: 'https://ydaemon.yearn.finance',
 		// YDAEMON_BASE_URI: 'https://ydaemon-dev.yearn.finance',
+		// YDAEMON_BASE_URI: 'https://api.ycorpo.com',
 		// YDAEMON_BASE_URI: 'http://localhost:8080',
 		BASE_YEARN_ASSETS_URI: 'https://raw.githubusercontent.com/yearn/yearn-assets/master/icons/multichain-tokens/'
 	}
-}));
+})));
 
