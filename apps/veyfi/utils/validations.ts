@@ -32,10 +32,11 @@ export type TValidateAmountProps = {
     balance?: TAmount;
     minAmountAllowed?: TAmount;
     maxAmountAllowed?: TAmount;
+	shouldDisplayMin?: boolean;
   }
   
 export function validateAmount(props: TValidateAmountProps): TValidationResponse {
-	const {amount, balance, minAmountAllowed, maxAmountAllowed} = props;
+	const {amount, balance, minAmountAllowed, maxAmountAllowed, shouldDisplayMin} = props;
 	const amountNumber = Number(amount);
 
 	if (amountNumber === 0) {
@@ -51,11 +52,11 @@ export function validateAmount(props: TValidateAmountProps): TValidationResponse
 	}
   
 	if (minAmountAllowed && amountNumber < Number(minAmountAllowed)) {
-		return {error: 'Amount under minimum allowed'};
+		return {error: `Amount under minimum allowed ${shouldDisplayMin && minAmountAllowed ? `(min ${minAmountAllowed})` : ''}`};
 	}
   
 	if (balance && amountNumber > Number(balance)) {
-		return {error: 'Insufficient amount'};
+		return {error: `Insufficient balance ${shouldDisplayMin && minAmountAllowed ? `(min ${minAmountAllowed})` : ''}`};
 	}
   
 	return {isValid: true};
