@@ -276,7 +276,7 @@ function	Factory(): ReactElement {
 			<div className={'mb-4 w-full bg-neutral-100 p-4 md:p-8'}>
 				<div aria-label={'new vault card title'} className={'flex flex-col pb-8'}>
 					<h2 className={'pb-4 text-3xl font-bold'}>{'Create new Vault'}</h2>
-					<div className={'w-7/12'}>
+					<div className={'w-full md:w-7/12'}>
 						<p>{'Deploy a new auto-compounding Vault for any pool with an existing gauge on curve. User deployed vaults have 0% management fee and a flat 10% performance fee. Permissionless finance just got permissionless-er. To learn more, check our docs.'}</p>
 					</div>
 				</div>
