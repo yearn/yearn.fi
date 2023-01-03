@@ -37,7 +37,6 @@ function useCurrentApp({pathname}: NextRouter): TCurrentApp {
     
 		return {name: 'Home', manifest: homeManifest, menu: []};
 	}, [pathname]);
-	
 }
 
 export {useCurrentApp};
