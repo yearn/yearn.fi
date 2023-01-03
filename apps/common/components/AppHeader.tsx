@@ -1,7 +1,7 @@
 import React, {cloneElement, Fragment, useMemo, useState} from 'react';
 import Link from 'next/link';
 import {useRouter} from 'next/router';
-import {AnimatePresence, motion} from 'framer-motion';
+import {AnimatePresence} from 'framer-motion';
 import {Popover, Transition} from '@headlessui/react';
 import {VaultsHeader} from '@vaults/components/header/VaultsHeader';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -9,11 +9,11 @@ import Header from '@yearn-finance/web-lib/layouts/Header.next';
 import BalanceReminderPopover from '@common/components/BalanceReminderPopover';
 import {useMenu} from '@common/contexts/useMenu';
 import LogoYearn from '@common/icons/LogoYearn';
-import {variants} from '@common/utils/animations';
 import {YBribeHeader} from '@yBribe/components/header/YBribeHeader';
 import {YCrvHeader} from '@yCRV/components/header/YCrvHeader';
 
 import {AppName, APPS} from './Apps';
+import {MotionDiv} from './MotionDiv';
 
 import type {ReactElement} from 'react';
 import type {TMenu} from '@yearn-finance/web-lib/layouts/Header.next';
@@ -26,17 +26,12 @@ function	Logo(): ReactElement {
 			<YCrvHeader />
 			<VaultsHeader pathname={pathname} />
 			<YBribeHeader />
-			<motion.div
-				key={'yearn'}
-				initial={'initial'}
-				animate={pathname === '/' ? 'enter' : 'exit'}
-				variants={variants}
-				className={'absolute cursor-pointer'}>
+			<MotionDiv name={'yearn'} animate={pathname === '/' ? 'enter' : 'exit'}>
 				<LogoYearn
 					className={'h-8 w-8'}
 					back={'text-neutral-900'}
 					front={'text-neutral-0'} />
-			</motion.div>
+			</MotionDiv>
 		</>
 	);
 
@@ -68,24 +63,27 @@ function	LogoPopover(): ReactElement {
 				<Popover.Panel className={'absolute left-1/2 z-10 mt-6 w-80 -translate-x-1/2 px-4 pt-4 sm:px-0 md:w-96'}>
 					<div className={'overflow-hidden border border-neutral-200 shadow-lg'}>
 						<div className={'relative grid grid-cols-2 bg-neutral-0 md:grid-cols-4'}>
-							{(Object.keys(APPS) as AppName[]).map((appName): ReactElement => (
-								<Link
-									prefetch={false}
-									key={APPS[appName].name}
-									href={APPS[appName].href}
-									onClick={(): void => set_isShowing(false)}>
-									<div
-										onClick={(): void => set_isShowing(false)}
-										className={'flex cursor-pointer flex-col items-center p-4 transition-colors hover:bg-neutral-200'}>
-										<div>
-											{cloneElement(APPS[appName].icon)}
+							{(Object.keys(APPS) as AppName[]).map((appName): ReactElement => {
+								const {name, href, icon} = APPS[appName];
+								return (
+									<Link
+										prefetch={false}
+										key={name}
+										href={href}
+										onClick={(): void => set_isShowing(false)}>
+										<div
+											onClick={(): void => set_isShowing(false)}
+											className={'flex cursor-pointer flex-col items-center p-4 transition-colors hover:bg-neutral-200'}>
+											<div>
+												{cloneElement(icon)}
+											</div>
+											<div className={'pt-2 text-center'}>
+												<b className={'text-base'}>{name}</b>
+											</div>
 										</div>
-										<div className={'pt-2 text-center'}>
-											<b className={'text-base'}>{APPS[appName].name}</b>
-										</div>
-									</div>
-								</Link>
-							))}
+									</Link>
+								);
+							})}
 						</div>
 					</div>
 				</Popover.Panel>
