@@ -1,30 +1,31 @@
-import React, {cloneElement, Fragment, useState} from 'react';
+import React, {cloneElement, Fragment, useMemo, useState} from 'react';
 import Link from 'next/link';
 import {useRouter} from 'next/router';
 import {AnimatePresence, motion} from 'framer-motion';
 import {Popover, Transition} from '@headlessui/react';
+import {VaultsHeader} from '@vaults/components/header/VaultsHeader';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import Header from '@yearn-finance/web-lib/layouts/Header.next';
 import BalanceReminderPopover from '@common/components/BalanceReminderPopover';
 import {useMenu} from '@common/contexts/useMenu';
-import {useAllApps} from '@common/hooks/useAllApps';
 import LogoYearn from '@common/icons/LogoYearn';
 import {variants} from '@common/utils/animations';
+import {YBribeHeader} from '@yBribe/components/header/YBribeHeader';
+import {YCrvHeader} from '@yCRV/components/header/YCrvHeader';
 
-import {APPS} from './Apps';
+import {AppName, APPS} from './Apps';
 
 import type {ReactElement} from 'react';
-import type {AppName} from './Apps';
+import type {TMenu} from '@yearn-finance/web-lib/layouts/Header.next';
 
 function	Logo(): ReactElement {
 	const	{pathname} = useRouter();
-	const	{headers} = useAllApps(pathname);
 
 	return (
 		<>
-			{headers.yCrv}
-			{headers.vaults}
-			{headers.yBribe}
+			<VaultsHeader pathname={pathname} />
+			<YBribeHeader />
+			<YCrvHeader />
 			<motion.div
 				key={'yearn'}
 				initial={'initial'}
@@ -97,7 +98,35 @@ export function	AppHeader(): ReactElement {
 	const	{pathname} = useRouter();
 	const	{isActive} = useWeb3();
 	const	{onOpenMenu} = useMenu();
-	const	{menu, supportedNetworks} = useAllApps(pathname);
+	const	menu = useMemo((): TMenu[] => {
+		const HOME_MENU = {path: '/', label: 'Home'};
+		
+		if (pathname.startsWith('/ycrv')) {
+			return [HOME_MENU, ...APPS[AppName.YCRV].menu];
+		}
+
+		if (pathname.startsWith('/vaults')) {
+			return [HOME_MENU, ...APPS[AppName.VAULTS].menu];
+		}
+		
+		if (pathname.startsWith('/ybribe')) {
+			return [HOME_MENU, ...APPS[AppName.YBRIBE].menu];
+		}
+		return [
+			HOME_MENU,
+			{path: 'https://gov.yearn.finance/', label: 'Governance', target: '_blank'},
+			{path: 'https://blog.yearn.finance/', label: 'Blog', target: '_blank'},
+			{path: 'https://docs.yearn.finance/', label: 'Docs', target: '_blank'}
+		];
+	}, [pathname]);
+
+	const	supportedNetworks = useMemo((): number[] => {
+		if (pathname.startsWith('/ycrv') || pathname.startsWith('/ybribe')) {
+			return [1];
+		}
+
+		return [1, 10, 250, 42161];
+	}, [pathname]);
 
 	return (
 		<Header
