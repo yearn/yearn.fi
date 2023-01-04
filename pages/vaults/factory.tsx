@@ -114,7 +114,7 @@ function	Factory(): ReactElement {
 	** Name and symbol from the Curve API are not the one we want to display.
 	** We need to fetch the name and symbol from the gauge contract.
 	**************************************************************************/
-	const fetchgaugeDisplayData = useCallback(async (): Promise<TGaugeDisplayData> => {
+	const fetchGaugeDisplayData = useCallback(async (): Promise<TGaugeDisplayData> => {
 		const currentProvider = safeChainID === 1 ? provider || getProvider(1) : getProvider(1);
 		const ethcallProvider = await newEthCallProvider(currentProvider);
 		const curveGauge = new Contract(toAddress(selectedOption.value.gaugeAddress), ERC20_ABI);
@@ -129,7 +129,7 @@ function	Factory(): ReactElement {
 		});	
 	}, [provider, safeChainID, selectedOption?.value]);
 
-	const [gaugeDisplayData] = useAsync<TGaugeDisplayData>(fetchgaugeDisplayData, undefined, [selectedOption.value.name]);
+	const [gaugeDisplayData] = useAsync<TGaugeDisplayData>(fetchGaugeDisplayData, undefined, [selectedOption.value.name]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Perform a smartContract call to the ZAP contract to get the expected

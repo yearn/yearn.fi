@@ -65,9 +65,9 @@ module.exports = withTM(withBundleAnalyzer(withPWA({
 		PARTNER_ID_ADDRESS: '0xFEB4acf3df3cDEA7399794D0869ef76A6EfAff52',
 		SHOULD_USE_PARTNER_CONTRACT: true,
 		// YDAEMON_BASE_URI: 'https://ydaemon.yearn.finance',
-		YDAEMON_BASE_URI: 'https://ydaemon-dev.yearn.finance',
+		// YDAEMON_BASE_URI: 'https://ydaemon-dev.yearn.finance',
 		// YDAEMON_BASE_URI: 'https://api.ycorpo.com',
-		// YDAEMON_BASE_URI: 'http://localhost:8080',
+		YDAEMON_BASE_URI: 'http://localhost:8080',
 		BASE_YEARN_ASSETS_URI: 'https://raw.githubusercontent.com/yearn/yearn-assets/master/icons/multichain-tokens/'
 	}
 })));

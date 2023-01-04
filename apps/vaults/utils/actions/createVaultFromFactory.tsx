@@ -17,7 +17,6 @@ export async function	createNewVaultsAndStrategies(
 			VAULT_FACTORY_ABI,
 			signer
 		);
-		console.log(gaugeAddress);
 		const	transaction = await contract.createNewVaultsAndStrategies(
 			gaugeAddress
 		);
