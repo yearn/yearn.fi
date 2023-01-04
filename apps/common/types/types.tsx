@@ -5,6 +5,9 @@ import type {TAddress} from '@yearn-finance/web-lib/utils/address';
 import type {TDict} from '@yearn-finance/web-lib/utils/types';
 import type {EXTERNAL_SERVICE_PROVIDER} from '@vaults/utils/migrationTable';
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
+export type VoidPromiseFunction = () => Promise<void>
+
 export type	TClaimable = {
 	raw: BigNumber,
 	normalized: number,

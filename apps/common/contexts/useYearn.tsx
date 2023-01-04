@@ -11,6 +11,7 @@ import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
 import type {TAddress} from '@yearn-finance/web-lib/utils/address';
 import type {TDict} from '@yearn-finance/web-lib/utils/types';
+import type {VoidPromiseFunction} from '@common/types/types';
 import type {TYdaemonEarned, TYDaemonToken, TYearnVault} from '@common/types/yearn';
 
 export type	TYearnContext = {
@@ -20,6 +21,7 @@ export type	TYearnContext = {
 	tokens: TDict<TYDaemonToken>,
 	vaults: TDict<TYearnVault | undefined>,
 	isLoadingVaultList: boolean,
+	mutateVaultList: VoidPromiseFunction
 }
 const	defaultProps: TYearnContext = {
 	currentPartner: toAddress(process.env.PARTNER_ID_ADDRESS as string),
@@ -31,7 +33,8 @@ const	defaultProps: TYearnContext = {
 	prices: {},
 	tokens: {},
 	vaults: {[ethers.constants.AddressZero]: undefined},
-	isLoadingVaultList: false
+	isLoadingVaultList: false,
+	mutateVaultList: async () => undefined
 };
 
 type TYearnVaultsMap = {
@@ -61,7 +64,7 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 		{revalidateOnFocus: false}
 	) as SWRResponse;
 
-	const	{data: vaults, isLoading: isLoadingVaultList} = useSWR(
+	const	{data: vaults, isLoading: isLoadingVaultList, mutate: mutateVaultList} = useSWR(
 		`${baseAPISettings.yDaemonBaseURI}/${safeChainID}/vaults/all?hideAlways=true&orderBy=apy.net_apy&orderDirection=desc&strategiesDetails=withDetails&strategiesRisk=withRisk&strategiesCondition=inQueue`,
 		baseFetcher,
 		{revalidateOnFocus: false}
@@ -100,8 +103,9 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 		tokens,
 		earned,
 		vaults: {...vaultsObject},
-		isLoadingVaultList
-	}), [currentPartner?.id, prices, tokens, earned, vaultsObject, isLoadingVaultList]);
+		isLoadingVaultList,
+		mutateVaultList
+	}), [currentPartner?.id, prices, tokens, earned, vaultsObject, isLoadingVaultList, mutateVaultList]);
 
 	return (
 		<YearnContext.Provider value={contextValue}>
