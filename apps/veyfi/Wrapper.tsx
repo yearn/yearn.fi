@@ -1,5 +1,5 @@
 import React from 'react';
-import meta from 'public/apps/vaults-manifest.json';
+import meta from 'public/apps/veyfi-manifest.json';
 import {AnimatePresence, motion} from 'framer-motion';
 import Meta from '@common/components/Meta';
 import {variants} from '@common/utils/animations';
