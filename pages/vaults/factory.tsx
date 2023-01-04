@@ -178,7 +178,17 @@ function	Factory(): ReactElement {
 				<div aria-label={'new vault card title'} className={'flex flex-col pb-8'}>
 					<h2 className={'pb-4 text-3xl font-bold'}>{'Create new Vault'}</h2>
 					<div className={'w-full md:w-7/12'}>
-						<p>{'Deploy a new auto-compounding Vault for any pool with an existing gauge on curve. User deployed vaults have 0% management fee and a flat 10% performance fee. Permissionless finance just got permissionless-er. To learn more, check our docs.'}</p>
+						<p>
+							{'Deploy a new auto-compounding yVault for any Curve pool with an active liquidity gauge. All factory-deployed vaults have no management fees and a flat 10% performance fee. Permissionless finance just got permissionless-er. To learn more, check our '}
+							<a
+								href={'https://docs.yearn.finance/getting-started/products/yvaults/vault-factory'}
+								target={'_blank'}
+								className={'text-neutral-900 underline'}
+								rel={'noreferrer'}>
+								{'docs'}
+							</a>
+							{'.'}
+						</p>
 					</div>
 				</div>
 
