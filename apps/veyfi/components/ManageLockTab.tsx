@@ -16,6 +16,7 @@ import {AmountInput} from '../../common/components/AmountInput';
 
 import type {ethers} from 'ethers';
 import type {ReactElement} from 'react';
+import type {TAddress} from '@yearn-finance/web-lib/utils/address';
 
 function ManageLockTab(): ReactElement {
 	const [lockTime, set_lockTime] = useState('');
@@ -27,6 +28,7 @@ function ManageLockTab(): ReactElement {
 	const [withdrawLocked, withdrawLockedStatus] = useTransaction(VotingEscrowActions.withdrawLocked, refreshData);
 
 	const web3Provider = provider as ethers.providers.Web3Provider;
+	const userAddress = address as TAddress;
 	const hasLockedAmount = BN(positions?.deposit?.balance).gt(0);
 	const willExtendLock = BN(lockTime).gt(0);
 	const timeUntilUnlock = positions?.unlockTime ? getTimeUntil(positions?.unlockTime) : undefined;
@@ -47,24 +49,24 @@ function ManageLockTab(): ReactElement {
 	});
 
 	const executeExtendLockTime = (): void => {
-		if (!votingEscrow || !address) {
+		if (!votingEscrow || !userAddress) {
 			return;
 		}
 		extendLockTime(
 			web3Provider,
-			address,
+			userAddress,
 			votingEscrow.address,
 			toSeconds(newUnlockTime)
 		);
 	};
 	
 	const executeWithdrawLocked = (): void => {
-		if (!votingEscrow  || !address) {
+		if (!votingEscrow  || !userAddress) {
 			return;
 		}
 		withdrawLocked(
 			web3Provider,
-			address,
+			userAddress,
 			votingEscrow.address
 		);
 	};

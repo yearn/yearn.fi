@@ -13,16 +13,17 @@ import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3
 
 import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
+import type {TAddress} from '@yearn-finance/web-lib/utils/address';
 import type {TDict} from '@yearn-finance/web-lib/utils/types';
 
 export type TVotingEscrow = {
-	address: string,
-	token: string,
+	address: TAddress,
+	token: TAddress,
 	name: string,
 	symbol: string,
 	decimals: number,
 	supply: string,
-	rewardPool: string,
+	rewardPool: TAddress,
 }
 
 export type TPosition = {
@@ -78,7 +79,7 @@ export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({chil
 			veYFIContract.decimals(),
 			veYFIContract.supply(),
 			veYFIContract.reward_pool()
-		]) as [string, string, string, number, BigNumber, string];
+		]) as [TAddress, string, string, number, BigNumber, TAddress];
 		
 		return ({
 			address: VEYFI_ADDRESS,

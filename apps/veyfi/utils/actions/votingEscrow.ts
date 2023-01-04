@@ -4,13 +4,15 @@ import {ERC20_ABI} from '@yearn-finance/web-lib/utils/abi';
 import VEYFI_ABI from '../abi/veYFI.abi';
 
 import type {BigNumber} from 'ethers';
+import type {TAddress} from '@yearn-finance/web-lib/utils/address';
+import type {TRaw, TSeconds} from '@veYFI/types';
 
 export async function approveLock(
 	provider: ethers.providers.Web3Provider,
-	accountAddress: string,
-	tokenAddress: string,
-	votingEscrowAddress: string,
-	amount?: string
+	accountAddress: TAddress,
+	tokenAddress: TAddress,
+	votingEscrowAddress: TAddress,
+	amount?: TRaw
 ): Promise<ethers.providers.TransactionResponse> {
 	const signer = provider.getSigner(accountAddress);
 	const tokenContract = new ethers.Contract(tokenAddress, ERC20_ABI, signer);
@@ -19,10 +21,10 @@ export async function approveLock(
 
 export async function lock(
 	provider: ethers.providers.Web3Provider,
-	accountAddress: string,
-	votingEscrowAddress: string,
-	amount: string,
-	time: number
+	accountAddress: TAddress,
+	votingEscrowAddress: TAddress,
+	amount: TRaw,
+	time: TSeconds
 ): Promise<ethers.providers.TransactionResponse> {
 	const signer = provider.getSigner(accountAddress);
 	const votingEscrowContract = new ethers.Contract(votingEscrowAddress, VEYFI_ABI, signer);
@@ -31,9 +33,9 @@ export async function lock(
 
 export async function increaseLockAmount(
 	provider: ethers.providers.Web3Provider,
-	accountAddress: string,
-	votingEscrowAddress: string,
-	amount: string
+	accountAddress: TAddress,
+	votingEscrowAddress: TAddress,
+	amount: TRaw
 ): Promise<ethers.providers.TransactionResponse> {
 	const signer = provider.getSigner(accountAddress);
 	const votingEscrowContract = new ethers.Contract(votingEscrowAddress, VEYFI_ABI, signer);
@@ -43,9 +45,9 @@ export async function increaseLockAmount(
 
 export async function extendLockTime(
 	provider: ethers.providers.Web3Provider,
-	accountAddress: string,
-	votingEscrowAddress: string,
-	time: number
+	accountAddress: TAddress,
+	votingEscrowAddress: TAddress,
+	time: TSeconds
 ): Promise<ethers.providers.TransactionResponse> {
 	const signer = provider.getSigner(accountAddress);
 	const votingEscrowContract = new ethers.Contract(votingEscrowAddress, VEYFI_ABI, signer);
@@ -55,8 +57,8 @@ export async function extendLockTime(
 
 export async function withdrawUnlocked(
 	provider: ethers.providers.Web3Provider,
-	accountAddress: string,
-	votingEscrowAddress: string
+	accountAddress: TAddress,
+	votingEscrowAddress: TAddress
 ): Promise<ethers.providers.TransactionResponse> {
 	const signer = provider.getSigner(accountAddress);
 	const votingEscrowContract = new ethers.Contract(votingEscrowAddress, VEYFI_ABI, signer);
@@ -70,8 +72,8 @@ export async function withdrawUnlocked(
 
 export async function withdrawLocked(
 	provider: ethers.providers.Web3Provider,
-	accountAddress: string,
-	votingEscrowAddress: string
+	accountAddress: TAddress,
+	votingEscrowAddress: TAddress
 ): Promise<ethers.providers.TransactionResponse> {
 	const signer = provider.getSigner(accountAddress);
 	const votingEscrowContract = new ethers.Contract(votingEscrowAddress, VEYFI_ABI, signer);

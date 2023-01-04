@@ -1,6 +1,7 @@
 import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
 import {BN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 
+import type {TAddress} from '@yearn-finance/web-lib/utils/address';
 import type {TDict} from '@yearn-finance/web-lib/utils/types';
 import type {TAmount, TRaw} from '@veYFI/types';
 
@@ -10,8 +11,8 @@ export type TValidationResponse = {
 }
 
 export type TValidateAllowanceProps = {
-    tokenAddress: string;
-    spenderAddress: string;
+    tokenAddress: TAddress;
+    spenderAddress: TAddress;
     allowances: TDict<TRaw>;
     amount: TRaw;
 }

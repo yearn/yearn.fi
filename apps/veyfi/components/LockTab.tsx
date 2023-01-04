@@ -18,6 +18,7 @@ import {AmountInput} from '../../common/components/AmountInput';
 
 import type {ethers} from 'ethers';
 import type {ReactElement} from 'react';
+import type {TAddress} from '@yearn-finance/web-lib/utils/address';
 
 function LockTab(): ReactElement {
 	const [lockAmount, set_lockAmount] = useState('');
@@ -32,6 +33,7 @@ function LockTab(): ReactElement {
 	const [increaseLockAmount, increaseLockAmountStatus] = useTransaction(VotingEscrowActions.increaseLockAmount, refreshData);
 
 	const web3Provider = provider as ethers.providers.Web3Provider;
+	const userAddress = address as TAddress;
 	const hasLockedAmount = BN(positions?.deposit?.balance).gt(0);
 	
 	const unlockTime = useMemo((): number => {
@@ -50,8 +52,8 @@ function LockTab(): ReactElement {
 	}, [positions?.unlockTime]);
 
 	const {isValid: isApproved} = validateAllowance({
-		tokenAddress: votingEscrow?.token ?? '',
-		spenderAddress: votingEscrow?.address ?? '',
+		tokenAddress: toAddress(votingEscrow?.token),
+		spenderAddress: toAddress(votingEscrow?.address),
 		allowances,
 		amount: toRaw(lockAmount, 18)
 	});
@@ -69,24 +71,24 @@ function LockTab(): ReactElement {
 	});
 	
 	const executeApprove = (): void => {
-		if (!votingEscrow || !address) {
+		if (!votingEscrow || !userAddress) {
 			return;
 		}
 		approveLock(
 			web3Provider,
-			address,
+			userAddress,
 			votingEscrow.token,
 			votingEscrow.address
 		);
 	};
 	
 	const executeLock = (): void => {
-		if (!votingEscrow  || !address) {
+		if (!votingEscrow  || !userAddress) {
 			return;
 		}
 		lock(
 			web3Provider,
-			address,
+			userAddress,
 			votingEscrow.address,
 			toRaw(lockAmount, 18),
 			toSeconds(unlockTime)
@@ -94,12 +96,12 @@ function LockTab(): ReactElement {
 	};
 	
 	const executeIncreaseLockAmount = (): void => {
-		if (!votingEscrow  || !address) {
+		if (!votingEscrow  || !userAddress) {
 			return;
 		}
 		increaseLockAmount(
 			web3Provider,
-			address,
+			userAddress,
 			votingEscrow.address,
 			toRaw(lockAmount, 18)
 		);
