@@ -3,6 +3,7 @@ import {useVotingEscrow} from '@veYFI/contexts/useVotingEscrow';
 import {useTransaction} from '@veYFI/hooks/useTransaction';
 import {getVotingPower} from '@veYFI/utils';
 import * as VotingEscrowActions from '@veYFI/utils/actions/votingEscrow';
+import {MAX_LOCK_TIME, MIN_LOCK_TIME} from '@veYFI/utils/constants';
 import {toUnit} from '@veYFI/utils/format';
 import {fromWeeks, getTimeUntil, toSeconds, toTime, toWeeks} from '@veYFI/utils/time';
 import {validateAmount} from '@veYFI/utils/validations';
@@ -15,9 +16,6 @@ import {AmountInput} from '../../common/components/AmountInput';
 
 import type {ethers} from 'ethers';
 import type {ReactElement} from 'react';
-
-const MAX_LOCK_TIME = '208'; // Weeks
-const MIN_LOCK_TIME = '1'; // Weeks
 
 function ManageLockTab(): ReactElement {
 	const [lockTime, set_lockTime] = useState('');
@@ -44,8 +42,8 @@ function ManageLockTab(): ReactElement {
 	}, [positions?.deposit, newUnlockTime, willExtendLock]);
 	
 	const {isValid: isValidLockTime, error: lockTimeError} = validateAmount({
-		amount: votingEscrow ? lockTime : MIN_LOCK_TIME,
-		minAmountAllowed: MIN_LOCK_TIME
+		amount: votingEscrow ? lockTime : MIN_LOCK_TIME.toString(),
+		minAmountAllowed: MIN_LOCK_TIME.toString()
 	});
 
 	const executeExtendLockTime = (): void => {

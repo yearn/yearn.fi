@@ -3,6 +3,7 @@ import {useVotingEscrow} from '@veYFI/contexts/useVotingEscrow';
 import {useTransaction} from '@veYFI/hooks/useTransaction';
 import {getVotingPower} from '@veYFI/utils';
 import * as VotingEscrowActions from '@veYFI/utils/actions/votingEscrow';
+import {MAX_LOCK_TIME, MIN_LOCK_AMOUNT, MIN_LOCK_TIME} from '@veYFI/utils/constants';
 import {formatAmount, toRaw, toUnit} from '@veYFI/utils/format';
 import {fromWeeks, getTimeUntil, toSeconds, toTime, toWeeks} from '@veYFI/utils/time';
 import {validateAllowance, validateAmount} from '@veYFI/utils/validations';
@@ -17,10 +18,6 @@ import {AmountInput} from '../../common/components/AmountInput';
 
 import type {ethers} from 'ethers';
 import type {ReactElement} from 'react';
-
-const MAX_LOCK_TIME = '209'; // Weeks
-const MIN_LOCK_TIME = '1'; // Weeks
-const MIN_LOCK_AMOUNT = '1';
 
 function LockTab(): ReactElement {
 	const [lockAmount, set_lockAmount] = useState('');
@@ -62,13 +59,13 @@ function LockTab(): ReactElement {
 	const {isValid: isValidLockAmount, error: lockAmountError} = validateAmount({
 		amount: lockAmount || '0',
 		balance: tokenBalance.normalized.toString(),
-		minAmountAllowed: hasLockedAmount ? '0' : MIN_LOCK_AMOUNT,
+		minAmountAllowed: hasLockedAmount ? '0' : MIN_LOCK_AMOUNT.toString(),
 		shouldDisplayMin: true
 	});
 	
 	const {isValid: isValidLockTime, error: lockTimeError} = validateAmount({
 		amount: lockTime,
-		minAmountAllowed: hasLockedAmount ? '0' : MIN_LOCK_TIME
+		minAmountAllowed: hasLockedAmount ? '0' : MIN_LOCK_TIME.toString()
 	});
 	
 	const executeApprove = (): void => {
@@ -164,7 +161,7 @@ function LockTab(): ReactElement {
 						label={'Current lock period (weeks)'}
 						amount={toTime(lockTime) === 0 ? '' : Math.floor(toTime(lockTime)).toString()}
 						onAmountChange={set_lockTime}
-						maxAmount={MAX_LOCK_TIME}
+						maxAmount={(MAX_LOCK_TIME + 1).toString()}
 						disabled={hasLockedAmount}
 						legend={'min 1'}
 						error={lockTimeError}

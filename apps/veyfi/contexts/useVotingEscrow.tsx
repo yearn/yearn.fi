@@ -4,6 +4,7 @@ import {FixedNumber} from 'ethers';
 import useSWR from 'swr';
 import VEYFI_ABI from '@veYFI/utils/abi/veYFI.abi';
 import VEYFI_POSITION_HELPER_ABI from '@veYFI/utils/abi/veYFIPositionHelper.abi';
+import {VEYFI_ADDRESS, VEYFI_POSITION_HELPER_ADDRESS, YFI_ADDRESS} from '@veYFI/utils/constants';
 import {toMilliseconds} from '@veYFI/utils/time';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
@@ -58,15 +59,10 @@ const	VotingEscrowContext = createContext<TVotingEscrowContext>(defaultProps);
 export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({children}: {children: ReactElement}): ReactElement {
 	const {provider, address, isActive} = useWeb3();
 
-	// TODO: add to constants
-	const veYFIAddress = '0x90c1f9220d90d3966FbeE24045EDd73E1d588aD5';
-	const veYFIPositionHelper = '0x5A70cD937bA3Daec8188E937E243fFa43d6ECbe8';
-	const yfiAddress = '0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e';
-
 	const assetFetcher = useCallback(async (): Promise<TVotingEscrow> => {
 		const currentProvider = getProvider(1);
 		const ethcallProvider = await newEthCallProvider(currentProvider);
-		const veYFIContract = new Contract(veYFIAddress, VEYFI_ABI);
+		const veYFIContract = new Contract(VEYFI_ADDRESS, VEYFI_ABI);
 
 		const	[
 			token,
@@ -85,7 +81,7 @@ export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({chil
 		]) as [string, string, string, number, BigNumber, string];
 		
 		return ({
-			address: veYFIAddress,
+			address: VEYFI_ADDRESS,
 			token,
 			name,
 			symbol,
@@ -102,7 +98,7 @@ export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({chil
 		}
 		const currentProvider = getProvider(1);
 		const ethcallProvider = await newEthCallProvider(currentProvider);
-		const veYFIPositionHelperContract = new Contract(veYFIPositionHelper, VEYFI_POSITION_HELPER_ABI);
+		const veYFIPositionHelperContract = new Contract(VEYFI_POSITION_HELPER_ADDRESS, VEYFI_POSITION_HELPER_ABI);
 
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		const [positionDetails] = await ethcallProvider.tryAll([veYFIPositionHelperContract.getPositionDetails(address)]) as [any];
@@ -128,12 +124,12 @@ export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({chil
 		}
 		const	currentProvider = getProvider(1);
 		const	ethcallProvider = await newEthCallProvider(currentProvider);
-		const	yfiContract = new Contract(yfiAddress, ERC20_ABI);
+		const	yfiContract = new Contract(YFI_ADDRESS, ERC20_ABI);
 
-		const	[yfiAllowanceVeYFI] = await ethcallProvider.tryAll([yfiContract.allowance(address, veYFIAddress)]) as BigNumber[];
+		const	[yfiAllowanceVeYFI] = await ethcallProvider.tryAll([yfiContract.allowance(address, VEYFI_ADDRESS)]) as BigNumber[];
 
 		return ({
-			[allowanceKey(yfiAddress, veYFIAddress)]: yfiAllowanceVeYFI.toString()
+			[allowanceKey(YFI_ADDRESS, VEYFI_ADDRESS)]: yfiAllowanceVeYFI.toString()
 		});
 	}, [isActive, address]);
 	const	{data: allowances, mutate: refreshAllowances, isLoading: isLoadingAllowances} = useSWR(isActive && provider ? 'allowances' : null, allowancesFetcher, {shouldRetryOnError: false});
