@@ -5,13 +5,13 @@ import {getVotingPower} from '@veYFI/utils';
 import * as VotingEscrowActions from '@veYFI/utils/actions/votingEscrow';
 import {MAX_LOCK_TIME, MIN_LOCK_AMOUNT, MIN_LOCK_TIME} from '@veYFI/utils/constants';
 import {toRaw, toUnit} from '@veYFI/utils/format';
-import {fromWeeks, getTimeUntil, toSeconds, toTime, toWeeks} from '@veYFI/utils/time';
 import {validateAllowance, validateAmount} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {BN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
+import {fromWeeks, getTimeUntil, toSeconds, toTime, toWeeks} from '@yearn-finance/web-lib/utils/time';
 import {useWallet} from '@common/contexts/useWallet';
 import {useBalance} from '@common/hooks/useBalance';
 

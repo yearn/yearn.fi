@@ -5,11 +5,11 @@ import {getVotingPower} from '@veYFI/utils';
 import * as VotingEscrowActions from '@veYFI/utils/actions/votingEscrow';
 import {MAX_LOCK_TIME, MIN_LOCK_TIME} from '@veYFI/utils/constants';
 import {toUnit} from '@veYFI/utils/format';
-import {fromWeeks, getTimeUntil, toSeconds, toTime, toWeeks} from '@veYFI/utils/time';
 import {validateAmount} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {BN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {fromWeeks, getTimeUntil, toSeconds, toTime, toWeeks} from '@yearn-finance/web-lib/utils/time';
 import {useWallet} from '@common/contexts/useWallet';
 
 import {AmountInput} from '../../common/components/AmountInput';

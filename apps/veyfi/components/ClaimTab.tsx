@@ -2,10 +2,10 @@ import {useVotingEscrow} from '@veYFI/contexts/useVotingEscrow';
 import {useTransaction} from '@veYFI/hooks/useTransaction';
 import * as VotingEscrowActions from '@veYFI/utils/actions/votingEscrow';
 import {toUnit} from '@veYFI/utils/format';
-import {getTimeUntil} from '@veYFI/utils/time';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {BN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {getTimeUntil} from '@yearn-finance/web-lib/utils/time';
 import {useWallet} from '@common/contexts/useWallet';
 
 import {AmountInput} from '../../common/components/AmountInput';

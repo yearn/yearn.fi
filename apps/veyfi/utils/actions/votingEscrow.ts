@@ -5,7 +5,8 @@ import VEYFI_ABI from '../abi/veYFI.abi';
 
 import type {BigNumber} from 'ethers';
 import type {TAddress} from '@yearn-finance/web-lib/utils/address';
-import type {TRaw, TSeconds} from '@veYFI/types';
+import type {TSeconds} from '@yearn-finance/web-lib/utils/time';
+import type {TRaw} from '@veYFI/types';
 
 export async function approveLock(
 	provider: ethers.providers.Web3Provider,

@@ -1,8 +1,8 @@
 import {BN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {roundToWeek, toSeconds, YEAR} from '@yearn-finance/web-lib/utils/time';
 
-import {roundToWeek, toSeconds, YEAR} from './time';
-
-import type {TMilliseconds, TRaw, TSeconds} from '@veYFI/types';
+import type {TMilliseconds, TSeconds} from '@yearn-finance/web-lib/utils/time';
+import type {TRaw} from '@veYFI/types';
 
 const MAX_LOCK: TSeconds = toSeconds(roundToWeek(YEAR * 4));
 

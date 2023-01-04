@@ -5,10 +5,10 @@ import useSWR from 'swr';
 import VEYFI_ABI from '@veYFI/utils/abi/veYFI.abi';
 import VEYFI_POSITION_HELPER_ABI from '@veYFI/utils/abi/veYFIPositionHelper.abi';
 import {VEYFI_ADDRESS, VEYFI_POSITION_HELPER_ADDRESS, YFI_ADDRESS} from '@veYFI/utils/constants';
-import {toMilliseconds} from '@veYFI/utils/time';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
 import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
+import {toMilliseconds} from '@yearn-finance/web-lib/utils/time';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 
 import type {BigNumber} from 'ethers';

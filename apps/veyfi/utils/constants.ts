@@ -1,7 +1,7 @@
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 
 import type {TAddress} from '@yearn-finance/web-lib/utils/address';
-import type {TWeeks} from '@veYFI/types';
+import type {TWeeks} from '@yearn-finance/web-lib/utils/time';
 
 export const VEYFI_ADDRESS: TAddress = toAddress('0x90c1f9220d90d3966FbeE24045EDd73E1d588aD5');
 export const VEYFI_POSITION_HELPER_ADDRESS: TAddress = toAddress('0x5A70cD937bA3Daec8188E937E243fFa43d6ECbe8');
