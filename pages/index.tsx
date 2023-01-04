@@ -1,4 +1,5 @@
 import React, {useRef} from 'react';
+import Balancer from 'react-wrap-balancer';
 import Image from 'next/image';
 import Link from 'next/link';
 import {useClientEffect} from '@yearn-finance/web-lib/hooks/useClientEffect';
@@ -88,7 +89,7 @@ function	AppBox({app}: {app: typeof apps[0]}): ReactElement {
 				</div>
 				<div className={'pt-6 text-center'}>
 					<b className={'text-lg'}>{app.title}</b>
-					<p className={'whitespace-pre'}>{app.description}</p>
+					<p><Balancer>{app.description}</Balancer></p>
 				</div>
 			</div>
 		</Link>
@@ -200,8 +201,9 @@ function	Index(): ReactElement {
 					</p>
 				</div>
 				<div className={'mb-6'}>
-					<p className={'text-center text-sm text-neutral-500 md:whitespace-pre md:text-base'}>
-						{'Yearn is a decentralized suite of products helping individuals, DAOs, and other protocols\nearn yield on their digital assets.'}
+					
+					<p className={'text-center text-sm text-neutral-500 md:text-base'}>
+						<Balancer ratio={1}>{'Yearn is a decentralized suite of products helping individuals, DAOs, and other protocols\nearn yield on their digital assets.'}</Balancer>
 					</p>
 				</div>
 			</div>
