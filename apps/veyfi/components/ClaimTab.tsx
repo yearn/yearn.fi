@@ -1,10 +1,9 @@
 import {useVotingEscrow} from '@veYFI/contexts/useVotingEscrow';
 import {useTransaction} from '@veYFI/hooks/useTransaction';
 import * as VotingEscrowActions from '@veYFI/utils/actions/votingEscrow';
-import {toUnit} from '@veYFI/utils/format';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {BN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {BN, formatUnits} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {getTimeUntil} from '@yearn-finance/web-lib/utils/time';
 import {useWallet} from '@common/contexts/useWallet';
 
@@ -56,7 +55,7 @@ function ClaimTab(): ReactElement {
 				<div className={'grid grid-cols-1 gap-6 md:mt-14 md:grid-cols-2'}>
 					<AmountInput
 						label={'Unlocked YFI'}
-						amount={toUnit(claimableAmount, 18)}
+						amount={formatUnits(claimableAmount, 18)}
 						disabled
 					/>
 					<Button

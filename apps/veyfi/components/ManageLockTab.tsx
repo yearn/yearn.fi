@@ -4,11 +4,10 @@ import {useTransaction} from '@veYFI/hooks/useTransaction';
 import {getVotingPower} from '@veYFI/utils';
 import * as VotingEscrowActions from '@veYFI/utils/actions/votingEscrow';
 import {MAX_LOCK_TIME, MIN_LOCK_TIME} from '@veYFI/utils/constants';
-import {toUnit} from '@veYFI/utils/format';
 import {validateAmount} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {BN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {BN, formatUnits} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {fromWeeks, getTimeUntil, toSeconds, toTime, toWeeks} from '@yearn-finance/web-lib/utils/time';
 import {useWallet} from '@common/contexts/useWallet';
 
@@ -103,7 +102,7 @@ function ManageLockTab(): ReactElement {
 				<div className={'grid grid-cols-1 gap-6 md:grid-cols-2 md:pb-7'}>
 					<AmountInput
 						label={'Total veYFI'}
-						amount={toUnit(votingPower, 18)}
+						amount={formatUnits(votingPower, 18)}
 						disabled
 					/>
 					<Button
@@ -130,7 +129,7 @@ function ManageLockTab(): ReactElement {
 				<div className={'grid grid-cols-1 gap-6 md:grid-cols-2'}>
 					<AmountInput
 						label={'veYFI you have'}
-						amount={toUnit(positions?.deposit?.balance, 18)}
+						amount={formatUnits(positions?.deposit?.balance, 18)}
 						disabled
 					/>
 					<AmountInput
@@ -142,7 +141,7 @@ function ManageLockTab(): ReactElement {
 				<div className={'grid grid-cols-1 gap-6 md:grid-cols-2'}>
 					<AmountInput
 						label={'YFI you get'}
-						amount={toUnit(positions?.withdrawable, 18)}
+						amount={formatUnits(positions?.withdrawable, 18)}
 						legend={`Penalty: %${((positions?.penaltyRatio ?? 0) * 100).toFixed(4).toString()}`}
 						disabled
 					/>

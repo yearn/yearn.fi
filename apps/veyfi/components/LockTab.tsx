@@ -4,12 +4,12 @@ import {useTransaction} from '@veYFI/hooks/useTransaction';
 import {getVotingPower} from '@veYFI/utils';
 import * as VotingEscrowActions from '@veYFI/utils/actions/votingEscrow';
 import {MAX_LOCK_TIME, MIN_LOCK_AMOUNT, MIN_LOCK_TIME} from '@veYFI/utils/constants';
-import {toRaw, toUnit} from '@veYFI/utils/format';
+import {toRaw} from '@veYFI/utils/format';
 import {validateAllowance, validateAmount} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {BN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {BN, formatUnits} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {fromWeeks, getTimeUntil, toSeconds, toTime, toWeeks} from '@yearn-finance/web-lib/utils/time';
 import {useWallet} from '@common/contexts/useWallet';
@@ -173,7 +173,7 @@ function LockTab(): ReactElement {
 				<div className={'grid grid-cols-1 gap-6 md:grid-cols-2'}>
 					<AmountInput
 						label={'Total veYFI'}
-						amount={toUnit(votingPower, 18)}
+						amount={formatUnits(votingPower, 18)}
 						disabled
 					/>
 					<Button
