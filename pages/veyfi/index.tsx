@@ -3,8 +3,9 @@ import {ClaimTab} from '@veYFI/components/ClaimTab';
 import {LockTab} from '@veYFI/components/LockTab';
 import {ManageLockTab} from '@veYFI/components/ManageLockTab';
 import {useVotingEscrow} from '@veYFI/contexts/useVotingEscrow';
-import {formatAmount, toUnit} from '@veYFI/utils/format';
 import Wrapper from '@veYFI/Wrapper';
+import {BN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {SummaryData} from '@common/components/SummaryData';
 import {Tabs} from '@common/components/Tabs';
 
@@ -23,8 +24,8 @@ function Index(): ReactElement {
 			<div className={'my-14 w-full'}>
 				<SummaryData
 					items={[
-						{label: 'Total Locked YFI', content: formatAmount(toUnit(votingEscrow?.supply, 18), 4)},
-						{label: 'Your Locked YFI', content: formatAmount(toUnit(positions?.deposit?.underlyingBalance, 18), 4)},
+						{label: 'Total Locked YFI', content: formatAmount(formatToNormalizedValue(BN(votingEscrow?.supply), 18), 4)},
+						{label: 'Your Locked YFI', content: formatAmount(formatToNormalizedValue(BN(positions?.deposit?.underlyingBalance), 18), 4)},
 						{label: 'Expiration for the lock', content: positions?.unlockTime ? new Date(positions.unlockTime).toLocaleDateString('en-CA') : '-'}
 					]} />
 			</div>
