@@ -1,17 +1,9 @@
 import {ethers} from 'ethers';
+import {ERC20_ABI} from '@yearn-finance/web-lib/utils/abi';
+
+import VEYFI_ABI from '../abi/veYFI.abi';
 
 import type {BigNumber} from 'ethers';
-
-const VotingEscrowAbi = [
-	'function locked(address arg0) public view returns (tuple(uint256 amount, uint256 end))',
-	'function modify_lock(uint256 amount, uint256 unlock_time, address user) public returns (tuple(uint256 amount, uint256 end))',
-	'function withdraw() public returns (tuple(uint256 amount, uint256 penalty))'
-];
-
-const TokenAbi = [
-	'function approve(address _spender, uint256 _value) public',
-	'function allowance(address _owner, address _spender) public view returns (uint256)'
-];
 
 export async function approveLock(
 	provider: ethers.providers.Web3Provider,
@@ -21,7 +13,7 @@ export async function approveLock(
 	amount?: string
 ): Promise<ethers.providers.TransactionResponse> {
 	const signer = provider.getSigner(accountAddress);
-	const tokenContract = new ethers.Contract(tokenAddress, TokenAbi, signer);
+	const tokenContract = new ethers.Contract(tokenAddress, ERC20_ABI, signer);
 	return await tokenContract.approve(votingEscrowAddress, amount ?? ethers.constants.MaxUint256.toString());
 }
 
@@ -33,7 +25,7 @@ export async function lock(
 	time: number
 ): Promise<ethers.providers.TransactionResponse> {
 	const signer = provider.getSigner(accountAddress);
-	const votingEscrowContract = new ethers.Contract(votingEscrowAddress, VotingEscrowAbi, signer);
+	const votingEscrowContract = new ethers.Contract(votingEscrowAddress, VEYFI_ABI, signer);
 	return await votingEscrowContract.modify_lock(amount, time, accountAddress);
 }
 
@@ -44,7 +36,7 @@ export async function increaseLockAmount(
 	amount: string
 ): Promise<ethers.providers.TransactionResponse> {
 	const signer = provider.getSigner(accountAddress);
-	const votingEscrowContract = new ethers.Contract(votingEscrowAddress, VotingEscrowAbi, signer);
+	const votingEscrowContract = new ethers.Contract(votingEscrowAddress, VEYFI_ABI, signer);
 	return await votingEscrowContract.modify_lock(amount, '0', accountAddress);
 
 }
@@ -56,7 +48,7 @@ export async function extendLockTime(
 	time: number
 ): Promise<ethers.providers.TransactionResponse> {
 	const signer = provider.getSigner(accountAddress);
-	const votingEscrowContract = new ethers.Contract(votingEscrowAddress, VotingEscrowAbi, signer);
+	const votingEscrowContract = new ethers.Contract(votingEscrowAddress, VEYFI_ABI, signer);
 	return await votingEscrowContract.modify_lock('0', time, accountAddress);
 
 }
@@ -67,7 +59,7 @@ export async function withdrawUnlocked(
 	votingEscrowAddress: string
 ): Promise<ethers.providers.TransactionResponse> {
 	const signer = provider.getSigner(accountAddress);
-	const votingEscrowContract = new ethers.Contract(votingEscrowAddress, VotingEscrowAbi, signer);
+	const votingEscrowContract = new ethers.Contract(votingEscrowAddress, VEYFI_ABI, signer);
 	const {penalty} = await votingEscrowContract.callStatic.withdraw();
 	if ((penalty as BigNumber).gt(0)) {
 		throw new Error('Tokens are not yet unlocked');
@@ -82,7 +74,7 @@ export async function withdrawLocked(
 	votingEscrowAddress: string
 ): Promise<ethers.providers.TransactionResponse> {
 	const signer = provider.getSigner(accountAddress);
-	const votingEscrowContract = new ethers.Contract(votingEscrowAddress, VotingEscrowAbi, signer);
+	const votingEscrowContract = new ethers.Contract(votingEscrowAddress, VEYFI_ABI, signer);
 	return await votingEscrowContract.withdraw();
 
 }
