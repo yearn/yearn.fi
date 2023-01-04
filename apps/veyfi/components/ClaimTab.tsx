@@ -12,6 +12,7 @@ import {AmountInput} from '../../common/components/AmountInput';
 
 import type {ethers} from 'ethers';
 import type {ReactElement} from 'react';
+import type {TAddress} from '@yearn-finance/web-lib/utils/address';
 
 function ClaimTab(): ReactElement {
 	const {provider, address} = useWeb3();
@@ -21,6 +22,7 @@ function ClaimTab(): ReactElement {
 	const [withdrawUnlocked, withdrawUnlockedStatus] = useTransaction(VotingEscrowActions.withdrawUnlocked, refreshData);
 
 	const web3Provider = provider as ethers.providers.Web3Provider;
+	const userAddress = address as TAddress;
 	const hasLockedAmount = BN(positions?.deposit?.balance).gt(0);
 	const timeUntilUnlock = positions?.unlockTime ? getTimeUntil(positions?.unlockTime) : 0;
 	const isClaimable = hasLockedAmount && !timeUntilUnlock;
@@ -32,7 +34,7 @@ function ClaimTab(): ReactElement {
 		}
 		withdrawUnlocked(
 			web3Provider,
-			address,
+			userAddress,
 			votingEscrow.address
 		);
 	};
