@@ -4,7 +4,7 @@ import {useTransaction} from '@veYFI/hooks/useTransaction';
 import {getVotingPower} from '@veYFI/utils';
 import * as VotingEscrowActions from '@veYFI/utils/actions/votingEscrow';
 import {MAX_LOCK_TIME, MIN_LOCK_TIME} from '@veYFI/utils/constants';
-import {validateAmount} from '@veYFI/utils/validations';
+import {validateTime} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {BN, formatUnits} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -42,9 +42,9 @@ function ManageLockTab(): ReactElement {
 		return willExtendLock ? getVotingPower(positions?.deposit?.underlyingBalance,  newUnlockTime) : positions?.deposit?.balance;
 	}, [positions?.deposit, newUnlockTime, willExtendLock]);
 	
-	const {isValid: isValidLockTime, error: lockTimeError} = validateAmount({
-		amount: votingEscrow ? lockTime : MIN_LOCK_TIME.toString(),
-		minAmountAllowed: MIN_LOCK_TIME.toString()
+	const {isValid: isValidLockTime, error: lockTimeError} = validateTime({
+		amount: toTime(votingEscrow ? lockTime : MIN_LOCK_TIME),
+		minAmountAllowed: MIN_LOCK_TIME
 	});
 
 	const executeExtendLockTime = (): void => {
@@ -90,10 +90,8 @@ function ManageLockTab(): ReactElement {
 					<AmountInput
 						label={'Increase lock period (weeks)'}
 						amount={lockTime}
-						onAmountChange={(amount): unknown => set_lockTime(Math.floor(toTime(amount)).toString())}
-						maxAmount={
-							BN(MAX_LOCK_TIME).sub(weeksToUnlock).gt(0) ? BN(MAX_LOCK_TIME).sub(weeksToUnlock).toString() : '0'
-						}
+						onAmountChange={(amount): void => set_lockTime(Math.floor(toTime(amount)).toString())}
+						onMaxAmountClick={(): void => set_lockTime(Math.floor(toTime(BN(MAX_LOCK_TIME).sub(weeksToUnlock).gt(0) ? BN(MAX_LOCK_TIME).sub(weeksToUnlock).toString() : '0')).toString())}
 						disabled={!hasLockedAmount}
 						error={lockTimeError}
 						legend={'min 1'}
