@@ -6,6 +6,7 @@ import {useVotingEscrow} from '@veYFI/contexts/useVotingEscrow';
 import Wrapper from '@veYFI/Wrapper';
 import {BN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
+import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
 import {SummaryData} from '@common/components/SummaryData';
 import {Tabs} from '@common/components/Tabs';
 
@@ -26,7 +27,7 @@ function Index(): ReactElement {
 					items={[
 						{label: 'Total Locked YFI', content: formatAmount(formatToNormalizedValue(BN(votingEscrow?.supply), 18), 4)},
 						{label: 'Your Locked YFI', content: formatAmount(formatToNormalizedValue(BN(positions?.deposit?.underlyingBalance), 18), 4)},
-						{label: 'Expiration for the lock', content: positions?.unlockTime ? new Date(positions.unlockTime).toLocaleDateString('en-CA') : '-'}
+						{label: 'Expiration for the lock', content: positions?.unlockTime ? formatDate(positions.unlockTime, false, '-') : '-'}
 					]} />
 			</div>
 
