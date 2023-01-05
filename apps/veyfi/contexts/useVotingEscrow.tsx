@@ -22,28 +22,28 @@ export type TVotingEscrow = {
 	name: string,
 	symbol: string,
 	decimals: number,
-	supply: string,
+	supply: BigNumber,
 	rewardPool: TAddress,
 }
 
 export type TPosition = {
-	balance: string,
-	underlyingBalance: string,
+	balance: BigNumber,
+	underlyingBalance: BigNumber,
 }
 
 export type TVotingEscrowPosition = {
 	deposit?: TPosition,
 	// yield?: TPosition,
 	unlockTime?: number,
-	penalty?: string,
+	penalty?: BigNumber,
 	penaltyRatio?: number,
-	withdrawable?: string,
+	withdrawable?: BigNumber,
 }
 
 export type	TVotingEscrowContext = {
 	votingEscrow: TVotingEscrow | undefined,
 	positions: TVotingEscrowPosition | undefined,
-	allowances: TDict<string>,
+	allowances: TDict<BigNumber>,
 	isLoading: boolean,
 	refresh: () => void,
 }
@@ -86,7 +86,7 @@ export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({chil
 			name,
 			symbol,
 			decimals,
-			supply: supply.toString(),
+			supply,
 			rewardPool
 		});
 	}, []);
@@ -104,21 +104,21 @@ export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({chil
 		const [positionDetails] = await ethcallProvider.tryAll([veYFIPositionHelperContract.getPositionDetails(address)]) as [any];
 		
 		const depositPosition: TPosition = {
-			balance: (positionDetails.balance as BigNumber).toString(),
-			underlyingBalance: (positionDetails.depositAmount as BigNumber).toString()
+			balance: positionDetails.balance,
+			underlyingBalance: positionDetails.depositAmount
 		};
 
 		return {
 			deposit: depositPosition,
 			unlockTime: toMilliseconds((positionDetails.unlockTime as BigNumber).toNumber()),
-			penalty: (positionDetails.penalty as BigNumber).toString(),
+			penalty: positionDetails.penalty,
 			penaltyRatio: (positionDetails.depositAmount as BigNumber).gt(0) ? FixedNumber.from(positionDetails.penalty).divUnsafe(FixedNumber.from(positionDetails.depositAmount)).toUnsafeFloat() : 0,
-			withdrawable: (positionDetails.withdrawable as BigNumber).toString()
+			withdrawable: positionDetails.withdrawable
 		};
 	}, [isActive, address]);
 	const {data: positions, mutate: refreshPositions, isLoading: isLoadingPositions} = useSWR(isActive && provider ? 'positions' : null, positionsFetcher, {shouldRetryOnError: false});
 
-	const allowancesFetcher = useCallback(async (): Promise<TDict<string>> => {
+	const allowancesFetcher = useCallback(async (): Promise<TDict<BigNumber>> => {
 		if (!isActive || !address) {
 			return {};
 		}
@@ -129,7 +129,7 @@ export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({chil
 		const	[yfiAllowanceVeYFI] = await ethcallProvider.tryAll([yfiContract.allowance(address, VEYFI_ADDRESS)]) as BigNumber[];
 
 		return ({
-			[allowanceKey(YFI_ADDRESS, VEYFI_ADDRESS)]: yfiAllowanceVeYFI.toString()
+			[allowanceKey(YFI_ADDRESS, VEYFI_ADDRESS)]: yfiAllowanceVeYFI
 		});
 	}, [isActive, address]);
 	const	{data: allowances, mutate: refreshAllowances, isLoading: isLoadingAllowances} = useSWR(isActive && provider ? 'allowances' : null, allowancesFetcher, {shouldRetryOnError: false});

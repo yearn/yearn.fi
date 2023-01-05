@@ -13,7 +13,7 @@ import {useWallet} from '@common/contexts/useWallet';
 
 import {AmountInput} from '../../common/components/AmountInput';
 
-import type {ethers} from 'ethers';
+import type {BigNumber, ethers} from 'ethers';
 import type {ReactElement} from 'react';
 import type {TAddress} from '@yearn-finance/web-lib/utils/address';
 
@@ -35,16 +35,16 @@ function ManageLockTab(): ReactElement {
 	const newUnlockTime = toTime(positions?.unlockTime) + fromWeeks(toTime(lockTime));
 	const hasPenalty = BN(positions?.penalty).gt(0);
 
-	const votingPower = useMemo((): string => {
+	const votingPower = useMemo((): BigNumber => {
 		if(!positions?.deposit || !newUnlockTime) {
-			return '0';
+			return BN(0);
 		}
-		return willExtendLock ? getVotingPower(positions?.deposit?.underlyingBalance,  newUnlockTime) : positions?.deposit?.balance;
+		return willExtendLock ? getVotingPower(positions?.deposit?.underlyingBalance,  newUnlockTime) : BN(positions?.deposit?.balance);
 	}, [positions?.deposit, newUnlockTime, willExtendLock]);
 	
 	const {isValid: isValidLockTime, error: lockTimeError} = validateAmount({
-		amount: votingEscrow ? lockTime : MIN_LOCK_TIME.toString(),
-		minAmountAllowed: MIN_LOCK_TIME.toString()
+		amount: lockTime,
+		minAmountAllowed: MIN_LOCK_TIME
 	});
 
 	const executeExtendLockTime = (): void => {

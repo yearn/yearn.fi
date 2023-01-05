@@ -1,9 +1,9 @@
 import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
 import {BN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 
+import type {BigNumber} from 'ethers';
 import type {TAddress} from '@yearn-finance/web-lib/utils/address';
 import type {TDict} from '@yearn-finance/web-lib/utils/types';
-import type {TAmount, TRaw} from '@veYFI/types';
 
 export type TValidationResponse = {
     isValid?: boolean;
@@ -13,8 +13,8 @@ export type TValidationResponse = {
 export type TValidateAllowanceProps = {
     tokenAddress: TAddress;
     spenderAddress: TAddress;
-    allowances: TDict<TRaw>;
-    amount: TRaw;
+    allowances: TDict<BigNumber>;
+    amount: BigNumber;
 }
 
 export function validateAllowance(props: TValidateAllowanceProps): TValidationResponse {
@@ -29,17 +29,17 @@ export function validateAllowance(props: TValidateAllowanceProps): TValidationRe
 }
 
 export type TValidateAmountProps = {
-    amount: TAmount;
-    balance?: TAmount;
-    minAmountAllowed?: TAmount;
-    maxAmountAllowed?: TAmount;
+    amount: string | number;
+    balance?: string | number;
+    minAmountAllowed?: string | number;
+    maxAmountAllowed?: string | number;
 	shouldDisplayMin?: boolean;
   }
   
 export function validateAmount(props: TValidateAmountProps): TValidationResponse {
 	const {amount, balance, minAmountAllowed, maxAmountAllowed, shouldDisplayMin} = props;
 	const amountNumber = Number(amount);
-
+	
 	if (amountNumber === 0) {
 		return {};
 	}
@@ -48,16 +48,16 @@ export function validateAmount(props: TValidateAmountProps): TValidationResponse
 		return {error: 'Invalid amount'};
 	}
   
-	if (maxAmountAllowed && amountNumber > Number(maxAmountAllowed)) {
+	if (maxAmountAllowed !== undefined && amountNumber > Number(maxAmountAllowed)) {
 		return {error: 'Exceeded max amount'};
 	}
   
-	if (minAmountAllowed && amountNumber < Number(minAmountAllowed)) {
-		return {error: `Amount under minimum allowed ${shouldDisplayMin && minAmountAllowed ? `(min ${minAmountAllowed})` : ''}`};
+	if (minAmountAllowed !== undefined && amountNumber < Number(minAmountAllowed)) {
+		return {error: `Amount under minimum allowed ${shouldDisplayMin && minAmountAllowed !== undefined  ? `(min ${minAmountAllowed})` : ''}`};
 	}
   
-	if (balance && amountNumber > Number(balance)) {
-		return {error: `Insufficient balance ${shouldDisplayMin && minAmountAllowed ? `(min ${minAmountAllowed})` : ''}`};
+	if (balance !== undefined && amountNumber > Number(balance)) {
+		return {error: `Insufficient balance ${shouldDisplayMin && minAmountAllowed !== undefined  ? `(min ${minAmountAllowed})` : ''}`};
 	}
   
 	return {isValid: true};

@@ -1,7 +1,7 @@
 import type {ReactElement} from 'react';
 
 type TAmountInputProps = {
-	amount?: string;
+	amount: string | number;
 	onAmountChange?: (amount: string) => void;
 	maxAmount?: string;
 	maxLabel?: string;
