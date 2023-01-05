@@ -10,6 +10,7 @@ import type {TYearnVault} from '@common/types/yearn';
 const GraphForVaultEarnings = dynamic(async (): Promise<any> => import('@vaults/components/graphs/GraphForVaultEarnings'), {ssr: false}) as any;
 
 function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYearnVault, harvestData: TGraphData[]}): ReactElement {
+	console.log(currentVault);
 	return (
 		<div className={'grid grid-cols-1 gap-10 bg-neutral-100 p-4 md:grid-cols-2 md:gap-32 md:p-8'}>
 			<div className={'col-span-1 w-full space-y-6'}>
@@ -72,13 +73,13 @@ function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYearnVau
 						<div className={'flex flex-col space-y-0 md:space-y-2'}>
 							<p className={'text-xxs text-neutral-600 md:text-xs'}>{'Management fee'}</p>
 							<b className={'font-number text-xl text-neutral-900'}>
-								{formatPercent((currentVault?.apy?.fees?.management || 0) * 100, 0)}
+								{formatPercent((currentVault?.details?.managementFee || 0) / 100, 0)}
 							</b>
 						</div>
 						<div className={'flex flex-col space-y-0 md:space-y-2'}>
 							<p className={'text-xxs text-neutral-600 md:text-xs'}>{'Performance fee'}</p>
 							<b className={'font-number text-xl text-neutral-500'}>
-								{formatPercent((currentVault?.apy?.fees?.performance || 0) * 100, 0)}
+								{formatPercent((currentVault?.details?.performanceFee || 0) / 100, 0)}
 							</b>
 						</div>
 					</div>
