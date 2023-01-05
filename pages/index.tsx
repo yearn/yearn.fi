@@ -189,8 +189,8 @@ function	TextAnimation(): ReactElement {
 function	Index(): ReactElement {
 	return (
 		<>
-			<div className={'mx-auto mt-6 mb-10 flex w-full max-w-6xl flex-col items-center justify-center md:mt-20 md:mb-14'}>
-				<div className={'relative h-12 w-[300px] md:h-[104px] md:w-[600px]'}>
+			<div className={'mx-auto mt-6 mb-10 flex flex-col justify-center md:mt-20 md:mb-14'}>
+				<div className={'relative h-12 w-[300px] self-center md:h-[104px] md:w-[600px]'}>
 					<TextAnimation />
 				</div>
 				<div className={'my-8'}>
@@ -203,7 +203,7 @@ function	Index(): ReactElement {
 				<div className={'mb-6'}>
 					
 					<p className={'text-center text-sm text-neutral-500 md:text-base'}>
-						<Balancer ratio={1}>{'Yearn is a decentralized suite of products helping individuals, DAOs, and other protocols\nearn yield on their digital assets.'}</Balancer>
+						<Balancer>{'Yearn is a decentralized suite of products helping individuals, DAOs, and other protocols\nearn yield on their digital assets.'}</Balancer>
 					</p>
 				</div>
 			</div>
