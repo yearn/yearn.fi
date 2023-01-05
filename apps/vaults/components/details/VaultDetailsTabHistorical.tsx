@@ -30,6 +30,7 @@ function	VaultDetailsHistorical({currentVault, harvestData}: {currentVault: TYea
 				where: {vault: "${currentVault.address.toLowerCase()}"}
 				orderBy: timestamp
 				orderDirection: asc
+				first: 1000
 			) {
 				pricePerShare
 				totalValueLockedUSD
