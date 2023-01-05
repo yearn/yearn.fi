@@ -5,6 +5,9 @@ import type {TAddress} from '@yearn-finance/web-lib/utils/address';
 import type {TDict} from '@yearn-finance/web-lib/utils/types';
 import type {EXTERNAL_SERVICE_PROVIDER} from '@vaults/utils/migrationTable';
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
+export type VoidPromiseFunction = () => Promise<void>
+
 export type	TClaimable = {
 	raw: BigNumber,
 	normalized: number,
@@ -47,6 +50,31 @@ export type TDropdownProps = {
 export type TDropdownItemProps = {
 	option: TDropdownOption;
 	balanceSource?: TDict<TBalanceData>;
+};
+
+
+
+export type TDropdownGaugeOption = {
+	label: string;
+	icon?: ReactElement;
+	value: {
+		name: string,
+		tokenAddress: TAddress,
+		poolAddress: TAddress,
+		gaugeAddress: TAddress,
+	};
+};
+export type TDropdownGaugeProps = {
+	options: TDropdownGaugeOption[];
+	selected?: TDropdownGaugeOption;
+	placeholder?: string;
+	onSelect:
+		| React.Dispatch<React.SetStateAction<TDropdownGaugeOption>>
+		| ((option: TDropdownGaugeOption) => void);
+};
+
+export type TDropdownGaugeItemProps = {
+	option: TDropdownGaugeOption;
 };
 
 export type	TNormalizedBN = {

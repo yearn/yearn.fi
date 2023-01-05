@@ -1,3 +1,22 @@
+# 0.1.12
+- Add a `mutateVaultList` function to ask to refresh the vaultList in the `useYearn` context
+- Add a `VoidPromiseFunction` type to mimic the `VoidFunction` type but for a function returning a `Promise`. TODO: Move to web-lib.
+- Tweek the `useAsync` function to fix some issues with the dependencies and have an internal `isLoading` state. Add a mutate callback.
+- Bump web-lib to `0.17.81` to get latest changes
+- In the `Factory` page, add the `fetchGaugeDisplayData` to fetch the name and symbol of the gauges in order to be able to compute the actual final name and symbol for that vault.
+- Enable the factory gauge in the dropdown
+
+# 0.1.11
+- Add a `GaugeDropdown` component using Combobox. To replicate to the default `TokenDropdown` component.
+- Fix background color for the inputs in the `vaults/[chainID]/[address]` page from `neutral-100` to `neutral-0`
+- Add the `Factory` nav item for the Vaults app
+- Remove unused `apps/vaults/components/list/MigratableVaultListRow.tsx`
+- Remove unused `apps/vaults/components/list/MigratableVaultsListEmpty.tsx`
+- Merge `apps/vaults/components/list/VaultListExternalMigrationEmpty.tsx` in `apps/vaults/components/list/VaultListEmpty.tsx`
+- Create an `useAsync` hook to be able to use it like we could use `useSWR` to get some values. It require a `callbackFunction` which will be triggered and a `defaultValue`, which will be returned until the desired value from the `callbackFunction` is loaded.
+- Add the possibility to create a Vault from the Factory page with the `createVaultFromFactory` action and the Factory page
+- Add the `VAULT_FACTORY_ADDRESS` to address [`0x21b1FC8A52f179757bf555346130bF27c0C2A17A`](https://etherscan.io/address/0x21b1FC8A52f179757bf555346130bF27c0C2A17A)
+
 # 0.1.10
 - Add `.env` example and update `readme` from @patcito
 - Fix typos from @engn33r

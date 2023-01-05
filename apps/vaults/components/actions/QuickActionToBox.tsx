@@ -50,7 +50,7 @@ export function	QuickActionToBox({
 						selected={selectedOptionTo}
 						onSelect={(option: TDropdownOption): void => onSelectTo(option)} />
 				) : (
-					<div className={'flex h-10 w-full items-center justify-between bg-neutral-100 px-2 text-base text-neutral-900 md:px-3'}>
+					<div className={'flex h-10 w-full items-center justify-between bg-neutral-0 px-2 text-base text-neutral-900 md:px-3'}>
 						<div className={'relative flex flex-row items-center'}>
 							<div key={selectedOptionTo?.value} className={'h-6 w-6 rounded-full'}>
 								{selectedOptionTo?.icon}

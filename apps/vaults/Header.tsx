@@ -10,6 +10,7 @@ import type {TMenu} from '@yearn-finance/web-lib/layouts/Header.next';
 export 	const	MenuVaultsOptions: TMenu[] = [
 	{path: '/vaults', label: 'Vaults'},
 	// {path: '/vaults/migrate', label: 'Migrate'},
+	{path: '/vaults/factory', label: 'Factory'},
 	{path: '/vaults/about', label: 'About'}
 ];
 
