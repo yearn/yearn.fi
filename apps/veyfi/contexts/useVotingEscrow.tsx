@@ -52,8 +52,7 @@ const defaultProps: TVotingEscrowContext = {
 	positions: undefined,
 	allowances: {},
 	isLoading: true,
-	// eslint-disable-next-line @typescript-eslint/no-empty-function
-	refresh: (): void => {}
+	refresh: (): unknown => ({})
 };
 
 const	VotingEscrowContext = createContext<TVotingEscrowContext>(defaultProps);
