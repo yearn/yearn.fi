@@ -180,26 +180,24 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 				decimals: currentVault?.decimals || 18
 			});
 
-			// Set the amount to max possible value if depositing, or to 0 if withdrawing
-			let _amount = DefaultTNormalizedBN;
-			const	vaultDepositLimit = formatBN(currentVault.details.depositLimit) || ethers.constants.Zero;
-			const	userBalance = balances?.[toAddress(_selectedFrom?.value)]?.raw || ethers.constants.Zero;
-			console.log(userBalance);
-			if (userBalance.gt(vaultDepositLimit)) {
-				_amount = (toNormalizedBN(vaultDepositLimit, currentVault.token.decimals));
-			} 
-			_amount = (toNormalizedBN(userBalance, currentVault.token.decimals));
-			
-
 			// Update the state
 			performBatchedUpdates((): void => {
 				set_selectedOptionFrom(_selectedFrom);
 				set_selectedOptionTo(_selectedTo);
-				set_amount(isDepositing ? _amount : DefaultTNormalizedBN);
 			});
 		}
 	}, [selectedOptionFrom, selectedOptionTo, currentVault, safeChainID, isDepositing, balances]);
-	
+
+	/* 🔵 - Yearn Finance **************************************************************************
+	** When the selectedOptionFrom change, we can also update the amount to the max possible value
+	** but only if the user is depositing. Otherwise, we set the amount to 0.
+	**********************************************************************************************/
+	useEffect((): void => {
+		if (currentVault && selectedOptionFrom) {
+			set_amount(isDepositing ? maxDepositPossible : DefaultTNormalizedBN);
+		}
+	}, [currentVault, isDepositing, maxDepositPossible, selectedOptionFrom]);
+
 	/* 🔵 - Yearn Finance ******************************************************
 	**	Setup and render the Context provider to use in the app.
 	***************************************************************************/
