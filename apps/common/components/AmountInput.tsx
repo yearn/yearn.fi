@@ -17,7 +17,6 @@ function AmountInput({
 	amount,
 	onAmountChange,
 	maxAmount,
-	maxLabel = 'Max',
 	label,
 	placeholder,
 	legend,
@@ -47,7 +46,7 @@ function AmountInput({
 					<button
 						onClick={onAmountChange ? (): void => onAmountChange(maxAmount.toString()) : undefined}
 						className={'absolute right-2 ml-2 h-6 cursor-pointer border-none bg-neutral-900 px-2 py-1 text-xs text-neutral-0 transition-colors hover:bg-neutral-700'}>
-						{maxLabel}
+						{'Max'}
 					</button>
 				)}
 			</div>
