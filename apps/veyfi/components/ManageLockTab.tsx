@@ -57,15 +57,15 @@ function ManageLockTab(): ReactElement {
 		}
 		extendLockTime(web3Provider, userAddress, votingEscrow.address, toSeconds(newUnlockTime));
 	};
-	
+
 	const executeWithdrawLocked = (): void => {
 		if (!votingEscrow  || !userAddress) {
 			return;
 		}
 		withdrawLocked(web3Provider, userAddress, votingEscrow.address);
 	};
-	
-	return ( 
+
+	return (
 		<div className={'grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-16'}>
 			<div className={'col-span-1 grid w-full gap-6'}>
 				<div className={'md:min-h-[104px]'}>
