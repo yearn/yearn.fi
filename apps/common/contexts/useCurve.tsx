@@ -1,5 +1,6 @@
 import React, {createContext, useContext, useMemo} from 'react';
 import useSWR from 'swr';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {baseFetcher, curveFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 
 import type {SWRResponse} from 'swr';
@@ -54,14 +55,14 @@ export const CurveContextApp = ({children}: {children: React.ReactElement}): Rea
 	) as unknown as SWRResponse<TDict<TCoinGeckoPrices>>;
 
 	const	{data: gaugesWrapper} = useSWR(
-		'https://api.curve.fi/api/getGauges?blockchainId=ethereum',
+		'https://api.curve.fi/api/getAllGauges?blockchainId=ethereum',
 		curveFetcher,
 		{revalidateOnFocus: false}
-	) as SWRResponse<{gauges: TDict<TCurveGauges>}>;
+	) as SWRResponse<TDict<TCurveGauges>>;
 
 	const	gauges = useMemo((): TCurveGauges[] => {
 		const	_gaugesForMainnet: TCurveGauges[] = [];
-		for (const gauge of Object.values(gaugesWrapper?.gauges || {})) {
+		for (const gauge of Object.values(gaugesWrapper || {})) {
 			const	currentGauge = gauge as TCurveGauges;
 			if (currentGauge.is_killed) {
 				continue;
@@ -69,6 +70,12 @@ export const CurveContextApp = ({children}: {children: React.ReactElement}): Rea
 			if (currentGauge.side_chain) {
 				continue;
 			}
+
+			const addressPart = /\([^()]*\)/;
+			currentGauge.name = currentGauge.name.replace(addressPart, '');
+			currentGauge.swap_token = toAddress(currentGauge.swap_token);
+			currentGauge.gauge = toAddress(currentGauge.gauge);
+			currentGauge.swap = toAddress(currentGauge.swap);
 			_gaugesForMainnet.push(currentGauge);
 		}
 		return _gaugesForMainnet;
