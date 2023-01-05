@@ -63,7 +63,7 @@ function	VaultDetailsQuickActionsFrom(): ReactElement {
 					className={'hidden text-base text-neutral-600 md:inline'}>
 					{'Amount'}
 				</label>
-				<div className={'flex h-10 items-center bg-neutral-100 p-2'}>
+				<div className={'flex h-10 items-center bg-neutral-0 p-2'}>
 					<div className={'flex h-10 w-full flex-row items-center justify-between py-4 px-0'}>
 						<input
 							id={'fromAmount'}

@@ -7,10 +7,10 @@ import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {useWallet} from '@common/contexts/useWallet';
-import {DefaultTNormalizedBN} from '@common/utils';
+import {DefaultTNormalizedBN, toNormalizedBN} from '@common/utils';
 
 import type {ReactNode} from 'react';
 import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
@@ -77,16 +77,9 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 		const	vaultDepositLimit = formatBN(currentVault.details.depositLimit) || ethers.constants.Zero;
 		const	userBalance = balances?.[toAddress(selectedOptionFrom?.value)]?.raw || ethers.constants.Zero;
 		if (userBalance.gt(vaultDepositLimit)) {
-			return ({
-				raw: vaultDepositLimit,
-				normalized: formatToNormalizedValue(vaultDepositLimit, currentVault.token.decimals)
-			});
+			return (toNormalizedBN(vaultDepositLimit, currentVault.token.decimals ));
 		} 
-		return ({
-			raw: userBalance,
-			normalized: balances?.[toAddress(selectedOptionFrom?.value)]?.normalized || 0
-		});
-		
+		return (toNormalizedBN(userBalance, currentVault.token.decimals ));
 	}, [balances, currentVault.details.depositLimit, currentVault.token.decimals, selectedOptionFrom?.value]);
 
 	const currentSolver = useMemo((): Solver => {
@@ -186,12 +179,26 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 				safeChainID,
 				decimals: currentVault?.decimals || 18
 			});
+
+			// Set the amount to max possible value if depositing, or to 0 if withdrawing
+			let _amount = DefaultTNormalizedBN;
+			const	vaultDepositLimit = formatBN(currentVault.details.depositLimit) || ethers.constants.Zero;
+			const	userBalance = balances?.[toAddress(_selectedFrom?.value)]?.raw || ethers.constants.Zero;
+			console.log(userBalance);
+			if (userBalance.gt(vaultDepositLimit)) {
+				_amount = (toNormalizedBN(vaultDepositLimit, currentVault.token.decimals));
+			} 
+			_amount = (toNormalizedBN(userBalance, currentVault.token.decimals));
+			
+
+			// Update the state
 			performBatchedUpdates((): void => {
 				set_selectedOptionFrom(_selectedFrom);
 				set_selectedOptionTo(_selectedTo);
+				set_amount(isDepositing ? _amount : DefaultTNormalizedBN);
 			});
 		}
-	}, [selectedOptionFrom, selectedOptionTo, currentVault, safeChainID]);
+	}, [selectedOptionFrom, selectedOptionTo, currentVault, safeChainID, isDepositing, balances]);
 	
 	/* 🔵 - Yearn Finance ******************************************************
 	**	Setup and render the Context provider to use in the app.

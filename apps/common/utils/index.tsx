@@ -54,7 +54,6 @@ export function getVaultRawAPY(vaults: TDict<TYearnVault | undefined>, vaultAddr
 	return 0;
 }
 
-//TODO: FIX THE HARDCODED 18, SHOULD TAKE TOKEN DECIMALS
 export function getAmountWithSlippage(from: string, to: string, value: BigNumber, slippage: number): number {
 	const	hasLP = (
 		toAddress(from) === LPYCRV_TOKEN_ADDRESS
