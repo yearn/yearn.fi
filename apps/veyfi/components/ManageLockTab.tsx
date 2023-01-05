@@ -7,7 +7,7 @@ import {MAX_LOCK_TIME, MIN_LOCK_TIME} from '@veYFI/utils/constants';
 import {validateAmount} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {BN, formatUnits} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatBN, formatUnits} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {fromWeeks, getTimeUntil, toSeconds, toTime, toWeeks} from '@yearn-finance/web-lib/utils/time';
 import {useWallet} from '@common/contexts/useWallet';
 
@@ -28,18 +28,18 @@ function ManageLockTab(): ReactElement {
 
 	const web3Provider = provider as ethers.providers.Web3Provider;
 	const userAddress = address as TAddress;
-	const hasLockedAmount = BN(positions?.deposit?.balance).gt(0);
-	const willExtendLock = BN(lockTime).gt(0);
+	const hasLockedAmount = formatBN(positions?.deposit?.balance).gt(0);
+	const willExtendLock = formatBN(lockTime).gt(0);
 	const timeUntilUnlock = positions?.unlockTime ? getTimeUntil(positions?.unlockTime) : undefined;
 	const weeksToUnlock = timeUntilUnlock ? toWeeks(timeUntilUnlock) : 0;
 	const newUnlockTime = toTime(positions?.unlockTime) + fromWeeks(toTime(lockTime));
-	const hasPenalty = BN(positions?.penalty).gt(0);
+	const hasPenalty = formatBN(positions?.penalty).gt(0);
 
 	const votingPower = useMemo((): BigNumber => {
 		if(!positions?.deposit || !newUnlockTime) {
-			return BN(0);
+			return formatBN(0);
 		}
-		return willExtendLock ? getVotingPower(positions?.deposit?.underlyingBalance,  newUnlockTime) : BN(positions?.deposit?.balance);
+		return willExtendLock ? getVotingPower(positions?.deposit?.underlyingBalance,  newUnlockTime) : formatBN(positions?.deposit?.balance);
 	}, [positions?.deposit, newUnlockTime, willExtendLock]);
 	
 	const {isValid: isValidLockTime, error: lockTimeError} = validateAmount({
@@ -91,9 +91,7 @@ function ManageLockTab(): ReactElement {
 						label={'Increase lock period (weeks)'}
 						amount={lockTime}
 						onAmountChange={(amount): unknown => set_lockTime(Math.floor(toTime(amount)).toString())}
-						maxAmount={
-							BN(MAX_LOCK_TIME).sub(weeksToUnlock).gt(0) ? BN(MAX_LOCK_TIME).sub(weeksToUnlock).toString() : '0'
-						}
+						maxAmount={MAX_LOCK_TIME - weeksToUnlock > 0 ? MAX_LOCK_TIME - weeksToUnlock : 0}
 						disabled={!hasLockedAmount}
 						error={lockTimeError}
 						legend={'min 1'}

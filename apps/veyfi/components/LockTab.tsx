@@ -8,7 +8,7 @@ import {validateAllowance, validateAmount} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {BN, formatUnits} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatBN, formatUnits} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {fromWeeks, getTimeUntil, toSeconds, toTime, toWeeks} from '@yearn-finance/web-lib/utils/time';
 import {useWallet} from '@common/contexts/useWallet';
@@ -36,14 +36,14 @@ function LockTab(): ReactElement {
 
 	const web3Provider = provider as ethers.providers.Web3Provider;
 	const userAddress = address as TAddress;
-	const hasLockedAmount = BN(positions?.deposit?.balance).gt(0);
+	const hasLockedAmount = formatBN(positions?.deposit?.balance).gt(0);
 	
 	const unlockTime = useMemo((): TMilliseconds => {
 		return positions?.unlockTime || Date.now() + fromWeeks(toTime(lockTime));
 	}, [positions?.unlockTime, lockTime]);
 
 	const votingPower = useMemo((): BigNumber => {
-		return getVotingPower(BN(positions?.deposit?.underlyingBalance).add(lockAmount.raw),  unlockTime);
+		return getVotingPower(formatBN(positions?.deposit?.underlyingBalance).add(lockAmount.raw),  unlockTime);
 	}, [positions?.deposit?.underlyingBalance, lockAmount, unlockTime]);
 
 	useEffect((): void => {

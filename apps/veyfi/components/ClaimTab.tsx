@@ -3,7 +3,7 @@ import {useTransaction} from '@veYFI/hooks/useTransaction';
 import * as VotingEscrowActions from '@veYFI/utils/actions/votingEscrow';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {BN, formatUnits} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatBN, formatUnits} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {getTimeUntil} from '@yearn-finance/web-lib/utils/time';
 import {useWallet} from '@common/contexts/useWallet';
 
@@ -22,7 +22,7 @@ function ClaimTab(): ReactElement {
 
 	const web3Provider = provider as ethers.providers.Web3Provider;
 	const userAddress = address as TAddress;
-	const hasLockedAmount = BN(positions?.deposit?.balance).gt(0);
+	const hasLockedAmount = formatBN(positions?.deposit?.balance).gt(0);
 	const timeUntilUnlock = positions?.unlockTime ? getTimeUntil(positions?.unlockTime) : 0;
 	const isClaimable = hasLockedAmount && !timeUntilUnlock;
 	const claimableAmount = isClaimable ? positions?.deposit?.balance : '0';

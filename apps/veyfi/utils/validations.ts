@@ -1,5 +1,4 @@
 import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
-import {BN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 
 import type {BigNumber} from 'ethers';
 import type {TAddress} from '@yearn-finance/web-lib/utils/address';
@@ -23,7 +22,7 @@ export function validateAllowance(props: TValidateAllowanceProps): TValidationRe
 	// TODO: return valid when is native token
   
 	const allowance = allowances[allowanceKey(tokenAddress, spenderAddress)];
-	const isApproved = BN(allowance).gte(amount);
+	const isApproved = allowance.gte(amount);
   
 	return {isValid: isApproved};
 }
