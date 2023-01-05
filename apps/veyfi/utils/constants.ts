@@ -1,5 +1,7 @@
+import {ethers} from 'ethers';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 
+import type {BigNumber} from 'ethers';
 import type {TAddress} from '@yearn-finance/web-lib/utils/address';
 import type {TWeeks} from '@yearn-finance/web-lib/utils/time';
 
@@ -9,4 +11,4 @@ export const YFI_ADDRESS: TAddress = toAddress('0x0bc529c00C6401aEF6D220BE8C6Ea1
 
 export const MAX_LOCK_TIME: TWeeks = 208;
 export const MIN_LOCK_TIME: TWeeks = 1;
-export const MIN_LOCK_AMOUNT: TWeeks = 1;
+export const MIN_LOCK_AMOUNT: BigNumber = ethers.constants.One;

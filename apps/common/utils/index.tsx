@@ -2,10 +2,10 @@ import {ethers} from 'ethers';
 import request from 'graphql-request';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {LPYCRV_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YVBOOST_TOKEN_ADDRESS, YVECRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 
-import type {BigNumber} from 'ethers';
+import type {BigNumber, BigNumberish} from 'ethers';
 import type {GraphQLResponse} from 'graphql-request/dist/types';
 import type {TDict} from '@yearn-finance/web-lib/utils/types';
 import type {TNormalizedBN} from '@common/types/types';
@@ -83,6 +83,19 @@ export function handleInputChange(
 	return ({raw: raw, normalized: amount});
 }
 
+export function handleInputChangeEventValue(
+	value: string,
+	decimals: number
+): TNormalizedBN {
+	let		amount = value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
+	const	amountParts = amount.split('.');
+	if (amountParts.length === 2) {
+		amount = amountParts[0] + '.' + amountParts[1].slice(0, decimals);
+	}
+	const	raw = ethers.utils.parseUnits(amount || '0', decimals);
+	return ({raw: raw, normalized: amount});
+}
+
 export function getVaultName(vault: TYearnVault): string {
 	const baseName = vault.display_name || vault.name || vault.formated_name || 'unknown';
 	if (baseName.includes(' yVault')) {
@@ -99,3 +112,10 @@ export const graphFetcher = async (args: [string, string]): Promise<GraphQLRespo
 export const formatPercent = (n: number, min = 2, max = 2): string => `${formatAmount(n || 0, min, max)}%`;
 
 export const formatUSD = (n: number, min = 2, max = 2): string => `$ ${formatAmount(n || 0, min, max)}`;
+
+export const DefaultTNormalizedBN: TNormalizedBN = {raw: ethers.constants.Zero, normalized: 0};
+
+export const toNormalizedBN = (value: BigNumberish, decimals?: number): TNormalizedBN => ({
+	raw: formatBN(value),
+	normalized: formatToNormalizedValue(formatBN(value), decimals || 18)
+});

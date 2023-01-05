@@ -1,10 +1,9 @@
 import type {ReactElement} from 'react';
 
 type TAmountInputProps = {
-	amount?: string;
+	amount: string | number;
 	onAmountChange?: (amount: string) => void;
-	maxAmount?: string;
-	maxLabel?: string;
+	onMaxAmountClick?: () => void;
 	label?: string;
 	placeholder?: string;
 	legend?: string;
@@ -16,8 +15,7 @@ type TAmountInputProps = {
 function AmountInput({
 	amount,
 	onAmountChange,
-	maxAmount,
-	maxLabel = 'Max',
+	onMaxAmountClick,
 	label,
 	placeholder,
 	legend,
@@ -35,7 +33,7 @@ function AmountInput({
 			)}
 			<div className={'relative flex w-full items-center justify-center'}>
 				<input
-					className={`h-10 w-full p-2 font-mono text-base font-normal outline-none ${maxAmount && !disabled ? 'pr-12' : null} ${error ? 'border border-solid border-[#EA5204] focus:border-[#EA5204]' : 'border-0 border-none'} ${disabled ? 'bg-neutral-300 text-[#5B5B5B]' : null}`}
+					className={`h-10 w-full p-2 font-mono text-base font-normal outline-none ${error ? 'border border-solid border-[#EA5204] focus:border-[#EA5204]' : 'border-0 border-none'} ${disabled ? 'bg-neutral-300 text-[#5B5B5B]' : null}`}
 					type={'number'}
 					aria-label={label}
 					value={amount}
@@ -43,11 +41,11 @@ function AmountInput({
 					placeholder={loading ? '' : placeholder ?? '0'}
 					disabled={disabled}
 				/>
-				{maxAmount && !disabled && (
+				{onMaxAmountClick && !disabled && (
 					<button
-						onClick={onAmountChange ? (): void => onAmountChange(maxAmount) : undefined}
+						onClick={onMaxAmountClick}
 						className={'absolute right-2 ml-2 h-6 cursor-pointer border-none bg-neutral-900 px-2 py-1 text-xs text-neutral-0 transition-colors hover:bg-neutral-700'}>
-						{maxLabel}
+						{'max'}
 					</button>
 				)}
 			</div>
