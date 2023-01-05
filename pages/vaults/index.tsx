@@ -74,7 +74,7 @@ function	Index(): ReactElement {
 	**	It's best to memorize the filtered vaults, which saves a lot of processing time by only
 	**	performing the filtering once.
 	**********************************************************************************************/
-	const	curveVaults = useFilteredVaults(vaults, ({category, type}): boolean => category === 'Curve' && type !== 'Automated');
+	const	curveVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Curve');
 	const	stablesVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Stablecoin');
 	const	balancerVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Balancer');
 	const	cryptoVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Volatile');
