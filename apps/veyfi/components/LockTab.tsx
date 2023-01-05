@@ -20,6 +20,7 @@ import {AmountInput} from '../../common/components/AmountInput';
 import type {BigNumber, ethers} from 'ethers';
 import type {ReactElement} from 'react';
 import type {TAddress} from '@yearn-finance/web-lib/utils/address';
+import type {TMilliseconds} from '@yearn-finance/web-lib/utils/time';
 
 function LockTab(): ReactElement {
 	const [lockAmount, set_lockAmount] = useState(DefaultTNormalizedBN);
@@ -37,7 +38,7 @@ function LockTab(): ReactElement {
 	const userAddress = address as TAddress;
 	const hasLockedAmount = BN(positions?.deposit?.balance).gt(0);
 	
-	const unlockTime = useMemo((): number => {
+	const unlockTime = useMemo((): TMilliseconds => {
 		return positions?.unlockTime || Date.now() + fromWeeks(toTime(lockTime));
 	}, [positions?.unlockTime, lockTime]);
 

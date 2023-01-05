@@ -14,6 +14,7 @@ import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3
 import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
 import type {TAddress} from '@yearn-finance/web-lib/utils/address';
+import type {TMilliseconds} from '@yearn-finance/web-lib/utils/time';
 import type {TDict} from '@yearn-finance/web-lib/utils/types';
 
 export type TVotingEscrow = {
@@ -34,7 +35,7 @@ export type TPosition = {
 export type TVotingEscrowPosition = {
 	deposit?: TPosition,
 	// yield?: TPosition,
-	unlockTime?: number,
+	unlockTime?: TMilliseconds,
 	penalty?: BigNumber,
 	penaltyRatio?: number,
 	withdrawable?: BigNumber,

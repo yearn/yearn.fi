@@ -31,7 +31,7 @@ function ManageLockTab(): ReactElement {
 	const hasLockedAmount = BN(positions?.deposit?.balance).gt(0);
 	const willExtendLock = BN(lockTime).gt(0);
 	const timeUntilUnlock = positions?.unlockTime ? getTimeUntil(positions?.unlockTime) : undefined;
-	const weeksToUnlock = timeUntilUnlock ? toWeeks(timeUntilUnlock).toString() : '0';
+	const weeksToUnlock = timeUntilUnlock ? toWeeks(timeUntilUnlock) : 0;
 	const newUnlockTime = toTime(positions?.unlockTime) + fromWeeks(toTime(lockTime));
 	const hasPenalty = BN(positions?.penalty).gt(0);
 
