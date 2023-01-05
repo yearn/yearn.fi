@@ -46,9 +46,17 @@ function	HeroTimer(): ReactElement {
 	}, []);
 
 	return (
-		<b className={'font-number'} suppressHydrationWarning={true}>
-			{time ? formatTimestamp(time) : '00H 00M 00S'}
-		</b>
+		<div className={'md:mb-0 md:mt-16'}>
+			<div className={'mx-auto flex w-full max-w-6xl flex-col items-center justify-center'}>
+				<div className={'mt-10 w-[300px] md:w-full'}>
+					<div className={'flex w-full items-center justify-center text-center text-4xl font-bold uppercase text-neutral-900 md:text-8xl'}>
+						<b className={'font-number'} suppressHydrationWarning>
+							{time ? formatTimestamp(time) : '00H 00M 00S'}
+						</b>
+					</div>
+				</div>
+			</div>
+		</div>
 	);
 }
 
