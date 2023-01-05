@@ -1,4 +1,5 @@
 import React, {useMemo} from 'react';
+import Balancer from 'react-wrap-balancer';
 import {ethers} from 'ethers';
 import {motion} from 'framer-motion';
 import {Button} from '@yearn-finance/web-lib/components/Button';
@@ -85,11 +86,15 @@ function	CardMigrateLegacy(): ReactElement {
 	return (
 		<>
 			<div aria-label={'card title'} className={'flex flex-col pb-8'}>
-				<h2 className={'text-3xl font-bold'}>{'Out with the old,'}</h2>
-				<h2 className={'text-3xl font-bold'}>{'in with the new'}</h2>
+				<Balancer>
+					<h2 className={'text-3xl font-bold'}>{'Out with the old,'}</h2>
+					<h2 className={'text-3xl font-bold'}>{'in with the new'}</h2>
+				</Balancer>
 			</div>
 			<div aria-label={'card description'} className={'w-[98%] pb-10'}>
-				<p className={'text-neutral-600'}>{'yveCRV and yvBOOST are no longer supported (RIP), but you can easily migrate them to our new and improved tokens. Simply convert below and start earning that sweet sweet yield.'}</p>
+				<Balancer>
+					<p className={'text-neutral-600'}>{'yveCRV and yvBOOST are no longer supported (RIP), but you can easily migrate them to our new and improved tokens. Simply convert below and start earning that sweet sweet yield.'}</p>
+				</Balancer>
 			</div>
 
 			<div className={'grid grid-cols-2 gap-4'}>

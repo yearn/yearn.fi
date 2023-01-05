@@ -347,8 +347,3 @@ details {
 	@apply outline-none focus:border-0 focus:outline-none focus:ring-0 active:border-0 active:ring-0;
 	box-shadow: none !important;
 }
-
-/* Just for testing */
-span[data-brr] {
-	background-color: #333;
-}
