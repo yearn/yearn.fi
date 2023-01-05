@@ -14,12 +14,13 @@ type TTxFuncArgs = Parameters<(arg1: ethers.providers.Web3Provider, ...args: unk
 type TTxFunc<T1 extends TTxFuncArgs, T2> = (...args: T1) => Promise<T2>;
 
 export const useTransaction = <T extends TTxFuncArgs>(
-	func: TTxFunc<T, ethers.providers.TransactionResponse>,
-	onSuccess?: (payload: ethers.providers.TransactionResponse | undefined) => void,
+	func: TTxFunc<T, boolean>,
+	onSuccess?: (payload: boolean | undefined) => void,
 	onError?: (error: unknown) => void
-): [TTxFunc<T, ethers.providers.TransactionResponse | undefined>, TStatus, ethers.providers.TransactionResponse | undefined] => {
+): [TTxFunc<T, boolean | undefined>, TStatus, boolean | undefined] => {
 	const {toast} = yToast();
-	const [result, set_result] = useState<ethers.providers.TransactionResponse | undefined>();
+	// eslint-disable-next-line @typescript-eslint/naming-convention
+	const [result, set_result] = useState<boolean | undefined>();
 	const [isLoading, set_isLoading] = useState(false);
 	const [error, set_error] = useState<string | undefined>(undefined);
 	const [isExecuted, set_isExecuted] = useState<boolean>(false);
@@ -30,15 +31,15 @@ export const useTransaction = <T extends TTxFuncArgs>(
 		executed: isExecuted
 	};
 
-	const execute = async (...p: T): Promise<ethers.providers.TransactionResponse | undefined> => {
+	const execute = async (...p: T): Promise<boolean | undefined> => {
 		set_isLoading(true);
 		set_error(undefined);
 		let funcResult;
 		try {
-			const tx = await func(...p);
-			const receipt = await tx.wait();
-			if (receipt.status === 0) {
-				throw new Error('Failed to perform transaction');
+			// eslint-disable-next-line @typescript-eslint/naming-convention
+			const funcResult = await func(...p);
+			if(!funcResult) {
+				throw new Error('Transaction failed');
 			}
 			set_result(funcResult);
 			set_isLoading(false);
