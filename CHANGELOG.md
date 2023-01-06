@@ -1,3 +1,7 @@
+# 0.1.13
+- Release the Vaults Factory page
+- Fix issue with Messari Subgraph only returning 100 results
+
 # 0.1.12
 - Add a `mutateVaultList` function to ask to refresh the vaultList in the `useYearn` context
 - Add a `VoidPromiseFunction` type to mimic the `VoidFunction` type but for a function returning a `Promise`. TODO: Move to web-lib.
