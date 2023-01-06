@@ -34,7 +34,7 @@ function AmountInput({
 			)}
 			<div className={'relative flex w-full items-center justify-center'}>
 				<input
-					className={`h-10 w-full p-2 font-mono text-base font-normal outline-none ${maxAmount && !disabled ? 'pr-12' : null} ${error ? 'border border-solid border-[#EA5204] focus:border-[#EA5204]' : 'border-0 border-none'} ${disabled ? 'bg-neutral-300 text-[#5B5B5B]' : null}`}
+					className={`h-10 w-full p-2 font-mono text-base font-normal outline-none ${maxAmount && !disabled ? 'pr-12' : null} ${error ? 'border border-solid border-[#EA5204] focus:border-[#EA5204]' : 'border-0 border-none'} ${disabled ? 'bg-neutral-300 text-neutral-600' : 'bg-neutral-0'}`}
 					type={'number'}
 					aria-label={label}
 					value={amount}
