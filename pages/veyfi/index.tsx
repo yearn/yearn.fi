@@ -7,6 +7,7 @@ import Wrapper from '@veYFI/Wrapper';
 import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
+import {PageProgressBar} from '@common/components/PageProgressBar';
 import {SummaryData} from '@common/components/SummaryData';
 import {Tabs} from '@common/components/Tabs';
 
@@ -14,10 +15,12 @@ import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
 
 function Index(): ReactElement {
-	const {votingEscrow, positions} = useVotingEscrow();
+	const {votingEscrow, positions, isLoading} = useVotingEscrow();
 
 	return (
 		<>
+			<PageProgressBar isLoading={isLoading}/>
+			
 			<h1 className={'w-full text-center text-8xl font-bold'}>
 				{'veYFI'}
 			</h1>
