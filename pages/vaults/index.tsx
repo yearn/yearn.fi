@@ -194,8 +194,6 @@ function	Index(): ReactElement {
 		);
 	}, [isLoadingVaultsMigrations, category, isLoadingVaultList, sortedVaultsToDisplay]);
 
-	console.log(category);
-
 	return (
 		<section className={'mt-4 grid w-full grid-cols-12 gap-y-10 pb-10 md:mt-20 md:gap-x-10 md:gap-y-20'}>
 
