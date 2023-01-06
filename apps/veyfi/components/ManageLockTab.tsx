@@ -97,7 +97,7 @@ function ManageLockTab(): ReactElement {
 						legend={'min 1'}
 					/>
 				</div>
-				<div className={'grid grid-cols-1 gap-6 md:grid-cols-2 md:pb-7'}>
+				<div className={'grid grid-cols-1 gap-6 md:grid-cols-2 md:pb-5'}>
 					<AmountInput
 						label={'Total veYFI'}
 						amount={formatUnits(votingPower, 18)}
@@ -111,7 +111,6 @@ function ManageLockTab(): ReactElement {
 					>
 						{'Extend'}
 					</Button>
-					
 				</div>
 			</div>
 
@@ -124,7 +123,7 @@ function ManageLockTab(): ReactElement {
 						<p>{'Or you can exit early by paying a penalty based on lock duration.'}</p>
 					</div>
 				</div>
-				<div className={'grid grid-cols-1 gap-6 md:grid-cols-2'}>
+				<div className={'grid grid-cols-1 gap-6 md:grid-cols-2 md:pb-5'}>
 					<AmountInput
 						label={'veYFI you have'}
 						amount={formatUnits(positions?.deposit?.balance, 18)}
