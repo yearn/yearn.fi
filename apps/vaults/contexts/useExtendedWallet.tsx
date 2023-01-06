@@ -8,14 +8,14 @@ import type {TDict} from '@yearn-finance/web-lib/utils/types';
 
 export type	TExtendedWalletContext = {
 	balances: TDict<TBalanceData>,
-	useWalletNonce: number,
+	balancesNonce: number,
 	isLoading: boolean,
 	refresh: () => Promise<TDict<TBalanceData>>
 }
 
 const	defaultProps = {
 	balances: {},
-	useWalletNonce: 0,
+	balancesNonce: 0,
 	isLoading: true,
 	refresh: async (): Promise<TDict<TBalanceData>> => ({})
 };
@@ -28,7 +28,7 @@ const	defaultProps = {
 const	ExtendedWalletContext = createContext<TExtendedWalletContext>(defaultProps);
 export const ExtendedWalletContextApp = memo(function ExtendedWalletContextApp({children}: {children: ReactElement}): ReactElement {
 	const	{balances, isLoading, refresh} = useWallet();
-	const	{balances: defiBalances, isLoading: isLoadingDefiBalances, refresh: refreshDefiBalances} = useWalletForExternalMigrations();
+	const	{balances: defiBalances, isLoading: isLoadingDefiBalances, refresh: refreshDefiBalances, nonce} = useWalletForExternalMigrations();
 
 	const	onRefresh = useCallback(async (): Promise<TDict<TBalanceData>> => {
 		const [updatedBalances, updatedDefiBalances] = await Promise.all([
@@ -55,8 +55,8 @@ export const ExtendedWalletContextApp = memo(function ExtendedWalletContextApp({
 		balances: mergedBalances,
 		isLoading: isLoading && isLoadingDefiBalances,
 		refresh: onRefresh,
-		useWalletNonce: 0
-	}), [mergedBalances, isLoading, isLoadingDefiBalances, onRefresh]);
+		balancesNonce: nonce
+	}), [mergedBalances, isLoading, isLoadingDefiBalances, onRefresh, nonce]);
 
 	return (
 		<ExtendedWalletContext.Provider value={contextValue}>

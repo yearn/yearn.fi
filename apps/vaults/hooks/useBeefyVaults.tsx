@@ -84,7 +84,7 @@ export function useBeefyVaults({all}: TProps = {}): TBeefyVaultResponse {
 
 	const	beefyVaults = useMemo((): TBeefyVault[] => vaults || [], [vaults]);
 
-	const	{data: balances} = useBalances({
+	const	{data: balances, nonce} = useBalances({
 		key: 0,
 		provider,
 		tokens: beefyVaults?.reduce((prev, {tokenAddress}): TUseBalancesReq['tokens'] => {
@@ -97,6 +97,7 @@ export function useBeefyVaults({all}: TProps = {}): TBeefyVaultResponse {
 	});
 
 	const beefyVaultsWithBalance = useMemo((): TBeefyVault[] => {
+		nonce; // remove warning, force deep refresh
 		return beefyVaults.reduce((prev, curr): TBeefyVault[] => {
 			if (!curr.tokenAddress) {
 				return prev;
@@ -104,7 +105,7 @@ export function useBeefyVaults({all}: TProps = {}): TBeefyVaultResponse {
 			const vaultWithBalance = {...curr, balance: balances[curr.tokenAddress]};
 			return [...prev, vaultWithBalance];
 		}, [] as TBeefyVault[]);
-	}, [balances, beefyVaults]);
+	}, [balances, nonce, beefyVaults]);
 
 
 	const	beefyVaultsWithBalanceAndAPY = useMemo((): TBeefyVault[] => {
