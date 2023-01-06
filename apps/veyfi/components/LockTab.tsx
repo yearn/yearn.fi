@@ -4,7 +4,7 @@ import {useTransaction} from '@veYFI/hooks/useTransaction';
 import {getVotingPower} from '@veYFI/utils';
 import * as VotingEscrowActions from '@veYFI/utils/actions/votingEscrow';
 import {MAX_LOCK_TIME, MIN_LOCK_AMOUNT, MIN_LOCK_TIME} from '@veYFI/utils/constants';
-import {validateAllowance, validateAmount} from '@veYFI/utils/validations';
+import {validateAllowance, validateAmount, validateNetwork} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -25,7 +25,7 @@ import type {TMilliseconds} from '@yearn-finance/web-lib/utils/time';
 function LockTab(): ReactElement {
 	const [lockAmount, set_lockAmount] = useState(DefaultTNormalizedBN);
 	const [lockTime, set_lockTime] = useState('');
-	const {provider, address} = useWeb3();
+	const {provider, address, isActive, chainID} = useWeb3();
 	const {refresh: refreshBalances} = useWallet();
 	const {votingEscrow, positions, allowances, isLoading: isLoadingVotingEscrow, refresh: refreshVotingEscrow} = useVotingEscrow();
 	const tokenBalance = useBalance(toAddress(votingEscrow?.token));
@@ -71,42 +71,28 @@ function LockTab(): ReactElement {
 		amount: lockTime,
 		minAmountAllowed: hasLockedAmount ? 0 : MIN_LOCK_TIME
 	});
+
+	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: 1, walletNetwork: chainID});
 	
 	const executeApprove = (): void => {
 		if (!votingEscrow || !userAddress) {
 			return;
 		}
-		approveLock(
-			web3Provider,
-			userAddress,
-			votingEscrow.token,
-			votingEscrow.address
-		);
+		approveLock(web3Provider, userAddress, votingEscrow.token, votingEscrow.address);
 	};
 	
 	const executeLock = (): void => {
 		if (!votingEscrow  || !userAddress) {
 			return;
 		}
-		lock(
-			web3Provider,
-			userAddress,
-			votingEscrow.address,
-			lockAmount.raw,
-			toSeconds(unlockTime)
-		);
+		lock(web3Provider, userAddress, votingEscrow.address, lockAmount.raw, toSeconds(unlockTime));
 	};
 	
 	const executeIncreaseLockAmount = (): void => {
 		if (!votingEscrow  || !userAddress) {
 			return;
 		}
-		increaseLockAmount(
-			web3Provider,
-			userAddress,
-			votingEscrow.address,
-			lockAmount.raw
-		);
+		increaseLockAmount(web3Provider, userAddress, votingEscrow.address, lockAmount.raw);
 	};
 
 	const txAction = !isApproved
@@ -114,28 +100,20 @@ function LockTab(): ReactElement {
 			label: 'Approve',
 			onAction: executeApprove,
 			status: approveLockStatus.loading,
-			disabled: isApproved || isLoadingVotingEscrow
+			disabled: !isActive || !isValidNetwork || isApproved || isLoadingVotingEscrow
 		}
 		: hasLockedAmount
 			? {
 				label: 'Lock',
 				onAction: executeIncreaseLockAmount,
 				status: increaseLockAmountStatus.loading,
-				disabled:
-					!isApproved ||
-					!isValidLockAmount ||
-					!isValidLockTime ||
-					isLoadingVotingEscrow
+				disabled: !isActive || !isValidNetwork || !isApproved || !isValidLockAmount || !isValidLockTime || isLoadingVotingEscrow
 			}
 			: {
 				label: 'Lock',
 				onAction: executeLock,
 				status: lockStatus.loading,
-				disabled:
-					!isApproved ||
-					!isValidLockAmount ||
-					!isValidLockTime ||
-					isLoadingVotingEscrow
+				disabled: !isActive || !isValidNetwork || !isApproved || !isValidLockAmount || !isValidLockTime || isLoadingVotingEscrow
 			};
 
 	return ( 

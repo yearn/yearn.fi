@@ -1,6 +1,7 @@
 import {useVotingEscrow} from '@veYFI/contexts/useVotingEscrow';
 import {useTransaction} from '@veYFI/hooks/useTransaction';
 import * as VotingEscrowActions from '@veYFI/utils/actions/votingEscrow';
+import {validateNetwork} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {formatBN, formatUnits} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -14,7 +15,7 @@ import type {ReactElement} from 'react';
 import type {TAddress} from '@yearn-finance/web-lib/utils/address';
 
 function ClaimTab(): ReactElement {
-	const {provider, address} = useWeb3();
+	const {provider, address, isActive, chainID} = useWeb3();
 	const {refresh: refreshBalances} = useWallet();
 	const {votingEscrow, positions, refresh: refreshVotingEscrow} = useVotingEscrow();
 	const refreshData = (): unknown => Promise.all([refreshVotingEscrow(), refreshBalances()]);
@@ -26,16 +27,14 @@ function ClaimTab(): ReactElement {
 	const timeUntilUnlock = positions?.unlockTime ? getTimeUntil(positions?.unlockTime) : 0;
 	const isClaimable = hasLockedAmount && !timeUntilUnlock;
 	const claimableAmount = isClaimable ? positions?.deposit?.balance : '0';
+
+	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: 1, walletNetwork: chainID});
     
 	const executeWithdrawUnlocked = (): void => {
 		if (!votingEscrow  || !address) {
 			return;
 		}
-		withdrawUnlocked(
-			web3Provider,
-			userAddress,
-			votingEscrow.address
-		);
+		withdrawUnlocked(web3Provider, userAddress, votingEscrow.address);
 	};
 
 	return ( 
@@ -62,7 +61,7 @@ function ClaimTab(): ReactElement {
 						className={'w-full md:mt-7'}
 						onClick={executeWithdrawUnlocked}
 						isBusy={withdrawUnlockedStatus.loading}
-						disabled={!isClaimable || withdrawUnlockedStatus.loading}
+						disabled={!isActive || !isValidNetwork || !isClaimable || withdrawUnlockedStatus.loading}
 					>
 						{'Claim'}
 					</Button>
