@@ -28,7 +28,7 @@ const	defaultProps = {
 const	ExtendedWalletContext = createContext<TExtendedWalletContext>(defaultProps);
 export const ExtendedWalletContextApp = memo(function ExtendedWalletContextApp({children}: {children: ReactElement}): ReactElement {
 	const	{balances, isLoading, refresh} = useWallet();
-	const	{balances: defiBalances, isLoading: isLoadingDefiBalances, refresh: refreshDefiBalances, nonce} = useWalletForExternalMigrations();
+	const	{balances: defiBalances, isLoading: isLoadingDefiBalances, refresh: refreshDefiBalances, balancesNonce} = useWalletForExternalMigrations();
 
 	const	onRefresh = useCallback(async (): Promise<TDict<TBalanceData>> => {
 		const [updatedBalances, updatedDefiBalances] = await Promise.all([
@@ -55,8 +55,8 @@ export const ExtendedWalletContextApp = memo(function ExtendedWalletContextApp({
 		balances: mergedBalances,
 		isLoading: isLoading && isLoadingDefiBalances,
 		refresh: onRefresh,
-		balancesNonce: nonce
-	}), [mergedBalances, isLoading, isLoadingDefiBalances, onRefresh, nonce]);
+		balancesNonce: balancesNonce
+	}), [mergedBalances, isLoading, isLoadingDefiBalances, onRefresh, balancesNonce]);
 
 	return (
 		<ExtendedWalletContext.Provider value={contextValue}>
