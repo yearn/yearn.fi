@@ -22,9 +22,11 @@ function ManageLockTab(): ReactElement {
 	const {provider, address, isActive, chainID} = useWeb3();
 	const {refresh: refreshBalances} = useWallet();
 	const {votingEscrow, positions, refresh: refreshVotingEscrow} = useVotingEscrow();
+	const clearLockTime = (): unknown => set_lockTime('');
 	const refreshData = (): unknown => Promise.all([refreshVotingEscrow(), refreshBalances()]);
-	const [extendLockTime, extendLockTimeStatus] = useTransaction(VotingEscrowActions.extendLockTime, refreshVotingEscrow);
-	const [withdrawLocked, withdrawLockedStatus] = useTransaction(VotingEscrowActions.withdrawLocked, refreshData);
+	const onTxSuccess = (): unknown =>  Promise.all([refreshData(), clearLockTime()]);
+	const [extendLockTime, extendLockTimeStatus] = useTransaction(VotingEscrowActions.extendLockTime, onTxSuccess);
+	const [withdrawLocked, withdrawLockedStatus] = useTransaction(VotingEscrowActions.withdrawLocked, onTxSuccess);
 
 	const web3Provider = provider as ethers.providers.Web3Provider;
 	const userAddress = address as TAddress;

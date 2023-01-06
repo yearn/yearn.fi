@@ -29,10 +29,12 @@ function LockTab(): ReactElement {
 	const {refresh: refreshBalances} = useWallet();
 	const {votingEscrow, positions, allowances, isLoading: isLoadingVotingEscrow, refresh: refreshVotingEscrow} = useVotingEscrow();
 	const tokenBalance = useBalance(toAddress(votingEscrow?.token));
+	const clearLockAmount = (): unknown => set_lockAmount(DefaultTNormalizedBN);
 	const refreshData = (): unknown => Promise.all([refreshVotingEscrow(), refreshBalances()]);
+	const onTxSuccess = (): unknown => Promise.all([refreshData(), clearLockAmount()]);
 	const [approveLock, approveLockStatus] = useTransaction(VotingEscrowActions.approveLock, refreshData);
-	const [lock, lockStatus] = useTransaction(VotingEscrowActions.lock, refreshData);
-	const [increaseLockAmount, increaseLockAmountStatus] = useTransaction(VotingEscrowActions.increaseLockAmount, refreshData);
+	const [lock, lockStatus] = useTransaction(VotingEscrowActions.lock, onTxSuccess);
+	const [increaseLockAmount, increaseLockAmountStatus] = useTransaction(VotingEscrowActions.increaseLockAmount, onTxSuccess);
 
 	const web3Provider = provider as ethers.providers.Web3Provider;
 	const userAddress = address as TAddress;
