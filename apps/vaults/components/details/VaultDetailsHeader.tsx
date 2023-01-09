@@ -68,7 +68,9 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 						{'Net APY'}
 					</p>
 					<b className={'font-number text-lg md:text-3xl'} suppressHydrationWarning>
-						{formatPercent((currentVault?.apy?.net_apy || 0) * 100)}
+						{(currentVault?.apy?.net_apy || 0) > 5 ? (
+							`≧ ${formatPercent(500)}`
+						) : formatPercent((currentVault?.apy?.net_apy || 0) * 100)}
 					</b>
 					<legend className={'text-xxs text-neutral-600 md:text-xs'}>&nbsp;</legend>
 				</div>

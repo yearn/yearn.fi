@@ -52,7 +52,9 @@ function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYearnVau
 							<div className={'flex flex-row items-center justify-between'}>
 								<p className={'text-sm text-neutral-500'}>{'Net APY'}</p>
 								<p className={'font-number text-sm text-neutral-900'} suppressHydrationWarning>
-									{formatPercent((currentVault?.apy?.net_apy || 0) * 100)}
+									{(currentVault?.apy?.net_apy || 0) > 5 ? (
+										`≧ ${formatPercent(500)}`
+									) : formatPercent((currentVault?.apy?.net_apy || 0) * 100)}
 								</p>
 							</div>
 						</div>

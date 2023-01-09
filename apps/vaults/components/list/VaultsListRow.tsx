@@ -51,6 +51,8 @@ function	VaultsListRow({currentVault}: {currentVault: TYearnVault}): ReactElemen
 						<b className={'yearn--table-data-section-item-value'}>
 							{(currentVault.apy?.type === 'new' && currentVault.apy?.net_apy == 0) ? (
 								'New'
+							) : (currentVault.apy?.net_apy || 0) > 5 ? (
+								`≧ ${formatPercent(500)}`
 							) : (
 								formatPercent((currentVault.apy?.net_apy || 0) * 100)
 							)}
