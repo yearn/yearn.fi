@@ -23,9 +23,9 @@ function	Logo(): ReactElement {
 
 	return (
 		<>
-			<YCrvHeader />
+			<YCrvHeader pathname={pathname} />
 			<VaultsHeader pathname={pathname} />
-			<YBribeHeader />
+			<YBribeHeader pathname={pathname} />
 			<MotionDiv name={'yearn'} animate={pathname === '/' ? 'enter' : 'exit'}>
 				<LogoYearn
 					className={'h-8 w-8'}
