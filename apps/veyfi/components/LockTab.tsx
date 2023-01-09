@@ -97,25 +97,27 @@ function LockTab(): ReactElement {
 		increaseLockAmount(web3Provider, userAddress, votingEscrow.address, lockAmount.raw);
 	};
 
+	const isApproveDisabled = !isActive || !isValidNetwork || isApproved || isLoadingVotingEscrow;
+	const isLockDisabled = !isActive || !isValidNetwork || !isApproved || !isValidLockAmount || !isValidLockTime || isLoadingVotingEscrow;
 	const txAction = !isApproved
 		? {
 			label: 'Approve',
 			onAction: executeApprove,
 			isLoading: approveLockStatus.loading,
-			isDisabled: !isActive || !isValidNetwork || isApproved || isLoadingVotingEscrow
+			isDisabled: isApproveDisabled
 		}
 		: hasLockedAmount
 			? {
 				label: 'Lock',
 				onAction: executeIncreaseLockAmount,
 				isLoading: increaseLockAmountStatus.loading,
-				isDisabled: !isActive || !isValidNetwork || !isApproved || !isValidLockAmount || !isValidLockTime || isLoadingVotingEscrow
+				isDisabled: isLockDisabled
 			}
 			: {
 				label: 'Lock',
 				onAction: executeLock,
 				isLoading: lockStatus.loading,
-				isDisabled: !isActive || !isValidNetwork || !isApproved || !isValidLockAmount || !isValidLockTime || isLoadingVotingEscrow
+				isDisabled: isLockDisabled
 			};
 
 	return ( 
