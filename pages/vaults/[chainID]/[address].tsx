@@ -25,10 +25,17 @@ function Index({router, vaultData}: {router: NextRouter, vaultData: TYearnVault}
 	const {refresh} = useWallet();
 
 	useEffect((): void => {
-		if (address && isActive && currentVault?.current?.token?.address) {
-			refresh([{token: toAddress(currentVault.current.address)}]);
+		if (address && isActive) {
+			const	tokensToRefresh = [];
+			if (currentVault?.current?.address) {
+				tokensToRefresh.push({token: toAddress(currentVault.current.address)});
+			}
+			if (currentVault?.current?.token?.address) {
+				tokensToRefresh.push({token: toAddress(currentVault.current.token.address)});
+			}
+			refresh(tokensToRefresh);
 		}
-	}, [currentVault.current.token.address, address, isActive, refresh]);
+	}, [currentVault.current?.address, currentVault.current?.token?.address, address, isActive, refresh]);
 
 	return (
 		<>
