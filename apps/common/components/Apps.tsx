@@ -14,7 +14,7 @@ import type {TMenu} from '@yearn-finance/web-lib/layouts/Header.next';
 import type {TMetaFile} from './Meta';
 
 export enum AppName {
-	VAULTS = 'vaults',
+	VAULTS = 'Vaults',
 	YCRV = 'yCRV',
 	VEYFI = 'veYFI',
 	YBRIBE = 'yBribe'
@@ -29,7 +29,7 @@ type TApp = {
 }
 
 export const APPS: { [key in AppName]: TApp } = {
-	vaults: {
+	Vaults: {
 		name: AppName.VAULTS,
 		href: '/vaults',
 		menu: VAULTS_MENU,

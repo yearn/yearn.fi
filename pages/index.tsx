@@ -31,7 +31,7 @@ const	apps = [
 	}, {
 		href: 'https://vote.yearn.finance',
 		title: 'veYFI',
-		description: 'stake YFI\nto take part in governance.',
+		description: 'lock YFI\nto take part in governance.',
 		icon: <LogoYearn
 			className={'h-[100px] w-[100px]'}
 			back={'text-primary'}
@@ -39,7 +39,7 @@ const	apps = [
 	}, {
 		href: '/ybribe',
 		title: 'yBribe',
-		description: 'sell votes, or buy them.\nJust like democracy.',
+		description: 'sell votes, or buy them.\njust like democracy.',
 		icon: <LogoYearn
 			className={'h-[100px] w-[100px]'}
 			back={'text-neutral-900'}
