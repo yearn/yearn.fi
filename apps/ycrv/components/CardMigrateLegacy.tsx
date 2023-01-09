@@ -1,4 +1,5 @@
 import React, {useMemo} from 'react';
+import Balancer from 'react-wrap-balancer';
 import {ethers} from 'ethers';
 import {motion} from 'framer-motion';
 import {Button} from '@yearn-finance/web-lib/components/Button';
@@ -11,7 +12,7 @@ import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUp
 import {Dropdown} from '@common/components/TokenDropdown';
 import {useYearn} from '@common/contexts/useYearn';
 import ArrowDown from '@common/icons/ArrowDown';
-import {formatPercent, handleInputChange} from '@common/utils';
+import {formatPercent, handleInputChange, toNormalizedBN} from '@common/utils';
 import CardTransactorContextApp, {useCardTransactor} from '@yCRV/components/CardTransactorWrapper';
 import {useExtendedWallet} from '@yCRV/contexts/useExtendedWallet';
 import {CardVariants, CardVariantsInner} from '@yCRV/utils/animations';
@@ -85,11 +86,15 @@ function	CardMigrateLegacy(): ReactElement {
 	return (
 		<>
 			<div aria-label={'card title'} className={'flex flex-col pb-8'}>
-				<h2 className={'text-3xl font-bold'}>{'Out with the old,'}</h2>
-				<h2 className={'text-3xl font-bold'}>{'in with the new'}</h2>
+				<Balancer>
+					<h2 className={'text-3xl font-bold'}>{'Out with the old,'}</h2>
+					<h2 className={'text-3xl font-bold'}>{'in with the new'}</h2>
+				</Balancer>
 			</div>
 			<div aria-label={'card description'} className={'w-[98%] pb-10'}>
-				<p className={'text-neutral-600'}>{'yveCRV and yvBOOST are no longer supported (RIP), but you can easily migrate them to our new and improved tokens. Simply convert below and start earning that sweet sweet yield.'}</p>
+				<Balancer>
+					<p className={'text-neutral-600'}>{'yveCRV and yvBOOST are no longer supported (RIP), but you can easily migrate them to our new and improved tokens. Simply convert below and start earning that sweet sweet yield.'}</p>
+				</Balancer>
 			</div>
 
 			<div className={'grid grid-cols-2 gap-4'}>
@@ -102,10 +107,7 @@ function	CardMigrateLegacy(): ReactElement {
 						onSelect={(option: TDropdownOption): void => {
 							performBatchedUpdates((): void => {
 								set_selectedOptionFrom(option);
-								set_amount({
-									raw: balances[toAddress(option.value)]?.raw || ethers.constants.Zero,
-									normalized: balances[toAddress(option.value)]?.normalized || 0
-								});
+								set_amount(toNormalizedBN(balances[toAddress(option.value)]?.raw));
 							});
 						}} />
 					<p className={'pl-2 !text-xs font-normal text-green-600'}>
@@ -133,12 +135,7 @@ function	CardMigrateLegacy(): ReactElement {
 									});
 								}} />
 							<button
-								onClick={(): void => {
-									set_amount({
-										raw: balances[toAddress(selectedOptionFrom.value)]?.raw || ethers.constants.Zero,
-										normalized: balances[toAddress(selectedOptionFrom.value)]?.normalized || 0
-									});
-								}}
+								onClick={(): void => set_amount(toNormalizedBN(balances[toAddress(selectedOptionFrom.value)]?.raw))}
 								className={'cursor-pointer text-sm text-neutral-500 transition-colors hover:text-neutral-900'}>
 								{'max'}
 							</button>

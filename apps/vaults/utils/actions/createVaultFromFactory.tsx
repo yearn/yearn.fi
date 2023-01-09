@@ -37,7 +37,6 @@ export async function	estimateGasForCreateNewVaultsAndStrategies(
 	provider: ethers.providers.Provider,
 	gaugeAddress: TAddress
 ): Promise<BigNumber> {
-	console.warn(gaugeAddress, VAULT_FACTORY_ADDRESS);
 	const	contract = new ethers.Contract(
 		VAULT_FACTORY_ADDRESS,
 		VAULT_FACTORY_ABI,

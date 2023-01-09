@@ -1,3 +1,15 @@
+# 0.1.14
+- Remove the `isActive` from the gauge dropdown, as wallet connect is not required to get that list
+- Add a `isClientLoaded` in `DesktopCategories` to avoid a SSR hydratation issue leading to multiple categories being selected
+- Replace `getGauges` with `getAllGauges` for useCurve and adapt code to handle the changes
+- Rename `useWalletNonce` to `balancesNonce` to match actual behavior and use the nonce from the useBalances hook
+- Use some `toNormalizedBN` instead of raw declarations
+- Add a specific code to refresh balance for a vault when you access that vault page. This will enable any old vault to get the balance even if it's not loaded in the app because of retired status.
+- Bump the web-lib to `0.17.85` for the updated `useBalances` hook and
+- Add an estimate code warning for the migration with an increase of `gasLimit` to avoid revert `outOfGas` issues
+- Merge branch to add a `Balancer` wrap around text to make them nicer to read
+- Add the `useCurrentApp` hook to make the app management easier to handle
+
 # 0.1.13
 - Release the Vaults Factory page
 - Fix issue with Messari Subgraph only returning 100 results

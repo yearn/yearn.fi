@@ -1,4 +1,4 @@
-import React, {createContext, memo, useCallback, useContext, useMemo, useState} from 'react';
+import React, {createContext, memo, useCallback, useContext, useMemo} from 'react';
 import {useUI} from '@yearn-finance/web-lib/contexts/useUI';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useBalances} from '@yearn-finance/web-lib/hooks/useBalances';
@@ -16,7 +16,7 @@ import type {TYearnVault} from '@common/types/yearn';
 export type	TWalletContext = {
 	balances: TDict<TBalanceData>,
 	cumulatedValueInVaults: number,
-	useWalletNonce: number,
+	balancesNonce: number,
 	isLoading: boolean,
 	refresh: (tokenList?: TUseBalancesTokens[]) => Promise<TDict<TBalanceData>>,
 }
@@ -24,7 +24,7 @@ export type	TWalletContext = {
 const	defaultProps = {
 	balances: {},
 	cumulatedValueInVaults: 0,
-	useWalletNonce: 0,
+	balancesNonce: 0,
 	isLoading: true,
 	refresh: async (): Promise<TDict<TBalanceData>> => ({})
 };
@@ -36,7 +36,6 @@ const	defaultProps = {
 ******************************************************************************/
 const	WalletContext = createContext<TWalletContext>(defaultProps);
 export const WalletContextApp = memo(function WalletContextApp({children}: {children: ReactElement}): ReactElement {
-	const	[nonce, set_nonce] = useState(0);
 	const	{chainID, provider} = useWeb3();
 	const	{vaults, isLoadingVaultList, prices} = useYearn();
 	const	{onLoadStart, onLoadDone} = useUI();
@@ -57,7 +56,7 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 		return tokens;
 	}, [vaults, isLoadingVaultList]);
 
-	const	{data: balances, update, updateSome, isLoading} = useBalances({
+	const	{data: balances, update, updateSome, nonce, isLoading} = useBalances({
 		key: chainID,
 		provider: provider || getProvider(1),
 		tokens: availableTokens,
@@ -91,9 +90,6 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 
 	useClientEffect((): void => {
 		if (isLoading) {
-			if (!balances) {
-				set_nonce(nonce + 1);
-			}
 			onLoadStart();
 		} else {
 			onLoadDone();
@@ -105,10 +101,10 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 	***************************************************************************/
 	const	contextValue = useMemo((): TWalletContext => ({
 		balances: balances,
+		balancesNonce: nonce,
 		cumulatedValueInVaults,
 		isLoading: isLoading || false,
-		refresh: onRefresh,
-		useWalletNonce: nonce
+		refresh: onRefresh
 	}), [balances, cumulatedValueInVaults, isLoading, onRefresh, nonce]);
 
 	return (
