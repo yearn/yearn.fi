@@ -53,7 +53,7 @@ const defaultProps: TVotingEscrowContext = {
 	positions: undefined,
 	allowances: {},
 	isLoading: true,
-	refresh: (): unknown => ({})
+	refresh: (): void => undefined
 };
 
 const	VotingEscrowContext = createContext<TVotingEscrowContext>(defaultProps);
