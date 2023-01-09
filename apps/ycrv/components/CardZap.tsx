@@ -1,4 +1,5 @@
 import React, {useMemo} from 'react';
+import Balancer from 'react-wrap-balancer';
 import {ethers} from 'ethers';
 import {motion} from 'framer-motion';
 import {Button} from '@yearn-finance/web-lib/components/Button';
@@ -116,11 +117,15 @@ function	CardZap(): ReactElement {
 	return (
 		<>
 			<div aria-label={'card title'} className={'flex flex-col pb-8'}>
-				<h2 className={'text-3xl font-bold'}>{'Supercharge your'}</h2>
-				<h2 className={'text-3xl font-bold'}>{'yield with yCRV'}</h2>
+				<Balancer>
+					<h2 className={'text-3xl font-bold'}>{'Supercharge your'}</h2>
+					<h2 className={'text-3xl font-bold'}>{'yield with yCRV'}</h2>
+				</Balancer>
 			</div>
 			<div aria-label={'card description'} className={'w-full pb-10 md:w-[96%]'}>
-				<p className={'text-neutral-600'}>{'Swap any token within the yCRV ecosystem for any other. Maybe you want to swap for a higher yield, or maybe you just like swapping. It’s ok, we don’t judge.'}</p>
+				<Balancer>
+					<p className={'text-neutral-600'}>{'Swap any token within the yCRV ecosystem for any other. Maybe you want to swap for a higher yield, or maybe you just like swapping. It’s ok, we don’t judge.'}</p>
+				</Balancer>
 			</div>
 
 			<div className={'grid grid-cols-2 gap-4'}>

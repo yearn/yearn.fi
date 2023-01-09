@@ -1,4 +1,5 @@
 import React, {useCallback, useMemo, useState} from 'react';
+import Balancer from 'react-wrap-balancer';
 import Link from 'next/link';
 import {BigNumber} from 'ethers';
 import {Button} from '@yearn-finance/web-lib/components/Button';
@@ -158,10 +159,12 @@ function	OfferBribe(): ReactElement {
 	return (
 		<>
 			<div className={'mt-8 mb-10 w-full max-w-6xl text-center'}>
-				<b className={'text-center text-lg md:text-2xl'}>{'Buy votes to boost emissions.'}</b>
-				<p className={'mt-8 whitespace-pre-line text-center text-base text-neutral-600'}>
-					{'Offer a bribe to increase CRV emissions to your favorite Curve pool.\nJust like democracy, minus the suit and expense account.'}
-				</p>
+				<Balancer>
+					<b className={'text-center text-lg md:text-2xl'}>{'Buy votes to boost emissions.'}</b>
+					<p className={'mt-8 whitespace-pre-line text-center text-base text-neutral-600'}>
+						{'Offer a bribe to increase CRV emissions to your favorite Curve pool.\nJust like democracy, minus the suit and expense account.'}
+					</p>
+				</Balancer>
 			</div>
 			<div className={'mb-10 flex flex-row items-center justify-center space-x-4 md:mb-0 md:space-x-10'}>
 				<Link
