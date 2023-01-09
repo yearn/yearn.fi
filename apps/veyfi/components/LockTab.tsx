@@ -101,21 +101,21 @@ function LockTab(): ReactElement {
 		? {
 			label: 'Approve',
 			onAction: executeApprove,
-			status: approveLockStatus.loading,
-			disabled: !isActive || !isValidNetwork || isApproved || isLoadingVotingEscrow
+			isLoading: approveLockStatus.loading,
+			isDisabled: !isActive || !isValidNetwork || isApproved || isLoadingVotingEscrow
 		}
 		: hasLockedAmount
 			? {
 				label: 'Lock',
 				onAction: executeIncreaseLockAmount,
-				status: increaseLockAmountStatus.loading,
-				disabled: !isActive || !isValidNetwork || !isApproved || !isValidLockAmount || !isValidLockTime || isLoadingVotingEscrow
+				isLoading: increaseLockAmountStatus.loading,
+				isDisabled: !isActive || !isValidNetwork || !isApproved || !isValidLockAmount || !isValidLockTime || isLoadingVotingEscrow
 			}
 			: {
 				label: 'Lock',
 				onAction: executeLock,
-				status: lockStatus.loading,
-				disabled: !isActive || !isValidNetwork || !isApproved || !isValidLockAmount || !isValidLockTime || isLoadingVotingEscrow
+				isLoading: lockStatus.loading,
+				isDisabled: !isActive || !isValidNetwork || !isApproved || !isValidLockAmount || !isValidLockTime || isLoadingVotingEscrow
 			};
 
 	return ( 
@@ -160,8 +160,8 @@ function LockTab(): ReactElement {
 					<Button
 						className={'w-full md:mt-7'}
 						onClick={txAction.onAction}
-						isDisabled={txAction.disabled || txAction.status}
-						isBusy={txAction.status}
+						isDisabled={txAction.isDisabled || txAction.isLoading}
+						isBusy={txAction.isLoading}
 					>
 						{txAction.label}
 					</Button>
