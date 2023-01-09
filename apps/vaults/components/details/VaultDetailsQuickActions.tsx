@@ -321,7 +321,7 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 	const [amount, set_amount] = useState<TNormalizedBN>({raw: ethers.constants.Zero, normalized: 0});
 
 	const	isDepositing = useMemo((): boolean => (
-		!selectedOptionTo?.value ? true : toAddress(selectedOptionTo.value) === toAddress(currentVault.address)
+		!selectedOptionTo?.value || toAddress(selectedOptionTo.value) === toAddress(currentVault.address)
 	), [selectedOptionTo, currentVault]);
 
 	const maxDepositPossible = useMemo((): TNormalizedBN => {
