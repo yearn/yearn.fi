@@ -14,7 +14,7 @@ function	useSortVaults(
 	sortBy: TPossibleSortBy,
 	sortDirection: TPossibleSortDirection
 ): TYearnVault[] {
-	const	{balances} = useWallet();
+	const	{balances, balancesNonce} = useWallet();
 	
 	const	sortedByName = useCallback((): TYearnVault[] => (
 		vaultList.sort((a, b): number => {
@@ -45,16 +45,20 @@ function	useSortVaults(
 		})
 	), [sortDirection, vaultList]);
 
-	const	sortedByDeposited = useCallback((): TYearnVault[] => (
-		vaultList.sort((a, b): number => {
-			if (sortDirection === 'asc') {
-				return (balances[toAddress(a.address)]?.normalized || 0) - (balances[toAddress(b.address)]?.normalized || 0);
-			}
-			return (balances[toAddress(b.address)]?.normalized || 0) - (balances[toAddress(a.address)]?.normalized || 0);
-		})
-	), [balances, sortDirection, vaultList]);
+	const	sortedByDeposited = useCallback((): TYearnVault[] => {
+		balancesNonce; // remove warning, force deep refresh
+		return (
+			vaultList.sort((a, b): number => {
+				if (sortDirection === 'asc') {
+					return (balances[toAddress(a.address)]?.normalized || 0) - (balances[toAddress(b.address)]?.normalized || 0);
+				}
+				return (balances[toAddress(b.address)]?.normalized || 0) - (balances[toAddress(a.address)]?.normalized || 0);
+			})
+		);
+	}, [balances, sortDirection, vaultList, balancesNonce]);
 
 	const	sortedByAvailable = useCallback((): TYearnVault[] => {
+		balancesNonce; // remove warning, force deep refresh
 		const	chainCoinBalance = balances[ETH_TOKEN_ADDRESS]?.normalized || 0;
 		return vaultList.sort((a, b): number => {
 			let	aBalance = (balances[toAddress(a.token.address)]?.normalized || 0);
@@ -70,7 +74,7 @@ function	useSortVaults(
 			}
 			return (bBalance) - (aBalance);
 		});
-	}, [balances, sortDirection, vaultList]);
+	}, [balances, balancesNonce, sortDirection, vaultList]);
 
 	const	stringifiedVaultList = JSON.stringify(vaultList);
 	const	sortedVaults = useMemo((): TYearnVault[] => {

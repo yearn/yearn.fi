@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {isValidCategory} from '@common/types/category';
 
@@ -70,13 +70,18 @@ function	SearchBar({searchPlaceholder, searchValue, set_searchValue}: TListHeroS
 }
 
 function	DesktopCategories<T>({categories, onSelect}: TListHeroDesktopCategories<T>): ReactElement {
+	const	[isClientLoaded, set_isClientLoaded] = useState(false);
+	useEffect((): void => {
+		set_isClientLoaded(true);
+	}, []);
+
 	return (
 		<div>
 			<label className={'text-neutral-600'}>&nbsp;</label>
 			<div className={'mt-1 flex flex-row space-x-4'}>
 				{(categories || []).map((currentCategory, index: number): ReactElement => (
 					<div
-						key={index}
+						key={`${index}-${isClientLoaded}`}
 						className={'flex flex-row space-x-0 divide-x border-x border-neutral-900'}>
 						{currentCategory.map((item): ReactElement => (
 							<Button

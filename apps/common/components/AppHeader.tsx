@@ -1,88 +1,42 @@
 import React, {cloneElement, Fragment, useMemo, useState} from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import {useRouter} from 'next/router';
-import {AnimatePresence, motion} from 'framer-motion';
+import {AnimatePresence} from 'framer-motion';
 import {Popover, Transition} from '@headlessui/react';
-import {LogoVaults, MenuVaultsOptions} from '@vaults/Header';
-import {LogoVeYFI, MenuVeYFIOptions} from '@veYFI/Header';
+import {VaultsHeader} from '@vaults/components/header/VaultsHeader';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import Header from '@yearn-finance/web-lib/layouts/Header.next';
-import {YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import BalanceReminderPopover from '@common/components/BalanceReminderPopover';
 import {useMenu} from '@common/contexts/useMenu';
 import LogoYearn from '@common/icons/LogoYearn';
-import {variants} from '@common/utils/animations';
-import {LogoYBribe, MenuYBribeOptions} from '@yBribe/Header';
-import {LogoYCRV, MenuYCRVOptions} from '@yCRV/Header';
+import {YBribeHeader} from '@yBribe/components/header/YBribeHeader';
+import {YCrvHeader} from '@yCRV/components/header/YCrvHeader';
+
+import {AppName, APPS} from './Apps';
+import {MotionDiv} from './MotionDiv';
 
 import type {ReactElement} from 'react';
 import type {TMenu} from '@yearn-finance/web-lib/layouts/Header.next';
 
-const Apps = [
-	{
-		name: 'Vaults',
-		href: '/vaults',
-		icon: <LogoYearn
-			className={'h-8 w-8'}
-			back={'text-pink-400'}
-			front={'text-white'} />
-	},
-	{
-		name: 'yCRV',
-		href: '/ycrv',
-		icon: (
-			<Image
-				alt={'yCRV'}
-				width={32}
-				height={32}
-				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YCRV_TOKEN_ADDRESS}/logo-128.png`}
-				loading={'eager'}
-				priority />
-		)
-	},
-	{
-		name: 'veYFI',
-		href: '/veyfi',
-		icon: <LogoYearn
-			className={'h-8 w-8'}
-			back={'text-primary'}
-			front={'text-white'} />
-	},
-	{
-		name: 'yBribe',
-		href: '/ybribe',
-		icon: <LogoYearn
-			className={'h-8 w-8'}
-			back={'text-neutral-900'}
-			front={'text-neutral-0'} />
-	}
-];
-
 function	Logo(): ReactElement {
-	const	router = useRouter();
+	const	{pathname} = useRouter();
 
 	return (
 		<>
-			<LogoYCRV />
-			<LogoVaults />
-			<LogoVeYFI />
-			<LogoYBribe />
-			<motion.div
-				key={'yearn'}
-				initial={'initial'}
-				animate={router.pathname === '/' ? 'enter' : 'exit'}
-				variants={variants}
-				className={'absolute cursor-pointer'}>
+			<YCrvHeader pathname={pathname} />
+			<VaultsHeader pathname={pathname} />
+			<YBribeHeader pathname={pathname} />
+			<MotionDiv name={'yearn'} animate={pathname === '/' ? 'enter' : 'exit'}>
 				<LogoYearn
 					className={'h-8 w-8'}
 					back={'text-neutral-900'}
 					front={'text-neutral-0'} />
-			</motion.div>
+			</MotionDiv>
 		</>
 	);
 
 }
+
 function	LogoPopover(): ReactElement {
 	const [isShowing, set_isShowing] = useState(false);
 
@@ -109,24 +63,27 @@ function	LogoPopover(): ReactElement {
 				<Popover.Panel className={'absolute left-1/2 z-10 mt-6 w-80 -translate-x-1/2 px-4 pt-4 sm:px-0 md:w-96'}>
 					<div className={'overflow-hidden border border-neutral-200 shadow-lg'}>
 						<div className={'relative grid grid-cols-2 bg-neutral-0 md:grid-cols-4'}>
-							{Apps.map((item): ReactElement => (
-								<Link
-									prefetch={false}
-									key={item.name}
-									href={item.href}
-									onClick={(): void => set_isShowing(false)}>
-									<div
-										onClick={(): void => set_isShowing(false)}
-										className={'flex cursor-pointer flex-col items-center p-4 transition-colors hover:bg-neutral-200'}>
-										<div>
-											{cloneElement(item.icon)}
+							{(Object.keys(APPS) as AppName[]).map((appName): ReactElement => {
+								const {name, href, icon} = APPS[appName];
+								return (
+									<Link
+										prefetch={false}
+										key={name}
+										href={href}
+										onClick={(): void => set_isShowing(false)}>
+										<div
+											onClick={(): void => set_isShowing(false)}
+											className={'flex cursor-pointer flex-col items-center p-4 transition-colors hover:bg-neutral-200'}>
+											<div>
+												{cloneElement(icon)}
+											</div>
+											<div className={'pt-2 text-center'}>
+												<b className={'text-base'}>{name}</b>
+											</div>
 										</div>
-										<div className={'pt-2 text-center'}>
-											<b className={'text-base'}>{item.name}</b>
-										</div>
-									</div>
-								</Link>
-							))}
+									</Link>
+								);
+							})}
 						</div>
 					</div>
 				</Popover.Panel>
@@ -136,49 +93,45 @@ function	LogoPopover(): ReactElement {
 }
 
 export function	AppHeader(): ReactElement {
-	const	router = useRouter();
+	const	{pathname} = useRouter();
 	const	{isActive} = useWeb3();
 	const	{onOpenMenu} = useMenu();
-	
-	const	navMenu = useMemo((): TMenu[] => {
-		let	menu: TMenu[] = [
-			{path: '/', label: 'Home'},
+	const	menu = useMemo((): TMenu[] => {
+		const HOME_MENU = {path: '/', label: 'Home'};
+		
+		if (pathname.startsWith('/ycrv')) {
+			return [HOME_MENU, ...APPS[AppName.YCRV].menu];
+		}
+
+		if (pathname.startsWith('/vaults')) {
+			return [HOME_MENU, ...APPS[AppName.VAULTS].menu];
+		}
+		
+		if (pathname.startsWith('/ybribe')) {
+			return [HOME_MENU, ...APPS[AppName.YBRIBE].menu];
+		}
+		return [
+			HOME_MENU,
 			{path: 'https://gov.yearn.finance/', label: 'Governance', target: '_blank'},
 			{path: 'https://blog.yearn.finance/', label: 'Blog', target: '_blank'},
 			{path: 'https://docs.yearn.finance/', label: 'Docs', target: '_blank'}
 		];
-
-		if (router.pathname.startsWith('/ycrv')) {
-			menu = [{path: '/', label: 'Home'}, ...MenuYCRVOptions];
-		} else if (router.pathname.startsWith('/vaults')) {
-			menu = [{path: '/', label: 'Home'}, ...MenuVaultsOptions];
-		} else if (router.pathname.startsWith('/veyfi')) {
-			menu = [{path: '/', label: 'Home'}, ...MenuVeYFIOptions];
-		} else if (router.pathname.startsWith('/ybribe')) {
-			menu = [{path: '/', label: 'Home'}, ...MenuYBribeOptions];
-		}
-		return menu as TMenu[];
-	}, [router]);
+	}, [pathname]);
 
 	const	supportedNetworks = useMemo((): number[] => {
-		let	networks: number[] = [1, 10, 250, 42161];
-
-		if (router.pathname.startsWith('/ycrv')) {
-			networks = [1];
-		} else if (router.pathname.startsWith('/veyfi')) {
-			networks = [1];
-		} else if (router.pathname.startsWith('/ybribe')) {
-			networks = [1];
+		if (pathname.startsWith('/ycrv') || pathname.startsWith('/ybribe')) {
+			return [1];
 		}
-		return networks;
-	}, [router]);
+
+		return [1, 10, 250, 42161];
+	}, [pathname]);
 
 	return (
 		<Header
 			linkComponent={<Link href={''} />}
-			currentPathName={router.pathname}
+			currentPathName={pathname}
 			onOpenMenuMobile={onOpenMenu}
-			nav={navMenu}
+			nav={menu}
 			supportedNetworks={supportedNetworks}
 			logo={(
 				<AnimatePresence mode={'wait'}>
