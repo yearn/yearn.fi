@@ -27,12 +27,12 @@ function useCurrentApp({pathname}: NextRouter): TCurrentApp {
             
 		if (pathname.startsWith('/ybribe')) {
 			const {name, manifest, menu} = APPS[AppName.YBRIBE];
-			return {name, manifest, menu, header: <YBribeHeader />};
+			return {name, manifest, menu, header: <YBribeHeader pathname={pathname} />};
 		}
             
 		if (pathname.startsWith('/ycrv')) {
 			const {name, manifest, menu} = APPS[AppName.YCRV];
-			return {name, manifest, menu, header: <YCrvHeader />};
+			return {name, manifest, menu, header: <YCrvHeader pathname={pathname} />};
 		}
     
 		return {name: 'Home', manifest: homeManifest, menu: []};
