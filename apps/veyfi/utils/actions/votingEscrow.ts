@@ -29,7 +29,7 @@ export async function approveLock(
 	votingEscrowAddress: TAddress,
 	amount?: BigNumber
 ): Promise<boolean> {
-	return await approveERC20(provider, tokenAddress, votingEscrowAddress, amount);
+	return approveERC20(provider, tokenAddress, votingEscrowAddress, amount);
 }
 
 export async function lock(
@@ -41,7 +41,7 @@ export async function lock(
 ): Promise<boolean> {
 	const signer = provider.getSigner(accountAddress);
 	const votingEscrowContract = new ethers.Contract(votingEscrowAddress, VEYFI_ABI, signer);
-	return await handleTx(votingEscrowContract.modify_lock(amount, time, accountAddress));
+	return handleTx(votingEscrowContract.modify_lock(amount, time, accountAddress));
 }
 
 export async function increaseLockAmount(
@@ -52,8 +52,7 @@ export async function increaseLockAmount(
 ): Promise<boolean> {
 	const signer = provider.getSigner(accountAddress);
 	const votingEscrowContract = new ethers.Contract(votingEscrowAddress, VEYFI_ABI, signer);
-	return await handleTx(votingEscrowContract.modify_lock(amount, '0', accountAddress));
-
+	return handleTx(votingEscrowContract.modify_lock(amount, '0', accountAddress));
 }
 
 export async function extendLockTime(
@@ -64,8 +63,7 @@ export async function extendLockTime(
 ): Promise<boolean> {
 	const signer = provider.getSigner(accountAddress);
 	const votingEscrowContract = new ethers.Contract(votingEscrowAddress, VEYFI_ABI, signer);
-	return await handleTx(votingEscrowContract.modify_lock('0', time, accountAddress));
-
+	return handleTx(votingEscrowContract.modify_lock('0', time, accountAddress));
 }
 
 export async function withdrawUnlocked(
@@ -79,8 +77,7 @@ export async function withdrawUnlocked(
 	if ((penalty as BigNumber).gt(0)) {
 		throw new Error('Tokens are not yet unlocked');
 	}
-	return await handleTx(votingEscrowContract.withdraw());
-
+	return handleTx(votingEscrowContract.withdraw());
 }
 
 export async function withdrawLocked(
@@ -90,6 +87,5 @@ export async function withdrawLocked(
 ): Promise<boolean> {
 	const signer = provider.getSigner(accountAddress);
 	const votingEscrowContract = new ethers.Contract(votingEscrowAddress, VEYFI_ABI, signer);
-	return await handleTx(votingEscrowContract.withdraw());
-
+	return handleTx(votingEscrowContract.withdraw());
 }
