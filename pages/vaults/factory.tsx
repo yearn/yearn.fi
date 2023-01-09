@@ -81,7 +81,7 @@ function	Factory(): ReactElement {
 		const	canCreateVaults = await ethcallProvider.tryAll(calls) as boolean[];
 		return gauges.filter((_gauge: TCurveGauges, index: number): boolean => canCreateVaults[index]);
 	}, [gauges, provider, safeChainID]);
-	const [filteredGauges, mutate] = useAsync(fetchAlreadyCreatedGauges, [], gauges);
+	const [filteredGauges, , mutate] = useAsync(fetchAlreadyCreatedGauges, [], [gauges]);
 	
 	/* 🔵 - Yearn Finance ******************************************************
 	** We need to create the possible elements for the dropdown by removing all
@@ -130,7 +130,7 @@ function	Factory(): ReactElement {
 		});	
 	}, [provider, safeChainID, selectedOption?.value]);
 
-	const [gaugeDisplayData] = useAsync<TGaugeDisplayData>(fetchGaugeDisplayData, undefined, [selectedOption.value.name]);
+	const [gaugeDisplayData, isLoading] = useAsync<TGaugeDisplayData>(fetchGaugeDisplayData, undefined, [selectedOption.value.name]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Perform a smartContract call to the ZAP contract to get the expected
@@ -208,55 +208,80 @@ function	Factory(): ReactElement {
 
 						<div className={'col-span-2 w-full space-y-1'}>
 							<p className={'text-neutral-600'}>{'Vault name'}</p>
-							<div className={'h-10 bg-neutral-200 p-2 text-neutral-600'}>
-								{!gaugeDisplayData ? '-' : `Curve ${gaugeDisplayData.name} Factory`}
-							</div>
+							{isLoading ? (
+								<div className={'flex h-10 items-center bg-neutral-200 p-2 pl-5 text-neutral-600'}>
+									<span className={'loader'} />
+								</div>
+							) : (
+								<div className={'h-10 bg-neutral-200 p-2 text-neutral-600'}>
+									{!gaugeDisplayData ? '' : `Curve ${gaugeDisplayData.name} Factory`}
+								</div>
+							)}
 						</div>
 
 						<div className={'col-span-2 w-full space-y-1'}>
 							<p className={'text-neutral-600'}>{'Symbol'}</p>
-							<div className={'h-10 bg-neutral-200 p-2 text-neutral-600'}>
-								{!gaugeDisplayData ? '-' : `yvCurve-${gaugeDisplayData.symbol}-f`}
-							</div>
+							{isLoading ? (
+								<div className={'flex h-10 items-center bg-neutral-200 p-2 pl-5 text-neutral-600'}>
+									<span className={'loader'} />
+								</div>
+							) : (
+								<div className={'h-10 bg-neutral-200 p-2 text-neutral-600'}>
+									{!gaugeDisplayData ? '' : `yvCurve-${gaugeDisplayData.symbol}-f`}
+								</div>
+							)}
 						</div>
 
 						<div className={'col-span-3 w-full space-y-1'}>
 							<p className={'text-neutral-600'}>{'Pool address'}</p>
-							<div className={'flex h-10 flex-row items-center justify-between bg-neutral-200 p-2 font-mono'}>
-								{gaugeDisplayData ? (
-									<>
-										<p className={'overflow-hidden text-ellipsis text-neutral-600'}>
-											{gaugeDisplayData.poolAddress}
-										</p>
-										<a
-											href={`${networks[1].explorerBaseURI}/address/${gaugeDisplayData.poolAddress}`}
-											target={'_blank'}
-											rel={'noreferrer'}
-											className={'ml-4 cursor-pointer text-neutral-900'}>
-											<LinkOut className={'h-6 w-6'} />
-										</a>
-									</>
-								) : ''}
-							</div>
+							{isLoading ? (
+								<div className={'flex h-10 items-center bg-neutral-200 p-2 pl-5 text-neutral-600'}>
+									<span className={'loader'} />
+								</div>
+							) : (
+								<div className={'flex h-10 flex-row items-center justify-between bg-neutral-200 p-2 font-mono'}>
+									{gaugeDisplayData ? (
+										<>
+											<p className={'overflow-hidden text-ellipsis text-neutral-600'}>
+												{gaugeDisplayData.poolAddress}
+											</p>
+											<a
+												href={`${networks[1].explorerBaseURI}/address/${gaugeDisplayData.poolAddress}`}
+												target={'_blank'}
+												rel={'noreferrer'}
+												className={'ml-4 cursor-pointer text-neutral-900'}>
+												<LinkOut className={'h-6 w-6'} />
+											</a>
+										</>
+									) : ''}
+								</div>
+							)}
 						</div>
 						<div className={'col-span-3 w-full space-y-1'}>
 							<p className={'text-neutral-600'}>{'Gauge address'}</p>
-							<div className={'flex h-10 flex-row items-center justify-between bg-neutral-200 p-2 font-mono'}>
-								{gaugeDisplayData ? (
-									<>
-										<p className={'overflow-hidden text-ellipsis text-neutral-600'}>
-											{gaugeDisplayData.gaugeAddress}
-										</p>
-										<a
-											href={`${networks[1].explorerBaseURI}/address/${gaugeDisplayData.gaugeAddress}`}
-											target={'_blank'}
-											rel={'noreferrer'}
-											className={'ml-4 cursor-pointer text-neutral-900'}>
-											<LinkOut className={'h-6 w-6'} />
-										</a>
-									</>
-								) : ''}
-							</div>
+							
+							{isLoading ? (
+								<div className={'flex h-10 items-center bg-neutral-200 p-2 pl-5 text-neutral-600'}>
+									<span className={'loader'} />
+								</div>
+							) : (
+								<div className={'flex h-10 flex-row items-center justify-between bg-neutral-200 p-2 font-mono'}>
+									{gaugeDisplayData ? (
+										<>
+											<p className={'overflow-hidden text-ellipsis text-neutral-600'}>
+												{gaugeDisplayData.gaugeAddress}
+											</p>
+											<a
+												href={`${networks[1].explorerBaseURI}/address/${gaugeDisplayData.gaugeAddress}`}
+												target={'_blank'}
+												rel={'noreferrer'}
+												className={'ml-4 cursor-pointer text-neutral-900'}>
+												<LinkOut className={'h-6 w-6'} />
+											</a>
+										</>
+									) : ''}
+								</div>
+							)}
 						</div>
 
 					</div>
