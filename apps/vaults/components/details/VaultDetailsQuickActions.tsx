@@ -19,6 +19,7 @@ import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/tr
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
+import {toNormalizedBN} from '@common/utils';
 import {approveERC20} from '@common/utils/actions/approveToken';
 import {deposit} from '@common/utils/actions/deposit';
 import {depositETH} from '@common/utils/actions/depositEth';
@@ -312,32 +313,26 @@ function	ActionButton({
 function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): ReactElement {
 	const {isActive, provider} = useWeb3();
 	const {chainID, safeChainID} = useChainID();
-	const {balances, refresh} = useWallet();
+	const {balances, balancesNonce, refresh} = useWallet();
 	const [possibleOptionsFrom, set_possibleOptionsFrom] = useState<TDropdownOption[]>([]);
 	const [possibleOptionsTo, set_possibleOptionsTo] = useState<TDropdownOption[]>([]);
 	const [selectedOptionFrom, set_selectedOptionFrom] = useState<TDropdownOption | undefined>();
 	const [selectedOptionTo, set_selectedOptionTo] = useState<TDropdownOption | undefined>();
 	const [amount, set_amount] = useState<TNormalizedBN>({raw: ethers.constants.Zero, normalized: 0});
 
+	const	isDepositing = useMemo((): boolean => (
+		!selectedOptionTo?.value || toAddress(selectedOptionTo.value) === toAddress(currentVault.address)
+	), [selectedOptionTo, currentVault]);
+
 	const maxDepositPossible = useMemo((): TNormalizedBN => {
+		balancesNonce; // remove warning, force deep refresh
 		const	vaultDepositLimit = formatBN(currentVault.details.depositLimit) || ethers.constants.Zero;
 		const	userBalance = balances?.[toAddress(selectedOptionFrom?.value)]?.raw || ethers.constants.Zero;
-		if (userBalance.gt(vaultDepositLimit)) {
-			return ({
-				raw: vaultDepositLimit,
-				normalized: formatToNormalizedValue(vaultDepositLimit, currentVault.token.decimals)
-			});
+		if (userBalance.gt(vaultDepositLimit) && isDepositing) {
+			return (toNormalizedBN(vaultDepositLimit, currentVault.token.decimals));
 		} 
-		return ({
-			raw: userBalance,
-			normalized: balances?.[toAddress(selectedOptionFrom?.value)]?.normalized || 0
-		});
-		
-	}, [balances, currentVault.details.depositLimit, currentVault.token.decimals, selectedOptionFrom?.value]);
-
-	const	isDepositing = useMemo((): boolean => (
-		!selectedOptionTo?.value ? true : toAddress(selectedOptionTo.value) === toAddress(currentVault.address)
-	), [selectedOptionTo, currentVault]);
+		return (toNormalizedBN(userBalance, currentVault.token.decimals));
+	}, [balances, balancesNonce, currentVault.details.depositLimit, currentVault.token.decimals, isDepositing, selectedOptionFrom?.value]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** If the token to deposit is wETH, we can also deposit ETH via our custom Zap contract. In

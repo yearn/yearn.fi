@@ -1,4 +1,5 @@
 import React, {useCallback, useMemo, useState} from 'react';
+import Balancer from 'react-wrap-balancer';
 import {Contract} from 'ethcall';
 import {ethers} from 'ethers';
 import useSWR from 'swr';
@@ -95,7 +96,7 @@ function	Factory(): ReactElement {
 					label: gauge.name,
 					icon: (
 						<ImageWithFallback
-							src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${gauge.swap_token}/logo-128.png`}
+							src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${toAddress(gauge.swap_token)}/logo-128.png`}
 							alt={gauge.name}
 							width={36}
 							height={36} />
@@ -178,17 +179,19 @@ function	Factory(): ReactElement {
 				<div aria-label={'new vault card title'} className={'flex flex-col pb-8'}>
 					<h2 className={'pb-4 text-3xl font-bold'}>{'Create new Vault'}</h2>
 					<div className={'w-full md:w-7/12'}>
-						<p>
-							{'Deploy a new auto-compounding yVault for any Curve pool with an active liquidity gauge. All factory-deployed vaults have no management fees and a flat 10% performance fee. Permissionless finance just got permissionless-er. To learn more, check our '}
-							<a
-								href={'https://docs.yearn.finance/getting-started/products/yvaults/vault-factory'}
-								target={'_blank'}
-								className={'text-neutral-900 underline'}
-								rel={'noreferrer'}>
-								{'docs'}
-							</a>
-							{'.'}
-						</p>
+						<Balancer>
+							<p>
+								{'Deploy a new auto-compounding yVault for any Curve pool with an active liquidity gauge. All factory-deployed vaults have no management fees and a flat 10% performance fee. Permissionless finance just got permissionless-er. To learn more, check our '}
+								<a
+									href={'https://docs.yearn.finance/getting-started/products/yvaults/vault-factory'}
+									target={'_blank'}
+									className={'text-neutral-900 underline'}
+									rel={'noreferrer'}>
+									{'docs'}
+								</a>
+								{'.'}
+							</p>
+						</Balancer>
 					</div>
 				</div>
 

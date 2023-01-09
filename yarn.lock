@@ -2367,10 +2367,10 @@
     "@web3-react/types" "^8.0.20-beta.0"
     eventemitter3 "^4.0.7"
 
-"@yearn-finance/web-lib@^0.17.81":
-  version "0.17.81"
-  resolved "https://registry.yarnpkg.com/@yearn-finance/web-lib/-/web-lib-0.17.81.tgz#21f7cf69f230aff6765fe321efa3da4f4cc2be70"
-  integrity sha512-7KcQBR7WCMVA18PGPFnZTe0gYRTDOS7ssiaYAA5u13gxwWqEqhYpN1ydNEHvoMDzIlqMX2UauKO0SwPl4Q7XXw==
+"@yearn-finance/web-lib@^0.17.85":
+  version "0.17.85"
+  resolved "https://registry.yarnpkg.com/@yearn-finance/web-lib/-/web-lib-0.17.85.tgz#1e9ac2e74e6d49600b1d1bba19938fa9158f65ea"
+  integrity sha512-na+33Yx2tnkHLcOoptFwcbolx1TGftynqLyu4eEOQk8p4L2DRyRWl2kZFsg17T+xNtK0GSFEwotXiSb7BbU/vA==
   dependencies:
     "@coinbase/wallet-sdk" "^3.5.4"
     "@ethersproject/experimental" "^5.7.0"
@@ -5865,6 +5865,11 @@ react-transition-group@2.9.0:
     loose-envify "^1.4.0"
     prop-types "^15.6.2"
     react-lifecycles-compat "^3.0.4"
+
+react-wrap-balancer@^0.2.4:
+  version "0.2.4"
+  resolved "https://registry.yarnpkg.com/react-wrap-balancer/-/react-wrap-balancer-0.2.4.tgz#1f112df575958400f253186aa9a7fd5ee9528ed1"
+  integrity sha512-MVL9/Tw1X72t0i5Y/2j3YmSx1vkJJ22b5Vb+vZ/IOEdq7r9JPNzTfnfkB8wrl98Jwx+F6VCwJXmU7a1lT5PtCA==
 
 react@18.2.0, react@^18.2.0:
   version "18.2.0"

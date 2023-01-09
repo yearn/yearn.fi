@@ -1,4 +1,5 @@
 import React, {useMemo, useState} from 'react';
+import Balancer from 'react-wrap-balancer';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 
@@ -54,14 +55,16 @@ function	SettingsOverwrite(): ReactElement {
 			</div>
 			<div className={'text-justify'}>
 				<p className={'pb-6'}>
-					{'Configure the default settings for this application, such as the '}
-					<a
-						href={'https://ydaemon.yearn.farm'}
-						target={'_blank'}
-						className={'text-neutral-900 underline'}
-						rel={'noreferrer'}>{'yDaemon API'}
-					</a>
-					{' base URI and the default network.'}
+					<Balancer>
+						{'Configure the default settings for this application, such as the '}
+						<a
+							href={'https://ydaemon.yearn.farm'}
+							target={'_blank'}
+							className={'text-neutral-900 underline'}
+							rel={'noreferrer'}>{'yDaemon API'}
+						</a>
+						{' base URI and the default network.'}
+					</Balancer>
 				</p>
 				<div className={'grid grid-cols-1 gap-4'}>
 					<WrappedInput

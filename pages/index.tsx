@@ -1,4 +1,5 @@
 import React, {useRef} from 'react';
+import Balancer from 'react-wrap-balancer';
 import Image from 'next/image';
 import Link from 'next/link';
 import {useClientEffect} from '@yearn-finance/web-lib/hooks/useClientEffect';
@@ -88,7 +89,7 @@ function	AppBox({app}: {app: typeof apps[0]}): ReactElement {
 				</div>
 				<div className={'pt-6 text-center'}>
 					<b className={'text-lg'}>{app.title}</b>
-					<p className={'whitespace-pre'}>{app.description}</p>
+					<p><Balancer>{app.description}</Balancer></p>
 				</div>
 			</div>
 		</Link>
@@ -188,8 +189,8 @@ function	TextAnimation(): ReactElement {
 function	Index(): ReactElement {
 	return (
 		<>
-			<div className={'mx-auto mt-6 mb-10 flex w-full max-w-6xl flex-col items-center justify-center md:mt-20 md:mb-14'}>
-				<div className={'relative h-12 w-[300px] md:h-[104px] md:w-[600px]'}>
+			<div className={'mx-auto mt-6 mb-10 flex flex-col justify-center md:mt-20 md:mb-14'}>
+				<div className={'relative h-12 w-[300px] self-center md:h-[104px] md:w-[600px]'}>
 					<TextAnimation />
 				</div>
 				<div className={'my-8'}>
@@ -200,8 +201,9 @@ function	Index(): ReactElement {
 					</p>
 				</div>
 				<div className={'mb-6'}>
-					<p className={'text-center text-sm text-neutral-500 md:whitespace-pre md:text-base'}>
-						{'Yearn is a decentralized suite of products helping individuals, DAOs, and other protocols\nearn yield on their digital assets.'}
+					
+					<p className={'text-center text-sm text-neutral-500 md:text-base'}>
+						<Balancer>{'Yearn is a decentralized suite of products helping individuals, DAOs, and other protocols\nearn yield on their digital assets.'}</Balancer>
 					</p>
 				</div>
 			</div>

@@ -1,6 +1,5 @@
 import React, {cloneElement, Fragment, useState} from 'react';
 import {Combobox, Transition} from '@headlessui/react';
-import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {useBalance} from '@common/hooks/useBalance';
 import IconChevron from '@common/icons/IconChevron';
@@ -33,17 +32,6 @@ function DropdownItem({option}: TDropdownGaugeItemProps): ReactElement {
 }
 
 function DropdownEmpty({query}: {query: string}): ReactElement {
-	const {isActive, openLoginModal} = useWeb3();
-
-	if (!isActive) {
-		return (
-			<div
-				onClick={(): void => openLoginModal()}
-				className={'flex h-14 cursor-pointer flex-col items-center justify-center px-4 text-center transition-colors hover:bg-neutral-300'}>
-				<b className={'text-neutral-900'}>{'Connect Wallet'}</b>
-			</div>
-		);
-	}
 	if (query !== '') {
 		return (
 			<div className={'relative flex h-14 flex-col items-center justify-center px-4 text-center'}>

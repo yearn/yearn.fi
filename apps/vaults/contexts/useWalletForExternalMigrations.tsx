@@ -1,4 +1,4 @@
-import React, {createContext, memo, useCallback, useContext, useMemo, useState} from 'react';
+import React, {createContext, memo, useCallback, useContext, useMemo} from 'react';
 import {migrationTable} from '@vaults/utils/migrationTable';
 import {useUI} from '@yearn-finance/web-lib/contexts/useUI';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -15,14 +15,14 @@ import type {TMigrationTable} from '@vaults/utils/migrationTable';
 
 export type	TWalletForExternalMigrations = {
 	balances: TDict<TBalanceData>,
-	useWalletNonce: number,
+	balancesNonce: number,
 	isLoading: boolean,
 	refresh: () => Promise<TDict<TBalanceData>>
 }
 
 const	defaultProps = {
 	balances: {},
-	useWalletNonce: 0,
+	balancesNonce: 0,
 	isLoading: true,
 	refresh: async (): Promise<TDict<TBalanceData>> => ({})
 };
@@ -34,7 +34,6 @@ const	defaultProps = {
 ******************************************************************************/
 const	WalletForExternalMigrations = createContext<TWalletForExternalMigrations>(defaultProps);
 export const WalletForExternalMigrationsApp = memo(function WalletForExternalMigrationsApp({children}: {children: ReactElement}): ReactElement {
-	const	[nonce, set_nonce] = useState<number>(0);
 	const	{provider} = useWeb3();
 	const	{prices} = useYearn();
 	const	{chainID} = useChainID();
@@ -50,7 +49,7 @@ export const WalletForExternalMigrationsApp = memo(function WalletForExternalMig
 		return tokens;
 	}, []);
 
-	const	{data: balances, update: updateBalances, isLoading} = useBalances({
+	const	{data: balances, update: updateBalances, isLoading, nonce} = useBalances({
 		key: chainID,
 		provider: provider || getProvider(1),
 		tokens: availableTokens,
@@ -64,9 +63,6 @@ export const WalletForExternalMigrationsApp = memo(function WalletForExternalMig
 
 	useClientEffect((): () => void => {
 		if (isLoading) {
-			if (!balances) {
-				set_nonce(nonce + 1);
-			}
 			onLoadStart();
 		} else {
 			onLoadDone();
@@ -81,7 +77,7 @@ export const WalletForExternalMigrationsApp = memo(function WalletForExternalMig
 		balances: balances,
 		isLoading: isLoading,
 		refresh: onRefresh,
-		useWalletNonce: nonce
+		balancesNonce: nonce
 	}), [balances, isLoading, onRefresh, nonce]);
 
 	return (
