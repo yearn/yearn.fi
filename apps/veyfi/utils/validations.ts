@@ -44,19 +44,19 @@ export function validateAmount(props: TValidateAmountProps): TValidationResponse
 	}
   
 	if (amountNumber < 0) {
-		return {error: 'Invalid amount'};
+		return {isValid: false, error: 'Invalid amount'};
 	}
   
 	if (maxAmountAllowed !== undefined && amountNumber > Number(maxAmountAllowed)) {
-		return {error: 'Exceeded max amount'};
+		return {isValid: false, error: 'Exceeded max amount'};
 	}
   
 	if (minAmountAllowed !== undefined && amountNumber < Number(minAmountAllowed)) {
-		return {error: `Amount under minimum allowed ${shouldDisplayMin && minAmountAllowed !== undefined  ? `(min ${minAmountAllowed})` : ''}`};
+		return {isValid: false, error: `Amount under minimum allowed ${shouldDisplayMin && minAmountAllowed !== undefined  ? `(min ${minAmountAllowed})` : ''}`};
 	}
   
 	if (balance !== undefined && amountNumber > Number(balance)) {
-		return {error: `Insufficient balance ${shouldDisplayMin && minAmountAllowed !== undefined  ? `(min ${minAmountAllowed})` : ''}`};
+		return {isValid: false, error: `Insufficient balance ${shouldDisplayMin && minAmountAllowed !== undefined  ? `(min ${minAmountAllowed})` : ''}`};
 	}
   
 	return {isValid: true};
@@ -71,10 +71,10 @@ export function validateNetwork(props: TValidateNetworkProps): TValidationRespon
 	const {supportedNetwork, walletNetwork} = props;
   
 	if (!walletNetwork) {
-		return {error: 'Wallet Not Connected'};
+		return {isValid: false, error: 'Wallet Not Connected'};
 	}
 	if (supportedNetwork !== walletNetwork) {
-		return {error: 'Incorrect Network Selected'};
+		return {isValid: false, error: 'Incorrect Network Selected'};
 	}
   
 	return {isValid: true};
