@@ -28,12 +28,12 @@ export function validateAllowance(props: TValidateAllowanceProps): TValidationRe
 }
 
 export type TValidateAmountProps = {
-    amount: string | number;
-    balance?: string | number;
-    minAmountAllowed?: string | number;
-    maxAmountAllowed?: string | number;
+	amount: string | number;
+	balance?: string | number;
+	minAmountAllowed?: string | number;
+	maxAmountAllowed?: string | number;
 	shouldDisplayMin?: boolean;
-  }
+}
   
 export function validateAmount(props: TValidateAmountProps): TValidationResponse {
 	const {amount, balance, minAmountAllowed, maxAmountAllowed, shouldDisplayMin} = props;
