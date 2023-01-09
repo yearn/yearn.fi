@@ -12,7 +12,7 @@ import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUp
 import {Dropdown} from '@common/components/TokenDropdown';
 import {useYearn} from '@common/contexts/useYearn';
 import ArrowDown from '@common/icons/ArrowDown';
-import {handleInputChange} from '@common/utils';
+import {handleInputChange, toNormalizedBN} from '@common/utils';
 import CardTransactorContextApp, {useCardTransactor} from '@yCRV/components/CardTransactorWrapper';
 import {useExtendedWallet} from '@yCRV/contexts/useExtendedWallet';
 import {CardVariants, CardVariantsInner} from '@yCRV/utils/animations';
@@ -141,10 +141,7 @@ function	CardZap(): ReactElement {
 									set_selectedOptionTo(ZAP_OPTIONS_TO.find((o: TDropdownOption): boolean => o.value !== option.value) as TDropdownOption);
 								}
 								set_selectedOptionFrom(option);
-								set_amount({
-									raw: balances[toAddress(option.value)]?.raw || ethers.constants.Zero,
-									normalized: balances[toAddress(option.value)]?.normalized || 0
-								});
+								set_amount(toNormalizedBN(balances[toAddress(option.value)]?.raw));
 							});
 						}} />
 					<p className={'pl-2 !text-xs font-normal !text-green-600'}>
@@ -172,12 +169,7 @@ function	CardZap(): ReactElement {
 									});
 								}} />
 							<button
-								onClick={(): void => {
-									set_amount({
-										raw: balances[toAddress(selectedOptionFrom.value)]?.raw || ethers.constants.Zero,
-										normalized: balances[toAddress(selectedOptionFrom.value)]?.normalized || 0
-									});
-								}}
+								onClick={(): void => set_amount(toNormalizedBN(balances[toAddress(selectedOptionFrom.value)]?.raw))}
 								className={'cursor-pointer text-sm text-neutral-500 transition-colors hover:text-neutral-900'}>
 								{'max'}
 							</button>

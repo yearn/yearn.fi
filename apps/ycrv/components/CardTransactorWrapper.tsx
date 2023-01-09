@@ -11,7 +11,7 @@ import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/tr
 import {useYearn} from '@common/contexts/useYearn';
 import {useAddToken} from '@common/hooks/useAddToken';
 import {useDismissToasts} from '@common/hooks/useDismissToasts';
-import {formatPercent, getAmountWithSlippage, getVaultAPY} from '@common/utils';
+import {formatPercent, getAmountWithSlippage, getVaultAPY, toNormalizedBN} from '@common/utils';
 import {approveERC20} from '@common/utils/actions/approveToken';
 import {deposit} from '@common/utils/actions/deposit';
 import {useExtendedWallet} from '@yCRV/contexts/useExtendedWallet';
@@ -68,7 +68,7 @@ function	CardTransactorContextApp({
 }): ReactElement {
 	const	{provider, isActive} = useWeb3();
 	const	{styCRVAPY, allowances, slippage} = useYCRV();
-	const	{useWalletNonce, balances, refresh} = useExtendedWallet();
+	const	{balancesNonce, balances, refresh} = useExtendedWallet();
 	const	{vaults} = useYearn();
 	const	[txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
 	const	[txStatusZap, set_txStatusZap] = useState(defaultTxStatus);
@@ -85,18 +85,16 @@ function	CardTransactorContextApp({
 	** the wallet is connected, or to 0 if the wallet is disconnected.
 	**************************************************************************/
 	useEffect((): void => {
+		balancesNonce; // remove warning, force deep refresh
 		if (isActive && amount.raw.eq(0) && !hasTypedSomething) {
-			set_amount({
-				raw: balances[toAddress(selectedOptionFrom.value)]?.raw || ethers.constants.Zero,
-				normalized: balances[toAddress(selectedOptionFrom.value)]?.normalized || 0
-			});
+			set_amount(toNormalizedBN(balances[toAddress(selectedOptionFrom.value)]?.raw));
 		} else if (!isActive && amount.raw.gt(0)) {
 			performBatchedUpdates((): void => {
-				set_amount({raw: ethers.constants.Zero, normalized: 0});
+				set_amount(toNormalizedBN(0));
 				set_hasTypedSomething(false);
 			});
 		}
-	}, [isActive, selectedOptionFrom, amount.raw, hasTypedSomething, balances]);
+	}, [isActive, selectedOptionFrom, amount.raw, hasTypedSomething, balances, balancesNonce]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Perform a smartContract call to the ZAP contract to get the expected
@@ -264,9 +262,9 @@ function	CardTransactorContextApp({
 	), [expectedOut, selectedOptionFrom.value, selectedOptionTo.value, slippage]);
 
 	const	allowanceFrom = useMemo((): BigNumber => {
-		useWalletNonce; // remove warning
+		balancesNonce; // remove warning, force deep refresh
 		return allowances?.[allowanceKey(selectedOptionFrom.value, selectedOptionFrom.zapVia)] || ethers.constants.Zero;
-	}, [useWalletNonce, allowances, selectedOptionFrom.value, selectedOptionFrom.zapVia]);
+	}, [balancesNonce, allowances, selectedOptionFrom.value, selectedOptionFrom.zapVia]);
 
 	return (
 		<CardTransactorContext.Provider

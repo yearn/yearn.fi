@@ -1,12 +1,14 @@
-import React, {useRef} from 'react';
+import React, {useEffect, useRef} from 'react';
 import {motion} from 'framer-motion';
 import {VaultDetailsHeader} from '@vaults/components/details/VaultDetailsHeader';
 import {VaultDetailsQuickActions} from '@vaults/components/details/VaultDetailsQuickActions';
 import {VaultDetailsTabsWrapper} from '@vaults/components/details/VaultDetailsTabsWrapper';
 import Wrapper from '@vaults/Wrapper';
+import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
+import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import {variants} from '@common/utils/animations';
 
@@ -16,9 +18,17 @@ import type {ReactElement} from 'react';
 import type {TYearnVault} from '@common/types/yearn';
 
 function Index({router, vaultData}: {router: NextRouter, vaultData: TYearnVault}): ReactElement {
+	const {address, isActive} = useWeb3();
 	const {safeChainID} = useChainID();
 	const {vaults} = useYearn();
 	const currentVault = useRef<TYearnVault>(vaults[toAddress(router.query.address as string)] as TYearnVault || vaultData);
+	const {refresh} = useWallet();
+
+	useEffect((): void => {
+		if (address && isActive && currentVault?.current?.token?.address) {
+			refresh([{token: toAddress(currentVault.current.address)}]);
+		}
+	}, [currentVault.current.token.address, address, isActive, refresh]);
 
 	return (
 		<>

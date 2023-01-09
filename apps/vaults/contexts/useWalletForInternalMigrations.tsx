@@ -1,4 +1,4 @@
-import React, {createContext, memo, useCallback, useContext, useMemo, useState} from 'react';
+import React, {createContext, memo, useCallback, useContext, useMemo} from 'react';
 import {useVaultsMigrations} from '@vaults/contexts/useVaultsMigrations';
 import {useUI} from '@yearn-finance/web-lib/contexts/useUI';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -17,7 +17,7 @@ import type {TYearnVault} from '@common/types/yearn';
 export type	TWalletForInternalMigrations = {
 	balances: TDict<TBalanceData>,
 	cumulatedValueInVaults: number,
-	useWalletNonce: number,
+	balancesNonce: number,
 	isLoading: boolean,
 	refresh: (tokenList?: TUseBalancesTokens[]) => Promise<TDict<TBalanceData>>,
 }
@@ -25,7 +25,7 @@ export type	TWalletForInternalMigrations = {
 const	defaultProps = {
 	balances: {},
 	cumulatedValueInVaults: 0,
-	useWalletNonce: 0,
+	balancesNonce: 0,
 	isLoading: true,
 	refresh: async (): Promise<TDict<TBalanceData>> => ({})
 };
@@ -37,7 +37,6 @@ const	defaultProps = {
 ******************************************************************************/
 const	WalletForInternalMigrations = createContext<TWalletForInternalMigrations>(defaultProps);
 export const WalletForInternalMigrationsApp = memo(function WalletForInternalMigrationsApp({children}: {children: ReactElement}): ReactElement {
-	const	[nonce, set_nonce] = useState(0);
 	const	{provider} = useWeb3();
 	const	{prices} = useYearn();
 	const	{chainID} = useChainID();
@@ -58,7 +57,7 @@ export const WalletForInternalMigrationsApp = memo(function WalletForInternalMig
 		return tokens;
 	}, [possibleVaultsMigrations, isLoadingVaultList]);
 
-	const	{data: balances, update, updateSome, isLoading} = useBalances({
+	const	{data: balances, update, updateSome, isLoading, nonce} = useBalances({
 		key: chainID,
 		provider: provider || getProvider(1),
 		tokens: availableTokens,
@@ -92,9 +91,6 @@ export const WalletForInternalMigrationsApp = memo(function WalletForInternalMig
 
 	useClientEffect((): void => {
 		if (isLoading) {
-			if (!balances) {
-				set_nonce(nonce + 1);
-			}
 			onLoadStart();
 		} else {
 			onLoadDone();
@@ -109,7 +105,7 @@ export const WalletForInternalMigrationsApp = memo(function WalletForInternalMig
 		cumulatedValueInVaults,
 		isLoading: isLoading || false,
 		refresh: onRefresh,
-		useWalletNonce: nonce
+		balancesNonce: nonce
 	}), [balances, cumulatedValueInVaults, isLoading, onRefresh, nonce]);
 
 	return (

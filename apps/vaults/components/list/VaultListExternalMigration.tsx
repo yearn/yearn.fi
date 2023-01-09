@@ -131,7 +131,7 @@ function	VaultListExternalMigrationRow({element}: {element: TMigrationTable}): R
 
 
 function	VaultListExternalMigration(): ReactElement {
-	const	{balances} = useWalletForExternalMigrations();
+	const	{balances, balancesNonce} = useWalletForExternalMigrations();
 	const	[sortBy, set_sortBy] = useState<TPossibleSortBy>('apy');
 	const	[sortDirection, set_sortDirection] = useState<TPossibleSortDirection>('desc');
 	
@@ -150,6 +150,7 @@ function	VaultListExternalMigration(): ReactElement {
 
 
 	const	possibleBowswapMigrations = useMemo((): TMigrationTable[] => {
+		balancesNonce; // remove warning, force deep refresh
 		const	migration: TMigrationTable[] = [];
 		
 		Object.values(migrationTable || {}).forEach((possibleBowswapMigrations: TMigrationTable[]): void => {
@@ -161,7 +162,7 @@ function	VaultListExternalMigration(): ReactElement {
 		});
 
 		return migration;
-	}, [balances]);
+	}, [balances, balancesNonce]);
 
 	const	possibleBeefyMigrations = useMemo((): TMigrationTable[] => {
 		return beefyVaults.reduce((migratableVaults, bVault): TMigrationTable[] => {

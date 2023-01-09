@@ -96,7 +96,7 @@ function	Factory(): ReactElement {
 					label: gauge.name,
 					icon: (
 						<ImageWithFallback
-							src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${gauge.swap_token}/logo-128.png`}
+							src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${toAddress(gauge.swap_token)}/logo-128.png`}
 							alt={gauge.name}
 							width={36}
 							height={36} />
