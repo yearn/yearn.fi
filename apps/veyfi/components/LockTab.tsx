@@ -136,7 +136,7 @@ function LockTab(): ReactElement {
 					<AmountInput
 						label={'YFI'}
 						amount={lockAmount.normalized}
-						onAmountChange={(amount): unknown => set_lockAmount(toNormalizedBN(amount, 18))}
+						onAmountChange={(amount): void => set_lockAmount(toNormalizedBN(amount, 18))}
 						maxAmount={tokenBalance.normalized > 0 ? tokenBalance.normalized.toFixed(18) : ''}
 						legend={`Available: ${formatAmount(tokenBalance.normalized, 4)} YFI`}
 						error={lockAmountError}

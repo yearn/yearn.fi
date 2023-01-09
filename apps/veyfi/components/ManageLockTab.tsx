@@ -85,7 +85,7 @@ function ManageLockTab(): ReactElement {
 					<AmountInput
 						label={'Increase lock period (weeks)'}
 						amount={lockTime}
-						onAmountChange={(amount): unknown => set_lockTime(Math.floor(toTime(amount)).toString())}
+						onAmountChange={(amount): void => set_lockTime(Math.floor(toTime(amount)).toString())}
 						maxAmount={MAX_LOCK_TIME - weeksToUnlock > 0 ? MAX_LOCK_TIME - weeksToUnlock : 0}
 						disabled={!hasLockedAmount}
 						error={lockTimeError}
