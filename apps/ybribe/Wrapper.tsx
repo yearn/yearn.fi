@@ -27,15 +27,7 @@ export default function Wrapper({children, router}: {children: ReactElement, rou
 							exit={'exit'}
 							className={'my-0 h-full md:mb-0 md:mt-16'}
 							variants={variants}>
-							<div className={'md:mb-0 md:mt-16'}>
-								<div className={'mx-auto flex w-full max-w-6xl flex-col items-center justify-center'}>
-									<div className={'mt-10 w-[300px] md:w-full'}>
-										<div className={'flex w-full items-center justify-center text-center text-4xl font-bold uppercase text-neutral-900 md:text-8xl'}>
-											<HeroTimer />
-										</div>
-									</div>
-								</div>
-							</div>
+							<HeroTimer />
 							{children}
 						</motion.div>
 					</AnimatePresence>
