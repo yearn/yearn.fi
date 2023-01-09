@@ -66,7 +66,7 @@ export function	QuickActionToBox({
 					</div>
 				)}
 				<legend className={'font-number hidden text-xs text-neutral-600 md:inline'} suppressHydrationWarning>
-					{isDepositing && (currentVault?.apy?.net_apy || 0 > 5) ? (
+					{isDepositing && ((currentVault?.apy?.net_apy || 0) > 5) ? (
 						`APY ≧ ${formatPercent(500)}`
 					) : isDepositing ? (
 						`APY ${formatPercent((currentVault?.apy?.net_apy || 0) * 100)}`
