@@ -70,27 +70,12 @@ export function getAmountWithSlippage(from: string, to: string, value: BigNumber
 	return formatToNormalizedValue(value || ethers.constants.Zero, 18);
 }
 
-export function toNormalizedBN(
-	value: string,
-	decimals: number
-): TNormalizedBN {
-	let		amount = value.replace(/,/g, '.').replace(/[^0-9.]/g, '');
-	const	amountParts = amount.split('.');
-	if (amountParts.length === 2) {
-		amount = amountParts[0] + '.' + amountParts[1].slice(0, decimals);
-	}
-	const	raw = ethers.utils.parseUnits(amount || '0', decimals);
-	return ({raw: raw, normalized: amount});
-}
-
 export function handleInputChange(
 	e: React.ChangeEvent<HTMLInputElement>,
 	decimals: number
 ): TNormalizedBN {
 	return toNormalizedBN(e.target.value, decimals);
 }
-
-export const DefaultTNormalizedBN: TNormalizedBN = {raw: ethers.constants.Zero, normalized: 0};
 
 export function getVaultName(vault: TYearnVault): string {
 	const baseName = vault.display_name || vault.name || vault.formated_name || 'unknown';
