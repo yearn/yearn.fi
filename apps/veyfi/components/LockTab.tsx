@@ -29,7 +29,7 @@ function LockTab(): ReactElement {
 	const {refresh: refreshBalances} = useWallet();
 	const {votingEscrow, positions, allowances, isLoading: isLoadingVotingEscrow, refresh: refreshVotingEscrow} = useVotingEscrow();
 	const tokenBalance = useBalance(toAddress(votingEscrow?.token));
-	const clearLockAmount = (): unknown => set_lockAmount(DefaultTNormalizedBN);
+	const clearLockAmount = (): void => set_lockAmount(DefaultTNormalizedBN);
 	const refreshData = (): unknown => Promise.all([refreshVotingEscrow(), refreshBalances()]);
 	const onTxSuccess = (): unknown => Promise.all([refreshData(), clearLockAmount()]);
 	const [approveLock, approveLockStatus] = useTransaction(VotingEscrowActions.approveLock, refreshData);
