@@ -58,25 +58,24 @@ export const CurveContextApp = ({children}: {children: React.ReactElement}): Rea
 		'https://api.curve.fi/api/getAllGauges?blockchainId=ethereum',
 		curveFetcher,
 		{revalidateOnFocus: false}
-	) as SWRResponse<TDict<TCurveGauges>>;
+	);
 
 	const	gauges = useMemo((): TCurveGauges[] => {
 		const	_gaugesForMainnet: TCurveGauges[] = [];
 		for (const gauge of Object.values(gaugesWrapper || {})) {
-			const	currentGauge = gauge as TCurveGauges;
-			if (currentGauge.is_killed) {
+			if (gauge.is_killed) {
 				continue;
 			}
-			if (currentGauge.side_chain) {
+			if (gauge.side_chain) {
 				continue;
 			}
 
 			const addressPart = /\([^()]*\)/;
-			currentGauge.name = currentGauge.name.replace(addressPart, '');
-			currentGauge.swap_token = toAddress(currentGauge.swap_token);
-			currentGauge.gauge = toAddress(currentGauge.gauge);
-			currentGauge.swap = toAddress(currentGauge.swap);
-			_gaugesForMainnet.push(currentGauge);
+			gauge.name = gauge.name.replace(addressPart, '');
+			gauge.swap_token = toAddress(gauge.swap_token);
+			gauge.gauge = toAddress(gauge.gauge);
+			gauge.swap = toAddress(gauge.swap);
+			_gaugesForMainnet.push(gauge);
 		}
 		return _gaugesForMainnet;
 	}, [gaugesWrapper]);
