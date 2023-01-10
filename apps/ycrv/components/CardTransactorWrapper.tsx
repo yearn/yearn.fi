@@ -21,6 +21,7 @@ import {LEGACY_OPTIONS_FROM, LEGACY_OPTIONS_TO} from '@yCRV/utils/zapOptions';
 
 import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
+import type {VoidPromiseFunction} from '@yearn-finance/web-lib/utils/types';
 import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
 
 type TCardTransactor = {
@@ -37,9 +38,9 @@ type TCardTransactor = {
 	set_selectedOptionTo: (option: TDropdownOption) => void,
 	set_amount: (amount: TNormalizedBN) => void,
 	set_hasTypedSomething: (hasTypedSomething: boolean) => void,
-	onApproveFrom: () => Promise<void>,
-	onIncreaseCRVAllowance: () => Promise<void>,
-	onZap: () => Promise<void>
+	onApproveFrom: VoidPromiseFunction,
+	onIncreaseCRVAllowance: VoidPromiseFunction,
+	onZap: VoidPromiseFunction
 }
 
 const		CardTransactorContext = createContext<TCardTransactor>({
