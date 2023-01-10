@@ -10,8 +10,7 @@ import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
 import type {TAddress} from '@yearn-finance/web-lib/utils/address';
-import type {TDict} from '@yearn-finance/web-lib/utils/types';
-import type {VoidPromiseFunction} from '@common/types/types';
+import type {TDict, VoidPromiseFunction} from '@yearn-finance/web-lib/utils/types';
 import type {TYdaemonEarned, TYDaemonToken, TYearnVault} from '@common/types/yearn';
 
 export type	TYearnContext = {
@@ -34,7 +33,7 @@ const	defaultProps: TYearnContext = {
 	tokens: {},
 	vaults: {[ethers.constants.AddressZero]: undefined},
 	isLoadingVaultList: false,
-	mutateVaultList: async () => undefined
+	mutateVaultList: async (): Promise<void> => Promise.resolve()
 };
 
 type TYearnVaultsMap = {

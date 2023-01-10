@@ -42,8 +42,8 @@ export type TDropdownProps = {
 	selected?: TDropdownOption;
 	placeholder?: string;
 	onSelect:
-		| React.Dispatch<React.SetStateAction<TDropdownOption>>
-		| ((option: TDropdownOption) => void);
+	| React.Dispatch<React.SetStateAction<TDropdownOption>>
+	| ((option: TDropdownOption) => void);
 	balanceSource?: TDict<TBalanceData>;
 };
 
@@ -69,8 +69,8 @@ export type TDropdownGaugeProps = {
 	selected?: TDropdownGaugeOption;
 	placeholder?: string;
 	onSelect:
-		| React.Dispatch<React.SetStateAction<TDropdownGaugeOption>>
-		| ((option: TDropdownGaugeOption) => void);
+	| React.Dispatch<React.SetStateAction<TDropdownGaugeOption>>
+	| ((option: TDropdownGaugeOption) => void);
 };
 
 export type TDropdownGaugeItemProps = {

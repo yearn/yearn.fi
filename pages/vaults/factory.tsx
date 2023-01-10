@@ -14,7 +14,7 @@ import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import LinkOut  from '@yearn-finance/web-lib/icons/IconLinkOut';
+import LinkOut from '@yearn-finance/web-lib/icons/IconLinkOut';
 import {ERC20_ABI} from '@yearn-finance/web-lib/utils/abi';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -67,7 +67,7 @@ function	Factory(): ReactElement {
 	** associated vault.
 	**************************************************************************/
 	const fetchAlreadyCreatedGauges = useCallback(async (): Promise<TCurveGauges[]> => {
-		if ((gauges || []).length === 0)  {
+		if ((gauges || []).length === 0) {
 			return [];
 		}
 		const	currentProvider = safeChainID === 1 ? provider || getProvider(1) : getProvider(1);

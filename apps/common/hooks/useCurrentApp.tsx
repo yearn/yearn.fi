@@ -12,10 +12,10 @@ import type {TMenu} from '@yearn-finance/web-lib/layouts/Header.next';
 import type {TMetaFile} from '@common/components/Meta';
 
 type TCurrentApp = {
-    name: AppName | 'Home';
-    manifest: TMetaFile;
-    header?: ReactElement;
-    menu: TMenu[];
+	name: AppName | 'Home';
+	manifest: TMetaFile;
+	header?: ReactElement;
+	menu: TMenu[];
 };
 
 function useCurrentApp({pathname}: NextRouter): TCurrentApp {
