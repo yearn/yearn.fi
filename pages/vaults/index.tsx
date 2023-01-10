@@ -205,6 +205,7 @@ function	Index(): ReactElement {
 				</div>
 				<ListHero
 					headLabel={category}
+					searchLabel={`Search ${category}`}
 					searchPlaceholder={'YFI Vault'}
 					categories={[
 						[
