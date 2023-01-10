@@ -6,13 +6,13 @@ import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {CRV_TOKEN_ADDRESS, LPYCRV_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatBN, formatToNormalizedValue, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
+import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {Dropdown} from '@common/components/TokenDropdown';
 import {useYearn} from '@common/contexts/useYearn';
 import ArrowDown from '@common/icons/ArrowDown';
-import {handleInputChange, toNormalizedBN} from '@common/utils';
 import CardTransactorContextApp, {useCardTransactor} from '@yCRV/components/CardTransactorWrapper';
 import {useExtendedWallet} from '@yCRV/contexts/useExtendedWallet';
 import {CardVariants, CardVariantsInner} from '@yCRV/utils/animations';
@@ -164,7 +164,7 @@ function	CardZap(): ReactElement {
 								value={amount.normalized}
 								onChange={(e: ChangeEvent<HTMLInputElement>): void => {
 									performBatchedUpdates((): void => {
-										set_amount(handleInputChange(e, balances[toAddress(selectedOptionFrom.value)]?.decimals || 18));
+										set_amount(handleInputChangeEventValue(e.target.value, balances[toAddress(selectedOptionFrom.value)]?.decimals || 18));
 										set_hasTypedSomething(true);
 									});
 								}} />

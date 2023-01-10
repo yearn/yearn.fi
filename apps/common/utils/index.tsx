@@ -2,13 +2,12 @@ import {ethers} from 'ethers';
 import request from 'graphql-request';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {LPYCRV_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YVBOOST_TOKEN_ADDRESS, YVECRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 
-import type {BigNumber, BigNumberish} from 'ethers';
+import type {BigNumber} from 'ethers';
 import type {GraphQLResponse} from 'graphql-request/dist/types';
 import type {TDict} from '@yearn-finance/web-lib/utils/types';
-import type {TNormalizedBN} from '@common/types/types';
 import type {TYearnVault} from '@common/types/yearn';
 
 export function	max(input: BigNumber, balance: BigNumber): BigNumber {
@@ -73,13 +72,6 @@ export function getAmountWithSlippage(from: string, to: string, value: BigNumber
 	return formatToNormalizedValue(value || ethers.constants.Zero, 18);
 }
 
-export function handleInputChange(
-	e: React.ChangeEvent<HTMLInputElement>,
-	decimals: number
-): TNormalizedBN {
-	return toNormalizedBN(e.target.value, decimals);
-}
-
 export function getVaultName(vault: TYearnVault): string {
 	const baseName = vault.display_name || vault.name || vault.formated_name || 'unknown';
 	if (baseName.includes(' yVault')) {
@@ -96,10 +88,3 @@ export const graphFetcher = async (args: [string, string]): Promise<GraphQLRespo
 export const formatPercent = (n: number, min = 2, max = 2): string => `${formatAmount(n || 0, min, max)}%`;
 
 export const formatUSD = (n: number, min = 2, max = 2): string => `$ ${formatAmount(n || 0, min, max)}`;
-
-export const toNormalizedBN = (value?: BigNumberish, decimals?: number): TNormalizedBN => ({
-	raw: formatBN(value),
-	normalized: formatToNormalizedValue(formatBN(value), decimals || 18)
-});
-
-export const DefaultTNormalizedBN: TNormalizedBN = toNormalizedBN(ethers.constants.Zero);
