@@ -101,8 +101,7 @@ export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({chil
 		const ethcallProvider = await newEthCallProvider(currentProvider);
 		const veYFIPositionHelperContract = new Contract(VEYFI_POSITION_HELPER_ADDRESS, VEYFI_POSITION_HELPER_ABI);
 
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		const [positionDetails] = await ethcallProvider.tryAll([veYFIPositionHelperContract.getPositionDetails(address)]) as [any];
+		const [positionDetails] = await ethcallProvider.tryAll([veYFIPositionHelperContract.getPositionDetails(address)]) as [{balance: BigNumber, depositAmount: BigNumber, unlockTime: BigNumber, penalty: BigNumber, withdrawable: BigNumber}];
 		
 		const depositPosition: TPosition = {
 			balance: positionDetails.balance,
@@ -111,9 +110,9 @@ export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({chil
 
 		return {
 			deposit: depositPosition,
-			unlockTime: toMilliseconds((positionDetails.unlockTime as BigNumber).toNumber()),
+			unlockTime: toMilliseconds(positionDetails.unlockTime.toNumber()),
 			penalty: positionDetails.penalty,
-			penaltyRatio: (positionDetails.depositAmount as BigNumber).gt(0) ? FixedNumber.from(positionDetails.penalty).divUnsafe(FixedNumber.from(positionDetails.depositAmount)).toUnsafeFloat() : 0,
+			penaltyRatio: positionDetails.depositAmount.gt(0) ? FixedNumber.from(positionDetails.penalty).divUnsafe(FixedNumber.from(positionDetails.depositAmount)).toUnsafeFloat() : 0,
 			withdrawable: positionDetails.withdrawable
 		};
 	}, [isActive, address]);
