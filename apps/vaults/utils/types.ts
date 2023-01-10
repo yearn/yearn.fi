@@ -1,4 +1,4 @@
 export type TMigratableVault = {
-    name: string;
-    address: string;
+	name: string;
+	address: string;
 }

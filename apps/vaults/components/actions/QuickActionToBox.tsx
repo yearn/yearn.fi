@@ -40,7 +40,11 @@ export function	QuickActionToBox({
 						{isDepositing ? 'To vault' : 'To wallet'}
 					</label>
 					<legend className={'font-number inline text-xs text-neutral-600 md:hidden'} suppressHydrationWarning>
-						{`APY ${formatPercent((isDepositing ? currentVault?.apy?.net_apy || 0 : 0) * 100)}`}
+						{(currentVault.apy?.net_apy || 0) > 5 ? (
+							`APY ≧ ${isDepositing ? formatPercent(500) : 0}`
+						) : (
+							`APY ${formatPercent((isDepositing ? currentVault?.apy?.net_apy || 0 : 0) * 100)}`
+						)}
 					</legend>
 				</div>
 				{(filteredPossibleOptionsTo.length > 1) ? (
@@ -62,7 +66,11 @@ export function	QuickActionToBox({
 					</div>
 				)}
 				<legend className={'font-number hidden text-xs text-neutral-600 md:inline'} suppressHydrationWarning>
-					{isDepositing ? `APY ${formatPercent((currentVault?.apy?.net_apy || 0) * 100)}` : ''}
+					{isDepositing && ((currentVault?.apy?.net_apy || 0) > 5) ? (
+						`APY ≧ ${formatPercent(500)}`
+					) : isDepositing ? (
+						`APY ${formatPercent((currentVault?.apy?.net_apy || 0) * 100)}`
+					) : ''}
 				</legend>
 			</div>
 

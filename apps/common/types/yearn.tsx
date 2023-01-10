@@ -52,57 +52,57 @@ export type TYearnVaultStrategy = {
 }
 
 export type TYearnVault = {
-    inception: number,
-    address: TAddress,
-    symbol: string,
-    display_symbol: string,
-    formated_symbol: string,
-    name: string,
-    display_name: string,
-    formated_name: string,
-    icon: string,
+	inception: number,
+	address: TAddress,
+	symbol: string,
+	display_symbol: string,
+	formated_symbol: string,
+	name: string,
+	display_name: string,
+	formated_name: string,
+	icon: string,
 	category: string,
 	riskScore: number,
-    token: {
-        address: TAddress,
-        name: string,
-        display_name: string,
-        symbol: string,
-        description: string,
-        decimals: number,
-        icon: string,
-    },
-    tvl: {
-        total_assets: string,
-        tvl: number,
-        price: number
-    },
-    apy: {
-        type: string,
-        gross_apr: number,
-        net_apy: number,
-        fees: {
-            performance: number,
-            withdrawal: number,
-            management: number,
-            keep_crv: number,
-            cvx_keep_crv: number
-        },
-        points: {
-            week_ago: number,
-            month_ago: number,
-            inception: number,
-        },
-        composite: {
-            boost: number,
-            pool_apy: number,
-            boosted_apr: number,
-            base_apr: number,
-            cvx_apr: number,
-            rewards_apr: number
-        }
-    },
-    strategies: TYearnVaultStrategy[],
+	token: {
+		address: TAddress,
+		name: string,
+		display_name: string,
+		symbol: string,
+		description: string,
+		decimals: number,
+		icon: string,
+	},
+	tvl: {
+		total_assets: string,
+		tvl: number,
+		price: number
+	},
+	apy: {
+		type: string,
+		gross_apr: number,
+		net_apy: number,
+		fees: {
+			performance: number,
+			withdrawal: number,
+			management: number,
+			keep_crv: number,
+			cvx_keep_crv: number
+		},
+		points: {
+			week_ago: number,
+			month_ago: number,
+			inception: number,
+		},
+		composite: {
+			boost: number,
+			pool_apy: number,
+			boosted_apr: number,
+			base_apr: number,
+			cvx_apr: number,
+			rewards_apr: number
+		}
+	},
+	strategies: TYearnVaultStrategy[],
 	details: {
 		management: TAddress,
 		governance: TAddress,
@@ -120,17 +120,17 @@ export type TYearnVault = {
 		allowZapOut: boolean,
 		retired: boolean
 	},
-    endorsed: boolean,
-    version: string,
-    decimals: number,
-    type: string,
-    emergency_shutdown: boolean,
-    updated: number,
-    migration: {
-        available: boolean,
-        address: TAddress,
-        contract: TAddress,
-    }
+	endorsed: boolean,
+	version: string,
+	decimals: number,
+	type: string,
+	emergency_shutdown: boolean,
+	updated: number,
+	migration: {
+		available: boolean,
+		address: TAddress,
+		contract: TAddress,
+	}
 }
 
 export type	TSettingsForNetwork = {

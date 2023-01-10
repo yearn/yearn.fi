@@ -29,6 +29,9 @@ export function getVaultAPY(vaults: TDict<TYearnVault | undefined>, vaultAddress
 	}
 
 	if (vaults?.[toAddress(vaultAddress)]?.apy?.net_apy) {
+		if ((vaults?.[toAddress(vaultAddress)]?.apy?.net_apy || 0) > 5) {
+			return `APY ≧ ${formatPercent(500)}`;
+		}
 		return `APY ${formatPercent((vaults?.[toAddress(vaultAddress)]?.apy?.net_apy || 0) * 100)}`;
 	}
 
