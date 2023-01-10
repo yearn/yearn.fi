@@ -13,7 +13,7 @@ import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3
 import CURVE_CRV_YCRV_LP_ABI from '@yCRV/utils/abi/curveCrvYCrvLp.abi';
 import STYCRV_ABI from '@yCRV/utils/abi/styCRV.abi';
 import YVECRV_ABI from '@yCRV/utils/abi/yveCRV.abi';
-import {CVXCRV_TOKEN_ADDRESS} from '@yCRV/utils/constants';
+import {CVXCRV_TOKEN_ADDRESS, VLYCRV_TOKEN_ADDRESS} from '@yCRV/utils/constants';
 
 import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
@@ -27,6 +27,7 @@ type THoldings = {
 	yCRVSupply: BigNumber;
 	styCRVSupply: BigNumber;
 	lpyCRVSupply: BigNumber;
+	vlyCRVSupply: BigNumber;
 	crvYCRVPeg: BigNumber;
 	boostMultiplier: BigNumber;
 	veCRVTotalSupply: BigNumber;
@@ -55,6 +56,7 @@ const	defaultProps = {
 		yCRVSupply: ethers.constants.Zero,
 		styCRVSupply: ethers.constants.Zero,
 		lpyCRVSupply: ethers.constants.Zero,
+		vlyCRVSupply: ethers.constants.Zero,
 		crvYCRVPeg: ethers.constants.Zero,
 		boostMultiplier: ethers.constants.Zero,
 		veCRVTotalSupply: ethers.constants.Zero,
@@ -109,6 +111,7 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 			yveCRVInYCRV,
 			veCRVBalance,
 			veCRVTotalSupply,
+			vlyCRVSupply,
 			yCRVTotalSupply,
 			styCRVTotalSupply,
 			lpyCRVTotalSupply,
@@ -118,11 +121,12 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 			yveCRVContract.balanceOf(YCRV_TOKEN_ADDRESS),
 			veEscrowContract.balanceOf(VECRV_YEARN_TREASURY_ADDRESS),
 			veEscrowContract.totalSupply(),
+			yveCRVContract.balanceOf(VLYCRV_TOKEN_ADDRESS),
 			yCRVContract.totalSupply(),
 			styCRVContract.totalAssets(),
 			lpyCRVContract.totalSupply(),
 			crvYCRVLpContract.get_dy(1, 0, ethers.constants.WeiPerEther)
-		]) as [BigNumber, BigNumber, BigNumber, BigNumber, BigNumber, BigNumber, BigNumber, BigNumber];
+		]) as [BigNumber, BigNumber, BigNumber, BigNumber, BigNumber, BigNumber, BigNumber, BigNumber, BigNumber];
 
 		return ({
 			['legacy']: yveCRVTotalSupply.sub(yveCRVInYCRV),
@@ -130,6 +134,7 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 			['yCRVSupply']: yCRVTotalSupply,
 			['styCRVSupply']: styCRVTotalSupply,
 			['lpyCRVSupply']: lpyCRVTotalSupply,
+			['vlyCRVSupply']: vlyCRVSupply,
 			['crvYCRVPeg']: crvYCRVPeg,
 			['boostMultiplier']: veCRVBalance.mul(1e4).div(styCRVTotalSupply),
 			['veCRVTotalSupply']: veCRVTotalSupply,

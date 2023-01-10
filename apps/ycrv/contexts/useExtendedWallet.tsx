@@ -8,7 +8,7 @@ import {CRV_TOKEN_ADDRESS, LPYCRV_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS, YVBOOST_TOK
 import {getProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
-import {CVXCRV_TOKEN_ADDRESS} from '@yCRV/utils/constants';
+import {CVXCRV_TOKEN_ADDRESS, VLYCRV_TOKEN_ADDRESS} from '@yCRV/utils/constants';
 
 import type {ReactElement} from 'react';
 import type {TBalanceData} from '@yearn-finance/web-lib/hooks/types';
@@ -46,6 +46,7 @@ export const ExtendedWalletContextApp = memo(function ExtendedWalletContextApp({
 		provider: provider || getProvider(1),
 		tokens: [
 			{token: YCRV_TOKEN_ADDRESS},
+			{token: VLYCRV_TOKEN_ADDRESS},
 			{token: LPYCRV_TOKEN_ADDRESS},
 			{token: CRV_TOKEN_ADDRESS},
 			{token: YVBOOST_TOKEN_ADDRESS},

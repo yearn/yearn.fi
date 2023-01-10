@@ -13,6 +13,7 @@ import {useTokenPrice} from '@common/hooks/useTokenPrice';
 import {formatPercent, getVaultAPY} from '@common/utils';
 import {Harvests} from '@yCRV/components/Harvests';
 import {useYCRV} from '@yCRV/contexts/useYCRV';
+import {VLYCRV_TOKEN_ADDRESS} from '@yCRV/utils/constants';
 import Wrapper from '@yCRV/Wrapper';
 
 import type {BigNumber} from 'ethers';
@@ -95,9 +96,9 @@ function	Holdings(): ReactElement {
 	const	latestCurveFeesValue = useMemo((): number => {
 		if (curveWeeklyFees?.weeklyFeesTable?.[0]?.rawFees > 0) {
 			return curveWeeklyFees.weeklyFeesTable[0].rawFees;
-		} 
+		}
 		return curveWeeklyFees?.weeklyFeesTable?.[1]?.rawFees || 0;
-		
+
 	}, [curveWeeklyFees]);
 
 	const	currentVeCRVAPY = useMemo((): number => {
@@ -157,7 +158,7 @@ function	Holdings(): ReactElement {
 							</p>
 						</div>
 					</div>
-				</div> 
+				</div>
 
 				<div className={'grid w-full bg-neutral-100 p-6'}>
 					<div className={'mb-6 hidden w-full grid-cols-5 md:grid'}>
@@ -288,24 +289,35 @@ function	Holdings(): ReactElement {
 						</div>
 						<div className={'flex flex-row items-center justify-between'}>
 							<span className={'inline text-sm font-normal text-neutral-400 md:hidden'}>{'Total Assets: '}</span>
-							<p className={'font-number text-base text-neutral-900'}>
-								{'N/A'}
+							<p
+								suppressHydrationWarning
+								className={'font-number text-base text-neutral-900'}>
+								{holdings?.vlyCRVSupply ? formatCounterValue(
+									formatToNormalizedValue(holdings.vlyCRVSupply || ethers.constants.Zero, 18),
+									ycrvPrice
+								) : formatAmount(0)}
 							</p>
 						</div>
 						<div className={'flex flex-row items-center justify-between'}>
 							<span className={'inline text-sm font-normal text-neutral-400 md:hidden'}>{'yCRV Deposits: '}</span>
-							<p className={'font-number text-base text-neutral-900'}>
-								{'N/A'}
+							<p
+								suppressHydrationWarning
+								className={'font-number text-base text-neutral-900'}>
+								{formatBigNumberOver10K(holdings?.vlyCRVSupply || 0)}
 							</p>
 						</div>
 						<div className={'flex flex-row items-baseline justify-between'}>
 							<span className={'inline text-sm font-normal text-neutral-400 md:hidden'}>{'My Balance: '}</span>
 							<div>
-								<p className={'font-number text-base text-neutral-900'}>
-									{'N/A'}
+								<p
+									suppressHydrationWarning
+									className={'font-number text-base text-neutral-900'}>
+									{formatNumberOver10K(balances[VLYCRV_TOKEN_ADDRESS]?.normalized || 0)}
 								</p>
-								<p className={'font-number text-xs text-neutral-600'}>
-									{'N/A'}
+								<p
+									suppressHydrationWarning
+									className={'font-number text-xs text-neutral-600'}>
+									{formatCounterValue(balances[VLYCRV_TOKEN_ADDRESS]?.normalized, ycrvPrice)}
 								</p>
 							</div>
 						</div>
