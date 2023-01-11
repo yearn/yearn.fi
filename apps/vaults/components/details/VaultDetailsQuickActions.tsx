@@ -462,13 +462,11 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 
 	return (
 		<>
-			<nav className={'mt-10 mb-2 w-full md:mt-20'}>
-				<Link href={'/vaults'}>
-					<p className={'yearn--header-nav-item w-full whitespace-nowrap opacity-30'}>
-						{'Back to vaults'}
-					</p>
-				</Link>
-			</nav>
+			<Link href={'/vaults'}>
+				<p className={'yearn--header-nav-item w-full whitespace-nowrap opacity-30'}>
+					{'Back to vaults'}
+				</p>
+			</Link>
 			<div
 				aria-label={'Quick Deposit'}
 				className={'col-span-12 mb-4 flex flex-col space-x-0 space-y-2 bg-neutral-200 p-4 md:flex-row md:space-x-4 md:space-y-0 md:p-8'}>

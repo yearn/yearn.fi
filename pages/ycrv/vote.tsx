@@ -1,25 +1,30 @@
 import React, {useEffect, useRef} from 'react';
-import {motion} from 'framer-motion';
-import {VaultDetailsHeader} from '@vaults/components/details/VaultDetailsHeader';
+import Balancer from 'react-wrap-balancer';
 import {VaultDetailsQuickActions} from '@vaults/components/details/VaultDetailsQuickActions';
-import {VaultDetailsTabsWrapper} from '@vaults/components/details/VaultDetailsTabsWrapper';
 import Wrapper from '@vaults/Wrapper';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {ImageWithFallback} from '@common/components/ImageWithFallback';
+import {HeroTimer} from '@common/components/HeroTimer';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
-import {variants} from '@common/utils/animations';
+import GaugeList from '@yCRV/components/list/GaugeList';
 
-import type {NextPageContext} from 'next';
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
-import type {TYearnVault} from '@common/types/yearn';
+import type {TYearnGauge, TYearnVault} from '@common/types/yearn';
+
+export const MOCK_GAUGE: TYearnGauge = {
+	name: 'Gauge',
+	address: '0x',
+	category: 'Foo',
+	token: {
+		address: '0x000000000000000000000000000000000000dEaD'
+	},
+	votes: 0
+};
 
 function Index({router, vaultData}: {router: NextRouter, vaultData: TYearnVault}): ReactElement {
 	const {address, isActive} = useWeb3();
-	const {safeChainID} = useChainID();
 	const {vaults} = useYearn();
 	const currentVault = useRef<TYearnVault>(vaults[toAddress(router.query.address as string)] as TYearnVault || vaultData);
 	const {refresh} = useWallet();
@@ -37,29 +42,21 @@ function Index({router, vaultData}: {router: NextRouter, vaultData: TYearnVault}
 		}
 	}, [currentVault.current?.address, currentVault.current?.token?.address, address, isActive, refresh]);
 
+	
 	return (
 		<>
-			<header className={'relative z-50 flex w-full items-center justify-center'}>
-				<motion.div
-					key={'vaults'}
-					initial={'initial'}
-					animate={'enter'}
-					variants={variants}
-					className={'absolute z-50 mt-0 h-12 w-12 cursor-pointer md:-mt-36 md:h-[72px] md:w-[72px]'}>
-					<ImageWithFallback
-						src={`${process.env.BASE_YEARN_ASSETS_URI}/${safeChainID}/${toAddress(currentVault.current.token.address)}/logo-128.png`}
-						alt={''}
-						width={72}
-						height={72} />
-				</motion.div>
-			</header>
-
+			<HeroTimer timeLeft={127579000} />
+			<div className={'mt-8 mb-10 w-full max-w-6xl text-center'}>
+				<Balancer>
+					<b className={'text-center text-lg md:text-2xl'}>{'Vote For Your Gauge.'}</b>
+					<p className={'mt-8 whitespace-pre-line text-center text-base text-neutral-600'}>
+						{'... stats ...'}
+					</p>
+				</Balancer>
+			</div>
 			<section className={'mt-10 grid w-full grid-cols-12 pb-10 md:mt-0'}>
-				<VaultDetailsHeader currentVault={currentVault.current} />
-				<nav className={'mt-10 mb-2 w-full md:mt-20'}>
-					<VaultDetailsQuickActions currentVault={currentVault.current} />
-				</nav>
-				<VaultDetailsTabsWrapper currentVault={currentVault.current} />
+				<VaultDetailsQuickActions currentVault={currentVault.current} />
+				<GaugeList />
 			</section>
 		</>
 	);
@@ -71,9 +68,9 @@ Index.getLayout = function getLayout(page: ReactElement, router: NextRouter): Re
 
 export default Index;
 
-Index.getInitialProps = async ({query}: NextPageContext): Promise<unknown> => {
-	const	address = toAddress((query?.address as string)?.split('/').pop() || '');
-	const	chainID = query?.chainID;
+Index.getInitialProps = async (): Promise<unknown> => {
+	const	address = toAddress(('0x27B5739e22ad9033bcBf192059122d163b60349D')?.split('/').pop() || '');
+	const	chainID = 1;
 	const	res = await fetch(`${process.env.YDAEMON_BASE_URI}/${chainID}/vaults/${address}?hideAlways=true&orderBy=apy.net_apy&orderDirection=desc&strategiesDetails=withDetails&strategiesRisk=withRisk&strategiesCondition=inQueue`);
 	const	json = await res.json();
 
