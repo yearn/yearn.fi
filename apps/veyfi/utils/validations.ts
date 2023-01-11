@@ -22,7 +22,7 @@ export function validateAllowance(props: TValidateAllowanceProps): TValidationRe
 	// TODO: return valid when is native token
 
 	const allowance = allowances[allowanceKey(tokenAddress, spenderAddress)];
-	const isApproved = allowance?.gte(amount);
+	const isApproved = allowance?.gt(0) && allowance?.gte(amount);
 
 	return {isValid: isApproved};
 }
