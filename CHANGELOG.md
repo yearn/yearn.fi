@@ -1,5 +1,7 @@
 # 0.1.15
 - Extract and reuse hooks and functions from the web-lib
+- Improve Vault's search
+- Remove the performance fee from Vault's strategies
 
 # 0.1.14
 - Remove the `isActive` from the gauge dropdown, as wallet connect is not required to get that list

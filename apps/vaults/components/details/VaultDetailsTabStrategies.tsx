@@ -121,13 +121,6 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVau
 									{formatPercent((strategy?.details?.debtRatio || 0) / 100, 0)}
 								</b>
 							</div>
-
-							<div className={'col-span-2 flex flex-col space-y-0 md:space-y-2'}>
-								<p className={'text-xxs text-neutral-600 md:text-xs'}>{'Performance fee'}</p>
-								<b className={'font-number text-xl text-neutral-600'}>
-									{formatPercent((strategy?.details?.performanceFee || 0) * 100, 0)}
-								</b>
-							</div>
 						</div>
 
 						<div className={'mt-auto pt-8'}>

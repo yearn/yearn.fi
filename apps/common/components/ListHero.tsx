@@ -13,6 +13,7 @@ export type TListHeroCategory<T> = {
 
 export type TListHero<T> = {
 	headLabel: string;
+	searchLabel: string;
 	searchPlaceholder: string;
 	categories: TListHeroCategory<T>[][];
 	onSelect: (category: T) => void;
@@ -21,6 +22,7 @@ export type TListHero<T> = {
 }
 
 export type TListHeroSearchBar = {
+	searchLabel: string;
 	searchPlaceholder: string;
 	searchValue: string;
 	set_searchValue: (searchValue: string) => void;
@@ -31,10 +33,10 @@ export type TListHeroDesktopCategories<T> = {
 	onSelect: (category: T) => void;
 }
 
-function	SearchBar({searchPlaceholder, searchValue, set_searchValue}: TListHeroSearchBar): ReactElement {
+function	SearchBar({searchLabel, searchPlaceholder, searchValue, set_searchValue}: TListHeroSearchBar): ReactElement {
 	return (
 		<div className={'w-full'}>
-			<label htmlFor={'search'} className={'text-neutral-600'}>{'Search'}</label>
+			<label htmlFor={'search'} className={'text-neutral-600'}>{searchLabel}</label>
 			<div className={'mt-1 flex h-10 w-full max-w-md items-center border border-neutral-0 bg-neutral-0 p-2 md:w-2/3'}>
 				<div className={'relative flex h-10 w-full flex-row items-center justify-between'}>
 					<input
@@ -101,6 +103,7 @@ function	DesktopCategories<T>({categories, onSelect}: TListHeroDesktopCategories
 
 function	ListHero<T extends string>({
 	headLabel,
+	searchLabel,
 	searchPlaceholder,
 	categories,
 	onSelect,
@@ -115,6 +118,7 @@ function	ListHero<T extends string>({
 
 			<div className={'hidden w-full flex-row items-center justify-between space-x-4 md:flex'}>
 				<SearchBar
+					searchLabel={searchLabel}
 					searchPlaceholder={searchPlaceholder}
 					searchValue={searchValue}
 					set_searchValue={set_searchValue} />
