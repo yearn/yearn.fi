@@ -1,3 +1,6 @@
+# 0.1.15
+- Extract and reuse hooks and functions from the web-lib
+
 # 0.1.14
 - Remove the `isActive` from the gauge dropdown, as wallet connect is not required to get that list
 - Add a `isClientLoaded` in `DesktopCategories` to avoid a SSR hydratation issue leading to multiple categories being selected
