@@ -3,15 +3,16 @@ import {ethers} from 'ethers';
 import useSWR from 'swr';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
+import {useAddToken} from '@yearn-finance/web-lib/hooks/useAddToken';
+import {useDismissToasts} from '@yearn-finance/web-lib/hooks/useDismissToasts';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {getProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
-import {useAddToken} from '@common/hooks/useAddToken';
-import {useDismissToasts} from '@common/hooks/useDismissToasts';
-import {formatPercent, getAmountWithSlippage, getVaultAPY, toNormalizedBN} from '@common/utils';
+import {formatPercent, getAmountWithSlippage, getVaultAPY} from '@common/utils';
 import {approveERC20} from '@common/utils/actions/approveToken';
 import {deposit} from '@common/utils/actions/deposit';
 import {useExtendedWallet} from '@yCRV/contexts/useExtendedWallet';
@@ -21,6 +22,7 @@ import {LEGACY_OPTIONS_FROM, LEGACY_OPTIONS_TO} from '@yCRV/utils/zapOptions';
 
 import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
+import type {VoidPromiseFunction} from '@yearn-finance/web-lib/utils/types';
 import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
 
 type TCardTransactor = {
@@ -37,9 +39,9 @@ type TCardTransactor = {
 	set_selectedOptionTo: (option: TDropdownOption) => void,
 	set_amount: (amount: TNormalizedBN) => void,
 	set_hasTypedSomething: (hasTypedSomething: boolean) => void,
-	onApproveFrom: () => Promise<void>,
-	onIncreaseCRVAllowance: () => Promise<void>,
-	onZap: () => Promise<void>
+	onApproveFrom: VoidPromiseFunction,
+	onIncreaseCRVAllowance: VoidPromiseFunction,
+	onZap: VoidPromiseFunction
 }
 
 const		CardTransactorContext = createContext<TCardTransactor>({
