@@ -6,9 +6,8 @@ import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {formatBN, formatUnits} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {getTimeUntil} from '@yearn-finance/web-lib/utils/time';
+import {AmountInput} from '@common/components/AmountInput';
 import {useWallet} from '@common/contexts/useWallet';
-
-import {AmountInput} from '../../common/components/AmountInput';
 
 import type {ethers} from 'ethers';
 import type {ReactElement} from 'react';
@@ -29,15 +28,15 @@ function ClaimTab(): ReactElement {
 	const claimableAmount = isClaimable ? positions?.deposit?.balance : '0';
 
 	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: 1, walletNetwork: chainID});
-    
+
 	const executeWithdrawUnlocked = (): void => {
-		if (!votingEscrow  || !address) {
+		if (!votingEscrow || !address) {
 			return;
 		}
 		withdrawUnlocked(web3Provider, userAddress, votingEscrow.address);
 	};
 
-	return ( 
+	return (
 		<div className={'grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-16'}>
 			<div className={'col-span-1 grid w-full gap-6'}>
 				<div className={'md:min-h-[104px]'}>
