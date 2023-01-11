@@ -30,7 +30,7 @@ import type {BigNumber} from 'ethers';
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
 import type {TAddress} from '@yearn-finance/web-lib/utils/address';
-import type {TCurveGauges} from '@common/types/curves';
+import type {TCurveGaugesFromYearn} from '@common/types/curves';
 import type {TDropdownGaugeOption} from '@common/types/types';
 
 type TGaugeDisplayData = {
@@ -55,7 +55,7 @@ function	Factory(): ReactElement {
 	const {provider, isActive} = useWeb3();
 	const {safeChainID} = useChainID();
 	const {networks} = useSettings();
-	const {gauges} = useCurve();
+	const {gaugesFromYearn} = useCurve();
 	const {toast} = yToast();
 	const [selectedOption, set_selectedOption] = useState(defaultOption);
 	const [hasError, set_hasError] = useState(false);
@@ -66,8 +66,8 @@ function	Factory(): ReactElement {
 	** This means we need to check, for all the gauges if we already have an
 	** associated vault.
 	**************************************************************************/
-	const fetchAlreadyCreatedGauges = useCallback(async (): Promise<TCurveGauges[]> => {
-		if ((gauges || []).length === 0) {
+	const fetchAlreadyCreatedGauges = useCallback(async (): Promise<TCurveGaugesFromYearn[]> => {
+		if ((gaugesFromYearn || []).length === 0) {
 			return [];
 		}
 		const	currentProvider = safeChainID === 1 ? provider || getProvider(1) : getProvider(1);
@@ -75,37 +75,38 @@ function	Factory(): ReactElement {
 		const	curveVaultFactory = new Contract(VAULT_FACTORY_ADDRESS, VAULT_FACTORY_ABI);
 
 		const calls = [];
-		for (const gauge of gauges) {
-			calls.push(curveVaultFactory.canCreateVaultPermissionlessly(gauge.gauge));
+		for (const gauge of gaugesFromYearn) {
+			calls.push(curveVaultFactory.canCreateVaultPermissionlessly(gauge.gauge_address));
 		}
 		const	canCreateVaults = await ethcallProvider.tryAll(calls) as boolean[];
-		return gauges.filter((_gauge: TCurveGauges, index: number): boolean => canCreateVaults[index]);
-	}, [gauges, provider, safeChainID]);
-	const [filteredGauges, , mutate] = useAsync(fetchAlreadyCreatedGauges, [], [gauges]);
-	
+		return gaugesFromYearn.filter((_gauge: TCurveGaugesFromYearn, index: number): boolean => canCreateVaults[index]);
+	}, [gaugesFromYearn, provider, safeChainID]);
+	const [filteredGauges, , mutate] = useAsync(fetchAlreadyCreatedGauges, [], [gaugesFromYearn]);
+
 	/* 🔵 - Yearn Finance ******************************************************
 	** We need to create the possible elements for the dropdown by removing all
-	** the extra impossible gauges and formating them to the expected 
+	** the extra impossible gauges and formating them to the expected
 	** TDropdownGaugeOption type
 	**************************************************************************/
 	const	gaugesOptions = useMemo((): TDropdownGaugeOption[] => {
 		return (
 			(filteredGauges || [])
-				.filter((item: TCurveGauges): boolean => !item.side_chain && !item.is_killed && item.gauge_controller.get_gauge_weight !== '0')
-				.map((gauge: TCurveGauges): TDropdownGaugeOption => ({
-					label: gauge.name,
+				// .filter((item: TCurveGaugesFromYearn): boolean => item.get_gauge_weight !== '0')
+				.map((gauge: TCurveGaugesFromYearn): TDropdownGaugeOption => ({
+					label: gauge.gauge_name,
 					icon: (
 						<ImageWithFallback
-							src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${toAddress(gauge.swap_token)}/logo-128.png`}
-							alt={gauge.name}
+							src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${toAddress(gauge.lp_token)}/logo-128.png`}
+							alt={gauge.gauge_name}
 							width={36}
 							height={36} />
 					),
 					value: {
-						name: gauge.name,
-						tokenAddress: toAddress(gauge.swap_token),
-						poolAddress: toAddress(gauge.swap),
-						gaugeAddress: toAddress(gauge.gauge)
+						name: gauge.gauge_name,
+						tokenAddress: toAddress(gauge.lp_token),
+						poolAddress: toAddress(gauge.pool_address),
+						gaugeAddress: toAddress(gauge.gauge_address),
+						APY: gauge.apy.net_apy
 					}
 				})
 				));
@@ -127,7 +128,7 @@ function	Factory(): ReactElement {
 			symbol: symbol.replace('-gauge', '').replace('-f', '') || selectedOption.value.name,
 			poolAddress: selectedOption.value.poolAddress,
 			gaugeAddress: selectedOption.value.gaugeAddress
-		});	
+		});
 	}, [provider, safeChainID, selectedOption?.value]);
 
 	const [gaugeDisplayData, isLoading] = useAsync<TGaugeDisplayData>(fetchGaugeDisplayData, undefined, [selectedOption.value.name]);
@@ -259,7 +260,7 @@ function	Factory(): ReactElement {
 						</div>
 						<div className={'col-span-3 w-full space-y-1'}>
 							<p className={'text-neutral-600'}>{'Gauge address'}</p>
-							
+
 							{isLoading ? (
 								<div className={'flex h-10 items-center bg-neutral-200 p-2 pl-5 text-neutral-600'}>
 									<span className={'loader'} />
