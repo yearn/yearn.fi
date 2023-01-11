@@ -4,7 +4,7 @@ import {useClientEffect} from '@yearn-finance/web-lib/hooks';
 import type {ReactElement} from 'react';
 
 type TPageProgressBarProps = {
-  isLoading: boolean;
+	isLoading: boolean;
 }
 
 function PageProgressBar({isLoading}: TPageProgressBarProps): ReactElement {
