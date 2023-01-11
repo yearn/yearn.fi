@@ -10,6 +10,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatBN, formatUnits, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
+import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
 import {fromWeeks, getTimeUntil, toSeconds, toTime, toWeeks} from '@yearn-finance/web-lib/utils/time';
 import {useWallet} from '@common/contexts/useWallet';
 import {useBalance} from '@common/hooks/useBalance';
@@ -137,7 +138,7 @@ function LockTab(): ReactElement {
 					<AmountInput
 						label={'YFI'}
 						amount={lockAmount.normalized}
-						onAmountChange={(amount): void => set_lockAmount(toNormalizedBN(amount, 18))}
+						onAmountChange={(amount): void => set_lockAmount(handleInputChangeEventValue(amount, 18))}
 						maxAmount={tokenBalance.normalized > 0 ? tokenBalance.normalized.toFixed(18) : ''}
 						legend={`Available: ${formatAmount(tokenBalance.normalized, 4)} YFI`}
 						error={lockAmountError}

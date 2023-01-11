@@ -43,6 +43,7 @@ function AmountInput({
 				<input
 					className={`h-10 w-full p-2 font-mono text-base font-normal outline-none ${maxAmount && !disabled ? 'pr-12' : null} ${error ? 'border border-solid border-[#EA5204] focus:border-[#EA5204]' : 'border-0 border-none'} ${disabled ? 'bg-neutral-300 text-neutral-600' : 'bg-neutral-0'}`}
 					type={'number'}
+					min={0}
 					aria-label={label}
 					value={displayedAmount}
 					onChange={onAmountChange ? (e): void => onAmountChange(e.target.value) : undefined}
