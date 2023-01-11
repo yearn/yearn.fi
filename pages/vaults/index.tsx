@@ -135,7 +135,7 @@ function	Index(): ReactElement {
 	**********************************************************************************************/
 	const	searchedVaultsToDisplay = useMemo((): TYearnVault[] => {
 		const	vaultsToUse = [...vaultsToDisplay];
-	
+
 		if (searchValue === '') {
 			return vaultsToUse;
 		}
@@ -182,7 +182,7 @@ function	Index(): ReactElement {
 					isLoading={isLoadingVaultList}
 					sortedVaultsToDisplay={sortedVaultsToDisplay}
 					currentCategory={category} />
-			);	
+			);
 		}
 		return (
 			sortedVaultsToDisplay.map((vault): ReactNode => {
