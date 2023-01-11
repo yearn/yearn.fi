@@ -1,4 +1,5 @@
 # 0.1.15
+- Improve Vault's search
 - Remove the performance fee from Vault's strategies
 
 # 0.1.14
