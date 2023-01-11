@@ -7,10 +7,9 @@ import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatBN, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {useWallet} from '@common/contexts/useWallet';
-import {DefaultTNormalizedBN, toNormalizedBN} from '@common/utils';
 
 import type {ReactNode} from 'react';
 import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
@@ -37,13 +36,13 @@ const	DefaultActionFlowContext: TActionFlowContext = {
 	possibleOptionsTo: [],
 	selectedOptionFrom: undefined,
 	selectedOptionTo: undefined,
-	amount: DefaultTNormalizedBN,
+	amount: toNormalizedBN(0),
 	onChangeAmount: (): void => undefined,
 	onUpdateSelectedOptionFrom: (): void => undefined,
 	onUpdateSelectedOptionTo: (): void => undefined,
 	onSwitchSelectedOptions: (): void => undefined,
 	isDepositing: true,
-	maxDepositPossible: DefaultTNormalizedBN,
+	maxDepositPossible: toNormalizedBN(0),
 	currentSolver: Solver.VANILLA
 };
 
@@ -59,7 +58,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 	const [possibleOptionsTo, set_possibleOptionsTo] = useState<TDropdownOption[]>([]);
 	const [selectedOptionFrom, set_selectedOptionFrom] = useState<TDropdownOption | undefined>();
 	const [selectedOptionTo, set_selectedOptionTo] = useState<TDropdownOption | undefined>();
-	const [amount, set_amount] = useState<TNormalizedBN>(DefaultTNormalizedBN);
+	const [amount, set_amount] = useState<TNormalizedBN>(toNormalizedBN(0));
 
 	const isDepositing = useMemo((): boolean => (
 		!selectedOptionTo?.value || toAddress(selectedOptionTo.value) === toAddress(currentVault.address)
@@ -78,7 +77,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 		const	userBalance = balances?.[toAddress(selectedOptionFrom?.value)]?.raw || ethers.constants.Zero;
 		if (userBalance.gt(vaultDepositLimit)) {
 			return (toNormalizedBN(vaultDepositLimit, currentVault.token.decimals ));
-		} 
+		}
 		return (toNormalizedBN(userBalance, currentVault.token.decimals ));
 	}, [balances, currentVault.details.depositLimit, currentVault.token.decimals, selectedOptionFrom?.value]);
 
@@ -89,7 +88,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 			return Solver.CHAIN_COIN;
 		}
 		if (selectedOptionFrom?.solveVia === Solver.COWSWAP) {
-			return Solver.COWSWAP;			
+			return Solver.COWSWAP;
 		}
 		if (isDepositing && isUsingPartnerContract) {
 			return Solver.PARTNER_CONTRACT;
@@ -105,7 +104,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 			set_selectedOptionFrom(_selectedOptionTo);
 			set_possibleOptionsTo(possibleOptionsFrom);
 			set_possibleOptionsFrom(_possibleOptionsTo);
-			set_amount(isDepositing ? DefaultTNormalizedBN : maxDepositPossible);
+			set_amount(isDepositing ? toNormalizedBN(0) : maxDepositPossible);
 		});
 	}, [selectedOptionTo, possibleOptionsTo, selectedOptionFrom, possibleOptionsFrom, isDepositing, maxDepositPossible]);
 
@@ -194,7 +193,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 	**********************************************************************************************/
 	useEffect((): void => {
 		if (currentVault && selectedOptionFrom) {
-			set_amount(isDepositing ? maxDepositPossible : DefaultTNormalizedBN);
+			set_amount(isDepositing ? maxDepositPossible : toNormalizedBN(0));
 		}
 	}, [currentVault, isDepositing, maxDepositPossible, selectedOptionFrom]);
 

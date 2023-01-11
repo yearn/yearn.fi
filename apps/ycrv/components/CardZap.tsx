@@ -82,7 +82,7 @@ function	CardZap(): ReactElement {
 						}>
 						{'Increase Allowance'}
 					</Button>
-				);	
+				);
 			}
 			return (
 				<Button
@@ -96,7 +96,7 @@ function	CardZap(): ReactElement {
 					}>
 					{isAboveBalance ? 'Insufficient balance' : `Approve ${selectedOptionFrom?.label || 'token'}`}
 				</Button>
-			);	
+			);
 		}
 
 		return (
@@ -113,7 +113,7 @@ function	CardZap(): ReactElement {
 			</Button>
 		);
 	}
-	
+
 	return (
 		<>
 			<div aria-label={'card title'} className={'flex flex-col pb-8'}>
@@ -247,7 +247,7 @@ function	CardZap(): ReactElement {
 
 function	CardZapWrapper(): ReactElement {
 	const {txStatusApprove, txStatusZap} = useCardTransactor();
-	
+
 	return (
 		<div>
 			<motion.div

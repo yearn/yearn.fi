@@ -6,8 +6,8 @@ import {getEthZapperContract} from '@vaults/utils';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
-import {DefaultTNormalizedBN} from '@common/utils';
 import {approveERC20} from '@common/utils/actions/approveToken';
 import {depositETH} from '@common/utils/actions/depositEth';
 import {withdrawETH} from '@common/utils/actions/withdrawEth';
@@ -32,14 +32,14 @@ function useChainCoinQuote(): [TVanillaLikeResult, (request: TInitSolverArgs) =>
 
 		if (canExecuteFetch) {
 			const result = await trigger([request.inputToken, request.outputToken, request.inputAmount, request.isDepositing]);
-			return result || DefaultTNormalizedBN;
+			return result || toNormalizedBN(0);
 		}
-		return DefaultTNormalizedBN;
+		return toNormalizedBN(0);
 	}, [trigger]);
 
 	return [
 		useMemo((): TVanillaLikeResult => ({
-			result: data || DefaultTNormalizedBN,
+			result: data || toNormalizedBN(0),
 			isLoading: isMutating,
 			error
 		}), [data, error, isMutating]),
@@ -142,7 +142,7 @@ export function useSolverChainCoin(): TSolverContext {
 	}, [provider, safeChainID]);
 
 	return useMemo((): TSolverContext => ({
-		quote: latestQuote?.result || DefaultTNormalizedBN,
+		quote: latestQuote?.result || toNormalizedBN(0),
 		getQuote: getQuote,
 		refreshQuote: refreshQuote,
 		init,

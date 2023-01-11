@@ -10,10 +10,10 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useWallet} from '@common/contexts/useWallet';
 import {useAllowanceFetcher} from '@common/hooks/useAllowanceFetcher';
-import {DefaultTNormalizedBN} from '@common/utils';
 
 import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
@@ -33,7 +33,7 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
 	const [txStatusExecuteDeposit, set_txStatusExecuteDeposit] = useState(defaultTxStatus);
 	const [txStatusExecuteWithdraw, set_txStatusExecuteWithdraw] = useState(defaultTxStatus);
-	const [allowanceFrom, set_allowanceFrom] = useState<TNormalizedBN>(DefaultTNormalizedBN);
+	const [allowanceFrom, set_allowanceFrom] = useState<TNormalizedBN>(toNormalizedBN(0));
 	const {selectedOptionFrom, selectedOptionTo, amount, onChangeAmount, maxDepositPossible, isDepositing} = useActionFlow();
 	const {onApprove, onExecuteDeposit, onExecuteWithdraw, currentSolver} = useSolver();
 	const retrieveAllowance = useAllowanceFetcher();
@@ -69,12 +69,12 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 
 	useEffect((): void => {
 		if (withVanillaAllowance) {
-			set_allowanceFrom(vanillAllowanceFrom || DefaultTNormalizedBN);
+			set_allowanceFrom(vanillAllowanceFrom || toNormalizedBN(0));
 		}
 	}, [vanillAllowanceFrom, withVanillaAllowance]);
 
 	const onSuccess = useCallback(async (): Promise<void> => {
-		onChangeAmount(DefaultTNormalizedBN);
+		onChangeAmount(toNormalizedBN(0));
 		await refresh();
 	}, [onChangeAmount, refresh]);
 
@@ -132,7 +132,7 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 				isDisabled={!isActive || amount.raw.isZero() || amount.raw.gt(maxDepositPossible.raw)}>
 				{'Deposit'}
 			</Button>
-		);	
+		);
 	}
 
 	return (

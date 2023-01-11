@@ -60,8 +60,8 @@ export type TSolverContext = {
 **	TVanillaRequest is the requirement to execute a quote request.
 ***************************************************************************/
 export type TVanillaLikeRequest = {
-    inputToken: TDropdownOption;
-    outputToken: TDropdownOption;
+	inputToken: TDropdownOption;
+	outputToken: TDropdownOption;
 	inputAmount: TNormalizedBN;
 	isDepositing: boolean;
 }

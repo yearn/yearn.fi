@@ -66,7 +66,7 @@ function	CardMigrateLegacy(): ReactElement {
 					}>
 					{isAboveBalance ? 'Insufficient balance' : `Approve ${selectedOptionFrom?.label || 'token'}`}
 				</Button>
-			);	
+			);
 		}
 
 		return (
@@ -214,7 +214,7 @@ function	CardMigrateLegacy(): ReactElement {
 
 function	CardMigrateLegacyWrapper(): ReactElement {
 	const {txStatusApprove, txStatusZap} = useCardTransactor();
-	
+
 	return (
 		<div>
 			<motion.div
