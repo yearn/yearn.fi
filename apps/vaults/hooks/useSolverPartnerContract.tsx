@@ -6,9 +6,9 @@ import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
-import {DefaultTNormalizedBN} from '@common/utils';
 import {approveERC20} from '@common/utils/actions/approveToken';
 import {depositViaPartner} from '@common/utils/actions/depositViaPartner';
 import {withdrawShares} from '@common/utils/actions/withdrawShares';
@@ -33,14 +33,14 @@ function usePartnerContractQuote(): [TVanillaLikeResult, (request: TInitSolverAr
 
 		if (canExecuteFetch) {
 			const result = await trigger([request.inputToken, request.outputToken, request.inputAmount, request.isDepositing]);
-			return result || DefaultTNormalizedBN;
+			return result || toNormalizedBN(0);
 		}
-		return DefaultTNormalizedBN;
+		return toNormalizedBN(0);
 	}, [trigger]);
 
 	return [
 		useMemo((): TVanillaLikeResult => ({
-			result: data || DefaultTNormalizedBN,
+			result: data || toNormalizedBN(0),
 			isLoading: isMutating,
 			error
 		}), [data, error, isMutating]),
@@ -96,7 +96,7 @@ export function useSolverPartnerContract(): TSolverContext {
 		new Transaction(provider, approveERC20, txStatusSetter)
 			.populate(
 				toAddress(request.current.inputToken.value), //token to approve
-				toAddress(networks[safeChainID].partnerContractAddress), //partner contract 
+				toAddress(networks[safeChainID].partnerContractAddress), //partner contract
 				ethers.constants.MaxUint256 //amount
 			)
 			.onSuccess(onSuccess)
@@ -149,7 +149,7 @@ export function useSolverPartnerContract(): TSolverContext {
 	}, [provider]);
 
 	return useMemo((): TSolverContext => ({
-		quote: latestQuote?.result || DefaultTNormalizedBN,
+		quote: latestQuote?.result || toNormalizedBN(0),
 		getQuote: getQuote,
 		refreshQuote: refreshQuote,
 		init,

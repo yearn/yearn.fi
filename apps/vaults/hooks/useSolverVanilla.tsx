@@ -4,8 +4,8 @@ import useSWRMutation from 'swr/mutation';
 import {useVaultEstimateOutFetcher} from '@vaults/hooks/useVaultEstimateOutFetcher';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
-import {DefaultTNormalizedBN} from '@common/utils';
 import {approveERC20} from '@common/utils/actions/approveToken';
 import {deposit} from '@common/utils/actions/deposit';
 import {withdrawShares} from '@common/utils/actions/withdrawShares';
@@ -30,14 +30,14 @@ function useVanillaQuote(): [TVanillaLikeResult, (request: TInitSolverArgs) => P
 
 		if (canExecuteFetch) {
 			const result = await trigger([request.inputToken, request.outputToken, request.inputAmount, request.isDepositing]);
-			return result || DefaultTNormalizedBN;
+			return result || toNormalizedBN(0);
 		}
-		return DefaultTNormalizedBN;
+		return toNormalizedBN(0);
 	}, [trigger]);
 
 	return [
 		useMemo((): TVanillaLikeResult => ({
-			result: data || DefaultTNormalizedBN,
+			result: data || toNormalizedBN(0),
 			isLoading: isMutating,
 			error
 		}), [data, error, isMutating]),
@@ -89,7 +89,7 @@ export function useSolverVanilla(): TSolverContext {
 		new Transaction(provider, approveERC20, txStatusSetter)
 			.populate(
 				toAddress(request.current.inputToken.value), //token to approve
-				toAddress(request.current.outputToken.value), //partner contract 
+				toAddress(request.current.outputToken.value), //partner contract
 				ethers.constants.MaxUint256 //amount
 			)
 			.onSuccess(onSuccess)
@@ -140,7 +140,7 @@ export function useSolverVanilla(): TSolverContext {
 
 
 	return useMemo((): TSolverContext => ({
-		quote: latestQuote?.result || DefaultTNormalizedBN,
+		quote: latestQuote?.result || toNormalizedBN(0),
 		getQuote: getQuote,
 		refreshQuote: refreshQuote,
 		init,

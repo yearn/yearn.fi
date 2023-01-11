@@ -6,9 +6,8 @@ import {domain, OrderKind, SigningScheme, signOrder} from '@gnosis.pm/gp-v2-cont
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatBN, formatToNormalizedValue, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
-import {DefaultTNormalizedBN} from '@common/utils';
 
 import type {AxiosError} from 'axios';
 import type {TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
@@ -109,7 +108,7 @@ export function useSolverCowswap(): TSolverContext {
 				normalized: formatToNormalizedValue(formatBN(quote?.quote.buyAmount || 0), request?.current?.outputToken?.decimals || 18)
 			});
 		}
-		return DefaultTNormalizedBN;
+		return toNormalizedBN(0);
 	}, [getQuote]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
@@ -194,7 +193,7 @@ export function useSolverCowswap(): TSolverContext {
 			await new Promise((resolve): NodeJS.Timeout => setTimeout(resolve, 3000));
 		}
 		return ({isSuccessful: false, error: new Error('TX fail because the order expired')});
-	} 
+	}
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** execute will send the post request to execute the order and wait for it to be executed, no
@@ -233,7 +232,7 @@ export function useSolverCowswap(): TSolverContext {
 
 	const expectedOut = useMemo((): TNormalizedBN => {
 		if (!latestQuote?.current?.quote?.buyAmount) {
-			return (DefaultTNormalizedBN);
+			return (toNormalizedBN(0));
 		}
 		return ({
 			raw: formatBN(latestQuote?.current?.quote?.buyAmount || ethers.constants.Zero),

@@ -6,8 +6,8 @@ import {useSolverPartnerContract} from '@vaults/hooks/useSolverPartnerContract';
 import {useSolverVanilla} from '@vaults/hooks/useSolverVanilla';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
-import {DefaultTNormalizedBN} from '@common/utils';
 
 import type {TNormalizedBN} from '@common/types/types';
 import type {TWithSolver} from '@vaults/types/solvers';
@@ -23,11 +23,11 @@ export enum	Solver {
 
 const	DefaultWithSolverContext: TWithSolver = {
 	currentSolver: Solver.VANILLA,
-	expectedOut: DefaultTNormalizedBN,
+	expectedOut: toNormalizedBN(0),
 	isLoadingExpectedOut: false,
-	onApprove: async (): Promise<void> => undefined,
-	onExecuteDeposit: async (): Promise<void> => undefined,
-	onExecuteWithdraw: async (): Promise<void> => undefined
+	onApprove: async (): Promise<void> => Promise.resolve(),
+	onExecuteDeposit: async (): Promise<void> => Promise.resolve(),
+	onExecuteWithdraw: async (): Promise<void> => Promise.resolve()
 };
 
 const		WithSolverContext = createContext<TWithSolver>(DefaultWithSolverContext);
@@ -50,59 +50,59 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 		}
 		set_isLoading(true);
 
-		let quote: TNormalizedBN = DefaultTNormalizedBN;
+		let quote: TNormalizedBN = toNormalizedBN(0);
 		switch (currentSolver) {
-		case Solver.COWSWAP:
-			quote = await cowswap.init({
-				from: toAddress(address || ''),
-				inputToken: selectedOptionFrom,
-				outputToken: selectedOptionTo,
-				inputAmount: amount.raw,
-				isDepositing: isDepositing
-			});
-			performBatchedUpdates((): void => {
-				set_currentSolverState({...cowswap, quote});
-				set_isLoading(false);
-			});
-			break;
-		case Solver.CHAIN_COIN:
-			quote = await chainCoin.init({
-				from: toAddress(address || ''),
-				inputToken: selectedOptionFrom,
-				outputToken: selectedOptionTo,
-				inputAmount: amount.raw,
-				isDepositing: isDepositing
-			});
-			performBatchedUpdates((): void => {
-				set_currentSolverState({...chainCoin, quote});
-				set_isLoading(false);
-			});
-			break;
-		case Solver.PARTNER_CONTRACT:
-			quote = await partnerContract.init({
-				from: toAddress(address || ''),
-				inputToken: selectedOptionFrom,
-				outputToken: selectedOptionTo,
-				inputAmount: amount.raw,
-				isDepositing: isDepositing
-			});
-			performBatchedUpdates((): void => {
-				set_currentSolverState({...partnerContract, quote});
-				set_isLoading(false);
-			});
-			break;
-		default:
-			quote = await vanilla.init({
-				from: toAddress(address || ''),
-				inputToken: selectedOptionFrom,
-				outputToken: selectedOptionTo,
-				inputAmount: amount.raw,
-				isDepositing: isDepositing
-			});
-			performBatchedUpdates((): void => {
-				set_currentSolverState({...vanilla, quote});
-				set_isLoading(false);
-			});
+			case Solver.COWSWAP:
+				quote = await cowswap.init({
+					from: toAddress(address || ''),
+					inputToken: selectedOptionFrom,
+					outputToken: selectedOptionTo,
+					inputAmount: amount.raw,
+					isDepositing: isDepositing
+				});
+				performBatchedUpdates((): void => {
+					set_currentSolverState({...cowswap, quote});
+					set_isLoading(false);
+				});
+				break;
+			case Solver.CHAIN_COIN:
+				quote = await chainCoin.init({
+					from: toAddress(address || ''),
+					inputToken: selectedOptionFrom,
+					outputToken: selectedOptionTo,
+					inputAmount: amount.raw,
+					isDepositing: isDepositing
+				});
+				performBatchedUpdates((): void => {
+					set_currentSolverState({...chainCoin, quote});
+					set_isLoading(false);
+				});
+				break;
+			case Solver.PARTNER_CONTRACT:
+				quote = await partnerContract.init({
+					from: toAddress(address || ''),
+					inputToken: selectedOptionFrom,
+					outputToken: selectedOptionTo,
+					inputAmount: amount.raw,
+					isDepositing: isDepositing
+				});
+				performBatchedUpdates((): void => {
+					set_currentSolverState({...partnerContract, quote});
+					set_isLoading(false);
+				});
+				break;
+			default:
+				quote = await vanilla.init({
+					from: toAddress(address || ''),
+					inputToken: selectedOptionFrom,
+					outputToken: selectedOptionTo,
+					inputAmount: amount.raw,
+					isDepositing: isDepositing
+				});
+				performBatchedUpdates((): void => {
+					set_currentSolverState({...vanilla, quote});
+					set_isLoading(false);
+				});
 		}
 	}, [address, selectedOptionFrom, selectedOptionTo, amount.raw, currentSolver, cowswap.init, vanilla.init, amount, isDepositing]); //Ignore the warning, it's a false positive
 
@@ -113,7 +113,7 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 
 	const	contextValue = useMemo((): TWithSolver => ({
 		currentSolver: currentSolver,
-		expectedOut: currentSolverState?.quote || DefaultTNormalizedBN,
+		expectedOut: currentSolverState?.quote || toNormalizedBN(0),
 		isLoadingExpectedOut: isLoading,
 		onApprove: currentSolverState.onApprove,
 		onExecuteDeposit: currentSolverState.onExecuteDeposit,
