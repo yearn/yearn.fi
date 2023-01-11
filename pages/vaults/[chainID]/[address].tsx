@@ -1,8 +1,9 @@
 import React, {useEffect, useRef} from 'react';
 import {motion} from 'framer-motion';
+import {VaultActionsTabsWrapper} from '@vaults/components/details/VaultActionsTabsWrapper';
 import {VaultDetailsHeader} from '@vaults/components/details/VaultDetailsHeader';
-import {VaultDetailsQuickActions} from '@vaults/components/details/VaultDetailsQuickActions';
 import {VaultDetailsTabsWrapper} from '@vaults/components/details/VaultDetailsTabsWrapper';
+import ActionFlowContextApp from '@vaults/contexts/useActionFlow';
 import Wrapper from '@vaults/Wrapper';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
@@ -56,7 +57,9 @@ function Index({router, vaultData}: {router: NextRouter, vaultData: TYearnVault}
 
 			<section className={'mt-10 grid w-full grid-cols-12 pb-10 md:mt-0'}>
 				<VaultDetailsHeader currentVault={currentVault.current} />
-				<VaultDetailsQuickActions currentVault={currentVault.current} />
+				<ActionFlowContextApp currentVault={currentVault.current}>
+					<VaultActionsTabsWrapper />
+				</ActionFlowContextApp>
 				<VaultDetailsTabsWrapper currentVault={currentVault.current} />
 			</section>
 		</>
