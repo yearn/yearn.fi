@@ -52,8 +52,6 @@ export type TDropdownItemProps = {
 	balanceSource?: TDict<TBalanceData>;
 };
 
-
-
 export type TDropdownGaugeOption = {
 	label: string;
 	icon?: ReactElement;
@@ -62,6 +60,7 @@ export type TDropdownGaugeOption = {
 		tokenAddress: TAddress,
 		poolAddress: TAddress,
 		gaugeAddress: TAddress,
+		APY: number
 	};
 };
 export type TDropdownGaugeProps = {

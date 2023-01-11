@@ -1,3 +1,6 @@
+# 0.1.15
+- Add the fetch to `https://api.yearn.finance/v1/chains/1/apy-previews/curve-factory` to get the APY for the gauges on the factory page
+
 # 0.1.14
 - Remove the `isActive` from the gauge dropdown, as wallet connect is not required to get that list
 - Add a `isClientLoaded` in `DesktopCategories` to avoid a SSR hydratation issue leading to multiple categories being selected
