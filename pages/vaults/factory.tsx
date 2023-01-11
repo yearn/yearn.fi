@@ -46,7 +46,8 @@ const	defaultOption: TDropdownGaugeOption = {
 		name: '',
 		tokenAddress: toAddress(ethers.constants.AddressZero),
 		poolAddress: toAddress(ethers.constants.AddressZero),
-		gaugeAddress: toAddress(ethers.constants.AddressZero)
+		gaugeAddress: toAddress(ethers.constants.AddressZero),
+		APY: 0
 	}
 };
 
