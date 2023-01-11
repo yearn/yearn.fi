@@ -80,7 +80,7 @@ export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({chil
 			veYFIContract.supply(),
 			veYFIContract.reward_pool()
 		]) as [TAddress, string, string, number, BigNumber, TAddress];
-		
+
 		return ({
 			address: VEYFI_ADDRESS,
 			token,
@@ -102,7 +102,7 @@ export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({chil
 		const veYFIPositionHelperContract = new Contract(VEYFI_POSITION_HELPER_ADDRESS, VEYFI_POSITION_HELPER_ABI);
 
 		const [positionDetails] = await ethcallProvider.tryAll([veYFIPositionHelperContract.getPositionDetails(address)]) as [{balance: BigNumber, depositAmount: BigNumber, unlockTime: BigNumber, penalty: BigNumber, withdrawable: BigNumber}];
-		
+
 		const depositPosition: TPosition = {
 			balance: positionDetails.balance,
 			underlyingBalance: positionDetails.depositAmount

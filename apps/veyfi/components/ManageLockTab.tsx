@@ -24,7 +24,7 @@ function ManageLockTab(): ReactElement {
 	const {votingEscrow, positions, refresh: refreshVotingEscrow} = useVotingEscrow();
 	const clearLockTime = (): void => set_lockTime('');
 	const refreshData = (): unknown => Promise.all([refreshVotingEscrow(), refreshBalances()]);
-	const onTxSuccess = (): unknown =>  Promise.all([refreshData(), clearLockTime()]);
+	const onTxSuccess = (): unknown => Promise.all([refreshData(), clearLockTime()]);
 	const [extendLockTime, extendLockTimeStatus] = useTransaction(VotingEscrowActions.extendLockTime, onTxSuccess);
 	const [withdrawLocked, withdrawLockedStatus] = useTransaction(VotingEscrowActions.withdrawLocked, onTxSuccess);
 
@@ -41,9 +41,9 @@ function ManageLockTab(): ReactElement {
 		if(!positions?.deposit || !newUnlockTime) {
 			return formatBN(0);
 		}
-		return willExtendLock ? getVotingPower(positions?.deposit?.underlyingBalance,  newUnlockTime) : formatBN(positions?.deposit?.balance);
+		return willExtendLock ? getVotingPower(positions?.deposit?.underlyingBalance, newUnlockTime) : formatBN(positions?.deposit?.balance);
 	}, [positions?.deposit, newUnlockTime, willExtendLock]);
-	
+
 	const {isValid: isValidLockTime, error: lockTimeError} = validateAmount({
 		amount: lockTime,
 		minAmountAllowed: MIN_LOCK_TIME
@@ -57,15 +57,15 @@ function ManageLockTab(): ReactElement {
 		}
 		extendLockTime(web3Provider, userAddress, votingEscrow.address, toSeconds(newUnlockTime));
 	};
-	
+
 	const executeWithdrawLocked = (): void => {
-		if (!votingEscrow  || !userAddress) {
+		if (!votingEscrow || !userAddress) {
 			return;
 		}
 		withdrawLocked(web3Provider, userAddress, votingEscrow.address);
 	};
-	
-	return ( 
+
+	return (
 		<div className={'grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-16'}>
 			<div className={'col-span-1 grid w-full gap-6'}>
 				<div className={'md:min-h-[104px]'}>

@@ -8,12 +8,12 @@ import {validateAllowance, validateAmount, validateNetwork} from '@veYFI/utils/v
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatBN, formatUnits} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatBN, formatUnits, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
+import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
 import {fromWeeks, getTimeUntil, toSeconds, toTime, toWeeks} from '@yearn-finance/web-lib/utils/time';
 import {useWallet} from '@common/contexts/useWallet';
 import {useBalance} from '@common/hooks/useBalance';
-import {DefaultTNormalizedBN, toNormalizedBN} from '@common/utils';
 
 import {AmountInput} from '../../common/components/AmountInput';
 
@@ -23,13 +23,13 @@ import type {TAddress} from '@yearn-finance/web-lib/utils/address';
 import type {TMilliseconds} from '@yearn-finance/web-lib/utils/time';
 
 function LockTab(): ReactElement {
-	const [lockAmount, set_lockAmount] = useState(DefaultTNormalizedBN);
+	const [lockAmount, set_lockAmount] = useState(toNormalizedBN(0));
 	const [lockTime, set_lockTime] = useState('');
 	const {provider, address, isActive, chainID} = useWeb3();
 	const {refresh: refreshBalances} = useWallet();
 	const {votingEscrow, positions, allowances, isLoading: isLoadingVotingEscrow, refresh: refreshVotingEscrow} = useVotingEscrow();
 	const tokenBalance = useBalance(toAddress(votingEscrow?.token));
-	const clearLockAmount = (): void => set_lockAmount(DefaultTNormalizedBN);
+	const clearLockAmount = (): void => set_lockAmount(toNormalizedBN(0));
 	const refreshData = (): unknown => Promise.all([refreshVotingEscrow(), refreshBalances()]);
 	const onTxSuccess = (): unknown => Promise.all([refreshData(), clearLockAmount()]);
 	const [approveLock, approveLockStatus] = useTransaction(VotingEscrowActions.approveLock, refreshData);
@@ -39,13 +39,13 @@ function LockTab(): ReactElement {
 	const web3Provider = provider as ethers.providers.Web3Provider;
 	const userAddress = address as TAddress;
 	const hasLockedAmount = formatBN(positions?.deposit?.balance).gt(0);
-	
+
 	const unlockTime = useMemo((): TMilliseconds => {
 		return positions?.unlockTime || Date.now() + fromWeeks(toTime(lockTime));
 	}, [positions?.unlockTime, lockTime]);
 
 	const votingPower = useMemo((): BigNumber => {
-		return getVotingPower(formatBN(positions?.deposit?.underlyingBalance).add(lockAmount.raw),  unlockTime);
+		return getVotingPower(formatBN(positions?.deposit?.underlyingBalance).add(lockAmount.raw), unlockTime);
 	}, [positions?.deposit?.underlyingBalance, lockAmount, unlockTime]);
 
 	useEffect((): void => {
@@ -61,37 +61,37 @@ function LockTab(): ReactElement {
 		allowances,
 		amount: lockAmount.raw
 	});
-	
+
 	const {isValid: isValidLockAmount, error: lockAmountError} = validateAmount({
 		amount: lockAmount.normalized,
 		balance: tokenBalance.normalized,
 		minAmountAllowed: hasLockedAmount ? 0 : MIN_LOCK_AMOUNT,
 		shouldDisplayMin: !hasLockedAmount
 	});
-	
+
 	const {isValid: isValidLockTime, error: lockTimeError} = validateAmount({
 		amount: lockTime,
 		minAmountAllowed: hasLockedAmount ? 0 : MIN_LOCK_TIME
 	});
 
 	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: 1, walletNetwork: chainID});
-	
+
 	const executeApprove = (): void => {
 		if (!votingEscrow || !userAddress) {
 			return;
 		}
 		approveLock(web3Provider, userAddress, votingEscrow.token, votingEscrow.address);
 	};
-	
+
 	const executeLock = (): void => {
-		if (!votingEscrow  || !userAddress) {
+		if (!votingEscrow || !userAddress) {
 			return;
 		}
 		lock(web3Provider, userAddress, votingEscrow.address, lockAmount.raw, toSeconds(unlockTime));
 	};
-	
+
 	const executeIncreaseLockAmount = (): void => {
-		if (!votingEscrow  || !userAddress) {
+		if (!votingEscrow || !userAddress) {
 			return;
 		}
 		increaseLockAmount(web3Provider, userAddress, votingEscrow.address, lockAmount.raw);
@@ -120,7 +120,7 @@ function LockTab(): ReactElement {
 				isDisabled: isLockDisabled
 			};
 
-	return ( 
+	return (
 		<div className={'grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-16'}>
 			<div className={'col-span-1 w-full'}>
 				<h2 className={'m-0 text-2xl font-bold'}>
@@ -138,7 +138,7 @@ function LockTab(): ReactElement {
 					<AmountInput
 						label={'YFI'}
 						amount={lockAmount.normalized}
-						onAmountChange={(amount): void => set_lockAmount(toNormalizedBN(amount, 18))}
+						onAmountChange={(amount): void => set_lockAmount(handleInputChangeEventValue(amount, 18))}
 						maxAmount={tokenBalance.normalized > 0 ? tokenBalance.normalized.toFixed(18) : ''}
 						legend={`Available: ${formatAmount(tokenBalance.normalized, 4)} YFI`}
 						error={lockAmountError}

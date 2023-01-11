@@ -100,7 +100,7 @@ export function	AppHeader(): ReactElement {
 	const	{onOpenMenu} = useMenu();
 	const	menu = useMemo((): TMenu[] => {
 		const HOME_MENU = {path: '/', label: 'Home'};
-		
+
 		if (pathname.startsWith('/ycrv')) {
 			return [HOME_MENU, ...APPS[AppName.YCRV].menu];
 		}
@@ -112,7 +112,7 @@ export function	AppHeader(): ReactElement {
 		if (pathname.startsWith('/veyfi')) {
 			return [HOME_MENU, ...APPS[AppName.VEYFI].menu];
 		}
-		
+
 		if (pathname.startsWith('/ybribe')) {
 			return [HOME_MENU, ...APPS[AppName.YBRIBE].menu];
 		}
@@ -142,7 +142,7 @@ export function	AppHeader(): ReactElement {
 			logo={(
 				<AnimatePresence mode={'wait'}>
 					<LogoPopover />
-				</AnimatePresence>	
+				</AnimatePresence>
 			)}
 			extra={isActive ? (
 				<div className={'ml-4'}>

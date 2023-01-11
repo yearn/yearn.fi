@@ -25,7 +25,7 @@ type TTabsOptions = {
 }
 type TTabs = {
 	selectedAboutTabIndex: number,
-	set_selectedAboutTabIndex: (arg0: number) => void	
+	set_selectedAboutTabIndex: (arg0: number) => void
 }
 
 function	Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactElement {
@@ -48,7 +48,7 @@ function	Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactE
 							className={'hover-fix tab'}>
 							{tab.label}
 						</p>
-					</button>	
+					</button>
 				))}
 			</nav>
 			<div className={'relative z-50'}>
@@ -132,7 +132,7 @@ function	VaultDetailsTabsWrapper({currentVault}: {currentVault: TYearnVault}): R
 				value: formatToNormalizedValue(formatBN(harvest.profit).sub(formatBN(harvest.loss)), currentVault.decimals)
 			}))
 		);
-	}, [currentVault.decimals, yDaemonHarvestsData]);	
+	}, [currentVault.decimals, yDaemonHarvestsData]);
 
 	return (
 		<div aria-label={'Vault Details'} className={'col-span-12 mb-4 flex flex-col bg-neutral-100'}>
@@ -140,7 +140,7 @@ function	VaultDetailsTabsWrapper({currentVault}: {currentVault: TYearnVault}): R
 				<Tabs
 					selectedAboutTabIndex={selectedAboutTabIndex}
 					set_selectedAboutTabIndex={set_selectedAboutTabIndex} />
-				
+
 				<div className={'flex flex-row items-center justify-end space-x-2 pb-0 md:pb-4 md:last:space-x-4'}>
 					<button
 						onClick={(): void => {

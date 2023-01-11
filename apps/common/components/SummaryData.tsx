@@ -2,8 +2,8 @@
 import type {ReactElement} from 'react';
 
 type TItem = {
-    label: string,
-    content: string
+	label: string,
+	content: string
 }
 
 type TTabsProps = {

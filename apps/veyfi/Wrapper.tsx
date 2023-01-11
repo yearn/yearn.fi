@@ -1,7 +1,7 @@
 import React from 'react';
-import meta from 'public/apps/veyfi-manifest.json';
 import {AnimatePresence, motion} from 'framer-motion';
 import Meta from '@common/components/Meta';
+import {useCurrentApp} from '@common/hooks/useCurrentApp';
 import {variants} from '@common/utils/animations';
 
 import {VotingEscrowContextApp} from './contexts/useVotingEscrow';
@@ -10,9 +10,11 @@ import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
 
 export default function Wrapper({children, router}: {children: ReactElement, router: NextRouter}): ReactElement {
+	const {manifest} = useCurrentApp(router);
+
 	return (
 		<>
-			<Meta meta={meta} />
+			<Meta meta={manifest} />
 			<VotingEscrowContextApp>
 				<AnimatePresence mode={'wait'}>
 					<motion.div

@@ -4,9 +4,9 @@ import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import type {ethers} from 'ethers';
 
 type TStatus = {
-  loading?: boolean;
-  error?: string;
-  executed?: boolean;
+	loading?: boolean;
+	error?: string;
+	executed?: boolean;
 }
 
 type TTxFuncArgs = Parameters<(arg1: ethers.providers.Web3Provider, ...args: unknown[] ) => void>
