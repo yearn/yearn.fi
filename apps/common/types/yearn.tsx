@@ -206,3 +206,14 @@ export type TYDaemonGaugeRewardsFeed = {
 	timestamp: string;
 	blockNumber: string;
 }
+
+// TODO Temp
+export type TYearnGauge = {
+	name: string;
+	address: string;
+	votes: number;
+	category: string;
+	token: {
+		address: string
+	}
+}
