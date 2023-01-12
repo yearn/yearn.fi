@@ -134,7 +134,7 @@ function ManageLockTab(): ReactElement {
 					<AmountInput
 						label={'YFI you get'}
 						amount={formatUnits(positions?.withdrawable, 18)}
-						legend={`Penalty: %${((positions?.penaltyRatio ?? 0) * 100).toFixed(4).toString()}`}
+						legend={`Penalty: ${((positions?.penaltyRatio ?? 0) * 100).toFixed(2).toString()}%`}
 						disabled
 					/>
 					<Button
