@@ -1,6 +1,6 @@
 import {useCallback, useMemo, useRef, useState} from 'react';
 import {ethers} from 'ethers';
-import {quote as wiQuote} from 'wido';
+import {getTokenAllowance as wiGetTokenAllowance, getWidoContractAddress, quote as wiQuote} from 'wido';
 import {useAsync} from '@vaults/hooks/useAsync';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -8,7 +8,6 @@ import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatBN, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {approveERC20, isApprovedERC20} from '@common/utils/actions/approveToken';
-import {WIDO_RELAYER_ADDRESS} from '@common/utils/constants';
 
 import type {AxiosError} from 'axios';
 import type {QuoteRequest, QuoteResult} from 'wido';
@@ -135,7 +134,24 @@ export function useSolverWido(): TSolverContext {
 			return (toNormalizedBN(0));
 		}
 		return toNormalizedBN(latestQuote?.current?.toTokenAmount, request?.current?.outputToken?.decimals || 18);
-	}, [latestQuote]);
+	}, [latestQuote, request]);
+
+	/* 🔵 - Yearn Finance ******************************************************
+	** Retrieve the allowance for the token to be used by the solver. This will
+	** be used to determine if the user should approve the token or not.
+	**************************************************************************/
+	const onRetrieveAllowance = useCallback(async (): Promise<TNormalizedBN> => {
+		if (!latestQuote?.current || !request?.current) {
+			return toNormalizedBN(0);
+		}
+
+		const {allowance} = await wiGetTokenAllowance({
+			chainId: 1,
+			tokenAddress: toAddress(request.current.inputToken.value),
+			accountAddress: toAddress(request.current.from)
+		});
+		return toNormalizedBN(allowance, request.current.inputToken.decimals);
+	}, [latestQuote, request]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Trigger an signature to approve the token to be used by the Wido
@@ -150,18 +166,18 @@ export function useSolverWido(): TSolverContext {
 		if (!latestQuote?.current || !request?.current) {
 			return;
 		}
-
+		const	widoRelayerAddress = toAddress(await getWidoContractAddress(1));
 		const	isApproved = await isApprovedERC20(
 			provider as ethers.providers.Web3Provider,
 			toAddress(request.current.inputToken.value), //token to approve
-			WIDO_RELAYER_ADDRESS, //Wido relayer
+			widoRelayerAddress, //Wido relayer
 			amount
 		);
 		if (!isApproved) {
 			new Transaction(provider, approveERC20, txStatusSetter)
 				.populate(
 					toAddress(request.current.inputToken.value), //token to approve
-					WIDO_RELAYER_ADDRESS, //Wido relayer
+					widoRelayerAddress, //Wido relayer
 					amount
 				)
 				.onSuccess(onSuccess)
@@ -207,8 +223,9 @@ export function useSolverWido(): TSolverContext {
 		getQuote: getQuote,
 		refreshQuote,
 		init,
+		onRetrieveAllowance: onRetrieveAllowance,
 		onApprove: onApprove,
 		onExecuteDeposit: onExecuteDeposit,
 		onExecuteWithdraw: onExecuteWithdraw
-	}), [expectedOut, getQuote, refreshQuote, init, onApprove, onExecuteDeposit, onExecuteWithdraw]);
+	}), [expectedOut, getQuote, refreshQuote, init, onApprove, onExecuteDeposit, onExecuteWithdraw, onRetrieveAllowance]);
 }

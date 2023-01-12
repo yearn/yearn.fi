@@ -9,7 +9,7 @@ import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
-import {approveERC20} from '@common/utils/actions/approveToken';
+import {approvedERC20Amount, approveERC20} from '@common/utils/actions/approveToken';
 import {depositViaPartner} from '@common/utils/actions/depositViaPartner';
 import {withdrawShares} from '@common/utils/actions/withdrawShares';
 
@@ -77,6 +77,22 @@ export function useSolverPartnerContract(): TSolverContext {
 		}
 	}, [request, getQuote]);
 
+	/* 🔵 - Yearn Finance ******************************************************
+	** Retrieve the allowance for the token to be used by the solver. This will
+	** be used to determine if the user should approve the token or not.
+	**************************************************************************/
+	const onRetrieveAllowance = useCallback(async (): Promise<TNormalizedBN> => {
+		if (!request?.current) {
+			return toNormalizedBN(0);
+		}
+
+		const allowance = await approvedERC20Amount(
+			provider as ethers.providers.Web3Provider,
+			toAddress(request.current.inputToken.value), //Input token
+			toAddress(networks[safeChainID].partnerContractAddress) //spender aka partner contract
+		);
+		return toNormalizedBN(allowance, request.current.inputToken.decimals);
+	}, [request, provider, networks, safeChainID]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Trigger an approve web3 action, simply trying to approve `amount` tokens
@@ -154,8 +170,9 @@ export function useSolverPartnerContract(): TSolverContext {
 		getQuote: getQuote,
 		refreshQuote: refreshQuote,
 		init,
+		onRetrieveAllowance: onRetrieveAllowance,
 		onApprove: onApprove,
 		onExecuteDeposit: onExecuteDeposit,
 		onExecuteWithdraw: onExecuteWithdraw
-	}), [latestQuote?.result, getQuote, refreshQuote, init, onApprove, onExecuteDeposit, onExecuteWithdraw]);
+	}), [latestQuote?.result, getQuote, refreshQuote, init, onApprove, onExecuteDeposit, onExecuteWithdraw, onRetrieveAllowance]);
 }

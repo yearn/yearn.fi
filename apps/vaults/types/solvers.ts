@@ -13,6 +13,7 @@ export type TWithSolver = {
 	currentSolver: Solver;
 	expectedOut: TNormalizedBN;
 	isLoadingExpectedOut: boolean;
+	onRetrieveAllowance: () => Promise<TNormalizedBN>;
 	onApprove: (
 		amount: BigNumber,
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
@@ -41,6 +42,7 @@ export type TSolverContext = {
 	getQuote: CallableFunction;
 	refreshQuote: CallableFunction;
 	init: (args: TInitSolverArgs) => Promise<TNormalizedBN>;
+	onRetrieveAllowance: () => Promise<TNormalizedBN>;
 	onApprove: (
 		amount: BigNumber,
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,

@@ -6,9 +6,10 @@ import {getEthZapperContract} from '@vaults/utils';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {ETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
-import {approveERC20} from '@common/utils/actions/approveToken';
+import {approvedERC20Amount, approveERC20} from '@common/utils/actions/approveToken';
 import {depositETH} from '@common/utils/actions/depositEth';
 import {withdrawETH} from '@common/utils/actions/withdrawEth';
 
@@ -74,6 +75,26 @@ export function useSolverChainCoin(): TSolverContext {
 		}
 	}, [request, getQuote]);
 
+
+	/* 🔵 - Yearn Finance ******************************************************
+	** Retrieve the allowance for the token to be used by the solver. This will
+	** be used to determine if the user should approve the token or not.
+	** No allowance required if depositing chainCoin, so set it to infinity.
+	**************************************************************************/
+	const onRetrieveAllowance = useCallback(async (): Promise<TNormalizedBN> => {
+		if (!request?.current) {
+			return toNormalizedBN(0);
+		}
+		if (toAddress(request.current.outputToken.value) === ETH_TOKEN_ADDRESS) {
+			const allowance = await approvedERC20Amount(
+				provider as ethers.providers.Web3Provider,
+				toAddress(request.current.inputToken.value), //Input token
+				toAddress(getEthZapperContract(safeChainID)) //Spender, aka ethZap contract
+			);
+			return toNormalizedBN(allowance, request.current.inputToken.decimals);
+		}
+		return toNormalizedBN(0);
+	}, [provider, safeChainID]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** When we want to withdraw a yvWrappedCoin to the base chain coin, we first
@@ -147,8 +168,9 @@ export function useSolverChainCoin(): TSolverContext {
 		getQuote: getQuote,
 		refreshQuote: refreshQuote,
 		init,
+		onRetrieveAllowance: onRetrieveAllowance,
 		onApprove: onApprove,
 		onExecuteDeposit: onExecuteDeposit,
 		onExecuteWithdraw: onExecuteWithdraw
-	}), [latestQuote?.result, getQuote, refreshQuote, init, onApprove, onExecuteDeposit, onExecuteWithdraw]);
+	}), [latestQuote?.result, getQuote, refreshQuote, init, onApprove, onExecuteDeposit, onExecuteWithdraw, onRetrieveAllowance]);
 }

@@ -51,7 +51,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 	const {balances} = useWallet();
 	const {safeChainID} = useChainID();
 	const {networks} = useSettings();
-	const {balances: zapBalances, tokensList} = useWalletForZap();
+	const {balances: zapBalances, tokensList, balancesNonce: zapBalancesNonce} = useWalletForZap();
 
 	const [possibleOptionsFrom, set_possibleOptionsFrom] = useState<TDropdownOption[]>([]);
 	const [possibleZapOptionsFrom, set_possibleZapOptionsFrom] = useState<TDropdownOption[]>([]);
@@ -89,6 +89,9 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 		const isOutputTokenEth = selectedOptionTo?.value === ETH_TOKEN_ADDRESS;
 		if (isInputTokenEth || isOutputTokenEth) {
 			return Solver.CHAIN_COIN;
+		}
+		if (selectedOptionFrom?.solveVia === Solver.WIDO) {
+			return Solver.WIDO;
 		}
 		if (selectedOptionFrom?.solveVia === Solver.COWSWAP) {
 			return Solver.COWSWAP;
@@ -147,19 +150,35 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 		const	_possibleZapOptionsFrom: TDropdownOption[] = [];
 		Object.entries(zapBalances || {}).forEach(([tokenAddress]): void => {
 			const	tokenListData = tokensList[toAddress(tokenAddress)];
-			_possibleZapOptionsFrom.push(
-				setZapOption({
-					name: tokenListData?.name,
-					symbol: tokenListData?.symbol,
-					address: toAddress(tokenListData?.address),
-					safeChainID,
-					decimals: tokenListData?.decimals,
-					solveVia: Solver.COWSWAP //Should handle multiple
-				})
-			);
+			// if (tokenListData.supportedZaps.includes('Cowswap')) {
+			// 	_possibleZapOptionsFrom.push(
+			// 		setZapOption({
+			// 			name: tokenListData?.name,
+			// 			symbol: tokenListData?.symbol,
+			// 			address: toAddress(tokenListData?.address),
+			// 			safeChainID,
+			// 			decimals: tokenListData?.decimals,
+			// 			solveVia: Solver.COWSWAP
+			// 		})
+			// 	);
+			// }
+			if ((tokenListData?.supportedZaps || []).includes('Wido')) {
+				console.log('TES');
+				_possibleZapOptionsFrom.push(
+					setZapOption({
+						name: tokenListData?.name,
+						symbol: tokenListData?.symbol,
+						address: toAddress(tokenListData?.address),
+						safeChainID,
+						decimals: tokenListData?.decimals,
+						solveVia: Solver.WIDO //Should handle multiple
+					})
+				);
+			}
 		});
+		console.warn(_possibleZapOptionsFrom);
 		set_possibleZapOptionsFrom(_possibleZapOptionsFrom);
-	}, [safeChainID, tokensList, zapBalances]);
+	}, [safeChainID, tokensList, zapBalances, zapBalancesNonce]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** Init selectedOptionFrom and selectedOptionTo with the tokens matching this vault. Only
