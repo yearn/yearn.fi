@@ -12,21 +12,20 @@ import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
 import type {TBalanceData, TUseBalancesTokens} from '@yearn-finance/web-lib/hooks/types';
 import type {TDict} from '@yearn-finance/web-lib/utils/types';
-import type {TNormalizedBN} from '@common/types/types';
 import type {TYDaemonTokensList} from '@vaults/types/yearn';
 
 export type	TWalletForZap = {
 	tokensList: TDict<TYDaemonTokensList>,
 	balances: TDict<TBalanceData>,
 	isLoading: boolean,
-	refresh: () => Promise<TDict<TNormalizedBN>>
+	refresh: (tokenList?: TUseBalancesTokens[]) => Promise<TDict<TBalanceData>>,
 }
 
 const	defaultProps = {
 	tokensList: {},
 	balances: {},
 	isLoading: true,
-	refresh: async (): Promise<TDict<TNormalizedBN>> => ({})
+	refresh: async (): Promise<TDict<TBalanceData>> => ({})
 };
 
 /* 🔵 - Yearn Finance **********************************************************
@@ -62,23 +61,29 @@ export const WalletForZapApp = memo(function WalletForZapApp({children}: {childr
 		return tokens;
 	}, [tokensList, safeChainID]);
 
-	const	{data: balances, update: updateBalances, isLoading: isLoadingBalances} = useBalances({
+	const	{data: balances, update, updateSome, isLoading: isLoadingBalances} = useBalances({
 		key: safeChainID,
 		provider: provider || getProvider(1),
 		tokens: availableTokens,
 		prices
 	});
 
-	const	onRefresh = useCallback(async (): Promise<TDict<TBalanceData>> => {
-		const updatedBalances = await updateBalances();
+	const	onRefresh = useCallback(async (tokenToUpdate?: TUseBalancesTokens[]): Promise<TDict<TBalanceData>> => {
+		if (tokenToUpdate) {
+			const updatedBalances = await updateSome(tokenToUpdate);
+			return updatedBalances;
+		}
+		const updatedBalances = await update();
 		return updatedBalances;
-	}, [updateBalances]);
+
+	}, [update, updateSome]);
+
 
 	/* 🔵 - Yearn Finance ******************************************************
 	**	Setup and render the Context provider to use in the app.
 	***************************************************************************/
 	const	contextValue = useMemo((): TWalletForZap => ({
-		tokensList: tokensList || {}, 
+		tokensList: tokensList || {},
 		balances: balances,
 		isLoading: isLoading || isLoadingBalances,
 		refresh: onRefresh

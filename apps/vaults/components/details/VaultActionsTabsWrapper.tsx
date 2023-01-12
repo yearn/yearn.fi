@@ -14,10 +14,6 @@ type TTabsOptions = {
 	value: number;
 	label: string;
 }
-type TTabs = {
-	selectedAboutTabIndex: number,
-	set_selectedAboutTabIndex: (arg0: number) => void
-}
 
 const tabs: TTabsOptions[] = [
 	{value: 0, label: 'Deposit'},

@@ -75,11 +75,14 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 	const maxDepositPossible = useMemo((): TNormalizedBN => {
 		const	vaultDepositLimit = formatBN(currentVault.details.depositLimit) || ethers.constants.Zero;
 		const	userBalance = balances?.[toAddress(selectedOptionFrom?.value)]?.raw || ethers.constants.Zero;
-		if (userBalance.gt(vaultDepositLimit)) {
-			return (toNormalizedBN(vaultDepositLimit, currentVault.token.decimals ));
+		if (selectedOptionFrom?.value === currentVault?.token?.address && isDepositing) {
+			if (userBalance.gt(vaultDepositLimit)) {
+				return (toNormalizedBN(vaultDepositLimit, currentVault.token.decimals));
+			}
 		}
-		return (toNormalizedBN(userBalance, currentVault.token.decimals ));
-	}, [balances, currentVault.details.depositLimit, currentVault.token.decimals, selectedOptionFrom?.value]);
+
+		return (toNormalizedBN(userBalance, selectedOptionFrom?.decimals || currentVault?.token?.decimals || 18));
+	}, [balances, currentVault.details.depositLimit, currentVault.token?.address, currentVault.token.decimals, isDepositing, selectedOptionFrom?.decimals, selectedOptionFrom?.value]);
 
 	const currentSolver = useMemo((): Solver => {
 		const isInputTokenEth = selectedOptionFrom?.value === ETH_TOKEN_ADDRESS;

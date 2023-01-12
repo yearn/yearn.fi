@@ -8,6 +8,8 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatBN, formatToNormalizedValue, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
+import {approveERC20, isApprovedERC20} from '@common/utils/actions/approveToken';
+import {COW_VAULT_RELAYER_ADDRESS} from '@common/utils/constants';
 
 import type {AxiosError} from 'axios';
 import type {TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
@@ -51,12 +53,14 @@ function useCowswapQuote(): [TCowResult, (request: TInitSolverArgs) => Promise<T
 				return (result);
 			} catch (error) {
 				const	_error = error as AxiosError<ApiError>;
-				toast({type: 'error', content: _error?.response?.data?.description || 'Error while fetching quote from Cowswap'});
+				console.error(error);
+				const	message = `Zap not possible. Try again later or pick another token. ${_error?.response?.data?.description ? `(Reason: [${_error?.response?.data?.description}])` : ''}`;
+				toast({type: 'error', content: message});
 				return undefined;
 			}
 		}
 		return undefined;
-	}, [trigger]);
+	}, [trigger]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	return [
 		useMemo((): TCowResult => ({
@@ -71,7 +75,7 @@ function useCowswapQuote(): [TCowResult, (request: TInitSolverArgs) => Promise<T
 export function useSolverCowswap(): TSolverContext {
 	const {address, provider} = useWeb3();
 	const maxIterations = 1000; // 1000 * up to 3 seconds = 3000 seconds = 50 minutes
-	const shouldUsePresign = true; //Debug only
+	const shouldUsePresign = false; //Debug only
 	const DEFAULT_SLIPPAGE_COWSWAP = 0.01; // 1%
 	const [, getQuote] = useCowswapQuote();
 	const request = useRef<TInitSolverArgs>();
@@ -155,7 +159,6 @@ export function useSolverCowswap(): TSolverContext {
 		if (!latestQuote?.current || !latestQuote?.current?.quote || !request?.current) {
 			return false;
 		}
-
 		const	{quote} = latestQuote.current;
 		try {
 			const	buyAmountWithSlippage = getBuyAmountWithSlippage(latestQuote.current, request.current.outputToken.decimals);
@@ -234,10 +237,7 @@ export function useSolverCowswap(): TSolverContext {
 		if (!latestQuote?.current?.quote?.buyAmount) {
 			return (toNormalizedBN(0));
 		}
-		return ({
-			raw: formatBN(latestQuote?.current?.quote?.buyAmount || ethers.constants.Zero),
-			normalized: formatToNormalizedValue(formatBN(latestQuote?.current?.quote?.buyAmount || 0), request?.current?.outputToken?.decimals || 18)
-		});
+		return toNormalizedBN(latestQuote?.current?.quote?.buyAmount, request?.current?.outputToken?.decimals || 18);
 	}, [latestQuote]);
 
 
@@ -247,12 +247,35 @@ export function useSolverCowswap(): TSolverContext {
 	** of the token by the Cowswap solver.
 	**************************************************************************/
 	const onApprove = useCallback(async (
+		amount = ethers.constants.MaxUint256,
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
-		new Transaction(provider, approve, txStatusSetter)
-			.populate()
-			.onSuccess(onSuccess)
+		if (!latestQuote?.current || !latestQuote?.current?.quote || !request?.current) {
+			return;
+		}
+
+		const	isApproved = await isApprovedERC20(
+			provider as ethers.providers.Web3Provider,
+			toAddress(request.current.inputToken.value), //token to approve
+			COW_VAULT_RELAYER_ADDRESS, //Cowswap relayer
+			amount
+		);
+		if (isApproved) {
+			await approve();
+			onSuccess();
+			return;
+		}
+		new Transaction(provider, approveERC20, txStatusSetter)
+			.populate(
+				toAddress(request.current.inputToken.value), //token to approve
+				COW_VAULT_RELAYER_ADDRESS, //Cowswap relayer
+				amount
+			)
+			.onSuccess(async (): Promise<void> => {
+				await approve();
+				onSuccess();
+			})
 			.perform();
 	}, [approve, provider]);
 

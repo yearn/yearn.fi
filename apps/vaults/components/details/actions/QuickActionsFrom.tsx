@@ -72,7 +72,10 @@ function	VaultDetailsQuickActionsFrom(): ReactElement {
 							disabled={!isActive}
 							value={amount.normalized}
 							onChange={(e: ChangeEvent<HTMLInputElement>): void => onChangeAmount(
-								handleInputChangeEventValue(e.target.value, balances?.[toAddress(selectedOptionFrom?.value)]?.decimals || 18)
+								handleInputChangeEventValue(
+									e.target.value,
+									balances?.[toAddress(selectedOptionFrom?.value)]?.decimals || 18
+								)
 							)} />
 						<button
 							onClick={(): void => onChangeAmount(maxDepositPossible)}

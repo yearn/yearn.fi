@@ -3,6 +3,7 @@ import {ethers} from 'ethers';
 import useSWR from 'swr';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {Solver, useSolver} from '@vaults/contexts/useSolver';
+import useWalletForZap from '@vaults/contexts/useWalletForZaps';
 import {getEthZapperContract} from '@vaults/utils';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
@@ -27,6 +28,7 @@ function	shouldUseVanillaAllowance({solver, isInputTokenEth}: {solver: Solver, i
 
 function	VaultDetailsQuickActionsButtons(): ReactElement {
 	const {refresh} = useWallet();
+	const {refresh: refreshZapBalances} = useWalletForZap();
 	const {isActive} = useWeb3();
 	const {safeChainID} = useChainID();
 	const {networks} = useSettings();
@@ -35,7 +37,7 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 	const [txStatusExecuteWithdraw, set_txStatusExecuteWithdraw] = useState(defaultTxStatus);
 	const [allowanceFrom, set_allowanceFrom] = useState<TNormalizedBN>(toNormalizedBN(0));
 	const {selectedOptionFrom, selectedOptionTo, amount, onChangeAmount, maxDepositPossible, isDepositing} = useActionFlow();
-	const {onApprove, onExecuteDeposit, onExecuteWithdraw, currentSolver} = useSolver();
+	const {onApprove, onExecuteDeposit, onExecuteWithdraw, currentSolver, expectedOut} = useSolver();
 	const retrieveAllowance = useAllowanceFetcher();
 
 	const withVanillaAllowance = shouldUseVanillaAllowance({
@@ -75,8 +77,26 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 
 	const onSuccess = useCallback(async (): Promise<void> => {
 		onChangeAmount(toNormalizedBN(0));
-		await refresh();
-	}, [onChangeAmount, refresh]);
+		if ([Solver.VANILLA, Solver.CHAIN_COIN, Solver.PARTNER_CONTRACT].includes(currentSolver)) {
+			await refresh([
+				{token: toAddress(selectedOptionFrom?.value)},
+				{token: toAddress(selectedOptionTo?.value)}
+			]);
+		} else if ([Solver.COWSWAP, Solver.PORTALS, Solver.WIDO].includes(currentSolver)) {
+			if (isDepositing) { //refresh input from zap wallet, refresh output from default
+				await Promise.all([
+					refreshZapBalances([{token: toAddress(selectedOptionFrom?.value)}]),
+					refresh([{token: toAddress(selectedOptionTo?.value)}])
+				]);
+			} else {
+				await Promise.all([
+					refreshZapBalances([{token: toAddress(selectedOptionTo?.value)}]),
+					refresh([{token: toAddress(selectedOptionFrom?.value)}])
+				]);
+			}
+		}
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [currentSolver, isDepositing, onChangeAmount, selectedOptionFrom?.value, selectedOptionTo?.value]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Trigger an approve web3 action, simply trying to approve `amount` tokens
@@ -86,14 +106,13 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 	** (not connected) or if the tx is still pending.
 	**************************************************************************/
 	async function	onApproveFrom(): Promise<void> {
+		const	shouldApproveInfinite = currentSolver === Solver.PARTNER_CONTRACT || currentSolver === Solver.VANILLA;
 		onApprove(
+			shouldApproveInfinite ? ethers.constants.MaxUint256 : amount.raw,
 			set_txStatusApprove,
 			async (): Promise<void> => {
 				if (currentSolver === Solver.COWSWAP) {
-					set_allowanceFrom({
-						raw: ethers.constants.MaxUint256,
-						normalized: Infinity
-					});
+					set_allowanceFrom(toNormalizedBN(ethers.constants.MaxUint256));
 				} else {
 					await mutateAllowance();
 				}
@@ -116,7 +135,7 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 			<Button
 				className={'w-full'}
 				isBusy={txStatusApprove.pending || isValidatingAllowance}
-				isDisabled={!isActive || amount.raw.isZero() || amount.raw.gt(maxDepositPossible.raw)}
+				isDisabled={!isActive || amount.raw.isZero() || amount.raw.gt(maxDepositPossible.raw) || expectedOut.raw.isZero()}
 				onClick={onApproveFrom}>
 				{'Approve'}
 			</Button>
