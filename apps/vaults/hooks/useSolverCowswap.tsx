@@ -233,13 +233,16 @@ export function useSolverCowswap(): TSolverContext {
 		return false;
 	}, [latestQuote, shouldUsePresign, signature]);
 
+	/* 🔵 - Yearn Finance ******************************************************
+	** Format the quote to a normalized value, which will be used for subsequent
+	** process and displayed to the user.
+	**************************************************************************/
 	const expectedOut = useMemo((): TNormalizedBN => {
 		if (!latestQuote?.current?.quote?.buyAmount) {
 			return (toNormalizedBN(0));
 		}
 		return toNormalizedBN(latestQuote?.current?.quote?.buyAmount, request?.current?.outputToken?.decimals || 18);
 	}, [latestQuote]);
-
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Trigger an signature to approve the token to be used by the Cowswap
