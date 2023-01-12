@@ -26,19 +26,19 @@ function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYearnVau
 						<div className={'space-y-2'}>
 							<div className={'flex flex-row items-center justify-between'}>
 								<p className={'text-sm text-neutral-500'}>{'Weekly APY'}</p>
-								<p className={'font-number text-sm text-neutral-900'}>
+								<p className={'font-number text-sm text-neutral-900'} suppressHydrationWarning>
 									{formatPercent((currentVault?.apy?.points?.week_ago || 0) * 100)}
 								</p>
 							</div>
 							<div className={'flex flex-row items-center justify-between'}>
 								<p className={'text-sm text-neutral-500'}>{'Monthly APY'}</p>
-								<p className={'font-number text-sm text-neutral-900'}>
+								<p className={'font-number text-sm text-neutral-900'} suppressHydrationWarning>
 									{formatPercent((currentVault?.apy?.points?.month_ago || 0) * 100)}
 								</p>
 							</div>
 							<div className={'flex flex-row items-center justify-between'}>
 								<p className={'text-sm text-neutral-500'}>{'Inception APY'}</p>
-								<p className={'font-number text-sm text-neutral-900'}>
+								<p className={'font-number text-sm text-neutral-900'} suppressHydrationWarning>
 									{formatPercent((currentVault?.apy?.points?.inception || 0) * 100)}
 								</p>
 							</div>
@@ -46,13 +46,13 @@ function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYearnVau
 						<div className={'space-y-2'}>
 							<div className={'flex flex-row items-center justify-between'}>
 								<p className={'text-sm text-neutral-500'}>{'Gross APR'}</p>
-								<p className={'font-number text-sm text-neutral-900'}>
+								<p className={'font-number text-sm text-neutral-900'} suppressHydrationWarning>
 									{formatPercent((currentVault?.apy?.gross_apr || 0) * 100)}
 								</p>
 							</div>
 							<div className={'flex flex-row items-center justify-between'}>
 								<p className={'text-sm text-neutral-500'}>{'Net APY'}</p>
-								<p className={'font-number text-sm text-neutral-900'}>
+								<p className={'font-number text-sm text-neutral-900'} suppressHydrationWarning>
 									{formatPercent((currentVault?.apy?.net_apy || 0) * 100)}
 								</p>
 							</div>
@@ -72,13 +72,13 @@ function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYearnVau
 						</div>
 						<div className={'flex flex-col space-y-0 md:space-y-2'}>
 							<p className={'text-xxs text-neutral-600 md:text-xs'}>{'Management fee'}</p>
-							<b className={'font-number text-xl text-neutral-900'}>
+							<b className={'font-number text-xl text-neutral-900'} suppressHydrationWarning>
 								{formatPercent((currentVault?.apy?.fees?.management || 0) * 100, 0)}
 							</b>
 						</div>
 						<div className={'flex flex-col space-y-0 md:space-y-2'}>
 							<p className={'text-xxs text-neutral-600 md:text-xs'}>{'Perfomance fee'}</p>
-							<b className={'font-number text-xl text-neutral-500'}>
+							<b className={'font-number text-xl text-neutral-500'} suppressHydrationWarning>
 								{formatPercent((currentVault?.apy?.fees?.performance || 0) * 100, 0)}
 							</b>
 						</div>

@@ -80,6 +80,7 @@ export function useSolverChainCoin(): TSolverContext {
 	** need to approve the yvWrappedCoin to be used by the zap contract.
 	**************************************************************************/
 	const onApprove = useCallback(async (
+		amount = ethers.constants.MaxUint256,
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
@@ -91,7 +92,7 @@ export function useSolverChainCoin(): TSolverContext {
 			.populate(
 				toAddress(request.current.inputToken.value), // Token to approve (wrapped coin)
 				getEthZapperContract(safeChainID), // Coin Zap Contract
-				ethers.constants.MaxUint256 //amount
+				amount //amount
 			)
 			.onSuccess(onSuccess)
 			.perform();

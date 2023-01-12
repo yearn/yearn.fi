@@ -14,6 +14,7 @@ export type TWithSolver = {
 	expectedOut: TNormalizedBN;
 	isLoadingExpectedOut: boolean;
 	onApprove: (
+		amount: BigNumber,
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	) => Promise<void>;
@@ -41,6 +42,7 @@ export type TSolverContext = {
 	refreshQuote: CallableFunction;
 	init: (args: TInitSolverArgs) => Promise<TNormalizedBN>;
 	onApprove: (
+		amount: BigNumber,
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	) => Promise<void>;

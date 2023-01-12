@@ -86,6 +86,7 @@ export function useSolverPartnerContract(): TSolverContext {
 	** (not connected) or if the tx is still pending.
 	**************************************************************************/
 	const onApprove = useCallback(async (
+		amount = ethers.constants.MaxUint256,
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
@@ -97,7 +98,7 @@ export function useSolverPartnerContract(): TSolverContext {
 			.populate(
 				toAddress(request.current.inputToken.value), //token to approve
 				toAddress(networks[safeChainID].partnerContractAddress), //partner contract
-				ethers.constants.MaxUint256 //amount
+				amount //amount
 			)
 			.onSuccess(onSuccess)
 			.perform();
