@@ -54,9 +54,11 @@ function Index({router, vaultData}: {router: NextRouter, vaultData: TYearnVault}
 				</motion.div>
 			</header>
 
-			<section className={'mt-10 grid w-full grid-cols-12 pb-10 md:mt-0'}>
+			<section className={'mt-10 pb-10 md:mt-0'}>
 				<VaultDetailsHeader currentVault={currentVault.current} />
-				<VaultDetailsQuickActions currentVault={currentVault.current} />
+				<div className={'mt-10 mb-2 md:mt-20'}>
+					<VaultDetailsQuickActions currentVault={currentVault.current} />
+				</div>
 				<VaultDetailsTabsWrapper currentVault={currentVault.current} />
 			</section>
 		</>

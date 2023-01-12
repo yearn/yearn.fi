@@ -2,30 +2,25 @@ import React, {useCallback, useEffect, useRef, useState} from 'react';
 import dayjs, {extend} from 'dayjs';
 import dayjsDuration from 'dayjs/plugin/duration.js';
 import {useBribes} from '@yBribe/contexts/useBribes';
-import {getNextThursday} from '@yBribe/utils';
 
 import type {ReactElement} from 'react';
 
 extend(dayjsDuration);
 
-function	computeTimeLeft(): number {
-	const nextPeriod = getNextThursday();
-	const currentTime = dayjs();
-	const diffTime = nextPeriod - currentTime.unix();
-	const duration = dayjs.duration(diffTime * 1000, 'milliseconds');
-	return duration.asMilliseconds();
+type TProps = {
+	timeLeft: number;
 }
 
-function	HeroTimer(): ReactElement {
+function	HeroTimer({timeLeft}: TProps): ReactElement {
 	const	{nextPeriod} = useBribes();
 	const	interval = useRef<NodeJS.Timeout | null>(null);
-	const	[time, set_time] = useState<number>(computeTimeLeft());
+	const	[time, set_time] = useState<number>(timeLeft);
 
 	useEffect((): VoidFunction => {
-		set_time(computeTimeLeft());
+		set_time(timeLeft);
 
 		interval.current = setInterval((): void => {
-			set_time(computeTimeLeft());
+			set_time(timeLeft);
 		}, 1000);
 
 		return (): void => {
@@ -33,7 +28,7 @@ function	HeroTimer(): ReactElement {
 				clearInterval(interval.current);
 			}
 		};
-	}, [nextPeriod]);
+	}, [nextPeriod, timeLeft]);
 
 	const formatTimestamp = useCallback((n: number): string => {
 		const	twoDP = (n: number): string | number => (n > 9 ? n : '0' + n);
