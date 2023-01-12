@@ -99,7 +99,7 @@ function	AppBox({app}: {app: typeof apps[0]}): ReactElement {
 function	TextAnimation(): ReactElement {
 	const hasBeenTriggerd = useRef<boolean>(false);
 
-	function	onStartAnimation(): void {	
+	function	onStartAnimation(): void {
 		hasBeenTriggerd.current = true;
 		const words = document.getElementsByClassName('word') as HTMLCollectionOf<HTMLSpanElement>;
 		const wordArray: HTMLSpanElement[][] = [];
@@ -119,7 +119,7 @@ function	TextAnimation(): ReactElement {
 			for (let i = 0; i < cw.length; i++) {
 				animateLetterOut(cw, i);
 			}
-  
+
 			for (let i = 0; i < nw.length; i++) {
 				nw[i].className = 'letter behind';
 				if (nw?.[0]?.parentElement?.style) {
@@ -153,7 +153,7 @@ function	TextAnimation(): ReactElement {
 				word.appendChild(letter);
 				letters.push(letter);
 			}
-  
+
 			wordArray.push(letters);
 		}
 
@@ -172,7 +172,7 @@ function	TextAnimation(): ReactElement {
 	return (
 		<>
 			<div className={'text'}>
-				<p className={'wordWrapper'}> 
+				<p className={'wordWrapper'}>
 					<span className={'word'}>{'STAKE'}</span>
 					<span className={'word'}>{'INVEST'}</span>
 					<span className={'word'}>{'BUILD'}</span>
@@ -201,7 +201,7 @@ function	Index(): ReactElement {
 					</p>
 				</div>
 				<div className={'mb-6'}>
-					
+
 					<p className={'text-center text-sm text-neutral-500 md:text-base'}>
 						<Balancer>{'Yearn is a decentralized suite of products helping individuals, DAOs, and other protocols\nearn yield on their digital assets.'}</Balancer>
 					</p>

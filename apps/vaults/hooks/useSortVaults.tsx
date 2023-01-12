@@ -84,13 +84,17 @@ function	useSortVaults(
 		}
 		if (sortBy === 'name') {
 			return sortedByName();
-		} if (sortBy === 'apy') {
+		}
+		if (sortBy === 'apy') {
 			return sortedByAPY();
-		} if (sortBy === 'tvl') {
+		}
+		if (sortBy === 'tvl') {
 			return sortedByTVL();
-		} if (sortBy === 'deposited') {
+		}
+		if (sortBy === 'deposited') {
 			return sortedByDeposited();
-		} if (sortBy === 'available') {
+		}
+		if (sortBy === 'available') {
 			return sortedByAvailable();
 		}
 

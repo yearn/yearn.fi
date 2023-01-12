@@ -53,9 +53,7 @@ function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYearnVau
 							<div className={'flex flex-row items-center justify-between'}>
 								<p className={'text-sm text-neutral-500'}>{'Net APY'}</p>
 								<p className={'font-number text-sm text-neutral-900'} suppressHydrationWarning>
-									{(currentVault?.apy?.net_apy || 0) > 5 ? (
-										`≧ ${formatPercent(500)}`
-									) : formatPercent((currentVault?.apy?.net_apy || 0) * 100)}
+									{formatPercent((currentVault?.apy?.net_apy || 0) * 100)}
 								</p>
 							</div>
 						</div>
@@ -74,14 +72,14 @@ function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYearnVau
 						</div>
 						<div className={'flex flex-col space-y-0 md:space-y-2'}>
 							<p className={'text-xxs text-neutral-600 md:text-xs'}>{'Management fee'}</p>
-							<b className={'font-number text-xl text-neutral-900'}>
-								{formatPercent((currentVault?.details?.managementFee || 0) / 100, 0)}
+							<b className={'font-number text-xl text-neutral-900'} suppressHydrationWarning>
+								{formatPercent((currentVault?.apy?.fees?.management || 0) * 100, 0)}
 							</b>
 						</div>
 						<div className={'flex flex-col space-y-0 md:space-y-2'}>
-							<p className={'text-xxs text-neutral-600 md:text-xs'}>{'Performance fee'}</p>
-							<b className={'font-number text-xl text-neutral-500'}>
-								{formatPercent((currentVault?.details?.performanceFee || 0) / 100, 0)}
+							<p className={'text-xxs text-neutral-600 md:text-xs'}>{'Perfomance fee'}</p>
+							<b className={'font-number text-xl text-neutral-500'} suppressHydrationWarning>
+								{formatPercent((currentVault?.apy?.fees?.performance || 0) * 100, 0)}
 							</b>
 						</div>
 					</div>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useMemo} from 'react';
 import dynamic from 'next/dynamic';
 import IconCopy from '@yearn-finance/web-lib/icons/IconCopy';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -16,7 +16,34 @@ import type {TGraphForStrategyReportsProps} from '@vaults/components/graphs/Grap
 
 const GraphForStrategyReports = dynamic<TGraphForStrategyReportsProps>(async (): LoaderComponent<TGraphForStrategyReportsProps> => import('@vaults/components/graphs/GraphForStrategyReports'), {ssr: false});
 
+type TRiskScoreElementProps = {
+	label: string;
+	value: number;
+};
+function	RiskScoreElement({label, value}: TRiskScoreElementProps): ReactElement {
+	return (
+		<div className={'flex flex-row items-center justify-between'}>
+			<p className={'text-sm text-neutral-500'}>{label}</p>
+			<p className={'font-number text-sm text-neutral-900'}>{value}</p>
+		</div>
+	);
+}
+
 function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVault, strategy: TYearnVaultStrategy}): ReactElement {
+	const	riskScoreElementsMap = useMemo((): TRiskScoreElementProps[] => {
+		const {riskDetails} = strategy?.risk || {};
+		return ([
+			{label: 'TVL Impact', value: riskDetails?.TVLImpact},
+			{label: 'Audit Score', value: riskDetails?.auditScore},
+			{label: 'Code Review Score', value: riskDetails?.codeReviewScore},
+			{label: 'Complexity Score', value: riskDetails?.complexityScore},
+			{label: 'Longevity Impact', value: riskDetails?.longevityImpact},
+			{label: 'Protocol Safety Score', value: riskDetails?.protocolSafetyScore},
+			{label: 'Team Knowledge Score', value: riskDetails?.teamKnowledgeScore},
+			{label: 'Testing Score', value: riskDetails?.testingScore}
+		]);
+	}, [strategy]);
+
 	return (
 		<details className={'p-0'}>
 			<summary>
@@ -70,38 +97,12 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVau
 						<div className={'flex flex-col space-y-4 bg-neutral-200 p-2 md:p-4'}>
 							<p className={'text-base text-neutral-600'}>{'Risk score'}</p>
 							<div className={'mt-0 grid grid-cols-1 gap-x-12 gap-y-2 md:grid-cols-2'}>
-								<div className={'flex flex-row items-center justify-between'}>
-									<p className={'text-sm text-neutral-500'}>{'TVL Impact'}</p>
-									<p className={'font-number text-sm text-neutral-900'}>{strategy?.risk?.riskDetails?.TVLImpact}</p>
-								</div>
-								<div className={'flex flex-row items-center justify-between'}>
-									<p className={'text-sm text-neutral-500'}>{'Audit Score'}</p>
-									<p className={'font-number text-sm text-neutral-900'}>{strategy?.risk?.riskDetails?.auditScore}</p>
-								</div>
-								<div className={'flex flex-row items-center justify-between'}>
-									<p className={'text-sm text-neutral-500'}>{'Code Review Score'}</p>
-									<p className={'font-number text-sm text-neutral-900'}>{strategy?.risk?.riskDetails?.codeReviewScore}</p>
-								</div>
-								<div className={'flex flex-row items-center justify-between'}>
-									<p className={'text-sm text-neutral-500'}>{'Complexity Score'}</p>
-									<p className={'font-number text-sm text-neutral-900'}>{strategy?.risk?.riskDetails?.complexityScore}</p>
-								</div>
-								<div className={'flex flex-row items-center justify-between'}>
-									<p className={'text-sm text-neutral-500'}>{'Longevity Impact'}</p>
-									<p className={'font-number text-sm text-neutral-900'}>{strategy?.risk?.riskDetails?.longevityImpact}</p>
-								</div>
-								<div className={'flex flex-row items-center justify-between'}>
-									<p className={'text-sm text-neutral-500'}>{'Protocol Safety Score'}</p>
-									<p className={'font-number text-sm text-neutral-900'}>{strategy?.risk?.riskDetails?.protocolSafetyScore}</p>
-								</div>
-								<div className={'flex flex-row items-center justify-between'}>
-									<p className={'text-sm text-neutral-500'}>{'Team Knowledge Score'}</p>
-									<p className={'font-number text-sm text-neutral-900'}>{strategy?.risk?.riskDetails?.teamKnowledgeScore}</p>
-								</div>
-								<div className={'flex flex-row items-center justify-between'}>
-									<p className={'text-sm text-neutral-500'}>{'Testing Score'}</p>
-									<p className={'font-number text-sm text-neutral-900'}>{strategy?.risk?.riskDetails?.testingScore}</p>
-								</div>
+								{riskScoreElementsMap.map(({label, value}): ReactElement => (
+									<RiskScoreElement
+										key={label}
+										label={label}
+										value={value || 0} />
+								))}
 							</div>
 						</div>
 					</div>
@@ -120,6 +121,13 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVau
 								</p>
 								<b className={'font-number text-xl text-neutral-900'}>
 									{formatPercent((strategy?.details?.debtRatio || 0) / 100, 0)}
+								</b>
+							</div>
+
+							<div className={'col-span-2 flex flex-col space-y-0 md:space-y-2'}>
+								<p className={'text-xxs text-neutral-600 md:text-xs'}>{'Perfomance fee'}</p>
+								<b className={'font-number text-xl text-neutral-600'}>
+									{formatPercent((strategy?.details?.performanceFee || 0) * 100, 0)}
 								</b>
 							</div>
 						</div>
