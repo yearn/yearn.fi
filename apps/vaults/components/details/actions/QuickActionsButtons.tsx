@@ -70,11 +70,7 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 			shouldApproveInfinite ? ethers.constants.MaxUint256 : amount.raw,
 			set_txStatusApprove,
 			async (): Promise<void> => {
-				if ([Solver.COWSWAP, Solver.WIDO, Solver.PORTALS].includes(currentSolver)) {
-					set_allowanceFrom(toNormalizedBN(ethers.constants.MaxUint256));
-				} else {
-					await mutateAllowance();
-				}
+				await mutateAllowance();
 			}
 		);
 	}
