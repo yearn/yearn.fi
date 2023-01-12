@@ -148,35 +148,46 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 
 	useEffect((): void => {
 		const	_possibleZapOptionsFrom: TDropdownOption[] = [];
+		const	isWithWETH = safeChainID === 1 && currentVault && toAddress(currentVault.token.address) === WETH_TOKEN_ADDRESS;
+		const	isWithWFTM = safeChainID === 250 && currentVault && toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS;
 		Object.entries(zapBalances || {}).forEach(([tokenAddress]): void => {
 			const	tokenListData = tokensList[toAddress(tokenAddress)];
-			// if (tokenListData.supportedZaps.includes('Cowswap')) {
-			// 	_possibleZapOptionsFrom.push(
-			// 		setZapOption({
-			// 			name: tokenListData?.name,
-			// 			symbol: tokenListData?.symbol,
-			// 			address: toAddress(tokenListData?.address),
-			// 			safeChainID,
-			// 			decimals: tokenListData?.decimals,
-			// 			solveVia: Solver.COWSWAP
-			// 		})
-			// 	);
-			// }
-			if ((tokenListData?.supportedZaps || []).includes('Wido')) {
-				console.log('TES');
-				_possibleZapOptionsFrom.push(
-					setZapOption({
-						name: tokenListData?.name,
-						symbol: tokenListData?.symbol,
-						address: toAddress(tokenListData?.address),
-						safeChainID,
-						decimals: tokenListData?.decimals,
-						solveVia: Solver.WIDO //Should handle multiple
-					})
-				);
+			if (isWithWETH && toAddress(tokenListData?.address) === WETH_TOKEN_ADDRESS) {
+				// Do nothing to avoid duplicate wETH in the list
+			} else if (isWithWFTM && toAddress(tokenListData?.address) === WFTM_TOKEN_ADDRESS) {
+				// Do nothing to avoid duplicate wFTM in the list
+			} else if (toAddress(tokenListData?.address) === currentVault?.token?.address) {
+				// Do nothing to avoid duplicate vault underlying token in the list
+			} else if (toAddress(tokenListData?.address) === currentVault?.address) {
+				// Do nothing to avoid vault token in the list
+			} else {
+				// tokenListData.address
+				// if (tokenListData.supportedZaps.includes('Cowswap')) {
+				// 	_possibleZapOptionsFrom.push(
+				// 		setZapOption({
+				// 			name: tokenListData?.name,
+				// 			symbol: tokenListData?.symbol,
+				// 			address: toAddress(tokenListData?.address),
+				// 			safeChainID,
+				// 			decimals: tokenListData?.decimals,
+				// 			solveVia: Solver.COWSWAP
+				// 		})
+				// 	);
+				// }
+				if ((tokenListData?.supportedZaps || []).includes('Wido')) {
+					_possibleZapOptionsFrom.push(
+						setZapOption({
+							name: tokenListData?.name,
+							symbol: tokenListData?.symbol,
+							address: toAddress(tokenListData?.address),
+							safeChainID,
+							decimals: tokenListData?.decimals,
+							solveVia: Solver.WIDO //Should handle multiple
+						})
+					);
+				}
 			}
 		});
-		console.warn(_possibleZapOptionsFrom);
 		set_possibleZapOptionsFrom(_possibleZapOptionsFrom);
 	}, [safeChainID, tokensList, zapBalances, zapBalancesNonce]);
 

@@ -26,6 +26,7 @@ const	DefaultWithSolverContext: TWithSolver = {
 	currentSolver: Solver.VANILLA,
 	expectedOut: toNormalizedBN(0),
 	isLoadingExpectedOut: false,
+	onRetrieveExpectedOut: async (): Promise<TNormalizedBN> => toNormalizedBN(0),
 	onRetrieveAllowance: async (): Promise<TNormalizedBN> => toNormalizedBN(0),
 	onApprove: async (): Promise<void> => Promise.resolve(),
 	onExecuteDeposit: async (): Promise<void> => Promise.resolve(),
@@ -126,11 +127,41 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 		onUpdateSolver();
 	}, [onUpdateSolver]);
 
+	const	fetchAllQuotes = useCallback(async (): Promise<void> => {
+		if (!selectedOptionFrom || !selectedOptionTo || !amount) {
+			return;
+		}
+		set_isLoading(true);
+		const req = {
+			from: toAddress(address || ''),
+			inputToken: selectedOptionFrom,
+			outputToken: selectedOptionTo,
+			inputAmount: amount.raw,
+			isDepositing: isDepositing
+		};
+		const	timeNow = Date.now();
+		const	quotes = await Promise.all([
+			cowswap.onRetrieveExpectedOut(req),
+			wido.onRetrieveExpectedOut(req)
+		]);
+		console.log({
+			cowswap: quotes[0]?.normalized,
+			wido: quotes[1]?.normalized,
+			duration: Date.now() - timeNow
+		});
+
+	}, [selectedOptionFrom, amount]);
+
+	useEffect((): void => {
+		fetchAllQuotes();
+	}, [fetchAllQuotes]);
+
 
 	const	contextValue = useMemo((): TWithSolver => ({
 		currentSolver: currentSolver,
 		expectedOut: currentSolverState?.quote || toNormalizedBN(0),
 		isLoadingExpectedOut: isLoading,
+		onRetrieveExpectedOut: currentSolverState.onRetrieveExpectedOut,
 		onRetrieveAllowance: currentSolverState.onRetrieveAllowance,
 		onApprove: currentSolverState.onApprove,
 		onExecuteDeposit: currentSolverState.onExecuteDeposit,

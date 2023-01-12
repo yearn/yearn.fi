@@ -137,6 +137,15 @@ export function useSolverWido(): TSolverContext {
 	}, [latestQuote, request]);
 
 	/* 🔵 - Yearn Finance ******************************************************
+	** Retrieve the current outValue from the quote, which will be used to
+	** display the current value to the user.
+	**************************************************************************/
+	const onRetrieveExpectedOut = useCallback(async (request: TInitSolverArgs): Promise<TNormalizedBN> => {
+		const	quoteResult = await getQuote(request);
+		return toNormalizedBN(formatBN(quoteResult?.toTokenAmount), request.outputToken.decimals);
+	}, [getQuote]);
+
+	/* 🔵 - Yearn Finance ******************************************************
 	** Retrieve the allowance for the token to be used by the solver. This will
 	** be used to determine if the user should approve the token or not.
 	**************************************************************************/
@@ -223,9 +232,10 @@ export function useSolverWido(): TSolverContext {
 		getQuote: getQuote,
 		refreshQuote,
 		init,
-		onRetrieveAllowance: onRetrieveAllowance,
-		onApprove: onApprove,
-		onExecuteDeposit: onExecuteDeposit,
-		onExecuteWithdraw: onExecuteWithdraw
-	}), [expectedOut, getQuote, refreshQuote, init, onApprove, onExecuteDeposit, onExecuteWithdraw, onRetrieveAllowance]);
+		onRetrieveExpectedOut,
+		onRetrieveAllowance,
+		onApprove,
+		onExecuteDeposit,
+		onExecuteWithdraw
+	}), [expectedOut, getQuote, refreshQuote, init, onApprove, onExecuteDeposit, onExecuteWithdraw, onRetrieveAllowance, onRetrieveExpectedOut]);
 }

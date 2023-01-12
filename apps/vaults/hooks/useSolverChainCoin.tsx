@@ -75,6 +75,14 @@ export function useSolverChainCoin(): TSolverContext {
 		}
 	}, [request, getQuote]);
 
+	/* 🔵 - Yearn Finance ******************************************************
+	** Retrieve the current outValue from the quote, which will be used to
+	** display the current value to the user.
+	**************************************************************************/
+	const onRetrieveExpectedOut = useCallback(async (request: TInitSolverArgs): Promise<TNormalizedBN> => {
+		const	quoteResult = await getQuote(request);
+		return quoteResult;
+	}, [getQuote]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Retrieve the allowance for the token to be used by the solver. This will
@@ -168,9 +176,10 @@ export function useSolverChainCoin(): TSolverContext {
 		getQuote: getQuote,
 		refreshQuote: refreshQuote,
 		init,
-		onRetrieveAllowance: onRetrieveAllowance,
-		onApprove: onApprove,
-		onExecuteDeposit: onExecuteDeposit,
-		onExecuteWithdraw: onExecuteWithdraw
-	}), [latestQuote?.result, getQuote, refreshQuote, init, onApprove, onExecuteDeposit, onExecuteWithdraw, onRetrieveAllowance]);
+		onRetrieveExpectedOut,
+		onRetrieveAllowance,
+		onApprove,
+		onExecuteDeposit,
+		onExecuteWithdraw
+	}), [latestQuote?.result, getQuote, refreshQuote, init, onApprove, onExecuteDeposit, onExecuteWithdraw, onRetrieveAllowance, onRetrieveExpectedOut]);
 }
