@@ -89,7 +89,7 @@ function ManageLockTab(): ReactElement {
 						maxAmount={MAX_LOCK_TIME - weeksToUnlock > 0 ? MAX_LOCK_TIME - weeksToUnlock : 0}
 						disabled={!hasLockedAmount}
 						error={lockTimeError}
-						legend={'min 1'}
+						legend={'Minimum: 1 week'}
 					/>
 				</div>
 				<div className={'grid grid-cols-1 gap-6 md:grid-cols-2 md:pb-5'}>

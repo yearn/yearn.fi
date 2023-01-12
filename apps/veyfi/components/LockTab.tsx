@@ -149,7 +149,7 @@ function LockTab(): ReactElement {
 						onAmountChange={set_lockTime}
 						maxAmount={(MAX_LOCK_TIME + 1).toString()}
 						disabled={hasLockedAmount}
-						legend={'min 1'}
+						legend={'Minimum: 1 week'}
 						error={lockTimeError}
 					/>
 				</div>
