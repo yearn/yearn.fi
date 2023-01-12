@@ -27,7 +27,7 @@ function Tabs({items, className}: TTabsProps): ReactElement {
 
 	return (
 		<div className={`w-full bg-neutral-100 ${className}`}>
-			<nav className={'hidden h-14 w-full border-b-2 border-neutral-300 text-center md:flex'}>
+			<nav className={'hidden h-14 w-full border-b-2 border-neutral-300 pl-[13px] pr-4 text-center md:flex'}>
 				{items.map(({id, label}): ReactElement => (
 					<div
 						key={`tab-label-${id}`}

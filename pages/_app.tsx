@@ -19,6 +19,7 @@ import	'../style.css';
 
 const aeonik = localFont({
 	variable: '--font-aeonik',
+	display: 'swap',
 	src: [
 		{
 			path: '../public/fonts/Aeonik-Regular.woff2',
