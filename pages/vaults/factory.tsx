@@ -82,10 +82,10 @@ function	Factory(): ReactElement {
 		return gauges.filter((_gauge: TCurveGauges, index: number): boolean => canCreateVaults[index]);
 	}, [gauges, provider, safeChainID]);
 	const [filteredGauges, , mutate] = useAsync(fetchAlreadyCreatedGauges, [], [gauges]);
-	
+
 	/* 🔵 - Yearn Finance ******************************************************
 	** We need to create the possible elements for the dropdown by removing all
-	** the extra impossible gauges and formating them to the expected 
+	** the extra impossible gauges and formating them to the expected
 	** TDropdownGaugeOption type
 	**************************************************************************/
 	const	gaugesOptions = useMemo((): TDropdownGaugeOption[] => {
@@ -127,7 +127,7 @@ function	Factory(): ReactElement {
 			symbol: symbol.replace('-gauge', '').replace('-f', '') || selectedOption.value.name,
 			poolAddress: selectedOption.value.poolAddress,
 			gaugeAddress: selectedOption.value.gaugeAddress
-		});	
+		});
 	}, [provider, safeChainID, selectedOption?.value]);
 
 	const [gaugeDisplayData, isLoading] = useAsync<TGaugeDisplayData>(fetchGaugeDisplayData, undefined, [selectedOption.value.name]);
@@ -259,7 +259,7 @@ function	Factory(): ReactElement {
 						</div>
 						<div className={'col-span-3 w-full space-y-1'}>
 							<p className={'text-neutral-600'}>{'Gauge address'}</p>
-							
+
 							{isLoading ? (
 								<div className={'flex h-10 items-center bg-neutral-200 p-2 pl-5 text-neutral-600'}>
 									<span className={'loader'} />
