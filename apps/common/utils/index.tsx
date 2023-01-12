@@ -88,3 +88,12 @@ export const graphFetcher = async (args: [string, string]): Promise<GraphQLRespo
 export const formatPercent = (n: number, min = 2, max = 2): string => `${formatAmount(n || 0, min, max)}%`;
 
 export const formatUSD = (n: number, min = 2, max = 2): string => `$ ${formatAmount(n || 0, min, max)}`;
+
+export function	formatDateShort(value: number): string {
+	let		locale = 'fr-FR';
+	if (typeof(navigator) !== 'undefined') {
+		locale = navigator.language || 'fr-FR';
+	}
+
+	return (new Intl.DateTimeFormat([locale, 'en-US'], {year: 'numeric', month: 'short', day: '2-digit'}).format(value));
+}

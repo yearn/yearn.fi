@@ -82,7 +82,7 @@
 		@apply text-neutral-900 bg-neutral-0 font-normal border border-transparent;
 		&:disabled {@apply bg-neutral-200 opacity-40;}
 		&:not(:disabled):not([aria-busy="true"]):hover {@apply bg-neutral-200;}
-		
+
 		&[aria-busy="true"] svg {
 			@apply text-neutral-900;
 		}
@@ -346,4 +346,12 @@ details {
 [type='checkbox']:focus {
 	@apply outline-none focus:border-0 focus:outline-none focus:ring-0 active:border-0 active:ring-0;
 	box-shadow: none !important;
+}
+
+
+.yearn--tab {
+	@apply mx-5 flex h-full flex-col justify-center text-base cursor-pointer font-normal;
+	&.selected {
+		@apply cursor-default font-bold;
+	}
 }

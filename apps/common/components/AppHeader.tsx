@@ -4,6 +4,7 @@ import {useRouter} from 'next/router';
 import {AnimatePresence} from 'framer-motion';
 import {Popover, Transition} from '@headlessui/react';
 import {VaultsHeader} from '@vaults/components/header/VaultsHeader';
+import {VeYfiHeader} from '@veYFI/components/header/VeYfiHeader';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import Header from '@yearn-finance/web-lib/layouts/Header.next';
 import BalanceReminderPopover from '@common/components/BalanceReminderPopover';
@@ -25,6 +26,7 @@ function	Logo(): ReactElement {
 		<>
 			<YCrvHeader pathname={pathname} />
 			<VaultsHeader pathname={pathname} />
+			<VeYfiHeader pathname={pathname} />
 			<YBribeHeader pathname={pathname} />
 			<MotionDiv name={'yearn'} animate={pathname === '/' ? 'enter' : 'exit'}>
 				<LogoYearn
@@ -98,7 +100,7 @@ export function	AppHeader(): ReactElement {
 	const	{onOpenMenu} = useMenu();
 	const	menu = useMemo((): TMenu[] => {
 		const HOME_MENU = {path: '/', label: 'Home'};
-		
+
 		if (pathname.startsWith('/ycrv')) {
 			return [HOME_MENU, ...APPS[AppName.YCRV].menu];
 		}
@@ -106,7 +108,11 @@ export function	AppHeader(): ReactElement {
 		if (pathname.startsWith('/vaults')) {
 			return [HOME_MENU, ...APPS[AppName.VAULTS].menu];
 		}
-		
+
+		if (pathname.startsWith('/veyfi')) {
+			return [HOME_MENU, ...APPS[AppName.VEYFI].menu];
+		}
+
 		if (pathname.startsWith('/ybribe')) {
 			return [HOME_MENU, ...APPS[AppName.YBRIBE].menu];
 		}
@@ -119,7 +125,7 @@ export function	AppHeader(): ReactElement {
 	}, [pathname]);
 
 	const	supportedNetworks = useMemo((): number[] => {
-		if (pathname.startsWith('/ycrv') || pathname.startsWith('/ybribe')) {
+		if (pathname.startsWith('/ycrv') || pathname.startsWith('/veyfi') || pathname.startsWith('/ybribe')) {
 			return [1];
 		}
 
@@ -136,7 +142,7 @@ export function	AppHeader(): ReactElement {
 			logo={(
 				<AnimatePresence mode={'wait'}>
 					<LogoPopover />
-				</AnimatePresence>	
+				</AnimatePresence>
 			)}
 			extra={isActive ? (
 				<div className={'ml-4'}>
