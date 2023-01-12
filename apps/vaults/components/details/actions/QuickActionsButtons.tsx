@@ -1,79 +1,38 @@
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useState} from 'react';
 import {ethers} from 'ethers';
-import useSWR from 'swr';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {Solver, useSolver} from '@vaults/contexts/useSolver';
-import useWalletForZap from '@vaults/contexts/useWalletForZaps';
-import {getEthZapperContract} from '@vaults/utils';
+import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
+import {useAsync} from '@vaults/hooks/useAsync';
 import {Button} from '@yearn-finance/web-lib/components/Button';
-import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {ETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatBN, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useWallet} from '@common/contexts/useWallet';
-import {useAllowanceFetcher} from '@common/hooks/useAllowanceFetcher';
 
 import type {ReactElement} from 'react';
-import type {SWRResponse} from 'swr';
-import type {TAddress} from '@yearn-finance/web-lib/utils/address';
-import type {TNormalizedBN} from '@common/types/types';
-
-
-function	shouldUseVanillaAllowance({solver, isInputTokenEth}: {solver: Solver, isInputTokenEth: boolean}): boolean {
-	return ([Solver.VANILLA, Solver.CHAIN_COIN, Solver.PARTNER_CONTRACT].includes(solver) && !isInputTokenEth);
-}
 
 function	VaultDetailsQuickActionsButtons(): ReactElement {
 	const {refresh} = useWallet();
 	const {refresh: refreshZapBalances} = useWalletForZap();
 	const {isActive} = useWeb3();
-	const {safeChainID} = useChainID();
-	const {networks} = useSettings();
 	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
 	const [txStatusExecuteDeposit, set_txStatusExecuteDeposit] = useState(defaultTxStatus);
 	const [txStatusExecuteWithdraw, set_txStatusExecuteWithdraw] = useState(defaultTxStatus);
-	const [allowanceFrom, set_allowanceFrom] = useState<TNormalizedBN>(toNormalizedBN(0));
 	const {selectedOptionFrom, selectedOptionTo, amount, onChangeAmount, maxDepositPossible, isDepositing} = useActionFlow();
-	const {onApprove, onExecuteDeposit, onExecuteWithdraw, currentSolver, expectedOut} = useSolver();
-	const retrieveAllowance = useAllowanceFetcher();
-
-	const withVanillaAllowance = shouldUseVanillaAllowance({
-		solver: currentSolver,
-		isInputTokenEth: selectedOptionFrom?.value === ETH_TOKEN_ADDRESS
-	});
-	const canInteract = isActive && amount.raw.gt(0) && selectedOptionFrom && selectedOptionTo;
-
-	const spender = useMemo((): TAddress => {
-		const isOutputTokenEth = selectedOptionTo?.value === ETH_TOKEN_ADDRESS;
-
-		if (currentSolver === Solver.CHAIN_COIN && isOutputTokenEth) {
-			return (toAddress(getEthZapperContract(safeChainID)));
-		}
-		if (currentSolver === Solver.PARTNER_CONTRACT) {
-			return (toAddress(networks?.[safeChainID]?.partnerContractAddress));
-		}
-		return (toAddress(selectedOptionTo?.value));
-	}, [currentSolver, networks, safeChainID, selectedOptionTo?.value]);
+	const {onApprove, onExecuteDeposit, onExecuteWithdraw, onRetrieveAllowance, currentSolver, expectedOut} = useSolver();
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** SWR hook to get the expected out for a given in/out pair with a specific amount. This hook is
 	** called every 10s or when amount/in or out changes. Calls the allowanceFetcher callback.
 	**********************************************************************************************/
-	const	{data: vanillAllowanceFrom, isLoading: isValidatingAllowance, mutate: mutateAllowance} = useSWR(
-		canInteract && withVanillaAllowance ?
-			[selectedOptionFrom, spender] : null,
-		retrieveAllowance,
-		{revalidateOnFocus: false}
-	) as SWRResponse<TNormalizedBN>;
-
-	useEffect((): void => {
-		if (withVanillaAllowance) {
-			set_allowanceFrom(vanillAllowanceFrom || toNormalizedBN(0));
-		}
-	}, [vanillAllowanceFrom, withVanillaAllowance]);
+	// onRetrieveAllowance
+	const [allowanceFrom, isValidatingAllowance, mutateAllowance] = useAsync(
+		onRetrieveAllowance,
+		toNormalizedBN(0),
+		[currentSolver, selectedOptionFrom?.value]
+	);
 
 	const onSuccess = useCallback(async (): Promise<void> => {
 		onChangeAmount(toNormalizedBN(0));
@@ -111,7 +70,7 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 			shouldApproveInfinite ? ethers.constants.MaxUint256 : amount.raw,
 			set_txStatusApprove,
 			async (): Promise<void> => {
-				if (currentSolver === Solver.COWSWAP) {
+				if ([Solver.COWSWAP, Solver.WIDO, Solver.PORTALS].includes(currentSolver)) {
 					set_allowanceFrom(toNormalizedBN(ethers.constants.MaxUint256));
 				} else {
 					await mutateAllowance();
@@ -124,10 +83,11 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 	** Wrapper to decide if we should use the partner contract or not
 	**************************************************************************/
 	if (
-		txStatusApprove.pending || amount.raw.gt(allowanceFrom.raw) && (
+		txStatusApprove.pending || amount.raw.gt(formatBN(allowanceFrom?.raw)) && (
 			(currentSolver === Solver.VANILLA && isDepositing)
 			|| (currentSolver === Solver.CHAIN_COIN && !isDepositing)
 			|| (currentSolver === Solver.COWSWAP)
+			|| (currentSolver === Solver.WIDO)
 			|| (currentSolver === Solver.PARTNER_CONTRACT)
 		)
 	) {

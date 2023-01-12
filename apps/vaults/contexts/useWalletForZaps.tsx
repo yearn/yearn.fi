@@ -17,6 +17,7 @@ import type {TYDaemonTokensList} from '@vaults/types/yearn';
 export type	TWalletForZap = {
 	tokensList: TDict<TYDaemonTokensList>,
 	balances: TDict<TBalanceData>,
+	balancesNonce: number,
 	isLoading: boolean,
 	refresh: (tokenList?: TUseBalancesTokens[]) => Promise<TDict<TBalanceData>>,
 }
@@ -24,6 +25,7 @@ export type	TWalletForZap = {
 const	defaultProps = {
 	tokensList: {},
 	balances: {},
+	balancesNonce: 0,
 	isLoading: true,
 	refresh: async (): Promise<TDict<TBalanceData>> => ({})
 };
@@ -48,8 +50,6 @@ export const WalletForZapApp = memo(function WalletForZapApp({children}: {childr
 		{revalidateOnFocus: false}
 	) as SWRResponse<TDict<TYDaemonTokensList>>;
 
-	// console.log(tokensList, isLoading);
-
 	const	availableTokens = useMemo((): TUseBalancesTokens[] => {
 		const	tokens: TUseBalancesTokens[] = [];
 		Object.values(tokensList || {}).forEach((token): void => {
@@ -61,7 +61,7 @@ export const WalletForZapApp = memo(function WalletForZapApp({children}: {childr
 		return tokens;
 	}, [tokensList, safeChainID]);
 
-	const	{data: balances, update, updateSome, isLoading: isLoadingBalances} = useBalances({
+	const	{data: balances, update, updateSome, nonce, isLoading: isLoadingBalances} = useBalances({
 		key: safeChainID,
 		provider: provider || getProvider(1),
 		tokens: availableTokens,
@@ -85,9 +85,10 @@ export const WalletForZapApp = memo(function WalletForZapApp({children}: {childr
 	const	contextValue = useMemo((): TWalletForZap => ({
 		tokensList: tokensList || {},
 		balances: balances,
+		balancesNonce: nonce,
 		isLoading: isLoading || isLoadingBalances,
 		refresh: onRefresh
-	}), [balances, isLoading, isLoadingBalances, onRefresh, tokensList]);
+	}), [balances, isLoading, isLoadingBalances, nonce, onRefresh, tokensList]);
 
 	return (
 		<WalletForZap.Provider value={contextValue}>

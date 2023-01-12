@@ -4,6 +4,7 @@ import {useSolverChainCoin} from '@vaults/hooks/useSolverChainCoin';
 import {useSolverCowswap} from '@vaults/hooks/useSolverCowswap';
 import {useSolverPartnerContract} from '@vaults/hooks/useSolverPartnerContract';
 import {useSolverVanilla} from '@vaults/hooks/useSolverVanilla';
+import {useSolverWido} from '@vaults/hooks/useSolverWido';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -25,6 +26,7 @@ const	DefaultWithSolverContext: TWithSolver = {
 	currentSolver: Solver.VANILLA,
 	expectedOut: toNormalizedBN(0),
 	isLoadingExpectedOut: false,
+	onRetrieveAllowance: async (): Promise<TNormalizedBN> => toNormalizedBN(0),
 	onApprove: async (): Promise<void> => Promise.resolve(),
 	onExecuteDeposit: async (): Promise<void> => Promise.resolve(),
 	onExecuteWithdraw: async (): Promise<void> => Promise.resolve()
@@ -35,6 +37,7 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 	const {address} = useWeb3();
 	const {selectedOptionFrom, selectedOptionTo, amount, currentSolver, isDepositing} = useActionFlow();
 	const cowswap = useSolverCowswap();
+	const wido = useSolverWido();
 	const vanilla = useSolverVanilla();
 	const chainCoin = useSolverChainCoin();
 	const partnerContract = useSolverPartnerContract();
@@ -52,6 +55,19 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 
 		let quote: TNormalizedBN = toNormalizedBN(0);
 		switch (currentSolver) {
+			case Solver.WIDO:
+				quote = await wido.init({
+					from: toAddress(address || ''),
+					inputToken: selectedOptionFrom,
+					outputToken: selectedOptionTo,
+					inputAmount: amount.raw,
+					isDepositing: isDepositing
+				});
+				performBatchedUpdates((): void => {
+					set_currentSolverState({...wido, quote});
+					set_isLoading(false);
+				});
+				break;
 			case Solver.COWSWAP:
 				quote = await cowswap.init({
 					from: toAddress(address || ''),
@@ -104,7 +120,7 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 					set_isLoading(false);
 				});
 		}
-	}, [address, selectedOptionFrom, selectedOptionTo, amount.raw, currentSolver, cowswap.init, vanilla.init, amount, isDepositing]); //Ignore the warning, it's a false positive
+	}, [address, selectedOptionFrom, selectedOptionTo, amount.raw, currentSolver, cowswap.init, vanilla.init, wido.init, amount, isDepositing]); //Ignore the warning, it's a false positive
 
 	useEffect((): void => {
 		onUpdateSolver();
@@ -115,6 +131,7 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 		currentSolver: currentSolver,
 		expectedOut: currentSolverState?.quote || toNormalizedBN(0),
 		isLoadingExpectedOut: isLoading,
+		onRetrieveAllowance: currentSolverState.onRetrieveAllowance,
 		onApprove: currentSolverState.onApprove,
 		onExecuteDeposit: currentSolverState.onExecuteDeposit,
 		onExecuteWithdraw: currentSolverState.onExecuteWithdraw
