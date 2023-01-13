@@ -10,10 +10,10 @@ import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {CURVE_BRIBE_V3_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
+import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
-import {handleInputChange} from '@common/utils';
 import {approveERC20} from '@common/utils/actions/approveToken';
 import {useBribes} from '@yBribe/contexts/useBribes';
 import {addReward} from '@yBribe/utils/actions/addReward';
@@ -195,7 +195,7 @@ function	GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauges, o
 									disabled={!isActive}
 									value={amount.normalized}
 									onChange={(e: ChangeEvent<HTMLInputElement>): void => {
-										set_amount(handleInputChange(e, selectedToken?.decimals || 18));
+										set_amount(handleInputChangeEventValue(e.target.value, selectedToken?.decimals || 18));
 									}} />
 								<button
 									onClick={(): void => {

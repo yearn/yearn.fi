@@ -13,7 +13,7 @@ import CURVE_BRIBE_V3 from '@yBribe/utils/abi/curveBribeV3.abi';
 import CURVE_BRIBE_V3_HELPER from '@yBribe/utils/abi/curveBribeV3Helper.abi';
 
 import type {BigNumber} from 'ethers';
-import type {TDict} from '@yearn-finance/web-lib/utils/types';
+import type {TDict, VoidPromiseFunction} from '@yearn-finance/web-lib/utils/types';
 import type {TCurveGaugeVersionRewards} from '@common/types/curves';
 
 export type	TBribesContext = {
@@ -23,7 +23,7 @@ export type	TBribesContext = {
 	currentPeriod: number,
 	nextPeriod: number,
 	isLoading: boolean,
-	refresh: () => Promise<void>
+	refresh: VoidPromiseFunction
 }
 const	defaultProps: TBribesContext = {
 	currentRewards: {
