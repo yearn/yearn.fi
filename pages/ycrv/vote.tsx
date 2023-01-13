@@ -1,4 +1,5 @@
 import React from 'react';
+import Balancer from 'react-wrap-balancer';
 import Wrapper from '@vaults/Wrapper';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {HeroTimer} from '@common/components/HeroTimer';
@@ -95,16 +96,24 @@ function Vote(): ReactElement {
 			<section className={'mt-10 grid w-full grid-cols-12 pb-10 md:mt-0'}>
 				<div
 					aria-label={'Quick Actions'}
-					className={'col-span-12 mb-4 flex flex-col space-x-0 space-y-2 bg-neutral-200 p-4 md:flex-row md:space-x-4 md:space-y-0 md:p-8'}>
-					<QuickActions label={'voteFrom'}>
-						<QuickActions.Select {...fromSelect} />
-						<QuickActions.Input {...fromInput} />
-					</QuickActions>
-					<QuickActions.Switch tooltipText={'Deposit / Withdraw'} onSwitchFromTo={(): void => undefined} />
-					<QuickActions label={'voteTo'}>
-						<QuickActions.Select {...toSelect} />
-						<QuickActions.Input {...toInput} />
-					</QuickActions>
+					className={'col-span-12 mb-4 bg-neutral-200'}>
+					<div className={'p-4 pb-0 md:p-8 md:pb-0'}>
+						<Balancer>
+							<h2 suppressHydrationWarning className={'pb-2 text-lg font-bold md:pb-4 md:text-3xl'}>{'Get your vote on.'}</h2>
+							<p>{'Deposit vanilla yCRV for vote locked yCRV (vl-yCRV) and gain vote power for Curve voting. Each vote period lasts for two weeks, and your tokens cannot be withdrawn until the end of the following period.\nPlease note, vl-yCRV does not generate yield but maintains a 1:1 exchange rate with yCRV (so if yCRV increases in value, so will your vl-yCRV). '}</p>
+						</Balancer>
+					</div>
+					<div className={'col-span-12 flex flex-col space-x-0 space-y-2 p-4 md:flex-row md:space-x-4 md:space-y-0 md:p-8'}>
+						<QuickActions label={'voteFrom'}>
+							<QuickActions.Select {...fromSelect} />
+							<QuickActions.Input {...fromInput} />
+						</QuickActions>
+						<QuickActions.Switch tooltipText={'Deposit / Withdraw'} onSwitchFromTo={(): void => undefined} />
+						<QuickActions label={'voteTo'}>
+							<QuickActions.Select {...toSelect} />
+							<QuickActions.Input {...toInput} />
+						</QuickActions>
+					</div>
 				</div>
 				<GaugeList />
 			</section>
