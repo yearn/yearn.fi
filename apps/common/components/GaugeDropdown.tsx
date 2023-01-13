@@ -1,15 +1,12 @@
 import React, {cloneElement, Fragment, useState} from 'react';
 import {Combobox, Transition} from '@headlessui/react';
-import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
-import {useBalance} from '@common/hooks/useBalance';
 import IconChevron from '@common/icons/IconChevron';
+import {formatPercent} from '@common/utils';
 
 import type {ReactElement} from 'react';
 import type {TDropdownGaugeItemProps, TDropdownGaugeOption, TDropdownGaugeProps} from '@common/types/types';
 
 function DropdownItem({option}: TDropdownGaugeItemProps): ReactElement {
-	const	balance = useBalance(option.value.tokenAddress);
-
 	return (
 		<Combobox.Option value={option}>
 			{({active}): ReactElement => (
@@ -17,12 +14,12 @@ function DropdownItem({option}: TDropdownGaugeItemProps): ReactElement {
 					<div className={'h-6 w-6 rounded-full'}>
 						{option?.icon ? cloneElement(option.icon) : null}
 					</div>
-					<div>
+					<div className={'flex w-full flex-row items-center justify-between'}>
 						<p className={`${option.icon ? 'pl-2' : 'pl-0'} font-normal text-neutral-900`}>
 							{option.label}
 						</p>
-						<p className={`${option.icon ? 'pl-2' : 'pl-0'} text-xxs font-normal text-neutral-600`}>
-							{`${formatAmount(balance.normalized)} ${option.label}`}
+						<p className={`${option.icon ? 'pl-2' : 'pl-0'} text-xs font-normal text-neutral-600`}>
+							{`APY ${formatPercent((option?.value?.APY || 0) * 100)}`}
 						</p>
 					</div>
 				</div>
@@ -39,7 +36,7 @@ function DropdownEmpty({query}: {query: string}): ReactElement {
 					<p className={'text-sm text-neutral-900'}>{'Nothing found.'}</p>
 				</div>
 			</div>
-		);	
+		);
 	}
 	return (
 		<div className={'relative flex h-14 flex-col items-center justify-center px-4 text-center'}>
@@ -48,7 +45,7 @@ function DropdownEmpty({query}: {query: string}): ReactElement {
 			</div>
 		</div>
 	);
-}	
+}
 
 function Dropdown({
 	options,
@@ -118,7 +115,7 @@ function Dropdown({
 							) : (
 								filteredOptions
 									.map((option): ReactElement => (
-										<DropdownItem 
+										<DropdownItem
 											key={option.label}
 											option={option} />
 									)
