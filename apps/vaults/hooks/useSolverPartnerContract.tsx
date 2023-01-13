@@ -18,14 +18,19 @@ import type {TNormalizedBN} from '@common/types/types';
 import type {TVaultEstimateOutFetcher} from '@vaults/hooks/useVaultEstimateOutFetcher';
 import type {TInitSolverArgs, TSolverContext, TVanillaLikeResult} from '@vaults/types/solvers';
 
-function usePartnerContractQuote(): [TVanillaLikeResult, (request: TInitSolverArgs) => Promise<TNormalizedBN>] {
+function usePartnerContractQuote(): [TVanillaLikeResult, (request: TInitSolverArgs, shouldPreventErrorToast?: boolean) => Promise<TNormalizedBN>] {
 	const retrieveExpectedOut = useVaultEstimateOutFetcher();
 	const {data, error, trigger, isMutating} = useSWRMutation(
 		'partnerContract',
 		async (_: string, data: {arg: TVaultEstimateOutFetcher}): Promise<TNormalizedBN> => retrieveExpectedOut(data.arg)
 	);
 
-	const getQuote = useCallback(async (request: TInitSolverArgs): Promise<TNormalizedBN> => {
+	const getQuote = useCallback(async (
+		request: TInitSolverArgs,
+		shouldPreventErrorToast = false //do nothing, for consistency with other solvers
+	): Promise<TNormalizedBN> => {
+		shouldPreventErrorToast;
+
 		const canExecuteFetch = (
 			!request.inputToken || !request.outputToken || !request.inputAmount ||
 			!(isZeroAddress(request.inputToken.value) || isZeroAddress(request.outputToken.value) || request.inputAmount.isZero())
@@ -82,7 +87,7 @@ export function useSolverPartnerContract(): TSolverContext {
 	** display the current value to the user.
 	**************************************************************************/
 	const onRetrieveExpectedOut = useCallback(async (request: TInitSolverArgs): Promise<TNormalizedBN> => {
-		const	quoteResult = await getQuote(request);
+		const	quoteResult = await getQuote(request, true);
 		return quoteResult;
 	}, [getQuote]);
 

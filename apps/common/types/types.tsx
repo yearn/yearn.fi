@@ -26,7 +26,7 @@ export type TDropdownOption = {
 	value: string;
 	icon?: ReactElement;
 	zapVia?: TAddress;
-	solveVia?: Solver;
+	solveVia?: Solver[];
 	balanceSource?: string;
 	settings?: {
 		serviceID?: EXTERNAL_SERVICE_PROVIDER

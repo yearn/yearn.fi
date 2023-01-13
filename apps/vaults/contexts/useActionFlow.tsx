@@ -10,6 +10,7 @@ import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-
 import {formatBN, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {useWallet} from '@common/contexts/useWallet';
+import useYearn from '@common/contexts/useYearn';
 
 import type {ReactNode} from 'react';
 import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
@@ -43,7 +44,7 @@ const	DefaultActionFlowContext: TActionFlowContext = {
 	onSwitchSelectedOptions: (): void => undefined,
 	isDepositing: true,
 	maxDepositPossible: toNormalizedBN(0),
-	currentSolver: Solver.VANILLA
+	currentSolver: Solver?.VANILLA || 'Vanilla'
 };
 
 const ActionFlowContext = createContext<TActionFlowContext>(DefaultActionFlowContext);
@@ -52,6 +53,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 	const {safeChainID} = useChainID();
 	const {networks} = useSettings();
 	const {balances: zapBalances, tokensList, balancesNonce: zapBalancesNonce} = useWalletForZap();
+	const {zapProvider} = useYearn();
 
 	const [possibleOptionsFrom, set_possibleOptionsFrom] = useState<TDropdownOption[]>([]);
 	const [possibleZapOptionsFrom, set_possibleZapOptionsFrom] = useState<TDropdownOption[]>([]);
@@ -90,17 +92,14 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 		if (isInputTokenEth || isOutputTokenEth) {
 			return Solver.CHAIN_COIN;
 		}
-		if (selectedOptionFrom?.solveVia === Solver.WIDO) {
-			return Solver.WIDO;
-		}
-		if (selectedOptionFrom?.solveVia === Solver.COWSWAP) {
-			return Solver.COWSWAP;
+		if (selectedOptionFrom?.solveVia?.includes(zapProvider)) {
+			return zapProvider;
 		}
 		if (isDepositing && isUsingPartnerContract) {
 			return Solver.PARTNER_CONTRACT;
 		}
 		return Solver.VANILLA;
-	}, [isDepositing, isUsingPartnerContract, selectedOptionFrom?.solveVia, selectedOptionFrom?.value, selectedOptionTo?.value]);
+	}, [isDepositing, isUsingPartnerContract, selectedOptionFrom?.solveVia, selectedOptionFrom?.value, selectedOptionTo?.value, zapProvider]);
 
 	const onSwitchSelectedOptions = useCallback((): void => {
 		performBatchedUpdates((): void => {
@@ -145,7 +144,6 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 		}
 	}, [currentVault, isDepositing, safeChainID]);
 
-
 	useEffect((): void => {
 		const	_possibleZapOptionsFrom: TDropdownOption[] = [];
 		const	isWithWETH = safeChainID === 1 && currentVault && toAddress(currentVault.token.address) === WETH_TOKEN_ADDRESS;
@@ -161,35 +159,20 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 			} else if (toAddress(tokenListData?.address) === currentVault?.address) {
 				// Do nothing to avoid vault token in the list
 			} else {
-				// tokenListData.address
-				// if (tokenListData.supportedZaps.includes('Cowswap')) {
-				// 	_possibleZapOptionsFrom.push(
-				// 		setZapOption({
-				// 			name: tokenListData?.name,
-				// 			symbol: tokenListData?.symbol,
-				// 			address: toAddress(tokenListData?.address),
-				// 			safeChainID,
-				// 			decimals: tokenListData?.decimals,
-				// 			solveVia: Solver.COWSWAP
-				// 		})
-				// 	);
-				// }
-				if ((tokenListData?.supportedZaps || []).includes('Wido')) {
-					_possibleZapOptionsFrom.push(
-						setZapOption({
-							name: tokenListData?.name,
-							symbol: tokenListData?.symbol,
-							address: toAddress(tokenListData?.address),
-							safeChainID,
-							decimals: tokenListData?.decimals,
-							solveVia: Solver.WIDO //Should handle multiple
-						})
-					);
-				}
+				_possibleZapOptionsFrom.push(
+					setZapOption({
+						name: tokenListData?.name,
+						symbol: tokenListData?.symbol,
+						address: toAddress(tokenListData?.address),
+						safeChainID,
+						decimals: tokenListData?.decimals,
+						solveVia: tokenListData.supportedZaps
+					})
+				);
 			}
 		});
 		set_possibleZapOptionsFrom(_possibleZapOptionsFrom);
-	}, [safeChainID, tokensList, zapBalances, zapBalancesNonce]);
+	}, [safeChainID, tokensList, zapBalances, zapBalancesNonce, currentVault]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** Init selectedOptionFrom and selectedOptionTo with the tokens matching this vault. Only

@@ -18,7 +18,7 @@ import type {ApiError, Order, QuoteQuery, Timestamp} from '@gnosis.pm/gp-v2-cont
 import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
 import type {TCowAPIResult, TCowResult} from '@vaults/types/solvers.cowswap';
 
-function useCowswapQuote(): [TCowResult, (request: TInitSolverArgs) => Promise<TCowAPIResult | undefined>] {
+function useCowswapQuote(): [TCowResult, (request: TInitSolverArgs, shouldPreventErrorToast?: boolean) => Promise<TCowAPIResult | undefined>] {
 	const {toast} = yToast();
 	const {data, error, trigger, isMutating} = useSWRMutation(
 		'https://api.cow.fi/mainnet/api/v1/quote',
@@ -28,7 +28,10 @@ function useCowswapQuote(): [TCowResult, (request: TInitSolverArgs) => Promise<T
 		}
 	);
 
-	const getQuote = useCallback(async (request: TInitSolverArgs): Promise<TCowAPIResult | undefined> => {
+	const getQuote = useCallback(async (
+		request: TInitSolverArgs,
+		shouldPreventErrorToast = false
+	): Promise<TCowAPIResult | undefined> => {
 		const	YEARN_APP_DATA = '0x2B8694ED30082129598720860E8E972F07AA10D9B81CAE16CA0E2CFB24743E24';
 		const	quote: QuoteQuery = ({
 			from: request.from, // receiver
@@ -54,6 +57,9 @@ function useCowswapQuote(): [TCowResult, (request: TInitSolverArgs) => Promise<T
 			} catch (error) {
 				const	_error = error as AxiosError<ApiError>;
 				console.error(error);
+				if (shouldPreventErrorToast) {
+					return undefined;
+				}
 				const	message = `Zap not possible. Try again later or pick another token. ${_error?.response?.data?.description ? `(Reason: [${_error?.response?.data?.description}])` : ''}`;
 				toast({type: 'error', content: message});
 				return undefined;
@@ -249,7 +255,7 @@ export function useSolverCowswap(): TSolverContext {
 	** display the current value to the user.
 	**************************************************************************/
 	const onRetrieveExpectedOut = useCallback(async (request: TInitSolverArgs): Promise<TNormalizedBN> => {
-		const	quoteResult = await getQuote(request);
+		const	quoteResult = await getQuote(request, true);
 		return toNormalizedBN(formatBN(quoteResult?.quote?.buyAmount), request.outputToken.decimals);
 	}, [getQuote]);
 

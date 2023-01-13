@@ -1,3 +1,5 @@
+import type {Solver} from '@vaults/contexts/useSolver';
+
 export type TYDaemonTokensList = {
 	chainID: number;
 	address: string;
@@ -6,5 +8,5 @@ export type TYDaemonTokensList = {
 	logoURI: string;
 	decimals: number;
 	balance: string;
-	supportedZaps: string[];
+	supportedZaps: Solver[];
 };

@@ -17,11 +17,14 @@ import type {ApiError} from '@gnosis.pm/gp-v2-contracts';
 import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
 import type {TWidoResult} from '@vaults/types/solvers.wido';
 
-function useWidoQuote(): [TWidoResult, (request: TInitSolverArgs) => Promise<QuoteResult | undefined>] {
+function useWidoQuote(): [TWidoResult, (request: TInitSolverArgs, shouldPreventErrorToast?: boolean) => Promise<QuoteResult | undefined>] {
 	const {toast} = yToast();
 	const [err, set_err] = useState<Error>();
 
-	const getQuote = useCallback(async (request: TInitSolverArgs): Promise<QuoteResult | undefined> => {
+	const getQuote = useCallback(async (
+		request: TInitSolverArgs,
+		shouldPreventErrorToast = false
+	): Promise<QuoteResult | undefined> => {
 		const	quoteRequest: QuoteRequest = ({
 			fromChainId: 1, // Chain Id of from token
 			fromToken: toAddress(request.inputToken.value), // token to spend
@@ -46,6 +49,9 @@ function useWidoQuote(): [TWidoResult, (request: TInitSolverArgs) => Promise<Quo
 				const	_error = error as AxiosError<ApiError>;
 				set_err(error as Error);
 				console.error(error);
+				if (shouldPreventErrorToast) {
+					return undefined;
+				}
 				const	message = `Zap not possible. Try again later or pick another token. ${_error?.response?.data?.description ? `(Reason: [${_error?.response?.data?.description}])` : ''}`;
 				toast({type: 'error', content: message});
 				return undefined;
@@ -141,7 +147,7 @@ export function useSolverWido(): TSolverContext {
 	** display the current value to the user.
 	**************************************************************************/
 	const onRetrieveExpectedOut = useCallback(async (request: TInitSolverArgs): Promise<TNormalizedBN> => {
-		const	quoteResult = await getQuote(request);
+		const	quoteResult = await getQuote(request, true);
 		return toNormalizedBN(formatBN(quoteResult?.toTokenAmount), request.outputToken.decimals);
 	}, [getQuote]);
 

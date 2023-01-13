@@ -14,12 +14,12 @@ import type {TNormalizedBN} from '@common/types/types';
 import type {TWithSolver} from '@vaults/types/solvers';
 
 export enum	Solver {
-	VANILLA = 'vanilla',
-	PARTNER_CONTRACT = 'partnerContract',
-	CHAIN_COIN = 'chainCoin',
-	COWSWAP = 'cowswap',
-	WIDO = 'wido',
-	PORTALS = 'portals'
+	VANILLA = 'Vanilla',
+	PARTNER_CONTRACT = 'PartnerContract',
+	CHAIN_COIN = 'ChainCoin',
+	COWSWAP = 'Cowswap',
+	WIDO = 'Wido',
+	PORTALS = 'Portals'
 }
 
 const	DefaultWithSolverContext: TWithSolver = {

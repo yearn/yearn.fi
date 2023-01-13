@@ -1,8 +1,10 @@
 import React, {createContext, memo, useContext, useMemo} from 'react';
 import {ethers} from 'ethers';
 import useSWR from 'swr';
+import {Solver} from '@vaults/contexts/useSolver';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
+import {useLocalStorage} from '@yearn-finance/web-lib/hooks';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
@@ -21,6 +23,10 @@ export type	TYearnContext = {
 	vaults: TDict<TYearnVault | undefined>,
 	isLoadingVaultList: boolean,
 	mutateVaultList: VoidPromiseFunction
+	zapSlippage: number,
+	set_zapSlippage: (value: number) => void
+	zapProvider: Solver,
+	set_zapProvider: (value: Solver) => void
 }
 const	defaultProps: TYearnContext = {
 	currentPartner: toAddress(process.env.PARTNER_ID_ADDRESS as string),
@@ -33,7 +39,11 @@ const	defaultProps: TYearnContext = {
 	tokens: {},
 	vaults: {[ethers.constants.AddressZero]: undefined},
 	isLoadingVaultList: false,
-	mutateVaultList: async (): Promise<void> => Promise.resolve()
+	mutateVaultList: async (): Promise<void> => Promise.resolve(),
+	zapSlippage: 0.1,
+	set_zapSlippage: (): void => undefined,
+	zapProvider: Solver.COWSWAP,
+	set_zapProvider: (): void => undefined
 };
 
 type TYearnVaultsMap = {
@@ -45,6 +55,8 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 	const {safeChainID} = useChainID();
 	const {settings: baseAPISettings} = useSettings();
 	const {address, currentPartner} = useWeb3();
+	const [zapSlippage, set_zapSlippage] = useLocalStorage<number>('yearn.finance/slippage', 0.1);
+	const [zapProvider, set_zapProvider] = useLocalStorage<Solver>('yearn.finance/provider', Solver.COWSWAP);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	**	We will play with the some Yearn vaults. To correctly play with them,
@@ -101,10 +113,14 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 		prices,
 		tokens,
 		earned,
+		zapSlippage,
+		set_zapSlippage,
+		zapProvider,
+		set_zapProvider,
 		vaults: {...vaultsObject},
 		isLoadingVaultList,
 		mutateVaultList
-	}), [currentPartner?.id, prices, tokens, earned, vaultsObject, isLoadingVaultList, mutateVaultList]);
+	}), [currentPartner?.id, prices, tokens, earned, vaultsObject, isLoadingVaultList, mutateVaultList, zapSlippage, set_zapSlippage, zapProvider, set_zapProvider]);
 
 	return (
 		<YearnContext.Provider value={contextValue}>

@@ -6,7 +6,8 @@ import VaultDetailsQuickActionsSwitch from '@vaults/components/details/actions/Q
 import VaultDetailsQuickActionsTo from '@vaults/components/details/actions/QuickActionsTo';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {WithSolverContextApp} from '@vaults/contexts/useSolver';
-import IconSettings from '@yearn-finance/web-lib/icons/IconSettings';
+
+import SettingsPopover from '../SettingsPopover';
 
 import type {ReactElement} from 'react';
 
@@ -53,10 +54,7 @@ function	VaultActionsTabsWrapper(): ReactElement {
 					</nav>
 
 					<div className={'flex flex-row items-center justify-end space-x-2 pb-0 md:pb-4 md:last:space-x-4'}>
-						<button>
-							<span className={'sr-only'}>{'Settings'}</span>
-							<IconSettings className={'h-5 w-5 text-neutral-600 transition-colors hover:text-neutral-900 md:h-6 md:w-6'} />
-						</button>
+						<SettingsPopover />
 					</div>
 				</div>
 				<div className={'-mt-0.5 h-0.5 w-full bg-neutral-300'} />

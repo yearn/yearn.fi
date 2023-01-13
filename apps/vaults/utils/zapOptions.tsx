@@ -10,13 +10,13 @@ type TSetZapOptionProps = {
 	address: string;
 	safeChainID: number;
 	decimals: number;
-	solveVia?: Solver
+	solveVia?: Solver[]
 }
 export function	setZapOption({
 	name,
 	symbol,
 	address,
-	safeChainID, 
+	safeChainID,
 	decimals,
 	solveVia
 }: TSetZapOptionProps): TDropdownOption {
