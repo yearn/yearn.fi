@@ -33,7 +33,7 @@ function	useAsync<T>(
 		callCallback();
 	}, [callCallback, ...effectDependencies]);
 
-	return ([isLoading ? defaultValue : (data || defaultValue), isLoading, callCallback]);	
+	return ([isLoading ? defaultValue : (data || defaultValue), isLoading, callCallback]);
 }
 
 export {useAsync};

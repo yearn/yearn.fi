@@ -5,7 +5,7 @@ import {baseFetcher, curveFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 
 import type {SWRResponse} from 'swr';
 import type {TDict} from '@yearn-finance/web-lib/utils/types';
-import type {TCurveGauges} from '@common/types/curves';
+import type {TCurveGauges, TCurveGaugesFromYearn} from '@common/types/curves';
 
 type TCurveWeeklyFees = {
 	weeklyFeesTable: {
@@ -22,8 +22,9 @@ type TCoinGeckoPrices = {
 }
 export type TCurveContext = {
 	curveWeeklyFees: TCurveWeeklyFees,
-	gauges: TCurveGauges[],
 	cgPrices: TDict<TCoinGeckoPrices>
+	gauges: TCurveGauges[],
+	gaugesFromYearn: TCurveGaugesFromYearn[]
 }
 const	defaultProps: TCurveContext = {
 	curveWeeklyFees: {
@@ -33,7 +34,8 @@ const	defaultProps: TCurveContext = {
 		}
 	},
 	cgPrices: {},
-	gauges: []
+	gauges: [],
+	gaugesFromYearn: []
 };
 
 
@@ -52,13 +54,19 @@ export const CurveContextApp = ({children}: {children: React.ReactElement}): Rea
 		'https://api.coingecko.com/api/v3/simple/price?ids=curve-dao-token&vs_currencies=usd',
 		baseFetcher,
 		{revalidateOnFocus: false}
-	) as unknown as SWRResponse<TDict<TCoinGeckoPrices>>;
+	) as SWRResponse<TDict<TCoinGeckoPrices>>;
 
 	const	{data: gaugesWrapper} = useSWR(
 		'https://api.curve.fi/api/getAllGauges?blockchainId=ethereum',
 		curveFetcher,
 		{revalidateOnFocus: false}
 	);
+
+	const	{data: gaugesFromYearn} = useSWR(
+		'https://api.yearn.finance/v1/chains/1/apy-previews/curve-factory',
+		baseFetcher,
+		{revalidateOnFocus: false}
+	) as SWRResponse<TCurveGaugesFromYearn[]>;
 
 	const	gauges = useMemo((): TCurveGauges[] => {
 		const	_gaugesForMainnet: TCurveGauges[] = [];
@@ -86,8 +94,9 @@ export const CurveContextApp = ({children}: {children: React.ReactElement}): Rea
 	const	contextValue = useMemo((): TCurveContext => ({
 		curveWeeklyFees: curveWeeklyFees || defaultProps.curveWeeklyFees,
 		cgPrices: cgPrices || defaultProps.cgPrices,
-		gauges: gauges || defaultProps.gauges
-	}), [curveWeeklyFees, cgPrices, gauges]);
+		gauges: gauges || defaultProps.gauges,
+		gaugesFromYearn: gaugesFromYearn || defaultProps.gaugesFromYearn
+	}), [curveWeeklyFees, cgPrices, gauges, gaugesFromYearn]);
 
 	return (
 		<CurveContext.Provider value={contextValue}>

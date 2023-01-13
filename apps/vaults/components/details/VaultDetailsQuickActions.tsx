@@ -90,17 +90,17 @@ function	ActionButton({
 	** from and to options selected:
 	** - By default, the spender is the vault itself, aka a direct deposit
 	** - If we are depositing and using the partner contract, spender is the partner contract
-	** - If we are not depositing and we want to withdraw eth, spender is the eth zapper contract	
+	** - If we are not depositing and we want to withdraw eth, spender is the eth zapper contract
 	**********************************************************************************************/
 	const spender = useMemo((): TAddress => {
 		let	spender = toAddress(selectedOptionTo?.value || ethers.constants.AddressZero);
-		if (isDepositing && isUsingPartnerContract) { 
+		if (isDepositing && isUsingPartnerContract) {
 			spender = toAddress(networks[safeChainID]?.partnerContractAddress);
 		} else if (!isDepositing && isOutputTokenEth) {
 			spender = toAddress(getEthZapperContract(chainID));
 		}
 		return spender;
-	}, [chainID, isDepositing, isOutputTokenEth, isUsingPartnerContract, networks, safeChainID, selectedOptionTo?.value]);	
+	}, [chainID, isDepositing, isOutputTokenEth, isUsingPartnerContract, networks, safeChainID, selectedOptionTo?.value]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** Perform a smartContract call to the deposit contract to get the allowance for the deposit
@@ -194,7 +194,7 @@ function	ActionButton({
 		).onSuccess(async (): Promise<void> => {
 			await onSuccess();
 		}).perform();
-		
+
 	}
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -328,10 +328,12 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 		const	vaultDepositLimit = formatBN(currentVault.details.depositLimit) || ethers.constants.Zero;
 		const	userBalance = balances?.[toAddress(selectedOptionFrom?.value)]?.raw || ethers.constants.Zero;
 		if (userBalance.gt(vaultDepositLimit) && isDepositing) {
-			return (toNormalizedBN(vaultDepositLimit, currentVault.token.decimals));
-		} 
-		return (toNormalizedBN(userBalance, currentVault.token.decimals));
+			return (toNormalizedBN(vaultDepositLimit.toString(), currentVault.token.decimals));
+		}
+		return (toNormalizedBN(userBalance.toString(), currentVault.token.decimals));
+
 	}, [balances, balancesNonce, currentVault.details.depositLimit, currentVault.token.decimals, isDepositing, selectedOptionFrom?.value]);
+
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** If the token to deposit is wETH, we can also deposit ETH via our custom Zap contract. In
@@ -401,7 +403,7 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 		if (!_inputToken || !_outputToken) {
 			return ({raw: ethers.constants.Zero, normalized: 0});
 		}
-		
+
 		const	currentProvider = provider || getProvider(chainID);
 		const	contract = new ethers.Contract(
 			toAddress(isDepositing ? _outputToken.value : _inputToken.value),
@@ -416,18 +418,17 @@ function	VaultDetailsQuickActions({currentVault}: {currentVault: TYearnVault}): 
 					raw: expectedOutFetched,
 					normalized: formatToNormalizedValue(expectedOutFetched || ethers.constants.Zero, _outputToken?.decimals || currentVault?.decimals)
 				});
-			} 
+			}
 			const	expectedOutFetched = _amountIn.mul(pps).div(formatBN(10).pow(_outputToken?.decimals));
 			return ({
 				raw: expectedOutFetched,
 				normalized: formatToNormalizedValue(expectedOutFetched || ethers.constants.Zero, _outputToken?.decimals || currentVault?.decimals)
 			});
-			
+
 		} catch (error) {
 			console.error(error);
 			return ({raw: ethers.constants.Zero, normalized: 0});
 		}
-		
 	}, [provider, chainID, currentVault?.decimals, isDepositing]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
