@@ -22,46 +22,41 @@ export function GaugeListEmpty({
 	if (isLoading && sortedGaugesToDisplay.length === 0) {
 		return (
 			<div className={'flex h-96 w-full flex-col items-center justify-center py-2 px-10'}>
-				<b className={'text-lg'}>{'Fetching Vaults'}</b>
-				<p className={'text-neutral-600'}>{'Vaults will appear soon. Please wait. Beep boop.'}</p>
+				<b className={'text-lg'}>{'Fetching Gauges...'}</b>
+				<p className={'text-neutral-600'}>{'Gauges will appear soon. Please wait. Beep boop.'}</p>
 				<div className={'flex h-10 items-center justify-center'}>
 					<span className={'loader'} />
 				</div>
 			</div>
 		);
-	} if (!isLoading && sortedGaugesToDisplay.length === 0 && currentCategory === 'Holdings') {
-		return (
-			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center py-2 px-10 md:w-3/4'}>
-				<b className={'text-center text-lg'}>{'Well this is awkward...'}</b>
-				<p className={'text-center text-neutral-600'}>
-					{'You don\'t appear to have any deposits in our Vaults. There\'s an easy way to change that 😏'}
-				</p>
-			</div>
-		);
-	} if (!isLoading && sortedGaugesToDisplay.length === 0 && safeChainID !== 1) {
+	}
+
+	if (!isLoading && sortedGaugesToDisplay.length === 0 && safeChainID !== 1) {
 		const chainName = CHAINS[safeChainID]?.name || 'this network';
 		return (
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center py-2 px-10 md:w-3/4'}>
-				<b className={'text-center text-lg'}>{'👀 Where Vaults ser?'}</b>
+				<b className={'text-center text-lg'}>{'👀 Where Gauges ser?'}</b>
 				<p className={'text-center text-neutral-600'}>
-					{`It seems we don’t have ${currentCategory} on ${chainName} (yet). Feel free to check out other vaults on ${chainName} or change network. New Vaults and strategies are added often, so check back later. Don’t be a stranger.`}
+					{`It seems we don’t have ${currentCategory} on ${chainName} (yet).`}
 				</p>
 			</div>
 		);
-	} if (!isLoading && sortedGaugesToDisplay.length === 0) {
+	}
+	
+	if (!isLoading && sortedGaugesToDisplay.length === 0) {
 		return (
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center gap-4 py-2 px-10 md:w-3/4'}>
 				<b className={'text-center text-lg'}>{'No data, reeeeeeeeeeee'}</b>
-				{category === 'All Vaults' ?
-					<p className={'text-center text-neutral-600'}>{`The vault "${searchValue}" does not exist`}</p> :
+				{category === 'All Gauges' ?
+					<p className={'text-center text-neutral-600'}>{`The gauge "${searchValue}" does not exist`}</p> :
 					<>
 						<p className={'text-center text-neutral-600'}>
 							{`There doesn’t seem to be anything here. It might be because you searched for a token in the ${currentCategory} category, or because there’s a rodent infestation in our server room. You check the search box, we’ll check the rodents. Deal?`}
 						</p>
 						<Button
 							className={'w-full md:w-48'}
-							onClick={(): void => set_category('All Vaults')}>
-							{'Search all vaults'}
+							onClick={(): void => set_category('All Gauges')}>
+							{'Search all gauges'}
 						</Button>
 					</>
 				}
