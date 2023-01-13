@@ -1,7 +1,8 @@
-import React from 'react';
+import React, {useState} from 'react';
 import Balancer from 'react-wrap-balancer';
 import Wrapper from '@vaults/Wrapper';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
+import {YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {HeroTimer} from '@common/components/HeroTimer';
 import GaugeList from '@yCRV/components/list/GaugeList';
 import {QuickActions} from '@yCRV/components/QuickActions';
@@ -24,9 +25,12 @@ export const MOCK_GAUGE: TYearnGauge = {
 function Vote(): ReactElement {
 	const {isActive} = useWeb3();
 	const {nextPeriod} = useVLyCRV();
+	const [isLocking, set_isLocking] = useState(true);
 
+	console.log({YCRV_TOKEN_ADDRESS});
+	
 	const fromSelect = {
-		label: 'From wallet',
+		label: `From ${isLocking ? 'wallet' : 'vault'}`,
 		legend: 'You have 420 000.69',
 		options: [],
 		balanceSource: {},
@@ -42,9 +46,14 @@ function Vote(): ReactElement {
 		legend: '$23,344.55',
 		isDisabled: !isActive
 	};
+
+	const switchProps = {
+		tooltipText: isLocking ? 'Withdraw' : 'Lock',
+		onSwitchFromTo: (): void => set_isLocking((prev): boolean => !prev)
+	};
 	
 	const toSelect = {
-		label: 'To vault',
+		label: `To ${isLocking ? 'vault' : 'wallet'}`,
 		legend: 'APY 69%',
 		options: [],
 		onSelect: (): void => undefined,
@@ -108,7 +117,7 @@ function Vote(): ReactElement {
 							<QuickActions.Select {...fromSelect} />
 							<QuickActions.Input {...fromInput} />
 						</QuickActions>
-						<QuickActions.Switch tooltipText={'Deposit / Withdraw'} onSwitchFromTo={(): void => undefined} />
+						<QuickActions.Switch {...switchProps} />
 						<QuickActions label={'voteTo'}>
 							<QuickActions.Select {...toSelect} />
 							<QuickActions.Input {...toInput} />
