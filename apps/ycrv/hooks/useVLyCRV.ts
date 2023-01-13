@@ -6,7 +6,7 @@ import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import VLYCRV_ABI from '@yCRV/utils/abi/vlYCrv.abi';
 
-export function useVLyCRV(): {currentPeriod?: number} {
+export function useVLyCRV(): {nextPeriod?: number} {
 	const {provider, isActive} = useWeb3();
 	const VL_YCRV_CONTRACT = toAddress('0xCCBD4579495cD78280e4900CB482C8Edf2EC8336');
     
@@ -19,12 +19,12 @@ export function useVLyCRV(): {currentPeriod?: number} {
 		const ethcallProvider = await newEthCallProvider(currentProvider);
 		const vLyCRVContract = new Contract(VL_YCRV_CONTRACT, VLYCRV_ABI);
 
-		const [currentPeriod] = await ethcallProvider.tryAll([vLyCRVContract.currentPeriod()]) as [number];
+		const [nextPeriod] = await ethcallProvider.tryAll([vLyCRVContract.nextPeriod()]) as [number];
 
-		return currentPeriod;
+		return nextPeriod;
 	}, [VL_YCRV_CONTRACT, isActive, provider]);
 
 	const {data} = useSWR<number>(isActive && provider ? 'vLyCRV' : null, fetcher);
 
-	return {currentPeriod: data};
+	return {nextPeriod: data};
 }

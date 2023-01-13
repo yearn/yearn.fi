@@ -1,5 +1,4 @@
 import React from 'react';
-import Balancer from 'react-wrap-balancer';
 import Wrapper from '@vaults/Wrapper';
 import {HeroTimer} from '@common/components/HeroTimer';
 import GaugeList from '@yCRV/components/list/GaugeList';
@@ -20,20 +19,41 @@ export const MOCK_GAUGE: TYearnGauge = {
 };
 
 function Vote(): ReactElement {
-	const vlYCrv = useVLyCRV();
+	const {nextPeriod} = useVLyCRV();
 
-	console.log({vlYCrv});
-	
 	return (
 		<>
-			<HeroTimer timeLeft={127579000} />
+			<HeroTimer endTime={nextPeriod} />
 			<div className={'mt-8 mb-10 w-full max-w-6xl text-center'}>
-				<Balancer>
-					<b className={'text-center text-lg md:text-2xl'}>{'Vote For Your Gauge. '}</b>
-					<p className={'mt-8 whitespace-pre-line text-center text-base text-neutral-600'}>
-						{'... stats ...'}
-					</p>
-				</Balancer>
+				<div className={'mb-10 md:mb-14'}>
+					<b className={'text-center text-lg md:text-2xl'}>{'Time left till next period'}</b>
+				</div>
+				<div className={'grid grid-cols-1 gap-6 md:grid-cols-3 md:gap-12'}>
+					<div className={'flex flex-col items-center justify-center space-y-1 md:space-y-2'}>
+						<b className={'font-number text-lg md:text-3xl'} suppressHydrationWarning>
+							{'420 000'}
+						</b>
+						<legend className={'font-number text-xxs text-neutral-600 md:text-xs'} suppressHydrationWarning>
+							{'Total Value Locked'}
+						</legend>
+					</div>
+
+					<div className={'flex flex-col items-center justify-center space-y-1 md:space-y-2'}>
+						<b className={'font-number text-lg md:text-3xl'} suppressHydrationWarning>
+							{'69 000'}
+						</b>
+						<legend className={'text-xxs text-neutral-600 md:text-xs'}>{'Total X Stacked'}</legend>
+					</div>
+
+					<div className={'flex flex-col items-center justify-center space-y-1 md:space-y-2'}>
+						<b className={'font-number text-lg md:text-3xl'} suppressHydrationWarning>
+							{'12 Jan 2023'}
+						</b>
+						<legend className={'font-number text-xxs text-neutral-600 md:text-xs'} suppressHydrationWarning>
+							{'Last vote'}
+						</legend>
+					</div>
+				</div>
 			</div>
 			<section className={'mt-10 grid w-full grid-cols-12 pb-10 md:mt-0'}>
 				{/* <VaultDetailsQuickActions currentVault={currentVault.current} /> */}
