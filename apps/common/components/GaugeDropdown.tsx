@@ -14,11 +14,11 @@ function DropdownItem({option}: TDropdownGaugeItemProps): ReactElement {
 					<div className={'h-6 w-6 rounded-full'}>
 						{option?.icon ? cloneElement(option.icon) : null}
 					</div>
-					<div>
+					<div className={'flex w-full flex-row items-center justify-between'}>
 						<p className={`${option.icon ? 'pl-2' : 'pl-0'} font-normal text-neutral-900`}>
 							{option.label}
 						</p>
-						<p className={`${option.icon ? 'pl-2' : 'pl-0'} text-xxs font-normal text-neutral-600`}>
+						<p className={`${option.icon ? 'pl-2' : 'pl-0'} text-xs font-normal text-neutral-600`}>
 							{`APY ${formatPercent((option?.value?.APY || 0) * 100)}`}
 						</p>
 					</div>

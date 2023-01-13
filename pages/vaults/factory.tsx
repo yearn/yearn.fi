@@ -92,7 +92,7 @@ function	Factory(): ReactElement {
 	const	gaugesOptions = useMemo((): TDropdownGaugeOption[] => {
 		return (
 			(filteredGauges || [])
-				// .filter((item: TCurveGaugesFromYearn): boolean => item.get_gauge_weight !== '0')
+				.filter((item: TCurveGaugesFromYearn): boolean => item.weight !== '0')
 				.map((gauge: TCurveGaugesFromYearn): TDropdownGaugeOption => ({
 					label: gauge.gauge_name,
 					icon: (
