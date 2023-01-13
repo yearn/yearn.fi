@@ -1,7 +1,9 @@
 import React from 'react';
 import Wrapper from '@vaults/Wrapper';
+import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {HeroTimer} from '@common/components/HeroTimer';
 import GaugeList from '@yCRV/components/list/GaugeList';
+import {QuickActions} from '@yCRV/components/QuickActions';
 import {useVLyCRV} from '@yCRV/hooks/useVLyCRV';
 
 import type {NextRouter} from 'next/router';
@@ -19,7 +21,42 @@ export const MOCK_GAUGE: TYearnGauge = {
 };
 
 function Vote(): ReactElement {
+	const {isActive} = useWeb3();
 	const {nextPeriod} = useVLyCRV();
+
+	const fromSelect = {
+		label: 'From wallet',
+		legend: 'You have 420 000.69',
+		options: [],
+		balanceSource: {},
+		onSelect: (): void => undefined,
+		selected: undefined
+	};
+
+	const fromInput = {
+		onChange: (): void => undefined,
+		value: 0,
+		onSetMaxAmount: (): void => undefined,
+		label: 'Amount',
+		legend: '$23,344.55',
+		isDisabled: !isActive
+	};
+	
+	const toSelect = {
+		label: 'To vault',
+		legend: 'APY 69%',
+		options: [],
+		onSelect: (): void => undefined,
+		selected: undefined
+	};
+
+	const toInput = {
+		onChange: (): void => undefined,
+		value: 0,
+		label: 'You will get',
+		legend: '$23,344.55',
+		isDisabled: true
+	};
 
 	return (
 		<>
@@ -56,7 +93,19 @@ function Vote(): ReactElement {
 				</div>
 			</div>
 			<section className={'mt-10 grid w-full grid-cols-12 pb-10 md:mt-0'}>
-				{/* <VaultDetailsQuickActions currentVault={currentVault.current} /> */}
+				<div
+					aria-label={'Quick Actions'}
+					className={'col-span-12 mb-4 flex flex-col space-x-0 space-y-2 bg-neutral-200 p-4 md:flex-row md:space-x-4 md:space-y-0 md:p-8'}>
+					<QuickActions label={'voteFrom'}>
+						<QuickActions.Select {...fromSelect} />
+						<QuickActions.Input {...fromInput} />
+					</QuickActions>
+					<QuickActions.Switch tooltipText={'Deposit / Withdraw'} onSwitchFromTo={(): void => undefined} />
+					<QuickActions label={'voteTo'}>
+						<QuickActions.Select {...toSelect} />
+						<QuickActions.Input {...toInput} />
+					</QuickActions>
+				</div>
 				<GaugeList />
 			</section>
 		</>
