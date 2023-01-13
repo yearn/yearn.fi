@@ -3,11 +3,11 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
+import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
 import {Dropdown} from '@common/components/TokenDropdown';
 import {useWallet} from '@common/contexts/useWallet';
 import {useBalance} from '@common/hooks/useBalance';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
-import {handleInputChange} from '@common/utils';
 
 import type {ChangeEvent, ReactElement} from 'react';
 import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
@@ -86,7 +86,7 @@ export function	QuickActionFromBox({
 							disabled={!isActive}
 							value={amount.normalized}
 							onChange={(e: ChangeEvent<HTMLInputElement>): void => {
-								onSetAmount(handleInputChange(e, balances?.[toAddress(selectedOptionFrom?.value)]?.decimals || 18));
+								onSetAmount(handleInputChangeEventValue(e.target.value, balances?.[toAddress(selectedOptionFrom?.value)]?.decimals || 18));
 							}} />
 						<button
 							onClick={onSetMaxAmount}
