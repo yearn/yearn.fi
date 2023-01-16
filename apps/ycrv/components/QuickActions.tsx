@@ -10,7 +10,7 @@ import type {TDropdownOption} from '@common/types/types';
 
 type TSelect = {
 	label: string;
-	legend: string;
+	legend?: string;
 	options: TDropdownOption[];
 	selected?: TDropdownOption;
 	balanceSource?: TDict<TBalanceData>; // only 'from'
@@ -24,11 +24,15 @@ type TSwitch = {
 
 type TInput = {
 	label: string;
-	legend: string;
+	legend?: string;
 	value: string | number;
-	isDisabled: boolean;
+	isDisabled?: boolean;
 	onSetMaxAmount?: () => void;
 	onChange?: (e: ChangeEvent<HTMLInputElement>) => void;
+}
+
+type TActionButton = {
+	label: string;
 }
 
 function Select(props: TSelect): ReactElement {
@@ -122,6 +126,22 @@ function Input(props: TInput): ReactElement {
 	);
 }
 
+function ActionButton({label, ...props}: TActionButton): ReactElement {
+	return (
+		<div className={'w-full space-y-0 md:w-42 md:min-w-42 md:space-y-2'}>
+			<label className={'hidden text-base md:inline'}>&nbsp;</label>
+			<div>
+				<Button
+					className={'w-full'}
+					{...props}>
+					{label}
+				</Button>
+			</div>
+			<legend className={'hidden text-xs md:inline'}>&nbsp;</legend>
+		</div>
+	);
+}
+
 export function	QuickActions({label, children}: {label: string; children: ReactNode}): ReactElement {
 	return (
 		<section aria-label={label} className={'flex w-full flex-col space-x-0 md:flex-row md:space-x-4'}>
@@ -133,3 +153,4 @@ export function	QuickActions({label, children}: {label: string; children: ReactN
 QuickActions.Select = Select;
 QuickActions.Switch = Switch;
 QuickActions.Input = Input;
+QuickActions.Button = ActionButton;
