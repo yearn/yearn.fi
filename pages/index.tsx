@@ -29,7 +29,7 @@ const	apps = [
 			loading={'eager'}
 			priority />
 	}, {
-		href: 'https://vote.yearn.finance',
+		href: '/veyfi',
 		title: 'veYFI',
 		description: 'lock YFI\nto take part in governance.',
 		icon: <LogoYearn

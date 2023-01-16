@@ -40,6 +40,12 @@ module.exports = withTM(withBundleAnalyzer(withPWA({
 				has: [{type: 'host', value: 'ybribe.com'}],
 				destination: 'https://yearn.finance/ybribe/:path*',
 				permanent: true
+			},
+			{
+				source: '/:path*',
+				has: [{type: 'host', value: 'vote.yearn.finance'}],
+				destination: 'https://yearn.finance/veyfi/:path*',
+				permanent: true
 			}
 		];
 	},
