@@ -1,7 +1,9 @@
 import {ethers} from 'ethers';
 import {approveERC20} from '@common/utils/actions/approveToken';
 
+import SNAPSHOT_DELEGATE_REGISTRY_ABI from '../abi/SnapshotDelegateRegistry.abi';
 import VEYFI_ABI from '../abi/veYFI.abi';
+import {SNAPSHOT_DELEGATE_REGISTRY_ADDRESS, YEARN_SNAPSHOT_SPACE} from '../constants';
 
 import type {BigNumber} from 'ethers';
 import type {TAddress} from '@yearn-finance/web-lib/utils/address';
@@ -88,4 +90,14 @@ export async function withdrawLocked(
 	const signer = provider.getSigner(accountAddress);
 	const votingEscrowContract = new ethers.Contract(votingEscrowAddress, VEYFI_ABI, signer);
 	return handleTx(votingEscrowContract.withdraw());
+}
+
+export async function delegateVote(
+	provider: ethers.providers.Web3Provider,
+	accountAddress: TAddress,
+	delegateAddress: TAddress
+): Promise<boolean> {
+	const signer = provider.getSigner(accountAddress);
+	const delegateRegistryContract = new ethers.Contract(SNAPSHOT_DELEGATE_REGISTRY_ADDRESS, SNAPSHOT_DELEGATE_REGISTRY_ABI, signer);
+	return handleTx(delegateRegistryContract.setDelegate(ethers.utils.formatBytes32String(YEARN_SNAPSHOT_SPACE), delegateAddress));
 }
