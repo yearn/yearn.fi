@@ -1,3 +1,4 @@
+import {isAddress} from 'ethers/lib/utils';
 import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
 
 import type {BigNumber} from 'ethers';
@@ -75,6 +76,24 @@ export function validateNetwork(props: TValidateNetworkProps): TValidationRespon
 	}
 	if (supportedNetwork !== walletNetwork) {
 		return {isValid: false, error: 'Incorrect Network Selected'};
+	}
+
+	return {isValid: true};
+}
+
+export type TValidateAddressProps = {
+	address?: string;
+}
+
+export function validateAddress(props: TValidateAddressProps): TValidationResponse {
+	const {address} = props;
+
+	if(!address) {
+		return {isValid: false};
+	}
+
+	if (!isAddress(address)) {
+		return {isValid: false, error: 'Invalid Address'};
 	}
 
 	return {isValid: true};
