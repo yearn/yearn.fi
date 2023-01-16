@@ -218,6 +218,7 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 		return (((styCRVVault as TYearnVault)?.apy?.net_apy || 0) * 100);
 		// return (((styCRVVault as TYearnVault)?.apy?.net_apy || 0) * 100) + (styCRVMegaBoost * 100);
 		// return (styCRVExperimentalAPY * 100) + (styCRVMegaBoost * 100);
+	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [styCRVVault, styCRVMegaBoost]);
 
 	/* 🔵 - Yearn Finance ******************************************************
