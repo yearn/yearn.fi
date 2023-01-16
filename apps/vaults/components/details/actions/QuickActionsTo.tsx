@@ -10,10 +10,10 @@ import {formatPercent} from '@common/utils';
 import type {ReactElement} from 'react';
 
 function	VaultDetailsQuickActionsTo(): ReactElement {
-	const {currentVault, possibleOptionsTo, selectedOptionTo, onUpdateSelectedOptionTo, isDepositing} = useActionFlow();
+	const {currentVault, possibleOptionsTo, actionParams, onUpdateSelectedOptionTo, isDepositing} = useActionFlow();
 	const {expectedOut, isLoadingExpectedOut} = useSolver();
 
-	const selectedOptionToPricePerToken = useTokenPrice(toAddress(selectedOptionTo?.value));
+	const selectedOptionToPricePerToken = useTokenPrice(toAddress(actionParams?.selectedOptionTo?.value));
 
 	return (
 		<section aria-label={'TO'} className={'flex w-full flex-col space-x-0 md:flex-row md:space-x-4'}>
@@ -30,16 +30,16 @@ function	VaultDetailsQuickActionsTo(): ReactElement {
 					<Dropdown
 						defaultOption={possibleOptionsTo[0]}
 						options={possibleOptionsTo}
-						selected={selectedOptionTo}
+						selected={actionParams?.selectedOptionTo}
 						onSelect={onUpdateSelectedOptionTo} />
 				) : (
 					<div className={'flex h-10 w-full items-center justify-between bg-neutral-300 px-2 text-base text-neutral-900 md:px-3'}>
 						<div className={'relative flex flex-row items-center'}>
 							<div className={'h-6 w-6 rounded-full'}>
-								{selectedOptionTo?.icon}
+								{actionParams?.selectedOptionTo?.icon}
 							</div>
 							<p className={'overflow-x-hidden text-ellipsis whitespace-nowrap pl-2 font-normal text-neutral-900 scrollbar-none'}>
-								{selectedOptionTo?.symbol}
+								{actionParams?.selectedOptionTo?.symbol}
 							</p>
 						</div>
 					</div>

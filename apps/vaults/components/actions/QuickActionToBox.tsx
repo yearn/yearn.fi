@@ -29,9 +29,13 @@ export function	QuickActionToBox({
 	const selectedOptionToPricePerToken = useTokenPrice(toAddress(selectedOptionTo?.value));
 
 	const filteredPossibleOptionsTo = useMemo((): TDropdownOption[] => (
-		possibleOptionsTo.filter((option): boolean => !option?.settings?.shouldNotBeWithdrawTarget)
+		possibleOptionsTo.filter((option): boolean => (
+			!option?.settings?.shouldNotBeWithdrawTarget
+			||
+			((option?.solveVia || []).length) > 0
+		))
 	), [possibleOptionsTo]);
-	
+
 	return (
 		<section aria-label={'TO'} className={'flex w-full flex-col space-x-0 md:flex-row md:space-x-4'}>
 			<div className={'relative z-10 w-full space-y-2'}>

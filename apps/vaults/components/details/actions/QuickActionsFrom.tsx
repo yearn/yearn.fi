@@ -16,13 +16,12 @@ function	VaultDetailsQuickActionsFrom(): ReactElement {
 	const {isActive} = useWeb3();
 	const {balances} = useWallet();
 	const {
-		possibleOptionsFrom, selectedOptionFrom, onUpdateSelectedOptionFrom,
-		amount, onChangeAmount,
+		possibleOptionsFrom, actionParams, onUpdateSelectedOptionFrom, onChangeAmount,
 		maxDepositPossible, isDepositing
 	} = useActionFlow();
 
-	const selectedFromBalance = useBalance(toAddress(selectedOptionFrom?.value));
-	const selectedOptionFromPricePerToken = useTokenPrice(toAddress(selectedOptionFrom?.value));
+	const selectedFromBalance = useBalance(toAddress(actionParams?.selectedOptionFrom?.value));
+	const selectedOptionFromPricePerToken = useTokenPrice(toAddress(actionParams?.selectedOptionFrom?.value));
 
 	return (
 		<section aria-label={'FROM'} className={'flex w-full flex-col space-x-0 md:flex-row md:space-x-4'}>
@@ -32,29 +31,29 @@ function	VaultDetailsQuickActionsFrom(): ReactElement {
 						{isDepositing ? 'From wallet' : 'From vault'}
 					</label>
 					<legend className={'font-number inline text-xs text-neutral-600 md:hidden'} suppressHydrationWarning>
-						{`You have ${formatAmount(selectedFromBalance.normalized)} ${selectedOptionFrom?.symbol || 'tokens'}`}
+						{`You have ${formatAmount(selectedFromBalance.normalized)} ${actionParams?.selectedOptionFrom?.symbol || 'tokens'}`}
 					</legend>
 				</div>
 				{possibleOptionsFrom.length > 1 ? (
 					<Dropdown
 						defaultOption={possibleOptionsFrom[0]}
 						options={possibleOptionsFrom}
-						selected={selectedOptionFrom}
+						selected={actionParams?.selectedOptionFrom}
 						onSelect={onUpdateSelectedOptionFrom} />
 				) : (
 					<div className={'flex h-10 w-full items-center justify-between bg-neutral-100 px-2 text-base text-neutral-900 md:px-3'}>
 						<div className={'relative flex flex-row items-center'}>
 							<div className={'h-6 w-6 rounded-full'}>
-								{selectedOptionFrom?.icon}
+								{actionParams?.selectedOptionFrom?.icon}
 							</div>
 							<p className={'overflow-x-hidden text-ellipsis whitespace-nowrap pl-2 font-normal text-neutral-900 scrollbar-none'}>
-								{selectedOptionFrom?.symbol}
+								{actionParams?.selectedOptionFrom?.symbol}
 							</p>
 						</div>
 					</div>
 				)}
 				<legend className={'font-number hidden text-xs text-neutral-600 md:inline'} suppressHydrationWarning>
-					{`You have ${formatAmount(selectedFromBalance.normalized)} ${selectedOptionFrom?.symbol || 'tokens'}`}
+					{`You have ${formatAmount(selectedFromBalance.normalized)} ${actionParams?.selectedOptionFrom?.symbol || 'tokens'}`}
 				</legend>
 			</div>
 			<div className={'w-full space-y-2'}>
@@ -70,11 +69,11 @@ function	VaultDetailsQuickActionsFrom(): ReactElement {
 							className={`w-full overflow-x-scroll border-none bg-transparent py-4 px-0 font-bold outline-none scrollbar-none ${isActive ? '' : 'cursor-not-allowed'}`}
 							type={'text'}
 							disabled={!isActive}
-							value={amount.normalized}
+							value={actionParams?.amount.normalized}
 							onChange={(e: ChangeEvent<HTMLInputElement>): void => onChangeAmount(
 								handleInputChangeEventValue(
 									e.target.value,
-									balances?.[toAddress(selectedOptionFrom?.value)]?.decimals || 18
+									balances?.[toAddress(actionParams?.selectedOptionFrom?.value)]?.decimals || 18
 								)
 							)} />
 						<button
@@ -85,7 +84,7 @@ function	VaultDetailsQuickActionsFrom(): ReactElement {
 					</div>
 				</div>
 				<legend className={'font-number mr-1 text-end text-xs text-neutral-600 md:mr-0 md:text-start'}>
-					{formatCounterValue(amount?.normalized || 0, selectedOptionFromPricePerToken)}
+					{formatCounterValue(actionParams?.amount?.normalized || 0, selectedOptionFromPricePerToken)}
 				</legend>
 			</div>
 		</section>

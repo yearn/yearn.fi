@@ -20,7 +20,7 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
 	const [txStatusExecuteDeposit, set_txStatusExecuteDeposit] = useState(defaultTxStatus);
 	const [txStatusExecuteWithdraw, set_txStatusExecuteWithdraw] = useState(defaultTxStatus);
-	const {selectedOptionFrom, selectedOptionTo, amount, onChangeAmount, maxDepositPossible, isDepositing} = useActionFlow();
+	const {actionParams, onChangeAmount, maxDepositPossible, isDepositing} = useActionFlow();
 	const {onApprove, onExecuteDeposit, onExecuteWithdraw, onRetrieveAllowance, currentSolver, expectedOut} = useSolver();
 
 	/* 🔵 - Yearn Finance **************************************************************************
@@ -31,31 +31,31 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 	const [allowanceFrom, isValidatingAllowance, mutateAllowance] = useAsync(
 		onRetrieveAllowance,
 		toNormalizedBN(0),
-		[currentSolver, selectedOptionFrom?.value]
+		[currentSolver, actionParams?.selectedOptionFrom?.value]
 	);
 
 	const onSuccess = useCallback(async (): Promise<void> => {
 		onChangeAmount(toNormalizedBN(0));
 		if ([Solver.VANILLA, Solver.CHAIN_COIN, Solver.PARTNER_CONTRACT].includes(currentSolver)) {
 			await refresh([
-				{token: toAddress(selectedOptionFrom?.value)},
-				{token: toAddress(selectedOptionTo?.value)}
+				{token: toAddress(actionParams?.selectedOptionFrom?.value)},
+				{token: toAddress(actionParams?.selectedOptionTo?.value)}
 			]);
 		} else if ([Solver.COWSWAP, Solver.PORTALS, Solver.WIDO].includes(currentSolver)) {
 			if (isDepositing) { //refresh input from zap wallet, refresh output from default
 				await Promise.all([
-					refreshZapBalances([{token: toAddress(selectedOptionFrom?.value)}]),
-					refresh([{token: toAddress(selectedOptionTo?.value)}])
+					refreshZapBalances([{token: toAddress(actionParams?.selectedOptionFrom?.value)}]),
+					refresh([{token: toAddress(actionParams?.selectedOptionTo?.value)}])
 				]);
 			} else {
 				await Promise.all([
-					refreshZapBalances([{token: toAddress(selectedOptionTo?.value)}]),
-					refresh([{token: toAddress(selectedOptionFrom?.value)}])
+					refreshZapBalances([{token: toAddress(actionParams?.selectedOptionTo?.value)}]),
+					refresh([{token: toAddress(actionParams?.selectedOptionFrom?.value)}])
 				]);
 			}
 		}
 	// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [currentSolver, isDepositing, onChangeAmount, selectedOptionFrom?.value, selectedOptionTo?.value]);
+	}, [currentSolver, isDepositing, onChangeAmount, actionParams?.selectedOptionFrom?.value, actionParams?.selectedOptionTo?.value]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Trigger an approve web3 action, simply trying to approve `amount` tokens
@@ -67,7 +67,7 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 	async function	onApproveFrom(): Promise<void> {
 		const	shouldApproveInfinite = currentSolver === Solver.PARTNER_CONTRACT || currentSolver === Solver.VANILLA;
 		onApprove(
-			shouldApproveInfinite ? ethers.constants.MaxUint256 : amount.raw,
+			shouldApproveInfinite ? ethers.constants.MaxUint256 : actionParams?.amount.raw,
 			set_txStatusApprove,
 			async (): Promise<void> => {
 				await mutateAllowance();
@@ -79,7 +79,7 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 	** Wrapper to decide if we should use the partner contract or not
 	**************************************************************************/
 	if (
-		txStatusApprove.pending || amount.raw.gt(formatBN(allowanceFrom?.raw)) && (
+		txStatusApprove.pending || actionParams?.amount.raw.gt(formatBN(allowanceFrom?.raw)) && (
 			(currentSolver === Solver.VANILLA && isDepositing)
 			|| (currentSolver === Solver.CHAIN_COIN && !isDepositing)
 			|| (currentSolver === Solver.COWSWAP)
@@ -91,7 +91,7 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 			<Button
 				className={'w-full'}
 				isBusy={txStatusApprove.pending || isValidatingAllowance}
-				isDisabled={!isActive || amount.raw.isZero() || amount.raw.gt(maxDepositPossible.raw) || expectedOut.raw.isZero()}
+				isDisabled={!isActive || actionParams?.amount.raw.isZero() || actionParams?.amount.raw.gt(maxDepositPossible.raw) || expectedOut.raw.isZero()}
 				onClick={onApproveFrom}>
 				{'Approve'}
 			</Button>
@@ -104,7 +104,7 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 				onClick={async (): Promise<void> => onExecuteDeposit(set_txStatusExecuteDeposit, onSuccess)}
 				className={'w-full'}
 				isBusy={txStatusExecuteDeposit.pending}
-				isDisabled={!isActive || amount.raw.isZero() || amount.raw.gt(maxDepositPossible.raw)}>
+				isDisabled={!isActive || actionParams?.amount.raw.isZero() || actionParams?.amount.raw.gt(maxDepositPossible.raw)}>
 				{'Deposit'}
 			</Button>
 		);
@@ -115,7 +115,7 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 			onClick={async (): Promise<void> => onExecuteWithdraw(set_txStatusExecuteWithdraw, onSuccess)}
 			className={'w-full'}
 			isBusy={txStatusExecuteWithdraw.pending}
-			isDisabled={!isActive || amount.raw.isZero() || amount.raw.gt(maxDepositPossible.raw)}>
+			isDisabled={!isActive || actionParams?.amount.raw.isZero() || actionParams?.amount.raw.gt(maxDepositPossible.raw)}>
 			{'Withdraw'}
 		</Button>
 	);

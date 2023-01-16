@@ -36,7 +36,7 @@ const	DefaultWithSolverContext: TWithSolver = {
 const		WithSolverContext = createContext<TWithSolver>(DefaultWithSolverContext);
 function	WithSolverContextApp({children}: {children: React.ReactElement}): React.ReactElement {
 	const {address} = useWeb3();
-	const {selectedOptionFrom, selectedOptionTo, amount, currentSolver, isDepositing} = useActionFlow();
+	const {actionParams, currentSolver, isDepositing} = useActionFlow();
 	const cowswap = useSolverCowswap();
 	const wido = useSolverWido();
 	const vanilla = useSolverVanilla();
@@ -49,94 +49,71 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 	** Based on the currentSolver, we initialize the solver with the required parameters.
 	**********************************************************************************************/
 	const	onUpdateSolver = useCallback(async (): Promise<void> => {
-		if (!selectedOptionFrom || !selectedOptionTo || !amount) {
+		if (!actionParams?.selectedOptionFrom || !actionParams?.selectedOptionTo || !actionParams?.amount) {
 			return;
 		}
 		set_isLoading(true);
 
 		let quote: TNormalizedBN = toNormalizedBN(0);
+		const request = {
+			from: toAddress(address || ''),
+			inputToken: actionParams?.selectedOptionFrom,
+			outputToken: actionParams?.selectedOptionTo,
+			inputAmount: actionParams?.amount.raw,
+			isDepositing: isDepositing
+		};
 		switch (currentSolver) {
 			case Solver.WIDO:
-				quote = await wido.init({
-					from: toAddress(address || ''),
-					inputToken: selectedOptionFrom,
-					outputToken: selectedOptionTo,
-					inputAmount: amount.raw,
-					isDepositing: isDepositing
-				});
+				quote = await wido.init(request);
 				performBatchedUpdates((): void => {
 					set_currentSolverState({...wido, quote});
 					set_isLoading(false);
 				});
 				break;
 			case Solver.COWSWAP:
-				quote = await cowswap.init({
-					from: toAddress(address || ''),
-					inputToken: selectedOptionFrom,
-					outputToken: selectedOptionTo,
-					inputAmount: amount.raw,
-					isDepositing: isDepositing
-				});
+				quote = await cowswap.init(request);
 				performBatchedUpdates((): void => {
 					set_currentSolverState({...cowswap, quote});
 					set_isLoading(false);
 				});
 				break;
 			case Solver.CHAIN_COIN:
-				quote = await chainCoin.init({
-					from: toAddress(address || ''),
-					inputToken: selectedOptionFrom,
-					outputToken: selectedOptionTo,
-					inputAmount: amount.raw,
-					isDepositing: isDepositing
-				});
+				quote = await chainCoin.init(request);
 				performBatchedUpdates((): void => {
 					set_currentSolverState({...chainCoin, quote});
 					set_isLoading(false);
 				});
 				break;
 			case Solver.PARTNER_CONTRACT:
-				quote = await partnerContract.init({
-					from: toAddress(address || ''),
-					inputToken: selectedOptionFrom,
-					outputToken: selectedOptionTo,
-					inputAmount: amount.raw,
-					isDepositing: isDepositing
-				});
+				quote = await partnerContract.init(request);
 				performBatchedUpdates((): void => {
 					set_currentSolverState({...partnerContract, quote});
 					set_isLoading(false);
 				});
 				break;
 			default:
-				quote = await vanilla.init({
-					from: toAddress(address || ''),
-					inputToken: selectedOptionFrom,
-					outputToken: selectedOptionTo,
-					inputAmount: amount.raw,
-					isDepositing: isDepositing
-				});
+				quote = await vanilla.init(request);
 				performBatchedUpdates((): void => {
 					set_currentSolverState({...vanilla, quote});
 					set_isLoading(false);
 				});
 		}
-	}, [address, selectedOptionFrom, selectedOptionTo, amount.raw, currentSolver, cowswap.init, vanilla.init, wido.init, amount, isDepositing]); //Ignore the warning, it's a false positive
+	}, [address, actionParams, currentSolver, cowswap.init, vanilla.init, wido.init, isDepositing]); //Ignore the warning, it's a false positive
 
 	useEffect((): void => {
 		onUpdateSolver();
 	}, [onUpdateSolver]);
 
 	const	fetchAllQuotes = useCallback(async (): Promise<void> => {
-		if (!selectedOptionFrom || !selectedOptionTo || !amount) {
+		if (!actionParams?.selectedOptionFrom || !actionParams?.selectedOptionTo || !actionParams?.amount) {
 			return;
 		}
 		set_isLoading(true);
 		const req = {
 			from: toAddress(address || ''),
-			inputToken: selectedOptionFrom,
-			outputToken: selectedOptionTo,
-			inputAmount: amount.raw,
+			inputToken: actionParams?.selectedOptionFrom,
+			outputToken: actionParams?.selectedOptionTo,
+			inputAmount: actionParams?.amount.raw,
 			isDepositing: isDepositing
 		};
 		const	timeNow = Date.now();
@@ -150,7 +127,7 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 			duration: Date.now() - timeNow
 		});
 
-	}, [selectedOptionFrom, amount]);
+	}, [actionParams]);
 
 	useEffect((): void => {
 		fetchAllQuotes();
