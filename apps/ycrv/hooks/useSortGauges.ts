@@ -14,8 +14,7 @@ function useSortGauges(
 		gaugesList.sort(({name: a}, {name: b}): number => (
 			direction === 'desc' ? a.localeCompare(b) : b.localeCompare(a)
 		))
-	), [gaugesList, direction]);
-
+	), [direction, gaugesList]);
 
 	const stringifiedVaultList = JSON.stringify(gaugesList);
 	const sortedVaults = useMemo((): TCurveGauges[] => {

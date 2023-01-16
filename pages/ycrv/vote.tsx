@@ -15,7 +15,7 @@ import {useBalance} from '@common/hooks/useBalance';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
 import GaugeList from '@yCRV/components/list/GaugeList';
 import {QuickActions} from '@yCRV/components/QuickActions';
-import {ST_YCRV, YCRV} from '@yCRV/constants/tokens';
+import {VL_YCRV, YCRV} from '@yCRV/constants/tokens';
 import {useVLyCRV} from '@yCRV/hooks/useVLyCRV';
 import Wrapper from '@yCRV/Wrapper';
 
@@ -31,10 +31,10 @@ function Vote(): ReactElement {
 	const {gauges, isLoadingGauges} = useCurve();
 	const [isLocking, set_isLocking] = useState(true);
 	const yCRVBalance = useBalance(YCRV.value);
-	const stYCRVBalance = useBalance(ST_YCRV.value);
+	const stYCRVBalance = useBalance(VL_YCRV.value);
 	const [amount, set_amount] = useState<TNormalizedBN | undefined>({raw: ethers.constants.Zero, normalized: 0});
 	const pricePerYCRV = useTokenPrice(toAddress(YCRV.value));
-	const pricePerSTYCRV = useTokenPrice(toAddress(ST_YCRV.value));
+	const pricePerSTYCRV = useTokenPrice(toAddress(VL_YCRV.value));
 
 	const fromSelectProps: TQASelect = useMemo((): TQASelect => {
 		if (isLocking) {
@@ -43,7 +43,7 @@ function Vote(): ReactElement {
 		}
 		
 		const legend = `You have ${formatAmount(stYCRVBalance.normalized)} ${stYCRVBalance?.symbol || 'tokens'}`;
-		return {label: 'From vault', legend, options: [ST_YCRV], selected: ST_YCRV};
+		return {label: 'From vault', legend, options: [VL_YCRV], selected: VL_YCRV};
 	}, [isLocking, stYCRVBalance.normalized, stYCRVBalance?.symbol, yCRVBalance.normalized, yCRVBalance?.symbol]);
 
 	const maxLockingPossible = useMemo((): TNormalizedBN => {
@@ -58,7 +58,7 @@ function Vote(): ReactElement {
 
 	const fromInputProps: TQAInput = useMemo((): TQAInput => ({
 		onChange: ({target: {value}}: ChangeEvent<HTMLInputElement>): void => {
-			const decimals = balances?.[toAddress(isLocking ? YCRV.value : ST_YCRV.value)]?.decimals || 18;
+			const decimals = balances?.[toAddress(isLocking ? YCRV.value : VL_YCRV.value)]?.decimals || 18;
 			if (value === '') {
 				set_amount(undefined);
 				return;
@@ -82,7 +82,7 @@ function Vote(): ReactElement {
 	
 	const toSelectProps: TQASelect = useMemo((): TQASelect => {
 		if (isLocking) {
-			return {label: 'To vault', options: [ST_YCRV], selected: ST_YCRV};
+			return {label: 'To vault', options: [VL_YCRV], selected: VL_YCRV};
 		}
 
 		return {label: 'To wallet', options: [YCRV], selected: YCRV};
