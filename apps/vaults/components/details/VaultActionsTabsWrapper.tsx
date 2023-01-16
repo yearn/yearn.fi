@@ -5,7 +5,7 @@ import VaultDetailsQuickActionsFrom from '@vaults/components/details/actions/Qui
 import VaultDetailsQuickActionsSwitch from '@vaults/components/details/actions/QuickActionsSwitch';
 import VaultDetailsQuickActionsTo from '@vaults/components/details/actions/QuickActionsTo';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
-import {WithSolverContextApp} from '@vaults/contexts/useSolver';
+import {Solver, useSolver} from '@vaults/contexts/useSolver';
 
 import SettingsPopover from '../SettingsPopover';
 
@@ -22,6 +22,7 @@ const tabs: TTabsOptions[] = [
 ];
 function	VaultActionsTabsWrapper(): ReactElement {
 	const {onSwitchSelectedOptions, isDepositing} = useActionFlow();
+	const {effectiveSolver} = useSolver();
 
 	return (
 		<Fragment>
@@ -59,23 +60,23 @@ function	VaultActionsTabsWrapper(): ReactElement {
 				</div>
 				<div className={'-mt-0.5 h-0.5 w-full bg-neutral-300'} />
 
-				<WithSolverContextApp>
-					<Fragment>
-						<div
-							className={'col-span-12 mb-4 flex flex-col space-x-0 space-y-2 bg-neutral-200 p-4 md:flex-row md:space-x-4 md:space-y-0 md:py-6 md:px-8'}>
-							<VaultDetailsQuickActionsFrom />
-							<VaultDetailsQuickActionsSwitch />
-							<VaultDetailsQuickActionsTo />
-							<div className={'w-full space-y-0 md:w-42 md:min-w-42 md:space-y-2'}>
-								<label className={'hidden text-base md:inline'}>&nbsp;</label>
-								<div>
-									<VaultDetailsQuickActionsButtons />
-								</div>
-								<legend className={'hidden text-xs md:inline'}>&nbsp;</legend>
+				<Fragment>
+					<div
+						className={'col-span-12 mb-4 flex flex-col space-x-0 space-y-2 bg-neutral-200 p-4 md:flex-row md:space-x-4 md:space-y-0 md:py-6 md:px-8'}>
+						<VaultDetailsQuickActionsFrom />
+						<VaultDetailsQuickActionsSwitch />
+						<VaultDetailsQuickActionsTo />
+						<div className={'w-full space-y-0 md:w-42 md:min-w-42 md:space-y-2'}>
+							<label className={'hidden text-base md:inline'}>&nbsp;</label>
+							<div>
+								<VaultDetailsQuickActionsButtons />
 							</div>
+							<legend className={'hidden text-xs text-neutral-400 md:inline'}>
+								{[Solver.COWSWAP, Solver.PORTALS, Solver.WIDO].includes(effectiveSolver) ? `Zap provided by ${effectiveSolver}` : ''}&nbsp;
+							</legend>
 						</div>
-					</Fragment>
-				</WithSolverContextApp>
+					</div>
+				</Fragment>
 			</div>
 		</Fragment>
 	);

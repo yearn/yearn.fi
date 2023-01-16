@@ -3,6 +3,7 @@ import {ethers} from 'ethers';
 import axios from 'axios';
 import useSWRMutation from 'swr/mutation';
 import {domain, OrderKind, SigningScheme, signOrder} from '@gnosis.pm/gp-v2-contracts';
+import {Solver} from '@vaults/contexts/useSolver';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -346,6 +347,7 @@ export function useSolverCowswap(): TSolverContext {
 
 
 	return useMemo((): TSolverContext => ({
+		type: Solver.COWSWAP,
 		quote: expectedOut,
 		getQuote: getQuote,
 		refreshQuote,

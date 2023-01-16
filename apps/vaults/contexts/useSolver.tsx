@@ -1,4 +1,4 @@
-import React, {createContext, useCallback, useContext, useEffect, useMemo, useState} from 'react';
+import React, {createContext, useCallback, useContext, useState} from 'react';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useSolverChainCoin} from '@vaults/hooks/useSolverChainCoin';
 import {useSolverCowswap} from '@vaults/hooks/useSolverCowswap';
@@ -6,6 +6,8 @@ import {useSolverPartnerContract} from '@vaults/hooks/useSolverPartnerContract';
 import {useSolverVanilla} from '@vaults/hooks/useSolverVanilla';
 import {useSolverWido} from '@vaults/hooks/useSolverWido';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
+import {Hooks} from '@yearn-finance/web-lib/hooks';
+import {useDebouncedEffect} from '@yearn-finance/web-lib/hooks/useDebounce';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
@@ -24,6 +26,7 @@ export enum	Solver {
 
 const	DefaultWithSolverContext: TWithSolver = {
 	currentSolver: Solver.VANILLA,
+	effectiveSolver: Solver.VANILLA,
 	expectedOut: toNormalizedBN(0),
 	isLoadingExpectedOut: false,
 	onRetrieveExpectedOut: async (): Promise<TNormalizedBN> => toNormalizedBN(0),
@@ -64,19 +67,50 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 		};
 		switch (currentSolver) {
 			case Solver.WIDO:
-				quote = await wido.init(request);
-				performBatchedUpdates((): void => {
-					set_currentSolverState({...wido, quote});
-					set_isLoading(false);
+			case Solver.COWSWAP: {
+				const [widoQuote, cowswapQuote] = await Promise.all([wido.init(request), cowswap.init(request)]);
+				console.log({
+					cowswap: cowswapQuote?.normalized,
+					wido: widoQuote?.normalized
 				});
+
+				if (currentSolver === Solver.WIDO) {
+					if (widoQuote?.raw?.gt(0)) {
+						performBatchedUpdates((): void => {
+							set_currentSolverState({...wido, quote: widoQuote});
+							set_isLoading(false);
+						});
+					} else if (cowswapQuote?.raw?.gt(0)) {
+						performBatchedUpdates((): void => {
+							set_currentSolverState({...cowswap, quote: cowswapQuote});
+							set_isLoading(false);
+						});
+					}
+				}
+
+				if (currentSolver === Solver.COWSWAP) {
+					if (cowswapQuote?.raw?.gt(0)) {
+						performBatchedUpdates((): void => {
+							set_currentSolverState({...cowswap, quote: cowswapQuote});
+							set_isLoading(false);
+						});
+					} else if (widoQuote?.raw?.gt(0)) {
+						performBatchedUpdates((): void => {
+							set_currentSolverState({...wido, quote: widoQuote});
+							set_isLoading(false);
+						});
+					}
+
+				}
 				break;
-			case Solver.COWSWAP:
-				quote = await cowswap.init(request);
-				performBatchedUpdates((): void => {
-					set_currentSolverState({...cowswap, quote});
-					set_isLoading(false);
-				});
-				break;
+			}
+			// case Solver.COWSWAP:
+			// 	quote = await cowswap.init(request);
+			// 	performBatchedUpdates((): void => {
+			// 		set_currentSolverState({...cowswap, quote});
+			// 		set_isLoading(false);
+			// 	});
+			// 	break;
 			case Solver.CHAIN_COIN:
 				quote = await chainCoin.init(request);
 				performBatchedUpdates((): void => {
@@ -100,42 +134,13 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 		}
 	}, [address, actionParams, currentSolver, cowswap.init, vanilla.init, wido.init, isDepositing]); //Ignore the warning, it's a false positive
 
-	useEffect((): void => {
+	useDebouncedEffect((): void => {
 		onUpdateSolver();
-	}, [onUpdateSolver]);
+	}, [onUpdateSolver], 0);
 
-	const	fetchAllQuotes = useCallback(async (): Promise<void> => {
-		if (!actionParams?.selectedOptionFrom || !actionParams?.selectedOptionTo || !actionParams?.amount) {
-			return;
-		}
-		set_isLoading(true);
-		const req = {
-			from: toAddress(address || ''),
-			inputToken: actionParams?.selectedOptionFrom,
-			outputToken: actionParams?.selectedOptionTo,
-			inputAmount: actionParams?.amount.raw,
-			isDepositing: isDepositing
-		};
-		const	timeNow = Date.now();
-		const	quotes = await Promise.all([
-			cowswap.onRetrieveExpectedOut(req),
-			wido.onRetrieveExpectedOut(req)
-		]);
-		console.log({
-			cowswap: quotes[0]?.normalized,
-			wido: quotes[1]?.normalized,
-			duration: Date.now() - timeNow
-		});
-
-	}, [actionParams]);
-
-	useEffect((): void => {
-		fetchAllQuotes();
-	}, [fetchAllQuotes]);
-
-
-	const	contextValue = useMemo((): TWithSolver => ({
+	const	contextValue = Hooks.useDeepCompareMemo((): TWithSolver => ({
 		currentSolver: currentSolver,
+		effectiveSolver: currentSolverState?.type,
 		expectedOut: currentSolverState?.quote || toNormalizedBN(0),
 		isLoadingExpectedOut: isLoading,
 		onRetrieveExpectedOut: currentSolverState.onRetrieveExpectedOut,

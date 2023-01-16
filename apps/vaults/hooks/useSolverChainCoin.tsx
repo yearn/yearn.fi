@@ -1,6 +1,7 @@
 import {useCallback, useMemo, useRef} from 'react';
 import {ethers} from 'ethers';
 import useSWRMutation from 'swr/mutation';
+import {Solver} from '@vaults/contexts/useSolver';
 import {useVaultEstimateOutFetcher} from '@vaults/hooks/useVaultEstimateOutFetcher';
 import {getEthZapperContract} from '@vaults/utils';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -177,6 +178,7 @@ export function useSolverChainCoin(): TSolverContext {
 	}, [provider, safeChainID]);
 
 	return useMemo((): TSolverContext => ({
+		type: Solver.CHAIN_COIN,
 		quote: latestQuote?.result || toNormalizedBN(0),
 		getQuote: getQuote,
 		refreshQuote: refreshQuote,

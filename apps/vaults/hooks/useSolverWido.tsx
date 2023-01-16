@@ -1,6 +1,7 @@
 import {useCallback, useMemo, useRef, useState} from 'react';
 import {ethers} from 'ethers';
 import {getTokenAllowance as wiGetTokenAllowance, getWidoContractAddress, quote as wiQuote} from 'wido';
+import {Solver} from '@vaults/contexts/useSolver';
 import {useAsync} from '@vaults/hooks/useAsync';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -234,6 +235,7 @@ export function useSolverWido(): TSolverContext {
 
 
 	return useMemo((): TSolverContext => ({
+		type: Solver.WIDO,
 		quote: expectedOut,
 		getQuote: getQuote,
 		refreshQuote,

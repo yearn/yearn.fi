@@ -11,6 +11,7 @@ import type {Solver} from '@vaults/contexts/useSolver';
 ***************************************************************************/
 export type TWithSolver = {
 	currentSolver: Solver;
+	effectiveSolver: Solver;
 	expectedOut: TNormalizedBN;
 	isLoadingExpectedOut: boolean;
 	onRetrieveExpectedOut: (request: TInitSolverArgs) => Promise<TNormalizedBN>;
@@ -39,6 +40,7 @@ export type TInitSolverArgs = {
 }
 
 export type TSolverContext = {
+	type: Solver;
 	quote: TNormalizedBN;
 	getQuote: CallableFunction;
 	refreshQuote: CallableFunction;
