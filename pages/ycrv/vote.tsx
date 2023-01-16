@@ -1,49 +1,39 @@
 import React, {useState} from 'react';
 import Balancer from 'react-wrap-balancer';
-import Wrapper from '@vaults/Wrapper';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
 import {HeroTimer} from '@common/components/HeroTimer';
+import {useCurve} from '@common/contexts/useCurve';
 import GaugeList from '@yCRV/components/list/GaugeList';
 import {QuickActions} from '@yCRV/components/QuickActions';
 import {useVLyCRV} from '@yCRV/hooks/useVLyCRV';
+import Wrapper from '@yCRV/Wrapper';
 
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
-import type {TYearnGauge} from '@common/types/yearn';
-
-export const MOCK_GAUGE: TYearnGauge = {
-	name: 'Gauge',
-	address: '0x',
-	category: 'Foo',
-	token: {
-		address: '0x000000000000000000000000000000000000dEaD'
-	},
-	votes: 0
-};
 
 function Vote(): ReactElement {
 	const {isActive} = useWeb3();
-	const {nextPeriod} = useVLyCRV();
+	const {nextPeriod, userInfo} = useVLyCRV();
+	const {gauges, isLoadingGauges} = useCurve();
 	const [isLocking, set_isLocking] = useState(true);
-
-	console.log({YCRV_TOKEN_ADDRESS});
 	
-	const fromSelect = {
+	const fromSelectProps = {
 		label: `From ${isLocking ? 'wallet' : 'vault'}`,
-		legend: 'You have 420 000.69',
+		legend: 'You have X yCRV',
 		options: [],
 		balanceSource: {},
 		onSelect: (): void => undefined,
 		selected: undefined
 	};
 
-	const fromInput = {
+	const fromInputProps = {
 		onChange: (): void => undefined,
 		value: 0,
 		onSetMaxAmount: (): void => undefined,
 		label: 'Amount',
-		legend: '$23,344.55',
+		legend: '$0.00',
 		isDisabled: !isActive
 	};
 
@@ -52,21 +42,28 @@ function Vote(): ReactElement {
 		onSwitchFromTo: (): void => set_isLocking((prev): boolean => !prev)
 	};
 	
-	const toSelect = {
+	const toSelectProps = {
 		label: `To ${isLocking ? 'vault' : 'wallet'}`,
-		legend: 'APY 69%',
 		options: [],
 		onSelect: (): void => undefined,
 		selected: undefined
 	};
 
-	const toInput = {
+	const toInputProps = {
 		onChange: (): void => undefined,
 		value: 0,
-		label: 'You will get',
-		legend: '$23,344.55',
+		label: 'You will receive',
 		isDisabled: true
 	};
+
+	const buttonProps = {
+		label: isLocking ? 'Lock' : 'Withdraw'
+	};
+
+	const {balance, lastVoteTime, votesSpent} = userInfo;
+
+	const totalVotes = formatToNormalizedValue(balance);
+	const remainingVotesForThisPeriod = formatToNormalizedValue(balance.sub(votesSpent));
 
 	return (
 		<>
@@ -78,23 +75,23 @@ function Vote(): ReactElement {
 				<div className={'grid grid-cols-1 gap-6 md:grid-cols-3 md:gap-12'}>
 					<div className={'flex flex-col items-center justify-center space-y-1 md:space-y-2'}>
 						<b className={'font-number text-lg md:text-3xl'} suppressHydrationWarning>
-							{'420 000'}
+							{totalVotes}
 						</b>
 						<legend className={'font-number text-xxs text-neutral-600 md:text-xs'} suppressHydrationWarning>
-							{'Total Value Locked'}
+							{'Total Votes'}
 						</legend>
 					</div>
 
 					<div className={'flex flex-col items-center justify-center space-y-1 md:space-y-2'}>
 						<b className={'font-number text-lg md:text-3xl'} suppressHydrationWarning>
-							{'69 000'}
+							{remainingVotesForThisPeriod}
 						</b>
-						<legend className={'text-xxs text-neutral-600 md:text-xs'}>{'Total X Stacked'}</legend>
+						<legend className={'text-xxs text-neutral-600 md:text-xs'}>{'Remaining Votes for this period'}</legend>
 					</div>
 
 					<div className={'flex flex-col items-center justify-center space-y-1 md:space-y-2'}>
 						<b className={'font-number text-lg md:text-3xl'} suppressHydrationWarning>
-							{'12 Jan 2023'}
+							{formatDate(lastVoteTime)}
 						</b>
 						<legend className={'font-number text-xxs text-neutral-600 md:text-xs'} suppressHydrationWarning>
 							{'Last vote'}
@@ -114,17 +111,18 @@ function Vote(): ReactElement {
 					</div>
 					<div className={'col-span-12 flex flex-col space-x-0 space-y-2 p-4 md:flex-row md:space-x-4 md:space-y-0 md:p-8'}>
 						<QuickActions label={'voteFrom'}>
-							<QuickActions.Select {...fromSelect} />
-							<QuickActions.Input {...fromInput} />
+							<QuickActions.Select {...fromSelectProps} />
+							<QuickActions.Input {...fromInputProps} />
 						</QuickActions>
 						<QuickActions.Switch {...switchProps} />
 						<QuickActions label={'voteTo'}>
-							<QuickActions.Select {...toSelect} />
-							<QuickActions.Input {...toInput} />
+							<QuickActions.Select {...toSelectProps} />
+							<QuickActions.Input {...toInputProps} />
 						</QuickActions>
+						<QuickActions.Button {...buttonProps} />
 					</div>
 				</div>
-				<GaugeList />
+				<GaugeList gauges={gauges} isLoadingGauges={isLoadingGauges} />
 			</section>
 		</>
 	);

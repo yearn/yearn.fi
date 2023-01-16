@@ -5,21 +5,21 @@ import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import CHAINS from '@yearn-finance/web-lib/utils/web3/chains';
 
 import type {ReactElement} from 'react';
-import type {TYearnGauge} from '@common/types/yearn';
+import type {TCurveGauges} from '@common/types/curves';
 
 export function GaugeListEmpty({
-	sortedGaugesToDisplay,
+	gauges,
 	currentCategory,
 	isLoading
 }: {
-	sortedGaugesToDisplay: TYearnGauge[],
+	gauges: TCurveGauges[],
 	currentCategory: string,
 	isLoading: boolean
 }): ReactElement {
 	const {safeChainID} = useChainID();
 	const {searchValue, category, set_category} = useAppSettings();
 
-	if (isLoading && sortedGaugesToDisplay.length === 0) {
+	if (isLoading && gauges.length === 0) {
 		return (
 			<div className={'flex h-96 w-full flex-col items-center justify-center py-2 px-10'}>
 				<b className={'text-lg'}>{'Fetching Gauges...'}</b>
@@ -31,7 +31,7 @@ export function GaugeListEmpty({
 		);
 	}
 
-	if (!isLoading && sortedGaugesToDisplay.length === 0 && safeChainID !== 1) {
+	if (!isLoading && gauges.length === 0 && safeChainID !== 1) {
 		const chainName = CHAINS[safeChainID]?.name || 'this network';
 		return (
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center py-2 px-10 md:w-3/4'}>
@@ -43,7 +43,7 @@ export function GaugeListEmpty({
 		);
 	}
 	
-	if (!isLoading && sortedGaugesToDisplay.length === 0) {
+	if (!isLoading && gauges.length === 0) {
 		return (
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center gap-4 py-2 px-10 md:w-3/4'}>
 				<b className={'text-center text-lg'}>{'No data, reeeeeeeeeeee'}</b>

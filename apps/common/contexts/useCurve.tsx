@@ -21,10 +21,11 @@ type TCoinGeckoPrices = {
 	usd: number
 }
 export type TCurveContext = {
-	curveWeeklyFees: TCurveWeeklyFees,
-	cgPrices: TDict<TCoinGeckoPrices>
-	gauges: TCurveGauges[],
-	gaugesFromYearn: TCurveGaugesFromYearn[]
+	curveWeeklyFees: TCurveWeeklyFees;
+	cgPrices: TDict<TCoinGeckoPrices>;
+	gauges: TCurveGauges[];
+	isLoadingGauges: boolean;
+	gaugesFromYearn: TCurveGaugesFromYearn[];
 }
 const	defaultProps: TCurveContext = {
 	curveWeeklyFees: {
@@ -35,6 +36,7 @@ const	defaultProps: TCurveContext = {
 	},
 	cgPrices: {},
 	gauges: [],
+	isLoadingGauges: false,
 	gaugesFromYearn: []
 };
 
@@ -56,7 +58,7 @@ export const CurveContextApp = ({children}: {children: React.ReactElement}): Rea
 		{revalidateOnFocus: false}
 	) as SWRResponse<TDict<TCoinGeckoPrices>>;
 
-	const	{data: gaugesWrapper} = useSWR(
+	const	{data: gaugesWrapper, isLoading: isLoadingGauges} = useSWR(
 		'https://api.curve.fi/api/getAllGauges?blockchainId=ethereum',
 		curveFetcher,
 		{revalidateOnFocus: false}
@@ -95,8 +97,9 @@ export const CurveContextApp = ({children}: {children: React.ReactElement}): Rea
 		curveWeeklyFees: curveWeeklyFees || defaultProps.curveWeeklyFees,
 		cgPrices: cgPrices || defaultProps.cgPrices,
 		gauges: gauges || defaultProps.gauges,
+		isLoadingGauges: isLoadingGauges || defaultProps.isLoadingGauges,
 		gaugesFromYearn: gaugesFromYearn || defaultProps.gaugesFromYearn
-	}), [curveWeeklyFees, cgPrices, gauges, gaugesFromYearn]);
+	}), [curveWeeklyFees, cgPrices, gauges, isLoadingGauges, gaugesFromYearn]);
 
 	return (
 		<CurveContext.Provider value={contextValue}>
