@@ -8,6 +8,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatBN, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
+import {useYearn} from '@common/contexts/useYearn';
 import {approveERC20, isApprovedERC20} from '@common/utils/actions/approveToken';
 
 import type {AxiosError} from 'axios';
@@ -20,6 +21,7 @@ import type {TWidoResult} from '@vaults/types/solvers.wido';
 
 function useWidoQuote(): [TWidoResult, (request: TInitSolverArgs, shouldPreventErrorToast?: boolean) => Promise<QuoteResult | undefined>] {
 	const {toast} = yToast();
+	const {zapSlippage} = useYearn();
 	const [err, set_err] = useState<Error>();
 
 	const getQuote = useCallback(async (
@@ -32,7 +34,7 @@ function useWidoQuote(): [TWidoResult, (request: TInitSolverArgs, shouldPreventE
 			toChainId: 1, // Chain Id of to token
 			toToken: toAddress(request.outputToken.value), // token to receive
 			amount: formatBN(request?.inputAmount || 0).toString(), // Token amount of from token
-			slippagePercentage: 0.1, // Acceptable max slippage for the swap
+			slippagePercentage: zapSlippage, // Acceptable max slippage for the swap
 			user: request.from // receiver
 		});
 

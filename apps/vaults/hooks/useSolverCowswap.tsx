@@ -7,8 +7,9 @@ import {Solver} from '@vaults/contexts/useSolver';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatBN, formatToNormalizedValue, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatBN, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
+import {useYearn} from '@common/contexts/useYearn';
 import {approvedERC20Amount, approveERC20, isApprovedERC20} from '@common/utils/actions/approveToken';
 import {COW_VAULT_RELAYER_ADDRESS} from '@common/utils/constants';
 
@@ -80,10 +81,10 @@ function useCowswapQuote(): [TCowResult, (request: TInitSolverArgs, shouldPreven
 }
 
 export function useSolverCowswap(): TSolverContext {
+	const {zapSlippage} = useYearn();
 	const {address, provider} = useWeb3();
 	const maxIterations = 1000; // 1000 * up to 3 seconds = 3000 seconds = 50 minutes
 	const shouldUsePresign = false; //Debug only
-	const DEFAULT_SLIPPAGE_COWSWAP = 0.01; // 1%
 	const [, getQuote] = useCowswapQuote();
 	const request = useRef<TInitSolverArgs>();
 	const latestQuote = useRef<TCowAPIResult>();
@@ -94,15 +95,15 @@ export function useSolverCowswap(): TSolverContext {
 	** fluctuations. The buyAmountWithSlippage is used to request this amount instead of the
 	** original buyAmount.
 	**********************************************************************************************/
-	function getBuyAmountWithSlippage(currentQuote: TCowAPIResult, decimals: number): string {
+	const getBuyAmountWithSlippage = useCallback((currentQuote: TCowAPIResult, decimals: number): string => {
 		if (!currentQuote) {
 			return '0';
 		}
 		const {quote} = currentQuote;
 		const buyAmount = Number(ethers.utils.formatUnits(quote.buyAmount, decimals));
-		const withSlippage = ethers.utils.parseUnits((buyAmount * (1 - Number(DEFAULT_SLIPPAGE_COWSWAP))).toFixed(decimals), decimals);
+		const withSlippage = ethers.utils.parseUnits((buyAmount * (1 - Number(zapSlippage / 100))).toFixed(decimals), decimals);
 		return withSlippage.toString();
-	}
+	}, [zapSlippage]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** init will be called when the cowswap solver should be used to perform the desired swap.
@@ -114,10 +115,8 @@ export function useSolverCowswap(): TSolverContext {
 		const quote = await getQuote(_request);
 		if (quote) {
 			latestQuote.current = quote;
-			return ({
-				raw: formatBN(quote?.quote?.buyAmount || ethers.constants.Zero),
-				normalized: formatToNormalizedValue(formatBN(quote?.quote.buyAmount || 0), request?.current?.outputToken?.decimals || 18)
-			});
+			getBuyAmountWithSlippage(quote, request?.current?.outputToken?.decimals || 18);
+			return toNormalizedBN(quote?.quote?.buyAmount || 0, request?.current?.outputToken?.decimals || 18);
 		}
 		return toNormalizedBN(0);
 	}, [getQuote]);
@@ -179,7 +178,7 @@ export function useSolverCowswap(): TSolverContext {
 			console.error(_error);
 			return false;
 		}
-	}, [latestQuote, signCowswapOrder]);
+	}, [getBuyAmountWithSlippage, signCowswapOrder]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** Cowswap orders have a validity period and the return value on submit is not the execution

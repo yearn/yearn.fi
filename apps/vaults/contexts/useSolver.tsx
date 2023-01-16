@@ -6,7 +6,7 @@ import {useSolverPartnerContract} from '@vaults/hooks/useSolverPartnerContract';
 import {useSolverVanilla} from '@vaults/hooks/useSolverVanilla';
 import {useSolverWido} from '@vaults/hooks/useSolverWido';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {Hooks} from '@yearn-finance/web-lib/hooks';
+import {hooks} from '@yearn-finance/web-lib/hooks';
 import {useDebouncedEffect} from '@yearn-finance/web-lib/hooks/useDebounce';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -138,7 +138,7 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 		onUpdateSolver();
 	}, [onUpdateSolver], 0);
 
-	const	contextValue = Hooks.useDeepCompareMemo((): TWithSolver => ({
+	const	contextValue = hooks.useDeepCompareMemo((): TWithSolver => ({
 		currentSolver: currentSolver,
 		effectiveSolver: currentSolverState?.type,
 		expectedOut: currentSolverState?.quote || toNormalizedBN(0),
