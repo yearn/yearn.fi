@@ -8,7 +8,7 @@ export type TListHead = {
 	items: {
 		label: string,
 		value: string,
-		sortable: boolean,
+		sortable?: boolean,
 		className?: string
 	}[],
 	dataClassName?: string,
