@@ -15,10 +15,9 @@ import {useBalance} from '@common/hooks/useBalance';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
 import GaugeList from '@yCRV/components/list/GaugeList';
 import {QuickActions} from '@yCRV/components/QuickActions';
+import {ST_YCRV, YCRV} from '@yCRV/constants/tokens';
 import {useVLyCRV} from '@yCRV/hooks/useVLyCRV';
 import Wrapper from '@yCRV/Wrapper';
-
-import {ST_YCRV, YCRV} from './constants';
 
 import type {NextRouter} from 'next/router';
 import type {ChangeEvent, ReactElement} from 'react';
