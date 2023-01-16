@@ -8,21 +8,21 @@ import type {TBalanceData} from '@yearn-finance/web-lib/hooks/types';
 import type {TDict} from '@yearn-finance/web-lib/utils/types';
 import type {TDropdownOption} from '@common/types/types';
 
-type TSelect = {
+export type TQASelect = {
 	label: string;
 	legend?: string;
 	options: TDropdownOption[];
 	selected?: TDropdownOption;
 	balanceSource?: TDict<TBalanceData>; // only 'from'
-	onSelect: (option: TDropdownOption) => void;
+	onSelect?: (option: TDropdownOption) => void;
 }
 
-type TSwitch = {
+export type TQASwitch = {
 	tooltipText: string;
 	onSwitchFromTo: () => void;
 }
 
-type TInput = {
+export type TQAInput = {
 	label: string;
 	legend?: string;
 	value: string | number;
@@ -31,11 +31,11 @@ type TInput = {
 	onChange?: (e: ChangeEvent<HTMLInputElement>) => void;
 }
 
-type TActionButton = {
+export type TQAButton = {
 	label: string;
 }
 
-function Select(props: TSelect): ReactElement {
+function QASelect(props: TQASelect): ReactElement {
 	const {label, legend, options, selected, balanceSource, onSelect} = props;
 
 	return (
@@ -46,7 +46,7 @@ function Select(props: TSelect): ReactElement {
 					{legend}
 				</legend>
 			</div>
-			{(options.length > 1) ? (
+			{(onSelect && options.length > 1) ? (
 				<Dropdown
 					defaultOption={options[0]}
 					options={options}
@@ -72,7 +72,7 @@ function Select(props: TSelect): ReactElement {
 	);
 }
 
-function Switch({tooltipText, onSwitchFromTo}: TSwitch): ReactElement {
+function QASwitch({tooltipText, onSwitchFromTo}: TQASwitch): ReactElement {
 	return (
 		<div className={'mx-auto flex w-full justify-center space-y-0 md:mx-none md:block md:w-14 md:space-y-2'}>
 			<label className={'hidden text-base md:inline'}>&nbsp;</label>
@@ -93,7 +93,7 @@ function Switch({tooltipText, onSwitchFromTo}: TSwitch): ReactElement {
 	);
 }
 
-function Input(props: TInput): ReactElement {
+function QAInput(props: TQAInput): ReactElement {
 	const {label, legend, value, isDisabled, onChange, onSetMaxAmount} = props;
 
 	return (
@@ -126,7 +126,7 @@ function Input(props: TInput): ReactElement {
 	);
 }
 
-function ActionButton({label, ...props}: TActionButton): ReactElement {
+function QAButton({label, ...props}: TQAButton): ReactElement {
 	return (
 		<div className={'w-full space-y-0 md:w-42 md:min-w-42 md:space-y-2'}>
 			<label className={'hidden text-base md:inline'}>&nbsp;</label>
@@ -150,7 +150,7 @@ export function	QuickActions({label, children}: {label: string; children: ReactN
 	);
 }
 
-QuickActions.Select = Select;
-QuickActions.Switch = Switch;
-QuickActions.Input = Input;
-QuickActions.Button = ActionButton;
+QuickActions.Select = QASelect;
+QuickActions.Switch = QASwitch;
+QuickActions.Input = QAInput;
+QuickActions.Button = QAButton;
