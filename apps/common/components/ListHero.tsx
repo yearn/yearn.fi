@@ -165,7 +165,8 @@ function	ListHero<T extends string>({
 					set_searchValue={set_searchValue} />
 
 				{!!switchProps && (
-					<div className={'mb-2 self-end'}>
+					<div className={'mr-4 mt-7 flex h-full flex-row'}>
+						<small className={'mr-2'}>{'Hide gauges with 0 votes'}</small>
 						<Switch {...switchProps} />
 					</div>
 				)}

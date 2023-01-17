@@ -18,13 +18,14 @@ export type TQASelect = {
 }
 
 export type TQAInput = {
-	label: string;
+	label?: string;
 	legend?: string;
-	value: string | number;
+	className?: string;
+	value?: string | number;
 	isDisabled?: boolean;
 	onSetMaxAmount?: () => void;
 	onChange?: (e: ChangeEvent<HTMLInputElement>) => void;
-}
+} & React.DetailedHTMLProps<React.InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>;
 
 export type TQAButton = {
 	label: string;
@@ -81,22 +82,26 @@ function QASwitch(): ReactElement {
 }
 
 function QAInput(props: TQAInput): ReactElement {
-	const {label, legend, value, isDisabled, onChange, onSetMaxAmount} = props;
+	const {className, label, legend, value, isDisabled, onChange, onSetMaxAmount, type, ...inputProps} = props;
 
 	return (
-		<div className={'w-full space-y-2'}>
-			<label htmlFor={label} className={'hidden text-base text-neutral-600 md:inline'}>
-				{label}
-			</label>
+		<div className={className ? className : 'w-full space-y-2'}>
+			{!!label && (
+				<label htmlFor={label} className={'hidden text-base text-neutral-600 md:inline'}>
+					{label}
+				</label>
+			)}
 			<div className={`flex h-10 items-center ${isDisabled ? 'bg-neutral-300' : 'bg-neutral-0'} p-2`}>
 				<div className={'flex h-10 w-full flex-row items-center justify-between py-4 px-0'}>
 					<input
-						id={label}
+						id={inputProps.id || label}
 						className={`w-full overflow-x-scroll border-none bg-transparent py-4 px-0 font-bold outline-none scrollbar-none ${isDisabled ? 'cursor-not-allowed' : 'cursor-default'}`}
-						type={'text'}
+						type={type || 'text'}
 						disabled={isDisabled}
 						value={value}
-						onChange={onChange} />
+						onChange={onChange}
+						{...inputProps}
+					/>
 					{onSetMaxAmount &&
 						<button
 							onClick={onSetMaxAmount}
