@@ -4,10 +4,8 @@ import VaultDetailsQuickActionsButtons from '@vaults/components/details/actions/
 import VaultDetailsQuickActionsFrom from '@vaults/components/details/actions/QuickActionsFrom';
 import VaultDetailsQuickActionsSwitch from '@vaults/components/details/actions/QuickActionsSwitch';
 import VaultDetailsQuickActionsTo from '@vaults/components/details/actions/QuickActionsTo';
+import SettingsPopover from '@vaults/components/SettingsPopover';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
-import {Solver, useSolver} from '@vaults/contexts/useSolver';
-
-import SettingsPopover from '../SettingsPopover';
 
 import type {ReactElement} from 'react';
 
@@ -22,7 +20,6 @@ const tabs: TTabsOptions[] = [
 ];
 function	VaultActionsTabsWrapper(): ReactElement {
 	const {onSwitchSelectedOptions, isDepositing} = useActionFlow();
-	const {effectiveSolver} = useSolver();
 
 	return (
 		<Fragment>
@@ -71,9 +68,7 @@ function	VaultActionsTabsWrapper(): ReactElement {
 							<div>
 								<VaultDetailsQuickActionsButtons />
 							</div>
-							<legend className={'hidden text-xs text-neutral-400 md:inline'}>
-								{[Solver.COWSWAP, Solver.PORTALS, Solver.WIDO].includes(effectiveSolver) ? `Zap provided by ${effectiveSolver}` : ''}&nbsp;
-							</legend>
+							<legend className={'hidden text-xs md:inline'}>&nbsp;</legend>
 						</div>
 					</div>
 				</Fragment>

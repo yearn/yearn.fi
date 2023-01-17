@@ -46,7 +46,7 @@ export type	TVotingEscrowContext = {
 	positions: TVotingEscrowPosition | undefined,
 	allowances: TDict<BigNumber>,
 	isLoading: boolean,
-	refresh: () => void,
+	refresh: VoidFunction,
 }
 const defaultProps: TVotingEscrowContext = {
 	votingEscrow: undefined,

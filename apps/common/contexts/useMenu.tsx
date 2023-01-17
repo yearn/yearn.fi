@@ -15,7 +15,7 @@ export type TCurrentMenu = {
 }
 export type TMenu = {
 	menu: TCurrentMenu,
-	onOpenMenu: () => void,
+	onOpenMenu: VoidFunction,
 }
 const	defaultProps: TMenu = {
 	menu: {

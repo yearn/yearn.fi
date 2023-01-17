@@ -63,7 +63,7 @@ export const ExtendedWalletContextApp = memo(function ExtendedWalletContextApp({
 		return {...updatedBalances, ...updatedExtendedBalances};
 	}, [updateBalances, refresh]);
 
-	useClientEffect((): () => void => {
+	useClientEffect((): VoidFunction => {
 		if (isLoadingBalances || isLoadingExtendedBalances) {
 			onLoadStart();
 		} else {

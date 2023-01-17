@@ -26,7 +26,7 @@ function	VaultDetailsQuickActionsTo(): ReactElement {
 						{`APY ${formatPercent((isDepositing ? currentVault?.apy?.net_apy || 0 : 0) * 100)}`}
 					</legend>
 				</div>
-				{possibleOptionsTo.length > 1 ? (
+				{!isDepositing && possibleOptionsTo.length > 1 ? (
 					<Dropdown
 						defaultOption={possibleOptionsTo[0]}
 						options={possibleOptionsTo}
