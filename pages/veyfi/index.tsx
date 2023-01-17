@@ -2,6 +2,7 @@ import React from 'react';
 import {ClaimTab} from '@veYFI/components/ClaimTab';
 import {LockTab} from '@veYFI/components/LockTab';
 import {ManageLockTab} from '@veYFI/components/ManageLockTab';
+import {VoteTab} from '@veYFI/components/VoteTab';
 import {useVotingEscrow} from '@veYFI/contexts/useVotingEscrow';
 import Wrapper from '@veYFI/Wrapper';
 import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -37,9 +38,10 @@ function Index(): ReactElement {
 			<Tabs
 				className={'min-h-[356px]'}
 				items={[
-					{id: 'lock', label: 'Lock YFI', content: <LockTab />},
-					{id: 'manage', label: 'Manage lock', content: <ManageLockTab />},
-					{id: 'claim', label: 'Claim', content: <ClaimTab />}
+					{id: 'lock', label: 'Lock YFI', content: <LockTab />}, 
+					{id: 'manage', label: 'Manage lock', content: <ManageLockTab />}, 
+					{id: 'claim', label: 'Claim', content: <ClaimTab />},
+					{id: 'vote', label: 'Vote for Gauge', content: <VoteTab />}
 				]} />
 
 		</>
