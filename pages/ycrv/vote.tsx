@@ -12,6 +12,7 @@ import {HeroTimer} from '@common/components/HeroTimer';
 import {useCurve} from '@common/contexts/useCurve';
 import {useWallet} from '@common/contexts/useWallet';
 import {useBalance} from '@common/hooks/useBalance';
+import {useTabs} from '@common/hooks/useTabs';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
 import GaugeList from '@yCRV/components/list/GaugeList';
 import {QuickActions} from '@yCRV/components/QuickActions';
@@ -21,44 +22,29 @@ import Wrapper from '@yCRV/Wrapper';
 
 import type {NextRouter} from 'next/router';
 import type {ChangeEvent, ReactElement} from 'react';
-import type {TQAInput, TQASelect, TQASwitch} from '@yCRV/components/QuickActions';
+import type {TQAInput, TQASelect} from '@yCRV/components/QuickActions';
 import type {TNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 
-function Vote(): ReactElement {
+function useDeposit(): ReactElement {
 	const {isActive} = useWeb3();
 	const {balances} = useWallet();
-	const {nextPeriod, userInfo} = useVLyCRV();
-	const {gauges, isLoadingGauges} = useCurve();
-	const [isLocking, set_isLocking] = useState(true);
 	const yCRVBalance = useBalance(YCRV.value);
-	const stYCRVBalance = useBalance(VL_YCRV.value);
 	const [amount, set_amount] = useState<TNormalizedBN | undefined>({raw: ethers.constants.Zero, normalized: 0});
 	const pricePerYCRV = useTokenPrice(toAddress(YCRV.value));
-	const pricePerSTYCRV = useTokenPrice(toAddress(VL_YCRV.value));
 
 	const fromSelectProps: TQASelect = useMemo((): TQASelect => {
-		if (isLocking) {
-			const legend = `You have ${formatAmount(yCRVBalance.normalized)} ${yCRVBalance?.symbol || 'tokens'}`;
-			return {label: 'From wallet', legend, options: [YCRV], selected: YCRV};
-		}
-		
-		const legend = `You have ${formatAmount(stYCRVBalance.normalized)} ${stYCRVBalance?.symbol || 'tokens'}`;
-		return {label: 'From vault', legend, options: [VL_YCRV], selected: VL_YCRV};
-	}, [isLocking, stYCRVBalance.normalized, stYCRVBalance?.symbol, yCRVBalance.normalized, yCRVBalance?.symbol]);
+		const legend = `You have ${formatAmount(yCRVBalance.normalized)} ${yCRVBalance?.symbol || 'tokens'}`;
+		return {label: 'From wallet', legend, options: [YCRV], selected: YCRV};
+	}, [yCRVBalance.normalized, yCRVBalance?.symbol]);
 
 	const maxLockingPossible = useMemo((): TNormalizedBN => {
-		if (isLocking) {
-			const balance = yCRVBalance.raw || ethers.constants.Zero;
-			return (toNormalizedBN(balance.toString(), yCRVBalance.decimals));
-		}
-		
-		const balance = stYCRVBalance.raw || ethers.constants.Zero;
-		return (toNormalizedBN(balance.toString(), stYCRVBalance.decimals));
-	}, [isLocking, stYCRVBalance.decimals, stYCRVBalance.raw, yCRVBalance.decimals, yCRVBalance.raw]);
+		const balance = yCRVBalance.raw || ethers.constants.Zero;
+		return (toNormalizedBN(balance.toString(), yCRVBalance.decimals));
+	}, [yCRVBalance.decimals, yCRVBalance.raw]);
 
 	const fromInputProps: TQAInput = useMemo((): TQAInput => ({
 		onChange: ({target: {value}}: ChangeEvent<HTMLInputElement>): void => {
-			const decimals = balances?.[toAddress(isLocking ? YCRV.value : VL_YCRV.value)]?.decimals || 18;
+			const decimals = balances?.[toAddress(YCRV.value)]?.decimals || 18;
 			if (value === '') {
 				set_amount(undefined);
 				return;
@@ -68,35 +54,131 @@ function Vote(): ReactElement {
 		value: amount ? amount.normalized : '',
 		onSetMaxAmount: (): void => set_amount(maxLockingPossible),
 		label: 'Amount',
-		legend: formatCounterValue(amount?.normalized || 0, isLocking ? pricePerYCRV : pricePerSTYCRV),
+		legend: formatCounterValue(amount?.normalized || 0, pricePerYCRV),
 		isDisabled: !isActive
-	}), [amount, balances, isActive, isLocking, maxLockingPossible, pricePerSTYCRV, pricePerYCRV]);
+	}), [amount, balances, isActive, maxLockingPossible, pricePerYCRV]);
 
-	const switchProps: TQASwitch = useMemo((): TQASwitch => ({
-		tooltipText: isLocking ? 'Withdraw' : 'Lock',
-		onSwitchFromTo: (): void => {
-			set_isLocking((prev): boolean => !prev);
-			set_amount(isLocking ? {raw: ethers.constants.Zero, normalized: 0} : maxLockingPossible);
-		}
-	}), [isLocking, maxLockingPossible]);
 	
-	const toSelectProps: TQASelect = useMemo((): TQASelect => {
-		if (isLocking) {
-			return {label: 'To vault', options: [VL_YCRV], selected: VL_YCRV};
-		}
-
-		return {label: 'To wallet', options: [YCRV], selected: YCRV};
-	}, [isLocking]);
-
 	const toInputProps: TQAInput = useMemo((): TQAInput => ({
 		value: amount?.normalized ?? 0,
-		label: 'You will receive',
+		label: 'You will get',
 		isDisabled: true
 	}), [amount]);
+	
+	return useMemo((): ReactElement => {
+		const toSelectProps: TQASelect = {label: 'To vault', options: [VL_YCRV], selected: VL_YCRV};
 
-	const buttonProps = {
-		label: isLocking ? 'Lock' : 'Withdraw'
-	};
+		const buttonProps = {
+			label: 'Deposit'
+		};
+
+		return (
+			<div
+				aria-label={'Quick Actions'}
+				className={'col-span-12 mb-4'}>
+				<Balancer>
+					<h2 suppressHydrationWarning className={'pb-2 text-lg font-bold md:pb-4 md:text-3xl'}>{'Get your vote on.'}</h2>
+					<p>{'Deposit vanilla yCRV for vote locked yCRV (vl-yCRV) and gain vote power for Curve voting. Each vote period lasts for two weeks, and your tokens cannot be withdrawn until the end of the following period.\nPlease note, vl-yCRV does not generate yield but maintains a 1:1 exchange rate with yCRV (so if yCRV increases in value, so will your vl-yCRV). '}</p>
+				</Balancer>
+				<div className={'col-span-12 flex flex-col space-x-0 space-y-2 py-4 md:flex-row md:space-x-4 md:space-y-0 md:py-8'}>
+					<QuickActions label={'voteFrom'}>
+						<QuickActions.Select {...fromSelectProps} />
+						<QuickActions.Input {...fromInputProps} />
+					</QuickActions>
+					<QuickActions.Switch />
+					<QuickActions label={'voteTo'}>
+						<QuickActions.Select {...toSelectProps} />
+						<QuickActions.Input {...toInputProps} />
+					</QuickActions>
+					<QuickActions.Button {...buttonProps} />
+				</div>
+			</div>
+		);
+	}, [fromInputProps, fromSelectProps, toInputProps]);
+}
+
+function useWithdraw(): ReactElement {
+	const {isActive} = useWeb3();
+	const {balances} = useWallet();
+	const stYCRVBalance = useBalance(VL_YCRV.value);
+	const [amount, set_amount] = useState<TNormalizedBN | undefined>({raw: ethers.constants.Zero, normalized: 0});
+	const pricePerSTYCRV = useTokenPrice(toAddress(VL_YCRV.value));
+
+	const fromSelectProps: TQASelect = useMemo((): TQASelect => {
+		const legend = `You have ${formatAmount(stYCRVBalance.normalized)} ${stYCRVBalance?.symbol || 'tokens'}`;
+		return {label: 'From vault', legend, options: [VL_YCRV], selected: VL_YCRV};
+	}, [stYCRVBalance.normalized, stYCRVBalance?.symbol]);
+
+	const maxLockingPossible = useMemo((): TNormalizedBN => {
+		const balance = stYCRVBalance.raw || ethers.constants.Zero;
+		return (toNormalizedBN(balance.toString(), stYCRVBalance.decimals));
+	}, [stYCRVBalance.decimals, stYCRVBalance.raw]);
+
+	const fromInputProps: TQAInput = useMemo((): TQAInput => ({
+		onChange: ({target: {value}}: ChangeEvent<HTMLInputElement>): void => {
+			const decimals = balances?.[toAddress(VL_YCRV.value)]?.decimals || 18;
+			if (value === '') {
+				set_amount(undefined);
+				return;
+			}
+			set_amount(handleInputChangeEventValue(value, decimals));
+		},
+		value: amount ? amount.normalized : '',
+		onSetMaxAmount: (): void => set_amount(maxLockingPossible),
+		label: 'Amount',
+		legend: formatCounterValue(amount?.normalized || 0, pricePerSTYCRV),
+		isDisabled: !isActive
+	}), [amount, balances, isActive, maxLockingPossible, pricePerSTYCRV]);
+
+	
+	const toInputProps: TQAInput = useMemo((): TQAInput => ({
+		value: amount?.normalized ?? 0,
+		label: 'You will get',
+		isDisabled: true
+	}), [amount]);
+	
+	return useMemo((): ReactElement => {
+		const toSelectProps: TQASelect = {label: 'To wallet', options: [YCRV], selected: YCRV};
+
+		const buttonProps = {
+			label: 'Withdraw'
+		};
+
+		return (
+			<div
+				aria-label={'Quick Actions'}
+				className={'col-span-12 mb-4'}>
+				<Balancer>
+					<h2 suppressHydrationWarning className={'pb-2 text-lg font-bold md:pb-4 md:text-3xl'}>{'{withdrawDescription}'}</h2>
+					<p>{'{withdrawDescription}'}</p>
+				</Balancer>
+				<div className={'col-span-12 flex flex-col space-x-0 space-y-2 py-4 md:flex-row md:space-x-4 md:space-y-0 md:py-8'}>
+					<QuickActions label={'voteFrom'}>
+						<QuickActions.Select {...fromSelectProps} />
+						<QuickActions.Input {...fromInputProps} />
+					</QuickActions>
+					<QuickActions.Switch />
+					<QuickActions label={'voteTo'}>
+						<QuickActions.Select {...toSelectProps} />
+						<QuickActions.Input {...toInputProps} />
+					</QuickActions>
+					<QuickActions.Button {...buttonProps} />
+				</div>
+			</div>
+		);
+	}, [fromInputProps, fromSelectProps, toInputProps]);
+}
+
+function Vote(): ReactElement {
+	const {nextPeriod, userInfo} = useVLyCRV();
+	const {gauges, isLoadingGauges} = useCurve();
+	const {component: Tabs, selectedTabId} = useTabs({
+		className: 'min-h-[356px]',
+		items: [
+			{id: 'deposit', label: 'Deposit', content: useDeposit()},
+			{id: 'withdraw', label: 'Withdraw', content: useWithdraw()}
+		]
+	});
 
 	const {balance, lastVoteTime, votesSpent} = userInfo;
 
@@ -137,31 +219,14 @@ function Vote(): ReactElement {
 					</div>
 				</div>
 			</div>
-			<section className={'mt-10 grid w-full grid-cols-12 pb-10 md:mt-0'}>
-				<div
-					aria-label={'Quick Actions'}
-					className={'col-span-12 mb-4 bg-neutral-200'}>
-					<div className={'p-4 pb-0 md:p-8 md:pb-0'}>
-						<Balancer>
-							<h2 suppressHydrationWarning className={'pb-2 text-lg font-bold md:pb-4 md:text-3xl'}>{'Get your vote on.'}</h2>
-							<p>{'Deposit vanilla yCRV for vote locked yCRV (vl-yCRV) and gain vote power for Curve voting. Each vote period lasts for two weeks, and your tokens cannot be withdrawn until the end of the following period.\nPlease note, vl-yCRV does not generate yield but maintains a 1:1 exchange rate with yCRV (so if yCRV increases in value, so will your vl-yCRV). '}</p>
-						</Balancer>
-					</div>
-					<div className={'col-span-12 flex flex-col space-x-0 space-y-2 p-4 md:flex-row md:space-x-4 md:space-y-0 md:p-8'}>
-						<QuickActions label={'voteFrom'}>
-							<QuickActions.Select {...fromSelectProps} />
-							<QuickActions.Input {...fromInputProps} />
-						</QuickActions>
-						<QuickActions.Switch {...switchProps} />
-						<QuickActions label={'voteTo'}>
-							<QuickActions.Select {...toSelectProps} />
-							<QuickActions.Input {...toInputProps} />
-						</QuickActions>
-						<QuickActions.Button {...buttonProps} />
-					</div>
-				</div>
-				<GaugeList gauges={gauges} isLoadingGauges={isLoadingGauges} />
-			</section>
+			<div className={'mb-10'}>
+				{Tabs}
+			</div>
+			{selectedTabId === 'deposit' && <GaugeList gauges={gauges} isLoadingGauges={isLoadingGauges} />}
+			{/* <section className={'mt-10 grid w-full grid-cols-12 pb-10 md:mt-0'}>
+			
+			</section> */}
+			
 		</>
 	);
 }

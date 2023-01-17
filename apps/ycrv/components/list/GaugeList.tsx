@@ -1,5 +1,4 @@
 import React, {useCallback, useMemo, useState} from 'react';
-import VaultListOptions from '@vaults/components/list/VaultListOptions';
 import {useSessionStorage} from '@yearn-finance/web-lib/hooks/useSessionStorage';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import ListHead from '@common/components/ListHead';
@@ -11,6 +10,7 @@ import {GaugeListRow} from './GaugeListRow';
 
 import type {ReactElement, ReactNode} from 'react';
 import type {TPossibleGaugesSortBy, TPossibleGaugesSortDirection} from '@yCRV/hooks/useSortGauges';
+import type {TDict} from '@yearn-finance/web-lib/utils/types';
 import type {TCurveGauges} from '@common/types/curves';
 
 type TProps = {
@@ -19,7 +19,9 @@ type TProps = {
 }
 
 function	GaugeList({gauges, isLoadingGauges}: TProps): ReactElement {
+	const	[votes, set_votes] = useState<TDict<boolean>>({});
 	const	[category, set_category] = useState('Standard');
+	const	[isSwitchEnabled, set_isSwitchEnabled] = useState(false);
 	const 	[searchValue, set_searchValue] = useSessionStorage('yCRVVoteSearchValue', '');
 	const	[sortBy, set_sortBy] = useState<TPossibleGaugesSortBy>('name');
 	const	[sortDirection, set_sortDirection] = useState<TPossibleGaugesSortDirection>('');
@@ -58,21 +60,27 @@ function	GaugeList({gauges, isLoadingGauges}: TProps): ReactElement {
 		}
 		return (
 			sortedGaugesToDisplay.map((gauge): ReactNode => {
-				if (!gauge) {
+				if (!gauge || (isSwitchEnabled && !votes[gauge.gauge])) {
 					return (null);
 				}
-				return <GaugeListRow key={gauge.name} gauge={gauge} />;
+				return <GaugeListRow
+					key={gauge.name}
+					gauge={gauge}
+					votes={votes}
+					set_votes={set_votes} />;
 			})
 		);
-	}, [category, isLoadingGauges, sortedGaugesToDisplay]);
+	}, [category, isLoadingGauges, isSwitchEnabled, sortedGaugesToDisplay, votes]);
+
+	const handleOnSwitch = (): void => {
+		set_isSwitchEnabled((p): boolean => !p);
+	};
 
 	return (
 		<div className={'relative col-span-12 flex w-full flex-col bg-neutral-100'}>
-			<div className={'absolute top-8 right-8'}>
-				<VaultListOptions />
-			</div>
 			<ListHero
-				headLabel={'Vote for Gauge'}
+				headLabel={'Vote for Gauges'}
+				switchProps={{isEnabled: isSwitchEnabled, onSwitch: handleOnSwitch}}
 				searchLabel={'Search'}
 				searchPlaceholder={'f-yfieth'}
 				categories={[
@@ -93,11 +101,9 @@ function	GaugeList({gauges, isLoadingGauges}: TProps): ReactElement {
 				onSort={onSort}
 				items={[
 					{label: 'Gauges', value: 'gauges', sortable: true},
-					{label: 'APY', value: 'apy', className: 'col-span-1', sortable: true},
-					{label: 'Current votes', value: 'current-votes', className: 'col-span-2', sortable: true},
 					{label: 'Your votes', value: 'your-votes', className: 'col-span-2', sortable: true},
-					{label: 'Put your votes', value: 'put-your-votes', className: 'col-span-2', sortable: true},
-					{label: '', value: '', className: 'col-span-1'}
+					{label: 'Put your votes', value: 'put-your-votes', className: 'col-span-4', sortable: true},
+					{label: '', value: '', className: 'col-span-2'}
 				]} />
 
 			{GaugeList}

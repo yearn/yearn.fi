@@ -31,7 +31,7 @@ export const VL_YCRV = {
 			alt={'vl-yCRV'}
 			width={24}
 			height={24}
-			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${VL_YCRV_TOKEN_ADDRESS}/logo-128.png`}
+			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YCRV_TOKEN_ADDRESS}/logo-128.png`}
 			loading={'eager'}
 			priority />
 	)
