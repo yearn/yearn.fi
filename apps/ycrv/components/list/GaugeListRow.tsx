@@ -2,6 +2,7 @@ import React from 'react';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
+import {formatPercent} from '@common/utils';
 
 import type {ReactElement} from 'react';
 import type {TCurveGauges} from '@common/types/curves';
@@ -27,15 +28,29 @@ function	GaugeListRow({gauge}: {gauge: TCurveGauges}): ReactElement {
 			</div>
 
 			<div className={'yearn--table-data-section'}>
-				<div className={'yearn--table-data-section-item justify-center md:col-span-1'} datatype={''}>
-					<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Multi Select'}</label>
-					<b className={'yearn--table-data-section-item-value'}>
-						<input type={'checkbox'} />
-					</b>
+				<div className={'yearn--table-data-section-item justify-center md:col-span-1'} datatype={'number'}>
+					<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'APY'}</label>
+					<p className={'yearn--table-data-section-item-value'}>
+						{formatPercent((0.1 || 0) * 100)}
+					</p>
 				</div>
 
-				<div className={'yearn--table-data-section-item md:col-span-5'} datatype={'number'}>
-					<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Number of yCrv votes'}</label>
+				<div className={'yearn--table-data-section-item justify-center md:col-span-2'} datatype={'number'}>
+					<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Current votes'}</label>
+					<p className={'yearn--table-data-section-item-value'}>
+						{Number(Math.random() * 1000).toFixed(0)}
+					</p>
+				</div>
+
+				<div className={'yearn--table-data-section-item justify-center md:col-span-2'} datatype={'number'}>
+					<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Your votes'}</label>
+					<p className={'yearn--table-data-section-item-value'}>
+						{Number(Math.random() * 1000).toFixed(0)}
+					</p>
+				</div>
+
+				<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
+					<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Put your votes'}</label>
 					<p className={'yearn--table-data-section-item-value w-full text-neutral-900'}>
 						<div className={'flex h-10 items-center bg-neutral-200 p-2'}>
 							<div className={'flex h-10 w-full flex-row items-center justify-between py-4 px-0'}>
@@ -43,13 +58,14 @@ function	GaugeListRow({gauge}: {gauge: TCurveGauges}): ReactElement {
 									id={'toAmount'}
 									className={'w-full cursor-default overflow-x-scroll border-none bg-transparent py-4 px-0 font-bold outline-none scrollbar-none'}
 									type={'text'}
-									value={0} />
+									placeholder={'0'}
+								/>
 							</div>
 						</div>
 					</p>
 				</div>
 
-				<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
+				<div className={'yearn--table-data-section-item md:col-span-1'} datatype={'number'}>
 					<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Action'}</label>
 					<p className={`yearn--table-data-section-item-value ${locked === 0 ? 'text-neutral-400' : 'text-neutral-900'}`}>
 						<Button
