@@ -34,7 +34,7 @@ function	VaultDetailsQuickActionsFrom(): ReactElement {
 						{`You have ${formatAmount(selectedFromBalance.normalized)} ${actionParams?.selectedOptionFrom?.symbol || 'tokens'}`}
 					</legend>
 				</div>
-				{isDepositing && possibleOptionsFrom.length > 1 ? (
+				{isActive && isDepositing && possibleOptionsFrom.length > 1 ? (
 					<Dropdown
 						defaultOption={possibleOptionsFrom[0]}
 						options={possibleOptionsFrom}

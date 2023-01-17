@@ -1,6 +1,7 @@
 import React from 'react';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useSolver} from '@vaults/contexts/useSolver';
+import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {Dropdown} from '@common/components/TokenDropdown';
@@ -10,6 +11,7 @@ import {formatPercent} from '@common/utils';
 import type {ReactElement} from 'react';
 
 function	VaultDetailsQuickActionsTo(): ReactElement {
+	const {isActive} = useWeb3();
 	const {currentVault, possibleOptionsTo, actionParams, onUpdateSelectedOptionTo, isDepositing} = useActionFlow();
 	const {expectedOut, isLoadingExpectedOut} = useSolver();
 
@@ -26,7 +28,7 @@ function	VaultDetailsQuickActionsTo(): ReactElement {
 						{`APY ${formatPercent((isDepositing ? currentVault?.apy?.net_apy || 0 : 0) * 100)}`}
 					</legend>
 				</div>
-				{!isDepositing && possibleOptionsTo.length > 1 ? (
+				{isActive && !isDepositing && possibleOptionsTo.length > 1 ? (
 					<Dropdown
 						defaultOption={possibleOptionsTo[0]}
 						options={possibleOptionsTo}
