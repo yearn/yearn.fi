@@ -12,7 +12,8 @@ import {formatBN, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigN
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
-import ExternalzapOutTokenList from '@common/utils/externalzapOutTokenList.json';
+
+import ExternalzapOutTokenList from '../../common/utils/externalZapOutTokenList.json';
 
 import type {ReactNode} from 'react';
 import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
