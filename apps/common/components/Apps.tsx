@@ -1,9 +1,10 @@
 import Image from 'next/image';
 import vaultsManifest from 'public/apps/vaults-manifest.json';
+import veyfiManifest from 'public/apps/veyfi-manifest.json';
 import ybribeManifest from 'public/apps/ybribe-manifest.json';
 import ycrvManifest from 'public/apps/ycrv-manifest.json';
-import homeManifest from 'public/manifest.json';
 import {VAULTS_MENU} from '@vaults/constants/menu';
+import {VEYFI_MENU} from '@veYFI/constants/menu';
 import {YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import LogoYearn from '@common/icons/LogoYearn';
 import {YBRIBE_MENU} from '@yBribe/constants/menu';
@@ -56,9 +57,9 @@ export const APPS: { [key in AppName]: TApp } = {
 	},
 	veYFI: {
 		name: AppName.VEYFI,
-		menu: [],
-		href: 'https://vote.yearn.finance',
-		manifest: homeManifest,
+		menu: VEYFI_MENU,
+		href: '/veyfi',
+		manifest: veyfiManifest,
 		icon: <LogoYearn
 			className={'h-8 w-8'}
 			back={'text-primary'}

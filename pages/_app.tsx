@@ -19,6 +19,7 @@ import	'../style.css';
 
 const aeonik = localFont({
 	variable: '--font-aeonik',
+	display: 'swap',
 	src: [
 		{
 			path: '../public/fonts/Aeonik-Regular.woff2',
@@ -49,7 +50,7 @@ const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 							initial={'initial'}
 							animate={'enter'}
 							exit={'exit'}
-							className={'rooooot my-0 h-full md:mb-0 md:mt-16'}
+							className={'my-0 h-full md:mb-0 md:mt-16'}
 							variants={variants}>
 							{getLayout(<Component router={props.router} {...pageProps} />, router)}
 						</motion.div>
@@ -63,7 +64,7 @@ const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 const App = memo(function App(props: AppProps): ReactElement {
 	const	{Component, pageProps, router} = props;
 	const	{manifest} = useCurrentApp(router);
-	
+
 	return (
 		<MenuContextApp>
 			<YearnContextApp>

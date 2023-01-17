@@ -25,7 +25,6 @@ pnpm-debug.log*
 .env
 .next
 .vercel
-.tsconfig.tsbuildinfo
 _app
 
 # Auto Generated PWA files
@@ -35,3 +34,5 @@ _app
 **/public/sw.js.map
 **/public/workbox-*.js.map
 **/public/worker-*.js.map
+
+tsconfig.tsbuildinfo
