@@ -42,7 +42,7 @@ export type TListHeroDesktopCategories<T> = {
 
 function	SearchBar({searchLabel, searchPlaceholder, searchValue, set_searchValue}: TListHeroSearchBar): ReactElement {
 	return (
-		<div className={'w-full'}>
+		<div className={'grow'}>
 			<label htmlFor={'search'} className={'text-neutral-600'}>{searchLabel}</label>
 			<div className={'mt-1 flex h-10 w-full max-w-md items-center border border-neutral-0 bg-neutral-0 p-2 md:w-2/3'}>
 				<div className={'relative flex h-10 w-full flex-row items-center justify-between'}>
@@ -160,7 +160,8 @@ function	ListHero<T extends string>({
 					set_searchValue={set_searchValue} />
 
 				{!!switchProps && (
-					<div className={'mb-2 self-end'}>
+					<div className={'mr-4 mt-7 flex h-full flex-row'}>
+						<small className={'mr-2'}>{'Hide gauges with 0 votes'}</small>
 						<Switch {...switchProps} />
 					</div>
 				)}

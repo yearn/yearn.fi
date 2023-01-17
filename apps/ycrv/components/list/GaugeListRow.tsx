@@ -4,7 +4,9 @@ import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {isNumber} from '@common/utils/isNumber';
 
-import type {Dispatch, ReactElement, SetStateAction} from 'react';
+import {QuickActions} from '../QuickActions';
+
+import type {ChangeEvent, Dispatch, ReactElement, SetStateAction} from 'react';
 import type {TDict} from '@yearn-finance/web-lib/utils/types';
 import type {TCurveGauges} from '@common/types/curves';
 
@@ -17,6 +19,20 @@ type TGaugeListRow = {
 function	GaugeListRow({gauge, votes, set_votes}: TGaugeListRow): ReactElement {
 	const [currentVotes, set_currentVotes] = useState<number>();
 	const locked = 0;
+
+	const handleVoteInput = (e: ChangeEvent<HTMLInputElement>): void => {
+		if (e.target.value === '') {
+			set_currentVotes(undefined);
+			set_votes((p): TDict<boolean> => ({...p, [gauge.gauge]: false}));
+			return;
+		}
+
+		if (isNumber(+e.target.value)) {
+			set_currentVotes(+e.target.value);
+			set_votes((p): TDict<boolean> => ({...p, [gauge.gauge]: true}));
+			return;
+		}
+	};
 
 	return (
 		<div className={'yearn--table-wrapper cursor-pointer transition-colors hover:bg-neutral-300'}>
@@ -46,28 +62,16 @@ function	GaugeListRow({gauge, votes, set_votes}: TGaugeListRow): ReactElement {
 				<div className={'yearn--table-data-section-item md:col-span-4'} datatype={'number'}>
 					<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Put your votes'}</label>
 					<p className={'yearn--table-data-section-item-value w-full text-neutral-900'}>
-						<div className={'flex h-10 items-center bg-neutral-200 p-2'}>
-							<div className={'flex h-10 w-full flex-row items-center justify-between py-4 px-0'}>
-								<input
-									id={'toAmount'}
-									className={'w-full cursor-default overflow-x-scroll border-none bg-transparent py-4 px-0 font-bold outline-none scrollbar-none'}
-									type={'number'}
+						<div className={'flex h-10 items-center bg-neutral-200'}>
+							<div className={'flex h-10 w-full flex-row items-center justify-between'}>
+								<QuickActions.Input
+									id={`${gauge.gauge}-votes`}
 									placeholder={'0'}
-									onChange={({target: {value}}): void => {
-										if (isNumber(+value)) {
-											set_currentVotes(+value);
-											set_votes((p): TDict<boolean> => ({
-												...p,
-												[gauge.gauge]: true
-											}));
-											return;
-										}
-										set_votes((p): TDict<boolean> => ({
-											...p,
-											[gauge.gauge]: false
-										}));
-									}}
+									type={'number'}
+									className={'w-full cursor-default overflow-x-scroll border-none bg-transparent py-4 px-0 font-bold outline-none scrollbar-none'}
 									value={currentVotes}
+									onSetMaxAmount={(): void => alert('Not implemented yet!')}
+									onChange={handleVoteInput}
 								/>
 							</div>
 						</div>
@@ -80,7 +84,6 @@ function	GaugeListRow({gauge, votes, set_votes}: TGaugeListRow): ReactElement {
 						<Button
 							onClick={(): void => alert(`${votes} for ${gauge.gauge}`)}
 							className={'w-full'}
-							isBusy={false}
 							isDisabled={!currentVotes}>
 							{'Vote'}
 						</Button>
