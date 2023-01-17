@@ -20,6 +20,7 @@ export const YCRV = {
 // TODO Move to web-lib
 const VL_YCRV_TOKEN_ADDRESS = '0xCCBD4579495cD78280e4900CB482C8Edf2EC8336';
 
+// TODO Add Image src
 export const VL_YCRV = {
 	label: 'vl-yCRV',
 	symbol: 'vl-yCRV',
