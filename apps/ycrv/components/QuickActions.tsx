@@ -17,11 +17,6 @@ export type TQASelect = {
 	onSelect?: (option: TDropdownOption) => void;
 }
 
-export type TQASwitch = {
-	tooltipText: string;
-	onSwitchFromTo: () => void;
-}
-
 export type TQAInput = {
 	label: string;
 	legend?: string;
@@ -72,21 +67,13 @@ function QASelect(props: TQASelect): ReactElement {
 	);
 }
 
-function QASwitch({tooltipText, onSwitchFromTo}: TQASwitch): ReactElement {
+function QASwitch(): ReactElement {
 	return (
 		<div className={'mx-auto flex w-full justify-center space-y-0 md:mx-none md:block md:w-14 md:space-y-2'}>
 			<label className={'hidden text-base md:inline'}>&nbsp;</label>
 
-			<div className={'tooltip top'}>
-				<Button onClick={onSwitchFromTo} className={'flex h-6 w-6 rotate-90 items-center justify-center bg-neutral-900 p-0 md:h-10 md:w-14 md:rotate-0'}>
-					<span className={'sr-only'}>{tooltipText}</span>
-					<IconArrowRight className={'w-4 text-neutral-0 md:w-[25px]'} />
-				</Button>
-				<span
-					className={'tooltiptext'}
-					style={{width: 120, marginRight: 'calc(-62px + 50%)'}}>
-					<p>{tooltipText}</p>
-				</span>
+			<div className={'flex h-6 w-6 rotate-90 items-center justify-center p-0 md:h-10 md:w-14 md:rotate-0'}>
+				<IconArrowRight className={'w-4 text-neutral-400 md:w-[25px]'} />
 			</div>
 			<legend className={'hidden text-xs md:inline'}>&nbsp;</legend>
 		</div>

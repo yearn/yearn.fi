@@ -16,18 +16,16 @@ function useSortGauges(
 		))
 	), [direction, gaugesList]);
 
-	const stringifiedVaultList = JSON.stringify(gaugesList);
 	const sortedVaults = useMemo((): TCurveGauges[] => {
-		const sortResult = JSON.parse(stringifiedVaultList);
 		if (direction === '') {
-			return sortResult;
+			return gaugesList;
 		}
 		if (sortBy === 'name') {
 			return sortedByName();
 		}
 
-		return sortResult;
-	}, [sortBy, direction, sortedByName, stringifiedVaultList]);
+		return gaugesList;
+	}, [direction, sortBy, gaugesList, sortedByName]);
 
 	return (sortedVaults);	
 }

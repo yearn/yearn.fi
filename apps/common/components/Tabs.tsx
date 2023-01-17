@@ -22,6 +22,10 @@ type TTabsProps = {
 	className?: string,
 }
 
+/**
+ * 
+ * @deprecated Use the hook `useTabs()` instead.
+ */
 function Tabs({items, className}: TTabsProps): ReactElement {
 	const [selectedTabId, set_selectedTabId] = useState(items[0]?.id);
 

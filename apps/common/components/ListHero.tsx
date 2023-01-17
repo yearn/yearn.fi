@@ -1,4 +1,5 @@
 import React, {useEffect, useState} from 'react';
+import {Switch as HeadlessSwitch} from '@headlessui/react';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {isValidCategory} from '@common/types/category';
 
@@ -11,8 +12,14 @@ export type TListHeroCategory<T> = {
 	isSelected?: boolean,
 }
 
+type TSwitchProps = {
+	isEnabled: boolean;
+	onSwitch?: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
 export type TListHero<T> = {
 	headLabel: string;
+	switchProps?: TSwitchProps;
 	searchLabel: string;
 	searchPlaceholder: string;
 	categories: TListHeroCategory<T>[][];
@@ -106,6 +113,34 @@ function	DesktopCategories<T>({categories, onSelect}: TListHeroDesktopCategories
 	);
 }
 
+function Switch(props: TSwitchProps): ReactElement {
+	const	{isEnabled, onSwitch} = props;
+	const	[isEnabledState, set_isEnabledState] = useState(isEnabled);
+
+	function	safeOnSwitch(): void {
+		if (onSwitch) {
+			onSwitch(!isEnabled);
+		} else {
+			set_isEnabledState(!isEnabledState);
+		}
+	}
+
+	return (
+		<div>
+			<HeadlessSwitch
+				checked={onSwitch ? isEnabled : isEnabledState}
+				onChange={safeOnSwitch}
+				onKeyDown={({keyCode}: {keyCode: number}): unknown => keyCode === 13 ? safeOnSwitch() : null}
+				className={'yearn--next-switch'}>
+				<span className={'sr-only'}>{'Use setting'}</span>
+				<div
+					aria-hidden={'true'}
+					className={(onSwitch ? isEnabled : isEnabledState) ? 'translate-x-[14px]' : 'translate-x-0'} />
+			</HeadlessSwitch>
+		</div>
+	);
+}
+
 function	ListHero<T extends string>({
 	headLabel,
 	searchLabel,
@@ -113,7 +148,8 @@ function	ListHero<T extends string>({
 	categories,
 	onSelect,
 	searchValue,
-	set_searchValue
+	set_searchValue,
+	switchProps
 }: TListHero<T>): ReactElement {
 	return (
 		<div className={'flex flex-col items-start justify-between space-x-0 px-4 pt-4 pb-2 md:px-10 md:pt-10 md:pb-8'}>
@@ -127,6 +163,12 @@ function	ListHero<T extends string>({
 					searchPlaceholder={searchPlaceholder}
 					searchValue={searchValue}
 					set_searchValue={set_searchValue} />
+
+				{!!switchProps && (
+					<div className={'mb-2 self-end'}>
+						<Switch {...switchProps} />
+					</div>
+				)}
 
 				<DesktopCategories
 					categories={categories}
