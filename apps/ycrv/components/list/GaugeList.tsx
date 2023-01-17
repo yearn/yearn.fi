@@ -72,15 +72,11 @@ function	GaugeList({gauges, isLoadingGauges}: TProps): ReactElement {
 		);
 	}, [category, isLoadingGauges, isSwitchEnabled, sortedGaugesToDisplay, votes]);
 
-	const handleOnSwitch = (): void => {
-		set_isSwitchEnabled((p): boolean => !p);
-	};
-
 	return (
 		<div className={'relative col-span-12 flex w-full flex-col bg-neutral-100'}>
 			<ListHero
 				headLabel={'Vote for Gauges'}
-				switchProps={{isEnabled: isSwitchEnabled, onSwitch: handleOnSwitch}}
+				switchProps={{isEnabled: isSwitchEnabled, onSwitch: (): void => set_isSwitchEnabled((p): boolean => !p)}}
 				searchLabel={'Search'}
 				searchPlaceholder={'f-yfieth'}
 				categories={[

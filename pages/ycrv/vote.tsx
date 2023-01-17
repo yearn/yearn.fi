@@ -55,7 +55,8 @@ function useDeposit(): ReactElement {
 		onSetMaxAmount: (): void => set_amount(maxLockingPossible),
 		label: 'Amount',
 		legend: formatCounterValue(amount?.normalized || 0, pricePerYCRV),
-		isDisabled: !isActive
+		isDisabled: !isActive,
+		placeholder: '0'
 	}), [amount, balances, isActive, maxLockingPossible, pricePerYCRV]);
 
 	
@@ -127,7 +128,8 @@ function useWithdraw(): ReactElement {
 		onSetMaxAmount: (): void => set_amount(maxLockingPossible),
 		label: 'Amount',
 		legend: formatCounterValue(amount?.normalized || 0, pricePerSTYCRV),
-		isDisabled: !isActive
+		isDisabled: !isActive,
+		placeholder: '0'
 	}), [amount, balances, isActive, maxLockingPossible, pricePerSTYCRV]);
 
 	
