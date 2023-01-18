@@ -66,7 +66,7 @@ function	GaugeListRow({gauge, votes, set_votes}: TGaugeListRow): ReactElement {
 					</p>
 				</div>
 
-				<div className={'yearn--table-data-section-item md:col-span-3'}>
+				<div className={'yearn--table-data-section-item md:col-span-3 md:pt-2'}>
 					<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Put your votes'}</label>
 					<p className={'yearn--table-data-section-item-value w-full text-neutral-900'}>
 						<div className={'flex h-10 items-center bg-neutral-200'}>
@@ -75,7 +75,7 @@ function	GaugeListRow({gauge, votes, set_votes}: TGaugeListRow): ReactElement {
 									id={`${gauge.gauge}-votes`}
 									placeholder={'0'}
 									type={'number'}
-									className={'w-full cursor-default overflow-x-scroll border-none bg-transparent py-4 px-0 font-bold outline-none scrollbar-none'}
+									className={'w-full cursor-default overflow-x-scroll border-none bg-transparent px-0 font-bold outline-none scrollbar-none'}
 									value={currentVotes}
 									onSetMaxAmount={(): void => alert('Not implemented yet!')}
 									onChange={handleVoteInput}
@@ -85,7 +85,7 @@ function	GaugeListRow({gauge, votes, set_votes}: TGaugeListRow): ReactElement {
 					</p>
 				</div>
 
-				<div className={'yearn--table-data-section-item md:col-span-1'}>
+				<div className={'yearn--table-data-section-item md:col-span-1 md:pt-2'}>
 					<label className={'yearn--table-data-section-item-label !font-aeonik'}>{}</label>
 					<p className={`yearn--table-data-section-item-value ${locked === 0 ? 'text-neutral-400' : 'text-neutral-900'}`}>
 						<Button
