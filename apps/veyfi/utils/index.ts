@@ -1,7 +1,7 @@
 import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {roundToWeek, toSeconds, YEAR} from '@yearn-finance/web-lib/utils/time';
 
-import type {BigNumber} from 'ethers';
+import type {BigNumber, ethers} from 'ethers';
 import type {TMilliseconds, TSeconds} from '@yearn-finance/web-lib/utils/time';
 import type {TDict} from '@yearn-finance/web-lib/utils/types';
 
@@ -21,3 +21,18 @@ export function getVotingPower(lockAmount: BigNumber, unlockTime: TMilliseconds)
 export const keyBy = <T1, T2 extends keyof T1 & string>(array: T1[], key: T2): TDict<T1 | undefined> => 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	(array || []).reduce((r, x): TDict<T1> => ({...r, [(x as any)[key]]: x}), {});
+
+export const handleTx = async (txPromise: Promise<ethers.providers.TransactionResponse>): Promise<boolean> => {
+	try {
+		const tx = await txPromise;
+		const receipt = await tx.wait();
+		if (receipt.status === 0) {
+			console.error('Fail to perform transaction');
+			return false;
+		}
+		return true;
+	} catch (error) {
+		console.error(error);
+		return false;
+	}
+};
