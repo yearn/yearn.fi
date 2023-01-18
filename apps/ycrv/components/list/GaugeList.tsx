@@ -15,14 +15,14 @@ import type {TCurveGauges} from '@common/types/curves';
 
 type TProps = {
 	gauges: TCurveGauges[];
-	isLoadingGauges: boolean;
+	isLoading: boolean;
 }
 
-function	GaugeList({gauges, isLoadingGauges}: TProps): ReactElement {
-	const	[votes, set_votes] = useState<TDict<boolean>>({});
-	const	[category, set_category] = useState('Standard');
+function	GaugeList({gauges, isLoading}: TProps): ReactElement {
+	const	[votes, set_votes] = useState<TDict<number | undefined>>({});
+	const	[category, set_category] = useState('All');
 	const	[isSwitchEnabled, set_isSwitchEnabled] = useState(false);
-	const 	[searchValue, set_searchValue] = useSessionStorage('yCRVVoteSearchValue', '');
+	const 	[searchValue, set_searchValue] = useSessionStorage('yCRVGaugeSearchValue', '');
 	const	[sortBy, set_sortBy] = useState<TPossibleGaugesSortBy>('name');
 	const	[sortDirection, set_sortDirection] = useState<TPossibleGaugesSortDirection>('');
 
@@ -45,32 +45,44 @@ function	GaugeList({gauges, isLoadingGauges}: TProps): ReactElement {
 		});
 	}, []);
 
+	/**
+	 * Checks if there are no votes in all gauges
+	 * Returns `true` if there are no votes; `false` otherwise.
+	 */
+	const	isVotesEmpty = useCallback((): boolean => Object.values(votes).length === 0, [votes]);
+
 	/* 🔵 - Yearn Finance **************************************************************************
 	**	The GaugeList component is memoized to prevent it from being re-created on every render.
 	**	It contains either the list of gauges, is some are available, or a message to the user.
 	**********************************************************************************************/
 	const	GaugeList = useMemo((): ReactNode => {
-		if (isLoadingGauges || sortedGaugesToDisplay.length === 0) {
+		const gauges = sortedGaugesToDisplay.map((gauge): ReactElement | null => {
+			if (!gauge || isSwitchEnabled && !votes[gauge.gauge]) {
+				return null;
+			}
+
 			return (
-				<GaugeListEmpty
-					isLoading={isLoadingGauges}
-					gauges={sortedGaugesToDisplay}
-					currentCategory={category} />
-			);	
-		}
-		return (
-			sortedGaugesToDisplay.map((gauge): ReactNode => {
-				if (!gauge || (isSwitchEnabled && !votes[gauge.gauge])) {
-					return (null);
-				}
-				return <GaugeListRow
+				<GaugeListRow
 					key={gauge.gauge}
 					gauge={gauge}
 					votes={votes}
-					set_votes={set_votes} />;
-			})
-		);
-	}, [category, isLoadingGauges, isSwitchEnabled, sortedGaugesToDisplay, votes]);
+					set_votes={set_votes} />
+			);
+		});
+
+		if (gauges.length === 0 || (isVotesEmpty() && isSwitchEnabled)) {
+			return (
+				<GaugeListEmpty
+					isSwitchEnabled={isSwitchEnabled}
+					searchValue={searchValue}
+					category={category}
+					set_category={set_category}
+				/>
+			);
+		}
+
+		return gauges;
+	}, [category, isSwitchEnabled, isVotesEmpty, searchValue, sortedGaugesToDisplay, votes]);
 
 	return (
 		<div className={'relative col-span-12 flex w-full flex-col bg-neutral-100'}>
@@ -81,8 +93,8 @@ function	GaugeList({gauges, isLoadingGauges}: TProps): ReactElement {
 				searchPlaceholder={'f-yfieth'}
 				categories={[
 					[
-						{value: 'Standard', label: 'Standard', isSelected: category === 'Standard'},
-						{value: 'Factory', label: 'Factory', isSelected: category === 'Factory'},
+						// {value: 'Standard', label: 'Standard', isSelected: category === 'Standard'},
+						// {value: 'Factory', label: 'Factory', isSelected: category === 'Factory'},
 						{value: 'All', label: 'All', isSelected: category === 'All'}
 
 					]
@@ -103,7 +115,7 @@ function	GaugeList({gauges, isLoadingGauges}: TProps): ReactElement {
 					{label: '', value: '', className: 'col-span-1'}
 				]} />
 
-			{GaugeList}
+			{isLoading ? <GaugeListEmpty isLoading category={category} /> : GaugeList}
 		</div>
 	);
 }

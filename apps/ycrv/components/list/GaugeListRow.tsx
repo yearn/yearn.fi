@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React from 'react';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
@@ -12,24 +12,20 @@ import type {TCurveGauges} from '@common/types/curves';
 
 type TGaugeListRow = {
 	gauge: TCurveGauges;
-	votes?: TDict<boolean>;
-	set_votes: Dispatch<SetStateAction<TDict<boolean>>>
+	votes: TDict<number | undefined>;
+	set_votes: Dispatch<SetStateAction<TDict<number | undefined>>>
 }
 
-function	GaugeListRow({gauge, votes, set_votes}: TGaugeListRow): ReactElement {
-	const [currentVotes, set_currentVotes] = useState<number>();
-	const locked = 0;
+function	GaugeListRow({gauge, votes, set_votes}: TGaugeListRow): ReactElement | null {
+	const currentVotes = votes[gauge.gauge];
 
-	const handleVoteInput = (e: ChangeEvent<HTMLInputElement>): void => {
-		if (e.target.value === '') {
-			set_currentVotes(undefined);
-			set_votes((p): TDict<boolean> => ({...p, [gauge.gauge]: false}));
+	const handleVoteInput = ({target: {value}}: ChangeEvent<HTMLInputElement>): void => {
+		if (value === '') {
+			set_votes((p): TDict<number | undefined> => ({...p, [gauge.gauge]: undefined}));
 			return;
 		}
-
-		if (isNumber(+e.target.value)) {
-			set_currentVotes(+e.target.value);
-			set_votes((p): TDict<boolean> => ({...p, [gauge.gauge]: true}));
+		if (isNumber(+value)) {
+			set_votes((p): TDict<number | undefined> => ({...p, [gauge.gauge]: +value}));
 			return;
 		}
 	};
@@ -87,9 +83,9 @@ function	GaugeListRow({gauge, votes, set_votes}: TGaugeListRow): ReactElement {
 
 				<div className={'yearn--table-data-section-item md:col-span-1 md:pt-2'}>
 					<label className={'yearn--table-data-section-item-label !font-aeonik'}>{}</label>
-					<p className={`yearn--table-data-section-item-value ${locked === 0 ? 'text-neutral-400' : 'text-neutral-900'}`}>
+					<p className={'yearn--table-data-section-item-value'}>
 						<Button
-							onClick={(): void => alert(`${votes} for ${gauge.gauge}`)}
+							onClick={(): void => alert(`${currentVotes} for ${gauge.gauge}`)}
 							className={'grow'}
 							isDisabled={!currentVotes}>
 							{'Vote'}
