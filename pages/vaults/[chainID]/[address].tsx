@@ -47,7 +47,7 @@ function Index({router, vaultData}: {router: NextRouter, vaultData: TYearnVault}
 					initial={'initial'}
 					animate={'enter'}
 					variants={variants}
-					className={'absolute z-50 mt-0 h-12 w-12 cursor-pointer md:-mt-36 md:h-[72px] md:w-[72px]'}>
+					className={'z-50 -mt-6 h-12 w-12 cursor-pointer md:-mt-36 md:h-[72px] md:w-[72px]'}>
 					<ImageWithFallback
 						src={`${process.env.BASE_YEARN_ASSETS_URI}/${safeChainID}/${toAddress(currentVault.current.token.address)}/logo-128.png`}
 						alt={''}
@@ -56,7 +56,7 @@ function Index({router, vaultData}: {router: NextRouter, vaultData: TYearnVault}
 				</motion.div>
 			</header>
 
-			<section className={'mt-10 grid w-full grid-cols-12 pb-10 md:mt-0'}>
+			<section className={'mt-4 grid w-full grid-cols-12 pb-10 md:mt-0'}>
 				<VaultDetailsHeader currentVault={currentVault.current} />
 				<ActionFlowContextApp currentVault={currentVault.current}>
 					<WithSolverContextApp>
