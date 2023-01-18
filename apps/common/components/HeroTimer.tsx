@@ -10,7 +10,7 @@ type TProps = {
 	endTime?: number;
 }
 
-function	computeTimeLeft({endTime}: {endTime?: number}): number {
+export function	computeTimeLeft({endTime}: {endTime?: number}): number {
 	if (!endTime) {
 		return 0;
 	}
