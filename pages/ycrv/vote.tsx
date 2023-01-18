@@ -240,7 +240,7 @@ function Vote(): ReactElement {
 			<div className={'mb-10'}>
 				{Tabs}
 			</div>
-			<GaugeList gauges={gauges} isLoadingGauges={isLoadingGauges} />
+			<GaugeList gauges={gauges} isLoading={isLoadingGauges} />
 		</>
 	);
 }
