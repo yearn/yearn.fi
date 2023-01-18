@@ -41,7 +41,7 @@ function	VaultDetailsQuickActionsFrom(): ReactElement {
 						selected={actionParams?.selectedOptionFrom}
 						onSelect={onUpdateSelectedOptionFrom} />
 				) : (
-					<div className={'flex h-10 w-full items-center justify-between bg-neutral-100 px-2 text-base text-neutral-900 md:px-3'}>
+					<div className={'flex h-10 w-full items-center justify-between bg-neutral-300 px-2 text-base text-neutral-900 md:px-3'}>
 						<div className={'relative flex flex-row items-center'}>
 							<div className={'h-6 w-6 rounded-full'}>
 								{actionParams?.selectedOptionFrom?.icon}
