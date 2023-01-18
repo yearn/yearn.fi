@@ -5,15 +5,15 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatToNormalizedValue, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
-import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
-import {HeroTimer} from '@common/components/HeroTimer';
+import {computeTimeLeft, HeroTimer} from '@common/components/HeroTimer';
 import {useCurve} from '@common/contexts/useCurve';
 import {useWallet} from '@common/contexts/useWallet';
 import {useBalance} from '@common/hooks/useBalance';
 import {useTabs} from '@common/hooks/useTabs';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
+import {formatDateShort} from '@common/utils';
 import GaugeList from '@yCRV/components/list/GaugeList';
 import {QuickActions} from '@yCRV/components/QuickActions';
 import {VL_YCRV, YCRV} from '@yCRV/constants/tokens';
@@ -167,16 +167,20 @@ function HowItWorks(): ReactElement {
 	return (
 		<div
 			aria-label={'Quick Actions'}
-			className={'col-span-12 mb-4'}>
+			className={'col-span-12'}>
 			<Balancer>
-				<h2 suppressHydrationWarning className={'pb-2 text-lg font-bold md:pb-4 md:text-3xl'}>{'Get your vote on.'}</h2>
-				<p>{'Deposit vanilla yCRV for vote locked yCRV (vl-yCRV) and gain vote power for Curve voting. Each vote period lasts for two weeks, and your tokens cannot be withdrawn until the end of the following period.\nPlease note, vl-yCRV does not generate yield but maintains a 1:1 exchange rate with yCRV (so if yCRV increases in value, so will your vl-yCRV). '}</p>
+				<h2 suppressHydrationWarning className={'pb-2 text-lg font-bold md:pb-4 md:text-3xl'}>{'Deposit'}</h2>
+				<p>{'Deposit vanilla yCRV for vote locked yCRV (vl-yCRV) and gain vote power for Curve voting. Let’s learn about the fun way that Curve voting works. Each vote period lasts for two weeks, and once you vote in the ‘current period’ (as shown below) your tokens cannot be withdrawn until after the ‘next period’. Voting in the next period (once it becomes the current period) would again lock your tokens for a further period. Please note, vl-yCRV does not generate yield but maintains a 1:1 exchange rate with yCRV (so if yCRV increases in value, so will your vl-yCRV).'}</p>
+				<h2 suppressHydrationWarning className={'mt-4 pb-2 text-lg font-bold md:mt-8 md:pb-4 md:text-3xl'}>{'Withdraw'}</h2>
+				<p>{'Once you vote in the ‘current period’ (as shown below), you must wait until the end of the ‘next period’ in order to withdraw your vl-yCRV back to yCRV. However, if you choose to also vote in the ‘next period’ once it becomes the ‘current period’ you would then have to wait until the end of the following period (without voting in it) in order to withdraw. In other words, once you vote in the ‘current period’ you must wait for the ‘next period’ to end without voting in it to withdraw. Who said DeFi was complicated...'}</p>
 			</Balancer>
+			<p className={'mt-4 border p-8'}>{'{diagram}'}</p>
 		</div>
 	);
 }
 
 function Vote(): ReactElement {
+	const {isActive} = useWeb3();
 	const {nextPeriod, userInfo} = useVLyCRV();
 	const {gauges, isLoadingGauges} = useCurve();
 	const {component: Tabs} = useTabs({
@@ -188,24 +192,31 @@ function Vote(): ReactElement {
 	});
 
 	const {balance, lastVoteTime, votesSpent} = userInfo;
-
 	const totalVotes = formatToNormalizedValue(balance);
 	const remainingVotesForThisPeriod = formatToNormalizedValue(balance.sub(votesSpent));
+
+	const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+	const timeLeft = computeTimeLeft({endTime: nextPeriod});
+	const isLessThan1Day = isActive && !!nextPeriod && timeLeft < ONE_DAY_MS;
 
 	return (
 		<>
 			<HeroTimer endTime={nextPeriod} />
 			<div className={'mt-8 mb-10 w-full max-w-6xl text-center'}>
 				<div className={'mb-10 md:mb-14'}>
-					<b className={'text-center text-lg md:text-2xl'}>{'Time left till next period'}</b>
+					{isLessThan1Day ? 
+						<p className={'text-2xl font-bold text-[#8F0000]'}>{'Last day to vote!'}</p>
+						:
+						<b className={'text-center text-lg md:text-2xl'}>{'Time left till next period'}</b>
+					}
 				</div>
 				<div className={'grid grid-cols-1 gap-6 md:grid-cols-3 md:gap-12'}>
 					<div className={'flex flex-col items-center justify-center space-y-1 md:space-y-2'}>
 						<b className={'font-number text-lg md:text-3xl'} suppressHydrationWarning>
 							{totalVotes}
 						</b>
-						<legend className={'font-number text-xxs text-neutral-600 md:text-xs'} suppressHydrationWarning>
-							{'Total Votes'}
+						<legend className={'text-xxs text-neutral-600 md:text-xs'} suppressHydrationWarning>
+							{'Your total votes'}
 						</legend>
 					</div>
 
@@ -213,15 +224,15 @@ function Vote(): ReactElement {
 						<b className={'font-number text-lg md:text-3xl'} suppressHydrationWarning>
 							{remainingVotesForThisPeriod}
 						</b>
-						<legend className={'text-xxs text-neutral-600 md:text-xs'}>{'Remaining Votes for this period'}</legend>
+						<legend className={'text-xxs text-neutral-600 md:text-xs'}>{'Your remaining votes'}</legend>
 					</div>
 
 					<div className={'flex flex-col items-center justify-center space-y-1 md:space-y-2'}>
 						<b className={'font-number text-lg md:text-3xl'} suppressHydrationWarning>
-							{formatDate(lastVoteTime)}
+							{lastVoteTime ? formatDateShort(lastVoteTime) : '—'}
 						</b>
-						<legend className={'font-number text-xxs text-neutral-600 md:text-xs'} suppressHydrationWarning>
-							{'Last vote'}
+						<legend className={'text-xxs text-neutral-600 md:text-xs'} suppressHydrationWarning>
+							{'Your last vote'}
 						</legend>
 					</div>
 				</div>
