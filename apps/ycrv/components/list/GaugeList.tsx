@@ -64,7 +64,7 @@ function	GaugeList({gauges, isLoadingGauges}: TProps): ReactElement {
 					return (null);
 				}
 				return <GaugeListRow
-					key={gauge.name}
+					key={gauge.gauge}
 					gauge={gauge}
 					votes={votes}
 					set_votes={set_votes} />;
