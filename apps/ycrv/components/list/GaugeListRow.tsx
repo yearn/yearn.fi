@@ -53,13 +53,20 @@ function	GaugeListRow({gauge, votes, set_votes}: TGaugeListRow): ReactElement {
 
 			<div className={'yearn--table-data-section'}>
 				<div className={'yearn--table-data-section-item justify-center md:col-span-2'} datatype={'number'}>
+					<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Current votes'}</label>
+					<p className={'yearn--table-data-section-item-value'}>
+						{0}
+					</p>
+				</div>
+
+				<div className={'yearn--table-data-section-item justify-center md:col-span-2'} datatype={'number'}>
 					<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Your votes'}</label>
 					<p className={'yearn--table-data-section-item-value'}>
 						{0}
 					</p>
 				</div>
 
-				<div className={'yearn--table-data-section-item md:col-span-4'} datatype={'number'}>
+				<div className={'yearn--table-data-section-item md:col-span-3'}>
 					<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Put your votes'}</label>
 					<p className={'yearn--table-data-section-item-value w-full text-neutral-900'}>
 						<div className={'flex h-10 items-center bg-neutral-200'}>
@@ -78,12 +85,12 @@ function	GaugeListRow({gauge, votes, set_votes}: TGaugeListRow): ReactElement {
 					</p>
 				</div>
 
-				<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
-					<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Action'}</label>
+				<div className={'yearn--table-data-section-item md:col-span-1'}>
+					<label className={'yearn--table-data-section-item-label !font-aeonik'}>{}</label>
 					<p className={`yearn--table-data-section-item-value ${locked === 0 ? 'text-neutral-400' : 'text-neutral-900'}`}>
 						<Button
 							onClick={(): void => alert(`${votes} for ${gauge.gauge}`)}
-							className={'w-full'}
+							className={'grow'}
 							isDisabled={!currentVotes}>
 							{'Vote'}
 						</Button>
