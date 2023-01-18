@@ -4,26 +4,12 @@ import {approveERC20} from '@common/utils/actions';
 import SNAPSHOT_DELEGATE_REGISTRY_ABI from '../abi/SnapshotDelegateRegistry.abi';
 import VEYFI_ABI from '../abi/veYFI.abi';
 import {SNAPSHOT_DELEGATE_REGISTRY_ADDRESS, YEARN_SNAPSHOT_SPACE} from '../constants';
+import {handleTx} from '..';
 
 import type {BigNumber} from 'ethers';
 import type {Connector} from 'wagmi';
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TSeconds} from '@yearn-finance/web-lib/utils/time';
-
-const handleTx = async (txPromise: Promise<ethers.providers.TransactionResponse>): Promise<boolean> => {
-	try {
-		const tx = await txPromise;
-		const receipt = await tx.wait();
-		if (receipt.status === 0) {
-			console.error('Fail to perform transaction');
-			return false;
-		}
-		return true;
-	} catch (error) {
-		console.error(error);
-		return false;
-	}
-};
 
 export async function approveLock(
 	provider: Connector,
