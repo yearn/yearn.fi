@@ -1,6 +1,6 @@
 import {useCallback, useMemo, useRef, useState} from 'react';
 import {ethers} from 'ethers';
-import {getTokenAllowance as wiGetTokenAllowance, getWidoContractAddress, quote as wiQuote} from 'wido';
+import {getTokenAllowance as wiGetTokenAllowance, getWidoSpender, quote as wiQuote} from 'wido';
 import {Solver} from '@vaults/contexts/useSolver';
 import {useAsync} from '@vaults/hooks/useAsync';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
@@ -165,7 +165,8 @@ export function useSolverWido(): TSolverContext {
 
 		const {allowance} = await wiGetTokenAllowance({
 			chainId: 1,
-			tokenAddress: toAddress(request.current.inputToken.value),
+			fromToken: toAddress(request.current.inputToken.value),
+			toToken: toAddress(request.current.outputToken.value),
 			accountAddress: toAddress(request.current.from)
 		});
 		return toNormalizedBN(allowance, request.current.inputToken.decimals);
@@ -184,18 +185,22 @@ export function useSolverWido(): TSolverContext {
 		if (!latestQuote?.current || !request?.current) {
 			return;
 		}
-		const	widoRelayerAddress = toAddress(await getWidoContractAddress(1));
+		const	widoSpenderAddress = toAddress(await getWidoSpender({
+			chainId: 1,
+			fromToken: toAddress(request.current.inputToken.value),
+			toToken: toAddress(request.current.outputToken.value)
+		}));
 		const	isApproved = await isApprovedERC20(
 			provider as ethers.providers.Web3Provider,
 			toAddress(request.current.inputToken.value), //token to approve
-			widoRelayerAddress, //Wido relayer
+			widoSpenderAddress, //contract to approve
 			amount
 		);
 		if (!isApproved) {
 			new Transaction(provider, approveERC20, txStatusSetter)
 				.populate(
 					toAddress(request.current.inputToken.value), //token to approve
-					widoRelayerAddress, //Wido relayer
+					widoSpenderAddress, //contract to approve
 					amount
 				)
 				.onSuccess(onSuccess)
