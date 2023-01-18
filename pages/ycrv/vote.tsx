@@ -25,7 +25,7 @@ import type {ChangeEvent, ReactElement} from 'react';
 import type {TQAInput, TQASelect} from '@yCRV/components/QuickActions';
 import type {TNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 
-function useDeposit(): ReactElement {
+function Deposit(): ReactElement {
 	const {isActive} = useWeb3();
 	const {balances} = useWallet();
 	const yCRVBalance = useBalance(YCRV.value);
@@ -77,11 +77,7 @@ function useDeposit(): ReactElement {
 			<div
 				aria-label={'Quick Actions'}
 				className={'col-span-12 mb-4'}>
-				<Balancer>
-					<h2 suppressHydrationWarning className={'pb-2 text-lg font-bold md:pb-4 md:text-3xl'}>{'Get your vote on.'}</h2>
-					<p>{'Deposit vanilla yCRV for vote locked yCRV (vl-yCRV) and gain vote power for Curve voting. Each vote period lasts for two weeks, and your tokens cannot be withdrawn until the end of the following period.\nPlease note, vl-yCRV does not generate yield but maintains a 1:1 exchange rate with yCRV (so if yCRV increases in value, so will your vl-yCRV). '}</p>
-				</Balancer>
-				<div className={'col-span-12 flex flex-col space-x-0 space-y-2 py-4 md:flex-row md:space-x-4 md:space-y-0 md:py-8'}>
+				<div className={'col-span-12 flex flex-col space-x-0 space-y-2 md:flex-row md:space-x-4 md:space-y-0'}>
 					<QuickActions label={'voteFrom'}>
 						<QuickActions.Select {...fromSelectProps} />
 						<QuickActions.Input {...fromInputProps} />
@@ -98,7 +94,7 @@ function useDeposit(): ReactElement {
 	}, [fromInputProps, fromSelectProps, toInputProps]);
 }
 
-function useWithdraw(): ReactElement {
+function Withdraw(): ReactElement {
 	const {isActive} = useWeb3();
 	const {balances} = useWallet();
 	const stYCRVBalance = useBalance(VL_YCRV.value);
@@ -150,11 +146,7 @@ function useWithdraw(): ReactElement {
 			<div
 				aria-label={'Quick Actions'}
 				className={'col-span-12 mb-4'}>
-				<Balancer>
-					<h2 suppressHydrationWarning className={'pb-2 text-lg font-bold md:pb-4 md:text-3xl'}>{'{withdrawDescription}'}</h2>
-					<p>{'{withdrawDescription}'}</p>
-				</Balancer>
-				<div className={'col-span-12 flex flex-col space-x-0 space-y-2 py-4 md:flex-row md:space-x-4 md:space-y-0 md:py-8'}>
+				<div className={'col-span-12 flex flex-col space-x-0 space-y-2 md:flex-row md:space-x-4 md:space-y-0'}>
 					<QuickActions label={'voteFrom'}>
 						<QuickActions.Select {...fromSelectProps} />
 						<QuickActions.Input {...fromInputProps} />
@@ -171,14 +163,27 @@ function useWithdraw(): ReactElement {
 	}, [fromInputProps, fromSelectProps, toInputProps]);
 }
 
+function HowItWorks(): ReactElement {
+	return (
+		<div
+			aria-label={'Quick Actions'}
+			className={'col-span-12 mb-4'}>
+			<Balancer>
+				<h2 suppressHydrationWarning className={'pb-2 text-lg font-bold md:pb-4 md:text-3xl'}>{'Get your vote on.'}</h2>
+				<p>{'Deposit vanilla yCRV for vote locked yCRV (vl-yCRV) and gain vote power for Curve voting. Each vote period lasts for two weeks, and your tokens cannot be withdrawn until the end of the following period.\nPlease note, vl-yCRV does not generate yield but maintains a 1:1 exchange rate with yCRV (so if yCRV increases in value, so will your vl-yCRV). '}</p>
+			</Balancer>
+		</div>
+	);
+}
+
 function Vote(): ReactElement {
 	const {nextPeriod, userInfo} = useVLyCRV();
 	const {gauges, isLoadingGauges} = useCurve();
-	const {component: Tabs, selectedTabId} = useTabs({
-		className: 'min-h-[356px]',
+	const {component: Tabs} = useTabs({
 		items: [
-			{id: 'deposit', label: 'Deposit', content: useDeposit()},
-			{id: 'withdraw', label: 'Withdraw', content: useWithdraw()}
+			{id: 'deposit', label: 'Deposit', content: <Deposit />},
+			{id: 'withdraw', label: 'Withdraw', content: <Withdraw />},
+			{id: 'how-it-works', label: 'How it works', content: <HowItWorks />}
 		]
 	});
 
@@ -224,11 +229,7 @@ function Vote(): ReactElement {
 			<div className={'mb-10'}>
 				{Tabs}
 			</div>
-			{selectedTabId === 'deposit' && <GaugeList gauges={gauges} isLoadingGauges={isLoadingGauges} />}
-			{/* <section className={'mt-10 grid w-full grid-cols-12 pb-10 md:mt-0'}>
-			
-			</section> */}
-			
+			<GaugeList gauges={gauges} isLoadingGauges={isLoadingGauges} />
 		</>
 	);
 }
