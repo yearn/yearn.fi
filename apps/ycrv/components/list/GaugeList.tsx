@@ -97,9 +97,10 @@ function	GaugeList({gauges, isLoadingGauges}: TProps): ReactElement {
 				onSort={onSort}
 				items={[
 					{label: 'Gauges', value: 'gauges', sortable: true},
+					{label: 'Current votes', value: 'current-votes', className: 'col-span-2', sortable: true},
 					{label: 'Your votes', value: 'your-votes', className: 'col-span-2', sortable: true},
-					{label: 'Put your votes', value: 'put-your-votes', className: 'col-span-4', sortable: true},
-					{label: '', value: '', className: 'col-span-2'}
+					{label: 'Put your votes', value: 'put-your-votes', className: 'col-span-3', sortable: true},
+					{label: '', value: '', className: 'col-span-1'}
 				]} />
 
 			{GaugeList}
