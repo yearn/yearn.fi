@@ -22,7 +22,7 @@ import Wrapper from '@yCRV/Wrapper';
 
 import type {NextRouter} from 'next/router';
 import type {ChangeEvent, ReactElement} from 'react';
-import type {TQAInput, TQASelect} from '@yCRV/components/QuickActions';
+import type {TQAButton, TQAInput, TQASelect} from '@yCRV/components/QuickActions';
 import type {TNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 
 function Deposit(): ReactElement {
@@ -45,11 +45,7 @@ function Deposit(): ReactElement {
 	const fromInputProps: TQAInput = useMemo((): TQAInput => ({
 		onChange: ({target: {value}}: ChangeEvent<HTMLInputElement>): void => {
 			const decimals = balances?.[toAddress(YCRV.value)]?.decimals || 18;
-			if (value === '') {
-				set_amount(undefined);
-				return;
-			}
-			set_amount(handleInputChangeEventValue(value, decimals));
+			set_amount(value === '' ? undefined : handleInputChangeEventValue(value, decimals));
 		},
 		value: amount ? amount.normalized : '',
 		onSetMaxAmount: (): void => set_amount(maxLockingPossible),
@@ -65,17 +61,22 @@ function Deposit(): ReactElement {
 		label: 'You will get',
 		isDisabled: true
 	}), [amount]);
-	
+
 	return useMemo((): ReactElement => {
 		const toSelectProps: TQASelect = {label: 'To vault', options: [VL_YCRV], selected: VL_YCRV};
+		
+		async function onDeposit(): Promise<void> {
+			alert(`Depositing ${amount?.raw} yCRV`);
+		}
 
-		const buttonProps = {
-			label: 'Deposit'
+		const buttonProps: TQAButton = {
+			label: 'Deposit',
+			onClick: onDeposit
 		};
 
 		return (
 			<div
-				aria-label={'Quick Actions'}
+				aria-label={'yCRV Deposit'}
 				className={'col-span-12 mb-4'}>
 				<div className={'col-span-12 flex flex-col space-x-0 space-y-2 md:flex-row md:space-x-4 md:space-y-0'}>
 					<QuickActions label={'voteFrom'}>
@@ -91,7 +92,7 @@ function Deposit(): ReactElement {
 				</div>
 			</div>
 		);
-	}, [fromInputProps, fromSelectProps, toInputProps]);
+	}, [amount?.raw, fromInputProps, fromSelectProps, toInputProps]);
 }
 
 function Withdraw(): ReactElement {
@@ -138,13 +139,18 @@ function Withdraw(): ReactElement {
 	return useMemo((): ReactElement => {
 		const toSelectProps: TQASelect = {label: 'To wallet', options: [YCRV], selected: YCRV};
 
-		const buttonProps = {
-			label: 'Withdraw'
+		async function onDeposit(): Promise<void> {
+			alert(`Withdraw ${amount?.raw} yCRV`);
+		}
+
+		const buttonProps: TQAButton = {
+			label: 'Withdraw',
+			onClick: onDeposit
 		};
 
 		return (
 			<div
-				aria-label={'Quick Actions'}
+				aria-label={'yCRV Withdraw'}
 				className={'col-span-12 mb-4'}>
 				<div className={'col-span-12 flex flex-col space-x-0 space-y-2 md:flex-row md:space-x-4 md:space-y-0'}>
 					<QuickActions label={'voteFrom'}>
@@ -160,7 +166,7 @@ function Withdraw(): ReactElement {
 				</div>
 			</div>
 		);
-	}, [fromInputProps, fromSelectProps, toInputProps]);
+	}, [amount?.raw, fromInputProps, fromSelectProps, toInputProps]);
 }
 
 function HowItWorks(): ReactElement {
@@ -204,7 +210,7 @@ function Vote(): ReactElement {
 			<HeroTimer endTime={nextPeriod} />
 			<div className={'mt-8 mb-10 w-full max-w-6xl text-center'}>
 				<div className={'mb-10 md:mb-14'}>
-					{isLessThan1Day ? 
+					{isLessThan1Day && !!timeLeft ? 
 						<p className={'text-2xl font-bold text-[#8F0000]'}>{'Last day to vote!'}</p>
 						:
 						<b className={'text-center text-lg md:text-2xl'}>{'Time left till next period'}</b>
