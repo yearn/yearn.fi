@@ -1,6 +1,6 @@
 import React, {useMemo, useState} from 'react';
 import Balancer from 'react-wrap-balancer';
-import {ethers} from 'ethers';
+import {BigNumber, ethers} from 'ethers';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatToNormalizedValue, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -26,11 +26,12 @@ import type {TQAButton, TQAInput, TQASelect} from '@yCRV/components/QuickActions
 import type {TNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 
 function Deposit(): ReactElement {
-	const {isActive} = useWeb3();
+	const {isActive, provider} = useWeb3();
 	const {balances} = useWallet();
 	const yCRVBalance = useBalance(YCRV.value);
 	const [amount, set_amount] = useState<TNormalizedBN | undefined>({raw: ethers.constants.Zero, normalized: 0});
 	const pricePerYCRV = useTokenPrice(toAddress(YCRV.value));
+	const {deposit} = useVLyCRV();
 
 	const fromSelectProps: TQASelect = useMemo((): TQASelect => {
 		const legend = `You have ${formatAmount(yCRVBalance.normalized)} ${yCRVBalance?.symbol || 'tokens'}`;
@@ -66,12 +67,13 @@ function Deposit(): ReactElement {
 		const toSelectProps: TQASelect = {label: 'To vault', options: [VL_YCRV], selected: VL_YCRV};
 		
 		async function onDeposit(): Promise<void> {
-			alert(`Depositing ${amount?.raw} yCRV`);
+			deposit({amount: amount?.raw ? amount?.raw : BigNumber.from(0), provider: provider as ethers.providers.Web3Provider});
 		}
 
 		const buttonProps: TQAButton = {
 			label: 'Deposit',
-			onClick: onDeposit
+			onClick: onDeposit,
+			isDisabled: !isActive || !amount?.raw.gt(0)
 		};
 
 		return (
@@ -92,15 +94,16 @@ function Deposit(): ReactElement {
 				</div>
 			</div>
 		);
-	}, [amount?.raw, fromInputProps, fromSelectProps, toInputProps]);
+	}, [amount?.raw, deposit, fromInputProps, fromSelectProps, isActive, provider, toInputProps]);
 }
 
 function Withdraw(): ReactElement {
-	const {isActive} = useWeb3();
+	const {isActive, provider} = useWeb3();
 	const {balances} = useWallet();
 	const stYCRVBalance = useBalance(VL_YCRV.value);
 	const [amount, set_amount] = useState<TNormalizedBN | undefined>({raw: ethers.constants.Zero, normalized: 0});
 	const pricePerSTYCRV = useTokenPrice(toAddress(VL_YCRV.value));
+	const {withdraw} = useVLyCRV();
 
 	const fromSelectProps: TQASelect = useMemo((): TQASelect => {
 		const legend = `You have ${formatAmount(stYCRVBalance.normalized)} ${stYCRVBalance?.symbol || 'tokens'}`;
@@ -139,13 +142,14 @@ function Withdraw(): ReactElement {
 	return useMemo((): ReactElement => {
 		const toSelectProps: TQASelect = {label: 'To wallet', options: [YCRV], selected: YCRV};
 
-		async function onDeposit(): Promise<void> {
-			alert(`Withdraw ${amount?.raw} yCRV`);
+		async function onWithdraw(): Promise<void> {
+			withdraw({amount: amount?.raw ? amount?.raw : BigNumber.from(0), provider: provider as ethers.providers.Web3Provider});
 		}
 
 		const buttonProps: TQAButton = {
 			label: 'Withdraw',
-			onClick: onDeposit
+			onClick: onWithdraw,
+			isDisabled: !isActive || !amount?.raw.gt(0)
 		};
 
 		return (
@@ -166,7 +170,7 @@ function Withdraw(): ReactElement {
 				</div>
 			</div>
 		);
-	}, [amount?.raw, fromInputProps, fromSelectProps, toInputProps]);
+	}, [amount?.raw, fromInputProps, fromSelectProps, provider, toInputProps, withdraw]);
 }
 
 function HowItWorks(): ReactElement {
@@ -187,7 +191,7 @@ function HowItWorks(): ReactElement {
 
 function Vote(): ReactElement {
 	const {isActive} = useWeb3();
-	const {nextPeriod, userInfo} = useVLyCRV();
+	const {initialData: {nextPeriod, userInfo}} = useVLyCRV();
 	const {gauges, isLoadingGauges} = useCurve();
 	const {component: Tabs} = useTabs({
 		items: [
