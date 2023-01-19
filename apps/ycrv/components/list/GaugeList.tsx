@@ -23,7 +23,7 @@ function	GaugeList({gauges, isLoading}: TProps): ReactElement {
 	const	[category, set_category] = useState('All');
 	const	[isSwitchEnabled, set_isSwitchEnabled] = useState(false);
 	const 	[searchValue, set_searchValue] = useSessionStorage('yCRVGaugeSearchValue', '');
-	const	[sortBy, set_sortBy] = useState<TPossibleGaugesSortBy>('name');
+	const	[sortBy, set_sortBy] = useState<TPossibleGaugesSortBy>('gauges');
 	const	[sortDirection, set_sortDirection] = useState<TPossibleGaugesSortDirection>('');
 
 	const	searchedGauges = useMemo((): TCurveGauges[] => {
@@ -36,7 +36,6 @@ function	GaugeList({gauges, isLoading}: TProps): ReactElement {
 		});
 	}, [searchValue, gauges]);
 
-	const	sortedGaugesToDisplay = useSortGauges([...searchedGauges], sortBy, sortDirection);
 
 	const	onSort = useCallback((newSortBy: string, newSortDirection: string): void => {
 		performBatchedUpdates((): void => {
@@ -44,6 +43,8 @@ function	GaugeList({gauges, isLoading}: TProps): ReactElement {
 			set_sortDirection(newSortDirection as TPossibleGaugesSortDirection);
 		});
 	}, []);
+
+	const	sortedGauges = useSortGauges({list: searchedGauges, sortBy, sortDirection, votes});
 
 	/**
 	 * Checks if there are no votes in all gauges
@@ -56,7 +57,8 @@ function	GaugeList({gauges, isLoading}: TProps): ReactElement {
 	**	It contains either the list of gauges, is some are available, or a message to the user.
 	**********************************************************************************************/
 	const	GaugeList = useMemo((): ReactNode => {
-		const gauges = sortedGaugesToDisplay.map((gauge): ReactElement | null => {
+		sortDirection; // TODO better trigger rendering when sort direction changes
+		const gauges = sortedGauges.map((gauge): ReactElement | null => {
 			if (!gauge || isSwitchEnabled && !votes[gauge.gauge]) {
 				return null;
 			}
@@ -66,7 +68,8 @@ function	GaugeList({gauges, isLoading}: TProps): ReactElement {
 					key={gauge.gauge}
 					gauge={gauge}
 					votes={votes}
-					set_votes={set_votes} />
+					set_votes={set_votes}
+				/>
 			);
 		});
 
@@ -82,7 +85,7 @@ function	GaugeList({gauges, isLoading}: TProps): ReactElement {
 		}
 
 		return gauges;
-	}, [category, isSwitchEnabled, isVotesEmpty, searchValue, sortedGaugesToDisplay, votes]);
+	}, [category, isSwitchEnabled, isVotesEmpty, searchValue, sortDirection, sortedGauges, votes]);
 
 	return (
 		<div className={'relative col-span-12 flex w-full flex-col bg-neutral-100'}>
