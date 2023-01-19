@@ -7,10 +7,18 @@ import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import VLYCRV_ABI from '@yCRV/utils/abi/vlYCrv.abi';
 
+import type {Address} from 'next-seo/lib/types';
+
 type TUserInfo = {
 	balance: BigNumber;
 	votesSpent: BigNumber;
 	lastVoteTime: number;
+}
+
+type TVoteTxProps = {
+	provider: ethers.providers.Web3Provider;
+	votes?: number;
+	gaugeAddress: Address;
 }
 
 type TTransactionProps = {
@@ -23,6 +31,7 @@ type TUseVLyCRV = {
 		nextPeriod: number;
 		userInfo: TUserInfo;
 	};
+	vote: (props: TVoteTxProps) => Promise<boolean>;
 	deposit: (props: TTransactionProps) => Promise<boolean>;
 	withdraw: (props: TTransactionProps) => Promise<boolean>;
 };
@@ -74,6 +83,25 @@ async function withdraw({provider, amount}: TTransactionProps): Promise<boolean>
 	}
 }
 
+async function vote({provider, gaugeAddress, votes}: TVoteTxProps): Promise<boolean> {
+	const signer = provider.getSigner();
+
+	try {
+		const contract = new ethers.Contract(VL_YCRV_CONTRACT, VLYCRV_ABI, signer);
+		const amount = ethers.utils.parseUnits((votes || 0).toString(), 18);
+		const transaction = await contract.vote(gaugeAddress, amount);
+		const transactionResult = await transaction.wait();
+		if (transactionResult.status === 0) {
+			throw new Error('Fail to perform transaction');
+		}
+
+		return true;
+	} catch(error) {
+		console.error(error);
+		return false;
+	}
+}
+
 export function useVLyCRV(): TUseVLyCRV {
 	const {provider, isActive, address} = useWeb3();
     
@@ -99,5 +127,5 @@ export function useVLyCRV(): TUseVLyCRV {
 
 	const {data} = useSWR<TUseVLyCRV['initialData']>(isActive && provider ? 'vLyCRV' : null, fetcher);
 
-	return {initialData: data ?? DEFAULT_VLYCRV, deposit, withdraw};
+	return {initialData: data ?? DEFAULT_VLYCRV, deposit, withdraw, vote};
 }
