@@ -17,7 +17,8 @@ export function	computeTimeLeft({endTime}: {endTime?: number}): number {
 	const currentTime = dayjs();
 	const diffTime = endTime - currentTime.unix();
 	const duration = dayjs.duration(diffTime * 1000, 'milliseconds');
-	return duration.asMilliseconds();
+	const ms = duration.asMilliseconds();
+	return ms > 0 ? ms : 0;
 }
 
 function	HeroTimer({endTime}: TProps): ReactElement {
