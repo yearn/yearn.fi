@@ -29,6 +29,10 @@ export type TQAInput = {
 
 export type TQAButton = {
 	label: string;
+	className?: string;
+	isBusy?: boolean;
+	isDisabled?: boolean;
+	onClick: VoidFunction
 }
 
 function QASelect(props: TQASelect): ReactElement {
