@@ -128,12 +128,13 @@ function	GaugeList({gauges, isLoading}: TProps): ReactElement {
 							</div>
 							<ReactPaginate
 								className={'isolate inline-flex -space-x-px rounded-md shadow-sm'}
-								previousLinkClassName={'border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center rounded-l-md border  p-2 text-sm font-medium focus:z-20'}
-								nextLinkClassName={'border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center rounded-r-md border p-2 text-sm font-medium focus:z-20'}
-								breakLinkClassName={'border-gray-300 text-gray-700 relative inline-flex items-center border px-4 py-2 text-sm font-medium'}
-								activeLinkClassName={'border-gray-300 text-gray-500 hover:bg-gray-50 relative hidden items-center border px-4 py-2 text-sm font-medium focus:z-20 md:inline-flex bg-black'}
-								pageLinkClassName={'border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center border px-4 py-2 text-sm font-medium focus:z-20'}
-								disabledLinkClassName={'cursor-not-allowed bg-neutral-300'}
+								previousLinkClassName={'border-neutral-400 text-gray-500 hover:bg-neutral-300 relative inline-flex items-center rounded-l-md border  p-2 text-sm font-medium focus:z-20'}
+								nextLinkClassName={'border-neutral-400 text-gray-500 hover:bg-neutral-300 relative inline-flex items-center rounded-r-md border p-2 text-sm font-medium focus:z-20'}
+								breakLinkClassName={'border-neutral-400 text-gray-700 relative inline-flex items-center border px-4 py-2 text-sm font-medium hover:bg-neutral-300'}
+								activeLinkClassName={'border-neutral-400 text-gray-500 hover:bg-neutral-300 relative hidden items-center border px-4 py-2 text-sm font-medium focus:z-20 md:inline-flex bg-neutral-300'}
+								pageLinkClassName={'border-neutral-400 text-gray-500 hover:bg-neutral-300 relative inline-flex items-center border px-4 py-2 text-sm font-medium focus:z-20'}
+								disabledLinkClassName={'cursor-not-allowed bg-neutral-100 hover:bg-neutral-100'}
+								disabledClassName={'text-neutral-300'}
 								renderOnZeroPageCount={(): null => null}
 								breakLabel={'...'}
 								onPageChange={handlePageClick}
