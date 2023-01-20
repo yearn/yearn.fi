@@ -22,6 +22,23 @@ export const keyBy = <T1, T2 extends keyof T1 & string>(array: T1[], key: T2): T
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	(array || []).reduce((r, x): TDict<T1> => ({...r, [(x as any)[key]]: x}), {});
 
+export const sort = <T>(data: T[], by: Extract<keyof T, string>, order?: 'asc' | 'desc'): T[] => {
+	const compare = (a: T, b: T): number => {
+		const elementA = a[by];
+		const elementB = b[by];
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		if (!isNaN(elementA as any) && !isNaN(elementB as any)) {
+			return order === 'desc' ? Number(elementA) - Number(elementB) : Number(elementB) - Number(elementA);
+		}
+		if (typeof elementA === 'string' && typeof elementB === 'string') {
+			return order === 'desc' ? elementA.toLowerCase().localeCompare(elementB.toLowerCase()) : elementB.toLowerCase().localeCompare(elementA.toLowerCase());
+		}
+		return 0;
+	};
+
+	return [...data].sort(compare);
+};
+
 export const handleTx = async (txPromise: Promise<ethers.providers.TransactionResponse>): Promise<boolean> => {
 	try {
 		const tx = await txPromise;
