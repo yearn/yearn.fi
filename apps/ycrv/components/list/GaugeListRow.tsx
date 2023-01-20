@@ -61,45 +61,42 @@ function	GaugeListRow({gauge, votes, set_votes}: TGaugeListRow): ReactElement | 
 			</div>
 
 			<div className={'yearn--table-data-section'}>
-				<div className={'yearn--table-data-section-item justify-center md:col-span-2'} datatype={'number'}>
+				<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
 					<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Current votes'}</label>
 					<p className={'yearn--table-data-section-item-value'}>
 						{0}
 					</p>
 				</div>
 
-				<div className={'yearn--table-data-section-item justify-center md:col-span-2'} datatype={'number'}>
+				<div className={'yearn--table-data-section-item pt-2 md:col-span-2'} datatype={'number'}>
 					<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Your votes'}</label>
 					<p className={'yearn--table-data-section-item-value'}>
 						{0}
 					</p>
 				</div>
 
-				<div className={'yearn--table-data-section-item md:col-span-3 md:pt-2'}>
+				<div className={'yearn--table-data-section-item pt-2 md:col-span-3'}>
 					<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Put your votes'}</label>
 					<p className={'yearn--table-data-section-item-value w-full text-neutral-900'}>
-						<div className={'flex h-10 items-center bg-neutral-200'}>
-							<div className={'flex h-10 w-full flex-row items-center justify-between'}>
-								<QuickActions.Input
-									id={`${gauge.gauge}-votes`}
-									placeholder={'0'}
-									type={'number'}
-									className={'w-full cursor-default overflow-x-scroll border-none bg-transparent px-0 font-bold outline-none scrollbar-none'}
-									value={currentVotes}
-									onSetMaxAmount={(): void => alert('Not implemented yet!')}
-									onChange={handleVoteInput}
-								/>
-							</div>
+						<div className={'flex h-10 w-full flex-row items-center justify-between'}>
+							<QuickActions.Input
+								id={`${gauge.gauge}-votes`}
+								placeholder={'0'}
+								type={'number'}
+								className={'w-full cursor-default overflow-x-scroll border-none bg-transparent px-0 font-bold outline-none scrollbar-none'}
+								value={currentVotes}
+								onSetMaxAmount={(): void => alert('Not implemented yet!')}
+								onChange={handleVoteInput}
+							/>
 						</div>
 					</p>
 				</div>
 
-				<div className={'yearn--table-data-section-item md:col-span-1 md:pt-2'}>
-					<label className={'yearn--table-data-section-item-label !font-aeonik'}>{}</label>
-					<p className={'yearn--table-data-section-item-value'}>
+				<div className={'yearn--table-data-section-item pt-2 md:col-span-1'}>
+					<p className={'yearn--table-data-section-item-value w-full'}>
 						<Button
 							onClick={handleOnVote}
-							className={'grow'}
+							className={'w-full'}
 							isDisabled={!currentVotes}>
 							{'Vote'}
 						</Button>
