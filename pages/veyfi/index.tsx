@@ -1,5 +1,6 @@
 import React from 'react';
 import {ClaimTab} from '@veYFI/components/ClaimTab';
+import {GaugesTab} from '@veYFI/components/GaugesTab';
 import {LockTab} from '@veYFI/components/LockTab';
 import {ManageLockTab} from '@veYFI/components/ManageLockTab';
 import {VoteTab} from '@veYFI/components/VoteTab';
@@ -22,9 +23,10 @@ function Index(): ReactElement {
 	const yourLockedYFI = formatToNormalizedValue(toBigInt(positions?.deposit?.underlyingBalance), 18);
 
 	const tabs = [
-		{id: 'lock', label: 'Lock YFI', content: <LockTab />},
-		{id: 'manage', label: 'Manage lock', content: <ManageLockTab />},
+		{id: 'lock', label: 'Lock YFI', content: <LockTab />}, 
+		{id: 'manage', label: 'Manage lock', content: <ManageLockTab />}, 
 		{id: 'claim', label: 'Claim', content: <ClaimTab />},
+		{id: 'gauges', label: 'Stake / Unstake', content: <GaugesTab />},
 		{id: 'vote', label: 'Vote for Gauge', content: <VoteTab />}
 	];
 
