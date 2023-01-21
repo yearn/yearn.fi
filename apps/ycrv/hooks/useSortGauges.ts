@@ -1,5 +1,7 @@
 import {useCallback, useMemo} from 'react';
+import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 
+import type {BigNumber} from 'ethers';
 import type {TDict} from '@yearn-finance/web-lib/utils/types';
 import type {TCurveGauges} from '@common/types/curves';
 
@@ -10,13 +12,13 @@ type TProps = {
 	list: TCurveGauges[];
 	sortBy: TPossibleGaugesSortBy;
 	sortDirection: TPossibleGaugesSortDirection;
-	votes: TDict<number | undefined>;
+	votes: TDict<BigNumber | undefined>;
 };
 
 type TSortByNotSubmittedVotes = {
 	withVotes: {
 		gauge: TCurveGauges;
-		votes: number
+		votes: BigNumber
 	}[];
 	withoutVotes: TCurveGauges[];
 }
@@ -41,9 +43,11 @@ function useSortGauges({list, sortBy, sortDirection, votes}: TProps): TCurveGaug
 			return prev;
 		}, {withVotes: [] as TSortByNotSubmittedVotes['withVotes'], withoutVotes: [] as TSortByNotSubmittedVotes['withoutVotes']});
 
-		const sortedGaugesWithVotes = withVotes.sort((a, b): number => (
-			sortDirection === 'desc' ? a.votes - b.votes : b.votes - a.votes
-		));
+		const sortedGaugesWithVotes = withVotes.sort((a, b): number => {
+			return sortDirection === 'desc'
+				? Number(toNormalizedBN(a.votes.sub(b.votes)).normalized)
+				: Number(toNormalizedBN(b.votes.sub(a.votes)).normalized);
+		});
 
 		return [...sortedGaugesWithVotes.map(({gauge}): TCurveGauges => gauge), ...withoutVotes];
 	// We don't want to sort when the votes change, hence
