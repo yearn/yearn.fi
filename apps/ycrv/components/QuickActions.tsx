@@ -23,6 +23,7 @@ export type TQAInput = {
 	className?: string;
 	value?: string | number;
 	isDisabled?: boolean;
+	isMaxDisabled?: boolean;
 	onSetMaxAmount?: () => void;
 	onChange?: (e: ChangeEvent<HTMLInputElement>) => void;
 } & React.DetailedHTMLProps<React.InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>;
@@ -86,7 +87,7 @@ function QASwitch(): ReactElement {
 }
 
 function QAInput(props: TQAInput): ReactElement {
-	const {className, label, legend, value, isDisabled, onChange, onSetMaxAmount, type, ...inputProps} = props;
+	const {className, label, legend, value, isDisabled, isMaxDisabled, onChange, onSetMaxAmount, type, ...inputProps} = props;
 
 	return (
 		<div className={className ? className : 'w-full space-y-2'}>
@@ -108,8 +109,10 @@ function QAInput(props: TQAInput): ReactElement {
 					/>
 					{onSetMaxAmount &&
 						<button
-							onClick={onSetMaxAmount}
-							className={'ml-2 cursor-pointer bg-neutral-900 px-2 py-1 text-xs text-neutral-0 transition-colors hover:bg-neutral-700'}>
+							onClick={!isMaxDisabled ? onSetMaxAmount : undefined}
+							className={`ml-2 cursor-pointer px-2 py-1 text-xs text-neutral-0 transition-colors ${isMaxDisabled ? 'cursor-not-allowed bg-neutral-300 hover:bg-neutral-300' : 'cursor-default bg-neutral-900 hover:bg-neutral-700'}`}
+							disabled={isMaxDisabled}
+						>
 							{'Max'}
 						</button>
 					}

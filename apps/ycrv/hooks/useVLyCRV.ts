@@ -9,7 +9,7 @@ import VLYCRV_ABI from '@yCRV/utils/abi/vlYCrv.abi';
 
 import type {Address} from 'next-seo/lib/types';
 
-type TUserInfo = {
+export type TUserInfo = {
 	balance: BigNumber;
 	votesSpent: BigNumber;
 	lastVoteTime: number;
