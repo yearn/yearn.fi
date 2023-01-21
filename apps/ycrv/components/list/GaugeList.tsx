@@ -1,6 +1,8 @@
-import React, {useCallback, useMemo, useState} from 'react';
+import React, {useCallback, useMemo, useReducer, useState} from 'react';
 import ReactPaginate from 'react-paginate';
+import {BigNumber, utils} from 'ethers';
 import {useSessionStorage} from '@yearn-finance/web-lib/hooks/useSessionStorage';
+import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import ListHead from '@common/components/ListHead';
 import ListHero from '@common/components/ListHero';
@@ -12,22 +14,78 @@ import {GaugeListRow} from './GaugeListRow';
 
 import type {ReactElement, ReactNode} from 'react';
 import type {TPossibleGaugesSortBy, TPossibleGaugesSortDirection} from '@yCRV/hooks/useSortGauges';
+import type {TUserInfo} from '@yCRV/hooks/useVLyCRV';
 import type {TDict} from '@yearn-finance/web-lib/utils/types';
 import type {TCurveGauges} from '@common/types/curves';
 
 type TProps = {
 	gauges: TCurveGauges[];
 	isLoading: boolean;
+	userInfo: TUserInfo;
 }
 
-function	GaugeList({gauges, isLoading}: TProps): ReactElement {
-	const	[votes, set_votes] = useState<TDict<number | undefined>>({});
+export type TVotesReducerState = {
+	votes: TDict<number | undefined>;
+	maxVotes: BigNumber;
+	currentTotal: BigNumber;
+};
+
+export type TVotesReducerAction = {
+	type: string;
+	gauge: string;
+	votes?: number;
+};
+
+export function votesReducer(state: TVotesReducerState, {type, gauge, votes}: TVotesReducerAction): TVotesReducerState {
+	switch(type) {
+		case 'max': {
+			const prevVotes = utils.parseUnits(String(state.votes[gauge] ?? 0), 18);
+			const maxVotesAvailable = state.maxVotes.sub(state.currentTotal.sub(prevVotes));
+
+			return {
+				maxVotes: state.maxVotes,
+				votes: {...state.votes, [gauge]: Number(toNormalizedBN(maxVotesAvailable, 18).normalized)},
+				currentTotal: state.maxVotes
+			};
+		}
+		case 'update': {
+			const prevVotes = utils.parseUnits(String(state.votes[gauge] ?? 0), 18);
+			const currentVotes = utils.parseUnits(String(votes ?? 0), 18);
+			const newTotal = state.currentTotal.sub(prevVotes).add(currentVotes);
+			
+			if (newTotal.gte(0) && newTotal.lte(state.maxVotes)) {
+				return {
+					maxVotes: state.maxVotes,
+					votes: {...state.votes, [gauge]: votes},
+					currentTotal: newTotal
+				};
+			}
+			return {
+				maxVotes: state.maxVotes,
+				votes: {...state.votes, [gauge]: Number(toNormalizedBN(prevVotes, 18).normalized)},
+				currentTotal: state.currentTotal
+			};
+		}
+		default: {
+			throw Error('Unknown action: ' + type);
+		}
+	}
+}
+
+function createInitialState({votes, maxVotes}: Pick<TVotesReducerState, 'votes' | 'maxVotes'>): TVotesReducerState {
+	return {maxVotes, votes, currentTotal: BigNumber.from(0)};
+}
+
+function	GaugeList({gauges, isLoading, userInfo}: TProps): ReactElement {
 	const	[category, set_category] = useState('All');
 	const	[isSwitchEnabled, set_isSwitchEnabled] = useState(false);
 	const 	[searchValue, set_searchValue] = useSessionStorage('yCRVGaugeSearchValue', '');
 	const	[sortBy, set_sortBy] = useState<TPossibleGaugesSortBy>('gauges');
 	const	[sortDirection, set_sortDirection] = useState<TPossibleGaugesSortDirection>('');
 	const	[itemOffset, set_itemOffset] = useState(0);
+
+	const 	maxVotes = userInfo.balance.sub(userInfo.votesSpent);
+	const 	[{votes, ...votesState}, votesDispatch] = useReducer(votesReducer, {votes: {}, maxVotes}, createInitialState);
 
 	const	searchedGauges = useMemo((): TCurveGauges[] => {
 		if (searchValue === '') {
@@ -70,8 +128,8 @@ function	GaugeList({gauges, isLoading}: TProps): ReactElement {
 				<GaugeListRow
 					key={gauge.gauge}
 					gauge={gauge}
-					votes={votes}
-					set_votes={set_votes}
+					votesState={{votes, ...votesState}}
+					votesDispatch={votesDispatch}
 				/>
 			);
 		});
