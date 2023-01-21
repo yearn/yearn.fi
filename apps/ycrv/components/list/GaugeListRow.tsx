@@ -1,14 +1,18 @@
 import React from 'react';
+import {utils} from 'ethers';
 import {Button} from '@yearn-finance/web-lib/components/Button';
+import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {isNumber} from '@common/utils/isNumber';
 import {useVLyCRV} from '@yCRV/hooks/useVLyCRV';
+import {isAddress} from '@yCRV/utils/isAddress';
+import {isWeb3Provider} from '@yCRV/utils/isWeb3Provider';
 
 import {QuickActions} from '../QuickActions';
 
-import type {ethers} from 'ethers';
 import type {ChangeEvent, Dispatch, ReactElement} from 'react';
 import type {TCurveGauges} from '@common/types/curves';
 import type {TVotesReducerAction, TVotesReducerState} from './GaugeList';
@@ -19,32 +23,37 @@ type TGaugeListRow = {
 	votesDispatch: Dispatch<TVotesReducerAction>;
 }
 
-function	GaugeListRow({gauge, votesState, votesDispatch}: TGaugeListRow): ReactElement | null {
+function GaugeListRow({gauge, votesState, votesDispatch}: TGaugeListRow): ReactElement | null {
 	const {vote} = useVLyCRV();
-	const {provider} = useWeb3();
+	const {toast} = yToast();
+	const {provider, isActive} = useWeb3();
 	const currentVotes = votesState.votes[gauge.gauge];
 
 	const handleVoteInput = ({target: {value}}: ChangeEvent<HTMLInputElement>): void => {
-		if (value === '') {
-			votesDispatch({type: 'update', gauge: gauge.gauge, votes: undefined});
+		if (value === '' && isAddress(gauge.gauge)) {
+			votesDispatch({type: 'UPDATE', gaugeAddress: gauge.gauge, votes: undefined});
 			return;
 		}
-		if (isNumber(+value)) {
-			votesDispatch({type: 'update', gauge: gauge.gauge, votes: +value});
+		if (isNumber(+value) && isAddress(gauge.gauge)) {
+			votesDispatch({type: 'UPDATE', gaugeAddress: gauge.gauge, votes: utils.parseUnits(String(+value), 18)});
 			return;
 		}
 	};
 
 	async function handleOnVote(): Promise<void> {
-		vote({
-			provider: provider as ethers.providers.Web3Provider,
-			gaugeAddress: gauge.gauge,
-			votes: currentVotes
-		});
+		if (!isActive) {
+			toast({type: 'warning', content: 'Your wallet is not connected!'});
+			return;
+		}
+		if (isAddress(gauge.gauge) && isWeb3Provider(provider)) {
+			vote({provider, gaugeAddress: gauge.gauge, votes: votesState.votes[gauge.gauge]});
+		}
 	}
 
 	async function handleOnSetMaxAmount(): Promise<void> {
-		votesDispatch({type: 'max', gauge: gauge.gauge});
+		if (isAddress(gauge.gauge)) {
+			votesDispatch({type: 'MAX', gaugeAddress: gauge.gauge});
+		}
 	}
 
 	return (
@@ -88,7 +97,7 @@ function	GaugeListRow({gauge, votesState, votesDispatch}: TGaugeListRow): ReactE
 								placeholder={'0'}
 								type={'number'}
 								className={'w-full cursor-default overflow-x-scroll border-none bg-transparent px-0 font-bold outline-none scrollbar-none'}
-								value={currentVotes}
+								value={currentVotes ? toNormalizedBN(currentVotes).normalized : undefined}
 								onSetMaxAmount={handleOnSetMaxAmount}
 								onChange={handleVoteInput}
 								isMaxDisabled={votesState.maxVotes.eq(votesState.currentTotal)}
