@@ -1,6 +1,6 @@
 import React from 'react';
 import {Button} from '@yearn-finance/web-lib/components/Button';
-import useWeb3 from '@yearn-finance/web-lib/contexts/useWeb3';
+import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {isNumber} from '@common/utils/isNumber';
@@ -9,28 +9,28 @@ import {useVLyCRV} from '@yCRV/hooks/useVLyCRV';
 import {QuickActions} from '../QuickActions';
 
 import type {ethers} from 'ethers';
-import type {ChangeEvent, Dispatch, ReactElement, SetStateAction} from 'react';
-import type {TDict} from '@yearn-finance/web-lib/utils/types';
+import type {ChangeEvent, Dispatch, ReactElement} from 'react';
 import type {TCurveGauges} from '@common/types/curves';
+import type {TVotesReducerAction, TVotesReducerState} from './GaugeList';
 
 type TGaugeListRow = {
 	gauge: TCurveGauges;
-	votes: TDict<number | undefined>;
-	set_votes: Dispatch<SetStateAction<TDict<number | undefined>>>
+	votesState: TVotesReducerState;
+	votesDispatch: Dispatch<TVotesReducerAction>;
 }
 
-function	GaugeListRow({gauge, votes, set_votes}: TGaugeListRow): ReactElement | null {
+function	GaugeListRow({gauge, votesState, votesDispatch}: TGaugeListRow): ReactElement | null {
 	const {vote} = useVLyCRV();
 	const {provider} = useWeb3();
-	const currentVotes = votes[gauge.gauge];
+	const currentVotes = votesState.votes[gauge.gauge];
 
 	const handleVoteInput = ({target: {value}}: ChangeEvent<HTMLInputElement>): void => {
 		if (value === '') {
-			set_votes((p): TDict<number | undefined> => ({...p, [gauge.gauge]: undefined}));
+			votesDispatch({type: 'update', gauge: gauge.gauge, votes: undefined});
 			return;
 		}
 		if (isNumber(+value)) {
-			set_votes((p): TDict<number | undefined> => ({...p, [gauge.gauge]: +value}));
+			votesDispatch({type: 'update', gauge: gauge.gauge, votes: +value});
 			return;
 		}
 	};
@@ -41,6 +41,10 @@ function	GaugeListRow({gauge, votes, set_votes}: TGaugeListRow): ReactElement | 
 			gaugeAddress: gauge.gauge,
 			votes: currentVotes
 		});
+	}
+
+	async function handleOnSetMaxAmount(): Promise<void> {
+		votesDispatch({type: 'max', gauge: gauge.gauge});
 	}
 
 	return (
@@ -85,8 +89,9 @@ function	GaugeListRow({gauge, votes, set_votes}: TGaugeListRow): ReactElement | 
 								type={'number'}
 								className={'w-full cursor-default overflow-x-scroll border-none bg-transparent px-0 font-bold outline-none scrollbar-none'}
 								value={currentVotes}
-								onSetMaxAmount={(): void => alert('Not implemented yet!')}
+								onSetMaxAmount={handleOnSetMaxAmount}
 								onChange={handleVoteInput}
+								isMaxDisabled={votesState.maxVotes.eq(votesState.currentTotal)}
 							/>
 						</div>
 					</p>

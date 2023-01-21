@@ -170,7 +170,7 @@ function Withdraw(): ReactElement {
 				</div>
 			</div>
 		);
-	}, [amount?.raw, fromInputProps, fromSelectProps, provider, toInputProps, withdraw]);
+	}, [amount?.raw, fromInputProps, fromSelectProps, isActive, provider, toInputProps, withdraw]);
 }
 
 function HowItWorks(): ReactElement {
@@ -191,7 +191,8 @@ function HowItWorks(): ReactElement {
 
 function Vote(): ReactElement {
 	const {isActive} = useWeb3();
-	const {initialData: {nextPeriod, userInfo}} = useVLyCRV();
+	// const {initialData: {nextPeriod, userInfo}} = useVLyCRV();
+	const {initialData: {nextPeriod}} = useVLyCRV();
 	const {gauges, isLoadingGauges} = useCurve();
 	const {component: Tabs} = useTabs({
 		items: [
@@ -201,7 +202,15 @@ function Vote(): ReactElement {
 		]
 	});
 
-	const {balance, lastVoteTime, votesSpent} = userInfo;
+	// Fake it until you make it
+	const MOCK_USER_INFO = {
+		balance: BigNumber.from('100000000000000000000'),
+		votesSpent: BigNumber.from('50000000000000000000'),
+		lastVoteTime: 1674217683000
+	};
+
+	// const {balance, lastVoteTime, votesSpent} = userInfo;
+	const {balance, lastVoteTime, votesSpent} = MOCK_USER_INFO;
 	const totalVotes = formatToNormalizedValue(balance);
 	const remainingVotesForThisPeriod = formatToNormalizedValue(balance.sub(votesSpent));
 
@@ -250,7 +259,10 @@ function Vote(): ReactElement {
 			<div className={'mb-10'}>
 				{Tabs}
 			</div>
-			<GaugeList gauges={gauges} isLoading={isLoadingGauges} />
+			<GaugeList
+				gauges={gauges}
+				isLoading={isLoadingGauges}
+				userInfo={MOCK_USER_INFO} />
 		</>
 	);
 }
