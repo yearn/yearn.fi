@@ -1,8 +1,7 @@
 import React, {useCallback, useMemo, useReducer, useState} from 'react';
 import ReactPaginate from 'react-paginate';
-import {BigNumber, utils} from 'ethers';
+import {BigNumber} from 'ethers';
 import {useSessionStorage} from '@yearn-finance/web-lib/hooks/useSessionStorage';
-import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import ListHead from '@common/components/ListHead';
 import ListHero from '@common/components/ListHero';
@@ -15,6 +14,7 @@ import {GaugeListRow} from './GaugeListRow';
 import type {ReactElement, ReactNode} from 'react';
 import type {TPossibleGaugesSortBy, TPossibleGaugesSortDirection} from '@yCRV/hooks/useSortGauges';
 import type {TUserInfo} from '@yCRV/hooks/useVLyCRV';
+import type {TAddress} from '@yearn-finance/web-lib/utils/address';
 import type {TDict} from '@yearn-finance/web-lib/utils/types';
 import type {TCurveGauges} from '@common/types/curves';
 
@@ -24,47 +24,57 @@ type TProps = {
 	userInfo: TUserInfo;
 }
 
+export type TVotesReducerActionTypes = 'MAX' | 'UPDATE';
+
 export type TVotesReducerState = {
-	votes: TDict<number | undefined>;
+	votes: TDict<BigNumber | undefined>;
 	maxVotes: BigNumber;
 	currentTotal: BigNumber;
 };
 
 export type TVotesReducerAction = {
-	type: string;
-	gauge: string;
-	votes?: number;
+	type: TVotesReducerActionTypes;
+	gaugeAddress: TAddress;
+	votes?: BigNumber;
 };
 
-export function votesReducer(state: TVotesReducerState, {type, gauge, votes}: TVotesReducerAction): TVotesReducerState {
-	switch(type) {
-		case 'max': {
-			const prevVotes = utils.parseUnits(String(state.votes[gauge] ?? 0), 18);
-			const maxVotesAvailable = state.maxVotes.sub(state.currentTotal.sub(prevVotes));
+type TVotesReducer = {
+	state: TVotesReducerState;
+	action: TVotesReducerAction;
+}
 
+function computeMaxVotesAvailable({state, action}: TVotesReducer): BigNumber {
+	const prevVotes = state.votes[action.gaugeAddress] ?? 0;
+	return state.maxVotes.sub(state.currentTotal.sub(prevVotes));
+}
+
+function computeNewTotal({state, action}: TVotesReducer): BigNumber {
+	return state.currentTotal.sub(state.votes[action.gaugeAddress] ?? 0).add(action.votes ?? 0);
+}
+
+export function votesReducer(state: TVotesReducerState, action: TVotesReducerAction): TVotesReducerState {
+	const {type, gaugeAddress, votes} = action;
+
+	switch(type) {
+		case 'MAX': {
 			return {
-				maxVotes: state.maxVotes,
-				votes: {...state.votes, [gauge]: Number(toNormalizedBN(maxVotesAvailable, 18).normalized)},
+				...state,
+				votes: {...state.votes, [gaugeAddress]: computeMaxVotesAvailable({state, action})},
 				currentTotal: state.maxVotes
 			};
 		}
-		case 'update': {
-			const prevVotes = utils.parseUnits(String(state.votes[gauge] ?? 0), 18);
-			const currentVotes = utils.parseUnits(String(votes ?? 0), 18);
-			const newTotal = state.currentTotal.sub(prevVotes).add(currentVotes);
+		case 'UPDATE': {
+			const newTotal = computeNewTotal({state, action});
 			
 			if (newTotal.gte(0) && newTotal.lte(state.maxVotes)) {
 				return {
-					maxVotes: state.maxVotes,
-					votes: {...state.votes, [gauge]: votes},
+					...state,
+					votes: {...state.votes, [gaugeAddress]: votes},
 					currentTotal: newTotal
 				};
 			}
-			return {
-				maxVotes: state.maxVotes,
-				votes: {...state.votes, [gauge]: Number(toNormalizedBN(prevVotes, 18).normalized)},
-				currentTotal: state.currentTotal
-			};
+
+			return {...state, votes: {...state.votes, [gaugeAddress]: state.votes[gaugeAddress]}};
 		}
 		default: {
 			throw Error('Unknown action: ' + type);
@@ -76,18 +86,18 @@ function createInitialState({votes, maxVotes}: Pick<TVotesReducerState, 'votes' 
 	return {maxVotes, votes, currentTotal: BigNumber.from(0)};
 }
 
-function	GaugeList({gauges, isLoading, userInfo}: TProps): ReactElement {
-	const	[category, set_category] = useState('All');
-	const	[isSwitchEnabled, set_isSwitchEnabled] = useState(false);
-	const 	[searchValue, set_searchValue] = useSessionStorage('yCRVGaugeSearchValue', '');
-	const	[sortBy, set_sortBy] = useState<TPossibleGaugesSortBy>('gauges');
-	const	[sortDirection, set_sortDirection] = useState<TPossibleGaugesSortDirection>('');
-	const	[itemOffset, set_itemOffset] = useState(0);
+function GaugeList({gauges, isLoading, userInfo}: TProps): ReactElement {
+	const [category, set_category] = useState('All');
+	const [isSwitchEnabled, set_isSwitchEnabled] = useState(false);
+	const [searchValue, set_searchValue] = useSessionStorage('yCRVGaugeSearchValue', '');
+	const [sortBy, set_sortBy] = useState<TPossibleGaugesSortBy>('gauges');
+	const [sortDirection, set_sortDirection] = useState<TPossibleGaugesSortDirection>('');
+	const [itemOffset, set_itemOffset] = useState(0);
 
-	const 	maxVotes = userInfo.balance.sub(userInfo.votesSpent);
-	const 	[{votes, ...votesState}, votesDispatch] = useReducer(votesReducer, {votes: {}, maxVotes}, createInitialState);
+	const maxVotes = userInfo.balance.sub(userInfo.votesSpent);
+	const [{votes, ...votesState}, votesDispatch] = useReducer(votesReducer, {votes: {}, maxVotes}, createInitialState);
 
-	const	searchedGauges = useMemo((): TCurveGauges[] => {
+	const searchedGauges = useMemo((): TCurveGauges[] => {
 		if (searchValue === '') {
 			return gauges;
 		}
@@ -98,26 +108,26 @@ function	GaugeList({gauges, isLoading, userInfo}: TProps): ReactElement {
 	}, [searchValue, gauges]);
 
 
-	const	onSort = useCallback((newSortBy: string, newSortDirection: string): void => {
+	const onSort = useCallback((newSortBy: string, newSortDirection: string): void => {
 		performBatchedUpdates((): void => {
 			set_sortBy(newSortBy as TPossibleGaugesSortBy);
 			set_sortDirection(newSortDirection as TPossibleGaugesSortDirection);
 		});
 	}, []);
 
-	const	sortedGauges = useSortGauges({list: searchedGauges, sortBy, sortDirection, votes});
+	const sortedGauges = useSortGauges({list: searchedGauges, sortBy, sortDirection, votes});
 
 	/**
 	 * Checks if there are no votes in all gauges
 	 * Returns `true` if there are no votes; `false` otherwise.
 	 */
-	const	isVotesEmpty = useCallback((): boolean => Object.values(votes).length === 0, [votes]);
+	const isVotesEmpty = useCallback((): boolean => Object.values(votes).length === 0, [votes]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	**	The GaugeList component is memoized to prevent it from being re-created on every render.
 	**	It contains either the list of gauges, is some are available, or a message to the user.
 	**********************************************************************************************/
-	const	GaugeList = useMemo((): ReactNode => {
+	const GaugeList = useMemo((): ReactNode => {
 		sortDirection; // TODO better trigger rendering when sort direction changes
 		const gauges = sortedGauges.map((gauge): ReactElement | null => {
 			if (!gauge || isSwitchEnabled && !votes[gauge.gauge]) {
@@ -206,7 +216,7 @@ function	GaugeList({gauges, isLoading, userInfo}: TProps): ReactElement {
 				</div>
 			</>
 		);
-	}, [category, isSwitchEnabled, isVotesEmpty, itemOffset, searchValue, sortDirection, sortedGauges, votes]);
+	}, [category, isSwitchEnabled, isVotesEmpty, itemOffset, searchValue, sortDirection, sortedGauges, votes, votesState]);
 
 	return (
 		<div className={'relative col-span-12 flex w-full flex-col bg-neutral-100'}>

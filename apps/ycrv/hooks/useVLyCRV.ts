@@ -7,7 +7,7 @@ import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import VLYCRV_ABI from '@yCRV/utils/abi/vlYCrv.abi';
 
-import type {Address} from 'next-seo/lib/types';
+import type {TAddress} from '@yearn-finance/web-lib/utils/address';
 
 export type TUserInfo = {
 	balance: BigNumber;
@@ -17,8 +17,8 @@ export type TUserInfo = {
 
 type TVoteTxProps = {
 	provider: ethers.providers.Web3Provider;
-	votes?: number;
-	gaugeAddress: Address;
+	votes?: BigNumber;
+	gaugeAddress: TAddress;
 }
 
 type TTransactionProps = {
