@@ -1,11 +1,13 @@
-import React, {Fragment} from 'react';
+import React, {Fragment, useMemo} from 'react';
 import Link from 'next/link';
+import {Listbox, Transition} from '@headlessui/react';
 import VaultDetailsQuickActionsButtons from '@vaults/components/details/actions/QuickActionsButtons';
 import VaultDetailsQuickActionsFrom from '@vaults/components/details/actions/QuickActionsFrom';
 import VaultDetailsQuickActionsSwitch from '@vaults/components/details/actions/QuickActionsSwitch';
 import VaultDetailsQuickActionsTo from '@vaults/components/details/actions/QuickActionsTo';
 import SettingsPopover from '@vaults/components/SettingsPopover';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
+import IconChevron from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
 
@@ -20,6 +22,7 @@ const tabs: TTabsOptions[] = [
 ];
 function	VaultActionsTabsWrapper(): ReactElement {
 	const {onSwitchSelectedOptions, isDepositing} = useActionFlow();
+	const currentTab = useMemo((): TTabsOptions => tabs.find((tab): boolean => tab.value === (isDepositing ? 0 : 1)) as TTabsOptions, [isDepositing]);
 
 	return (
 		<Fragment>
@@ -50,6 +53,46 @@ function	VaultActionsTabsWrapper(): ReactElement {
 							</button>
 						))}
 					</nav>
+					<div className={'relative z-50'}>
+						<Listbox
+							value={currentTab.label}
+							onChange={(): void => onSwitchSelectedOptions()}>
+							{({open}): ReactElement => (
+								<>
+									<Listbox.Button
+										className={'flex h-10 w-40 flex-row items-center border-0 border-b-2 border-neutral-900 bg-neutral-100 p-0 font-bold focus:border-neutral-900 md:hidden'}>
+										<div className={'relative flex flex-row items-center'}>
+											{currentTab?.label || 'Menu'}
+										</div>
+										<div className={'absolute right-0'}>
+											<IconChevron
+												className={`h-6 w-6 transition-transform ${open ? '-rotate-180' : 'rotate-0'}`} />
+										</div>
+									</Listbox.Button>
+									<Transition
+										as={Fragment}
+										show={open}
+										enter={'transition duration-100 ease-out'}
+										enterFrom={'transform scale-95 opacity-0'}
+										enterTo={'transform scale-100 opacity-100'}
+										leave={'transition duration-75 ease-out'}
+										leaveFrom={'transform scale-100 opacity-100'}
+										leaveTo={'transform scale-95 opacity-0'}>
+										<Listbox.Options className={'yearn--listbox-menu'}>
+											{tabs.map((tab): ReactElement => (
+												<Listbox.Option
+													className={'yearn--listbox-menu-item'}
+													key={tab.value}
+													value={tab.value}>
+													{tab.label}
+												</Listbox.Option>
+											))}
+										</Listbox.Options>
+									</Transition>
+								</>
+							)}
+						</Listbox>
+					</div>
 
 					<div className={'flex flex-row items-center justify-end space-x-2 pb-0 md:pb-4 md:last:space-x-4'}>
 						<SettingsPopover />
