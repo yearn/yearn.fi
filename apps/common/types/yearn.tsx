@@ -63,6 +63,7 @@ export type TYearnVault = {
 	icon: string,
 	category: string,
 	riskScore: number,
+	chainID: number,
 	token: {
 		address: TAddress,
 		name: string,

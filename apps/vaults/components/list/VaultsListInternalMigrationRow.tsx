@@ -1,4 +1,5 @@
 import React, {useMemo, useState} from 'react';
+import Link from 'next/link';
 import {ethers} from 'ethers';
 import {useWalletForInternalMigrations} from '@vaults/contexts/useWalletForInternalMigrations';
 import {zap} from '@vaults/utils/actions/migrateVeCRV';
@@ -31,7 +32,7 @@ function	VaultsListInternalMigrationRow({currentVault}: {currentVault: TYearnVau
 
 	async function onMigrateFlow(): Promise<void> {
 		const	isApproved = await isApprovedERC20(
-			provider as ethers.providers.Web3Provider, 
+			provider as ethers.providers.Web3Provider,
 			toAddress(currentVault.address), //from
 			toAddress(currentVault.migration.contract), //migrator
 			balanceToMigrate.raw || ethers.constants.Zero
@@ -101,7 +102,7 @@ function	VaultsListInternalMigrationRow({currentVault}: {currentVault: TYearnVau
 						{'Looks like you\'re holding tokens for an old version of this Vault. To keep earning yield on your assets, migrate to the current Vault.'}
 					</div>
 
-					<div className={'col-span-2 flex h-8 flex-row items-center justify-between md:h-auto md:justify-end md:py-4'}>
+					<div className={'col-span-2 flex h-auto flex-row items-center justify-between space-x-4 py-4 md:justify-end'}>
 						<Button
 							variant={'reverted'}
 							className={'yearn--button-smaller !w-full'}
@@ -110,6 +111,13 @@ function	VaultsListInternalMigrationRow({currentVault}: {currentVault: TYearnVau
 							isDisabled={!isActive}>
 							{'Migrate'}
 						</Button>
+
+						<Link
+							href={`/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`}
+							data-variant={'reverted'}
+							className={'yearn--button-smaller reverted !w-full text-center'}>
+							{'Details'}
+						</Link>
 					</div>
 				</div>
 			</div>
