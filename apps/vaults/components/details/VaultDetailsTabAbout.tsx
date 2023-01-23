@@ -18,7 +18,7 @@ function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYearnVau
 					<b className={'text-neutral-900'}>{'Description'}</b>
 					<p
 						className={'mt-4 text-neutral-600'}
-						dangerouslySetInnerHTML={{__html: parseMarkdown(currentVault?.token?.description) || 'Sorry, we don’t have a description for this asset right now. But did you know the correct word for a blob of toothpaste is a “nurdle”. Fascinating! We’ll work on updating the asset description, but at least you learnt something interesting. Catch ya later nurdles.'}} />
+						dangerouslySetInnerHTML={{__html: currentVault?.token?.description ? parseMarkdown(currentVault?.token?.description) : 'Sorry, we don’t have a description for this asset right now. But did you know the correct word for a blob of toothpaste is a “nurdle”. Fascinating! We’ll work on updating the asset description, but at least you learnt something interesting. Catch ya later nurdles.'}} />
 				</div>
 				<div>
 					<b className={'text-neutral-900'}>{'APY'}</b>
