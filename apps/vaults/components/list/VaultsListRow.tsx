@@ -3,6 +3,7 @@ import Link from 'next/link';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useBalance} from '@common/hooks/useBalance';
@@ -21,11 +22,14 @@ function	VaultsListRow({currentVault}: {currentVault: TYearnVault}): ReactElemen
 
 	const availableToDeposit = useMemo((): number => {
 		// Handle ETH native coin
-		if ((toAddress(currentVault.token.address) === WETH_TOKEN_ADDRESS) || (toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS)) {
+		if (toAddress(currentVault.token.address) === WETH_TOKEN_ADDRESS) {
 			return (balanceOfWrappedCoin.normalized + balanceOfCoin.normalized);
 		}
+		if (toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS) {
+			return (balanceOfWrappedCoin.normalized + Number(toNormalizedBN(balanceOfCoin.raw, 18).normalized));
+		}
 		return balanceOfWant.normalized;
-	}, [balanceOfCoin.normalized, balanceOfWant.normalized, balanceOfWrappedCoin.normalized, currentVault.token.address]);
+	}, [balanceOfCoin.normalized, balanceOfCoin.raw, balanceOfWant.normalized, balanceOfWrappedCoin.normalized, currentVault.token.address]);
 	
 	return (
 		<Link key={`${currentVault.address}`} href={`/vaults/${safeChainID}/${toAddress(currentVault.address)}`}>
