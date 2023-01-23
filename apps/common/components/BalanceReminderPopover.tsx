@@ -131,9 +131,9 @@ export default function BalanceReminderPopover(): ReactElement {
 						leave={'transition ease-in duration-150'}
 						leaveFrom={'opacity-100 translate-y-0'}
 						leaveTo={'opacity-0 translate-y-1'}>
-						<Popover.Panel className={'absolute right-0 top-6 z-[1000] mt-3 w-screen max-w-xs md:top-4 md:-right-4 '}>
+						<Popover.Panel className={'yearn--shadow absolute right-0 top-6 z-[1000] mt-3 w-screen max-w-xs md:top-4 md:-right-4'}>
 							<div className={'overflow-hidden'}>
-								<div className={'relative bg-neutral-100 p-0'}>
+								<div className={'relative bg-neutral-0 p-0'}>
 									<div className={'flex items-center justify-center border-b border-neutral-300 py-4 text-center'}>
 										<b>
 											{isActive && address && ens ? (

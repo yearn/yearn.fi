@@ -26,15 +26,15 @@ export default function SettingsPopover(): ReactElement {
 						leaveFrom={'opacity-100 translate-y-0'}
 						leaveTo={'opacity-0 translate-y-1'}>
 						<Popover.Panel className={'absolute right-0 top-6 z-[1000] mt-3 w-screen max-w-xs md:top-4 md:-right-4'}>
-							<div className={'yearn--shadow overflow-hidden'}>
-								<div className={'relative bg-neutral-100 p-4'}>
+							<div className={'yearn--shadow'}>
+								<div className={'relative bg-neutral-0 p-4'}>
 									<div className={'mb-7 flex flex-col space-y-1'}>
 										<label htmlFor={'zapProvider'} className={'text-neutral-900'}>{'Zap Provider'}</label>
 										<select
 											id={'zapProvider'}
 											onChange={(e): void => set_zapProvider(e.target.value as Solver)}
 											value={zapProvider}
-											className={'mt-1 h-10 w-full overflow-x-scroll border-none bg-neutral-0 p-2 outline-none scrollbar-none'}>
+											className={'mt-1 h-10 w-full overflow-x-scroll border-none bg-neutral-100 p-2 outline-none scrollbar-none'}>
 											<option
 												disabled={isSolverDisabled[Solver.COWSWAP]}
 												value={Solver.COWSWAP}>
@@ -61,15 +61,15 @@ export default function SettingsPopover(): ReactElement {
 										<div className={'mt-1 flex flex-row space-x-2'}>
 											<button
 												onClick={(): void => set_zapSlippage(1)}
-												className={`flex h-10 items-center border bg-neutral-0 p-2 ${zapSlippage === 1 ? 'border-neutral-900' : 'border-transparent'}`}>
-												<p className={'font-number pr-5 text-neutral-900'}>{'1%'}</p>
+												className={`flex h-10 items-center border bg-neutral-100 py-2 px-1.5 ${zapSlippage === 1 ? 'border-neutral-900' : 'border-transparent'}`}>
+												<p className={'font-number pr-4 text-neutral-900'}>{'1%'}</p>
 											</button>
 											<button
 												onClick={(): void => set_zapSlippage(2)}
-												className={`flex h-10 items-center border bg-neutral-0 p-2 ${zapSlippage === 2 ? 'border-neutral-900' : 'border-transparent'}`}>
-												<p className={'font-number pr-5 text-neutral-900'}>{'2%'}</p>
+												className={`flex h-10 items-center border bg-neutral-100 py-2 px-1.5 ${zapSlippage === 2 ? 'border-neutral-900' : 'border-transparent'}`}>
+												<p className={'font-number pr-4 text-neutral-900'}>{'2%'}</p>
 											</button>
-											<div className={`flex h-10 w-40 min-w-[72px] items-center border bg-neutral-0 py-4 px-0 md:min-w-[160px] ${zapSlippage !== 1 && zapSlippage !== 2 ? 'border-neutral-900' : 'border-transparent'}`}>
+											<div className={`flex h-10 w-full min-w-[72px] items-center border bg-neutral-100 py-4 px-0 md:min-w-[160px] ${zapSlippage !== 1 && zapSlippage !== 2 ? 'border-neutral-900' : 'border-transparent'}`}>
 												<input
 													id={'slippageTolerance'}
 													type={'number'}

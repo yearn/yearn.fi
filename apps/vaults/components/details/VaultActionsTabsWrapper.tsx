@@ -30,7 +30,7 @@ function	VaultActionsTabsWrapper(): ReactElement {
 					</p>
 				</Link>
 			</nav>
-			<div aria-label={'Vault Actions'} className={'col-span-12 mb-4 flex flex-col bg-neutral-200'}>
+			<div aria-label={'Vault Actions'} className={'col-span-12 mb-4 flex flex-col bg-neutral-100'}>
 				<div className={'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'}>
 					<nav className={'hidden flex-row items-center space-x-10 md:flex'}>
 						{tabs.map((tab): ReactElement => (
@@ -59,7 +59,7 @@ function	VaultActionsTabsWrapper(): ReactElement {
 
 				<Fragment>
 					<div
-						className={'col-span-12 mb-4 flex flex-col space-x-0 space-y-2 bg-neutral-200 p-4 md:flex-row md:space-x-4 md:space-y-0 md:py-6 md:px-8'}>
+						className={'col-span-12 mb-4 flex flex-col space-x-0 space-y-2 bg-neutral-100 p-4 md:flex-row md:space-x-4 md:space-y-0 md:py-6 md:px-8'}>
 						<VaultDetailsQuickActionsFrom />
 						<VaultDetailsQuickActionsSwitch />
 						<VaultDetailsQuickActionsTo />
