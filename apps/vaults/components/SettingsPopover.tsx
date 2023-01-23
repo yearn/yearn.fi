@@ -51,6 +51,19 @@ export default function SettingsPopover(): ReactElement {
 												{Solver.PORTALS}
 											</option>
 										</select>
+										{zapProvider === Solver.COWSWAP ?(
+											<legend className={'text-xs italic text-neutral-500'}>
+												{'Submit a'}&nbsp;
+												<a
+													className={'underline'}
+													href={'https://docs.cow.fi/front-end/cowswap'}
+													target={'_blank'}
+													rel={'noreferrer'}>
+													{'gasless order'}
+												</a>
+												&nbsp;{'using CoW Swap.'}
+											</legend>
+										) : (<legend>&nbsp;</legend>)}
 									</div>
 									<div>
 										<label

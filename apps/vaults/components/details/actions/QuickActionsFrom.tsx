@@ -13,7 +13,7 @@ import {useTokenPrice} from '@common/hooks/useTokenPrice';
 import type {ChangeEvent, ReactElement} from 'react';
 
 function	VaultDetailsQuickActionsFrom(): ReactElement {
-	const {isActive} = useWeb3();
+	const {isActive, chainID} = useWeb3();
 	const {balances} = useWallet();
 	const {
 		possibleOptionsFrom, actionParams, onUpdateSelectedOptionFrom, onChangeAmount,

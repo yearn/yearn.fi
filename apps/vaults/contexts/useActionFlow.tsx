@@ -173,13 +173,13 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 	hooks.useMountEffect((): void => {
 		if (safeChainID === 1 && currentVault && toAddress(currentVault.token.address) === WETH_TOKEN_ADDRESS) {
 			set_possibleOptionsFrom([
-				setZapOption({name: 'ETH', symbol: 'ETH', address: ETH_TOKEN_ADDRESS, safeChainID, decimals: 18}),
-				setZapOption({name: 'wETH', symbol: 'wETH', address: WETH_TOKEN_ADDRESS, safeChainID, decimals: 18})
+				setZapOption({name: 'ETH', symbol: 'ETH', address: ETH_TOKEN_ADDRESS, chainID: safeChainID, decimals: 18}),
+				setZapOption({name: 'wETH', symbol: 'wETH', address: WETH_TOKEN_ADDRESS, chainID: safeChainID, decimals: 18})
 			]);
 		} else if (safeChainID === 250 && currentVault && toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS) {
 			set_possibleOptionsFrom([
-				setZapOption({name: 'FTM', symbol: 'FTM', address: ETH_TOKEN_ADDRESS, safeChainID, decimals: 18}),
-				setZapOption({name: 'wFTM', symbol: 'wFTM', address: WFTM_TOKEN_ADDRESS, safeChainID, decimals: 18})
+				setZapOption({name: 'FTM', symbol: 'FTM', address: ETH_TOKEN_ADDRESS, chainID: safeChainID, decimals: 18}),
+				setZapOption({name: 'wFTM', symbol: 'wFTM', address: WFTM_TOKEN_ADDRESS, chainID: safeChainID, decimals: 18})
 			]);
 		} else {
 			performBatchedUpdates((): void => {
@@ -188,7 +188,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 						name: currentVault?.token?.display_name || currentVault?.token?.name,
 						symbol: currentVault?.token?.symbol,
 						address: toAddress(currentVault.token.address),
-						safeChainID,
+						chainID: currentVault?.chainID === 1337 ? safeChainID : currentVault?.chainID,
 						decimals: currentVault?.token?.decimals || 18
 					})
 				]);
@@ -197,7 +197,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 						name: currentVault?.display_name || currentVault?.name,
 						symbol: currentVault?.symbol,
 						address: toAddress(currentVault.address),
-						safeChainID,
+						chainID: currentVault?.chainID === 1337 ? safeChainID : currentVault?.chainID,
 						decimals: currentVault?.decimals || 18
 					})
 				]);
@@ -234,7 +234,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 						name: tokenListData?.name,
 						symbol: tokenListData?.symbol,
 						address: toAddress(tokenListData?.address),
-						safeChainID,
+						chainID: currentVault?.chainID === 1337 ? safeChainID : currentVault?.chainID,
 						decimals: tokenListData?.decimals,
 						solveVia: tokenListData?.supportedZaps || []
 					})
@@ -259,7 +259,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 					name: tokenListData?.name,
 					symbol: tokenListData?.symbol,
 					address: toAddress(tokenListData?.address),
-					safeChainID,
+					chainID: currentVault?.chainID === 1337 ? safeChainID : currentVault?.chainID,
 					decimals: tokenListData?.decimals,
 					solveVia: (tokenListData?.supportedZaps as Solver[]) || []
 				})
@@ -305,14 +305,14 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 				name: currentVault?.token?.display_name || currentVault?.token?.name,
 				symbol: currentVault?.token?.symbol,
 				address: toAddress(currentVault.token.address),
-				safeChainID,
+				chainID: currentVault?.chainID === 1337 ? safeChainID : currentVault?.chainID,
 				decimals: currentVault?.token?.decimals || 18
 			});
 			const	_selectedTo = setZapOption({
 				name: currentVault?.display_name || currentVault?.name || currentVault.formated_name,
 				symbol: currentVault?.display_symbol || currentVault.symbol,
 				address: toAddress(currentVault.address),
-				safeChainID,
+				chainID: currentVault?.chainID === 1337 ? safeChainID : currentVault?.chainID,
 				decimals: currentVault?.decimals || 18
 			});
 			updateParams(_selectedFrom, _selectedTo);

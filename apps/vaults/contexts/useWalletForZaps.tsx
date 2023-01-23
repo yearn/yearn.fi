@@ -2,11 +2,12 @@ import React, {createContext, memo, useCallback, useContext, useMemo} from 'reac
 import useSWR from 'swr';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {useBalances} from '@yearn-finance/web-lib/hooks';
+// import {useBalances} from '@yearn-finance/web-lib/hooks';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import {getProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import {useYearn} from '@common/contexts/useYearn';
+import {useBalances} from '@common/hooks/useBalances';
 
 import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
@@ -62,7 +63,6 @@ export const WalletForZapApp = memo(function WalletForZapApp({children}: {childr
 	}, [tokensList, safeChainID]);
 
 	const	{data: balances, update, updateSome, nonce, isLoading: isLoadingBalances} = useBalances({
-		key: safeChainID,
 		provider: provider || getProvider(1),
 		tokens: availableTokens,
 		prices

@@ -8,7 +8,7 @@ type TSetZapOptionProps = {
 	name: string;
 	symbol: string;
 	address: string;
-	safeChainID: number;
+	chainID: number;
 	decimals: number;
 	solveVia?: Solver[]
 }
@@ -16,7 +16,7 @@ export function	setZapOption({
 	name,
 	symbol,
 	address,
-	safeChainID,
+	chainID,
 	decimals,
 	solveVia
 }: TSetZapOptionProps): TDropdownOption {
@@ -27,7 +27,7 @@ export function	setZapOption({
 		decimals,
 		solveVia,
 		icon: <ImageWithFallback
-			src={`${process.env.BASE_YEARN_ASSETS_URI}/${safeChainID}/${address}/logo-128.png`}
+			src={`${process.env.BASE_YEARN_ASSETS_URI}/${chainID}/${address}/logo-128.png`}
 			alt={name}
 			width={36}
 			height={36} />

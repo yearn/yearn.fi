@@ -1,12 +1,13 @@
 import React, {createContext, memo, useCallback, useContext, useMemo} from 'react';
 import {useUI} from '@yearn-finance/web-lib/contexts/useUI';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {useBalances} from '@yearn-finance/web-lib/hooks/useBalances';
+// import {useBalances} from '@yearn-finance/web-lib/hooks/useBalances';
 import {useClientEffect} from '@yearn-finance/web-lib/hooks/useClientEffect';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {getProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import {useYearn} from '@common/contexts/useYearn';
+import {useBalances} from '@common/hooks/useBalances';
 
 import type {ReactElement} from 'react';
 import type {TBalanceData, TUseBalancesTokens} from '@yearn-finance/web-lib/hooks/types';
@@ -36,7 +37,7 @@ const	defaultProps = {
 ******************************************************************************/
 const	WalletContext = createContext<TWalletContext>(defaultProps);
 export const WalletContextApp = memo(function WalletContextApp({children}: {children: ReactElement}): ReactElement {
-	const	{chainID, provider} = useWeb3();
+	const	{provider} = useWeb3();
 	const	{vaults, isLoadingVaultList, prices} = useYearn();
 	const	{onLoadStart, onLoadDone} = useUI();
 
@@ -57,7 +58,6 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 	}, [vaults, isLoadingVaultList]);
 
 	const	{data: balances, update, updateSome, nonce, isLoading} = useBalances({
-		key: chainID,
 		provider: provider || getProvider(1),
 		tokens: availableTokens,
 		prices
