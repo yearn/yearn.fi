@@ -93,7 +93,7 @@ function GaugeListRow({gauge, votesState, votesDispatch}: TGaugeListRow): ReactE
 					</p>
 				</div>
 
-				<div className={'yearn--table-data-section-item pt-2 md:col-span-2'} datatype={'number'}>
+				<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
 					<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Your votes'}</label>
 					<p className={'yearn--table-data-section-item-value'}>
 						{0}
