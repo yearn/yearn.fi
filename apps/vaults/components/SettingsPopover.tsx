@@ -1,6 +1,6 @@
 import React, {Fragment} from 'react';
 import {Popover, Transition} from '@headlessui/react';
-import {Solver} from '@vaults/contexts/useSolver';
+import {isSolverDisabled, Solver} from '@vaults/contexts/useSolver';
 import IconSettings from '@yearn-finance/web-lib/icons/IconSettings';
 import {useYearn} from '@common/contexts/useYearn';
 
@@ -35,9 +35,21 @@ export default function SettingsPopover(): ReactElement {
 											onChange={(e): void => set_zapProvider(e.target.value as Solver)}
 											value={zapProvider}
 											className={'mt-1 h-10 w-full overflow-x-scroll border-none bg-neutral-0 p-2 outline-none scrollbar-none'}>
-											<option value={Solver.COWSWAP}>{Solver.COWSWAP}</option>
-											<option value={Solver.WIDO}>{Solver.WIDO}</option>
-											<option disabled value={Solver.PORTALS}>{Solver.PORTALS}</option>
+											<option
+												disabled={isSolverDisabled[Solver.COWSWAP]}
+												value={Solver.COWSWAP}>
+												{Solver.COWSWAP}
+											</option>
+											<option
+												disabled={isSolverDisabled[Solver.WIDO]}
+												value={Solver.WIDO}>
+												{Solver.WIDO}
+											</option>
+											<option
+												disabled={isSolverDisabled[Solver.PORTALS]}
+												value={Solver.PORTALS}>
+												{Solver.PORTALS}
+											</option>
 										</select>
 									</div>
 									<div>

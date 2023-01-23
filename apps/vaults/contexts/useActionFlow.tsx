@@ -1,6 +1,6 @@
 import React, {createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState} from 'react';
 import {ethers} from 'ethers';
-import {Solver} from '@vaults/contexts/useSolver';
+import {isSolverDisabled, Solver} from '@vaults/contexts/useSolver';
 import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
 import {setZapOption} from '@vaults/utils/zapOptions';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
@@ -128,9 +128,9 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 		if (isInputTokenEth || isOutputTokenEth) {
 			return Solver.CHAIN_COIN;
 		}
-		if (isDepositing && actionParams?.selectedOptionFrom?.solveVia?.includes(zapProvider)) {
+		if (isDepositing && actionParams?.selectedOptionFrom?.solveVia?.includes(zapProvider) && !isSolverDisabled[zapProvider]) {
 			return zapProvider;
-		} if (!isDepositing && actionParams?.selectedOptionTo?.solveVia?.includes(zapProvider)) {
+		} if (!isDepositing && actionParams?.selectedOptionTo?.solveVia?.includes(zapProvider) && !isSolverDisabled[zapProvider]) {
 			return zapProvider;
 		}
 		if (isDepositing && isUsingPartnerContract) {

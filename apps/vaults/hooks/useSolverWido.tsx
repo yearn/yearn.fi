@@ -1,7 +1,7 @@
 import {useCallback, useMemo, useRef, useState} from 'react';
 import {ethers} from 'ethers';
 import {getTokenAllowance as wiGetTokenAllowance, getWidoSpender, quote as wiQuote} from 'wido';
-import {Solver} from '@vaults/contexts/useSolver';
+import {isSolverDisabled, Solver} from '@vaults/contexts/useSolver';
 import {useAsync} from '@vaults/hooks/useAsync';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -88,6 +88,9 @@ export function useSolverWido(): TSolverContext {
 	** call getQuote to get the current quote for the provided request.current.
 	**********************************************************************************************/
 	const init = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN> => {
+		if (isSolverDisabled[Solver.WIDO]) {
+			return toNormalizedBN(0);
+		}
 		request.current = _request;
 		const quote = await getQuote(_request);
 		if (quote) {
@@ -114,7 +117,7 @@ export function useSolverWido(): TSolverContext {
 	** not.
 	**********************************************************************************************/
 	const execute = useCallback(async (): Promise<boolean> => {
-		if (!latestQuote?.current || !request.current) {
+		if (!latestQuote?.current || !request.current || isSolverDisabled[Solver.WIDO]) {
 			return false;
 		}
 
@@ -139,7 +142,7 @@ export function useSolverWido(): TSolverContext {
 	** process and displayed to the user.
 	**************************************************************************/
 	const expectedOut = useMemo((): TNormalizedBN => {
-		if (!latestQuote?.current?.toTokenAmount) {
+		if (!latestQuote?.current?.toTokenAmount || isSolverDisabled[Solver.WIDO]) {
 			return (toNormalizedBN(0));
 		}
 		return toNormalizedBN(latestQuote?.current?.toTokenAmount, request?.current?.outputToken?.decimals || 18);
@@ -150,7 +153,10 @@ export function useSolverWido(): TSolverContext {
 	** display the current value to the user.
 	**************************************************************************/
 	const onRetrieveExpectedOut = useCallback(async (request: TInitSolverArgs): Promise<TNormalizedBN> => {
-		const	quoteResult = await getQuote(request, true);
+		if (isSolverDisabled[Solver.WIDO]) {
+			return toNormalizedBN(0);
+		}
+		const quoteResult = await getQuote(request, true);
 		return toNormalizedBN(formatBN(quoteResult?.toTokenAmount), request.outputToken.decimals);
 	}, [getQuote]);
 
@@ -159,7 +165,7 @@ export function useSolverWido(): TSolverContext {
 	** be used to determine if the user should approve the token or not.
 	**************************************************************************/
 	const onRetrieveAllowance = useCallback(async (): Promise<TNormalizedBN> => {
-		if (!latestQuote?.current || !request?.current) {
+		if (!latestQuote?.current || !request?.current || isSolverDisabled[Solver.WIDO]) {
 			return toNormalizedBN(0);
 		}
 
@@ -182,7 +188,7 @@ export function useSolverWido(): TSolverContext {
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
-		if (!latestQuote?.current || !request?.current) {
+		if (!latestQuote?.current || !request?.current || isSolverDisabled[Solver.WIDO]) {
 			return;
 		}
 		const	widoSpenderAddress = toAddress(await getWidoSpender({

@@ -24,6 +24,15 @@ export enum	Solver {
 	PORTALS = 'Portals'
 }
 
+export const isSolverDisabled = {
+	[Solver.VANILLA]: false,
+	[Solver.PARTNER_CONTRACT]: false,
+	[Solver.CHAIN_COIN]: false,
+	[Solver.COWSWAP]: false,
+	[Solver.WIDO]: true, //Audit ongoing
+	[Solver.PORTALS]: true //Not yet implemented
+};
+
 const	DefaultWithSolverContext: TWithSolver = {
 	currentSolver: Solver.VANILLA,
 	effectiveSolver: Solver.VANILLA,
@@ -68,13 +77,8 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 		switch (currentSolver) {
 			case Solver.WIDO:
 			case Solver.COWSWAP: {
-				const [widoQuote, cowswapQuote] = await Promise.all([wido.init(request), cowswap.init(request)]);
-				console.log({
-					cowswap: cowswapQuote?.normalized,
-					wido: widoQuote?.normalized
-				});
-
-				if (currentSolver === Solver.WIDO) {
+				const [widoQuote, cowswapQuote] = await Promise.all([wido.init(request), cowswap.init(request)]); //TODO: add Portals once implemented
+				if (currentSolver === Solver.WIDO && !isSolverDisabled[Solver.WIDO]) {
 					if (widoQuote?.raw?.gt(0)) {
 						performBatchedUpdates((): void => {
 							set_currentSolverState({...wido, quote: widoQuote});
@@ -88,7 +92,7 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 					}
 				}
 
-				if (currentSolver === Solver.COWSWAP) {
+				if (currentSolver === Solver.COWSWAP && !isSolverDisabled[Solver.COWSWAP]) {
 					if (cowswapQuote?.raw?.gt(0)) {
 						performBatchedUpdates((): void => {
 							set_currentSolverState({...cowswap, quote: cowswapQuote});
@@ -104,13 +108,6 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 				}
 				break;
 			}
-			// case Solver.COWSWAP:
-			// 	quote = await cowswap.init(request);
-			// 	performBatchedUpdates((): void => {
-			// 		set_currentSolverState({...cowswap, quote});
-			// 		set_isLoading(false);
-			// 	});
-			// 	break;
 			case Solver.CHAIN_COIN:
 				quote = await chainCoin.init(request);
 				performBatchedUpdates((): void => {

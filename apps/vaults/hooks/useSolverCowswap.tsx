@@ -3,7 +3,7 @@ import {ethers} from 'ethers';
 import axios from 'axios';
 import useSWRMutation from 'swr/mutation';
 import {domain, OrderKind, SigningScheme, signOrder} from '@gnosis.pm/gp-v2-contracts';
-import {Solver} from '@vaults/contexts/useSolver';
+import {isSolverDisabled, Solver} from '@vaults/contexts/useSolver';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -111,6 +111,9 @@ export function useSolverCowswap(): TSolverContext {
 	** call getQuote to get the current quote for the provided request.current.
 	**********************************************************************************************/
 	const init = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN> => {
+		if (isSolverDisabled[Solver.COWSWAP]) {
+			return toNormalizedBN(0);
+		}
 		request.current = _request;
 		const quote = await getQuote(_request);
 		if (quote) {
@@ -162,7 +165,7 @@ export function useSolverCowswap(): TSolverContext {
 	** signCowswapOrder method.
 	**********************************************************************************************/
 	const	approve = useCallback(async (): Promise<boolean> => {
-		if (!latestQuote?.current || !latestQuote?.current?.quote || !request?.current) {
+		if (!latestQuote?.current || !latestQuote?.current?.quote || !request?.current || isSolverDisabled[Solver.COWSWAP]) {
 			return false;
 		}
 		const	{quote} = latestQuote.current;
@@ -210,7 +213,7 @@ export function useSolverCowswap(): TSolverContext {
 	** not.
 	**********************************************************************************************/
 	const execute = useCallback(async (): Promise<boolean> => {
-		if (!latestQuote?.current || !latestQuote?.current?.quote || !request.current) {
+		if (!latestQuote?.current || !latestQuote?.current?.quote || !request.current || isSolverDisabled[Solver.COWSWAP]) {
 			return false;
 		}
 		const	{quote, from, id} = latestQuote.current;
@@ -244,7 +247,7 @@ export function useSolverCowswap(): TSolverContext {
 	** process and displayed to the user.
 	**************************************************************************/
 	const expectedOut = useMemo((): TNormalizedBN => {
-		if (!latestQuote?.current?.quote?.buyAmount) {
+		if (!latestQuote?.current?.quote?.buyAmount || isSolverDisabled[Solver.COWSWAP]) {
 			return (toNormalizedBN(0));
 		}
 		return toNormalizedBN(latestQuote?.current?.quote?.buyAmount, request?.current?.outputToken?.decimals || 18);
@@ -255,7 +258,10 @@ export function useSolverCowswap(): TSolverContext {
 	** display the current value to the user.
 	**************************************************************************/
 	const onRetrieveExpectedOut = useCallback(async (request: TInitSolverArgs): Promise<TNormalizedBN> => {
-		const	quoteResult = await getQuote(request, true);
+		if (isSolverDisabled[Solver.COWSWAP]) {
+			return (toNormalizedBN(0));
+		}
+		const quoteResult = await getQuote(request, true);
 		return toNormalizedBN(formatBN(quoteResult?.quote?.buyAmount), request.outputToken.decimals);
 	}, [getQuote]);
 
@@ -264,7 +270,7 @@ export function useSolverCowswap(): TSolverContext {
 	** be used to determine if the user should approve the token or not.
 	**************************************************************************/
 	const onRetrieveAllowance = useCallback(async (): Promise<TNormalizedBN> => {
-		if (!request?.current) {
+		if (!request?.current || isSolverDisabled[Solver.COWSWAP]) {
 			return toNormalizedBN(0);
 		}
 
@@ -286,7 +292,7 @@ export function useSolverCowswap(): TSolverContext {
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
-		if (!latestQuote?.current || !latestQuote?.current?.quote || !request?.current) {
+		if (!latestQuote?.current || !latestQuote?.current?.quote || !request?.current || isSolverDisabled[Solver.COWSWAP]) {
 			return;
 		}
 
@@ -343,7 +349,6 @@ export function useSolverCowswap(): TSolverContext {
 			.onSuccess(onSuccess)
 			.perform();
 	}, [execute, provider]);
-
 
 	return useMemo((): TSolverContext => ({
 		type: Solver.COWSWAP,
