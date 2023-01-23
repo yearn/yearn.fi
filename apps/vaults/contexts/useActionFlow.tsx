@@ -13,7 +13,7 @@ import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUp
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 
-import ExternalzapOutTokenList from '../../common/utils/externalZapOutTokenList.json';
+import externalzapOutTokenList from '../../common/utils/externalZapOutTokenList.json';
 
 import type {ReactNode} from 'react';
 import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
@@ -218,29 +218,31 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 		const	_possibleZapOptionsFrom: TDropdownOption[] = [];
 		const	isWithWETH = safeChainID === 1 && currentVault && toAddress(currentVault.token.address) === WETH_TOKEN_ADDRESS;
 		const	isWithWFTM = safeChainID === 250 && currentVault && toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS;
-		Object.entries(zapBalances || {}).forEach(([tokenAddress]): void => {
-			const	tokenListData = tokensList[toAddress(tokenAddress)];
-			if (isWithWETH && toAddress(tokenListData?.address) === WETH_TOKEN_ADDRESS) {
+		Object.entries(zapBalances || {})
+			.filter((): boolean => safeChainID === currentVault?.chainID) // Disable if we are on the wrong chain
+			.forEach(([tokenAddress]): void => {
+				const	tokenListData = tokensList[toAddress(tokenAddress)];
+				if (isWithWETH && toAddress(tokenListData?.address) === WETH_TOKEN_ADDRESS) {
 				// Do nothing to avoid duplicate wETH in the list
-			} else if (isWithWFTM && toAddress(tokenListData?.address) === WFTM_TOKEN_ADDRESS) {
+				} else if (isWithWFTM && toAddress(tokenListData?.address) === WFTM_TOKEN_ADDRESS) {
 				// Do nothing to avoid duplicate wFTM in the list
-			} else if (toAddress(tokenListData?.address) === currentVault?.token?.address) {
+				} else if (toAddress(tokenListData?.address) === currentVault?.token?.address) {
 				// Do nothing to avoid duplicate vault underlying token in the list
-			} else if (toAddress(tokenListData?.address) === currentVault?.address) {
+				} else if (toAddress(tokenListData?.address) === currentVault?.address) {
 				// Do nothing to avoid vault token in the list
-			} else {
-				_possibleZapOptionsFrom.push(
-					setZapOption({
-						name: tokenListData?.name,
-						symbol: tokenListData?.symbol,
-						address: toAddress(tokenListData?.address),
-						chainID: currentVault?.chainID === 1337 ? safeChainID : currentVault?.chainID,
-						decimals: tokenListData?.decimals,
-						solveVia: tokenListData?.supportedZaps || []
-					})
-				);
-			}
-		});
+				} else {
+					_possibleZapOptionsFrom.push(
+						setZapOption({
+							name: tokenListData?.name,
+							symbol: tokenListData?.symbol,
+							address: toAddress(tokenListData?.address),
+							chainID: currentVault?.chainID === 1337 ? safeChainID : currentVault?.chainID,
+							decimals: tokenListData?.decimals,
+							solveVia: tokenListData?.supportedZaps || []
+						})
+					);
+				}
+			});
 		set_possibleZapOptionsFrom(_possibleZapOptionsFrom);
 	}, [safeChainID, tokensList, zapBalances, zapBalancesNonce, currentVault]);
 
@@ -253,20 +255,23 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 	**********************************************************************************************/
 	useEffect((): void => {
 		const	_possibleZapOptionsTo: TDropdownOption[] = [];
-		ExternalzapOutTokenList.forEach((tokenListData): void => {
-			_possibleZapOptionsTo.push(
-				setZapOption({
-					name: tokenListData?.name,
-					symbol: tokenListData?.symbol,
-					address: toAddress(tokenListData?.address),
-					chainID: currentVault?.chainID === 1337 ? safeChainID : currentVault?.chainID,
-					decimals: tokenListData?.decimals,
-					solveVia: (tokenListData?.supportedZaps as Solver[]) || []
-				})
-			);
-		});
+		externalzapOutTokenList
+			.filter((): boolean => safeChainID === currentVault?.chainID) // Disable if we are on the wrong chain
+			.filter((token): boolean => token.chainID === (currentVault?.chainID || safeChainID))
+			.forEach((tokenListData): void => {
+				_possibleZapOptionsTo.push(
+					setZapOption({
+						name: tokenListData?.name,
+						symbol: tokenListData?.symbol,
+						address: toAddress(tokenListData?.address),
+						chainID: currentVault?.chainID === 1337 ? safeChainID : currentVault?.chainID,
+						decimals: tokenListData?.decimals,
+						solveVia: (tokenListData?.supportedZaps as Solver[]) || []
+					})
+				);
+			});
 		set_possibleZapOptionsTo(_possibleZapOptionsTo);
-	}, [safeChainID]);
+	}, [currentVault?.chainID, safeChainID]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** FLOW: Update From/To/Amount in one unique re-render

@@ -49,7 +49,7 @@ function Index({router, vaultData}: {router: NextRouter, vaultData: TYearnVault}
 					variants={variants}
 					className={'z-50 -mt-6 h-12 w-12 cursor-pointer md:-mt-36 md:h-[72px] md:w-[72px]'}>
 					<ImageWithFallback
-						src={`${process.env.BASE_YEARN_ASSETS_URI}/${safeChainID}/${toAddress(currentVault.current.token.address)}/logo-128.png`}
+						src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault?.current?.chainID || safeChainID}/${toAddress(currentVault.current.token.address)}/logo-128.png`}
 						alt={''}
 						width={72}
 						height={72} />
