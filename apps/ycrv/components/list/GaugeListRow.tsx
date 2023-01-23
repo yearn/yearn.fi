@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useMemo, useState} from 'react';
 import {utils} from 'ethers';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
@@ -27,7 +27,17 @@ function GaugeListRow({gauge, votesState, votesDispatch}: TGaugeListRow): ReactE
 	const {vote} = useVLyCRV();
 	const {toast} = yToast();
 	const {provider, isActive} = useWeb3();
-	const currentVotes = votesState.votes[gauge.gauge];
+	const [currentVotes, set_currentVotes] = useState<string>('');
+
+	useMemo((): void => {
+		const votes = votesState.votes[gauge.gauge];
+		if (!votes) {
+			set_currentVotes('');
+			return;
+		}
+		const {normalized} = toNormalizedBN(votes);
+		set_currentVotes(normalized.toString());
+	}, [gauge.gauge, votesState.votes]);
 
 	const handleVoteInput = ({target: {value}}: ChangeEvent<HTMLInputElement>): void => {
 		if (value === '' && isAddress(gauge.gauge)) {
@@ -55,6 +65,8 @@ function GaugeListRow({gauge, votesState, votesDispatch}: TGaugeListRow): ReactE
 			votesDispatch({type: 'MAX', gaugeAddress: gauge.gauge});
 		}
 	}
+
+	const isMaxDisabled = votesState.maxVotes.eq(votesState.currentTotal);
 
 	return (
 		<div className={'yearn--table-wrapper cursor-pointer transition-colors hover:bg-neutral-300'}>
@@ -97,10 +109,10 @@ function GaugeListRow({gauge, votesState, votesDispatch}: TGaugeListRow): ReactE
 								placeholder={'0'}
 								type={'number'}
 								className={'w-full cursor-default overflow-x-scroll border-none bg-transparent px-0 font-bold outline-none scrollbar-none'}
-								value={currentVotes ? toNormalizedBN(currentVotes).normalized : undefined}
+								value={currentVotes}
 								onSetMaxAmount={handleOnSetMaxAmount}
 								onChange={handleVoteInput}
-								isMaxDisabled={votesState.maxVotes.eq(votesState.currentTotal)}
+								isMaxDisabled={isMaxDisabled}
 							/>
 						</div>
 					</p>
