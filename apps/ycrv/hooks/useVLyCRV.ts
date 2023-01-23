@@ -88,8 +88,7 @@ async function vote({provider, gaugeAddress, votes}: TVoteTxProps): Promise<bool
 
 	try {
 		const contract = new ethers.Contract(VL_YCRV_CONTRACT, VLYCRV_ABI, signer);
-		const amount = ethers.utils.parseUnits((votes || 0).toString(), 18);
-		const transaction = await contract.vote(gaugeAddress, amount);
+		const transaction = await contract.vote(gaugeAddress, votes);
 		const transactionResult = await transaction.wait();
 		if (transactionResult.status === 0) {
 			throw new Error('Fail to perform transaction');
