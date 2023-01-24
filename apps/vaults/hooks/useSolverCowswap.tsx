@@ -219,12 +219,13 @@ export function useSolverCowswap(): TSolverContext {
 		const	{quote, from, id} = latestQuote.current;
 		try {
 			const	buyAmountWithSlippage = getBuyAmountWithSlippage(latestQuote.current, request.current.outputToken.decimals);
+			const	signature = await signCowswapOrder({...quote, buyAmount: buyAmountWithSlippage});
 			const	{data: orderUID} = await axios.post('https://api.cow.fi/mainnet/api/v1/orders', {
 				...quote,
 				buyAmount: buyAmountWithSlippage,
 				from: from,
 				quoteId: id,
-				signature: signature.current,
+				signature: signature,
 				signingScheme: shouldUsePresign ? 'presign' : 'eip712'
 			});
 			if (orderUID) {
@@ -240,7 +241,7 @@ export function useSolverCowswap(): TSolverContext {
 			return false;
 		}
 		return false;
-	}, [latestQuote, shouldUsePresign, signature]);
+	}, [getBuyAmountWithSlippage, shouldUsePresign, signCowswapOrder]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Format the quote to a normalized value, which will be used for subsequent
