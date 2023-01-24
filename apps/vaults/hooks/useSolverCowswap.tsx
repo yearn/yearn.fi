@@ -304,7 +304,6 @@ export function useSolverCowswap(): TSolverContext {
 			amount
 		);
 		if (isApproved) {
-			await approve();
 			onSuccess();
 			return;
 		}
@@ -314,10 +313,7 @@ export function useSolverCowswap(): TSolverContext {
 				toAddress(SOLVER_COW_VAULT_RELAYER_ADDRESS), //Cowswap relayer
 				amount
 			)
-			.onSuccess(async (): Promise<void> => {
-				await approve();
-				onSuccess();
-			})
+			.onSuccess(onSuccess)
 			.perform();
 	}, [approve, provider]);
 
