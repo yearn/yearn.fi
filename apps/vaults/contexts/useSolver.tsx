@@ -64,6 +64,7 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 		if (!actionParams?.selectedOptionFrom || !actionParams?.selectedOptionTo || !actionParams?.amount) {
 			return;
 		}
+		console.log('HEEERE');
 		set_isLoading(true);
 
 		let quote: TNormalizedBN = toNormalizedBN(0);
@@ -89,10 +90,13 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 							set_currentSolverState({...cowswap, quote: cowswapQuote});
 							set_isLoading(false);
 						});
+					} else {
+						performBatchedUpdates((): void => {
+							set_currentSolverState({...cowswap, quote: toNormalizedBN(0)});
+							set_isLoading(false);
+						});
 					}
-				}
-
-				if (currentSolver === Solver.COWSWAP && !isSolverDisabled[Solver.COWSWAP]) {
+				} else if (currentSolver === Solver.COWSWAP && !isSolverDisabled[Solver.COWSWAP]) {
 					if (cowswapQuote?.raw?.gt(0)) {
 						performBatchedUpdates((): void => {
 							set_currentSolverState({...cowswap, quote: cowswapQuote});
@@ -103,7 +107,14 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 							set_currentSolverState({...wido, quote: widoQuote});
 							set_isLoading(false);
 						});
+					} else {
+						performBatchedUpdates((): void => {
+							set_currentSolverState({...wido, quote: toNormalizedBN(0)});
+							set_isLoading(false);
+						});
 					}
+				} else {
+					set_isLoading(false);
 				}
 				break;
 			}
