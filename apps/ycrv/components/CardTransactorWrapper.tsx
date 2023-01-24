@@ -7,7 +7,7 @@ import {useAddToken} from '@yearn-finance/web-lib/hooks/useAddToken';
 import {useDismissToasts} from '@yearn-finance/web-lib/hooks/useDismissToasts';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatBN, toNormalizedBN, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {getProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
@@ -50,7 +50,7 @@ const		CardTransactorContext = createContext<TCardTransactor>({
 	amount: toNormalizedBN(0),
 	txStatusApprove: defaultTxStatus,
 	txStatusZap: defaultTxStatus,
-	allowanceFrom: ethers.constants.Zero,
+	allowanceFrom: Zero,
 	fromVaultAPY: '',
 	toVaultAPY: '',
 	expectedOutWithSlippage: 0,
@@ -106,7 +106,7 @@ function	CardTransactorContextApp({
 	const expectedOutFetcher = useCallback(async (args: [string, string, BigNumber]): Promise<BigNumber> => {
 		const [_inputToken, _outputToken, _amountIn] = args;
 		if (_amountIn.isZero()) {
-			return (ethers.constants.Zero);
+			return (Zero);
 		}
 
 		const	currentProvider = provider || getProvider(1);
@@ -118,11 +118,11 @@ function	CardTransactorContextApp({
 				currentProvider
 			);
 			try {
-				const	pps = await contract.pricePerShare() || ethers.constants.Zero;
+				const	pps = formatBN(await contract.pricePerShare());
 				const	_expectedOut = _amountIn.mul(pps).div(ethers.constants.WeiPerEther);
 				return _expectedOut;
 			} catch (error) {
-				return (ethers.constants.Zero);
+				return (Zero);
 			}
 		} else {
 			// Zap in
@@ -132,10 +132,10 @@ function	CardTransactorContextApp({
 				currentProvider
 			);
 			try {
-				const	_expectedOut = await contract.calc_expected_out(_inputToken, _outputToken, _amountIn) || ethers.constants.Zero;
+				const	_expectedOut = formatBN(await contract.calc_expected_out(_inputToken, _outputToken, _amountIn));
 				return _expectedOut;
 			} catch (error) {
-				return (ethers.constants.Zero);
+				return (Zero);
 			}
 		}
 	}, [provider]);
@@ -259,13 +259,13 @@ function	CardTransactorContextApp({
 	const	expectedOutWithSlippage = useMemo((): number => getAmountWithSlippage(
 		selectedOptionFrom.value,
 		selectedOptionTo.value,
-		expectedOut || ethers.constants.Zero,
+		formatBN(expectedOut),
 		slippage
 	), [expectedOut, selectedOptionFrom.value, selectedOptionTo.value, slippage]);
 
 	const	allowanceFrom = useMemo((): BigNumber => {
 		balancesNonce; // remove warning, force deep refresh
-		return allowances?.[allowanceKey(selectedOptionFrom.value, selectedOptionFrom.zapVia)] || ethers.constants.Zero;
+		return formatBN(allowances?.[allowanceKey(selectedOptionFrom.value, selectedOptionFrom.zapVia)]);
 	}, [balancesNonce, allowances, selectedOptionFrom.value, selectedOptionFrom.zapVia]);
 
 	return (

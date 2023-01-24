@@ -1,16 +1,16 @@
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {Contract} from 'ethcall';
-import {ethers} from 'ethers';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import * as format from '@yearn-finance/web-lib/utils/format';
+import {formatBN} from '@yearn-finance/web-lib/utils/format';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import * as providers from '@yearn-finance/web-lib/utils/web3/providers';
 
-import type {BigNumber} from 'ethers';
+import type {BigNumber, ethers} from 'ethers';
 import type {DependencyList} from 'react';
 import type {TBalanceData, TDefaultStatus} from '@yearn-finance/web-lib/hooks/types';
 import type {TAddress} from '@yearn-finance/web-lib/utils/address';
@@ -125,7 +125,7 @@ export function	useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 				const	{token} = element;
 				const	balanceOf = results[rIndex++] as BigNumber;
 				const	decimals = results[rIndex++] as number;
-				const	rawPrice = format.BN(props?.prices?.[toAddress(token)] || ethers.constants.Zero);
+				const	rawPrice = formatBN(props?.prices?.[toAddress(token)]);
 				let symbol = results[rIndex++] as string;
 
 				if (toAddress(token) === ETH_TOKEN_ADDRESS) {
@@ -255,7 +255,7 @@ export function	useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	const assignPrices = useCallback((_rawData: TDict<TBalanceData>): TDict<TBalanceData> => {
 		for (const key of Object.keys(_rawData)) {
 			const	tokenAddress = toAddress(key);
-			const	rawPrice = format.BN(props?.prices?.[tokenAddress] || ethers.constants.Zero);
+			const	rawPrice = formatBN(props?.prices?.[tokenAddress]);
 			_rawData[tokenAddress] = {
 				..._rawData[tokenAddress],
 				rawPrice,

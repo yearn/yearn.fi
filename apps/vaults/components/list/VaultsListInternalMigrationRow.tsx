@@ -8,6 +8,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
@@ -35,7 +36,7 @@ function	VaultsListInternalMigrationRow({currentVault}: {currentVault: TYearnVau
 			provider as ethers.providers.Web3Provider,
 			toAddress(currentVault.address), //from
 			toAddress(currentVault.migration.contract), //migrator
-			balanceToMigrate.raw || ethers.constants.Zero
+			formatBN(balanceToMigrate.raw)
 		);
 
 		if (isApproved) {

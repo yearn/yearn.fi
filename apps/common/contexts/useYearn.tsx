@@ -1,12 +1,11 @@
 import React, {createContext, memo, useContext, useMemo} from 'react';
-import {ethers} from 'ethers';
 import useSWR from 'swr';
 import {Solver} from '@vaults/contexts/useSolver';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useLocalStorage} from '@yearn-finance/web-lib/hooks';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {addressZero, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 
 import type {ReactElement} from 'react';
@@ -37,7 +36,7 @@ const	defaultProps: TYearnContext = {
 	},
 	prices: {},
 	tokens: {},
-	vaults: {[ethers.constants.AddressZero]: undefined},
+	vaults: {[addressZero]: undefined},
 	isLoadingVaultList: false,
 	mutateVaultList: async (): Promise<void> => Promise.resolve(),
 	zapSlippage: 0.1,

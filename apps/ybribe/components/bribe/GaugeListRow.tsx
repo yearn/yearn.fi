@@ -1,5 +1,4 @@
 import React, {useMemo, useState} from 'react';
-import {ethers} from 'ethers';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {Modal} from '@yearn-finance/web-lib/components/Modal';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -49,13 +48,13 @@ function	GaugeListRow({currentGauge}: {currentGauge: TCurveGauges}): ReactElemen
 	const	currentRewardsForCurrentGauge = useMemo((): TDict<BigNumber> => {
 		return currentRewards?.v3?.[toAddress(currentGauge.gauge)] || {};
 	}, [currentGauge.gauge, currentRewards]);
-	
+
 	const	nextRewardsForCurrentGauge = useMemo((): TDict<BigNumber> => {
 		return nextRewards?.v3?.[toAddress(currentGauge.gauge)] || {};
 	}, [currentGauge.gauge, nextRewards]);
 
 	const	gaugeRelativeWeight = useMemo((): number => {
-		return formatToNormalizedValue(formatBN(String(currentGauge?.gauge_controller?.gauge_relative_weight) || ethers.constants.Zero), 18);
+		return formatToNormalizedValue(formatBN(currentGauge?.gauge_controller?.gauge_relative_weight), 18);
 	}, [currentGauge]);
 
 	const	currentRewardsForCurrentGaugeMap = Object.entries(currentRewardsForCurrentGauge || {}) || [];

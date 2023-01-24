@@ -1,5 +1,4 @@
 import React, {Fragment, useCallback, useMemo} from 'react';
-import {ethers} from 'ethers';
 import VaultListOptions from '@vaults/components/list/VaultListOptions';
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
 import {VaultsListInternalMigrationRow} from '@vaults/components/list/VaultsListInternalMigrationRow';
@@ -12,6 +11,7 @@ import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import Wrapper from '@vaults/Wrapper';
 import {useSessionStorage} from '@yearn-finance/web-lib/hooks/useSessionStorage';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import ListHead from '@common/components/ListHead';
 import ListHero from '@common/components/ListHero';
@@ -81,7 +81,7 @@ function	Index(): ReactElement {
 	const	cryptoVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Volatile');
 	const	holdingsVaults = useFilteredVaults(vaults, ({address}): boolean => {
 		const	holding = balances?.[toAddress(address)];
-		const	hasValidBalance = (holding?.raw || ethers.constants.Zero).gt(0);
+		const	hasValidBalance = formatBN(holding?.raw).gt(0);
 		const	balanceValue = holding?.normalizedValue || 0;
 		if (shouldHideDust && balanceValue < 0.01) {
 			return false;
@@ -93,8 +93,8 @@ function	Index(): ReactElement {
 	});
 	const	migratableVaults = useFilteredVaults(possibleVaultsMigrations, ({address}): boolean => {
 		const	holding = internalMigrationsBalances?.[toAddress(address)];
-		const	hasValidPrice = (holding?.rawPrice || ethers.constants.Zero).gt(0);
-		const	hasValidBalance = (holding?.raw || ethers.constants.Zero).gt(0);
+		const	hasValidPrice = formatBN(holding?.rawPrice).gt(0);
+		const	hasValidBalance = formatBN(holding?.raw).gt(0);
 		if (hasValidBalance && (hasValidPrice ? (holding?.normalizedValue || 0) >= 0.01 : true)) {
 			return true;
 		}

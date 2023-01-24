@@ -1,9 +1,8 @@
 import React, {createContext, memo, useContext, useMemo} from 'react';
-import {ethers} from 'ethers';
 import useSWR from 'swr';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {addressZero, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 
 import type {ReactElement} from 'react';
@@ -16,7 +15,7 @@ export type	TVaultsMigrationsContext = {
 	isLoading: boolean,
 }
 const	defaultProps: TVaultsMigrationsContext = {
-	possibleVaultsMigrations: {[ethers.constants.AddressZero]: undefined},
+	possibleVaultsMigrations: {[addressZero]: undefined},
 	isLoading: false
 };
 

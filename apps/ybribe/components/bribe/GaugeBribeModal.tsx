@@ -1,6 +1,5 @@
 import React, {useCallback, useState} from 'react';
 import {Contract} from 'ethcall';
-import {ethers} from 'ethers';
 import useSWR from 'swr';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -8,7 +7,7 @@ import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {ERC20_ABI} from '@yearn-finance/web-lib/utils/abi';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {CURVE_BRIBE_V3_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatToNormalizedValue, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatBN, formatToNormalizedValue, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
@@ -141,8 +140,8 @@ function	GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauges, o
 				isDisabled={
 					!isActive ||
 					isZeroAddress(tokenAddress) ||
-					amount.raw.isZero() ||
-					amount.raw.gt(selectedToken?.raw || ethers.constants.Zero) ||
+					formatBN(amount?.raw).isZero() ||
+					formatBN(amount?.raw).gt(formatBN(selectedToken?.raw)) ||
 					![1, 1337].includes(chainID)
 				}>
 				{'Deposit'}
@@ -200,7 +199,7 @@ function	GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauges, o
 								<button
 									onClick={(): void => {
 										set_amount({
-											raw: selectedToken?.raw || ethers.constants.Zero,
+											raw: formatBN(selectedToken?.raw),
 											normalized: selectedToken?.normalized || 0
 										});
 									}}

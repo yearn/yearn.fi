@@ -7,11 +7,11 @@ import {isSolverDisabled, Solver} from '@vaults/contexts/useSolver';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {SOLVER_COW_VAULT_RELAYER_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatBN, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
 import {approvedERC20Amount, approveERC20, isApprovedERC20} from '@common/utils/actions/approveToken';
-import {COW_VAULT_RELAYER_ADDRESS} from '@common/utils/constants';
 
 import type {AxiosError} from 'axios';
 import type {TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
@@ -277,7 +277,7 @@ export function useSolverCowswap(): TSolverContext {
 		const allowance = await approvedERC20Amount(
 			provider as ethers.providers.Web3Provider,
 			toAddress(request.current.inputToken.value), //Input token
-			toAddress(COW_VAULT_RELAYER_ADDRESS) //Spender, aka Cowswap solver
+			toAddress(SOLVER_COW_VAULT_RELAYER_ADDRESS) //Spender, aka Cowswap solver
 		);
 		return toNormalizedBN(allowance, request.current.inputToken.decimals);
 	}, [provider, request]);
@@ -299,7 +299,7 @@ export function useSolverCowswap(): TSolverContext {
 		const	isApproved = await isApprovedERC20(
 			provider as ethers.providers.Web3Provider,
 			toAddress(request.current.inputToken.value), //token to approve
-			toAddress(COW_VAULT_RELAYER_ADDRESS), //Cowswap relayer
+			toAddress(SOLVER_COW_VAULT_RELAYER_ADDRESS), //Cowswap relayer
 			amount
 		);
 		if (isApproved) {
@@ -310,7 +310,7 @@ export function useSolverCowswap(): TSolverContext {
 		new Transaction(provider, approveERC20, txStatusSetter)
 			.populate(
 				toAddress(request.current.inputToken.value), //token to approve
-				toAddress(COW_VAULT_RELAYER_ADDRESS), //Cowswap relayer
+				toAddress(SOLVER_COW_VAULT_RELAYER_ADDRESS), //Cowswap relayer
 				amount
 			)
 			.onSuccess(async (): Promise<void> => {

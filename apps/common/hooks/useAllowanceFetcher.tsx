@@ -2,7 +2,7 @@ import {useCallback} from 'react';
 import {ethers} from 'ethers';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatBN, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 
 import type {TAddress} from '@yearn-finance/web-lib/utils/address';
 import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
@@ -29,7 +29,7 @@ export function	useAllowanceFetcher(): (args: TAllowanceFetcher) => Promise<TNor
 		const	address = await (provider as ethers.providers.Web3Provider).getSigner().getAddress();
 
 		try {
-			const	tokenAllowance = await contract.allowance(address, spender) || ethers.constants.Zero;
+			const	tokenAllowance = formatBN(await contract.allowance(address, spender));
 			const	effectiveAllowance = toNormalizedBN(tokenAllowance, inputToken.decimals);
 			return effectiveAllowance;
 		} catch (error) {

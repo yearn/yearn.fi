@@ -1,5 +1,4 @@
 import React, {createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState} from 'react';
-import {ethers} from 'ethers';
 import {isSolverDisabled, Solver} from '@vaults/contexts/useSolver';
 import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
 import {setZapOption} from '@vaults/utils/zapOptions';
@@ -111,8 +110,8 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 	const [isDepositing, isUsingPartnerContract] = useContextualIs(actionParams?.selectedOptionTo, currentVault);
 
 	const maxDepositPossible = useMemo((): TNormalizedBN => {
-		const	vaultDepositLimit = formatBN(currentVault.details.depositLimit) || ethers.constants.Zero;
-		const	userBalance = balances?.[toAddress(actionParams?.selectedOptionFrom?.value)]?.raw || ethers.constants.Zero;
+		const	vaultDepositLimit = formatBN(currentVault?.details?.depositLimit);
+		const	userBalance = formatBN(balances?.[toAddress(actionParams?.selectedOptionFrom?.value)]?.raw);
 		if (actionParams?.selectedOptionFrom?.value === currentVault?.token?.address && isDepositing) {
 			if (userBalance.gt(vaultDepositLimit)) {
 				return (toNormalizedBN(vaultDepositLimit, currentVault.token.decimals));
@@ -284,10 +283,10 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 	** If not, the amount is set to the user balance for that token.
 	**********************************************************************************************/
 	const	updateParams = useCallback((_selectedFrom: TDropdownOption, _selectedTo: TDropdownOption): void => {
-		const	userBalance = balances?.[toAddress(_selectedFrom?.value)]?.raw || ethers.constants.Zero;
+		const	userBalance = formatBN(balances?.[toAddress(_selectedFrom?.value)]?.raw);
 		let	_amount = toNormalizedBN(userBalance, _selectedFrom?.decimals || currentVault?.token?.decimals || 18);
 		if (isDepositing) {
-			const	vaultDepositLimit = formatBN(currentVault.details.depositLimit) || ethers.constants.Zero;
+			const	vaultDepositLimit = formatBN(currentVault?.details?.depositLimit);
 			if (_selectedFrom?.value === currentVault?.token?.address) {
 				if (userBalance.gt(vaultDepositLimit)) {
 					_amount = toNormalizedBN(vaultDepositLimit, currentVault.token.decimals);

@@ -32,7 +32,7 @@ export function	useVaultEstimateOutFetcher(): (args: TVaultEstimateOutFetcher) =
 			currentProvider
 		);
 		try {
-			const	pps = await contract.pricePerShare() || ethers.constants.Zero;
+			const	pps = formatBN(await contract.pricePerShare());
 			if (isDepositing) {
 				const expectedOutFetched = inputAmount.mul(formatBN(10).pow(outputToken?.decimals)).div(pps);
 				return toNormalizedBN(expectedOutFetched, outputToken?.decimals || 18);

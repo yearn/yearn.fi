@@ -1,6 +1,5 @@
 import React, {Fragment, useMemo} from 'react';
 import Image from 'next/image';
-import {ethers} from 'ethers';
 import {Popover, Transition} from '@headlessui/react';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
@@ -8,6 +7,7 @@ import IconAddToMetamask from '@yearn-finance/web-lib/icons/IconAddToMetamask';
 import IconCross from '@yearn-finance/web-lib/icons/IconCross';
 import IconWallet from '@yearn-finance/web-lib/icons/IconWallet';
 import {toAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
+import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
@@ -93,7 +93,7 @@ export default function BalanceReminderPopover(): ReactElement {
 
 	const	nonNullBalances = useMemo((): TDict<TBalanceData> => {
 		const	nonNullBalances = Object.entries(balances).reduce((acc, [address, balance]): TDict<TBalanceData> => {
-			if (!(balance?.raw || ethers.constants.Zero).isZero()) {
+			if (!formatBN(balance?.raw).isZero()) {
 				acc[toAddress(address)] = balance;
 			}
 			return acc;
