@@ -84,7 +84,7 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 							set_currentSolverState({...wido, quote: widoQuote});
 							set_isLoading(false);
 						});
-					} else if (cowswapQuote?.raw?.gt(0)) {
+					} else if (cowswapQuote?.raw?.gt(0) && !isSolverDisabled[Solver.COWSWAP]) {
 						performBatchedUpdates((): void => {
 							set_currentSolverState({...cowswap, quote: cowswapQuote});
 							set_isLoading(false);
@@ -98,13 +98,12 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 							set_currentSolverState({...cowswap, quote: cowswapQuote});
 							set_isLoading(false);
 						});
-					} else if (widoQuote?.raw?.gt(0)) {
+					} else if (widoQuote?.raw?.gt(0) && !isSolverDisabled[Solver.WIDO]) {
 						performBatchedUpdates((): void => {
 							set_currentSolverState({...wido, quote: widoQuote});
 							set_isLoading(false);
 						});
 					}
-
 				}
 				break;
 			}
