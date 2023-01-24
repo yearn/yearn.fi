@@ -64,7 +64,6 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 		if (!actionParams?.selectedOptionFrom || !actionParams?.selectedOptionTo || !actionParams?.amount) {
 			return;
 		}
-		console.log('HEEERE');
 		set_isLoading(true);
 
 		let quote: TNormalizedBN = toNormalizedBN(0);
