@@ -1,13 +1,11 @@
 import React, {useCallback, useMemo, useState} from 'react';
 import Balancer from 'react-wrap-balancer';
 import {Contract} from 'ethcall';
-import {ethers} from 'ethers';
 import useSWR from 'swr';
 import VaultListFactory from '@vaults/components/list/VaultListFactory';
 import {useAsync} from '@vaults/hooks/useAsync';
 import VAULT_FACTORY_ABI from '@vaults/utils/abi/vaultFactory.abi';
 import {createNewVaultsAndStrategies, estimateGasForCreateNewVaultsAndStrategies} from '@vaults/utils/actions/createVaultFromFactory';
-import {VAULT_FACTORY_ADDRESS} from '@vaults/utils/constants';
 import Wrapper from '@vaults/Wrapper';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
@@ -16,8 +14,9 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import LinkOut from '@yearn-finance/web-lib/icons/IconLinkOut';
 import {ERC20_ABI} from '@yearn-finance/web-lib/utils/abi';
-import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {addressZero, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {VAULT_FACTORY_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {formatBN, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
@@ -44,9 +43,9 @@ const	defaultOption: TDropdownGaugeOption = {
 	label: '',
 	value: {
 		name: '',
-		tokenAddress: toAddress(ethers.constants.AddressZero),
-		poolAddress: toAddress(ethers.constants.AddressZero),
-		gaugeAddress: toAddress(ethers.constants.AddressZero),
+		tokenAddress: addressZero,
+		poolAddress: addressZero,
+		gaugeAddress: addressZero,
 		APY: 0
 	}
 };
@@ -151,13 +150,13 @@ function	Factory(): ReactElement {
 				toast({type: 'error', content: (err?.reason || '').replace('execution reverted: ', '')});
 				set_hasError(true);
 			}
-			return ethers.constants.Zero;
+			return Zero;
 		}
 		//eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [provider, selectedOption?.value?.gaugeAddress]); //toast is a false negative error
 	const	{data: estimate} = useSWR(
 		'gasEstimate',
-		(!isActive || selectedOption.value.gaugeAddress === toAddress(ethers.constants.AddressZero) || safeChainID !== 1) ? null : fetchEstimate,
+		(!isActive || selectedOption.value.gaugeAddress === addressZero || safeChainID !== 1) ? null : fetchEstimate,
 		{shouldRetryOnError: false}
 	);
 
@@ -294,7 +293,7 @@ function	Factory(): ReactElement {
 						<Button
 							onClick={onCreateNewVault}
 							isBusy={txStatus.pending}
-							disabled={!isActive || selectedOption.value.gaugeAddress === toAddress(ethers.constants.AddressZero) || safeChainID !== 1 || hasError}
+							disabled={!isActive || selectedOption.value.gaugeAddress === addressZero || safeChainID !== 1 || hasError}
 							className={'w-full'}>
 							{'Create new Vault'}
 						</Button>

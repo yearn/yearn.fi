@@ -61,7 +61,7 @@ export const WalletForExternalMigrationsApp = memo(function WalletForExternalMig
 		return updatedBalances;
 	}, [updateBalances]);
 
-	useClientEffect((): () => void => {
+	useClientEffect((): VoidFunction => {
 		if (isLoading) {
 			onLoadStart();
 		} else {

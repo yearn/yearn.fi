@@ -3,7 +3,7 @@ import {Contract} from 'ethcall';
 import {ethers} from 'ethers';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {addressZero, allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {CURVE_BRIBE_V3_ADDRESS, CURVE_BRIBE_V3_HELPER_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
@@ -62,7 +62,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 		const	currentProvider = safeChainID === 1 ? provider || getProvider(1) : getProvider(1);
 		const	ethcallProvider = await newEthCallProvider(currentProvider);
 		const	curveBribeV3Contract = new Contract(CURVE_BRIBE_V3_ADDRESS, CURVE_BRIBE_V3);
-		const	[_currentPeriod] = await ethcallProvider.tryAll([curveBribeV3Contract.current_period()]) as [number];	
+		const	[_currentPeriod] = await ethcallProvider.tryAll([curveBribeV3Contract.current_period()]) as [number];
 
 		performBatchedUpdates((): void => {
 			set_currentPeriod(Number(_currentPeriod));
@@ -72,7 +72,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 	useEffect((): void => {
 		getSharedStuffFromBribes();
 	}, [getSharedStuffFromBribes]);
-	
+
 
 	/* 🔵 - Yearn Finance ******************************************************
 	**	getBribes will call the bribeV2 contract to get all the rewards
@@ -86,7 +86,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 		const	rewardsPerGaugesCalls = [];
 
 		for (const gauge of gauges) {
-			rewardsPerGaugesCalls.push(contract.rewards_per_gauge(gauge.gauge));	
+			rewardsPerGaugesCalls.push(contract.rewards_per_gauge(gauge.gauge));
 		}
 		const	_rewardsPerGauges = await ethcallProvider.tryAll(rewardsPerGaugesCalls) as string[][];
 		return ([..._rewardsPerGauges]);
@@ -105,7 +105,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 		if ((rewardsPerGauges || []).length === 0) {
 			return ({rewardsList: [], multicallResult: []});
 		}
-		const	userAddress = address || ethers.constants.AddressZero;
+		const	userAddress = address || addressZero;
 		const	ethcallProvider = await newEthCallProvider(currentProvider);
 		const	rewardsPerTokensPerGaugesCalls = [];
 		const	rewardsList: string[] = [];
@@ -183,7 +183,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 		const	_claimable: TDict<TDict<BigNumber>> = {};
 		const	_periods: TDict<TDict<BigNumber>> = {};
 		let	rIndex = 0;
-		
+
 		for (const rewardListKey of rewardsList) {
 			const	rewardPerTokenPerGauge = multicallResult[rIndex++];
 			const	periodPerTokenPerGauge = multicallResult[rIndex++];
@@ -220,7 +220,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 			return;
 		}
 		const	_nextRewards: TDict<TDict<BigNumber>> = {};
-		
+
 		let	rIndex = 0;
 		for (const rewardListKey of rewardsList) {
 			const	pendingForNextPeriod = multicallResult[rIndex++];

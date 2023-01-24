@@ -38,10 +38,6 @@
 	@apply scroll-mt-12 mb-0 md:mb-44;
 }
 
-.font-number {
-	@apply font-mono tabular-nums;
-}
-
 /* 🔵 - Yearn Finance ******************************************************************************
 	** AppBox is the style used to make the nices animations on the home page feel nice and smooth
 	** A custom overwrite is required for dark/light mode
@@ -77,16 +73,13 @@
 	}
 }
 
-.yearn--button-smaller.reverted,
-.yearn--button {
-	&[data-variant="reverted"] {
-		@apply text-neutral-900 bg-neutral-0 font-normal border border-transparent;
-		&:disabled {@apply bg-neutral-200 opacity-40;}
-		&:not(:disabled):not([aria-busy="true"]):hover {@apply bg-neutral-200;}
+.yearn--button-smaller.reverted {
+	@apply text-neutral-900 bg-neutral-0 font-normal border border-transparent;
+	&:disabled {@apply bg-neutral-200 opacity-40;}
+	&:not(:disabled):not([aria-busy="true"]):hover {@apply bg-neutral-200;}
 
-		&[aria-busy="true"] svg {
-			@apply text-neutral-900;
-		}
+	&[aria-busy="true"] svg {
+		@apply text-neutral-900;
 	}
 }
 
@@ -148,10 +141,6 @@
 }
 .yearn--table-label {
 	@apply inline text-start text-neutral-500 md:hidden;
-}
-
-.yearn--shadow {
-	box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.16);
 }
 
 .yearn--next-switch {
@@ -342,13 +331,6 @@ details {
 	}
 }
 }
-
-[type='checkbox'],
-[type='checkbox']:focus {
-	@apply outline-none focus:border-0 focus:outline-none focus:ring-0 active:border-0 active:ring-0;
-	box-shadow: none !important;
-}
-
 
 .yearn--tab {
 	@apply mx-5 flex h-full flex-col justify-center text-base cursor-pointer font-normal;

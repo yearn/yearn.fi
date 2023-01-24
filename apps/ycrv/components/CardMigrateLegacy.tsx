@@ -1,12 +1,11 @@
 import React, {useMemo} from 'react';
 import Balancer from 'react-wrap-balancer';
-import {ethers} from 'ethers';
 import {motion} from 'framer-motion';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {YCRV_CURVE_POOL_ADDRESS, YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatBN, formatToNormalizedValue, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatBN, formatToNormalizedValue, toNormalizedBN, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
@@ -50,8 +49,8 @@ function	CardMigrateLegacy(): ReactElement {
 	), [prices]);
 
 	function	renderButton(): ReactElement {
-		const	balanceForInputToken = balances?.[toAddress(selectedOptionFrom.value)]?.raw || ethers.constants.Zero;
-		const	isAboveBalance = amount.raw.gt(balanceForInputToken) || balanceForInputToken.eq(ethers.constants.Zero);
+		const	balanceForInputToken = formatBN(balances?.[toAddress(selectedOptionFrom.value)]?.raw);
+		const	isAboveBalance = formatBN(amount?.raw).gt(balanceForInputToken) || balanceForInputToken.eq(Zero);
 
 		if (txStatusApprove.pending || (amount.raw).gt(allowanceFrom)) {
 			return (
@@ -66,7 +65,7 @@ function	CardMigrateLegacy(): ReactElement {
 					}>
 					{isAboveBalance ? 'Insufficient balance' : `Approve ${selectedOptionFrom?.label || 'token'}`}
 				</Button>
-			);	
+			);
 		}
 
 		return (
@@ -214,7 +213,7 @@ function	CardMigrateLegacy(): ReactElement {
 
 function	CardMigrateLegacyWrapper(): ReactElement {
 	const {txStatusApprove, txStatusZap} = useCardTransactor();
-	
+
 	return (
 		<div>
 			<motion.div

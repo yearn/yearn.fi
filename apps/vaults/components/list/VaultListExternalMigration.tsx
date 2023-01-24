@@ -8,7 +8,8 @@ import {migrationTable} from '@vaults/utils/migrationTable';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {addressZero, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
@@ -38,14 +39,14 @@ function	VaultListExternalMigrationRow({element}: {element: TMigrationTable}): R
 	const	oldAPY = element?.sourceAPY || 0;
 	const	newAPY = yearnVault?.apy?.net_apy || 0;
 
-	//TODO: Move away from this component to be able to display empty state 
+	//TODO: Move away from this component to be able to display empty state
 	if (!yearnVault) {
 		return <Fragment />;
 	}
 
 	async function onMigrateFlow(): Promise<void> {
 		const	isApproved = await isApprovedERC20(
-			provider as ethers.providers.Web3Provider, 
+			provider as ethers.providers.Web3Provider,
 			toAddress(element.tokenToMigrate), //from
 			toAddress(element.zapVia), //migrator
 			balance.raw
@@ -134,9 +135,9 @@ function	VaultListExternalMigration(): ReactElement {
 	const	{balances, balancesNonce} = useWalletForExternalMigrations();
 	const	[sortBy, set_sortBy] = useState<TPossibleSortBy>('apy');
 	const	[sortDirection, set_sortDirection] = useState<TPossibleSortDirection>('desc');
-	
+
 	const 	{vaults: beefyVaults} = useBeefyVaults();
-	
+
 	/* 🔵 - Yearn Finance **************************************************************************
 	**	Callback method used to sort the vaults list.
 	**	The use of useCallback() is to prevent the method from being re-created on every render.
@@ -152,10 +153,10 @@ function	VaultListExternalMigration(): ReactElement {
 	const	possibleBowswapMigrations = useMemo((): TMigrationTable[] => {
 		balancesNonce; // remove warning, force deep refresh
 		const	migration: TMigrationTable[] = [];
-		
+
 		Object.values(migrationTable || {}).forEach((possibleBowswapMigrations: TMigrationTable[]): void => {
 			for (const element of possibleBowswapMigrations) {
-				if ((balances[toAddress(element.tokenToMigrate)]?.raw || ethers.constants.Zero).gt(0)) {
+				if (formatBN(balances[toAddress(element.tokenToMigrate)]?.raw).gt(0)) {
 					migration.push(element);
 				}
 			}
@@ -167,12 +168,12 @@ function	VaultListExternalMigration(): ReactElement {
 	const	possibleBeefyMigrations = useMemo((): TMigrationTable[] => {
 		return beefyVaults.reduce((migratableVaults, bVault): TMigrationTable[] => {
 			if (!bVault.tokenAddress) {
-				return migratableVaults; 
+				return migratableVaults;
 			}
 			const	element: TMigrationTable = {
 				service: 3,
 				symbol: bVault.name,
-				zapVia: toAddress(ethers.constants.AddressZero),
+				zapVia: addressZero,
 				tokenToMigrate: toAddress(bVault.tokenAddress),
 				underlyingToken: toAddress(bVault.tokenAddress),
 				sourceAPY: bVault.apy

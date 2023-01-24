@@ -9,8 +9,8 @@ export type	TAppSettingsContext = {
 	searchValue: string;
 	shouldHideDust: boolean,
 	shouldHideLowTVLVaults: boolean,
-	onSwitchHideDust: () => void,
-	onSwitchHideLowTVLVaults: () => void,
+	onSwitchHideDust: VoidFunction,
+	onSwitchHideLowTVLVaults: VoidFunction,
 	set_category: (v: string) => void
 	set_searchValue: (v: string) => void
 }

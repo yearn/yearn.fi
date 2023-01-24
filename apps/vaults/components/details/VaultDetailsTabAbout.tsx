@@ -3,12 +3,13 @@ import dynamic from 'next/dynamic';
 import {parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
 import {formatPercent} from '@common/utils';
 
+import type {LoaderComponent} from 'next/dynamic';
 import type {ReactElement} from 'react';
 import type {TGraphData} from '@common/types/types';
 import type {TYearnVault} from '@common/types/yearn';
+import type {TGraphForVaultEarningsProps} from '@vaults/components/graphs/GraphForVaultEarnings';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const GraphForVaultEarnings = dynamic(async (): Promise<any> => import('@vaults/components/graphs/GraphForVaultEarnings'), {ssr: false}) as any;
+const GraphForVaultEarnings = dynamic<TGraphForVaultEarningsProps>(async (): LoaderComponent<TGraphForVaultEarningsProps> => import('@vaults/components/graphs/GraphForVaultEarnings'), {ssr: false});
 
 function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYearnVault, harvestData: TGraphData[]}): ReactElement {
 	return (

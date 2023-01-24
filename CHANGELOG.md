@@ -1,3 +1,16 @@
+# 0.1.16
+- Add support for Solvers, aka external services used for zaps. Current zaps are Cowswap, Wido and Portals. Cowswap is implemented, Wido is waiting for a review from our security team, Portals is yet to be implemented.
+- Add and fetch a tokenList with a supportedZap feature to determine which solver can be used for this IN token
+- Add a separated tab for `Deposit` and `Withdraw` in the Vault Detail page
+- Replace the `TokenDropdown` component to use Combobox instead of Listbox
+- Draft a new version of `useBalances` hook to fetch the balances of the user
+- Integrate `yearn.finance/zap-slippage` locale storage value to determine the slippage to use in the zaps
+- Integrate `yearn.finance/zap-provider` locale storage value to determine the provider to use in the zaps
+- Add some new custom hooks and context `apps/common/hooks/useAllowanceFetcher.tsx`, `apps/vaults/contexts/useSolver.tsx`, `apps/vaults/contexts/useWalletForZaps.tsx`, `apps/vaults/hooks/useSolverChainCoin.tsx`, `apps/vaults/hooks/useVaultEstimateOutFetcher.tsx`, `apps/vaults/contexts/useActionFlow.tsx`
+- Add one solver hook per solver (`useVanilla`, `useChainChoin`, `usePartnerContract`, `useWido`, `useCowswap`)
+- Fix some minor UI and UX issues
+- Improve some typing and linting
+
 # 0.1.15
 - Add the fetch to `https://api.yearn.finance/v1/chains/1/apy-previews/curve-factory` to get the APY for the gauges on the factory page
 - Extract and reuse hooks and functions from the web-lib

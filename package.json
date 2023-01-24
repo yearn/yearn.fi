@@ -11,9 +11,11 @@
     "bump": "bump"
   },
   "dependencies": {
+    "@gnosis.pm/gp-v2-contracts": "^1.1.2",
     "@next/bundle-analyzer": "^13.1.1",
     "@next/font": "^13.1.1",
-    "@yearn-finance/web-lib": "^0.17.92",
+    "@react-hookz/deep-equal": "^1.0.4",
+    "@yearn-finance/web-lib": "^0.17.117",
     "axios": "^1.2.2",
     "dayjs": "^1.11.7",
     "ethcall": "^4.8.13",
@@ -30,7 +32,8 @@
     "react-wrap-balancer": "^0.2.4",
     "recharts": "^2.2.0",
     "swr": "^2.0.0",
-    "tailwindcss": "^3.2.4"
+    "tailwindcss": "^3.2.4",
+    "wido": "^0.2.0"
   },
   "devDependencies": {
     "@types/node": "^18.11.18",

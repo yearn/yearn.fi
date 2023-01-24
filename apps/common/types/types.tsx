@@ -3,6 +3,7 @@ import type {ReactElement} from 'react';
 import type {TBalanceData} from '@yearn-finance/web-lib/hooks/types';
 import type {TAddress} from '@yearn-finance/web-lib/utils/address';
 import type {TDict} from '@yearn-finance/web-lib/utils/types';
+import type {Solver} from '@vaults/contexts/useSolver';
 import type {EXTERNAL_SERVICE_PROVIDER} from '@vaults/utils/migrationTable';
 
 export type	TClaimable = {
@@ -25,6 +26,7 @@ export type TDropdownOption = {
 	value: string;
 	icon?: ReactElement;
 	zapVia?: TAddress;
+	solveVia?: Solver[];
 	balanceSource?: string;
 	settings?: {
 		serviceID?: EXTERNAL_SERVICE_PROVIDER
