@@ -1,12 +1,34 @@
 import React, {useState} from 'react';
 import Balancer from 'react-wrap-balancer';
 import {Button} from '@yearn-finance/web-lib/components/Button';
+import {LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, VLYCRV_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import SettingsOverwrite from '@common/components/SettingsOverwrite';
 import {useYCRV} from '@yCRV/contexts/useYCRV';
 import Wrapper from '@yCRV/Wrapper';
 
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
+
+type TContractListRowProps = {
+	label: string;
+	address: string;
+}
+
+function ContractListRow({label, address}: TContractListRowProps): ReactElement {
+	return (
+		<p key={address} className={'pb-4 text-neutral-600'}>
+			<b>{label}</b>
+			{': '}
+			<a
+				href={`https://etherscan.io/address/${address}#code`}
+				target={'_blank'}
+				className={'text-neutral-900 underline'}
+				rel={'noreferrer'}>
+				{address}
+			</a>
+		</p>
+	);
+}
 
 function	About(): ReactElement {
 	const	{slippage, set_slippage} = useYCRV();
@@ -190,6 +212,26 @@ function	About(): ReactElement {
 						<p className={'text-neutral-600'}>
 							{'As Yearn holds a large amount of veCRV we are able to optimize bribe revenues and work with other partners to drive outsized yields to both yCRV stakers and LPers.'}
 						</p>
+					</Balancer>
+				</div>
+			</div>
+
+			<div className={'w-full bg-neutral-100 p-10'}>
+				<div aria-label={'Contract corner'} className={'flex flex-col pb-6'}>
+					<h2 className={'text-3xl font-bold'}>{'Contract corner'}</h2>
+				</div>
+				<div aria-label={'Contract corner details'}>
+					<Balancer>
+						<p className={'pb-6 text-neutral-600'}>
+							{'The yCRV ecosystem is powered by smart contracts; programs that run on blockchains (in yCRV\'s case Ethereum) with transparent functions that can be read by anyone. It wouldn\'t be open and transparent finance if we didn\'t let you check out our contracts. Go ahead and peek anon, it\'s ok.'}
+						</p>
+						{[
+							{label: 'Zap', address: ZAP_YEARN_VE_CRV_ADDRESS},
+							{label: 'yCRV', address: YCRV_TOKEN_ADDRESS},
+							{label: 'st-yCRV', address: STYCRV_TOKEN_ADDRESS},
+							{label: 'lp-yCRV', address: LPYCRV_TOKEN_ADDRESS},
+							{label: 'vl-yCRV', address: VLYCRV_TOKEN_ADDRESS}
+						].map(ContractListRow)}
 					</Balancer>
 				</div>
 			</div>

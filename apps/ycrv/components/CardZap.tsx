@@ -1,12 +1,11 @@
 import React, {useMemo} from 'react';
 import Balancer from 'react-wrap-balancer';
-import {ethers} from 'ethers';
 import {motion} from 'framer-motion';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {CRV_TOKEN_ADDRESS, LPYCRV_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatBN, formatToNormalizedValue, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatBN, formatToNormalizedValue, toNormalizedBN, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
@@ -64,12 +63,12 @@ function	CardZap(): ReactElement {
 	}, [selectedOptionFrom.value, selectedOptionTo.value, ZAP_OPTIONS_TO]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	function	renderButton(): ReactElement {
-		const	balanceForInputToken = balances?.[toAddress(selectedOptionFrom.value)]?.raw || ethers.constants.Zero;
-		const	isAboveBalance = amount.raw.gt(balanceForInputToken) || balanceForInputToken.eq(ethers.constants.Zero);
+		const	balanceForInputToken = formatBN(balances?.[toAddress(selectedOptionFrom.value)]?.raw);
+		const	isAboveBalance = amount.raw.gt(balanceForInputToken) || balanceForInputToken.eq(Zero);
 		const	isAboveAllowance = (amount.raw).gt(allowanceFrom);
 
 		if (txStatusApprove.pending || isAboveAllowance) {
-			if (allowanceFrom.gt(ethers.constants.Zero) && toAddress(selectedOptionFrom.value) === CRV_TOKEN_ADDRESS) {
+			if (allowanceFrom.gt(Zero) && toAddress(selectedOptionFrom.value) === CRV_TOKEN_ADDRESS) {
 				return (
 					<Button
 						onClick={onIncreaseCRVAllowance}
@@ -82,7 +81,7 @@ function	CardZap(): ReactElement {
 						}>
 						{'Increase Allowance'}
 					</Button>
-				);	
+				);
 			}
 			return (
 				<Button
@@ -96,7 +95,7 @@ function	CardZap(): ReactElement {
 					}>
 					{isAboveBalance ? 'Insufficient balance' : `Approve ${selectedOptionFrom?.label || 'token'}`}
 				</Button>
-			);	
+			);
 		}
 
 		return (
@@ -113,7 +112,7 @@ function	CardZap(): ReactElement {
 			</Button>
 		);
 	}
-	
+
 	return (
 		<>
 			<div aria-label={'card title'} className={'flex flex-col pb-8'}>
@@ -247,7 +246,7 @@ function	CardZap(): ReactElement {
 
 function	CardZapWrapper(): ReactElement {
 	const {txStatusApprove, txStatusZap} = useCardTransactor();
-	
+
 	return (
 		<div>
 			<motion.div

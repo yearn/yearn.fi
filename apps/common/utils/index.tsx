@@ -2,7 +2,7 @@ import {ethers} from 'ethers';
 import request from 'graphql-request';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {LPYCRV_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YVBOOST_TOKEN_ADDRESS, YVECRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 
 import type {BigNumber} from 'ethers';
@@ -42,8 +42,7 @@ export function getVaultRawAPY(vaults: TDict<TYearnVault | undefined>, vaultAddr
 		return 0;
 	}
 
-	if (toAddress(vaultAddress) === YVECRV_TOKEN_ADDRESS
-		|| toAddress(vaultAddress) === YVBOOST_TOKEN_ADDRESS) {
+	if (toAddress(vaultAddress) === YVECRV_TOKEN_ADDRESS || toAddress(vaultAddress) === YVBOOST_TOKEN_ADDRESS) {
 		return 0;
 	}
 
@@ -55,21 +54,15 @@ export function getVaultRawAPY(vaults: TDict<TYearnVault | undefined>, vaultAddr
 }
 
 export function getAmountWithSlippage(from: string, to: string, value: BigNumber, slippage: number): number {
-	const	hasLP = (
-		toAddress(from) === LPYCRV_TOKEN_ADDRESS
-		|| toAddress(to) === LPYCRV_TOKEN_ADDRESS
-	);
-	const	isDirectDeposit = (
-		toAddress(from) === YCRV_CURVE_POOL_ADDRESS
-		|| toAddress(to) === LPYCRV_TOKEN_ADDRESS
-	);
+	const	hasLP = (toAddress(from) === LPYCRV_TOKEN_ADDRESS|| toAddress(to) === LPYCRV_TOKEN_ADDRESS);
+	const	isDirectDeposit = (toAddress(from) === YCRV_CURVE_POOL_ADDRESS || toAddress(to) === LPYCRV_TOKEN_ADDRESS);
 
 	if (hasLP && !isDirectDeposit) {
-		const	minAmountStr = Number(ethers.utils.formatUnits(value || ethers.constants.Zero, 18));
-		const	minAmountWithSlippage = ethers.utils.parseUnits((minAmountStr * (1 - (slippage / 100))).toFixed(18), 18);
-		return formatToNormalizedValue(minAmountWithSlippage || ethers.constants.Zero, 18);
+		const minAmountStr = Number(ethers.utils.formatUnits(formatBN(value), 18));
+		const minAmountWithSlippage = ethers.utils.parseUnits((minAmountStr * (1 - (slippage / 100))).toFixed(18), 18);
+		return formatToNormalizedValue(formatBN(minAmountWithSlippage), 18);
 	}
-	return formatToNormalizedValue(value || ethers.constants.Zero, 18);
+	return formatToNormalizedValue(value, 18);
 }
 
 export function getVaultName(vault: TYearnVault): string {

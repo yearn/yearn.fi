@@ -6,14 +6,13 @@ import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
 import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
-import {CRV_TOKEN_ADDRESS, LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, VECRV_ADDRESS, VECRV_YEARN_TREASURY_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YCRV_TOKEN_ADDRESS, YVBOOST_TOKEN_ADDRESS, YVECRV_POOL_LP_ADDRESS, YVECRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {CRV_TOKEN_ADDRESS, CVXCRV_TOKEN_ADDRESS, LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, VECRV_ADDRESS, VECRV_YEARN_TREASURY_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YCRV_TOKEN_ADDRESS, YVBOOST_TOKEN_ADDRESS, YVECRV_POOL_LP_ADDRESS, YVECRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
-import {formatUnits} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatUnits, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import CURVE_CRV_YCRV_LP_ABI from '@yCRV/utils/abi/curveCrvYCrvLp.abi';
 import STYCRV_ABI from '@yCRV/utils/abi/styCRV.abi';
 import YVECRV_ABI from '@yCRV/utils/abi/yveCRV.abi';
-import {CVXCRV_TOKEN_ADDRESS} from '@yCRV/utils/constants';
 
 import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
@@ -50,15 +49,15 @@ const	defaultProps = {
 	slippage: 0.6,
 	set_slippage: (): void => undefined,
 	holdings: {
-		legacy: ethers.constants.Zero,
-		treasury: ethers.constants.Zero,
-		yCRVSupply: ethers.constants.Zero,
-		styCRVSupply: ethers.constants.Zero,
-		lpyCRVSupply: ethers.constants.Zero,
-		crvYCRVPeg: ethers.constants.Zero,
-		boostMultiplier: ethers.constants.Zero,
-		veCRVTotalSupply: ethers.constants.Zero,
-		veCRVBalance: ethers.constants.Zero
+		legacy: Zero,
+		treasury: Zero,
+		yCRVSupply: Zero,
+		styCRVSupply: Zero,
+		lpyCRVSupply: Zero,
+		crvYCRVPeg: Zero,
+		boostMultiplier: Zero,
+		veCRVTotalSupply: Zero,
+		veCRVBalance: Zero
 	}
 };
 
@@ -201,7 +200,7 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 	** donator, with 30_000 per week.
 	**************************************************************************/
 	const	styCRVMegaBoost = useMemo((): number => {
-		if (!holdings || holdings.styCRVSupply === ethers.constants.Zero) {
+		if (!holdings || holdings.styCRVSupply === Zero) {
 			return 0;
 		}
 		const	fromDonatorPerWeek = 30_000;

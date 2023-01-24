@@ -1,8 +1,10 @@
 import React, {useEffect, useRef} from 'react';
 import {motion} from 'framer-motion';
+import {VaultActionsTabsWrapper} from '@vaults/components/details/VaultActionsTabsWrapper';
 import {VaultDetailsHeader} from '@vaults/components/details/VaultDetailsHeader';
-import {VaultDetailsQuickActions} from '@vaults/components/details/VaultDetailsQuickActions';
 import {VaultDetailsTabsWrapper} from '@vaults/components/details/VaultDetailsTabsWrapper';
+import ActionFlowContextApp from '@vaults/contexts/useActionFlow';
+import {WithSolverContextApp} from '@vaults/contexts/useSolver';
 import Wrapper from '@vaults/Wrapper';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
@@ -47,7 +49,7 @@ function Index({router, vaultData}: {router: NextRouter, vaultData: TYearnVault}
 					variants={variants}
 					className={'z-50 -mt-6 h-12 w-12 cursor-pointer md:-mt-36 md:h-[72px] md:w-[72px]'}>
 					<ImageWithFallback
-						src={`${process.env.BASE_YEARN_ASSETS_URI}/${safeChainID}/${toAddress(currentVault.current.token.address)}/logo-128.png`}
+						src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault?.current?.chainID || safeChainID}/${toAddress(currentVault.current.token.address)}/logo-128.png`}
 						alt={''}
 						width={72}
 						height={72} />
@@ -56,7 +58,11 @@ function Index({router, vaultData}: {router: NextRouter, vaultData: TYearnVault}
 
 			<section className={'mt-4 grid w-full grid-cols-12 pb-10 md:mt-0'}>
 				<VaultDetailsHeader currentVault={currentVault.current} />
-				<VaultDetailsQuickActions currentVault={currentVault.current} />
+				<ActionFlowContextApp currentVault={currentVault.current}>
+					<WithSolverContextApp>
+						<VaultActionsTabsWrapper />
+					</WithSolverContextApp>
+				</ActionFlowContextApp>
 				<VaultDetailsTabsWrapper currentVault={currentVault.current} />
 			</section>
 		</>
@@ -64,7 +70,11 @@ function Index({router, vaultData}: {router: NextRouter, vaultData: TYearnVault}
 }
 
 Index.getLayout = function getLayout(page: ReactElement, router: NextRouter): ReactElement {
-	return <Wrapper router={router}>{page}</Wrapper>;
+	return (
+		<Wrapper router={router}>
+			{page}
+		</Wrapper>
+	);
 };
 
 export default Index;

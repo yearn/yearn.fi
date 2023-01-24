@@ -1,8 +1,6 @@
 import React from 'react';
 import Image from 'next/image';
-import {CRV_TOKEN_ADDRESS, LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YCRV_TOKEN_ADDRESS, YVBOOST_TOKEN_ADDRESS, YVECRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-
-import {CVXCRV_TOKEN_ADDRESS} from './constants';
+import {CRV_TOKEN_ADDRESS, CVXCRV_TOKEN_ADDRESS, LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YCRV_TOKEN_ADDRESS, YVBOOST_TOKEN_ADDRESS, YVECRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 
 import type {TDropdownOption} from '@common/types/types';
 
@@ -85,7 +83,7 @@ const	LEGACY_OPTIONS_TO: TDropdownOption[] = [
 				loading={'eager'}
 				priority />
 		)
-	} 
+	}
 // {
 // 	label: 'vl-yCRV',
 // 	value: VLYCRV_TOKEN_ADDRESS,

@@ -1342,6 +1342,11 @@
     "@ethersproject/properties" "^5.7.0"
     "@ethersproject/strings" "^5.7.0"
 
+"@gnosis.pm/gp-v2-contracts@^1.1.2":
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/@gnosis.pm/gp-v2-contracts/-/gp-v2-contracts-1.1.2.tgz#0453bb097377dc63cf46ee195f7e521d429f7e22"
+  integrity sha512-BvZMNS+fwITb+qs+trs2fyvYksa6MPjjLze9AOXPnvcKVYFEGwG6cfsecBswEMo+xevLIQNDyF7HZRhN7ply8w==
+
 "@gnosis.pm/safe-apps-provider@^0.11.3":
   version "0.11.3"
   resolved "https://registry.yarnpkg.com/@gnosis.pm/safe-apps-provider/-/safe-apps-provider-0.11.3.tgz#9e1ec2fb69a7fae8127631330f630662bd07a580"
@@ -1740,6 +1745,18 @@
   version "1.0.0-next.21"
   resolved "https://registry.yarnpkg.com/@polka/url/-/url-1.0.0-next.21.tgz#5de5a2385a35309427f6011992b544514d559aa1"
   integrity sha512-a5Sab1C4/icpTZVzZc5Ghpz88yQtGOyNqYXcZgOssB2uuAr+wF/MvN6bgtW32q7HHrvBki+BsZ0OuNv6EV3K9g==
+
+"@react-hookz/deep-equal@^1.0.4":
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/@react-hookz/deep-equal/-/deep-equal-1.0.4.tgz#68a71f36cbc88724b3ce6f4036183778b6e7f282"
+  integrity sha512-N56fTrAPUDz/R423pag+n6TXWbvlBZDtTehaGFjK0InmN+V2OFWLE/WmORhmn6Ce7dlwH5+tQN1LJFw3ngTJVg==
+
+"@react-hookz/web@^22.0.0":
+  version "22.0.0"
+  resolved "https://registry.yarnpkg.com/@react-hookz/web/-/web-22.0.0.tgz#e3f44f63adeaa9043ec18c5d19a9e6da14730b2f"
+  integrity sha512-jl4JgUXaiSvvDVQD2z/rq2/RaykjjLrAZxHOEQj2H38j4UFWIVhv5oKUH8yrKF4wX6tMX9gdrj62f9yGq/nSaQ==
+  dependencies:
+    "@react-hookz/deep-equal" "^1.0.4"
 
 "@rollup/plugin-babel@^5.2.0":
   version "5.3.1"
@@ -2449,14 +2466,16 @@
     "@web3-react/types" "^8.0.20-beta.0"
     eventemitter3 "^4.0.7"
 
-"@yearn-finance/web-lib@^0.17.92":
-  version "0.17.92"
-  resolved "https://registry.yarnpkg.com/@yearn-finance/web-lib/-/web-lib-0.17.92.tgz#879f9449e76ed5f34b1673c9991c524484e26ca6"
-  integrity sha512-Tg2nLiVAQ9tvh7Unw3npW0Mj1muSlSs+pd69WoFnTndWbeyrOOzRdT4MSn2kqBt8FZg+vA8RVcZ/mNUnBhvWfQ==
+"@yearn-finance/web-lib@^0.17.117":
+  version "0.17.117"
+  resolved "https://registry.yarnpkg.com/@yearn-finance/web-lib/-/web-lib-0.17.117.tgz#f760f7d3b08b2f63401f61aa8f2b201b28e881a1"
+  integrity sha512-ctyMlia8bBthmKvxHeanPNnx7DphzPvp3yGojnWBlpxgB/pLA2ltcNGd0ZzPjWXK99QfiLQp3Coc9i9ljWEzUw==
   dependencies:
     "@coinbase/wallet-sdk" "^3.5.4"
     "@ethersproject/experimental" "^5.7.0"
     "@headlessui/react" "1.7.3"
+    "@react-hookz/deep-equal" "^1.0.4"
+    "@react-hookz/web" "^22.0.0"
     "@tailwindcss/forms" "^0.5.3"
     "@tailwindcss/line-clamp" "^0.4.2"
     "@tailwindcss/typography" "^0.5.7"
@@ -3777,7 +3796,7 @@ eslint-plugin-react-hooks@^4.5.0, eslint-plugin-react-hooks@^4.6.0:
   resolved "https://registry.yarnpkg.com/eslint-plugin-react-hooks/-/eslint-plugin-react-hooks-4.6.0.tgz#4c3e697ad95b77e93f8646aaa1630c1ba607edd3"
   integrity sha512-oFc7Itz9Qxh2x4gNHStv3BqJq54ExXmfC+a1NjAta66IAN87Wu0R/QArgIS9qKzX3dXKPI9H5crl9QchNMY9+g==
 
-eslint-plugin-react@^7.31.11, eslint-plugin-react@^7.31.7:
+eslint-plugin-react@^7.31.7:
   version "7.31.11"
   resolved "https://registry.yarnpkg.com/eslint-plugin-react/-/eslint-plugin-react-7.31.11.tgz#011521d2b16dcf95795df688a4770b4eaab364c8"
   integrity sha512-TTvq5JsT5v56wPa9OYHzsrOlHzKZKjV+aLgS+55NJP/cuzdiQPC7PfYoUjMoxlffKtvijpk7vA/jmuqRb9nohw==
@@ -7163,6 +7182,11 @@ which@^2.0.1:
   integrity sha512-BLI3Tl1TW3Pvl70l3yq3Y64i+awpwXqsGBYWkkqMtnbXgrMD+yj7rhW0kuEDxzJaYXGjEW5ogapKNMEKNMjibA==
   dependencies:
     isexe "^2.0.0"
+
+wido@^0.2.0:
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/wido/-/wido-0.2.0.tgz#42920c79e9e72a8078807a28bc4c752746edbaf8"
+  integrity sha512-P4K95445vAtJPUL6x6dDAimmqeuH0I65nULFJEWBGDajf5EJoK/XpEBYC/otELAMJu470vwVjyzWhjf1YnuIog==
 
 word-wrap@^1.2.3:
   version "1.2.3"

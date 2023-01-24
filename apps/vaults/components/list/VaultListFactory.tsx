@@ -1,5 +1,4 @@
 import React, {useCallback, useMemo, useState} from 'react';
-import {ethers} from 'ethers';
 import VaultListOptions from '@vaults/components/list/VaultListOptions';
 import {VaultsListEmptyFactory} from '@vaults/components/list/VaultsListEmpty';
 import {VaultsListRow} from '@vaults/components/list/VaultsListRow';
@@ -7,6 +6,7 @@ import {useAppSettings} from '@vaults/contexts/useAppSettings';
 import {useFilteredVaults} from '@vaults/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import ListHead from '@common/components/ListHead';
 import ListHero from '@common/components/ListHero';
@@ -33,7 +33,7 @@ function	VaultListFactory(): ReactElement {
 	const	curveVaults = useFilteredVaults(vaults, ({category, type}): boolean => category === 'Curve' && type === 'Automated');
 	const	holdingsVaults = useFilteredVaults(vaults, ({category, address, type}): boolean => {
 		const	holding = balances?.[toAddress(address)];
-		const	hasValidBalance = (holding?.raw || ethers.constants.Zero).gt(0);
+		const	hasValidBalance = formatBN(holding?.raw).gt(0);
 		const	balanceValue = holding?.normalizedValue || 0;
 		if (shouldHideDust && balanceValue < 0.01) {
 			return false;
@@ -70,7 +70,7 @@ function	VaultListFactory(): ReactElement {
 	**********************************************************************************************/
 	const	searchedVaults = useMemo((): TYearnVault[] => {
 		const	vaultsToUse = [...vaultsToDisplay];
-	
+
 		if (searchValue === '') {
 			return vaultsToUse;
 		}
@@ -109,7 +109,7 @@ function	VaultListFactory(): ReactElement {
 					isLoading={isLoadingVaultList}
 					sortedVaultsToDisplay={sortedVaultsToDisplay}
 					currentCategory={category} />
-			);	
+			);
 		}
 		return (
 			sortedVaultsToDisplay.map((vault): ReactNode => {

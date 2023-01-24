@@ -1,0 +1,98 @@
+[{
+	"chainID": 1,
+	"address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+	"name": "Wrapped Ether",
+	"symbol": "WETH",
+	"logoURI": "https://tokens.1inch.io/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2.png",
+	"decimals": 18,
+	"balance": "0",
+	"supportedZaps": [
+		"Wido",
+		"Portals",
+		"Cowswap"
+	]
+},
+{
+	"chainID": 1,
+	"address": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+	"name": "Wrapped BTC",
+	"symbol": "WBTC",
+	"logoURI": "https://tokens.1inch.io/0x2260fac5e5542a773aa44fbcfedf7c193bc2c599.png",
+	"decimals": 8,
+	"balance": "0",
+	"supportedZaps": [
+		"Wido",
+		"Portals",
+		"Cowswap"
+	]
+},
+{
+	"chainID": 1,
+	"address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+	"name": "Dai Stablecoin",
+	"symbol": "DAI",
+	"logoURI": "https://tokens.1inch.io/0x6b175474e89094c44da98b954eedeac495271d0f.png",
+	"decimals": 18,
+	"balance": "0",
+	"supportedZaps": [
+		"Wido",
+		"Portals",
+		"Cowswap"
+	]
+},
+{
+	"chainID": 1,
+	"address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+	"name": "USD Coin",
+	"symbol": "USDC",
+	"logoURI": "https://tokens.1inch.io/0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.png",
+	"decimals": 6,
+	"balance": "0",
+	"supportedZaps": [
+		"Wido",
+		"Portals",
+		"Cowswap"
+	]
+},
+{
+	"chainID": 1,
+	"address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+	"name": "Tether USD",
+	"symbol": "USDT",
+	"logoURI": "https://tokens.1inch.io/0xdac17f958d2ee523a2206206994597c13d831ec7.png",
+	"decimals": 6,
+	"balance": "0",
+	"supportedZaps": [
+		"Wido",
+		"Portals",
+		"Cowswap"
+	]
+},
+{
+	"chainID": 1,
+	"address": "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e",
+	"name": "yearn.finance",
+	"symbol": "YFI",
+	"logoURI": "https://tokens.1inch.io/0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e.png",
+	"decimals": 18,
+	"balance": "0",
+	"supportedZaps": [
+		"Wido",
+		"Portals",
+		"Cowswap"
+	]
+},
+{
+	"chainID": 1,
+	"address": "0xD533a949740bb3306d119CC777fa900bA034cd52",
+	"name": "Curve DAO Token",
+	"symbol": "CRV",
+	"logoURI": "https://tokens.1inch.io/0xd533a949740bb3306d119cc777fa900ba034cd52.png",
+	"decimals": 18,
+	"balance": "0",
+	"supportedZaps": [
+		"Wido",
+		"Portals",
+		"Cowswap"
+	]
+}]
