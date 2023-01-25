@@ -86,21 +86,14 @@ function GaugeListRow({gauge, votesState, votesDispatch}: TGaugeListRow): ReactE
 			</div>
 
 			<div className={'yearn--table-data-section'}>
-				<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
-					<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Current votes'}</label>
-					<p className={'yearn--table-data-section-item-value'}>
-						{0}
-					</p>
-				</div>
-
-				<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
+				<div className={'yearn--table-data-section-item md:col-span-3'} datatype={'number'}>
 					<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Your votes'}</label>
 					<p className={'yearn--table-data-section-item-value'}>
 						{0}
 					</p>
 				</div>
 
-				<div className={'yearn--table-data-section-item pt-2 md:col-span-3'}>
+				<div className={'yearn--table-data-section-item pt-2 md:col-span-4'}>
 					<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Put your votes'}</label>
 					<p className={'yearn--table-data-section-item-value w-full text-neutral-900'}>
 						<div className={'flex h-10 w-full flex-row items-center justify-between'}>
