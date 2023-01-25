@@ -219,7 +219,7 @@ function GaugeList({gauges, gaugesVotes, isLoading, userInfo}: TProps): ReactEle
 				</div>
 			</>
 		);
-	}, [category, isSwitchEnabled, isVotesEmpty, itemOffset, searchValue, sortDirection, sortedGauges, votes, votesState]);
+	}, [category, gaugesVotes, isSwitchEnabled, isVotesEmpty, itemOffset, searchValue, sortDirection, sortedGauges, votes, votesState]);
 
 	return (
 		<div className={'relative col-span-12 flex w-full flex-col bg-neutral-100'}>
