@@ -24,6 +24,7 @@ import type {NextRouter} from 'next/router';
 import type {ChangeEvent, ReactElement} from 'react';
 import type {TQAButton, TQAInput, TQASelect} from '@yCRV/components/QuickActions';
 import type {TNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import type {TDict} from '@yearn-finance/web-lib/utils/types';
 
 function Deposit(): ReactElement {
 	const {isActive, provider} = useWeb3();
@@ -77,9 +78,7 @@ function Deposit(): ReactElement {
 		};
 
 		return (
-			<div
-				aria-label={'yCRV Deposit'}
-				className={'col-span-12 mb-4'}>
+			<div aria-label={'yCRV Deposit'} className={'col-span-12 mb-4'}>
 				<div className={'col-span-12 flex flex-col space-x-0 space-y-2 md:flex-row md:space-x-4 md:space-y-0'}>
 					<QuickActions label={'voteFrom'}>
 						<QuickActions.Select {...fromSelectProps} />
@@ -191,7 +190,7 @@ function HowItWorks(): ReactElement {
 
 function Vote(): ReactElement {
 	const {isActive} = useWeb3();
-	// const {initialData: {nextPeriod, userInfo}} = useVLyCRV();
+	// const {initialData: {nextPeriod, userInfo, getVotesUnpacked}} = useVLyCRV();
 	const {initialData: {nextPeriod}} = useVLyCRV();
 	const {gauges, isLoadingGauges} = useCurve();
 	const {component: Tabs} = useTabs({
@@ -208,6 +207,27 @@ function Vote(): ReactElement {
 		votesSpent: BigNumber.from('50000000000000000000'),
 		lastVoteTime: 1674217683000
 	};
+
+	const MOCK_GET_VOTES_UNPACKED: {
+		gaugesList: string[];
+		voteAmounts: BigNumber[];
+	} = {
+		gaugesList: [
+			'0xDB190E4d9c9A95fdF066b258892b8D6Bb107434e',
+			'0x6a69FfD1353Fa129f7F9932BB68Fa7bE88F3888A',
+			'0xFA712EE4788C042e2B7BB55E6cb8ec569C4530c1'
+		],
+		voteAmounts: [
+			BigNumber.from('10000000000000000000000'),
+			BigNumber.from('2000000000000000000000'),
+			BigNumber.from('300000000000000000000')
+		]
+	};
+
+	const {gaugesList, voteAmounts} = MOCK_GET_VOTES_UNPACKED;
+	const gaugesVotes = useMemo((): TDict<BigNumber> => {
+		return gaugesList.reduce((prev, curr, i): TDict<BigNumber> => ({...prev, [curr]: voteAmounts[i]}), {});
+	}, [gaugesList, voteAmounts]);
 
 	// const {balance, lastVoteTime, votesSpent} = userInfo;
 	const {balance, lastVoteTime, votesSpent} = MOCK_USER_INFO;
@@ -261,6 +281,7 @@ function Vote(): ReactElement {
 			</div>
 			<GaugeList
 				gauges={gauges}
+				gaugesVotes={gaugesVotes}
 				isLoading={isLoadingGauges}
 				userInfo={MOCK_USER_INFO} />
 		</>

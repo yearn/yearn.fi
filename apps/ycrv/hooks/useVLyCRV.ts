@@ -26,10 +26,16 @@ type TTransactionProps = {
 	amount: BigNumber;
 }
 
+type TGetVotesUnpacked = {
+	gaugesList: string[];
+	voteAmounts: BigNumber[];
+}
+
 type TUseVLyCRV = {
 	initialData: {
 		nextPeriod: number;
 		userInfo: TUserInfo;
+		getVotesUnpacked: TGetVotesUnpacked;
 	};
 	vote: (props: TVoteTxProps) => Promise<boolean>;
 	deposit: (props: TTransactionProps) => Promise<boolean>;
@@ -42,6 +48,10 @@ const DEFAULT_VLYCRV = {
 		balance: BigNumber.from(0),
 		votesSpent: BigNumber.from(0),
 		lastVoteTime: 0
+	},
+	getVotesUnpacked: {
+		gaugesList: [],
+		voteAmounts: []
 	}
 };
 
@@ -115,13 +125,15 @@ export function useVLyCRV(): TUseVLyCRV {
 
 		const [
 			nextPeriod,
-			userInfo
+			userInfo,
+			getVotesUnpacked
 		] = await ethcallProvider.tryAll([
 			vLyCRVContract.nextPeriod(),
-			vLyCRVContract.userInfo(address)
-		]) as [number, TUserInfo];
+			vLyCRVContract.userInfo(address),
+			vLyCRVContract.getVotesUnpacked()
+		]) as [number, TUserInfo, TGetVotesUnpacked];
 
-		return {nextPeriod, userInfo};
+		return {nextPeriod, userInfo, getVotesUnpacked};
 	}, [address, isActive, provider]);
 
 	const {data} = useSWR<TUseVLyCRV['initialData']>(isActive && provider ? 'vLyCRV' : null, fetcher);
