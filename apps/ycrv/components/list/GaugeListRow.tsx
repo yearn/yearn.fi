@@ -13,17 +13,19 @@ import {isWeb3Provider} from '@yCRV/utils/isWeb3Provider';
 
 import {QuickActions} from '../QuickActions';
 
+import type {BigNumber} from 'ethers';
 import type {ChangeEvent, Dispatch, ReactElement} from 'react';
 import type {TCurveGauges} from '@common/types/curves';
 import type {TVotesReducerAction, TVotesReducerState} from './GaugeList';
 
 type TGaugeListRow = {
 	gauge: TCurveGauges;
+	gaugeVotes: BigNumber;
 	votesState: TVotesReducerState;
 	votesDispatch: Dispatch<TVotesReducerAction>;
 }
 
-function GaugeListRow({gauge, votesState, votesDispatch}: TGaugeListRow): ReactElement | null {
+function GaugeListRow({gauge, gaugeVotes, votesState, votesDispatch}: TGaugeListRow): ReactElement | null {
 	const {vote} = useVLyCRV();
 	const {toast} = yToast();
 	const {provider, isActive} = useWeb3();
@@ -87,9 +89,9 @@ function GaugeListRow({gauge, votesState, votesDispatch}: TGaugeListRow): ReactE
 
 			<div className={'yearn--table-data-section'}>
 				<div className={'yearn--table-data-section-item md:col-span-3'} datatype={'number'}>
-					<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Your votes'}</label>
+					<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Current votes'}</label>
 					<p className={'yearn--table-data-section-item-value'}>
-						{0}
+						{toNormalizedBN(gaugeVotes).normalized}
 					</p>
 				</div>
 

@@ -20,6 +20,7 @@ import type {TCurveGauges} from '@common/types/curves';
 
 type TProps = {
 	gauges: TCurveGauges[];
+	gaugesVotes: TDict<BigNumber>;
 	isLoading: boolean;
 	userInfo: TUserInfo;
 }
@@ -86,7 +87,7 @@ function createInitialState({votes, maxVotes}: Pick<TVotesReducerState, 'votes' 
 	return {maxVotes, votes, currentTotal: BigNumber.from(0)};
 }
 
-function GaugeList({gauges, isLoading, userInfo}: TProps): ReactElement {
+function GaugeList({gauges, gaugesVotes, isLoading, userInfo}: TProps): ReactElement {
 	const [category, set_category] = useState('All');
 	const [isSwitchEnabled, set_isSwitchEnabled] = useState(false);
 	const [searchValue, set_searchValue] = useSessionStorage('yCRVGaugeSearchValue', '');
@@ -115,7 +116,7 @@ function GaugeList({gauges, isLoading, userInfo}: TProps): ReactElement {
 		});
 	}, []);
 
-	const sortedGauges = useSortGauges({list: searchedGauges, sortBy, sortDirection, votes});
+	const sortedGauges = useSortGauges({list: searchedGauges, gaugesVotes, sortBy, sortDirection, votes});
 
 	/**
 	 * Checks if there are no votes in all gauges
@@ -130,14 +131,16 @@ function GaugeList({gauges, isLoading, userInfo}: TProps): ReactElement {
 	const GaugeList = useMemo((): ReactNode => {
 		sortDirection; // TODO better trigger rendering when sort direction changes
 		const gauges = sortedGauges.map((gauge): ReactElement | null => {
-			if (!gauge || isSwitchEnabled && !votes[gauge.gauge]) {
+			const GAUGE_ADDRESS = gauge.gauge;
+			if (!gauge || isSwitchEnabled && !votes[GAUGE_ADDRESS]) {
 				return null;
 			}
 
 			return (
 				<GaugeListRow
-					key={gauge.gauge}
+					key={GAUGE_ADDRESS}
 					gauge={gauge}
+					gaugeVotes={gaugesVotes[GAUGE_ADDRESS]}
 					votesState={{votes, ...votesState}}
 					votesDispatch={votesDispatch}
 				/>
