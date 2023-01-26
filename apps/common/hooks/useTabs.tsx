@@ -2,14 +2,9 @@ import {useMemo, useState} from 'react';
 import {AnimatePresence, motion} from 'framer-motion';
 import {Listbox, Transition} from '@headlessui/react';
 import IconChevron from '@common/icons/IconChevron';
+import {TABS_VARIANTS} from '@common/utils/animations';
 
 import type {Dispatch, ReactElement, SetStateAction} from 'react';
-
-const variants = {
-	initial: {y: 10, opacity: 0},
-	enter: {y: 0, opacity: 1},
-	exit: {y: -10, opacity: 0}
-};
 
 type TItem = {
 	id: string,
@@ -100,7 +95,7 @@ function useTabs({items, className}: TTabsProps): TUseTabs {
 						initial={'initial'}
 						animate={'enter'}
 						exit={'exit'}
-						variants={variants}
+						variants={TABS_VARIANTS}
 						transition={{duration: 0.15}}
 					>
 						{items.map(({id, content}): ReactElement => (
