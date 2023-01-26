@@ -24,10 +24,6 @@ type TUseTabs = {
 }
 
 function useTabs({items, className}: TTabsProps): TUseTabs {
-	if (items.length === 0) {
-		throw new Error('You need to pass at least one item for the tabs');
-	}
-
 	const [selectedTabId, set_selectedTabId] = useState(items[0].id);
 
 	const component = useMemo((): ReactElement => {
