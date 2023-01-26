@@ -3,7 +3,7 @@ import {Contract} from 'ethcall';
 import {BigNumber, ethers} from 'ethers';
 import useSWR from 'swr';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {VLYCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import VLYCRV_ABI from '@yCRV/utils/abi/vlYCrv.abi';
 
@@ -55,13 +55,11 @@ const DEFAULT_VLYCRV = {
 	}
 };
 
-const VL_YCRV_CONTRACT = toAddress('0xCCBD4579495cD78280e4900CB482C8Edf2EC8336');
-
 async function deposit({provider, amount}: TTransactionProps): Promise<boolean> {
 	const signer = provider.getSigner();
 
 	try {
-		const contract = new ethers.Contract(VL_YCRV_CONTRACT, VLYCRV_ABI, signer);
+		const contract = new ethers.Contract(VLYCRV_TOKEN_ADDRESS, VLYCRV_ABI, signer);
 		const transaction = await contract.deposit(amount);
 		const transactionResult = await transaction.wait();
 		if (transactionResult.status === 0) {
@@ -79,7 +77,7 @@ async function withdraw({provider, amount}: TTransactionProps): Promise<boolean>
 	const signer = provider.getSigner();
 
 	try {
-		const contract = new ethers.Contract(VL_YCRV_CONTRACT, VLYCRV_ABI, signer);
+		const contract = new ethers.Contract(VLYCRV_TOKEN_ADDRESS, VLYCRV_ABI, signer);
 		const transaction = await contract.withdraw(amount);
 		const transactionResult = await transaction.wait();
 		if (transactionResult.status === 0) {
@@ -97,7 +95,7 @@ async function vote({provider, gaugeAddress, votes}: TVoteTxProps): Promise<bool
 	const signer = provider.getSigner();
 
 	try {
-		const contract = new ethers.Contract(VL_YCRV_CONTRACT, VLYCRV_ABI, signer);
+		const contract = new ethers.Contract(VLYCRV_TOKEN_ADDRESS, VLYCRV_ABI, signer);
 		const transaction = await contract.vote(gaugeAddress, votes);
 		const transactionResult = await transaction.wait();
 		if (transactionResult.status === 0) {
@@ -121,7 +119,7 @@ export function useVLyCRV(): TUseVLyCRV {
 
 		const currentProvider = provider || getProvider(1);
 		const ethcallProvider = await newEthCallProvider(currentProvider);
-		const vLyCRVContract = new Contract(VL_YCRV_CONTRACT, VLYCRV_ABI);
+		const vLyCRVContract = new Contract(VLYCRV_TOKEN_ADDRESS, VLYCRV_ABI);
 
 		const [
 			nextPeriod,
