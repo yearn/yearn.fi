@@ -47,12 +47,11 @@ export async function stake(
 export async function unstake(
 	provider: ethers.providers.Web3Provider,
 	accountAddress: TAddress,
-	stakingAddress: TAddress,
-	amount: BigNumber
+	stakingAddress: TAddress
 ): Promise<boolean> {
 	const signer = provider.getSigner(accountAddress);
 	const stakingRewardsContract = new ethers.Contract(stakingAddress, STAKING_REWARDS_ABI, signer);
-	return handleTx(stakingRewardsContract.withdraw(amount));
+	return handleTx(stakingRewardsContract.exit());
 }
 
 export async function claim(
