@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import {YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {VLYCRV_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 
 export const YCRV = {
 	label: 'yCRV',
@@ -17,15 +17,12 @@ export const YCRV = {
 	)
 };
 
-// TODO Move to web-lib
-const VL_YCRV_TOKEN_ADDRESS = '0xCCBD4579495cD78280e4900CB482C8Edf2EC8336';
-
 // TODO Add Image src
 export const VL_YCRV = {
 	label: 'vl-yCRV',
 	symbol: 'vl-yCRV',
 	decimals: 18,
-	value: VL_YCRV_TOKEN_ADDRESS,
+	value: VLYCRV_TOKEN_ADDRESS,
 	icon: (
 		<Image
 			alt={'vl-yCRV'}
