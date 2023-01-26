@@ -1,29 +1,21 @@
 import {useCallback} from 'react';
 import {Contract} from 'ethcall';
-import {BigNumber, ethers} from 'ethers';
+import {BigNumber} from 'ethers';
 import useSWR from 'swr';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {VLYCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import VLYCRV_ABI from '@yCRV/utils/abi/vlYCrv.abi';
+import {vLyCRVDeposit} from '@yCRV/utils/actions/vLyCRVDeposit';
+import {vLyCRVVote} from '@yCRV/utils/actions/vLyCRVVote';
+import {vLyCRVWithdraw} from '@yCRV/utils/actions/vLyCRVWithdraw';
 
-import type {TAddress} from '@yearn-finance/web-lib/utils/address';
+import type {TTransactionProps, TVoteTxProps} from '@yCRV/utils/actions/types';
 
 export type TUserInfo = {
 	balance: BigNumber;
 	votesSpent: BigNumber;
 	lastVoteTime: number;
-}
-
-type TVoteTxProps = {
-	provider: ethers.providers.Web3Provider;
-	votes?: BigNumber;
-	gaugeAddress: TAddress;
-}
-
-type TTransactionProps = {
-	provider: ethers.providers.Web3Provider;
-	amount: BigNumber;
 }
 
 type TGetVotesUnpacked = {
@@ -55,60 +47,6 @@ const DEFAULT_VLYCRV = {
 	}
 };
 
-async function deposit({provider, amount}: TTransactionProps): Promise<boolean> {
-	const signer = provider.getSigner();
-
-	try {
-		const contract = new ethers.Contract(VLYCRV_TOKEN_ADDRESS, VLYCRV_ABI, signer);
-		const transaction = await contract.deposit(amount);
-		const transactionResult = await transaction.wait();
-		if (transactionResult.status === 0) {
-			throw new Error('Fail to perform transaction');
-		}
-
-		return true;
-	} catch(error) {
-		console.error(error);
-		return false;
-	}
-}
-
-async function withdraw({provider, amount}: TTransactionProps): Promise<boolean> {
-	const signer = provider.getSigner();
-
-	try {
-		const contract = new ethers.Contract(VLYCRV_TOKEN_ADDRESS, VLYCRV_ABI, signer);
-		const transaction = await contract.withdraw(amount);
-		const transactionResult = await transaction.wait();
-		if (transactionResult.status === 0) {
-			throw new Error('Fail to perform transaction');
-		}
-
-		return true;
-	} catch(error) {
-		console.error(error);
-		return false;
-	}
-}
-
-async function vote({provider, gaugeAddress, votes}: TVoteTxProps): Promise<boolean> {
-	const signer = provider.getSigner();
-
-	try {
-		const contract = new ethers.Contract(VLYCRV_TOKEN_ADDRESS, VLYCRV_ABI, signer);
-		const transaction = await contract.vote(gaugeAddress, votes);
-		const transactionResult = await transaction.wait();
-		if (transactionResult.status === 0) {
-			throw new Error('Fail to perform transaction');
-		}
-
-		return true;
-	} catch(error) {
-		console.error(error);
-		return false;
-	}
-}
-
 export function useVLyCRV(): TUseVLyCRV {
 	const {provider, isActive, address} = useWeb3();
     
@@ -136,5 +74,10 @@ export function useVLyCRV(): TUseVLyCRV {
 
 	const {data} = useSWR<TUseVLyCRV['initialData']>(isActive && provider ? 'vLyCRV' : null, fetcher);
 
-	return {initialData: data ?? DEFAULT_VLYCRV, deposit, withdraw, vote};
+	return {
+		initialData: data ?? DEFAULT_VLYCRV,
+		deposit: vLyCRVDeposit,
+		withdraw: vLyCRVWithdraw,
+		vote: vLyCRVVote
+	};
 }
