@@ -46,6 +46,32 @@ module.exports = withTM(withBundleAnalyzer(withPWA({
 				has: [{type: 'host', value: 'vote.yearn.finance'}],
 				destination: 'https://yearn.finance/veyfi/:path*',
 				permanent: true
+			},
+			//
+			{
+				source: '/twitter',
+				destination: 'https://twitter.com/iearnfinance',
+				permanent: true
+			},
+			{
+				source: '/telegram',
+				destination: 'https://t.me/yearnfinance/',
+				permanent: true
+			},
+			{
+				source: '/medium',
+				destination: 'https://medium.com/iearn',
+				permanent: true
+			},
+			{
+				source: '/governance',
+				destination: 'https://gov.yearn.finance/',
+				permanent: true
+			},
+			{
+				source: '/snapshot',
+				destination: 'https://snapshot.org/#/ybaby.eth',
+				permanent: true
 			}
 		];
 	},
