@@ -6,7 +6,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
-import {isNumber} from '@common/utils/isNumber';
+import {isNumber} from '@common/utils/typeGuards';
 import {useVLyCRV} from '@yCRV/hooks/useVLyCRV';
 import {isAddress} from '@yCRV/utils/isAddress';
 import {isWeb3Provider} from '@yCRV/utils/isWeb3Provider';
