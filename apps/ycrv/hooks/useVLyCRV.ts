@@ -10,7 +10,7 @@ import {vLyCRVDeposit} from '@yCRV/utils/actions/vLyCRVDeposit';
 import {vLyCRVVote} from '@yCRV/utils/actions/vLyCRVVote';
 import {vLyCRVWithdraw} from '@yCRV/utils/actions/vLyCRVWithdraw';
 
-import type {TTransactionProps, TVoteTxProps} from '@yCRV/utils/actions/types';
+import type {TVlyCRVDepositProps, TVlyCRVWithdrawProps, TVoteTxProps} from '@yCRV/utils/actions/types';
 
 export type TUserInfo = {
 	balance: BigNumber;
@@ -30,8 +30,8 @@ type TUseVLyCRV = {
 		getVotesUnpacked: TGetVotesUnpacked;
 	};
 	vote: (props: TVoteTxProps) => Promise<boolean>;
-	deposit: (props: TTransactionProps) => Promise<boolean>;
-	withdraw: (props: TTransactionProps) => Promise<boolean>;
+	deposit: (props: TVlyCRVDepositProps) => Promise<boolean>;
+	withdraw: (props: TVlyCRVWithdrawProps) => Promise<boolean>;
 };
 
 const DEFAULT_VLYCRV = {
