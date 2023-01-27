@@ -5,10 +5,10 @@ import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {isTAddress} from '@yearn-finance/web-lib/utils/isTAddress';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {isNumber} from '@common/utils/typeGuards';
 import {useVLyCRV} from '@yCRV/hooks/useVLyCRV';
-import {isAddress} from '@yCRV/utils/isAddress';
 import {isWeb3Provider} from '@yCRV/utils/isWeb3Provider';
 
 import {QuickActions} from '../QuickActions';
@@ -42,11 +42,11 @@ function GaugeListRow({gauge, gaugeVotes, votesState, votesDispatch}: TGaugeList
 	}, [gauge.gauge, votesState.votes]);
 
 	const handleVoteInput = ({target: {value}}: ChangeEvent<HTMLInputElement>): void => {
-		if (value === '' && isAddress(gauge.gauge)) {
+		if (value === '' && isTAddress(gauge.gauge)) {
 			votesDispatch({type: 'UPDATE', gaugeAddress: gauge.gauge, votes: undefined});
 			return;
 		}
-		if (isNumber(+value) && isAddress(gauge.gauge)) {
+		if (isNumber(+value) && isTAddress(gauge.gauge)) {
 			votesDispatch({type: 'UPDATE', gaugeAddress: gauge.gauge, votes: utils.parseUnits(String(+value), 18)});
 			return;
 		}
@@ -57,13 +57,13 @@ function GaugeListRow({gauge, gaugeVotes, votesState, votesDispatch}: TGaugeList
 			toast({type: 'warning', content: 'Your wallet is not connected!'});
 			return;
 		}
-		if (isAddress(gauge.gauge) && isWeb3Provider(provider)) {
+		if (isTAddress(gauge.gauge) && isWeb3Provider(provider)) {
 			vote({provider, gaugeAddress: gauge.gauge, votes: votesState.votes[gauge.gauge]});
 		}
 	}
 
 	async function handleOnSetMaxAmount(): Promise<void> {
-		if (isAddress(gauge.gauge)) {
+		if (isTAddress(gauge.gauge)) {
 			votesDispatch({type: 'MAX', gaugeAddress: gauge.gauge});
 		}
 	}
