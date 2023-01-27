@@ -3,28 +3,22 @@ import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {useWallet} from '@common/contexts/useWallet';
 import {getVaultName} from '@common/utils';
+import {stringSort} from '@common/utils/sort';
 
+import type {TSortDirection} from '@common/types/types';
 import type {TYearnVault} from '@common/types/yearn';
 
 export type TPossibleSortBy = 'apy' | 'tvl' | 'name' | 'deposited' | 'available';
-export type TPossibleSortDirection = 'asc' | 'desc' | '';
 
 function	useSortVaults(
 	vaultList: TYearnVault[],
 	sortBy: TPossibleSortBy,
-	sortDirection: TPossibleSortDirection
+	sortDirection: TSortDirection
 ): TYearnVault[] {
 	const	{balances, balancesNonce} = useWallet();
 	
 	const	sortedByName = useCallback((): TYearnVault[] => (
-		vaultList.sort((a, b): number => {
-			const	aName = getVaultName(a);
-			const	bName = getVaultName(b);
-			if (sortDirection === 'desc') {
-				return aName.localeCompare(bName);
-			}
-			return bName.localeCompare(aName);
-		})
+		vaultList.sort((a, b): number => stringSort({a: getVaultName(a), b: getVaultName(b), sortDirection}))
 	), [sortDirection, vaultList]);
 
 	const	sortedByAPY = useCallback((): TYearnVault[] => (
