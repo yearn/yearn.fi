@@ -8,10 +8,10 @@ import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
 import {computeTimeLeft, HeroTimer} from '@common/components/HeroTimer';
+import {Tabs} from '@common/components/Tabs';
 import {useCurve} from '@common/contexts/useCurve';
 import {useWallet} from '@common/contexts/useWallet';
 import {useBalance} from '@common/hooks/useBalance';
-import {useTabs} from '@common/hooks/useTabs';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
 import {formatDateShort} from '@common/utils';
 import GaugeList from '@yCRV/components/list/GaugeList';
@@ -193,13 +193,6 @@ function Vote(): ReactElement {
 	// const {initialData: {nextPeriod, userInfo, getVotesUnpacked}} = useVLyCRV();
 	const {initialData: {nextPeriod}} = useVLyCRV();
 	const {gauges, isLoadingGauges} = useCurve();
-	const {component: Tabs} = useTabs({
-		items: [
-			{id: 'deposit', label: 'Deposit', content: <Deposit />},
-			{id: 'withdraw', label: 'Withdraw', content: <Withdraw />},
-			{id: 'how-it-works', label: 'How it works', content: <HowItWorks />}
-		]
-	});
 
 	// Fake it until you make it
 	const MOCK_USER_INFO = {
@@ -277,7 +270,13 @@ function Vote(): ReactElement {
 				</div>
 			</div>
 			<div className={'mb-10'}>
-				{Tabs}
+				<Tabs
+					className={'min-h-[356px]'}
+					items={[
+						{id: 'deposit', label: 'Deposit', content: <Deposit />},
+						{id: 'withdraw', label: 'Withdraw', content: <Withdraw />},
+						{id: 'how-it-works', label: 'How it works', content: <HowItWorks />}
+					]} />
 			</div>
 			<GaugeList
 				gauges={gauges}
