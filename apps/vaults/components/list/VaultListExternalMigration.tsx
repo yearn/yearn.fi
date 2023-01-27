@@ -23,7 +23,8 @@ import {approveERC20, isApprovedERC20} from '@common/utils/actions/approveToken'
 import {depositVia} from '@common/utils/actions/depositVia';
 
 import type {ReactElement} from 'react';
-import type {TPossibleSortBy, TPossibleSortDirection} from '@vaults/hooks/useSortVaults';
+import type {TSortDirection} from '@common/types/types';
+import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 import type {TMigrationTable} from '@vaults/utils/migrationTable';
 
 function	VaultListExternalMigrationRow({element}: {element: TMigrationTable}): ReactElement {
@@ -134,7 +135,7 @@ function	VaultListExternalMigrationRow({element}: {element: TMigrationTable}): R
 function	VaultListExternalMigration(): ReactElement {
 	const	{balances, balancesNonce} = useWalletForExternalMigrations();
 	const	[sortBy, set_sortBy] = useState<TPossibleSortBy>('apy');
-	const	[sortDirection, set_sortDirection] = useState<TPossibleSortDirection>('desc');
+	const	[sortDirection, set_sortDirection] = useState<TSortDirection>('desc');
 
 	const 	{vaults: beefyVaults} = useBeefyVaults();
 
@@ -145,7 +146,7 @@ function	VaultListExternalMigration(): ReactElement {
 	const	onSort = useCallback((newSortBy: string, newSortDirection: string): void => {
 		performBatchedUpdates((): void => {
 			set_sortBy(newSortBy as TPossibleSortBy);
-			set_sortDirection(newSortDirection as TPossibleSortDirection);
+			set_sortDirection(newSortDirection as TSortDirection);
 		});
 	}, []);
 
