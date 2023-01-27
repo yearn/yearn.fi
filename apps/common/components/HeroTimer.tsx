@@ -3,14 +3,15 @@ import dayjs, {extend} from 'dayjs';
 import dayjsDuration from 'dayjs/plugin/duration.js';
 
 import type {ReactElement} from 'react';
+import type {TMilliseconds} from '@yearn-finance/web-lib/utils/time';
 
 extend(dayjsDuration);
 
 type TProps = {
-	endTime?: number;
+	endTime?: TMilliseconds;
 }
 
-export function	computeTimeLeft({endTime}: {endTime?: number}): number {
+export function	computeTimeLeft({endTime}: {endTime?: TMilliseconds}): number {
 	if (!endTime) {
 		return 0;
 	}
@@ -24,7 +25,7 @@ export function	computeTimeLeft({endTime}: {endTime?: number}): number {
 function	HeroTimer({endTime}: TProps): ReactElement {
 	const	interval = useRef<NodeJS.Timeout | null>(null);
 	const	timeLeft = computeTimeLeft({endTime});
-	const	[time, set_time] = useState<number>(timeLeft);
+	const	[time, set_time] = useState<TMilliseconds>(timeLeft);
 
 	useEffect((): VoidFunction => {
 		interval.current = setInterval((): void => {
