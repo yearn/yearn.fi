@@ -6,11 +6,9 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {VLYCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import VLYCRV_ABI from '@yCRV/utils/abi/vlYCrv.abi';
-import {vLyCRVDeposit} from '@yCRV/utils/actions/vLyCRVDeposit';
-import {vLyCRVVote} from '@yCRV/utils/actions/vLyCRVVote';
-import {vLyCRVWithdraw} from '@yCRV/utils/actions/vLyCRVWithdraw';
+import {vLyCRVDeposit, vLyCRVVote, vLyCRVWithdraw} from '@yCRV/utils/actions';
 
-import type {TVlyCRVDepositProps, TVlyCRVWithdrawProps, TVoteTxProps} from '@yCRV/utils/actions/types';
+import type {TVlyCRVDepositProps, TVlyCRVWithdrawProps, TVoteTxProps} from '@yCRV/utils/actions';
 
 export type TUserInfo = {
 	balance: BigNumber;
