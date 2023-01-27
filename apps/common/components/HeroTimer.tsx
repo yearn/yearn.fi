@@ -11,6 +11,7 @@ type TProps = {
 	endTime?: TSeconds;
 }
 
+// TODO Check if we can use `getTimeUntil` from the web lib for this computation
 export function	computeTimeLeft({endTime}: {endTime?: TSeconds}): number {
 	if (!endTime) {
 		return 0;
