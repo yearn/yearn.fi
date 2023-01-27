@@ -3,9 +3,9 @@ import {VLYCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 
 import VLYCRV_ABI from '../abi/vlYCrv.abi';
 
-import type {TTransactionProps} from './types';
+import type {TVlyCRVWithdrawProps} from './types';
 
-export async function vLyCRVWithdraw({provider, amount}: TTransactionProps): Promise<boolean> {
+export async function vLyCRVWithdraw({provider, amount}: TVlyCRVWithdrawProps): Promise<boolean> {
 	const signer = provider.getSigner();
 
 	try {
