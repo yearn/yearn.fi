@@ -3,7 +3,7 @@ import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {useWallet} from '@common/contexts/useWallet';
 import {getVaultName} from '@common/utils';
-import {stringSort} from '@common/utils/sort';
+import {numberSort, stringSort} from '@common/utils/sort';
 
 import type {TSortDirection} from '@common/types/types';
 import type {TYearnVault} from '@common/types/yearn';
@@ -22,32 +22,21 @@ function	useSortVaults(
 	), [sortDirection, vaultList]);
 
 	const	sortedByAPY = useCallback((): TYearnVault[] => (
-		vaultList.sort((a, b): number => {
-			if (sortDirection === 'desc') {
-				return (b.apy?.net_apy || 0) - (a.apy?.net_apy || 0);
-			}
-			return (a.apy?.net_apy || 0) - (b.apy?.net_apy || 0);
-		})
+		vaultList.sort((a, b): number => numberSort({a: a.apy?.net_apy, b: b.apy?.net_apy, sortDirection}))
 	), [sortDirection, vaultList]);
 
 	const	sortedByTVL = useCallback((): TYearnVault[] => (
-		vaultList.sort((a, b): number => {
-			if (sortDirection === 'desc') {
-				return (b.tvl.tvl || 0) - (a.tvl.tvl || 0);
-			}
-			return (a.tvl.tvl || 0) - (b.tvl.tvl || 0);
-		})
+		vaultList.sort((a, b): number => numberSort({a: a.tvl.tvl, b: b.tvl.tvl, sortDirection}))
 	), [sortDirection, vaultList]);
 
 	const	sortedByDeposited = useCallback((): TYearnVault[] => {
 		balancesNonce; // remove warning, force deep refresh
 		return (
-			vaultList.sort((a, b): number => {
-				if (sortDirection === 'asc') {
-					return (balances[toAddress(a.address)]?.normalized || 0) - (balances[toAddress(b.address)]?.normalized || 0);
-				}
-				return (balances[toAddress(b.address)]?.normalized || 0) - (balances[toAddress(a.address)]?.normalized || 0);
-			})
+			vaultList.sort((a, b): number => numberSort({
+				a: balances[toAddress(a.address)]?.normalized,
+				b: balances[toAddress(b.address)]?.normalized,
+				sortDirection
+			}))
 		);
 	}, [balances, sortDirection, vaultList, balancesNonce]);
 

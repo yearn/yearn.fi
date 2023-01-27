@@ -1,6 +1,5 @@
 import {useCallback, useMemo} from 'react';
-import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {stringSort} from '@common/utils/sort';
+import {bigNumberSort, stringSort} from '@common/utils/sort';
 
 import type {BigNumber} from 'ethers';
 import type {TDict} from '@yearn-finance/web-lib/utils/types';
@@ -45,7 +44,7 @@ function useSortGauges({list, gaugesVotes, sortBy, sortDirection, votes}: TProps
 		}, {withVotes: [] as TSortByVotes['withVotes'], withoutVotes: [] as TSortByVotes['withoutVotes']});
 
 		const sortedGaugesWithVotes = withVotes.sort((a, b): number => (
-			Number(toNormalizedBN(sortDirection === 'desc' ? a.votes.sub(b.votes) : b.votes.sub(a.votes)).normalized)
+			bigNumberSort({a: a.votes, b: b.votes, sortDirection})
 		)).map(({gauge}): TCurveGauges => gauge);
 
 		return [...sortedGaugesWithVotes, ...withoutVotes];
@@ -62,9 +61,7 @@ function useSortGauges({list, gaugesVotes, sortBy, sortDirection, votes}: TProps
 		}, {withVotes: [] as TSortByVotes['withVotes'], withoutVotes: [] as TSortByVotes['withoutVotes']});
 
 		const sortedGaugesWithVotes = withVotes.sort((a, b): number => (
-			sortDirection === 'desc'
-				? Number(toNormalizedBN(a.votes.sub(b.votes)).normalized)
-				: Number(toNormalizedBN(b.votes.sub(a.votes)).normalized)
+			bigNumberSort({a: a.votes, b: b.votes, sortDirection})
 		)).map(({gauge}): TCurveGauges => gauge);
 
 		return [...sortedGaugesWithVotes, ...withoutVotes];
