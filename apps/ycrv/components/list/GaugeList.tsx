@@ -12,11 +12,12 @@ import {GaugeListEmpty} from './GaugeListEmpty';
 import {GaugeListRow} from './GaugeListRow';
 
 import type {ReactElement, ReactNode} from 'react';
-import type {TPossibleGaugesSortBy, TPossibleGaugesSortDirection} from '@yCRV/hooks/useSortGauges';
+import type {TPossibleGaugesSortBy} from '@yCRV/hooks/useSortGauges';
 import type {TUserInfo} from '@yCRV/hooks/useVLyCRV';
 import type {TAddress} from '@yearn-finance/web-lib/utils/address';
 import type {TDict} from '@yearn-finance/web-lib/utils/types';
 import type {TCurveGauges} from '@common/types/curves';
+import type {TSortDirection} from '@common/types/types';
 
 type TProps = {
 	gauges: TCurveGauges[];
@@ -92,7 +93,7 @@ function GaugeList({gauges, gaugesVotes, isLoading, userInfo}: TProps): ReactEle
 	const [isSwitchEnabled, set_isSwitchEnabled] = useState(false);
 	const [searchValue, set_searchValue] = useSessionStorage('yCRVGaugeSearchValue', '');
 	const [sortBy, set_sortBy] = useState<TPossibleGaugesSortBy>('gauges');
-	const [sortDirection, set_sortDirection] = useState<TPossibleGaugesSortDirection>('');
+	const [sortDirection, set_sortDirection] = useState<TSortDirection>('');
 	const [itemOffset, set_itemOffset] = useState(0);
 
 	const maxVotes = userInfo.balance.sub(userInfo.votesSpent);
@@ -112,7 +113,7 @@ function GaugeList({gauges, gaugesVotes, isLoading, userInfo}: TProps): ReactEle
 	const onSort = useCallback((newSortBy: string, newSortDirection: string): void => {
 		performBatchedUpdates((): void => {
 			set_sortBy(newSortBy as TPossibleGaugesSortBy);
-			set_sortDirection(newSortDirection as TPossibleGaugesSortDirection);
+			set_sortDirection(newSortDirection as TSortDirection);
 		});
 	}, []);
 
