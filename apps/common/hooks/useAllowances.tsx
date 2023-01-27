@@ -17,7 +17,7 @@ export type TAllowanceRequest = {
 	spender?: TAddress
 }
 
-export const useAllowances = (allowanceRequests: TAllowanceRequest[]): [TDict<BigNumber | undefined>, boolean] => {
+export const useAllowances = (allowanceRequests: TAllowanceRequest[]): [TDict<BigNumber | undefined>, boolean, () => void] => {
 	const {provider, address: userAddress, isActive} = useWeb3();
 	const {chainID} = useChainID();
 
@@ -40,7 +40,7 @@ export const useAllowances = (allowanceRequests: TAllowanceRequest[]): [TDict<Bi
 
 		return allowancesMap;
 	}, [allowanceRequests, chainID, isActive, userAddress]);
-	const	{data: allowancesMap, isLoading} = useSWR(isActive && provider ? 'allowances' : null, allowancesFetcher, {shouldRetryOnError: false});
+	const {data: allowancesMap, isLoading, mutate: refresh} = useSWR(isActive && provider ? allowanceRequests : null, allowancesFetcher, {shouldRetryOnError: false});
 	
-	return [allowancesMap || {}, isLoading];
+	return [allowancesMap || {}, isLoading, refresh];
 };
