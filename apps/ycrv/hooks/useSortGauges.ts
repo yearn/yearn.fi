@@ -1,18 +1,19 @@
 import {useCallback, useMemo} from 'react';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {stringSort} from '@common/utils/sort';
 
 import type {BigNumber} from 'ethers';
 import type {TDict} from '@yearn-finance/web-lib/utils/types';
 import type {TCurveGauges} from '@common/types/curves';
+import type {TSortDirection} from '@common/types/types';
 
 export type TPossibleGaugesSortBy = 'gauges' | 'current-votes' | 'put-your-votes';
-export type TPossibleGaugesSortDirection = 'asc' | 'desc' | '';
 
 type TProps = {
 	list: TCurveGauges[];
 	gaugesVotes: TDict<BigNumber>;
 	sortBy: TPossibleGaugesSortBy;
-	sortDirection: TPossibleGaugesSortDirection;
+	sortDirection: TSortDirection;
 	votes: TDict<BigNumber | undefined>;
 };
 
@@ -29,10 +30,8 @@ function useSortGauges({list, gaugesVotes, sortBy, sortDirection, votes}: TProps
 		if (sortBy !== 'gauges') {
 			return list;
 		}
-		return list.sort((a, b): number => (
-			sortDirection === 'desc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)
-		));
-	}, [sortDirection, list, sortBy]);
+		return list.sort((a, b): number => stringSort({a: a.name, b: b.name, sortDirection}));
+	}, [list, sortBy, sortDirection]);
 
 	const sortedByCurrentVotes = useCallback((): TCurveGauges[] => {
 		if (sortBy !== 'current-votes') {
