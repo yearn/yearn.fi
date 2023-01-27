@@ -3,15 +3,15 @@ import dayjs, {extend} from 'dayjs';
 import dayjsDuration from 'dayjs/plugin/duration.js';
 
 import type {ReactElement} from 'react';
-import type {TMilliseconds} from '@yearn-finance/web-lib/utils/time';
+import type {TMilliseconds, TSeconds} from '@yearn-finance/web-lib/utils/time';
 
 extend(dayjsDuration);
 
 type TProps = {
-	endTime?: TMilliseconds;
+	endTime?: TSeconds;
 }
 
-export function	computeTimeLeft({endTime}: {endTime?: TMilliseconds}): number {
+export function	computeTimeLeft({endTime}: {endTime?: TSeconds}): number {
 	if (!endTime) {
 		return 0;
 	}
