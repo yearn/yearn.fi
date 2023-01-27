@@ -14,7 +14,7 @@ export type TListHeroCategory<T> = {
 
 type TSwitchProps = {
 	isEnabled: boolean;
-	onSwitch?: React.Dispatch<React.SetStateAction<boolean>>;
+	onSwitch?: (state: boolean) => void;
 }
 
 export type TListHero<T> = {
