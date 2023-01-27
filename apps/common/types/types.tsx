@@ -90,3 +90,5 @@ export type TMessariGraphData = {
 	tvl: number;
 	pps: number;
 }
+
+export type TSortDirection = 'asc' | 'desc' | '';
