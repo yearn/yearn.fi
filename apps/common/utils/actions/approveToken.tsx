@@ -44,7 +44,7 @@ export async function	approvedERC20Amount(
 }
 
 export async function	approveERC20(
-	provider: ethers.providers.Web3Provider,
+	provider: ethers.providers.Web3Provider | ethers.providers.JsonRpcProvider,
 	tokenAddress: string,
 	spender: string,
 	amount = ethers.constants.MaxUint256
