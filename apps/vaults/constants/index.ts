@@ -1,0 +1,1 @@
+export const STAKING_REWARDS_SUPPORTED_CHAINS = [10];

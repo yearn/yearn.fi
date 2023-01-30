@@ -90,3 +90,7 @@ export function	formatDateShort(value: number): string {
 
 	return (new Intl.DateTimeFormat([locale, 'en-US'], {year: 'numeric', month: 'short', day: '2-digit'}).format(value));
 }
+
+export const keyBy = <T1, T2 extends keyof T1 & string>(array: T1[], key: T2): TDict<T1 | undefined> => 
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	(array || []).reduce((r, x): TDict<T1> => ({...r, [(x as any)[key]]: x}), {});
