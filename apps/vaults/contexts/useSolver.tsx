@@ -1,4 +1,5 @@
 import React, {createContext, useCallback, useContext, useState} from 'react';
+import {useDeepCompareMemo} from '@react-hookz/web';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useSolverChainCoin} from '@vaults/hooks/useSolverChainCoin';
 import {useSolverCowswap} from '@vaults/hooks/useSolverCowswap';
@@ -6,7 +7,6 @@ import {useSolverPartnerContract} from '@vaults/hooks/useSolverPartnerContract';
 import {useSolverVanilla} from '@vaults/hooks/useSolverVanilla';
 import {useSolverWido} from '@vaults/hooks/useSolverWido';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {hooks} from '@yearn-finance/web-lib/hooks';
 import {useDebouncedEffect} from '@yearn-finance/web-lib/hooks/useDebounce';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -89,10 +89,13 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 							set_currentSolverState({...cowswap, quote: cowswapQuote});
 							set_isLoading(false);
 						});
+					} else {
+						performBatchedUpdates((): void => {
+							set_currentSolverState({...cowswap, quote: toNormalizedBN(0)});
+							set_isLoading(false);
+						});
 					}
-				}
-
-				if (currentSolver === Solver.COWSWAP && !isSolverDisabled[Solver.COWSWAP]) {
+				} else if (currentSolver === Solver.COWSWAP && !isSolverDisabled[Solver.COWSWAP]) {
 					if (cowswapQuote?.raw?.gt(0)) {
 						performBatchedUpdates((): void => {
 							set_currentSolverState({...cowswap, quote: cowswapQuote});
@@ -103,7 +106,14 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 							set_currentSolverState({...wido, quote: widoQuote});
 							set_isLoading(false);
 						});
+					} else {
+						performBatchedUpdates((): void => {
+							set_currentSolverState({...wido, quote: toNormalizedBN(0)});
+							set_isLoading(false);
+						});
 					}
+				} else {
+					set_isLoading(false);
 				}
 				break;
 			}
@@ -134,7 +144,7 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 		onUpdateSolver();
 	}, [onUpdateSolver], 0);
 
-	const	contextValue = hooks.useDeepCompareMemo((): TWithSolver => ({
+	const	contextValue = useDeepCompareMemo((): TWithSolver => ({
 		currentSolver: currentSolver,
 		effectiveSolver: currentSolverState?.type,
 		expectedOut: currentSolverState?.quote || toNormalizedBN(0),

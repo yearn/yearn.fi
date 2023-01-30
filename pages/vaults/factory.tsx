@@ -1,9 +1,9 @@
-import React, {useCallback, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import Balancer from 'react-wrap-balancer';
 import {Contract} from 'ethcall';
 import useSWR from 'swr';
+import {useAsync} from '@react-hookz/web';
 import VaultListFactory from '@vaults/components/list/VaultListFactory';
-import {useAsync} from '@vaults/hooks/useAsync';
 import VAULT_FACTORY_ABI from '@vaults/utils/abi/vaultFactory.abi';
 import {createNewVaultsAndStrategies, estimateGasForCreateNewVaultsAndStrategies} from '@vaults/utils/actions/createVaultFromFactory';
 import Wrapper from '@vaults/Wrapper';
@@ -25,7 +25,7 @@ import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {CurveContextApp, useCurve} from '@common/contexts/useCurve';
 import {useYearn} from '@common/contexts/useYearn';
 
-import type {BigNumber} from 'ethers';
+import type {BigNumber, providers} from 'ethers';
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
 import type {TAddress} from '@yearn-finance/web-lib/utils/address';
@@ -66,22 +66,29 @@ function	Factory(): ReactElement {
 	** This means we need to check, for all the gauges if we already have an
 	** associated vault.
 	**************************************************************************/
-	const fetchAlreadyCreatedGauges = useCallback(async (): Promise<TCurveGaugesFromYearn[]> => {
-		if ((gaugesFromYearn || []).length === 0) {
+	const [{result: filteredGauges}, fetchGaugesAction] = useAsync(async function fetchAlreadyCreatedGauges(
+		_provider: providers.JsonRpcProvider,
+		_safeChainID: number,
+		_gaugesFromYearn: TCurveGaugesFromYearn[]
+	): Promise<TCurveGaugesFromYearn[]> {
+		if ((_gaugesFromYearn || []).length === 0) {
 			return [];
 		}
-		const	currentProvider = safeChainID === 1 ? provider || getProvider(1) : getProvider(1);
+		const	currentProvider = _safeChainID === 1 ? _provider || getProvider(1) : getProvider(1);
 		const	ethcallProvider = await newEthCallProvider(currentProvider);
 		const	curveVaultFactory = new Contract(VAULT_FACTORY_ADDRESS, VAULT_FACTORY_ABI);
 
 		const calls = [];
-		for (const gauge of gaugesFromYearn) {
+		for (const gauge of _gaugesFromYearn) {
 			calls.push(curveVaultFactory.canCreateVaultPermissionlessly(gauge.gauge_address));
 		}
 		const	canCreateVaults = await ethcallProvider.tryAll(calls) as boolean[];
-		return gaugesFromYearn.filter((_gauge: TCurveGaugesFromYearn, index: number): boolean => canCreateVaults[index]);
-	}, [gaugesFromYearn, provider, safeChainID]);
-	const [filteredGauges, , mutate] = useAsync(fetchAlreadyCreatedGauges, [], [gaugesFromYearn]);
+		return _gaugesFromYearn.filter((_gauge: TCurveGaugesFromYearn, index: number): boolean => canCreateVaults[index]);
+	}, []);
+
+	useEffect((): void => {
+		fetchGaugesAction.execute(provider, safeChainID, gaugesFromYearn);
+	}, [fetchGaugesAction, gaugesFromYearn, provider, safeChainID]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** We need to create the possible elements for the dropdown by removing all
@@ -116,22 +123,28 @@ function	Factory(): ReactElement {
 	** Name and symbol from the Curve API are not the one we want to display.
 	** We need to fetch the name and symbol from the gauge contract.
 	**************************************************************************/
-	const fetchGaugeDisplayData = useCallback(async (): Promise<TGaugeDisplayData> => {
-		const currentProvider = safeChainID === 1 ? provider || getProvider(1) : getProvider(1);
+	const [{result: gaugeDisplayData, status}, fetchGaugeDisplayDataAction] = useAsync(async function fetchGaugeDisplayData(
+		_provider: providers.JsonRpcProvider,
+		_safeChainID: number,
+		_selectedOption: TDropdownGaugeOption
+	): Promise<TGaugeDisplayData> {
+		const currentProvider = _safeChainID === 1 ? _provider || getProvider(1) : getProvider(1);
 		const ethcallProvider = await newEthCallProvider(currentProvider);
-		const curveGauge = new Contract(toAddress(selectedOption.value.gaugeAddress), ERC20_ABI);
+		const curveGauge = new Contract(toAddress(_selectedOption.value.gaugeAddress), ERC20_ABI);
 
 		const calls = [curveGauge.name(), curveGauge.symbol()];
 		const [name, symbol] = await ethcallProvider.tryAll(calls) as [string, string];
 		return ({
-			name: name.replace('Curve.fi', '').replace('Gauge Deposit', '') || selectedOption.value.name,
-			symbol: symbol.replace('-gauge', '').replace('-f', '') || selectedOption.value.name,
-			poolAddress: selectedOption.value.poolAddress,
-			gaugeAddress: selectedOption.value.gaugeAddress
+			name: name.replace('Curve.fi', '').replace('Gauge Deposit', '') || _selectedOption.value.name,
+			symbol: symbol.replace('-gauge', '').replace('-f', '') || _selectedOption.value.name,
+			poolAddress: _selectedOption.value.poolAddress,
+			gaugeAddress: _selectedOption.value.gaugeAddress
 		});
-	}, [provider, safeChainID, selectedOption?.value]);
+	}, undefined);
 
-	const [gaugeDisplayData, isLoading] = useAsync<TGaugeDisplayData>(fetchGaugeDisplayData, undefined, [selectedOption.value.name]);
+	useEffect((): void => {
+		fetchGaugeDisplayDataAction.execute(provider, safeChainID, selectedOption);
+	}, [fetchGaugeDisplayDataAction, provider, safeChainID, selectedOption]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Perform a smartContract call to the ZAP contract to get the expected
@@ -167,7 +180,7 @@ function	Factory(): ReactElement {
 			set_selectedOption(defaultOption);
 			await setTimeout(async (): Promise<void> => {
 				await Promise.all([
-					mutate(),
+					fetchGaugesAction.execute(provider, safeChainID, gaugesFromYearn),
 					mutateVaultList()
 				]);
 			}, 1000);
@@ -209,7 +222,7 @@ function	Factory(): ReactElement {
 
 						<div className={'col-span-2 w-full space-y-1'}>
 							<p className={'text-neutral-600'}>{'Vault name'}</p>
-							{isLoading ? (
+							{status === 'loading' ? (
 								<div className={'flex h-10 items-center bg-neutral-200 p-2 pl-5 text-neutral-600'}>
 									<span className={'loader'} />
 								</div>
@@ -222,7 +235,7 @@ function	Factory(): ReactElement {
 
 						<div className={'col-span-2 w-full space-y-1'}>
 							<p className={'text-neutral-600'}>{'Symbol'}</p>
-							{isLoading ? (
+							{status === 'loading' ? (
 								<div className={'flex h-10 items-center bg-neutral-200 p-2 pl-5 text-neutral-600'}>
 									<span className={'loader'} />
 								</div>
@@ -235,7 +248,7 @@ function	Factory(): ReactElement {
 
 						<div className={'col-span-3 w-full space-y-1'}>
 							<p className={'text-neutral-600'}>{'Pool address'}</p>
-							{isLoading ? (
+							{status === 'loading' ? (
 								<div className={'flex h-10 items-center bg-neutral-200 p-2 pl-5 text-neutral-600'}>
 									<span className={'loader'} />
 								</div>
@@ -261,7 +274,7 @@ function	Factory(): ReactElement {
 						<div className={'col-span-3 w-full space-y-1'}>
 							<p className={'text-neutral-600'}>{'Gauge address'}</p>
 
-							{isLoading ? (
+							{status === 'loading' ? (
 								<div className={'flex h-10 items-center bg-neutral-200 p-2 pl-5 text-neutral-600'}>
 									<span className={'loader'} />
 								</div>

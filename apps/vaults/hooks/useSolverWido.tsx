@@ -1,8 +1,8 @@
 import {useCallback, useMemo, useRef, useState} from 'react';
 import {ethers} from 'ethers';
 import {getTokenAllowance as wiGetTokenAllowance, getWidoSpender, quote as wiQuote} from 'wido';
+import {useAsync} from '@react-hookz/web';
 import {isSolverDisabled, Solver} from '@vaults/contexts/useSolver';
-import {useAsync} from '@vaults/hooks/useAsync';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -63,16 +63,15 @@ function useWidoQuote(): [TWidoResult, (request: TInitSolverArgs, shouldPreventE
 		return undefined;
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
-	const [data, isLoading] = useAsync<QuoteResult>(getQuote, undefined, []);
-
+	const [{result: data, status}, actions] = useAsync(getQuote, undefined);
 
 	return [
-		useMemo((): TWidoResult => ({
+		{
 			result: data,
-			isLoading,
+			isLoading: status === 'loading',
 			error: err
-		}), [data, err, isLoading]),
-		getQuote
+		},
+		actions.execute
 	];
 }
 
