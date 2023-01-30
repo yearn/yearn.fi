@@ -275,7 +275,6 @@ function Vote(): ReactElement {
 			</div>
 			<div className={'mb-10'}>
 				<Tabs
-					className={'min-h-[356px]'}
 					items={[
 						{id: 'deposit', label: 'Deposit', content: <Deposit />},
 						{id: 'withdraw', label: 'Withdraw', content: <Withdraw />},
