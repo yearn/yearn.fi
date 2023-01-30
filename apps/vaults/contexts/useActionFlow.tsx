@@ -1,9 +1,9 @@
 import React, {createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState} from 'react';
+import {useMountEffect} from '@react-hookz/web';
 import {isSolverDisabled, Solver} from '@vaults/contexts/useSolver';
 import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
 import {setZapOption} from '@vaults/utils/zapOptions';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
-import {hooks} from '@yearn-finance/web-lib/hooks';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
@@ -169,7 +169,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 	** order to be able to do that, we need to be able to select ETH or wETH as the token to, and
 	** so, we need to create the "possibleOptionsFrom" array.
 	**********************************************************************************************/
-	hooks.useMountEffect((): void => {
+	useMountEffect((): void => {
 		if (safeChainID === 1 && currentVault && toAddress(currentVault.token.address) === WETH_TOKEN_ADDRESS) {
 			set_possibleOptionsFrom([
 				setZapOption({name: 'ETH', symbol: 'ETH', address: ETH_TOKEN_ADDRESS, chainID: safeChainID, decimals: 18}),

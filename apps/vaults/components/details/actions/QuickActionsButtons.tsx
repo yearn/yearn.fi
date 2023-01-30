@@ -1,9 +1,9 @@
-import React, {useCallback, useState} from 'react';
+import React, {useCallback, useEffect, useState} from 'react';
 import {ethers} from 'ethers';
+import {useAsync} from '@react-hookz/web';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {Solver, useSolver} from '@vaults/contexts/useSolver';
 import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
-import {useAsync} from '@vaults/hooks/useAsync';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -27,12 +27,10 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 	** SWR hook to get the expected out for a given in/out pair with a specific amount. This hook is
 	** called every 10s or when amount/in or out changes. Calls the allowanceFetcher callback.
 	**********************************************************************************************/
-	// onRetrieveAllowance
-	const [allowanceFrom, isValidatingAllowance, mutateAllowance] = useAsync(
-		onRetrieveAllowance,
-		toNormalizedBN(0),
-		[currentSolver, actionParams?.selectedOptionFrom?.value]
-	);
+	const [{result: allowanceFrom, status}, actions] = useAsync(onRetrieveAllowance, toNormalizedBN(0));
+	useEffect((): void => {
+		actions.execute();
+	}, [currentSolver, actionParams?.selectedOptionFrom?.value, actions]);
 
 	const onSuccess = useCallback(async (): Promise<void> => {
 		onChangeAmount(toNormalizedBN(0));
@@ -70,7 +68,7 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 			shouldApproveInfinite ? ethers.constants.MaxUint256 : actionParams?.amount.raw,
 			set_txStatusApprove,
 			async (): Promise<void> => {
-				await mutateAllowance();
+				await actions.execute();
 			}
 		);
 	}
@@ -90,7 +88,7 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 		return (
 			<Button
 				className={'w-full'}
-				isBusy={txStatusApprove.pending || isValidatingAllowance}
+				isBusy={txStatusApprove.pending || status === 'loading'}
 				isDisabled={!isActive || actionParams?.amount.raw.isZero() || actionParams?.amount.raw.gt(maxDepositPossible.raw) || expectedOut.raw.isZero()}
 				onClick={onApproveFrom}>
 				{'Approve'}
