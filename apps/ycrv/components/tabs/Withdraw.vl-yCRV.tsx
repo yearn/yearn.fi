@@ -2,6 +2,7 @@ import React, {useMemo, useState} from 'react';
 import {ethers} from 'ethers';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {VLYCRV_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatBN, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
@@ -21,10 +22,10 @@ import type {TNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber'
 function Withdraw(): ReactElement {
 	const {isActive, provider} = useWeb3();
 	const {balances, refresh} = useWallet();
-	const stYCRVBalance = useBalance(VL_YCRV.value);
+	const stYCRVBalance = useBalance(VLYCRV_TOKEN_ADDRESS);
 	const [amount, set_amount] = useState<TNormalizedBN | undefined>({raw: ethers.constants.Zero, normalized: 0});
 	const [txStatusWithdraw, set_txStatusWithdraw] = useState(defaultTxStatus);
-	const pricePerSTYCRV = useTokenPrice(toAddress(VL_YCRV.value));
+	const pricePerYCRV = useTokenPrice(YCRV_TOKEN_ADDRESS);
 	const {withdraw} = useVLyCRV();
 
 	const fromSelectProps: TQASelect = useMemo((): TQASelect => {
@@ -49,17 +50,16 @@ function Withdraw(): ReactElement {
 		value: amount ? amount.normalized : '',
 		onSetMaxAmount: (): void => set_amount(maxLockingPossible),
 		label: 'Amount',
-		legend: formatCounterValue(amount?.normalized || 0, pricePerSTYCRV),
 		isDisabled: !isActive,
 		placeholder: '0'
-	}), [amount, balances, isActive, maxLockingPossible, pricePerSTYCRV]);
-
+	}), [amount, balances, isActive, maxLockingPossible]);
 
 	const toInputProps: TQAInput = useMemo((): TQAInput => ({
 		value: amount?.normalized ?? 0,
 		label: 'You will get',
+		legend: formatCounterValue(amount?.normalized || 0, pricePerYCRV),
 		isDisabled: true
-	}), [amount]);
+	}), [amount?.normalized, pricePerYCRV]);
 
 	const toSelectProps: TQASelect = {label: 'To wallet', options: [YCRV], selected: YCRV};
 

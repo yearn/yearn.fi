@@ -4,7 +4,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 // import {useBalances} from '@yearn-finance/web-lib/hooks/useBalances';
 import {useClientEffect} from '@yearn-finance/web-lib/hooks/useClientEffect';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {ETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {ETH_TOKEN_ADDRESS, VLYCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {getProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import {useYearn} from '@common/contexts/useYearn';
 import {useBalances} from '@common/hooks/useBalances';
@@ -53,6 +53,7 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 			tokens.push({token: vault?.address});
 			tokens.push({token: vault.token.address});
 		});
+		tokens.push({token: VLYCRV_TOKEN_ADDRESS});
 		tokens.push({token: ETH_TOKEN_ADDRESS});
 		return tokens;
 	}, [vaults, isLoadingVaultList]);
