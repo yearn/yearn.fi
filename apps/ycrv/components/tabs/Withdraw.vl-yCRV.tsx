@@ -1,11 +1,13 @@
 import React, {useMemo, useState} from 'react';
-import {BigNumber, ethers} from 'ethers';
+import {ethers} from 'ethers';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {VLYCRV_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {formatBN, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
+import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useWallet} from '@common/contexts/useWallet';
 import {useBalance} from '@common/hooks/useBalance';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
@@ -19,10 +21,11 @@ import type {TNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber'
 
 function Withdraw(): ReactElement {
 	const {isActive, provider} = useWeb3();
-	const {balances} = useWallet();
-	const stYCRVBalance = useBalance(VL_YCRV.value);
+	const {balances, refresh} = useWallet();
+	const stYCRVBalance = useBalance(VLYCRV_TOKEN_ADDRESS);
 	const [amount, set_amount] = useState<TNormalizedBN | undefined>({raw: ethers.constants.Zero, normalized: 0});
-	const pricePerSTYCRV = useTokenPrice(toAddress(VL_YCRV.value));
+	const [txStatusWithdraw, set_txStatusWithdraw] = useState(defaultTxStatus);
+	const pricePerYCRV = useTokenPrice(YCRV_TOKEN_ADDRESS);
 	const {withdraw} = useVLyCRV();
 
 	const fromSelectProps: TQASelect = useMemo((): TQASelect => {
@@ -47,50 +50,53 @@ function Withdraw(): ReactElement {
 		value: amount ? amount.normalized : '',
 		onSetMaxAmount: (): void => set_amount(maxLockingPossible),
 		label: 'Amount',
-		legend: formatCounterValue(amount?.normalized || 0, pricePerSTYCRV),
 		isDisabled: !isActive,
 		placeholder: '0'
-	}), [amount, balances, isActive, maxLockingPossible, pricePerSTYCRV]);
-
+	}), [amount, balances, isActive, maxLockingPossible]);
 
 	const toInputProps: TQAInput = useMemo((): TQAInput => ({
 		value: amount?.normalized ?? 0,
 		label: 'You will get',
+		legend: formatCounterValue(amount?.normalized || 0, pricePerYCRV),
 		isDisabled: true
-	}), [amount]);
+	}), [amount?.normalized, pricePerYCRV]);
 
-	return useMemo((): ReactElement => {
-		const toSelectProps: TQASelect = {label: 'To wallet', options: [YCRV], selected: YCRV};
+	const toSelectProps: TQASelect = {label: 'To wallet', options: [YCRV], selected: YCRV};
 
-		async function onWithdraw(): Promise<void> {
-			withdraw({amount: amount?.raw ? amount?.raw : BigNumber.from(0), provider: provider as ethers.providers.Web3Provider});
-		}
+	async function onWithdraw(): Promise<void> {
+		new Transaction(provider, withdraw, set_txStatusWithdraw)
+			.populate(formatBN(amount?.raw))
+			.onSuccess(async (): Promise<void> => {
+				await refresh([{token: VL_YCRV.value}, {token: YCRV.value}]);
+			})
+			.perform();
+	}
 
-		const buttonProps: TQAButton = {
-			label: 'Withdraw',
-			onClick: onWithdraw,
-			isDisabled: !isActive || !amount?.raw.gt(0)
-		};
+	const buttonProps: TQAButton = {
+		label: 'Withdraw',
+		onClick: onWithdraw,
+		isBusy: txStatusWithdraw.pending,
+		isDisabled: !isActive || !amount?.raw.gt(0)
+	};
 
-		return (
-			<div
-				aria-label={'yCRV Withdraw'}
-				className={'col-span-12 mb-4'}>
-				<div className={'col-span-12 flex flex-col space-x-0 space-y-2 md:flex-row md:space-x-4 md:space-y-0'}>
-					<QuickActions label={'voteFrom'}>
-						<QuickActions.Select {...fromSelectProps} />
-						<QuickActions.Input {...fromInputProps} />
-					</QuickActions>
-					<QuickActions.Switch />
-					<QuickActions label={'voteTo'}>
-						<QuickActions.Select {...toSelectProps} />
-						<QuickActions.Input {...toInputProps} />
-					</QuickActions>
-					<QuickActions.Button {...buttonProps} />
-				</div>
+	return (
+		<div
+			aria-label={'yCRV Withdraw'}
+			className={'col-span-12 mb-4'}>
+			<div className={'col-span-12 flex flex-col space-x-0 space-y-2 md:flex-row md:space-x-4 md:space-y-0'}>
+				<QuickActions label={'voteFrom'}>
+					<QuickActions.Select {...fromSelectProps} />
+					<QuickActions.Input {...fromInputProps} />
+				</QuickActions>
+				<QuickActions.Switch />
+				<QuickActions label={'voteTo'}>
+					<QuickActions.Select {...toSelectProps} />
+					<QuickActions.Input {...toInputProps} />
+				</QuickActions>
+				<QuickActions.Button {...buttonProps} />
 			</div>
-		);
-	}, [amount?.raw, fromInputProps, fromSelectProps, isActive, provider, toInputProps, withdraw]);
+		</div>
+	);
 }
 
 export default Withdraw;

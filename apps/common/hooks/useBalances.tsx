@@ -124,7 +124,7 @@ export function	useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 			for (const element of tokens) {
 				const	{token} = element;
 				const	balanceOf = results[rIndex++] as BigNumber;
-				const	decimals = results[rIndex++] as number;
+				const	decimals = (results[rIndex++] as number || 18);
 				const	rawPrice = formatBN(props?.prices?.[toAddress(token)]);
 				let symbol = results[rIndex++] as string;
 
