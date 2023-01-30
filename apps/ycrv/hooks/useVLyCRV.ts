@@ -3,12 +3,14 @@ import {Contract} from 'ethcall';
 import {BigNumber} from 'ethers';
 import useSWR from 'swr';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {VLYCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {VLYCRV_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
+import {approveERC20} from '@common/utils/actions/approveToken';
 import VLYCRV_ABI from '@yCRV/utils/abi/vlYCrv.abi';
 import {vLyCRVDeposit, vLyCRVVote, vLyCRVWithdraw} from '@yCRV/utils/actions';
 
-import type {TVlyCRVDepositProps, TVlyCRVWithdrawProps, TVoteTxProps} from '@yCRV/utils/actions';
+import type {providers} from 'ethers';
+import type {TVoteTxProps} from '@yCRV/utils/actions';
 
 export type TUserInfo = {
 	balance: BigNumber;
@@ -28,8 +30,9 @@ type TUseVLyCRV = {
 		getVotesUnpacked: TGetVotesUnpacked;
 	};
 	vote: (props: TVoteTxProps) => Promise<boolean>;
-	deposit: (props: TVlyCRVDepositProps) => Promise<boolean>;
-	withdraw: (props: TVlyCRVWithdrawProps) => Promise<boolean>;
+	deposit: (provider: providers.JsonRpcProvider, amount: BigNumber) => Promise<boolean>;
+	withdraw: (provider: providers.JsonRpcProvider, amount: BigNumber) => Promise<boolean>;
+	approve: (provider: providers.JsonRpcProvider, amount: BigNumber) => Promise<boolean>;
 };
 
 const DEFAULT_VLYCRV = {
@@ -47,7 +50,7 @@ const DEFAULT_VLYCRV = {
 
 export function useVLyCRV(): TUseVLyCRV {
 	const {provider, isActive, address} = useWeb3();
-    
+
 	const fetcher = useCallback(async (): Promise<TUseVLyCRV['initialData']> => {
 		if (!isActive || !provider) {
 			return DEFAULT_VLYCRV;
@@ -76,6 +79,14 @@ export function useVLyCRV(): TUseVLyCRV {
 		initialData: data ?? DEFAULT_VLYCRV,
 		deposit: vLyCRVDeposit,
 		withdraw: vLyCRVWithdraw,
-		vote: vLyCRVVote
+		vote: vLyCRVVote,
+		approve: async (provider: providers.JsonRpcProvider, amount: BigNumber): Promise<boolean> => (
+			approveERC20(
+				provider,
+				YCRV_TOKEN_ADDRESS,
+				VLYCRV_TOKEN_ADDRESS,
+				amount
+			)
+		)
 	};
 }
