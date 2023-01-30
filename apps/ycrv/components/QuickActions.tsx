@@ -110,9 +110,8 @@ function QAInput(props: TQAInput): ReactElement {
 					{onSetMaxAmount &&
 						<button
 							onClick={!isMaxDisabled ? onSetMaxAmount : undefined}
-							className={`ml-2 cursor-pointer px-2 py-1 text-xs text-neutral-0 transition-colors ${isMaxDisabled ? 'cursor-not-allowed bg-neutral-300 hover:bg-neutral-300' : 'cursor-default bg-neutral-900 hover:bg-neutral-700'}`}
-							disabled={isMaxDisabled}
-						>
+							className={`ml-2 px-2 py-1 text-xs font-normal text-neutral-0 transition-colors ${isMaxDisabled ? 'cursor-not-allowed bg-neutral-300 hover:bg-neutral-300' : 'cursor-pointer bg-neutral-900 hover:bg-neutral-700'}`}
+							disabled={isMaxDisabled}>
 							{'Max'}
 						</button>
 					}
