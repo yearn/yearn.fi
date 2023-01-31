@@ -1,14 +1,16 @@
 import React, {useMemo} from 'react';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {computeTimeLeft, HeroTimer} from '@common/components/HeroTimer';
+import {HeroTimer} from '@common/components/HeroTimer';
 import {Tabs} from '@common/components/Tabs';
 import {useCurve} from '@common/contexts/useCurve';
+import {computeTimeLeft} from '@common/hooks/useTimer';
 import {formatDateShort} from '@common/utils';
 import GaugeList from '@yCRV/components/list/GaugeList';
 import Deposit from '@yCRV/components/tabs/Deposit.vl-yCRV';
 import HowItWorks from '@yCRV/components/tabs/HowItWorks.vl-yCRV';
 import Withdraw from '@yCRV/components/tabs/Withdraw.vl-yCRV';
+import WithdrawUnavailable from '@yCRV/components/tabs/WithdrawUnavailable.vl-yCRV';
 import {useVLyCRV} from '@yCRV/hooks/useVLyCRV';
 import Wrapper from '@yCRV/Wrapper';
 
@@ -27,7 +29,7 @@ function Vote(): ReactElement {
 		return gaugesList.reduce((prev, curr, i): TDict<BigNumber> => ({...prev, [curr]: voteAmounts[i]}), {});
 	}, [gaugesList, voteAmounts]);
 
-	const {balance, lastVoteTime, votesSpent} = userInfo;
+	const {balance, lastVoteTime, votesSpent, unlockTime} = userInfo;
 	const totalVotes = formatToNormalizedValue(balance);
 	const remainingVotesForThisPeriod = formatToNormalizedValue(balance.sub(votesSpent));
 
@@ -77,7 +79,7 @@ function Vote(): ReactElement {
 				<Tabs
 					items={[
 						{id: 'deposit', label: 'Deposit', content: <Deposit />},
-						{id: 'withdraw', label: 'Withdraw', content: <Withdraw />},
+						{id: 'withdraw', label: 'Withdraw', content: unlockTime ? <Withdraw /> : <WithdrawUnavailable />},
 						{id: 'how-it-works', label: 'How it works', content: <HowItWorks />}
 					]} />
 			</div>

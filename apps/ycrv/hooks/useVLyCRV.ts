@@ -17,6 +17,7 @@ export type TUserInfo = {
 	balance: BigNumber;
 	votesSpent: BigNumber;
 	lastVoteTime: number;
+	unlockTime: number;
 }
 
 type TGetVotesUnpacked = {
@@ -46,7 +47,8 @@ const DEFAULT_VLYCRV = {
 	userInfo: {
 		balance: Zero,
 		votesSpent: Zero,
-		lastVoteTime: 0
+		lastVoteTime: 0,
+		unlockTime: 0
 	},
 	getVotesUnpacked: {
 		gaugesList: [],
