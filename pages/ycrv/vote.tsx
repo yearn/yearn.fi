@@ -10,7 +10,6 @@ import GaugeList from '@yCRV/components/list/GaugeList';
 import Deposit from '@yCRV/components/tabs/Deposit.vl-yCRV';
 import HowItWorks from '@yCRV/components/tabs/HowItWorks.vl-yCRV';
 import Withdraw from '@yCRV/components/tabs/Withdraw.vl-yCRV';
-import WithdrawUnavailable from '@yCRV/components/tabs/WithdrawUnavailable.vl-yCRV';
 import {useVLyCRV} from '@yCRV/hooks/useVLyCRV';
 import Wrapper from '@yCRV/Wrapper';
 
@@ -79,7 +78,7 @@ function Vote(): ReactElement {
 				<Tabs
 					items={[
 						{id: 'deposit', label: 'Deposit', content: <Deposit />},
-						{id: 'withdraw', label: 'Withdraw', content: unlockTime ? <Withdraw /> : <WithdrawUnavailable />},
+						{id: 'withdraw', label: 'Withdraw', content: <Withdraw />},
 						{id: 'how-it-works', label: 'How it works', content: <HowItWorks />}
 					]} />
 			</div>
