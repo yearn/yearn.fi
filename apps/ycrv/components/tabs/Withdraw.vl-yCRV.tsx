@@ -1,4 +1,5 @@
 import React, {useMemo, useState} from 'react';
+import dayjs from 'dayjs';
 import {ethers} from 'ethers';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -81,7 +82,9 @@ function Withdraw(): ReactElement {
 		isDisabled: !isActive || !amount?.raw.gt(0)
 	};
 
-	if (!unlockTime) {
+	const currentTime = dayjs().unix();
+
+	if (unlockTime <= currentTime) {
 		return (
 			<div
 				aria-label={'yCRV Withdraw Not Available'}
