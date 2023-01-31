@@ -4,7 +4,6 @@ import {Listbox, Transition} from '@headlessui/react';
 import {VaultDetailsAbout} from '@vaults/components/details/tabs/VaultDetailsAbout';
 import {VaultDetailsHistorical} from '@vaults/components/details/tabs/VaultDetailsHistorical';
 import {VaultDetailsStrategies} from '@vaults/components/details/tabs/VaultDetailsStrategies';
-import {RewardsTab} from '@vaults/components/RewardsTab';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
@@ -25,18 +24,17 @@ type TTabsOptions = {
 	label: string;
 	hidden?: boolean;
 }
+
 type TTabs = {
-	chainID: number,
 	selectedAboutTabIndex: number,
 	set_selectedAboutTabIndex: (arg0: number) => void
 }
 
-function	Tabs({chainID, selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactElement {
+function	Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactElement {
 	const tabs: TTabsOptions[] = [
 		{value: 0, label: 'About'},
 		{value: 1, label: 'Strategies'},
-		{value: 2, label: 'Historical rates'},
-		{value: 3, label: '$OP BOOST', hidden: chainID !== 10}
+		{value: 2, label: 'Historical rates'}
 	];
 
 	return (
@@ -142,7 +140,6 @@ function	VaultDetailsTabsWrapper({currentVault}: {currentVault: TYearnVault}): R
 		<div aria-label={'Vault Details'} className={'col-span-12 mb-4 flex flex-col bg-neutral-100'}>
 			<div className={'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'}>
 				<Tabs
-					chainID={safeChainID}
 					selectedAboutTabIndex={selectedAboutTabIndex}
 					set_selectedAboutTabIndex={set_selectedAboutTabIndex} />
 
@@ -186,11 +183,6 @@ function	VaultDetailsTabsWrapper({currentVault}: {currentVault: TYearnVault}): R
 					currentVault={currentVault}
 					harvestData={harvestData} />
 			) : null}
-
-			{currentVault && selectedAboutTabIndex === 3 ? (
-				<RewardsTab currentVault={currentVault} />
-			) : null}
-
 
 		</div>
 	);

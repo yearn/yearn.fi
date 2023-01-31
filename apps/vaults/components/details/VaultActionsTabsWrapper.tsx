@@ -6,9 +6,11 @@ import VaultDetailsQuickActionsButtons from '@vaults/components/details/actions/
 import VaultDetailsQuickActionsFrom from '@vaults/components/details/actions/QuickActionsFrom';
 import VaultDetailsQuickActionsSwitch from '@vaults/components/details/actions/QuickActionsSwitch';
 import VaultDetailsQuickActionsTo from '@vaults/components/details/actions/QuickActionsTo';
+import {RewardsTab} from '@vaults/components/RewardsTab';
 import SettingsPopover from '@vaults/components/SettingsPopover';
 import {Flow, useActionFlow} from '@vaults/contexts/useActionFlow';
 import {Solver} from '@vaults/contexts/useSolver';
+import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import IconChevron from '@common/icons/IconChevron';
 
@@ -18,12 +20,14 @@ type TTabsOptions = {
 	value: number;
 	label: string;
 	flowAction: Flow;
+	hidden?: (args: any) => boolean;
 }
 
 const tabs: TTabsOptions[] = [
 	{value: 0, label: 'Deposit', flowAction: Flow.Deposit},
 	{value: 1, label: 'Withdraw', flowAction: Flow.Withdraw},
-	{value: 2, label: 'Migrate', flowAction: Flow.Migrate}
+	{value: 2, label: 'Migrate', flowAction: Flow.Migrate},
+	{value: 3, label: '$OP BOOST', flowAction: Flow.Switch, hidden: (chainID: number): boolean => chainID !== 10}
 ];
 function	getCurrentTab({isDepositing, hasMigration}: {isDepositing: boolean, hasMigration: boolean}): TTabsOptions {
 	if (hasMigration) {
@@ -33,14 +37,21 @@ function	getCurrentTab({isDepositing, hasMigration}: {isDepositing: boolean, has
 }
 
 function	VaultActionsTabsWrapper(): ReactElement {
-	const {currentVault, onSwitchSelectedOptions, isDepositing, actionParams} = useActionFlow();
+	const {currentVault, onSwitchSelectedOptions, isDepositing, actionParams, currentSolver} = useActionFlow();
+	const {chainID} = useChainID();
 	const [possibleTabs, set_possibleTabs] = useState<TTabsOptions[]>([tabs[0], tabs[1]]);
 	const [currentTab, set_currentTab] = useState<TTabsOptions>(
 		getCurrentTab({isDepositing, hasMigration: currentVault?.migration?.available})
 	);
 
 	useUpdateEffect((): void => {
-		if (currentVault?.migration?.available && actionParams.isReady) {
+		if (chainID === 10) {
+			performBatchedUpdates((): void => {
+				set_possibleTabs([tabs[0], tabs[1], tabs[3]]);
+				set_currentTab(tabs[0]);
+				onSwitchSelectedOptions(Flow.Switch);
+			});
+		} else if (currentVault?.migration?.available && actionParams.isReady) {
 			performBatchedUpdates((): void => {
 				set_possibleTabs([tabs[1], tabs[2]]);
 				set_currentTab(tabs[2]);
@@ -131,26 +142,30 @@ function	VaultActionsTabsWrapper(): ReactElement {
 				</div>
 				<div className={'-mt-0.5 h-0.5 w-full bg-neutral-300'} />
 
-				<div className={'col-span-12 flex flex-col space-x-0 space-y-2 bg-neutral-100 p-4 md:flex-row md:space-x-4 md:space-y-0 md:py-6 md:px-8'}>
-					<VaultDetailsQuickActionsFrom />
-					<VaultDetailsQuickActionsSwitch />
-					<VaultDetailsQuickActionsTo />
-					<div className={'w-full space-y-0 md:w-42 md:min-w-42 md:space-y-2'}>
-						<label className={'hidden text-base md:inline'}>&nbsp;</label>
-						<div>
-							<VaultDetailsQuickActionsButtons />
+				{currentTab.value === 3 ? (
+					<RewardsTab currentVault={currentVault} />
+				) : (
+					<div className={'col-span-12 flex flex-col space-x-0 space-y-2 bg-neutral-100 p-4 md:flex-row md:space-x-4 md:space-y-0 md:py-6 md:px-8'}>
+						<VaultDetailsQuickActionsFrom />
+						<VaultDetailsQuickActionsSwitch />
+						<VaultDetailsQuickActionsTo />
+						<div className={'w-full space-y-0 md:w-42 md:min-w-42 md:space-y-2'}>
+							<label className={'hidden text-base md:inline'}>&nbsp;</label>
+							<div>
+								<VaultDetailsQuickActionsButtons />
+							</div>
+							<legend className={'hidden text-xs md:inline'}>&nbsp;</legend>
 						</div>
-						<legend className={'hidden text-xs md:inline'}>&nbsp;</legend>
 					</div>
-				</div>
+				)}
 
-				{currentSolver === Solver.OPTIMISM_BOOSTER ? (
+				{currentTab.value === 0 && currentSolver === Solver.OPTIMISM_BOOSTER && (
 					<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
 						<div className={'w-full bg-green-400 px-6 py-4'}>
 							<b className={'text-base text-neutral-0'}>{'This is Optimism boosted Vault - your tokens will be automatically staked to have additional rewards!'}</b>
 						</div>
 					</div>
-				) : null}
+				)}
 
 			</div>
 		</Fragment>

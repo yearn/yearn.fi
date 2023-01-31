@@ -58,7 +58,7 @@ function Index({router, vaultData}: {router: NextRouter, vaultData: TYearnVault}
 				<VaultDetailsHeader currentVault={currentVault.current} />
 				<ActionFlowContextApp currentVault={currentVault.current}>
 					<WithSolverContextApp>
-						<VaultActionsTabsWrapper />
+						<VaultActionsTabsWrapper currentVault={currentVault.current} />
 					</WithSolverContextApp>
 				</ActionFlowContextApp>
 				<VaultDetailsTabsWrapper currentVault={currentVault.current} />
