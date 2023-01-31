@@ -7,6 +7,7 @@ import VaultDetailsQuickActionsSwitch from '@vaults/components/details/actions/Q
 import VaultDetailsQuickActionsTo from '@vaults/components/details/actions/QuickActionsTo';
 import SettingsPopover from '@vaults/components/SettingsPopover';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
+import {Solver} from '@vaults/contexts/useSolver';
 import IconChevron from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
@@ -21,7 +22,7 @@ const tabs: TTabsOptions[] = [
 	{value: 1, label: 'Withdraw'}
 ];
 function	VaultActionsTabsWrapper(): ReactElement {
-	const {onSwitchSelectedOptions, isDepositing} = useActionFlow();
+	const {onSwitchSelectedOptions, isDepositing, currentSolver} = useActionFlow();
 	const currentTab = useMemo((): TTabsOptions => tabs.find((tab): boolean => tab.value === (isDepositing ? 0 : 1)) as TTabsOptions, [isDepositing]);
 
 	return (
@@ -113,11 +114,13 @@ function	VaultActionsTabsWrapper(): ReactElement {
 					</div>
 				</div>
 
-				<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
-					<div className={'w-full bg-green-400 px-6 py-4'}>
-						<b className={'text-base text-neutral-0'}>{'This is Optimism boosted Vault - your tokens will be automatically staked to have additional rewards!'}</b>
+				{currentSolver === Solver.OPTIMISM_BOOSTER ? (
+					<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
+						<div className={'w-full bg-green-400 px-6 py-4'}>
+							<b className={'text-base text-neutral-0'}>{'This is Optimism boosted Vault - your tokens will be automatically staked to have additional rewards!'}</b>
+						</div>
 					</div>
-				</div>
+				) : null}
 
 			</div>
 		</Fragment>
