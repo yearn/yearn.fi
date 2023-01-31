@@ -1,8 +1,8 @@
 import React, {useEffect, useRef} from 'react';
 import {motion} from 'framer-motion';
+import {VaultDetailsTabsWrapper} from '@vaults/components/details/tabs/VaultDetailsTabsWrapper';
 import {VaultActionsTabsWrapper} from '@vaults/components/details/VaultActionsTabsWrapper';
 import {VaultDetailsHeader} from '@vaults/components/details/VaultDetailsHeader';
-import {VaultDetailsTabsWrapper} from '@vaults/components/details/VaultDetailsTabsWrapper';
 import ActionFlowContextApp from '@vaults/contexts/useActionFlow';
 import {WithSolverContextApp} from '@vaults/contexts/useSolver';
 import Wrapper from '@vaults/Wrapper';

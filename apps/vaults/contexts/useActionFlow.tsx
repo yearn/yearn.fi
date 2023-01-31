@@ -168,6 +168,10 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 	});
 
 	const currentSolver = useMemo((): Solver => {
+		if (safeChainID === 10) {
+			return Solver.OPTIMISM_BOOSTER;
+		}
+
 		const isInputTokenEth = actionParams?.selectedOptionFrom?.value === ETH_TOKEN_ADDRESS;
 		const isOutputTokenEth = actionParams?.selectedOptionTo?.value === ETH_TOKEN_ADDRESS;
 		if (isInputTokenEth || isOutputTokenEth) {
@@ -185,7 +189,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 			return Solver.PARTNER_CONTRACT;
 		}
 		return Solver.VANILLA;
-	}, [actionParams?.selectedOptionFrom?.value, actionParams?.selectedOptionFrom?.solveVia, actionParams?.selectedOptionTo?.value, actionParams?.selectedOptionTo?.solveVia, currentVault?.migration?.address, currentVault?.migration?.available, isDepositing, zapProvider, isUsingPartnerContract]);
+	}, [safeChainID, actionParams?.selectedOptionFrom?.value, actionParams?.selectedOptionFrom?.solveVia, actionParams?.selectedOptionTo?.value, actionParams?.selectedOptionTo?.solveVia, currentVault?.migration?.available, currentVault?.migration?.address, isDepositing, zapProvider, isUsingPartnerContract]);
 
 	const onSwitchSelectedOptions = useCallback((nextFlow = Flow.Switch): void => {
 		balancesNonce;

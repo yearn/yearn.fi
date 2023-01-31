@@ -4,6 +4,7 @@ import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useSolverChainCoin} from '@vaults/hooks/useSolverChainCoin';
 import {useSolverCowswap} from '@vaults/hooks/useSolverCowswap';
 import {useSolverInternalMigration} from '@vaults/hooks/useSolverInternalMigration';
+import {useSolverOptimismBooster} from '@vaults/hooks/useSolverOptimismBooster';
 import {useSolverPartnerContract} from '@vaults/hooks/useSolverPartnerContract';
 import {useSolverVanilla} from '@vaults/hooks/useSolverVanilla';
 import {useSolverWido} from '@vaults/hooks/useSolverWido';
@@ -21,6 +22,7 @@ export enum	Solver {
 	PARTNER_CONTRACT = 'PartnerContract',
 	CHAIN_COIN = 'ChainCoin',
 	INTERNAL_MIGRATION = 'InternalMigration',
+	OPTIMISM_BOOSTER = 'OptimismBooster',
 	COWSWAP = 'Cowswap',
 	WIDO = 'Wido',
 	PORTALS = 'Portals'
@@ -32,6 +34,7 @@ export const isSolverDisabled = {
 	[Solver.CHAIN_COIN]: false,
 	[Solver.INTERNAL_MIGRATION]: false,
 	[Solver.COWSWAP]: false,
+	[Solver.OPTIMISM_BOOSTER]: false,
 	[Solver.WIDO]: true, //Audit ongoing
 	[Solver.PORTALS]: true //Not yet implemented
 };
@@ -58,6 +61,7 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 	const chainCoin = useSolverChainCoin();
 	const partnerContract = useSolverPartnerContract();
 	const internalMigration = useSolverInternalMigration();
+	const optimismBooster = useSolverOptimismBooster();
 	const [currentSolverState, set_currentSolverState] = useState(vanilla);
 	const [isLoading, set_isLoading] = useState(false);
 
@@ -121,6 +125,13 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 				}
 				break;
 			}
+			case Solver.OPTIMISM_BOOSTER:
+				quote = await optimismBooster.init(request);
+				performBatchedUpdates((): void => {
+					set_currentSolverState({...optimismBooster, quote});
+					set_isLoading(false);
+				});
+				break;
 			case Solver.CHAIN_COIN:
 				quote = await chainCoin.init(request);
 				performBatchedUpdates((): void => {
@@ -150,7 +161,7 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 					set_isLoading(false);
 				});
 		}
-	}, [address, actionParams, currentSolver, cowswap.init, vanilla.init, wido.init, internalMigration.init, isDepositing, currentVault.migration.contract]); //Ignore the warning, it's a false positive
+	}, [address, actionParams, currentSolver, cowswap.init, vanilla.init, wido.init, internalMigration.init, optimismBooster.init, isDepositing, currentVault.migration.contract]); //Ignore the warning, it's a false positive
 
 	useDebouncedEffect((): void => {
 		onUpdateSolver();
