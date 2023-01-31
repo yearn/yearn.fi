@@ -100,21 +100,25 @@ function	VaultActionsTabsWrapper(): ReactElement {
 				</div>
 				<div className={'-mt-0.5 h-0.5 w-full bg-neutral-300'} />
 
-				<Fragment>
-					<div
-						className={'col-span-12 mb-4 flex flex-col space-x-0 space-y-2 bg-neutral-100 p-4 md:flex-row md:space-x-4 md:space-y-0 md:py-6 md:px-8'}>
-						<VaultDetailsQuickActionsFrom />
-						<VaultDetailsQuickActionsSwitch />
-						<VaultDetailsQuickActionsTo />
-						<div className={'w-full space-y-0 md:w-42 md:min-w-42 md:space-y-2'}>
-							<label className={'hidden text-base md:inline'}>&nbsp;</label>
-							<div>
-								<VaultDetailsQuickActionsButtons />
-							</div>
-							<legend className={'hidden text-xs md:inline'}>&nbsp;</legend>
+				<div className={'col-span-12 flex flex-col space-x-0 space-y-2 bg-neutral-100 p-4 md:flex-row md:space-x-4 md:space-y-0 md:py-6 md:px-8'}>
+					<VaultDetailsQuickActionsFrom />
+					<VaultDetailsQuickActionsSwitch />
+					<VaultDetailsQuickActionsTo />
+					<div className={'w-full space-y-0 md:w-42 md:min-w-42 md:space-y-2'}>
+						<label className={'hidden text-base md:inline'}>&nbsp;</label>
+						<div>
+							<VaultDetailsQuickActionsButtons />
 						</div>
+						<legend className={'hidden text-xs md:inline'}>&nbsp;</legend>
 					</div>
-				</Fragment>
+				</div>
+
+				<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
+					<div className={'w-full bg-green-400 px-6 py-4'}>
+						<b className={'text-base text-neutral-0'}>{'This is Optimism boosted Vault - your tokens will be automatically staked to have additional rewards!'}</b>
+					</div>
+				</div>
+
 			</div>
 		</Fragment>
 	);

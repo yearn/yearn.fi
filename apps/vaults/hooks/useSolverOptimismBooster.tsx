@@ -19,7 +19,7 @@ import type {TNormalizedBN} from '@common/types/types';
 import type {TVaultEstimateOutFetcher} from '@vaults/hooks/useVaultEstimateOutFetcher';
 import type {TInitSolverArgs, TSolverContext, TVanillaLikeResult} from '@vaults/types/solvers';
 
-function usePartnerContractQuote(): [TVanillaLikeResult, (request: TInitSolverArgs, shouldPreventErrorToast?: boolean) => Promise<TNormalizedBN>] {
+function useOptimismBoosterQuote(): [TVanillaLikeResult, (request: TInitSolverArgs, shouldPreventErrorToast?: boolean) => Promise<TNormalizedBN>] {
 	const retrieveExpectedOut = useVaultEstimateOutFetcher();
 	const {data, error, trigger, isMutating} = useSWRMutation(
 		'partnerContract',
@@ -54,16 +54,16 @@ function usePartnerContractQuote(): [TVanillaLikeResult, (request: TInitSolverAr
 	];
 }
 
-export function useSolverPartnerContract(): TSolverContext {
+export function useSolverOptimismBooster(): TSolverContext {
 	const {networks} = useSettings();
 	const {provider} = useWeb3();
 	const {safeChainID} = useChainID();
 	const {currentPartner} = useYearn();
-	const [latestQuote, getQuote] = usePartnerContractQuote();
+	const [latestQuote, getQuote] = useOptimismBoosterQuote();
 	const request = useRef<TInitSolverArgs>();
 
 	/* 🔵 - Yearn Finance **************************************************************************
-	** init will be called when the partner contract solver should be used to deposit.
+	** init will be called when the optimism booster should be used to perform the desired deposit.
 	** It will set the request to the provided value, as it's required to get the quote, and will
 	** call getQuote to get the current quote for the provided request.
 	**********************************************************************************************/
@@ -121,6 +121,7 @@ export function useSolverPartnerContract(): TSolverContext {
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
+		console.log('OPTIMISM BOOSTER APPROVAL');
 		if (!request?.current?.inputToken || !request?.current?.outputToken || !request?.current?.inputAmount) {
 			return;
 		}
@@ -143,6 +144,7 @@ export function useSolverPartnerContract(): TSolverContext {
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
+		console.log('OPTIMISM BOOSTER DEPOSIT');
 		if (!request?.current?.inputToken || !request?.current?.outputToken || !request?.current?.inputAmount) {
 			return;
 		}
