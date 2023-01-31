@@ -1,5 +1,4 @@
 import React, {useMemo} from 'react';
-import {BigNumber} from 'ethers';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {computeTimeLeft, HeroTimer} from '@common/components/HeroTimer';
@@ -13,6 +12,7 @@ import Withdraw from '@yCRV/components/tabs/Withdraw.vl-yCRV';
 import {useVLyCRV} from '@yCRV/hooks/useVLyCRV';
 import Wrapper from '@yCRV/Wrapper';
 
+import type {BigNumber} from 'ethers';
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
 import type {TDict} from '@yearn-finance/web-lib/utils/types';
@@ -20,40 +20,14 @@ import type {TDict} from '@yearn-finance/web-lib/utils/types';
 
 function Vote(): ReactElement {
 	const {isActive} = useWeb3();
-	// const {initialData: {nextPeriod, userInfo, getVotesUnpacked}} = useVLyCRV();
-	const {initialData: {nextPeriod}} = useVLyCRV();
+	const {initialData: {nextPeriod, userInfo, getVotesUnpacked}} = useVLyCRV();
 	const {gauges, isLoadingGauges} = useCurve();
-
-	// Fake it until you make it
-	const MOCK_USER_INFO = {
-		balance: BigNumber.from('100000000000000000000'),
-		votesSpent: BigNumber.from('50000000000000000000'),
-		lastVoteTime: 1674217683000
-	};
-
-	const MOCK_GET_VOTES_UNPACKED: {
-		gaugesList: string[];
-		voteAmounts: BigNumber[];
-	} = {
-		gaugesList: [
-			'0xDB190E4d9c9A95fdF066b258892b8D6Bb107434e',
-			'0x6a69FfD1353Fa129f7F9932BB68Fa7bE88F3888A',
-			'0xFA712EE4788C042e2B7BB55E6cb8ec569C4530c1'
-		],
-		voteAmounts: [
-			BigNumber.from('10000000000000000000000'),
-			BigNumber.from('2000000000000000000000'),
-			BigNumber.from('300000000000000000000')
-		]
-	};
-
-	const {gaugesList, voteAmounts} = MOCK_GET_VOTES_UNPACKED;
+	const {gaugesList, voteAmounts} = getVotesUnpacked;
 	const gaugesVotes = useMemo((): TDict<BigNumber> => {
 		return gaugesList.reduce((prev, curr, i): TDict<BigNumber> => ({...prev, [curr]: voteAmounts[i]}), {});
 	}, [gaugesList, voteAmounts]);
 
-	// const {balance, lastVoteTime, votesSpent} = userInfo;
-	const {balance, lastVoteTime, votesSpent} = MOCK_USER_INFO;
+	const {balance, lastVoteTime, votesSpent} = userInfo;
 	const totalVotes = formatToNormalizedValue(balance);
 	const remainingVotesForThisPeriod = formatToNormalizedValue(balance.sub(votesSpent));
 
@@ -91,7 +65,7 @@ function Vote(): ReactElement {
 
 					<div className={'flex flex-col items-center justify-center space-y-1 md:space-y-2'}>
 						<b className={'font-number text-lg md:text-3xl'} suppressHydrationWarning>
-							{lastVoteTime ? formatDateShort(lastVoteTime) : '—'}
+							{lastVoteTime ? formatDateShort(lastVoteTime * 1000) : '—'}
 						</b>
 						<legend className={'text-xxs text-neutral-600 md:text-xs'} suppressHydrationWarning>
 							{'Your last vote'}
@@ -111,7 +85,7 @@ function Vote(): ReactElement {
 				gauges={gauges}
 				gaugesVotes={gaugesVotes}
 				isLoading={isLoadingGauges}
-				userInfo={MOCK_USER_INFO} />
+				userInfo={userInfo} />
 		</>
 	);
 }

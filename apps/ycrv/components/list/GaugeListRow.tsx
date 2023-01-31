@@ -1,4 +1,4 @@
-import React, {useMemo, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {utils} from 'ethers';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
@@ -6,12 +6,12 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isTAddress} from '@yearn-finance/web-lib/utils/isTAddress';
+import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {isNumber} from '@common/utils/typeGuards';
+import {QuickActions} from '@yCRV/components/QuickActions';
 import {useVLyCRV} from '@yCRV/hooks/useVLyCRV';
 import {isWeb3Provider} from '@yCRV/utils/isWeb3Provider';
-
-import {QuickActions} from '../QuickActions';
 
 import type {BigNumber} from 'ethers';
 import type {ChangeEvent, Dispatch, ReactElement} from 'react';
@@ -26,12 +26,13 @@ type TGaugeListRow = {
 }
 
 function GaugeListRow({gauge, gaugeVotes, votesState, votesDispatch}: TGaugeListRow): ReactElement | null {
-	const {vote} = useVLyCRV();
+	const {vote, mutateData} = useVLyCRV();
 	const {toast} = yToast();
 	const {provider, isActive} = useWeb3();
 	const [currentVotes, set_currentVotes] = useState<string>('');
+	const [txStatusVote, set_txStatusVote] = useState(defaultTxStatus);
 
-	useMemo((): void => {
+	useEffect((): void => {
 		const votes = votesState.votes[gauge.gauge];
 		if (!votes) {
 			set_currentVotes('');
@@ -58,7 +59,12 @@ function GaugeListRow({gauge, gaugeVotes, votesState, votesDispatch}: TGaugeList
 			return;
 		}
 		if (isTAddress(gauge.gauge) && isWeb3Provider(provider)) {
-			vote({provider, gaugeAddress: gauge.gauge, votes: votesState.votes[gauge.gauge]});
+			new Transaction(provider, vote, set_txStatusVote)
+				.populate(gauge.gauge, votesState.votes[gauge.gauge])
+				.onSuccess(async (): Promise<void> => {
+					await mutateData();
+				})
+				.perform();
 		}
 	}
 
@@ -118,7 +124,8 @@ function GaugeListRow({gauge, gaugeVotes, votesState, votesDispatch}: TGaugeList
 						<Button
 							onClick={handleOnVote}
 							className={'w-full'}
-							isDisabled={!currentVotes}>
+							isBusy={txStatusVote.pending}
+							isDisabled={!currentVotes || currentVotes === '0'}>
 							{'Vote'}
 						</Button>
 					</p>
