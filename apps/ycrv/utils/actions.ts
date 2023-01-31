@@ -6,12 +6,6 @@ import VLYCRV_ABI from './abi/vlYCrv.abi';
 import type {BigNumber} from 'ethers';
 import type {TAddress} from '@yearn-finance/web-lib/utils/address';
 
-export type TVoteTxProps = {
-	provider: ethers.providers.JsonRpcProvider;
-	votes?: BigNumber;
-	gaugeAddress: TAddress;
-}
-
 const handleTx = async (txPromise: Promise<ethers.providers.TransactionResponse>): Promise<boolean> => {
 	try {
 		const tx = await txPromise;
@@ -44,11 +38,13 @@ export async function vLyCRVWithdraw(
 	return handleTx(contract.withdraw(amount));
 }
 
-export async function vLyCRVVote({provider, gaugeAddress, votes}: TVoteTxProps): Promise<boolean> {
+export async function vLyCRVVote(
+	provider: ethers.providers.Web3Provider | ethers.providers.JsonRpcProvider,
+	gaugeAddress: TAddress,
+	votes: BigNumber
+): Promise<boolean> {
 	const signer = provider.getSigner();
-
 	const contract = new ethers.Contract(VLYCRV_TOKEN_ADDRESS, VLYCRV_ABI, signer);
-
 	return handleTx(contract.vote(gaugeAddress, votes));
 }
 
