@@ -7,6 +7,7 @@ import VaultDetailsQuickActionsSwitch from '@vaults/components/details/actions/Q
 import VaultDetailsQuickActionsTo from '@vaults/components/details/actions/QuickActionsTo';
 import SettingsPopover from '@vaults/components/SettingsPopover';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
+import {Solver} from '@vaults/contexts/useSolver';
 import IconChevron from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
@@ -21,7 +22,7 @@ const tabs: TTabsOptions[] = [
 	{value: 1, label: 'Withdraw'}
 ];
 function	VaultActionsTabsWrapper(): ReactElement {
-	const {onSwitchSelectedOptions, isDepositing} = useActionFlow();
+	const {onSwitchSelectedOptions, isDepositing, currentSolver} = useActionFlow();
 	const currentTab = useMemo((): TTabsOptions => tabs.find((tab): boolean => tab.value === (isDepositing ? 0 : 1)) as TTabsOptions, [isDepositing]);
 
 	return (
@@ -100,21 +101,27 @@ function	VaultActionsTabsWrapper(): ReactElement {
 				</div>
 				<div className={'-mt-0.5 h-0.5 w-full bg-neutral-300'} />
 
-				<Fragment>
-					<div
-						className={'col-span-12 mb-4 flex flex-col space-x-0 space-y-2 bg-neutral-100 p-4 md:flex-row md:space-x-4 md:space-y-0 md:py-6 md:px-8'}>
-						<VaultDetailsQuickActionsFrom />
-						<VaultDetailsQuickActionsSwitch />
-						<VaultDetailsQuickActionsTo />
-						<div className={'w-full space-y-0 md:w-42 md:min-w-42 md:space-y-2'}>
-							<label className={'hidden text-base md:inline'}>&nbsp;</label>
-							<div>
-								<VaultDetailsQuickActionsButtons />
-							</div>
-							<legend className={'hidden text-xs md:inline'}>&nbsp;</legend>
+				<div className={'col-span-12 flex flex-col space-x-0 space-y-2 bg-neutral-100 p-4 md:flex-row md:space-x-4 md:space-y-0 md:py-6 md:px-8'}>
+					<VaultDetailsQuickActionsFrom />
+					<VaultDetailsQuickActionsSwitch />
+					<VaultDetailsQuickActionsTo />
+					<div className={'w-full space-y-0 md:w-42 md:min-w-42 md:space-y-2'}>
+						<label className={'hidden text-base md:inline'}>&nbsp;</label>
+						<div>
+							<VaultDetailsQuickActionsButtons />
+						</div>
+						<legend className={'hidden text-xs md:inline'}>&nbsp;</legend>
+					</div>
+				</div>
+
+				{currentSolver === Solver.OPTIMISM_BOOSTER ? (
+					<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
+						<div className={'w-full bg-green-400 px-6 py-4'}>
+							<b className={'text-base text-neutral-0'}>{'This is Optimism boosted Vault - your tokens will be automatically staked to have additional rewards!'}</b>
 						</div>
 					</div>
-				</Fragment>
+				) : null}
+
 			</div>
 		</Fragment>
 	);

@@ -122,6 +122,10 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 	}, [actionParams?.selectedOptionFrom?.decimals, actionParams?.selectedOptionFrom?.value, balances, currentVault.details.depositLimit, currentVault.token?.address, currentVault.token.decimals, isDepositing]);
 
 	const currentSolver = useMemo((): Solver => {
+		if (safeChainID === 10) {
+			return Solver.OPTIMISM_BOOSTER;
+		}
+
 		const isInputTokenEth = actionParams?.selectedOptionFrom?.value === ETH_TOKEN_ADDRESS;
 		const isOutputTokenEth = actionParams?.selectedOptionTo?.value === ETH_TOKEN_ADDRESS;
 		if (isInputTokenEth || isOutputTokenEth) {
@@ -136,7 +140,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 			return Solver.PARTNER_CONTRACT;
 		}
 		return Solver.VANILLA;
-	}, [actionParams?.selectedOptionFrom?.value, actionParams?.selectedOptionFrom?.solveVia, actionParams?.selectedOptionTo?.value, actionParams?.selectedOptionTo?.solveVia, isDepositing, zapProvider, isUsingPartnerContract]);
+	}, [actionParams?.selectedOptionFrom?.value, actionParams?.selectedOptionFrom?.solveVia, actionParams?.selectedOptionTo?.value, actionParams?.selectedOptionTo?.solveVia, isDepositing, zapProvider, isUsingPartnerContract, safeChainID]);
 
 	const onSwitchSelectedOptions = useCallback((): void => {
 		performBatchedUpdates((): void => {
