@@ -10,6 +10,7 @@ import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers
 import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useWallet} from '@common/contexts/useWallet';
 import {useBalance} from '@common/hooks/useBalance';
+import {useTimer} from '@common/hooks/useTimer';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
 import {QuickActions} from '@yCRV/components/QuickActions';
 import {VL_YCRV, YCRV} from '@yCRV/constants/tokens';
@@ -26,7 +27,8 @@ function Withdraw(): ReactElement {
 	const [amount, set_amount] = useState<TNormalizedBN | undefined>({raw: ethers.constants.Zero, normalized: 0});
 	const [txStatusWithdraw, set_txStatusWithdraw] = useState(defaultTxStatus);
 	const pricePerYCRV = useTokenPrice(YCRV_TOKEN_ADDRESS);
-	const {withdraw} = useVLyCRV();
+	const {withdraw, initialData: {userInfo: {unlockTime}}} = useVLyCRV();
+	const time = useTimer({endTime: unlockTime});
 
 	const fromSelectProps: TQASelect = useMemo((): TQASelect => {
 		const legend = `You have ${formatAmount(stYCRVBalance.normalized)} ${stYCRVBalance?.symbol || 'tokens'}`;
@@ -78,6 +80,25 @@ function Withdraw(): ReactElement {
 		isBusy: txStatusWithdraw.pending,
 		isDisabled: !isActive || !amount?.raw.gt(0)
 	};
+
+	if (!unlockTime) {
+		return (
+			<div
+				aria-label={'yCRV Withdraw Not Available'}
+				className={'col-span-12 mb-4'}>
+				{isActive ? (
+					<div>
+						<h1>{unlockTime ? `You can withdraw in ${time}` : 'You have nothing to withdraw'}</h1>
+						<p className={'mt-4'}>{'Please note, you can’t withdraw until the end of the following voting period. See \'how it works\' for more info.'}</p>
+					</div>
+				): (
+					<div>
+						<p>{'Connect your wallet to withdraw'}</p>
+					</div>
+				)}
+			</div>
+		);
+	}
 
 	return (
 		<div
