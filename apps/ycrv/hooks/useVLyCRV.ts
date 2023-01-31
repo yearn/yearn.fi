@@ -62,7 +62,7 @@ export function useVLyCRV(): TUseVLyCRV {
 			return DEFAULT_VLYCRV;
 		}
 
-		const currentProvider = provider || getProvider(1337);
+		const currentProvider = provider || getProvider(1);
 		const ethcallProvider = await newEthCallProvider(currentProvider);
 		const vLyCRVContract = new Contract(VLYCRV_TOKEN_ADDRESS, VLYCRV_ABI);
 
