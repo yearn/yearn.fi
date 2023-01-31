@@ -28,7 +28,7 @@ function Vote(): ReactElement {
 		return gaugesList.reduce((prev, curr, i): TDict<BigNumber> => ({...prev, [curr]: voteAmounts[i]}), {});
 	}, [gaugesList, voteAmounts]);
 
-	const {balance, lastVoteTime, votesSpent, unlockTime} = userInfo;
+	const {balance, lastVoteTime, votesSpent} = userInfo;
 	const totalVotes = formatToNormalizedValue(balance);
 	const remainingVotesForThisPeriod = formatToNormalizedValue(balance.sub(votesSpent));
 
