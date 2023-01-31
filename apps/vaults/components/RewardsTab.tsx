@@ -45,7 +45,7 @@ function RewardsTab({currentVault}: {currentVault: TYearnVault}): ReactElement {
 		allowances,
 		amount: vaultBalance.raw
 	});
-	
+
 	async function onApproveStake(): Promise<void> {
 		if(!stakingRewards) {
 			return;
@@ -75,7 +75,7 @@ function RewardsTab({currentVault}: {currentVault: TYearnVault}): ReactElement {
 	}
 
 	return (
-		<div className={'grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-16'}>
+		<div className={'grid grid-cols-1 gap-6 bg-neutral-100 p-4 md:grid-cols-2 md:gap-16 md:p-8'}>
 			<div className={'col-span-1 grid w-full gap-6'}>
 				<div className={'md:min-h-[104px]'}>
 					<h2 className={'m-0 text-2xl font-bold'}>
@@ -99,7 +99,7 @@ function RewardsTab({currentVault}: {currentVault: TYearnVault}): ReactElement {
 						disabled={!isActive || isLoadingAllowances || vaultBalance.normalized <= 0 }
 					>
 						{isApproved ? 'Stake' : 'Approve'}
-					</Button>	
+					</Button>
 				</div>
 			</div>
 			<div className={'col-span-1 grid w-full gap-6'}>
@@ -125,7 +125,7 @@ function RewardsTab({currentVault}: {currentVault: TYearnVault}): ReactElement {
 						disabled={!isActive || stakeBalance.normalized <= 0 }
 					>
 						{'Unstake + Claim'}
-					</Button>	
+					</Button>
 				</div>
 			</div>
 			<div className={'col-span-1 grid w-full gap-6'}>
@@ -148,10 +148,9 @@ function RewardsTab({currentVault}: {currentVault: TYearnVault}): ReactElement {
 						className={'w-full md:mt-7'}
 						onClick={onClaim}
 						isBusy={claimStatus.loading}
-						disabled={!isActive || rewardBalance.normalized <= 0 }
-					>
+						disabled={!isActive || rewardBalance.normalized <= 0}>
 						{'Claim'}
-					</Button>					
+					</Button>
 				</div>
 			</div>
 		</div>
