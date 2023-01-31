@@ -1,7 +1,10 @@
 import React, {useCallback, useMemo, useReducer, useState} from 'react';
 import ReactPaginate from 'react-paginate';
 import {BigNumber} from 'ethers';
+import {useUpdateEffect} from '@react-hookz/web';
 import {useSessionStorage} from '@yearn-finance/web-lib/hooks/useSessionStorage';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import ListHead from '@common/components/ListHead';
 import ListHero from '@common/components/ListHero';
@@ -26,7 +29,7 @@ type TProps = {
 	userInfo: TUserInfo;
 }
 
-export type TVotesReducerActionTypes = 'MAX' | 'UPDATE';
+export type TVotesReducerActionTypes = 'MAX' | 'INIT_MAX' | 'UPDATE';
 
 export type TVotesReducerState = {
 	votes: TDict<BigNumber | undefined>;
@@ -36,8 +39,9 @@ export type TVotesReducerState = {
 
 export type TVotesReducerAction = {
 	type: TVotesReducerActionTypes;
-	gaugeAddress: TAddress;
+	gaugeAddress?: TAddress;
 	votes?: BigNumber;
+	maxVotes?: BigNumber;
 };
 
 type TVotesReducer = {
@@ -46,37 +50,43 @@ type TVotesReducer = {
 }
 
 function computeMaxVotesAvailable({state, action}: TVotesReducer): BigNumber {
-	const prevVotes = state.votes[action.gaugeAddress] ?? 0;
+	const prevVotes = state.votes[toAddress(action.gaugeAddress)] ?? 0;
 	return state.maxVotes.sub(state.currentTotal.sub(prevVotes));
 }
 
 function computeNewTotal({state, action}: TVotesReducer): BigNumber {
-	return state.currentTotal.sub(state.votes[action.gaugeAddress] ?? 0).add(action.votes ?? 0);
+	return state.currentTotal.sub(state.votes[toAddress(action.gaugeAddress)] ?? 0).add(action.votes ?? 0);
 }
 
 export function votesReducer(state: TVotesReducerState, action: TVotesReducerAction): TVotesReducerState {
-	const {type, gaugeAddress, votes} = action;
+	const {type, gaugeAddress, maxVotes, votes} = action;
 
 	switch(type) {
+		case 'INIT_MAX': {
+			return {
+				...state,
+				maxVotes: formatBN(maxVotes)
+			};
+		}
 		case 'MAX': {
 			return {
 				...state,
-				votes: {...state.votes, [gaugeAddress]: computeMaxVotesAvailable({state, action})},
+				votes: {...state.votes, [toAddress(gaugeAddress)]: computeMaxVotesAvailable({state, action})},
 				currentTotal: state.maxVotes
 			};
 		}
 		case 'UPDATE': {
 			const newTotal = computeNewTotal({state, action});
-			
+
 			if (newTotal.gte(0) && newTotal.lte(state.maxVotes)) {
 				return {
 					...state,
-					votes: {...state.votes, [gaugeAddress]: votes},
+					votes: {...state.votes, [toAddress(gaugeAddress)]: votes},
 					currentTotal: newTotal
 				};
 			}
 
-			return {...state, votes: {...state.votes, [gaugeAddress]: state.votes[gaugeAddress]}};
+			return {...state, votes: {...state.votes, [toAddress(gaugeAddress)]: state.votes[toAddress(gaugeAddress)]}};
 		}
 		default: {
 			throw Error('Unknown action: ' + type);
@@ -98,6 +108,10 @@ function GaugeList({gauges, gaugesVotes, isLoading, userInfo}: TProps): ReactEle
 
 	const maxVotes = userInfo.balance.sub(userInfo.votesSpent);
 	const [{votes, ...votesState}, votesDispatch] = useReducer(votesReducer, {votes: {}, maxVotes}, createInitialState);
+
+	useUpdateEffect((): void => {
+		votesDispatch({type: 'INIT_MAX', maxVotes});
+	}, [formatBN(maxVotes).toString()]);
 
 	const searchedGauges = useMemo((): TCurveGauges[] => {
 		if (searchValue === '') {

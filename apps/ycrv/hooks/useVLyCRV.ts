@@ -10,7 +10,8 @@ import VLYCRV_ABI from '@yCRV/utils/abi/vlYCrv.abi';
 import {vLyCRVDeposit, vLyCRVVote, vLyCRVWithdraw} from '@yCRV/utils/actions';
 
 import type {providers} from 'ethers';
-import type {TVoteTxProps} from '@yCRV/utils/actions';
+import type {KeyedMutator} from 'swr';
+import type {TAddress} from '@yearn-finance/web-lib/utils/address';
 
 export type TUserInfo = {
 	balance: BigNumber;
@@ -29,7 +30,12 @@ type TUseVLyCRV = {
 		userInfo: TUserInfo;
 		getVotesUnpacked: TGetVotesUnpacked;
 	};
-	vote: (props: TVoteTxProps) => Promise<boolean>;
+	mutateData: KeyedMutator<{
+		nextPeriod: number;
+		userInfo: TUserInfo;
+		getVotesUnpacked: TGetVotesUnpacked;
+	}>;
+	vote: (provider: providers.JsonRpcProvider, gaugeAddress: TAddress, votes: BigNumber) => Promise<boolean>;
 	deposit: (provider: providers.JsonRpcProvider, amount: BigNumber) => Promise<boolean>;
 	withdraw: (provider: providers.JsonRpcProvider, amount: BigNumber) => Promise<boolean>;
 	approve: (provider: providers.JsonRpcProvider, amount: BigNumber) => Promise<boolean>;
@@ -56,7 +62,7 @@ export function useVLyCRV(): TUseVLyCRV {
 			return DEFAULT_VLYCRV;
 		}
 
-		const currentProvider = provider || getProvider(1);
+		const currentProvider = provider || getProvider(1337);
 		const ethcallProvider = await newEthCallProvider(currentProvider);
 		const vLyCRVContract = new Contract(VLYCRV_TOKEN_ADDRESS, VLYCRV_ABI);
 
@@ -73,10 +79,11 @@ export function useVLyCRV(): TUseVLyCRV {
 		return {nextPeriod, userInfo, getVotesUnpacked};
 	}, [address, isActive, provider]);
 
-	const {data} = useSWR<TUseVLyCRV['initialData']>(isActive && provider ? 'vLyCRV' : null, fetcher);
+	const {data, mutate} = useSWR<TUseVLyCRV['initialData']>(isActive && provider ? 'vLyCRV' : null, fetcher);
 
 	return {
 		initialData: data ?? DEFAULT_VLYCRV,
+		mutateData: mutate,
 		deposit: vLyCRVDeposit,
 		withdraw: vLyCRVWithdraw,
 		vote: vLyCRVVote,
