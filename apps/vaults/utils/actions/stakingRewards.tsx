@@ -1,4 +1,5 @@
 import {ethers} from 'ethers';
+import {STAKING_REWARDS_ZAP_ADDRESS} from '@vaults/constants';
 import {approveERC20} from '@common/utils/actions/approveToken';
 
 import STAKING_REWARDS_ABI from '../abi/stakingRewards.abi';
@@ -62,4 +63,15 @@ export async function claim(
 	const signer = provider.getSigner(accountAddress);
 	const stakingRewardsContract = new ethers.Contract(stakingAddress, STAKING_REWARDS_ABI, signer);
 	return handleTx(stakingRewardsContract.getReward());
+}
+
+export async function depositAndStake(
+	provider: ethers.providers.Web3Provider,
+	accountAddress: TAddress,
+	stakingAddress: TAddress,
+	amount: BigNumber
+): Promise<boolean> {
+	const signer = provider.getSigner(accountAddress);
+	const stakingRewardsZapContract = new ethers.Contract(STAKING_REWARDS_ZAP_ADDRESS, [], signer); // TODO: update abi once deployed
+	return handleTx(stakingRewardsZapContract.zap(stakingAddress, amount)); // TODO: update method once available
 }

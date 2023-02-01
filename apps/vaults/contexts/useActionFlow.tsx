@@ -1,6 +1,7 @@
 import React, {createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState} from 'react';
 import {useMountEffect} from '@react-hookz/web';
 import {isSolverDisabled, Solver} from '@vaults/contexts/useSolver';
+import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
 import {setZapOption} from '@vaults/utils/zapOptions';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
@@ -79,6 +80,9 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 	const {safeChainID} = useChainID();
 	const {balances: zapBalances, tokensList, balancesNonce: zapBalancesNonce} = useWalletForZap();
 	const {zapProvider} = useYearn();
+	const {stakingRewardsByVault} = useStakingRewards();
+	const stakingRewardsAddress = stakingRewardsByVault[currentVault.address];
+	const hasStakingRewards = !!stakingRewardsAddress;
 
 	const [possibleOptionsFrom, set_possibleOptionsFrom] = useState<TDropdownOption[]>([]);
 	const [possibleZapOptionsFrom, set_possibleZapOptionsFrom] = useState<TDropdownOption[]>([]);
@@ -122,7 +126,8 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 	}, [actionParams?.selectedOptionFrom?.decimals, actionParams?.selectedOptionFrom?.value, balances, currentVault.details.depositLimit, currentVault.token?.address, currentVault.token.decimals, isDepositing]);
 
 	const currentSolver = useMemo((): Solver => {
-		if (safeChainID === 10) {
+		const isUnderlyingToken = actionParams?.selectedOptionFrom?.value === currentVault.token.address;
+		if (hasStakingRewards && isDepositing && isUnderlyingToken) {
 			return Solver.OPTIMISM_BOOSTER;
 		}
 
@@ -140,7 +145,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 			return Solver.PARTNER_CONTRACT;
 		}
 		return Solver.VANILLA;
-	}, [actionParams?.selectedOptionFrom?.value, actionParams?.selectedOptionFrom?.solveVia, actionParams?.selectedOptionTo?.value, actionParams?.selectedOptionTo?.solveVia, isDepositing, zapProvider, isUsingPartnerContract, safeChainID]);
+	}, [actionParams?.selectedOptionFrom?.value, actionParams?.selectedOptionFrom?.solveVia, actionParams?.selectedOptionTo?.value, actionParams?.selectedOptionTo?.solveVia, isDepositing, zapProvider, isUsingPartnerContract, currentVault.token.address, hasStakingRewards]);
 
 	const onSwitchSelectedOptions = useCallback((): void => {
 		performBatchedUpdates((): void => {
