@@ -8,7 +8,7 @@ import VaultDetailsQuickActionsTo from '@vaults/components/details/actions/Quick
 import {RewardsTab} from '@vaults/components/RewardsTab';
 import SettingsPopover from '@vaults/components/SettingsPopover';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
-import {Solver} from '@vaults/contexts/useSolver';
+import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import IconChevron from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
@@ -21,13 +21,16 @@ type TTabsOptions = {
 }
 
 function	VaultActionsTabsWrapper({currentVault}: {currentVault: TYearnVault}): ReactElement {
-	const {onSwitchSelectedOptions, isDepositing, currentSolver} = useActionFlow();
+	const {onSwitchSelectedOptions, isDepositing} = useActionFlow();
 	const [selectedTabIndex, set_selectedTabIndex] = useState(isDepositing ? 0 : 1);
+	const {stakingRewardsByVault} = useStakingRewards();
+	const stakingRewardsAddress = stakingRewardsByVault[currentVault.address];
+	const hasStakingRewards = !!stakingRewardsAddress;
 	const tabs = useMemo((): TTabsOptions[] => [
 		{value: 0, label: 'Deposit'},
 		{value: 1, label: 'Withdraw'},
-		{value: 2, label: '$OP BOOST', hidden: currentVault.chainID !== 10}
-	], [currentVault]);
+		{value: 2, label: '$OP BOOST', hidden: !hasStakingRewards}
+	], [hasStakingRewards]);
 	const currentTab = useMemo((): TTabsOptions => tabs.find((tab): boolean => tab.value === selectedTabIndex) as TTabsOptions, [selectedTabIndex, tabs]);
 
 	return (
@@ -126,7 +129,7 @@ function	VaultActionsTabsWrapper({currentVault}: {currentVault: TYearnVault}): R
 					<RewardsTab currentVault={currentVault} />
 				)}
 
-				{selectedTabIndex === 0 && currentSolver === Solver.OPTIMISM_BOOSTER && (
+				{selectedTabIndex === 0 && hasStakingRewards && (
 					<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
 						<div className={'w-full bg-green-400 px-6 py-4'}>
 							<b className={'text-base text-neutral-0'}>{'This is Optimism boosted Vault - your tokens will be automatically staked to have additional rewards!'}</b>
