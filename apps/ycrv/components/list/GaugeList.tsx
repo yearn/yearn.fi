@@ -1,10 +1,9 @@
 import React, {useCallback, useMemo, useReducer, useState} from 'react';
 import ReactPaginate from 'react-paginate';
-import {BigNumber} from 'ethers';
 import {useUpdateEffect} from '@react-hookz/web';
 import {useSessionStorage} from '@yearn-finance/web-lib/hooks/useSessionStorage';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatBN, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import ListHead from '@common/components/ListHead';
 import ListHero from '@common/components/ListHero';
@@ -14,6 +13,7 @@ import {useSortGauges} from '@yCRV/hooks/useSortGauges';
 import {GaugeListEmpty} from './GaugeListEmpty';
 import {GaugeListRow} from './GaugeListRow';
 
+import type {BigNumber} from 'ethers';
 import type {ReactElement, ReactNode} from 'react';
 import type {TPossibleGaugesSortBy} from '@yCRV/hooks/useSortGauges';
 import type {TUserInfo} from '@yCRV/hooks/useVLyCRV';
@@ -29,7 +29,7 @@ type TProps = {
 	userInfo: TUserInfo;
 }
 
-export type TVotesReducerActionTypes = 'MAX' | 'INIT_MAX' | 'UPDATE';
+export type TVotesReducerActionTypes = 'INIT' | 'MAX' | 'UPDATE';
 
 export type TVotesReducerState = {
 	votes: TDict<BigNumber | undefined>;
@@ -41,7 +41,7 @@ export type TVotesReducerAction = {
 	type: TVotesReducerActionTypes;
 	gaugeAddress?: TAddress;
 	votes?: BigNumber;
-	maxVotes?: BigNumber;
+	userInfo?: TUserInfo;
 };
 
 type TVotesReducer = {
@@ -59,10 +59,11 @@ function computeNewTotal({state, action}: TVotesReducer): BigNumber {
 }
 
 export function votesReducer(state: TVotesReducerState, action: TVotesReducerAction): TVotesReducerState {
-	const {type, gaugeAddress, maxVotes, votes} = action;
+	const {type, gaugeAddress, userInfo, votes} = action;
 
 	switch(type) {
-		case 'INIT_MAX': {
+		case 'INIT': {
+			const maxVotes = userInfo?.balance.sub(userInfo.votesSpent ?? 0);
 			return {
 				...state,
 				maxVotes: formatBN(maxVotes)
@@ -95,7 +96,7 @@ export function votesReducer(state: TVotesReducerState, action: TVotesReducerAct
 }
 
 function createInitialState({votes, maxVotes}: Pick<TVotesReducerState, 'votes' | 'maxVotes'>): TVotesReducerState {
-	return {maxVotes, votes, currentTotal: BigNumber.from(0)};
+	return {maxVotes, votes, currentTotal: Zero};
 }
 
 function GaugeList({gauges, gaugesVotes, isLoading, userInfo}: TProps): ReactElement {
@@ -105,13 +106,11 @@ function GaugeList({gauges, gaugesVotes, isLoading, userInfo}: TProps): ReactEle
 	const [sortBy, set_sortBy] = useState<TPossibleGaugesSortBy>('gauges');
 	const [sortDirection, set_sortDirection] = useState<TSortDirection>('');
 	const [itemOffset, set_itemOffset] = useState(0);
-
-	const maxVotes = userInfo.balance.sub(userInfo.votesSpent);
-	const [{votes, ...votesState}, votesDispatch] = useReducer(votesReducer, {votes: {}, maxVotes}, createInitialState);
+	const [{votes, ...votesState}, votesDispatch] = useReducer(votesReducer, {votes: {}, maxVotes: Zero}, createInitialState);
 
 	useUpdateEffect((): void => {
-		votesDispatch({type: 'INIT_MAX', maxVotes});
-	}, [formatBN(maxVotes).toString()]);
+		votesDispatch({type: 'INIT', userInfo});
+	}, [userInfo.balance.toString(), userInfo.votesSpent.toString()]);
 
 	const searchedGauges = useMemo((): TCurveGauges[] => {
 		if (searchValue === '') {

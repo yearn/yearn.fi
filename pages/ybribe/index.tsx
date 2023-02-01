@@ -1,11 +1,10 @@
 import React, {useCallback, useMemo, useState} from 'react';
 import Balancer from 'react-wrap-balancer';
 import Link from 'next/link';
-import {BigNumber} from 'ethers';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useSessionStorage} from '@yearn-finance/web-lib/hooks/useSessionStorage';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatBN, formatToNormalizedValue, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import ListHead from '@common/components/ListHead';
 import ListHero from '@common/components/ListHero';
 import {useCurve} from '@common/contexts/useCurve';
@@ -16,6 +15,7 @@ import {GaugeListRow} from '@yBribe/components/claim/GaugeListRow';
 import {useBribes} from '@yBribe/contexts/useBribes';
 import Wrapper from '@yBribe/Wrapper';
 
+import type {BigNumber} from 'ethers';
 import type {NextRouter} from 'next/router';
 import type {ReactElement, ReactNode} from 'react';
 import type {TCurveGauges} from '@common/types/curves';
@@ -73,12 +73,12 @@ function	GaugeList(): ReactElement {
 		if (sort.sortBy === 'rewards') {
 			return searchedGauges.sort((a, b): number => {
 				const allARewards = Object.entries(currentRewards?.v3?.[toAddress(a.gauge)] || {}).reduce((acc, [address, value]): number => {
-					const aBribeValue = getRewardValue(address, value || BigNumber.from(0));
+					const aBribeValue = getRewardValue(address, value || Zero);
 					return acc + aBribeValue;
 				}, 0);
 
 				const allBRewards = Object.entries(currentRewards?.v3?.[toAddress(b.gauge)] || {}).reduce((acc, [address, value]): number => {
-					const aBribeValue = getRewardValue(address, value || BigNumber.from(0));
+					const aBribeValue = getRewardValue(address, value || Zero);
 					return acc + aBribeValue;
 				}, 0);
 
@@ -91,12 +91,12 @@ function	GaugeList(): ReactElement {
 		if (sort.sortBy === 'pendingRewards') {
 			return searchedGauges.sort((a, b): number => {
 				const allARewards = Object.entries(nextRewards?.v3?.[toAddress(a.gauge)] || {}).reduce((acc, [address, value]): number => {
-					const aBribeValue = getRewardValue(address, value || BigNumber.from(0));
+					const aBribeValue = getRewardValue(address, value || Zero);
 					return acc + aBribeValue;
 				}, 0);
 
 				const allBRewards = Object.entries(nextRewards?.v3?.[toAddress(b.gauge)] || {}).reduce((acc, [address, value]): number => {
-					const aBribeValue = getRewardValue(address, value || BigNumber.from(0));
+					const aBribeValue = getRewardValue(address, value || Zero);
 					return acc + aBribeValue;
 				}, 0);
 
