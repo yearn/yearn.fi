@@ -1,15 +1,15 @@
 import {useCallback} from 'react';
 import {Contract} from 'ethcall';
-import {BigNumber} from 'ethers';
 import useSWR from 'swr';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {VLYCRV_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import {approveERC20} from '@common/utils/actions/approveToken';
 import VLYCRV_ABI from '@yCRV/utils/abi/vlYCrv.abi';
 import {vLyCRVDeposit, vLyCRVVote, vLyCRVWithdraw} from '@yCRV/utils/actions';
 
-import type {providers} from 'ethers';
+import type {BigNumber, providers} from 'ethers';
 import type {KeyedMutator} from 'swr';
 import type {TAddress} from '@yearn-finance/web-lib/utils/address';
 
@@ -44,8 +44,8 @@ type TUseVLyCRV = {
 const DEFAULT_VLYCRV = {
 	nextPeriod: 0,
 	userInfo: {
-		balance: BigNumber.from(0),
-		votesSpent: BigNumber.from(0),
+		balance: Zero,
+		votesSpent: Zero,
 		lastVoteTime: 0
 	},
 	getVotesUnpacked: {
