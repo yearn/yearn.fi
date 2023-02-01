@@ -100,7 +100,7 @@ function QAInput(props: TQAInput): ReactElement {
 				<div className={'flex h-10 w-full flex-row items-center justify-between py-4 px-0'}>
 					<input
 						id={inputProps.id || label}
-						className={`w-full overflow-x-scroll border-none bg-transparent py-4 px-0 font-bold outline-none scrollbar-none ${isDisabled ? 'cursor-not-allowed' : 'cursor-default'}`}
+						className={`w-full overflow-x-scroll border-none bg-transparent px-0 font-bold outline-none scrollbar-none ${isDisabled ? 'cursor-not-allowed' : 'cursor-default'}`}
 						type={type || 'text'}
 						disabled={isDisabled}
 						value={value}
