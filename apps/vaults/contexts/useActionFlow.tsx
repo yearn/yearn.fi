@@ -1,6 +1,7 @@
 import React, {createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState} from 'react';
 import {useMountEffect, useUpdateEffect} from '@react-hookz/web';
 import {isSolverDisabled, Solver} from '@vaults/contexts/useSolver';
+import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
 import {setZapOption} from '@vaults/utils/zapOptions';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
@@ -115,6 +116,9 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 	const {safeChainID} = useChainID();
 	const {balances: zapBalances, tokensList} = useWalletForZap();
 	const {zapProvider} = useYearn();
+	const {stakingRewardsByVault} = useStakingRewards();
+	const stakingRewardsAddress = stakingRewardsByVault[currentVault.address];
+	const hasStakingRewards = !!stakingRewardsAddress;
 
 	const [possibleOptionsFrom, set_possibleOptionsFrom] = useState<TDropdownOption[]>([]);
 	const [possibleZapOptionsFrom, set_possibleZapOptionsFrom] = useState<TDropdownOption[]>([]);
@@ -168,7 +172,8 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 	});
 
 	const currentSolver = useMemo((): Solver => {
-		if (safeChainID === 10) {
+		const isUnderlyingToken = actionParams?.selectedOptionFrom?.value === currentVault.token.address;
+		if (hasStakingRewards && isDepositing && isUnderlyingToken) {
 			return Solver.OPTIMISM_BOOSTER;
 		}
 
@@ -189,7 +194,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 			return Solver.PARTNER_CONTRACT;
 		}
 		return Solver.VANILLA;
-	}, [safeChainID, actionParams?.selectedOptionFrom?.value, actionParams?.selectedOptionFrom?.solveVia, actionParams?.selectedOptionTo?.value, actionParams?.selectedOptionTo?.solveVia, currentVault?.migration?.available, currentVault?.migration?.address, isDepositing, zapProvider, isUsingPartnerContract]);
+	}, [actionParams?.selectedOptionFrom?.value, actionParams?.selectedOptionFrom?.solveVia, actionParams?.selectedOptionTo?.value, actionParams?.selectedOptionTo?.solveVia, currentVault.token.address, currentVault?.migration?.available, currentVault?.migration?.address, hasStakingRewards, isDepositing, zapProvider, isUsingPartnerContract]);
 
 	const onSwitchSelectedOptions = useCallback((nextFlow = Flow.Switch): void => {
 		balancesNonce;
