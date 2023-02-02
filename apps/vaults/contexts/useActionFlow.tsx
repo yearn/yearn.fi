@@ -81,8 +81,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 	const {balances: zapBalances, tokensList, balancesNonce: zapBalancesNonce} = useWalletForZap();
 	const {zapProvider} = useYearn();
 	const {stakingRewardsByVault} = useStakingRewards();
-	const stakingRewardsAddress = stakingRewardsByVault[currentVault.address];
-	const hasStakingRewards = !!stakingRewardsAddress;
+	const hasStakingRewards = !!stakingRewardsByVault[currentVault.address];
 
 	const [possibleOptionsFrom, set_possibleOptionsFrom] = useState<TDropdownOption[]>([]);
 	const [possibleZapOptionsFrom, set_possibleZapOptionsFrom] = useState<TDropdownOption[]>([]);

@@ -24,8 +24,7 @@ function	VaultActionsTabsWrapper({currentVault}: {currentVault: TYearnVault}): R
 	const {onSwitchSelectedOptions, isDepositing} = useActionFlow();
 	const [selectedTabIndex, set_selectedTabIndex] = useState(isDepositing ? 0 : 1);
 	const {stakingRewardsByVault} = useStakingRewards();
-	const stakingRewardsAddress = stakingRewardsByVault[currentVault.address];
-	const hasStakingRewards = !!stakingRewardsAddress;
+	const hasStakingRewards = !!stakingRewardsByVault[currentVault.address];
 	const tabs = useMemo((): TTabsOptions[] => [
 		{value: 0, label: 'Deposit'},
 		{value: 1, label: 'Withdraw'},
