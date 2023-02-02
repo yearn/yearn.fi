@@ -1,9 +1,10 @@
 import React, {useMemo} from 'react';
 import Link from 'next/link';
+import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {toNormalizedBN, toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useBalance} from '@common/hooks/useBalance';
@@ -19,6 +20,10 @@ function	VaultsListRow({currentVault}: {currentVault: TYearnVault}): ReactElemen
 	const balanceOfWrappedCoin = useBalance(toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS ? WFTM_TOKEN_ADDRESS : WETH_TOKEN_ADDRESS);
 	const deposited = useBalance(currentVault.address)?.normalized;
 	const vaultName = useMemo((): string => getVaultName(currentVault), [currentVault]);
+
+	const {stakingRewardsByVault, positionsMap} = useStakingRewards();
+	const stakedBalance = toNormalizedValue(positionsMap[toAddress(stakingRewardsByVault[currentVault.address])]?.stake.balance || 0, currentVault.decimals);
+	const depositedAndStaked = deposited + stakedBalance;
 
 	const availableToDeposit = useMemo((): number => {
 		// Handle ETH native coin
@@ -72,8 +77,8 @@ function	VaultsListRow({currentVault}: {currentVault: TYearnVault}): ReactElemen
 
 					<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
 						<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Deposited'}</label>
-						<p className={`yearn--table-data-section-item-value ${deposited === 0 ? 'text-neutral-400' : 'text-neutral-900'}`}>
-							{formatAmount(deposited)}
+						<p className={`yearn--table-data-section-item-value ${depositedAndStaked === 0 ? 'text-neutral-400' : 'text-neutral-900'}`}>
+							{formatAmount(depositedAndStaked)}
 						</p>
 					</div>
 

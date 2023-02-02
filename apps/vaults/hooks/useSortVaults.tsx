@@ -1,6 +1,8 @@
 import {useCallback, useMemo} from 'react';
+import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {useWallet} from '@common/contexts/useWallet';
 import {getVaultName} from '@common/utils';
 
@@ -15,6 +17,7 @@ function	useSortVaults(
 	sortDirection: TPossibleSortDirection
 ): TYearnVault[] {
 	const	{balances, balancesNonce} = useWallet();
+	const {stakingRewardsByVault, positionsMap} = useStakingRewards();
 	
 	const	sortedByName = useCallback((): TYearnVault[] => (
 		vaultList.sort((a, b): number => {
@@ -49,13 +52,18 @@ function	useSortVaults(
 		balancesNonce; // remove warning, force deep refresh
 		return (
 			vaultList.sort((a, b): number => {
+				const aDepositedBalance = balances[toAddress(a.address)]?.normalized || 0;
+				const bDepositedBalance = balances[toAddress(b.address)]?.normalized || 0;
+				const aStakedBalance = toNormalizedValue(positionsMap[toAddress(stakingRewardsByVault[a.address])]?.stake.balance || 0, a.decimals);
+				const bStakedBalance = toNormalizedValue(positionsMap[toAddress(stakingRewardsByVault[b.address])]?.stake.balance || 0, b.decimals);
+	
 				if (sortDirection === 'asc') {
-					return (balances[toAddress(a.address)]?.normalized || 0) - (balances[toAddress(b.address)]?.normalized || 0);
+					return (aDepositedBalance + aStakedBalance) - (bDepositedBalance + bStakedBalance);
 				}
-				return (balances[toAddress(b.address)]?.normalized || 0) - (balances[toAddress(a.address)]?.normalized || 0);
+				return (bDepositedBalance + bStakedBalance) - (aDepositedBalance + aStakedBalance);
 			})
 		);
-	}, [balances, sortDirection, vaultList, balancesNonce]);
+	}, [balancesNonce, vaultList, balances, positionsMap, stakingRewardsByVault, sortDirection]);
 
 	const	sortedByAvailable = useCallback((): TYearnVault[] => {
 		balancesNonce; // remove warning, force deep refresh
