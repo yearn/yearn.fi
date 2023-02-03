@@ -34,7 +34,7 @@ function useCowswapQuote(): [TCowResult, (request: TInitSolverArgs, shouldPreven
 		request: TInitSolverArgs,
 		shouldPreventErrorToast = false
 	): Promise<TCowAPIResult | undefined> => {
-		const	YEARN_APP_DATA = '0x2B8694ED30082129598720860E8E972F07AA10D9B81CAE16CA0E2CFB24743E24';
+		const	YEARN_APP_DATA = '0x5d22bf49b708de1d2d9547a6cca9faccbdc2b162012e8573811c07103b163d4b';
 		const	quote: QuoteQuery = ({
 			from: request.from, // receiver
 			sellToken: toAddress(request.inputToken.value), // token to spend
