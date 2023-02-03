@@ -18,6 +18,9 @@ import type {ReactElement} from 'react';
 import type {TAddress} from '@yearn-finance/web-lib/utils/address';
 import type {TYearnVault} from '@common/types/yearn';
 
+const DISPLAY_DECIMALS = 10;
+const trimAmount = (amount: string | number): string => Number(Number(amount).toFixed(DISPLAY_DECIMALS)).toString(); 
+
 function RewardsTab({currentVault}: {currentVault: TYearnVault}): ReactElement {
 	const {provider, address, isActive} = useWeb3();
 	const {refresh: refreshBalances} = useWallet();
@@ -75,25 +78,26 @@ function RewardsTab({currentVault}: {currentVault: TYearnVault}): ReactElement {
 	}
 
 	return (
-		<div className={'grid grid-cols-1 gap-6 bg-neutral-100 p-4 md:grid-cols-2 md:gap-16 md:p-8'}>
-			<div className={'col-span-1 grid w-full gap-6'}>
-				<div className={'md:min-h-[104px]'}>
-					<h2 className={'m-0 text-2xl font-bold'}>
+		<div className={'flex flex-col gap-6 bg-neutral-100 p-4 md:gap-10 md:p-8'}>
+			<div className={'flex flex-col gap-4'}>
+				<div>
+					<div className={'font-bold'}>
 						{'Stake'}
-					</h2>
-					<div className={'mt-6 text-neutral-600'} >
+					</div>
+					<div className={'mt-2 text-neutral-600'} >
 						<p>{'You can stake your yVault tokens to get additional $OP BOOST.'}</p>
 					</div>
 				</div>
-				<div className={'grid grid-cols-1 gap-6 md:grid-cols-2'}>
+				<div className={'flex flex-col gap-4 md:flex-row'}>
 					<Input
+						className={'w-full md:w-[216px]'}
 						label={'You have unstaked'}
 						legend={formatCounterValue(vaultBalance.normalized, vaultBalance.normalizedPrice)}
-						value={`${vaultBalance.normalized} ${currentVault.symbol}`}
+						value={`${trimAmount(vaultBalance.normalized)} ${currentVault.symbol}`}
 						disabled
 					/>
 					<Button
-						className={'w-full md:mt-7'}
+						className={'w-full md:mt-7 md:w-[168px]'}
 						onClick={isApproved ? onStake : onApproveStake}
 						isBusy={stakeStatus.loading || approveStakeStatus.loading || isLoadingAllowances}
 						disabled={!isActive || isLoadingAllowances || vaultBalance.normalized <= 0 }
@@ -102,54 +106,57 @@ function RewardsTab({currentVault}: {currentVault: TYearnVault}): ReactElement {
 					</Button>
 				</div>
 			</div>
-			<div className={'col-span-1 grid w-full gap-6'}>
-				<div className={'md:min-h-[104px]'}>
-					<h2 className={'m-0 text-2xl font-bold'}>
-						{'Unstake'}
-					</h2>
-					<div className={'mt-6 text-neutral-600'} >
-						<p>{'You can unstake your yVault tokens. Your remaining rewards will be claimed automatically.'}</p>
+			<div className={'flex flex-col gap-4'}>
+				<div>
+					<div className={'font-bold'}>
+						{'Claim'}
+					</div>
+					<div className={'mt-2 text-neutral-600'} >
+						<p>{'You can claim your rewards for staking.'}</p>
 					</div>
 				</div>
-				<div className={'grid grid-cols-1 gap-6 md:grid-cols-2'}>
+				<div className={'flex flex-col gap-4 md:flex-row'}>
 					<Input
-						label={'You have staked'}
-						legend={formatCounterValue(stakeBalance.normalized, vaultBalance.normalizedPrice)}
-						value={`${stakeBalance.normalized} ${currentVault.symbol}`}
+						className={'w-full md:w-[216px]'}
+						label={'You have unclaimed'}
+						legend={formatCounterValue(rewardBalance.normalized, rewardTokenBalance.normalizedPrice)}
+						value={`${trimAmount(rewardBalance.normalized)} ${rewardTokenBalance.symbol}`}
 						disabled
 					/>
 					<Button
-						className={'w-full md:mt-7'}
+						className={'w-full md:mt-7 md:w-[168px]'}
+						onClick={onClaim}
+						isBusy={claimStatus.loading}
+						disabled={!isActive || rewardBalance.normalized <= 0}
+					>
+						{'Claim'}
+					</Button>
+				</div>
+			</div>
+			<div className={'flex flex-col gap-4'}>
+				<div>
+					<div className={'font-bold'}>
+						{'Unstake'}
+					</div>
+					<div className={'mt-2 text-neutral-600'} >
+						<p>{'You can unstake your yVault tokens. Your remaining rewards will be claimed automatically.'}</p>
+					</div>
+				</div>
+				<div className={'flex flex-col gap-4 md:flex-row'}>
+					<Input
+						className={'w-full md:w-[216px]'}
+						label={'You have staked'}
+						legend={formatCounterValue(stakeBalance.normalized, vaultBalance.normalizedPrice)}
+						value={`${trimAmount(stakeBalance.normalized)} ${currentVault.symbol}`}
+						disabled
+					/>
+					<Button
+						className={'w-full md:mt-7 md:w-[168px]'}
 						onClick={onUnstake}
 						isBusy={unstakeStatus.loading}
 						disabled={!isActive || stakeBalance.normalized <= 0 }
 					>
 						{'Unstake + Claim'}
-					</Button>
-				</div>
-			</div>
-			<div className={'col-span-1 grid w-full gap-6'}>
-				<div>
-					<h2 className={'m-0 text-2xl font-bold'}>
-						{'Claim'}
-					</h2>
-					<div className={'mt-6 text-neutral-600'} >
-						<p>{'You can claim your rewards for staking.'}</p>
-					</div>
-				</div>
-				<div className={'grid grid-cols-1 gap-6 md:grid-cols-2'}>
-					<Input
-						label={'You have unclaimed'}
-						legend={formatCounterValue(rewardBalance.normalized, rewardTokenBalance.normalizedPrice)}
-						value={`${rewardBalance.normalized} ${currentVault.symbol}`}
-						disabled
-					/>
-					<Button
-						className={'w-full md:mt-7'}
-						onClick={onClaim}
-						isBusy={claimStatus.loading}
-						disabled={!isActive || rewardBalance.normalized <= 0}>
-						{'Claim'}
 					</Button>
 				</div>
 			</div>
