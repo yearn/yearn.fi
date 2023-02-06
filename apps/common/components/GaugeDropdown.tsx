@@ -1,4 +1,4 @@
-import React, {cloneElement, Fragment, useState} from 'react';
+import React, {cloneElement, Fragment, useMemo, useState} from 'react';
 import {Combobox, Transition} from '@headlessui/react';
 import IconChevron from '@common/icons/IconChevron';
 import {formatPercent} from '@common/utils';
@@ -7,6 +7,13 @@ import type {ReactElement} from 'react';
 import type {TDropdownGaugeItemProps, TDropdownGaugeOption, TDropdownGaugeProps} from '@common/types/types';
 
 function DropdownItem({option}: TDropdownGaugeItemProps): ReactElement {
+	function	renderAPY(): string {
+		if (((option?.value?.APY || 0) * 100) > 500) {
+			return `APY ≧ ${formatPercent(500, 0, 0)}`;
+		}
+		return `APY ${formatPercent((option?.value?.APY || 0) * 100)}`;
+	}
+
 	return (
 		<Combobox.Option value={option}>
 			{({active}): ReactElement => (
@@ -19,7 +26,7 @@ function DropdownItem({option}: TDropdownGaugeItemProps): ReactElement {
 							{option.label}
 						</p>
 						<p className={`${option.icon ? 'pl-2' : 'pl-0'} text-xs font-normal text-neutral-600`}>
-							{`APY ${formatPercent((option?.value?.APY || 0) * 100)}`}
+							{renderAPY()}
 						</p>
 					</div>
 				</div>
@@ -56,9 +63,19 @@ function Dropdown({
 	const [isOpen, set_isOpen] = useState(false);
 	const [query, set_query] = useState('');
 
+	const orderedOptions = useMemo((): TDropdownGaugeOption[] => options.sort((a, b): number => {
+		if (a.value.APY < b.value.APY) {
+			return 1;
+		}
+		if (a.value.APY > b.value.APY) {
+			return -1;
+		}
+		return 0;
+	}), [options]);
+
 	const filteredOptions = query === ''
-		? options
-		: options.filter((option): boolean => {
+		? orderedOptions
+		: orderedOptions.filter((option): boolean => {
 			return (option.label).toLowerCase().includes(query.toLowerCase());
 		});
 
