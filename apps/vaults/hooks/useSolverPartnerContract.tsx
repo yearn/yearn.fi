@@ -147,7 +147,6 @@ export function useSolverPartnerContract(): TSolverContext {
 			return;
 		}
 
-		console.log({APPROVING: request.current.inputAmount.toString()});
 		new Transaction(provider, depositViaPartner, txStatusSetter)
 			.populate(
 				networks[safeChainID].partnerContractAddress,

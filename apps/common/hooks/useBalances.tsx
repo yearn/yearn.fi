@@ -10,6 +10,7 @@ import {formatBN} from '@yearn-finance/web-lib/utils/format';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import * as providers from '@yearn-finance/web-lib/utils/web3/providers';
 
+import type {Call, Provider} from 'ethcall';
 import type {BigNumber, ethers} from 'ethers';
 import type {DependencyList} from 'react';
 import type {TBalanceData, TDefaultStatus} from '@yearn-finance/web-lib/hooks/types';
@@ -83,13 +84,50 @@ export function	useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	**************************************************************************/
 	const stringifiedTokens = useMemo((): string => JSON.stringify(props?.tokens || []), [props?.tokens]);
 
+	async function performCall(
+		ethcallProvider: Provider,
+		calls: Call[],
+		tokens: TUseBalancesTokens[]
+	): Promise<[TDict<TBalanceData>, Error | undefined]> {
+		const	_data: TDict<TBalanceData> = {};
+		const	results = await ethcallProvider.tryAll(calls);
+
+		let		rIndex = 0;
+		for (const element of tokens) {
+			const	{token} = element;
+			const	balanceOf = results[rIndex++] as BigNumber;
+			const	decimals = results[rIndex++] as number;
+			const	rawPrice = formatBN(props?.prices?.[toAddress(token)]);
+			let symbol = results[rIndex++] as string;
+
+			if (toAddress(token) === ETH_TOKEN_ADDRESS) {
+				symbol = 'ETH';
+			}
+			_data[toAddress(token)] = {
+				decimals: Number(decimals),
+				symbol: symbol,
+				raw: balanceOf,
+				rawPrice,
+				normalized: format.toNormalizedValue(balanceOf, Number(decimals)),
+				normalizedPrice: format.toNormalizedValue(rawPrice, 6),
+				normalizedValue: (format.toNormalizedValue(balanceOf, Number(decimals)) * format.toNormalizedValue(rawPrice, 6))
+			};
+		}
+		return [_data, undefined];
+	}
+
 	const getBalances = useCallback(async (tokenList: string): Promise<[TDict<TBalanceData>, Error | undefined]> => {
+		let		currentProvider = provider;
+		let		shouldUseWalletProvider = true;
 		const	tokens = JSON.parse(tokenList) || [];
 		if (!isActive || !web3Address || tokens.length === 0) {
 			return [{}, undefined];
 		}
 
-		let		currentProvider = provider || providers.getProvider(props?.chainID || web3ChainID || 1);
+		if (!provider) {
+			currentProvider = providers.getProvider(props?.chainID || web3ChainID || 1);
+			shouldUseWalletProvider = false;
+		}
 		if (props?.chainID && props.chainID !== web3ChainID) {
 			currentProvider = providers.getProvider(props?.chainID);
 		}
@@ -117,32 +155,13 @@ export function	useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 			}
 		}
 
-		const	_data: TDict<TBalanceData> = {};
 		try {
-			const	results = await ethcallProvider.tryAll(calls);
-			let		rIndex = 0;
-			for (const element of tokens) {
-				const	{token} = element;
-				const	balanceOf = results[rIndex++] as BigNumber;
-				const	decimals = results[rIndex++] as number;
-				const	rawPrice = formatBN(props?.prices?.[toAddress(token)]);
-				let symbol = results[rIndex++] as string;
-
-				if (toAddress(token) === ETH_TOKEN_ADDRESS) {
-					symbol = 'ETH';
-				}
-				_data[toAddress(token)] = {
-					decimals: Number(decimals),
-					symbol: symbol,
-					raw: balanceOf,
-					rawPrice,
-					normalized: format.toNormalizedValue(balanceOf, Number(decimals)),
-					normalizedPrice: format.toNormalizedValue(rawPrice, 6),
-					normalizedValue: (format.toNormalizedValue(balanceOf, Number(decimals)) * format.toNormalizedValue(rawPrice, 6))
-				};
-			}
-			return [_data, undefined];
+			return await performCall(ethcallProvider, calls, tokens);
 		} catch (_error) {
+			if (shouldUseWalletProvider) {
+				const	ethcallProviderOverride = await providers.newEthCallProvider(providers.getProvider(props?.chainID || web3ChainID || 1));
+				return await performCall(ethcallProviderOverride, calls, tokens);
+			}
 			return [{}, _error as Error];
 		}
 	}, [isActive, web3Address, props?.chainID, props?.prices, web3ChainID, provider, ...effectDependencies]);

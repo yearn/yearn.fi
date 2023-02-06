@@ -218,7 +218,7 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 		return (((styCRVVault as TYearnVault)?.apy?.net_apy || 0) * 100);
 		// return (((styCRVVault as TYearnVault)?.apy?.net_apy || 0) * 100) + (styCRVMegaBoost * 100);
 		// return (styCRVExperimentalAPY * 100) + (styCRVMegaBoost * 100);
-	}, [styCRVVault, styCRVMegaBoost]);
+	}, [styCRVVault]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	**	Setup and render the Context provider to use in the app.

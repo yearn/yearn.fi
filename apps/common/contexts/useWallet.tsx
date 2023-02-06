@@ -1,7 +1,6 @@
 import React, {createContext, memo, useCallback, useContext, useMemo} from 'react';
 import {useUI} from '@yearn-finance/web-lib/contexts/useUI';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-// import {useBalances} from '@yearn-finance/web-lib/hooks/useBalances';
 import {useClientEffect} from '@yearn-finance/web-lib/hooks/useClientEffect';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';

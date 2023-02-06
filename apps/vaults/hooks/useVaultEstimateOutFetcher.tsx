@@ -40,7 +40,7 @@ export function	useVaultEstimateOutFetcher(): (args: TVaultEstimateOutFetcher) =
 			const expectedOutFetched = inputAmount.mul(pps).div(formatBN(10).pow(outputToken?.decimals));
 			return toNormalizedBN(expectedOutFetched, outputToken?.decimals || 18);
 		} catch (error) {
-			console.log(error);
+			console.error(error);
 			return (toNormalizedBN(0));
 		}
 	}, [provider, chainID]);
