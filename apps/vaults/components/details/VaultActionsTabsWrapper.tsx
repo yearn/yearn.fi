@@ -10,6 +10,7 @@ import {RewardsTab} from '@vaults/components/RewardsTab';
 import SettingsPopover from '@vaults/components/SettingsPopover';
 import {Flow, useActionFlow} from '@vaults/contexts/useActionFlow';
 import {Solver} from '@vaults/contexts/useSolver';
+import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import IconChevron from '@common/icons/IconChevron';
@@ -40,6 +41,9 @@ function	VaultActionsTabsWrapper(): ReactElement {
 	const {currentVault, onSwitchSelectedOptions, isDepositing, actionParams, currentSolver} = useActionFlow();
 	const {chainID} = useChainID();
 	const [possibleTabs, set_possibleTabs] = useState<TTabsOptions[]>([tabs[0], tabs[1]]);
+	const {stakingRewardsByVault} = useStakingRewards();
+	const willDepositAndStake = currentSolver === Solver.OPTIMISM_BOOSTER;
+	const hasStakingRewards = !!stakingRewardsByVault[currentVault.address];
 	const [currentTab, set_currentTab] = useState<TTabsOptions>(
 		getCurrentTab({isDepositing, hasMigration: currentVault?.migration?.available})
 	);
@@ -161,8 +165,16 @@ function	VaultActionsTabsWrapper(): ReactElement {
 
 				{currentTab.value === 0 && currentSolver === Solver.OPTIMISM_BOOSTER && (
 					<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
-						<div className={'w-full bg-green-400 px-6 py-4'}>
+						<div className={'w-full bg-green-400 p-2 md:px-6 md:py-4'}>
 							<b className={'text-base text-neutral-0'}>{'This is Optimism boosted Vault - your tokens will be automatically staked to have additional rewards!'}</b>
+						</div>
+					</div>
+				)}
+
+				{currentTab.value === 0 && hasStakingRewards && !willDepositAndStake && (
+					<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
+						<div className={'w-full bg-[#F0D308] p-2 md:px-6 md:py-4'}>
+							<b className={'text-base text-neutral-0'}>{'This is Optimism boosted Vault. If you wanna zap into and get additional OP rewards you have to stake tokens manually on $OP BOOST tab after you deposit. It just works like this, anon'}</b>
 						</div>
 					</div>
 				)}
