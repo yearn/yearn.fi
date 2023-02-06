@@ -8,6 +8,7 @@ import VaultDetailsQuickActionsTo from '@vaults/components/details/actions/Quick
 import {RewardsTab} from '@vaults/components/RewardsTab';
 import SettingsPopover from '@vaults/components/SettingsPopover';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
+import {Solver, useSolver} from '@vaults/contexts/useSolver';
 import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import IconChevron from '@common/icons/IconChevron';
 
@@ -24,6 +25,8 @@ function	VaultActionsTabsWrapper({currentVault}: {currentVault: TYearnVault}): R
 	const {onSwitchSelectedOptions, isDepositing} = useActionFlow();
 	const [selectedTabIndex, set_selectedTabIndex] = useState(isDepositing ? 0 : 1);
 	const {stakingRewardsByVault} = useStakingRewards();
+	const {currentSolver} = useSolver();
+	const willDepositAndStake = currentSolver === Solver.OPTIMISM_BOOSTER;
 	const hasStakingRewards = !!stakingRewardsByVault[currentVault.address];
 	const tabs = useMemo((): TTabsOptions[] => [
 		{value: 0, label: 'Deposit'},
@@ -128,10 +131,18 @@ function	VaultActionsTabsWrapper({currentVault}: {currentVault: TYearnVault}): R
 					<RewardsTab currentVault={currentVault} />
 				)}
 
-				{selectedTabIndex === 0 && hasStakingRewards && (
+				{selectedTabIndex === 0 && hasStakingRewards && willDepositAndStake && (
 					<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
-						<div className={'w-full bg-green-400 px-6 py-4'}>
+						<div className={'w-full bg-green-400 p-2 md:px-6 md:py-4'}>
 							<b className={'text-base text-neutral-0'}>{'This is Optimism boosted Vault - your tokens will be automatically staked to have additional rewards!'}</b>
+						</div>
+					</div>
+				)}
+
+				{selectedTabIndex === 0 && hasStakingRewards && !willDepositAndStake && (
+					<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
+						<div className={'w-full bg-[#F0D308] p-2 md:px-6 md:py-4'}>
+							<b className={'text-base text-neutral-0'}>{'This is Optimism boosted Vault. If you wanna zap into and get additional OP rewards you have to stake tokens manually on $OP BOOST tab after you deposit. It just works like this, anon'}</b>
 						</div>
 					</div>
 				)}
