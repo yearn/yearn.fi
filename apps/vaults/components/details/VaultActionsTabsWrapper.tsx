@@ -142,7 +142,7 @@ function	VaultActionsTabsWrapper({currentVault}: {currentVault: TYearnVault}): R
 				{selectedTabIndex === 0 && hasStakingRewards && !willDepositAndStake && (
 					<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
 						<div className={'w-full bg-[#F0D308] p-2 md:px-6 md:py-4'}>
-							<b className={'text-base text-neutral-0'}>{'This is Optimism boosted Vault. If you wanna zap into and get additional OP rewards you have to stake tokens manually on $OP BOOST tab after you deposit. It just works like this, anon'}</b>
+							<b className={'text-base text-neutral-0'}>{'This is Optimism boosted Vault. If you want to get additional OP rewards you have to stake tokens manually on $OP BOOST tab after you deposit. It just works like this, anon'}</b>
 						</div>
 					</div>
 				)}
