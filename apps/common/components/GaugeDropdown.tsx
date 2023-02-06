@@ -63,7 +63,7 @@ function Dropdown({
 	const [isOpen, set_isOpen] = useState(false);
 	const [query, set_query] = useState('');
 
-	const orderedOptions = useMemo((): TDropdownGaugeOption[] => options.sort((a, b): number => {
+	const orderedOptions = useMemo((): TDropdownGaugeOption[] => (options || []).sort((a, b): number => {
 		if (a.value.APY < b.value.APY) {
 			return 1;
 		}
