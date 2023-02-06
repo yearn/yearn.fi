@@ -30,7 +30,7 @@ function	VaultsListRow({currentVault}: {currentVault: TYearnVault}): ReactElemen
 		}
 		return balanceOfWant.normalized;
 	}, [balanceOfCoin.normalized, balanceOfCoin.raw, balanceOfWant.normalized, balanceOfWrappedCoin.normalized, currentVault.token.address]);
-	
+
 	return (
 		<Link key={`${currentVault.address}`} href={`/vaults/${safeChainID}/${toAddress(currentVault.address)}`}>
 			<div className={'yearn--table-wrapper cursor-pointer transition-colors hover:bg-neutral-300'}>
@@ -52,15 +52,20 @@ function	VaultsListRow({currentVault}: {currentVault: TYearnVault}): ReactElemen
 				<div className={'yearn--table-data-section'}>
 					<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
 						<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'APY'}</label>
-						<b className={'yearn--table-data-section-item-value'}>
-							{(currentVault.apy?.type === 'new' && currentVault.apy?.net_apy == 0) ? (
-								'New'
-							) : (currentVault.apy?.net_apy || 0) > 5 ? (
-								`≧ ${formatPercent(500)}`
-							) : (
-								formatPercent((currentVault.apy?.net_apy || 0) * 100)
-							)}
-						</b>
+						<div className={'flex flex-col text-right'}>
+							<b className={'yearn--table-data-section-item-value'}>
+								{(currentVault.apy?.type === 'new' && currentVault.apy?.net_apy == 0) ? (
+									'New'
+								) : (currentVault.apy?.net_apy || 0) > 5 ? (
+									`≧ ${formatPercent(500)}`
+								) : (
+									formatPercent((currentVault.apy?.net_apy || 0) * 100)
+								)}
+							</b>
+							<small className={'text-xs text-neutral-900'}>
+								{currentVault.apy?.composite?.boost ? `BOOST ${formatAmount(currentVault.apy?.composite?.boost, 2, 2)}x` : null}
+							</small>
+						</div>
 					</div>
 
 					<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
