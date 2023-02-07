@@ -81,7 +81,7 @@ function Deposit(): ReactElement {
 	}
 	async function onApprove(): Promise<void> {
 		new Transaction(provider, approve, set_txStatusApprove)
-			.populate(formatBN(amount?.raw))
+			.populate(ethers.constants.MaxUint256)
 			.onSuccess(async (): Promise<void> => {
 				await actions.execute();
 			})
