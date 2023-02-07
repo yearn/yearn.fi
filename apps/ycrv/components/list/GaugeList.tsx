@@ -103,8 +103,8 @@ function GaugeList({gauges, gaugesVotes, isLoading, userInfo}: TProps): ReactEle
 	const [category, set_category] = useState('All');
 	const [isSwitchEnabled, set_isSwitchEnabled] = useState(false);
 	const [searchValue, set_searchValue] = useSessionStorage('yCRVGaugeSearchValue', '');
-	const [sortBy, set_sortBy] = useState<TPossibleGaugesSortBy>('gauges');
-	const [sortDirection, set_sortDirection] = useState<TSortDirection>('');
+	const [sortBy, set_sortBy] = useState<TPossibleGaugesSortBy>('current-votes');
+	const [sortDirection, set_sortDirection] = useState<TSortDirection>('desc');
 	const [itemOffset, set_itemOffset] = useState(0);
 	const [{votes, ...votesState}, votesDispatch] = useReducer(votesReducer, {votes: {}, maxVotes: Zero}, createInitialState);
 
