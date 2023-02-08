@@ -104,7 +104,7 @@ async function getBalances(
 	tokens: TUseBalancesTokens[],
 	prices?: TDict<string>
 ): Promise<[TDict<TBalanceData>, Error | undefined]> {
-	let		result: TDict<TBalanceData> = {};
+	const		result: TDict<TBalanceData> = {};
 	const	currentProvider = provider;
 	const	calls = [];
 	const	ethcallProvider = await newEthCallProvider(currentProvider);
@@ -131,18 +131,17 @@ async function getBalances(
 	}
 
 	try {
-		const	[callResult] = await performCall(ethcallProvider, calls, tokens, prices);
-		result = {...result, ...callResult};
-	} catch (_error) {
+		const	[callResult, error] = await performCall(ethcallProvider, calls, tokens, prices);
+		return [{...result, ...callResult}, error];
+	} catch (error) {
 		if (fallBackProvider) {
 			const	ethcallProviderOverride = await newEthCallProvider(fallBackProvider);
-			const	[callResult] = await performCall(ethcallProviderOverride, calls, tokens, prices);
-			result = {...result, ...callResult};
-		} else {
-			console.error(_error);
+			const	[callResult, error] = await performCall(ethcallProviderOverride, calls, tokens, prices);
+			return [{...result, ...callResult}, error];
 		}
+		console.error(error);
+		return [result, error as Error];
 	}
-	return [result, undefined];
 }
 
 
