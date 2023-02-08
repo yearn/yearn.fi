@@ -36,7 +36,12 @@ export type TListHeroDesktopCategories<T> = {
 function	SearchBar({searchLabel, searchPlaceholder, searchValue, set_searchValue}: TListHeroSearchBar): ReactElement {
 	return (
 		<div className={'w-full'}>
-			<label htmlFor={'search'} className={'text-neutral-600'}>{searchLabel}</label>
+			<label
+				suppressHydrationWarning
+				htmlFor={'search'}
+				className={'text-neutral-600'}>
+				{searchLabel}
+			</label>
 			<div className={'mt-1 flex h-10 w-full max-w-md items-center border border-neutral-0 bg-neutral-0 p-2 md:w-2/3'}>
 				<div className={'relative flex h-10 w-full flex-row items-center justify-between'}>
 					<input
@@ -68,7 +73,7 @@ function	SearchBar({searchLabel, searchPlaceholder, searchValue, set_searchValue
 				</div>
 			</div>
 		</div>
-	);	
+	);
 }
 
 function	DesktopCategories<T>({categories, onSelect}: TListHeroDesktopCategories<T>): ReactElement {
@@ -92,7 +97,7 @@ function	DesktopCategories<T>({categories, onSelect}: TListHeroDesktopCategories
 								variant={item.isSelected ? 'filled' : 'outlined'}
 								className={'yearn--button-smaller relative !border-x-0'}>
 								{item?.node || item.label}
-							</Button>	
+							</Button>
 						))}
 					</div>
 				))}

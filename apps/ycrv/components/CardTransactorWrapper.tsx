@@ -11,11 +11,11 @@ import {formatBN, toNormalizedBN, Zero} from '@yearn-finance/web-lib/utils/forma
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {getProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
+import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import {formatPercent, getAmountWithSlippage, getVaultAPY} from '@common/utils';
 import {approveERC20} from '@common/utils/actions/approveToken';
 import {deposit} from '@common/utils/actions/deposit';
-import {useExtendedWallet} from '@yCRV/contexts/useExtendedWallet';
 import {useYCRV} from '@yCRV/contexts/useYCRV';
 import {zap} from '@yCRV/utils/actions/zap';
 import {LEGACY_OPTIONS_FROM, LEGACY_OPTIONS_TO} from '@yCRV/utils/zapOptions';
@@ -70,7 +70,7 @@ function	CardTransactorContextApp({
 }): ReactElement {
 	const	{provider, isActive} = useWeb3();
 	const	{styCRVAPY, allowances, slippage} = useYCRV();
-	const	{balancesNonce, balances, refresh} = useExtendedWallet();
+	const	{balancesNonce, balances, refresh} = useWallet();
 	const	{vaults} = useYearn();
 	const	[txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
 	const	[txStatusZap, set_txStatusZap] = useState(defaultTxStatus);

@@ -2,7 +2,7 @@ import React, {Fragment, useCallback, useMemo, useState} from 'react';
 import {ethers} from 'ethers';
 import {VaultListEmptyExternalMigration} from '@vaults/components/list/VaultsListEmpty';
 import {useWalletForExternalMigrations} from '@vaults/contexts/useWalletForExternalMigrations';
-import {useBeefyVaults} from '@vaults/hooks/useBeefyVaults';
+import {useBeefyVaults} from '@vaults/hooks/useBeefyVaults.unused';
 import {useFindVault} from '@vaults/hooks/useFindVault';
 import {migrationTable} from '@vaults/utils/migrationTable';
 import {Button} from '@yearn-finance/web-lib/components/Button';
