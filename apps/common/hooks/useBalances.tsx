@@ -162,7 +162,7 @@ export function	useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 		newRawData: TDict<TBalanceData>,
 		err?: Error
 	): TDict<TBalanceData> => {
-		if (toAddress(web3Address as string) !== data?.current?.[workerForChainID]?.address) {
+		if (toAddress(web3Address) !== data?.current?.[workerForChainID]?.address) {
 			data.current[workerForChainID] = {
 				address: toAddress(web3Address as string),
 				balances: {},
