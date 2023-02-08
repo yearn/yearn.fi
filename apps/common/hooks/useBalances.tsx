@@ -110,8 +110,7 @@ async function getBalances(
 	const	ethcallProvider = await newEthCallProvider(currentProvider);
 
 	for (const {token} of tokens) {
-		const	isEth = toAddress(token) === ETH_TOKEN_ADDRESS;
-		if (isEth) {
+		if (toAddress(token) === ETH_TOKEN_ADDRESS) {
 			const	tokenContract = new Contract(WETH_TOKEN_ADDRESS, ERC20_ABI);
 			calls.push(
 				ethcallProvider.getEthBalance(ownerAddress),
