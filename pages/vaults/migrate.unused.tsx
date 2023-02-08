@@ -1,5 +1,5 @@
 import React from 'react';
-import VaultListExternalMigration from '@vaults/components/list/VaultListExternalMigration';
+import VaultListExternalMigration from '@vaults/components/list/VaultListExternalMigration.unused';
 import Wrapper from '@vaults/Wrapper';
 
 import type {NextRouter} from 'next/router';

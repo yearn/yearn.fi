@@ -10,11 +10,11 @@ import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {Dropdown} from '@common/components/TokenDropdown';
+import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import ArrowDown from '@common/icons/ArrowDown';
 import {formatPercent} from '@common/utils';
 import CardTransactorContextApp, {useCardTransactor} from '@yCRV/components/CardTransactorWrapper';
-import {useExtendedWallet} from '@yCRV/contexts/useExtendedWallet';
 import {CardVariants, CardVariantsInner} from '@yCRV/utils/animations';
 import {LEGACY_OPTIONS_FROM, LEGACY_OPTIONS_TO} from '@yCRV/utils/zapOptions';
 
@@ -23,7 +23,7 @@ import type {TDropdownOption} from '@common/types/types';
 
 function	CardMigrateLegacy(): ReactElement {
 	const	{isActive} = useWeb3();
-	const	{balances} = useExtendedWallet();
+	const	{balances} = useWallet();
 	const	{vaults, prices} = useYearn();
 	const	{
 		txStatusApprove, txStatusZap,

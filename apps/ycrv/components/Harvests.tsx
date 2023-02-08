@@ -54,8 +54,8 @@ function	Harvests(): ReactElement {
 			</div>
 			<div className={'mt-4 grid w-full grid-cols-1 md:mt-0'}>
 				<HarvestListHead />
-				{(filteredHarvests || [])?.map((harvest: TYDaemonHarvests): ReactElement => {
-					return <HarvestListRow key={harvest.timestamp} harvest={harvest} />;
+				{(filteredHarvests || [])?.map((harvest: TYDaemonHarvests, index: number): ReactElement => {
+					return <HarvestListRow key={`${harvest.timestamp}_${harvest.vaultAddress}_${index}`} harvest={harvest} />;
 				})}
 			</div>
 		</div>
