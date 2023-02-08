@@ -7,7 +7,7 @@ import {Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import {approveERC20} from '@common/utils/actions/approveToken';
 import VLYCRV_ABI from '@yCRV/utils/abi/vlYCrv.abi';
-import {vLyCRVDeposit, vLyCRVVote, vLyCRVWithdraw} from '@yCRV/utils/actions';
+import {vLyCRVDeposit, vLyCRVVote, vLyCRVVoteMany, vLyCRVWithdraw} from '@yCRV/utils/actions';
 
 import type {BigNumber, providers} from 'ethers';
 import type {KeyedMutator} from 'swr';
@@ -37,6 +37,7 @@ type TUseVLyCRV = {
 		getVotesUnpacked: TGetVotesUnpacked;
 	}>;
 	vote: (provider: providers.JsonRpcProvider, gaugeAddress: TAddress, votes: BigNumber) => Promise<boolean>;
+	voteMany: (provider: providers.JsonRpcProvider, gauges: TAddress[], votes: BigNumber[]) => Promise<boolean>;
 	deposit: (provider: providers.JsonRpcProvider, amount: BigNumber) => Promise<boolean>;
 	withdraw: (provider: providers.JsonRpcProvider, amount: BigNumber) => Promise<boolean>;
 	approve: (provider: providers.JsonRpcProvider, amount: BigNumber) => Promise<boolean>;
@@ -89,6 +90,7 @@ export function useVLyCRV(): TUseVLyCRV {
 		deposit: vLyCRVDeposit,
 		withdraw: vLyCRVWithdraw,
 		vote: vLyCRVVote,
+		voteMany: vLyCRVVoteMany,
 		approve: async (provider: providers.JsonRpcProvider, amount: BigNumber): Promise<boolean> => (
 			approveERC20(
 				provider,

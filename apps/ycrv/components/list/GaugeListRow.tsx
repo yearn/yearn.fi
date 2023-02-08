@@ -1,17 +1,11 @@
 import React, {useEffect, useState} from 'react';
 import {utils} from 'ethers';
-import {Button} from '@yearn-finance/web-lib/components/Button';
-import {yToast} from '@yearn-finance/web-lib/components/yToast';
-import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isTAddress} from '@yearn-finance/web-lib/utils/isTAddress';
-import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {isNumber} from '@common/utils/typeGuards';
 import {QuickActions} from '@yCRV/components/QuickActions';
-import {useVLyCRV} from '@yCRV/hooks/useVLyCRV';
-import {isWeb3Provider} from '@yCRV/utils/isWeb3Provider';
 
 import type {BigNumber} from 'ethers';
 import type {ChangeEvent, Dispatch, ReactElement} from 'react';
@@ -26,11 +20,7 @@ type TGaugeListRow = {
 }
 
 function GaugeListRow({gauge, gaugeVotes, votesState, votesDispatch}: TGaugeListRow): ReactElement | null {
-	const {vote, mutateData} = useVLyCRV();
-	const {toast} = yToast();
-	const {provider, isActive} = useWeb3();
 	const [currentVotes, set_currentVotes] = useState<string>('');
-	const [txStatusVote, set_txStatusVote] = useState(defaultTxStatus);
 
 	useEffect((): void => {
 		const votes = votesState.votes[gauge.gauge];
@@ -52,21 +42,6 @@ function GaugeListRow({gauge, gaugeVotes, votesState, votesDispatch}: TGaugeList
 			return;
 		}
 	};
-
-	async function handleOnVote(): Promise<void> {
-		if (!isActive) {
-			toast({type: 'warning', content: 'Your wallet is not connected!'});
-			return;
-		}
-		if (isTAddress(gauge.gauge) && isWeb3Provider(provider)) {
-			new Transaction(provider, vote, set_txStatusVote)
-				.populate(gauge.gauge, votesState.votes[gauge.gauge])
-				.onSuccess(async (): Promise<void> => {
-					await mutateData();
-				})
-				.perform();
-		}
-	}
 
 	async function handleOnSetMaxAmount(): Promise<void> {
 		if (isTAddress(gauge.gauge)) {
@@ -101,7 +76,7 @@ function GaugeListRow({gauge, gaugeVotes, votesState, votesDispatch}: TGaugeList
 					</p>
 				</div>
 
-				<div className={'yearn--table-data-section-item pt-2 md:col-span-4'}>
+				<div className={'yearn--table-data-section-item pt-2 md:col-span-5'}>
 					<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Put your votes'}</label>
 					<p className={'yearn--table-data-section-item-value w-full text-neutral-900'}>
 						<div className={'flex h-10 w-full flex-row items-center justify-between'}>
@@ -116,18 +91,6 @@ function GaugeListRow({gauge, gaugeVotes, votesState, votesDispatch}: TGaugeList
 								isMaxDisabled={isMaxDisabled}
 							/>
 						</div>
-					</p>
-				</div>
-
-				<div className={'yearn--table-data-section-item pt-2 md:col-span-1'}>
-					<p className={'yearn--table-data-section-item-value w-full'}>
-						<Button
-							onClick={handleOnVote}
-							className={'w-full'}
-							isBusy={txStatusVote.pending}
-							isDisabled={!currentVotes || currentVotes === '0'}>
-							{'Vote'}
-						</Button>
 					</p>
 				</div>
 			</div>

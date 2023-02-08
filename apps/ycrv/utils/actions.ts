@@ -48,6 +48,16 @@ export async function vLyCRVVote(
 	return handleTx(contract.vote(gaugeAddress, votes));
 }
 
+export async function vLyCRVVoteMany(
+	provider: ethers.providers.Web3Provider | ethers.providers.JsonRpcProvider,
+	gauges: TAddress[],
+	votes: BigNumber[]
+): Promise<boolean> {
+	const signer = provider.getSigner();
+	const contract = new ethers.Contract(VLYCRV_TOKEN_ADDRESS, VLYCRV_ABI, signer);
+	return handleTx(contract.voteMany(gauges, votes));
+}
+
 export async function	addLiquidity(
 	provider: ethers.providers.Web3Provider,
 	amount1: BigNumber,
