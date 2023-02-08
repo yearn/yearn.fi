@@ -110,7 +110,7 @@ function getVoteButtonProps(votes: TDict<BigNumber | undefined>): {
 	label: string;
 	isDisabled: boolean;
 } {
-	const numGaugesWithVotes = Object.keys(votes).reduce((prev, curr): number => votes[curr] ? ++prev : prev, 0);
+	const numGaugesWithVotes = Object.keys(votes).reduce((prev, curr): number => votes[curr]?.gt(0) ? ++prev : prev, 0);
 
 	if (numGaugesWithVotes === 0) {
 		return {label:'Vote', isDisabled: true};
@@ -160,7 +160,7 @@ function GaugeList({gauges, gaugesVotes, isLoading, userInfo}: TProps): ReactEle
 		}
 
 		const gaugesWithVotes = Object.keys(votes).reduce((prev, curr): TDict<BigNumber | undefined> => {
-			return isTAddress(curr) && votes[curr] ? {...prev, [curr]: votes[curr]} : prev;
+			return isTAddress(curr) && votes[curr]?.gt(0) ? {...prev, [curr]: votes[curr]} : prev;
 		}, {});
 
 		if (isWeb3Provider(provider)) {
