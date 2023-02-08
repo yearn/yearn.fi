@@ -76,7 +76,6 @@ export const WalletForZapApp = memo(function WalletForZapApp({children}: {childr
 		refresh(allToRefresh).then((result): void => {
 			performBatchedUpdates((): void => {
 				set_isLoading(false);
-				console.log(result, availableTokens);
 				set_zapMigrationBalances(result);
 				onLoadDone();
 			});
