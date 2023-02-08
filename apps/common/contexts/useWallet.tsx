@@ -65,10 +65,10 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 			if (!vault) {
 				return;
 			}
-			if (!tokensExists[toAddress(vault?.address)]) {
+			if (vault?.address && !tokensExists[toAddress(vault?.address)]) {
 				tokens.push({token: vault.address});
 			}
-			if (!tokensExists[toAddress(vault?.token?.address)]) {
+			if (vault?.token?.address && !tokensExists[toAddress(vault?.token?.address)]) {
 				tokens.push({token: vault.token.address});
 			}
 		});
