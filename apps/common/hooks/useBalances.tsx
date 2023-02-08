@@ -100,7 +100,7 @@ async function performCall(
 async function getBalances(
 	provider: ethers.providers.Web3Provider | ethers.providers.JsonRpcProvider,
 	fallBackProvider: ethers.providers.Web3Provider | ethers.providers.JsonRpcProvider,
-	address: TAddress,
+	ownerAddress: TAddress,
 	tokens: TUseBalancesTokens[],
 	prices?: TDict<string>
 ): Promise<[TDict<TBalanceData>, Error | undefined]> {
@@ -109,9 +109,7 @@ async function getBalances(
 	const	calls = [];
 	const	ethcallProvider = await newEthCallProvider(currentProvider);
 
-	for (const element of tokens) {
-		const	{token} = element;
-		const	ownerAddress = address;
+	for (const {token} of tokens) {
 		const	isEth = toAddress(token) === ETH_TOKEN_ADDRESS;
 		if (isEth) {
 			const	tokenContract = new Contract(WETH_TOKEN_ADDRESS, ERC20_ABI);
