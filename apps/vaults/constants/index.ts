@@ -1,5 +1,7 @@
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 
+export const OPTIMISM_TOKEN_ADDRESS = toAddress('0x4200000000000000000000000000000000000042');
+
 export const STAKING_REWARDS_SUPPORTED_CHAINS = [10];
 
 // TODO: hardcoded until a registry is deployed
