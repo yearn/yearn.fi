@@ -56,6 +56,8 @@ export const WalletForExternalMigrationsApp = memo(function WalletForExternalMig
 		prices
 	});
 
+	console.log('🔵 - WalletForExternalMigrationsApp - balances', balances);
+
 	const	onRefresh = useCallback(async (): Promise<TDict<TBalanceData>> => {
 		const updatedBalances = await updateBalances();
 		return updatedBalances;

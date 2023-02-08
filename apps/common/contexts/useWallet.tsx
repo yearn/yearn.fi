@@ -3,7 +3,7 @@ import {useUI} from '@yearn-finance/web-lib/contexts/useUI';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useClientEffect} from '@yearn-finance/web-lib/hooks/useClientEffect';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {ETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {CRV_TOKEN_ADDRESS, CVXCRV_TOKEN_ADDRESS, ETH_TOKEN_ADDRESS, LPYCRV_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS, YVBOOST_TOKEN_ADDRESS, YVECRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {getProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import {useYearn} from '@common/contexts/useYearn';
 import {useBalances} from '@common/hooks/useBalances';
@@ -45,14 +45,33 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 			return [];
 		}
 		const	tokens: TUseBalancesTokens[] = [];
+		const	tokensExists: TDict<boolean> = {};
+
+		const	extraTokens = [
+			ETH_TOKEN_ADDRESS,
+			YCRV_TOKEN_ADDRESS,
+			LPYCRV_TOKEN_ADDRESS,
+			CRV_TOKEN_ADDRESS,
+			YVBOOST_TOKEN_ADDRESS,
+			YVECRV_TOKEN_ADDRESS,
+			CVXCRV_TOKEN_ADDRESS
+		];
+		for (const token of extraTokens) {
+			tokensExists[token] = true;
+			tokens.push({token});
+		}
+
 		Object.values(vaults || {}).forEach((vault?: TYearnVault): void => {
 			if (!vault) {
 				return;
 			}
-			tokens.push({token: vault?.address});
-			tokens.push({token: vault.token.address});
+			if (!tokensExists[toAddress(vault?.address)]) {
+				tokens.push({token: vault.address});
+			}
+			if (!tokensExists[toAddress(vault?.token?.address)]) {
+				tokens.push({token: vault.token.address});
+			}
 		});
-		tokens.push({token: ETH_TOKEN_ADDRESS});
 		return tokens;
 	}, [vaults, isLoadingVaultList]);
 
@@ -63,9 +82,8 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 	});
 
 	const	cumulatedValueInVaults = useMemo((): number => {
-		if (isLoadingVaultList || isLoading) {
-			return 0;
-		}
+		nonce; //Suppress warning
+
 		return (
 			Object.entries(balances).reduce((acc, [token, balance]): number => {
 				const	vault = vaults?.[toAddress(token)] ;
@@ -75,7 +93,7 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 				return acc;
 			}, 0)
 		);
-	}, [vaults, balances, isLoadingVaultList, isLoading]);
+	}, [vaults, balances, nonce]);
 
 	const	onRefresh = useCallback(async (tokenToUpdate?: TUseBalancesTokens[]): Promise<TDict<TBalanceData>> => {
 		if (tokenToUpdate) {

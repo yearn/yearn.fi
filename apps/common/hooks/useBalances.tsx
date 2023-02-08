@@ -1,14 +1,15 @@
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {useCallback, useMemo, useRef, useState} from 'react';
 import {Contract} from 'ethcall';
+import {useMountEffect, useUpdateEffect} from '@react-hookz/web';
+import {useUI} from '@yearn-finance/web-lib/contexts/useUI';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import * as format from '@yearn-finance/web-lib/utils/format';
-import {formatBN} from '@yearn-finance/web-lib/utils/format';
+import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
-import * as providers from '@yearn-finance/web-lib/utils/web3/providers';
+import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 
 import type {Call, Provider} from 'ethcall';
 import type {BigNumber, ethers} from 'ethers';
@@ -63,188 +64,210 @@ const		defaultStatus = {
 	isRefetching: false
 };
 
+async function performCall(
+	ethcallProvider: Provider,
+	calls: Call[],
+	tokens: TUseBalancesTokens[],
+	prices?: TDict<string>
+): Promise<[TDict<TBalanceData>, Error | undefined]> {
+	const	_data: TDict<TBalanceData> = {};
+	const	results = await ethcallProvider.tryAll(calls);
+
+	let		rIndex = 0;
+	for (const element of tokens) {
+		const	{token} = element;
+		const	balanceOf = results[rIndex++] as BigNumber;
+		const	decimals = results[rIndex++] as number;
+		const	rawPrice = formatBN(prices?.[toAddress(token)]);
+		let symbol = results[rIndex++] as string;
+
+		if (toAddress(token) === ETH_TOKEN_ADDRESS) {
+			symbol = 'ETH';
+		}
+		_data[toAddress(token)] = {
+			decimals: Number(decimals),
+			symbol: symbol,
+			raw: balanceOf,
+			rawPrice,
+			normalized: formatToNormalizedValue(balanceOf, Number(decimals)),
+			normalizedPrice: formatToNormalizedValue(rawPrice, 6),
+			normalizedValue: (formatToNormalizedValue(balanceOf, Number(decimals)) * formatToNormalizedValue(rawPrice, 6))
+		};
+	}
+	return [_data, undefined];
+}
+
+async function getBalances(
+	provider: ethers.providers.Web3Provider | ethers.providers.JsonRpcProvider,
+	fallBackProvider: ethers.providers.Web3Provider | ethers.providers.JsonRpcProvider,
+	address: TAddress,
+	tokens: TUseBalancesTokens[],
+	prices?: TDict<string>
+): Promise<[TDict<TBalanceData>, Error | undefined]> {
+	let		result: TDict<TBalanceData> = {};
+	const	currentProvider = provider;
+	const	calls = [];
+	const	ethcallProvider = await newEthCallProvider(currentProvider);
+
+	for (const element of tokens) {
+		const	{token} = element;
+		const	ownerAddress = address;
+		const	isEth = toAddress(token) === ETH_TOKEN_ADDRESS;
+		if (isEth) {
+			const	tokenContract = new Contract(WETH_TOKEN_ADDRESS, ERC20_ABI);
+			calls.push(
+				ethcallProvider.getEthBalance(ownerAddress),
+				tokenContract.decimals(),
+				tokenContract.symbol()
+			);
+		} else {
+			const	tokenContract = new Contract(token, ERC20_ABI);
+			calls.push(
+				tokenContract.balanceOf(ownerAddress),
+				tokenContract.decimals(),
+				tokenContract.symbol()
+			);
+		}
+	}
+
+	try {
+		const	[callResult] = await performCall(ethcallProvider, calls, tokens, prices);
+		result = {...result, ...callResult};
+	} catch (_error) {
+		if (fallBackProvider) {
+			const	ethcallProviderOverride = await newEthCallProvider(fallBackProvider);
+			const	[callResult] = await performCall(ethcallProviderOverride, calls, tokens, prices);
+			result = {...result, ...callResult};
+		} else {
+			console.error(_error);
+		}
+	}
+	return [result, undefined];
+}
+
+
 /* 🔵 - Yearn Finance ******************************************************
 ** This hook can be used to fetch balance information for any ERC20 tokens.
 **************************************************************************/
 export function	useBalances(props?: TUseBalancesReq): TUseBalancesRes {
+	const	workerRef = useRef<Worker>();
 	const	{address: web3Address, isActive, provider} = useWeb3();
 	const	{chainID: web3ChainID} = useChainID();
+	const	{onLoadStart, onLoadDone} = useUI();
 	const	[nonce, set_nonce] = useState(0);
 	const	[status, set_status] = useState<TDefaultStatus>(defaultStatus);
 	const	[error, set_error] = useState<Error | undefined>(undefined);
 	const	[balances, set_balances] = useState<TNDict<TDict<TBalanceData>>>({});
 	const	data = useRef<TNDict<TDataRef>>({1: {nonce: 0, address: toAddress(), balances: {}}});
-	const	interval = useRef<NodeJS.Timer>();
-	const	effectDependencies = props?.effectDependencies || [];
+	const	stringifiedTokens = useMemo((): string => JSON.stringify(props?.tokens || []), [props?.tokens]);
 
-	/* 🔵 - Yearn Finance ******************************************************
-	** When this hook is called, it will fetch the informations for the
-	** specified list of tokens. If no props are specified, the default values
-	** will be used.
-	**************************************************************************/
-	const stringifiedTokens = useMemo((): string => JSON.stringify(props?.tokens || []), [props?.tokens]);
-
-	async function performCall(
-		ethcallProvider: Provider,
-		calls: Call[],
-		tokens: TUseBalancesTokens[]
-	): Promise<[TDict<TBalanceData>, Error | undefined]> {
-		const	_data: TDict<TBalanceData> = {};
-		const	results = await ethcallProvider.tryAll(calls);
-
-		let		rIndex = 0;
-		for (const element of tokens) {
-			const	{token} = element;
-			const	balanceOf = results[rIndex++] as BigNumber;
-			const	decimals = results[rIndex++] as number;
-			const	rawPrice = formatBN(props?.prices?.[toAddress(token)]);
-			let symbol = results[rIndex++] as string;
-
-			if (toAddress(token) === ETH_TOKEN_ADDRESS) {
-				symbol = 'ETH';
-			}
-			_data[toAddress(token)] = {
-				decimals: Number(decimals),
-				symbol: symbol,
-				raw: balanceOf,
-				rawPrice,
-				normalized: format.toNormalizedValue(balanceOf, Number(decimals)),
-				normalizedPrice: format.toNormalizedValue(rawPrice, 6),
-				normalizedValue: (format.toNormalizedValue(balanceOf, Number(decimals)) * format.toNormalizedValue(rawPrice, 6))
-			};
-		}
-		return [_data, undefined];
-	}
-
-	const getBalances = useCallback(async (tokenList: string): Promise<[TDict<TBalanceData>, Error | undefined]> => {
-		let		currentProvider = provider;
-		let		shouldUseWalletProvider = true;
-		const	tokens = JSON.parse(tokenList) || [];
-		if (!isActive || !web3Address || tokens.length === 0) {
-			return [{}, undefined];
-		}
-
-		if (!provider) {
-			currentProvider = providers.getProvider(props?.chainID || web3ChainID || 1);
-			shouldUseWalletProvider = false;
-		}
-		if (props?.chainID && props.chainID !== web3ChainID) {
-			currentProvider = providers.getProvider(props?.chainID);
-		}
-
-		const	calls = [];
-		const	ethcallProvider = await providers.newEthCallProvider(currentProvider);
-		for (const element of tokens) {
-			const	{token} = element;
-			const	ownerAddress = (element?.for || web3Address) as string;
-			const	isEth = toAddress(token) === ETH_TOKEN_ADDRESS;
-			if (isEth) {
-				const	tokenContract = new Contract(WETH_TOKEN_ADDRESS, ERC20_ABI);
-				calls.push(
-					ethcallProvider.getEthBalance(ownerAddress),
-					tokenContract.decimals(),
-					tokenContract.symbol()
-				);
-			} else {
-				const	tokenContract = new Contract(token, ERC20_ABI);
-				calls.push(
-					tokenContract.balanceOf(ownerAddress),
-					tokenContract.decimals(),
-					tokenContract.symbol()
-				);
-			}
-		}
-
-		try {
-			return await performCall(ethcallProvider, calls, tokens);
-		} catch (_error) {
-			if (shouldUseWalletProvider) {
-				const	ethcallProviderOverride = await providers.newEthCallProvider(providers.getProvider(props?.chainID || web3ChainID || 1));
-				return await performCall(ethcallProviderOverride, calls, tokens);
-			}
-			return [{}, _error as Error];
-		}
-	}, [isActive, web3Address, props?.chainID, props?.prices, web3ChainID, provider, ...effectDependencies]);
-
-	/* 🔵 - Yearn Finance ******************************************************
-	** Add an interval to update the balance every X time, based on the
-	** refreshEvery prop. This specific effect is not used if the refresh is
-	** not set or if it is set to 'block'.
-	**************************************************************************/
-	useEffect((): () => void => {
-		if (props?.refreshEvery && props?.refreshEvery !== 'block') {
-			let	delay = props.refreshEvery;
-			if (delay === 'second') {
-				delay = 1 * 1000;
-			} else if (delay === 'minute') {
-				delay = 60 * 1000;
-			} else if (delay === 'hour') {
-				delay = 60 * 60 * 1000;
-			}
-			interval.current = setInterval((): void => {
-				getBalances(stringifiedTokens);
-			}, delay as number);
-			return (): void => clearInterval(interval.current);
-		}
-		return (): void => undefined;
-	}, [getBalances, props?.refreshEvery, stringifiedTokens]);
-
-	/* 🔵 - Yearn Finance ******************************************************
-	** Add an interval to update the balance every X block, based on the
-	** refreshEvery prop. This specific effect is not used if the refresh is
-	** not set or if it is NOT set to 'block'.
-	**************************************************************************/
-	useEffect((): () => void => {
-		if (!props?.refreshEvery || props?.refreshEvery !== 'block') {
-			return (): void => undefined;
-		}
-
-		let	currentProvider = props?.provider || providers.getProvider(props?.chainID || web3ChainID || 1);
-		if (!props?.provider && props?.chainID === web3ChainID && provider) {
-			currentProvider = provider as ethers.providers.BaseProvider | ethers.providers.Web3Provider;
-		}
-		currentProvider.on('block', async (): Promise<unknown> => getBalances(stringifiedTokens));
-
-		return (): void => {
-			currentProvider.off('block', async (): Promise<unknown> => getBalances(stringifiedTokens));
-		};
-	}, [provider, props?.chainID, props?.provider, props?.refreshEvery, web3ChainID, getBalances, stringifiedTokens]);
-
-	const	onUpdate = useCallback(async (): Promise<TDict<TBalanceData>> => {
-		set_status({...defaultStatus, isLoading: true, isFetching: true, isRefetching: defaultStatus.isFetched});
-
-		const	[newRawData, err] = await getBalances(stringifiedTokens);
-		if (toAddress(web3Address as string) !== data?.current?.[web3ChainID]?.address) {
-			data.current[web3ChainID] = {
+	const	updateBalancesFromWorker = useCallback((
+		workerForChainID: number,
+		newRawData: TDict<TBalanceData>,
+		err?: Error
+	): TDict<TBalanceData> => {
+		console.warn(newRawData, err);
+		if (toAddress(web3Address as string) !== data?.current?.[workerForChainID]?.address) {
+			data.current[workerForChainID] = {
 				address: toAddress(web3Address as string),
 				balances: {},
 				nonce: 0
 			};
 		}
-		data.current[web3ChainID].address = toAddress(web3Address as string);
+		data.current[workerForChainID].address = toAddress(web3Address as string);
 
 		for (const [address, element] of Object.entries(newRawData)) {
-			data.current[web3ChainID].balances[address] = {
-				...data.current[web3ChainID].balances[address],
+			element.raw = formatBN(element.raw);
+			data.current[workerForChainID].balances[address] = {
+				...data.current[workerForChainID].balances[address],
 				...element
 			};
 		}
-		data.current[web3ChainID].nonce += 1;
+		data.current[workerForChainID].nonce += 1;
 
 		performBatchedUpdates((): void => {
 			set_nonce((n): number => n + 1);
-			set_balances((b): TNDict<TDict<TBalanceData>> => ({...b, [web3ChainID]: data.current[web3ChainID].balances}));
+			set_balances((b): TNDict<TDict<TBalanceData>> => ({...b, [workerForChainID]: data.current[workerForChainID].balances}));
 			set_error(err as Error);
 			set_status({...defaultStatus, isSuccess: true, isFetched: true});
 		});
-		return data.current[web3ChainID].balances;
-	}, [getBalances, stringifiedTokens, web3Address, web3ChainID]);
+		onLoadDone();
 
+		return data.current[workerForChainID].balances;
+	}, [onLoadDone, web3Address]);
+
+	/* 🔵 - Yearn Finance ******************************************************
+	** onUpdateSome takes a list of tokens and fetches the balances for each
+	** token. Even if it's not optimized for performance, it should not be an
+	** issue as it should only be used for a little list of tokens.
+	**************************************************************************/
+	const	onUpdate = useCallback(async (): Promise<TDict<TBalanceData>> => {
+		if (!isActive || !web3Address) {
+			return {};
+		}
+		const	tokens = JSON.parse(stringifiedTokens) || [];
+		if (tokens.length === 0) {
+			return {};
+		}
+		set_status({...defaultStatus, isLoading: true, isFetching: true, isRefetching: defaultStatus.isFetched});
+		onLoadStart();
+
+		const	chunks = [];
+		for (let i = 0; i < tokens.length; i += 10_000) {
+			chunks.push(tokens.slice(i, i + 10_000));
+		}
+
+		for (const chunkTokens of chunks) {
+			const	[newRawData, err] = await getBalances(
+				provider,
+				getProvider(props?.chainID || web3ChainID || 1),
+				web3Address,
+				chunkTokens,
+				props?.prices
+			);
+			if (toAddress(web3Address as string) !== data?.current?.[web3ChainID]?.address) {
+				data.current[web3ChainID] = {
+					address: toAddress(web3Address as string),
+					balances: {},
+					nonce: 0
+				};
+			}
+			data.current[web3ChainID].address = toAddress(web3Address as string);
+
+			for (const [address, element] of Object.entries(newRawData)) {
+				data.current[web3ChainID].balances[address] = {
+					...data.current[web3ChainID].balances[address],
+					...element
+				};
+			}
+			data.current[web3ChainID].nonce += 1;
+
+			performBatchedUpdates((): void => {
+				set_nonce((n): number => n + 1);
+				set_balances((b): TNDict<TDict<TBalanceData>> => ({...b, [web3ChainID]: data.current[web3ChainID].balances}));
+				set_error(err as Error);
+				set_status({...defaultStatus, isSuccess: true, isFetched: true});
+			});
+			onLoadDone();
+		}
+		return data.current[web3ChainID].balances;
+	}, [isActive, onLoadDone, onLoadStart, props?.chainID, props?.prices, provider, stringifiedTokens, web3Address, web3ChainID]);
+
+	/* 🔵 - Yearn Finance ******************************************************
+	** onUpdateSome takes a list of tokens and fetches the balances for each
+	** token. Even if it's not optimized for performance, it should not be an
+	** issue as it should only be used for a little list of tokens.
+	**************************************************************************/
 	const	onUpdateSome = useCallback(async (tokenList: TUseBalancesTokens[]): Promise<TDict<TBalanceData>> => {
 		set_status({...defaultStatus, isLoading: true, isFetching: true, isRefetching: defaultStatus.isFetched});
 
-		const	stringifiedSomeTokens = JSON.stringify(tokenList);
-		const	[newRawData, err] = await getBalances(stringifiedSomeTokens);
+		const	[newRawData, err] = await getBalances(
+			provider,
+			getProvider(props?.chainID || web3ChainID || 1),
+			toAddress(web3Address as string),
+			tokenList,
+			props?.prices
+		);
 		if (toAddress(web3Address as string) !== data?.current?.[web3ChainID]?.address) {
 			data.current[web3ChainID] = {
 				address: toAddress(web3Address as string),
@@ -269,25 +292,53 @@ export function	useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 			set_status({...defaultStatus, isSuccess: true, isFetched: true});
 		});
 		return data.current[web3ChainID].balances;
-	}, [getBalances, web3Address, web3ChainID]);
+	}, [props?.chainID, props?.prices, provider, web3Address, web3ChainID]);
 
-	const assignPrices = useCallback((_rawData: TDict<TBalanceData>): TDict<TBalanceData> => {
+	const	assignPrices = useCallback((_rawData: TDict<TBalanceData>): TDict<TBalanceData> => {
 		for (const key of Object.keys(_rawData)) {
 			const	tokenAddress = toAddress(key);
 			const	rawPrice = formatBN(props?.prices?.[tokenAddress]);
 			_rawData[tokenAddress] = {
 				..._rawData[tokenAddress],
 				rawPrice,
-				normalizedPrice: format.toNormalizedValue(rawPrice, 6),
-				normalizedValue: ((_rawData?.[tokenAddress] || 0).normalized * format.toNormalizedValue(rawPrice, 6))
+				normalizedPrice: formatToNormalizedValue(rawPrice, 6),
+				normalizedValue: ((_rawData?.[tokenAddress] || 0).normalized * formatToNormalizedValue(rawPrice, 6))
 			};
 		}
 		return _rawData;
 	}, [props?.prices]);
 
-	useEffect((): void => {
-		onUpdate();
-	}, [onUpdate]);
+
+	/* 🔵 - Yearn Finance ******************************************************
+	** onMount, we need to init the worker and set the onmessage handler.
+	**************************************************************************/
+	useMountEffect((): VoidFunction => {
+		workerRef.current = new Worker(new URL('./useBalances.worker.tsx', import.meta.url));
+		workerRef.current.onerror = (event): void => console.log(event),
+		workerRef.current.onmessage = (event: MessageEvent<[number, TDict<TBalanceData>, Error | undefined]>): void => {
+			updateBalancesFromWorker(event.data[0], event.data[1], event.data[2]);
+		};
+		return (): void => workerRef?.current?.terminate();
+	});
+
+	/* 🔵 - Yearn Finance ******************************************************
+	** Everytime the stringifiedTokens change, we need to update the balances.
+	** This is the main hook and is optimized for performance, using a worker
+	** to fetch the balances, preventing the UI to freeze.
+	**************************************************************************/
+	useUpdateEffect((): void => {
+		if (!isActive || !web3Address) {
+			return;
+		}
+		onLoadStart();
+		set_status({...defaultStatus, isLoading: true, isFetching: true, isRefetching: defaultStatus.isFetched});
+
+		const	tokens = JSON.parse(stringifiedTokens) || [];
+		const	chainID = props?.chainID || web3ChainID || 1;
+		console.log('UPDATING FOR ', chainID, web3Address);
+		workerRef?.current?.postMessage({chainID, address: web3Address, tokens});
+	}, [stringifiedTokens, isActive, web3Address, web3ChainID]);
+
 
 	const	contextValue = useMemo((): TUseBalancesRes => ({
 		data: assignPrices(balances[web3ChainID] || {}),
