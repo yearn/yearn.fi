@@ -162,7 +162,6 @@ export function	useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 		newRawData: TDict<TBalanceData>,
 		err?: Error
 	): TDict<TBalanceData> => {
-		console.warn(newRawData, err);
 		if (toAddress(web3Address as string) !== data?.current?.[workerForChainID]?.address) {
 			data.current[workerForChainID] = {
 				address: toAddress(web3Address as string),
@@ -331,7 +330,6 @@ export function	useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 
 		const	tokens = JSON.parse(stringifiedTokens) || [];
 		const	chainID = props?.chainID || web3ChainID || 1;
-		console.log('UPDATING FOR ', chainID, web3Address);
 		workerRef?.current?.postMessage({chainID, address: web3Address, tokens});
 	}, [stringifiedTokens, isActive, web3Address, web3ChainID]);
 
