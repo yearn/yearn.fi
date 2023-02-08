@@ -59,7 +59,7 @@ export const WalletForInternalMigrationsApp = memo(function WalletForInternalMig
 	useUpdateEffect((): void => {
 		onLoadStart();
 		set_isLoading(true);
-		const	allToRefresh = availableTokens.map((token): TUseBalancesTokens => ({token: token.token}));
+		const	allToRefresh = availableTokens.map(({token}): TUseBalancesTokens => ({token}));
 		refresh(allToRefresh).then((result): void => {
 			performBatchedUpdates((): void => {
 				set_isLoading(false);

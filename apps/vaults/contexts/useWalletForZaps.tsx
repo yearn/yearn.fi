@@ -68,7 +68,7 @@ export const WalletForZapApp = memo(function WalletForZapApp({children}: {childr
 	useUpdateEffect((): void => {
 		onLoadStart();
 		set_isLoading(true);
-		const	allToRefresh = availableTokens.map((token): TUseBalancesTokens => ({token: token.token}));
+		const	allToRefresh = availableTokens.map(({token}): TUseBalancesTokens => ({token}));
 		refresh(allToRefresh).then((result): void => {
 			performBatchedUpdates((): void => {
 				set_isLoading(false);
