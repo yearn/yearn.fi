@@ -5,6 +5,7 @@ import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useUI} from '@yearn-finance/web-lib/contexts/useUI';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
+import {isZeroAddress} from '@yearn-finance/web-lib/utils/address';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {useWallet} from '@common/contexts/useWallet';
@@ -60,6 +61,9 @@ export const WalletForZapApp = memo(function WalletForZapApp({children}: {childr
 			if (token.chainID !== safeChainID) {
 				return;
 			}
+			if (isZeroAddress(token.address)) {
+				return;
+			}
 			tokens.push({token: token.address});
 		});
 		return tokens;
@@ -72,6 +76,7 @@ export const WalletForZapApp = memo(function WalletForZapApp({children}: {childr
 		refresh(allToRefresh).then((result): void => {
 			performBatchedUpdates((): void => {
 				set_isLoading(false);
+				console.log(result, availableTokens);
 				set_zapMigrationBalances(result);
 				onLoadDone();
 			});
