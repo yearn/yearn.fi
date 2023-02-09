@@ -76,13 +76,6 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 	/* 🔵 - Yearn Finance ******************************************************
 	** Wrapper to decide if we should use the partner contract or not
 	**************************************************************************/
-	console.log({
-		amount: actionParams?.amount.raw.toString(),
-		allowance: formatBN(allowanceFrom?.raw).toString(),
-		allowanceFrom: actionParams?.amount.raw.gt(formatBN(allowanceFrom?.raw)),
-		maxDepositPossible: maxDepositPossible?.normalized,
-		status
-	});
 	if (
 		txStatusApprove.pending || actionParams?.amount.raw.gt(formatBN(allowanceFrom?.raw)) || status !== 'success' && (
 			(currentSolver === Solver.VANILLA && isDepositing)
