@@ -7,6 +7,7 @@ import {useLocalStorage} from '@yearn-finance/web-lib/hooks';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {addressZero, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
+import {DEFAULT_SLIPPAGE} from '@common/utils/constants';
 
 import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
@@ -54,7 +55,7 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 	const {safeChainID} = useChainID();
 	const {settings: baseAPISettings} = useSettings();
 	const {address, currentPartner} = useWeb3();
-	const [zapSlippage, set_zapSlippage] = useLocalStorage<number>('yearn.finance/zap-slippage', 0.5);
+	const [zapSlippage, set_zapSlippage] = useLocalStorage<number>('yearn.finance/zap-slippage', DEFAULT_SLIPPAGE);
 	const [zapProvider, set_zapProvider] = useLocalStorage<Solver>('yearn.finance/zap-provider', Solver.COWSWAP);
 
 	/* 🔵 - Yearn Finance ******************************************************
