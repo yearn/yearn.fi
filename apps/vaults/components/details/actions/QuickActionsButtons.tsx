@@ -16,12 +16,12 @@ import type {ReactElement} from 'react';
 function	VaultDetailsQuickActionsButtons(): ReactElement {
 	const {refresh} = useWallet();
 	const {refresh: refreshZapBalances} = useWalletForZap();
-	const {isActive} = useWeb3();
+	const {address, isActive} = useWeb3();
 	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
 	const [txStatusExecuteDeposit, set_txStatusExecuteDeposit] = useState(defaultTxStatus);
 	const [txStatusExecuteWithdraw, set_txStatusExecuteWithdraw] = useState(defaultTxStatus);
 	const {actionParams, onChangeAmount, maxDepositPossible, isDepositing} = useActionFlow();
-	const {onApprove, onExecuteDeposit, onExecuteWithdraw, onRetrieveAllowance, currentSolver, expectedOut} = useSolver();
+	const {onApprove, onExecuteDeposit, onExecuteWithdraw, onRetrieveAllowance, currentSolver, expectedOut, isLoadingExpectedOut} = useSolver();
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** SWR hook to get the expected out for a given in/out pair with a specific amount. This hook is
@@ -30,7 +30,7 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 	const [{result: allowanceFrom, status}, actions] = useAsync(onRetrieveAllowance, toNormalizedBN(0));
 	useEffect((): void => {
 		actions.execute();
-	}, [currentSolver, actionParams?.selectedOptionFrom?.value, actions]);
+	}, [currentSolver, actionParams?.selectedOptionFrom?.value, actions, isActive, address, onRetrieveAllowance]);
 
 	const onSuccess = useCallback(async (): Promise<void> => {
 		onChangeAmount(toNormalizedBN(0));
@@ -76,8 +76,15 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 	/* 🔵 - Yearn Finance ******************************************************
 	** Wrapper to decide if we should use the partner contract or not
 	**************************************************************************/
+	console.log({
+		amount: actionParams?.amount.raw.toString(),
+		allowance: formatBN(allowanceFrom?.raw).toString(),
+		allowanceFrom: actionParams?.amount.raw.gt(formatBN(allowanceFrom?.raw)),
+		maxDepositPossible: maxDepositPossible?.normalized,
+		status
+	});
 	if (
-		txStatusApprove.pending || actionParams?.amount.raw.gt(formatBN(allowanceFrom?.raw)) && (
+		txStatusApprove.pending || actionParams?.amount.raw.gt(formatBN(allowanceFrom?.raw)) || status !== 'success' && (
 			(currentSolver === Solver.VANILLA && isDepositing)
 			|| (currentSolver === Solver.CHAIN_COIN && !isDepositing)
 			|| (currentSolver === Solver.COWSWAP)
@@ -88,8 +95,14 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 		return (
 			<Button
 				className={'w-full'}
-				isBusy={txStatusApprove.pending || status === 'loading'}
-				isDisabled={!isActive || actionParams?.amount.raw.isZero() || actionParams?.amount.raw.gt(maxDepositPossible.raw) || expectedOut.raw.isZero()}
+				isBusy={txStatusApprove.pending}
+				isDisabled={
+					!isActive ||
+					actionParams?.amount.raw.isZero() ||
+					actionParams?.amount.raw.gt(maxDepositPossible.raw) ||
+					expectedOut.raw.isZero() ||
+					isLoadingExpectedOut
+				}
 				onClick={onApproveFrom}>
 				{'Approve'}
 			</Button>
@@ -102,7 +115,12 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 				onClick={async (): Promise<void> => onExecuteDeposit(set_txStatusExecuteDeposit, onSuccess)}
 				className={'w-full'}
 				isBusy={txStatusExecuteDeposit.pending}
-				isDisabled={!isActive || actionParams?.amount.raw.isZero() || actionParams?.amount.raw.gt(maxDepositPossible.raw)}>
+				isDisabled={
+					!isActive ||
+					actionParams?.amount.raw.isZero() ||
+					actionParams?.amount.raw.gt(maxDepositPossible.raw) ||
+					isLoadingExpectedOut
+				}>
 				{'Deposit'}
 			</Button>
 		);
@@ -113,7 +131,12 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 			onClick={async (): Promise<void> => onExecuteWithdraw(set_txStatusExecuteWithdraw, onSuccess)}
 			className={'w-full'}
 			isBusy={txStatusExecuteWithdraw.pending}
-			isDisabled={!isActive || actionParams?.amount.raw.isZero() || actionParams?.amount.raw.gt(maxDepositPossible.raw)}>
+			isDisabled={
+				!isActive ||
+				actionParams?.amount.raw.isZero() ||
+				actionParams?.amount.raw.gt(maxDepositPossible.raw) ||
+				isLoadingExpectedOut
+			}>
 			{'Withdraw'}
 		</Button>
 	);
