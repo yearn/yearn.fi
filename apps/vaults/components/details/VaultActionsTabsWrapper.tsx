@@ -75,7 +75,10 @@ function	VaultActionsTabsWrapper(): ReactElement {
 						<Listbox
 							value={currentTab.label}
 							onChange={(value): void => {
-								const	newTab = tabs.find((tab): boolean => tab.value === Number(value)) as TTabsOptions;
+								const	newTab = tabs.find((tab): boolean => tab.value === Number(value));
+								if (!newTab) {
+									return;
+								}
 								set_currentTab(newTab);
 								onSwitchSelectedOptions(Flows.SWITCH);
 							}}>
