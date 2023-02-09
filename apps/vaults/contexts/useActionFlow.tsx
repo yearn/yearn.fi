@@ -20,12 +20,12 @@ import type {TAddress} from '@yearn-finance/web-lib/utils/address';
 import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
 import type {TYearnVault} from '@common/types/yearn';
 
-export enum	Flows {
-	DEPOSIT = 'deposit', // TODO: create this flow handler
-	WITHDRAW = 'withdraw',
-	MIGRATE = 'migrate', // TODO: create this flow handler
-	ZAP = 'zap', // TODO: create this flow handler
-	SWITCH = 'switch'
+export enum	Flow {
+	Deposit = 'deposit', // TODO: create this flow handler
+	Withdraw = 'withdraw',
+	Migrate = 'migrate', // TODO: create this flow handler
+	Zap = 'zap', // TODO: create this flow handler
+	Switch = 'switch'
 }
 
 type TActionParams = {
@@ -44,7 +44,7 @@ type	TActionFlowContext = {
 	onChangeAmount: (amount: TNormalizedBN) => void;
 	onUpdateSelectedOptionFrom: (option: TDropdownOption) => void;
 	onUpdateSelectedOptionTo: (option: TDropdownOption) => void;
-	onSwitchSelectedOptions: (nextFlow?: Flows) => void;
+	onSwitchSelectedOptions: (nextFlow?: Flow) => void;
 	isDepositing: boolean;
 	maxDepositPossible: TNormalizedBN;
 	currentSolver: Solver;
@@ -184,8 +184,8 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 		return Solver.VANILLA;
 	}, [actionParams?.selectedOptionFrom?.value, actionParams?.selectedOptionFrom?.solveVia, actionParams?.selectedOptionTo?.value, actionParams?.selectedOptionTo?.solveVia, isDepositing, zapProvider, isUsingPartnerContract]);
 
-	const onSwitchSelectedOptions = useCallback((nextFlow = Flows.SWITCH): void => {
-		if (nextFlow === Flows.SWITCH) {
+	const onSwitchSelectedOptions = useCallback((nextFlow = Flow.Switch): void => {
+		if (nextFlow === Flow.Switch) {
 			performBatchedUpdates((): void => {
 				const _selectedOptionTo = actionParams?.selectedOptionTo;
 				const _possibleOptionsTo = possibleOptionsTo;
@@ -209,7 +209,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 			});
 		}
 
-		if (nextFlow === Flows.WITHDRAW) {
+		if (nextFlow === Flow.Withdraw) {
 			actionParamsDispatcher({
 				type: 'all',
 				payload: {

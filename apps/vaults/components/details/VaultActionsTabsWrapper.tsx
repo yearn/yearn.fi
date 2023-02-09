@@ -7,7 +7,7 @@ import VaultDetailsQuickActionsFrom from '@vaults/components/details/actions/Qui
 import VaultDetailsQuickActionsSwitch from '@vaults/components/details/actions/QuickActionsSwitch';
 import VaultDetailsQuickActionsTo from '@vaults/components/details/actions/QuickActionsTo';
 import SettingsPopover from '@vaults/components/SettingsPopover';
-import {Flows, useActionFlow} from '@vaults/contexts/useActionFlow';
+import {Flow, useActionFlow} from '@vaults/contexts/useActionFlow';
 import IconChevron from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
@@ -39,7 +39,7 @@ function	VaultActionsTabsWrapper(): ReactElement {
 		if (currentVault?.migration?.available && actionParams.isReady) {
 			set_possibleTabs([tabs[1]]);
 			set_currentTab(tabs[1]);
-			onSwitchSelectedOptions(Flows.WITHDRAW);
+			onSwitchSelectedOptions(Flow.Withdraw);
 		}
 	}, [currentVault?.migration?.available, actionParams.isReady]);
 
@@ -60,7 +60,7 @@ function	VaultActionsTabsWrapper(): ReactElement {
 								key={`desktop-${tab.value}`}
 								onClick={(): void => {
 									set_currentTab(tab);
-									onSwitchSelectedOptions(Flows.SWITCH);
+									onSwitchSelectedOptions(Flow.Switch);
 								}}>
 								<p
 									title={tab.label}
@@ -80,7 +80,7 @@ function	VaultActionsTabsWrapper(): ReactElement {
 									return;
 								}
 								set_currentTab(newTab);
-								onSwitchSelectedOptions(Flows.SWITCH);
+								onSwitchSelectedOptions(Flow.Switch);
 							}}>
 							{({open}): ReactElement => (
 								<>
