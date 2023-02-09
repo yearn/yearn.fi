@@ -1,12 +1,13 @@
-import React, {Fragment, useMemo} from 'react';
+import React, {Fragment, useState} from 'react';
 import Link from 'next/link';
 import {Listbox, Transition} from '@headlessui/react';
+import {useUpdateEffect} from '@react-hookz/web';
 import VaultDetailsQuickActionsButtons from '@vaults/components/details/actions/QuickActionsButtons';
 import VaultDetailsQuickActionsFrom from '@vaults/components/details/actions/QuickActionsFrom';
 import VaultDetailsQuickActionsSwitch from '@vaults/components/details/actions/QuickActionsSwitch';
 import VaultDetailsQuickActionsTo from '@vaults/components/details/actions/QuickActionsTo';
 import SettingsPopover from '@vaults/components/SettingsPopover';
-import {useActionFlow} from '@vaults/contexts/useActionFlow';
+import {Flow, useActionFlow} from '@vaults/contexts/useActionFlow';
 import IconChevron from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
@@ -20,9 +21,27 @@ const tabs: TTabsOptions[] = [
 	{value: 0, label: 'Deposit'},
 	{value: 1, label: 'Withdraw'}
 ];
+function	getCurrentTab({isDepositing, hasMigration}: {isDepositing: boolean, hasMigration: boolean}): TTabsOptions {
+	if (hasMigration) {
+		return tabs[1];
+	}
+	return tabs.find((tab): boolean => tab.value === (isDepositing ? 0 : 1)) as TTabsOptions;
+}
+
 function	VaultActionsTabsWrapper(): ReactElement {
-	const {onSwitchSelectedOptions, isDepositing} = useActionFlow();
-	const currentTab = useMemo((): TTabsOptions => tabs.find((tab): boolean => tab.value === (isDepositing ? 0 : 1)) as TTabsOptions, [isDepositing]);
+	const {currentVault, onSwitchSelectedOptions, isDepositing, actionParams} = useActionFlow();
+	const [possibleTabs, set_possibleTabs] = useState<TTabsOptions[]>(tabs);
+	const [currentTab, set_currentTab] = useState<TTabsOptions>(
+		getCurrentTab({isDepositing, hasMigration: currentVault?.migration?.available})
+	);
+
+	useUpdateEffect((): void => {
+		if (currentVault?.migration?.available && actionParams.isReady) {
+			set_possibleTabs([tabs[1]]);
+			set_currentTab(tabs[1]);
+			onSwitchSelectedOptions(Flow.Withdraw);
+		}
+	}, [currentVault?.migration?.available, actionParams.isReady]);
 
 	return (
 		<Fragment>
@@ -36,17 +55,16 @@ function	VaultActionsTabsWrapper(): ReactElement {
 			<div aria-label={'Vault Actions'} className={'col-span-12 mb-4 flex flex-col bg-neutral-100'}>
 				<div className={'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'}>
 					<nav className={'hidden flex-row items-center space-x-10 md:flex'}>
-						{tabs.map((tab): ReactElement => (
+						{possibleTabs.map((tab): ReactElement => (
 							<button
 								key={`desktop-${tab.value}`}
 								onClick={(): void => {
-									if ((tab.value === 0 && !isDepositing) || (tab.value === 1 && isDepositing)) {
-										onSwitchSelectedOptions();
-									}
+									set_currentTab(tab);
+									onSwitchSelectedOptions(Flow.Switch);
 								}}>
 								<p
 									title={tab.label}
-									aria-selected={(tab.value === 0 && isDepositing) || (tab.value === 1 && !isDepositing)}
+									aria-selected={currentTab.value === tab.value}
 									className={'hover-fix tab'}>
 									{tab.label}
 								</p>
@@ -56,7 +74,14 @@ function	VaultActionsTabsWrapper(): ReactElement {
 					<div className={'relative z-50'}>
 						<Listbox
 							value={currentTab.label}
-							onChange={(): void => onSwitchSelectedOptions()}>
+							onChange={(value): void => {
+								const	newTab = tabs.find((tab): boolean => tab.value === Number(value));
+								if (!newTab) {
+									return;
+								}
+								set_currentTab(newTab);
+								onSwitchSelectedOptions(Flow.Switch);
+							}}>
 							{({open}): ReactElement => (
 								<>
 									<Listbox.Button
@@ -79,7 +104,7 @@ function	VaultActionsTabsWrapper(): ReactElement {
 										leaveFrom={'transform scale-100 opacity-100'}
 										leaveTo={'transform scale-95 opacity-0'}>
 										<Listbox.Options className={'yearn--listbox-menu'}>
-											{tabs.map((tab): ReactElement => (
+											{possibleTabs.map((tab): ReactElement => (
 												<Listbox.Option
 													className={'yearn--listbox-menu-item'}
 													key={tab.value}
