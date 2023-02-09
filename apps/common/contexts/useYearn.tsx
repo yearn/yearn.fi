@@ -54,7 +54,7 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 	const {safeChainID} = useChainID();
 	const {settings: baseAPISettings} = useSettings();
 	const {address, currentPartner} = useWeb3();
-	const [zapSlippage, set_zapSlippage] = useLocalStorage<number>('yearn.finance/zap-slippage', 0.1);
+	const [zapSlippage, set_zapSlippage] = useLocalStorage<number>('yearn.finance/zap-slippage', 0.5);
 	const [zapProvider, set_zapProvider] = useLocalStorage<Solver>('yearn.finance/zap-provider', Solver.COWSWAP);
 
 	/* 🔵 - Yearn Finance ******************************************************
