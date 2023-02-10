@@ -6,8 +6,8 @@ function HowItWorksDiagram(props: React.SVGProps<SVGSVGElement>): ReactElement {
 	return (
 		<svg
 			{...props}
-			width={'980'}
-			height={'288'}
+			width={'100%'}
+			height={'100%'}
 			viewBox={'0 0 980 288'}
 			fill={'none'}
 			xmlns={'http://www.w3.org/2000/svg'}>

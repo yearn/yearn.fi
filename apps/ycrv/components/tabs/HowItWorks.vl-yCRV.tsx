@@ -15,7 +15,7 @@ function HowItWorks(): ReactElement {
 				<h2 suppressHydrationWarning className={'mt-4 pb-2 text-lg font-bold md:mt-8 md:pb-4 md:text-3xl'}>{'Withdraw'}</h2>
 				<p>{'Once you vote in the ‘current period’ (as shown below), you must wait until the end of the ‘next period’ in order to withdraw your vl-yCRV back to yCRV. However, if you choose to also vote in the ‘next period’ once it becomes the ‘current period’ you would then have to wait until the end of the following period (without voting in it) in order to withdraw. In other words, once you vote in the ‘current period’ you must wait for the ‘next period’ to end without voting in it to withdraw. Who said DeFi was complicated...'}</p>
 			</Balancer>
-			<p className={'p-16 pb-0'}>
+			<p className={'pt-8 md:pt-16 md:pb-0'}>
 				<HowItWorksDiagram />
 			</p>
 		</div>
