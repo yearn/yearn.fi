@@ -1,13 +1,14 @@
 import React, {Fragment, useMemo, useState} from 'react';
 import Link from 'next/link';
 import {Listbox, Transition} from '@headlessui/react';
+import {useUpdateEffect} from '@react-hookz/web';
 import VaultDetailsQuickActionsButtons from '@vaults/components/details/actions/QuickActionsButtons';
 import VaultDetailsQuickActionsFrom from '@vaults/components/details/actions/QuickActionsFrom';
 import VaultDetailsQuickActionsSwitch from '@vaults/components/details/actions/QuickActionsSwitch';
 import VaultDetailsQuickActionsTo from '@vaults/components/details/actions/QuickActionsTo';
 import {RewardsTab} from '@vaults/components/RewardsTab';
 import SettingsPopover from '@vaults/components/SettingsPopover';
-import {useActionFlow} from '@vaults/contexts/useActionFlow';
+import {Flow, useActionFlow} from '@vaults/contexts/useActionFlow';
 import {Solver, useSolver} from '@vaults/contexts/useSolver';
 import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import IconChevron from '@common/icons/IconChevron';
@@ -21,19 +22,26 @@ type TTabsOptions = {
 	hidden?: boolean;
 }
 
-function	VaultActionsTabsWrapper({currentVault}: {currentVault: TYearnVault}): ReactElement {
-	const {onSwitchSelectedOptions, isDepositing} = useActionFlow();
-	const [selectedTabIndex, set_selectedTabIndex] = useState(isDepositing ? 0 : 1);
+function VaultActionsTabsWrapper({currentVault}: {currentVault: TYearnVault}): ReactElement {
+	const {onSwitchSelectedOptions, isDepositing, actionParams} = useActionFlow();
+	const [selectedTabIndex, set_selectedTabIndex] = useState(currentVault.migration.available ? 1 : isDepositing ? 0 : 1);
 	const {stakingRewardsByVault} = useStakingRewards();
 	const {currentSolver} = useSolver();
 	const willDepositAndStake = currentSolver === Solver.OPTIMISM_BOOSTER;
 	const hasStakingRewards = !!stakingRewardsByVault[currentVault.address];
 	const tabs = useMemo((): TTabsOptions[] => [
-		{value: 0, label: 'Deposit'},
+		{value: 0, label: 'Deposit', hidden: currentVault.migration.available && actionParams.isReady},
 		{value: 1, label: 'Withdraw'},
 		{value: 2, label: '$OP BOOST', hidden: !hasStakingRewards}
-	], [hasStakingRewards]);
+	], [currentVault.migration.available, actionParams.isReady, hasStakingRewards]);
 	const currentTab = useMemo((): TTabsOptions => tabs.find((tab): boolean => tab.value === selectedTabIndex) as TTabsOptions, [selectedTabIndex, tabs]);
+
+	useUpdateEffect((): void => {
+		if (currentVault.migration.available && actionParams.isReady) {
+			set_selectedTabIndex(1);
+			onSwitchSelectedOptions(Flow.Withdraw);
+		}
+	}, [currentVault.migration.available, actionParams.isReady]);
 
 	return (
 		<Fragment>
@@ -52,7 +60,7 @@ function	VaultActionsTabsWrapper({currentVault}: {currentVault: TYearnVault}): R
 								key={`desktop-${tab.value}`}
 								onClick={(): void => {
 									if ((tab.value === 0 && !isDepositing) || (tab.value === 1 && isDepositing)) {
-										onSwitchSelectedOptions();
+										onSwitchSelectedOptions(Flow.Switch);
 									}
 									set_selectedTabIndex(tab.value);
 								}}>
@@ -68,7 +76,13 @@ function	VaultActionsTabsWrapper({currentVault}: {currentVault: TYearnVault}): R
 					<div className={'relative z-50'}>
 						<Listbox
 							value={currentTab.label}
-							onChange={(): void => onSwitchSelectedOptions()}>
+							onChange={(value): void => {
+								const index = Number(value);
+								if ((index === 0 && !isDepositing) || (index === 1 && isDepositing)) {
+									onSwitchSelectedOptions(Flow.Switch);
+								}
+								set_selectedTabIndex(index);
+							}}>
 							{({open}): ReactElement => (
 								<>
 									<Listbox.Button

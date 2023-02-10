@@ -33,7 +33,6 @@ export type	TUseBalancesReq = {
 	key?: string | number,
 	tokens: TUseBalancesTokens[]
 	prices?: TDict<string>,
-	refreshEvery?: 'block' | 'second' | 'minute' | 'hour' | number,
 	effectDependencies?: DependencyList
 } & TDefaultReqArgs
 
@@ -181,8 +180,14 @@ export function	useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 		data.current[workerForChainID].nonce += 1;
 
 		performBatchedUpdates((): void => {
+			set_balances((b): TNDict<TDict<TBalanceData>> => ({
+				...b,
+				[workerForChainID]: {
+					...(b[workerForChainID] || {}),
+					...data.current[workerForChainID].balances
+				}
+			}));
 			set_nonce((n): number => n + 1);
-			set_balances((b): TNDict<TDict<TBalanceData>> => ({...b, [workerForChainID]: data.current[workerForChainID].balances}));
 			set_error(err as Error);
 			set_status({...defaultStatus, isSuccess: true, isFetched: true});
 		});
@@ -239,8 +244,14 @@ export function	useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 			data.current[web3ChainID].nonce += 1;
 
 			performBatchedUpdates((): void => {
+				set_balances((b): TNDict<TDict<TBalanceData>> => ({
+					...b,
+					[web3ChainID]: {
+						...(b[web3ChainID] || {}),
+						...data.current[web3ChainID].balances
+					}
+				}));
 				set_nonce((n): number => n + 1);
-				set_balances((b): TNDict<TDict<TBalanceData>> => ({...b, [web3ChainID]: data.current[web3ChainID].balances}));
 				set_error(err as Error);
 				set_status({...defaultStatus, isSuccess: true, isFetched: true});
 			});
@@ -285,8 +296,14 @@ export function	useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 		data.current[web3ChainID].nonce += 1;
 
 		performBatchedUpdates((): void => {
+			set_balances((b): TNDict<TDict<TBalanceData>> => ({
+				...b,
+				[web3ChainID]: {
+					...(b[web3ChainID] || {}),
+					...data.current[web3ChainID].balances
+				}
+			}));
 			set_nonce((n): number => n + 1);
-			set_balances((b): TNDict<TDict<TBalanceData>> => ({...b, [web3ChainID]: data.current[web3ChainID].balances}));
 			set_error(err as Error);
 			set_status({...defaultStatus, isSuccess: true, isFetched: true});
 		});
