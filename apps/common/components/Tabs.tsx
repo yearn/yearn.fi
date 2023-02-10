@@ -44,7 +44,7 @@ function Tabs({items, className}: TTabsProps): ReactElement {
 					</div>
 				))}
 			</nav>
-			<div className={'relative z-50 flex px-4 pt-4 md:hidden'}>
+			<div className={'relative z-50 px-4 pt-4 md:hidden'}>
 				<Listbox
 					value={selectedTabId}
 					onChange={(value): void => set_selectedTabId(value)}>
