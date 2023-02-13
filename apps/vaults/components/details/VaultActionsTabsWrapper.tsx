@@ -19,7 +19,7 @@ import type {TYearnVault} from '@common/types/yearn';
 type TTabsOptions = {
 	value: number;
 	label: string;
-	hidden?: boolean;
+	isHidden?: boolean;
 }
 
 function VaultActionsTabsWrapper({currentVault}: {currentVault: TYearnVault}): ReactElement {
@@ -30,9 +30,9 @@ function VaultActionsTabsWrapper({currentVault}: {currentVault: TYearnVault}): R
 	const willDepositAndStake = currentSolver === Solver.OPTIMISM_BOOSTER;
 	const hasStakingRewards = !!stakingRewardsByVault[currentVault.address];
 	const tabs = useMemo((): TTabsOptions[] => [
-		{value: 0, label: 'Deposit', hidden: currentVault.migration.available && actionParams.isReady},
+		{value: 0, label: 'Deposit', isHidden: currentVault.migration.available && actionParams.isReady},
 		{value: 1, label: 'Withdraw'},
-		{value: 2, label: '$OP BOOST', hidden: !hasStakingRewards}
+		{value: 2, label: '$OP BOOST', isHidden: !hasStakingRewards}
 	], [currentVault.migration.available, actionParams.isReady, hasStakingRewards]);
 	const currentTab = useMemo((): TTabsOptions => tabs.find((tab): boolean => tab.value === selectedTabIndex) as TTabsOptions, [selectedTabIndex, tabs]);
 
@@ -55,7 +55,7 @@ function VaultActionsTabsWrapper({currentVault}: {currentVault: TYearnVault}): R
 			<div aria-label={'Vault Actions'} className={'col-span-12 mb-4 flex flex-col bg-neutral-100'}>
 				<div className={'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'}>
 					<nav className={'hidden flex-row items-center space-x-10 md:flex'}>
-						{tabs.filter((tab): boolean => !tab.hidden).map((tab): ReactElement => (
+						{tabs.filter((tab): boolean => !tab.isHidden).map((tab): ReactElement => (
 							<button
 								key={`desktop-${tab.value}`}
 								onClick={(): void => {
@@ -105,7 +105,7 @@ function VaultActionsTabsWrapper({currentVault}: {currentVault: TYearnVault}): R
 										leaveFrom={'transform scale-100 opacity-100'}
 										leaveTo={'transform scale-95 opacity-0'}>
 										<Listbox.Options className={'yearn--listbox-menu'}>
-											{tabs.filter((tab): boolean => !tab.hidden).map((tab): ReactElement => (
+											{tabs.filter((tab): boolean => !tab.isHidden).map((tab): ReactElement => (
 												<Listbox.Option
 													className={'yearn--listbox-menu-item'}
 													key={tab.value}
