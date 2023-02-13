@@ -50,31 +50,19 @@ function RewardsTab({currentVault}: {currentVault: TYearnVault}): ReactElement {
 	});
 
 	async function onApproveStake(): Promise<void> {
-		if(!stakingRewards) {
-			return;
-		}
-		approveStake(web3Provider, userAddress, currentVault.address, stakingRewards.address);
+		approveStake(web3Provider, userAddress, currentVault.address, toAddress(stakingRewards?.address));
 	}
 
 	async function onStake(): Promise<void> {
-		if(!stakingRewards) {
-			return;
-		}
-		stake(web3Provider, userAddress, stakingRewards.address, vaultBalance.raw);
+		stake(web3Provider, userAddress, toAddress(stakingRewards?.address), vaultBalance.raw);
 	}
 
 	async function onUnstake(): Promise<void> {
-		if(!stakingRewards) {
-			return;
-		}
-		unstake(web3Provider, userAddress, stakingRewards.address);
+		unstake(web3Provider, userAddress, toAddress(stakingRewards?.address));
 	}
 
 	async function onClaim(): Promise<void> {
-		if(!stakingRewards) {
-			return;
-		}
-		claim(web3Provider, userAddress, stakingRewards.address);
+		claim(web3Provider, userAddress, toAddress(stakingRewards?.address));
 	}
 
 	return (
