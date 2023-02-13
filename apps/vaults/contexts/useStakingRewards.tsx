@@ -76,7 +76,7 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 				stakingRewardsContract.rewardsToken(),
 				stakingRewardsContract.totalSupply()
 			]) as [TAddress, TAddress, BigNumber];
-			
+
 			return ({
 				address,
 				stakingToken,
@@ -95,10 +95,21 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 		const currentProvider = getProvider(chainID);
 		const ethcallProvider = await newEthCallProvider(currentProvider);
 
-		const positionPromises = stakingRewards.map(async ({address}): Promise<TStakePosition> => {
+		const	calls = [];
+		for (const {address} of stakingRewards) {
 			const stakingRewardsContract = new Contract(address, STAKING_REWARDS_ABI);
-			const [balance, rewards, earned] = await ethcallProvider.tryAll([stakingRewardsContract.balanceOf(userAddress), stakingRewardsContract.rewards(userAddress), stakingRewardsContract.rewards(userAddress)]) as BigNumber[];
-			
+			calls.push(stakingRewardsContract.balanceOf(userAddress));
+			calls.push(stakingRewardsContract.rewards(userAddress));
+			calls.push(stakingRewardsContract.rewards(userAddress));
+		}
+		const results = await ethcallProvider.tryAll(calls) as BigNumber[];
+		let	resultIndex = 0;
+
+		const	positionPromises = [];
+		for (const {address} of stakingRewards) {
+			const	balance = results[resultIndex++];
+			const	rewards = results[resultIndex++];
+			const	earned = results[resultIndex++];
 			const stakePosition: TPosition = {
 				balance,
 				underlyingBalance: balance // TODO: Convert to underlying
@@ -114,14 +125,15 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 				underlyingBalance: earned // TODO: Convert if reward token is a vault token
 			};
 
-			return {
+			positionPromises.push({
 				address,
 				stake: stakePosition,
 				reward: rewardPosition,
 				earned: earnedPosition
-			};
-		});
-		return Promise.all(positionPromises);
+			});
+		}
+		
+		return positionPromises;
 	}, [stakingRewards, isActive, userAddress, chainID]);
 	const {data: positions, mutate: refreshPositions, isLoading: isLoadingPositions} = useSWR(isActive && provider && stakingRewards ? 'stakePositions' : null, positionsFetcher, {shouldRetryOnError: false});
 
@@ -133,16 +145,16 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 		if (!stakingRewards) {
 			return {};
 		}
-		
+
 		return stakingRewards.reduce<TDict<TPosition | undefined>>((acc, {address, stakingToken}): TDict<TPosition | undefined> => {
 			acc[stakingToken] = {
 				balance: acc[stakingToken]?.balance.add(positionsMap[address]?.earned.balance ?? formatBN(0)) ?? formatBN(0),
 				underlyingBalance: acc[stakingToken]?.underlyingBalance.add(positionsMap[address]?.earned.underlyingBalance ?? formatBN(0)) ?? formatBN(0)
-			}; 
+			};
 			return acc;
 		}, {});
 	}, [stakingRewards, positionsMap]);
-	
+
 	const refresh = useCallback((): void => {
 		refreshStakingRewards();
 		refreshPositions();
