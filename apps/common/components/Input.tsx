@@ -7,8 +7,8 @@ type TAmountInputProps = {
 	placeholder?: string;
 	legend?: string;
 	error?: string;
-	disabled?: boolean;
-	loading?: boolean;
+	isDisabled?: boolean;
+	isLoading?: boolean;
 	className?: string;
 }
 
@@ -19,8 +19,8 @@ function Input({
 	placeholder,
 	legend,
 	error,
-	disabled,
-	loading,
+	isDisabled,
+	isLoading,
 	className = ''
 }: TAmountInputProps): ReactElement {
 	return (
@@ -33,14 +33,14 @@ function Input({
 			)}
 			<div className={'relative flex w-full items-center justify-center'}>
 				<input
-					className={`h-10 w-full p-2 font-mono text-base font-normal outline-none ${error ? 'border border-solid border-[#EA5204] focus:border-[#EA5204]' : 'border-0 border-none'} ${disabled ? 'bg-neutral-300 text-neutral-600' : 'bg-neutral-0'}`}
+					className={`h-10 w-full p-2 font-mono text-base font-normal outline-none ${error ? 'border border-solid border-[#EA5204] focus:border-[#EA5204]' : 'border-0 border-none'} ${isDisabled ? 'bg-neutral-300 text-neutral-600' : 'bg-neutral-0'}`}
 					type={'text'}
 					min={0}
 					aria-label={label}
 					value={value}
 					onChange={onChange ? (e): void => onChange(e.target.value) : undefined}
-					placeholder={loading ? '' : placeholder ?? ''}
-					disabled={disabled}
+					placeholder={isLoading ? '' : placeholder ?? ''}
+					disabled={isDisabled}
 				/>
 			</div>
 			{(error || legend) && (

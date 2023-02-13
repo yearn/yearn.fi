@@ -94,13 +94,13 @@ function RewardsTab({currentVault}: {currentVault: TYearnVault}): ReactElement {
 						label={'You have unstaked'}
 						legend={formatCounterValue(vaultBalance.normalized, vaultBalance.normalizedPrice)}
 						value={`${trimAmount(vaultBalance.normalized)} ${currentVault.symbol}`}
-						disabled
+						isDisabled
 					/>
 					<Button
 						className={'w-full md:mt-7 md:w-[168px]'}
 						onClick={isApproved ? onStake : onApproveStake}
 						isBusy={stakeStatus.loading || approveStakeStatus.loading || isLoadingAllowances}
-						disabled={!isActive || isLoadingAllowances || vaultBalance.normalized <= 0 }
+						isDisabled={!isActive || isLoadingAllowances || vaultBalance.normalized <= 0 }
 					>
 						{isApproved ? 'Stake' : 'Approve'}
 					</Button>
@@ -121,13 +121,13 @@ function RewardsTab({currentVault}: {currentVault: TYearnVault}): ReactElement {
 						label={'You have unclaimed'}
 						legend={formatCounterValue(rewardBalance.normalized, rewardTokenBalance.normalizedPrice)}
 						value={`${trimAmount(rewardBalance.normalized)} ${rewardTokenBalance.symbol}`}
-						disabled
+						isDisabled
 					/>
 					<Button
 						className={'w-full md:mt-7 md:w-[168px]'}
 						onClick={onClaim}
 						isBusy={claimStatus.loading}
-						disabled={!isActive || rewardBalance.normalized <= 0}
+						isDisabled={!isActive || rewardBalance.normalized <= 0}
 					>
 						{'Claim'}
 					</Button>
@@ -148,13 +148,13 @@ function RewardsTab({currentVault}: {currentVault: TYearnVault}): ReactElement {
 						label={'You have staked'}
 						legend={formatCounterValue(stakeBalance.normalized, vaultBalance.normalizedPrice)}
 						value={`${trimAmount(stakeBalance.normalized)} ${currentVault.symbol}`}
-						disabled
+						isDisabled
 					/>
 					<Button
 						className={'w-full md:mt-7 md:w-[168px]'}
 						onClick={onUnstake}
 						isBusy={unstakeStatus.loading}
-						disabled={!isActive || stakeBalance.normalized <= 0 }
+						isDisabled={!isActive || stakeBalance.normalized <= 0 }
 					>
 						{'Unstake + Claim'}
 					</Button>
