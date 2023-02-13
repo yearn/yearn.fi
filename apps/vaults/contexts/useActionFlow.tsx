@@ -457,19 +457,6 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 		set_possibleZapOptionsTo(_possibleZapOptionsTo);
 	}, [currentVault?.chainID, safeChainID]);
 
-
-	useUpdateEffect((): void => {
-		if (currentSolver === Solver.INTERNAL_MIGRATION) {
-			//set amount to max
-			// actionParamsDispatcher({
-			// 	type: 'amount',
-			// 	payload: {
-			// 		amount: formatToNormalizedBN(balances?.[toAddress(actionParams?.selectedOptionFrom?.value)]?.raw)
-			// 	}
-			// });
-		}
-	}), [currentSolver];
-
 	/* 🔵 - Yearn Finance **************************************************************************
 	** FLOW: Store the value from that context in a Memoized variable to avoid useless re-renders
 	**********************************************************************************************/
