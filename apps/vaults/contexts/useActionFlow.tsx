@@ -21,9 +21,9 @@ import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
 import type {TYearnVault} from '@common/types/yearn';
 
 export enum	Flow {
-	Deposit = 'deposit', // TODO: create this flow handler
+	Deposit = 'deposit',
 	Withdraw = 'withdraw',
-	Migrate = 'migrate', // TODO: create this flow handler
+	Migrate = 'migrate',
 	Zap = 'zap', // TODO: create this flow handler
 	Switch = 'switch'
 }
@@ -173,6 +173,9 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 		if (isInputTokenEth || isOutputTokenEth) {
 			return Solver.CHAIN_COIN;
 		}
+		if (currentVault?.migration?.available && actionParams?.selectedOptionTo?.value === currentVault?.migration?.address) {
+			return Solver.INTERNAL_MIGRATION;
+		}
 		if (isDepositing && actionParams?.selectedOptionFrom?.solveVia?.includes(zapProvider) && !isSolverDisabled[zapProvider]) {
 			return zapProvider;
 		} if (!isDepositing && actionParams?.selectedOptionTo?.solveVia?.includes(zapProvider) && !isSolverDisabled[zapProvider]) {
@@ -182,16 +185,17 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 			return Solver.PARTNER_CONTRACT;
 		}
 		return Solver.VANILLA;
-	}, [actionParams?.selectedOptionFrom?.value, actionParams?.selectedOptionFrom?.solveVia, actionParams?.selectedOptionTo?.value, actionParams?.selectedOptionTo?.solveVia, isDepositing, zapProvider, isUsingPartnerContract]);
+	}, [actionParams?.selectedOptionFrom?.value, actionParams?.selectedOptionFrom?.solveVia, actionParams?.selectedOptionTo?.value, actionParams?.selectedOptionTo?.solveVia, currentVault?.migration?.address, currentVault?.migration?.available, isDepositing, zapProvider, isUsingPartnerContract]);
 
 	const onSwitchSelectedOptions = useCallback((nextFlow = Flow.Switch): void => {
+		balancesNonce;
 		if (nextFlow === Flow.Switch) {
 			performBatchedUpdates((): void => {
 				const _selectedOptionTo = actionParams?.selectedOptionTo;
 				const _possibleOptionsTo = possibleOptionsTo;
 				let _selectedOptionFrom = actionParams?.selectedOptionFrom;
 				if (isDepositing && (actionParams?.selectedOptionFrom?.solveVia || []).length > 0) {
-				// We don't want to be able to withdraw to exotic tokens. If the current from is one of them, take another one.
+					// We don't want to be able to withdraw to exotic tokens. If the current from is one of them, take another one.
 					_selectedOptionFrom = possibleOptionsFrom.find((option: TDropdownOption): boolean => (
 						option.value !== actionParams?.selectedOptionFrom?.value && (option.solveVia || []).length === 0
 					));
@@ -209,19 +213,65 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 			});
 		}
 
-		if (nextFlow === Flow.Withdraw) {
+
+		const	vaultUnderlying = setZapOption({
+			name: currentVault?.token?.display_name || currentVault?.token?.name,
+			symbol: currentVault?.token?.symbol,
+			address: toAddress(currentVault.token.address),
+			chainID: currentVault?.chainID === 1337 ? safeChainID : currentVault?.chainID,
+			decimals: currentVault?.token?.decimals || 18
+		});
+		const	vaultToken = setZapOption({
+			name: currentVault?.display_name || currentVault?.name || currentVault.formated_name,
+			symbol: currentVault?.display_symbol || currentVault.symbol,
+			address: toAddress(currentVault.address),
+			chainID: currentVault?.chainID === 1337 ? safeChainID : currentVault?.chainID,
+			decimals: currentVault?.decimals || 18
+		});
+
+		if (nextFlow === Flow.Deposit) {
 			actionParamsDispatcher({
 				type: 'all',
 				payload: {
-					selectedOptionFrom: actionParams?.selectedOptionTo,
-					selectedOptionTo: actionParams?.selectedOptionFrom,
+					selectedOptionFrom: vaultUnderlying,
+					selectedOptionTo: vaultToken,
+					possibleOptionsFrom: possibleOptionsFrom,
+					possibleOptionsTo: possibleOptionsTo,
+					amount: toNormalizedBN(0)
+				}
+			});
+		} else if (nextFlow === Flow.Withdraw) {
+			actionParamsDispatcher({
+				type: 'all',
+				payload: {
+					selectedOptionFrom: vaultToken,
+					selectedOptionTo: vaultUnderlying,
 					possibleOptionsFrom: possibleOptionsTo,
 					possibleOptionsTo: possibleOptionsFrom,
 					amount: toNormalizedBN(0)
 				}
 			});
+		} else if (nextFlow === Flow.Migrate) {
+			const	userBalance = formatBN(balances?.[toAddress(currentVault?.address)]?.raw);
+			const	_amount = toNormalizedBN(userBalance, currentVault?.decimals || currentVault?.token?.decimals || 18);
+			actionParamsDispatcher({
+				type: 'all',
+				payload: {
+					selectedOptionFrom: vaultToken,
+					selectedOptionTo: setZapOption({
+						name: currentVault?.name,
+						symbol: currentVault?.symbol,
+						address: currentVault?.migration?.address,
+						chainID: currentVault?.chainID,
+						decimals: currentVault?.token?.decimals
+					}),
+					possibleOptionsFrom: possibleOptionsTo,
+					possibleOptionsTo: possibleOptionsFrom,
+					amount: _amount
+				}
+			});
 		}
-	}, [actionParams?.selectedOptionTo, possibleOptionsTo, actionParams?.selectedOptionFrom, possibleOptionsFrom, isDepositing, maxDepositPossible]);
+	}, [actionParams?.selectedOptionTo, possibleOptionsTo, actionParams?.selectedOptionFrom, possibleOptionsFrom, isDepositing, maxDepositPossible, currentVault, balances, balancesNonce, safeChainID]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** FLOW: Update From/To/Amount in one unique re-render
@@ -406,6 +456,19 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 			});
 		set_possibleZapOptionsTo(_possibleZapOptionsTo);
 	}, [currentVault?.chainID, safeChainID]);
+
+
+	useUpdateEffect((): void => {
+		if (currentSolver === Solver.INTERNAL_MIGRATION) {
+			//set amount to max
+			// actionParamsDispatcher({
+			// 	type: 'amount',
+			// 	payload: {
+			// 		amount: formatToNormalizedBN(balances?.[toAddress(actionParams?.selectedOptionFrom?.value)]?.raw)
+			// 	}
+			// });
+		}
+	}), [currentSolver];
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** FLOW: Store the value from that context in a Memoized variable to avoid useless re-renders

@@ -4,8 +4,6 @@ import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
 import {VaultsListInternalMigrationRow} from '@vaults/components/list/VaultsListInternalMigrationRow';
 import {VaultsListRow} from '@vaults/components/list/VaultsListRow';
 import {useAppSettings} from '@vaults/contexts/useAppSettings';
-import {useVaultsMigrations} from '@vaults/contexts/useVaultsMigrations';
-import {useWalletForInternalMigrations} from '@vaults/contexts/useWalletForInternalMigrations';
 import {useFilteredVaults} from '@vaults/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import Wrapper from '@vaults/Wrapper';
@@ -22,18 +20,16 @@ import {getVaultName} from '@common/utils';
 
 import type {NextRouter} from 'next/router';
 import type {ReactElement, ReactNode} from 'react';
+import type {TAddress} from '@yearn-finance/web-lib/utils/address';
 import type {TYearnVault} from '@common/types/yearn';
 import type {TPossibleSortBy, TPossibleSortDirection} from '@vaults/hooks/useSortVaults';
 
 function	HeaderUserPosition(): ReactElement {
 	const	{cumulatedValueInVaults} = useWallet();
-	const	{cumulatedValueInVaults: cumulatedValueInDeprecatedVaults} = useWalletForInternalMigrations();
 	const	{earned} = useYearn();
 
 	const	formatedYouEarned = useMemo((): string => formatAmount(earned?.totalUnrealizedGainsUSD || 0), [earned]);
-	const	formatedYouHave = useMemo((): string => (
-		formatAmount(cumulatedValueInVaults + cumulatedValueInDeprecatedVaults)
-	), [cumulatedValueInVaults, cumulatedValueInDeprecatedVaults]);
+	const	formatedYouHave = useMemo((): string => formatAmount(cumulatedValueInVaults || 0), [cumulatedValueInVaults]);
 
 	return (
 		<Fragment>
@@ -42,7 +38,7 @@ function	HeaderUserPosition(): ReactElement {
 				<b className={'font-number text-4xl text-neutral-900 md:text-7xl'}>
 					<ValueAnimation
 						identifier={'youHave'}
-						value={formatedYouHave}
+						value={formatedYouHave ? formatedYouHave : ''}
 						defaultValue={formatAmount(0)}
 						prefix={'$'} />
 				</b>
@@ -62,24 +58,15 @@ function	HeaderUserPosition(): ReactElement {
 }
 
 function	Index(): ReactElement {
-	const	{balances} = useWallet();
-	const	{vaults, isLoadingVaultList} = useYearn();
-	const	{possibleVaultsMigrations, isLoading: isLoadingVaultsMigrations} = useVaultsMigrations();
-	const	{balances: internalMigrationsBalances} = useWalletForInternalMigrations();
+	const	{balances, balancesNonce} = useWallet();
+	const	{vaults, vaultsMigrations, isLoadingVaultList} = useYearn();
 	const 	[sort, set_sort] = useSessionStorage<{sortBy: TPossibleSortBy, sortDirection: TPossibleSortDirection}>(
 		'yVaultsSorting', {sortBy: 'apy', sortDirection: 'desc'}
 	);
 	const	{shouldHideDust, shouldHideLowTVLVaults, category, searchValue, set_category, set_searchValue} = useAppSettings();
 
-	/* 🔵 - Yearn Finance **************************************************************************
-	**	It's best to memorize the filtered vaults, which saves a lot of processing time by only
-	**	performing the filtering once.
-	**********************************************************************************************/
-	const	curveVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Curve');
-	const	stablesVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Stablecoin');
-	const	balancerVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Balancer');
-	const	cryptoVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Volatile');
-	const	holdingsVaults = useFilteredVaults(vaults, ({address}): boolean => {
+	const	filterHoldingsCallback = useCallback((address: TAddress): boolean => {
+		balancesNonce;
 		const	holding = balances?.[toAddress(address)];
 		const	hasValidBalance = formatBN(holding?.raw).gt(0);
 		const	balanceValue = holding?.normalizedValue || 0;
@@ -90,16 +77,29 @@ function	Index(): ReactElement {
 			return true;
 		}
 		return false;
-	});
-	const	migratableVaults = useFilteredVaults(possibleVaultsMigrations, ({address}): boolean => {
-		const	holding = internalMigrationsBalances?.[toAddress(address)];
+	}, [balances, shouldHideDust, balancesNonce]);
+
+	const	filterMigrationCallback = useCallback((address: TAddress): boolean => {
+		balancesNonce;
+		const	holding = balances?.[toAddress(address)];
 		const	hasValidPrice = formatBN(holding?.rawPrice).gt(0);
 		const	hasValidBalance = formatBN(holding?.raw).gt(0);
 		if (hasValidBalance && (hasValidPrice ? (holding?.normalizedValue || 0) >= 0.01 : true)) {
 			return true;
 		}
 		return false;
-	});
+	}, [balances, balancesNonce]);
+
+	/* 🔵 - Yearn Finance **************************************************************************
+	**	It's best to memorize the filtered vaults, which saves a lot of processing time by only
+	**	performing the filtering once.
+	**********************************************************************************************/
+	const	curveVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Curve');
+	const	stablesVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Stablecoin');
+	const	balancerVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Balancer');
+	const	cryptoVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Volatile');
+	const	holdingsVaults = useFilteredVaults(vaults, ({address}): boolean => filterHoldingsCallback(address));
+	const	migratableVaults = useFilteredVaults(vaultsMigrations, ({address}): boolean => filterMigrationCallback(address));
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	**	First, we need to determine in which category we are. The vaultsToDisplay function will
@@ -167,10 +167,10 @@ function	Index(): ReactElement {
 	**	It contains either the list of vaults, is some are available, or a message to the user.
 	**********************************************************************************************/
 	const	VaultList = useMemo((): ReactNode => {
-		if (isLoadingVaultsMigrations && category === 'Holdings') {
+		if (isLoadingVaultList && category === 'Holdings') {
 			return (
 				<VaultsListEmpty
-					isLoading={isLoadingVaultsMigrations}
+					isLoading={isLoadingVaultList}
 					sortedVaultsToDisplay={sortedVaultsToDisplay}
 					currentCategory={category} />
 			);
@@ -191,7 +191,7 @@ function	Index(): ReactElement {
 				return <VaultsListRow key={vault.address} currentVault={vault} />;
 			})
 		);
-	}, [isLoadingVaultsMigrations, category, isLoadingVaultList, sortedVaultsToDisplay]);
+	}, [category, isLoadingVaultList, sortedVaultsToDisplay]);
 
 	return (
 		<section className={'mt-4 grid w-full grid-cols-12 gap-y-10 pb-10 md:mt-20 md:gap-x-10 md:gap-y-20'}>

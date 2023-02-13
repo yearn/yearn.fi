@@ -1,4 +1,4 @@
-import React, {createContext, memo, useContext, useMemo} from 'react';
+import React, {createContext, memo, useMemo} from 'react';
 import useSWR from 'swr';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
@@ -59,6 +59,3 @@ export const VaultMigrationContextApp = memo(function VaultMigrationContextApp({
 		</VaultMigrationContext.Provider>
 	);
 });
-
-export const useVaultsMigrations = (): TVaultsMigrationsContext => useContext(VaultMigrationContext);
-export default useVaultsMigrations;
