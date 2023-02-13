@@ -17,6 +17,13 @@ function	VaultDetailsQuickActionsTo(): ReactElement {
 
 	const selectedOptionToPricePerToken = useTokenPrice(toAddress(actionParams?.selectedOptionTo?.value));
 
+	function	renderAPY(): string {
+		if (((currentVault?.apy?.net_apy || 0) * 100) > 500) {
+			return `APY ≧ ${formatPercent(500, 0, 0)}`;
+		}
+		return `APY ${formatPercent((currentVault?.apy?.net_apy || 0) * 100)}`;
+	}
+
 	return (
 		<section aria-label={'TO'} className={'flex w-full flex-col space-x-0 md:flex-row md:space-x-4'}>
 			<div className={'relative z-10 w-full space-y-2'}>
@@ -25,7 +32,7 @@ function	VaultDetailsQuickActionsTo(): ReactElement {
 						{isDepositing ? 'To vault' : 'To wallet'}
 					</label>
 					<legend className={'font-number inline text-xs text-neutral-600 md:hidden'} suppressHydrationWarning>
-						{`APY ${formatPercent((isDepositing ? currentVault?.apy?.net_apy || 0 : 0) * 100)}`}
+						{renderAPY()}
 					</legend>
 				</div>
 				{isActive && !isDepositing && possibleOptionsTo.length > 1 ? (
@@ -47,7 +54,7 @@ function	VaultDetailsQuickActionsTo(): ReactElement {
 					</div>
 				)}
 				<legend className={'font-number hidden text-xs text-neutral-600 md:inline'} suppressHydrationWarning>
-					{isDepositing ? `APY ${formatPercent((currentVault?.apy?.net_apy || 0) * 100)}` : ''}
+					{isDepositing ? renderAPY() : ''}
 				</legend>
 			</div>
 

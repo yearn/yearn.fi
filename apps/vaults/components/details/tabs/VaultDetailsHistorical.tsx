@@ -23,7 +23,7 @@ const GraphForVaultEarnings = dynamic<TGraphForVaultEarningsProps>(async (): Loa
 function	VaultDetailsHistorical({currentVault, harvestData}: {currentVault: TYearnVault, harvestData: TGraphData[]}): ReactElement {
 	const {safeChainID} = useChainID();
 	const [selectedViewIndex, set_selectedViewIndex] = useState(0);
-	
+
 	const	{data: messariMixedData} = useSWR(currentVault.address ? [
 		getMessariSubgraphEndpoint(safeChainID),
 		`{
@@ -31,6 +31,7 @@ function	VaultDetailsHistorical({currentVault, harvestData}: {currentVault: TYea
 				where: {vault: "${currentVault.address.toLowerCase()}"}
 				orderBy: timestamp
 				orderDirection: asc
+				first: 1000
 			) {
 				pricePerShare
 				totalValueLockedUSD

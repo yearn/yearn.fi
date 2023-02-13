@@ -1,5 +1,6 @@
 import React from 'react';
 import dynamic from 'next/dynamic';
+import {parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
 import {formatPercent} from '@common/utils';
 
 import type {LoaderComponent} from 'next/dynamic';
@@ -16,9 +17,9 @@ function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYearnVau
 			<div className={'col-span-1 w-full space-y-6'}>
 				<div>
 					<b className={'text-neutral-900'}>{'Description'}</b>
-					<p className={'mt-4 text-neutral-600'}>
-						{currentVault?.token?.description || 'Sorry, we don’t have a description for this asset right now. But did you know the correct word for a blob of toothpaste is a “nurdle”. Fascinating! We’ll work on updating the asset description, but at least you learnt something interesting. Catch ya later nurdles.'}
-					</p>
+					<p
+						className={'mt-4 text-neutral-600'}
+						dangerouslySetInnerHTML={{__html: currentVault?.token?.description ? parseMarkdown(currentVault?.token?.description) : 'Sorry, we don’t have a description for this asset right now. But did you know the correct word for a blob of toothpaste is a “nurdle”. Fascinating! We’ll work on updating the asset description, but at least you learnt something interesting. Catch ya later nurdles.'}} />
 				</div>
 				<div>
 					<b className={'text-neutral-900'}>{'APY'}</b>
@@ -53,7 +54,9 @@ function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYearnVau
 							<div className={'flex flex-row items-center justify-between'}>
 								<p className={'text-sm text-neutral-500'}>{'Net APY'}</p>
 								<p className={'font-number text-sm text-neutral-900'} suppressHydrationWarning>
-									{formatPercent((currentVault?.apy?.net_apy || 0) * 100)}
+									{(currentVault?.apy?.net_apy || 0) > 5 ? (
+										`≧ ${formatPercent(500)}`
+									) : formatPercent((currentVault?.apy?.net_apy || 0) * 100)}
 								</p>
 							</div>
 						</div>
@@ -72,14 +75,14 @@ function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYearnVau
 						</div>
 						<div className={'flex flex-col space-y-0 md:space-y-2'}>
 							<p className={'text-xxs text-neutral-600 md:text-xs'}>{'Management fee'}</p>
-							<b className={'font-number text-xl text-neutral-900'} suppressHydrationWarning>
-								{formatPercent((currentVault?.apy?.fees?.management || 0) * 100, 0)}
+							<b className={'font-number text-xl text-neutral-900'}>
+								{formatPercent((currentVault?.details?.managementFee || 0) / 100, 0)}
 							</b>
 						</div>
 						<div className={'flex flex-col space-y-0 md:space-y-2'}>
-							<p className={'text-xxs text-neutral-600 md:text-xs'}>{'Perfomance fee'}</p>
-							<b className={'font-number text-xl text-neutral-500'} suppressHydrationWarning>
-								{formatPercent((currentVault?.apy?.fees?.performance || 0) * 100, 0)}
+							<p className={'text-xxs text-neutral-600 md:text-xs'}>{'Performance fee'}</p>
+							<b className={'font-number text-xl text-neutral-500'}>
+								{formatPercent((currentVault?.details?.performanceFee || 0) / 100, 0)}
 							</b>
 						</div>
 					</div>

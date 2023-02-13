@@ -144,7 +144,7 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVau
 					</div>
 				</div>
 			</div>
-		</details>	
+		</details>
 	);
 }
 
