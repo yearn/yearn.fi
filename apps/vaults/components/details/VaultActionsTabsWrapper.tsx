@@ -21,14 +21,13 @@ type TTabsOptions = {
 	value: number;
 	label: string;
 	flowAction: Flow;
-	hidden?: (args: any) => boolean;
 }
 
 const tabs: TTabsOptions[] = [
 	{value: 0, label: 'Deposit', flowAction: Flow.Deposit},
 	{value: 1, label: 'Withdraw', flowAction: Flow.Withdraw},
 	{value: 2, label: 'Migrate', flowAction: Flow.Migrate},
-	{value: 3, label: '$OP BOOST', flowAction: Flow.Switch, hidden: (chainID: number): boolean => chainID !== 10}
+	{value: 3, label: '$OP BOOST', flowAction: Flow.Switch}
 ];
 function	getCurrentTab({isDepositing, hasMigration}: {isDepositing: boolean, hasMigration: boolean}): TTabsOptions {
 	if (hasMigration) {
