@@ -39,6 +39,11 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 				{token: toAddress(actionParams?.selectedOptionFrom?.value)},
 				{token: toAddress(actionParams?.selectedOptionTo?.value)}
 			]);
+		} else if ([Solver.INTERNAL_MIGRATION].includes(currentSolver)) {
+			await refresh([
+				{token: toAddress(actionParams?.selectedOptionFrom?.value)},
+				{token: toAddress(actionParams?.selectedOptionTo?.value)}
+			]);
 		} else if ([Solver.COWSWAP, Solver.PORTALS, Solver.WIDO].includes(currentSolver)) {
 			if (isDepositing) { //refresh input from zap wallet, refresh output from default
 				await Promise.all([
@@ -63,7 +68,7 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 	** (not connected) or if the tx is still pending.
 	**************************************************************************/
 	async function	onApproveFrom(): Promise<void> {
-		const	shouldApproveInfinite = currentSolver === Solver.PARTNER_CONTRACT || currentSolver === Solver.VANILLA;
+		const	shouldApproveInfinite = currentSolver === Solver.PARTNER_CONTRACT || currentSolver === Solver.VANILLA || currentSolver === Solver.INTERNAL_MIGRATION;
 		onApprove(
 			shouldApproveInfinite ? ethers.constants.MaxUint256 : actionParams?.amount.raw,
 			set_txStatusApprove,
@@ -80,6 +85,7 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 		txStatusApprove.pending || actionParams?.amount.raw.gt(formatBN(allowanceFrom?.raw)) || status !== 'success' && (
 			(currentSolver === Solver.VANILLA && isDepositing)
 			|| (currentSolver === Solver.CHAIN_COIN && !isDepositing)
+			|| (currentSolver === Solver.INTERNAL_MIGRATION)
 			|| (currentSolver === Solver.COWSWAP)
 			|| (currentSolver === Solver.WIDO)
 			|| (currentSolver === Solver.PARTNER_CONTRACT)
@@ -98,6 +104,23 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 				}
 				onClick={onApproveFrom}>
 				{'Approve'}
+			</Button>
+		);
+	}
+
+	if (currentSolver === Solver.INTERNAL_MIGRATION) {
+		return (
+			<Button
+				onClick={async (): Promise<void> => onExecuteDeposit(set_txStatusExecuteDeposit, onSuccess)}
+				className={'w-full'}
+				isBusy={txStatusExecuteDeposit.pending}
+				isDisabled={
+					!isActive ||
+					actionParams?.amount.raw.isZero() ||
+					actionParams?.amount.raw.gt(maxDepositPossible.raw) ||
+					isLoadingExpectedOut
+				}>
+				{'Migrate'}
 			</Button>
 		);
 	}

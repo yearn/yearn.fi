@@ -119,7 +119,7 @@
 	@apply flex flex-row items-center space-x-4 md:space-x-6;
 }
 .yearn--table-token-section-item-image {
-	@apply h-8 min-h-[32px] w-8 min-w-[32px] rounded-full bg-neutral-200 md:flex md:h-10 md:w-10;
+	@apply h-8 min-h-[32px] w-8 min-w-[32px] rounded-full md:flex md:h-10 md:w-10;
 }
 .yearn--table-data-section {
 	@apply col-span-5 grid grid-cols-1 gap-x-0 md:gap-x-7 md:grid-cols-8 gap-y-0;

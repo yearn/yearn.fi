@@ -5,7 +5,7 @@ import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useLocalStorage} from '@yearn-finance/web-lib/hooks';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {addressZero, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import {DEFAULT_SLIPPAGE} from '@common/utils/constants';
 
@@ -21,11 +21,12 @@ export type	TYearnContext = {
 	prices: TDict<string>,
 	tokens: TDict<TYDaemonToken>,
 	vaults: TDict<TYearnVault | undefined>,
+	vaultsMigrations: TDict<TYearnVault | undefined>,
 	isLoadingVaultList: boolean,
-	mutateVaultList: VoidPromiseFunction
 	zapSlippage: number,
-	set_zapSlippage: (value: number) => void
 	zapProvider: Solver,
+	mutateVaultList: VoidPromiseFunction
+	set_zapSlippage: (value: number) => void
 	set_zapProvider: (value: Solver) => void
 }
 const	defaultProps: TYearnContext = {
@@ -37,12 +38,13 @@ const	defaultProps: TYearnContext = {
 	},
 	prices: {},
 	tokens: {},
-	vaults: {[addressZero]: undefined},
+	vaults: {},
+	vaultsMigrations: {},
 	isLoadingVaultList: false,
-	mutateVaultList: async (): Promise<void> => Promise.resolve(),
 	zapSlippage: 0.1,
-	set_zapSlippage: (): void => undefined,
 	zapProvider: Solver.COWSWAP,
+	mutateVaultList: async (): Promise<void> => Promise.resolve(),
+	set_zapSlippage: (): void => undefined,
 	set_zapProvider: (): void => undefined
 };
 
@@ -81,6 +83,12 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 		{revalidateOnFocus: false}
 	) as SWRResponse;
 
+	const	{data: vaultsMigrations} = useSWR(
+		`${baseAPISettings.yDaemonBaseURI}/${safeChainID}/vaults/all?migratable=nodust`,
+		baseFetcher,
+		{revalidateOnFocus: false}
+	) as SWRResponse;
+
 	const	{data: earned} = useSWR(
 		address ? `${baseAPISettings.yDaemonBaseURI}/${safeChainID}/earned/${address}` : null,
 		baseFetcher,
@@ -89,21 +97,24 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 
 	const	vaultsObject = useMemo((): TYearnVaultsMap => {
 		const	_vaultsObject = (vaults || []).reduce((acc: TYearnVaultsMap, vault: TYearnVault): TYearnVaultsMap => {
-			//Hide vaults with a migration available
 			if (vault.migration.available) {
 				return acc;
 			}
-
-			//Hide vaults with APY 0
-			// if (vault.apy.net_apy === 0) {
-			// 	return acc;
-			// }
-
 			acc[toAddress(vault.address)] = vault;
 			return acc;
 		}, {});
 		return _vaultsObject;
 	}, [vaults]);
+
+	const	vaultsMigrationsObject = useMemo((): TYearnVaultsMap => {
+		const	_migratableVaultsObject = (vaultsMigrations || []).reduce((acc: TDict<TYearnVault>, vault: TYearnVault): TDict<TYearnVault> => {
+			if (toAddress(vault.address) !== toAddress(vault.migration?.address)) {
+				acc[toAddress(vault.address)] = vault;
+			}
+			return acc;
+		}, {});
+		return _migratableVaultsObject;
+	}, [vaultsMigrations]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	**	Setup and render the Context provider to use in the app.
@@ -118,9 +129,10 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 		zapProvider,
 		set_zapProvider,
 		vaults: {...vaultsObject},
+		vaultsMigrations: {...vaultsMigrationsObject},
 		isLoadingVaultList,
 		mutateVaultList
-	}), [currentPartner?.id, prices, tokens, earned, vaultsObject, isLoadingVaultList, mutateVaultList, zapSlippage, set_zapSlippage, zapProvider, set_zapProvider]);
+	}), [currentPartner?.id, prices, tokens, earned, zapSlippage, set_zapSlippage, zapProvider, set_zapProvider, vaultsObject, vaultsMigrationsObject, isLoadingVaultList, mutateVaultList]);
 
 	return (
 		<YearnContext.Provider value={contextValue}>

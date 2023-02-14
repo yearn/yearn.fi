@@ -5,7 +5,7 @@ import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
-import {ImageWithFallback} from '@common/components/ImageWithFallback';
+import TokenIcon from '@common/components/TokenIcon';
 import {useBalance} from '@common/hooks/useBalance';
 import {formatPercent, formatUSD, getVaultName} from '@common/utils';
 
@@ -37,13 +37,10 @@ function	VaultsListRow({currentVault}: {currentVault: TYearnVault}): ReactElemen
 				<div className={'yearn--table-token-section'}>
 					<div className={'yearn--table-token-section-item'}>
 						<div className={'yearn--table-token-section-item-image'}>
-							<ImageWithFallback
-								alt={vaultName}
-								width={40}
-								height={40}
-								quality={90}
-								src={`${process.env.BASE_YEARN_ASSETS_URI}/${safeChainID}/${toAddress(currentVault.token.address)}/logo-128.png`}
-								loading={'eager'} />
+							<TokenIcon
+								chainID={currentVault.chainID}
+								size={40}
+								token={currentVault.token} />
 						</div>
 						<p>{vaultName}</p>
 					</div>

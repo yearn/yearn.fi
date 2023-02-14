@@ -37,6 +37,7 @@ export type TInitSolverArgs = {
 	outputToken: TDropdownOption
 	inputAmount: BigNumber
 	isDepositing: boolean
+	migrator?: TAddress
 }
 
 export type TSolverContext = {

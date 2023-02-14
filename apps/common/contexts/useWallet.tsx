@@ -37,9 +37,10 @@ const	defaultProps = {
 const	WalletContext = createContext<TWalletContext>(defaultProps);
 export const WalletContextApp = memo(function WalletContextApp({children}: {children: ReactElement}): ReactElement {
 	const	{provider} = useWeb3();
-	const	{vaults, isLoadingVaultList, prices} = useYearn();
+	const	{vaults, vaultsMigrations, isLoadingVaultList, prices} = useYearn();
 	const	{onLoadStart, onLoadDone} = useUI();
 
+	//List all tokens related to yearn vaults
 	const	availableTokens = useMemo((): TUseBalancesTokens[] => {
 		if (isLoadingVaultList) {
 			return [];
@@ -75,25 +76,40 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 		return tokens;
 	}, [vaults, isLoadingVaultList]);
 
+	//List all vaults with a possible migration
+	const	migratableTokens = useMemo((): TUseBalancesTokens[] => {
+		const	tokens: TUseBalancesTokens[] = [];
+		Object.values(vaultsMigrations || {}).forEach((vault?: TYearnVault): void => {
+			if (!vault) {
+				return;
+			}
+			tokens.push({token: vault?.address});
+		});
+		return tokens;
+	}, [vaultsMigrations]);
+
+	// Fetch the balances
 	const	{data: balances, update, updateSome, nonce, isLoading} = useBalances({
 		provider: provider || getProvider(1),
-		tokens: availableTokens,
+		tokens: [...availableTokens, ...migratableTokens],
 		prices
 	});
 
+	//Compute the cumulatedValueInVaults
 	const	cumulatedValueInVaults = useMemo((): number => {
 		nonce; //Suppress warning
 
 		return (
 			Object.entries(balances).reduce((acc, [token, balance]): number => {
-				const	vault = vaults?.[toAddress(token)] ;
-				if (vault) {
+				if (vaults?.[toAddress(token)]) {
+					acc += balance.normalizedValue;
+				} else if (vaultsMigrations?.[toAddress(token)]) {
 					acc += balance.normalizedValue;
 				}
 				return acc;
 			}, 0)
 		);
-	}, [vaults, balances, nonce]);
+	}, [vaults, vaultsMigrations, balances, nonce]);
 
 	const	onRefresh = useCallback(async (tokenToUpdate?: TUseBalancesTokens[]): Promise<TDict<TBalanceData>> => {
 		if (tokenToUpdate) {

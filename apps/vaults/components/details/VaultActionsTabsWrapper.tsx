@@ -8,6 +8,7 @@ import VaultDetailsQuickActionsSwitch from '@vaults/components/details/actions/Q
 import VaultDetailsQuickActionsTo from '@vaults/components/details/actions/QuickActionsTo';
 import SettingsPopover from '@vaults/components/SettingsPopover';
 import {Flow, useActionFlow} from '@vaults/contexts/useActionFlow';
+import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import IconChevron from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
@@ -15,11 +16,13 @@ import type {ReactElement} from 'react';
 type TTabsOptions = {
 	value: number;
 	label: string;
+	flowAction: Flow;
 }
 
 const tabs: TTabsOptions[] = [
-	{value: 0, label: 'Deposit'},
-	{value: 1, label: 'Withdraw'}
+	{value: 0, label: 'Deposit', flowAction: Flow.Deposit},
+	{value: 1, label: 'Withdraw', flowAction: Flow.Withdraw},
+	{value: 2, label: 'Migrate', flowAction: Flow.Migrate}
 ];
 function	getCurrentTab({isDepositing, hasMigration}: {isDepositing: boolean, hasMigration: boolean}): TTabsOptions {
 	if (hasMigration) {
@@ -30,16 +33,18 @@ function	getCurrentTab({isDepositing, hasMigration}: {isDepositing: boolean, has
 
 function	VaultActionsTabsWrapper(): ReactElement {
 	const {currentVault, onSwitchSelectedOptions, isDepositing, actionParams} = useActionFlow();
-	const [possibleTabs, set_possibleTabs] = useState<TTabsOptions[]>(tabs);
+	const [possibleTabs, set_possibleTabs] = useState<TTabsOptions[]>([tabs[0], tabs[1]]);
 	const [currentTab, set_currentTab] = useState<TTabsOptions>(
 		getCurrentTab({isDepositing, hasMigration: currentVault?.migration?.available})
 	);
 
 	useUpdateEffect((): void => {
 		if (currentVault?.migration?.available && actionParams.isReady) {
-			set_possibleTabs([tabs[1]]);
-			set_currentTab(tabs[1]);
-			onSwitchSelectedOptions(Flow.Withdraw);
+			performBatchedUpdates((): void => {
+				set_possibleTabs([tabs[1], tabs[2]]);
+				set_currentTab(tabs[2]);
+				onSwitchSelectedOptions(Flow.Migrate);
+			});
 		}
 	}, [currentVault?.migration?.available, actionParams.isReady]);
 
@@ -60,7 +65,7 @@ function	VaultActionsTabsWrapper(): ReactElement {
 								key={`desktop-${tab.value}`}
 								onClick={(): void => {
 									set_currentTab(tab);
-									onSwitchSelectedOptions(Flow.Switch);
+									onSwitchSelectedOptions(tab.flowAction);
 								}}>
 								<p
 									title={tab.label}
@@ -80,7 +85,7 @@ function	VaultActionsTabsWrapper(): ReactElement {
 									return;
 								}
 								set_currentTab(newTab);
-								onSwitchSelectedOptions(Flow.Switch);
+								onSwitchSelectedOptions(newTab.flowAction);
 							}}>
 							{({open}): ReactElement => (
 								<>

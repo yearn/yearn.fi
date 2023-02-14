@@ -9,7 +9,7 @@ import Wrapper from '@vaults/Wrapper';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {ImageWithFallback} from '@common/components/ImageWithFallback';
+import TokenIcon from '@common/components/TokenIcon';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import {variants} from '@common/utils/animations';
@@ -23,8 +23,8 @@ function Index({router, vaultData}: {router: NextRouter, vaultData: TYearnVault}
 	const {address, isActive} = useWeb3();
 	const {safeChainID} = useChainID();
 	const {vaults} = useYearn();
-	const currentVault = useRef<TYearnVault>(vaults[toAddress(router.query.address as string)] as TYearnVault || vaultData);
 	const {refresh} = useWallet();
+	const currentVault = useRef<TYearnVault>(vaults[toAddress(router.query.address as string)] as TYearnVault || vaultData);
 
 	useEffect((): void => {
 		if (address && isActive) {
@@ -48,11 +48,9 @@ function Index({router, vaultData}: {router: NextRouter, vaultData: TYearnVault}
 					animate={'enter'}
 					variants={variants}
 					className={'z-50 -mt-6 h-12 w-12 cursor-pointer md:-mt-36 md:h-[72px] md:w-[72px]'}>
-					<ImageWithFallback
-						src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault?.current?.chainID || safeChainID}/${toAddress(currentVault.current.token.address)}/logo-128.png`}
-						alt={''}
-						width={72}
-						height={72} />
+					<TokenIcon
+						chainID={currentVault?.current?.chainID || safeChainID}
+						token={currentVault?.current?.token} />
 				</motion.div>
 			</header>
 
