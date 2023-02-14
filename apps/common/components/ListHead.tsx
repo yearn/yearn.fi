@@ -2,23 +2,23 @@ import React, {useCallback} from 'react';
 import IconChevronPlain from '@common/icons/IconChevronPlain';
 
 import type {ReactElement} from 'react';
-import type {TPossibleSortDirection} from '@vaults/hooks/useSortVaults';
+import type {TSortDirection} from '@common/types/types';
 
 export type TListHead = {
 	items: {
 		label: string,
 		value: string,
-		sortable: boolean,
+		sortable?: boolean,
 		className?: string
 	}[],
 	dataClassName?: string,
 	sortBy: string,
-	sortDirection: TPossibleSortDirection,
-	onSort: (sortBy: string, sortDirection: TPossibleSortDirection) => void
+	sortDirection: TSortDirection,
+	onSort: (sortBy: string, sortDirection: TSortDirection) => void
 }
 
 function	ListHead({items, dataClassName, sortBy, sortDirection, onSort}: TListHead): ReactElement {
-	const toggleSortDirection = (newSortBy: string): TPossibleSortDirection => {
+	const toggleSortDirection = (newSortBy: string): TSortDirection => {
 		return sortBy === newSortBy ? (
 			sortDirection === '' ? 'desc' : sortDirection === 'desc' ? 'asc' : 'desc'
 		) : 'desc';

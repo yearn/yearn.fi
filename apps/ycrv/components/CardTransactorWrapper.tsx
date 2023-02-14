@@ -17,7 +17,7 @@ import {formatPercent, getAmountWithSlippage, getVaultAPY} from '@common/utils';
 import {approveERC20} from '@common/utils/actions/approveToken';
 import {deposit} from '@common/utils/actions/deposit';
 import {useYCRV} from '@yCRV/contexts/useYCRV';
-import {zap} from '@yCRV/utils/actions/zap';
+import {zap} from '@yCRV/utils/actions';
 import {LEGACY_OPTIONS_FROM, LEGACY_OPTIONS_TO} from '@yCRV/utils/zapOptions';
 
 import type {BigNumber} from 'ethers';

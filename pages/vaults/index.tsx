@@ -21,8 +21,9 @@ import {getVaultName} from '@common/utils';
 import type {NextRouter} from 'next/router';
 import type {ReactElement, ReactNode} from 'react';
 import type {TAddress} from '@yearn-finance/web-lib/utils/address';
+import type {TSortDirection} from '@common/types/types';
 import type {TYearnVault} from '@common/types/yearn';
-import type {TPossibleSortBy, TPossibleSortDirection} from '@vaults/hooks/useSortVaults';
+import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 
 function	HeaderUserPosition(): ReactElement {
 	const	{cumulatedValueInVaults} = useWallet();
@@ -60,7 +61,7 @@ function	HeaderUserPosition(): ReactElement {
 function	Index(): ReactElement {
 	const	{balances, balancesNonce} = useWallet();
 	const	{vaults, vaultsMigrations, isLoadingVaultList} = useYearn();
-	const 	[sort, set_sort] = useSessionStorage<{sortBy: TPossibleSortBy, sortDirection: TPossibleSortDirection}>(
+	const 	[sort, set_sort] = useSessionStorage<{sortBy: TPossibleSortBy, sortDirection: TSortDirection}>(
 		'yVaultsSorting', {sortBy: 'apy', sortDirection: 'desc'}
 	);
 	const	{shouldHideDust, shouldHideLowTVLVaults, category, searchValue, set_category, set_searchValue} = useAppSettings();
@@ -159,7 +160,7 @@ function	Index(): ReactElement {
 	**	The use of useCallback() is to prevent the method from being re-created on every render.
 	**********************************************************************************************/
 	const	onSort = useCallback((newSortBy: string, newSortDirection: string): void => {
-		set_sort({sortBy: newSortBy as TPossibleSortBy, sortDirection: newSortDirection as TPossibleSortDirection});
+		set_sort({sortBy: newSortBy as TPossibleSortBy, sortDirection: newSortDirection as TSortDirection});
 	}, [set_sort]);
 
 	/* 🔵 - Yearn Finance **************************************************************************

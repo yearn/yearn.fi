@@ -1,24 +1,25 @@
 import React, {useCallback, useMemo, useState} from 'react';
 import Balancer from 'react-wrap-balancer';
 import Link from 'next/link';
-import {BigNumber} from 'ethers';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useSessionStorage} from '@yearn-finance/web-lib/hooks/useSessionStorage';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatBN, formatToNormalizedValue, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import ListHead from '@common/components/ListHead';
 import ListHero from '@common/components/ListHero';
 import {useCurve} from '@common/contexts/useCurve';
 import {useYearn} from '@common/contexts/useYearn';
+import {stringSort} from '@common/utils/sort';
 import {GaugeListEmpty} from '@yBribe/components/claim/GaugeListEmpty';
 import {GaugeListRow} from '@yBribe/components/claim/GaugeListRow';
 import {useBribes} from '@yBribe/contexts/useBribes';
 import Wrapper from '@yBribe/Wrapper';
 
+import type {BigNumber} from 'ethers';
 import type {NextRouter} from 'next/router';
 import type {ReactElement, ReactNode} from 'react';
 import type {TCurveGauges} from '@common/types/curves';
-import type {TPossibleSortDirection} from '@vaults/hooks/useSortVaults';
+import type {TSortDirection} from '@common/types/types';
 
 function	GaugeList(): ReactElement {
 	const	{tokens, prices} = useYearn();
@@ -26,7 +27,7 @@ function	GaugeList(): ReactElement {
 	const	{gauges} = useCurve();
 	const	[category, set_category] = useState('all');
 	const	[searchValue, set_searchValue] = useState('');
-	const 	[sort, set_sort] = useSessionStorage<{sortBy: string, sortDirection: TPossibleSortDirection}>(
+	const 	[sort, set_sort] = useSessionStorage<{sortBy: string, sortDirection: TSortDirection}>(
 		'yGaugeListBribeSorting', {sortBy: '', sortDirection: 'desc'}
 	);
 
@@ -67,22 +68,17 @@ function	GaugeList(): ReactElement {
 
 	const	sortedGauges = useMemo((): TCurveGauges[] => {
 		if (sort.sortBy === 'name') {
-			return searchedGauges.sort((a, b): number => {
-				if (sort.sortDirection === 'desc') {
-					return a.name.localeCompare(b.name);
-				}
-				return b.name.localeCompare(a.name);
-			});
+			return searchedGauges.sort((a, b): number => stringSort({a: a.name, b: b.name, sortDirection: sort.sortDirection}));
 		}
 		if (sort.sortBy === 'rewards') {
 			return searchedGauges.sort((a, b): number => {
 				const allARewards = Object.entries(currentRewards?.v3?.[toAddress(a.gauge)] || {}).reduce((acc, [address, value]): number => {
-					const aBribeValue = getRewardValue(address, value || BigNumber.from(0));
+					const aBribeValue = getRewardValue(address, value || Zero);
 					return acc + aBribeValue;
 				}, 0);
 
 				const allBRewards = Object.entries(currentRewards?.v3?.[toAddress(b.gauge)] || {}).reduce((acc, [address, value]): number => {
-					const aBribeValue = getRewardValue(address, value || BigNumber.from(0));
+					const aBribeValue = getRewardValue(address, value || Zero);
 					return acc + aBribeValue;
 				}, 0);
 
@@ -95,12 +91,12 @@ function	GaugeList(): ReactElement {
 		if (sort.sortBy === 'pendingRewards') {
 			return searchedGauges.sort((a, b): number => {
 				const allARewards = Object.entries(nextRewards?.v3?.[toAddress(a.gauge)] || {}).reduce((acc, [address, value]): number => {
-					const aBribeValue = getRewardValue(address, value || BigNumber.from(0));
+					const aBribeValue = getRewardValue(address, value || Zero);
 					return acc + aBribeValue;
 				}, 0);
 
 				const allBRewards = Object.entries(nextRewards?.v3?.[toAddress(b.gauge)] || {}).reduce((acc, [address, value]): number => {
-					const aBribeValue = getRewardValue(address, value || BigNumber.from(0));
+					const aBribeValue = getRewardValue(address, value || Zero);
 					return acc + aBribeValue;
 				}, 0);
 
@@ -115,7 +111,7 @@ function	GaugeList(): ReactElement {
 	}, [sort.sortBy, sort.sortDirection, searchedGauges, currentRewards?.v3, getRewardValue, nextRewards?.v3]);
 	
 	const	onSort = useCallback((newSortBy: string, newSortDirection: string): void => {
-		set_sort({sortBy: newSortBy, sortDirection: newSortDirection as TPossibleSortDirection});
+		set_sort({sortBy: newSortBy, sortDirection: newSortDirection as TSortDirection});
 	}, [set_sort]);
 
 	return (

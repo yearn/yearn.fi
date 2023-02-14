@@ -32,6 +32,7 @@ function	useAsync<T>(
 	useEffect((): void => {
 		runNonce.current += 1;
 		callCallback();
+	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [callCallback, ...effectDependencies]);
 
 	return ([isLoading ? defaultValue : (data || defaultValue), isLoading, callCallback]);

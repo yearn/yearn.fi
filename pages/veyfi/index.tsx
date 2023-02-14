@@ -35,7 +35,6 @@ function Index(): ReactElement {
 			</div>
 
 			<Tabs
-				className={'min-h-[356px]'}
 				items={[
 					{id: 'lock', label: 'Lock YFI', content: <LockTab />},
 					{id: 'manage', label: 'Manage lock', content: <ManageLockTab />},
