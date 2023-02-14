@@ -173,7 +173,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 		if (isInputTokenEth || isOutputTokenEth) {
 			return Solver.CHAIN_COIN;
 		}
-		if (currentVault?.migration?.available && actionParams?.selectedOptionTo?.value === currentVault?.migration?.address) {
+		if (currentVault?.migration?.available && (toAddress(actionParams?.selectedOptionTo?.value) === toAddress((currentVault?.migration?.address)) {
 			return Solver.INTERNAL_MIGRATION;
 		}
 		if (isDepositing && actionParams?.selectedOptionFrom?.solveVia?.includes(zapProvider) && !isSolverDisabled[zapProvider]) {

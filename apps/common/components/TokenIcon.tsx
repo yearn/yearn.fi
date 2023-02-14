@@ -14,7 +14,7 @@ function TokenIcon({
 	size?: number,
 	token: Partial<TYearnVaultToken>
 }): ReactElement {
-	const [imageType, set_imageType] = useState<'Vault' | 'Underlying'>('Vault');
+	const [imageType, set_imageType] = useState<'Vault' | 'Underlying' | 'Fallback'>('Vault');
 
 	function	renderMultipleAssetImage(): ReactElement {
 		if (token?.underlyingTokensAddresses?.length === 2) {
@@ -53,10 +53,17 @@ function TokenIcon({
 				<ImageWithFallback
 					loading={'eager'}
 					src={`${process.env.BASE_YEARN_ASSETS_URI}/${chainID}/${toAddress(token?.address)}/logo-128.png`}
-					onCatchError={(): void => set_imageType('Underlying')}
+					onCatchError={(): void => set_imageType('Fallback')}
 					alt={''}
-					width={72}
-					height={72} />
+					width={size}
+					height={size} />
+			) : imageType === 'Fallback' ? (
+				<ImageWithFallback
+					loading={'eager'}
+					src={'/placeholder.png'}
+					alt={''}
+					width={size}
+					height={size} />
 			) : (renderMultipleAssetImage())}
 		</>
 
