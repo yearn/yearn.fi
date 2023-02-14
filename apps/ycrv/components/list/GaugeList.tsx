@@ -119,7 +119,7 @@ function getVoteButtonProps(votes: TDict<BigNumber | undefined>): {
 	if (numGaugesWithVotes === 1) {
 		return {label: 'Vote for 1 gauge', isDisabled: false};
 	}
-	
+
 	return {
 		label: `Vote for ${numGaugesWithVotes} gauges`,
 		isDisabled: false
@@ -171,7 +171,7 @@ function GaugeList({gauges, gaugesVotes, isLoading, userInfo}: TProps): ReactEle
 				})
 				.perform();
 		}
-	
+
 	}, [isActive, mutateData, provider, toast, voteMany, votes]);
 
 	const onSort = useCallback((newSortBy: string, newSortDirection: string): void => {
@@ -223,18 +223,15 @@ function GaugeList({gauges, gaugesVotes, isLoading, userInfo}: TProps): ReactEle
 			);
 		}
 
-		const ITEMS_PER_PAGE = 6;
-
+		const ITEMS_PER_PAGE = 10;
 		const items = gauges.filter((g: ReactElement | null): boolean => !!g);
-
+		const endOffset = itemOffset + ITEMS_PER_PAGE;
+		const currentItems = items.slice(itemOffset, endOffset);
+		const pageCount = Math.ceil(items.length / ITEMS_PER_PAGE);
 		const handlePageClick = (event: {selected: number}): void => {
 			const newOffset = (event.selected * ITEMS_PER_PAGE) % items.length;
 			set_itemOffset(newOffset);
 		};
-
-		const endOffset = itemOffset + ITEMS_PER_PAGE;
-		const currentItems = items.slice(itemOffset, endOffset);
-		const pageCount = Math.ceil(items.length / ITEMS_PER_PAGE);
 
 		const {label, isDisabled} = getVoteButtonProps(votes);
 
@@ -266,11 +263,11 @@ function GaugeList({gauges, gaugesVotes, isLoading, userInfo}: TProps): ReactEle
 							</div>
 							<ReactPaginate
 								className={'isolate inline-flex -space-x-px rounded-md shadow-sm'}
-								previousLinkClassName={'border-neutral-400 text-gray-500 hover:bg-neutral-300 relative inline-flex items-center rounded-l-md border  p-2 text-sm font-medium focus:z-20'}
-								nextLinkClassName={'border-neutral-400 text-gray-500 hover:bg-neutral-300 relative inline-flex items-center rounded-r-md border p-2 text-sm font-medium focus:z-20'}
-								breakLinkClassName={'border-neutral-400 text-gray-700 relative inline-flex items-center border px-4 py-2 text-sm font-medium hover:bg-neutral-300'}
-								activeLinkClassName={'border-neutral-400 text-gray-500 hover:bg-neutral-300 relative hidden items-center border px-4 py-2 text-sm font-medium focus:z-20 md:inline-flex bg-neutral-300'}
-								pageLinkClassName={'border-neutral-400 text-gray-500 hover:bg-neutral-300 relative inline-flex items-center border px-4 py-2 text-sm font-medium focus:z-20'}
+								pageLinkClassName={'text-gray-500 hover:bg-neutral-300 relative inline-flex items-center px-4 py-2 text-sm font-medium focus:z-20 border border-neutral-400'}
+								previousLinkClassName={'text-gray-500 hover:bg-neutral-300 relative inline-flex items-center p-2 text-sm font-medium focus:z-20 border border-neutral-400'}
+								nextLinkClassName={'text-gray-500 hover:bg-neutral-300 relative inline-flex items-center p-2 text-sm font-medium focus:z-20 border border-neutral-400'}
+								breakLinkClassName={'text-gray-700 relative inline-flex items-center px-4 py-2 text-sm font-medium hover:bg-neutral-300 border border-neutral-400'}
+								activeLinkClassName={'text-gray-500 hover:bg-neutral-300 relative hidden items-center px-4 py-2 text-sm font-medium focus:z-20 md:inline-flex bg-neutral-300'}
 								disabledLinkClassName={'cursor-not-allowed bg-neutral-100 hover:bg-neutral-100'}
 								disabledClassName={'text-neutral-300'}
 								renderOnZeroPageCount={(): null => null}
