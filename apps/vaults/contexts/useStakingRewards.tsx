@@ -147,9 +147,11 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 		}
 
 		return stakingRewards.reduce<TDict<TPosition | undefined>>((acc, {address, stakingToken}): TDict<TPosition | undefined> => {
+			const earnedBalance = formatBN(positionsMap[address]?.earned.balance);
+			const earnedUnderlyingBalance = formatBN(positionsMap[address]?.earned.underlyingBalance);
 			acc[stakingToken] = {
-				balance: acc[stakingToken]?.balance.add(positionsMap[address]?.earned.balance ?? formatBN(0)) ?? formatBN(0),
-				underlyingBalance: acc[stakingToken]?.underlyingBalance.add(positionsMap[address]?.earned.underlyingBalance ?? formatBN(0)) ?? formatBN(0)
+				balance: formatBN(acc[stakingToken]?.balance.add(earnedBalance)),
+				underlyingBalance: formatBN(acc[stakingToken]?.underlyingBalance.add(earnedUnderlyingBalance))
 			};
 			return acc;
 		}, {});
