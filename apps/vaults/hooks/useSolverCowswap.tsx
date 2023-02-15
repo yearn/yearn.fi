@@ -122,7 +122,7 @@ export function useSolverCowswap(): TSolverContext {
 			return toNormalizedBN(quote?.quote?.buyAmount || 0, request?.current?.outputToken?.decimals || 18);
 		}
 		return toNormalizedBN(0);
-	}, [getQuote]);
+	}, [getBuyAmountWithSlippage, getQuote]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** signCowswapOrder is used to sign the order with the user's wallet. The signature is used
