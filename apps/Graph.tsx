@@ -83,7 +83,7 @@ function	Graph(): ReactElement {
 				))}
 			</select>
 			<div className={'my-10 border border-neutral-900'}>
-				<ResponsiveContainer width={'100%'} height={'100%'}>
+				<ResponsiveContainer width={'100%'} height={400}>
 					<AreaChart
 						margin={{
 							top: -58,
