@@ -50,7 +50,7 @@ function	Graph(): ReactElement {
 	const	[selectedVault, set_selectedVault] = useState('0xe9dc63083c464d6edccff23444ff3cfc6886f6fb');
 
 	const	strategyData = useMemo((): {name: number; value: number, total: string, treasury: string, strategist: string, data: TStrategyReport}[] => {
-		const	_reports = (draftData as TDict<TStrategyReport[]>)[selectedVault];
+		const	_reports = (draftData as unknown as TDict<TStrategyReport[]>)[selectedVault];
 		const reportsForGraph = (
 			_reports?.map((reports: TStrategyReport): {name: number; value: number, total: string, treasury: string, strategist: string, data: TStrategyReport} => ({
 				name: Number(reports.BlockNumber),
