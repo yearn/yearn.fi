@@ -183,7 +183,7 @@ function	Graph(): ReactElement {
 									<a
 										href={`https://etherscan.io/tx/${data.TxHash}`}
 										className={'font-number text-xs text-neutral-400 hover:underline'}>
-										{'(tx)'}
+										{truncateHex(data.TxHash, 6)}
 									</a>
 								</span>
 								<p className={'font-number text-xs text-neutral-400'}>
