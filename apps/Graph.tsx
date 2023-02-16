@@ -1,5 +1,6 @@
 import React, {Fragment, useMemo, useState} from 'react';
 import {Area, AreaChart, ResponsiveContainer, Tooltip} from 'recharts';
+import {useMountEffect, useUpdateEffect} from '@react-hookz/web';
 import {truncateHex} from '@yearn-finance/web-lib/utils/address';
 import {formatToNormalizedBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
@@ -48,6 +49,20 @@ export type TStrategyReport = {
 
 function	Graph(): ReactElement {
 	const	[selectedVault, set_selectedVault] = useState('0xe9dc63083c464d6edccff23444ff3cfc6886f6fb');
+
+	useMountEffect((): void => {
+		const urlParams = new URLSearchParams(window.location.search);
+		const vault = urlParams.get('vault');
+		if (vault) {
+			set_selectedVault(vault);
+		}
+	});
+
+	useUpdateEffect((): void => {
+		const urlParams = new URLSearchParams(window.location.search);
+		urlParams.set('vault', selectedVault);
+		window.history.replaceState({}, '', `${window.location.pathname}?${urlParams.toString()}`);
+	}, [selectedVault]);
 
 	const	strategyData = useMemo((): any[] => {
 		const	_reports = (draftData as unknown as TDict<TStrategyReport[]>)[selectedVault];
