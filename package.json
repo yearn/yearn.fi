@@ -1,6 +1,6 @@
 {
   "name": "yearnfi",
-  "version": "0.1.16",
+  "version": "0.1.23",
   "scripts": {
     "dev": "next",
     "dev:ts": "tsc --watch",
