@@ -1,5 +1,5 @@
 import React, {Fragment, useMemo, useState} from 'react';
-import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
+import {Area, AreaChart, ResponsiveContainer, Tooltip} from 'recharts';
 import {truncateHex} from '@yearn-finance/web-lib/utils/address';
 import {formatToNormalizedBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
@@ -49,12 +49,15 @@ export type TStrategyReport = {
 function	Graph(): ReactElement {
 	const	[selectedVault, set_selectedVault] = useState('0xe9dc63083c464d6edccff23444ff3cfc6886f6fb');
 
-	const	strategyData = useMemo((): {name: number; value: number, total: string, treasury: string, strategist: string, data: TStrategyReport}[] => {
+	const	strategyData = useMemo((): any[] => {
 		const	_reports = (draftData as unknown as TDict<TStrategyReport[]>)[selectedVault];
 		const reportsForGraph = (
-			_reports?.map((reports: TStrategyReport): {name: number; value: number, total: string, treasury: string, strategist: string, data: TStrategyReport} => ({
-				name: Number(reports.BlockNumber),
-				value: Number(formatToNormalizedBN(reports.Fees?.TotalCollectedFee || 0).normalized),
+			_reports?.map((reports: TStrategyReport): any => ({
+				name: truncateHex(reports.TxHash, 6),
+				value: Number(formatToNormalizedBN(reports.Gain || 0).normalized),
+				totalFeeRatio: formatPercent(Number(reports.Fees?.TotalFeeRatio) * 100, 2, 2),
+				treasuryFee: Number(formatToNormalizedBN(reports.Fees?.TreasuryCollectedFee || 0).normalized),
+				strategistFee: Number(formatToNormalizedBN(reports.Fees?.StrategistCollectedFee || 0).normalized),
 				total: reports.Fees?.TotalCollectedFee,
 				treasury: reports.Fees?.TreasuryCollectedFee,
 				strategist: reports.Fees?.StrategistCollectedFee,
@@ -80,41 +83,48 @@ function	Graph(): ReactElement {
 				))}
 			</select>
 			<div className={'my-10 border border-neutral-900'}>
-				<ResponsiveContainer width={'100%'} height={400}>
-					<LineChart
-						data={strategyData}>
-						<Line
-							className={'text-primary-600'}
-							type={'step'}
-							strokeWidth={2}
+				<ResponsiveContainer width={'100%'} height={'100%'}>
+					<AreaChart
+						margin={{
+							top: -58,
+							right: 0,
+							left: 0,
+							bottom: 0
+						}}
+						stackOffset={'expand'}
+						data={strategyData.filter((e): boolean => Number(e.value) > 0)}>
+						<Area
+							dataKey={'strategistFee'}
+							type={'monotone'}
+							stackId={'a'}
+							fill={'#5acae680'}
+							stroke={'#5acae6'}/>
+						<Area
+							dataKey={'treasuryFee'}
+							type={'monotone'}
+							stackId={'a'}
+							fill={'#fb878180'}
+							stroke={'#fb8781'}/>
+						<Area
 							dataKey={'value'}
-							stroke={'currentcolor'}
-							dot={false}
-							activeDot={(e): ReactElement => {
-								e.className = `${e.className} activeDot`;
-								return <circle {...e}></circle>;
-							}} />
-						<XAxis
-							dataKey={'name'}
-							hide />
-						<YAxis
-							orientation={'right'}
-							hide />
+							type={'monotone'}
+							stackId={'a'}
+							fill={'#000000'} />
 						<Tooltip
 							content={(e): ReactElement => {
-								const {active: isTooltipActive, payload, label} = e;
+								const {active: isTooltipActive, payload} = e;
 								if (!isTooltipActive || !payload) {
 									return <></>;
 								}
 								if (payload.length > 0) {
 									const [{payload: innerPayload}] = payload;
-									const {treasury, strategist, total, data} = innerPayload;
+									const {treasury, strategist, total, data, name} = innerPayload;
 
 									return (
 										<div className={'recharts-tooltip !w-96'}>
 											<div className={'mb-4'}>
 												<p className={'text-xs'}>
-													{label}
+													{name}
 												</p>
 											</div>
 											<div className={'flex flex-row items-center justify-between'}>
@@ -146,7 +156,7 @@ function	Graph(): ReactElement {
 								}
 								return <div />;
 							}} />
-					</LineChart>
+					</AreaChart>
 				</ResponsiveContainer>
 			</div>
 			<div className={'grid w-full grid-cols-1'}>
