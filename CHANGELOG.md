@@ -1,3 +1,59 @@
+# 0.1.23 (14/02/2023)
+- Add the vl-yCRV page by @karelianpie
+
+# 0.1.22 (13/02/2023)
+- Fix an issue with the deposit/approve button in the deposit/withdraw flow not being correctly updated
+- Update the default slippage value from `0.1` to `0.5`
+- Rename the `localStorage` variables to all use a specific format for Yearn
+- Fix the balances from being wipped if two `updateSome` are triggered at the same time because of a race condition
+- Update the `ActionFlow` and the tabs available in the vault details page to hide the `Deposit` tab for a deprecated vault
+- Update the `ImageWithFallback` to trigger a custom error catcher when the initial image is errored.
+- Update the `placeholder.png` with a better one
+- Prepare a new component for the mixed Tokens Icons (ex: for pools)
+- Update the `ValueAnimation` to use external better hooks for the flow
+- Add the `MigratableTokens` in the `useWallet` context instead of an external group of context to avoid code duplicate
+- Add a Migrate tab in the vault Details page to have a consistant flow for the migration, only available when a migration is possible for a given vault.
+- Add a new custom Solver `INTERNAL_MIGRATION` to handle the vault-to-vault migration
+- Fix an issue with the Frame Injector being triggered in loop
+
+
+# 0.1.21 (08/02/2023)
+- Move the `useBalances` hook to use some Service Workers to prevent UI freeze and have better performances 
+- Replace the multiple `useBalances` hook usage over the context to use the same global logic and avoid multiple balance list (making it easier to play with prices)
+- Rename unused components to `something.unused.tsx`
+- Add some more checks in various place to avoid undefined values and crashed
+- Fix the return value of the `useBalances` hook to only return the new balance fetched in `getBalances` function
+- Some cleaning and refactor to make code easier.
+
+# 0.1.20 (06/02/2023)
+- Replace the CowAppData to use a specific one for the UI
+- Add a fallback for the `useBalances` hook to use the default provider if the wallet one is down/unavailable
+- Add the Boost information on the vault page to display Curve's boost
+- Replace APY > 500 to `APY ≧ 500%` and sort the gauges by APY in the GaugeDropdown for the Vault Factory page.
+
+# 0.1.19 (30/01/2023)
+- Add redirections to twitter via `https://yearn.finance/twitter`
+- Add redirections to github via `https://yearn.finance/github`
+- Add redirections to telegram via `https://yearn.finance/telegram`
+- Add redirections to medium via `https://yearn.finance/medium`
+- Add redirections to governance via `https://yearn.finance/governance`
+- Add redirections to snapshot via `https://yearn.finance/snapshot`
+- Refactor the `useAsync` to use an external hook library with expected behaviors
+
+# 0.1.18 (24/01/2023)
+- Fix the markdown not being parsed in the vault token description section
+- Add a default check over nil/undef and a default fallback for the BigNumbers with `formatBN` and remove extra code
+- Add an info about the contract used in the yCRV about page
+- Add a fix on the signature of the coworder being triggered too early and breaking the logical flow
+- Add a `isDisabled` solver info, to be able to enable/disable a specific solver.
+- Replace the style of the `Connect Wallet` button to make it more visible
+- Correctly reset values on the solvers on error/after a success
+
+# 0.1.17 (23/01/2023)
+- Rework the `useBalances` hook to be lighter and more reliable
+- Fix some CSS issues on mobile and some global lint style
+- Fix the errored Vault logo when loading a vault page from the wrong network
+
 # 0.1.16
 - Add support for Solvers, aka external services used for zaps. Current zaps are Cowswap, Wido and Portals. Cowswap is implemented, Wido is waiting for a review from our security team, Portals is yet to be implemented.
 - Add and fetch a tokenList with a supportedZap feature to determine which solver can be used for this IN token
