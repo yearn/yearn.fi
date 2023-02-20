@@ -1,4 +1,4 @@
-import React, {createContext, useCallback, useContext, useMemo, useReducer, useState} from 'react';
+import React, {createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState} from 'react';
 import {useMountEffect, useUpdateEffect} from '@react-hookz/web';
 import {isSolverDisabled, Solver} from '@vaults/contexts/useSolver';
 import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
@@ -437,7 +437,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 	** feature.
 	** This list is always the same, and is not dependent on the vault.
 	**********************************************************************************************/
-	useUpdateEffect((): void => {
+	useEffect((): void => {
 		const	_possibleZapOptionsTo: TDropdownOption[] = [];
 		externalzapOutTokenList
 			.filter((): boolean => safeChainID === currentVault?.chainID) // Disable if we are on the wrong chain
