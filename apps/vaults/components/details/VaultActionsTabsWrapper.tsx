@@ -48,20 +48,24 @@ function	VaultActionsTabsWrapper(): ReactElement {
 	);
 
 	useUpdateEffect((): void => {
-		if (chainID === 10) {
-			performBatchedUpdates((): void => {
-				set_possibleTabs([tabs[0], tabs[1], tabs[3]]);
-				set_currentTab(tabs[0]);
-				onSwitchSelectedOptions(Flow.Switch);
-			});
-		} else if (currentVault?.migration?.available && actionParams.isReady) {
-			performBatchedUpdates((): void => {
-				set_possibleTabs([tabs[1], tabs[2]]);
-				set_currentTab(tabs[2]);
-				onSwitchSelectedOptions(Flow.Migrate);
-			});
+		let	_possibleTabs: TTabsOptions[] = [tabs[0], tabs[1]];
+		let	_currentTab = currentTab;
+		let _expectedFlow = currentTab.flowAction;
+		if (currentVault?.migration?.available && actionParams.isReady) {
+			_possibleTabs = [tabs[1], tabs[2]];
+			_currentTab = tabs[2]; // eslint-disable-line prefer-destructuring
+			_expectedFlow = Flow.Migrate;
 		}
-	}, [currentVault?.migration?.available, actionParams.isReady]);
+		if (chainID === 10 && hasStakingRewards) {
+			_possibleTabs.push(tabs[3]);
+		}
+
+		performBatchedUpdates((): void => {
+			set_possibleTabs(_possibleTabs);
+			set_currentTab(_currentTab);
+			onSwitchSelectedOptions(_expectedFlow);
+		});
+	}, [currentVault?.migration?.available, actionParams.isReady, hasStakingRewards, chainID]);
 
 	return (
 		<Fragment>
@@ -162,18 +166,16 @@ function	VaultActionsTabsWrapper(): ReactElement {
 					</div>
 				)}
 
-				{currentTab.value === 0 && currentSolver === Solver.OPTIMISM_BOOSTER && (
+				{currentTab.value === 0 && hasStakingRewards && willDepositAndStake ? (
 					<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
-						<div className={'w-full bg-green-400 p-2 md:px-6 md:py-4'}>
-							<b className={'text-base text-neutral-0'}>{'This is Optimism boosted Vault - your tokens will be automatically staked to have additional rewards!'}</b>
+						<div className={'w-full bg-up-only-green-400 p-2 md:px-6 md:py-4'}>
+							<b className={'text-base text-white'}>{'This is Optimism boosted Vault - your tokens will be automatically staked to have additional rewards!'}</b>
 						</div>
 					</div>
-				)}
-
-				{currentTab.value === 0 && hasStakingRewards && !willDepositAndStake && (
+				) : currentTab.value === 0 && hasStakingRewards && !willDepositAndStake && (
 					<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
-						<div className={'w-full bg-[#F0D308] p-2 md:px-6 md:py-4'}>
-							<b className={'text-base text-neutral-0'}>{'This is Optimism boosted Vault. If you want to get additional OP rewards you have to stake tokens manually on $OP BOOST tab after you deposit. It just works like this, anon'}</b>
+						<div className={'w-full bg-metaverse-sunset-400 p-2 md:px-6 md:py-4'}>
+							<b className={'text-base text-white'}>{'This is Optimism boosted Vault. If you want to get additional OP rewards you have to stake tokens manually on $OP BOOST tab after you deposit. It just works like this, anon'}</b>
 						</div>
 					</div>
 				)}
