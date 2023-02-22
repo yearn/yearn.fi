@@ -11,11 +11,11 @@ import SettingsPopover from '@vaults/components/SettingsPopover';
 import {Flow, useActionFlow} from '@vaults/contexts/useActionFlow';
 import {Solver} from '@vaults/contexts/useSolver';
 import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
-import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import IconChevron from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
+import type {TYearnVault} from '@common/types/yearn';
 
 type TTabsOptions = {
 	value: number;
@@ -36,27 +36,26 @@ function	getCurrentTab({isDepositing, hasMigration}: {isDepositing: boolean, has
 	return tabs.find((tab): boolean => tab.value === (isDepositing ? 0 : 1)) as TTabsOptions;
 }
 
-function	VaultActionsTabsWrapper(): ReactElement {
-	const {currentVault, onSwitchSelectedOptions, isDepositing, actionParams, currentSolver} = useActionFlow();
-	const {chainID} = useChainID();
+function	VaultActionsTabsWrapper({currentVault}: {currentVault: TYearnVault}): ReactElement {
+	const {onSwitchSelectedOptions, isDepositing, actionParams, currentSolver} = useActionFlow();
 	const [possibleTabs, set_possibleTabs] = useState<TTabsOptions[]>([tabs[0], tabs[1]]);
 	const {stakingRewardsByVault} = useStakingRewards();
 	const willDepositAndStake = currentSolver === Solver.OPTIMISM_BOOSTER;
 	const hasStakingRewards = !!stakingRewardsByVault[currentVault.address];
 	const [currentTab, set_currentTab] = useState<TTabsOptions>(
-		getCurrentTab({isDepositing, hasMigration: currentVault?.migration?.available})
+		getCurrentTab({isDepositing, hasMigration: currentVault.migration?.available})
 	);
 
 	useUpdateEffect((): void => {
 		let	_possibleTabs: TTabsOptions[] = [tabs[0], tabs[1]];
 		let	_currentTab = currentTab;
 		let _expectedFlow = currentTab.flowAction;
-		if (currentVault?.migration?.available && actionParams.isReady) {
+		if (currentVault.migration?.available && actionParams.isReady) {
 			_possibleTabs = [tabs[1], tabs[2]];
 			_currentTab = tabs[2]; // eslint-disable-line prefer-destructuring
 			_expectedFlow = Flow.Migrate;
 		}
-		if (chainID === 10 && hasStakingRewards) {
+		if (currentVault.chainID === 10 && hasStakingRewards) {
 			_possibleTabs.push(tabs[3]);
 		}
 
@@ -65,7 +64,7 @@ function	VaultActionsTabsWrapper(): ReactElement {
 			set_currentTab(_currentTab);
 			onSwitchSelectedOptions(_expectedFlow);
 		});
-	}, [currentVault?.migration?.available, actionParams.isReady, hasStakingRewards, chainID]);
+	}, [currentVault.migration?.available, actionParams.isReady, hasStakingRewards, currentVault.chainID]);
 
 	return (
 		<Fragment>
