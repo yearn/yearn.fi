@@ -15,14 +15,15 @@ import {useYearn} from '@common/contexts/useYearn';
 import {getVaultName} from '@common/utils';
 
 import type {ReactElement, ReactNode} from 'react';
+import type {TSortDirection} from '@common/types/types';
 import type {TYearnVault} from '@common/types/yearn';
-import type {TPossibleSortBy, TPossibleSortDirection} from '@vaults/hooks/useSortVaults';
+import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 
 function	VaultListFactory(): ReactElement {
 	const	{balances} = useWallet();
 	const	{vaults, isLoadingVaultList} = useYearn();
 	const	[sortBy, set_sortBy] = useState<TPossibleSortBy>('apy');
-	const	[sortDirection, set_sortDirection] = useState<TPossibleSortDirection>('');
+	const	[sortDirection, set_sortDirection] = useState<TSortDirection>('');
 	const	{shouldHideLowTVLVaults, shouldHideDust, searchValue, set_searchValue} = useAppSettings();
 	const	[category, set_category] = useState('Curve Factory Vaults');
 
@@ -94,7 +95,7 @@ function	VaultListFactory(): ReactElement {
 	const	onSort = useCallback((newSortBy: string, newSortDirection: string): void => {
 		performBatchedUpdates((): void => {
 			set_sortBy(newSortBy as TPossibleSortBy);
-			set_sortDirection(newSortDirection as TPossibleSortDirection);
+			set_sortDirection(newSortDirection as TSortDirection);
 		});
 	}, []);
 

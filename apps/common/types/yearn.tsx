@@ -51,6 +51,17 @@ export type TYearnVaultStrategy = {
 	}
 }
 
+export type TYearnVaultToken = {
+	address: TAddress,
+	underlyingTokensAddresses: TAddress[],
+	name: string,
+	display_name: string,
+	symbol: string,
+	description: string,
+	decimals: number,
+	icon: string,
+}
+
 export type TYearnVault = {
 	inception: number,
 	address: TAddress,
@@ -64,15 +75,7 @@ export type TYearnVault = {
 	category: string,
 	riskScore: number,
 	chainID: number,
-	token: {
-		address: TAddress,
-		name: string,
-		display_name: string,
-		symbol: string,
-		description: string,
-		decimals: number,
-		icon: string,
-	},
+	token: TYearnVaultToken,
 	tvl: {
 		total_assets: string,
 		tvl: number,
@@ -156,6 +159,7 @@ export type TYDaemonToken = {
 	description: string,
 	website: string,
 	categories: string[],
+	underlyingTokensAddresses: TAddress[],
 }
 
 export type TYDaemonHarvests = {

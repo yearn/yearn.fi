@@ -3,6 +3,7 @@ import {useDeepCompareMemo} from '@react-hookz/web';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useSolverChainCoin} from '@vaults/hooks/useSolverChainCoin';
 import {useSolverCowswap} from '@vaults/hooks/useSolverCowswap';
+import {useSolverInternalMigration} from '@vaults/hooks/useSolverInternalMigration';
 import {useSolverOptimismBooster} from '@vaults/hooks/useSolverOptimismBooster';
 import {useSolverPartnerContract} from '@vaults/hooks/useSolverPartnerContract';
 import {useSolverVanilla} from '@vaults/hooks/useSolverVanilla';
@@ -14,12 +15,13 @@ import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 
 import type {TNormalizedBN} from '@common/types/types';
-import type {TWithSolver} from '@vaults/types/solvers';
+import type {TInitSolverArgs, TWithSolver} from '@vaults/types/solvers';
 
 export enum	Solver {
 	VANILLA = 'Vanilla',
 	PARTNER_CONTRACT = 'PartnerContract',
 	CHAIN_COIN = 'ChainCoin',
+	INTERNAL_MIGRATION = 'InternalMigration',
 	OPTIMISM_BOOSTER = 'OptimismBooster',
 	COWSWAP = 'Cowswap',
 	WIDO = 'Wido',
@@ -30,6 +32,7 @@ export const isSolverDisabled = {
 	[Solver.VANILLA]: false,
 	[Solver.PARTNER_CONTRACT]: false,
 	[Solver.CHAIN_COIN]: false,
+	[Solver.INTERNAL_MIGRATION]: false,
 	[Solver.COWSWAP]: false,
 	[Solver.OPTIMISM_BOOSTER]: false,
 	[Solver.WIDO]: true, //Audit ongoing
@@ -51,12 +54,13 @@ const	DefaultWithSolverContext: TWithSolver = {
 const		WithSolverContext = createContext<TWithSolver>(DefaultWithSolverContext);
 function	WithSolverContextApp({children}: {children: React.ReactElement}): React.ReactElement {
 	const {address} = useWeb3();
-	const {actionParams, currentSolver, isDepositing} = useActionFlow();
+	const {currentVault, actionParams, currentSolver, isDepositing} = useActionFlow();
 	const cowswap = useSolverCowswap();
 	const wido = useSolverWido();
 	const vanilla = useSolverVanilla();
 	const chainCoin = useSolverChainCoin();
 	const partnerContract = useSolverPartnerContract();
+	const internalMigration = useSolverInternalMigration();
 	const optimismBooster = useSolverOptimismBooster();
 	const [currentSolverState, set_currentSolverState] = useState(vanilla);
 	const [isLoading, set_isLoading] = useState(false);
@@ -71,7 +75,7 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 		set_isLoading(true);
 
 		let quote: TNormalizedBN = toNormalizedBN(0);
-		const request = {
+		const request: TInitSolverArgs = {
 			from: toAddress(address || ''),
 			inputToken: actionParams?.selectedOptionFrom,
 			outputToken: actionParams?.selectedOptionTo,
@@ -142,6 +146,14 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 					set_isLoading(false);
 				});
 				break;
+			case Solver.INTERNAL_MIGRATION:
+				request.migrator = currentVault.migration.contract;
+				quote = await internalMigration.init(request);
+				performBatchedUpdates((): void => {
+					set_currentSolverState({...internalMigration, quote});
+					set_isLoading(false);
+				});
+				break;
 			default:
 				quote = await vanilla.init(request);
 				performBatchedUpdates((): void => {
@@ -149,7 +161,7 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 					set_isLoading(false);
 				});
 		}
-	}, [address, actionParams, currentSolver, cowswap.init, vanilla.init, wido.init, isDepositing, optimismBooster.init]); //Ignore the warning, it's a false positive
+	}, [address, actionParams, currentSolver, cowswap.init, vanilla.init, wido.init, internalMigration.init, optimismBooster.init, isDepositing, currentVault.migration.contract]); //Ignore the warning, it's a false positive
 
 	useDebouncedEffect((): void => {
 		onUpdateSolver();

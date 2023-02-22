@@ -1,4 +1,4 @@
-import React, {Fragment, useMemo, useState} from 'react';
+import React, {Fragment, useState} from 'react';
 import Link from 'next/link';
 import {Listbox, Transition} from '@headlessui/react';
 import {useUpdateEffect} from '@react-hookz/web';
@@ -9,39 +9,63 @@ import VaultDetailsQuickActionsTo from '@vaults/components/details/actions/Quick
 import {RewardsTab} from '@vaults/components/RewardsTab';
 import SettingsPopover from '@vaults/components/SettingsPopover';
 import {Flow, useActionFlow} from '@vaults/contexts/useActionFlow';
-import {Solver, useSolver} from '@vaults/contexts/useSolver';
+import {Solver} from '@vaults/contexts/useSolver';
 import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
+import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
+import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import IconChevron from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
-import type {TYearnVault} from '@common/types/yearn';
 
 type TTabsOptions = {
 	value: number;
 	label: string;
-	isHidden?: boolean;
+	flowAction: Flow;
 }
 
-function VaultActionsTabsWrapper({currentVault}: {currentVault: TYearnVault}): ReactElement {
-	const {onSwitchSelectedOptions, isDepositing, actionParams} = useActionFlow();
-	const [selectedTabIndex, set_selectedTabIndex] = useState(currentVault.migration.available ? 1 : isDepositing ? 0 : 1);
+const tabs: TTabsOptions[] = [
+	{value: 0, label: 'Deposit', flowAction: Flow.Deposit},
+	{value: 1, label: 'Withdraw', flowAction: Flow.Withdraw},
+	{value: 2, label: 'Migrate', flowAction: Flow.Migrate},
+	{value: 3, label: '$OP BOOST', flowAction: Flow.Switch}
+];
+function	getCurrentTab({isDepositing, hasMigration}: {isDepositing: boolean, hasMigration: boolean}): TTabsOptions {
+	if (hasMigration) {
+		return tabs[1];
+	}
+	return tabs.find((tab): boolean => tab.value === (isDepositing ? 0 : 1)) as TTabsOptions;
+}
+
+function	VaultActionsTabsWrapper(): ReactElement {
+	const {currentVault, onSwitchSelectedOptions, isDepositing, actionParams, currentSolver} = useActionFlow();
+	const {chainID} = useChainID();
+	const [possibleTabs, set_possibleTabs] = useState<TTabsOptions[]>([tabs[0], tabs[1]]);
 	const {stakingRewardsByVault} = useStakingRewards();
-	const {currentSolver} = useSolver();
 	const willDepositAndStake = currentSolver === Solver.OPTIMISM_BOOSTER;
 	const hasStakingRewards = !!stakingRewardsByVault[currentVault.address];
-	const tabs = useMemo((): TTabsOptions[] => [
-		{value: 0, label: 'Deposit', isHidden: currentVault.migration.available && actionParams.isReady},
-		{value: 1, label: 'Withdraw'},
-		{value: 2, label: '$OP BOOST', isHidden: !hasStakingRewards}
-	], [currentVault.migration.available, actionParams.isReady, hasStakingRewards]);
-	const currentTab = useMemo((): TTabsOptions => tabs.find((tab): boolean => tab.value === selectedTabIndex) as TTabsOptions, [selectedTabIndex, tabs]);
+	const [currentTab, set_currentTab] = useState<TTabsOptions>(
+		getCurrentTab({isDepositing, hasMigration: currentVault?.migration?.available})
+	);
 
 	useUpdateEffect((): void => {
-		if (currentVault.migration.available && actionParams.isReady) {
-			set_selectedTabIndex(1);
-			onSwitchSelectedOptions(Flow.Withdraw);
+		let	_possibleTabs: TTabsOptions[] = [tabs[0], tabs[1]];
+		let	_currentTab = currentTab;
+		let _expectedFlow = currentTab.flowAction;
+		if (currentVault?.migration?.available && actionParams.isReady) {
+			_possibleTabs = [tabs[1], tabs[2]];
+			_currentTab = tabs[2]; // eslint-disable-line prefer-destructuring
+			_expectedFlow = Flow.Migrate;
 		}
-	}, [currentVault.migration.available, actionParams.isReady]);
+		if (chainID === 10 && hasStakingRewards) {
+			_possibleTabs.push(tabs[3]);
+		}
+
+		performBatchedUpdates((): void => {
+			set_possibleTabs(_possibleTabs);
+			set_currentTab(_currentTab);
+			onSwitchSelectedOptions(_expectedFlow);
+		});
+	}, [currentVault?.migration?.available, actionParams.isReady, hasStakingRewards, chainID]);
 
 	return (
 		<Fragment>
@@ -55,18 +79,16 @@ function VaultActionsTabsWrapper({currentVault}: {currentVault: TYearnVault}): R
 			<div aria-label={'Vault Actions'} className={'col-span-12 mb-4 flex flex-col bg-neutral-100'}>
 				<div className={'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'}>
 					<nav className={'hidden flex-row items-center space-x-10 md:flex'}>
-						{tabs.filter((tab): boolean => !tab.isHidden).map((tab): ReactElement => (
+						{possibleTabs.map((tab): ReactElement => (
 							<button
 								key={`desktop-${tab.value}`}
 								onClick={(): void => {
-									if ((tab.value === 0 && !isDepositing) || (tab.value === 1 && isDepositing)) {
-										onSwitchSelectedOptions(Flow.Switch);
-									}
-									set_selectedTabIndex(tab.value);
+									set_currentTab(tab);
+									onSwitchSelectedOptions(tab.flowAction);
 								}}>
 								<p
 									title={tab.label}
-									aria-selected={tab.value === selectedTabIndex}
+									aria-selected={currentTab.value === tab.value}
 									className={'hover-fix tab'}>
 									{tab.label}
 								</p>
@@ -77,11 +99,12 @@ function VaultActionsTabsWrapper({currentVault}: {currentVault: TYearnVault}): R
 						<Listbox
 							value={currentTab.label}
 							onChange={(value): void => {
-								const index = Number(value);
-								if ((index === 0 && !isDepositing) || (index === 1 && isDepositing)) {
-									onSwitchSelectedOptions(Flow.Switch);
+								const	newTab = tabs.find((tab): boolean => tab.value === Number(value));
+								if (!newTab) {
+									return;
 								}
-								set_selectedTabIndex(index);
+								set_currentTab(newTab);
+								onSwitchSelectedOptions(newTab.flowAction);
 							}}>
 							{({open}): ReactElement => (
 								<>
@@ -105,7 +128,7 @@ function VaultActionsTabsWrapper({currentVault}: {currentVault: TYearnVault}): R
 										leaveFrom={'transform scale-100 opacity-100'}
 										leaveTo={'transform scale-95 opacity-0'}>
 										<Listbox.Options className={'yearn--listbox-menu'}>
-											{tabs.filter((tab): boolean => !tab.isHidden).map((tab): ReactElement => (
+											{possibleTabs.map((tab): ReactElement => (
 												<Listbox.Option
 													className={'yearn--listbox-menu-item'}
 													key={tab.value}
@@ -126,7 +149,9 @@ function VaultActionsTabsWrapper({currentVault}: {currentVault: TYearnVault}): R
 				</div>
 				<div className={'-mt-0.5 h-0.5 w-full bg-neutral-300'} />
 
-				{selectedTabIndex !== 2 && (
+				{currentTab.value === 3 ? (
+					<RewardsTab currentVault={currentVault} />
+				) : (
 					<div className={'col-span-12 flex flex-col space-x-0 space-y-2 bg-neutral-100 p-4 md:flex-row md:space-x-4 md:space-y-0 md:py-6 md:px-8'}>
 						<VaultDetailsQuickActionsFrom />
 						<VaultDetailsQuickActionsSwitch />
@@ -141,22 +166,16 @@ function VaultActionsTabsWrapper({currentVault}: {currentVault: TYearnVault}): R
 					</div>
 				)}
 
-				{selectedTabIndex === 2 && (
-					<RewardsTab currentVault={currentVault} />
-				)}
-
-				{selectedTabIndex === 0 && hasStakingRewards && willDepositAndStake && (
+				{currentTab.value === 0 && hasStakingRewards && willDepositAndStake ? (
 					<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
-						<div className={'w-full bg-green-400 p-2 md:px-6 md:py-4'}>
-							<b className={'text-base text-neutral-0'}>{'This is Optimism boosted Vault - your tokens will be automatically staked to have additional rewards!'}</b>
+						<div className={'w-full bg-up-only-green-400 p-2 md:px-6 md:py-4'}>
+							<b className={'text-base text-white'}>{'This is Optimism boosted Vault - your tokens will be automatically staked to have additional rewards!'}</b>
 						</div>
 					</div>
-				)}
-
-				{selectedTabIndex === 0 && hasStakingRewards && !willDepositAndStake && (
+				) : currentTab.value === 0 && hasStakingRewards && !willDepositAndStake && (
 					<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
-						<div className={'w-full bg-[#F0D308] p-2 md:px-6 md:py-4'}>
-							<b className={'text-base text-neutral-0'}>{'This is Optimism boosted Vault. If you want to get additional OP rewards you have to stake tokens manually on $OP BOOST tab after you deposit. It just works like this, anon'}</b>
+						<div className={'w-full bg-metaverse-sunset-400 p-2 md:px-6 md:py-4'}>
+							<b className={'text-base text-white'}>{'This is Optimism boosted Vault. If you want to get additional OP rewards you have to stake tokens manually on $OP BOOST tab after you deposit. It just works like this, anon'}</b>
 						</div>
 					</div>
 				)}

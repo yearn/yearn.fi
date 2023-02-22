@@ -5,47 +5,30 @@ import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-
 import {toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {useWallet} from '@common/contexts/useWallet';
 import {getVaultName} from '@common/utils';
+import {numberSort, stringSort} from '@common/utils/sort';
 
+import type {TSortDirection} from '@common/types/types';
 import type {TYearnVault} from '@common/types/yearn';
 
 export type TPossibleSortBy = 'apy' | 'tvl' | 'name' | 'deposited' | 'available';
-export type TPossibleSortDirection = 'asc' | 'desc' | '';
 
 function	useSortVaults(
 	vaultList: TYearnVault[],
 	sortBy: TPossibleSortBy,
-	sortDirection: TPossibleSortDirection
+	sortDirection: TSortDirection
 ): TYearnVault[] {
 	const	{balances, balancesNonce} = useWallet();
 	const {stakingRewardsByVault, positionsMap} = useStakingRewards();
-	
 	const	sortedByName = useCallback((): TYearnVault[] => (
-		vaultList.sort((a, b): number => {
-			const	aName = getVaultName(a);
-			const	bName = getVaultName(b);
-			if (sortDirection === 'desc') {
-				return aName.localeCompare(bName);
-			}
-			return bName.localeCompare(aName);
-		})
+		vaultList.sort((a, b): number => stringSort({a: getVaultName(a), b: getVaultName(b), sortDirection}))
 	), [sortDirection, vaultList]);
 
 	const	sortedByAPY = useCallback((): TYearnVault[] => (
-		vaultList.sort((a, b): number => {
-			if (sortDirection === 'desc') {
-				return (b.apy?.net_apy || 0) - (a.apy?.net_apy || 0);
-			}
-			return (a.apy?.net_apy || 0) - (b.apy?.net_apy || 0);
-		})
+		vaultList.sort((a, b): number => numberSort({a: a.apy?.net_apy, b: b.apy?.net_apy, sortDirection}))
 	), [sortDirection, vaultList]);
 
 	const	sortedByTVL = useCallback((): TYearnVault[] => (
-		vaultList.sort((a, b): number => {
-			if (sortDirection === 'desc') {
-				return (b.tvl.tvl || 0) - (a.tvl.tvl || 0);
-			}
-			return (a.tvl.tvl || 0) - (b.tvl.tvl || 0);
-		})
+		vaultList.sort((a, b): number => numberSort({a: a.tvl.tvl, b: b.tvl.tvl, sortDirection}))
 	), [sortDirection, vaultList]);
 
 	const	sortedByDeposited = useCallback((): TYearnVault[] => {
@@ -56,7 +39,6 @@ function	useSortVaults(
 				const bDepositedBalance = balances[toAddress(b.address)]?.normalized || 0;
 				const aStakedBalance = toNormalizedValue(positionsMap[toAddress(stakingRewardsByVault[a.address])]?.stake.balance || 0, a.decimals);
 				const bStakedBalance = toNormalizedValue(positionsMap[toAddress(stakingRewardsByVault[b.address])]?.stake.balance || 0, b.decimals);
-	
 				if (sortDirection === 'asc') {
 					return (aDepositedBalance + aStakedBalance) - (bDepositedBalance + bStakedBalance);
 				}
@@ -109,7 +91,7 @@ function	useSortVaults(
 		return sortResult;
 	}, [sortBy, sortDirection, sortedByAPY, sortedByAvailable, sortedByDeposited, sortedByName, sortedByTVL, stringifiedVaultList]);
 
-	return (sortedVaults);	
+	return (sortedVaults);
 }
 
 export {useSortVaults};
