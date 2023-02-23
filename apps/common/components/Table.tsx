@@ -57,7 +57,7 @@ function Table<T>({metadata, data, columns, initialSortBy, onRowClick}: TTablePr
 						disabled={!sortable}
 						className={`flex flex-row items-center justify-end space-x-1 first:justify-start ${`md:col-span-${columnSpan ?? 1}`} ${className || ''}`}
 					>
-						<p className={'text-base text-neutral-400'}>
+						<p className={'text-xs font-bold text-neutral-400'}>
 							{label}
 						</p>
 						{sortable && sortedBy === key && <IconChevronPlain className={`yearn--sort-chevron ${order === 'asc' ? 'rotate-180' : ''}`} />}
