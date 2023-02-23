@@ -1,5 +1,4 @@
 import React, {useCallback, useMemo, useState} from 'react';
-import {ethers} from 'ethers';
 import VaultListOptions from '@vaults/components/list/VaultListOptions';
 import {VaultsListEmptyFactory} from '@vaults/components/list/VaultsListEmpty';
 import {VaultsListRow} from '@vaults/components/list/VaultsListRow';
@@ -7,6 +6,7 @@ import {useAppSettings} from '@vaults/contexts/useAppSettings';
 import {useFilteredVaults} from '@vaults/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import ListHead from '@common/components/ListHead';
 import ListHero from '@common/components/ListHero';
@@ -15,14 +15,15 @@ import {useYearn} from '@common/contexts/useYearn';
 import {getVaultName} from '@common/utils';
 
 import type {ReactElement, ReactNode} from 'react';
+import type {TSortDirection} from '@common/types/types';
 import type {TYearnVault} from '@common/types/yearn';
-import type {TPossibleSortBy, TPossibleSortDirection} from '@vaults/hooks/useSortVaults';
+import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 
 function	VaultListFactory(): ReactElement {
 	const	{balances} = useWallet();
 	const	{vaults, isLoadingVaultList} = useYearn();
 	const	[sortBy, set_sortBy] = useState<TPossibleSortBy>('apy');
-	const	[sortDirection, set_sortDirection] = useState<TPossibleSortDirection>('');
+	const	[sortDirection, set_sortDirection] = useState<TSortDirection>('');
 	const	{shouldHideLowTVLVaults, shouldHideDust, searchValue, set_searchValue} = useAppSettings();
 	const	[category, set_category] = useState('Curve Factory Vaults');
 
@@ -33,7 +34,7 @@ function	VaultListFactory(): ReactElement {
 	const	curveVaults = useFilteredVaults(vaults, ({category, type}): boolean => category === 'Curve' && type === 'Automated');
 	const	holdingsVaults = useFilteredVaults(vaults, ({category, address, type}): boolean => {
 		const	holding = balances?.[toAddress(address)];
-		const	hasValidBalance = (holding?.raw || ethers.constants.Zero).gt(0);
+		const	hasValidBalance = formatBN(holding?.raw).gt(0);
 		const	balanceValue = holding?.normalizedValue || 0;
 		if (shouldHideDust && balanceValue < 0.01) {
 			return false;
@@ -70,7 +71,7 @@ function	VaultListFactory(): ReactElement {
 	**********************************************************************************************/
 	const	searchedVaults = useMemo((): TYearnVault[] => {
 		const	vaultsToUse = [...vaultsToDisplay];
-	
+
 		if (searchValue === '') {
 			return vaultsToUse;
 		}
@@ -94,7 +95,7 @@ function	VaultListFactory(): ReactElement {
 	const	onSort = useCallback((newSortBy: string, newSortDirection: string): void => {
 		performBatchedUpdates((): void => {
 			set_sortBy(newSortBy as TPossibleSortBy);
-			set_sortDirection(newSortDirection as TPossibleSortDirection);
+			set_sortDirection(newSortDirection as TSortDirection);
 		});
 	}, []);
 
@@ -109,7 +110,7 @@ function	VaultListFactory(): ReactElement {
 					isLoading={isLoadingVaultList}
 					sortedVaultsToDisplay={sortedVaultsToDisplay}
 					currentCategory={category} />
-			);	
+			);
 		}
 		return (
 			sortedVaultsToDisplay.map((vault): ReactNode => {

@@ -79,7 +79,7 @@ function	Holdings(): ReactElement {
 	const balanceOfLpyCRV = useBalance(LPYCRV_TOKEN_ADDRESS);
 
 	const	formatBigNumberOver10K = useCallback((v: BigNumber): string => {
-		if ((v || ethers.constants.Zero)?.gt(ethers.constants.WeiPerEther.mul(10000))) {
+		if (formatBN(v)?.gt(ethers.constants.WeiPerEther.mul(10000))) {
 			return formatAmount(formatToNormalizedValue(v || 0, 18), 0, 0);
 		}
 		return formatAmount(formatToNormalizedValue(v || 0, 18));
@@ -95,9 +95,9 @@ function	Holdings(): ReactElement {
 	const	latestCurveFeesValue = useMemo((): number => {
 		if (curveWeeklyFees?.weeklyFeesTable?.[0]?.rawFees > 0) {
 			return curveWeeklyFees.weeklyFeesTable[0].rawFees;
-		} 
+		}
 		return curveWeeklyFees?.weeklyFeesTable?.[1]?.rawFees || 0;
-		
+
 	}, [curveWeeklyFees]);
 
 	const	currentVeCRVAPY = useMemo((): number => {
@@ -151,13 +151,13 @@ function	Holdings(): ReactElement {
 								className={'text-lg text-neutral-500'}>
 								{`(Price = $${(formatAmount(ycrvPrice || 0))} | Peg = ${(
 									holdings?.crvYCRVPeg ? (formatPercent(
-										(formatToNormalizedValue(holdings?.crvYCRVPeg || ethers.constants.Zero, 18) + 0.0015) * 100)
+										(formatToNormalizedValue(holdings?.crvYCRVPeg, 18) + 0.0015) * 100)
 									): formatPercent(0)
 								)})`}
 							</p>
 						</div>
 					</div>
-				</div> 
+				</div>
 
 				<div className={'grid w-full bg-neutral-100 p-6'}>
 					<div className={'mb-6 hidden w-full grid-cols-5 md:grid'}>
@@ -189,7 +189,7 @@ function	Holdings(): ReactElement {
 								suppressHydrationWarning
 								className={'font-number text-base text-neutral-900'}>
 								{holdings?.styCRVSupply ? formatCounterValue(
-									formatToNormalizedValue(holdings.styCRVSupply || ethers.constants.Zero, 18),
+									formatToNormalizedValue(holdings.styCRVSupply, 18),
 									stycrvPrice
 								) : formatAmount(0)}
 							</p>
@@ -240,7 +240,7 @@ function	Holdings(): ReactElement {
 								suppressHydrationWarning
 								className={'font-number text-base text-neutral-900'}>
 								{holdings?.lpyCRVSupply ? formatCounterValue(
-									formatToNormalizedValue(holdings?.lpyCRVSupply || ethers.constants.Zero, 18),
+									formatToNormalizedValue(holdings?.lpyCRVSupply, 18),
 									lpycrvPrice
 								) : formatAmount(0)}
 							</p>

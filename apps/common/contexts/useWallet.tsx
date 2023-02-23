@@ -1,12 +1,12 @@
 import React, {createContext, memo, useCallback, useContext, useMemo} from 'react';
 import {useUI} from '@yearn-finance/web-lib/contexts/useUI';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {useBalances} from '@yearn-finance/web-lib/hooks/useBalances';
 import {useClientEffect} from '@yearn-finance/web-lib/hooks/useClientEffect';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {ETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {CRV_TOKEN_ADDRESS, CVXCRV_TOKEN_ADDRESS, ETH_TOKEN_ADDRESS, LPYCRV_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS, YVBOOST_TOKEN_ADDRESS, YVECRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {getProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import {useYearn} from '@common/contexts/useYearn';
+import {useBalances} from '@common/hooks/useBalances';
 
 import type {ReactElement} from 'react';
 import type {TBalanceData, TUseBalancesTokens} from '@yearn-finance/web-lib/hooks/types';
@@ -36,47 +36,80 @@ const	defaultProps = {
 ******************************************************************************/
 const	WalletContext = createContext<TWalletContext>(defaultProps);
 export const WalletContextApp = memo(function WalletContextApp({children}: {children: ReactElement}): ReactElement {
-	const	{chainID, provider} = useWeb3();
-	const	{vaults, isLoadingVaultList, prices} = useYearn();
+	const	{provider} = useWeb3();
+	const	{vaults, vaultsMigrations, isLoadingVaultList, prices} = useYearn();
 	const	{onLoadStart, onLoadDone} = useUI();
 
+	//List all tokens related to yearn vaults
 	const	availableTokens = useMemo((): TUseBalancesTokens[] => {
 		if (isLoadingVaultList) {
 			return [];
 		}
 		const	tokens: TUseBalancesTokens[] = [];
+		const	tokensExists: TDict<boolean> = {};
+
+		const	extraTokens = [
+			ETH_TOKEN_ADDRESS,
+			YCRV_TOKEN_ADDRESS,
+			LPYCRV_TOKEN_ADDRESS,
+			CRV_TOKEN_ADDRESS,
+			YVBOOST_TOKEN_ADDRESS,
+			YVECRV_TOKEN_ADDRESS,
+			CVXCRV_TOKEN_ADDRESS
+		];
+		for (const token of extraTokens) {
+			tokensExists[token] = true;
+			tokens.push({token});
+		}
+
 		Object.values(vaults || {}).forEach((vault?: TYearnVault): void => {
 			if (!vault) {
 				return;
 			}
-			tokens.push({token: vault?.address});
-			tokens.push({token: vault.token.address});
+			if (vault?.address && !tokensExists[toAddress(vault?.address)]) {
+				tokens.push({token: vault.address});
+			}
+			if (vault?.token?.address && !tokensExists[toAddress(vault?.token?.address)]) {
+				tokens.push({token: vault.token.address});
+			}
 		});
-		tokens.push({token: ETH_TOKEN_ADDRESS});
 		return tokens;
 	}, [vaults, isLoadingVaultList]);
 
+	//List all vaults with a possible migration
+	const	migratableTokens = useMemo((): TUseBalancesTokens[] => {
+		const	tokens: TUseBalancesTokens[] = [];
+		Object.values(vaultsMigrations || {}).forEach((vault?: TYearnVault): void => {
+			if (!vault) {
+				return;
+			}
+			tokens.push({token: vault?.address});
+		});
+		return tokens;
+	}, [vaultsMigrations]);
+
+	// Fetch the balances
 	const	{data: balances, update, updateSome, nonce, isLoading} = useBalances({
-		key: chainID,
 		provider: provider || getProvider(1),
-		tokens: availableTokens,
+		tokens: [...availableTokens, ...migratableTokens],
 		prices
 	});
 
+	//Compute the cumulatedValueInVaults
 	const	cumulatedValueInVaults = useMemo((): number => {
-		if (isLoadingVaultList || isLoading) {
-			return 0;
-		}
+		nonce; //Suppress warning
+
 		return (
 			Object.entries(balances).reduce((acc, [token, balance]): number => {
-				const	vault = vaults?.[toAddress(token)] ;
-				if (vault) {
+				if (vaults?.[toAddress(token)]) {
+					acc += balance.normalizedValue;
+				} else if (vaultsMigrations?.[toAddress(token)]) {
 					acc += balance.normalizedValue;
 				}
 				return acc;
 			}, 0)
 		);
-	}, [vaults, balances, isLoadingVaultList, isLoading]);
+	}, [vaults, vaultsMigrations, balances, nonce]);
 
 	const	onRefresh = useCallback(async (tokenToUpdate?: TUseBalancesTokens[]): Promise<TDict<TBalanceData>> => {
 		if (tokenToUpdate) {

@@ -4,10 +4,11 @@ import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUp
 import type {VoidPromiseFunction} from '@yearn-finance/web-lib/utils/types';
 
 function	useAsync<T>(
-	callback: (...args: unknown[]) => Promise<T>,
+	callback: (...args: any) => Promise<T | undefined>,
 	defaultValue?: T,
 	effectDependencies: unknown[] = []
 ): [T | undefined, boolean, VoidPromiseFunction] {
+	console.error('DEPRECATED: PLEASE USE @react-hookz/web instead');
 	const runNonce = useRef(0);
 	const [isLoading, set_isLoading] = useState(false);
 	const [data, set_data] = useState(defaultValue);
@@ -31,6 +32,7 @@ function	useAsync<T>(
 	useEffect((): void => {
 		runNonce.current += 1;
 		callCallback();
+	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [callCallback, ...effectDependencies]);
 
 	return ([isLoading ? defaultValue : (data || defaultValue), isLoading, callCallback]);

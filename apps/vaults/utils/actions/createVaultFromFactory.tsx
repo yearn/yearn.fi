@@ -1,6 +1,6 @@
 import {ethers} from 'ethers';
-import {VAULT_FACTORY_ADDRESS} from '@vaults/utils//constants';
 import VAULT_FACTORY_ABI from '@vaults/utils/abi/vaultFactory.abi';
+import {VAULT_FACTORY_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 
 import type {BigNumber} from 'ethers';
 import type {TAddress} from '@yearn-finance/web-lib/utils/address';

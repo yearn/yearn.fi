@@ -27,7 +27,7 @@ function Tabs({items, className}: TTabsProps): ReactElement {
 
 	return (
 		<div className={`w-full bg-neutral-100 ${className}`}>
-			<nav className={'hidden h-14 w-full border-b-2 border-neutral-300 pl-[13px] pr-4 text-center md:flex'}>
+			<nav className={'hidden h-14 w-full border-b-2 border-neutral-300 pl-[1px] pr-4 text-center md:flex'}>
 				{items.map(({id, label}): ReactElement => (
 					<div
 						key={`tab-label-${id}`}
@@ -44,7 +44,7 @@ function Tabs({items, className}: TTabsProps): ReactElement {
 					</div>
 				))}
 			</nav>
-			<div className={'relative z-50 px-4 pt-4'}>
+			<div className={'relative z-50 px-4 pt-4 md:hidden'}>
 				<Listbox
 					value={selectedTabId}
 					onChange={(value): void => set_selectedTabId(value)}>
@@ -95,7 +95,7 @@ function Tabs({items, className}: TTabsProps): ReactElement {
 					{items.map(({id, content}): ReactElement => (
 						<div
 							key={`tab-content-${id}`}
-							className={'w-full p-8'}
+							className={'w-full p-6'}
 							hidden={selectedTabId !== id}>
 							{content}
 						</div>

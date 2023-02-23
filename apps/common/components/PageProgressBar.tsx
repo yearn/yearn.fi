@@ -9,8 +9,8 @@ type TPageProgressBarProps = {
 
 function PageProgressBar({isLoading}: TPageProgressBarProps): ReactElement {
 	const {onLoadStart, onLoadDone} = useUI();
-    
-	useClientEffect((): () => void => {
+
+	useClientEffect((): VoidFunction => {
 		if (isLoading) {
 			onLoadStart();
 		} else {

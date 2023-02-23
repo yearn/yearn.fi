@@ -1,6 +1,6 @@
 /* eslint-disable no-irregular-whitespace */
 import React, {useRef} from 'react';
-import {useClientEffect} from '@yearn-finance/web-lib/hooks/useClientEffect';
+import {useMountEffect, useUpdateEffect} from '@react-hookz/web';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 
 import type {ReactElement} from 'react';
@@ -47,7 +47,7 @@ function	ValueAnimation({
 			for (let i = 0; i < cw.length; i++) {
 				animateLetterOut(cw, i);
 			}
-  
+
 			for (let i = 0; i < nw.length; i++) {
 				nw[i].className = 'letter behind';
 				if (nw?.[0]?.parentElement?.style) {
@@ -81,18 +81,18 @@ function	ValueAnimation({
 				word.appendChild(letter);
 				letters.push(letter);
 			}
-  
+
 			wordArray.push(letters);
 		}
 
 		setTimeout((): void => changeWord(), 100);
 	}
 
-	useClientEffect((): void => {
+	useMountEffect((): void => {
 		initZero();
-	}, []);
+	});
 
-	useClientEffect((): void => {
+	useUpdateEffect((): void => {
 		if (value && value !== formatAmount(0) && !hasBeenTriggerd.current) {
 			onStartAnimation();
 		}
@@ -101,7 +101,7 @@ function	ValueAnimation({
 	return (
 		<>
 			<div className={'text'}>
-				<p className={'wordWrapper'}> 
+				<p className={'wordWrapper'}>
 					<span suppressHydrationWarning className={`${className} ${identifier}`}>{`${prefix ? `${prefix} ` : ''}${defaultValue}${suffix ? ` ${suffix}` : ''}`}</span>
 					<span suppressHydrationWarning className={`${className} ${identifier}`}>{`${prefix ? `${prefix} ` : ''}${value}${suffix ? ` ${suffix}` : ''}`}</span>
 				</p>

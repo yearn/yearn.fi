@@ -1,4 +1,5 @@
 import React, {useEffect, useState} from 'react';
+import {Switch as HeadlessSwitch} from '@headlessui/react';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {isValidCategory} from '@common/types/category';
 
@@ -11,8 +12,14 @@ export type TListHeroCategory<T> = {
 	isSelected?: boolean,
 }
 
+type TSwitchProps = {
+	isEnabled: boolean;
+	onSwitch?: (state: boolean) => void;
+}
+
 export type TListHero<T> = {
 	headLabel: string;
+	switchProps?: TSwitchProps;
 	searchLabel: string;
 	searchPlaceholder: string;
 	categories: TListHeroCategory<T>[][];
@@ -36,7 +43,12 @@ export type TListHeroDesktopCategories<T> = {
 function	SearchBar({searchLabel, searchPlaceholder, searchValue, set_searchValue}: TListHeroSearchBar): ReactElement {
 	return (
 		<div className={'w-full'}>
-			<label htmlFor={'search'} className={'text-neutral-600'}>{searchLabel}</label>
+			<label
+				suppressHydrationWarning
+				htmlFor={'search'}
+				className={'text-neutral-600'}>
+				{searchLabel}
+			</label>
 			<div className={'mt-1 flex h-10 w-full max-w-md items-center border border-neutral-0 bg-neutral-0 p-2 md:w-2/3'}>
 				<div className={'relative flex h-10 w-full flex-row items-center justify-between'}>
 					<input
@@ -68,7 +80,7 @@ function	SearchBar({searchLabel, searchPlaceholder, searchValue, set_searchValue
 				</div>
 			</div>
 		</div>
-	);	
+	);
 }
 
 function	DesktopCategories<T>({categories, onSelect}: TListHeroDesktopCategories<T>): ReactElement {
@@ -92,11 +104,39 @@ function	DesktopCategories<T>({categories, onSelect}: TListHeroDesktopCategories
 								variant={item.isSelected ? 'filled' : 'outlined'}
 								className={'yearn--button-smaller relative !border-x-0'}>
 								{item?.node || item.label}
-							</Button>	
+							</Button>
 						))}
 					</div>
 				))}
 			</div>
+		</div>
+	);
+}
+
+function Switch(props: TSwitchProps): ReactElement {
+	const	{isEnabled, onSwitch} = props;
+	const	[isEnabledState, set_isEnabledState] = useState(isEnabled);
+
+	function	safeOnSwitch(): void {
+		if (onSwitch) {
+			onSwitch(!isEnabled);
+		} else {
+			set_isEnabledState(!isEnabledState);
+		}
+	}
+
+	return (
+		<div>
+			<HeadlessSwitch
+				checked={onSwitch ? isEnabled : isEnabledState}
+				onChange={safeOnSwitch}
+				onKeyDown={({keyCode}: {keyCode: number}): unknown => keyCode === 13 ? safeOnSwitch() : null}
+				className={'yearn--next-switch'}>
+				<span className={'sr-only'}>{'Use setting'}</span>
+				<div
+					aria-hidden={'true'}
+					className={(onSwitch ? isEnabled : isEnabledState) ? 'translate-x-[14px]' : 'translate-x-0'} />
+			</HeadlessSwitch>
 		</div>
 	);
 }
@@ -108,12 +148,13 @@ function	ListHero<T extends string>({
 	categories,
 	onSelect,
 	searchValue,
-	set_searchValue
+	set_searchValue,
+	switchProps
 }: TListHero<T>): ReactElement {
 	return (
 		<div className={'flex flex-col items-start justify-between space-x-0 px-4 pt-4 pb-2 md:px-10 md:pt-10 md:pb-8'}>
 			<div className={'mb-6'}>
-				<h2 suppressHydrationWarning className={'text-lg font-bold md:text-3xl'}>{headLabel}</h2>
+				<h2 className={'text-lg font-bold md:text-3xl'} suppressHydrationWarning>{headLabel}</h2>
 			</div>
 
 			<div className={'hidden w-full flex-row items-center justify-between space-x-4 md:flex'}>
@@ -122,6 +163,13 @@ function	ListHero<T extends string>({
 					searchPlaceholder={searchPlaceholder}
 					searchValue={searchValue}
 					set_searchValue={set_searchValue} />
+
+				{!!switchProps && (
+					<div className={'mr-4 mt-7 flex h-full min-w-fit flex-row'}>
+						<small className={'mr-2'}>{'Hide gauges with 0 votes'}</small>
+						<Switch {...switchProps} />
+					</div>
+				)}
 
 				<DesktopCategories
 					categories={categories}

@@ -1,4 +1,5 @@
 import {ethers} from 'ethers';
+import {Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 
 export async function	isApprovedERC20(
 	provider: ethers.providers.Web3Provider,
@@ -38,12 +39,12 @@ export async function	approvedERC20Amount(
 		);
 		return await contract.allowance(address, spender);
 	} catch (error) {
-		return ethers.constants.Zero;
+		return Zero;
 	}
 }
 
 export async function	approveERC20(
-	provider: ethers.providers.Web3Provider,
+	provider: ethers.providers.Web3Provider | ethers.providers.JsonRpcProvider,
 	tokenAddress: string,
 	spender: string,
 	amount = ethers.constants.MaxUint256

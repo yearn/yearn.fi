@@ -1,6 +1,5 @@
 import React, {Fragment, useMemo} from 'react';
 import Image from 'next/image';
-import {ethers} from 'ethers';
 import {Popover, Transition} from '@headlessui/react';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
@@ -8,6 +7,7 @@ import IconAddToMetamask from '@yearn-finance/web-lib/icons/IconAddToMetamask';
 import IconCross from '@yearn-finance/web-lib/icons/IconCross';
 import IconWallet from '@yearn-finance/web-lib/icons/IconWallet';
 import {toAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
+import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
@@ -93,7 +93,7 @@ export default function BalanceReminderPopover(): ReactElement {
 
 	const	nonNullBalances = useMemo((): TDict<TBalanceData> => {
 		const	nonNullBalances = Object.entries(balances).reduce((acc, [address, balance]): TDict<TBalanceData> => {
-			if (!(balance?.raw || ethers.constants.Zero).isZero()) {
+			if (!formatBN(balance?.raw).isZero()) {
 				acc[toAddress(address)] = balance;
 			}
 			return acc;
@@ -131,9 +131,9 @@ export default function BalanceReminderPopover(): ReactElement {
 						leave={'transition ease-in duration-150'}
 						leaveFrom={'opacity-100 translate-y-0'}
 						leaveTo={'opacity-0 translate-y-1'}>
-						<Popover.Panel className={'absolute right-0 top-6 z-[1000] mt-3 w-screen max-w-xs md:top-4 md:-right-4 '}>
+						<Popover.Panel className={'yearn--shadow absolute right-0 top-6 z-[1000] mt-3 w-screen max-w-xs md:top-4 md:-right-4'}>
 							<div className={'overflow-hidden'}>
-								<div className={'relative bg-neutral-100 p-0'}>
+								<div className={'relative bg-neutral-0 p-0'}>
 									<div className={'flex items-center justify-center border-b border-neutral-300 py-4 text-center'}>
 										<b>
 											{isActive && address && ens ? (
