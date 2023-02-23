@@ -74,8 +74,7 @@ function Table<T>({metadata, data, columns, initialSortBy, onRowClick}: TTablePr
 						onClick={(): void => onRowClick?.(item)}
 					>
 						{metadata.map(({key, label, className, fullWidth, columnSpan, format, transform}): ReactElement => {
-							// eslint-disable-next-line @typescript-eslint/no-explicit-any
-							const isNumber = !isNaN(item[key] as any);
+							const isNumber = !isNaN(item[key] as unknown as number);
 							const isZero = isNumber && Number(item[key]) === 0;
 							return (
 								<div key={`cell_${key}_${rowIndex}`} className={`flex h-8 flex-row items-center justify-between md:h-14 md:justify-end md:first:justify-start ${`md:col-span-${columnSpan ?? 1}`} ${className || ''}`}>
