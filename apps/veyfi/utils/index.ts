@@ -23,6 +23,8 @@ export const keyBy = <T1, T2 extends keyof T1 & string>(array: T1[], key: T2): T
 
 export const isNumber = (value: unknown): boolean => !isNaN(value as number);
 
+export const isString = (value: unknown): value is string => typeof value === 'string';
+
 export const sort = <T>(data: T[], by: Extract<keyof T, string>, order?: 'asc' | 'desc'): T[] => {
 	const compare = (a: T, b: T): number => {
 		const elementA = a[by];
@@ -30,7 +32,7 @@ export const sort = <T>(data: T[], by: Extract<keyof T, string>, order?: 'asc' |
 		if (isNumber(elementA) && isNumber(elementB)) {
 			return order === 'desc' ? Number(elementA) - Number(elementB) : Number(elementB) - Number(elementA);
 		}
-		if (typeof elementA === 'string' && typeof elementB === 'string') {
+		if (isString(elementA) && isString(elementB)) {
 			return order === 'desc' ? elementA.toLowerCase().localeCompare(elementB.toLowerCase()) : elementB.toLowerCase().localeCompare(elementA.toLowerCase());
 		}
 		return 0;
