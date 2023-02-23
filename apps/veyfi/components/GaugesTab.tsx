@@ -59,7 +59,7 @@ function GaugesTab(): ReactElement {
 					},
 					{
 						key: 'actions',
-						label: 'Actions',
+						label: '',
 						columnSpan: 2,
 						fullWidth: true,
 						className: 'my-4 md:my-0',
