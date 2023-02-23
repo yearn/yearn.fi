@@ -4,14 +4,14 @@ import IconChevronPlain from '@common/icons/IconChevronPlain';
 
 import type {ReactElement} from 'react';
 
-type TSortOrder = 'asc' | 'desc' | '';
+type TSortOrder = 'asc' | 'desc';
 
 type TState<T> = {
 	sortedBy: Extract<keyof T, string> | undefined, 
 	order: TSortOrder
 }
 
-const switchOrder = (order: TSortOrder): TSortOrder => order === '' ? 'desc' : order === 'desc' ? 'asc' : '';
+const switchOrder = (order: TSortOrder): TSortOrder => order === 'desc' ? 'asc' : 'desc';
 
 type TMetadata<T> = {
 	key: Extract<keyof T, string>;
@@ -37,7 +37,7 @@ function Table<T>({metadata, data, columns, initialSortBy, onRowClick}: TTablePr
 	
 	const handleSort = useCallback((key: Extract<keyof T, string>): void => {
 		const willChangeSortKey = sortedBy !== key;
-		const newOrder = switchOrder(willChangeSortKey ? '' : order);
+		const newOrder = switchOrder(willChangeSortKey ? 'asc' : order);
 		set_state({sortedBy: newOrder ? key : undefined, order: newOrder});
 	}, [order, sortedBy]);
     
