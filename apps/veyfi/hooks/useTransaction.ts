@@ -9,7 +9,7 @@ type TStatus = {
 	executed?: boolean;
 }
 
-type TTxFuncArgs = Parameters<(arg1: ethers.providers.Web3Provider, ...args: unknown[] ) => void>
+type TTxFuncArgs = Parameters<(arg1: ethers.providers.JsonRpcProvider, ...args: unknown[] ) => void>
 
 type TTxFunc<T1 extends TTxFuncArgs, T2> = (...args: T1) => Promise<T2>;
 

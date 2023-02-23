@@ -2,9 +2,9 @@ import React, {useEffect, useState} from 'react';
 import {utils} from 'ethers';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {isNumber} from '@yearn-finance/web-lib/utils/isNumber';
 import {isTAddress} from '@yearn-finance/web-lib/utils/isTAddress';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
-import {isNumber} from '@common/utils/typeGuards';
 import {QuickActions} from '@yCRV/components/QuickActions';
 
 import type {BigNumber} from 'ethers';

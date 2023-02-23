@@ -120,7 +120,7 @@ export function useSolverWido(): TSolverContext {
 			return false;
 		}
 
-		const signer = (provider as ethers.providers.Web3Provider).getSigner();
+		const signer = provider.getSigner();
 		try {
 			const {data, to} = latestQuote.current;
 			const transaction = await signer.sendTransaction({data, to});
@@ -196,7 +196,7 @@ export function useSolverWido(): TSolverContext {
 			toToken: toAddress(request.current.outputToken.value)
 		}));
 		const	isApproved = await isApprovedERC20(
-			provider as ethers.providers.Web3Provider,
+			provider,
 			toAddress(request.current.inputToken.value), //token to approve
 			widoSpenderAddress, //contract to approve
 			amount

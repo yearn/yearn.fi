@@ -1,10 +1,9 @@
 import {ethers} from 'ethers';
-import {PARTNER_VAULT_ABI} from '@yearn-finance/web-lib/utils/abi';
+import PARTNER_VAULT_ABI from '@yearn-finance/web-lib/utils/abi/partner.vault.abi';
 
-import type {ContractInterface} from 'ethers';
 
 export async function	depositViaPartner(
-	provider: ethers.providers.Web3Provider,
+	provider: ethers.providers.JsonRpcProvider,
 	partnerContractAddress: string,
 	partnerAddress: string,
 	vaultAddress: string,
@@ -16,7 +15,7 @@ export async function	depositViaPartner(
 	try {
 		const	contract = new ethers.Contract(
 			partnerContractAddress,
-			PARTNER_VAULT_ABI as ContractInterface,
+			PARTNER_VAULT_ABI,
 			signer
 		);
 		const	transaction = await contract.deposit(

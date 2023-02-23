@@ -4,7 +4,7 @@ import {approveERC20} from '@common/utils/actions/approveToken';
 import VEYFI_ABI from '../abi/veYFI.abi';
 
 import type {BigNumber} from 'ethers';
-import type {TAddress} from '@yearn-finance/web-lib/utils/address';
+import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TSeconds} from '@yearn-finance/web-lib/utils/time';
 
 const handleTx = async (txPromise: Promise<ethers.providers.TransactionResponse>): Promise<boolean> => {
@@ -23,7 +23,7 @@ const handleTx = async (txPromise: Promise<ethers.providers.TransactionResponse>
 };
 
 export async function approveLock(
-	provider: ethers.providers.Web3Provider,
+	provider: ethers.providers.JsonRpcProvider,
 	_accountAddress: TAddress,
 	tokenAddress: TAddress,
 	votingEscrowAddress: TAddress,
@@ -33,7 +33,7 @@ export async function approveLock(
 }
 
 export async function lock(
-	provider: ethers.providers.Web3Provider,
+	provider: ethers.providers.JsonRpcProvider,
 	accountAddress: TAddress,
 	votingEscrowAddress: TAddress,
 	amount: BigNumber,
@@ -45,7 +45,7 @@ export async function lock(
 }
 
 export async function increaseLockAmount(
-	provider: ethers.providers.Web3Provider,
+	provider: ethers.providers.JsonRpcProvider,
 	accountAddress: TAddress,
 	votingEscrowAddress: TAddress,
 	amount: BigNumber
@@ -56,7 +56,7 @@ export async function increaseLockAmount(
 }
 
 export async function extendLockTime(
-	provider: ethers.providers.Web3Provider,
+	provider: ethers.providers.JsonRpcProvider,
 	accountAddress: TAddress,
 	votingEscrowAddress: TAddress,
 	time: TSeconds
@@ -67,7 +67,7 @@ export async function extendLockTime(
 }
 
 export async function withdrawUnlocked(
-	provider: ethers.providers.Web3Provider,
+	provider: ethers.providers.JsonRpcProvider,
 	accountAddress: TAddress,
 	votingEscrowAddress: TAddress
 ): Promise<boolean> {
@@ -81,7 +81,7 @@ export async function withdrawUnlocked(
 }
 
 export async function withdrawLocked(
-	provider: ethers.providers.Web3Provider,
+	provider: ethers.providers.JsonRpcProvider,
 	accountAddress: TAddress,
 	votingEscrowAddress: TAddress
 ): Promise<boolean> {

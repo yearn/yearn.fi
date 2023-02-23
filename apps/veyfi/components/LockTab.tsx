@@ -7,25 +7,26 @@ import {MAX_LOCK_TIME, MIN_LOCK_AMOUNT, MIN_LOCK_TIME} from '@veYFI/utils/consta
 import {validateAllowance, validateAmount, validateNetwork} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
+import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatBN, formatUnits, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
 import {fromWeeks, getTimeUntil, toSeconds, toTime, toWeeks} from '@yearn-finance/web-lib/utils/time';
+import {AmountInput} from '@common/components/AmountInput';
 import {useWallet} from '@common/contexts/useWallet';
 import {useBalance} from '@common/hooks/useBalance';
 
-import {AmountInput} from '../../common/components/AmountInput';
-
-import type {BigNumber, ethers} from 'ethers';
+import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
-import type {TAddress} from '@yearn-finance/web-lib/utils/address';
+import type {MaybeBoolean} from '@yearn-finance/web-lib/types';
 import type {TMilliseconds} from '@yearn-finance/web-lib/utils/time';
 
 function LockTab(): ReactElement {
 	const [lockAmount, set_lockAmount] = useState(toNormalizedBN(0));
 	const [lockTime, set_lockTime] = useState('');
-	const {provider, address, isActive, chainID} = useWeb3();
+	const {provider, address, isActive} = useWeb3();
+	const {safeChainID} = useChainID();
 	const {refresh: refreshBalances} = useWallet();
 	const {votingEscrow, positions, allowances, isLoading: isLoadingVotingEscrow, refresh: refreshVotingEscrow} = useVotingEscrow();
 	const tokenBalance = useBalance(toAddress(votingEscrow?.token));
@@ -36,8 +37,6 @@ function LockTab(): ReactElement {
 	const [lock, lockStatus] = useTransaction(VotingEscrowActions.lock, onTxSuccess);
 	const [increaseLockAmount, increaseLockAmountStatus] = useTransaction(VotingEscrowActions.increaseLockAmount, onTxSuccess);
 
-	const web3Provider = provider as ethers.providers.Web3Provider;
-	const userAddress = address as TAddress;
 	const hasLockedAmount = formatBN(positions?.deposit?.balance).gt(0);
 
 	const unlockTime = useMemo((): TMilliseconds => {
@@ -74,48 +73,27 @@ function LockTab(): ReactElement {
 		minAmountAllowed: hasLockedAmount ? 0 : MIN_LOCK_TIME
 	});
 
-	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: 1, walletNetwork: chainID});
+	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: 1, walletNetwork: safeChainID});
 
-	const executeApprove = (): void => {
-		if (!votingEscrow || !userAddress) {
-			return;
-		}
-		approveLock(web3Provider, userAddress, votingEscrow.token, votingEscrow.address);
-	};
-
-	const executeLock = (): void => {
-		if (!votingEscrow || !userAddress) {
-			return;
-		}
-		lock(web3Provider, userAddress, votingEscrow.address, lockAmount.raw, toSeconds(unlockTime));
-	};
-
-	const executeIncreaseLockAmount = (): void => {
-		if (!votingEscrow || !userAddress) {
-			return;
-		}
-		increaseLockAmount(web3Provider, userAddress, votingEscrow.address, lockAmount.raw);
-	};
-
-	const isApproveDisabled = !isActive || !isValidNetwork || isApproved || isLoadingVotingEscrow;
-	const isLockDisabled = !isActive || !isValidNetwork || !isApproved || !isValidLockAmount || !isValidLockTime || isLoadingVotingEscrow;
+	const isApproveDisabled = !isActive || !isValidNetwork || isApproved || isLoadingVotingEscrow || !votingEscrow || !address;
+	const isLockDisabled = !isActive || !isValidNetwork || !isApproved || !isValidLockAmount || !isValidLockTime || isLoadingVotingEscrow || !votingEscrow || !address;
 	const txAction = !isApproved
 		? {
 			label: 'Approve',
-			onAction: executeApprove,
+			onAction: async (): Promise<MaybeBoolean> => approveLock(provider, toAddress(address), toAddress(votingEscrow?.token), toAddress(votingEscrow?.address)),
 			isLoading: approveLockStatus.loading,
 			isDisabled: isApproveDisabled
 		}
 		: hasLockedAmount
 			? {
 				label: 'Lock',
-				onAction: executeIncreaseLockAmount,
+				onAction: async (): Promise<MaybeBoolean> => increaseLockAmount(provider, toAddress(address), toAddress(votingEscrow?.address), lockAmount.raw),
 				isLoading: increaseLockAmountStatus.loading,
 				isDisabled: isLockDisabled
 			}
 			: {
 				label: 'Lock',
-				onAction: executeLock,
+				onAction: async (): Promise<MaybeBoolean> => lock(provider, toAddress(address), toAddress(votingEscrow?.address), lockAmount.raw, toSeconds(unlockTime)),
 				isLoading: lockStatus.loading,
 				isDisabled: isLockDisabled
 			};
@@ -138,33 +116,32 @@ function LockTab(): ReactElement {
 					<AmountInput
 						label={'YFI'}
 						amount={lockAmount.normalized}
+						maxAmount={formatAmount(tokenBalance.normalized, 0, 6)}
 						onAmountChange={(amount): void => set_lockAmount(handleInputChangeEventValue(amount, 18))}
-						maxAmount={tokenBalance.normalized > 0 ? tokenBalance.normalized.toFixed(18) : ''}
+						onLegendClick={(): void => set_lockAmount(tokenBalance)}
+						onMaxClick={(): void => set_lockAmount(tokenBalance)}
 						legend={`Available: ${formatAmount(tokenBalance.normalized, 4)} YFI`}
-						error={lockAmountError}
-					/>
+						error={lockAmountError} />
 					<AmountInput
 						label={'Current lock period (weeks)'}
 						amount={toTime(lockTime) === 0 ? '' : Math.floor(toTime(lockTime)).toString()}
 						onAmountChange={set_lockTime}
 						maxAmount={(MAX_LOCK_TIME + 1).toString()}
+						onMaxClick={(): void => set_lockTime((MAX_LOCK_TIME + 1).toString())}
 						disabled={hasLockedAmount}
 						legend={'Minimum: 1 week'}
-						error={lockTimeError}
-					/>
+						error={lockTimeError} />
 				</div>
 				<div className={'grid grid-cols-1 gap-6 md:grid-cols-2'}>
 					<AmountInput
 						label={'Total veYFI'}
 						amount={formatUnits(votingPower, 18)}
-						disabled
-					/>
+						disabled />
 					<Button
 						className={'w-full md:mt-7'}
 						onClick={txAction.onAction}
 						isDisabled={txAction.isDisabled || txAction.isLoading}
-						isBusy={txAction.isLoading}
-					>
+						isBusy={txAction.isLoading}>
 						{txAction.label}
 					</Button>
 				</div>

@@ -56,7 +56,7 @@ function	About(): ReactElement {
 						</p>
 					</Balancer>
 				</div>
-			</div> 
+			</div>
 
 			<div className={'w-full bg-neutral-100 p-10'}>
 				<div aria-label={'Swap anytime for better yield'} className={'flex flex-col pb-6'}>
@@ -180,7 +180,7 @@ function	About(): ReactElement {
 							<p className={'pr-5 text-neutral-900'}>{'3%'}</p>
 						</button>
 						<Button
-							disabled={slippage === localSlippage}
+							isDisabled={slippage === localSlippage}
 							className={'w-full'}
 							onClick={(): void => set_slippage(localSlippage)}>
 							{'Submit'}

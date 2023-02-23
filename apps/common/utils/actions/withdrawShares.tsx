@@ -1,10 +1,9 @@
 import {ethers} from 'ethers';
-import {VAULT_ABI} from '@yearn-finance/web-lib/utils/abi';
+import VAULT_ABI from '@yearn-finance/web-lib/utils/abi/vault.abi';
 
-import type {ContractInterface} from 'ethers';
 
 export async function	withdrawShares(
-	provider: ethers.providers.Web3Provider,
+	provider: ethers.providers.JsonRpcProvider,
 	vaultAddress: string,
 	maxShares: ethers.BigNumber
 ): Promise<boolean> {
@@ -13,7 +12,7 @@ export async function	withdrawShares(
 	try {
 		const	contract = new ethers.Contract(
 			vaultAddress,
-			VAULT_ABI as ContractInterface,
+			VAULT_ABI,
 			signer
 		);
 		const	transaction = await contract.withdraw(maxShares);

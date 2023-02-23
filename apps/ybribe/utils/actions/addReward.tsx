@@ -4,7 +4,7 @@ import {CURVE_BRIBE_V3_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import type {BigNumber} from 'ethers';
 
 export async function	addReward(
-	provider: ethers.providers.Web3Provider,
+	provider: ethers.providers.JsonRpcProvider,
 	gaugeAddress: string,
 	tokenAddress: string,
 	amount: BigNumber

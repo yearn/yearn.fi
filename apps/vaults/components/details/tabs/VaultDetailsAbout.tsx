@@ -1,7 +1,7 @@
 import React from 'react';
 import dynamic from 'next/dynamic';
+import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
-import {formatPercent} from '@common/utils';
 
 import type {LoaderComponent} from 'next/dynamic';
 import type {ReactElement} from 'react';
@@ -54,9 +54,7 @@ function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYearnVau
 							<div className={'flex flex-row items-center justify-between'}>
 								<p className={'text-sm text-neutral-500'}>{'Net APY'}</p>
 								<p className={'font-number text-sm text-neutral-900'} suppressHydrationWarning>
-									{(currentVault?.apy?.net_apy || 0) > 5 ? (
-										`≧ ${formatPercent(500)}`
-									) : formatPercent((currentVault?.apy?.net_apy || 0) * 100)}
+									{`APY ${formatPercent((currentVault?.apy?.net_apy || 0) * 100, 2, 2, 500)}`}
 								</p>
 							</div>
 						</div>

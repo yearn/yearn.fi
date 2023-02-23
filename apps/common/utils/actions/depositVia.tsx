@@ -1,12 +1,12 @@
 import {ethers} from 'ethers';
 import {EXTERNAL_SERVICE_PROVIDER} from '@vaults/utils/migrationTable';
-import {PARTNER_VAULT_ABI} from '@yearn-finance/web-lib/utils/abi';
+import PARTNER_VAULT_ABI from '@yearn-finance/web-lib/utils/abi/partner.vault.abi';
 
 import type {ContractInterface} from 'ethers';
-import type {TAddress} from '@yearn-finance/web-lib/utils/address';
+import type {TAddress} from '@yearn-finance/web-lib/types';
 
 export async function	depositVia(
-	provider: ethers.providers.Web3Provider,
+	provider: ethers.providers.JsonRpcProvider,
 	viaContractAddress: TAddress,
 	serviceID: EXTERNAL_SERVICE_PROVIDER,
 	addressFrom: TAddress,

@@ -1,19 +1,12 @@
 import React, {cloneElement, Fragment, useMemo, useState} from 'react';
 import {Combobox, Transition} from '@headlessui/react';
+import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import IconChevron from '@common/icons/IconChevron';
-import {formatPercent} from '@common/utils';
 
 import type {ReactElement} from 'react';
 import type {TDropdownGaugeItemProps, TDropdownGaugeOption, TDropdownGaugeProps} from '@common/types/types';
 
 function DropdownItem({option}: TDropdownGaugeItemProps): ReactElement {
-	function	renderAPY(): string {
-		if (((option?.value?.APY || 0) * 100) > 500) {
-			return `APY ≧ ${formatPercent(500, 0, 0)}`;
-		}
-		return `APY ${formatPercent((option?.value?.APY || 0) * 100)}`;
-	}
-
 	return (
 		<Combobox.Option value={option}>
 			{({active}): ReactElement => (
@@ -26,7 +19,7 @@ function DropdownItem({option}: TDropdownGaugeItemProps): ReactElement {
 							{option.label}
 						</p>
 						<p className={`${option.icon ? 'pl-2' : 'pl-0'} text-xs font-normal text-neutral-600`}>
-							{renderAPY()}
+							{`APY ${formatPercent((option?.value?.APY || 0) * 100, 2, 2, 500)}`}
 						</p>
 					</div>
 				</div>

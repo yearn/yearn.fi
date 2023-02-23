@@ -3,7 +3,7 @@ import {ethers} from 'ethers';
 import type {BigNumber} from 'ethers';
 
 export async function	deposit(
-	provider: ethers.providers.Web3Provider,
+	provider: ethers.providers.JsonRpcProvider,
 	vaultAddress: string,
 	amount: BigNumber
 ): Promise<boolean> {

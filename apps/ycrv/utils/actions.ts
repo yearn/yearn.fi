@@ -4,7 +4,7 @@ import {VLYCRV_TOKEN_ADDRESS, YVECRV_POOL_LP_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} 
 import VLYCRV_ABI from './abi/vlYCrv.abi';
 
 import type {BigNumber} from 'ethers';
-import type {TAddress} from '@yearn-finance/web-lib/utils/address';
+import type {TAddress} from '@yearn-finance/web-lib/types';
 
 const handleTx = async (txPromise: Promise<ethers.providers.TransactionResponse>): Promise<boolean> => {
 	try {
@@ -21,7 +21,7 @@ const handleTx = async (txPromise: Promise<ethers.providers.TransactionResponse>
 };
 
 export async function vLyCRVDeposit(
-	provider: ethers.providers.Web3Provider | ethers.providers.JsonRpcProvider,
+	provider: ethers.providers.JsonRpcProvider,
 	amount = ethers.constants.MaxUint256
 ): Promise<boolean> {
 	const signer = provider.getSigner();
@@ -30,7 +30,7 @@ export async function vLyCRVDeposit(
 }
 
 export async function vLyCRVWithdraw(
-	provider: ethers.providers.Web3Provider | ethers.providers.JsonRpcProvider,
+	provider: ethers.providers.JsonRpcProvider,
 	amount = ethers.constants.MaxUint256
 ): Promise<boolean> {
 	const signer = provider.getSigner();
@@ -39,7 +39,7 @@ export async function vLyCRVWithdraw(
 }
 
 export async function vLyCRVVote(
-	provider: ethers.providers.Web3Provider | ethers.providers.JsonRpcProvider,
+	provider: ethers.providers.JsonRpcProvider,
 	gaugeAddress: TAddress,
 	votes: BigNumber
 ): Promise<boolean> {
@@ -49,7 +49,7 @@ export async function vLyCRVVote(
 }
 
 export async function vLyCRVVoteMany(
-	provider: ethers.providers.Web3Provider | ethers.providers.JsonRpcProvider,
+	provider: ethers.providers.JsonRpcProvider,
 	gauges: TAddress[],
 	votes: BigNumber[]
 ): Promise<boolean> {
@@ -59,7 +59,7 @@ export async function vLyCRVVoteMany(
 }
 
 export async function	addLiquidity(
-	provider: ethers.providers.Web3Provider,
+	provider: ethers.providers.JsonRpcProvider,
 	amount1: BigNumber,
 	amount2: BigNumber,
 	expectedAmount: BigNumber
@@ -90,7 +90,7 @@ export async function	addLiquidity(
 }
 
 export async function	zap(
-	provider: ethers.providers.Web3Provider,
+	provider: ethers.providers.JsonRpcProvider,
 	inputToken: string,
 	outputToken: string,
 	amount: BigNumber,

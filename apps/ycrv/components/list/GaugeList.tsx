@@ -8,6 +8,7 @@ import {useSessionStorage} from '@yearn-finance/web-lib/hooks/useSessionStorage'
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatBN, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isTAddress} from '@yearn-finance/web-lib/utils/isTAddress';
+import {isWeb3Provider} from '@yearn-finance/web-lib/utils/isWeb3Provider';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import ListHead from '@common/components/ListHead';
@@ -15,7 +16,6 @@ import ListHero from '@common/components/ListHero';
 import IconChevron from '@common/icons/IconChevron';
 import {useSortGauges} from '@yCRV/hooks/useSortGauges';
 import {useVLyCRV} from '@yCRV/hooks/useVLyCRV';
-import {isWeb3Provider} from '@yCRV/utils/isWeb3Provider';
 
 import {GaugeListEmpty} from './GaugeListEmpty';
 import {GaugeListRow} from './GaugeListRow';
@@ -24,8 +24,7 @@ import type {BigNumber} from 'ethers';
 import type {ReactElement, ReactNode} from 'react';
 import type {TPossibleGaugesSortBy} from '@yCRV/hooks/useSortGauges';
 import type {TUserInfo} from '@yCRV/hooks/useVLyCRV';
-import type {TAddress} from '@yearn-finance/web-lib/utils/address';
-import type {TDict} from '@yearn-finance/web-lib/utils/types';
+import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 import type {TCurveGauges} from '@common/types/curves';
 import type {TSortDirection} from '@common/types/types';
 

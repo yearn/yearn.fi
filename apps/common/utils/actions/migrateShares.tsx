@@ -2,11 +2,10 @@ import {ethers} from 'ethers';
 import VAULT_MIGRATOR_ABI from '@vaults/utils/abi/vaultMigrator.abi';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 
-import type {ContractInterface} from 'ethers';
-import type {TAddress} from '@yearn-finance/web-lib/utils/address';
+import type {TAddress} from '@yearn-finance/web-lib/types';
 
 export async function	migrateShares(
-	provider: ethers.providers.Web3Provider,
+	provider: ethers.providers.JsonRpcProvider,
 	migratorAddress: TAddress,
 	fromVault: TAddress,
 	toVault: TAddress
@@ -17,7 +16,7 @@ export async function	migrateShares(
 	try {
 		const	contract = new ethers.Contract(
 			migratorAddress,
-			VAULT_MIGRATOR_ABI as ContractInterface,
+			VAULT_MIGRATOR_ABI,
 			signer
 		);
 		const	estimate = await contract.estimateGas.migrateAll(fromVault, toVault);

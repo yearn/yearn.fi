@@ -11,7 +11,7 @@ import {vLyCRVDeposit, vLyCRVVote, vLyCRVVoteMany, vLyCRVWithdraw} from '@yCRV/u
 
 import type {BigNumber, providers} from 'ethers';
 import type {KeyedMutator} from 'swr';
-import type {TAddress} from '@yearn-finance/web-lib/utils/address';
+import type {TAddress} from '@yearn-finance/web-lib/types';
 
 export type TUserInfo = {
 	balance: BigNumber;

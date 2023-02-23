@@ -4,7 +4,7 @@ import {ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import type {BigNumber} from 'ethers';
 
 export async function	zap(
-	provider: ethers.providers.Web3Provider,
+	provider: ethers.providers.JsonRpcProvider,
 	inputToken: string,
 	outputToken: string,
 	amount: BigNumber

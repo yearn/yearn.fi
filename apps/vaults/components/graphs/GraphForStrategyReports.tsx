@@ -5,9 +5,8 @@ import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
+import {formatAmount, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
-import {formatPercent} from '@common/utils';
 
 import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
@@ -56,7 +55,7 @@ function	GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height =
 					type={'step'}
 					strokeWidth={2}
 					dataKey={'value'}
-					stroke={'currentcolor'} 
+					stroke={'currentcolor'}
 					dot={false}
 					activeDot={(e): ReactElement => {
 						e.className = `${e.className} activeDot`;
@@ -67,7 +66,7 @@ function	GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height =
 					hide />
 				<YAxis
 					orientation={'right'}
-					hide={false} 
+					hide={false}
 					tick={(e): ReactElement => {
 						const {payload: {value}} = e;
 						e.fill = '#5B5B5B';
@@ -87,7 +86,7 @@ function	GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height =
 							const	{gain, loss} = innerPayload;
 							const	diff = formatBN(gain).sub(formatBN(loss));
 							const	normalizedDiff = formatToNormalizedValue(diff, vaultDecimals);
-							
+
 							return (
 								<div className={'recharts-tooltip'}>
 									<div className={'mb-4'}>

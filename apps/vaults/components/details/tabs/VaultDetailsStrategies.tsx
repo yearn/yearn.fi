@@ -3,11 +3,10 @@ import dynamic from 'next/dynamic';
 import IconCopy from '@yearn-finance/web-lib/icons/IconCopy';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
+import {formatAmount, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {formatDuration} from '@yearn-finance/web-lib/utils/format.time';
 import {copyToClipboard, parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
 import IconChevron from '@common/icons/IconChevron';
-import {formatPercent} from '@common/utils';
 
 import type {LoaderComponent} from 'next/dynamic';
 import type {ReactElement} from 'react';

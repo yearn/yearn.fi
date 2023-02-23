@@ -4,7 +4,7 @@ import {useWallet} from '@common/contexts/useWallet';
 
 import type {ReactElement} from 'react';
 import type {TBalanceData} from '@yearn-finance/web-lib/hooks/types';
-import type {TDict} from '@yearn-finance/web-lib/utils/types';
+import type {TDict} from '@yearn-finance/web-lib/types';
 
 export type	TExtendedWalletContext = {
 	balances: TDict<TBalanceData>,

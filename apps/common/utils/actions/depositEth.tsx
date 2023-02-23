@@ -1,12 +1,12 @@
 import	{ethers} from 'ethers';
 import {getEthZapperContract} from '@vaults/utils';
-import {ZAP_ETH_TO_YVETH_ABI} from '@yearn-finance/web-lib/utils/abi';
-import ZAP_FTM_TO_YVFTM_ABI from '@common/utils/abi/zapFtmToYvFTM.abi';
+import ZAP_ETH_TO_YVETH_ABI from '@yearn-finance/web-lib/utils/abi/zapEthToYvEth.abi';
+import ZAP_FTM_TO_YVFTM_ABI from '@yearn-finance/web-lib/utils/abi/zapFtmToYvFTM.abi';
 
 import type {ContractInterface} from 'ethers';
 
 export async function	depositETH(
-	provider: ethers.providers.Web3Provider,
+	provider: ethers.providers.JsonRpcProvider,
 	chainID: number,
 	amount: ethers.BigNumber
 ): Promise<boolean> {

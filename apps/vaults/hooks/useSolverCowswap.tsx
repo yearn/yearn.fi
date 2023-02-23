@@ -135,7 +135,7 @@ export function useSolverCowswap(): TSolverContext {
 			return toAddress(address || '');
 		}
 
-		const	signer = (provider as ethers.providers.Web3Provider).getSigner();
+		const	signer = provider.getSigner();
 		const	rawSignature = await signOrder(
 			domain(1, '0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
 			quote,
@@ -276,7 +276,7 @@ export function useSolverCowswap(): TSolverContext {
 		}
 
 		const allowance = await approvedERC20Amount(
-			provider as ethers.providers.Web3Provider,
+			provider,
 			toAddress(request.current.inputToken.value), //Input token
 			toAddress(SOLVER_COW_VAULT_RELAYER_ADDRESS) //Spender, aka Cowswap solver
 		);
@@ -298,7 +298,7 @@ export function useSolverCowswap(): TSolverContext {
 		}
 
 		const	isApproved = await isApprovedERC20(
-			provider as ethers.providers.Web3Provider,
+			provider,
 			toAddress(request.current.inputToken.value), //token to approve
 			toAddress(SOLVER_COW_VAULT_RELAYER_ADDRESS), //Cowswap relayer
 			amount

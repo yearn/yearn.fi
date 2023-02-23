@@ -18,8 +18,7 @@ import type {BigNumber, ethers} from 'ethers';
 import type {TGetBatchBalancesResp} from 'pages/api/getBatchBalances';
 import type {DependencyList} from 'react';
 import type {TBalanceData, TDefaultStatus} from '@yearn-finance/web-lib/hooks/types';
-import type {TAddress} from '@yearn-finance/web-lib/utils/address';
-import type {TDict, TNDict} from '@yearn-finance/web-lib/utils/types';
+import type {TAddress, TDict, TNDict} from '@yearn-finance/web-lib/types';
 
 /* 🔵 - Yearn Finance **********************************************************
 ** Request, Response and helpers for the useBalances hook.
@@ -100,8 +99,8 @@ async function performCall(
 }
 
 async function getBalances(
-	provider: ethers.providers.Web3Provider | ethers.providers.JsonRpcProvider,
-	fallBackProvider: ethers.providers.Web3Provider | ethers.providers.JsonRpcProvider,
+	provider: ethers.providers.JsonRpcProvider,
+	fallBackProvider: ethers.providers.JsonRpcProvider,
 	ownerAddress: TAddress,
 	tokens: TUseBalancesTokens[],
 	prices?: TDict<string>

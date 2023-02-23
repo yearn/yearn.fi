@@ -13,9 +13,8 @@ import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3
 
 import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
-import type {TAddress} from '@yearn-finance/web-lib/utils/address';
+import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 import type {TMilliseconds} from '@yearn-finance/web-lib/utils/time';
-import type {TDict} from '@yearn-finance/web-lib/utils/types';
 
 export type TVotingEscrow = {
 	address: TAddress,
@@ -61,18 +60,10 @@ export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({chil
 	const {provider, address, isActive} = useWeb3();
 
 	const assetFetcher = useCallback(async (): Promise<TVotingEscrow> => {
-		const currentProvider = getProvider(1);
+		const currentProvider = provider || getProvider(1);
 		const ethcallProvider = await newEthCallProvider(currentProvider);
 		const veYFIContract = new Contract(VEYFI_ADDRESS, VEYFI_ABI);
-
-		const	[
-			token,
-			name,
-			symbol,
-			decimals,
-			supply,
-			rewardPool
-		] = await ethcallProvider.tryAll([
+		const [token, name, symbol, decimals, supply, rewardPool] = await ethcallProvider.tryAll([
 			veYFIContract.token(),
 			veYFIContract.name(),
 			veYFIContract.symbol(),
@@ -90,14 +81,14 @@ export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({chil
 			supply,
 			rewardPool
 		});
-	}, []);
+	}, [provider]);
 	const {data: votingEscrow, mutate: refreshVotingEscrow, isLoading: isLoadingVotingEscrow} = useSWR('asset', assetFetcher, {shouldRetryOnError: false});
 
 	const positionsFetcher = useCallback(async (): Promise<TVotingEscrowPosition> => {
 		if (!isActive || !address) {
 			return {};
 		}
-		const currentProvider = getProvider(1);
+		const currentProvider = provider || getProvider(1);
 		const ethcallProvider = await newEthCallProvider(currentProvider);
 		const veYFIPositionHelperContract = new Contract(VEYFI_POSITION_HELPER_ADDRESS, VEYFI_POSITION_HELPER_ABI);
 
@@ -115,14 +106,14 @@ export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({chil
 			penaltyRatio: positionDetails.depositAmount.gt(0) ? FixedNumber.from(positionDetails.penalty).divUnsafe(FixedNumber.from(positionDetails.depositAmount)).toUnsafeFloat() : 0,
 			withdrawable: positionDetails.withdrawable
 		};
-	}, [isActive, address]);
+	}, [isActive, address, provider]);
 	const {data: positions, mutate: refreshPositions, isLoading: isLoadingPositions} = useSWR(isActive && provider ? 'positions' : null, positionsFetcher, {shouldRetryOnError: false});
 
 	const allowancesFetcher = useCallback(async (): Promise<TDict<BigNumber>> => {
 		if (!isActive || !address) {
 			return {};
 		}
-		const	currentProvider = getProvider(1);
+		const	currentProvider = provider || getProvider(1);
 		const	ethcallProvider = await newEthCallProvider(currentProvider);
 		const	yfiContract = new Contract(YFI_ADDRESS, ERC20_ABI);
 
@@ -131,7 +122,7 @@ export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({chil
 		return ({
 			[allowanceKey(YFI_ADDRESS, VEYFI_ADDRESS)]: yfiAllowanceVeYFI
 		});
-	}, [isActive, address]);
+	}, [isActive, address, provider]);
 	const	{data: allowances, mutate: refreshAllowances, isLoading: isLoadingAllowances} = useSWR(isActive && provider ? 'allowances' : null, allowancesFetcher, {shouldRetryOnError: false});
 
 	const refresh = useCallback((): void => {

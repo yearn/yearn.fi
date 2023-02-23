@@ -3,10 +3,10 @@ import VAULT_FACTORY_ABI from '@vaults/utils/abi/vaultFactory.abi';
 import {VAULT_FACTORY_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 
 import type {BigNumber} from 'ethers';
-import type {TAddress} from '@yearn-finance/web-lib/utils/address';
+import type {TAddress} from '@yearn-finance/web-lib/types';
 
 export async function	createNewVaultsAndStrategies(
-	provider: ethers.providers.Web3Provider,
+	provider: ethers.providers.JsonRpcProvider,
 	gaugeAddress: TAddress
 ): Promise<boolean> {
 	const	signer = provider.getSigner();

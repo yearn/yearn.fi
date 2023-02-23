@@ -186,7 +186,7 @@ function	ListHero<T extends string>({
 					}}>
 					{categories.map((currentCategory): ReactNode => (
 						currentCategory.map((item): ReactElement => (
-							<option key={item.value as string} value={item.value as string}>
+							<option key={item.value} value={item.value}>
 								{item.label}
 							</option>
 						))
