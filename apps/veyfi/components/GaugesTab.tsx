@@ -7,7 +7,7 @@ import type {ReactElement} from 'react';
 
 function GaugesTab(): ReactElement {
 	return (
-		<div className={'relative -left-8 w-[calc(100%+64px)]'}>
+		<div className={'relative -left-6 w-[calc(100%+48px)]'}>
 			<Table 
 				metadata={[
 					{

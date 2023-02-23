@@ -45,11 +45,11 @@ function Table<T>({metadata, data, columns, initialSortBy, onRowClick}: TTablePr
 		return sortedBy && order ? sort(data, sortedBy, order) : data;
 	}, [data, order, sortedBy]);
 
-	const numberOfColumns = Math.min(columns ?? (metadata.length), 12);
+	const numberOfColumns = Math.min(columns ?? (metadata.length), 12).toString();
 
 	return (
 		<div className={'w-full'}>
-			<div className={`mb-2 hidden w-full px-8 md:grid ${`md:grid-cols-${numberOfColumns}`}`}>
+			<div className={`mb-2 hidden w-full px-6 md:grid md:grid-flow-col ${`md:grid-cols-${numberOfColumns}`}`}>
 				{metadata.map(({key, label, sortable, className, columnSpan}): ReactElement => (
 					<button
 						key={`header_${key}`} 
@@ -70,7 +70,7 @@ function Table<T>({metadata, data, columns, initialSortBy, onRowClick}: TTablePr
 				return (
 					<div 
 						key={`row_${rowIndex}`} 
-						className={`grid w-full grid-cols-1 border-t border-neutral-200 px-4 py-2 transition-colors hover:bg-neutral-300 md:border-none md:px-8 ${`md:grid-cols-${numberOfColumns}`} ${onRowClick ? 'cursor-pointer' : 'cursor-auto'}`}
+						className={`grid w-full grid-cols-1 border-t border-neutral-200 px-4 py-2 transition-colors hover:bg-neutral-300 md:grid-flow-col md:border-none md:px-6 ${`md:grid-cols-${numberOfColumns}`} ${onRowClick ? 'cursor-pointer' : 'cursor-auto'}`}
 						onClick={(): void => onRowClick?.(item)}
 					>
 						{metadata.map(({key, label, className, fullWidth, columnSpan, format, transform}): ReactElement => {
