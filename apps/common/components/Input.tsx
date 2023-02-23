@@ -29,7 +29,7 @@ function Input(props: TAmountInputProps): ReactElement {
 					aria-label={label}
 					value={value}
 					onChange={onChange ? (e): void => onChange(e.target.value) : undefined}
-					placeholder={isLoading ? '' : placeholder ?? ''}
+					placeholder={isLoading ? undefined : placeholder}
 					disabled={isDisabled}
 				/>
 			</div>
