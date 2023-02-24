@@ -21,7 +21,7 @@ export function getVotingPower(lockAmount: BigNumber, unlockTime: TMilliseconds)
 export const keyBy = <T1, T2 extends keyof T1 & string>(array: T1[], key: T2): TDict<T1 | undefined> => 
 	(array || []).reduce((r, x): TDict<T1> => ({...r, [x[key] as string]: x}), {});
 
-export const isNumber = (value: unknown): boolean => !isNaN(value as number);
+export const isNumberable = (value: unknown): boolean => !isNaN(value as number);
 
 export const isString = (value: unknown): value is string => typeof value === 'string';
 
@@ -29,7 +29,7 @@ export const sort = <T>(data: T[], by: Extract<keyof T, string>, order?: 'asc' |
 	const compare = (a: T, b: T): number => {
 		const elementA = a[by];
 		const elementB = b[by];
-		if (isNumber(elementA) && isNumber(elementB)) {
+		if (isNumberable(elementA) && isNumberable(elementB)) {
 			return order === 'desc' ? Number(elementA) - Number(elementB) : Number(elementB) - Number(elementA);
 		}
 		if (isString(elementA) && isString(elementB)) {
