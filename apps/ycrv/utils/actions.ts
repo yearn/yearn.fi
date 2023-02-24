@@ -14,7 +14,7 @@ export async function vLyCRVDeposit(
 ): Promise<TTxResponse> {
 	const signer = provider.getSigner();
 	const contract = new ethers.Contract(VLYCRV_TOKEN_ADDRESS, VLYCRV_ABI, signer);
-	return handleTx(contract.deposit(amount));
+	return await handleTx(contract.deposit(amount));
 }
 
 export async function vLyCRVWithdraw(
@@ -23,7 +23,7 @@ export async function vLyCRVWithdraw(
 ): Promise<TTxResponse> {
 	const signer = provider.getSigner();
 	const contract = new ethers.Contract(VLYCRV_TOKEN_ADDRESS, VLYCRV_ABI, signer);
-	return handleTx(contract.withdraw(amount));
+	return await handleTx(contract.withdraw(amount));
 }
 
 export async function vLyCRVVote(
@@ -33,7 +33,7 @@ export async function vLyCRVVote(
 ): Promise<TTxResponse> {
 	const signer = provider.getSigner();
 	const contract = new ethers.Contract(VLYCRV_TOKEN_ADDRESS, VLYCRV_ABI, signer);
-	return handleTx(contract.vote(gaugeAddress, votes));
+	return await handleTx(contract.vote(gaugeAddress, votes));
 }
 
 export async function vLyCRVVoteMany(

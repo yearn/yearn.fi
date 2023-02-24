@@ -13,7 +13,7 @@ export async function	createNewVaultsAndStrategies(
 ): Promise<TTxResponse> {
 	const signer = provider.getSigner();
 	const contract = new ethers.Contract(VAULT_FACTORY_ADDRESS, VAULT_FACTORY_ABI, signer);
-	return handleTx(contract.createNewVaultsAndStrategies(gaugeAddress));
+	return await handleTx(contract.createNewVaultsAndStrategies(gaugeAddress));
 }
 
 export async function	estimateGasForCreateNewVaultsAndStrategies(

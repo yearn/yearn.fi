@@ -15,5 +15,5 @@ export async function	zap(
 ): Promise<TTxResponse> {
 	const signer = provider.getSigner();
 	const contract = new ethers.Contract(ZAP_YEARN_VE_CRV_ADDRESS, ZAP_YEARN_VE_CRV_MIN_ABI, signer);
-	return handleTx(contract.zap(inputToken, outputToken, amount));
+	return await handleTx(contract.zap(inputToken, outputToken, amount));
 }
