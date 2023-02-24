@@ -19,7 +19,7 @@ export function getVotingPower(lockAmount: bigint, unlockTime: TMilliseconds): b
 }
 
 export const keyBy = <T1, T2 extends keyof T1 & string>(array: T1[], key: T2): TDict<T1 | undefined> => 
-	(array || []).reduce((r, x): TDict<T1> => ({...r, [x[key] as unknown as string]: x}), {});
+	(array || []).reduce((r, x): TDict<T1> => ({...r, [x[key] as string]: x}), {});
 
 export const isNumber = (value: unknown): boolean => !isNaN(value as number);
 
