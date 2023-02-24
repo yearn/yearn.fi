@@ -33,11 +33,11 @@ function VoteTab(): ReactElement {
 	return (
 		<div className={'grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-16'}>
 			<div className={'col-span-1 grid w-full gap-8'}>
-				<div className={'md:min-h-[104px]'}>
+				<div className={'flex flex-col gap-6 md:min-h-[104px]'}>
 					<h2 className={'m-0 text-2xl font-bold'}>
 						{'Vote for Gauge'}
 					</h2>
-					<div className={'mt-6 text-neutral-600'} >
+					<div className={'text-neutral-600'} >
 						<p>{'Vote to direct future YFI rewards to a particular gauge.'}</p>
 						<br />
 						<p>{'If you prefer your democracy on the representative side, you can delegate your vote to another address.'}</p>
