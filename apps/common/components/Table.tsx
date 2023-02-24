@@ -75,7 +75,7 @@ function Table<T>({metadata, data, columns, initialSortBy, onRowClick}: TTablePr
 					>
 						{metadata.map(({key, label, className, fullWidth, columnSpan, format, transform}): ReactElement => {
 							const isNumber = !isNaN(item[key] as number);
-							const isZero = isNumber && Number(item[key]) === 0;
+							const isZero = isNumber && item[key] === 0;
 							return (
 								<div key={`cell_${key}_${rowIndex}`} className={`flex h-8 flex-row items-center justify-between md:h-14 md:justify-end md:first:justify-start ${`md:col-span-${columnSpan ?? 1}`} ${className || ''}`}>
 									{!fullWidth && <label className={'inline text-start text-sm text-neutral-500 md:hidden'}>{label}</label>}
