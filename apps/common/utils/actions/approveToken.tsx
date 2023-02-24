@@ -1,5 +1,8 @@
 import {ethers} from 'ethers';
 import {Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {handleTx} from '@yearn-finance/web-lib/utils/web3/transaction';
+
+import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 
 export async function	isApprovedERC20(
 	provider: ethers.providers.JsonRpcProvider,
@@ -48,24 +51,8 @@ export async function	approveERC20(
 	tokenAddress: string,
 	spender: string,
 	amount = ethers.constants.MaxUint256
-): Promise<boolean> {
-	const	signer = provider.getSigner();
-
-	try {
-		const	contract = new ethers.Contract(
-			tokenAddress, ['function approve(address _spender, uint256 _value) external'],
-			signer
-		);
-		const	transaction = await contract.approve(spender, amount);
-		const	transactionResult = await transaction.wait();
-		if (transactionResult.status === 0) {
-			console.error('Fail to perform transaction');
-			return false;
-		}
-
-		return true;
-	} catch(error) {
-		console.error(error);
-		return false;
-	}
+): Promise<TTxResponse> {
+	const signer = provider.getSigner();
+	const contract = new ethers.Contract(tokenAddress, ['function approve(address _spender, uint256 _value) external'], signer);
+	return await handleTx(contract.approve(spender, amount));
 }

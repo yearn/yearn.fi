@@ -13,7 +13,7 @@ import {approveERC20, isApprovedERC20} from '@common/utils/actions/approveToken'
 
 import type {AxiosError} from 'axios';
 import type {QuoteRequest, QuoteResult} from 'wido';
-import type {TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
+import type {TTxResponse, TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TNormalizedBN} from '@common/types/types';
 import type {ApiError} from '@gnosis.pm/gp-v2-contracts';
 import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
@@ -115,24 +115,24 @@ export function useSolverWido(): TSolverContext {
 	** matter the result. It returns a boolean value indicating whether the order was successful or
 	** not.
 	**********************************************************************************************/
-	const execute = useCallback(async (): Promise<boolean> => {
+	const execute = useCallback(async (): Promise<TTxResponse> => {
 		if (!latestQuote?.current || !request.current || isSolverDisabled[Solver.WIDO]) {
-			return false;
+			return ({isSuccessful: false});
 		}
 
 		const signer = provider.getSigner();
 		try {
 			const {data, to} = latestQuote.current;
 			const transaction = await signer.sendTransaction({data, to});
-			const transactionResult = await transaction.wait();
-			if (transactionResult.status === 0) {
+			const transactionReceipt = await transaction.wait();
+			if (transactionReceipt.status === 0) {
 				console.error('Fail to perform transaction');
-				return false;
+				return ({isSuccessful: false});
 			}
-			return true;
+			return ({isSuccessful: true, receipt: transactionReceipt});
 		} catch (_error) {
 			console.error(_error);
-			return false;
+			return ({isSuccessful: false});
 		}
 	}, [provider, latestQuote]);
 

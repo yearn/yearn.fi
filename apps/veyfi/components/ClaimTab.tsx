@@ -12,7 +12,7 @@ import {AmountInput} from '@common/components/AmountInput';
 import {useWallet} from '@common/contexts/useWallet';
 
 import type {ReactElement} from 'react';
-import type {MaybeBoolean} from '@yearn-finance/web-lib/types';
+import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 
 function ClaimTab(): ReactElement {
 	const {provider, address, isActive} = useWeb3();
@@ -50,7 +50,7 @@ function ClaimTab(): ReactElement {
 						disabled />
 					<Button
 						className={'w-full md:mt-7'}
-						onClick={async (): Promise<MaybeBoolean> => withdrawUnlocked(provider, toAddress(address), toAddress(votingEscrow?.address))}
+						onClick={async (): Promise<TTxResponse> => withdrawUnlocked(provider, toAddress(address), toAddress(votingEscrow?.address))}
 						isBusy={withdrawUnlockedStatus.loading}
 						isDisabled={!isActive || !isValidNetwork || !isClaimable || withdrawUnlockedStatus.loading || !votingEscrow || !address}>
 						{'Claim'}

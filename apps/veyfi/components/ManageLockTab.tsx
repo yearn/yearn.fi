@@ -17,7 +17,7 @@ import {AmountInput} from '../../common/components/AmountInput';
 
 import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
-import type {MaybeBoolean} from '@yearn-finance/web-lib/types';
+import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 
 function ManageLockTab(): ReactElement {
 	const [lockTime, set_lockTime] = useState('');
@@ -85,7 +85,7 @@ function ManageLockTab(): ReactElement {
 						disabled />
 					<Button
 						className={'w-full md:mt-7'}
-						onClick={async (): Promise<MaybeBoolean> => extendLockTime(provider, toAddress(address), toAddress(votingEscrow?.address), toSeconds(newUnlockTime))}
+						onClick={async (): Promise<TTxResponse> => extendLockTime(provider, toAddress(address), toAddress(votingEscrow?.address), toSeconds(newUnlockTime))}
 						isBusy={extendLockTimeStatus.loading}
 						isDisabled={!isActive || !isValidNetwork || !isValidLockTime || extendLockTimeStatus.loading || !votingEscrow || !address}>
 						{'Extend'}
@@ -120,7 +120,7 @@ function ManageLockTab(): ReactElement {
 						disabled />
 					<Button
 						className={'w-full md:mt-7'}
-						onClick={async (): Promise<MaybeBoolean> => withdrawLocked(provider, toAddress(address), toAddress(votingEscrow?.address))}
+						onClick={async (): Promise<TTxResponse> => withdrawLocked(provider, toAddress(address), toAddress(votingEscrow?.address))}
 						isBusy={withdrawLockedStatus.loading}
 						isDisabled={!isActive || !isValidNetwork || !hasPenalty || withdrawLockedStatus.loading || !votingEscrow || !address}>
 						{'Exit'}

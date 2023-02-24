@@ -19,8 +19,8 @@ import {useBalance} from '@common/hooks/useBalance';
 
 import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
-import type {MaybeBoolean} from '@yearn-finance/web-lib/types';
 import type {TMilliseconds} from '@yearn-finance/web-lib/utils/time';
+import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 
 function LockTab(): ReactElement {
 	const [lockAmount, set_lockAmount] = useState(toNormalizedBN(0));
@@ -80,20 +80,20 @@ function LockTab(): ReactElement {
 	const txAction = !isApproved
 		? {
 			label: 'Approve',
-			onAction: async (): Promise<MaybeBoolean> => approveLock(provider, toAddress(address), toAddress(votingEscrow?.token), toAddress(votingEscrow?.address)),
+			onAction: async (): Promise<TTxResponse> => approveLock(provider, toAddress(address), toAddress(votingEscrow?.token), toAddress(votingEscrow?.address)),
 			isLoading: approveLockStatus.loading,
 			isDisabled: isApproveDisabled
 		}
 		: hasLockedAmount
 			? {
 				label: 'Lock',
-				onAction: async (): Promise<MaybeBoolean> => increaseLockAmount(provider, toAddress(address), toAddress(votingEscrow?.address), lockAmount.raw),
+				onAction: async (): Promise<TTxResponse> => increaseLockAmount(provider, toAddress(address), toAddress(votingEscrow?.address), lockAmount.raw),
 				isLoading: increaseLockAmountStatus.loading,
 				isDisabled: isLockDisabled
 			}
 			: {
 				label: 'Lock',
-				onAction: async (): Promise<MaybeBoolean> => lock(provider, toAddress(address), toAddress(votingEscrow?.address), lockAmount.raw, toSeconds(unlockTime)),
+				onAction: async (): Promise<TTxResponse> => lock(provider, toAddress(address), toAddress(votingEscrow?.address), lockAmount.raw, toSeconds(unlockTime)),
 				isLoading: lockStatus.loading,
 				isDisabled: isLockDisabled
 			};
