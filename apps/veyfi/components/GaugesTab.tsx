@@ -13,6 +13,7 @@ function GaugesTab(): ReactElement {
 					{
 						key: 'name',
 						label: 'Asset',
+						columnSpan: 2,
 						sortable: true,
 						fullWidth: true,
 						className: 'my-4 md:my-0',
@@ -93,7 +94,7 @@ function GaugesTab(): ReactElement {
 						actions: null
 					}
 				]}
-				columns={8}
+				columns={9}
 				initialSortBy={'gaugeApy'}
 			/>
 		</div>
