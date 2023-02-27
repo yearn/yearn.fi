@@ -1,6 +1,8 @@
 import {useCallback, useMemo, useState} from 'react';
+import ReactPaginate from 'react-paginate';
 import {sort} from '@veYFI/utils';
 import IconChevronPlain from '@common/icons/IconChevronPlain';
+import IconPaginationArrow from '@common/icons/IconPaginationArrow';
 
 import type {ReactElement} from 'react';
 
@@ -34,6 +36,7 @@ type TTableProps<T> = {
 
 function Table<T>({metadata, data, columns, initialSortBy, onRowClick}: TTableProps<T>): ReactElement {
 	const [{sortedBy, order}, set_state] = useState<TState<T>>({sortedBy: initialSortBy, order: 'desc'});
+	const [itemOffset, set_itemOffset] = useState(0);
 	
 	const handleSort = useCallback((key: Extract<keyof T, string>): void => {
 		const willChangeSortKey = sortedBy !== key;
@@ -46,6 +49,15 @@ function Table<T>({metadata, data, columns, initialSortBy, onRowClick}: TTablePr
 	}, [data, order, sortedBy]);
 
 	const numberOfColumns = Math.min(columns ?? (metadata.length), 12).toString();
+
+	const ITEMS_PER_PAGE = 10;
+	const endOffset = itemOffset + ITEMS_PER_PAGE;
+	const currentItems = sortedData.slice(itemOffset, endOffset);
+	const pageCount = Math.ceil(sortedData.length / ITEMS_PER_PAGE);
+	const handlePageClick = (event: {selected: number}): void => {
+		const newOffset = (event.selected * ITEMS_PER_PAGE) % sortedData.length;
+		set_itemOffset(newOffset);
+	};
 
 	return (
 		<div className={'w-full'}>
@@ -66,7 +78,7 @@ function Table<T>({metadata, data, columns, initialSortBy, onRowClick}: TTablePr
 				))}
 			</div>
 			
-			{sortedData.map((item, rowIndex): ReactElement => {
+			{currentItems.map((item, rowIndex): ReactElement => {
 				return (
 					<div 
 						key={`row_${rowIndex}`} 
@@ -88,6 +100,50 @@ function Table<T>({metadata, data, columns, initialSortBy, onRowClick}: TTablePr
 					</div>
 				);
 			})}
+			<div className={'mt-4'}>
+				<div className={'border-t border-neutral-300 p-4 pb-0'}>
+					<div className={'flex flex-1 justify-between sm:hidden'}>
+						<a
+							href={'#'}
+							className={'border-gray-300 text-gray-700 hover:bg-gray-50 relative inline-flex items-center rounded-md border  px-4 py-2 text-sm font-medium'}
+						>
+							{'Previous'}
+						</a>
+						<a
+							href={'#'}
+							className={'border-gray-300 text-gray-700 hover:bg-gray-50 relative ml-3 inline-flex items-center rounded-md border  px-4 py-2 text-sm font-medium'}
+						>
+							{'Next'}
+						</a>
+					</div>
+					<div className={'sm-border hidden sm:flex sm:items-center sm:justify-center'}>
+						<div className={'flex-1'}>
+							<p className={'text-gray-700 text-sm'}>
+								{'Showing '}<span className={'font-medium'}>{endOffset - (ITEMS_PER_PAGE - 1)}</span>{' to '}<span className={'font-medium'}>{Math.min(endOffset, sortedData.length)}</span>{' of'}{' '}
+								<span className={'font-medium'}>{sortedData.length}</span> {'results'}
+							</p>
+						</div>
+						<ReactPaginate
+							className={'inline-flex align-middle'}
+							pageLinkClassName={'text-[#5B5B5B] hover:border-b-2 inline-flex items-end mx-2 mt-2.5 px-1 text-xs'}
+							previousLinkClassName={'inline-flex items-center m-2 font-medium'}
+							nextLinkClassName={'inline-flex items-center m-2 font-medium'}
+							breakLinkClassName={'text-[#5B5B5B] inline-flex items-center mx-2 my-2 px-1 font-medium'}
+							activeLinkClassName={'text-gray-900 font-bold border-b-2 items-center mx-2 my-2 px-1 md:inline-flex'}
+							disabledLinkClassName={'cursor-not-allowed hover:bg-neutral-100'}
+							disabledClassName={'text-neutral-300'}
+							renderOnZeroPageCount={(): null => null}
+							breakLabel={'...'}
+							onPageChange={handlePageClick}
+							pageRangeDisplayed={5}
+							pageCount={pageCount}
+							previousLabel={<IconPaginationArrow className={'h-5 w-5 transition-transform'} />}
+							nextLabel={<IconPaginationArrow className={'h-5 w-5 -rotate-180 transition-transform'} />}
+						/>
+						<div className={'sm:flex-1'}></div>
+					</div>
+				</div>
+			</div>
 		</div>
         
 	);
