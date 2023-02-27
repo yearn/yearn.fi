@@ -33,7 +33,7 @@ export type TGaugePosition = {
 	address: TAddress,
 	deposit?: TPosition,
 	reward?: TPosition,
-	// boost?: number,
+	boost?: number,
 }
 
 export type	TGaugeContext = {
@@ -103,7 +103,11 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 
 		const positionPromises = gauges.map(async ({address}): Promise<TGaugePosition> => {
 			const veYFIGaugeContract = new Contract(address, []); // todo: update once abi is available
-			const [balance, earned] = await ethcallProvider.tryAll([veYFIGaugeContract.balanceOf(address), veYFIGaugeContract.earned(address)]) as BigNumber[];
+			const [balance, earned, boostedBalance] = await ethcallProvider.tryAll([
+				veYFIGaugeContract.balanceOf(userAddress), 
+				veYFIGaugeContract.earned(userAddress),
+				veYFIGaugeContract.boostedBalanceOf(userAddress)
+			]) as BigNumber[];
 			
 			const depositPosition: TPosition = {
 				balance,
@@ -115,10 +119,16 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 				underlyingBalance: earned // TODO: convert to underlying
 			};
 
+			const boostRatio = balance.gt(0)
+				? boostedBalance.div(balance).toNumber()
+				: 0.1;
+			const boost = Math.min(1, boostRatio) * 10;
+
 			return {
 				address,
 				deposit: depositPosition,
-				reward: rewardPosition
+				reward: rewardPosition,
+				boost
 			};
 		});
 		return Promise.all(positionPromises);
