@@ -118,7 +118,7 @@ function Table<T>({metadata, data, columns, initialSortBy, onRowClick}: TTablePr
 					</div>
 					<div className={'sm-border hidden sm:flex sm:items-center sm:justify-center'}>
 						<div className={'ml-3 flex-1'}>
-							<p className={'text-gray-700 text-sm'}>
+							<p className={'text-sm text-[#5B5B5B]'}>
 								{'Showing '}<span className={'font-medium'}>{endOffset - (ITEMS_PER_PAGE - 1)}</span>{' to '}<span className={'font-medium'}>{Math.min(endOffset, sortedData.length)}</span>{' of'}{' '}
 								<span className={'font-medium'}>{sortedData.length}</span> {'results'}
 							</p>
