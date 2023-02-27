@@ -37,10 +37,9 @@ export async function unstake(
 	amount: BigNumber
 ): Promise<boolean> {
 	const willClaim = false;
-	const willLock = false;
 	const signer = provider.getSigner(accountAddress);
 	const gaugeContract = new ethers.Contract(gaugeAddress, VEYFI_GAUGE_ABI, signer);
-	return handleTx(gaugeContract.withdraw(amount, accountAddress, accountAddress, willClaim, willLock));
+	return handleTx(gaugeContract.withdraw(amount, accountAddress, accountAddress, willClaim));
 }
 
 export async function claimRewards(
