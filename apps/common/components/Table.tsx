@@ -117,7 +117,7 @@ function Table<T>({metadata, data, columns, initialSortBy, onRowClick}: TTablePr
 						</a>
 					</div>
 					<div className={'sm-border hidden sm:flex sm:items-center sm:justify-center'}>
-						<div className={'flex-1'}>
+						<div className={'ml-3 flex-1'}>
 							<p className={'text-gray-700 text-sm'}>
 								{'Showing '}<span className={'font-medium'}>{endOffset - (ITEMS_PER_PAGE - 1)}</span>{' to '}<span className={'font-medium'}>{Math.min(endOffset, sortedData.length)}</span>{' of'}{' '}
 								<span className={'font-medium'}>{sortedData.length}</span> {'results'}
@@ -125,17 +125,17 @@ function Table<T>({metadata, data, columns, initialSortBy, onRowClick}: TTablePr
 						</div>
 						<ReactPaginate
 							className={'inline-flex align-middle'}
-							pageLinkClassName={'text-[#5B5B5B] hover:border-b-2 inline-flex items-end mx-2 mt-2.5 px-1 text-xs'}
+							pageLinkClassName={'text-[#5B5B5B] hover:border-b-2 inline-flex items-end mx-1.5 mt-2.5 px-0.5 text-xs'}
 							previousLinkClassName={'inline-flex items-center m-2 font-medium'}
 							nextLinkClassName={'inline-flex items-center m-2 font-medium'}
-							breakLinkClassName={'text-[#5B5B5B] inline-flex items-center mx-2 my-2 px-1 font-medium'}
-							activeLinkClassName={'text-gray-900 font-bold border-b-2 items-center mx-2 my-2 px-1 md:inline-flex'}
+							breakLinkClassName={'text-[#5B5B5B] inline-flex items-center mx-2 my-2 px-0.5 font-medium'}
+							activeLinkClassName={'text-gray-900 font-bold border-b-2 items-center mx-2 my-2 px-0.5 md:inline-flex'}
 							disabledLinkClassName={'cursor-not-allowed hover:bg-neutral-100'}
 							disabledClassName={'text-neutral-300'}
 							renderOnZeroPageCount={(): null => null}
 							breakLabel={'...'}
 							onPageChange={handlePageClick}
-							pageRangeDisplayed={5}
+							pageRangeDisplayed={3}
 							pageCount={pageCount}
 							previousLabel={<IconPaginationArrow className={'h-5 w-5 transition-transform'} />}
 							nextLabel={<IconPaginationArrow className={'h-5 w-5 -rotate-180 transition-transform'} />}
