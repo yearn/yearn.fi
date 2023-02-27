@@ -31,9 +31,9 @@ export type TPosition = {
 
 export type TGaugePosition = {
 	address: TAddress,
-	deposit?: TPosition,
-	reward?: TPosition,
-	boost?: number,
+	deposit: TPosition,
+	reward: TPosition,
+	boost: number,
 }
 
 export type	TGaugeContext = {
