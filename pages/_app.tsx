@@ -1,5 +1,4 @@
 import React, {Fragment, memo} from 'react';
-import PlausibleProvider from 'next-plausible';
 import {AnimatePresence, domAnimation, LazyMotion, motion} from 'framer-motion';
 import localFont from '@next/font/local';
 import {WithYearn} from '@yearn-finance/web-lib/contexts/WithYearn';
@@ -85,27 +84,26 @@ const App = memo(function App(props: AppProps): ReactElement {
 
 function	MyApp(props: AppProps): ReactElement {
 	return (
-		<PlausibleProvider
-			domain={'yearn.finance'}
-			customDomain={'https://analytics.yearn.finance/'}
-			selfHosted>
-			<main className={aeonik.className}>
-				<WithYearn
-					options={{
-						web3: {
-							supportedChainID: [1, 10, 250, 42161, 1337]
-						},
-						baseSettings: {
-							yDaemonBaseURI: process.env.YDAEMON_BASE_URI as string
-						},
-						ui: {
-							shouldUseThemes: false
-						}
-					}}>
-					<App {...props} />
-				</WithYearn>
-			</main>
-		</PlausibleProvider>
+		<main className={aeonik.className}>
+			<script
+				defer
+				data-domain={'yearn.finance'}
+				src={'https://analytics.yearn.finance/js/script.js'} />
+			<WithYearn
+				options={{
+					web3: {
+						supportedChainID: [1, 10, 250, 42161, 1337]
+					},
+					baseSettings: {
+						yDaemonBaseURI: process.env.YDAEMON_BASE_URI as string
+					},
+					ui: {
+						shouldUseThemes: false
+					}
+				}}>
+				<App {...props} />
+			</WithYearn>
+		</main>
 	);
 }
 
