@@ -43,7 +43,7 @@ const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 	return (
 		<PlausibleProvider
 			domain={'yearn.finance'}
-			customDomain={'https://analytics.yearn.finance'}
+			customDomain={'https://analytics.yearn.finance/'}
 			selfHosted>
 			<div id={'app'} className={'mx-auto mb-0 flex max-w-6xl font-aeonik'}>
 				<div className={'block min-h-[100vh] w-full'}>
