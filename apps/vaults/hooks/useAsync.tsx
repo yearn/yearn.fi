@@ -4,7 +4,7 @@ import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUp
 import type {VoidPromiseFunction} from '@yearn-finance/web-lib/types';
 
 function	useAsync<T>(
-	callback: (...args: any) => Promise<T | undefined>,
+	callback: (...args: unknown[]) => Promise<T | undefined>,
 	defaultValue?: T,
 	effectDependencies: unknown[] = []
 ): [T | undefined, boolean, VoidPromiseFunction] {
