@@ -51,7 +51,7 @@ export default function SettingsPopover(): ReactElement {
 												{Solver.PORTALS}
 											</option>
 										</select>
-										{zapProvider === Solver.COWSWAP ?(
+										{zapProvider === Solver.COWSWAP ? (
 											<legend className={'text-xs italic text-neutral-500'}>
 												{'Submit a'}&nbsp;
 												<a
@@ -62,6 +62,18 @@ export default function SettingsPopover(): ReactElement {
 													{'gasless order'}
 												</a>
 												&nbsp;{'using CoW Swap.'}
+											</legend>
+										) : zapProvider === Solver.WIDO ? (
+											<legend className={'text-xs italic text-neutral-500'}>
+												{'Submit an order via'}&nbsp;
+												<a
+													className={'underline'}
+													href={'https://www.joinwido.com/'}
+													target={'_blank'}
+													rel={'noreferrer'}>
+													{'Wido'}
+												</a>
+												&nbsp;{'(0.3% fee).'}
 											</legend>
 										) : (<legend>&nbsp;</legend>)}
 									</div>
