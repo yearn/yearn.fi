@@ -2,7 +2,6 @@ import type {ReactElement} from 'react';
 
 type TAmountInputProps = {
 	amount: string | number;
-	onAmountChange?: (amount: string) => void;
 	maxAmount?: string | number;
 	maxLabel?: string;
 	label?: string;
@@ -11,18 +10,23 @@ type TAmountInputProps = {
 	error?: string;
 	disabled?: boolean;
 	loading?: boolean;
+	onAmountChange?: (amount: string) => void;
+	onLegendClick?: () => void;
+	onMaxClick?: () => void;
 }
 
 function AmountInput({
 	amount,
-	onAmountChange,
 	maxAmount,
 	label,
 	placeholder,
 	legend,
 	error,
 	disabled,
-	loading
+	loading,
+	onAmountChange,
+	onLegendClick,
+	onMaxClick
 }: TAmountInputProps): ReactElement {
 	let displayedAmount = amount.toString();
 	if(displayedAmount === '0' && !disabled) {
@@ -50,16 +54,20 @@ function AmountInput({
 					placeholder={loading ? '' : placeholder ?? '0'}
 					disabled={disabled}
 				/>
-				{maxAmount && !disabled && (
+				{maxAmount && !disabled ? (
 					<button
-						onClick={onAmountChange ? (): void => onAmountChange(maxAmount.toString()) : undefined}
+						onClick={onMaxClick ? (): void => onMaxClick() : undefined}
 						className={'absolute right-2 ml-2 h-6 cursor-pointer border-none bg-neutral-900 px-2 py-1 text-xs text-neutral-0 transition-colors hover:bg-neutral-700'}>
 						{'Max'}
 					</button>
-				)}
+				) : null}
 			</div>
 			{(error || legend) && (
-				<legend className={`mt-1 pl-2 text-xs md:mr-0 ${error ? 'text-[#EA5204]' : 'text-neutral-600'}`} suppressHydrationWarning>
+				<legend
+					role={onLegendClick ? 'button' : 'text'}
+					onClick={onLegendClick}
+					className={`mt-1 pl-2 text-xs md:mr-0 ${error ? 'text-[#EA5204]' : 'text-neutral-600'}`}
+					suppressHydrationWarning>
 					{error ?? legend}
 				</legend>
 			)}

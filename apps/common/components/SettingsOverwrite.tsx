@@ -32,7 +32,7 @@ function	WrappedInput({title, initialValue, onSave}: TWrappedInput): ReactElemen
 					/>
 				</div>
 				<Button
-					disabled={isInitialValue}
+					isDisabled={isInitialValue}
 					className={'w-full md:w-48'}
 					onClick={(): void => onSave(value)}>
 					{'Submit'}

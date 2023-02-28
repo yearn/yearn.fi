@@ -3,10 +3,10 @@ import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useSolver} from '@vaults/contexts/useSolver';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {Dropdown} from '@common/components/TokenDropdown';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
-import {formatPercent} from '@common/utils';
 
 import type {ReactElement} from 'react';
 
@@ -17,13 +17,6 @@ function	VaultDetailsQuickActionsTo(): ReactElement {
 
 	const selectedOptionToPricePerToken = useTokenPrice(toAddress(actionParams?.selectedOptionTo?.value));
 
-	function	renderAPY(): string {
-		if (((currentVault?.apy?.net_apy || 0) * 100) > 500) {
-			return `APY ≧ ${formatPercent(500, 0, 0)}`;
-		}
-		return `APY ${formatPercent((currentVault?.apy?.net_apy || 0) * 100)}`;
-	}
-
 	return (
 		<section aria-label={'TO'} className={'flex w-full flex-col space-x-0 md:flex-row md:space-x-4'}>
 			<div className={'relative z-10 w-full space-y-2'}>
@@ -32,7 +25,7 @@ function	VaultDetailsQuickActionsTo(): ReactElement {
 						{isDepositing ? 'To vault' : 'To wallet'}
 					</label>
 					<legend className={'font-number inline text-xs text-neutral-600 md:hidden'} suppressHydrationWarning>
-						{renderAPY()}
+						{`APY ${formatPercent((currentVault?.apy?.net_apy || 0) * 100, 2, 2, 500)}`}
 					</legend>
 				</div>
 				{isActive && !isDepositing && possibleOptionsTo.length > 1 ? (
@@ -54,7 +47,9 @@ function	VaultDetailsQuickActionsTo(): ReactElement {
 					</div>
 				)}
 				<legend className={'font-number hidden text-xs text-neutral-600 md:inline'} suppressHydrationWarning>
-					{isDepositing ? renderAPY() : ''}
+					{isDepositing ? (
+						formatPercent((currentVault?.apy?.net_apy || 0) * 100, 2, 2, 500)
+					) : ''}
 				</legend>
 			</div>
 

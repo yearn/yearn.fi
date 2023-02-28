@@ -1,5 +1,5 @@
 import {useUI} from '@yearn-finance/web-lib/contexts/useUI';
-import {useClientEffect} from '@yearn-finance/web-lib/hooks';
+import {useClientEffect} from '@yearn-finance/web-lib/hooks/useClientEffect';
 
 import type {ReactElement} from 'react';
 

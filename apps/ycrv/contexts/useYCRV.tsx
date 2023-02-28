@@ -17,7 +17,7 @@ import YVECRV_ABI from '@yCRV/utils/abi/yveCRV.abi';
 import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
-import type {TDict} from '@yearn-finance/web-lib/utils/types';
+import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TYDaemonHarvests, TYearnVault} from '@common/types/yearn';
 
 type THoldings = {

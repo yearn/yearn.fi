@@ -1,5 +1,5 @@
 import React, {createContext, useCallback, useContext, useState} from 'react';
-import {useDeepCompareMemo} from '@react-hookz/web';
+import {useDebouncedEffect, useDeepCompareMemo} from '@react-hookz/web';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useSolverChainCoin} from '@vaults/hooks/useSolverChainCoin';
 import {useSolverCowswap} from '@vaults/hooks/useSolverCowswap';
@@ -8,7 +8,6 @@ import {useSolverPartnerContract} from '@vaults/hooks/useSolverPartnerContract';
 import {useSolverVanilla} from '@vaults/hooks/useSolverVanilla';
 import {useSolverWido} from '@vaults/hooks/useSolverWido';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {useDebouncedEffect} from '@yearn-finance/web-lib/hooks/useDebounce';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';

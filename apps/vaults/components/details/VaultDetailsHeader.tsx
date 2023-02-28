@@ -6,12 +6,12 @@ import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import {formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
+import {formatAmount, formatPercent, formatUSD} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {copyToClipboard} from '@yearn-finance/web-lib/utils/helpers';
 import {useBalance} from '@common/hooks/useBalance';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
-import {formatPercent, formatUSD, getVaultName} from '@common/utils';
+import {getVaultName} from '@common/utils';
 
 import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
@@ -68,9 +68,7 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 						{'Net APY'}
 					</p>
 					<b className={'font-number text-lg md:text-3xl'} suppressHydrationWarning>
-						{(currentVault?.apy?.net_apy || 0) > 5 ? (
-							`≧ ${formatPercent(500)}`
-						) : formatPercent((currentVault?.apy?.net_apy || 0) * 100)}
+						{formatPercent((currentVault?.apy?.net_apy || 0) * 100, 2, 2, 500)}
 					</b>
 					<legend className={'text-xxs text-neutral-600 md:text-xs'}>&nbsp;</legend>
 				</div>

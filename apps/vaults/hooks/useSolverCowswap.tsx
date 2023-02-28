@@ -14,7 +14,7 @@ import {useYearn} from '@common/contexts/useYearn';
 import {approvedERC20Amount, approveERC20, isApprovedERC20} from '@common/utils/actions/approveToken';
 
 import type {AxiosError} from 'axios';
-import type {TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
+import type {TTxResponse, TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TNormalizedBN} from '@common/types/types';
 import type {ApiError, Order, QuoteQuery, Timestamp} from '@gnosis.pm/gp-v2-contracts';
 import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
@@ -88,7 +88,6 @@ export function useSolverCowswap(): TSolverContext {
 	const [, getQuote] = useCowswapQuote();
 	const request = useRef<TInitSolverArgs>();
 	const latestQuote = useRef<TCowAPIResult>();
-	const signature = useRef<string>('');
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** A slippage of 1% per default is set to avoid the transaction to fail due to price
@@ -122,7 +121,7 @@ export function useSolverCowswap(): TSolverContext {
 			return toNormalizedBN(quote?.quote?.buyAmount || 0, request?.current?.outputToken?.decimals || 18);
 		}
 		return toNormalizedBN(0);
-	}, [getQuote]);
+	}, [getBuyAmountWithSlippage, getQuote]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** signCowswapOrder is used to sign the order with the user's wallet. The signature is used
@@ -135,7 +134,7 @@ export function useSolverCowswap(): TSolverContext {
 			return toAddress(address || '');
 		}
 
-		const	signer = (provider as ethers.providers.Web3Provider).getSigner();
+		const	signer = provider.getSigner();
 		const	rawSignature = await signOrder(
 			domain(1, '0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
 			quote,
@@ -155,33 +154,6 @@ export function useSolverCowswap(): TSolverContext {
 			getQuote(request.current);
 		}
 	}, [request, getQuote]);
-
-	/* 🔵 - Yearn Finance **************************************************************************
-	** approve is a method that approves an order for the CowSwap exchange. It returns a boolean
-	** value indicating whether the approval was successful or not.
-	** This method tries to sign the quote object contained within the latestQuote.result object using
-	** the signCowswapOrder method described above. The buyAmount field of the quote object is set
-	** to the value of the buyAmountWithSlippage variable before it is passed to the
-	** signCowswapOrder method.
-	**********************************************************************************************/
-	const	approve = useCallback(async (): Promise<boolean> => {
-		if (!latestQuote?.current || !latestQuote?.current?.quote || !request?.current || isSolverDisabled[Solver.COWSWAP]) {
-			return false;
-		}
-		const	{quote} = latestQuote.current;
-		try {
-			const	buyAmountWithSlippage = getBuyAmountWithSlippage(latestQuote.current, request.current.outputToken.decimals);
-			const	_signature = await signCowswapOrder({
-				...quote,
-				buyAmount: buyAmountWithSlippage
-			});
-			signature.current = _signature;
-			return true;
-		} catch (_error) {
-			console.error(_error);
-			return false;
-		}
-	}, [getBuyAmountWithSlippage, signCowswapOrder]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** Cowswap orders have a validity period and the return value on submit is not the execution
@@ -212,9 +184,9 @@ export function useSolverCowswap(): TSolverContext {
 	** matter the result. It returns a boolean value indicating whether the order was successful or
 	** not.
 	**********************************************************************************************/
-	const execute = useCallback(async (): Promise<boolean> => {
+	const execute = useCallback(async (): Promise<TTxResponse> => {
 		if (!latestQuote?.current || !latestQuote?.current?.quote || !request.current || isSolverDisabled[Solver.COWSWAP]) {
-			return false;
+			return ({isSuccessful: false});
 		}
 		const	{quote, from, id} = latestQuote.current;
 		try {
@@ -232,15 +204,15 @@ export function useSolverCowswap(): TSolverContext {
 				const {isSuccessful, error} = await checkOrderStatus(orderUID, quote.validTo);
 				if (error) {
 					console.error(error);
-					return false;
+					return ({isSuccessful: false, error});
 				}
-				return isSuccessful;
+				return {isSuccessful};
 			}
-		} catch (_error) {
-			console.error(_error);
-			return false;
+		} catch (error) {
+			console.error(error);
+			return ({isSuccessful: false, error: error as Error});
 		}
-		return false;
+		return ({isSuccessful: false});
 	}, [getBuyAmountWithSlippage, shouldUsePresign, signCowswapOrder]);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -276,7 +248,7 @@ export function useSolverCowswap(): TSolverContext {
 		}
 
 		const allowance = await approvedERC20Amount(
-			provider as ethers.providers.Web3Provider,
+			provider,
 			toAddress(request.current.inputToken.value), //Input token
 			toAddress(SOLVER_COW_VAULT_RELAYER_ADDRESS) //Spender, aka Cowswap solver
 		);
@@ -298,7 +270,7 @@ export function useSolverCowswap(): TSolverContext {
 		}
 
 		const	isApproved = await isApprovedERC20(
-			provider as ethers.providers.Web3Provider,
+			provider,
 			toAddress(request.current.inputToken.value), //token to approve
 			toAddress(SOLVER_COW_VAULT_RELAYER_ADDRESS), //Cowswap relayer
 			amount
@@ -315,7 +287,7 @@ export function useSolverCowswap(): TSolverContext {
 			)
 			.onSuccess(onSuccess)
 			.perform();
-	}, [approve, provider]);
+	}, [provider]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** This execute function is not an actual deposit, but a swap using the

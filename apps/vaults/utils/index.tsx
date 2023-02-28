@@ -1,7 +1,7 @@
 import {addressZero} from '@yearn-finance/web-lib/utils/address';
 import {ZAP_ETH_WETH_CONTRACT, ZAP_FTM_WFTM_CONTRACT} from '@yearn-finance/web-lib/utils/constants';
 
-import type {TAddress} from '@yearn-finance/web-lib/utils/address';
+import type {TAddress} from '@yearn-finance/web-lib/types';
 
 export function getMessariSubgraphEndpoint(chainID: number): string {
 	switch (chainID) {

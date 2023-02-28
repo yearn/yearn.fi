@@ -1,7 +1,7 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 
-import type {VoidPromiseFunction} from '@yearn-finance/web-lib/utils/types';
+import type {VoidPromiseFunction} from '@yearn-finance/web-lib/types';
 
 function	useAsync<T>(
 	callback: (...args: any) => Promise<T | undefined>,

@@ -16,7 +16,7 @@ import externalzapOutTokenList from '../../common/utils/externalZapOutTokenList.
 
 import type {BigNumber} from 'ethers';
 import type {ReactNode} from 'react';
-import type {TAddress} from '@yearn-finance/web-lib/utils/address';
+import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
 import type {TYearnVault} from '@common/types/yearn';
 

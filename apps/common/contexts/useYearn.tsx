@@ -3,16 +3,15 @@ import useSWR from 'swr';
 import {Solver} from '@vaults/contexts/useSolver';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {useLocalStorage} from '@yearn-finance/web-lib/hooks';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
+import {useLocalStorage} from '@yearn-finance/web-lib/hooks/useLocalStorage';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import {DEFAULT_SLIPPAGE} from '@common/utils/constants';
 
 import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
-import type {TAddress} from '@yearn-finance/web-lib/utils/address';
-import type {TDict, VoidPromiseFunction} from '@yearn-finance/web-lib/utils/types';
+import type {TAddress, TDict, VoidPromiseFunction} from '@yearn-finance/web-lib/types';
 import type {TYdaemonEarned, TYDaemonToken, TYearnVault} from '@common/types/yearn';
 
 export type	TYearnContext = {
@@ -30,7 +29,7 @@ export type	TYearnContext = {
 	set_zapProvider: (value: Solver) => void
 }
 const	defaultProps: TYearnContext = {
-	currentPartner: toAddress(process.env.PARTNER_ID_ADDRESS as string),
+	currentPartner: toAddress(process.env.PARTNER_ID_ADDRESS),
 	earned: {
 		earned: {},
 		totalRealizedGainsUSD: 0,
@@ -120,7 +119,7 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 	**	Setup and render the Context provider to use in the app.
 	***************************************************************************/
 	const	contextValue = useMemo((): TYearnContext => ({
-		currentPartner: currentPartner?.id ? toAddress(currentPartner.id) : toAddress(process.env.PARTNER_ID_ADDRESS as string),
+		currentPartner: currentPartner?.id ? toAddress(currentPartner.id) : toAddress(process.env.PARTNER_ID_ADDRESS),
 		prices,
 		tokens,
 		earned,

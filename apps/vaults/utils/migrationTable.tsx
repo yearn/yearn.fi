@@ -1,8 +1,7 @@
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ZAP_YVEMPIRE_CONTRACT} from '@yearn-finance/web-lib/utils/constants';
 
-import type {TAddress} from '@yearn-finance/web-lib/utils/address';
-import type {TDict} from '@yearn-finance/web-lib/utils/types';
+import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 
 export type TMigrationTable = {
 	service: number;

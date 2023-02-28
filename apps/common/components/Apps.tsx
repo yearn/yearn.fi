@@ -11,7 +11,7 @@ import {YBRIBE_MENU} from '@yBribe/constants/menu';
 import {YCRV_MENU} from '@yCRV/constants/menu';
 
 import type {ReactElement} from 'react';
-import type {TMenu} from '@yearn-finance/web-lib/layouts/Header.next';
+import type {TMenu} from '@yearn-finance/web-lib/components/Header';
 import type {TMetaFile} from './Meta';
 
 export enum AppName {

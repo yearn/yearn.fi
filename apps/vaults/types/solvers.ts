@@ -1,6 +1,6 @@
 
 import type {BigNumber} from 'ethers';
-import type {TAddress} from '@yearn-finance/web-lib/utils/address';
+import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
 import type {Solver} from '@vaults/contexts/useSolver';

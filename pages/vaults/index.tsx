@@ -20,7 +20,7 @@ import {getVaultName} from '@common/utils';
 
 import type {NextRouter} from 'next/router';
 import type {ReactElement, ReactNode} from 'react';
-import type {TAddress} from '@yearn-finance/web-lib/utils/address';
+import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TSortDirection} from '@common/types/types';
 import type {TYearnVault} from '@common/types/yearn';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
@@ -29,7 +29,7 @@ function	HeaderUserPosition(): ReactElement {
 	const	{cumulatedValueInVaults} = useWallet();
 	const	{earned} = useYearn();
 
-	const	formatedYouEarned = useMemo((): string => formatAmount(earned?.totalUnrealizedGainsUSD || 0), [earned]);
+	const	formatedYouEarned = useMemo((): string => formatAmount((earned?.totalUnrealizedGainsUSD || 0) > 0 ? earned?.totalUnrealizedGainsUSD || 0 : 0), [earned]);
 	const	formatedYouHave = useMemo((): string => formatAmount(cumulatedValueInVaults || 0), [cumulatedValueInVaults]);
 
 	return (
