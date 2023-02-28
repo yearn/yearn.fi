@@ -143,7 +143,7 @@ export type	TSettingsForNetwork = {
 	metaURI?: string,
 	apiURI?: string,
 	explorerBaseURI?: string,
-	lensAddress?: TAddress,
+	lensOracleAddress?: TAddress,
 	partnerContractAddress?: TAddress
 }
 
