@@ -15,9 +15,9 @@ export async function	depositViaPartner(
 	const signer = provider.getSigner();
 	const contract = new ethers.Contract(partnerContractAddress, PARTNER_VAULT_ABI, signer);
 	const result = await handleTx(contract.deposit(vaultAddress, partnerAddress || process.env.PARTNER_ID_ADDRESS, amount, (gasLimit && gasLimit >= 0) ? {gasLimit} : {}));
-	if (result.error) {
-		const	errorCode = (result.error as any)?.code;
-		if (errorCode === 'UNPREDICTABLE_GAS_LIMIT' && gasLimit !== -1) {
+	if (gasLimit !== -1 && result.error && hasCode(result.error)) {
+		const	errorCode = result.error?.code;
+		if (errorCode === 'UNPREDICTABLE_GAS_LIMIT') {
 			return depositViaPartner(
 				provider,
 				partnerContractAddress,
@@ -29,4 +29,8 @@ export async function	depositViaPartner(
 		}
 	}
 	return result;
+}
+
+function hasCode(error: Error | unknown): error is { code: string} {
+	return (error as { code: string}).code !== undefined;
 }

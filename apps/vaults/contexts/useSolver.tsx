@@ -149,6 +149,7 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 					set_isLoading(false);
 				});
 		}
+	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [address, actionParams, currentSolver, cowswap.init, vanilla.init, wido.init, internalMigration.init, isDepositing, currentVault.migration.contract]); //Ignore the warning, it's a false positive
 
 	useDebouncedEffect((): void => {
