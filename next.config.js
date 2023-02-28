@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 const runtimeCaching = require('next-pwa/cache');
-
+const {withPlausibleProxy} = require('next-plausible');
 const withTM = require('next-transpile-modules')(['@yearn-finance/web-lib'], {resolveSymlinks: false});
 const withPWA = require('next-pwa')({
 	dest: './public/',
@@ -13,7 +13,7 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
 	enabled: process.env.ANALYZE === 'true'
 });
 
-module.exports = withTM(withBundleAnalyzer(withPWA({
+module.exports = withPlausibleProxy(withTM(withBundleAnalyzer(withPWA({
 	images: {
 		domains: [
 			'rawcdn.githack.com',
@@ -102,5 +102,5 @@ module.exports = withTM(withBundleAnalyzer(withPWA({
 		// YDAEMON_BASE_URI: 'http://localhost:8080',
 		BASE_YEARN_ASSETS_URI: 'https://raw.githubusercontent.com/yearn/yearn-assets/master/icons/multichain-tokens/'
 	}
-})));
+}))));
 

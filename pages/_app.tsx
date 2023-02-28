@@ -1,4 +1,5 @@
 import React, {Fragment, memo} from 'react';
+import PlausibleProvider from 'next-plausible';
 import {AnimatePresence, domAnimation, LazyMotion, motion} from 'framer-motion';
 import localFont from '@next/font/local';
 import {WithYearn} from '@yearn-finance/web-lib/contexts/WithYearn';
@@ -40,24 +41,26 @@ const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 	const	{name} = useCurrentApp(router);
 
 	return (
-		<div id={'app'} className={'mx-auto mb-0 flex max-w-6xl font-aeonik'}>
-			<div className={'block min-h-[100vh] w-full'}>
-				<AppHeader />
-				<LazyMotion features={domAnimation}>
-					<AnimatePresence mode={'wait'}>
-						<motion.div
-							key={name}
-							initial={'initial'}
-							animate={'enter'}
-							exit={'exit'}
-							className={'my-0 h-full md:mb-0 md:mt-16'}
-							variants={variants}>
-							{getLayout(<Component router={props.router} {...pageProps} />, router)}
-						</motion.div>
-					</AnimatePresence>
-				</LazyMotion>
+		<PlausibleProvider domain={'yearn.finance'}>
+			<div id={'app'} className={'mx-auto mb-0 flex max-w-6xl font-aeonik'}>
+				<div className={'block min-h-[100vh] w-full'}>
+					<AppHeader />
+					<LazyMotion features={domAnimation}>
+						<AnimatePresence mode={'wait'}>
+							<motion.div
+								key={name}
+								initial={'initial'}
+								animate={'enter'}
+								exit={'exit'}
+								className={'my-0 h-full md:mb-0 md:mt-16'}
+								variants={variants}>
+								{getLayout(<Component router={props.router} {...pageProps} />, router)}
+							</motion.div>
+						</AnimatePresence>
+					</LazyMotion>
+				</div>
 			</div>
-		</div>
+		</PlausibleProvider>
 	);
 });
 
