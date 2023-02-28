@@ -41,29 +41,24 @@ const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 	const	{name} = useCurrentApp(router);
 
 	return (
-		<PlausibleProvider
-			domain={'yearn.finance'}
-			customDomain={'https://analytics.yearn.finance/'}
-			selfHosted>
-			<div id={'app'} className={'mx-auto mb-0 flex max-w-6xl font-aeonik'}>
-				<div className={'block min-h-[100vh] w-full'}>
-					<AppHeader />
-					<LazyMotion features={domAnimation}>
-						<AnimatePresence mode={'wait'}>
-							<motion.div
-								key={name}
-								initial={'initial'}
-								animate={'enter'}
-								exit={'exit'}
-								className={'my-0 h-full md:mb-0 md:mt-16'}
-								variants={variants}>
-								{getLayout(<Component router={props.router} {...pageProps} />, router)}
-							</motion.div>
-						</AnimatePresence>
-					</LazyMotion>
-				</div>
+		<div id={'app'} className={'mx-auto mb-0 flex max-w-6xl font-aeonik'}>
+			<div className={'block min-h-[100vh] w-full'}>
+				<AppHeader />
+				<LazyMotion features={domAnimation}>
+					<AnimatePresence mode={'wait'}>
+						<motion.div
+							key={name}
+							initial={'initial'}
+							animate={'enter'}
+							exit={'exit'}
+							className={'my-0 h-full md:mb-0 md:mt-16'}
+							variants={variants}>
+							{getLayout(<Component router={props.router} {...pageProps} />, router)}
+						</motion.div>
+					</AnimatePresence>
+				</LazyMotion>
 			</div>
-		</PlausibleProvider>
+		</div>
 	);
 });
 
@@ -90,22 +85,27 @@ const App = memo(function App(props: AppProps): ReactElement {
 
 function	MyApp(props: AppProps): ReactElement {
 	return (
-		<main className={aeonik.className}>
-			<WithYearn
-				options={{
-					web3: {
-						supportedChainID: [1, 10, 250, 42161, 1337]
-					},
-					baseSettings: {
-						yDaemonBaseURI: process.env.YDAEMON_BASE_URI as string
-					},
-					ui: {
-						shouldUseThemes: false
-					}
-				}}>
-				<App {...props} />
-			</WithYearn>
-		</main>
+		<PlausibleProvider
+			domain={'yearn.finance'}
+			customDomain={'https://analytics.yearn.finance/'}
+			selfHosted>
+			<main className={aeonik.className}>
+				<WithYearn
+					options={{
+						web3: {
+							supportedChainID: [1, 10, 250, 42161, 1337]
+						},
+						baseSettings: {
+							yDaemonBaseURI: process.env.YDAEMON_BASE_URI as string
+						},
+						ui: {
+							shouldUseThemes: false
+						}
+					}}>
+					<App {...props} />
+				</WithYearn>
+			</main>
+		</PlausibleProvider>
 	);
 }
 

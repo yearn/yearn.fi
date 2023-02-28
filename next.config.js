@@ -21,6 +21,18 @@ module.exports = withPlausibleProxy()(withTM(withBundleAnalyzer(withPWA({
 			'placehold.co'
 		]
 	},
+	// async rewrites() {
+	// 	return [
+	// 		{
+	// 			source: '/js/script.js',
+	// 			destination: 'https://analytics.yearn.finance/js/script.js'
+	// 		},
+	// 		{
+	// 			source: '/api/event',
+	// 			destination: 'https://analytics.yearn.finance/api/event'
+	// 		}
+	// 	];
+	// },
 	redirects() {
 		return [
 			{
