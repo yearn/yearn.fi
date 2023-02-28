@@ -31,7 +31,7 @@ export const isSolverDisabled = {
 	[Solver.CHAIN_COIN]: false,
 	[Solver.INTERNAL_MIGRATION]: false,
 	[Solver.COWSWAP]: false,
-	[Solver.WIDO]: true, //Audit ongoing
+	[Solver.WIDO]: false,
 	[Solver.PORTALS]: true //Not yet implemented
 };
 
@@ -81,6 +81,13 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 			case Solver.WIDO:
 			case Solver.COWSWAP: {
 				const [widoQuote, cowswapQuote] = await Promise.all([wido.init(request), cowswap.init(request)]); //TODO: add Portals once implemented
+
+				/**************************************************************
+				** Logic is to use the primary solver (Wido) and check if a
+				** quote is available. If not, we fallback to the secondary
+				** solver (Cowswap). If neither are available, we set the
+				** quote to 0.
+				**************************************************************/
 				if (currentSolver === Solver.WIDO && !isSolverDisabled[Solver.WIDO]) {
 					if (widoQuote?.raw?.gt(0)) {
 						performBatchedUpdates((): void => {
@@ -98,7 +105,16 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 							set_isLoading(false);
 						});
 					}
-				} else if (currentSolver === Solver.COWSWAP && !isSolverDisabled[Solver.COWSWAP]) {
+					return;
+				}
+
+				/**************************************************************
+				** Logic is to use the primary solver (Cowswap) and check if a
+				** quote is available. If not, we fallback to the secondary
+				** solver (Wido). If neither are available, we set the
+				** quote to 0.
+				**************************************************************/
+				if (currentSolver === Solver.COWSWAP && !isSolverDisabled[Solver.COWSWAP]) {
 					if (cowswapQuote?.raw?.gt(0)) {
 						performBatchedUpdates((): void => {
 							set_currentSolverState({...cowswap, quote: cowswapQuote});
