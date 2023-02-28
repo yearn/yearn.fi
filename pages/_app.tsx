@@ -88,7 +88,7 @@ function	MyApp(props: AppProps): ReactElement {
 			<script
 				defer
 				data-domain={'yearn.finance'}
-				src={'https://analytics.yearn.finance/js/script.js'} />
+				src={'/js/script.js'} />
 			<WithYearn
 				options={{
 					web3: {
