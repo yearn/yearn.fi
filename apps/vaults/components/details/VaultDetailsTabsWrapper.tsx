@@ -119,7 +119,7 @@ function	VaultDetailsTabsWrapper({currentVault}: {currentVault: TYearnVault}): R
 	}
 
 	const	{data: yDaemonHarvestsData} = useSWR(
-		`${baseAPISettings.yDaemonBaseURI}/${safeChainID}/vaults/harvests/${currentVault.address}`,
+		`${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/${safeChainID}/vaults/harvests/${currentVault.address}`,
 		baseFetcher,
 		{revalidateOnFocus: false}
 	) as SWRResponse;

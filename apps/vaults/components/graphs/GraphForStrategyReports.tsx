@@ -23,7 +23,7 @@ function	GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height =
 	const {safeChainID} = useChainID();
 	const {settings: baseAPISettings} = useSettings();
 	const {data: reports} = useSWR(
-		`${baseAPISettings.yDaemonBaseURI}/${safeChainID}/reports/${strategy.address}`,
+		`${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/${safeChainID}/reports/${strategy.address}`,
 		baseFetcher,
 		{revalidateOnFocus: false}
 	) as SWRResponse;

@@ -77,14 +77,14 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 	// ) as SWRResponse;
 
 	const	{data: styCRVVault} = useSWR(
-		`${baseAPISettings.yDaemonBaseURI}/1/vaults/${STYCRV_TOKEN_ADDRESS}`,
+		`${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/1/vaults/${STYCRV_TOKEN_ADDRESS}`,
 		baseFetcher,
 		{revalidateOnFocus: false}
 	) as SWRResponse;
 
 
 	const	{data: yCRVHarvests} = useSWR(
-		`${baseAPISettings.yDaemonBaseURI}/1/vaults/harvests/${STYCRV_TOKEN_ADDRESS},${LPYCRV_TOKEN_ADDRESS}`,
+		`${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/1/vaults/harvests/${STYCRV_TOKEN_ADDRESS},${LPYCRV_TOKEN_ADDRESS}`,
 		baseFetcher,
 		{revalidateOnFocus: false}
 	) as SWRResponse;

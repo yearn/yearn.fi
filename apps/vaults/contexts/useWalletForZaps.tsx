@@ -50,7 +50,7 @@ export const WalletForZapApp = memo(function WalletForZapApp({children}: {childr
 	**	Fetching, for this user, the list of tokens available for zaps
 	***************************************************************************/
 	const	{data: tokensList} = useSWR(
-		address ? `${baseAPISettings.yDaemonBaseURI}/${safeChainID}/tokenlistbalances/${address}` : null,
+		address ? `${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/${safeChainID}/tokenlistbalances/${address}` : null,
 		baseFetcher,
 		{revalidateOnFocus: false}
 	) as SWRResponse<TDict<TYDaemonTokensList>>;

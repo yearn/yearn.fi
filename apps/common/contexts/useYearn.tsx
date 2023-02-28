@@ -65,31 +65,31 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 	**	apy.net_apy
 	***************************************************************************/
 	const	{data: prices} = useSWR(
-		`${baseAPISettings.yDaemonBaseURI}/${safeChainID}/prices/all`,
+		`${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/${safeChainID}/prices/all`,
 		baseFetcher,
 		{revalidateOnFocus: false}
 	) as SWRResponse;
 
 	const	{data: tokens} = useSWR(
-		`${baseAPISettings.yDaemonBaseURI}/${safeChainID}/tokens/all`,
+		`${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/${safeChainID}/tokens/all`,
 		baseFetcher,
 		{revalidateOnFocus: false}
 	) as SWRResponse;
 
 	const	{data: vaults, isLoading: isLoadingVaultList, mutate: mutateVaultList} = useSWR(
-		`${baseAPISettings.yDaemonBaseURI}/${safeChainID}/vaults/all?hideAlways=true&orderBy=apy.net_apy&orderDirection=desc&strategiesDetails=withDetails&strategiesRisk=withRisk&strategiesCondition=inQueue`,
+		`${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/${safeChainID}/vaults/all?hideAlways=true&orderBy=apy.net_apy&orderDirection=desc&strategiesDetails=withDetails&strategiesRisk=withRisk&strategiesCondition=inQueue`,
 		baseFetcher,
 		{revalidateOnFocus: false}
 	) as SWRResponse;
 
 	const	{data: vaultsMigrations} = useSWR(
-		`${baseAPISettings.yDaemonBaseURI}/${safeChainID}/vaults/all?migratable=nodust`,
+		`${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/${safeChainID}/vaults/all?migratable=nodust`,
 		baseFetcher,
 		{revalidateOnFocus: false}
 	) as SWRResponse;
 
 	const	{data: earned} = useSWR(
-		address ? `${baseAPISettings.yDaemonBaseURI}/${safeChainID}/earned/${address}` : null,
+		address ? `${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/${safeChainID}/earned/${address}` : null,
 		baseFetcher,
 		{revalidateOnFocus: false}
 	) as SWRResponse;

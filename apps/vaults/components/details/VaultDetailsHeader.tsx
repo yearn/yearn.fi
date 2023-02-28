@@ -22,7 +22,7 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 	const {address} = useWeb3();
 	const {settings: baseAPISettings} = useSettings();
 	const {data: earned} = useSWR(
-		currentVault.address && address ? `${baseAPISettings.yDaemonBaseURI}/${safeChainID}/earned/${address}/${currentVault.address}` : null,
+		currentVault.address && address ? `${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/${safeChainID}/earned/${address}/${currentVault.address}` : null,
 		baseFetcher,
 		{revalidateOnFocus: false}
 	) as SWRResponse as {data: TYdaemonEarned};
