@@ -102,5 +102,5 @@ module.exports = withPlausibleProxy()(withTM(withBundleAnalyzer(withPWA({
 		// YDAEMON_BASE_URI: 'http://localhost:8080',
 		BASE_YEARN_ASSETS_URI: 'https://raw.githubusercontent.com/yearn/yearn-assets/master/icons/multichain-tokens/'
 	}
-})));
+}))));
 
