@@ -34,7 +34,7 @@ function useWidoQuote(): [TWidoResult, (request: TInitSolverArgs, shouldPreventE
 			toChainId: 1, // Chain Id of to token
 			toToken: toAddress(request.outputToken.value), // token to receive
 			amount: formatBN(request?.inputAmount || 0).toString(), // Token amount of from token
-			slippagePercentage: zapSlippage, // Acceptable max slippage for the swap
+			slippagePercentage: zapSlippage/100, // Acceptable max slippage for the swap
 			user: request.from // receiver
 		});
 
@@ -94,7 +94,7 @@ export function useSolverWido(): TSolverContext {
 		const quote = await getQuote(_request);
 		if (quote) {
 			latestQuote.current = quote;
-			return toNormalizedBN(formatBN(quote?.toTokenAmount));
+			return toNormalizedBN(quote?.toTokenAmount || 0, request?.current?.outputToken?.decimals || 18);
 		}
 		return toNormalizedBN(0);
 	}, [getQuote]);
