@@ -70,12 +70,16 @@ type TDropdownOption = {
 }
   
 export type TDropdownProps = {
-	selected: TDropdownOption;
+	selected?: TDropdownOption;
 	options: TDropdownOption[];
 	onChange?: (selected: TDropdownOption) => void;
+	label?: string;
+	legend?: string;
+	isDisabled?: boolean;
+	className?: string;
 }
 
-const Dropdown = ({selected, options, onChange}: TDropdownProps): ReactElement => {
+const Dropdown = ({selected, options, onChange, label, legend, isDisabled, className}: TDropdownProps): ReactElement => {
 	const [isOpen, set_isOpen] = useThrottledState(false, 400);
 	const [search, set_search] = useState('');
 
@@ -85,94 +89,107 @@ const Dropdown = ({selected, options, onChange}: TDropdownProps): ReactElement =
 		: options;
 
 	return (
-		<div>
-			{isOpen ? (
-				<div
-					className={'fixed inset-0 z-0'}
-					onClick={(e): void => {
-						e.stopPropagation();
-						e.preventDefault();
-						set_isOpen(false);
-					}} />
-			) : null}
-			<Combobox
-				value={selected}
-				onChange={(option: TDropdownOption): void => {
-					performBatchedUpdates((): void => {
-						if(onChange) {
-							onChange(option);
-						}
-						set_isOpen(false);
-					});
-				}}>
-				<>
-					<Combobox.Button
-						onClick={(): void => set_isOpen((state: boolean): boolean => !state)}
-						className={'flex h-10 w-full items-center justify-between bg-neutral-0 p-2 text-base text-neutral-900 md:px-3'}>
-						<div className={'relative flex flex-row items-center'}>
-							{selected.icon && (
-								<div className={'h-6 w-6 rounded-full'}>
-									<ImageWithFallback
-										alt={selected.label}
-										width={24}
-										height={24}
-										quality={90}
-										src={selected.icon}
-										loading={'eager'} 
-									/>
-								</div>
-							)}
-							<p className={`max-w-[90%] overflow-x-hidden text-ellipsis whitespace-nowrap font-normal text-neutral-900 scrollbar-none md:max-w-full ${selected.icon ? 'pl-2' : 'pl-0'}`}>
-								<Combobox.Input
-									className={'w-full cursor-default overflow-x-scroll border-none bg-transparent p-0 outline-none scrollbar-none'}
-									displayValue={({label}: TDropdownOption): string => label}
-									spellCheck={false}
-									onChange={(event): void => {
-										performBatchedUpdates((): void => {
-											set_isOpen(true);
-											set_search(event.target.value);
-										});
-									}} />
-							</p>
-						</div>
-						<div className={'absolute right-2 md:right-3'}>
-							<IconChevron
-								aria-hidden={'true'}
-								className={`h-6 w-6 transition-transform ${isOpen ? '-rotate-180' : 'rotate-0'}`} />
-						</div>
-					</Combobox.Button>
-					<Transition
-						as={Fragment}
-						show={isOpen}
-						enter={'transition duration-100 ease-out'}
-						enterFrom={'transform scale-95 opacity-0'}
-						enterTo={'transform scale-100 opacity-100'}
-						leave={'transition duration-75 ease-out'}
-						leaveFrom={'transform scale-100 opacity-100'}
-						leaveTo={'transform scale-95 opacity-0'}
-						afterLeave={(): void => {
-							performBatchedUpdates((): void => {
+		<div className={className}>
+			<div className={'relative z-20 flex flex-col space-y-1'}>
+				{label && <label className={'text-base text-neutral-600'}>{label}</label>}
+				<div>
+					{isOpen ? (
+						<div
+							className={'fixed inset-0 z-0'}
+							onClick={(e): void => {
+								e.stopPropagation();
+								e.preventDefault();
 								set_isOpen(false);
-								set_search('');
+							}} />
+					) : null}
+					<Combobox
+						value={selected}
+						onChange={(option: TDropdownOption): void => {
+							performBatchedUpdates((): void => {
+								if(onChange) {
+									onChange(option);
+								}
+								set_isOpen(false);
 							});
-						}}>
-						<Combobox.Options className={'yearn--dropdown-menu z-50'}>
-							{filteredOptions.length === 0 ? (
-								<DropdownEmpty isSearching={isSearching} />
-							) : (
-								filteredOptions.map(({key, label, description, icon}): ReactElement => (
-									<DropdownOption
-										key={key}
-										label={label}
-										description={description}
-										icon={icon}
-									/>
-								))
-							)}
-						</Combobox.Options>
-					</Transition>
-				</>
-			</Combobox>
+						}}
+						disabled={isDisabled}
+					>
+						<>
+							<Combobox.Button
+								onClick={(): void => set_isOpen((state: boolean): boolean => !state)}
+								className={`flex h-10 w-full items-center justify-between p-2 text-base md:px-3 ${isDisabled ? 'bg-neutral-300 text-neutral-600' : 'bg-neutral-0 text-neutral-900'}`}>
+								<div className={'relative flex flex-row items-center'}>
+									{selected?.icon && (
+										<div className={'h-6 w-6 rounded-full'}>
+											<ImageWithFallback
+												alt={selected.label}
+												width={24}
+												height={24}
+												quality={90}
+												src={selected.icon}
+												loading={'eager'} 
+											/>
+										</div>
+									)}
+									<p className={`max-w-[90%] overflow-x-hidden text-ellipsis whitespace-nowrap font-normal scrollbar-none md:max-w-full ${selected?.icon ? 'pl-2' : 'pl-0'} ${isDisabled ? 'text-neutral-600' : 'text-neutral-900'}`}>
+										<Combobox.Input
+											className={'w-full cursor-default overflow-x-scroll border-none bg-transparent p-0 outline-none scrollbar-none'}
+											displayValue={(option?: TDropdownOption): string => option?.label ?? '-' }
+											spellCheck={false}
+											onChange={(event): void => {
+												performBatchedUpdates((): void => {
+													set_isOpen(true);
+													set_search(event.target.value);
+												});
+											}} 
+										/>
+									</p>
+								</div>
+								<div className={'absolute right-2 md:right-3'}>
+									<IconChevron
+										aria-hidden={'true'}
+										className={`h-6 w-6 transition-transform ${isOpen ? '-rotate-180' : 'rotate-0'}`} />
+								</div>
+							</Combobox.Button>
+							<Transition
+								as={Fragment}
+								show={isOpen}
+								enter={'transition duration-100 ease-out'}
+								enterFrom={'transform scale-95 opacity-0'}
+								enterTo={'transform scale-100 opacity-100'}
+								leave={'transition duration-75 ease-out'}
+								leaveFrom={'transform scale-100 opacity-100'}
+								leaveTo={'transform scale-95 opacity-0'}
+								afterLeave={(): void => {
+									performBatchedUpdates((): void => {
+										set_isOpen(false);
+										set_search('');
+									});
+								}}>
+								<Combobox.Options className={'yearn--dropdown-menu z-50'}>
+									{filteredOptions.length === 0 ? (
+										<DropdownEmpty isSearching={isSearching} />
+									) : (
+										filteredOptions.map(({key, label, description, icon}): ReactElement => (
+											<DropdownOption
+												key={key}
+												label={label}
+												description={description}
+												icon={icon}
+											/>
+										))
+									)}
+								</Combobox.Options>
+							</Transition>
+						</>
+					</Combobox>
+				</div>
+				{legend && (
+					<p className={'pl-2 text-xs font-normal text-neutral-600'}>
+						{legend}
+					</p>
+				)}
+			</div>
 		</div>
 	);
 };
