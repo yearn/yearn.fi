@@ -34,7 +34,7 @@ function useWidoQuote(): [TWidoResult, (request: TInitSolverArgs, shouldPreventE
 			toChainId: 1, // Chain Id of to token
 			toToken: toAddress(request.outputToken.value), // token to receive
 			amount: formatBN(request?.inputAmount || 0).toString(), // Token amount of from token
-			slippagePercentage: zapSlippage/100, // Acceptable max slippage for the swap
+			slippagePercentage: zapSlippage / 100, // Acceptable max slippage for the swap
 			user: request.from // receiver
 		});
 
@@ -94,7 +94,7 @@ export function useSolverWido(): TSolverContext {
 		const quote = await getQuote(_request);
 		if (quote) {
 			latestQuote.current = quote;
-			return toNormalizedBN(quote?.toTokenAmount || 0, request?.current?.outputToken?.decimals || 18);
+			return toNormalizedBN(quote?.minToTokenAmount || 0, request?.current?.outputToken?.decimals || 18);
 		}
 		return toNormalizedBN(0);
 	}, [getQuote]);
@@ -141,10 +141,10 @@ export function useSolverWido(): TSolverContext {
 	** process and displayed to the user.
 	**************************************************************************/
 	const expectedOut = useMemo((): TNormalizedBN => {
-		if (!latestQuote?.current?.toTokenAmount || isSolverDisabled[Solver.WIDO]) {
+		if (!latestQuote?.current?.minToTokenAmount || isSolverDisabled[Solver.WIDO]) {
 			return (toNormalizedBN(0));
 		}
-		return toNormalizedBN(latestQuote?.current?.toTokenAmount, request?.current?.outputToken?.decimals || 18);
+		return toNormalizedBN(latestQuote?.current?.minToTokenAmount, request?.current?.outputToken?.decimals || 18);
 	}, [latestQuote, request]);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -156,7 +156,7 @@ export function useSolverWido(): TSolverContext {
 			return toNormalizedBN(0);
 		}
 		const quoteResult = await getQuote(request, true);
-		return toNormalizedBN(formatBN(quoteResult?.toTokenAmount), request.outputToken.decimals);
+		return toNormalizedBN(formatBN(quoteResult?.minToTokenAmount), request.outputToken.decimals);
 	}, [getQuote]);
 
 	/* 🔵 - Yearn Finance ******************************************************
