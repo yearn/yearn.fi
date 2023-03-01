@@ -2,6 +2,7 @@ import {useCallback, useMemo, useState} from 'react';
 import {sort} from '@veYFI/utils';
 import IconChevronPlain from '@common/icons/IconChevronPlain';
 
+import {Pagination} from './Pagination';
 import {usePagination} from './usePagination';
 
 import type {ReactElement} from 'react';
@@ -41,7 +42,7 @@ function Table<T>({metadata, data, columns, initialSortBy, onRowClick}: TTablePr
 		return sortedBy && order ? sort(data, sortedBy, order) : data;
 	}, [data, order, sortedBy]);
 
-	const {currentItems, PaginationElement} = usePagination<T>({data: sortedData, itemsPerPage: 10});
+	const {currentItems, paginationProps} = usePagination<T>({data: sortedData, itemsPerPage: 10});
 	
 	const handleSort = useCallback((key: Extract<keyof T, string>): void => {
 		const willChangeSortKey = sortedBy !== key;
@@ -94,7 +95,7 @@ function Table<T>({metadata, data, columns, initialSortBy, onRowClick}: TTablePr
 			})}
 			<div className={'mt-4'}>
 				<div className={'border-t border-neutral-300 p-4 pb-0'}>
-					{PaginationElement}
+					<Pagination {...paginationProps} />
 				</div>
 			</div>
 		</div>

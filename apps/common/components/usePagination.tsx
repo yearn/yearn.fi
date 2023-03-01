@@ -1,73 +1,40 @@
 import {useState} from 'react';
-import ReactPaginate from 'react-paginate';
-import IconPaginationArrow from '@common/icons/IconPaginationArrow';
-
-import type {ReactElement} from 'react';
 
 type TProps<T> = {
 	data: T[];
 	itemsPerPage: number;
 }
 
-export function usePagination<T>({data, itemsPerPage}: TProps<T>): { PaginationElement: ReactElement; currentItems: T[]} {
+type TUsePaginationReturn<T> = {
+	currentItems: T[];
+	paginationProps: {
+		range: [from: number, to: number];
+		pageCount: number;
+		numberOfItems: number;
+		onPageChange: (selectedItem: {
+			selected: number;
+		}) => void;
+	}
+}
+
+export function usePagination<T>({data, itemsPerPage}: TProps<T>): TUsePaginationReturn<T> {
 	const [itemOffset, set_itemOffset] = useState(0);
 
 	const endOffset = itemOffset + itemsPerPage;
 
-	const pageCount = Math.ceil(data.length / itemsPerPage);
-
 	const currentItems = data.slice(itemOffset, endOffset);
 
-	const handlePageClick = (event: {selected: number}): void => {
-		const newOffset = (event.selected * itemsPerPage) % data.length;
-		set_itemOffset(newOffset);
+	const handlePageChange = ({selected}: {selected: number}): void => {
+		set_itemOffset((selected * itemsPerPage) % data.length);
 	};
 
 	return {
 		currentItems,
-		PaginationElement: (
-			<>
-				<div className={'flex flex-1 justify-between sm:hidden'}>
-					<a
-						href={'#'}
-						className={'border-gray-300 text-gray-700 hover:bg-gray-50 relative inline-flex items-center rounded-md border  px-4 py-2 text-sm font-medium'}
-					>
-						{'Previous'}
-					</a>
-					<a
-						href={'#'}
-						className={'border-gray-300 text-gray-700 hover:bg-gray-50 relative ml-3 inline-flex items-center rounded-md border  px-4 py-2 text-sm font-medium'}
-					>
-						{'Next'}
-					</a>
-				</div>
-				<div className={'sm-border hidden sm:flex sm:items-center sm:justify-center'}>
-					<div className={'ml-3 flex-1'}>
-						<p className={'text-sm text-[#5B5B5B]'}>
-							{'Showing '}<span className={'font-medium'}>{endOffset - (itemsPerPage - 1)}</span>{' to '}<span className={'font-medium'}>{Math.min(endOffset, data.length)}</span>{' of'}{' '}
-							<span className={'font-medium'}>{data.length}</span> {'results'}
-						</p>
-					</div>
-					<ReactPaginate
-						className={'inline-flex align-middle'}
-						pageLinkClassName={'text-[#5B5B5B] hover:border-b-2 inline-flex items-end mx-1.5 mt-2.5 px-0.5 text-xs'}
-						previousLinkClassName={'inline-flex items-center m-2 font-medium'}
-						nextLinkClassName={'inline-flex items-center m-2 font-medium'}
-						breakLinkClassName={'text-[#5B5B5B] inline-flex items-center mx-2 my-2 px-0.5 font-medium'}
-						activeLinkClassName={'text-gray-900 font-bold border-b-2 items-center mx-2 my-2 px-0.5 md:inline-flex'}
-						disabledLinkClassName={'cursor-not-allowed hover:bg-neutral-100'}
-						disabledClassName={'text-neutral-300'}
-						renderOnZeroPageCount={(): null => null}
-						breakLabel={'...'}
-						onPageChange={handlePageClick}
-						pageRangeDisplayed={3}
-						pageCount={pageCount}
-						previousLabel={<IconPaginationArrow className={'h-5 w-5 transition-transform'} />}
-						nextLabel={<IconPaginationArrow className={'h-5 w-5 -rotate-180 transition-transform'} />}
-					/>
-					<div className={'sm:flex-1'}></div>
-				</div>
-			</>
-		)
+		paginationProps: {
+			range: [endOffset - (itemsPerPage - 1), Math.min(endOffset, data.length)],
+			pageCount: Math.ceil(data.length / itemsPerPage),
+			numberOfItems: data.length,
+			onPageChange: handlePageChange
+		}
 	};
 }
