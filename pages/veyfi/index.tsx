@@ -3,6 +3,7 @@ import {ClaimTab} from '@veYFI/components/ClaimTab';
 import {GaugesTab} from '@veYFI/components/GaugesTab';
 import {LockTab} from '@veYFI/components/LockTab';
 import {ManageLockTab} from '@veYFI/components/ManageLockTab';
+import {RewardsTab} from '@veYFI/components/RewardsTab';
 import {VoteTab} from '@veYFI/components/VoteTab';
 import {useVotingEscrow} from '@veYFI/contexts/useVotingEscrow';
 import Wrapper from '@veYFI/Wrapper';
@@ -42,6 +43,7 @@ function Index(): ReactElement {
 					{id: 'manage', label: 'Manage lock', content: <ManageLockTab />}, 
 					{id: 'claim', label: 'Claim', content: <ClaimTab />},
 					{id: 'gauges', label: 'Stake / Unstake', content: <GaugesTab />},
+					{id: 'rewards', label: 'Rewards', content: <RewardsTab />},
 					{id: 'vote', label: 'Vote for Gauge', content: <VoteTab />}
 				]} />
 
