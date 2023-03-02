@@ -2,6 +2,9 @@ import {useCallback, useMemo, useState} from 'react';
 import {sort} from '@veYFI/utils';
 import IconChevronPlain from '@common/icons/IconChevronPlain';
 
+import {Pagination} from './Pagination';
+import {usePagination} from './usePagination';
+
 import type {ReactElement} from 'react';
 
 type TSortOrder = 'asc' | 'desc';
@@ -23,7 +26,7 @@ type TMetadata<T> = {
 	format?: (item: T) => string;
 	transform?: (item: T) => ReactElement;
 }
-  
+
 type TTableProps<T> = {
 	metadata: TMetadata<T>[];
 	data: T[];
@@ -33,17 +36,19 @@ type TTableProps<T> = {
 }
 
 function Table<T>({metadata, data, columns, initialSortBy, onRowClick}: TTableProps<T>): ReactElement {
-	const [{sortedBy, order}, set_state] = useState<TState<T>>({sortedBy: initialSortBy, order: 'desc'});
+	const [{sortedBy, order}, set_state] = useState<TState<T>>({sortedBy: initialSortBy, order: 'desc'});    
+	
+	const sortedData = useMemo((): T[] => {
+		return sortedBy && order ? sort(data, sortedBy, order) : data;
+	}, [data, order, sortedBy]);
+
+	const {currentItems, paginationProps} = usePagination<T>({data: sortedData, itemsPerPage: 10});
 	
 	const handleSort = useCallback((key: Extract<keyof T, string>): void => {
 		const willChangeSortKey = sortedBy !== key;
 		const newOrder = switchOrder(willChangeSortKey ? 'asc' : order);
 		set_state({sortedBy: newOrder ? key : undefined, order: newOrder});
 	}, [order, sortedBy]);
-    
-	const sortedData = useMemo((): T[] => {
-		return sortedBy && order ? sort(data, sortedBy, order) : data;
-	}, [data, order, sortedBy]);
 
 	const numberOfColumns = Math.min(columns ?? (metadata.length), 12).toString();
 
@@ -66,7 +71,7 @@ function Table<T>({metadata, data, columns, initialSortBy, onRowClick}: TTablePr
 				))}
 			</div>
 			
-			{sortedData.map((item, rowIndex): ReactElement => {
+			{currentItems.map((item, rowIndex): ReactElement => {
 				return (
 					<div 
 						key={`row_${rowIndex}`} 
@@ -88,6 +93,11 @@ function Table<T>({metadata, data, columns, initialSortBy, onRowClick}: TTablePr
 					</div>
 				);
 			})}
+			<div className={'mt-4'}>
+				<div className={'border-t border-neutral-300 p-4 pb-0'}>
+					<Pagination {...paginationProps} />
+				</div>
+			</div>
 		</div>
         
 	);
