@@ -19,6 +19,26 @@ export async function approveStake(
 	return approveERC20(provider, vaultAddress, gaugeAddress, amount);
 }
 
+export async function approveAndStake(
+	provider: ethers.providers.Web3Provider,
+	accountAddress: TAddress,
+	vaultAddress: TAddress,
+	gaugeAddress: TAddress,
+	amount: BigNumber,
+	allowance: BigNumber
+): Promise<boolean> {
+	let isApproved = allowance.gte(amount);
+	if(!isApproved) {
+		isApproved = await approveERC20(provider, vaultAddress, gaugeAddress, amount);
+	}
+	if(!isApproved) {
+		return false;
+	}
+	const signer = provider.getSigner(accountAddress);
+	const gaugeContract = new ethers.Contract(gaugeAddress, VEYFI_GAUGE_ABI, signer);
+	return handleTx(gaugeContract.deposit(amount));
+}
+
 export async function stake(
 	provider: ethers.providers.Web3Provider,
 	accountAddress: TAddress,
