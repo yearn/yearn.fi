@@ -33,16 +33,17 @@ type TTableProps<T> = {
 	columns?: number;
 	initialSortBy?: Extract<keyof T, string>;
 	onRowClick?: (item: T) => void;
+	itemsPerPage?: number;
 }
 
-function Table<T>({metadata, data, columns, initialSortBy, onRowClick}: TTableProps<T>): ReactElement {
+function Table<T>({metadata, data, columns, initialSortBy, onRowClick, itemsPerPage}: TTableProps<T>): ReactElement {
 	const [{sortedBy, order}, set_state] = useState<TState<T>>({sortedBy: initialSortBy, order: 'desc'});    
 	
 	const sortedData = useMemo((): T[] => {
 		return sortedBy && order ? sort(data, sortedBy, order) : data;
 	}, [data, order, sortedBy]);
 
-	const {currentItems, paginationProps} = usePagination<T>({data: sortedData, itemsPerPage: 10});
+	const {currentItems, paginationProps} = usePagination<T>({data: sortedData, itemsPerPage: itemsPerPage || sortedData.length});
 	
 	const handleSort = useCallback((key: Extract<keyof T, string>): void => {
 		const willChangeSortKey = sortedBy !== key;
@@ -93,11 +94,13 @@ function Table<T>({metadata, data, columns, initialSortBy, onRowClick}: TTablePr
 					</div>
 				);
 			})}
-			<div className={'mt-4'}>
-				<div className={'border-t border-neutral-300 p-4 pb-0'}>
-					<Pagination {...paginationProps} />
+			{itemsPerPage && (
+				<div className={'mt-4'}>
+					<div className={'border-t border-neutral-300 p-4 pb-0'}>
+						<Pagination {...paginationProps} />
+					</div>
 				</div>
-			</div>
+			)}
 		</div>
         
 	);
