@@ -62,7 +62,7 @@ const DropdownEmpty = ({isSearching}: {isSearching: boolean}): ReactElement => {
 	);
 };
 
-type TDropdownOption = {
+export type TDropdownOption = {
 	key: string;
 	label: string;
 	description?: string;
