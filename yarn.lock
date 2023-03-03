@@ -2681,10 +2681,10 @@
     motion "10.15.5"
     qrcode "1.5.1"
 
-"@yearn-finance/web-lib@^0.18.0":
-  version "0.18.0"
-  resolved "https://registry.yarnpkg.com/@yearn-finance/web-lib/-/web-lib-0.18.0.tgz#a14058b37f29d3ea0ba23a137e80c546a413ca59"
-  integrity sha512-omTgEoKDq9DvCS+/jktKhhk0L3xbONwLqA1zSuMzHkcNNnWdDVGfywjf8LqB1P2mIs+z9OQMQAATIDCX/6UVhw==
+"@yearn-finance/web-lib@^0.18.1":
+  version "0.18.1"
+  resolved "https://registry.yarnpkg.com/@yearn-finance/web-lib/-/web-lib-0.18.1.tgz#b6f861770907bfbec226b7aa2fe15f48e007834c"
+  integrity sha512-sMXef5sEpcO76ouw7hiZi00+iL3W0RiZ5IqIyolNyTM0m8uN3G0rRNY5w+fmCowin9LUyIWr60p+6LUFrPY43g==
   dependencies:
     "@coinbase/wallet-sdk" "^3.6.4"
     "@ethersproject/experimental" "^5.7.0"
