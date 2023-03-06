@@ -1,6 +1,7 @@
 import {useState} from 'react';
 import {AnimatePresence, motion} from 'framer-motion';
 import {Listbox, Transition} from '@headlessui/react';
+import {useHasMounted} from '@common/hooks/useHasMounted';
 import IconChevron from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
@@ -22,8 +23,13 @@ type TTabsProps = {
 	className?: string,
 }
 
-function Tabs({items, className}: TTabsProps): ReactElement {
+function Tabs({items, className}: TTabsProps): ReactElement | null {
 	const [selectedTabId, set_selectedTabId] = useState(items[0]?.id);
+	const hasMounted = useHasMounted();
+
+	if (!hasMounted) {
+		return null;
+	}
 
 	return (
 		<div className={`w-full bg-neutral-100 ${className}`}>
