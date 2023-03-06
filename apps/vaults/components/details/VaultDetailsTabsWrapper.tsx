@@ -120,10 +120,6 @@ function	VaultDetailsTabsWrapper({currentVault}: {currentVault: TYearnVault}): R
 		);
 	}, [currentVault.decimals, yDaemonHarvestsData]);
 
-	if (!hasMounted) {
-		return null;
-	}
-
 	async function onAddTokenToMetamask(address: string, symbol: string, decimals: number, image: string): Promise<void> {
 		try {
 			await (provider as TMetamaskInjectedProvider).send('wallet_watchAsset', {
@@ -138,6 +134,10 @@ function	VaultDetailsTabsWrapper({currentVault}: {currentVault: TYearnVault}): R
 		} catch (error) {
 			// Token has not been added to MetaMask.
 		}
+	}
+
+	if (!hasMounted) {
+		return null;
 	}
 
 	return (
