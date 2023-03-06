@@ -1,5 +1,3 @@
-
-import type {BigNumber} from 'ethers';
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
@@ -17,7 +15,7 @@ export type TWithSolver = {
 	onRetrieveExpectedOut: (request: TInitSolverArgs) => Promise<TNormalizedBN>;
 	onRetrieveAllowance: () => Promise<TNormalizedBN>;
 	onApprove: (
-		amount: BigNumber,
+		amount: bigint,
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	) => Promise<void>;
@@ -35,7 +33,7 @@ export type TInitSolverArgs = {
 	from: TAddress,
 	inputToken: TDropdownOption
 	outputToken: TDropdownOption
-	inputAmount: BigNumber
+	inputAmount: bigint
 	isDepositing: boolean
 	migrator?: TAddress
 }
@@ -49,7 +47,7 @@ export type TSolverContext = {
 	onRetrieveExpectedOut: (request: TInitSolverArgs) => Promise<TNormalizedBN>;
 	onRetrieveAllowance: () => Promise<TNormalizedBN>;
 	onApprove: (
-		amount: BigNumber,
+		amount: bigint,
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	) => Promise<void>;

@@ -14,7 +14,6 @@ import {useYearn} from '@common/contexts/useYearn';
 
 import externalzapOutTokenList from '../../common/utils/externalZapOutTokenList.json';
 
-import type {BigNumber} from 'ethers';
 import type {ReactNode} from 'react';
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
@@ -93,7 +92,7 @@ type TGetMaxDepositPossible = {
 	vault: TYearnVault,
 	fromToken: TAddress,
 	fromDecimals: number,
-	fromTokenBalance: BigNumber,
+	fromTokenBalance: bigint,
 	isDepositing: boolean
 }
 function	getMaxDepositPossible({vault, fromToken, fromDecimals, isDepositing, fromTokenBalance}: TGetMaxDepositPossible): TNormalizedBN {
@@ -101,7 +100,7 @@ function	getMaxDepositPossible({vault, fromToken, fromDecimals, isDepositing, fr
 	const	userBalance = formatBN(fromTokenBalance);
 
 	if (fromToken === vault?.token?.address && isDepositing) {
-		if (userBalance.gt(vaultDepositLimit)) {
+		if (userBalance > vaultDepositLimit) {
 			return (toNormalizedBN(vaultDepositLimit, vault.token.decimals));
 		}
 	}
@@ -289,7 +288,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 		if (isDepositing) {
 			const	vaultDepositLimit = formatBN(currentVault?.details?.depositLimit);
 			if (_selectedFrom?.value === currentVault?.token?.address) {
-				if (userBalance.gt(vaultDepositLimit)) {
+				if (userBalance > vaultDepositLimit) {
 					_amount = toNormalizedBN(vaultDepositLimit, currentVault.token.decimals);
 				}
 			}

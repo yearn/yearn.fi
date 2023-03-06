@@ -41,7 +41,7 @@ function	VaultDetailsHistorical({currentVault, harvestData}: {currentVault: TYea
 	] : null, graphFetcher);
 
 	const	messariData = useMemo((): TMessariGraphData[] => {
-		const	_messariMixedData = [...(messariMixedData?.vaultDailySnapshots || [])];
+		const	_messariMixedData = [...(messariMixedData?.vaultDailySnapshots || []) as {pricePerShare: string, totalValueLockedUSD: string, timestamp: string}[]];
 		return (
 			_messariMixedData?.map((elem): TMessariGraphData => ({
 				name: formatDate(Number(elem.timestamp) * 1000),

@@ -25,9 +25,9 @@ import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {CurveContextApp, useCurve} from '@common/contexts/useCurve';
 import {useYearn} from '@common/contexts/useYearn';
 
-import type {BigNumber, providers} from 'ethers';
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
+import type {TWeb3Provider} from '@yearn-finance/web-lib/contexts/types';
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TCurveGaugesFromYearn} from '@common/types/curves';
 import type {TDropdownGaugeOption} from '@common/types/types';
@@ -67,7 +67,7 @@ function	Factory(): ReactElement {
 	** associated vault.
 	**************************************************************************/
 	const [{result: filteredGauges}, fetchGaugesAction] = useAsync(async function fetchAlreadyCreatedGauges(
-		_provider: providers.JsonRpcProvider,
+		_provider: TWeb3Provider,
 		_safeChainID: number,
 		_gaugesFromYearn: TCurveGaugesFromYearn[]
 	): Promise<TCurveGaugesFromYearn[]> {
@@ -124,7 +124,7 @@ function	Factory(): ReactElement {
 	** We need to fetch the name and symbol from the gauge contract.
 	**************************************************************************/
 	const [{result: gaugeDisplayData, status}, fetchGaugeDisplayDataAction] = useAsync(async function fetchGaugeDisplayData(
-		_provider: providers.JsonRpcProvider,
+		_provider: TWeb3Provider,
 		_safeChainID: number,
 		_selectedOption: TDropdownGaugeOption
 	): Promise<TGaugeDisplayData> {
@@ -151,7 +151,7 @@ function	Factory(): ReactElement {
 	** out for a given in/out pair with a specific amount. This callback is
 	** called every 10s or when amount/in or out changes.
 	**************************************************************************/
-	const fetchEstimate = useCallback(async (): Promise<BigNumber> => {
+	const fetchEstimate = useCallback(async (): Promise<bigint> => {
 		set_hasError(false);
 		try {
 			return await estimateGasForCreateNewVaultsAndStrategies(provider, toAddress(selectedOption.value.gaugeAddress));
@@ -313,7 +313,7 @@ function	Factory(): ReactElement {
 					</div>
 					<div>
 						<p className={'font-number text-xs'}>
-							{`Est. gas ${formatAmount((formatBN(estimate)).toNumber(), 0, 0)}`}
+							{`Est. gas ${formatAmount(Number(formatBN(estimate)), 0, 0)}`}
 						</p>
 					</div>
 				</div>

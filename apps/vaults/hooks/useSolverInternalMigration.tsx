@@ -1,11 +1,12 @@
 import {useCallback, useMemo, useRef} from 'react';
-import {ethers} from 'ethers';
+import {MaxUint256} from 'ethers';
 import useSWRMutation from 'swr/mutation';
 import {Solver} from '@vaults/contexts/useSolver';
 import {useVaultEstimateOutFetcher} from '@vaults/hooks/useVaultEstimateOutFetcher';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {approvedERC20Amount, approveERC20} from '@common/utils/actions/approveToken';
 import {migrateShares} from '@common/utils/actions/migrateShares';
@@ -30,7 +31,7 @@ function useInternalMigrationQuote(): [TVanillaLikeResult, (request: TInitSolver
 
 		const canExecuteFetch = (
 			!request.inputToken || !request.outputToken || !request.inputAmount ||
-			!(isZeroAddress(request.inputToken.value) || isZeroAddress(request.outputToken.value) || request.inputAmount.isZero())
+			!(isZero(request.inputToken.value) || isZero(request.outputToken.value) || isZero(request.inputAmount))
 		);
 
 		if (canExecuteFetch) {
@@ -109,7 +110,7 @@ export function useSolverInternalMigration(): TSolverContext {
 	** (not connected) or if the tx is still pending.
 	**************************************************************************/
 	const onApprove = useCallback(async (
-		amount = ethers.constants.MaxUint256,
+		amount = MaxUint256,
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {

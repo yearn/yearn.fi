@@ -1,4 +1,3 @@
-import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
 import type {TBalanceData} from '@yearn-finance/web-lib/hooks/types';
 import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
@@ -6,14 +5,14 @@ import type {Solver} from '@vaults/contexts/useSolver';
 import type {EXTERNAL_SERVICE_PROVIDER} from '@vaults/utils/migrationTable';
 
 export type	TClaimable = {
-	raw: BigNumber,
+	raw: bigint,
 	normalized: number,
 }
 
 export type	TSimplifiedBalanceData = {
 	decimals: number,
 	symbol: string,
-	raw: BigNumber,
+	raw: bigint,
 	normalized: number,
 	normalizedPrice: number,
 }
@@ -75,7 +74,7 @@ export type TDropdownGaugeItemProps = {
 };
 
 export type	TNormalizedBN = {
-	raw: BigNumber,
+	raw: bigint,
 	normalized: number | string,
 }
 

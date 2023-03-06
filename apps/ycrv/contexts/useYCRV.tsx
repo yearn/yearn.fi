@@ -1,6 +1,5 @@
 import React, {createContext, useCallback, useContext, useMemo, useState} from 'react';
 import {Contract} from 'ethcall';
-import {ethers} from 'ethers';
 import useSWR from 'swr';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -8,34 +7,33 @@ import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
 import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
 import {CRV_TOKEN_ADDRESS, CVXCRV_TOKEN_ADDRESS, LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, VECRV_ADDRESS, VECRV_YEARN_TREASURY_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YCRV_TOKEN_ADDRESS, YVBOOST_TOKEN_ADDRESS, YVECRV_POOL_LP_ADDRESS, YVECRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
-import {formatUnits, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatUnits, WeiPerEther, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import CURVE_CRV_YCRV_LP_ABI from '@yCRV/utils/abi/curveCrvYCrvLp.abi';
 import STYCRV_ABI from '@yCRV/utils/abi/styCRV.abi';
 import YVECRV_ABI from '@yCRV/utils/abi/yveCRV.abi';
 
-import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TYDaemonHarvests, TYearnVault} from '@common/types/yearn';
 
 type THoldings = {
-	legacy: BigNumber;
-	treasury: BigNumber;
-	yCRVSupply: BigNumber;
-	styCRVSupply: BigNumber;
-	lpyCRVSupply: BigNumber;
-	crvYCRVPeg: BigNumber;
-	boostMultiplier: BigNumber;
-	veCRVTotalSupply: BigNumber;
-	veCRVBalance: BigNumber;
+	legacy: bigint;
+	treasury: bigint;
+	yCRVSupply: bigint;
+	styCRVSupply: bigint;
+	lpyCRVSupply: bigint;
+	crvYCRVPeg: bigint;
+	boostMultiplier: bigint;
+	veCRVTotalSupply: bigint;
+	veCRVBalance: bigint;
 }
 type TYCRVContext = {
 	styCRVMegaBoost: number,
 	styCRVAPY: number,
 	slippage: number,
-	allowances: TDict<BigNumber>,
+	allowances: TDict<bigint>,
 	holdings: THoldings,
 	harvests: TYDaemonHarvests[],
 	set_slippage: (slippage: number) => void,
@@ -92,7 +90,7 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 	/* 🔵 - Yearn Finance ******************************************************
 	** SWR hook to get the holdings data for the yCRV ecosystem.
 	**************************************************************************/
-	const numbersFetchers = useCallback(async (): Promise<TDict<BigNumber>> => {
+	const numbersFetchers = useCallback(async (): Promise<TDict<bigint>> => {
 		const	currentProvider = provider || getProvider(1);
 		const	ethcallProvider = await newEthCallProvider(currentProvider);
 
@@ -120,17 +118,17 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 			yCRVContract.totalSupply(),
 			styCRVContract.totalAssets(),
 			lpyCRVContract.totalSupply(),
-			crvYCRVLpContract.get_dy(1, 0, ethers.constants.WeiPerEther)
-		]) as [BigNumber, BigNumber, BigNumber, BigNumber, BigNumber, BigNumber, BigNumber, BigNumber];
+			crvYCRVLpContract.get_dy(1, 0, WeiPerEther)
+		]) as [bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint];
 
 		return ({
-			['legacy']: yveCRVTotalSupply.sub(yveCRVInYCRV),
-			['treasury']: veCRVBalance.sub(yveCRVTotalSupply.sub(yveCRVInYCRV)).sub(yCRVTotalSupply),
+			['legacy']: yveCRVTotalSupply - yveCRVInYCRV,
+			['treasury']: veCRVBalance - yveCRVTotalSupply - yveCRVInYCRV - yCRVTotalSupply,
 			['yCRVSupply']: yCRVTotalSupply,
 			['styCRVSupply']: styCRVTotalSupply,
 			['lpyCRVSupply']: lpyCRVTotalSupply,
 			['crvYCRVPeg']: crvYCRVPeg,
-			['boostMultiplier']: veCRVBalance.mul(1e4).div(styCRVTotalSupply),
+			['boostMultiplier']: veCRVBalance * BigInt(1e4) / styCRVTotalSupply,
 			['veCRVTotalSupply']: veCRVTotalSupply,
 			['veCRVBalance']: veCRVBalance
 		});
@@ -143,7 +141,7 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 	**	the allowance informations for a specific wallet. As the possible path
 	**	are limited, we can hardcode the contract addresses.
 	***************************************************************************/
-	const getAllowances = useCallback(async (): Promise<TDict<BigNumber>> => {
+	const getAllowances = useCallback(async (): Promise<TDict<bigint>> => {
 		if (!isActive || !provider) {
 			return {};
 		}
@@ -176,7 +174,7 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 			yveCRVContract.allowance(userAddress, YVECRV_POOL_LP_ADDRESS),
 			crvContract.allowance(userAddress, YVECRV_POOL_LP_ADDRESS),
 			yCRVPoolContract.allowance(userAddress, LPYCRV_TOKEN_ADDRESS)
-		]) as BigNumber[];
+		]) as bigint[];
 
 		return ({
 			// YCRV ECOSYSTEM
@@ -226,7 +224,7 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 	const	contextValue = useMemo((): TYCRVContext => ({
 		harvests: yCRVHarvests,
 		holdings: holdings as THoldings,
-		allowances: allowances as TDict<BigNumber>,
+		allowances: allowances as TDict<bigint>,
 		styCRVAPY,
 		styCRVMegaBoost,
 		slippage,

@@ -17,7 +17,6 @@ import {AmountInput} from '@common/components/AmountInput';
 import {useWallet} from '@common/contexts/useWallet';
 import {useBalance} from '@common/hooks/useBalance';
 
-import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
 import type {TMilliseconds} from '@yearn-finance/web-lib/utils/time';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
@@ -37,14 +36,14 @@ function LockTab(): ReactElement {
 	const [lock, lockStatus] = useTransaction(VotingEscrowActions.lock, onTxSuccess);
 	const [increaseLockAmount, increaseLockAmountStatus] = useTransaction(VotingEscrowActions.increaseLockAmount, onTxSuccess);
 
-	const hasLockedAmount = formatBN(positions?.deposit?.balance).gt(0);
+	const hasLockedAmount = formatBN(positions?.deposit?.balance) > 0;
 
 	const unlockTime = useMemo((): TMilliseconds => {
 		return positions?.unlockTime || Date.now() + fromWeeks(toTime(lockTime));
 	}, [positions?.unlockTime, lockTime]);
 
-	const votingPower = useMemo((): BigNumber => {
-		return getVotingPower(formatBN(positions?.deposit?.underlyingBalance).add(lockAmount.raw), unlockTime);
+	const votingPower = useMemo((): bigint => {
+		return getVotingPower(formatBN(positions?.deposit?.underlyingBalance) + lockAmount.raw, unlockTime);
 	}, [positions?.deposit?.underlyingBalance, lockAmount, unlockTime]);
 
 	useEffect((): void => {

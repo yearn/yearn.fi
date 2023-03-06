@@ -10,12 +10,11 @@ import {useYearn} from '@common/contexts/useYearn';
 import {GaugeBribeModal} from '@yBribe/components/bribe/GaugeBribeModal';
 import {useBribes} from '@yBribe/contexts/useBribes';
 
-import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TCurveGauges} from '@common/types/curves';
 
-function	GaugeRowItemWithExtraData({address, value}: {address: string, value: BigNumber}): ReactElement {
+function	GaugeRowItemWithExtraData({address, value}: {address: string, value: bigint}): ReactElement {
 	const	{tokens, prices} = useYearn();
 
 	const	tokenInfo = tokens?.[address];
@@ -44,11 +43,11 @@ function	GaugeListRow({currentGauge}: {currentGauge: TCurveGauges}): ReactElemen
 	const	{currentRewards, nextRewards} = useBribes();
 	const	[hasModal, set_hasModal] = useState(false);
 
-	const	currentRewardsForCurrentGauge = useMemo((): TDict<BigNumber> => {
+	const	currentRewardsForCurrentGauge = useMemo((): TDict<bigint> => {
 		return currentRewards?.v3?.[toAddress(currentGauge.gauge)] || {};
 	}, [currentGauge.gauge, currentRewards]);
 
-	const	nextRewardsForCurrentGauge = useMemo((): TDict<BigNumber> => {
+	const	nextRewardsForCurrentGauge = useMemo((): TDict<bigint> => {
 		return nextRewards?.v3?.[toAddress(currentGauge.gauge)] || {};
 	}, [currentGauge.gauge, nextRewards]);
 
@@ -107,7 +106,7 @@ function	GaugeListRow({currentGauge}: {currentGauge: TCurveGauges}): ReactElemen
 									{'-'}
 								</p>
 							</div>
-						) : currentRewardsForCurrentGaugeMap.map(([key, value]: [string, BigNumber]): ReactElement => (
+						) : currentRewardsForCurrentGaugeMap.map(([key, value]: [string, bigint]): ReactElement => (
 							<GaugeRowItemWithExtraData
 								key={`rewards-${currentGauge.gauge}-${key}`}
 								address={toAddress(key)}
@@ -128,7 +127,7 @@ function	GaugeListRow({currentGauge}: {currentGauge: TCurveGauges}): ReactElemen
 									{'-'}
 								</p>
 							</div>
-						) : nextRewardsForCurrentGaugeMap.map(([key, value]: [string, BigNumber]): ReactElement => (
+						) : nextRewardsForCurrentGaugeMap.map(([key, value]: [string, bigint]): ReactElement => (
 							<GaugeRowItemWithExtraData
 								key={`rewards-${currentGauge.gauge}-${key}`}
 								address={toAddress(key)}

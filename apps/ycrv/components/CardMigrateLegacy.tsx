@@ -5,10 +5,11 @@ import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {YCRV_CURVE_POOL_ADDRESS, YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatBN, formatToNormalizedValue, toNormalizedBN, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatBN, formatToNormalizedValue, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {Dropdown} from '@common/components/TokenDropdown';
 import {useWallet} from '@common/contexts/useWallet';
@@ -50,19 +51,15 @@ function	CardMigrateLegacy(): ReactElement {
 
 	function	renderButton(): ReactElement {
 		const	balanceForInputToken = formatBN(balances?.[toAddress(selectedOptionFrom.value)]?.raw);
-		const	isAboveBalance = formatBN(amount?.raw).gt(balanceForInputToken) || balanceForInputToken.eq(Zero);
+		const	isAboveBalance = formatBN(amount?.raw) > formatBN(balanceForInputToken) || isZero(balanceForInputToken);
 
-		if (txStatusApprove.pending || (amount.raw).gt(allowanceFrom)) {
+		if (txStatusApprove.pending || formatBN(amount.raw) > formatBN(allowanceFrom)) {
 			return (
 				<Button
 					onClick={onApproveFrom}
 					className={'w-full'}
 					isBusy={txStatusApprove.pending}
-					isDisabled={
-						!isActive
-						|| (amount.raw).isZero()
-						|| isAboveBalance
-					}>
+					isDisabled={!isActive || isZero(amount.raw) || isAboveBalance}>
 					{isAboveBalance ? 'Insufficient balance' : `Approve ${selectedOptionFrom?.label || 'token'}`}
 				</Button>
 			);
@@ -73,12 +70,8 @@ function	CardMigrateLegacy(): ReactElement {
 				onClick={onZap}
 				className={'w-full'}
 				isBusy={txStatusZap.pending}
-				isDisabled={
-					!isActive ||
-					(amount.raw).isZero() ||
-					amount.raw.gt(balanceForInputToken)
-				}>
-				{isAboveBalance && !amount.raw.isZero() ? 'Insufficient balance' : 'Swap'}
+				isDisabled={!isActive || isZero(amount.raw) || formatBN(amount.raw) > formatBN(balanceForInputToken)}>
+				{isAboveBalance && !isZero(amount.raw) ? 'Insufficient balance' : 'Swap'}
 			</Button>
 		);
 	}

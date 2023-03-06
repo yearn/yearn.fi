@@ -2,15 +2,16 @@ import {ethers} from 'ethers';
 import {CURVE_BRIBE_V3_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {handleTx} from '@yearn-finance/web-lib/utils/web3/transaction';
 
+import type {TWeb3Provider} from '@yearn-finance/web-lib/contexts/types';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 
 export async function	claimReward(
-	provider: ethers.providers.JsonRpcProvider,
+	provider: TWeb3Provider,
 	contractAddress: string,
 	gauge: string,
 	token: string
 ): Promise<TTxResponse> {
-	const signer = provider.getSigner();
+	const signer = await provider.getSigner();
 	const user = await signer.getAddress();
 	const contract = new ethers.Contract(
 		contractAddress, [

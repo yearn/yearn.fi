@@ -1,13 +1,13 @@
 import React, {useMemo, useState} from 'react';
 import dayjs from 'dayjs';
-import {ethers} from 'ethers';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {VLYCRV_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatBN, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatBN, toNormalizedBN, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useWallet} from '@common/contexts/useWallet';
 import {useBalance} from '@common/hooks/useBalance';
@@ -25,7 +25,7 @@ function Withdraw(): ReactElement {
 	const {isActive, provider} = useWeb3();
 	const {balances, refresh} = useWallet();
 	const stYCRVBalance = useBalance(VLYCRV_TOKEN_ADDRESS);
-	const [amount, set_amount] = useState<TNormalizedBN | undefined>({raw: ethers.constants.Zero, normalized: 0});
+	const [amount, set_amount] = useState<TNormalizedBN | undefined>({raw: Zero, normalized: 0});
 	const [txStatusWithdraw, set_txStatusWithdraw] = useState(defaultTxStatus);
 	const pricePerYCRV = useTokenPrice(YCRV_TOKEN_ADDRESS);
 	const {withdraw, initialData: {userInfo: {unlockTime}}} = useVLyCRV();
@@ -37,7 +37,7 @@ function Withdraw(): ReactElement {
 	}, [stYCRVBalance.normalized, stYCRVBalance?.symbol]);
 
 	const maxLockingPossible = useMemo((): TNormalizedBN => {
-		const balance = stYCRVBalance.raw || ethers.constants.Zero;
+		const balance = stYCRVBalance.raw || Zero;
 		return (toNormalizedBN(balance.toString(), stYCRVBalance.decimals));
 	}, [stYCRVBalance.decimals, stYCRVBalance.raw]);
 
@@ -79,7 +79,7 @@ function Withdraw(): ReactElement {
 		label: 'Withdraw',
 		onClick: onWithdraw,
 		isBusy: txStatusWithdraw.pending,
-		isDisabled: !isActive || !amount?.raw.gt(0)
+		isDisabled: !isActive || !isZero(amount?.raw)
 	};
 
 	const currentTime = dayjs().unix();

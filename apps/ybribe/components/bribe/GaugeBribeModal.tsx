@@ -10,6 +10,7 @@ import {CURVE_BRIBE_V3_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatBN, formatToNormalizedValue, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
@@ -17,7 +18,6 @@ import {approveERC20} from '@common/utils/actions/approveToken';
 import {useBribes} from '@yBribe/contexts/useBribes';
 import {addReward} from '@yBribe/utils/actions/addReward';
 
-import type {BigNumber} from 'ethers';
 import type {ChangeEvent, ReactElement} from 'react';
 import type {TCurveGauges} from '@common/types/curves';
 import type {TNormalizedBN} from '@common/types/types';
@@ -38,8 +38,8 @@ function	GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauges, o
 		symbol: string;
 		decimals: number;
 		normalized: number,
-		raw: BigNumber,
-		allowance: BigNumber,
+		raw: bigint,
+		allowance: bigint,
 	}> => {
 		const	[_tokenAddress] = args;
 		const	currentProvider = safeChainID === 1 ? provider || getProvider(1) : getProvider(1);
@@ -52,7 +52,7 @@ function	GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauges, o
 			erc20Contract.decimals(),
 			erc20Contract.balanceOf(address),
 			erc20Contract.allowance(address, CURVE_BRIBE_V3_ADDRESS)
-		]) as [string, string, number, BigNumber, BigNumber];
+		]) as [string, string, number, bigint, bigint];
 
 		return ({
 			name,
@@ -70,7 +70,7 @@ function	GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauges, o
 	** Calls the expectedOutFetcher callback.
 	**************************************************************************/
 	const	{data: selectedToken, mutate} = useSWR(
-		isActive && !isZeroAddress(tokenAddress) ? [toAddress(tokenAddress)] : null, expectedOutFetcher,
+		isActive && !isZero(tokenAddress) ? [toAddress(tokenAddress)] : null, expectedOutFetcher,
 		{refreshInterval: 10000, shouldRetryOnError: false}
 	);
 
@@ -115,7 +115,7 @@ function	GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauges, o
 				</Button>
 			);
 		}
-		if (txStatusApprove.pending || amount.raw.gt(selectedToken?.allowance || 0)) {
+		if (txStatusApprove.pending || formatBN(amount.raw) > formatBN(selectedToken?.allowance)) {
 			return (
 				<Button
 					onClick={onApproveFrom}
@@ -123,8 +123,8 @@ function	GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauges, o
 					isBusy={txStatusApprove.pending}
 					isDisabled={
 						!isActive ||
-						isZeroAddress(tokenAddress) ||
-						amount.raw.isZero() ||
+						isZero(tokenAddress) ||
+						isZero(amount.raw) ||
 						![1, 1337].includes(chainID)
 					}>
 					{`Approve ${selectedToken?.symbol || 'token'}`}
@@ -139,9 +139,9 @@ function	GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauges, o
 				isBusy={txStatusAddReward.pending}
 				isDisabled={
 					!isActive ||
-					isZeroAddress(tokenAddress) ||
-					formatBN(amount?.raw).isZero() ||
-					formatBN(amount?.raw).gt(formatBN(selectedToken?.raw)) ||
+					isZero(tokenAddress) ||
+					isZero(formatBN(amount?.raw)) ||
+					formatBN(amount?.raw) > formatBN(selectedToken?.raw) ||
 					![1, 1337].includes(chainID)
 				}>
 				{'Deposit'}

@@ -1,7 +1,6 @@
 import React, {Fragment, useCallback, useMemo} from 'react';
-import {ethers} from 'ethers';
 import {LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatBN, formatToNormalizedValue, WeiPerEther} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue, formatCounterValueRaw} from '@yearn-finance/web-lib/utils/format.value';
 import ValueAnimation from '@common/components/ValueAnimation';
@@ -15,7 +14,6 @@ import {Harvests} from '@yCRV/components/Harvests';
 import {useYCRV} from '@yCRV/contexts/useYCRV';
 import Wrapper from '@yCRV/Wrapper';
 
-import type {BigNumber} from 'ethers';
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
 
@@ -78,8 +76,8 @@ function	Holdings(): ReactElement {
 	const balanceOfStyCRV = useBalance(STYCRV_TOKEN_ADDRESS);
 	const balanceOfLpyCRV = useBalance(LPYCRV_TOKEN_ADDRESS);
 
-	const	formatBigNumberOver10K = useCallback((v: BigNumber): string => {
-		if (formatBN(v)?.gt(ethers.constants.WeiPerEther.mul(10000))) {
+	const	formatBigNumberOver10K = useCallback((v: bigint): string => {
+		if (formatBN(v) > (WeiPerEther * 10000n)) {
 			return formatAmount(formatToNormalizedValue(v || 0, 18), 0, 0);
 		}
 		return formatAmount(formatToNormalizedValue(v || 0, 18));
@@ -124,7 +122,7 @@ function	Holdings(): ReactElement {
 							<b
 								suppressHydrationWarning
 								className={'font-number pb-2 text-3xl text-neutral-900'}>
-								{holdings?.treasury ? `${formatBigNumberOver10K(holdings?.treasury || 0)} ` : '- '}
+								{holdings?.treasury ? `${formatBigNumberOver10K(holdings?.treasury)} ` : '- '}
 								<span className={'font-number text-base text-neutral-600 md:text-3xl md:text-neutral-900'}>{'veCRV'}</span>
 							</b>
 							<p className={'text-lg text-neutral-500'}>{'Yearn Treasury'}</p>
@@ -133,7 +131,7 @@ function	Holdings(): ReactElement {
 							<b
 								suppressHydrationWarning
 								className={'font-number pb-2 text-3xl text-neutral-900'}>
-								{holdings?.legacy ? `${formatBigNumberOver10K(holdings?.legacy || 0)} ` : '- '}
+								{holdings?.legacy ? `${formatBigNumberOver10K(holdings?.legacy)} ` : '- '}
 								<span className={'font-number text-base text-neutral-600 md:text-3xl md:text-neutral-900'}>{'yveCRV'}</span>
 							</b>
 							<p className={'text-lg text-neutral-500'}>{'Legacy system'}</p>
@@ -142,7 +140,7 @@ function	Holdings(): ReactElement {
 							<b
 								suppressHydrationWarning
 								className={'font-number pb-2 text-3xl text-neutral-900'}>
-								{holdings?.yCRVSupply ? `${formatBigNumberOver10K(holdings?.yCRVSupply || 0)} ` : '- '}
+								{holdings?.yCRVSupply ? `${formatBigNumberOver10K(holdings?.yCRVSupply)} ` : '- '}
 								<span className={'font-number text-base text-neutral-600 md:text-3xl md:text-neutral-900'}>{'yCRV'}</span>
 							</b>
 
@@ -199,7 +197,7 @@ function	Holdings(): ReactElement {
 							<p
 								suppressHydrationWarning
 								className={'font-number text-base text-neutral-900'}>
-								{formatBigNumberOver10K(holdings?.styCRVSupply || 0)}
+								{formatBigNumberOver10K(holdings?.styCRVSupply)}
 							</p>
 						</div>
 						<div className={'flex flex-row items-baseline justify-between'}>
@@ -250,7 +248,7 @@ function	Holdings(): ReactElement {
 							<p
 								suppressHydrationWarning
 								className={'font-number text-base text-neutral-900'}>
-								{formatBigNumberOver10K(holdings?.lpyCRVSupply || 0)}
+								{formatBigNumberOver10K(holdings?.lpyCRVSupply)}
 							</p>
 						</div>
 						<div className={'flex flex-row items-baseline justify-between'}>

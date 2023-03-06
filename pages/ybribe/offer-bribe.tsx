@@ -15,7 +15,6 @@ import {GaugeListRow} from '@yBribe/components/bribe/GaugeListRow';
 import {useBribes} from '@yBribe/contexts/useBribes';
 import Wrapper from '@yBribe/Wrapper';
 
-import type {BigNumber} from 'ethers';
 import type {NextRouter} from 'next/router';
 import type {ReactElement, ReactNode} from 'react';
 import type {TCurveGauges} from '@common/types/curves';
@@ -31,7 +30,7 @@ function	GaugeList(): ReactElement {
 		'yGaugeListOfferBribeSorting', {sortBy: '', sortDirection: 'desc'}
 	);
 
-	const	getRewardValue = useCallback((address: string, value: BigNumber): number => {
+	const	getRewardValue = useCallback((address: string, value: bigint): number => {
 		const	tokenInfo = tokens?.[address];
 		const	tokenPrice = prices?.[address];
 		const	decimals = tokenInfo?.decimals || 18;
@@ -54,7 +53,7 @@ function	GaugeList(): ReactElement {
 
 	const	searchedGauges = useMemo((): TCurveGauges[] => {
 		const	gaugesToSearch = [...filteredGauges];
-	
+
 		if (searchValue === '') {
 			return gaugesToSearch;
 		}
@@ -63,7 +62,7 @@ function	GaugeList(): ReactElement {
 			return searchString.toLowerCase().includes(searchValue.toLowerCase());
 		});
 	}, [filteredGauges, searchValue]);
-	
+
 	const	sortedGauges = useMemo((): TCurveGauges[] => {
 		if (sort.sortBy === 'name') {
 			return searchedGauges.sort((a, b): number => stringSort({a: a.name, b: b.name, sortDirection: sort.sortDirection}));
@@ -140,7 +139,7 @@ function	GaugeList(): ReactElement {
 						{label: 'Pending $/veCRV', value: 'pendingRewards', sortable: true, className: 'col-span-3'},
 						{label: '', value: '', sortable: false, className: 'col-span-1'}
 					]} />
-					
+
 				{sortedGauges.length === 0 ? (
 					<GaugeListEmpty />
 				) : sortedGauges.map((gauge): ReactNode => {

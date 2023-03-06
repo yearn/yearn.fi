@@ -89,12 +89,12 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 				** quote to 0.
 				**************************************************************/
 				if (currentSolver === Solver.WIDO && !isSolverDisabled[Solver.WIDO]) {
-					if (widoQuote?.raw?.gt(0)) {
+					if (widoQuote?.raw > 0) {
 						performBatchedUpdates((): void => {
 							set_currentSolverState({...wido, quote: widoQuote});
 							set_isLoading(false);
 						});
-					} else if (cowswapQuote?.raw?.gt(0) && !isSolverDisabled[Solver.COWSWAP]) {
+					} else if (cowswapQuote?.raw > 0 && !isSolverDisabled[Solver.COWSWAP]) {
 						performBatchedUpdates((): void => {
 							set_currentSolverState({...cowswap, quote: cowswapQuote});
 							set_isLoading(false);
@@ -115,12 +115,12 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 				** quote to 0.
 				**************************************************************/
 				if (currentSolver === Solver.COWSWAP && !isSolverDisabled[Solver.COWSWAP]) {
-					if (cowswapQuote?.raw?.gt(0)) {
+					if (cowswapQuote?.raw > 0) {
 						performBatchedUpdates((): void => {
 							set_currentSolverState({...cowswap, quote: cowswapQuote});
 							set_isLoading(false);
 						});
-					} else if (widoQuote?.raw?.gt(0) && !isSolverDisabled[Solver.WIDO]) {
+					} else if (widoQuote?.raw > 0 && !isSolverDisabled[Solver.WIDO]) {
 						performBatchedUpdates((): void => {
 							set_currentSolverState({...wido, quote: widoQuote});
 							set_isLoading(false);

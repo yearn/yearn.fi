@@ -12,7 +12,6 @@ import {useYearn} from '@common/contexts/useYearn';
 import {useBribes} from '@yBribe/contexts/useBribes';
 import {claimReward} from '@yBribe/utils/actions/claimReward';
 
-import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TCurveGauges} from '@common/types/curves';
@@ -21,7 +20,7 @@ function	GaugeRowItemWithExtraData({
 	address,
 	value,
 	minDecimals = 5
-}: {address: string, value: BigNumber, minDecimals?: number}): ReactElement {
+}: {address: string, value: bigint, minDecimals?: number}): ReactElement {
 	const	{tokens, prices} = useYearn();
 
 	const	tokenInfo = tokens?.[address];
@@ -45,7 +44,7 @@ function	GaugeRowItemWithExtraData({
 	);
 }
 
-function	GaugeRowItemAPR({address, value}: {address: string, value: BigNumber}): ReactElement {
+function	GaugeRowItemAPR({address, value}: {address: string, value: bigint}): ReactElement {
 	const	{tokens, prices} = useYearn();
 
 	const	crvPrice = useMemo((): number => {
@@ -82,22 +81,22 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 	const	{currentRewards, nextRewards, claimable, refresh} = useBribes();
 	const	[txStatusClaim, set_txStatusClaim] = useState(defaultTxStatus);
 
-	const	currentRewardsForCurrentGauge = useMemo((): TDict<BigNumber> => {
+	const	currentRewardsForCurrentGauge = useMemo((): TDict<bigint> => {
 		return currentRewards?.v3?.[toAddress(currentGauge.gauge)] || {};
 	}, [currentGauge.gauge, currentRewards, category]);
 
-	const	nextRewardsForCurrentGauge = useMemo((): TDict<BigNumber> => {
+	const	nextRewardsForCurrentGauge = useMemo((): TDict<bigint> => {
 		return nextRewards?.v3?.[toAddress(currentGauge.gauge)] || {};
 	}, [currentGauge.gauge, nextRewards, category]);
 
-	const	claimableForCurrentGauge = useMemo((): TDict<BigNumber> => {
+	const	claimableForCurrentGauge = useMemo((): TDict<bigint> => {
 		return claimable?.v3?.[toAddress(currentGauge.gauge)] || {};
 	}, [currentGauge.gauge, claimable, category]);
 
 	const	claimableForCurrentGaugeMap = Object.entries(claimableForCurrentGauge || {}) || [];
 	const	currentRewardsForCurrentGaugeMap = Object.entries(currentRewardsForCurrentGauge || {}) || [];
 	const	nextRewardsForCurrentGaugeMap = Object.entries(nextRewardsForCurrentGauge || {}) || [];
-	const	hasSomethingToClaim = claimableForCurrentGaugeMap.some(([, value]: [string, BigNumber]): boolean => value.gt(0));
+	const	hasSomethingToClaim = claimableForCurrentGaugeMap.some(([, value]: [string, bigint]): boolean => formatBN(value) > 0);
 
 	function	onClaimReward(token: string): void {
 		new Transaction(provider, claimReward, set_txStatusClaim).populate(
@@ -157,7 +156,7 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 											{'-'}
 										</p>
 									</div>
-								) : currentRewardsForCurrentGaugeMap.map(([key, value]: [string, BigNumber]): ReactElement => (
+								) : currentRewardsForCurrentGaugeMap.map(([key, value]: [string, bigint]): ReactElement => (
 									<GaugeRowItemWithExtraData
 										key={`current-rewards-${currentGauge.gauge}-${key}`}
 										address={toAddress(key)}
@@ -177,7 +176,7 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 											{'-'}
 										</p>
 									</div>
-								) : nextRewardsForCurrentGaugeMap.map(([key, value]: [string, BigNumber]): ReactElement => (
+								) : nextRewardsForCurrentGaugeMap.map(([key, value]: [string, bigint]): ReactElement => (
 									<GaugeRowItemWithExtraData
 										key={`pending-rewards-${currentGauge.gauge}-${key}`}
 										address={toAddress(key)}
@@ -200,7 +199,7 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 											{formatPercent(0)}
 										</p>
 									</div>
-								) : currentRewardsForCurrentGaugeMap.map(([key, value]: [string, BigNumber]): ReactElement => (
+								) : currentRewardsForCurrentGaugeMap.map(([key, value]: [string, bigint]): ReactElement => (
 									<GaugeRowItemAPR
 										key={`apr-${currentGauge.gauge}-${key}`}
 										address={toAddress(key)}
@@ -217,7 +216,7 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 											{formatPercent(0)}
 										</p>
 									</div>
-								) : nextRewardsForCurrentGaugeMap.map(([key, value]: [string, BigNumber]): ReactElement => (
+								) : nextRewardsForCurrentGaugeMap.map(([key, value]: [string, bigint]): ReactElement => (
 									<GaugeRowItemAPR
 										key={`apr-${currentGauge.gauge}-${key}`}
 										address={toAddress(key)}
@@ -242,7 +241,7 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 											{'-'}
 										</p>
 									</div>
-								) : claimableForCurrentGaugeMap.map(([key, value]: [string, BigNumber]): ReactElement => (
+								) : claimableForCurrentGaugeMap.map(([key, value]: [string, bigint]): ReactElement => (
 									<div key={`claimable-${currentGauge.gauge}-${key}`} className={'flex flex-col items-end space-y-2'}>
 										<GaugeRowItemWithExtraData
 											address={toAddress(key)}
@@ -277,7 +276,7 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 										{'Claim'}
 									</Button>
 								</div>
-							) : currentRewardsForCurrentGaugeMap.map(([key]: [string, BigNumber]): ReactElement => (
+							) : currentRewardsForCurrentGaugeMap.map(([key]: [string, bigint]): ReactElement => (
 								<div key={`claim-${key}`} className={'h-14 pt-0'}>
 									<Button
 										className={'yearn--button-smaller w-full'}

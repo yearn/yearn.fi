@@ -1,14 +1,15 @@
 import {useCallback, useMemo, useRef} from 'react';
-import {ethers} from 'ethers';
+import {ethers, formatUnits, parseUnits} from 'ethers';
 import axios from 'axios';
 import useSWRMutation from 'swr/mutation';
 import {domain, OrderKind, SigningScheme, signOrder} from '@gnosis.pm/gp-v2-contracts';
 import {isSolverDisabled, Solver} from '@vaults/contexts/useSolver';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {SOLVER_COW_VAULT_RELAYER_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatBN, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatBN, MaxUint256, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
 import {approvedERC20Amount, approveERC20, isApprovedERC20} from '@common/utils/actions/approveToken';
@@ -48,8 +49,8 @@ function useCowswapQuote(): [TCowResult, (request: TInitSolverArgs, shouldPreven
 		});
 
 		const canExecuteFetch = (
-			!(isZeroAddress(quote.from) || isZeroAddress(quote.sellToken) || isZeroAddress(quote.buyToken))
-			&& !formatBN(request?.inputAmount || 0).isZero()
+			!(isZero(quote.from) || isZero(quote.sellToken) || isZero(quote.buyToken))
+			&& !isZero(formatBN(request?.inputAmount || 0))
 		);
 		if (canExecuteFetch) {
 			quote.validTo = Math.round((new Date().setMinutes(new Date().getMinutes() + 10) / 1000));
@@ -99,8 +100,8 @@ export function useSolverCowswap(): TSolverContext {
 			return '0';
 		}
 		const {quote} = currentQuote;
-		const buyAmount = Number(ethers.utils.formatUnits(quote.buyAmount, decimals));
-		const withSlippage = ethers.utils.parseUnits((buyAmount * (1 - Number(zapSlippage / 100))).toFixed(decimals), decimals);
+		const buyAmount = Number(formatUnits(quote.buyAmount, decimals));
+		const withSlippage = parseUnits((buyAmount * (1 - Number(zapSlippage / 100))).toFixed(decimals), decimals);
 		return withSlippage.toString();
 	}, [zapSlippage]);
 
@@ -134,14 +135,14 @@ export function useSolverCowswap(): TSolverContext {
 			return toAddress(address || '');
 		}
 
-		const	signer = provider.getSigner();
+		const	signer = await provider.getSigner();
 		const	rawSignature = await signOrder(
 			domain(1, '0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
 			quote,
 			signer,
 			SigningScheme.EIP712
 		);
-		return ethers.utils.joinSignature(rawSignature.data);
+		return ethers.Signature.from(rawSignature.data as ethers.SignatureLike).serialized;
 	}, [provider, shouldUsePresign, address]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
@@ -261,7 +262,7 @@ export function useSolverCowswap(): TSolverContext {
 	** of the token by the Cowswap solver.
 	**************************************************************************/
 	const onApprove = useCallback(async (
-		amount = ethers.constants.MaxUint256,
+		amount = MaxUint256,
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {

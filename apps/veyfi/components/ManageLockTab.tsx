@@ -15,7 +15,6 @@ import {useWallet} from '@common/contexts/useWallet';
 
 import {AmountInput} from '../../common/components/AmountInput';
 
-import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 
@@ -31,14 +30,14 @@ function ManageLockTab(): ReactElement {
 	const [extendLockTime, extendLockTimeStatus] = useTransaction(VotingEscrowActions.extendLockTime, onTxSuccess);
 	const [withdrawLocked, withdrawLockedStatus] = useTransaction(VotingEscrowActions.withdrawLocked, onTxSuccess);
 
-	const hasLockedAmount = formatBN(positions?.deposit?.balance).gt(0);
-	const willExtendLock = formatBN(lockTime).gt(0);
+	const hasLockedAmount = formatBN(positions?.deposit?.balance) > 0;
+	const willExtendLock = formatBN(lockTime) > 0;
 	const timeUntilUnlock = positions?.unlockTime ? getTimeUntil(positions?.unlockTime) : undefined;
 	const weeksToUnlock = toWeeks(timeUntilUnlock);
 	const newUnlockTime = toTime(positions?.unlockTime) + fromWeeks(toTime(lockTime));
-	const hasPenalty = formatBN(positions?.penalty).gt(0);
+	const hasPenalty = formatBN(positions?.penalty) > 0;
 
-	const votingPower = useMemo((): BigNumber => {
+	const votingPower = useMemo((): bigint => {
 		if(!positions?.deposit || !newUnlockTime) {
 			return formatBN(0);
 		}

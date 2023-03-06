@@ -22,7 +22,7 @@ function ClaimTab(): ReactElement {
 	const refreshData = (): unknown => Promise.all([refreshVotingEscrow(), refreshBalances()]);
 	const [withdrawUnlocked, withdrawUnlockedStatus] = useTransaction(VotingEscrowActions.withdrawUnlocked, refreshData);
 
-	const hasLockedAmount = formatBN(positions?.deposit?.balance).gt(0);
+	const hasLockedAmount = formatBN(positions?.deposit?.balance) > 0;
 	const timeUntilUnlock = positions?.unlockTime ? getTimeUntil(positions?.unlockTime) : 0;
 	const isClaimable = hasLockedAmount && !timeUntilUnlock;
 	const claimableAmount = isClaimable ? positions?.deposit?.balance : '0';

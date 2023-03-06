@@ -86,7 +86,7 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVau
 								<p className={'text-base text-neutral-600'}>{'Total Gain'}</p>
 								<b className={'font-number text-lg text-neutral-900'}>
 									{`${formatAmount(formatToNormalizedValue(
-										formatBN(strategy?.details?.totalGain).sub(formatBN(strategy?.details?.totalLoss)),
+										formatBN(strategy?.details?.totalGain) - formatBN(strategy?.details?.totalLoss),
 										currentVault?.decimals
 									), 0, 0)} ${currentVault.token.symbol}`}
 								</b>

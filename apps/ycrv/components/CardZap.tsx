@@ -5,9 +5,10 @@ import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {CRV_TOKEN_ADDRESS, LPYCRV_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatBN, formatToNormalizedValue, toNormalizedBN, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatBN, formatToNormalizedValue, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {Dropdown} from '@common/components/TokenDropdown';
 import {useWallet} from '@common/contexts/useWallet';
@@ -64,21 +65,17 @@ function	CardZap(): ReactElement {
 
 	function	renderButton(): ReactElement {
 		const	balanceForInputToken = formatBN(balances?.[toAddress(selectedOptionFrom.value)]?.raw);
-		const	isAboveBalance = amount.raw.gt(balanceForInputToken) || balanceForInputToken.eq(Zero);
-		const	isAboveAllowance = (amount.raw).gt(allowanceFrom);
+		const	isAboveBalance = formatBN(amount.raw) > formatBN(balanceForInputToken) || isZero(balanceForInputToken);
+		const	isAboveAllowance = formatBN(amount.raw) > formatBN(allowanceFrom);
 
 		if (txStatusApprove.pending || isAboveAllowance) {
-			if (allowanceFrom.gt(Zero) && toAddress(selectedOptionFrom.value) === CRV_TOKEN_ADDRESS) {
+			if (formatBN(allowanceFrom) > 0 && toAddress(selectedOptionFrom.value) === CRV_TOKEN_ADDRESS) {
 				return (
 					<Button
 						onClick={onIncreaseCRVAllowance}
 						className={'w-full'}
 						isBusy={txStatusApprove.pending}
-						isDisabled={
-							!isActive
-							|| (amount.raw).isZero()
-							|| isAboveBalance
-						}>
+						isDisabled={!isActive || isZero(amount.raw) || isAboveBalance}>
 						{'Increase Allowance'}
 					</Button>
 				);
@@ -88,11 +85,7 @@ function	CardZap(): ReactElement {
 					onClick={onApproveFrom}
 					className={'w-full'}
 					isBusy={txStatusApprove.pending}
-					isDisabled={
-						!isActive
-						|| (amount.raw).isZero()
-						|| isAboveBalance
-					}>
+					isDisabled={!isActive || isZero(amount.raw) || isAboveBalance}>
 					{isAboveBalance ? 'Insufficient balance' : `Approve ${selectedOptionFrom?.label || 'token'}`}
 				</Button>
 			);
@@ -103,12 +96,8 @@ function	CardZap(): ReactElement {
 				onClick={onZap}
 				className={'w-full'}
 				isBusy={txStatusZap.pending}
-				isDisabled={
-					!isActive ||
-					(amount.raw).isZero() ||
-					amount.raw.gt(balanceForInputToken)
-				}>
-				{isAboveBalance && !amount.raw.isZero() ? 'Insufficient balance' : 'Swap'}
+				isDisabled={!isActive || isZero(amount.raw) || formatBN(amount.raw) > formatBN(balanceForInputToken)}>
+				{isAboveBalance && !isZero(amount.raw) ? 'Insufficient balance' : 'Swap'}
 			</Button>
 		);
 	}

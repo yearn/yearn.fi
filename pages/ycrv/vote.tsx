@@ -13,7 +13,6 @@ import Withdraw from '@yCRV/components/tabs/Withdraw.vl-yCRV';
 import {useVLyCRV} from '@yCRV/hooks/useVLyCRV';
 import Wrapper from '@yCRV/Wrapper';
 
-import type {BigNumber} from 'ethers';
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
 import type {TDict} from '@yearn-finance/web-lib/types';
@@ -24,13 +23,13 @@ function Vote(): ReactElement {
 	const {initialData: {nextPeriod, userInfo, getVotesUnpacked}} = useVLyCRV();
 	const {gauges, isLoadingGauges} = useCurve();
 	const {gaugesList, voteAmounts} = getVotesUnpacked;
-	const gaugesVotes = useMemo((): TDict<BigNumber> => {
-		return gaugesList.reduce((prev, curr, i): TDict<BigNumber> => ({...prev, [curr]: voteAmounts[i]}), {});
+	const gaugesVotes = useMemo((): TDict<bigint> => {
+		return gaugesList.reduce((prev, curr, i): TDict<bigint> => ({...prev, [curr]: voteAmounts[i]}), {});
 	}, [gaugesList, voteAmounts]);
 
 	const {balance, lastVoteTime, votesSpent} = userInfo;
 	const totalVotes = formatToNormalizedValue(balance);
-	const remainingVotesForThisPeriod = formatToNormalizedValue(balance.sub(votesSpent));
+	const remainingVotesForThisPeriod = formatToNormalizedValue(balance - votesSpent);
 
 	const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 	const timeLeft = computeTimeLeft({endTime: nextPeriod});

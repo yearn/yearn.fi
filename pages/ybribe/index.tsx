@@ -15,7 +15,6 @@ import {GaugeListRow} from '@yBribe/components/claim/GaugeListRow';
 import {useBribes} from '@yBribe/contexts/useBribes';
 import Wrapper from '@yBribe/Wrapper';
 
-import type {BigNumber} from 'ethers';
 import type {NextRouter} from 'next/router';
 import type {ReactElement, ReactNode} from 'react';
 import type {TCurveGauges} from '@common/types/curves';
@@ -31,7 +30,7 @@ function	GaugeList(): ReactElement {
 		'yGaugeListBribeSorting', {sortBy: '', sortDirection: 'desc'}
 	);
 
-	const	getRewardValue = useCallback((address: string, value: BigNumber): number => {
+	const	getRewardValue = useCallback((address: string, value: bigint): number => {
 		const	tokenInfo = tokens?.[address];
 		const	tokenPrice = prices?.[address];
 		const	decimals = tokenInfo?.decimals || 18;
@@ -44,7 +43,7 @@ function	GaugeList(): ReactElement {
 		if (category === 'claimable') {
 			return gauges.filter((gauge): boolean => {
 				const currentClaimableMapV3 = Object.values(claimable?.v3?.[toAddress(gauge.gauge)] || {});
-				return currentClaimableMapV3.some((value: BigNumber): boolean => value.gt(0));
+				return currentClaimableMapV3.some((value: bigint): boolean => formatBN(value) > 0);
 			});
 		}
 		return gauges.filter((gauge): boolean => {
@@ -56,7 +55,7 @@ function	GaugeList(): ReactElement {
 
 	const	searchedGauges = useMemo((): TCurveGauges[] => {
 		const	gaugesToSearch = [...filteredGauges];
-	
+
 		if (searchValue === '') {
 			return gaugesToSearch;
 		}
@@ -109,7 +108,7 @@ function	GaugeList(): ReactElement {
 
 		return searchedGauges;
 	}, [sort.sortBy, sort.sortDirection, searchedGauges, currentRewards?.v3, getRewardValue, nextRewards?.v3]);
-	
+
 	const	onSort = useCallback((newSortBy: string, newSortDirection: string): void => {
 		set_sort({sortBy: newSortBy, sortDirection: newSortDirection as TSortDirection});
 	}, [set_sort]);
@@ -143,7 +142,7 @@ function	GaugeList(): ReactElement {
 						{label: 'Claimable', value: 'claimable', sortable: false},
 						{label: '', value: '', sortable: false}
 					]} />
-					
+
 				{sortedGauges.length === 0 ? (
 					<GaugeListEmpty category={category} />
 				) : sortedGauges.map((gauge): ReactNode => {

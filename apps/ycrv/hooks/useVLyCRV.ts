@@ -9,21 +9,21 @@ import {approveERC20} from '@common/utils/actions/approveToken';
 import VLYCRV_ABI from '@yCRV/utils/abi/vlYCrv.abi';
 import {vLyCRVDeposit, vLyCRVVote, vLyCRVVoteMany, vLyCRVWithdraw} from '@yCRV/utils/actions';
 
-import type {BigNumber, providers} from 'ethers';
 import type {KeyedMutator} from 'swr';
+import type {TWeb3Provider} from '@yearn-finance/web-lib/contexts/types';
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 
 export type TUserInfo = {
-	balance: BigNumber;
-	votesSpent: BigNumber;
+	balance: bigint;
+	votesSpent: bigint;
 	lastVoteTime: number;
 	unlockTime: number;
 }
 
 type TGetVotesUnpacked = {
 	gaugesList: string[];
-	voteAmounts: BigNumber[];
+	voteAmounts: bigint[];
 }
 
 type TUseVLyCRV = {
@@ -37,11 +37,11 @@ type TUseVLyCRV = {
 		userInfo: TUserInfo;
 		getVotesUnpacked: TGetVotesUnpacked;
 	}>;
-	vote: (provider: providers.JsonRpcProvider, gaugeAddress: TAddress, votes: BigNumber) => Promise<TTxResponse>;
-	voteMany: (provider: providers.JsonRpcProvider, gauges: TAddress[], votes: BigNumber[]) => Promise<TTxResponse>;
-	deposit: (provider: providers.JsonRpcProvider, amount: BigNumber) => Promise<TTxResponse>;
-	withdraw: (provider: providers.JsonRpcProvider, amount: BigNumber) => Promise<TTxResponse>;
-	approve: (provider: providers.JsonRpcProvider, amount: BigNumber) => Promise<TTxResponse>;
+	vote: (provider: TWeb3Provider, gaugeAddress: TAddress, votes: bigint) => Promise<TTxResponse>;
+	voteMany: (provider: TWeb3Provider, gauges: TAddress[], votes: bigint[]) => Promise<TTxResponse>;
+	deposit: (provider: TWeb3Provider, amount: bigint) => Promise<TTxResponse>;
+	withdraw: (provider: TWeb3Provider, amount: bigint) => Promise<TTxResponse>;
+	approve: (provider: TWeb3Provider, amount: bigint) => Promise<TTxResponse>;
 };
 
 const DEFAULT_VLYCRV = {
@@ -92,7 +92,7 @@ export function useVLyCRV(): TUseVLyCRV {
 		withdraw: vLyCRVWithdraw,
 		vote: vLyCRVVote,
 		voteMany: vLyCRVVoteMany,
-		approve: async (provider: providers.JsonRpcProvider, amount: BigNumber): Promise<TTxResponse> => (
+		approve: async (provider: TWeb3Provider, amount: bigint): Promise<TTxResponse> => (
 			approveERC20(provider, YCRV_TOKEN_ADDRESS, VLYCRV_TOKEN_ADDRESS, amount)
 		)
 	};
