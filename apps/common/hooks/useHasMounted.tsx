@@ -1,12 +1,13 @@
-import {useEffect, useState} from 'react';
+import {useState} from 'react';
+import {useMountEffect} from '@react-hookz/web';
 
 export function useHasMounted(): boolean {
 	const [hasMounted, set_hasMounted] = useState(false);
-	
-	useEffect((): void => {
-		set_hasMounted(true);
-	}, []);
 
+	useMountEffect((): void => {
+		set_hasMounted(true);
+	});
+	
 	return hasMounted;
 }
 
