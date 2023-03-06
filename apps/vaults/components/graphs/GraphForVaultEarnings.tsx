@@ -45,6 +45,7 @@ function	GraphForVaultEarnings({currentVault, harvestData, height = 312, isCumul
 					dot={false}
 					activeDot={(e): ReactElement => {
 						e.className = `${e.className} activeDot`;
+						delete e.dataKey;
 						return <circle {...e}></circle>;
 					}}
 					strokeWidth={2}

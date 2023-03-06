@@ -59,6 +59,7 @@ function	GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height =
 					dot={false}
 					activeDot={(e): ReactElement => {
 						e.className = `${e.className} activeDot`;
+						delete e.dataKey;
 						return <circle {...e}></circle>;
 					}} />
 				<XAxis
@@ -72,6 +73,9 @@ function	GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height =
 						e.fill = '#5B5B5B';
 						e.className = 'text-xxs md:text-xs font-number z-10 ';
 						e.alignmentBaseline = 'middle';
+						delete e.verticalAnchor;
+						delete e.visibleTicksCount;
+						delete e.tickFormatter;
 						const	formatedValue = formatPercent(value);
 						return <text {...e}>{formatedValue}</text>;
 					}} />
