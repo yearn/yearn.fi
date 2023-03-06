@@ -12,6 +12,7 @@ import IconLinkOut from '@yearn-finance/web-lib/icons/IconLinkOut';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
+import {useHasMounted} from '@common/hooks/useHasMounted';
 import IconChevron from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
@@ -95,28 +96,13 @@ function	Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactE
 	);
 }
 
-function	VaultDetailsTabsWrapper({currentVault}: {currentVault: TYearnVault}): ReactElement {
+function	VaultDetailsTabsWrapper({currentVault}: {currentVault: TYearnVault}): ReactElement | null {
 	const {provider} = useWeb3();
 	const {safeChainID} = useChainID();
 	const {settings: baseAPISettings, networks} = useSettings();
 	const [selectedAboutTabIndex, set_selectedAboutTabIndex] = useState(0);
 	const networkSettings = useMemo((): TSettingsForNetwork => networks[safeChainID], [networks, safeChainID]);
-
-	async function onAddTokenToMetamask(address: string, symbol: string, decimals: number, image: string): Promise<void> {
-		try {
-			await (provider as TMetamaskInjectedProvider).send('wallet_watchAsset', {
-				type: 'ERC20',
-				options: {
-					address,
-					symbol,
-					decimals,
-					image
-				}
-			});
-		} catch (error) {
-			// Token has not been added to MetaMask.
-		}
-	}
+	const hasMounted = useHasMounted();
 
 	const	{data: yDaemonHarvestsData} = useSWR(
 		`${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/${safeChainID}/vaults/harvests/${currentVault.address}`,
@@ -133,6 +119,26 @@ function	VaultDetailsTabsWrapper({currentVault}: {currentVault: TYearnVault}): R
 			}))
 		);
 	}, [currentVault.decimals, yDaemonHarvestsData]);
+
+	if (!hasMounted) {
+		return null;
+	}
+
+	async function onAddTokenToMetamask(address: string, symbol: string, decimals: number, image: string): Promise<void> {
+		try {
+			await (provider as TMetamaskInjectedProvider).send('wallet_watchAsset', {
+				type: 'ERC20',
+				options: {
+					address,
+					symbol,
+					decimals,
+					image
+				}
+			});
+		} catch (error) {
+			// Token has not been added to MetaMask.
+		}
+	}
 
 	return (
 		<div aria-label={'Vault Details'} className={'col-span-12 mb-4 flex flex-col bg-neutral-100'}>
