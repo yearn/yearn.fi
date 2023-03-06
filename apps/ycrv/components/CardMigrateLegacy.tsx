@@ -13,6 +13,7 @@ import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUp
 import {Dropdown} from '@common/components/TokenDropdown';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
+import {useHasMounted} from '@common/hooks/useHasMounted';
 import ArrowDown from '@common/icons/ArrowDown';
 import CardTransactorContextApp, {useCardTransactor} from '@yCRV/components/CardTransactorWrapper';
 import {CardVariants, CardVariantsInner} from '@yCRV/utils/animations';
@@ -21,7 +22,7 @@ import {LEGACY_OPTIONS_FROM, LEGACY_OPTIONS_TO} from '@yCRV/utils/zapOptions';
 import type {ChangeEvent, ReactElement} from 'react';
 import type {TDropdownOption} from '@common/types/types';
 
-function	CardMigrateLegacy(): ReactElement {
+function	CardMigrateLegacy(): ReactElement | null {
 	const	{isActive} = useWeb3();
 	const	{balances} = useWallet();
 	const	{vaults, prices} = useYearn();
@@ -34,6 +35,7 @@ function	CardMigrateLegacy(): ReactElement {
 		toVaultAPY, expectedOutWithSlippage,
 		allowanceFrom, onApproveFrom, onZap
 	} = useCardTransactor();
+	const hasMounted = useHasMounted();
 
 	const	ycrvPrice = useMemo((): number => (
 		formatToNormalizedValue(
@@ -47,6 +49,10 @@ function	CardMigrateLegacy(): ReactElement {
 			6
 		)
 	), [prices]);
+
+	if (!hasMounted) {
+		return null;
+	}
 
 	function	renderButton(): ReactElement {
 		const	balanceForInputToken = formatBN(balances?.[toAddress(selectedOptionFrom.value)]?.raw);
