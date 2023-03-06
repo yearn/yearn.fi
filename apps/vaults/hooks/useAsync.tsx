@@ -1,10 +1,10 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 
-import type {VoidPromiseFunction} from '@yearn-finance/web-lib/utils/types';
+import type {VoidPromiseFunction} from '@yearn-finance/web-lib/types';
 
 function	useAsync<T>(
-	callback: (...args: any) => Promise<T | undefined>,
+	callback: (...args: unknown[]) => Promise<T | undefined>,
 	defaultValue?: T,
 	effectDependencies: unknown[] = []
 ): [T | undefined, boolean, VoidPromiseFunction] {

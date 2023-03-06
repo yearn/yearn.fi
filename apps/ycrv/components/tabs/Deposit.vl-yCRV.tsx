@@ -61,7 +61,7 @@ function Deposit(): ReactElement {
 	}), [amount]);
 
 	const [{result: allowanceFrom, status}, actions] = useAsync(async (): Promise<BigNumber> => approvedERC20Amount(
-		provider as ethers.providers.Web3Provider,
+		provider,
 		toAddress(YCRV.value),
 		toAddress(VL_YCRV.value)
 	), Zero);

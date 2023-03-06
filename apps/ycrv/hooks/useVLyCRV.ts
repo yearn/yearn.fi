@@ -11,7 +11,8 @@ import {vLyCRVDeposit, vLyCRVVote, vLyCRVVoteMany, vLyCRVWithdraw} from '@yCRV/u
 
 import type {BigNumber, providers} from 'ethers';
 import type {KeyedMutator} from 'swr';
-import type {TAddress} from '@yearn-finance/web-lib/utils/address';
+import type {TAddress} from '@yearn-finance/web-lib/types';
+import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 
 export type TUserInfo = {
 	balance: BigNumber;
@@ -36,11 +37,11 @@ type TUseVLyCRV = {
 		userInfo: TUserInfo;
 		getVotesUnpacked: TGetVotesUnpacked;
 	}>;
-	vote: (provider: providers.JsonRpcProvider, gaugeAddress: TAddress, votes: BigNumber) => Promise<boolean>;
-	voteMany: (provider: providers.JsonRpcProvider, gauges: TAddress[], votes: BigNumber[]) => Promise<boolean>;
-	deposit: (provider: providers.JsonRpcProvider, amount: BigNumber) => Promise<boolean>;
-	withdraw: (provider: providers.JsonRpcProvider, amount: BigNumber) => Promise<boolean>;
-	approve: (provider: providers.JsonRpcProvider, amount: BigNumber) => Promise<boolean>;
+	vote: (provider: providers.JsonRpcProvider, gaugeAddress: TAddress, votes: BigNumber) => Promise<TTxResponse>;
+	voteMany: (provider: providers.JsonRpcProvider, gauges: TAddress[], votes: BigNumber[]) => Promise<TTxResponse>;
+	deposit: (provider: providers.JsonRpcProvider, amount: BigNumber) => Promise<TTxResponse>;
+	withdraw: (provider: providers.JsonRpcProvider, amount: BigNumber) => Promise<TTxResponse>;
+	approve: (provider: providers.JsonRpcProvider, amount: BigNumber) => Promise<TTxResponse>;
 };
 
 const DEFAULT_VLYCRV = {
@@ -91,13 +92,8 @@ export function useVLyCRV(): TUseVLyCRV {
 		withdraw: vLyCRVWithdraw,
 		vote: vLyCRVVote,
 		voteMany: vLyCRVVoteMany,
-		approve: async (provider: providers.JsonRpcProvider, amount: BigNumber): Promise<boolean> => (
-			approveERC20(
-				provider,
-				YCRV_TOKEN_ADDRESS,
-				VLYCRV_TOKEN_ADDRESS,
-				amount
-			)
+		approve: async (provider: providers.JsonRpcProvider, amount: BigNumber): Promise<TTxResponse> => (
+			approveERC20(provider, YCRV_TOKEN_ADDRESS, VLYCRV_TOKEN_ADDRESS, amount)
 		)
 	};
 }

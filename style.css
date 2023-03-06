@@ -1,5 +1,5 @@
 /* This will load Tailwindcss + all the overwrite from Yearn lib */
-@import "@yearn-finance/web-lib/style.next.css";
+@import "@yearn-finance/web-lib/style.css";
 
 @font-face {
 	font-family: "Aeonik Mono";

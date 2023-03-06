@@ -13,7 +13,7 @@ import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import LinkOut from '@yearn-finance/web-lib/icons/IconLinkOut';
-import {ERC20_ABI} from '@yearn-finance/web-lib/utils/abi';
+import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
 import {addressZero, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {VAULT_FACTORY_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatBN, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -28,7 +28,7 @@ import {useYearn} from '@common/contexts/useYearn';
 import type {BigNumber, providers} from 'ethers';
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
-import type {TAddress} from '@yearn-finance/web-lib/utils/address';
+import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TCurveGaugesFromYearn} from '@common/types/curves';
 import type {TDropdownGaugeOption} from '@common/types/types';
 
@@ -306,7 +306,7 @@ function	Factory(): ReactElement {
 						<Button
 							onClick={onCreateNewVault}
 							isBusy={txStatus.pending}
-							disabled={!isActive || selectedOption.value.gaugeAddress === addressZero || safeChainID !== 1 || hasError}
+							isDisabled={!isActive || selectedOption.value.gaugeAddress === addressZero || safeChainID !== 1 || hasError}
 							className={'w-full'}>
 							{'Create new Vault'}
 						</Button>

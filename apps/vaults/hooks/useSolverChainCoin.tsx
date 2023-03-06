@@ -101,7 +101,7 @@ export function useSolverChainCoin(): TSolverContext {
 		}
 		if (toAddress(request.current.outputToken.value) === ETH_TOKEN_ADDRESS) {
 			const allowance = await approvedERC20Amount(
-				provider as ethers.providers.Web3Provider,
+				provider,
 				toAddress(request.current.inputToken.value), //Input token
 				toAddress(getEthZapperContract(safeChainID)) //Spender, aka ethZap contract
 			);

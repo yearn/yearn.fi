@@ -1,12 +1,11 @@
 import React, {useMemo} from 'react';
 import {toAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
 import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
+import {formatAmount, formatUSD} from '@yearn-finance/web-lib/utils/format.number';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useCurve} from '@common/contexts/useCurve';
 import {useYearn} from '@common/contexts/useYearn';
-import {formatUSD} from '@common/utils';
 
 import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
@@ -55,7 +54,7 @@ function	RewardFeedTableRow({currentRewardAdded}: {currentRewardAdded: TYDaemonG
 
 	return (
 		<div className={'grid w-full grid-cols-2 border-t border-neutral-200 px-4 md:grid-cols-3 md:px-10'}>
-			
+
 			<div className={'col-span-1 flex h-20 w-full space-x-4'}>
 				<div className={'flex flex-row items-start pt-6'}>
 					<div className={'flex h-6 w-6 rounded-full md:flex md:h-10 md:w-10'}>

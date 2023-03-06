@@ -97,7 +97,7 @@ export function useSolverVanilla(): TSolverContext {
 		}
 
 		const allowance = await approvedERC20Amount(
-			provider as ethers.providers.Web3Provider,
+			provider,
 			toAddress(request.current.inputToken.value), //Input token
 			toAddress(request.current.outputToken.value) //Spender, aka vault
 		);

@@ -5,10 +5,10 @@ import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toNormalizedBN, toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
+import {formatAmount, formatPercent, formatUSD} from '@yearn-finance/web-lib/utils/format.number';
 import TokenIcon from '@common/components/TokenIcon';
 import {useBalance} from '@common/hooks/useBalance';
-import {formatPercent, formatUSD, getVaultName} from '@common/utils';
+import {getVaultName} from '@common/utils';
 
 import type {ReactElement} from 'react';
 import type {TYearnVault} from '@common/types/yearn';
@@ -58,10 +58,8 @@ function	VaultsListRow({currentVault}: {currentVault: TYearnVault}): ReactElemen
 							<b className={'yearn--table-data-section-item-value'}>
 								{(currentVault.apy?.type === 'new' && currentVault.apy?.net_apy == 0) ? (
 									'New'
-								) : (currentVault.apy?.net_apy || 0) > 5 ? (
-									`≧ ${formatPercent(500)}`
 								) : (
-									formatPercent((currentVault.apy?.net_apy || 0) * 100)
+									formatPercent((currentVault?.apy?.net_apy || 0) * 100, 2, 2, 500)
 								)}
 							</b>
 							<small className={'text-xs text-neutral-900'}>

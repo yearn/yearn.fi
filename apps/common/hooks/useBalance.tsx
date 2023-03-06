@@ -5,8 +5,7 @@ import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {useWallet} from '@common/contexts/useWallet';
 
 import type {TBalanceData} from '@yearn-finance/web-lib/hooks/types';
-import type {TAddress} from '@yearn-finance/web-lib/utils/address';
-import type {TDict} from '@yearn-finance/web-lib/utils/types';
+import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 
 function	useBalance(
 	address: string | TAddress,

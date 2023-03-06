@@ -1,42 +1,24 @@
 import {ethers} from 'ethers';
-import {PARTNER_VAULT_ABI} from '@yearn-finance/web-lib/utils/abi';
+import PARTNER_VAULT_ABI from '@yearn-finance/web-lib/utils/abi/partner.vault.abi';
+import {handleTx} from '@yearn-finance/web-lib/utils/web3/transaction';
 
-import type {ContractInterface} from 'ethers';
+import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 
 export async function	depositViaPartner(
-	provider: ethers.providers.Web3Provider,
+	provider: ethers.providers.JsonRpcProvider,
 	partnerContractAddress: string,
 	partnerAddress: string,
 	vaultAddress: string,
 	amount: ethers.BigNumber,
 	gasLimit?: number
-): Promise<boolean> {
-	const	signer = provider.getSigner();
-
-	try {
-		const	contract = new ethers.Contract(
-			partnerContractAddress,
-			PARTNER_VAULT_ABI as ContractInterface,
-			signer
-		);
-		const	transaction = await contract.deposit(
-			vaultAddress,
-			partnerAddress || process.env.PARTNER_ID_ADDRESS,
-			amount,
-			(gasLimit && gasLimit >= 0) ? {gasLimit} : {}
-		);
-		const	transactionResult = await transaction.wait();
-		if (transactionResult.status === 0) {
-			console.error('Fail to perform transaction');
-			return false;
-		}
-
-		return true;
-	} catch(error) {
-		console.error(error);
-		const	errorCode = (error as {code: ethers.errors})?.code || '';
-		if (errorCode === 'UNPREDICTABLE_GAS_LIMIT' && gasLimit !== -1) {
-			depositViaPartner(
+): Promise<TTxResponse> {
+	const signer = provider.getSigner();
+	const contract = new ethers.Contract(partnerContractAddress, PARTNER_VAULT_ABI, signer);
+	const result = await handleTx(contract.deposit(vaultAddress, partnerAddress || process.env.PARTNER_ID_ADDRESS, amount, (gasLimit && gasLimit >= 0) ? {gasLimit} : {}));
+	if (gasLimit !== -1 && result.error && hasCode(result.error)) {
+		const	errorCode = result.error?.code;
+		if (errorCode === 'UNPREDICTABLE_GAS_LIMIT') {
+			return depositViaPartner(
 				provider,
 				partnerContractAddress,
 				partnerAddress,
@@ -45,6 +27,10 @@ export async function	depositViaPartner(
 				gasLimit ? 300_000 : -1
 			);
 		}
-		return false;
 	}
+	return result;
+}
+
+function hasCode(error: Error | unknown): error is { code: string} {
+	return (error as { code: string}).code !== undefined;
 }

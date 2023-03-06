@@ -102,7 +102,7 @@ export function useSolverPartnerContract(): TSolverContext {
 		}
 
 		const allowance = await approvedERC20Amount(
-			provider as ethers.providers.Web3Provider,
+			provider,
 			toAddress(request.current.inputToken.value), //Input token
 			toAddress(networks[safeChainID].partnerContractAddress) //spender aka partner contract
 		);

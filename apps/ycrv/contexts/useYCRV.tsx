@@ -17,7 +17,7 @@ import YVECRV_ABI from '@yCRV/utils/abi/yveCRV.abi';
 import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
-import type {TDict} from '@yearn-finance/web-lib/utils/types';
+import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TYDaemonHarvests, TYearnVault} from '@common/types/yearn';
 
 type THoldings = {
@@ -77,14 +77,14 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 	// ) as SWRResponse;
 
 	const	{data: styCRVVault} = useSWR(
-		`${baseAPISettings.yDaemonBaseURI}/1/vaults/${STYCRV_TOKEN_ADDRESS}`,
+		`${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/1/vaults/${STYCRV_TOKEN_ADDRESS}`,
 		baseFetcher,
 		{revalidateOnFocus: false}
 	) as SWRResponse;
 
 
 	const	{data: yCRVHarvests} = useSWR(
-		`${baseAPISettings.yDaemonBaseURI}/1/vaults/harvests/${STYCRV_TOKEN_ADDRESS},${LPYCRV_TOKEN_ADDRESS}`,
+		`${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/1/vaults/harvests/${STYCRV_TOKEN_ADDRESS},${LPYCRV_TOKEN_ADDRESS}`,
 		baseFetcher,
 		{revalidateOnFocus: false}
 	) as SWRResponse;

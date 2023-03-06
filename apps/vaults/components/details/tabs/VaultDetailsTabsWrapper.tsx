@@ -16,7 +16,7 @@ import IconChevron from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
-import type {TMetamaskInjectedProvider} from '@yearn-finance/web-lib/utils/types';
+import type {TMetamaskInjectedProvider} from '@yearn-finance/web-lib/types';
 import type {TSettingsForNetwork, TYearnVault} from '@common/types/yearn';
 
 type TTabsOptions = {
@@ -121,7 +121,7 @@ function	VaultDetailsTabsWrapper({currentVault}: {currentVault: TYearnVault}): R
 	}
 
 	const	{data: yDaemonHarvestsData} = useSWR(
-		`${baseAPISettings.yDaemonBaseURI}/${safeChainID}/vaults/harvests/${currentVault.address}`,
+		`${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/${safeChainID}/vaults/harvests/${currentVault.address}`,
 		baseFetcher,
 		{revalidateOnFocus: false}
 	) as SWRResponse;
@@ -158,7 +158,7 @@ function	VaultDetailsTabsWrapper({currentVault}: {currentVault: TYearnVault}): R
 						<IconAddToMetamask className={'h-5 w-5 text-neutral-600 transition-colors hover:text-neutral-900 md:h-6 md:w-6'} />
 					</button>
 					<a
-						href={`${networkSettings?.explorerBaseURI as string}/address/${currentVault.address}`}
+						href={`${networkSettings?.explorerBaseURI}/address/${currentVault.address}`}
 						target={'_blank'}
 						rel={'noopener noreferrer'}>
 						<span className={'sr-only'}>{'Open in explorer'}</span>

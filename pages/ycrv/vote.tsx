@@ -16,7 +16,7 @@ import Wrapper from '@yCRV/Wrapper';
 import type {BigNumber} from 'ethers';
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
-import type {TDict} from '@yearn-finance/web-lib/utils/types';
+import type {TDict} from '@yearn-finance/web-lib/types';
 
 
 function Vote(): ReactElement {

@@ -1,5 +1,4 @@
-import type {TAddress} from '@yearn-finance/web-lib/utils/address';
-import type {TDict} from '@yearn-finance/web-lib/utils/types';
+import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 
 export type TYearnVaultStrategy = {
 	address: TAddress,
@@ -144,7 +143,7 @@ export type	TSettingsForNetwork = {
 	metaURI?: string,
 	apiURI?: string,
 	explorerBaseURI?: string,
-	lensAddress?: TAddress,
+	lensOracleAddress?: TAddress,
 	partnerContractAddress?: TAddress
 }
 

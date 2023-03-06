@@ -1,36 +1,19 @@
 import {ethers} from 'ethers';
 import {ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {handleTx} from '@yearn-finance/web-lib/utils/web3/transaction';
 
 import type {BigNumber} from 'ethers';
+import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
+
+const	ZAP_YEARN_VE_CRV_MIN_ABI = ['function zap(address _input, address _output, uint256 _amount) external returns (uint256)'];
 
 export async function	zap(
-	provider: ethers.providers.Web3Provider,
+	provider: ethers.providers.JsonRpcProvider,
 	inputToken: string,
 	outputToken: string,
 	amount: BigNumber
-): Promise<boolean> {
-	const	signer = provider.getSigner();
-
-	try {
-		const	contract = new ethers.Contract(
-			ZAP_YEARN_VE_CRV_ADDRESS,
-			['function zap(address _input, address _output, uint256 _amount) external returns (uint256)'],
-			signer
-		);
-		const	transaction = await contract.zap(
-			inputToken,
-			outputToken,
-			amount
-		);
-		const	transactionResult = await transaction.wait();
-		if (transactionResult.status === 0) {
-			console.error('Fail to perform transaction');
-			return false;
-		}
-
-		return true;
-	} catch(error) {
-		console.error(error);
-		return false;
-	}
+): Promise<TTxResponse> {
+	const signer = provider.getSigner();
+	const contract = new ethers.Contract(ZAP_YEARN_VE_CRV_ADDRESS, ZAP_YEARN_VE_CRV_MIN_ABI, signer);
+	return await handleTx(contract.zap(inputToken, outputToken, amount));
 }

@@ -7,19 +7,22 @@ import {MAX_LOCK_TIME, MIN_LOCK_TIME} from '@veYFI/utils/constants';
 import {validateAmount, validateNetwork} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
+import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatBN, formatUnits} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {fromWeeks, getTimeUntil, toSeconds, toTime, toWeeks} from '@yearn-finance/web-lib/utils/time';
 import {useWallet} from '@common/contexts/useWallet';
 
 import {AmountInput} from '../../common/components/AmountInput';
 
-import type {BigNumber, ethers} from 'ethers';
+import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
-import type {TAddress} from '@yearn-finance/web-lib/utils/address';
+import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 
 function ManageLockTab(): ReactElement {
 	const [lockTime, set_lockTime] = useState('');
-	const {provider, address, isActive, chainID} = useWeb3();
+	const {provider, address, isActive} = useWeb3();
+	const {safeChainID} = useChainID();
 	const {refresh: refreshBalances} = useWallet();
 	const {votingEscrow, positions, refresh: refreshVotingEscrow} = useVotingEscrow();
 	const clearLockTime = (): void => set_lockTime('');
@@ -28,12 +31,10 @@ function ManageLockTab(): ReactElement {
 	const [extendLockTime, extendLockTimeStatus] = useTransaction(VotingEscrowActions.extendLockTime, onTxSuccess);
 	const [withdrawLocked, withdrawLockedStatus] = useTransaction(VotingEscrowActions.withdrawLocked, onTxSuccess);
 
-	const web3Provider = provider as ethers.providers.Web3Provider;
-	const userAddress = address as TAddress;
 	const hasLockedAmount = formatBN(positions?.deposit?.balance).gt(0);
 	const willExtendLock = formatBN(lockTime).gt(0);
 	const timeUntilUnlock = positions?.unlockTime ? getTimeUntil(positions?.unlockTime) : undefined;
-	const weeksToUnlock = timeUntilUnlock ? toWeeks(timeUntilUnlock) : 0;
+	const weeksToUnlock = toWeeks(timeUntilUnlock);
 	const newUnlockTime = toTime(positions?.unlockTime) + fromWeeks(toTime(lockTime));
 	const hasPenalty = formatBN(positions?.penalty).gt(0);
 
@@ -49,21 +50,7 @@ function ManageLockTab(): ReactElement {
 		minAmountAllowed: MIN_LOCK_TIME
 	});
 
-	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: 1, walletNetwork: chainID});
-
-	const executeExtendLockTime = (): void => {
-		if (!votingEscrow || !userAddress) {
-			return;
-		}
-		extendLockTime(web3Provider, userAddress, votingEscrow.address, toSeconds(newUnlockTime));
-	};
-
-	const executeWithdrawLocked = (): void => {
-		if (!votingEscrow || !userAddress) {
-			return;
-		}
-		withdrawLocked(web3Provider, userAddress, votingEscrow.address);
-	};
+	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: 1, walletNetwork: safeChainID});
 
 	return (
 		<div className={'grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-16'}>
@@ -80,30 +67,27 @@ function ManageLockTab(): ReactElement {
 					<AmountInput
 						label={'Current lock period (weeks)'}
 						amount={weeksToUnlock}
-						disabled
-					/>
+						disabled />
 					<AmountInput
 						label={'Increase lock period (weeks)'}
 						amount={lockTime}
 						onAmountChange={(amount): void => set_lockTime(Math.floor(toTime(amount)).toString())}
 						maxAmount={MAX_LOCK_TIME - weeksToUnlock > 0 ? MAX_LOCK_TIME - weeksToUnlock : 0}
+						onMaxClick={(): void => set_lockTime(Math.floor(toTime(MAX_LOCK_TIME - weeksToUnlock > 0 ? MAX_LOCK_TIME - weeksToUnlock : 0)).toString())}
 						disabled={!hasLockedAmount}
 						error={lockTimeError}
-						legend={'Minimum: 1 week'}
-					/>
+						legend={'Minimum: 1 week'} />
 				</div>
 				<div className={'grid grid-cols-1 gap-6 md:grid-cols-2 md:pb-5'}>
 					<AmountInput
 						label={'Total veYFI'}
 						amount={formatUnits(votingPower, 18)}
-						disabled
-					/>
+						disabled />
 					<Button
 						className={'w-full md:mt-7'}
-						onClick={executeExtendLockTime}
+						onClick={async (): Promise<TTxResponse> => extendLockTime(provider, toAddress(address), toAddress(votingEscrow?.address), toSeconds(newUnlockTime))}
 						isBusy={extendLockTimeStatus.loading}
-						disabled={!isActive || !isValidNetwork || !isValidLockTime || extendLockTimeStatus.loading}
-					>
+						isDisabled={!isActive || !isValidNetwork || !isValidLockTime || extendLockTimeStatus.loading || !votingEscrow || !address}>
 						{'Extend'}
 					</Button>
 				</div>
@@ -122,27 +106,23 @@ function ManageLockTab(): ReactElement {
 					<AmountInput
 						label={'veYFI you have'}
 						amount={formatUnits(positions?.deposit?.balance, 18)}
-						disabled
-					/>
+						disabled />
 					<AmountInput
 						label={'Current lock time (weeks)'}
 						amount={weeksToUnlock}
-						disabled
-					/>
+						disabled />
 				</div>
 				<div className={'grid grid-cols-1 gap-6 md:grid-cols-2'}>
 					<AmountInput
 						label={'YFI you get'}
 						amount={formatUnits(positions?.withdrawable, 18)}
 						legend={`Penalty: ${((positions?.penaltyRatio ?? 0) * 100).toFixed(2).toString()}%`}
-						disabled
-					/>
+						disabled />
 					<Button
 						className={'w-full md:mt-7'}
-						onClick={executeWithdrawLocked}
+						onClick={async (): Promise<TTxResponse> => withdrawLocked(provider, toAddress(address), toAddress(votingEscrow?.address))}
 						isBusy={withdrawLockedStatus.loading}
-						disabled={!isActive || !isValidNetwork || !hasPenalty || withdrawLockedStatus.loading}
-					>
+						isDisabled={!isActive || !isValidNetwork || !hasPenalty || withdrawLockedStatus.loading || !votingEscrow || !address}>
 						{'Exit'}
 					</Button>
 				</div>

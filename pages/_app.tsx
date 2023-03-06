@@ -85,6 +85,10 @@ const App = memo(function App(props: AppProps): ReactElement {
 function	MyApp(props: AppProps): ReactElement {
 	return (
 		<main className={aeonik.className}>
+			<script
+				defer
+				data-domain={'yearn.finance'}
+				src={'/js/script.js'} />
 			<WithYearn
 				options={{
 					web3: {

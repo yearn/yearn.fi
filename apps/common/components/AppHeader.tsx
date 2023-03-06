@@ -5,8 +5,8 @@ import {AnimatePresence} from 'framer-motion';
 import {Popover, Transition} from '@headlessui/react';
 import {VaultsHeader} from '@vaults/components/header/VaultsHeader';
 import {VeYfiHeader} from '@veYFI/components/header/VeYfiHeader';
+import Header from '@yearn-finance/web-lib/components/Header';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import Header from '@yearn-finance/web-lib/layouts/Header.next';
 import BalanceReminderPopover from '@common/components/BalanceReminderPopover';
 import {useMenu} from '@common/contexts/useMenu';
 import LogoYearn from '@common/icons/LogoYearn';
@@ -17,7 +17,7 @@ import {AppName, APPS} from './Apps';
 import {MotionDiv} from './MotionDiv';
 
 import type {ReactElement} from 'react';
-import type {TMenu} from '@yearn-finance/web-lib/layouts/Header.next';
+import type {TMenu} from '@yearn-finance/web-lib/components/Header';
 
 function	Logo(): ReactElement {
 	const	{pathname} = useRouter();
