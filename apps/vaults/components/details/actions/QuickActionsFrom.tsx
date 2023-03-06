@@ -8,20 +8,26 @@ import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers
 import {Dropdown} from '@common/components/TokenDropdown';
 import {useWallet} from '@common/contexts/useWallet';
 import {useBalance} from '@common/hooks/useBalance';
+import {useHasMounted} from '@common/hooks/useHasMounted';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
 
 import type {ChangeEvent, ReactElement} from 'react';
 
-function	VaultDetailsQuickActionsFrom(): ReactElement {
+function	VaultDetailsQuickActionsFrom(): ReactElement | null {
 	const {isActive} = useWeb3();
 	const {balances} = useWallet();
 	const {
 		possibleOptionsFrom, actionParams, onUpdateSelectedOptionFrom, onChangeAmount,
 		maxDepositPossible, isDepositing
 	} = useActionFlow();
+	const hasMounted = useHasMounted();
 
 	const selectedFromBalance = useBalance(toAddress(actionParams?.selectedOptionFrom?.value));
 	const selectedOptionFromPricePerToken = useTokenPrice(toAddress(actionParams?.selectedOptionFrom?.value));
+
+	if (!hasMounted) {
+		return null;
+	}
 
 	return (
 		<section aria-label={'FROM'} className={'flex w-full flex-col space-x-0 md:flex-row md:space-x-4'}>
@@ -30,7 +36,7 @@ function	VaultDetailsQuickActionsFrom(): ReactElement {
 					<label className={'text-base text-neutral-600'}>
 						{isDepositing ? 'From wallet' : 'From vault'}
 					</label>
-					<legend className={'font-number inline text-xs text-neutral-600 md:hidden'} suppressHydrationWarning>
+					<legend className={'font-number inline text-xs text-neutral-600 md:hidden'}>
 						{`You have ${formatAmount(selectedFromBalance.normalized)} ${actionParams?.selectedOptionFrom?.symbol || 'tokens'}`}
 					</legend>
 				</div>
@@ -52,7 +58,7 @@ function	VaultDetailsQuickActionsFrom(): ReactElement {
 						</div>
 					</div>
 				)}
-				<legend className={'font-number hidden text-xs text-neutral-600 md:inline'} suppressHydrationWarning>
+				<legend className={'font-number hidden text-xs text-neutral-600 md:inline'}>
 					{`You have ${formatAmount(selectedFromBalance.normalized)} ${actionParams?.selectedOptionFrom?.symbol || 'tokens'}`}
 				</legend>
 			</div>

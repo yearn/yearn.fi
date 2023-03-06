@@ -6,16 +6,22 @@ import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {Dropdown} from '@common/components/TokenDropdown';
+import {useHasMounted} from '@common/hooks/useHasMounted';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
 
 import type {ReactElement} from 'react';
 
-function	VaultDetailsQuickActionsTo(): ReactElement {
+function	VaultDetailsQuickActionsTo(): ReactElement | null {
 	const {isActive} = useWeb3();
 	const {currentVault, possibleOptionsTo, actionParams, onUpdateSelectedOptionTo, isDepositing} = useActionFlow();
 	const {expectedOut, isLoadingExpectedOut} = useSolver();
+	const hasMounted = useHasMounted();
 
 	const selectedOptionToPricePerToken = useTokenPrice(toAddress(actionParams?.selectedOptionTo?.value));
+
+	if (!hasMounted) {
+		return null;
+	}
 
 	return (
 		<section aria-label={'TO'} className={'flex w-full flex-col space-x-0 md:flex-row md:space-x-4'}>
@@ -24,7 +30,7 @@ function	VaultDetailsQuickActionsTo(): ReactElement {
 					<label className={'text-base text-neutral-600'}>
 						{isDepositing ? 'To vault' : 'To wallet'}
 					</label>
-					<legend className={'font-number inline text-xs text-neutral-600 md:hidden'} suppressHydrationWarning>
+					<legend className={'font-number inline text-xs text-neutral-600 md:hidden'}>
 						{`APY ${formatPercent((currentVault?.apy?.net_apy || 0) * 100, 2, 2, 500)}`}
 					</legend>
 				</div>
@@ -46,7 +52,7 @@ function	VaultDetailsQuickActionsTo(): ReactElement {
 						</div>
 					</div>
 				)}
-				<legend className={'font-number hidden text-xs text-neutral-600 md:inline'} suppressHydrationWarning>
+				<legend className={'font-number hidden text-xs text-neutral-600 md:inline'}>
 					{isDepositing ? (
 						formatPercent((currentVault?.apy?.net_apy || 0) * 100, 2, 2, 500)
 					) : ''}
