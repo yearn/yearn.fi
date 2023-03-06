@@ -44,7 +44,6 @@ function	SearchBar({searchLabel, searchPlaceholder, searchValue, set_searchValue
 	return (
 		<div className={'w-full'}>
 			<label
-				suppressHydrationWarning
 				htmlFor={'search'}
 				className={'text-neutral-600'}>
 				{searchLabel}
@@ -154,7 +153,7 @@ function	ListHero<T extends string>({
 	return (
 		<div className={'flex flex-col items-start justify-between space-x-0 px-4 pt-4 pb-2 md:px-10 md:pt-10 md:pb-8'}>
 			<div className={'mb-6'}>
-				<h2 className={'text-lg font-bold md:text-3xl'} suppressHydrationWarning>{headLabel}</h2>
+				<h2 className={'text-lg font-bold md:text-3xl'}>{headLabel}</h2>
 			</div>
 
 			<div className={'hidden w-full flex-row items-center justify-between space-x-4 md:flex'}>

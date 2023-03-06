@@ -337,7 +337,6 @@ export function	useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 		const	chainID = props?.chainID || web3ChainID || 1;
 		axios.post('/api/getBatchBalances', {chainID, address: web3Address, tokens})
 			.then((res: AxiosResponse<TGetBatchBalancesResp>): void => {
-				console.log(res.data);
 				updateBalancesCall(res.data.chainID, res.data.balances);
 			})
 			.catch((err): void => {

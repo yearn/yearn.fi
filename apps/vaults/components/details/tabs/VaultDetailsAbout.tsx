@@ -2,6 +2,7 @@ import React from 'react';
 import dynamic from 'next/dynamic';
 import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
+import {useHasMounted} from '@common/hooks/useHasMounted';
 
 import type {LoaderComponent} from 'next/dynamic';
 import type {ReactElement} from 'react';
@@ -11,7 +12,13 @@ import type {TGraphForVaultEarningsProps} from '@vaults/components/graphs/GraphF
 
 const GraphForVaultEarnings = dynamic<TGraphForVaultEarningsProps>(async (): LoaderComponent<TGraphForVaultEarningsProps> => import('@vaults/components/graphs/GraphForVaultEarnings'), {ssr: false});
 
-function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYearnVault, harvestData: TGraphData[]}): ReactElement {
+function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYearnVault, harvestData: TGraphData[]}): ReactElement | null {
+	const hasMounted = useHasMounted();
+	
+	if (!hasMounted) {
+		return null;
+	}
+
 	return (
 		<div className={'grid grid-cols-1 gap-10 bg-neutral-100 p-4 md:grid-cols-2 md:gap-32 md:p-8'}>
 			<div className={'col-span-1 w-full space-y-6'}>
@@ -27,19 +34,19 @@ function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYearnVau
 						<div className={'space-y-2'}>
 							<div className={'flex flex-row items-center justify-between'}>
 								<p className={'text-sm text-neutral-500'}>{'Weekly APY'}</p>
-								<p className={'font-number text-sm text-neutral-900'} suppressHydrationWarning>
+								<p className={'font-number text-sm text-neutral-900'}>
 									{formatPercent((currentVault?.apy?.points?.week_ago || 0) * 100)}
 								</p>
 							</div>
 							<div className={'flex flex-row items-center justify-between'}>
 								<p className={'text-sm text-neutral-500'}>{'Monthly APY'}</p>
-								<p className={'font-number text-sm text-neutral-900'} suppressHydrationWarning>
+								<p className={'font-number text-sm text-neutral-900'}>
 									{formatPercent((currentVault?.apy?.points?.month_ago || 0) * 100)}
 								</p>
 							</div>
 							<div className={'flex flex-row items-center justify-between'}>
 								<p className={'text-sm text-neutral-500'}>{'Inception APY'}</p>
-								<p className={'font-number text-sm text-neutral-900'} suppressHydrationWarning>
+								<p className={'font-number text-sm text-neutral-900'}>
 									{formatPercent((currentVault?.apy?.points?.inception || 0) * 100)}
 								</p>
 							</div>
@@ -47,13 +54,13 @@ function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYearnVau
 						<div className={'space-y-2'}>
 							<div className={'flex flex-row items-center justify-between'}>
 								<p className={'text-sm text-neutral-500'}>{'Gross APR'}</p>
-								<p className={'font-number text-sm text-neutral-900'} suppressHydrationWarning>
+								<p className={'font-number text-sm text-neutral-900'}>
 									{formatPercent((currentVault?.apy?.gross_apr || 0) * 100)}
 								</p>
 							</div>
 							<div className={'flex flex-row items-center justify-between'}>
 								<p className={'text-sm text-neutral-500'}>{'Net APY'}</p>
-								<p className={'font-number text-sm text-neutral-900'} suppressHydrationWarning>
+								<p className={'font-number text-sm text-neutral-900'}>
 									{`APY ${formatPercent((currentVault?.apy?.net_apy || 0) * 100, 2, 2, 500)}`}
 								</p>
 							</div>
