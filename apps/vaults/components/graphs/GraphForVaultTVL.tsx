@@ -29,6 +29,7 @@ function	GraphForVaultTVL({messariData, height = 312}: TGraphForVaultTVLProps): 
 					dot={false}
 					activeDot={(e): ReactElement => {
 						e.className = `${e.className} activeDot`;
+						delete e.dataKey;
 						return <circle {...e}></circle>;
 					}} />
 				<XAxis
@@ -43,6 +44,9 @@ function	GraphForVaultTVL({messariData, height = 312}: TGraphForVaultTVLProps): 
 						e.fill = '#5B5B5B';
 						e.className = 'text-xxs md:text-xs font-number';
 						e.alignmentBaseline = 'middle';
+						delete e.verticalAnchor;
+						delete e.visibleTicksCount;
+						delete e.tickFormatter;
 						const	formatedValue = formatWithUnit(value, 0, 0);
 						return <text {...e}>{formatedValue}</text>;
 					}} />
