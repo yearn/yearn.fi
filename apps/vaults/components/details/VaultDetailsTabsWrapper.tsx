@@ -104,22 +104,6 @@ function	VaultDetailsTabsWrapper({currentVault}: {currentVault: TYearnVault}): R
 	const networkSettings = useMemo((): TSettingsForNetwork => networks[safeChainID], [networks, safeChainID]);
 	const hasMounted = useHasMounted();
 
-	const	{data: yDaemonHarvestsData} = useSWR(
-		`${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/${safeChainID}/vaults/harvests/${currentVault.address}`,
-		baseFetcher,
-		{revalidateOnFocus: false}
-	) as SWRResponse;
-
-	const	harvestData = useMemo((): {name: string; value: number}[] => {
-		const	_yDaemonHarvestsData = [...(yDaemonHarvestsData || [])].reverse();
-		return (
-			_yDaemonHarvestsData?.map((harvest): {name: string; value: number} => ({
-				name: formatDate(Number(harvest.timestamp) * 1000),
-				value: formatToNormalizedValue(formatBN(harvest.profit).sub(formatBN(harvest.loss)), currentVault.decimals)
-			}))
-		);
-	}, [currentVault.decimals, yDaemonHarvestsData]);
-
 	async function onAddTokenToMetamask(address: string, symbol: string, decimals: number, image: string): Promise<void> {
 		try {
 			await (provider as TMetamaskInjectedProvider).send('wallet_watchAsset', {
@@ -135,6 +119,22 @@ function	VaultDetailsTabsWrapper({currentVault}: {currentVault: TYearnVault}): R
 			// Token has not been added to MetaMask.
 		}
 	}
+
+	const	{data: yDaemonHarvestsData} = useSWR(
+		`${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/${safeChainID}/vaults/harvests/${currentVault.address}`,
+		baseFetcher,
+		{revalidateOnFocus: false}
+	) as SWRResponse;
+
+	const	harvestData = useMemo((): {name: string; value: number}[] => {
+		const	_yDaemonHarvestsData = [...(yDaemonHarvestsData || [])].reverse();
+		return (
+			_yDaemonHarvestsData?.map((harvest): {name: string; value: number} => ({
+				name: formatDate(Number(harvest.timestamp) * 1000),
+				value: formatToNormalizedValue(formatBN(harvest.profit).sub(formatBN(harvest.loss)), currentVault.decimals)
+			}))
+		);
+	}, [currentVault.decimals, yDaemonHarvestsData]);
 
 	if (!hasMounted) {
 		return null;
