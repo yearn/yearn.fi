@@ -1,4 +1,3 @@
-import type {BigNumber} from 'ethers';
 import type {TDict} from '@yearn-finance/web-lib/types';
 
 export type TCurveGaugesFromYearn = {
@@ -41,9 +40,9 @@ export type TCurveGauges = {
 		virtual_price: string
 	},
 	rewardPerGauge?: string[]
-	rewardPerTokenPerGauge?: TDict<BigNumber>
+	rewardPerTokenPerGauge?: TDict<bigint>
 }
 
 export type TCurveGaugeVersionRewards = {
-	v3: TDict<TDict<BigNumber>>,
+	v3: TDict<TDict<bigint>>,
 }

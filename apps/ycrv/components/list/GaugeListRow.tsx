@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {utils} from 'ethers';
+import {parseUnits} from 'ethers';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isNumber} from '@yearn-finance/web-lib/utils/isNumber';
@@ -7,14 +7,13 @@ import {isTAddress} from '@yearn-finance/web-lib/utils/isTAddress';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {QuickActions} from '@yCRV/components/QuickActions';
 
-import type {BigNumber} from 'ethers';
 import type {ChangeEvent, Dispatch, ReactElement} from 'react';
 import type {TCurveGauges} from '@common/types/curves';
 import type {TVotesReducerAction, TVotesReducerState} from './GaugeList';
 
 type TGaugeListRow = {
 	gauge: TCurveGauges;
-	gaugeVotes: BigNumber;
+	gaugeVotes: bigint;
 	votesState: TVotesReducerState;
 	votesDispatch: Dispatch<TVotesReducerAction>;
 }
@@ -38,7 +37,7 @@ function GaugeListRow({gauge, gaugeVotes, votesState, votesDispatch}: TGaugeList
 			return;
 		}
 		if (isNumber(+value) && isTAddress(gauge.gauge)) {
-			votesDispatch({type: 'UPDATE', gaugeAddress: gauge.gauge, votes: utils.parseUnits(String(+value), 18)});
+			votesDispatch({type: 'UPDATE', gaugeAddress: gauge.gauge, votes: parseUnits(String(+value), 18)});
 			return;
 		}
 	};
@@ -49,7 +48,7 @@ function GaugeListRow({gauge, gaugeVotes, votesState, votesDispatch}: TGaugeList
 		}
 	}
 
-	const isMaxDisabled = votesState.maxVotes.eq(votesState.currentTotal);
+	const isMaxDisabled = votesState.maxVotes === votesState.currentTotal;
 
 	return (
 		<div className={'yearn--table-wrapper cursor-pointer transition-colors hover:bg-neutral-300'}>

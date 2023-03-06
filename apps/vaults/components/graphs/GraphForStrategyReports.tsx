@@ -88,7 +88,7 @@ function	GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height =
 						if (payload.length > 0) {
 							const [{value, payload: innerPayload}] = payload;
 							const	{gain, loss} = innerPayload;
-							const	diff = formatBN(gain).sub(formatBN(loss));
+							const	diff = formatBN(gain) - formatBN(loss);
 							const	normalizedDiff = formatToNormalizedValue(diff, vaultDecimals);
 
 							return (

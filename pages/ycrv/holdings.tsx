@@ -1,7 +1,6 @@
 import React, {Fragment, useCallback, useMemo} from 'react';
-import {ethers} from 'ethers';
 import {LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatToNormalizedValue, toBigInt, toNumber, WeiPerEther} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue, formatCounterValueRaw} from '@yearn-finance/web-lib/utils/format.value';
 import ValueAnimation from '@common/components/ValueAnimation';
@@ -16,7 +15,6 @@ import {Harvests} from '@yCRV/components/Harvests';
 import {useYCRV} from '@yCRV/contexts/useYCRV';
 import Wrapper from '@yCRV/Wrapper';
 
-import type {BigNumber} from 'ethers';
 import type {NextRouter} from 'next/router';
 import type {ReactElement, ReactNode} from 'react';
 
@@ -26,24 +24,24 @@ function	HeaderPosition(): ReactElement {
 	const balanceOfLpyCRV = useBalance(LPYCRV_TOKEN_ADDRESS);
 	const stycrvPrice = useTokenPrice(STYCRV_TOKEN_ADDRESS);
 	const lpycrvPrice = useTokenPrice(LPYCRV_TOKEN_ADDRESS);
-	
+
 	const clientOnlyFormatAmount = useClientOnlyFn({fn: formatAmount, placeholder: '0,00'});
 	const clientOnlyFormatCounterValueRaw = useClientOnlyFn({fn: formatCounterValueRaw, placeholder: '0,00'});
 
-	const	formatedYearnHas = useMemo((): ReactNode => (
+	const	formatedYearnHas = useMemo((): ReactNode =>
 		holdings?.veCRVBalance ?
 			clientOnlyFormatAmount(formatToNormalizedValue(holdings.veCRVBalance, 18), 0, 0)
 			: ''
-	), [clientOnlyFormatAmount, holdings?.veCRVBalance]);
+	, [clientOnlyFormatAmount, holdings?.veCRVBalance]);
 
-	const	formatedYouHave = useMemo((): ReactNode => (
+	const	formatedYouHave = useMemo((): ReactNode =>
 		clientOnlyFormatCounterValueRaw(
-			(balanceOfStyCRV.normalized * stycrvPrice)
+			balanceOfStyCRV.normalized * stycrvPrice
 			+
-			(balanceOfLpyCRV.normalized * lpycrvPrice),
+			balanceOfLpyCRV.normalized * lpycrvPrice,
 			1
 		)
-	), [clientOnlyFormatCounterValueRaw, balanceOfStyCRV.normalized, stycrvPrice, balanceOfLpyCRV.normalized, lpycrvPrice]);
+	, [clientOnlyFormatCounterValueRaw, balanceOfStyCRV.normalized, stycrvPrice, balanceOfLpyCRV.normalized, lpycrvPrice]);
 
 	return (
 		<Fragment>
@@ -85,16 +83,16 @@ function	Holdings(): ReactElement {
 	const lpycrvPrice = useTokenPrice(LPYCRV_TOKEN_ADDRESS);
 	const balanceOfStyCRV = useBalance(STYCRV_TOKEN_ADDRESS);
 	const balanceOfLpyCRV = useBalance(LPYCRV_TOKEN_ADDRESS);
-	
+
 	const clientOnlyFormatAmount = useClientOnlyFn({fn: formatAmount, placeholder: '0,00'});
 	const clientOnlyFormatPercent = useClientOnlyFn({fn: formatPercent, placeholder: '0,00'});
 	const clientOnlyFormatCounterValue = useClientOnlyFn({fn: formatCounterValue, placeholder: '0,00'});
 
-	const	formatBigNumberOver10K = useCallback((v: BigNumber): string => {
-		if (formatBN(v)?.gt(ethers.constants.WeiPerEther.mul(10000))) {
-			return clientOnlyFormatAmount(formatToNormalizedValue(v || 0, 18), 0, 0)?.toString() ?? '';
+	const	formatBigNumberOver10K = useCallback((v: bigint): string => {
+		if (toBigInt(v) > WeiPerEther * 10000n) {
+			return formatAmount(formatToNormalizedValue(toBigInt(v), 18), 0, 0);
 		}
-		return clientOnlyFormatAmount(formatToNormalizedValue(v || 0, 18))?.toString() ?? '';
+		return clientOnlyFormatAmount(formatToNormalizedValue(toBigInt(v), 18))?.toString() ?? '';
 	}, [clientOnlyFormatAmount]);
 
 	const	formatNumberOver10K = useCallback((v: number): string => {
@@ -115,13 +113,13 @@ function	Holdings(): ReactElement {
 	const	currentVeCRVAPY = useMemo((): number => {
 		return (
 			latestCurveFeesValue / (
-				formatToNormalizedValue(formatBN(holdings?.veCRVTotalSupply), 18) * cgPrices?.['curve-dao-token']?.usd
+				formatToNormalizedValue(toBigInt(holdings?.veCRVTotalSupply), 18) * toNumber(cgPrices?.['curve-dao-token']?.usd)
 			) * 52 * 100
 		);
 	}, [holdings, latestCurveFeesValue, cgPrices]);
 
 	const	curveAdminFeePercent = useMemo((): number => {
-		return (currentVeCRVAPY * Number(holdings?.boostMultiplier) / 10000);
+		return currentVeCRVAPY * Number(holdings?.boostMultiplier) / 10000;
 	}, [holdings, currentVeCRVAPY]);
 
 	return (
@@ -135,7 +133,7 @@ function	Holdings(): ReactElement {
 						<div>
 							<b
 								className={'font-number pb-2 text-3xl text-neutral-900'}>
-								{holdings?.treasury ? `${formatBigNumberOver10K(holdings?.treasury || 0)} ` : '- '}
+								{holdings?.treasury ? `${formatBigNumberOver10K(holdings?.treasury)} ` : '- '}
 								<span className={'font-number text-base text-neutral-600 md:text-3xl md:text-neutral-900'}>{'veCRV'}</span>
 							</b>
 							<p className={'text-lg text-neutral-500'}>{'Yearn Treasury'}</p>
@@ -143,7 +141,7 @@ function	Holdings(): ReactElement {
 						<div>
 							<b
 								className={'font-number pb-2 text-3xl text-neutral-900'}>
-								{holdings?.legacy ? `${formatBigNumberOver10K(holdings?.legacy || 0)} ` : '- '}
+								{holdings?.legacy ? `${formatBigNumberOver10K(holdings?.legacy)} ` : '- '}
 								<span className={'font-number text-base text-neutral-600 md:text-3xl md:text-neutral-900'}>{'yveCRV'}</span>
 							</b>
 							<p className={'text-lg text-neutral-500'}>{'Legacy system'}</p>
@@ -151,17 +149,17 @@ function	Holdings(): ReactElement {
 						<div>
 							<b
 								className={'font-number pb-2 text-3xl text-neutral-900'}>
-								{holdings?.yCRVSupply ? `${formatBigNumberOver10K(holdings?.yCRVSupply || 0)} ` : '- '}
+								{holdings?.yCRVSupply ? `${formatBigNumberOver10K(holdings?.yCRVSupply)} ` : '- '}
 								<span className={'font-number text-base text-neutral-600 md:text-3xl md:text-neutral-900'}>{'yCRV'}</span>
 							</b>
 
 							<p
 								className={'text-lg text-neutral-500'}>
-								{`(Price = $${(clientOnlyFormatAmount(ycrvPrice || 0))} | Peg = ${(
-									holdings?.crvYCRVPeg ? (clientOnlyFormatPercent(
+								{`(Price = $${clientOnlyFormatAmount(ycrvPrice || 0)} | Peg = ${
+									holdings?.crvYCRVPeg ? clientOnlyFormatPercent(
 										(formatToNormalizedValue(holdings?.crvYCRVPeg, 18) + 0.0015) * 100)
-									): clientOnlyFormatPercent(0)
-								)})`}
+										: clientOnlyFormatPercent(0)
+								})`}
 							</p>
 						</div>
 					</div>
@@ -204,7 +202,7 @@ function	Holdings(): ReactElement {
 							<span className={'inline text-sm font-normal text-neutral-400 md:hidden'}>{'yCRV Deposits: '}</span>
 							<p
 								className={'font-number text-base text-neutral-900'}>
-								{formatBigNumberOver10K(holdings?.styCRVSupply || 0)}
+								{formatBigNumberOver10K(holdings?.styCRVSupply)}
 							</p>
 						</div>
 						<div className={'flex flex-row items-baseline justify-between'}>
@@ -250,7 +248,7 @@ function	Holdings(): ReactElement {
 							<span className={'inline text-sm font-normal text-neutral-400 md:hidden'}>{'yCRV Deposits: '}</span>
 							<p
 								className={'font-number text-base text-neutral-900'}>
-								{formatBigNumberOver10K(holdings?.lpyCRVSupply || 0)}
+								{formatBigNumberOver10K(holdings?.lpyCRVSupply)}
 							</p>
 						</div>
 						<div className={'flex flex-row items-baseline justify-between'}>
@@ -320,7 +318,7 @@ function	Holdings(): ReactElement {
 						</p>
 						<p
 							className={'font-number text-sm text-neutral-400 md:text-base'}>
-							{`∙ ${styCRVAPY && curveAdminFeePercent && styCRVMegaBoost ? clientOnlyFormatAmount(styCRVAPY - (curveAdminFeePercent + (styCRVMegaBoost * 100)), 2, 2) : '0.00'}% Gauge Voting Bribes`}
+							{`∙ ${styCRVAPY && curveAdminFeePercent && styCRVMegaBoost ? clientOnlyFormatAmount(styCRVAPY - (curveAdminFeePercent + styCRVMegaBoost * 100), 2, 2) : '0.00'}% Gauge Voting Bribes`}
 						</p>
 						<p
 							className={'font-number text-sm text-neutral-400 md:text-base'}>

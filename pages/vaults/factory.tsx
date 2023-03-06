@@ -26,9 +26,9 @@ import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {CurveContextApp, useCurve} from '@common/contexts/useCurve';
 import {useYearn} from '@common/contexts/useYearn';
 
-import type {BigNumber, providers} from 'ethers';
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
+import type {TWeb3Provider} from '@yearn-finance/web-lib/contexts/types';
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TCurveGaugesFromYearn} from '@common/types/curves';
 import type {TDropdownGaugeOption} from '@common/types/types';
@@ -68,7 +68,7 @@ function	Factory(): ReactElement {
 	** associated vault.
 	**************************************************************************/
 	const [{result: filteredGauges}, fetchGaugesAction] = useAsync(async function fetchAlreadyCreatedGauges(
-		_provider: providers.JsonRpcProvider,
+		_provider: TWeb3Provider,
 		_safeChainID: number,
 		_gaugesFromYearn: TCurveGaugesFromYearn[]
 	): Promise<TCurveGaugesFromYearn[]> {
@@ -102,13 +102,13 @@ function	Factory(): ReactElement {
 				.filter((item: TCurveGaugesFromYearn): boolean => item.weight !== '0')
 				.map((gauge: TCurveGaugesFromYearn): TDropdownGaugeOption => ({
 					label: gauge.gauge_name,
-					icon: (
+					icon:
 						<ImageWithFallback
 							src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${toAddress(gauge.lp_token)}/logo-128.png`}
 							alt={gauge.gauge_name}
 							width={36}
 							height={36} />
-					),
+					,
 					value: {
 						name: gauge.gauge_name,
 						tokenAddress: toAddress(gauge.lp_token),
@@ -125,7 +125,7 @@ function	Factory(): ReactElement {
 	** We need to fetch the name and symbol from the gauge contract.
 	**************************************************************************/
 	const [{result: gaugeDisplayData, status}, fetchGaugeDisplayDataAction] = useAsync(async function fetchGaugeDisplayData(
-		_provider: providers.JsonRpcProvider,
+		_provider: TWeb3Provider,
 		_safeChainID: number,
 		_selectedOption: TDropdownGaugeOption
 	): Promise<TGaugeDisplayData> {
@@ -135,12 +135,12 @@ function	Factory(): ReactElement {
 
 		const calls = [curveGauge.name(), curveGauge.symbol()];
 		const [name, symbol] = await ethcallProvider.tryAll(calls) as [string, string];
-		return ({
+		return {
 			name: name.replace('Curve.fi', '').replace('Gauge Deposit', '') || _selectedOption.value.name,
 			symbol: symbol.replace('-gauge', '').replace('-f', '') || _selectedOption.value.name,
 			poolAddress: _selectedOption.value.poolAddress,
 			gaugeAddress: _selectedOption.value.gaugeAddress
-		});
+		};
 	}, undefined);
 
 	useEffect((): void => {
@@ -152,7 +152,7 @@ function	Factory(): ReactElement {
 	** out for a given in/out pair with a specific amount. This callback is
 	** called every 10s or when amount/in or out changes.
 	**************************************************************************/
-	const fetchEstimate = useCallback(async (): Promise<BigNumber> => {
+	const fetchEstimate = useCallback(async (): Promise<bigint> => {
 		set_hasError(false);
 		try {
 			return await estimateGasForCreateNewVaultsAndStrategies(provider, toAddress(selectedOption.value.gaugeAddress));
@@ -170,7 +170,7 @@ function	Factory(): ReactElement {
 	}, [provider, selectedOption?.value?.gaugeAddress]); //toast is a false negative error
 	const	{data: estimate} = useSWR(
 		'gasEstimate',
-		(!isActive || selectedOption.value.gaugeAddress === addressZero || safeChainID !== 1) ? null : fetchEstimate,
+		!isActive || selectedOption.value.gaugeAddress === addressZero || safeChainID !== 1 ? null : fetchEstimate,
 		{shouldRetryOnError: false}
 	);
 

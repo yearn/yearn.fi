@@ -179,7 +179,7 @@ function	VaultDetailsTabsWrapper({currentVault}: {currentVault: TYearnVault}): R
 		return (
 			_yDaemonHarvestsData?.map((harvest): {name: string; value: number} => ({
 				name: formatDate(Number(harvest.timestamp) * 1000),
-				value: formatToNormalizedValue(formatBN(harvest.profit).sub(formatBN(harvest.loss)), currentVault.decimals)
+				value: formatToNormalizedValue(formatBN(harvest.profit) - formatBN(harvest.loss), currentVault.decimals)
 			}))
 		);
 	}, [currentVault.decimals, yDaemonHarvestsData]);

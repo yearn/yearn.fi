@@ -7,7 +7,6 @@ import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useCurve} from '@common/contexts/useCurve';
 import {useYearn} from '@common/contexts/useYearn';
 
-import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
 import type {TCurveGauges} from '@common/types/curves';
 import type {TYDaemonGaugeRewardsFeed} from '@common/types/yearn';
@@ -15,7 +14,7 @@ import type {TYDaemonGaugeRewardsFeed} from '@common/types/yearn';
 function	RewardFeedRowItemWithExtraData({
 	address,
 	value
-}: {address: string, value: BigNumber, minDecimals?: number}): ReactElement {
+}: {address: string, value: bigint, minDecimals?: number}): ReactElement {
 	const	{tokens, prices} = useYearn();
 
 	const	tokenInfo = tokens?.[address];

@@ -1,6 +1,6 @@
 import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
+import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 
-import type {BigNumber} from 'ethers';
 import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 
 export type TValidationResponse = {
@@ -11,8 +11,8 @@ export type TValidationResponse = {
 export type TValidateAllowanceProps = {
 	tokenAddress: TAddress;
 	spenderAddress: TAddress;
-	allowances: TDict<BigNumber>;
-	amount: BigNumber;
+	allowances: TDict<bigint>;
+	amount: bigint;
 }
 
 export function validateAllowance(props: TValidateAllowanceProps): TValidationResponse {
@@ -21,7 +21,7 @@ export function validateAllowance(props: TValidateAllowanceProps): TValidationRe
 	// TODO: return valid when is native token
 
 	const allowance = allowances[allowanceKey(tokenAddress, spenderAddress)];
-	const isApproved = allowance?.gte(amount);
+	const isApproved = formatBN(allowance) >= amount;
 
 	return {isValid: isApproved};
 }

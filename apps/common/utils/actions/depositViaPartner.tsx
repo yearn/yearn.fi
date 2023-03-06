@@ -2,17 +2,18 @@ import {ethers} from 'ethers';
 import PARTNER_VAULT_ABI from '@yearn-finance/web-lib/utils/abi/partner.vault.abi';
 import {handleTx} from '@yearn-finance/web-lib/utils/web3/transaction';
 
+import type {TWeb3Provider} from '@yearn-finance/web-lib/contexts/types';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 
 export async function	depositViaPartner(
-	provider: ethers.providers.JsonRpcProvider,
+	provider: TWeb3Provider,
 	partnerContractAddress: string,
 	partnerAddress: string,
 	vaultAddress: string,
-	amount: ethers.BigNumber,
+	amount: bigint,
 	gasLimit?: number
 ): Promise<TTxResponse> {
-	const signer = provider.getSigner();
+	const signer = await provider.getSigner();
 	const contract = new ethers.Contract(partnerContractAddress, PARTNER_VAULT_ABI, signer);
 	const result = await handleTx(contract.deposit(vaultAddress, partnerAddress || process.env.PARTNER_ID_ADDRESS, amount, (gasLimit && gasLimit >= 0) ? {gasLimit} : {}));
 	if (gasLimit !== -1 && result.error && hasCode(result.error)) {

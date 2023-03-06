@@ -2,14 +2,14 @@ import {useEffect, useMemo, useState} from 'react';
 import {useVotingEscrow} from '@veYFI/contexts/useVotingEscrow';
 import {useTransaction} from '@veYFI/hooks/useTransaction';
 import {getVotingPower} from '@veYFI/utils';
-import * as VotingEscrowActions from '@veYFI/utils/actions/votingEscrow';
+import {approveLock as approveLockAction, increaseLockAmount as increaseLockAmountAction, lock as lockAction} from '@veYFI/utils/actions/votingEscrow';
 import {MAX_LOCK_TIME, MIN_LOCK_AMOUNT, MIN_LOCK_TIME} from '@veYFI/utils/constants';
 import {validateAllowance, validateAmount, validateNetwork} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatBN, formatUnits, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatUnits, toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
 import {fromWeeks, getTimeUntil, toSeconds, toTime, toWeeks} from '@yearn-finance/web-lib/utils/time';
@@ -18,7 +18,6 @@ import {useWallet} from '@common/contexts/useWallet';
 import {useBalance} from '@common/hooks/useBalance';
 import {useClientOnlyFn} from '@common/hooks/useClientOnlyFn';
 
-import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
 import type {TMilliseconds} from '@yearn-finance/web-lib/utils/time';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
@@ -34,19 +33,19 @@ function LockTab(): ReactElement {
 	const clearLockAmount = (): void => set_lockAmount(toNormalizedBN(0));
 	const refreshData = (): unknown => Promise.all([refreshVotingEscrow(), refreshBalances()]);
 	const onTxSuccess = (): unknown => Promise.all([refreshData(), clearLockAmount()]);
-	const [approveLock, approveLockStatus] = useTransaction(VotingEscrowActions.approveLock, refreshData);
-	const [lock, lockStatus] = useTransaction(VotingEscrowActions.lock, onTxSuccess);
-	const [increaseLockAmount, increaseLockAmountStatus] = useTransaction(VotingEscrowActions.increaseLockAmount, onTxSuccess);
+	const [approveLock, approveLockStatus] = useTransaction(approveLockAction, refreshData);
+	const [lock, lockStatus] = useTransaction(lockAction, onTxSuccess);
+	const [increaseLockAmount, increaseLockAmountStatus] = useTransaction(increaseLockAmountAction, onTxSuccess);
 	const clientOnlyFormatAmount = useClientOnlyFn({fn: formatAmount, placeholder: '0,0000'});
 
-	const hasLockedAmount = formatBN(positions?.deposit?.underlyingBalance).gt(0);
+	const hasLockedAmount = toBigInt(positions?.deposit?.underlyingBalance) > 0;
 
 	const unlockTime = useMemo((): TMilliseconds => {
 		return positions?.unlockTime || Date.now() + fromWeeks(toTime(lockTime));
 	}, [positions?.unlockTime, lockTime]);
 
-	const votingPower = useMemo((): BigNumber => {
-		return getVotingPower(formatBN(positions?.deposit?.underlyingBalance).add(lockAmount.raw), unlockTime);
+	const votingPower = useMemo((): bigint => {
+		return getVotingPower(toBigInt(positions?.deposit?.underlyingBalance) + lockAmount.raw, unlockTime);
 	}, [positions?.deposit?.underlyingBalance, lockAmount, unlockTime]);
 
 	useEffect((): void => {

@@ -4,26 +4,25 @@ import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {Modal} from '@yearn-finance/web-lib/components/Modal';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatPercent, formatUSD} from '@yearn-finance/web-lib/utils/format.number';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useYearn} from '@common/contexts/useYearn';
 import {GaugeBribeModal} from '@yBribe/components/bribe/GaugeBribeModal';
 import {useBribes} from '@yBribe/contexts/useBribes';
 
-import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
-import type {TDict} from '@yearn-finance/web-lib/types';
+import type {Maybe, TDict} from '@yearn-finance/web-lib/types';
 import type {TCurveGauges} from '@common/types/curves';
 
-function	GaugeRowItemWithExtraData({address, value}: {address: string, value: BigNumber}): ReactElement {
+function	GaugeRowItemWithExtraData({address, value}: {address: string, value: bigint}): ReactElement {
 	const	{tokens, prices} = useYearn();
 
 	const	tokenInfo = tokens?.[address];
 	const	tokenPrice = prices?.[address];
 	const	decimals = tokenInfo?.decimals || 18;
 	const	symbol = tokenInfo?.symbol || '???';
-	const	bribeAmount = formatToNormalizedValue(formatBN(value), decimals);
+	const	bribeAmount = formatToNormalizedValue(toBigInt(value), decimals);
 	const	bribeValue = bribeAmount * (Number(tokenPrice || 0) / 100);
 
 	return (
@@ -45,16 +44,16 @@ function	GaugeListRow({currentGauge}: {currentGauge: TCurveGauges}): ReactElemen
 	const	{currentRewards, nextRewards} = useBribes();
 	const	[hasModal, set_hasModal] = useState(false);
 
-	const	currentRewardsForCurrentGauge = useMemo((): TDict<BigNumber> => {
+	const	currentRewardsForCurrentGauge = useMemo((): TDict<bigint> => {
 		return currentRewards?.v3?.[toAddress(currentGauge.gauge)] || {};
 	}, [currentGauge.gauge, currentRewards]);
 
-	const	nextRewardsForCurrentGauge = useMemo((): TDict<BigNumber> => {
+	const	nextRewardsForCurrentGauge = useMemo((): TDict<bigint> => {
 		return nextRewards?.v3?.[toAddress(currentGauge.gauge)] || {};
 	}, [currentGauge.gauge, nextRewards]);
 
 	const	gaugeRelativeWeight = useMemo((): number => {
-		return formatToNormalizedValue(formatBN(currentGauge?.gauge_controller?.gauge_relative_weight), 18);
+		return formatToNormalizedValue(toBigInt(currentGauge?.gauge_controller?.gauge_relative_weight), 18);
 	}, [currentGauge]);
 
 	const	currentRewardsForCurrentGaugeMap = Object.entries(currentRewardsForCurrentGauge || {}) || [];
@@ -114,11 +113,11 @@ function	GaugeListRow({currentGauge}: {currentGauge: TCurveGauges}): ReactElemen
 					<Renderable
 						shouldRender={!!currentRewardsForCurrentGaugeMap && currentRewardsForCurrentGaugeMap.length > 0}
 						fallback={renderDefaultValueUSDFallback()}>
-						{currentRewardsForCurrentGaugeMap.map(([key, value]: [string, BigNumber]): ReactElement =>
+						{currentRewardsForCurrentGaugeMap.map(([key, value]: [string, Maybe<bigint>]): ReactElement =>
 							<GaugeRowItemWithExtraData
 								key={`rewards-${currentGauge.gauge}-${key}`}
 								address={toAddress(key)}
-								value={value} />
+								value={toBigInt(value)} />
 						)}
 					</Renderable>
 				</div>
@@ -128,11 +127,11 @@ function	GaugeListRow({currentGauge}: {currentGauge: TCurveGauges}): ReactElemen
 					<Renderable
 						shouldRender={!!nextRewardsForCurrentGaugeMap && nextRewardsForCurrentGaugeMap.length > 0}
 						fallback={renderDefaultValueUSDFallback()}>
-						{nextRewardsForCurrentGaugeMap.map(([key, value]: [string, BigNumber]): ReactElement =>
+						{nextRewardsForCurrentGaugeMap.map(([key, value]: [string, Maybe<bigint>]): ReactElement =>
 							<GaugeRowItemWithExtraData
 								key={`rewards-${currentGauge.gauge}-${key}`}
 								address={toAddress(key)}
-								value={value} />
+								value={toBigInt(value)} />
 						)}
 					</Renderable>
 				</div>

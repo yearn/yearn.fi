@@ -5,6 +5,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {addressZero, allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {CURVE_BRIBE_V3_ADDRESS, CURVE_BRIBE_V3_HELPER_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import {useCurve} from '@common/contexts/useCurve';
@@ -12,7 +13,7 @@ import {getLastThursday, getNextThursday} from '@yBribe/utils';
 import CURVE_BRIBE_V3 from '@yBribe/utils/abi/curveBribeV3.abi';
 import CURVE_BRIBE_V3_HELPER from '@yBribe/utils/abi/curveBribeV3Helper.abi';
 
-import type {BigNumber} from 'ethers';
+import type {TWeb3Provider} from '@yearn-finance/web-lib/contexts/types';
 import type {TDict, VoidPromiseFunction} from '@yearn-finance/web-lib/types';
 import type {TCurveGaugeVersionRewards} from '@common/types/curves';
 
@@ -79,7 +80,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 	**	per gauge.
 	***************************************************************************/
 	const getRewardsPerGauges = useCallback(async (
-		currentProvider: ethers.providers.Provider,
+		currentProvider: TWeb3Provider,
 		contract: Contract
 	): Promise<string[][]> => {
 		const	ethcallProvider = await newEthCallProvider(currentProvider);
@@ -98,10 +99,10 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 	** 	list of gauges/tokens.
 	***************************************************************************/
 	const getRewardsPerUser = useCallback(async (
-		currentProvider: ethers.providers.Provider,
+		currentProvider: TWeb3Provider,
 		contract: Contract,
 		rewardsPerGauges: string[][]
-	): Promise<{rewardsList: string[], multicallResult: BigNumber[]}> => {
+	): Promise<{rewardsList: string[], multicallResult: bigint[]}> => {
 		if ((rewardsPerGauges || []).length === 0) {
 			return ({rewardsList: [], multicallResult: []});
 		}
@@ -129,7 +130,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 			}
 		}
 
-		const	_rewardsPerTokensPerGaugesWithPeriods = await ethcallProvider.tryAll(rewardsPerTokensPerGaugesCalls) as BigNumber[];
+		const	_rewardsPerTokensPerGaugesWithPeriods = await ethcallProvider.tryAll(rewardsPerTokensPerGaugesCalls) as bigint[];
 		return ({rewardsList, multicallResult: [..._rewardsPerTokensPerGaugesWithPeriods]});
 	}, [gauges, address]);
 
@@ -139,9 +140,9 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 	** 	able to calculate the next period rewards.
 	***************************************************************************/
 	const getNextPeriodRewards = useCallback(async (
-		currentProvider: ethers.providers.Provider,
+		currentProvider: TWeb3Provider,
 		rewardsPerGauges: string[][]
-	): Promise<{rewardsList: string[], multicallResult: BigNumber[]}> => {
+	): Promise<{rewardsList: string[], multicallResult: bigint[]}> => {
 		if ((rewardsPerGauges || []).length === 0) {
 			return ({rewardsList: [], multicallResult: []});
 		}
@@ -161,8 +162,8 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 		}
 
 		const	multicallResult = await Promise.all(
-			rewardsPerTokensPerGaugesCalls.map((pair): unknown => contract.callStatic.getNewRewardPerToken(...pair))
-		) as BigNumber[];
+			rewardsPerTokensPerGaugesCalls.map((pair): unknown => contract.getNewRewardPerToken.staticCall(...pair))
+		) as bigint[];
 
 		return ({rewardsList, multicallResult: [...multicallResult]});
 	}, [gauges]);
@@ -174,22 +175,22 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 	const assignBribes = useCallback(async (
 		version: string,
 		rewardsList: string[],
-		multicallResult: BigNumber[]
+		multicallResult: bigint[]
 	): Promise<void> => {
 		if (!multicallResult || multicallResult.length === 0 || rewardsList.length === 0) {
 			return;
 		}
-		const	_currentRewards: TDict<TDict<BigNumber>> = {};
-		const	_claimable: TDict<TDict<BigNumber>> = {};
-		const	_periods: TDict<TDict<BigNumber>> = {};
+		const	_currentRewards: TDict<TDict<bigint>> = {};
+		const	_claimable: TDict<TDict<bigint>> = {};
+		const	_periods: TDict<TDict<bigint>> = {};
 		let	rIndex = 0;
 
 		for (const rewardListKey of rewardsList) {
-			const	rewardPerTokenPerGauge = multicallResult[rIndex++];
-			const	periodPerTokenPerGauge = multicallResult[rIndex++];
-			const	claimablePerTokenPerGauge = multicallResult[rIndex++];
-			if (periodPerTokenPerGauge.toNumber() >= currentPeriod) {
-				if (rewardListKey && rewardPerTokenPerGauge.gt(0)) {
+			const rewardPerTokenPerGauge = formatBN(multicallResult[rIndex++]);
+			const periodPerTokenPerGauge = formatBN(multicallResult[rIndex++]);
+			const claimablePerTokenPerGauge = formatBN(multicallResult[rIndex++]);
+			if (Number(periodPerTokenPerGauge) >= currentPeriod) {
+				if (rewardListKey && rewardPerTokenPerGauge > 0) {
 					const	[gauge, token] = rewardListKey.split('_');
 					if (!_currentRewards[toAddress(gauge)]) {
 						_currentRewards[toAddress(gauge)] = {};
@@ -215,11 +216,11 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 	**	assignNextRewards will save the next period rewards values for each
 	**	gauge/token to the state to be used by the UI.
 	***************************************************************************/
-	const assignNextRewards = useCallback(async (version: string, rewardsList: string[], multicallResult: BigNumber[]): Promise<void> => {
+	const assignNextRewards = useCallback(async (version: string, rewardsList: string[], multicallResult: bigint[]): Promise<void> => {
 		if (!multicallResult || multicallResult.length === 0 || rewardsList.length === 0) {
 			return;
 		}
-		const	_nextRewards: TDict<TDict<BigNumber>> = {};
+		const	_nextRewards: TDict<TDict<bigint>> = {};
 
 		let	rIndex = 0;
 		for (const rewardListKey of rewardsList) {

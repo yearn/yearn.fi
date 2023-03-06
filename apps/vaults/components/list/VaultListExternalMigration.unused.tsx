@@ -1,5 +1,4 @@
 import React, {Fragment, useCallback, useMemo, useState} from 'react';
-import {ethers} from 'ethers';
 import {VaultListEmptyExternalMigration} from '@vaults/components/list/VaultsListEmpty';
 import {useWalletForExternalMigrations} from '@vaults/contexts/useWalletForExternalMigrations';
 import {useBeefyVaults} from '@vaults/hooks/useBeefyVaults.unused';
@@ -10,8 +9,9 @@ import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {addressZero, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {MaxUint256, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
@@ -23,6 +23,7 @@ import {approveERC20, isApprovedERC20} from '@common/utils/actions/approveToken'
 import {depositVia} from '@common/utils/actions/depositVia';
 
 import type {ReactElement} from 'react';
+import type {Maybe} from '@yearn-finance/web-lib/types';
 import type {TSortDirection} from '@common/types/types';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 import type {TMigrationTable} from '@vaults/utils/migrationTable';
@@ -70,7 +71,7 @@ function	VaultListExternalMigrationRow({element}: {element: TMigrationTable}): R
 			new Transaction(provider, approveERC20, set_txStatus).populate(
 				toAddress(element.tokenToMigrate), //from
 				toAddress(element.zapVia), //migrator
-				ethers.constants.MaxUint256 //amount
+				MaxUint256 //amount
 			).onSuccess(async (): Promise<void> => {
 				await onMigrateFlow();
 			}).perform();
@@ -112,7 +113,7 @@ function	VaultListExternalMigrationRow({element}: {element: TMigrationTable}): R
 
 				<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
 					<label className={'yearn--table-data-section-item-label'}>{'Deposited'}</label>
-					<p className={`yearn--table-data-section-item-value ${balance.raw.isZero() ? 'text-neutral-400' : 'text-neutral-900'}`}>
+					<p className={`yearn--table-data-section-item-value ${isZero(balance.raw) ? 'text-neutral-400' : 'text-neutral-900'}`}>
 						{formatAmount(balance.normalized)}
 					</p>
 				</div>
@@ -155,10 +156,12 @@ function	VaultListExternalMigration(): ReactElement {
 		balancesNonce; // remove warning, force deep refresh
 		const	migration: TMigrationTable[] = [];
 
-		Object.values(migrationTable || {}).forEach((possibleBowswapMigrations: TMigrationTable[]): void => {
-			for (const element of possibleBowswapMigrations) {
-				if (formatBN(balances[toAddress(element.tokenToMigrate)]?.raw).gt(0)) {
-					migration.push(element);
+		Object.values(migrationTable || {}).forEach((possibleBowswapMigrations: Maybe<TMigrationTable[]>): void => {
+			if (possibleBowswapMigrations) {
+				for (const element of possibleBowswapMigrations) {
+					if (toBigInt(balances[toAddress(element.tokenToMigrate)]?.raw) > 0) {
+						migration.push(element);
+					}
 				}
 			}
 		});

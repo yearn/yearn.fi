@@ -1,12 +1,12 @@
 import React, {useMemo, useState} from 'react';
-import {ethers} from 'ethers';
 import {useAsync, useUpdateEffect} from '@react-hookz/web';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatBN, toNormalizedBN, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatBN, MaxUint256, toNormalizedBN, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useWallet} from '@common/contexts/useWallet';
 import {useBalance} from '@common/hooks/useBalance';
@@ -17,7 +17,6 @@ import {QuickActions} from '@yCRV/components/QuickActions';
 import {VL_YCRV, YCRV} from '@yCRV/constants/tokens';
 import {useVLyCRV} from '@yCRV/hooks/useVLyCRV';
 
-import type {BigNumber} from 'ethers';
 import type {ChangeEvent, ReactElement} from 'react';
 import type {TQAButton, TQAInput, TQASelect} from '@yCRV/components/QuickActions';
 import type {TNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -28,7 +27,7 @@ function Deposit(): ReactElement {
 	const yCRVBalance = useBalance(YCRV.value);
 	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
 	const [txStatusDeposit, set_txStatusDeposit] = useState(defaultTxStatus);
-	const [amount, set_amount] = useState<TNormalizedBN | undefined>({raw: ethers.constants.Zero, normalized: 0});
+	const [amount, set_amount] = useState<TNormalizedBN | undefined>({raw: Zero, normalized: 0});
 	const pricePerYCRV = useTokenPrice(toAddress(YCRV.value));
 	const {deposit, approve} = useVLyCRV();
 	const clientOnlyFormatAmount = useClientOnlyFn({fn: formatAmount, placeholder: '0,00'});
@@ -39,7 +38,7 @@ function Deposit(): ReactElement {
 	}, [clientOnlyFormatAmount, yCRVBalance.normalized, yCRVBalance?.symbol]);
 
 	const maxLockingPossible = useMemo((): TNormalizedBN => {
-		const balance = yCRVBalance.raw || ethers.constants.Zero;
+		const balance = formatBN(yCRVBalance?.raw);
 		return (toNormalizedBN(balance.toString(), yCRVBalance.decimals));
 	}, [yCRVBalance.decimals, yCRVBalance.raw]);
 
@@ -62,7 +61,7 @@ function Deposit(): ReactElement {
 		isDisabled: true
 	}), [amount]);
 
-	const [{result: allowanceFrom, status}, actions] = useAsync(async (): Promise<BigNumber> => approvedERC20Amount(
+	const [{result: allowanceFrom, status}, actions] = useAsync(async (): Promise<bigint> => approvedERC20Amount(
 		provider,
 		toAddress(YCRV.value),
 		toAddress(VL_YCRV.value)
@@ -83,7 +82,7 @@ function Deposit(): ReactElement {
 	}
 	async function onApprove(): Promise<void> {
 		new Transaction(provider, approve, set_txStatusApprove)
-			.populate(ethers.constants.MaxUint256)
+			.populate(MaxUint256)
 			.onSuccess(async (): Promise<void> => {
 				await actions.execute();
 			})
@@ -94,7 +93,7 @@ function Deposit(): ReactElement {
 		label: 'Deposit',
 		onClick: onDeposit,
 		isBusy: txStatusDeposit.pending,
-		isDisabled: !isActive || !amount?.raw.gt(0)
+		isDisabled: !isActive || !isZero(amount?.raw)
 	};
 	const approveButtonProps: TQAButton = {
 		label: 'Approve',
@@ -115,7 +114,7 @@ function Deposit(): ReactElement {
 					<QuickActions.Select {...toSelectProps} />
 					<QuickActions.Input {...toInputProps} />
 				</QuickActions>
-				<QuickActions.Button {...(allowanceFrom.gte(formatBN(amount?.raw)) ? depositButtonProps : approveButtonProps)} />
+				<QuickActions.Button {...(allowanceFrom >= formatBN(amount?.raw) ? depositButtonProps : approveButtonProps)} />
 			</div>
 		</div>
 	);

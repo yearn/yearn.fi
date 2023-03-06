@@ -1,7 +1,6 @@
 import {useCallback, useMemo} from 'react';
 import {bigNumberSort, stringSort} from '@common/utils/sort';
 
-import type {BigNumber} from 'ethers';
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TCurveGauges} from '@common/types/curves';
 import type {TSortDirection} from '@common/types/types';
@@ -10,16 +9,16 @@ export type TPossibleGaugesSortBy = 'gauges' | 'current-votes' | 'put-your-votes
 
 type TProps = {
 	list: TCurveGauges[];
-	gaugesVotes: TDict<BigNumber>;
+	gaugesVotes: TDict<bigint>;
 	sortBy: TPossibleGaugesSortBy;
 	sortDirection: TSortDirection;
-	votes: TDict<BigNumber | undefined>;
+	votes: TDict<bigint | undefined>;
 };
 
 type TSortByVotes = {
 	withVotes: {
 		gauge: TCurveGauges;
-		votes: BigNumber
+		votes: bigint
 	}[];
 	withoutVotes: TCurveGauges[];
 }

@@ -1,17 +1,17 @@
 import {useCallback} from 'react';
 import {ethers} from 'ethers';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatBN, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {getProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 
-import type {BigNumber} from 'ethers';
 import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
 
 export type TVaultEstimateOutFetcher = [
     inputToken: TDropdownOption,
     outputToken: TDropdownOption,
-	inputAmount: BigNumber,
+	inputAmount: bigint,
 	isDepositing: boolean
 ]
 
@@ -21,7 +21,7 @@ export function	useVaultEstimateOutFetcher(): (args: TVaultEstimateOutFetcher) =
 	const retrieveExpectedOut = useCallback(async (args: TVaultEstimateOutFetcher): Promise<TNormalizedBN> => {
 		const	[inputToken, outputToken, inputAmount, isDepositing] = args;
 
-		if (isZeroAddress(inputToken?.value) || isZeroAddress(outputToken?.value) || inputAmount?.isZero()) {
+		if (isZero(inputToken?.value) || isZero(outputToken?.value) || isZero(inputAmount)) {
 			return (toNormalizedBN(0));
 		}
 
@@ -34,10 +34,10 @@ export function	useVaultEstimateOutFetcher(): (args: TVaultEstimateOutFetcher) =
 		try {
 			const	pps = formatBN(await contract.pricePerShare());
 			if (isDepositing) {
-				const expectedOutFetched = inputAmount.mul(formatBN(10).pow(outputToken?.decimals)).div(pps);
+				const expectedOutFetched = inputAmount * (formatBN(10) ** BigInt(outputToken?.decimals || 18)) / pps;
 				return toNormalizedBN(expectedOutFetched, outputToken?.decimals || 18);
 			}
-			const expectedOutFetched = inputAmount.mul(pps).div(formatBN(10).pow(outputToken?.decimals));
+			const expectedOutFetched = inputAmount * pps / (formatBN(10) ** BigInt(outputToken?.decimals || 18));
 			return toNormalizedBN(expectedOutFetched, outputToken?.decimals || 18);
 		} catch (error) {
 			console.error(error);

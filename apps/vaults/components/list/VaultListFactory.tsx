@@ -34,7 +34,7 @@ function	VaultListFactory(): ReactElement {
 	const	curveVaults = useFilteredVaults(vaults, ({category, type}): boolean => category === 'Curve' && type === 'Automated');
 	const	holdingsVaults = useFilteredVaults(vaults, ({category, address, type}): boolean => {
 		const	holding = balances?.[toAddress(address)];
-		const	hasValidBalance = formatBN(holding?.raw).gt(0);
+		const	hasValidBalance = formatBN(holding?.raw) > 0;
 		const	balanceValue = holding?.normalizedValue || 0;
 		if (shouldHideDust && balanceValue < 0.01) {
 			return false;

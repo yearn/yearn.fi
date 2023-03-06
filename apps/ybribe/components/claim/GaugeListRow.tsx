@@ -5,7 +5,7 @@ import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {CRV_TOKEN_ADDRESS, CURVE_BRIBE_V3_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatPercent, formatUSD} from '@yearn-finance/web-lib/utils/format.number';
 import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
@@ -13,24 +13,23 @@ import {useYearn} from '@common/contexts/useYearn';
 import {useBribes} from '@yBribe/contexts/useBribes';
 import {claimReward} from '@yBribe/utils/actions/claimReward';
 
-import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
-import type {TDict} from '@yearn-finance/web-lib/types';
+import type {Maybe, TDict} from '@yearn-finance/web-lib/types';
 import type {TCurveGauges} from '@common/types/curves';
 
 function	GaugeRowItemWithExtraData({
 	address,
 	value,
 	minDecimals = 5
-}: {address: string, value: BigNumber, minDecimals?: number}): ReactElement {
+}: {address: string, value: bigint, minDecimals?: number}): ReactElement {
 	const	{tokens, prices} = useYearn();
 
 	const	tokenInfo = tokens?.[address];
 	const	tokenPrice = Number(prices?.[address]) / 1000000;
 	const	decimals = tokenInfo?.decimals || 18;
 	const	symbol = tokenInfo?.symbol || '???';
-	const	bribeAmount = formatToNormalizedValue(formatBN(value), decimals);
-	const	bribeValue = bribeAmount * (Number(tokenPrice || 0));
+	const	bribeAmount = formatToNormalizedValue(toBigInt(value), decimals);
+	const	bribeValue = bribeAmount * Number(tokenPrice || 0);
 
 	return (
 		<div className={'flex h-auto flex-col items-end pt-0 md:h-14'}>
@@ -46,7 +45,7 @@ function	GaugeRowItemWithExtraData({
 	);
 }
 
-function	GaugeRowItemAPR({address, value}: {address: string, value: BigNumber}): ReactElement {
+function	GaugeRowItemAPR({address, value}: {address: string, value: bigint}): ReactElement {
 	const	{tokens, prices} = useYearn();
 
 	const	crvPrice = useMemo((): number => {
@@ -83,22 +82,22 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 	const	{currentRewards, nextRewards, claimable, refresh} = useBribes();
 	const	[txStatusClaim, set_txStatusClaim] = useState(defaultTxStatus);
 
-	const	currentRewardsForCurrentGauge = useMemo((): TDict<BigNumber> => {
+	const	currentRewardsForCurrentGauge = useMemo((): TDict<bigint> => {
 		return currentRewards?.v3?.[toAddress(currentGauge.gauge)] || {};
 	}, [currentGauge.gauge, currentRewards, category]);
 
-	const	nextRewardsForCurrentGauge = useMemo((): TDict<BigNumber> => {
+	const	nextRewardsForCurrentGauge = useMemo((): TDict<bigint> => {
 		return nextRewards?.v3?.[toAddress(currentGauge.gauge)] || {};
 	}, [currentGauge.gauge, nextRewards, category]);
 
-	const	claimableForCurrentGauge = useMemo((): TDict<BigNumber> => {
+	const	claimableForCurrentGauge = useMemo((): TDict<bigint> => {
 		return claimable?.v3?.[toAddress(currentGauge.gauge)] || {};
 	}, [currentGauge.gauge, claimable, category]);
 
 	const	claimableForCurrentGaugeMap = Object.entries(claimableForCurrentGauge || {}) || [];
 	const	currentRewardsForCurrentGaugeMap = Object.entries(currentRewardsForCurrentGauge || {}) || [];
 	const	nextRewardsForCurrentGaugeMap = Object.entries(nextRewardsForCurrentGauge || {}) || [];
-	const	hasSomethingToClaim = claimableForCurrentGaugeMap.some(([, value]: [string, BigNumber]): boolean => value.gt(0));
+	const	hasSomethingToClaim = claimableForCurrentGaugeMap.some(([, value]: [string, Maybe<bigint>]): boolean => toBigInt(value) > 0);
 
 	function	onClaimReward(token: string): void {
 		new Transaction(provider, claimReward, set_txStatusClaim).populate(
@@ -145,7 +144,7 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 	}
 	function	renderMultipleButtonsFallback(): ReactElement[] {
 		return (
-			currentRewardsForCurrentGaugeMap.map(([key]: [string, BigNumber]): ReactElement =>
+			currentRewardsForCurrentGaugeMap.map(([key]: [string, Maybe<bigint>]): ReactElement =>
 				<div key={`claim-${key}`} className={'h-14 pt-0'}>
 					<Button
 						className={'yearn--button-smaller w-full'}
@@ -200,11 +199,11 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 							<Renderable
 								shouldRender={!!currentRewardsForCurrentGaugeMap && currentRewardsForCurrentGaugeMap.length > 0}
 								fallback={renderDefaultValueUSDFallback()}>
-								{currentRewardsForCurrentGaugeMap.map(([key, value]: [string, BigNumber]): ReactElement =>
+								{currentRewardsForCurrentGaugeMap.map(([key, value]: [string, Maybe<bigint>]): ReactElement =>
 									<GaugeRowItemWithExtraData
 										key={`current-rewards-${currentGauge.gauge}-${key}`}
 										address={toAddress(key)}
-										value={value} />
+										value={toBigInt(value)} />
 								)}
 							</Renderable>
 						</div>
@@ -213,11 +212,11 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 							<Renderable
 								shouldRender={!!nextRewardsForCurrentGaugeMap && nextRewardsForCurrentGaugeMap.length > 0}
 								fallback={renderDefaultValueUSDFallback()}>
-								{nextRewardsForCurrentGaugeMap.map(([key, value]: [string, BigNumber]): ReactElement =>
+								{nextRewardsForCurrentGaugeMap.map(([key, value]: [string, Maybe<bigint>]): ReactElement =>
 									<GaugeRowItemWithExtraData
 										key={`pending-rewards-${currentGauge.gauge}-${key}`}
 										address={toAddress(key)}
-										value={value} />
+										value={toBigInt(value)} />
 								)}
 							</Renderable>
 						</div>
@@ -232,11 +231,11 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 							<Renderable
 								shouldRender={!!currentRewardsForCurrentGaugeMap && currentRewardsForCurrentGaugeMap.length > 0}
 								fallback={renderDefaultValuePercentFallback()}>
-								{currentRewardsForCurrentGaugeMap.map(([key, value]: [string, BigNumber]): ReactElement =>
+								{currentRewardsForCurrentGaugeMap.map(([key, value]: [string, Maybe<bigint>]): ReactElement =>
 									<GaugeRowItemAPR
 										key={`apr-${currentGauge.gauge}-${key}`}
 										address={toAddress(key)}
-										value={value} />
+										value={toBigInt(value)} />
 								)}
 							</Renderable>
 						</div>
@@ -245,11 +244,11 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 							<Renderable
 								shouldRender={!!nextRewardsForCurrentGaugeMap && nextRewardsForCurrentGaugeMap.length > 0}
 								fallback={renderDefaultValuePercentFallback()}>
-								{nextRewardsForCurrentGaugeMap.map(([key, value]: [string, BigNumber]): ReactElement =>
+								{nextRewardsForCurrentGaugeMap.map(([key, value]: [string, Maybe<bigint>]): ReactElement =>
 									<GaugeRowItemAPR
 										key={`apr-${currentGauge.gauge}-${key}`}
 										address={toAddress(key)}
-										value={value} />
+										value={toBigInt(value)} />
 								)}
 							</Renderable>
 						</div>
@@ -263,11 +262,11 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 							<Renderable
 								shouldRender={!!claimableForCurrentGaugeMap && claimableForCurrentGaugeMap.length > 0}
 								fallback={renderDefaultValuesUSDFallback()}>
-								{claimableForCurrentGaugeMap.map(([key, value]: [string, BigNumber]): ReactElement =>
+								{claimableForCurrentGaugeMap.map(([key, value]: [string, Maybe<bigint>]): ReactElement =>
 									<div key={`claimable-${currentGauge.gauge}-${key}`} className={'flex flex-col items-end space-y-2'}>
 										<GaugeRowItemWithExtraData
 											address={toAddress(key)}
-											value={value} />
+											value={toBigInt(value)} />
 										<div className={'block h-auto pt-0 md:hidden md:h-16 md:pt-7'}>
 											<Button
 												className={'yearn--button-smaller w-full'}

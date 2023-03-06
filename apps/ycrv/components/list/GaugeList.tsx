@@ -20,7 +20,6 @@ import {useVLyCRV} from '@yCRV/hooks/useVLyCRV';
 import {GaugeListEmpty} from './GaugeListEmpty';
 import {GaugeListRow} from './GaugeListRow';
 
-import type {BigNumber} from 'ethers';
 import type {ReactElement, ReactNode} from 'react';
 import type {TPossibleGaugesSortBy} from '@yCRV/hooks/useSortGauges';
 import type {TUserInfo} from '@yCRV/hooks/useVLyCRV';
@@ -30,7 +29,7 @@ import type {TSortDirection} from '@common/types/types';
 
 type TProps = {
 	gauges: TCurveGauges[];
-	gaugesVotes: TDict<BigNumber>;
+	gaugesVotes: TDict<bigint>;
 	isLoading: boolean;
 	userInfo: TUserInfo;
 }
@@ -38,15 +37,15 @@ type TProps = {
 export type TVotesReducerActionTypes = 'INIT' | 'MAX' | 'UPDATE';
 
 export type TVotesReducerState = {
-	votes: TDict<BigNumber | undefined>;
-	maxVotes: BigNumber;
-	currentTotal: BigNumber;
+	votes: TDict<bigint | undefined>;
+	maxVotes: bigint;
+	currentTotal: bigint;
 };
 
 export type TVotesReducerAction = {
 	type: TVotesReducerActionTypes;
 	gaugeAddress?: TAddress;
-	votes?: BigNumber;
+	votes?: bigint;
 	userInfo?: TUserInfo;
 };
 
@@ -55,13 +54,13 @@ type TVotesReducer = {
 	action: TVotesReducerAction;
 }
 
-function computeMaxVotesAvailable({state, action}: TVotesReducer): BigNumber {
-	const prevVotes = state.votes[toAddress(action.gaugeAddress)] ?? 0;
-	return state.maxVotes.sub(state.currentTotal.sub(prevVotes));
+function computeMaxVotesAvailable({state, action}: TVotesReducer): bigint {
+	const prevVotes = formatBN(state.votes[toAddress(action.gaugeAddress)]);
+	return state.maxVotes - (state.currentTotal - prevVotes);
 }
 
-function computeNewTotal({state, action}: TVotesReducer): BigNumber {
-	return state.currentTotal.sub(state.votes[toAddress(action.gaugeAddress)] ?? 0).add(action.votes ?? 0);
+function computeNewTotal({state, action}: TVotesReducer): bigint {
+	return state.currentTotal - formatBN(state.votes[toAddress(action.gaugeAddress)]) + formatBN(action.votes);
 }
 
 export function votesReducer(state: TVotesReducerState, action: TVotesReducerAction): TVotesReducerState {
@@ -69,7 +68,7 @@ export function votesReducer(state: TVotesReducerState, action: TVotesReducerAct
 
 	switch(type) {
 		case 'INIT': {
-			const maxVotes = userInfo?.balance.sub(userInfo.votesSpent ?? 0);
+			const maxVotes = formatBN(userInfo?.balance) - formatBN(userInfo?.votesSpent);
 			return {
 				...state,
 				maxVotes: formatBN(maxVotes)
@@ -85,7 +84,7 @@ export function votesReducer(state: TVotesReducerState, action: TVotesReducerAct
 		case 'UPDATE': {
 			const newTotal = computeNewTotal({state, action});
 
-			if (newTotal.gte(0) && newTotal.lte(state.maxVotes)) {
+			if (newTotal >= 0 && newTotal <= state.maxVotes) {
 				return {
 					...state,
 					votes: {...state.votes, [toAddress(gaugeAddress)]: votes},
@@ -105,11 +104,11 @@ function createInitialState({votes, maxVotes}: Pick<TVotesReducerState, 'votes' 
 	return {maxVotes, votes, currentTotal: Zero};
 }
 
-function getVoteButtonProps(votes: TDict<BigNumber | undefined>): {
+function getVoteButtonProps(votes: TDict<bigint | undefined>): {
 	label: string;
 	isDisabled: boolean;
 } {
-	const numGaugesWithVotes = Object.keys(votes).reduce((prev, curr): number => votes[curr]?.gt(0) ? ++prev : prev, 0);
+	const numGaugesWithVotes = Object.keys(votes).reduce((prev, curr): number => formatBN(votes[curr]) > 0 ? ++prev : prev, 0);
 
 	if (numGaugesWithVotes === 0) {
 		return {label:'Vote', isDisabled: true};
@@ -158,8 +157,8 @@ function GaugeList({gauges, gaugesVotes, isLoading, userInfo}: TProps): ReactEle
 			return;
 		}
 
-		const gaugesWithVotes = Object.keys(votes).reduce((prev, curr): TDict<BigNumber | undefined> => {
-			return isTAddress(curr) && votes[curr]?.gt(0) ? {...prev, [curr]: votes[curr]} : prev;
+		const gaugesWithVotes = Object.keys(votes).reduce((prev, curr): TDict<bigint | undefined> => {
+			return isTAddress(curr) && formatBN(votes[curr]) > 0 ? {...prev, [curr]: votes[curr]} : prev;
 		}, {});
 
 		if (isWeb3Provider(provider)) {

@@ -14,9 +14,9 @@ import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3
 
 import type {AxiosResponse} from 'axios';
 import type {Call, Provider} from 'ethcall';
-import type {BigNumber, ethers} from 'ethers';
 import type {TGetBatchBalancesResp} from 'pages/api/getBatchBalances';
 import type {DependencyList} from 'react';
+import type {TWeb3Provider} from '@yearn-finance/web-lib/contexts/types';
 import type {TBalanceData, TDefaultStatus} from '@yearn-finance/web-lib/hooks/types';
 import type {TAddress, TDict, TNDict} from '@yearn-finance/web-lib/types';
 
@@ -25,7 +25,7 @@ import type {TAddress, TDict, TNDict} from '@yearn-finance/web-lib/types';
 ******************************************************************************/
 type	TDefaultReqArgs = {
 	chainID?: number,
-	provider?: ethers.providers.Provider,
+	provider?: TWeb3Provider,
 }
 export type	TUseBalancesTokens = {
 	token: string,
@@ -77,7 +77,7 @@ async function performCall(
 	let		rIndex = 0;
 	for (const element of tokens) {
 		const	{token} = element;
-		const	balanceOf = results[rIndex++] as BigNumber;
+		const	balanceOf = results[rIndex++] as bigint;
 		const	decimals = results[rIndex++] as number;
 		const	rawPrice = formatBN(prices?.[toAddress(token)]);
 		let symbol = results[rIndex++] as string;
@@ -99,8 +99,8 @@ async function performCall(
 }
 
 async function getBalances(
-	provider: ethers.providers.JsonRpcProvider,
-	fallBackProvider: ethers.providers.JsonRpcProvider,
+	provider: TWeb3Provider,
+	fallBackProvider: TWeb3Provider,
 	ownerAddress: TAddress,
 	tokens: TUseBalancesTokens[],
 	prices?: TDict<string>

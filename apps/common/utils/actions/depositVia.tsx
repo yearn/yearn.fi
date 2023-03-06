@@ -3,24 +3,24 @@ import {EXTERNAL_SERVICE_PROVIDER} from '@vaults/utils/migrationTable';
 import PARTNER_VAULT_ABI from '@yearn-finance/web-lib/utils/abi/partner.vault.abi';
 import {handleTx} from '@yearn-finance/web-lib/utils/web3/transaction';
 
-import type {ContractInterface} from 'ethers';
+import type {TWeb3Provider} from '@yearn-finance/web-lib/contexts/types';
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 
 export async function	depositVia(
-	provider: ethers.providers.JsonRpcProvider,
+	provider: TWeb3Provider,
 	viaContractAddress: TAddress,
 	serviceID: EXTERNAL_SERVICE_PROVIDER,
 	addressFrom: TAddress,
 	addressTo: TAddress,
-	amount: ethers.BigNumber
+	amount: bigint
 ): Promise<TTxResponse> {
-	const	signer = provider.getSigner();
+	const	signer = await provider.getSigner();
 
 	addressTo;
 	amount;
 
-	let abi: ContractInterface = PARTNER_VAULT_ABI;
+	let abi = PARTNER_VAULT_ABI;
 	let	method = 'deposit';
 	let params: unknown[] = [];
 
@@ -31,7 +31,7 @@ export async function	depositVia(
 	].includes(serviceID)) {
 		method = 'migrate';
 		params = [[serviceID, addressFrom]];
-		abi = [{'inputs':[{'components':[{'internalType':'enum YVEmpire.Service', 'name':'service', 'type':'uint8'}, {'internalType':'address', 'name':'coin', 'type':'address'}], 'internalType':'struct YVEmpire.Swap[]', 'name':'swaps', 'type':'tuple[]'}], 'name':'migrate', 'outputs':[], 'stateMutability':'nonpayable', 'type':'function'}];
+		abi = [{'inputs':[{'components':[{'internalType':'enum YVEmpire.Service', 'name':'service', 'type':'uint8'}, {'internalType':'address', 'name':'coin', 'type':'address'}], 'internalType':'struct YVEmpire.Swap[]', 'name':'swaps', 'type':'tuple[]'}], 'name':'migrate', 'outputs':[], 'stateMutability':'nonpayable', 'type':'function'}] as never;
 	} else {
 		console.error('Invalid service ID');
 		return {isSuccessful: false};

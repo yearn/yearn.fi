@@ -11,7 +11,6 @@ import {VEYFI_ADDRESS, VEYFI_POSITION_HELPER_ADDRESS, YFI_ADDRESS} from '@yearn-
 import {toMilliseconds} from '@yearn-finance/web-lib/utils/time';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 
-import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
 import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 import type {TMilliseconds} from '@yearn-finance/web-lib/utils/time';
@@ -22,28 +21,28 @@ export type TVotingEscrow = {
 	name: string,
 	symbol: string,
 	decimals: number,
-	supply: BigNumber,
+	supply: bigint,
 	rewardPool: TAddress,
 }
 
 export type TPosition = {
-	balance: BigNumber,
-	underlyingBalance: BigNumber,
+	balance: bigint,
+	underlyingBalance: bigint,
 }
 
 export type TVotingEscrowPosition = {
 	deposit?: TPosition,
 	// yield?: TPosition,
 	unlockTime?: TMilliseconds,
-	penalty?: BigNumber,
+	penalty?: bigint,
 	penaltyRatio?: number,
-	withdrawable?: BigNumber,
+	withdrawable?: bigint,
 }
 
 export type	TVotingEscrowContext = {
 	votingEscrow: TVotingEscrow | undefined,
 	positions: TVotingEscrowPosition | undefined,
-	allowances: TDict<BigNumber>,
+	allowances: TDict<bigint>,
 	isLoading: boolean,
 	refresh: VoidFunction,
 }
@@ -70,7 +69,7 @@ export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({chil
 			veYFIContract.decimals(),
 			veYFIContract.supply(),
 			veYFIContract.reward_pool()
-		]) as [TAddress, string, string, number, BigNumber, TAddress];
+		]) as [TAddress, string, string, number, bigint, TAddress];
 
 		return ({
 			address: VEYFI_ADDRESS,
@@ -92,7 +91,7 @@ export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({chil
 		const ethcallProvider = await newEthCallProvider(currentProvider);
 		const veYFIPositionHelperContract = new Contract(VEYFI_POSITION_HELPER_ADDRESS, VEYFI_POSITION_HELPER_ABI);
 
-		const [positionDetails] = await ethcallProvider.tryAll([veYFIPositionHelperContract.getPositionDetails(address)]) as [{balance: BigNumber, depositAmount: BigNumber, unlockTime: BigNumber, penalty: BigNumber, withdrawable: BigNumber}];
+		const [positionDetails] = await ethcallProvider.tryAll([veYFIPositionHelperContract.getPositionDetails(address)]) as [{balance: bigint, depositAmount: bigint, unlockTime: bigint, penalty: bigint, withdrawable: bigint}];
 
 		const depositPosition: TPosition = {
 			balance: positionDetails.balance,
@@ -101,15 +100,15 @@ export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({chil
 
 		return {
 			deposit: depositPosition,
-			unlockTime: toMilliseconds(positionDetails.unlockTime.toNumber()),
+			unlockTime: toMilliseconds(Number(positionDetails.unlockTime)),
 			penalty: positionDetails.penalty,
-			penaltyRatio: positionDetails.depositAmount.gt(0) ? FixedNumber.from(positionDetails.penalty).divUnsafe(FixedNumber.from(positionDetails.depositAmount)).toUnsafeFloat() : 0,
+			penaltyRatio: positionDetails.depositAmount > 0 ? FixedNumber.fromValue(positionDetails.penalty).divUnsafe(FixedNumber.fromValue(positionDetails.depositAmount)).toUnsafeFloat() : 0,
 			withdrawable: positionDetails.withdrawable
 		};
 	}, [isActive, address, provider]);
 	const {data: positions, mutate: refreshPositions, isLoading: isLoadingPositions} = useSWR(isActive && provider ? 'positions' : null, positionsFetcher, {shouldRetryOnError: false});
 
-	const allowancesFetcher = useCallback(async (): Promise<TDict<BigNumber>> => {
+	const allowancesFetcher = useCallback(async (): Promise<TDict<bigint>> => {
 		if (!isActive || !address) {
 			return {};
 		}
@@ -117,7 +116,7 @@ export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({chil
 		const	ethcallProvider = await newEthCallProvider(currentProvider);
 		const	yfiContract = new Contract(YFI_ADDRESS, ERC20_ABI);
 
-		const	[yfiAllowanceVeYFI] = await ethcallProvider.tryAll([yfiContract.allowance(address, VEYFI_ADDRESS)]) as BigNumber[];
+		const	[yfiAllowanceVeYFI] = await ethcallProvider.tryAll([yfiContract.allowance(address, VEYFI_ADDRESS)]) as bigint[];
 
 		return ({
 			[allowanceKey(YFI_ADDRESS, VEYFI_ADDRESS)]: yfiAllowanceVeYFI

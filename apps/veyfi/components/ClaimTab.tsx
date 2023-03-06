@@ -1,12 +1,12 @@
 import {useVotingEscrow} from '@veYFI/contexts/useVotingEscrow';
 import {useTransaction} from '@veYFI/hooks/useTransaction';
-import * as VotingEscrowActions from '@veYFI/utils/actions/votingEscrow';
+import {withdrawUnlocked as withdrawUnlockedAction} from '@veYFI/utils/actions/votingEscrow';
 import {validateNetwork} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatBN, formatUnits} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatUnits, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {getTimeUntil} from '@yearn-finance/web-lib/utils/time';
 import {AmountInput} from '@common/components/AmountInput';
 import {useWallet} from '@common/contexts/useWallet';
@@ -20,12 +20,12 @@ function ClaimTab(): ReactElement {
 	const {refresh: refreshBalances} = useWallet();
 	const {votingEscrow, positions, refresh: refreshVotingEscrow} = useVotingEscrow();
 	const refreshData = (): unknown => Promise.all([refreshVotingEscrow(), refreshBalances()]);
-	const [withdrawUnlocked, withdrawUnlockedStatus] = useTransaction(VotingEscrowActions.withdrawUnlocked, refreshData);
+	const [withdrawUnlocked, withdrawUnlockedStatus] = useTransaction(withdrawUnlockedAction, refreshData);
 
-	const hasLockedAmount = formatBN(positions?.deposit?.underlyingBalance).gt(0);
+	const hasLockedAmount = toBigInt(positions?.deposit?.underlyingBalance) > 0;
 	const timeUntilUnlock = positions?.unlockTime ? getTimeUntil(positions?.unlockTime) : 0;
 	const isClaimable = hasLockedAmount && !timeUntilUnlock;
-	const claimableAmount = isClaimable ? positions?.deposit?.underlyingBalance : '0';
+	const claimableAmount = isClaimable ? positions?.deposit?.underlyingBalance : undefined;
 
 	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: 1, walletNetwork: safeChainID});
 

@@ -79,7 +79,7 @@ function	Index(): ReactElement {
 	const	filterHoldingsCallback = useCallback((address: TAddress): boolean => {
 		balancesNonce;
 		const	holding = balances?.[toAddress(address)];
-		const	hasValidBalance = formatBN(holding?.raw).gt(0);
+		const	hasValidBalance = formatBN(holding?.raw) > 0;
 		const	balanceValue = holding?.normalizedValue || 0;
 		if (shouldHideDust && balanceValue < 0.01) {
 			return false;
@@ -93,8 +93,8 @@ function	Index(): ReactElement {
 	const	filterMigrationCallback = useCallback((address: TAddress): boolean => {
 		balancesNonce;
 		const	holding = balances?.[toAddress(address)];
-		const	hasValidPrice = formatBN(holding?.rawPrice).gt(0);
-		const	hasValidBalance = formatBN(holding?.raw).gt(0);
+		const	hasValidPrice = formatBN(holding?.rawPrice) > 0;
+		const	hasValidBalance = formatBN(holding?.raw) > 0;
 		if (hasValidBalance && (hasValidPrice ? (holding?.normalizedValue || 0) >= 0.01 : true)) {
 			return true;
 		}

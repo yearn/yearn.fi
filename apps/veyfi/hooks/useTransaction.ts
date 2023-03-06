@@ -1,7 +1,7 @@
 import {useState} from 'react';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 
-import type {ethers} from 'ethers';
+import type {TWeb3Provider} from '@yearn-finance/web-lib/contexts/types';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 
 type TStatus = {
@@ -10,7 +10,7 @@ type TStatus = {
 	executed?: boolean;
 }
 
-type TTxFuncArgs = Parameters<(arg1: ethers.providers.JsonRpcProvider, ...args: unknown[] ) => void>
+type TTxFuncArgs = Parameters<(arg1: TWeb3Provider, ...args: unknown[] ) => void>
 
 type TTxFunc<T1 extends TTxFuncArgs, T2> = (...args: T1) => Promise<T2>;
 
