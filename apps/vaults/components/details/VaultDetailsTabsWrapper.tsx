@@ -29,6 +29,11 @@ type TTabs = {
 	set_selectedAboutTabIndex: (arg0: number) => void
 }
 
+type TExplorerLinkProps = {
+	explorerBaseURI?: string;
+	currentVaultAddress: string;
+}
+
 function	Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactElement {
 	const tabs: TTabsOptions[] = [
 		{value: 0, label: 'About'},
@@ -96,13 +101,30 @@ function	Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactE
 	);
 }
 
-function	VaultDetailsTabsWrapper({currentVault}: {currentVault: TYearnVault}): ReactElement | null {
+function ExplorerLink({explorerBaseURI, currentVaultAddress}: TExplorerLinkProps): ReactElement | null {
+	const hasMounted = useHasMounted();
+
+	if (!explorerBaseURI || !hasMounted) {
+		return null;
+	}
+
+	return (
+		<a
+			href={`${explorerBaseURI}/address/${currentVaultAddress}`}
+			target={'_blank'}
+			rel={'noopener noreferrer'}>
+			<span className={'sr-only'}>{'Open in explorer'}</span>
+			<IconLinkOut className={'h-5 w-5 cursor-alias text-neutral-600 transition-colors hover:text-neutral-900 md:h-6 md:w-6'} />
+		</a>
+	);
+}
+
+function	VaultDetailsTabsWrapper({currentVault}: {currentVault: TYearnVault}): ReactElement {
 	const {provider} = useWeb3();
 	const {safeChainID} = useChainID();
 	const {settings: baseAPISettings, networks} = useSettings();
 	const [selectedAboutTabIndex, set_selectedAboutTabIndex] = useState(0);
 	const networkSettings = useMemo((): TSettingsForNetwork => networks[safeChainID], [networks, safeChainID]);
-	const hasMounted = useHasMounted();
 
 	async function onAddTokenToMetamask(address: string, symbol: string, decimals: number, image: string): Promise<void> {
 		try {
@@ -136,10 +158,6 @@ function	VaultDetailsTabsWrapper({currentVault}: {currentVault: TYearnVault}): R
 		);
 	}, [currentVault.decimals, yDaemonHarvestsData]);
 
-	if (!hasMounted) {
-		return null;
-	}
-
 	return (
 		<div aria-label={'Vault Details'} className={'col-span-12 mb-4 flex flex-col bg-neutral-100'}>
 			<div className={'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'}>
@@ -161,13 +179,7 @@ function	VaultDetailsTabsWrapper({currentVault}: {currentVault: TYearnVault}): R
 						<span className={'sr-only'}>{'Add to wallet'}</span>
 						<IconAddToMetamask className={'h-5 w-5 text-neutral-600 transition-colors hover:text-neutral-900 md:h-6 md:w-6'} />
 					</button>
-					<a
-						href={`${networkSettings?.explorerBaseURI}/address/${currentVault.address}`}
-						target={'_blank'}
-						rel={'noopener noreferrer'}>
-						<span className={'sr-only'}>{'Open in explorer'}</span>
-						<IconLinkOut className={'h-5 w-5 cursor-alias text-neutral-600 transition-colors hover:text-neutral-900 md:h-6 md:w-6'} />
-					</a>
+					<ExplorerLink explorerBaseURI={networkSettings?.explorerBaseURI} currentVaultAddress={currentVault.address} />
 				</div>
 			</div>
 
