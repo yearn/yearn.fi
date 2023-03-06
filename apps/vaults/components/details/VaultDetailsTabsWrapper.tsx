@@ -1,6 +1,7 @@
 import React, {Fragment, useMemo, useState} from 'react';
 import useSWR from 'swr';
 import {Listbox, Transition} from '@headlessui/react';
+import {useIsMounted} from '@react-hookz/web';
 import {VaultDetailsAbout} from '@vaults/components/details/tabs/VaultDetailsAbout';
 import {VaultDetailsHistorical} from '@vaults/components/details/tabs/VaultDetailsHistorical';
 import {VaultDetailsStrategies} from '@vaults/components/details/tabs/VaultDetailsStrategies';
@@ -12,7 +13,6 @@ import IconLinkOut from '@yearn-finance/web-lib/icons/IconLinkOut';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
-import {useHasMounted} from '@common/hooks/useHasMounted';
 import IconChevron from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
@@ -102,9 +102,9 @@ function	Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactE
 }
 
 function ExplorerLink({explorerBaseURI, currentVaultAddress}: TExplorerLinkProps): ReactElement | null {
-	const hasMounted = useHasMounted();
+	const isMounted = useIsMounted();
 
-	if (!explorerBaseURI || !hasMounted) {
+	if (!explorerBaseURI || !isMounted()) {
 		return null;
 	}
 
