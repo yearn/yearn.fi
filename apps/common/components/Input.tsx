@@ -12,17 +12,8 @@ type TAmountInputProps = {
 	className?: string;
 }
 
-function Input({
-	value,
-	onChange,
-	label,
-	placeholder,
-	legend,
-	error,
-	isDisabled,
-	isLoading,
-	className = ''
-}: TAmountInputProps): ReactElement {
+function Input(props: TAmountInputProps): ReactElement {
+	const {value, onChange, label, placeholder, legend, error, isDisabled, isLoading, className = ''} = props;
 	return (
 		<div className={`w-full ${className}`}>
 			{label && (
@@ -39,11 +30,11 @@ function Input({
 					aria-label={label}
 					value={value}
 					onChange={onChange ? (e): void => onChange(e.target.value) : undefined}
-					placeholder={isLoading ? '' : placeholder ?? ''}
+					placeholder={isLoading ? undefined : placeholder}
 					disabled={isDisabled}
 				/>
 			</div>
-			{(error || legend) && (
+			{(error ?? legend) && (
 				<legend className={`mt-1 pl-2 text-xs md:mr-0 ${error ? 'text-[#EA5204]' : 'text-neutral-600'}`} suppressHydrationWarning>
 					{error ?? legend}
 				</legend>
