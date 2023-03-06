@@ -15,7 +15,7 @@ import {useBalance} from '@common/hooks/useBalance';
 
 import type {ethers} from 'ethers';
 import type {ReactElement} from 'react';
-import type {TAddress} from '@yearn-finance/web-lib/utils/address';
+import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TYearnVault} from '@common/types/yearn';
 
 const DISPLAY_DECIMALS = 10;

@@ -3,14 +3,13 @@ import {Contract} from 'ethcall';
 import useSWR from 'swr';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {ERC20_ABI} from '@yearn-finance/web-lib/utils/abi';
+import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 
 import type {Call} from 'ethcall';
 import type {BigNumber} from 'ethers';
-import type {TAddress} from '@yearn-finance/web-lib/utils/address';
-import type {TDict} from '@yearn-finance/web-lib/utils/types';
+import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 
 export type TAllowanceRequest = {
 	token: TAddress,
