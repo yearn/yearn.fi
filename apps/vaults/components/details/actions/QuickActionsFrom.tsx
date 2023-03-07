@@ -1,4 +1,5 @@
 import React from 'react';
+import {useIsMounted} from '@react-hookz/web';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -8,7 +9,6 @@ import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers
 import {Dropdown} from '@common/components/TokenDropdown';
 import {useWallet} from '@common/contexts/useWallet';
 import {useBalance} from '@common/hooks/useBalance';
-import {useHasMounted} from '@common/hooks/useHasMounted';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
 
 import type {ChangeEvent, ReactElement} from 'react';
@@ -20,14 +20,10 @@ function	VaultDetailsQuickActionsFrom(): ReactElement | null {
 		possibleOptionsFrom, actionParams, onUpdateSelectedOptionFrom, onChangeAmount,
 		maxDepositPossible, isDepositing
 	} = useActionFlow();
-	const hasMounted = useHasMounted();
 
 	const selectedFromBalance = useBalance(toAddress(actionParams?.selectedOptionFrom?.value));
 	const selectedOptionFromPricePerToken = useTokenPrice(toAddress(actionParams?.selectedOptionFrom?.value));
-
-	if (!hasMounted) {
-		return null;
-	}
+	const isMounted = useIsMounted();
 
 	return (
 		<section aria-label={'FROM'} className={'flex w-full flex-col space-x-0 md:flex-row md:space-x-4'}>
@@ -37,7 +33,7 @@ function	VaultDetailsQuickActionsFrom(): ReactElement | null {
 						{isDepositing ? 'From wallet' : 'From vault'}
 					</label>
 					<legend className={'font-number inline text-xs text-neutral-600 md:hidden'}>
-						{`You have ${formatAmount(selectedFromBalance.normalized)} ${actionParams?.selectedOptionFrom?.symbol || 'tokens'}`}
+						{`You have ${isMounted() && formatAmount(selectedFromBalance.normalized)} ${actionParams?.selectedOptionFrom?.symbol || 'tokens'}`}
 					</legend>
 				</div>
 				{isActive && isDepositing && possibleOptionsFrom.length > 1 ? (

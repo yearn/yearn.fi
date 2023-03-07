@@ -12,7 +12,6 @@ import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUp
 import {Dropdown} from '@common/components/TokenDropdown';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
-import {useHasMounted} from '@common/hooks/useHasMounted';
 import ArrowDown from '@common/icons/ArrowDown';
 import CardTransactorContextApp, {useCardTransactor} from '@yCRV/components/CardTransactorWrapper';
 import {CardVariants, CardVariantsInner} from '@yCRV/utils/animations';
@@ -34,7 +33,6 @@ function	CardZap(): ReactElement | null {
 		fromVaultAPY, toVaultAPY, expectedOutWithSlippage,
 		allowanceFrom, onApproveFrom, onZap, onIncreaseCRVAllowance
 	} = useCardTransactor();
-	const hasMounted = useHasMounted();
 
 	const	ycrvPrice = useMemo((): number => (
 		formatToNormalizedValue(
@@ -63,10 +61,6 @@ function	CardZap(): ReactElement | null {
 		}
 		return ZAP_OPTIONS_TO.filter((option): boolean => option.value !== selectedOptionFrom.value);
 	}, [selectedOptionFrom.value, selectedOptionTo.value, ZAP_OPTIONS_TO]); // eslint-disable-line react-hooks/exhaustive-deps
-
-	if (!hasMounted) {
-		return null;
-	}
 
 	function	renderButton(): ReactElement {
 		const	balanceForInputToken = formatBN(balances?.[toAddress(selectedOptionFrom.value)]?.raw);

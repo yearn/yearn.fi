@@ -10,7 +10,6 @@ import {formatAmount, formatPercent, formatUSD} from '@yearn-finance/web-lib/uti
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {copyToClipboard} from '@yearn-finance/web-lib/utils/helpers';
 import {useBalance} from '@common/hooks/useBalance';
-import {useHasMounted} from '@common/hooks/useHasMounted';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
 import {getVaultName} from '@common/utils';
 
@@ -27,7 +26,6 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 		baseFetcher,
 		{revalidateOnFocus: false}
 	) as SWRResponse as {data: TYdaemonEarned};
-	const hasMounted = useHasMounted();
 
 	const	normalizedVaultEarned = useMemo((): number => (
 		formatToNormalizedValue(
@@ -39,10 +37,6 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 	const	vaultBalance = useBalance(currentVault?.address)?.normalized;
 	const	vaultPrice = useTokenPrice(currentVault?.address);
 	const	vaultName = useMemo((): string => getVaultName(currentVault), [currentVault]);
-
-	if (!hasMounted) {
-		return null;
-	}
 
 	return (
 		<div aria-label={'Vault Header'} className={'col-span-12 flex w-full flex-col items-center justify-center'}>

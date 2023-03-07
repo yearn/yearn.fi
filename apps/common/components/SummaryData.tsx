@@ -1,6 +1,3 @@
-
-import {useHasMounted} from '@common/hooks/useHasMounted';
-
 import type {ReactElement} from 'react';
 
 type TItem = {
@@ -13,12 +10,6 @@ type TTabsProps = {
 }
 
 function SummaryData({items}: TTabsProps): ReactElement | null {
-	const hasMounted = useHasMounted();
-
-	if (!hasMounted) {
-		return null;
-	}
-
 	return (
 		<div className={'align-center flex w-full flex-row flex-wrap justify-center gap-14'}>
 			{items.map((({label, content}): ReactElement => (
