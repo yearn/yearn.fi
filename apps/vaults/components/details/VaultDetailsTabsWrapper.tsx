@@ -19,8 +19,8 @@ import IconChevron from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
-import type {TMetamaskInjectedProvider} from '@yearn-finance/web-lib/types';
-import type {TSettingsForNetwork, TYearnVault} from '@common/types/yearn';
+import type {TCurrentVault} from '@yearn-finance/web-lib/types/vaults';
+import type {TSettingsForNetwork} from '@common/types/yearn';
 
 type TTabsOptions = {
 	value: number;
@@ -56,7 +56,7 @@ function	Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactE
 	return (
 		<>
 			<nav className={'hidden flex-row items-center space-x-10 md:flex'}>
-				{tabs.map((tab): ReactElement => (
+				{tabs.map((tab): ReactElement =>
 					<button
 						key={`desktop-${tab.value}`}
 						onClick={(): void => {
@@ -81,13 +81,13 @@ function	Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactE
 							{tab.label}
 						</p>
 					</button>
-				))}
+				)}
 			</nav>
 			<div className={'relative z-50'}>
 				<Listbox
 					value={selectedAboutTabIndex}
 					onChange={(value): void => set_selectedAboutTabIndex(value)}>
-					{({open}): ReactElement => (
+					{({open}): ReactElement =>
 						<>
 							<Listbox.Button
 								className={'flex h-10 w-40 flex-row items-center border-0 border-b-2 border-neutral-900 bg-neutral-100 p-0 font-bold focus:border-neutral-900 md:hidden'}>
@@ -109,18 +109,18 @@ function	Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactE
 								leaveFrom={'transform scale-100 opacity-100'}
 								leaveTo={'transform scale-95 opacity-0'}>
 								<Listbox.Options className={'yearn--listbox-menu'}>
-									{tabs.map((tab): ReactElement => (
+									{tabs.map((tab): ReactElement =>
 										<Listbox.Option
 											className={'yearn--listbox-menu-item'}
 											key={tab.value}
 											value={tab.value}>
 											{tab.label}
 										</Listbox.Option>
-									))}
+									)}
 								</Listbox.Options>
 							</Transition>
 						</>
-					)}
+					}
 				</Listbox>
 			</div>
 		</>
@@ -145,7 +145,7 @@ function ExplorerLink({explorerBaseURI, currentVaultAddress}: TExplorerLinkProps
 	);
 }
 
-function	VaultDetailsTabsWrapper({currentVault}: {currentVault: TYearnVault}): ReactElement {
+function	VaultDetailsTabsWrapper({currentVault}: TCurrentVault): ReactElement {
 	const {provider} = useWeb3();
 	const {safeChainID} = useChainID();
 	const {settings: baseAPISettings, networks} = useSettings();
@@ -154,7 +154,7 @@ function	VaultDetailsTabsWrapper({currentVault}: {currentVault: TYearnVault}): R
 
 	async function onAddTokenToMetamask(address: string, symbol: string, decimals: number, image: string): Promise<void> {
 		try {
-			await (provider as TMetamaskInjectedProvider).send('wallet_watchAsset', {
+			await provider.send('wallet_watchAsset', {
 				type: 'ERC20',
 				options: {
 					address,
@@ -175,7 +175,7 @@ function	VaultDetailsTabsWrapper({currentVault}: {currentVault: TYearnVault}): R
 	) as SWRResponse;
 
 	const	harvestData = useMemo((): {name: string; value: number}[] => {
-		const	_yDaemonHarvestsData = [...(yDaemonHarvestsData || [])].reverse();
+		const	_yDaemonHarvestsData = [...yDaemonHarvestsData || []].reverse();
 		return (
 			_yDaemonHarvestsData?.map((harvest): {name: string; value: number} => ({
 				name: formatDate(toNumber(harvest.timestamp) * 1000),

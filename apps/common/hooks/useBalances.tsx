@@ -19,7 +19,7 @@ import type {TGetBatchBalancesResp} from 'pages/api/getBatchBalances';
 import type {DependencyList} from 'react';
 import type {TWeb3Provider} from '@yearn-finance/web-lib/contexts/types';
 import type {TBalanceData, TDefaultStatus} from '@yearn-finance/web-lib/hooks/types';
-import type {TAddress, TDict, TNDict} from '@yearn-finance/web-lib/types';
+import type {Maybe, TAddress, TDict, TNDict} from '@yearn-finance/web-lib/types';
 
 /* 🔵 - Yearn Finance **********************************************************
 ** Request, Response and helpers for the useBalances hook.
@@ -71,7 +71,7 @@ async function performCall(
 	calls: Call[],
 	tokens: TUseBalancesTokens[],
 	prices?: TDict<string>
-): Promise<[TDict<TBalanceData>, Error | undefined]> {
+): Promise<[TDict<TBalanceData>, Maybe<Error>]> {
 	const	_data: TDict<TBalanceData> = {};
 	const	results = await ethcallProvider.tryAll(calls);
 
@@ -105,7 +105,7 @@ async function getBalances(
 	ownerAddress: TAddress,
 	tokens: TUseBalancesTokens[],
 	prices?: TDict<string>
-): Promise<[TDict<TBalanceData>, Error | undefined]> {
+): Promise<[TDict<TBalanceData>, Maybe<Error>]> {
 	const	result: TDict<TBalanceData> = {};
 	const	currentProvider = provider;
 	const	calls = [];
@@ -153,7 +153,7 @@ export function	useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	const	{onLoadStart, onLoadDone} = useUI();
 	const	[nonce, set_nonce] = useState(0);
 	const	[status, set_status] = useState<TDefaultStatus>(defaultStatus);
-	const	[error, set_error] = useState<Error | undefined>(undefined);
+	const	[error, set_error] = useState<Maybe<Error>>(undefined);
 	const	[balances, set_balances] = useState<TNDict<TDict<TBalanceData>>>({});
 	const	data = useRef<TNDict<TDataRef>>({});
 	const	stringifiedTokens = useMemo((): string => JSON.stringify(props?.tokens || []), [props?.tokens]);

@@ -7,7 +7,7 @@ import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import type {GraphQLResponse} from 'graphql-request/build/esm/types';
 import type {TBalanceData} from '@yearn-finance/web-lib/hooks/types';
 import type {TDict} from '@yearn-finance/web-lib/types';
-import type {TYearnVault} from '@common/types/yearn';
+import type {TVault} from '@yearn-finance/web-lib/types/vaults';
 
 export function	max(input: bigint, balance: bigint): bigint {
 	if (input > balance) {
@@ -16,7 +16,7 @@ export function	max(input: bigint, balance: bigint): bigint {
 	return input;
 }
 
-export function getVaultAPY(vaults: TDict<TYearnVault | undefined>, vaultAddress: string): string {
+export function getVaultAPY(vaults: TDict<TVault>, vaultAddress: string): string {
 	if (!vaults?.[toAddress(vaultAddress)]) {
 		return '';
 	}
@@ -32,7 +32,7 @@ export function getVaultAPY(vaults: TDict<TYearnVault | undefined>, vaultAddress
 	return `APY ${formatPercent(0)}`;
 }
 
-export function getVaultRawAPY(vaults: TDict<TYearnVault | undefined>, vaultAddress: string): number {
+export function getVaultRawAPY(vaults: TDict<TVault>, vaultAddress: string): number {
 	if (!vaults?.[toAddress(vaultAddress)]) {
 		return 0;
 	}
@@ -60,7 +60,7 @@ export function getAmountWithSlippage(from: string, to: string, value: bigint, s
 	return formatToNormalizedValue(value, 18);
 }
 
-export function getVaultName(vault: TYearnVault): string {
+export function getVaultName(vault: TVault): string {
 	const baseName = vault.display_name || vault.name || vault.formated_name || 'unknown';
 	if (baseName.includes(' yVault')) {
 		return baseName.replace(' yVault', '');

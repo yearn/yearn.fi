@@ -4,6 +4,7 @@ import {useMountEffect, useUpdateEffect} from '@react-hookz/web';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 
 import type {ReactElement} from 'react';
+import type {Maybe} from '@yearn-finance/web-lib/types';
 
 function	ValueAnimation({
 	identifier,
@@ -14,7 +15,7 @@ function	ValueAnimation({
 	className = 'wordLeft'
 }: {
 	identifier: string;
-	value: string | undefined,
+	value: Maybe<string>,
 	defaultValue?: string,
 	prefix?: string,
 	suffix?: string,

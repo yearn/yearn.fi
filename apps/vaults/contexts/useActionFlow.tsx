@@ -15,9 +15,9 @@ import {useYearn} from '@common/contexts/useYearn';
 import externalzapOutTokenList from '../../common/utils/externalZapOutTokenList.json';
 
 import type {ReactNode} from 'react';
-import type {TAddress, TNormalizedBN} from '@yearn-finance/web-lib/types';
+import type {Maybe, TAddress, TNormalizedBN} from '@yearn-finance/web-lib/types';
+import type {TVault} from '@yearn-finance/web-lib/types/vaults';
 import type {TDropdownOption} from '@common/types/types';
-import type {TYearnVault} from '@common/types/yearn';
 
 export enum	Flow {
 	Deposit = 'deposit',
@@ -30,13 +30,13 @@ export enum	Flow {
 type TActionParams = {
 	isReady: boolean;
 	amount: TNormalizedBN;
-	selectedOptionFrom: TDropdownOption | undefined;
-	selectedOptionTo: TDropdownOption | undefined;
+	selectedOptionFrom: Maybe<TDropdownOption>;
+	selectedOptionTo: Maybe<TDropdownOption>;
 	possibleOptionsFrom: TDropdownOption[];
 	possibleOptionsTo: TDropdownOption[];
 }
 type	TActionFlowContext = {
-	currentVault: TYearnVault;
+	currentVault: TVault;
 	possibleOptionsFrom: TDropdownOption[];
 	possibleOptionsTo: TDropdownOption[];
 	actionParams: TActionParams;
@@ -49,7 +49,7 @@ type	TActionFlowContext = {
 	currentSolver: Solver;
 }
 const	DefaultActionFlowContext: TActionFlowContext = {
-	currentVault: {} as TYearnVault, // eslint-disable-line @typescript-eslint/consistent-type-assertions
+	currentVault: {} as TVault, // eslint-disable-line @typescript-eslint/consistent-type-assertions
 	possibleOptionsFrom: [],
 	possibleOptionsTo: [],
 	actionParams: {
@@ -69,7 +69,7 @@ const	DefaultActionFlowContext: TActionFlowContext = {
 	currentSolver: Solver?.VANILLA || 'Vanilla'
 };
 
-function useContextualIs(selectedTo: TDropdownOption | undefined, currentVault: TYearnVault): [boolean, boolean] {
+function useContextualIs(selectedTo: Maybe<TDropdownOption>, currentVault: TVault): [boolean, boolean] {
 	const {networks} = useSettings();
 	const {safeChainID} = useChainID();
 
@@ -89,7 +89,7 @@ function useContextualIs(selectedTo: TDropdownOption | undefined, currentVault: 
 }
 
 type TGetMaxDepositPossible = {
-	vault: TYearnVault,
+	vault: TVault,
 	fromToken: TAddress,
 	fromDecimals: number,
 	fromTokenBalance: bigint,
@@ -109,7 +109,7 @@ function	getMaxDepositPossible({vault, fromToken, fromDecimals, isDepositing, fr
 }
 
 const ActionFlowContext = createContext<TActionFlowContext>(DefaultActionFlowContext);
-function ActionFlowContextApp({children, currentVault}: {children: ReactNode, currentVault: TYearnVault}): React.ReactElement {
+function ActionFlowContextApp({children, currentVault}: {children: ReactNode, currentVault: TVault}): React.ReactElement {
 	const {balances, balancesNonce} = useWallet();
 	const {safeChainID} = useChainID();
 	const {balances: zapBalances, tokensList} = useWalletForZap();

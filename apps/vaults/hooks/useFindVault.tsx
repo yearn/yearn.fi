@@ -1,14 +1,14 @@
 import {useMemo} from 'react';
 
 import type {TDict} from '@yearn-finance/web-lib/types';
-import type {TYearnVault} from '@common/types/yearn';
+import type {TVault} from '@yearn-finance/web-lib/types/vaults';
 
 function	useFindVault(
-	vaultMap: TDict<TYearnVault | undefined>,
-	condition: (v: TYearnVault) => boolean
-): TYearnVault {
-	const	foundVault = useMemo((): TYearnVault => {
-		return (Object.values(vaultMap || {}).find((vault): boolean => condition(vault as TYearnVault)) as TYearnVault);
+	vaultMap: TDict<TVault>,
+	condition: (v: TVault) => boolean
+): TVault {
+	const	foundVault = useMemo((): TVault => {
+		return (Object.values(vaultMap || {}).find((vault): boolean => condition(vault as TVault)) as TVault);
 	}, [vaultMap, condition]);
 
 	return (foundVault);

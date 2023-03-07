@@ -4,7 +4,7 @@ import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 
 import type {ReactElement} from 'react';
-import type {TYearnVaultToken} from '@common/types/yearn';
+import type {TVaultToken} from '@yearn-finance/web-lib/types/vaults';
 
 function TokenIcon({
 	chainID,
@@ -13,7 +13,7 @@ function TokenIcon({
 }: {
 	chainID: number,
 	size?: number,
-	token: Partial<TYearnVaultToken>
+	token: Partial<TVaultToken>
 }): ReactElement {
 	const [imageType, set_imageType] = useState<'Vault' | 'Underlying' | 'Fallback'>('Vault');
 

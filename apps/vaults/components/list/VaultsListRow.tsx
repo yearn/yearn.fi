@@ -10,9 +10,9 @@ import {useBalance} from '@common/hooks/useBalance';
 import {getVaultName} from '@common/utils';
 
 import type {ReactElement} from 'react';
-import type {TYearnVault} from '@common/types/yearn';
+import type {TCurrentVault} from '@yearn-finance/web-lib/types/vaults';
 
-function	VaultsListRow({currentVault}: {currentVault: TYearnVault}): ReactElement {
+function	VaultsListRow({currentVault}: TCurrentVault): ReactElement {
 	const {safeChainID} = useChainID();
 	const balanceOfWant = useBalance(currentVault.token.address);
 	const balanceOfCoin = useBalance(ETH_TOKEN_ADDRESS);

@@ -38,7 +38,7 @@ type TProps = {
 export type TVotesReducerActionTypes = 'INIT' | 'MAX' | 'UPDATE';
 
 export type TVotesReducerState = {
-	votes: TDict<bigint | undefined>;
+	votes: TDict<bigint>;
 	maxVotes: bigint;
 	currentTotal: bigint;
 };
@@ -109,7 +109,7 @@ function createInitialState({votes, maxVotes}: Pick<TVotesReducerState, 'votes' 
 	return {maxVotes, votes, currentTotal: Zero};
 }
 
-function getVoteButtonProps(votes: TDict<bigint | undefined>): {
+function getVoteButtonProps(votes: TDict<bigint>): {
 	label: string;
 	isDisabled: boolean;
 } {
@@ -162,7 +162,7 @@ function GaugeList({gauges, gaugesVotes, isLoading, userInfo}: TProps): ReactEle
 			return;
 		}
 
-		const gaugesWithVotes = Object.keys(votes).reduce((prev, curr): TDict<bigint | undefined> => {
+		const gaugesWithVotes = Object.keys(votes).reduce((prev, curr): TDict<bigint> => {
 			return isTAddress(curr) && isGreaterThanZero(votes[curr]) ? {...prev, [curr]: votes[curr]} : prev;
 		}, {});
 

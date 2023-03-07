@@ -13,13 +13,13 @@ import {approveERC20, isApprovedERC20} from '@common/utils/actions/approveToken'
 
 import type {AxiosError} from 'axios';
 import type {QuoteRequest, QuoteResult} from 'wido';
-import type {TNormalizedBN} from '@yearn-finance/web-lib/types';
+import type {MayPromise, TNormalizedBN} from '@yearn-finance/web-lib/types';
 import type {TTxResponse, TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {ApiError} from '@gnosis.pm/gp-v2-contracts';
 import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
 import type {TWidoResult} from '@vaults/types/solvers.wido';
 
-function useWidoQuote(): [TWidoResult, (request: TInitSolverArgs, shouldPreventErrorToast?: boolean) => Promise<QuoteResult | undefined>] {
+function useWidoQuote(): [TWidoResult, (request: TInitSolverArgs, shouldPreventErrorToast?: boolean) => MayPromise<QuoteResult>] {
 	const {toast} = yToast();
 	const {zapSlippage} = useYearn();
 	const [err, set_err] = useState<Error>();
@@ -27,7 +27,7 @@ function useWidoQuote(): [TWidoResult, (request: TInitSolverArgs, shouldPreventE
 	const getQuote = useCallback(async (
 		request: TInitSolverArgs,
 		shouldPreventErrorToast = false
-	): Promise<QuoteResult | undefined> => {
+	): MayPromise<QuoteResult> => {
 		const	quoteRequest: QuoteRequest = ({
 			fromChainId: 1, // Chain Id of from token
 			fromToken: toAddress(request.inputToken.value), // token to spend

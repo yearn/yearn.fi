@@ -1,6 +1,7 @@
 
 
 import type {QuoteResult} from 'wido';
+import type {Maybe} from '@yearn-finance/web-lib/types';
 
 /* 🔵 - Yearn Finance ******************************************************
 **	Theses types are used to define the request and response of the Wido
@@ -11,7 +12,7 @@ import type {QuoteResult} from 'wido';
 ***************************************************************************/
 export type TWidoAPIResult = QuoteResult;
 export type TWidoResult = {
-	result: QuoteResult | undefined,
-	isLoading: boolean,
-	error: Error | undefined
+	result: Maybe<QuoteResult>,
+	error: Maybe<Error>,
+	isLoading: boolean
 }

@@ -6,13 +6,13 @@ import {useClientOnlyFn} from '@common/hooks/useClientOnlyFn';
 
 import type {LoaderComponent} from 'next/dynamic';
 import type {ReactElement} from 'react';
+import type {TVault} from '@yearn-finance/web-lib/types/vaults';
 import type {TGraphData} from '@common/types/types';
-import type {TYearnVault} from '@common/types/yearn';
 import type {TGraphForVaultEarningsProps} from '@vaults/components/graphs/GraphForVaultEarnings';
 
 const GraphForVaultEarnings = dynamic<TGraphForVaultEarningsProps>(async (): LoaderComponent<TGraphForVaultEarningsProps> => import('@vaults/components/graphs/GraphForVaultEarnings'), {ssr: false});
 
-function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYearnVault, harvestData: TGraphData[]}): ReactElement {
+function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TVault, harvestData: TGraphData[]}): ReactElement {
 	const clientOnlyFormatPercent = useClientOnlyFn({fn: formatPercent, placeholder: '0,00'});
 
 	return (

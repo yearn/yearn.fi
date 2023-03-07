@@ -2,6 +2,7 @@ import {useState} from 'react';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 
 import type {TWeb3Provider} from '@yearn-finance/web-lib/contexts/types';
+import type {Maybe} from '@yearn-finance/web-lib/types';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 
 type TStatus = {
@@ -18,11 +19,11 @@ export const useTransaction = <T extends TTxFuncArgs>(
 	func: TTxFunc<T, TTxResponse>,
 	onSuccess?: (payload: TTxResponse) => void,
 	onError?: (error: unknown) => void
-): [TTxFunc<T, TTxResponse>, TStatus, TTxResponse | undefined] => {
+): [TTxFunc<T, TTxResponse>, TStatus, Maybe<TTxResponse>] => {
 	const {toast} = yToast();
 	const [result, set_result] = useState<TTxResponse>();
 	const [isLoading, set_isLoading] = useState(false);
-	const [error, set_error] = useState<string | undefined>(undefined);
+	const [error, set_error] = useState<Maybe<string>>(undefined);
 	const [isExecuted, set_isExecuted] = useState<boolean>(false);
 
 	const status: TStatus = {

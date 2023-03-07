@@ -13,7 +13,7 @@ import {toMilliseconds} from '@yearn-finance/web-lib/utils/time';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 
 import type {ReactElement} from 'react';
-import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
+import type {Maybe, TAddress, TDict} from '@yearn-finance/web-lib/types';
 import type {TMilliseconds} from '@yearn-finance/web-lib/utils/time';
 
 export type TVotingEscrow = {
@@ -41,8 +41,8 @@ export type TVotingEscrowPosition = {
 }
 
 export type	TVotingEscrowContext = {
-	votingEscrow: TVotingEscrow | undefined,
-	positions: TVotingEscrowPosition | undefined,
+	votingEscrow: Maybe<TVotingEscrow>,
+	positions: Maybe<TVotingEscrowPosition>,
 	allowances: TDict<bigint>,
 	isLoading: boolean,
 	refresh: VoidFunction,

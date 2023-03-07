@@ -12,15 +12,16 @@ import {DEFAULT_SLIPPAGE} from '@common/utils/constants';
 import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
 import type {TAddress, TDict, VoidPromiseFunction} from '@yearn-finance/web-lib/types';
-import type {TYdaemonEarned, TYDaemonToken, TYearnVault} from '@common/types/yearn';
+import type {TVault} from '@yearn-finance/web-lib/types/vaults';
+import type {TYdaemonEarned, TYDaemonToken} from '@common/types/yearn';
 
 export type	TYearnContext = {
 	currentPartner: TAddress,
 	earned: TYdaemonEarned,
 	prices: TDict<string>,
 	tokens: TDict<TYDaemonToken>,
-	vaults: TDict<TYearnVault | undefined>,
-	vaultsMigrations: TDict<TYearnVault | undefined>,
+	vaults: TDict<TVault>,
+	vaultsMigrations: TDict<TVault>,
 	isLoadingVaultList: boolean,
 	zapSlippage: number,
 	zapProvider: Solver,
@@ -48,7 +49,7 @@ const	defaultProps: TYearnContext = {
 };
 
 type TYearnVaultsMap = {
-	[address: string]: TYearnVault
+	[address: string]: TVault
 }
 
 const	YearnContext = createContext<TYearnContext>(defaultProps);
@@ -95,7 +96,7 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 	) as SWRResponse;
 
 	const	vaultsObject = useMemo((): TYearnVaultsMap => {
-		const	_vaultsObject = (vaults || []).reduce((acc: TYearnVaultsMap, vault: TYearnVault): TYearnVaultsMap => {
+		const	_vaultsObject = (vaults || []).reduce((acc: TYearnVaultsMap, vault: TVault): TYearnVaultsMap => {
 			if (vault.migration.available) {
 				return acc;
 			}
@@ -106,7 +107,7 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 	}, [vaults]);
 
 	const	vaultsMigrationsObject = useMemo((): TYearnVaultsMap => {
-		const	_migratableVaultsObject = (vaultsMigrations || []).reduce((acc: TDict<TYearnVault>, vault: TYearnVault): TDict<TYearnVault> => {
+		const	_migratableVaultsObject = (vaultsMigrations || []).reduce((acc: TDict<TVault>, vault: TVault): TDict<TVault> => {
 			if (toAddress(vault.address) !== toAddress(vault.migration?.address)) {
 				acc[toAddress(vault.address)] = vault;
 			}

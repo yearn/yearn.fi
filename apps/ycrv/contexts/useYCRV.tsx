@@ -16,7 +16,8 @@ import YVECRV_ABI from '@yCRV/utils/abi/yveCRV.abi';
 import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
 import type {TDict} from '@yearn-finance/web-lib/types';
-import type {TYDaemonHarvests, TYearnVault} from '@common/types/yearn';
+import type {TVault} from '@yearn-finance/web-lib/types/vaults';
+import type {TYDaemonHarvests} from '@common/types/yearn';
 
 type THoldings = {
 	legacy: bigint;
@@ -213,8 +214,8 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 	** Compute the styCRV APY based on the experimental APY and the mega boost.
 	**************************************************************************/
 	const	styCRVAPY = useMemo((): number => {
-		return (toNumber((styCRVVault as TYearnVault)?.apy?.net_apy) * 100);
-		// return (((styCRVVault as TYearnVault)?.apy?.net_apy || 0) * 100) + (styCRVMegaBoost * 100);
+		return (toNumber((styCRVVault as TVault)?.apy?.net_apy) * 100);
+		// return (((styCRVVault as TVault)?.apy?.net_apy || 0) * 100) + (styCRVMegaBoost * 100);
 		// return (styCRVExperimentalAPY * 100) + (styCRVMegaBoost * 100);
 	}, [styCRVVault]);
 
