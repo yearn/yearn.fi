@@ -208,7 +208,7 @@ function GaugeList({gauges, gaugesVotes, isLoading, userInfo}: TProps): ReactEle
 				<GaugeListRow
 					key={GAUGE_ADDRESS}
 					gauge={gauge}
-					gaugeVotes={gaugesVotes[GAUGE_ADDRESS]}
+					gaugeVotes={toBigInt(gaugesVotes[GAUGE_ADDRESS])}
 					votesState={{votes, ...votesState}}
 					votesDispatch={votesDispatch}
 				/>

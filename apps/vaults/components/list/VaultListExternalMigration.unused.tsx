@@ -154,8 +154,8 @@ function	VaultListExternalMigration(): ReactElement {
 		balancesNonce; // remove warning, force deep refresh
 		const	migration: TMigrationTable[] = [];
 
-		Object.values(migrationTable || {}).forEach((possibleBowswapMigrations: TMigrationTable[]): void => {
-			for (const element of possibleBowswapMigrations) {
+		Object.values(migrationTable || {}).forEach((possibleBowswapMigrations): void => {
+			for (const element of possibleBowswapMigrations || []) {
 				if (isGreaterThanZero(balances[toAddress(element.tokenToMigrate)]?.raw)) {
 					migration.push(element);
 				}

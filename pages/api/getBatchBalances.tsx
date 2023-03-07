@@ -11,7 +11,7 @@ import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3
 import type {NextApiRequest, NextApiResponse} from 'next';
 import type {TWeb3Provider} from '@yearn-finance/web-lib/contexts/types';
 import type {TBalanceData} from '@yearn-finance/web-lib/hooks/types';
-import type {Maybe, TDict} from '@yearn-finance/web-lib/types';
+import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TUseBalancesTokens} from '@common/hooks/useBalances';
 
 type TPerformCall = {
@@ -23,7 +23,7 @@ async function getBatchBalances({
 	chainID,
 	address,
 	tokens
-}: TPerformCall): Promise<TDict<Maybe<TBalanceData>>> {
+}: TPerformCall): Promise<TDict<TBalanceData>> {
 	let	currentProvider: TWeb3Provider;
 	if (chainID === 1337) {
 		currentProvider = new JsonRpcProvider('http://localhost:8545');
@@ -31,7 +31,7 @@ async function getBatchBalances({
 		currentProvider = getProvider(chainID);
 	}
 	const	ethcallProvider = await newEthCallProvider(currentProvider);
-	const	data: TDict<Maybe<TBalanceData>> = {};
+	const	data: TDict<TBalanceData> = {};
 	const	chunks = [];
 	for (let i = 0; i < tokens.length; i += 5_000) {
 		chunks.push(tokens.slice(i, i + 5_000));
@@ -90,7 +90,7 @@ async function getBatchBalances({
 	return data;
 }
 
-export type TGetBatchBalancesResp = {balances: TDict<Maybe<TBalanceData>>, chainID: number};
+export type TGetBatchBalancesResp = {balances: TDict<TBalanceData>, chainID: number};
 export default async function handler(req: NextApiRequest, res: NextApiResponse<TGetBatchBalancesResp>): Promise<void> {
 	const	balances = await getBatchBalances({
 		chainID: toNumber(req.body.chainID, 1),

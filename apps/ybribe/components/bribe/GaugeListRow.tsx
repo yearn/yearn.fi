@@ -11,7 +11,7 @@ import {GaugeBribeModal} from '@yBribe/components/bribe/GaugeBribeModal';
 import {useBribes} from '@yBribe/contexts/useBribes';
 
 import type {ReactElement} from 'react';
-import type {TDict} from '@yearn-finance/web-lib/types';
+import type {Maybe, TDict} from '@yearn-finance/web-lib/types';
 import type {TCurveGauges} from '@common/types/curves';
 
 function	GaugeRowItemWithExtraData({address, value}: {address: string, value: bigint}): ReactElement {
@@ -106,11 +106,11 @@ function	GaugeListRow({currentGauge}: {currentGauge: TCurveGauges}): ReactElemen
 									{'-'}
 								</p>
 							</div>
-						) : currentRewardsForCurrentGaugeMap.map(([key, value]: [string, bigint]): ReactElement => (
+						) : currentRewardsForCurrentGaugeMap.map(([key, value]: [string, Maybe<bigint>]): ReactElement => (
 							<GaugeRowItemWithExtraData
 								key={`rewards-${currentGauge.gauge}-${key}`}
 								address={toAddress(key)}
-								value={value} />
+								value={toBigInt(value)} />
 						))
 					}
 				</div>
@@ -127,11 +127,11 @@ function	GaugeListRow({currentGauge}: {currentGauge: TCurveGauges}): ReactElemen
 									{'-'}
 								</p>
 							</div>
-						) : nextRewardsForCurrentGaugeMap.map(([key, value]: [string, bigint]): ReactElement => (
+						) : nextRewardsForCurrentGaugeMap.map(([key, value]: [string, Maybe<bigint>]): ReactElement => (
 							<GaugeRowItemWithExtraData
 								key={`rewards-${currentGauge.gauge}-${key}`}
 								address={toAddress(key)}
-								value={value} />
+								value={toBigInt(value)} />
 						))
 					}
 				</div>

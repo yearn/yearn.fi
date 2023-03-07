@@ -3,6 +3,7 @@ import Balancer from 'react-wrap-balancer';
 import useSWR from 'swr';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
+import {toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import SettingsOverwrite from '@common/components/SettingsOverwrite';
 import {GaugeListEmpty} from '@yBribe/components/bribe/GaugeListEmpty';
 import {RewardFeedTableHead} from '@yBribe/components/rewardFeed/RewardFeedTableHead';
@@ -13,7 +14,6 @@ import type {NextRouter} from 'next/router';
 import type {ReactElement, ReactNode} from 'react';
 import type {SWRResponse} from 'swr';
 import type {TYDaemonGaugeRewardsFeed} from '@common/types/yearn';
-import { toNumber } from '@yearn-finance/web-lib/utils/format.bigNumber';
 
 function	About(): ReactElement {
 	const {settings: baseAPISettings} = useSettings();

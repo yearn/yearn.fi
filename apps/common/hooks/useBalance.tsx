@@ -5,11 +5,11 @@ import {useWallet} from '@common/contexts/useWallet';
 import {VoidTBalanceData} from '@common/utils';
 
 import type {TBalanceData} from '@yearn-finance/web-lib/hooks/types';
-import type {Maybe, TAddress, TDict} from '@yearn-finance/web-lib/types';
+import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 
 function	useBalance(
 	address: string | TAddress,
-	source?: TDict<Maybe<TBalanceData>>
+	source?: TDict<TBalanceData>
 ): TBalanceData {
 	const	{balances, balancesNonce} = useWallet();
 

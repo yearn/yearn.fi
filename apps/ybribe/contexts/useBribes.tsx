@@ -193,18 +193,28 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 			if (toNumber(periodPerTokenPerGauge) >= currentPeriod) {
 				if (rewardListKey && isGreaterThanZero(rewardPerTokenPerGauge)) {
 					const	[gauge, token] = rewardListKey.split('_');
-					if (!_currentRewards[toAddress(gauge)]) {
+					if (!_currentRewards?.[toAddress(gauge)]) {
 						_currentRewards[toAddress(gauge)] = {};
 					}
-					if (!_periods[toAddress(gauge)]) {
+					if (!_periods?.[toAddress(gauge)]) {
 						_periods[toAddress(gauge)] = {};
 					}
 					if (!_claimable[toAddress(gauge)]) {
 						_claimable[toAddress(gauge)] = {};
 					}
-					_currentRewards[toAddress(gauge)][toAddress(token)] = rewardPerTokenPerGauge;
-					_periods[toAddress(gauge)][toAddress(token)] = periodPerTokenPerGauge;
-					_claimable[toAddress(gauge)][toAddress(token)] = claimablePerTokenPerGauge;
+
+					_currentRewards[toAddress(gauge)] = {
+						..._currentRewards[toAddress(gauge)],
+						[toAddress(token)]: rewardPerTokenPerGauge
+					};
+					_periods[toAddress(gauge)] = {
+						..._periods[toAddress(gauge)],
+						[toAddress(token)]: periodPerTokenPerGauge
+					};
+					_claimable[toAddress(gauge)] = {
+						..._claimable[toAddress(gauge)],
+						[toAddress(token)]: claimablePerTokenPerGauge
+					};
 				}
 			}
 		}
@@ -231,7 +241,10 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 				if (!_nextRewards[toAddress(gauge)]) {
 					_nextRewards[toAddress(gauge)] = {};
 				}
-				_nextRewards[toAddress(gauge)][toAddress(token)] = toBigInt(pendingForNextPeriod);
+				_nextRewards[toAddress(gauge)] = {
+					..._nextRewards[toAddress(gauge)],
+					[toAddress(token)]: toBigInt(pendingForNextPeriod)
+				};
 			}
 		}
 		set_nextRewards((c: TCurveGaugeVersionRewards): TCurveGaugeVersionRewards => ({...c, [version]: _nextRewards}));

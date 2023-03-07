@@ -2,29 +2,28 @@ import React, {createContext, memo, useCallback, useContext, useMemo} from 'reac
 import {migrationTable} from '@vaults/utils/migrationTable';
 import {useUI} from '@yearn-finance/web-lib/contexts/useUI';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {useBalances} from '@yearn-finance/web-lib/hooks/useBalances';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {useClientEffect} from '@yearn-finance/web-lib/hooks/useClientEffect';
 import {getProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import {useYearn} from '@common/contexts/useYearn';
+import {useBalances} from '@common/hooks/useBalances';
 
 import type {ReactElement} from 'react';
 import type {TBalanceData, TUseBalancesTokens} from '@yearn-finance/web-lib/hooks/types';
-import type {Maybe, TDict} from '@yearn-finance/web-lib/types';
-import type {TMigrationTable} from '@vaults/utils/migrationTable';
+import type {TDict} from '@yearn-finance/web-lib/types';
 
 export type	TWalletForExternalMigrations = {
-	balances: TDict<Maybe<TBalanceData>>,
+	balances: TDict<TBalanceData>,
 	balancesNonce: number,
 	isLoading: boolean,
-	refresh: () => Promise<TDict<Maybe<TBalanceData>>>
+	refresh: () => Promise<TDict<TBalanceData>>
 }
 
 const	defaultProps = {
 	balances: {},
 	balancesNonce: 0,
 	isLoading: true,
-	refresh: async (): Promise<TDict<Maybe<TBalanceData>>> => ({})
+	refresh: async (): Promise<TDict<TBalanceData>> => ({})
 };
 
 
@@ -41,8 +40,8 @@ export const WalletForExternalMigrationsApp = memo(function WalletForExternalMig
 
 	const	availableTokens = useMemo((): TUseBalancesTokens[] => {
 		const	tokens: TUseBalancesTokens[] = [];
-		Object.values(migrationTable || {}).forEach((possibleMigrations: TMigrationTable[]): void => {
-			for (const element of possibleMigrations) {
+		Object.values(migrationTable || {}).forEach((possibleMigrations): void => {
+			for (const element of possibleMigrations || []) {
 				tokens.push({token: element.tokenToMigrate});
 			}
 		});
@@ -56,7 +55,7 @@ export const WalletForExternalMigrationsApp = memo(function WalletForExternalMig
 		prices
 	});
 
-	const	onRefresh = useCallback(async (): Promise<TDict<Maybe<TBalanceData>>> => {
+	const	onRefresh = useCallback(async (): Promise<TDict<TBalanceData>> => {
 		const updatedBalances = await updateBalances();
 		return updatedBalances;
 	}, [updateBalances]);

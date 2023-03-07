@@ -4,7 +4,7 @@ import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {CRV_TOKEN_ADDRESS, CURVE_BRIBE_V3_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatToNormalizedValue, toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatToNormalizedValue, toBigInt, toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatPercent, formatUSD} from '@yearn-finance/web-lib/utils/format.number';
 import {isGreaterThanZero} from '@yearn-finance/web-lib/utils/isZero';
 import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
@@ -14,7 +14,7 @@ import {useBribes} from '@yBribe/contexts/useBribes';
 import {claimReward} from '@yBribe/utils/actions/claimReward';
 
 import type {ReactElement} from 'react';
-import type {TDict} from '@yearn-finance/web-lib/types';
+import type {Maybe, TDict} from '@yearn-finance/web-lib/types';
 import type {TCurveGauges} from '@common/types/curves';
 
 function	GaugeRowItemWithExtraData({
@@ -97,7 +97,7 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 	const	claimableForCurrentGaugeMap = Object.entries(claimableForCurrentGauge || {}) || [];
 	const	currentRewardsForCurrentGaugeMap = Object.entries(currentRewardsForCurrentGauge || {}) || [];
 	const	nextRewardsForCurrentGaugeMap = Object.entries(nextRewardsForCurrentGauge || {}) || [];
-	const	hasSomethingToClaim = claimableForCurrentGaugeMap.some(([, value]: [string, bigint]): boolean => isGreaterThanZero(value));
+	const	hasSomethingToClaim = claimableForCurrentGaugeMap.some(([, value]: [string, Maybe<bigint>]): boolean => isGreaterThanZero(value));
 
 	function	onClaimReward(token: string): void {
 		new Transaction(provider, claimReward, set_txStatusClaim).populate(
@@ -157,11 +157,11 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 											{'-'}
 										</p>
 									</div>
-								) : currentRewardsForCurrentGaugeMap.map(([key, value]: [string, bigint]): ReactElement => (
+								) : currentRewardsForCurrentGaugeMap.map(([key, value]: [string, Maybe<bigint>]): ReactElement => (
 									<GaugeRowItemWithExtraData
 										key={`current-rewards-${currentGauge.gauge}-${key}`}
 										address={toAddress(key)}
-										value={value} />
+										value={toBigInt(value)} />
 								))
 							}
 						</div>
@@ -177,11 +177,11 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 											{'-'}
 										</p>
 									</div>
-								) : nextRewardsForCurrentGaugeMap.map(([key, value]: [string, bigint]): ReactElement => (
+								) : nextRewardsForCurrentGaugeMap.map(([key, value]: [string, Maybe<bigint>]): ReactElement => (
 									<GaugeRowItemWithExtraData
 										key={`pending-rewards-${currentGauge.gauge}-${key}`}
 										address={toAddress(key)}
-										value={value} />
+										value={toBigInt(value)} />
 								))
 							}
 						</div>
@@ -200,11 +200,11 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 											{formatPercent(0)}
 										</p>
 									</div>
-								) : currentRewardsForCurrentGaugeMap.map(([key, value]: [string, bigint]): ReactElement => (
+								) : currentRewardsForCurrentGaugeMap.map(([key, value]: [string, Maybe<bigint>]): ReactElement => (
 									<GaugeRowItemAPR
 										key={`apr-${currentGauge.gauge}-${key}`}
 										address={toAddress(key)}
-										value={value} />
+										value={toBigInt(value)} />
 								))
 							}
 						</div>
@@ -217,11 +217,11 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 											{formatPercent(0)}
 										</p>
 									</div>
-								) : nextRewardsForCurrentGaugeMap.map(([key, value]: [string, bigint]): ReactElement => (
+								) : nextRewardsForCurrentGaugeMap.map(([key, value]: [string, Maybe<bigint>]): ReactElement => (
 									<GaugeRowItemAPR
 										key={`apr-${currentGauge.gauge}-${key}`}
 										address={toAddress(key)}
-										value={value} />
+										value={toBigInt(value)} />
 								))
 							}
 						</div>
@@ -242,11 +242,11 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 											{'-'}
 										</p>
 									</div>
-								) : claimableForCurrentGaugeMap.map(([key, value]: [string, bigint]): ReactElement => (
+								) : claimableForCurrentGaugeMap.map(([key, value]: [string, Maybe<bigint>]): ReactElement => (
 									<div key={`claimable-${currentGauge.gauge}-${key}`} className={'flex flex-col items-end space-y-2'}>
 										<GaugeRowItemWithExtraData
 											address={toAddress(key)}
-											value={value} />
+											value={toBigInt(value)} />
 										<div className={'block h-auto pt-0 md:hidden md:h-16 md:pt-7'}>
 											<Button
 												className={'yearn--button-smaller w-full'}
@@ -277,7 +277,7 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 										{'Claim'}
 									</Button>
 								</div>
-							) : currentRewardsForCurrentGaugeMap.map(([key]: [string, bigint]): ReactElement => (
+							) : currentRewardsForCurrentGaugeMap.map(([key]: [string, Maybe<bigint>]): ReactElement => (
 								<div key={`claim-${key}`} className={'h-14 pt-0'}>
 									<Button
 										className={'yearn--button-smaller w-full'}

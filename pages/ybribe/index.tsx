@@ -18,6 +18,7 @@ import Wrapper from '@yBribe/Wrapper';
 
 import type {NextRouter} from 'next/router';
 import type {ReactElement, ReactNode} from 'react';
+import type {Maybe} from '@yearn-finance/web-lib/types';
 import type {TCurveGauges} from '@common/types/curves';
 import type {TSortDirection} from '@common/types/types';
 
@@ -44,7 +45,7 @@ function	GaugeList(): ReactElement {
 		if (category === 'claimable') {
 			return gauges.filter((gauge): boolean => {
 				const currentClaimableMapV3 = Object.values(claimable?.v3?.[toAddress(gauge.gauge)] || {});
-				return currentClaimableMapV3.some((value: bigint): boolean => isGreaterThanZero(value));
+				return currentClaimableMapV3.some((value: Maybe<bigint>): boolean => isGreaterThanZero(value));
 			});
 		}
 		return gauges.filter((gauge): boolean => {
