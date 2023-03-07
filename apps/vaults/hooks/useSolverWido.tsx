@@ -1,12 +1,11 @@
 import {useCallback, useMemo, useRef, useState} from 'react';
-import {MaxUint256} from 'ethers';
 import {getTokenAllowance as wiGetTokenAllowance, getWidoSpender, quote as wiQuote} from 'wido';
 import {useAsync} from '@react-hookz/web';
 import {isSolverDisabled, Solver} from '@vaults/contexts/useSolver';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatBN, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {MaxUint256, toBigInt, toNormalizedBN, toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
@@ -14,8 +13,8 @@ import {approveERC20, isApprovedERC20} from '@common/utils/actions/approveToken'
 
 import type {AxiosError} from 'axios';
 import type {QuoteRequest, QuoteResult} from 'wido';
+import type {TNormalizedBN} from '@yearn-finance/web-lib/types';
 import type {TTxResponse, TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
-import type {TNormalizedBN} from '@common/types/types';
 import type {ApiError} from '@gnosis.pm/gp-v2-contracts';
 import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
 import type {TWidoResult} from '@vaults/types/solvers.wido';
@@ -34,14 +33,14 @@ function useWidoQuote(): [TWidoResult, (request: TInitSolverArgs, shouldPreventE
 			fromToken: toAddress(request.inputToken.value), // token to spend
 			toChainId: 1, // Chain Id of to token
 			toToken: toAddress(request.outputToken.value), // token to receive
-			amount: formatBN(request?.inputAmount || 0).toString(), // Token amount of from token
+			amount: request?.inputAmount.toString(), // Token amount of from token
 			slippagePercentage: zapSlippage / 100, // Acceptable max slippage for the swap
 			user: request.from // receiver
 		});
 
 		const canExecuteFetch = (
 			!(isZero(quoteRequest.user) || isZero(quoteRequest.fromToken) || isZero(quoteRequest.toToken))
-			&& !isZero(formatBN(request?.inputAmount || 0))
+			&& !isZero(request?.inputAmount)
 		);
 
 		if (canExecuteFetch) {
@@ -95,7 +94,7 @@ export function useSolverWido(): TSolverContext {
 		const quote = await getQuote(_request);
 		if (quote) {
 			latestQuote.current = quote;
-			return toNormalizedBN(quote?.minToTokenAmount || 0, request?.current?.outputToken?.decimals || 18);
+			return toNormalizedBN(toBigInt(quote?.minToTokenAmount), toNumber(request?.current?.outputToken?.decimals, 18));
 		}
 		return toNormalizedBN(0);
 	}, [getQuote]);
@@ -145,7 +144,7 @@ export function useSolverWido(): TSolverContext {
 		if (!latestQuote?.current?.minToTokenAmount || isSolverDisabled[Solver.WIDO]) {
 			return (toNormalizedBN(0));
 		}
-		return toNormalizedBN(latestQuote?.current?.minToTokenAmount, request?.current?.outputToken?.decimals || 18);
+		return toNormalizedBN(latestQuote?.current?.minToTokenAmount, toNumber(request?.current?.outputToken?.decimals, 18));
 	}, [latestQuote, request]);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -157,7 +156,7 @@ export function useSolverWido(): TSolverContext {
 			return toNormalizedBN(0);
 		}
 		const quoteResult = await getQuote(request, true);
-		return toNormalizedBN(formatBN(quoteResult?.minToTokenAmount), request.outputToken.decimals);
+		return toNormalizedBN(toBigInt(quoteResult?.minToTokenAmount), request.outputToken.decimals);
 	}, [getQuote]);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -191,15 +190,15 @@ export function useSolverWido(): TSolverContext {
 		if (!latestQuote?.current || !request?.current || isSolverDisabled[Solver.WIDO]) {
 			return;
 		}
-		const	widoSpenderAddress = toAddress(await getWidoSpender({
+		const	widoSpenderAddress = await getWidoSpender({
 			chainId: 1,
 			fromToken: toAddress(request.current.inputToken.value),
 			toToken: toAddress(request.current.outputToken.value)
-		}));
+		});
 		const	isApproved = await isApprovedERC20(
 			provider,
 			toAddress(request.current.inputToken.value), //token to approve
-			widoSpenderAddress, //contract to approve
+			toAddress(widoSpenderAddress), //contract to approve
 			amount
 		);
 		if (!isApproved) {

@@ -8,6 +8,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
 import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
 import {VEYFI_ADDRESS, VEYFI_POSITION_HELPER_ADDRESS, YFI_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {toBigInt, toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {toMilliseconds} from '@yearn-finance/web-lib/utils/time';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 
@@ -77,7 +78,7 @@ export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({chil
 			name,
 			symbol,
 			decimals,
-			supply,
+			supply: toBigInt(supply),
 			rewardPool
 		});
 	}, [provider]);
@@ -91,19 +92,25 @@ export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({chil
 		const ethcallProvider = await newEthCallProvider(currentProvider);
 		const veYFIPositionHelperContract = new Contract(VEYFI_POSITION_HELPER_ADDRESS, VEYFI_POSITION_HELPER_ABI);
 
-		const [positionDetails] = await ethcallProvider.tryAll([veYFIPositionHelperContract.getPositionDetails(address)]) as [{balance: bigint, depositAmount: bigint, unlockTime: bigint, penalty: bigint, withdrawable: bigint}];
+		const [positionDetails] = await ethcallProvider.tryAll([veYFIPositionHelperContract.getPositionDetails(address)]) as [{
+			balance: bigint,
+			depositAmount: bigint,
+			unlockTime: bigint,
+			penalty: bigint,
+			withdrawable: bigint
+		}];
 
 		const depositPosition: TPosition = {
-			balance: positionDetails.balance,
-			underlyingBalance: positionDetails.depositAmount
+			balance: toBigInt(positionDetails.balance),
+			underlyingBalance: toBigInt(positionDetails.depositAmount)
 		};
 
 		return {
 			deposit: depositPosition,
-			unlockTime: toMilliseconds(Number(positionDetails.unlockTime)),
-			penalty: positionDetails.penalty,
+			unlockTime: toMilliseconds(toNumber(positionDetails.unlockTime)),
+			penalty: toBigInt(positionDetails.penalty),
 			penaltyRatio: positionDetails.depositAmount > 0 ? FixedNumber.fromValue(positionDetails.penalty).divUnsafe(FixedNumber.fromValue(positionDetails.depositAmount)).toUnsafeFloat() : 0,
-			withdrawable: positionDetails.withdrawable
+			withdrawable: toBigInt(positionDetails.withdrawable)
 		};
 	}, [isActive, address, provider]);
 	const {data: positions, mutate: refreshPositions, isLoading: isLoadingPositions} = useSWR(isActive && provider ? 'positions' : null, positionsFetcher, {shouldRetryOnError: false});
@@ -118,9 +125,7 @@ export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({chil
 
 		const	[yfiAllowanceVeYFI] = await ethcallProvider.tryAll([yfiContract.allowance(address, VEYFI_ADDRESS)]) as bigint[];
 
-		return ({
-			[allowanceKey(YFI_ADDRESS, VEYFI_ADDRESS)]: yfiAllowanceVeYFI
-		});
+		return ({[allowanceKey(YFI_ADDRESS, VEYFI_ADDRESS)]: toBigInt(yfiAllowanceVeYFI)});
 	}, [isActive, address, provider]);
 	const	{data: allowances, mutate: refreshAllowances, isLoading: isLoadingAllowances} = useSWR(isActive && provider ? 'allowances' : null, allowancesFetcher, {shouldRetryOnError: false});
 

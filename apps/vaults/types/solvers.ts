@@ -1,6 +1,6 @@
-import type {TAddress} from '@yearn-finance/web-lib/types';
+import type {TAddress, TNormalizedBN} from '@yearn-finance/web-lib/types';
 import type {TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
-import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
+import type {TDropdownOption} from '@common/types/types';
 import type {Solver} from '@vaults/contexts/useSolver';
 
 /* 🔵 - Yearn Finance ******************************************************

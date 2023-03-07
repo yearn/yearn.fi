@@ -1,6 +1,6 @@
 import React, {useMemo} from 'react';
 import {toAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
-import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatToNormalizedValue, toBigInt, toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatUSD} from '@yearn-finance/web-lib/utils/format.number';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
@@ -18,11 +18,11 @@ function	RewardFeedRowItemWithExtraData({
 	const	{tokens, prices} = useYearn();
 
 	const	tokenInfo = tokens?.[address];
-	const	tokenPrice = Number(prices?.[address]) / 1000000;
-	const	decimals = tokenInfo?.decimals || 18;
 	const	symbol = tokenInfo?.symbol || '???';
-	const	bribeAmount = formatToNormalizedValue(formatBN(value), decimals);
-	const	bribeValue = bribeAmount * (Number(tokenPrice || 0));
+	const	decimals = toNumber(tokenInfo?.decimals, 18);
+	const	tokenPrice = toNumber(prices?.[address]) / 1000000;
+	const	bribeAmount = formatToNormalizedValue(value, decimals);
+	const	bribeValue = bribeAmount * toNumber(tokenPrice);
 
 	return (
 		<div className={'flex h-auto flex-col items-end'}>
@@ -83,7 +83,7 @@ function	RewardFeedTableRow({currentRewardAdded}: {currentRewardAdded: TYDaemonG
 			<div className={'col-span-1 flex h-20 w-full justify-end'}>
 				<div className={'flex flex-row pt-6'}>
 					<p className={'font-number items-baseline text-end text-sm leading-6 text-neutral-400'}>
-						{formatDate(Number(currentRewardAdded.timestamp) * 1000)}
+						{formatDate(toNumber(currentRewardAdded.timestamp) * 1000)}
 					</p>
 				</div>
 			</div>
@@ -93,7 +93,7 @@ function	RewardFeedTableRow({currentRewardAdded}: {currentRewardAdded: TYDaemonG
 					<label className={'block text-sm leading-6 text-neutral-400 md:hidden'}>{'Current Rewards per veCRV'}</label>
 					<RewardFeedRowItemWithExtraData
 						address={toAddress(currentRewardAdded.rewardToken)}
-						value={formatBN(currentRewardAdded.amount)} />
+						value={toBigInt(currentRewardAdded.amount)} />
 
 				</div>
 			</div>

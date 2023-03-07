@@ -7,7 +7,7 @@ import IconAddToMetamask from '@yearn-finance/web-lib/icons/IconAddToMetamask';
 import IconCross from '@yearn-finance/web-lib/icons/IconCross';
 import IconWallet from '@yearn-finance/web-lib/icons/IconWallet';
 import {toAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
-import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {useWallet} from '@common/contexts/useWallet';
@@ -16,7 +16,7 @@ import {useBalance} from '@common/hooks/useBalance';
 
 import type {ReactElement} from 'react';
 import type {TBalanceData} from '@yearn-finance/web-lib/hooks/types';
-import type {TAddress, TDict, TMetamaskInjectedProvider} from '@yearn-finance/web-lib/types';
+import type {Maybe, TAddress, TDict, TMetamaskInjectedProvider} from '@yearn-finance/web-lib/types';
 
 type TBalanceReminderElement = {
 	address: TAddress,
@@ -90,9 +90,9 @@ export default function BalanceReminderPopover(): ReactElement {
 	const	{address, ens, isActive, onDesactivate} = useWeb3();
 	const	{vaults} = useYearn();
 
-	const	nonNullBalances = useMemo((): TDict<TBalanceData> => {
-		const	nonNullBalances = Object.entries(balances).reduce((acc: TDict<TBalanceData>, [address, balance]): TDict<TBalanceData> => {
-			if (!isZero(formatBN(balance?.raw))) {
+	const	nonNullBalances = useMemo((): TDict<Maybe<TBalanceData>> => {
+		const	nonNullBalances = Object.entries(balances).reduce((acc: TDict<Maybe<TBalanceData>>, [address, balance]): TDict<Maybe<TBalanceData>> => {
+			if (!isZero(balance?.raw)) {
 				acc[toAddress(address)] = balance;
 			}
 			return acc;
@@ -106,8 +106,8 @@ export default function BalanceReminderPopover(): ReactElement {
 			if (currentVault) {
 				acc.push({
 					address: toAddress(address),
-					normalizedBalance: balance.normalized,
-					decimals: balance.decimals,
+					normalizedBalance: toNumber(balance?.normalized),
+					decimals: toNumber(balance?.decimals, 18),
 					symbol: currentVault.symbol
 				});
 			}

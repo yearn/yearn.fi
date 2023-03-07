@@ -1,6 +1,7 @@
 import {ethers} from 'ethers';
 import VAULT_FACTORY_ABI from '@vaults/utils/abi/vaultFactory.abi';
 import {VAULT_FACTORY_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {handleTx} from '@yearn-finance/web-lib/utils/web3/transaction';
 
 import type {TWeb3Provider} from '@yearn-finance/web-lib/contexts/types';
@@ -21,5 +22,5 @@ export async function	estimateGasForCreateNewVaultsAndStrategies(
 	gaugeAddress: TAddress
 ): Promise<bigint> {
 	const	contract = new ethers.Contract(VAULT_FACTORY_ADDRESS, VAULT_FACTORY_ABI, provider);
-	return await contract.createNewVaultsAndStrategies.estimateGas(gaugeAddress);
+	return toBigInt(await contract.createNewVaultsAndStrategies.estimateGas(gaugeAddress));
 }

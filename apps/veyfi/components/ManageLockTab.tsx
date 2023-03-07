@@ -9,7 +9,8 @@ import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatBN, formatUnits} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatUnits, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {isGreaterThanZero} from '@yearn-finance/web-lib/utils/isZero';
 import {fromWeeks, getTimeUntil, toSeconds, toTime, toWeeks} from '@yearn-finance/web-lib/utils/time';
 import {useWallet} from '@common/contexts/useWallet';
 
@@ -30,18 +31,18 @@ function ManageLockTab(): ReactElement {
 	const [extendLockTime, extendLockTimeStatus] = useTransaction(VotingEscrowActions.extendLockTime, onTxSuccess);
 	const [withdrawLocked, withdrawLockedStatus] = useTransaction(VotingEscrowActions.withdrawLocked, onTxSuccess);
 
-	const hasLockedAmount = formatBN(positions?.deposit?.balance) > 0;
-	const willExtendLock = formatBN(lockTime) > 0;
+	const hasLockedAmount = isGreaterThanZero(positions?.deposit?.balance);
+	const willExtendLock = isGreaterThanZero(lockTime);
+	const hasPenalty = isGreaterThanZero(positions?.penalty);
 	const timeUntilUnlock = positions?.unlockTime ? getTimeUntil(positions?.unlockTime) : undefined;
 	const weeksToUnlock = toWeeks(timeUntilUnlock);
 	const newUnlockTime = toTime(positions?.unlockTime) + fromWeeks(toTime(lockTime));
-	const hasPenalty = formatBN(positions?.penalty) > 0;
 
 	const votingPower = useMemo((): bigint => {
 		if(!positions?.deposit || !newUnlockTime) {
-			return formatBN(0);
+			return toBigInt(0);
 		}
-		return willExtendLock ? getVotingPower(positions?.deposit?.underlyingBalance, newUnlockTime) : formatBN(positions?.deposit?.balance);
+		return willExtendLock ? getVotingPower(positions?.deposit?.underlyingBalance, newUnlockTime) : toBigInt(positions?.deposit?.balance);
 	}, [positions?.deposit, newUnlockTime, willExtendLock]);
 
 	const {isValid: isValidLockTime, error: lockTimeError} = validateAmount({

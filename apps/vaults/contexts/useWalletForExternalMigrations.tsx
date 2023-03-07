@@ -10,21 +10,21 @@ import {useYearn} from '@common/contexts/useYearn';
 
 import type {ReactElement} from 'react';
 import type {TBalanceData, TUseBalancesTokens} from '@yearn-finance/web-lib/hooks/types';
-import type {TDict} from '@yearn-finance/web-lib/types';
+import type {Maybe, TDict} from '@yearn-finance/web-lib/types';
 import type {TMigrationTable} from '@vaults/utils/migrationTable';
 
 export type	TWalletForExternalMigrations = {
-	balances: TDict<TBalanceData>,
+	balances: TDict<Maybe<TBalanceData>>,
 	balancesNonce: number,
 	isLoading: boolean,
-	refresh: () => Promise<TDict<TBalanceData>>
+	refresh: () => Promise<TDict<Maybe<TBalanceData>>>
 }
 
 const	defaultProps = {
 	balances: {},
 	balancesNonce: 0,
 	isLoading: true,
-	refresh: async (): Promise<TDict<TBalanceData>> => ({})
+	refresh: async (): Promise<TDict<Maybe<TBalanceData>>> => ({})
 };
 
 
@@ -56,7 +56,7 @@ export const WalletForExternalMigrationsApp = memo(function WalletForExternalMig
 		prices
 	});
 
-	const	onRefresh = useCallback(async (): Promise<TDict<TBalanceData>> => {
+	const	onRefresh = useCallback(async (): Promise<TDict<Maybe<TBalanceData>>> => {
 		const updatedBalances = await updateBalances();
 		return updatedBalances;
 	}, [updateBalances]);

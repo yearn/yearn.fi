@@ -3,7 +3,7 @@ import {Button} from '@yearn-finance/web-lib/components/Button';
 import {Modal} from '@yearn-finance/web-lib/components/Modal';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatToNormalizedValue, toBigInt, toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatPercent, formatUSD} from '@yearn-finance/web-lib/utils/format.number';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useYearn} from '@common/contexts/useYearn';
@@ -19,10 +19,10 @@ function	GaugeRowItemWithExtraData({address, value}: {address: string, value: bi
 
 	const	tokenInfo = tokens?.[address];
 	const	tokenPrice = prices?.[address];
-	const	decimals = tokenInfo?.decimals || 18;
 	const	symbol = tokenInfo?.symbol || '???';
-	const	bribeAmount = formatToNormalizedValue(formatBN(value), decimals);
-	const	bribeValue = bribeAmount * (Number(tokenPrice || 0) / 100);
+	const	decimals = toNumber(tokenInfo?.decimals, 18);
+	const	bribeAmount = formatToNormalizedValue(value, decimals);
+	const	bribeValue = bribeAmount * toNumber(tokenPrice) / 100;
 
 	return (
 		<div className={'flex h-auto flex-col items-end pt-0 md:h-14'}>
@@ -52,7 +52,7 @@ function	GaugeListRow({currentGauge}: {currentGauge: TCurveGauges}): ReactElemen
 	}, [currentGauge.gauge, nextRewards]);
 
 	const	gaugeRelativeWeight = useMemo((): number => {
-		return formatToNormalizedValue(formatBN(currentGauge?.gauge_controller?.gauge_relative_weight), 18);
+		return formatToNormalizedValue(toBigInt(currentGauge?.gauge_controller?.gauge_relative_weight), 18);
 	}, [currentGauge]);
 
 	const	currentRewardsForCurrentGaugeMap = Object.entries(currentRewardsForCurrentGauge || {}) || [];

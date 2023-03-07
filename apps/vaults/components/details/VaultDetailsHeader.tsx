@@ -5,7 +5,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
-import {formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatPercent, formatUSD} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {copyToClipboard} from '@yearn-finance/web-lib/utils/helpers';
@@ -29,7 +29,7 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 
 	const	normalizedVaultEarned = useMemo((): number => (
 		formatToNormalizedValue(
-			(earned?.earned?.[toAddress(currentVault?.address)]?.unrealizedGains || '0'),
+			toBigInt(earned?.earned?.[toAddress(currentVault?.address)]?.unrealizedGains),
 			currentVault?.decimals
 		)
 	), [earned, currentVault]);
@@ -56,7 +56,7 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 						{`Total deposited, ${currentVault?.symbol || 'token'}`}
 					</p>
 					<b className={'font-number text-lg md:text-3xl'} suppressHydrationWarning>
-						{formatAmount(formatToNormalizedValue(currentVault?.tvl?.total_assets, currentVault?.decimals))}
+						{formatAmount(formatToNormalizedValue(toBigInt(currentVault?.tvl?.total_assets), currentVault?.decimals))}
 					</b>
 					<legend className={'font-number text-xxs text-neutral-600 md:text-xs'} suppressHydrationWarning>
 						{formatUSD(currentVault?.tvl?.tvl)}

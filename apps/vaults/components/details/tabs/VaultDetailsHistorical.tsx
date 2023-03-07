@@ -4,7 +4,7 @@ import useSWR from 'swr';
 import {getMessariSubgraphEndpoint} from '@vaults/utils';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatToNormalizedValue, toBigInt, toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
 import {graphFetcher} from '@common/utils';
 
@@ -44,9 +44,9 @@ function	VaultDetailsHistorical({currentVault, harvestData}: {currentVault: TYea
 		const	_messariMixedData = [...(messariMixedData?.vaultDailySnapshots || []) as {pricePerShare: string, totalValueLockedUSD: string, timestamp: string}[]];
 		return (
 			_messariMixedData?.map((elem): TMessariGraphData => ({
-				name: formatDate(Number(elem.timestamp) * 1000),
-				tvl: Number(elem.totalValueLockedUSD),
-				pps: formatToNormalizedValue(formatBN(elem.pricePerShare), currentVault.decimals)
+				name: formatDate(toNumber(elem.timestamp) * 1000),
+				tvl: toNumber(elem.totalValueLockedUSD),
+				pps: formatToNormalizedValue(toBigInt(elem.pricePerShare), currentVault.decimals)
 			}))
 		);
 	}, [currentVault.decimals, messariMixedData?.vaultDailySnapshots]);

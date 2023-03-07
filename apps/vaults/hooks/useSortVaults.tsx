@@ -1,6 +1,7 @@
 import {useCallback, useMemo} from 'react';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {useWallet} from '@common/contexts/useWallet';
 import {getVaultName} from '@common/utils';
 import {numberSort, stringSort} from '@common/utils/sort';
@@ -16,7 +17,7 @@ function	useSortVaults(
 	sortDirection: TSortDirection
 ): TYearnVault[] {
 	const	{balances, balancesNonce} = useWallet();
-	
+
 	const	sortedByName = useCallback((): TYearnVault[] => (
 		vaultList.sort((a, b): number => stringSort({a: getVaultName(a), b: getVaultName(b), sortDirection}))
 	), [sortDirection, vaultList]);
@@ -42,10 +43,10 @@ function	useSortVaults(
 
 	const	sortedByAvailable = useCallback((): TYearnVault[] => {
 		balancesNonce; // remove warning, force deep refresh
-		const	chainCoinBalance = balances[ETH_TOKEN_ADDRESS]?.normalized || 0;
+		const	chainCoinBalance = toNumber(balances[ETH_TOKEN_ADDRESS]?.normalized);
 		return vaultList.sort((a, b): number => {
-			let	aBalance = (balances[toAddress(a.token.address)]?.normalized || 0);
-			let	bBalance = (balances[toAddress(b.token.address)]?.normalized || 0);
+			let	aBalance = toNumber(balances[toAddress(a.token.address)]?.normalized);
+			let	bBalance = toNumber(balances[toAddress(b.token.address)]?.normalized);
 			if ([WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS].includes(toAddress(a.token.address))) {
 				aBalance += chainCoinBalance;
 			} else if ([WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS].includes(toAddress(b.token.address))) {
@@ -84,7 +85,7 @@ function	useSortVaults(
 		return sortResult;
 	}, [sortBy, sortDirection, sortedByAPY, sortedByAvailable, sortedByDeposited, sortedByName, sortedByTVL, stringifiedVaultList]);
 
-	return (sortedVaults);	
+	return (sortedVaults);
 }
 
 export {useSortVaults};

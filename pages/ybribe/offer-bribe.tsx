@@ -4,7 +4,7 @@ import Link from 'next/link';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useSessionStorage} from '@yearn-finance/web-lib/hooks/useSessionStorage';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatBN, formatToNormalizedValue, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatToNormalizedValue, toNumber, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import ListHead from '@common/components/ListHead';
 import ListHero from '@common/components/ListHero';
 import {useCurve} from '@common/contexts/useCurve';
@@ -33,9 +33,9 @@ function	GaugeList(): ReactElement {
 	const	getRewardValue = useCallback((address: string, value: bigint): number => {
 		const	tokenInfo = tokens?.[address];
 		const	tokenPrice = prices?.[address];
-		const	decimals = tokenInfo?.decimals || 18;
-		const	bribeAmount = formatToNormalizedValue(formatBN(value), decimals);
-		const	bribeValue = bribeAmount * (Number(tokenPrice || 0) / 100);
+		const	decimals = toNumber(tokenInfo?.decimals, 18);
+		const	bribeAmount = formatToNormalizedValue(value, decimals);
+		const	bribeValue = bribeAmount * toNumber(tokenPrice) / 100;
 		return bribeValue;
 	}, [prices, tokens]);
 

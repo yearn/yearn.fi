@@ -5,13 +5,13 @@ import {JsonRpcProvider} from 'ethers';
 import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatToNormalizedValue, toBigInt, toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 
 import type {NextApiRequest, NextApiResponse} from 'next';
 import type {TWeb3Provider} from '@yearn-finance/web-lib/contexts/types';
 import type {TBalanceData} from '@yearn-finance/web-lib/hooks/types';
-import type {TDict} from '@yearn-finance/web-lib/types';
+import type {Maybe, TDict} from '@yearn-finance/web-lib/types';
 import type {TUseBalancesTokens} from '@common/hooks/useBalances';
 
 type TPerformCall = {
@@ -23,7 +23,7 @@ async function getBatchBalances({
 	chainID,
 	address,
 	tokens
-}: TPerformCall): Promise<TDict<TBalanceData>> {
+}: TPerformCall): Promise<TDict<Maybe<TBalanceData>>> {
 	let	currentProvider: TWeb3Provider;
 	if (chainID === 1337) {
 		currentProvider = new JsonRpcProvider('http://localhost:8545');
@@ -31,7 +31,7 @@ async function getBatchBalances({
 		currentProvider = getProvider(chainID);
 	}
 	const	ethcallProvider = await newEthCallProvider(currentProvider);
-	const	data: TDict<TBalanceData> = {};
+	const	data: TDict<Maybe<TBalanceData>> = {};
 	const	chunks = [];
 	for (let i = 0; i < tokens.length; i += 5_000) {
 		chunks.push(tokens.slice(i, i + 5_000));
@@ -61,24 +61,24 @@ async function getBatchBalances({
 		}
 
 		try {
-			const	results = await ethcallProvider.tryAll(calls);
+			const results = await ethcallProvider.tryAll(calls);
 
 			let		rIndex = 0;
 			for (const element of chunkTokens) {
-				const	{token} = element;
-				const	balanceOf = results[rIndex++] as bigint;
-				const	decimals = results[rIndex++] as number;
+				const {token} = element;
+				const balanceOf = toBigInt(results[rIndex++] as bigint);
+				const decimals = toNumber(results[rIndex++] as number);
 				let symbol = results[rIndex++] as string;
 
 				if (toAddress(token) === ETH_TOKEN_ADDRESS) {
 					symbol = 'ETH';
 				}
 				data[toAddress(token)] = {
-					decimals: Number(decimals),
+					decimals: decimals,
 					symbol: symbol,
 					raw: balanceOf,
-					rawPrice: formatBN(0),
-					normalized: formatToNormalizedValue(balanceOf, Number(decimals)),
+					rawPrice: toBigInt(0),
+					normalized: formatToNormalizedValue(balanceOf, decimals),
 					normalizedPrice: 0,
 					normalizedValue: 0
 				};
@@ -90,10 +90,10 @@ async function getBatchBalances({
 	return data;
 }
 
-export type TGetBatchBalancesResp = {balances: TDict<TBalanceData>, chainID: number};
+export type TGetBatchBalancesResp = {balances: TDict<Maybe<TBalanceData>>, chainID: number};
 export default async function handler(req: NextApiRequest, res: NextApiResponse<TGetBatchBalancesResp>): Promise<void> {
 	const	balances = await getBatchBalances({
-		chainID: Number(req.body.chainID),
+		chainID: toNumber(req.body.chainID, 1),
 		address: req.body.address as string,
 		tokens: req.body.tokens as unknown as TUseBalancesTokens[]
 	});

@@ -25,7 +25,7 @@ function	VaultDetailsQuickActionsTo(): ReactElement {
 						{isDepositing ? 'To vault' : 'To wallet'}
 					</label>
 					<legend className={'font-number inline text-xs text-neutral-600 md:hidden'} suppressHydrationWarning>
-						{`APY ${formatPercent((currentVault?.apy?.net_apy || 0) * 100, 2, 2, 500)}`}
+						{`APY ${formatPercent((currentVault?.apy?.net_apy) * 100, 2, 2, 500)}`}
 					</legend>
 				</div>
 				{isActive && !isDepositing && possibleOptionsTo.length > 1 ? (
@@ -48,7 +48,7 @@ function	VaultDetailsQuickActionsTo(): ReactElement {
 				)}
 				<legend className={'font-number hidden text-xs text-neutral-600 md:inline'} suppressHydrationWarning>
 					{isDepositing ? (
-						formatPercent((currentVault?.apy?.net_apy || 0) * 100, 2, 2, 500)
+						formatPercent((currentVault?.apy?.net_apy) * 100, 2, 2, 500)
 					) : ''}
 				</legend>
 			</div>
@@ -77,7 +77,7 @@ function	VaultDetailsQuickActionsTo(): ReactElement {
 					</div>
 				</div>
 				<legend className={'font-number mr-1 text-end text-xs text-neutral-600 md:mr-0 md:text-start'}>
-					{formatCounterValue(expectedOut?.normalized || 0, selectedOptionToPricePerToken)}
+					{formatCounterValue(expectedOut?.normalized, selectedOptionToPricePerToken)}
 				</legend>
 			</div>
 		</section>

@@ -1,4 +1,4 @@
-import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {toNormalizedBN, toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
 
 import type {TSortDirection} from '@common/types/types';
 
@@ -11,5 +11,5 @@ export const numberSort = ({a, b, sortDirection}: {a?: number; b?: number; sortD
 );
 
 export const bigNumberSort = ({a, b, sortDirection}: {a: bigint; b: bigint; sortDirection: TSortDirection}): number => (
-	Number(toNormalizedBN(sortDirection === 'desc' ? b - a : a - b).normalized)
+	toNumber(toNormalizedBN(sortDirection === 'desc' ? b - a : a - b).normalized)
 );

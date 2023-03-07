@@ -1,6 +1,6 @@
 import React, {useMemo} from 'react';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {HeroTimer} from '@common/components/HeroTimer';
 import {Tabs} from '@common/components/Tabs';
 import {useCurve} from '@common/contexts/useCurve';
@@ -17,7 +17,6 @@ import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
 import type {TDict} from '@yearn-finance/web-lib/types';
 
-
 function Vote(): ReactElement {
 	const {isActive} = useWeb3();
 	const {initialData: {nextPeriod, userInfo, getVotesUnpacked}} = useVLyCRV();
@@ -29,7 +28,7 @@ function Vote(): ReactElement {
 
 	const {balance, lastVoteTime, votesSpent} = userInfo;
 	const totalVotes = formatToNormalizedValue(balance);
-	const remainingVotesForThisPeriod = formatToNormalizedValue(balance - votesSpent);
+	const remainingVotesForThisPeriod = formatToNormalizedValue(toBigInt(balance) - toBigInt(votesSpent));
 
 	const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 	const timeLeft = computeTimeLeft({endTime: nextPeriod});

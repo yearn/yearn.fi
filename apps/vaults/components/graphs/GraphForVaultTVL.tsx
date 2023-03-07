@@ -10,7 +10,7 @@ export type TGraphForVaultTVLProps = {
 	height?: number,
 }
 
-function	GraphForVaultTVL({messariData, height = 312}: TGraphForVaultTVLProps): ReactElement {	
+function	GraphForVaultTVL({messariData, height = 312}: TGraphForVaultTVLProps): ReactElement {
 	if (messariData?.length === 0) {
 		return <Fragment />;
 	}
@@ -25,7 +25,7 @@ function	GraphForVaultTVL({messariData, height = 312}: TGraphForVaultTVLProps): 
 					type={'step'}
 					strokeWidth={2}
 					dataKey={'tvl'}
-					stroke={'currentcolor'} 
+					stroke={'currentcolor'}
 					dot={false}
 					activeDot={(e): ReactElement => {
 						e.className = `${e.className} activeDot`;
@@ -37,7 +37,7 @@ function	GraphForVaultTVL({messariData, height = 312}: TGraphForVaultTVLProps): 
 				<YAxis
 					orientation={'right'}
 					domain={['dataMin', 'auto']}
-					hide={false} 
+					hide={false}
 					tick={(e): ReactElement => {
 						const {payload: {value}} = e;
 						e.fill = '#5B5B5B';
@@ -63,7 +63,7 @@ function	GraphForVaultTVL({messariData, height = 312}: TGraphForVaultTVLProps): 
 									<div className={'flex flex-row items-center justify-between'}>
 										<p className={'text-xs text-neutral-600'}>{'TVL'}</p>
 										<b className={'font-number text-xs font-bold text-neutral-900'}>
-											{`${formatAmount(Number(value))} $`}
+											{`${formatAmount(Number(value || 0))} $`}
 										</b>
 									</div>
 								</div>

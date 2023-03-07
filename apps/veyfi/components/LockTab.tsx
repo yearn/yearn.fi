@@ -9,9 +9,10 @@ import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatBN, formatUnits, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatUnits, toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
+import {isGreaterThanZero} from '@yearn-finance/web-lib/utils/isZero';
 import {fromWeeks, getTimeUntil, toSeconds, toTime, toWeeks} from '@yearn-finance/web-lib/utils/time';
 import {AmountInput} from '@common/components/AmountInput';
 import {useWallet} from '@common/contexts/useWallet';
@@ -36,14 +37,19 @@ function LockTab(): ReactElement {
 	const [lock, lockStatus] = useTransaction(VotingEscrowActions.lock, onTxSuccess);
 	const [increaseLockAmount, increaseLockAmountStatus] = useTransaction(VotingEscrowActions.increaseLockAmount, onTxSuccess);
 
-	const hasLockedAmount = formatBN(positions?.deposit?.balance) > 0;
+	const hasLockedAmount = isGreaterThanZero(positions?.deposit?.balance);
 
 	const unlockTime = useMemo((): TMilliseconds => {
 		return positions?.unlockTime || Date.now() + fromWeeks(toTime(lockTime));
 	}, [positions?.unlockTime, lockTime]);
 
 	const votingPower = useMemo((): bigint => {
-		return getVotingPower(formatBN(positions?.deposit?.underlyingBalance) + lockAmount.raw, unlockTime);
+		return (
+			getVotingPower(
+				toBigInt(positions?.deposit?.underlyingBalance) + toBigInt(lockAmount.raw),
+				unlockTime
+			)
+		);
 	}, [positions?.deposit?.underlyingBalance, lockAmount, unlockTime]);
 
 	useEffect((): void => {
@@ -86,13 +92,24 @@ function LockTab(): ReactElement {
 		: hasLockedAmount
 			? {
 				label: 'Lock',
-				onAction: async (): Promise<TTxResponse> => increaseLockAmount(provider, toAddress(address), toAddress(votingEscrow?.address), lockAmount.raw),
+				onAction: async (): Promise<TTxResponse> => increaseLockAmount(
+					provider,
+					toAddress(address),
+					toAddress(votingEscrow?.address),
+					lockAmount.raw
+				),
 				isLoading: increaseLockAmountStatus.loading,
 				isDisabled: isLockDisabled
 			}
 			: {
 				label: 'Lock',
-				onAction: async (): Promise<TTxResponse> => lock(provider, toAddress(address), toAddress(votingEscrow?.address), lockAmount.raw, toSeconds(unlockTime)),
+				onAction: async (): Promise<TTxResponse> => lock(
+					provider,
+					toAddress(address),
+					toAddress(votingEscrow?.address),
+					lockAmount.raw,
+					toSeconds(unlockTime)
+				),
 				isLoading: lockStatus.loading,
 				isDisabled: isLockDisabled
 			};

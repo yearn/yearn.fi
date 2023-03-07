@@ -1,5 +1,4 @@
 import {ethers} from 'ethers';
-import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {handleTx} from '@yearn-finance/web-lib/utils/web3/transaction';
 
 import VEYFI_ABI from '../abi/veYFI.abi';
@@ -63,7 +62,7 @@ export async function withdrawUnlocked(
 	const signer = await provider.getSigner(accountAddress);
 	const votingEscrowContract = new ethers.Contract(votingEscrowAddress, VEYFI_ABI, signer);
 	const {penalty} = await votingEscrowContract.withdraw.staticCall();
-	if (formatBN(penalty) > 0) {
+	if (penalty > 0) {
 		throw new Error('Tokens are not yet unlocked');
 	}
 	return await handleTx(votingEscrowContract.withdraw());

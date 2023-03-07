@@ -7,7 +7,7 @@ import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
 import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
 import {CRV_TOKEN_ADDRESS, CVXCRV_TOKEN_ADDRESS, LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, VECRV_ADDRESS, VECRV_YEARN_TREASURY_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YCRV_TOKEN_ADDRESS, YVBOOST_TOKEN_ADDRESS, YVECRV_POOL_LP_ADDRESS, YVECRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
-import {formatUnits, WeiPerEther, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatUnits, toBigInt, toNumber, WeiPerEther, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import CURVE_CRV_YCRV_LP_ABI from '@yCRV/utils/abi/curveCrvYCrvLp.abi';
 import STYCRV_ABI from '@yCRV/utils/abi/styCRV.abi';
@@ -122,15 +122,15 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 		]) as [bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint];
 
 		return ({
-			['legacy']: yveCRVTotalSupply - yveCRVInYCRV,
-			['treasury']: veCRVBalance - yveCRVTotalSupply - yveCRVInYCRV - yCRVTotalSupply,
-			['yCRVSupply']: yCRVTotalSupply,
-			['styCRVSupply']: styCRVTotalSupply,
-			['lpyCRVSupply']: lpyCRVTotalSupply,
-			['crvYCRVPeg']: crvYCRVPeg,
-			['boostMultiplier']: veCRVBalance * BigInt(1e4) / styCRVTotalSupply,
-			['veCRVTotalSupply']: veCRVTotalSupply,
-			['veCRVBalance']: veCRVBalance
+			['legacy']: toBigInt(yveCRVTotalSupply - yveCRVInYCRV),
+			['treasury']: toBigInt(veCRVBalance - yveCRVTotalSupply - yveCRVInYCRV - yCRVTotalSupply),
+			['yCRVSupply']: toBigInt(yCRVTotalSupply),
+			['styCRVSupply']: toBigInt(styCRVTotalSupply),
+			['lpyCRVSupply']: toBigInt(lpyCRVTotalSupply),
+			['crvYCRVPeg']: toBigInt(crvYCRVPeg),
+			['boostMultiplier']: toBigInt(veCRVBalance * BigInt(1e4) / styCRVTotalSupply),
+			['veCRVTotalSupply']: toBigInt(veCRVTotalSupply),
+			['veCRVBalance']: toBigInt(veCRVBalance)
 		});
 	}, [provider]);
 	const	{data: holdings} = useSWR('numbers', numbersFetchers, {shouldRetryOnError: false});
@@ -178,17 +178,17 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 
 		return ({
 			// YCRV ECOSYSTEM
-			[allowanceKey(YCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS)]: yCRVAllowanceZap,
-			[allowanceKey(STYCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS)]: styCRVAllowanceZap,
-			[allowanceKey(LPYCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS)]: lpyCRVAllowanceZap,
-			[allowanceKey(CVXCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS)]: cvxCRVAllowanceZap,
-			[allowanceKey(YCRV_CURVE_POOL_ADDRESS, LPYCRV_TOKEN_ADDRESS)]: yCRVPoolAllowanceVault,
+			[allowanceKey(YCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS)]: toBigInt(yCRVAllowanceZap),
+			[allowanceKey(STYCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS)]: toBigInt(styCRVAllowanceZap),
+			[allowanceKey(LPYCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS)]: toBigInt(lpyCRVAllowanceZap),
+			[allowanceKey(CVXCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS)]: toBigInt(cvxCRVAllowanceZap),
+			[allowanceKey(YCRV_CURVE_POOL_ADDRESS, LPYCRV_TOKEN_ADDRESS)]: toBigInt(yCRVPoolAllowanceVault),
 			// CRV ECOSYSTEM
-			[allowanceKey(YVECRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS)]: yveCRVAllowanceZap,
-			[allowanceKey(CRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS)]:  crvAllowanceZap,
-			[allowanceKey(YVBOOST_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS)]: yvBoostAllowanceZap,
-			[allowanceKey(YVECRV_TOKEN_ADDRESS, YVECRV_POOL_LP_ADDRESS)]: yveCRVAllowanceLP,
-			[allowanceKey(CRV_TOKEN_ADDRESS, YVECRV_POOL_LP_ADDRESS)]:  crvAllowanceLP
+			[allowanceKey(YVECRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS)]: toBigInt(yveCRVAllowanceZap),
+			[allowanceKey(CRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS)]:  toBigInt(crvAllowanceZap),
+			[allowanceKey(YVBOOST_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS)]: toBigInt(yvBoostAllowanceZap),
+			[allowanceKey(YVECRV_TOKEN_ADDRESS, YVECRV_POOL_LP_ADDRESS)]: toBigInt(yveCRVAllowanceLP),
+			[allowanceKey(CRV_TOKEN_ADDRESS, YVECRV_POOL_LP_ADDRESS)]:  toBigInt(crvAllowanceLP)
 		});
 	}, [provider, address, isActive]);
 	const	{data: allowances} = useSWR(isActive && provider ? 'allowances' : null, getAllowances, {shouldRetryOnError: false});
@@ -204,7 +204,7 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 		const	fromDonatorPerWeek = 30_000;
 		const	fromDonatorPerYear = fromDonatorPerWeek * 52;
 		const	fromDonatorPerYearScaled = fromDonatorPerYear * 0.9;
-		const	humanizedStyCRVSupply = Number(formatUnits(holdings.styCRVSupply, 18));
+		const	humanizedStyCRVSupply = toNumber(formatUnits(holdings.styCRVSupply, 18));
 		const	megaBoostAPR = fromDonatorPerYearScaled / humanizedStyCRVSupply;
 		return megaBoostAPR;
 	}, [holdings]);
@@ -213,7 +213,7 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 	** Compute the styCRV APY based on the experimental APY and the mega boost.
 	**************************************************************************/
 	const	styCRVAPY = useMemo((): number => {
-		return (((styCRVVault as TYearnVault)?.apy?.net_apy || 0) * 100);
+		return (toNumber((styCRVVault as TYearnVault)?.apy?.net_apy) * 100);
 		// return (((styCRVVault as TYearnVault)?.apy?.net_apy || 0) * 100) + (styCRVMegaBoost * 100);
 		// return (styCRVExperimentalAPY * 100) + (styCRVMegaBoost * 100);
 	}, [styCRVVault]);

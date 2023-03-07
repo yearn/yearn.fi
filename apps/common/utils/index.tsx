@@ -1,11 +1,11 @@
-import {formatUnits, parseUnits} from 'ethers';
 import {request} from 'graphql-request';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {LPYCRV_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YVBOOST_TOKEN_ADDRESS, YVECRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatToNormalizedValue, formatUnits, parseUnits, toBigInt, toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 
 import type {GraphQLResponse} from 'graphql-request/build/esm/types';
+import type {TBalanceData} from '@yearn-finance/web-lib/hooks/types';
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TYearnVault} from '@common/types/yearn';
 
@@ -53,9 +53,9 @@ export function getAmountWithSlippage(from: string, to: string, value: bigint, s
 	const	isDirectDeposit = (toAddress(from) === YCRV_CURVE_POOL_ADDRESS || toAddress(to) === LPYCRV_TOKEN_ADDRESS);
 
 	if (hasLP && !isDirectDeposit) {
-		const minAmountStr = Number(formatUnits(formatBN(value), 18));
+		const minAmountStr = toNumber(formatUnits(value, 18));
 		const minAmountWithSlippage = parseUnits((minAmountStr * (1 - (slippage / 100))).toFixed(18), 18);
-		return formatToNormalizedValue(formatBN(minAmountWithSlippage), 18);
+		return formatToNormalizedValue(minAmountWithSlippage, 18);
 	}
 	return formatToNormalizedValue(value, 18);
 }
@@ -82,3 +82,13 @@ export function	formatDateShort(value: number): string {
 
 	return (new Intl.DateTimeFormat([locale, 'en-US'], {year: 'numeric', month: 'short', day: '2-digit'}).format(value));
 }
+
+export const VoidTBalanceData: TBalanceData = {
+	raw: toBigInt(0),
+	rawPrice: toBigInt(0),
+	symbol: '',
+	decimals: 0,
+	normalized: 0,
+	normalizedPrice: 0,
+	normalizedValue: 0
+};

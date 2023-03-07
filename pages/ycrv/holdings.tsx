@@ -1,6 +1,6 @@
 import React, {Fragment, useCallback, useMemo} from 'react';
 import {LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatBN, formatToNormalizedValue, WeiPerEther} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatToNormalizedValue, toBigInt, toNumber, WeiPerEther} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue, formatCounterValueRaw} from '@yearn-finance/web-lib/utils/format.value';
 import ValueAnimation from '@common/components/ValueAnimation';
@@ -77,10 +77,10 @@ function	Holdings(): ReactElement {
 	const balanceOfLpyCRV = useBalance(LPYCRV_TOKEN_ADDRESS);
 
 	const	formatBigNumberOver10K = useCallback((v: bigint): string => {
-		if (formatBN(v) > (WeiPerEther * 10000n)) {
-			return formatAmount(formatToNormalizedValue(v || 0, 18), 0, 0);
+		if (toBigInt(v) > toBigInt(WeiPerEther * 10000n)) {
+			return formatAmount(formatToNormalizedValue(v, 18), 0, 0);
 		}
-		return formatAmount(formatToNormalizedValue(v || 0, 18));
+		return formatAmount(formatToNormalizedValue(v, 18));
 	}, []);
 
 	const	formatNumberOver10K = useCallback((v: number): string => {
@@ -94,20 +94,20 @@ function	Holdings(): ReactElement {
 		if (curveWeeklyFees?.weeklyFeesTable?.[0]?.rawFees > 0) {
 			return curveWeeklyFees.weeklyFeesTable[0].rawFees;
 		}
-		return curveWeeklyFees?.weeklyFeesTable?.[1]?.rawFees || 0;
+		return toNumber(curveWeeklyFees?.weeklyFeesTable?.[1]?.rawFees);
 
 	}, [curveWeeklyFees]);
 
 	const	currentVeCRVAPY = useMemo((): number => {
 		return (
 			latestCurveFeesValue / (
-				formatToNormalizedValue(formatBN(holdings?.veCRVTotalSupply), 18) * cgPrices?.['curve-dao-token']?.usd
+				formatToNormalizedValue(holdings.veCRVTotalSupply, 18) * cgPrices?.['curve-dao-token']?.usd
 			) * 52 * 100
 		);
 	}, [holdings, latestCurveFeesValue, cgPrices]);
 
 	const	curveAdminFeePercent = useMemo((): number => {
-		return (currentVeCRVAPY * Number(holdings?.boostMultiplier) / 10000);
+		return (currentVeCRVAPY * toNumber(holdings?.boostMultiplier) / 10000);
 	}, [holdings, currentVeCRVAPY]);
 
 	return (
@@ -147,7 +147,7 @@ function	Holdings(): ReactElement {
 							<p
 								suppressHydrationWarning
 								className={'text-lg text-neutral-500'}>
-								{`(Price = $${(formatAmount(ycrvPrice || 0))} | Peg = ${(
+								{`(Price = $${(formatAmount(ycrvPrice))} | Peg = ${(
 									holdings?.crvYCRVPeg ? (formatPercent(
 										(formatToNormalizedValue(holdings?.crvYCRVPeg, 18) + 0.0015) * 100)
 									): formatPercent(0)
@@ -206,7 +206,7 @@ function	Holdings(): ReactElement {
 								<p
 									suppressHydrationWarning
 									className={'font-number text-base text-neutral-900'}>
-									{formatNumberOver10K(balances[STYCRV_TOKEN_ADDRESS]?.normalized || 0)}
+									{formatNumberOver10K(toNumber(balances[STYCRV_TOKEN_ADDRESS]?.normalized))}
 								</p>
 								<p
 									suppressHydrationWarning
@@ -257,7 +257,7 @@ function	Holdings(): ReactElement {
 								<p
 									suppressHydrationWarning
 									className={'font-number text-base text-neutral-900'}>
-									{formatNumberOver10K(balances[LPYCRV_TOKEN_ADDRESS]?.normalized || 0)}
+									{formatNumberOver10K(toNumber(balances[LPYCRV_TOKEN_ADDRESS]?.normalized))}
 								</p>
 								<p
 									suppressHydrationWarning
@@ -318,7 +318,7 @@ function	Holdings(): ReactElement {
 						<p
 							suppressHydrationWarning
 							className={'font-number text-sm text-neutral-400 md:text-base'}>
-							{`∙ ${curveAdminFeePercent ? formatPercent(curveAdminFeePercent) : formatPercent(0)} Curve Admin Fees (${formatAmount(Number(holdings?.boostMultiplier) / 10000)}x boost)`}
+							{`∙ ${curveAdminFeePercent ? formatPercent(curveAdminFeePercent) : formatPercent(0)} Curve Admin Fees (${formatAmount(toNumber(holdings?.boostMultiplier) / 10000)}x boost)`}
 						</p>
 						<p
 							suppressHydrationWarning

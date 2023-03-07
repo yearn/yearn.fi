@@ -4,8 +4,9 @@ import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {CRV_TOKEN_ADDRESS, CURVE_BRIBE_V3_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatToNormalizedValue, toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatPercent, formatUSD} from '@yearn-finance/web-lib/utils/format.number';
+import {isGreaterThanZero} from '@yearn-finance/web-lib/utils/isZero';
 import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useYearn} from '@common/contexts/useYearn';
@@ -24,11 +25,11 @@ function	GaugeRowItemWithExtraData({
 	const	{tokens, prices} = useYearn();
 
 	const	tokenInfo = tokens?.[address];
-	const	tokenPrice = Number(prices?.[address]) / 1000000;
-	const	decimals = tokenInfo?.decimals || 18;
 	const	symbol = tokenInfo?.symbol || '???';
-	const	bribeAmount = formatToNormalizedValue(formatBN(value), decimals);
-	const	bribeValue = bribeAmount * (Number(tokenPrice || 0));
+	const	decimals = toNumber(tokenInfo?.decimals, 18);
+	const	tokenPrice = toNumber(prices?.[address]) / 1000000;
+	const	bribeAmount = formatToNormalizedValue(value, decimals);
+	const	bribeValue = bribeAmount * toNumber(tokenPrice);
 
 	return (
 		<div className={'flex h-auto flex-col items-end pt-0 md:h-14'}>
@@ -48,18 +49,18 @@ function	GaugeRowItemAPR({address, value}: {address: string, value: bigint}): Re
 	const	{tokens, prices} = useYearn();
 
 	const	crvPrice = useMemo((): number => {
-		const	tokenPrice = Number(prices?.[CRV_TOKEN_ADDRESS] || 0);
+		const	tokenPrice = toNumber(prices?.[CRV_TOKEN_ADDRESS]);
 		return tokenPrice;
 	}, [prices]);
 
 	const	tokenPrice = useMemo((): number => {
-		const	tokenPrice = Number(prices?.[address] || 0);
+		const	tokenPrice = toNumber(prices?.[address]);
 		return tokenPrice;
 	}, [address, prices]);
 
 	const	APR = useMemo((): number => {
 		const	tokenInfo = tokens?.[address];
-		const	decimals = tokenInfo?.decimals || 18;
+		const	decimals = toNumber(tokenInfo?.decimals, 18);
 		if (tokenPrice === 0 || crvPrice === 0) {
 			return 0;
 		}
@@ -96,7 +97,7 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 	const	claimableForCurrentGaugeMap = Object.entries(claimableForCurrentGauge || {}) || [];
 	const	currentRewardsForCurrentGaugeMap = Object.entries(currentRewardsForCurrentGauge || {}) || [];
 	const	nextRewardsForCurrentGaugeMap = Object.entries(nextRewardsForCurrentGauge || {}) || [];
-	const	hasSomethingToClaim = claimableForCurrentGaugeMap.some(([, value]: [string, bigint]): boolean => formatBN(value) > 0);
+	const	hasSomethingToClaim = claimableForCurrentGaugeMap.some(([, value]: [string, bigint]): boolean => isGreaterThanZero(value));
 
 	function	onClaimReward(token: string): void {
 		new Transaction(provider, claimReward, set_txStatusClaim).populate(

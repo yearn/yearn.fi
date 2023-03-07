@@ -5,7 +5,8 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {addressZero, allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {CURVE_BRIBE_V3_ADDRESS, CURVE_BRIBE_V3_HELPER_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {toBigInt, toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {isGreaterThanZero} from '@yearn-finance/web-lib/utils/isZero';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import {useCurve} from '@common/contexts/useCurve';
@@ -66,8 +67,8 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 		const	[_currentPeriod] = await ethcallProvider.tryAll([curveBribeV3Contract.current_period()]) as [number];
 
 		performBatchedUpdates((): void => {
-			set_currentPeriod(Number(_currentPeriod));
-			set_nextPeriod(Number(_currentPeriod) + (86400 * 7));
+			set_currentPeriod(toNumber(_currentPeriod));
+			set_nextPeriod(toNumber(_currentPeriod) + (86400 * 7));
 		});
 	}, [provider, safeChainID]);
 	useEffect((): void => {
@@ -186,11 +187,11 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 		let	rIndex = 0;
 
 		for (const rewardListKey of rewardsList) {
-			const rewardPerTokenPerGauge = formatBN(multicallResult[rIndex++]);
-			const periodPerTokenPerGauge = formatBN(multicallResult[rIndex++]);
-			const claimablePerTokenPerGauge = formatBN(multicallResult[rIndex++]);
-			if (Number(periodPerTokenPerGauge) >= currentPeriod) {
-				if (rewardListKey && rewardPerTokenPerGauge > 0) {
+			const rewardPerTokenPerGauge = toBigInt(multicallResult[rIndex++]);
+			const periodPerTokenPerGauge = toBigInt(multicallResult[rIndex++]);
+			const claimablePerTokenPerGauge = toBigInt(multicallResult[rIndex++]);
+			if (toNumber(periodPerTokenPerGauge) >= currentPeriod) {
+				if (rewardListKey && isGreaterThanZero(rewardPerTokenPerGauge)) {
 					const	[gauge, token] = rewardListKey.split('_');
 					if (!_currentRewards[toAddress(gauge)]) {
 						_currentRewards[toAddress(gauge)] = {};
@@ -230,7 +231,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 				if (!_nextRewards[toAddress(gauge)]) {
 					_nextRewards[toAddress(gauge)] = {};
 				}
-				_nextRewards[toAddress(gauge)][toAddress(token)] = pendingForNextPeriod;
+				_nextRewards[toAddress(gauge)][toAddress(token)] = toBigInt(pendingForNextPeriod);
 			}
 		}
 		set_nextRewards((c: TCurveGaugeVersionRewards): TCurveGaugeVersionRewards => ({...c, [version]: _nextRewards}));

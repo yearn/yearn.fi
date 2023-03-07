@@ -10,7 +10,7 @@ import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import IconAddToMetamask from '@yearn-finance/web-lib/icons/IconAddToMetamask';
 import IconLinkOut from '@yearn-finance/web-lib/icons/IconLinkOut';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
-import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatToNormalizedValue, toBigInt, toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
 import IconChevron from '@common/icons/IconChevron';
 
@@ -128,8 +128,8 @@ function	VaultDetailsTabsWrapper({currentVault}: {currentVault: TYearnVault}): R
 		const	_yDaemonHarvestsData = [...(yDaemonHarvestsData || [])].reverse();
 		return (
 			_yDaemonHarvestsData?.map((harvest): {name: string; value: number} => ({
-				name: formatDate(Number(harvest.timestamp) * 1000),
-				value: formatToNormalizedValue(formatBN(harvest.profit) - formatBN(harvest.loss), currentVault.decimals)
+				name: formatDate(toNumber(harvest.timestamp) * 1000),
+				value: formatToNormalizedValue(toBigInt(harvest?.profit.sub(harvest?.loss)), currentVault.decimals)
 			}))
 		);
 	}, [currentVault.decimals, yDaemonHarvestsData]);

@@ -2,7 +2,7 @@ import React, {useMemo} from 'react';
 import dynamic from 'next/dynamic';
 import IconCopy from '@yearn-finance/web-lib/icons/IconCopy';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatToNormalizedValue, toBigInt, toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {formatDuration} from '@yearn-finance/web-lib/utils/format.time';
 import {copyToClipboard, parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
@@ -78,7 +78,7 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVau
 									{'Capital Allocation'}
 								</p>
 								<b className={'font-number text-lg text-neutral-900'}>
-									{`${formatAmount(formatToNormalizedValue(formatBN(strategy?.details?.totalDebt), currentVault?.decimals), 0, 0)} ${currentVault.token.symbol}`}
+									{`${formatAmount(formatToNormalizedValue(toBigInt(strategy?.details?.totalDebt), currentVault?.decimals), 0, 0)} ${currentVault.token.symbol}`}
 								</b>
 							</div>
 
@@ -86,7 +86,7 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVau
 								<p className={'text-base text-neutral-600'}>{'Total Gain'}</p>
 								<b className={'font-number text-lg text-neutral-900'}>
 									{`${formatAmount(formatToNormalizedValue(
-										formatBN(strategy?.details?.totalGain) - formatBN(strategy?.details?.totalLoss),
+										toBigInt(strategy.details.totalGain) - toBigInt(strategy.details.totalLoss),
 										currentVault?.decimals
 									), 0, 0)} ${currentVault.token.symbol}`}
 								</b>
@@ -100,7 +100,7 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVau
 									<RiskScoreElement
 										key={label}
 										label={label}
-										value={value || 0} />
+										value={toNumber(value)} />
 								))}
 							</div>
 						</div>
@@ -110,7 +110,7 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVau
 							<div className={'col-span-2 flex flex-col space-y-0 md:space-y-2'}>
 								<p className={'text-xxs text-neutral-600 md:text-xs'}>{'APR'}</p>
 								<b className={'font-number text-xl text-neutral-900'}>
-									{formatPercent((strategy?.details?.apr || 0), 0)}
+									{formatPercent((strategy?.details?.apr), 0)}
 								</b>
 							</div>
 
@@ -119,14 +119,14 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVau
 									{'Allocation'}
 								</p>
 								<b className={'font-number text-xl text-neutral-900'}>
-									{formatPercent((strategy?.details?.debtRatio || 0) / 100, 0)}
+									{formatPercent((strategy?.details?.debtRatio) / 100, 0)}
 								</b>
 							</div>
 
 							<div className={'col-span-2 flex flex-col space-y-0 md:space-y-2'}>
 								<p className={'text-xxs text-neutral-600 md:text-xs'}>{'Perfomance fee'}</p>
 								<b className={'font-number text-xl text-neutral-600'}>
-									{formatPercent((strategy?.details?.performanceFee || 0) * 100, 0)}
+									{formatPercent((strategy?.details?.performanceFee) * 100, 0)}
 								</b>
 							</div>
 						</div>
@@ -163,7 +163,7 @@ function	VaultDetailsStrategies({currentVault}: {currentVault: TYearnVault}): Re
 			<div className={'col-span-1 w-full border-t border-neutral-300'}>
 				{(currentVault?.strategies || [])
 					// .filter((strategy): boolean => (strategy?.details?.debtRatio || 0) > 0)
-					.sort((a, b): number => (b?.details?.debtRatio || 0) - (a?.details?.debtRatio || 0))
+					.sort((a, b): number => toNumber(b?.details?.debtRatio) - toNumber(a?.details?.debtRatio))
 					.map((strategy, index): ReactElement => (
 						<VaultDetailsStrategy
 							currentVault={currentVault}

@@ -6,9 +6,10 @@ import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useSessionStorage} from '@yearn-finance/web-lib/hooks/useSessionStorage';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatBN, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {toBigInt, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isTAddress} from '@yearn-finance/web-lib/utils/isTAddress';
 import {isWeb3Provider} from '@yearn-finance/web-lib/utils/isWeb3Provider';
+import {isGreaterThanZero} from '@yearn-finance/web-lib/utils/isZero';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import ListHead from '@common/components/ListHead';
@@ -55,12 +56,14 @@ type TVotesReducer = {
 }
 
 function computeMaxVotesAvailable({state, action}: TVotesReducer): bigint {
-	const prevVotes = formatBN(state.votes[toAddress(action.gaugeAddress)]);
-	return state.maxVotes - (state.currentTotal - prevVotes);
+	const prevVotes = toBigInt(state.votes[toAddress(action.gaugeAddress)]);
+	return state.maxVotes - state.currentTotal - prevVotes;
 }
 
 function computeNewTotal({state, action}: TVotesReducer): bigint {
-	return state.currentTotal - formatBN(state.votes[toAddress(action.gaugeAddress)]) + formatBN(action.votes);
+	const votesForGauge = toBigInt(state.votes[toAddress(action.gaugeAddress)]);
+	const newVotes = toBigInt(action.votes);
+	return state.currentTotal - votesForGauge + newVotes;
 }
 
 export function votesReducer(state: TVotesReducerState, action: TVotesReducerAction): TVotesReducerState {
@@ -68,10 +71,12 @@ export function votesReducer(state: TVotesReducerState, action: TVotesReducerAct
 
 	switch(type) {
 		case 'INIT': {
-			const maxVotes = formatBN(userInfo?.balance) - formatBN(userInfo?.votesSpent);
+			const userBalance = toBigInt(userInfo?.balance);
+			const voteSpent = toBigInt(userInfo?.votesSpent);
+			const maxVotes = userBalance - voteSpent;
 			return {
 				...state,
-				maxVotes: formatBN(maxVotes)
+				maxVotes
 			};
 		}
 		case 'MAX': {
@@ -84,7 +89,7 @@ export function votesReducer(state: TVotesReducerState, action: TVotesReducerAct
 		case 'UPDATE': {
 			const newTotal = computeNewTotal({state, action});
 
-			if (newTotal >= 0 && newTotal <= state.maxVotes) {
+			if (toBigInt(newTotal) >= 0 && newTotal <= state.maxVotes) {
 				return {
 					...state,
 					votes: {...state.votes, [toAddress(gaugeAddress)]: votes},
@@ -108,7 +113,7 @@ function getVoteButtonProps(votes: TDict<bigint | undefined>): {
 	label: string;
 	isDisabled: boolean;
 } {
-	const numGaugesWithVotes = Object.keys(votes).reduce((prev, curr): number => formatBN(votes[curr]) > 0 ? ++prev : prev, 0);
+	const numGaugesWithVotes = Object.keys(votes).reduce((prev, curr): number => isGreaterThanZero(votes[curr]) ? ++prev : prev, 0);
 
 	if (numGaugesWithVotes === 0) {
 		return {label:'Vote', isDisabled: true};
@@ -158,7 +163,7 @@ function GaugeList({gauges, gaugesVotes, isLoading, userInfo}: TProps): ReactEle
 		}
 
 		const gaugesWithVotes = Object.keys(votes).reduce((prev, curr): TDict<bigint | undefined> => {
-			return isTAddress(curr) && formatBN(votes[curr]) > 0 ? {...prev, [curr]: votes[curr]} : prev;
+			return isTAddress(curr) && isGreaterThanZero(votes[curr]) ? {...prev, [curr]: votes[curr]} : prev;
 		}, {});
 
 		if (isWeb3Provider(provider)) {

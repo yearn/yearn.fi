@@ -1,6 +1,6 @@
-import {ethers, formatUnits, parseUnits} from 'ethers';
+import {ethers} from 'ethers';
 import {VLYCRV_TOKEN_ADDRESS, YVECRV_POOL_LP_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {MaxUint256} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatUnits, MaxUint256, parseUnits, toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {handleTx} from '@yearn-finance/web-lib/utils/web3/transaction';
 
 import VLYCRV_ABI from './abi/vlYCrv.abi';
@@ -56,7 +56,7 @@ export async function	addLiquidity(
 	const signer = await provider.getSigner();
 	const contract = new ethers.Contract(YVECRV_POOL_LP_ADDRESS, ['function add_liquidity(uint256[2], uint256)'], signer);
 	const SLIPPAGE = 0.2;
-	const minAmountStr = Number(formatUnits(expectedAmount, 18));
+	const minAmountStr = toNumber(formatUnits(expectedAmount, 18));
 	const minAmountWithSlippage = parseUnits((minAmountStr * (1 - SLIPPAGE)).toFixed(18), 18);
 	return await handleTx(contract.add_liquidity([amount1, amount2], minAmountWithSlippage));
 }
@@ -76,7 +76,7 @@ export async function	zap(
 		['function zap(address _input, address _output, uint256 _amount, uint256 _minOut, address _recipient) external returns (uint256)'],
 		signer
 	);
-	const minAmountStr = Number(formatUnits(minAmount, 18));
+	const minAmountStr = toNumber(formatUnits(minAmount, 18));
 	const minAmountWithSlippage = parseUnits((minAmountStr * (1 - (slippage / 100))).toFixed(18), 18);
 	return await handleTx(contract.zap(inputToken, outputToken, amount, minAmountWithSlippage, address));
 }

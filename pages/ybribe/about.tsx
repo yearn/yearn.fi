@@ -13,6 +13,7 @@ import type {NextRouter} from 'next/router';
 import type {ReactElement, ReactNode} from 'react';
 import type {SWRResponse} from 'swr';
 import type {TYDaemonGaugeRewardsFeed} from '@common/types/yearn';
+import { toNumber } from '@yearn-finance/web-lib/utils/format.bigNumber';
 
 function	About(): ReactElement {
 	const {settings: baseAPISettings} = useSettings();
@@ -23,7 +24,7 @@ function	About(): ReactElement {
 
 	const	sortedFeed = useMemo((): TYDaemonGaugeRewardsFeed[] => {
 		return (feed || []).sort((a, b): number => {
-			return Number(b.timestamp) - Number(a.timestamp);
+			return toNumber(b.timestamp) - toNumber(a.timestamp);
 		});
 	}, [feed]);
 
@@ -41,7 +42,7 @@ function	About(): ReactElement {
 							<p className={'text-neutral-600'}>{'For those looking to buy votes, you can offer bribes to a gauge using the \'Bribe a Gauge\' function. Resulting in a boost to CRV emissions to the gauge of your choosing.'}</p>
 						</Balancer>
 					</div>
-				</div> 
+				</div>
 
 				<div className={'mb-10 w-full bg-neutral-100 p-10'}>
 					<div aria-label={'Claim Period'} className={'flex flex-col pb-6'}>

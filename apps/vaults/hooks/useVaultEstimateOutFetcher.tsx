@@ -2,11 +2,12 @@ import {useCallback} from 'react';
 import {ethers} from 'ethers';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatBN, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {toBigInt, toNormalizedBN, toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {getProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 
-import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
+import type {TNormalizedBN} from '@yearn-finance/web-lib/types';
+import type {TDropdownOption} from '@common/types/types';
 
 export type TVaultEstimateOutFetcher = [
     inputToken: TDropdownOption,
@@ -32,13 +33,13 @@ export function	useVaultEstimateOutFetcher(): (args: TVaultEstimateOutFetcher) =
 			currentProvider
 		);
 		try {
-			const	pps = formatBN(await contract.pricePerShare());
+			const	pps = toBigInt(await contract.pricePerShare());
 			if (isDepositing) {
-				const expectedOutFetched = inputAmount * (formatBN(10) ** BigInt(outputToken?.decimals || 18)) / pps;
-				return toNormalizedBN(expectedOutFetched, outputToken?.decimals || 18);
+				const expectedOutFetched = inputAmount * (toBigInt(10) ** toBigInt(outputToken?.decimals)) / pps;
+				return toNormalizedBN(expectedOutFetched, toNumber(outputToken?.decimals, 18));
 			}
-			const expectedOutFetched = inputAmount * pps / (formatBN(10) ** BigInt(outputToken?.decimals || 18));
-			return toNormalizedBN(expectedOutFetched, outputToken?.decimals || 18);
+			const expectedOutFetched = inputAmount * pps / (toBigInt(10) ** toBigInt(outputToken?.decimals));
+			return toNormalizedBN(expectedOutFetched, toNumber(outputToken?.decimals, 18));
 		} catch (error) {
 			console.error(error);
 			return (toNormalizedBN(0));

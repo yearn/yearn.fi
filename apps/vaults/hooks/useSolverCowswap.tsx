@@ -8,15 +8,15 @@ import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {SOLVER_COW_VAULT_RELAYER_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatBN, MaxUint256, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {MaxUint256, toBigInt, toNormalizedBN, toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
 import {approvedERC20Amount, approveERC20, isApprovedERC20} from '@common/utils/actions/approveToken';
 
 import type {AxiosError} from 'axios';
+import type {TNormalizedBN} from '@yearn-finance/web-lib/types';
 import type {TTxResponse, TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
-import type {TNormalizedBN} from '@common/types/types';
 import type {ApiError, Order, QuoteQuery, Timestamp} from '@gnosis.pm/gp-v2-contracts';
 import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
 import type {TCowAPIResult, TCowResult} from '@vaults/types/solvers.cowswap';
@@ -45,12 +45,12 @@ function useCowswapQuote(): [TCowResult, (request: TInitSolverArgs, shouldPreven
 			kind: OrderKind.SELL, // always sell
 			partiallyFillable: false, // always false
 			validTo: 0,
-			sellAmountBeforeFee: formatBN(request?.inputAmount || 0).toString() // amount to sell, in wei
+			sellAmountBeforeFee: request?.inputAmount.toString() // amount to sell, in wei
 		});
 
 		const canExecuteFetch = (
 			!(isZero(quote.from) || isZero(quote.sellToken) || isZero(quote.buyToken))
-			&& !isZero(formatBN(request?.inputAmount || 0))
+			&& !isZero(request?.inputAmount)
 		);
 		if (canExecuteFetch) {
 			quote.validTo = Math.round((new Date().setMinutes(new Date().getMinutes() + 10) / 1000));
@@ -100,8 +100,8 @@ export function useSolverCowswap(): TSolverContext {
 			return '0';
 		}
 		const {quote} = currentQuote;
-		const buyAmount = Number(formatUnits(quote.buyAmount, decimals));
-		const withSlippage = parseUnits((buyAmount * (1 - Number(zapSlippage / 100))).toFixed(decimals), decimals);
+		const buyAmount = toNumber(formatUnits(quote.buyAmount, decimals));
+		const withSlippage = parseUnits((buyAmount * (1 - toNumber(zapSlippage / 100))).toFixed(decimals), decimals);
 		return withSlippage.toString();
 	}, [zapSlippage]);
 
@@ -118,8 +118,8 @@ export function useSolverCowswap(): TSolverContext {
 		const quote = await getQuote(_request);
 		if (quote) {
 			latestQuote.current = quote;
-			getBuyAmountWithSlippage(quote, request?.current?.outputToken?.decimals || 18);
-			return toNormalizedBN(quote?.quote?.buyAmount || 0, request?.current?.outputToken?.decimals || 18);
+			getBuyAmountWithSlippage(quote, toNumber(request?.current?.outputToken?.decimals, 18));
+			return toNormalizedBN(toBigInt(quote?.quote?.buyAmount), toNumber(request?.current?.outputToken?.decimals, 18));
 		}
 		return toNormalizedBN(0);
 	}, [getBuyAmountWithSlippage, getQuote]);
@@ -224,7 +224,7 @@ export function useSolverCowswap(): TSolverContext {
 		if (!latestQuote?.current?.quote?.buyAmount || isSolverDisabled[Solver.COWSWAP]) {
 			return (toNormalizedBN(0));
 		}
-		return toNormalizedBN(latestQuote?.current?.quote?.buyAmount, request?.current?.outputToken?.decimals || 18);
+		return toNormalizedBN(latestQuote?.current?.quote?.buyAmount, toNumber(request?.current?.outputToken?.decimals, 18));
 	}, [latestQuote]);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -236,7 +236,7 @@ export function useSolverCowswap(): TSolverContext {
 			return (toNormalizedBN(0));
 		}
 		const quoteResult = await getQuote(request, true);
-		return toNormalizedBN(formatBN(quoteResult?.quote?.buyAmount), request.outputToken.decimals);
+		return toNormalizedBN(toBigInt(quoteResult?.quote?.buyAmount), request.outputToken.decimals);
 	}, [getQuote]);
 
 	/* 🔵 - Yearn Finance ******************************************************
