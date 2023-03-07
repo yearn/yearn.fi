@@ -6,7 +6,6 @@ import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {Dropdown} from '@common/components/TokenDropdown';
-import {useHasMounted} from '@common/hooks/useHasMounted';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
 
 import type {ReactElement} from 'react';
@@ -15,13 +14,8 @@ function	VaultDetailsQuickActionsTo(): ReactElement | null {
 	const {isActive} = useWeb3();
 	const {currentVault, possibleOptionsTo, actionParams, onUpdateSelectedOptionTo, isDepositing} = useActionFlow();
 	const {expectedOut, isLoadingExpectedOut} = useSolver();
-	const hasMounted = useHasMounted();
 
 	const selectedOptionToPricePerToken = useTokenPrice(toAddress(actionParams?.selectedOptionTo?.value));
-
-	if (!hasMounted) {
-		return null;
-	}
 
 	return (
 		<section aria-label={'TO'} className={'flex w-full flex-col space-x-0 md:flex-row md:space-x-4'}>

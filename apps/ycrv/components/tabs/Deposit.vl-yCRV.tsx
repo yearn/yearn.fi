@@ -1,6 +1,6 @@
 import React, {useMemo, useState} from 'react';
 import {ethers} from 'ethers';
-import {useAsync, useUpdateEffect} from '@react-hookz/web';
+import {useAsync, useIsMounted, useUpdateEffect} from '@react-hookz/web';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatBN, toNormalizedBN, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -30,11 +30,12 @@ function Deposit(): ReactElement {
 	const [amount, set_amount] = useState<TNormalizedBN | undefined>({raw: ethers.constants.Zero, normalized: 0});
 	const pricePerYCRV = useTokenPrice(toAddress(YCRV.value));
 	const {deposit, approve} = useVLyCRV();
+	const isMounted = useIsMounted();
 
 	const fromSelectProps: TQASelect = useMemo((): TQASelect => {
-		const legend = `You have ${formatAmount(yCRVBalance.normalized)} ${yCRVBalance?.symbol || 'tokens'}`;
+		const legend = isMounted() ? `You have ${formatAmount(yCRVBalance.normalized)} ${yCRVBalance?.symbol || 'tokens'}` : '';
 		return {label: 'From wallet', legend, options: [YCRV], selected: YCRV};
-	}, [yCRVBalance.normalized, yCRVBalance?.symbol]);
+	}, [isMounted, yCRVBalance.normalized, yCRVBalance?.symbol]);
 
 	const maxLockingPossible = useMemo((): TNormalizedBN => {
 		const balance = yCRVBalance.raw || ethers.constants.Zero;

@@ -2,7 +2,6 @@ import React from 'react';
 import dynamic from 'next/dynamic';
 import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
-import {useHasMounted} from '@common/hooks/useHasMounted';
 
 import type {LoaderComponent} from 'next/dynamic';
 import type {ReactElement} from 'react';
@@ -13,12 +12,6 @@ import type {TGraphForVaultEarningsProps} from '@vaults/components/graphs/GraphF
 const GraphForVaultEarnings = dynamic<TGraphForVaultEarningsProps>(async (): LoaderComponent<TGraphForVaultEarningsProps> => import('@vaults/components/graphs/GraphForVaultEarnings'), {ssr: false});
 
 function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYearnVault, harvestData: TGraphData[]}): ReactElement | null {
-	const hasMounted = useHasMounted();
-	
-	if (!hasMounted) {
-		return null;
-	}
-
 	return (
 		<div className={'grid grid-cols-1 gap-10 bg-neutral-100 p-4 md:grid-cols-2 md:gap-32 md:p-8'}>
 			<div className={'col-span-1 w-full space-y-6'}>
