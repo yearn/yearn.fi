@@ -8,7 +8,7 @@ import type {ReactElement} from 'react';
 function	ValueAnimation({
 	identifier,
 	value,
-	defaultValue = formatAmount(0),
+	defaultValue,
 	prefix = '',
 	suffix = '',
 	className = 'wordLeft'
