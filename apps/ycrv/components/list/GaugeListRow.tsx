@@ -78,7 +78,7 @@ function GaugeListRow({gauge, gaugeVotes, votesState, votesDispatch}: TGaugeList
 
 				<div className={'yearn--table-data-section-item pt-2 md:col-span-5'}>
 					<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Put your votes'}</label>
-					<p className={'yearn--table-data-section-item-value w-full text-neutral-900'}>
+					<div className={'yearn--table-data-section-item-value w-full text-neutral-900'}>
 						<div className={'flex h-10 w-full flex-row items-center justify-between'}>
 							<QuickActions.Input
 								id={`${gauge.gauge}-votes`}
@@ -91,7 +91,7 @@ function GaugeListRow({gauge, gaugeVotes, votesState, votesDispatch}: TGaugeList
 								isMaxDisabled={isMaxDisabled}
 							/>
 						</div>
-					</p>
+					</div>
 				</div>
 			</div>
 		</div>
