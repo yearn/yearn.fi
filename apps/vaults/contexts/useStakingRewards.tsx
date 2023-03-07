@@ -1,7 +1,7 @@
 import React, {createContext, memo, useCallback, useContext, useMemo} from 'react';
 import {Contract} from 'ethcall';
 import useSWR from 'swr';
-import {STAKING_REWARDS_ADDRESSES, STAKING_REWARDS_SUPPORTED_CHAINS} from '@vaults/constants';
+import {STAKING_REWARDS_REGISTRY_ADDRESS, STAKING_REWARDS_SUPPORTED_CHAINS} from '@vaults/constants';
 import STAKING_REWARDS_ABI from '@vaults/utils/abi/stakingRewards.abi';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
@@ -61,9 +61,13 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 		const currentProvider = getProvider(chainID);
 		const ethcallProvider = await newEthCallProvider(currentProvider);
 
-		// const stakingRewardsRegistryContract = new Contract(STAKING_REWARDS_REGISTRY_ADDRESS, []); // TODO: update once abi is available
-		// const [stakingRewardsAddresses] = await ethcallProvider.tryAll([stakingRewardsRegistryContract.getAddresses()]) as [TAddress[]]; // TODO: call correct method
-		const stakingRewardsAddresses = STAKING_REWARDS_ADDRESSES;
+		const stakingRewardsRegistryContract = new Contract(STAKING_REWARDS_REGISTRY_ADDRESS, []); // TODO: update once abi is available
+		const [vaultAddresses] = await ethcallProvider.tryAll([stakingRewardsRegistryContract.tokens()]) as [TAddress[]];
+		const calls = [];
+		for (const address of vaultAddresses) {
+			calls.push(stakingRewardsRegistryContract.stakingPool(address));
+		}
+		const stakingRewardsAddresses = await ethcallProvider.tryAll(calls) as TAddress[];
 		const stakingRewardsPromises = stakingRewardsAddresses.map(async (address): Promise<TStakingRewards> => {
 			const stakingRewardsContract = new Contract(address, STAKING_REWARDS_ABI);
 			const [
@@ -106,9 +110,9 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 
 		const	positionPromises = [];
 		for (const {address} of stakingRewards) {
-			const	balance = results[resultIndex++];
-			const	rewards = results[resultIndex++];
-			const	earned = results[resultIndex++];
+			const balance = results[resultIndex++];
+			const rewards = results[resultIndex++];
+			const earned = results[resultIndex++];
 			const stakePosition: TPosition = {
 				balance,
 				underlyingBalance: balance // TODO: Convert to underlying
