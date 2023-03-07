@@ -32,7 +32,6 @@ function	HeaderUserPosition(): ReactElement {
 
 	const clientOnlyFormatAmount = useClientOnlyFn({fn: formatAmount, placeholder: '0,00'});
 
-
 	const	formatedYouEarned = useMemo((): string => {
 		const amount = (earned?.totalUnrealizedGainsUSD || 0) > 0 ? earned?.totalUnrealizedGainsUSD || 0 : 0;
 		return clientOnlyFormatAmount(amount)?.toString() ?? '';
