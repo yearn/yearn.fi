@@ -4,7 +4,7 @@ import Link from 'next/link';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useSessionStorage} from '@yearn-finance/web-lib/hooks/useSessionStorage';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatToNormalizedValue, toNumber, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatToNormalizedValue, toBigInt, toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import ListHead from '@common/components/ListHead';
 import ListHero from '@common/components/ListHero';
 import {useCurve} from '@common/contexts/useCurve';
@@ -70,12 +70,12 @@ function	GaugeList(): ReactElement {
 		if (sort.sortBy === 'rewards') {
 			return searchedGauges.sort((a, b): number => {
 				const allARewards = Object.entries(currentRewards?.v3?.[toAddress(a.gauge)] || {}).reduce((acc, [address, value]): number => {
-					const aBribeValue = getRewardValue(address, value || Zero);
+					const aBribeValue = getRewardValue(address, toBigInt(value));
 					return acc + aBribeValue;
 				}, 0);
 
 				const allBRewards = Object.entries(currentRewards?.v3?.[toAddress(b.gauge)] || {}).reduce((acc, [address, value]): number => {
-					const aBribeValue = getRewardValue(address, value || Zero);
+					const aBribeValue = getRewardValue(address, toBigInt(value));
 					return acc + aBribeValue;
 				}, 0);
 
@@ -88,12 +88,12 @@ function	GaugeList(): ReactElement {
 		if (sort.sortBy === 'pendingRewards') {
 			return searchedGauges.sort((a, b): number => {
 				const allARewards = Object.entries(nextRewards?.v3?.[toAddress(a.gauge)] || {}).reduce((acc, [address, value]): number => {
-					const aBribeValue = getRewardValue(address, value || Zero);
+					const aBribeValue = getRewardValue(address, toBigInt(value));
 					return acc + aBribeValue;
 				}, 0);
 
 				const allBRewards = Object.entries(nextRewards?.v3?.[toAddress(b.gauge)] || {}).reduce((acc, [address, value]): number => {
-					const aBribeValue = getRewardValue(address, value || Zero);
+					const aBribeValue = getRewardValue(address, toBigInt(value));
 					return acc + aBribeValue;
 				}, 0);
 
