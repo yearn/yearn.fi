@@ -13,7 +13,7 @@ import type {TGraphForVaultEarningsProps} from '@vaults/components/graphs/GraphF
 const GraphForVaultEarnings = dynamic<TGraphForVaultEarningsProps>(async (): LoaderComponent<TGraphForVaultEarningsProps> => import('@vaults/components/graphs/GraphForVaultEarnings'), {ssr: false});
 
 function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYearnVault, harvestData: TGraphData[]}): ReactElement {
-	const clientOnlyFormatPercent = useClientOnlyFn(formatPercent);
+	const clientOnlyFormatPercent = useClientOnlyFn({fn: formatPercent, placeholder: '-'});
 	
 	return (
 		<div className={'grid grid-cols-1 gap-10 bg-neutral-100 p-4 md:grid-cols-2 md:gap-32 md:p-8'}>
