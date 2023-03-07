@@ -19,7 +19,7 @@ type TGaugeListRow = {
 	votesDispatch: Dispatch<TVotesReducerAction>;
 }
 
-function GaugeListRow({gauge, gaugeVotes, votesState, votesDispatch}: TGaugeListRow): ReactElement | null {
+function GaugeListRow({gauge, gaugeVotes, votesState, votesDispatch}: TGaugeListRow): ReactElement {
 	const [currentVotes, set_currentVotes] = useState<string>('');
 
 	useEffect((): void => {

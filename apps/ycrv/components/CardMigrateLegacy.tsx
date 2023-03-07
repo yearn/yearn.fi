@@ -21,7 +21,7 @@ import {LEGACY_OPTIONS_FROM, LEGACY_OPTIONS_TO} from '@yCRV/utils/zapOptions';
 import type {ChangeEvent, ReactElement} from 'react';
 import type {TDropdownOption} from '@common/types/types';
 
-function	CardMigrateLegacy(): ReactElement | null {
+function	CardMigrateLegacy(): ReactElement {
 	const	{isActive} = useWeb3();
 	const	{balances} = useWallet();
 	const	{vaults, prices} = useYearn();

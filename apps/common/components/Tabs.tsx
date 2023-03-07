@@ -22,7 +22,7 @@ type TTabsProps = {
 	className?: string,
 }
 
-function Tabs({items, className}: TTabsProps): ReactElement | null {
+function Tabs({items, className}: TTabsProps): ReactElement {
 	const [selectedTabId, set_selectedTabId] = useState(items[0]?.id);
 
 	return (
