@@ -1,5 +1,6 @@
 import React, {useMemo, useState} from 'react';
 import {Button} from '@yearn-finance/web-lib/components/Button';
+import ChildWithCondition from '@yearn-finance/web-lib/components/ChildWithCondition';
 import {Modal} from '@yearn-finance/web-lib/components/Modal';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -58,6 +59,19 @@ function	GaugeListRow({currentGauge}: {currentGauge: TCurveGauges}): ReactElemen
 	const	currentRewardsForCurrentGaugeMap = Object.entries(currentRewardsForCurrentGauge || {}) || [];
 	const	nextRewardsForCurrentGaugeMap = Object.entries(nextRewardsForCurrentGauge || {}) || [];
 
+	function	fallbackDefaultValue(): ReactElement {
+		return (
+			<div className={'flex h-auto flex-col items-end pt-0 md:h-14'}>
+				<p className={'yearn--table-data-section-item-value'}>
+					{formatUSD(0, 5, 5)}
+				</p>
+				<p className={'font-number inline-flex items-baseline text-right text-xs text-neutral-400'}>
+					{'-'}
+				</p>
+			</div>
+		);
+	}
+
 	return (
 		<div className={'yearn--table-wrapper cursor-pointer transition-colors hover:bg-neutral-300'}>
 			<div className={'yearn--table-token-section'}>
@@ -96,44 +110,32 @@ function	GaugeListRow({currentGauge}: {currentGauge: TCurveGauges}): ReactElemen
 
 				<div className={'yearn--table-data-section-item md:col-span-3'} datatype={'number'}>
 					<label className={'yearn--table-data-section-item-label'}>{'Current Bribes'}</label>
-					{
-						!currentRewardsForCurrentGaugeMap || currentRewardsForCurrentGaugeMap.length === 0 ? (
-							<div className={'flex h-auto flex-col items-end pt-0 md:h-14'}>
-								<p className={'yearn--table-data-section-item-value'}>
-									{formatUSD(0, 5, 5)}
-								</p>
-								<p className={'font-number inline-flex items-baseline text-right text-xs text-neutral-400'}>
-									{'-'}
-								</p>
-							</div>
-						) : currentRewardsForCurrentGaugeMap.map(([key, value]: [string, Maybe<bigint>]): ReactElement => (
+
+					<ChildWithCondition
+						shouldRender={!!currentRewardsForCurrentGaugeMap && currentRewardsForCurrentGaugeMap.length > 0}
+						fallback={fallbackDefaultValue()}>
+						{currentRewardsForCurrentGaugeMap.map(([key, value]: [string, Maybe<bigint>]): ReactElement =>
 							<GaugeRowItemWithExtraData
 								key={`rewards-${currentGauge.gauge}-${key}`}
 								address={toAddress(key)}
 								value={toBigInt(value)} />
-						))
-					}
+						)}
+					</ChildWithCondition>
 				</div>
 
 				<div className={'yearn--table-data-section-item md:col-span-3'} datatype={'number'}>
 					<label className={'yearn--table-data-section-item-label'}>{'Current Bribes'}</label>
-					{
-						!nextRewardsForCurrentGaugeMap || nextRewardsForCurrentGaugeMap.length === 0 ? (
-							<div className={'flex h-auto flex-col items-end pt-0 md:h-14'}>
-								<p className={'yearn--table-data-section-item-value'}>
-									{formatUSD(0, 5, 5)}
-								</p>
-								<p className={'font-number inline-flex items-baseline text-right text-xs text-neutral-400'}>
-									{'-'}
-								</p>
-							</div>
-						) : nextRewardsForCurrentGaugeMap.map(([key, value]: [string, Maybe<bigint>]): ReactElement => (
+
+					<ChildWithCondition
+						shouldRender={!!nextRewardsForCurrentGaugeMap && nextRewardsForCurrentGaugeMap.length > 0}
+						fallback={fallbackDefaultValue()}>
+						{nextRewardsForCurrentGaugeMap.map(([key, value]: [string, Maybe<bigint>]): ReactElement =>
 							<GaugeRowItemWithExtraData
 								key={`rewards-${currentGauge.gauge}-${key}`}
 								address={toAddress(key)}
 								value={toBigInt(value)} />
-						))
-					}
+						)}
+					</ChildWithCondition>
 				</div>
 
 				<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>

@@ -28,7 +28,7 @@ function useWidoQuote(): [TWidoResult, (request: TInitSolverArgs, shouldPreventE
 		request: TInitSolverArgs,
 		shouldPreventErrorToast = false
 	): MayPromise<QuoteResult> => {
-		const	quoteRequest: QuoteRequest = ({
+		const	quoteRequest: QuoteRequest = {
 			fromChainId: 1, // Chain Id of from token
 			fromToken: toAddress(request.inputToken.value), // token to spend
 			toChainId: 1, // Chain Id of to token
@@ -36,12 +36,12 @@ function useWidoQuote(): [TWidoResult, (request: TInitSolverArgs, shouldPreventE
 			amount: request?.inputAmount.toString(), // Token amount of from token
 			slippagePercentage: zapSlippage / 100, // Acceptable max slippage for the swap
 			user: request.from // receiver
-		});
+		};
 
-		const canExecuteFetch = (
+		const canExecuteFetch = 
 			!(isZero(quoteRequest.user) || isZero(quoteRequest.fromToken) || isZero(quoteRequest.toToken))
 			&& !isZero(request?.inputAmount)
-		);
+		;
 
 		if (canExecuteFetch) {
 			try {
@@ -117,7 +117,7 @@ export function useSolverWido(): TSolverContext {
 	**********************************************************************************************/
 	const execute = useCallback(async (): Promise<TTxResponse> => {
 		if (!latestQuote?.current || !request.current || isSolverDisabled[Solver.WIDO]) {
-			return ({isSuccessful: false});
+			return {isSuccessful: false};
 		}
 
 		try {
@@ -127,12 +127,12 @@ export function useSolverWido(): TSolverContext {
 			const transactionReceipt = await transaction.wait();
 			if (!transactionReceipt || transactionReceipt?.status === 0) {
 				console.error('Fail to perform transaction');
-				return ({isSuccessful: false});
+				return {isSuccessful: false};
 			}
-			return ({isSuccessful: true, receipt: transactionReceipt});
+			return {isSuccessful: true, receipt: transactionReceipt};
 		} catch (_error) {
 			console.error(_error);
-			return ({isSuccessful: false});
+			return {isSuccessful: false};
 		}
 	}, [provider, latestQuote]);
 
@@ -142,7 +142,7 @@ export function useSolverWido(): TSolverContext {
 	**************************************************************************/
 	const expectedOut = useMemo((): TNormalizedBN => {
 		if (!latestQuote?.current?.minToTokenAmount || isSolverDisabled[Solver.WIDO]) {
-			return (toNormalizedBN(0));
+			return toNormalizedBN(0);
 		}
 		return toNormalizedBN(latestQuote?.current?.minToTokenAmount, toNumber(request?.current?.outputToken?.decimals, 18));
 	}, [latestQuote, request]);

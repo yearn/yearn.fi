@@ -23,7 +23,7 @@ export function	useVaultEstimateOutFetcher(): (args: TVaultEstimateOutFetcher) =
 		const	[inputToken, outputToken, inputAmount, isDepositing] = args;
 
 		if (isZero(inputToken?.value) || isZero(outputToken?.value) || isZero(inputAmount)) {
-			return (toNormalizedBN(0));
+			return toNormalizedBN(0);
 		}
 
 		const	currentProvider = provider || getProvider(chainID);
@@ -35,14 +35,14 @@ export function	useVaultEstimateOutFetcher(): (args: TVaultEstimateOutFetcher) =
 		try {
 			const	pps = toBigInt(await contract.pricePerShare());
 			if (isDepositing) {
-				const expectedOutFetched = inputAmount * (toBigInt(10) ** toBigInt(outputToken?.decimals)) / pps;
+				const expectedOutFetched = inputAmount * toBigInt(10) ** toBigInt(outputToken?.decimals) / pps;
 				return toNormalizedBN(expectedOutFetched, toNumber(outputToken?.decimals, 18));
 			}
-			const expectedOutFetched = inputAmount * pps / (toBigInt(10) ** toBigInt(outputToken?.decimals));
+			const expectedOutFetched = inputAmount * pps / toBigInt(10) ** toBigInt(outputToken?.decimals);
 			return toNormalizedBN(expectedOutFetched, toNumber(outputToken?.decimals, 18));
 		} catch (error) {
 			console.error(error);
-			return (toNormalizedBN(0));
+			return toNormalizedBN(0);
 		}
 	}, [provider, chainID]);
 

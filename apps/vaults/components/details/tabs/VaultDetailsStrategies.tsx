@@ -31,7 +31,7 @@ function	RiskScoreElement({label, value}: TRiskScoreElementProps): ReactElement 
 function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TVault, strategy: TStrategy}): ReactElement {
 	const	riskScoreElementsMap = useMemo((): TRiskScoreElementProps[] => {
 		const {riskDetails} = strategy?.risk || {};
-		return ([
+		return [
 			{label: 'TVL Impact', value: riskDetails?.TVLImpact},
 			{label: 'Audit Score', value: riskDetails?.auditScore},
 			{label: 'Code Review Score', value: riskDetails?.codeReviewScore},
@@ -40,7 +40,7 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TVault, s
 			{label: 'Protocol Safety Score', value: riskDetails?.protocolSafetyScore},
 			{label: 'Team Knowledge Score', value: riskDetails?.teamKnowledgeScore},
 			{label: 'Testing Score', value: riskDetails?.testingScore}
-		]);
+		];
 	}, [strategy]);
 
 	return (
@@ -66,7 +66,7 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TVault, s
 						<p
 							className={'text-neutral-600'}
 							dangerouslySetInnerHTML={{__html: parseMarkdown(strategy.description.replaceAll('{{token}}', currentVault.token.symbol))}} />
-						<p className={'text-neutral-600'}>{`Last report ${formatDuration((strategy?.details?.lastReport * 1000) - new Date().valueOf(), true)}.`}</p>
+						<p className={'text-neutral-600'}>{`Last report ${formatDuration(strategy?.details?.lastReport * 1000 - new Date().valueOf(), true)}.`}</p>
 					</div>
 				</div>
 
@@ -96,12 +96,12 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TVault, s
 						<div className={'flex flex-col space-y-4 bg-neutral-200 p-2 md:p-4'}>
 							<p className={'text-base text-neutral-600'}>{'Risk score'}</p>
 							<div className={'mt-0 grid grid-cols-1 gap-x-12 gap-y-2 md:grid-cols-2'}>
-								{riskScoreElementsMap.map(({label, value}): ReactElement => (
+								{riskScoreElementsMap.map(({label, value}): ReactElement => 
 									<RiskScoreElement
 										key={label}
 										label={label}
 										value={toNumber(value)} />
-								))}
+								)}
 							</div>
 						</div>
 					</div>
@@ -110,7 +110,7 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TVault, s
 							<div className={'col-span-2 flex flex-col space-y-0 md:space-y-2'}>
 								<p className={'text-xxs text-neutral-600 md:text-xs'}>{'APR'}</p>
 								<b className={'font-number text-xl text-neutral-900'}>
-									{formatPercent((strategy?.details?.apr), 0)}
+									{formatPercent(strategy?.details?.apr, 0)}
 								</b>
 							</div>
 
@@ -119,14 +119,14 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TVault, s
 									{'Allocation'}
 								</p>
 								<b className={'font-number text-xl text-neutral-900'}>
-									{formatPercent((strategy?.details?.debtRatio) / 100, 0)}
+									{formatPercent(strategy?.details?.debtRatio / 100, 0)}
 								</b>
 							</div>
 
 							<div className={'col-span-2 flex flex-col space-y-0 md:space-y-2'}>
 								<p className={'text-xxs text-neutral-600 md:text-xs'}>{'Perfomance fee'}</p>
 								<b className={'font-number text-xl text-neutral-600'}>
-									{formatPercent((strategy?.details?.performanceFee) * 100, 0)}
+									{formatPercent(strategy?.details?.performanceFee * 100, 0)}
 								</b>
 							</div>
 						</div>
@@ -164,12 +164,12 @@ function	VaultDetailsStrategies({currentVault}: TCurrentVault): ReactElement {
 				{(currentVault?.strategies || [])
 					// .filter((strategy): boolean => (strategy?.details?.debtRatio || 0) > 0)
 					.sort((a, b): number => toNumber(b?.details?.debtRatio) - toNumber(a?.details?.debtRatio))
-					.map((strategy, index): ReactElement => (
+					.map((strategy, index): ReactElement => 
 						<VaultDetailsStrategy
 							currentVault={currentVault}
 							strategy={strategy}
 							key={index} />
-					))}
+					)}
 			</div>
 		</div>
 	);

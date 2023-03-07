@@ -35,7 +35,7 @@ function	useAsync<T>(
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [callCallback, ...effectDependencies]);
 
-	return ([isLoading ? defaultValue : (data || defaultValue), isLoading, callCallback]);
+	return [isLoading ? defaultValue : data || defaultValue, isLoading, callCallback];
 }
 
 export {useAsync};

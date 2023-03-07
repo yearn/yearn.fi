@@ -28,28 +28,28 @@ function	VaultDetailsHeader({currentVault}: TCurrentVault): ReactElement {
 		{revalidateOnFocus: false}
 	) as SWRResponse as {data: TYdaemonEarned};
 
-	const	normalizedVaultEarned = useMemo((): number => (
+	const	normalizedVaultEarned = useMemo((): number =>
 		formatToNormalizedValue(
 			toBigInt(earned?.earned?.[toAddress(currentVault?.address)]?.unrealizedGains),
 			currentVault?.decimals
 		)
-	), [earned, currentVault]);
+	, [earned, currentVault]);
 
 	const	vaultBalance = useBalance(currentVault?.address)?.normalized;
 	const	vaultPrice = useTokenPrice(currentVault?.address);
 	const	vaultName = useMemo((): string => getVaultName(currentVault), [currentVault]);
 
 	return (
-		<div aria-label={'Vault Header'} className={'col-span-12 flex w-full flex-col items-center justify-center'}>
+		<div className={'col-span-12 flex w-full flex-col items-center justify-center'}>
 			<b className={'mx-auto flex w-full flex-row items-center justify-center text-center text-4xl tabular-nums text-neutral-900 md:text-8xl'}>
 				&nbsp;{vaultName}&nbsp;
 			</b>
 			<div className={'mt-4 mb-10 md:mt-10 md:mb-14'}>
-				{currentVault?.address ? (
+				{currentVault?.address ?
 					<button onClick={(): void => copyToClipboard(currentVault.address)}>
 						<p className={'font-number text-xxs text-neutral-500 md:text-xs'}>{currentVault.address}</p>
 					</button>
-				): <p className={'text-xxs text-neutral-500 md:text-xs'}>&nbsp;</p>}
+					: <p className={'text-xxs text-neutral-500 md:text-xs'}>&nbsp;</p>}
 			</div>
 			<div className={'grid grid-cols-2 gap-6 md:grid-cols-4 md:gap-12'}>
 				<div className={'flex flex-col items-center justify-center space-y-1 md:space-y-2'}>

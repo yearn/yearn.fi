@@ -19,10 +19,10 @@ function	GraphForVaultEarnings({currentVault, harvestData, height = 312, isCumul
 		return (
 			harvestData.map((item: {name: string; value: number}): {name: string; value: number} => {
 				cumulativeValue += item.value;
-				return ({
+				return {
 					name: item.name,
 					value: cumulativeValue
-				});
+				};
 			})
 		);
 	}, [harvestData]);

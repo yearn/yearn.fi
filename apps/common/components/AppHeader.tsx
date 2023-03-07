@@ -5,6 +5,7 @@ import {AnimatePresence} from 'framer-motion';
 import {Popover, Transition} from '@headlessui/react';
 import {VaultsHeader} from '@vaults/components/header/VaultsHeader';
 import {VeYfiHeader} from '@veYFI/components/header/VeYfiHeader';
+import ChildWithCondition from '@yearn-finance/web-lib/components/ChildWithCondition';
 import Header from '@yearn-finance/web-lib/components/Header';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import BalanceReminderPopover from '@common/components/BalanceReminderPopover';
@@ -65,8 +66,7 @@ function	LogoPopover(): ReactElement {
 				<Popover.Panel className={'absolute left-1/2 z-10 mt-6 w-80 -translate-x-1/2 px-4 pt-4 sm:px-0 md:w-96'}>
 					<div className={'overflow-hidden border border-neutral-200 shadow-lg'}>
 						<div className={'relative grid grid-cols-2 bg-neutral-0 md:grid-cols-4'}>
-							{(Object.keys(APPS) as AppName[]).map((appName): ReactElement => {
-								const {name, href, icon} = APPS[appName];
+							{Object.values(APPS).map(({name, href, icon}): ReactElement => {
 								return (
 									<Link
 										prefetch={false}
@@ -144,11 +144,12 @@ export function	AppHeader(): ReactElement {
 					<LogoPopover />
 				</AnimatePresence>
 			)}
-			extra={isActive ? (
-				<div className={'ml-4'}>
-					<BalanceReminderPopover />
-				</div>
-			) : <div />}
-		/>
+			extra={
+				<ChildWithCondition shouldRender={isActive}>
+					<div className={'ml-4'}>
+						<BalanceReminderPopover />
+					</div>
+				</ChildWithCondition>
+			} />
 	);
 }

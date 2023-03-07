@@ -30,15 +30,15 @@ function	GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height =
 	) as SWRResponse;
 
 	const	strategyData = useMemo((): {name: number; value: number, gain: string, loss: string}[] => {
-		const	_reports = [...(reports || [])];
-		const reportsForGraph = (
+		const	_reports = [...reports || []];
+		const reportsForGraph = 
 			_reports.reverse()?.map((reports: TYDaemonReports): {name: number; value: number, gain: string, loss: string} => ({
 				name: toNumber(reports.timestamp),
 				value: toNumber(reports.results?.[0]?.APR) * 100,
 				gain: reports?.gain || '0',
 				loss: reports?.loss || '0'
 			}))
-		);
+		;
 		return reportsForGraph;
 	}, [reports]);
 

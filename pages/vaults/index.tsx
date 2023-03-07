@@ -7,6 +7,7 @@ import {useAppSettings} from '@vaults/contexts/useAppSettings';
 import {useFilteredVaults} from '@vaults/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import Wrapper from '@vaults/Wrapper';
+import ChildWithCondition from '@yearn-finance/web-lib/components/ChildWithCondition';
 import {useSessionStorage} from '@yearn-finance/web-lib/hooks/useSessionStorage';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -30,7 +31,7 @@ function	HeaderUserPosition(): ReactElement {
 	const	{cumulatedValueInVaults} = useWallet();
 	const	{earned} = useYearn();
 
-	const	formatedYouEarned = useMemo((): string => formatAmount((earned?.totalUnrealizedGainsUSD) > 0 ? earned?.totalUnrealizedGainsUSD : 0), [earned]);
+	const	formatedYouEarned = useMemo((): string => formatAmount(earned?.totalUnrealizedGainsUSD > 0 ? earned?.totalUnrealizedGainsUSD : 0), [earned]);
 	const	formatedYouHave = useMemo((): string => formatAmount(cumulatedValueInVaults), [cumulatedValueInVaults]);
 
 	return (
@@ -122,7 +123,7 @@ function	Index(): ReactElement {
 		} else if (category === 'Holdings') {
 			_vaultList = holdingsVaults;
 		} else if (category === 'Featured Vaults') {
-			_vaultList.sort((a, b): number => (toNumber(b.tvl.tvl) * toNumber(b?.apy?.net_apy)) - (toNumber(a.tvl.tvl) * toNumber(a?.apy?.net_apy)));
+			_vaultList.sort((a, b): number => toNumber(b.tvl.tvl) * toNumber(b?.apy?.net_apy) - toNumber(a.tvl.tvl) * toNumber(a?.apy?.net_apy));
 			_vaultList = _vaultList.slice(0, 10);
 		}
 
@@ -188,7 +189,7 @@ function	Index(): ReactElement {
 		return (
 			sortedVaultsToDisplay.map((vault): ReactNode => {
 				if (!vault) {
-					return (null);
+					return null;
 				}
 				return <VaultsListRow key={vault.address} currentVault={vault} />;
 			})
@@ -222,7 +223,7 @@ function	Index(): ReactElement {
 								value: 'Holdings',
 								label: 'Holdings',
 								isSelected: category === 'Holdings',
-								node: (
+								node:
 									<Fragment>
 										{'Holdings'}
 										<span className={`absolute -top-1 -right-1 flex h-2 w-2 ${category === 'Holdings' || migratableVaults?.length === 0 ? 'opacity-0' : 'opacity-100'}`}>
@@ -230,7 +231,7 @@ function	Index(): ReactElement {
 											<span className={'relative inline-flex h-2 w-2 rounded-full bg-pink-500'}></span>
 										</span>
 									</Fragment>
-								)
+
 							}
 						]
 					]}
@@ -238,18 +239,13 @@ function	Index(): ReactElement {
 					searchValue={searchValue}
 					set_searchValue={set_searchValue} />
 
-				{category === 'Holdings' && migratableVaults?.length > 0 ? (
+				<ChildWithCondition shouldRender={category === 'Holdings' && migratableVaults?.length > 0}>
 					<div className={'my-4'}>
-						{migratableVaults.map((vault): ReactNode => {
-							if (!vault) {
-								return (null);
-							}
-							return (
-								<VaultsListInternalMigrationRow key={vault.address} currentVault={vault} />
-							);
-						})}
+						{migratableVaults.filter((vault): boolean => !!vault).map((vault): ReactNode =>
+							<VaultsListInternalMigrationRow key={vault.address} currentVault={vault} />
+						)}
 					</div>
-				) : null}
+				</ChildWithCondition>
 
 				<ListHead
 					sortBy={sort.sortBy}

@@ -1,5 +1,6 @@
 import React from 'react';
 import {Button} from '@yearn-finance/web-lib/components/Button';
+import ChildWithCondition from '@yearn-finance/web-lib/components/ChildWithCondition';
 import {Dropdown} from '@common/components/TokenDropdown';
 import IconArrowRight from '@common/icons/IconArrowRight';
 
@@ -47,14 +48,16 @@ function QASelect(props: TQASelect): ReactElement {
 					{legend}
 				</legend>
 			</div>
-			{(onSelect && options.length > 1) ? (
+			<ChildWithCondition shouldRender={options.length > 1}>
 				<Dropdown
 					defaultOption={options[0]}
 					options={options}
 					selected={selected}
 					balanceSource={balanceSource}
-					onSelect={onSelect} />
-			) : (
+					onSelect={onSelect ? onSelect : (): void => undefined} />
+			</ChildWithCondition>
+
+			<ChildWithCondition shouldRender={options.length === 0}>
 				<div className={'flex h-10 w-full items-center justify-between bg-neutral-0 px-2 text-base text-neutral-900 md:px-3'}>
 					<div className={'relative flex flex-row items-center'}>
 						<div key={selected?.value} className={'h-6 w-6 rounded-full'}>
@@ -65,7 +68,8 @@ function QASelect(props: TQASelect): ReactElement {
 						</p>
 					</div>
 				</div>
-			)}
+			</ChildWithCondition>
+
 			<legend className={'font-number hidden text-xs text-neutral-600 md:inline'} suppressHydrationWarning>
 				{legend}
 			</legend>
@@ -91,11 +95,11 @@ function QAInput(props: TQAInput): ReactElement {
 
 	return (
 		<div className={className ? className : 'w-full space-y-2'}>
-			{!!label && (
+			{!!label &&
 				<label htmlFor={label} className={'hidden text-base text-neutral-600 md:inline'}>
 					{label}
 				</label>
-			)}
+			}
 			<div className={`flex h-10 items-center ${isDisabled ? 'bg-neutral-300' : 'bg-neutral-0'} p-2`}>
 				<div className={'flex h-10 w-full flex-row items-center justify-between py-4 px-0'}>
 					<input

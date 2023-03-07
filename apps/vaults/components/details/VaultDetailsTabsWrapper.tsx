@@ -4,6 +4,7 @@ import {Listbox, Transition} from '@headlessui/react';
 import {VaultDetailsAbout} from '@vaults/components/details/tabs/VaultDetailsAbout';
 import {VaultDetailsHistorical} from '@vaults/components/details/tabs/VaultDetailsHistorical';
 import {VaultDetailsStrategies} from '@vaults/components/details/tabs/VaultDetailsStrategies';
+import ChildWithCondition from '@yearn-finance/web-lib/components/ChildWithCondition';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
@@ -16,7 +17,6 @@ import IconChevron from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
-import type {TMetamaskInjectedProvider} from '@yearn-finance/web-lib/types';
 import type {TCurrentVault} from '@yearn-finance/web-lib/types/vaults';
 import type {TSettingsForNetwork} from '@common/types/yearn';
 
@@ -39,7 +39,7 @@ function	Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactE
 	return (
 		<>
 			<nav className={'hidden flex-row items-center space-x-10 md:flex'}>
-				{tabs.map((tab): ReactElement => (
+				{tabs.map((tab): ReactElement =>
 					<button
 						key={`desktop-${tab.value}`}
 						onClick={(): void => set_selectedAboutTabIndex(tab.value)}>
@@ -50,13 +50,13 @@ function	Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactE
 							{tab.label}
 						</p>
 					</button>
-				))}
+				)}
 			</nav>
 			<div className={'relative z-50'}>
 				<Listbox
 					value={selectedAboutTabIndex}
 					onChange={(value): void => set_selectedAboutTabIndex(value)}>
-					{({open}): ReactElement => (
+					{({open}): ReactElement =>
 						<>
 							<Listbox.Button
 								className={'flex h-10 w-40 flex-row items-center border-0 border-b-2 border-neutral-900 bg-neutral-100 p-0 font-bold focus:border-neutral-900 md:hidden'}>
@@ -78,18 +78,18 @@ function	Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactE
 								leaveFrom={'transform scale-100 opacity-100'}
 								leaveTo={'transform scale-95 opacity-0'}>
 								<Listbox.Options className={'yearn--listbox-menu'}>
-									{tabs.map((tab): ReactElement => (
+									{tabs.map((tab): ReactElement =>
 										<Listbox.Option
 											className={'yearn--listbox-menu-item'}
 											key={tab.value}
 											value={tab.value}>
 											{tab.label}
 										</Listbox.Option>
-									))}
+									)}
 								</Listbox.Options>
 							</Transition>
 						</>
-					)}
+					}
 				</Listbox>
 			</div>
 		</>
@@ -105,7 +105,7 @@ function	VaultDetailsTabsWrapper({currentVault}: TCurrentVault): ReactElement {
 
 	async function onAddTokenToMetamask(address: string, symbol: string, decimals: number, image: string): Promise<void> {
 		try {
-			await (provider as TMetamaskInjectedProvider).send('wallet_watchAsset', {
+			await provider.send('wallet_watchAsset', {
 				type: 'ERC20',
 				options: {
 					address,
@@ -126,7 +126,7 @@ function	VaultDetailsTabsWrapper({currentVault}: TCurrentVault): ReactElement {
 	) as SWRResponse;
 
 	const	harvestData = useMemo((): {name: string; value: number}[] => {
-		const	_yDaemonHarvestsData = [...(yDaemonHarvestsData || [])].reverse();
+		const	_yDaemonHarvestsData = [...yDaemonHarvestsData || []].reverse();
 		return (
 			_yDaemonHarvestsData?.map((harvest): {name: string; value: number} => ({
 				name: formatDate(toNumber(harvest.timestamp) * 1000),
@@ -168,21 +168,22 @@ function	VaultDetailsTabsWrapper({currentVault}: TCurrentVault): ReactElement {
 
 			<div className={'-mt-0.5 h-0.5 w-full bg-neutral-300'} />
 
-			{currentVault && selectedAboutTabIndex === 0 ? (
+			<ChildWithCondition shouldRender={currentVault && selectedAboutTabIndex === 0}>
 				<VaultDetailsAbout
 					currentVault={currentVault}
 					harvestData={harvestData} />
-			) : null}
-			{currentVault && selectedAboutTabIndex === 1 ? (
+			</ChildWithCondition>
+
+			<ChildWithCondition shouldRender={currentVault && selectedAboutTabIndex === 1}>
 				<VaultDetailsStrategies
 					currentVault={currentVault} />
-			) : null}
-			{currentVault && selectedAboutTabIndex === 2 ? (
+			</ChildWithCondition>
+
+			<ChildWithCondition shouldRender={currentVault && selectedAboutTabIndex === 2}>
 				<VaultDetailsHistorical
 					currentVault={currentVault}
 					harvestData={harvestData} />
-			) : null}
-
+			</ChildWithCondition>
 		</div>
 	);
 }

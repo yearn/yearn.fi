@@ -56,7 +56,7 @@ function	ValueAnimation({
 				}
 				animateLetterIn(nw, i);
 			}
-			currentWord = (currentWord == wordArray.length-1) ? 0 : currentWord+1;
+			currentWord = currentWord == wordArray.length-1 ? 0 : currentWord+1;
 		}
 
 		function animateLetterOut(cw: HTMLSpanElement[], i: number): void {
@@ -68,7 +68,7 @@ function	ValueAnimation({
 		function animateLetterIn(nw: HTMLSpanElement[], i: number): void {
 			setTimeout((): void => {
 				nw[i].className = 'letter in';
-			}, 340+(i*80));
+			}, 340+i*80);
 		}
 
 		function splitLetters(word: HTMLSpanElement): void {

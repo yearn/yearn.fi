@@ -8,6 +8,7 @@ import VAULT_FACTORY_ABI from '@vaults/utils/abi/vaultFactory.abi';
 import {createNewVaultsAndStrategies, estimateGasForCreateNewVaultsAndStrategies} from '@vaults/utils/actions/createVaultFromFactory';
 import Wrapper from '@vaults/Wrapper';
 import {Button} from '@yearn-finance/web-lib/components/Button';
+import ChildWithCondition from '@yearn-finance/web-lib/components/ChildWithCondition';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -101,13 +102,13 @@ function	Factory(): ReactElement {
 				.filter((item: TCurveGaugesFromYearn): boolean => item.weight !== '0')
 				.map((gauge: TCurveGaugesFromYearn): TDropdownGaugeOption => ({
 					label: gauge.gauge_name,
-					icon: (
+					icon:
 						<ImageWithFallback
 							src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${toAddress(gauge.lp_token)}/logo-128.png`}
 							alt={gauge.gauge_name}
 							width={36}
 							height={36} />
-					),
+					,
 					value: {
 						name: gauge.gauge_name,
 						tokenAddress: toAddress(gauge.lp_token),
@@ -134,12 +135,12 @@ function	Factory(): ReactElement {
 
 		const calls = [curveGauge.name(), curveGauge.symbol()];
 		const [name, symbol] = await ethcallProvider.tryAll(calls) as [string, string];
-		return ({
+		return {
 			name: name.replace('Curve.fi', '').replace('Gauge Deposit', '') || _selectedOption.value.name,
 			symbol: symbol.replace('-gauge', '').replace('-f', '') || _selectedOption.value.name,
 			poolAddress: _selectedOption.value.poolAddress,
 			gaugeAddress: _selectedOption.value.gaugeAddress
-		});
+		};
 	}, undefined);
 
 	useEffect((): void => {
@@ -169,7 +170,7 @@ function	Factory(): ReactElement {
 	}, [provider, selectedOption?.value?.gaugeAddress]); //toast is a false negative error
 	const	{data: estimate} = useSWR(
 		'gasEstimate',
-		(!isActive || selectedOption.value.gaugeAddress === addressZero || safeChainID !== 1) ? null : fetchEstimate,
+		!isActive || selectedOption.value.gaugeAddress === addressZero || safeChainID !== 1 ? null : fetchEstimate,
 		{shouldRetryOnError: false}
 	);
 
@@ -185,6 +186,14 @@ function	Factory(): ReactElement {
 				]);
 			}, 1000);
 		}).perform();
+	}
+
+	function	loadingFallback(): ReactElement {
+		return (
+			<div className={'flex h-10 items-center bg-neutral-200 p-2 pl-5 text-neutral-600'}>
+				<span className={'loader'} />
+			</div>
+		);
 	}
 
 	return (
@@ -222,80 +231,59 @@ function	Factory(): ReactElement {
 
 						<div className={'col-span-2 w-full space-y-1'}>
 							<p className={'text-neutral-600'}>{'Vault name'}</p>
-							{status === 'loading' ? (
-								<div className={'flex h-10 items-center bg-neutral-200 p-2 pl-5 text-neutral-600'}>
-									<span className={'loader'} />
-								</div>
-							) : (
+							<ChildWithCondition shouldRender={status !== 'loading'} fallback={loadingFallback()}>
 								<div className={'h-10 bg-neutral-200 p-2 text-neutral-600'}>
 									{!gaugeDisplayData ? '' : `Curve ${gaugeDisplayData.name} Factory`}
 								</div>
-							)}
+							</ChildWithCondition>
 						</div>
 
 						<div className={'col-span-2 w-full space-y-1'}>
 							<p className={'text-neutral-600'}>{'Symbol'}</p>
-							{status === 'loading' ? (
-								<div className={'flex h-10 items-center bg-neutral-200 p-2 pl-5 text-neutral-600'}>
-									<span className={'loader'} />
-								</div>
-							) : (
+							<ChildWithCondition shouldRender={status !== 'loading'} fallback={loadingFallback()}>
 								<div className={'h-10 bg-neutral-200 p-2 text-neutral-600'}>
 									{!gaugeDisplayData ? '' : `yvCurve-${gaugeDisplayData.symbol}-f`}
 								</div>
-							)}
+							</ChildWithCondition>
 						</div>
 
 						<div className={'col-span-3 w-full space-y-1'}>
 							<p className={'text-neutral-600'}>{'Pool address'}</p>
-							{status === 'loading' ? (
-								<div className={'flex h-10 items-center bg-neutral-200 p-2 pl-5 text-neutral-600'}>
-									<span className={'loader'} />
-								</div>
-							) : (
+							<ChildWithCondition shouldRender={status !== 'loading'} fallback={loadingFallback()}>
 								<div className={'flex h-10 flex-row items-center justify-between bg-neutral-200 p-2 font-mono'}>
-									{gaugeDisplayData ? (
-										<>
-											<p className={'overflow-hidden text-ellipsis text-neutral-600'}>
-												{gaugeDisplayData.poolAddress}
-											</p>
-											<a
-												href={`${networks[1].explorerBaseURI}/address/${gaugeDisplayData.poolAddress}`}
-												target={'_blank'}
-												rel={'noreferrer'}
-												className={'ml-4 cursor-pointer text-neutral-900'}>
-												<LinkOut className={'h-6 w-6'} />
-											</a>
-										</>
-									) : ''}
+									<ChildWithCondition shouldRender={!!gaugeDisplayData}>
+										<p className={'overflow-hidden text-ellipsis text-neutral-600'}>
+											{toAddress(gaugeDisplayData?.poolAddress)}
+										</p>
+										<a
+											href={`${networks[1].explorerBaseURI}/address/${toAddress(gaugeDisplayData?.poolAddress)}`}
+											target={'_blank'}
+											rel={'noreferrer'}
+											className={'ml-4 cursor-pointer text-neutral-900'}>
+											<LinkOut className={'h-6 w-6'} />
+										</a>
+									</ChildWithCondition>
 								</div>
-							)}
+							</ChildWithCondition>
 						</div>
 						<div className={'col-span-3 w-full space-y-1'}>
 							<p className={'text-neutral-600'}>{'Gauge address'}</p>
-
-							{status === 'loading' ? (
-								<div className={'flex h-10 items-center bg-neutral-200 p-2 pl-5 text-neutral-600'}>
-									<span className={'loader'} />
-								</div>
-							) : (
+							<ChildWithCondition shouldRender={status !== 'loading'} fallback={loadingFallback()}>
 								<div className={'flex h-10 flex-row items-center justify-between bg-neutral-200 p-2 font-mono'}>
-									{gaugeDisplayData ? (
-										<>
-											<p className={'overflow-hidden text-ellipsis text-neutral-600'}>
-												{gaugeDisplayData.gaugeAddress}
-											</p>
-											<a
-												href={`${networks[1].explorerBaseURI}/address/${gaugeDisplayData.gaugeAddress}`}
-												target={'_blank'}
-												rel={'noreferrer'}
-												className={'ml-4 cursor-pointer text-neutral-900'}>
-												<LinkOut className={'h-6 w-6'} />
-											</a>
-										</>
-									) : ''}
+									<ChildWithCondition shouldRender={!!gaugeDisplayData}>
+										<p className={'overflow-hidden text-ellipsis text-neutral-600'}>
+											{toAddress(gaugeDisplayData?.gaugeAddress)}
+										</p>
+										<a
+											href={`${networks[1].explorerBaseURI}/address/${toAddress(gaugeDisplayData?.gaugeAddress)}`}
+											target={'_blank'}
+											rel={'noreferrer'}
+											className={'ml-4 cursor-pointer text-neutral-900'}>
+											<LinkOut className={'h-6 w-6'} />
+										</a>
+									</ChildWithCondition>
 								</div>
-							)}
+							</ChildWithCondition>
 						</div>
 
 					</div>

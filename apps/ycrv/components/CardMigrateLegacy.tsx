@@ -36,12 +36,12 @@ function	CardMigrateLegacy(): ReactElement {
 		allowanceFrom, onApproveFrom, onZap
 	} = useCardTransactor();
 
-	const	ycrvPrice = useMemo((): number => (
+	const	ycrvPrice = useMemo((): number => 
 		formatToNormalizedValue(toBigInt(prices?.[YCRV_TOKEN_ADDRESS]), 6)
-	), [prices]);
-	const	ycrvCurvePoolPrice = useMemo((): number => (
+	, [prices]);
+	const	ycrvCurvePoolPrice = useMemo((): number => 
 		formatToNormalizedValue(toBigInt(prices?.[YCRV_CURVE_POOL_ADDRESS]), 6)
-	), [prices]);
+	, [prices]);
 
 	function	renderButton(): ReactElement {
 		const	rawAmount = toBigInt(amount.raw);

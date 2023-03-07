@@ -6,7 +6,7 @@ export const YCRV = {
 	symbol: 'yCRV',
 	decimals: 18,
 	value: YCRV_TOKEN_ADDRESS,
-	icon: (
+	icon: 
 		<Image
 			alt={'yCRV'}
 			width={24}
@@ -14,7 +14,7 @@ export const YCRV = {
 			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YCRV_TOKEN_ADDRESS}/logo-128.png`}
 			loading={'eager'}
 			priority />
-	)
+	
 };
 
 // TODO Add Image src
@@ -23,7 +23,7 @@ export const VL_YCRV = {
 	symbol: 'vl-yCRV',
 	decimals: 18,
 	value: VLYCRV_TOKEN_ADDRESS,
-	icon: (
+	icon: 
 		<Image
 			alt={'vl-yCRV'}
 			width={24}
@@ -31,5 +31,5 @@ export const VL_YCRV = {
 			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YCRV_TOKEN_ADDRESS}/logo-128.png`}
 			loading={'eager'}
 			priority />
-	)
+	
 };

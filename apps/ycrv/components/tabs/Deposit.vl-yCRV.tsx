@@ -37,7 +37,7 @@ function Deposit(): ReactElement {
 
 	const maxLockingPossible = useMemo((): TNormalizedBN => {
 		const balance = yCRVBalance.raw;
-		return (toNormalizedBN(balance.toString(), yCRVBalance.decimals));
+		return toNormalizedBN(balance.toString(), yCRVBalance.decimals);
 	}, [yCRVBalance.decimals, yCRVBalance.raw]);
 
 	const fromInputProps: TQAInput = useMemo((): TQAInput => ({

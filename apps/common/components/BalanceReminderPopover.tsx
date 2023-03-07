@@ -1,6 +1,7 @@
 import React, {Fragment, useMemo} from 'react';
 import Image from 'next/image';
 import {Popover, Transition} from '@headlessui/react';
+import ChildWithCondition from '@yearn-finance/web-lib/components/ChildWithCondition';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import IconAddToMetamask from '@yearn-finance/web-lib/icons/IconAddToMetamask';
@@ -16,7 +17,7 @@ import {useBalance} from '@common/hooks/useBalance';
 
 import type {ReactElement} from 'react';
 import type {TBalanceData} from '@yearn-finance/web-lib/hooks/types';
-import type {TAddress, TDict, TMetamaskInjectedProvider} from '@yearn-finance/web-lib/types';
+import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 
 type TBalanceReminderElement = {
 	address: TAddress,
@@ -32,7 +33,7 @@ function	TokenItem({element}: {element: TBalanceReminderElement}): ReactElement 
 
 	async function addTokenToMetamask(address: string, symbol: string, decimals: number, image: string): Promise<void> {
 		try {
-			await (provider as TMetamaskInjectedProvider).send('wallet_watchAsset', {
+			await provider.send('wallet_watchAsset', {
 				type: 'ERC20',
 				options: {
 					address,
@@ -85,6 +86,21 @@ function	TokenItem({element}: {element: TBalanceReminderElement}): ReactElement 
 	);
 }
 
+function	NoTokenFallback({isLoading}: {isLoading: boolean}): ReactElement {
+	if (isLoading) {
+		return (
+			<div className={'py-4 text-center text-sm text-neutral-400'}>
+				{'Retrieving your yvTokens ...'}
+			</div>
+		);
+	}
+	return (
+		<div className={'py-4 text-center text-sm text-neutral-400'}>
+			{'No position in Yearn found.'}
+		</div>
+	);
+}
+
 export default function BalanceReminderPopover(): ReactElement {
 	const	{balances, isLoading} = useWallet();
 	const	{address, ens, isActive, onDesactivate} = useWeb3();
@@ -118,7 +134,7 @@ export default function BalanceReminderPopover(): ReactElement {
 
 	return (
 		<Popover className={'relative flex'}>
-			{(): ReactElement => (
+			{(): ReactElement =>
 				<>
 					<Popover.Button>
 						<IconWallet className={'yearn--header-nav-item mt-0.5 h-4 w-4'} />
@@ -136,11 +152,7 @@ export default function BalanceReminderPopover(): ReactElement {
 								<div className={'relative bg-neutral-0 p-0'}>
 									<div className={'flex items-center justify-center border-b border-neutral-300 py-4 text-center'}>
 										<b>
-											{isActive && address && ens ? (
-												ens
-											) : isActive && address ? (
-												truncateHex(address, 5)
-											) : 'Connect wallet'}
+											{isActive && address && ens ? ens : isActive && address ? truncateHex(address, 5) : 'Connect wallet'}
 										</b>
 									</div>
 									<div className={'absolute top-4 right-4'}>
@@ -151,27 +163,17 @@ export default function BalanceReminderPopover(): ReactElement {
 										</button>
 									</div>
 
-									{
-										(nonNullBalancesForVault.length === 0 && isLoading) ? (
-											<div className={'py-4 text-center text-sm text-neutral-400'}>
-												{'Retrieving your yvTokens ...'}
-											</div>
-										) : (nonNullBalancesForVault.length === 0) ? (
-											<div className={'py-4 text-center text-sm text-neutral-400'}>
-												{'No position in Yearn found.'}
-											</div>
-										) : nonNullBalancesForVault.map((element): ReactElement => (
-											<TokenItem
-												key={element.address}
-												element={element} />
-										))
-									}
+									<ChildWithCondition
+										shouldRender={nonNullBalancesForVault.length > 0}
+										fallback={<NoTokenFallback isLoading={isLoading} />}>
+										{nonNullBalancesForVault.map((element): ReactElement => <TokenItem key={element.address} element={element} />)}
+									</ChildWithCondition>
 								</div>
 							</div>
 						</Popover.Panel>
 					</Transition>
 				</>
-			)}
+			}
 		</Popover>
 	);
 }

@@ -1,4 +1,5 @@
 import React, {useState} from 'react';
+import ChildWithCondition from '@yearn-finance/web-lib/components/ChildWithCondition';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 
@@ -23,7 +24,7 @@ function TokenIcon({
 					<ImageWithFallback
 						loading={'eager'}
 						src={`${process.env.BASE_YEARN_ASSETS_URI}/${chainID}/${toAddress(token.underlyingTokensAddresses[0])}/logo-128.png`}
-						style={{marginRight: (size * 0.8) / -4}}
+						style={{marginRight: size * 0.8 / -4}}
 						alt={''}
 						width={(size * 0.8)}
 						height={(size * 0.8)} />
@@ -31,7 +32,7 @@ function TokenIcon({
 						loading={'eager'}
 						src={`${process.env.BASE_YEARN_ASSETS_URI}/${chainID}/${toAddress(token.underlyingTokensAddresses[1])}/logo-128.png`}
 						alt={''}
-						style={{marginLeft: (size * 0.8) / -4}}
+						style={{marginLeft: size * 0.8 / -4}}
 						width={(size * 0.8)}
 						height={(size * 0.8)} />
 				</div>
@@ -49,7 +50,7 @@ function TokenIcon({
 
 	return (
 		<>
-			{imageType === 'Vault' ? (
+			<ChildWithCondition shouldRender={imageType === 'Vault'}>
 				<ImageWithFallback
 					loading={'eager'}
 					src={`${process.env.BASE_YEARN_ASSETS_URI}/${chainID}/${toAddress(token?.address)}/logo-128.png`}
@@ -57,14 +58,18 @@ function TokenIcon({
 					alt={''}
 					width={size}
 					height={size} />
-			) : imageType === 'Fallback' ? (
+			</ChildWithCondition>
+			<ChildWithCondition shouldRender={imageType === 'Fallback'}>
 				<ImageWithFallback
 					loading={'eager'}
 					src={'/placeholder.png'}
 					alt={''}
 					width={size}
 					height={size} />
-			) : (renderMultipleAssetImage())}
+			</ChildWithCondition>
+			<ChildWithCondition shouldRender={imageType === 'Underlying'}>
+				{renderMultipleAssetImage()}
+			</ChildWithCondition>
 		</>
 
 	);

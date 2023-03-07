@@ -24,20 +24,20 @@ function	HeaderPosition(): ReactElement {
 	const stycrvPrice = useTokenPrice(STYCRV_TOKEN_ADDRESS);
 	const lpycrvPrice = useTokenPrice(LPYCRV_TOKEN_ADDRESS);
 
-	const	formatedYearnHas = useMemo((): string => (
+	const	formatedYearnHas = useMemo((): string => 
 		holdings?.veCRVBalance ?
 			formatAmount(formatToNormalizedValue(holdings.veCRVBalance, 18), 0, 0)
 			: ''
-	), [holdings]);
+	, [holdings]);
 
-	const	formatedYouHave = useMemo((): string => (
+	const	formatedYouHave = useMemo((): string => 
 		formatCounterValueRaw(
-			(balanceOfStyCRV.normalized * stycrvPrice)
+			balanceOfStyCRV.normalized * stycrvPrice
 			+
-			(balanceOfLpyCRV.normalized * lpycrvPrice),
+			balanceOfLpyCRV.normalized * lpycrvPrice,
 			1
 		)
-	), [balanceOfStyCRV.normalized, stycrvPrice, balanceOfLpyCRV.normalized, lpycrvPrice]);
+	, [balanceOfStyCRV.normalized, stycrvPrice, balanceOfLpyCRV.normalized, lpycrvPrice]);
 
 	return (
 		<Fragment>
@@ -69,7 +69,7 @@ function	Holdings(): ReactElement {
 	const {vaults} = useYearn();
 	const {curveWeeklyFees, cgPrices} = useCurve();
 
-	const lpCRVAPY = useMemo((): string => getVaultAPY(vaults, LPYCRV_TOKEN_ADDRESS), [vaults]);
+	const lpCRVAPY = useMemo((): string => getVaultAPY(vaults[LPYCRV_TOKEN_ADDRESS]), [vaults]);
 	const ycrvPrice = useTokenPrice(YCRV_TOKEN_ADDRESS);
 	const stycrvPrice = useTokenPrice(STYCRV_TOKEN_ADDRESS);
 	const lpycrvPrice = useTokenPrice(LPYCRV_TOKEN_ADDRESS);
@@ -107,7 +107,7 @@ function	Holdings(): ReactElement {
 	}, [holdings, latestCurveFeesValue, cgPrices]);
 
 	const	curveAdminFeePercent = useMemo((): number => {
-		return (currentVeCRVAPY * toNumber(holdings?.boostMultiplier) / 10000);
+		return currentVeCRVAPY * toNumber(holdings?.boostMultiplier) / 10000;
 	}, [holdings, currentVeCRVAPY]);
 
 	return (
@@ -147,11 +147,11 @@ function	Holdings(): ReactElement {
 							<p
 								suppressHydrationWarning
 								className={'text-lg text-neutral-500'}>
-								{`(Price = $${(formatAmount(ycrvPrice))} | Peg = ${(
-									holdings?.crvYCRVPeg ? (formatPercent(
+								{`(Price = $${formatAmount(ycrvPrice)} | Peg = ${
+									holdings?.crvYCRVPeg ? formatPercent(
 										(formatToNormalizedValue(holdings?.crvYCRVPeg, 18) + 0.0015) * 100)
-									): formatPercent(0)
-								)})`}
+										: formatPercent(0)
+								})`}
 							</p>
 						</div>
 					</div>
@@ -323,7 +323,7 @@ function	Holdings(): ReactElement {
 						<p
 							suppressHydrationWarning
 							className={'font-number text-sm text-neutral-400 md:text-base'}>
-							{`∙ ${styCRVAPY && curveAdminFeePercent && styCRVMegaBoost ? formatAmount(styCRVAPY - (curveAdminFeePercent + (styCRVMegaBoost * 100)), 2, 2) : '0.00'}% Gauge Voting Bribes`}
+							{`∙ ${styCRVAPY && curveAdminFeePercent && styCRVMegaBoost ? formatAmount(styCRVAPY - (curveAdminFeePercent + styCRVMegaBoost * 100), 2, 2) : '0.00'}% Gauge Voting Bribes`}
 						</p>
 						<p
 							suppressHydrationWarning

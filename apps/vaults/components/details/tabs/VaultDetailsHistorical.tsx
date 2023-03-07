@@ -3,6 +3,7 @@ import dynamic from 'next/dynamic';
 import useSWR from 'swr';
 import {getMessariSubgraphEndpoint} from '@vaults/utils';
 import {Button} from '@yearn-finance/web-lib/components/Button';
+import ChildWithCondition from '@yearn-finance/web-lib/components/ChildWithCondition';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {formatToNormalizedValue, toBigInt, toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
@@ -76,15 +77,17 @@ function	VaultDetailsHistorical({currentVault, harvestData}: {currentVault: TVau
 				</div>
 			</div>
 			<div className={'mt-4 flex flex-row space-x-8 border-b border-l border-neutral-300'} style={{height: 312}}>
-				{selectedViewIndex === 0 ?(
+				<ChildWithCondition shouldRender={selectedViewIndex === 0}>
 					<GraphForVaultTVL messariData={messariData} />
-				) : null}
-				{selectedViewIndex === 1 ? (
+				</ChildWithCondition>
+
+				<ChildWithCondition shouldRender={selectedViewIndex === 1}>
 					<GraphForVaultPPSGrowth messariData={messariData} />
-				) : null}
-				{selectedViewIndex === 2 ? (
+				</ChildWithCondition>
+
+				<ChildWithCondition shouldRender={selectedViewIndex === 2}>
 					<GraphForVaultEarnings currentVault={currentVault} harvestData={harvestData} />
-				) : null}
+				</ChildWithCondition>
 			</div>
 		</div>
 	);

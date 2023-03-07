@@ -93,11 +93,11 @@ function	DesktopCategories<T>({categories, onSelect}: TListHeroDesktopCategories
 		<div>
 			<label className={'text-neutral-600'}>&nbsp;</label>
 			<div className={'mt-1 flex flex-row space-x-4'}>
-				{(categories || []).map((currentCategory, index: number): ReactElement => (
+				{(categories || []).map((currentCategory, index: number): ReactElement => 
 					<div
 						key={`${index}-${isClientLoaded}`}
 						className={'flex flex-row space-x-0 divide-x border-x border-neutral-900'}>
-						{currentCategory.map((item): ReactElement => (
+						{currentCategory.map((item): ReactElement => 
 							<Button
 								key={item.label}
 								onClick={(): void => onSelect(item.value)}
@@ -105,9 +105,9 @@ function	DesktopCategories<T>({categories, onSelect}: TListHeroDesktopCategories
 								className={'yearn--button-smaller relative !border-x-0'}>
 								{item?.node || item.label}
 							</Button>
-						))}
+						)}
 					</div>
-				))}
+				)}
 			</div>
 		</div>
 	);
@@ -164,12 +164,12 @@ function	ListHero<T extends string>({
 					searchValue={searchValue}
 					set_searchValue={set_searchValue} />
 
-				{!!switchProps && (
+				{!!switchProps && 
 					<div className={'mr-4 mt-7 flex h-full min-w-fit flex-row'}>
 						<small className={'mr-2'}>{'Hide gauges with 0 votes'}</small>
 						<Switch {...switchProps} />
 					</div>
-				)}
+				}
 
 				<DesktopCategories
 					categories={categories}
@@ -184,13 +184,13 @@ function	ListHero<T extends string>({
 							onSelect(value);
 						}
 					}}>
-					{categories.map((currentCategory): ReactNode => (
-						currentCategory.map((item): ReactElement => (
+					{categories.map((currentCategory): ReactNode => 
+						currentCategory.map((item): ReactElement => 
 							<option key={item.value} value={item.value}>
 								{item.label}
 							</option>
-						))
-					))}
+						)
+					)}
 				</select>
 				<div className={'flex h-8 w-full items-center border border-neutral-0 bg-neutral-0 p-2 md:w-auto'}>
 					<div className={'flex h-8 w-full flex-row items-center justify-between py-2 px-0'}>

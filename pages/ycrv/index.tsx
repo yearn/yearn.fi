@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useClientEffect} from '@yearn-finance/web-lib/hooks/useClientEffect';
 import CardMigrateLegacy from '@yCRV/components/CardMigrateLegacy';
@@ -28,7 +29,7 @@ function	TextAnimation(): ReactElement {
 			for (let i = 0; i < cw.length; i++) {
 				animateLetterOut(cw, i);
 			}
-  
+
 			for (let i = 0; i < nw.length; i++) {
 				nw[i].className = 'letter behind';
 				if (nw?.[0]?.parentElement?.style) {
@@ -36,7 +37,7 @@ function	TextAnimation(): ReactElement {
 				}
 				animateLetterIn(nw, i);
 			}
-			currentWord = (currentWord == wordArray.length-1) ? 0 : currentWord+1;
+			currentWord = currentWord == wordArray.length-1 ? 0 : currentWord+1;
 		}
 
 		function animateLetterOut(cw: HTMLSpanElement[], i: number): void {
@@ -48,7 +49,7 @@ function	TextAnimation(): ReactElement {
 		function animateLetterIn(nw: HTMLSpanElement[], i: number): void {
 			setTimeout((): void => {
 				nw[i].className = 'letter in';
-			}, 340+(i*80));
+			}, 340+i*80);
 		}
 
 		function splitLetters(word: HTMLSpanElement): void {
@@ -62,7 +63,7 @@ function	TextAnimation(): ReactElement {
 				word.appendChild(letter);
 				letters.push(letter);
 			}
-  
+
 			wordArray.push(letters);
 		}
 
@@ -79,7 +80,7 @@ function	TextAnimation(): ReactElement {
 	return (
 		<>
 			<div className={'text'}>
-				<p className={'wordWrapper'}> 
+				<p className={'wordWrapper'}>
 					<span className={'word'}>{'Gigantic'}</span>
 					<span className={'word'}>{'Seismic'}</span>
 					<span className={'word'}>{'Substantial'}</span>
@@ -106,12 +107,11 @@ function	Index(): ReactElement {
 					<p className={'text-center text-lg md:text-2xl'}>{'Whatever word you choose, get supercharged yields on CRV with Yearn.'}</p>
 				</div>
 				<div>
-					<Button
-						as={'a'}
-						href={'#swap'}
-						className={'w-full'}>
-						{'To the yield!'}
-					</Button>
+					<Link href={'#swap'}>
+						<Button className={'w-full'}>
+							{'To the yield!'}
+						</Button>
+					</Link>
 				</div>
 			</div>
 			<section id={'swap'} className={'mt-0 flex w-full flex-col items-center justify-center space-y-10 space-x-0 md:flex-row md:space-y-0 md:space-x-4 lg:space-x-0'}>

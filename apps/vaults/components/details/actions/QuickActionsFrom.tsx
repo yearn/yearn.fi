@@ -1,5 +1,6 @@
 import React from 'react';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
+import ChildWithCondition from '@yearn-finance/web-lib/components/ChildWithCondition';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -35,13 +36,16 @@ function	VaultDetailsQuickActionsFrom(): ReactElement {
 						{`You have ${formatAmount(selectedFromBalance.normalized)} ${actionParams?.selectedOptionFrom?.symbol || 'tokens'}`}
 					</legend>
 				</div>
-				{isActive && isDepositing && possibleOptionsFrom.length > 1 ? (
+
+				<ChildWithCondition shouldRender={isActive && isDepositing && possibleOptionsFrom.length > 1}>
 					<Dropdown
 						defaultOption={possibleOptionsFrom[0]}
 						options={possibleOptionsFrom}
 						selected={actionParams?.selectedOptionFrom}
 						onSelect={onUpdateSelectedOptionFrom} />
-				) : (
+				</ChildWithCondition>
+
+				<ChildWithCondition shouldRender={!isActive || !isDepositing || possibleOptionsFrom.length === 1}>
 					<div className={'flex h-10 w-full items-center justify-between bg-neutral-300 px-2 text-base text-neutral-900 md:px-3'}>
 						<div className={'relative flex flex-row items-center'}>
 							<div className={'h-6 w-6 rounded-full'}>
@@ -52,7 +56,8 @@ function	VaultDetailsQuickActionsFrom(): ReactElement {
 							</p>
 						</div>
 					</div>
-				)}
+				</ChildWithCondition>
+
 				<legend className={'font-number hidden text-xs text-neutral-600 md:inline'} suppressHydrationWarning>
 					{`You have ${formatAmount(selectedFromBalance.normalized)} ${actionParams?.selectedOptionFrom?.symbol || 'tokens'}`}
 				</legend>

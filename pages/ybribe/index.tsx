@@ -2,6 +2,7 @@ import React, {useCallback, useMemo, useState} from 'react';
 import Balancer from 'react-wrap-balancer';
 import Link from 'next/link';
 import {Button} from '@yearn-finance/web-lib/components/Button';
+import ChildWithCondition from '@yearn-finance/web-lib/components/ChildWithCondition';
 import {useSessionStorage} from '@yearn-finance/web-lib/hooks/useSessionStorage';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatToNormalizedValue, toBigInt, toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -145,17 +146,16 @@ function	GaugeList(): ReactElement {
 						{label: '', value: '', sortable: false}
 					]} />
 
-				{sortedGauges.length === 0 ? (
-					<GaugeListEmpty category={category} />
-				) : sortedGauges.map((gauge): ReactNode => {
-					if (!gauge) {
-						return (null);
-					}
-					return <GaugeListRow
-						key={gauge.name}
-						currentGauge={gauge}
-						category={category} />;
-				})}
+				<ChildWithCondition
+					shouldRender={sortedGauges.length > 0}
+					fallback={<GaugeListEmpty category={category} />}>
+					{sortedGauges.filter((gauge): boolean => !!gauge).map((gauge): ReactNode =>
+						<GaugeListRow
+							key={gauge.name}
+							currentGauge={gauge}
+							category={category} />
+					)}
+				</ChildWithCondition>
 			</div>
 		</section>
 	);

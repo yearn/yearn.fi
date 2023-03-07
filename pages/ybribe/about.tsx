@@ -1,6 +1,7 @@
 import React, {useMemo} from 'react';
 import Balancer from 'react-wrap-balancer';
 import useSWR from 'swr';
+import ChildWithCondition from '@yearn-finance/web-lib/components/ChildWithCondition';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import {toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -79,16 +80,15 @@ function	About(): ReactElement {
 					</div>
 					<div className={'grid w-full grid-cols-1 pb-2 md:pb-4'}>
 						<RewardFeedTableHead />
-						{(feed || []).length === 0 ? (
-							<GaugeListEmpty />
-						) : sortedFeed.map((item): ReactNode => {
-							if (!item) {
-								return (null);
-							}
-							return <RewardFeedTableRow
-								key={`${item.txHash}_${item.briber}_${item.rewardToken}`}
-								currentRewardAdded={item} />;
-						})}
+						<ChildWithCondition
+							shouldRender={(feed || []).length > 0}
+							fallback={<GaugeListEmpty />}>
+							{sortedFeed.filter((item): boolean => !!item).map((item): ReactNode =>
+								<RewardFeedTableRow
+									key={`${item.txHash}_${item.briber}_${item.rewardToken}`}
+									currentRewardAdded={item} />
+							)}
+						</ChildWithCondition>
 					</div>
 				</div>
 			</div>

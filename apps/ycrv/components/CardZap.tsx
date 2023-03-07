@@ -35,13 +35,13 @@ function	CardZap(): ReactElement {
 		allowanceFrom, onApproveFrom, onZap, onIncreaseCRVAllowance
 	} = useCardTransactor();
 
-	const	ycrvPrice = useMemo((): number => (
+	const	ycrvPrice = useMemo((): number => 
 		formatToNormalizedValue(toBigInt(prices?.[YCRV_TOKEN_ADDRESS]), 6)
-	), [prices]);
+	, [prices]);
 
-	const	ycrvCurvePoolPrice = useMemo((): number => (
+	const	ycrvCurvePoolPrice = useMemo((): number => 
 		formatToNormalizedValue(toBigInt(prices?.[YCRV_CURVE_POOL_ADDRESS]), 6)
-	), [prices]);
+	, [prices]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** useMemo to get the current possible TO vaults path for the current FROM
