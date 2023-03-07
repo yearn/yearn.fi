@@ -3,7 +3,7 @@ import dayjs from 'dayjs';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {VLYCRV_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {DefaultTNormalizedBN, toNormalizedBN, toNumber, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {DefaultTNormalizedBN, toBigInt, toNormalizedBN, toNumber, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
@@ -37,7 +37,7 @@ function Withdraw(): ReactElement {
 	}, [stYCRVBalance.normalized, stYCRVBalance?.symbol]);
 
 	const maxLockingPossible = useMemo((): TNormalizedBN => {
-		const balance = stYCRVBalance.raw || Zero;
+		const balance = toBigInt(stYCRVBalance.raw);
 		return (toNormalizedBN(balance.toString(), stYCRVBalance.decimals));
 	}, [stYCRVBalance.decimals, stYCRVBalance.raw]);
 
