@@ -19,7 +19,7 @@ import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
 import type {TVault} from '@yearn-finance/web-lib/types/vaults';
 
-function Index({router, vaultData}: {router: NextRouter, vaultData: TVault}): ReactElement {
+function Index({router, vaultData}: {router: NextRouter, vaultData: TVault}): ReactElement | null {
 	const {address, isActive} = useWeb3();
 	const {safeChainID} = useChainID();
 	const {vaults} = useYearn();
@@ -39,6 +39,9 @@ function Index({router, vaultData}: {router: NextRouter, vaultData: TVault}): Re
 		}
 	}, [currentVault.current?.address, currentVault.current?.token?.address, address, isActive, refresh]);
 
+	if (!currentVault) {
+		return null;
+	}
 	return (
 		<>
 			<header className={'relative z-50 flex w-full items-center justify-center'}>

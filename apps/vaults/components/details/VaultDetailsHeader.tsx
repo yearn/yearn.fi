@@ -1,4 +1,4 @@
-import React, {useMemo} from 'react';
+import React from 'react';
 import useSWR from 'swr';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -19,30 +19,16 @@ import type {SWRResponse} from 'swr';
 import type {TCurrentVault} from '@yearn-finance/web-lib/types/vaults';
 import type {TYdaemonEarned} from '@common/types/yearn';
 
-function	VaultDetailsHeader({currentVault}: TCurrentVault): ReactElement {
-	const {safeChainID} = useChainID();
-	const {address} = useWeb3();
-	const {settings: baseAPISettings} = useSettings();
-	const {data: earned} = useSWR(
-		currentVault.address && address ? `${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/${safeChainID}/earned/${address}/${currentVault.address}` : null,
-		baseFetcher,
-		{revalidateOnFocus: false}
-	) as SWRResponse as {data: TYdaemonEarned};
+function	VaultDetailsHeaderWrapped({currentVault, unrealizedGains}: TCurrentVault & {unrealizedGains: bigint}): ReactElement {
 	const clientOnlyFormatAmount = useClientOnlyFn({fn: formatAmount, placeholder: '0,00'});
 	const clientOnlyFormatPercent = useClientOnlyFn({fn: formatPercent, placeholder: '0,00'});
 	const clientOnlyFormatUSD = useClientOnlyFn({fn: formatUSD, placeholder: '0,00'});
 	const clientOnlyFormatCounterValue = useClientOnlyFn({fn: formatCounterValue, placeholder: '0,00'});
 
-	const	normalizedVaultEarned = useMemo((): number =>
-		formatToNormalizedValue(
-			toBigInt(earned?.earned?.[toAddress(currentVault?.address)]?.unrealizedGains),
-			currentVault?.decimals
-		)
-	, [earned, currentVault]);
-
-	const	vaultBalance = useBalance(currentVault?.address)?.normalized;
-	const	vaultPrice = useTokenPrice(currentVault?.address);
-	const	vaultName = useMemo((): string => getVaultName(currentVault), [currentVault]);
+	const vaultBalance = useBalance(currentVault.address)?.normalized;
+	const vaultPrice = useTokenPrice(currentVault.address);
+	const vaultName = getVaultName(currentVault);
+	const normalizedVaultEarned = formatToNormalizedValue(unrealizedGains, currentVault?.decimals);
 
 	return (
 		<div className={'col-span-12 flex w-full flex-col items-center justify-center'}>
@@ -50,16 +36,14 @@ function	VaultDetailsHeader({currentVault}: TCurrentVault): ReactElement {
 				&nbsp;{vaultName}&nbsp;
 			</b>
 			<div className={'mt-4 mb-10 md:mt-10 md:mb-14'}>
-				{currentVault?.address ?
-					<button onClick={(): void => copyToClipboard(currentVault.address)}>
-						<p className={'font-number text-xxs text-neutral-500 md:text-xs'}>{currentVault.address}</p>
-					</button>
-					: <p className={'text-xxs text-neutral-500 md:text-xs'}>&nbsp;</p>}
+				<button onClick={(): void => copyToClipboard(currentVault.address)}>
+					<p className={'font-number text-xxs text-neutral-500 md:text-xs'}>{currentVault.address}</p>
+				</button>
 			</div>
 			<div className={'grid grid-cols-2 gap-6 md:grid-cols-4 md:gap-12'}>
 				<div className={'flex flex-col items-center justify-center space-y-1 md:space-y-2'}>
 					<p className={'text-center text-xxs text-neutral-600 md:text-xs'}>
-						{`Total deposited, ${currentVault?.symbol || 'token'}`}
+						{`Total deposited, ${currentVault.symbol || 'token'}`}
 					</p>
 					<b className={'font-number text-lg md:text-3xl'}>
 						{clientOnlyFormatAmount(formatToNormalizedValue(toBigInt(currentVault?.tvl?.total_assets), currentVault?.decimals))}
@@ -81,7 +65,7 @@ function	VaultDetailsHeader({currentVault}: TCurrentVault): ReactElement {
 
 				<div className={'flex flex-col items-center justify-center space-y-1 md:space-y-2'}>
 					<p className={'text-center text-xxs text-neutral-600 md:text-xs'}>
-						{`Balance, ${currentVault?.symbol || 'token'}`}
+						{`Balance, ${currentVault.symbol || 'token'}`}
 					</p>
 					<b className={'font-number text-lg md:text-3xl'}>
 						{clientOnlyFormatAmount(vaultBalance)}
@@ -107,5 +91,24 @@ function	VaultDetailsHeader({currentVault}: TCurrentVault): ReactElement {
 	);
 }
 
+function	VaultDetailsHeader({currentVault}: TCurrentVault): ReactElement {
+	const {safeChainID} = useChainID();
+	const {address} = useWeb3();
+	const {settings: baseAPISettings} = useSettings();
+
+	const hasAddresses = currentVault.address && address;
+	const baseURI = baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI;
+	const {data} = useSWR(
+		hasAddresses ? `${baseURI}/${safeChainID}/earned/${address}/${currentVault.address}` : null,
+		baseFetcher,
+		{revalidateOnFocus: false}
+	) as SWRResponse as {data: TYdaemonEarned};
+
+	return (
+		<VaultDetailsHeaderWrapped
+			currentVault={currentVault}
+			unrealizedGains={toBigInt(data?.earned?.[toAddress(currentVault?.address)]?.unrealizedGains)} />
+	);
+}
 
 export {VaultDetailsHeader};
