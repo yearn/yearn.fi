@@ -1,13 +1,13 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 
-import type {VoidPromiseFunction} from '@yearn-finance/web-lib/types';
+import type {Maybe, MayPromise, VoidPromiseFunction} from '@yearn-finance/web-lib/types';
 
 function	useAsync<T>(
-	callback: (...args: unknown[]) => Promise<T | undefined>,
+	callback: (...args: unknown[]) => MayPromise<T>,
 	defaultValue?: T,
 	effectDependencies: unknown[] = []
-): [T | undefined, boolean, VoidPromiseFunction] {
+): [Maybe<T>, boolean, VoidPromiseFunction] {
 	console.error('DEPRECATED: PLEASE USE @react-hookz/web instead');
 	const runNonce = useRef(0);
 	const [isLoading, set_isLoading] = useState(false);

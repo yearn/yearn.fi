@@ -17,14 +17,14 @@ import {variants} from '@common/utils/animations';
 import type {NextPageContext} from 'next';
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
-import type {TYearnVault} from '@common/types/yearn';
+import type {TVault} from '@yearn-finance/web-lib/types/vaults';
 
-function Index({router, vaultData}: {router: NextRouter, vaultData: TYearnVault}): ReactElement {
+function Index({router, vaultData}: {router: NextRouter, vaultData: TVault}): ReactElement {
 	const {address, isActive} = useWeb3();
 	const {safeChainID} = useChainID();
 	const {vaults} = useYearn();
 	const {refresh} = useWallet();
-	const currentVault = useRef<TYearnVault>(vaults[toAddress(router.query.address as string)] as TYearnVault || vaultData);
+	const currentVault = useRef<TVault>(vaults[toAddress(router.query.address as string)] as TVault || vaultData);
 
 	useEffect((): void => {
 		if (address && isActive) {

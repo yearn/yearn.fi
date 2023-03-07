@@ -18,7 +18,7 @@ import {useVLyCRV} from '@yCRV/hooks/useVLyCRV';
 
 import type {ChangeEvent, ReactElement} from 'react';
 import type {TQAButton, TQAInput, TQASelect} from '@yCRV/components/QuickActions';
-import type {TNormalizedBN} from '@yearn-finance/web-lib/types';
+import type {Maybe, TNormalizedBN} from '@yearn-finance/web-lib/types';
 
 function Deposit(): ReactElement {
 	const {isActive, provider} = useWeb3();
@@ -26,7 +26,7 @@ function Deposit(): ReactElement {
 	const yCRVBalance = useBalance(YCRV.value);
 	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
 	const [txStatusDeposit, set_txStatusDeposit] = useState(defaultTxStatus);
-	const [amount, set_amount] = useState<TNormalizedBN | undefined>(DefaultTNormalizedBN);
+	const [amount, set_amount] = useState<Maybe<TNormalizedBN>>(DefaultTNormalizedBN);
 	const pricePerYCRV = useTokenPrice(toAddress(YCRV.value));
 	const {deposit, approve} = useVLyCRV();
 

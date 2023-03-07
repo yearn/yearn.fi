@@ -1,4 +1,5 @@
 
+import type {Maybe} from '@yearn-finance/web-lib/types';
 import type {Order} from '@gnosis.pm/gp-v2-contracts';
 
 /* 🔵 - Yearn Finance ******************************************************
@@ -16,7 +17,7 @@ export type TCowAPIResult = {
 	id: number;
 }
 export type TCowResult = {
-	result: TCowAPIResult | undefined,
-	isLoading: boolean,
-	error: Error | undefined
+	result: Maybe<TCowAPIResult>,
+	error: Maybe<Error>,
+	isLoading: boolean
 }

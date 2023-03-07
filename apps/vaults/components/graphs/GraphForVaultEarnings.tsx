@@ -3,11 +3,11 @@ import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recha
 import {formatAmount, formatWithUnit} from '@yearn-finance/web-lib/utils/format.number';
 
 import type {ReactElement} from 'react';
+import type {TVault} from '@yearn-finance/web-lib/types/vaults';
 import type {TGraphData} from '@common/types/types';
-import type {TYearnVault} from '@common/types/yearn';
 
 export type TGraphForVaultEarningsProps = {
-	currentVault: TYearnVault,
+	currentVault: TVault,
 	harvestData: TGraphData[],
 	height?: number,
 	isCumulative?: boolean,

@@ -15,13 +15,13 @@ import {useYearn} from '@common/contexts/useYearn';
 import {approvedERC20Amount, approveERC20, isApprovedERC20} from '@common/utils/actions/approveToken';
 
 import type {AxiosError} from 'axios';
-import type {TNormalizedBN} from '@yearn-finance/web-lib/types';
+import type {MayPromise, TNormalizedBN} from '@yearn-finance/web-lib/types';
 import type {TTxResponse, TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {ApiError, Order, QuoteQuery, Timestamp} from '@gnosis.pm/gp-v2-contracts';
 import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
 import type {TCowAPIResult, TCowResult} from '@vaults/types/solvers.cowswap';
 
-function useCowswapQuote(): [TCowResult, (request: TInitSolverArgs, shouldPreventErrorToast?: boolean) => Promise<TCowAPIResult | undefined>] {
+function useCowswapQuote(): [TCowResult, (request: TInitSolverArgs, shouldPreventErrorToast?: boolean) => MayPromise<TCowAPIResult>] {
 	const {toast} = yToast();
 	const {data, error, trigger, isMutating} = useSWRMutation(
 		'https://api.cow.fi/mainnet/api/v1/quote',
@@ -34,7 +34,7 @@ function useCowswapQuote(): [TCowResult, (request: TInitSolverArgs, shouldPreven
 	const getQuote = useCallback(async (
 		request: TInitSolverArgs,
 		shouldPreventErrorToast = false
-	): Promise<TCowAPIResult | undefined> => {
+	): MayPromise<TCowAPIResult> => {
 		const	YEARN_APP_DATA = '0x5d22bf49b708de1d2d9547a6cca9faccbdc2b162012e8573811c07103b163d4b';
 		const	quote: QuoteQuery = ({
 			from: request.from, // receiver

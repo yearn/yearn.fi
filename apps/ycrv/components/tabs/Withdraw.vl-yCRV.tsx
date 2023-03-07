@@ -19,13 +19,13 @@ import {useVLyCRV} from '@yCRV/hooks/useVLyCRV';
 
 import type {ChangeEvent, ReactElement} from 'react';
 import type {TQAButton, TQAInput, TQASelect} from '@yCRV/components/QuickActions';
-import type {TNormalizedBN} from '@yearn-finance/web-lib/types';
+import type {Maybe, TNormalizedBN} from '@yearn-finance/web-lib/types';
 
 function Withdraw(): ReactElement {
 	const {isActive, provider} = useWeb3();
 	const {balances, refresh} = useWallet();
 	const stYCRVBalance = useBalance(VLYCRV_TOKEN_ADDRESS);
-	const [amount, set_amount] = useState<TNormalizedBN | undefined>(DefaultTNormalizedBN);
+	const [amount, set_amount] = useState<Maybe<TNormalizedBN>>(DefaultTNormalizedBN);
 	const [txStatusWithdraw, set_txStatusWithdraw] = useState(defaultTxStatus);
 	const pricePerYCRV = useTokenPrice(YCRV_TOKEN_ADDRESS);
 	const {withdraw, initialData: {userInfo: {unlockTime}}} = useVLyCRV();

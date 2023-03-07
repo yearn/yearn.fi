@@ -11,7 +11,7 @@ import {useBalances} from '@common/hooks/useBalances';
 import type {ReactElement} from 'react';
 import type {TBalanceData, TUseBalancesTokens} from '@yearn-finance/web-lib/hooks/types';
 import type {TDict} from '@yearn-finance/web-lib/types';
-import type {TYearnVault} from '@common/types/yearn';
+import type {TVault} from '@yearn-finance/web-lib/types/vaults';
 
 export type	TWalletContext = {
 	balances: TDict<TBalanceData>,
@@ -62,7 +62,7 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 			tokens.push({token});
 		}
 
-		Object.values(vaults || {}).forEach((vault?: TYearnVault): void => {
+		Object.values(vaults || {}).forEach((vault?: TVault): void => {
 			if (!vault) {
 				return;
 			}
@@ -79,7 +79,7 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 	//List all vaults with a possible migration
 	const	migratableTokens = useMemo((): TUseBalancesTokens[] => {
 		const	tokens: TUseBalancesTokens[] = [];
-		Object.values(vaultsMigrations || {}).forEach((vault?: TYearnVault): void => {
+		Object.values(vaultsMigrations || {}).forEach((vault?: TVault): void => {
 			if (!vault) {
 				return;
 			}

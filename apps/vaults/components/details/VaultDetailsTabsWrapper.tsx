@@ -17,7 +17,8 @@ import IconChevron from '@common/icons/IconChevron';
 import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
 import type {TMetamaskInjectedProvider} from '@yearn-finance/web-lib/types';
-import type {TSettingsForNetwork, TYearnVault} from '@common/types/yearn';
+import type {TCurrentVault} from '@yearn-finance/web-lib/types/vaults';
+import type {TSettingsForNetwork} from '@common/types/yearn';
 
 type TTabsOptions = {
 	value: number;
@@ -95,7 +96,7 @@ function	Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactE
 	);
 }
 
-function	VaultDetailsTabsWrapper({currentVault}: {currentVault: TYearnVault}): ReactElement {
+function	VaultDetailsTabsWrapper({currentVault}: TCurrentVault): ReactElement {
 	const {provider} = useWeb3();
 	const {safeChainID} = useChainID();
 	const {settings: baseAPISettings, networks} = useSettings();

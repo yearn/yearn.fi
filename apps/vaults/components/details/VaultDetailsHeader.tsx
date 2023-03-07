@@ -15,9 +15,10 @@ import {getVaultName} from '@common/utils';
 
 import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
-import type {TYdaemonEarned, TYearnVault} from '@common/types/yearn';
+import type {TCurrentVault} from '@yearn-finance/web-lib/types/vaults';
+import type {TYdaemonEarned} from '@common/types/yearn';
 
-function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactElement {
+function	VaultDetailsHeader({currentVault}: TCurrentVault): ReactElement {
 	const {safeChainID} = useChainID();
 	const {address} = useWeb3();
 	const {settings: baseAPISettings} = useSettings();

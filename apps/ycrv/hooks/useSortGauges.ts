@@ -12,7 +12,7 @@ type TProps = {
 	gaugesVotes: TDict<bigint>;
 	sortBy: TPossibleGaugesSortBy;
 	sortDirection: TSortDirection;
-	votes: TDict<bigint | undefined>;
+	votes: TDict<bigint>;
 };
 
 type TSortByVotes = {

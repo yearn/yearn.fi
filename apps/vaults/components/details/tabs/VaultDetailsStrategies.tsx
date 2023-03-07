@@ -10,7 +10,7 @@ import IconChevron from '@common/icons/IconChevron';
 
 import type {LoaderComponent} from 'next/dynamic';
 import type {ReactElement} from 'react';
-import type {TYearnVault, TYearnVaultStrategy} from '@common/types/yearn';
+import type {TCurrentVault, TStrategy, TVault} from '@yearn-finance/web-lib/types/vaults';
 import type {TGraphForStrategyReportsProps} from '@vaults/components/graphs/GraphForStrategyReports';
 
 const GraphForStrategyReports = dynamic<TGraphForStrategyReportsProps>(async (): LoaderComponent<TGraphForStrategyReportsProps> => import('@vaults/components/graphs/GraphForStrategyReports'), {ssr: false});
@@ -28,7 +28,7 @@ function	RiskScoreElement({label, value}: TRiskScoreElementProps): ReactElement 
 	);
 }
 
-function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVault, strategy: TYearnVaultStrategy}): ReactElement {
+function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TVault, strategy: TStrategy}): ReactElement {
 	const	riskScoreElementsMap = useMemo((): TRiskScoreElementProps[] => {
 		const {riskDetails} = strategy?.risk || {};
 		return ([
@@ -147,7 +147,7 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVau
 	);
 }
 
-function	VaultDetailsStrategies({currentVault}: {currentVault: TYearnVault}): ReactElement {
+function	VaultDetailsStrategies({currentVault}: TCurrentVault): ReactElement {
 	return (
 		<div className={'grid grid-cols-1 bg-neutral-100'}>
 			<div className={'col-span-1 w-full space-y-6 p-4 md:p-6'}>

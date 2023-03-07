@@ -1,4 +1,4 @@
-import type {TAddress, TNormalizedBN} from '@yearn-finance/web-lib/types';
+import type {Maybe, TAddress, TNormalizedBN} from '@yearn-finance/web-lib/types';
 import type {TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TDropdownOption} from '@common/types/types';
 import type {Solver} from '@vaults/contexts/useSolver';
@@ -74,6 +74,6 @@ export type TVanillaLikeRequest = {
 }
 export type TVanillaLikeResult = {
 	result: TNormalizedBN,
-	isLoading: boolean,
-	error: Error | undefined
+	error: Maybe<Error>,
+	isLoading: boolean
 }
