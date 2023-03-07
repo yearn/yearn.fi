@@ -53,10 +53,10 @@ export async function claim(
 export async function depositAndStake(
 	provider: ethers.providers.Web3Provider,
 	accountAddress: TAddress,
-	stakingAddress: TAddress,
+	vaultAddress: TAddress,
 	amount: BigNumber
 ): Promise<TTxResponse> {
 	const signer = provider.getSigner(accountAddress);
 	const stakingRewardsZapContract = new ethers.Contract(STAKING_REWARDS_ZAP_ADDRESS, [], signer); // TODO: update abi once deployed
-	return handleTx(stakingRewardsZapContract.zap(stakingAddress, amount)); // TODO: update method once available
+	return handleTx(stakingRewardsZapContract.zapIn(vaultAddress, amount));
 }

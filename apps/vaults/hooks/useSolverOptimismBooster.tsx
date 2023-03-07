@@ -3,7 +3,6 @@ import {ethers} from 'ethers';
 import useSWRMutation from 'swr/mutation';
 import {STAKING_REWARDS_ZAP_ADDRESS} from '@vaults/constants';
 import {Solver} from '@vaults/contexts/useSolver';
-import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {useVaultEstimateOutFetcher} from '@vaults/hooks/useVaultEstimateOutFetcher';
 import {depositAndStake} from '@vaults/utils/actions/stakingRewards';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -56,8 +55,6 @@ export function useSolverOptimismBooster(): TSolverContext {
 	const {provider} = useWeb3();
 	const [latestQuote, getQuote] = useOptimismBoosterQuote();
 	const request = useRef<TInitSolverArgs>();
-	const {stakingRewardsByVault} = useStakingRewards();
-	const stakingRewardsAddress = stakingRewardsByVault[toAddress(request.current?.outputToken.value)];
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** init will be called when the optimism booster should be used to perform the desired deposit.
@@ -142,16 +139,16 @@ export function useSolverOptimismBooster(): TSolverContext {
 			return;
 		}
 
-		new Transaction(provider, depositAndStake, txStatusSetter) // TODO: verify depositAndStake parameters
+		new Transaction(provider, depositAndStake, txStatusSetter)
 			.populate(
 				provider,
 				request.current.from,
-				stakingRewardsAddress,
+				toAddress(request.current.outputToken.value), // vault
 				request.current.inputAmount
 			)
 			.onSuccess(onSuccess)
 			.perform();
-	}, [provider, stakingRewardsAddress]);
+	}, [provider]);
 
 	return useMemo((): TSolverContext => ({
 		type: Solver.OPTIMISM_BOOSTER,
