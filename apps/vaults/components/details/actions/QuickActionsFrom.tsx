@@ -23,7 +23,7 @@ function	VaultDetailsQuickActionsFrom(): ReactElement {
 
 	const selectedFromBalance = useBalance(toAddress(actionParams?.selectedOptionFrom?.value));
 	const selectedOptionFromPricePerToken = useTokenPrice(toAddress(actionParams?.selectedOptionFrom?.value));
-	const clientOnlyFormatAmount = useClientOnlyFn({fn: formatAmount, placeholder: '-'});
+	const clientOnlyFormatAmount = useClientOnlyFn({fn: formatAmount, placeholder: '0,00'});
 
 	return (
 		<section aria-label={'FROM'} className={'flex w-full flex-col space-x-0 md:flex-row md:space-x-4'}>

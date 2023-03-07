@@ -27,8 +27,8 @@ function	HeaderPosition(): ReactElement {
 	const stycrvPrice = useTokenPrice(STYCRV_TOKEN_ADDRESS);
 	const lpycrvPrice = useTokenPrice(LPYCRV_TOKEN_ADDRESS);
 	
-	const clientOnlyFormatAmount = useClientOnlyFn({fn: formatAmount, placeholder: '-'});
-	const clientOnlyFormatCounterValueRaw = useClientOnlyFn({fn: formatCounterValueRaw, placeholder: '-'});
+	const clientOnlyFormatAmount = useClientOnlyFn({fn: formatAmount, placeholder: '0,00'});
+	const clientOnlyFormatCounterValueRaw = useClientOnlyFn({fn: formatCounterValueRaw, placeholder: '0,00'});
 
 	const	formatedYearnHas = useMemo((): ReactNode => (
 		holdings?.veCRVBalance ?
@@ -54,7 +54,7 @@ function	HeaderPosition(): ReactElement {
 						identifier={'veCRVTreasury'}
 						value={formatedYearnHas?.toString()}
 						suffix={'veCRV'}
-						defaultValue={'-'}
+						defaultValue={'0,00'}
 					/>
 				</b>
 			</div>
@@ -65,7 +65,7 @@ function	HeaderPosition(): ReactElement {
 						identifier={'youHave'}
 						value={formatedYouHave?.toString()}
 						prefix={'$'}
-						defaultValue={'-'}
+						defaultValue={'0,00'}
 					/>
 				</b>
 			</div>
@@ -86,9 +86,9 @@ function	Holdings(): ReactElement {
 	const balanceOfStyCRV = useBalance(STYCRV_TOKEN_ADDRESS);
 	const balanceOfLpyCRV = useBalance(LPYCRV_TOKEN_ADDRESS);
 	
-	const clientOnlyFormatAmount = useClientOnlyFn({fn: formatAmount, placeholder: '-'});
-	const clientOnlyFormatPercent = useClientOnlyFn({fn: formatPercent, placeholder: '-'});
-	const clientOnlyFormatCounterValue = useClientOnlyFn({fn: formatCounterValue, placeholder: '-'});
+	const clientOnlyFormatAmount = useClientOnlyFn({fn: formatAmount, placeholder: '0,00'});
+	const clientOnlyFormatPercent = useClientOnlyFn({fn: formatPercent, placeholder: '0,00'});
+	const clientOnlyFormatCounterValue = useClientOnlyFn({fn: formatCounterValue, placeholder: '0,00'});
 
 	const	formatBigNumberOver10K = useCallback((v: BigNumber): string => {
 		if (formatBN(v)?.gt(ethers.constants.WeiPerEther.mul(10000))) {

@@ -15,7 +15,7 @@ function	VaultDetailsQuickActionsTo(): ReactElement {
 	const {isActive} = useWeb3();
 	const {currentVault, possibleOptionsTo, actionParams, onUpdateSelectedOptionTo, isDepositing} = useActionFlow();
 	const {expectedOut, isLoadingExpectedOut} = useSolver();
-	const clientOnlyFormatPercent = useClientOnlyFn({fn: formatPercent, placeholder: '-'});
+	const clientOnlyFormatPercent = useClientOnlyFn({fn: formatPercent, placeholder: '0,00'});
 
 	const selectedOptionToPricePerToken = useTokenPrice(toAddress(actionParams?.selectedOptionTo?.value));
 
