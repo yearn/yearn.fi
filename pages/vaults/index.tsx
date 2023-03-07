@@ -49,7 +49,7 @@ function	HeaderUserPosition(): ReactElement {
 				<b className={'font-number text-4xl text-neutral-900 md:text-7xl'}>
 					<ValueAnimation
 						identifier={'youHave'}
-						value={formatedYouHave ? formatedYouHave : ''}
+						value={formatedYouHave}
 						defaultValue={'0,00'}
 						prefix={'$'} />
 				</b>
@@ -59,7 +59,7 @@ function	HeaderUserPosition(): ReactElement {
 				<b className={'font-number text-3xl text-neutral-900 md:text-7xl'}>
 					<ValueAnimation
 						identifier={'youEarned'}
-						value={formatedYouEarned ? formatedYouEarned : ''}
+						value={formatedYouEarned}
 						defaultValue={'0,00'}
 						prefix={'$'} />
 				</b>
