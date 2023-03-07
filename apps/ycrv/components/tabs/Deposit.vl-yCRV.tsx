@@ -31,7 +31,7 @@ function Deposit(): ReactElement {
 	const [amount, set_amount] = useState<TNormalizedBN | undefined>({raw: ethers.constants.Zero, normalized: 0});
 	const pricePerYCRV = useTokenPrice(toAddress(YCRV.value));
 	const {deposit, approve} = useVLyCRV();
-	const clientOnlyFormatAmount = useClientOnlyFn({fn: formatAmount, placeholder: '-'});
+	const clientOnlyFormatAmount = useClientOnlyFn({fn: formatAmount, placeholder: '0,00'});
 
 	const fromSelectProps: TQASelect = useMemo((): TQASelect => {
 		const legend = `You have ${clientOnlyFormatAmount(yCRVBalance.normalized)} ${yCRVBalance?.symbol || 'tokens'}`;

@@ -27,10 +27,10 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 		baseFetcher,
 		{revalidateOnFocus: false}
 	) as SWRResponse as {data: TYdaemonEarned};
-	const clientOnlyFormatAmount = useClientOnlyFn({fn: formatAmount, placeholder: '-'});
-	const clientOnlyFormatPercent = useClientOnlyFn({fn: formatPercent, placeholder: '-'});
-	const clientOnlyFormatUSD = useClientOnlyFn({fn: formatUSD, placeholder: '-'});
-	const clientOnlyFormatCounterValue = useClientOnlyFn({fn: formatCounterValue, placeholder: '-'});
+	const clientOnlyFormatAmount = useClientOnlyFn({fn: formatAmount, placeholder: '0,00'});
+	const clientOnlyFormatPercent = useClientOnlyFn({fn: formatPercent, placeholder: '0,00'});
+	const clientOnlyFormatUSD = useClientOnlyFn({fn: formatUSD, placeholder: '0,00'});
+	const clientOnlyFormatCounterValue = useClientOnlyFn({fn: formatCounterValue, placeholder: '0,00'});
 
 	const	normalizedVaultEarned = useMemo((): number => (
 		formatToNormalizedValue(
