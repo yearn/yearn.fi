@@ -13,15 +13,15 @@ import {useWallet} from '@common/contexts/useWallet';
 import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
 import type {TBalanceData, TUseBalancesTokens} from '@yearn-finance/web-lib/hooks/types';
-import type {Maybe, TDict} from '@yearn-finance/web-lib/types';
+import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TYDaemonTokensList} from '@vaults/types/yearn';
 
 export type	TWalletForZap = {
 	tokensList: TDict<TYDaemonTokensList>,
-	balances: TDict<Maybe<TBalanceData>>,
+	balances: TDict<TBalanceData>,
 	balancesNonce: number,
 	isLoading: boolean,
-	refresh: (tokenList?: TUseBalancesTokens[]) => Promise<TDict<Maybe<TBalanceData>>>,
+	refresh: (tokenList?: TUseBalancesTokens[]) => Promise<TDict<TBalanceData>>,
 }
 
 const	defaultProps = {
@@ -29,7 +29,7 @@ const	defaultProps = {
 	balances: {},
 	balancesNonce: 0,
 	isLoading: true,
-	refresh: async (): Promise<TDict<Maybe<TBalanceData>>> => ({})
+	refresh: async (): Promise<TDict<TBalanceData>> => ({})
 };
 
 /* 🔵 - Yearn Finance **********************************************************
@@ -44,7 +44,7 @@ export const WalletForZapApp = memo(function WalletForZapApp({children}: {childr
 	const {settings: baseAPISettings} = useSettings();
 	const {onLoadStart, onLoadDone} = useUI();
 	const [isLoading, set_isLoading] = useState(false);
-	const [zapBalances, set_zapMigrationBalances] = useState<TDict<Maybe<TBalanceData>>>({});
+	const [zapBalances, set_zapMigrationBalances] = useState<TDict<TBalanceData>>({});
 
 	/* 🔵 - Yearn Finance ******************************************************
 	**	Fetching, for this user, the list of tokens available for zaps
@@ -58,10 +58,7 @@ export const WalletForZapApp = memo(function WalletForZapApp({children}: {childr
 	const	availableTokens = useMemo((): TUseBalancesTokens[] => {
 		const	tokens: TUseBalancesTokens[] = [];
 		Object.values(tokensList || {}).forEach((token): void => {
-			if (token.chainID !== safeChainID) {
-				return;
-			}
-			if (isZeroAddress(token.address)) {
+			if (!token || token.chainID !== safeChainID || isZeroAddress(token.address)) {
 				return;
 			}
 			tokens.push({token: token.address});

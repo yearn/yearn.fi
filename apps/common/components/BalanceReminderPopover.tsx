@@ -17,7 +17,7 @@ import {useBalance} from '@common/hooks/useBalance';
 
 import type {ReactElement} from 'react';
 import type {TBalanceData} from '@yearn-finance/web-lib/hooks/types';
-import type {Maybe, TAddress, TDict, TMetamaskInjectedProvider} from '@yearn-finance/web-lib/types';
+import type {TAddress, TDict, TMetamaskInjectedProvider} from '@yearn-finance/web-lib/types';
 
 type TBalanceReminderElement = {
 	address: TAddress,
@@ -91,8 +91,8 @@ export default function BalanceReminderPopover(): ReactElement {
 	const	{address, ens, isActive, onDesactivate} = useWeb3();
 	const	{vaults} = useYearn();
 
-	const	nonNullBalances = useMemo((): TDict<Maybe<TBalanceData>> => {
-		const	nonNullBalances = Object.entries(balances).reduce((acc: TDict<Maybe<TBalanceData>>, [address, balance]): TDict<Maybe<TBalanceData>> => {
+	const	nonNullBalances = useMemo((): TDict<TBalanceData> => {
+		const	nonNullBalances = Object.entries(balances).reduce((acc: TDict<TBalanceData>, [address, balance]): TDict<TBalanceData> => {
 			if (!isZero(balance?.raw)) {
 				acc[toAddress(address)] = balance;
 			}

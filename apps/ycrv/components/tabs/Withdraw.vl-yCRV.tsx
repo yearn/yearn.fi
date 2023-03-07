@@ -3,7 +3,7 @@ import dayjs from 'dayjs';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {VLYCRV_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {DefaultTNormalizedBN, toBigInt, toNormalizedBN, toNumber, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {DefaultTNormalizedBN, toBigInt, toNormalizedBN, toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';

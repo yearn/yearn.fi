@@ -1,20 +1,21 @@
 import {useMemo} from 'react';
 import useSWR from 'swr';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {useBalances} from '@yearn-finance/web-lib/hooks/useBalances';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import {useYearn} from '@common/contexts/useYearn';
+import {useBalances} from '@common/hooks/useBalances';
 
 import type {SWRResponse} from 'swr';
 import type {TBalanceData, TUseBalancesReq, TUseBalancesTokens} from '@yearn-finance/web-lib/hooks/types';
+import type {Maybe} from '@yearn-finance/web-lib/types';
 
 type TBeefyChain = 'metis' | 'celo' | 'cronos' | 'moonbeam' | 'one' | 'moonriver' | 'fuse' | 'arbitrum' | 'heco' | 'avax' | 'aurora' | 'polygon' | 'fantom' | 'bsc' | 'emerald' | 'optimism' | 'kava' | 'ethereum';
 
 export type TBeefyVault = {
 	addLiquidityUrl?: string | null;
 	assets?: (string)[] | null;
-	balance: TBalanceData;
+	balance: Maybe<TBalanceData>;
 	buyTokenUrl?: string | null;
 	callFee?: number | null;
 	chain: TBeefyChain;
@@ -103,7 +104,10 @@ export function useBeefyVaults({all}: TProps = {}): TBeefyVaultResponse {
 				return prev;
 			}
 			const vaultWithBalance = {...curr, balance: balances[curr.tokenAddress]};
-			return [...prev, vaultWithBalance];
+			return [
+				...prev,
+				vaultWithBalance
+			];
 		}, [] as TBeefyVault[]);
 	}, [balances, nonce, beefyVaults]);
 

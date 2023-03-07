@@ -1,6 +1,6 @@
 import type {ReactElement} from 'react';
 import type {TBalanceData} from '@yearn-finance/web-lib/hooks/types';
-import type {Maybe, TAddress, TDict} from '@yearn-finance/web-lib/types';
+import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 import type {Solver} from '@vaults/contexts/useSolver';
 import type {EXTERNAL_SERVICE_PROVIDER} from '@vaults/utils/migrationTable';
 
@@ -36,12 +36,12 @@ export type TDropdownProps = {
 	onSelect:
 	| React.Dispatch<React.SetStateAction<TDropdownOption>>
 	| ((option: TDropdownOption) => void);
-	balanceSource?: TDict<Maybe<TBalanceData>>;
+	balanceSource?: TDict<TBalanceData>;
 };
 
 export type TDropdownItemProps = {
 	option: TDropdownOption;
-	balanceSource?: TDict<Maybe<TBalanceData>>;
+	balanceSource?: TDict<TBalanceData>;
 };
 
 export type TDropdownGaugeOption = {
