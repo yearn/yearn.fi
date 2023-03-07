@@ -72,7 +72,7 @@ export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({chil
 			veYFIContract.reward_pool()
 		]) as [TAddress, string, string, number, bigint, TAddress];
 
-		return ({
+		return {
 			address: VEYFI_ADDRESS,
 			token,
 			name,
@@ -80,7 +80,7 @@ export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({chil
 			decimals,
 			supply: toBigInt(supply),
 			rewardPool
-		});
+		};
 	}, [provider]);
 	const {data: votingEscrow, mutate: refreshVotingEscrow, isLoading: isLoadingVotingEscrow} = useSWR('asset', assetFetcher, {shouldRetryOnError: false});
 
@@ -125,7 +125,7 @@ export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({chil
 
 		const	[yfiAllowanceVeYFI] = await ethcallProvider.tryAll([yfiContract.allowance(address, VEYFI_ADDRESS)]) as bigint[];
 
-		return ({[allowanceKey(YFI_ADDRESS, VEYFI_ADDRESS)]: toBigInt(yfiAllowanceVeYFI)});
+		return {[allowanceKey(YFI_ADDRESS, VEYFI_ADDRESS)]: toBigInt(yfiAllowanceVeYFI)};
 	}, [isActive, address, provider]);
 	const	{data: allowances, mutate: refreshAllowances, isLoading: isLoadingAllowances} = useSWR(isActive && provider ? 'allowances' : null, allowancesFetcher, {shouldRetryOnError: false});
 

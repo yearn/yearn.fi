@@ -8,10 +8,10 @@ function	useFilteredVaults(
 	condition: (v: TVault) => boolean
 ): TVault[] {
 	const	filtered = useMemo((): TVault[] => {
-		return (Object.values(vaultMap || {}).filter((vault): boolean => condition(vault as TVault)) as TVault[]);
+		return Object.values(vaultMap || {}).filter((vault): boolean => condition(vault as TVault)) as TVault[];
 	}, [vaultMap, condition]);
 
-	return (filtered);
+	return filtered;
 }
 
 export {useFilteredVaults};

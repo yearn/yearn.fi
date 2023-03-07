@@ -12,7 +12,7 @@ export function getMessariSubgraphEndpoint(chainID: number): string {
 		case 42161:
 			return 'https://api.thegraph.com/subgraphs/name/messari/yearn-v2-arbitrum';
 		default:
-			return ('https://api.thegraph.com/subgraphs/name/messari/yearn-v2-ethereum');
+			return 'https://api.thegraph.com/subgraphs/name/messari/yearn-v2-ethereum';
 	}
 }
 

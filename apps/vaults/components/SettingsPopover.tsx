@@ -12,7 +12,7 @@ export default function SettingsPopover(): ReactElement {
 
 	return (
 		<Popover className={'relative flex'}>
-			{(): ReactElement => (
+			{(): ReactElement =>
 				<>
 					<Popover.Button>
 						<span className={'sr-only'}>{'Settings'}</span>
@@ -82,6 +82,7 @@ export default function SettingsPopover(): ReactElement {
 											<legend>&nbsp;</legend>
 										</Renderable>
 									</div>
+
 									<div>
 										<label
 											htmlFor={'slippageTolerance'}
@@ -120,7 +121,7 @@ export default function SettingsPopover(): ReactElement {
 						</Popover.Panel>
 					</Transition>
 				</>
-			)}
+			}
 		</Popover>
 	);
 }

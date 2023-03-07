@@ -41,7 +41,7 @@ function	useTimer({endTime}: TProps): string {
 	}, [endTime, timeLeft]);
 
 	const formatTimestamp = useCallback((n: number): string => {
-		const	twoDP = (n: number): string | number => (n > 9 ? n : '0' + n);
+		const	twoDP = (n: number): string | number => n > 9 ? n : '0' + n;
 		const	duration = dayjs.duration(n, 'milliseconds');
 		const	days = duration.days();
 		const	hours = duration.hours();

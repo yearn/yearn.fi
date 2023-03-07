@@ -1,5 +1,3 @@
-
-
 import {Contract} from 'ethcall';
 import {JsonRpcProvider} from 'ethers';
 import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';

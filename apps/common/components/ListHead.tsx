@@ -19,9 +19,7 @@ export type TListHead = {
 
 function	ListHead({items, dataClassName, sortBy, sortDirection, onSort}: TListHead): ReactElement {
 	const toggleSortDirection = (newSortBy: string): TSortDirection => {
-		return sortBy === newSortBy ? (
-			sortDirection === '' ? 'desc' : sortDirection === 'desc' ? 'asc' : 'desc'
-		) : 'desc';
+		return sortBy === newSortBy ? sortDirection === '' ? 'desc' : sortDirection === 'desc' ? 'asc' : 'desc' : 'desc';
 	};
 
 	const	renderChevron = useCallback((shouldSortBy: boolean): ReactElement => {
@@ -50,7 +48,7 @@ function	ListHead({items, dataClassName, sortBy, sortDirection, onSort}: TListHe
 				</div>
 
 				<div className={`yearn--table-head-data-section ${dataClassName || ''}`}>
-					{rest.map((item, index): ReactElement => (
+					{rest.map((item, index): ReactElement =>
 						<button
 							key={`${index}_${item.value}`}
 							onClick={(): void => onSort(item.value, toggleSortDirection(item.value))}
@@ -62,7 +60,7 @@ function	ListHead({items, dataClassName, sortBy, sortDirection, onSort}: TListHe
 							</p>
 							{item.sortable ? renderChevron(sortBy === item.value) : null}
 						</button>
-					))}
+					)}
 				</div>
 			</div>
 		</div>

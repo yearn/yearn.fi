@@ -67,7 +67,7 @@ export const MenuContextApp = ({children}: {children: React.ReactElement}): Reac
 				shouldUseNetworks={true}
 				isOpen={menu.isOpen}
 				onClose={(): void => set_menu(defaultProps.menu)}>
-				{(menu?.app || [])?.map((option): ReactElement => (
+				{(menu?.app || [])?.map((option): ReactElement => 
 					<Link key={option.path} href={option.path}>
 						<div
 							className={'mobile-nav-item'}
@@ -77,7 +77,7 @@ export const MenuContextApp = ({children}: {children: React.ReactElement}): Reac
 							</p>
 						</div>
 					</Link>
-				))}
+				)}
 			</ModalMobileMenu>
 		</MenuContext.Provider>
 	);

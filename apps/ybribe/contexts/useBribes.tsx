@@ -68,7 +68,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 
 		performBatchedUpdates((): void => {
 			set_currentPeriod(toNumber(_currentPeriod));
-			set_nextPeriod(toNumber(_currentPeriod) + (86400 * 7));
+			set_nextPeriod(toNumber(_currentPeriod) + 86400 * 7);
 		});
 	}, [provider, safeChainID]);
 	useEffect((): void => {
@@ -91,7 +91,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 			rewardsPerGaugesCalls.push(contract.rewards_per_gauge(gauge.gauge));
 		}
 		const	_rewardsPerGauges = await ethcallProvider.tryAll(rewardsPerGaugesCalls) as string[][];
-		return ([..._rewardsPerGauges]);
+		return [..._rewardsPerGauges];
 	}, [gauges]);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -105,7 +105,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 		rewardsPerGauges: string[][]
 	): Promise<{rewardsList: string[], multicallResult: bigint[]}> => {
 		if ((rewardsPerGauges || []).length === 0) {
-			return ({rewardsList: [], multicallResult: []});
+			return {rewardsList: [], multicallResult: []};
 		}
 		const	userAddress = address || addressZero;
 		const	ethcallProvider = await newEthCallProvider(currentProvider);
@@ -132,7 +132,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 		}
 
 		const	_rewardsPerTokensPerGaugesWithPeriods = await ethcallProvider.tryAll(rewardsPerTokensPerGaugesCalls) as bigint[];
-		return ({rewardsList, multicallResult: [..._rewardsPerTokensPerGaugesWithPeriods]});
+		return {rewardsList, multicallResult: [..._rewardsPerTokensPerGaugesWithPeriods]};
 	}, [gauges, address]);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -145,7 +145,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 		rewardsPerGauges: string[][]
 	): Promise<{rewardsList: string[], multicallResult: bigint[]}> => {
 		if ((rewardsPerGauges || []).length === 0) {
-			return ({rewardsList: [], multicallResult: []});
+			return {rewardsList: [], multicallResult: []};
 		}
 		const	contract = new ethers.Contract(CURVE_BRIBE_V3_HELPER_ADDRESS, CURVE_BRIBE_V3_HELPER, currentProvider);
 		const	rewardsPerTokensPerGaugesCalls = [];
@@ -166,7 +166,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 			rewardsPerTokensPerGaugesCalls.map((pair): unknown => contract.getNewRewardPerToken.staticCall(...pair))
 		) as bigint[];
 
-		return ({rewardsList, multicallResult: [...multicallResult]});
+		return {rewardsList, multicallResult: [...multicallResult]};
 	}, [gauges]);
 
 	/* 🔵 - Yearn Finance ******************************************************

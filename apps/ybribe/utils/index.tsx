@@ -14,9 +14,9 @@ export function	getLastThursday(): number {
 	lastThursday = lastThursday.set('minute', 0);
 	lastThursday = lastThursday.set('second', 0);
 	if (today.isBefore(lastThursday)) {
-		return (lastThursday.subtract(1, 'week').unix());
+		return lastThursday.subtract(1, 'week').unix();
 	}
-	return (lastThursday.unix());
+	return lastThursday.unix();
 }
 
 export function	getNextThursday(): number {
@@ -26,7 +26,7 @@ export function	getNextThursday(): number {
 	nextThursday = nextThursday.set('minute', 0);
 	nextThursday = nextThursday.set('second', 0);
 	if (today.isAfter(nextThursday)) {
-		return (nextThursday.add(1, 'week').unix());
+		return nextThursday.add(1, 'week').unix();
 	}
-	return (nextThursday.unix());
+	return nextThursday.unix();
 }

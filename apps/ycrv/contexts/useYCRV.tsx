@@ -16,7 +16,6 @@ import YVECRV_ABI from '@yCRV/utils/abi/yveCRV.abi';
 import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
 import type {TDict} from '@yearn-finance/web-lib/types';
-import type {TVault} from '@yearn-finance/web-lib/types/vaults';
 import type {TYDaemonHarvests} from '@common/types/yearn';
 
 type THoldings = {
@@ -122,7 +121,7 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 			crvYCRVLpContract.get_dy(1, 0, WeiPerEther)
 		]) as [bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint];
 
-		return ({
+		return {
 			['legacy']: toBigInt(yveCRVTotalSupply - yveCRVInYCRV),
 			['treasury']: toBigInt(veCRVBalance - yveCRVTotalSupply - yveCRVInYCRV - yCRVTotalSupply),
 			['yCRVSupply']: toBigInt(yCRVTotalSupply),
@@ -132,7 +131,7 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 			['boostMultiplier']: toBigInt(veCRVBalance * BigInt(1e4) / styCRVTotalSupply),
 			['veCRVTotalSupply']: toBigInt(veCRVTotalSupply),
 			['veCRVBalance']: toBigInt(veCRVBalance)
-		});
+		};
 	}, [provider]);
 	const	{data: holdings} = useSWR('numbers', numbersFetchers, {shouldRetryOnError: false});
 
@@ -177,7 +176,7 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 			yCRVPoolContract.allowance(userAddress, LPYCRV_TOKEN_ADDRESS)
 		]) as bigint[];
 
-		return ({
+		return {
 			// YCRV ECOSYSTEM
 			[allowanceKey(YCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS)]: toBigInt(yCRVAllowanceZap),
 			[allowanceKey(STYCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS)]: toBigInt(styCRVAllowanceZap),
@@ -190,7 +189,7 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 			[allowanceKey(YVBOOST_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS)]: toBigInt(yvBoostAllowanceZap),
 			[allowanceKey(YVECRV_TOKEN_ADDRESS, YVECRV_POOL_LP_ADDRESS)]: toBigInt(yveCRVAllowanceLP),
 			[allowanceKey(CRV_TOKEN_ADDRESS, YVECRV_POOL_LP_ADDRESS)]:  toBigInt(crvAllowanceLP)
-		});
+		};
 	}, [provider, address, isActive]);
 	const	{data: allowances} = useSWR(isActive && provider ? 'allowances' : null, getAllowances, {shouldRetryOnError: false});
 
@@ -214,7 +213,7 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 	** Compute the styCRV APY based on the experimental APY and the mega boost.
 	**************************************************************************/
 	const	styCRVAPY = useMemo((): number => {
-		return (toNumber((styCRVVault as TVault)?.apy?.net_apy) * 100);
+		return toNumber(styCRVVault?.apy?.net_apy) * 100;
 		// return (((styCRVVault as TVault)?.apy?.net_apy || 0) * 100) + (styCRVMegaBoost * 100);
 		// return (styCRVExperimentalAPY * 100) + (styCRVMegaBoost * 100);
 	}, [styCRVVault]);

@@ -20,7 +20,7 @@ export function	setZapOption({
 	decimals,
 	solveVia
 }: TSetZapOptionProps): TDropdownOption {
-	return ({
+	return {
 		label: name,
 		symbol,
 		value: address,
@@ -31,5 +31,5 @@ export function	setZapOption({
 			alt={name}
 			width={36}
 			height={36} />
-	});
+	};
 }

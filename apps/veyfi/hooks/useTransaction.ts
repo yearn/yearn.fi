@@ -63,7 +63,7 @@ export const useTransaction = <T extends TTxFuncArgs>(
 				onError(error);
 			}
 			toast({content: 'Transaction failed', type: 'error'});
-			return ({isSuccessful: false});
+			return {isSuccessful: false};
 		}
 	};
 

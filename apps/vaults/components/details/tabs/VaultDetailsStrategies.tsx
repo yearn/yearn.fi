@@ -168,7 +168,7 @@ function	VaultDetailsStrategies({currentVault}: TCurrentVault): ReactElement {
 			<div className={'col-span-1 w-full border-t border-neutral-300'}>
 				{(currentVault?.strategies || [])
 					.filter((strategy): boolean => toNumber(strategy?.details?.totalDebt) > 0 || isExceptionStrategy(strategy))
-					.sort((a, b): number => (b?.details?.debtRatio || 0) - (a?.details?.debtRatio || 0))
+					.sort((a, b): number => toNumber(b?.details?.debtRatio) - toNumber(a?.details?.debtRatio))
 					.map((strategy, index): ReactElement =>
 						<VaultDetailsStrategy
 							currentVault={currentVault}

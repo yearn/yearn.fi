@@ -45,7 +45,7 @@ function	VaultDetailsHeader({currentVault}: TCurrentVault): ReactElement {
 	const	vaultName = useMemo((): string => getVaultName(currentVault), [currentVault]);
 
 	return (
-		<div aria-label={'Vault Header'} className={'col-span-12 flex w-full flex-col items-center justify-center'}>
+		<div className={'col-span-12 flex w-full flex-col items-center justify-center'}>
 			<b className={'mx-auto flex w-full flex-row items-center justify-center text-center text-4xl tabular-nums text-neutral-900 md:text-8xl'}>
 				&nbsp;{vaultName}&nbsp;
 			</b>

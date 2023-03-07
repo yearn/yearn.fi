@@ -23,10 +23,10 @@ function	VaultsListRow({currentVault}: TCurrentVault): ReactElement {
 	const availableToDeposit = useMemo((): number => {
 		// Handle ETH native coin
 		if (toAddress(currentVault.token.address) === WETH_TOKEN_ADDRESS) {
-			return (balanceOfWrappedCoin.normalized + balanceOfCoin.normalized);
+			return balanceOfWrappedCoin.normalized + balanceOfCoin.normalized;
 		}
 		if (toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS) {
-			return (balanceOfWrappedCoin.normalized + toNumber(toNormalizedBN(balanceOfCoin.raw, 18).normalized));
+			return balanceOfWrappedCoin.normalized + toNumber(toNormalizedBN(balanceOfCoin.raw, 18).normalized);
 		}
 		return balanceOfWant.normalized;
 	}, [balanceOfCoin.normalized, balanceOfCoin.raw, balanceOfWant.normalized, balanceOfWrappedCoin.normalized, currentVault.token.address]);
@@ -51,11 +51,7 @@ function	VaultsListRow({currentVault}: TCurrentVault): ReactElement {
 						<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'APY'}</label>
 						<div className={'flex flex-col text-right'}>
 							<b className={'yearn--table-data-section-item-value'}>
-								{(currentVault.apy?.type === 'new' && currentVault.apy?.net_apy == 0) ? (
-									'New'
-								) : (
-									formatPercent(currentVault?.apy?.net_apy * 100, 2, 2, 500)
-								)}
+								{currentVault.apy?.type === 'new' && currentVault.apy?.net_apy == 0 ? 'New' : formatPercent(currentVault?.apy?.net_apy * 100, 2, 2, 500)}
 							</b>
 							<small className={'text-xs text-neutral-900'}>
 								{currentVault.apy?.composite?.boost ? `BOOST ${formatAmount(currentVault.apy?.composite?.boost, 2, 2)}x` : null}

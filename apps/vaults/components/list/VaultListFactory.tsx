@@ -116,7 +116,7 @@ function	VaultListFactory(): ReactElement {
 		return (
 			sortedVaultsToDisplay.map((vault): ReactNode => {
 				if (!vault) {
-					return (null);
+					return null;
 				}
 				return <VaultsListRow key={vault.address} currentVault={vault} />;
 			})

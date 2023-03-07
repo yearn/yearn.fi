@@ -18,17 +18,17 @@ function	useSortVaults(
 ): TVault[] {
 	const	{balances, balancesNonce} = useWallet();
 
-	const	sortedByName = useCallback((): TVault[] => (
+	const	sortedByName = useCallback((): TVault[] => 
 		vaultList.sort((a, b): number => stringSort({a: getVaultName(a), b: getVaultName(b), sortDirection}))
-	), [sortDirection, vaultList]);
+	, [sortDirection, vaultList]);
 
-	const	sortedByAPY = useCallback((): TVault[] => (
+	const	sortedByAPY = useCallback((): TVault[] => 
 		vaultList.sort((a, b): number => numberSort({a: a.apy?.net_apy, b: b.apy?.net_apy, sortDirection}))
-	), [sortDirection, vaultList]);
+	, [sortDirection, vaultList]);
 
-	const	sortedByTVL = useCallback((): TVault[] => (
+	const	sortedByTVL = useCallback((): TVault[] => 
 		vaultList.sort((a, b): number => numberSort({a: a.tvl.tvl, b: b.tvl.tvl, sortDirection}))
-	), [sortDirection, vaultList]);
+	, [sortDirection, vaultList]);
 
 	const	sortedByDeposited = useCallback((): TVault[] => {
 		balancesNonce; // remove warning, force deep refresh
@@ -54,9 +54,9 @@ function	useSortVaults(
 			}
 
 			if (sortDirection === 'asc') {
-				return (aBalance) - (bBalance);
+				return aBalance - bBalance;
 			}
-			return (bBalance) - (aBalance);
+			return bBalance - aBalance;
 		});
 	}, [balances, balancesNonce, sortDirection, vaultList]);
 
@@ -85,7 +85,7 @@ function	useSortVaults(
 		return sortResult;
 	}, [sortBy, sortDirection, sortedByAPY, sortedByAvailable, sortedByDeposited, sortedByName, sortedByTVL, stringifiedVaultList]);
 
-	return (sortedVaults);
+	return sortedVaults;
 }
 
 export {useSortVaults};

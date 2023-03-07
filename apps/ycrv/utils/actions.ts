@@ -77,6 +77,6 @@ export async function	zap(
 		signer
 	);
 	const minAmountStr = toNumber(formatUnits(minAmount, 18));
-	const minAmountWithSlippage = parseUnits((minAmountStr * (1 - (slippage / 100))).toFixed(18), 18);
+	const minAmountWithSlippage = parseUnits((minAmountStr * (1 - slippage / 100)).toFixed(18), 18);
 	return await handleTx(contract.zap(inputToken, outputToken, amount, minAmountWithSlippage, address));
 }

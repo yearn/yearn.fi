@@ -8,10 +8,10 @@ function	useFindVault(
 	condition: (v: TVault) => boolean
 ): TVault {
 	const	foundVault = useMemo((): TVault => {
-		return (Object.values(vaultMap || {}).find((vault): boolean => condition(vault as TVault)) as TVault);
+		return Object.values(vaultMap || {}).find((vault): boolean => condition(vault as TVault)) as TVault;
 	}, [vaultMap, condition]);
 
-	return (foundVault);
+	return foundVault;
 }
 
 export {useFindVault};

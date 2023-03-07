@@ -28,10 +28,10 @@ function useInternalMigrationQuote(): [TVanillaLikeResult, (request: TInitSolver
 	): Promise<TNormalizedBN> => {
 		shouldPreventErrorToast;
 
-		const canExecuteFetch = (
+		const canExecuteFetch = 
 			!request.inputToken || !request.outputToken || !request.inputAmount ||
 			!(isZero(request.inputToken.value) || isZero(request.outputToken.value) || isZero(request.inputAmount))
-		);
+		;
 
 		if (canExecuteFetch) {
 			const result = await trigger([request.inputToken, request.outputToken, request.inputAmount, request.isDepositing]);

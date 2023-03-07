@@ -83,12 +83,12 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 	**************************************************************************/
 	if (
 		txStatusApprove.pending || actionParams?.amount.raw > allowanceFrom.raw || status !== 'success' && (
-			(currentSolver === Solver.VANILLA && isDepositing)
-			|| (currentSolver === Solver.CHAIN_COIN && !isDepositing)
-			|| (currentSolver === Solver.INTERNAL_MIGRATION)
-			|| (currentSolver === Solver.COWSWAP)
-			|| (currentSolver === Solver.WIDO)
-			|| (currentSolver === Solver.PARTNER_CONTRACT)
+			currentSolver === Solver.VANILLA && isDepositing
+			|| currentSolver === Solver.CHAIN_COIN && !isDepositing
+			|| currentSolver === Solver.INTERNAL_MIGRATION
+			|| currentSolver === Solver.COWSWAP
+			|| currentSolver === Solver.WIDO
+			|| currentSolver === Solver.PARTNER_CONTRACT
 		)
 	) {
 		return (

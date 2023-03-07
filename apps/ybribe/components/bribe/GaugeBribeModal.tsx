@@ -53,14 +53,14 @@ function	GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauges, o
 			erc20Contract.allowance(address, CURVE_BRIBE_V3_ADDRESS)
 		]) as [string, string, number, bigint, bigint];
 
-		return ({
+		return {
 			name,
 			symbol,
 			decimals,
 			raw: toBigInt(balance),
 			normalized: formatToNormalizedValue(toBigInt(balance), decimals),
 			allowance: toBigInt(allowance)
-		});
+		};
 	}, [safeChainID, provider, address]);
 
 	/* 🔵 - Yearn Finance ******************************************************

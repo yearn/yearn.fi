@@ -99,11 +99,11 @@ function QAInput(props: TQAInput): ReactElement {
 
 	return (
 		<div className={className ? className : 'w-full space-y-2'}>
-			{!!label && (
+			{!!label &&
 				<label htmlFor={label} className={'hidden text-base text-neutral-600 md:inline'}>
 					{label}
 				</label>
-			)}
+			}
 			<div className={`flex h-10 items-center ${isDisabled ? 'bg-neutral-300' : 'bg-neutral-0'} p-2`}>
 				<div className={'flex h-10 w-full flex-row items-center justify-between py-4 px-0'}>
 					<input

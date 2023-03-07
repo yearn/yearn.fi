@@ -38,7 +38,7 @@ function Withdraw(): ReactElement {
 
 	const maxLockingPossible = useMemo((): TNormalizedBN => {
 		const balance = toBigInt(stYCRVBalance.raw);
-		return (toNormalizedBN(balance.toString(), stYCRVBalance.decimals));
+		return toNormalizedBN(balance.toString(), stYCRVBalance.decimals);
 	}, [stYCRVBalance.decimals, stYCRVBalance.raw]);
 
 	const fromInputProps: TQAInput = useMemo((): TQAInput => ({
@@ -93,16 +93,16 @@ function Withdraw(): ReactElement {
 			<div
 				aria-label={'yCRV Withdraw Not Available'}
 				className={'col-span-12 mb-4'}>
-				{isActive ? (
+				{isActive ? 
 					<div>
 						<h1>{unlockTime ? `You can withdraw in ${time}` : 'You have nothing to withdraw'}</h1>
 						<p className={'mt-4'}>{'Please note, you can’t withdraw until the end of the following voting period. See \'how it works\' for more info.'}</p>
 					</div>
-				): (
+					: 
 					<div>
 						<p>{'Connect your wallet to withdraw'}</p>
 					</div>
-				)}
+				}
 			</div>
 		);
 	}

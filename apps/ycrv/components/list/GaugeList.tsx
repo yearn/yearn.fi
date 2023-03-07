@@ -215,7 +215,7 @@ function GaugeList({gauges, gaugesVotes, isLoading, userInfo}: TProps): ReactEle
 			);
 		});
 
-		if (gauges.length === 0 || (isVotesEmpty() && isSwitchEnabled)) {
+		if (gauges.length === 0 || isVotesEmpty() && isSwitchEnabled) {
 			return (
 				<GaugeListEmpty
 					isSwitchEnabled={isSwitchEnabled}
@@ -232,7 +232,7 @@ function GaugeList({gauges, gaugesVotes, isLoading, userInfo}: TProps): ReactEle
 		const currentItems = items.slice(itemOffset, endOffset);
 		const pageCount = Math.ceil(items.length / ITEMS_PER_PAGE);
 		const handlePageClick = (event: {selected: number}): void => {
-			const newOffset = (event.selected * ITEMS_PER_PAGE) % items.length;
+			const newOffset = event.selected * ITEMS_PER_PAGE % items.length;
 			set_itemOffset(newOffset);
 		};
 

@@ -11,20 +11,20 @@ const	LEGACY_OPTIONS_FROM: TDropdownOption[] = [
 		decimals: 18,
 		value: YVBOOST_TOKEN_ADDRESS,
 		zapVia: ZAP_YEARN_VE_CRV_ADDRESS,
-		icon: (
+		icon: 
 			<Image
 				alt={'yvBOOST'}
 				width={24}
 				height={24}
 				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YVBOOST_TOKEN_ADDRESS}/logo-128.png`} />
-		)
+		
 	}, {
 		label: 'yveCRV',
 		symbol: 'yveCRV',
 		decimals: 18,
 		value: YVECRV_TOKEN_ADDRESS,
 		zapVia: ZAP_YEARN_VE_CRV_ADDRESS,
-		icon: (
+		icon: 
 			<Image
 				alt={'yveCRV'}
 				width={24}
@@ -32,7 +32,7 @@ const	LEGACY_OPTIONS_FROM: TDropdownOption[] = [
 				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YVECRV_TOKEN_ADDRESS}/logo-128.png`}
 				loading={'eager'}
 				priority />
-		)
+		
 	}
 ];
 
@@ -43,7 +43,7 @@ const	LEGACY_OPTIONS_TO: TDropdownOption[] = [
 		decimals: 18,
 		value: STYCRV_TOKEN_ADDRESS,
 		zapVia: ZAP_YEARN_VE_CRV_ADDRESS,
-		icon: (
+		icon: 
 			<Image
 				alt={'st-yCRV'}
 				width={24}
@@ -51,14 +51,14 @@ const	LEGACY_OPTIONS_TO: TDropdownOption[] = [
 				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${STYCRV_TOKEN_ADDRESS}/logo-128.png`}
 				loading={'eager'}
 				priority />
-		)
+		
 	}, {
 		label: 'yCRV',
 		symbol: 'yCRV',
 		decimals: 18,
 		value: YCRV_TOKEN_ADDRESS,
 		zapVia: ZAP_YEARN_VE_CRV_ADDRESS,
-		icon: (
+		icon: 
 			<Image
 				alt={'yCRV'}
 				width={24}
@@ -66,7 +66,7 @@ const	LEGACY_OPTIONS_TO: TDropdownOption[] = [
 				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YCRV_TOKEN_ADDRESS}/logo-128.png`}
 				loading={'eager'}
 				priority />
-		)
+		
 	},
 	{
 		label: 'lp-yCRV',
@@ -74,7 +74,7 @@ const	LEGACY_OPTIONS_TO: TDropdownOption[] = [
 		decimals: 18,
 		value: LPYCRV_TOKEN_ADDRESS,
 		zapVia: ZAP_YEARN_VE_CRV_ADDRESS,
-		icon: (
+		icon: 
 			<Image
 				alt={'lp-yCRV'}
 				width={24}
@@ -82,7 +82,7 @@ const	LEGACY_OPTIONS_TO: TDropdownOption[] = [
 				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${LPYCRV_TOKEN_ADDRESS}/logo-128.png`}
 				loading={'eager'}
 				priority />
-		)
+		
 	}
 // {
 // 	label: 'vl-yCRV',
@@ -106,13 +106,13 @@ const	ZAP_OPTIONS_FROM: TDropdownOption[] = [
 		decimals: 18,
 		value: CRV_TOKEN_ADDRESS,
 		zapVia: ZAP_YEARN_VE_CRV_ADDRESS,
-		icon: (
+		icon: 
 			<Image
 				alt={'CRV'}
 				width={24}
 				height={24}
 				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${CRV_TOKEN_ADDRESS}/logo-128.png`} />
-		)
+		
 	},
 	...LEGACY_OPTIONS_TO,
 	{
@@ -121,13 +121,13 @@ const	ZAP_OPTIONS_FROM: TDropdownOption[] = [
 		decimals: 18,
 		value: CVXCRV_TOKEN_ADDRESS,
 		zapVia: ZAP_YEARN_VE_CRV_ADDRESS,
-		icon: (
+		icon: 
 			<Image
 				alt={'cvxCRV'}
 				width={24}
 				height={24}
 				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${CVXCRV_TOKEN_ADDRESS}/logo-128.png`} />
-		)
+		
 	},
 	{
 		label: 'Curve CRV/yCRV',
@@ -135,13 +135,13 @@ const	ZAP_OPTIONS_FROM: TDropdownOption[] = [
 		decimals: 18,
 		value: YCRV_CURVE_POOL_ADDRESS,
 		zapVia: LPYCRV_TOKEN_ADDRESS,
-		icon: (
+		icon: 
 			<Image
 				alt={'Curve CRV/yCRV'}
 				width={24}
 				height={24}
 				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YCRV_CURVE_POOL_ADDRESS}/logo-128.png`} />
-		)
+		
 	},
 	...LEGACY_OPTIONS_FROM
 ];

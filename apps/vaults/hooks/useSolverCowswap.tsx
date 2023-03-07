@@ -36,7 +36,7 @@ function useCowswapQuote(): [TCowResult, (request: TInitSolverArgs, shouldPreven
 		shouldPreventErrorToast = false
 	): MayPromise<TCowAPIResult> => {
 		const	YEARN_APP_DATA = '0x5d22bf49b708de1d2d9547a6cca9faccbdc2b162012e8573811c07103b163d4b';
-		const	quote: QuoteQuery = ({
+		const	quote: QuoteQuery = {
 			from: request.from, // receiver
 			sellToken: toAddress(request.inputToken.value), // token to spend
 			buyToken: toAddress(request.outputToken.value), // token to receive
@@ -46,17 +46,17 @@ function useCowswapQuote(): [TCowResult, (request: TInitSolverArgs, shouldPreven
 			partiallyFillable: false, // always false
 			validTo: 0,
 			sellAmountBeforeFee: request?.inputAmount.toString() // amount to sell, in wei
-		});
+		};
 
-		const canExecuteFetch = (
+		const canExecuteFetch = 
 			!(isZero(quote.from) || isZero(quote.sellToken) || isZero(quote.buyToken))
 			&& !isZero(request?.inputAmount)
-		);
+		;
 		if (canExecuteFetch) {
-			quote.validTo = Math.round((new Date().setMinutes(new Date().getMinutes() + 10) / 1000));
+			quote.validTo = Math.round(new Date().setMinutes(new Date().getMinutes() + 10) / 1000);
 			try {
 				const result = await trigger(quote, {revalidate: false});
-				return (result);
+				return result;
 			} catch (error) {
 				const	_error = error as AxiosError<ApiError>;
 				console.error(error);
@@ -166,18 +166,18 @@ export function useSolverCowswap(): TSolverContext {
 		for (let i = 0; i < maxIterations; i++) {
 			const {data: order} = await axios.get(`https://api.cow.fi/mainnet/api/v1/orders/${orderUID}`);
 			if (order?.status === 'fulfilled') {
-				return ({isSuccessful: true});
+				return {isSuccessful: true};
 			}
 			if (order?.status === 'cancelled' || order?.status === 'expired') {
-				return ({isSuccessful: false, error: new Error('TX fail because the order was not fulfilled')});
+				return {isSuccessful: false, error: new Error('TX fail because the order was not fulfilled')};
 			}
-			if (validTo < (new Date().valueOf() / 1000)) {
-				return ({isSuccessful: false, error: new Error('TX fail because the order expired')});
+			if (validTo < new Date().valueOf() / 1000) {
+				return {isSuccessful: false, error: new Error('TX fail because the order expired')};
 			}
 			// Sleep for 3 seconds before checking the status again
 			await new Promise((resolve): NodeJS.Timeout => setTimeout(resolve, 3000));
 		}
-		return ({isSuccessful: false, error: new Error('TX fail because the order expired')});
+		return {isSuccessful: false, error: new Error('TX fail because the order expired')};
 	}
 
 	/* 🔵 - Yearn Finance **************************************************************************
@@ -187,7 +187,7 @@ export function useSolverCowswap(): TSolverContext {
 	**********************************************************************************************/
 	const execute = useCallback(async (): Promise<TTxResponse> => {
 		if (!latestQuote?.current || !latestQuote?.current?.quote || !request.current || isSolverDisabled[Solver.COWSWAP]) {
-			return ({isSuccessful: false});
+			return {isSuccessful: false};
 		}
 		const	{quote, from, id} = latestQuote.current;
 		try {
@@ -205,15 +205,15 @@ export function useSolverCowswap(): TSolverContext {
 				const {isSuccessful, error} = await checkOrderStatus(orderUID, quote.validTo);
 				if (error) {
 					console.error(error);
-					return ({isSuccessful: false, error});
+					return {isSuccessful: false, error};
 				}
 				return {isSuccessful};
 			}
 		} catch (error) {
 			console.error(error);
-			return ({isSuccessful: false, error: error as Error});
+			return {isSuccessful: false, error: error as Error};
 		}
-		return ({isSuccessful: false});
+		return {isSuccessful: false};
 	}, [getBuyAmountWithSlippage, shouldUsePresign, signCowswapOrder]);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -222,7 +222,7 @@ export function useSolverCowswap(): TSolverContext {
 	**************************************************************************/
 	const expectedOut = useMemo((): TNormalizedBN => {
 		if (!latestQuote?.current?.quote?.buyAmount || isSolverDisabled[Solver.COWSWAP]) {
-			return (toNormalizedBN(0));
+			return toNormalizedBN(0);
 		}
 		return toNormalizedBN(latestQuote?.current?.quote?.buyAmount, toNumber(request?.current?.outputToken?.decimals, 18));
 	}, [latestQuote]);
@@ -233,7 +233,7 @@ export function useSolverCowswap(): TSolverContext {
 	**************************************************************************/
 	const onRetrieveExpectedOut = useCallback(async (request: TInitSolverArgs): Promise<TNormalizedBN> => {
 		if (isSolverDisabled[Solver.COWSWAP]) {
-			return (toNormalizedBN(0));
+			return toNormalizedBN(0);
 		}
 		const quoteResult = await getQuote(request, true);
 		return toNormalizedBN(toBigInt(quoteResult?.quote?.buyAmount), request.outputToken.decimals);

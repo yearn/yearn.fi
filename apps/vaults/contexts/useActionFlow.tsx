@@ -73,17 +73,17 @@ function useContextualIs(selectedTo: Maybe<TDropdownOption>, currentVault: TVaul
 	const {networks} = useSettings();
 	const {safeChainID} = useChainID();
 
-	const isDepositing = useMemo((): boolean => (
+	const isDepositing = useMemo((): boolean => 
 		!selectedTo?.value || toAddress(selectedTo.value) === toAddress(currentVault.address)
-	), [selectedTo?.value, currentVault.address]);
+	, [selectedTo?.value, currentVault.address]);
 
-	const isPartnerAddressValid = useMemo((): boolean => (
+	const isPartnerAddressValid = useMemo((): boolean => 
 		!isZeroAddress(toAddress(networks?.[safeChainID]?.partnerContractAddress))
-	), [networks, safeChainID]);
+	, [networks, safeChainID]);
 
-	const isUsingPartnerContract = useMemo((): boolean => (
+	const isUsingPartnerContract = useMemo((): boolean => 
 		(process?.env?.SHOULD_USE_PARTNER_CONTRACT === undefined ? true : Boolean(process?.env?.SHOULD_USE_PARTNER_CONTRACT)) && isPartnerAddressValid
-	), [isPartnerAddressValid]);
+	, [isPartnerAddressValid]);
 
 	return [isDepositing, isUsingPartnerContract];
 }
@@ -101,11 +101,11 @@ function	getMaxDepositPossible({vault, fromToken, fromDecimals, isDepositing, fr
 
 	if (fromToken === vault?.token?.address && isDepositing) {
 		if (userBalance > vaultDepositLimit) {
-			return (toNormalizedBN(vaultDepositLimit, vault.token.decimals));
+			return toNormalizedBN(vaultDepositLimit, vault.token.decimals);
 		}
 	}
 
-	return (toNormalizedBN(userBalance, fromDecimals));
+	return toNormalizedBN(userBalance, fromDecimals);
 }
 
 const ActionFlowContext = createContext<TActionFlowContext>(DefaultActionFlowContext);
@@ -172,7 +172,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 		if (isInputTokenEth || isOutputTokenEth) {
 			return Solver.CHAIN_COIN;
 		}
-		if (currentVault?.migration?.available && (toAddress(actionParams?.selectedOptionTo?.value) === toAddress(currentVault?.migration?.address))) {
+		if (currentVault?.migration?.available && toAddress(actionParams?.selectedOptionTo?.value) === toAddress(currentVault?.migration?.address)) {
 			return Solver.INTERNAL_MIGRATION;
 		}
 		if (isDepositing && actionParams?.selectedOptionFrom?.solveVia?.includes(zapProvider) && !isSolverDisabled[zapProvider]) {
@@ -195,9 +195,9 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 				let _selectedOptionFrom = actionParams?.selectedOptionFrom;
 				if (isDepositing && (actionParams?.selectedOptionFrom?.solveVia || []).length > 0) {
 					// We don't want to be able to withdraw to exotic tokens. If the current from is one of them, take another one.
-					_selectedOptionFrom = possibleOptionsFrom.find((option: TDropdownOption): boolean => (
+					_selectedOptionFrom = possibleOptionsFrom.find((option: TDropdownOption): boolean => 
 						option.value !== actionParams?.selectedOptionFrom?.value && (option.solveVia || []).length === 0
-					));
+					);
 				}
 				actionParamsDispatcher({
 					type: 'all',
@@ -460,7 +460,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 						address: toAddress(tokenListData?.address),
 						chainID: currentVault?.chainID === 1337 ? safeChainID : currentVault?.chainID,
 						decimals: tokenListData?.decimals,
-						solveVia: (tokenListData?.supportedZaps as Solver[]) || []
+						solveVia: tokenListData?.supportedZaps as Solver[] || []
 					})
 				);
 			});

@@ -29,18 +29,11 @@ function	HeaderPosition(): ReactElement {
 	const clientOnlyFormatCounterValueRaw = useClientOnlyFn({fn: formatCounterValueRaw, placeholder: '0,00'});
 
 	const	formatedYearnHas = useMemo((): ReactNode =>
-		holdings?.veCRVBalance ?
-			clientOnlyFormatAmount(formatToNormalizedValue(holdings.veCRVBalance, 18), 0, 0)
-			: ''
+		holdings?.veCRVBalance ? clientOnlyFormatAmount(formatToNormalizedValue(holdings.veCRVBalance, 18), 0, 0) : ''
 	, [clientOnlyFormatAmount, holdings?.veCRVBalance]);
 
 	const	formatedYouHave = useMemo((): ReactNode =>
-		clientOnlyFormatCounterValueRaw(
-			balanceOfStyCRV.normalized * stycrvPrice
-			+
-			balanceOfLpyCRV.normalized * lpycrvPrice,
-			1
-		)
+		clientOnlyFormatCounterValueRaw(balanceOfStyCRV.normalized * stycrvPrice + balanceOfLpyCRV.normalized * lpycrvPrice, 1)
 	, [clientOnlyFormatCounterValueRaw, balanceOfStyCRV.normalized, stycrvPrice, balanceOfLpyCRV.normalized, lpycrvPrice]);
 
 	return (
@@ -77,7 +70,7 @@ function	Holdings(): ReactElement {
 	const {vaults} = useYearn();
 	const {curveWeeklyFees, cgPrices} = useCurve();
 
-	const lpCRVAPY = useMemo((): string => getVaultAPY(vaults, LPYCRV_TOKEN_ADDRESS), [vaults]);
+	const lpCRVAPY = useMemo((): string => getVaultAPY(vaults[LPYCRV_TOKEN_ADDRESS]), [vaults]);
 	const ycrvPrice = useTokenPrice(YCRV_TOKEN_ADDRESS);
 	const stycrvPrice = useTokenPrice(STYCRV_TOKEN_ADDRESS);
 	const lpycrvPrice = useTokenPrice(LPYCRV_TOKEN_ADDRESS);
@@ -318,7 +311,7 @@ function	Holdings(): ReactElement {
 						</p>
 						<p
 							className={'font-number text-sm text-neutral-400 md:text-base'}>
-							{`∙ ${styCRVAPY && curveAdminFeePercent && styCRVMegaBoost ? clientOnlyFormatAmount(styCRVAPY - (curveAdminFeePercent + styCRVMegaBoost * 100), 2, 2) : '0.00'}% Gauge Voting Bribes`}
+							{`∙ ${styCRVAPY && curveAdminFeePercent && styCRVMegaBoost ? formatAmount(styCRVAPY - (curveAdminFeePercent + styCRVMegaBoost * 100), 2, 2) : '0.00'}% Gauge Voting Bribes`}
 						</p>
 						<p
 							className={'font-number text-sm text-neutral-400 md:text-base'}>

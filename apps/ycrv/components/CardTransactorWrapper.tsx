@@ -107,7 +107,7 @@ function	CardTransactorContextApp({
 	const expectedOutFetcher = useCallback(async (args: [string, string, bigint]): Promise<bigint> => {
 		const [_inputToken, _outputToken, _amountIn] = args;
 		if (isZero(_amountIn)) {
-			return (Zero);
+			return Zero;
 		}
 
 		const	currentProvider = provider || getProvider(1);
@@ -123,7 +123,7 @@ function	CardTransactorContextApp({
 				const	_expectedOut = _amountIn / pps * WeiPerEther;
 				return _expectedOut;
 			} catch (error) {
-				return (Zero);
+				return Zero;
 			}
 		} else {
 			// Zap in
@@ -136,7 +136,7 @@ function	CardTransactorContextApp({
 				const	_expectedOut = toBigInt(await contract.calc_expected_out(_inputToken, _outputToken, _amountIn));
 				return _expectedOut;
 			} catch (error) {
-				return (Zero);
+				return Zero;
 			}
 		}
 	}, [provider]);
@@ -247,14 +247,14 @@ function	CardTransactorContextApp({
 		if (toAddress(selectedOptionFrom.value) === STYCRV_TOKEN_ADDRESS) {
 			return `APY ${formatPercent(styCRVAPY)}`;
 		}
-		return getVaultAPY(vaults, selectedOptionFrom.value);
+		return getVaultAPY(vaults[selectedOptionFrom.value]);
 	}, [vaults, selectedOptionFrom, styCRVAPY]);
 
 	const	toVaultAPY = useMemo((): string => {
 		if (toAddress(selectedOptionTo.value) === STYCRV_TOKEN_ADDRESS) {
 			return `APY ${formatPercent(styCRVAPY)}`;
 		}
-		return getVaultAPY(vaults, selectedOptionTo.value);
+		return getVaultAPY(vaults[selectedOptionTo.value]);
 	}, [vaults, selectedOptionTo, styCRVAPY]);
 
 	const	expectedOutWithSlippage = useMemo((): number => getAmountWithSlippage(

@@ -36,7 +36,8 @@ const aeonik = localFont({
 type TGetLayout = NextComponentType & {getLayout: (p: ReactElement, router: NextRouter) => ReactElement}
 const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 	const	{Component, pageProps, router} = props;
-	const	getLayout = (Component as TGetLayout).getLayout || ((page: ReactElement): ReactElement => page);
+	const	ComponentWithLayout = Component as TGetLayout;
+	const	getLayout = ComponentWithLayout.getLayout || ((page: ReactElement): ReactElement => page);
 	const	{name} = useCurrentApp(router);
 
 	return (

@@ -92,8 +92,8 @@ export function useVLyCRV(): TUseVLyCRV {
 		withdraw: vLyCRVWithdraw,
 		vote: vLyCRVVote,
 		voteMany: vLyCRVVoteMany,
-		approve: async (provider: TWeb3Provider, amount: bigint): Promise<TTxResponse> => (
+		approve: async (provider: TWeb3Provider, amount: bigint): Promise<TTxResponse> => 
 			approveERC20(provider, YCRV_TOKEN_ADDRESS, VLYCRV_TOKEN_ADDRESS, amount)
-		)
+		
 	};
 }
