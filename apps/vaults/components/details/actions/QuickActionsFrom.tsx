@@ -1,5 +1,4 @@
 import React from 'react';
-import {useIsMounted} from '@react-hookz/web';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -9,6 +8,7 @@ import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers
 import {Dropdown} from '@common/components/TokenDropdown';
 import {useWallet} from '@common/contexts/useWallet';
 import {useBalance} from '@common/hooks/useBalance';
+import {useClientOnlyFn} from '@common/hooks/useClientOnlyFn';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
 
 import type {ChangeEvent, ReactElement} from 'react';
@@ -23,7 +23,7 @@ function	VaultDetailsQuickActionsFrom(): ReactElement {
 
 	const selectedFromBalance = useBalance(toAddress(actionParams?.selectedOptionFrom?.value));
 	const selectedOptionFromPricePerToken = useTokenPrice(toAddress(actionParams?.selectedOptionFrom?.value));
-	const isMounted = useIsMounted();
+	const clientOnlyFormatAmount = useClientOnlyFn(formatAmount);
 
 	return (
 		<section aria-label={'FROM'} className={'flex w-full flex-col space-x-0 md:flex-row md:space-x-4'}>
@@ -33,7 +33,7 @@ function	VaultDetailsQuickActionsFrom(): ReactElement {
 						{isDepositing ? 'From wallet' : 'From vault'}
 					</label>
 					<legend className={'font-number inline text-xs text-neutral-600 md:hidden'}>
-						{`You have ${isMounted() && formatAmount(selectedFromBalance.normalized)} ${actionParams?.selectedOptionFrom?.symbol || 'tokens'}`}
+						{`You have ${clientOnlyFormatAmount(selectedFromBalance.normalized)} ${actionParams?.selectedOptionFrom?.symbol || 'tokens'}`}
 					</legend>
 				</div>
 				{isActive && isDepositing && possibleOptionsFrom.length > 1 ? (
@@ -55,7 +55,7 @@ function	VaultDetailsQuickActionsFrom(): ReactElement {
 					</div>
 				)}
 				<legend className={'font-number hidden text-xs text-neutral-600 md:inline'}>
-					{`You have ${formatAmount(selectedFromBalance.normalized)} ${actionParams?.selectedOptionFrom?.symbol || 'tokens'}`}
+					{`You have ${clientOnlyFormatAmount(selectedFromBalance.normalized)} ${actionParams?.selectedOptionFrom?.symbol || 'tokens'}`}
 				</legend>
 			</div>
 			<div className={'w-full space-y-2'}>
