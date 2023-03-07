@@ -3,6 +3,7 @@ import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
@@ -86,7 +87,7 @@ function	VaultDetailsQuickActionsFrom(): ReactElement {
 							onChange={(e: ChangeEvent<HTMLInputElement>): void => onChangeAmount(
 								handleInputChangeEventValue(
 									e.target.value,
-									balances?.[toAddress(actionParams?.selectedOptionFrom?.value)]?.decimals || 18
+									toNumber(balances?.[toAddress(actionParams?.selectedOptionFrom?.value)]?.decimals, 18)
 								)
 							)} />
 						<button
@@ -97,7 +98,7 @@ function	VaultDetailsQuickActionsFrom(): ReactElement {
 					</div>
 				</div>
 				<legend className={'font-number mr-1 text-end text-xs text-neutral-600 md:mr-0 md:text-start'}>
-					{formatCounterValue(actionParams?.amount?.normalized || 0, selectedOptionFromPricePerToken)}
+					{formatCounterValue(actionParams?.amount?.normalized, selectedOptionFromPricePerToken)}
 				</legend>
 			</div>
 		</section>

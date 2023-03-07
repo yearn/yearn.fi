@@ -7,7 +7,7 @@ import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {CURVE_BRIBE_V3_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatBN, formatToNormalizedValue, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatToNormalizedValue, toBigInt, toNormalizedBN, toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
@@ -19,9 +19,8 @@ import {useBribes} from '@yBribe/contexts/useBribes';
 import {addReward} from '@yBribe/utils/actions/addReward';
 
 import type {ChangeEvent, ReactElement} from 'react';
+import type {TNormalizedBN} from '@yearn-finance/web-lib/types';
 import type {TCurveGauges} from '@common/types/curves';
-import type {TNormalizedBN} from '@common/types/types';
-
 
 function	GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauges, onClose: VoidFunction}): ReactElement {
 	const {chainID, safeChainID} = useChainID();
@@ -58,9 +57,9 @@ function	GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauges, o
 			name,
 			symbol,
 			decimals,
-			raw: balance,
-			normalized: formatToNormalizedValue(balance, decimals),
-			allowance
+			raw: toBigInt(balance),
+			normalized: formatToNormalizedValue(toBigInt(balance), decimals),
+			allowance: toBigInt(allowance)
 		});
 	}, [safeChainID, provider, address]);
 
@@ -115,7 +114,7 @@ function	GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauges, o
 				</Button>
 			);
 		}
-		if (txStatusApprove.pending || formatBN(amount.raw) > formatBN(selectedToken?.allowance)) {
+		if (txStatusApprove.pending || toBigInt(amount.raw) > toBigInt(selectedToken?.allowance)) {
 			return (
 				<Button
 					onClick={onApproveFrom}
@@ -140,8 +139,8 @@ function	GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauges, o
 				isDisabled={
 					!isActive ||
 					isZero(tokenAddress) ||
-					isZero(formatBN(amount?.raw)) ||
-					formatBN(amount?.raw) > formatBN(selectedToken?.raw) ||
+					isZero(amount.raw) ||
+					toBigInt(amount.raw) > toBigInt(selectedToken?.raw) ||
 					![1, 1337].includes(chainID)
 				}>
 				{'Deposit'}
@@ -194,13 +193,13 @@ function	GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauges, o
 									disabled={!isActive}
 									value={amount.normalized}
 									onChange={(e: ChangeEvent<HTMLInputElement>): void => {
-										set_amount(handleInputChangeEventValue(e.target.value, selectedToken?.decimals || 18));
+										set_amount(handleInputChangeEventValue(e.target.value, toNumber(selectedToken?.decimals, 18)));
 									}} />
 								<button
 									onClick={(): void => {
 										set_amount({
-											raw: formatBN(selectedToken?.raw),
-											normalized: selectedToken?.normalized || 0
+											raw: toBigInt(selectedToken?.raw),
+											normalized: toNumber(selectedToken?.normalized)
 										});
 									}}
 									className={'cursor-pointer bg-neutral-900 px-2 py-1 text-xs text-neutral-0 transition-colors hover:bg-neutral-700'}>
@@ -224,7 +223,10 @@ function	GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauges, o
 								{'Value'}
 							</p>
 							<p className={'font-number text-base text-neutral-900'}>
-								{selectedToken ? formatCounterValue(amount?.normalized || 0, (Number(prices?.[toAddress(tokenAddress)] || 0) / 1000000)) : '-'}
+								{selectedToken ? formatCounterValue(
+									toNumber(amount?.normalized),
+									toNumber(prices?.[toAddress(tokenAddress)]) / 1000000
+								) : '-'}
 							</p>
 						</div>
 						<div className={'flex flex-row items-center justify-between'}>

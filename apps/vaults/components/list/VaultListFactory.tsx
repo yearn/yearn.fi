@@ -6,7 +6,8 @@ import {useAppSettings} from '@vaults/contexts/useAppSettings';
 import {useFilteredVaults} from '@vaults/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {isGreaterThanZero} from '@yearn-finance/web-lib/utils/isZero';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import ListHead from '@common/components/ListHead';
 import ListHero from '@common/components/ListHero';
@@ -34,8 +35,8 @@ function	VaultListFactory(): ReactElement {
 	const	curveVaults = useFilteredVaults(vaults, ({category, type}): boolean => category === 'Curve' && type === 'Automated');
 	const	holdingsVaults = useFilteredVaults(vaults, ({category, address, type}): boolean => {
 		const	holding = balances?.[toAddress(address)];
-		const	hasValidBalance = formatBN(holding?.raw) > 0;
-		const	balanceValue = holding?.normalizedValue || 0;
+		const	hasValidBalance = isGreaterThanZero(holding?.raw);
+		const	balanceValue = toNumber(holding?.normalizedValue);
 		if (shouldHideDust && balanceValue < 0.01) {
 			return false;
 		} if (hasValidBalance && category === 'Curve' && type === 'Automated') {
@@ -59,7 +60,7 @@ function	VaultListFactory(): ReactElement {
 		}
 
 		if (shouldHideLowTVLVaults && category !== 'Holdings') {
-			_vaultList = _vaultList.filter((vault): boolean => (vault?.tvl?.tvl || 0) > 10_000);
+			_vaultList = _vaultList.filter((vault): boolean => toNumber(vault?.tvl?.tvl) > 10_000);
 		}
 
 		return _vaultList;

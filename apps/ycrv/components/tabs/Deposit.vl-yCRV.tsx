@@ -2,7 +2,7 @@ import React, {useMemo, useState} from 'react';
 import {useAsync, useUpdateEffect} from '@react-hookz/web';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatBN, MaxUint256, toNormalizedBN, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {DefaultTNormalizedBN, MaxUint256, toBigInt, toNormalizedBN, toNumber, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
@@ -19,7 +19,7 @@ import {useVLyCRV} from '@yCRV/hooks/useVLyCRV';
 
 import type {ChangeEvent, ReactElement} from 'react';
 import type {TQAButton, TQAInput, TQASelect} from '@yCRV/components/QuickActions';
-import type {TNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import type {TNormalizedBN} from '@yearn-finance/web-lib/types';
 
 function Deposit(): ReactElement {
 	const {isActive, provider} = useWeb3();
@@ -27,7 +27,7 @@ function Deposit(): ReactElement {
 	const yCRVBalance = useBalance(YCRV.value);
 	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
 	const [txStatusDeposit, set_txStatusDeposit] = useState(defaultTxStatus);
-	const [amount, set_amount] = useState<TNormalizedBN | undefined>({raw: Zero, normalized: 0});
+	const [amount, set_amount] = useState<TNormalizedBN | undefined>(DefaultTNormalizedBN);
 	const pricePerYCRV = useTokenPrice(toAddress(YCRV.value));
 	const {deposit, approve} = useVLyCRV();
 	const clientOnlyFormatAmount = useClientOnlyFn({fn: formatAmount, placeholder: '0,00'});
@@ -38,25 +38,25 @@ function Deposit(): ReactElement {
 	}, [clientOnlyFormatAmount, yCRVBalance.normalized, yCRVBalance?.symbol]);
 
 	const maxLockingPossible = useMemo((): TNormalizedBN => {
-		const balance = formatBN(yCRVBalance?.raw);
+		const balance = yCRVBalance.raw;
 		return (toNormalizedBN(balance.toString(), yCRVBalance.decimals));
 	}, [yCRVBalance.decimals, yCRVBalance.raw]);
 
 	const fromInputProps: TQAInput = useMemo((): TQAInput => ({
 		onChange: ({target: {value}}: ChangeEvent<HTMLInputElement>): void => {
-			const decimals = balances?.[toAddress(YCRV.value)]?.decimals || 18;
+			const decimals = toNumber(balances?.[toAddress(YCRV.value)]?.decimals, 18);
 			set_amount(value === '' ? undefined : handleInputChangeEventValue(value, decimals));
 		},
 		value: amount ? amount.normalized : '',
 		onSetMaxAmount: (): void => set_amount(maxLockingPossible),
 		label: 'Amount',
-		legend: formatCounterValue(amount?.normalized || 0, pricePerYCRV),
+		legend: formatCounterValue(toNumber(amount?.normalized), pricePerYCRV),
 		isDisabled: !isActive,
 		placeholder: '0'
 	}), [amount, balances, isActive, maxLockingPossible, pricePerYCRV]);
 
 	const toInputProps: TQAInput = useMemo((): TQAInput => ({
-		value: amount?.normalized ?? 0,
+		value: toNumber(amount?.normalized),
 		label: 'You will get',
 		isDisabled: true
 	}), [amount]);
@@ -73,8 +73,12 @@ function Deposit(): ReactElement {
 	const toSelectProps: TQASelect = {label: 'To vault', options: [VL_YCRV], selected: VL_YCRV};
 
 	async function onDeposit(): Promise<void> {
+		if (!amount) {
+			return;
+		}
+
 		new Transaction(provider, deposit, set_txStatusDeposit)
-			.populate(formatBN(amount?.raw))
+			.populate(amount.raw)
 			.onSuccess(async (): Promise<void> => {
 				await refresh([{token: VL_YCRV.value}, {token: YCRV.value}]);
 			})
@@ -114,7 +118,7 @@ function Deposit(): ReactElement {
 					<QuickActions.Select {...toSelectProps} />
 					<QuickActions.Input {...toInputProps} />
 				</QuickActions>
-				<QuickActions.Button {...(allowanceFrom >= formatBN(amount?.raw) ? depositButtonProps : approveButtonProps)} />
+				<QuickActions.Button {...(allowanceFrom >= toBigInt(amount?.raw) ? depositButtonProps : approveButtonProps)} />
 			</div>
 		</div>
 	);

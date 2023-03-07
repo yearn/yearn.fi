@@ -1,5 +1,5 @@
 import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
-import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {toBigInt, toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
 
 import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 
@@ -21,7 +21,7 @@ export function validateAllowance(props: TValidateAllowanceProps): TValidationRe
 	// TODO: return valid when is native token
 
 	const allowance = allowances[allowanceKey(tokenAddress, spenderAddress)];
-	const isApproved = formatBN(allowance) >= amount;
+	const isApproved = toBigInt(allowance) > toBigInt(amount);
 
 	return {isValid: isApproved};
 }
@@ -36,7 +36,7 @@ export type TValidateAmountProps = {
 
 export function validateAmount(props: TValidateAmountProps): TValidationResponse {
 	const {amount, balance, minAmountAllowed, maxAmountAllowed, shouldDisplayMin} = props;
-	const amountNumber = Number(amount);
+	const amountNumber = toNumber(amount);
 
 	if (amountNumber === 0) {
 		return {};
@@ -46,15 +46,15 @@ export function validateAmount(props: TValidateAmountProps): TValidationResponse
 		return {isValid: false, error: 'Invalid amount'};
 	}
 
-	if (maxAmountAllowed !== undefined && amountNumber > Number(maxAmountAllowed)) {
+	if (maxAmountAllowed !== undefined && amountNumber > toNumber(maxAmountAllowed)) {
 		return {isValid: false, error: 'Exceeded max amount'};
 	}
 
-	if (minAmountAllowed !== undefined && amountNumber < Number(minAmountAllowed)) {
+	if (minAmountAllowed !== undefined && amountNumber < toNumber(minAmountAllowed)) {
 		return {isValid: false, error: `Amount under minimum allowed ${shouldDisplayMin && minAmountAllowed !== undefined ? `(min ${minAmountAllowed})` : ''}`};
 	}
 
-	if (balance !== undefined && amountNumber > Number(balance)) {
+	if (balance !== undefined && amountNumber > toNumber(balance)) {
 		return {isValid: false, error: 'Insufficient balance'};
 	}
 

@@ -4,7 +4,7 @@ import useSWR from 'swr';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
-import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatToNormalizedValue, toBigInt, toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
 
@@ -32,8 +32,8 @@ function	GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height =
 		const	_reports = [...(reports || [])];
 		const reportsForGraph = (
 			_reports.reverse()?.map((reports: TYDaemonReports): {name: number; value: number, gain: string, loss: string} => ({
-				name: Number(reports.timestamp),
-				value: Number(reports.results?.[0]?.APR || 0) * 100,
+				name: toNumber(reports.timestamp),
+				value: toNumber(reports.results?.[0]?.APR) * 100,
 				gain: reports?.gain || '0',
 				loss: reports?.loss || '0'
 			}))
@@ -88,8 +88,8 @@ function	GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height =
 						if (payload.length > 0) {
 							const [{value, payload: innerPayload}] = payload;
 							const	{gain, loss} = innerPayload;
-							const	diff = formatBN(gain) - formatBN(loss);
-							const	normalizedDiff = formatToNormalizedValue(diff, vaultDecimals);
+							const	diff = gain.sub(loss);
+							const	normalizedDiff = formatToNormalizedValue(toBigInt(diff), vaultDecimals);
 
 							return (
 								<div className={'recharts-tooltip'}>
@@ -101,7 +101,7 @@ function	GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height =
 									<div className={'flex flex-row items-center justify-between'}>
 										<p className={'text-xs text-neutral-600'}>{'APR'}</p>
 										<b className={'font-number text-xs font-bold text-neutral-900'}>
-											{formatPercent(Number(value))}
+											{formatPercent(Number(value || 0))}
 										</b>
 									</div>
 									<div className={'flex flex-row items-center justify-between'}>

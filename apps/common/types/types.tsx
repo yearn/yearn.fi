@@ -1,13 +1,8 @@
 import type {ReactElement} from 'react';
 import type {TBalanceData} from '@yearn-finance/web-lib/hooks/types';
-import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
+import type {Maybe, TAddress, TDict} from '@yearn-finance/web-lib/types';
 import type {Solver} from '@vaults/contexts/useSolver';
 import type {EXTERNAL_SERVICE_PROVIDER} from '@vaults/utils/migrationTable';
-
-export type	TClaimable = {
-	raw: bigint,
-	normalized: number,
-}
 
 export type	TSimplifiedBalanceData = {
 	decimals: number,
@@ -41,12 +36,12 @@ export type TDropdownProps = {
 	onSelect:
 	| React.Dispatch<React.SetStateAction<TDropdownOption>>
 	| ((option: TDropdownOption) => void);
-	balanceSource?: TDict<TBalanceData>;
+	balanceSource?: TDict<Maybe<TBalanceData>>;
 };
 
 export type TDropdownItemProps = {
 	option: TDropdownOption;
-	balanceSource?: TDict<TBalanceData>;
+	balanceSource?: TDict<Maybe<TBalanceData>>;
 };
 
 export type TDropdownGaugeOption = {
@@ -72,11 +67,6 @@ export type TDropdownGaugeProps = {
 export type TDropdownGaugeItemProps = {
 	option: TDropdownGaugeOption;
 };
-
-export type	TNormalizedBN = {
-	raw: bigint,
-	normalized: number | string,
-}
 
 export type TGraphData = {
 	name: string;

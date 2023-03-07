@@ -3,7 +3,7 @@ import dayjs from 'dayjs';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {VLYCRV_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatBN, toNormalizedBN, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {DefaultTNormalizedBN, toNormalizedBN, toNumber, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
@@ -19,13 +19,13 @@ import {useVLyCRV} from '@yCRV/hooks/useVLyCRV';
 
 import type {ChangeEvent, ReactElement} from 'react';
 import type {TQAButton, TQAInput, TQASelect} from '@yCRV/components/QuickActions';
-import type {TNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import type {TNormalizedBN} from '@yearn-finance/web-lib/types';
 
 function Withdraw(): ReactElement {
 	const {isActive, provider} = useWeb3();
 	const {balances, refresh} = useWallet();
 	const stYCRVBalance = useBalance(VLYCRV_TOKEN_ADDRESS);
-	const [amount, set_amount] = useState<TNormalizedBN | undefined>({raw: Zero, normalized: 0});
+	const [amount, set_amount] = useState<TNormalizedBN | undefined>(DefaultTNormalizedBN);
 	const [txStatusWithdraw, set_txStatusWithdraw] = useState(defaultTxStatus);
 	const pricePerYCRV = useTokenPrice(YCRV_TOKEN_ADDRESS);
 	const {withdraw, initialData: {userInfo: {unlockTime}}} = useVLyCRV();
@@ -43,7 +43,7 @@ function Withdraw(): ReactElement {
 
 	const fromInputProps: TQAInput = useMemo((): TQAInput => ({
 		onChange: ({target: {value}}: ChangeEvent<HTMLInputElement>): void => {
-			const decimals = balances?.[toAddress(VL_YCRV.value)]?.decimals || 18;
+			const decimals = toNumber(balances?.[toAddress(VL_YCRV.value)]?.decimals, 18);
 			if (value === '') {
 				set_amount(undefined);
 				return;
@@ -58,17 +58,21 @@ function Withdraw(): ReactElement {
 	}), [amount, balances, isActive, maxLockingPossible]);
 
 	const toInputProps: TQAInput = useMemo((): TQAInput => ({
-		value: amount?.normalized ?? 0,
+		value: toNumber(amount?.normalized),
 		label: 'You will get',
-		legend: formatCounterValue(amount?.normalized || 0, pricePerYCRV),
+		legend: formatCounterValue(toNumber(amount?.normalized), pricePerYCRV),
 		isDisabled: true
 	}), [amount?.normalized, pricePerYCRV]);
 
 	const toSelectProps: TQASelect = {label: 'To wallet', options: [YCRV], selected: YCRV};
 
 	async function onWithdraw(): Promise<void> {
+		if (!amount || isZero(amount.raw)) {
+			return;
+		}
+
 		new Transaction(provider, withdraw, set_txStatusWithdraw)
-			.populate(formatBN(amount?.raw))
+			.populate(amount.raw)
 			.onSuccess(async (): Promise<void> => {
 				await refresh([{token: VL_YCRV.value}, {token: YCRV.value}]);
 			})

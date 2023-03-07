@@ -10,8 +10,9 @@ import Wrapper from '@vaults/Wrapper';
 import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {useSessionStorage} from '@yearn-finance/web-lib/hooks/useSessionStorage';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
+import {isGreaterThanZero} from '@yearn-finance/web-lib/utils/isZero';
 import ListHead from '@common/components/ListHead';
 import ListHero from '@common/components/ListHero';
 import ValueAnimation from '@common/components/ValueAnimation';
@@ -79,8 +80,8 @@ function	Index(): ReactElement {
 	const	filterHoldingsCallback = useCallback((address: TAddress): boolean => {
 		balancesNonce;
 		const	holding = balances?.[toAddress(address)];
-		const	hasValidBalance = formatBN(holding?.raw) > 0;
-		const	balanceValue = holding?.normalizedValue || 0;
+		const	hasValidBalance = isGreaterThanZero(holding?.raw);
+		const	balanceValue = toNumber(holding?.normalizedValue);
 		if (shouldHideDust && balanceValue < 0.01) {
 			return false;
 		}
@@ -93,9 +94,9 @@ function	Index(): ReactElement {
 	const	filterMigrationCallback = useCallback((address: TAddress): boolean => {
 		balancesNonce;
 		const	holding = balances?.[toAddress(address)];
-		const	hasValidPrice = formatBN(holding?.rawPrice) > 0;
-		const	hasValidBalance = formatBN(holding?.raw) > 0;
-		if (hasValidBalance && (hasValidPrice ? (holding?.normalizedValue || 0) >= 0.01 : true)) {
+		const	hasValidPrice = isGreaterThanZero(holding?.rawPrice);
+		const	hasValidBalance = isGreaterThanZero(holding?.raw);
+		if (hasValidBalance && (hasValidPrice ? toNumber(holding?.normalizedValue) >= 0.01 : true)) {
 			return true;
 		}
 		return false;
@@ -131,12 +132,12 @@ function	Index(): ReactElement {
 		} else if (category === 'Holdings') {
 			_vaultList = holdingsVaults;
 		} else if (category === 'Featured Vaults') {
-			_vaultList.sort((a, b): number => ((b.tvl.tvl || 0) * (b?.apy?.net_apy || 0)) - ((a.tvl.tvl || 0) * (a?.apy?.net_apy || 0)));
+			_vaultList.sort((a, b): number => toNumber(b.tvl.tvl) * toNumber(b?.apy?.net_apy) - toNumber(a.tvl.tvl) * toNumber(a?.apy?.net_apy));
 			_vaultList = _vaultList.slice(0, 10);
 		}
 
 		if (shouldHideLowTVLVaults && category !== 'Holdings') {
-			_vaultList = _vaultList.filter((vault): boolean => (vault?.tvl?.tvl || 0) > 10_000);
+			_vaultList = _vaultList.filter((vault): boolean => toNumber(vault?.tvl?.tvl) > 10_000);
 		}
 
 		return _vaultList;
@@ -197,7 +198,7 @@ function	Index(): ReactElement {
 		return (
 			sortedVaultsToDisplay.map((vault): ReactNode => {
 				if (!vault) {
-					return (null);
+					return null;
 				}
 				return <VaultsListRow key={vault.address} currentVault={vault} />;
 			})
@@ -231,7 +232,7 @@ function	Index(): ReactElement {
 								value: 'Holdings',
 								label: 'Holdings',
 								isSelected: category === 'Holdings',
-								node: (
+								node:
 									<Fragment>
 										{'Holdings'}
 										<span className={`absolute -top-1 -right-1 flex h-2 w-2 ${category === 'Holdings' || migratableVaults?.length === 0 ? 'opacity-0' : 'opacity-100'}`}>
@@ -239,7 +240,7 @@ function	Index(): ReactElement {
 											<span className={'relative inline-flex h-2 w-2 rounded-full bg-pink-500'}></span>
 										</span>
 									</Fragment>
-								)
+
 							}
 						]
 					]}

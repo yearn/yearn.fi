@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {parseUnits} from 'ethers';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isNumber} from '@yearn-finance/web-lib/utils/isNumber';
 import {isTAddress} from '@yearn-finance/web-lib/utils/isTAddress';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
@@ -37,7 +37,7 @@ function GaugeListRow({gauge, gaugeVotes, votesState, votesDispatch}: TGaugeList
 			return;
 		}
 		if (isNumber(+value) && isTAddress(gauge.gauge)) {
-			votesDispatch({type: 'UPDATE', gaugeAddress: gauge.gauge, votes: parseUnits(String(+value), 18)});
+			votesDispatch({type: 'UPDATE', gaugeAddress: gauge.gauge, votes: toBigInt(parseUnits(String(+value), 18))});
 			return;
 		}
 	};

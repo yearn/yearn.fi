@@ -14,7 +14,7 @@ const GraphForVaultEarnings = dynamic<TGraphForVaultEarningsProps>(async (): Loa
 
 function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYearnVault, harvestData: TGraphData[]}): ReactElement {
 	const clientOnlyFormatPercent = useClientOnlyFn({fn: formatPercent, placeholder: '0,00'});
-	
+
 	return (
 		<div className={'grid grid-cols-1 gap-10 bg-neutral-100 p-4 md:grid-cols-2 md:gap-32 md:p-8'}>
 			<div className={'col-span-1 w-full space-y-6'}>
@@ -31,19 +31,19 @@ function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYearnVau
 							<div className={'flex flex-row items-center justify-between'}>
 								<p className={'text-sm text-neutral-500'}>{'Weekly APY'}</p>
 								<p className={'font-number text-sm text-neutral-900'}>
-									{clientOnlyFormatPercent((currentVault?.apy?.points?.week_ago || 0) * 100)}
+									{clientOnlyFormatPercent(currentVault?.apy?.points?.week_ago * 100)}
 								</p>
 							</div>
 							<div className={'flex flex-row items-center justify-between'}>
 								<p className={'text-sm text-neutral-500'}>{'Monthly APY'}</p>
 								<p className={'font-number text-sm text-neutral-900'}>
-									{clientOnlyFormatPercent((currentVault?.apy?.points?.month_ago || 0) * 100)}
+									{clientOnlyFormatPercent(currentVault?.apy?.points?.month_ago * 100)}
 								</p>
 							</div>
 							<div className={'flex flex-row items-center justify-between'}>
 								<p className={'text-sm text-neutral-500'}>{'Inception APY'}</p>
 								<p className={'font-number text-sm text-neutral-900'}>
-									{clientOnlyFormatPercent((currentVault?.apy?.points?.inception || 0) * 100)}
+									{clientOnlyFormatPercent(currentVault?.apy?.points?.inception * 100)}
 								</p>
 							</div>
 						</div>
@@ -51,13 +51,13 @@ function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYearnVau
 							<div className={'flex flex-row items-center justify-between'}>
 								<p className={'text-sm text-neutral-500'}>{'Gross APR'}</p>
 								<p className={'font-number text-sm text-neutral-900'}>
-									{clientOnlyFormatPercent((currentVault?.apy?.gross_apr || 0) * 100)}
+									{clientOnlyFormatPercent(currentVault?.apy?.gross_apr * 100)}
 								</p>
 							</div>
 							<div className={'flex flex-row items-center justify-between'}>
 								<p className={'text-sm text-neutral-500'}>{'Net APY'}</p>
 								<p className={'font-number text-sm text-neutral-900'}>
-									{`APY ${clientOnlyFormatPercent((currentVault?.apy?.net_apy || 0) * 100, 2, 2, 500)}`}
+									{`APY ${clientOnlyFormatPercent(currentVault?.apy?.net_apy * 100, 2, 2, 500)}`}
 								</p>
 							</div>
 						</div>
@@ -77,13 +77,13 @@ function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYearnVau
 						<div className={'flex flex-col space-y-0 md:space-y-2'}>
 							<p className={'text-xxs text-neutral-600 md:text-xs'}>{'Management fee'}</p>
 							<b className={'font-number text-xl text-neutral-900'}>
-								{clientOnlyFormatPercent((currentVault?.details?.managementFee || 0) / 100, 0)}
+								{clientOnlyFormatPercent(currentVault?.details?.managementFee / 100, 0)}
 							</b>
 						</div>
 						<div className={'flex flex-col space-y-0 md:space-y-2'}>
 							<p className={'text-xxs text-neutral-600 md:text-xs'}>{'Performance fee'}</p>
 							<b className={'font-number text-xl text-neutral-500'}>
-								{clientOnlyFormatPercent((currentVault?.details?.performanceFee || 0) / 100, 0)}
+								{clientOnlyFormatPercent(currentVault?.details?.performanceFee / 100, 0)}
 							</b>
 						</div>
 					</div>

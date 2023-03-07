@@ -7,9 +7,9 @@ import {useAddToken} from '@yearn-finance/web-lib/hooks/useAddToken';
 import {useDismissToasts} from '@yearn-finance/web-lib/hooks/useDismissToasts';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatBN, MaxUint256, toNormalizedBN, WeiPerEther, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {MaxUint256, toBigInt, toNormalizedBN, WeiPerEther, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
-import {isZero} from '@yearn-finance/web-lib/utils/isZero';
+import {isGreaterThanZero, isZero} from '@yearn-finance/web-lib/utils/isZero';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {getProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
@@ -23,8 +23,8 @@ import {zap} from '@yCRV/utils/actions';
 import {LEGACY_OPTIONS_FROM, LEGACY_OPTIONS_TO} from '@yCRV/utils/zapOptions';
 
 import type {ReactElement} from 'react';
-import type {VoidPromiseFunction} from '@yearn-finance/web-lib/types';
-import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
+import type {TNormalizedBN, VoidPromiseFunction} from '@yearn-finance/web-lib/types';
+import type {TDropdownOption} from '@common/types/types';
 
 type TCardTransactor = {
 	selectedOptionFrom: TDropdownOption,
@@ -90,8 +90,8 @@ function	CardTransactorContextApp({
 	useEffect((): void => {
 		balancesNonce; // remove warning, force deep refresh
 		if (isActive && isZero(amount.raw) && !hasTypedSomething) {
-			set_amount(toNormalizedBN(balances[toAddress(selectedOptionFrom.value)]?.raw));
-		} else if (!isActive && formatBN(amount.raw) > 0) {
+			set_amount(toNormalizedBN(toBigInt(balances[toAddress(selectedOptionFrom.value)]?.raw)));
+		} else if (!isActive && isGreaterThanZero(amount.raw)) {
 			performBatchedUpdates((): void => {
 				set_amount(toNormalizedBN(0));
 				set_hasTypedSomething(false);
@@ -119,8 +119,8 @@ function	CardTransactorContextApp({
 				currentProvider
 			);
 			try {
-				const	pps = formatBN(await contract.pricePerShare());
-				const	_expectedOut = _amountIn * pps / WeiPerEther;
+				const	pps = toBigInt(await contract.pricePerShare());
+				const	_expectedOut = _amountIn / pps * WeiPerEther;
 				return _expectedOut;
 			} catch (error) {
 				return (Zero);
@@ -133,7 +133,7 @@ function	CardTransactorContextApp({
 				currentProvider
 			);
 			try {
-				const	_expectedOut = formatBN(await contract.calc_expected_out(_inputToken, _outputToken, _amountIn));
+				const	_expectedOut = toBigInt(await contract.calc_expected_out(_inputToken, _outputToken, _amountIn));
 				return _expectedOut;
 			} catch (error) {
 				return (Zero);
@@ -260,13 +260,13 @@ function	CardTransactorContextApp({
 	const	expectedOutWithSlippage = useMemo((): number => getAmountWithSlippage(
 		selectedOptionFrom.value,
 		selectedOptionTo.value,
-		formatBN(expectedOut),
+		toBigInt(expectedOut),
 		slippage
 	), [expectedOut, selectedOptionFrom.value, selectedOptionTo.value, slippage]);
 
 	const	allowanceFrom = useMemo((): bigint => {
 		balancesNonce; // remove warning, force deep refresh
-		return formatBN(allowances?.[allowanceKey(selectedOptionFrom.value, selectedOptionFrom.zapVia)]);
+		return toBigInt(allowances?.[allowanceKey(selectedOptionFrom.value, selectedOptionFrom.zapVia)]);
 	}, [balancesNonce, allowances, selectedOptionFrom.value, selectedOptionFrom.zapVia]);
 
 	return (

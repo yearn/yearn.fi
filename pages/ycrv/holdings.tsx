@@ -106,7 +106,7 @@ function	Holdings(): ReactElement {
 		if (curveWeeklyFees?.weeklyFeesTable?.[0]?.rawFees > 0) {
 			return curveWeeklyFees.weeklyFeesTable[0].rawFees;
 		}
-		return curveWeeklyFees?.weeklyFeesTable?.[1]?.rawFees || 0;
+		return toNumber(curveWeeklyFees?.weeklyFeesTable?.[1]?.rawFees);
 
 	}, [curveWeeklyFees]);
 
@@ -119,7 +119,7 @@ function	Holdings(): ReactElement {
 	}, [holdings, latestCurveFeesValue, cgPrices]);
 
 	const	curveAdminFeePercent = useMemo((): number => {
-		return currentVeCRVAPY * Number(holdings?.boostMultiplier) / 10000;
+		return currentVeCRVAPY * toNumber(holdings?.boostMultiplier) / 10000;
 	}, [holdings, currentVeCRVAPY]);
 
 	return (
@@ -210,7 +210,7 @@ function	Holdings(): ReactElement {
 							<div>
 								<p
 									className={'font-number text-base text-neutral-900'}>
-									{formatNumberOver10K(balances[STYCRV_TOKEN_ADDRESS]?.normalized || 0)}
+									{formatNumberOver10K(toNumber(balances[STYCRV_TOKEN_ADDRESS]?.normalized))}
 								</p>
 								<p
 									className={'font-number text-xs text-neutral-600'}>
@@ -256,7 +256,7 @@ function	Holdings(): ReactElement {
 							<div>
 								<p
 									className={'font-number text-base text-neutral-900'}>
-									{formatNumberOver10K(balances[LPYCRV_TOKEN_ADDRESS]?.normalized || 0)}
+									{formatNumberOver10K(toNumber(balances[LPYCRV_TOKEN_ADDRESS]?.normalized))}
 								</p>
 								<p
 									className={'font-number text-xs text-neutral-600'}>
@@ -314,7 +314,7 @@ function	Holdings(): ReactElement {
 						</p>
 						<p
 							className={'font-number text-sm text-neutral-400 md:text-base'}>
-							{`∙ ${curveAdminFeePercent ? clientOnlyFormatPercent(curveAdminFeePercent) : clientOnlyFormatPercent(0)} Curve Admin Fees (${clientOnlyFormatAmount(Number(holdings?.boostMultiplier) / 10000)}x boost)`}
+							{`∙ ${clientOnlyFormatPercent(toNumber(curveAdminFeePercent))} Curve Admin Fees (${clientOnlyFormatAmount(Number(holdings?.boostMultiplier) / 10000)}x boost)`}
 						</p>
 						<p
 							className={'font-number text-sm text-neutral-400 md:text-base'}>

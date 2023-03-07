@@ -5,7 +5,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
-import {formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatPercent, formatUSD} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {copyToClipboard} from '@yearn-finance/web-lib/utils/helpers';
@@ -32,12 +32,12 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 	const clientOnlyFormatUSD = useClientOnlyFn({fn: formatUSD, placeholder: '0,00'});
 	const clientOnlyFormatCounterValue = useClientOnlyFn({fn: formatCounterValue, placeholder: '0,00'});
 
-	const	normalizedVaultEarned = useMemo((): number => (
+	const	normalizedVaultEarned = useMemo((): number =>
 		formatToNormalizedValue(
-			(earned?.earned?.[toAddress(currentVault?.address)]?.unrealizedGains || '0'),
+			toBigInt(earned?.earned?.[toAddress(currentVault?.address)]?.unrealizedGains),
 			currentVault?.decimals
 		)
-	), [earned, currentVault]);
+	, [earned, currentVault]);
 
 	const	vaultBalance = useBalance(currentVault?.address)?.normalized;
 	const	vaultPrice = useTokenPrice(currentVault?.address);
@@ -49,11 +49,11 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 				&nbsp;{vaultName}&nbsp;
 			</b>
 			<div className={'mt-4 mb-10 md:mt-10 md:mb-14'}>
-				{currentVault?.address ? (
+				{currentVault?.address ?
 					<button onClick={(): void => copyToClipboard(currentVault.address)}>
 						<p className={'font-number text-xxs text-neutral-500 md:text-xs'}>{currentVault.address}</p>
 					</button>
-				): <p className={'text-xxs text-neutral-500 md:text-xs'}>&nbsp;</p>}
+					: <p className={'text-xxs text-neutral-500 md:text-xs'}>&nbsp;</p>}
 			</div>
 			<div className={'grid grid-cols-2 gap-6 md:grid-cols-4 md:gap-12'}>
 				<div className={'flex flex-col items-center justify-center space-y-1 md:space-y-2'}>
@@ -61,7 +61,7 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 						{`Total deposited, ${currentVault?.symbol || 'token'}`}
 					</p>
 					<b className={'font-number text-lg md:text-3xl'}>
-						{clientOnlyFormatAmount(formatToNormalizedValue(currentVault?.tvl?.total_assets, currentVault?.decimals))}
+						{clientOnlyFormatAmount(formatToNormalizedValue(toBigInt(currentVault?.tvl?.total_assets), currentVault?.decimals))}
 					</b>
 					<legend className={'font-number text-xxs text-neutral-600 md:text-xs'}>
 						{clientOnlyFormatUSD(currentVault?.tvl?.tvl)}

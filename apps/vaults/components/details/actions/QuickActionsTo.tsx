@@ -4,6 +4,7 @@ import {useSolver} from '@vaults/contexts/useSolver';
 import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {Dropdown} from '@common/components/TokenDropdown';
@@ -38,7 +39,7 @@ function	VaultDetailsQuickActionsTo(): ReactElement {
 						{isDepositing ? 'To vault' : 'To wallet'}
 					</label>
 					<legend className={'font-number inline text-xs text-neutral-600 md:hidden'}>
-						{`APY ${clientOnlyFormatPercent((currentVault?.apy?.net_apy || 0) * 100, 2, 2, 500)}`}
+						{`APY ${clientOnlyFormatPercent(currentVault?.apy?.net_apy * 100, 2, 2, 500)}`}
 					</legend>
 				</div>
 				<Renderable
@@ -56,7 +57,7 @@ function	VaultDetailsQuickActionsTo(): ReactElement {
 					</div>
 				</Renderable>
 				<legend className={'font-number hidden text-xs text-neutral-600 md:inline'}>
-					{isDepositing ? (clientOnlyFormatPercent((currentVault?.apy?.net_apy || 0) * 100, 2, 2, 500)) : ''}
+					{isDepositing ? clientOnlyFormatPercent(currentVault?.apy?.net_apy * 100, 2, 2, 500) : ''}
 				</legend>
 			</div>
 
@@ -79,12 +80,12 @@ function	VaultDetailsQuickActionsTo(): ReactElement {
 								className={'w-full cursor-default overflow-x-scroll border-none bg-transparent py-4 px-0 font-bold outline-none scrollbar-none'}
 								type={'text'}
 								disabled
-								value={expectedOut?.normalized || 0} />
+								value={toNumber(expectedOut?.normalized)} />
 						}
 					</div>
 				</div>
 				<legend className={'font-number mr-1 text-end text-xs text-neutral-600 md:mr-0 md:text-start'}>
-					{formatCounterValue(expectedOut?.normalized || 0, selectedOptionToPricePerToken)}
+					{formatCounterValue(expectedOut?.normalized, selectedOptionToPricePerToken)}
 				</legend>
 			</div>
 		</section>

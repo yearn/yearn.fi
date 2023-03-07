@@ -5,6 +5,7 @@ import {formatToNormalizedValue, formatUnits, parseUnits, toBigInt} from '@yearn
 import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 
 import type {GraphQLResponse} from 'graphql-request/build/esm/types';
+import type {TBalanceData} from '@yearn-finance/web-lib/hooks/types';
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TYearnVault} from '@common/types/yearn';
 
@@ -81,3 +82,13 @@ export function	formatDateShort(value: number): string {
 
 	return new Intl.DateTimeFormat([locale, 'en-US'], {year: 'numeric', month: 'short', day: '2-digit'}).format(value);
 }
+
+export const VoidTBalanceData: TBalanceData = {
+	raw: toBigInt(0),
+	rawPrice: toBigInt(0),
+	decimals: toBigInt(0),
+	symbol: '',
+	normalized: 0,
+	normalizedPrice: 0,
+	normalizedValue: 0
+};

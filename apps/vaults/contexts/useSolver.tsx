@@ -10,9 +10,10 @@ import {useSolverWido} from '@vaults/hooks/useSolverWido';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {isGreaterThanZero} from '@yearn-finance/web-lib/utils/isZero';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 
-import type {TNormalizedBN} from '@common/types/types';
+import type {TNormalizedBN} from '@yearn-finance/web-lib/types';
 import type {TInitSolverArgs, TWithSolver} from '@vaults/types/solvers';
 
 export enum	Solver {
@@ -89,12 +90,12 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 				** quote to 0.
 				**************************************************************/
 				if (currentSolver === Solver.WIDO && !isSolverDisabled[Solver.WIDO]) {
-					if (widoQuote?.raw > 0) {
+					if (isGreaterThanZero(widoQuote.raw)) {
 						performBatchedUpdates((): void => {
 							set_currentSolverState({...wido, quote: widoQuote});
 							set_isLoading(false);
 						});
-					} else if (cowswapQuote?.raw > 0 && !isSolverDisabled[Solver.COWSWAP]) {
+					} else if (isGreaterThanZero(cowswapQuote.raw) && !isSolverDisabled[Solver.COWSWAP]) {
 						performBatchedUpdates((): void => {
 							set_currentSolverState({...cowswap, quote: cowswapQuote});
 							set_isLoading(false);
@@ -115,12 +116,12 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 				** quote to 0.
 				**************************************************************/
 				if (currentSolver === Solver.COWSWAP && !isSolverDisabled[Solver.COWSWAP]) {
-					if (cowswapQuote?.raw > 0) {
+					if (isGreaterThanZero(cowswapQuote.raw)) {
 						performBatchedUpdates((): void => {
 							set_currentSolverState({...cowswap, quote: cowswapQuote});
 							set_isLoading(false);
 						});
-					} else if (widoQuote?.raw > 0 && !isSolverDisabled[Solver.WIDO]) {
+					} else if (isGreaterThanZero(widoQuote.raw) && !isSolverDisabled[Solver.WIDO]) {
 						performBatchedUpdates((): void => {
 							set_currentSolverState({...wido, quote: widoQuote});
 							set_isLoading(false);

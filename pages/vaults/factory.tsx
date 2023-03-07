@@ -17,7 +17,7 @@ import LinkOut from '@yearn-finance/web-lib/icons/IconLinkOut';
 import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
 import {addressZero, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {VAULT_FACTORY_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {toNumber, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
@@ -301,7 +301,7 @@ function	Factory(): ReactElement {
 					</div>
 					<div>
 						<p className={'font-number text-xs'}>
-							{`Est. gas ${formatAmount(Number(estimate), 0, 0)}`}
+							{`Est. gas ${formatAmount(toNumber(estimate), 0, 0)}`}
 						</p>
 					</div>
 				</div>

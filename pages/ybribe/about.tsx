@@ -14,6 +14,7 @@ import type {NextRouter} from 'next/router';
 import type {ReactElement, ReactNode} from 'react';
 import type {SWRResponse} from 'swr';
 import type {TYDaemonGaugeRewardsFeed} from '@common/types/yearn';
+import { toNumber } from '@yearn-finance/web-lib/utils/format.bigNumber';
 
 function	About(): ReactElement {
 	const {settings: baseAPISettings} = useSettings();
@@ -24,7 +25,7 @@ function	About(): ReactElement {
 
 	const	sortedFeed = useMemo((): TYDaemonGaugeRewardsFeed[] => {
 		return (feed || []).sort((a, b): number => {
-			return Number(b.timestamp) - Number(a.timestamp);
+			return toNumber(b.timestamp) - toNumber(a.timestamp);
 		});
 	}, [feed]);
 

@@ -9,6 +9,7 @@ import VaultDetailsQuickActionsSwitch from '@vaults/components/details/actions/Q
 import VaultDetailsQuickActionsTo from '@vaults/components/details/actions/QuickActionsTo';
 import SettingsPopover from '@vaults/components/SettingsPopover';
 import {Flow, useActionFlow} from '@vaults/contexts/useActionFlow';
+import {toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import IconChevron from '@common/icons/IconChevron';
 
@@ -102,7 +103,7 @@ function	VaultActionsTabsWrapper(): ReactElement {
 						<Listbox
 							value={currentTab.label}
 							onChange={(value): void => {
-								const	newTab = tabs.find((tab): boolean => tab.value === Number(value));
+								const	newTab = tabs.find((tab): boolean => tab.value === toNumber(value));
 								if (!newTab) {
 									return;
 								}

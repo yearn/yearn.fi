@@ -8,9 +8,10 @@ import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format';
+import {formatToNormalizedValue, toBigInt, toNumber} from '@yearn-finance/web-lib/utils/format';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
+import {VoidTBalanceData} from '@common/utils';
 
 import type {AxiosResponse} from 'axios';
 import type {Call, Provider} from 'ethcall';
@@ -18,7 +19,7 @@ import type {TGetBatchBalancesResp} from 'pages/api/getBatchBalances';
 import type {DependencyList} from 'react';
 import type {TWeb3Provider} from '@yearn-finance/web-lib/contexts/types';
 import type {TBalanceData, TDefaultStatus} from '@yearn-finance/web-lib/hooks/types';
-import type {TAddress, TDict, TNDict} from '@yearn-finance/web-lib/types';
+import type {Maybe, TAddress, TDict, TNDict} from '@yearn-finance/web-lib/types';
 
 /* 🔵 - Yearn Finance **********************************************************
 ** Request, Response and helpers for the useBalances hook.
@@ -39,9 +40,9 @@ export type	TUseBalancesReq = {
 } & TDefaultReqArgs
 
 export type	TUseBalancesRes = {
-	data: TDict<TBalanceData>,
-	update: () => Promise<TDict<TBalanceData>>,
-	updateSome: (token: TUseBalancesTokens[]) => Promise<TDict<TBalanceData>>,
+	data: TDict<Maybe<TBalanceData>>,
+	update: () => Promise<TDict<Maybe<TBalanceData>>>,
+	updateSome: (token: TUseBalancesTokens[]) => Promise<TDict<Maybe<TBalanceData>>>,
 	error?: Error,
 	status: 'error' | 'loading' | 'success' | 'unknown',
 	nonce: number
@@ -50,7 +51,7 @@ export type	TUseBalancesRes = {
 type TDataRef = {
 	nonce: number,
 	address: TAddress,
-	balances: TDict<TBalanceData>,
+	balances: TDict<Maybe<TBalanceData>>,
 }
 
 /* 🔵 - Yearn Finance **********************************************************
@@ -70,29 +71,29 @@ async function performCall(
 	calls: Call[],
 	tokens: TUseBalancesTokens[],
 	prices?: TDict<string>
-): Promise<[TDict<TBalanceData>, Error | undefined]> {
-	const	_data: TDict<TBalanceData> = {};
+): Promise<[TDict<Maybe<TBalanceData>>, Error | undefined]> {
+	const	_data: TDict<Maybe<TBalanceData>> = {};
 	const	results = await ethcallProvider.tryAll(calls);
 
 	let		rIndex = 0;
 	for (const element of tokens) {
 		const	{token} = element;
-		const	balanceOf = results[rIndex++] as bigint;
-		const	decimals = results[rIndex++] as number;
-		const	rawPrice = formatBN(prices?.[toAddress(token)]);
+		const	balanceOf = toBigInt(results[rIndex++] as bigint);
+		const	decimals = toNumber(results[rIndex++] as number, 18);
+		const	rawPrice = toBigInt(prices?.[toAddress(token)]);
 		let symbol = results[rIndex++] as string;
 
 		if (toAddress(token) === ETH_TOKEN_ADDRESS) {
 			symbol = 'ETH';
 		}
 		_data[toAddress(token)] = {
-			decimals: Number(decimals),
+			decimals: decimals,
 			symbol: symbol,
 			raw: balanceOf,
 			rawPrice,
-			normalized: formatToNormalizedValue(balanceOf, Number(decimals)),
+			normalized: formatToNormalizedValue(balanceOf, decimals),
 			normalizedPrice: formatToNormalizedValue(rawPrice, 6),
-			normalizedValue: (formatToNormalizedValue(balanceOf, Number(decimals)) * formatToNormalizedValue(rawPrice, 6))
+			normalizedValue: (formatToNormalizedValue(balanceOf, decimals) * formatToNormalizedValue(rawPrice, 6))
 		};
 	}
 	return [_data, undefined];
@@ -104,8 +105,8 @@ async function getBalances(
 	ownerAddress: TAddress,
 	tokens: TUseBalancesTokens[],
 	prices?: TDict<string>
-): Promise<[TDict<TBalanceData>, Error | undefined]> {
-	const	result: TDict<TBalanceData> = {};
+): Promise<[TDict<Maybe<TBalanceData>>, Error | undefined]> {
+	const	result: TDict<Maybe<TBalanceData>> = {};
 	const	currentProvider = provider;
 	const	calls = [];
 	const	ethcallProvider = await newEthCallProvider(currentProvider);
@@ -153,11 +154,11 @@ export function	useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	const	[nonce, set_nonce] = useState(0);
 	const	[status, set_status] = useState<TDefaultStatus>(defaultStatus);
 	const	[error, set_error] = useState<Error | undefined>(undefined);
-	const	[balances, set_balances] = useState<TNDict<TDict<TBalanceData>>>({});
+	const	[balances, set_balances] = useState<TNDict<TDict<Maybe<TBalanceData>>>>({});
 	const	data = useRef<TNDict<TDataRef>>({1: {nonce: 0, address: toAddress(), balances: {}}});
 	const	stringifiedTokens = useMemo((): string => JSON.stringify(props?.tokens || []), [props?.tokens]);
 
-	const	updateBalancesCall = useCallback((chainID: number, newRawData: TDict<TBalanceData>): TDict<TBalanceData> => {
+	const	updateBalancesCall = useCallback((chainID: number, newRawData: TDict<Maybe<TBalanceData>>): TDict<Maybe<TBalanceData>> => {
 		if (toAddress(web3Address) !== data?.current?.[chainID]?.address) {
 			data.current[chainID] = {
 				address: toAddress(web3Address as string),
@@ -168,16 +169,17 @@ export function	useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 		data.current[chainID].address = toAddress(web3Address as string);
 
 		for (const [address, element] of Object.entries(newRawData)) {
-			element.raw = formatBN(element.raw);
-			data.current[chainID].balances[address] = {
-				...data.current[chainID].balances[address],
-				...element
-			};
+			if (element) {
+				data.current[chainID].balances[address] = {
+					...data.current[chainID].balances[address],
+					...element
+				};
+			}
 		}
 		data.current[chainID].nonce += 1;
 
 		performBatchedUpdates((): void => {
-			set_balances((b): TNDict<TDict<TBalanceData>> => ({
+			set_balances((b): TNDict<TDict<Maybe<TBalanceData>>> => ({
 				...b,
 				[chainID]: {
 					...(b[chainID] || {}),
@@ -197,7 +199,7 @@ export function	useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	** token. Even if it's not optimized for performance, it should not be an
 	** issue as it should only be used for a little list of tokens.
 	**************************************************************************/
-	const	onUpdate = useCallback(async (): Promise<TDict<TBalanceData>> => {
+	const	onUpdate = useCallback(async (): Promise<TDict<Maybe<TBalanceData>>> => {
 		if (!isActive || !web3Address || !provider) {
 			return {};
 		}
@@ -232,15 +234,17 @@ export function	useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 			data.current[web3ChainID].address = toAddress(web3Address as string);
 
 			for (const [address, element] of Object.entries(newRawData)) {
-				data.current[web3ChainID].balances[address] = {
-					...data.current[web3ChainID].balances[address],
-					...element
-				};
+				if (element) {
+					data.current[web3ChainID].balances[address] = {
+						...data.current[web3ChainID].balances[address],
+						...element
+					};
+				}
 			}
 			data.current[web3ChainID].nonce += 1;
 
 			performBatchedUpdates((): void => {
-				set_balances((b): TNDict<TDict<TBalanceData>> => ({
+				set_balances((b): TNDict<TDict<Maybe<TBalanceData>>> => ({
 					...b,
 					[web3ChainID]: {
 						...(b[web3ChainID] || {}),
@@ -261,7 +265,7 @@ export function	useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	** token. Even if it's not optimized for performance, it should not be an
 	** issue as it should only be used for a little list of tokens.
 	**************************************************************************/
-	const	onUpdateSome = useCallback(async (tokenList: TUseBalancesTokens[]): Promise<TDict<TBalanceData>> => {
+	const	onUpdateSome = useCallback(async (tokenList: TUseBalancesTokens[]): Promise<TDict<Maybe<TBalanceData>>> => {
 		set_status({...defaultStatus, isLoading: true, isFetching: true, isRefetching: defaultStatus.isFetched});
 		const	tokens = tokenList.filter(({token}: TUseBalancesTokens): boolean => !isZeroAddress(token));
 
@@ -281,18 +285,20 @@ export function	useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 		}
 		data.current[web3ChainID].address = toAddress(web3Address as string);
 
-		const tokensAdded: TDict<TBalanceData> = {};
+		const tokensAdded: TDict<Maybe<TBalanceData>> = {};
 		for (const [address, element] of Object.entries(newRawData)) {
-			tokensAdded[address] = element;
-			data.current[web3ChainID].balances[address] = {
-				...data.current[web3ChainID].balances[address],
-				...element
-			};
+			if (element) {
+				tokensAdded[address] = element;
+				data.current[web3ChainID].balances[address] = {
+					...data.current[web3ChainID].balances[address],
+					...element
+				};
+			}
 		}
 		data.current[web3ChainID].nonce += 1;
 
 		performBatchedUpdates((): void => {
-			set_balances((b): TNDict<TDict<TBalanceData>> => ({
+			set_balances((b): TNDict<TDict<Maybe<TBalanceData>>> => ({
 				...b,
 				[web3ChainID]: {
 					...(b[web3ChainID] || {}),
@@ -307,16 +313,25 @@ export function	useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 		return tokensAdded;
 	}, [props?.chainID, props?.prices, provider, web3Address, web3ChainID]);
 
-	const	assignPrices = useCallback((_rawData: TDict<TBalanceData>): TDict<TBalanceData> => {
+	const	assignPrices = useCallback((_rawData: TDict<Maybe<TBalanceData>>): TDict<Maybe<TBalanceData>> => {
 		for (const key of Object.keys(_rawData)) {
 			const	tokenAddress = toAddress(key);
-			const	rawPrice = formatBN(props?.prices?.[tokenAddress]);
-			_rawData[tokenAddress] = {
-				..._rawData[tokenAddress],
-				rawPrice,
-				normalizedPrice: formatToNormalizedValue(rawPrice, 6),
-				normalizedValue: ((_rawData?.[tokenAddress] || 0).normalized * formatToNormalizedValue(rawPrice, 6))
-			};
+			const	rawPrice = toBigInt(props?.prices?.[tokenAddress]);
+			if (_rawData[tokenAddress]) {
+				_rawData[tokenAddress] = {
+					..._rawData[tokenAddress],
+					rawPrice,
+					normalizedPrice: formatToNormalizedValue(rawPrice, 6),
+					normalizedValue: ((_rawData?.[tokenAddress] || 0).normalized * formatToNormalizedValue(rawPrice, 6))
+				};
+			} else {
+				_rawData[tokenAddress] = {
+					...VoidTBalanceData,
+					rawPrice,
+					normalizedPrice: formatToNormalizedValue(rawPrice, 6),
+					normalizedValue: 0
+				};
+			}
 		}
 		return _rawData;
 	}, [props?.prices]);

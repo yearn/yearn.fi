@@ -14,8 +14,8 @@ import {approvedERC20Amount, approveERC20} from '@common/utils/actions/approveTo
 import {depositETH} from '@common/utils/actions/depositEth';
 import {withdrawETH} from '@common/utils/actions/withdrawEth';
 
+import type {TNormalizedBN} from '@yearn-finance/web-lib/types';
 import type {TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
-import type {TNormalizedBN} from '@common/types/types';
 import type {TVaultEstimateOutFetcher} from '@vaults/hooks/useVaultEstimateOutFetcher';
 import type {TInitSolverArgs, TSolverContext, TVanillaLikeResult} from '@vaults/types/solvers';
 

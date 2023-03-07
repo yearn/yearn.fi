@@ -1,5 +1,4 @@
 import React, {useCallback, useEffect, useState} from 'react';
-import {MaxUint256} from 'ethers';
 import {useAsync} from '@react-hookz/web';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {Solver, useSolver} from '@vaults/contexts/useSolver';
@@ -7,7 +6,7 @@ import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatBN, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {MaxUint256, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useWallet} from '@common/contexts/useWallet';
@@ -71,7 +70,7 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 	async function	onApproveFrom(): Promise<void> {
 		const	shouldApproveInfinite = currentSolver === Solver.PARTNER_CONTRACT || currentSolver === Solver.VANILLA || currentSolver === Solver.INTERNAL_MIGRATION;
 		onApprove(
-			shouldApproveInfinite ? MaxUint256 : actionParams?.amount.raw,
+			shouldApproveInfinite ? MaxUint256 : actionParams.amount.raw,
 			set_txStatusApprove,
 			async (): Promise<void> => {
 				await actions.execute();
@@ -83,7 +82,7 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 	** Wrapper to decide if we should use the partner contract or not
 	**************************************************************************/
 	if (
-		txStatusApprove.pending || actionParams?.amount.raw > formatBN(allowanceFrom?.raw) || status !== 'success' && (
+		txStatusApprove.pending || actionParams?.amount.raw > allowanceFrom.raw || status !== 'success' && (
 			(currentSolver === Solver.VANILLA && isDepositing)
 			|| (currentSolver === Solver.CHAIN_COIN && !isDepositing)
 			|| (currentSolver === Solver.INTERNAL_MIGRATION)

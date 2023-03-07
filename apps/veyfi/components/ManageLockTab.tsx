@@ -10,6 +10,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatUnits, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {isGreaterThanZero} from '@yearn-finance/web-lib/utils/isZero';
 import {fromWeeks, getTimeUntil, toSeconds, toTime, toWeeks} from '@yearn-finance/web-lib/utils/time';
 import {useWallet} from '@common/contexts/useWallet';
 
@@ -30,12 +31,12 @@ function ManageLockTab(): ReactElement {
 	const [extendLockTime, extendLockTimeStatus] = useTransaction(extendLockTimeAction, onTxSuccess);
 	const [withdrawLocked, withdrawLockedStatus] = useTransaction(withdrawLockedAction, onTxSuccess);
 
-	const hasLockedAmount = toBigInt(positions?.deposit?.underlyingBalance) > 0;
-	const willExtendLock = toBigInt(lockTime) > 0;
+	const hasLockedAmount = isGreaterThanZero(positions?.deposit?.underlyingBalance);
+	const willExtendLock = isGreaterThanZero(lockTime);
+	const hasPenalty = isGreaterThanZero(positions?.penalty);
 	const timeUntilUnlock = positions?.unlockTime ? getTimeUntil(positions?.unlockTime) : undefined;
 	const weeksToUnlock = toWeeks(timeUntilUnlock);
 	const newUnlockTime = toTime(positions?.unlockTime) + fromWeeks(toTime(lockTime));
-	const hasPenalty = toBigInt(positions?.penalty) > 0;
 
 	const votingPower = useMemo((): bigint => {
 		if(!positions?.deposit || !newUnlockTime) {

@@ -3,7 +3,7 @@ import Link from 'next/link';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {toNormalizedBN, toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatPercent, formatUSD} from '@yearn-finance/web-lib/utils/format.number';
 import TokenIcon from '@common/components/TokenIcon';
 import {useBalance} from '@common/hooks/useBalance';
@@ -26,7 +26,7 @@ function	VaultsListRow({currentVault}: {currentVault: TYearnVault}): ReactElemen
 			return (balanceOfWrappedCoin.normalized + balanceOfCoin.normalized);
 		}
 		if (toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS) {
-			return (balanceOfWrappedCoin.normalized + Number(toNormalizedBN(balanceOfCoin.raw, 18).normalized));
+			return (balanceOfWrappedCoin.normalized + toNumber(toNormalizedBN(balanceOfCoin.raw, 18).normalized));
 		}
 		return balanceOfWant.normalized;
 	}, [balanceOfCoin.normalized, balanceOfCoin.raw, balanceOfWant.normalized, balanceOfWrappedCoin.normalized, currentVault.token.address]);
@@ -54,7 +54,7 @@ function	VaultsListRow({currentVault}: {currentVault: TYearnVault}): ReactElemen
 								{(currentVault.apy?.type === 'new' && currentVault.apy?.net_apy == 0) ? (
 									'New'
 								) : (
-									formatPercent((currentVault?.apy?.net_apy || 0) * 100, 2, 2, 500)
+									formatPercent(currentVault?.apy?.net_apy * 100, 2, 2, 500)
 								)}
 							</b>
 							<small className={'text-xs text-neutral-900'}>
@@ -80,7 +80,7 @@ function	VaultsListRow({currentVault}: {currentVault: TYearnVault}): ReactElemen
 					<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
 						<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'TVL'}</label>
 						<p className={'yearn--table-data-section-item-value'}>
-							{formatUSD(currentVault.tvl?.tvl || 0, 0, 0)}
+							{formatUSD(currentVault.tvl?.tvl, 0, 0)}
 						</p>
 					</div>
 				</div>

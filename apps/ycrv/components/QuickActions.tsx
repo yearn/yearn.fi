@@ -6,7 +6,7 @@ import IconArrowRight from '@common/icons/IconArrowRight';
 
 import type {ChangeEvent, ReactElement, ReactNode} from 'react';
 import type {TBalanceData} from '@yearn-finance/web-lib/hooks/types';
-import type {TDict} from '@yearn-finance/web-lib/types';
+import type {Maybe, TDict} from '@yearn-finance/web-lib/types';
 import type {TDropdownOption} from '@common/types/types';
 
 export type TQASelect = {
@@ -14,7 +14,7 @@ export type TQASelect = {
 	legend?: string;
 	options: TDropdownOption[];
 	selected?: TDropdownOption;
-	balanceSource?: TDict<TBalanceData>; // only 'from'
+	balanceSource?: TDict<Maybe<TBalanceData>>; // only 'from'
 	onSelect?: (option: TDropdownOption) => void;
 }
 

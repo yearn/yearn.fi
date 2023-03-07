@@ -9,9 +9,9 @@ import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {addressZero, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {MaxUint256, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {MaxUint256, toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
-import {isZero} from '@yearn-finance/web-lib/utils/isZero';
+import {isGreaterThanZero, isZero} from '@yearn-finance/web-lib/utils/isZero';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
@@ -38,8 +38,8 @@ function	VaultListExternalMigrationRow({element}: {element: TMigrationTable}): R
 
 	const	yearnVault = useFindVault(vaults, ({token}): boolean => toAddress(token.address) === toAddress(element.underlyingToken));
 	const	balance = useBalance(element.tokenToMigrate, balances);
-	const	oldAPY = element?.sourceAPY || 0;
-	const	newAPY = yearnVault?.apy?.net_apy || 0;
+	const	oldAPY = toNumber(element?.sourceAPY);
+	const	newAPY = toNumber(yearnVault?.apy?.net_apy);
 
 	//TODO: Move away from this component to be able to display empty state
 	if (!yearnVault) {
@@ -100,14 +100,14 @@ function	VaultListExternalMigrationRow({element}: {element: TMigrationTable}): R
 				<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
 					<label className={'yearn--table-data-section-item-label'}>{'APY'}</label>
 					<p className={'yearn--table-data-section-item-value'}>
-						{formatPercent((oldAPY || 0) * 100)}
+						{formatPercent(oldAPY * 100)}
 					</p>
 				</div>
 
 				<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
 					<label className={'yearn--table-data-section-item-label'}>{'APY'}</label>
 					<b className={'yearn--table-data-section-item-value'}>
-						{formatPercent((newAPY || 0) * 100)}
+						{formatPercent(newAPY * 100)}
 					</b>
 				</div>
 
@@ -159,7 +159,7 @@ function	VaultListExternalMigration(): ReactElement {
 		Object.values(migrationTable || {}).forEach((possibleBowswapMigrations: Maybe<TMigrationTable[]>): void => {
 			if (possibleBowswapMigrations) {
 				for (const element of possibleBowswapMigrations) {
-					if (toBigInt(balances[toAddress(element.tokenToMigrate)]?.raw) > 0) {
+					if (isGreaterThanZero(balances[toAddress(element.tokenToMigrate)]?.raw)) {
 						migration.push(element);
 					}
 				}
