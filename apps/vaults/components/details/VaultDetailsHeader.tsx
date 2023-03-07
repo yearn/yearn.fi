@@ -10,6 +10,7 @@ import {formatAmount, formatPercent, formatUSD} from '@yearn-finance/web-lib/uti
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {copyToClipboard} from '@yearn-finance/web-lib/utils/helpers';
 import {useBalance} from '@common/hooks/useBalance';
+import {useClientOnlyFn} from '@common/hooks/useClientOnlyFn';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
 import {getVaultName} from '@common/utils';
 
@@ -26,6 +27,10 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 		baseFetcher,
 		{revalidateOnFocus: false}
 	) as SWRResponse as {data: TYdaemonEarned};
+	const clientOnlyFormatAmount = useClientOnlyFn(formatAmount);
+	const clientOnlyFormatPercent = useClientOnlyFn(formatPercent);
+	const clientOnlyFormatUSD = useClientOnlyFn(formatUSD);
+	const clientOnlyFormatCounterValue = useClientOnlyFn(formatCounterValue);
 
 	const	normalizedVaultEarned = useMemo((): number => (
 		formatToNormalizedValue(
@@ -56,10 +61,10 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 						{`Total deposited, ${currentVault?.symbol || 'token'}`}
 					</p>
 					<b className={'font-number text-lg md:text-3xl'}>
-						{formatAmount(formatToNormalizedValue(currentVault?.tvl?.total_assets, currentVault?.decimals))}
+						{clientOnlyFormatAmount(formatToNormalizedValue(currentVault?.tvl?.total_assets, currentVault?.decimals))}
 					</b>
 					<legend className={'font-number text-xxs text-neutral-600 md:text-xs'}>
-						{formatUSD(currentVault?.tvl?.tvl)}
+						{clientOnlyFormatUSD(currentVault?.tvl?.tvl)}
 					</legend>
 				</div>
 
@@ -68,7 +73,7 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 						{'Net APY'}
 					</p>
 					<b className={'font-number text-lg md:text-3xl'}>
-						{formatPercent((currentVault?.apy?.net_apy || 0) * 100, 2, 2, 500)}
+						{clientOnlyFormatPercent((currentVault?.apy?.net_apy || 0) * 100, 2, 2, 500)}
 					</b>
 					<legend className={'text-xxs text-neutral-600 md:text-xs'}>&nbsp;</legend>
 				</div>
@@ -78,10 +83,10 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 						{`Balance, ${currentVault?.symbol || 'token'}`}
 					</p>
 					<b className={'font-number text-lg md:text-3xl'}>
-						{formatAmount(vaultBalance)}
+						{clientOnlyFormatAmount(vaultBalance)}
 					</b>
 					<legend className={'font-number text-xxs text-neutral-600 md:text-xs'}>
-						{formatCounterValue(vaultBalance, vaultPrice)}
+						{clientOnlyFormatCounterValue(vaultBalance, vaultPrice)}
 					</legend>
 				</div>
 
@@ -90,10 +95,10 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 						{`Earned, ${currentVault?.token?.symbol || 'token'}`}
 					</p>
 					<b className={'font-number text-lg md:text-3xl'}>
-						{formatAmount(normalizedVaultEarned)}
+						{clientOnlyFormatAmount(normalizedVaultEarned)}
 					</b>
 					<legend className={'font-number text-xxs text-neutral-600 md:text-xs'}>
-						{formatCounterValue(normalizedVaultEarned || 0, vaultPrice)}
+						{clientOnlyFormatCounterValue(normalizedVaultEarned || 0, vaultPrice)}
 					</legend>
 				</div>
 			</div>
