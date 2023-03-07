@@ -17,7 +17,7 @@ import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
 import type {TYdaemonEarned, TYearnVault} from '@common/types/yearn';
 
-function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactElement | null {
+function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactElement {
 	const {safeChainID} = useChainID();
 	const {address} = useWeb3();
 	const {settings: baseAPISettings} = useSettings();

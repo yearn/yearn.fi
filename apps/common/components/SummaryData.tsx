@@ -9,7 +9,7 @@ type TTabsProps = {
 	items: TItem[],
 }
 
-function SummaryData({items}: TTabsProps): ReactElement | null {
+function SummaryData({items}: TTabsProps): ReactElement {
 	return (
 		<div className={'align-center flex w-full flex-row flex-wrap justify-center gap-14'}>
 			{items.map((({label, content}): ReactElement => (

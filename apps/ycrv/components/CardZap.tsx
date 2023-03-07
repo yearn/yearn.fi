@@ -20,7 +20,7 @@ import {ZAP_OPTIONS_FROM, ZAP_OPTIONS_TO} from '@yCRV/utils/zapOptions';
 import type {ChangeEvent, ReactElement} from 'react';
 import type {TDropdownOption} from '@common/types/types';
 
-function	CardZap(): ReactElement | null {
+function	CardZap(): ReactElement {
 	const	{isActive} = useWeb3();
 	const	{balances} = useWallet();
 	const	{vaults, prices} = useYearn();
