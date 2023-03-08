@@ -28,6 +28,7 @@ function	ApproveButton(props: TApproveButtonProps): ReactElement {
 	**********************************************************************************************/
 	const isInvalidAmount = toBigInt(actionParams?.amount.raw) > toBigInt(maxDepositPossible.raw) || isZero(actionParams?.amount.raw);
 	const isApprovalDisabled = !isActive || isInvalidAmount || isZero(expectedOut.raw) || isLoadingExpectedOut;
+	const shouldApproveInfinite = [Solver.PARTNER_CONTRACT, Solver.VANILLA, Solver.INTERNAL_MIGRATION].includes(currentSolver);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** Trigger an approve web3 action, simply trying to approve `amount` tokens
@@ -36,14 +37,13 @@ function	ApproveButton(props: TApproveButtonProps): ReactElement {
 	** This approve can not be triggered if the wallet is not active
 	** (not connected) or if the tx is still pending.
 	**********************************************************************************************/
-	async function	onApproveFrom(): Promise<void> {
-		const	shouldApproveInfinite = [Solver.PARTNER_CONTRACT, Solver.VANILLA, Solver.INTERNAL_MIGRATION].includes(currentSolver);
+	const	onApproveFrom = useCallback((): void => {
 		onApprove(
 			shouldApproveInfinite ? MaxUint256 : actionParams.amount.raw,
 			set_txStatusApprove,
 			props.onRetrieveAllowance as VoidPromiseFunction
 		);
-	}
+	}, [actionParams.amount.raw, onApprove, props.onRetrieveAllowance, shouldApproveInfinite]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** Rendering this component
