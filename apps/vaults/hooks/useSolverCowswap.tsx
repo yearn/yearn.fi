@@ -48,7 +48,7 @@ function useCowswapQuote(): [TCowResult, (request: TInitSolverArgs, shouldPreven
 			sellAmountBeforeFee: request?.inputAmount.toString() // amount to sell, in wei
 		};
 
-		const canExecuteFetch = 
+		const canExecuteFetch =
 			!(isZero(quote.from) || isZero(quote.sellToken) || isZero(quote.buyToken))
 			&& !isZero(request?.inputAmount)
 		;

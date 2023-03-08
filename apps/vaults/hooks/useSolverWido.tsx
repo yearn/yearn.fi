@@ -38,7 +38,7 @@ function useWidoQuote(): [TWidoResult, (request: TInitSolverArgs, shouldPreventE
 			user: request.from // receiver
 		};
 
-		const canExecuteFetch = 
+		const canExecuteFetch =
 			!(isZero(quoteRequest.user) || isZero(quoteRequest.fromToken) || isZero(quoteRequest.toToken))
 			&& !isZero(request?.inputAmount)
 		;

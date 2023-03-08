@@ -1,6 +1,6 @@
 
 import type {Maybe} from '@yearn-finance/web-lib/types';
-import type {Order} from '@cowprotocol/contracts';
+import type {Order} from '@cowprotocol/cow-sdk';
 
 /* 🔵 - Yearn Finance ******************************************************
 **	Theses types are used to define the request and response of the Cowswap

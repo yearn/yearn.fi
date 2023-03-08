@@ -31,7 +31,7 @@ function	GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height =
 
 	const	strategyData = useMemo((): {name: number; value: number, gain: string, loss: string}[] => {
 		const	_reports = [...reports || []];
-		const reportsForGraph = 
+		const reportsForGraph =
 			_reports.reverse()?.map((reports: TYDaemonReports): {name: number; value: number, gain: string, loss: string} => ({
 				name: toNumber(reports.timestamp),
 				value: toNumber(reports.results?.[0]?.APR) * 100,
@@ -85,7 +85,7 @@ function	GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height =
 						if (payload.length > 0) {
 							const [{value, payload: innerPayload}] = payload;
 							const	{gain, loss} = innerPayload;
-							const	diff = gain.sub(loss);
+							const	diff = gain - loss;
 							const	normalizedDiff = formatToNormalizedValue(toBigInt(diff), vaultDecimals);
 
 							return (

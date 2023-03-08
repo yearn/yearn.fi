@@ -128,10 +128,15 @@ function	VaultDetailsTabsWrapper({currentVault}: TCurrentVault): ReactElement {
 	const	harvestData = useMemo((): {name: string; value: number}[] => {
 		const	_yDaemonHarvestsData = [...yDaemonHarvestsData || []].reverse();
 		return (
-			_yDaemonHarvestsData?.map((harvest): {name: string; value: number} => ({
-				name: formatDate(toNumber(harvest.timestamp) * 1000),
-				value: formatToNormalizedValue(toBigInt(harvest?.profit.sub(harvest?.loss)), currentVault.decimals)
-			}))
+			_yDaemonHarvestsData?.map((harvest): {name: string; value: number} => {
+				const	profits = toBigInt(harvest.profit);
+				const	loss = toBigInt(harvest.loss);
+
+				return {
+					name: formatDate(toNumber(harvest.timestamp) * 1000),
+					value: formatToNormalizedValue(profits - loss, currentVault.decimals)
+				};
+			})
 		);
 	}, [currentVault.decimals, yDaemonHarvestsData]);
 
