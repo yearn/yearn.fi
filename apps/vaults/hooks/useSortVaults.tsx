@@ -37,8 +37,8 @@ function	useSortVaults(
 			vaultList.sort((a, b): number => {
 				const aDepositedBalance = balances[toAddress(a.address)]?.normalized || 0;
 				const bDepositedBalance = balances[toAddress(b.address)]?.normalized || 0;
-				const aStakedBalance = toNormalizedValue(positionsMap[toAddress(stakingRewardsByVault[a.address])]?.stake.balance || 0, a.decimals);
-				const bStakedBalance = toNormalizedValue(positionsMap[toAddress(stakingRewardsByVault[b.address])]?.stake.balance || 0, b.decimals);
+				const aStakedBalance = toNormalizedValue(positionsMap[toAddress(stakingRewardsByVault[a.address])]?.stake || 0, a.decimals);
+				const bStakedBalance = toNormalizedValue(positionsMap[toAddress(stakingRewardsByVault[b.address])]?.stake || 0, b.decimals);
 				if (sortDirection === 'asc') {
 					return (aDepositedBalance + aStakedBalance) - (bDepositedBalance + bStakedBalance);
 				}
