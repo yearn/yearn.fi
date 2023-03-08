@@ -49,26 +49,26 @@ function Vote(): ReactElement {
 				</div>
 				<div className={'grid grid-cols-1 gap-6 md:grid-cols-3 md:gap-12'}>
 					<div className={'flex flex-col items-center justify-center space-y-1 md:space-y-2'}>
-						<b className={'font-number text-lg md:text-3xl'} suppressHydrationWarning>
+						<b className={'font-number text-lg md:text-3xl'}>
 							{totalVotes}
 						</b>
-						<legend className={'text-xxs text-neutral-600 md:text-xs'} suppressHydrationWarning>
+						<legend className={'text-xxs text-neutral-600 md:text-xs'}>
 							{'Your total votes'}
 						</legend>
 					</div>
 
 					<div className={'flex flex-col items-center justify-center space-y-1 md:space-y-2'}>
-						<b className={'font-number text-lg md:text-3xl'} suppressHydrationWarning>
+						<b className={'font-number text-lg md:text-3xl'}>
 							{remainingVotesForThisPeriod}
 						</b>
 						<legend className={'text-xxs text-neutral-600 md:text-xs'}>{'Your remaining votes'}</legend>
 					</div>
 
 					<div className={'flex flex-col items-center justify-center space-y-1 md:space-y-2'}>
-						<b className={'font-number text-lg md:text-3xl'} suppressHydrationWarning>
+						<b className={'font-number text-lg md:text-3xl'}>
 							{lastVoteTime ? formatDateShort(lastVoteTime * 1000) : '—'}
 						</b>
-						<legend className={'text-xxs text-neutral-600 md:text-xs'} suppressHydrationWarning>
+						<legend className={'text-xxs text-neutral-600 md:text-xs'}>
 							{'Your last vote'}
 						</legend>
 					</div>

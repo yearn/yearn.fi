@@ -8,6 +8,7 @@ import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers
 import {Dropdown} from '@common/components/TokenDropdown';
 import {useWallet} from '@common/contexts/useWallet';
 import {useBalance} from '@common/hooks/useBalance';
+import {useClientOnlyFn} from '@common/hooks/useClientOnlyFn';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
 
 import type {ChangeEvent, ReactElement} from 'react';
@@ -22,6 +23,7 @@ function	VaultDetailsQuickActionsFrom(): ReactElement {
 
 	const selectedFromBalance = useBalance(toAddress(actionParams?.selectedOptionFrom?.value));
 	const selectedOptionFromPricePerToken = useTokenPrice(toAddress(actionParams?.selectedOptionFrom?.value));
+	const clientOnlyFormatAmount = useClientOnlyFn({fn: formatAmount, placeholder: '0,00'});
 
 	return (
 		<section aria-label={'FROM'} className={'flex w-full flex-col space-x-0 md:flex-row md:space-x-4'}>
@@ -30,8 +32,8 @@ function	VaultDetailsQuickActionsFrom(): ReactElement {
 					<label className={'text-base text-neutral-600'}>
 						{isDepositing ? 'From wallet' : 'From vault'}
 					</label>
-					<legend className={'font-number inline text-xs text-neutral-600 md:hidden'} suppressHydrationWarning>
-						{`You have ${formatAmount(selectedFromBalance.normalized)} ${actionParams?.selectedOptionFrom?.symbol || 'tokens'}`}
+					<legend className={'font-number inline text-xs text-neutral-600 md:hidden'}>
+						{`You have ${clientOnlyFormatAmount(selectedFromBalance.normalized)} ${actionParams?.selectedOptionFrom?.symbol || 'tokens'}`}
 					</legend>
 				</div>
 				{isActive && isDepositing && possibleOptionsFrom.length > 1 ? (
@@ -52,8 +54,8 @@ function	VaultDetailsQuickActionsFrom(): ReactElement {
 						</div>
 					</div>
 				)}
-				<legend className={'font-number hidden text-xs text-neutral-600 md:inline'} suppressHydrationWarning>
-					{`You have ${formatAmount(selectedFromBalance.normalized)} ${actionParams?.selectedOptionFrom?.symbol || 'tokens'}`}
+				<legend className={'font-number hidden text-xs text-neutral-600 md:inline'}>
+					{`You have ${clientOnlyFormatAmount(selectedFromBalance.normalized)} ${actionParams?.selectedOptionFrom?.symbol || 'tokens'}`}
 				</legend>
 			</div>
 			<div className={'w-full space-y-2'}>

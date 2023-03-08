@@ -43,7 +43,7 @@ function QASelect(props: TQASelect): ReactElement {
 		<div className={'relative z-10 w-full space-y-2'}>
 			<div className={'flex flex-row items-baseline justify-between'}>
 				<label className={'text-base text-neutral-600'}>{label}</label>
-				<legend className={'font-number inline text-xs text-neutral-600 md:hidden'} suppressHydrationWarning>
+				<legend className={'font-number inline text-xs text-neutral-600 md:hidden'}>
 					{legend}
 				</legend>
 			</div>
@@ -66,7 +66,7 @@ function QASelect(props: TQASelect): ReactElement {
 					</div>
 				</div>
 			)}
-			<legend className={'font-number hidden text-xs text-neutral-600 md:inline'} suppressHydrationWarning>
+			<legend className={'font-number hidden text-xs text-neutral-600 md:inline'}>
 				{legend}
 			</legend>
 		</div>
