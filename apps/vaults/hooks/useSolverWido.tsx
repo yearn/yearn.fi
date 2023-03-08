@@ -15,7 +15,7 @@ import type {AxiosError} from 'axios';
 import type {QuoteRequest, QuoteResult} from 'wido';
 import type {MayPromise, TNormalizedBN} from '@yearn-finance/web-lib/types';
 import type {TTxResponse, TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
-import type {ApiError} from '@gnosis.pm/gp-v2-contracts';
+import type {ApiError} from '@cowprotocol/contracts';
 import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
 import type {TWidoResult} from '@vaults/types/solvers.wido';
 
