@@ -73,7 +73,7 @@ function RewardsTab({currentVault}: {currentVault: TYearnVault}): ReactElement {
 						{'Stake'}
 					</div>
 					<div className={'mt-2 text-neutral-600'} >
-						<p>{'You can stake your yVault tokens to get additional $OP BOOST.'}</p>
+						<p>{'Stake your yVault tokens for additional $OP rewards.'}</p>
 					</div>
 				</div>
 				<div className={'flex flex-col gap-4 md:flex-row'}>
@@ -100,7 +100,7 @@ function RewardsTab({currentVault}: {currentVault: TYearnVault}): ReactElement {
 						{'Claim'}
 					</div>
 					<div className={'mt-2 text-neutral-600'} >
-						<p>{'You can claim your rewards for staking.'}</p>
+						<p>{'Claim your staking rewards here. You\'ve earned it anon.'}</p>
 					</div>
 				</div>
 				<div className={'flex flex-col gap-4 md:flex-row'}>
@@ -127,7 +127,7 @@ function RewardsTab({currentVault}: {currentVault: TYearnVault}): ReactElement {
 						{'Unstake'}
 					</div>
 					<div className={'mt-2 text-neutral-600'} >
-						<p>{'You can unstake your yVault tokens. Your remaining rewards will be claimed automatically.'}</p>
+						<p>{'Unstake your yVault tokens and your remaining $OP rewards will be claimed automatically. Boom.'}</p>
 					</div>
 				</div>
 				<div className={'flex flex-col gap-4 md:flex-row'}>
