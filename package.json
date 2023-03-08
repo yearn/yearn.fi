@@ -11,8 +11,8 @@
     "bump": "bump"
   },
   "dependencies": {
+    "@cowprotocol/contracts": "karelianpie/cowprotocol-contracts#ethers-as-dependency",
     "@cowprotocol/cow-sdk": "^2.0.0-alpha.4",
-    "@gnosis.pm/gp-v2-contracts": "^1.1.2",
     "@next/bundle-analyzer": "^13.2.3",
     "@next/font": "^13.2.3",
     "@react-hookz/deep-equal": "^1.0.4",
