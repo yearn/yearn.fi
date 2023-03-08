@@ -101,7 +101,7 @@ function	Holdings(): ReactElement {
 	const	currentVeCRVAPY = useMemo((): number => {
 		return (
 			latestCurveFeesValue / (
-				formatToNormalizedValue(holdings.veCRVTotalSupply, 18) * toNumber(cgPrices?.['curve-dao-token']?.usd)
+				formatToNormalizedValue(holdings?.veCRVTotalSupply, 18) * toNumber(cgPrices?.['curve-dao-token']?.usd)
 			) * 52 * 100
 		);
 	}, [holdings, latestCurveFeesValue, cgPrices]);

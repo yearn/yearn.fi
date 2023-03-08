@@ -2,7 +2,7 @@ import {useCallback, useMemo, useRef} from 'react';
 import {ethers, formatUnits, parseUnits} from 'ethers';
 import axios from 'axios';
 import useSWRMutation from 'swr/mutation';
-import {domain, OrderKind, SigningScheme, signOrder} from '@gnosis.pm/gp-v2-contracts';
+import {domain, OrderKind, SigningScheme, signOrder} from '@cowprotocol/contracts';
 import {isSolverDisabled, Solver} from '@vaults/contexts/useSolver';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -17,7 +17,7 @@ import {approvedERC20Amount, approveERC20, isApprovedERC20} from '@common/utils/
 import type {AxiosError} from 'axios';
 import type {MayPromise, TNormalizedBN} from '@yearn-finance/web-lib/types';
 import type {TTxResponse, TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
-import type {ApiError, Order, QuoteQuery, Timestamp} from '@gnosis.pm/gp-v2-contracts';
+import type {ApiError, Order, QuoteQuery, Timestamp} from '@cowprotocol/contracts';
 import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
 import type {TCowAPIResult, TCowResult} from '@vaults/types/solvers.cowswap';
 
@@ -100,7 +100,7 @@ export function useSolverCowswap(): TSolverContext {
 			return '0';
 		}
 		const {quote} = currentQuote;
-		const buyAmount = toNumber(formatUnits(quote.buyAmount, decimals));
+		const buyAmount = toNumber(formatUnits(quote.buyAmount.toString(), decimals));
 		const withSlippage = parseUnits((buyAmount * (1 - toNumber(zapSlippage / 100))).toFixed(decimals), decimals);
 		return withSlippage.toString();
 	}, [zapSlippage]);
@@ -119,7 +119,7 @@ export function useSolverCowswap(): TSolverContext {
 		if (quote) {
 			latestQuote.current = quote;
 			getBuyAmountWithSlippage(quote, toNumber(request?.current?.outputToken?.decimals, 18));
-			return toNormalizedBN(toBigInt(quote?.quote?.buyAmount), toNumber(request?.current?.outputToken?.decimals, 18));
+			return toNormalizedBN(toBigInt(quote?.quote?.buyAmount.toString()), toNumber(request?.current?.outputToken?.decimals, 18));
 		}
 		return toNormalizedBN(0);
 	}, [getBuyAmountWithSlippage, getQuote]);
@@ -135,7 +135,7 @@ export function useSolverCowswap(): TSolverContext {
 			return toAddress(address || '');
 		}
 
-		const	signer = await provider.getSigner();
+		const	signer = await provider.getSigner() as any;
 		const	rawSignature = await signOrder(
 			domain(1, '0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
 			quote,
@@ -224,7 +224,7 @@ export function useSolverCowswap(): TSolverContext {
 		if (!latestQuote?.current?.quote?.buyAmount || isSolverDisabled[Solver.COWSWAP]) {
 			return toNormalizedBN(0);
 		}
-		return toNormalizedBN(latestQuote?.current?.quote?.buyAmount, toNumber(request?.current?.outputToken?.decimals, 18));
+		return toNormalizedBN(latestQuote?.current?.quote?.buyAmount.toString(), toNumber(request?.current?.outputToken?.decimals, 18));
 	}, [latestQuote]);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -236,7 +236,7 @@ export function useSolverCowswap(): TSolverContext {
 			return toNormalizedBN(0);
 		}
 		const quoteResult = await getQuote(request, true);
-		return toNormalizedBN(toBigInt(quoteResult?.quote?.buyAmount), request.outputToken.decimals);
+		return toNormalizedBN(toBigInt(quoteResult?.quote?.buyAmount.toString()), request.outputToken.decimals);
 	}, [getQuote]);
 
 	/* 🔵 - Yearn Finance ******************************************************
