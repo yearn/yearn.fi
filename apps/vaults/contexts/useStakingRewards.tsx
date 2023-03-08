@@ -21,23 +21,18 @@ export type TStakingRewards = {
 	// apy?: number;
 }
 
-export type TPosition = {
-	balance: BigNumber,
-	underlyingBalance: BigNumber,
-}
-
 export type TStakePosition = {
 	address: TAddress,
-	stake: TPosition,
-	reward: TPosition,
-	earned: TPosition,
+	stake: BigNumber,
+	reward: BigNumber,
+	earned: BigNumber,
 }
 
 export type	TStakingRewardsContext = {
 	stakingRewardsByVault: TDict<TAddress | undefined>,
 	stakingRewardsMap: TDict<TStakingRewards | undefined>,
 	positionsMap: TDict<TStakePosition | undefined>,
-	earningsMap: TDict<TPosition | undefined>,
+	earningsMap: TDict<BigNumber | undefined>,
 	isLoading: boolean,
 	refresh: () => void,
 }
@@ -110,30 +105,10 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 
 		const	positionPromises = [];
 		for (const {address} of stakingRewards) {
-			const balance = results[resultIndex++];
-			const rewards = results[resultIndex++];
+			const stake = results[resultIndex++];
+			const reward = results[resultIndex++];
 			const earned = results[resultIndex++];
-			const stakePosition: TPosition = {
-				balance,
-				underlyingBalance: balance // TODO: Convert to underlying
-			};
-
-			const rewardPosition: TPosition = {
-				balance: rewards,
-				underlyingBalance: rewards // TODO: Convert if reward token is a vault token
-			};
-
-			const earnedPosition: TPosition = {
-				balance: earned,
-				underlyingBalance: earned // TODO: Convert if reward token is a vault token
-			};
-
-			positionPromises.push({
-				address,
-				stake: stakePosition,
-				reward: rewardPosition,
-				earned: earnedPosition
-			});
+			positionPromises.push({address, stake, reward, earned});
 		}
 		
 		return positionPromises;
@@ -144,18 +119,14 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 		return keyBy(positions ?? [], 'address');
 	}, [positions]);
 
-	const earningsMap = useMemo((): TDict<TPosition | undefined> => {
+	const earningsMap = useMemo((): TDict<BigNumber | undefined> => {
 		if (!stakingRewards) {
 			return {};
 		}
 
-		return stakingRewards.reduce<TDict<TPosition | undefined>>((acc, {address, stakingToken}): TDict<TPosition | undefined> => {
-			const earnedBalance = formatBN(positionsMap[address]?.earned.balance);
-			const earnedUnderlyingBalance = formatBN(positionsMap[address]?.earned.underlyingBalance);
-			acc[stakingToken] = {
-				balance: formatBN(acc[stakingToken]?.balance.add(earnedBalance)),
-				underlyingBalance: formatBN(acc[stakingToken]?.underlyingBalance.add(earnedUnderlyingBalance))
-			};
+		return stakingRewards.reduce<TDict<BigNumber | undefined>>((acc, {address, stakingToken}): TDict<BigNumber | undefined> => {
+			const earnedBalance = formatBN(positionsMap[address]?.earned);
+			acc[stakingToken] = formatBN(acc[stakingToken]).add(earnedBalance);
 			return acc;
 		}, {});
 	}, [stakingRewards, positionsMap]);

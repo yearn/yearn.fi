@@ -39,8 +39,8 @@ function RewardsTab({currentVault}: {currentVault: TYearnVault}): ReactElement {
 
 	const web3Provider = provider as ethers.providers.Web3Provider;
 	const userAddress = address as TAddress;
-	const stakeBalance = toNormalizedBN(stakingRewardsPosition?.stake.balance ?? 0, currentVault.decimals);
-	const rewardBalance = toNormalizedBN(stakingRewardsPosition?.reward.balance ?? 0, currentVault.decimals);
+	const stakeBalance = toNormalizedBN(stakingRewardsPosition?.stake ?? 0, currentVault.decimals);
+	const rewardBalance = toNormalizedBN(stakingRewardsPosition?.reward ?? 0, currentVault.decimals);
 
 	const {isValid: isApproved} = validateAllowance({
 		tokenAddress: currentVault.address,

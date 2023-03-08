@@ -7,7 +7,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
-import {formatBN, formatToNormalizedValue, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatToNormalizedValue, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatPercent, formatUSD} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {copyToClipboard} from '@yearn-finance/web-lib/utils/helpers';
@@ -47,7 +47,7 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 	const	{stakingRewardsByVault, earningsMap} = useStakingRewards();
 	const	hasStakingRewards = !!stakingRewardsByVault[currentVault.address];
 	const	optimismPrice = useTokenPrice(OPTIMISM_TOKEN_ADDRESS);
-	const	optimismEarnings = toNormalizedBN(earningsMap[OPTIMISM_TOKEN_ADDRESS]?.balance ?? formatBN(0), 18);
+	const	optimismEarnings = toNormalizedBN(earningsMap[OPTIMISM_TOKEN_ADDRESS] ?? 0, 18);
 	const	shouldShowOptimismEarned = hasStakingRewards;
 
 	return (

@@ -22,7 +22,7 @@ function	VaultsListRow({currentVault}: {currentVault: TYearnVault}): ReactElemen
 	const vaultName = useMemo((): string => getVaultName(currentVault), [currentVault]);
 
 	const {stakingRewardsByVault, positionsMap} = useStakingRewards();
-	const stakedBalance = toNormalizedValue(positionsMap[toAddress(stakingRewardsByVault[currentVault.address])]?.stake.balance || 0, currentVault.decimals);
+	const stakedBalance = toNormalizedValue(positionsMap[toAddress(stakingRewardsByVault[currentVault.address])]?.stake ?? 0, currentVault.decimals);
 	const depositedAndStaked = deposited + stakedBalance;
 
 	const availableToDeposit = useMemo((): number => {
