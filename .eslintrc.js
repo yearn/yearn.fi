@@ -107,7 +107,7 @@ module.exports = {
 			{'selector': 'function', 'format': ['camelCase', 'PascalCase']},
 
 			{'selector': 'variableLike', 'format': ['camelCase', 'PascalCase', 'UPPER_CASE'], 'leadingUnderscore': 'allow'},
-			{'selector': 'variable', 'types': ['boolean'], 'format': ['PascalCase'], 'prefix': ['is', 'should', 'has', 'can', 'did', 'will', 'with']},
+			{'selector': 'variable', 'types': ['boolean'], 'format': ['PascalCase'], 'prefix': ['is', 'should', 'has', 'can', 'did', 'will', 'with', 'must']},
 			{
 				'selector': 'default',
 				'format': null,

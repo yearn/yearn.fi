@@ -2,161 +2,166 @@ import React, {useCallback, useEffect, useState} from 'react';
 import {useAsync} from '@react-hookz/web';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {Solver, useSolver} from '@vaults/contexts/useSolver';
-import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
 import {Button} from '@yearn-finance/web-lib/components/Button';
+import ChildWithCondition from '@yearn-finance/web-lib/components/ChildWithCondition';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {MaxUint256, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {MaxUint256, toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useWallet} from '@common/contexts/useWallet';
 
 import type {ReactElement} from 'react';
+import type {TNormalizedBN, UnknownPromiseFunction, VoidPromiseFunction} from '@yearn-finance/web-lib/types';
 
-function	VaultDetailsQuickActionsButtons(): ReactElement {
-	const {refresh} = useWallet();
-	const {refresh: refreshZapBalances} = useWalletForZap();
-	const {address, isActive} = useWeb3();
+type TApproveButtonProps = {
+	onRetrieveAllowance: UnknownPromiseFunction;
+};
+function	ApproveButton(props: TApproveButtonProps): ReactElement {
+	const {isActive} = useWeb3();
 	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
-	const [txStatusExecuteDeposit, set_txStatusExecuteDeposit] = useState(defaultTxStatus);
-	const [txStatusExecuteWithdraw, set_txStatusExecuteWithdraw] = useState(defaultTxStatus);
-	const {actionParams, onChangeAmount, maxDepositPossible, isDepositing} = useActionFlow();
-	const {onApprove, onExecuteDeposit, onExecuteWithdraw, onRetrieveAllowance, currentSolver, expectedOut, isLoadingExpectedOut} = useSolver();
+	const {actionParams, maxDepositPossible} = useActionFlow();
+	const {onApprove, currentSolver, expectedOut, isLoadingExpectedOut} = useSolver();
 
 	/* 🔵 - Yearn Finance **************************************************************************
-	** SWR hook to get the expected out for a given in/out pair with a specific amount. This hook is
-	** called every 10s or when amount/in or out changes. Calls the allowanceFetcher callback.
+	** Declare the variable we will need for this component in an easy to read way.
 	**********************************************************************************************/
-	const [{result: allowanceFrom, status}, actions] = useAsync(onRetrieveAllowance, toNormalizedBN(0));
-	useEffect((): void => {
-		actions.execute();
-	}, [currentSolver, actionParams?.selectedOptionFrom?.value, actions, isActive, address, onRetrieveAllowance]);
+	const isInvalidAmount = toBigInt(actionParams?.amount.raw) > toBigInt(maxDepositPossible.raw) || isZero(actionParams?.amount.raw);
+	const isApprovalDisabled = !isActive || isInvalidAmount || isZero(expectedOut.raw) || isLoadingExpectedOut;
 
-	const onSuccess = useCallback(async (): Promise<void> => {
-		onChangeAmount(toNormalizedBN(0));
-		if ([Solver.VANILLA, Solver.CHAIN_COIN, Solver.PARTNER_CONTRACT].includes(currentSolver)) {
-			await refresh([
-				{token: toAddress(actionParams?.selectedOptionFrom?.value)},
-				{token: toAddress(actionParams?.selectedOptionTo?.value)}
-			]);
-		} else if ([Solver.INTERNAL_MIGRATION].includes(currentSolver)) {
-			await refresh([
-				{token: toAddress(actionParams?.selectedOptionFrom?.value)},
-				{token: toAddress(actionParams?.selectedOptionTo?.value)}
-			]);
-		} else if ([Solver.COWSWAP, Solver.PORTALS, Solver.WIDO].includes(currentSolver)) {
-			if (isDepositing) { //refresh input from zap wallet, refresh output from default
-				await Promise.all([
-					refreshZapBalances([{token: toAddress(actionParams?.selectedOptionFrom?.value)}]),
-					refresh([{token: toAddress(actionParams?.selectedOptionTo?.value)}])
-				]);
-			} else {
-				await Promise.all([
-					refreshZapBalances([{token: toAddress(actionParams?.selectedOptionTo?.value)}]),
-					refresh([{token: toAddress(actionParams?.selectedOptionFrom?.value)}])
-				]);
-			}
-		}
-	// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [currentSolver, isDepositing, onChangeAmount, actionParams?.selectedOptionFrom?.value, actionParams?.selectedOptionTo?.value]);
-
-	/* 🔵 - Yearn Finance ******************************************************
+	/* 🔵 - Yearn Finance **************************************************************************
 	** Trigger an approve web3 action, simply trying to approve `amount` tokens
 	** to be used by the Partner contract or the final vault, in charge of
 	** depositing the tokens.
 	** This approve can not be triggered if the wallet is not active
 	** (not connected) or if the tx is still pending.
-	**************************************************************************/
+	**********************************************************************************************/
 	async function	onApproveFrom(): Promise<void> {
-		const	shouldApproveInfinite = currentSolver === Solver.PARTNER_CONTRACT || currentSolver === Solver.VANILLA || currentSolver === Solver.INTERNAL_MIGRATION;
+		const	shouldApproveInfinite = [Solver.PARTNER_CONTRACT, Solver.VANILLA, Solver.INTERNAL_MIGRATION].includes(currentSolver);
 		onApprove(
 			shouldApproveInfinite ? MaxUint256 : actionParams.amount.raw,
 			set_txStatusApprove,
-			async (): Promise<void> => {
-				await actions.execute();
-			}
+			props.onRetrieveAllowance as VoidPromiseFunction
 		);
 	}
 
-	/* 🔵 - Yearn Finance ******************************************************
-	** Wrapper to decide if we should use the partner contract or not
-	**************************************************************************/
-	if (
-		txStatusApprove.pending || actionParams?.amount.raw > allowanceFrom.raw || status !== 'success' && (
-			currentSolver === Solver.VANILLA && isDepositing
-			|| currentSolver === Solver.CHAIN_COIN && !isDepositing
-			|| currentSolver === Solver.INTERNAL_MIGRATION
-			|| currentSolver === Solver.COWSWAP
-			|| currentSolver === Solver.WIDO
-			|| currentSolver === Solver.PARTNER_CONTRACT
-		)
-	) {
-		return (
-			<Button
-				className={'w-full'}
-				isBusy={txStatusApprove.pending}
-				isDisabled={
-					!isActive ||
-					isZero(actionParams?.amount.raw) ||
-					isZero(expectedOut.raw) ||
-					actionParams?.amount.raw > maxDepositPossible.raw ||
-					isLoadingExpectedOut
-				}
-				onClick={onApproveFrom}>
-				{'Approve'}
-			</Button>
-		);
-	}
+	/* 🔵 - Yearn Finance **************************************************************************
+	** Rendering this component
+	**********************************************************************************************/
+	return (
+		<Button
+			className={'w-full'}
+			isBusy={txStatusApprove.pending}
+			isDisabled={isApprovalDisabled}
+			onClick={onApproveFrom}>
+			{'Approve'}
+		</Button>
+	);
+}
 
-	if (currentSolver === Solver.INTERNAL_MIGRATION) {
-		return (
-			<Button
-				onClick={async (): Promise<void> => onExecuteDeposit(set_txStatusExecuteDeposit, onSuccess)}
-				className={'w-full'}
-				isBusy={txStatusExecuteDeposit.pending}
-				isDisabled={
-					!isActive ||
-					isZero(actionParams?.amount.raw) ||
-					actionParams?.amount.raw > maxDepositPossible.raw ||
-					isLoadingExpectedOut
-				}>
-				{'Migrate'}
-			</Button>
-		);
-	}
 
-	if (isDepositing) {
-		return (
-			<Button
-				onClick={async (): Promise<void> => onExecuteDeposit(set_txStatusExecuteDeposit, onSuccess)}
-				className={'w-full'}
-				isBusy={txStatusExecuteDeposit.pending}
-				isDisabled={
-					!isActive ||
-					isZero(actionParams?.amount.raw) ||
-					actionParams?.amount.raw > maxDepositPossible.raw ||
-					isLoadingExpectedOut
-				}>
-				{'Deposit'}
-			</Button>
-		);
-	}
+type TActionButton = {
+	isMigrating: boolean;
+	isDepositing: boolean;
+	isBusy: boolean;
+	isDisabled: boolean;
+	onAction: UnknownPromiseFunction;
+};
+function	ActionButton(props: TActionButton): ReactElement {
+	const	label = props.isMigrating ? 'Migrate' : props.isDepositing ? 'Deposit' : 'Withdraw';
 
 	return (
 		<Button
-			onClick={async (): Promise<void> => onExecuteWithdraw(set_txStatusExecuteWithdraw, onSuccess)}
+			onClick={props.onAction}
 			className={'w-full'}
-			isBusy={txStatusExecuteWithdraw.pending}
-			isDisabled={
-				!isActive ||
-				isZero(actionParams?.amount.raw) ||
-				actionParams?.amount.raw > maxDepositPossible.raw ||
-				isLoadingExpectedOut
-			}>
-			{'Withdraw'}
+			isBusy={props.isBusy}
+			isDisabled={props.isDisabled}>
+			{label}
 		</Button>
 	);
+}
 
+
+type TVaultDetailsQuickActionsButtonsWrapped = {
+	isAllowanceLoading: boolean;
+	allowanceFrom: TNormalizedBN;
+	onRetrieveAllowance: UnknownPromiseFunction;
+}
+function	VaultDetailsQuickActionsButtonsWrapped(props: TVaultDetailsQuickActionsButtonsWrapped): ReactElement {
+	const {refresh} = useWallet();
+	const {isActive} = useWeb3();
+	const [txStatusExecute, set_txStatusExecute] = useState(defaultTxStatus);
+	const {actionParams, onChangeAmount, maxDepositPossible, isDepositing} = useActionFlow();
+	const {onExecuteDeposit, onExecuteWithdraw, currentSolver, isLoadingExpectedOut} = useSolver();
+
+	/* 🔵 - Yearn Finance **************************************************************************
+	** Declare the variable we will need for this component in an easy to read way.
+	**********************************************************************************************/
+	const selectedFromAddress = toAddress(actionParams?.selectedOptionFrom?.value);
+	const selectedToAddress = toAddress(actionParams?.selectedOptionTo?.value);
+	const shouldApproveBySolver = [Solver.INTERNAL_MIGRATION, Solver.COWSWAP, Solver.WIDO, Solver.PARTNER_CONTRACT].includes(currentSolver);
+	const isVanillaDeposit = currentSolver === Solver.VANILLA && isDepositing;
+	const isChainCoinWithdraw = currentSolver === Solver.CHAIN_COIN && !isDepositing;
+	const isLackingAllowance = toBigInt(actionParams?.amount.raw) > toBigInt(props.allowanceFrom.raw);
+	const isInvalidAmount = toBigInt(actionParams?.amount.raw) > toBigInt(maxDepositPossible.raw) || isZero(actionParams?.amount.raw);
+	const mustApproveFirst = isLackingAllowance || props.isAllowanceLoading && (isVanillaDeposit || isChainCoinWithdraw || shouldApproveBySolver);
+
+
+	/* 🔵 - Yearn Finance **************************************************************************
+	** Once an action is done, we just need to refresh the balances of the input token and the
+	** output token (should have less input and more output).
+	**********************************************************************************************/
+	const onSuccess = useCallback(async (): Promise<void> => {
+		onChangeAmount(toNormalizedBN(0));
+		await refresh([{token: selectedFromAddress}, {token: selectedToAddress}]);
+	}, [onChangeAmount, refresh, selectedFromAddress, selectedToAddress]);
+
+
+	/* 🔵 - Yearn Finance **************************************************************************
+	** Rendering this component
+	**********************************************************************************************/
+	return (
+		<ChildWithCondition
+			shouldRender={!mustApproveFirst}
+			fallback={<ApproveButton onRetrieveAllowance={props.onRetrieveAllowance} />}>
+			<ActionButton
+				isMigrating={currentSolver === Solver.INTERNAL_MIGRATION}
+				isDepositing={isDepositing}
+				isBusy={txStatusExecute.pending}
+				isDisabled={!isActive || isInvalidAmount || isLoadingExpectedOut}
+				onAction={async (): Promise<void> => {
+					if (isDepositing) {
+						await onExecuteDeposit(set_txStatusExecute, onSuccess);
+					} else {
+						await onExecuteWithdraw(set_txStatusExecute, onSuccess);
+					}
+				}} />
+		</ChildWithCondition>
+	);
+}
+
+function	VaultDetailsQuickActionsButtons(): ReactElement {
+	const {onRetrieveAllowance} = useSolver();
+
+	/* 🔵 - Yearn Finance **************************************************************************
+	** SWR hook to get the expected out for a given in/out pair with a specific amount. This hook is
+	** called every 10s or when amount/in or out changes. Calls the allowanceFetcher callback.
+	**********************************************************************************************/
+	const [{result: allowanceFrom, status}, {execute: retrieveAllowance}] = useAsync(onRetrieveAllowance, toNormalizedBN(0));
+	useEffect((): void => {
+		retrieveAllowance();
+	}, [retrieveAllowance, onRetrieveAllowance]);
+
+
+	/* 🔵 - Yearn Finance **************************************************************************
+	** Wrapper to decide if we should use the partner contract or not
+	**********************************************************************************************/
+	return (
+		<VaultDetailsQuickActionsButtonsWrapped
+			isAllowanceLoading={status !== 'success'}
+			allowanceFrom={allowanceFrom}
+			onRetrieveAllowance={retrieveAllowance} />
+	);
 }
 
 export default VaultDetailsQuickActionsButtons;
