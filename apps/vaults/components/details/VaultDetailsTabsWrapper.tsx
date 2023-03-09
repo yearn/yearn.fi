@@ -47,11 +47,11 @@ function	Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactE
 	], []);
 
 	useEffect((): void => {
-		const tab = tabs.find((tab): boolean => tab.slug === router.query.tab2);
+		const tab = tabs.find((tab): boolean => tab.slug === router.query.tab);
 		if (tab?.value) {
 			set_selectedAboutTabIndex(tab?.value);
 		}
-	}, [router.query.tab2, set_selectedAboutTabIndex, tabs]);
+	}, [router.query.tab, set_selectedAboutTabIndex, tabs]);
 
 	return (
 		<>
@@ -64,7 +64,7 @@ function	Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactE
 								{
 									query: {
 										...router.query,
-										tab2: tab.slug
+										tab: tab.slug
 									}
 								},
 								undefined,

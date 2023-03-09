@@ -1,5 +1,6 @@
 import React, {Fragment, useEffect, useState} from 'react';
 import Link from 'next/link';
+import {useRouter} from 'next/router';
 import {Listbox, Transition} from '@headlessui/react';
 import {useUpdateEffect} from '@react-hookz/web';
 import VaultDetailsQuickActionsButtons from '@vaults/components/details/actions/QuickActionsButtons';
@@ -12,7 +13,6 @@ import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUp
 import IconChevron from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
-import { useRouter } from 'next/router';
 
 type TTabsOptions = {
 	value: number;
@@ -42,11 +42,11 @@ function	VaultActionsTabsWrapper(): ReactElement {
 	const router = useRouter();
 
 	useEffect((): void => {
-		const tab = tabs.find((tab): boolean => tab.slug === router.query.tab);
+		const tab = tabs.find((tab): boolean => tab.slug === router.query.action);
 		if (tab?.value) {
 			set_currentTab(tab);
 		}
-	}, [router.query.tab, set_currentTab]);
+	}, [router.query.action, set_currentTab]);
 
 	useUpdateEffect((): void => {
 		if (currentVault?.migration?.available && actionParams.isReady) {
@@ -79,7 +79,7 @@ function	VaultActionsTabsWrapper(): ReactElement {
 										{
 											query: {
 												...router.query,
-												tab: tab.slug
+												action: tab.slug
 											}
 										},
 										undefined,
