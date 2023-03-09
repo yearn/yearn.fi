@@ -36,6 +36,9 @@ export const useTransaction = <T extends TTxFuncArgs>(
 		set_error(undefined);
 		try {
 			const funcResult = await func(...p);
+			if(!funcResult.isSuccessful) {
+				throw new Error('Transaction failed');
+			}
 			set_result(funcResult);
 			set_isLoading(false);
 			set_isExecuted(true);
