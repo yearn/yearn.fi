@@ -3,6 +3,7 @@ import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 export type TYearnVaultStrategy = {
 	address: TAddress,
 	name: string,
+	displayName: string,
 	description: string,
 	details: {
 		keeper: TAddress,
