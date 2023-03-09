@@ -37,7 +37,7 @@ function LockTab(): ReactElement {
 	const [lock, lockStatus] = useTransaction(VotingEscrowActions.lock, onTxSuccess);
 	const [increaseLockAmount, increaseLockAmountStatus] = useTransaction(VotingEscrowActions.increaseLockAmount, onTxSuccess);
 
-	const hasLockedAmount = formatBN(positions?.deposit?.balance).gt(0);
+	const hasLockedAmount = formatBN(positions?.deposit?.underlyingBalance).gt(0);
 
 	const unlockTime = useMemo((): TMilliseconds => {
 		return positions?.unlockTime || Date.now() + fromWeeks(toTime(lockTime));
