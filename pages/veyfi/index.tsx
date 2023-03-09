@@ -9,6 +9,7 @@ import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {PageProgressBar} from '@common/components/PageProgressBar';
 import {SummaryData} from '@common/components/SummaryData';
 import {Tabs} from '@common/components/Tabs';
+import {useClientOnlyFn} from '@common/hooks/useClientOnlyFn';
 import {formatDateShort} from '@common/utils';
 
 import type {NextRouter} from 'next/router';
@@ -16,6 +17,16 @@ import type {ReactElement} from 'react';
 
 function Index(): ReactElement {
 	const {votingEscrow, positions, isLoading} = useVotingEscrow();
+	const clientOnlyFormatAmount = useClientOnlyFn({fn: formatAmount, placeholder: '0,0000'});
+
+	const tabs = [
+		{id: 'lock', label: 'Lock YFI', content: <LockTab />},
+		{id: 'manage', label: 'Manage lock', content: <ManageLockTab />},
+		{id: 'claim', label: 'Claim', content: <ClaimTab />}
+	];
+
+	const totalLockedYFI = formatToNormalizedValue(formatBN(votingEscrow?.supply), 18);
+	const yourLockedYFI = formatToNormalizedValue(formatBN(positions?.deposit?.underlyingBalance), 18);
 
 	return (
 		<>
@@ -28,18 +39,22 @@ function Index(): ReactElement {
 			<div className={'my-14 w-full'}>
 				<SummaryData
 					items={[
-						{label: 'Total Locked YFI', content: formatAmount(formatToNormalizedValue(formatBN(votingEscrow?.supply), 18), 4)},
-						{label: 'Your Locked YFI', content: formatAmount(formatToNormalizedValue(formatBN(positions?.deposit?.underlyingBalance), 18), 4)},
-						{label: 'Expiration for the lock', content: positions?.unlockTime ? formatDateShort(positions.unlockTime) : '-'}
+						{
+							label: 'Total Locked YFI',
+							content: clientOnlyFormatAmount(totalLockedYFI, 4)?.toString() ?? '-'
+						},
+						{
+							label: 'Your Locked YFI',
+							content: clientOnlyFormatAmount(yourLockedYFI, 4)?.toString() ?? '-'
+						},
+						{
+							label: 'Expiration for the lock',
+							content: positions?.unlockTime ? formatDateShort(positions.unlockTime) : '-'
+						}
 					]} />
 			</div>
 
-			<Tabs
-				items={[
-					{id: 'lock', label: 'Lock YFI', content: <LockTab />},
-					{id: 'manage', label: 'Manage lock', content: <ManageLockTab />},
-					{id: 'claim', label: 'Claim', content: <ClaimTab />}
-				]} />
+			<Tabs items={tabs} />
 
 		</>
 	);
