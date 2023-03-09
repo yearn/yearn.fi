@@ -35,9 +35,8 @@ export const useTransaction = <T extends TTxFuncArgs>(
 		set_isLoading(true);
 		set_error(undefined);
 		try {
-			// eslint-disable-next-line @typescript-eslint/naming-convention
 			const funcResult = await func(...p);
-			if(!funcResult) {
+			if(!funcResult.isSuccessful) {
 				throw new Error('Transaction failed');
 			}
 			set_result(funcResult);
