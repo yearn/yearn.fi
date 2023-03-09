@@ -193,7 +193,7 @@ function	GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauges, o
 									disabled={!isActive}
 									value={amount.normalized}
 									onChange={(e: ChangeEvent<HTMLInputElement>): void => {
-										set_amount(handleInputChangeEventValue(e.target.value, toNumber(selectedToken?.decimals, 18)));
+										set_amount(handleInputChangeEventValue(e.target.value, toBigInt(selectedToken?.decimals || 18)));
 									}} />
 								<button
 									onClick={(): void => {

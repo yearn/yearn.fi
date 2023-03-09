@@ -35,11 +35,11 @@ function	CardZap(): ReactElement {
 		allowanceFrom, onApproveFrom, onZap, onIncreaseCRVAllowance
 	} = useCardTransactor();
 
-	const	ycrvPrice = useMemo((): number => 
+	const	ycrvPrice = useMemo((): number =>
 		formatToNormalizedValue(toBigInt(prices?.[YCRV_TOKEN_ADDRESS]), 6)
 	, [prices]);
 
-	const	ycrvCurvePoolPrice = useMemo((): number => 
+	const	ycrvCurvePoolPrice = useMemo((): number =>
 		formatToNormalizedValue(toBigInt(prices?.[YCRV_CURVE_POOL_ADDRESS]), 6)
 	, [prices]);
 
@@ -149,7 +149,7 @@ function	CardZap(): ReactElement {
 									performBatchedUpdates((): void => {
 										set_amount(handleInputChangeEventValue(
 											e.target.value,
-											toNumber(balances[toAddress(selectedOptionFrom.value)]?.decimals, 18)
+											toBigInt(balances[toAddress(selectedOptionFrom.value)]?.decimals || 18)
 										));
 										set_hasTypedSomething(true);
 									});

@@ -15,7 +15,7 @@ export type	TSimplifiedBalanceData = {
 export type TDropdownOption = {
 	label: string;
 	symbol: string;
-	decimals: number;
+	decimals: bigint;
 	value: string;
 	icon?: ReactElement;
 	zapVia?: TAddress;

@@ -21,7 +21,7 @@ function	GaugeRowItemWithExtraData({address, value}: {address: string, value: bi
 	const	tokenInfo = tokens?.[address];
 	const	tokenPrice = prices?.[address];
 	const	symbol = tokenInfo?.symbol || '???';
-	const	decimals = toNumber(tokenInfo?.decimals, 18);
+	const	decimals = toBigInt(tokenInfo?.decimals || 18);
 	const	bribeAmount = formatToNormalizedValue(value, decimals);
 	const	bribeValue = bribeAmount * toNumber(tokenPrice) / 100;
 

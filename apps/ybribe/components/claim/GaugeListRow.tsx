@@ -27,7 +27,7 @@ function	GaugeRowItemWithExtraData({
 
 	const	tokenInfo = tokens?.[address];
 	const	symbol = tokenInfo?.symbol || '???';
-	const	decimals = toNumber(tokenInfo?.decimals, 18);
+	const	decimals = toBigInt(tokenInfo?.decimals || 18);
 	const	tokenPrice = toNumber(prices?.[address]) / 1000000;
 	const	bribeAmount = formatToNormalizedValue(value, decimals);
 	const	bribeValue = bribeAmount * toNumber(tokenPrice);
@@ -61,7 +61,7 @@ function	GaugeRowItemAPR({address, value}: {address: string, value: bigint}): Re
 
 	const	APR = useMemo((): number => {
 		const	tokenInfo = tokens?.[address];
-		const	decimals = toNumber(tokenInfo?.decimals, 18);
+		const	decimals = toBigInt(tokenInfo?.decimals || 18);
 		if (tokenPrice === 0 || crvPrice === 0) {
 			return 0;
 		}

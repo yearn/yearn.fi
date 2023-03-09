@@ -5,7 +5,7 @@ import {isSolverDisabled, Solver} from '@vaults/contexts/useSolver';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {MaxUint256, toBigInt, toNormalizedBN, toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {MaxUint256, toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
@@ -38,7 +38,7 @@ function useWidoQuote(): [TWidoResult, (request: TInitSolverArgs, shouldPreventE
 			user: request.from // receiver
 		};
 
-		const canExecuteFetch = 
+		const canExecuteFetch =
 			!(isZero(quoteRequest.user) || isZero(quoteRequest.fromToken) || isZero(quoteRequest.toToken))
 			&& !isZero(request?.inputAmount)
 		;
@@ -94,7 +94,7 @@ export function useSolverWido(): TSolverContext {
 		const quote = await getQuote(_request);
 		if (quote) {
 			latestQuote.current = quote;
-			return toNormalizedBN(toBigInt(quote?.minToTokenAmount), toNumber(request?.current?.outputToken?.decimals, 18));
+			return toNormalizedBN(toBigInt(quote?.minToTokenAmount), toBigInt(request?.current?.outputToken?.decimals));
 		}
 		return toNormalizedBN(0);
 	}, [getQuote]);
@@ -144,7 +144,7 @@ export function useSolverWido(): TSolverContext {
 		if (!latestQuote?.current?.minToTokenAmount || isSolverDisabled[Solver.WIDO]) {
 			return toNormalizedBN(0);
 		}
-		return toNormalizedBN(latestQuote?.current?.minToTokenAmount, toNumber(request?.current?.outputToken?.decimals, 18));
+		return toNormalizedBN(toBigInt(latestQuote?.current?.minToTokenAmount), toBigInt(request?.current?.outputToken?.decimals));
 	}, [latestQuote, request]);
 
 	/* 🔵 - Yearn Finance ******************************************************

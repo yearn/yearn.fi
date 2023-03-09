@@ -44,7 +44,7 @@ function Deposit(): ReactElement {
 
 	const fromInputProps: TQAInput = useMemo((): TQAInput => ({
 		onChange: ({target: {value}}: ChangeEvent<HTMLInputElement>): void => {
-			const decimals = toNumber(balances?.[toAddress(YCRV.value)]?.decimals, 18);
+			const decimals = toBigInt(balances?.[toAddress(YCRV.value)]?.decimals || 18);
 			set_amount(value === '' ? undefined : handleInputChangeEventValue(value, decimals));
 		},
 		value: amount ? amount.normalized : '',

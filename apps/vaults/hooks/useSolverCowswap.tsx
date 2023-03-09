@@ -48,7 +48,7 @@ function useCowswapQuote(): [TCowResult, (request: TInitSolverArgs, shouldPreven
 			sellAmountBeforeFee: request?.inputAmount.toString() // amount to sell, in wei
 		};
 
-		const canExecuteFetch = 
+		const canExecuteFetch =
 			!(isZero(quote.from) || isZero(quote.sellToken) || isZero(quote.buyToken))
 			&& !isZero(request?.inputAmount)
 		;
@@ -95,13 +95,13 @@ export function useSolverCowswap(): TSolverContext {
 	** fluctuations. The buyAmountWithSlippage is used to request this amount instead of the
 	** original buyAmount.
 	**********************************************************************************************/
-	const getBuyAmountWithSlippage = useCallback((currentQuote: TCowAPIResult, decimals: number): string => {
+	const getBuyAmountWithSlippage = useCallback((currentQuote: TCowAPIResult, decimals: bigint): string => {
 		if (!currentQuote) {
 			return '0';
 		}
 		const {quote} = currentQuote;
 		const buyAmount = toNumber(formatUnits(quote.buyAmount.toString(), decimals));
-		const withSlippage = parseUnits((buyAmount * (1 - toNumber(zapSlippage / 100))).toFixed(decimals), decimals);
+		const withSlippage = parseUnits((buyAmount * (1 - toNumber(zapSlippage / 100))).toFixed(Number(decimals)), decimals);
 		return withSlippage.toString();
 	}, [zapSlippage]);
 
@@ -118,8 +118,8 @@ export function useSolverCowswap(): TSolverContext {
 		const quote = await getQuote(_request);
 		if (quote) {
 			latestQuote.current = quote;
-			getBuyAmountWithSlippage(quote, toNumber(request?.current?.outputToken?.decimals, 18));
-			return toNormalizedBN(toBigInt(quote?.quote?.buyAmount.toString()), toNumber(request?.current?.outputToken?.decimals, 18));
+			getBuyAmountWithSlippage(quote, toBigInt(request?.current?.outputToken?.decimals || 18));
+			return toNormalizedBN(toBigInt(quote?.quote?.buyAmount.toString()), toBigInt(request?.current?.outputToken?.decimals));
 		}
 		return toNormalizedBN(0);
 	}, [getBuyAmountWithSlippage, getQuote]);
@@ -224,7 +224,7 @@ export function useSolverCowswap(): TSolverContext {
 		if (!latestQuote?.current?.quote?.buyAmount || isSolverDisabled[Solver.COWSWAP]) {
 			return toNormalizedBN(0);
 		}
-		return toNormalizedBN(latestQuote?.current?.quote?.buyAmount.toString(), toNumber(request?.current?.outputToken?.decimals, 18));
+		return toNormalizedBN(latestQuote?.current?.quote?.buyAmount.toString(), toBigInt(request?.current?.outputToken?.decimals));
 	}, [latestQuote]);
 
 	/* 🔵 - Yearn Finance ******************************************************

@@ -2,7 +2,7 @@ import {useCallback} from 'react';
 import {ethers} from 'ethers';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {toBigInt, toNormalizedBN, toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {getProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 
@@ -36,10 +36,10 @@ export function	useVaultEstimateOutFetcher(): (args: TVaultEstimateOutFetcher) =
 			const	pps = toBigInt(await contract.pricePerShare());
 			if (isDepositing) {
 				const expectedOutFetched = inputAmount * toBigInt(10) ** toBigInt(outputToken?.decimals) / pps;
-				return toNormalizedBN(expectedOutFetched, toNumber(outputToken?.decimals, 18));
+				return toNormalizedBN(expectedOutFetched, toBigInt(outputToken?.decimals || 18));
 			}
 			const expectedOutFetched = inputAmount * pps / toBigInt(10) ** toBigInt(outputToken?.decimals);
-			return toNormalizedBN(expectedOutFetched, toNumber(outputToken?.decimals, 18));
+			return toNormalizedBN(expectedOutFetched, toBigInt(outputToken?.decimals || 18));
 		} catch (error) {
 			console.error(error);
 			return toNormalizedBN(0);

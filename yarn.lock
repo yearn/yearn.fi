@@ -2680,7 +2680,7 @@
     "@web3-react/types" "^8.0.20-beta.0"
     eventemitter3 "^4.0.7"
 
-"@yearn-finance/web-lib@^0.18.7":
+"@yearn-finance/web-lib@^0.18.4":
   version "0.18.7"
   resolved "https://registry.yarnpkg.com/@yearn-finance/web-lib/-/web-lib-0.18.7.tgz#2ee1737903670982266d910183c988eae91be174"
   integrity sha512-6tB1v5mbjz2SMDOsyYI7yKFYI5pOKyQQL2Yr3hfQQU0UropigO8GEjVQrMVMzk646oD4n6TiHbpzROSu/5oGkQ==

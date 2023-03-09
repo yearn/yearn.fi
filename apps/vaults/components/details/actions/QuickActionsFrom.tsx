@@ -3,7 +3,7 @@ import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
@@ -87,7 +87,7 @@ function	VaultDetailsQuickActionsFrom(): ReactElement {
 							onChange={(e: ChangeEvent<HTMLInputElement>): void => onChangeAmount(
 								handleInputChangeEventValue(
 									e.target.value,
-									toNumber(balances?.[toAddress(actionParams?.selectedOptionFrom?.value)]?.decimals, 18)
+									toBigInt(balances?.[toAddress(actionParams?.selectedOptionFrom?.value)]?.decimals || 18)
 								)
 							)} />
 						<button

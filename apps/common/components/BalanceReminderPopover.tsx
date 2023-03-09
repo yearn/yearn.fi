@@ -8,7 +8,7 @@ import IconAddToMetamask from '@yearn-finance/web-lib/icons/IconAddToMetamask';
 import IconCross from '@yearn-finance/web-lib/icons/IconCross';
 import IconWallet from '@yearn-finance/web-lib/icons/IconWallet';
 import {toAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
-import {toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {toBigInt, toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {useWallet} from '@common/contexts/useWallet';
@@ -22,7 +22,7 @@ import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 type TBalanceReminderElement = {
 	address: TAddress,
 	normalizedBalance: number,
-	decimals: number,
+	decimals: bigint,
 	symbol: string,
 }
 
@@ -31,7 +31,7 @@ function	TokenItem({element}: {element: TBalanceReminderElement}): ReactElement 
 	const	{safeChainID} = useChainID();
 	const	balance = useBalance(element.address);
 
-	async function addTokenToMetamask(address: string, symbol: string, decimals: number, image: string): Promise<void> {
+	async function addTokenToMetamask(address: string, symbol: string, decimals: bigint, image: string): Promise<void> {
 		try {
 			await provider.send('wallet_watchAsset', {
 				type: 'ERC20',
@@ -108,7 +108,7 @@ export default function BalanceReminderPopover(): ReactElement {
 				acc.push({
 					address: toAddress(address),
 					normalizedBalance: toNumber(balance?.normalized),
-					decimals: toNumber(balance?.decimals, 18),
+					decimals: toBigInt(balance?.decimals),
 					symbol: currentVault.symbol
 				});
 			}
