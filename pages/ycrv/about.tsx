@@ -8,10 +8,11 @@ import Wrapper from '@yCRV/Wrapper';
 
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
+import type {TAddress} from '@yearn-finance/web-lib/types';
 
 type TContractListRowProps = {
 	label: string;
-	address: string;
+	address: TAddress;
 }
 
 function ContractListRow({label, address}: TContractListRowProps): ReactElement {

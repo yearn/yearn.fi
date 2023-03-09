@@ -9,12 +9,12 @@ import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3
 import type {NextApiRequest, NextApiResponse} from 'next';
 import type {TWeb3Provider} from '@yearn-finance/web-lib/contexts/types';
 import type {TBalanceData} from '@yearn-finance/web-lib/hooks/types';
-import type {TDict} from '@yearn-finance/web-lib/types';
+import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 import type {TUseBalancesTokens} from '@common/hooks/useBalances';
 
 type TPerformCall = {
 	chainID: number,
-	address: string,
+	address: TAddress,
 	tokens: TUseBalancesTokens[]
 }
 async function getBatchBalances({
@@ -92,7 +92,7 @@ export type TGetBatchBalancesResp = {balances: TDict<TBalanceData>, chainID: num
 export default async function handler(req: NextApiRequest, res: NextApiResponse<TGetBatchBalancesResp>): Promise<void> {
 	const	balances = await getBatchBalances({
 		chainID: toNumber(req.body.chainID, 1),
-		address: req.body.address as string,
+		address: toAddress(req.body.address as string),
 		tokens: req.body.tokens as unknown as TUseBalancesTokens[]
 	});
 	return res.status(200).json({balances, chainID: req.body.chainID});

@@ -8,13 +8,14 @@ import {useCurve} from '@common/contexts/useCurve';
 import {useYearn} from '@common/contexts/useYearn';
 
 import type {ReactElement} from 'react';
+import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TCurveGauges} from '@common/types/curves';
 import type {TYDaemonGaugeRewardsFeed} from '@common/types/yearn';
 
 function	RewardFeedRowItemWithExtraData({
 	address,
 	value
-}: {address: string, value: bigint, minDecimals?: number}): ReactElement {
+}: {address: TAddress, value: bigint, minDecimals?: number}): ReactElement {
 	const	{tokens, prices} = useYearn();
 
 	const	tokenInfo = tokens?.[address];

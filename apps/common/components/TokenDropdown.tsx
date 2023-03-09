@@ -11,7 +11,6 @@ import IconChevron from '@common/icons/IconChevron';
 import type {ReactElement} from 'react';
 import type {TDropdownItemProps, TDropdownOption, TDropdownProps} from '@common/types/types';
 
-
 function DropdownItem({option, balanceSource}: TDropdownItemProps): ReactElement {
 	const	balance = useBalance(option.value, balanceSource);
 

@@ -1,12 +1,13 @@
+import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {Solver} from '@vaults/contexts/useSolver';
 
 export type TYDaemonTokensList = {
+	address: TAddress;
+	decimals: bigint;
 	chainID: number;
-	address: string;
 	name: string;
 	symbol: string;
 	logoURI: string;
-	decimals: number;
 	balance: string;
 	supportedZaps: Solver[];
 };

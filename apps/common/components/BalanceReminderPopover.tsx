@@ -31,7 +31,7 @@ function	TokenItem({element}: {element: TBalanceReminderElement}): ReactElement 
 	const	{safeChainID} = useChainID();
 	const	balance = useBalance(element.address);
 
-	async function addTokenToMetamask(address: string, symbol: string, decimals: bigint, image: string): Promise<void> {
+	async function addTokenToMetamask(address: TAddress, symbol: string, decimals: bigint, image: string): Promise<void> {
 		try {
 			await provider.send('wallet_watchAsset', {
 				type: 'ERC20',

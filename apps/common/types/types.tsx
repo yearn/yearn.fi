@@ -16,9 +16,9 @@ export type TDropdownOption = {
 	label: string;
 	symbol: string;
 	decimals: bigint;
-	value: string;
-	icon?: ReactElement;
+	value: TAddress;
 	zapVia?: TAddress;
+	icon?: ReactElement;
 	solveVia?: Solver[];
 	balanceSource?: string;
 	settings?: {

@@ -8,7 +8,7 @@ import type {TBalanceData} from '@yearn-finance/web-lib/hooks/types';
 import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 
 function	useBalance(
-	address: string | TAddress,
+	address: TAddress,
 	source?: TDict<TBalanceData>
 ): TBalanceData {
 	const	{balances, balancesNonce} = useWallet();
