@@ -1,4 +1,5 @@
-import React, {Fragment, useMemo, useState} from 'react';
+import React, {Fragment, useEffect, useMemo, useState} from 'react';
+import {useRouter} from 'next/router';
 import useSWR from 'swr';
 import {Listbox, Transition} from '@headlessui/react';
 import {useIsMounted} from '@react-hookz/web';
@@ -24,6 +25,7 @@ import type {TSettingsForNetwork, TYearnVault} from '@common/types/yearn';
 type TTabsOptions = {
 	value: number;
 	label: string;
+	slug?: string;
 }
 type TTabs = {
 	selectedAboutTabIndex: number,
@@ -36,11 +38,20 @@ type TExplorerLinkProps = {
 }
 
 function	Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactElement {
-	const tabs: TTabsOptions[] = [
-		{value: 0, label: 'About'},
-		{value: 1, label: 'Strategies'},
-		{value: 2, label: 'Historical rates'}
-	];
+	const router = useRouter();
+
+	const tabs: TTabsOptions[] = useMemo((): TTabsOptions[] => [
+		{value: 0, label: 'About', slug: 'about'},
+		{value: 1, label: 'Strategies', slug: 'strategies'},
+		{value: 2, label: 'Historical rates', slug: 'historical-rates'}
+	], []);
+
+	useEffect((): void => {
+		const tab = tabs.find((tab): boolean => tab.slug === router.query.tab2);
+		if (tab?.value) {
+			set_selectedAboutTabIndex(tab?.value);
+		}
+	}, [router.query.tab2, set_selectedAboutTabIndex, tabs]);
 
 	return (
 		<>
@@ -48,7 +59,21 @@ function	Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactE
 				{tabs.map((tab): ReactElement => (
 					<button
 						key={`desktop-${tab.value}`}
-						onClick={(): void => set_selectedAboutTabIndex(tab.value)}>
+						onClick={(): void => {
+							router.replace(
+								{
+									query: {
+										...router.query,
+										tab2: tab.slug
+									}
+								},
+								undefined,
+								{
+									shallow: true
+								}
+							);
+							set_selectedAboutTabIndex(tab.value);
+						}}>
 						<p
 							title={tab.label}
 							aria-selected={selectedAboutTabIndex === tab.value}
