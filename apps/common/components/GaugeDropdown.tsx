@@ -1,5 +1,6 @@
 import React, {cloneElement, Fragment, useMemo, useState} from 'react';
 import {Combobox, Transition} from '@headlessui/react';
+import Childable from '@yearn-finance/web-lib/components/Childable';
 import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import IconChevron from '@common/icons/IconChevron';
 
@@ -9,7 +10,7 @@ import type {TDropdownGaugeItemProps, TDropdownGaugeOption, TDropdownGaugeProps}
 function DropdownItem({option}: TDropdownGaugeItemProps): ReactElement {
 	return (
 		<Combobox.Option value={option}>
-			{({active}): ReactElement => (
+			{({active}): ReactElement =>
 				<div data-active={active} className={'yearn--dropdown-menu-item w-full hover:bg-neutral-0/40'}>
 					<div className={'h-6 w-6 rounded-full'}>
 						{option?.icon ? cloneElement(option.icon) : null}
@@ -23,7 +24,7 @@ function DropdownItem({option}: TDropdownGaugeItemProps): ReactElement {
 						</p>
 					</div>
 				</div>
-			)}
+			}
 		</Combobox.Option>
 	);
 }
@@ -69,12 +70,12 @@ function Dropdown({
 	const filteredOptions = query === ''
 		? orderedOptions
 		: orderedOptions.filter((option): boolean => {
-			return (option.label).toLowerCase().includes(query.toLowerCase());
+			return option.label.toLowerCase().includes(query.toLowerCase());
 		});
 
 	return (
 		<div>
-			{isOpen ? (
+			<Childable shouldRender={isOpen}>
 				<div
 					className={'fixed inset-0 z-0'}
 					onClick={(e): void => {
@@ -82,7 +83,8 @@ function Dropdown({
 						e.preventDefault();
 						set_isOpen(false);
 					}} />
-			) : null}
+			</Childable>
+
 			<Combobox
 				value={selected}
 				onChange={onSelect}>
@@ -120,16 +122,11 @@ function Dropdown({
 						leaveTo={'transform scale-95 opacity-0'}
 						afterLeave={(): void => set_query('')}>
 						<Combobox.Options static className={'yearn--dropdown-menu z-50'}>
-							{filteredOptions.length === 0 ? (
-								<DropdownEmpty query={query} />
-							) : (
-								filteredOptions
-									.map((option): ReactElement => (
-										<DropdownItem
-											key={option.label}
-											option={option} />
-									)
-									))}
+							<Childable
+								shouldRender={filteredOptions.length > 0}
+								fallback={<DropdownEmpty query={query} />}>
+								{filteredOptions.map((option): ReactElement => <DropdownItem key={option.label} option={option} />)}
+							</Childable>
 						</Combobox.Options>
 					</Transition>
 				</>

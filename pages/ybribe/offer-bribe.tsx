@@ -2,6 +2,7 @@ import React, {useCallback, useMemo, useState} from 'react';
 import Balancer from 'react-wrap-balancer';
 import Link from 'next/link';
 import {Button} from '@yearn-finance/web-lib/components/Button';
+import Childable from '@yearn-finance/web-lib/components/Childable';
 import {useSessionStorage} from '@yearn-finance/web-lib/hooks/useSessionStorage';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatBN, formatToNormalizedValue, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -54,7 +55,7 @@ function	GaugeList(): ReactElement {
 
 	const	searchedGauges = useMemo((): TCurveGauges[] => {
 		const	gaugesToSearch = [...filteredGauges];
-	
+
 		if (searchValue === '') {
 			return gaugesToSearch;
 		}
@@ -63,7 +64,7 @@ function	GaugeList(): ReactElement {
 			return searchString.toLowerCase().includes(searchValue.toLowerCase());
 		});
 	}, [filteredGauges, searchValue]);
-	
+
 	const	sortedGauges = useMemo((): TCurveGauges[] => {
 		if (sort.sortBy === 'name') {
 			return searchedGauges.sort((a, b): number => stringSort({a: a.name, b: b.name, sortDirection: sort.sortDirection}));
@@ -140,15 +141,14 @@ function	GaugeList(): ReactElement {
 						{label: 'Pending $/veCRV', value: 'pendingRewards', sortable: true, className: 'col-span-3'},
 						{label: '', value: '', sortable: false, className: 'col-span-1'}
 					]} />
-					
-				{sortedGauges.length === 0 ? (
-					<GaugeListEmpty />
-				) : sortedGauges.map((gauge): ReactNode => {
-					if (!gauge) {
-						return (null);
-					}
-					return <GaugeListRow key={gauge.name} currentGauge={gauge} />;
-				})}
+
+				<Childable
+					shouldRender={sortedGauges.length > 0}
+					fallback={<GaugeListEmpty />}>
+					{sortedGauges.filter((gauge): boolean => !!gauge).map((gauge): ReactNode =>
+						<GaugeListRow key={gauge.name} currentGauge={gauge} />
+					)}
+				</Childable>
 			</div>
 		</section>
 	);

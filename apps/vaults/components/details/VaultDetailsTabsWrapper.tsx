@@ -5,6 +5,7 @@ import {useIsMounted} from '@react-hookz/web';
 import {VaultDetailsAbout} from '@vaults/components/details/tabs/VaultDetailsAbout';
 import {VaultDetailsHistorical} from '@vaults/components/details/tabs/VaultDetailsHistorical';
 import {VaultDetailsStrategies} from '@vaults/components/details/tabs/VaultDetailsStrategies';
+import Childable from '@yearn-finance/web-lib/components/Childable';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
@@ -185,20 +186,22 @@ function	VaultDetailsTabsWrapper({currentVault}: {currentVault: TYearnVault}): R
 
 			<div className={'-mt-0.5 h-0.5 w-full bg-neutral-300'} />
 
-			{currentVault && selectedAboutTabIndex === 0 ? (
+			<Childable shouldRender={currentVault && selectedAboutTabIndex === 0}>
 				<VaultDetailsAbout
 					currentVault={currentVault}
 					harvestData={harvestData} />
-			) : null}
-			{currentVault && selectedAboutTabIndex === 1 ? (
+			</Childable>
+
+			<Childable shouldRender={currentVault && selectedAboutTabIndex === 1}>
 				<VaultDetailsStrategies
 					currentVault={currentVault} />
-			) : null}
-			{currentVault && selectedAboutTabIndex === 2 ? (
+			</Childable>
+
+			<Childable shouldRender={currentVault && selectedAboutTabIndex === 2}>
 				<VaultDetailsHistorical
 					currentVault={currentVault}
 					harvestData={harvestData} />
-			) : null}
+			</Childable>
 
 		</div>
 	);
