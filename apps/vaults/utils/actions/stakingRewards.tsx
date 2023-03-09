@@ -4,6 +4,7 @@ import {handleTx} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {approveERC20} from '@common/utils/actions/approveToken';
 
 import STAKING_REWARDS_ABI from '../abi/stakingRewards.abi';
+import STAKING_REWARDS_ZAP_ABI from '../abi/stakingRewardsZap.abi';
 
 import type {BigNumber} from 'ethers';
 import type {TAddress} from '@yearn-finance/web-lib/types';
@@ -57,6 +58,6 @@ export async function depositAndStake(
 	amount: BigNumber
 ): Promise<TTxResponse> {
 	const signer = provider.getSigner(accountAddress);
-	const stakingRewardsZapContract = new ethers.Contract(STAKING_REWARDS_ZAP_ADDRESS, [], signer); // TODO: update abi once deployed
+	const stakingRewardsZapContract = new ethers.Contract(STAKING_REWARDS_ZAP_ADDRESS, STAKING_REWARDS_ZAP_ABI, signer);
 	return handleTx(stakingRewardsZapContract.zapIn(vaultAddress, amount));
 }

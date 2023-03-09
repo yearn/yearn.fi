@@ -4,10 +4,8 @@ export const OPTIMISM_TOKEN_ADDRESS = toAddress('0x42000000000000000000000000000
 
 export const STAKING_REWARDS_SUPPORTED_CHAINS = [10];
 
-// TODO: hardcoded until a registry is deployed
-export const STAKING_REWARDS_ADDRESSES = [toAddress('0x1eC8BaAB7DBd6f5a02EfcAb711e765bF796d091c')];
-export const STAKING_REWARDS_REGISTRY_ADDRESS = toAddress();
+export const STAKING_REWARDS_REGISTRY_ADDRESS = toAddress('0xB54d1833ACA99B0E50dfCC7F55A9165c6805BB9f');
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export const STAKING_REWARDS_ZAP_ENABLED = false;
-export const STAKING_REWARDS_ZAP_ADDRESS = toAddress(); // TODO: update once deployed
+export const STAKING_REWARDS_ZAP_ENABLED = true;
+export const STAKING_REWARDS_ZAP_ADDRESS = toAddress('0xBA8559DFa1f2b767cEa440Fb1EDE9BfB4a9F518e');

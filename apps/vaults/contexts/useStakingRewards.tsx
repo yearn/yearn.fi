@@ -3,6 +3,7 @@ import {Contract} from 'ethcall';
 import useSWR from 'swr';
 import {STAKING_REWARDS_REGISTRY_ADDRESS, STAKING_REWARDS_SUPPORTED_CHAINS} from '@vaults/constants';
 import STAKING_REWARDS_ABI from '@vaults/utils/abi/stakingRewards.abi';
+import STAKING_REWARDS_REGISTRY_ABI from '@vaults/utils/abi/stakingRewardsRegistry.abi';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -56,13 +57,18 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 		const currentProvider = getProvider(chainID);
 		const ethcallProvider = await newEthCallProvider(currentProvider);
 
-		const stakingRewardsRegistryContract = new Contract(STAKING_REWARDS_REGISTRY_ADDRESS, []); // TODO: update once abi is available
-		const [vaultAddresses] = await ethcallProvider.tryAll([stakingRewardsRegistryContract.tokens()]) as [TAddress[]];
-		const calls = [];
-		for (const address of vaultAddresses) {
-			calls.push(stakingRewardsRegistryContract.stakingPool(address));
+		const stakingRewardsRegistryContract = new Contract(STAKING_REWARDS_REGISTRY_ADDRESS, STAKING_REWARDS_REGISTRY_ABI);
+		const [numTokens] = await ethcallProvider.tryAll([stakingRewardsRegistryContract.numTokens()]) as [BigNumber];
+		const tokensCalls = [];
+		for (let i = 0; i < numTokens.toNumber(); i++) {
+			tokensCalls.push(stakingRewardsRegistryContract.tokens(i));
 		}
-		const stakingRewardsAddresses = await ethcallProvider.tryAll(calls) as TAddress[];
+		const vaultAddresses = await ethcallProvider.tryAll(tokensCalls) as TAddress[];
+		const stakingPoolCalls = [];
+		for (const address of vaultAddresses) {
+			stakingPoolCalls.push(stakingRewardsRegistryContract.stakingPool(address));
+		}
+		const stakingRewardsAddresses = await ethcallProvider.tryAll(stakingPoolCalls) as TAddress[];
 		const stakingRewardsPromises = stakingRewardsAddresses.map(async (address): Promise<TStakingRewards> => {
 			const stakingRewardsContract = new Contract(address, STAKING_REWARDS_ABI);
 			const [

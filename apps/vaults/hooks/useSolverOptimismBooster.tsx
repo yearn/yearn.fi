@@ -141,7 +141,6 @@ export function useSolverOptimismBooster(): TSolverContext {
 
 		new Transaction(provider, depositAndStake, txStatusSetter)
 			.populate(
-				provider,
 				request.current.from,
 				toAddress(request.current.outputToken.value), // vault
 				request.current.inputAmount
