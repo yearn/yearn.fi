@@ -17,6 +17,12 @@ import type {ReactElement} from 'react';
 function Index(): ReactElement {
 	const {votingEscrow, positions, isLoading} = useVotingEscrow();
 
+	const tabs = [
+		{id: 'lock', label: 'Lock YFI', content: <LockTab />},
+		{id: 'manage', label: 'Manage lock', content: <ManageLockTab />},
+		{id: 'claim', label: 'Claim', content: <ClaimTab />}
+	];
+
 	return (
 		<>
 			<PageProgressBar isLoading={isLoading}/>
@@ -34,13 +40,7 @@ function Index(): ReactElement {
 					]} />
 			</div>
 
-			<Tabs
-				items={[
-					{id: 'lock', label: 'Lock YFI', content: <LockTab />},
-					{id: 'manage', label: 'Manage lock', content: <ManageLockTab />},
-					{id: 'claim', label: 'Claim', content: <ClaimTab />}
-				]} />
-
+			<Tabs items={tabs} />
 		</>
 	);
 }
