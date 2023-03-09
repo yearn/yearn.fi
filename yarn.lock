@@ -2328,10 +2328,17 @@
     "@web3-react/types" "^8.0.20-beta.0"
     eventemitter3 "^4.0.7"
 
+<<<<<<< HEAD
 "@yearn-finance/web-lib@^0.18.9":
   version "0.18.9"
   resolved "https://registry.yarnpkg.com/@yearn-finance/web-lib/-/web-lib-0.18.9.tgz#70d38f794eb6b699a06b87960ee58802354f5b1d"
   integrity sha512-omBMSyVXd8BWvNbZTxiHWuJvtkHERAxqgH9G+M4u9381g2WVnuldDo5s69KNIJrAbZQ95mXOhFnDH4M04Df5WA==
+=======
+"@yearn-finance/web-lib@^0.18.6":
+  version "0.18.6"
+  resolved "https://registry.yarnpkg.com/@yearn-finance/web-lib/-/web-lib-0.18.6.tgz#f2b396aee27ebed378577aad205154650e02d16e"
+  integrity sha512-XiL1bejHVCxvoJBEKWAMrRDwOJXLbFdlX2oqR8IiaeXyiDmsTL/EwYboIrnTuUNekpzh0LDKtvWfT2nPx3naWw==
+>>>>>>> e65a7984 (feat: add Childable)
   dependencies:
     "@coinbase/wallet-sdk" "^3.6.4"
     "@ethersproject/experimental" "^5.7.0"

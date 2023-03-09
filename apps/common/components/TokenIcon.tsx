@@ -71,7 +71,6 @@ function TokenIcon({
 				{renderMultipleAssetImage()}
 			</Renderable>
 		</>
-
 	);
 }
 export default TokenIcon;
