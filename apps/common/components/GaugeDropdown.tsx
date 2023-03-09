@@ -1,6 +1,7 @@
 import React, {cloneElement, Fragment, useMemo, useState} from 'react';
 import {Combobox, Transition} from '@headlessui/react';
 import Renderable from '@yearn-finance/web-lib/components/Renderable';
+import {toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import IconChevron from '@common/icons/IconChevron';
 
@@ -20,7 +21,7 @@ function DropdownItem({option}: TDropdownGaugeItemProps): ReactElement {
 							{option.label}
 						</p>
 						<p className={`${option.icon ? 'pl-2' : 'pl-0'} text-xs font-normal text-neutral-600`}>
-							{`APY ${formatPercent((option?.value?.APY || 0) * 100, 2, 2, 500)}`}
+							{`APY ${formatPercent(toNumber(option?.value?.APY) * 100, 2, 2, 500)}`}
 						</p>
 					</div>
 				</div>

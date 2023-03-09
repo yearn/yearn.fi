@@ -4,6 +4,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useClientEffect} from '@yearn-finance/web-lib/hooks/useClientEffect';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {CRV_TOKEN_ADDRESS, CVXCRV_TOKEN_ADDRESS, ETH_TOKEN_ADDRESS, LPYCRV_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS, YVBOOST_TOKEN_ADDRESS, YVECRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {getProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import {useYearn} from '@common/contexts/useYearn';
 import {useBalances} from '@common/hooks/useBalances';
@@ -101,10 +102,8 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 
 		return (
 			Object.entries(balances).reduce((acc, [token, balance]): number => {
-				if (vaults?.[toAddress(token)]) {
-					acc += balance?.normalizedValue || 0;
-				} else if (vaultsMigrations?.[toAddress(token)]) {
-					acc += balance?.normalizedValue || 0;
+				if (vaults?.[toAddress(token)] || vaultsMigrations?.[toAddress(token)]) {
+					acc += toNumber(balance?.normalizedValue);
 				}
 				return acc;
 			}, 0)

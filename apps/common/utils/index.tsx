@@ -26,7 +26,7 @@ export function getVaultAPY(vault: Maybe<TVault>): string {
 	}
 
 	if (vault?.apy?.net_apy) {
-		return `APY ${formatPercent((vault?.apy?.net_apy || 0) * 100, 2, 2, 500)}`;
+		return `APY ${formatPercent(toNumber(vault?.apy?.net_apy) * 100, 2, 2, 500)}`;
 	}
 	return `APY ${formatPercent(0)}`;
 }
