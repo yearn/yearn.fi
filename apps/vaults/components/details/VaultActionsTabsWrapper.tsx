@@ -1,5 +1,6 @@
-import React, {Fragment, useState} from 'react';
+import React, {Fragment, useEffect, useState} from 'react';
 import Link from 'next/link';
+import {useRouter} from 'next/router';
 import {Listbox, Transition} from '@headlessui/react';
 import {useUpdateEffect} from '@react-hookz/web';
 import VaultDetailsQuickActionsButtons from '@vaults/components/details/actions/QuickActionsButtons';
@@ -17,12 +18,13 @@ type TTabsOptions = {
 	value: number;
 	label: string;
 	flowAction: Flow;
+	slug?: string;
 }
 
 const tabs: TTabsOptions[] = [
-	{value: 0, label: 'Deposit', flowAction: Flow.Deposit},
-	{value: 1, label: 'Withdraw', flowAction: Flow.Withdraw},
-	{value: 2, label: 'Migrate', flowAction: Flow.Migrate}
+	{value: 0, label: 'Deposit', flowAction: Flow.Deposit, slug: 'deposit'},
+	{value: 1, label: 'Withdraw', flowAction: Flow.Withdraw, slug: 'withdraw'},
+	{value: 2, label: 'Migrate', flowAction: Flow.Migrate, slug: 'migrate'}
 ];
 function	getCurrentTab({isDepositing, hasMigration}: {isDepositing: boolean, hasMigration: boolean}): TTabsOptions {
 	if (hasMigration) {
@@ -37,6 +39,14 @@ function	VaultActionsTabsWrapper(): ReactElement {
 	const [currentTab, set_currentTab] = useState<TTabsOptions>(
 		getCurrentTab({isDepositing, hasMigration: currentVault?.migration?.available})
 	);
+	const router = useRouter();
+
+	useEffect((): void => {
+		const tab = tabs.find((tab): boolean => tab.slug === router.query.action);
+		if (tab?.value) {
+			set_currentTab(tab);
+		}
+	}, [router.query.action, set_currentTab]);
 
 	useUpdateEffect((): void => {
 		if (currentVault?.migration?.available && actionParams.isReady) {
@@ -65,6 +75,18 @@ function	VaultActionsTabsWrapper(): ReactElement {
 								key={`desktop-${tab.value}`}
 								onClick={(): void => {
 									set_currentTab(tab);
+									router.replace(
+										{
+											query: {
+												...router.query,
+												action: tab.slug
+											}
+										},
+										undefined,
+										{
+											shallow: true
+										}
+									);
 									onSwitchSelectedOptions(tab.flowAction);
 								}}>
 								<p
