@@ -1,6 +1,7 @@
 import React, {cloneElement, Fragment, useState} from 'react';
 import {Combobox, Transition} from '@headlessui/react';
 import {useThrottledState} from '@react-hookz/web';
+import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
@@ -16,7 +17,7 @@ function DropdownItem({option, balanceSource}: TDropdownItemProps): ReactElement
 
 	return (
 		<Combobox.Option value={option}>
-			{({active}): ReactElement => (
+			{({active}): ReactElement =>
 				<div data-active={active} className={'yearn--dropdown-menu-item w-full hover:bg-neutral-0/40'}>
 					<div className={'h-6 w-6 rounded-full'}>
 						{option?.icon ? cloneElement(option.icon) : null}
@@ -30,7 +31,7 @@ function DropdownItem({option, balanceSource}: TDropdownItemProps): ReactElement
 						</p>
 					</div>
 				</div>
-			)}
+			}
 		</Combobox.Option>
 	);
 }
@@ -78,13 +79,13 @@ function Dropdown({
 	const filteredOptions = query === ''
 		? options
 		: options.filter((option): boolean => {
-			return (option.symbol).toLowerCase().includes(query.toLowerCase());
+			return option.symbol.toLowerCase().includes(query.toLowerCase());
 		});
 
 
 	return (
 		<div>
-			{isOpen ? (
+			<Renderable shouldRender={isOpen}>
 				<div
 					className={'fixed inset-0 z-0'}
 					onClick={(e): void => {
@@ -92,7 +93,8 @@ function Dropdown({
 						e.preventDefault();
 						set_isOpen(false);
 					}} />
-			) : null}
+			</Renderable>
+
 			<Combobox
 				value={selected}
 				onChange={(_selected: TDropdownOption): void => {
@@ -145,17 +147,15 @@ function Dropdown({
 							});
 						}}>
 						<Combobox.Options className={'yearn--dropdown-menu z-50'}>
-							{filteredOptions.length === 0 ? (
-								<DropdownEmpty query={query} />
-							): (
-								filteredOptions
-									.map((option): ReactElement => (
-										<DropdownItem
-											key={option.value}
-											option={option}
-											balanceSource={balanceSource} />
-									)
-									))}
+							<Renderable
+								shouldRender={filteredOptions.length > 0}
+								fallback={<DropdownEmpty query={query} />}>
+								{filteredOptions.map((option): ReactElement => <DropdownItem
+									key={option.label}
+									option={option}
+									balanceSource={balanceSource} />
+								)}
+							</Renderable>
 						</Combobox.Options>
 					</Transition>
 				</>

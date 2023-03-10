@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, {useMemo, useState} from 'react';
 import {Button} from '@yearn-finance/web-lib/components/Button';
+import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {CRV_TOKEN_ADDRESS, CURVE_BRIBE_V3_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
@@ -109,6 +110,55 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 		}).perform();
 	}
 
+	function	renderDefaultValueUSDFallback(): ReactElement {
+		return (
+			<div className={'flex h-auto flex-col items-end pt-0 md:h-14'}>
+				<p className={'yearn--table-data-section-item-value'}>
+					{formatUSD(0, 5, 5)}
+				</p>
+				<p className={'font-number inline-flex items-baseline text-right text-xs text-neutral-400'}>
+					{'-'}
+				</p>
+			</div>
+		);
+	}
+	function	renderDefaultValuesUSDFallback(): ReactElement {
+		return (
+			<div className={'flex h-auto flex-col items-end pt-0 md:h-14'}>
+				<p className={'font-number inline-flex items-baseline text-base text-neutral-900'}>
+					{formatUSD(0, 5, 5)}
+				</p>
+				<p className={'font-number inline-flex items-baseline text-right text-xs text-neutral-400'}>
+					{'-'}
+				</p>
+			</div>
+		);
+	}
+	function	renderDefaultValuePercentFallback(): ReactElement {
+		return (
+			<div className={'flex h-auto flex-col items-end pt-0 md:h-14'}>
+				<p className={'yearn--table-data-section-item-value'}>
+					{formatPercent(0)}
+				</p>
+			</div>
+		);
+	}
+	function	renderMultipleButtonsFallback(): ReactElement[] {
+		return (
+			currentRewardsForCurrentGaugeMap.map(([key]: [string, BigNumber]): ReactElement =>
+				<div key={`claim-${key}`} className={'h-14 pt-0'}>
+					<Button
+						className={'yearn--button-smaller w-full'}
+						onClick={(): void => onClaimReward(key)}
+						isBusy={txStatusClaim.pending}
+						isDisabled={!isActive || !hasSomethingToClaim}>
+						{'Claim'}
+					</Button>
+				</div>
+			)
+		);
+	}
+
 	return (
 		<div className={'yearn--table-wrapper border-neutral-200 md:!border-t md:!border-solid'}>
 			<div className={'yearn--table-token-section'}>
@@ -147,43 +197,29 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 					<div className={'w-full'}>
 						<div className={'mb-4 flex h-auto flex-row items-baseline justify-between pt-0 md:mb-0 md:h-14 md:flex-col md:items-end'}>
 							<label className={'yearn--table-data-section-item-label'}>{'Current $/veCRV'}</label>
-							{
-								!currentRewardsForCurrentGaugeMap || currentRewardsForCurrentGaugeMap.length === 0 ? (
-									<div className={'flex h-auto flex-col items-end pt-0 md:h-14'}>
-										<p className={'yearn--table-data-section-item-value'}>
-											{formatUSD(0, 5, 5)}
-										</p>
-										<p className={'font-number inline-flex items-baseline text-right text-xs text-neutral-400'}>
-											{'-'}
-										</p>
-									</div>
-								) : currentRewardsForCurrentGaugeMap.map(([key, value]: [string, BigNumber]): ReactElement => (
+							<Renderable
+								shouldRender={!!currentRewardsForCurrentGaugeMap && currentRewardsForCurrentGaugeMap.length > 0}
+								fallback={renderDefaultValueUSDFallback()}>
+								{currentRewardsForCurrentGaugeMap.map(([key, value]: [string, BigNumber]): ReactElement =>
 									<GaugeRowItemWithExtraData
 										key={`current-rewards-${currentGauge.gauge}-${key}`}
 										address={toAddress(key)}
 										value={value} />
-								))
-							}
+								)}
+							</Renderable>
 						</div>
 						<div className={'flex h-auto flex-row items-baseline justify-between pt-0 md:h-14 md:flex-col md:items-end'}>
 							<label className={'yearn--table-data-section-item-label'}>{'Pending $/veCRV'}</label>
-							{
-								!nextRewardsForCurrentGaugeMap || nextRewardsForCurrentGaugeMap.length === 0 ? (
-									<div className={'flex h-auto flex-col items-end pt-0 md:h-14'}>
-										<p className={'yearn--table-data-section-item-value'}>
-											{formatUSD(0, 5, 5)}
-										</p>
-										<p className={'font-number inline-flex items-baseline text-right text-xs text-neutral-400'}>
-											{'-'}
-										</p>
-									</div>
-								) : nextRewardsForCurrentGaugeMap.map(([key, value]: [string, BigNumber]): ReactElement => (
+							<Renderable
+								shouldRender={!!nextRewardsForCurrentGaugeMap && nextRewardsForCurrentGaugeMap.length > 0}
+								fallback={renderDefaultValueUSDFallback()}>
+								{nextRewardsForCurrentGaugeMap.map(([key, value]: [string, BigNumber]): ReactElement =>
 									<GaugeRowItemWithExtraData
 										key={`pending-rewards-${currentGauge.gauge}-${key}`}
 										address={toAddress(key)}
 										value={value} />
-								))
-							}
+								)}
+							</Renderable>
 						</div>
 					</div>
 				</div>
@@ -193,37 +229,29 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 					<div className={'w-full'}>
 						<div className={'mb-4 flex h-auto flex-row items-baseline justify-between pt-0 md:mb-0 md:h-14 md:flex-col md:items-end'}>
 							<label className={'yearn--table-data-section-item-label'}>{'Current APR'}</label>
-							{
-								!currentRewardsForCurrentGaugeMap || currentRewardsForCurrentGaugeMap.length === 0 ? (
-									<div className={'flex h-auto flex-col items-end pt-0 md:h-14'}>
-										<p className={'yearn--table-data-section-item-value'}>
-											{formatPercent(0)}
-										</p>
-									</div>
-								) : currentRewardsForCurrentGaugeMap.map(([key, value]: [string, BigNumber]): ReactElement => (
+							<Renderable
+								shouldRender={!!currentRewardsForCurrentGaugeMap && currentRewardsForCurrentGaugeMap.length > 0}
+								fallback={renderDefaultValuePercentFallback()}>
+								{currentRewardsForCurrentGaugeMap.map(([key, value]: [string, BigNumber]): ReactElement =>
 									<GaugeRowItemAPR
 										key={`apr-${currentGauge.gauge}-${key}`}
 										address={toAddress(key)}
 										value={value} />
-								))
-							}
+								)}
+							</Renderable>
 						</div>
 						<div className={'flex h-auto flex-row items-baseline justify-between pt-0 md:h-14 md:flex-col md:items-end'}>
 							<label className={'yearn--table-data-section-item-label'}>{'Pending APR'}</label>
-							{
-								!nextRewardsForCurrentGaugeMap || nextRewardsForCurrentGaugeMap.length === 0 ? (
-									<div className={'flex h-auto flex-col items-end pt-0 md:h-14'}>
-										<p className={'yearn--table-data-section-item-value'}>
-											{formatPercent(0)}
-										</p>
-									</div>
-								) : nextRewardsForCurrentGaugeMap.map(([key, value]: [string, BigNumber]): ReactElement => (
+							<Renderable
+								shouldRender={!!nextRewardsForCurrentGaugeMap && nextRewardsForCurrentGaugeMap.length > 0}
+								fallback={renderDefaultValuePercentFallback()}>
+								{nextRewardsForCurrentGaugeMap.map(([key, value]: [string, BigNumber]): ReactElement =>
 									<GaugeRowItemAPR
 										key={`apr-${currentGauge.gauge}-${key}`}
 										address={toAddress(key)}
 										value={value} />
-								))
-							}
+								)}
+							</Renderable>
 						</div>
 					</div>
 				</div>
@@ -232,17 +260,10 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 					<div className={'w-full'}>
 						<div className={'flex h-auto flex-row items-baseline justify-between pt-0 md:h-14 md:flex-col md:items-end'}>
 							<label className={'yearn--table-data-section-item-label'}>{'Claimable'}</label>
-							{
-								!claimableForCurrentGaugeMap || claimableForCurrentGaugeMap.length === 0 ? (
-									<div className={'flex h-auto flex-col items-end pt-0 md:h-14'}>
-										<p className={'font-number inline-flex items-baseline text-base text-neutral-900'}>
-											{formatUSD(0, 5, 5)}
-										</p>
-										<p className={'font-number inline-flex items-baseline text-right text-xs text-neutral-400'}>
-											{'-'}
-										</p>
-									</div>
-								) : claimableForCurrentGaugeMap.map(([key, value]: [string, BigNumber]): ReactElement => (
+							<Renderable
+								shouldRender={!!claimableForCurrentGaugeMap && claimableForCurrentGaugeMap.length > 0}
+								fallback={renderDefaultValuesUSDFallback()}>
+								{claimableForCurrentGaugeMap.map(([key, value]: [string, BigNumber]): ReactElement =>
 									<div key={`claimable-${currentGauge.gauge}-${key}`} className={'flex flex-col items-end space-y-2'}>
 										<GaugeRowItemWithExtraData
 											address={toAddress(key)}
@@ -257,8 +278,8 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 											</Button>
 										</div>
 									</div>
-								))
-							}
+								)}
+							</Renderable>
 						</div>
 					</div>
 					<div />
@@ -267,28 +288,18 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 
 				<div className={'yearn--table-data-section-item md:col-span-1'} datatype={'number'}>
 					<div className={'col-span-2 hidden flex-col items-end space-y-4 md:flex'}>
-						{
-							!currentRewardsForCurrentGaugeMap || currentRewardsForCurrentGaugeMap.length === 0 ? (
-								<div className={'h-14 pt-0'}>
-									<Button
-										className={'yearn--button-smaller w-full'}
-										isBusy={txStatusClaim.pending}
-										isDisabled>
-										{'Claim'}
-									</Button>
-								</div>
-							) : currentRewardsForCurrentGaugeMap.map(([key]: [string, BigNumber]): ReactElement => (
-								<div key={`claim-${key}`} className={'h-14 pt-0'}>
-									<Button
-										className={'yearn--button-smaller w-full'}
-										onClick={(): void => onClaimReward(key)}
-										isBusy={txStatusClaim.pending}
-										isDisabled={!isActive || !hasSomethingToClaim}>
-										{'Claim'}
-									</Button>
-								</div>
-							))
-						}
+						<Renderable
+							shouldRender={currentRewardsForCurrentGaugeMap?.length === 0}
+							fallback={renderMultipleButtonsFallback()}>
+							<div className={'h-14 pt-0'}>
+								<Button
+									className={'yearn--button-smaller w-full'}
+									isBusy={txStatusClaim.pending}
+									isDisabled>
+									{'Claim'}
+								</Button>
+							</div>
+						</Renderable>
 					</div>
 					<div />
 				</div>
