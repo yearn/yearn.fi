@@ -1,12 +1,12 @@
 import {ethers} from 'ethers';
-import request from 'graphql-request';
+import {request} from 'graphql-request';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {LPYCRV_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YVBOOST_TOKEN_ADDRESS, YVECRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 
 import type {BigNumber} from 'ethers';
-import type {GraphQLResponse} from 'graphql-request/dist/types';
+import type {GraphQLResponse} from 'graphql-request/build/esm/types';
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TYearnVault} from '@common/types/yearn';
 
