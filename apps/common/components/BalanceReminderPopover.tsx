@@ -1,7 +1,7 @@
 import React, {Fragment, useMemo} from 'react';
 import Image from 'next/image';
 import {Popover, Transition} from '@headlessui/react';
-import Childable from '@yearn-finance/web-lib/components/Childable';
+import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import IconAddToMetamask from '@yearn-finance/web-lib/icons/IconAddToMetamask';
@@ -165,11 +165,11 @@ export default function BalanceReminderPopover(): ReactElement {
 											<IconCross className={'h-4 w-4 text-neutral-600'} />
 										</button>
 									</div>
-									<Childable
+									<Renderable
 										shouldRender={nonNullBalancesForVault.length > 0}
 										fallback={renderNoTokenFallback(isLoading)}>
 										{nonNullBalancesForVault.map((element): ReactElement => <TokenItem key={element.address} element={element} />)}
-									</Childable>
+									</Renderable>
 								</div>
 							</div>
 						</Popover.Panel>

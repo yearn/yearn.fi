@@ -8,7 +8,7 @@ import VAULT_FACTORY_ABI from '@vaults/utils/abi/vaultFactory.abi';
 import {createNewVaultsAndStrategies, estimateGasForCreateNewVaultsAndStrategies} from '@vaults/utils/actions/createVaultFromFactory';
 import Wrapper from '@vaults/Wrapper';
 import {Button} from '@yearn-finance/web-lib/components/Button';
-import Childable from '@yearn-finance/web-lib/components/Childable';
+import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -231,27 +231,27 @@ function	Factory(): ReactElement {
 
 						<div className={'col-span-2 w-full space-y-1'}>
 							<p className={'text-neutral-600'}>{'Vault name'}</p>
-							<Childable shouldRender={status !== 'loading'} fallback={loadingFallback()}>
+							<Renderable shouldRender={status !== 'loading'} fallback={loadingFallback()}>
 								<div className={'h-10 bg-neutral-200 p-2 text-neutral-600'}>
 									{!gaugeDisplayData ? '' : `Curve ${gaugeDisplayData.name} Factory`}
 								</div>
-							</Childable>
+							</Renderable>
 						</div>
 
 						<div className={'col-span-2 w-full space-y-1'}>
 							<p className={'text-neutral-600'}>{'Symbol'}</p>
-							<Childable shouldRender={status !== 'loading'} fallback={loadingFallback()}>
+							<Renderable shouldRender={status !== 'loading'} fallback={loadingFallback()}>
 								<div className={'h-10 bg-neutral-200 p-2 text-neutral-600'}>
 									{!gaugeDisplayData ? '' : `yvCurve-${gaugeDisplayData.symbol}-f`}
 								</div>
-							</Childable>
+							</Renderable>
 						</div>
 
 						<div className={'col-span-3 w-full space-y-1'}>
 							<p className={'text-neutral-600'}>{'Pool address'}</p>
-							<Childable shouldRender={status !== 'loading'} fallback={loadingFallback()}>
+							<Renderable shouldRender={status !== 'loading'} fallback={loadingFallback()}>
 								<div className={'flex h-10 flex-row items-center justify-between bg-neutral-200 p-2 font-mono'}>
-									<Childable shouldRender={!!gaugeDisplayData}>
+									<Renderable shouldRender={!!gaugeDisplayData}>
 										<p className={'overflow-hidden text-ellipsis text-neutral-600'}>
 											{toAddress(gaugeDisplayData?.poolAddress)}
 										</p>
@@ -262,15 +262,15 @@ function	Factory(): ReactElement {
 											className={'ml-4 cursor-pointer text-neutral-900'}>
 											<LinkOut className={'h-6 w-6'} />
 										</a>
-									</Childable>
+									</Renderable>
 								</div>
-							</Childable>
+							</Renderable>
 						</div>
 						<div className={'col-span-3 w-full space-y-1'}>
 							<p className={'text-neutral-600'}>{'Gauge address'}</p>
-							<Childable shouldRender={status !== 'loading'} fallback={loadingFallback()}>
+							<Renderable shouldRender={status !== 'loading'} fallback={loadingFallback()}>
 								<div className={'flex h-10 flex-row items-center justify-between bg-neutral-200 p-2 font-mono'}>
-									<Childable shouldRender={!!gaugeDisplayData}>
+									<Renderable shouldRender={!!gaugeDisplayData}>
 										<p className={'overflow-hidden text-ellipsis text-neutral-600'}>
 											{toAddress(gaugeDisplayData?.gaugeAddress)}
 										</p>
@@ -281,9 +281,9 @@ function	Factory(): ReactElement {
 											className={'ml-4 cursor-pointer text-neutral-900'}>
 											<LinkOut className={'h-6 w-6'} />
 										</a>
-									</Childable>
+									</Renderable>
 								</div>
-							</Childable>
+							</Renderable>
 						</div>
 
 					</div>

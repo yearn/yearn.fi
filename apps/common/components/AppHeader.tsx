@@ -5,7 +5,7 @@ import {AnimatePresence} from 'framer-motion';
 import {Popover, Transition} from '@headlessui/react';
 import {VaultsHeader} from '@vaults/components/header/VaultsHeader';
 import {VeYfiHeader} from '@veYFI/components/header/VeYfiHeader';
-import Childable from '@yearn-finance/web-lib/components/Childable';
+import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import Header from '@yearn-finance/web-lib/components/Header';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import BalanceReminderPopover from '@common/components/BalanceReminderPopover';
@@ -145,11 +145,11 @@ export function	AppHeader(): ReactElement {
 				</AnimatePresence>
 			)}
 			extra={
-				<Childable shouldRender={isActive}>
+				<Renderable shouldRender={isActive}>
 					<div className={'ml-4'}>
 						<BalanceReminderPopover />
 					</div>
-				</Childable>
+				</Renderable>
 			} />
 	);
 }

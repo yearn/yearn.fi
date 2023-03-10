@@ -1,6 +1,6 @@
 import React from 'react';
 import {Button} from '@yearn-finance/web-lib/components/Button';
-import Childable from '@yearn-finance/web-lib/components/Childable';
+import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {Dropdown} from '@common/components/TokenDropdown';
 import IconArrowRight from '@common/icons/IconArrowRight';
 
@@ -60,7 +60,7 @@ function QASelect(props: TQASelect): ReactElement {
 				</legend>
 			</div>
 
-			<Childable
+			<Renderable
 				fallback={renderMultipleOptionsFallback()}
 				shouldRender={options.length === 0}>
 				<div className={'flex h-10 w-full items-center justify-between bg-neutral-0 px-2 text-base text-neutral-900 md:px-3'}>
@@ -73,7 +73,7 @@ function QASelect(props: TQASelect): ReactElement {
 						</p>
 					</div>
 				</div>
-			</Childable>
+			</Renderable>
 			<legend className={'font-number hidden text-xs text-neutral-600 md:inline'}>
 				{legend}
 			</legend>

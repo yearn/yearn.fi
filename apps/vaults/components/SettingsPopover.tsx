@@ -1,7 +1,7 @@
 import React, {Fragment} from 'react';
 import {Popover, Transition} from '@headlessui/react';
 import {isSolverDisabled, Solver} from '@vaults/contexts/useSolver';
-import Childable from '@yearn-finance/web-lib/components/Childable';
+import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import IconSettings from '@yearn-finance/web-lib/icons/IconSettings';
 import {useYearn} from '@common/contexts/useYearn';
 
@@ -52,7 +52,7 @@ export default function SettingsPopover(): ReactElement {
 												{Solver.PORTALS}
 											</option>
 										</select>
-										<Childable shouldRender={zapProvider === Solver.COWSWAP}>
+										<Renderable shouldRender={zapProvider === Solver.COWSWAP}>
 											<legend className={'text-xs italic text-neutral-500'}>
 												{'Submit a'}&nbsp;
 												<a
@@ -64,8 +64,8 @@ export default function SettingsPopover(): ReactElement {
 												</a>
 													&nbsp;{'using CoW Swap.'}
 											</legend>
-										</Childable>
-										<Childable shouldRender={zapProvider === Solver.WIDO}>
+										</Renderable>
+										<Renderable shouldRender={zapProvider === Solver.WIDO}>
 											<legend className={'text-xs italic text-neutral-500'}>
 												{'Submit an order via'}&nbsp;
 												<a
@@ -77,10 +77,10 @@ export default function SettingsPopover(): ReactElement {
 												</a>
 													&nbsp;{'(0.3% fee).'}
 											</legend>
-										</Childable>
-										<Childable shouldRender={zapProvider === Solver.PORTALS}>
+										</Renderable>
+										<Renderable shouldRender={zapProvider === Solver.PORTALS}>
 											<legend>&nbsp;</legend>
-										</Childable>
+										</Renderable>
 									</div>
 									<div>
 										<label

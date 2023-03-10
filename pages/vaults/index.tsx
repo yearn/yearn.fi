@@ -7,7 +7,7 @@ import {useAppSettings} from '@vaults/contexts/useAppSettings';
 import {useFilteredVaults} from '@vaults/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import Wrapper from '@vaults/Wrapper';
-import Childable from '@yearn-finance/web-lib/components/Childable';
+import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {useSessionStorage} from '@yearn-finance/web-lib/hooks/useSessionStorage';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -247,13 +247,13 @@ function	Index(): ReactElement {
 					searchValue={searchValue}
 					set_searchValue={set_searchValue} />
 
-				<Childable shouldRender={category === 'Holdings' && migratableVaults?.length > 0}>
+				<Renderable shouldRender={category === 'Holdings' && migratableVaults?.length > 0}>
 					<div className={'my-4'}>
 						{migratableVaults.filter((vault): boolean => !!vault).map((vault): ReactNode =>
 							<VaultsListInternalMigrationRow key={vault.address} currentVault={vault} />
 						)}
 					</div>
-				</Childable>
+				</Renderable>
 
 				<ListHead
 					sortBy={sort.sortBy}

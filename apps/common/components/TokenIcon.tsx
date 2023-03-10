@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import Childable from '@yearn-finance/web-lib/components/Childable';
+import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 
@@ -50,7 +50,7 @@ function TokenIcon({
 
 	return (
 		<>
-			<Childable shouldRender={imageType === 'Vault'}>
+			<Renderable shouldRender={imageType === 'Vault'}>
 				<ImageWithFallback
 					loading={'eager'}
 					src={`${process.env.BASE_YEARN_ASSETS_URI}/${chainID}/${toAddress(token?.address)}/logo-128.png`}
@@ -58,18 +58,18 @@ function TokenIcon({
 					alt={''}
 					width={size}
 					height={size} />
-			</Childable>
-			<Childable shouldRender={imageType === 'Fallback'}>
+			</Renderable>
+			<Renderable shouldRender={imageType === 'Fallback'}>
 				<ImageWithFallback
 					loading={'eager'}
 					src={'/placeholder.png'}
 					alt={''}
 					width={size}
 					height={size} />
-			</Childable>
-			<Childable shouldRender={imageType === 'Underlying'}>
+			</Renderable>
+			<Renderable shouldRender={imageType === 'Underlying'}>
 				{renderMultipleAssetImage()}
-			</Childable>
+			</Renderable>
 		</>
 
 	);

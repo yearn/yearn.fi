@@ -1,6 +1,6 @@
 import React, {cloneElement, Fragment, useMemo, useState} from 'react';
 import {Combobox, Transition} from '@headlessui/react';
-import Childable from '@yearn-finance/web-lib/components/Childable';
+import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import IconChevron from '@common/icons/IconChevron';
 
@@ -75,7 +75,7 @@ function Dropdown({
 
 	return (
 		<div>
-			<Childable shouldRender={isOpen}>
+			<Renderable shouldRender={isOpen}>
 				<div
 					className={'fixed inset-0 z-0'}
 					onClick={(e): void => {
@@ -83,7 +83,7 @@ function Dropdown({
 						e.preventDefault();
 						set_isOpen(false);
 					}} />
-			</Childable>
+			</Renderable>
 
 			<Combobox
 				value={selected}
@@ -122,11 +122,11 @@ function Dropdown({
 						leaveTo={'transform scale-95 opacity-0'}
 						afterLeave={(): void => set_query('')}>
 						<Combobox.Options static className={'yearn--dropdown-menu z-50'}>
-							<Childable
+							<Renderable
 								shouldRender={filteredOptions.length > 0}
 								fallback={<DropdownEmpty query={query} />}>
 								{filteredOptions.map((option): ReactElement => <DropdownItem key={option.label} option={option} />)}
-							</Childable>
+							</Renderable>
 						</Combobox.Options>
 					</Transition>
 				</>

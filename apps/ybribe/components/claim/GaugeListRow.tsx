@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, {useMemo, useState} from 'react';
 import {Button} from '@yearn-finance/web-lib/components/Button';
-import Childable from '@yearn-finance/web-lib/components/Childable';
+import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {CRV_TOKEN_ADDRESS, CURVE_BRIBE_V3_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
@@ -197,7 +197,7 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 					<div className={'w-full'}>
 						<div className={'mb-4 flex h-auto flex-row items-baseline justify-between pt-0 md:mb-0 md:h-14 md:flex-col md:items-end'}>
 							<label className={'yearn--table-data-section-item-label'}>{'Current $/veCRV'}</label>
-							<Childable
+							<Renderable
 								shouldRender={!!currentRewardsForCurrentGaugeMap && currentRewardsForCurrentGaugeMap.length > 0}
 								fallback={renderDefaultValueUSDFallback()}>
 								{currentRewardsForCurrentGaugeMap.map(([key, value]: [string, BigNumber]): ReactElement =>
@@ -206,11 +206,11 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 										address={toAddress(key)}
 										value={value} />
 								)}
-							</Childable>
+							</Renderable>
 						</div>
 						<div className={'flex h-auto flex-row items-baseline justify-between pt-0 md:h-14 md:flex-col md:items-end'}>
 							<label className={'yearn--table-data-section-item-label'}>{'Pending $/veCRV'}</label>
-							<Childable
+							<Renderable
 								shouldRender={!!nextRewardsForCurrentGaugeMap && nextRewardsForCurrentGaugeMap.length > 0}
 								fallback={renderDefaultValueUSDFallback()}>
 								{nextRewardsForCurrentGaugeMap.map(([key, value]: [string, BigNumber]): ReactElement =>
@@ -219,7 +219,7 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 										address={toAddress(key)}
 										value={value} />
 								)}
-							</Childable>
+							</Renderable>
 						</div>
 					</div>
 				</div>
@@ -229,7 +229,7 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 					<div className={'w-full'}>
 						<div className={'mb-4 flex h-auto flex-row items-baseline justify-between pt-0 md:mb-0 md:h-14 md:flex-col md:items-end'}>
 							<label className={'yearn--table-data-section-item-label'}>{'Current APR'}</label>
-							<Childable
+							<Renderable
 								shouldRender={!!currentRewardsForCurrentGaugeMap && currentRewardsForCurrentGaugeMap.length > 0}
 								fallback={renderDefaultValuePercentFallback()}>
 								{currentRewardsForCurrentGaugeMap.map(([key, value]: [string, BigNumber]): ReactElement =>
@@ -238,11 +238,11 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 										address={toAddress(key)}
 										value={value} />
 								)}
-							</Childable>
+							</Renderable>
 						</div>
 						<div className={'flex h-auto flex-row items-baseline justify-between pt-0 md:h-14 md:flex-col md:items-end'}>
 							<label className={'yearn--table-data-section-item-label'}>{'Pending APR'}</label>
-							<Childable
+							<Renderable
 								shouldRender={!!nextRewardsForCurrentGaugeMap && nextRewardsForCurrentGaugeMap.length > 0}
 								fallback={renderDefaultValuePercentFallback()}>
 								{nextRewardsForCurrentGaugeMap.map(([key, value]: [string, BigNumber]): ReactElement =>
@@ -251,7 +251,7 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 										address={toAddress(key)}
 										value={value} />
 								)}
-							</Childable>
+							</Renderable>
 						</div>
 					</div>
 				</div>
@@ -260,7 +260,7 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 					<div className={'w-full'}>
 						<div className={'flex h-auto flex-row items-baseline justify-between pt-0 md:h-14 md:flex-col md:items-end'}>
 							<label className={'yearn--table-data-section-item-label'}>{'Claimable'}</label>
-							<Childable
+							<Renderable
 								shouldRender={!!claimableForCurrentGaugeMap && claimableForCurrentGaugeMap.length > 0}
 								fallback={renderDefaultValuesUSDFallback()}>
 								{claimableForCurrentGaugeMap.map(([key, value]: [string, BigNumber]): ReactElement =>
@@ -279,7 +279,7 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 										</div>
 									</div>
 								)}
-							</Childable>
+							</Renderable>
 						</div>
 					</div>
 					<div />
@@ -288,7 +288,7 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 
 				<div className={'yearn--table-data-section-item md:col-span-1'} datatype={'number'}>
 					<div className={'col-span-2 hidden flex-col items-end space-y-4 md:flex'}>
-						<Childable
+						<Renderable
 							shouldRender={currentRewardsForCurrentGaugeMap?.length === 0}
 							fallback={renderMultipleButtonsFallback()}>
 							<div className={'h-14 pt-0'}>
@@ -299,7 +299,7 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 									{'Claim'}
 								</Button>
 							</div>
-						</Childable>
+						</Renderable>
 					</div>
 					<div />
 				</div>

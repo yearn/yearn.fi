@@ -1,6 +1,6 @@
 import React, {useMemo, useState} from 'react';
 import {Button} from '@yearn-finance/web-lib/components/Button';
-import Childable from '@yearn-finance/web-lib/components/Childable';
+import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {Modal} from '@yearn-finance/web-lib/components/Modal';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -111,7 +111,7 @@ function	GaugeListRow({currentGauge}: {currentGauge: TCurveGauges}): ReactElemen
 
 				<div className={'yearn--table-data-section-item md:col-span-3'} datatype={'number'}>
 					<label className={'yearn--table-data-section-item-label'}>{'Current Bribes'}</label>
-					<Childable
+					<Renderable
 						shouldRender={!!currentRewardsForCurrentGaugeMap && currentRewardsForCurrentGaugeMap.length > 0}
 						fallback={renderDefaultValueUSDFallback()}>
 						{currentRewardsForCurrentGaugeMap.map(([key, value]: [string, BigNumber]): ReactElement =>
@@ -120,12 +120,12 @@ function	GaugeListRow({currentGauge}: {currentGauge: TCurveGauges}): ReactElemen
 								address={toAddress(key)}
 								value={value} />
 						)}
-					</Childable>
+					</Renderable>
 				</div>
 
 				<div className={'yearn--table-data-section-item md:col-span-3'} datatype={'number'}>
 					<label className={'yearn--table-data-section-item-label'}>{'Current Bribes'}</label>
-					<Childable
+					<Renderable
 						shouldRender={!!nextRewardsForCurrentGaugeMap && nextRewardsForCurrentGaugeMap.length > 0}
 						fallback={renderDefaultValueUSDFallback()}>
 						{nextRewardsForCurrentGaugeMap.map(([key, value]: [string, BigNumber]): ReactElement =>
@@ -134,7 +134,7 @@ function	GaugeListRow({currentGauge}: {currentGauge: TCurveGauges}): ReactElemen
 								address={toAddress(key)}
 								value={value} />
 						)}
-					</Childable>
+					</Renderable>
 				</div>
 
 				<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>

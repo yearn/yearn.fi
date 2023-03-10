@@ -6,7 +6,7 @@ import {useBeefyVaults} from '@vaults/hooks/useBeefyVaults.unused';
 import {useFindVault} from '@vaults/hooks/useFindVault';
 import {migrationTable} from '@vaults/utils/migrationTable';
 import {Button} from '@yearn-finance/web-lib/components/Button';
-import Childable from '@yearn-finance/web-lib/components/Childable';
+import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {addressZero, toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -208,7 +208,7 @@ function	VaultListExternalMigration(): ReactElement {
 				]} />
 
 			<div>
-				<Childable
+				<Renderable
 					shouldRender={possibleBowswapMigrations.length > 0 || possibleBeefyMigrations.length > 0}
 					fallback={<VaultListEmptyExternalMigration />}>
 					<Fragment>
@@ -223,7 +223,7 @@ function	VaultListExternalMigration(): ReactElement {
 								element={element} />
 						)}
 					</Fragment>
-				</Childable>
+				</Renderable>
 			</div>
 		</div>
 	);

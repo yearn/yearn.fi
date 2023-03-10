@@ -1,6 +1,6 @@
 import React from 'react';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
-import Childable from '@yearn-finance/web-lib/components/Childable';
+import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
@@ -50,7 +50,7 @@ function	VaultDetailsQuickActionsFrom(): ReactElement {
 						{`You have ${clientOnlyFormatAmount(selectedFromBalance.normalized)} ${actionParams?.selectedOptionFrom?.symbol || 'tokens'}`}
 					</legend>
 				</div>
-				<Childable
+				<Renderable
 					shouldRender={!hasMultipleInputsToChooseFrom}
 					fallback={renderMultipleOptionsFallback()}>
 					<div className={'flex h-10 w-full items-center justify-between bg-neutral-300 px-2 text-base text-neutral-900 md:px-3'}>
@@ -63,7 +63,7 @@ function	VaultDetailsQuickActionsFrom(): ReactElement {
 							</p>
 						</div>
 					</div>
-				</Childable>
+				</Renderable>
 
 				<legend className={'font-number hidden text-xs text-neutral-600 md:inline'}>
 					{`You have ${clientOnlyFormatAmount(selectedFromBalance.normalized)} ${actionParams?.selectedOptionFrom?.symbol || 'tokens'}`}

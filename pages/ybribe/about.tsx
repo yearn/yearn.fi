@@ -1,7 +1,7 @@
 import React, {useMemo} from 'react';
 import Balancer from 'react-wrap-balancer';
 import useSWR from 'swr';
-import Childable from '@yearn-finance/web-lib/components/Childable';
+import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import SettingsOverwrite from '@common/components/SettingsOverwrite';
@@ -79,7 +79,7 @@ function	About(): ReactElement {
 					</div>
 					<div className={'grid w-full grid-cols-1 pb-2 md:pb-4'}>
 						<RewardFeedTableHead />
-						<Childable
+						<Renderable
 							shouldRender={(feed || []).length > 0}
 							fallback={<GaugeListEmpty />}>
 							{sortedFeed.filter((item): boolean => !!item).map((item): ReactNode =>
@@ -87,7 +87,7 @@ function	About(): ReactElement {
 									key={`${item.txHash}_${item.briber}_${item.rewardToken}`}
 									currentRewardAdded={item} />
 							)}
-						</Childable>
+						</Renderable>
 					</div>
 				</div>
 			</div>

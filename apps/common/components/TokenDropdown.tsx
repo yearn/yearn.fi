@@ -1,7 +1,7 @@
 import React, {cloneElement, Fragment, useState} from 'react';
 import {Combobox, Transition} from '@headlessui/react';
 import {useThrottledState} from '@react-hookz/web';
-import Childable from '@yearn-finance/web-lib/components/Childable';
+import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
@@ -85,7 +85,7 @@ function Dropdown({
 
 	return (
 		<div>
-			<Childable shouldRender={isOpen}>
+			<Renderable shouldRender={isOpen}>
 				<div
 					className={'fixed inset-0 z-0'}
 					onClick={(e): void => {
@@ -93,7 +93,7 @@ function Dropdown({
 						e.preventDefault();
 						set_isOpen(false);
 					}} />
-			</Childable>
+			</Renderable>
 
 			<Combobox
 				value={selected}
@@ -147,7 +147,7 @@ function Dropdown({
 							});
 						}}>
 						<Combobox.Options className={'yearn--dropdown-menu z-50'}>
-							<Childable
+							<Renderable
 								shouldRender={filteredOptions.length > 0}
 								fallback={<DropdownEmpty query={query} />}>
 								{filteredOptions.map((option): ReactElement => <DropdownItem
@@ -155,7 +155,7 @@ function Dropdown({
 									option={option}
 									balanceSource={balanceSource} />
 								)}
-							</Childable>
+							</Renderable>
 						</Combobox.Options>
 					</Transition>
 				</>
