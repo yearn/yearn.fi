@@ -31,7 +31,7 @@ function ManageLockTab(): ReactElement {
 	const [extendLockTime, extendLockTimeStatus] = useTransaction(VotingEscrowActions.extendLockTime, onTxSuccess);
 	const [withdrawLocked, withdrawLockedStatus] = useTransaction(VotingEscrowActions.withdrawLocked, onTxSuccess);
 
-	const hasLockedAmount = formatBN(positions?.deposit?.balance).gt(0);
+	const hasLockedAmount = formatBN(positions?.deposit?.underlyingBalance).gt(0);
 	const willExtendLock = formatBN(lockTime).gt(0);
 	const timeUntilUnlock = positions?.unlockTime ? getTimeUntil(positions?.unlockTime) : undefined;
 	const weeksToUnlock = toWeeks(timeUntilUnlock);

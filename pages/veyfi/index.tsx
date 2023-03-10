@@ -28,6 +28,12 @@ function Index(): ReactElement {
 	const totalLockedYFI = formatToNormalizedValue(formatBN(votingEscrow?.supply), 18);
 	const yourLockedYFI = formatToNormalizedValue(formatBN(positions?.deposit?.underlyingBalance), 18);
 
+	const tabs = [
+		{id: 'lock', label: 'Lock YFI', content: <LockTab />},
+		{id: 'manage', label: 'Manage lock', content: <ManageLockTab />},
+		{id: 'claim', label: 'Claim', content: <ClaimTab />}
+	];
+
 	return (
 		<>
 			<PageProgressBar isLoading={isLoading}/>
@@ -55,7 +61,6 @@ function Index(): ReactElement {
 			</div>
 
 			<Tabs items={tabs} />
-
 		</>
 	);
 }
