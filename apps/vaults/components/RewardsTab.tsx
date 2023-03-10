@@ -29,7 +29,7 @@ function RewardsTab({currentVault}: {currentVault: TYearnVault}): ReactElement {
 	const stakingRewards = stakingRewardsAddress ? stakingRewardsMap[stakingRewardsAddress] : undefined;
 	const stakingRewardsPosition = stakingRewardsAddress ? positionsMap[stakingRewardsAddress] : undefined;
 	const vaultBalance = useBalance(currentVault.address);
-	const rewardTokenBalance = useBalance(stakingRewards?.rewardsToken ?? '');
+	const rewardTokenBalance = useBalance(toAddress(stakingRewards?.rewardsToken));
 	const [allowances, isLoadingAllowances, refreshAllowances] = useAllowances([{token: currentVault.address, spender: stakingRewards?.address}]);
 	const refreshData = (): unknown => Promise.all([refreshBalances(), refreshStakingRewards()]);
 	const [approveStake, approveStakeStatus] = useTransaction(StakingRewardsActions.approveStake, refreshAllowances);
@@ -40,7 +40,7 @@ function RewardsTab({currentVault}: {currentVault: TYearnVault}): ReactElement {
 	const web3Provider = provider as ethers.providers.Web3Provider;
 	const userAddress = address as TAddress;
 	const stakeBalance = toNormalizedBN(stakingRewardsPosition?.stake ?? 0, currentVault.decimals);
-	const rewardBalance = toNormalizedBN(stakingRewardsPosition?.reward ?? 0, currentVault.decimals);
+	const rewardBalance = toNormalizedBN(stakingRewardsPosition?.reward ?? 0, rewardTokenBalance.decimals);
 
 	const {isValid: isApproved} = validateAllowance({
 		tokenAddress: currentVault.address,
