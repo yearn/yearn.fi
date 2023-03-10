@@ -47,7 +47,7 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVau
 		<details className={'p-0'}>
 			<summary>
 				<div>
-					<b className={'text-neutral-900'}>{strategy.name}</b>
+					<b className={'text-neutral-900'}>{strategy?.displayName || strategy.name}</b>
 				</div>
 				<div>
 					<IconChevron className={'summary-chevron'} />
