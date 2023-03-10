@@ -13,7 +13,7 @@ export async function approveLock(
 	_accountAddress: TAddress,
 	tokenAddress: TAddress,
 	votingEscrowAddress: TAddress,
-	amount?: BigNumber
+	amount = ethers.constants.MaxUint256
 ): Promise<TTxResponse> {
 	const signer = provider.getSigner();
 	const contract = new ethers.Contract(tokenAddress, ['function approve(address _spender, uint256 _value) external'], signer);

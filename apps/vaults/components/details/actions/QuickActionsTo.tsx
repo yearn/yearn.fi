@@ -1,6 +1,7 @@
 import React from 'react';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useSolver} from '@vaults/contexts/useSolver';
+import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
@@ -19,6 +20,16 @@ function	VaultDetailsQuickActionsTo(): ReactElement {
 
 	const selectedOptionToPricePerToken = useTokenPrice(toAddress(actionParams?.selectedOptionTo?.value));
 
+	function	renderMultipleOptionsFallback(): ReactElement {
+		return (
+			<Dropdown
+				defaultOption={possibleOptionsTo[0]}
+				options={possibleOptionsTo}
+				selected={actionParams?.selectedOptionTo}
+				onSelect={onUpdateSelectedOptionTo} />
+		);
+	}
+
 	return (
 		<section aria-label={'TO'} className={'flex w-full flex-col space-x-0 md:flex-row md:space-x-4'}>
 			<div className={'relative z-10 w-full space-y-2'}>
@@ -30,13 +41,9 @@ function	VaultDetailsQuickActionsTo(): ReactElement {
 						{`APY ${clientOnlyFormatPercent((currentVault?.apy?.net_apy || 0) * 100, 2, 2, 500)}`}
 					</legend>
 				</div>
-				{isActive && !isDepositing && possibleOptionsTo.length > 1 ? (
-					<Dropdown
-						defaultOption={possibleOptionsTo[0]}
-						options={possibleOptionsTo}
-						selected={actionParams?.selectedOptionTo}
-						onSelect={onUpdateSelectedOptionTo} />
-				) : (
+				<Renderable
+					shouldRender={!isActive || isDepositing || possibleOptionsTo.length === 1}
+					fallback={renderMultipleOptionsFallback()}>
 					<div className={'flex h-10 w-full items-center justify-between bg-neutral-300 px-2 text-base text-neutral-900 md:px-3'}>
 						<div className={'relative flex flex-row items-center'}>
 							<div className={'h-6 w-6 rounded-full'}>
@@ -47,11 +54,9 @@ function	VaultDetailsQuickActionsTo(): ReactElement {
 							</p>
 						</div>
 					</div>
-				)}
+				</Renderable>
 				<legend className={'font-number hidden text-xs text-neutral-600 md:inline'}>
-					{isDepositing ? (
-						clientOnlyFormatPercent((currentVault?.apy?.net_apy || 0) * 100, 2, 2, 500)
-					) : ''}
+					{isDepositing ? (clientOnlyFormatPercent((currentVault?.apy?.net_apy || 0) * 100, 2, 2, 500)) : ''}
 				</legend>
 			</div>
 

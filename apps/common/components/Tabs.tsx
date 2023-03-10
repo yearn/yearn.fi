@@ -1,4 +1,5 @@
-import {useState} from 'react';
+import {useEffect, useState} from 'react';
+import {useRouter} from 'next/router';
 import {AnimatePresence, motion} from 'framer-motion';
 import {Listbox, Transition} from '@headlessui/react';
 import IconChevron from '@common/icons/IconChevron';
@@ -24,6 +25,14 @@ type TTabsProps = {
 
 function Tabs({items, className}: TTabsProps): ReactElement {
 	const [selectedTabId, set_selectedTabId] = useState(items[0]?.id);
+	const router = useRouter();
+
+	useEffect((): void => {
+		const tab = items.find((tab): boolean => tab.id === router.query.tab);
+		if (tab?.id) {
+			set_selectedTabId(tab?.id);
+		}
+	}, [items, router.query.tab]);
 
 	return (
 		<div className={`w-full bg-neutral-100 ${className}`}>
@@ -32,7 +41,21 @@ function Tabs({items, className}: TTabsProps): ReactElement {
 					<div
 						key={`tab-label-${id}`}
 						className={`yearn--tab ${selectedTabId === id ? 'selected' : ''}`}
-						onClick={(): void => set_selectedTabId(id)}>
+						onClick={(): void => {
+							router.replace(
+								{
+									query: {
+										...router.query,
+										tab: id
+									}
+								},
+								undefined,
+								{
+									shallow: true
+								}
+							);
+							set_selectedTabId(id);
+						}}>
 						<p
 							title={label}
 							aria-selected={selectedTabId === id}

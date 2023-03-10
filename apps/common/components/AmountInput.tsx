@@ -1,3 +1,5 @@
+import Renderable from '@yearn-finance/web-lib/components/Renderable';
+
 import type {ReactElement} from 'react';
 
 type TAmountInputProps = {
@@ -54,22 +56,22 @@ function AmountInput({
 					placeholder={loading ? '' : placeholder ?? '0'}
 					disabled={disabled}
 				/>
-				{maxAmount && !disabled ? (
+				<Renderable shouldRender={!!maxAmount && !disabled}>
 					<button
 						onClick={onMaxClick ? (): void => onMaxClick() : undefined}
 						className={'absolute right-2 ml-2 h-6 cursor-pointer border-none bg-neutral-900 px-2 py-1 text-xs text-neutral-0 transition-colors hover:bg-neutral-700'}>
 						{'Max'}
 					</button>
-				) : null}
+				</Renderable>
 			</div>
-			{(error || legend) && (
+			<Renderable shouldRender={!!error || !!legend}>
 				<legend
 					role={onLegendClick ? 'button' : 'text'}
 					onClick={onLegendClick}
 					className={`mt-1 pl-2 text-xs md:mr-0 ${error ? 'text-[#EA5204]' : 'text-neutral-600'}`}>
 					{error ?? legend}
 				</legend>
-			)}
+			</Renderable>
 		</div>
 	);
 }
