@@ -1,12 +1,11 @@
 import React, {useMemo} from 'react';
 import useSWR from 'swr';
-import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
-import {formatToNormalizedValue, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatPercent, formatUSD} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {copyToClipboard} from '@yearn-finance/web-lib/utils/helpers';
@@ -43,12 +42,6 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 	const	vaultBalance = useBalance(currentVault?.address)?.normalized;
 	const	vaultPrice = useTokenPrice(currentVault?.address);
 	const	vaultName = useMemo((): string => getVaultName(currentVault), [currentVault]);
-	const	{stakingRewardsByVault, stakingRewardsMap, earningsMap} = useStakingRewards();
-	const 	stakingRewardsAddress = stakingRewardsByVault[currentVault.address];
-	const	hasStakingRewards = !!stakingRewardsAddress;
-	const 	stakingRewards = stakingRewardsAddress ? stakingRewardsMap[stakingRewardsAddress] : undefined;
-	const 	rewardTokenBalance = useBalance(toAddress(stakingRewards?.rewardsToken));
-	const	rewardEarnings = toNormalizedBN(earningsMap[toAddress(stakingRewards?.rewardsToken)] ?? 0, rewardTokenBalance.decimals);
 
 	return (
 		<div aria-label={'Vault Header'} className={'col-span-12 flex w-full flex-col items-center justify-center'}>
@@ -62,7 +55,7 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 					</button>
 				): <p className={'text-xxs text-neutral-500 md:text-xs'}>&nbsp;</p>}
 			</div>
-			<div className={`grid grid-cols-2 gap-6 md:gap-12 ${hasStakingRewards ? 'md:grid-cols-5' : 'md:grid-cols-4'}`}>
+			<div className={'grid grid-cols-2 gap-6 md:grid-cols-4 md:gap-12'}>
 				<div className={'flex flex-col items-center justify-center space-y-1 md:space-y-2'}>
 					<p className={'text-center text-xxs text-neutral-600 md:text-xs'}>
 						{`Total deposited, ${currentVault?.symbol || 'token'}`}
@@ -108,24 +101,9 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 						{clientOnlyFormatCounterValue(normalizedVaultEarned || 0, vaultPrice)}
 					</legend>
 				</div>
-
-				{hasStakingRewards && (
-					<div className={'flex flex-col items-center justify-center space-y-1 md:space-y-2'}>
-						<p className={'text-center text-xxs text-neutral-600 md:text-xs'}>
-							{'You earned, $OP'}
-						</p>
-						<b className={'font-number text-lg md:text-3xl'} suppressHydrationWarning>
-							{formatAmount(Number(rewardEarnings.normalized))}
-						</b>
-						<legend className={'font-number text-xxs text-neutral-600 md:text-xs'} suppressHydrationWarning>
-							{formatCounterValue(rewardEarnings.normalized || 0, rewardTokenBalance.normalizedPrice)}
-						</legend>
-					</div>
-				)}
 			</div>
 		</div>
 	);
 }
-
 
 export {VaultDetailsHeader};

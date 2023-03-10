@@ -6,7 +6,6 @@ import STAKING_REWARDS_ABI from '@vaults/utils/abi/stakingRewards.abi';
 import STAKING_REWARDS_REGISTRY_ABI from '@vaults/utils/abi/stakingRewardsRegistry.abi';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import {keyBy} from '@common/utils';
 
@@ -19,21 +18,18 @@ export type TStakingRewards = {
 	stakingToken: TAddress,
 	rewardsToken: TAddress,
 	totalStaked: BigNumber,
-	// apy?: number;
 }
 
 export type TStakePosition = {
 	address: TAddress,
 	stake: BigNumber,
 	reward: BigNumber,
-	earned: BigNumber,
 }
 
 export type	TStakingRewardsContext = {
 	stakingRewardsByVault: TDict<TAddress | undefined>,
 	stakingRewardsMap: TDict<TStakingRewards | undefined>,
 	positionsMap: TDict<TStakePosition | undefined>,
-	earningsMap: TDict<BigNumber | undefined>,
 	isLoading: boolean,
 	refresh: () => void,
 }
@@ -42,7 +38,6 @@ const defaultProps: TStakingRewardsContext = {
 	stakingRewardsByVault: {},
 	stakingRewardsMap: {},
 	positionsMap: {},
-	earningsMap: {},
 	isLoading: true,
 	refresh: (): void => undefined
 };
@@ -103,7 +98,6 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 		for (const {address} of stakingRewards) {
 			const stakingRewardsContract = new Contract(address, STAKING_REWARDS_ABI);
 			calls.push(stakingRewardsContract.balanceOf(userAddress));
-			calls.push(stakingRewardsContract.rewards(userAddress));
 			calls.push(stakingRewardsContract.earned(userAddress));
 		}
 		const results = await ethcallProvider.tryAll(calls) as BigNumber[];
@@ -113,8 +107,7 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 		for (const {address} of stakingRewards) {
 			const stake = results[resultIndex++];
 			const reward = results[resultIndex++];
-			const earned = results[resultIndex++];
-			positionPromises.push({address, stake, reward, earned});
+			positionPromises.push({address, stake, reward});
 		}
 		
 		return positionPromises;
@@ -125,18 +118,6 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 		return keyBy(positions ?? [], 'address');
 	}, [positions]);
 
-	const earningsMap = useMemo((): TDict<BigNumber | undefined> => {
-		if (!stakingRewards) {
-			return {};
-		}
-
-		return stakingRewards.reduce<TDict<BigNumber | undefined>>((acc, {address, stakingToken}): TDict<BigNumber | undefined> => {
-			const earnedBalance = formatBN(positionsMap[address]?.earned);
-			acc[stakingToken] = formatBN(acc[stakingToken]).add(earnedBalance);
-			return acc;
-		}, {});
-	}, [stakingRewards, positionsMap]);
-
 	const refresh = useCallback((): void => {
 		refreshStakingRewards();
 		refreshPositions();
@@ -146,10 +127,9 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 		stakingRewardsByVault: stakingRewards?.reduce((map, {address, stakingToken}): TDict<TAddress> => ({...map, [stakingToken]: address}), {}) ?? {},
 		stakingRewardsMap: keyBy(stakingRewards ?? [], 'address'),
 		positionsMap,
-		earningsMap,
 		isLoading: isLoadingStakingRewards || isLoadingPositions,
 		refresh
-	}), [stakingRewards, positionsMap, earningsMap, isLoadingStakingRewards, isLoadingPositions, refresh]);
+	}), [stakingRewards, positionsMap, isLoadingStakingRewards, isLoadingPositions, refresh]);
 
 	return (
 		<StakingRewardsContext.Provider value={contextValue}>
