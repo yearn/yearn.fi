@@ -104,11 +104,11 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 			const stakingRewardsContract = new Contract(address, STAKING_REWARDS_ABI);
 			calls.push(stakingRewardsContract.balanceOf(userAddress));
 			calls.push(stakingRewardsContract.rewards(userAddress));
-			calls.push(stakingRewardsContract.rewards(userAddress));
+			calls.push(stakingRewardsContract.earned(userAddress));
 		}
 		const results = await ethcallProvider.tryAll(calls) as BigNumber[];
-		let	resultIndex = 0;
 
+		let	resultIndex = 0;
 		const	positionPromises = [];
 		for (const {address} of stakingRewards) {
 			const stake = results[resultIndex++];
