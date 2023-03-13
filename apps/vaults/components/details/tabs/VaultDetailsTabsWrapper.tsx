@@ -25,10 +25,8 @@ import type {TSettingsForNetwork, TYearnVault} from '@common/types/yearn';
 type TTabsOptions = {
 	value: number;
 	label: string;
-	isHidden?: boolean;
 	slug?: string;
 }
-
 type TTabs = {
 	selectedAboutTabIndex: number,
 	set_selectedAboutTabIndex: (arg0: number) => void
@@ -58,7 +56,7 @@ function	Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactE
 	return (
 		<>
 			<nav className={'hidden flex-row items-center space-x-10 md:flex'}>
-				{tabs.filter((tab): boolean => !tab.isHidden).map((tab): ReactElement => (
+				{tabs.map((tab): ReactElement => (
 					<button
 						key={`desktop-${tab.value}`}
 						onClick={(): void => {
@@ -111,7 +109,7 @@ function	Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactE
 								leaveFrom={'transform scale-100 opacity-100'}
 								leaveTo={'transform scale-95 opacity-0'}>
 								<Listbox.Options className={'yearn--listbox-menu'}>
-									{tabs.filter((tab): boolean => !tab.isHidden).map((tab): ReactElement => (
+									{tabs.map((tab): ReactElement => (
 										<Listbox.Option
 											className={'yearn--listbox-menu-item'}
 											key={tab.value}
