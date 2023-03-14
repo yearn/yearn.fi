@@ -402,6 +402,11 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 		const	_possibleZapOptionsFrom: TDropdownOption[] = [];
 		const	isWithWETH = safeChainID === 1 && currentVault && toAddress(currentVault.token.address) === WETH_TOKEN_ADDRESS;
 		const	isWithWFTM = safeChainID === 250 && currentVault && toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS;
+		const	isOnOptimism = safeChainID === 10;
+
+		if (isOnOptimism) {
+			return;
+		}
 		Object.entries(zapBalances || {})
 			.filter((): boolean => safeChainID === currentVault?.chainID) // Disable if we are on the wrong chain
 			.forEach(([tokenAddress]): void => {
@@ -439,6 +444,11 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 	**********************************************************************************************/
 	useEffect((): void => {
 		const	_possibleZapOptionsTo: TDropdownOption[] = [];
+		const	isOnOptimism = safeChainID === 10;
+
+		if (isOnOptimism) {
+			return;
+		}
 		externalzapOutTokenList
 			.filter((): boolean => safeChainID === currentVault?.chainID) // Disable if we are on the wrong chain
 			.filter((token): boolean => token.chainID === (currentVault?.chainID || safeChainID))
