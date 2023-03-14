@@ -8,6 +8,7 @@ import {useFilteredVaults} from '@vaults/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import Wrapper from '@vaults/Wrapper';
 import Renderable from '@yearn-finance/web-lib/components/Renderable';
+import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {useSessionStorage} from '@yearn-finance/web-lib/hooks/useSessionStorage';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -23,6 +24,7 @@ import {getVaultName} from '@common/utils';
 import type {NextRouter} from 'next/router';
 import type {ReactElement, ReactNode} from 'react';
 import type {TAddress} from '@yearn-finance/web-lib/types';
+import type {TListHeroCategory} from '@common/components/ListHero';
 import type {TSortDirection} from '@common/types/types';
 import type {TYearnVault} from '@common/types/yearn';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
@@ -69,6 +71,7 @@ function	HeaderUserPosition(): ReactElement {
 }
 
 function	Index(): ReactElement {
+	const	{safeChainID} = useChainID();
 	const	{balances, balancesNonce} = useWallet();
 	const	{vaults, vaultsMigrations, isLoadingVaultList} = useYearn();
 	const 	[sort, set_sort] = useSessionStorage<{sortBy: TPossibleSortBy, sortDirection: TSortDirection}>(
@@ -106,11 +109,30 @@ function	Index(): ReactElement {
 	**	performing the filtering once.
 	**********************************************************************************************/
 	const	curveVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Curve');
+	const	velodromeVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Velodrome');
 	const	stablesVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Stablecoin');
 	const	balancerVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Balancer');
 	const	cryptoVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Volatile');
 	const	holdingsVaults = useFilteredVaults(vaults, ({address}): boolean => filterHoldingsCallback(address));
 	const	migratableVaults = useFilteredVaults(vaultsMigrations, ({address}): boolean => filterMigrationCallback(address));
+
+	const	categoriesToDisplay = useMemo((): TListHeroCategory<string>[] => {
+		const	categories = [
+			{value: 'Featured Vaults', label: 'Featured', isSelected: category === 'Featured Vaults'},
+			{value: 'Crypto Vaults', label: 'Crypto', isSelected: category === 'Crypto Vaults'},
+			{value: 'Stables Vaults', label: 'Stables', isSelected: category === 'Stables Vaults'},
+			{value: 'Curve Vaults', label: 'Curve', isSelected: category === 'Curve Vaults'}
+		];
+		if (safeChainID === 10) {
+			categories.push({value: 'Velodrome Vaults', label: 'Velodrome', isSelected: category === 'Velodrome Vaults'});
+		} else {
+			categories.push({value: 'Balancer Vaults', label: 'Balancer', isSelected: category === 'Balancer Vaults'});
+		}
+		return [
+			...categories,
+			{value: 'All Vaults', label: 'All', isSelected: category === 'All Vaults'}
+		];
+	}, [category, safeChainID]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	**	First, we need to determine in which category we are. The vaultsToDisplay function will
@@ -124,6 +146,8 @@ function	Index(): ReactElement {
 			_vaultList = curveVaults;
 		} else if (category === 'Balancer Vaults') {
 			_vaultList = balancerVaults;
+		} else if (category === 'Velodrome Vaults') {
+			_vaultList = velodromeVaults;
 		} else if (category === 'Stables Vaults') {
 			_vaultList = stablesVaults;
 		} else if (category === 'Crypto Vaults') {
@@ -140,7 +164,7 @@ function	Index(): ReactElement {
 		}
 
 		return _vaultList;
-	}, [vaults, category, shouldHideLowTVLVaults, curveVaults, balancerVaults, stablesVaults, cryptoVaults, holdingsVaults]);
+	}, [vaults, category, shouldHideLowTVLVaults, curveVaults, balancerVaults, velodromeVaults, stablesVaults, cryptoVaults, holdingsVaults]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	**	Then, on the vaultsToDisplay list, we apply the search filter. The search filter is
@@ -218,14 +242,7 @@ function	Index(): ReactElement {
 					searchLabel={`Search ${category}`}
 					searchPlaceholder={'YFI Vault'}
 					categories={[
-						[
-							{value: 'Featured Vaults', label: 'Featured', isSelected: category === 'Featured Vaults'},
-							{value: 'Crypto Vaults', label: 'Crypto', isSelected: category === 'Crypto Vaults'},
-							{value: 'Stables Vaults', label: 'Stables', isSelected: category === 'Stables Vaults'},
-							{value: 'Curve Vaults', label: 'Curve', isSelected: category === 'Curve Vaults'},
-							{value: 'Balancer Vaults', label: 'Balancer', isSelected: category === 'Balancer Vaults'},
-							{value: 'All Vaults', label: 'All', isSelected: category === 'All Vaults'}
-						],
+						categoriesToDisplay,
 						[
 							{
 								value: 'Holdings',
