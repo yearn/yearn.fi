@@ -1,11 +1,12 @@
 import React, {useMemo} from 'react';
 import useSWR from 'swr';
+import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
-import {formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatToNormalizedValue, toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatPercent, formatUSD} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {copyToClipboard} from '@yearn-finance/web-lib/utils/helpers';
@@ -42,6 +43,9 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 	const	vaultBalance = useBalance(currentVault?.address)?.normalized;
 	const	vaultPrice = useTokenPrice(currentVault?.address);
 	const	vaultName = useMemo((): string => getVaultName(currentVault), [currentVault]);
+	const	{stakingRewardsByVault, positionsMap} = useStakingRewards();
+	const 	stakedBalance = toNormalizedValue(positionsMap[toAddress(stakingRewardsByVault[currentVault.address])]?.stake ?? 0, currentVault.decimals);
+	const 	depositedAndStaked = vaultBalance + stakedBalance;
 
 	return (
 		<div aria-label={'Vault Header'} className={'col-span-12 flex w-full flex-col items-center justify-center'}>
@@ -83,10 +87,10 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 						{`Balance, ${currentVault?.symbol || 'token'}`}
 					</p>
 					<b className={'font-number text-lg md:text-3xl'}>
-						{clientOnlyFormatAmount(vaultBalance)}
+						{clientOnlyFormatAmount(depositedAndStaked)}
 					</b>
 					<legend className={'font-number text-xxs text-neutral-600 md:text-xs'}>
-						{clientOnlyFormatCounterValue(vaultBalance, vaultPrice)}
+						{clientOnlyFormatCounterValue(depositedAndStaked, vaultPrice)}
 					</legend>
 				</div>
 
