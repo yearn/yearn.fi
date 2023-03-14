@@ -147,6 +147,11 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVau
 	);
 }
 
+function isExceptionStrategy(strategy: TYearnVaultStrategy): boolean {
+	// Curve DAO Fee and Bribes Reinvest
+	return strategy.address.toString() === '0x23724D764d8b3d26852BA20d3Bc2578093d2B022' && strategy.details.inQueue;
+}
+
 function	VaultDetailsStrategies({currentVault}: {currentVault: TYearnVault}): ReactElement {
 	return (
 		<div className={'grid grid-cols-1 bg-neutral-100'}>
@@ -162,7 +167,9 @@ function	VaultDetailsStrategies({currentVault}: {currentVault: TYearnVault}): Re
 			</div>
 			<div className={'col-span-1 w-full border-t border-neutral-300'}>
 				{(currentVault?.strategies || [])
-					// .filter((strategy): boolean => (strategy?.details?.debtRatio || 0) > 0)
+					.filter((strategy): boolean => {
+						return Number(strategy?.details?.totalDebt) > 0 || isExceptionStrategy(strategy);
+					})
 					.sort((a, b): number => (b?.details?.debtRatio || 0) - (a?.details?.debtRatio || 0))
 					.map((strategy, index): ReactElement => (
 						<VaultDetailsStrategy
