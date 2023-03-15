@@ -1,15 +1,16 @@
 import React from 'react';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 
+import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TDropdownOption} from '@common/types/types';
 import type {Solver} from '@vaults/contexts/useSolver';
 
 type TSetZapOptionProps = {
+	address: TAddress;
+	decimals: bigint;
 	name: string;
 	symbol: string;
-	address: string;
 	chainID: number;
-	decimals: bigint;
 	solveVia?: Solver[]
 }
 export function	setZapOption({

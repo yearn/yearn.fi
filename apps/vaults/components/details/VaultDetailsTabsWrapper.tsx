@@ -19,6 +19,7 @@ import IconChevron from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
+import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TCurrentVault} from '@yearn-finance/web-lib/types/vaults';
 import type {TSettingsForNetwork} from '@common/types/yearn';
 
@@ -152,7 +153,7 @@ function	VaultDetailsTabsWrapper({currentVault}: TCurrentVault): ReactElement {
 	const [selectedAboutTabIndex, set_selectedAboutTabIndex] = useState(0);
 	const networkSettings = useMemo((): TSettingsForNetwork => networks[safeChainID], [networks, safeChainID]);
 
-	async function onAddTokenToMetamask(address: string, symbol: string, decimals: number, image: string): Promise<void> {
+	async function onAddTokenToMetamask(address: TAddress, symbol: string, decimals: bigint, image: string): Promise<void> {
 		try {
 			await provider.send('wallet_watchAsset', {
 				type: 'ERC20',
@@ -179,7 +180,7 @@ function	VaultDetailsTabsWrapper({currentVault}: TCurrentVault): ReactElement {
 		return (
 			_yDaemonHarvestsData?.map((harvest): {name: string; value: number} => ({
 				name: formatDate(toNumber(harvest.timestamp) * 1000),
-				value: formatToNormalizedValue(toBigInt(harvest?.profit.sub(harvest?.loss)), currentVault.decimals)
+				value: formatToNormalizedValue(toBigInt(harvest?.profit) - toBigInt(harvest?.loss), currentVault.decimals)
 			}))
 		);
 	}, [currentVault.decimals, yDaemonHarvestsData]);

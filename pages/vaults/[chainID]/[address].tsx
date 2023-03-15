@@ -8,6 +8,7 @@ import {WithSolverContextApp} from '@vaults/contexts/useSolver';
 import Wrapper from '@vaults/Wrapper';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
+import {handleRawTVaut} from '@yearn-finance/web-lib/types/vaults';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import TokenIcon from '@common/components/TokenIcon';
 import {useWallet} from '@common/contexts/useWallet';
@@ -24,7 +25,7 @@ function Index({router, vaultData}: {router: NextRouter, vaultData: TVault}): Re
 	const {safeChainID} = useChainID();
 	const {vaults} = useYearn();
 	const {refresh} = useWallet();
-	const currentVault = useRef<TVault>(vaults[toAddress(router.query.address as string)] as TVault || vaultData);
+	const currentVault = useRef<TVault>(vaults[toAddress(router.query.address as string)] as TVault || handleRawTVaut(vaultData));
 
 	useEffect((): void => {
 		if (address && isActive) {

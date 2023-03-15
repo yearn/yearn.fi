@@ -5,6 +5,7 @@ import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {useLocalStorage} from '@yearn-finance/web-lib/hooks/useLocalStorage';
+import {handleRawTVaut} from '@yearn-finance/web-lib/types/vaults';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import {DEFAULT_SLIPPAGE} from '@common/utils/constants';
@@ -47,10 +48,6 @@ const	defaultProps: TYearnContext = {
 	set_zapSlippage: (): void => undefined,
 	set_zapProvider: (): void => undefined
 };
-
-type TYearnVaultsMap = {
-	[address: string]: TVault
-}
 
 const	YearnContext = createContext<TYearnContext>(defaultProps);
 export const YearnContextApp = memo(function YearnContextApp({children}: {children: ReactElement}): ReactElement {
@@ -95,21 +92,21 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 		{revalidateOnFocus: false}
 	) as SWRResponse;
 
-	const	vaultsObject = useMemo((): TYearnVaultsMap => {
-		const	_vaultsObject = (vaults || []).reduce((acc: TYearnVaultsMap, vault: TVault): TYearnVaultsMap => {
+	const	vaultsObject = useMemo((): TDict<TVault> => {
+		const	_vaultsObject = (vaults || []).reduce((acc: TDict<TVault>, vault: TVault): TDict<TVault> => {
 			if (vault.migration.available) {
 				return acc;
 			}
-			acc[toAddress(vault.address)] = vault;
+			acc[toAddress(vault.address)] = handleRawTVaut(vault);
 			return acc;
 		}, {});
 		return _vaultsObject;
 	}, [vaults]);
 
-	const	vaultsMigrationsObject = useMemo((): TYearnVaultsMap => {
+	const	vaultsMigrationsObject = useMemo((): TDict<TVault> => {
 		const	_migratableVaultsObject = (vaultsMigrations || []).reduce((acc: TDict<TVault>, vault: TVault): TDict<TVault> => {
 			if (toAddress(vault.address) !== toAddress(vault.migration?.address)) {
-				acc[toAddress(vault.address)] = vault;
+				acc[toAddress(vault.address)] = handleRawTVaut(vault);
 			}
 			return acc;
 		}, {});

@@ -19,7 +19,7 @@ import Wrapper from '@yBribe/Wrapper';
 
 import type {NextRouter} from 'next/router';
 import type {ReactElement, ReactNode} from 'react';
-import type {Maybe} from '@yearn-finance/web-lib/types';
+import type {Maybe, TAddress} from '@yearn-finance/web-lib/types';
 import type {TCurveGauges} from '@common/types/curves';
 import type {TSortDirection} from '@common/types/types';
 
@@ -33,7 +33,7 @@ function	GaugeList(): ReactElement {
 		'yGaugeListBribeSorting', {sortBy: '', sortDirection: 'desc'}
 	);
 
-	const	getRewardValue = useCallback((address: string, value: bigint): number => {
+	const	getRewardValue = useCallback((address: TAddress, value: bigint): number => {
 		const	tokenInfo = tokens?.[address];
 		const	tokenPrice = prices?.[address];
 		const	decimals = toBigInt(tokenInfo?.decimals || 18);
@@ -75,12 +75,12 @@ function	GaugeList(): ReactElement {
 		if (sort.sortBy === 'rewards') {
 			return searchedGauges.sort((a, b): number => {
 				const allARewards = Object.entries(currentRewards?.v3?.[toAddress(a.gauge)] || {}).reduce((acc, [address, value]): number => {
-					const aBribeValue = getRewardValue(address, toBigInt(value));
+					const aBribeValue = getRewardValue(toAddress(address), toBigInt(value));
 					return acc + aBribeValue;
 				}, 0);
 
 				const allBRewards = Object.entries(currentRewards?.v3?.[toAddress(b.gauge)] || {}).reduce((acc, [address, value]): number => {
-					const aBribeValue = getRewardValue(address, toBigInt(value));
+					const aBribeValue = getRewardValue(toAddress(address), toBigInt(value));
 					return acc + aBribeValue;
 				}, 0);
 
@@ -93,12 +93,12 @@ function	GaugeList(): ReactElement {
 		if (sort.sortBy === 'pendingRewards') {
 			return searchedGauges.sort((a, b): number => {
 				const allARewards = Object.entries(nextRewards?.v3?.[toAddress(a.gauge)] || {}).reduce((acc, [address, value]): number => {
-					const aBribeValue = getRewardValue(address, toBigInt(value));
+					const aBribeValue = getRewardValue(toAddress(address), toBigInt(value));
 					return acc + aBribeValue;
 				}, 0);
 
 				const allBRewards = Object.entries(nextRewards?.v3?.[toAddress(b.gauge)] || {}).reduce((acc, [address, value]): number => {
-					const aBribeValue = getRewardValue(address, toBigInt(value));
+					const aBribeValue = getRewardValue(toAddress(address), toBigInt(value));
 					return acc + aBribeValue;
 				}, 0);
 
