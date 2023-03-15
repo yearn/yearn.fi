@@ -15,7 +15,7 @@ import type {TYDaemonReports} from '@common/types/yearn';
 
 export type TGraphForStrategyReportsProps = {
 	strategy: TStrategy,
-	vaultDecimals: number,
+	vaultDecimals: bigint,
 	vaultTicker: string
 	height?: number,
 }
@@ -31,7 +31,7 @@ function	GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height =
 
 	const	strategyData = useMemo((): {name: number; value: number, gain: string, loss: string}[] => {
 		const	_reports = [...reports || []];
-		const reportsForGraph = 
+		const reportsForGraph =
 			_reports.reverse()?.map((reports: TYDaemonReports): {name: number; value: number, gain: string, loss: string} => ({
 				name: toNumber(reports.timestamp),
 				value: toNumber(reports.results?.[0]?.APR) * 100,
