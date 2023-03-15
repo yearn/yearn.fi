@@ -16,6 +16,7 @@ import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
 import IconChevron from '@common/icons/IconChevron';
+import {classNames} from '@common/utils/classNames';
 
 import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
@@ -96,7 +97,12 @@ function	Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactE
 								</div>
 								<div className={'absolute right-0'}>
 									<IconChevron
-										className={`h-6 w-6 transition-transform ${open ? '-rotate-180' : 'rotate-0'}`} />
+										className={classNames(
+											open
+												? '-rotate-180'
+												: 'rotate-0',
+											'h-6 w-6 transition-transform'
+										)} />
 								</div>
 							</Listbox.Button>
 							<Transition
