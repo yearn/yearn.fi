@@ -43,7 +43,7 @@ function Withdraw(): ReactElement {
 
 	const fromInputProps: TQAInput = useMemo((): TQAInput => ({
 		onChange: ({target: {value}}: ChangeEvent<HTMLInputElement>): void => {
-			const decimals = toNumber(balances?.[toAddress(VL_YCRV.value)]?.decimals, 18);
+			const decimals = toBigInt(balances?.[toAddress(VL_YCRV.value)]?.decimals || 18);
 			if (value === '') {
 				set_amount(undefined);
 				return;
@@ -93,12 +93,12 @@ function Withdraw(): ReactElement {
 			<div
 				aria-label={'yCRV Withdraw Not Available'}
 				className={'col-span-12 mb-4'}>
-				{isActive ? 
+				{isActive ?
 					<div>
 						<h1>{unlockTime ? `You can withdraw in ${time}` : 'You have nothing to withdraw'}</h1>
 						<p className={'mt-4'}>{'Please note, you can’t withdraw until the end of the following voting period. See \'how it works\' for more info.'}</p>
 					</div>
-					: 
+					:
 					<div>
 						<p>{'Connect your wallet to withdraw'}</p>
 					</div>

@@ -1,11 +1,10 @@
 import {request} from 'graphql-request';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {LPYCRV_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YVBOOST_TOKEN_ADDRESS, YVECRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatToNormalizedValue, formatUnits, parseUnits, toBigInt, toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatToNormalizedValue, formatUnits, parseUnits, toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 
 import type {GraphQLResponse} from 'graphql-request/build/esm/types';
-import type {TBalanceData} from '@yearn-finance/web-lib/hooks/types';
 import type {Maybe} from '@yearn-finance/web-lib/types';
 import type {TVault} from '@yearn-finance/web-lib/types/vaults';
 
@@ -65,13 +64,3 @@ export function	formatDateShort(value: number): string {
 
 	return new Intl.DateTimeFormat([locale, 'en-US'], {year: 'numeric', month: 'short', day: '2-digit'}).format(value);
 }
-
-export const VoidTBalanceData: TBalanceData = {
-	raw: toBigInt(0),
-	rawPrice: toBigInt(0),
-	decimals: toBigInt(0),
-	symbol: '',
-	normalized: 0,
-	normalizedPrice: 0,
-	normalizedValue: 0
-};

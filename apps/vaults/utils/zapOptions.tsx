@@ -9,7 +9,7 @@ type TSetZapOptionProps = {
 	symbol: string;
 	address: string;
 	chainID: number;
-	decimals: number;
+	decimals: bigint;
 	solveVia?: Solver[]
 }
 export function	setZapOption({

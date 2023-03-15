@@ -65,7 +65,7 @@ async function getBatchBalances({
 			for (const element of chunkTokens) {
 				const {token} = element;
 				const balanceOf = toBigInt(results[rIndex++] as bigint);
-				const decimals = toNumber(results[rIndex++] as number);
+				const decimals = toBigInt(results[rIndex++] as bigint);
 				let symbol = results[rIndex++] as string;
 
 				if (toAddress(token) === ETH_TOKEN_ADDRESS) {

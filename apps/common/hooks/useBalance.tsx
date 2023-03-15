@@ -1,8 +1,8 @@
 
 import {useMemo} from 'react';
+import {VoidTBalanceData} from '@yearn-finance/web-lib/hooks/useBalances';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {useWallet} from '@common/contexts/useWallet';
-import {VoidTBalanceData} from '@common/utils';
 
 import type {TBalanceData} from '@yearn-finance/web-lib/hooks/types';
 import type {TAddress, TDict} from '@yearn-finance/web-lib/types';

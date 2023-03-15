@@ -34,7 +34,7 @@ function	GaugeList(): ReactElement {
 	const	getRewardValue = useCallback((address: string, value: bigint): number => {
 		const	tokenInfo = tokens?.[address];
 		const	tokenPrice = prices?.[address];
-		const	decimals = toNumber(tokenInfo?.decimals, 18);
+		const	decimals = toBigInt(tokenInfo?.decimals || 18);
 		const	bribeAmount = formatToNormalizedValue(value, decimals);
 		const	bribeValue = bribeAmount * toNumber(tokenPrice) / 100;
 		return bribeValue;

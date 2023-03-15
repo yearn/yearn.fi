@@ -7,7 +7,7 @@ import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {toBigInt, toNormalizedBN, toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
@@ -73,15 +73,15 @@ function useContextualIs(selectedTo: Maybe<TDropdownOption>, currentVault: TVaul
 	const {networks} = useSettings();
 	const {safeChainID} = useChainID();
 
-	const isDepositing = useMemo((): boolean => 
+	const isDepositing = useMemo((): boolean =>
 		!selectedTo?.value || toAddress(selectedTo.value) === toAddress(currentVault.address)
 	, [selectedTo?.value, currentVault.address]);
 
-	const isPartnerAddressValid = useMemo((): boolean => 
+	const isPartnerAddressValid = useMemo((): boolean =>
 		!isZeroAddress(toAddress(networks?.[safeChainID]?.partnerContractAddress))
 	, [networks, safeChainID]);
 
-	const isUsingPartnerContract = useMemo((): boolean => 
+	const isUsingPartnerContract = useMemo((): boolean =>
 		(process?.env?.SHOULD_USE_PARTNER_CONTRACT === undefined ? true : Boolean(process?.env?.SHOULD_USE_PARTNER_CONTRACT)) && isPartnerAddressValid
 	, [isPartnerAddressValid]);
 
@@ -91,7 +91,7 @@ function useContextualIs(selectedTo: Maybe<TDropdownOption>, currentVault: TVaul
 type TGetMaxDepositPossible = {
 	vault: TVault,
 	fromToken: TAddress,
-	fromDecimals: number,
+	fromDecimals: bigint,
 	fromTokenBalance: bigint,
 	isDepositing: boolean
 }
@@ -161,7 +161,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 	const maxDepositPossible = getMaxDepositPossible({
 		vault: currentVault,
 		fromToken: toAddress(actionParams?.selectedOptionFrom?.value),
-		fromDecimals: toNumber(actionParams?.selectedOptionFrom?.decimals || currentVault?.token?.decimals, 18),
+		fromDecimals: toBigInt(actionParams?.selectedOptionFrom?.decimals || currentVault?.token?.decimals || 18),
 		fromTokenBalance: toBigInt(balances[toAddress(actionParams?.selectedOptionFrom?.value)]?.raw),
 		isDepositing
 	});
@@ -195,7 +195,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 				let _selectedOptionFrom = actionParams?.selectedOptionFrom;
 				if (isDepositing && (actionParams?.selectedOptionFrom?.solveVia || []).length > 0) {
 					// We don't want to be able to withdraw to exotic tokens. If the current from is one of them, take another one.
-					_selectedOptionFrom = possibleOptionsFrom.find((option: TDropdownOption): boolean => 
+					_selectedOptionFrom = possibleOptionsFrom.find((option: TDropdownOption): boolean =>
 						option.value !== actionParams?.selectedOptionFrom?.value && (option.solveVia || []).length === 0
 					);
 				}
@@ -218,14 +218,14 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 			symbol: currentVault?.token?.symbol,
 			address: toAddress(currentVault.token.address),
 			chainID: currentVault?.chainID === 1337 ? safeChainID : currentVault?.chainID,
-			decimals: toNumber(currentVault?.token?.decimals, 18)
+			decimals: toBigInt(currentVault?.token?.decimals || 18)
 		});
 		const	vaultToken = setZapOption({
 			name: currentVault?.display_name || currentVault?.name || currentVault.formated_name,
 			symbol: currentVault?.display_symbol || currentVault.symbol,
 			address: toAddress(currentVault.address),
 			chainID: currentVault?.chainID === 1337 ? safeChainID : currentVault?.chainID,
-			decimals: toNumber(currentVault?.decimals, 18)
+			decimals: toBigInt(currentVault?.decimals || 18)
 		});
 
 		if (nextFlow === Flow.Deposit) {
@@ -252,7 +252,8 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 			});
 		} else if (nextFlow === Flow.Migrate) {
 			const	userBalance = toBigInt(balances?.[toAddress(currentVault?.address)]?.raw);
-			const	decimals = toNumber(currentVault?.decimals || currentVault?.token?.decimals, 18);
+			const	decimals = toBigInt(currentVault?.decimals || currentVault?.token?.decimals || 18);
+			const	tokenDecimals = toBigInt(currentVault?.token?.decimals || 18);
 			const	amount = toNormalizedBN(userBalance, decimals);
 			actionParamsDispatcher({
 				type: 'all',
@@ -263,7 +264,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 						symbol: currentVault?.symbol,
 						address: currentVault?.migration?.address,
 						chainID: currentVault?.chainID,
-						decimals: currentVault?.token?.decimals
+						decimals: tokenDecimals
 					}),
 					possibleOptionsFrom: possibleOptionsTo,
 					possibleOptionsTo: possibleOptionsFrom,
@@ -285,7 +286,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 	**********************************************************************************************/
 	const	updateParams = useCallback((_selectedFrom: TDropdownOption, _selectedTo: TDropdownOption): void => {
 		const userBalance = toBigInt(balances?.[toAddress(_selectedFrom?.value)]?.raw);
-		const decimals = toNumber(_selectedFrom?.decimals || currentVault?.token?.decimals, 18);
+		const decimals = toBigInt(_selectedFrom?.decimals || currentVault?.token?.decimals || 18);
 		let	_amount = toNormalizedBN(userBalance, decimals);
 		if (isDepositing) {
 			const	vaultDepositLimit = toBigInt(currentVault?.details?.depositLimit);
@@ -325,13 +326,13 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 		******************************************************************************************/
 		if (safeChainID === 1 && currentVault && toAddress(currentVault.token.address) === WETH_TOKEN_ADDRESS) {
 			payloadFrom.push(...[
-				setZapOption({name: 'ETH', symbol: 'ETH', address: ETH_TOKEN_ADDRESS, chainID: safeChainID, decimals: 18}),
-				setZapOption({name: 'wETH', symbol: 'wETH', address: WETH_TOKEN_ADDRESS, chainID: safeChainID, decimals: 18})
+				setZapOption({name: 'ETH', symbol: 'ETH', address: ETH_TOKEN_ADDRESS, chainID: safeChainID, decimals: 18n}),
+				setZapOption({name: 'wETH', symbol: 'wETH', address: WETH_TOKEN_ADDRESS, chainID: safeChainID, decimals: 18n})
 			]);
 		} else if (safeChainID === 250 && currentVault && toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS) {
 			payloadFrom.push(...[
-				setZapOption({name: 'FTM', symbol: 'FTM', address: ETH_TOKEN_ADDRESS, chainID: safeChainID, decimals: 18}),
-				setZapOption({name: 'wFTM', symbol: 'wFTM', address: WFTM_TOKEN_ADDRESS, chainID: safeChainID, decimals: 18})
+				setZapOption({name: 'FTM', symbol: 'FTM', address: ETH_TOKEN_ADDRESS, chainID: safeChainID, decimals: 18n}),
+				setZapOption({name: 'wFTM', symbol: 'wFTM', address: WFTM_TOKEN_ADDRESS, chainID: safeChainID, decimals: 18n})
 			]);
 		} else {
 			payloadFrom.push(
@@ -340,7 +341,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 					symbol: currentVault?.token?.symbol,
 					address: toAddress(currentVault.token.address),
 					chainID: currentVault?.chainID === 1337 ? safeChainID : currentVault?.chainID,
-					decimals: toNumber(currentVault?.token?.decimals, 18)
+					decimals: toBigInt(currentVault?.token?.decimals || 18)
 				})
 			);
 			payloadTo.push(
@@ -349,7 +350,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 					symbol: currentVault?.symbol,
 					address: toAddress(currentVault.address),
 					chainID: currentVault?.chainID === 1337 ? safeChainID : currentVault?.chainID,
-					decimals: toNumber(currentVault?.decimals, 18)
+					decimals: toBigInt(currentVault?.decimals || 18)
 				})
 			);
 		}
@@ -362,14 +363,14 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 			symbol: currentVault?.token?.symbol,
 			address: toAddress(currentVault.token.address),
 			chainID: currentVault?.chainID === 1337 ? safeChainID : currentVault?.chainID,
-			decimals: toNumber(currentVault?.token?.decimals, 18)
+			decimals: toBigInt(currentVault?.token?.decimals || 18)
 		});
 		const	_selectedTo = setZapOption({
 			name: currentVault?.display_name || currentVault?.name || currentVault.formated_name,
 			symbol: currentVault?.display_symbol || currentVault.symbol,
 			address: toAddress(currentVault.address),
 			chainID: currentVault?.chainID === 1337 ? safeChainID : currentVault?.chainID,
-			decimals: toNumber(currentVault?.decimals, 18)
+			decimals: toBigInt(currentVault?.decimals || 18)
 		});
 
 		/* 🔵 - Yearn Finance **********************************************************************
@@ -410,7 +411,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 				const	tokenListData = tokensList[toAddress(tokenAddress)];
 				if (tokenListData) {
 					const	tokenListAddress = toAddress(tokenListData?.address);
-					const	tokenListDecimals = toNumber(tokenListData.decimals, 18);
+					const	tokenListDecimals = toBigInt(tokenListData.decimals || 18);
 					const	tokenListName = tokenListData.name;
 					const	tokenListSymbol = tokenListData.symbol;
 					const	tokenListSupportedZaps = tokenListData.supportedZaps || [];
@@ -459,7 +460,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 						symbol: tokenListData?.symbol,
 						address: toAddress(tokenListData?.address),
 						chainID: currentVault?.chainID === 1337 ? safeChainID : currentVault?.chainID,
-						decimals: tokenListData?.decimals,
+						decimals: toBigInt(tokenListData?.decimals || 18),
 						solveVia: tokenListData?.supportedZaps as Solver[] || []
 					})
 				);

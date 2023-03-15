@@ -19,7 +19,7 @@ function	RewardFeedRowItemWithExtraData({
 
 	const	tokenInfo = tokens?.[address];
 	const	symbol = tokenInfo?.symbol || '???';
-	const	decimals = toNumber(tokenInfo?.decimals, 18);
+	const	decimals = toBigInt(tokenInfo?.decimals || 18);
 	const	tokenPrice = toNumber(prices?.[address]) / 1000000;
 	const	bribeAmount = formatToNormalizedValue(value, decimals);
 	const	bribeValue = bribeAmount * toNumber(tokenPrice);
