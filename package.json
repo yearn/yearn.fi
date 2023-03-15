@@ -14,7 +14,7 @@
     "@next/bundle-analyzer": "^13.2.3",
     "@next/font": "^13.2.3",
     "@react-hookz/deep-equal": "^1.0.4",
-    "@yearn-finance/web-lib": "^0.18.9",
+    "@yearn-finance/web-lib": "https://github.com/yearn/web-lib.git#ethers6",
     "axios": "^1.3.4",
     "dayjs": "^1.11.7",
     "ethcall": "^4.8.13",
