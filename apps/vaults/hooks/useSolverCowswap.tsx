@@ -2,7 +2,6 @@ import {useCallback, useMemo, useRef} from 'react';
 import {ethers, formatUnits, parseUnits} from 'ethers';
 import axios from 'axios';
 import useSWRMutation from 'swr/mutation';
-// import {domain, signOrder} from '@cowprotocol/contracts';
 import {isSolverDisabled, Solver} from '@vaults/contexts/useSolver';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
