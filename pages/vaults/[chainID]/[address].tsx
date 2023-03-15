@@ -13,6 +13,7 @@ import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import TokenIcon from '@common/components/TokenIcon';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
+import {JSONParse, JSONStringify} from '@common/utils';
 import {variants} from '@common/utils/animations';
 
 import type {NextPageContext} from 'next';
@@ -20,12 +21,12 @@ import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
 import type {TVault} from '@yearn-finance/web-lib/types/vaults';
 
-function Index({router, vaultData}: {router: NextRouter, vaultData: TVault}): ReactElement | null {
+function Index({router, vaultData}: {router: NextRouter, vaultData: string}): ReactElement | null {
 	const {address, isActive} = useWeb3();
 	const {safeChainID} = useChainID();
 	const {vaults} = useYearn();
 	const {refresh} = useWallet();
-	const currentVault = useRef<TVault>(vaults[toAddress(router.query.address as string)] as TVault || handleRawTVaut(vaultData));
+	const currentVault = useRef<TVault>(vaults[toAddress(router.query.address as string)] as TVault || handleRawTVaut(JSONParse(vaultData)));
 
 	useEffect((): void => {
 		if (address && isActive) {
@@ -88,5 +89,5 @@ Index.getInitialProps = async ({query}: NextPageContext): Promise<unknown> => {
 	const	res = await fetch(`${process.env.YDAEMON_BASE_URI}/${chainID}/vaults/${address}?hideAlways=true&orderBy=apy.net_apy&orderDirection=desc&strategiesDetails=withDetails&strategiesRisk=withRisk&strategiesCondition=inQueue`);
 	const	json = await res.json();
 
-	return {vaultData: json};
+	return {vaultData: JSONStringify(json)};
 };

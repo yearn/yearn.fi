@@ -71,7 +71,7 @@ function	VaultActionsTabsWrapper(): ReactElement {
 			<div aria-label={'Vault Actions'} className={'col-span-12 mb-4 flex flex-col bg-neutral-100'}>
 				<div className={'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'}>
 					<nav className={'hidden flex-row items-center space-x-10 md:flex'}>
-						{possibleTabs.map((tab): ReactElement => 
+						{possibleTabs.map((tab): ReactElement =>
 							<button
 								key={`desktop-${tab.value}`}
 								onClick={(): void => {
@@ -110,7 +110,7 @@ function	VaultActionsTabsWrapper(): ReactElement {
 								set_currentTab(newTab);
 								onSwitchSelectedOptions(newTab.flowAction);
 							}}>
-							{({open}): ReactElement => 
+							{({open}): ReactElement =>
 								<>
 									<Listbox.Button
 										className={'flex h-10 w-40 flex-row items-center border-0 border-b-2 border-neutral-900 bg-neutral-100 p-0 font-bold focus:border-neutral-900 md:hidden'}>
@@ -132,7 +132,7 @@ function	VaultActionsTabsWrapper(): ReactElement {
 										leaveFrom={'transform scale-100 opacity-100'}
 										leaveTo={'transform scale-95 opacity-0'}>
 										<Listbox.Options className={'yearn--listbox-menu'}>
-											{possibleTabs.map((tab): ReactElement => 
+											{possibleTabs.map((tab): ReactElement =>
 												<Listbox.Option
 													className={'yearn--listbox-menu-item'}
 													key={tab.value}

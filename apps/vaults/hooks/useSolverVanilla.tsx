@@ -29,7 +29,7 @@ function useVanillaQuote(): [TVanillaLikeResult, (request: TInitSolverArgs, shou
 	): Promise<TNormalizedBN> => {
 		shouldPreventErrorToast;
 
-		const canExecuteFetch = 
+		const canExecuteFetch =
 			!request.inputToken || !request.outputToken || !request.inputAmount ||
 			!(isZero(request.inputToken.value) || isZero(request.outputToken.value) || isZero(request.inputAmount))
 		;

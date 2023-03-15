@@ -3,7 +3,7 @@ import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {useWallet} from '@common/contexts/useWallet';
-import {getVaultName} from '@common/utils';
+import {getVaultName, JSONParse, JSONStringify} from '@common/utils';
 import {numberSort, stringSort} from '@common/utils/sort';
 
 import type {TVault} from '@yearn-finance/web-lib/types/vaults';
@@ -18,15 +18,15 @@ function	useSortVaults(
 ): TVault[] {
 	const	{balances, balancesNonce} = useWallet();
 
-	const	sortedByName = useCallback((): TVault[] => 
+	const	sortedByName = useCallback((): TVault[] =>
 		vaultList.sort((a, b): number => stringSort({a: getVaultName(a), b: getVaultName(b), sortDirection}))
 	, [sortDirection, vaultList]);
 
-	const	sortedByAPY = useCallback((): TVault[] => 
+	const	sortedByAPY = useCallback((): TVault[] =>
 		vaultList.sort((a, b): number => numberSort({a: a.apy?.net_apy, b: b.apy?.net_apy, sortDirection}))
 	, [sortDirection, vaultList]);
 
-	const	sortedByTVL = useCallback((): TVault[] => 
+	const	sortedByTVL = useCallback((): TVault[] =>
 		vaultList.sort((a, b): number => numberSort({a: a.tvl.tvl, b: b.tvl.tvl, sortDirection}))
 	, [sortDirection, vaultList]);
 
@@ -60,9 +60,9 @@ function	useSortVaults(
 		});
 	}, [balances, balancesNonce, sortDirection, vaultList]);
 
-	const	stringifiedVaultList = JSON.stringify(vaultList);
+	const	stringifiedVaultList = JSONStringify(vaultList);
 	const	sortedVaults = useMemo((): TVault[] => {
-		const	sortResult = JSON.parse(stringifiedVaultList);
+		const	sortResult = JSONParse(stringifiedVaultList);
 		if (sortDirection === '') {
 			return sortResult;
 		}

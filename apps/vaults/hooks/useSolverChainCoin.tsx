@@ -32,7 +32,7 @@ function useChainCoinQuote(): [TVanillaLikeResult, (request: TInitSolverArgs, sh
 	): Promise<TNormalizedBN> => {
 		shouldPreventErrorToast;
 
-		const canExecuteFetch = 
+		const canExecuteFetch =
 			!request.inputToken || !request.outputToken || !request.inputAmount ||
 			!(isZero(request.inputToken.value) || isZero(request.outputToken.value) || isZero(request.inputAmount))
 		;

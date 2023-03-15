@@ -92,11 +92,11 @@ function	DesktopCategories<T>({categories, onSelect}: TListHeroDesktopCategories
 		<div>
 			<label className={'text-neutral-600'}>&nbsp;</label>
 			<div className={'mt-1 flex flex-row space-x-4'}>
-				{(categories || []).map((currentCategory, index: number): ReactElement => 
+				{(categories || []).map((currentCategory, index: number): ReactElement =>
 					<div
 						key={`${index}-${isClientLoaded}`}
 						className={'flex flex-row space-x-0 divide-x border-x border-neutral-900'}>
-						{currentCategory.map((item): ReactElement => 
+						{currentCategory.map((item): ReactElement =>
 							<Button
 								key={item.label}
 								onClick={(): void => onSelect(item.value)}
@@ -163,7 +163,7 @@ function	ListHero<T extends string>({
 					searchValue={searchValue}
 					set_searchValue={set_searchValue} />
 
-				{!!switchProps && 
+				{!!switchProps &&
 					<div className={'mr-4 mt-7 flex h-full min-w-fit flex-row'}>
 						<small className={'mr-2'}>{'Hide gauges with 0 votes'}</small>
 						<Switch {...switchProps} />
@@ -183,8 +183,8 @@ function	ListHero<T extends string>({
 							onSelect(value);
 						}
 					}}>
-					{categories.map((currentCategory): ReactNode => 
-						currentCategory.map((item): ReactElement => 
+					{categories.map((currentCategory): ReactNode =>
+						currentCategory.map((item): ReactElement =>
 							<option key={item.value} value={item.value}>
 								{item.label}
 							</option>

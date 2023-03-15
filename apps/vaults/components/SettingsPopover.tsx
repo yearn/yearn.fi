@@ -28,14 +28,14 @@ export default function SettingsPopover(): ReactElement {
 						leaveTo={'opacity-0 translate-y-1'}>
 						<Popover.Panel className={'absolute right-0 top-6 z-[1000] mt-3 w-screen max-w-xs md:top-4 md:-right-4'}>
 							<div className={'yearn--shadow'}>
-								<div className={'relative bg-neutral-0 p-4'}>
+								<div className={'bg-neutral-0 relative p-4'}>
 									<div className={'mb-7 flex flex-col space-y-1'}>
 										<label htmlFor={'zapProvider'} className={'text-neutral-900'}>{'Zap Provider'}</label>
 										<select
 											id={'zapProvider'}
 											onChange={(e): void => set_zapProvider(e.target.value as Solver)}
 											value={zapProvider}
-											className={'mt-1 h-10 w-full overflow-x-scroll border-none bg-neutral-100 p-2 outline-none scrollbar-none'}>
+											className={'scrollbar-none mt-1 h-10 w-full overflow-x-scroll border-none bg-neutral-100 p-2 outline-none'}>
 											<option
 												disabled={isSolverDisabled[Solver.COWSWAP]}
 												value={Solver.COWSWAP}>
@@ -107,7 +107,7 @@ export default function SettingsPopover(): ReactElement {
 													min={0}
 													step={0.1}
 													max={100}
-													className={'font-number h-10 w-full overflow-x-scroll border-none bg-transparent p-2 text-right outline-none scrollbar-none'}
+													className={'font-number scrollbar-none h-10 w-full overflow-x-scroll border-none bg-transparent p-2 text-right outline-none'}
 													value={zapSlippage}
 													onChange={(e): void => {
 														set_zapSlippage(parseFloat(e.target.value) || 0);

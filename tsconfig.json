@@ -1,11 +1,8 @@
 {
   "compilerOptions": {
-    "rootDirs": [
-      "."
-    ],
+    "rootDirs": ["."],
     "baseUrl": ".",
 	"paths": {
-		"@yearn-finance/web-lib/*": ["node_modules/@yearn-finance/web-lib-root/packages/web-lib/*"],
         "@common/*": ["apps/common/*"],
         "@vaults/*": ["apps/vaults/*"],
         "@veYFI/*": ["apps/veyfi/*"],

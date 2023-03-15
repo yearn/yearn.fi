@@ -45,7 +45,7 @@ export const APPS: { [key in AppName]: TApp } = {
 		href: '/ycrv',
 		menu: YCRV_MENU,
 		manifest: ycrvManifest,
-		icon: 
+		icon:
 			<Image
 				alt={'yCRV'}
 				width={32}
@@ -53,7 +53,7 @@ export const APPS: { [key in AppName]: TApp } = {
 				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YCRV_TOKEN_ADDRESS}/logo-128.png`}
 				loading={'eager'}
 				priority />
-		
+
 	},
 	veYFI: {
 		name: AppName.VEYFI,

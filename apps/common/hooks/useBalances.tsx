@@ -9,9 +9,10 @@ import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatToNormalizedValue, toBigInt, toNumber} from '@yearn-finance/web-lib/utils/format';
+import {formatToNormalizedValue, toBigInt, toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
+import {JSONParse, JSONStringify} from '@common/utils';
 
 import type {AxiosResponse} from 'axios';
 import type {Call, Provider} from 'ethcall';
@@ -156,7 +157,7 @@ export function	useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	const	[error, set_error] = useState<Maybe<Error>>(undefined);
 	const	[balances, set_balances] = useState<TNDict<TDict<TBalanceData>>>({});
 	const	data = useRef<TNDict<TDataRef>>({});
-	const	stringifiedTokens = useMemo((): string => JSON.stringify(props?.tokens || []), [props?.tokens]);
+	const	stringifiedTokens = useMemo((): string => JSONStringify(props?.tokens || []), [props?.tokens]);
 
 	const	initialDataRefValue = useMemo((): TDataRef => ({
 		address: toAddress(web3Address),
@@ -209,7 +210,7 @@ export function	useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 			return {};
 		}
 		const	currentState: TDataRef = data.current[web3ChainID] || initialDataRefValue;
-		const	tokenList = JSON.parse(stringifiedTokens) || [];
+		const	tokenList = JSONParse(stringifiedTokens) || [];
 		const	tokens = tokenList.filter(({token}: TUseBalancesTokens): boolean => !isZeroAddress(token));
 		if (tokens.length === 0) {
 			return {};
@@ -326,7 +327,7 @@ export function	useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 			const	rawPrice = toBigInt(props?.prices?.[tokenAddress]);
 			if (_rawData[tokenAddress]) {
 				_rawData[tokenAddress] = {
-					..._rawData[tokenAddress],
+					..._rawData[tokenAddress] || VoidTBalanceData,
 					rawPrice,
 					normalizedPrice: formatToNormalizedValue(rawPrice, 6),
 					normalizedValue: toNumber(_rawData?.[tokenAddress]?.normalized) * formatToNormalizedValue(rawPrice, 6)
@@ -355,11 +356,11 @@ export function	useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 		set_status({...defaultStatus, isLoading: true, isFetching: true, isRefetching: defaultStatus.isFetched});
 		onLoadStart();
 
-		const	tokens = JSON.parse(stringifiedTokens) || [];
+		const	tokens = JSONParse(stringifiedTokens) || [];
 		const	chainID = props?.chainID || web3ChainID || 1;
 		axios.post('/api/getBatchBalances', {chainID, address: web3Address, tokens})
 			.then((res: AxiosResponse<TGetBatchBalancesResp>): void => {
-				updateBalancesCall(res.data.chainID, res.data.balances);
+				updateBalancesCall(res.data.chainID, JSONParse(res.data.balances) as TDict<TBalanceData>);
 			})
 			.catch((err): void => {
 				console.error(err);

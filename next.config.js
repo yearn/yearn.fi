@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 const runtimeCaching = require('next-pwa/cache');
 const {withPlausibleProxy} = require('next-plausible');
-const withTM = require('next-transpile-modules')(['@yearn-finance/web-lib-root'], {resolveSymlinks: false});
+const withTM = require('next-transpile-modules')(['@yearn-finance/web-lib'], {resolveSymlinks: false});
 const withPWA = require('next-pwa')({
 	dest: './public/',
 	register: true,

@@ -64,3 +64,17 @@ export function	formatDateShort(value: number): string {
 
 	return new Intl.DateTimeFormat([locale, 'en-US'], {year: 'numeric', month: 'short', day: '2-digit'}).format(value);
 }
+
+export function	JSONStringify(value: unknown): string {
+	return JSON.stringify(
+		value,
+		(_key, value): unknown => typeof value === 'bigint' ? {type: 'biging', value: value.toString()} : value
+	);
+}
+
+export function	JSONParse(value: string): any {
+	return JSON.parse(
+		value,
+		(_key, value): unknown => value?.type === 'biging' ? BigInt(value.value) : value
+	);
+}

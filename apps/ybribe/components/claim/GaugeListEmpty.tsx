@@ -17,7 +17,7 @@ function	GaugeListEmpty({category}: {category: string}): ReactElement {
 					<span className={'loader'} />
 				</div>
 			</div>
-		);	
+		);
 	}
 	if (category === 'claimable') {
 		if (!isActive) {
@@ -26,14 +26,14 @@ function	GaugeListEmpty({category}: {category: string}): ReactElement {
 					<b className={'text-lg'}>{'Connect your wallet'}</b>
 					<p className={'text-neutral-600'}>{'Please connect your wallet to load the gauges.'}</p>
 				</div>
-			);	
+			);
 		}
 		return (
 			<div className={'flex h-96 w-full flex-col items-center justify-center py-2 px-10'}>
 				<b className={'text-lg'}>{'No reward'}</b>
 				<p className={'text-neutral-600'}>{'You have nothing to claim.'}</p>
 			</div>
-		);	
+		);
 	}
 	return (
 		<div className={'flex h-96 w-full flex-col items-center justify-center py-2 px-10'}>
@@ -42,7 +42,7 @@ function	GaugeListEmpty({category}: {category: string}): ReactElement {
 				{'No gauges available.'}
 			</p>
 		</div>
-	);	
+	);
 }
 
 export {GaugeListEmpty};

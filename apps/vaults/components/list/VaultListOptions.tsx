@@ -45,7 +45,7 @@ export default function VaultListOptions(): ReactElement {
 
 	return (
 		<Popover className={'relative flex'}>
-			{(): ReactElement => 
+			{(): ReactElement =>
 				<>
 					<Popover.Button>
 						<IconSettings className={'transition-color h-4 w-4 text-neutral-400 hover:text-neutral-900'} />

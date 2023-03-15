@@ -33,18 +33,18 @@ function GaugeListRow({gauge, gaugeVotes, votesState, votesDispatch}: TGaugeList
 
 	const handleVoteInput = ({target: {value}}: ChangeEvent<HTMLInputElement>): void => {
 		if (value === '' && isTAddress(gauge.gauge)) {
-			votesDispatch({type: 'UPDATE', gaugeAddress: gauge.gauge, votes: undefined});
+			votesDispatch({type: 'UPDATE', gaugeAddress: toAddress(gauge.gauge), votes: undefined});
 			return;
 		}
 		if (isNumber(+value) && isTAddress(gauge.gauge)) {
-			votesDispatch({type: 'UPDATE', gaugeAddress: gauge.gauge, votes: toBigInt(parseUnits(String(+value), 18))});
+			votesDispatch({type: 'UPDATE', gaugeAddress: toAddress(gauge.gauge), votes: toBigInt(parseUnits(String(+value), 18))});
 			return;
 		}
 	};
 
 	async function handleOnSetMaxAmount(): Promise<void> {
 		if (isTAddress(gauge.gauge)) {
-			votesDispatch({type: 'MAX', gaugeAddress: gauge.gauge});
+			votesDispatch({type: 'MAX', gaugeAddress: toAddress(gauge.gauge)});
 		}
 	}
 

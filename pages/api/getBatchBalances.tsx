@@ -5,6 +5,7 @@ import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatToNormalizedValue, toBigInt, toNumber} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
+import {JSONStringify} from '@common/utils';
 
 import type {NextApiRequest, NextApiResponse} from 'next';
 import type {TWeb3Provider} from '@yearn-finance/web-lib/contexts/types';
@@ -88,12 +89,12 @@ async function getBatchBalances({
 	return data;
 }
 
-export type TGetBatchBalancesResp = {balances: TDict<TBalanceData>, chainID: number};
+export type TGetBatchBalancesResp = {balances: string, chainID: number};
 export default async function handler(req: NextApiRequest, res: NextApiResponse<TGetBatchBalancesResp>): Promise<void> {
 	const	balances = await getBatchBalances({
 		chainID: toNumber(req.body.chainID, 1),
 		address: toAddress(req.body.address as string),
 		tokens: req.body.tokens as unknown as TUseBalancesTokens[]
 	});
-	return res.status(200).json({balances, chainID: req.body.chainID});
+	return res.status(200).json({balances: JSONStringify(balances), chainID: req.body.chainID});
 }

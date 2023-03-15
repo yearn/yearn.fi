@@ -2,14 +2,14 @@ import {toNormalizedBN, toNumber} from '@yearn-finance/web-lib/utils/format.bigN
 
 import type {TSortDirection} from '@common/types/types';
 
-export const stringSort = ({a, b, sortDirection}: {a: string; b: string; sortDirection: TSortDirection}): number => 
+export const stringSort = ({a, b, sortDirection}: {a: string; b: string; sortDirection: TSortDirection}): number =>
 	sortDirection === 'desc' ? a.localeCompare(b) : b.localeCompare(a)
 ;
 
-export const numberSort = ({a, b, sortDirection}: {a?: number; b?: number; sortDirection: TSortDirection}): number => 
+export const numberSort = ({a, b, sortDirection}: {a?: number; b?: number; sortDirection: TSortDirection}): number =>
 	sortDirection === 'desc' ? (b ?? 0) - (a ?? 0) : (a ?? 0) - (b ?? 0)
 ;
 
-export const bigNumberSort = ({a, b, sortDirection}: {a: bigint; b: bigint; sortDirection: TSortDirection}): number => 
+export const bigNumberSort = ({a, b, sortDirection}: {a: bigint; b: bigint; sortDirection: TSortDirection}): number =>
 	toNumber(toNormalizedBN(sortDirection === 'desc' ? b - a : a - b).normalized)
 ;

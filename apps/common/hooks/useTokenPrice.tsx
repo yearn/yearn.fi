@@ -8,7 +8,7 @@ import type {TAddress} from '@yearn-finance/web-lib/types';
 function	useTokenPrice(address: TAddress): number {
 	const {prices} = useYearn();
 
-	const tokenPrice = useMemo((): number => 
+	const tokenPrice = useMemo((): number =>
 		formatToNormalizedValue(toBigInt(prices?.[address]), 6)
 	, [address, prices]);
 

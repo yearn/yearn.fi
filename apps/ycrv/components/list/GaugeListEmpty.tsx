@@ -82,7 +82,7 @@ export function GaugeListEmpty(props: TGaugeListEmptyProps): ReactElement {
 			</div>
 		);
 	}
-	
+
 	return (
 		<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center gap-4 py-2 px-10 md:w-3/4'}>
 			<b className={'text-center text-lg'}>{'No data, reeeeeeeeeeee'}</b>

@@ -42,7 +42,7 @@ function useSortGauges({list, gaugesVotes, sortBy, sortDirection, votes}: TProps
 			return prev;
 		}, {withVotes: [] as TSortByVotes['withVotes'], withoutVotes: [] as TSortByVotes['withoutVotes']});
 
-		const sortedGaugesWithVotes = withVotes.sort((a, b): number => 
+		const sortedGaugesWithVotes = withVotes.sort((a, b): number =>
 			bigNumberSort({a: a.votes, b: b.votes, sortDirection})
 		).map(({gauge}): TCurveGauges => gauge);
 
@@ -59,7 +59,7 @@ function useSortGauges({list, gaugesVotes, sortBy, sortDirection, votes}: TProps
 			return prev;
 		}, {withVotes: [] as TSortByVotes['withVotes'], withoutVotes: [] as TSortByVotes['withoutVotes']});
 
-		const sortedGaugesWithVotes = withVotes.sort((a, b): number => 
+		const sortedGaugesWithVotes = withVotes.sort((a, b): number =>
 			bigNumberSort({a: a.votes, b: b.votes, sortDirection})
 		).map(({gauge}): TCurveGauges => gauge);
 
