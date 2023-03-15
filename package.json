@@ -11,8 +11,6 @@
     "bump": "bump"
   },
   "dependencies": {
-    "@cowprotocol/contracts": "https://github.com/karelianpie/cowprotocol-contracts.git#ethers-as-dependency-with-build",
-    "@cowprotocol/cow-sdk": "^2.0.0-alpha.4",
     "@next/bundle-analyzer": "^13.2.3",
     "@next/font": "^13.2.3",
     "@react-hookz/deep-equal": "^1.0.4",

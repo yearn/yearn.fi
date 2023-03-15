@@ -15,7 +15,6 @@ import type {AxiosError} from 'axios';
 import type {QuoteRequest, QuoteResult} from 'wido';
 import type {MayPromise, TNormalizedBN} from '@yearn-finance/web-lib/types';
 import type {TTxResponse, TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
-import type {ApiError} from '@cowprotocol/contracts';
 import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
 import type {TWidoResult} from '@vaults/types/solvers.wido';
 
@@ -49,7 +48,7 @@ function useWidoQuote(): [TWidoResult, (request: TInitSolverArgs, shouldPreventE
 
 				return result;
 			} catch (error) {
-				const	_error = error as AxiosError<ApiError>;
+				const	_error = error as AxiosError<any>;
 				set_err(error as Error);
 				console.error(error);
 				if (shouldPreventErrorToast) {

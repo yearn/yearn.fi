@@ -2,7 +2,7 @@ import {useCallback, useMemo, useRef} from 'react';
 import {ethers, formatUnits, parseUnits} from 'ethers';
 import axios from 'axios';
 import useSWRMutation from 'swr/mutation';
-import {domain, OrderKind, SigningScheme, signOrder} from '@cowprotocol/contracts';
+// import {domain, signOrder} from '@cowprotocol/contracts';
 import {isSolverDisabled, Solver} from '@vaults/contexts/useSolver';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -12,12 +12,14 @@ import {MaxUint256, toBigInt, toNormalizedBN, toNumber} from '@yearn-finance/web
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
+import {OrderKind, SigningScheme} from '@common/types/cowswap.helper';
 import {approvedERC20Amount, approveERC20, isApprovedERC20} from '@common/utils/actions/approveToken';
+import {domain, signOrder} from '@common/utils/cowswap.helpers';
 
 import type {AxiosError} from 'axios';
 import type {MayPromise, TNormalizedBN} from '@yearn-finance/web-lib/types';
 import type {TTxResponse, TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
-import type {ApiError, Order, QuoteQuery, Timestamp} from '@cowprotocol/contracts';
+import type {ApiError, Order, QuoteQuery, Timestamp} from '@common/types/cowswap.helper';
 import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
 import type {TCowAPIResult, TCowResult} from '@vaults/types/solvers.cowswap';
 

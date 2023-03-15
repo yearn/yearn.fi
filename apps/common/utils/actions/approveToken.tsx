@@ -17,7 +17,7 @@ export async function	isApprovedERC20(
 		const contract = new ethers.Contract(
 			tokenAddress,
 			['function allowance(address _owner, address _spender) public view returns (uint256)'],
-			provider
+			signer
 		);
 		const value = await contract.allowance(address, spender);
 		return value.gte(amount);
