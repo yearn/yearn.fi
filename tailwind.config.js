@@ -20,7 +20,6 @@ module.exports = {
 				mono: ['Aeonik Mono', ...defaultTheme.fontFamily.mono]
 			},
 			width: {
-				'1/3': '33.333333%',
 				'22': '5.5rem',
 				'42': '10.5rem',
 				'50': '12.5rem',
