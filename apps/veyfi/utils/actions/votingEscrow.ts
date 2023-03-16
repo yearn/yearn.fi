@@ -1,10 +1,10 @@
 import {ethers} from 'ethers';
+import {handleTx} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {approveERC20} from '@common/utils/actions';
 
 import SNAPSHOT_DELEGATE_REGISTRY_ABI from '../abi/SnapshotDelegateRegistry.abi';
 import VEYFI_ABI from '../abi/veYFI.abi';
 import {SNAPSHOT_DELEGATE_REGISTRY_ADDRESS, YEARN_SNAPSHOT_SPACE} from '../constants';
-import {handleTx} from '..';
 
 import type {BigNumber} from 'ethers';
 import type {Connector} from 'wagmi';
@@ -41,7 +41,8 @@ export async function lock(
 ): Promise<boolean> {
 	const signer = provider.getSigner(accountAddress);
 	const votingEscrowContract = new ethers.Contract(votingEscrowAddress, VEYFI_ABI, signer);
-	return handleTx(votingEscrowContract.modify_lock(amount, time, accountAddress));
+	const result = await handleTx(votingEscrowContract.modify_lock(amount, time, accountAddress));
+	return result.isSuccessful;
 }
 
 export async function increaseLockAmount(
@@ -52,7 +53,8 @@ export async function increaseLockAmount(
 ): Promise<boolean> {
 	const signer = provider.getSigner(accountAddress);
 	const votingEscrowContract = new ethers.Contract(votingEscrowAddress, VEYFI_ABI, signer);
-	return handleTx(votingEscrowContract.modify_lock(amount, '0', accountAddress));
+	const result = await (votingEscrowContract.modify_lock(amount, '0', accountAddress));
+	return result.isSuccessful;
 }
 
 export async function extendLockTime(
@@ -63,7 +65,8 @@ export async function extendLockTime(
 ): Promise<boolean> {
 	const signer = provider.getSigner(accountAddress);
 	const votingEscrowContract = new ethers.Contract(votingEscrowAddress, VEYFI_ABI, signer);
-	return handleTx(votingEscrowContract.modify_lock('0', time, accountAddress));
+	const result = await (votingEscrowContract.modify_lock('0', time, accountAddress));
+	return result.isSuccessful;
 }
 
 export async function withdrawUnlocked(
@@ -77,7 +80,8 @@ export async function withdrawUnlocked(
 	if ((penalty as BigNumber).gt(0)) {
 		throw new Error('Tokens are not yet unlocked');
 	}
-	return handleTx(votingEscrowContract.withdraw());
+	const result = await (votingEscrowContract.withdraw());
+	return result.isSuccessful;
 }
 
 export async function withdrawLocked(
@@ -87,7 +91,8 @@ export async function withdrawLocked(
 ): Promise<boolean> {
 	const signer = provider.getSigner(accountAddress);
 	const votingEscrowContract = new ethers.Contract(votingEscrowAddress, VEYFI_ABI, signer);
-	return handleTx(votingEscrowContract.withdraw());
+	const result = await (votingEscrowContract.withdraw());
+	return result.isSuccessful;
 }
 
 export async function delegateVote(
@@ -97,5 +102,6 @@ export async function delegateVote(
 ): Promise<boolean> {
 	const signer = provider.getSigner(accountAddress);
 	const delegateRegistryContract = new ethers.Contract(SNAPSHOT_DELEGATE_REGISTRY_ADDRESS, SNAPSHOT_DELEGATE_REGISTRY_ABI, signer);
-	return handleTx(delegateRegistryContract.setDelegate(ethers.utils.formatBytes32String(YEARN_SNAPSHOT_SPACE), delegateAddress));
+	const result = await (delegateRegistryContract.setDelegate(ethers.utils.formatBytes32String(YEARN_SNAPSHOT_SPACE), delegateAddress));
+	return result.isSuccessful;
 }
