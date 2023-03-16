@@ -1,19 +1,19 @@
 import React, {useMemo, useState} from 'react';
 import {Button} from '@yearn-finance/web-lib/components/Button';
+import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {Modal} from '@yearn-finance/web-lib/components/Modal';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
+import {formatAmount, formatPercent, formatUSD} from '@yearn-finance/web-lib/utils/format.number';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useYearn} from '@common/contexts/useYearn';
-import {formatPercent, formatUSD} from '@common/utils';
 import {GaugeBribeModal} from '@yBribe/components/bribe/GaugeBribeModal';
 import {useBribes} from '@yBribe/contexts/useBribes';
 
 import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
-import type {TDict} from '@yearn-finance/web-lib/utils/types';
+import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TCurveGauges} from '@common/types/curves';
 
 function	GaugeRowItemWithExtraData({address, value}: {address: string, value: BigNumber}): ReactElement {
@@ -60,6 +60,19 @@ function	GaugeListRow({currentGauge}: {currentGauge: TCurveGauges}): ReactElemen
 	const	currentRewardsForCurrentGaugeMap = Object.entries(currentRewardsForCurrentGauge || {}) || [];
 	const	nextRewardsForCurrentGaugeMap = Object.entries(nextRewardsForCurrentGauge || {}) || [];
 
+	function	renderDefaultValueUSDFallback(): ReactElement {
+		return (
+			<div className={'flex h-auto flex-col items-end pt-0 md:h-14'}>
+				<p className={'yearn--table-data-section-item-value'}>
+					{formatUSD(0, 5, 5)}
+				</p>
+				<p className={'font-number inline-flex items-baseline text-right text-xs text-neutral-400'}>
+					{'-'}
+				</p>
+			</div>
+		);
+	}
+
 	return (
 		<div className={'yearn--table-wrapper cursor-pointer transition-colors hover:bg-neutral-300'}>
 			<div className={'yearn--table-token-section'}>
@@ -98,44 +111,30 @@ function	GaugeListRow({currentGauge}: {currentGauge: TCurveGauges}): ReactElemen
 
 				<div className={'yearn--table-data-section-item md:col-span-3'} datatype={'number'}>
 					<label className={'yearn--table-data-section-item-label'}>{'Current Bribes'}</label>
-					{
-						!currentRewardsForCurrentGaugeMap || currentRewardsForCurrentGaugeMap.length === 0 ? (
-							<div className={'flex h-auto flex-col items-end pt-0 md:h-14'}>
-								<p className={'yearn--table-data-section-item-value'}>
-									{formatUSD(0, 5, 5)}
-								</p>
-								<p className={'font-number inline-flex items-baseline text-right text-xs text-neutral-400'}>
-									{'-'}
-								</p>
-							</div>
-						) : currentRewardsForCurrentGaugeMap.map(([key, value]: [string, BigNumber]): ReactElement => (
+					<Renderable
+						shouldRender={!!currentRewardsForCurrentGaugeMap && currentRewardsForCurrentGaugeMap.length > 0}
+						fallback={renderDefaultValueUSDFallback()}>
+						{currentRewardsForCurrentGaugeMap.map(([key, value]: [string, BigNumber]): ReactElement =>
 							<GaugeRowItemWithExtraData
 								key={`rewards-${currentGauge.gauge}-${key}`}
 								address={toAddress(key)}
 								value={value} />
-						))
-					}
+						)}
+					</Renderable>
 				</div>
 
 				<div className={'yearn--table-data-section-item md:col-span-3'} datatype={'number'}>
 					<label className={'yearn--table-data-section-item-label'}>{'Current Bribes'}</label>
-					{
-						!nextRewardsForCurrentGaugeMap || nextRewardsForCurrentGaugeMap.length === 0 ? (
-							<div className={'flex h-auto flex-col items-end pt-0 md:h-14'}>
-								<p className={'yearn--table-data-section-item-value'}>
-									{formatUSD(0, 5, 5)}
-								</p>
-								<p className={'font-number inline-flex items-baseline text-right text-xs text-neutral-400'}>
-									{'-'}
-								</p>
-							</div>
-						) : nextRewardsForCurrentGaugeMap.map(([key, value]: [string, BigNumber]): ReactElement => (
+					<Renderable
+						shouldRender={!!nextRewardsForCurrentGaugeMap && nextRewardsForCurrentGaugeMap.length > 0}
+						fallback={renderDefaultValueUSDFallback()}>
+						{nextRewardsForCurrentGaugeMap.map(([key, value]: [string, BigNumber]): ReactElement =>
 							<GaugeRowItemWithExtraData
 								key={`rewards-${currentGauge.gauge}-${key}`}
 								address={toAddress(key)}
 								value={value} />
-						))
-					}
+						)}
+					</Renderable>
 				</div>
 
 				<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>

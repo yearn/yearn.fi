@@ -1,5 +1,5 @@
 import type {BigNumber} from 'ethers';
-import type {TDict} from '@yearn-finance/web-lib/utils/types';
+import type {TDict} from '@yearn-finance/web-lib/types';
 
 export type TCurveGaugesFromYearn = {
 	gauge_name: string,

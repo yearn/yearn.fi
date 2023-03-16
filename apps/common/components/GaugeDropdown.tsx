@@ -1,22 +1,16 @@
 import React, {cloneElement, Fragment, useMemo, useState} from 'react';
 import {Combobox, Transition} from '@headlessui/react';
+import Renderable from '@yearn-finance/web-lib/components/Renderable';
+import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import IconChevron from '@common/icons/IconChevron';
-import {formatPercent} from '@common/utils';
 
 import type {ReactElement} from 'react';
 import type {TDropdownGaugeItemProps, TDropdownGaugeOption, TDropdownGaugeProps} from '@common/types/types';
 
 function DropdownItem({option}: TDropdownGaugeItemProps): ReactElement {
-	function	renderAPY(): string {
-		if (((option?.value?.APY || 0) * 100) > 500) {
-			return `APY ≧ ${formatPercent(500, 0, 0)}`;
-		}
-		return `APY ${formatPercent((option?.value?.APY || 0) * 100)}`;
-	}
-
 	return (
 		<Combobox.Option value={option}>
-			{({active}): ReactElement => (
+			{({active}): ReactElement =>
 				<div data-active={active} className={'yearn--dropdown-menu-item w-full hover:bg-neutral-0/40'}>
 					<div className={'h-6 w-6 rounded-full'}>
 						{option?.icon ? cloneElement(option.icon) : null}
@@ -26,11 +20,11 @@ function DropdownItem({option}: TDropdownGaugeItemProps): ReactElement {
 							{option.label}
 						</p>
 						<p className={`${option.icon ? 'pl-2' : 'pl-0'} text-xs font-normal text-neutral-600`}>
-							{renderAPY()}
+							{`APY ${formatPercent((option?.value?.APY || 0) * 100, 2, 2, 500)}`}
 						</p>
 					</div>
 				</div>
-			)}
+			}
 		</Combobox.Option>
 	);
 }
@@ -76,12 +70,12 @@ function Dropdown({
 	const filteredOptions = query === ''
 		? orderedOptions
 		: orderedOptions.filter((option): boolean => {
-			return (option.label).toLowerCase().includes(query.toLowerCase());
+			return option.label.toLowerCase().includes(query.toLowerCase());
 		});
 
 	return (
 		<div>
-			{isOpen ? (
+			<Renderable shouldRender={isOpen}>
 				<div
 					className={'fixed inset-0 z-0'}
 					onClick={(e): void => {
@@ -89,7 +83,8 @@ function Dropdown({
 						e.preventDefault();
 						set_isOpen(false);
 					}} />
-			) : null}
+			</Renderable>
+
 			<Combobox
 				value={selected}
 				onChange={onSelect}>
@@ -127,16 +122,11 @@ function Dropdown({
 						leaveTo={'transform scale-95 opacity-0'}
 						afterLeave={(): void => set_query('')}>
 						<Combobox.Options static className={'yearn--dropdown-menu z-50'}>
-							{filteredOptions.length === 0 ? (
-								<DropdownEmpty query={query} />
-							) : (
-								filteredOptions
-									.map((option): ReactElement => (
-										<DropdownItem
-											key={option.label}
-											option={option} />
-									)
-									))}
+							<Renderable
+								shouldRender={filteredOptions.length > 0}
+								fallback={<DropdownEmpty query={query} />}>
+								{filteredOptions.map((option): ReactElement => <DropdownItem key={option.label} option={option} />)}
+							</Renderable>
 						</Combobox.Options>
 					</Transition>
 				</>

@@ -2,7 +2,7 @@ import {useCallback, useMemo} from 'react';
 import {bigNumberSort, stringSort} from '@common/utils/sort';
 
 import type {BigNumber} from 'ethers';
-import type {TDict} from '@yearn-finance/web-lib/utils/types';
+import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TCurveGauges} from '@common/types/curves';
 import type {TSortDirection} from '@common/types/types';
 
@@ -80,7 +80,7 @@ function useSortGauges({list, gaugesVotes, sortBy, sortDirection, votes}: TProps
 			default:
 				return list;
 		}
-		
+
 	}, [sortBy, sortedByName, sortedByCurrentVotes, sortedByPutYourVotes, list]);
 
 	return sortedVaults;

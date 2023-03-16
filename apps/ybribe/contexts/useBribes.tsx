@@ -13,7 +13,7 @@ import CURVE_BRIBE_V3 from '@yBribe/utils/abi/curveBribeV3.abi';
 import CURVE_BRIBE_V3_HELPER from '@yBribe/utils/abi/curveBribeV3Helper.abi';
 
 import type {BigNumber} from 'ethers';
-import type {TDict, VoidPromiseFunction} from '@yearn-finance/web-lib/utils/types';
+import type {TDict, VoidPromiseFunction} from '@yearn-finance/web-lib/types';
 import type {TCurveGaugeVersionRewards} from '@common/types/curves';
 
 export type	TBribesContext = {

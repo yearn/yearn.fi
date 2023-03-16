@@ -1,6 +1,7 @@
 import React, {useMemo} from 'react';
 import Balancer from 'react-wrap-balancer';
 import useSWR from 'swr';
+import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import SettingsOverwrite from '@common/components/SettingsOverwrite';
@@ -41,7 +42,7 @@ function	About(): ReactElement {
 							<p className={'text-neutral-600'}>{'For those looking to buy votes, you can offer bribes to a gauge using the \'Bribe a Gauge\' function. Resulting in a boost to CRV emissions to the gauge of your choosing.'}</p>
 						</Balancer>
 					</div>
-				</div> 
+				</div>
 
 				<div className={'mb-10 w-full bg-neutral-100 p-10'}>
 					<div aria-label={'Claim Period'} className={'flex flex-col pb-6'}>
@@ -78,16 +79,15 @@ function	About(): ReactElement {
 					</div>
 					<div className={'grid w-full grid-cols-1 pb-2 md:pb-4'}>
 						<RewardFeedTableHead />
-						{(feed || []).length === 0 ? (
-							<GaugeListEmpty />
-						) : sortedFeed.map((item): ReactNode => {
-							if (!item) {
-								return (null);
-							}
-							return <RewardFeedTableRow
-								key={`${item.txHash}_${item.briber}_${item.rewardToken}`}
-								currentRewardAdded={item} />;
-						})}
+						<Renderable
+							shouldRender={(feed || []).length > 0}
+							fallback={<GaugeListEmpty />}>
+							{sortedFeed.filter((item): boolean => !!item).map((item): ReactNode =>
+								<RewardFeedTableRow
+									key={`${item.txHash}_${item.briber}_${item.rewardToken}`}
+									currentRewardAdded={item} />
+							)}
+						</Renderable>
 					</div>
 				</div>
 			</div>

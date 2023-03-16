@@ -1,11 +1,12 @@
 import React from 'react';
 import {Button} from '@yearn-finance/web-lib/components/Button';
+import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {Dropdown} from '@common/components/TokenDropdown';
 import IconArrowRight from '@common/icons/IconArrowRight';
 
 import type {ChangeEvent, ReactElement, ReactNode} from 'react';
 import type {TBalanceData} from '@yearn-finance/web-lib/hooks/types';
-import type {TDict} from '@yearn-finance/web-lib/utils/types';
+import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TDropdownOption} from '@common/types/types';
 
 export type TQASelect = {
@@ -39,22 +40,29 @@ export type TQAButton = {
 function QASelect(props: TQASelect): ReactElement {
 	const {label, legend, options, selected, balanceSource, onSelect} = props;
 
+	function	renderMultipleOptionsFallback(): ReactElement {
+		return (
+			<Dropdown
+				defaultOption={options[0]}
+				options={options}
+				selected={selected}
+				balanceSource={balanceSource}
+				onSelect={onSelect ? onSelect : (): void => undefined} />
+		);
+	}
+
 	return (
 		<div className={'relative z-10 w-full space-y-2'}>
 			<div className={'flex flex-row items-baseline justify-between'}>
 				<label className={'text-base text-neutral-600'}>{label}</label>
-				<legend className={'font-number inline text-xs text-neutral-600 md:hidden'} suppressHydrationWarning>
+				<legend className={'font-number inline text-xs text-neutral-600 md:hidden'}>
 					{legend}
 				</legend>
 			</div>
-			{(onSelect && options.length > 1) ? (
-				<Dropdown
-					defaultOption={options[0]}
-					options={options}
-					selected={selected}
-					balanceSource={balanceSource}
-					onSelect={onSelect} />
-			) : (
+
+			<Renderable
+				fallback={renderMultipleOptionsFallback()}
+				shouldRender={options.length === 0}>
 				<div className={'flex h-10 w-full items-center justify-between bg-neutral-0 px-2 text-base text-neutral-900 md:px-3'}>
 					<div className={'relative flex flex-row items-center'}>
 						<div key={selected?.value} className={'h-6 w-6 rounded-full'}>
@@ -65,8 +73,8 @@ function QASelect(props: TQASelect): ReactElement {
 						</p>
 					</div>
 				</div>
-			)}
-			<legend className={'font-number hidden text-xs text-neutral-600 md:inline'} suppressHydrationWarning>
+			</Renderable>
+			<legend className={'font-number hidden text-xs text-neutral-600 md:inline'}>
 				{legend}
 			</legend>
 		</div>

@@ -10,7 +10,7 @@ import {useYearn} from '@common/contexts/useYearn';
 
 import type {ReactElement} from 'react';
 import type {TBalanceData, TUseBalancesTokens} from '@yearn-finance/web-lib/hooks/types';
-import type {TDict} from '@yearn-finance/web-lib/utils/types';
+import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TMigrationTable} from '@vaults/utils/migrationTable';
 
 export type	TWalletForExternalMigrations = {

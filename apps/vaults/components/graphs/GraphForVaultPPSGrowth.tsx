@@ -1,7 +1,6 @@
 import React, {Fragment} from 'react';
 import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
-import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
-import {formatPercent} from '@common/utils';
+import {formatAmount, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 
 import type {ReactElement} from 'react';
 import type {TMessariGraphData} from '@common/types/types';
@@ -26,10 +25,11 @@ function	GraphForVaultPPSGrowth({messariData, height = 312}: TGraphForVaultPPSGr
 					type={'step'}
 					strokeWidth={2}
 					dataKey={'pps'}
-					stroke={'currentcolor'} 
+					stroke={'currentcolor'}
 					dot={false}
 					activeDot={(e): ReactElement => {
 						e.className = `${e.className} activeDot`;
+						delete e.dataKey;
 						return <circle {...e}></circle>;
 					}} />
 				<XAxis
@@ -38,12 +38,15 @@ function	GraphForVaultPPSGrowth({messariData, height = 312}: TGraphForVaultPPSGr
 				<YAxis
 					orientation={'right'}
 					domain={['dataMin', 'auto']}
-					hide={false} 
+					hide={false}
 					tick={(e): ReactElement => {
 						const {payload: {value}} = e;
 						e.fill = '#5B5B5B';
 						e.className = 'text-xxs md:text-xs font-number';
 						e.alignmentBaseline = 'middle';
+						delete e.verticalAnchor;
+						delete e.visibleTicksCount;
+						delete e.tickFormatter;
 						const	formatedValue = formatAmount(value, 3, 3);
 						return <text {...e}>{formatedValue}</text>;
 					}} />

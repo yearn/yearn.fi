@@ -5,9 +5,8 @@ import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
+import {formatAmount, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
-import {formatPercent} from '@common/utils';
 
 import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
@@ -24,7 +23,7 @@ function	GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height =
 	const {safeChainID} = useChainID();
 	const {settings: baseAPISettings} = useSettings();
 	const {data: reports} = useSWR(
-		`${baseAPISettings.yDaemonBaseURI}/${safeChainID}/reports/${strategy.address}`,
+		`${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/${safeChainID}/reports/${strategy.address}`,
 		baseFetcher,
 		{revalidateOnFocus: false}
 	) as SWRResponse;
@@ -56,10 +55,11 @@ function	GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height =
 					type={'step'}
 					strokeWidth={2}
 					dataKey={'value'}
-					stroke={'currentcolor'} 
+					stroke={'currentcolor'}
 					dot={false}
 					activeDot={(e): ReactElement => {
 						e.className = `${e.className} activeDot`;
+						delete e.dataKey;
 						return <circle {...e}></circle>;
 					}} />
 				<XAxis
@@ -67,12 +67,15 @@ function	GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height =
 					hide />
 				<YAxis
 					orientation={'right'}
-					hide={false} 
+					hide={false}
 					tick={(e): ReactElement => {
 						const {payload: {value}} = e;
 						e.fill = '#5B5B5B';
 						e.className = 'text-xxs md:text-xs font-number z-10 ';
 						e.alignmentBaseline = 'middle';
+						delete e.verticalAnchor;
+						delete e.visibleTicksCount;
+						delete e.tickFormatter;
 						const	formatedValue = formatPercent(value);
 						return <text {...e}>{formatedValue}</text>;
 					}} />
@@ -87,7 +90,7 @@ function	GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height =
 							const	{gain, loss} = innerPayload;
 							const	diff = formatBN(gain).sub(formatBN(loss));
 							const	normalizedDiff = formatToNormalizedValue(diff, vaultDecimals);
-							
+
 							return (
 								<div className={'recharts-tooltip'}>
 									<div className={'mb-4'}>

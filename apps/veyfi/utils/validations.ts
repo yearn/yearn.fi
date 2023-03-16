@@ -2,8 +2,7 @@ import {isAddress} from 'ethers/lib/utils';
 import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
 
 import type {BigNumber} from 'ethers';
-import type {TAddress} from '@yearn-finance/web-lib/utils/address';
-import type {TDict} from '@yearn-finance/web-lib/utils/types';
+import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 
 export type TValidationResponse = {
 	isValid?: boolean;
@@ -57,7 +56,7 @@ export function validateAmount(props: TValidateAmountProps): TValidationResponse
 	}
 
 	if (balance !== undefined && amountNumber > Number(balance)) {
-		return {isValid: false, error: `Insufficient balance ${shouldDisplayMin && minAmountAllowed !== undefined ? `(min ${minAmountAllowed})` : ''}`};
+		return {isValid: false, error: 'Insufficient balance'};
 	}
 
 	return {isValid: true};

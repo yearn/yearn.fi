@@ -1,9 +1,12 @@
-import React, {Fragment, useMemo, useState} from 'react';
+import React, {Fragment, useEffect, useMemo, useState} from 'react';
+import {useRouter} from 'next/router';
 import useSWR from 'swr';
 import {Listbox, Transition} from '@headlessui/react';
+import {useIsMounted} from '@react-hookz/web';
 import {VaultDetailsAbout} from '@vaults/components/details/tabs/VaultDetailsAbout';
 import {VaultDetailsHistorical} from '@vaults/components/details/tabs/VaultDetailsHistorical';
 import {VaultDetailsStrategies} from '@vaults/components/details/tabs/VaultDetailsStrategies';
+import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
@@ -16,24 +19,39 @@ import IconChevron from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
-import type {TMetamaskInjectedProvider} from '@yearn-finance/web-lib/utils/types';
+import type {TMetamaskInjectedProvider} from '@yearn-finance/web-lib/types';
 import type {TSettingsForNetwork, TYearnVault} from '@common/types/yearn';
 
 type TTabsOptions = {
 	value: number;
 	label: string;
+	slug?: string;
 }
 type TTabs = {
 	selectedAboutTabIndex: number,
 	set_selectedAboutTabIndex: (arg0: number) => void
 }
 
+type TExplorerLinkProps = {
+	explorerBaseURI?: string;
+	currentVaultAddress: string;
+}
+
 function	Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactElement {
-	const tabs: TTabsOptions[] = [
-		{value: 0, label: 'About'},
-		{value: 1, label: 'Strategies'},
-		{value: 2, label: 'Historical rates'}
-	];
+	const router = useRouter();
+
+	const tabs: TTabsOptions[] = useMemo((): TTabsOptions[] => [
+		{value: 0, label: 'About', slug: 'about'},
+		{value: 1, label: 'Strategies', slug: 'strategies'},
+		{value: 2, label: 'Historical rates', slug: 'historical-rates'}
+	], []);
+
+	useEffect((): void => {
+		const tab = tabs.find((tab): boolean => tab.slug === router.query.tab);
+		if (tab?.value) {
+			set_selectedAboutTabIndex(tab?.value);
+		}
+	}, [router.query.tab, set_selectedAboutTabIndex, tabs]);
 
 	return (
 		<>
@@ -41,7 +59,21 @@ function	Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactE
 				{tabs.map((tab): ReactElement => (
 					<button
 						key={`desktop-${tab.value}`}
-						onClick={(): void => set_selectedAboutTabIndex(tab.value)}>
+						onClick={(): void => {
+							router.replace(
+								{
+									query: {
+										...router.query,
+										tab: tab.slug
+									}
+								},
+								undefined,
+								{
+									shallow: true
+								}
+							);
+							set_selectedAboutTabIndex(tab.value);
+						}}>
 						<p
 							title={tab.label}
 							aria-selected={selectedAboutTabIndex === tab.value}
@@ -95,6 +127,24 @@ function	Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactE
 	);
 }
 
+function ExplorerLink({explorerBaseURI, currentVaultAddress}: TExplorerLinkProps): ReactElement | null {
+	const isMounted = useIsMounted();
+
+	if (!explorerBaseURI || !isMounted()) {
+		return null;
+	}
+
+	return (
+		<a
+			href={`${explorerBaseURI}/address/${currentVaultAddress}`}
+			target={'_blank'}
+			rel={'noopener noreferrer'}>
+			<span className={'sr-only'}>{'Open in explorer'}</span>
+			<IconLinkOut className={'h-5 w-5 cursor-alias text-neutral-600 transition-colors hover:text-neutral-900 md:h-6 md:w-6'} />
+		</a>
+	);
+}
+
 function	VaultDetailsTabsWrapper({currentVault}: {currentVault: TYearnVault}): ReactElement {
 	const {provider} = useWeb3();
 	const {safeChainID} = useChainID();
@@ -119,7 +169,7 @@ function	VaultDetailsTabsWrapper({currentVault}: {currentVault: TYearnVault}): R
 	}
 
 	const	{data: yDaemonHarvestsData} = useSWR(
-		`${baseAPISettings.yDaemonBaseURI}/${safeChainID}/vaults/harvests/${currentVault.address}`,
+		`${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/${safeChainID}/vaults/harvests/${currentVault.address}`,
 		baseFetcher,
 		{revalidateOnFocus: false}
 	) as SWRResponse;
@@ -155,32 +205,28 @@ function	VaultDetailsTabsWrapper({currentVault}: {currentVault: TYearnVault}): R
 						<span className={'sr-only'}>{'Add to wallet'}</span>
 						<IconAddToMetamask className={'h-5 w-5 text-neutral-600 transition-colors hover:text-neutral-900 md:h-6 md:w-6'} />
 					</button>
-					<a
-						href={`${networkSettings?.explorerBaseURI as string}/address/${currentVault.address}`}
-						target={'_blank'}
-						rel={'noopener noreferrer'}>
-						<span className={'sr-only'}>{'Open in explorer'}</span>
-						<IconLinkOut className={'h-5 w-5 cursor-alias text-neutral-600 transition-colors hover:text-neutral-900 md:h-6 md:w-6'} />
-					</a>
+					<ExplorerLink explorerBaseURI={networkSettings?.explorerBaseURI} currentVaultAddress={currentVault.address} />
 				</div>
 			</div>
 
 			<div className={'-mt-0.5 h-0.5 w-full bg-neutral-300'} />
 
-			{currentVault && selectedAboutTabIndex === 0 ? (
+			<Renderable shouldRender={currentVault && selectedAboutTabIndex === 0}>
 				<VaultDetailsAbout
 					currentVault={currentVault}
 					harvestData={harvestData} />
-			) : null}
-			{currentVault && selectedAboutTabIndex === 1 ? (
+			</Renderable>
+
+			<Renderable shouldRender={currentVault && selectedAboutTabIndex === 1}>
 				<VaultDetailsStrategies
 					currentVault={currentVault} />
-			) : null}
-			{currentVault && selectedAboutTabIndex === 2 ? (
+			</Renderable>
+
+			<Renderable shouldRender={currentVault && selectedAboutTabIndex === 2}>
 				<VaultDetailsHistorical
 					currentVault={currentVault}
 					harvestData={harvestData} />
-			) : null}
+			</Renderable>
 
 		</div>
 	);

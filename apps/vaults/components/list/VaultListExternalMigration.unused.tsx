@@ -6,11 +6,12 @@ import {useBeefyVaults} from '@vaults/hooks/useBeefyVaults.unused';
 import {useFindVault} from '@vaults/hooks/useFindVault';
 import {migrationTable} from '@vaults/utils/migrationTable';
 import {Button} from '@yearn-finance/web-lib/components/Button';
+import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {addressZero, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
+import {formatAmount, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
@@ -18,7 +19,6 @@ import ListHead from '@common/components/ListHead';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import {useBalance} from '@common/hooks/useBalance';
-import {formatPercent} from '@common/utils';
 import {approveERC20, isApprovedERC20} from '@common/utils/actions/approveToken';
 import {depositVia} from '@common/utils/actions/depositVia';
 
@@ -47,7 +47,7 @@ function	VaultListExternalMigrationRow({element}: {element: TMigrationTable}): R
 
 	async function onMigrateFlow(): Promise<void> {
 		const	isApproved = await isApprovedERC20(
-			provider as ethers.providers.Web3Provider,
+			provider,
 			toAddress(element.tokenToMigrate), //from
 			toAddress(element.zapVia), //migrator
 			balance.raw
@@ -167,7 +167,7 @@ function	VaultListExternalMigration(): ReactElement {
 	}, [balances, balancesNonce]);
 
 	const	possibleBeefyMigrations = useMemo((): TMigrationTable[] => {
-		return beefyVaults.reduce((migratableVaults, bVault): TMigrationTable[] => {
+		return beefyVaults.reduce((migratableVaults: TMigrationTable[], bVault): TMigrationTable[] => {
 			if (!bVault.tokenAddress) {
 				return migratableVaults;
 			}
@@ -180,7 +180,7 @@ function	VaultListExternalMigration(): ReactElement {
 				sourceAPY: bVault.apy
 			};
 			return [...migratableVaults, element];
-		}, [] as TMigrationTable[]);
+		}, []);
 	}, [beefyVaults]);
 
 	return (
@@ -208,25 +208,22 @@ function	VaultListExternalMigration(): ReactElement {
 				]} />
 
 			<div>
-				{
-					possibleBowswapMigrations.length === 0 && possibleBeefyMigrations.length >= 0 ? (
-						<VaultListEmptyExternalMigration />
-					) : (
-						<Fragment>
-							{possibleBowswapMigrations.map((element: TMigrationTable): ReactElement => (
-								<VaultListExternalMigrationRow
-									key={`${element.tokenToMigrate}_${element.service}`}
-									element={element} />
-							))}
-							{possibleBeefyMigrations.map((element: TMigrationTable): ReactElement => (
-								<VaultListExternalMigrationRow
-									key={`${element.tokenToMigrate}_${element.service}`}
-									element={element} />
-							))}
-						</Fragment>
-					)
-				}
-
+				<Renderable
+					shouldRender={possibleBowswapMigrations.length > 0 || possibleBeefyMigrations.length > 0}
+					fallback={<VaultListEmptyExternalMigration />}>
+					<Fragment>
+						{possibleBowswapMigrations.map((element: TMigrationTable): ReactElement =>
+							<VaultListExternalMigrationRow
+								key={`${element.tokenToMigrate}_${element.service}`}
+								element={element} />
+						)}
+						{possibleBeefyMigrations.map((element: TMigrationTable): ReactElement =>
+							<VaultListExternalMigrationRow
+								key={`${element.tokenToMigrate}_${element.service}`}
+								element={element} />
+						)}
+					</Fragment>
+				</Renderable>
 			</div>
 		</div>
 	);

@@ -10,6 +10,7 @@ import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers
 import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useWallet} from '@common/contexts/useWallet';
 import {useBalance} from '@common/hooks/useBalance';
+import {useClientOnlyFn} from '@common/hooks/useClientOnlyFn';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
 import {approvedERC20Amount} from '@common/utils/actions/approveToken';
 import {QuickActions} from '@yCRV/components/QuickActions';
@@ -30,11 +31,12 @@ function Deposit(): ReactElement {
 	const [amount, set_amount] = useState<TNormalizedBN | undefined>({raw: ethers.constants.Zero, normalized: 0});
 	const pricePerYCRV = useTokenPrice(toAddress(YCRV.value));
 	const {deposit, approve} = useVLyCRV();
+	const clientOnlyFormatAmount = useClientOnlyFn({fn: formatAmount, placeholder: '0,00'});
 
 	const fromSelectProps: TQASelect = useMemo((): TQASelect => {
-		const legend = `You have ${formatAmount(yCRVBalance.normalized)} ${yCRVBalance?.symbol || 'tokens'}`;
+		const legend = `You have ${clientOnlyFormatAmount(yCRVBalance.normalized)} ${yCRVBalance?.symbol || 'tokens'}`;
 		return {label: 'From wallet', legend, options: [YCRV], selected: YCRV};
-	}, [yCRVBalance.normalized, yCRVBalance?.symbol]);
+	}, [clientOnlyFormatAmount, yCRVBalance.normalized, yCRVBalance?.symbol]);
 
 	const maxLockingPossible = useMemo((): TNormalizedBN => {
 		const balance = yCRVBalance.raw || ethers.constants.Zero;
@@ -61,7 +63,7 @@ function Deposit(): ReactElement {
 	}), [amount]);
 
 	const [{result: allowanceFrom, status}, actions] = useAsync(async (): Promise<BigNumber> => approvedERC20Amount(
-		provider as ethers.providers.Web3Provider,
+		provider,
 		toAddress(YCRV.value),
 		toAddress(VL_YCRV.value)
 	), Zero);

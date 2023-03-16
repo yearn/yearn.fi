@@ -8,15 +8,16 @@ import VAULT_FACTORY_ABI from '@vaults/utils/abi/vaultFactory.abi';
 import {createNewVaultsAndStrategies, estimateGasForCreateNewVaultsAndStrategies} from '@vaults/utils/actions/createVaultFromFactory';
 import Wrapper from '@vaults/Wrapper';
 import {Button} from '@yearn-finance/web-lib/components/Button';
+import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import LinkOut from '@yearn-finance/web-lib/icons/IconLinkOut';
-import {ERC20_ABI} from '@yearn-finance/web-lib/utils/abi';
+import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
 import {addressZero, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {VAULT_FACTORY_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatBN, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
@@ -28,7 +29,7 @@ import {useYearn} from '@common/contexts/useYearn';
 import type {BigNumber, providers} from 'ethers';
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
-import type {TAddress} from '@yearn-finance/web-lib/utils/address';
+import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TCurveGaugesFromYearn} from '@common/types/curves';
 import type {TDropdownGaugeOption} from '@common/types/types';
 
@@ -187,6 +188,14 @@ function	Factory(): ReactElement {
 		}).perform();
 	}
 
+	function	loadingFallback(): ReactElement {
+		return (
+			<div className={'flex h-10 items-center bg-neutral-200 p-2 pl-5 text-neutral-600'}>
+				<span className={'loader'} />
+			</div>
+		);
+	}
+
 	return (
 		<section>
 			<div className={'mb-4 w-full bg-neutral-100 p-4 md:p-8'}>
@@ -222,80 +231,59 @@ function	Factory(): ReactElement {
 
 						<div className={'col-span-2 w-full space-y-1'}>
 							<p className={'text-neutral-600'}>{'Vault name'}</p>
-							{status === 'loading' ? (
-								<div className={'flex h-10 items-center bg-neutral-200 p-2 pl-5 text-neutral-600'}>
-									<span className={'loader'} />
-								</div>
-							) : (
+							<Renderable shouldRender={status !== 'loading'} fallback={loadingFallback()}>
 								<div className={'h-10 bg-neutral-200 p-2 text-neutral-600'}>
 									{!gaugeDisplayData ? '' : `Curve ${gaugeDisplayData.name} Factory`}
 								</div>
-							)}
+							</Renderable>
 						</div>
 
 						<div className={'col-span-2 w-full space-y-1'}>
 							<p className={'text-neutral-600'}>{'Symbol'}</p>
-							{status === 'loading' ? (
-								<div className={'flex h-10 items-center bg-neutral-200 p-2 pl-5 text-neutral-600'}>
-									<span className={'loader'} />
-								</div>
-							) : (
+							<Renderable shouldRender={status !== 'loading'} fallback={loadingFallback()}>
 								<div className={'h-10 bg-neutral-200 p-2 text-neutral-600'}>
 									{!gaugeDisplayData ? '' : `yvCurve-${gaugeDisplayData.symbol}-f`}
 								</div>
-							)}
+							</Renderable>
 						</div>
 
 						<div className={'col-span-3 w-full space-y-1'}>
 							<p className={'text-neutral-600'}>{'Pool address'}</p>
-							{status === 'loading' ? (
-								<div className={'flex h-10 items-center bg-neutral-200 p-2 pl-5 text-neutral-600'}>
-									<span className={'loader'} />
-								</div>
-							) : (
+							<Renderable shouldRender={status !== 'loading'} fallback={loadingFallback()}>
 								<div className={'flex h-10 flex-row items-center justify-between bg-neutral-200 p-2 font-mono'}>
-									{gaugeDisplayData ? (
-										<>
-											<p className={'overflow-hidden text-ellipsis text-neutral-600'}>
-												{gaugeDisplayData.poolAddress}
-											</p>
-											<a
-												href={`${networks[1].explorerBaseURI}/address/${gaugeDisplayData.poolAddress}`}
-												target={'_blank'}
-												rel={'noreferrer'}
-												className={'ml-4 cursor-pointer text-neutral-900'}>
-												<LinkOut className={'h-6 w-6'} />
-											</a>
-										</>
-									) : ''}
+									<Renderable shouldRender={!!gaugeDisplayData}>
+										<p className={'overflow-hidden text-ellipsis text-neutral-600'}>
+											{toAddress(gaugeDisplayData?.poolAddress)}
+										</p>
+										<a
+											href={`${networks[1].explorerBaseURI}/address/${toAddress(gaugeDisplayData?.poolAddress)}`}
+											target={'_blank'}
+											rel={'noreferrer'}
+											className={'ml-4 cursor-pointer text-neutral-900'}>
+											<LinkOut className={'h-6 w-6'} />
+										</a>
+									</Renderable>
 								</div>
-							)}
+							</Renderable>
 						</div>
 						<div className={'col-span-3 w-full space-y-1'}>
 							<p className={'text-neutral-600'}>{'Gauge address'}</p>
-
-							{status === 'loading' ? (
-								<div className={'flex h-10 items-center bg-neutral-200 p-2 pl-5 text-neutral-600'}>
-									<span className={'loader'} />
-								</div>
-							) : (
+							<Renderable shouldRender={status !== 'loading'} fallback={loadingFallback()}>
 								<div className={'flex h-10 flex-row items-center justify-between bg-neutral-200 p-2 font-mono'}>
-									{gaugeDisplayData ? (
-										<>
-											<p className={'overflow-hidden text-ellipsis text-neutral-600'}>
-												{gaugeDisplayData.gaugeAddress}
-											</p>
-											<a
-												href={`${networks[1].explorerBaseURI}/address/${gaugeDisplayData.gaugeAddress}`}
-												target={'_blank'}
-												rel={'noreferrer'}
-												className={'ml-4 cursor-pointer text-neutral-900'}>
-												<LinkOut className={'h-6 w-6'} />
-											</a>
-										</>
-									) : ''}
+									<Renderable shouldRender={!!gaugeDisplayData}>
+										<p className={'overflow-hidden text-ellipsis text-neutral-600'}>
+											{toAddress(gaugeDisplayData?.gaugeAddress)}
+										</p>
+										<a
+											href={`${networks[1].explorerBaseURI}/address/${toAddress(gaugeDisplayData?.gaugeAddress)}`}
+											target={'_blank'}
+											rel={'noreferrer'}
+											className={'ml-4 cursor-pointer text-neutral-900'}>
+											<LinkOut className={'h-6 w-6'} />
+										</a>
+									</Renderable>
 								</div>
-							)}
+							</Renderable>
 						</div>
 
 					</div>
@@ -306,14 +294,14 @@ function	Factory(): ReactElement {
 						<Button
 							onClick={onCreateNewVault}
 							isBusy={txStatus.pending}
-							disabled={!isActive || selectedOption.value.gaugeAddress === addressZero || safeChainID !== 1 || hasError}
+							isDisabled={!isActive || selectedOption.value.gaugeAddress === addressZero || safeChainID !== 1 || hasError}
 							className={'w-full'}>
 							{'Create new Vault'}
 						</Button>
 					</div>
 					<div>
 						<p className={'font-number text-xs'}>
-							{`Est. gas ${formatAmount((formatBN(estimate)).toNumber(), 0, 0)}`}
+							{`Est. gas ${formatAmount(Number(estimate), 0, 0)}`}
 						</p>
 					</div>
 				</div>

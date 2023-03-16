@@ -1,5 +1,5 @@
 import React, {createContext, useCallback, useContext, useState} from 'react';
-import {useDeepCompareMemo} from '@react-hookz/web';
+import {useDebouncedEffect, useDeepCompareMemo} from '@react-hookz/web';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useSolverChainCoin} from '@vaults/hooks/useSolverChainCoin';
 import {useSolverCowswap} from '@vaults/hooks/useSolverCowswap';
@@ -8,7 +8,6 @@ import {useSolverPartnerContract} from '@vaults/hooks/useSolverPartnerContract';
 import {useSolverVanilla} from '@vaults/hooks/useSolverVanilla';
 import {useSolverWido} from '@vaults/hooks/useSolverWido';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {useDebouncedEffect} from '@yearn-finance/web-lib/hooks/useDebounce';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
@@ -32,7 +31,7 @@ export const isSolverDisabled = {
 	[Solver.CHAIN_COIN]: false,
 	[Solver.INTERNAL_MIGRATION]: false,
 	[Solver.COWSWAP]: false,
-	[Solver.WIDO]: true, //Audit ongoing
+	[Solver.WIDO]: false,
 	[Solver.PORTALS]: true //Not yet implemented
 };
 
@@ -82,6 +81,13 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 			case Solver.WIDO:
 			case Solver.COWSWAP: {
 				const [widoQuote, cowswapQuote] = await Promise.all([wido.init(request), cowswap.init(request)]); //TODO: add Portals once implemented
+
+				/**************************************************************
+				** Logic is to use the primary solver (Wido) and check if a
+				** quote is available. If not, we fallback to the secondary
+				** solver (Cowswap). If neither are available, we set the
+				** quote to 0.
+				**************************************************************/
 				if (currentSolver === Solver.WIDO && !isSolverDisabled[Solver.WIDO]) {
 					if (widoQuote?.raw?.gt(0)) {
 						performBatchedUpdates((): void => {
@@ -99,7 +105,16 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 							set_isLoading(false);
 						});
 					}
-				} else if (currentSolver === Solver.COWSWAP && !isSolverDisabled[Solver.COWSWAP]) {
+					return;
+				}
+
+				/**************************************************************
+				** Logic is to use the primary solver (Cowswap) and check if a
+				** quote is available. If not, we fallback to the secondary
+				** solver (Wido). If neither are available, we set the
+				** quote to 0.
+				**************************************************************/
+				if (currentSolver === Solver.COWSWAP && !isSolverDisabled[Solver.COWSWAP]) {
 					if (cowswapQuote?.raw?.gt(0)) {
 						performBatchedUpdates((): void => {
 							set_currentSolverState({...cowswap, quote: cowswapQuote});
@@ -150,6 +165,7 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 					set_isLoading(false);
 				});
 		}
+	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [address, actionParams, currentSolver, cowswap.init, vanilla.init, wido.init, internalMigration.init, isDepositing, currentVault.migration.contract]); //Ignore the warning, it's a false positive
 
 	useDebouncedEffect((): void => {

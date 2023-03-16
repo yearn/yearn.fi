@@ -3,11 +3,10 @@ import dynamic from 'next/dynamic';
 import IconCopy from '@yearn-finance/web-lib/icons/IconCopy';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
+import {formatAmount, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {formatDuration} from '@yearn-finance/web-lib/utils/format.time';
 import {copyToClipboard, parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
 import IconChevron from '@common/icons/IconChevron';
-import {formatPercent} from '@common/utils';
 
 import type {LoaderComponent} from 'next/dynamic';
 import type {ReactElement} from 'react';
@@ -48,7 +47,7 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVau
 		<details className={'p-0'}>
 			<summary>
 				<div>
-					<b className={'text-neutral-900'}>{strategy.name}</b>
+					<b className={'text-neutral-900'}>{strategy?.displayName || strategy.name}</b>
 				</div>
 				<div>
 					<IconChevron className={'summary-chevron'} />
@@ -148,6 +147,11 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVau
 	);
 }
 
+function isExceptionStrategy(strategy: TYearnVaultStrategy): boolean {
+	// Curve DAO Fee and Bribes Reinvest
+	return strategy.address.toString() === '0x23724D764d8b3d26852BA20d3Bc2578093d2B022' && strategy.details.inQueue;
+}
+
 function	VaultDetailsStrategies({currentVault}: {currentVault: TYearnVault}): ReactElement {
 	return (
 		<div className={'grid grid-cols-1 bg-neutral-100'}>
@@ -163,7 +167,9 @@ function	VaultDetailsStrategies({currentVault}: {currentVault: TYearnVault}): Re
 			</div>
 			<div className={'col-span-1 w-full border-t border-neutral-300'}>
 				{(currentVault?.strategies || [])
-					// .filter((strategy): boolean => (strategy?.details?.debtRatio || 0) > 0)
+					.filter((strategy): boolean => {
+						return Number(strategy?.details?.totalDebt) > 0 || isExceptionStrategy(strategy);
+					})
 					.sort((a, b): number => (b?.details?.debtRatio || 0) - (a?.details?.debtRatio || 0))
 					.map((strategy, index): ReactElement => (
 						<VaultDetailsStrategy

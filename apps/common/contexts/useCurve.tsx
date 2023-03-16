@@ -4,7 +4,7 @@ import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {baseFetcher, curveFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 
 import type {SWRResponse} from 'swr';
-import type {TDict} from '@yearn-finance/web-lib/utils/types';
+import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TCurveGauges, TCurveGaugesFromYearn} from '@common/types/curves';
 
 type TCurveWeeklyFees = {

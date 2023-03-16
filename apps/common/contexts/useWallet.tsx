@@ -10,7 +10,7 @@ import {useBalances} from '@common/hooks/useBalances';
 
 import type {ReactElement} from 'react';
 import type {TBalanceData, TUseBalancesTokens} from '@yearn-finance/web-lib/hooks/types';
-import type {TDict} from '@yearn-finance/web-lib/utils/types';
+import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TYearnVault} from '@common/types/yearn';
 
 export type	TWalletContext = {

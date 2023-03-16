@@ -1,13 +1,13 @@
 import {useMemo} from 'react';
 import useSWR from 'swr';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {useBalances} from '@yearn-finance/web-lib/hooks';
+import {useBalances} from '@yearn-finance/web-lib/hooks/useBalances';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import {useYearn} from '@common/contexts/useYearn';
 
 import type {SWRResponse} from 'swr';
-import type {TBalanceData, TUseBalancesReq, TUseBalancesTokens} from '@yearn-finance/web-lib/hooks/types.d';
+import type {TBalanceData, TUseBalancesReq, TUseBalancesTokens} from '@yearn-finance/web-lib/hooks/types';
 
 type TBeefyChain = 'metis' | 'celo' | 'cronos' | 'moonbeam' | 'one' | 'moonriver' | 'fuse' | 'arbitrum' | 'heco' | 'avax' | 'aurora' | 'polygon' | 'fantom' | 'bsc' | 'emerald' | 'optimism' | 'kava' | 'ethereum';
 
@@ -89,7 +89,7 @@ export function useBeefyVaults({all}: TProps = {}): TBeefyVaultResponse {
 		provider,
 		tokens: beefyVaults?.reduce((prev, {tokenAddress}): TUseBalancesReq['tokens'] => {
 			if (!tokenAddress) {
-				return prev; 
+				return prev;
 			}
 			return [...prev, {token: tokenAddress}];
 		}, [] as TUseBalancesTokens[]) || [],

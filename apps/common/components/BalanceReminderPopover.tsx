@@ -1,6 +1,7 @@
 import React, {Fragment, useMemo} from 'react';
 import Image from 'next/image';
 import {Popover, Transition} from '@headlessui/react';
+import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import IconAddToMetamask from '@yearn-finance/web-lib/icons/IconAddToMetamask';
@@ -15,9 +16,7 @@ import {useBalance} from '@common/hooks/useBalance';
 
 import type {ReactElement} from 'react';
 import type {TBalanceData} from '@yearn-finance/web-lib/hooks/types';
-import type {TAddress} from '@yearn-finance/web-lib/utils/address';
-import type {TDict, TMetamaskInjectedProvider} from '@yearn-finance/web-lib/utils/types';
-import type {TYearnVault} from '@common/types/yearn';
+import type {TAddress, TDict, TMetamaskInjectedProvider} from '@yearn-finance/web-lib/types';
 
 type TBalanceReminderElement = {
 	address: TAddress,
@@ -73,7 +72,7 @@ function	TokenItem({element}: {element: TBalanceReminderElement}): ReactElement 
 							e.preventDefault();
 							e.stopPropagation();
 							addTokenToMetamask(
-								element.address as string,
+								element.address,
 								element.symbol,
 								element.decimals,
 								`${process.env.BASE_YEARN_ASSETS_URI}/${safeChainID}/${toAddress(element.address)}/logo-128.png`
@@ -92,29 +91,45 @@ export default function BalanceReminderPopover(): ReactElement {
 	const	{vaults} = useYearn();
 
 	const	nonNullBalances = useMemo((): TDict<TBalanceData> => {
-		const	nonNullBalances = Object.entries(balances).reduce((acc, [address, balance]): TDict<TBalanceData> => {
+		const	nonNullBalances = Object.entries(balances).reduce((acc: TDict<TBalanceData>, [address, balance]): TDict<TBalanceData> => {
 			if (!formatBN(balance?.raw).isZero()) {
 				acc[toAddress(address)] = balance;
 			}
 			return acc;
-		}, {} as TDict<TBalanceData>); // eslint-disable-line @typescript-eslint/consistent-type-assertions
+		}, {});
 		return nonNullBalances;
 	}, [balances]);
 
 	const	nonNullBalancesForVault = useMemo((): TBalanceReminderElement[] => {
-		const	nonNullBalancesForVault = Object.entries(nonNullBalances).reduce((acc, [address, balance]): TBalanceReminderElement[] => {
-			if (vaults?.[toAddress(address)]) {
+		const	nonNullBalancesForVault = Object.entries(nonNullBalances).reduce((acc: TBalanceReminderElement[], [address, balance]): TBalanceReminderElement[] => {
+			const currentVault = vaults?.[toAddress(address)];
+			if (currentVault) {
 				acc.push({
 					address: toAddress(address),
 					normalizedBalance: balance.normalized,
 					decimals: balance.decimals,
-					symbol: (vaults[toAddress(address)] as TYearnVault).symbol
+					symbol: currentVault.symbol
 				});
 			}
 			return acc;
-		}, [] as TBalanceReminderElement[]); // eslint-disable-line @typescript-eslint/consistent-type-assertions
+		}, []);
 		return nonNullBalancesForVault;
 	}, [nonNullBalances, vaults]);
+
+	function	renderNoTokenFallback(isLoading: boolean): ReactElement {
+		if (isLoading) {
+			return (
+				<div className={'py-4 text-center text-sm text-neutral-400'}>
+					{'Retrieving your yvTokens ...'}
+				</div>
+			);
+		}
+		return (
+			<div className={'py-4 text-center text-sm text-neutral-400'}>
+				{'No position in Yearn found.'}
+			</div>
+		);
+	}
 
 	return (
 		<Popover className={'relative flex'}>
@@ -150,22 +165,11 @@ export default function BalanceReminderPopover(): ReactElement {
 											<IconCross className={'h-4 w-4 text-neutral-600'} />
 										</button>
 									</div>
-
-									{
-										(nonNullBalancesForVault.length === 0 && isLoading) ? (
-											<div className={'py-4 text-center text-sm text-neutral-400'}>
-												{'Retrieving your yvTokens ...'}
-											</div>
-										) : (nonNullBalancesForVault.length === 0) ? (
-											<div className={'py-4 text-center text-sm text-neutral-400'}>
-												{'No position in Yearn found.'}
-											</div>
-										) : nonNullBalancesForVault.map((element): ReactElement => (
-											<TokenItem
-												key={element.address}
-												element={element} />
-										))
-									}
+									<Renderable
+										shouldRender={nonNullBalancesForVault.length > 0}
+										fallback={renderNoTokenFallback(isLoading)}>
+										{nonNullBalancesForVault.map((element): ReactElement => <TokenItem key={element.address} element={element} />)}
+									</Renderable>
 								</div>
 							</div>
 						</Popover.Panel>

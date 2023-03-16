@@ -2,9 +2,9 @@ import React, {useEffect, useState} from 'react';
 import {utils} from 'ethers';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {isNumber} from '@yearn-finance/web-lib/utils/isNumber';
 import {isTAddress} from '@yearn-finance/web-lib/utils/isTAddress';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
-import {isNumber} from '@common/utils/typeGuards';
 import {QuickActions} from '@yCRV/components/QuickActions';
 
 import type {BigNumber} from 'ethers';
@@ -19,7 +19,7 @@ type TGaugeListRow = {
 	votesDispatch: Dispatch<TVotesReducerAction>;
 }
 
-function GaugeListRow({gauge, gaugeVotes, votesState, votesDispatch}: TGaugeListRow): ReactElement | null {
+function GaugeListRow({gauge, gaugeVotes, votesState, votesDispatch}: TGaugeListRow): ReactElement {
 	const [currentVotes, set_currentVotes] = useState<string>('');
 
 	useEffect((): void => {
@@ -78,7 +78,7 @@ function GaugeListRow({gauge, gaugeVotes, votesState, votesDispatch}: TGaugeList
 
 				<div className={'yearn--table-data-section-item pt-2 md:col-span-5'}>
 					<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Put your votes'}</label>
-					<p className={'yearn--table-data-section-item-value w-full text-neutral-900'}>
+					<div className={'yearn--table-data-section-item-value w-full text-neutral-900'}>
 						<div className={'flex h-10 w-full flex-row items-center justify-between'}>
 							<QuickActions.Input
 								id={`${gauge.gauge}-votes`}
@@ -91,7 +91,7 @@ function GaugeListRow({gauge, gaugeVotes, votesState, votesDispatch}: TGaugeList
 								isMaxDisabled={isMaxDisabled}
 							/>
 						</div>
-					</p>
+					</div>
 				</div>
 			</div>
 		</div>
