@@ -49,22 +49,6 @@ function RewardsTab({currentVault}: {currentVault: TYearnVault}): ReactElement {
 		amount: vaultBalance.raw
 	});
 
-	async function onApproveStake(): Promise<void> {
-		approveStake(web3Provider, userAddress, currentVault.address, toAddress(stakingRewards?.address));
-	}
-
-	async function onStake(): Promise<void> {
-		stake(web3Provider, userAddress, toAddress(stakingRewards?.address), vaultBalance.raw);
-	}
-
-	async function onUnstake(): Promise<void> {
-		unstake(web3Provider, userAddress, toAddress(stakingRewards?.address));
-	}
-
-	async function onClaim(): Promise<void> {
-		claim(web3Provider, userAddress, toAddress(stakingRewards?.address));
-	}
-
 	return (
 		<div className={'flex flex-col gap-6 bg-neutral-100 p-4 md:gap-10 md:p-8'}>
 			<div className={'flex flex-col gap-4'}>
@@ -86,7 +70,11 @@ function RewardsTab({currentVault}: {currentVault: TYearnVault}): ReactElement {
 					/>
 					<Button
 						className={'w-full md:mt-7 md:w-[168px]'}
-						onClick={isApproved ? onStake : onApproveStake}
+						onClick={(): unknown => 
+							isApproved 
+								? stake(web3Provider, userAddress, toAddress(stakingRewards?.address), vaultBalance.raw) 
+								: approveStake(web3Provider, userAddress, currentVault.address, toAddress(stakingRewards?.address))
+						}
 						isBusy={stakeStatus.loading || approveStakeStatus.loading || isLoadingAllowances}
 						isDisabled={!isActive || isLoadingAllowances || vaultBalance.normalized <= 0 }
 					>
@@ -113,7 +101,7 @@ function RewardsTab({currentVault}: {currentVault: TYearnVault}): ReactElement {
 					/>
 					<Button
 						className={'w-full md:mt-7 md:w-[168px]'}
-						onClick={onClaim}
+						onClick={(): unknown => claim(web3Provider, userAddress, toAddress(stakingRewards?.address))}
 						isBusy={claimStatus.loading}
 						isDisabled={!isActive || rewardBalance.normalized <= 0}
 					>
@@ -140,7 +128,7 @@ function RewardsTab({currentVault}: {currentVault: TYearnVault}): ReactElement {
 					/>
 					<Button
 						className={'w-full md:mt-7 md:w-[168px]'}
-						onClick={onUnstake}
+						onClick={(): unknown => unstake(web3Provider, userAddress, toAddress(stakingRewards?.address))}
 						isBusy={unstakeStatus.loading}
 						isDisabled={!isActive || stakeBalance.normalized <= 0 }
 					>
