@@ -12,12 +12,12 @@ import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 
 export async function approveLock(
 	provider: ethers.providers.JsonRpcProvider,
-	_accountAddress: TAddress,
+	accountAddress: TAddress,
 	tokenAddress: TAddress,
 	votingEscrowAddress: TAddress,
 	amount = ethers.constants.MaxUint256
 ): Promise<TTxResponse> {
-	const signer = provider.getSigner();
+	const signer = provider.getSigner(accountAddress);
 	const contract = new ethers.Contract(tokenAddress, ['function approve(address _spender, uint256 _value) external'], signer);
 	return await handleTx(contract.approve(votingEscrowAddress, amount));
 }

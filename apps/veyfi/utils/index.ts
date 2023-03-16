@@ -1,9 +1,9 @@
 import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {roundToWeek, toSeconds, YEAR} from '@yearn-finance/web-lib/utils/time';
 
-import type {BigNumber, ethers} from 'ethers';
+import type {BigNumber} from 'ethers';
+import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TMilliseconds, TSeconds} from '@yearn-finance/web-lib/utils/time';
-import type {TDict} from '@yearn-finance/web-lib/utils/types';
 
 const MAX_LOCK: TSeconds = toSeconds(roundToWeek(YEAR * 4));
 
@@ -39,19 +39,4 @@ export const sort = <T>(data: T[], by: Extract<keyof T, string>, order?: 'asc' |
 	};
 
 	return [...data].sort(compare);
-};
-
-export const handleTx = async (txPromise: Promise<ethers.providers.TransactionResponse>): Promise<boolean> => {
-	try {
-		const tx = await txPromise;
-		const receipt = await tx.wait();
-		if (receipt.status === 0) {
-			console.error('Fail to perform transaction');
-			return false;
-		}
-		return true;
-	} catch (error) {
-		console.error(error);
-		return false;
-	}
 };

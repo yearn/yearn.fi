@@ -1,22 +1,24 @@
 import {ethers} from 'ethers';
-import {approveERC20} from '@common/utils/actions/approveToken';
+import {handleTx} from '@yearn-finance/web-lib/utils/web3/transaction';
 
 import VEYFI_CLAIM_REWARDS_ZAP_ABI from '../abi/veYFIClaimRewardsZap.abi';
 import VEYFI_GAUGE_ABI from '../abi/veYFIGauge.abi';
 import {VEYFI_CLAIM_REWARDS_ZAP_ADDRESS} from '../constants';
-import {handleTx} from '..';
 
 import type {BigNumber} from 'ethers';
-import type {TAddress} from '@yearn-finance/web-lib/utils/address';
+import type {TAddress} from '@yearn-finance/web-lib/types';
+import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 
 export async function approveStake(
 	provider: ethers.providers.Web3Provider,
-	_accountAddress: TAddress,
+	accountAddress: TAddress,
 	vaultAddress: TAddress,
 	gaugeAddress: TAddress,
 	amount?: BigNumber
-): Promise<boolean> {
-	return approveERC20(provider, vaultAddress, gaugeAddress, amount);
+): Promise<TTxResponse> {
+	const signer = provider.getSigner(accountAddress);
+	const contract = new ethers.Contract(vaultAddress, ['function approve(address _spender, uint256 _value) external'], signer);
+	return await handleTx(contract.approve(gaugeAddress, amount));
 }
 
 export async function approveAndStake(
@@ -26,15 +28,12 @@ export async function approveAndStake(
 	gaugeAddress: TAddress,
 	amount: BigNumber,
 	allowance: BigNumber
-): Promise<boolean> {
-	let isApproved = allowance.gte(amount);
-	if(!isApproved) {
-		isApproved = await approveERC20(provider, vaultAddress, gaugeAddress, amount);
-	}
-	if(!isApproved) {
-		return false;
-	}
+): Promise<TTxResponse> {
 	const signer = provider.getSigner(accountAddress);
+	if(!allowance.gte(amount)) {
+		const contract = new ethers.Contract(vaultAddress, ['function approve(address _spender, uint256 _value) external'], signer);
+		await contract.approve(gaugeAddress, amount);
+	}
 	const gaugeContract = new ethers.Contract(gaugeAddress, VEYFI_GAUGE_ABI, signer);
 	return handleTx(gaugeContract.deposit(amount));
 }
@@ -44,7 +43,7 @@ export async function stake(
 	accountAddress: TAddress,
 	gaugeAddress: TAddress,
 	amount: BigNumber
-): Promise<boolean> {
+): Promise<TTxResponse> {
 	const signer = provider.getSigner(accountAddress);
 	const gaugeContract = new ethers.Contract(gaugeAddress, VEYFI_GAUGE_ABI, signer);
 	return handleTx(gaugeContract.deposit(amount));
@@ -55,7 +54,7 @@ export async function unstake(
 	accountAddress: TAddress,
 	gaugeAddress: TAddress,
 	amount: BigNumber
-): Promise<boolean> {
+): Promise<TTxResponse> {
 	const willClaim = false;
 	const signer = provider.getSigner(accountAddress);
 	const gaugeContract = new ethers.Contract(gaugeAddress, VEYFI_GAUGE_ABI, signer);
@@ -66,7 +65,7 @@ export async function claimRewards(
 	provider: ethers.providers.Web3Provider,
 	accountAddress: TAddress,
 	gaugeAddress: TAddress
-): Promise<boolean> {
+): Promise<TTxResponse> {
 	const signer = provider.getSigner(accountAddress);
 	const gaugeContract = new ethers.Contract(gaugeAddress, VEYFI_GAUGE_ABI, signer);
 	return handleTx(gaugeContract.getReward());
@@ -77,7 +76,7 @@ export async function claimAllRewards(
 	accountAddress: TAddress,
 	gaugeAddresses: TAddress[],
 	claimVotingEscrow: boolean
-): Promise<boolean> {
+): Promise<TTxResponse> {
 	const willLockRewards = false;
 	const signer = provider.getSigner(accountAddress);
 	const gaugeContract = new ethers.Contract(VEYFI_CLAIM_REWARDS_ZAP_ADDRESS, VEYFI_CLAIM_REWARDS_ZAP_ABI, signer);
