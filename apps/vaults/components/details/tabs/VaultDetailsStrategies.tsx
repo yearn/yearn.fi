@@ -1,11 +1,13 @@
-import React, {useMemo} from 'react';
+import React, {useMemo, useState} from 'react';
 import dynamic from 'next/dynamic';
+import {Switch} from '@vaults/components/list/VaultListOptions';
 import IconCopy from '@yearn-finance/web-lib/icons/IconCopy';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {formatDuration} from '@yearn-finance/web-lib/utils/format.time';
 import {copyToClipboard, parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
+import {SearchBar} from '@common/components/SearchBar';
 import IconChevron from '@common/icons/IconChevron';
 
 import type {LoaderComponent} from 'next/dynamic';
@@ -19,6 +21,7 @@ type TRiskScoreElementProps = {
 	label: string;
 	value: number;
 };
+
 function	RiskScoreElement({label, value}: TRiskScoreElementProps): ReactElement {
 	return (
 		<div className={'flex flex-row items-center justify-between'}>
@@ -147,36 +150,60 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVau
 	);
 }
 
-function isExceptionStrategy(strategy: TYearnVaultStrategy): boolean {
+function	isExceptionStrategy(strategy: TYearnVaultStrategy): boolean {
 	// Curve DAO Fee and Bribes Reinvest
 	return strategy.address.toString() === '0x23724D764d8b3d26852BA20d3Bc2578093d2B022' && strategy.details.inQueue;
 }
 
 function	VaultDetailsStrategies({currentVault}: {currentVault: TYearnVault}): ReactElement {
+	const [searchValue, set_searchValue] = useState<string>('');
+	const [shouldHide0DebtStrategies, set_shouldHide0DebtStrategies] = useState(true);
+
+	const hide0DebtStrategyFilter = (strategy: TYearnVault['strategies'][0]): boolean => {
+		return !shouldHide0DebtStrategies || Number(strategy.details?.totalDebt) > 0 || isExceptionStrategy(strategy);
+	};
+
+	const nameSearchFilter = ({name, displayName}: TYearnVault['strategies'][0]): boolean => {
+		return !searchValue || [name, displayName].map((n): string => n.toLowerCase()).some((n): boolean => n.includes(searchValue));
+	};
+
+	const sortedStrategies = useMemo((): TYearnVault['strategies'] => {
+		return currentVault.strategies.sort((a, b): number => (b.details?.debtRatio || 0) - (a.details?.debtRatio || 0));
+	}, [currentVault.strategies]);
+
+	const filteredStrategies = sortedStrategies
+		.filter(hide0DebtStrategyFilter)
+		.filter(nameSearchFilter);
+
 	return (
 		<div className={'grid grid-cols-1 bg-neutral-100'}>
 			<div className={'col-span-1 w-full space-y-6 p-4 md:p-6'}>
-				<div>
-					<p className={'text-neutral-600'}>
-						{'Strategies are the ways in which each Yearn Vault puts your assets to work within the DeFi ecosystem, returning the earned yield back to you.'}
-					</p>
-					<p className={'text-neutral-600'}>
-						{'Vaults often have multiple strategies, which each go through comprehensive peer reviews and audits before being deployed.'}
-					</p>
+				<div className={'w-full flex-row items-center justify-between md:flex md:space-x-4'}>
+					<SearchBar
+						searchLabel={'Search'}
+						searchPlaceholder={'Aave'}
+						searchValue={searchValue}
+						set_searchValue={(value): void => {
+							set_searchValue(value.toLowerCase());
+						}} />
+
+					<div className={'mt-4 flex h-full min-w-fit flex-row md:mr-4 md:mt-7'}>
+						<small className={'mr-2'}>{'Hide 0 debt strategies'}</small>
+						<Switch
+							isEnabled={shouldHide0DebtStrategies}
+							onSwitch={(): void => {
+								set_shouldHide0DebtStrategies((prev): boolean => !prev);
+							}} />
+					</div>
 				</div>
 			</div>
 			<div className={'col-span-1 w-full border-t border-neutral-300'}>
-				{(currentVault?.strategies || [])
-					.filter((strategy): boolean => {
-						return Number(strategy?.details?.totalDebt) > 0 || isExceptionStrategy(strategy);
-					})
-					.sort((a, b): number => (b?.details?.debtRatio || 0) - (a?.details?.debtRatio || 0))
-					.map((strategy, index): ReactElement => (
-						<VaultDetailsStrategy
-							currentVault={currentVault}
-							strategy={strategy}
-							key={index} />
-					))}
+				{filteredStrategies.map((strategy): ReactElement => (
+					<VaultDetailsStrategy
+						currentVault={currentVault}
+						strategy={strategy}
+						key={strategy.address} />
+				))}
 			</div>
 		</div>
 	);
