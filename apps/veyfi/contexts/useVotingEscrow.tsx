@@ -123,7 +123,7 @@ export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({chil
 			[allowanceKey(YFI_ADDRESS, VEYFI_ADDRESS)]: yfiAllowanceVeYFI
 		});
 	}, [isActive, address, provider]);
-	const	{data: allowances, mutate: refreshAllowances, isLoading: isLoadingAllowances} = useSWR(isActive && provider ? 'allowances' : null, allowancesFetcher, {shouldRetryOnError: false});
+	const	{data: allowances, mutate: refreshAllowances, isLoading: isLoadingAllowances} = useSWR(isActive && provider ? 'votingEscrowAllowances' : null, allowancesFetcher, {shouldRetryOnError: false});
 
 	const refresh = useCallback((): void => {
 		refreshVotingEscrow();
