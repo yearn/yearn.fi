@@ -1,9 +1,8 @@
 import React, {useEffect, useState} from 'react';
 import {Switch as HeadlessSwitch} from '@headlessui/react';
 import {Button} from '@yearn-finance/web-lib/components/Button';
+import {SearchBar} from '@common/components/SearchBar';
 import {isValidCategory} from '@common/types/category';
-
-import {SearchBar} from './SearchBar';
 
 import type {ChangeEvent, ReactElement, ReactNode} from 'react';
 
