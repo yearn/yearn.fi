@@ -10,7 +10,7 @@ import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 
 export async function stake(
-	provider: ethers.providers.Web3Provider,
+	provider: ethers.providers.JsonRpcProvider,
 	accountAddress: TAddress,
 	stakingAddress: TAddress,
 	amount: BigNumber
@@ -21,7 +21,7 @@ export async function stake(
 }
 
 export async function unstake(
-	provider: ethers.providers.Web3Provider,
+	provider: ethers.providers.JsonRpcProvider,
 	accountAddress: TAddress,
 	stakingAddress: TAddress
 ): Promise<TTxResponse> {
@@ -31,7 +31,7 @@ export async function unstake(
 }
 
 export async function claim(
-	provider: ethers.providers.Web3Provider,
+	provider: ethers.providers.JsonRpcProvider,
 	accountAddress: TAddress,
 	stakingAddress: TAddress
 ): Promise<TTxResponse> {
@@ -41,7 +41,7 @@ export async function claim(
 }
 
 export async function depositAndStake(
-	provider: ethers.providers.Web3Provider,
+	provider: ethers.providers.JsonRpcProvider,
 	accountAddress: TAddress,
 	vaultAddress: TAddress,
 	amount: BigNumber

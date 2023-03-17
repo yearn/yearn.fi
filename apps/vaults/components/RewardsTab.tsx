@@ -14,7 +14,6 @@ import {useAllowances} from '@common/hooks/useAllowances';
 import {useBalance} from '@common/hooks/useBalance';
 import {approveERC20} from '@common/utils/actions/approveToken';
 
-import type {ethers} from 'ethers';
 import type {ReactElement} from 'react';
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TYearnVault} from '@common/types/yearn';
@@ -38,7 +37,6 @@ function RewardsTab({currentVault}: {currentVault: TYearnVault}): ReactElement {
 	const [unstake, unstakeStatus] = useTransaction(StakingRewardsActions.unstake, refreshData);
 	const [claim, claimStatus] = useTransaction(StakingRewardsActions.claim, refreshData);
 
-	const web3Provider = provider as ethers.providers.Web3Provider;
 	const userAddress = address as TAddress;
 	const stakeBalance = toNormalizedBN(stakingRewardsPosition?.stake ?? 0, currentVault.decimals);
 	const rewardBalance = toNormalizedBN(stakingRewardsPosition?.reward ?? 0, rewardTokenBalance.decimals);
@@ -73,8 +71,8 @@ function RewardsTab({currentVault}: {currentVault: TYearnVault}): ReactElement {
 						className={'w-full md:mt-7 md:w-[168px]'}
 						onClick={(): unknown => 
 							isApproved 
-								? stake(web3Provider, userAddress, toAddress(stakingRewards?.address), vaultBalance.raw) 
-								: approveStake(web3Provider, currentVault.address, toAddress(stakingRewards?.address))
+								? stake(provider, userAddress, toAddress(stakingRewards?.address), vaultBalance.raw) 
+								: approveStake(provider, currentVault.address, toAddress(stakingRewards?.address))
 						}
 						isBusy={stakeStatus.loading || approveStakeStatus.loading || isLoadingAllowances}
 						isDisabled={!isActive || isLoadingAllowances || vaultBalance.normalized <= 0 }
@@ -102,7 +100,7 @@ function RewardsTab({currentVault}: {currentVault: TYearnVault}): ReactElement {
 					/>
 					<Button
 						className={'w-full md:mt-7 md:w-[168px]'}
-						onClick={(): unknown => claim(web3Provider, userAddress, toAddress(stakingRewards?.address))}
+						onClick={(): unknown => claim(provider, userAddress, toAddress(stakingRewards?.address))}
 						isBusy={claimStatus.loading}
 						isDisabled={!isActive || rewardBalance.normalized <= 0}
 					>
@@ -129,7 +127,7 @@ function RewardsTab({currentVault}: {currentVault: TYearnVault}): ReactElement {
 					/>
 					<Button
 						className={'w-full md:mt-7 md:w-[168px]'}
-						onClick={(): unknown => unstake(web3Provider, userAddress, toAddress(stakingRewards?.address))}
+						onClick={(): unknown => unstake(provider, userAddress, toAddress(stakingRewards?.address))}
 						isBusy={unstakeStatus.loading}
 						isDisabled={!isActive || stakeBalance.normalized <= 0 }
 					>
