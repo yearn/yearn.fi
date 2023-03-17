@@ -1,7 +1,7 @@
 
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 
-import type {TAddress} from '@yearn-finance/web-lib/utils/address';
+import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TWeeks} from '@yearn-finance/web-lib/utils/time';
 
 export const VEYFI_REGISTRY_ADDRESS: TAddress = toAddress(''); // TODO: update once deployed

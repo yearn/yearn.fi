@@ -10,7 +10,7 @@ import {Input} from '@common/components/Input';
 
 import type {ethers} from 'ethers';
 import type {ReactElement} from 'react';
-import type {TAddress} from '@yearn-finance/web-lib/utils/address';
+import type {TAddress} from '@yearn-finance/web-lib/types';
 
 function VoteTab(): ReactElement {
 	const [delegateAddress, set_delegateAddress] = useState('');
