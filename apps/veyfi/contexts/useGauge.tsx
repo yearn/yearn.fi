@@ -11,8 +11,7 @@ import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3
 import type {Call} from 'ethcall';
 import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
-import type {TAddress} from '@yearn-finance/web-lib/utils/address';
-import type {TDict} from '@yearn-finance/web-lib/utils/types';
+import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 
 export type TGauge = {
 	address: TAddress,
