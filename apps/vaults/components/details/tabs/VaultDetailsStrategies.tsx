@@ -164,7 +164,7 @@ function	VaultDetailsStrategies({currentVault}: {currentVault: TYearnVault}): Re
 	};
 
 	const nameSearchFilter = ({name, displayName}: TYearnVault['strategies'][0]): boolean => {
-		return !searchValue || [name, displayName].map((n): string => n.toLowerCase()).some((n): boolean => n.includes(searchValue));
+		return !searchValue || (`${name} ${displayName}`).toLowerCase().includes(searchValue)
 	};
 
 	const sortedStrategies = useMemo((): TYearnVault['strategies'] => {
