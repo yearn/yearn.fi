@@ -4,6 +4,7 @@ import useSWR from 'swr';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 
 import type {BigNumber} from 'ethers';
@@ -12,11 +13,10 @@ import type {TDict} from '@yearn-finance/web-lib/types';
 
 export type TOptionPosition = {
 	balance: BigNumber,
-	redeemable: BigNumber,
-	fee: BigNumber
 }
 
 export type	TOptionContext = {
+	getRequiredEth: (amount: BigNumber) => Promise<BigNumber>,
 	positions: TOptionPosition | undefined,
 	allowances: TDict<BigNumber>,
 	isLoading: boolean,
@@ -24,6 +24,7 @@ export type	TOptionContext = {
 }
 
 const defaultProps: TOptionContext = {
+	getRequiredEth: async (): Promise<BigNumber> => formatBN(0),
 	positions: undefined,
 	allowances: {},
 	isLoading: true,
@@ -37,6 +38,14 @@ const OptionContext = createContext<TOptionContext>(defaultProps);
 export const OptionContextApp = memo(function OptionContextApp({children}: {children: ReactElement}): ReactElement {
 	const {provider, address: userAddress, isActive} = useWeb3();
 
+	const getRequiredEth = useCallback(async (amount: BigNumber): Promise<BigNumber> => {
+		const currentProvider = getProvider(1);
+		const optionsContract = new Contract(VEYFI_OPTIONS_ADDRESS, [], currentProvider); // TODO: update once abi is available
+		const requiredEth = await optionsContract.eth_required(amount);
+
+		return requiredEth;
+	}, []);
+
 	const positionsFetcher = useCallback(async (): Promise<TOptionPosition | undefined> => {
 		if (!isActive|| !userAddress) {
 			return undefined;
@@ -45,15 +54,8 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 		const currentProvider = getProvider(1);
 		const oYFIContract = new Contract(VEYFI_OYFI_ADDRESS, [], currentProvider); // TODO: update once abi is available
 		const balance = await oYFIContract.balanceOf(userAddress);
-		const optionsContract = new Contract(VEYFI_OPTIONS_ADDRESS, [], currentProvider); // TODO: update once abi is available
-		const redeemable = await optionsContract.callStatic.exercise(balance, userAddress);
-		const fee = await optionsContract.eth_required(balance);
 			
-		return {
-			balance,
-			redeemable,
-			fee
-		};
+		return {balance};
 	}, [isActive, userAddress]);
 	const {data: positions, mutate: refreshPositions, isLoading: isLoadingPositions} = useSWR(isActive && provider ? 'optionPositions' : null, positionsFetcher, {shouldRetryOnError: false});
 
@@ -80,11 +82,12 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 	}, [refreshPositions, refreshAllowances]);
 
 	const contextValue = useMemo((): TOptionContext => ({
+		getRequiredEth,
 		positions,
 		allowances: allowances ?? {},
 		isLoading: isLoadingPositions || isLoadingAllowances,
 		refresh
-	}), [allowances, isLoadingAllowances, isLoadingPositions, positions, refresh]);
+	}), [allowances, getRequiredEth, isLoadingAllowances, isLoadingPositions, positions, refresh]);
 
 	return (
 		<OptionContext.Provider value={contextValue}>
