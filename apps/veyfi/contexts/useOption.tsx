@@ -61,7 +61,7 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 		if (!isActive || !userAddress) {
 			return {};
 		}
-		const	currentProvider = provider || getProvider(1);
+		const	currentProvider = getProvider(1);
 		const	ethcallProvider = await newEthCallProvider(currentProvider);
 		const	oYFIContract = new Contract(VEYFI_OYFI_ADDRESS, ERC20_ABI);
 
@@ -70,7 +70,7 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 		return ({
 			[allowanceKey(VEYFI_OYFI_ADDRESS, VEYFI_OPTIONS_ADDRESS)]: oYFIAllowanceOptions
 		});
-	}, [isActive, userAddress, provider]);
+	}, [isActive, userAddress]);
 	const	{data: allowances, mutate: refreshAllowances, isLoading: isLoadingAllowances} = useSWR(isActive && provider ? 'allowances' : null, allowancesFetcher, {shouldRetryOnError: false});
 
 
