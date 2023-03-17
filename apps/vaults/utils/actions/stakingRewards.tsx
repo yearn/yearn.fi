@@ -1,7 +1,6 @@
 import {ethers} from 'ethers';
 import {STAKING_REWARDS_ZAP_ADDRESS} from '@vaults/constants';
 import {handleTx} from '@yearn-finance/web-lib/utils/web3/transaction';
-import {approveERC20} from '@common/utils/actions/approveToken';
 
 import STAKING_REWARDS_ABI from '../abi/stakingRewards.abi';
 import STAKING_REWARDS_ZAP_ABI from '../abi/stakingRewardsZap.abi';
@@ -9,16 +8,6 @@ import STAKING_REWARDS_ZAP_ABI from '../abi/stakingRewardsZap.abi';
 import type {BigNumber} from 'ethers';
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
-
-export async function approveStake(
-	provider: ethers.providers.Web3Provider,
-	_accountAddress: TAddress,
-	vaultAddress: TAddress,
-	stakingAddress: TAddress,
-	amount?: BigNumber
-): Promise<TTxResponse> {
-	return approveERC20(provider, vaultAddress, stakingAddress, amount);
-}
 
 export async function stake(
 	provider: ethers.providers.Web3Provider,

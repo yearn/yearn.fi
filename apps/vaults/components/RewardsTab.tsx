@@ -12,6 +12,7 @@ import {Input} from '@common/components/Input';
 import {useWallet} from '@common/contexts/useWallet';
 import {useAllowances} from '@common/hooks/useAllowances';
 import {useBalance} from '@common/hooks/useBalance';
+import {approveERC20} from '@common/utils/actions/approveToken';
 
 import type {ethers} from 'ethers';
 import type {ReactElement} from 'react';
@@ -32,7 +33,7 @@ function RewardsTab({currentVault}: {currentVault: TYearnVault}): ReactElement {
 	const rewardTokenBalance = useBalance(toAddress(stakingRewards?.rewardsToken));
 	const [allowances, isLoadingAllowances, refreshAllowances] = useAllowances([{token: currentVault.address, spender: stakingRewards?.address}]);
 	const refreshData = (): unknown => Promise.all([refreshBalances(), refreshStakingRewards()]);
-	const [approveStake, approveStakeStatus] = useTransaction(StakingRewardsActions.approveStake, refreshAllowances);
+	const [approveStake, approveStakeStatus] = useTransaction(approveERC20, refreshAllowances);
 	const [stake, stakeStatus] = useTransaction(StakingRewardsActions.stake, refreshData);
 	const [unstake, unstakeStatus] = useTransaction(StakingRewardsActions.unstake, refreshData);
 	const [claim, claimStatus] = useTransaction(StakingRewardsActions.claim, refreshData);
@@ -73,7 +74,7 @@ function RewardsTab({currentVault}: {currentVault: TYearnVault}): ReactElement {
 						onClick={(): unknown => 
 							isApproved 
 								? stake(web3Provider, userAddress, toAddress(stakingRewards?.address), vaultBalance.raw) 
-								: approveStake(web3Provider, userAddress, currentVault.address, toAddress(stakingRewards?.address))
+								: approveStake(web3Provider, currentVault.address, toAddress(stakingRewards?.address))
 						}
 						isBusy={stakeStatus.loading || approveStakeStatus.loading || isLoadingAllowances}
 						isDisabled={!isActive || isLoadingAllowances || vaultBalance.normalized <= 0 }
