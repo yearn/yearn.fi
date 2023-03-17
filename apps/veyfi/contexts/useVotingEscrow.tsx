@@ -135,7 +135,7 @@ export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({chil
 		votingEscrow,
 		positions,
 		allowances: allowances ?? {},
-		isLoading: isLoadingVotingEscrow && isLoadingPositions && isLoadingAllowances,
+		isLoading: isLoadingVotingEscrow || isLoadingPositions || isLoadingAllowances,
 		refresh
 	}), [votingEscrow, positions, allowances, isLoadingVotingEscrow, isLoadingPositions, isLoadingAllowances, refresh]);
 
