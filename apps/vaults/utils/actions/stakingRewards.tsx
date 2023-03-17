@@ -17,7 +17,7 @@ export async function stake(
 ): Promise<TTxResponse> {
 	const signer = provider.getSigner(accountAddress);
 	const stakingRewardsContract = new ethers.Contract(stakingAddress, STAKING_REWARDS_ABI, signer);
-	return handleTx(stakingRewardsContract.stake(amount));
+	return await handleTx(stakingRewardsContract.stake(amount));
 }
 
 export async function unstake(
@@ -27,7 +27,7 @@ export async function unstake(
 ): Promise<TTxResponse> {
 	const signer = provider.getSigner(accountAddress);
 	const stakingRewardsContract = new ethers.Contract(stakingAddress, STAKING_REWARDS_ABI, signer);
-	return handleTx(stakingRewardsContract.exit());
+	return await handleTx(stakingRewardsContract.exit());
 }
 
 export async function claim(
@@ -37,7 +37,7 @@ export async function claim(
 ): Promise<TTxResponse> {
 	const signer = provider.getSigner(accountAddress);
 	const stakingRewardsContract = new ethers.Contract(stakingAddress, STAKING_REWARDS_ABI, signer);
-	return handleTx(stakingRewardsContract.getReward());
+	return await handleTx(stakingRewardsContract.getReward());
 }
 
 export async function depositAndStake(
@@ -48,5 +48,5 @@ export async function depositAndStake(
 ): Promise<TTxResponse> {
 	const signer = provider.getSigner(accountAddress);
 	const stakingRewardsZapContract = new ethers.Contract(STAKING_REWARDS_ZAP_ADDRESS, STAKING_REWARDS_ZAP_ABI, signer);
-	return handleTx(stakingRewardsZapContract.zapIn(vaultAddress, amount));
+	return await handleTx(stakingRewardsZapContract.zapIn(vaultAddress, amount));
 }
