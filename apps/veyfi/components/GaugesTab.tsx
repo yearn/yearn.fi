@@ -14,7 +14,7 @@ import {useYearn} from '@common/contexts/useYearn';
 
 import type {BigNumber, ethers} from 'ethers';
 import type {ReactElement} from 'react';
-import type {TAddress} from '@yearn-finance/web-lib/utils/address';
+import type {TAddress} from '@yearn-finance/web-lib/types';
 
 function GaugesTab(): ReactElement {
 	const [selectedGauge, set_selectedGauge] = useState('');
