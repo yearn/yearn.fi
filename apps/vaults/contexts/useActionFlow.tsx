@@ -27,7 +27,8 @@ export enum	Flow {
 	Withdraw = 'withdraw',
 	Migrate = 'migrate',
 	Zap = 'zap', // TODO: create this flow handler
-	Switch = 'switch'
+	Switch = 'switch',
+	None = 'none'
 }
 
 type TActionParams = {
@@ -198,6 +199,10 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 
 	const onSwitchSelectedOptions = useCallback((nextFlow = Flow.Switch): void => {
 		balancesNonce;
+		if (nextFlow === Flow.None) {
+			return;
+		}
+
 		if (nextFlow === Flow.Switch) {
 			performBatchedUpdates((): void => {
 				const _selectedOptionTo = actionParams?.selectedOptionTo;

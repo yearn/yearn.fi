@@ -29,7 +29,7 @@ const tabs: TTabsOptions[] = [
 	{value: 0, label: 'Deposit', flowAction: Flow.Deposit, slug: 'deposit'},
 	{value: 1, label: 'Withdraw', flowAction: Flow.Withdraw, slug: 'withdraw'},
 	{value: 2, label: 'Migrate', flowAction: Flow.Migrate, slug: 'migrate'},
-	{value: 3, label: '$OP BOOST', flowAction: Flow.Switch, slug: 'boost'}
+	{value: 3, label: '$OP BOOST', flowAction: Flow.None, slug: 'boost'}
 ];
 function	getCurrentTab({isDepositing, hasMigration}: {isDepositing: boolean, hasMigration: boolean}): TTabsOptions {
 	if (hasMigration) {
