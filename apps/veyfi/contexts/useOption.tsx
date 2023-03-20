@@ -1,9 +1,10 @@
 import React, {createContext, memo, useCallback, useContext, useMemo} from 'react';
 import {Contract} from 'ethers';
 import useSWR from 'swr';
+import {VEYFI_OPTIONS_ADDRESS, VEYFI_OYFI_ADDRESS} from '@veYFI/constants';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
-import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
 import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 
@@ -30,9 +31,6 @@ const defaultProps: TOptionContext = {
 	isLoading: true,
 	refresh: (): void => undefined
 };
-
-const VEYFI_OPTIONS_ADDRESS = toAddress(''); // TODO: update once deployed
-const VEYFI_OYFI_ADDRESS = toAddress(''); // TODO: update once deployed
 
 const OptionContext = createContext<TOptionContext>(defaultProps);
 export const OptionContextApp = memo(function OptionContextApp({children}: {children: ReactElement}): ReactElement {
