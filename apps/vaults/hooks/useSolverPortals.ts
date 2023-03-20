@@ -56,7 +56,8 @@ function usePortalsQuote(): [
 
 		if (canExecuteFetch) {
 			try {
-				return (await axios.get(`https://api.portals.fi/v1/portal/${NETWORK.get(1)}/estimate`, {params})).data;
+				const {data: estimate} = await axios.get(`https://api.portals.fi/v1/portal/${NETWORK.get(1)}/estimate`, {params});
+				return estimate;
 			} catch (error) {
 				const	_error = error as AxiosError<ApiError>;
 				set_err(error as Error);
