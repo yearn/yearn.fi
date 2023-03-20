@@ -1,5 +1,5 @@
 import {useCallback, useMemo, useRef, useState} from 'react';
-import {ethers} from 'ethers';
+import {BigNumber, ethers} from 'ethers';
 import {useAsync} from '@react-hookz/web';
 import {isSolverDisabled, Solver} from '@vaults/contexts/useSolver';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
@@ -15,7 +15,7 @@ import type {TTxResponse, TTxStatus} from '@yearn-finance/web-lib/utils/web3/tra
 import type {TNormalizedBN} from '@common/types/types';
 import type {ApiError} from '@gnosis.pm/gp-v2-contracts';
 import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
-import type {TPortalsAPIResult, TPortalsApproval, TPortalsResult} from '@vaults/types/solvers.portals';
+import type {TPortalEstimation, TPortalsApproval, TPortalsQuoteResult, TPortalTransaction} from '@vaults/types/solvers.portals';
 
 const NETWORK = new Map<number, string>([
 	[1, 'ethereum'],
@@ -28,18 +28,20 @@ const NETWORK = new Map<number, string>([
 ]);
 
 function usePortalsQuote(): [
-	TPortalsResult,
-	(request: TInitSolverArgs, shouldPreventErrorToast?: boolean) => Promise<TPortalsAPIResult | undefined>
+	TPortalsQuoteResult,
+	(request: TInitSolverArgs, shouldPreventErrorToast?: boolean) => Promise<TPortalEstimation | undefined>
 ] {
 	const {toast} = yToast();
 	const {zapSlippage} = useYearn();
 	const [err, set_err] = useState<Error>();
+	const {address} = useWeb3();
 
 	const getQuote = useCallback(async (
 		request: TInitSolverArgs,
 		shouldPreventErrorToast = false
-	): Promise<TPortalsAPIResult | undefined> => {
+	): Promise<TPortalEstimation | undefined> => {
 		const	quoteRequest = {
+			takerAddress: toAddress(address),
 			sellToken: toAddress(request.inputToken.value),
 			sellAmount: formatBN(request?.inputAmount || 0).toString(),
 			buyToken: toAddress(request.outputToken.value),
@@ -54,17 +56,16 @@ function usePortalsQuote(): [
 		if (canExecuteFetch) {
 			try {
 				const params = new URLSearchParams(quoteRequest);
-				const endpoint = `https://api.portals.fi/v1/portal/${NETWORK.get(1)}/estimate?${params}`;
 
-				const res = await fetch(endpoint);
+				const estimateEndpoint = `https://api.portals.fi/v1/portal/${NETWORK.get(1)}/estimate?${params}`;
+
+				const res = await fetch(estimateEndpoint);
 
 				if (!res.ok) {
 					console.error('Error fetching quote');
 				}
 
-				const data = await res.json();
-
-				console.log('getQuote', data);
+				const data: TPortalEstimation = await res.json();
 
 				return data;
 			} catch (error) {
@@ -79,10 +80,12 @@ function usePortalsQuote(): [
 				return undefined;
 			}
 		}
+
 		return undefined;
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
-	const [{result: data, status}, actions] = useAsync(getQuote, undefined);
+
+	const [{result: data, status}] = useAsync(getQuote);
 
 	return [
 		{
@@ -90,7 +93,7 @@ function usePortalsQuote(): [
 			isLoading: status === 'loading',
 			error: err
 		},
-		actions.execute
+		getQuote
 	];
 }
 
@@ -98,7 +101,9 @@ export function useSolverPortals(): TSolverContext {
 	const {provider} = useWeb3();
 	const [, getQuote] = usePortalsQuote();
 	const request = useRef<TInitSolverArgs>();
-	const latestQuote = useRef<TPortalsAPIResult>();
+	const latestQuote = useRef<TPortalEstimation>();
+	const {address} = useWeb3();
+	const {zapSlippage} = useYearn();
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** init will be called when the Portals solver should be used to perform the desired swap.
@@ -129,7 +134,7 @@ export function useSolverPortals(): TSolverContext {
 		}
 	}, [request, getQuote]);
 
-	/* TODO 🔵 - Yearn Finance **************************************************************************
+	/* 🔵 - Yearn Finance **************************************************************************
 	** execute will send the post request to execute the order and wait for it to be executed, no
 	** matter the result. It returns a boolean value indicating whether the order was successful or
 	** not.
@@ -139,22 +144,43 @@ export function useSolverPortals(): TSolverContext {
 			return ({isSuccessful: false});
 		}
 
-		// const signer = provider.getSigner();
+		const params = new URLSearchParams({
+			takerAddress: toAddress(address),
+			sellToken: toAddress(request.current.inputToken.value),
+			sellAmount: formatBN(request.current.inputAmount || 0).toString(),
+			buyToken: toAddress(request.current.outputToken.value),
+			slippagePercentage: String(zapSlippage / 100)
+		});
+
+		const txEndpoint = `https://api.portals.fi/v1/portal/${NETWORK.get(1)}?${params}`;
+
+		const res = await fetch(txEndpoint);
+
+		if (!res.ok) {
+			console.error('Error fetching quote');
+		}
+
+		const txPortals: TPortalTransaction = await res.json();
+
+		const signer = provider.getSigner();
 		try {
-			// const {data, to} = latestQuote.current;
-			// const transaction = await signer.sendTransaction({data, to});
-			// const transactionReceipt = await transaction.wait();
-			// if (transactionReceipt.status === 0) {
-			// 	console.error('Fail to perform transaction');
-			// 	return ({isSuccessful: false});
-			// }
-			// return ({isSuccessful: true, receipt: transactionReceipt});
-			return ({isSuccessful: true});
+			const {tx: {value, gasLimit, ...rest}} = txPortals;
+			const transaction = await signer.sendTransaction({
+				value: BigNumber.from(value.hex),
+				gasLimit: BigNumber.from(gasLimit.hex),
+				...rest
+			});
+			const transactionReceipt = await transaction.wait();
+			if (transactionReceipt.status === 0) {
+				console.error('Fail to perform transaction');
+				return ({isSuccessful: false});
+			}
+			return ({isSuccessful: true, receipt: transactionReceipt});
 		} catch (_error) {
 			console.error(_error);
 			return ({isSuccessful: false});
 		}
-	}, [latestQuote]);
+	}, [address, provider, zapSlippage]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Format the quote to a normalized value, which will be used for subsequent
@@ -206,8 +232,6 @@ export function useSolverPortals(): TSolverContext {
 
 		const data: TPortalsApproval = await res.json();
 
-		console.log('onRetrieveAllowance', data);
-
 		return toNormalizedBN(data.context.allowance, request.current.inputToken.decimals);
 	}, [latestQuote, request]);
 
@@ -242,8 +266,6 @@ export function useSolverPortals(): TSolverContext {
 		}
 
 		const data: TPortalsApproval = await res.json();
-
-		console.log('onApprove', data);
 
 		const	isApproved = await isApprovedERC20(
 			provider,
@@ -299,7 +321,7 @@ export function useSolverPortals(): TSolverContext {
 	return useMemo((): TSolverContext => ({
 		type: Solver.PORTALS,
 		quote: expectedOut,
-		getQuote: getQuote,
+		getQuote,
 		refreshQuote,
 		init,
 		onRetrieveExpectedOut,
