@@ -56,7 +56,7 @@ function usePortalsQuote(): [
 
 		if (canExecuteFetch) {
 			try {
-				return axios.get(`https://api.portals.fi/v1/portal/${NETWORK.get(1)}/estimate`, {params});
+				return (await axios.get(`https://api.portals.fi/v1/portal/${NETWORK.get(1)}/estimate`, {params})).data;
 			} catch (error) {
 				const	_error = error as AxiosError<ApiError>;
 				set_err(error as Error);
@@ -150,7 +150,7 @@ export function useSolverPortals(): TSolverContext {
 		try {
 			const {tx: {value, gasLimit, ...rest}} = portals;
 			const transaction = await signer.sendTransaction({
-				value: BigNumber.from(value.hex),
+				value: BigNumber.from(value?.hex ?? 0),
 				gasLimit: BigNumber.from(gasLimit.hex),
 				...rest
 			});
