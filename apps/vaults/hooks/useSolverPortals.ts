@@ -1,5 +1,6 @@
 import {useCallback, useMemo, useRef, useState} from 'react';
 import {BigNumber, ethers} from 'ethers';
+import axios from 'axios';
 import {useAsync} from '@react-hookz/web';
 import {isSolverDisabled, Solver} from '@vaults/contexts/useSolver';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
@@ -40,7 +41,7 @@ function usePortalsQuote(): [
 		request: TInitSolverArgs,
 		shouldPreventErrorToast = false
 	): Promise<TPortalEstimation | undefined> => {
-		const	quoteRequest = {
+		const	params = {
 			takerAddress: toAddress(address),
 			sellToken: toAddress(request.inputToken.value),
 			sellAmount: formatBN(request?.inputAmount || 0).toString(),
@@ -49,25 +50,13 @@ function usePortalsQuote(): [
 		};
 
 		const canExecuteFetch = (
-			!(isZeroAddress(quoteRequest.sellToken) || isZeroAddress(quoteRequest.buyToken)) &&
+			!(isZeroAddress(params.sellToken) || isZeroAddress(params.buyToken)) &&
 				!formatBN(request?.inputAmount || 0).isZero()
 		);
 
 		if (canExecuteFetch) {
 			try {
-				const params = new URLSearchParams(quoteRequest);
-
-				const estimateEndpoint = `https://api.portals.fi/v1/portal/${NETWORK.get(1)}/estimate?${params}`;
-
-				const res = await fetch(estimateEndpoint);
-
-				if (!res.ok) {
-					console.error('Error fetching quote');
-				}
-
-				const data: TPortalEstimation = await res.json();
-
-				return data;
+				return axios.get(`https://api.portals.fi/v1/portal/${NETWORK.get(1)}/estimate`, {params});
 			} catch (error) {
 				const	_error = error as AxiosError<ApiError>;
 				set_err(error as Error);
@@ -144,27 +133,22 @@ export function useSolverPortals(): TSolverContext {
 			return ({isSuccessful: false});
 		}
 
-		const params = new URLSearchParams({
-			takerAddress: toAddress(address),
-			sellToken: toAddress(request.current.inputToken.value),
-			sellAmount: formatBN(request.current.inputAmount || 0).toString(),
-			buyToken: toAddress(request.current.outputToken.value),
-			slippagePercentage: String(zapSlippage / 100)
-		});
-
-		const txEndpoint = `https://api.portals.fi/v1/portal/${NETWORK.get(1)}?${params}`;
-
-		const res = await fetch(txEndpoint);
-
-		if (!res.ok) {
-			console.error('Error fetching quote');
-		}
-
-		const txPortals: TPortalTransaction = await res.json();
+		const {data: portals} = await axios.get<TPortalTransaction>(
+			`https://api.portals.fi/v1/portal/${NETWORK.get(1)}`,
+			{
+				params: {
+					takerAddress: toAddress(address),
+					sellToken: toAddress(request.current.inputToken.value),
+					sellAmount: formatBN(request.current.inputAmount || 0).toString(),
+					buyToken: toAddress(request.current.outputToken.value),
+					slippagePercentage: String(zapSlippage / 100)
+				}
+			});
 
 		const signer = provider.getSigner();
+		
 		try {
-			const {tx: {value, gasLimit, ...rest}} = txPortals;
+			const {tx: {value, gasLimit, ...rest}} = portals;
 			const transaction = await signer.sendTransaction({
 				value: BigNumber.from(value.hex),
 				gasLimit: BigNumber.from(gasLimit.hex),
@@ -214,25 +198,18 @@ export function useSolverPortals(): TSolverContext {
 			return toNormalizedBN(0);
 		}
 
-		const allowanceRequest = {
-			takerAddress: toAddress(request.current.from),
-			sellToken: toAddress(request.current.inputToken.value),
-			sellAmount:formatBN(request.current.inputAmount || 0).toString(),
-			buyToken: toAddress(request.current.outputToken.value)
-		};
+		const {data: approval} = await axios.get<TPortalsApproval>(
+			`https://api.portals.fi/v1/approval/${NETWORK.get(1)}`,
+			{
+				params: {
+					takerAddress: toAddress(request.current.from),
+					sellToken: toAddress(request.current.inputToken.value),
+					sellAmount:formatBN(request.current.inputAmount || 0).toString(),
+					buyToken: toAddress(request.current.outputToken.value)
+				}
+			});
 
-		const params = new URLSearchParams(allowanceRequest);
-		const endpoint = `https://api.portals.fi/v1/approval/${NETWORK.get(1)}?${params}`;
-
-		const res = await fetch(endpoint);
-
-		if (!res.ok) {
-			console.error('Error fetching allowance');
-		}
-
-		const data: TPortalsApproval = await res.json();
-
-		return toNormalizedBN(data.context.allowance, request.current.inputToken.decimals);
+		return toNormalizedBN(approval.context.allowance, request.current.inputToken.decimals);
 	}, [latestQuote, request]);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -249,35 +226,30 @@ export function useSolverPortals(): TSolverContext {
 			return;
 		}
 
-		const approveRequest = {
-			takerAddress: toAddress(request.current.from),
-			sellToken: toAddress(request.current.inputToken.value),
-			sellAmount:formatBN(request.current.inputAmount || 0).toString(),
-			buyToken: toAddress(request.current.outputToken.value)
-		};
 
-		const params = new URLSearchParams(approveRequest);
-		const endpoint = `https://api.portals.fi/v1/approval/${NETWORK.get(1)}?${params}`;
-
-		const res = await fetch(endpoint);
-
-		if (!res.ok) {
-			console.error('Error fetching onApprove');
-		}
-
-		const data: TPortalsApproval = await res.json();
+		const {data: approval} = await axios.get<TPortalsApproval>(
+			`https://api.portals.fi/v1/approval/${NETWORK.get(1)}`,
+			{
+				params: {
+					takerAddress: toAddress(request.current.from),
+					sellToken: toAddress(request.current.inputToken.value),
+					sellAmount:formatBN(request.current.inputAmount || 0).toString(),
+					buyToken: toAddress(request.current.outputToken.value)
+				}
+			}
+		);
 
 		const	isApproved = await isApprovedERC20(
 			provider,
 			toAddress(request.current.inputToken.value), //token to approve
-			data.context.spender, //contract to approve
+			approval.context.spender, //contract to approve
 			amount
 		);
 		if (!isApproved) {
 			new Transaction(provider, approveERC20, txStatusSetter)
 				.populate(
 					toAddress(request.current.inputToken.value), //token to approve
-					data.context.spender, //contract to approve
+					approval.context.spender, //contract to approve
 					amount
 				)
 				.onSuccess(onSuccess)
