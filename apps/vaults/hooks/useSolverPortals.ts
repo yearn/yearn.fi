@@ -1,77 +1,72 @@
 import {useCallback, useMemo, useRef, useState} from 'react';
 import {BigNumber, ethers} from 'ethers';
-import axios from 'axios';
 import {useAsync} from '@react-hookz/web';
 import {isSolverDisabled, Solver} from '@vaults/contexts/useSolver';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatBN, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatBN, toNormalizedBN, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
 import {approveERC20, isApprovedERC20} from '@common/utils/actions/approveToken';
+
+import usePortalsApi from './usePortalsApi';
 
 import type {AxiosError} from 'axios';
 import type {TTxResponse, TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TNormalizedBN} from '@common/types/types';
 import type {ApiError} from '@gnosis.pm/gp-v2-contracts';
 import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
-import type {TPortalEstimation, TPortalsApproval, TPortalsQuoteResult, TPortalTransaction} from '@vaults/types/solvers.portals';
+import type {TPortalEstimate} from './usePortalsApi';
 
-const NETWORK = new Map<number, string>([
-	[1, 'ethereum'],
-	[10, 'optimism'],
-	[250, 'fantom'],
-	[42161, 'arbitrum'],
-	[137, 'polygon'],
-	[43114, 'avalanche'],
-	[56, 'bsc']
-]);
+export type TPortalsQuoteResult = {
+	result?: TPortalEstimate | null;
+	isLoading: boolean;
+	error?: Error;
+};
 
 function usePortalsQuote(): [
 	TPortalsQuoteResult,
-	(request: TInitSolverArgs, shouldPreventErrorToast?: boolean) => Promise<TPortalEstimation | undefined>
+	(request: TInitSolverArgs, shouldPreventErrorToast?: boolean) => Promise<TPortalEstimate | null>
 ] {
 	const {toast} = yToast();
 	const {zapSlippage} = useYearn();
 	const [err, set_err] = useState<Error>();
-	const {address} = useWeb3();
+	const {getEstimate} = usePortalsApi();
 
 	const getQuote = useCallback(async (
 		request: TInitSolverArgs,
 		shouldPreventErrorToast = false
-	): Promise<TPortalEstimation | undefined> => {
-		const	params = {
-			takerAddress: toAddress(address),
+	): Promise<TPortalEstimate | null> => {
+		const params = {
 			sellToken: toAddress(request.inputToken.value),
-			sellAmount: formatBN(request?.inputAmount || 0).toString(),
+			sellAmount: formatBN(request.inputAmount || 0).toString(),
 			buyToken: toAddress(request.outputToken.value),
 			slippagePercentage: String(zapSlippage / 100)
 		};
 
 		const canExecuteFetch = (
 			!(isZeroAddress(params.sellToken) || isZeroAddress(params.buyToken)) &&
-				!formatBN(request?.inputAmount || 0).isZero()
+				!formatBN(request.inputAmount || 0).isZero()
 		);
 
 		if (canExecuteFetch) {
 			try {
-				const {data: estimate} = await axios.get(`https://api.portals.fi/v1/portal/${NETWORK.get(1)}/estimate`, {params});
-				return estimate;
+				return getEstimate({network: 1, params});
 			} catch (error) {
-				const	_error = error as AxiosError<ApiError>;
+				const _error = error as AxiosError<ApiError>;
 				set_err(error as Error);
 				console.error(error);
 				if (shouldPreventErrorToast) {
-					return undefined;
+					return null;
 				}
-				const	message = `Zap not possible. Try again later or pick another token. ${_error?.response?.data?.description ? `(Reason: [${_error?.response?.data?.description}])` : ''}`;
+				const message = `Zap not possible. Try again later or pick another token. ${_error?.response?.data?.description ? `(Reason: [${_error?.response?.data?.description}])` : ''}`;
 				toast({type: 'error', content: message});
-				return undefined;
+				return null;
 			}
 		}
 
-		return undefined;
+		return null;
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
@@ -91,9 +86,10 @@ export function useSolverPortals(): TSolverContext {
 	const {provider} = useWeb3();
 	const [, getQuote] = usePortalsQuote();
 	const request = useRef<TInitSolverArgs>();
-	const latestQuote = useRef<TPortalEstimation>();
+	const latestQuote = useRef<TPortalEstimate>();
 	const {address} = useWeb3();
 	const {zapSlippage} = useYearn();
+	const {getTransaction, getApproval} = usePortalsApi();
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** init will be called when the Portals solver should be used to perform the desired swap.
@@ -118,7 +114,7 @@ export function useSolverPortals(): TSolverContext {
 	** as in the initial request and it will fails if request is not set.
 	** init should be called first to initialize the request.current.
 	**********************************************************************************************/
-	const	refreshQuote = useCallback(async (): Promise<void> => {
+	const refreshQuote = useCallback(async (): Promise<void> => {
 		if (request.current) {
 			getQuote(request.current);
 		}
@@ -134,9 +130,9 @@ export function useSolverPortals(): TSolverContext {
 			return ({isSuccessful: false});
 		}
 
-		const {data: portals} = await axios.get<TPortalTransaction>(
-			`https://api.portals.fi/v1/portal/${NETWORK.get(1)}`,
-			{
+		try {
+			const transaction = await getTransaction({
+				network: 1,
 				params: {
 					takerAddress: toAddress(address),
 					sellToken: toAddress(request.current.inputToken.value),
@@ -146,16 +142,19 @@ export function useSolverPortals(): TSolverContext {
 				}
 			});
 
-		const signer = provider.getSigner();
+			if (!transaction) {
+				throw new Error('Fail to get transaction');
+			}
 		
-		try {
-			const {tx: {value, gasLimit, ...rest}} = portals;
-			const transaction = await signer.sendTransaction({
+			const {tx: {value, gasLimit, ...rest}} = transaction;
+
+			const signer = provider.getSigner();
+			const transactionResponse = await signer.sendTransaction({
 				value: BigNumber.from(value?.hex ?? 0),
-				gasLimit: BigNumber.from(gasLimit.hex),
+				gasLimit: BigNumber.from(gasLimit?.hex ?? 0),
 				...rest
 			});
-			const transactionReceipt = await transaction.wait();
+			const transactionReceipt = await transactionResponse.wait();
 			if (transactionReceipt.status === 0) {
 				console.error('Fail to perform transaction');
 				return ({isSuccessful: false});
@@ -165,7 +164,7 @@ export function useSolverPortals(): TSolverContext {
 			console.error(_error);
 			return ({isSuccessful: false});
 		}
-	}, [address, provider, zapSlippage]);
+	}, [address, getTransaction, provider, zapSlippage]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Format the quote to a normalized value, which will be used for subsequent
@@ -199,9 +198,9 @@ export function useSolverPortals(): TSolverContext {
 			return toNormalizedBN(0);
 		}
 
-		const {data: approval} = await axios.get<TPortalsApproval>(
-			`https://api.portals.fi/v1/approval/${NETWORK.get(1)}`,
-			{
+		try {			
+			const approval = await getApproval({
+				network: 1,
 				params: {
 					takerAddress: toAddress(request.current.from),
 					sellToken: toAddress(request.current.inputToken.value),
@@ -210,8 +209,17 @@ export function useSolverPortals(): TSolverContext {
 				}
 			});
 
-		return toNormalizedBN(approval.context.allowance, request.current.inputToken.decimals);
-	}, [latestQuote, request]);
+			if (!approval) {
+				throw new Error('Fail to get approval');
+			}
+
+			return toNormalizedBN(approval.context.allowance, request.current.inputToken.decimals);
+		} catch (error) {
+			console.error(error);
+			return ({raw: Zero, normalized: 0});
+		}
+
+	}, [getApproval]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Trigger an signature to approve the token to be used by the Portals
@@ -227,38 +235,45 @@ export function useSolverPortals(): TSolverContext {
 			return;
 		}
 
-
-		const {data: approval} = await axios.get<TPortalsApproval>(
-			`https://api.portals.fi/v1/approval/${NETWORK.get(1)}`,
-			{
+		try {
+			const approval = await getApproval({
+				network: 1,
 				params: {
 					takerAddress: toAddress(request.current.from),
 					sellToken: toAddress(request.current.inputToken.value),
 					sellAmount:formatBN(request.current.inputAmount || 0).toString(),
 					buyToken: toAddress(request.current.outputToken.value)
 				}
-			}
-		);
+			});
 
-		const	isApproved = await isApprovedERC20(
-			provider,
-			toAddress(request.current.inputToken.value), //token to approve
-			approval.context.spender, //contract to approve
-			amount
-		);
-		if (!isApproved) {
-			new Transaction(provider, approveERC20, txStatusSetter)
-				.populate(
-					toAddress(request.current.inputToken.value), //token to approve
-					approval.context.spender, //contract to approve
-					amount
-				)
-				.onSuccess(onSuccess)
-				.perform();
+			if (!approval) {
+				throw new Error('Fail to get approval');
+			}
+
+			const isApproved = await isApprovedERC20(
+				provider,
+				toAddress(request.current.inputToken.value), //token to approve
+				approval.context.spender, //contract to approve
+				amount
+			);
+
+			if (!isApproved) {
+				new Transaction(provider, approveERC20, txStatusSetter)
+					.populate(
+						toAddress(request.current.inputToken.value), //token to approve
+						approval.context.spender, //contract to approve
+						amount
+					)
+					.onSuccess(onSuccess)
+					.perform();
+			}
+			onSuccess();
+			return;
+		} catch (error) {
+			console.error(error);
+			return;
 		}
-		onSuccess();
-		return;
-	}, [provider]);
+	}, [getApproval, provider]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** This execute function is not an actual deposit, but a swap using the
