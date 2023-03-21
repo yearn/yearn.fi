@@ -283,11 +283,11 @@ export function useSolverPortals(): TSolverContext {
 	}, [getApproval, provider, safeChainID]);
 
 	/* 🔵 - Yearn Finance ******************************************************
-	** This execute function is not an actual deposit, but a swap using the
-	** Portals solver. The deposit will be executed by the Portals solver by
+	** This execute function is not an actual deposit/withdraw, but a swap using
+	** the Portals solver. The deposit will be executed by the Portals solver by
 	** simply swapping the input token for the output token.
 	**************************************************************************/
-	const onExecuteDeposit = useCallback(async (
+	const onExecute = useCallback(async (
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
@@ -296,23 +296,6 @@ export function useSolverPortals(): TSolverContext {
 			.onSuccess(onSuccess)
 			.perform();
 	}, [execute, provider]);
-
-	/* 🔵 - Yearn Finance ******************************************************
-	** This execute function is not an actual withdraw, but a swap using the
-	** Portals solver. The withdraw will be executed by the Portals solver by
-	** simply swapping the input token for the output token.
-	**************************************************************************/
-	const onExecuteWithdraw = useCallback(async (
-		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-		onSuccess: () => Promise<void>
-	): Promise<void> => {
-		new Transaction(provider, execute, txStatusSetter)
-			.populate()
-			.onSuccess(onSuccess)
-			.perform();
-	}, [execute, provider]);
-
-
 	return useMemo((): TSolverContext => ({
 		type: Solver.PORTALS,
 		quote: expectedOut,
@@ -322,8 +305,8 @@ export function useSolverPortals(): TSolverContext {
 		onRetrieveExpectedOut,
 		onRetrieveAllowance,
 		onApprove,
-		onExecuteDeposit,
-		onExecuteWithdraw
-	}), [expectedOut, getQuote, refreshQuote, init, onApprove, onExecuteDeposit, onExecuteWithdraw, onRetrieveAllowance, onRetrieveExpectedOut]);
+		onExecuteDeposit: onExecute,
+		onExecuteWithdraw: onExecute
+	}), [expectedOut, getQuote, refreshQuote, init, onApprove, onExecute, onRetrieveAllowance, onRetrieveExpectedOut]);
 }
 
