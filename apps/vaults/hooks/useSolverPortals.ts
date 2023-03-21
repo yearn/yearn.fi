@@ -6,6 +6,7 @@ import {isSolverDisabled, Solver} from '@vaults/contexts/useSolver';
 import usePortalsApi from '@vaults/hooks/usePortalsApi';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
+import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatBN, toNormalizedBN, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
@@ -31,6 +32,7 @@ function usePortalsQuote(): [
 	const {zapSlippage} = useYearn();
 	const [err, set_err] = useState<Error>();
 	const {getEstimate} = usePortalsApi();
+	const {safeChainID} = useChainID();
 
 	const getQuote = useCallback(async (
 		request: TInitSolverArgs,
@@ -53,7 +55,7 @@ function usePortalsQuote(): [
 		}
 		
 		try {
-			return getEstimate({network: 1, params});
+			return getEstimate({network: safeChainID, params});
 		} catch (error) {
 			set_err(error instanceof Error ? error : new Error(`Unknown error: ${error}`));
 
@@ -71,7 +73,7 @@ function usePortalsQuote(): [
 
 			return null;
 		}
-	}, [getEstimate, toast, zapSlippage]);
+	}, [getEstimate, safeChainID, toast, zapSlippage]);
 
 	const [{result: data, status}] = useAsync(getQuote);
 
@@ -93,6 +95,7 @@ export function useSolverPortals(): TSolverContext {
 	const {address} = useWeb3();
 	const {zapSlippage} = useYearn();
 	const {getTransaction, getApproval} = usePortalsApi();
+	const {safeChainID} = useChainID();
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** init will be called when the Portals solver should be used to perform the desired swap.
@@ -135,7 +138,7 @@ export function useSolverPortals(): TSolverContext {
 
 		try {
 			const transaction = await getTransaction({
-				network: 1,
+				network: safeChainID,
 				params: {
 					takerAddress: toAddress(address),
 					sellToken: toAddress(request.current.inputToken.value),
@@ -168,7 +171,7 @@ export function useSolverPortals(): TSolverContext {
 			console.error(_error);
 			return ({isSuccessful: false});
 		}
-	}, [address, getTransaction, provider, zapSlippage]);
+	}, [address, getTransaction, provider, safeChainID, zapSlippage]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Format the quote to a normalized value, which will be used for subsequent
@@ -204,7 +207,7 @@ export function useSolverPortals(): TSolverContext {
 
 		try {			
 			const approval = await getApproval({
-				network: 1,
+				network: safeChainID,
 				params: {
 					takerAddress: toAddress(request.current.from),
 					sellToken: toAddress(request.current.inputToken.value),
@@ -223,7 +226,7 @@ export function useSolverPortals(): TSolverContext {
 			return ({raw: Zero, normalized: 0});
 		}
 
-	}, [getApproval]);
+	}, [getApproval, safeChainID]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Trigger an signature to approve the token to be used by the Portals
@@ -241,7 +244,7 @@ export function useSolverPortals(): TSolverContext {
 
 		try {
 			const approval = await getApproval({
-				network: 1,
+				network: safeChainID,
 				params: {
 					takerAddress: toAddress(request.current.from),
 					sellToken: toAddress(request.current.inputToken.value),
