@@ -79,7 +79,6 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 			inputAmount: actionParams?.amount.raw,
 			isDepositing: isDepositing
 		};
-		console.log({currentSolver});
 		
 		switch (currentSolver) {
 			case Solver.WIDO:
