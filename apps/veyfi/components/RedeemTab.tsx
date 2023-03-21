@@ -1,9 +1,57 @@
+import {useState} from 'react';
+import {formatUnits} from 'ethers/lib/utils';
+import {useAsync} from '@react-hookz/web';
+import {VEYFI_OPTIONS_ADDRESS, VEYFI_OYFI_ADDRESS} from '@veYFI/constants';
+import {useOption} from '@veYFI/contexts/useOption';
+import {useTransaction} from '@veYFI/hooks/useTransaction';
+import * as OptionActions from '@veYFI/utils/actions/option';
+import {validateAllowance, validateAmount, validateNetwork} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
+import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
+import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {ETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {formatBN, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
+import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
 import {AmountInput} from '@common/components/AmountInput';
+import {useWallet} from '@common/contexts/useWallet';
+import {useBalance} from '@common/hooks/useBalance';
+import {approveERC20} from '@common/utils/actions/approveToken';
 
 import type {ReactElement} from 'react';
 
 function RedeemTab(): ReactElement {
+	const [redeemAmount, set_redeemAmount] = useState(toNormalizedBN(0));
+	const {provider, address, isActive} = useWeb3();
+	const {safeChainID} = useChainID();
+	const {refresh: refreshBalances} = useWallet();
+	const {getRequiredEth, positions, allowances, isLoading: isLoadingOption, refresh} = useOption();
+	const clearLockAmount = (): void => set_redeemAmount(toNormalizedBN(0));
+	const refreshData = (): unknown => Promise.all([refresh(), refreshBalances()]);
+	const onTxSuccess = (): unknown => Promise.all([refreshData(), clearLockAmount()]);
+	const [{status, result}, fetchRequiredEth] = useAsync(getRequiredEth, formatBN(0));
+	const ethBalance = useBalance(ETH_TOKEN_ADDRESS);
+	const [approveRedeem, approveRedeemStatus] = useTransaction(approveERC20, refreshData);
+	const [redeem, redeemStatus] = useTransaction(OptionActions.redeem, onTxSuccess);
+
+	const oYFIBalance = toNormalizedBN(formatBN(positions?.balance), 18);
+	const ethRequired = formatUnits(result, 18);
+
+	const {isValid: isApproved} = validateAllowance({
+		tokenAddress: VEYFI_OYFI_ADDRESS,
+		spenderAddress: VEYFI_OPTIONS_ADDRESS,
+		allowances,
+		amount: redeemAmount.raw
+	});
+
+	const {isValid: isValidRedeemAmount, error: redeemAmountError} = validateAmount({
+		amount: redeemAmount.normalized,
+		balance: oYFIBalance.normalized
+	});
+
+	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: 1, walletNetwork: safeChainID});
+
 	return (
 		<div className={'flex flex-col gap-6 md:gap-10'}>
 			<div className={'flex flex-col gap-4'}>
@@ -16,27 +64,40 @@ function RedeemTab(): ReactElement {
 				<div className={'grid grid-cols-1 gap-4 md:grid-cols-4'}>
 					<AmountInput
 						label={'You have oYFI'}
-						amount={0}
-						legend={'≈ $ 420.00'}
+						amount={oYFIBalance.normalized}
+						legend={'≈ $ 420.00'} // TODO: get price value
 						disabled
 					/>
 					<AmountInput
 						label={'YFI you want to redeem'}
-						amount={0}
-						maxAmount={100}
-						legend={'≈ $ 420.00'}
+						amount={redeemAmount.normalized}
+						maxAmount={oYFIBalance.normalized}
+						onAmountChange={(value): void => {
+							const amount = handleInputChangeEventValue(value, 18);
+							set_redeemAmount(amount);
+							fetchRequiredEth.execute(amount.raw);
+						}}
+						onLegendClick={(): void => set_redeemAmount(oYFIBalance)}
+						onMaxClick={(): void => set_redeemAmount(oYFIBalance)}
+						legend={'≈ $ 420.00'} // TODO: get price value
+						error={redeemAmountError}
 					/>
 					<AmountInput
 						label={'ETH fee'}
-						amount={0}
-						legend={'≈ $ 420.00'}
+						amount={ethRequired}
+						legend={formatCounterValue(ethRequired, ethBalance.normalizedPrice)}
+						loading={status === 'loading'}
 						disabled
 					/>
 					<Button 
 						className={'w-full md:mt-7'}
-						onClick={(): void => undefined}
-						isBusy={false}
-						disabled={false}
+						onClick={(): unknown =>
+							isApproved  
+								? redeem(provider, toAddress(address), redeemAmount.raw)
+								: approveRedeem(provider, VEYFI_OYFI_ADDRESS, VEYFI_OPTIONS_ADDRESS)
+						}
+						isBusy={isLoadingOption || approveRedeemStatus.loading || redeemStatus.loading}
+						disabled={!isActive || !isValidNetwork || !isValidRedeemAmount || status === 'loading' || status === 'error'}
 					>
 						{'Redeem'}
 					</Button>
