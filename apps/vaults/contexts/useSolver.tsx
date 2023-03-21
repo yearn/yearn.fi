@@ -28,7 +28,7 @@ export enum	Solver {
 
 export const isSolverDisabled = {
 	[Solver.VANILLA]: false,
-	[Solver.PARTNER_CONTRACT]: true,
+	[Solver.PARTNER_CONTRACT]: false,
 	[Solver.CHAIN_COIN]: false,
 	[Solver.INTERNAL_MIGRATION]: false,
 	[Solver.COWSWAP]: false,
