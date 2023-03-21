@@ -30,7 +30,7 @@ export const isSolverDisabled = {
 	[Solver.PARTNER_CONTRACT]: false,
 	[Solver.CHAIN_COIN]: false,
 	[Solver.INTERNAL_MIGRATION]: false,
-	[Solver.COWSWAP]: false,
+	[Solver.COWSWAP]: true,
 	[Solver.WIDO]: false,
 	[Solver.PORTALS]: true //Not yet implemented
 };

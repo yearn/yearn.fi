@@ -41,7 +41,7 @@ const	defaultProps: TYearnContext = {
 	vaultsMigrations: {},
 	isLoadingVaultList: false,
 	zapSlippage: 0.1,
-	zapProvider: Solver.COWSWAP,
+	zapProvider: Solver.WIDO,
 	mutateVaultList: async (): Promise<void> => Promise.resolve(),
 	set_zapSlippage: (): void => undefined,
 	set_zapProvider: (): void => undefined
@@ -57,7 +57,7 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 	const {settings: baseAPISettings} = useSettings();
 	const {address, currentPartner} = useWeb3();
 	const [zapSlippage, set_zapSlippage] = useLocalStorage<number>('yearn.finance/zap-slippage', DEFAULT_SLIPPAGE);
-	const [zapProvider, set_zapProvider] = useLocalStorage<Solver>('yearn.finance/zap-provider', Solver.COWSWAP);
+	const [zapProvider, set_zapProvider] = useLocalStorage<Solver>('yearn.finance/zap-provider', Solver.WIDO);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	**	We will play with the some Yearn vaults. To correctly play with them,
