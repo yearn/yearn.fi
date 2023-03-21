@@ -142,7 +142,8 @@ export function useSolverPortals(): TSolverContext {
 					sellToken: toAddress(request.current.inputToken.value),
 					sellAmount: formatBN(request.current.inputAmount || 0).toString(),
 					buyToken: toAddress(request.current.outputToken.value),
-					slippagePercentage: String(zapSlippage / 100)
+					slippagePercentage: String(zapSlippage / 100),
+					validate: false
 				}
 			});
 

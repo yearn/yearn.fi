@@ -23,6 +23,7 @@ type TGetEstimateProps = {
 type TGetTransactionProps = Omit<TGetEstimateProps, 'params'> & {
 	params: Required<Pick<TGetEstimateProps, 'params'>['params']> & {
 		takerAddress: string;
+		validate?: boolean;
 	};
 };
 
