@@ -3,6 +3,7 @@ import {BigNumber, ethers} from 'ethers';
 import axios from 'axios';
 import {useAsync} from '@react-hookz/web';
 import {isSolverDisabled, Solver} from '@vaults/contexts/useSolver';
+import usePortalsApi from '@vaults/hooks/usePortalsApi';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -11,12 +12,10 @@ import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
 import {approveERC20, isApprovedERC20} from '@common/utils/actions/approveToken';
 
-import usePortalsApi from './usePortalsApi';
-
 import type {TTxResponse, TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TNormalizedBN} from '@common/types/types';
+import type {TPortalEstimate} from '@vaults/hooks/usePortalsApi';
 import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
-import type {TPortalEstimate} from './usePortalsApi';
 
 export type TPortalsQuoteResult = {
 	result?: TPortalEstimate | null;
