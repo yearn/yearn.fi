@@ -260,7 +260,7 @@ export function useSolverPortals(): TSolverContext {
 			const isApproved = await isApprovedERC20(
 				provider,
 				toAddress(request.current.inputToken.value), //token to approve
-				approval.context.spender, //contract to approve
+				toAddress(approval.context.spender), //contract to approve
 				amount
 			);
 
@@ -268,7 +268,7 @@ export function useSolverPortals(): TSolverContext {
 				new Transaction(provider, approveERC20, txStatusSetter)
 					.populate(
 						toAddress(request.current.inputToken.value), //token to approve
-						approval.context.spender, //contract to approve
+						toAddress(approval.context.spender), //contract to approve
 						amount
 					)
 					.onSuccess(onSuccess)
@@ -280,7 +280,7 @@ export function useSolverPortals(): TSolverContext {
 			console.error(error);
 			return;
 		}
-	}, [getApproval, provider]);
+	}, [getApproval, provider, safeChainID]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** This execute function is not an actual deposit, but a swap using the
