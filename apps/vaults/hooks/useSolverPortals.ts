@@ -1,5 +1,6 @@
 import {useCallback, useMemo, useRef, useState} from 'react';
 import {BigNumber, ethers} from 'ethers';
+import axios from 'axios';
 import {useAsync} from '@react-hookz/web';
 import {isSolverDisabled, Solver} from '@vaults/contexts/useSolver';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
@@ -12,10 +13,8 @@ import {approveERC20, isApprovedERC20} from '@common/utils/actions/approveToken'
 
 import usePortalsApi from './usePortalsApi';
 
-import type {AxiosError} from 'axios';
 import type {TTxResponse, TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TNormalizedBN} from '@common/types/types';
-import type {ApiError} from '@gnosis.pm/gp-v2-contracts';
 import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
 import type {TPortalEstimate} from './usePortalsApi';
 
@@ -50,25 +49,30 @@ function usePortalsQuote(): [
 				!formatBN(request.inputAmount || 0).isZero()
 		);
 
-		if (canExecuteFetch) {
-			try {
-				return getEstimate({network: 1, params});
-			} catch (error) {
-				const _error = error as AxiosError<ApiError>;
-				set_err(error as Error);
-				console.error(error);
-				if (shouldPreventErrorToast) {
-					return null;
-				}
-				const message = `Zap not possible. Try again later or pick another token. ${_error?.response?.data?.description ? `(Reason: [${_error?.response?.data?.description}])` : ''}`;
-				toast({type: 'error', content: message});
-				return null;
-			}
+		if (!canExecuteFetch) {
+			return null;
 		}
+		
+		try {
+			return getEstimate({network: 1, params});
+		} catch (error) {
+			set_err(error instanceof Error ? error : new Error(`Unknown error: ${error}`));
 
-		return null;
-	// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
+			console.error(error);
+
+			if (!shouldPreventErrorToast) {
+				let errorContent = 'Zap not possible. Try again later or pick another token.';
+				if (axios.isAxiosError(error)) {
+					const description = error.response?.data?.description;
+					errorContent += `${description ? ` (Reason: [${description}])` : ''}`;
+				}
+	
+				toast({type: 'error', content: errorContent});
+			}
+
+			return null;
+		}
+	}, [getEstimate, toast, zapSlippage]);
 
 	const [{result: data, status}] = useAsync(getQuote);
 
