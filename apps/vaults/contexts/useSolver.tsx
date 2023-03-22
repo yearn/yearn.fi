@@ -85,7 +85,7 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 			case Solver.PORTALS:
 			case Solver.COWSWAP: {
 				const promises = [wido.init(request), cowswap.init(request), portals.init(request)];
-				const [widoQuote, cowswapQuote, portalsQuote] = await Promise.all(promises);
+				const [widoQuote, cowswapQuote, portalsQuote] = await Promise.allSettled(promises);
 
 				/**************************************************************
 				** Logic is to use the primary solver (Wido) and check if a
@@ -94,19 +94,19 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 				** quote to 0.
 				**************************************************************/
 				if (currentSolver === Solver.WIDO && !isSolverDisabled[Solver.WIDO]) {
-					if (widoQuote?.raw?.gt(0)) {
+					if (widoQuote.status === 'fulfilled' && widoQuote?.value.raw?.gt(0)) {
 						performBatchedUpdates((): void => {
-							set_currentSolverState({...wido, quote: widoQuote});
+							set_currentSolverState({...wido, quote: widoQuote.value});
 							set_isLoading(false);
 						});
-					} else if (cowswapQuote?.raw?.gt(0) && !isSolverDisabled[Solver.COWSWAP]) {
+					} else if (cowswapQuote.status === 'fulfilled' && cowswapQuote.value.raw?.gt(0) && !isSolverDisabled[Solver.COWSWAP]) {
 						performBatchedUpdates((): void => {
-							set_currentSolverState({...cowswap, quote: cowswapQuote});
+							set_currentSolverState({...cowswap, quote: cowswapQuote.value});
 							set_isLoading(false);
 						});
-					} else if (portalsQuote?.raw?.gt(0) && !isSolverDisabled[Solver.PORTALS]) {
+					} else if (portalsQuote.status === 'fulfilled' && portalsQuote.value.raw?.gt(0) && !isSolverDisabled[Solver.PORTALS]) {
 						performBatchedUpdates((): void => {
-							set_currentSolverState({...portals, quote: portalsQuote});
+							set_currentSolverState({...portals, quote: portalsQuote.value});
 							set_isLoading(false);
 						});
 					} else {
@@ -125,19 +125,19 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 				** quote to 0.
 				**************************************************************/
 				if (currentSolver === Solver.COWSWAP && !isSolverDisabled[Solver.COWSWAP]) {
-					if (cowswapQuote?.raw?.gt(0)) {
+					if (cowswapQuote.status === 'fulfilled' && cowswapQuote.value.raw?.gt(0)) {
 						performBatchedUpdates((): void => {
-							set_currentSolverState({...cowswap, quote: cowswapQuote});
+							set_currentSolverState({...cowswap, quote: cowswapQuote.value});
 							set_isLoading(false);
 						});
-					} else if (widoQuote?.raw?.gt(0) && !isSolverDisabled[Solver.WIDO]) {
+					} else if (widoQuote.status === 'fulfilled' && widoQuote.value.raw?.gt(0) && !isSolverDisabled[Solver.WIDO]) {
 						performBatchedUpdates((): void => {
-							set_currentSolverState({...wido, quote: widoQuote});
+							set_currentSolverState({...wido, quote: widoQuote.value});
 							set_isLoading(false);
 						});
-					} else if (portalsQuote?.raw?.gt(0) && !isSolverDisabled[Solver.PORTALS]) {
+					} else if (portalsQuote.status === 'fulfilled' && portalsQuote.value.raw?.gt(0) && !isSolverDisabled[Solver.PORTALS]) {
 						performBatchedUpdates((): void => {
-							set_currentSolverState({...portals, quote: portalsQuote});
+							set_currentSolverState({...portals, quote: portalsQuote.value});
 							set_isLoading(false);
 						});
 					} else {
@@ -155,19 +155,19 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 				** quote to 0.
 				**************************************************************/
 				if (currentSolver === Solver.PORTALS && !isSolverDisabled[Solver.PORTALS]) {
-					if (portalsQuote?.raw?.gt(0)) {
+					if (portalsQuote.status === 'fulfilled' && portalsQuote.value.raw?.gt(0)) {
 						performBatchedUpdates((): void => {
-							set_currentSolverState({...portals, quote: portalsQuote});
+							set_currentSolverState({...portals, quote: portalsQuote.value});
 							set_isLoading(false);
 						});
-					} else if (widoQuote?.raw?.gt(0) && !isSolverDisabled[Solver.WIDO]) {
+					} else if (widoQuote.status === 'fulfilled' && widoQuote.value.raw?.gt(0) && !isSolverDisabled[Solver.WIDO]) {
 						performBatchedUpdates((): void => {
-							set_currentSolverState({...wido, quote: widoQuote});
+							set_currentSolverState({...wido, quote: widoQuote.value});
 							set_isLoading(false);
 						});
-					} else if (cowswapQuote?.raw?.gt(0) && !isSolverDisabled[Solver.COWSWAP]) {
+					} else if (cowswapQuote.status === 'fulfilled' && cowswapQuote.value.raw?.gt(0) && !isSolverDisabled[Solver.COWSWAP]) {
 						performBatchedUpdates((): void => {
-							set_currentSolverState({...cowswap, quote: cowswapQuote});
+							set_currentSolverState({...cowswap, quote: cowswapQuote.value});
 							set_isLoading(false);
 						});
 					} else {
