@@ -38,7 +38,7 @@ function	VaultDetailsQuickActionsTo(): ReactElement {
 						{isDepositing ? 'To vault' : 'To wallet'}
 					</label>
 					<legend className={'font-number inline text-xs text-neutral-600 md:hidden'}>
-						{`APY ${clientOnlyFormatPercent((currentVault?.apy?.net_apy || 0) * 100, 2, 2, 500)}`}
+						{`APY ${clientOnlyFormatPercent(((currentVault?.apy?.net_apy || 0) + (currentVault?.apy?.staking_rewards_apr || 0)) * 100, 2, 2, 500)}`}
 					</legend>
 				</div>
 				<Renderable
@@ -56,7 +56,7 @@ function	VaultDetailsQuickActionsTo(): ReactElement {
 					</div>
 				</Renderable>
 				<legend className={'font-number hidden text-xs text-neutral-600 md:inline'}>
-					{isDepositing ? (clientOnlyFormatPercent((currentVault?.apy?.net_apy || 0) * 100, 2, 2, 500)) : ''}
+					{isDepositing ? (clientOnlyFormatPercent(((currentVault?.apy?.net_apy || 0) + (currentVault?.apy?.staking_rewards_apr || 0)) * 100, 2, 2, 500)) : ''}
 				</legend>
 			</div>
 
