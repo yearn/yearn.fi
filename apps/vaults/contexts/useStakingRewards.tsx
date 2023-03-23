@@ -1,4 +1,5 @@
 import React, {createContext, memo, useCallback, useContext, useMemo} from 'react';
+import {useRouter} from 'next/router';
 import {Contract} from 'ethcall';
 import useSWR from 'swr';
 import {STAKING_REWARDS_REGISTRY_ADDRESS, STAKING_REWARDS_SUPPORTED_CHAINS} from '@vaults/constants';
@@ -45,7 +46,10 @@ const defaultProps: TStakingRewardsContext = {
 const StakingRewardsContext = createContext<TStakingRewardsContext>(defaultProps);
 export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({children}: {children: ReactElement}): ReactElement {
 	const {provider, address: userAddress, isActive} = useWeb3();
-	const {chainID} = useChainID();
+	const {chainID: appChainID} = useChainID();
+	const router = useRouter();
+	const routeChainID = Number(router.query.chainID || '0');
+	const chainID = routeChainID || appChainID;
 	const isChainSupported = STAKING_REWARDS_SUPPORTED_CHAINS.includes(chainID);
 
 	const stakingRewardsFetcher = useCallback(async (): Promise<TStakingRewards[]> => {
