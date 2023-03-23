@@ -30,7 +30,7 @@ function	HeaderPosition(): ReactElement {
 		holdings?.veCRVBalance ?
 			formatAmount(formatToNormalizedValue(holdings.veCRVBalance, 18), 0, 0)
 			: ''
-	), [holdings.veCRVBalance]);
+	), [holdings?.veCRVBalance]);
 
 	const	formatedYouHave = useMemo((): ReactNode => (
 		formatCounterValueRaw(
