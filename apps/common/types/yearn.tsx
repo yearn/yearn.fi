@@ -85,6 +85,7 @@ export type TYearnVault = {
 		type: string,
 		gross_apr: number,
 		net_apy: number,
+		staking_rewards_apr: number,
 		fees: {
 			performance: number,
 			withdrawal: number,

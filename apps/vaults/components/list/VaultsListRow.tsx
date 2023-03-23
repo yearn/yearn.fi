@@ -59,11 +59,14 @@ function	VaultsListRow({currentVault}: {currentVault: TYearnVault}): ReactElemen
 								{(currentVault.apy?.type === 'new' && currentVault.apy?.net_apy == 0) ? (
 									'New'
 								) : (
-									formatPercent((currentVault?.apy?.net_apy || 0) * 100, 2, 2, 500)
+									formatPercent(((currentVault?.apy?.net_apy || 0) + (currentVault.apy?.staking_rewards_apr || 0)) * 100, 2, 2, 500)
 								)}
 							</b>
 							<small className={'text-xs text-neutral-900'}>
 								{currentVault.apy?.composite?.boost ? `BOOST ${formatAmount(currentVault.apy?.composite?.boost, 2, 2)}x` : null}
+							</small>
+							<small className={'text-xs text-neutral-900'}>
+								{currentVault.apy?.staking_rewards_apr ? `REWARD ${formatPercent((currentVault.apy?.staking_rewards_apr || 0) * 100, 2, 2, 500)}` : null}
 							</small>
 						</div>
 					</div>
