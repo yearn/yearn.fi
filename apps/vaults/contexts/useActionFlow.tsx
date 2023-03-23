@@ -82,7 +82,8 @@ function useContextualIs({selectedTo, currentVault}: TUseContextualIs): [boolean
 	const router = useRouter();
 
 	const isDepositing = useMemo((): boolean => (
-		router.query.action === 'deposit' && (!selectedTo?.value || toAddress(selectedTo?.value) === toAddress(currentVault.address))
+		(!router.query.action || router.query.action === 'deposit') &&
+			(!selectedTo?.value || toAddress(selectedTo?.value) === toAddress(currentVault.address))
 	), [selectedTo?.value, currentVault.address, router.query.action]);
 
 	const isPartnerAddressValid = useMemo((): boolean => (
