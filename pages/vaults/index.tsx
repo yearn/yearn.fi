@@ -18,7 +18,6 @@ import ListHero from '@common/components/ListHero';
 import ValueAnimation from '@common/components/ValueAnimation';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
-import {useClientOnlyFn} from '@common/hooks/useClientOnlyFn';
 import {getVaultName} from '@common/utils';
 
 import type {NextRouter} from 'next/router';
@@ -33,16 +32,14 @@ function	HeaderUserPosition(): ReactElement {
 	const	{cumulatedValueInVaults} = useWallet();
 	const	{earned} = useYearn();
 
-	const clientOnlyFormatAmount = useClientOnlyFn({fn: formatAmount, placeholder: '0,00'});
-
 	const	formatedYouEarned = useMemo((): string => {
 		const amount = (earned?.totalUnrealizedGainsUSD || 0) > 0 ? earned?.totalUnrealizedGainsUSD || 0 : 0;
-		return clientOnlyFormatAmount(amount)?.toString() ?? '';
-	}, [clientOnlyFormatAmount, earned?.totalUnrealizedGainsUSD]);
+		return formatAmount(amount)?.toString() ?? '';
+	}, [earned?.totalUnrealizedGainsUSD]);
 
 	const	formatedYouHave = useMemo((): string => {
-		return clientOnlyFormatAmount(cumulatedValueInVaults || 0)?.toString() ?? '';
-	}, [clientOnlyFormatAmount, cumulatedValueInVaults]);
+		return formatAmount(cumulatedValueInVaults || 0)?.toString() ?? '';
+	}, [cumulatedValueInVaults]);
 
 	return (
 		<Fragment>
