@@ -79,7 +79,7 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 			inputAmount: actionParams?.amount.raw,
 			isDepositing: isDepositing
 		};
-		
+
 		switch (currentSolver) {
 			case Solver.WIDO:
 			case Solver.PORTALS:

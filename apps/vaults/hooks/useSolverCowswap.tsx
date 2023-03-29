@@ -6,6 +6,7 @@ import {domain, OrderKind, SigningScheme, signOrder} from '@gnosis.pm/gp-v2-cont
 import {isSolverDisabled, Solver} from '@vaults/contexts/useSolver';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
+import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {SOLVER_COW_VAULT_RELAYER_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatBN, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -83,11 +84,13 @@ function useCowswapQuote(): [TCowResult, (request: TInitSolverArgs, shouldPreven
 export function useSolverCowswap(): TSolverContext {
 	const {zapSlippage} = useYearn();
 	const {address, provider} = useWeb3();
+	const {safeChainID} = useChainID();
 	const maxIterations = 1000; // 1000 * up to 3 seconds = 3000 seconds = 50 minutes
 	const shouldUsePresign = false; //Debug only
 	const [, getQuote] = useCowswapQuote();
 	const request = useRef<TInitSolverArgs>();
 	const latestQuote = useRef<TCowAPIResult>();
+	const isDisabled = isSolverDisabled[Solver.COWSWAP] || safeChainID !== 1;
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** A slippage of 1% per default is set to avoid the transaction to fail due to price
@@ -110,7 +113,7 @@ export function useSolverCowswap(): TSolverContext {
 	** call getQuote to get the current quote for the provided request.current.
 	**********************************************************************************************/
 	const init = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN> => {
-		if (isSolverDisabled[Solver.COWSWAP]) {
+		if (isDisabled) {
 			return toNormalizedBN(0);
 		}
 		request.current = _request;
@@ -121,7 +124,7 @@ export function useSolverCowswap(): TSolverContext {
 			return toNormalizedBN(quote?.quote?.buyAmount || 0, request?.current?.outputToken?.decimals || 18);
 		}
 		return toNormalizedBN(0);
-	}, [getBuyAmountWithSlippage, getQuote]);
+	}, [getBuyAmountWithSlippage, getQuote, isDisabled]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** signCowswapOrder is used to sign the order with the user's wallet. The signature is used
@@ -185,7 +188,7 @@ export function useSolverCowswap(): TSolverContext {
 	** not.
 	**********************************************************************************************/
 	const execute = useCallback(async (): Promise<TTxResponse> => {
-		if (!latestQuote?.current || !latestQuote?.current?.quote || !request.current || isSolverDisabled[Solver.COWSWAP]) {
+		if (!latestQuote?.current || !latestQuote?.current?.quote || !request.current || isDisabled) {
 			return ({isSuccessful: false});
 		}
 		const	{quote, from, id} = latestQuote.current;
@@ -213,37 +216,37 @@ export function useSolverCowswap(): TSolverContext {
 			return ({isSuccessful: false, error: error as Error});
 		}
 		return ({isSuccessful: false});
-	}, [getBuyAmountWithSlippage, shouldUsePresign, signCowswapOrder]);
+	}, [getBuyAmountWithSlippage, shouldUsePresign, signCowswapOrder, isDisabled]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Format the quote to a normalized value, which will be used for subsequent
 	** process and displayed to the user.
 	**************************************************************************/
 	const expectedOut = useMemo((): TNormalizedBN => {
-		if (!latestQuote?.current?.quote?.buyAmount || isSolverDisabled[Solver.COWSWAP]) {
+		if (!latestQuote?.current?.quote?.buyAmount || isDisabled) {
 			return (toNormalizedBN(0));
 		}
 		return toNormalizedBN(latestQuote?.current?.quote?.buyAmount, request?.current?.outputToken?.decimals || 18);
-	}, [latestQuote]);
+	}, [latestQuote, isDisabled]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Retrieve the current outValue from the quote, which will be used to
 	** display the current value to the user.
 	**************************************************************************/
 	const onRetrieveExpectedOut = useCallback(async (request: TInitSolverArgs): Promise<TNormalizedBN> => {
-		if (isSolverDisabled[Solver.COWSWAP]) {
+		if (isDisabled) {
 			return (toNormalizedBN(0));
 		}
 		const quoteResult = await getQuote(request, true);
 		return toNormalizedBN(formatBN(quoteResult?.quote?.buyAmount), request.outputToken.decimals);
-	}, [getQuote]);
+	}, [getQuote, isDisabled]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Retrieve the allowance for the token to be used by the solver. This will
 	** be used to determine if the user should approve the token or not.
 	**************************************************************************/
 	const onRetrieveAllowance = useCallback(async (): Promise<TNormalizedBN> => {
-		if (!request?.current || isSolverDisabled[Solver.COWSWAP]) {
+		if (!request?.current || isDisabled) {
 			return toNormalizedBN(0);
 		}
 
@@ -253,7 +256,7 @@ export function useSolverCowswap(): TSolverContext {
 			toAddress(SOLVER_COW_VAULT_RELAYER_ADDRESS) //Spender, aka Cowswap solver
 		);
 		return toNormalizedBN(allowance, request.current.inputToken.decimals);
-	}, [provider, request]);
+	}, [isDisabled, provider]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Trigger an signature to approve the token to be used by the Cowswap
@@ -265,7 +268,7 @@ export function useSolverCowswap(): TSolverContext {
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
-		if (!latestQuote?.current || !latestQuote?.current?.quote || !request?.current || isSolverDisabled[Solver.COWSWAP]) {
+		if (!latestQuote?.current || !latestQuote?.current?.quote || !request?.current || isDisabled) {
 			return;
 		}
 
@@ -287,7 +290,7 @@ export function useSolverCowswap(): TSolverContext {
 			)
 			.onSuccess(onSuccess)
 			.perform();
-	}, [provider]);
+	}, [provider, isDisabled]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** This execute function is not an actual deposit, but a swap using the
