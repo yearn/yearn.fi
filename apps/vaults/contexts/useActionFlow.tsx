@@ -1,7 +1,7 @@
 import React, {createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState} from 'react';
 import {useRouter} from 'next/router';
 import {useMountEffect, useUpdateEffect} from '@react-hookz/web';
-import {isSolverDisabled, Solver} from '@vaults/contexts/useSolver';
+import {Solver} from '@vaults/contexts/useSolver';
 import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
 import {setZapOption} from '@vaults/utils/zapOptions';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
@@ -188,9 +188,10 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 		if (currentVault?.migration?.available && (toAddress(actionParams?.selectedOptionTo?.value) === toAddress(currentVault?.migration?.address))) {
 			return Solver.INTERNAL_MIGRATION;
 		}
-		if (isDepositing && actionParams?.selectedOptionFrom?.solveVia?.includes(zapProvider) && !isSolverDisabled[zapProvider]) {
+		if (isDepositing && (actionParams?.selectedOptionFrom?.solveVia?.length || 0) > 0) {
 			return zapProvider;
-		} if (!isDepositing && actionParams?.selectedOptionTo?.solveVia?.includes(zapProvider) && !isSolverDisabled[zapProvider]) {
+		}
+		if (!isDepositing && (actionParams?.selectedOptionTo?.solveVia?.length || 0) > 0) {
 			return zapProvider;
 		}
 		if (isDepositing && isUsingPartnerContract) {

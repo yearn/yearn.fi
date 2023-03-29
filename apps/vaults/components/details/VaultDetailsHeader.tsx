@@ -55,10 +55,10 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 					<p className={'text-center text-xxs text-neutral-600 md:text-xs'}>
 						{`Total deposited, ${currentVault?.symbol || 'token'}`}
 					</p>
-					<b className={'font-number text-lg md:text-3xl'}>
+					<b className={'font-number text-lg md:text-3xl'} suppressHydrationWarning>
 						{formatAmount(formatToNormalizedValue(currentVault?.tvl?.total_assets, currentVault?.decimals))}
 					</b>
-					<legend className={'font-number text-xxs text-neutral-600 md:text-xs'}>
+					<legend className={'font-number text-xxs text-neutral-600 md:text-xs'} suppressHydrationWarning>
 						{formatUSD(currentVault?.tvl?.tvl)}
 					</legend>
 				</div>
@@ -67,7 +67,7 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 					<p className={'text-center text-xxs text-neutral-600 md:text-xs'}>
 						{'Net APY'}
 					</p>
-					<b className={'font-number text-lg md:text-3xl'}>
+					<b className={'font-number text-lg md:text-3xl'} suppressHydrationWarning>
 						{formatPercent((currentVault?.apy?.net_apy || 0) * 100, 2, 2, 500)}
 					</b>
 					<legend className={'text-xxs text-neutral-600 md:text-xs'}>&nbsp;</legend>
@@ -77,10 +77,10 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 					<p className={'text-center text-xxs text-neutral-600 md:text-xs'}>
 						{`Balance, ${currentVault?.symbol || 'token'}`}
 					</p>
-					<b className={'font-number text-lg md:text-3xl'}>
+					<b className={'font-number text-lg md:text-3xl'} suppressHydrationWarning>
 						{formatAmount(vaultBalance)}
 					</b>
-					<legend className={'font-number text-xxs text-neutral-600 md:text-xs'}>
+					<legend className={'font-number text-xxs text-neutral-600 md:text-xs'} suppressHydrationWarning>
 						{formatCounterValue(vaultBalance, vaultPrice)}
 					</legend>
 				</div>
@@ -89,10 +89,10 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 					<p className={'text-center text-xxs text-neutral-600 md:text-xs'}>
 						{`Earned, ${currentVault?.token?.symbol || 'token'}`}
 					</p>
-					<b className={'font-number text-lg md:text-3xl'}>
+					<b className={'font-number text-lg md:text-3xl'} suppressHydrationWarning>
 						{formatAmount(normalizedVaultEarned)}
 					</b>
-					<legend className={'font-number text-xxs text-neutral-600 md:text-xs'}>
+					<legend className={'font-number text-xxs text-neutral-600 md:text-xs'} suppressHydrationWarning>
 						{formatCounterValue(normalizedVaultEarned || 0, vaultPrice)}
 					</legend>
 				</div>

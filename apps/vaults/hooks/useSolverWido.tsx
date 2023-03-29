@@ -5,6 +5,7 @@ import {useAsync} from '@react-hookz/web';
 import {isSolverDisabled, Solver} from '@vaults/contexts/useSolver';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
+import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatBN, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
@@ -12,7 +13,7 @@ import {useYearn} from '@common/contexts/useYearn';
 import {approveERC20, isApprovedERC20} from '@common/utils/actions/approveToken';
 
 import type {AxiosError} from 'axios';
-import type {QuoteRequest, QuoteResult} from 'wido';
+import type {ChainId, QuoteRequest, QuoteResult} from 'wido';
 import type {TTxResponse, TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TNormalizedBN} from '@common/types/types';
 import type {ApiError} from '@gnosis.pm/gp-v2-contracts';
@@ -23,15 +24,16 @@ function useWidoQuote(): [TWidoResult, (request: TInitSolverArgs, shouldPreventE
 	const {toast} = yToast();
 	const {zapSlippage} = useYearn();
 	const [err, set_err] = useState<Error>();
+	const {safeChainID} = useChainID();
 
 	const getQuote = useCallback(async (
 		request: TInitSolverArgs,
 		shouldPreventErrorToast = false
 	): Promise<QuoteResult | undefined> => {
 		const	quoteRequest: QuoteRequest = ({
-			fromChainId: 1, // Chain Id of from token
+			fromChainId: safeChainID as ChainId, // Chain Id of from token
 			fromToken: toAddress(request.inputToken.value), // token to spend
-			toChainId: 1, // Chain Id of to token
+			toChainId: safeChainID as ChainId, // Chain Id of to token
 			toToken: toAddress(request.outputToken.value), // token to receive
 			amount: formatBN(request?.inputAmount || 0).toString(), // Token amount of from token
 			slippagePercentage: zapSlippage / 100, // Acceptable max slippage for the swap
@@ -80,6 +82,7 @@ export function useSolverWido(): TSolverContext {
 	const [, getQuote] = useWidoQuote();
 	const request = useRef<TInitSolverArgs>();
 	const latestQuote = useRef<QuoteResult>();
+	const {safeChainID} = useChainID();
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** init will be called when the Wido solver should be used to perform the desired swap.
@@ -169,13 +172,13 @@ export function useSolverWido(): TSolverContext {
 		}
 
 		const {allowance} = await wiGetTokenAllowance({
-			chainId: 1,
+			chainId: safeChainID as ChainId,
 			fromToken: toAddress(request.current.inputToken.value),
 			toToken: toAddress(request.current.outputToken.value),
 			accountAddress: toAddress(request.current.from)
 		});
 		return toNormalizedBN(allowance, request.current.inputToken.decimals);
-	}, [latestQuote, request]);
+	}, [latestQuote, request, safeChainID]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Trigger an signature to approve the token to be used by the Wido
@@ -191,7 +194,7 @@ export function useSolverWido(): TSolverContext {
 			return;
 		}
 		const	widoSpenderAddress = toAddress(await getWidoSpender({
-			chainId: 1,
+			chainId: safeChainID as ChainId,
 			fromToken: toAddress(request.current.inputToken.value),
 			toToken: toAddress(request.current.outputToken.value)
 		}));
@@ -213,7 +216,7 @@ export function useSolverWido(): TSolverContext {
 		}
 		onSuccess();
 		return;
-	}, [provider]);
+	}, [provider, safeChainID]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** This execute function is not an actual deposit, but a swap using the
