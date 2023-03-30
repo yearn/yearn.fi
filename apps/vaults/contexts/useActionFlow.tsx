@@ -181,8 +181,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 
 	const currentSolver = useMemo((): Solver => {
 		const isInputTokenEth = actionParams?.selectedOptionFrom?.value === ETH_TOKEN_ADDRESS;
-		const isOutputTokenEth = actionParams?.selectedOptionTo?.value === ETH_TOKEN_ADDRESS;
-		if (isInputTokenEth || isOutputTokenEth) {
+		if (isInputTokenEth) {
 			return Solver.CHAIN_COIN;
 		}
 		if (currentVault?.migration?.available && (toAddress(actionParams?.selectedOptionTo?.value) === toAddress(currentVault?.migration?.address))) {
