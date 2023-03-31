@@ -20,6 +20,7 @@ function	VaultsListRow({currentVault}: {currentVault: TYearnVault}): ReactElemen
 	const balanceOfWrappedCoin = useBalance(toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS ? WFTM_TOKEN_ADDRESS : WETH_TOKEN_ADDRESS);
 	const deposited = useBalance(currentVault.address)?.normalized;
 	const vaultName = useMemo((): string => getVaultName(currentVault), [currentVault]);
+	const isEthMainnet = currentVault.chainID === 1;
 
 	const {stakingRewardsByVault, positionsMap} = useStakingRewards();
 	const stakedBalance = toNormalizedValue(positionsMap[toAddress(stakingRewardsByVault[currentVault.address])]?.stake ?? 0, currentVault.decimals);
@@ -63,7 +64,7 @@ function	VaultsListRow({currentVault}: {currentVault: TYearnVault}): ReactElemen
 								)}
 							</b>
 							<small className={'text-xs text-neutral-900'}>
-								{currentVault.apy?.composite?.boost && !currentVault.apy?.staking_rewards_apr ? `BOOST ${formatAmount(currentVault.apy?.composite?.boost, 2, 2)}x` : null}
+								{isEthMainnet && currentVault.apy?.composite?.boost && !currentVault.apy?.staking_rewards_apr ? `BOOST ${formatAmount(currentVault.apy?.composite?.boost, 2, 2)}x` : null}
 							</small>
 							<small className={'text-xs text-neutral-900'}>
 								{currentVault.apy?.staking_rewards_apr ? `REWARD ${formatPercent((currentVault.apy?.staking_rewards_apr || 0) * 100, 2, 2, 500)}` : null}
