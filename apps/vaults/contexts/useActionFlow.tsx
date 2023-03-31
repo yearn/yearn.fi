@@ -1,8 +1,9 @@
 import React, {createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState} from 'react';
+import {useRouter} from 'next/router';
 import {useMountEffect, useUpdateEffect} from '@react-hookz/web';
 import {STAKING_REWARDS_ZAP_ENABLED} from '@vaults/constants';
-import {isSolverDisabled, Solver} from '@vaults/contexts/useSolver';
 import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
+import {Solver} from '@vaults/contexts/useSolver';
 import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
 import {setZapOption} from '@vaults/utils/zapOptions';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
@@ -73,13 +74,20 @@ const	DefaultActionFlowContext: TActionFlowContext = {
 	currentSolver: Solver?.VANILLA || 'Vanilla'
 };
 
-function useContextualIs(selectedTo: TDropdownOption | undefined, currentVault: TYearnVault): [boolean, boolean] {
+type TUseContextualIs = {
+	selectedTo?: TDropdownOption;
+	currentVault: TYearnVault;
+}
+
+function useContextualIs({selectedTo, currentVault}: TUseContextualIs): [boolean, boolean] {
 	const {networks} = useSettings();
 	const {safeChainID} = useChainID();
+	const router = useRouter();
 
 	const isDepositing = useMemo((): boolean => (
-		!selectedTo?.value || toAddress(selectedTo.value) === toAddress(currentVault.address)
-	), [selectedTo?.value, currentVault.address]);
+		(!router.query.action || router.query.action === 'deposit') &&
+			(!selectedTo?.value || toAddress(selectedTo?.value) === toAddress(currentVault.address))
+	), [selectedTo?.value, currentVault.address, router.query.action]);
 
 	const isPartnerAddressValid = useMemo((): boolean => (
 		!isZeroAddress(toAddress(networks?.[safeChainID]?.partnerContractAddress))
@@ -162,7 +170,11 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 		possibleOptionsTo: [],
 		amount: toNormalizedBN(0)
 	});
-	const [isDepositing, isUsingPartnerContract] = useContextualIs(actionParams?.selectedOptionTo, currentVault);
+
+	const [isDepositing, isUsingPartnerContract] = useContextualIs({
+		selectedTo: actionParams?.selectedOptionTo,
+		currentVault
+	});
 
 	const maxDepositPossible = getMaxDepositPossible({
 		vault: currentVault,
@@ -186,9 +198,10 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 		if (currentVault?.migration?.available && (toAddress(actionParams?.selectedOptionTo?.value) === toAddress(currentVault?.migration?.address))) {
 			return Solver.INTERNAL_MIGRATION;
 		}
-		if (isDepositing && actionParams?.selectedOptionFrom?.solveVia?.includes(zapProvider) && !isSolverDisabled[zapProvider]) {
+		if (isDepositing && (actionParams?.selectedOptionFrom?.solveVia?.length || 0) > 0) {
 			return zapProvider;
-		} if (!isDepositing && actionParams?.selectedOptionTo?.solveVia?.includes(zapProvider) && !isSolverDisabled[zapProvider]) {
+		}
+		if (!isDepositing && (actionParams?.selectedOptionTo?.solveVia?.length || 0) > 0) {
 			return zapProvider;
 		}
 		if (isDepositing && isUsingPartnerContract) {
@@ -391,15 +404,27 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 		performBatchedUpdates((): void => {
 			set_possibleOptionsFrom(payloadFrom);
 			set_possibleOptionsTo(payloadTo);
-			actionParamsDispatcher({
-				type: 'options',
-				payload: {
-					selectedOptionFrom: _selectedFrom,
-					selectedOptionTo: _selectedTo,
-					possibleOptionsFrom: payloadFrom,
-					possibleOptionsTo: payloadTo
-				}
-			});
+			if (!isDepositing) {
+				actionParamsDispatcher({
+					type: 'options',
+					payload: {
+						selectedOptionFrom: _selectedTo,
+						selectedOptionTo: _selectedFrom,
+						possibleOptionsFrom: payloadTo,
+						possibleOptionsTo: payloadFrom
+					}
+				});
+			} else {
+				actionParamsDispatcher({
+					type: 'options',
+					payload: {
+						selectedOptionFrom: _selectedFrom,
+						selectedOptionTo: _selectedTo,
+						possibleOptionsFrom: payloadFrom,
+						possibleOptionsTo: payloadTo
+					}
+				});
+			}
 		});
 	});
 

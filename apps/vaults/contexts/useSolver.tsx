@@ -6,6 +6,7 @@ import {useSolverCowswap} from '@vaults/hooks/useSolverCowswap';
 import {useSolverInternalMigration} from '@vaults/hooks/useSolverInternalMigration';
 import {useSolverOptimismBooster} from '@vaults/hooks/useSolverOptimismBooster';
 import {useSolverPartnerContract} from '@vaults/hooks/useSolverPartnerContract';
+import {useSolverPortals} from '@vaults/hooks/useSolverPortals';
 import {useSolverVanilla} from '@vaults/hooks/useSolverVanilla';
 import {useSolverWido} from '@vaults/hooks/useSolverWido';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -35,7 +36,7 @@ export const isSolverDisabled = {
 	[Solver.COWSWAP]: false,
 	[Solver.OPTIMISM_BOOSTER]: false,
 	[Solver.WIDO]: false,
-	[Solver.PORTALS]: true //Not yet implemented
+	[Solver.PORTALS]: false
 };
 
 const	DefaultWithSolverContext: TWithSolver = {
@@ -57,6 +58,7 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 	const cowswap = useSolverCowswap();
 	const wido = useSolverWido();
 	const vanilla = useSolverVanilla();
+	const portals = useSolverPortals();
 	const chainCoin = useSolverChainCoin();
 	const partnerContract = useSolverPartnerContract();
 	const internalMigration = useSolverInternalMigration();
@@ -81,10 +83,13 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 			inputAmount: actionParams?.amount.raw,
 			isDepositing: isDepositing
 		};
+
 		switch (currentSolver) {
 			case Solver.WIDO:
+			case Solver.PORTALS:
 			case Solver.COWSWAP: {
-				const [widoQuote, cowswapQuote] = await Promise.all([wido.init(request), cowswap.init(request)]); //TODO: add Portals once implemented
+				const promises = [wido.init(request), cowswap.init(request), portals.init(request)];
+				const [widoQuote, cowswapQuote, portalsQuote] = await Promise.allSettled(promises);
 
 				/**************************************************************
 				** Logic is to use the primary solver (Wido) and check if a
@@ -93,14 +98,19 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 				** quote to 0.
 				**************************************************************/
 				if (currentSolver === Solver.WIDO && !isSolverDisabled[Solver.WIDO]) {
-					if (widoQuote?.raw?.gt(0)) {
+					if (widoQuote.status === 'fulfilled' && widoQuote?.value.raw?.gt(0)) {
 						performBatchedUpdates((): void => {
-							set_currentSolverState({...wido, quote: widoQuote});
+							set_currentSolverState({...wido, quote: widoQuote.value});
 							set_isLoading(false);
 						});
-					} else if (cowswapQuote?.raw?.gt(0) && !isSolverDisabled[Solver.COWSWAP]) {
+					} else if (cowswapQuote.status === 'fulfilled' && cowswapQuote.value.raw?.gt(0) && !isSolverDisabled[Solver.COWSWAP]) {
 						performBatchedUpdates((): void => {
-							set_currentSolverState({...cowswap, quote: cowswapQuote});
+							set_currentSolverState({...cowswap, quote: cowswapQuote.value});
+							set_isLoading(false);
+						});
+					} else if (portalsQuote.status === 'fulfilled' && portalsQuote.value.raw?.gt(0) && !isSolverDisabled[Solver.PORTALS]) {
+						performBatchedUpdates((): void => {
+							set_currentSolverState({...portals, quote: portalsQuote.value});
 							set_isLoading(false);
 						});
 					} else {
@@ -119,14 +129,19 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 				** quote to 0.
 				**************************************************************/
 				if (currentSolver === Solver.COWSWAP && !isSolverDisabled[Solver.COWSWAP]) {
-					if (cowswapQuote?.raw?.gt(0)) {
+					if (cowswapQuote.status === 'fulfilled' && cowswapQuote.value.raw?.gt(0)) {
 						performBatchedUpdates((): void => {
-							set_currentSolverState({...cowswap, quote: cowswapQuote});
+							set_currentSolverState({...cowswap, quote: cowswapQuote.value});
 							set_isLoading(false);
 						});
-					} else if (widoQuote?.raw?.gt(0) && !isSolverDisabled[Solver.WIDO]) {
+					} else if (widoQuote.status === 'fulfilled' && widoQuote.value.raw?.gt(0) && !isSolverDisabled[Solver.WIDO]) {
 						performBatchedUpdates((): void => {
-							set_currentSolverState({...wido, quote: widoQuote});
+							set_currentSolverState({...wido, quote: widoQuote.value});
+							set_isLoading(false);
+						});
+					} else if (portalsQuote.status === 'fulfilled' && portalsQuote.value.raw?.gt(0) && !isSolverDisabled[Solver.PORTALS]) {
+						performBatchedUpdates((): void => {
+							set_currentSolverState({...portals, quote: portalsQuote.value});
 							set_isLoading(false);
 						});
 					} else {
@@ -135,9 +150,40 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 							set_isLoading(false);
 						});
 					}
-				} else {
-					set_isLoading(false);
 				}
+
+				/**************************************************************
+				** Logic is to use the primary solver (Portals) and check if a
+				** quote is available. If not, we fallback to the secondary
+				** solver (Wido). If neither are available, we set the
+				** quote to 0.
+				**************************************************************/
+				if (currentSolver === Solver.PORTALS && !isSolverDisabled[Solver.PORTALS]) {
+					if (portalsQuote.status === 'fulfilled' && portalsQuote.value.raw?.gt(0)) {
+						performBatchedUpdates((): void => {
+							set_currentSolverState({...portals, quote: portalsQuote.value});
+							set_isLoading(false);
+						});
+					} else if (widoQuote.status === 'fulfilled' && widoQuote.value.raw?.gt(0) && !isSolverDisabled[Solver.WIDO]) {
+						performBatchedUpdates((): void => {
+							set_currentSolverState({...wido, quote: widoQuote.value});
+							set_isLoading(false);
+						});
+					} else if (cowswapQuote.status === 'fulfilled' && cowswapQuote.value.raw?.gt(0) && !isSolverDisabled[Solver.COWSWAP]) {
+						performBatchedUpdates((): void => {
+							set_currentSolverState({...cowswap, quote: cowswapQuote.value});
+							set_isLoading(false);
+						});
+					} else {
+						performBatchedUpdates((): void => {
+							set_currentSolverState({...wido, quote: toNormalizedBN(0)});
+							set_isLoading(false);
+						});
+					}
+				}
+
+				set_isLoading(false);
+
 				break;
 			}
 			case Solver.OPTIMISM_BOOSTER:

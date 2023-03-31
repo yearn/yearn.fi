@@ -11,7 +11,6 @@ import {formatAmount, formatPercent, formatUSD} from '@yearn-finance/web-lib/uti
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {copyToClipboard} from '@yearn-finance/web-lib/utils/helpers';
 import {useBalance} from '@common/hooks/useBalance';
-import {useClientOnlyFn} from '@common/hooks/useClientOnlyFn';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
 import {getVaultName} from '@common/utils';
 
@@ -28,10 +27,6 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 		baseFetcher,
 		{revalidateOnFocus: false}
 	) as SWRResponse as {data: TYdaemonEarned};
-	const clientOnlyFormatAmount = useClientOnlyFn({fn: formatAmount, placeholder: '0,00'});
-	const clientOnlyFormatPercent = useClientOnlyFn({fn: formatPercent, placeholder: '0,00'});
-	const clientOnlyFormatUSD = useClientOnlyFn({fn: formatUSD, placeholder: '0,00'});
-	const clientOnlyFormatCounterValue = useClientOnlyFn({fn: formatCounterValue, placeholder: '0,00'});
 
 	const	normalizedVaultEarned = useMemo((): number => (
 		formatToNormalizedValue(
@@ -64,11 +59,11 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 					<p className={'text-center text-xxs text-neutral-600 md:text-xs'}>
 						{`Total deposited, ${currentVault?.symbol || 'token'}`}
 					</p>
-					<b className={'font-number text-lg md:text-3xl'}>
-						{clientOnlyFormatAmount(formatToNormalizedValue(currentVault?.tvl?.total_assets, currentVault?.decimals))}
+					<b className={'font-number text-lg md:text-3xl'} suppressHydrationWarning>
+						{formatAmount(formatToNormalizedValue(currentVault?.tvl?.total_assets, currentVault?.decimals))}
 					</b>
-					<legend className={'font-number text-xxs text-neutral-600 md:text-xs'}>
-						{clientOnlyFormatUSD(currentVault?.tvl?.tvl)}
+					<legend className={'font-number text-xxs text-neutral-600 md:text-xs'} suppressHydrationWarning>
+						{formatUSD(currentVault?.tvl?.tvl)}
 					</legend>
 				</div>
 
@@ -76,8 +71,8 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 					<p className={'text-center text-xxs text-neutral-600 md:text-xs'}>
 						{'Net APY'}
 					</p>
-					<b className={'font-number text-lg md:text-3xl'}>
-						{clientOnlyFormatPercent(((currentVault?.apy?.net_apy || 0) + (currentVault?.apy?.staking_rewards_apr || 0)) * 100, 2, 2, 500)}
+					<b className={'font-number text-lg md:text-3xl'} suppressHydrationWarning>
+						{formatPercent(((currentVault?.apy?.net_apy || 0) + (currentVault?.apy?.staking_rewards_apr || 0)) * 100, 2, 2, 500)}
 					</b>
 					<legend className={'text-xxs text-neutral-600 md:text-xs'}>&nbsp;</legend>
 				</div>
@@ -86,11 +81,11 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 					<p className={'text-center text-xxs text-neutral-600 md:text-xs'}>
 						{`Balance, ${currentVault?.symbol || 'token'}`}
 					</p>
-					<b className={'font-number text-lg md:text-3xl'}>
-						{clientOnlyFormatAmount(depositedAndStaked)}
+					<b className={'font-number text-lg md:text-3xl'} suppressHydrationWarning>
+						{formatAmount(depositedAndStaked)}
 					</b>
-					<legend className={'font-number text-xxs text-neutral-600 md:text-xs'}>
-						{clientOnlyFormatCounterValue(depositedAndStaked, vaultPrice)}
+					<legend className={'font-number text-xxs text-neutral-600 md:text-xs'} suppressHydrationWarning>
+						{formatCounterValue(depositedAndStaked, vaultPrice)}
 					</legend>
 				</div>
 
@@ -98,11 +93,11 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactE
 					<p className={'text-center text-xxs text-neutral-600 md:text-xs'}>
 						{`Earned, ${currentVault?.token?.symbol || 'token'}`}
 					</p>
-					<b className={'font-number text-lg md:text-3xl'}>
-						{clientOnlyFormatAmount(normalizedVaultEarned)}
+					<b className={'font-number text-lg md:text-3xl'} suppressHydrationWarning>
+						{formatAmount(normalizedVaultEarned)}
 					</b>
-					<legend className={'font-number text-xxs text-neutral-600 md:text-xs'}>
-						{clientOnlyFormatCounterValue(normalizedVaultEarned || 0, vaultPrice)}
+					<legend className={'font-number text-xxs text-neutral-600 md:text-xs'} suppressHydrationWarning>
+						{formatCounterValue(normalizedVaultEarned || 0, vaultPrice)}
 					</legend>
 				</div>
 			</div>
