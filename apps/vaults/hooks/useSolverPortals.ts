@@ -158,7 +158,7 @@ export function useSolverPortals(): TSolverContext {
 			const signer = provider.getSigner();
 			const transactionResponse = await signer.sendTransaction({
 				value: BigNumber.from(value?.hex ?? 0),
-				gasLimit: BigNumber.from(gasLimit?.hex ?? 0),
+				gasLimit: gasLimit?.hex ? BigNumber.from(gasLimit.hex) : undefined,
 				...rest
 			});
 			const transactionReceipt = await transactionResponse.wait();
