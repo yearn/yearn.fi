@@ -1,6 +1,7 @@
 import React, {createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState} from 'react';
 import {useRouter} from 'next/router';
 import {useMountEffect, useUpdateEffect} from '@react-hookz/web';
+import {YVWETH_ADDRESS} from '@vaults/constants/vaults';
 import {Solver} from '@vaults/contexts/useSolver';
 import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
 import {setZapOption} from '@vaults/utils/zapOptions';
@@ -181,7 +182,10 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 
 	const currentSolver = useMemo((): Solver => {
 		const isInputTokenEth = actionParams?.selectedOptionFrom?.value === ETH_TOKEN_ADDRESS;
-		if (isInputTokenEth) {
+		const isOutputTokenEth = actionParams?.selectedOptionTo?.value === ETH_TOKEN_ADDRESS;
+		const isVaultTokenWrappedEth = currentVault.address === YVWETH_ADDRESS;
+		
+		if (isVaultTokenWrappedEth && (isInputTokenEth || isOutputTokenEth)) {
 			return Solver.CHAIN_COIN;
 		}
 		if (currentVault?.migration?.available && (toAddress(actionParams?.selectedOptionTo?.value) === toAddress(currentVault?.migration?.address))) {
@@ -197,7 +201,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 			return Solver.PARTNER_CONTRACT;
 		}
 		return Solver.VANILLA;
-	}, [actionParams?.selectedOptionFrom?.value, actionParams?.selectedOptionFrom?.solveVia, actionParams?.selectedOptionTo?.value, actionParams?.selectedOptionTo?.solveVia, currentVault?.migration?.address, currentVault?.migration?.available, isDepositing, zapProvider, isUsingPartnerContract]);
+	}, [actionParams?.selectedOptionFrom?.value, actionParams?.selectedOptionFrom?.solveVia?.length, actionParams?.selectedOptionTo?.value, actionParams?.selectedOptionTo?.solveVia?.length, currentVault.address, currentVault?.migration?.available, currentVault?.migration?.address, isDepositing, isUsingPartnerContract, zapProvider]);
 
 	const onSwitchSelectedOptions = useCallback((nextFlow = Flow.Switch): void => {
 		balancesNonce;
