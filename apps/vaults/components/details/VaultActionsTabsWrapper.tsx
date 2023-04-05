@@ -7,8 +7,11 @@ import VaultDetailsQuickActionsButtons from '@vaults/components/details/actions/
 import VaultDetailsQuickActionsFrom from '@vaults/components/details/actions/QuickActionsFrom';
 import VaultDetailsQuickActionsSwitch from '@vaults/components/details/actions/QuickActionsSwitch';
 import VaultDetailsQuickActionsTo from '@vaults/components/details/actions/QuickActionsTo';
+import ImageWithOverlay from '@vaults/components/ImageWithOverlay';
 import SettingsPopover from '@vaults/components/SettingsPopover';
 import {Flow, useActionFlow} from '@vaults/contexts/useActionFlow';
+import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
+import {useLocalStorage} from '@yearn-finance/web-lib/hooks/useLocalStorage';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import IconChevron from '@common/icons/IconChevron';
 
@@ -39,7 +42,9 @@ function	VaultActionsTabsWrapper(): ReactElement {
 	const [currentTab, set_currentTab] = useState<TTabsOptions>(
 		getCurrentTab({isDepositing, hasMigration: currentVault?.migration?.available})
 	);
+	const [shouldShowLedgerPluginBanner, set_shouldShowLedgerPluginBanner] = useLocalStorage<boolean>('yearn.finance/ledger-plugin-banner', true);
 	const router = useRouter();
+	const {walletType} = useWeb3();
 
 	useEffect((): void => {
 		const tab = tabs.find((tab): boolean => tab.slug === router.query.action);
@@ -59,8 +64,22 @@ function	VaultActionsTabsWrapper(): ReactElement {
 	}, [currentVault?.migration?.available, actionParams.isReady]);
 
 	return (
-		<Fragment>
-			<nav className={'mt-10 mb-2 w-full md:mt-20'}>
+		<>
+			{walletType === 'EMBED_LEDGER' && shouldShowLedgerPluginBanner && (
+				<div aria-label={'Ledger Plugin'} className={'col-span-12 mt-10'}>
+					<ImageWithOverlay
+						imageAlt={''}
+						imageWidth={2400}
+						imageHeight={385}
+						imageSrc={'/ledger-plugin-bg.png'}
+						onButtonClick={(): Window | null => window.open('ledgerlive://myledger?installApp=yearn')}
+						onCloseClick={(): void => set_shouldShowLedgerPluginBanner(false)}
+						overlayText={'SIGN IN WITH LEDGER'}
+						buttonText={'DOWNLOAD LEDGER PLUGIN'}
+					/>
+				</div>
+			)}
+			<nav className={'mt-1 mb-2 w-full md:mt-2'}>
 				<Link href={'/vaults'}>
 					<p className={'yearn--header-nav-item w-full whitespace-nowrap opacity-30'}>
 						{'Back to vaults'}
@@ -152,7 +171,7 @@ function	VaultActionsTabsWrapper(): ReactElement {
 				</div>
 				<div className={'-mt-0.5 h-0.5 w-full bg-neutral-300'} />
 
-				<Fragment>
+				<>
 					<div
 						className={'col-span-12 mb-4 flex flex-col space-x-0 space-y-2 bg-neutral-100 p-4 md:flex-row md:space-x-4 md:space-y-0 md:py-6 md:px-8'}>
 						<VaultDetailsQuickActionsFrom />
@@ -166,9 +185,9 @@ function	VaultActionsTabsWrapper(): ReactElement {
 							<legend className={'hidden text-xs md:inline'}>&nbsp;</legend>
 						</div>
 					</div>
-				</Fragment>
+				</>
 			</div>
-		</Fragment>
+		</>
 	);
 }
 
