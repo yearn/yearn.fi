@@ -35,7 +35,7 @@ function	VaultDetailsQuickActionsTo(): ReactElement {
 					<label className={'text-base text-neutral-600'}>
 						{isDepositing ? 'To vault' : 'To wallet'}
 					</label>
-					<legend className={'font-number inline text-xs text-neutral-600 md:hidden'}>
+					<legend className={'font-number inline text-xs text-neutral-600 md:hidden'} suppressHydrationWarning>
 						{`APY ${formatPercent((currentVault?.apy?.net_apy || 0) * 100, 2, 2, 500)}`}
 					</legend>
 				</div>
