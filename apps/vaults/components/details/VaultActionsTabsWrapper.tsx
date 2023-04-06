@@ -63,7 +63,6 @@ function	VaultActionsTabsWrapper(): ReactElement {
 		}
 	}, [currentVault?.migration?.available, actionParams.isReady]);
 
-	console.log(walletType);
 	return (
 		<>
 			{['EMBED_LEDGER', 'INJECTED_LEDGER'].includes(walletType) && shouldShowLedgerPluginBanner && (
