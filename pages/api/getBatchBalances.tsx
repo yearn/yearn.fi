@@ -30,6 +30,7 @@ async function getBatchBalances({
 	} else {
 		currentProvider = getProvider(chainID);
 	}
+
 	const	ethcallProvider = await newEthCallProvider(currentProvider);
 	const	data: TDict<TBalanceData> = {};
 	const	chunks = [];

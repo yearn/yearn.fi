@@ -63,9 +63,10 @@ function	VaultActionsTabsWrapper(): ReactElement {
 		}
 	}, [currentVault?.migration?.available, actionParams.isReady]);
 
+	console.log(walletType);
 	return (
 		<>
-			{walletType === 'EMBED_LEDGER' && shouldShowLedgerPluginBanner && (
+			{['EMBED_LEDGER', 'INJECTED_LEDGER'].includes(walletType) && shouldShowLedgerPluginBanner && (
 				<div aria-label={'Ledger Plugin'} className={'col-span-12 mt-10'}>
 					<ImageWithOverlay
 						imageAlt={''}
