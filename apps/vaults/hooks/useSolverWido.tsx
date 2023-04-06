@@ -90,7 +90,7 @@ export function useSolverWido(): TSolverContext {
 	** call getQuote to get the current quote for the provided request.current.
 	**********************************************************************************************/
 	const init = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN> => {
-		if (isSolverDisabled[Solver.WIDO]) {
+		if (isSolverDisabled[Solver.WIDO] || !_request.inputToken.solveVia?.includes(Solver.WIDO)) {
 			return toNormalizedBN(0);
 		}
 		request.current = _request;
@@ -154,12 +154,12 @@ export function useSolverWido(): TSolverContext {
 	** Retrieve the current outValue from the quote, which will be used to
 	** display the current value to the user.
 	**************************************************************************/
-	const onRetrieveExpectedOut = useCallback(async (request: TInitSolverArgs): Promise<TNormalizedBN> => {
-		if (isSolverDisabled[Solver.WIDO]) {
+	const onRetrieveExpectedOut = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN> => {
+		if (isSolverDisabled[Solver.WIDO] || !_request.inputToken.solveVia?.includes(Solver.WIDO)) {
 			return toNormalizedBN(0);
 		}
-		const quoteResult = await getQuote(request, true);
-		return toNormalizedBN(formatBN(quoteResult?.minToTokenAmount), request.outputToken.decimals);
+		const quoteResult = await getQuote(_request, true);
+		return toNormalizedBN(formatBN(quoteResult?.minToTokenAmount), _request.outputToken.decimals);
 	}, [getQuote]);
 
 	/* 🔵 - Yearn Finance ******************************************************

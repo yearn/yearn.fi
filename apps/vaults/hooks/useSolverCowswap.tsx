@@ -8,7 +8,7 @@ import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {SOLVER_COW_VAULT_RELAYER_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {ETH_TOKEN_ADDRESS, SOLVER_COW_VAULT_RELAYER_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatBN, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
@@ -113,7 +113,10 @@ export function useSolverCowswap(): TSolverContext {
 	** call getQuote to get the current quote for the provided request.current.
 	**********************************************************************************************/
 	const init = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN> => {
-		if (isDisabled) {
+		if (isDisabled || !_request.inputToken.solveVia?.includes(Solver.COWSWAP)) {
+			return toNormalizedBN(0);
+		}
+		if (_request.inputToken.value === ETH_TOKEN_ADDRESS) {
 			return toNormalizedBN(0);
 		}
 		request.current = _request;
@@ -233,12 +236,12 @@ export function useSolverCowswap(): TSolverContext {
 	** Retrieve the current outValue from the quote, which will be used to
 	** display the current value to the user.
 	**************************************************************************/
-	const onRetrieveExpectedOut = useCallback(async (request: TInitSolverArgs): Promise<TNormalizedBN> => {
-		if (isDisabled) {
+	const onRetrieveExpectedOut = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN> => {
+		if (isDisabled || !_request.inputToken.solveVia?.includes(Solver.COWSWAP)) {
 			return (toNormalizedBN(0));
 		}
-		const quoteResult = await getQuote(request, true);
-		return toNormalizedBN(formatBN(quoteResult?.quote?.buyAmount), request.outputToken.decimals);
+		const quoteResult = await getQuote(_request, true);
+		return toNormalizedBN(formatBN(quoteResult?.quote?.buyAmount), _request.outputToken.decimals);
 	}, [getQuote, isDisabled]);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -246,7 +249,7 @@ export function useSolverCowswap(): TSolverContext {
 	** be used to determine if the user should approve the token or not.
 	**************************************************************************/
 	const onRetrieveAllowance = useCallback(async (): Promise<TNormalizedBN> => {
-		if (!request?.current || isDisabled) {
+		if (!request?.current || isDisabled || !request?.current?.inputToken?.solveVia?.includes(Solver.COWSWAP)) {
 			return toNormalizedBN(0);
 		}
 

@@ -183,7 +183,8 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 		const isInputTokenEth = actionParams?.selectedOptionFrom?.value === ETH_TOKEN_ADDRESS;
 		const isOutputTokenEth = actionParams?.selectedOptionTo?.value === ETH_TOKEN_ADDRESS;
 		const isVaultTokenWrappedEth = currentVault.address === YVWETH_ADDRESS;
-		
+
+		console.warn(actionParams?.selectedOptionFrom);
 		if (isVaultTokenWrappedEth && (isInputTokenEth || isOutputTokenEth)) {
 			return Solver.CHAIN_COIN;
 		}
