@@ -72,7 +72,7 @@ function	VaultActionsTabsWrapper(): ReactElement {
 						imageWidth={2400}
 						imageHeight={385}
 						imageSrc={'/ledger-plugin-bg.png'}
-						onButtonClick={(): Window | null => window.open('ledgerlive://myledger?installApp=yearn')}
+						href={'ledgerlive://myledger?installApp=yearn'}
 						onCloseClick={(): void => set_shouldShowLedgerPluginBanner(false)}
 						overlayText={'SIGN IN WITH LEDGER'}
 						buttonText={'DOWNLOAD LEDGER PLUGIN'}

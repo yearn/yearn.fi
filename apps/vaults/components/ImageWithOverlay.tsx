@@ -11,7 +11,7 @@ type TImageWithOverlayProps = {
 	imageHeight: number;
 	overlayText: string;
 	buttonText: string;
-	onButtonClick: () => void;
+	href: string;
 	onCloseClick: () => void;
 }
 
@@ -22,7 +22,7 @@ const ImageWithOverlay: React.FC<TImageWithOverlayProps> = ({
 	imageHeight,
 	overlayText,
 	buttonText,
-	onButtonClick,
+	href,
 	onCloseClick
 }): ReactElement => {
 	return (
@@ -37,15 +37,13 @@ const ImageWithOverlay: React.FC<TImageWithOverlayProps> = ({
 			<div className={'absolute inset-0 flex flex-col items-center justify-center'}>
 				<IconCross
 					className={'absolute top-1 right-1 cursor-pointer text-white md:top-4 md:right-3'}
-					onClick={onCloseClick}
-				/>
+					onClick={onCloseClick} />
 				<h2 className={'text-xl font-bold text-white md:mb-5 md:text-6xl'}>{overlayText}</h2>
-				<button
-					className={'w-auto bg-white p-1 text-sm font-bold text-[#0657F9] hover:bg-[#EBEBEB] md:w-[314px] md:p-2 md:text-intermediate'}
-					onClick={onButtonClick}
-				>
-					{buttonText}
-				</button>
+				<a href={href}>
+					<button className={'w-auto bg-white p-1 text-sm font-bold text-[#0657F9] hover:bg-[#EBEBEB] md:w-[314px] md:p-2 md:text-intermediate'}>
+						{buttonText}
+					</button>
+				</a>
 			</div>
 		</div>
 	);
