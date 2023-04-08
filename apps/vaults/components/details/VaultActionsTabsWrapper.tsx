@@ -63,9 +63,11 @@ function	VaultActionsTabsWrapper(): ReactElement {
 		}
 	}, [currentVault?.migration?.available, actionParams.isReady]);
 
+	const isLedgerPluginVisible = ['EMBED_LEDGER', 'INJECTED_LEDGER'].includes(walletType) && shouldShowLedgerPluginBanner;
+
 	return (
 		<>
-			{['EMBED_LEDGER', 'INJECTED_LEDGER'].includes(walletType) && shouldShowLedgerPluginBanner && (
+			{isLedgerPluginVisible && (
 				<div aria-label={'Ledger Plugin'} className={'col-span-12 mt-10'}>
 					<ImageWithOverlay
 						imageAlt={''}
@@ -79,7 +81,7 @@ function	VaultActionsTabsWrapper(): ReactElement {
 					/>
 				</div>
 			)}
-			<nav className={'mt-1 mb-2 w-full md:mt-2'}>
+			<nav className={`mb-2 w-full ${isLedgerPluginVisible ? 'mt-1 md:mt-2' : 'mt-10 md:mt-20'}`}>
 				<Link href={'/vaults'}>
 					<p className={'yearn--header-nav-item w-full whitespace-nowrap opacity-30'}>
 						{'Back to vaults'}
