@@ -1,7 +1,7 @@
 import {useCallback, useMemo, useRef} from 'react';
 import {ethers} from 'ethers';
 import useSWRMutation from 'swr/mutation';
-import {STAKING_REWARDS_ZAP_ADDRESS} from '@vaults/constants';
+import {STAKING_REWARDS_ZAP_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {Solver} from '@vaults/contexts/useSolver';
 import {useVaultEstimateOutFetcher} from '@vaults/hooks/useVaultEstimateOutFetcher';
 import {depositAndStake} from '@vaults/utils/actions/stakingRewards';

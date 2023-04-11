@@ -2,7 +2,7 @@ import React, {createContext, memo, useCallback, useContext, useMemo} from 'reac
 import {useRouter} from 'next/router';
 import {Contract} from 'ethcall';
 import useSWR from 'swr';
-import {STAKING_REWARDS_REGISTRY_ADDRESS, STAKING_REWARDS_SUPPORTED_CHAINS} from '@vaults/constants';
+import {STAKING_REWARDS_REGISTRY_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import STAKING_REWARDS_ABI from '@vaults/utils/abi/stakingRewards.abi';
 import STAKING_REWARDS_REGISTRY_ABI from '@vaults/utils/abi/stakingRewardsRegistry.abi';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -50,7 +50,7 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 	const router = useRouter();
 	const routeChainID = Number(router.query.chainID || '0');
 	const chainID = routeChainID || appChainID;
-	const isChainSupported = STAKING_REWARDS_SUPPORTED_CHAINS.includes(chainID);
+	const isChainSupported = [10].includes(chainID);
 
 	const stakingRewardsFetcher = useCallback(async (): Promise<TStakingRewards[]> => {
 		const currentProvider = getProvider(chainID);

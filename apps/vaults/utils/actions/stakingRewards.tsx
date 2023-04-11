@@ -1,5 +1,5 @@
 import {ethers} from 'ethers';
-import {STAKING_REWARDS_ZAP_ADDRESS} from '@vaults/constants';
+import {STAKING_REWARDS_ZAP_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {handleTx} from '@yearn-finance/web-lib/utils/web3/transaction';
 
 import STAKING_REWARDS_ABI from '../abi/stakingRewards.abi';

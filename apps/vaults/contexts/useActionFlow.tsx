@@ -1,7 +1,6 @@
 import React, {createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState} from 'react';
 import {useRouter} from 'next/router';
 import {useMountEffect, useUpdateEffect} from '@react-hookz/web';
-import {STAKING_REWARDS_ZAP_ENABLED} from '@vaults/constants';
 import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {Solver} from '@vaults/contexts/useSolver';
 import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
@@ -186,7 +185,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 
 	const currentSolver = useMemo((): Solver => {
 		const isUnderlyingToken = toAddress(actionParams?.selectedOptionFrom?.value) === toAddress(currentVault.token.address);
-		if (hasStakingRewards && isDepositing && isUnderlyingToken && STAKING_REWARDS_ZAP_ENABLED) {
+		if (hasStakingRewards && isDepositing && isUnderlyingToken) {
 			return Solver.OPTIMISM_BOOSTER;
 		}
 
