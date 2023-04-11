@@ -8,6 +8,7 @@ import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {ETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatBN, toNormalizedBN, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
@@ -53,7 +54,7 @@ function usePortalsQuote(): [
 		if (!canExecuteFetch) {
 			return null;
 		}
-		
+
 		try {
 			return getEstimate({network: safeChainID, params});
 		} catch (error) {
@@ -67,7 +68,7 @@ function usePortalsQuote(): [
 					const description = error.response?.data?.description;
 					errorContent += `${description ? ` (Reason: [${description}])` : ''}`;
 				}
-	
+
 				toast({type: 'error', content: errorContent});
 			}
 
@@ -103,7 +104,10 @@ export function useSolverPortals(): TSolverContext {
 	** call getQuote to get the current quote for the provided request.current.
 	**********************************************************************************************/
 	const init = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN> => {
-		if (isSolverDisabled[Solver.PORTALS]) {
+		if (isSolverDisabled[Solver.PORTALS] || !_request.inputToken.solveVia?.includes(Solver.PORTALS)) {
+			return toNormalizedBN(0);
+		}
+		if (_request.inputToken.value === ETH_TOKEN_ADDRESS) {
 			return toNormalizedBN(0);
 		}
 		request.current = _request;
@@ -152,7 +156,7 @@ export function useSolverPortals(): TSolverContext {
 			if (!transaction) {
 				throw new Error('Fail to get transaction');
 			}
-		
+
 			const {tx: {value, gasLimit, ...rest}} = transaction;
 
 			const signer = provider.getSigner();
@@ -188,12 +192,12 @@ export function useSolverPortals(): TSolverContext {
 	** Retrieve the current outValue from the quote, which will be used to
 	** display the current value to the user.
 	**************************************************************************/
-	const onRetrieveExpectedOut = useCallback(async (request: TInitSolverArgs): Promise<TNormalizedBN> => {
-		if (isSolverDisabled[Solver.PORTALS]) {
+	const onRetrieveExpectedOut = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN> => {
+		if (isSolverDisabled[Solver.PORTALS] || !_request.inputToken.solveVia?.includes(Solver.PORTALS)) {
 			return toNormalizedBN(0);
 		}
-		const quoteResult = await getQuote(request, true);
-		return toNormalizedBN(formatBN(quoteResult?.minBuyAmount), request.outputToken.decimals);
+		const quoteResult = await getQuote(_request, true);
+		return toNormalizedBN(formatBN(quoteResult?.minBuyAmount), _request.outputToken.decimals);
 	}, [getQuote]);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -205,7 +209,7 @@ export function useSolverPortals(): TSolverContext {
 			return toNormalizedBN(0);
 		}
 
-		try {			
+		try {
 			const approval = await getApproval({
 				network: safeChainID,
 				params: {

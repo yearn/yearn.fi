@@ -98,7 +98,7 @@ module.exports = withPlausibleProxy()(withTM(withBundleAnalyzer(withPWA({
 			42161: process.env.WS_URL_ARBITRUM
 		},
 		JSON_RPC_URL: {
-			1: 'https://1rpc.io/eth' || process.env.RPC_URL_MAINNET,
+			1: process.env.RPC_URL_MAINNET || 'https://eth.llamarpc.com',
 			10: process.env.RPC_URL_OPTIMISM,
 			250: process.env.RPC_URL_FANTOM,
 			42161: process.env.RPC_URL_ARBITRUM

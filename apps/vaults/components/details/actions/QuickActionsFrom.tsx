@@ -44,7 +44,7 @@ function	VaultDetailsQuickActionsFrom(): ReactElement {
 					<label className={'text-base text-neutral-600'}>
 						{isDepositing ? 'From wallet' : 'From vault'}
 					</label>
-					<legend className={'font-number inline text-xs text-neutral-600 md:hidden'}>
+					<legend className={'font-number inline text-xs text-neutral-600 md:hidden'} suppressHydrationWarning>
 						{`You have ${formatAmount(selectedFromBalance.normalized)} ${actionParams?.selectedOptionFrom?.symbol || 'tokens'}`}
 					</legend>
 				</div>
@@ -63,7 +63,7 @@ function	VaultDetailsQuickActionsFrom(): ReactElement {
 					</div>
 				</Renderable>
 
-				<legend className={'font-number hidden text-xs text-neutral-600 md:inline'}>
+				<legend className={'font-number hidden text-xs text-neutral-600 md:inline'} suppressHydrationWarning>
 					{`You have ${formatAmount(selectedFromBalance.normalized)} ${actionParams?.selectedOptionFrom?.symbol || 'tokens'}`}
 				</legend>
 			</div>
