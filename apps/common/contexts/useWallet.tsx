@@ -12,6 +12,7 @@ import type {ReactElement} from 'react';
 import type {TBalanceData, TUseBalancesTokens} from '@yearn-finance/web-lib/hooks/types';
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TYearnVault} from '@common/types/yearn';
+import { useChainID } from '@yearn-finance/web-lib/hooks/useChainID';
 
 export type	TWalletContext = {
 	balances: TDict<TBalanceData>,
@@ -37,6 +38,7 @@ const	defaultProps = {
 const	WalletContext = createContext<TWalletContext>(defaultProps);
 export const WalletContextApp = memo(function WalletContextApp({children}: {children: ReactElement}): ReactElement {
 	const	{provider} = useWeb3();
+	const	{safeChainID} = useChainID();
 	const	{vaults, vaultsMigrations, isLoadingVaultList, prices} = useYearn();
 	const	{onLoadStart, onLoadDone} = useUI();
 
@@ -48,18 +50,20 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 		const	tokens: TUseBalancesTokens[] = [];
 		const	tokensExists: TDict<boolean> = {};
 
-		const	extraTokens = [
-			ETH_TOKEN_ADDRESS,
-			YCRV_TOKEN_ADDRESS,
-			LPYCRV_TOKEN_ADDRESS,
-			CRV_TOKEN_ADDRESS,
-			YVBOOST_TOKEN_ADDRESS,
-			YVECRV_TOKEN_ADDRESS,
-			CVXCRV_TOKEN_ADDRESS
-		];
-		for (const token of extraTokens) {
-			tokensExists[token] = true;
-			tokens.push({token});
+		if(safeChainID === 1) {
+			const	extraTokens = [
+				ETH_TOKEN_ADDRESS,
+				YCRV_TOKEN_ADDRESS,
+				LPYCRV_TOKEN_ADDRESS,
+				CRV_TOKEN_ADDRESS,
+				YVBOOST_TOKEN_ADDRESS,
+				YVECRV_TOKEN_ADDRESS,
+				CVXCRV_TOKEN_ADDRESS
+			];
+			for (const token of extraTokens) {
+				tokensExists[token] = true;
+				tokens.push({token});
+			}
 		}
 
 		Object.values(vaults || {}).forEach((vault?: TYearnVault): void => {

@@ -7,7 +7,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {ETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
@@ -19,6 +19,7 @@ import type {TGetBatchBalancesResp} from 'pages/api/getBatchBalances';
 import type {DependencyList} from 'react';
 import type {TBalanceData, TDefaultStatus} from '@yearn-finance/web-lib/hooks/types';
 import type {TAddress, TDict, TNDict} from '@yearn-finance/web-lib/types';
+import { getNativeTokenWrapperContract } from '@vaults/utils';
 
 /* 🔵 - Yearn Finance **********************************************************
 ** Request, Response and helpers for the useBalances hook.
@@ -112,7 +113,7 @@ async function getBalances(
 
 	for (const {token} of tokens) {
 		if (toAddress(token) === ETH_TOKEN_ADDRESS) {
-			const	tokenContract = new Contract(WETH_TOKEN_ADDRESS, ERC20_ABI);
+			const	tokenContract = new Contract(getNativeTokenWrapperContract(currentProvider.network.chainId), ERC20_ABI);
 			calls.push(
 				ethcallProvider.getEthBalance(ownerAddress),
 				tokenContract.decimals(),
