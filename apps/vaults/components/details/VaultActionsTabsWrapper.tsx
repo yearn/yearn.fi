@@ -7,12 +7,12 @@ import VaultDetailsQuickActionsButtons from '@vaults/components/details/actions/
 import VaultDetailsQuickActionsFrom from '@vaults/components/details/actions/QuickActionsFrom';
 import VaultDetailsQuickActionsSwitch from '@vaults/components/details/actions/QuickActionsSwitch';
 import VaultDetailsQuickActionsTo from '@vaults/components/details/actions/QuickActionsTo';
+import ImageWithOverlay from '@vaults/components/ImageWithOverlay';
 import {RewardsTab} from '@vaults/components/RewardsTab';
 import SettingsPopover from '@vaults/components/SettingsPopover';
 import {Flow, useActionFlow} from '@vaults/contexts/useActionFlow';
 import {Solver} from '@vaults/contexts/useSolver';
 import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
-import ImageWithOverlay from '@vaults/components/ImageWithOverlay';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useLocalStorage} from '@yearn-finance/web-lib/hooks/useLocalStorage';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';

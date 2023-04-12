@@ -1,8 +1,8 @@
 import React, {createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState} from 'react';
 import {useRouter} from 'next/router';
 import {useMountEffect, useUpdateEffect} from '@react-hookz/web';
-import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {Solver} from '@vaults/contexts/useSolver';
+import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
 import {WOPT_TOKEN_ADDRESS} from '@vaults/utils';
 import {setZapOption} from '@vaults/utils/zapOptions';
@@ -210,7 +210,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 			return Solver.PARTNER_CONTRACT;
 		}
 		return Solver.VANILLA;
-	}, [actionParams?.selectedOptionFrom?.value, actionParams?.selectedOptionFrom?.solveVia?.length, actionParams?.selectedOptionTo?.value, actionParams?.selectedOptionTo?.solveVia?.length, currentVault.token.address, currentVault?.migration?.available, currentVault?.migration?.address, hasStakingRewards, isDepositing, isUsingPartnerContract, zapProvider]);
+	}, [actionParams?.selectedOptionFrom?.value, actionParams?.selectedOptionFrom?.solveVia?.length, actionParams?.selectedOptionTo?.value, actionParams?.selectedOptionTo?.solveVia?.length, currentVault.token.address, currentVault.address, currentVault?.migration?.available, currentVault?.migration?.address, hasStakingRewards, isDepositing, isUsingPartnerContract, zapProvider]);
 
 	const onSwitchSelectedOptions = useCallback((nextFlow = Flow.Switch): void => {
 		balancesNonce;

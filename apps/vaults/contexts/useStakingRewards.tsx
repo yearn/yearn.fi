@@ -2,11 +2,11 @@ import React, {createContext, memo, useCallback, useContext, useMemo} from 'reac
 import {useRouter} from 'next/router';
 import {Contract} from 'ethcall';
 import useSWR from 'swr';
-import {STAKING_REWARDS_REGISTRY_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import STAKING_REWARDS_ABI from '@vaults/utils/abi/stakingRewards.abi';
 import STAKING_REWARDS_REGISTRY_ABI from '@vaults/utils/abi/stakingRewardsRegistry.abi';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
+import {STAKING_REWARDS_REGISTRY_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import {keyBy} from '@common/utils';
 

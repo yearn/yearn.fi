@@ -1,12 +1,12 @@
 import {useCallback, useMemo, useRef} from 'react';
 import {ethers} from 'ethers';
 import useSWRMutation from 'swr/mutation';
-import {STAKING_REWARDS_ZAP_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {Solver} from '@vaults/contexts/useSolver';
 import {useVaultEstimateOutFetcher} from '@vaults/hooks/useVaultEstimateOutFetcher';
 import {depositAndStake} from '@vaults/utils/actions/stakingRewards';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {STAKING_REWARDS_ZAP_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {approvedERC20Amount, approveERC20} from '@common/utils/actions/approveToken';
