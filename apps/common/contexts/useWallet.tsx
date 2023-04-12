@@ -1,6 +1,7 @@
 import React, {createContext, memo, useCallback, useContext, useMemo} from 'react';
 import {useUI} from '@yearn-finance/web-lib/contexts/useUI';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
+import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {useClientEffect} from '@yearn-finance/web-lib/hooks/useClientEffect';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {CRV_TOKEN_ADDRESS, CVXCRV_TOKEN_ADDRESS, ETH_TOKEN_ADDRESS, LPYCRV_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS, YVBOOST_TOKEN_ADDRESS, YVECRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
@@ -12,7 +13,6 @@ import type {ReactElement} from 'react';
 import type {TBalanceData, TUseBalancesTokens} from '@yearn-finance/web-lib/hooks/types';
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TYearnVault} from '@common/types/yearn';
-import { useChainID } from '@yearn-finance/web-lib/hooks/useChainID';
 
 export type	TWalletContext = {
 	balances: TDict<TBalanceData>,
@@ -49,21 +49,20 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 		}
 		const	tokens: TUseBalancesTokens[] = [];
 		const	tokensExists: TDict<boolean> = {};
-
+		const	extraTokens = [ETH_TOKEN_ADDRESS];
 		if(safeChainID === 1) {
-			const	extraTokens = [
-				ETH_TOKEN_ADDRESS,
+			extraTokens.push(...[
 				YCRV_TOKEN_ADDRESS,
 				LPYCRV_TOKEN_ADDRESS,
 				CRV_TOKEN_ADDRESS,
 				YVBOOST_TOKEN_ADDRESS,
 				YVECRV_TOKEN_ADDRESS,
 				CVXCRV_TOKEN_ADDRESS
-			];
-			for (const token of extraTokens) {
-				tokensExists[token] = true;
-				tokens.push({token});
-			}
+			]);
+		}
+		for (const token of extraTokens) {
+			tokensExists[token] = true;
+			tokens.push({token});
 		}
 
 		Object.values(vaults || {}).forEach((vault?: TYearnVault): void => {
@@ -78,7 +77,7 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 			}
 		});
 		return tokens;
-	}, [vaults, isLoadingVaultList]);
+	}, [isLoadingVaultList, safeChainID, vaults]);
 
 	//List all vaults with a possible migration
 	const	migratableTokens = useMemo((): TUseBalancesTokens[] => {

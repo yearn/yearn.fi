@@ -3,6 +3,9 @@ import {WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS, ZAP_ETH_WETH_CONTRACT, ZAP_FTM_W
 
 import type {TAddress} from '@yearn-finance/web-lib/types';
 
+export const WOPT_TOKEN_ADDRESS = toAddress('0x4200000000000000000000000000000000000006');
+export const WARB_TOKEN_ADDRESS = toAddress('0x82aF49447D8a07e3bd95BD0d56f35241523fBab1');
+
 export function getMessariSubgraphEndpoint(chainID: number): string {
 	switch (chainID) {
 		case 1:
@@ -36,12 +39,27 @@ export function getNativeTokenWrapperContract(chainID: number): TAddress {
 		case 1:
 			return WETH_TOKEN_ADDRESS;
 		case 10:
-			return toAddress('0x4200000000000000000000000000000000000006'); // TODO: import from web-lib
+			return WOPT_TOKEN_ADDRESS; // TODO: import from web-lib
 		case 250:
 			return WFTM_TOKEN_ADDRESS;
 		case 42161:
-			return toAddress('0x82aF49447D8a07e3bd95BD0d56f35241523fBab1'); // TODO: import from web-lib
+			return WARB_TOKEN_ADDRESS; // TODO: import from web-lib
 		default:
 			return addressZero;
+	}
+}
+
+export function getNativeTokenWrapperName(chainID: number): string {
+	switch (chainID) {
+		case 1:
+			return 'ETH';
+		case 10:
+			return 'OPT';
+		case 250:
+			return 'FTM';
+		case 42161:
+			return 'ARB';
+		default:
+			return 'ETH';
 	}
 }

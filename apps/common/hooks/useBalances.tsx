@@ -2,6 +2,7 @@ import {useCallback, useMemo, useRef, useState} from 'react';
 import {Contract} from 'ethcall';
 import axios from 'axios';
 import {useUpdateEffect} from '@react-hookz/web';
+import {getNativeTokenWrapperContract, getNativeTokenWrapperName} from '@vaults/utils';
 import {useUI} from '@yearn-finance/web-lib/contexts/useUI';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
@@ -19,7 +20,6 @@ import type {TGetBatchBalancesResp} from 'pages/api/getBatchBalances';
 import type {DependencyList} from 'react';
 import type {TBalanceData, TDefaultStatus} from '@yearn-finance/web-lib/hooks/types';
 import type {TAddress, TDict, TNDict} from '@yearn-finance/web-lib/types';
-import { getNativeTokenWrapperContract } from '@vaults/utils';
 
 /* 🔵 - Yearn Finance **********************************************************
 ** Request, Response and helpers for the useBalances hook.
@@ -84,7 +84,8 @@ async function performCall(
 		let symbol = results[rIndex++] as string;
 
 		if (toAddress(token) === ETH_TOKEN_ADDRESS) {
-			symbol = 'ETH';
+			const	network = await ethcallProvider.provider?.getNetwork();
+			symbol = getNativeTokenWrapperName(network?.chainId || 1);
 		}
 		_data[toAddress(token)] = {
 			decimals: Number(decimals),
