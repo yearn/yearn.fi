@@ -3,6 +3,7 @@ import {useRouter} from 'next/router';
 import {useMountEffect, useUpdateEffect} from '@react-hookz/web';
 import {Solver} from '@vaults/contexts/useSolver';
 import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
+import {WOPT_TOKEN_ADDRESS} from '@vaults/utils';
 import {setZapOption} from '@vaults/utils/zapOptions';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
@@ -428,6 +429,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 	useUpdateEffect((): void => {
 		const	_possibleZapOptionsFrom: TDropdownOption[] = [];
 		const	isWithWETH = safeChainID === 1 && currentVault && toAddress(currentVault.token.address) === WETH_TOKEN_ADDRESS;
+		const	isWithWOPT = safeChainID === 10 && currentVault && toAddress(currentVault.token.address) === WOPT_TOKEN_ADDRESS;
 		const	isWithWFTM = safeChainID === 250 && currentVault && toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS;
 		Object.entries(zapBalances || {})
 			.filter((): boolean => safeChainID === currentVault?.chainID) // Disable if we are on the wrong chain
@@ -437,6 +439,8 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 				// Do nothing to avoid duplicate wETH in the list
 				} else if (isWithWFTM && toAddress(tokenListData?.address) === WFTM_TOKEN_ADDRESS) {
 				// Do nothing to avoid duplicate wFTM in the list
+				} else if (isWithWOPT && toAddress(tokenListData?.address) === WOPT_TOKEN_ADDRESS) {
+				// Do nothing to avoid duplicate wOPT in the list
 				} else if (toAddress(tokenListData?.address) === toAddress(currentVault?.token?.address)) {
 				// Do nothing to avoid duplicate vault underlying token in the list
 				} else if (toAddress(tokenListData?.address) === toAddress(currentVault?.address)) {

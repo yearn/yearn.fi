@@ -2,9 +2,10 @@
 
 import {Contract} from 'ethcall';
 import {ethers} from 'ethers';
+import {getNativeTokenWrapperContract, getNativeTokenWrapperName} from '@vaults/utils';
 import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {ETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 
@@ -43,9 +44,9 @@ async function getBatchBalances({
 		for (const element of chunkTokens) {
 			const	{token} = element;
 			const	ownerAddress = address;
-			const	isEth = toAddress(token) === ETH_TOKEN_ADDRESS;
-			if (isEth) {
-				const	tokenContract = new Contract(WETH_TOKEN_ADDRESS, ERC20_ABI);
+			const	isNativeToken = toAddress(token) === ETH_TOKEN_ADDRESS;
+			if (isNativeToken) {
+				const	tokenContract = new Contract(getNativeTokenWrapperContract(chainID), ERC20_ABI);
 				calls.push(
 					ethcallProvider.getEthBalance(ownerAddress),
 					tokenContract.decimals(),
@@ -72,7 +73,7 @@ async function getBatchBalances({
 				let symbol = results[rIndex++] as string;
 
 				if (toAddress(token) === ETH_TOKEN_ADDRESS) {
-					symbol = 'ETH';
+					symbol = getNativeTokenWrapperName(chainID);
 				}
 				data[toAddress(token)] = {
 					decimals: Number(decimals),
