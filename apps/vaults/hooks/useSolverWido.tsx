@@ -125,8 +125,8 @@ export function useSolverWido(): TSolverContext {
 
 		const signer = provider.getSigner();
 		try {
-			const {data, to} = latestQuote.current;
-			const transaction = await signer.sendTransaction({data, to});
+			const {data, to, value} = latestQuote.current;
+			const transaction = await signer.sendTransaction({data, to, value});
 			const transactionReceipt = await transaction.wait();
 			if (transactionReceipt.status === 0) {
 				console.error('Fail to perform transaction');
