@@ -2,6 +2,8 @@ import React, {createContext, memo, useCallback, useContext, useMemo} from 'reac
 import {Contract} from 'ethcall';
 import useSWR from 'swr';
 import {keyBy} from '@veYFI/utils';
+import VEYFI_GAUGE_ABI from '@veYFI/utils/abi/veYFIGauge.abi';
+import VEYFI_REGISTRY_ABI from '@veYFI/utils/abi/veYFIRegistry.abi';
 import {VEYFI_REGISTRY_ADDRESS} from '@veYFI/utils/constants';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
@@ -59,13 +61,12 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 	const gaugesFetcher = useCallback(async (): Promise<TGauge[]> => {
 		const currentProvider = getProvider(1);
 		const ethcallProvider = await newEthCallProvider(currentProvider);
-		const veYFIRegistryContract = new Contract(VEYFI_REGISTRY_ADDRESS, []); // todo: update once abi is available
-
+		const veYFIRegistryContract = new Contract(VEYFI_REGISTRY_ADDRESS, VEYFI_REGISTRY_ABI); // todo: update once abi is available
 		const [vaultAddresses] = await ethcallProvider.tryAll([veYFIRegistryContract.getVaults()]) as [TAddress[]];
 		const gaugeAddressCalls = vaultAddresses.map((address): Call => veYFIRegistryContract.gauges(address));
 		const gaugeAddresses = await ethcallProvider.tryAll(gaugeAddressCalls) as TAddress[];
 		const gaugePromises = gaugeAddresses.map(async (address): Promise<TGauge> => {
-			const veYFIGaugeContract = new Contract(address, []); // todo: update once abi is available
+			const veYFIGaugeContract = new Contract(address, VEYFI_GAUGE_ABI); // todo: update once abi is available
 			const [
 				asset,
 				name,
@@ -101,7 +102,7 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 		const ethcallProvider = await newEthCallProvider(currentProvider);
 
 		const positionPromises = gauges.map(async ({address}): Promise<TGaugePosition> => {
-			const veYFIGaugeContract = new Contract(address, []); // todo: update once abi is available
+			const veYFIGaugeContract = new Contract(address, VEYFI_GAUGE_ABI); // todo: update once abi is available
 			const [balance, earned, boostedBalance] = await ethcallProvider.tryAll([
 				veYFIGaugeContract.balanceOf(userAddress), 
 				veYFIGaugeContract.earned(userAddress),
