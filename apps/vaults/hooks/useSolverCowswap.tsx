@@ -7,7 +7,7 @@ import {isSolverDisabled, Solver} from '@vaults/contexts/useSolver';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {allowanceKey, isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, SOLVER_COW_VAULT_RELAYER_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatBN, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
@@ -90,6 +90,7 @@ export function useSolverCowswap(): TSolverContext {
 	const [, getQuote] = useCowswapQuote();
 	const request = useRef<TInitSolverArgs>();
 	const latestQuote = useRef<TCowAPIResult>();
+	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
 	const isDisabled = isSolverDisabled[Solver.COWSWAP] || safeChainID !== 1;
 
 	/* 🔵 - Yearn Finance **************************************************************************
@@ -248,18 +249,23 @@ export function useSolverCowswap(): TSolverContext {
 	** Retrieve the allowance for the token to be used by the solver. This will
 	** be used to determine if the user should approve the token or not.
 	**************************************************************************/
-	const onRetrieveAllowance = useCallback(async (): Promise<TNormalizedBN> => {
+	const onRetrieveAllowance = useCallback(async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
 		if (!request?.current || isDisabled || !request?.current?.inputToken?.solveVia?.includes(Solver.COWSWAP)) {
 			return toNormalizedBN(0);
 		}
 
+		const key = allowanceKey(safeChainID, toAddress(request.current.inputToken.value), toAddress(request.current.outputToken.value), toAddress(request.current.from));
+		if (existingAllowances.current[key] && !shouldForceRefetch) {
+			return existingAllowances.current[key];
+		}
 		const allowance = await approvedERC20Amount(
 			provider,
 			toAddress(request.current.inputToken.value), //Input token
 			toAddress(SOLVER_COW_VAULT_RELAYER_ADDRESS) //Spender, aka Cowswap solver
 		);
-		return toNormalizedBN(allowance, request.current.inputToken.decimals);
-	}, [isDisabled, provider]);
+		existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals);
+		return existingAllowances.current[key];
+	}, [isDisabled, provider, safeChainID]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Trigger an signature to approve the token to be used by the Cowswap

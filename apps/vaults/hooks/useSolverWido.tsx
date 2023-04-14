@@ -6,7 +6,7 @@ import {isSolverDisabled, Solver} from '@vaults/contexts/useSolver';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {allowanceKey, isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatBN, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
@@ -14,6 +14,7 @@ import {approveERC20, isApprovedERC20} from '@common/utils/actions/approveToken'
 
 import type {AxiosError} from 'axios';
 import type {ChainId, QuoteRequest, QuoteResult} from 'wido';
+import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TTxResponse, TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TNormalizedBN} from '@common/types/types';
 import type {ApiError} from '@gnosis.pm/gp-v2-contracts';
@@ -82,6 +83,7 @@ export function useSolverWido(): TSolverContext {
 	const [, getQuote] = useWidoQuote();
 	const request = useRef<TInitSolverArgs>();
 	const latestQuote = useRef<QuoteResult>();
+	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
 	const {safeChainID} = useChainID();
 
 	/* 🔵 - Yearn Finance **************************************************************************
@@ -166,18 +168,24 @@ export function useSolverWido(): TSolverContext {
 	** Retrieve the allowance for the token to be used by the solver. This will
 	** be used to determine if the user should approve the token or not.
 	**************************************************************************/
-	const onRetrieveAllowance = useCallback(async (): Promise<TNormalizedBN> => {
+	const onRetrieveAllowance = useCallback(async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
 		if (!latestQuote?.current || !request?.current || isSolverDisabled[Solver.WIDO]) {
 			return toNormalizedBN(0);
 		}
 
+		const key = allowanceKey(safeChainID, toAddress(request.current.inputToken.value), toAddress(request.current.outputToken.value), toAddress(request.current.from));
+		if (existingAllowances.current[key] && !shouldForceRefetch) {
+			return existingAllowances.current[key];
+		}
 		const {allowance} = await wiGetTokenAllowance({
 			chainId: safeChainID as ChainId,
 			fromToken: toAddress(request.current.inputToken.value),
 			toToken: toAddress(request.current.outputToken.value),
 			accountAddress: toAddress(request.current.from)
 		});
-		return toNormalizedBN(allowance, request.current.inputToken.decimals);
+
+		existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals);
+		return existingAllowances.current[key];
 	}, [latestQuote, request, safeChainID]);
 
 	/* 🔵 - Yearn Finance ******************************************************

@@ -13,6 +13,7 @@ export type TWithSolver = {
 	currentSolver: Solver;
 	effectiveSolver: Solver;
 	expectedOut: TNormalizedBN;
+	hash: string,
 	isLoadingExpectedOut: boolean;
 	onRetrieveExpectedOut: (request: TInitSolverArgs) => Promise<TNormalizedBN>;
 	onRetrieveAllowance: () => Promise<TNormalizedBN>;
@@ -47,7 +48,7 @@ export type TSolverContext = {
 	refreshQuote: CallableFunction;
 	init: (args: TInitSolverArgs, shouldLogError?: boolean) => Promise<TNormalizedBN>;
 	onRetrieveExpectedOut: (request: TInitSolverArgs) => Promise<TNormalizedBN>;
-	onRetrieveAllowance: () => Promise<TNormalizedBN>;
+	onRetrieveAllowance: (shouldForceRefetch?: boolean) => Promise<TNormalizedBN>;
 	onApprove: (
 		amount: BigNumber,
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,

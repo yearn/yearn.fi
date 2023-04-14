@@ -7,13 +7,14 @@ import usePortalsApi from '@vaults/hooks/usePortalsApi';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {allowanceKey, isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatBN, toNormalizedBN, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
 import {approveERC20, isApprovedERC20} from '@common/utils/actions/approveToken';
 
+import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TTxResponse, TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TNormalizedBN} from '@common/types/types';
 import type {TPortalEstimate} from '@vaults/hooks/usePortalsApi';
@@ -93,6 +94,7 @@ export function useSolverPortals(): TSolverContext {
 	const [, getQuote] = usePortalsQuote();
 	const request = useRef<TInitSolverArgs>();
 	const latestQuote = useRef<TPortalEstimate>();
+	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
 	const {address} = useWeb3();
 	const {zapSlippage} = useYearn();
 	const {getTransaction, getApproval} = usePortalsApi();
@@ -204,9 +206,14 @@ export function useSolverPortals(): TSolverContext {
 	** Retrieve the allowance for the token to be used by the solver. This will
 	** be used to determine if the user should approve the token or not.
 	**************************************************************************/
-	const onRetrieveAllowance = useCallback(async (): Promise<TNormalizedBN> => {
+	const onRetrieveAllowance = useCallback(async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
 		if (!latestQuote?.current || !request?.current || isSolverDisabled[Solver.PORTALS]) {
 			return toNormalizedBN(0);
+		}
+
+		const key = allowanceKey(safeChainID, toAddress(request.current.inputToken.value), toAddress(request.current.outputToken.value), toAddress(request.current.from));
+		if (existingAllowances.current[key] && !shouldForceRefetch) {
+			return existingAllowances.current[key];
 		}
 
 		try {
@@ -224,7 +231,8 @@ export function useSolverPortals(): TSolverContext {
 				throw new Error('Fail to get approval');
 			}
 
-			return toNormalizedBN(approval.context.allowance, request.current.inputToken.decimals);
+			existingAllowances.current[key] = toNormalizedBN(approval.context.allowance, request.current.inputToken.decimals);
+			return existingAllowances.current[key];
 		} catch (error) {
 			console.error(error);
 			return ({raw: Zero, normalized: 0});
