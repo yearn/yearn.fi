@@ -27,7 +27,7 @@ async function getBatchBalances({
 }: TPerformCall): Promise<TDict<TBalanceData>> {
 	let	currentProvider: ethers.providers.JsonRpcProvider;
 	if (chainID === 1337) {
-		currentProvider = new ethers.providers.JsonRpcProvider('http://localhost:8545');
+		currentProvider = new ethers.providers.JsonRpcProvider('http://0.0.0.0:8545');
 	} else {
 		currentProvider = getProvider(chainID);
 	}
