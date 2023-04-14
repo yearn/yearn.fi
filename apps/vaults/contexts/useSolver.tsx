@@ -84,7 +84,11 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 			case Solver.WIDO:
 			case Solver.PORTALS:
 			case Solver.COWSWAP: {
-				const promises = [wido.init(request), cowswap.init(request), portals.init(request)];
+				const promises = [
+					wido.init(request, currentSolver === Solver.WIDO),
+					cowswap.init(request, currentSolver === Solver.COWSWAP),
+					portals.init(request, currentSolver === Solver.PORTALS)
+				];
 				const [widoQuote, cowswapQuote, portalsQuote] = await Promise.allSettled(promises);
 
 				/**************************************************************
