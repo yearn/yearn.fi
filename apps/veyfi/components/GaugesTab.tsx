@@ -6,7 +6,8 @@ import {validateNetwork} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatBN, toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatAmount, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {Table} from '@common/components/Table';
 import {useWallet} from '@common/contexts/useWallet';
@@ -15,6 +16,22 @@ import {useYearn} from '@common/contexts/useYearn';
 import type {BigNumber, ethers} from 'ethers';
 import type {ReactElement} from 'react';
 import type {TAddress} from '@yearn-finance/web-lib/types';
+
+type TGaugeData = {
+	gaugeAddress: TAddress,
+	vaultAddress: TAddress,
+	decimals: number,
+	vaultIcon: string,
+	vaultName: string,
+	vaultApy: number,
+	vaultDeposited: BigNumber,
+	gaugeApy: number,
+	gaugeBoost: number,
+	gaugeStaked: BigNumber,
+	allowance: BigNumber,
+	isApproved: boolean,
+	actions: undefined
+}
 
 function GaugesTab(): ReactElement {
 	const [selectedGauge, set_selectedGauge] = useState('');
@@ -31,7 +48,7 @@ function GaugesTab(): ReactElement {
 	const web3Provider = provider as ethers.providers.Web3Provider;
 	const userAddress = address as TAddress;
 
-	const gaugesData = gaugeAddresses.map((address): any => {
+	const gaugesData = gaugeAddresses.map((address): TGaugeData => {
 		const gauge = gaugesMap[address];
 		const vaultAddress = toAddress(gauge?.vaultAddress);
 		const vault = vaults[vaultAddress];
@@ -39,15 +56,17 @@ function GaugesTab(): ReactElement {
 		return {
 			gaugeAddress: address,
 			vaultAddress,
+			decimals: gauge?.decimals ?? 18,
 			vaultIcon: `${process.env.BASE_YEARN_ASSETS_URI}/1/${vaultAddress}/logo-128.png`,
 			vaultName: vault?.display_name ?? '',
 			vaultApy: vault?.apy.net_apy ?? 0,
-			vaultDeposited: balances[vaultAddress].raw,
+			vaultDeposited: formatBN(balances[vaultAddress]?.raw),
 			gaugeApy: 0, // TODO: gauge apy calcs
-			gaugeBoost: positionsMap[address]?.boost ?? 0,
+			gaugeBoost: positionsMap[address]?.boost ?? 1,
 			gaugeStaked: formatBN(positionsMap[address]?.deposit.balance),
 			allowance: allowancesMap[address],
-			isApproved: formatBN(allowancesMap[address]).gte(balances[vaultAddress].raw)
+			isApproved: formatBN(allowancesMap[address]).gte(formatBN(balances[vaultAddress]?.raw)),
+			actions: undefined
 		};
 	});
 	console.log(gaugesData);
@@ -102,12 +121,14 @@ function GaugesTab(): ReactElement {
 					{
 						key: 'vaultApy',
 						label: 'Vault APY',
-						sortable: true
+						sortable: true,
+						format: ({vaultApy}): string => formatPercent((vaultApy) * 100, 2, 2, 500)
 					},
 					{
 						key: 'vaultDeposited',
 						label: 'Deposited in Vault',
-						sortable: true
+						sortable: true,
+						format: ({vaultDeposited, decimals}): string => formatAmount(toNormalizedValue(vaultDeposited, decimals))
 					},
 					{
 						key: 'gaugeApy',
@@ -115,14 +136,16 @@ function GaugesTab(): ReactElement {
 						sortable: true
 					},
 					{
-						key: 'gaugeboost',
+						key: 'gaugeBoost',
 						label: 'Boost',
-						sortable: true
+						sortable: true,
+						format: ({gaugeBoost}): string => `${gaugeBoost}x`
 					},
 					{
 						key: 'gaugeStaked',
 						label: 'Staked in Gauge',
-						sortable: true
+						sortable: true,
+						format: ({gaugeStaked, decimals}): string => formatAmount(toNormalizedValue(gaugeStaked, decimals))
 					},
 					{
 						key: 'actions',
@@ -133,7 +156,7 @@ function GaugesTab(): ReactElement {
 						transform: ({isApproved, vaultAddress, gaugeAddress, vaultDeposited, gaugeStaked, allowance}): ReactElement => (
 							<div className={'flex flex-row justify-center space-x-2 md:justify-end'}>
 								<Button 
-									className={'w-full md:w-fit'}
+									className={'w-full md:w-24'}
 									onClick={(): void => onUnstake(gaugeAddress, gaugeStaked)}
 									disabled={!isActive || !isValidNetwork || gaugeStaked.eq(0)}
 									isBusy={gaugeAddress === selectedGauge && selectedAction === 'unstake' && unstakeStatus.loading}
@@ -142,7 +165,7 @@ function GaugesTab(): ReactElement {
 								</Button>
 								{!isApproved && (
 									<Button
-										className={'w-full md:w-fit'}
+										className={'w-full md:w-24'}
 										onClick={(): void => onApproveAndStake(vaultAddress, gaugeAddress, vaultDeposited, allowance)}
 										disabled={!isActive || !isValidNetwork || vaultDeposited.eq(0)}
 										isBusy={gaugeAddress === selectedGauge && selectedAction === 'stake' && approveAndStakeStatus.loading}
@@ -152,7 +175,7 @@ function GaugesTab(): ReactElement {
 								)}
 								{isApproved && (
 									<Button
-										className={'w-full md:w-fit'}
+										className={'w-full md:w-24'}
 										onClick={(): void => onStake(gaugeAddress, vaultDeposited)}
 										disabled={!isActive || !isValidNetwork || vaultDeposited.eq(0)}
 										isBusy={gaugeAddress === selectedGauge && selectedAction === 'stake' && stakeStatus.loading}
@@ -164,37 +187,7 @@ function GaugesTab(): ReactElement {
 						)
 					}
 				]}
-				// data={gaugesData}
-				data={[
-					{
-						gaugeAddress: toAddress('0xA696a63cc78DfFa1a63E9E50587C197387FF6C7E'),
-						vaultAddress: toAddress('0xA696a63cc78DfFa1a63E9E50587C197387FF6C7E'),
-						vaultIcon: `${process.env.BASE_YEARN_ASSETS_URI}/1/0xA696a63cc78DfFa1a63E9E50587C197387FF6C7E/logo-128.png`,
-						vaultName: 'yvWBTC',
-						vaultApy: '42%',
-						vaultDeposited: formatBN('0'),
-						gaugeApy: '42%',
-						gaugeboost: 'x1',
-						gaugeStaked: formatBN('0'),
-						allowance: formatBN('0'),
-						isApproved: false,
-						actions: null
-					},
-					{
-						gaugeAddress: toAddress('0xdA816459F1AB5631232FE5e97a05BBBb94970c95'),
-						vaultAddress: toAddress('0xdA816459F1AB5631232FE5e97a05BBBb94970c95'),
-						vaultIcon: `${process.env.BASE_YEARN_ASSETS_URI}/1/0xdA816459F1AB5631232FE5e97a05BBBb94970c95/logo-128.png`,
-						vaultName: 'yvDAI',
-						vaultApy: '42%',
-						vaultDeposited: formatBN('0'),
-						gaugeApy: '42%',
-						gaugeboost: 'x10',
-						gaugeStaked: formatBN('0'),
-						allowance: formatBN('0'),
-						isApproved: true,
-						actions: null
-					}
-				]}
+				data={gaugesData}
 				columns={9}
 				initialSortBy={'gaugeApy'}
 			/>
