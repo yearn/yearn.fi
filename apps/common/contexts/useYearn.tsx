@@ -21,6 +21,7 @@ export type	TYearnContext = {
 	tokens: TDict<TYDaemonToken>,
 	vaults: TDict<TYearnVault | undefined>,
 	vaultsMigrations: TDict<TYearnVault | undefined>,
+	vaultsRetired: TDict<TYearnVault | undefined>,
 	isLoadingVaultList: boolean,
 	zapSlippage: number,
 	zapProvider: Solver,
@@ -39,6 +40,7 @@ const	defaultProps: TYearnContext = {
 	tokens: {},
 	vaults: {},
 	vaultsMigrations: {},
+	vaultsRetired: {},
 	isLoadingVaultList: false,
 	zapSlippage: 0.1,
 	zapProvider: Solver.COWSWAP,
@@ -88,6 +90,12 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 		{revalidateOnFocus: false}
 	) as SWRResponse;
 
+	const	{data: vaultsRetired} = useSWR(
+		`${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/${safeChainID}/vaults/retired`,
+		baseFetcher,
+		{revalidateOnFocus: false}
+	) as SWRResponse;
+
 	const	{data: earned} = useSWR(
 		address ? `${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/${safeChainID}/earned/${address}` : null,
 		baseFetcher,
@@ -115,6 +123,14 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 		return _migratableVaultsObject;
 	}, [vaultsMigrations]);
 
+	const vaultsRetiredObject = useMemo((): TYearnVaultsMap => {
+		const	_retiredVaultsObject = (vaultsRetired || []).reduce((acc: TDict<TYearnVault>, vault: TYearnVault): TDict<TYearnVault> => {
+			acc[toAddress(vault.address)] = vault;
+			return acc;
+		}, {});
+		return _retiredVaultsObject;
+	}, [vaultsRetired]);
+
 	/* 🔵 - Yearn Finance ******************************************************
 	**	Setup and render the Context provider to use in the app.
 	***************************************************************************/
@@ -129,9 +145,10 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 		set_zapProvider,
 		vaults: {...vaultsObject},
 		vaultsMigrations: {...vaultsMigrationsObject},
+		vaultsRetired: {...vaultsRetiredObject},
 		isLoadingVaultList,
 		mutateVaultList
-	}), [currentPartner?.id, prices, tokens, earned, zapSlippage, set_zapSlippage, zapProvider, set_zapProvider, vaultsObject, vaultsMigrationsObject, isLoadingVaultList, mutateVaultList]);
+	}), [currentPartner?.id, prices, tokens, earned, zapSlippage, set_zapSlippage, zapProvider, set_zapProvider, vaultsObject, vaultsMigrationsObject, isLoadingVaultList, mutateVaultList, vaultsRetiredObject]);
 
 	return (
 		<YearnContext.Provider value={contextValue}>

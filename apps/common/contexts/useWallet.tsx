@@ -39,7 +39,7 @@ const	WalletContext = createContext<TWalletContext>(defaultProps);
 export const WalletContextApp = memo(function WalletContextApp({children}: {children: ReactElement}): ReactElement {
 	const	{provider} = useWeb3();
 	const	{safeChainID} = useChainID();
-	const	{vaults, vaultsMigrations, isLoadingVaultList, prices} = useYearn();
+	const	{vaults, vaultsMigrations, vaultsRetired, isLoadingVaultList, prices} = useYearn();
 	const	{onLoadStart, onLoadDone} = useUI();
 
 	//List all tokens related to yearn vaults
@@ -91,10 +91,21 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 		return tokens;
 	}, [vaultsMigrations]);
 
+	const	retiredTokens = useMemo((): TUseBalancesTokens[] => {
+		const	tokens: TUseBalancesTokens[] = [];
+		Object.values(vaultsRetired || {}).forEach((vault?: TYearnVault): void => {
+			if (!vault) {
+				return;
+			}
+			tokens.push({token: vault?.address});
+		});
+		return tokens;
+	}, [vaultsRetired]);
+
 	// Fetch the balances
 	const	{data: balances, update, updateSome, nonce, isLoading} = useBalances({
 		provider: provider || getProvider(1),
-		tokens: [...availableTokens, ...migratableTokens],
+		tokens: [...availableTokens, ...migratableTokens, ...retiredTokens],
 		prices
 	});
 

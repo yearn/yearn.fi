@@ -52,6 +52,7 @@ function	DesktopCategories<T>({categories, onSelect}: TListHeroDesktopCategories
 							<Button
 								key={item.label}
 								onClick={(): void => onSelect(item.value)}
+								suppressHydrationWarning
 								variant={item.isSelected ? 'filled' : 'outlined'}
 								className={'yearn--button-smaller relative !border-x-0'}>
 								{item?.node || item.label}
@@ -137,7 +138,10 @@ function	ListHero<T extends string>({
 					}}>
 					{categories.map((currentCategory): ReactNode => (
 						currentCategory.map((item): ReactElement => (
-							<option key={item.value} value={item.value}>
+							<option
+								suppressHydrationWarning
+								key={item.value}
+								value={item.value}>
 								{item.label}
 							</option>
 						))

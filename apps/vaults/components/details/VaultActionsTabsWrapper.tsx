@@ -29,8 +29,8 @@ const tabs: TTabsOptions[] = [
 	{value: 1, label: 'Withdraw', flowAction: Flow.Withdraw, slug: 'withdraw'},
 	{value: 2, label: 'Migrate', flowAction: Flow.Migrate, slug: 'migrate'}
 ];
-function	getCurrentTab({isDepositing, hasMigration}: {isDepositing: boolean, hasMigration: boolean}): TTabsOptions {
-	if (hasMigration) {
+function	getCurrentTab({isDepositing, hasMigration, isRetired}: {isDepositing: boolean, hasMigration: boolean, isRetired: boolean}): TTabsOptions {
+	if (hasMigration || isRetired) {
 		return tabs[1];
 	}
 	return tabs.find((tab): boolean => tab.value === (isDepositing ? 0 : 1)) as TTabsOptions;
@@ -40,7 +40,7 @@ function	VaultActionsTabsWrapper(): ReactElement {
 	const {currentVault, onSwitchSelectedOptions, isDepositing, actionParams} = useActionFlow();
 	const [possibleTabs, set_possibleTabs] = useState<TTabsOptions[]>([tabs[0], tabs[1]]);
 	const [currentTab, set_currentTab] = useState<TTabsOptions>(
-		getCurrentTab({isDepositing, hasMigration: currentVault?.migration?.available})
+		getCurrentTab({isDepositing, hasMigration: currentVault?.migration?.available, isRetired: currentVault?.details?.retired})
 	);
 	const [shouldShowLedgerPluginBanner, set_shouldShowLedgerPluginBanner] = useLocalStorage<boolean>('yearn.finance/ledger-plugin-banner', true);
 	const router = useRouter();
@@ -60,8 +60,14 @@ function	VaultActionsTabsWrapper(): ReactElement {
 				set_currentTab(tabs[2]);
 				onSwitchSelectedOptions(Flow.Migrate);
 			});
+		} else if (currentVault?.details?.retired && actionParams.isReady) {
+			performBatchedUpdates((): void => {
+				set_possibleTabs([tabs[1]]);
+				set_currentTab(tabs[1]);
+				onSwitchSelectedOptions(Flow.Withdraw);
+			});
 		}
-	}, [currentVault?.migration?.available, actionParams.isReady]);
+	}, [currentVault?.migration?.available, currentVault?.details?.retired, actionParams.isReady]);
 
 	const isLedgerPluginVisible = ['EMBED_LEDGER', 'INJECTED_LEDGER'].includes(walletType) && shouldShowLedgerPluginBanner;
 
@@ -81,7 +87,27 @@ function	VaultActionsTabsWrapper(): ReactElement {
 					/>
 				</div>
 			)}
-			<nav className={`mb-2 w-full ${isLedgerPluginVisible ? 'mt-1 md:mt-2' : 'mt-10 md:mt-20'}`}>
+
+			{currentVault?.migration?.available && (
+				<div aria-label={'Migration Warning'} className={'col-span-12 mt-10'}>
+					<div className={'w-full bg-neutral-900 p-6 text-neutral-0'}>
+						<b className={'text-lg'}>{'Looks like this an old Vault.'}</b>
+						<p className={'mt-2'}>{'This Vault is no longer earning yield, but good news, there’s a shiny up to date version just waiting for you to deposit your tokens into. Click migrate, and your tokens will be migrated to the current Vault, which will be mi-great!'}</p>
+					</div>
+				</div>
+			)}
+
+
+			{(!currentVault?.migration.available && currentVault?.details?.retired) && (
+				<div aria-label={'Deprecation Warning'} className={'col-span-12 mt-10'}>
+					<div className={'w-full bg-neutral-900 p-6 text-neutral-0'}>
+						<b className={'text-lg'}>{'This Vault is no longer supported (oh no).'}</b>
+						<p className={'mt-2'}>{'They say all good things must come to an end, and sadly this vault is deprecated and will no longer earn yield or be supported by Yearn. Please withdraw your funds (which you could deposit into another Vault. Just saying…)'}</p>
+					</div>
+				</div>
+			)}
+
+			<nav className={`mb-2 w-full ${(isLedgerPluginVisible || currentVault?.details?.retired) ? 'mt-1 md:mt-4' : 'mt-10 md:mt-20'}`}>
 				<Link href={'/vaults'}>
 					<p className={'yearn--header-nav-item w-full whitespace-nowrap opacity-30'}>
 						{'Back to vaults'}
