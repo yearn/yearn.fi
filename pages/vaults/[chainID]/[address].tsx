@@ -1,4 +1,5 @@
-import React, {useEffect, useRef} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
+import {getToastMessage} from 'pages/vaults/[chainID]/getToastMessage';
 import {motion} from 'framer-motion';
 import {VaultActionsTabsWrapper} from '@vaults/components/details/VaultActionsTabsWrapper';
 import {VaultDetailsHeader} from '@vaults/components/details/VaultDetailsHeader';
@@ -6,9 +7,11 @@ import {VaultDetailsTabsWrapper} from '@vaults/components/details/VaultDetailsTa
 import ActionFlowContextApp from '@vaults/contexts/useActionFlow';
 import {WithSolverContextApp} from '@vaults/contexts/useSolver';
 import Wrapper from '@vaults/Wrapper';
+import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import CHAINS from '@yearn-finance/web-lib/utils/web3/chains';
 import TokenIcon from '@common/components/TokenIcon';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
@@ -24,6 +27,9 @@ function Index({router, vaultData}: {router: NextRouter, vaultData: TYearnVault}
 	const {safeChainID} = useChainID();
 	const {vaults} = useYearn();
 	const {refresh} = useWallet();
+	const {toast} = yToast();
+	
+	const [isToastOpen, set_isToastOpen] = useState(false);
 	const currentVault = useRef<TYearnVault>(vaults[toAddress(router.query.address as string)] as TYearnVault || vaultData);
 
 	useEffect((): void => {
@@ -38,6 +44,25 @@ function Index({router, vaultData}: {router: NextRouter, vaultData: TYearnVault}
 			refresh(tokensToRefresh);
 		}
 	}, [currentVault.current?.address, currentVault.current?.token?.address, address, isActive, refresh]);
+
+	useEffect((): void => {
+		if (isToastOpen) {
+			return;
+		}
+
+		if (!!safeChainID && currentVault.current?.chainID !== safeChainID) {
+			const vaultChainName = CHAINS[currentVault.current?.chainID]?.name;
+			const chainName = CHAINS[safeChainID]?.name;
+
+			toast({
+				type: 'warning',
+				content: getToastMessage({vaultChainName, chainName}),
+				duration: Infinity
+			});
+
+			set_isToastOpen(true);
+		}
+	}, [isToastOpen, safeChainID, toast]);
 
 	return (
 		<>
