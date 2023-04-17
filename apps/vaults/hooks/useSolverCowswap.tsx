@@ -112,7 +112,7 @@ export function useSolverCowswap(): TSolverContext {
 	** It will set the request to the provided value, as it's required to get the quote, and will
 	** call getQuote to get the current quote for the provided request.current.
 	**********************************************************************************************/
-	const init = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN> => {
+	const init = useCallback(async (_request: TInitSolverArgs, shouldLogError?: boolean): Promise<TNormalizedBN> => {
 		if (isDisabled || !_request.inputToken.solveVia?.includes(Solver.COWSWAP)) {
 			return toNormalizedBN(0);
 		}
@@ -120,7 +120,7 @@ export function useSolverCowswap(): TSolverContext {
 			return toNormalizedBN(0);
 		}
 		request.current = _request;
-		const quote = await getQuote(_request);
+		const quote = await getQuote(_request, !shouldLogError);
 		if (quote) {
 			latestQuote.current = quote;
 			getBuyAmountWithSlippage(quote, request?.current?.outputToken?.decimals || 18);

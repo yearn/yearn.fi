@@ -89,12 +89,12 @@ export function useSolverWido(): TSolverContext {
 	** It will set the request to the provided value, as it's required to get the quote, and will
 	** call getQuote to get the current quote for the provided request.current.
 	**********************************************************************************************/
-	const init = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN> => {
+	const init = useCallback(async (_request: TInitSolverArgs, shouldLogError?: boolean): Promise<TNormalizedBN> => {
 		if (isSolverDisabled[Solver.WIDO] || !_request.inputToken.solveVia?.includes(Solver.WIDO)) {
 			return toNormalizedBN(0);
 		}
 		request.current = _request;
-		const quote = await getQuote(_request);
+		const quote = await getQuote(_request, !shouldLogError);
 		if (quote) {
 			latestQuote.current = quote;
 			return toNormalizedBN(quote?.minToTokenAmount || 0, request?.current?.outputToken?.decimals || 18);
@@ -125,8 +125,8 @@ export function useSolverWido(): TSolverContext {
 
 		const signer = provider.getSigner();
 		try {
-			const {data, to} = latestQuote.current;
-			const transaction = await signer.sendTransaction({data, to});
+			const {data, to, value} = latestQuote.current;
+			const transaction = await signer.sendTransaction({data, to, value});
 			const transactionReceipt = await transaction.wait();
 			if (transactionReceipt.status === 0) {
 				console.error('Fail to perform transaction');

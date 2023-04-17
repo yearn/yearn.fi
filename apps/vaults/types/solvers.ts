@@ -45,7 +45,7 @@ export type TSolverContext = {
 	quote: TNormalizedBN;
 	getQuote: CallableFunction;
 	refreshQuote: CallableFunction;
-	init: (args: TInitSolverArgs) => Promise<TNormalizedBN>;
+	init: (args: TInitSolverArgs, shouldLogError?: boolean) => Promise<TNormalizedBN>;
 	onRetrieveExpectedOut: (request: TInitSolverArgs) => Promise<TNormalizedBN>;
 	onRetrieveAllowance: () => Promise<TNormalizedBN>;
 	onApprove: (

@@ -2,6 +2,7 @@ import React, {Fragment, useCallback, useMemo} from 'react';
 import VaultListOptions from '@vaults/components/list/VaultListOptions';
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
 import {VaultsListInternalMigrationRow} from '@vaults/components/list/VaultsListInternalMigrationRow';
+import {VaultsListRetired} from '@vaults/components/list/VaultsListRetired';
 import {VaultsListRow} from '@vaults/components/list/VaultsListRow';
 import {useAppSettings} from '@vaults/contexts/useAppSettings';
 import {useFilteredVaults} from '@vaults/hooks/useFilteredVaults';
@@ -70,7 +71,7 @@ function	HeaderUserPosition(): ReactElement {
 function	Index(): ReactElement {
 	const	{safeChainID} = useChainID();
 	const	{balances, balancesNonce} = useWallet();
-	const	{vaults, vaultsMigrations, isLoadingVaultList} = useYearn();
+	const	{vaults, vaultsMigrations, vaultsRetired, isLoadingVaultList} = useYearn();
 	const 	[sort, set_sort] = useSessionStorage<{sortBy: TPossibleSortBy, sortDirection: TSortDirection}>(
 		'yVaultsSorting', {sortBy: 'apy', sortDirection: 'desc'}
 	);
@@ -112,6 +113,7 @@ function	Index(): ReactElement {
 	const	cryptoVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Volatile');
 	const	holdingsVaults = useFilteredVaults(vaults, ({address}): boolean => filterHoldingsCallback(address));
 	const	migratableVaults = useFilteredVaults(vaultsMigrations, ({address}): boolean => filterMigrationCallback(address));
+	const	retiredVaults = useFilteredVaults(vaultsRetired, ({address}): boolean => filterMigrationCallback(address));
 
 	const	categoriesToDisplay = useMemo((): TListHeroCategory<string>[] => {
 		const	categories = [
@@ -248,7 +250,7 @@ function	Index(): ReactElement {
 								node: (
 									<Fragment>
 										{'Holdings'}
-										<span className={`absolute -top-1 -right-1 flex h-2 w-2 ${category === 'Holdings' || migratableVaults?.length === 0 ? 'opacity-0' : 'opacity-100'}`}>
+										<span className={`absolute -top-1 -right-1 flex h-2 w-2 ${category === 'Holdings' || (migratableVaults?.length + retiredVaults?.length) === 0 ? 'opacity-0' : 'opacity-100'}`}>
 											<span className={'absolute inline-flex h-full w-full animate-ping rounded-full bg-pink-600 opacity-75'}></span>
 											<span className={'relative inline-flex h-2 w-2 rounded-full bg-pink-500'}></span>
 										</span>
@@ -260,6 +262,15 @@ function	Index(): ReactElement {
 					onSelect={set_category}
 					searchValue={searchValue}
 					set_searchValue={set_searchValue} />
+
+
+				<Renderable shouldRender={category === 'Holdings' && retiredVaults?.length > 0}>
+					<div className={'my-4'}>
+						{retiredVaults.filter((vault): boolean => !!vault).map((vault): ReactNode =>
+							<VaultsListRetired key={vault.address} currentVault={vault} />
+						)}
+					</div>
+				</Renderable>
 
 				<Renderable shouldRender={category === 'Holdings' && migratableVaults?.length > 0}>
 					<div className={'my-4'}>

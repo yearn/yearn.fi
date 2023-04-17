@@ -25,12 +25,15 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** SWR hook to get the expected out for a given in/out pair with a specific amount. This hook is
-	** called every 10s or when amount/in or out changes. Calls the allowanceFetcher callback.
+	** called when amount/in or out changes. Calls the allowanceFetcher callback.
 	**********************************************************************************************/
 	const [{result: allowanceFrom, status}, actions] = useAsync(onRetrieveAllowance, toNormalizedBN(0));
+
 	useEffect((): void => {
-		actions.execute();
-	}, [currentSolver, actionParams?.selectedOptionFrom?.value, actions, isActive, address, onRetrieveAllowance]);
+		if (!isLoadingExpectedOut) {
+			actions.execute();
+		}
+	}, [currentSolver, actionParams?.selectedOptionFrom?.value, actions, isActive, address, onRetrieveAllowance, isLoadingExpectedOut, expectedOut]);
 
 	const onSuccess = useCallback(async (): Promise<void> => {
 		onChangeAmount(toNormalizedBN(0));
