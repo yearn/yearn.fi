@@ -15,6 +15,7 @@ import {useYearn} from '@common/contexts/useYearn';
 import {approvedERC20Amount, approveERC20, isApprovedERC20} from '@common/utils/actions/approveToken';
 
 import type {AxiosError} from 'axios';
+import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TTxResponse, TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TNormalizedBN} from '@common/types/types';
 import type {ApiError, Order, QuoteQuery, Timestamp} from '@gnosis.pm/gp-v2-contracts';
@@ -114,20 +115,53 @@ export function useSolverCowswap(): TSolverContext {
 	** call getQuote to get the current quote for the provided request.current.
 	**********************************************************************************************/
 	const init = useCallback(async (_request: TInitSolverArgs, shouldLogError?: boolean): Promise<TNormalizedBN> => {
-		if (isDisabled || !_request.inputToken.solveVia?.includes(Solver.COWSWAP)) {
+		/******************************************************************************************
+		** First we need to know which token we are selling to the zap. When we are depositing, we
+		** are selling the inputToken, when we are withdrawing, we are selling the outputToken.
+		** based on that token, different checks are required to determine if the solver can be
+		** used.
+		******************************************************************************************/
+		const sellToken = _request.isDepositing ? _request.inputToken: _request.outputToken;
+
+		/******************************************************************************************
+		** This first obvious check is to see if the solver is disabled. If it is, we return 0.
+		******************************************************************************************/
+		if (isDisabled) {
 			return toNormalizedBN(0);
 		}
-		if (_request.inputToken.value === ETH_TOKEN_ADDRESS) {
+
+		/******************************************************************************************
+		** Then, we check if the solver can be used for this specific sellToken. If it can't, we
+		** return 0.
+		** This solveVia array is set via the yDaemon tokenList process. If a solve is not set for
+		** a token, you can contact the yDaemon team to add it.
+		******************************************************************************************/
+		if (!sellToken.solveVia?.includes(Solver.COWSWAP)) {
 			return toNormalizedBN(0);
 		}
+
+		/******************************************************************************************
+		** Finally, we check if the sellToken is ETH. Indeed, the cowswap solver can't be used to
+		** sell ETH, but can be used to buy ETH. So, if we are selling ETH (aka depositing ETH vs
+		** a vault token) we return 0.
+		******************************************************************************************/
+		if (_request.isDepositing && sellToken.value === ETH_TOKEN_ADDRESS) {
+			return toNormalizedBN(0);
+		}
+
+		/******************************************************************************************
+		** At this point, we know that the solver can be used for this specific token. We set the
+		** request to the provided value, as it's required to get the quote, and we call getQuote
+		** to get the current quote for the provided request.current.
+		******************************************************************************************/
 		request.current = _request;
 		const quote = await getQuote(_request, !shouldLogError);
-		if (quote) {
-			latestQuote.current = quote;
-			getBuyAmountWithSlippage(quote, request?.current?.outputToken?.decimals || 18);
-			return toNormalizedBN(quote?.quote?.buyAmount || 0, request?.current?.outputToken?.decimals || 18);
+		if (!quote) {
+			return toNormalizedBN(0);
 		}
-		return toNormalizedBN(0);
+		latestQuote.current = quote;
+		getBuyAmountWithSlippage(quote, request?.current?.outputToken?.decimals || 18);
+		return toNormalizedBN(quote?.quote?.buyAmount || 0, request?.current?.outputToken?.decimals || 18);
 	}, [getBuyAmountWithSlippage, getQuote, isDisabled]);
 
 	/* 🔵 - Yearn Finance **************************************************************************

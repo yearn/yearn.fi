@@ -92,16 +92,43 @@ export function useSolverWido(): TSolverContext {
 	** call getQuote to get the current quote for the provided request.current.
 	**********************************************************************************************/
 	const init = useCallback(async (_request: TInitSolverArgs, shouldLogError?: boolean): Promise<TNormalizedBN> => {
-		if (isSolverDisabled[Solver.WIDO] || !_request.inputToken.solveVia?.includes(Solver.WIDO)) {
+		/******************************************************************************************
+		** First we need to know which token we are selling to the zap. When we are depositing, we
+		** are selling the inputToken, when we are withdrawing, we are selling the outputToken.
+		** based on that token, different checks are required to determine if the solver can be
+		** used.
+		******************************************************************************************/
+		const sellToken = _request.isDepositing ? _request.inputToken: _request.outputToken;
+
+		/******************************************************************************************
+		** This first obvious check is to see if the solver is disabled. If it is, we return 0.
+		******************************************************************************************/
+		if (isSolverDisabled[Solver.WIDO]) {
 			return toNormalizedBN(0);
 		}
+
+		/******************************************************************************************
+		** Then, we check if the solver can be used for this specific sellToken. If it can't, we
+		** return 0.
+		** This solveVia array is set via the yDaemon tokenList process. If a solve is not set for
+		** a token, you can contact the yDaemon team to add it.
+		******************************************************************************************/
+		if (!sellToken.solveVia?.includes(Solver.WIDO)) {
+			return toNormalizedBN(0);
+		}
+
+		/******************************************************************************************
+		** At this point, we know that the solver can be used for this specific token. We set the
+		** request to the provided value, as it's required to get the quote, and we call getQuote
+		** to get the current quote for the provided request.current.
+		******************************************************************************************/
 		request.current = _request;
 		const quote = await getQuote(_request, !shouldLogError);
-		if (quote) {
-			latestQuote.current = quote;
-			return toNormalizedBN(quote?.minToTokenAmount || 0, request?.current?.outputToken?.decimals || 18);
+		if (!quote) {
+			return toNormalizedBN(0);
 		}
-		return toNormalizedBN(0);
+		latestQuote.current = quote;
+		return toNormalizedBN(quote?.minToTokenAmount || 0, request?.current?.outputToken?.decimals || 18);
 	}, [getQuote]);
 
 	/* 🔵 - Yearn Finance **************************************************************************

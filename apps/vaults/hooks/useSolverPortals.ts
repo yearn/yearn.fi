@@ -60,7 +60,6 @@ function usePortalsQuote(): [
 			return getEstimate({network: safeChainID, params});
 		} catch (error) {
 			set_err(error instanceof Error ? error : new Error(`Unknown error: ${error}`));
-
 			console.error(error);
 
 			if (!shouldPreventErrorToast) {
@@ -106,19 +105,50 @@ export function useSolverPortals(): TSolverContext {
 	** call getQuote to get the current quote for the provided request.current.
 	**********************************************************************************************/
 	const init = useCallback(async (_request: TInitSolverArgs, shouldLogError?: boolean): Promise<TNormalizedBN> => {
-		if (isSolverDisabled[Solver.PORTALS] || !_request.inputToken.solveVia?.includes(Solver.PORTALS)) {
+		/******************************************************************************************
+		** First we need to know which token we are selling to the zap. When we are depositing, we
+		** are selling the inputToken, when we are withdrawing, we are selling the outputToken.
+		** based on that token, different checks are required to determine if the solver can be
+		** used.
+		******************************************************************************************/
+		const sellToken = _request.isDepositing ? _request.inputToken: _request.outputToken;
+
+		/******************************************************************************************
+		** This first obvious check is to see if the solver is disabled. If it is, we return 0.
+		******************************************************************************************/
+		if (isSolverDisabled[Solver.PORTALS]) {
 			return toNormalizedBN(0);
 		}
-		if (_request.inputToken.value === ETH_TOKEN_ADDRESS) {
+
+		/******************************************************************************************
+		** Then, we check if the solver can be used for this specific sellToken. If it can't, we
+		** return 0.
+		** This solveVia array is set via the yDaemon tokenList process. If a solve is not set for
+		** a token, you can contact the yDaemon team to add it.
+		******************************************************************************************/
+		if (!sellToken.solveVia?.includes(Solver.PORTALS)) {
 			return toNormalizedBN(0);
 		}
+
+		/******************************************************************************************
+		** Finally, we check if the sellToken is ETH. If it is, we return 0.
+		******************************************************************************************/
+		if (sellToken.value === ETH_TOKEN_ADDRESS) {
+			return toNormalizedBN(0);
+		}
+
+		/******************************************************************************************
+		** At this point, we know that the solver can be used for this specific token. We set the
+		** request to the provided value, as it's required to get the quote, and we call getQuote
+		** to get the current quote for the provided request.current.
+		******************************************************************************************/
 		request.current = _request;
 		const quote = await getQuote(_request, !shouldLogError);
-		if (quote) {
-			latestQuote.current = quote;
-			return toNormalizedBN(quote?.minBuyAmount || 0, request?.current?.outputToken?.decimals || 18);
+		if (!quote) {
+			return toNormalizedBN(0);
 		}
-		return toNormalizedBN(0);
+		latestQuote.current = quote;
+		return toNormalizedBN(quote?.minBuyAmount || 0, request?.current?.outputToken?.decimals || 18);
 	}, [getQuote]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
