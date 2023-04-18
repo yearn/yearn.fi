@@ -26,9 +26,9 @@ function Index({router, vaultData}: {router: NextRouter, vaultData: TYearnVault}
 	const {safeChainID} = useChainID();
 	const {vaults} = useYearn();
 	const {refresh} = useWallet();
-	const {toast} = yToast();
+	const {toast, toastMaster} = yToast();
 	
-	const [isToastOpen, set_isToastOpen] = useState(false);
+	const [toastState, set_toastState] = useState<{id?: string; isOpen: boolean}>({isOpen: false});
 	const currentVault = useRef<TYearnVault>(vaults[toAddress(router.query.address as string)] as TYearnVault || vaultData);
 
 	useEffect((): void => {
@@ -45,7 +45,11 @@ function Index({router, vaultData}: {router: NextRouter, vaultData: TYearnVault}
 	}, [currentVault.current?.address, currentVault.current?.token?.address, address, isActive, refresh]);
 
 	useEffect((): void => {
-		if (isToastOpen) {
+		if (toastState.isOpen) {
+			if (!!safeChainID && currentVault.current?.chainID === safeChainID) {
+				toastMaster.dismiss(toastState.id);
+				set_toastState({isOpen: false});
+			}
 			return;
 		}
 
@@ -53,15 +57,15 @@ function Index({router, vaultData}: {router: NextRouter, vaultData: TYearnVault}
 			const vaultChainName = CHAINS[currentVault.current?.chainID]?.name;
 			const chainName = CHAINS[safeChainID]?.name;
 
-			toast({
+			const toastId = toast({
 				type: 'warning',
 				content: getToastMessage({vaultChainName, chainName}),
 				duration: Infinity
 			});
 
-			set_isToastOpen(true);
+			set_toastState({id: toastId, isOpen: true});
 		}
-	}, [isToastOpen, safeChainID, toast]);
+	}, [safeChainID, toast, toastMaster, toastState.id, toastState.isOpen]);
 
 	return (
 		<>
