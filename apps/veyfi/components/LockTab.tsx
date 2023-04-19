@@ -55,8 +55,10 @@ function LockTab(): ReactElement {
 	}, [positions?.unlockTime]);
 
 	const {isValid: isApproved} = validateAllowance({
+		ownerAddress: toAddress(address),
 		tokenAddress: toAddress(votingEscrow?.token),
 		spenderAddress: toAddress(votingEscrow?.address),
+		chainID: safeChainID,
 		allowances,
 		amount: lockAmount.raw
 	});

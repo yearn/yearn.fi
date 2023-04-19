@@ -69,7 +69,7 @@ function	CardTransactorContextApp({
 	defaultOptionTo = LEGACY_OPTIONS_TO[0],
 	children = <div />
 }): ReactElement {
-	const	{provider, isActive} = useWeb3();
+	const	{provider, isActive, address} = useWeb3();
 	const	{styCRVAPY, allowances, slippage} = useYCRV();
 	const	{balancesNonce, balances, refresh} = useWallet();
 	const	{vaults} = useYearn();
@@ -266,8 +266,8 @@ function	CardTransactorContextApp({
 
 	const	allowanceFrom = useMemo((): BigNumber => {
 		balancesNonce; // remove warning, force deep refresh
-		return formatBN(allowances?.[allowanceKey(selectedOptionFrom.value, selectedOptionFrom.zapVia)]);
-	}, [balancesNonce, allowances, selectedOptionFrom.value, selectedOptionFrom.zapVia]);
+		return formatBN(allowances?.[allowanceKey(1, toAddress(selectedOptionFrom.value), toAddress(selectedOptionFrom.zapVia), toAddress(address))]);
+	}, [balancesNonce, allowances, selectedOptionFrom.value, selectedOptionFrom.zapVia, address]);
 
 	return (
 		<CardTransactorContext.Provider

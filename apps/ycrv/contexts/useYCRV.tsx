@@ -5,7 +5,7 @@ import useSWR from 'swr';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
-import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
+import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {CRV_TOKEN_ADDRESS, CVXCRV_TOKEN_ADDRESS, LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, VECRV_ADDRESS, VECRV_YEARN_TREASURY_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YCRV_TOKEN_ADDRESS, YVBOOST_TOKEN_ADDRESS, YVECRV_POOL_LP_ADDRESS, YVECRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import {formatUnits, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -180,17 +180,17 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 
 		return ({
 			// YCRV ECOSYSTEM
-			[allowanceKey(YCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS)]: yCRVAllowanceZap,
-			[allowanceKey(STYCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS)]: styCRVAllowanceZap,
-			[allowanceKey(LPYCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS)]: lpyCRVAllowanceZap,
-			[allowanceKey(CVXCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS)]: cvxCRVAllowanceZap,
-			[allowanceKey(YCRV_CURVE_POOL_ADDRESS, LPYCRV_TOKEN_ADDRESS)]: yCRVPoolAllowanceVault,
+			[allowanceKey(1, YCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS, toAddress(userAddress))]: yCRVAllowanceZap,
+			[allowanceKey(1, STYCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS, toAddress(userAddress))]: styCRVAllowanceZap,
+			[allowanceKey(1, LPYCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS, toAddress(userAddress))]: lpyCRVAllowanceZap,
+			[allowanceKey(1, CVXCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS, toAddress(userAddress))]: cvxCRVAllowanceZap,
+			[allowanceKey(1, YCRV_CURVE_POOL_ADDRESS, LPYCRV_TOKEN_ADDRESS, toAddress(userAddress))]: yCRVPoolAllowanceVault,
 			// CRV ECOSYSTEM
-			[allowanceKey(YVECRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS)]: yveCRVAllowanceZap,
-			[allowanceKey(CRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS)]:  crvAllowanceZap,
-			[allowanceKey(YVBOOST_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS)]: yvBoostAllowanceZap,
-			[allowanceKey(YVECRV_TOKEN_ADDRESS, YVECRV_POOL_LP_ADDRESS)]: yveCRVAllowanceLP,
-			[allowanceKey(CRV_TOKEN_ADDRESS, YVECRV_POOL_LP_ADDRESS)]:  crvAllowanceLP
+			[allowanceKey(1, YVECRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS, toAddress(userAddress))]: yveCRVAllowanceZap,
+			[allowanceKey(1, CRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS, toAddress(userAddress))]:  crvAllowanceZap,
+			[allowanceKey(1, YVBOOST_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS, toAddress(userAddress))]: yvBoostAllowanceZap,
+			[allowanceKey(1, YVECRV_TOKEN_ADDRESS, YVECRV_POOL_LP_ADDRESS, toAddress(userAddress))]: yveCRVAllowanceLP,
+			[allowanceKey(1, CRV_TOKEN_ADDRESS, YVECRV_POOL_LP_ADDRESS, toAddress(userAddress))]:  crvAllowanceLP
 		});
 	}, [provider, address, isActive]);
 	const	{data: allowances} = useSWR(isActive && provider ? 'allowances' : null, getAllowances, {shouldRetryOnError: false});
