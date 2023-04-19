@@ -6,6 +6,7 @@ import {Solver, useSolver} from '@vaults/contexts/useSolver';
 import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
+import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatBN, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
@@ -17,10 +18,11 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 	const {refresh} = useWallet();
 	const {refresh: refreshZapBalances} = useWalletForZap();
 	const {address, isActive} = useWeb3();
+	const {safeChainID} = useChainID();
 	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
 	const [txStatusExecuteDeposit, set_txStatusExecuteDeposit] = useState(defaultTxStatus);
 	const [txStatusExecuteWithdraw, set_txStatusExecuteWithdraw] = useState(defaultTxStatus);
-	const {actionParams, onChangeAmount, maxDepositPossible, isDepositing} = useActionFlow();
+	const {actionParams, currentVault, onChangeAmount, maxDepositPossible, isDepositing} = useActionFlow();
 	const {onApprove, onExecuteDeposit, onExecuteWithdraw, onRetrieveAllowance, currentSolver, expectedOut, isLoadingExpectedOut} = useSolver();
 
 	/* 🔵 - Yearn Finance **************************************************************************
@@ -81,6 +83,10 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 		);
 	}
 
+	const isDiffNetwork = !!safeChainID && currentVault.chainID !== safeChainID;
+
+	const isButtonDisabled = !isActive || actionParams?.amount.raw.isZero() || actionParams?.amount.raw.gt(maxDepositPossible.raw) || isLoadingExpectedOut || isDiffNetwork;
+	
 	/* 🔵 - Yearn Finance ******************************************************
 	** Wrapper to decide if we should use the partner contract or not
 	**************************************************************************/
@@ -98,49 +104,21 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 			<Button
 				className={'w-full'}
 				isBusy={txStatusApprove.pending}
-				isDisabled={
-					!isActive ||
-					actionParams?.amount.raw.isZero() ||
-					actionParams?.amount.raw.gt(maxDepositPossible.raw) ||
-					expectedOut.raw.isZero() ||
-					isLoadingExpectedOut
-				}
+				isDisabled={isButtonDisabled || expectedOut.raw.isZero()}
 				onClick={onApproveFrom}>
 				{'Approve'}
 			</Button>
 		);
 	}
 
-	if (currentSolver === Solver.INTERNAL_MIGRATION) {
+	if (isDepositing || currentSolver === Solver.INTERNAL_MIGRATION) {
 		return (
 			<Button
 				onClick={async (): Promise<void> => onExecuteDeposit(set_txStatusExecuteDeposit, onSuccess)}
 				className={'w-full'}
 				isBusy={txStatusExecuteDeposit.pending}
-				isDisabled={
-					!isActive ||
-					actionParams?.amount.raw.isZero() ||
-					actionParams?.amount.raw.gt(maxDepositPossible.raw) ||
-					isLoadingExpectedOut
-				}>
-				{'Migrate'}
-			</Button>
-		);
-	}
-
-	if (isDepositing) {
-		return (
-			<Button
-				onClick={async (): Promise<void> => onExecuteDeposit(set_txStatusExecuteDeposit, onSuccess)}
-				className={'w-full'}
-				isBusy={txStatusExecuteDeposit.pending}
-				isDisabled={
-					!isActive ||
-					actionParams?.amount.raw.isZero() ||
-					actionParams?.amount.raw.gt(maxDepositPossible.raw) ||
-					isLoadingExpectedOut
-				}>
-				{'Deposit'}
+				isDisabled={isButtonDisabled}>
+				{isDepositing ? 'Deposit' : 'Migrate'}
 			</Button>
 		);
 	}
@@ -150,12 +128,7 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 			onClick={async (): Promise<void> => onExecuteWithdraw(set_txStatusExecuteWithdraw, onSuccess)}
 			className={'w-full'}
 			isBusy={txStatusExecuteWithdraw.pending}
-			isDisabled={
-				!isActive ||
-				actionParams?.amount.raw.isZero() ||
-				actionParams?.amount.raw.gt(maxDepositPossible.raw) ||
-				isLoadingExpectedOut
-			}>
+			isDisabled={isButtonDisabled}>
 			{'Withdraw'}
 		</Button>
 	);
