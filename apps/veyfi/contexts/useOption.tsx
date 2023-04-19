@@ -1,12 +1,14 @@
 import React, {createContext, memo, useCallback, useContext, useMemo} from 'react';
-import {Contract} from 'ethers';
+import {Contract, ethers} from 'ethers';
 import useSWR from 'swr';
 import {VEYFI_OPTIONS_ADDRESS, VEYFI_OYFI_ADDRESS} from '@veYFI/constants';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
 import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
-import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {ETH_TOKEN_ADDRESS, YFI_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {formatBN, toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
+import {useTokenPrice} from '@common/hooks/useTokenPrice';
 
 import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
@@ -18,6 +20,7 @@ export type TOptionPosition = {
 
 export type	TOptionContext = {
 	getRequiredEth: (amount: BigNumber) => Promise<BigNumber>,
+	price: number | undefined,
 	positions: TOptionPosition | undefined,
 	allowances: TDict<BigNumber>,
 	isLoading: boolean,
@@ -26,6 +29,7 @@ export type	TOptionContext = {
 
 const defaultProps: TOptionContext = {
 	getRequiredEth: async (): Promise<BigNumber> => formatBN(0),
+	price: undefined,
 	positions: undefined,
 	allowances: {},
 	isLoading: true,
@@ -35,6 +39,8 @@ const defaultProps: TOptionContext = {
 const OptionContext = createContext<TOptionContext>(defaultProps);
 export const OptionContextApp = memo(function OptionContextApp({children}: {children: ReactElement}): ReactElement {
 	const {provider, address: userAddress, isActive} = useWeb3();
+	const yfiPrice = useTokenPrice(YFI_ADDRESS);
+	const ethPrice = useTokenPrice(ETH_TOKEN_ADDRESS);
 
 	const getRequiredEth = useCallback(async (amount: BigNumber): Promise<BigNumber> => {
 		const currentProvider = getProvider(1);
@@ -43,6 +49,15 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 
 		return requiredEth;
 	}, []);
+
+	const priceFetcher = useCallback(async (): Promise<number | undefined> => {
+		const oneOption = ethers.utils.parseEther('1');
+		const requiredEthPerOption = await getRequiredEth(oneOption);
+		const requiredEthValuePerOption = toNormalizedValue(requiredEthPerOption, 18) * ethPrice;
+		const pricePerOption = yfiPrice - requiredEthValuePerOption;
+		return pricePerOption;
+	}, [ethPrice, yfiPrice, getRequiredEth]);
+	const {data: price, mutate: refreshPrice, isLoading: isLoadingPrice} = useSWR('optionPrice', priceFetcher, {shouldRetryOnError: false});
 
 	const positionsFetcher = useCallback(async (): Promise<TOptionPosition | undefined> => {
 		if (!isActive|| !userAddress) {
@@ -74,18 +89,20 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 	const	{data: allowances, mutate: refreshAllowances, isLoading: isLoadingAllowances} = useSWR(isActive && provider ? 'optionAllowances' : null, allowancesFetcher, {shouldRetryOnError: false});
 
 
-	const refresh = useCallback((): void => {	
+	const refresh = useCallback((): void => {
+		refreshPrice();
 		refreshPositions();
 		refreshAllowances();
-	}, [refreshPositions, refreshAllowances]);
+	}, [refreshPrice, refreshPositions, refreshAllowances]);
 
 	const contextValue = useMemo((): TOptionContext => ({
 		getRequiredEth,
+		price,
 		positions,
 		allowances: allowances ?? {},
-		isLoading: isLoadingPositions || isLoadingAllowances,
+		isLoading: isLoadingPrice || isLoadingPositions || isLoadingAllowances,
 		refresh
-	}), [allowances, getRequiredEth, isLoadingAllowances, isLoadingPositions, positions, refresh]);
+	}), [allowances, getRequiredEth, isLoadingAllowances, isLoadingPositions, isLoadingPrice, positions, price, refresh]);
 
 	return (
 		<OptionContext.Provider value={contextValue}>
