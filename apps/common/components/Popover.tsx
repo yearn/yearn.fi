@@ -25,7 +25,7 @@ export function Popover(): ReactElement {
 				className={'fixed bottom-5 right-5 h-10 w-10 rounded-full bg-orange-500'}
 				ref={set_referenceElement}
 			>
-				{'FA'}
+				<FontAwesomeIcon icon={'fa-solid fa-message'} />
 			</PopoverHeadlessUI.Button>
 			<PopoverHeadlessUI.Overlay className={'fixed inset-0 bg-black opacity-30'} />
 			<Transition
