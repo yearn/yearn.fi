@@ -1,7 +1,7 @@
 import {Fragment, useState} from 'react';
 import {usePopper} from 'react-popper';
 import {Popover as PopoverHeadlessUI, Transition} from '@headlessui/react';
-import {useLocalStorage} from '@yearn-finance/web-lib/hooks/useLocalStorage';
+import {useLocalStorageValue} from '@react-hookz/web';
 import {Switch} from '@common/components/Switch';
 import MessageIcon from '@common/icons/MessageIcon';
 
@@ -18,7 +18,8 @@ export function Popover(): ReactElement {
 	});
 	const [type, set_type] = useState<TRequestType>('bug');
 	const [description, set_description] = useState<string>();
-	const [isPopoverHidden, set_isPopoverHidden] = useLocalStorage<boolean>('yearn.finance/feedback-popover', false);
+	// eslint-disable-next-line @typescript-eslint/naming-convention
+	const {value, set} = useLocalStorageValue<boolean>('yearn.finance/feedback-popover');
     
 	return (
 		<PopoverHeadlessUI className={'relative'}>
@@ -76,8 +77,8 @@ export function Popover(): ReactElement {
 							<label className={'flex cursor-pointer items-center justify-between pt-4 transition-colors hover:bg-neutral-100/40'}>
 								<p className={'text-xs'}>{'Hide me forever'}</p>
 								<Switch
-									isEnabled={isPopoverHidden}
-									onSwitch={(v): void => set_isPopoverHidden(v)} />
+									isEnabled={!!value}
+									onSwitch={(): void => set(!value)} />
 							</label>
 						</div>
 					)}
