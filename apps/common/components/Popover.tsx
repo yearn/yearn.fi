@@ -10,7 +10,8 @@ export function Popover(): ReactElement {
 	const [referenceElement, set_referenceElement] = useState<HTMLButtonElement | null>(null);
 	const [popperElement, set_popperElement] = useState<HTMLDivElement | null>(null);
 	const {styles, attributes} = usePopper(referenceElement, popperElement, {
-		modifiers: [{name: 'offset', options: {offset: [-110, 10]}}]
+		modifiers: [{name: 'offset', options: {offset: [0, 10]}}],
+		placement: 'bottom-end'
 	});
 	const [type, set_type] = useState<TRequestType>('bug');
 	const [description, set_description] = useState<string>();
