@@ -1,6 +1,8 @@
 import {Fragment, useState} from 'react';
 import {usePopper} from 'react-popper';
 import {Popover as PopoverHeadlessUI, Transition} from '@headlessui/react';
+import {useLocalStorage} from '@yearn-finance/web-lib/hooks/useLocalStorage';
+import {Switch} from '@common/components/Switch';
 
 import type {ReactElement} from 'react';
 
@@ -15,6 +17,7 @@ export function Popover(): ReactElement {
 	});
 	const [type, set_type] = useState<TRequestType>('bug');
 	const [description, set_description] = useState<string>();
+	const [isPopoverHidden, set_isPopoverHidden] = useLocalStorage<boolean>('yearn.finance/feedback-popover', false);
     
 	return (
 		<PopoverHeadlessUI className={'relative'}>
@@ -69,6 +72,12 @@ export function Popover(): ReactElement {
 								}}
 							>{'Submit'}
 							</button>
+							<label className={'flex cursor-pointer items-center justify-between pt-4 transition-colors hover:bg-neutral-100/40'}>
+								<p className={'text-xs'}>{'Hide me forever'}</p>
+								<Switch
+									isEnabled={isPopoverHidden}
+									onSwitch={(v): void => set_isPopoverHidden(v)} />
+							</label>
 						</div>
 					)}
 
