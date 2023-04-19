@@ -121,7 +121,7 @@ export function useSolverCowswap(): TSolverContext {
 		** based on that token, different checks are required to determine if the solver can be
 		** used.
 		******************************************************************************************/
-		const sellToken = _request.isDepositing ? _request.inputToken: _request.outputToken;
+		const sellToken = _request.isDepositing ? _request.inputToken : _request.outputToken;
 
 		/******************************************************************************************
 		** This first obvious check is to see if the solver is disabled. If it is, we return 0.
