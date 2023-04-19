@@ -3,6 +3,7 @@ import {usePopper} from 'react-popper';
 import {Popover as PopoverHeadlessUI, Transition} from '@headlessui/react';
 import {useLocalStorage} from '@yearn-finance/web-lib/hooks/useLocalStorage';
 import {Switch} from '@common/components/Switch';
+import MessageIcon from '@common/icons/MessageIcon';
 
 import type {ReactElement} from 'react';
 
@@ -22,10 +23,10 @@ export function Popover(): ReactElement {
 	return (
 		<PopoverHeadlessUI className={'relative'}>
 			<PopoverHeadlessUI.Button
-				className={'fixed bottom-5 right-5 h-10 w-10 rounded-full bg-orange-500'}
+				className={'fixed bottom-5 right-5 flex h-10 w-10 items-center justify-center rounded-full bg-orange-500'}
 				ref={set_referenceElement}
 			>
-				<FontAwesomeIcon icon={'fa-solid fa-message'} />
+				<MessageIcon />
 			</PopoverHeadlessUI.Button>
 			<PopoverHeadlessUI.Overlay className={'fixed inset-0 bg-black opacity-30'} />
 			<Transition
