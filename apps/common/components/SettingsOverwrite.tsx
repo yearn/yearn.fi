@@ -2,6 +2,8 @@ import React, {useMemo, useState} from 'react';
 import Balancer from 'react-wrap-balancer';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
+import {useLocalStorage} from '@yearn-finance/web-lib/hooks/useLocalStorage';
+import {Switch} from '@common/components/Switch';
 
 import type {ReactElement} from 'react';
 
@@ -44,6 +46,7 @@ function	WrappedInput({title, initialValue, onSave}: TWrappedInput): ReactElemen
 
 function	SettingsOverwrite(): ReactElement {
 	const	{onUpdateBaseSettings, onUpdateNetworks, settings: baseAPISettings} = useSettings();
+	const 	[isPopoverHidden, set_isPopoverHidden] = useLocalStorage<boolean>('yearn.finance/feedback-popover', true);
 	const	[, set_nonce] = useState(0);
 
 	return (
@@ -81,6 +84,14 @@ function	SettingsOverwrite(): ReactElement {
 							onUpdateNetworks({1: {rpcURI: value}});
 							set_nonce((n: number): number => n + 1);
 						}} />
+				</div>
+				<div className={'grid grid-cols-1 gap-4'}>
+					<label className={'flex cursor-pointer items-center justify-between pt-4 transition-colors hover:bg-neutral-100/40'}>
+						<p>{'Show feedback popover'}</p>
+						<Switch
+							isEnabled={!isPopoverHidden}
+							onSwitch={(v): void => set_isPopoverHidden(!v)} />
+					</label>
 				</div>
 			</div>
 		</div>
