@@ -35,6 +35,9 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 		}
 	}, [currentSolver, actionParams?.selectedOptionFrom?.value, actions, isActive, address, onRetrieveAllowance, isLoadingExpectedOut, expectedOut]);
 
+	console.warn({currentSolver, isDepositing});
+
+
 	const onSuccess = useCallback(async (): Promise<void> => {
 		onChangeAmount(toNormalizedBN(0));
 		if ([Solver.VANILLA, Solver.CHAIN_COIN, Solver.PARTNER_CONTRACT].includes(currentSolver)) {
@@ -84,10 +87,12 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 	/* 🔵 - Yearn Finance ******************************************************
 	** Wrapper to decide if we should use the partner contract or not
 	**************************************************************************/
+	const isDepositingEthViaChainCoin = (currentSolver === Solver.CHAIN_COIN && isDepositing);
+	const hasAllowanceSet = actionParams?.amount.raw.gt(formatBN(allowanceFrom?.raw));
+	const isButtonBusy = txStatusApprove.pending || status !== 'success';
 	if (
-		txStatusApprove.pending || actionParams?.amount.raw.gt(formatBN(allowanceFrom?.raw)) || status !== 'success' && (
+		!isDepositingEthViaChainCoin && (isButtonBusy || hasAllowanceSet) && (
 			(currentSolver === Solver.VANILLA && isDepositing)
-			|| (currentSolver === Solver.CHAIN_COIN && !isDepositing)
 			|| (currentSolver === Solver.INTERNAL_MIGRATION)
 			|| (currentSolver === Solver.COWSWAP)
 			|| (currentSolver === Solver.WIDO)
