@@ -4,6 +4,7 @@ import localFont from '@next/font/local';
 import {WithYearn} from '@yearn-finance/web-lib/contexts/WithYearn';
 import {AppHeader} from '@common/components/AppHeader';
 import Meta from '@common/components/Meta';
+import {Popover} from '@common/components/Popover';
 import {MenuContextApp} from '@common/contexts/useMenu';
 import {WalletContextApp} from '@common/contexts/useWallet';
 import {YearnContextApp} from '@common/contexts/useYearn';
@@ -53,6 +54,7 @@ const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 							className={'my-0 h-full md:mb-0 md:mt-16'}
 							variants={variants}>
 							{getLayout(<Component router={props.router} {...pageProps} />, router)}
+							<Popover />
 						</motion.div>
 					</AnimatePresence>
 				</LazyMotion>
