@@ -119,7 +119,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 				}
 				gauge.rewardPerGauge.push(...rewardPerGauge);
 				for (const tokenAsReward of rewardPerGauge) {
-					rewardsList.push(allowanceKey(gauge.gauge, tokenAsReward));
+					rewardsList.push(allowanceKey(safeChainID, toAddress(gauge.gauge), toAddress(tokenAsReward), toAddress(address)));
 					rewardsPerTokensPerGaugesCalls.push(...[
 						contract.reward_per_token(gauge.gauge, tokenAsReward),
 						contract.active_period(gauge.gauge, tokenAsReward),
@@ -131,7 +131,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 
 		const	_rewardsPerTokensPerGaugesWithPeriods = await ethcallProvider.tryAll(rewardsPerTokensPerGaugesCalls) as BigNumber[];
 		return ({rewardsList, multicallResult: [..._rewardsPerTokensPerGaugesWithPeriods]});
-	}, [gauges, address]);
+	}, [gauges, safeChainID, address]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	**	getNextPeriodRewards will help you retrieved the the reward_per_gauge
@@ -154,7 +154,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 			const	rewardPerGauge = _rewardsPerGauges.shift();
 			if (rewardPerGauge && rewardPerGauge.length > 0) {
 				for (const tokenAsReward of rewardPerGauge) {
-					rewardsList.push(allowanceKey(gauge.gauge, tokenAsReward));
+					rewardsList.push(allowanceKey(safeChainID, toAddress(gauge.gauge), toAddress(tokenAsReward), toAddress(address)));
 					rewardsPerTokensPerGaugesCalls.push([gauge.gauge, tokenAsReward]);
 				}
 			}
@@ -165,7 +165,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 		) as BigNumber[];
 
 		return ({rewardsList, multicallResult: [...multicallResult]});
-	}, [gauges]);
+	}, [gauges, address, safeChainID]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	**	assignBribes will save the currentRewards,  periods and clamable values

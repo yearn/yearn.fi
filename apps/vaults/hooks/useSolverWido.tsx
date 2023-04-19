@@ -6,7 +6,7 @@ import {isSolverDisabled, Solver} from '@vaults/contexts/useSolver';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {allowanceKey, isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatBN, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
@@ -14,6 +14,7 @@ import {approveERC20, isApprovedERC20} from '@common/utils/actions/approveToken'
 
 import type {AxiosError} from 'axios';
 import type {ChainId, QuoteRequest, QuoteResult} from 'wido';
+import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TTxResponse, TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TNormalizedBN} from '@common/types/types';
 import type {ApiError} from '@gnosis.pm/gp-v2-contracts';
@@ -82,6 +83,7 @@ export function useSolverWido(): TSolverContext {
 	const [, getQuote] = useWidoQuote();
 	const request = useRef<TInitSolverArgs>();
 	const latestQuote = useRef<QuoteResult>();
+	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
 	const {safeChainID} = useChainID();
 
 	/* 🔵 - Yearn Finance **************************************************************************
@@ -90,16 +92,43 @@ export function useSolverWido(): TSolverContext {
 	** call getQuote to get the current quote for the provided request.current.
 	**********************************************************************************************/
 	const init = useCallback(async (_request: TInitSolverArgs, shouldLogError?: boolean): Promise<TNormalizedBN> => {
-		if (isSolverDisabled[Solver.WIDO] || !_request.inputToken.solveVia?.includes(Solver.WIDO)) {
+		/******************************************************************************************
+		** First we need to know which token we are selling to the zap. When we are depositing, we
+		** are selling the inputToken, when we are withdrawing, we are selling the outputToken.
+		** based on that token, different checks are required to determine if the solver can be
+		** used.
+		******************************************************************************************/
+		const sellToken = _request.isDepositing ? _request.inputToken: _request.outputToken;
+
+		/******************************************************************************************
+		** This first obvious check is to see if the solver is disabled. If it is, we return 0.
+		******************************************************************************************/
+		if (isSolverDisabled[Solver.WIDO]) {
 			return toNormalizedBN(0);
 		}
+
+		/******************************************************************************************
+		** Then, we check if the solver can be used for this specific sellToken. If it can't, we
+		** return 0.
+		** This solveVia array is set via the yDaemon tokenList process. If a solve is not set for
+		** a token, you can contact the yDaemon team to add it.
+		******************************************************************************************/
+		if (!sellToken.solveVia?.includes(Solver.WIDO)) {
+			return toNormalizedBN(0);
+		}
+
+		/******************************************************************************************
+		** At this point, we know that the solver can be used for this specific token. We set the
+		** request to the provided value, as it's required to get the quote, and we call getQuote
+		** to get the current quote for the provided request.current.
+		******************************************************************************************/
 		request.current = _request;
 		const quote = await getQuote(_request, !shouldLogError);
-		if (quote) {
-			latestQuote.current = quote;
-			return toNormalizedBN(quote?.minToTokenAmount || 0, request?.current?.outputToken?.decimals || 18);
+		if (!quote) {
+			return toNormalizedBN(0);
 		}
-		return toNormalizedBN(0);
+		latestQuote.current = quote;
+		return toNormalizedBN(quote?.minToTokenAmount || 0, request?.current?.outputToken?.decimals || 18);
 	}, [getQuote]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
@@ -166,18 +195,24 @@ export function useSolverWido(): TSolverContext {
 	** Retrieve the allowance for the token to be used by the solver. This will
 	** be used to determine if the user should approve the token or not.
 	**************************************************************************/
-	const onRetrieveAllowance = useCallback(async (): Promise<TNormalizedBN> => {
+	const onRetrieveAllowance = useCallback(async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
 		if (!latestQuote?.current || !request?.current || isSolverDisabled[Solver.WIDO]) {
 			return toNormalizedBN(0);
 		}
 
+		const key = allowanceKey(safeChainID, toAddress(request.current.inputToken.value), toAddress(request.current.outputToken.value), toAddress(request.current.from));
+		if (existingAllowances.current[key] && !shouldForceRefetch) {
+			return existingAllowances.current[key];
+		}
 		const {allowance} = await wiGetTokenAllowance({
 			chainId: safeChainID as ChainId,
 			fromToken: toAddress(request.current.inputToken.value),
 			toToken: toAddress(request.current.outputToken.value),
 			accountAddress: toAddress(request.current.from)
 		});
-		return toNormalizedBN(allowance, request.current.inputToken.decimals);
+
+		existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals);
+		return existingAllowances.current[key];
 	}, [latestQuote, request, safeChainID]);
 
 	/* 🔵 - Yearn Finance ******************************************************
