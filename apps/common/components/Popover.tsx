@@ -58,7 +58,7 @@ export function Popover(): ReactElement {
 								id={'description'}
 								cols={30}
 								rows={4}
-								className={'text-xs'}
+								className={'resize-none text-xs'}
 								onChange={({target:{value}}): void => set_description(value)}
 							/>
 							<button
