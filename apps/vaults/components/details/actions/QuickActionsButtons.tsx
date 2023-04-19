@@ -8,6 +8,7 @@ import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {ETH_TOKEN_ADDRESS, YVWETH_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatBN, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useWallet} from '@common/contexts/useWallet';
@@ -36,9 +37,6 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 			actions.execute();
 		}
 	}, [currentSolver, actionParams?.selectedOptionFrom?.value, actions, isActive, address, onRetrieveAllowance, isLoadingExpectedOut, expectedOut]);
-
-	console.warn({currentSolver, isDepositing});
-
 
 	const onSuccess = useCallback(async (): Promise<void> => {
 		onChangeAmount(toNormalizedBN(0));
@@ -94,10 +92,14 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 	** Wrapper to decide if we should use the partner contract or not
 	**************************************************************************/
 	const isDepositingEthViaChainCoin = (currentSolver === Solver.CHAIN_COIN && isDepositing);
+	const shouldUseChainCoinContract = (
+		toAddress(actionParams?.selectedOptionFrom?.value) === ETH_TOKEN_ADDRESS
+		&& toAddress(actionParams?.selectedOptionTo?.value) === YVWETH_ADDRESS
+	);
 	const hasAllowanceSet = actionParams?.amount.raw.gt(formatBN(allowanceFrom?.raw));
 	const isButtonBusy = txStatusApprove.pending || status !== 'success';
 	if (
-		!isDepositingEthViaChainCoin && (isButtonBusy || hasAllowanceSet) && (
+		!(isDepositingEthViaChainCoin && shouldUseChainCoinContract) && (isButtonBusy || hasAllowanceSet) && (
 			(currentSolver === Solver.VANILLA && isDepositing)
 			|| (currentSolver === Solver.INTERNAL_MIGRATION)
 			|| (currentSolver === Solver.COWSWAP)
