@@ -1,4 +1,4 @@
-import React, {useEffect, useRef} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {motion} from 'framer-motion';
 import {VaultActionsTabsWrapper} from '@vaults/components/details/VaultActionsTabsWrapper';
 import {VaultDetailsHeader} from '@vaults/components/details/VaultDetailsHeader';
@@ -6,9 +6,11 @@ import {VaultDetailsTabsWrapper} from '@vaults/components/details/VaultDetailsTa
 import ActionFlowContextApp from '@vaults/contexts/useActionFlow';
 import {WithSolverContextApp} from '@vaults/contexts/useSolver';
 import Wrapper from '@vaults/Wrapper';
+import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import CHAINS from '@yearn-finance/web-lib/utils/web3/chains';
 import TokenIcon from '@common/components/TokenIcon';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
@@ -24,6 +26,9 @@ function Index({router, vaultData}: {router: NextRouter, vaultData: TYearnVault}
 	const {safeChainID} = useChainID();
 	const {vaults} = useYearn();
 	const {refresh} = useWallet();
+	const {toast, toastMaster} = yToast();
+	
+	const [toastState, set_toastState] = useState<{id?: string; isOpen: boolean}>({isOpen: false});
 	const currentVault = useRef<TYearnVault>(vaults[toAddress(router.query.address as string)] as TYearnVault || vaultData);
 
 	useEffect((): void => {
@@ -38,6 +43,29 @@ function Index({router, vaultData}: {router: NextRouter, vaultData: TYearnVault}
 			refresh(tokensToRefresh);
 		}
 	}, [currentVault.current?.address, currentVault.current?.token?.address, address, isActive, refresh]);
+
+	useEffect((): void => {
+		if (toastState.isOpen) {
+			if (!!safeChainID && currentVault.current?.chainID === safeChainID) {
+				toastMaster.dismiss(toastState.id);
+				set_toastState({isOpen: false});
+			}
+			return;
+		}
+
+		if (!!safeChainID && currentVault.current?.chainID !== safeChainID) {
+			const vaultChainName = CHAINS[currentVault.current?.chainID]?.name;
+			const chainName = CHAINS[safeChainID]?.name;
+
+			const toastId = toast({
+				type: 'warning',
+				content: getToastMessage({vaultChainName, chainName}),
+				duration: Infinity
+			});
+
+			set_toastState({id: toastId, isOpen: true});
+		}
+	}, [safeChainID, toast, toastMaster, toastState.id, toastState.isOpen]);
 
 	return (
 		<>
@@ -66,6 +94,23 @@ function Index({router, vaultData}: {router: NextRouter, vaultData: TYearnVault}
 		</>
 	);
 }
+
+export function getToastMessage({vaultChainName, chainName}: {vaultChainName?: string, chainName?: string}): string {
+	if (vaultChainName && chainName) {
+		return `Please note, this Vault is on ${vaultChainName}. You're currently connected to ${chainName}.`;
+	}
+
+	if (vaultChainName && !chainName) {
+		return `Please note, this Vault is on ${vaultChainName} and you're currently connected to a different network.`;
+	}
+
+	if (!vaultChainName && chainName) {
+		return `Please note, you're currently connected to ${chainName} and this Vault is on a different network.`;
+	}
+
+	return 'Please note, you\'re currently connected to a different network than this Vault.';
+}
+
 
 Index.getLayout = function getLayout(page: ReactElement, router: NextRouter): ReactElement {
 	return (
