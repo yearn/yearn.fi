@@ -1,13 +1,14 @@
 import {useMemo, useState} from 'react';
-import {formatUnits} from 'ethers/lib/utils';
 import {useGauge} from '@veYFI/contexts/useGauge';
+import {useOption} from '@veYFI/contexts/useOption';
 import {useTransaction} from '@veYFI/hooks/useTransaction';
 import * as GaugeActions from '@veYFI/utils/actions/gauge';
 import {validateNetwork} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatBN, toNormalizedAmount} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {AmountInput} from '@common/components/AmountInput';
 import {Dropdown} from '@common/components/Dropdown';
 import {useYearn} from '@common/contexts/useYearn';
@@ -21,6 +22,7 @@ function RewardsTab(): ReactElement {
 	const [selectedGauge, set_selectedGauge] = useState<TDropdownOption>();
 	const {provider, address, isActive, chainID} = useWeb3();
 	const {gaugeAddresses, gaugesMap, positionsMap, refresh: refreshGauges} = useGauge();
+	const {price: optionPrice} = useOption();
 	const {vaults} = useYearn();
 	const refreshData = (): unknown => Promise.all([refreshGauges()]);
 	const [claim, claimStatus] = useTransaction(GaugeActions.claimRewards, refreshData);
@@ -71,8 +73,8 @@ function RewardsTab(): ReactElement {
 				<div className={'grid grid-cols-1 gap-4 md:grid-cols-4'}>
 					<AmountInput
 						label={'Total unclaimed rewards (oYFI)'}
-						amount={formatUnits(gaugesRewards, 18)}
-						// legend={'≈ $ 420.00'} // TODO: oYFI price calcs
+						amount={toNormalizedAmount(gaugesRewards, 18)}
+						legend={formatCounterValue(toNormalizedAmount(gaugesRewards, 18), optionPrice ?? 0)}
 						disabled
 					/>
 					<Button 
@@ -102,8 +104,8 @@ function RewardsTab(): ReactElement {
 					/>
 					<AmountInput
 						label={'Unclaimed rewards (oYFI)'}
-						amount={formatUnits(selectedGaugeRewards, 18)}
-						// legend={'≈ $ 420.00'} // TODO: oYFI price calcs
+						amount={toNormalizedAmount(selectedGaugeRewards, 18)}
+						legend={formatCounterValue(toNormalizedAmount(selectedGaugeRewards, 18), optionPrice ?? 0)}
 						disabled
 					/>
 					<Button 

@@ -1,5 +1,4 @@
 import {useState} from 'react';
-import {formatUnits} from 'ethers/lib/utils';
 import {useAsync} from '@react-hookz/web';
 import {VEYFI_OPTIONS_ADDRESS, VEYFI_OYFI_ADDRESS} from '@veYFI/constants';
 import {useOption} from '@veYFI/contexts/useOption';
@@ -10,13 +9,14 @@ import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {ETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatBN, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {ETH_TOKEN_ADDRESS, YFI_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {formatBN, toNormalizedBN, toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
 import {AmountInput} from '@common/components/AmountInput';
 import {useWallet} from '@common/contexts/useWallet';
 import {useBalance} from '@common/hooks/useBalance';
+import {useTokenPrice} from '@common/hooks/useTokenPrice';
 import {approveERC20} from '@common/utils/actions/approveToken';
 
 import type {ReactElement} from 'react';
@@ -26,17 +26,18 @@ function RedeemTab(): ReactElement {
 	const {provider, address, isActive} = useWeb3();
 	const {safeChainID} = useChainID();
 	const {refresh: refreshBalances} = useWallet();
-	const {getRequiredEth, positions, allowances, isLoading: isLoadingOption, refresh} = useOption();
+	const {getRequiredEth, price: optionPrice, positions, allowances, isLoading: isLoadingOption, refresh} = useOption();
 	const clearLockAmount = (): void => set_redeemAmount(toNormalizedBN(0));
 	const refreshData = (): unknown => Promise.all([refresh(), refreshBalances()]);
 	const onTxSuccess = (): unknown => Promise.all([refreshData(), clearLockAmount()]);
 	const [{status, result}, fetchRequiredEth] = useAsync(getRequiredEth, formatBN(0));
 	const ethBalance = useBalance(ETH_TOKEN_ADDRESS);
+	const yfiPrice = useTokenPrice(YFI_ADDRESS);
 	const [approveRedeem, approveRedeemStatus] = useTransaction(approveERC20, refreshData);
 	const [redeem, redeemStatus] = useTransaction(OptionActions.redeem, onTxSuccess);
 
 	const oYFIBalance = toNormalizedBN(formatBN(positions?.balance), 18);
-	const ethRequired = formatUnits(result, 18);
+	const ethRequired = toNormalizedValue(result, 18);
 
 	const {isValid: isApproved} = validateAllowance({
 		tokenAddress: VEYFI_OYFI_ADDRESS,
@@ -65,7 +66,7 @@ function RedeemTab(): ReactElement {
 					<AmountInput
 						label={'You have oYFI'}
 						amount={oYFIBalance.normalized}
-						legend={'≈ $ 420.00'} // TODO: get price value
+						legend={formatCounterValue(oYFIBalance.normalized, optionPrice ?? 0)}
 						disabled
 					/>
 					<AmountInput
@@ -79,7 +80,7 @@ function RedeemTab(): ReactElement {
 						}}
 						onLegendClick={(): void => set_redeemAmount(oYFIBalance)}
 						onMaxClick={(): void => set_redeemAmount(oYFIBalance)}
-						legend={'≈ $ 420.00'} // TODO: get price value
+						legend={formatCounterValue(redeemAmount.normalized, yfiPrice)}
 						error={redeemAmountError}
 					/>
 					<AmountInput
