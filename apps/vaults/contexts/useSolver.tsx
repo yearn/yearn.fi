@@ -14,6 +14,7 @@ import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {hash} from '@common/utils';
 
+import type {MaybeString} from '@yearn-finance/web-lib/types';
 import type {TNormalizedBN} from '@common/types/types';
 import type {TInitSolverArgs, TSolverContext, TWithSolver} from '@vaults/types/solvers';
 
@@ -41,7 +42,7 @@ const	DefaultWithSolverContext: TWithSolver = {
 	currentSolver: Solver.VANILLA,
 	effectiveSolver: Solver.VANILLA,
 	expectedOut: toNormalizedBN(0),
-	hash: '',
+	hash: undefined,
 	isLoadingExpectedOut: false,
 	onRetrieveExpectedOut: async (): Promise<TNormalizedBN> => toNormalizedBN(0),
 	onRetrieveAllowance: async (): Promise<TNormalizedBN> => toNormalizedBN(0),
@@ -61,7 +62,7 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 	const chainCoin = useSolverChainCoin();
 	const partnerContract = useSolverPartnerContract();
 	const internalMigration = useSolverInternalMigration();
-	const [currentSolverState, set_currentSolverState] = useState<TSolverContext & {hash: string}>({...vanilla, hash: ''});
+	const [currentSolverState, set_currentSolverState] = useState<TSolverContext & {hash: MaybeString}>({...vanilla, hash: undefined});
 	const [isLoading, set_isLoading] = useState(false);
 
 	/* 🔵 - Yearn Finance **************************************************************************
@@ -247,7 +248,7 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 		currentSolver: currentSolver,
 		effectiveSolver: currentSolverState?.type,
 		expectedOut: currentSolverState?.quote || toNormalizedBN(0),
-		hash: currentSolverState?.hash || '',
+		hash: currentSolverState?.hash,
 		isLoadingExpectedOut: isLoading,
 		onRetrieveExpectedOut: currentSolverState.onRetrieveExpectedOut,
 		onRetrieveAllowance: currentSolverState.onRetrieveAllowance,
