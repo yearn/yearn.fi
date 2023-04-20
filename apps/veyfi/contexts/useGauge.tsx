@@ -133,7 +133,7 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 		});
 		return Promise.all(positionPromises);
 	}, [gauges, isActive, userAddress]);
-	const {data: positions, mutate: refreshPositions, isLoading: isLoadingPositions} = useSWR(isActive && provider ? 'gaugePositions' : null, positionsFetcher, {shouldRetryOnError: false});
+	const {data: positions, mutate: refreshPositions, isLoading: isLoadingPositions} = useSWR(gauges && isActive && provider ? 'gaugePositions' : null, positionsFetcher, {shouldRetryOnError: false});
 
 	const allowancesFetcher = useCallback(async (): Promise<TDict<BigNumber>> => {
 		if (!gauges || !isActive || !userAddress) {
@@ -154,7 +154,7 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 
 		return allowancesMap;
 	}, [gauges, isActive, userAddress]);
-	const	{data: allowancesMap, mutate: refreshAllowances, isLoading: isLoadingAllowances} = useSWR(isActive && provider ? 'gaugeAllowances' : null, allowancesFetcher, {shouldRetryOnError: false});
+	const	{data: allowancesMap, mutate: refreshAllowances, isLoading: isLoadingAllowances} = useSWR(gauges && isActive && provider ? 'gaugeAllowances' : null, allowancesFetcher, {shouldRetryOnError: false});
 
 	const refresh = useCallback((): void => {
 		refreshVotingEscrow();
