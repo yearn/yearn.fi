@@ -1,5 +1,6 @@
 import React, {createContext, memo, useCallback, useContext, useMemo} from 'react';
 import {Contract} from 'ethcall';
+import {FixedNumber} from 'ethers';
 import useSWR from 'swr';
 import {keyBy} from '@veYFI/utils';
 import VEYFI_GAUGE_ABI from '@veYFI/utils/abi/veYFIGauge.abi';
@@ -120,7 +121,7 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 			};
 
 			const boostRatio = balance.gt(0)
-				? boostedBalance.div(balance).toNumber()
+				? FixedNumber.from(boostedBalance).divUnsafe(FixedNumber.from(balance)).toUnsafeFloat()
 				: 0.1;
 			const boost = Math.min(1, boostRatio) * 10;
 
