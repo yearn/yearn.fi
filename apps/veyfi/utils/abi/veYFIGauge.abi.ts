@@ -674,45 +674,8 @@ const VEYFI_GAUGE_ABI = [
 				'internalType': 'uint256',
 				'name': '_assets',
 				'type': 'uint256'
-			},
-			{
-				'internalType': 'address',
-				'name': '_receiver',
-				'type': 'address'
 			}
 		],
-		'name': 'deposit',
-		'outputs': [
-			{
-				'internalType': 'uint256',
-				'name': '',
-				'type': 'uint256'
-			}
-		],
-		'stateMutability': 'nonpayable',
-		'type': 'function'
-	},
-	{
-		'inputs': [
-			{
-				'internalType': 'uint256',
-				'name': '_assets',
-				'type': 'uint256'
-			}
-		],
-		'name': 'deposit',
-		'outputs': [
-			{
-				'internalType': 'uint256',
-				'name': '',
-				'type': 'uint256'
-			}
-		],
-		'stateMutability': 'nonpayable',
-		'type': 'function'
-	},
-	{
-		'inputs': [],
 		'name': 'deposit',
 		'outputs': [
 			{
@@ -1428,67 +1391,6 @@ const VEYFI_GAUGE_ABI = [
 			}
 		],
 		'stateMutability': 'view',
-		'type': 'function'
-	},
-	{
-		'inputs': [],
-		'name': 'withdraw',
-		'outputs': [
-			{
-				'internalType': 'uint256',
-				'name': '',
-				'type': 'uint256'
-			}
-		],
-		'stateMutability': 'nonpayable',
-		'type': 'function'
-	},
-	{
-		'inputs': [
-			{
-				'internalType': 'bool',
-				'name': '_claim',
-				'type': 'bool'
-			}
-		],
-		'name': 'withdraw',
-		'outputs': [
-			{
-				'internalType': 'uint256',
-				'name': '',
-				'type': 'uint256'
-			}
-		],
-		'stateMutability': 'nonpayable',
-		'type': 'function'
-	},
-	{
-		'inputs': [
-			{
-				'internalType': 'uint256',
-				'name': '_assets',
-				'type': 'uint256'
-			},
-			{
-				'internalType': 'address',
-				'name': '_receiver',
-				'type': 'address'
-			},
-			{
-				'internalType': 'address',
-				'name': '_owner',
-				'type': 'address'
-			}
-		],
-		'name': 'withdraw',
-		'outputs': [
-			{
-				'internalType': 'uint256',
-				'name': '',
-				'type': 'uint256'
-			}
-		],
-		'stateMutability': 'nonpayable',
 		'type': 'function'
 	},
 	{
