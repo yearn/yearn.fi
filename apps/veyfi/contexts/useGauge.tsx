@@ -107,7 +107,7 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 			const [balance, earned, boostedBalance] = await ethcallProvider.tryAll([
 				veYFIGaugeContract.balanceOf(userAddress), 
 				veYFIGaugeContract.earned(userAddress),
-				veYFIGaugeContract.boostedBalanceOf(userAddress)
+				veYFIGaugeContract.nextBoostedBalanceOf(userAddress)
 			]) as BigNumber[];
 			
 			const depositPosition: TPosition = {
