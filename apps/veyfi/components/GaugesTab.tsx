@@ -139,7 +139,7 @@ function GaugesTab(): ReactElement {
 						key: 'gaugeBoost',
 						label: 'Boost',
 						sortable: true,
-						format: ({gaugeBoost}): string => `${gaugeBoost}x`
+						format: ({gaugeBoost}): string => `${gaugeBoost.toFixed(2)}x`
 					},
 					{
 						key: 'gaugeStaked',
