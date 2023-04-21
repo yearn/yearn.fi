@@ -53,13 +53,16 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 	}, []);
 
 	const priceFetcher = useCallback(async (): Promise<number | undefined> => {
+		if(!ethPrice || !yfiPrice) {
+			return undefined;
+		}
 		const oneOption = ethers.utils.parseEther('1');
 		const requiredEthPerOption = await getRequiredEth(oneOption);
 		const requiredEthValuePerOption = toNormalizedValue(requiredEthPerOption, 18) * ethPrice;
 		const pricePerOption = yfiPrice - requiredEthValuePerOption;
 		return pricePerOption;
 	}, [ethPrice, yfiPrice, getRequiredEth]);
-	const {data: price, mutate: refreshPrice, isLoading: isLoadingPrice} = useSWR('optionPrice', priceFetcher, {shouldRetryOnError: false});
+	const {data: price, mutate: refreshPrice, isLoading: isLoadingPrice} = useSWR(ethPrice && yfiPrice ? 'optionPrice' : null, priceFetcher, {shouldRetryOnError: false});
 
 	const positionsFetcher = useCallback(async (): Promise<TOptionPosition | undefined> => {
 		if (!isActive|| !userAddress) {
