@@ -64,12 +64,11 @@ function GaugesTab(): ReactElement {
 			gaugeApy: 0, // TODO: gauge apy calcs
 			gaugeBoost: positionsMap[address]?.boost ?? 1,
 			gaugeStaked: formatBN(positionsMap[address]?.deposit.balance),
-			allowance: formatBN(allowancesMap[allowanceKey(vaultAddress, address)]),
-			isApproved: formatBN(allowancesMap[allowanceKey(vaultAddress, address)]).gte(formatBN(balances[vaultAddress]?.raw)),
+			allowance: formatBN(allowancesMap[allowanceKey(1, vaultAddress, address, userAddress)]),
+			isApproved: formatBN(allowancesMap[allowanceKey(1, vaultAddress, address, userAddress)]).gte(formatBN(balances[vaultAddress]?.raw)),
 			actions: undefined
 		};
 	});
-	console.log(gaugesData);
 
 	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: 1, walletNetwork: chainID});
 

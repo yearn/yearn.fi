@@ -20,6 +20,7 @@ import {useTokenPrice} from '@common/hooks/useTokenPrice';
 import {approveERC20} from '@common/utils/actions/approveToken';
 
 import type {ReactElement} from 'react';
+import type {TAddress} from '@yearn-finance/web-lib/types';
 
 function RedeemTab(): ReactElement {
 	const [redeemAmount, set_redeemAmount] = useState(toNormalizedBN(0));
@@ -36,6 +37,7 @@ function RedeemTab(): ReactElement {
 	const [approveRedeem, approveRedeemStatus] = useTransaction(approveERC20, refreshData);
 	const [redeem, redeemStatus] = useTransaction(OptionActions.redeem, onTxSuccess);
 
+	const userAddress = address as TAddress;
 	const oYFIBalance = toNormalizedBN(formatBN(positions?.balance), 18);
 	const ethRequired = toNormalizedValue(result, 18);
 
@@ -43,7 +45,9 @@ function RedeemTab(): ReactElement {
 		tokenAddress: VEYFI_OYFI_ADDRESS,
 		spenderAddress: VEYFI_OPTIONS_ADDRESS,
 		allowances,
-		amount: redeemAmount.raw
+		amount: redeemAmount.raw,
+		ownerAddress: userAddress,
+		chainID: 1
 	});
 
 	const {isValid: isValidRedeemAmount, error: redeemAmountError} = validateAmount({

@@ -150,7 +150,7 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 		const allowances = await ethcallProvider.tryAll(allowanceCalls) as BigNumber[];
 		const allowancesMap: TDict<BigNumber> = {};
 		gauges.forEach(({address, vaultAddress}, index): void => {
-			allowancesMap[allowanceKey(vaultAddress, address)] = allowances[index];
+			allowancesMap[allowanceKey(1, vaultAddress, address, userAddress)] = allowances[index];
 		});
 
 		return allowancesMap;
