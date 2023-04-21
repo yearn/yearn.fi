@@ -733,25 +733,6 @@ const VEYFI_GAUGE_ABI = [
 		'type': 'function'
 	},
 	{
-		'inputs': [
-			{
-				'internalType': 'address',
-				'name': '_account',
-				'type': 'address'
-			}
-		],
-		'name': 'getReward',
-		'outputs': [
-			{
-				'internalType': 'bool',
-				'name': '',
-				'type': 'bool'
-			}
-		],
-		'stateMutability': 'nonpayable',
-		'type': 'function'
-	},
-	{
 		'inputs': [],
 		'name': 'historicalRewards',
 		'outputs': [
