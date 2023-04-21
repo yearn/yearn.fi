@@ -54,14 +54,6 @@ function RewardsTab(): ReactElement {
 
 	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: 1, walletNetwork: chainID});
 
-	const onClaim = (): void => {
-		claim(web3Provider, userAddress, selectedGaugeAddress);
-	};
-
-	const onClaimAll = (): void => {
-		claimAll(web3Provider, userAddress, gaugeAddresses, true);
-	};
-
 	return (
 		<div className={'flex flex-col gap-6 md:gap-10'}>
 			<div className={'flex flex-col gap-4'}>
@@ -80,7 +72,7 @@ function RewardsTab(): ReactElement {
 					/>
 					<Button 
 						className={'w-full md:mt-7'}
-						onClick={onClaimAll}
+						onClick={(): unknown => claimAll(web3Provider, userAddress, gaugeAddresses, true)}
 						disabled={!isActive || !isValidNetwork || gaugesRewards.eq(0)}
 						isBusy={claimAllStatus.loading}
 					>
@@ -111,7 +103,7 @@ function RewardsTab(): ReactElement {
 					/>
 					<Button 
 						className={'w-full md:mt-7'}
-						onClick={onClaim}
+						onClick={(): unknown => claim(web3Provider, userAddress, selectedGaugeAddress)}
 						disabled={!isActive || !isValidNetwork || selectedGaugeRewards.eq(0)}
 						isBusy={claimStatus.loading}
 					>
