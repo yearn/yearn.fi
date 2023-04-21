@@ -94,10 +94,10 @@ function RedeemTab(): ReactElement {
 						className={'w-full md:mt-7'}
 						onClick={(): unknown =>
 							isApproved  
-								? redeem(provider, toAddress(address), redeemAmount.raw)
+								? redeem(provider, toAddress(address), redeemAmount.raw, result)
 								: approveRedeem(provider, VEYFI_OYFI_ADDRESS, VEYFI_OPTIONS_ADDRESS)
 						}
-						isBusy={isLoadingOption || approveRedeemStatus.loading || redeemStatus.loading}
+						isBusy={isLoadingOption || approveRedeemStatus.loading || redeemStatus.loading || status === 'loading'}
 						disabled={!isActive || !isValidNetwork || !isValidRedeemAmount || status === 'loading' || status === 'error'}
 					>
 						{'Redeem'}
