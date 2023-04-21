@@ -104,7 +104,7 @@ function RedeemTab(): ReactElement {
 						isBusy={isLoadingOption || approveRedeemStatus.loading || redeemStatus.loading || status === 'loading'}
 						disabled={!isActive || !isValidNetwork || !isValidRedeemAmount || status === 'loading' || status === 'error'}
 					>
-						{'Redeem'}
+						{isApproved ? 'Redeem' : 'Approve'}
 					</Button>
 				</div>
 			</div>
