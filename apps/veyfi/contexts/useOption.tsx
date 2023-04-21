@@ -86,7 +86,7 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 		const	oYFIAllowanceOptions = await oYFIContract.allowance(userAddress, VEYFI_OPTIONS_ADDRESS);
 
 		return ({
-			[allowanceKey(VEYFI_OYFI_ADDRESS, VEYFI_OPTIONS_ADDRESS)]: oYFIAllowanceOptions
+			[allowanceKey(1, VEYFI_OYFI_ADDRESS, VEYFI_OPTIONS_ADDRESS, userAddress)]: oYFIAllowanceOptions
 		});
 	}, [isActive, userAddress]);
 	const	{data: allowances, mutate: refreshAllowances, isLoading: isLoadingAllowances} = useSWR(isActive && provider ? 'optionAllowances' : null, allowancesFetcher, {shouldRetryOnError: false});
