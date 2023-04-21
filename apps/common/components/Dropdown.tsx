@@ -63,7 +63,7 @@ const DropdownEmpty = ({isSearching}: {isSearching: boolean}): ReactElement => {
 };
 
 export type TDropdownOption = {
-	key: string;
+	id: string;
 	label: string;
 	description?: string;
 	icon?: string;
@@ -170,9 +170,10 @@ const Dropdown = ({selected, options, onChange, label, legend, isDisabled, class
 									{filteredOptions.length === 0 ? (
 										<DropdownEmpty isSearching={isSearching} />
 									) : (
-										filteredOptions.map(({key, label, description, icon}): ReactElement => (
+										filteredOptions.map(({id, label, description, icon}): ReactElement => (
 											<DropdownOption
-												key={key}
+												key={id}
+												id={id}
 												label={label}
 												description={description}
 												icon={icon}

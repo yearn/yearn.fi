@@ -30,20 +30,21 @@ function RewardsTab(): ReactElement {
 	
 	const web3Provider = provider as ethers.providers.Web3Provider;
 	const userAddress = address as TAddress;
-	const selectedGaugeAddress = toAddress(selectedGauge?.key);
+	const selectedGaugeAddress = toAddress(selectedGauge?.id);
 	const selectedGaugeRewards = formatBN(positionsMap[selectedGaugeAddress]?.reward.balance);
 
-	const gaugeOptions = gaugeAddresses.map((address): TDropdownOption => {
-		const gauge = gaugesMap[address];
-		const vaultAddress = toAddress(gauge?.vaultAddress);
-		const vault = vaults[vaultAddress];
+	const gaugeOptions = gaugeAddresses.filter((address): boolean => positionsMap[address]?.reward.balance.gt(0) ?? false)
+		.map((address): TDropdownOption => {
+			const gauge = gaugesMap[address];
+			const vaultAddress = toAddress(gauge?.vaultAddress);
+			const vault = vaults[vaultAddress];
 
-		return {
-			key: address,
-			label: vault?.display_name ?? '',
-			icon: `${process.env.BASE_YEARN_ASSETS_URI}/1/${vaultAddress}/logo-128.png`
-		};
-	});
+			return {
+				id: address,
+				label: vault?.display_name ?? '',
+				icon: `${process.env.BASE_YEARN_ASSETS_URI}/1/${vaultAddress}/logo-128.png`
+			};
+		});
 
 	const gaugesRewards = useMemo((): BigNumber => {
 		return gaugeAddresses.reduce<BigNumber>((acc, address): BigNumber => {
