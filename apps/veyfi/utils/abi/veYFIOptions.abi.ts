@@ -109,23 +109,6 @@ const VEYFI_OPTIONS_ABI = [
 			{
 				'name': 'amount',
 				'type': 'uint256'
-			}
-		],
-		'name': 'exercise',
-		'outputs': [
-			{
-				'name': '',
-				'type': 'uint256'
-			}
-		],
-		'stateMutability': 'payable',
-		'type': 'function'
-	},
-	{
-		'inputs': [
-			{
-				'name': 'amount',
-				'type': 'uint256'
 			},
 			{
 				'name': 'recipient',
