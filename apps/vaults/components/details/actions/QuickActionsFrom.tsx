@@ -9,7 +9,6 @@ import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers
 import {Dropdown} from '@common/components/TokenDropdown';
 import {useWallet} from '@common/contexts/useWallet';
 import {useBalance} from '@common/hooks/useBalance';
-import {useClientOnlyFn} from '@common/hooks/useClientOnlyFn';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
 
 import type {ChangeEvent, ReactElement} from 'react';
@@ -24,7 +23,6 @@ function	VaultDetailsQuickActionsFrom(): ReactElement {
 
 	const selectedFromBalance = useBalance(toAddress(actionParams?.selectedOptionFrom?.value));
 	const selectedOptionFromPricePerToken = useTokenPrice(toAddress(actionParams?.selectedOptionFrom?.value));
-	const clientOnlyFormatAmount = useClientOnlyFn({fn: formatAmount, placeholder: '0,00'});
 	const hasMultipleInputsToChooseFrom = isActive && isDepositing && possibleOptionsFrom.length > 1;
 	const selectedFromSymbol = actionParams?.selectedOptionFrom?.symbol || 'tokens';
 	const selectedFromIcon = actionParams?.selectedOptionFrom?.icon;
@@ -46,8 +44,8 @@ function	VaultDetailsQuickActionsFrom(): ReactElement {
 					<label className={'text-base text-neutral-600'}>
 						{isDepositing ? 'From wallet' : 'From vault'}
 					</label>
-					<legend className={'font-number inline text-xs text-neutral-600 md:hidden'}>
-						{`You have ${clientOnlyFormatAmount(selectedFromBalance.normalized)} ${actionParams?.selectedOptionFrom?.symbol || 'tokens'}`}
+					<legend className={'font-number inline text-xs text-neutral-600 md:hidden'} suppressHydrationWarning>
+						{`You have ${formatAmount(selectedFromBalance.normalized)} ${actionParams?.selectedOptionFrom?.symbol || 'tokens'}`}
 					</legend>
 				</div>
 				<Renderable
@@ -55,7 +53,7 @@ function	VaultDetailsQuickActionsFrom(): ReactElement {
 					fallback={renderMultipleOptionsFallback()}>
 					<div className={'flex h-10 w-full items-center justify-between bg-neutral-300 px-2 text-base text-neutral-900 md:px-3'}>
 						<div className={'relative flex flex-row items-center'}>
-							<div className={'h-6 w-6 rounded-full'}>
+							<div className={'h-6 w-6 flex-none rounded-full'}>
 								{selectedFromIcon}
 							</div>
 							<p className={'overflow-x-hidden text-ellipsis whitespace-nowrap pl-2 font-normal text-neutral-900 scrollbar-none'}>
@@ -65,8 +63,8 @@ function	VaultDetailsQuickActionsFrom(): ReactElement {
 					</div>
 				</Renderable>
 
-				<legend className={'font-number hidden text-xs text-neutral-600 md:inline'}>
-					{`You have ${clientOnlyFormatAmount(selectedFromBalance.normalized)} ${actionParams?.selectedOptionFrom?.symbol || 'tokens'}`}
+				<legend className={'font-number hidden text-xs text-neutral-600 md:inline'} suppressHydrationWarning>
+					{`You have ${formatAmount(selectedFromBalance.normalized)} ${actionParams?.selectedOptionFrom?.symbol || 'tokens'}`}
 				</legend>
 			</div>
 			<div className={'w-full space-y-2'}>

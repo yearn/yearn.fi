@@ -2,12 +2,13 @@ import {useCallback, useMemo, useRef, useState} from 'react';
 import {Contract} from 'ethcall';
 import axios from 'axios';
 import {useUpdateEffect} from '@react-hookz/web';
+import {getNativeTokenWrapperContract, getNativeTokenWrapperName} from '@vaults/utils';
 import {useUI} from '@yearn-finance/web-lib/contexts/useUI';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {ETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
@@ -83,7 +84,8 @@ async function performCall(
 		let symbol = results[rIndex++] as string;
 
 		if (toAddress(token) === ETH_TOKEN_ADDRESS) {
-			symbol = 'ETH';
+			const	network = await ethcallProvider.provider?.getNetwork();
+			symbol = getNativeTokenWrapperName(network?.chainId || 1);
 		}
 		_data[toAddress(token)] = {
 			decimals: Number(decimals),
@@ -112,7 +114,7 @@ async function getBalances(
 
 	for (const {token} of tokens) {
 		if (toAddress(token) === ETH_TOKEN_ADDRESS) {
-			const	tokenContract = new Contract(WETH_TOKEN_ADDRESS, ERC20_ABI);
+			const	tokenContract = new Contract(getNativeTokenWrapperContract(currentProvider.network.chainId), ERC20_ABI);
 			calls.push(
 				ethcallProvider.getEthBalance(ownerAddress),
 				tokenContract.decimals(),

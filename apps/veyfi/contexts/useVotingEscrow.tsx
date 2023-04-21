@@ -120,7 +120,7 @@ export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({chil
 		const	[yfiAllowanceVeYFI] = await ethcallProvider.tryAll([yfiContract.allowance(address, VEYFI_ADDRESS)]) as BigNumber[];
 
 		return ({
-			[allowanceKey(YFI_ADDRESS, VEYFI_ADDRESS)]: yfiAllowanceVeYFI
+			[allowanceKey(1, YFI_ADDRESS, VEYFI_ADDRESS, address)]: yfiAllowanceVeYFI
 		});
 	}, [isActive, address, provider]);
 	const	{data: allowances, mutate: refreshAllowances, isLoading: isLoadingAllowances} = useSWR(isActive && provider ? 'votingEscrowAllowances' : null, allowancesFetcher, {shouldRetryOnError: false});

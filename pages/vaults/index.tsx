@@ -2,6 +2,7 @@ import React, {Fragment, useCallback, useMemo} from 'react';
 import VaultListOptions from '@vaults/components/list/VaultListOptions';
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
 import {VaultsListInternalMigrationRow} from '@vaults/components/list/VaultsListInternalMigrationRow';
+import {VaultsListRetired} from '@vaults/components/list/VaultsListRetired';
 import {VaultsListRow} from '@vaults/components/list/VaultsListRow';
 import {useAppSettings} from '@vaults/contexts/useAppSettings';
 import {useFilteredVaults} from '@vaults/hooks/useFilteredVaults';
@@ -18,7 +19,6 @@ import ListHero from '@common/components/ListHero';
 import ValueAnimation from '@common/components/ValueAnimation';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
-import {useClientOnlyFn} from '@common/hooks/useClientOnlyFn';
 import {getVaultName} from '@common/utils';
 
 import type {NextRouter} from 'next/router';
@@ -33,16 +33,14 @@ function	HeaderUserPosition(): ReactElement {
 	const	{cumulatedValueInVaults} = useWallet();
 	const	{earned} = useYearn();
 
-	const clientOnlyFormatAmount = useClientOnlyFn({fn: formatAmount, placeholder: '0,00'});
-
 	const	formatedYouEarned = useMemo((): string => {
 		const amount = (earned?.totalUnrealizedGainsUSD || 0) > 0 ? earned?.totalUnrealizedGainsUSD || 0 : 0;
-		return clientOnlyFormatAmount(amount)?.toString() ?? '';
-	}, [clientOnlyFormatAmount, earned?.totalUnrealizedGainsUSD]);
+		return formatAmount(amount)?.toString() ?? '';
+	}, [earned?.totalUnrealizedGainsUSD]);
 
 	const	formatedYouHave = useMemo((): string => {
-		return clientOnlyFormatAmount(cumulatedValueInVaults || 0)?.toString() ?? '';
-	}, [clientOnlyFormatAmount, cumulatedValueInVaults]);
+		return formatAmount(cumulatedValueInVaults || 0)?.toString() ?? '';
+	}, [cumulatedValueInVaults]);
 
 	return (
 		<Fragment>
@@ -73,7 +71,7 @@ function	HeaderUserPosition(): ReactElement {
 function	Index(): ReactElement {
 	const	{safeChainID} = useChainID();
 	const	{balances, balancesNonce} = useWallet();
-	const	{vaults, vaultsMigrations, isLoadingVaultList} = useYearn();
+	const	{vaults, vaultsMigrations, vaultsRetired, isLoadingVaultList} = useYearn();
 	const 	[sort, set_sort] = useSessionStorage<{sortBy: TPossibleSortBy, sortDirection: TSortDirection}>(
 		'yVaultsSorting', {sortBy: 'apy', sortDirection: 'desc'}
 	);
@@ -115,6 +113,7 @@ function	Index(): ReactElement {
 	const	cryptoVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Volatile');
 	const	holdingsVaults = useFilteredVaults(vaults, ({address}): boolean => filterHoldingsCallback(address));
 	const	migratableVaults = useFilteredVaults(vaultsMigrations, ({address}): boolean => filterMigrationCallback(address));
+	const	retiredVaults = useFilteredVaults(vaultsRetired, ({address}): boolean => filterMigrationCallback(address));
 
 	const	categoriesToDisplay = useMemo((): TListHeroCategory<string>[] => {
 		const	categories = [
@@ -251,7 +250,7 @@ function	Index(): ReactElement {
 								node: (
 									<Fragment>
 										{'Holdings'}
-										<span className={`absolute -top-1 -right-1 flex h-2 w-2 ${category === 'Holdings' || migratableVaults?.length === 0 ? 'opacity-0' : 'opacity-100'}`}>
+										<span className={`absolute -top-1 -right-1 flex h-2 w-2 ${category === 'Holdings' || (migratableVaults?.length + retiredVaults?.length) === 0 ? 'opacity-0' : 'opacity-100'}`}>
 											<span className={'absolute inline-flex h-full w-full animate-ping rounded-full bg-pink-600 opacity-75'}></span>
 											<span className={'relative inline-flex h-2 w-2 rounded-full bg-pink-500'}></span>
 										</span>
@@ -263,6 +262,15 @@ function	Index(): ReactElement {
 					onSelect={set_category}
 					searchValue={searchValue}
 					set_searchValue={set_searchValue} />
+
+
+				<Renderable shouldRender={category === 'Holdings' && retiredVaults?.length > 0}>
+					<div className={'my-4'}>
+						{retiredVaults.filter((vault): boolean => !!vault).map((vault): ReactNode =>
+							<VaultsListRetired key={vault.address} currentVault={vault} />
+						)}
+					</div>
+				</Renderable>
 
 				<Renderable shouldRender={category === 'Holdings' && migratableVaults?.length > 0}>
 					<div className={'my-4'}>

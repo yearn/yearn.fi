@@ -16,7 +16,6 @@ import {fromWeeks, getTimeUntil, toSeconds, toTime, toWeeks} from '@yearn-financ
 import {AmountInput} from '@common/components/AmountInput';
 import {useWallet} from '@common/contexts/useWallet';
 import {useBalance} from '@common/hooks/useBalance';
-import {useClientOnlyFn} from '@common/hooks/useClientOnlyFn';
 
 import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
@@ -37,7 +36,6 @@ function LockTab(): ReactElement {
 	const [approveLock, approveLockStatus] = useTransaction(VotingEscrowActions.approveLock, refreshData);
 	const [lock, lockStatus] = useTransaction(VotingEscrowActions.lock, onTxSuccess);
 	const [increaseLockAmount, increaseLockAmountStatus] = useTransaction(VotingEscrowActions.increaseLockAmount, onTxSuccess);
-	const clientOnlyFormatAmount = useClientOnlyFn({fn: formatAmount, placeholder: '0,0000'});
 
 	const hasLockedAmount = formatBN(positions?.deposit?.underlyingBalance).gt(0);
 
@@ -57,8 +55,10 @@ function LockTab(): ReactElement {
 	}, [positions?.unlockTime]);
 
 	const {isValid: isApproved} = validateAllowance({
+		ownerAddress: toAddress(address),
 		tokenAddress: toAddress(votingEscrow?.token),
 		spenderAddress: toAddress(votingEscrow?.address),
+		chainID: safeChainID,
 		allowances,
 		amount: lockAmount.raw
 	});
@@ -122,7 +122,7 @@ function LockTab(): ReactElement {
 						onAmountChange={(amount): void => set_lockAmount(handleInputChangeEventValue(amount, 18))}
 						onLegendClick={(): void => set_lockAmount(tokenBalance)}
 						onMaxClick={(): void => set_lockAmount(tokenBalance)}
-						legend={`Available: ${clientOnlyFormatAmount(tokenBalance.normalized, 4)} YFI`}
+						legend={`Available: ${formatAmount(tokenBalance.normalized, 4)} YFI`}
 						error={lockAmountError} />
 					<AmountInput
 						label={'Current lock period (weeks)'}

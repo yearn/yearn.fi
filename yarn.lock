@@ -2140,9 +2140,9 @@
     tslib "1.14.1"
 
 "@walletconnect/jsonrpc-provider@^1.0.5", "@walletconnect/jsonrpc-provider@^1.0.8":
-  version "1.0.8"
-  resolved "https://registry.yarnpkg.com/@walletconnect/jsonrpc-provider/-/jsonrpc-provider-1.0.8.tgz#d56e5bc95c1ec264748a6911389a3ac80f4bd831"
-  integrity sha512-M44vzTrF0TeDcxQorm2lJ5klmfqchYOZqmIHb5T9lIPA/rj22643P83j44flZLyzycPqy5UUlIH6foeBPwjxMg==
+  version "1.0.10"
+  resolved "https://registry.yarnpkg.com/@walletconnect/jsonrpc-provider/-/jsonrpc-provider-1.0.10.tgz#8351a06b70faa8f8c0e77dc2c6d9b0190d17d407"
+  integrity sha512-g0ffPSpY3P6GqGjWGHsr3yqvQUhj7q2k6pAikoXv5XTXWaJRzFvrlbFkSgxziXsBrwrMZn0qvPufvpN4mMZ5FA==
   dependencies:
     "@walletconnect/jsonrpc-utils" "^1.0.6"
     "@walletconnect/safe-json" "^1.0.1"
@@ -2328,10 +2328,10 @@
     "@web3-react/types" "^8.0.20-beta.0"
     eventemitter3 "^4.0.7"
 
-"@yearn-finance/web-lib@^0.18.9":
-  version "0.18.9"
-  resolved "https://registry.yarnpkg.com/@yearn-finance/web-lib/-/web-lib-0.18.9.tgz#70d38f794eb6b699a06b87960ee58802354f5b1d"
-  integrity sha512-omBMSyVXd8BWvNbZTxiHWuJvtkHERAxqgH9G+M4u9381g2WVnuldDo5s69KNIJrAbZQ95mXOhFnDH4M04Df5WA==
+"@yearn-finance/web-lib@^0.18.26":
+  version "0.18.26"
+  resolved "https://registry.yarnpkg.com/@yearn-finance/web-lib/-/web-lib-0.18.26.tgz#fa279db79e975fd0ffd6e8fb3d179aff0298ba1f"
+  integrity sha512-4k1uiqO4I4kdBOqWMlF1VuKBjwfZ+vWSnJ6KKXkqZY5h9asaXay0/pUIPRuA7VsPseEAYYsGD+TLQlpVGkvtLg==
   dependencies:
     "@coinbase/wallet-sdk" "^3.6.4"
     "@ethersproject/experimental" "^5.7.0"

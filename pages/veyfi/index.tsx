@@ -13,7 +13,6 @@ import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {PageProgressBar} from '@common/components/PageProgressBar';
 import {SummaryData} from '@common/components/SummaryData';
 import {Tabs} from '@common/components/Tabs';
-import {useClientOnlyFn} from '@common/hooks/useClientOnlyFn';
 import {formatDateShort} from '@common/utils';
 
 import type {NextRouter} from 'next/router';
@@ -21,7 +20,6 @@ import type {ReactElement} from 'react';
 
 function Index(): ReactElement {
 	const {votingEscrow, positions, isLoading} = useVotingEscrow();
-	const clientOnlyFormatAmount = useClientOnlyFn({fn: formatAmount, placeholder: '0,0000'});
 
 	const totalLockedYFI = formatToNormalizedValue(formatBN(votingEscrow?.supply), 18);
 	const yourLockedYFI = formatToNormalizedValue(formatBN(positions?.deposit?.underlyingBalance), 18);
@@ -49,11 +47,11 @@ function Index(): ReactElement {
 					items={[
 						{
 							label: 'Total Locked YFI',
-							content: clientOnlyFormatAmount(totalLockedYFI, 4)?.toString() ?? '-'
+							content: formatAmount(totalLockedYFI, 4)?.toString() ?? '-'
 						},
 						{
 							label: 'Your Locked YFI',
-							content: clientOnlyFormatAmount(yourLockedYFI, 4)?.toString() ?? '-'
+							content: formatAmount(yourLockedYFI, 4)?.toString() ?? '-'
 						},
 						{
 							label: 'Expiration for the lock',
