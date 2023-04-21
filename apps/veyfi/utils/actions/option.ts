@@ -15,6 +15,6 @@ export async function redeem(
 	ethRequired: BigNumber
 ): Promise<TTxResponse> {
 	const signer = provider.getSigner(accountAddress);
-	const gaugeContract = new ethers.Contract(VEYFI_OPTIONS_ADDRESS, VEYFI_OPTIONS_ABI, signer); // TODO: update once deployed
-	return handleTx(gaugeContract.exercise(amount, accountAddress, {value: ethRequired}));
+	const optionsContract = new ethers.Contract(VEYFI_OPTIONS_ADDRESS, VEYFI_OPTIONS_ABI, signer); // TODO: update once deployed
+	return handleTx(optionsContract.exercise(amount, accountAddress, {value: ethRequired}));
 }
