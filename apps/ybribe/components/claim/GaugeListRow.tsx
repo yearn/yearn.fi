@@ -80,7 +80,7 @@ function	GaugeRowItemAPR({address, value}: {address: string, value: BigNumber}):
 
 function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, category: string}): ReactElement {
 	const	{isActive, provider} = useWeb3();
-	const	{currentRewards, nextRewards, claimable, refresh} = useBribes();
+	const	{currentRewards, nextRewards, claimable, dryRunClaimRewards, refresh} = useBribes();
 	const	[txStatusClaim, set_txStatusClaim] = useState(defaultTxStatus);
 
 	const	currentRewardsForCurrentGauge = useMemo((): TDict<BigNumber> => {
@@ -95,11 +95,16 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 		return claimable?.v3?.[toAddress(currentGauge.gauge)] || {};
 	}, [currentGauge.gauge, claimable, category]);
 
+	const	dryRunRewardsForCurrentGauge = useMemo((): TDict<BigNumber> => {
+		return dryRunClaimRewards?.v3?.[toAddress(currentGauge.gauge)] || {};
+	}, [currentGauge.gauge, dryRunClaimRewards, category]);
+
 	const	claimableForCurrentGaugeMap = Object.entries(claimableForCurrentGauge || {}) || [];
 	const	currentRewardsForCurrentGaugeMap = Object.entries(currentRewardsForCurrentGauge || {}) || [];
 	const	nextRewardsForCurrentGaugeMap = Object.entries(nextRewardsForCurrentGauge || {}) || [];
+	const	dryRunRewardsForCurrentGaugeMap = Object.entries(dryRunRewardsForCurrentGauge || {}) || [];
 	const	hasSomethingToClaim = claimableForCurrentGaugeMap.some(([, value]: [string, BigNumber]): boolean => value.gt(0)) ||
-		nextRewardsForCurrentGaugeMap.some(([, value]: [string, BigNumber]): boolean => value.gt(0));
+		dryRunRewardsForCurrentGaugeMap.some(([, value]: [string, BigNumber]): boolean => value.gt(0));
 
 	function	onClaimReward(token: string): void {
 		new Transaction(provider, claimReward, set_txStatusClaim).populate(
@@ -261,6 +266,17 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 					<div className={'w-full'}>
 						<div className={'flex h-auto flex-row items-baseline justify-between pt-0 md:h-14 md:flex-col md:items-end'}>
 							<label className={'yearn--table-data-section-item-label'}>{'Claimable'}</label>
+							<Renderable
+								shouldRender={!!dryRunRewardsForCurrentGaugeMap && dryRunRewardsForCurrentGaugeMap.length > 0}
+								fallback={renderDefaultValuesUSDFallback()}>
+								{dryRunRewardsForCurrentGaugeMap.map(([key, value]: [string, BigNumber]): ReactElement =>
+									<div key={`dry-run-rewards-${currentGauge.gauge}-${key}`} className={'flex flex-col items-end space-y-2'}>
+										<GaugeRowItemWithExtraData
+											address={toAddress(key)}
+											value={value} />
+									</div>
+								)}
+							</Renderable>
 							<Renderable
 								shouldRender={!!claimableForCurrentGaugeMap && claimableForCurrentGaugeMap.length > 0}
 								fallback={renderDefaultValuesUSDFallback()}>
