@@ -98,7 +98,8 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, cat
 	const	claimableForCurrentGaugeMap = Object.entries(claimableForCurrentGauge || {}) || [];
 	const	currentRewardsForCurrentGaugeMap = Object.entries(currentRewardsForCurrentGauge || {}) || [];
 	const	nextRewardsForCurrentGaugeMap = Object.entries(nextRewardsForCurrentGauge || {}) || [];
-	const	hasSomethingToClaim = claimableForCurrentGaugeMap.some(([, value]: [string, BigNumber]): boolean => value.gt(0));
+	const	hasSomethingToClaim = claimableForCurrentGaugeMap.some(([, value]: [string, BigNumber]): boolean => value.gt(0)) ||
+		nextRewardsForCurrentGaugeMap.some(([, value]: [string, BigNumber]): boolean => value.gt(0));
 
 	function	onClaimReward(token: string): void {
 		new Transaction(provider, claimReward, set_txStatusClaim).populate(
