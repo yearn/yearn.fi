@@ -13,7 +13,6 @@ import {useYearn} from '@common/contexts/useYearn';
 import {stringSort} from '@common/utils/sort';
 import {GaugeListEmpty} from '@yBribe/components/claim/GaugeListEmpty';
 import {GaugeListRow} from '@yBribe/components/claim/GaugeListRow';
-import {ZERO_ADDRESS} from '@yBribe/constants/addresses';
 import {useBribes} from '@yBribe/contexts/useBribes';
 import Wrapper from '@yBribe/Wrapper';
 
@@ -51,7 +50,7 @@ function	GaugeList(): ReactElement {
 		}
 		return gauges.filter((gauge): boolean => {
 			const hasCurrentRewardsV3 = currentRewards?.v3?.[toAddress(gauge.gauge)] !== undefined;
-			const hasNextRewardsV3 = nextRewards?.v3?.[ZERO_ADDRESS]?.[toAddress(gauge.gauge)] !== undefined;
+			const hasNextRewardsV3 = nextRewards?.v3?.[toAddress(gauge.gauge)] !== undefined;
 			return hasCurrentRewardsV3 || hasNextRewardsV3;
 		});
 	}, [category, gauges, currentRewards, nextRewards, claimable]);

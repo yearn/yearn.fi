@@ -190,7 +190,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 			const	claimablePerTokenPerGauge = multicallResult[rIndex++];
 			if (periodPerTokenPerGauge.toNumber() >= currentPeriod) {
 				if (rewardListKey && rewardPerTokenPerGauge.gt(0)) {
-					const	[gauge, token] = rewardListKey.split('_');
+					const	[, gauge, token] = rewardListKey.split('_');
 					if (!_currentRewards[toAddress(gauge)]) {
 						_currentRewards[toAddress(gauge)] = {};
 					}
@@ -225,7 +225,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 		for (const rewardListKey of rewardsList) {
 			const	pendingForNextPeriod = multicallResult[rIndex++];
 			if (rewardListKey) {
-				const	[gauge, token] = rewardListKey.split('_');
+				const	[, gauge, token] = rewardListKey.split('_');
 				if (!_nextRewards[toAddress(gauge)]) {
 					_nextRewards[toAddress(gauge)] = {};
 				}
