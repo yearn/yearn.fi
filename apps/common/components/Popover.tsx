@@ -101,7 +101,8 @@ export function Popover(): ReactElement {
 									className={'resize-none border border-neutral-300/50 bg-transparent text-xs transition-colors hover:bg-neutral-100/40 focus:border-neutral-300/50'}
 									onChange={({target:{value}}): void => set_description(value)} />
 								<button
-									className={'relative h-8 cursor-pointer items-center justify-center border border-transparent bg-neutral-900 px-2 text-xs text-neutral-0 transition-all hover:bg-neutral-800'}
+									disabled={!description || description.length < 10}
+									className={'relative h-8 cursor-pointer items-center justify-center border border-transparent bg-neutral-900 px-2 text-xs text-neutral-0 transition-all hover:bg-neutral-800 disabled:opacity-40'}
 									onClick={async (): Promise<void> => onSubmit(close)}>
 									{'Submit'}
 								</button>
