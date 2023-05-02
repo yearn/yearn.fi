@@ -11,7 +11,7 @@ type TRequest = {
 	};
 } & NextApiRequest
 
-export default async function handler(req: TRequest, res: NextApiResponse<boolean>): Promise<void> {
+export default async function handler(req: TRequest, res: NextApiResponse<{ message: string }>): Promise<void> {
 	const telegram = new Telegram(process.env.TELEGRAM_BOT as string);
 	try {
 		const form = formidable();
@@ -24,20 +24,22 @@ export default async function handler(req: TRequest, res: NextApiResponse<boolea
 			});
 		});
 		const {fields, files: {screenshot}} = formData;
-		if (process.env.TELEGRAM_CHAT) {
-			await telegram.sendPhoto(
-				process.env.TELEGRAM_CHAT,
-				Input.fromLocalFile(screenshot.filepath),
-				{
-					caption: fields.messages,
-					parse_mode: 'Markdown'
-				}
-			);
+		if (!process.env.TELEGRAM_CHAT) {
+			return res.status(400).json({message: 'TELEGRAM_CHAT is not defined'});
 		}
-		return res.status(200).json(true);
+
+		await telegram.sendPhoto(
+			process.env.TELEGRAM_CHAT,
+			Input.fromLocalFile(screenshot.filepath),
+			{
+				caption: fields.messages,
+				parse_mode: 'Markdown'
+			}
+		);
+		return res.status(200).json({message: 'Submitted successfully!'});
 	} catch (error) {
 		console.error(error);
-		return res.status(500).json(false);
+		return res.status(500).json({message: String(error)});
 	}
 }
 
