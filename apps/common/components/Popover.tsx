@@ -28,34 +28,37 @@ export function Popover(): ReactElement {
 
 	async function onSubmit(closeCallback: VoidFunction): Promise<void> {
 		const {body} = document;
-		if (body) {
-			const canvas = await html2canvas(body, {
-				backgroundColor: null,
-				allowTaint: true,
-				ignoreElements: (element): boolean => element.id === 'headlessui-portal-root'
-			});
-			const reporter = ens || lensProtocolHandle || (address ? truncateHex(toAddress(address), 4) : '');
-			const formData = new FormData();
-			const blob = await new Promise((resolve): void => {
-				canvas.toBlob((blob): void => resolve(blob));
-			});
-			formData.append('screenshot', blob as Blob);
-			formData.append('messages', [
-				`*🔵 New ${type} submitted*`,
-				description,
-				'\n*👀 - Info:*',
-				reporter ?
-					`\t\t\t\tFrom: [${reporter}](https://etherscan.io/address/${address})` :
-					'\t\t\t\tFrom: [wallet-not-connected]',
-				`\t\t\t\tChain: ${chainID}`,
-				`\t\t\t\tWallet: ${walletType}`,
-				`\t\t\t\tOrigin: [${router.asPath}](https://yearn.finance/${router.asPath})`
-			].join('\n'));
-			await axios.post('/api/notify', formData, {
-				headers: {'Content-Type': 'multipart/form-data'}
-			});
-			console.log(`${type} submitted!\n\n${description}`);
+		if (!body) {
+			closeCallback();
+			return;
 		}
+		const canvas = await html2canvas(body, {
+			backgroundColor: null,
+			allowTaint: true,
+			ignoreElements: (element): boolean => element.id === 'headlessui-portal-root'
+		});
+		const reporter = ens || lensProtocolHandle || (address ? truncateHex(toAddress(address), 4) : '');
+		const formData = new FormData();
+		const blob = await new Promise<Blob | null>((resolve): void => {
+			canvas.toBlob((blob): void => resolve(blob));
+		});
+		if (blob) {
+			formData.append('screenshot', blob);
+		}
+		formData.append('messages', [
+			`*🔵 New ${type} submitted*`,
+			description,
+			'\n*👀 - Info:*',
+			reporter ?
+				`\t\t\t\tFrom: [${reporter}](https://etherscan.io/address/${address})` :
+				'\t\t\t\tFrom: [wallet-not-connected]',
+			`\t\t\t\tChain: ${chainID}`,
+			`\t\t\t\tWallet: ${walletType}`,
+			`\t\t\t\tOrigin: [${router.asPath}](https://yearn.finance/${router.asPath})`
+		].join('\n'));
+		await axios.post('/api/notify', formData, {
+			headers: {'Content-Type': 'multipart/form-data'}
+		});
 		closeCallback();
 	}
 

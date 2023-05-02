@@ -15,24 +15,25 @@ export default async function handler(req: TRequest, res: NextApiResponse<boolea
 	const telegram = new Telegram(process.env.TELEGRAM_BOT as string);
 	try {
 		const form = formidable();
-		const formData = await new Promise(async (resolve, reject): Promise<void> => {
-			form.parse(req, async (err: Error, fields: unknown, files: unknown): Promise<void> => {
+		const formData = await new Promise<{fields: TRequest['body'], files: TRequest['body']}>(async (resolve, reject): Promise<void> => {
+			form.parse(req, async (err: Error, fields: TRequest['body'], files: TRequest['body']): Promise<void> => {
 				if (err) {
 					reject('error');
 				}
 				resolve({fields, files});
 			});
 		});
-		const {fields, files} = await formData as any;
-		const {screenshot} = files;
-		await telegram.sendPhoto(
-			process.env.TELEGRAM_CHAT as string,
-			Input.fromLocalFile(screenshot.filepath),
-			{
-				caption: fields.messages,
-				parse_mode: 'Markdown'
-			}
-		);
+		const {fields, files: {screenshot}} = formData;
+		if (process.env.TELEGRAM_CHAT) {
+			await telegram.sendPhoto(
+				process.env.TELEGRAM_CHAT,
+				Input.fromLocalFile(screenshot.filepath),
+				{
+					caption: fields.messages,
+					parse_mode: 'Markdown'
+				}
+			);
+		}
 		return res.status(200).json(true);
 	} catch (error) {
 		console.error(error);
