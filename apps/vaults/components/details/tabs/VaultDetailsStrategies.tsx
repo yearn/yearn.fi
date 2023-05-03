@@ -1,6 +1,5 @@
 import React, {useMemo, useState} from 'react';
 import dynamic from 'next/dynamic';
-import {Switch} from '@vaults/components/list/VaultListOptions';
 import IconCopy from '@yearn-finance/web-lib/icons/IconCopy';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -8,6 +7,7 @@ import {formatAmount, formatPercent} from '@yearn-finance/web-lib/utils/format.n
 import {formatDuration} from '@yearn-finance/web-lib/utils/format.time';
 import {copyToClipboard, parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
 import {SearchBar} from '@common/components/SearchBar';
+import {Switch} from '@common/components/Switch';
 import IconChevron from '@common/icons/IconChevron';
 
 import type {LoaderComponent} from 'next/dynamic';
