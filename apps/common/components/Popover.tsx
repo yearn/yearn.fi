@@ -109,9 +109,17 @@ export function Popover(): ReactElement {
 									onClick={async (): Promise<void> => onSubmit(close)}>
 									{'Submit'}
 								</button>
-								<label className={'flex cursor-pointer items-center justify-end pt-2'}>
+								<label className={'max-w-xs items-center justify-end pt-2'}>
+									<p className={'text-right text-xs italic text-neutral-200'}>
+										{'Address and screenshot of page will be attached'}
+									</p>
+									<p className={'text-right text-xs italic text-neutral-200'}>
+										{'For internal use only'}
+									</p>
+								</label>
+								<label className={'flex cursor-pointer items-center justify-end'}>
 									<button
-										className={'text-right text-xs text-neutral-200 transition-colors hover:text-neutral-400'}
+										className={'text-right text-xs text-neutral-200 underline transition-colors hover:text-neutral-400'}
 										onClick={(): void => set_hasPopover(!hasPopover)}>
 										{'Hide me forever'}
 									</button>
