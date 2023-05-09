@@ -5,6 +5,7 @@ import {useTransaction} from '@veYFI/hooks/useTransaction'; // TODO: make a comm
 import {validateAllowance} from '@veYFI/utils/validations'; // TODO: make it common
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
+import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
@@ -23,6 +24,7 @@ const trimAmount = (amount: string | number): string => Number(Number(amount).to
 
 function RewardsTab({currentVault}: {currentVault: TYearnVault}): ReactElement {
 	const {provider, address, isActive} = useWeb3();
+	const {safeChainID} = useChainID();
 	const {refresh: refreshBalances} = useWallet();
 	const {stakingRewardsByVault, stakingRewardsMap, positionsMap, refresh: refreshStakingRewards} = useStakingRewards();
 	const stakingRewardsAddress = stakingRewardsByVault[currentVault.address];
@@ -42,8 +44,10 @@ function RewardsTab({currentVault}: {currentVault: TYearnVault}): ReactElement {
 	const rewardBalance = toNormalizedBN(stakingRewardsPosition?.reward ?? 0, rewardTokenBalance.decimals);
 
 	const {isValid: isApproved} = validateAllowance({
+		ownerAddress: userAddress,
 		tokenAddress: currentVault.address,
 		spenderAddress: toAddress(stakingRewardsAddress),
+		chainID: safeChainID,
 		allowances,
 		amount: vaultBalance.raw
 	});

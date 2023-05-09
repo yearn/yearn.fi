@@ -16,7 +16,7 @@ export type TAllowanceRequest = {
 	spender?: TAddress
 }
 
-export const useAllowances = (allowanceRequests: TAllowanceRequest[]): [TDict<BigNumber | undefined>, boolean, () => void] => {
+export const useAllowances = (allowanceRequests: TAllowanceRequest[]): [TDict<BigNumber>, boolean, () => void] => {
 	const {provider, address: userAddress, isActive} = useWeb3();
 	const {chainID} = useChainID();
 
@@ -34,7 +34,7 @@ export const useAllowances = (allowanceRequests: TAllowanceRequest[]): [TDict<Bi
 		const allowances = await ethcallProvider.tryAll(allowanceCalls) as BigNumber[];
 		const allowancesMap: TDict<BigNumber> = {};
 		allowanceRequests.forEach(({token, spender}, index): void => {
-			allowancesMap[allowanceKey(token, spender)] = allowances[index];
+			allowancesMap[allowanceKey(chainID, token, toAddress(spender), userAddress)] = allowances[index];
 		});
 
 		return allowancesMap;
