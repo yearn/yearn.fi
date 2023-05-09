@@ -1,7 +1,11 @@
 import React, {useMemo, useState} from 'react';
 import dynamic from 'next/dynamic';
+import useSWR from 'swr';
+import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
+import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import IconCopy from '@yearn-finance/web-lib/icons/IconCopy';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {formatDuration} from '@yearn-finance/web-lib/utils/format.time';
@@ -12,7 +16,8 @@ import IconChevron from '@common/icons/IconChevron';
 
 import type {LoaderComponent} from 'next/dynamic';
 import type {ReactElement} from 'react';
-import type {TYearnVault, TYearnVaultStrategy} from '@common/types/yearn';
+import type {SWRResponse} from 'swr';
+import type {TYDaemonReports, TYearnVault, TYearnVaultStrategy} from '@common/types/yearn';
 import type {TGraphForStrategyReportsProps} from '@vaults/components/graphs/GraphForStrategyReports';
 
 const GraphForStrategyReports = dynamic<TGraphForStrategyReportsProps>(async (): LoaderComponent<TGraphForStrategyReportsProps> => import('@vaults/components/graphs/GraphForStrategyReports'), {ssr: false});
@@ -32,6 +37,17 @@ function	RiskScoreElement({label, value}: TRiskScoreElementProps): ReactElement 
 }
 
 function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVault, strategy: TYearnVaultStrategy}): ReactElement {
+	const {safeChainID} = useChainID();
+	const {settings: baseAPISettings} = useSettings();
+
+	const	{data: reports} = useSWR(
+		`${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/${safeChainID}/reports/${strategy.address}`,
+		baseFetcher,
+		{revalidateOnFocus: false}
+	) as SWRResponse;
+
+	const latestApr = findLatestApr(reports);
+
 	const	riskScoreElementsMap = useMemo((): TRiskScoreElementProps[] => {
 		const {riskDetails} = strategy?.risk || {};
 		return ([
@@ -111,9 +127,9 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVau
 					<div className={'col-span-12 flex h-full w-full flex-col justify-between md:col-span-6'}>
 						<div className={'grid grid-cols-6 gap-6 md:gap-8'}>
 							<div className={'col-span-2 flex flex-col space-y-0 md:space-y-2'}>
-								<p className={'text-xxs text-neutral-600 md:text-xs'}>{'APR'}</p>
+								<p className={'text-xxs text-neutral-600 md:text-xs'}>{'APR1'}</p>
 								<b className={'font-number text-xl text-neutral-900'}>
-									{formatPercent((strategy?.details?.apr || 0), 0)}
+									{formatPercent((latestApr || 0), 0)}
 								</b>
 							</div>
 
@@ -208,5 +224,18 @@ function	VaultDetailsStrategies({currentVault}: {currentVault: TYearnVault}): Re
 		</div>
 	);
 }
+
+function findLatestApr(reports?: TYDaemonReports[]): number {
+	if (!reports) {
+		return 0;
+	}
+
+	const latestReport = reports.reduce((prev, curr): TYDaemonReports => {
+		return parseInt(prev.timestamp) > parseInt(curr.timestamp)? prev : curr;
+	});
+
+	return Number(latestReport.results[0].APR);
+}
+
 
 export {VaultDetailsStrategies};
