@@ -13,9 +13,11 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
+import {hash} from '@common/utils';
 
+import type {MaybeString} from '@yearn-finance/web-lib/types';
 import type {TNormalizedBN} from '@common/types/types';
-import type {TInitSolverArgs, TWithSolver} from '@vaults/types/solvers';
+import type {TInitSolverArgs, TSolverContext, TWithSolver} from '@vaults/types/solvers';
 
 export enum	Solver {
 	VANILLA = 'Vanilla',
@@ -43,6 +45,7 @@ const	DefaultWithSolverContext: TWithSolver = {
 	currentSolver: Solver.VANILLA,
 	effectiveSolver: Solver.VANILLA,
 	expectedOut: toNormalizedBN(0),
+	hash: undefined,
 	isLoadingExpectedOut: false,
 	onRetrieveExpectedOut: async (): Promise<TNormalizedBN> => toNormalizedBN(0),
 	onRetrieveAllowance: async (): Promise<TNormalizedBN> => toNormalizedBN(0),
@@ -63,7 +66,7 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 	const partnerContract = useSolverPartnerContract();
 	const internalMigration = useSolverInternalMigration();
 	const optimismBooster = useSolverOptimismBooster();
-	const [currentSolverState, set_currentSolverState] = useState(vanilla);
+	const [currentSolverState, set_currentSolverState] = useState<TSolverContext & {hash: MaybeString}>({...vanilla, hash: undefined});
 	const [isLoading, set_isLoading] = useState(false);
 
 	/* 🔵 - Yearn Finance **************************************************************************
@@ -75,7 +78,6 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 		}
 		set_isLoading(true);
 
-		let quote: TNormalizedBN = toNormalizedBN(0);
 		const request: TInitSolverArgs = {
 			from: toAddress(address || ''),
 			inputToken: actionParams?.selectedOptionFrom,
@@ -103,23 +105,27 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 				**************************************************************/
 				if (currentSolver === Solver.WIDO && !isSolverDisabled[Solver.WIDO]) {
 					if (widoQuote.status === 'fulfilled' && widoQuote?.value.raw?.gt(0)) {
+						const requestHash = await hash(JSON.stringify({...request, solver: Solver.WIDO, expectedOut: widoQuote.value.raw.toString()}));
 						performBatchedUpdates((): void => {
-							set_currentSolverState({...wido, quote: widoQuote.value});
+							set_currentSolverState({...wido, quote: widoQuote.value, hash: requestHash});
 							set_isLoading(false);
 						});
 					} else if (cowswapQuote.status === 'fulfilled' && cowswapQuote.value.raw?.gt(0) && !isSolverDisabled[Solver.COWSWAP]) {
+						const requestHash = await hash(JSON.stringify({...request, solver: Solver.COWSWAP, expectedOut: cowswapQuote.value.raw.toString()}));
 						performBatchedUpdates((): void => {
-							set_currentSolverState({...cowswap, quote: cowswapQuote.value});
+							set_currentSolverState({...cowswap, quote: cowswapQuote.value, hash: requestHash});
 							set_isLoading(false);
 						});
 					} else if (portalsQuote.status === 'fulfilled' && portalsQuote.value.raw?.gt(0) && !isSolverDisabled[Solver.PORTALS]) {
+						const requestHash = await hash(JSON.stringify({...request, solver: Solver.PORTALS, expectedOut: portalsQuote.value.raw.toString()}));
 						performBatchedUpdates((): void => {
-							set_currentSolverState({...portals, quote: portalsQuote.value});
+							set_currentSolverState({...portals, quote: portalsQuote.value, hash: requestHash});
 							set_isLoading(false);
 						});
 					} else {
+						const requestHash = await hash(JSON.stringify({...request, solver: 'NONE', expectedOut: '0'}));
 						performBatchedUpdates((): void => {
-							set_currentSolverState({...cowswap, quote: toNormalizedBN(0)});
+							set_currentSolverState({...cowswap, quote: toNormalizedBN(0), hash: requestHash});
 							set_isLoading(false);
 						});
 					}
@@ -134,23 +140,27 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 				**************************************************************/
 				if (currentSolver === Solver.COWSWAP && !isSolverDisabled[Solver.COWSWAP]) {
 					if (cowswapQuote.status === 'fulfilled' && cowswapQuote.value.raw?.gt(0)) {
+						const requestHash = await hash(JSON.stringify({...request, solver: Solver.COWSWAP, expectedOut: cowswapQuote.value.raw.toString()}));
 						performBatchedUpdates((): void => {
-							set_currentSolverState({...cowswap, quote: cowswapQuote.value});
+							set_currentSolverState({...cowswap, quote: cowswapQuote.value, hash: requestHash});
 							set_isLoading(false);
 						});
 					} else if (widoQuote.status === 'fulfilled' && widoQuote.value.raw?.gt(0) && !isSolverDisabled[Solver.WIDO]) {
+						const requestHash = await hash(JSON.stringify({...request, solver: Solver.WIDO, expectedOut: widoQuote.value.raw.toString()}));
 						performBatchedUpdates((): void => {
-							set_currentSolverState({...wido, quote: widoQuote.value});
+							set_currentSolverState({...wido, quote: widoQuote.value, hash: requestHash});
 							set_isLoading(false);
 						});
 					} else if (portalsQuote.status === 'fulfilled' && portalsQuote.value.raw?.gt(0) && !isSolverDisabled[Solver.PORTALS]) {
+						const requestHash = await hash(JSON.stringify({...request, solver: Solver.PORTALS, expectedOut: portalsQuote.value.raw.toString()}));
 						performBatchedUpdates((): void => {
-							set_currentSolverState({...portals, quote: portalsQuote.value});
+							set_currentSolverState({...portals, quote: portalsQuote.value, hash: requestHash});
 							set_isLoading(false);
 						});
 					} else {
+						const requestHash = await hash(JSON.stringify({...request, solver: 'NONE', expectedOut: '0'}));
 						performBatchedUpdates((): void => {
-							set_currentSolverState({...wido, quote: toNormalizedBN(0)});
+							set_currentSolverState({...wido, quote: toNormalizedBN(0), hash: requestHash});
 							set_isLoading(false);
 						});
 					}
@@ -164,23 +174,27 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 				**************************************************************/
 				if (currentSolver === Solver.PORTALS && !isSolverDisabled[Solver.PORTALS]) {
 					if (portalsQuote.status === 'fulfilled' && portalsQuote.value.raw?.gt(0)) {
+						const requestHash = await hash(JSON.stringify({...request, solver: Solver.PORTALS, expectedOut: portalsQuote.value.raw.toString()}));
 						performBatchedUpdates((): void => {
-							set_currentSolverState({...portals, quote: portalsQuote.value});
+							set_currentSolverState({...portals, quote: portalsQuote.value, hash: requestHash});
 							set_isLoading(false);
 						});
 					} else if (widoQuote.status === 'fulfilled' && widoQuote.value.raw?.gt(0) && !isSolverDisabled[Solver.WIDO]) {
+						const requestHash = await hash(JSON.stringify({...request, solver: Solver.WIDO, expectedOut: widoQuote.value.raw.toString()}));
 						performBatchedUpdates((): void => {
-							set_currentSolverState({...wido, quote: widoQuote.value});
+							set_currentSolverState({...wido, quote: widoQuote.value, hash: requestHash});
 							set_isLoading(false);
 						});
 					} else if (cowswapQuote.status === 'fulfilled' && cowswapQuote.value.raw?.gt(0) && !isSolverDisabled[Solver.COWSWAP]) {
+						const requestHash = await hash(JSON.stringify({...request, solver: Solver.COWSWAP, expectedOut: cowswapQuote.value.raw.toString()}));
 						performBatchedUpdates((): void => {
-							set_currentSolverState({...cowswap, quote: cowswapQuote.value});
+							set_currentSolverState({...cowswap, quote: cowswapQuote.value, hash: requestHash});
 							set_isLoading(false);
 						});
 					} else {
+						const requestHash = await hash(JSON.stringify({...request, solver: 'NONE', expectedOut: '0'}));
 						performBatchedUpdates((): void => {
-							set_currentSolverState({...wido, quote: toNormalizedBN(0)});
+							set_currentSolverState({...wido, quote: toNormalizedBN(0), hash: requestHash});
 							set_isLoading(false);
 						});
 					}
@@ -190,41 +204,51 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 
 				break;
 			}
-			case Solver.OPTIMISM_BOOSTER:
-				quote = await optimismBooster.init(request);
+			case Solver.OPTIMISM_BOOSTER: {
+				const quote = await optimismBooster.init(request);
+				const requestHash = await hash(JSON.stringify({...request, solver: Solver.OPTIMISM_BOOSTER, expectedOut: quote.raw.toString()}));
 				performBatchedUpdates((): void => {
-					set_currentSolverState({...optimismBooster, quote});
+					set_currentSolverState({...optimismBooster, quote, hash: requestHash});
 					set_isLoading(false);
 				});
 				break;
-			case Solver.CHAIN_COIN:
-				quote = await chainCoin.init(request);
+			}
+			case Solver.CHAIN_COIN: {
+				const quote = await chainCoin.init(request);
+				const requestHash = await hash(JSON.stringify({...request, solver: Solver.CHAIN_COIN, expectedOut: quote.raw.toString()}));
 				performBatchedUpdates((): void => {
-					set_currentSolverState({...chainCoin, quote});
+					set_currentSolverState({...chainCoin, quote, hash: requestHash});
 					set_isLoading(false);
 				});
 				break;
-			case Solver.PARTNER_CONTRACT:
-				quote = await partnerContract.init(request);
+			}
+			case Solver.PARTNER_CONTRACT: {
+				const quote = await partnerContract.init(request);
+				const requestHash = await hash(JSON.stringify({...request, solver: Solver.PARTNER_CONTRACT, expectedOut: quote.raw.toString()}));
 				performBatchedUpdates((): void => {
-					set_currentSolverState({...partnerContract, quote});
+					set_currentSolverState({...partnerContract, quote, hash: requestHash});
 					set_isLoading(false);
 				});
 				break;
-			case Solver.INTERNAL_MIGRATION:
+			}
+			case Solver.INTERNAL_MIGRATION: {
 				request.migrator = currentVault.migration.contract;
-				quote = await internalMigration.init(request);
+				const quote = await internalMigration.init(request);
+				const requestHash = await hash(JSON.stringify({...request, solver: Solver.INTERNAL_MIGRATION, expectedOut: quote.raw.toString()}));
 				performBatchedUpdates((): void => {
-					set_currentSolverState({...internalMigration, quote});
+					set_currentSolverState({...internalMigration, quote, hash: requestHash});
 					set_isLoading(false);
 				});
 				break;
-			default:
-				quote = await vanilla.init(request);
+			}
+			default: {
+				const quote = await vanilla.init(request);
+				const requestHash = await hash(JSON.stringify({...request, solver: Solver.VANILLA, expectedOut: quote.raw.toString()}));
 				performBatchedUpdates((): void => {
-					set_currentSolverState({...vanilla, quote});
+					set_currentSolverState({...vanilla, quote, hash: requestHash});
 					set_isLoading(false);
 				});
+			}
 		}
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [address, actionParams, currentSolver, cowswap.init, vanilla.init, wido.init, internalMigration.init, optimismBooster.init, isDepositing, currentVault.migration.contract]); //Ignore the warning, it's a false positive
@@ -237,6 +261,7 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 		currentSolver: currentSolver,
 		effectiveSolver: currentSolverState?.type,
 		expectedOut: currentSolverState?.quote || toNormalizedBN(0),
+		hash: currentSolverState?.hash,
 		isLoadingExpectedOut: isLoading,
 		onRetrieveExpectedOut: currentSolverState.onRetrieveExpectedOut,
 		onRetrieveAllowance: currentSolverState.onRetrieveAllowance,

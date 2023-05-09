@@ -19,7 +19,7 @@ function DropdownItem({option, balanceSource}: TDropdownItemProps): ReactElement
 		<Combobox.Option value={option}>
 			{({active}): ReactElement =>
 				<div data-active={active} className={'yearn--dropdown-menu-item w-full hover:bg-neutral-0/40'}>
-					<div className={'h-6 w-6 rounded-full'}>
+					<div className={'h-6 w-6 flex-none rounded-full'}>
 						{option?.icon ? cloneElement(option.icon) : null}
 					</div>
 					<div>
@@ -108,8 +108,8 @@ function Dropdown({
 						onClick={(): void => set_isOpen((o: boolean): boolean => !o)}
 						className={'flex h-10 w-full items-center justify-between bg-neutral-0 p-2 text-base text-neutral-900 md:px-3'}>
 						<div className={'relative flex flex-row items-center'}>
-							<div key={selected?.label} className={'h-6 w-6 rounded-full'}>
-								{selected?.icon ? cloneElement(selected.icon) : <div className={'h-6 w-6 rounded-full bg-neutral-500'} />}
+							<div key={selected?.label} className={'h-6 w-6 flex-none rounded-full'}>
+								{selected?.icon ? cloneElement(selected.icon) : <div className={'h-6 w-6 flex-none rounded-full bg-neutral-500'} />}
 							</div>
 							<p className={'max-w-[90%] overflow-x-hidden text-ellipsis whitespace-nowrap pl-2 font-normal text-neutral-900 scrollbar-none md:max-w-full'}>
 								<Combobox.Input

@@ -90,3 +90,11 @@ export function	formatDateShort(value: number): string {
 **********************************************************************************************/
 export const keyBy = <T1, T2 extends keyof T1 & string>(array: T1[], key: T2): TDict<T1 | undefined> => 
 	(array || []).reduce((r, x): TDict<T1> => ({...r, [x[key] as string]: x}), {});
+
+export async function hash(message: string): Promise<string> {
+	const msgUint8 = new TextEncoder().encode(message); // encode as (utf-8) Uint8Array
+	const hashBuffer = await crypto.subtle.digest('SHA-512', msgUint8); // hash the message
+	const hashArray = Array.from(new Uint8Array(hashBuffer)); // convert buffer to byte array
+	const hashHex = hashArray.map((b): string => b.toString(16).padStart(2, '0')).join(''); // convert bytes to hex string
+	return `0x${hashHex}`;
+}

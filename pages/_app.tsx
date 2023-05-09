@@ -1,9 +1,11 @@
 import React, {Fragment, memo} from 'react';
 import {AnimatePresence, domAnimation, LazyMotion, motion} from 'framer-motion';
 import localFont from '@next/font/local';
+import {useLocalStorageValue} from '@react-hookz/web';
 import {WithYearn} from '@yearn-finance/web-lib/contexts/WithYearn';
 import {AppHeader} from '@common/components/AppHeader';
 import Meta from '@common/components/Meta';
+import {Popover} from '@common/components/Popover';
 import {MenuContextApp} from '@common/contexts/useMenu';
 import {WalletContextApp} from '@common/contexts/useWallet';
 import {YearnContextApp} from '@common/contexts/useYearn';
@@ -37,6 +39,8 @@ type TGetLayout = NextComponentType & {getLayout: (p: ReactElement, router: Next
 const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 	const	{Component, pageProps, router} = props;
 	const	getLayout = (Component as TGetLayout).getLayout || ((page: ReactElement): ReactElement => page);
+	// eslint-disable-next-line @typescript-eslint/naming-convention
+	const 	{value} = useLocalStorageValue<boolean>('yearn.finance/feedback-popover');
 	const	{name} = useCurrentApp(router);
 
 	return (
@@ -53,6 +57,7 @@ const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 							className={'my-0 h-full md:mb-0 md:mt-16'}
 							variants={variants}>
 							{getLayout(<Component router={props.router} {...pageProps} />, router)}
+							{!value && <Popover />}
 						</motion.div>
 					</AnimatePresence>
 				</LazyMotion>
@@ -84,7 +89,7 @@ const App = memo(function App(props: AppProps): ReactElement {
 
 function	MyApp(props: AppProps): ReactElement {
 	return (
-		<main className={aeonik.className}>
+		<main id={'main'} className={aeonik.className}>
 			<script
 				defer
 				data-domain={'yearn.finance'}

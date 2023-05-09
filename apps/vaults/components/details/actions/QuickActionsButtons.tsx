@@ -6,7 +6,9 @@ import {Solver, useSolver} from '@vaults/contexts/useSolver';
 import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
+import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {ETH_TOKEN_ADDRESS, YVWETH_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatBN, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useWallet} from '@common/contexts/useWallet';
@@ -17,11 +19,12 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 	const {refresh} = useWallet();
 	const {refresh: refreshZapBalances} = useWalletForZap();
 	const {address, isActive} = useWeb3();
+	const {safeChainID} = useChainID();
 	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
 	const [txStatusExecuteDeposit, set_txStatusExecuteDeposit] = useState(defaultTxStatus);
 	const [txStatusExecuteWithdraw, set_txStatusExecuteWithdraw] = useState(defaultTxStatus);
-	const {actionParams, onChangeAmount, maxDepositPossible, isDepositing} = useActionFlow();
-	const {onApprove, onExecuteDeposit, onExecuteWithdraw, onRetrieveAllowance, currentSolver, expectedOut, isLoadingExpectedOut} = useSolver();
+	const {actionParams, currentVault, onChangeAmount, maxDepositPossible, isDepositing} = useActionFlow();
+	const {onApprove, onExecuteDeposit, onExecuteWithdraw, onRetrieveAllowance, currentSolver, expectedOut, isLoadingExpectedOut, hash} = useSolver();
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** SWR hook to get the expected out for a given in/out pair with a specific amount. This hook is
@@ -30,10 +33,8 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 	const [{result: allowanceFrom, status}, actions] = useAsync(onRetrieveAllowance, toNormalizedBN(0));
 
 	useEffect((): void => {
-		if (!isLoadingExpectedOut) {
-			actions.execute();
-		}
-	}, [currentSolver, actionParams?.selectedOptionFrom?.value, actions, isActive, address, onRetrieveAllowance, isLoadingExpectedOut, expectedOut]);
+		actions.execute();
+	}, [actions, isActive, address, onRetrieveAllowance, hash]);
 
 	const onSuccess = useCallback(async (): Promise<void> => {
 		onChangeAmount(toNormalizedBN(0));
@@ -81,13 +82,23 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 		);
 	}
 
+	const isDiffNetwork = !!safeChainID && currentVault.chainID !== safeChainID;
+
+	const isButtonDisabled = !isActive || actionParams?.amount.raw.isZero() || actionParams?.amount.raw.gt(maxDepositPossible.raw) || isLoadingExpectedOut || isDiffNetwork;
+	
 	/* 🔵 - Yearn Finance ******************************************************
 	** Wrapper to decide if we should use the partner contract or not
 	**************************************************************************/
+	const isDepositingEthViaChainCoin = (currentSolver === Solver.CHAIN_COIN && isDepositing);
+	const shouldUseChainCoinContract = (
+		toAddress(actionParams?.selectedOptionFrom?.value) === ETH_TOKEN_ADDRESS
+		&& toAddress(actionParams?.selectedOptionTo?.value) === YVWETH_ADDRESS
+	);
+	const hasAllowanceSet = actionParams?.amount.raw.gt(formatBN(allowanceFrom?.raw));
+	const isButtonBusy = txStatusApprove.pending || status !== 'success';
 	if (
-		txStatusApprove.pending || actionParams?.amount.raw.gt(formatBN(allowanceFrom?.raw)) || status !== 'success' && (
+		!(isDepositingEthViaChainCoin && shouldUseChainCoinContract) && (isButtonBusy || hasAllowanceSet) && (
 			(currentSolver === Solver.VANILLA && isDepositing)
-			|| (currentSolver === Solver.CHAIN_COIN && !isDepositing)
 			|| (currentSolver === Solver.INTERNAL_MIGRATION)
 			|| (currentSolver === Solver.COWSWAP)
 			|| (currentSolver === Solver.WIDO)
@@ -98,37 +109,14 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 			<Button
 				className={'w-full'}
 				isBusy={txStatusApprove.pending}
-				isDisabled={
-					!isActive ||
-					actionParams?.amount.raw.isZero() ||
-					actionParams?.amount.raw.gt(maxDepositPossible.raw) ||
-					expectedOut.raw.isZero() ||
-					isLoadingExpectedOut
-				}
+				isDisabled={isButtonDisabled || expectedOut.raw.isZero()}
 				onClick={onApproveFrom}>
 				{'Approve'}
 			</Button>
 		);
 	}
 
-	if (currentSolver === Solver.INTERNAL_MIGRATION) {
-		return (
-			<Button
-				onClick={async (): Promise<void> => onExecuteDeposit(set_txStatusExecuteDeposit, onSuccess)}
-				className={'w-full'}
-				isBusy={txStatusExecuteDeposit.pending}
-				isDisabled={
-					!isActive ||
-					actionParams?.amount.raw.isZero() ||
-					actionParams?.amount.raw.gt(maxDepositPossible.raw) ||
-					isLoadingExpectedOut
-				}>
-				{'Migrate'}
-			</Button>
-		);
-	}
-
-	if (isDepositing) {
+	if (isDepositing || currentSolver === Solver.INTERNAL_MIGRATION) {
 		if (currentSolver === Solver.OPTIMISM_BOOSTER) {
 			return (
 				<Button
@@ -145,13 +133,8 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 				onClick={async (): Promise<void> => onExecuteDeposit(set_txStatusExecuteDeposit, onSuccess)}
 				className={'w-full'}
 				isBusy={txStatusExecuteDeposit.pending}
-				isDisabled={
-					!isActive ||
-					actionParams?.amount.raw.isZero() ||
-					actionParams?.amount.raw.gt(maxDepositPossible.raw) ||
-					isLoadingExpectedOut
-				}>
-				{'Deposit'}
+				isDisabled={isButtonDisabled}>
+				{isDepositing ? 'Deposit' : 'Migrate'}
 			</Button>
 		);
 	}
@@ -161,12 +144,7 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 			onClick={async (): Promise<void> => onExecuteWithdraw(set_txStatusExecuteWithdraw, onSuccess)}
 			className={'w-full'}
 			isBusy={txStatusExecuteWithdraw.pending}
-			isDisabled={
-				!isActive ||
-				actionParams?.amount.raw.isZero() ||
-				actionParams?.amount.raw.gt(maxDepositPossible.raw) ||
-				isLoadingExpectedOut
-			}>
+			isDisabled={isButtonDisabled}>
 			{'Withdraw'}
 		</Button>
 	);

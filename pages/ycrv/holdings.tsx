@@ -188,7 +188,7 @@ function	Holdings(): ReactElement {
 								className={'font-number text-base text-neutral-900'}>
 								{holdings?.styCRVSupply ? formatCounterValue(
 									formatToNormalizedValue(holdings.styCRVSupply, 18),
-									stycrvPrice
+									ycrvPrice
 								) : formatAmount(0)}
 							</p>
 						</div>

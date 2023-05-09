@@ -1,6 +1,6 @@
 
 import type {BigNumber} from 'ethers';
-import type {TAddress} from '@yearn-finance/web-lib/types';
+import type {MaybeString, TAddress} from '@yearn-finance/web-lib/types';
 import type {TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
 import type {Solver} from '@vaults/contexts/useSolver';
@@ -13,6 +13,7 @@ export type TWithSolver = {
 	currentSolver: Solver;
 	effectiveSolver: Solver;
 	expectedOut: TNormalizedBN;
+	hash: MaybeString,
 	isLoadingExpectedOut: boolean;
 	onRetrieveExpectedOut: (request: TInitSolverArgs) => Promise<TNormalizedBN>;
 	onRetrieveAllowance: () => Promise<TNormalizedBN>;
@@ -47,7 +48,7 @@ export type TSolverContext = {
 	refreshQuote: CallableFunction;
 	init: (args: TInitSolverArgs, shouldLogError?: boolean) => Promise<TNormalizedBN>;
 	onRetrieveExpectedOut: (request: TInitSolverArgs) => Promise<TNormalizedBN>;
-	onRetrieveAllowance: () => Promise<TNormalizedBN>;
+	onRetrieveAllowance: (shouldForceRefetch?: boolean) => Promise<TNormalizedBN>;
 	onApprove: (
 		amount: BigNumber,
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,

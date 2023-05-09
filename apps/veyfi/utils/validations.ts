@@ -9,14 +9,16 @@ export type TValidationResponse = {
 }
 
 export type TValidateAllowanceProps = {
-	tokenAddress?: TAddress;
-	spenderAddress?: TAddress;
-	allowances: TDict<BigNumber | undefined>;
+	ownerAddress: TAddress;
+	tokenAddress: TAddress;
+	spenderAddress: TAddress;
+	chainID: number;
+	allowances: TDict<BigNumber>;
 	amount: BigNumber;
 }
 
 export function validateAllowance(props: TValidateAllowanceProps): TValidationResponse {
-	const {tokenAddress, spenderAddress, allowances, amount} = props;
+	const {tokenAddress, spenderAddress, allowances, amount, ownerAddress, chainID} = props;
 
 	if(!tokenAddress || !spenderAddress) {
 		return {isValid: false};
@@ -24,7 +26,7 @@ export function validateAllowance(props: TValidateAllowanceProps): TValidationRe
 
 	// TODO: return valid when is native token
 
-	const allowance = allowances[allowanceKey(tokenAddress, spenderAddress)];
+	const allowance = allowances[allowanceKey(chainID, tokenAddress, spenderAddress, ownerAddress)];
 	const isApproved = allowance?.gte(amount);
 
 	return {isValid: isApproved};

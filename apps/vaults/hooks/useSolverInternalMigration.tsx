@@ -4,12 +4,14 @@ import useSWRMutation from 'swr/mutation';
 import {Solver} from '@vaults/contexts/useSolver';
 import {useVaultEstimateOutFetcher} from '@vaults/hooks/useVaultEstimateOutFetcher';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
+import {allowanceKey, isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {approvedERC20Amount, approveERC20} from '@common/utils/actions/approveToken';
 import {migrateShares} from '@common/utils/actions/migrateShares';
 
+import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TNormalizedBN} from '@common/types/types';
 import type {TVaultEstimateOutFetcher} from '@vaults/hooks/useVaultEstimateOutFetcher';
@@ -52,8 +54,10 @@ function useInternalMigrationQuote(): [TVanillaLikeResult, (request: TInitSolver
 
 export function useSolverInternalMigration(): TSolverContext {
 	const {provider} = useWeb3();
+	const {safeChainID} = useChainID();
 	const [latestQuote, getQuote] = useInternalMigrationQuote();
 	const request = useRef<TInitSolverArgs>();
+	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** init will be called when the cowswap solver should be used to perform the desired swap.
@@ -89,9 +93,14 @@ export function useSolverInternalMigration(): TSolverContext {
 	** Retrieve the allowance for the token to be used by the solver. This will
 	** be used to determine if the user should approve the token or not.
 	**************************************************************************/
-	const onRetrieveAllowance = useCallback(async (): Promise<TNormalizedBN> => {
+	const onRetrieveAllowance = useCallback(async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
 		if (!request?.current) {
 			return toNormalizedBN(0);
+		}
+
+		const key = allowanceKey(safeChainID, toAddress(request.current.inputToken.value), toAddress(request.current.outputToken.value), toAddress(request.current.from));
+		if (existingAllowances.current[key] && !shouldForceRefetch) {
+			return existingAllowances.current[key];
 		}
 
 		const allowance = await approvedERC20Amount(
@@ -99,8 +108,9 @@ export function useSolverInternalMigration(): TSolverContext {
 			toAddress(request.current.inputToken.value), //Input token
 			toAddress(request.current.migrator) //Spender, aka migration contract
 		);
-		return toNormalizedBN(allowance, request.current.inputToken.decimals);
-	}, [request, provider]);
+		existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals);
+		return existingAllowances.current[key];
+	}, [request, safeChainID, provider]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Trigger an approve web3 action, simply trying to approve `amount` tokens

@@ -20,6 +20,7 @@ export type	TBribesContext = {
 	currentRewards: TCurveGaugeVersionRewards,
 	nextRewards: TCurveGaugeVersionRewards,
 	claimable: TCurveGaugeVersionRewards,
+	dryRunClaimRewards: TCurveGaugeVersionRewards,
 	currentPeriod: number,
 	nextPeriod: number,
 	isLoading: boolean,
@@ -33,6 +34,9 @@ const	defaultProps: TBribesContext = {
 		v3: {}
 	},
 	claimable: {
+		v3: {}
+	},
+	dryRunClaimRewards: {
 		v3: {}
 	},
 	currentPeriod: 0,
@@ -49,6 +53,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 	const [currentRewards, set_currentRewards] = useState<TCurveGaugeVersionRewards>({v3: {}});
 	const [nextRewards, set_nextRewards] = useState<TCurveGaugeVersionRewards>({v3: {}});
 	const [claimable, set_claimable] = useState<TCurveGaugeVersionRewards>({v3: {}});
+	const [dryRunClaimRewards, set_dryRunClaimRewards] = useState<TCurveGaugeVersionRewards>({v3: {}});
 	const [isLoading, set_isLoading] = useState<boolean>(true);
 	const [currentPeriod, set_currentPeriod] = useState<number>(getLastThursday());
 	const [nextPeriod, set_nextPeriod] = useState<number>(getNextThursday());
@@ -119,7 +124,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 				}
 				gauge.rewardPerGauge.push(...rewardPerGauge);
 				for (const tokenAsReward of rewardPerGauge) {
-					rewardsList.push(allowanceKey(gauge.gauge, tokenAsReward));
+					rewardsList.push(allowanceKey(safeChainID, toAddress(gauge.gauge), toAddress(tokenAsReward), toAddress(address)));
 					rewardsPerTokensPerGaugesCalls.push(...[
 						contract.reward_per_token(gauge.gauge, tokenAsReward),
 						contract.active_period(gauge.gauge, tokenAsReward),
@@ -131,7 +136,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 
 		const	_rewardsPerTokensPerGaugesWithPeriods = await ethcallProvider.tryAll(rewardsPerTokensPerGaugesCalls) as BigNumber[];
 		return ({rewardsList, multicallResult: [..._rewardsPerTokensPerGaugesWithPeriods]});
-	}, [gauges, address]);
+	}, [gauges, safeChainID, address]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	**	getNextPeriodRewards will help you retrieved the the reward_per_gauge
@@ -154,7 +159,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 			const	rewardPerGauge = _rewardsPerGauges.shift();
 			if (rewardPerGauge && rewardPerGauge.length > 0) {
 				for (const tokenAsReward of rewardPerGauge) {
-					rewardsList.push(allowanceKey(gauge.gauge, tokenAsReward));
+					rewardsList.push(allowanceKey(safeChainID, toAddress(gauge.gauge), toAddress(tokenAsReward), toAddress(address)));
 					rewardsPerTokensPerGaugesCalls.push([gauge.gauge, tokenAsReward]);
 				}
 			}
@@ -165,7 +170,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 		) as BigNumber[];
 
 		return ({rewardsList, multicallResult: [...multicallResult]});
-	}, [gauges]);
+	}, [gauges, address, safeChainID]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	**	assignBribes will save the currentRewards,  periods and clamable values
@@ -174,7 +179,8 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 	const assignBribes = useCallback(async (
 		version: string,
 		rewardsList: string[],
-		multicallResult: BigNumber[]
+		multicallResult: BigNumber[],
+		currentProvider: ethers.providers.Provider
 	): Promise<void> => {
 		if (!multicallResult || multicallResult.length === 0 || rewardsList.length === 0) {
 			return;
@@ -182,15 +188,17 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 		const	_currentRewards: TDict<TDict<BigNumber>> = {};
 		const	_claimable: TDict<TDict<BigNumber>> = {};
 		const	_periods: TDict<TDict<BigNumber>> = {};
+		const	_dryRunClaimRewards: TDict<TDict<BigNumber>> = {};
 		let	rIndex = 0;
 
+		const	contractV3 = new ethers.Contract(CURVE_BRIBE_V3_ADDRESS, CURVE_BRIBE_V3, currentProvider);
 		for (const rewardListKey of rewardsList) {
 			const	rewardPerTokenPerGauge = multicallResult[rIndex++];
 			const	periodPerTokenPerGauge = multicallResult[rIndex++];
 			const	claimablePerTokenPerGauge = multicallResult[rIndex++];
 			if (periodPerTokenPerGauge.toNumber() >= currentPeriod) {
 				if (rewardListKey && rewardPerTokenPerGauge.gt(0)) {
-					const	[gauge, token] = rewardListKey.split('_');
+					const	[, gauge, token] = rewardListKey.split('_');
 					if (!_currentRewards[toAddress(gauge)]) {
 						_currentRewards[toAddress(gauge)] = {};
 					}
@@ -200,16 +208,21 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 					if (!_claimable[toAddress(gauge)]) {
 						_claimable[toAddress(gauge)] = {};
 					}
+					if (!_dryRunClaimRewards[toAddress(gauge)]) {
+						_dryRunClaimRewards[toAddress(gauge)] = {};
+					}
 					_currentRewards[toAddress(gauge)][toAddress(token)] = rewardPerTokenPerGauge;
 					_periods[toAddress(gauge)][toAddress(token)] = periodPerTokenPerGauge;
 					_claimable[toAddress(gauge)][toAddress(token)] = claimablePerTokenPerGauge;
+					_dryRunClaimRewards[toAddress(gauge)][toAddress(token)] = await contractV3.callStatic.claim_reward_for(toAddress(address), toAddress(gauge), toAddress(token));
 				}
 			}
 		}
 		set_currentRewards((c: TCurveGaugeVersionRewards): TCurveGaugeVersionRewards => ({...c, [version]: _currentRewards}));
 		set_claimable((c: TCurveGaugeVersionRewards): TCurveGaugeVersionRewards => ({...c, [version]: _claimable}));
+		set_dryRunClaimRewards((c: TCurveGaugeVersionRewards): TCurveGaugeVersionRewards => ({...c, [version]: _dryRunClaimRewards}));
 		set_isLoading(false);
-	}, [currentPeriod]);
+	}, [address, currentPeriod]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	**	assignNextRewards will save the next period rewards values for each
@@ -225,7 +238,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 		for (const rewardListKey of rewardsList) {
 			const	pendingForNextPeriod = multicallResult[rIndex++];
 			if (rewardListKey) {
-				const	[gauge, token] = rewardListKey.split('_');
+				const	[, gauge, token] = rewardListKey.split('_');
 				if (!_nextRewards[toAddress(gauge)]) {
 					_nextRewards[toAddress(gauge)] = {};
 				}
@@ -251,7 +264,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 		const	{rewardsList: rewardsListV3, multicallResult: multicallResultV3} = rewardsPerUserV3;
 		const	{rewardsList: nextRewardsListV3, multicallResult: nextMulticallResultV3} = nextPeriodRewardsV3;
 		performBatchedUpdates((): void => {
-			assignBribes('v3', rewardsListV3, multicallResultV3);
+			assignBribes('v3', rewardsListV3, multicallResultV3, currentProvider);
 			assignNextRewards('v3', nextRewardsListV3, nextMulticallResultV3);
 		});
 
@@ -271,11 +284,12 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 		currentRewards: currentRewards || {},
 		nextRewards: nextRewards || {},
 		claimable: claimable || {},
+		dryRunClaimRewards: dryRunClaimRewards || {},
 		isLoading: isLoading,
 		currentPeriod,
 		nextPeriod,
 		refresh: onRefresh
-	}), [currentRewards, nextRewards, claimable, isLoading, currentPeriod, nextPeriod, onRefresh]);
+	}), [currentRewards, nextRewards, claimable, dryRunClaimRewards, isLoading, currentPeriod, nextPeriod, onRefresh]);
 
 	return (
 		<BribesContext.Provider value={contextValue}>
