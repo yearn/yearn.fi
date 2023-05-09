@@ -1,12 +1,14 @@
 import {Fragment, useState} from 'react';
 import {usePopper} from 'react-popper';
 import {useRouter} from 'next/router';
+import dayjs from 'dayjs';
 import html2canvas from 'html2canvas';
 import axios from 'axios';
 import {Popover as PopoverHeadlessUI, Portal, Transition} from '@headlessui/react';
 import {useLocalStorageValue} from '@react-hookz/web';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
+import {useTimer} from '@common/hooks/useTimer';
 import MessageIcon from '@common/icons/MessageIcon';
 
 import type {ReactElement} from 'react';
@@ -21,10 +23,13 @@ export function Popover(): ReactElement {
 	const {address, chainID, ens, lensProtocolHandle, walletType} = useWeb3();
 	const router = useRouter();
 	const {value: hasPopover, set: set_hasPopover} = useLocalStorageValue<boolean>('yearn.finance/feedback-popover');
+	const {value: nextSubmissionTime, set: set_nextSubmissionTime} = useLocalStorageValue<number>('yearn.finance/popover-cooling-off');
 	const {styles, attributes} = usePopper(referenceElement, popperElement, {
 		modifiers: [{name: 'offset', options: {offset: [0, 10]}}],
 		placement: 'bottom-end'
 	});
+	const timeLeft = useTimer({endTime: nextSubmissionTime});
+	const isCoolingOff = getIsCoolingOff({nextSubmissionTime});
 
 	async function onSubmit(closeCallback: VoidFunction): Promise<void> {
 		const {body} = document;
@@ -60,6 +65,7 @@ export function Popover(): ReactElement {
 			headers: {'Content-Type': 'multipart/form-data'}
 		});
 		closeCallback();
+		set_nextSubmissionTime(dayjs().add(10, 'minutes').unix());
 	}
 
 	return (
@@ -85,6 +91,7 @@ export function Popover(): ReactElement {
 						{...attributes.popper}>
 						{({close}): ReactElement => (
 							<div className={'flex flex-col space-y-2 overflow-hidden rounded-lg border border-neutral-300/50 bg-neutral-0 p-6 pb-3 shadow shadow-transparent'}>
+								{isCoolingOff && <small>{`You can submit another report in ${timeLeft}`}</small>}
 								<select
 									name={'type'}
 									id={'type'}
@@ -104,10 +111,10 @@ export function Popover(): ReactElement {
 									className={'resize-none border border-neutral-300/50 bg-transparent text-xs transition-colors hover:bg-neutral-100/40 focus:border-neutral-300/50'}
 									onChange={({target:{value}}): void => set_description(value)} />
 								<button
-									disabled={!description || description.length < 10}
-									className={'relative h-8 cursor-pointer items-center justify-center border border-transparent bg-neutral-900 px-2 text-xs text-neutral-0 transition-all hover:bg-neutral-800 disabled:opacity-40'}
+									disabled={!description || description.length < 10 || isCoolingOff}
+									className={'relative h-8 cursor-pointer items-center justify-center border border-transparent bg-neutral-900 px-2 text-xs text-neutral-0 transition-all hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-40'}
 									onClick={async (): Promise<void> => onSubmit(close)}>
-									{'Submit'}
+									{!isCoolingOff ? 'Submit' : `Please wait ${timeLeft}`}
 								</button>
 								<label className={'max-w-xs items-center justify-end pt-2'}>
 									<p className={'text-right text-xs italic text-neutral-200'}>
@@ -136,4 +143,12 @@ export function Popover(): ReactElement {
 
 function isRequestTypeKnown(type: string): type is TRequestType {
 	return type === 'bug' || type === 'feature';
+}
+
+function getIsCoolingOff({nextSubmissionTime}: {nextSubmissionTime?: number}): boolean {
+	if (!nextSubmissionTime) {
+		return false;
+	}
+
+	return dayjs().isBefore(dayjs(nextSubmissionTime * 1000));
 }
