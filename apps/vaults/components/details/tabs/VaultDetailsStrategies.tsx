@@ -234,7 +234,7 @@ function findLatestApr(reports?: TYDaemonReports[]): number {
 		return parseInt(prev.timestamp) > parseInt(curr.timestamp)? prev : curr;
 	});
 
-	return Number(latestReport.results[0].APR);
+	return Number(latestReport.results[0].APR) * 100;
 }
 
 
