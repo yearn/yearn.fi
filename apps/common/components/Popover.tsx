@@ -19,6 +19,7 @@ export function Popover(): ReactElement {
 	const [referenceElement, set_referenceElement] = useState<HTMLButtonElement | null>(null);
 	const [popperElement, set_popperElement] = useState<HTMLDivElement | null>(null);
 	const [type, set_type] = useState<TRequestType>('bug');
+	const [isSubmitDisabled, set_isSubmitDisabled] = useState<boolean>(false);
 	const [description, set_description] = useState<string>();
 	const {address, chainID, ens, lensProtocolHandle, walletType} = useWeb3();
 	const router = useRouter();
@@ -32,8 +33,11 @@ export function Popover(): ReactElement {
 	const isCoolingOff = getIsCoolingOff({nextSubmissionTime});
 
 	async function onSubmit(closeCallback: VoidFunction): Promise<void> {
+		set_isSubmitDisabled(true);
+
 		const {body} = document;
 		if (!body) {
+			set_isSubmitDisabled(false);
 			closeCallback();
 			return;
 		}
@@ -66,6 +70,7 @@ export function Popover(): ReactElement {
 		});
 		closeCallback();
 		set_nextSubmissionTime(dayjs().add(5, 'minutes').unix());
+		set_isSubmitDisabled(false);
 	}
 
 	return (
@@ -111,7 +116,7 @@ export function Popover(): ReactElement {
 									className={'resize-none border border-neutral-300/50 bg-transparent text-xs transition-colors hover:bg-neutral-100/40 focus:border-neutral-300/50'}
 									onChange={({target:{value}}): void => set_description(value)} />
 								<button
-									disabled={!description || description.length < 10 || isCoolingOff}
+									disabled={!description || description.length < 10 || isCoolingOff || isSubmitDisabled}
 									className={'relative h-8 cursor-pointer items-center justify-center border border-transparent bg-neutral-900 px-2 text-xs text-neutral-0 transition-all hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-40'}
 									onClick={async (): Promise<void> => onSubmit(close)}>
 									{!isCoolingOff ? 'Submit' : `Please wait ${timeLeft}`}
