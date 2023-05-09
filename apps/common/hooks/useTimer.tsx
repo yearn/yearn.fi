@@ -47,7 +47,15 @@ function	useTimer({endTime}: TProps): string {
 		const	hours = duration.hours();
 		const	minutes = duration.minutes();
 		const	seconds = duration.seconds();
-		return `${days ? `${days}d ` : ''}${twoDP(hours)}h ${twoDP(minutes)}m ${twoDP(seconds)}s`;
+		if (days) {
+			return `${days}d ${twoDP(hours)}h ${twoDP(minutes)}m ${twoDP(seconds)}s`;
+		}
+
+		if (hours) {
+			return `${twoDP(hours)}h ${twoDP(minutes)}m ${twoDP(seconds)}s`;
+		}
+
+		return `${twoDP(minutes)}m ${twoDP(seconds)}s`;
 	}, []);
 
 	return time ? formatTimestamp(time) : '00H 00M 00S';
