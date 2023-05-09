@@ -127,7 +127,7 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVau
 					<div className={'col-span-12 flex h-full w-full flex-col justify-between md:col-span-6'}>
 						<div className={'grid grid-cols-6 gap-6 md:gap-8'}>
 							<div className={'col-span-2 flex flex-col space-y-0 md:space-y-2'}>
-								<p className={'text-xxs text-neutral-600 md:text-xs'}>{'APR1'}</p>
+								<p className={'text-xxs text-neutral-600 md:text-xs'}>{'APR'}</p>
 								<b className={'font-number text-xl text-neutral-900'}>
 									{formatPercent((latestApr || 0), 0)}
 								</b>
