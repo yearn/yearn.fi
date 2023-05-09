@@ -65,7 +65,7 @@ export function Popover(): ReactElement {
 			headers: {'Content-Type': 'multipart/form-data'}
 		});
 		closeCallback();
-		set_nextSubmissionTime(dayjs().add(10, 'minutes').unix());
+		set_nextSubmissionTime(dayjs().add(5, 'minutes').unix());
 	}
 
 	return (
