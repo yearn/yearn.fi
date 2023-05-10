@@ -183,9 +183,13 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 	const currentSolver = useMemo((): Solver => {
 		const isInputTokenEth = actionParams?.selectedOptionFrom?.value === ETH_TOKEN_ADDRESS;
 		const isOutputTokenEth = actionParams?.selectedOptionTo?.value === ETH_TOKEN_ADDRESS;
-		const isVaultTokenWrappedEth = currentVault.address === YVWETH_ADDRESS;
+		// TODO Move yvWFTM address to web-lib
+		const isVaultTokenWrappedEthOrFtm = (
+			(safeChainID === 1 && currentVault.address === YVWETH_ADDRESS) ||
+			(safeChainID === 250 && currentVault.address === toAddress('0x0DEC85e74A92c52b7F708c4B10207D9560CEFaf0'))
+		);
 
-		if (isVaultTokenWrappedEth && (isInputTokenEth || isOutputTokenEth)) {
+		if (isVaultTokenWrappedEthOrFtm && (isInputTokenEth || isOutputTokenEth)) {
 			return Solver.CHAIN_COIN;
 		}
 		if (currentVault?.migration?.available && (toAddress(actionParams?.selectedOptionTo?.value) === toAddress(currentVault?.migration?.address))) {
@@ -201,7 +205,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 			return Solver.PARTNER_CONTRACT;
 		}
 		return Solver.VANILLA;
-	}, [actionParams?.selectedOptionFrom?.value, actionParams?.selectedOptionFrom?.solveVia?.length, actionParams?.selectedOptionTo?.value, actionParams?.selectedOptionTo?.solveVia?.length, currentVault.address, currentVault?.migration?.available, currentVault?.migration?.address, isDepositing, isUsingPartnerContract, zapProvider]);
+	}, [actionParams?.selectedOptionFrom?.value, actionParams?.selectedOptionFrom?.solveVia?.length, actionParams?.selectedOptionTo?.value, actionParams?.selectedOptionTo?.solveVia?.length, safeChainID, currentVault.address, currentVault?.migration?.available, currentVault?.migration?.address, isDepositing, isUsingPartnerContract, zapProvider]);
 
 	const onSwitchSelectedOptions = useCallback((nextFlow = Flow.Switch): void => {
 		balancesNonce;
