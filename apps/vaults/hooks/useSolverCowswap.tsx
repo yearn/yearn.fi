@@ -211,7 +211,7 @@ export function useSolverCowswap(): TSolverContext {
 			if (order?.status === 'cancelled' || order?.status === 'expired') {
 				return ({isSuccessful: false, error: new Error('TX fail because the order was not fulfilled')});
 			}
-			if (validTo < (new Date().valueOf() / 1000)) {
+			if (validTo.valueOf() < (new Date().valueOf() / 1000)) {
 				return ({isSuccessful: false, error: new Error('TX fail because the order expired')});
 			}
 			// Sleep for 3 seconds before checking the status again
