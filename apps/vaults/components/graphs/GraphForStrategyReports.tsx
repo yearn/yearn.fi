@@ -10,7 +10,8 @@ import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
 
 import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
-import type {TYDaemonReports, TYearnVaultStrategy} from '@common/types/yearn';
+import type {TYearnVaultStrategy} from '@common/types/yearn';
+import type {TYDaemonReports} from '@vaults/schemas';
 
 export type TGraphForStrategyReportsProps = {
 	strategy: TYearnVaultStrategy,

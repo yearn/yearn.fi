@@ -1,4 +1,4 @@
-import type {TYDaemonReports} from '@common/types/yearn';
+import type {TYDaemonReports} from '@vaults/schemas';
 
 export type TYDaemonPartialReports = Pick<TYDaemonReports, 'timestamp'> & {
 	results: Pick<TYDaemonReports['results'][0], 'APR'>[];
