@@ -8,7 +8,8 @@
     "build": "tsc && next build",
     "export": "tsc && next build && next export -o ipfs",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
-    "bump": "bump"
+    "bump": "bump",
+    "test": "jest"
   },
   "dependencies": {
     "@gnosis.pm/gp-v2-contracts": "^1.1.2",
@@ -27,6 +28,7 @@
     "graphql": "^16.6.0",
     "graphql-request": "^5.1.0",
     "html2canvas": "^1.4.1",
+    "jest": "^29.5.0",
     "next": "^13.1.1",
     "next-plausible": "^3.7.2",
     "next-pwa": "^5.6.0",
@@ -44,6 +46,7 @@
     "wido": "^0.2.0"
   },
   "devDependencies": {
+    "@types/jest": "^29.5.1",
     "@types/node": "^18.11.18",
     "@types/nprogress": "^0.2.0",
     "@types/react": "^18.0.26",
@@ -69,6 +72,7 @@
     "postcss-nesting": "^10.2.0",
     "sass": "^1.57.1",
     "sharp": "^0.31.3",
+    "ts-jest": "^29.1.0",
     "ts-loader": "^9.4.2",
     "typescript": "^5.0.4"
   },
