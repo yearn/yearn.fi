@@ -1,9 +1,9 @@
 import {z} from 'zod';
 
 const resultSchema = z.object({
-	duration: z.string().optional(),
-	durationPR: z.string().optional(),
-	APR: z.string()
+	duration: z.coerce.number().optional(),
+	durationPR: z.coerce.number().optional(),
+	APR: z.coerce.number()
 });
 
 const reportSchema = z.object({
@@ -16,7 +16,7 @@ const reportSchema = z.object({
 	loss: z.string().optional(),
 	totalLoss: z.string().optional(),
 	debtPaid: z.string().optional(),
-	timestamp: z.string(),
+	timestamp: z.coerce.number(),
 	results: z.array(resultSchema)
 });
 

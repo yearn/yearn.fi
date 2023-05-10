@@ -62,14 +62,20 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVau
 		{revalidateOnFocus: false}
 	) as SWRResponse;
 
-	const result = yDaemonReportsSchema.safeParse(data);
+	let latestApr;
 
-	if (!result.success) {
-		// TODO Send to Sentry
-		console.error(result.error);
+	if (!data) {
+		latestApr = 0;
 	}
 
-	const latestApr = result.success ? findLatestApr(result.data) : 0;
+	const result = data ? yDaemonReportsSchema.safeParse(data) : null;
+
+	if (data && !result?.success) {
+		// TODO Send to Sentry
+		console.error(result?.error);
+	}
+
+	latestApr = result?.success ? findLatestApr(result.data) : 0;
 
 	return (
 		<details className={'p-0'}>
