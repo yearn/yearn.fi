@@ -2,7 +2,7 @@ import React, {useMemo, useState} from 'react';
 import dynamic from 'next/dynamic';
 import useSWR from 'swr';
 import {findLatestApr} from '@vaults/components/details/tabs/findLatestApr';
-import {ReportsSchema} from '@vaults/schemas';
+import {yDaemonReportsSchema} from '@vaults/schemas';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import IconCopy from '@yearn-finance/web-lib/icons/IconCopy';
@@ -62,15 +62,14 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVau
 		{revalidateOnFocus: false}
 	) as SWRResponse;
 
-	const result = ReportsSchema.safeParse(data);
+	const result = yDaemonReportsSchema.safeParse(data);
 
 	if (!result.success) {
 		// TODO Send to Sentry
 		console.error(result.error);
-		return null;
 	}
 
-	const latestApr = findLatestApr(result.data);
+	const latestApr = result.success ? findLatestApr(result.data) : 0;
 
 	return (
 		<details className={'p-0'}>

@@ -1,25 +1,25 @@
 import {z} from 'zod';
 
-const ResultSchema = z.object({
-	duration: z.string(),
-	durationPR: z.string(),
+const resultSchema = z.object({
+	duration: z.string().optional(),
+	durationPR: z.string().optional(),
 	APR: z.string()
 });
 
-const ReportSchema = z.object({
-	id: z.string(),
-	debtAdded: z.string(),
-	debtLimit: z.string(),
-	totalDebt: z.string(),
-	gain: z.string(),
-	totalGain: z.string(),
-	loss: z.string(),
-	totalLoss: z.string(),
-	debtPaid: z.string(),
+const reportSchema = z.object({
+	id: z.string().optional(),
+	debtAdded: z.string().optional(),
+	debtLimit: z.string().optional(),
+	totalDebt: z.string().optional(),
+	gain: z.string().optional(),
+	totalGain: z.string().optional(),
+	loss: z.string().optional(),
+	totalLoss: z.string().optional(),
+	debtPaid: z.string().optional(),
 	timestamp: z.string(),
-	results: z.array(ResultSchema)
+	results: z.array(resultSchema)
 });
 
-export const ReportsSchema = z.array(ReportSchema);
+export const yDaemonReportsSchema = z.array(reportSchema);
 
-export type TYDaemonReports = z.infer<typeof ReportSchema>;
+export type TYDaemonReports = z.infer<typeof reportSchema>;
