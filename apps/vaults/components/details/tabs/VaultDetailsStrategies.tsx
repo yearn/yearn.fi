@@ -2,6 +2,7 @@ import React, {useMemo, useState} from 'react';
 import dynamic from 'next/dynamic';
 import useSWR from 'swr';
 import {findLatestApr} from '@vaults/components/details/tabs/findLatestApr';
+import {ReportsSchema} from '@vaults/schemas';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import IconCopy from '@yearn-finance/web-lib/icons/IconCopy';
@@ -37,17 +38,9 @@ function	RiskScoreElement({label, value}: TRiskScoreElementProps): ReactElement 
 	);
 }
 
-function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVault, strategy: TYearnVaultStrategy}): ReactElement {
+function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVault, strategy: TYearnVaultStrategy}): ReactElement | null {
 	const {safeChainID} = useChainID();
 	const {settings: baseAPISettings} = useSettings();
-
-	const	{data: reports} = useSWR(
-		`${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/${safeChainID}/reports/${strategy.address}`,
-		baseFetcher,
-		{revalidateOnFocus: false}
-	) as SWRResponse;
-
-	const latestApr = findLatestApr(reports);
 
 	const	riskScoreElementsMap = useMemo((): TRiskScoreElementProps[] => {
 		const {riskDetails} = strategy?.risk || {};
@@ -62,6 +55,22 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVau
 			{label: 'Testing Score', value: riskDetails?.testingScore}
 		]);
 	}, [strategy]);
+
+	const	{data} = useSWR(
+		`${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/${safeChainID}/reports/${strategy.address}`,
+		baseFetcher,
+		{revalidateOnFocus: false}
+	) as SWRResponse;
+
+	const result = ReportsSchema.safeParse(data);
+
+	if (!result.success) {
+		// TODO Send to Sentry
+		console.error(result.error);
+		return null;
+	}
+
+	const latestApr = findLatestApr(result.data);
 
 	return (
 		<details className={'p-0'}>

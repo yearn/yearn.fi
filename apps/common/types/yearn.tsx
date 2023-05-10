@@ -173,23 +173,6 @@ export type TYDaemonHarvests = {
 	lossValue: number,
 }
 
-export type TYDaemonReports = {
-	debtAdded: string,
-	debtLimit: string,
-	totalDebt: string,
-	gain: string,
-	totalGain: string,
-	loss: string,
-	totalLoss: string,
-	debtPaid: string,
-	timestamp: string,
-	results: [{
-		duration: string,
-		durationPR: string,
-		APR: string
-	}]
-}
-
 export type TYdaemonEarned = {
 	earned: TDict<{
 		realizedGains: string,

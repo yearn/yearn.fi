@@ -43,7 +43,8 @@
     "swr": "^2.0.0",
     "tailwindcss": "^3.2.4",
     "telegraf": "^4.12.2",
-    "wido": "^0.2.0"
+    "wido": "^0.2.0",
+    "zod": "^3.21.4"
   },
   "devDependencies": {
     "@types/jest": "^29.5.1",
