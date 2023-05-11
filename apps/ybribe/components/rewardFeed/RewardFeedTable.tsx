@@ -18,7 +18,7 @@ export function RewardFeedTable(): ReactElement | null {
 	const {data} = useSWR(endpoint, baseFetcher);
 
 	if (!data) {
-		return null;
+		return <GaugeListEmpty />;
 	}
 
 	const result = yDaemonGaugeRewardsFeedSchema.safeParse(data);
