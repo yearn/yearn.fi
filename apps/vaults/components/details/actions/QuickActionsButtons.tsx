@@ -38,7 +38,7 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 
 	const onSuccess = useCallback(async (): Promise<void> => {
 		onChangeAmount(toNormalizedBN(0));
-		if ([Solver.VANILLA, Solver.CHAIN_COIN, Solver.PARTNER_CONTRACT].includes(currentSolver)) {
+		if ([Solver.VANILLA, Solver.CHAIN_COIN, Solver.PARTNER_CONTRACT, Solver.OPTIMISM_BOOSTER].includes(currentSolver)) {
 			await refresh([
 				{token: toAddress(actionParams?.selectedOptionFrom?.value)},
 				{token: toAddress(actionParams?.selectedOptionTo?.value)}
