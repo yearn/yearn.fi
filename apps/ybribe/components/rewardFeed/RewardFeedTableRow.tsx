@@ -9,8 +9,8 @@ import {useYearn} from '@common/contexts/useYearn';
 
 import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
+import type {TYDaemonGaugeRewardsFeed} from '@common/schemas/yDaemonGaugeRewardsFeedSchema';
 import type {TCurveGauges} from '@common/types/curves';
-import type {TYDaemonGaugeRewardsFeed} from '@common/types/yearn';
 
 function	RewardFeedRowItemWithExtraData({
 	address,
@@ -39,7 +39,7 @@ function	RewardFeedRowItemWithExtraData({
 	);
 }
 
-function	RewardFeedTableRow({currentRewardAdded}: {currentRewardAdded: TYDaemonGaugeRewardsFeed}): ReactElement {
+function	RewardFeedTableRow({currentRewardAdded}: {currentRewardAdded: TYDaemonGaugeRewardsFeed[0]}): ReactElement | null {
 	const	{gauges} = useCurve();
 
 	const	gaugesObject = useMemo((): {[key: string]: TCurveGauges} => {
@@ -51,6 +51,10 @@ function	RewardFeedTableRow({currentRewardAdded}: {currentRewardAdded: TYDaemonG
 	}, [gauges]);
 
 	const	gaugeItem = gaugesObject[toAddress(currentRewardAdded.gauge)];
+
+	if (!gaugeItem) {
+		return null;
+	}
 
 	return (
 		<div className={'grid w-full grid-cols-2 border-t border-neutral-200 px-4 md:grid-cols-3 md:px-10'}>
