@@ -27,9 +27,7 @@ export function RewardFeedTable(): ReactElement | null {
 		return <GaugeListEmpty />;
 	}
 
-	const sortedFeed = result.data.sort((a, b): number => {
-		return Number(b.timestamp) - Number(a.timestamp);
-	}) ;
+	const sortedFeed = result.data.sort((a, b): number => b.timestamp - a.timestamp) ;
 
 	return (
 		<>
