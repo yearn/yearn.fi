@@ -85,8 +85,10 @@ export function useVLyCRV(): TUseVLyCRV {
 
 	const {data, mutate} = useSWR<TUseVLyCRV['initialData']>(isActive && provider ? 'vLyCRV' : null, fetcher);
 
+	const initialData = (data && !isEmpty(data)) ? data : DEFAULT_VLYCRV;
+
 	return {
-		initialData: data ?? DEFAULT_VLYCRV,
+		initialData,
 		mutateData: mutate,
 		deposit: vLyCRVDeposit,
 		withdraw: vLyCRVWithdraw,
@@ -96,4 +98,12 @@ export function useVLyCRV(): TUseVLyCRV {
 			approveERC20(provider, YCRV_TOKEN_ADDRESS, VLYCRV_TOKEN_ADDRESS, amount)
 		)
 	};
+}
+
+function isEmpty(data?: TUseVLyCRV['initialData']): boolean {
+	if (!data) {
+		return true;
+	}
+
+	return !data.nextPeriod || !data.userInfo || !data.getVotesUnpacked;
 }
