@@ -4,7 +4,6 @@ import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import {yDaemonGaugeRewardsFeedSchema} from '@common/schemas';
 import {GaugeListEmpty} from '@yBribe/components/bribe/GaugeListEmpty';
-import {RewardFeedTableHead} from '@yBribe/components/rewardFeed/RewardFeedTableHead';
 import {RewardFeedTableRow} from '@yBribe/components/rewardFeed/RewardFeedTableRow';
 
 import type {ReactElement, ReactNode} from 'react';
@@ -25,12 +24,7 @@ export function RewardFeedTable(): ReactElement | null {
 	if (!result.success) {
 		// TODO Send to Sentry
 		console.error(result?.error);
-		return (
-			<>
-				<RewardFeedTableHead />
-				<GaugeListEmpty />
-			</>
-		);
+		return <GaugeListEmpty />;
 	}
 
 	const sortedFeed = result.data.sort((a, b): number => {
@@ -39,7 +33,6 @@ export function RewardFeedTable(): ReactElement | null {
 
 	return (
 		<>
-			<RewardFeedTableHead />
 			{sortedFeed.filter(Boolean).map((item, index): ReactNode =>
 				<RewardFeedTableRow
 					key={`${index}-${item.txHash}_${item.briber}_${item.rewardToken}`}
