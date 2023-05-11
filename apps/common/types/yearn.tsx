@@ -183,13 +183,3 @@ export type TYdaemonEarned = {
 	totalRealizedGainsUSD: number,
 	totalUnrealizedGainsUSD: number,
 }
-
-export type TYDaemonGaugeRewardsFeed = {
-	briber: TAddress;
-	gauge: TAddress;
-	rewardToken: TAddress;
-	amount: string;
-	txHash: string;
-	timestamp: string;
-	blockNumber: string;
-}
