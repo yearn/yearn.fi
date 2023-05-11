@@ -103,6 +103,7 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 			|| (currentSolver === Solver.COWSWAP)
 			|| (currentSolver === Solver.WIDO)
 			|| (currentSolver === Solver.PARTNER_CONTRACT)
+			|| (currentSolver === Solver.OPTIMISM_BOOSTER)
 		)
 	) {
 		return (
