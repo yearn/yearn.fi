@@ -118,53 +118,39 @@ function WithSolverContextApp({children}: { children: React.ReactElement }): Rea
 				];
 				const [widoQuote, cowswapQuote, portalsQuote] = await Promise.allSettled(promises);
 
-				let result: [PromiseSettledResult<TNormalizedBN>, Solver, TSolverContext];
+				const solverPriority = [Solver.WIDO, Solver.COWSWAP, Solver.PORTALS, Solver.VANILLA];
 
-				if (currentSolver === Solver.WIDO && !isSolverDisabled[Solver.WIDO]) {
-					if (isValidSolver({quote: widoQuote, solver: Solver.WIDO})) {
-						result = [widoQuote, Solver.WIDO, wido];
-					} else if (isValidSolver({quote:cowswapQuote, solver: Solver.COWSWAP})) {
-						result = [cowswapQuote, Solver.COWSWAP, cowswap];
-					} else if (isValidSolver({quote:portalsQuote, solver: Solver.PORTALS})) {
-						result = [portalsQuote, Solver.PORTALS, portals];
-					} else {
-						result = [{status: 'fulfilled', value: toNormalizedBN(0)}, Solver.NONE, vanilla];
-						
-					}
-					const [quote, solver, solverCtx] = result;
-					await handleUpdateSolver({request, quote, solver, solverCtx});
-					return;
+				const solvers = {} as any;
+
+				if (isValidSolver({quote: widoQuote, solver: Solver.WIDO})) {
+					solvers[Solver.WIDO] = [widoQuote, Solver.WIDO, wido];
 				}
 
-				if (currentSolver === Solver.COWSWAP && !isSolverDisabled[Solver.COWSWAP]) {
-					if (isValidSolver({quote:cowswapQuote, solver: Solver.COWSWAP})) {
-						result = [cowswapQuote, Solver.COWSWAP, cowswap];
-					} else if (isValidSolver({quote: widoQuote, solver: Solver.WIDO})) {
-						result = [widoQuote, Solver.WIDO, wido];
-					} else if (isValidSolver({quote:portalsQuote, solver: Solver.PORTALS})) {
-						result = [portalsQuote, Solver.PORTALS, portals];
-					} else {
-						result = [{status: 'fulfilled', value: toNormalizedBN(0)}, Solver.NONE, vanilla];
-					}
-					const [quote, solver, solverCtx] = result;
-					await handleUpdateSolver({request, quote, solver, solverCtx});
-					return;
+				if (isValidSolver({quote: cowswapQuote, solver: Solver.COWSWAP})) {
+					solvers[Solver.COWSWAP] = [cowswapQuote, Solver.COWSWAP, cowswap];
 				}
 
-				if (currentSolver === Solver.PORTALS && !isSolverDisabled[Solver.PORTALS]) {
-					if (isValidSolver({quote:portalsQuote, solver: Solver.PORTALS})) {
-						result = [portalsQuote, Solver.PORTALS, portals];
-					} else if (isValidSolver({quote: widoQuote, solver: Solver.WIDO})) {
-						result = [widoQuote, Solver.WIDO, wido];
-					} else if (isValidSolver({quote:cowswapQuote, solver: Solver.COWSWAP})) {
-						result = [cowswapQuote, Solver.COWSWAP, cowswap];
-					} else {
-						result = [{status: 'fulfilled', value: toNormalizedBN(0)}, Solver.NONE, vanilla];
+				if (isValidSolver({quote: portalsQuote, solver: Solver.PORTALS})) {
+					solvers[Solver.PORTALS] = [portalsQuote, Solver.PORTALS, portals];
+				}
+
+				solvers[Solver.VANILLA] = [{status: 'fulfilled', value: toNormalizedBN(0)}, Solver.NONE, vanilla];
+
+				const currentSolverIndex = solverPriority.indexOf(currentSolver);
+				if (currentSolverIndex > -1) {
+					solverPriority.splice(currentSolverIndex, 1); // Remove currentSolver from its current position
+				}
+				solverPriority.unshift(currentSolver); // Add currentSolver back to the beginning of the array
+
+				solverPriority.forEach(async (currentSolver: Solver): Promise<void> => {
+					if (!solvers[currentSolver]) {
+						return;
 					}
-					const [quote, solver, solverCtx] = result;
+
+					const [quote, solver, solverCtx] = solvers[currentSolver];
 					await handleUpdateSolver({request, quote, solver, solverCtx});
 					return;
-				}
+				});
 
 				set_isLoading(false);
 
