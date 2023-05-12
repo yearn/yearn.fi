@@ -151,56 +151,24 @@ function WithSolverContextApp({children}: { children: React.ReactElement }): Rea
 			}
 
 			case Solver.CHAIN_COIN: {
-				const quote = await chainCoin.init(request);
-				await handleUpdateSolver({
-					request,
-					quote: {
-						status: 'fulfilled',
-						value: quote
-					},
-					solver: Solver.CHAIN_COIN,
-					solverCtx: chainCoin
-				});
+				const [quote] = await Promise.allSettled([chainCoin.init(request)]);
+				await handleUpdateSolver({request, quote, solver: Solver.CHAIN_COIN, solverCtx: chainCoin});
 				break;
 			}
 			case Solver.PARTNER_CONTRACT: {
-				const quote = await partnerContract.init(request);
-				await handleUpdateSolver({
-					request,
-					quote:{
-						status: 'fulfilled',
-						value: quote
-					},
-					solver: Solver.PARTNER_CONTRACT,
-					solverCtx: partnerContract
-				});
+				const [quote] = await Promise.allSettled([partnerContract.init(request)]);
+				await handleUpdateSolver({request, quote, solver: Solver.PARTNER_CONTRACT, solverCtx: partnerContract});
 				break;
 			}
 			case Solver.INTERNAL_MIGRATION: {
 				request.migrator = currentVault.migration.contract;
-				const quote = await internalMigration.init(request);
-				await handleUpdateSolver({
-					request,
-					quote:{
-						status: 'fulfilled',
-						value: quote
-					},
-					solver: Solver.INTERNAL_MIGRATION,
-					solverCtx: internalMigration
-				});
+				const [quote] = await Promise.allSettled([internalMigration.init(request)]);
+				await handleUpdateSolver({request, quote, solver: Solver.INTERNAL_MIGRATION, solverCtx: internalMigration});
 				break;
 			}
 			default: {
-				const quote = await vanilla.init(request);
-				await handleUpdateSolver({
-					request,
-					quote: {
-						status: 'fulfilled',
-						value: quote
-					},
-					solver: Solver.VANILLA,
-					solverCtx: vanilla
-				});
+				const [quote] = await Promise.allSettled([vanilla.init(request)]);
+				await handleUpdateSolver({request, quote, solver: Solver.VANILLA, solverCtx: vanilla});
 			}
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
