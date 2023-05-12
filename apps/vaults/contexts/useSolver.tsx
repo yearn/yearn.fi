@@ -42,7 +42,7 @@ type TUpdateSolverHandler = {
 	request: TInitSolverArgs;
 	quote: PromiseSettledResult<TNormalizedBN>;
 	solver: Solver;
-	solverCtx: TSolverContext;
+	ctx: TSolverContext;
 }
 
 const DefaultWithSolverContext: TWithSolver = {
@@ -72,14 +72,14 @@ function WithSolverContextApp({children}: { children: React.ReactElement }): Rea
 	const [currentSolverState, set_currentSolverState] = useState<TSolverContext & { hash: MaybeString }>({...vanilla, hash: undefined});
 	const [isLoading, set_isLoading] = useState(false);
 
-	async function handleUpdateSolver({request, quote, solver, solverCtx}: TUpdateSolverHandler): Promise<void> {
-		if (quote.status !== 'fulfilled' ) {
+	async function handleUpdateSolver({request, quote, solver, ctx}: TUpdateSolverHandler): Promise<void> {
+		if (quote.status !== 'fulfilled') {
 			return;
 		}
-		
+
 		const requestHash = await hash(JSON.stringify({...request, solver, expectedOut: quote.value.raw.toString()}));
 		performBatchedUpdates((): void => {
-			set_currentSolverState({...solverCtx, quote: quote.value, hash: requestHash});
+			set_currentSolverState({...ctx, quote: quote.value, hash: requestHash});
 			set_isLoading(false);
 		});
 	}
@@ -101,7 +101,7 @@ function WithSolverContextApp({children}: { children: React.ReactElement }): Rea
 			isDepositing: isDepositing
 		};
 
-		const isValidSolver = ({quote, solver}: {quote: PromiseSettledResult<TNormalizedBN>; solver: Solver}): boolean => {
+		const isValidSolver = ({quote, solver}: { quote: PromiseSettledResult<TNormalizedBN>; solver: Solver }): boolean => {
 			return quote.status === 'fulfilled' && quote?.value.raw?.gt(0) && !isSolverDisabled[solver];
 		};
 
@@ -116,33 +116,32 @@ function WithSolverContextApp({children}: { children: React.ReactElement }): Rea
 				]);
 
 				const solvers: {
-					[key in Solver]?: [PromiseSettledResult<TNormalizedBN>, TSolverContext];
+					[key in Solver]?: { quote: PromiseSettledResult<TNormalizedBN>; ctx: TSolverContext };
 				} = {};
-				
-				if (isValidSolver({quote: widoQuote, solver: Solver.WIDO})) {
-					solvers[Solver.WIDO] = [widoQuote, wido];
-				}
-				
-				if (isValidSolver({quote: cowswapQuote, solver: Solver.COWSWAP})) {
-					solvers[Solver.COWSWAP] = [cowswapQuote, cowswap];
-				}
-				
-				if (isValidSolver({quote: portalsQuote, solver: Solver.PORTALS})) {
-					solvers[Solver.PORTALS] = [portalsQuote, portals];
-				}
-				
-				solvers[Solver.VANILLA] = [{status: 'fulfilled', value: toNormalizedBN(0)}, vanilla];
-				
+
+				[
+					{solver: Solver.WIDO, quote: widoQuote, ctx: wido},
+					{solver: Solver.COWSWAP, quote: cowswapQuote, ctx: cowswap},
+					{solver: Solver.PORTALS, quote: portalsQuote, ctx: portals}
+				].forEach(({solver, quote, ctx}): void => {
+					if (isValidSolver({quote, solver})) {
+						solvers[solver] = {quote, ctx};
+					}
+				});
+
+				solvers[Solver.VANILLA] = {quote: {status: 'fulfilled', value: toNormalizedBN(0)}, ctx: vanilla};
+
 				const solverPriority = [Solver.WIDO, Solver.COWSWAP, Solver.PORTALS, Solver.VANILLA];
+				
 				const newSolverPriority = [currentSolver, ...solverPriority.filter((solver): boolean => solver !== currentSolver)];
 
-				for (const currentSolver of newSolverPriority) {
-					if (!solvers[currentSolver]) {
+				for (const solver of newSolverPriority) {
+					if (!solvers[solver]) {
 						continue;
 					}
 
-					const [quote, solverCtx] = solvers[currentSolver] ?? solvers[Solver.VANILLA];
-					await handleUpdateSolver({request, quote, solver: currentSolver, solverCtx});
+					const {quote, ctx} = solvers[solver] ?? solvers[Solver.VANILLA];
+					await handleUpdateSolver({request, quote, solver, ctx});
 					return;
 				}
 
@@ -150,26 +149,26 @@ function WithSolverContextApp({children}: { children: React.ReactElement }): Rea
 			}
 			case Solver.CHAIN_COIN: {
 				const [quote] = await Promise.allSettled([chainCoin.init(request)]);
-				await handleUpdateSolver({request, quote, solver: Solver.CHAIN_COIN, solverCtx: chainCoin});
+				await handleUpdateSolver({request, quote, solver: Solver.CHAIN_COIN, ctx: chainCoin});
 				break;
 			}
 			case Solver.PARTNER_CONTRACT: {
 				const [quote] = await Promise.allSettled([partnerContract.init(request)]);
-				await handleUpdateSolver({request, quote, solver: Solver.PARTNER_CONTRACT, solverCtx: partnerContract});
+				await handleUpdateSolver({request, quote, solver: Solver.PARTNER_CONTRACT, ctx: partnerContract});
 				break;
 			}
 			case Solver.INTERNAL_MIGRATION: {
 				request.migrator = currentVault.migration.contract;
 				const [quote] = await Promise.allSettled([internalMigration.init(request)]);
-				await handleUpdateSolver({request, quote, solver: Solver.INTERNAL_MIGRATION, solverCtx: internalMigration});
+				await handleUpdateSolver({request, quote, solver: Solver.INTERNAL_MIGRATION, ctx: internalMigration});
 				break;
 			}
 			default: {
 				const [quote] = await Promise.allSettled([vanilla.init(request)]);
-				await handleUpdateSolver({request, quote, solver: Solver.VANILLA, solverCtx: vanilla});
+				await handleUpdateSolver({request, quote, solver: Solver.VANILLA, ctx: vanilla});
 			}
 		}
-		
+
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [address, actionParams, currentSolver, cowswap.init, vanilla.init, wido.init, internalMigration.init, isDepositing, currentVault.migration.contract]); //Ignore the warning, it's a false positive
 
