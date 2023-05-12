@@ -25,7 +25,7 @@ function	HeaderPosition(): ReactElement {
 	const balanceOfLpyCRV = useBalance(LPYCRV_TOKEN_ADDRESS);
 	const stycrvPrice = useTokenPrice(STYCRV_TOKEN_ADDRESS);
 	const lpycrvPrice = useTokenPrice(LPYCRV_TOKEN_ADDRESS);
-	
+
 	const	formatedYearnHas = useMemo((): ReactNode => (
 		holdings?.veCRVBalance ?
 			formatAmount(formatToNormalizedValue(holdings.veCRVBalance, 18), 0, 0)
@@ -81,7 +81,7 @@ function	Holdings(): ReactElement {
 	const lpycrvPrice = useTokenPrice(LPYCRV_TOKEN_ADDRESS);
 	const balanceOfStyCRV = useBalance(STYCRV_TOKEN_ADDRESS);
 	const balanceOfLpyCRV = useBalance(LPYCRV_TOKEN_ADDRESS);
-	
+
 	const	formatBigNumberOver10K = useCallback((v: BigNumber): string => {
 		if (formatBN(v)?.gt(ethers.constants.WeiPerEther.mul(10000))) {
 			return formatAmount(formatToNormalizedValue(v || 0, 18), 0, 0)?.toString() ?? '';
@@ -258,44 +258,6 @@ function	Holdings(): ReactElement {
 										balanceOfLpyCRV?.normalized,
 										lpycrvPrice
 									)}
-								</p>
-							</div>
-						</div>
-					</div>
-
-					<div className={'mb-8 grid w-full grid-cols-1 md:grid-cols-5'}>
-						<div className={'flex flex-row items-center justify-between'}>
-							<span className={'inline text-sm font-normal text-neutral-400 md:hidden'}>{'Product: '}</span>
-							<p className={'text-base text-neutral-900'}>
-								{'vl-yCRV'}
-							</p>
-						</div>
-						<div className={'flex flex-row items-center justify-between'}>
-							<span className={'mr-auto inline font-normal text-neutral-400 md:hidden'}>{'APY: '}</span>
-							<b className={'font-number text-base text-neutral-900'}>
-								{'N/A'}
-							</b>
-						</div>
-						<div className={'flex flex-row items-center justify-between'}>
-							<span className={'inline text-sm font-normal text-neutral-400 md:hidden'}>{'Total Assets: '}</span>
-							<p className={'font-number text-base text-neutral-900'}>
-								{'N/A'}
-							</p>
-						</div>
-						<div className={'flex flex-row items-center justify-between'}>
-							<span className={'inline text-sm font-normal text-neutral-400 md:hidden'}>{'yCRV Deposits: '}</span>
-							<p className={'font-number text-base text-neutral-900'}>
-								{'N/A'}
-							</p>
-						</div>
-						<div className={'flex flex-row items-baseline justify-between'}>
-							<span className={'inline text-sm font-normal text-neutral-400 md:hidden'}>{'My Balance: '}</span>
-							<div>
-								<p className={'font-number text-base text-neutral-900'}>
-									{'N/A'}
-								</p>
-								<p className={'font-number text-xs text-neutral-600'}>
-									{'N/A'}
 								</p>
 							</div>
 						</div>
