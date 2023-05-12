@@ -111,12 +111,11 @@ function WithSolverContextApp({children}: { children: React.ReactElement }): Rea
 			case Solver.WIDO:
 			case Solver.PORTALS:
 			case Solver.COWSWAP: {
-				const promises = [
+				const [widoQuote, cowswapQuote, portalsQuote] = await Promise.allSettled([
 					wido.init(request, currentSolver === Solver.WIDO),
 					cowswap.init(request, currentSolver === Solver.COWSWAP),
 					portals.init(request, currentSolver === Solver.PORTALS)
-				];
-				const [widoQuote, cowswapQuote, portalsQuote] = await Promise.allSettled(promises);
+				]);
 
 				const solverPriority = [Solver.WIDO, Solver.COWSWAP, Solver.PORTALS, Solver.VANILLA];
 
@@ -147,7 +146,7 @@ function WithSolverContextApp({children}: { children: React.ReactElement }): Rea
 					await handleUpdateSolver({request, quote, solver, solverCtx});
 					return;
 				}
-				
+
 				break;
 			}
 
