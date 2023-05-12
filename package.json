@@ -18,7 +18,7 @@
     "@next/font": "^13.1.1",
     "@popperjs/core": "^2.11.7",
     "@react-hookz/deep-equal": "^1.0.4",
-    "@yearn-finance/web-lib": "^0.18.30",
+    "@yearn-finance/web-lib": "^0.18.35",
     "axios": "^1.2.2",
     "dayjs": "^1.11.7",
     "ethcall": "^4.8.13",
