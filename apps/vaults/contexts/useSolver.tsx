@@ -25,7 +25,8 @@ export enum Solver {
 	INTERNAL_MIGRATION = 'InternalMigration',
 	COWSWAP = 'Cowswap',
 	WIDO = 'Wido',
-	PORTALS = 'Portals'
+	PORTALS = 'Portals',
+	NONE = 'None'
 }
 
 export const isSolverDisabled = {
@@ -35,7 +36,8 @@ export const isSolverDisabled = {
 	[Solver.INTERNAL_MIGRATION]: false,
 	[Solver.COWSWAP]: false,
 	[Solver.WIDO]: false,
-	[Solver.PORTALS]: false
+	[Solver.PORTALS]: false,
+	[Solver.NONE]: false
 };
 
 type TUpdateSolverHandler = {
@@ -129,7 +131,7 @@ function WithSolverContextApp({children}: { children: React.ReactElement }): Rea
 					}
 				});
 
-				solvers[Solver.VANILLA] = {quote: {status: 'fulfilled', value: toNormalizedBN(0)}, ctx: vanilla};
+				solvers[Solver.NONE] = {quote: {status: 'fulfilled', value: toNormalizedBN(0)}, ctx: vanilla};
 
 				const solverPriority = [Solver.WIDO, Solver.COWSWAP, Solver.PORTALS, Solver.VANILLA];
 				
@@ -140,7 +142,7 @@ function WithSolverContextApp({children}: { children: React.ReactElement }): Rea
 						continue;
 					}
 
-					const {quote, ctx} = solvers[solver] ?? solvers[Solver.VANILLA];
+					const {quote, ctx} = solvers[solver] ?? solvers[Solver.NONE];
 					await handleUpdateSolver({request, quote, solver, ctx});
 					return;
 				}
