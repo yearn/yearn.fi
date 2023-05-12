@@ -136,24 +136,18 @@ function WithSolverContextApp({children}: { children: React.ReactElement }): Rea
 
 				solvers[Solver.VANILLA] = [{status: 'fulfilled', value: toNormalizedBN(0)}, Solver.NONE, vanilla];
 
-				const currentSolverIndex = solverPriority.indexOf(currentSolver);
-				if (currentSolverIndex > -1) {
-					solverPriority.splice(currentSolverIndex, 1); // Remove currentSolver from its current position
-				}
-				solverPriority.unshift(currentSolver); // Add currentSolver back to the beginning of the array
+				const newSolverPriority = [currentSolver, ...solverPriority.filter((solver): boolean => solver !== currentSolver)];
 
-				solverPriority.forEach(async (currentSolver: Solver): Promise<void> => {
+				for (const currentSolver of newSolverPriority) {
 					if (!solvers[currentSolver]) {
-						return;
+						continue;
 					}
 
 					const [quote, solver, solverCtx] = solvers[currentSolver];
 					await handleUpdateSolver({request, quote, solver, solverCtx});
 					return;
-				});
-
-				set_isLoading(false);
-
+				}
+				
 				break;
 			}
 
