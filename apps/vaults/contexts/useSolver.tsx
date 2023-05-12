@@ -133,7 +133,7 @@ function WithSolverContextApp({children}: { children: React.ReactElement }): Rea
 
 				solvers[Solver.NONE] = {quote: {status: 'fulfilled', value: toNormalizedBN(0)}, ctx: vanilla};
 
-				const solverPriority = [Solver.WIDO, Solver.COWSWAP, Solver.PORTALS, Solver.VANILLA];
+				const solverPriority = [Solver.WIDO, Solver.COWSWAP, Solver.PORTALS, Solver.NONE];
 				
 				const newSolverPriority = [currentSolver, ...solverPriority.filter((solver): boolean => solver !== currentSolver)];
 
