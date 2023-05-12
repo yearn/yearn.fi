@@ -1,33 +1,14 @@
-import React, {useMemo} from 'react';
+import React from 'react';
 import Balancer from 'react-wrap-balancer';
-import useSWR from 'swr';
-import Renderable from '@yearn-finance/web-lib/components/Renderable';
-import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
-import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import SettingsOverwrite from '@common/components/SettingsOverwrite';
-import {GaugeListEmpty} from '@yBribe/components/bribe/GaugeListEmpty';
+import {RewardFeedTable} from '@yBribe/components/rewardFeed/RewardFeedTable';
 import {RewardFeedTableHead} from '@yBribe/components/rewardFeed/RewardFeedTableHead';
-import {RewardFeedTableRow} from '@yBribe/components/rewardFeed/RewardFeedTableRow';
 import Wrapper from '@yBribe/Wrapper';
 
 import type {NextRouter} from 'next/router';
-import type {ReactElement, ReactNode} from 'react';
-import type {SWRResponse} from 'swr';
-import type {TYDaemonGaugeRewardsFeed} from '@common/types/yearn';
+import type {ReactElement} from 'react';
 
 function	About(): ReactElement {
-	const {settings: baseAPISettings} = useSettings();
-	const {data: feed} = useSWR(
-		`${baseAPISettings.yDaemonBaseURI}/1/bribes/newRewardFeed`,
-		baseFetcher
-	) as SWRResponse<TYDaemonGaugeRewardsFeed[]>;
-
-	const	sortedFeed = useMemo((): TYDaemonGaugeRewardsFeed[] => {
-		return (feed || []).sort((a, b): number => {
-			return Number(b.timestamp) - Number(a.timestamp);
-		});
-	}, [feed]);
-
 	return (
 		<section className={'mt-4 grid w-full grid-cols-1 gap-10 pb-10 md:mt-20 md:grid-cols-2'}>
 			<div>
@@ -79,15 +60,7 @@ function	About(): ReactElement {
 					</div>
 					<div className={'grid w-full grid-cols-1 pb-2 md:pb-4'}>
 						<RewardFeedTableHead />
-						<Renderable
-							shouldRender={(feed || []).length > 0}
-							fallback={<GaugeListEmpty />}>
-							{sortedFeed.filter((item): boolean => !!item).map((item): ReactNode =>
-								<RewardFeedTableRow
-									key={`${item.txHash}_${item.briber}_${item.rewardToken}`}
-									currentRewardAdded={item} />
-							)}
-						</Renderable>
+						<RewardFeedTable />
 					</div>
 				</div>
 			</div>
