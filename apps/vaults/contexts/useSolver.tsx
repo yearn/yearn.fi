@@ -25,8 +25,7 @@ export enum Solver {
 	INTERNAL_MIGRATION = 'InternalMigration',
 	COWSWAP = 'Cowswap',
 	WIDO = 'Wido',
-	PORTALS = 'Portals',
-	NONE = 'None'
+	PORTALS = 'Portals'
 }
 
 export const isSolverDisabled = {
@@ -36,8 +35,7 @@ export const isSolverDisabled = {
 	[Solver.INTERNAL_MIGRATION]: false,
 	[Solver.COWSWAP]: false,
 	[Solver.WIDO]: false,
-	[Solver.PORTALS]: false,
-	[Solver.NONE]: false
+	[Solver.PORTALS]: false
 };
 
 type TUpdateSolverHandler = {
@@ -117,24 +115,25 @@ function WithSolverContextApp({children}: { children: React.ReactElement }): Rea
 					portals.init(request, currentSolver === Solver.PORTALS)
 				]);
 
-				const solverPriority = [Solver.WIDO, Solver.COWSWAP, Solver.PORTALS, Solver.VANILLA];
-
-				const solvers = {} as any;
-
+				const solvers: {
+					[key in Solver]?: [PromiseSettledResult<TNormalizedBN>, TSolverContext];
+				} = {};
+				
 				if (isValidSolver({quote: widoQuote, solver: Solver.WIDO})) {
-					solvers[Solver.WIDO] = [widoQuote, Solver.WIDO, wido];
+					solvers[Solver.WIDO] = [widoQuote, wido];
 				}
-
+				
 				if (isValidSolver({quote: cowswapQuote, solver: Solver.COWSWAP})) {
-					solvers[Solver.COWSWAP] = [cowswapQuote, Solver.COWSWAP, cowswap];
+					solvers[Solver.COWSWAP] = [cowswapQuote, cowswap];
 				}
-
+				
 				if (isValidSolver({quote: portalsQuote, solver: Solver.PORTALS})) {
-					solvers[Solver.PORTALS] = [portalsQuote, Solver.PORTALS, portals];
+					solvers[Solver.PORTALS] = [portalsQuote, portals];
 				}
-
-				solvers[Solver.VANILLA] = [{status: 'fulfilled', value: toNormalizedBN(0)}, Solver.NONE, vanilla];
-
+				
+				solvers[Solver.VANILLA] = [{status: 'fulfilled', value: toNormalizedBN(0)}, vanilla];
+				
+				const solverPriority = [Solver.WIDO, Solver.COWSWAP, Solver.PORTALS, Solver.VANILLA];
 				const newSolverPriority = [currentSolver, ...solverPriority.filter((solver): boolean => solver !== currentSolver)];
 
 				for (const currentSolver of newSolverPriority) {
@@ -142,14 +141,13 @@ function WithSolverContextApp({children}: { children: React.ReactElement }): Rea
 						continue;
 					}
 
-					const [quote, solver, solverCtx] = solvers[currentSolver];
-					await handleUpdateSolver({request, quote, solver, solverCtx});
+					const [quote, solverCtx] = solvers[currentSolver] ?? solvers[Solver.VANILLA];
+					await handleUpdateSolver({request, quote, solver: currentSolver, solverCtx});
 					return;
 				}
 
 				break;
 			}
-
 			case Solver.CHAIN_COIN: {
 				const [quote] = await Promise.allSettled([chainCoin.init(request)]);
 				await handleUpdateSolver({request, quote, solver: Solver.CHAIN_COIN, solverCtx: chainCoin});
@@ -171,6 +169,7 @@ function WithSolverContextApp({children}: { children: React.ReactElement }): Rea
 				await handleUpdateSolver({request, quote, solver: Solver.VANILLA, solverCtx: vanilla});
 			}
 		}
+		
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [address, actionParams, currentSolver, cowswap.init, vanilla.init, wido.init, internalMigration.init, isDepositing, currentVault.migration.contract]); //Ignore the warning, it's a false positive
 
