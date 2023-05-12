@@ -79,7 +79,7 @@ function RewardsTab({currentVault}: {currentVault: TYearnVault}): ReactElement {
 								: approveStake(provider, currentVault.address, toAddress(stakingRewards?.address))
 						}
 						isBusy={stakeStatus.loading || approveStakeStatus.loading || isLoadingAllowances}
-						isDisabled={!isActive || isLoadingAllowances || vaultBalance.normalized <= 0 }
+						isDisabled={!isActive || isLoadingAllowances || Number(vaultBalance.normalized) <= 0 }
 					>
 						{isApproved ? 'Stake' : 'Approve'}
 					</Button>
@@ -106,7 +106,7 @@ function RewardsTab({currentVault}: {currentVault: TYearnVault}): ReactElement {
 						className={'w-full md:mt-7 md:w-[168px]'}
 						onClick={(): unknown => claim(provider, userAddress, toAddress(stakingRewards?.address))}
 						isBusy={claimStatus.loading}
-						isDisabled={!isActive || rewardBalance.normalized <= 0}
+						isDisabled={!isActive || Number(rewardBalance.normalized) <= 0}
 					>
 						{'Claim'}
 					</Button>
@@ -133,7 +133,7 @@ function RewardsTab({currentVault}: {currentVault: TYearnVault}): ReactElement {
 						className={'w-full md:mt-7 md:w-[168px]'}
 						onClick={(): unknown => unstake(provider, userAddress, toAddress(stakingRewards?.address))}
 						isBusy={unstakeStatus.loading}
-						isDisabled={!isActive || stakeBalance.normalized <= 0 }
+						isDisabled={!isActive || Number(stakeBalance.normalized) <= 0 }
 					>
 						{'Unstake + Claim'}
 					</Button>
