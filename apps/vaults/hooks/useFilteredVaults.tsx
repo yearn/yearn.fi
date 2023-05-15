@@ -1,17 +1,15 @@
 import {useMemo} from 'react';
 
 import type {TDict} from '@yearn-finance/web-lib/types';
-import type {TYearnVault} from '@common/types/yearn';
+import type {TYDaemonVault} from '@common/schemas';
 
 function	useFilteredVaults(
-	vaultMap: TDict<TYearnVault | undefined>,
-	condition: (v: TYearnVault) => boolean
-): TYearnVault[] {
-	const	filtered = useMemo((): TYearnVault[] => {
-		return (Object.values(vaultMap || {}).filter((vault): boolean => condition(vault as TYearnVault)) as TYearnVault[]);
-	}, [vaultMap, condition]);
-
-	return (filtered);
+	vaultMap: TDict<TYDaemonVault>,
+	condition: (v: TYDaemonVault) => boolean
+): TYDaemonVault[] {
+	return useMemo((): TYDaemonVault[] => (
+		Object.values(vaultMap).filter((vault): boolean => condition(vault))
+	), [vaultMap, condition]);
 }
 
 export {useFilteredVaults};

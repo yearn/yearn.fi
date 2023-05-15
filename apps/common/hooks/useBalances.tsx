@@ -20,6 +20,7 @@ import type {TGetBatchBalancesResp} from 'pages/api/getBatchBalances';
 import type {DependencyList} from 'react';
 import type {TBalanceData, TDefaultStatus} from '@yearn-finance/web-lib/hooks/types';
 import type {TAddress, TDict, TNDict} from '@yearn-finance/web-lib/types';
+import type {TYDaemonPrices} from '@common/schemas';
 
 /* 🔵 - Yearn Finance **********************************************************
 ** Request, Response and helpers for the useBalances hook.
@@ -35,7 +36,7 @@ export type	TUseBalancesTokens = {
 export type	TUseBalancesReq = {
 	key?: string | number,
 	tokens: TUseBalancesTokens[]
-	prices?: TDict<string>,
+	prices?: TYDaemonPrices,
 	effectDependencies?: DependencyList
 } & TDefaultReqArgs
 
@@ -70,7 +71,7 @@ async function performCall(
 	ethcallProvider: Provider,
 	calls: Call[],
 	tokens: TUseBalancesTokens[],
-	prices?: TDict<string>
+	prices?: TYDaemonPrices
 ): Promise<[TDict<TBalanceData>, Error | undefined]> {
 	const	_data: TDict<TBalanceData> = {};
 	const	results = await ethcallProvider.tryAll(calls);
@@ -105,7 +106,7 @@ async function getBalances(
 	fallBackProvider: ethers.providers.JsonRpcProvider,
 	ownerAddress: TAddress,
 	tokens: TUseBalancesTokens[],
-	prices?: TDict<string>
+	prices?: TYDaemonPrices
 ): Promise<[TDict<TBalanceData>, Error | undefined]> {
 	const	result: TDict<TBalanceData> = {};
 	const	currentProvider = provider;

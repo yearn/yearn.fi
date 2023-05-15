@@ -19,8 +19,8 @@ import externalzapOutTokenList from '../../common/utils/externalZapOutTokenList.
 import type {BigNumber} from 'ethers';
 import type {ReactNode} from 'react';
 import type {TAddress} from '@yearn-finance/web-lib/types';
+import type {TYDaemonVault} from '@common/schemas';
 import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
-import type {TYearnVault} from '@common/types/yearn';
 
 export enum	Flow {
 	Deposit = 'deposit',
@@ -39,7 +39,7 @@ type TActionParams = {
 	possibleOptionsTo: TDropdownOption[];
 }
 type	TActionFlowContext = {
-	currentVault: TYearnVault;
+	currentVault: TYDaemonVault;
 	possibleOptionsFrom: TDropdownOption[];
 	possibleOptionsTo: TDropdownOption[];
 	actionParams: TActionParams;
@@ -52,7 +52,7 @@ type	TActionFlowContext = {
 	currentSolver: Solver;
 }
 const	DefaultActionFlowContext: TActionFlowContext = {
-	currentVault: {} as TYearnVault, // eslint-disable-line @typescript-eslint/consistent-type-assertions
+	currentVault: {} as TYDaemonVault, // eslint-disable-line @typescript-eslint/consistent-type-assertions
 	possibleOptionsFrom: [],
 	possibleOptionsTo: [],
 	actionParams: {
@@ -74,7 +74,7 @@ const	DefaultActionFlowContext: TActionFlowContext = {
 
 type TUseContextualIs = {
 	selectedTo?: TDropdownOption;
-	currentVault: TYearnVault;
+	currentVault: TYDaemonVault;
 }
 
 function useContextualIs({selectedTo, currentVault}: TUseContextualIs): [boolean, boolean] {
@@ -99,7 +99,7 @@ function useContextualIs({selectedTo, currentVault}: TUseContextualIs): [boolean
 }
 
 type TGetMaxDepositPossible = {
-	vault: TYearnVault,
+	vault: TYDaemonVault,
 	fromToken: TAddress,
 	fromDecimals: number,
 	fromTokenBalance: BigNumber,
@@ -119,7 +119,7 @@ function	getMaxDepositPossible({vault, fromToken, fromDecimals, isDepositing, fr
 }
 
 const ActionFlowContext = createContext<TActionFlowContext>(DefaultActionFlowContext);
-function ActionFlowContextApp({children, currentVault}: {children: ReactNode, currentVault: TYearnVault}): React.ReactElement {
+function ActionFlowContextApp({children, currentVault}: {children: ReactNode, currentVault: TYDaemonVault}): React.ReactElement {
 	const {balances, balancesNonce} = useWallet();
 	const {safeChainID} = useChainID();
 	const {balances: zapBalances, tokensList} = useWalletForZap();

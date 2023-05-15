@@ -11,8 +11,8 @@ import {graphFetcher} from '@common/utils';
 
 import type {LoaderComponent} from 'next/dynamic';
 import type {ReactElement} from 'react';
+import type {TYDaemonVault} from '@common/schemas';
 import type {TGraphData, TMessariGraphData} from '@common/types/types';
-import type {TYearnVault} from '@common/types/yearn';
 import type {TGraphForVaultEarningsProps} from '@vaults/components/graphs/GraphForVaultEarnings';
 import type {TGraphForVaultPPSGrowthProps} from '@vaults/components/graphs/GraphForVaultPPSGrowth';
 import type {TGraphForVaultTVLProps} from '@vaults/components/graphs/GraphForVaultTVL';
@@ -21,7 +21,7 @@ const GraphForVaultTVL = dynamic<TGraphForVaultTVLProps>(async (): LoaderCompone
 const GraphForVaultPPSGrowth = dynamic<TGraphForVaultPPSGrowthProps>(async (): LoaderComponent<TGraphForVaultPPSGrowthProps> => import('@vaults/components/graphs/GraphForVaultPPSGrowth'), {ssr: false});
 const GraphForVaultEarnings = dynamic<TGraphForVaultEarningsProps>(async (): LoaderComponent<TGraphForVaultEarningsProps> => import('@vaults/components/graphs/GraphForVaultEarnings'), {ssr: false});
 
-function	VaultDetailsHistorical({currentVault, harvestData}: {currentVault: TYearnVault, harvestData: TGraphData[]}): ReactElement {
+function	VaultDetailsHistorical({currentVault, harvestData}: {currentVault: TYDaemonVault, harvestData: TGraphData[]}): ReactElement {
 	const {safeChainID} = useChainID();
 	const [selectedViewIndex, set_selectedViewIndex] = useState(0);
 

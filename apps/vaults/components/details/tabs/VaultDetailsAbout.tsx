@@ -5,13 +5,13 @@ import {parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
 
 import type {LoaderComponent} from 'next/dynamic';
 import type {ReactElement} from 'react';
+import type {TYDaemonVault} from '@common/schemas';
 import type {TGraphData} from '@common/types/types';
-import type {TYearnVault} from '@common/types/yearn';
 import type {TGraphForVaultEarningsProps} from '@vaults/components/graphs/GraphForVaultEarnings';
 
 const GraphForVaultEarnings = dynamic<TGraphForVaultEarningsProps>(async (): LoaderComponent<TGraphForVaultEarningsProps> => import('@vaults/components/graphs/GraphForVaultEarnings'), {ssr: false});
 
-function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYearnVault, harvestData: TGraphData[]}): ReactElement {
+function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYDaemonVault, harvestData: TGraphData[]}): ReactElement {
 	return (
 		<div className={'grid grid-cols-1 gap-10 bg-neutral-100 p-4 md:grid-cols-2 md:gap-32 md:p-8'}>
 			<div className={'col-span-1 w-full space-y-6'}>

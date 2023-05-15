@@ -6,6 +6,7 @@ import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {useSessionStorage} from '@yearn-finance/web-lib/hooks/useSessionStorage';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatBN, formatToNormalizedValue, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {isTAddress} from '@yearn-finance/web-lib/utils/isTAddress';
 import ListHead from '@common/components/ListHead';
 import ListHero from '@common/components/ListHero';
 import {useCurve} from '@common/contexts/useCurve';
@@ -33,6 +34,9 @@ function	GaugeList(): ReactElement {
 	);
 
 	const	getRewardValue = useCallback((address: string, value: BigNumber): number => {
+		if (!isTAddress(address)) {
+			return 0;
+		}
 		const	tokenInfo = tokens?.[address];
 		const	tokenPrice = prices?.[address];
 		const	decimals = tokenInfo?.decimals || 18;
