@@ -18,7 +18,8 @@ import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
 import type {TDict} from '@yearn-finance/web-lib/types';
-import type {TYDaemonHarvests, TYearnVault} from '@common/types/yearn';
+import type {TYDaemonVault} from '@common/schemas';
+import type {TYDaemonHarvests} from '@common/types/yearn';
 
 type THoldings = {
 	legacy: BigNumber;
@@ -76,11 +77,11 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 	// 	{revalidateOnFocus: false}
 	// ) as SWRResponse;
 
-	const	{data: styCRVVault} = useSWR(
+	const	{data: styCRVVault} = useSWR<TYDaemonVault>(
 		`${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/1/vaults/${STYCRV_TOKEN_ADDRESS}`,
 		baseFetcher,
 		{revalidateOnFocus: false}
-	) as SWRResponse;
+	);
 
 
 	const	{data: yCRVHarvests} = useSWR(
@@ -215,8 +216,8 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 	** Compute the styCRV APY based on the experimental APY and the mega boost.
 	**************************************************************************/
 	const	styCRVAPY = useMemo((): number => {
-		return (((styCRVVault as TYearnVault)?.apy?.net_apy || 0) * 100);
-		// return (((styCRVVault as TYearnVault)?.apy?.net_apy || 0) * 100) + (styCRVMegaBoost * 100);
+		return ((styCRVVault?.apy?.net_apy || 0) * 100);
+		// return ((styCRVVault?.apy?.net_apy || 0) * 100) + (styCRVMegaBoost * 100);
 		// return (styCRVExperimentalAPY * 100) + (styCRVMegaBoost * 100);
 	}, [styCRVVault]);
 

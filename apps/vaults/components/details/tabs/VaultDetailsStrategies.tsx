@@ -19,14 +19,19 @@ import IconChevron from '@common/icons/IconChevron';
 import type {LoaderComponent} from 'next/dynamic';
 import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
-import type {TYearnVault, TYearnVaultStrategy} from '@common/types/yearn';
+import type {TYDaemonVault} from '@common/schemas';
 import type {TGraphForStrategyReportsProps} from '@vaults/components/graphs/GraphForStrategyReports';
 
 const GraphForStrategyReports = dynamic<TGraphForStrategyReportsProps>(async (): LoaderComponent<TGraphForStrategyReportsProps> => import('@vaults/components/graphs/GraphForStrategyReports'), {ssr: false});
 
+type TProps = {
+	currentVault: TYDaemonVault;
+	strategy: TYDaemonVault['strategies'][0];
+};
+
 type TRiskScoreElementProps = {
 	label: string;
-	value: number;
+	value?: number;
 };
 
 function	RiskScoreElement({label, value}: TRiskScoreElementProps): ReactElement {
@@ -38,7 +43,7 @@ function	RiskScoreElement({label, value}: TRiskScoreElementProps): ReactElement 
 	);
 }
 
-function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVault, strategy: TYearnVaultStrategy}): ReactElement {
+function	VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
 	const {safeChainID} = useChainID();
 	const {settings: baseAPISettings} = useSettings();
 
@@ -77,6 +82,9 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVau
 
 	latestApr = result?.success ? findLatestApr(result.data) : 0;
 
+	const {lastReport} = strategy?.details || {};
+	const lastReportTime = lastReport ? formatDuration((lastReport * 1000) - new Date().valueOf(), true) : 'N/A';
+
 	return (
 		<details className={'p-0'}>
 			<summary>
@@ -100,7 +108,7 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVau
 						<p
 							className={'text-neutral-600'}
 							dangerouslySetInnerHTML={{__html: parseMarkdown(strategy.description.replaceAll('{{token}}', currentVault.token.symbol))}} />
-						<p className={'text-neutral-600'}>{`Last report ${formatDuration((strategy?.details?.lastReport * 1000) - new Date().valueOf(), true)}.`}</p>
+						<p className={'text-neutral-600'}>{`Last report ${lastReportTime}.`}</p>
 					</div>
 				</div>
 
@@ -181,24 +189,24 @@ function	VaultDetailsStrategy({currentVault, strategy}: {currentVault: TYearnVau
 	);
 }
 
-function	isExceptionStrategy(strategy: TYearnVaultStrategy): boolean {
+function	isExceptionStrategy(strategy: TYDaemonVault['strategies'][0]): boolean {
 	// Curve DAO Fee and Bribes Reinvest
-	return strategy.address.toString() === '0x23724D764d8b3d26852BA20d3Bc2578093d2B022' && strategy.details.inQueue;
+	return strategy.address.toString() === '0x23724D764d8b3d26852BA20d3Bc2578093d2B022' && !!strategy.details?.inQueue;
 }
 
-function	VaultDetailsStrategies({currentVault}: {currentVault: TYearnVault}): ReactElement {
+function	VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const [searchValue, set_searchValue] = useState<string>('');
 	const [shouldHide0DebtStrategies, set_shouldHide0DebtStrategies] = useState(true);
 
-	const hide0DebtStrategyFilter = (strategy: TYearnVault['strategies'][0]): boolean => {
+	const hide0DebtStrategyFilter = (strategy: TYDaemonVault['strategies'][0]): boolean => {
 		return !shouldHide0DebtStrategies || Number(strategy.details?.totalDebt) > 0 || isExceptionStrategy(strategy);
 	};
 
-	const nameSearchFilter = ({name, displayName}: TYearnVault['strategies'][0]): boolean => {
+	const nameSearchFilter = ({name, displayName}: TYDaemonVault['strategies'][0]): boolean => {
 		return !searchValue || (`${name} ${displayName}`).toLowerCase().includes(searchValue);
 	};
 
-	const sortedStrategies = useMemo((): TYearnVault['strategies'] => {
+	const sortedStrategies = useMemo((): TYDaemonVault['strategies'] => {
 		return currentVault.strategies.sort((a, b): number => (b.details?.debtRatio || 0) - (a.details?.debtRatio || 0));
 	}, [currentVault.strategies]);
 

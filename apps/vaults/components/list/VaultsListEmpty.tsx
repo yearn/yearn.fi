@@ -5,14 +5,14 @@ import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import CHAINS from '@yearn-finance/web-lib/utils/web3/chains';
 
 import type {ReactElement} from 'react';
-import type {TYearnVault} from '@common/types/yearn';
+import type {TYDaemonVaults} from '@common/schemas';
 
 export function VaultsListEmpty({
 	sortedVaultsToDisplay,
 	currentCategory,
 	isLoading
 }: {
-	sortedVaultsToDisplay: TYearnVault[],
+	sortedVaultsToDisplay: TYDaemonVaults,
 	currentCategory: string,
 	isLoading: boolean
 }): ReactElement {
@@ -90,7 +90,7 @@ export function VaultsListEmptyFactory({
 	currentCategory,
 	isLoading
 }: {
-	sortedVaultsToDisplay: TYearnVault[],
+	sortedVaultsToDisplay: TYDaemonVaults,
 	currentCategory: string,
 	isLoading: boolean
 }): ReactElement {
