@@ -9,7 +9,7 @@ type TUseZodProps = {
 	schema: z.ZodSchema;
 }
 
-export function	useZod<T>({endpoint, schema}: TUseZodProps): SWRResponse<T> {
+export function	useFetch<T>({endpoint, schema}: TUseZodProps): SWRResponse<T> {
 	const result = useSWR<T>(endpoint, baseFetcher, {revalidateOnFocus: false});
 
 	if (!result.data || result.isLoading || result.isValidating) {
