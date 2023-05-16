@@ -1,6 +1,65 @@
 import {z} from 'zod';
 import {addressSchema} from '@common/schemas/custom/addressSchema';
 
+const yDaemonVaultStrategySchema = z.object({
+	address: addressSchema,
+	name: z.string(),
+	displayName: z.string(),
+	description: z.string(),
+	details: z.object({
+		keeper: addressSchema,
+		strategist: addressSchema,
+		rewards: addressSchema,
+		healthCheck: addressSchema,
+		totalDebt: z.string(),
+		totalLoss: z.string(),
+		totalGain: z.string(),
+		minDebtPerHarvest: z.string(),
+		maxDebtPerHarvest: z.string(),
+		estimatedTotalAssets: z.string(),
+		creditAvailable: z.string(),
+		debtOutstanding: z.string(),
+		expectedReturn: z.string(),
+		delegatedAssets: z.string(),
+		delegatedValue: z.string(),
+		version: z.string(),
+		protocols: z.array(z.string()).or(z.null()),
+		apr: z.number(),
+		performanceFee: z.number(),
+		lastReport: z.number(),
+		activation: z.number(),
+		keepCRV: z.number(),
+		debtLimit: z.number(),
+		withdrawalQueuePosition: z.number(),
+		doHealthCheck: z.boolean(),
+		inQueue: z.boolean(),
+		emergencyExit: z.boolean(),
+		isActive: z.boolean(),
+		debtRatio: z.number().optional()
+	}).optional(), // Optional for migratable
+	risk: z.object({
+		riskScore: z.number(),
+		riskGroup: z.string(),
+		riskDetails: z.object({
+			TVLImpact: z.number(),
+			auditScore: z.number(),
+			codeReviewScore: z.number(),
+			complexityScore: z.number(),
+			longevityImpact: z.number(),
+			protocolSafetyScore: z.number(),
+			teamKnowledgeScore: z.number(),
+			testingScore: z.number()
+		}),
+		allocation: z.object({
+			status: z.string(),
+			currentTVL: z.string(),
+			availableTVL: z.string(),
+			currentAmount: z.string(),
+			availableAmount: z.string()
+		})
+	}).optional() // Optional for migratable
+});
+
 export const yDaemonVaultSchema = z.object({
 	address: addressSchema,
 	type: z.literal('Automated').or(z.literal('Standard').or(z.literal('Experimental'))),
@@ -85,66 +144,7 @@ export const yDaemonVaultSchema = z.object({
 		retired: z.boolean(),
 		hideAlways: z.boolean()
 	}),
-	strategies: z.array(
-		z.object({
-			address: addressSchema,
-			name: z.string(),
-			displayName: z.string(),
-			description: z.string(),
-			details: z.object({
-				keeper: addressSchema,
-				strategist: addressSchema,
-				rewards: addressSchema,
-				healthCheck: addressSchema,
-				totalDebt: z.string(),
-				totalLoss: z.string(),
-				totalGain: z.string(),
-				minDebtPerHarvest: z.string(),
-				maxDebtPerHarvest: z.string(),
-				estimatedTotalAssets: z.string(),
-				creditAvailable: z.string(),
-				debtOutstanding: z.string(),
-				expectedReturn: z.string(),
-				delegatedAssets: z.string(),
-				delegatedValue: z.string(),
-				version: z.string(),
-				protocols: z.array(z.string()).or(z.null()),
-				apr: z.number(),
-				performanceFee: z.number(),
-				lastReport: z.number(),
-				activation: z.number(),
-				keepCRV: z.number(),
-				debtLimit: z.number(),
-				withdrawalQueuePosition: z.number(),
-				doHealthCheck: z.boolean(),
-				inQueue: z.boolean(),
-				emergencyExit: z.boolean(),
-				isActive: z.boolean(),
-				debtRatio: z.number().optional()
-			}).optional(), // Optional for migratable
-			risk: z.object({
-				riskScore: z.number(),
-				riskGroup: z.string(),
-				riskDetails: z.object({
-					TVLImpact: z.number(),
-					auditScore: z.number(),
-					codeReviewScore: z.number(),
-					complexityScore: z.number(),
-					longevityImpact: z.number(),
-					protocolSafetyScore: z.number(),
-					teamKnowledgeScore: z.number(),
-					testingScore: z.number()
-				}),
-				allocation: z.object({
-					status: z.string(),
-					currentTVL: z.string(),
-					availableTVL: z.string(),
-					currentAmount: z.string(),
-					availableAmount: z.string()
-				})
-			}).optional() // Optional for migratable
-		})
-	),
+	strategies: z.array(yDaemonVaultStrategySchema),
 	migration: z.object({
 		available: z.boolean(),
 		address: addressSchema,
@@ -161,5 +161,7 @@ export const yDaemonVaultSchema = z.object({
 export const yDaemonVaultsSchema = z.array(yDaemonVaultSchema);
 
 export type TYDaemonVault = z.infer<typeof yDaemonVaultSchema>;
+
+export type TYDaemonVaultStrategy = z.infer<typeof yDaemonVaultStrategySchema>;
 
 export type TYDaemonVaults = z.infer<typeof yDaemonVaultsSchema>;
