@@ -19,14 +19,14 @@ import IconChevron from '@common/icons/IconChevron';
 import type {LoaderComponent} from 'next/dynamic';
 import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
-import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault, TYDaemonVaultStrategy} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TGraphForStrategyReportsProps} from '@vaults/components/graphs/GraphForStrategyReports';
 
 const GraphForStrategyReports = dynamic<TGraphForStrategyReportsProps>(async (): LoaderComponent<TGraphForStrategyReportsProps> => import('@vaults/components/graphs/GraphForStrategyReports'), {ssr: false});
 
 type TProps = {
 	currentVault: TYDaemonVault;
-	strategy: TYDaemonVault['strategies'][0];
+	strategy: TYDaemonVaultStrategy;
 };
 
 type TRiskScoreElementProps = {
@@ -189,7 +189,7 @@ function	VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
 	);
 }
 
-function	isExceptionStrategy(strategy: TYDaemonVault['strategies'][0]): boolean {
+function	isExceptionStrategy(strategy: TYDaemonVaultStrategy): boolean {
 	// Curve DAO Fee and Bribes Reinvest
 	return strategy.address.toString() === '0x23724D764d8b3d26852BA20d3Bc2578093d2B022' && !!strategy.details?.inQueue;
 }
@@ -198,11 +198,11 @@ function	VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVault}): 
 	const [searchValue, set_searchValue] = useState<string>('');
 	const [shouldHide0DebtStrategies, set_shouldHide0DebtStrategies] = useState(true);
 
-	const hide0DebtStrategyFilter = (strategy: TYDaemonVault['strategies'][0]): boolean => {
+	const hide0DebtStrategyFilter = (strategy: TYDaemonVaultStrategy): boolean => {
 		return !shouldHide0DebtStrategies || Number(strategy.details?.totalDebt) > 0 || isExceptionStrategy(strategy);
 	};
 
-	const nameSearchFilter = ({name, displayName}: TYDaemonVault['strategies'][0]): boolean => {
+	const nameSearchFilter = ({name, displayName}: TYDaemonVaultStrategy): boolean => {
 		return !searchValue || (`${name} ${displayName}`).toLowerCase().includes(searchValue);
 	};
 

@@ -10,11 +10,11 @@ import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
 
 import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
-import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVaultStrategy} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TYDaemonReports} from '@vaults/schemas/reportsSchema';
 
 export type TGraphForStrategyReportsProps = {
-	strategy: TYDaemonVault['strategies'][0],
+	strategy: TYDaemonVaultStrategy,
 	vaultDecimals: number,
 	vaultTicker: string
 	height?: number,
