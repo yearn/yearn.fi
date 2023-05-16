@@ -10,7 +10,7 @@ import {useBalance} from '@common/hooks/useBalance';
 import {getVaultName} from '@common/utils';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@common/schemas';
+import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
 function	VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {safeChainID} = useChainID();

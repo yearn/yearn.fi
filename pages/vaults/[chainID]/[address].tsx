@@ -19,7 +19,7 @@ import {variants} from '@common/utils/animations';
 import type {NextPageContext} from 'next';
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@common/schemas';
+import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
 function Index({router, vaultData}: {router: NextRouter, vaultData: TYDaemonVault}): ReactElement {
 	const {address, isActive} = useWeb3();

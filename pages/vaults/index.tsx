@@ -25,7 +25,7 @@ import type {NextRouter} from 'next/router';
 import type {ReactElement, ReactNode} from 'react';
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TListHeroCategory} from '@common/components/ListHero';
-import type {TYDaemonVault} from '@common/schemas';
+import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TSortDirection} from '@common/types/types';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 

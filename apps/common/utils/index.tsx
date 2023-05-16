@@ -8,7 +8,7 @@ import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import type {BigNumber} from 'ethers';
 import type {GraphQLResponse} from 'graphql-request/build/esm/types';
 import type {TDict} from '@yearn-finance/web-lib/types';
-import type {TYDaemonVault} from '@common/schemas';
+import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
 export function	max(input: BigNumber, balance: BigNumber): BigNumber {
 	if (input.gt(balance)) {

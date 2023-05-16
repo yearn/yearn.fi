@@ -5,7 +5,7 @@ import {parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
 
 import type {LoaderComponent} from 'next/dynamic';
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@common/schemas';
+import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TGraphData} from '@common/types/types';
 import type {TGraphForVaultEarningsProps} from '@vaults/components/graphs/GraphForVaultEarnings';
 

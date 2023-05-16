@@ -1,4 +1,4 @@
-import type {TYDaemonReports} from '@vaults/schemas';
+import type {TYDaemonReports} from '@vaults/schemas/reportsSchema';
 
 export function findLatestApr(reports: TYDaemonReports[]): number {
 	if (!reports.length) {

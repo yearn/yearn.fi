@@ -14,7 +14,8 @@ import {useTokenPrice} from '@common/hooks/useTokenPrice';
 import {getVaultName} from '@common/utils';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonEarned, TYDaemonVault} from '@common/schemas';
+import type {TYDaemonEarned} from '@common/schemas/yDaemonEarnedSchema';
+import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
 function	VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {safeChainID} = useChainID();

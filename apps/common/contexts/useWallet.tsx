@@ -12,7 +12,7 @@ import {useBalances} from '@common/hooks/useBalances';
 import type {ReactElement} from 'react';
 import type {TBalanceData, TUseBalancesTokens} from '@yearn-finance/web-lib/hooks/types';
 import type {TDict} from '@yearn-finance/web-lib/types';
-import type {TYDaemonVault} from '@common/schemas';
+import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
 export type	TWalletContext = {
 	balances: TDict<TBalanceData>,

@@ -1,5 +1,5 @@
 import {z} from 'zod';
-import {addressSchema} from '@common/schemas/custom';
+import {addressSchema} from '@common/schemas/custom/addressSchema';
 
 export const yDaemonGaugeRewardSchema = z.object({
 	amount: z.string(),

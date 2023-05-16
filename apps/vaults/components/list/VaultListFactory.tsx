@@ -15,7 +15,7 @@ import {useYearn} from '@common/contexts/useYearn';
 import {getVaultName} from '@common/utils';
 
 import type {ReactElement, ReactNode} from 'react';
-import type {TYDaemonVaults} from '@common/schemas';
+import type {TYDaemonVaults} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TSortDirection} from '@common/types/types';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 
