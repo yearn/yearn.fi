@@ -19,7 +19,7 @@ import externalzapOutTokenList from '../../common/utils/externalZapOutTokenList.
 import type {BigNumber} from 'ethers';
 import type {ReactNode} from 'react';
 import type {TAddress} from '@yearn-finance/web-lib/types';
-import type {TYDaemonVault} from '@common/schemas';
+import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
 
 export enum	Flow {

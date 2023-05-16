@@ -5,7 +5,7 @@ import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import CHAINS from '@yearn-finance/web-lib/utils/web3/chains';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVaults} from '@common/schemas';
+import type {TYDaemonVaults} from '@common/schemas/yDaemonVaultsSchemas';
 
 export function VaultsListEmpty({
 	sortedVaultsToDisplay,

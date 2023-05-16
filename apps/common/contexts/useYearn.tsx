@@ -6,13 +6,19 @@ import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {useLocalStorage} from '@yearn-finance/web-lib/hooks/useLocalStorage';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {useFetch} from '@common/hooks/useFetch';
-import {yDaemonEarnedSchema, yDaemonPricesSchema, yDaemonTokensSchema, yDaemonVaultsSchema} from '@common/schemas';
+import {yDaemonEarnedSchema} from '@common/schemas/yDaemonEarnedSchema';
+import {yDaemonPricesSchema} from '@common/schemas/yDaemonPricesSchema';
+import {yDaemonTokensSchema} from '@common/schemas/yDaemonTokensSchema';
+import {yDaemonVaultsSchema} from '@common/schemas/yDaemonVaultsSchemas';
 import {DEFAULT_SLIPPAGE} from '@common/utils/constants';
 
 import type {ReactElement} from 'react';
 import type {KeyedMutator} from 'swr';
 import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
-import type {TYDaemonEarned, TYDaemonPrices, TYDaemonTokens, TYDaemonVault, TYDaemonVaults} from '@common/schemas';
+import type {TYDaemonEarned} from '@common/schemas/yDaemonEarnedSchema';
+import type {TYDaemonPrices} from '@common/schemas/yDaemonPricesSchema';
+import type {TYDaemonTokens} from '@common/schemas/yDaemonTokensSchema';
+import type {TYDaemonVault, TYDaemonVaults} from '@common/schemas/yDaemonVaultsSchemas';
 
 export type TYearnContext = {
 	currentPartner: TAddress,

@@ -2,7 +2,7 @@ import React, {useMemo, useState} from 'react';
 import dynamic from 'next/dynamic';
 import useSWR from 'swr';
 import {findLatestApr} from '@vaults/components/details/tabs/findLatestApr';
-import {yDaemonReportsSchema} from '@vaults/schemas';
+import {yDaemonReportsSchema} from '@vaults/schemas/reportsSchema';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import IconCopy from '@yearn-finance/web-lib/icons/IconCopy';
@@ -19,7 +19,7 @@ import IconChevron from '@common/icons/IconChevron';
 import type {LoaderComponent} from 'next/dynamic';
 import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
-import type {TYDaemonVault} from '@common/schemas';
+import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TGraphForStrategyReportsProps} from '@vaults/components/graphs/GraphForStrategyReports';
 
 const GraphForStrategyReports = dynamic<TGraphForStrategyReportsProps>(async (): LoaderComponent<TGraphForStrategyReportsProps> => import('@vaults/components/graphs/GraphForStrategyReports'), {ssr: false});

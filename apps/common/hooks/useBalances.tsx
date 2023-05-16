@@ -20,7 +20,7 @@ import type {TGetBatchBalancesResp} from 'pages/api/getBatchBalances';
 import type {DependencyList} from 'react';
 import type {TBalanceData, TDefaultStatus} from '@yearn-finance/web-lib/hooks/types';
 import type {TAddress, TDict, TNDict} from '@yearn-finance/web-lib/types';
-import type {TYDaemonPrices} from '@common/schemas';
+import type {TYDaemonPrices} from '@common/schemas/yDaemonPricesSchema';
 
 /* 🔵 - Yearn Finance **********************************************************
 ** Request, Response and helpers for the useBalances hook.

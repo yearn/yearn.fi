@@ -4,7 +4,7 @@ import useSWR from 'swr';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import IconChevron from '@common/icons/IconChevron';
-import {yDaemonGaugeRewardsFeedSchema} from '@common/schemas';
+import {yDaemonGaugeRewardsFeedSchema} from '@common/schemas/yDaemonGaugeRewardsFeedSchema';
 import {GaugeListEmpty} from '@yBribe/components/bribe/GaugeListEmpty';
 import {RewardFeedTableRow} from '@yBribe/components/rewardFeed/RewardFeedTableRow';
 

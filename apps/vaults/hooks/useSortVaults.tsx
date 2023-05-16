@@ -5,7 +5,7 @@ import {useWallet} from '@common/contexts/useWallet';
 import {getVaultName} from '@common/utils';
 import {numberSort, stringSort} from '@common/utils/sort';
 
-import type {TYDaemonVaults} from '@common/schemas';
+import type {TYDaemonVaults} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TSortDirection} from '@common/types/types';
 
 export type TPossibleSortBy = 'apy' | 'tvl' | 'name' | 'deposited' | 'available';

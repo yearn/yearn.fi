@@ -1,7 +1,7 @@
 import {useMemo} from 'react';
 
 import type {TDict} from '@yearn-finance/web-lib/types';
-import type {TYDaemonVault} from '@common/schemas';
+import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
 function	useFindVault(
 	vaultMap: TDict<TYDaemonVault>,

@@ -11,7 +11,7 @@ import {graphFetcher} from '@common/utils';
 
 import type {LoaderComponent} from 'next/dynamic';
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@common/schemas';
+import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TGraphData, TMessariGraphData} from '@common/types/types';
 import type {TGraphForVaultEarningsProps} from '@vaults/components/graphs/GraphForVaultEarnings';
 import type {TGraphForVaultPPSGrowthProps} from '@vaults/components/graphs/GraphForVaultPPSGrowth';

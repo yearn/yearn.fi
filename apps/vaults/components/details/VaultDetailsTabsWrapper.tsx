@@ -20,7 +20,7 @@ import IconChevron from '@common/icons/IconChevron';
 import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
 import type {TMetamaskInjectedProvider} from '@yearn-finance/web-lib/types';
-import type {TYDaemonVault} from '@common/schemas';
+import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TSettingsForNetwork} from '@common/types/yearn';
 
 type TTabsOptions = {
