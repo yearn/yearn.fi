@@ -5,7 +5,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {useLocalStorage} from '@yearn-finance/web-lib/hooks/useLocalStorage';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {useZod} from '@common/hooks/useZod';
+import {useFetch} from '@common/hooks/useFetch';
 import {yDaemonEarnedSchema, yDaemonPricesSchema, yDaemonTokensSchema, yDaemonVaultsSchema} from '@common/schemas';
 import {DEFAULT_SLIPPAGE} from '@common/utils/constants';
 
@@ -59,17 +59,17 @@ export const YearnContextApp = memo(function YearnContextApp({children}: { child
 
 	const YDAEMON_BASE_URI = `${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/${safeChainID}`;
 
-	const {data: prices} = useZod<TYDaemonPrices>({
+	const {data: prices} = useFetch<TYDaemonPrices>({
 		endpoint: `${YDAEMON_BASE_URI}/prices/all`,
 		schema: yDaemonPricesSchema
 	});
 
-	const {data: tokens} = useZod<TYDaemonTokens>({
+	const {data: tokens} = useFetch<TYDaemonTokens>({
 		endpoint: `${YDAEMON_BASE_URI}/tokens/all`,
 		schema: yDaemonTokensSchema
 	});
 
-	const {data: vaults, isLoading: isLoadingVaultList, mutate: mutateVaultList} = useZod<TYDaemonVaults>({
+	const {data: vaults, isLoading: isLoadingVaultList, mutate: mutateVaultList} = useFetch<TYDaemonVaults>({
 		endpoint: `${YDAEMON_BASE_URI}/vaults/all?${new URLSearchParams({
 			hideAlways: 'true',
 			orderBy: 'apy.net_apy',
@@ -81,17 +81,17 @@ export const YearnContextApp = memo(function YearnContextApp({children}: { child
 		schema: yDaemonVaultsSchema
 	});
 
-	const {data: vaultsMigrations} = useZod<TYDaemonVaults>({
+	const {data: vaultsMigrations} = useFetch<TYDaemonVaults>({
 		endpoint: `${YDAEMON_BASE_URI}/vaults/all?${new URLSearchParams({migratable: 'nodust'})}`,
 		schema: yDaemonVaultsSchema
 	});
 
-	const {data: vaultsRetired} = useZod<TYDaemonVaults>({
+	const {data: vaultsRetired} = useFetch<TYDaemonVaults>({
 		endpoint: `${YDAEMON_BASE_URI}/vaults/retired`,
 		schema: yDaemonVaultsSchema
 	});
 
-	const {data: earned} = useZod<TYDaemonEarned>({
+	const {data: earned} = useFetch<TYDaemonEarned>({
 		endpoint: `${YDAEMON_BASE_URI}/earned/${address}`,
 		schema: yDaemonEarnedSchema
 	});
