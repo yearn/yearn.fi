@@ -1,4 +1,5 @@
 import useSWR from 'swr';
+import * as Sentry from '@sentry/nextjs';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 
 import type {SWRResponse} from 'swr';
@@ -10,26 +11,26 @@ type TUseZodProps<T> = {
 	config?: Parameters<typeof useSWR<T>>[2];
 }
 
-export function	useFetch<T>({endpoint, schema, config}: TUseZodProps<T>): SWRResponse<T> {
+export function	useFetch<T>({endpoint, schema, config}: TUseZodProps<T>): SWRResponse<T> & {isSuccess: boolean} {
 	const result = useSWR<T>(endpoint, baseFetcher, {revalidateOnFocus: false, ...config});
 
 	if (!result.data || result.isLoading || result.isValidating) {
-		return result;
+		return {...result, isSuccess: false};
 	}
 
 	if (result.error) {
-		// TODO Send to Sentry
 		console.error(endpoint, result.error);
-		return result;
+		Sentry.captureException(result.error, {extra: {endpoint}});
+		return {...result, isSuccess: false};
 	}
 
 	const parsedData = schema.safeParse(result.data);
 	
 	if (!parsedData.success) {
-		// TODO Send to Sentry
 		console.error(endpoint, parsedData.error);
-		return result;
+		Sentry.captureException(parsedData.error, {extra: {endpoint}});
+		return {...result, isSuccess: false};
 	}
 
-	return {...result, data: parsedData.data};
+	return {...result, data: parsedData.data, isSuccess: true};
 }
