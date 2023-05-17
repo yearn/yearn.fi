@@ -84,19 +84,6 @@ const	LEGACY_OPTIONS_TO: TDropdownOption[] = [
 				priority />
 		)
 	}
-// {
-// 	label: 'vl-yCRV',
-// 	value: VLYCRV_TOKEN_ADDRESS,
-// 	icon: (
-// 		<Image
-// 			alt={'vl-yCRV'}
-// 			width={24}
-// 			height={24}
-// 			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${VLYCRV_TOKEN_ADDRESS}/logo-128.png`}
-// 			loading={'eager'}
-// 			priority />
-// 	)
-// }
 ];
 
 const	ZAP_OPTIONS_FROM: TDropdownOption[] = [
