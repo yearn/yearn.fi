@@ -16,7 +16,7 @@ export type TWithSolver = {
 	hash: MaybeString,
 	isLoadingExpectedOut: boolean;
 	onRetrieveExpectedOut: (request: TInitSolverArgs) => Promise<TNormalizedBN>;
-	onRetrieveAllowance: () => Promise<TNormalizedBN>;
+	onRetrieveAllowance: (shouldForceRefetch?: boolean) => Promise<TNormalizedBN>;
 	onApprove: (
 		amount: BigNumber,
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,

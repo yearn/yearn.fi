@@ -14,6 +14,7 @@ import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useWallet} from '@common/contexts/useWallet';
 
 import type {ReactElement} from 'react';
+import type {TNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 
 function	VaultDetailsQuickActionsButtons(): ReactElement {
 	const {refresh} = useWallet();
@@ -30,7 +31,7 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 	** SWR hook to get the expected out for a given in/out pair with a specific amount. This hook is
 	** called when amount/in or out changes. Calls the allowanceFetcher callback.
 	**********************************************************************************************/
-	const [{result: allowanceFrom, status}, actions] = useAsync(onRetrieveAllowance, toNormalizedBN(0));
+	const [{result: allowanceFrom, status}, actions] = useAsync(async (): Promise<TNormalizedBN> => onRetrieveAllowance(true), toNormalizedBN(0));
 
 	useEffect((): void => {
 		actions.execute();
@@ -85,7 +86,7 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 	const isDiffNetwork = !!safeChainID && currentVault.chainID !== safeChainID;
 
 	const isButtonDisabled = !isActive || actionParams?.amount.raw.isZero() || actionParams?.amount.raw.gt(maxDepositPossible.raw) || isLoadingExpectedOut || isDiffNetwork;
-	
+
 	/* 🔵 - Yearn Finance ******************************************************
 	** Wrapper to decide if we should use the partner contract or not
 	**************************************************************************/
