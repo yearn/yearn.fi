@@ -6,7 +6,7 @@ import type {SWRResponse} from 'swr';
 import type {z} from 'zod';
 
 type TUseZodProps<T> = {
-	endpoint: string;
+	endpoint: string | null;
 	schema: z.ZodSchema;
 	config?: Parameters<typeof useSWR<T>>[2];
 }
