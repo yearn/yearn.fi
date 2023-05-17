@@ -17,7 +17,7 @@ const yDaemonReportSchema = z.object({
 	totalLoss: z.string().optional(),
 	debtPaid: z.string().optional(),
 	timestamp: z.coerce.number(),
-	results: z.array(resultSchema)
+	results: z.array(resultSchema).nullable()
 });
 
 export const yDaemonReportsSchema = z.array(yDaemonReportSchema);
