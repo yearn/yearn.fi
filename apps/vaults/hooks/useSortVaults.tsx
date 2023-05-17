@@ -5,31 +5,31 @@ import {useWallet} from '@common/contexts/useWallet';
 import {getVaultName} from '@common/utils';
 import {numberSort, stringSort} from '@common/utils/sort';
 
+import type {TYDaemonVaults} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TSortDirection} from '@common/types/types';
-import type {TYearnVault} from '@common/types/yearn';
 
 export type TPossibleSortBy = 'apy' | 'tvl' | 'name' | 'deposited' | 'available';
 
 function	useSortVaults(
-	vaultList: TYearnVault[],
+	vaultList: TYDaemonVaults,
 	sortBy: TPossibleSortBy,
 	sortDirection: TSortDirection
-): TYearnVault[] {
+): TYDaemonVaults {
 	const	{balances, balancesNonce} = useWallet();
 	
-	const	sortedByName = useCallback((): TYearnVault[] => (
+	const	sortedByName = useCallback((): TYDaemonVaults => (
 		vaultList.sort((a, b): number => stringSort({a: getVaultName(a), b: getVaultName(b), sortDirection}))
 	), [sortDirection, vaultList]);
 
-	const	sortedByAPY = useCallback((): TYearnVault[] => (
+	const	sortedByAPY = useCallback((): TYDaemonVaults => (
 		vaultList.sort((a, b): number => numberSort({a: a.apy?.net_apy, b: b.apy?.net_apy, sortDirection}))
 	), [sortDirection, vaultList]);
 
-	const	sortedByTVL = useCallback((): TYearnVault[] => (
+	const	sortedByTVL = useCallback((): TYDaemonVaults => (
 		vaultList.sort((a, b): number => numberSort({a: a.tvl.tvl, b: b.tvl.tvl, sortDirection}))
 	), [sortDirection, vaultList]);
 
-	const	sortedByDeposited = useCallback((): TYearnVault[] => {
+	const	sortedByDeposited = useCallback((): TYDaemonVaults => {
 		balancesNonce; // remove warning, force deep refresh
 		return (
 			vaultList.sort((a, b): number => numberSort({
@@ -40,7 +40,7 @@ function	useSortVaults(
 		);
 	}, [balances, sortDirection, vaultList, balancesNonce]);
 
-	const	sortedByAvailable = useCallback((): TYearnVault[] => {
+	const	sortedByAvailable = useCallback((): TYDaemonVaults => {
 		balancesNonce; // remove warning, force deep refresh
 		const	chainCoinBalance = balances[ETH_TOKEN_ADDRESS]?.normalized || 0;
 		return vaultList.sort((a, b): number => {
@@ -60,7 +60,7 @@ function	useSortVaults(
 	}, [balances, balancesNonce, sortDirection, vaultList]);
 
 	const	stringifiedVaultList = JSON.stringify(vaultList);
-	const	sortedVaults = useMemo((): TYearnVault[] => {
+	const	sortedVaults = useMemo((): TYDaemonVaults => {
 		const	sortResult = JSON.parse(stringifiedVaultList);
 		if (sortDirection === '') {
 			return sortResult;

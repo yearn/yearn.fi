@@ -10,11 +10,11 @@ import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
 
 import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
-import type {TYearnVaultStrategy} from '@common/types/yearn';
-import type {TYDaemonReports} from '@vaults/schemas';
+import type {TYDaemonVaultStrategy} from '@common/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonReport} from '@vaults/schemas/reportsSchema';
 
 export type TGraphForStrategyReportsProps = {
-	strategy: TYearnVaultStrategy,
+	strategy: TYDaemonVaultStrategy,
 	vaultDecimals: number,
 	vaultTicker: string
 	height?: number,
@@ -32,7 +32,7 @@ function	GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height =
 	const	strategyData = useMemo((): {name: number; value: number, gain: string, loss: string}[] => {
 		const	_reports = [...(reports || [])];
 		const reportsForGraph = (
-			_reports.reverse()?.map((reports: TYDaemonReports): {name: number; value: number, gain: string, loss: string} => ({
+			_reports.reverse()?.map((reports: TYDaemonReport): {name: number; value: number, gain: string, loss: string} => ({
 				name: Number(reports.timestamp),
 				value: Number(reports.results?.[0]?.APR || 0) * 100,
 				gain: reports?.gain || '0',

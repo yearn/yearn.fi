@@ -25,8 +25,8 @@ import type {NextRouter} from 'next/router';
 import type {ReactElement, ReactNode} from 'react';
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TListHeroCategory} from '@common/components/ListHero';
+import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TSortDirection} from '@common/types/types';
-import type {TYearnVault} from '@common/types/yearn';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 
 function	HeaderUserPosition(): ReactElement {
@@ -138,8 +138,8 @@ function	Index(): ReactElement {
 	**	decide which vaults to display based on the category. No extra filters are applied.
 	**	The possible lists are memoized to avoid unnecessary re-renders.
 	**********************************************************************************************/
-	const	vaultsToDisplay = useMemo((): TYearnVault[] => {
-		let	_vaultList: TYearnVault[] = [...Object.values(vaults || {})] as TYearnVault[];
+	const	vaultsToDisplay = useMemo((): TYDaemonVault[] => {
+		let	_vaultList: TYDaemonVault[] = [...Object.values(vaults || {})] as TYDaemonVault[];
 
 		if (category === 'Curve Vaults') {
 			_vaultList = curveVaults;
@@ -169,7 +169,7 @@ function	Index(): ReactElement {
 	**	Then, on the vaultsToDisplay list, we apply the search filter. The search filter is
 	**	implemented as a simple string.includes() on the vault name.
 	**********************************************************************************************/
-	const	searchedVaultsToDisplay = useMemo((): TYearnVault[] => {
+	const	searchedVaultsToDisplay = useMemo((): TYDaemonVault[] => {
 		const	vaultsToUse = [...vaultsToDisplay];
 
 		if (searchValue === '') {
