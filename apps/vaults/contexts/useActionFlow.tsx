@@ -1,16 +1,18 @@
 import React, {createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState} from 'react';
 import {useRouter} from 'next/router';
-import {useMountEffect, useUpdateEffect} from '@react-hookz/web';
+import {useAsync, useMountEffect, useUpdateEffect} from '@react-hookz/web';
 import {Solver} from '@vaults/contexts/useSolver';
 import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
+import {useMaxDepositPossibleFetcher} from '@vaults/hooks/useMaxDepositPossibleFetcher';
 import {WOPT_TOKEN_ADDRESS} from '@vaults/utils';
 import {setZapOption} from '@vaults/utils/zapOptions';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
+import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS, YVWETH_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatBN, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatBN, toNormalizedBN, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
@@ -101,15 +103,17 @@ function useContextualIs({selectedTo, currentVault}: TUseContextualIs): [boolean
 }
 
 type TGetMaxDepositPossible = {
-	vault: TYDaemonVault,
-	fromToken: TAddress,
-	fromDecimals: number,
-	fromTokenBalance: BigNumber,
-	isDepositing: boolean
+	vault: TYDaemonVault;
+	fromToken: TAddress;
+	fromDecimals: number;
+	fromTokenBalance: BigNumber;
+	isDepositing: boolean;
+	depositLimit: BigNumber;
 }
-function	getMaxDepositPossible({vault, fromToken, fromDecimals, isDepositing, fromTokenBalance}: TGetMaxDepositPossible): TNormalizedBN {
-	const	vaultDepositLimit = formatBN(vault?.details?.depositLimit);
-	const	userBalance = formatBN(fromTokenBalance);
+function getMaxDepositPossible(props: TGetMaxDepositPossible): TNormalizedBN {
+	const {vault, fromToken, fromDecimals, isDepositing, fromTokenBalance, depositLimit} = props;
+	const vaultDepositLimit = formatBN(depositLimit || Zero);
+	const userBalance = formatBN(fromTokenBalance);
 
 	if (fromToken === vault?.token?.address && isDepositing) {
 		if (userBalance.gt(vaultDepositLimit)) {
@@ -128,11 +132,21 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 	const {zapProvider} = useYearn();
 	const {stakingRewardsByVault} = useStakingRewards();
 	const hasStakingRewards = !!stakingRewardsByVault[currentVault.address];
+	const {provider} = useWeb3();
+	const retrieveDepositLimit = useMaxDepositPossibleFetcher();
 
 	const [possibleOptionsFrom, set_possibleOptionsFrom] = useState<TDropdownOption[]>([]);
 	const [possibleZapOptionsFrom, set_possibleZapOptionsFrom] = useState<TDropdownOption[]>([]);
 	const [possibleOptionsTo, set_possibleOptionsTo] = useState<TDropdownOption[]>([]);
 	const [possibleZapOptionsTo, set_possibleZapOptionsTo] = useState<TDropdownOption[]>([]);
+
+	const [{result: depositLimit}, actions] = useAsync(async (): Promise<BigNumber> => retrieveDepositLimit({
+		vault: currentVault
+	}), Zero);
+
+	useUpdateEffect((): void => {
+		actions.execute();
+	}, [provider]);
 
 	//Combine selectedOptionFrom, selectedOptionTo and amount in a useReducer
 	const [actionParams, actionParamsDispatcher] = useReducer((
@@ -176,13 +190,14 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 		currentVault
 	});
 
-	const maxDepositPossible = getMaxDepositPossible({
+	const maxDepositPossible = useMemo((): TNormalizedBN => getMaxDepositPossible({
 		vault: currentVault,
 		fromToken: toAddress(actionParams?.selectedOptionFrom?.value),
 		fromDecimals: actionParams?.selectedOptionFrom?.decimals || currentVault?.token?.decimals || 18,
 		fromTokenBalance: formatBN(balances?.[toAddress(actionParams?.selectedOptionFrom?.value)]?.raw),
-		isDepositing
-	});
+		isDepositing,
+		depositLimit
+	}), [actionParams?.selectedOptionFrom?.decimals, actionParams?.selectedOptionFrom?.value, balances, currentVault, depositLimit, isDepositing]);
 
 	const currentSolver = useMemo((): Solver => {
 		const isUnderlyingToken = toAddress(actionParams?.selectedOptionFrom?.value) === toAddress(currentVault.token.address);
