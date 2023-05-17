@@ -13,10 +13,10 @@ import {useBribes} from '@yBribe/contexts/useBribes';
 
 import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
-import type {TDict} from '@yearn-finance/web-lib/types';
+import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 import type {TCurveGauges} from '@common/types/curves';
 
-function	GaugeRowItemWithExtraData({address, value}: {address: string, value: BigNumber}): ReactElement {
+function	GaugeRowItemWithExtraData({address, value}: {address: TAddress, value: BigNumber}): ReactElement {
 	const	{tokens, prices} = useYearn();
 
 	const	tokenInfo = tokens?.[address];

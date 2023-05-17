@@ -19,6 +19,7 @@ export function Popover(): ReactElement {
 	const [referenceElement, set_referenceElement] = useState<HTMLButtonElement | null>(null);
 	const [popperElement, set_popperElement] = useState<HTMLDivElement | null>(null);
 	const [type, set_type] = useState<TRequestType>('bug');
+	const [telegramHandle, set_telegramHandle] = useState<string>();
 	const [isSubmitDisabled, set_isSubmitDisabled] = useState<boolean>(false);
 	const [description, set_description] = useState<string>();
 	const {address, chainID, ens, lensProtocolHandle, walletType} = useWeb3();
@@ -56,6 +57,7 @@ export function Popover(): ReactElement {
 		}
 		formData.append('messages', [
 			`*🔵 New ${type} submitted*`,
+			`\n*Telegram:* ${telegramHandle}`,
 			description,
 			'\n*👀 - Info:*',
 			reporter ?
@@ -113,8 +115,16 @@ export function Popover(): ReactElement {
 									id={'description'}
 									cols={30}
 									rows={4}
-									className={'resize-none border border-neutral-300/50 bg-transparent text-xs transition-colors hover:bg-neutral-100/40 focus:border-neutral-300/50'}
-									onChange={({target:{value}}): void => set_description(value)} />
+									className={'resize-none border border-neutral-300/50 bg-transparent p-2 text-xs transition-colors hover:bg-neutral-100/40 focus:border-neutral-300/50'}
+									onChange={({target:{value}}): void => set_description(value)}
+									placeholder={`Describe the ${type} in detail`}
+								/>
+								<input
+									id={'telegramHandle'}
+									className={'resize-none border border-neutral-300/50 bg-transparent p-2 text-xs transition-colors hover:bg-neutral-100/40 focus:border-neutral-300/50'}
+									onChange={({target:{value}}): void => set_telegramHandle(value)}
+									placeholder={'Your telegram handle'}
+								/>
 								<button
 									disabled={!description || description.length < 10 || isCoolingOff || isSubmitDisabled}
 									className={'relative h-8 cursor-pointer items-center justify-center border border-transparent bg-neutral-900 px-2 text-xs text-neutral-0 transition-all hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-40'}

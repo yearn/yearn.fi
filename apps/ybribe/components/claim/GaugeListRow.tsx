@@ -15,14 +15,14 @@ import {claimReward} from '@yBribe/utils/actions/claimReward';
 
 import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
-import type {TDict} from '@yearn-finance/web-lib/types';
+import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 import type {TCurveGauges} from '@common/types/curves';
 
 function	GaugeRowItemWithExtraData({
 	address,
 	value,
 	minDecimals = 5
-}: {address: string, value: BigNumber, minDecimals?: number}): ReactElement {
+}: {address: TAddress, value: BigNumber, minDecimals?: number}): ReactElement {
 	const	{tokens, prices} = useYearn();
 
 	const	tokenInfo = tokens?.[address];
@@ -46,7 +46,7 @@ function	GaugeRowItemWithExtraData({
 	);
 }
 
-function	GaugeRowItemAPR({address, value}: {address: string, value: BigNumber}): ReactElement {
+function	GaugeRowItemAPR({address, value}: {address: TAddress, value: BigNumber}): ReactElement {
 	const	{tokens, prices} = useYearn();
 
 	const	crvPrice = useMemo((): number => {

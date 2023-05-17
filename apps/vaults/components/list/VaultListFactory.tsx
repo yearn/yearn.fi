@@ -15,8 +15,8 @@ import {useYearn} from '@common/contexts/useYearn';
 import {getVaultName} from '@common/utils';
 
 import type {ReactElement, ReactNode} from 'react';
+import type {TYDaemonVaults} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TSortDirection} from '@common/types/types';
-import type {TYearnVault} from '@common/types/yearn';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 
 function	VaultListFactory(): ReactElement {
@@ -49,8 +49,8 @@ function	VaultListFactory(): ReactElement {
 	**	decide which vaults to display based on the category. No extra filters are applied.
 	**	The possible lists are memoized to avoid unnecessary re-renders.
 	**********************************************************************************************/
-	const	vaultsToDisplay = useMemo((): TYearnVault[] => {
-		let	_vaultList: TYearnVault[] = [...Object.values(vaults || {})] as TYearnVault[];
+	const	vaultsToDisplay = useMemo((): TYDaemonVaults => {
+		let	_vaultList: TYDaemonVaults = [...Object.values(vaults || {})];
 
 		if (category === 'Curve Factory Vaults') {
 			_vaultList = curveVaults;
@@ -69,7 +69,7 @@ function	VaultListFactory(): ReactElement {
 	**	Then, on the vaultsToDisplay list, we apply the search filter. The search filter is
 	**	implemented as a simple string.includes() on the vault name.
 	**********************************************************************************************/
-	const	searchedVaults = useMemo((): TYearnVault[] => {
+	const	searchedVaults = useMemo((): TYDaemonVaults => {
 		const	vaultsToUse = [...vaultsToDisplay];
 
 		if (searchValue === '') {
