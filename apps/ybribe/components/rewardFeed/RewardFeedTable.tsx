@@ -1,36 +1,32 @@
 import React, {useState} from 'react';
 import ReactPaginate from 'react-paginate';
-import useSWR from 'swr';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
-import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
+import {useFetch} from '@common/hooks/useFetch';
 import IconChevron from '@common/icons/IconChevron';
 import {yDaemonGaugeRewardsFeedSchema} from '@common/schemas/yDaemonGaugeRewardsFeedSchema';
 import {GaugeListEmpty} from '@yBribe/components/bribe/GaugeListEmpty';
 import {RewardFeedTableRow} from '@yBribe/components/rewardFeed/RewardFeedTableRow';
 
 import type {ReactElement, ReactNode} from 'react';
+import type {TYDaemonGaugeRewardsFeed} from '@common/schemas/yDaemonGaugeRewardsFeedSchema';
 
 export function RewardFeedTable(): ReactElement | null {
 	const {settings: baseAPISettings} = useSettings();
 	const [itemOffset, set_itemOffset] = useState(0);
 
 	const endpoint = `${baseAPISettings.yDaemonBaseURI}/1/bribes/newRewardFeed`;
-	const {data} = useSWR(endpoint, baseFetcher);
 
-	if (!data) {
-		return <GaugeListEmpty />;
-	}
+	const {isSuccess, data} = useFetch<TYDaemonGaugeRewardsFeed>({
+		endpoint,
+		schema: yDaemonGaugeRewardsFeedSchema
+	});
 
-	const result = yDaemonGaugeRewardsFeedSchema.safeParse(data);
-
-	if (!result.success) {
-		// TODO Send to Sentry
-		console.error(result?.error);
+	if (!isSuccess || !data?.length) {
 		return <GaugeListEmpty />;
 	}
 
 	const ITEMS_PER_PAGE = 15;
-	const items = result.data.sort((a, b): number => b.timestamp - a.timestamp) ;
+	const items = data.sort((a, b): number => b.timestamp - a.timestamp) ;
 	const endOffset = itemOffset + ITEMS_PER_PAGE;
 	const currentItems = items.slice(itemOffset, endOffset);
 	const pageCount = Math.ceil(items.length / ITEMS_PER_PAGE);

@@ -6,7 +6,7 @@ const resultSchema = z.object({
 	APR: z.coerce.number()
 });
 
-const reportSchema = z.object({
+const yDaemonReportSchema = z.object({
 	id: z.string().optional(),
 	debtAdded: z.string().optional(),
 	debtLimit: z.string().optional(),
@@ -20,6 +20,8 @@ const reportSchema = z.object({
 	results: z.array(resultSchema)
 });
 
-export const yDaemonReportsSchema = z.array(reportSchema);
+export const yDaemonReportsSchema = z.array(yDaemonReportSchema);
 
-export type TYDaemonReports = z.infer<typeof reportSchema>;
+export type TYDaemonReport = z.infer<typeof yDaemonReportSchema>;
+
+export type TYDaemonReports = z.infer<typeof yDaemonReportsSchema>;
