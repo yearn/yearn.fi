@@ -2,6 +2,7 @@ import React, {createContext, useCallback, useContext, useEffect, useMemo, useRe
 import {useRouter} from 'next/router';
 import {useMountEffect, useUpdateEffect} from '@react-hookz/web';
 import {Solver} from '@vaults/contexts/useSolver';
+import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
 import {WOPT_TOKEN_ADDRESS} from '@vaults/utils';
 import {setZapOption} from '@vaults/utils/zapOptions';
@@ -27,7 +28,8 @@ export enum	Flow {
 	Withdraw = 'withdraw',
 	Migrate = 'migrate',
 	Zap = 'zap', // TODO: create this flow handler
-	Switch = 'switch'
+	Switch = 'switch',
+	None = 'none'
 }
 
 type TActionParams = {
@@ -124,6 +126,8 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 	const {safeChainID} = useChainID();
 	const {balances: zapBalances, tokensList} = useWalletForZap();
 	const {zapProvider} = useYearn();
+	const {stakingRewardsByVault} = useStakingRewards();
+	const hasStakingRewards = !!stakingRewardsByVault[currentVault.address];
 
 	const [possibleOptionsFrom, set_possibleOptionsFrom] = useState<TDropdownOption[]>([]);
 	const [possibleZapOptionsFrom, set_possibleZapOptionsFrom] = useState<TDropdownOption[]>([]);
@@ -181,6 +185,11 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 	});
 
 	const currentSolver = useMemo((): Solver => {
+		const isUnderlyingToken = toAddress(actionParams?.selectedOptionFrom?.value) === toAddress(currentVault.token.address);
+		if (hasStakingRewards && isDepositing && isUnderlyingToken) {
+			return Solver.OPTIMISM_BOOSTER;
+		}
+
 		const isInputTokenEth = actionParams?.selectedOptionFrom?.value === ETH_TOKEN_ADDRESS;
 		const isOutputTokenEth = actionParams?.selectedOptionTo?.value === ETH_TOKEN_ADDRESS;
 		// TODO Move yvWFTM address to web-lib
@@ -205,10 +214,14 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 			return Solver.PARTNER_CONTRACT;
 		}
 		return Solver.VANILLA;
-	}, [actionParams?.selectedOptionFrom?.value, actionParams?.selectedOptionFrom?.solveVia?.length, actionParams?.selectedOptionTo?.value, actionParams?.selectedOptionTo?.solveVia?.length, safeChainID, currentVault.address, currentVault?.migration?.available, currentVault?.migration?.address, isDepositing, isUsingPartnerContract, zapProvider]);
-
+	}, [actionParams?.selectedOptionFrom?.value, actionParams?.selectedOptionFrom?.solveVia?.length, actionParams?.selectedOptionTo?.value, actionParams?.selectedOptionTo?.solveVia?.length, currentVault.token.address, currentVault.address, currentVault?.migration?.available, currentVault?.migration?.address, hasStakingRewards, isDepositing, safeChainID, isUsingPartnerContract, zapProvider]);
+	
 	const onSwitchSelectedOptions = useCallback((nextFlow = Flow.Switch): void => {
 		balancesNonce;
+		if (nextFlow === Flow.None) {
+			return;
+		}
+
 		if (nextFlow === Flow.Switch) {
 			performBatchedUpdates((): void => {
 				const _selectedOptionTo = actionParams?.selectedOptionTo;
@@ -435,6 +448,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 		const	isWithWETH = safeChainID === 1 && currentVault && toAddress(currentVault.token.address) === WETH_TOKEN_ADDRESS;
 		const	isWithWOPT = safeChainID === 10 && currentVault && toAddress(currentVault.token.address) === WOPT_TOKEN_ADDRESS;
 		const	isWithWFTM = safeChainID === 250 && currentVault && toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS;
+
 		Object.entries(zapBalances || {})
 			.filter((): boolean => safeChainID === currentVault?.chainID) // Disable if we are on the wrong chain
 			.forEach(([tokenAddress]): void => {
@@ -474,6 +488,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 	**********************************************************************************************/
 	useEffect((): void => {
 		const	_possibleZapOptionsTo: TDropdownOption[] = [];
+
 		externalzapOutTokenList
 			.filter((): boolean => safeChainID === currentVault?.chainID) // Disable if we are on the wrong chain
 			.filter((token): boolean => token.chainID === (currentVault?.chainID || safeChainID))

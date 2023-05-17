@@ -54,9 +54,17 @@ function	VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYDaemonV
 							<div className={'flex flex-row items-center justify-between'}>
 								<p className={'text-sm text-neutral-500'}>{'Net APY'}</p>
 								<p className={'font-number text-sm text-neutral-900'} suppressHydrationWarning>
-									{`APY ${formatPercent((currentVault?.apy?.net_apy || 0) * 100, 2, 2, 500)}`}
+									{formatPercent(((currentVault?.apy?.net_apy || 0) + (currentVault?.apy?.staking_rewards_apr || 0)) * 100, 2, 2, 500)}
 								</p>
 							</div>
+							{currentVault.apy?.staking_rewards_apr > 0 && (
+								<div className={'flex flex-row items-center justify-between'}>
+									<p className={'text-sm text-neutral-500'}>{'Reward APR'}</p>
+									<p className={'font-number text-sm text-neutral-900'}>
+										{formatPercent((currentVault?.apy?.staking_rewards_apr || 0) * 100, 2, 2, 500)}
+									</p>
+								</div>
+							)}
 						</div>
 					</div>
 				</div>

@@ -1,6 +1,8 @@
 import {useCallback, useMemo} from 'react';
+import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {useWallet} from '@common/contexts/useWallet';
 import {getVaultName} from '@common/utils';
 import {numberSort, stringSort} from '@common/utils/sort';
@@ -16,6 +18,7 @@ function	useSortVaults(
 	sortDirection: TSortDirection
 ): TYDaemonVaults {
 	const	{balances, balancesNonce} = useWallet();
+	const {stakingRewardsByVault, positionsMap} = useStakingRewards();
 	
 	const	sortedByName = useCallback((): TYDaemonVaults => (
 		vaultList.sort((a, b): number => stringSort({a: getVaultName(a), b: getVaultName(b), sortDirection}))
@@ -32,13 +35,18 @@ function	useSortVaults(
 	const	sortedByDeposited = useCallback((): TYDaemonVaults => {
 		balancesNonce; // remove warning, force deep refresh
 		return (
-			vaultList.sort((a, b): number => numberSort({
-				a: balances[toAddress(a.address)]?.normalized,
-				b: balances[toAddress(b.address)]?.normalized,
-				sortDirection
-			}))
+			vaultList.sort((a, b): number => {
+				const aDepositedBalance = balances[toAddress(a.address)]?.normalized || 0;
+				const bDepositedBalance = balances[toAddress(b.address)]?.normalized || 0;
+				const aStakedBalance = toNormalizedValue(positionsMap[toAddress(stakingRewardsByVault[a.address])]?.stake || 0, a.decimals);
+				const bStakedBalance = toNormalizedValue(positionsMap[toAddress(stakingRewardsByVault[b.address])]?.stake || 0, b.decimals);
+				if (sortDirection === 'asc') {
+					return (aDepositedBalance + aStakedBalance) - (bDepositedBalance + bStakedBalance);
+				}
+				return (bDepositedBalance + bStakedBalance) - (aDepositedBalance + aStakedBalance);
+			})
 		);
-	}, [balances, sortDirection, vaultList, balancesNonce]);
+	}, [balancesNonce, vaultList, balances, positionsMap, stakingRewardsByVault, sortDirection]);
 
 	const	sortedByAvailable = useCallback((): TYDaemonVaults => {
 		balancesNonce; // remove warning, force deep refresh
@@ -84,7 +92,7 @@ function	useSortVaults(
 		return sortResult;
 	}, [sortBy, sortDirection, sortedByAPY, sortedByAvailable, sortedByDeposited, sortedByName, sortedByTVL, stringifiedVaultList]);
 
-	return (sortedVaults);	
+	return (sortedVaults);
 }
 
 export {useSortVaults};

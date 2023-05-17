@@ -4,6 +4,7 @@ import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useSolverChainCoin} from '@vaults/hooks/useSolverChainCoin';
 import {useSolverCowswap} from '@vaults/hooks/useSolverCowswap';
 import {useSolverInternalMigration} from '@vaults/hooks/useSolverInternalMigration';
+import {useSolverOptimismBooster} from '@vaults/hooks/useSolverOptimismBooster';
 import {useSolverPartnerContract} from '@vaults/hooks/useSolverPartnerContract';
 import {useSolverPortals} from '@vaults/hooks/useSolverPortals';
 import {useSolverVanilla} from '@vaults/hooks/useSolverVanilla';
@@ -23,6 +24,7 @@ export enum Solver {
 	PARTNER_CONTRACT = 'PartnerContract',
 	CHAIN_COIN = 'ChainCoin',
 	INTERNAL_MIGRATION = 'InternalMigration',
+	OPTIMISM_BOOSTER = 'OptimismBooster',
 	COWSWAP = 'Cowswap',
 	WIDO = 'Wido',
 	PORTALS = 'Portals',
@@ -35,6 +37,7 @@ export const isSolverDisabled = {
 	[Solver.CHAIN_COIN]: false,
 	[Solver.INTERNAL_MIGRATION]: false,
 	[Solver.COWSWAP]: false,
+	[Solver.OPTIMISM_BOOSTER]: false,
 	[Solver.WIDO]: false,
 	[Solver.PORTALS]: false,
 	[Solver.NONE]: false
@@ -71,6 +74,7 @@ function WithSolverContextApp({children}: { children: React.ReactElement }): Rea
 	const chainCoin = useSolverChainCoin();
 	const partnerContract = useSolverPartnerContract();
 	const internalMigration = useSolverInternalMigration();
+	const optimismBooster = useSolverOptimismBooster();
 	const [currentSolverState, set_currentSolverState] = useState<TSolverContext & { hash: MaybeString }>({...vanilla, hash: undefined});
 	const [isLoading, set_isLoading] = useState(false);
 
@@ -149,6 +153,15 @@ function WithSolverContextApp({children}: { children: React.ReactElement }): Rea
 
 				break;
 			}
+			case Solver.OPTIMISM_BOOSTER: {
+				const quote = await optimismBooster.init(request);
+				const requestHash = await hash(JSON.stringify({...request, solver: Solver.OPTIMISM_BOOSTER, expectedOut: quote.raw.toString()}));
+				performBatchedUpdates((): void => {
+					set_currentSolverState({...optimismBooster, quote, hash: requestHash});
+					set_isLoading(false);
+				});
+				break;
+			}
 			case Solver.CHAIN_COIN: {
 				const [quote] = await Promise.allSettled([chainCoin.init(request)]);
 				await handleUpdateSolver({request, quote, solver: Solver.CHAIN_COIN, ctx: chainCoin});
@@ -170,9 +183,8 @@ function WithSolverContextApp({children}: { children: React.ReactElement }): Rea
 				await handleUpdateSolver({request, quote, solver: Solver.VANILLA, ctx: vanilla});
 			}
 		}
-
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [address, actionParams, currentSolver, cowswap.init, vanilla.init, wido.init, internalMigration.init, isDepositing, currentVault.migration.contract]); //Ignore the warning, it's a false positive
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [address, actionParams, currentSolver, cowswap.init, vanilla.init, wido.init, internalMigration.init, optimismBooster.init, isDepositing, currentVault.migration.contract]); //Ignore the warning, it's a false positive
 
 	useDebouncedEffect((): void => {
 		onUpdateSolver();

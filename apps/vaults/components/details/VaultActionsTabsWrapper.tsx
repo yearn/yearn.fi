@@ -8,14 +8,18 @@ import VaultDetailsQuickActionsFrom from '@vaults/components/details/actions/Qui
 import VaultDetailsQuickActionsSwitch from '@vaults/components/details/actions/QuickActionsSwitch';
 import VaultDetailsQuickActionsTo from '@vaults/components/details/actions/QuickActionsTo';
 import ImageWithOverlay from '@vaults/components/ImageWithOverlay';
+import {RewardsTab} from '@vaults/components/RewardsTab';
 import SettingsPopover from '@vaults/components/SettingsPopover';
 import {Flow, useActionFlow} from '@vaults/contexts/useActionFlow';
+import {Solver} from '@vaults/contexts/useSolver';
+import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useLocalStorage} from '@yearn-finance/web-lib/hooks/useLocalStorage';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import IconChevron from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
+import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
 type TTabsOptions = {
 	value: number;
@@ -27,7 +31,8 @@ type TTabsOptions = {
 const tabs: TTabsOptions[] = [
 	{value: 0, label: 'Deposit', flowAction: Flow.Deposit, slug: 'deposit'},
 	{value: 1, label: 'Withdraw', flowAction: Flow.Withdraw, slug: 'withdraw'},
-	{value: 2, label: 'Migrate', flowAction: Flow.Migrate, slug: 'migrate'}
+	{value: 2, label: 'Migrate', flowAction: Flow.Migrate, slug: 'migrate'},
+	{value: 3, label: '$OP BOOST', flowAction: Flow.None, slug: 'boost'}
 ];
 function	getCurrentTab({isDepositing, hasMigration, isRetired}: {isDepositing: boolean, hasMigration: boolean, isRetired: boolean}): TTabsOptions {
 	if (hasMigration || isRetired) {
@@ -36,9 +41,12 @@ function	getCurrentTab({isDepositing, hasMigration, isRetired}: {isDepositing: b
 	return tabs.find((tab): boolean => tab.value === (isDepositing ? 0 : 1)) as TTabsOptions;
 }
 
-function	VaultActionsTabsWrapper(): ReactElement {
-	const {currentVault, onSwitchSelectedOptions, isDepositing, actionParams} = useActionFlow();
+function	VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+	const {onSwitchSelectedOptions, isDepositing, actionParams, currentSolver} = useActionFlow();
 	const [possibleTabs, set_possibleTabs] = useState<TTabsOptions[]>([tabs[0], tabs[1]]);
+	const {stakingRewardsByVault} = useStakingRewards();
+	const willDepositAndStake = currentSolver === Solver.OPTIMISM_BOOSTER;
+	const hasStakingRewards = !!stakingRewardsByVault[currentVault.address];
 	const [currentTab, set_currentTab] = useState<TTabsOptions>(
 		getCurrentTab({isDepositing, hasMigration: currentVault?.migration?.available, isRetired: currentVault?.details?.retired})
 	);
@@ -66,8 +74,14 @@ function	VaultActionsTabsWrapper(): ReactElement {
 				set_currentTab(tabs[1]);
 				onSwitchSelectedOptions(Flow.Withdraw);
 			});
+		} 
+		
+		if (currentVault.chainID === 10 && hasStakingRewards) {
+			performBatchedUpdates((): void => {
+				set_possibleTabs([tabs[0], tabs[1], tabs[3]]);
+			});
 		}
-	}, [currentVault?.migration?.available, currentVault?.details?.retired, actionParams.isReady]);
+	}, [currentVault?.migration?.available, currentVault?.details?.retired, actionParams.isReady, hasStakingRewards]);
 
 	const isLedgerPluginVisible = ['EMBED_LEDGER', 'INJECTED_LEDGER'].includes(walletType) && shouldShowLedgerPluginBanner;
 
@@ -199,9 +213,10 @@ function	VaultActionsTabsWrapper(): ReactElement {
 				</div>
 				<div className={'-mt-0.5 h-0.5 w-full bg-neutral-300'} />
 
-				<>
-					<div
-						className={'col-span-12 mb-4 flex flex-col space-x-0 space-y-2 bg-neutral-100 p-4 md:flex-row md:space-x-4 md:space-y-0 md:py-6 md:px-8'}>
+				{currentTab.value === 3 ? (
+					<RewardsTab currentVault={currentVault} />
+				) : (
+					<div className={'col-span-12 mb-4 flex flex-col space-x-0 space-y-2 bg-neutral-100 p-4 md:flex-row md:space-x-4 md:space-y-0 md:py-6 md:px-8'}>
 						<VaultDetailsQuickActionsFrom />
 						<VaultDetailsQuickActionsSwitch />
 						<VaultDetailsQuickActionsTo />
@@ -213,7 +228,22 @@ function	VaultActionsTabsWrapper(): ReactElement {
 							<legend className={'hidden text-xs md:inline'}>&nbsp;</legend>
 						</div>
 					</div>
-				</>
+				)}
+
+				{currentTab.value === 0 && hasStakingRewards && willDepositAndStake ? (
+					<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
+						<div className={'w-full bg-[#34A14F] p-2 md:px-6 md:py-4'}>
+							<b className={'text-base text-white'}>{'Great news! This Vault is receiving an Optimism Boost. Deposit and stake your tokens to receive OP rewards. Nice!'}</b>
+						</div>
+					</div>
+				) : currentTab.value === 0 && hasStakingRewards && !willDepositAndStake && (
+					<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
+						<div className={'w-full bg-[#F8A908] p-2 md:px-6 md:py-4'}>
+							<b className={'text-base text-white'}>{'This Vault is receiving an Optimism Boost. To zap into it for additional OP rewards, you\'ll have to stake your yVault tokens manually on the $OP BOOST tab after you deposit. Sorry anon, it\'s just how it works.'}</b>
+						</div>
+					</div>
+				)}
+
 			</div>
 		</>
 	);

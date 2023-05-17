@@ -38,7 +38,7 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 
 	const onSuccess = useCallback(async (): Promise<void> => {
 		onChangeAmount(toNormalizedBN(0));
-		if ([Solver.VANILLA, Solver.CHAIN_COIN, Solver.PARTNER_CONTRACT].includes(currentSolver)) {
+		if ([Solver.VANILLA, Solver.CHAIN_COIN, Solver.PARTNER_CONTRACT, Solver.OPTIMISM_BOOSTER].includes(currentSolver)) {
 			await refresh([
 				{token: toAddress(actionParams?.selectedOptionFrom?.value)},
 				{token: toAddress(actionParams?.selectedOptionTo?.value)}
@@ -103,6 +103,7 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 			|| (currentSolver === Solver.COWSWAP)
 			|| (currentSolver === Solver.WIDO)
 			|| (currentSolver === Solver.PARTNER_CONTRACT)
+			|| (currentSolver === Solver.OPTIMISM_BOOSTER)
 		)
 	) {
 		return (
@@ -117,6 +118,17 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 	}
 
 	if (isDepositing || currentSolver === Solver.INTERNAL_MIGRATION) {
+		if (currentSolver === Solver.OPTIMISM_BOOSTER) {
+			return (
+				<Button
+					onClick={async (): Promise<void> => onExecuteDeposit(set_txStatusExecuteDeposit, onSuccess)}
+					className={'w-full whitespace-nowrap'}
+					isBusy={txStatusExecuteDeposit.pending}
+					isDisabled={!isActive || actionParams?.amount.raw.isZero() || actionParams?.amount.raw.gt(maxDepositPossible.raw)}>
+					{'Deposit and Stake'}
+				</Button>
+			);
+		}
 		return (
 			<Button
 				onClick={async (): Promise<void> => onExecuteDeposit(set_txStatusExecuteDeposit, onSuccess)}

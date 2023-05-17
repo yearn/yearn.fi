@@ -3,27 +3,23 @@ import {ethers} from 'ethers';
 import useSWRMutation from 'swr/mutation';
 import {Solver} from '@vaults/contexts/useSolver';
 import {useVaultEstimateOutFetcher} from '@vaults/hooks/useVaultEstimateOutFetcher';
-import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
+import {depositAndStake} from '@vaults/utils/actions/stakingRewards';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {allowanceKey, isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {STAKING_REWARDS_ZAP_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
-import {useYearn} from '@common/contexts/useYearn';
 import {approvedERC20Amount, approveERC20} from '@common/utils/actions/approveToken';
-import {depositViaPartner} from '@common/utils/actions/depositViaPartner';
-import {withdrawShares} from '@common/utils/actions/withdrawShares';
 
-import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TNormalizedBN} from '@common/types/types';
 import type {TVaultEstimateOutFetcher} from '@vaults/hooks/useVaultEstimateOutFetcher';
 import type {TInitSolverArgs, TSolverContext, TVanillaLikeResult} from '@vaults/types/solvers';
 
-function usePartnerContractQuote(): [TVanillaLikeResult, (request: TInitSolverArgs, shouldPreventErrorToast?: boolean) => Promise<TNormalizedBN>] {
+function useOptimismBoosterQuote(): [TVanillaLikeResult, (request: TInitSolverArgs, shouldPreventErrorToast?: boolean) => Promise<TNormalizedBN>] {
 	const retrieveExpectedOut = useVaultEstimateOutFetcher();
 	const {data, error, trigger, isMutating} = useSWRMutation(
-		'partnerContract',
+		'stakingRewardsBoost',
 		async (_: string, data: {arg: TVaultEstimateOutFetcher}): Promise<TNormalizedBN> => retrieveExpectedOut(data.arg)
 	);
 
@@ -55,17 +51,13 @@ function usePartnerContractQuote(): [TVanillaLikeResult, (request: TInitSolverAr
 	];
 }
 
-export function useSolverPartnerContract(): TSolverContext {
-	const {networks} = useSettings();
+export function useSolverOptimismBooster(): TSolverContext {
 	const {provider} = useWeb3();
-	const {safeChainID} = useChainID();
-	const {currentPartner} = useYearn();
-	const [latestQuote, getQuote] = usePartnerContractQuote();
+	const [latestQuote, getQuote] = useOptimismBoosterQuote();
 	const request = useRef<TInitSolverArgs>();
-	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
 
 	/* 🔵 - Yearn Finance **************************************************************************
-	** init will be called when the partner contract solver should be used to deposit.
+	** init will be called when the optimism booster should be used to perform the desired deposit.
 	** It will set the request to the provided value, as it's required to get the quote, and will
 	** call getQuote to get the current quote for the provided request.
 	**********************************************************************************************/
@@ -98,29 +90,21 @@ export function useSolverPartnerContract(): TSolverContext {
 	** Retrieve the allowance for the token to be used by the solver. This will
 	** be used to determine if the user should approve the token or not.
 	**************************************************************************/
-	const onRetrieveAllowance = useCallback(async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
+	const onRetrieveAllowance = useCallback(async (): Promise<TNormalizedBN> => {
 		if (!request?.current) {
 			return toNormalizedBN(0);
 		}
 
-		const key = allowanceKey(safeChainID, toAddress(request.current.inputToken.value), toAddress(request.current.outputToken.value), toAddress(request.current.from));
-		if (existingAllowances.current[key] && !shouldForceRefetch) {
-			return existingAllowances.current[key];
-		}
-
 		const allowance = await approvedERC20Amount(
 			provider,
-			toAddress(request.current.inputToken.value), //Input token
-			toAddress(networks[safeChainID].partnerContractAddress) //spender aka partner contract
+			toAddress(request.current.inputToken.value), // Input token
+			STAKING_REWARDS_ZAP_ADDRESS // spender
 		);
-		existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals);
-		return existingAllowances.current[key];
-	}, [request, provider, networks, safeChainID]);
+		return toNormalizedBN(allowance, request.current.inputToken.decimals);
+	}, [request, provider]);
 
 	/* 🔵 - Yearn Finance ******************************************************
-	** Trigger an approve web3 action, simply trying to approve `amount` tokens
-	** to be used by the Partner contract or the final vault, in charge of
-	** depositing the tokens.
+	** Trigger an approve web3 action
 	** This approve can not be triggered if the wallet is not active
 	** (not connected) or if the tx is still pending.
 	**************************************************************************/
@@ -136,16 +120,16 @@ export function useSolverPartnerContract(): TSolverContext {
 		new Transaction(provider, approveERC20, txStatusSetter)
 			.populate(
 				toAddress(request.current.inputToken.value), //token to approve
-				toAddress(networks[safeChainID].partnerContractAddress), //partner contract
+				STAKING_REWARDS_ZAP_ADDRESS,
 				amount //amount
 			)
 			.onSuccess(onSuccess)
 			.perform();
-	}, [networks, provider, safeChainID]);
+	}, [provider]);
 
 	/* 🔵 - Yearn Finance ******************************************************
-	** Trigger a deposit web3 action, simply trying to deposit `amount` tokens
-	** via the Partner Contract, to the selected vault.
+	** Trigger a deposit and stake web3 action, simply trying to zap `amount`
+	** tokens via the Staking Rewards Zap Contract, to the selected vault.
 	**************************************************************************/
 	const onExecuteDeposit = useCallback(async (
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
@@ -155,40 +139,18 @@ export function useSolverPartnerContract(): TSolverContext {
 			return;
 		}
 
-		new Transaction(provider, depositViaPartner, txStatusSetter)
+		new Transaction(provider, depositAndStake, txStatusSetter)
 			.populate(
-				networks[safeChainID].partnerContractAddress,
-				currentPartner,
-				toAddress(request.current.outputToken.value),
+				request.current.from,
+				toAddress(request.current.outputToken.value), // vault
 				request.current.inputAmount
-			)
-			.onSuccess(onSuccess)
-			.perform();
-	}, [currentPartner, networks, provider, safeChainID]);
-
-	/* 🔵 - Yearn Finance ******************************************************
-	** Trigger a withdraw web3 action using the vault contract to take back
-	** some underlying token from this specific vault.
-	**************************************************************************/
-	const onExecuteWithdraw = useCallback(async (
-		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-		onSuccess: () => Promise<void>
-	): Promise<void> => {
-		if (!request?.current?.inputToken || !request?.current?.outputToken || !request?.current?.inputAmount) {
-			return;
-		}
-
-		new Transaction(provider, withdrawShares, txStatusSetter)
-			.populate(
-				toAddress(request.current.inputToken.value), //vault address
-				request.current.inputAmount //amount
 			)
 			.onSuccess(onSuccess)
 			.perform();
 	}, [provider]);
 
 	return useMemo((): TSolverContext => ({
-		type: Solver.PARTNER_CONTRACT,
+		type: Solver.OPTIMISM_BOOSTER,
 		quote: latestQuote?.result || toNormalizedBN(0),
 		getQuote: getQuote,
 		refreshQuote: refreshQuote,
@@ -197,6 +159,6 @@ export function useSolverPartnerContract(): TSolverContext {
 		onRetrieveAllowance,
 		onApprove,
 		onExecuteDeposit,
-		onExecuteWithdraw
-	}), [latestQuote?.result, getQuote, refreshQuote, init, onApprove, onExecuteDeposit, onExecuteWithdraw, onRetrieveAllowance, onRetrieveExpectedOut]);
+		onExecuteWithdraw: async (): Promise<void> => undefined
+	}), [latestQuote?.result, getQuote, refreshQuote, init, onApprove, onExecuteDeposit, onRetrieveAllowance, onRetrieveExpectedOut]);
 }

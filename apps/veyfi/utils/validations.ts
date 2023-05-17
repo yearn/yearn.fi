@@ -20,6 +20,10 @@ export type TValidateAllowanceProps = {
 export function validateAllowance(props: TValidateAllowanceProps): TValidationResponse {
 	const {tokenAddress, spenderAddress, allowances, amount, ownerAddress, chainID} = props;
 
+	if(!tokenAddress || !spenderAddress) {
+		return {isValid: false};
+	}
+
 	// TODO: return valid when is native token
 
 	const allowance = allowances[allowanceKey(chainID, tokenAddress, spenderAddress, ownerAddress)];

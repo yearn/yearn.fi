@@ -84,6 +84,12 @@ export function	formatDateShort(value: number): string {
 	return (new Intl.DateTimeFormat([locale, 'en-US'], {year: 'numeric', month: 'short', day: '2-digit'}).format(value));
 }
 
+/* 🔵 - Yearn Finance **************************************************************************
+**	Returns an object composed of each element of an array, using one of the elements 
+**  properties as its key
+**********************************************************************************************/
+export const keyBy = <T1, T2 extends keyof T1 & string>(array: T1[], key: T2): TDict<T1 | undefined> => 
+	(array || []).reduce((r, x): TDict<T1> => ({...r, [x[key] as string]: x}), {});
 
 export async function hash(message: string): Promise<string> {
 	const msgUint8 = new TextEncoder().encode(message); // encode as (utf-8) Uint8Array
