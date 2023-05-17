@@ -19,7 +19,7 @@ import type {MaybeString} from '@yearn-finance/web-lib/types';
 import type {TNormalizedBN} from '@common/types/types';
 import type {TInitSolverArgs, TSolverContext, TWithSolver} from '@vaults/types/solvers';
 
-export enum	Solver {
+export enum Solver {
 	VANILLA = 'Vanilla',
 	PARTNER_CONTRACT = 'PartnerContract',
 	CHAIN_COIN = 'ChainCoin',
@@ -27,7 +27,8 @@ export enum	Solver {
 	OPTIMISM_BOOSTER = 'OptimismBooster',
 	COWSWAP = 'Cowswap',
 	WIDO = 'Wido',
-	PORTALS = 'Portals'
+	PORTALS = 'Portals',
+	NONE = 'None'
 }
 
 export const isSolverDisabled = {
@@ -38,10 +39,18 @@ export const isSolverDisabled = {
 	[Solver.COWSWAP]: false,
 	[Solver.OPTIMISM_BOOSTER]: false,
 	[Solver.WIDO]: false,
-	[Solver.PORTALS]: false
+	[Solver.PORTALS]: false,
+	[Solver.NONE]: false
 };
 
-const	DefaultWithSolverContext: TWithSolver = {
+type TUpdateSolverHandler = {
+	request: TInitSolverArgs;
+	quote: PromiseSettledResult<TNormalizedBN>;
+	solver: Solver;
+	ctx: TSolverContext;
+}
+
+const DefaultWithSolverContext: TWithSolver = {
 	currentSolver: Solver.VANILLA,
 	effectiveSolver: Solver.VANILLA,
 	expectedOut: toNormalizedBN(0),
@@ -54,8 +63,8 @@ const	DefaultWithSolverContext: TWithSolver = {
 	onExecuteWithdraw: async (): Promise<void> => Promise.resolve()
 };
 
-const		WithSolverContext = createContext<TWithSolver>(DefaultWithSolverContext);
-function	WithSolverContextApp({children}: {children: React.ReactElement}): React.ReactElement {
+const WithSolverContext = createContext<TWithSolver>(DefaultWithSolverContext);
+function WithSolverContextApp({children}: { children: React.ReactElement }): React.ReactElement {
 	const {address} = useWeb3();
 	const {currentVault, actionParams, currentSolver, isDepositing} = useActionFlow();
 	const cowswap = useSolverCowswap();
@@ -66,141 +75,81 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 	const partnerContract = useSolverPartnerContract();
 	const internalMigration = useSolverInternalMigration();
 	const optimismBooster = useSolverOptimismBooster();
-	const [currentSolverState, set_currentSolverState] = useState<TSolverContext & {hash: MaybeString}>({...vanilla, hash: undefined});
+	const [currentSolverState, set_currentSolverState] = useState<TSolverContext & { hash: MaybeString }>({...vanilla, hash: undefined});
 	const [isLoading, set_isLoading] = useState(false);
+
+	async function handleUpdateSolver({request, quote, solver, ctx}: TUpdateSolverHandler): Promise<void> {
+		if (quote.status !== 'fulfilled') {
+			return;
+		}
+
+		const requestHash = await hash(JSON.stringify({...request, solver, expectedOut: quote.value.raw.toString()}));
+		performBatchedUpdates((): void => {
+			set_currentSolverState({...ctx, quote: quote.value, hash: requestHash});
+			set_isLoading(false);
+		});
+	}
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** Based on the currentSolver, we initialize the solver with the required parameters.
 	**********************************************************************************************/
-	const	onUpdateSolver = useCallback(async (): Promise<void> => {
-		if (!actionParams?.selectedOptionFrom || !actionParams?.selectedOptionTo || !actionParams?.amount) {
+	const onUpdateSolver = useCallback(async (): Promise<void> => {
+		if (!actionParams?.selectedOptionFrom || !actionParams?.selectedOptionTo || !actionParams?.amount.raw) {
 			return;
 		}
 		set_isLoading(true);
 
 		const request: TInitSolverArgs = {
 			from: toAddress(address || ''),
-			inputToken: actionParams?.selectedOptionFrom,
-			outputToken: actionParams?.selectedOptionTo,
-			inputAmount: actionParams?.amount.raw,
+			inputToken: actionParams.selectedOptionFrom,
+			outputToken: actionParams.selectedOptionTo,
+			inputAmount: actionParams.amount.raw,
 			isDepositing: isDepositing
+		};
+
+		const isValidSolver = ({quote, solver}: { quote: PromiseSettledResult<TNormalizedBN>; solver: Solver }): boolean => {
+			return quote.status === 'fulfilled' && quote?.value.raw?.gt(0) && !isSolverDisabled[solver];
 		};
 
 		switch (currentSolver) {
 			case Solver.WIDO:
 			case Solver.PORTALS:
 			case Solver.COWSWAP: {
-				const promises = [
+				const [widoQuote, cowswapQuote, portalsQuote] = await Promise.allSettled([
 					wido.init(request, currentSolver === Solver.WIDO),
 					cowswap.init(request, currentSolver === Solver.COWSWAP),
 					portals.init(request, currentSolver === Solver.PORTALS)
-				];
-				const [widoQuote, cowswapQuote, portalsQuote] = await Promise.allSettled(promises);
+				]);
 
-				/**************************************************************
-				** Logic is to use the primary solver (Wido) and check if a
-				** quote is available. If not, we fallback to the secondary
-				** solver (Cowswap). If neither are available, we set the
-				** quote to 0.
-				**************************************************************/
-				if (currentSolver === Solver.WIDO && !isSolverDisabled[Solver.WIDO]) {
-					if (widoQuote.status === 'fulfilled' && widoQuote?.value.raw?.gt(0)) {
-						const requestHash = await hash(JSON.stringify({...request, solver: Solver.WIDO, expectedOut: widoQuote.value.raw.toString()}));
-						performBatchedUpdates((): void => {
-							set_currentSolverState({...wido, quote: widoQuote.value, hash: requestHash});
-							set_isLoading(false);
-						});
-					} else if (cowswapQuote.status === 'fulfilled' && cowswapQuote.value.raw?.gt(0) && !isSolverDisabled[Solver.COWSWAP]) {
-						const requestHash = await hash(JSON.stringify({...request, solver: Solver.COWSWAP, expectedOut: cowswapQuote.value.raw.toString()}));
-						performBatchedUpdates((): void => {
-							set_currentSolverState({...cowswap, quote: cowswapQuote.value, hash: requestHash});
-							set_isLoading(false);
-						});
-					} else if (portalsQuote.status === 'fulfilled' && portalsQuote.value.raw?.gt(0) && !isSolverDisabled[Solver.PORTALS]) {
-						const requestHash = await hash(JSON.stringify({...request, solver: Solver.PORTALS, expectedOut: portalsQuote.value.raw.toString()}));
-						performBatchedUpdates((): void => {
-							set_currentSolverState({...portals, quote: portalsQuote.value, hash: requestHash});
-							set_isLoading(false);
-						});
-					} else {
-						const requestHash = await hash(JSON.stringify({...request, solver: 'NONE', expectedOut: '0'}));
-						performBatchedUpdates((): void => {
-							set_currentSolverState({...cowswap, quote: toNormalizedBN(0), hash: requestHash});
-							set_isLoading(false);
-						});
+				const solvers: {
+					[key in Solver]?: { quote: PromiseSettledResult<TNormalizedBN>; ctx: TSolverContext };
+				} = {};
+
+				[
+					{solver: Solver.WIDO, quote: widoQuote, ctx: wido},
+					{solver: Solver.COWSWAP, quote: cowswapQuote, ctx: cowswap},
+					{solver: Solver.PORTALS, quote: portalsQuote, ctx: portals}
+				].forEach(({solver, quote, ctx}): void => {
+					if (isValidSolver({quote, solver})) {
+						solvers[solver] = {quote, ctx};
 					}
+				});
+
+				solvers[Solver.NONE] = {quote: {status: 'fulfilled', value: toNormalizedBN(0)}, ctx: vanilla};
+
+				const solverPriority = [Solver.WIDO, Solver.COWSWAP, Solver.PORTALS, Solver.NONE];
+				
+				const newSolverPriority = [currentSolver, ...solverPriority.filter((solver): boolean => solver !== currentSolver)];
+
+				for (const solver of newSolverPriority) {
+					if (!solvers[solver]) {
+						continue;
+					}
+
+					const {quote, ctx} = solvers[solver] ?? solvers[Solver.NONE];
+					await handleUpdateSolver({request, quote, solver, ctx});
 					return;
 				}
-
-				/**************************************************************
-				** Logic is to use the primary solver (Cowswap) and check if a
-				** quote is available. If not, we fallback to the secondary
-				** solver (Wido). If neither are available, we set the
-				** quote to 0.
-				**************************************************************/
-				if (currentSolver === Solver.COWSWAP && !isSolverDisabled[Solver.COWSWAP]) {
-					if (cowswapQuote.status === 'fulfilled' && cowswapQuote.value.raw?.gt(0)) {
-						const requestHash = await hash(JSON.stringify({...request, solver: Solver.COWSWAP, expectedOut: cowswapQuote.value.raw.toString()}));
-						performBatchedUpdates((): void => {
-							set_currentSolverState({...cowswap, quote: cowswapQuote.value, hash: requestHash});
-							set_isLoading(false);
-						});
-					} else if (widoQuote.status === 'fulfilled' && widoQuote.value.raw?.gt(0) && !isSolverDisabled[Solver.WIDO]) {
-						const requestHash = await hash(JSON.stringify({...request, solver: Solver.WIDO, expectedOut: widoQuote.value.raw.toString()}));
-						performBatchedUpdates((): void => {
-							set_currentSolverState({...wido, quote: widoQuote.value, hash: requestHash});
-							set_isLoading(false);
-						});
-					} else if (portalsQuote.status === 'fulfilled' && portalsQuote.value.raw?.gt(0) && !isSolverDisabled[Solver.PORTALS]) {
-						const requestHash = await hash(JSON.stringify({...request, solver: Solver.PORTALS, expectedOut: portalsQuote.value.raw.toString()}));
-						performBatchedUpdates((): void => {
-							set_currentSolverState({...portals, quote: portalsQuote.value, hash: requestHash});
-							set_isLoading(false);
-						});
-					} else {
-						const requestHash = await hash(JSON.stringify({...request, solver: 'NONE', expectedOut: '0'}));
-						performBatchedUpdates((): void => {
-							set_currentSolverState({...wido, quote: toNormalizedBN(0), hash: requestHash});
-							set_isLoading(false);
-						});
-					}
-				}
-
-				/**************************************************************
-				** Logic is to use the primary solver (Portals) and check if a
-				** quote is available. If not, we fallback to the secondary
-				** solver (Wido). If neither are available, we set the
-				** quote to 0.
-				**************************************************************/
-				if (currentSolver === Solver.PORTALS && !isSolverDisabled[Solver.PORTALS]) {
-					if (portalsQuote.status === 'fulfilled' && portalsQuote.value.raw?.gt(0)) {
-						const requestHash = await hash(JSON.stringify({...request, solver: Solver.PORTALS, expectedOut: portalsQuote.value.raw.toString()}));
-						performBatchedUpdates((): void => {
-							set_currentSolverState({...portals, quote: portalsQuote.value, hash: requestHash});
-							set_isLoading(false);
-						});
-					} else if (widoQuote.status === 'fulfilled' && widoQuote.value.raw?.gt(0) && !isSolverDisabled[Solver.WIDO]) {
-						const requestHash = await hash(JSON.stringify({...request, solver: Solver.WIDO, expectedOut: widoQuote.value.raw.toString()}));
-						performBatchedUpdates((): void => {
-							set_currentSolverState({...wido, quote: widoQuote.value, hash: requestHash});
-							set_isLoading(false);
-						});
-					} else if (cowswapQuote.status === 'fulfilled' && cowswapQuote.value.raw?.gt(0) && !isSolverDisabled[Solver.COWSWAP]) {
-						const requestHash = await hash(JSON.stringify({...request, solver: Solver.COWSWAP, expectedOut: cowswapQuote.value.raw.toString()}));
-						performBatchedUpdates((): void => {
-							set_currentSolverState({...cowswap, quote: cowswapQuote.value, hash: requestHash});
-							set_isLoading(false);
-						});
-					} else {
-						const requestHash = await hash(JSON.stringify({...request, solver: 'NONE', expectedOut: '0'}));
-						performBatchedUpdates((): void => {
-							set_currentSolverState({...wido, quote: toNormalizedBN(0), hash: requestHash});
-							set_isLoading(false);
-						});
-					}
-				}
-
-				set_isLoading(false);
 
 				break;
 			}
@@ -214,40 +163,24 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 				break;
 			}
 			case Solver.CHAIN_COIN: {
-				const quote = await chainCoin.init(request);
-				const requestHash = await hash(JSON.stringify({...request, solver: Solver.CHAIN_COIN, expectedOut: quote.raw.toString()}));
-				performBatchedUpdates((): void => {
-					set_currentSolverState({...chainCoin, quote, hash: requestHash});
-					set_isLoading(false);
-				});
+				const [quote] = await Promise.allSettled([chainCoin.init(request)]);
+				await handleUpdateSolver({request, quote, solver: Solver.CHAIN_COIN, ctx: chainCoin});
 				break;
 			}
 			case Solver.PARTNER_CONTRACT: {
-				const quote = await partnerContract.init(request);
-				const requestHash = await hash(JSON.stringify({...request, solver: Solver.PARTNER_CONTRACT, expectedOut: quote.raw.toString()}));
-				performBatchedUpdates((): void => {
-					set_currentSolverState({...partnerContract, quote, hash: requestHash});
-					set_isLoading(false);
-				});
+				const [quote] = await Promise.allSettled([partnerContract.init(request)]);
+				await handleUpdateSolver({request, quote, solver: Solver.PARTNER_CONTRACT, ctx: partnerContract});
 				break;
 			}
 			case Solver.INTERNAL_MIGRATION: {
 				request.migrator = currentVault.migration.contract;
-				const quote = await internalMigration.init(request);
-				const requestHash = await hash(JSON.stringify({...request, solver: Solver.INTERNAL_MIGRATION, expectedOut: quote.raw.toString()}));
-				performBatchedUpdates((): void => {
-					set_currentSolverState({...internalMigration, quote, hash: requestHash});
-					set_isLoading(false);
-				});
+				const [quote] = await Promise.allSettled([internalMigration.init(request)]);
+				await handleUpdateSolver({request, quote, solver: Solver.INTERNAL_MIGRATION, ctx: internalMigration});
 				break;
 			}
 			default: {
-				const quote = await vanilla.init(request);
-				const requestHash = await hash(JSON.stringify({...request, solver: Solver.VANILLA, expectedOut: quote.raw.toString()}));
-				performBatchedUpdates((): void => {
-					set_currentSolverState({...vanilla, quote, hash: requestHash});
-					set_isLoading(false);
-				});
+				const [quote] = await Promise.allSettled([vanilla.init(request)]);
+				await handleUpdateSolver({request, quote, solver: Solver.VANILLA, ctx: vanilla});
 			}
 		}
 	// eslint-disable-next-line react-hooks/exhaustive-deps
@@ -257,7 +190,7 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 		onUpdateSolver();
 	}, [onUpdateSolver], 0);
 
-	const	contextValue = useDeepCompareMemo((): TWithSolver => ({
+	const contextValue = useDeepCompareMemo((): TWithSolver => ({
 		currentSolver: currentSolver,
 		effectiveSolver: currentSolverState?.type,
 		expectedOut: currentSolverState?.quote || toNormalizedBN(0),
@@ -276,6 +209,7 @@ function	WithSolverContextApp({children}: {children: React.ReactElement}): React
 		</WithSolverContext.Provider>
 	);
 }
+
 
 export {WithSolverContextApp};
 export const useSolver = (): TWithSolver => useContext(WithSolverContext);

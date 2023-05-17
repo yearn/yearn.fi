@@ -19,9 +19,9 @@ import {variants} from '@common/utils/animations';
 import type {NextPageContext} from 'next';
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
-import type {TYearnVault} from '@common/types/yearn';
+import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
-function Index({router, vaultData}: {router: NextRouter, vaultData: TYearnVault}): ReactElement {
+function Index({router, vaultData}: {router: NextRouter, vaultData: TYDaemonVault}): ReactElement {
 	const {address, isActive} = useWeb3();
 	const {safeChainID} = useChainID();
 	const {vaults} = useYearn();
@@ -29,7 +29,7 @@ function Index({router, vaultData}: {router: NextRouter, vaultData: TYearnVault}
 	const {toast, toastMaster} = yToast();
 	
 	const [toastState, set_toastState] = useState<{id?: string; isOpen: boolean}>({isOpen: false});
-	const currentVault = useRef<TYearnVault>(vaults[toAddress(router.query.address as string)] as TYearnVault || vaultData);
+	const currentVault = useRef<TYDaemonVault>(vaults[toAddress(router.query.address as string)] || vaultData);
 
 	useEffect((): void => {
 		if (address && isActive) {

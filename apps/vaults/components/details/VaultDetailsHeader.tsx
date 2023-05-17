@@ -15,18 +15,18 @@ import {useTokenPrice} from '@common/hooks/useTokenPrice';
 import {getVaultName} from '@common/utils';
 
 import type {ReactElement} from 'react';
-import type {SWRResponse} from 'swr';
-import type {TYdaemonEarned, TYearnVault} from '@common/types/yearn';
+import type {TYDaemonEarned} from '@common/schemas/yDaemonEarnedSchema';
+import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
-function	VaultDetailsHeader({currentVault}: {currentVault: TYearnVault}): ReactElement {
+function	VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {safeChainID} = useChainID();
 	const {address} = useWeb3();
 	const {settings: baseAPISettings} = useSettings();
-	const {data: earned} = useSWR(
+	const {data: earned} = useSWR<TYDaemonEarned>(
 		currentVault.address && address ? `${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/${safeChainID}/earned/${address}/${currentVault.address}` : null,
 		baseFetcher,
 		{revalidateOnFocus: false}
-	) as SWRResponse as {data: TYdaemonEarned};
+	);
 
 	const	normalizedVaultEarned = useMemo((): number => (
 		formatToNormalizedValue(
