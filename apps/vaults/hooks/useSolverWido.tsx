@@ -23,7 +23,7 @@ import type {TWidoResult} from '@vaults/types/solvers.wido';
 
 function useWidoQuote(): [TWidoResult, (request: TInitSolverArgs, shouldPreventErrorToast?: boolean) => Promise<QuoteResult | undefined>] {
 	const {toast} = yToast();
-	const {zapSlippage} = useYearn();
+	const {zapSlippage, currentPartner} = useYearn();
 	const [err, set_err] = useState<Error>();
 	const {safeChainID} = useChainID();
 
@@ -38,7 +38,8 @@ function useWidoQuote(): [TWidoResult, (request: TInitSolverArgs, shouldPreventE
 			toToken: toAddress(request.outputToken.value), // token to receive
 			amount: formatBN(request?.inputAmount || 0).toString(), // Token amount of from token
 			slippagePercentage: zapSlippage / 100, // Acceptable max slippage for the swap
-			user: request.from // receiver
+			user: request.from, // receiver
+			partner: currentPartner
 		});
 
 		const canExecuteFetch = (
