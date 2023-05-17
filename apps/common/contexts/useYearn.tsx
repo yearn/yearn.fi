@@ -98,7 +98,7 @@ export const YearnContextApp = memo(function YearnContextApp({children}: { child
 	});
 
 	const {data: earned} = useFetch<TYDaemonEarned>({
-		endpoint: `${YDAEMON_BASE_URI}/earned/${address}`,
+		endpoint: address ? `${YDAEMON_BASE_URI}/earned/${address}` : null,
 		schema: yDaemonEarnedSchema
 	});
 
