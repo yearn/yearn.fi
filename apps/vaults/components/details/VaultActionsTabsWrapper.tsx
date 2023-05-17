@@ -19,7 +19,7 @@ import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUp
 import IconChevron from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
-import type {TYearnVault} from '@common/types/yearn';
+import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
 type TTabsOptions = {
 	value: number;
@@ -41,7 +41,7 @@ function	getCurrentTab({isDepositing, hasMigration, isRetired}: {isDepositing: b
 	return tabs.find((tab): boolean => tab.value === (isDepositing ? 0 : 1)) as TTabsOptions;
 }
 
-function	VaultActionsTabsWrapper({currentVault}: {currentVault: TYearnVault}): ReactElement {
+function	VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {onSwitchSelectedOptions, isDepositing, actionParams, currentSolver} = useActionFlow();
 	const [possibleTabs, set_possibleTabs] = useState<TTabsOptions[]>([tabs[0], tabs[1]]);
 	const {stakingRewardsByVault} = useStakingRewards();

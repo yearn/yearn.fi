@@ -17,12 +17,12 @@ import {approveERC20} from '@common/utils/actions/approveToken';
 
 import type {ReactElement} from 'react';
 import type {TAddress} from '@yearn-finance/web-lib/types';
-import type {TYearnVault} from '@common/types/yearn';
+import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
 const DISPLAY_DECIMALS = 10;
 const trimAmount = (amount: string | number): string => Number(Number(amount).toFixed(DISPLAY_DECIMALS)).toString(); 
 
-function RewardsTab({currentVault}: {currentVault: TYearnVault}): ReactElement {
+function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {provider, address, isActive} = useWeb3();
 	const {safeChainID} = useChainID();
 	const {refresh: refreshBalances} = useWallet();
