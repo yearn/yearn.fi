@@ -9,5 +9,5 @@ export function findLatestApr(reports?: TYDaemonReports): number {
 		return prev.timestamp > curr.timestamp ? prev : curr;
 	});
 
-	return latestReport.results[0].APR * 100;
+	return (latestReport?.results?.[0]?.APR || 0) * 100;
 }
