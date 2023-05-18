@@ -15,6 +15,7 @@ module.exports = {
 		'indent': 'off',
 		'@typescript-eslint/indent': ['error', 'tab'],
 		'no-multi-spaces': ['error', {ignoreEOLComments: false}],
-		'no-mixed-spaces-and-tabs': 'error'
+		'no-mixed-spaces-and-tabs': 'error',
+		'react/jsx-max-props-per-line': 'off'
 	}
 };
