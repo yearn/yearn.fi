@@ -1,5 +1,5 @@
 import {addressZero, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS, ZAP_ETH_WETH_CONTRACT, ZAP_FTM_WFTM_CONTRACT} from '@yearn-finance/web-lib/utils/constants';
+import {WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS, ZAP_ETH_WETH_CONTRACT, ZAP_ETH_WETH_OPT_CONTRACT, ZAP_FTM_WFTM_CONTRACT} from '@yearn-finance/web-lib/utils/constants';
 
 import type {TAddress} from '@yearn-finance/web-lib/types';
 
@@ -24,7 +24,7 @@ export function getEthZapperContract(chainID: number): TAddress {
 		case 1:
 			return ZAP_ETH_WETH_CONTRACT;
 		case 10:
-			return addressZero;
+			return ZAP_ETH_WETH_OPT_CONTRACT;
 		case 250:
 			return ZAP_FTM_WFTM_CONTRACT;
 		case 42161:

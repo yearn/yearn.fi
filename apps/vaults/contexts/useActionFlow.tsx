@@ -11,7 +11,7 @@ import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS, YVWETH_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS, YVWETH_ADDRESS, YVWETH_OPT_ADDRESS, YVWFTM_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatBN, toNormalizedBN, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {useWallet} from '@common/contexts/useWallet';
@@ -210,7 +210,8 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 		// TODO Move yvWFTM address to web-lib
 		const isVaultTokenWrappedEthOrFtm = (
 			(safeChainID === 1 && currentVault.address === YVWETH_ADDRESS) ||
-			(safeChainID === 250 && currentVault.address === toAddress('0x0DEC85e74A92c52b7F708c4B10207D9560CEFaf0'))
+			(safeChainID === 10 && currentVault.address === YVWETH_OPT_ADDRESS) ||
+			(safeChainID === 250 && currentVault.address === YVWFTM_ADDRESS)
 		);
 
 		if (isVaultTokenWrappedEthOrFtm && (isInputTokenEth || isOutputTokenEth)) {
@@ -230,7 +231,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 		}
 		return Solver.VANILLA;
 	}, [actionParams?.selectedOptionFrom?.value, actionParams?.selectedOptionFrom?.solveVia?.length, actionParams?.selectedOptionTo?.value, actionParams?.selectedOptionTo?.solveVia?.length, currentVault.token.address, currentVault.address, currentVault?.migration?.available, currentVault?.migration?.address, hasStakingRewards, isDepositing, safeChainID, isUsingPartnerContract, zapProvider]);
-	
+
 	const onSwitchSelectedOptions = useCallback((nextFlow = Flow.Switch): void => {
 		balancesNonce;
 		if (nextFlow === Flow.None) {
