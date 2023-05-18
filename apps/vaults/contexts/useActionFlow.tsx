@@ -140,9 +140,9 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 	const [possibleZapOptionsTo, set_possibleZapOptionsTo] = useState<TDropdownOption[]>([]);
 	const [{result: depositLimit}, actions] = useAsync(async (): Promise<BigNumber> => fetchMaxPossibleDeposit({provider, vault: currentVault}), Zero);
 
-	useUpdateEffect((): void => {
+	useEffect((): void => {
 		actions.execute();
-	}, [provider]);
+	}, [actions, currentVault, provider]);
 
 	//Combine selectedOptionFrom, selectedOptionTo and amount in a useReducer
 	const [actionParams, actionParamsDispatcher] = useReducer((
