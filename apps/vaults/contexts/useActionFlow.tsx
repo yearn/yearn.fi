@@ -117,7 +117,7 @@ function getMaxDepositPossible(props: TGetMaxDepositPossible): TNormalizedBN {
 
 	if (fromToken === vault?.token?.address && isDepositing) {
 		if (userBalance.gt(vaultDepositLimit)) {
-			return (toNormalizedBN(vaultDepositLimit, vault.token.decimals));
+			// return (toNormalizedBN(vaultDepositLimit, vault.token.decimals));
 		}
 	}
 
