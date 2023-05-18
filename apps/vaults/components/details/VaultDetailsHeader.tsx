@@ -56,8 +56,9 @@ function VaultDetailsHeader({vault}: { vault: TYDaemonVault }): ReactElement {
 
 	const normalizedVaultEarned = useMemo((): number => {
 		const {unrealizedGains} = earned?.earned?.[toAddress(address)] || {};
-		const absoluteUnrealizedGains = unrealizedGains ? Math.abs(Number(unrealizedGains)) : 0;
-		return formatToNormalizedValue(absoluteUnrealizedGains, decimals);
+		const normalizedValue = formatToNormalizedValue(unrealizedGains || 0, decimals);
+		
+		return normalizedValue > -0.01 ? Math.abs(normalizedValue) : normalizedValue;
 	}, [earned?.earned, address, decimals]);
 
 	const vaultBalance = useBalance(address)?.normalized;
