@@ -99,7 +99,7 @@ function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): ReactElement
 						className={'w-full md:w-[216px]'}
 						label={'You have unclaimed'}
 						legend={formatCounterValue(rewardBalance.normalized, rewardTokenBalance.normalizedPrice)}
-						value={`${trimAmount(rewardBalance.normalized)} ${rewardTokenBalance.symbol}`}
+						value={`${trimAmount(rewardBalance.normalized)} ${rewardTokenBalance.symbol || 'yvOP'}`}
 						isDisabled
 					/>
 					<Button
