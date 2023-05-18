@@ -102,20 +102,23 @@ async function performCall(
 }
 
 async function getBalances(
-	provider: ethers.providers.JsonRpcProvider,
+	provider: ethers.providers.JsonRpcProvider | undefined,
 	fallBackProvider: ethers.providers.JsonRpcProvider,
 	ownerAddress: TAddress,
 	tokens: TUseBalancesTokens[],
 	prices?: TYDaemonPrices
 ): Promise<[TDict<TBalanceData>, Error | undefined]> {
+	if (!provider) {
+		return [{}, new Error('Provider not found')];
+	}
+
 	const	result: TDict<TBalanceData> = {};
-	const	currentProvider = provider;
 	const	calls = [];
-	const	ethcallProvider = await newEthCallProvider(currentProvider);
+	const	ethcallProvider = await newEthCallProvider(provider);
 
 	for (const {token} of tokens) {
 		if (toAddress(token) === ETH_TOKEN_ADDRESS) {
-			const	tokenContract = new Contract(getNativeTokenWrapperContract(currentProvider.network.chainId), ERC20_ABI);
+			const	tokenContract = new Contract(getNativeTokenWrapperContract(provider.network.chainId), ERC20_ABI);
 			calls.push(
 				ethcallProvider.getEthBalance(ownerAddress),
 				tokenContract.decimals(),
