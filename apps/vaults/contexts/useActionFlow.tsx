@@ -11,7 +11,7 @@ import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS, YVWETH_ADDRESS, YVWETH_OPT_ADDRESS, YVWFTM_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {ETH_TOKEN_ADDRESS, OPT_WETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS, YVWETH_ADDRESS, YVWETH_OPT_ADDRESS, YVWFTM_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatBN, toNormalizedBN, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {useWallet} from '@common/contexts/useWallet';
@@ -208,13 +208,13 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 		const isInputTokenEth = actionParams?.selectedOptionFrom?.value === ETH_TOKEN_ADDRESS;
 		const isOutputTokenEth = actionParams?.selectedOptionTo?.value === ETH_TOKEN_ADDRESS;
 		// TODO Move yvWFTM address to web-lib
-		const isVaultTokenWrappedEthOrFtm = (
+		const isVaultTokenWrappedCoin = (
 			(safeChainID === 1 && currentVault.address === YVWETH_ADDRESS) ||
 			(safeChainID === 10 && currentVault.address === YVWETH_OPT_ADDRESS) ||
 			(safeChainID === 250 && currentVault.address === YVWFTM_ADDRESS)
 		);
 
-		if (isVaultTokenWrappedEthOrFtm && (isInputTokenEth || isOutputTokenEth)) {
+		if (isVaultTokenWrappedCoin && (isInputTokenEth || isOutputTokenEth)) {
 			return Solver.CHAIN_COIN;
 		}
 		if (currentVault?.migration?.available && (toAddress(actionParams?.selectedOptionTo?.value) === toAddress(currentVault?.migration?.address))) {
@@ -380,6 +380,11 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 			payloadFrom.push(...[
 				setZapOption({name: 'FTM', symbol: 'FTM', address: ETH_TOKEN_ADDRESS, chainID: safeChainID, decimals: 18}),
 				setZapOption({name: 'wFTM', symbol: 'wFTM', address: WFTM_TOKEN_ADDRESS, chainID: safeChainID, decimals: 18})
+			]);
+		} else if (safeChainID === 10 && currentVault && toAddress(currentVault.token.address) === OPT_WETH_TOKEN_ADDRESS) {
+			payloadFrom.push(...[
+				setZapOption({name: 'ETH', symbol: 'ETH', address: ETH_TOKEN_ADDRESS, chainID: safeChainID, decimals: 18}),
+				setZapOption({name: 'wETH', symbol: 'wETH', address: OPT_WETH_TOKEN_ADDRESS, chainID: safeChainID, decimals: 18})
 			]);
 		} else {
 			payloadFrom.push(
