@@ -4,8 +4,8 @@ import {useAsync, useMountEffect, useUpdateEffect} from '@react-hookz/web';
 import {Solver} from '@vaults/contexts/useSolver';
 import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
-import {useMaxDepositPossibleFetcher} from '@vaults/hooks/useMaxDepositPossibleFetcher';
 import {WOPT_TOKEN_ADDRESS} from '@vaults/utils';
+import {fetchMaxPossibleDeposit} from '@vaults/utils/fetchMaxPossibleDeposit';
 import {setZapOption} from '@vaults/utils/zapOptions';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -117,7 +117,7 @@ function getMaxDepositPossible(props: TGetMaxDepositPossible): TNormalizedBN {
 
 	if (fromToken === vault?.token?.address && isDepositing) {
 		if (userBalance.gt(vaultDepositLimit)) {
-			// return (toNormalizedBN(vaultDepositLimit, vault.token.decimals));
+			return (toNormalizedBN(vaultDepositLimit, vault.token.decimals));
 		}
 	}
 
@@ -133,16 +133,12 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 	const {stakingRewardsByVault} = useStakingRewards();
 	const hasStakingRewards = !!stakingRewardsByVault[currentVault.address];
 	const {provider} = useWeb3();
-	const retrieveDepositLimit = useMaxDepositPossibleFetcher();
 
 	const [possibleOptionsFrom, set_possibleOptionsFrom] = useState<TDropdownOption[]>([]);
 	const [possibleZapOptionsFrom, set_possibleZapOptionsFrom] = useState<TDropdownOption[]>([]);
 	const [possibleOptionsTo, set_possibleOptionsTo] = useState<TDropdownOption[]>([]);
 	const [possibleZapOptionsTo, set_possibleZapOptionsTo] = useState<TDropdownOption[]>([]);
-
-	const [{result: depositLimit}, actions] = useAsync(async (): Promise<BigNumber> => retrieveDepositLimit({
-		vault: currentVault
-	}), Zero);
+	const [{result: depositLimit}, actions] = useAsync(async (): Promise<BigNumber> => fetchMaxPossibleDeposit({provider, vault: currentVault}), Zero);
 
 	useUpdateEffect((): void => {
 		actions.execute();
