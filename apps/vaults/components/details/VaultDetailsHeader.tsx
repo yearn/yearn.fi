@@ -1,46 +1,71 @@
 import React, {useMemo} from 'react';
-import useSWR from 'swr';
 import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import {formatToNormalizedValue, toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatPercent, formatUSD} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {copyToClipboard} from '@yearn-finance/web-lib/utils/helpers';
 import {useBalance} from '@common/hooks/useBalance';
+import {useFetch} from '@common/hooks/useFetch';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
+import {yDaemonEarnedSchema} from '@common/schemas/yDaemonEarnedSchema';
 import {getVaultName} from '@common/utils';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonEarned} from '@common/schemas/yDaemonEarnedSchema';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
-function	VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const {safeChainID} = useChainID();
-	const {address} = useWeb3();
-	const {settings: baseAPISettings} = useSettings();
-	const {data: earned} = useSWR<TYDaemonEarned>(
-		currentVault.address && address ? `${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/${safeChainID}/earned/${address}/${currentVault.address}` : null,
-		baseFetcher,
-		{revalidateOnFocus: false}
+type TVaultHeaderLineItemProps = {
+	label: string;
+	children: string;
+	legend?: string;
+}
+
+function VaultHeaderLineItem({label, children, legend}: TVaultHeaderLineItemProps): ReactElement {
+	return (
+		<div className={'flex flex-col items-center justify-center space-y-1 md:space-y-2'}>
+			<p className={'text-center text-xxs text-neutral-600 md:text-xs'}>
+				{label}
+			</p>
+			<b className={'font-number text-lg md:text-3xl'} suppressHydrationWarning>
+				{children}
+			</b>
+			<legend className={'font-number text-xxs text-neutral-600 md:text-xs'} suppressHydrationWarning>
+				{legend ? legend : '\u00A0'}
+			</legend>
+		</div>
 	);
+}
 
-	const	normalizedVaultEarned = useMemo((): number => (
-		formatToNormalizedValue(
-			(earned?.earned?.[toAddress(currentVault?.address)]?.unrealizedGains || '0'),
-			currentVault?.decimals
-		)
-	), [earned, currentVault]);
+function VaultDetailsHeader({vault}: { vault: TYDaemonVault }): ReactElement {
+	const {safeChainID} = useChainID();
+	const {address: userAddress} = useWeb3();
+	const {settings: baseAPISettings} = useSettings();
 
-	const	vaultBalance = useBalance(currentVault?.address)?.normalized;
-	const	vaultPrice = useTokenPrice(currentVault?.address);
-	const	vaultName = useMemo((): string => getVaultName(currentVault), [currentVault]);
-	const	{stakingRewardsByVault, positionsMap} = useStakingRewards();
-	const 	stakedBalance = toNormalizedValue(positionsMap[toAddress(stakingRewardsByVault[currentVault.address])]?.stake ?? 0, currentVault.decimals);
-	const 	depositedAndStaked = vaultBalance + stakedBalance;
+	const {address, apy, tvl, decimals, symbol = 'token', token} = vault;
+
+	const YDAEMON_BASE_URI = `${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/${safeChainID}`;
+
+	const {data: earned} = useFetch<TYDaemonEarned>({
+		endpoint: (address && userAddress) ? `${YDAEMON_BASE_URI}/earned/${userAddress}` : null,
+		schema: yDaemonEarnedSchema
+	});
+
+	const normalizedVaultEarned = useMemo((): number => {
+		const {unrealizedGains} = earned?.earned?.[toAddress(address)] || {};
+		const absoluteUnrealizedGains = unrealizedGains ? Math.abs(Number(unrealizedGains)) : 0;
+		return formatToNormalizedValue(absoluteUnrealizedGains, decimals);
+	}, [earned?.earned, address, decimals]);
+
+	const vaultBalance = useBalance(address)?.normalized;
+	const vaultPrice = useTokenPrice(address);
+	const vaultName = useMemo((): string => getVaultName(vault), [vault]);
+	const {stakingRewardsByVault, positionsMap} = useStakingRewards();
+	const stakedBalance = toNormalizedValue(positionsMap[toAddress(stakingRewardsByVault[address])]?.stake ?? 0, decimals);
+	const depositedAndStaked = vaultBalance + stakedBalance;
 
 	return (
 		<div aria-label={'Vault Header'} className={'col-span-12 flex w-full flex-col items-center justify-center'}>
@@ -48,58 +73,28 @@ function	VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}): Reac
 				&nbsp;{vaultName}&nbsp;
 			</b>
 			<div className={'mt-4 mb-10 md:mt-10 md:mb-14'}>
-				{currentVault?.address ? (
-					<button onClick={(): void => copyToClipboard(currentVault.address)}>
-						<p className={'font-number text-xxs text-neutral-500 md:text-xs'}>{currentVault.address}</p>
+				{address ? (
+					<button onClick={(): void => copyToClipboard(address)}>
+						<p className={'font-number text-xxs text-neutral-500 md:text-xs'}>{address}</p>
 					</button>
-				): <p className={'text-xxs text-neutral-500 md:text-xs'}>&nbsp;</p>}
+				) : <p className={'text-xxs text-neutral-500 md:text-xs'}>&nbsp;</p>}
 			</div>
 			<div className={'grid grid-cols-2 gap-6 md:grid-cols-4 md:gap-12'}>
-				<div className={'flex flex-col items-center justify-center space-y-1 md:space-y-2'}>
-					<p className={'text-center text-xxs text-neutral-600 md:text-xs'}>
-						{`Total deposited, ${currentVault?.symbol || 'token'}`}
-					</p>
-					<b className={'font-number text-lg md:text-3xl'} suppressHydrationWarning>
-						{formatAmount(formatToNormalizedValue(currentVault?.tvl?.total_assets, currentVault?.decimals))}
-					</b>
-					<legend className={'font-number text-xxs text-neutral-600 md:text-xs'} suppressHydrationWarning>
-						{formatUSD(currentVault?.tvl?.tvl)}
-					</legend>
-				</div>
+				<VaultHeaderLineItem label={`Total deposited, ${symbol}`} legend={formatUSD(tvl.tvl)}>
+					{formatAmount(formatToNormalizedValue(tvl.total_assets, decimals))}
+				</VaultHeaderLineItem>
 
-				<div className={'flex flex-col items-center justify-center space-y-1 md:space-y-2'}>
-					<p className={'text-center text-xxs text-neutral-600 md:text-xs'}>
-						{'Net APY'}
-					</p>
-					<b className={'font-number text-lg md:text-3xl'} suppressHydrationWarning>
-						{formatPercent(((currentVault?.apy?.net_apy || 0) + (currentVault?.apy?.staking_rewards_apr || 0)) * 100, 2, 2, 500)}
-					</b>
-					<legend className={'text-xxs text-neutral-600 md:text-xs'}>&nbsp;</legend>
-				</div>
+				<VaultHeaderLineItem label={'Net APY'}>
+					{formatPercent(((apy.net_apy || 0) + (apy.staking_rewards_apr || 0)) * 100, 2, 2, 500)}
+				</VaultHeaderLineItem>
 
-				<div className={'flex flex-col items-center justify-center space-y-1 md:space-y-2'}>
-					<p className={'text-center text-xxs text-neutral-600 md:text-xs'}>
-						{`Balance, ${currentVault?.symbol || 'token'}`}
-					</p>
-					<b className={'font-number text-lg md:text-3xl'} suppressHydrationWarning>
-						{formatAmount(depositedAndStaked)}
-					</b>
-					<legend className={'font-number text-xxs text-neutral-600 md:text-xs'} suppressHydrationWarning>
-						{formatCounterValue(depositedAndStaked, vaultPrice)}
-					</legend>
-				</div>
+				<VaultHeaderLineItem label={`Balance, ${symbol}`} legend={formatCounterValue(depositedAndStaked, vaultPrice)}>
+					{formatAmount(depositedAndStaked)}
+				</VaultHeaderLineItem>
 
-				<div className={'flex flex-col items-center justify-center space-y-1 md:space-y-2'}>
-					<p className={'text-center text-xxs text-neutral-600 md:text-xs'}>
-						{`Earned, ${currentVault?.token?.symbol || 'token'}`}
-					</p>
-					<b className={'font-number text-lg md:text-3xl'} suppressHydrationWarning>
-						{formatAmount(normalizedVaultEarned)}
-					</b>
-					<legend className={'font-number text-xxs text-neutral-600 md:text-xs'} suppressHydrationWarning>
-						{formatCounterValue(normalizedVaultEarned || 0, vaultPrice)}
-					</legend>
-				</div>
+				<VaultHeaderLineItem label={`Earned, ${token.symbol}`} legend={formatCounterValue(normalizedVaultEarned, vaultPrice)}>
+					{formatAmount(normalizedVaultEarned)}
+				</VaultHeaderLineItem>
 			</div>
 		</div>
 	);
