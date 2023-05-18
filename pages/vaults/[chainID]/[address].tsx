@@ -83,7 +83,7 @@ function Index({router, vaultData}: {router: NextRouter, vaultData: TYDaemonVaul
 			</header>
 
 			<section className={'mt-4 grid w-full grid-cols-12 pb-10 md:mt-0'}>
-				<VaultDetailsHeader currentVault={currentVault.current} />
+				<VaultDetailsHeader vault={currentVault.current} />
 				<ActionFlowContextApp currentVault={currentVault.current}>
 					<WithSolverContextApp>
 						<VaultActionsTabsWrapper currentVault={currentVault.current} />
