@@ -3,12 +3,14 @@ import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUp
 
 import type {VoidPromiseFunction} from '@yearn-finance/web-lib/types';
 
+/**
+ * @deprecated Use `@react-hookz/web` instead
+ */
 function	useAsync<T>(
 	callback: (...args: unknown[]) => Promise<T | undefined>,
 	defaultValue?: T,
 	effectDependencies: unknown[] = []
 ): [T | undefined, boolean, VoidPromiseFunction] {
-	console.error('DEPRECATED: PLEASE USE @react-hookz/web instead');
 	const runNonce = useRef(0);
 	const [isLoading, set_isLoading] = useState(false);
 	const [data, set_data] = useState(defaultValue);
