@@ -75,7 +75,7 @@ function	VaultDetailsQuickActionsTo(): ReactElement {
 							<input
 								id={'toAmount'}
 								className={'w-full cursor-default overflow-x-scroll border-none bg-transparent py-4 px-0 font-bold outline-none scrollbar-none'}
-								type={'text'}
+								type={'number'}
 								disabled
 								value={expectedOut?.normalized || 0} />
 						}

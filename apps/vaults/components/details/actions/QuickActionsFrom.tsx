@@ -78,7 +78,7 @@ function	VaultDetailsQuickActionsFrom(): ReactElement {
 						<input
 							id={'fromAmount'}
 							className={`w-full overflow-x-scroll border-none bg-transparent py-4 px-0 font-bold outline-none scrollbar-none ${isActive ? '' : 'cursor-not-allowed'}`}
-							type={'text'}
+							type={'number'}
 							disabled={!isActive}
 							value={actionParams?.amount.normalized}
 							onChange={(e: ChangeEvent<HTMLInputElement>): void => onChangeAmount(
