@@ -1,13 +1,12 @@
-
-
 import {Contract} from 'ethcall';
 import {ethers} from 'ethers';
+import * as Sentry from '@sentry/nextjs';
 import {getNativeTokenWrapperContract, getNativeTokenWrapperName} from '@vaults/utils';
 import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
+import {getProvider, getRPC, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 
 import type {BigNumber} from 'ethers';
 import type {NextApiRequest, NextApiResponse} from 'next';
@@ -32,7 +31,7 @@ async function getBatchBalances({
 		currentProvider = getProvider(chainID);
 	}
 
-	await currentProvider.ready;
+	// await currentProvider.ready;
 
 	const	ethcallProvider = await newEthCallProvider(currentProvider);
 	const	data: TDict<TBalanceData> = {};
@@ -96,10 +95,14 @@ async function getBatchBalances({
 
 export type TGetBatchBalancesResp = {balances: TDict<TBalanceData>, chainID: number};
 export default async function handler(req: NextApiRequest, res: NextApiResponse<TGetBatchBalancesResp>): Promise<void> {
-	const	balances = await getBatchBalances({
-		chainID: Number(req.body.chainID),
-		address: req.body.address as string,
-		tokens: req.body.tokens as unknown as TUseBalancesTokens[]
-	});
-	return res.status(200).json({balances, chainID: req.body.chainID});
+	const chainID = Number(req.body.chainID);
+	const address = String(req.body.address);
+	const tokens = req.body.tokens as unknown as TUseBalancesTokens[];
+
+	try {		
+		const balances = await getBatchBalances({chainID, address, tokens});
+		return res.status(200).json({balances, chainID: req.body.chainID});
+	} catch (error) {
+		Sentry.captureException(error, {tags: {rpc: getRPC(chainID), chainID, address}});
+	}
 }
