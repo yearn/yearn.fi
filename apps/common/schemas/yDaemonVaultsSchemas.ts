@@ -52,10 +52,10 @@ const yDaemonVaultStrategySchema = z.object({
 		}),
 		allocation: z.object({
 			status: z.string(),
-			currentTVL: z.string(),
+			currentTVL: z.string().or(z.null()),
 			availableTVL: z.string(),
-			currentAmount: z.string(),
-			availableAmount: z.string()
+			currentAmount: z.string().or(z.null()),
+			availableAmount: z.string().or(z.null())
 		})
 	}).optional() // Optional for migratable
 });
