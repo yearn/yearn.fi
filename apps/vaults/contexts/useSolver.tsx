@@ -37,7 +37,7 @@ export const isSolverDisabled = {
 	[Solver.CHAIN_COIN]: false,
 	[Solver.INTERNAL_MIGRATION]: false,
 	[Solver.COWSWAP]: false,
-	[Solver.OPTIMISM_BOOSTER]: false,
+	[Solver.OPTIMISM_BOOSTER]: true,
 	[Solver.WIDO]: false,
 	[Solver.PORTALS]: false,
 	[Solver.NONE]: false
@@ -138,7 +138,7 @@ function WithSolverContextApp({children}: { children: React.ReactElement }): Rea
 				solvers[Solver.NONE] = {quote: {status: 'fulfilled', value: toNormalizedBN(0)}, ctx: vanilla};
 
 				const solverPriority = [Solver.WIDO, Solver.COWSWAP, Solver.PORTALS, Solver.NONE];
-				
+
 				const newSolverPriority = [currentSolver, ...solverPriority.filter((solver): boolean => solver !== currentSolver)];
 
 				for (const solver of newSolverPriority) {
