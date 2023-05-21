@@ -119,17 +119,17 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 	}
 
 	if (isDepositing || currentSolver === Solver.INTERNAL_MIGRATION) {
-		if (currentSolver === Solver.OPTIMISM_BOOSTER) {
-			return (
-				<Button
-					onClick={async (): Promise<void> => onExecuteDeposit(set_txStatusExecuteDeposit, onSuccess)}
-					className={'w-full whitespace-nowrap'}
-					isBusy={txStatusExecuteDeposit.pending}
-					isDisabled={!isActive || actionParams?.amount.raw.isZero() || actionParams?.amount.raw.gt(maxDepositPossible.raw)}>
-					{'Deposit and Stake'}
-				</Button>
-			);
-		}
+		// if (currentSolver === Solver.OPTIMISM_BOOSTER) {
+		// 	return (
+		// 		<Button
+		// 			onClick={async (): Promise<void> => onExecuteDeposit(set_txStatusExecuteDeposit, onSuccess)}
+		// 			className={'w-full whitespace-nowrap'}
+		// 			isBusy={txStatusExecuteDeposit.pending}
+		// 			isDisabled={!isActive || actionParams?.amount.raw.isZero() || actionParams?.amount.raw.gt(maxDepositPossible.raw)}>
+		// 			{'Deposit and Stake'}
+		// 		</Button>
+		// 	);
+		// }
 		return (
 			<Button
 				onClick={async (): Promise<void> => onExecuteDeposit(set_txStatusExecuteDeposit, onSuccess)}

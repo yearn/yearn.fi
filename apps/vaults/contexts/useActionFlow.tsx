@@ -198,7 +198,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 	const currentSolver = useMemo((): Solver => {
 		const isUnderlyingToken = toAddress(actionParams?.selectedOptionFrom?.value) === toAddress(currentVault.token.address);
 		if (hasStakingRewards && isDepositing && isUnderlyingToken) {
-			return Solver.OPTIMISM_BOOSTER;
+			// return Solver.OPTIMISM_BOOSTER;
 		}
 
 		const isInputTokenEth = actionParams?.selectedOptionFrom?.value === ETH_TOKEN_ADDRESS;
