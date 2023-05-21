@@ -67,6 +67,7 @@
     "theme.config.js",
     ".eslintrc.js",
     ".next/types/**/*.ts",
-    "jest.config.js"
+    "jest.config.js",
+    "worker/index.js"
   ]
 }
