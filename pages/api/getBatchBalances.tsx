@@ -94,7 +94,7 @@ async function getBatchBalances({
 }
 
 export function isArrayOfUseBalancesTokens(value: unknown): value is TUseBalancesTokens[] {
-	return Array.isArray(value) && value.every(({token}): boolean => token && typeof token === 'string');
+	return Array.isArray(value) && value.every(({token}): boolean => !!token && typeof token === 'string');
 }
 
 export type TGetBatchBalancesResp = {balances: TDict<TBalanceData>, chainID: number};
