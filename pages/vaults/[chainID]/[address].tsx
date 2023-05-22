@@ -12,6 +12,7 @@ import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {isTAddress} from '@yearn-finance/web-lib/utils/isTAddress';
 import CHAINS from '@yearn-finance/web-lib/utils/web3/chains';
 import TokenIcon from '@common/components/TokenIcon';
 import {useWallet} from '@common/contexts/useWallet';
@@ -22,6 +23,7 @@ import {variants} from '@common/utils/animations';
 import type {GetServerSideProps, GetServerSidePropsContext, InferGetServerSidePropsType} from 'next';
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
+import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
 function Index(vault: InferGetServerSidePropsType<typeof getServerSideProps>): ReactElement {
@@ -115,7 +117,6 @@ export function getToastMessage({vaultChainName, chainName}: {vaultChainName?: s
 	return 'Please note, you\'re currently connected to a different network than this Vault.';
 }
 
-
 Index.getLayout = function getLayout(page: ReactElement, router: NextRouter): ReactElement {
 	return (
 		<Wrapper router={router}>
@@ -132,7 +133,7 @@ export const getServerSideProps: GetServerSideProps<TYDaemonVault> = async (cont
 		return {notFound: true};
 	}
 	
-	const address = toAddress((context.query.address as string)?.split('/').pop() || '');
+	const address = getAddress(context.query.address);
 
 	if (!address || !ADDRESS_REGEX.test(address) || isZeroAddress(address)) {
 		return {notFound: true};
@@ -158,5 +159,14 @@ export const getServerSideProps: GetServerSideProps<TYDaemonVault> = async (cont
 		return {notFound: true};
 	}
 };
+
+function getAddress(address?: string | string[]): TAddress | null {
+	if (!address || typeof address !== 'string') {
+		return null;
+	}
+
+	const rawAddress = address.split('/').pop();
+	return isTAddress(rawAddress) ? rawAddress : null;
+}
 
 export default Index;
