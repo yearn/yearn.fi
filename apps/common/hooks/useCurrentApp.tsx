@@ -4,6 +4,7 @@ import {VeYfiHeader} from 'apps/veyfi/components/header/VeYfiHeader';
 import homeManifest from 'public/manifest.json';
 import {VaultsHeader} from '@vaults/components/header/VaultsHeader';
 import {AppName, APPS} from '@common/components/Apps';
+import {YBalHeader} from '@yBal/components/header/YBalHeader';
 import {YBribeHeader} from '@yBribe/components/header/YBribeHeader';
 import {YCrvHeader} from '@yCRV/components/header/YCrvHeader';
 
@@ -34,6 +35,11 @@ function useCurrentApp({pathname}: NextRouter): TCurrentApp {
 		if (pathname.startsWith('/ycrv')) {
 			const {name, manifest, menu} = APPS[AppName.YCRV];
 			return {name, manifest, menu, header: <YCrvHeader pathname={pathname} />};
+		}
+
+		if (pathname.startsWith('/ybal')) {
+			const {name, manifest, menu} = APPS[AppName.YBAL];
+			return {name, manifest, menu, header: <YBalHeader pathname={pathname} />};
 		}
 
 		if (pathname.startsWith('/veyfi')) {
