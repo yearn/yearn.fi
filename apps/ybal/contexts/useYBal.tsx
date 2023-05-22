@@ -18,7 +18,7 @@ import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
 import type {TDict} from '@yearn-finance/web-lib/types';
-import type {TYDaemonHarvests, TYearnVault} from '@common/types/yearn';
+import type {TYDaemonHarvests} from '@common/types/yearn';
 
 type THoldings = {
 	legacy: BigNumber;
@@ -205,7 +205,7 @@ export const YBalContextApp = ({children}: {children: ReactElement}): ReactEleme
 	** Compute the styCRV APY based on the experimental APY and the mega boost.
 	**************************************************************************/
 	const	styBalAPY = useMemo((): number => {
-		return (((styBalVault as TYearnVault)?.apy?.net_apy || 0) * 100);
+		return ((styBalVault?.apy?.net_apy || 0) * 100);
 		// return (((styBalVault as TYearnVault)?.apy?.net_apy || 0) * 100) + (styBalMegaBoost * 100);
 		// return (styCRVExperimentalAPY * 100) + (styBalMegaBoost * 100);
 	}, [styBalVault]);
