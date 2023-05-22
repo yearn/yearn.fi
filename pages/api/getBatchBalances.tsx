@@ -93,11 +93,15 @@ async function getBatchBalances({
 	return data;
 }
 
+export function isArrayOfUseBalancesTokens(value: unknown): value is TUseBalancesTokens[] {
+	return Array.isArray(value) && value.every(({token}): boolean => token && typeof token === 'string');
+}
+
 export type TGetBatchBalancesResp = {balances: TDict<TBalanceData>, chainID: number};
 export default async function handler(req: NextApiRequest, res: NextApiResponse<TGetBatchBalancesResp>): Promise<void> {
 	const chainID = Number(req.body.chainID);
 	const address = String(req.body.address);
-	const tokens = req.body.tokens as unknown as TUseBalancesTokens[];
+	const tokens = isArrayOfUseBalancesTokens(req.body.tokens) ? req.body.tokens : [];
 
 	try {		
 		const balances = await getBatchBalances({chainID, address, tokens});
