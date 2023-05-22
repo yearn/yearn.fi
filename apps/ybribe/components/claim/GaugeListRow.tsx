@@ -16,7 +16,7 @@ import {claimReward} from '@yBribe/utils/actions/claimReward';
 import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
 import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
-import type {TCurveGauges} from '@common/types/curves';
+import type {TCurveAllGauges} from '@common/schemas/curveSchemas';
 
 function	GaugeRowItemWithExtraData({
 	address,
@@ -78,7 +78,7 @@ function	GaugeRowItemAPR({address, value}: {address: TAddress, value: BigNumber}
 }
 
 
-function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauges, category: string}): ReactElement {
+function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveAllGauges['data'][string], category: string}): ReactElement {
 	const	{isActive, provider} = useWeb3();
 	const	{currentRewards, nextRewards, claimable, dryRunClaimRewards, refresh} = useBribes();
 	const	[txStatusClaim, set_txStatusClaim] = useState(defaultTxStatus);
