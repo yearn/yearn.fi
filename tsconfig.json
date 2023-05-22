@@ -10,6 +10,7 @@
         "@veYFI/*": ["apps/veyfi/*"],
         "@yBribe/*": ["apps/ybribe/*"],
         "@yCRV/*": ["apps/ycrv/*"],
+        "@yBal/*": ["apps/ybal/*"],
     },
     /* Basic Options */
     "target": "esnext",

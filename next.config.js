@@ -17,7 +17,8 @@ module.exports = withTM(withBundleAnalyzer(withPWA({
 		domains: [
 			'rawcdn.githack.com',
 			'raw.githubusercontent.com',
-			'placehold.co'
+			'placehold.co',
+			'assets.smold.app'
 		]
 	},
 	async rewrites() {
@@ -111,7 +112,7 @@ module.exports = withTM(withBundleAnalyzer(withPWA({
 		// YDAEMON_BASE_URI: 'https://ydaemon-dev.yearn.finance',
 		// YDAEMON_BASE_URI: 'https://api.ycorpo.com',
 		// YDAEMON_BASE_URI: 'http://localhost:8080',
-		BASE_YEARN_ASSETS_URI: 'https://raw.githubusercontent.com/yearn/yearn-assets/master/icons/multichain-tokens/'
+		BASE_YEARN_ASSETS_URI: 'https://assets.smold.app/api/token/'
 	}
 })));
 
