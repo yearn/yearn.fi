@@ -14,7 +14,7 @@ import {useBribes} from '@yBribe/contexts/useBribes';
 import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
 import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
-import type {TCurveGauges} from '@common/types/curves';
+import type {TCurveAllGauges} from '@common/schemas/curveSchemas';
 
 function	GaugeRowItemWithExtraData({address, value}: {address: TAddress, value: BigNumber}): ReactElement {
 	const	{tokens, prices} = useYearn();
@@ -40,7 +40,7 @@ function	GaugeRowItemWithExtraData({address, value}: {address: TAddress, value: 
 	);
 }
 
-function	GaugeListRow({currentGauge}: {currentGauge: TCurveGauges}): ReactElement {
+function	GaugeListRow({currentGauge}: {currentGauge: TCurveAllGauges['data'][string]}): ReactElement {
 	const	{isActive} = useWeb3();
 	const	{currentRewards, nextRewards} = useBribes();
 	const	[hasModal, set_hasModal] = useState(false);
