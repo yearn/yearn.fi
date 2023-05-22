@@ -26,7 +26,7 @@ import type {ReactElement} from 'react';
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
-function Index(vault: InferGetServerSidePropsType<typeof getServerSideProps>): ReactElement {
+function Index(vault: InferGetServerSidePropsType<typeof getServerSideProps>): ReactElement | null {
 	const {address, isActive} = useWeb3();
 	const {safeChainID} = useChainID();
 	const {vaults} = useYearn();
@@ -72,6 +72,10 @@ function Index(vault: InferGetServerSidePropsType<typeof getServerSideProps>): R
 			set_toastState({id: toastId, isOpen: true});
 		}
 	}, [safeChainID, toast, toastMaster, toastState.id, toastState.isOpen]);
+
+	if (!vault) {
+		return null;
+	}
 
 	return (
 		<>
