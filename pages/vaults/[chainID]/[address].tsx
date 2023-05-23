@@ -1,4 +1,5 @@
 import React, {useEffect, useRef, useState} from 'react';
+import {useRouter} from 'next/router';
 import {motion} from 'framer-motion';
 import {VaultDetailsTabsWrapper} from '@vaults/components/details/tabs/VaultDetailsTabsWrapper';
 import {VaultActionsTabsWrapper} from '@vaults/components/details/VaultActionsTabsWrapper';
@@ -9,27 +10,29 @@ import Wrapper from '@vaults/Wrapper';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import CHAINS from '@yearn-finance/web-lib/utils/web3/chains';
 import TokenIcon from '@common/components/TokenIcon';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
+import {ADDRESS_REGEX} from '@common/schemas/custom/addressSchema';
 import {variants} from '@common/utils/animations';
 
-import type {NextPageContext} from 'next';
+import type {GetServerSideProps, GetServerSidePropsContext, InferGetServerSidePropsType} from 'next';
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
-function Index({router, vaultData}: {router: NextRouter, vaultData: TYDaemonVault}): ReactElement {
+function Index(vault: InferGetServerSidePropsType<typeof getServerSideProps>): ReactElement | null {
 	const {address, isActive} = useWeb3();
 	const {safeChainID} = useChainID();
 	const {vaults} = useYearn();
+	const router = useRouter();
 	const {refresh} = useWallet();
 	const {toast, toastMaster} = yToast();
 	
 	const [toastState, set_toastState] = useState<{id?: string; isOpen: boolean}>({isOpen: false});
-	const currentVault = useRef<TYDaemonVault>(vaults[toAddress(router.query.address as string)] || vaultData);
+	const currentVault = useRef<TYDaemonVault>(vaults[toAddress(router.query.address as string)] || vault);
 
 	useEffect((): void => {
 		if (address && isActive) {
@@ -120,13 +123,34 @@ Index.getLayout = function getLayout(page: ReactElement, router: NextRouter): Re
 	);
 };
 
-export default Index;
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+export const getServerSideProps: GetServerSideProps<TYDaemonVault> = async (context: GetServerSidePropsContext) => {
+	const {chainID} = context.query;
 
-Index.getInitialProps = async ({query}: NextPageContext): Promise<unknown> => {
-	const	address = toAddress((query?.address as string)?.split('/').pop() || '');
-	const	chainID = query?.chainID;
-	const	res = await fetch(`${process.env.YDAEMON_BASE_URI}/${chainID}/vaults/${address}?hideAlways=true&orderBy=apy.net_apy&orderDirection=desc&strategiesDetails=withDetails&strategiesRisk=withRisk&strategiesCondition=inQueue`);
-	const	json = await res.json();
+	if (typeof chainID !== 'string' || !Object.keys(CHAINS).includes(chainID)) {
+		return {notFound: true};
+	}
+	
+	const address = toAddress((context.query.address as string)?.split('/').pop() || '');
 
-	return {vaultData: json};
+	if (!address || !ADDRESS_REGEX.test(address) || isZeroAddress(address)) {
+		return {notFound: true};
+	}
+
+	const queryParams = new URLSearchParams({
+		hideAlways: 'true',
+		orderBy: 'apy.net_apy',
+		orderDirection: 'desc',
+		strategiesDetails: 'withDetails',
+		strategiesRisk: 'withRisk',
+		strategiesCondition: 'inQueue'
+	});
+
+	const res = await fetch(`${process.env.YDAEMON_BASE_URI}/${chainID}/vaults/${address}?${queryParams}`);
+
+	const vault = await res.json();
+
+	return {props: vault};
 };
+
+export default Index;
