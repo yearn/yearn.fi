@@ -23,7 +23,7 @@ import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
-function Index(vault: InferGetServerSidePropsType<typeof getServerSideProps>): ReactElement | null {
+function Index(vault: InferGetServerSidePropsType<typeof getServerSideProps>): ReactElement {
 	const {address, isActive} = useWeb3();
 	const {safeChainID} = useChainID();
 	const {vaults} = useYearn();
