@@ -1,6 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {useRouter} from 'next/router';
 import {motion} from 'framer-motion';
+import * as Sentry from '@sentry/nextjs';
 import {VaultDetailsTabsWrapper} from '@vaults/components/details/tabs/VaultDetailsTabsWrapper';
 import {VaultActionsTabsWrapper} from '@vaults/components/details/VaultActionsTabsWrapper';
 import {VaultDetailsHeader} from '@vaults/components/details/VaultDetailsHeader';
@@ -146,11 +147,16 @@ export const getServerSideProps: GetServerSideProps<TYDaemonVault> = async (cont
 		strategiesCondition: 'inQueue'
 	});
 
-	const res = await fetch(`${process.env.YDAEMON_BASE_URI}/${chainID}/vaults/${address}?${queryParams}`);
+	const endpoint = `${process.env.YDAEMON_BASE_URI}/${chainID}/vaults/${address}?${queryParams}`;
 
-	const vault = await res.json();
-
-	return {props: vault};
+	try {
+		const res = await fetch(endpoint);
+		const vault = await res.json();
+		return {props: vault};
+	} catch (error) {
+		Sentry.captureException(error, {tags: {endpoint}});
+		return {notFound: true};
+	}
 };
 
 export default Index;
