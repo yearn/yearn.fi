@@ -20,7 +20,7 @@ import Wrapper from '@yBribe/Wrapper';
 import type {BigNumber} from 'ethers';
 import type {NextRouter} from 'next/router';
 import type {ReactElement, ReactNode} from 'react';
-import type {TCurveAllGauges} from '@common/schemas/curveSchemas';
+import type {TCurveGauge} from '@common/schemas/curveSchemas';
 import type {TSortDirection} from '@common/types/types';
 
 function	GaugeList(): ReactElement {
@@ -45,9 +45,9 @@ function	GaugeList(): ReactElement {
 		return bribeValue;
 	}, [prices, tokens]);
 
-	const	standardGauges = useMemo((): TCurveAllGauges['data'][string][] => gauges.filter((gauge): boolean => !gauge.factory), [gauges]);
-	const	factoryGauges = useMemo((): TCurveAllGauges['data'][string][] => gauges.filter((gauge): boolean => gauge.factory), [gauges]);
-	const	filteredGauges = useMemo((): TCurveAllGauges['data'][string][] => {
+	const	standardGauges = useMemo((): TCurveGauge[] => gauges.filter((gauge): boolean => !gauge.factory), [gauges]);
+	const	factoryGauges = useMemo((): TCurveGauge[] => gauges.filter((gauge): boolean => gauge.factory), [gauges]);
+	const	filteredGauges = useMemo((): TCurveGauge[] => {
 		if (category === 'standard') {
 			return standardGauges;
 		}
@@ -57,7 +57,7 @@ function	GaugeList(): ReactElement {
 		return gauges;
 	}, [category, gauges, factoryGauges, standardGauges]);
 
-	const	searchedGauges = useMemo((): TCurveAllGauges['data'][string][] => {
+	const	searchedGauges = useMemo((): TCurveGauge[] => {
 		const	gaugesToSearch = [...filteredGauges];
 
 		if (searchValue === '') {
@@ -69,7 +69,7 @@ function	GaugeList(): ReactElement {
 		});
 	}, [filteredGauges, searchValue]);
 
-	const	sortedGauges = useMemo((): TCurveAllGauges['data'][string][] => {
+	const	sortedGauges = useMemo((): TCurveGauge[] => {
 		if (sort.sortBy === 'name') {
 			return searchedGauges.sort((a, b): number => stringSort({a: a.name, b: b.name, sortDirection: sort.sortDirection}));
 		}

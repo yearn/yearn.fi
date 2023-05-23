@@ -7,7 +7,7 @@ import {curveAllGaugesSchema, curveWeeklyFeesSchema} from '@common/schemas/curve
 
 import type {SWRResponse} from 'swr';
 import type {TDict} from '@yearn-finance/web-lib/types';
-import type {TCurveAllGauges, TCurveWeeklyFees} from '@common/schemas/curveSchemas';
+import type {TCurveAllGauges, TCurveGauge, TCurveWeeklyFees} from '@common/schemas/curveSchemas';
 import type {TCurveGaugesFromYearn} from '@common/types/curves';
 
 type TCoinGeckoPrices = {
@@ -16,7 +16,7 @@ type TCoinGeckoPrices = {
 export type TCurveContext = {
 	curveWeeklyFees: TCurveWeeklyFees['data'];
 	cgPrices: TDict<TCoinGeckoPrices>;
-	gauges: TCurveAllGauges['data'][string][];
+	gauges: TCurveGauge[];
 	isLoadingGauges: boolean;
 	gaugesFromYearn: TCurveGaugesFromYearn[];
 }
@@ -61,8 +61,8 @@ export const CurveContextApp = ({children}: { children: React.ReactElement }): R
 		{revalidateOnFocus: false}
 	) as SWRResponse<TCurveGaugesFromYearn[]>;
 
-	const gauges = useMemo((): TCurveAllGauges['data'][string][] => {
-		const _gaugesForMainnet: TCurveAllGauges['data'][string][] = [];
+	const gauges = useMemo((): TCurveGauge[] => {
+		const _gaugesForMainnet: TCurveGauge[] = [];
 		for (const gauge of Object.values(gaugesWrapper?.data || {})) {
 			if (gauge.is_killed) {
 				continue;

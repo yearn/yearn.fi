@@ -19,11 +19,11 @@ import {addReward} from '@yBribe/utils/actions/addReward';
 
 import type {BigNumber} from 'ethers';
 import type {ChangeEvent, ReactElement} from 'react';
-import type {TCurveAllGauges} from '@common/schemas/curveSchemas';
+import type {TCurveGauge} from '@common/schemas/curveSchemas';
 import type {TNormalizedBN} from '@common/types/types';
 
 
-function	GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveAllGauges['data'][string], onClose: VoidFunction}): ReactElement {
+function	GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauge, onClose: VoidFunction}): ReactElement {
 	const {chainID, safeChainID} = useChainID();
 	const {address, provider, isActive, openLoginModal, onSwitchChain} = useWeb3();
 	const {refresh} = useBribes();
