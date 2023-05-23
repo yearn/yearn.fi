@@ -10,7 +10,7 @@ import {useYearn} from '@common/contexts/useYearn';
 import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
 import type {TAddress} from '@yearn-finance/web-lib/types';
-import type {TCurveAllGauges} from '@common/schemas/curveSchemas';
+import type {TCurveGauge} from '@common/schemas/curveSchemas';
 import type {TYDaemonGaugeRewardsFeed} from '@common/schemas/yDaemonGaugeRewardsFeedSchema';
 
 function	RewardFeedRowItemWithExtraData({
@@ -43,8 +43,8 @@ function	RewardFeedRowItemWithExtraData({
 function	RewardFeedTableRow({currentRewardAdded}: {currentRewardAdded: TYDaemonGaugeRewardsFeed[0]}): ReactElement | null {
 	const	{gauges} = useCurve();
 
-	const	gaugesObject = useMemo((): {[key: string]: TCurveAllGauges['data'][string]} => {
-		const	_gaugesObject: {[key: string]: TCurveAllGauges['data'][string]} = {};
+	const	gaugesObject = useMemo((): {[key: string]: TCurveGauge} => {
+		const	_gaugesObject: {[key: string]: TCurveGauge} = {};
 		for (const gauge of gauges) {
 			_gaugesObject[toAddress(gauge.gauge)] = gauge;
 		}

@@ -21,7 +21,7 @@ import type {BigNumber} from 'ethers';
 import type {NextRouter} from 'next/router';
 import type {ReactElement, ReactNode} from 'react';
 import type {TAddress} from '@yearn-finance/web-lib/types';
-import type {TCurveAllGauges} from '@common/schemas/curveSchemas';
+import type {TCurveGauge} from '@common/schemas/curveSchemas';
 import type {TSortDirection} from '@common/types/types';
 
 function	GaugeList(): ReactElement {
@@ -43,7 +43,7 @@ function	GaugeList(): ReactElement {
 		return bribeValue;
 	}, [prices, tokens]);
 
-	const	filteredGauges = useMemo((): TCurveAllGauges['data'][string][] => {
+	const	filteredGauges = useMemo((): TCurveGauge[] => {
 		if (category === 'claimable') {
 			return gauges.filter((gauge): boolean => {
 				const currentClaimableMapV3 = Object.values(claimable?.v3?.[toAddress(gauge.gauge)] || {});
@@ -57,7 +57,7 @@ function	GaugeList(): ReactElement {
 		});
 	}, [category, gauges, currentRewards, nextRewards, claimable]);
 
-	const	searchedGauges = useMemo((): TCurveAllGauges['data'][string][] => {
+	const	searchedGauges = useMemo((): TCurveGauge[] => {
 		const	gaugesToSearch = [...filteredGauges];
 
 		if (searchValue === '') {
@@ -69,7 +69,7 @@ function	GaugeList(): ReactElement {
 		});
 	}, [filteredGauges, searchValue]);
 
-	const	sortedGauges = useMemo((): TCurveAllGauges['data'][string][] => {
+	const	sortedGauges = useMemo((): TCurveGauge[] => {
 		if (sort.sortBy === 'name') {
 			return searchedGauges.sort((a, b): number => stringSort({a: a.name, b: b.name, sortDirection: sort.sortDirection}));
 		}
