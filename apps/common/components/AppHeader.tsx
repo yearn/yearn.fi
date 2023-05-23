@@ -133,7 +133,10 @@ export function AppHeader(): ReactElement {
 	}, [pathname]);
 
 	const	supportedNetworks = useMemo((): number[] => {
-		if (pathname.startsWith('/ycrv') || pathname.startsWith('/ybal') || pathname.startsWith('/veyfi') || pathname.startsWith('/ybribe')) {
+	const ethereumOnlyPaths = ['/ycrv', '/ybal', '/veyfi', '/ybribe'];
+	if (ethereumOnlyPaths.some(path => pathname.startsWith(path))) {
+		return [1];
+	}
 			return [1];
 		}
 
