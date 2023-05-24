@@ -5,7 +5,7 @@ import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {BAL_TOKEN_ADDRESS, BALWETH_TOKEN_ADDRESS, LPYBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, YBAL_BALANCER_POOL_ADDRESS, YBAL_TOKEN_ADDRESS, ZAP_YEARN_YBAL_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {BAL_TOKEN_ADDRESS, BALWETH_TOKEN_ADDRESS, LPYBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, YBAL_BALANCER_POOL_ADDRESS, YBAL_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import {formatUnits, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
@@ -17,6 +17,8 @@ import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TYDaemonHarvests} from '@common/types/yearn';
+
+const LOCAL_ZAP_YEARN_YBAL_ADDRESS = toAddress('0x5E5713a0d915701F464DEbb66015adD62B2e6AE9');
 
 type THoldings = {
 	yBalSupply: BigNumber;
@@ -112,22 +114,22 @@ export const YBalContextApp = ({children}: {children: ReactElement}): ReactEleme
 		const ethcallProvider = await newEthCallProvider(currentProvider);
 		const userAddress = address;
 		const calls = [
-			new Contract(BAL_TOKEN_ADDRESS, ERC20_ABI).allowance(userAddress, ZAP_YEARN_YBAL_ADDRESS),
-			new Contract(WETH_TOKEN_ADDRESS, ERC20_ABI).allowance(userAddress, ZAP_YEARN_YBAL_ADDRESS),
-			new Contract(BALWETH_TOKEN_ADDRESS, ERC20_ABI).allowance(userAddress, ZAP_YEARN_YBAL_ADDRESS),
-			new Contract(YBAL_TOKEN_ADDRESS, ERC20_ABI).allowance(userAddress, ZAP_YEARN_YBAL_ADDRESS),
-			new Contract(STYBAL_TOKEN_ADDRESS, ERC20_ABI).allowance(userAddress, ZAP_YEARN_YBAL_ADDRESS),
-			new Contract(LPYBAL_TOKEN_ADDRESS, ERC20_ABI).allowance(userAddress, ZAP_YEARN_YBAL_ADDRESS)
+			new Contract(BAL_TOKEN_ADDRESS, ERC20_ABI).allowance(userAddress, LOCAL_ZAP_YEARN_YBAL_ADDRESS),
+			new Contract(WETH_TOKEN_ADDRESS, ERC20_ABI).allowance(userAddress, LOCAL_ZAP_YEARN_YBAL_ADDRESS),
+			new Contract(BALWETH_TOKEN_ADDRESS, ERC20_ABI).allowance(userAddress, LOCAL_ZAP_YEARN_YBAL_ADDRESS),
+			new Contract(YBAL_TOKEN_ADDRESS, ERC20_ABI).allowance(userAddress, LOCAL_ZAP_YEARN_YBAL_ADDRESS),
+			new Contract(STYBAL_TOKEN_ADDRESS, ERC20_ABI).allowance(userAddress, LOCAL_ZAP_YEARN_YBAL_ADDRESS),
+			new Contract(LPYBAL_TOKEN_ADDRESS, ERC20_ABI).allowance(userAddress, LOCAL_ZAP_YEARN_YBAL_ADDRESS)
 		];
 		const result = await ethcallProvider.tryAll(calls) as [BigNumber, BigNumber, BigNumber, BigNumber, BigNumber, BigNumber];
 
 		return ({
-			[allowanceKey(1, BAL_TOKEN_ADDRESS, ZAP_YEARN_YBAL_ADDRESS, toAddress(userAddress))]: result[0] || Zero,
-			[allowanceKey(1, WETH_TOKEN_ADDRESS, ZAP_YEARN_YBAL_ADDRESS, toAddress(userAddress))]: result[1] || Zero,
-			[allowanceKey(1, BALWETH_TOKEN_ADDRESS, ZAP_YEARN_YBAL_ADDRESS, toAddress(userAddress))]: result[2] || Zero,
-			[allowanceKey(1, YBAL_TOKEN_ADDRESS, ZAP_YEARN_YBAL_ADDRESS, toAddress(userAddress))]: result[3] || Zero,
-			[allowanceKey(1, STYBAL_TOKEN_ADDRESS, ZAP_YEARN_YBAL_ADDRESS, toAddress(userAddress))]: result[4] || Zero,
-			[allowanceKey(1, LPYBAL_TOKEN_ADDRESS, ZAP_YEARN_YBAL_ADDRESS, toAddress(userAddress))]: result[5] || Zero
+			[allowanceKey(1, BAL_TOKEN_ADDRESS, LOCAL_ZAP_YEARN_YBAL_ADDRESS, toAddress(userAddress))]: result[0] || Zero,
+			[allowanceKey(1, WETH_TOKEN_ADDRESS, LOCAL_ZAP_YEARN_YBAL_ADDRESS, toAddress(userAddress))]: result[1] || Zero,
+			[allowanceKey(1, BALWETH_TOKEN_ADDRESS, LOCAL_ZAP_YEARN_YBAL_ADDRESS, toAddress(userAddress))]: result[2] || Zero,
+			[allowanceKey(1, YBAL_TOKEN_ADDRESS, LOCAL_ZAP_YEARN_YBAL_ADDRESS, toAddress(userAddress))]: result[3] || Zero,
+			[allowanceKey(1, STYBAL_TOKEN_ADDRESS, LOCAL_ZAP_YEARN_YBAL_ADDRESS, toAddress(userAddress))]: result[4] || Zero,
+			[allowanceKey(1, LPYBAL_TOKEN_ADDRESS, LOCAL_ZAP_YEARN_YBAL_ADDRESS, toAddress(userAddress))]: result[5] || Zero
 		});
 	}, [provider, address, isActive]);
 	const {data: allowances} = useSWR(isActive && provider ? 'allowances' : null, getAllowances, {shouldRetryOnError: false});

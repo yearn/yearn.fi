@@ -103,7 +103,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 	const address = String(req.body.address);
 	const tokens = isArrayOfUseBalancesTokens(req.body.tokens) ? req.body.tokens : [];
 
-	try {		
+	try {
 		const balances = await getBatchBalances({chainID, address, tokens});
 		return res.status(200).json({balances, chainID: req.body.chainID});
 	} catch (error) {
