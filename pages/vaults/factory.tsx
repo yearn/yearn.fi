@@ -30,7 +30,7 @@ import type {BigNumber, providers} from 'ethers';
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
 import type {TAddress} from '@yearn-finance/web-lib/types';
-import type {TCurveGaugesFromYearn} from '@common/types/curves';
+import type {TCurveGaugeFromYearn, TCurveGaugesFromYearn} from '@common/schemas/curveSchemas';
 import type {TDropdownGaugeOption} from '@common/types/types';
 
 type TGaugeDisplayData = {
@@ -70,8 +70,8 @@ function	Factory(): ReactElement {
 	const [{result: filteredGauges}, fetchGaugesAction] = useAsync(async function fetchAlreadyCreatedGauges(
 		_provider: providers.JsonRpcProvider,
 		_safeChainID: number,
-		_gaugesFromYearn: TCurveGaugesFromYearn[]
-	): Promise<TCurveGaugesFromYearn[]> {
+		_gaugesFromYearn: TCurveGaugesFromYearn
+	): Promise<TCurveGaugesFromYearn> {
 		if ((_gaugesFromYearn || []).length === 0) {
 			return [];
 		}
@@ -84,7 +84,7 @@ function	Factory(): ReactElement {
 			calls.push(curveVaultFactory.canCreateVaultPermissionlessly(gauge.gauge_address));
 		}
 		const	canCreateVaults = await ethcallProvider.tryAll(calls) as boolean[];
-		return _gaugesFromYearn.filter((_gauge: TCurveGaugesFromYearn, index: number): boolean => canCreateVaults[index]);
+		return _gaugesFromYearn.filter((_gauge: TCurveGaugeFromYearn, index: number): boolean => canCreateVaults[index]);
 	}, []);
 
 	useEffect((): void => {
@@ -99,8 +99,8 @@ function	Factory(): ReactElement {
 	const	gaugesOptions = useMemo((): TDropdownGaugeOption[] => {
 		return (
 			(filteredGauges || [])
-				.filter((item: TCurveGaugesFromYearn): boolean => item.weight !== '0')
-				.map((gauge: TCurveGaugesFromYearn): TDropdownGaugeOption => ({
+				.filter((item: TCurveGaugeFromYearn): boolean => item.weight !== '0')
+				.map((gauge: TCurveGaugeFromYearn): TDropdownGaugeOption => ({
 					label: gauge.gauge_name,
 					icon: (
 						<ImageWithFallback
