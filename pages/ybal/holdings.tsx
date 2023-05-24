@@ -97,11 +97,13 @@ function	Holdings(): ReactElement {
 	}, []);
 
 	const	latestCurveFeesValue = useMemo((): number => {
+		if (!curveWeeklyFees) {
+			return 0;
+		}
 		if (curveWeeklyFees?.weeklyFeesTable?.[0]?.rawFees > 0) {
 			return curveWeeklyFees.weeklyFeesTable[0].rawFees;
 		}
 		return curveWeeklyFees?.weeklyFeesTable?.[1]?.rawFees || 0;
-
 	}, [curveWeeklyFees]);
 
 	const	currentVeBalAPY = useMemo((): number => {
