@@ -1,5 +1,5 @@
 import {ethers} from 'ethers';
-import {ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {ZAP_YEARN_YBAL_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {handleTx} from '@yearn-finance/web-lib/utils/web3/transaction';
 
 import type {BigNumber} from 'ethers';
@@ -16,7 +16,7 @@ export async function	zap(
 	const signer = provider.getSigner();
 	const address = await signer.getAddress();
 	const contract = new ethers.Contract(
-		ZAP_YEARN_VE_CRV_ADDRESS,
+		ZAP_YEARN_YBAL_ADDRESS,
 		['function zap(address _input, address _output, uint256 _amount, uint256 _minOut, address _recipient) external returns (uint256)'],
 		signer
 	);

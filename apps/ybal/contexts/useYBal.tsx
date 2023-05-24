@@ -6,7 +6,7 @@ import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {BAL_TOKEN_ADDRESS, LPYBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, VECRV_ADDRESS, VECRV_YEARN_TREASURY_ADDRESS, YBAL_BALANCER_POOL_ADDRESS, YBAL_TOKEN_ADDRESS, YVBOOST_TOKEN_ADDRESS, YVECRV_POOL_LP_ADDRESS, YVECRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {BAL_TOKEN_ADDRESS, LPYBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, VECRV_ADDRESS, VECRV_YEARN_TREASURY_ADDRESS, YBAL_BALANCER_POOL_ADDRESS, YBAL_TOKEN_ADDRESS, YVBOOST_TOKEN_ADDRESS, YVECRV_POOL_LP_ADDRESS, YVECRV_TOKEN_ADDRESS, ZAP_YEARN_YBAL_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import {formatUnits, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
@@ -158,12 +158,12 @@ export const YBalContextApp = ({children}: {children: ReactElement}): ReactEleme
 			yveCRVAllowanceLP, crvAllowanceLP,
 			yCRVPoolAllowanceVault
 		] = await ethcallProvider.tryAll([
-			yBalContract.allowance(userAddress, ZAP_YEARN_VE_CRV_ADDRESS),
-			styBalContract.allowance(userAddress, ZAP_YEARN_VE_CRV_ADDRESS),
-			lpyBalContract.allowance(userAddress, ZAP_YEARN_VE_CRV_ADDRESS),
-			yveCRVContract.allowance(userAddress, ZAP_YEARN_VE_CRV_ADDRESS),
-			balContract.allowance(userAddress, ZAP_YEARN_VE_CRV_ADDRESS),
-			yvBoostContract.allowance(userAddress, ZAP_YEARN_VE_CRV_ADDRESS),
+			yBalContract.allowance(userAddress, ZAP_YEARN_YBAL_ADDRESS),
+			styBalContract.allowance(userAddress, ZAP_YEARN_YBAL_ADDRESS),
+			lpyBalContract.allowance(userAddress, ZAP_YEARN_YBAL_ADDRESS),
+			yveCRVContract.allowance(userAddress, ZAP_YEARN_YBAL_ADDRESS),
+			balContract.allowance(userAddress, ZAP_YEARN_YBAL_ADDRESS),
+			yvBoostContract.allowance(userAddress, ZAP_YEARN_YBAL_ADDRESS),
 			yveCRVContract.allowance(userAddress, YVECRV_POOL_LP_ADDRESS),
 			balContract.allowance(userAddress, YVECRV_POOL_LP_ADDRESS),
 			yBalPoolContract.allowance(userAddress, LPYBAL_TOKEN_ADDRESS)
@@ -171,14 +171,14 @@ export const YBalContextApp = ({children}: {children: ReactElement}): ReactEleme
 
 		return ({
 			// YCRV ECOSYSTEM
-			[allowanceKey(1, YBAL_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS, toAddress(userAddress))]: yCRVAllowanceZap,
-			[allowanceKey(1, STYBAL_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS, toAddress(userAddress))]: styCRVAllowanceZap,
-			[allowanceKey(1, LPYBAL_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS, toAddress(userAddress))]: lpyCRVAllowanceZap,
+			[allowanceKey(1, YBAL_TOKEN_ADDRESS, ZAP_YEARN_YBAL_ADDRESS, toAddress(userAddress))]: yCRVAllowanceZap,
+			[allowanceKey(1, STYBAL_TOKEN_ADDRESS, ZAP_YEARN_YBAL_ADDRESS, toAddress(userAddress))]: styCRVAllowanceZap,
+			[allowanceKey(1, LPYBAL_TOKEN_ADDRESS, ZAP_YEARN_YBAL_ADDRESS, toAddress(userAddress))]: lpyCRVAllowanceZap,
 			[allowanceKey(1, YBAL_BALANCER_POOL_ADDRESS, LPYBAL_TOKEN_ADDRESS, toAddress(userAddress))]: yCRVPoolAllowanceVault,
 			// CRV ECOSYSTEM
-			[allowanceKey(1, YVECRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS, toAddress(userAddress))]: yveCRVAllowanceZap,
-			[allowanceKey(1, BAL_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS, toAddress(userAddress))]:  crvAllowanceZap,
-			[allowanceKey(1, YVBOOST_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS, toAddress(userAddress))]: yvBoostAllowanceZap,
+			[allowanceKey(1, YVECRV_TOKEN_ADDRESS, ZAP_YEARN_YBAL_ADDRESS, toAddress(userAddress))]: yveCRVAllowanceZap,
+			[allowanceKey(1, BAL_TOKEN_ADDRESS, ZAP_YEARN_YBAL_ADDRESS, toAddress(userAddress))]:  crvAllowanceZap,
+			[allowanceKey(1, YVBOOST_TOKEN_ADDRESS, ZAP_YEARN_YBAL_ADDRESS, toAddress(userAddress))]: yvBoostAllowanceZap,
 			[allowanceKey(1, YVECRV_TOKEN_ADDRESS, YVECRV_POOL_LP_ADDRESS, toAddress(userAddress))]: yveCRVAllowanceLP,
 			[allowanceKey(1, BAL_TOKEN_ADDRESS, YVECRV_POOL_LP_ADDRESS, toAddress(userAddress))]:  crvAllowanceLP
 		});
