@@ -20,7 +20,7 @@ function DropdownItem({option, balanceSource}: TDropdownItemProps): ReactElement
 			{({active}): ReactElement =>
 				<div data-active={active} className={'yearn--dropdown-menu-item w-full hover:bg-neutral-0/40'}>
 					<div className={'h-6 w-6 flex-none rounded-full'}>
-						{option?.icon ? cloneElement(option.icon) : null}
+						{option?.icon ? option.icon : null}
 					</div>
 					<div>
 						<p className={`${option.icon ? 'pl-2' : 'pl-0'} font-normal text-neutral-900`}>
