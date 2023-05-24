@@ -32,18 +32,12 @@ function	CardZap(): ReactElement {
 		allowanceFrom, onApproveFrom, onZap, onIncreaseBalAllowance
 	} = useCardTransactor();
 
-	const	yBalPrice = useMemo((): number => (
-		formatToNormalizedValue(
-			formatBN(prices?.[YBAL_TOKEN_ADDRESS] || 0),
-			6
-		)
+	const yBalPrice = useMemo((): number => (
+		formatToNormalizedValue(formatBN(prices?.[YBAL_TOKEN_ADDRESS] || 0), 6)
 	), [prices]);
 
-	const	yBalCurvePoolPrice = useMemo((): number => (
-		formatToNormalizedValue(
-			formatBN(prices?.[YBAL_BALANCER_POOL_ADDRESS] || 0),
-			6
-		)
+	const yBalCurvePoolPrice = useMemo((): number => (
+		formatToNormalizedValue(formatBN(prices?.[YBAL_BALANCER_POOL_ADDRESS] || 0), 6)
 	), [prices]);
 
 	/* 🔵 - Yearn Finance ******************************************************
