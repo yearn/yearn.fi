@@ -1,6 +1,6 @@
 import React, {useMemo, useState} from 'react';
 import {Button} from '@yearn-finance/web-lib/components/Button';
-import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {LPYBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {useYBal} from '@yBal/contexts/useYBal';
 
@@ -54,9 +54,20 @@ function	Harvests(): ReactElement {
 			</div>
 			<div className={'mt-4 grid w-full grid-cols-1 md:mt-0'}>
 				<HarvestListHead />
-				{(filteredHarvests || [])?.map((harvest: TYDaemonHarvests, index: number): ReactElement => {
-					return <HarvestListRow key={`${harvest.timestamp}_${harvest.vaultAddress}_${index}`} harvest={harvest} />;
-				})}
+				{
+					(filteredHarvests || [])
+						.filter((harvest: TYDaemonHarvests): boolean => {
+							return (
+								!isZeroAddress(toAddress(harvest.vaultAddress)) &&
+								[STYBAL_TOKEN_ADDRESS, LPYBAL_TOKEN_ADDRESS].includes(toAddress(harvest.vaultAddress))
+							);
+						}).map((harvest: TYDaemonHarvests, index: number): ReactElement => {
+							return (
+								<HarvestListRow
+									key={`${harvest.timestamp}_${harvest.vaultAddress}_${index}`}
+									harvest={harvest} />
+							);
+						})}
 			</div>
 		</div>
 	);
