@@ -1,41 +1,34 @@
 import React from 'react';
+import {cl} from '@yearn-finance/web-lib/utils/cl';
 
 import type {ReactElement} from 'react';
+
+type THeadLabelProps = {
+	label: string;
+	className?: string;
+	datatype?: 'text' | 'number';
+}
+function HeadLabel({label, className, datatype = 'text'}: THeadLabelProps): ReactElement {
+	return (
+		<div className={cl('yearn--table-head-label-wrapper group', className)} datatype={datatype}>
+			<p className={'yearn--table-head-label'}>
+				{label}
+			</p>
+		</div>
+	);
+}
 
 function	HarvestListHead(): ReactElement {
 	return (
 		<div className={'yearn--table-head-wrapper'}>
 			<div className={'yearn--table-head-token-section'}>
-				<div className={'yearn--table-head-label-wrapper group'}>
-					<p className={'yearn--table-head-label'}>
-						{'Token'}
-					</p>
-				</div>
+				<HeadLabel label={'Token'} />
 			</div>
 			<div className={'yearn--table-head-data-section grid-cols-9'}>
-				<div className={'yearn--table-head-label-wrapper group'} datatype={'number'}>
-					<p className={'yearn--table-head-label'}>
-						{'Gain'}
-					</p>
-				</div>
-
-				<div className={'yearn--table-head-label-wrapper group col-span-2'} datatype={'number'}>
-					<p className={'yearn--table-head-label'}>
-						{'Value'}
-					</p>
-				</div>
-
-				<div className={'yearn--table-head-label-wrapper group col-span-3'} datatype={'number'}>
-					<p className={'yearn--table-head-label'}>
-						{'Date'}
-					</p>
-				</div>
-
-				<div className={'yearn--table-head-label-wrapper group col-span-3'} datatype={'number'}>
-					<p className={'yearn--table-head-label'}>
-						{'Transaction'}
-					</p>
-				</div>
+				<HeadLabel label={'Gain'} datatype={'number' }/>
+				<HeadLabel label={'Value'} className={'col-span-2'} datatype={'number' }/>
+				<HeadLabel label={'Date'} className={'col-span-3'} datatype={'number' }/>
+				<HeadLabel label={'Transaction'} className={'col-span-3'} datatype={'number' }/>
 			</div>
 		</div>
 	);
