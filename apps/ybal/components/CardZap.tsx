@@ -3,7 +3,7 @@ import Balancer from 'react-wrap-balancer';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {BAL_TOKEN_ADDRESS, LPYBAL_TOKEN_ADDRESS, YBAL_BALANCER_POOL_ADDRESS, YBAL_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {LPYBAL_TOKEN_ADDRESS, YBAL_BALANCER_POOL_ADDRESS, YBAL_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatBN, formatToNormalizedValue, toNormalizedBN, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
@@ -13,7 +13,7 @@ import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import ArrowDown from '@common/icons/ArrowDown';
 import CardTransactorContextApp, {useCardTransactor} from '@yBal/components/CardTransactorWrapper';
-import {ZAP_OPTIONS_FROM, ZAP_OPTIONS_TO} from '@yBal/utils/zapOptions';
+import {ZAP_OPTIONS_FROM, ZAP_OPTIONS_TO} from '@yBal/constants/tokens';
 
 import type {ChangeEvent, ReactElement} from 'react';
 import type {TDropdownOption} from '@common/types/types';
@@ -29,7 +29,7 @@ function	CardZap(): ReactElement {
 		amount, set_amount,
 		set_hasTypedSomething,
 		fromVaultAPY, toVaultAPY, expectedOutWithSlippage,
-		allowanceFrom, onApproveFrom, onZap, onIncreaseBalAllowance
+		allowanceFrom, onApproveFrom, onZap
 	} = useCardTransactor();
 
 	const yBalPrice = useMemo((): number => (
@@ -52,7 +52,7 @@ function	CardZap(): ReactElement {
 			return possibleOptions;
 		}
 		return ZAP_OPTIONS_TO.filter((option): boolean => option.value !== selectedOptionFrom.value);
-	}, [selectedOptionFrom.value, selectedOptionTo.value, ZAP_OPTIONS_TO]); // eslint-disable-line react-hooks/exhaustive-deps
+	}, [selectedOptionFrom.value, selectedOptionTo.value, set_selectedOptionTo]);
 
 	function	renderButton(): ReactElement {
 		const	balanceForInputToken = formatBN(balances?.[toAddress(selectedOptionFrom.value)]?.raw);
@@ -60,21 +60,6 @@ function	CardZap(): ReactElement {
 		const	isAboveAllowance = (amount.raw).gt(allowanceFrom);
 
 		if (txStatusApprove.pending || isAboveAllowance) {
-			if (allowanceFrom.gt(Zero) && toAddress(selectedOptionFrom.value) === BAL_TOKEN_ADDRESS) {
-				return (
-					<Button
-						onClick={onIncreaseBalAllowance}
-						className={'w-full'}
-						isBusy={txStatusApprove.pending}
-						isDisabled={
-							!isActive
-							|| (amount.raw).isZero()
-							|| isAboveBalance
-						}>
-						{'Increase Allowance'}
-					</Button>
-				);
-			}
 			return (
 				<Button
 					onClick={onApproveFrom}

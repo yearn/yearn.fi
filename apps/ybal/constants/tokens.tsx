@@ -1,13 +1,17 @@
 import React from 'react';
-import {BAL_TOKEN_ADDRESS, BALWETH_TOKEN_ADDRESS, LPYBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, YBAL_TOKEN_ADDRESS, ZAP_YEARN_YBAL_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {BAL_TOKEN_ADDRESS, BALWETH_TOKEN_ADDRESS, LPYBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, YBAL_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 
+import type {TDropdownOption} from '@common/types/types';
+
+const LOCAL_ZAP_YEARN_YBAL_ADDRESS = toAddress('0x5E5713a0d915701F464DEbb66015adD62B2e6AE9');
 export const BAL = {
 	label: 'Bal',
 	symbol: 'Bal',
 	decimals: 18,
 	value: BAL_TOKEN_ADDRESS,
-	zapVia: ZAP_YEARN_YBAL_ADDRESS,
+	zapVia: LOCAL_ZAP_YEARN_YBAL_ADDRESS,
 	icon: (
 		<ImageWithFallback
 			alt={'Bal'}
@@ -21,7 +25,7 @@ export const YBAL = {
 	symbol: 'yBal',
 	decimals: 18,
 	value: YBAL_TOKEN_ADDRESS,
-	zapVia: ZAP_YEARN_YBAL_ADDRESS,
+	zapVia: LOCAL_ZAP_YEARN_YBAL_ADDRESS,
 	icon: (
 		<ImageWithFallback
 			alt={'yBal'}
@@ -37,7 +41,7 @@ export const BALWETH = {
 	symbol: 'BAL/wETH',
 	decimals: 18,
 	value: BALWETH_TOKEN_ADDRESS,
-	zapVia: ZAP_YEARN_YBAL_ADDRESS,
+	zapVia: LOCAL_ZAP_YEARN_YBAL_ADDRESS,
 	icon: (
 		<ImageWithFallback
 			alt={'BAL/wETH'}
@@ -53,7 +57,7 @@ export const STYBAL = {
 	symbol: 'st-yBal',
 	decimals: 18,
 	value: STYBAL_TOKEN_ADDRESS,
-	zapVia: ZAP_YEARN_YBAL_ADDRESS,
+	zapVia: LOCAL_ZAP_YEARN_YBAL_ADDRESS,
 	icon: (
 		<ImageWithFallback
 			alt={'st-yBal'}
@@ -69,7 +73,7 @@ export const LPYBAL = {
 	symbol: 'lp-yBal',
 	decimals: 18,
 	value: LPYBAL_TOKEN_ADDRESS,
-	zapVia: ZAP_YEARN_YBAL_ADDRESS,
+	zapVia: LOCAL_ZAP_YEARN_YBAL_ADDRESS,
 	icon: (
 		<ImageWithFallback
 			alt={'lp-yBal'}
@@ -85,7 +89,7 @@ export const WETH = {
 	symbol: 'wETH',
 	decimals: 18,
 	value: WETH_TOKEN_ADDRESS,
-	zapVia: ZAP_YEARN_YBAL_ADDRESS,
+	zapVia: LOCAL_ZAP_YEARN_YBAL_ADDRESS,
 	icon: (
 		<ImageWithFallback
 			alt={'wETH'}
@@ -94,3 +98,7 @@ export const WETH = {
 			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${WETH_TOKEN_ADDRESS}/logo-128.png`} />
 	)
 };
+
+export const ZAP_OPTIONS_FROM: TDropdownOption[] = [BAL, WETH, BALWETH, YBAL, STYBAL, LPYBAL];
+
+export const ZAP_OPTIONS_TO: TDropdownOption[] = [YBAL, STYBAL, LPYBAL];
