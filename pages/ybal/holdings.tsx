@@ -97,7 +97,7 @@ function	Holdings(): ReactElement {
 	}, []);
 
 	const	latestCurveFeesValue = useMemo((): number => {
-		if (!curveWeeklyFees) {
+		if (!curveWeeklyFees?.weeklyFeesTable?.length) {
 			return 0;
 		}
 		if (curveWeeklyFees?.weeklyFeesTable?.[0]?.rawFees > 0) {

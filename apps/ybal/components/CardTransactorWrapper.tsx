@@ -6,7 +6,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useAddToken} from '@yearn-finance/web-lib/hooks/useAddToken';
 import {useDismissToasts} from '@yearn-finance/web-lib/hooks/useDismissToasts';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {LPYBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, YBAL_BALANCER_POOL_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {LPYBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, YBAL_BALANCER_POOL_ADDRESS, ZAP_YEARN_YBAL_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatBN, toNormalizedBN, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
@@ -128,7 +128,7 @@ function	CardTransactorContextApp({
 		} else {
 			// Zap in
 			const	contract = new ethers.Contract(
-				ZAP_YEARN_VE_CRV_ADDRESS,
+				ZAP_YEARN_YBAL_ADDRESS,
 				['function calc_expected_out(address, address, uint256) public view returns (uint256)'],
 				currentProvider
 			);

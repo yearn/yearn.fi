@@ -1,6 +1,6 @@
 import React from 'react';
 import Image from 'next/image';
-import {BAL_TOKEN_ADDRESS, LPYBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, YBAL_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {BAL_TOKEN_ADDRESS, LPYBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, YBAL_TOKEN_ADDRESS, ZAP_YEARN_YBAL_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 
 import type {TDropdownOption} from '@common/types/types';
 
@@ -10,10 +10,10 @@ const	ZAP_OPTIONS_FROM: TDropdownOption[] = [
 		symbol: 'Bal',
 		decimals: 18,
 		value: BAL_TOKEN_ADDRESS,
-		zapVia: ZAP_YEARN_VE_CRV_ADDRESS,
+		zapVia: ZAP_YEARN_YBAL_ADDRESS,
 		icon: (
 			<Image
-				alt={'CRV'}
+				alt={'Bal'}
 				width={24}
 				height={24}
 				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${BAL_TOKEN_ADDRESS}/logo-128.png`} />
@@ -24,7 +24,7 @@ const	ZAP_OPTIONS_FROM: TDropdownOption[] = [
 		symbol: 'st-yBal',
 		decimals: 18,
 		value: STYBAL_TOKEN_ADDRESS,
-		zapVia: ZAP_YEARN_VE_CRV_ADDRESS,
+		zapVia: ZAP_YEARN_YBAL_ADDRESS,
 		icon: (
 			<Image
 				alt={'st-yBal'}
@@ -39,7 +39,7 @@ const	ZAP_OPTIONS_FROM: TDropdownOption[] = [
 		symbol: 'yBal',
 		decimals: 18,
 		value: YBAL_TOKEN_ADDRESS,
-		zapVia: ZAP_YEARN_VE_CRV_ADDRESS,
+		zapVia: ZAP_YEARN_YBAL_ADDRESS,
 		icon: (
 			<Image
 				alt={'yBal'}
@@ -55,7 +55,7 @@ const	ZAP_OPTIONS_FROM: TDropdownOption[] = [
 		symbol: 'lp-yBal',
 		decimals: 18,
 		value: LPYBAL_TOKEN_ADDRESS,
-		zapVia: ZAP_YEARN_VE_CRV_ADDRESS,
+		zapVia: ZAP_YEARN_YBAL_ADDRESS,
 		icon: (
 			<Image
 				alt={'lp-yBal'}
@@ -74,7 +74,7 @@ const	ZAP_OPTIONS_TO: TDropdownOption[] = [
 		symbol: 'st-yBal',
 		decimals: 18,
 		value: STYBAL_TOKEN_ADDRESS,
-		zapVia: ZAP_YEARN_VE_CRV_ADDRESS,
+		zapVia: ZAP_YEARN_YBAL_ADDRESS,
 		icon: (
 			<Image
 				alt={'st-yBal'}
@@ -89,7 +89,7 @@ const	ZAP_OPTIONS_TO: TDropdownOption[] = [
 		symbol: 'yBal',
 		decimals: 18,
 		value: YBAL_TOKEN_ADDRESS,
-		zapVia: ZAP_YEARN_VE_CRV_ADDRESS,
+		zapVia: ZAP_YEARN_YBAL_ADDRESS,
 		icon: (
 			<Image
 				alt={'yBal'}
@@ -105,7 +105,7 @@ const	ZAP_OPTIONS_TO: TDropdownOption[] = [
 		symbol: 'lp-yBal',
 		decimals: 18,
 		value: LPYBAL_TOKEN_ADDRESS,
-		zapVia: ZAP_YEARN_VE_CRV_ADDRESS,
+		zapVia: ZAP_YEARN_YBAL_ADDRESS,
 		icon: (
 			<Image
 				alt={'lp-yBal'}
