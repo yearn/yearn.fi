@@ -5,7 +5,7 @@ import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {BAL_TOKEN_ADDRESS, BALWETH_TOKEN_ADDRESS, LPYBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, VECRV_ADDRESS, WETH_TOKEN_ADDRESS, YBAL_BALANCER_POOL_ADDRESS, YBAL_TOKEN_ADDRESS, ZAP_YEARN_YBAL_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {BAL_TOKEN_ADDRESS, BALWETH_TOKEN_ADDRESS, LPYBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, YBAL_BALANCER_POOL_ADDRESS, YBAL_TOKEN_ADDRESS, ZAP_YEARN_YBAL_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import {formatUnits, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
@@ -23,7 +23,6 @@ type THoldings = {
 	styBalSupply: BigNumber;
 	lpyBalSupply: BigNumber;
 	balYBalPeg: BigNumber;
-	veBalTotalSupply: BigNumber;
 }
 type TYBalContext = {
 	styBalMegaBoost: number,
@@ -46,8 +45,7 @@ const	defaultProps = {
 		yBalSupply: Zero,
 		styBalSupply: Zero,
 		lpyBalSupply: Zero,
-		balYBalPeg: Zero,
-		veBalTotalSupply: Zero
+		balYBalPeg: Zero
 	}
 };
 
@@ -80,20 +78,17 @@ export const YBalContextApp = ({children}: {children: ReactElement}): ReactEleme
 		const ethcallProvider = await newEthCallProvider(currentProvider);
 		const yBalContract = new Contract(YBAL_TOKEN_ADDRESS, ERC20_ABI);
 		const lpyBalContract = new Contract(LPYBAL_TOKEN_ADDRESS, ERC20_ABI);
-		const veEscrowContract = new Contract(VECRV_ADDRESS, ERC20_ABI);
 		const styBalContract = new Contract(STYBAL_TOKEN_ADDRESS, STYBAL_ABI);
 		const yBalBalancerPoolContract = new Contract(YBAL_BALANCER_POOL_ADDRESS, YBAL_BALANCER_POOL_ABI);
 		const calls = [
-			veEscrowContract.totalSupply(),
 			yBalContract.totalSupply(),
 			styBalContract.totalAssets(),
 			lpyBalContract.totalSupply(),
 			yBalBalancerPoolContract.getRate()
 		];
-		const result = await ethcallProvider.tryAll(calls) as [BigNumber, BigNumber, BigNumber, BigNumber, BigNumber, BigNumber];
+		const result = await ethcallProvider.tryAll(calls) as [BigNumber, BigNumber, BigNumber, BigNumber, BigNumber];
 
 		return ({
-			veBalTotalSupply: result[0] || Zero,
 			yBalSupply: result[1] || Zero,
 			styBalSupply: result[2] || Zero,
 			lpyBalSupply: result[3] || Zero,
@@ -158,8 +153,6 @@ export const YBalContextApp = ({children}: {children: ReactElement}): ReactEleme
 	**************************************************************************/
 	const	styBalAPY = useMemo((): number => {
 		return ((styBalVault?.apy?.net_apy || 0) * 100);
-		// return (((styBalVault as TYearnVault)?.apy?.net_apy || 0) * 100) + (styBalMegaBoost * 100);
-		// return (styCRVExperimentalAPY * 100) + (styBalMegaBoost * 100);
 	}, [styBalVault]);
 
 	/* 🔵 - Yearn Finance ******************************************************
