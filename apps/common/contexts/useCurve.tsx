@@ -6,20 +6,18 @@ import {useFetch} from '@common/hooks/useFetch';
 import {curveAllGaugesSchema, curveWeeklyFeesSchema} from '@common/schemas/curveSchemas';
 
 import type {SWRResponse} from 'swr';
-import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TCurveAllGauges, TCurveGauge, TCurveWeeklyFees} from '@common/schemas/curveSchemas';
 import type {TCurveGaugesFromYearn} from '@common/types/curves';
+import { TCoinGeckoPrices, coinGeckoPricesSchema } from '@common/schemas/coinGeckoSchemas';
 
-type TCoinGeckoPrices = {
-	usd: number
-}
 export type TCurveContext = {
 	curveWeeklyFees: TCurveWeeklyFees['data'];
-	cgPrices: TDict<TCoinGeckoPrices>;
+	cgPrices: TCoinGeckoPrices;
 	gauges: TCurveGauge[];
 	isLoadingGauges: boolean;
 	gaugesFromYearn: TCurveGaugesFromYearn[];
 }
+
 const defaultProps: TCurveContext = {
 	curveWeeklyFees: {
 		weeklyFeesTable: [],
@@ -33,19 +31,22 @@ const defaultProps: TCurveContext = {
 	gaugesFromYearn: []
 };
 
-
 const CurveContext = createContext<TCurveContext>(defaultProps);
 export const CurveContextApp = ({children}: { children: React.ReactElement }): React.ReactElement => {
 	const {data: curveWeeklyFees} = useFetch<TCurveWeeklyFees>({
 		endpoint: 'https://api.curve.fi/api/getWeeklyFees',
 		schema: curveWeeklyFeesSchema
 	});
-	
-	const {data: cgPrices} = useSWR(
-		'https://api.coingecko.com/api/v3/simple/price?ids=curve-dao-token&vs_currencies=usd',
-		baseFetcher,
-		{revalidateOnFocus: false}
-	) as SWRResponse<TDict<TCoinGeckoPrices>>;
+
+	const cgPricesQueryParams = new URLSearchParams({
+		ids: 'curve-dao-token',
+		vs_currencies: 'usd'
+	});
+
+	const {data: cgPrices} = useFetch<TCoinGeckoPrices>({
+		endpoint: `https://api.coingecko.com/api/v3/simple/price?${cgPricesQueryParams}`,
+		schema: coinGeckoPricesSchema
+	});
 		
 	/* 🔵 - Yearn Finance ******************************************************
 	**	Fetch all the CurveGauges to be able to create some new if required
