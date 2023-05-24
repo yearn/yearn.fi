@@ -1,21 +1,18 @@
 import React, {createContext, useContext, useMemo} from 'react';
-import useSWR from 'swr';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import {useFetch} from '@common/hooks/useFetch';
-import {curveAllGaugesSchema, curveWeeklyFeesSchema} from '@common/schemas/curveSchemas';
+import {coinGeckoPricesSchema} from '@common/schemas/coinGeckoSchemas';
+import {curveAllGaugesSchema, curveGaugesFromYearnSchema, curveWeeklyFeesSchema} from '@common/schemas/curveSchemas';
 
-import type {SWRResponse} from 'swr';
-import type {TCurveAllGauges, TCurveGauge, TCurveWeeklyFees} from '@common/schemas/curveSchemas';
-import type {TCurveGaugesFromYearn} from '@common/types/curves';
-import { TCoinGeckoPrices, coinGeckoPricesSchema } from '@common/schemas/coinGeckoSchemas';
+import type {TCoinGeckoPrices} from '@common/schemas/coinGeckoSchemas';
+import type {TCurveAllGauges, TCurveGauge, TCurveGaugesFromYearn, TCurveWeeklyFees} from '@common/schemas/curveSchemas';
 
 export type TCurveContext = {
 	curveWeeklyFees: TCurveWeeklyFees['data'];
 	cgPrices: TCoinGeckoPrices;
 	gauges: TCurveGauge[];
 	isLoadingGauges: boolean;
-	gaugesFromYearn: TCurveGaugesFromYearn[];
+	gaugesFromYearn: TCurveGaugesFromYearn;
 }
 
 const defaultProps: TCurveContext = {
@@ -56,11 +53,10 @@ export const CurveContextApp = ({children}: { children: React.ReactElement }): R
 		schema: curveAllGaugesSchema
 	});
 
-	const {data: gaugesFromYearn} = useSWR(
-		'https://api.yearn.finance/v1/chains/1/apy-previews/curve-factory',
-		baseFetcher,
-		{revalidateOnFocus: false}
-	) as SWRResponse<TCurveGaugesFromYearn[]>;
+	const {data: gaugesFromYearn} = useFetch<TCurveGaugesFromYearn>({
+		endpoint: 'https://api.yearn.finance/v1/chains/1/apy-previews/curve-factory',
+		schema: curveGaugesFromYearnSchema
+	});
 
 	const gauges = useMemo((): TCurveGauge[] => {
 		const _gaugesForMainnet: TCurveGauge[] = [];
