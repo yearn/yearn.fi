@@ -1,18 +1,16 @@
 import React, {createContext, useCallback, useContext, useMemo, useState} from 'react';
 import {Contract} from 'ethcall';
-import {ethers} from 'ethers';
 import useSWR from 'swr';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {BAL_TOKEN_ADDRESS, LPYBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, VECRV_ADDRESS, VECRV_YEARN_TREASURY_ADDRESS, YBAL_BALANCER_POOL_ADDRESS, YBAL_TOKEN_ADDRESS, YVBOOST_TOKEN_ADDRESS, YVECRV_POOL_LP_ADDRESS, YVECRV_TOKEN_ADDRESS, ZAP_YEARN_YBAL_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {BAL_TOKEN_ADDRESS, BALWETH_TOKEN_ADDRESS, LPYBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, VECRV_ADDRESS, WETH_TOKEN_ADDRESS, YBAL_BALANCER_POOL_ADDRESS, YBAL_TOKEN_ADDRESS, ZAP_YEARN_YBAL_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import {formatUnits, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
-import CURVE_CRV_YCRV_LP_ABI from '@yBal/utils/abi/curveCrvYCrvLp.abi';
-import STYCRV_ABI from '@yBal/utils/abi/styCRV.abi';
-import YVECRV_ABI from '@yBal/utils/abi/yveCRV.abi';
+import STYBAL_ABI from '@yBal/utils/abi/styBal.abi';
+import YBAL_BALANCER_POOL_ABI from '@yBal/utils/abi/yBalBalancerPool.abi';
 
 import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
@@ -21,15 +19,11 @@ import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TYDaemonHarvests} from '@common/types/yearn';
 
 type THoldings = {
-	legacy: BigNumber;
-	treasury: BigNumber;
 	yBalSupply: BigNumber;
 	styBalSupply: BigNumber;
 	lpyBalSupply: BigNumber;
 	balYBalPeg: BigNumber;
-	boostMultiplier: BigNumber;
 	veBalTotalSupply: BigNumber;
-	veBalBalance: BigNumber;
 }
 type TYBalContext = {
 	styBalMegaBoost: number,
@@ -49,15 +43,11 @@ const	defaultProps = {
 	slippage: 0.6,
 	set_slippage: (): void => undefined,
 	holdings: {
-		legacy: Zero,
-		treasury: Zero,
 		yBalSupply: Zero,
 		styBalSupply: Zero,
 		lpyBalSupply: Zero,
 		balYBalPeg: Zero,
-		boostMultiplier: Zero,
-		veBalTotalSupply: Zero,
-		veBalBalance: Zero
+		veBalTotalSupply: Zero
 	}
 };
 
@@ -76,7 +66,6 @@ export const YBalContextApp = ({children}: {children: ReactElement}): ReactEleme
 		{revalidateOnFocus: false}
 	) as SWRResponse;
 
-
 	const	{data: yBalHarvests} = useSWR(
 		`${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/1/vaults/harvests/${STYBAL_TOKEN_ADDRESS},${LPYBAL_TOKEN_ADDRESS}`,
 		baseFetcher,
@@ -86,50 +75,33 @@ export const YBalContextApp = ({children}: {children: ReactElement}): ReactEleme
 	/* 🔵 - Yearn Finance ******************************************************
 	** SWR hook to get the holdings data for the yBal ecosystem.
 	**************************************************************************/
-	const numbersFetchers = useCallback(async (): Promise<TDict<BigNumber>> => {
-		const	currentProvider = provider || getProvider(1);
-		const	ethcallProvider = await newEthCallProvider(currentProvider);
-
-		const	yBalContract = new Contract(YBAL_TOKEN_ADDRESS as string, YVECRV_ABI);
-		const	styBalContract = new Contract(STYBAL_TOKEN_ADDRESS as string, STYCRV_ABI);
-		const	lpyBalContract = new Contract(LPYBAL_TOKEN_ADDRESS as string, YVECRV_ABI);
-		const	yveCRVContract = new Contract(YVECRV_TOKEN_ADDRESS as string, YVECRV_ABI);
-		const	veEscrowContract = new Contract(VECRV_ADDRESS as string, YVECRV_ABI);
-		const	crvYCRVLpContract = new Contract(YBAL_BALANCER_POOL_ADDRESS as string, CURVE_CRV_YCRV_LP_ABI);
-
-		const	[
-			yveBalTotalSupply,
-			yveCRVInYCRV,
-			veBalBalance,
-			veBalTotalSupply,
-			yCRVTotalSupply,
-			styCRVTotalSupply,
-			lpyCRVTotalSupply,
-			balYBalPeg
-		] = await ethcallProvider.tryAll([
-			yveCRVContract.totalSupply(),
-			yveCRVContract.balanceOf(YBAL_TOKEN_ADDRESS),
-			veEscrowContract.balanceOf(VECRV_YEARN_TREASURY_ADDRESS),
+	const numbersFetchers = useCallback(async (): Promise<THoldings> => {
+		const currentProvider = provider || getProvider(1);
+		const ethcallProvider = await newEthCallProvider(currentProvider);
+		const yBalContract = new Contract(YBAL_TOKEN_ADDRESS, ERC20_ABI);
+		const lpyBalContract = new Contract(LPYBAL_TOKEN_ADDRESS, ERC20_ABI);
+		const veEscrowContract = new Contract(VECRV_ADDRESS, ERC20_ABI);
+		const styBalContract = new Contract(STYBAL_TOKEN_ADDRESS, STYBAL_ABI);
+		const yBalBalancerPoolContract = new Contract(YBAL_BALANCER_POOL_ADDRESS, YBAL_BALANCER_POOL_ABI);
+		const calls = [
 			veEscrowContract.totalSupply(),
 			yBalContract.totalSupply(),
 			styBalContract.totalAssets(),
 			lpyBalContract.totalSupply(),
-			crvYCRVLpContract.get_dy(1, 0, ethers.constants.WeiPerEther)
-		]) as [BigNumber, BigNumber, BigNumber, BigNumber, BigNumber, BigNumber, BigNumber, BigNumber];
+			yBalBalancerPoolContract.getRate()
+		];
+		const result = await ethcallProvider.tryAll(calls) as [BigNumber, BigNumber, BigNumber, BigNumber, BigNumber, BigNumber];
 
 		return ({
-			['legacy']: yveBalTotalSupply.sub(yveCRVInYCRV),
-			['treasury']: veBalBalance.sub(yveBalTotalSupply.sub(yveCRVInYCRV)).sub(yCRVTotalSupply),
-			['yBalSupply']: yCRVTotalSupply,
-			['styBalSupply']: styCRVTotalSupply,
-			['lpyBalSupply']: lpyCRVTotalSupply,
-			['balYBalPeg']: balYBalPeg,
-			['boostMultiplier']: veBalBalance.mul(1e4).div(styCRVTotalSupply),
-			['veBalTotalSupply']: veBalTotalSupply,
-			['veBalBalance']: veBalBalance
+			veBalTotalSupply: result[0] || Zero,
+			yBalSupply: result[1] || Zero,
+			styBalSupply: result[2] || Zero,
+			lpyBalSupply: result[3] || Zero,
+			balYBalPeg: result[4] || Zero
 		});
 	}, [provider]);
-	const	{data: holdings} = useSWR('numbers', numbersFetchers, {shouldRetryOnError: false});
+
+	const {data: holdings} = useSWR('numbers', numbersFetchers, {shouldRetryOnError: false});
 
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -141,49 +113,29 @@ export const YBalContextApp = ({children}: {children: ReactElement}): ReactEleme
 		if (!isActive || !provider) {
 			return {};
 		}
-		const	currentProvider = provider || getProvider(1);
-		const	ethcallProvider = await newEthCallProvider(currentProvider);
-		const	userAddress = address;
-		const	yBalContract = new Contract(YBAL_TOKEN_ADDRESS as string, YVECRV_ABI);
-		const	styBalContract = new Contract(STYBAL_TOKEN_ADDRESS as string, YVECRV_ABI);
-		const	lpyBalContract = new Contract(LPYBAL_TOKEN_ADDRESS as string, YVECRV_ABI);
-		const	yveCRVContract = new Contract(YVECRV_TOKEN_ADDRESS as string, YVECRV_ABI);
-		const	balContract = new Contract(BAL_TOKEN_ADDRESS as string, ERC20_ABI);
-		const	yvBoostContract = new Contract(YVBOOST_TOKEN_ADDRESS as string, ERC20_ABI);
-		const	yBalPoolContract = new Contract(YBAL_BALANCER_POOL_ADDRESS as string, YVECRV_ABI);
-
-		const	[
-			yCRVAllowanceZap, styCRVAllowanceZap, lpyCRVAllowanceZap,
-			yveCRVAllowanceZap, crvAllowanceZap, yvBoostAllowanceZap,
-			yveCRVAllowanceLP, crvAllowanceLP,
-			yCRVPoolAllowanceVault
-		] = await ethcallProvider.tryAll([
-			yBalContract.allowance(userAddress, ZAP_YEARN_YBAL_ADDRESS),
-			styBalContract.allowance(userAddress, ZAP_YEARN_YBAL_ADDRESS),
-			lpyBalContract.allowance(userAddress, ZAP_YEARN_YBAL_ADDRESS),
-			yveCRVContract.allowance(userAddress, ZAP_YEARN_YBAL_ADDRESS),
-			balContract.allowance(userAddress, ZAP_YEARN_YBAL_ADDRESS),
-			yvBoostContract.allowance(userAddress, ZAP_YEARN_YBAL_ADDRESS),
-			yveCRVContract.allowance(userAddress, YVECRV_POOL_LP_ADDRESS),
-			balContract.allowance(userAddress, YVECRV_POOL_LP_ADDRESS),
-			yBalPoolContract.allowance(userAddress, LPYBAL_TOKEN_ADDRESS)
-		]) as BigNumber[];
+		const currentProvider = provider || getProvider(1);
+		const ethcallProvider = await newEthCallProvider(currentProvider);
+		const userAddress = address;
+		const calls = [
+			new Contract(BAL_TOKEN_ADDRESS, ERC20_ABI).allowance(userAddress, ZAP_YEARN_YBAL_ADDRESS),
+			new Contract(WETH_TOKEN_ADDRESS, ERC20_ABI).allowance(userAddress, ZAP_YEARN_YBAL_ADDRESS),
+			new Contract(BALWETH_TOKEN_ADDRESS, ERC20_ABI).allowance(userAddress, ZAP_YEARN_YBAL_ADDRESS),
+			new Contract(YBAL_TOKEN_ADDRESS, ERC20_ABI).allowance(userAddress, ZAP_YEARN_YBAL_ADDRESS),
+			new Contract(STYBAL_TOKEN_ADDRESS, ERC20_ABI).allowance(userAddress, ZAP_YEARN_YBAL_ADDRESS),
+			new Contract(LPYBAL_TOKEN_ADDRESS, ERC20_ABI).allowance(userAddress, ZAP_YEARN_YBAL_ADDRESS)
+		];
+		const result = await ethcallProvider.tryAll(calls) as [BigNumber, BigNumber, BigNumber, BigNumber, BigNumber, BigNumber];
 
 		return ({
-			// YCRV ECOSYSTEM
-			[allowanceKey(1, YBAL_TOKEN_ADDRESS, ZAP_YEARN_YBAL_ADDRESS, toAddress(userAddress))]: yCRVAllowanceZap,
-			[allowanceKey(1, STYBAL_TOKEN_ADDRESS, ZAP_YEARN_YBAL_ADDRESS, toAddress(userAddress))]: styCRVAllowanceZap,
-			[allowanceKey(1, LPYBAL_TOKEN_ADDRESS, ZAP_YEARN_YBAL_ADDRESS, toAddress(userAddress))]: lpyCRVAllowanceZap,
-			[allowanceKey(1, YBAL_BALANCER_POOL_ADDRESS, LPYBAL_TOKEN_ADDRESS, toAddress(userAddress))]: yCRVPoolAllowanceVault,
-			// CRV ECOSYSTEM
-			[allowanceKey(1, YVECRV_TOKEN_ADDRESS, ZAP_YEARN_YBAL_ADDRESS, toAddress(userAddress))]: yveCRVAllowanceZap,
-			[allowanceKey(1, BAL_TOKEN_ADDRESS, ZAP_YEARN_YBAL_ADDRESS, toAddress(userAddress))]:  crvAllowanceZap,
-			[allowanceKey(1, YVBOOST_TOKEN_ADDRESS, ZAP_YEARN_YBAL_ADDRESS, toAddress(userAddress))]: yvBoostAllowanceZap,
-			[allowanceKey(1, YVECRV_TOKEN_ADDRESS, YVECRV_POOL_LP_ADDRESS, toAddress(userAddress))]: yveCRVAllowanceLP,
-			[allowanceKey(1, BAL_TOKEN_ADDRESS, YVECRV_POOL_LP_ADDRESS, toAddress(userAddress))]:  crvAllowanceLP
+			[allowanceKey(1, BAL_TOKEN_ADDRESS, ZAP_YEARN_YBAL_ADDRESS, toAddress(userAddress))]: result[0] || Zero,
+			[allowanceKey(1, WETH_TOKEN_ADDRESS, ZAP_YEARN_YBAL_ADDRESS, toAddress(userAddress))]: result[1] || Zero,
+			[allowanceKey(1, BALWETH_TOKEN_ADDRESS, ZAP_YEARN_YBAL_ADDRESS, toAddress(userAddress))]: result[2] || Zero,
+			[allowanceKey(1, YBAL_TOKEN_ADDRESS, ZAP_YEARN_YBAL_ADDRESS, toAddress(userAddress))]: result[3] || Zero,
+			[allowanceKey(1, STYBAL_TOKEN_ADDRESS, ZAP_YEARN_YBAL_ADDRESS, toAddress(userAddress))]: result[4] || Zero,
+			[allowanceKey(1, LPYBAL_TOKEN_ADDRESS, ZAP_YEARN_YBAL_ADDRESS, toAddress(userAddress))]: result[5] || Zero
 		});
 	}, [provider, address, isActive]);
-	const	{data: allowances} = useSWR(isActive && provider ? 'allowances' : null, getAllowances, {shouldRetryOnError: false});
+	const {data: allowances} = useSWR(isActive && provider ? 'allowances' : null, getAllowances, {shouldRetryOnError: false});
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Compute the mega boost for the staked yBal. This boost come from the

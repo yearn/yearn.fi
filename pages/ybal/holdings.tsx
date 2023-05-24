@@ -5,7 +5,6 @@ import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/fo
 import {formatAmount, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue, formatCounterValueRaw} from '@yearn-finance/web-lib/utils/format.value';
 import ValueAnimation from '@common/components/ValueAnimation';
-import {useCurve} from '@common/contexts/useCurve';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import {useBalance} from '@common/hooks/useBalance';
@@ -20,17 +19,10 @@ import type {NextRouter} from 'next/router';
 import type {ReactElement, ReactNode} from 'react';
 
 function	HeaderPosition(): ReactElement {
-	const {holdings} = useYBal();
 	const balanceOfStyBal = useBalance(STYBAL_TOKEN_ADDRESS);
 	const balanceOfLpyBal = useBalance(LPYBAL_TOKEN_ADDRESS);
 	const styBalPrice = useTokenPrice(STYBAL_TOKEN_ADDRESS);
 	const lpyBalPrice = useTokenPrice(LPYBAL_TOKEN_ADDRESS);
-
-	const	formatedYearnHas = useMemo((): ReactNode => (
-		holdings?.veBalBalance ?
-			formatAmount(formatToNormalizedValue(holdings.veBalBalance, 18), 0, 0)
-			: ''
-	), [holdings?.veBalBalance]);
 
 	const	formatedYouHave = useMemo((): ReactNode => (
 		formatCounterValueRaw(
@@ -48,7 +40,7 @@ function	HeaderPosition(): ReactElement {
 				<b className={'font-number text-4xl text-neutral-900 md:text-7xl'}>
 					<ValueAnimation
 						identifier={'veBalTreasury'}
-						value={formatedYearnHas?.toString()}
+						value={'TODO'}
 						suffix={'veBal'}
 						defaultValue={'0,00'}
 					/>
@@ -73,7 +65,6 @@ function	Holdings(): ReactElement {
 	const {balances} = useWallet();
 	const {holdings, styBalMegaBoost, styBalAPY} = useYBal();
 	const {vaults} = useYearn();
-	const {curveWeeklyFees, cgPrices} = useCurve();
 
 	const lpBalAPY = useMemo((): string => getVaultAPY(vaults, LPYBAL_TOKEN_ADDRESS), [vaults]);
 	const yBalPrice = useTokenPrice(YBAL_TOKEN_ADDRESS);
@@ -96,28 +87,6 @@ function	Holdings(): ReactElement {
 		return formatAmount(v)?.toString() ?? '';
 	}, []);
 
-	const	latestCurveFeesValue = useMemo((): number => {
-		if (!curveWeeklyFees?.weeklyFeesTable?.length) {
-			return 0;
-		}
-		if (curveWeeklyFees?.weeklyFeesTable?.[0]?.rawFees > 0) {
-			return curveWeeklyFees.weeklyFeesTable[0].rawFees;
-		}
-		return curveWeeklyFees?.weeklyFeesTable?.[1]?.rawFees || 0;
-	}, [curveWeeklyFees]);
-
-	const	currentVeBalAPY = useMemo((): number => {
-		return (
-			latestCurveFeesValue / (
-				formatToNormalizedValue(formatBN(holdings?.veBalTotalSupply), 18) * cgPrices?.['curve-dao-token']?.usd
-			) * 52 * 100
-		);
-	}, [holdings, latestCurveFeesValue, cgPrices]);
-
-	const	curveAdminFeePercent = useMemo((): number => {
-		return (currentVeBalAPY * Number(holdings?.boostMultiplier) / 10000);
-	}, [holdings, currentVeBalAPY]);
-
 	return (
 		<section className={'mt-4 grid w-full grid-cols-12 gap-y-10 pb-10 md:mt-20 md:gap-x-10 md:gap-y-20'}>
 
@@ -126,14 +95,6 @@ function	Holdings(): ReactElement {
 			<div className={'col-span-12 flex w-full flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4'}>
 				<div className={'w-full bg-neutral-100 p-6 md:w-[412px] md:min-w-[412px]'}>
 					<div className={'grid w-full gap-6 md:col-span-5'}>
-						<div>
-							<b
-								className={'font-number pb-2 text-3xl text-neutral-900'}>
-								{holdings?.treasury ? `${formatBigNumberOver10K(holdings?.treasury || 0)} ` : '- '}
-								<span className={'font-number text-base text-neutral-600 md:text-3xl md:text-neutral-900'}>{'veBal'}</span>
-							</b>
-							<p className={'text-lg text-neutral-500'}>{'Yearn Treasury'}</p>
-						</div>
 						<div>
 							<b
 								className={'font-number pb-2 text-3xl text-neutral-900'}>
@@ -261,14 +222,6 @@ function	Holdings(): ReactElement {
 						<p
 							className={'font-number text-sm text-neutral-400 md:text-base'}>
 							{styBalAPY ? `*${formatPercent(styBalAPY)} APY: ` : `*${formatPercent(0)} APY: `}
-						</p>
-						<p
-							className={'font-number text-sm text-neutral-400 md:text-base'}>
-							{`∙ ${curveAdminFeePercent ? formatPercent(curveAdminFeePercent) : formatPercent(0)} Curve Admin Fees (${formatAmount(Number(holdings?.boostMultiplier) / 10000)}x boost)`}
-						</p>
-						<p
-							className={'font-number text-sm text-neutral-400 md:text-base'}>
-							{`∙ ${styBalAPY && curveAdminFeePercent && styBalMegaBoost ? formatAmount(styBalAPY - (curveAdminFeePercent + (styBalMegaBoost * 100)), 2, 2) : '0.00'}% Gauge Voting Bribes`}
 						</p>
 						<p
 							className={'font-number text-sm text-neutral-400 md:text-base'}>
