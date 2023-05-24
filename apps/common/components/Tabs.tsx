@@ -21,10 +21,9 @@ type TItem = {
 type TTabsProps = {
 	items: TItem[],
 	className?: string,
-	innerPadding?: string
 }
 
-function Tabs({items, className, innerPadding = 'p-6'}: TTabsProps): ReactElement {
+function Tabs({items, className}: TTabsProps): ReactElement {
 	const [selectedTabId, set_selectedTabId] = useState(items[0]?.id);
 	const router = useRouter();
 
@@ -119,7 +118,7 @@ function Tabs({items, className, innerPadding = 'p-6'}: TTabsProps): ReactElemen
 					{items.map(({id, content}): ReactElement => (
 						<div
 							key={`tab-content-${id}`}
-							className={`w-full ${innerPadding}`}
+							className={'w-full'}
 							hidden={selectedTabId !== id}>
 							{content}
 						</div>
