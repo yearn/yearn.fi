@@ -1,6 +1,7 @@
 import React from 'react';
 import IconLinkOut from '@yearn-finance/web-lib/icons/IconLinkOut';
 import {toAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
+import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {STYBAL_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatBN, formatToNormalizedAmount} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatUSD} from '@yearn-finance/web-lib/utils/format.number';
@@ -9,6 +10,23 @@ import {ImageWithFallback} from '@common/components/ImageWithFallback';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonHarvests} from '@common/types/yearn';
+
+type TRowProps = {
+	label: string;
+	value: string;
+	className?: string;
+	valueClassName?: string;
+}
+function Row({label, value, className, valueClassName}: TRowProps): ReactElement {
+	return (
+		<div className={cl('yearn--table-data-section-item', className)} datatype={'number'}>
+			<p className={'yearn--table-data-section-item-label'}>{label}</p>
+			<p className={cl('yearn--table-data-section-item-value', valueClassName)}>
+				{value}
+			</p>
+		</div>
+	);
+}
 
 function	HarvestListRow({harvest}: {harvest: TYDaemonHarvests}): ReactElement {
 	return (
@@ -31,26 +49,22 @@ function	HarvestListRow({harvest}: {harvest: TYDaemonHarvests}): ReactElement {
 			</div>
 
 			<div className={'yearn--table-data-section md:grid-cols-9'}>
-				<div className={'yearn--table-data-section-item md:col-span-1'} datatype={'number'}>
-					<p className={'yearn--table-data-section-item-label'}>{'Gain'}</p>
-					<b className={'yearn--table-data-section-item-value'}>
-						{formatToNormalizedAmount(formatBN(harvest.profit).sub(formatBN(harvest.loss)))}
-					</b>
-				</div>
+				<Row
+					label={'Gain'}
+					value={formatToNormalizedAmount(formatBN(harvest.profit).sub(formatBN(harvest.loss)))}
+					className={'md:col-span-1'}
+					valueClassName={'font-bold'} />
 
-				<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
-					<p className={'yearn--table-data-section-item-label'}>{'Value'}</p>
-					<p className={'yearn--table-data-section-item-value'}>
-						{formatUSD(Number(harvest.profitValue) - Number(harvest.lossValue))}
-					</p>
-				</div>
+				<Row
+					label={'Value'}
+					value={formatUSD(Number(harvest.profitValue) - Number(harvest.lossValue))}
+					className={'md:col-span-2'} />
 
-				<div className={'yearn--table-data-section-item md:col-span-3'} datatype={'number'}>
-					<p className={'yearn--table-data-section-item-label'}>{'Date'}</p>
-					<p className={'yearn--table-data-section-item-value'} style={{lineHeight: '24px'}}>
-						{formatDate(Number(harvest.timestamp) * 1000)}
-					</p>
-				</div>
+				<Row
+					label={'Date'}
+					value={formatDate(Number(harvest.timestamp) * 1000)}
+					className={'md:col-span-3'}
+					valueClassName={'leading-6'} />
 
 				<div className={'yearn--table-data-section-item md:col-span-3'} datatype={'number'}>
 					<p className={'yearn--table-data-section-item-label'}>{'Hash'}</p>
