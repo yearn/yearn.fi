@@ -4,6 +4,5 @@ module.exports = {
 	testEnvironment: 'node',
 	moduleNameMapper: {
 		'@vaults/(.*)': ['<rootDir>/apps/vaults/$1']
-	},
-	transform: {}
+	}
 };
