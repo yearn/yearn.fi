@@ -9,7 +9,7 @@
     "export": "tsc && next build && next export -o ipfs",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "bump": "bump",
-    "test": "jest"
+    "test": "yarn node --experimental-vm-modules $(yarn bin jest)"
   },
   "dependencies": {
     "@gnosis.pm/gp-v2-contracts": "^1.1.2",
