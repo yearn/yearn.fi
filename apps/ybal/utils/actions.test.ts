@@ -57,11 +57,11 @@ describe('actions', () => {
 				const {mint, minOut} = await simulateZapForMinOut(provider, inputToken, outputToken, amountIn);
 
 				expect(mockCallStaticZap).toHaveBeenNthCalledWith(1,
-					"0xInputToken", "0xOutputToken", "400000000000000000000", 0, "0xRecipient", true
+					"0xInputToken", "0xOutputToken", "500000000000000000000", 0, "0xRecipient", true
 				);
 
 				expect(mockCallStaticZap).toHaveBeenNthCalledWith(2,
-					"0xInputToken", "0xOutputToken", "400000000000000000000", 0, "0xRecipient", false
+					"0xInputToken", "0xOutputToken", ethers.BigNumber.from("500000000000000000000"), 0, "0xRecipient", false
 				);
 			
 				expect(mint).toBe(false);
@@ -81,17 +81,17 @@ describe('actions', () => {
 
 				const inputToken = '0xInputToken' as TAddress;
 				const outputToken = '0xOutputToken' as TAddress;
-				const amountIn = ethers.utils.parseEther('400'); // 500e18
+				const amountIn = ethers.utils.parseEther('400'); // 400e18
 				const provider = new ethers.providers.JsonRpcProvider();
 			
 				const {mint, minOut} = await simulateZapForMinOut(provider, inputToken, outputToken, amountIn);
 
 				expect(mockCallStaticZap).toHaveBeenNthCalledWith(1,
-					"0xInputToken", "0xOutputToken", "500000000000000000000", 0, "0xRecipient", true
+					"0xInputToken", "0xOutputToken", "400000000000000000000", 0, "0xRecipient", true
 				);
 
 				expect(mockCallStaticZap).toHaveBeenNthCalledWith(2,
-					"0xInputToken", "0xOutputToken", "500000000000000000000", 0, "0xRecipient", false
+					"0xInputToken", "0xOutputToken", ethers.BigNumber.from("400000000000000000000"), 0, "0xRecipient", false
 				);
 			
 				expect(mint).toBe(true);
@@ -115,8 +115,8 @@ describe('actions', () => {
 			expect(mockZap).toHaveBeenCalledWith(
 				'0xInputToken',
 				'0xOutputToken',
-				'100000000000000000000',
-				'98000000000000000000',
+				ethers.BigNumber.from('100000000000000000000'),
+				ethers.BigNumber.from('98000000000000000000'),
 				'0xRecipient',
 				true
 			);
