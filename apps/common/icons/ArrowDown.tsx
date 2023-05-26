@@ -2,13 +2,14 @@ import React from 'react';
 
 import type {ReactElement} from 'react';
 
-function ArrowDown(props: React.SVGProps<SVGSVGElement>): ReactElement {
+function	ArrowDown(props: React.SVGProps<SVGSVGElement>): ReactElement {
+	const height = props.height ?? 49;
 	return (
 		<svg
 			{...props}
 			className={'text-neutral-900'}
 			width={'16'}
-			height={'49'}
+			height={height}
 			viewBox={'0 0 16 49'}
 			fill={'none'}
 			xmlns={'http://www.w3.org/2000/svg'}>

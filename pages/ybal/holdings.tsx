@@ -10,13 +10,14 @@ import {useYearn} from '@common/contexts/useYearn';
 import {useBalance} from '@common/hooks/useBalance';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
 import {getVaultAPY} from '@common/utils';
+import CardZap from '@yBal/components/CardZapSmaller';
 import {Harvests} from '@yBal/components/Harvests';
 import {useYBal} from '@yBal/contexts/useYBal';
 import Wrapper from '@yBal/Wrapper';
 
 import type {BigNumber} from 'ethers';
 import type {NextRouter} from 'next/router';
-import type {ReactElement, ReactNode} from 'react';
+import type {ReactElement} from 'react';
 
 function	HeaderPosition(): ReactElement {
 	const {holdings} = useYBal();
@@ -25,13 +26,13 @@ function	HeaderPosition(): ReactElement {
 	const styBalPrice = useTokenPrice(STYBAL_TOKEN_ADDRESS);
 	const lpyBalPrice = useTokenPrice(LPYBAL_TOKEN_ADDRESS);
 
-	const	formatedYearnHas = useMemo((): ReactNode => (
+	const	formatedYearnHas = useMemo((): string => (
 		holdings?.veBalBalance ?
 			formatAmount(formatToNormalizedValue(holdings.veBalBalance, 18), 0, 0)
 			: ''
 	), [holdings?.veBalBalance]);
 
-	const	formatedYouHave = useMemo((): ReactNode => (
+	const	formatedYouHave = useMemo((): string => (
 		formatCounterValueRaw(
 			(balanceOfStyBal.normalized * styBalPrice)
 			+
@@ -47,10 +48,9 @@ function	HeaderPosition(): ReactElement {
 				<b className={'font-number text-4xl text-neutral-900 md:text-7xl'}>
 					<ValueAnimation
 						identifier={'veBalTreasury'}
-						value={formatedYearnHas?.toString()}
+						value={formatedYearnHas}
 						suffix={'veBal'}
-						defaultValue={'0,00'}
-					/>
+						defaultValue={formatAmount(0, 2, 2)} />
 				</b>
 			</div>
 			<div className={'col-span-12 w-full md:col-span-4'}>
@@ -58,10 +58,9 @@ function	HeaderPosition(): ReactElement {
 				<b className={'font-number text-3xl text-neutral-900 md:text-7xl'}>
 					<ValueAnimation
 						identifier={'youHave'}
-						value={formatedYouHave?.toString()}
+						value={formatedYouHave}
 						prefix={'$'}
-						defaultValue={'0,00'}
-					/>
+						defaultValue={formatAmount(0, 2, 2)} />
 				</b>
 			</div>
 		</Fragment>
@@ -70,10 +69,10 @@ function	HeaderPosition(): ReactElement {
 
 function	Holdings(): ReactElement {
 	const {balances} = useWallet();
-	const {holdings, styBalMegaBoost, styBalAPY} = useYBal();
+	const {holdings, styBalAPY} = useYBal();
 	const {vaults} = useYearn();
 
-	const lpBalAPY = useMemo((): string => getVaultAPY(vaults, LPYBAL_TOKEN_ADDRESS), [vaults]);
+	const lpyBalAPY = useMemo((): number => Number(getVaultAPY(vaults, LPYBAL_TOKEN_ADDRESS)), [vaults]);
 	const yBalPrice = useTokenPrice(YBAL_TOKEN_ADDRESS);
 	const styBalPrice = useTokenPrice(STYBAL_TOKEN_ADDRESS);
 	const lpyBalPrice = useTokenPrice(LPYBAL_TOKEN_ADDRESS);
@@ -89,9 +88,9 @@ function	Holdings(): ReactElement {
 
 	const	formatNumberOver10K = useCallback((v: number): string => {
 		if (v >= 10000) {
-			return formatAmount(v, 0, 0)?.toString() ?? '';
+			return formatAmount(v, 0, 0) ?? '';
 		}
-		return formatAmount(v)?.toString() ?? '';
+		return formatAmount(v) ?? '';
 	}, []);
 
 	return (
@@ -99,170 +98,152 @@ function	Holdings(): ReactElement {
 
 			<HeaderPosition />
 
-			<div className={'col-span-12 flex w-full flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4'}>
-				<div className={'w-full bg-neutral-100 p-6 md:w-[412px] md:min-w-[412px]'}>
-					<div className={'grid w-full gap-6 md:col-span-5'}>
+			<div className={'col-span-12 grid w-full grid-cols-12 gap-4'}>
 
-						<div>
-							<b
-								className={'font-number pb-2 text-3xl text-neutral-900'}>
-								{holdings?.treasury ? `${formatBigNumberOver10K(holdings?.treasury || 0)} ` : '- '}
-								<span className={'font-number text-base text-neutral-600 md:text-3xl md:text-neutral-900'}>{'veBal'}</span>
-							</b>
-							<p className={'text-lg text-neutral-500'}>{'Yearn Treasury'}</p>
-						</div>
+				<CardZap className={'col-span-12 md:col-span-8'} />
 
-
-						<div>
-							<b
-								suppressHydrationWarning
-								className={'font-number pb-2 text-3xl text-neutral-900'}>
-								{holdings?.yBalSupply ? `${formatBigNumberOver10K(holdings?.yBalSupply || 0)} ` : '- '}
-								<span className={'font-number text-base text-neutral-600 md:text-3xl md:text-neutral-900'}>{'yBal'}</span>
-							</b>
-
+				{/* RIGHT */}
+				<div className={'col-span-12 flex flex-col gap-4 md:col-span-4'}>
+					<div className={'w-full bg-neutral-100 p-4'}>
+						<div className={'flex flex-row items-baseline justify-between pb-1'}>
+							<span className={'inline text-sm font-normal text-neutral-400'}>
+								{'PEG: '}
+							</span>
 							<p
 								suppressHydrationWarning
-								className={'text-lg text-neutral-500'}>
-								{`(Price = $${(formatAmount(yBalPrice || 0))} | Peg = ${(
-									holdings?.balYBalPeg ? (formatPercent(
-										(formatToNormalizedValue(holdings?.balYBalPeg, 18) + 0.0015) * 100)
-									): formatPercent(0)
-								)})`}
+								className={'font-number text-sm text-neutral-900'}>
+								{holdings?.balYBalPeg ? (formatPercent((formatToNormalizedValue(holdings?.balYBalPeg, 18) + 0.0015) * 100)): formatPercent(0)}
 							</p>
 						</div>
 					</div>
-				</div>
 
-				<div className={'grid w-full bg-neutral-100 p-6'}>
-					<div className={'mb-6 hidden w-full grid-cols-5 md:grid'}>
-						<p className={'text-base text-neutral-400'}>{'Product'}</p>
-						<p className={'text-base text-neutral-400'}>{'APY'}</p>
-						<p className={'text-base text-neutral-400'}>{'Total Assets'}</p>
-						<p className={'text-base text-neutral-400'}>{'yBal Deposits'}</p>
-						<p className={'text-base text-neutral-400'}>{'My Balance'}</p>
-					</div>
-
-					<div className={'mb-8 grid w-full grid-cols-1 md:grid-cols-5'}>
-						<div className={'flex flex-row items-center justify-between'}>
-							<span className={'inline text-sm font-normal text-neutral-400 md:hidden'}>{'Product: '}</span>
-							<p className={'text-base text-neutral-900'}>
+					<div className={'w-full bg-neutral-100 p-4'}>
+						<div className={'flex flex-row items-center justify-between pb-3'}>
+							<b className={'text-neutral-900'}>
 								{'st-yBal'}
+							</b>
+						</div>
+
+						<div className={'flex flex-row items-baseline justify-between pb-1'}>
+							<span className={'inline text-sm font-normal text-neutral-400'}>
+								{'My Balance: '}
+							</span>
+							<p
+								suppressHydrationWarning
+								className={'font-number text-sm text-neutral-900'}>
+								{formatNumberOver10K(balances[STYBAL_TOKEN_ADDRESS]?.normalized || 0)}
 							</p>
 						</div>
 						<div className={'flex flex-row items-center justify-between'}>
-							<span className={'mr-auto inline font-normal text-neutral-400 md:hidden'}>{'APY: '}</span>
-							<b
-								suppressHydrationWarning
-								className={'font-number text-base text-neutral-900'}>
-								{styBalAPY ? `${formatPercent(styBalAPY)}*` : `${formatPercent(0)}`}
-							</b>
-						</div>
-						<div className={'flex flex-row items-center justify-between'}>
-							<span className={'inline text-sm font-normal text-neutral-400 md:hidden'}>{'Total Assets: '}</span>
+							<span className={'inline text-sm font-normal text-neutral-400'}>
+								{'Value: '}
+							</span>
 							<p
 								suppressHydrationWarning
-								className={'font-number text-base text-neutral-900'}>
+								className={'font-number text-sm text-neutral-900'}>
+								{formatCounterValue(balanceOfStyBal.normalized, styBalPrice)}
+							</p>
+						</div>
+
+						<div className={'my-2 h-px w-full bg-neutral-200'} />
+
+						<div className={'flex flex-row items-center justify-between pb-1'}>
+							<span className={'mr-auto text-sm font-normal text-neutral-400'}>{'APY: '}</span>
+							<b
+								suppressHydrationWarning
+								className={'font-number text-sm text-neutral-900'}>
+								{formatPercent(styBalAPY ?? 0)}
+							</b>
+						</div>
+						<div className={'flex flex-row items-center justify-between pb-1'}>
+							<span className={'inline text-sm font-normal text-neutral-400'}>
+								{'Total Assets: '}
+							</span>
+							<p
+								suppressHydrationWarning
+								className={'font-number text-sm text-neutral-900'}>
 								{holdings?.styBalSupply ? formatCounterValue(
 									formatToNormalizedValue(holdings.styBalSupply, 18),
 									yBalPrice
 								) : formatAmount(0)}
 							</p>
 						</div>
-						<div className={'flex flex-row items-center justify-between'}>
-							<span className={'inline text-sm font-normal text-neutral-400 md:hidden'}>{'yBal Deposits: '}</span>
+						<div className={'flex flex-row items-center justify-between pb-1'}>
+							<span className={'inline text-sm font-normal text-neutral-400'}>
+								{'yBal Deposits: '}
+							</span>
 							<p
 								suppressHydrationWarning
-								className={'font-number text-base text-neutral-900'}>
+								className={'font-number text-sm text-neutral-900'}>
 								{formatBigNumberOver10K(holdings?.styBalSupply || 0)}
 							</p>
 						</div>
-						<div className={'flex flex-row items-baseline justify-between'}>
-							<span className={'inline text-sm font-normal text-neutral-400 md:hidden'}>{'My Balance: '}</span>
-							<div>
-								<p
-									suppressHydrationWarning
-									className={'font-number text-base text-neutral-900'}>
-									{formatNumberOver10K(balances[STYBAL_TOKEN_ADDRESS]?.normalized || 0)}
-								</p>
-								<p
-									suppressHydrationWarning
-									className={'font-number text-xs text-neutral-600'}>
-									{formatCounterValue(balanceOfStyBal.normalized, styBalPrice)}
-								</p>
-							</div>
-						</div>
 					</div>
 
-					<div className={'mb-8 grid w-full grid-cols-1 md:grid-cols-5'}>
-						<div className={'flex flex-row items-center justify-between'}>
-							<span className={'inline text-sm font-normal text-neutral-400 md:hidden'}>{'Product: '}</span>
-							<p className={'text-base text-neutral-900'}>
+					<div className={'w-full bg-neutral-100 p-4'}>
+						<div className={'flex flex-row items-center justify-between pb-3'}>
+							<b className={'text-neutral-900'}>
 								{'lp-yBal'}
+							</b>
+						</div>
+
+						<div className={'flex flex-row items-baseline justify-between pb-1'}>
+							<span className={'inline text-sm font-normal text-neutral-400'}>
+								{'My Balance: '}
+							</span>
+							<p
+								suppressHydrationWarning
+								className={'font-number text-sm text-neutral-900'}>
+								{formatNumberOver10K(balances[LPYBAL_TOKEN_ADDRESS]?.normalized || 0)}
 							</p>
 						</div>
 						<div className={'flex flex-row items-center justify-between'}>
-							<span className={'mr-auto inline font-normal text-neutral-400 md:hidden'}>{'APY: '}</span>
-							<b
-								suppressHydrationWarning
-								className={'font-number text-base text-neutral-900'}>
-								{lpBalAPY ? `${(lpBalAPY || '').replace('APY', '')}` : `${formatPercent(0)}`}
-							</b>
-						</div>
-						<div className={'flex flex-row items-center justify-between'}>
-							<span className={'inline text-sm font-normal text-neutral-400 md:hidden'}>{'Total Assets: '}</span>
+							<span className={'inline text-sm font-normal text-neutral-400'}>
+								{'Value: '}
+							</span>
 							<p
 								suppressHydrationWarning
-								className={'font-number text-base text-neutral-900'}>
+								className={'font-number text-sm text-neutral-900'}>
+								{formatCounterValue(balanceOfLpyBal.normalized, lpyBalPrice)}
+							</p>
+						</div>
+
+						<div className={'my-2 h-px w-full bg-neutral-200'} />
+
+						<div className={'flex flex-row items-center justify-between pb-1'}>
+							<span className={'mr-auto text-sm font-normal text-neutral-400'}>{'APY: '}</span>
+							<b
+								suppressHydrationWarning
+								className={'font-number text-sm text-neutral-900'}>
+								{formatPercent(lpyBalAPY ?? 0)}
+							</b>
+						</div>
+						<div className={'flex flex-row items-center justify-between pb-1'}>
+							<span className={'inline text-sm font-normal text-neutral-400'}>
+								{'Total Assets: '}
+							</span>
+							<p
+								suppressHydrationWarning
+								className={'font-number text-sm text-neutral-900'}>
 								{holdings?.lpyBalSupply ? formatCounterValue(
-									formatToNormalizedValue(holdings?.lpyBalSupply, 18),
+									formatToNormalizedValue(holdings.lpyBalSupply, 18),
 									lpyBalPrice
 								) : formatAmount(0)}
 							</p>
 						</div>
-						<div className={'flex flex-row items-center justify-between'}>
-							<span className={'inline text-sm font-normal text-neutral-400 md:hidden'}>{'yBal Deposits: '}</span>
+						<div className={'flex flex-row items-center justify-between pb-1'}>
+							<span className={'inline text-sm font-normal text-neutral-400'}>
+								{'yBal Deposits: '}
+							</span>
 							<p
 								suppressHydrationWarning
-								className={'font-number text-base text-neutral-900'}>
+								className={'font-number text-sm text-neutral-900'}>
 								{formatBigNumberOver10K(holdings?.lpyBalSupply || 0)}
 							</p>
 						</div>
-						<div className={'flex flex-row items-baseline justify-between'}>
-							<span className={'inline text-sm font-normal text-neutral-400 md:hidden'}>{'My Balance: '}</span>
-							<div>
-								<p
-									suppressHydrationWarning
-									className={'font-number text-base text-neutral-900'}>
-									{formatNumberOver10K(balances[LPYBAL_TOKEN_ADDRESS]?.normalized || 0)}
-								</p>
-								<p
-									suppressHydrationWarning
-									className={'font-number text-xs text-neutral-600'}>
-									{formatCounterValue(
-										balanceOfLpyBal?.normalized,
-										lpyBalPrice
-									)}
-								</p>
-							</div>
-						</div>
-					</div>
-
-					<div>
-						<p
-							suppressHydrationWarning
-							className={'font-number text-sm text-neutral-400 md:text-base'}>
-							{styBalAPY ? `*${formatPercent(styBalAPY)} APY: ` : `*${formatPercent(0)} APY: `}
-						</p>
-						<p
-							suppressHydrationWarning
-							className={'font-number text-sm text-neutral-400 md:text-base'}>
-							{`∙ ${styBalMegaBoost ? formatPercent(styBalMegaBoost * 100) : formatPercent(0)} Mega Boost`}
-						</p>
 					</div>
 				</div>
 			</div>
-
 			<Harvests />
 
 		</section>

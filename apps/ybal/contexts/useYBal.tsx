@@ -7,7 +7,7 @@ import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {BAL_TOKEN_ADDRESS, BALWETH_TOKEN_ADDRESS, LPYBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, YBAL_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
-import {formatUnits, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import {defaultHoldingsProps, useHoldings} from '@yBal/contexts/useHoldingsHooks';
 
@@ -21,7 +21,6 @@ import type {TYDaemonHarvests} from '@common/types/yearn';
 const LOCAL_ZAP_YEARN_YBAL_ADDRESS = toAddress('0x43cA9bAe8dF108684E5EAaA720C25e1b32B0A075');
 
 type TYBalContext = {
-	styBalMegaBoost: number,
 	styBalAPY: number,
 	slippage: number,
 	allowances: TDict<BigNumber>,
@@ -31,7 +30,6 @@ type TYBalContext = {
 }
 
 const	defaultProps = {
-	styBalMegaBoost: 0,
 	styBalAPY: 0,
 	harvests: [],
 	allowances: {},
@@ -61,12 +59,6 @@ export const YBalContextApp = ({children}: {children: ReactElement}): ReactEleme
 		baseFetcher,
 		{revalidateOnFocus: false}
 	) as SWRResponse;
-
-	/* 🔵 - Yearn Finance ******************************************************
-	** SWR hook to get the holdings data for the yBal ecosystem.
-	**************************************************************************/
-
-	// const {data: holdings} = useSWR('numbers', numbersFetchers, {shouldRetryOnError: false});
 
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -103,22 +95,6 @@ export const YBalContextApp = ({children}: {children: ReactElement}): ReactEleme
 	const {data: allowances} = useSWR(isActive && provider ? 'allowances' : null, getAllowances, {shouldRetryOnError: false});
 
 	/* 🔵 - Yearn Finance ******************************************************
-	** Compute the mega boost for the staked yBal. This boost come from the
-	** donator, with 30_000 per week.
-	**************************************************************************/
-	const	styBalMegaBoost = useMemo((): number => {
-		if (!holdings || holdings.styBalSupply === Zero) {
-			return 0;
-		}
-		const	fromDonatorPerWeek = 30_000;
-		const	fromDonatorPerYear = fromDonatorPerWeek * 52;
-		const	fromDonatorPerYearScaled = fromDonatorPerYear * 0.9;
-		const	humanizedStyBalSupply = Number(formatUnits(holdings.styBalSupply, 18));
-		const	megaBoostAPR = fromDonatorPerYearScaled / humanizedStyBalSupply;
-		return megaBoostAPR;
-	}, [holdings]);
-
-	/* 🔵 - Yearn Finance ******************************************************
 	** Compute the styBal APY based on the experimental APY and the mega boost.
 	**************************************************************************/
 	const	styBalAPY = useMemo((): number => {
@@ -133,10 +109,9 @@ export const YBalContextApp = ({children}: {children: ReactElement}): ReactEleme
 		holdings: holdings as THoldings,
 		allowances: allowances as TDict<BigNumber>,
 		styBalAPY,
-		styBalMegaBoost,
 		slippage,
 		set_slippage
-	}), [yBalHarvests, holdings, allowances, styBalAPY, styBalMegaBoost, slippage, set_slippage]);
+	}), [yBalHarvests, holdings, allowances, styBalAPY, slippage, set_slippage]);
 
 	return (
 		<YBalContext.Provider value={contextValue}>
