@@ -1,17 +1,15 @@
 import React, {createContext, useCallback, useContext, useMemo, useState} from 'react';
 import {Contract} from 'ethcall';
-import {ethers} from 'ethers';
 import useSWR from 'swr';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {CRV_TOKEN_ADDRESS, CVXCRV_TOKEN_ADDRESS, LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, VECRV_ADDRESS, VECRV_YEARN_TREASURY_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YCRV_TOKEN_ADDRESS, YVBOOST_TOKEN_ADDRESS, YVECRV_POOL_LP_ADDRESS, YVECRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {CRV_TOKEN_ADDRESS, CVXCRV_TOKEN_ADDRESS, LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YCRV_TOKEN_ADDRESS, YVBOOST_TOKEN_ADDRESS, YVECRV_POOL_LP_ADDRESS, YVECRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import {formatUnits, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
-import CURVE_CRV_YCRV_LP_ABI from '@yCRV/utils/abi/curveCrvYCrvLp.abi';
-import STYCRV_ABI from '@yCRV/utils/abi/styCRV.abi';
+import {useHoldings} from '@yCRV/contexts/useHoldingsHooks';
 import YVECRV_ABI from '@yCRV/utils/abi/yveCRV.abi';
 
 import type {BigNumber} from 'ethers';
@@ -70,6 +68,7 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 	const {provider, address, isActive} = useWeb3();
 	const {settings: baseAPISettings} = useSettings();
 	const [slippage, set_slippage] = useState<number>(0.6);
+	const holdings = useHoldings();
 
 	// const	{data: styCRVExperimentalAPY} = useSWR(
 	// 	`${baseAPISettings.yDaemonBaseURI}/1/vaults/apy/${STYCRV_TOKEN_ADDRESS}`,
@@ -83,60 +82,11 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 		{revalidateOnFocus: false}
 	);
 
-
 	const	{data: yCRVHarvests} = useSWR(
 		`${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/1/vaults/harvests/${STYCRV_TOKEN_ADDRESS},${LPYCRV_TOKEN_ADDRESS}`,
 		baseFetcher,
 		{revalidateOnFocus: false}
 	) as SWRResponse;
-
-	/* 🔵 - Yearn Finance ******************************************************
-	** SWR hook to get the holdings data for the yCRV ecosystem.
-	**************************************************************************/
-	const numbersFetchers = useCallback(async (): Promise<TDict<BigNumber>> => {
-		const	currentProvider = provider || getProvider(1);
-		const	ethcallProvider = await newEthCallProvider(currentProvider);
-
-		const	yCRVContract = new Contract(YCRV_TOKEN_ADDRESS as string, YVECRV_ABI);
-		const	styCRVContract = new Contract(STYCRV_TOKEN_ADDRESS as string, STYCRV_ABI);
-		const	lpyCRVContract = new Contract(LPYCRV_TOKEN_ADDRESS as string, YVECRV_ABI);
-		const	yveCRVContract = new Contract(YVECRV_TOKEN_ADDRESS as string, YVECRV_ABI);
-		const	veEscrowContract = new Contract(VECRV_ADDRESS as string, YVECRV_ABI);
-		const	crvYCRVLpContract = new Contract(YCRV_CURVE_POOL_ADDRESS as string, CURVE_CRV_YCRV_LP_ABI);
-
-		const	[
-			yveCRVTotalSupply,
-			yveCRVInYCRV,
-			veCRVBalance,
-			veCRVTotalSupply,
-			yCRVTotalSupply,
-			styCRVTotalSupply,
-			lpyCRVTotalSupply,
-			crvYCRVPeg
-		] = await ethcallProvider.tryAll([
-			yveCRVContract.totalSupply(),
-			yveCRVContract.balanceOf(YCRV_TOKEN_ADDRESS),
-			veEscrowContract.balanceOf(VECRV_YEARN_TREASURY_ADDRESS),
-			veEscrowContract.totalSupply(),
-			yCRVContract.totalSupply(),
-			styCRVContract.totalAssets(),
-			lpyCRVContract.totalSupply(),
-			crvYCRVLpContract.get_dy(1, 0, ethers.constants.WeiPerEther)
-		]) as [BigNumber, BigNumber, BigNumber, BigNumber, BigNumber, BigNumber, BigNumber, BigNumber];
-
-		return ({
-			['legacy']: yveCRVTotalSupply.sub(yveCRVInYCRV),
-			['treasury']: veCRVBalance.sub(yveCRVTotalSupply.sub(yveCRVInYCRV)).sub(yCRVTotalSupply),
-			['yCRVSupply']: yCRVTotalSupply,
-			['styCRVSupply']: styCRVTotalSupply,
-			['lpyCRVSupply']: lpyCRVTotalSupply,
-			['crvYCRVPeg']: crvYCRVPeg,
-			['boostMultiplier']: veCRVBalance.mul(1e4).div(styCRVTotalSupply),
-			['veCRVTotalSupply']: veCRVTotalSupply,
-			['veCRVBalance']: veCRVBalance
-		});
-	}, [provider]);
-	const	{data: holdings} = useSWR('numbers', numbersFetchers, {shouldRetryOnError: false});
 
 
 	/* 🔵 - Yearn Finance ******************************************************
