@@ -8,9 +8,9 @@ import type {BigNumber} from 'ethers';
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 
-const ZAP_ABI = [{'inputs':[{'name':'_input_token', 'type':'address'}, {'name':'_output_token', 'type':'address'}, {'name':'_amount_in', 'type':'uint256'}, {'name':'_min_out', 'type':'uint256'}, {'name':'_recipient', 'type':'address'}, {'name':'_mint', 'type':'bool'}], 'name':'zap', 'outputs':[{'name':'', 'type':'uint256'}], 'stateMutability':'nonpayable', 'type':'function'}, {'inputs':[], 'name':'mint_buffer', 'outputs':[{'name':'', 'type':'uint256'}], 'stateMutability':'view', 'type':'function'}];
+const ZAP_ABI = [{'inputs':[{'name':'_input_token', 'type':'address'}, {'name':'_output_token', 'type':'address'}, {'name':'_amount_in', 'type':'uint256'}, {'name':'_min_out', 'type':'uint256'}, {'name':'_recipient', 'type':'address'}, {'name':'_mint', 'type':'bool'}], 'name':'zap', 'outputs':[{'name':'', 'type':'uint256'}], 'stateMutability':'nonpayable', 'type':'function'}, {'inputs':[], 'name':'mint_buffer', 'outputs':[{'name':'', 'type':'uint256'}], 'stateMutability':'view', 'type':'function'}, {'inputs':[{'name':'_input_token', 'type':'address'}, {'name':'_output_token', 'type':'address'}, {'name':'_amount_in', 'type':'uint256'}, {'name':'_mint', 'type':'bool'}], 'name':'queryZapOutput', 'outputs':[{'name':'', 'type':'uint256'}], 'stateMutability':'nonpayable', 'type':'function'}];
 
-const LOCAL_ZAP_YEARN_YBAL_ADDRESS = toAddress('0x5E5713a0d915701F464DEbb66015adD62B2e6AE9');
+const LOCAL_ZAP_YEARN_YBAL_ADDRESS = toAddress('0x43cA9bAe8dF108684E5EAaA720C25e1b32B0A075');
 const OUTPUT_TOKENS = [YBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, LPYBAL_TOKEN_ADDRESS];
 
 export async function	simulateZapForMinOut(
@@ -18,24 +18,19 @@ export async function	simulateZapForMinOut(
 	inputToken: TAddress,
 	outputToken: TAddress,
 	amountIn: BigNumber
-): Promise<{mint: boolean, minOut: BigNumber}> {
+): Promise<{shouldMint: boolean, minOut: BigNumber}> {
 	if (amountIn.isZero()) {
-		return ({mint: false, minOut: BN(0)});
+		return ({shouldMint: false, minOut: BN(0)});
 	}
 	try {
 		const signer = provider.getSigner();
-		const address = await signer.getAddress();
 		const contract = new ethers.Contract(LOCAL_ZAP_YEARN_YBAL_ADDRESS, ZAP_ABI, signer);
 
-		console.log(`ZAP.zap.call("${inputToken}","${outputToken}","${amountIn.toString()}","${0}","${address}",False, {"from": me})`);
-
 		// Static Call - simulating output
-		const expectedAmountMint = await contract.callStatic.zap(
+		const expectedAmountMint = await contract.callStatic.queryZapOutput(
 			inputToken, // user supplied
 			outputToken, // user supplied
 			amountIn.toString(), // default=full input_token balace of user, unless specified
-			0, // zero is fine for staticcall
-			address, // default=user, unless specified
 			true // mint
 		) as BigNumber;
 
@@ -43,12 +38,10 @@ export async function	simulateZapForMinOut(
 		let expectedAmountSwap = expectedAmountMint;
 		if (!OUTPUT_TOKENS.includes(inputToken)) {
 			// Do another Static Call - simulating output
-			expectedAmountSwap = await contract.callStatic.zap(
+			expectedAmountSwap = await contract.callStatic.queryZapOutput(
 				inputToken, // user supplied
 				outputToken, // user supplied
 				amountIn, // default=full input_token balace of user, unless specified
-				0, // zero is fine for staticcall
-				address, // default=user, unless specified
 				false // mint
 			) as BigNumber;
 		}
@@ -67,7 +60,7 @@ export async function	simulateZapForMinOut(
 				expectedAmountMint: bufferedAmount.toString(),
 				expectedAmountMintSlippage: minOutWithSlippage.toString()
 			});
-			return ({mint: false, minOut});
+			return ({shouldMint: false, minOut});
 		}
 		const minOutStr = Number(ethers.utils.formatUnits(expectedAmountMint, 18));
 		const minOutWithSlippage = ethers.utils.parseUnits((minOutStr * (1 - (slippage / 100))).toFixed(18), 18);
@@ -76,10 +69,10 @@ export async function	simulateZapForMinOut(
 			expectedAmountMint: expectedAmountMint.toString(),
 			expectedAmountMintSlippage: minOutWithSlippage.toString()
 		});
-		return ({mint: true, minOut});
+		return ({shouldMint: true, minOut});
 	} catch (error) {
 		console.error(error);
-		return ({mint: false, minOut: BN(0)});
+		return ({shouldMint: false, minOut: BN(0)});
 	}
 }
 
