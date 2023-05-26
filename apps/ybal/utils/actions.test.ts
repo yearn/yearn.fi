@@ -5,12 +5,11 @@ import {describe, expect, it, vi} from 'vitest';
 import {BAL_TOKEN_ADDRESS, YBAL_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {simulateZapForMinOut} from '@yBal/utils/actions';
 
-
-beforeEach(async (): Promise<void> => {
-	await vi.doMock('ethers', async () => {
-		const ethers = await vi.importActual('ethers');
-		return {
-			...ethers as any,
+vi.mock('ethers', async () => {
+	const actual = await vi.importActual<typeof ethers>('ethers');
+	return {
+		ethers: {
+			...actual,
 			// providers: {
 			// 	JsonRpcProvider: vi.fn().mockImplementation(() => ({
 			// 		getSigner: vi.fn().mockReturnValue({
@@ -26,8 +25,8 @@ beforeEach(async (): Promise<void> => {
 				},
 				mint_buffer: vi.fn()
 			}))
-		};
-	});
+		}
+	};
 });
 
 // vi.mock('ethers', async (importOriginal) => {
