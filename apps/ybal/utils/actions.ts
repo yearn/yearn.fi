@@ -57,19 +57,11 @@ export async function	simulateZapForMinOut(
 			const minOutStr = Number(ethers.utils.formatUnits(bufferedAmount, 18));
 			const minOutWithSlippage = ethers.utils.parseUnits((minOutStr * (1 - (slippage / 100))).toFixed(18), 18);
 			const minOut = minOutWithSlippage;
-			console.warn({
-				expectedAmountMint: bufferedAmount.toString(),
-				expectedAmountMintSlippage: minOutWithSlippage.toString()
-			});
 			return ({shouldMint: false, minOut});
 		}
 		const minOutStr = Number(ethers.utils.formatUnits(expectedAmountMint, 18));
 		const minOutWithSlippage = ethers.utils.parseUnits((minOutStr * (1 - (slippage / 100))).toFixed(18), 18);
 		const minOut = minOutWithSlippage;
-		console.warn({
-			expectedAmountMint: expectedAmountMint.toString(),
-			expectedAmountMintSlippage: minOutWithSlippage.toString()
-		});
 		return ({shouldMint: true, minOut});
 	} catch (error) {
 		console.error(error);
