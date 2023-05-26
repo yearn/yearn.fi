@@ -24,7 +24,8 @@ vi.mock('ethers', async () => {
 				},
 				mint_buffer: vi.fn()
 			}))
-		}
+		},
+		BigNumber: actual.BigNumber
 	};
 });
 
