@@ -17,7 +17,7 @@ export default defineConfig({
 	},
 	test: {
 		globals: true,
-		environment: 'jsdom',
+		environment: 'node',
 		deps: {
 			inline: ['@yearn-finance/web-lib']
 		}
