@@ -18,7 +18,7 @@ import type {SWRResponse} from 'swr';
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TYDaemonHarvests} from '@common/types/yearn';
 
-const LOCAL_ZAP_YEARN_YBAL_ADDRESS = toAddress('0x5E5713a0d915701F464DEbb66015adD62B2e6AE9');
+const LOCAL_ZAP_YEARN_YBAL_ADDRESS = toAddress('0x43cA9bAe8dF108684E5EAaA720C25e1b32B0A075');
 
 type THoldings = {
 	yBalSupply: BigNumber;
