@@ -2,7 +2,8 @@
 import {ethers} from 'ethers';
 
 import {simulateZapForMinOut, zap} from './actions';
-import { TAddress } from '@yearn-finance/web-lib/types';
+
+import type {TAddress} from '@yearn-finance/web-lib/types';
 
 const MINT_BUFFER = ethers.BigNumber.from('5');
 
@@ -23,7 +24,7 @@ jest.mock('ethers', () => ({
 		Contract: jest.fn().mockImplementation(() => ({
 			zap: mockZap,
 			callStatic: {
-				zap: mockCallStaticZap
+				queryZapOutput: mockCallStaticZap
 			},
 			mint_buffer: mockMintBuffer
 		}))
@@ -53,21 +54,21 @@ describe('actions', () => {
 				const outputToken = '0xOutputToken' as TAddress;
 				const amountIn = ethers.utils.parseEther('500'); // 500e18
 				const provider = new ethers.providers.JsonRpcProvider();
-			
-				const {mint, minOut} = await simulateZapForMinOut(provider, inputToken, outputToken, amountIn);
+
+				const {shouldMint, minOut} = await simulateZapForMinOut(provider, inputToken, outputToken, amountIn);
 
 				expect(mockCallStaticZap).toHaveBeenNthCalledWith(1,
-					"0xInputToken", "0xOutputToken", "500000000000000000000", 0, "0xRecipient", true
+					'0xInputToken', '0xOutputToken', '500000000000000000000', true
 				);
 
 				expect(mockCallStaticZap).toHaveBeenNthCalledWith(2,
-					"0xInputToken", "0xOutputToken", ethers.BigNumber.from("500000000000000000000"), 0, "0xRecipient", false
+					'0xInputToken', '0xOutputToken', ethers.BigNumber.from('500000000000000000000'), false
 				);
-			
-				expect(mint).toBe(false);
+
+				expect(shouldMint).toBe(false);
 
 				expect(minOut).toEqual(ethers.BigNumber.from('197752499999999997726'));
-			})
+			});
 		});
 
 		describe('when buffered amount is less or equal to expected amount mint', () => {
@@ -83,21 +84,21 @@ describe('actions', () => {
 				const outputToken = '0xOutputToken' as TAddress;
 				const amountIn = ethers.utils.parseEther('400'); // 400e18
 				const provider = new ethers.providers.JsonRpcProvider();
-			
-				const {mint, minOut} = await simulateZapForMinOut(provider, inputToken, outputToken, amountIn);
+
+				const {shouldMint, minOut} = await simulateZapForMinOut(provider, inputToken, outputToken, amountIn);
 
 				expect(mockCallStaticZap).toHaveBeenNthCalledWith(1,
-					"0xInputToken", "0xOutputToken", "400000000000000000000", 0, "0xRecipient", true
+					'0xInputToken', '0xOutputToken', '400000000000000000000', true
 				);
 
 				expect(mockCallStaticZap).toHaveBeenNthCalledWith(2,
-					"0xInputToken", "0xOutputToken", ethers.BigNumber.from("400000000000000000000"), 0, "0xRecipient", false
+					'0xInputToken', '0xOutputToken', ethers.BigNumber.from('400000000000000000000'), false
 				);
-			
-				expect(mint).toBe(true);
+
+				expect(shouldMint).toBe(true);
 
 				expect(minOut).toEqual(ethers.BigNumber.from('41579999999999998295'));
-			})
+			});
 		});
 	});
 
@@ -109,9 +110,9 @@ describe('actions', () => {
 			const minOut = ethers.utils.parseEther('100'); // 100e18;
 			const slippage = 2;
 			const provider = new ethers.providers.JsonRpcProvider();
-	
+
 			await zap(provider, inputToken, outputToken, amountIn, minOut, slippage);
-	
+
 			expect(mockZap).toHaveBeenCalledWith(
 				'0xInputToken',
 				'0xOutputToken',
