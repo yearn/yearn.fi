@@ -19,12 +19,30 @@ export async function	simulateZapForMinOut(
 	outputToken: TAddress,
 	amountIn: BigNumber
 ): Promise<{shouldMint: boolean, minOut: BigNumber}> {
+	console.log('simulateZapForMinOut', {inputToken, outputToken, amountIn});
+	console.log('simulateZapForMinOut', {inputToken, outputToken, amountIn});
+	console.log('simulateZapForMinOut', {inputToken, outputToken, amountIn});
+	console.log('simulateZapForMinOut', {inputToken, outputToken, amountIn});
+	console.log('simulateZapForMinOut', {inputToken, outputToken, amountIn});
 	if (amountIn.isZero()) {
 		return ({shouldMint: false, minOut: BN(0)});
 	}
+
 	try {
 		const signer = provider.getSigner();
 		const contract = new ethers.Contract(LOCAL_ZAP_YEARN_YBAL_ADDRESS, ZAP_ABI, signer);
+
+		console.log(contract.red);
+		console.log(contract.red);
+		console.log(contract.red);
+		console.log(contract.red);
+		console.log(contract.red);
+		console.log(contract.red);
+		console.log(contract.red);
+		console.log(contract.red);
+		console.log(contract.red);
+		console.log(contract.red);
+		console.log(contract.red);
 
 		// Static Call - simulating output
 		const expectedAmountMint = await contract.callStatic.queryZapOutput(
