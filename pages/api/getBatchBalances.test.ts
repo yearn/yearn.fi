@@ -1,3 +1,5 @@
+import {describe, expect, it} from 'vitest';
+
 import {isArrayOfUseBalancesTokens} from './getBatchBalances';
 
 import type {TUseBalancesTokens} from '@common/hooks/useBalances';

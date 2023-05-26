@@ -1,8 +1,6 @@
 {
   "compilerOptions": {
-    "rootDirs": [
-      "."
-    ],
+    "rootDirs": ["."],
     "baseUrl": ".",
 	"paths": {
         "@common/*": ["apps/common/*"],
@@ -68,7 +66,6 @@
     "theme.config.js",
     ".eslintrc.js",
     ".next/types/**/*.ts",
-    "jest.config.js",
-    "worker/index.js"
-  ]
+    "vitest.config.ts",
+    "worker/index.js"]
 }
