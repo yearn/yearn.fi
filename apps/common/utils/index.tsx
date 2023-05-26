@@ -97,3 +97,11 @@ export async function hash(message: string): Promise<string> {
 	const hashHex = hashArray.map((b): string => b.toString(16).padStart(2, '0')).join(''); // convert bytes to hex string
 	return `0x${hashHex}`;
 }
+
+export function handleSettle<T>(data: PromiseSettledResult<unknown>, fallback: T): T {
+	if (data.status !== 'fulfilled') {
+		console.error(data.reason);
+		return fallback;
+	}
+	return data.value as T;
+}

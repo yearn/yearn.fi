@@ -5,27 +5,21 @@ import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {BAL_TOKEN_ADDRESS, BALWETH_TOKEN_ADDRESS, LPYBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, YBAL_BALANCER_POOL_ADDRESS, YBAL_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {BAL_TOKEN_ADDRESS, BALWETH_TOKEN_ADDRESS, LPYBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, YBAL_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import {formatUnits, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
-import STYBAL_ABI from '@yBal/utils/abi/styBal.abi';
-import YBAL_BALANCER_POOL_ABI from '@yBal/utils/abi/yBalBalancerPool.abi';
+import {defaultHoldingsProps, useHoldings} from '@yBal/contexts/useHoldingsHooks';
 
 import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
+import type {THoldings} from '@yBal/contexts/useHoldingsHooks';
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TYDaemonHarvests} from '@common/types/yearn';
 
 const LOCAL_ZAP_YEARN_YBAL_ADDRESS = toAddress('0x43cA9bAe8dF108684E5EAaA720C25e1b32B0A075');
 
-type THoldings = {
-	yBalSupply: BigNumber;
-	styBalSupply: BigNumber;
-	lpyBalSupply: BigNumber;
-	balYBalPeg: BigNumber;
-}
 type TYBalContext = {
 	styBalMegaBoost: number,
 	styBalAPY: number,
@@ -43,12 +37,7 @@ const	defaultProps = {
 	allowances: {},
 	slippage: 0.6,
 	set_slippage: (): void => undefined,
-	holdings: {
-		yBalSupply: Zero,
-		styBalSupply: Zero,
-		lpyBalSupply: Zero,
-		balYBalPeg: Zero
-	}
+	holdings: defaultHoldingsProps
 };
 
 /* 🔵 - Yearn Finance **********************************************************
@@ -59,6 +48,7 @@ export const YBalContextApp = ({children}: {children: ReactElement}): ReactEleme
 	const {provider, address, isActive} = useWeb3();
 	const {settings: baseAPISettings} = useSettings();
 	const [slippage, set_slippage] = useState<number>(0.6);
+	const holdings = useHoldings();
 
 	const	{data: styBalVault} = useSWR(
 		`${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/1/vaults/${STYBAL_TOKEN_ADDRESS}`,
@@ -75,30 +65,8 @@ export const YBalContextApp = ({children}: {children: ReactElement}): ReactEleme
 	/* 🔵 - Yearn Finance ******************************************************
 	** SWR hook to get the holdings data for the yBal ecosystem.
 	**************************************************************************/
-	const numbersFetchers = useCallback(async (): Promise<THoldings> => {
-		const currentProvider = provider || getProvider(1);
-		const ethcallProvider = await newEthCallProvider(currentProvider);
-		const yBalContract = new Contract(YBAL_TOKEN_ADDRESS, ERC20_ABI);
-		const lpyBalContract = new Contract(LPYBAL_TOKEN_ADDRESS, ERC20_ABI);
-		const styBalContract = new Contract(STYBAL_TOKEN_ADDRESS, STYBAL_ABI);
-		const yBalBalancerPoolContract = new Contract(YBAL_BALANCER_POOL_ADDRESS, YBAL_BALANCER_POOL_ABI);
-		const calls = [
-			yBalContract.totalSupply(),
-			styBalContract.totalAssets(),
-			lpyBalContract.totalSupply(),
-			yBalBalancerPoolContract.getRate()
-		];
-		const result = await ethcallProvider.tryAll(calls) as [BigNumber, BigNumber, BigNumber, BigNumber, BigNumber];
 
-		return ({
-			yBalSupply: result[1] || Zero,
-			styBalSupply: result[2] || Zero,
-			lpyBalSupply: result[3] || Zero,
-			balYBalPeg: result[4] || Zero
-		});
-	}, [provider]);
-
-	const {data: holdings} = useSWR('numbers', numbersFetchers, {shouldRetryOnError: false});
+	// const {data: holdings} = useSWR('numbers', numbersFetchers, {shouldRetryOnError: false});
 
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -151,7 +119,7 @@ export const YBalContextApp = ({children}: {children: ReactElement}): ReactEleme
 	}, [holdings]);
 
 	/* 🔵 - Yearn Finance ******************************************************
-	** Compute the styCRV APY based on the experimental APY and the mega boost.
+	** Compute the styBal APY based on the experimental APY and the mega boost.
 	**************************************************************************/
 	const	styBalAPY = useMemo((): number => {
 		return ((styBalVault?.apy?.net_apy || 0) * 100);

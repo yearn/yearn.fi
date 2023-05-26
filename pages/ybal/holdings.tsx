@@ -19,10 +19,17 @@ import type {NextRouter} from 'next/router';
 import type {ReactElement, ReactNode} from 'react';
 
 function	HeaderPosition(): ReactElement {
+	const {holdings} = useYBal();
 	const balanceOfStyBal = useBalance(STYBAL_TOKEN_ADDRESS);
 	const balanceOfLpyBal = useBalance(LPYBAL_TOKEN_ADDRESS);
 	const styBalPrice = useTokenPrice(STYBAL_TOKEN_ADDRESS);
 	const lpyBalPrice = useTokenPrice(LPYBAL_TOKEN_ADDRESS);
+
+	const	formatedYearnHas = useMemo((): ReactNode => (
+		holdings?.veBalBalance ?
+			formatAmount(formatToNormalizedValue(holdings.veBalBalance, 18), 0, 0)
+			: ''
+	), [holdings?.veBalBalance]);
 
 	const	formatedYouHave = useMemo((): ReactNode => (
 		formatCounterValueRaw(
@@ -40,7 +47,7 @@ function	HeaderPosition(): ReactElement {
 				<b className={'font-number text-4xl text-neutral-900 md:text-7xl'}>
 					<ValueAnimation
 						identifier={'veBalTreasury'}
-						value={'TODO'}
+						value={formatedYearnHas?.toString()}
 						suffix={'veBal'}
 						defaultValue={'0,00'}
 					/>
@@ -95,14 +102,27 @@ function	Holdings(): ReactElement {
 			<div className={'col-span-12 flex w-full flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4'}>
 				<div className={'w-full bg-neutral-100 p-6 md:w-[412px] md:min-w-[412px]'}>
 					<div className={'grid w-full gap-6 md:col-span-5'}>
+
 						<div>
 							<b
+								className={'font-number pb-2 text-3xl text-neutral-900'}>
+								{holdings?.treasury ? `${formatBigNumberOver10K(holdings?.treasury || 0)} ` : '- '}
+								<span className={'font-number text-base text-neutral-600 md:text-3xl md:text-neutral-900'}>{'veBal'}</span>
+							</b>
+							<p className={'text-lg text-neutral-500'}>{'Yearn Treasury'}</p>
+						</div>
+
+
+						<div>
+							<b
+								suppressHydrationWarning
 								className={'font-number pb-2 text-3xl text-neutral-900'}>
 								{holdings?.yBalSupply ? `${formatBigNumberOver10K(holdings?.yBalSupply || 0)} ` : '- '}
 								<span className={'font-number text-base text-neutral-600 md:text-3xl md:text-neutral-900'}>{'yBal'}</span>
 							</b>
 
 							<p
+								suppressHydrationWarning
 								className={'text-lg text-neutral-500'}>
 								{`(Price = $${(formatAmount(yBalPrice || 0))} | Peg = ${(
 									holdings?.balYBalPeg ? (formatPercent(
@@ -133,6 +153,7 @@ function	Holdings(): ReactElement {
 						<div className={'flex flex-row items-center justify-between'}>
 							<span className={'mr-auto inline font-normal text-neutral-400 md:hidden'}>{'APY: '}</span>
 							<b
+								suppressHydrationWarning
 								className={'font-number text-base text-neutral-900'}>
 								{styBalAPY ? `${formatPercent(styBalAPY)}*` : `${formatPercent(0)}`}
 							</b>
@@ -140,6 +161,7 @@ function	Holdings(): ReactElement {
 						<div className={'flex flex-row items-center justify-between'}>
 							<span className={'inline text-sm font-normal text-neutral-400 md:hidden'}>{'Total Assets: '}</span>
 							<p
+								suppressHydrationWarning
 								className={'font-number text-base text-neutral-900'}>
 								{holdings?.styBalSupply ? formatCounterValue(
 									formatToNormalizedValue(holdings.styBalSupply, 18),
@@ -150,6 +172,7 @@ function	Holdings(): ReactElement {
 						<div className={'flex flex-row items-center justify-between'}>
 							<span className={'inline text-sm font-normal text-neutral-400 md:hidden'}>{'yBal Deposits: '}</span>
 							<p
+								suppressHydrationWarning
 								className={'font-number text-base text-neutral-900'}>
 								{formatBigNumberOver10K(holdings?.styBalSupply || 0)}
 							</p>
@@ -158,10 +181,12 @@ function	Holdings(): ReactElement {
 							<span className={'inline text-sm font-normal text-neutral-400 md:hidden'}>{'My Balance: '}</span>
 							<div>
 								<p
+									suppressHydrationWarning
 									className={'font-number text-base text-neutral-900'}>
 									{formatNumberOver10K(balances[STYBAL_TOKEN_ADDRESS]?.normalized || 0)}
 								</p>
 								<p
+									suppressHydrationWarning
 									className={'font-number text-xs text-neutral-600'}>
 									{formatCounterValue(balanceOfStyBal.normalized, styBalPrice)}
 								</p>
@@ -179,6 +204,7 @@ function	Holdings(): ReactElement {
 						<div className={'flex flex-row items-center justify-between'}>
 							<span className={'mr-auto inline font-normal text-neutral-400 md:hidden'}>{'APY: '}</span>
 							<b
+								suppressHydrationWarning
 								className={'font-number text-base text-neutral-900'}>
 								{lpBalAPY ? `${(lpBalAPY || '').replace('APY', '')}` : `${formatPercent(0)}`}
 							</b>
@@ -186,6 +212,7 @@ function	Holdings(): ReactElement {
 						<div className={'flex flex-row items-center justify-between'}>
 							<span className={'inline text-sm font-normal text-neutral-400 md:hidden'}>{'Total Assets: '}</span>
 							<p
+								suppressHydrationWarning
 								className={'font-number text-base text-neutral-900'}>
 								{holdings?.lpyBalSupply ? formatCounterValue(
 									formatToNormalizedValue(holdings?.lpyBalSupply, 18),
@@ -196,6 +223,7 @@ function	Holdings(): ReactElement {
 						<div className={'flex flex-row items-center justify-between'}>
 							<span className={'inline text-sm font-normal text-neutral-400 md:hidden'}>{'yBal Deposits: '}</span>
 							<p
+								suppressHydrationWarning
 								className={'font-number text-base text-neutral-900'}>
 								{formatBigNumberOver10K(holdings?.lpyBalSupply || 0)}
 							</p>
@@ -204,10 +232,12 @@ function	Holdings(): ReactElement {
 							<span className={'inline text-sm font-normal text-neutral-400 md:hidden'}>{'My Balance: '}</span>
 							<div>
 								<p
+									suppressHydrationWarning
 									className={'font-number text-base text-neutral-900'}>
 									{formatNumberOver10K(balances[LPYBAL_TOKEN_ADDRESS]?.normalized || 0)}
 								</p>
 								<p
+									suppressHydrationWarning
 									className={'font-number text-xs text-neutral-600'}>
 									{formatCounterValue(
 										balanceOfLpyBal?.normalized,
@@ -220,10 +250,12 @@ function	Holdings(): ReactElement {
 
 					<div>
 						<p
+							suppressHydrationWarning
 							className={'font-number text-sm text-neutral-400 md:text-base'}>
 							{styBalAPY ? `*${formatPercent(styBalAPY)} APY: ` : `*${formatPercent(0)} APY: `}
 						</p>
 						<p
+							suppressHydrationWarning
 							className={'font-number text-sm text-neutral-400 md:text-base'}>
 							{`∙ ${styBalMegaBoost ? formatPercent(styBalMegaBoost * 100) : formatPercent(0)} Mega Boost`}
 						</p>
