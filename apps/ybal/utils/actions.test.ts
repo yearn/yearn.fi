@@ -10,15 +10,14 @@ vi.mock('ethers', async () => {
 	return {
 		ethers: {
 			...actual,
-			// providers: {
-			// 	JsonRpcProvider: vi.fn().mockImplementation(() => ({
-			// 		getSigner: vi.fn().mockReturnValue({
-			// 			getAddress: vi.fn().mockReturnValue('0xRecipient')
-			// 		})
-			// 	}))
-			// },
+			providers: {
+				Web3Provider: vi.fn().mockImplementation(() => ({
+					getSigner: vi.fn().mockReturnValue({
+						getAddress: vi.fn().mockReturnValue('0xRecipient')
+					})
+				}))
+			},
 			Contract: vi.fn().mockImplementation(() => ({
-				red: 'blue',
 				zap: vi.fn(),
 				callStatic: {
 					queryZapOutput: vi.fn()
