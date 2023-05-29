@@ -1,8 +1,8 @@
 import React, {Fragment, useEffect, useMemo, useState} from 'react';
 import {useRouter} from 'next/router';
-import useSWR from 'swr';
 import {Listbox, Transition} from '@headlessui/react';
 import {useIsMounted} from '@react-hookz/web';
+import * as Sentry from '@sentry/nextjs';
 import {VaultDetailsAbout} from '@vaults/components/details/tabs/VaultDetailsAbout';
 import {VaultDetailsHistorical} from '@vaults/components/details/tabs/VaultDetailsHistorical';
 import {VaultDetailsStrategies} from '@vaults/components/details/tabs/VaultDetailsStrategies';
@@ -12,15 +12,16 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import IconAddToMetamask from '@yearn-finance/web-lib/icons/IconAddToMetamask';
 import IconLinkOut from '@yearn-finance/web-lib/icons/IconLinkOut';
-import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
+import {useFetch} from '@common/hooks/useFetch';
 import IconChevron from '@common/icons/IconChevron';
+import {yDaemonVaultHarvestsSchema} from '@common/schemas/yDaemonVaultsSchemas';
+import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 
 import type {ReactElement} from 'react';
-import type {SWRResponse} from 'swr';
 import type {TMetamaskInjectedProvider} from '@yearn-finance/web-lib/types';
-import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault, TYDaemonVaultHarvestsSchema} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TSettingsForNetwork} from '@common/types/yearn';
 
 type TTabsOptions = {
@@ -38,7 +39,7 @@ type TExplorerLinkProps = {
 	currentVaultAddress: string;
 }
 
-function	Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactElement {
+function Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactElement {
 	const router = useRouter();
 
 	const tabs: TTabsOptions[] = useMemo((): TTabsOptions[] => [
@@ -146,10 +147,11 @@ function ExplorerLink({explorerBaseURI, currentVaultAddress}: TExplorerLinkProps
 	);
 }
 
-function	VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+function VaultDetailsTabsWrapper({currentVault}: { currentVault: TYDaemonVault }): ReactElement {
 	const {provider} = useWeb3();
 	const {safeChainID} = useChainID();
-	const {settings: baseAPISettings, networks} = useSettings();
+	const {networks} = useSettings();
+	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: safeChainID});
 	const [selectedAboutTabIndex, set_selectedAboutTabIndex] = useState(0);
 	const networkSettings = useMemo((): TSettingsForNetwork => networks[safeChainID], [networks, safeChainID]);
 
@@ -165,20 +167,20 @@ function	VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}):
 				}
 			});
 		} catch (error) {
+			Sentry.captureException(error);
 			// Token has not been added to MetaMask.
 		}
 	}
 
-	const	{data: yDaemonHarvestsData} = useSWR(
-		`${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/${safeChainID}/vaults/harvests/${currentVault.address}`,
-		baseFetcher,
-		{revalidateOnFocus: false}
-	) as SWRResponse;
+	const {data: yDaemonHarvestsData} = useFetch<TYDaemonVaultHarvestsSchema>({
+		endpoint: `${yDaemonBaseUri}/vaults/harvests/${currentVault.address}`,
+		schema: yDaemonVaultHarvestsSchema
+	});
 
-	const	harvestData = useMemo((): {name: string; value: number}[] => {
-		const	_yDaemonHarvestsData = [...(yDaemonHarvestsData || [])].reverse();
+	const harvestData = useMemo((): { name: string; value: number }[] => {
+		const _yDaemonHarvestsData = [...(yDaemonHarvestsData || [])].reverse();
 		return (
-			_yDaemonHarvestsData?.map((harvest): {name: string; value: number} => ({
+			_yDaemonHarvestsData.map((harvest): { name: string; value: number } => ({
 				name: formatDate(Number(harvest.timestamp) * 1000),
 				value: formatToNormalizedValue(formatBN(harvest.profit).sub(formatBN(harvest.loss)), currentVault.decimals)
 			}))

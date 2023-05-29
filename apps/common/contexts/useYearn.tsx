@@ -1,6 +1,5 @@
 import React, {createContext, memo, useContext, useMemo} from 'react';
 import {Solver} from '@vaults/contexts/useSolver';
-import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {useLocalStorage} from '@yearn-finance/web-lib/hooks/useLocalStorage';
@@ -11,6 +10,7 @@ import {yDaemonPricesSchema} from '@common/schemas/yDaemonPricesSchema';
 import {yDaemonTokensSchema} from '@common/schemas/yDaemonTokensSchema';
 import {yDaemonVaultsSchema} from '@common/schemas/yDaemonVaultsSchemas';
 import {DEFAULT_SLIPPAGE} from '@common/utils/constants';
+import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 
 import type {ReactElement} from 'react';
 import type {KeyedMutator} from 'swr';
@@ -58,25 +58,23 @@ const YearnContext = createContext<TYearnContext>({
 
 export const YearnContextApp = memo(function YearnContextApp({children}: { children: ReactElement }): ReactElement {
 	const {safeChainID} = useChainID();
-	const {settings: baseAPISettings} = useSettings();
+	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: safeChainID});
 	const {address, currentPartner} = useWeb3();
 	const [zapSlippage, set_zapSlippage] = useLocalStorage<number>('yearn.finance/zap-slippage', DEFAULT_SLIPPAGE);
 	const [zapProvider, set_zapProvider] = useLocalStorage<Solver>('yearn.finance/zap-provider', Solver.COWSWAP);
 
-	const YDAEMON_BASE_URI = `${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/${safeChainID}`;
-
 	const {data: prices} = useFetch<TYDaemonPrices>({
-		endpoint: `${YDAEMON_BASE_URI}/prices/all`,
+		endpoint: `${yDaemonBaseUri}/prices/all`,
 		schema: yDaemonPricesSchema
 	});
 
 	const {data: tokens} = useFetch<TYDaemonTokens>({
-		endpoint: `${YDAEMON_BASE_URI}/tokens/all`,
+		endpoint: `${yDaemonBaseUri}/tokens/all`,
 		schema: yDaemonTokensSchema
 	});
 
 	const {data: vaults, isLoading: isLoadingVaultList, mutate: mutateVaultList} = useFetch<TYDaemonVaults>({
-		endpoint: `${YDAEMON_BASE_URI}/vaults/all?${new URLSearchParams({
+		endpoint: `${yDaemonBaseUri}/vaults/all?${new URLSearchParams({
 			hideAlways: 'true',
 			orderBy: 'apy.net_apy',
 			orderDirection: 'desc',
@@ -88,17 +86,17 @@ export const YearnContextApp = memo(function YearnContextApp({children}: { child
 	});
 
 	const {data: vaultsMigrations} = useFetch<TYDaemonVaults>({
-		endpoint: `${YDAEMON_BASE_URI}/vaults/all?${new URLSearchParams({migratable: 'nodust'})}`,
+		endpoint: `${yDaemonBaseUri}/vaults/all?${new URLSearchParams({migratable: 'nodust'})}`,
 		schema: yDaemonVaultsSchema
 	});
 
 	const {data: vaultsRetired} = useFetch<TYDaemonVaults>({
-		endpoint: `${YDAEMON_BASE_URI}/vaults/retired`,
+		endpoint: `${yDaemonBaseUri}/vaults/retired`,
 		schema: yDaemonVaultsSchema
 	});
 
 	const {data: earned} = useFetch<TYDaemonEarned>({
-		endpoint: address ? `${YDAEMON_BASE_URI}/earned/${address}` : null,
+		endpoint: address ? `${yDaemonBaseUri}/earned/${address}` : null,
 		schema: yDaemonEarnedSchema
 	});
 

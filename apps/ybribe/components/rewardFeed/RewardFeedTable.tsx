@@ -1,9 +1,9 @@
 import React, {useState} from 'react';
 import ReactPaginate from 'react-paginate';
-import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useFetch} from '@common/hooks/useFetch';
 import IconChevron from '@common/icons/IconChevron';
 import {yDaemonGaugeRewardsFeedSchema} from '@common/schemas/yDaemonGaugeRewardsFeedSchema';
+import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 import {GaugeListEmpty} from '@yBribe/components/bribe/GaugeListEmpty';
 import {RewardFeedTableRow} from '@yBribe/components/rewardFeed/RewardFeedTableRow';
 
@@ -11,13 +11,11 @@ import type {ReactElement, ReactNode} from 'react';
 import type {TYDaemonGaugeRewardsFeed} from '@common/schemas/yDaemonGaugeRewardsFeedSchema';
 
 export function RewardFeedTable(): ReactElement | null {
-	const {settings: baseAPISettings} = useSettings();
+	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: 1});
 	const [itemOffset, set_itemOffset] = useState(0);
 
-	const endpoint = `${baseAPISettings.yDaemonBaseURI}/1/bribes/newRewardFeed`;
-
 	const {isSuccess, data} = useFetch<TYDaemonGaugeRewardsFeed>({
-		endpoint,
+		endpoint: `${yDaemonBaseUri}/bribes/newRewardFeed`,
 		schema: yDaemonGaugeRewardsFeedSchema
 	});
 

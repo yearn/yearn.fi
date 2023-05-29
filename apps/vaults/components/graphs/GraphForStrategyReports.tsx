@@ -1,17 +1,16 @@
 import React, {Fragment, useMemo} from 'react';
 import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
-import useSWR from 'swr';
-import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
+import {yDaemonReportsSchema} from '@vaults/schemas/reportsSchema';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
+import {useFetch} from '@common/hooks/useFetch';
+import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 
 import type {ReactElement} from 'react';
-import type {SWRResponse} from 'swr';
 import type {TYDaemonVaultStrategy} from '@common/schemas/yDaemonVaultsSchemas';
-import type {TYDaemonReport} from '@vaults/schemas/reportsSchema';
+import type {TYDaemonReport, TYDaemonReports} from '@vaults/schemas/reportsSchema';
 
 export type TGraphForStrategyReportsProps = {
 	strategy: TYDaemonVaultStrategy,
@@ -22,13 +21,13 @@ export type TGraphForStrategyReportsProps = {
 
 function	GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height = 127}: TGraphForStrategyReportsProps): ReactElement {
 	const {safeChainID} = useChainID();
-	const {settings: baseAPISettings} = useSettings();
-	const {data: reports} = useSWR(
-		`${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/${safeChainID}/reports/${strategy.address}`,
-		baseFetcher,
-		{revalidateOnFocus: false}
-	) as SWRResponse;
+	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: safeChainID});
 
+	const {data: reports} = useFetch<TYDaemonReports>({
+		endpoint: `${yDaemonBaseUri}/reports/${strategy.address}`,
+		schema: yDaemonReportsSchema
+	});
+	
 	const	strategyData = useMemo((): {name: number; value: number, gain: string, loss: string}[] => {
 		const	_reports = [...(reports || [])];
 		const reportsForGraph = (
