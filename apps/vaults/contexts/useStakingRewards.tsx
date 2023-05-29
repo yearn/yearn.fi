@@ -53,7 +53,7 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 	const isChainSupported = [10].includes(chainID);
 
 	const stakingRewardsFetcher = useCallback(async (): Promise<TStakingRewards[]> => {
-		const currentProvider = getProvider(chainID);
+		const currentProvider = provider || getProvider(chainID);
 		const ethcallProvider = await newEthCallProvider(currentProvider);
 
 		const stakingRewardsRegistryContract = new Contract(STAKING_REWARDS_REGISTRY_ADDRESS, STAKING_REWARDS_REGISTRY_ABI);
@@ -88,14 +88,14 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 			});
 		});
 		return Promise.all(stakingRewardsPromises);
-	}, [chainID]);
+	}, [chainID, provider]);
 	const {data: stakingRewards, mutate: refreshStakingRewards, isLoading: isLoadingStakingRewards} = useSWR(isChainSupported ? 'stakingRewards' : null, stakingRewardsFetcher, {shouldRetryOnError: false});
 
 	const positionsFetcher = useCallback(async (): Promise<TStakePosition[]> => {
 		if (!stakingRewards || !isActive|| !userAddress) {
 			return [];
 		}
-		const currentProvider = getProvider(chainID);
+		const currentProvider = provider || getProvider(chainID);
 		const ethcallProvider = await newEthCallProvider(currentProvider);
 
 		const	calls = [];
@@ -113,9 +113,9 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 			const reward = results[resultIndex++];
 			positionPromises.push({address, stake, reward});
 		}
-		
+
 		return positionPromises;
-	}, [stakingRewards, isActive, userAddress, chainID]);
+	}, [stakingRewards, isActive, userAddress, chainID, provider]);
 	const {data: positions, mutate: refreshPositions, isLoading: isLoadingPositions} = useSWR(isActive && provider && stakingRewards ? 'stakePositions' : null, positionsFetcher, {shouldRetryOnError: false});
 
 	const positionsMap = useMemo((): TDict<TStakePosition | undefined> => {
