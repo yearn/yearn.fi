@@ -127,7 +127,8 @@ function Holdings(): ReactElement {
 
 			<HeaderPosition />
 
-			<div className={'col-span-12 flex w-full flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4'}>
+			<ZapAndStats />
+			<div className={'col-span-12 hidden w-full flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4'}>
 				<div className={'w-full bg-neutral-100 p-6 md:w-[412px] md:min-w-[412px]'}>
 					<div className={'grid w-full gap-6 md:col-span-5'}>
 						<div>
