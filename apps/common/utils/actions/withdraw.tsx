@@ -1,6 +1,5 @@
 import {getEthZapperContract} from '@vaults/utils';
 import {prepareWriteContract} from '@wagmi/core';
-import PARTNER_VAULT_ABI from '@yearn-finance/web-lib/utils/abi/partner.vault.abi';
 import VAULT_ABI from '@yearn-finance/web-lib/utils/abi/vault.abi';
 import ZAP_ETH_TO_YVETH_ABI from '@yearn-finance/web-lib/utils/abi/zapEthToYvEth.abi';
 import ZAP_FTM_TO_YVFTM_ABI from '@yearn-finance/web-lib/utils/abi/zapFtmToYvFTM.abi';
@@ -11,65 +10,45 @@ import type {Connector} from 'wagmi';
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 
-export async function	deposit(
+export async function withdrawShares(
 	connector: Connector,
 	vaultAddress: TAddress,
-	amount: bigint
+	maxShares: bigint
 ): Promise<TTxResponse> {
 	const wagmiProvider = await toWagmiProvider(connector);
 	const config = await prepareWriteContract({
 		...wagmiProvider,
 		address: toWagmiAddress(vaultAddress),
 		abi: VAULT_ABI,
-		functionName: 'deposit',
-		args: [amount]
+		functionName: 'withdraw',
+		args: [maxShares]
 	});
 	return await writeContract(config);
 }
 
-export async function	depositETH(
+export async function withdrawETH(
 	connector: Connector,
 	amount: bigint
 ): Promise<TTxResponse> {
 	const wagmiProvider = await toWagmiProvider(connector);
+	const contractAddress = getEthZapperContract(wagmiProvider.chainId);
+
 	if (wagmiProvider.chainId === 250) {
 		const config = await prepareWriteContract({
 			...wagmiProvider,
-			address: toWagmiAddress(getEthZapperContract(wagmiProvider.chainId)),
+			address: toWagmiAddress(contractAddress),
 			abi: ZAP_FTM_TO_YVFTM_ABI,
-			functionName: 'deposit',
-			value: amount
+			functionName: 'withdraw',
+			args: [amount]
 		});
-		// When using value, the PrepareWriteContractResult type looks broken. Bypass error.
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		return await writeContract(config as any);
+		return await writeContract(config);
 	}
 	const config = await prepareWriteContract({
 		...wagmiProvider,
-		address: toWagmiAddress(getEthZapperContract(wagmiProvider.chainId)),
+		address: toWagmiAddress(contractAddress),
 		abi: ZAP_ETH_TO_YVETH_ABI,
-		functionName: 'deposit',
-		value: amount
-	});
-	// When using value, the PrepareWriteContractResult type looks broken. Bypass error.
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	return await writeContract(config as any);
-}
-
-export async function	depositViaPartner(
-	connector: Connector,
-	partnerContractAddress: TAddress,
-	partnerAddress: TAddress,
-	vaultAddress: TAddress,
-	amount: bigint
-): Promise<TTxResponse> {
-	const wagmiProvider = await toWagmiProvider(connector);
-	const config = await prepareWriteContract({
-		...wagmiProvider,
-		address: toWagmiAddress(partnerContractAddress),
-		abi: PARTNER_VAULT_ABI,
-		functionName: 'deposit',
-		args: [toWagmiAddress(vaultAddress), toWagmiAddress(partnerAddress || process.env.PARTNER_ID_ADDRESS), amount]
+		functionName: 'withdraw',
+		args: [amount]
 	});
 	return await writeContract(config);
 }
