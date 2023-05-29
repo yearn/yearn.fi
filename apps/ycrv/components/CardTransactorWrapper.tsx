@@ -17,9 +17,9 @@ import {useYearn} from '@common/contexts/useYearn';
 import {getAmountWithSlippage, getVaultAPY} from '@common/utils';
 import {approveERC20} from '@common/utils/actions/approveToken';
 import {deposit} from '@common/utils/actions/deposit';
+import {LEGACY_OPTIONS_FROM, LEGACY_OPTIONS_TO} from '@yCRV/constants/tokens';
 import {useYCRV} from '@yCRV/contexts/useYCRV';
 import {zap} from '@yCRV/utils/actions';
-import {LEGACY_OPTIONS_FROM, LEGACY_OPTIONS_TO} from '@yCRV/utils/zapOptions';
 
 import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
