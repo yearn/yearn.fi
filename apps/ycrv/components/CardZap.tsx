@@ -1,9 +1,8 @@
 import React, {useMemo} from 'react';
-import Balancer from 'react-wrap-balancer';
-import {motion} from 'framer-motion';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {CRV_TOKEN_ADDRESS, LPYCRV_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatBN, formatToNormalizedValue, toNormalizedBN, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
@@ -14,7 +13,6 @@ import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import ArrowDown from '@common/icons/ArrowDown';
 import CardTransactorContextApp, {useCardTransactor} from '@yCRV/components/CardTransactorWrapper';
-import {CardVariants, CardVariantsInner} from '@yCRV/utils/animations';
 import {ZAP_OPTIONS_FROM, ZAP_OPTIONS_TO} from '@yCRV/utils/zapOptions';
 
 import type {ChangeEvent, ReactElement} from 'react';
@@ -115,18 +113,6 @@ function	CardZap(): ReactElement {
 
 	return (
 		<>
-			<div aria-label={'card title'} className={'flex flex-col pb-8'}>
-				<Balancer>
-					<h2 className={'text-3xl font-bold'}>{'Supercharge your'}</h2>
-					<h2 className={'text-3xl font-bold'}>{'yield with yCRV'}</h2>
-				</Balancer>
-			</div>
-			<div aria-label={'card description'} className={'w-full pb-10 md:w-[96%]'}>
-				<Balancer>
-					<p className={'text-neutral-600'}>{'Swap any token within the yCRV ecosystem for any other. Maybe you want to swap for a higher yield, or maybe you just like swapping. It’s ok, we don’t judge.'}</p>
-				</Balancer>
-			</div>
-
 			<div className={'grid grid-cols-2 gap-4'}>
 				<label className={'relative z-20 flex flex-col space-y-1'}>
 					<p className={'text-base text-neutral-600'}>{'Swap from'}</p>
@@ -244,38 +230,20 @@ function	CardZap(): ReactElement {
 	);
 }
 
-function	CardZapWrapper(): ReactElement {
-	const {txStatusApprove, txStatusZap} = useCardTransactor();
-
-	return (
-		<div>
-			<motion.div
-				initial={'rest'}
-				whileHover={'hover'}
-				animate={'rest'}
-				variants={CardVariants as never}
-				className={'hidden h-[733px] w-[592px] items-center justify-end lg:flex'}
-				custom={!txStatusApprove.none || !txStatusZap.none}>
-				<motion.div
-					variants={CardVariantsInner as never}
-					custom={!txStatusApprove.none || !txStatusZap.none}
-					className={'h-[701px] w-[560px] bg-neutral-200 p-12'}>
-					<CardZap />
-				</motion.div>
-			</motion.div>
-			<div className={'w-full bg-neutral-200 p-4 md:p-8 lg:hidden'}>
-				<CardZap />
-			</div>
-		</div>
-	);
-}
-
-function	WithCardTransactor(): ReactElement {
+function	WithCardTransactor({className}: {className: string}): ReactElement {
 	return (
 		<CardTransactorContextApp
 			defaultOptionFrom={ZAP_OPTIONS_FROM[0]}
 			defaultOptionTo={ZAP_OPTIONS_TO[0]}>
-			<CardZapWrapper />
+			<div className={cl('mx-auto w-full bg-neutral-200 p-4 md:p-6', className)}>
+				<div className={'flex flex-col pb-2'}>
+					<h2 className={'text-2xl font-bold'}>{'Supercharge your yield with yCRV'}</h2>
+				</div>
+				<div className={'w-full pb-8'}>
+					<p className={'text-sm text-neutral-600'}>{'Swap any token within the yCRV ecosystem for any other. Maybe you want to swap for a higher yield, or maybe you just like swapping. It’s ok, we don’t judge.'}</p>
+				</div>
+				<CardZap />
+			</div>
 		</CardTransactorContextApp>
 	);
 }

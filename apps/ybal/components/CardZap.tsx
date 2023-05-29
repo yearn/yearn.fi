@@ -1,8 +1,8 @@
 import React, {useMemo} from 'react';
-import Balancer from 'react-wrap-balancer';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {LPYBAL_TOKEN_ADDRESS, YBAL_BALANCER_POOL_ADDRESS, YBAL_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatBN, formatToNormalizedValue, toNormalizedBN, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
@@ -92,21 +92,9 @@ function	CardZap(): ReactElement {
 
 	return (
 		<>
-			<div aria-label={'card title'} className={'flex flex-col pb-8'}>
-				<Balancer>
-					<h2 className={'text-3xl font-bold'}>{'Supercharge your'}</h2>
-					<h2 className={'text-3xl font-bold'}>{'yield with yBal'}</h2>
-				</Balancer>
-			</div>
-			<div aria-label={'card description'} className={'w-full pb-10 md:w-[96%]'}>
-				<Balancer>
-					<p className={'text-neutral-600'}>{'Swap any token within the yBal ecosystem for any other. Maybe you want to swap for a higher yield, or maybe you just like swapping. It’s ok, we don’t judge.'}</p>
-				</Balancer>
-			</div>
-
 			<div className={'grid grid-cols-2 gap-4'}>
 				<label className={'relative z-20 flex flex-col space-y-1'}>
-					<p className={'text-base text-neutral-600'}>{'Swap from'}</p>
+					<p className={'text-ba text-neutral-600'}>{'Swap from'}</p>
 					<Dropdown
 						defaultOption={ZAP_OPTIONS_FROM[0]}
 						options={ZAP_OPTIONS_FROM}
@@ -127,7 +115,7 @@ function	CardZap(): ReactElement {
 				<div className={'flex flex-col space-y-1'}>
 					<label
 						htmlFor={'amount'}
-						className={'text-base text-neutral-600'}>
+						className={'text-ba text-neutral-600'}>
 						{'Amount'}
 					</label>
 					<div className={'flex h-10 items-center bg-neutral-100 p-2'}>
@@ -151,7 +139,7 @@ function	CardZap(): ReactElement {
 							</button>
 						</div>
 					</div>
-					<p className={'pl-2 text-xs font-normal text-neutral-600'}>
+					<p suppressHydrationWarning className={'pl-2 text-xs font-normal text-neutral-600'}>
 						{formatCounterValue(
 							amount?.normalized || 0,
 							toAddress(selectedOptionFrom.value) === YBAL_TOKEN_ADDRESS
@@ -166,7 +154,7 @@ function	CardZap(): ReactElement {
 				</div>
 			</div>
 
-			<div className={'mt-2 mb-4 hidden grid-cols-2 gap-4 md:grid lg:mt-8 lg:mb-10'}>
+			<div className={'mt-2 mb-4 hidden grid-cols-2 gap-4 md:grid'}>
 				<div className={'flex items-center justify-center'}>
 					<ArrowDown />
 				</div>
@@ -177,7 +165,7 @@ function	CardZap(): ReactElement {
 
 			<div className={'mt-4 mb-8 grid grid-cols-2 gap-4 md:mt-0'}>
 				<label className={'relative z-10 flex flex-col space-y-1'}>
-					<p className={'text-base text-neutral-600'}>{'Swap to'}</p>
+					<p className={'text-ba text-neutral-600'}>{'Swap to'}</p>
 					<Dropdown
 						defaultOption={possibleTo[0]}
 						options={possibleTo}
@@ -189,15 +177,15 @@ function	CardZap(): ReactElement {
 				</label>
 				<div className={'flex flex-col space-y-1'}>
 					<div>
-						<p className={'hidden text-base text-neutral-600 md:block'}>{'You will receive minimum'}</p>
-						<p className={'block text-base text-neutral-600 md:hidden'}>{'You will receive min'}</p>
+						<p className={'text-ba hidden text-neutral-600 md:block'}>{'You will receive minimum'}</p>
+						<p className={'text-ba block text-neutral-600 md:hidden'}>{'You will receive min'}</p>
 					</div>
 					<div className={'flex h-10 items-center bg-neutral-300 p-2'}>
 						<b className={'overflow-x-scroll scrollbar-none'}>
 							{expectedOutWithSlippage}
 						</b>
 					</div>
-					<p className={'pl-2 text-xs font-normal text-neutral-600'}>
+					<p suppressHydrationWarning className={'pl-2 text-xs font-normal text-neutral-600'}>
 						{formatCounterValue(
 							expectedOutWithSlippage,
 							toAddress(selectedOptionTo.value) === YBAL_TOKEN_ADDRESS
@@ -213,28 +201,28 @@ function	CardZap(): ReactElement {
 			</div>
 
 			<div aria-label={'card actions'}>
-				<div className={'mb-3'}>
-					{renderButton()}
-				</div>
+				{renderButton()}
 			</div>
 		</>
 	);
 }
 
-function	CardZapWrapper(): ReactElement {
-	return (
-		<div className={'mx-auto w-full max-w-2xl bg-neutral-200 p-4 md:p-8'}>
-			<CardZap />
-		</div>
-	);
-}
-
-function	WithCardTransactor(): ReactElement {
+function	WithCardTransactor({className}: {className: string}): ReactElement {
 	return (
 		<CardTransactorContextApp
 			defaultOptionFrom={ZAP_OPTIONS_FROM[0]}
 			defaultOptionTo={ZAP_OPTIONS_TO[0]}>
-			<CardZapWrapper />
+			<div className={cl('mx-auto w-full bg-neutral-200 p-4 md:p-6', className)}>
+				<div className={'flex flex-col pb-2'}>
+					<h2 className={'text-2xl font-bold'}>{'Supercharge your yield with yBal'}</h2>
+				</div>
+				<div className={'w-full pb-8'}>
+					<p className={'text-sm text-neutral-600'}>
+						{'Swap any token within the yBal ecosystem for any other. Maybe you want to swap for a higher yield, or maybe you just like swapping. It’s ok, we don’t judge.'}
+					</p>
+				</div>
+				<CardZap />
+			</div>
 		</CardTransactorContextApp>
 	);
 }
