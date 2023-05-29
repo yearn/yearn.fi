@@ -1,17 +1,16 @@
 import React, {createContext, memo, useCallback, useContext, useMemo} from 'react';
 import {useUI} from '@yearn-finance/web-lib/contexts/useUI';
-import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {useClientEffect} from '@yearn-finance/web-lib/hooks/useClientEffect';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {BAL_TOKEN_ADDRESS, BALWETH_TOKEN_ADDRESS, CRV_TOKEN_ADDRESS, CVXCRV_TOKEN_ADDRESS, ETH_TOKEN_ADDRESS, LPYBAL_TOKEN_ADDRESS, LPYCRV_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, YBAL_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS, YVBOOST_TOKEN_ADDRESS, YVECRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {getProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import {useYearn} from '@common/contexts/useYearn';
 import {useBalances} from '@common/hooks/useBalances';
 
 import type {ReactElement} from 'react';
-import type {TBalanceData, TUseBalancesTokens} from '@yearn-finance/web-lib/hooks/types';
 import type {TDict} from '@yearn-finance/web-lib/types';
+import type {TBalanceData} from '@yearn-finance/web-lib/types/hooks';
+import type {TUseBalancesTokens} from '@common/hooks/useBalances';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
 export type	TWalletContext = {
@@ -37,7 +36,6 @@ const	defaultProps = {
 ******************************************************************************/
 const	WalletContext = createContext<TWalletContext>(defaultProps);
 export const WalletContextApp = memo(function WalletContextApp({children}: {children: ReactElement}): ReactElement {
-	const	{provider} = useWeb3();
 	const	{safeChainID} = useChainID();
 	const	{vaults, vaultsMigrations, vaultsRetired, isLoadingVaultList, prices} = useYearn();
 	const	{onLoadStart, onLoadDone} = useUI();
@@ -109,7 +107,6 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 
 	// Fetch the balances
 	const	{data: balances, update, updateSome, nonce, isLoading} = useBalances({
-		provider: provider || getProvider(1),
 		tokens: [...availableTokens, ...migratableTokens, ...retiredTokens],
 		prices
 	});

@@ -1,17 +1,16 @@
-import {ethers} from 'ethers';
 import {request} from 'graphql-request';
+import {formatUnits, parseUnits} from 'viem';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {LPYCRV_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YVBOOST_TOKEN_ADDRESS, YVECRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 
-import type {BigNumber} from 'ethers';
 import type {GraphQLResponse} from 'graphql-request/build/esm/types';
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
-export function	max(input: BigNumber, balance: BigNumber): BigNumber {
-	if (input.gt(balance)) {
+export function	max(input: bigint, balance: bigint): bigint {
+	if (input > balance) {
 		return balance;
 	}
 	return input;
@@ -49,14 +48,14 @@ export function getVaultRawAPY(vaults: TDict<TYDaemonVault | undefined>, vaultAd
 	return 0;
 }
 
-export function getAmountWithSlippage(from: string, to: string, value: BigNumber, slippage: number): number {
+export function getAmountWithSlippage(from: string, to: string, value: bigint, slippage: number): number {
 	const	hasLP = (toAddress(from) === LPYCRV_TOKEN_ADDRESS|| toAddress(to) === LPYCRV_TOKEN_ADDRESS);
 	const	isDirectDeposit = (toAddress(from) === YCRV_CURVE_POOL_ADDRESS || toAddress(to) === LPYCRV_TOKEN_ADDRESS);
 
 	if (hasLP && !isDirectDeposit) {
-		const minAmountStr = Number(ethers.utils.formatUnits(formatBN(value), 18));
-		const minAmountWithSlippage = ethers.utils.parseUnits((minAmountStr * (1 - (slippage / 100))).toFixed(18), 18);
-		return formatToNormalizedValue(formatBN(minAmountWithSlippage), 18);
+		const minAmountStr = Number(formatUnits(toBigInt(value), 18));
+		const minAmountWithSlippage = parseUnits(((minAmountStr * (1 - (slippage / 100))).toFixed(18) as `${number}`), 18);
+		return formatToNormalizedValue(toBigInt(minAmountWithSlippage), 18);
 	}
 	return formatToNormalizedValue(value, 18);
 }

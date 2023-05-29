@@ -7,16 +7,16 @@ import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import IconAddToMetamask from '@yearn-finance/web-lib/icons/IconAddToMetamask';
 import IconCross from '@yearn-finance/web-lib/icons/IconCross';
 import IconWallet from '@yearn-finance/web-lib/icons/IconWallet';
-import {toAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
-import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {toAddress, toWagmiAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
+import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import {useBalance} from '@common/hooks/useBalance';
 
 import type {ReactElement} from 'react';
-import type {TBalanceData} from '@yearn-finance/web-lib/hooks/types';
-import type {TAddress, TDict, TMetamaskInjectedProvider} from '@yearn-finance/web-lib/types';
+import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
+import type {TBalanceData} from '@yearn-finance/web-lib/types/hooks';
 
 type TBalanceReminderElement = {
 	address: TAddress,
@@ -31,18 +31,23 @@ function	TokenItem({element}: {element: TBalanceReminderElement}): ReactElement 
 	const	balance = useBalance(element.address);
 
 	async function addTokenToMetamask(address: string, symbol: string, decimals: number, image: string): Promise<void> {
+		if (!provider) {
+			return;
+		}
+
 		try {
-			await (provider as TMetamaskInjectedProvider).send('wallet_watchAsset', {
+			const walletClient = await provider.getWalletClient();
+			await walletClient.watchAsset({
 				type: 'ERC20',
 				options: {
-					address,
-					symbol,
-					decimals,
-					image
+					address: toWagmiAddress(address),
+					decimals: decimals,
+					symbol: symbol,
+					image: image
 				}
 			});
 		} catch (error) {
-			// Token has not been added to MetaMask.
+			console.warn(error);
 		}
 	}
 
@@ -92,7 +97,7 @@ export default function BalanceReminderPopover(): ReactElement {
 
 	const	nonNullBalances = useMemo((): TDict<TBalanceData> => {
 		const	nonNullBalances = Object.entries(balances).reduce((acc: TDict<TBalanceData>, [address, balance]): TDict<TBalanceData> => {
-			if (!formatBN(balance?.raw).isZero()) {
+			if (toBigInt(balance?.raw) > 0n) {
 				acc[toAddress(address)] = balance;
 			}
 			return acc;

@@ -1,58 +1,69 @@
-import {ethers} from 'ethers';
-import {Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {handleTx} from '@yearn-finance/web-lib/utils/web3/transaction';
+import {captureException} from '@sentry/nextjs';
+import {erc20ABI, prepareWriteContract, readContract, waitForTransaction, writeContract} from '@wagmi/core';
+import {toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
+import {MaxUint256} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {toWagmiProvider} from '@common/utils/toWagmiProvider';
 
+import type {BaseError} from 'viem';
+import type {Connector} from 'wagmi';
+import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 
 export async function	isApprovedERC20(
-	provider: ethers.providers.JsonRpcProvider,
-	tokenAddress: string,
-	spender: string,
-	amount = ethers.constants.MaxUint256
+	connector: Connector,
+	tokenAddress: TAddress,
+	spender: TAddress,
+	amount = MaxUint256
 ): Promise<boolean> {
-	const	signer = provider.getSigner();
-	const	address = await signer.getAddress();
-
-	try {
-		const	contract = new ethers.Contract(
-			tokenAddress,
-			['function allowance(address _owner, address _spender) public view returns (uint256)'],
-			provider
-		);
-		const value = await contract.allowance(address, spender);
-		return value.gte(amount);
-	} catch (error) {
-		return false;
-	}
+	const wagmiProvider = await toWagmiProvider(connector);
+	const result = await readContract({
+		...wagmiProvider,
+		abi: erc20ABI,
+		address: toWagmiAddress(tokenAddress),
+		functionName: 'allowance',
+		args: [toWagmiAddress(wagmiProvider.address), toWagmiAddress(spender)]
+	});
+	return (result || 0n) >= amount;
 }
 
 export async function	approvedERC20Amount(
-	provider: ethers.providers.JsonRpcProvider,
-	tokenAddress: string,
-	spender: string
-): Promise<ethers.BigNumber> {
-	const	signer = provider.getSigner();
-	const	address = await signer.getAddress();
-
-	try {
-		const	contract = new ethers.Contract(
-			tokenAddress,
-			['function allowance(address _owner, address _spender) public view returns (uint256)'],
-			provider
-		);
-		return await contract.allowance(address, spender);
-	} catch (error) {
-		return Zero;
-	}
+	connector: Connector,
+	tokenAddress: TAddress,
+	spender: TAddress
+): Promise<bigint> {
+	const wagmiProvider = await toWagmiProvider(connector);
+	const result = await readContract({
+		...wagmiProvider,
+		abi: erc20ABI,
+		address: toWagmiAddress(tokenAddress),
+		functionName: 'allowance',
+		args: [toWagmiAddress(wagmiProvider.address), toWagmiAddress(spender)]
+	});
+	return result || 0n;
 }
 
 export async function	approveERC20(
-	provider: ethers.providers.JsonRpcProvider | ethers.providers.JsonRpcProvider,
+	connector: Connector,
 	tokenAddress: string,
 	spender: string,
-	amount = ethers.constants.MaxUint256
+	amount = MaxUint256
 ): Promise<TTxResponse> {
-	const signer = provider.getSigner();
-	const contract = new ethers.Contract(tokenAddress, ['function approve(address _spender, uint256 _value) external'], signer);
-	return await handleTx(contract.approve(spender, amount));
+	try {
+		const wagmiProvider = await toWagmiProvider(connector);
+		const config = await prepareWriteContract({
+			...wagmiProvider,
+			address: toWagmiAddress(tokenAddress),
+			abi: erc20ABI,
+			functionName: 'approve',
+			args: [toWagmiAddress(spender), amount]
+		});
+		const {hash} = await writeContract(config.request);
+		const receipt = await waitForTransaction({chainId: wagmiProvider.chainId, hash});
+		return ({isSuccessful: receipt.status === 'success', receipt});
+	} catch (error) {
+		console.error(error);
+		const errorAsBaseError = error as BaseError;
+		captureException(errorAsBaseError);
+		return ({isSuccessful: false, error: errorAsBaseError || ''});
+	}
 }

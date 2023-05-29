@@ -12,7 +12,7 @@ import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {approvedERC20Amount, approveERC20} from '@common/utils/actions/approveToken';
 import {depositETH} from '@common/utils/actions/depositEth';
-import {withdrawETH} from '@common/utils/actions/withdrawEth';
+import {withdrawETH} from '@common/utils/actions/withdraw';
 
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
@@ -155,13 +155,10 @@ export function useSolverChainCoin(): TSolverContext {
 		}
 
 		new Transaction(provider, depositETH, txStatusSetter)
-			.populate(
-				safeChainID, //ChainID to get the correct zap contract
-				request.current.inputAmount //amount
-			)
+			.populate(request.current.inputAmount)
 			.onSuccess(onSuccess)
 			.perform();
-	}, [provider, safeChainID]);
+	}, [provider]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Trigger a withdraw web3 action using the ETH zap contract to take back
@@ -177,13 +174,10 @@ export function useSolverChainCoin(): TSolverContext {
 		}
 
 		new Transaction(provider, withdrawETH, txStatusSetter)
-			.populate(
-				safeChainID, //ChainID to get the correct zap contract
-				request.current.inputAmount //amount
-			)
+			.populate(request.current.inputAmount)
 			.onSuccess(onSuccess)
 			.perform();
-	}, [provider, safeChainID]);
+	}, [provider]);
 
 	return useMemo((): TSolverContext => ({
 		type: Solver.CHAIN_COIN,
