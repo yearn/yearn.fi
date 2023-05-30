@@ -296,12 +296,8 @@ export function useSolverPortals(): TSolverContext {
 			return;
 		}
 		assert(request.current, 'Request is not set');
-		assert(provider, 'Provider is not set');
-
-		//Asserting the basic request parameters
-		const {inputToken, inputAmount} = request.current;
-		assert(inputToken, 'Input token is not set');
-		assert(inputAmount, 'Input amount is not set');
+		assert(request.current.inputToken, 'Input token is not set');
+		assert(request.current.inputAmount, 'Input amount is not set');
 
 		try {
 			const approval = await getApproval({
@@ -320,7 +316,7 @@ export function useSolverPortals(): TSolverContext {
 
 			const isApproved = await isApprovedERC20(
 				provider,
-				toAddress(inputToken.value), //token to approve
+				toAddress(request.current.inputToken.value), //token to approve
 				toAddress(approval.context.spender), //contract to approve
 				amount
 			);

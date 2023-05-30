@@ -109,7 +109,6 @@ export function useSolverChainCoin(): TSolverContext {
 			return existingAllowances.current[key];
 		}
 
-		assert(provider, 'Provider not set');
 		assert(toAddress(request.current.outputToken.value) === ETH_TOKEN_ADDRESS, 'Out is not ETH');
 		const allowance = await approvedERC20Amount(
 			provider,
@@ -129,7 +128,6 @@ export function useSolverChainCoin(): TSolverContext {
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
-		assert(provider, 'Provider is not set');
 		assert(request?.current?.inputToken, 'Input token is not set');
 
 		const result = await approveERC20({
@@ -153,18 +151,13 @@ export function useSolverChainCoin(): TSolverContext {
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
-		assert(provider, 'Provider is not set');
 		assert(request.current, 'Request is not set');
-
-		//Asserting the basic & contextual request parameters
-		const {inputAmount} = request.current;
-		assert(inputAmount, 'Input amount is not set');
-		assert(inputAmount > 0n, 'Input amount is 0');
+		assert(request.current.inputAmount, 'Input amount is not set');
 
 		const result = await depositETH({
 			connector: provider,
 			contractAddress: toWagmiAddress(getEthZapperContract(safeChainID)),
-			amount: inputAmount,
+			amount: request.current.inputAmount,
 			statusHandler: txStatusSetter
 		});
 		if (result.isSuccessful) {
@@ -181,18 +174,13 @@ export function useSolverChainCoin(): TSolverContext {
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
-		assert(provider, 'Provider is not set');
 		assert(request.current, 'Request is not set');
-
-		//Asserting the basic & contextual request parameters
-		const {inputAmount} = request.current;
-		assert(inputAmount, 'Input amount is not set');
-		assert(inputAmount > 0n, 'Input amount is 0');
+		assert(request.current.inputAmount, 'Input amount is not set');
 
 		const result = await withdrawETH({
 			connector: provider,
 			contractAddress: toWagmiAddress(getEthZapperContract(safeChainID)),
-			amount: inputAmount,
+			amount: request.current.inputAmount,
 			statusHandler: txStatusSetter
 		});
 		if (result.isSuccessful) {

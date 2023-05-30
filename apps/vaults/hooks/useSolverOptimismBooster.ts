@@ -107,7 +107,6 @@ export function useSolverOptimismBooster(): TSolverContext {
 			return existingAllowances.current[key];
 		}
 
-		assert(provider, 'Provider is not defined');
 		const allowance = await approvedERC20Amount(
 			provider,
 			toAddress(request.current.inputToken.value), // Input token
@@ -127,7 +126,6 @@ export function useSolverOptimismBooster(): TSolverContext {
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
-		assert(provider, 'Provider is not set');
 		assert(request.current, 'Request is not set');
 		assert(request.current.inputToken, 'Input token is not set');
 
@@ -151,20 +149,15 @@ export function useSolverOptimismBooster(): TSolverContext {
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
-		assert(provider, 'Provider is not set');
 		assert(request.current, 'Request is not set');
-
-		//Asserting the basic request parameters
-		const {outputToken, inputAmount} = request.current;
-		assert(outputToken, 'Output token is not set');
-		assert(inputAmount, 'Input amount is not set');
-		assert(inputAmount > 0n, 'Input amount is 0');
+		assert(request.current.outputToken, 'Output token is not set');
+		assert(request.current.inputAmount, 'Input amount is not set');
 
 		const result = await depositAndStake({
 			connector: provider,
 			contractAddress: toWagmiAddress(STAKING_REWARDS_ZAP_ADDRESS),
-			vaultAddress: toWagmiAddress(outputToken.value),
-			amount: inputAmount,
+			vaultAddress: toWagmiAddress(request.current.outputToken.value),
+			amount: request.current.inputAmount,
 			statusHandler: txStatusSetter
 		});
 		if (result.isSuccessful) {
