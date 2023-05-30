@@ -245,14 +245,10 @@ export function useSolverWido(): TSolverContext {
 		if (isSolverDisabled[Solver.WIDO]) {
 			return;
 		}
-		assert(provider, 'Provider is not set');
 		assert(request.current, 'Request is not set');
 		assert(latestQuote.current, 'Quote is not set');
-
-		//Asserting the basic request parameters
-		const {inputToken, inputAmount} = request.current;
-		assert(inputToken, 'Input token is not set');
-		assert(inputAmount, 'Input amount is not set');
+		assert(request.current.inputToken, 'Input token is not set');
+		assert(request.current.inputAmount, 'Input amount is not set');
 
 		const widoSpender = await getWidoSpender({
 			chainId: safeChainID as ChainId,

@@ -107,7 +107,6 @@ export function useSolverInternalMigration(): TSolverContext {
 			return existingAllowances.current[key];
 		}
 
-		assert(provider, 'Provider is not defined');
 		const allowance = await approvedERC20Amount(
 			provider,
 			toAddress(request.current.inputToken.value), //Input token
@@ -128,19 +127,14 @@ export function useSolverInternalMigration(): TSolverContext {
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
-		assert(provider, 'Provider is not defined');
 		assert(request.current, 'Request is not set');
-
-		//Asserting the basic request parameters
-		const {inputToken, migrator} = request.current;
-		assert(request.current, 'Request is not defined');
-		assert(inputToken, 'Input token is not defined');
-		assert(migrator, 'Input token is not defined');
+		assert(request.current.inputToken, 'Input token is not defined');
+		assert(request.current.migrator, 'Input token is not defined');
 
 		const result = await approveERC20({
 			connector: provider,
-			contractAddress: toWagmiAddress(inputToken.value),
-			spenderAddress: toWagmiAddress(migrator),
+			contractAddress: toWagmiAddress(request.current.inputToken.value),
+			spenderAddress: toWagmiAddress(request.current.migrator),
 			amount: amount,
 			statusHandler: txStatusSetter
 		});
@@ -157,20 +151,16 @@ export function useSolverInternalMigration(): TSolverContext {
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
-		assert(provider, 'Provider is not set');
 		assert(request.current, 'Request is not set');
-
-		//Asserting the basic & contextual request parameters
-		const {inputToken, outputToken, migrator} = request.current;
-		assert(inputToken, 'Input token is not set');
-		assert(outputToken, 'Output token is not set');
-		assert(migrator, 'Migrator is not defined');
+		assert(request.current.inputToken, 'Input token is not set');
+		assert(request.current.outputToken, 'Output token is not set');
+		assert(request.current.migrator, 'Migrator is not defined');
 
 		const result = await migrateShares({
 			connector: provider,
-			contractAddress: toWagmiAddress(migrator),
-			fromVault: toWagmiAddress(inputToken.value),
-			toVault: toWagmiAddress(outputToken.value),
+			contractAddress: toWagmiAddress(request.current.migrator),
+			fromVault: toWagmiAddress(request.current.inputToken.value),
+			toVault: toWagmiAddress(request.current.outputToken.value),
 			statusHandler: txStatusSetter
 		});
 		if (result.isSuccessful) {

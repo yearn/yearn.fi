@@ -107,7 +107,6 @@ export function useSolverVanilla(): TSolverContext {
 			return existingAllowances.current[key];
 		}
 
-		assert(provider, 'Provider is not defined');
 		const allowance = await approvedERC20Amount(
 			provider,
 			toAddress(request.current.inputToken.value), //Input token
@@ -129,17 +128,13 @@ export function useSolverVanilla(): TSolverContext {
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
 		assert(request.current, 'Request is not set');
-		assert(provider, 'Provider is not set');
-
-		//Asserting the basic request parameters
-		const {inputToken, outputToken} = request.current;
-		assert(inputToken, 'Input token is not set');
-		assert(outputToken, 'Output token is not set');
+		assert(request.current.inputToken, 'Input token is not set');
+		assert(request.current.outputToken, 'Output token is not set');
 
 		const result = await approveERC20({
 			connector: provider,
-			contractAddress: toWagmiAddress(inputToken.value),
-			spenderAddress: toWagmiAddress(outputToken.value),
+			contractAddress: toWagmiAddress(request.current.inputToken.value),
+			spenderAddress: toWagmiAddress(request.current.outputToken.value),
 			amount: amount,
 			statusHandler: txStatusSetter
 		});
@@ -157,7 +152,6 @@ export function useSolverVanilla(): TSolverContext {
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
 		assert(request.current, 'Request is not set');
-		assert(provider, 'Provider is not set');
 		assert(request.current.outputToken, 'Output token is not set');
 		assert(request.current.inputAmount, 'Input amount is not set');
 
@@ -181,7 +175,6 @@ export function useSolverVanilla(): TSolverContext {
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
 		assert(request.current, 'Request is not set');
-		assert(provider, 'Provider is not set');
 		assert(request.current.inputToken, 'Output token is not set');
 		assert(request.current.inputAmount, 'Input amount is not set');
 

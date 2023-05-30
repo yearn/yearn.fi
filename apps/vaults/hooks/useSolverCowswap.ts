@@ -330,7 +330,6 @@ export function useSolverCowswap(): TSolverContext {
 		if (existingAllowances.current[key] && !shouldForceRefetch) {
 			return existingAllowances.current[key];
 		}
-		assert(provider, 'Provider is not defined');
 		const allowance = await approvedERC20Amount(
 			provider,
 			toAddress(request.current.inputToken.value), //Input token
@@ -353,7 +352,6 @@ export function useSolverCowswap(): TSolverContext {
 		if (isDisabled) {
 			return;
 		}
-		assert(provider, 'Provider is not defined');
 		assert(latestQuote?.current?.quote, 'Quote is not defined');
 		assert(request.current, 'Request is not defined');
 		assert(request?.current?.inputToken?.solveVia?.includes(Solver.COWSWAP), 'Input token is not supported by Cowswap');
