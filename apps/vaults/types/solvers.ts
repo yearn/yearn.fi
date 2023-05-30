@@ -1,5 +1,5 @@
 
-import type {MaybeString, TAddress} from '@yearn-finance/web-lib/types';
+import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
 import type {Solver} from '@vaults/contexts/useSolver';
@@ -12,7 +12,7 @@ export type TWithSolver = {
 	currentSolver: Solver;
 	effectiveSolver: Solver;
 	expectedOut: TNormalizedBN;
-	hash: MaybeString,
+	hash?: string,
 	isLoadingExpectedOut: boolean;
 	onRetrieveExpectedOut: (request: TInitSolverArgs) => Promise<TNormalizedBN>;
 	onRetrieveAllowance: (shouldForceRefetch?: boolean) => Promise<TNormalizedBN>;

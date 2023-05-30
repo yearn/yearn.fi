@@ -158,19 +158,15 @@ export function useSolverPartnerContract(): TSolverContext {
 	): Promise<void> => {
 		assert(provider, 'Provider is not set');
 		assert(request.current, 'Request is not set');
-
-		//Asserting the basic & contextual request parameters
-		const {outputToken, inputAmount} = request.current;
-		assert(outputToken, 'Output token is not set');
-		assert(inputAmount, 'Input amount is not set');
-		assert(inputAmount > 0n, 'Input amount is 0');
+		assert(request.current.outputToken, 'Output token is not set');
+		assert(request.current.inputAmount, 'Input amount is not set');
 
 		const result = await depositViaPartner({
 			connector: provider,
 			contractAddress: toWagmiAddress(networks[safeChainID].partnerContractAddress),
-			vaultAddress: toWagmiAddress(outputToken.value),
+			vaultAddress: toWagmiAddress(request.current.outputToken.value),
 			partnerAddress: currentPartner ? toWagmiAddress(currentPartner) : undefined,
-			amount: inputAmount,
+			amount: request.current.inputAmount,
 			statusHandler: txStatusSetter
 		});
 		if (result.isSuccessful) {
@@ -188,19 +184,13 @@ export function useSolverPartnerContract(): TSolverContext {
 	): Promise<void> => {
 		assert(provider, 'Provider is not set');
 		assert(request.current, 'Request is not set');
-
-		//Asserting the basic request parameters
-		const {inputToken, inputAmount} = request.current;
-		assert(inputToken, 'Input token is not set');
-		assert(inputAmount, 'Input amount is not set');
-
-		//Asserting the contextual validity of the request parameters
-		assert(inputAmount > 0n, 'Input amount is 0');
+		assert(request.current.inputToken, 'Input token is not set');
+		assert(request.current.inputAmount, 'Input amount is not set');
 
 		const result = await withdrawShares({
 			connector: provider,
-			contractAddress: toWagmiAddress(inputToken.value),
-			amount: inputAmount,
+			contractAddress: toWagmiAddress(request.current.inputToken.value),
+			amount: request.current.inputAmount,
 			statusHandler: txStatusSetter
 		});
 		if (result.isSuccessful) {

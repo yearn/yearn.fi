@@ -1,16 +1,15 @@
 import React, {createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState} from 'react';
 import {useRouter} from 'next/router';
-import {useAsync, useMountEffect, useUpdateEffect} from '@react-hookz/web';
+import {useContractRead} from 'wagmi';
+import {useMountEffect, useUpdateEffect} from '@react-hookz/web';
 import {Solver} from '@vaults/contexts/useSolver';
 import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
-import {WOPT_TOKEN_ADDRESS} from '@vaults/utils';
-import {fetchMaxPossibleDeposit} from '@vaults/utils/fetchMaxPossibleDeposit';
 import {setZapOption} from '@vaults/utils/zapOptions';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
-import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
+import VAULT_ABI from '@yearn-finance/web-lib/utils/abi/vault.abi';
+import {isZeroAddress, toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, OPT_WETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS, YVWETH_ADDRESS, YVWETH_OPT_ADDRESS, YVWFTM_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
@@ -126,22 +125,21 @@ function getMaxDepositPossible(props: TGetMaxDepositPossible): TNormalizedBN {
 const ActionFlowContext = createContext<TActionFlowContext>(DefaultActionFlowContext);
 function ActionFlowContextApp({children, currentVault}: {children: ReactNode, currentVault: TYDaemonVault}): React.ReactElement {
 	const {balances, balancesNonce} = useWallet();
-	const {safeChainID} = useChainID();
+	const {chainID, safeChainID} = useChainID();
 	const {balances: zapBalances, tokensList} = useWalletForZap();
 	const {zapProvider} = useYearn();
 	const {stakingRewardsByVault} = useStakingRewards();
 	const hasStakingRewards = !!stakingRewardsByVault[currentVault.address];
-	const {provider} = useWeb3();
-
 	const [possibleOptionsFrom, set_possibleOptionsFrom] = useState<TDropdownOption[]>([]);
 	const [possibleZapOptionsFrom, set_possibleZapOptionsFrom] = useState<TDropdownOption[]>([]);
 	const [possibleOptionsTo, set_possibleOptionsTo] = useState<TDropdownOption[]>([]);
 	const [possibleZapOptionsTo, set_possibleZapOptionsTo] = useState<TDropdownOption[]>([]);
-	const [{result: depositLimit}, actions] = useAsync(async (): Promise<bigint> => fetchMaxPossibleDeposit({provider, vault: currentVault}), 0n);
-
-	useEffect((): void => {
-		actions.execute();
-	}, [actions, currentVault, provider]);
+	const {data: depositLimit} = useContractRead({
+		address: toWagmiAddress(currentVault.address),
+		abi: VAULT_ABI,
+		chainId: chainID,
+		functionName: 'depositLimit'
+	});
 
 	//Combine selectedOptionFrom, selectedOptionTo and amount in a useReducer
 	const [actionParams, actionParamsDispatcher] = useReducer((
@@ -191,7 +189,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 		fromDecimals: actionParams?.selectedOptionFrom?.decimals || currentVault?.token?.decimals || 18,
 		fromTokenBalance: toBigInt(balances?.[toAddress(actionParams?.selectedOptionFrom?.value)]?.raw),
 		isDepositing,
-		depositLimit
+		depositLimit: depositLimit || 0n
 	}), [actionParams?.selectedOptionFrom?.decimals, actionParams?.selectedOptionFrom?.value, balances, currentVault, depositLimit, isDepositing]);
 
 	const currentSolver = useMemo((): Solver => {
@@ -462,7 +460,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 	useUpdateEffect((): void => {
 		const	_possibleZapOptionsFrom: TDropdownOption[] = [];
 		const	isWithWETH = safeChainID === 1 && currentVault && toAddress(currentVault.token.address) === WETH_TOKEN_ADDRESS;
-		const	isWithWOPT = safeChainID === 10 && currentVault && toAddress(currentVault.token.address) === WOPT_TOKEN_ADDRESS;
+		const	isWithWOPT = safeChainID === 10 && currentVault && toAddress(currentVault.token.address) === OPT_WETH_TOKEN_ADDRESS;
 		const	isWithWFTM = safeChainID === 250 && currentVault && toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS;
 
 		Object.entries(zapBalances || {})
@@ -473,7 +471,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 				// Do nothing to avoid duplicate wETH in the list
 				} else if (isWithWFTM && toAddress(tokenListData?.address) === WFTM_TOKEN_ADDRESS) {
 				// Do nothing to avoid duplicate wFTM in the list
-				} else if (isWithWOPT && toAddress(tokenListData?.address) === WOPT_TOKEN_ADDRESS) {
+				} else if (isWithWOPT && toAddress(tokenListData?.address) === OPT_WETH_TOKEN_ADDRESS) {
 				// Do nothing to avoid duplicate wOPT in the list
 				} else if (toAddress(tokenListData?.address) === toAddress(currentVault?.token?.address)) {
 				// Do nothing to avoid duplicate vault underlying token in the list

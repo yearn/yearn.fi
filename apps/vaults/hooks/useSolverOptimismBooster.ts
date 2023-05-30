@@ -2,12 +2,13 @@ import {useCallback, useMemo, useRef} from 'react';
 import useSWRMutation from 'swr/mutation';
 import {Solver} from '@vaults/contexts/useSolver';
 import {useVaultEstimateOutFetcher} from '@vaults/hooks/useVaultEstimateOutFetcher';
+import {depositAndStake} from '@vaults/utils/actions';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {allowanceKey, isZeroAddress, toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
 import {MAX_UINT_256, STAKING_REWARDS_ZAP_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {approvedERC20Amount, approveERC20, depositAndStake} from '@common/utils/actions';
+import {approvedERC20Amount, approveERC20} from '@common/utils/actions';
 import {assert} from '@common/utils/assert';
 
 import type {TDict} from '@yearn-finance/web-lib/types';
@@ -158,7 +159,6 @@ export function useSolverOptimismBooster(): TSolverContext {
 		const {outputToken, inputAmount} = request.current;
 		assert(outputToken, 'Output token is not set');
 		assert(inputAmount, 'Input amount is not set');
-		assert(inputAmount > 0n, 'Input amount is 0');
 
 		const result = await depositAndStake({
 			connector: provider,

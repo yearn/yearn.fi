@@ -155,16 +155,12 @@ export function useSolverChainCoin(): TSolverContext {
 	): Promise<void> => {
 		assert(provider, 'Provider is not set');
 		assert(request.current, 'Request is not set');
-
-		//Asserting the basic & contextual request parameters
-		const {inputAmount} = request.current;
-		assert(inputAmount, 'Input amount is not set');
-		assert(inputAmount > 0n, 'Input amount is 0');
+		assert(request.current.inputAmount, 'Input amount is not set');
 
 		const result = await depositETH({
 			connector: provider,
 			contractAddress: toWagmiAddress(getEthZapperContract(safeChainID)),
-			amount: inputAmount,
+			amount: request.current.inputAmount,
 			statusHandler: txStatusSetter
 		});
 		if (result.isSuccessful) {
@@ -183,16 +179,12 @@ export function useSolverChainCoin(): TSolverContext {
 	): Promise<void> => {
 		assert(provider, 'Provider is not set');
 		assert(request.current, 'Request is not set');
-
-		//Asserting the basic & contextual request parameters
-		const {inputAmount} = request.current;
-		assert(inputAmount, 'Input amount is not set');
-		assert(inputAmount > 0n, 'Input amount is 0');
+		assert(request.current.inputAmount, 'Input amount is not set');
 
 		const result = await withdrawETH({
 			connector: provider,
 			contractAddress: toWagmiAddress(getEthZapperContract(safeChainID)),
-			amount: inputAmount,
+			amount: request.current.inputAmount,
 			statusHandler: txStatusSetter
 		});
 		if (result.isSuccessful) {

@@ -158,17 +158,13 @@ export function useSolverVanilla(): TSolverContext {
 	): Promise<void> => {
 		assert(request.current, 'Request is not set');
 		assert(provider, 'Provider is not set');
-
-		//Asserting the basic & contextual request parameters
-		const {outputToken, inputAmount} = request.current;
-		assert(outputToken, 'Output token is not set');
-		assert(inputAmount, 'Input amount is not set');
-		assert(inputAmount > 0n, 'Input amount is 0');
+		assert(request.current.outputToken, 'Output token is not set');
+		assert(request.current.inputAmount, 'Input amount is not set');
 
 		const result = await deposit({
 			connector: provider,
-			contractAddress: toWagmiAddress(outputToken.value),
-			amount: inputAmount,
+			contractAddress: toWagmiAddress(request.current.outputToken.value),
+			amount: request.current.inputAmount,
 			statusHandler: txStatusSetter
 		});
 		if (result.isSuccessful) {
@@ -186,19 +182,13 @@ export function useSolverVanilla(): TSolverContext {
 	): Promise<void> => {
 		assert(request.current, 'Request is not set');
 		assert(provider, 'Provider is not set');
-
-		//Asserting the basic request parameters
-		const {inputToken, inputAmount} = request.current;
-		assert(inputToken, 'Output token is not set');
-		assert(inputAmount, 'Input amount is not set');
-
-		//Asserting the contextual validity of the request parameters
-		assert(inputAmount > 0n, 'Input amount is 0');
+		assert(request.current.inputToken, 'Output token is not set');
+		assert(request.current.inputAmount, 'Input amount is not set');
 
 		const result = await withdrawShares({
 			connector: provider,
-			contractAddress: toWagmiAddress(inputToken.value),
-			amount: inputAmount,
+			contractAddress: toWagmiAddress(request.current.inputToken.value),
+			amount: request.current.inputAmount,
 			statusHandler: txStatusSetter
 		});
 		if (result.isSuccessful) {

@@ -69,5 +69,5 @@
     ".next/types/**/*.ts",
     "jest.config.js",
     "worker/index.js"
-  ]
+, "apps/vaults/utils/actions/migrateVeCRV.tsxsss"  ]
 }

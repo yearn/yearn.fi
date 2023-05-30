@@ -15,7 +15,7 @@ import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/tr
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import {getAmountWithSlippage, getVaultAPY} from '@common/utils';
-import {approveERC20} from '@common/utils/actions';
+import {approveERC20} from '@common/utils/actions/actions';
 import {deposit} from '@common/utils/actions/deposit';
 import {useYCRV} from '@yCRV/contexts/useYCRV';
 import {zap} from '@yCRV/utils/actions';

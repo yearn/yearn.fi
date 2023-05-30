@@ -1,6 +1,5 @@
 import {captureException} from '@sentry/nextjs';
 import {getEthZapperContract} from '@vaults/utils';
-import STAKING_REWARDS_ZAP_ABI from '@vaults/utils/abi/stakingRewardsZap.abi';
 import VAULT_MIGRATOR_ABI from '@vaults/utils/abi/vaultMigrator.abi';
 import {erc20ABI, prepareWriteContract, readContract, waitForTransaction, writeContract} from '@wagmi/core';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
@@ -9,7 +8,7 @@ import VAULT_ABI from '@yearn-finance/web-lib/utils/abi/vault.abi';
 import ZAP_ETH_TO_YVETH_ABI from '@yearn-finance/web-lib/utils/abi/zapEthToYvEth.abi';
 import ZAP_FTM_TO_YVFTM_ABI from '@yearn-finance/web-lib/utils/abi/zapFtmToYvFTM.abi';
 import {toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
-import {MAX_UINT_256, STAKING_REWARDS_ZAP_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {assert} from '@common/utils/assert';
 import {assertAddress, toWagmiProvider} from '@common/utils/toWagmiProvider';
@@ -434,87 +433,3 @@ export async function	migrateShares(props: TMigrateShares): Promise<TTxResponse>
 		}, 3000);
 	}
 }
-
-/* 🔵 - Yearn Finance **********************************************************
-** depositAndStake is a _WRITE_ function that deposit the underlying asset into
-** the vault and stake the resulting shares into the staking contract.
-**
-** @app - Vaults (optimism)
-** @param vaultAddress - The address of the vault to deposit into.
-** @param amount - The amount of the underlying asset to deposit.
-******************************************************************************/
-type TDepositAndStake = TWriteTransaction & {
-	vaultAddress: TAddressWagmi;
-	amount: bigint;
-};
-export async function depositAndStake(props: TDepositAndStake): Promise<TTxResponse> {
-	assertAddress(props.contractAddress);
-	assertAddress(props.vaultAddress);
-	assert(props.amount > 0n, 'Amount is 0');
-
-	props.statusHandler?.({...defaultTxStatus, pending: true});
-	const wagmiProvider = await toWagmiProvider(props.connector);
-
-	try {
-		const config = await prepareWriteContract({
-			...wagmiProvider,
-			address: toWagmiAddress(STAKING_REWARDS_ZAP_ADDRESS),
-			abi: STAKING_REWARDS_ZAP_ABI,
-			functionName: 'zapIn',
-			args: [props.vaultAddress, props.amount]
-		});
-		const {hash} = await writeContract(config.request);
-		const receipt = await waitForTransaction({chainId: wagmiProvider.chainId, hash});
-		if (receipt.status === 'success') {
-			props.statusHandler?.({...defaultTxStatus, success: true});
-		} else if (receipt.status === 'reverted') {
-			props.statusHandler?.({...defaultTxStatus, error: true});
-		}
-		return ({isSuccessful: receipt.status === 'success', receipt});
-	} catch (error) {
-		console.error(error);
-		const errorAsBaseError = error as BaseError;
-		captureException(errorAsBaseError);
-		props.statusHandler?.({...defaultTxStatus, error: true});
-		return ({isSuccessful: false, error: errorAsBaseError || ''});
-	} finally {
-		setTimeout((): void => {
-			props.statusHandler?.({...defaultTxStatus});
-		}, 3000);
-	}
-
-}
-
-
-//TODO:
-// export async function stake(
-// 	provider: ethers.providers.JsonRpcProvider,
-// 	accountAddress: TAddress,
-// 	stakingAddress: TAddress,
-// 	amount: bigint
-// ): Promise<TTxResponse> {
-// 	const signer = provider.getSigner(accountAddress);
-// 	const stakingRewardsContract = new ethers.Contract(stakingAddress, STAKING_REWARDS_ABI, signer);
-// 	return await handleTx(stakingRewardsContract.stake(amount));
-// }
-
-// export async function unstake(
-// 	provider: ethers.providers.JsonRpcProvider,
-// 	accountAddress: TAddress,
-// 	stakingAddress: TAddress
-// ): Promise<TTxResponse> {
-// 	const signer = provider.getSigner(accountAddress);
-// 	const stakingRewardsContract = new ethers.Contract(stakingAddress, STAKING_REWARDS_ABI, signer);
-// 	return await handleTx(stakingRewardsContract.exit());
-// }
-
-// export async function claim(
-// 	provider: ethers.providers.JsonRpcProvider,
-// 	accountAddress: TAddress,
-// 	stakingAddress: TAddress
-// ): Promise<TTxResponse> {
-// 	const signer = provider.getSigner(accountAddress);
-// 	const stakingRewardsContract = new ethers.Contract(stakingAddress, STAKING_REWARDS_ABI, signer);
-// 	return await handleTx(stakingRewardsContract.getReward());
-// }
-
