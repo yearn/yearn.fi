@@ -1,30 +1,29 @@
 import React, {useCallback, useState} from 'react';
-import {Contract} from 'ethcall';
+import {readContracts} from 'wagmi';
 import useSWR from 'swr';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
-import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {isZeroAddress, toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
 import {CURVE_BRIBE_V3_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatBN, formatToNormalizedValue, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {decodeAsBigInt, decodeAsNumber, decodeAsString} from '@yearn-finance/web-lib/utils/decoder';
+import {formatToNormalizedValue, toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
-import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
-import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
+import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
-import {approveERC20} from '@common/utils/actions/actions';
+import {approveERC20} from '@common/utils/actions';
 import {useBribes} from '@yBribe/contexts/useBribes';
-import {addReward} from '@yBribe/utils/actions/addReward';
+import {addReward} from '@yBribe/utils/actions';
 
-import type {BigNumber} from 'ethers';
 import type {ChangeEvent, ReactElement} from 'react';
 import type {TCurveGauge} from '@common/schemas/curveSchemas';
 import type {TNormalizedBN} from '@common/types/types';
 
 
 function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauge, onClose: VoidFunction}): ReactElement {
-	const {chainID, safeChainID} = useChainID();
+	const {chainID} = useChainID();
 	const {address, provider, isActive, openLoginModal, onSwitchChain} = useWeb3();
 	const {refresh} = useBribes();
 	const {prices} = useYearn();
@@ -38,31 +37,30 @@ function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauge, on
 		symbol: string;
 		decimals: number;
 		normalized: number,
-		raw: BigNumber,
-		allowance: BigNumber,
+		raw: bigint,
+		allowance: bigint,
 	}> => {
 		const [_tokenAddress] = args;
-		const currentProvider = safeChainID === 1 ? provider || getProvider(1) : getProvider(1);
-		const ethcallProvider = await newEthCallProvider(currentProvider);
-		const erc20Contract = new Contract(_tokenAddress, ERC20_ABI);
-
-		const [name, symbol, decimals, balance, allowance] = await ethcallProvider.tryAll([
-			erc20Contract.name(),
-			erc20Contract.symbol(),
-			erc20Contract.decimals(),
-			erc20Contract.balanceOf(address),
-			erc20Contract.allowance(address, CURVE_BRIBE_V3_ADDRESS)
-		]) as [string, string, number, BigNumber, BigNumber];
+		const baseContract = {address: toWagmiAddress(_tokenAddress), abi: ERC20_ABI};
+		const [name, symbol, decimals, balance, allowance] = await readContracts({
+			contracts: [
+				{...baseContract, functionName: 'name'},
+				{...baseContract, functionName: 'symbol'},
+				{...baseContract, functionName: 'decimals'},
+				{...baseContract, functionName: 'balanceOf', args: [toWagmiAddress(address)]},
+				{...baseContract, functionName: 'allowance', args: [toWagmiAddress(address), toWagmiAddress(CURVE_BRIBE_V3_ADDRESS)]}
+			]
+		});
 
 		return ({
-			name,
-			symbol,
-			decimals,
-			raw: balance,
-			normalized: formatToNormalizedValue(balance, decimals),
-			allowance
+			name: decodeAsString(name),
+			symbol: decodeAsString(symbol),
+			decimals: decodeAsNumber(decimals),
+			raw: decodeAsBigInt(balance),
+			normalized: formatToNormalizedValue(decodeAsBigInt(balance), decodeAsNumber(decimals)),
+			allowance: decodeAsBigInt(allowance)
 		});
-	}, [safeChainID, provider, address]);
+	}, [address]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** SWR hook to get the expected out for a given in/out pair with a specific
@@ -74,27 +72,34 @@ function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauge, on
 		{refreshInterval: 10000, shouldRetryOnError: false}
 	);
 
-	async function onApproveFrom(): Promise<void> {
-		new Transaction(provider, approveERC20, set_txStatusApprove).populate(
-			tokenAddress,
-			CURVE_BRIBE_V3_ADDRESS,
-			amount.raw
-		).onSuccess(async (): Promise<void> => {
+	const onApprove = useCallback(async (): Promise<void> => {
+		const result = await approveERC20({
+			connector: provider,
+			contractAddress: toWagmiAddress(tokenAddress),
+			spenderAddress: toWagmiAddress(CURVE_BRIBE_V3_ADDRESS),
+			amount: amount.raw,
+			statusHandler: set_txStatusApprove
+		});
+		if (result.isSuccessful) {
 			mutate();
-		}).perform();
-	}
+		}
+	}, [amount.raw, mutate, provider, tokenAddress]);
 
-	function onAddReward(): void {
-		new Transaction(provider, addReward, set_txStatusAddReward).populate(
-			currentGauge.gauge,
-			tokenAddress,
-			amount.raw
-		).onSuccess(async (): Promise<void> => {
+	const onAddReward = useCallback(async (): Promise<void> => {
+		const result = await addReward({
+			connector: provider,
+			contractAddress: toWagmiAddress(CURVE_BRIBE_V3_ADDRESS),
+			gaugeAddress: toWagmiAddress(currentGauge.gauge),
+			tokenAddress: toWagmiAddress(tokenAddress),
+			amount: amount.raw,
+			statusHandler: set_txStatusAddReward
+		});
+		if (result.isSuccessful) {
 			onClose();
 			mutate();
 			await refresh();
-		}).perform();
-	}
+		}
+	}, [amount.raw, currentGauge.gauge, mutate, onClose, provider, refresh, tokenAddress]);
 
 	function renderButton(): ReactElement {
 		if (!isActive) {
@@ -115,16 +120,16 @@ function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauge, on
 				</Button>
 			);
 		}
-		if (txStatusApprove.pending || amount.raw.gt(selectedToken?.allowance || 0)) {
+		if (txStatusApprove.pending || toBigInt(amount.raw) > toBigInt(selectedToken?.allowance)) {
 			return (
 				<Button
-					onClick={onApproveFrom}
+					onClick={onApprove}
 					className={'w-full'}
 					isBusy={txStatusApprove.pending}
 					isDisabled={
 						!isActive ||
 						isZeroAddress(tokenAddress) ||
-						amount.raw.isZero() ||
+						toBigInt(amount.raw) === 0n ||
 						![1, 1337].includes(chainID)
 					}>
 					{`Approve ${selectedToken?.symbol || 'token'}`}
@@ -140,8 +145,8 @@ function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauge, on
 				isDisabled={
 					!isActive ||
 					isZeroAddress(tokenAddress) ||
-					formatBN(amount?.raw).isZero() ||
-					formatBN(amount?.raw).gt(formatBN(selectedToken?.raw)) ||
+					toBigInt(amount?.raw) === 0n ||
+					toBigInt(amount?.raw) > toBigInt(selectedToken?.raw) ||
 					![1, 1337].includes(chainID)
 				}>
 				{'Deposit'}
@@ -199,7 +204,7 @@ function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauge, on
 								<button
 									onClick={(): void => {
 										set_amount({
-											raw: formatBN(selectedToken?.raw),
+											raw: toBigInt(selectedToken?.raw),
 											normalized: selectedToken?.normalized || 0
 										});
 									}}
