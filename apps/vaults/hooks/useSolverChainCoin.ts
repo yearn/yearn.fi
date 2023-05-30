@@ -6,8 +6,8 @@ import {getEthZapperContract} from '@vaults/utils';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {allowanceKey, isZeroAddress, toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
-import {ETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {MaxUint256, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {ETH_TOKEN_ADDRESS, MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
+import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {approvedERC20Amount, approveERC20, depositETH, withdrawETH} from '@common/utils/actions';
 import {assert} from '@common/utils/assert';
 
@@ -125,7 +125,7 @@ export function useSolverChainCoin(): TSolverContext {
 	** need to approve the yvWrappedCoin to be used by the zap contract.
 	**************************************************************************/
 	const onApprove = useCallback(async (
-		amount = MaxUint256,
+		amount = MAX_UINT_256,
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {

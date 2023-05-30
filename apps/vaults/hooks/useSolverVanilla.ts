@@ -5,8 +5,8 @@ import {useVaultEstimateOutFetcher} from '@vaults/hooks/useVaultEstimateOutFetch
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {allowanceKey, isZeroAddress, toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
-import {ETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {MaxUint256, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
+import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {approvedERC20Amount, approveERC20, deposit, withdrawShares} from '@common/utils/actions';
 import {assert} from '@common/utils/assert';
 
@@ -124,7 +124,7 @@ export function useSolverVanilla(): TSolverContext {
 	** (not connected) or if the tx is still pending.
 	**************************************************************************/
 	const onApprove = useCallback(async (
-		amount = MaxUint256,
+		amount = MAX_UINT_256,
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
@@ -159,14 +159,10 @@ export function useSolverVanilla(): TSolverContext {
 		assert(request.current, 'Request is not set');
 		assert(provider, 'Provider is not set');
 
-		//Asserting the basic request parameters
+		//Asserting the basic & contextual request parameters
 		const {outputToken, inputAmount} = request.current;
 		assert(outputToken, 'Output token is not set');
 		assert(inputAmount, 'Input amount is not set');
-
-		//Asserting the contextual validity of the request parameters
-		assert(!isZeroAddress(outputToken?.value), 'Output token is address 0x0');
-		assert(toAddress(outputToken?.value) !== ETH_TOKEN_ADDRESS, 'Output token is address 0xE');
 		assert(inputAmount > 0n, 'Input amount is 0');
 
 		const result = await deposit({

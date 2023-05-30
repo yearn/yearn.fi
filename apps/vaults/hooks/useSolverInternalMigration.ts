@@ -5,7 +5,8 @@ import {useVaultEstimateOutFetcher} from '@vaults/hooks/useVaultEstimateOutFetch
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {allowanceKey, isZeroAddress, toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
-import {MaxUint256, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
+import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {approvedERC20Amount, approveERC20, migrateShares} from '@common/utils/actions';
 import {assert} from '@common/utils/assert';
 
@@ -123,7 +124,7 @@ export function useSolverInternalMigration(): TSolverContext {
 	** (not connected) or if the tx is still pending.
 	**************************************************************************/
 	const onApprove = useCallback(async (
-		amount = MaxUint256,
+		amount = MAX_UINT_256,
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
@@ -159,15 +160,11 @@ export function useSolverInternalMigration(): TSolverContext {
 		assert(provider, 'Provider is not set');
 		assert(request.current, 'Request is not set');
 
-		//Asserting the basic request parameters
+		//Asserting the basic & contextual request parameters
 		const {inputToken, outputToken, migrator} = request.current;
 		assert(inputToken, 'Input token is not set');
 		assert(outputToken, 'Output token is not set');
 		assert(migrator, 'Migrator is not defined');
-
-		//Asserting the contextual validity of the request parameters
-		assert(!isZeroAddress(outputToken.value), 'Output token is address 0x0');
-		assert(!isZeroAddress(migrator), 'Migrator token is address 0x0');
 
 		const result = await migrateShares({
 			connector: provider,

@@ -3434,10 +3434,10 @@
     motion "10.15.5"
     qrcode "1.5.3"
 
-"@yearn-finance/web-lib@^0.20.36":
-  version "0.20.36"
-  resolved "https://registry.yarnpkg.com/@yearn-finance/web-lib/-/web-lib-0.20.36.tgz#6fcee1e89aadf79d9acb79413a86c770b7866343"
-  integrity sha512-hXBEcgtlGIRIQYmyr9MpUMBgWcuWq8JDCk60iBj1ZKWzSFwGFiK5PCyAAjWgmI9gmgqMpeWG+DdffetN55UUyA==
+"@yearn-finance/web-lib@^0.20.39":
+  version "0.20.39"
+  resolved "https://registry.yarnpkg.com/@yearn-finance/web-lib/-/web-lib-0.20.39.tgz#bc2e55acca76a7637980783fabf68ff1a1f91d72"
+  integrity sha512-iRft/dSi0NWXEiec02fdB7cc0M6NLowCEPDGhsmmOQ26PjogaiYm0HILSf/5e4BGeAyNChm0kMlkehUKOeJvNA==
   dependencies:
     "@headlessui/react" "1.7.11"
     "@ledgerhq/iframe-provider" "^0.4.3"
