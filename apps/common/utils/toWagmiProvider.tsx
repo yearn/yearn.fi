@@ -1,15 +1,12 @@
-import {captureException} from '@sentry/nextjs';
-import {waitForTransaction, writeContract as wagmiWriteContract} from '@wagmi/core';
 import {isZeroAddress, toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {isTAddress} from '@yearn-finance/web-lib/utils/isTAddress';
 import {assert} from '@common/utils/assert';
 
-import type {BaseError} from 'viem';
 import type {Connector} from 'wagmi';
 import type {TAddress, TAddressWagmi} from '@yearn-finance/web-lib/types';
-import type {defaultTxStatus, TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
-import type {GetWalletClientResult, PrepareWriteContractResult} from '@wagmi/core';
+import type {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
+import type {GetWalletClientResult} from '@wagmi/core';
 
 export type TWagmiProviderContract = {
 	walletClient: GetWalletClientResult,
@@ -25,20 +22,6 @@ export async function toWagmiProvider(connector: Connector): Promise<TWagmiProvi
 		chainId,
 		address
 	});
-}
-
-export async function writeContract(config: PrepareWriteContractResult): Promise<TTxResponse> {
-	try {
-		const {hash} = await wagmiWriteContract(config.request);
-		const receipt = await waitForTransaction({chainId: config.request.chainId, hash});
-		return ({isSuccessful: receipt.status === 'success', receipt});
-	} catch (error) {
-		console.error(error);
-		const errorAsBaseError = error as BaseError;
-		captureException(errorAsBaseError);
-		return ({isSuccessful: false, error: errorAsBaseError || ''});
-	}
-
 }
 
 export type TWriteTransaction = {
