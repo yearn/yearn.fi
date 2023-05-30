@@ -1,14 +1,16 @@
 import {captureException} from '@sentry/nextjs';
 import STAKING_REWARDS_ABI from '@vaults/utils/abi/stakingRewards.abi';
 import STAKING_REWARDS_ZAP_ABI from '@vaults/utils/abi/stakingRewardsZap.abi';
+import ZAP_VE_CRV_ABI from '@vaults/utils/abi/zapVeCRV.abi';
 import {prepareWriteContract, waitForTransaction, writeContract} from '@wagmi/core';
 import {toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
-import {STAKING_REWARDS_ZAP_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {STAKING_REWARDS_ZAP_ADDRESS, VAULT_FACTORY_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {assert} from '@common/utils/assert';
 import {assertAddress, toWagmiProvider} from '@common/utils/toWagmiProvider';
 
-import ZAP_VE_CRV_ABI from './abi/zapVeCRV.abi';
+import VAULT_FACTORY_ABI from './abi/vaultFactory.abi';
 
 import type {BaseError} from 'viem';
 import type {TAddressWagmi} from '@yearn-finance/web-lib/types';
@@ -242,5 +244,80 @@ export async function veCRVzap(props: TVeCRVZap): Promise<TTxResponse> {
 		setTimeout((): void => {
 			props.statusHandler?.({...defaultTxStatus});
 		}, 3000);
+	}
+}
+
+
+/* 🔵 - Yearn Finance **********************************************************
+** createNewVaultsAndStrategies is a _WRITE_ function that creates a new vault
+** and strategy for the given gauge.
+**
+** @app - Vaults (veCRV)
+** @param gaugeAddress - the base gauge address
+******************************************************************************/
+// overwrite contractAddress type to force it to VAULT_FACTORY_ADDRESS
+type TCreateNewVaultsAndStrategies = TWriteTransaction & {
+	gaugeAddress: TAddressWagmi;
+};
+export async function createNewVaultsAndStrategies(props: TCreateNewVaultsAndStrategies): Promise<TTxResponse> {
+	assertAddress(props.contractAddress);
+	assertAddress(props.gaugeAddress);
+
+	props.statusHandler?.({...defaultTxStatus, pending: true});
+	const wagmiProvider = await toWagmiProvider(props.connector);
+
+	try {
+		const config = await prepareWriteContract({
+			...wagmiProvider,
+			address: toWagmiAddress(VAULT_FACTORY_ADDRESS),
+			abi: VAULT_FACTORY_ABI,
+			functionName: 'createNewVaultsAndStrategies',
+			args: [props.gaugeAddress]
+		});
+		const {hash} = await writeContract(config.request);
+		const receipt = await waitForTransaction({chainId: wagmiProvider.chainId, hash});
+		if (receipt.status === 'success') {
+			props.statusHandler?.({...defaultTxStatus, success: true});
+		} else if (receipt.status === 'reverted') {
+			props.statusHandler?.({...defaultTxStatus, error: true});
+		}
+		return ({isSuccessful: receipt.status === 'success', receipt});
+	} catch (error) {
+		console.error(error);
+		const errorAsBaseError = error as BaseError;
+		captureException(errorAsBaseError);
+		props.statusHandler?.({...defaultTxStatus, error: true});
+		return ({isSuccessful: false, error: errorAsBaseError || ''});
+	} finally {
+		setTimeout((): void => {
+			props.statusHandler?.({...defaultTxStatus});
+		}, 3000);
+	}
+}
+
+/* 🔵 - Yearn Finance **********************************************************
+** gasOfCreateNewVaultsAndStrategies is a _READ function that estimate the gas
+** of the createNewVaultsAndStrategies function.
+**
+** @app - Vaults (veCRV)
+** @param gaugeAddress - the base gauge address
+******************************************************************************/
+export async function gasOfCreateNewVaultsAndStrategies(props: TCreateNewVaultsAndStrategies): Promise<bigint> {
+	assertAddress(props.contractAddress);
+	assertAddress(props.gaugeAddress);
+
+	const wagmiProvider = await toWagmiProvider(props.connector);
+	try {
+		const config = await prepareWriteContract({
+			...wagmiProvider,
+			address: toWagmiAddress(VAULT_FACTORY_ADDRESS),
+			abi: VAULT_FACTORY_ABI,
+			functionName: 'createNewVaultsAndStrategies',
+			args: [props.gaugeAddress]
+		});
+		return toBigInt(config.request.gas);
+	} catch (error) {
+		console.error(error);
+		return toBigInt(0);
 	}
 }

@@ -1,71 +1,62 @@
 {
-  "compilerOptions": {
-    "rootDirs": ["."],
-    "baseUrl": ".",
-	"paths": {
-        "@common/*": ["apps/common/*"],
-        "@vaults/*": ["apps/vaults/*"],
-        "@veYFI/*": ["apps/veyfi/*"],
-        "@yBribe/*": ["apps/ybribe/*"],
-        "@yCRV/*": ["apps/ycrv/*"],
-        "@yBal/*": ["apps/ybal/*"],
-    },
-    /* Basic Options */
-    "target": "esnext",
-    "module": "esnext",
-    "lib": [
-      "es6",
-      "es7",
-      "esnext",
-      "dom"
-    ],
-    "allowJs": true,
-    "jsx": "preserve",
-    "removeComments": false,
-    "strict": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "strictFunctionTypes": true,
-    "strictPropertyInitialization": true,
-    "noImplicitThis": true,
-    "alwaysStrict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "moduleResolution": "node",
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "inlineSourceMap": true,
-    "inlineSources": true,
-    "resolveJsonModule": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "noEmit": true,
-    "incremental": true,
-    "isolatedModules": true,
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ]
-  },
-  "exclude": [
-    "node_modules",
-	"_app"
-  ],
-  "include": [
-    "**/*.css",
-    "**/*.ts",
-    "**/*.tsx",
-    "**/*.d.tsx",
-    "public",
-    "postcss.config.js",
-    "tailwind.config.js",
-    "next.config.js",
-    "theme.config.js",
-    ".eslintrc.js",
-    ".next/types/**/*.ts",
-    "vitest.config.ts",
-    "worker/index.js"]
+	"compilerOptions": {
+		"rootDirs": ["."],
+		"baseUrl": ".",
+		"paths": {
+			"@common/*": ["apps/common/*"],
+			"@vaults/*": ["apps/vaults/*"],
+			"@veYFI/*": ["apps/veyfi/*"],
+			"@yBribe/*": ["apps/ybribe/*"],
+			"@yCRV/*": ["apps/ycrv/*"],
+		},
+		/* Basic Options */
+		"target": "esnext",
+		"module": "esnext",
+		"lib": ["es6", "es7", "esnext", "dom"],
+		"allowJs": true,
+		"jsx": "preserve",
+		"removeComments": false,
+		"strict": true,
+		"noImplicitAny": true,
+		"strictNullChecks": true,
+		"strictFunctionTypes": true,
+		"strictPropertyInitialization": true,
+		"noImplicitThis": true,
+		"alwaysStrict": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"noImplicitReturns": true,
+		"noFallthroughCasesInSwitch": true,
+		"moduleResolution": "node",
+		"allowSyntheticDefaultImports": true,
+		"esModuleInterop": true,
+		"inlineSourceMap": true,
+		"inlineSources": true,
+		"resolveJsonModule": true,
+		"skipLibCheck": true,
+		"forceConsistentCasingInFileNames": true,
+		"noEmit": true,
+		"incremental": true,
+		"isolatedModules": true,
+		"plugins": [{"name": "next"}]
+	},
+	"exclude": [
+		"node_modules",
+		"_app"
+	],
+	"include": [
+		"**/*.css",
+		"**/*.ts",
+		"**/*.tsx",
+		"**/*.d.tsx",
+		"public",
+		"postcss.config.js",
+		"tailwind.config.js",
+		"next.config.js",
+		"theme.config.js",
+		".eslintrc.js",
+		".next/types/**/*.ts",
+		"vitest.config.js",
+		"worker/index.js"
+	]
 }

@@ -4,7 +4,7 @@ import useSWR from 'swr';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
-import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
 
@@ -89,7 +89,7 @@ function	GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height =
 						if (payload.length > 0) {
 							const [{value, payload: innerPayload}] = payload;
 							const	{gain, loss} = innerPayload;
-							const	diff = formatBN(gain).sub(formatBN(loss));
+							const	diff = toBigInt(gain) - toBigInt(loss);
 							const	normalizedDiff = formatToNormalizedValue(diff, vaultDecimals);
 
 							return (
