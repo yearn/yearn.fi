@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-types */
-
-
 import actualAssert from 'assert';
 import {captureException} from '@sentry/nextjs';
 
