@@ -34,14 +34,14 @@ const tabs: TTabsOptions[] = [
 	{value: 2, label: 'Migrate', flowAction: Flow.Migrate, slug: 'migrate'},
 	{value: 3, label: '$OP BOOST', flowAction: Flow.None, slug: 'boost'}
 ];
-function	getCurrentTab({isDepositing, hasMigration, isRetired}: {isDepositing: boolean, hasMigration: boolean, isRetired: boolean}): TTabsOptions {
+function getCurrentTab({isDepositing, hasMigration, isRetired}: {isDepositing: boolean, hasMigration: boolean, isRetired: boolean}): TTabsOptions {
 	if (hasMigration || isRetired) {
 		return tabs[1];
 	}
 	return tabs.find((tab): boolean => tab.value === (isDepositing ? 0 : 1)) as TTabsOptions;
 }
 
-function	VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {onSwitchSelectedOptions, isDepositing, actionParams, currentSolver} = useActionFlow();
 	const [possibleTabs, set_possibleTabs] = useState<TTabsOptions[]>([tabs[0], tabs[1]]);
 	const {stakingRewardsByVault} = useStakingRewards();
@@ -74,8 +74,8 @@ function	VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}):
 				set_currentTab(tabs[1]);
 				onSwitchSelectedOptions(Flow.Withdraw);
 			});
-		} 
-		
+		}
+
 		if (currentVault.chainID === 10 && hasStakingRewards) {
 			performBatchedUpdates((): void => {
 				set_possibleTabs([tabs[0], tabs[1], tabs[3]]);
@@ -163,7 +163,7 @@ function	VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}):
 						<Listbox
 							value={currentTab.label}
 							onChange={(value): void => {
-								const	newTab = tabs.find((tab): boolean => tab.value === Number(value));
+								const newTab = tabs.find((tab): boolean => tab.value === Number(value));
 								if (!newTab) {
 									return;
 								}

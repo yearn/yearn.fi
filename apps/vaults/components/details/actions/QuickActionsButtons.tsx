@@ -15,7 +15,7 @@ import {useWallet} from '@common/contexts/useWallet';
 import type {ReactElement} from 'react';
 import type {TNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 
-function	VaultDetailsQuickActionsButtons(): ReactElement {
+function VaultDetailsQuickActionsButtons(): ReactElement {
 	const {refresh} = useWallet();
 	const {refresh: refreshZapBalances} = useWalletForZap();
 	const {address, isActive} = useWeb3();
@@ -70,8 +70,8 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 	** This approve can not be triggered if the wallet is not active
 	** (not connected) or if the tx is still pending.
 	**************************************************************************/
-	async function	onApproveFrom(): Promise<void> {
-		const	shouldApproveInfinite = currentSolver === Solver.PARTNER_CONTRACT || currentSolver === Solver.VANILLA || currentSolver === Solver.INTERNAL_MIGRATION;
+	async function onApproveFrom(): Promise<void> {
+		const shouldApproveInfinite = currentSolver === Solver.PARTNER_CONTRACT || currentSolver === Solver.VANILLA || currentSolver === Solver.INTERNAL_MIGRATION;
 		onApprove(
 			shouldApproveInfinite ? MAX_UINT_256 : actionParams?.amount.raw,
 			set_txStatusApprove,

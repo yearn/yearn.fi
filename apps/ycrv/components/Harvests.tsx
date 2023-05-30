@@ -10,12 +10,12 @@ import {HarvestListRow} from './HarvestsListRow';
 import type {ReactElement} from 'react';
 import type {TYDaemonHarvests} from '@common/types/yearn';
 
-function	Harvests(): ReactElement {
-	const	{harvests} = useYCRV();
-	const	[category, set_category] = useState('all');
+function Harvests(): ReactElement {
+	const {harvests} = useYCRV();
+	const [category, set_category] = useState('all');
 
-	const	filteredHarvests = useMemo((): TYDaemonHarvests[] => {
-		const	_harvests = [...(harvests || [])];
+	const filteredHarvests = useMemo((): TYDaemonHarvests[] => {
+		const _harvests = [...(harvests || [])];
 		if (category === 'st-yCRV') {
 			return _harvests.filter((harvest): boolean => toAddress(harvest.vaultAddress) === STYCRV_TOKEN_ADDRESS);
 		}

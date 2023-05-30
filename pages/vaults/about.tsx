@@ -6,7 +6,7 @@ import SettingsOverwrite from '@common/components/SettingsOverwrite';
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
 
-function	About(): ReactElement {
+function About(): ReactElement {
 	return (
 		<section className={'mt-4 grid w-full grid-cols-1 gap-10 pb-10 md:mt-20 md:grid-cols-2'}>
 			<div className={'w-full bg-neutral-100 p-10'}>
@@ -26,7 +26,7 @@ function	About(): ReactElement {
 						</p>
 					</Balancer>
 				</div>
-			</div> 
+			</div>
 
 			<div className={'w-full bg-neutral-100 p-10'}>
 				<div aria-label={'Risk Score'} className={'flex flex-col pb-6'}>

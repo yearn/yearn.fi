@@ -18,19 +18,19 @@ import type {ReactElement} from 'react';
 import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 import type {TCurveGauge} from '@common/schemas/curveSchemas';
 
-function	GaugeRowItemWithExtraData({
+function GaugeRowItemWithExtraData({
 	address,
 	value,
 	minDecimals = 5
 }: {address: TAddress, value: BigNumber, minDecimals?: number}): ReactElement {
-	const	{tokens, prices} = useYearn();
+	const {tokens, prices} = useYearn();
 
-	const	tokenInfo = tokens?.[address];
-	const	tokenPrice = Number(prices?.[address]) / 1000000;
-	const	decimals = tokenInfo?.decimals || 18;
-	const	symbol = tokenInfo?.symbol || '???';
-	const	bribeAmount = formatToNormalizedValue(formatBN(value), decimals);
-	const	bribeValue = bribeAmount * (Number(tokenPrice || 0));
+	const tokenInfo = tokens?.[address];
+	const tokenPrice = Number(prices?.[address]) / 1000000;
+	const decimals = tokenInfo?.decimals || 18;
+	const symbol = tokenInfo?.symbol || '???';
+	const bribeAmount = formatToNormalizedValue(formatBN(value), decimals);
+	const bribeValue = bribeAmount * (Number(tokenPrice || 0));
 
 	return (
 		<div className={'flex h-auto flex-col items-end pt-0 md:h-14'}>
@@ -46,22 +46,22 @@ function	GaugeRowItemWithExtraData({
 	);
 }
 
-function	GaugeRowItemAPR({address, value}: {address: TAddress, value: BigNumber}): ReactElement {
-	const	{tokens, prices} = useYearn();
+function GaugeRowItemAPR({address, value}: {address: TAddress, value: BigNumber}): ReactElement {
+	const {tokens, prices} = useYearn();
 
-	const	crvPrice = useMemo((): number => {
-		const	tokenPrice = Number(prices?.[CRV_TOKEN_ADDRESS] || 0);
+	const crvPrice = useMemo((): number => {
+		const tokenPrice = Number(prices?.[CRV_TOKEN_ADDRESS] || 0);
 		return tokenPrice;
 	}, [prices]);
 
-	const	tokenPrice = useMemo((): number => {
-		const	tokenPrice = Number(prices?.[address] || 0);
+	const tokenPrice = useMemo((): number => {
+		const tokenPrice = Number(prices?.[address] || 0);
 		return tokenPrice;
 	}, [address, prices]);
 
-	const	APR = useMemo((): number => {
-		const	tokenInfo = tokens?.[address];
-		const	decimals = tokenInfo?.decimals || 18;
+	const APR = useMemo((): number => {
+		const tokenInfo = tokens?.[address];
+		const decimals = tokenInfo?.decimals || 18;
 		if (tokenPrice === 0 || crvPrice === 0) {
 			return 0;
 		}
@@ -78,35 +78,35 @@ function	GaugeRowItemAPR({address, value}: {address: TAddress, value: BigNumber}
 }
 
 
-function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauge, category: string}): ReactElement {
-	const	{isActive, provider} = useWeb3();
-	const	{currentRewards, nextRewards, claimable, dryRunClaimRewards, refresh} = useBribes();
-	const	[txStatusClaim, set_txStatusClaim] = useState(defaultTxStatus);
+function GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauge, category: string}): ReactElement {
+	const {isActive, provider} = useWeb3();
+	const {currentRewards, nextRewards, claimable, dryRunClaimRewards, refresh} = useBribes();
+	const [txStatusClaim, set_txStatusClaim] = useState(defaultTxStatus);
 
-	const	currentRewardsForCurrentGauge = useMemo((): TDict<BigNumber> => {
+	const currentRewardsForCurrentGauge = useMemo((): TDict<BigNumber> => {
 		return currentRewards?.v3?.[toAddress(currentGauge.gauge)] || {};
 	}, [currentGauge.gauge, currentRewards, category]);
 
-	const	nextRewardsForCurrentGauge = useMemo((): TDict<BigNumber> => {
+	const nextRewardsForCurrentGauge = useMemo((): TDict<BigNumber> => {
 		return nextRewards?.v3?.[toAddress(currentGauge.gauge)] || {};
 	}, [currentGauge.gauge, nextRewards, category]);
 
-	const	claimableForCurrentGauge = useMemo((): TDict<BigNumber> => {
+	const claimableForCurrentGauge = useMemo((): TDict<BigNumber> => {
 		return claimable?.v3?.[toAddress(currentGauge.gauge)] || {};
 	}, [currentGauge.gauge, claimable, category]);
 
-	const	dryRunRewardsForCurrentGauge = useMemo((): TDict<BigNumber> => {
+	const dryRunRewardsForCurrentGauge = useMemo((): TDict<BigNumber> => {
 		return dryRunClaimRewards?.v3?.[toAddress(currentGauge.gauge)] || {};
 	}, [currentGauge.gauge, dryRunClaimRewards, category]);
 
-	const	claimableForCurrentGaugeMap = Object.entries(claimableForCurrentGauge || {}) || [];
-	const	currentRewardsForCurrentGaugeMap = Object.entries(currentRewardsForCurrentGauge || {}) || [];
-	const	nextRewardsForCurrentGaugeMap = Object.entries(nextRewardsForCurrentGauge || {}) || [];
-	const	dryRunRewardsForCurrentGaugeMap = Object.entries(dryRunRewardsForCurrentGauge || {}) || [];
-	const	hasSomethingToClaim = claimableForCurrentGaugeMap.some(([, value]: [string, BigNumber]): boolean => value.gt(0)) ||
+	const claimableForCurrentGaugeMap = Object.entries(claimableForCurrentGauge || {}) || [];
+	const currentRewardsForCurrentGaugeMap = Object.entries(currentRewardsForCurrentGauge || {}) || [];
+	const nextRewardsForCurrentGaugeMap = Object.entries(nextRewardsForCurrentGauge || {}) || [];
+	const dryRunRewardsForCurrentGaugeMap = Object.entries(dryRunRewardsForCurrentGauge || {}) || [];
+	const hasSomethingToClaim = claimableForCurrentGaugeMap.some(([, value]: [string, BigNumber]): boolean => value.gt(0)) ||
 		dryRunRewardsForCurrentGaugeMap.some(([, value]: [string, BigNumber]): boolean => value.gt(0));
 
-	function	onClaimReward(token: string): void {
+	function onClaimReward(token: string): void {
 		new Transaction(provider, claimReward, set_txStatusClaim).populate(
 			CURVE_BRIBE_V3_ADDRESS,
 			currentGauge.gauge,
@@ -116,7 +116,7 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauge, cate
 		}).perform();
 	}
 
-	function	renderDefaultValueUSDFallback(): ReactElement {
+	function renderDefaultValueUSDFallback(): ReactElement {
 		return (
 			<div className={'flex h-auto flex-col items-end pt-0 md:h-14'}>
 				<p className={'yearn--table-data-section-item-value'}>
@@ -128,7 +128,7 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauge, cate
 			</div>
 		);
 	}
-	function	renderDefaultValuesUSDFallback(): ReactElement {
+	function renderDefaultValuesUSDFallback(): ReactElement {
 		return (
 			<div className={'flex h-auto flex-col items-end pt-0 md:h-14'}>
 				<p className={'font-number inline-flex items-baseline text-base text-neutral-900'}>
@@ -140,7 +140,7 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauge, cate
 			</div>
 		);
 	}
-	function	renderDefaultValuePercentFallback(): ReactElement {
+	function renderDefaultValuePercentFallback(): ReactElement {
 		return (
 			<div className={'flex h-auto flex-col items-end pt-0 md:h-14'}>
 				<p className={'yearn--table-data-section-item-value'}>
@@ -149,7 +149,7 @@ function	GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauge, cate
 			</div>
 		);
 	}
-	function	renderMultipleButtonsFallback(): ReactElement[] {
+	function renderMultipleButtonsFallback(): ReactElement[] {
 		return (
 			currentRewardsForCurrentGaugeMap.map(([key]: [string, BigNumber]): ReactElement =>
 				<div key={`claim-${key}`} className={'h-14 pt-0'}>

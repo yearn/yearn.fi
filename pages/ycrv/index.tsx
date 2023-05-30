@@ -8,8 +8,8 @@ import Wrapper from '@yCRV/Wrapper';
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
 
-function	TextAnimation(): ReactElement {
-	function	onStartAnimation(): void {
+function TextAnimation(): ReactElement {
+	function onStartAnimation(): void {
 		const words = document.getElementsByClassName('word') as HTMLCollectionOf<HTMLSpanElement>;
 		const wordArray: HTMLSpanElement[][] = [];
 		let currentWord = 0;
@@ -28,7 +28,7 @@ function	TextAnimation(): ReactElement {
 			for (let i = 0; i < cw.length; i++) {
 				animateLetterOut(cw, i);
 			}
-  
+
 			for (let i = 0; i < nw.length; i++) {
 				nw[i].className = 'letter behind';
 				if (nw?.[0]?.parentElement?.style) {
@@ -62,7 +62,7 @@ function	TextAnimation(): ReactElement {
 				word.appendChild(letter);
 				letters.push(letter);
 			}
-  
+
 			wordArray.push(letters);
 		}
 
@@ -79,7 +79,7 @@ function	TextAnimation(): ReactElement {
 	return (
 		<>
 			<div className={'text'}>
-				<p className={'wordWrapper'}> 
+				<p className={'wordWrapper'}>
 					<span className={'word'}>{'Gigantic'}</span>
 					<span className={'word'}>{'Seismic'}</span>
 					<span className={'word'}>{'Substantial'}</span>
@@ -95,7 +95,7 @@ function	TextAnimation(): ReactElement {
 	);
 }
 
-function	Index(): ReactElement {
+function Index(): ReactElement {
 	return (
 		<>
 			<div className={'mx-auto mt-20 mb-44 flex w-full max-w-6xl flex-col items-center justify-center'}>

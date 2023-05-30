@@ -9,7 +9,7 @@ import type {GraphQLResponse} from 'graphql-request/build/esm/types';
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
-export function	max(input: bigint, balance: bigint): bigint {
+export function max(input: bigint, balance: bigint): bigint {
 	if (input > balance) {
 		return balance;
 	}
@@ -49,8 +49,8 @@ export function getVaultRawAPY(vaults: TDict<TYDaemonVault | undefined>, vaultAd
 }
 
 export function getAmountWithSlippage(from: string, to: string, value: bigint, slippage: number): number {
-	const	hasLP = (toAddress(from) === LPYCRV_TOKEN_ADDRESS|| toAddress(to) === LPYCRV_TOKEN_ADDRESS);
-	const	isDirectDeposit = (toAddress(from) === YCRV_CURVE_POOL_ADDRESS || toAddress(to) === LPYCRV_TOKEN_ADDRESS);
+	const hasLP = (toAddress(from) === LPYCRV_TOKEN_ADDRESS|| toAddress(to) === LPYCRV_TOKEN_ADDRESS);
+	const isDirectDeposit = (toAddress(from) === YCRV_CURVE_POOL_ADDRESS || toAddress(to) === LPYCRV_TOKEN_ADDRESS);
 
 	if (hasLP && !isDirectDeposit) {
 		const minAmountStr = Number(formatUnits(toBigInt(value), 18));
@@ -74,8 +74,8 @@ export const graphFetcher = async (args: [string, string]): Promise<GraphQLRespo
 };
 
 
-export function	formatDateShort(value: number): string {
-	let		locale = 'fr-FR';
+export function formatDateShort(value: number): string {
+	let locale = 'fr-FR';
 	if (typeof(navigator) !== 'undefined') {
 		locale = navigator.language || 'fr-FR';
 	}

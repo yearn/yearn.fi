@@ -17,14 +17,14 @@ export type TListHead = {
 	onSort: (sortBy: string, sortDirection: TSortDirection) => void
 }
 
-function	ListHead({items, dataClassName, sortBy, sortDirection, onSort}: TListHead): ReactElement {
+function ListHead({items, dataClassName, sortBy, sortDirection, onSort}: TListHead): ReactElement {
 	const toggleSortDirection = (newSortBy: string): TSortDirection => {
 		return sortBy === newSortBy ? (
 			sortDirection === '' ? 'desc' : sortDirection === 'desc' ? 'asc' : 'desc'
 		) : 'desc';
 	};
 
-	const	renderChevron = useCallback((shouldSortBy: boolean): ReactElement => {
+	const renderChevron = useCallback((shouldSortBy: boolean): ReactElement => {
 		if (shouldSortBy && sortDirection === 'desc') {
 			return <IconChevronPlain className={'yearn--sort-chevron'} />;
 		}
@@ -34,7 +34,7 @@ function	ListHead({items, dataClassName, sortBy, sortDirection, onSort}: TListHe
 		return <IconChevronPlain className={'yearn--sort-chevron--off text-neutral-300 group-hover:text-neutral-500'} />;
 	}, [sortDirection]);
 
-	const	[first, ...rest] = items;
+	const [first, ...rest] = items;
 	return (
 		<div className={'mt-4 grid w-full grid-cols-1 md:mt-0'}>
 			<div className={'yearn--table-head-wrapper'}>

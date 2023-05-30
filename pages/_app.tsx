@@ -17,7 +17,7 @@ import type {AppProps} from 'next/app';
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
 
-import	'../style.css';
+import '../style.css';
 
 const aeonik = localFont({
 	variable: '--font-aeonik',
@@ -37,11 +37,11 @@ const aeonik = localFont({
 
 type TGetLayout = NextComponentType & {getLayout: (p: ReactElement, router: NextRouter) => ReactElement}
 const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
-	const	{Component, pageProps, router} = props;
-	const	getLayout = (Component as TGetLayout).getLayout || ((page: ReactElement): ReactElement => page);
+	const {Component, pageProps, router} = props;
+	const getLayout = (Component as TGetLayout).getLayout || ((page: ReactElement): ReactElement => page);
 	// eslint-disable-next-line @typescript-eslint/naming-convention
-	const 	{value} = useLocalStorageValue<boolean>('yearn.finance/feedback-popover');
-	const	{name} = useCurrentApp(router);
+	const {value} = useLocalStorageValue<boolean>('yearn.finance/feedback-popover');
+	const {name} = useCurrentApp(router);
 
 	return (
 		<div id={'app'} className={'mx-auto mb-0 flex max-w-6xl font-aeonik'}>
@@ -67,8 +67,8 @@ const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 });
 
 const App = memo(function App(props: AppProps): ReactElement {
-	const	{Component, pageProps, router} = props;
-	const	{manifest} = useCurrentApp(router);
+	const {Component, pageProps, router} = props;
+	const {manifest} = useCurrentApp(router);
 
 	return (
 		<MenuContextApp>
@@ -87,7 +87,7 @@ const App = memo(function App(props: AppProps): ReactElement {
 	);
 });
 
-function	MyApp(props: AppProps): ReactElement {
+function MyApp(props: AppProps): ReactElement {
 	return (
 		<main id={'main'} className={aeonik.className}>
 			<WithYearn

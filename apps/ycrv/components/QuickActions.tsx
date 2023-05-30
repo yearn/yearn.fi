@@ -40,7 +40,7 @@ export type TQAButton = {
 function QASelect(props: TQASelect): ReactElement {
 	const {label, legend, options, selected, balanceSource, onSelect} = props;
 
-	function	renderMultipleOptionsFallback(): ReactElement {
+	function renderMultipleOptionsFallback(): ReactElement {
 		return (
 			<Dropdown
 				defaultOption={options[0]}
@@ -148,7 +148,7 @@ function QAButton({label, ...props}: TQAButton): ReactElement {
 	);
 }
 
-export function	QuickActions({label, children}: {label: string; children: ReactNode}): ReactElement {
+export function QuickActions({label, children}: {label: string; children: ReactNode}): ReactElement {
 	return (
 		<section aria-label={label} className={'flex w-full flex-col space-x-0 md:flex-row md:space-x-4'}>
 			{children}

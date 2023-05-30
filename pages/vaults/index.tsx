@@ -29,16 +29,16 @@ import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TSortDirection} from '@common/types/types';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 
-function	HeaderUserPosition(): ReactElement {
-	const	{cumulatedValueInVaults} = useWallet();
-	const	{earned} = useYearn();
+function HeaderUserPosition(): ReactElement {
+	const {cumulatedValueInVaults} = useWallet();
+	const {earned} = useYearn();
 
-	const	formatedYouEarned = useMemo((): string => {
+	const formatedYouEarned = useMemo((): string => {
 		const amount = (earned?.totalUnrealizedGainsUSD || 0) > 0 ? earned?.totalUnrealizedGainsUSD || 0 : 0;
 		return formatAmount(amount)?.toString() ?? '';
 	}, [earned?.totalUnrealizedGainsUSD]);
 
-	const	formatedYouHave = useMemo((): string => {
+	const formatedYouHave = useMemo((): string => {
 		return formatAmount(cumulatedValueInVaults || 0)?.toString() ?? '';
 	}, [cumulatedValueInVaults]);
 
@@ -68,20 +68,20 @@ function	HeaderUserPosition(): ReactElement {
 	);
 }
 
-function	Index(): ReactElement {
-	const	{safeChainID} = useChainID();
-	const	{balances, balancesNonce} = useWallet();
-	const	{vaults, vaultsMigrations, vaultsRetired, isLoadingVaultList} = useYearn();
-	const 	[sort, set_sort] = useSessionStorage<{sortBy: TPossibleSortBy, sortDirection: TSortDirection}>(
+function Index(): ReactElement {
+	const {safeChainID} = useChainID();
+	const {balances, balancesNonce} = useWallet();
+	const {vaults, vaultsMigrations, vaultsRetired, isLoadingVaultList} = useYearn();
+	const [sort, set_sort] = useSessionStorage<{sortBy: TPossibleSortBy, sortDirection: TSortDirection}>(
 		'yVaultsSorting', {sortBy: 'apy', sortDirection: 'desc'}
 	);
-	const	{shouldHideDust, shouldHideLowTVLVaults, category, searchValue, set_category, set_searchValue} = useAppSettings();
+	const {shouldHideDust, shouldHideLowTVLVaults, category, searchValue, set_category, set_searchValue} = useAppSettings();
 
-	const	filterHoldingsCallback = useCallback((address: TAddress): boolean => {
+	const filterHoldingsCallback = useCallback((address: TAddress): boolean => {
 		balancesNonce;
-		const	holding = balances?.[toAddress(address)];
-		const	hasValidBalance = toBigInt(holding?.raw) > 0n;
-		const	balanceValue = holding?.normalizedValue || 0;
+		const holding = balances?.[toAddress(address)];
+		const hasValidBalance = toBigInt(holding?.raw) > 0n;
+		const balanceValue = holding?.normalizedValue || 0;
 		if (shouldHideDust && balanceValue < 0.01) {
 			return false;
 		}
@@ -91,11 +91,11 @@ function	Index(): ReactElement {
 		return false;
 	}, [balances, shouldHideDust, balancesNonce]);
 
-	const	filterMigrationCallback = useCallback((address: TAddress): boolean => {
+	const filterMigrationCallback = useCallback((address: TAddress): boolean => {
 		balancesNonce;
-		const	holding = balances?.[toAddress(address)];
-		const	hasValidPrice = toBigInt(holding?.rawPrice) > 0n;
-		const	hasValidBalance = toBigInt(holding?.raw) > 0n;
+		const holding = balances?.[toAddress(address)];
+		const hasValidPrice = toBigInt(holding?.rawPrice) > 0n;
+		const hasValidBalance = toBigInt(holding?.raw) > 0n;
 		if (hasValidBalance && (hasValidPrice ? (holding?.normalizedValue || 0) >= 0.01 : true)) {
 			return true;
 		}
@@ -106,17 +106,17 @@ function	Index(): ReactElement {
 	**	It's best to memorize the filtered vaults, which saves a lot of processing time by only
 	**	performing the filtering once.
 	**********************************************************************************************/
-	const	curveVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Curve');
-	const	velodromeVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Velodrome');
-	const	stablesVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Stablecoin');
-	const	balancerVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Balancer');
-	const	cryptoVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Volatile');
-	const	holdingsVaults = useFilteredVaults(vaults, ({address}): boolean => filterHoldingsCallback(address));
-	const	migratableVaults = useFilteredVaults(vaultsMigrations, ({address}): boolean => filterMigrationCallback(address));
-	const	retiredVaults = useFilteredVaults(vaultsRetired, ({address}): boolean => filterMigrationCallback(address));
+	const curveVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Curve');
+	const velodromeVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Velodrome');
+	const stablesVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Stablecoin');
+	const balancerVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Balancer');
+	const cryptoVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Volatile');
+	const holdingsVaults = useFilteredVaults(vaults, ({address}): boolean => filterHoldingsCallback(address));
+	const migratableVaults = useFilteredVaults(vaultsMigrations, ({address}): boolean => filterMigrationCallback(address));
+	const retiredVaults = useFilteredVaults(vaultsRetired, ({address}): boolean => filterMigrationCallback(address));
 
-	const	categoriesToDisplay = useMemo((): TListHeroCategory<string>[] => {
-		const	categories = [
+	const categoriesToDisplay = useMemo((): TListHeroCategory<string>[] => {
+		const categories = [
 			{value: 'Featured Vaults', label: 'Featured', isSelected: category === 'Featured Vaults'},
 			{value: 'Crypto Vaults', label: 'Crypto', isSelected: category === 'Crypto Vaults'},
 			{value: 'Stables Vaults', label: 'Stables', isSelected: category === 'Stables Vaults'},
@@ -138,8 +138,8 @@ function	Index(): ReactElement {
 	**	decide which vaults to display based on the category. No extra filters are applied.
 	**	The possible lists are memoized to avoid unnecessary re-renders.
 	**********************************************************************************************/
-	const	vaultsToDisplay = useMemo((): TYDaemonVault[] => {
-		let	_vaultList: TYDaemonVault[] = [...Object.values(vaults || {})] as TYDaemonVault[];
+	const vaultsToDisplay = useMemo((): TYDaemonVault[] => {
+		let _vaultList: TYDaemonVault[] = [...Object.values(vaults || {})] as TYDaemonVault[];
 
 		if (category === 'Curve Vaults') {
 			_vaultList = curveVaults;
@@ -169,14 +169,14 @@ function	Index(): ReactElement {
 	**	Then, on the vaultsToDisplay list, we apply the search filter. The search filter is
 	**	implemented as a simple string.includes() on the vault name.
 	**********************************************************************************************/
-	const	searchedVaultsToDisplay = useMemo((): TYDaemonVault[] => {
-		const	vaultsToUse = [...vaultsToDisplay];
+	const searchedVaultsToDisplay = useMemo((): TYDaemonVault[] => {
+		const vaultsToUse = [...vaultsToDisplay];
 
 		if (searchValue === '') {
 			return vaultsToUse;
 		}
 		return vaultsToUse.filter((vault): boolean => {
-			const	searchString = getVaultName(vault);
+			const searchString = getVaultName(vault);
 			return searchString.toLowerCase().includes(searchValue.toLowerCase());
 		});
 	}, [vaultsToDisplay, searchValue]);
@@ -186,13 +186,13 @@ function	Index(): ReactElement {
 	**	is done via a custom method that will sort the vaults based on the sortBy and
 	**	sortDirection values.
 	**********************************************************************************************/
-	const	sortedVaultsToDisplay = useSortVaults([...searchedVaultsToDisplay], sort.sortBy, sort.sortDirection);
+	const sortedVaultsToDisplay = useSortVaults([...searchedVaultsToDisplay], sort.sortBy, sort.sortDirection);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	**	Callback method used to sort the vaults list.
 	**	The use of useCallback() is to prevent the method from being re-created on every render.
 	**********************************************************************************************/
-	const	onSort = useCallback((newSortBy: string, newSortDirection: string): void => {
+	const onSort = useCallback((newSortBy: string, newSortDirection: string): void => {
 		set_sort({sortBy: newSortBy as TPossibleSortBy, sortDirection: newSortDirection as TSortDirection});
 	}, [set_sort]);
 
@@ -200,7 +200,7 @@ function	Index(): ReactElement {
 	**	The VaultList component is memoized to prevent it from being re-created on every render.
 	**	It contains either the list of vaults, is some are available, or a message to the user.
 	**********************************************************************************************/
-	const	VaultList = useMemo((): ReactNode => {
+	const VaultList = useMemo((): ReactNode => {
 		if (isLoadingVaultList && category === 'Holdings') {
 			return (
 				<VaultsListEmpty
