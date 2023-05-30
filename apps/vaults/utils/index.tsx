@@ -35,11 +35,11 @@ export function getNativeTokenWrapperContract(chainID: number): TAddress {
 		case 1:
 			return WETH_TOKEN_ADDRESS;
 		case 10:
-			return OPT_WETH_TOKEN_ADDRESS; // TODO: import from web-lib
+			return OPT_WETH_TOKEN_ADDRESS;
 		case 250:
 			return WFTM_TOKEN_ADDRESS;
 		case 42161:
-			return ARB_WETH_TOKEN_ADDRESS; // TODO: import from web-lib
+			return ARB_WETH_TOKEN_ADDRESS;
 		default:
 			return ZERO_ADDRESS;
 	}
