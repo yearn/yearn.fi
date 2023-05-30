@@ -43,7 +43,7 @@ type TCardTransactor = {
 	onZap: VoidPromiseFunction
 }
 
-const		CardTransactorContext = createContext<TCardTransactor>({
+const CardTransactorContext = createContext<TCardTransactor>({
 	selectedOptionFrom: ZAP_OPTIONS_FROM[0],
 	selectedOptionTo: ZAP_OPTIONS_TO[0],
 	amount: toNormalizedBN(0),
@@ -61,24 +61,24 @@ const		CardTransactorContext = createContext<TCardTransactor>({
 	onZap: async (): Promise<void> => undefined
 });
 
-function	CardTransactorContextApp({
+function CardTransactorContextApp({
 	defaultOptionFrom = ZAP_OPTIONS_FROM[0],
 	defaultOptionTo = ZAP_OPTIONS_TO[0],
 	children = <div />
 }): ReactElement {
-	const	{provider, isActive, address} = useWeb3();
-	const	{styBalAPY, allowances, slippage} = useYBal();
-	const	{balancesNonce, balances, refresh} = useWallet();
-	const	{vaults} = useYearn();
-	const	[txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
-	const	[txStatusZap, set_txStatusZap] = useState(defaultTxStatus);
-	const	[selectedOptionFrom, set_selectedOptionFrom] = useState(defaultOptionFrom);
-	const	[selectedOptionTo, set_selectedOptionTo] = useState(defaultOptionTo);
-	const	[amount, set_amount] = useState<TNormalizedBN>(toNormalizedBN(0));
-	const	[hasTypedSomething, set_hasTypedSomething] = useState(false);
-	const	addToken = useAddToken();
-	const 	{dismissAllToasts} = useDismissToasts();
-	const 	{toast} = yToast();
+	const {provider, isActive, address} = useWeb3();
+	const {styBalAPY, allowances, slippage} = useYBal();
+	const {balancesNonce, balances, refresh} = useWallet();
+	const {vaults} = useYearn();
+	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
+	const [txStatusZap, set_txStatusZap] = useState(defaultTxStatus);
+	const [selectedOptionFrom, set_selectedOptionFrom] = useState(defaultOptionFrom);
+	const [selectedOptionTo, set_selectedOptionTo] = useState(defaultOptionTo);
+	const [amount, set_amount] = useState<TNormalizedBN>(toNormalizedBN(0));
+	const [hasTypedSomething, set_hasTypedSomething] = useState(false);
+	const addToken = useAddToken();
+	const {dismissAllToasts} = useDismissToasts();
+	const {toast} = yToast();
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** useEffect to set the amount to the max amount of the selected token once
@@ -139,7 +139,7 @@ function	CardTransactorContextApp({
 	** Execute a zap using the ZAP contract to migrate from a token A to a
 	** supported token B.
 	**************************************************************************/
-	async function	onZap(): Promise<void> {
+	async function onZap(): Promise<void> {
 		dismissAllToasts();
 
 		const addToMetamaskToast = {
@@ -187,28 +187,28 @@ function	CardTransactorContextApp({
 	** Set of memorized values to limit the number of re-rendering of the
 	** component.
 	**************************************************************************/
-	const	fromVaultAPY = useMemo((): string => {
+	const fromVaultAPY = useMemo((): string => {
 		if (toAddress(selectedOptionFrom.value) === STYBAL_TOKEN_ADDRESS) {
 			return `APY ${formatPercent(styBalAPY)}`;
 		}
 		return getVaultAPY(vaults, selectedOptionFrom.value);
 	}, [vaults, selectedOptionFrom, styBalAPY]);
 
-	const	toVaultAPY = useMemo((): string => {
+	const toVaultAPY = useMemo((): string => {
 		if (toAddress(selectedOptionTo.value) === STYBAL_TOKEN_ADDRESS) {
 			return `APY ${formatPercent(styBalAPY)}`;
 		}
 		return getVaultAPY(vaults, selectedOptionTo.value);
 	}, [vaults, selectedOptionTo, styBalAPY]);
 
-	const	expectedOutWithSlippage = useMemo((): number => getAmountWithSlippage(
+	const expectedOutWithSlippage = useMemo((): number => getAmountWithSlippage(
 		selectedOptionFrom.value,
 		selectedOptionTo.value,
 		formatBN(expectedOut),
 		slippage
 	), [expectedOut, selectedOptionFrom.value, selectedOptionTo.value, slippage]);
 
-	const	allowanceFrom = useMemo((): BigNumber => {
+	const allowanceFrom = useMemo((): BigNumber => {
 		balancesNonce; // remove warning, force deep refresh
 		return formatBN(allowances?.[allowanceKey(1, toAddress(selectedOptionFrom.value), toAddress(selectedOptionFrom.zapVia), toAddress(address))]);
 	}, [balancesNonce, allowances, selectedOptionFrom.value, selectedOptionFrom.zapVia, address]);

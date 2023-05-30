@@ -18,11 +18,11 @@ import {ZAP_OPTIONS_FROM, ZAP_OPTIONS_TO} from '@yBal/constants/tokens';
 import type {ChangeEvent, ReactElement} from 'react';
 import type {TDropdownOption} from '@common/types/types';
 
-function	CardZap(): ReactElement {
-	const	{isActive} = useWeb3();
-	const	{balances} = useWallet();
-	const	{vaults, prices} = useYearn();
-	const	{
+function CardZap(): ReactElement {
+	const {isActive} = useWeb3();
+	const {balances} = useWallet();
+	const {vaults, prices} = useYearn();
+	const {
 		txStatusApprove, txStatusZap,
 		selectedOptionFrom, set_selectedOptionFrom,
 		selectedOptionTo, set_selectedOptionTo,
@@ -43,7 +43,7 @@ function	CardZap(): ReactElement {
 	/* 🔵 - Yearn Finance ******************************************************
 	** useMemo to get the current possible TO vaults path for the current FROM
 	**************************************************************************/
-	const	possibleTo = useMemo((): TDropdownOption[] => {
+	const possibleTo = useMemo((): TDropdownOption[] => {
 		if (selectedOptionFrom.value === YBAL_BALANCER_POOL_ADDRESS) {
 			const possibleOptions = ZAP_OPTIONS_TO.filter((option): boolean => option.value === LPYBAL_TOKEN_ADDRESS);
 			if (selectedOptionTo.value !== LPYBAL_TOKEN_ADDRESS) {
@@ -54,10 +54,10 @@ function	CardZap(): ReactElement {
 		return ZAP_OPTIONS_TO.filter((option): boolean => option.value !== selectedOptionFrom.value);
 	}, [selectedOptionFrom.value, selectedOptionTo.value, set_selectedOptionTo]);
 
-	function	renderButton(): ReactElement {
-		const	balanceForInputToken = formatBN(balances?.[toAddress(selectedOptionFrom.value)]?.raw);
-		const	isAboveBalance = amount.raw.gt(balanceForInputToken) || balanceForInputToken.eq(Zero);
-		const	isAboveAllowance = (amount.raw).gt(allowanceFrom);
+	function renderButton(): ReactElement {
+		const balanceForInputToken = formatBN(balances?.[toAddress(selectedOptionFrom.value)]?.raw);
+		const isAboveBalance = amount.raw.gt(balanceForInputToken) || balanceForInputToken.eq(Zero);
+		const isAboveAllowance = (amount.raw).gt(allowanceFrom);
 
 		if (txStatusApprove.pending || isAboveAllowance) {
 			return (
@@ -207,7 +207,7 @@ function	CardZap(): ReactElement {
 	);
 }
 
-function	WithCardTransactor({className}: {className: string}): ReactElement {
+function WithCardTransactor({className}: {className: string}): ReactElement {
 	return (
 		<CardTransactorContextApp
 			defaultOptionFrom={ZAP_OPTIONS_FROM[0]}

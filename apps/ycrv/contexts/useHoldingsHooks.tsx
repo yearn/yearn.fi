@@ -29,7 +29,7 @@ type THoldings = {
 	veCRVBalance: BigNumber;
 }
 
-const	defaultProps = {
+const defaultProps = {
 	legacy: Zero,
 	treasury: Zero,
 	yCRVSupply: Zero,

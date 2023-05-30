@@ -132,7 +132,7 @@ export function AppHeader(): ReactElement {
 		];
 	}, [pathname]);
 
-	const	supportedNetworks = useMemo((): number[] => {
+	const supportedNetworks = useMemo((): number[] => {
 		const ethereumOnlyPaths = ['/ycrv', '/ybal', '/veyfi', '/ybribe'];
 		if (ethereumOnlyPaths.some((path): boolean => pathname.startsWith(path))) {
 			return [1];

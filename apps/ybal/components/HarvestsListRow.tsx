@@ -28,7 +28,7 @@ function Row({label, value, className, valueClassName}: TRowProps): ReactElement
 	);
 }
 
-function	HarvestListRow({harvest}: {harvest: TYDaemonHarvests}): ReactElement {
+function HarvestListRow({harvest}: {harvest: TYDaemonHarvests}): ReactElement {
 	return (
 		<div className={'yearn--table-wrapper'}>
 			<div className={'yearn--table-token-section'}>

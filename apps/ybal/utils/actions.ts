@@ -13,7 +13,7 @@ const ZAP_ABI = [{'inputs':[{'name':'_input_token', 'type':'address'}, {'name':'
 const LOCAL_ZAP_YEARN_YBAL_ADDRESS = toAddress('0x43cA9bAe8dF108684E5EAaA720C25e1b32B0A075');
 const OUTPUT_TOKENS = [YBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, LPYBAL_TOKEN_ADDRESS];
 
-export async function	simulateZapForMinOut(
+export async function simulateZapForMinOut(
 	provider: ethers.providers.JsonRpcProvider,
 	inputToken: TAddress,
 	outputToken: TAddress,
@@ -70,7 +70,7 @@ export async function	simulateZapForMinOut(
 }
 
 
-export async function	zap(
+export async function zap(
 	provider: ethers.providers.JsonRpcProvider,
 	inputToken: string,
 	outputToken: string,

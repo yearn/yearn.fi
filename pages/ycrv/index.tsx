@@ -20,20 +20,20 @@ import type {BigNumber} from 'ethers';
 import type {NextRouter} from 'next/router';
 import type {ReactElement, ReactNode} from 'react';
 
-function	HeaderPosition(): ReactElement {
+function HeaderPosition(): ReactElement {
 	const {holdings} = useYCRV();
 	const balanceOfStyCRV = useBalance(STYCRV_TOKEN_ADDRESS);
 	const balanceOfLpyCRV = useBalance(LPYCRV_TOKEN_ADDRESS);
 	const stycrvPrice = useTokenPrice(STYCRV_TOKEN_ADDRESS);
 	const lpycrvPrice = useTokenPrice(LPYCRV_TOKEN_ADDRESS);
 
-	const	formatedYearnHas = useMemo((): ReactNode => (
+	const formatedYearnHas = useMemo((): ReactNode => (
 		holdings?.veCRVBalance ?
 			formatAmount(formatToNormalizedValue(holdings.veCRVBalance, 18), 0, 0)
 			: ''
 	), [holdings?.veCRVBalance]);
 
-	const	formatedYouHave = useMemo((): ReactNode => (
+	const formatedYouHave = useMemo((): ReactNode => (
 		formatCounterValueRaw(
 			(balanceOfStyCRV.normalized * stycrvPrice)
 			+
@@ -70,7 +70,7 @@ function	HeaderPosition(): ReactElement {
 	);
 }
 
-function	ZapAndStats(): ReactElement {
+function ZapAndStats(): ReactElement {
 	const {balances} = useWallet();
 	const {holdings, styCRVMegaBoost, styCRVAPY} = useYCRV();
 	const {vaults} = useYearn();
@@ -83,21 +83,21 @@ function	ZapAndStats(): ReactElement {
 	const balanceOfStyCRV = useBalance(STYCRV_TOKEN_ADDRESS);
 	const balanceOfLpyCRV = useBalance(LPYCRV_TOKEN_ADDRESS);
 
-	const	formatBigNumberOver10K = useCallback((v: BigNumber): string => {
+	const formatBigNumberOver10K = useCallback((v: BigNumber): string => {
 		if (formatBN(v)?.gt(ethers.constants.WeiPerEther.mul(10000))) {
 			return formatAmount(formatToNormalizedValue(v || 0, 18), 0, 0)?.toString() ?? '';
 		}
 		return formatAmount(formatToNormalizedValue(v || 0, 18))?.toString() ?? '';
 	}, []);
 
-	const	formatNumberOver10K = useCallback((v: number): string => {
+	const formatNumberOver10K = useCallback((v: number): string => {
 		if (v >= 10000) {
 			return formatAmount(v, 0, 0)?.toString() ?? '';
 		}
 		return formatAmount(v)?.toString() ?? '';
 	}, []);
 
-	const	latestCurveFeesValue = useMemo((): number => {
+	const latestCurveFeesValue = useMemo((): number => {
 		const {weeklyFeesTable} = curveWeeklyFees;
 
 		if (!weeklyFeesTable) {
@@ -111,7 +111,7 @@ function	ZapAndStats(): ReactElement {
 		return weeklyFeesTable[1]?.rawFees || 0;
 	}, [curveWeeklyFees]);
 
-	const	currentVeCRVAPY = useMemo((): number => {
+	const currentVeCRVAPY = useMemo((): number => {
 		return (
 			latestCurveFeesValue / (
 				formatToNormalizedValue(formatBN(holdings?.veCRVTotalSupply), 18) * cgPrices?.['curve-dao-token']?.usd
@@ -119,7 +119,7 @@ function	ZapAndStats(): ReactElement {
 		);
 	}, [holdings, latestCurveFeesValue, cgPrices]);
 
-	const	curveAdminFeePercent = useMemo((): number => {
+	const curveAdminFeePercent = useMemo((): number => {
 		return (currentVeCRVAPY * Number(holdings?.boostMultiplier) / 10000);
 	}, [holdings, currentVeCRVAPY]);
 
@@ -329,7 +329,7 @@ function	ZapAndStats(): ReactElement {
 	);
 }
 
-function	Holdings(): ReactElement {
+function Holdings(): ReactElement {
 	const {balances} = useWallet();
 	const {holdings, styCRVMegaBoost, styCRVAPY} = useYCRV();
 	const {vaults} = useYearn();
@@ -342,21 +342,21 @@ function	Holdings(): ReactElement {
 	const balanceOfStyCRV = useBalance(STYCRV_TOKEN_ADDRESS);
 	const balanceOfLpyCRV = useBalance(LPYCRV_TOKEN_ADDRESS);
 
-	const	formatBigNumberOver10K = useCallback((v: BigNumber): string => {
+	const formatBigNumberOver10K = useCallback((v: BigNumber): string => {
 		if (formatBN(v)?.gt(ethers.constants.WeiPerEther.mul(10000))) {
 			return formatAmount(formatToNormalizedValue(v || 0, 18), 0, 0)?.toString() ?? '';
 		}
 		return formatAmount(formatToNormalizedValue(v || 0, 18))?.toString() ?? '';
 	}, []);
 
-	const	formatNumberOver10K = useCallback((v: number): string => {
+	const formatNumberOver10K = useCallback((v: number): string => {
 		if (v >= 10000) {
 			return formatAmount(v, 0, 0)?.toString() ?? '';
 		}
 		return formatAmount(v)?.toString() ?? '';
 	}, []);
 
-	const	latestCurveFeesValue = useMemo((): number => {
+	const latestCurveFeesValue = useMemo((): number => {
 		const {weeklyFeesTable} = curveWeeklyFees;
 
 		if (!weeklyFeesTable) {
@@ -370,7 +370,7 @@ function	Holdings(): ReactElement {
 		return weeklyFeesTable[1]?.rawFees || 0;
 	}, [curveWeeklyFees]);
 
-	const	currentVeCRVAPY = useMemo((): number => {
+	const currentVeCRVAPY = useMemo((): number => {
 		return (
 			latestCurveFeesValue / (
 				formatToNormalizedValue(formatBN(holdings?.veCRVTotalSupply), 18) * cgPrices?.['curve-dao-token']?.usd
@@ -378,7 +378,7 @@ function	Holdings(): ReactElement {
 		);
 	}, [holdings, latestCurveFeesValue, cgPrices]);
 
-	const	curveAdminFeePercent = useMemo((): number => {
+	const curveAdminFeePercent = useMemo((): number => {
 		return (currentVeCRVAPY * Number(holdings?.boostMultiplier) / 10000);
 	}, [holdings, currentVeCRVAPY]);
 
