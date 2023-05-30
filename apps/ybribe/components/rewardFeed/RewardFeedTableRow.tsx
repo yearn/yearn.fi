@@ -1,30 +1,29 @@
 import React, {useMemo} from 'react';
 import {toAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
-import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatUSD} from '@yearn-finance/web-lib/utils/format.number';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useCurve} from '@common/contexts/useCurve';
 import {useYearn} from '@common/contexts/useYearn';
 
-import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TCurveGauge} from '@common/schemas/curveSchemas';
 import type {TYDaemonGaugeRewardsFeed} from '@common/schemas/yDaemonGaugeRewardsFeedSchema';
 
-function	RewardFeedRowItemWithExtraData({
+function RewardFeedRowItemWithExtraData({
 	address,
 	value
-}: {address: TAddress, value: BigNumber, minDecimals?: number}): ReactElement {
-	const	{tokens, prices} = useYearn();
+}: {address: TAddress, value: bigint, minDecimals?: number}): ReactElement {
+	const {tokens, prices} = useYearn();
 
-	const	tokenInfo = tokens?.[address];
-	const	tokenPrice = Number(prices?.[address]) / 1000000;
-	const	decimals = tokenInfo?.decimals || 18;
-	const	symbol = tokenInfo?.symbol || '???';
-	const	bribeAmount = formatToNormalizedValue(formatBN(value), decimals);
-	const	bribeValue = bribeAmount * (Number(tokenPrice || 0));
+	const tokenInfo = tokens?.[address];
+	const tokenPrice = Number(prices?.[address]) / 1000000;
+	const decimals = tokenInfo?.decimals || 18;
+	const symbol = tokenInfo?.symbol || '???';
+	const bribeAmount = formatToNormalizedValue(toBigInt(value), decimals);
+	const bribeValue = bribeAmount * (Number(tokenPrice || 0));
 
 	return (
 		<div className={'flex h-auto flex-col items-end'}>
@@ -40,18 +39,18 @@ function	RewardFeedRowItemWithExtraData({
 	);
 }
 
-function	RewardFeedTableRow({currentRewardAdded}: {currentRewardAdded: TYDaemonGaugeRewardsFeed[0]}): ReactElement | null {
-	const	{gauges} = useCurve();
+function RewardFeedTableRow({currentRewardAdded}: {currentRewardAdded: TYDaemonGaugeRewardsFeed[0]}): ReactElement | null {
+	const {gauges} = useCurve();
 
-	const	gaugesObject = useMemo((): {[key: string]: TCurveGauge} => {
-		const	_gaugesObject: {[key: string]: TCurveGauge} = {};
+	const gaugesObject = useMemo((): {[key: string]: TCurveGauge} => {
+		const _gaugesObject: {[key: string]: TCurveGauge} = {};
 		for (const gauge of gauges) {
 			_gaugesObject[toAddress(gauge.gauge)] = gauge;
 		}
 		return _gaugesObject;
 	}, [gauges]);
 
-	const	gaugeItem = gaugesObject[toAddress(currentRewardAdded.gauge)];
+	const gaugeItem = gaugesObject[toAddress(currentRewardAdded.gauge)];
 
 	if (!gaugeItem) {
 		return null;
@@ -99,7 +98,7 @@ function	RewardFeedTableRow({currentRewardAdded}: {currentRewardAdded: TYDaemonG
 					<label className={'block text-sm leading-6 text-neutral-400 md:hidden'}>{'Current Rewards per veCRV'}</label>
 					<RewardFeedRowItemWithExtraData
 						address={toAddress(currentRewardAdded.rewardToken)}
-						value={formatBN(currentRewardAdded.amount)} />
+						value={toBigInt(currentRewardAdded.amount)} />
 
 				</div>
 			</div>

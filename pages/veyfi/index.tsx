@@ -4,7 +4,7 @@ import {LockTab} from '@veYFI/components/LockTab';
 import {ManageLockTab} from '@veYFI/components/ManageLockTab';
 import {useVotingEscrow} from '@veYFI/contexts/useVotingEscrow';
 import Wrapper from '@veYFI/Wrapper';
-import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {PageProgressBar} from '@common/components/PageProgressBar';
 import {SummaryData} from '@common/components/SummaryData';
@@ -17,8 +17,8 @@ import type {ReactElement} from 'react';
 function Index(): ReactElement {
 	const {votingEscrow, positions, isLoading} = useVotingEscrow();
 
-	const totalLockedYFI = formatToNormalizedValue(formatBN(votingEscrow?.supply), 18);
-	const yourLockedYFI = formatToNormalizedValue(formatBN(positions?.deposit?.underlyingBalance), 18);
+	const totalLockedYFI = formatToNormalizedValue(toBigInt(votingEscrow?.supply), 18);
+	const yourLockedYFI = formatToNormalizedValue(toBigInt(positions?.deposit?.underlyingBalance), 18);
 
 	const tabs = [
 		{id: 'lock', label: 'Lock YFI', content: <LockTab />},

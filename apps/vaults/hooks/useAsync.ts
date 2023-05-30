@@ -6,7 +6,7 @@ import type {VoidPromiseFunction} from '@yearn-finance/web-lib/types';
 /**
  * @deprecated Use `@react-hookz/web` instead
  */
-function	useAsync<T>(
+function useAsync<T>(
 	callback: (...args: unknown[]) => Promise<T | undefined>,
 	defaultValue?: T,
 	effectDependencies: unknown[] = []
@@ -17,9 +17,9 @@ function	useAsync<T>(
 
 	const callCallback = useCallback(async (): Promise<void> => {
 		set_isLoading(true);
-		const	currentNonce = runNonce.current;
+		const currentNonce = runNonce.current;
 		try {
-			const	res = await callback();
+			const res = await callback();
 			if (currentNonce === runNonce.current) {
 				performBatchedUpdates((): void => {
 					set_isLoading(false);

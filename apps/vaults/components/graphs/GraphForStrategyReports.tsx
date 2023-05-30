@@ -20,7 +20,7 @@ export type TGraphForStrategyReportsProps = {
 	height?: number,
 }
 
-function	GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height = 127}: TGraphForStrategyReportsProps): ReactElement {
+function GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height = 127}: TGraphForStrategyReportsProps): ReactElement {
 	const {safeChainID} = useChainID();
 	const {settings: baseAPISettings} = useSettings();
 	const {data: reports} = useSWR(
@@ -29,8 +29,8 @@ function	GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height =
 		{revalidateOnFocus: false}
 	) as SWRResponse;
 
-	const	strategyData = useMemo((): {name: number; value: number, gain: string, loss: string}[] => {
-		const	_reports = [...(reports || [])];
+	const strategyData = useMemo((): {name: number; value: number, gain: string, loss: string}[] => {
+		const _reports = [...(reports || [])];
 		const reportsForGraph = (
 			_reports.reverse()?.map((reports: TYDaemonReport): {name: number; value: number, gain: string, loss: string} => ({
 				name: Number(reports.timestamp),
@@ -77,7 +77,7 @@ function	GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height =
 						delete e.verticalAnchor;
 						delete e.visibleTicksCount;
 						delete e.tickFormatter;
-						const	formatedValue = formatPercent(value);
+						const formatedValue = formatPercent(value);
 						return <text {...e}>{formatedValue}</text>;
 					}} />
 				<Tooltip
@@ -88,9 +88,9 @@ function	GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height =
 						}
 						if (payload.length > 0) {
 							const [{value, payload: innerPayload}] = payload;
-							const	{gain, loss} = innerPayload;
-							const	diff = toBigInt(gain) - toBigInt(loss);
-							const	normalizedDiff = formatToNormalizedValue(diff, vaultDecimals);
+							const {gain, loss} = innerPayload;
+							const diff = toBigInt(gain) - toBigInt(loss);
+							const normalizedDiff = formatToNormalizedValue(diff, vaultDecimals);
 
 							return (
 								<div className={'recharts-tooltip'}>

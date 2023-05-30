@@ -5,7 +5,7 @@ import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUp
 import type {ImageProps} from 'next/image';
 import type {CSSProperties, ReactElement} from 'react';
 
-function	ImageWithFallback(props: ImageProps & {onCatchError?: VoidFunction}): ReactElement {
+function ImageWithFallback(props: ImageProps & {onCatchError?: VoidFunction}): ReactElement {
 	const {alt, src, ...rest} = props;
 	const [imageSrc, set_imageSrc] = useState(src);
 	const [imageStyle, set_imageStyle] = useState<CSSProperties>({});

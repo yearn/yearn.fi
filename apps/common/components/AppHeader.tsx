@@ -22,8 +22,8 @@ import {MotionDiv} from './MotionDiv';
 import type {ReactElement} from 'react';
 import type {TMenu} from '@yearn-finance/web-lib/components/Header';
 
-function	Logo(): ReactElement {
-	const	{pathname} = useRouter();
+function Logo(): ReactElement {
+	const {pathname} = useRouter();
 
 	return (
 		<>
@@ -43,7 +43,7 @@ function	Logo(): ReactElement {
 
 }
 
-function	LogoPopover(): ReactElement {
+function LogoPopover(): ReactElement {
 	const [isShowing, set_isShowing] = useState(false);
 
 	return (
@@ -97,12 +97,12 @@ function	LogoPopover(): ReactElement {
 	);
 }
 
-export function	AppHeader(): ReactElement {
-	const	isMounted = useIsMounted();
-	const	{pathname} = useRouter();
-	const	{isActive} = useWeb3();
-	const	{onOpenMenu} = useMenu();
-	const	menu = useMemo((): TMenu[] => {
+export function AppHeader(): ReactElement {
+	const isMounted = useIsMounted();
+	const {pathname} = useRouter();
+	const {isActive} = useWeb3();
+	const {onOpenMenu} = useMenu();
+	const menu = useMemo((): TMenu[] => {
 		const HOME_MENU = {path: '/', label: 'Home'};
 
 		if (pathname.startsWith('/ycrv')) {
@@ -131,7 +131,6 @@ export function	AppHeader(): ReactElement {
 			{path: 'https://docs.yearn.finance/', label: 'Docs', target: '_blank'}
 		];
 	}, [pathname]);
-
 
 	const	supportedNetworks = useMemo((): number[] => {
 		const ethereumOnlyPaths = ['/ycrv', '/ybal', '/veyfi', '/ybribe'];

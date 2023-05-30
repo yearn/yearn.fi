@@ -45,7 +45,7 @@ type TCardTransactor = {
 	onZap: VoidPromiseFunction
 }
 
-const		CardTransactorContext = createContext<TCardTransactor>({
+const CardTransactorContext = createContext<TCardTransactor>({
 	selectedOptionFrom: LEGACY_OPTIONS_FROM[0],
 	selectedOptionTo: LEGACY_OPTIONS_TO[0],
 	amount: toNormalizedBN(0),
@@ -64,24 +64,24 @@ const		CardTransactorContext = createContext<TCardTransactor>({
 	onIncreaseCRVAllowance: async (): Promise<void> => undefined
 });
 
-function	CardTransactorContextApp({
+function CardTransactorContextApp({
 	defaultOptionFrom = LEGACY_OPTIONS_FROM[0],
 	defaultOptionTo = LEGACY_OPTIONS_TO[0],
 	children = <div />
 }): ReactElement {
-	const	{provider, isActive, address} = useWeb3();
-	const	{styCRVAPY, allowances, slippage} = useYCRV();
-	const	{balancesNonce, balances, refresh} = useWallet();
-	const	{vaults} = useYearn();
-	const	[txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
-	const	[txStatusZap, set_txStatusZap] = useState(defaultTxStatus);
-	const	[selectedOptionFrom, set_selectedOptionFrom] = useState(defaultOptionFrom);
-	const	[selectedOptionTo, set_selectedOptionTo] = useState(defaultOptionTo);
-	const	[amount, set_amount] = useState<TNormalizedBN>(toNormalizedBN(0));
-	const	[hasTypedSomething, set_hasTypedSomething] = useState(false);
-	const	addToken = useAddToken();
-	const 	{dismissAllToasts} = useDismissToasts();
-	const 	{toast} = yToast();
+	const {provider, isActive, address} = useWeb3();
+	const {styCRVAPY, allowances, slippage} = useYCRV();
+	const {balancesNonce, balances, refresh} = useWallet();
+	const {vaults} = useYearn();
+	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
+	const [txStatusZap, set_txStatusZap] = useState(defaultTxStatus);
+	const [selectedOptionFrom, set_selectedOptionFrom] = useState(defaultOptionFrom);
+	const [selectedOptionTo, set_selectedOptionTo] = useState(defaultOptionTo);
+	const [amount, set_amount] = useState<TNormalizedBN>(toNormalizedBN(0));
+	const [hasTypedSomething, set_hasTypedSomething] = useState(false);
+	const addToken = useAddToken();
+	const {dismissAllToasts} = useDismissToasts();
+	const {toast} = yToast();
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** useEffect to set the amount to the max amount of the selected token once
@@ -110,30 +110,30 @@ function	CardTransactorContextApp({
 			return (Zero);
 		}
 
-		const	currentProvider = provider || getProvider(1);
+		const currentProvider = provider || getProvider(1);
 		if (_inputToken === YCRV_CURVE_POOL_ADDRESS) {
 			// Direct deposit to vault from crv/yCRV Curve LP Token to lp-yCRV Vault
-			const	contract = new ethers.Contract(
+			const contract = new ethers.Contract(
 				LPYCRV_TOKEN_ADDRESS,
 				['function pricePerShare() public view returns (uint256)'],
 				currentProvider
 			);
 			try {
-				const	pps = formatBN(await contract.pricePerShare());
-				const	_expectedOut = _amountIn.mul(pps).div(ethers.constants.WeiPerEther);
+				const pps = formatBN(await contract.pricePerShare());
+				const _expectedOut = _amountIn.mul(pps).div(ethers.constants.WeiPerEther);
 				return _expectedOut;
 			} catch (error) {
 				return (Zero);
 			}
 		} else {
 			// Zap in
-			const	contract = new ethers.Contract(
+			const contract = new ethers.Contract(
 				ZAP_YEARN_VE_CRV_ADDRESS,
 				['function calc_expected_out(address, address, uint256) public view returns (uint256)'],
 				currentProvider
 			);
 			try {
-				const	_expectedOut = formatBN(await contract.calc_expected_out(_inputToken, _outputToken, _amountIn));
+				const _expectedOut = formatBN(await contract.calc_expected_out(_inputToken, _outputToken, _amountIn));
 				return _expectedOut;
 			} catch (error) {
 				return (Zero);
@@ -146,7 +146,7 @@ function	CardTransactorContextApp({
 	** amount. This hook is called every 10s or when amount/in or out changes.
 	** Calls the expectedOutFetcher callback.
 	**************************************************************************/
-	const	{data: expectedOut} = useSWR(
+	const {data: expectedOut} = useSWR(
 		isActive ? [
 			selectedOptionFrom.value,
 			selectedOptionTo.value,
@@ -160,7 +160,7 @@ function	CardTransactorContextApp({
 	** Approve the spending of token A by the corresponding ZAP contract to
 	** perform the swap.
 	**************************************************************************/
-	async function	onApproveFrom(): Promise<void> {
+	async function onApproveFrom(): Promise<void> {
 		new Transaction(provider, approveERC20, set_txStatusApprove).populate(
 			toAddress(selectedOptionFrom.value),
 			selectedOptionFrom.zapVia,
@@ -175,7 +175,7 @@ function	CardTransactorContextApp({
 	** increase it. This function is called when the user wants to increase the
 	** allowance of the CRV token.
 	**************************************************************************/
-	async function	onIncreaseCRVAllowance(): Promise<void> {
+	async function onIncreaseCRVAllowance(): Promise<void> {
 		await new Transaction(provider, approveERC20, set_txStatusApprove).populate(
 			toAddress(selectedOptionFrom.value),
 			selectedOptionFrom.zapVia,
@@ -195,7 +195,7 @@ function	CardTransactorContextApp({
 	** Execute a zap using the ZAP contract to migrate from a token A to a
 	** supported token B.
 	**************************************************************************/
-	async function	onZap(): Promise<void> {
+	async function onZap(): Promise<void> {
 		dismissAllToasts();
 
 		const addToMetamaskToast = {
@@ -243,28 +243,28 @@ function	CardTransactorContextApp({
 	** Set of memorized values to limit the number of re-rendering of the
 	** component.
 	**************************************************************************/
-	const	fromVaultAPY = useMemo((): string => {
+	const fromVaultAPY = useMemo((): string => {
 		if (toAddress(selectedOptionFrom.value) === STYCRV_TOKEN_ADDRESS) {
 			return `APY ${formatPercent(styCRVAPY)}`;
 		}
 		return getVaultAPY(vaults, selectedOptionFrom.value);
 	}, [vaults, selectedOptionFrom, styCRVAPY]);
 
-	const	toVaultAPY = useMemo((): string => {
+	const toVaultAPY = useMemo((): string => {
 		if (toAddress(selectedOptionTo.value) === STYCRV_TOKEN_ADDRESS) {
 			return `APY ${formatPercent(styCRVAPY)}`;
 		}
 		return getVaultAPY(vaults, selectedOptionTo.value);
 	}, [vaults, selectedOptionTo, styCRVAPY]);
 
-	const	expectedOutWithSlippage = useMemo((): number => getAmountWithSlippage(
+	const expectedOutWithSlippage = useMemo((): number => getAmountWithSlippage(
 		selectedOptionFrom.value,
 		selectedOptionTo.value,
 		formatBN(expectedOut),
 		slippage
 	), [expectedOut, selectedOptionFrom.value, selectedOptionTo.value, slippage]);
 
-	const	allowanceFrom = useMemo((): BigNumber => {
+	const allowanceFrom = useMemo((): BigNumber => {
 		balancesNonce; // remove warning, force deep refresh
 		return formatBN(allowances?.[allowanceKey(1, toAddress(selectedOptionFrom.value), toAddress(selectedOptionFrom.zapVia), toAddress(address))]);
 	}, [balancesNonce, allowances, selectedOptionFrom.value, selectedOptionFrom.zapVia, address]);

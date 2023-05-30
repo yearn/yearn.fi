@@ -25,10 +25,10 @@ type TBalanceReminderElement = {
 	symbol: string,
 }
 
-function	TokenItem({element}: {element: TBalanceReminderElement}): ReactElement {
-	const	{provider} = useWeb3();
-	const	{safeChainID} = useChainID();
-	const	balance = useBalance(element.address);
+function TokenItem({element}: {element: TBalanceReminderElement}): ReactElement {
+	const {provider} = useWeb3();
+	const {safeChainID} = useChainID();
+	const balance = useBalance(element.address);
 
 	async function addTokenToMetamask(address: string, symbol: string, decimals: number, image: string): Promise<void> {
 		if (!provider) {
@@ -91,12 +91,12 @@ function	TokenItem({element}: {element: TBalanceReminderElement}): ReactElement 
 }
 
 export default function BalanceReminderPopover(): ReactElement {
-	const	{balances, isLoading} = useWallet();
-	const	{address, ens, isActive, onDesactivate} = useWeb3();
-	const	{vaults} = useYearn();
+	const {balances, isLoading} = useWallet();
+	const {address, ens, isActive, onDesactivate} = useWeb3();
+	const {vaults} = useYearn();
 
-	const	nonNullBalances = useMemo((): TDict<TBalanceData> => {
-		const	nonNullBalances = Object.entries(balances).reduce((acc: TDict<TBalanceData>, [address, balance]): TDict<TBalanceData> => {
+	const nonNullBalances = useMemo((): TDict<TBalanceData> => {
+		const nonNullBalances = Object.entries(balances).reduce((acc: TDict<TBalanceData>, [address, balance]): TDict<TBalanceData> => {
 			if (toBigInt(balance?.raw) > 0n) {
 				acc[toAddress(address)] = balance;
 			}
@@ -105,8 +105,8 @@ export default function BalanceReminderPopover(): ReactElement {
 		return nonNullBalances;
 	}, [balances]);
 
-	const	nonNullBalancesForVault = useMemo((): TBalanceReminderElement[] => {
-		const	nonNullBalancesForVault = Object.entries(nonNullBalances).reduce((acc: TBalanceReminderElement[], [address, balance]): TBalanceReminderElement[] => {
+	const nonNullBalancesForVault = useMemo((): TBalanceReminderElement[] => {
+		const nonNullBalancesForVault = Object.entries(nonNullBalances).reduce((acc: TBalanceReminderElement[], [address, balance]): TBalanceReminderElement[] => {
 			const currentVault = vaults?.[toAddress(address)];
 			if (currentVault) {
 				acc.push({
@@ -121,7 +121,7 @@ export default function BalanceReminderPopover(): ReactElement {
 		return nonNullBalancesForVault;
 	}, [nonNullBalances, vaults]);
 
-	function	renderNoTokenFallback(isLoading: boolean): ReactElement {
+	function renderNoTokenFallback(isLoading: boolean): ReactElement {
 		if (isLoading) {
 			return (
 				<div className={'py-4 text-center text-sm text-neutral-400'}>

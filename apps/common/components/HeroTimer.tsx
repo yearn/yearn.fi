@@ -12,7 +12,7 @@ type TProps = {
 	endTime?: TSeconds;
 }
 
-function	HeroTimer({endTime}: TProps): ReactElement {
+function HeroTimer({endTime}: TProps): ReactElement {
 	const time = useTimer({endTime});
 
 	return (

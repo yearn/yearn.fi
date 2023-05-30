@@ -23,31 +23,31 @@ import type {ReactElement, ReactNode} from 'react';
 import type {TCurveGauge} from '@common/schemas/curveSchemas';
 import type {TSortDirection} from '@common/types/types';
 
-function	GaugeList(): ReactElement {
-	const	{tokens, prices} = useYearn();
-	const	{gauges} = useCurve();
-	const	{currentRewards, nextRewards} = useBribes();
-	const	[category, set_category] = useState('all');
-	const	[searchValue, set_searchValue] = useState('');
-	const 	[sort, set_sort] = useSessionStorage<{sortBy: string, sortDirection: TSortDirection}>(
+function GaugeList(): ReactElement {
+	const {tokens, prices} = useYearn();
+	const {gauges} = useCurve();
+	const {currentRewards, nextRewards} = useBribes();
+	const [category, set_category] = useState('all');
+	const [searchValue, set_searchValue] = useState('');
+	const [sort, set_sort] = useSessionStorage<{sortBy: string, sortDirection: TSortDirection}>(
 		'yGaugeListOfferBribeSorting', {sortBy: '', sortDirection: 'desc'}
 	);
 
-	const	getRewardValue = useCallback((address: string, value: BigNumber): number => {
+	const getRewardValue = useCallback((address: string, value: BigNumber): number => {
 		if (!isTAddress(address)) {
 			return 0;
 		}
-		const	tokenInfo = tokens?.[address];
-		const	tokenPrice = prices?.[address];
-		const	decimals = tokenInfo?.decimals || 18;
-		const	bribeAmount = formatToNormalizedValue(formatBN(value), decimals);
-		const	bribeValue = bribeAmount * (Number(tokenPrice || 0) / 100);
+		const tokenInfo = tokens?.[address];
+		const tokenPrice = prices?.[address];
+		const decimals = tokenInfo?.decimals || 18;
+		const bribeAmount = formatToNormalizedValue(formatBN(value), decimals);
+		const bribeValue = bribeAmount * (Number(tokenPrice || 0) / 100);
 		return bribeValue;
 	}, [prices, tokens]);
 
-	const	standardGauges = useMemo((): TCurveGauge[] => gauges.filter((gauge): boolean => !gauge.factory), [gauges]);
-	const	factoryGauges = useMemo((): TCurveGauge[] => gauges.filter((gauge): boolean => gauge.factory), [gauges]);
-	const	filteredGauges = useMemo((): TCurveGauge[] => {
+	const standardGauges = useMemo((): TCurveGauge[] => gauges.filter((gauge): boolean => !gauge.factory), [gauges]);
+	const factoryGauges = useMemo((): TCurveGauge[] => gauges.filter((gauge): boolean => gauge.factory), [gauges]);
+	const filteredGauges = useMemo((): TCurveGauge[] => {
 		if (category === 'standard') {
 			return standardGauges;
 		}
@@ -57,19 +57,19 @@ function	GaugeList(): ReactElement {
 		return gauges;
 	}, [category, gauges, factoryGauges, standardGauges]);
 
-	const	searchedGauges = useMemo((): TCurveGauge[] => {
-		const	gaugesToSearch = [...filteredGauges];
+	const searchedGauges = useMemo((): TCurveGauge[] => {
+		const gaugesToSearch = [...filteredGauges];
 
 		if (searchValue === '') {
 			return gaugesToSearch;
 		}
 		return gaugesToSearch.filter((gauge): boolean => {
-			const	searchString = `${gauge.name} ${gauge.gauge}`;
+			const searchString = `${gauge.name} ${gauge.gauge}`;
 			return searchString.toLowerCase().includes(searchValue.toLowerCase());
 		});
 	}, [filteredGauges, searchValue]);
 
-	const	sortedGauges = useMemo((): TCurveGauge[] => {
+	const sortedGauges = useMemo((): TCurveGauge[] => {
 		if (sort.sortBy === 'name') {
 			return searchedGauges.sort((a, b): number => stringSort({a: a.name, b: b.name, sortDirection: sort.sortDirection}));
 		}
@@ -112,7 +112,7 @@ function	GaugeList(): ReactElement {
 		return searchedGauges;
 	}, [sort.sortBy, sort.sortDirection, searchedGauges, currentRewards?.v3, getRewardValue, nextRewards?.v3]);
 
-	const	onSort = useCallback((newSortBy: string, newSortDirection: string): void => {
+	const onSort = useCallback((newSortBy: string, newSortDirection: string): void => {
 		set_sort({sortBy: newSortBy, sortDirection: newSortDirection as TSortDirection});
 	}, [set_sort]);
 
@@ -158,7 +158,7 @@ function	GaugeList(): ReactElement {
 	);
 }
 
-function	OfferBribe(): ReactElement {
+function OfferBribe(): ReactElement {
 	return (
 		<>
 			<div className={'mt-8 mb-10 w-full max-w-6xl text-center'}>

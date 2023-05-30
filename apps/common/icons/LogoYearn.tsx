@@ -2,7 +2,7 @@ import React from 'react';
 
 import type {ReactElement} from 'react';
 
-function	LogoYearn(props: React.SVGProps<SVGSVGElement> & {back?: string, front?: string}): ReactElement {
+function LogoYearn(props: React.SVGProps<SVGSVGElement> & {back?: string, front?: string}): ReactElement {
 	return (
 		<svg
 			{...props}
