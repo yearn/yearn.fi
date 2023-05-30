@@ -52,13 +52,13 @@ function AmountInput({
 					min={0}
 					aria-label={label}
 					value={displayedAmount}
-					onChange={onAmountChange ? (e) => onAmountChange(e.target.value) : undefined}
+					onChange={onAmountChange ? (e): void => onAmountChange(e.target.value) : undefined}
 					placeholder={loading ? '' : placeholder ?? '0'}
 					disabled={disabled}
 				/>
 				<Renderable shouldRender={!!maxAmount && !disabled}>
 					<button
-						onClick={onMaxClick ? () => onMaxClick() : undefined}
+						onClick={onMaxClick ? (): void => onMaxClick() : undefined}
 						className={'absolute right-2 ml-2 h-6 cursor-pointer border-none bg-neutral-900 px-2 py-1 text-xs text-neutral-0 transition-colors hover:bg-neutral-700'}>
 						{'Max'}
 					</button>
