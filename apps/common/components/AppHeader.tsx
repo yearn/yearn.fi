@@ -3,6 +3,7 @@ import Link from 'next/link';
 import {useRouter} from 'next/router';
 import {AnimatePresence} from 'framer-motion';
 import {Popover, Transition} from '@headlessui/react';
+import {useIsMounted} from '@react-hookz/web';
 import {VaultsHeader} from '@vaults/components/header/VaultsHeader';
 import {VeYfiHeader} from '@veYFI/components/header/VeYfiHeader';
 import Header from '@yearn-finance/web-lib/components/Header';
@@ -95,6 +96,7 @@ function	LogoPopover(): ReactElement {
 }
 
 export function	AppHeader(): ReactElement {
+	const	isMounted = useIsMounted();
 	const	{pathname} = useRouter();
 	const	{isActive} = useWeb3();
 	const	{onOpenMenu} = useMenu();
@@ -145,7 +147,7 @@ export function	AppHeader(): ReactElement {
 				</AnimatePresence>
 			)}
 			extra={
-				<Renderable shouldRender={isActive}>
+				<Renderable shouldRender={isActive && isMounted()}>
 					<div className={'ml-4'}>
 						<BalanceReminderPopover />
 					</div>

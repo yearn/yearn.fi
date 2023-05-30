@@ -1,6 +1,6 @@
 import {serialize} from 'wagmi';
 import * as Sentry from '@sentry/nextjs';
-import {getNativeTokenWrapperName} from '@vaults/utils';
+import {getNativeTokenWrapperContract, getNativeTokenWrapperName} from '@vaults/utils';
 import {erc20ABI, multicall} from '@wagmi/core';
 import AGGREGATE3_ABI from '@yearn-finance/web-lib/utils/abi/aggregate.abi';
 import {toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
@@ -30,6 +30,7 @@ async function getBatchBalances({
 		chunks.push(tokens.slice(i, i + 5_000));
 	}
 
+	const nativeTokenWrapper = getNativeTokenWrapperContract(chainID);
 	const nativeTokenWrapperName = getNativeTokenWrapperName(chainID);
 	for (const chunkTokens of chunks) {
 		const calls = [];
@@ -38,9 +39,16 @@ async function getBatchBalances({
 			const	ownerAddress = address;
 			const	isEth = toAddress(token) === toAddress(ETH_TOKEN_ADDRESS);
 			if (isEth) {
-				calls.push({address: toWagmiAddress(MULTICALL3_ADDRESS), abi: AGGREGATE3_ABI, functionName: 'getEthBalance', args: [ownerAddress]});
+				const multicall3Contract = {address: toWagmiAddress(MULTICALL3_ADDRESS), abi: AGGREGATE3_ABI};
+				const baseContract = {address: toWagmiAddress(nativeTokenWrapper), abi: erc20ABI};
+				calls.push({...multicall3Contract, functionName: 'getEthBalance', args: [ownerAddress]});
+				calls.push({...baseContract, functionName: 'decimals'});
+				calls.push({...baseContract, functionName: 'symbol'});
 			} else {
-				calls.push({address: toWagmiAddress(token), abi: erc20ABI, functionName: 'balanceOf', args: [ownerAddress]});
+				const baseContract = {address: toWagmiAddress(token), abi: erc20ABI};
+				calls.push({...baseContract, functionName: 'balanceOf', args: [ownerAddress]});
+				calls.push({...baseContract, functionName: 'decimals'});
+				calls.push({...baseContract, functionName: 'symbol'});
 			}
 		}
 

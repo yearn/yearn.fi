@@ -2,7 +2,7 @@ import {useCallback, useMemo, useRef, useState} from 'react';
 import {erc20ABI} from 'wagmi';
 import axios from 'axios';
 import {useUpdateEffect} from '@react-hookz/web';
-import {getNativeTokenWrapperName} from '@vaults/utils';
+import {getNativeTokenWrapperContract, getNativeTokenWrapperName} from '@vaults/utils';
 import {deserialize, multicall} from '@wagmi/core';
 import {useUI} from '@yearn-finance/web-lib/contexts/useUI';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -108,14 +108,23 @@ async function getBalances(
 ): Promise<[TDict<TBalanceData>, Error | undefined]> {
 	let		result: TDict<TBalanceData> = {};
 	const	calls: ContractFunctionConfig[] = [];
+	const	nativeTokenWrapper = getNativeTokenWrapperContract(chainID);
+
 	for (const element of tokens) {
 		const	{token} = element;
 		const	ownerAddress = address;
 		const	isEth = toAddress(token) === toAddress(ETH_TOKEN_ADDRESS);
 		if (isEth) {
-			calls.push({address: toWagmiAddress(MULTICALL3_ADDRESS), abi: AGGREGATE3_ABI, functionName: 'getEthBalance', args: [ownerAddress]});
+			const multicall3Contract = {address: toWagmiAddress(MULTICALL3_ADDRESS), abi: AGGREGATE3_ABI};
+			const baseContract = {address: toWagmiAddress(nativeTokenWrapper), abi: erc20ABI};
+			calls.push({...multicall3Contract, functionName: 'getEthBalance', args: [ownerAddress]});
+			calls.push({...baseContract, functionName: 'decimals'});
+			calls.push({...baseContract, functionName: 'symbol'});
 		} else {
-			calls.push({address: toWagmiAddress(token), abi: erc20ABI, functionName: 'balanceOf', args: [ownerAddress]});
+			const baseContract = {address: toWagmiAddress(token), abi: erc20ABI};
+			calls.push({...baseContract, functionName: 'balanceOf', args: [ownerAddress]});
+			calls.push({...baseContract, functionName: 'decimals'});
+			calls.push({...baseContract, functionName: 'symbol'});
 		}
 	}
 
@@ -247,7 +256,6 @@ export function	useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 		set_status({...defaultStatus, isLoading: true, isFetching: true, isRefetching: defaultStatus.isFetched});
 		onLoadStart();
 		const	tokens = tokenList.filter(({token}: TUseBalancesTokens): boolean => !isZeroAddress(token));
-
 		const	chunks = [];
 		for (let i = 0; i < tokens.length; i += 2_000) {
 			chunks.push(tokens.slice(i, i + 2_000));
