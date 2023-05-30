@@ -10,7 +10,7 @@ export type TGraphForVaultTVLProps = {
 	height?: number,
 }
 
-function	GraphForVaultTVL({messariData, height = 312}: TGraphForVaultTVLProps): ReactElement {	
+function GraphForVaultTVL({messariData, height = 312}: TGraphForVaultTVLProps): ReactElement {
 	if (messariData?.length === 0) {
 		return <Fragment />;
 	}
@@ -25,7 +25,7 @@ function	GraphForVaultTVL({messariData, height = 312}: TGraphForVaultTVLProps): 
 					type={'step'}
 					strokeWidth={2}
 					dataKey={'tvl'}
-					stroke={'currentcolor'} 
+					stroke={'currentcolor'}
 					dot={false}
 					activeDot={(e): ReactElement => {
 						e.className = `${e.className} activeDot`;
@@ -38,7 +38,7 @@ function	GraphForVaultTVL({messariData, height = 312}: TGraphForVaultTVLProps): 
 				<YAxis
 					orientation={'right'}
 					domain={['dataMin', 'auto']}
-					hide={false} 
+					hide={false}
 					tick={(e): ReactElement => {
 						const {payload: {value}} = e;
 						e.fill = '#5B5B5B';
@@ -47,7 +47,7 @@ function	GraphForVaultTVL({messariData, height = 312}: TGraphForVaultTVLProps): 
 						delete e.verticalAnchor;
 						delete e.visibleTicksCount;
 						delete e.tickFormatter;
-						const	formatedValue = formatWithUnit(value, 0, 0);
+						const formatedValue = formatWithUnit(value, 0, 0);
 						return <text {...e}>{formatedValue}</text>;
 					}} />
 				<Tooltip

@@ -12,7 +12,7 @@ type TSetZapOptionProps = {
 	decimals: number;
 	solveVia?: Solver[]
 }
-export function	setZapOption({
+export function setZapOption({
 	name,
 	symbol,
 	address,

@@ -14,7 +14,7 @@ export type	TAppSettingsContext = {
 	set_category: (v: string) => void
 	set_searchValue: (v: string) => void
 }
-const	defaultProps: TAppSettingsContext = {
+const defaultProps: TAppSettingsContext = {
 	category: '',
 	searchValue: '',
 	shouldHideDust: false,
@@ -25,17 +25,17 @@ const	defaultProps: TAppSettingsContext = {
 	set_searchValue: (): void => undefined
 };
 
-const	AppSettingsContext = createContext<TAppSettingsContext>(defaultProps);
+const AppSettingsContext = createContext<TAppSettingsContext>(defaultProps);
 export const AppSettingsContextApp = memo(function AppSettingsContextApp({children}: {children: ReactElement}): ReactElement {
-	const 	[category, set_category] = useSessionStorage('yearn.finance/vaults-category', 'Featured Vaults');
-	const 	[searchValue, set_searchValue] = useSessionStorage('yearn.finance/vaults-search', '');
-	const	[shouldHideDust, set_shouldHideDust] = useLocalStorage('yearn.finance/hide-dust', true);
-	const	[shouldHideLowTVLVaults, set_shouldHideLowTVLVaults] = useLocalStorage('yearn.finance/hide-low-tvl', false);
+	const [category, set_category] = useSessionStorage('yearn.finance/vaults-category', 'Featured Vaults');
+	const [searchValue, set_searchValue] = useSessionStorage('yearn.finance/vaults-search', '');
+	const [shouldHideDust, set_shouldHideDust] = useLocalStorage('yearn.finance/hide-dust', true);
+	const [shouldHideLowTVLVaults, set_shouldHideLowTVLVaults] = useLocalStorage('yearn.finance/hide-low-tvl', false);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	**	Setup and render the Context provider to use in the app.
 	***************************************************************************/
-	const	contextValue = useMemo((): TAppSettingsContext => ({
+	const contextValue = useMemo((): TAppSettingsContext => ({
 		shouldHideDust,
 		onSwitchHideDust: (): void => set_shouldHideDust(!shouldHideDust),
 		shouldHideLowTVLVaults,

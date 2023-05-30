@@ -13,7 +13,7 @@ import type {TDropdownItemProps, TDropdownOption, TDropdownProps} from '@common/
 
 
 function DropdownItem({option, balanceSource}: TDropdownItemProps): ReactElement {
-	const	balance = useBalance(option.value, balanceSource);
+	const balance = useBalance(option.value, balanceSource);
 
 	return (
 		<Combobox.Option value={option}>

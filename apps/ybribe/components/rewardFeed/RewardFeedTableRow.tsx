@@ -13,18 +13,18 @@ import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TCurveGauge} from '@common/schemas/curveSchemas';
 import type {TYDaemonGaugeRewardsFeed} from '@common/schemas/yDaemonGaugeRewardsFeedSchema';
 
-function	RewardFeedRowItemWithExtraData({
+function RewardFeedRowItemWithExtraData({
 	address,
 	value
 }: {address: TAddress, value: BigNumber, minDecimals?: number}): ReactElement {
-	const	{tokens, prices} = useYearn();
+	const {tokens, prices} = useYearn();
 
-	const	tokenInfo = tokens?.[address];
-	const	tokenPrice = Number(prices?.[address]) / 1000000;
-	const	decimals = tokenInfo?.decimals || 18;
-	const	symbol = tokenInfo?.symbol || '???';
-	const	bribeAmount = formatToNormalizedValue(formatBN(value), decimals);
-	const	bribeValue = bribeAmount * (Number(tokenPrice || 0));
+	const tokenInfo = tokens?.[address];
+	const tokenPrice = Number(prices?.[address]) / 1000000;
+	const decimals = tokenInfo?.decimals || 18;
+	const symbol = tokenInfo?.symbol || '???';
+	const bribeAmount = formatToNormalizedValue(formatBN(value), decimals);
+	const bribeValue = bribeAmount * (Number(tokenPrice || 0));
 
 	return (
 		<div className={'flex h-auto flex-col items-end'}>
@@ -40,18 +40,18 @@ function	RewardFeedRowItemWithExtraData({
 	);
 }
 
-function	RewardFeedTableRow({currentRewardAdded}: {currentRewardAdded: TYDaemonGaugeRewardsFeed[0]}): ReactElement | null {
-	const	{gauges} = useCurve();
+function RewardFeedTableRow({currentRewardAdded}: {currentRewardAdded: TYDaemonGaugeRewardsFeed[0]}): ReactElement | null {
+	const {gauges} = useCurve();
 
-	const	gaugesObject = useMemo((): {[key: string]: TCurveGauge} => {
-		const	_gaugesObject: {[key: string]: TCurveGauge} = {};
+	const gaugesObject = useMemo((): {[key: string]: TCurveGauge} => {
+		const _gaugesObject: {[key: string]: TCurveGauge} = {};
 		for (const gauge of gauges) {
 			_gaugesObject[toAddress(gauge.gauge)] = gauge;
 		}
 		return _gaugesObject;
 	}, [gauges]);
 
-	const	gaugeItem = gaugesObject[toAddress(currentRewardAdded.gauge)];
+	const gaugeItem = gaugesObject[toAddress(currentRewardAdded.gauge)];
 
 	if (!gaugeItem) {
 		return null;

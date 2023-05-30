@@ -23,7 +23,7 @@ import type {TCurveGauge} from '@common/schemas/curveSchemas';
 import type {TNormalizedBN} from '@common/types/types';
 
 
-function	GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauge, onClose: VoidFunction}): ReactElement {
+function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauge, onClose: VoidFunction}): ReactElement {
 	const {chainID, safeChainID} = useChainID();
 	const {address, provider, isActive, openLoginModal, onSwitchChain} = useWeb3();
 	const {refresh} = useBribes();
@@ -41,12 +41,12 @@ function	GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauge, on
 		raw: BigNumber,
 		allowance: BigNumber,
 	}> => {
-		const	[_tokenAddress] = args;
-		const	currentProvider = safeChainID === 1 ? provider || getProvider(1) : getProvider(1);
-		const	ethcallProvider = await newEthCallProvider(currentProvider);
-		const	erc20Contract = new Contract(_tokenAddress, ERC20_ABI);
+		const [_tokenAddress] = args;
+		const currentProvider = safeChainID === 1 ? provider || getProvider(1) : getProvider(1);
+		const ethcallProvider = await newEthCallProvider(currentProvider);
+		const erc20Contract = new Contract(_tokenAddress, ERC20_ABI);
 
-		const	[name, symbol, decimals, balance, allowance] = await ethcallProvider.tryAll([
+		const [name, symbol, decimals, balance, allowance] = await ethcallProvider.tryAll([
 			erc20Contract.name(),
 			erc20Contract.symbol(),
 			erc20Contract.decimals(),
@@ -69,12 +69,12 @@ function	GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauge, on
 	** amount. This hook is called every 10s or when amount/in or out changes.
 	** Calls the expectedOutFetcher callback.
 	**************************************************************************/
-	const	{data: selectedToken, mutate} = useSWR(
+	const {data: selectedToken, mutate} = useSWR(
 		isActive && !isZeroAddress(tokenAddress) ? [toAddress(tokenAddress)] : null, expectedOutFetcher,
 		{refreshInterval: 10000, shouldRetryOnError: false}
 	);
 
-	async function	onApproveFrom(): Promise<void> {
+	async function onApproveFrom(): Promise<void> {
 		new Transaction(provider, approveERC20, set_txStatusApprove).populate(
 			tokenAddress,
 			CURVE_BRIBE_V3_ADDRESS,
@@ -84,7 +84,7 @@ function	GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauge, on
 		}).perform();
 	}
 
-	function	onAddReward(): void {
+	function onAddReward(): void {
 		new Transaction(provider, addReward, set_txStatusAddReward).populate(
 			currentGauge.gauge,
 			tokenAddress,
@@ -171,7 +171,7 @@ function	GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauge, on
 									placeholder={'0x...'}
 									value={tokenAddress}
 									onChange={(e: ChangeEvent<HTMLInputElement>): void => {
-										const	{value} = e.target;
+										const {value} = e.target;
 										if (value === '' || value.match(/^(0[x]{0,1})[a-fA-F0-9]{0,40}/gm)?.includes(value)) {
 											if (isZeroAddress(value)) {
 												set_tokenAddress(value);

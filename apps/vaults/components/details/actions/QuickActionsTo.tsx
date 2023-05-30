@@ -11,13 +11,13 @@ import {useTokenPrice} from '@common/hooks/useTokenPrice';
 
 import type {ReactElement} from 'react';
 
-function	VaultDetailsQuickActionsTo(): ReactElement {
+function VaultDetailsQuickActionsTo(): ReactElement {
 	const {isActive} = useWeb3();
 	const {currentVault, possibleOptionsTo, actionParams, onUpdateSelectedOptionTo, isDepositing} = useActionFlow();
 	const {expectedOut, isLoadingExpectedOut} = useSolver();
 	const selectedOptionToPricePerToken = useTokenPrice(toAddress(actionParams?.selectedOptionTo?.value));
 
-	function	renderMultipleOptionsFallback(): ReactElement {
+	function renderMultipleOptionsFallback(): ReactElement {
 		return (
 			<Dropdown
 				defaultOption={possibleOptionsTo[0]}

@@ -34,8 +34,8 @@ export type TListHeroDesktopCategories<T> = {
 	onSelect: (category: T) => void;
 }
 
-function	DesktopCategories<T>({categories, onSelect}: TListHeroDesktopCategories<T>): ReactElement {
-	const	[isClientLoaded, set_isClientLoaded] = useState(false);
+function DesktopCategories<T>({categories, onSelect}: TListHeroDesktopCategories<T>): ReactElement {
+	const [isClientLoaded, set_isClientLoaded] = useState(false);
 	useEffect((): void => {
 		set_isClientLoaded(true);
 	}, []);
@@ -66,10 +66,10 @@ function	DesktopCategories<T>({categories, onSelect}: TListHeroDesktopCategories
 }
 
 function Switch(props: TSwitchProps): ReactElement {
-	const	{isEnabled, onSwitch} = props;
-	const	[isEnabledState, set_isEnabledState] = useState(isEnabled);
+	const {isEnabled, onSwitch} = props;
+	const [isEnabledState, set_isEnabledState] = useState(isEnabled);
 
-	function	safeOnSwitch(): void {
+	function safeOnSwitch(): void {
 		if (onSwitch) {
 			onSwitch(!isEnabled);
 		} else {
@@ -93,7 +93,7 @@ function Switch(props: TSwitchProps): ReactElement {
 	);
 }
 
-function	ListHero<T extends string>({
+function ListHero<T extends string>({
 	headLabel,
 	searchLabel,
 	searchPlaceholder,

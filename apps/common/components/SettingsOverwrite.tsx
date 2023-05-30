@@ -13,10 +13,10 @@ type TWrappedInput = {
 	onSave: (value: string) => void;
 }
 
-function	WrappedInput({title, initialValue, onSave}: TWrappedInput): ReactElement {
-	const	[isFocused, set_isFocused] = useState(false);
-	const	[value, set_value] = useState(initialValue);
-	const	isInitialValue = useMemo((): boolean => value === initialValue, [value, initialValue]);
+function WrappedInput({title, initialValue, onSave}: TWrappedInput): ReactElement {
+	const [isFocused, set_isFocused] = useState(false);
+	const [value, set_value] = useState(initialValue);
+	const isInitialValue = useMemo((): boolean => value === initialValue, [value, initialValue]);
 
 	return (
 		<label>
@@ -44,11 +44,11 @@ function	WrappedInput({title, initialValue, onSave}: TWrappedInput): ReactElemen
 	);
 }
 
-function	SettingsOverwrite(): ReactElement {
-	const	{onUpdateBaseSettings, onUpdateNetworks, settings: baseAPISettings} = useSettings();
+function SettingsOverwrite(): ReactElement {
+	const {onUpdateBaseSettings, onUpdateNetworks, settings: baseAPISettings} = useSettings();
 	// eslint-disable-next-line @typescript-eslint/naming-convention
-	const 	{value, set} = useLocalStorageValue<boolean>('yearn.finance/feedback-popover');
-	const	[, set_nonce] = useState(0);
+	const {value, set} = useLocalStorageValue<boolean>('yearn.finance/feedback-popover');
+	const [, set_nonce] = useState(0);
 
 	return (
 		<div className={'bg-neutral-100 p-10'}>

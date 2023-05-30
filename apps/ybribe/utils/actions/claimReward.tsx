@@ -4,7 +4,7 @@ import {handleTx} from '@yearn-finance/web-lib/utils/web3/transaction';
 
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 
-export async function	claimReward(
+export async function claimReward(
 	provider: ethers.providers.JsonRpcProvider,
 	contractAddress: string,
 	gauge: string,

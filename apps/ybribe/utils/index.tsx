@@ -7,9 +7,9 @@ extend(dayjsDuration);
 extend(weekday);
 extend(utc);
 
-export function	getLastThursday(): number {
-	const	today = dayjs().utc();
-	let		lastThursday = today.weekday(4);
+export function getLastThursday(): number {
+	const today = dayjs().utc();
+	let lastThursday = today.weekday(4);
 	lastThursday = lastThursday.set('hour', 0);
 	lastThursday = lastThursday.set('minute', 0);
 	lastThursday = lastThursday.set('second', 0);
@@ -19,9 +19,9 @@ export function	getLastThursday(): number {
 	return (lastThursday.unix());
 }
 
-export function	getNextThursday(): number {
-	const	today = dayjs().utc();
-	let		nextThursday = today.weekday(4);
+export function getNextThursday(): number {
+	const today = dayjs().utc();
+	let nextThursday = today.weekday(4);
 	nextThursday = nextThursday.set('hour', 0);
 	nextThursday = nextThursday.set('minute', 0);
 	nextThursday = nextThursday.set('second', 0);
