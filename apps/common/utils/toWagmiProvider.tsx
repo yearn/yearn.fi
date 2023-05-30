@@ -31,7 +31,7 @@ export type TWriteTransaction = {
 }
 
 export function assertAddress(addr: string): asserts addr is TAddress {
-	assert(isTAddress(addr), 'Address is not an address');
+	assert(isTAddress(addr), 'Address provided is invalid');
 	assert(toAddress(addr) !== ZERO_ADDRESS, 'Address is address 0x0');
 	assert(toAddress(addr) !== ETH_TOKEN_ADDRESS, 'Address is address 0xE');
 }
