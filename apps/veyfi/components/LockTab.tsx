@@ -1,26 +1,26 @@
-import {useEffect, useMemo, useState} from 'react';
+import {useCallback, useEffect, useMemo, useState} from 'react';
+import {formatUnits} from 'viem';
 import {useVotingEscrow} from '@veYFI/contexts/useVotingEscrow';
-import {useTransaction} from '@veYFI/hooks/useTransaction';
 import {getVotingPower} from '@veYFI/utils';
-import * as VotingEscrowActions from '@veYFI/utils/actions/votingEscrow';
+import {increaseLockAmount, lock} from '@veYFI/utils/actions';
 import {MAX_LOCK_TIME, MIN_LOCK_AMOUNT, MIN_LOCK_TIME} from '@veYFI/utils/constants';
 import {validateAllowance, validateAmount, validateNetwork} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatBN, formatUnits, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
+import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
 import {fromWeeks, getTimeUntil, toSeconds, toTime, toWeeks} from '@yearn-finance/web-lib/utils/time';
+import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {AmountInput} from '@common/components/AmountInput';
 import {useWallet} from '@common/contexts/useWallet';
 import {useBalance} from '@common/hooks/useBalance';
+import {approveERC20} from '@common/utils/actions';
 
-import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
 import type {TMilliseconds} from '@yearn-finance/web-lib/utils/time';
-import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 
 function LockTab(): ReactElement {
 	const [lockAmount, set_lockAmount] = useState(toNormalizedBN(0));
@@ -30,22 +30,64 @@ function LockTab(): ReactElement {
 	const {refresh: refreshBalances} = useWallet();
 	const {votingEscrow, positions, allowances, isLoading: isLoadingVotingEscrow, refresh: refreshVotingEscrow} = useVotingEscrow();
 	const tokenBalance = useBalance(toAddress(votingEscrow?.token));
-	const clearLockAmount = (): void => set_lockAmount(toNormalizedBN(0));
-	const refreshData = (): unknown => Promise.all([refreshVotingEscrow(), refreshBalances()]);
-	const onTxSuccess = (): unknown => Promise.all([refreshData(), clearLockAmount()]);
-	const [approveLock, approveLockStatus] = useTransaction(VotingEscrowActions.approveLock, refreshData);
-	const [lock, lockStatus] = useTransaction(VotingEscrowActions.lock, onTxSuccess);
-	const [increaseLockAmount, increaseLockAmountStatus] = useTransaction(VotingEscrowActions.increaseLockAmount, onTxSuccess);
-
-	const hasLockedAmount = formatBN(positions?.deposit?.underlyingBalance).gt(0);
+	const hasLockedAmount = toBigInt(positions?.deposit?.underlyingBalance) > 0n;
+	const [approveLockStatus, set_approveLockStatus] = useState(defaultTxStatus);
+	const [lockStatus, set_lockStatus] = useState(defaultTxStatus);
+	const [increaseLockAmountStatus, set_increaseLockAmountStatus] = useState(defaultTxStatus);
 
 	const unlockTime = useMemo((): TMilliseconds => {
 		return positions?.unlockTime || Date.now() + fromWeeks(toTime(lockTime));
 	}, [positions?.unlockTime, lockTime]);
 
-	const votingPower = useMemo((): BigNumber => {
-		return getVotingPower(formatBN(positions?.deposit?.underlyingBalance).add(lockAmount.raw), unlockTime);
+	const votingPower = useMemo((): bigint => {
+		return getVotingPower(toBigInt(positions?.deposit?.underlyingBalance) + toBigInt(lockAmount.raw), unlockTime);
 	}, [positions?.deposit?.underlyingBalance, lockAmount, unlockTime]);
+
+	const refreshData = useCallback(async (): Promise<void> => {
+		await Promise.all([refreshVotingEscrow(), refreshBalances()]);
+	}, [refreshVotingEscrow, refreshBalances]);
+
+	const onTxSuccess = useCallback(async (): Promise<void> => {
+		await Promise.all([refreshData(), set_lockAmount(toNormalizedBN(0))]);
+	}, [refreshData]);
+
+	const onApproveLock = useCallback(async (): Promise<void> => {
+		const result = await approveERC20({
+			connector: provider,
+			contractAddress: toWagmiAddress(votingEscrow?.token),
+			spenderAddress: toWagmiAddress(votingEscrow?.address),
+			statusHandler: set_approveLockStatus,
+			amount: lockAmount.raw
+		});
+		if (result.isSuccessful) {
+			refreshData();
+		}
+	}, [lockAmount.raw, provider, refreshData, votingEscrow?.address, votingEscrow?.token]);
+
+	const onLock = useCallback(async (): Promise<void> => {
+		const result = await lock({
+			connector: provider,
+			contractAddress: toWagmiAddress(votingEscrow?.address),
+			amount: lockAmount.raw,
+			time: toBigInt(toSeconds(unlockTime)),
+			statusHandler: set_lockStatus
+		});
+		if (result.isSuccessful) {
+			onTxSuccess();
+		}
+	}, [provider, votingEscrow?.address, lockAmount.raw, unlockTime, onTxSuccess]);
+
+	const onIncreaseLockAmount = useCallback(async (): Promise<void> => {
+		const result = await increaseLockAmount({
+			connector: provider,
+			contractAddress: toWagmiAddress(votingEscrow?.address),
+			amount: lockAmount.raw,
+			statusHandler: set_increaseLockAmountStatus
+		});
+		if (result.isSuccessful) {
+			onTxSuccess();
+		}
+	}, [provider, votingEscrow?.address, lockAmount.raw, onTxSuccess]);
 
 	useEffect((): void => {
 		if(!positions?.unlockTime) {
@@ -82,21 +124,21 @@ function LockTab(): ReactElement {
 	const txAction = !isApproved
 		? {
 			label: 'Approve',
-			onAction: async (): Promise<TTxResponse> => approveLock(provider, toAddress(address), toAddress(votingEscrow?.token), toAddress(votingEscrow?.address)),
-			isLoading: approveLockStatus.loading,
+			onAction: onApproveLock,
+			isLoading: approveLockStatus.pending,
 			isDisabled: isApproveDisabled
 		}
 		: hasLockedAmount
 			? {
 				label: 'Lock',
-				onAction: async (): Promise<TTxResponse> => increaseLockAmount(provider, toAddress(address), toAddress(votingEscrow?.address), lockAmount.raw),
-				isLoading: increaseLockAmountStatus.loading,
+				onAction: onIncreaseLockAmount,
+				isLoading: increaseLockAmountStatus.pending,
 				isDisabled: isLockDisabled
 			}
 			: {
 				label: 'Lock',
-				onAction: async (): Promise<TTxResponse> => lock(provider, toAddress(address), toAddress(votingEscrow?.address), lockAmount.raw, toSeconds(unlockTime)),
-				isLoading: lockStatus.loading,
+				onAction: onLock,
+				isLoading: lockStatus.pending,
 				isDisabled: isLockDisabled
 			};
 

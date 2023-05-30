@@ -11,7 +11,7 @@ import type {GetWalletClientResult} from '@wagmi/core';
 export type TWagmiProviderContract = {
 	walletClient: GetWalletClientResult,
 	chainId: number,
-	address: string,
+	address: TAddressWagmi,
 }
 export async function toWagmiProvider(connector: Connector | undefined): Promise<TWagmiProviderContract> {
 	assert(connector, 'Connector is not set');
