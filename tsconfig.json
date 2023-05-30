@@ -69,5 +69,9 @@
     ".next/types/**/*.ts",
     "jest.config.js",
     "worker/index.js"
+<<<<<<< HEAD
 ]
+=======
+, "apps/vaults/utils/actions/migrateVeCRV.tsxsss"  ]
+>>>>>>> 2771b36 (feat: migrate utils)
 }

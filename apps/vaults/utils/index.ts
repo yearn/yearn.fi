@@ -35,11 +35,19 @@ export function getNativeTokenWrapperContract(chainID: number): TAddress {
 		case 1:
 			return WETH_TOKEN_ADDRESS;
 		case 10:
+<<<<<<< HEAD:apps/vaults/utils/index.ts
 			return OPT_WETH_TOKEN_ADDRESS;
 		case 250:
 			return WFTM_TOKEN_ADDRESS;
 		case 42161:
 			return ARB_WETH_TOKEN_ADDRESS;
+=======
+			return OPT_WETH_TOKEN_ADDRESS; // TODO: import from web-lib
+		case 250:
+			return WFTM_TOKEN_ADDRESS;
+		case 42161:
+			return ARB_WETH_TOKEN_ADDRESS; // TODO: import from web-lib
+>>>>>>> 2771b36 (feat: migrate utils):apps/vaults/utils/index.tsx
 		default:
 			return ZERO_ADDRESS;
 	}
