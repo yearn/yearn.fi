@@ -5,7 +5,7 @@ import {Button} from '@yearn-finance/web-lib/components/Button';
 import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {useSessionStorage} from '@yearn-finance/web-lib/hooks/useSessionStorage';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatBN, formatToNormalizedValue, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isTAddress} from '@yearn-finance/web-lib/utils/isTAddress';
 import ListHead from '@common/components/ListHead';
 import ListHero from '@common/components/ListHero';
@@ -17,7 +17,6 @@ import {GaugeListRow} from '@yBribe/components/bribe/GaugeListRow';
 import {useBribes} from '@yBribe/contexts/useBribes';
 import Wrapper from '@yBribe/Wrapper';
 
-import type {BigNumber} from 'ethers';
 import type {NextRouter} from 'next/router';
 import type {ReactElement, ReactNode} from 'react';
 import type {TCurveGauge} from '@common/schemas/curveSchemas';
@@ -33,14 +32,14 @@ function GaugeList(): ReactElement {
 		'yGaugeListOfferBribeSorting', {sortBy: '', sortDirection: 'desc'}
 	);
 
-	const getRewardValue = useCallback((address: string, value: BigNumber): number => {
+	const getRewardValue = useCallback((address: string, value: bigint): number => {
 		if (!isTAddress(address)) {
 			return 0;
 		}
 		const tokenInfo = tokens?.[address];
 		const tokenPrice = prices?.[address];
 		const decimals = tokenInfo?.decimals || 18;
-		const bribeAmount = formatToNormalizedValue(formatBN(value), decimals);
+		const bribeAmount = formatToNormalizedValue(toBigInt(value), decimals);
 		const bribeValue = bribeAmount * (Number(tokenPrice || 0) / 100);
 		return bribeValue;
 	}, [prices, tokens]);
@@ -76,12 +75,12 @@ function GaugeList(): ReactElement {
 		if (sort.sortBy === 'rewards') {
 			return searchedGauges.sort((a, b): number => {
 				const allARewards = Object.entries(currentRewards?.v3?.[toAddress(a.gauge)] || {}).reduce((acc, [address, value]): number => {
-					const aBribeValue = getRewardValue(address, value || Zero);
+					const aBribeValue = getRewardValue(address, value || 0n);
 					return acc + aBribeValue;
 				}, 0);
 
 				const allBRewards = Object.entries(currentRewards?.v3?.[toAddress(b.gauge)] || {}).reduce((acc, [address, value]): number => {
-					const aBribeValue = getRewardValue(address, value || Zero);
+					const aBribeValue = getRewardValue(address, value || 0n);
 					return acc + aBribeValue;
 				}, 0);
 
@@ -94,12 +93,12 @@ function GaugeList(): ReactElement {
 		if (sort.sortBy === 'pendingRewards') {
 			return searchedGauges.sort((a, b): number => {
 				const allARewards = Object.entries(nextRewards?.v3?.[toAddress(a.gauge)] || {}).reduce((acc, [address, value]): number => {
-					const aBribeValue = getRewardValue(address, value || Zero);
+					const aBribeValue = getRewardValue(address, value || 0n);
 					return acc + aBribeValue;
 				}, 0);
 
 				const allBRewards = Object.entries(nextRewards?.v3?.[toAddress(b.gauge)] || {}).reduce((acc, [address, value]): number => {
-					const aBribeValue = getRewardValue(address, value || Zero);
+					const aBribeValue = getRewardValue(address, value || 0n);
 					return acc + aBribeValue;
 				}, 0);
 

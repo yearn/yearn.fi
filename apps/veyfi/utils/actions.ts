@@ -1,10 +1,9 @@
 import {captureException} from '@sentry/nextjs';
+import VEYFI_ABI from '@veYFI/utils/abi/veYFI.abi';
 import {prepareWriteContract, waitForTransaction, writeContract} from '@wagmi/core';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {assert} from '@common/utils/assert';
 import {assertAddress, toWagmiProvider} from '@common/utils/toWagmiProvider';
-
-import VEYFI_ABI from './abi/veYFI.abi';
 
 import type {BaseError} from 'viem';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
