@@ -74,7 +74,7 @@ function WithSolverContextApp({children}: { children: React.ReactElement }): Rea
 	const partnerContract = useSolverPartnerContract();
 	const internalMigration = useSolverInternalMigration();
 	const optimismBooster = useSolverOptimismBooster();
-	const [currentSolverState, set_currentSolverState] = useState<TSolverContext & { hash?: string }>({...vanilla, hash: undefined});
+	const [currentSolverState, set_currentSolverState] = useState<TSolverContext & { hash?: string }>(vanilla);
 	const [isLoading, set_isLoading] = useState(false);
 
 	async function handleUpdateSolver({request, quote, solver, ctx}: TUpdateSolverHandler): Promise<void> {
