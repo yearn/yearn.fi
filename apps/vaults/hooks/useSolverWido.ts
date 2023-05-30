@@ -1,18 +1,20 @@
 import {useCallback, useMemo, useRef, useState} from 'react';
-import {ethers} from 'ethers';
 import {getTokenAllowance as wiGetTokenAllowance, getWidoSpender, quote as wiQuote} from 'wido';
 import {useAsync} from '@react-hookz/web';
 import {isSolverDisabled, Solver} from '@vaults/contexts/useSolver';
+import {waitForTransaction} from '@wagmi/core';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {allowanceKey, isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatBN, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {allowanceKey, isZeroAddress, toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
+import {MaxUint256, toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
-import {approveERC20, isApprovedERC20} from '@common/utils/actions/approveToken';
+import {approveERC20, isApprovedERC20} from '@common/utils/actions';
+import {assert} from '@common/utils/assert';
 
 import type {AxiosError} from 'axios';
+import type {Hex} from 'viem';
 import type {ChainId, QuoteRequest, QuoteResult} from 'wido';
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TTxResponse, TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
@@ -21,7 +23,7 @@ import type {ApiError} from '@gnosis.pm/gp-v2-contracts';
 import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
 import type {TWidoResult} from '@vaults/types/solvers.wido';
 
-function useWidoQuote(): [TWidoResult, (request: TInitSolverArgs, shouldPreventErrorToast?: boolean) => Promise<QuoteResult | undefined>] {
+function useQuote(): [TWidoResult, (request: TInitSolverArgs, shouldPreventErrorToast?: boolean) => Promise<QuoteResult | undefined>] {
 	const {toast} = yToast();
 	const {zapSlippage, currentPartner} = useYearn();
 	const [err, set_err] = useState<Error>();
@@ -31,12 +33,12 @@ function useWidoQuote(): [TWidoResult, (request: TInitSolverArgs, shouldPreventE
 		request: TInitSolverArgs,
 		shouldPreventErrorToast = false
 	): Promise<QuoteResult | undefined> => {
-		const	quoteRequest: QuoteRequest = ({
+		const quoteRequest: QuoteRequest = ({
 			fromChainId: safeChainID as ChainId, // Chain Id of from token
 			fromToken: toAddress(request.inputToken.value), // token to spend
 			toChainId: safeChainID as ChainId, // Chain Id of to token
 			toToken: toAddress(request.outputToken.value), // token to receive
-			amount: formatBN(request?.inputAmount || 0).toString(), // Token amount of from token
+			amount: toBigInt(request?.inputAmount || 0).toString(), // Token amount of from token
 			slippagePercentage: zapSlippage / 100, // Acceptable max slippage for the swap
 			user: request.from, // receiver
 			partner: currentPartner
@@ -44,7 +46,7 @@ function useWidoQuote(): [TWidoResult, (request: TInitSolverArgs, shouldPreventE
 
 		const canExecuteFetch = (
 			!(isZeroAddress(quoteRequest.user) || isZeroAddress(quoteRequest.fromToken) || isZeroAddress(quoteRequest.toToken))
-			&& !formatBN(request?.inputAmount || 0).isZero()
+			&& toBigInt(request?.inputAmount) !== 0n
 		);
 
 		if (canExecuteFetch) {
@@ -53,13 +55,13 @@ function useWidoQuote(): [TWidoResult, (request: TInitSolverArgs, shouldPreventE
 
 				return result;
 			} catch (error) {
-				const	_error = error as AxiosError<ApiError>;
+				const _error = error as AxiosError<ApiError>;
 				set_err(error as Error);
 				console.error(error);
 				if (shouldPreventErrorToast) {
 					return undefined;
 				}
-				const	message = `Zap not possible. Try again later or pick another token. ${_error?.response?.data?.description ? `(Reason: [${_error?.response?.data?.description}])` : ''}`;
+				const message = `Zap not possible. Try again later or pick another token. ${_error?.response?.data?.description ? `(Reason: [${_error?.response?.data?.description}])` : ''}`;
 				toast({type: 'error', content: message});
 				return undefined;
 			}
@@ -81,7 +83,7 @@ function useWidoQuote(): [TWidoResult, (request: TInitSolverArgs, shouldPreventE
 
 export function useSolverWido(): TSolverContext {
 	const {provider} = useWeb3();
-	const [, getQuote] = useWidoQuote();
+	const [, getQuote] = useQuote();
 	const request = useRef<TInitSolverArgs>();
 	const latestQuote = useRef<QuoteResult>();
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
@@ -137,7 +139,7 @@ export function useSolverWido(): TSolverContext {
 	** as in the initial request and it will fails if request is not set.
 	** init should be called first to initialize the request.current.
 	**********************************************************************************************/
-	const	refreshQuote = useCallback(async (): Promise<void> => {
+	const refreshQuote = useCallback(async (): Promise<void> => {
 		if (request.current) {
 			getQuote(request.current);
 		}
@@ -149,20 +151,28 @@ export function useSolverWido(): TSolverContext {
 	** not.
 	**********************************************************************************************/
 	const execute = useCallback(async (): Promise<TTxResponse> => {
-		if (!latestQuote?.current || !request.current || isSolverDisabled[Solver.WIDO]) {
+		if (isSolverDisabled[Solver.WIDO]) {
 			return ({isSuccessful: false});
 		}
 
-		const signer = provider.getSigner();
+		assert(provider, 'Provider is not set');
+		assert(request.current, 'Request is not set');
+		assert(latestQuote.current, 'Quote is not set');
+
 		try {
+			const signer = await provider.getWalletClient();
 			const {data, to, value} = latestQuote.current;
-			const transaction = await signer.sendTransaction({data, to, value});
-			const transactionReceipt = await transaction.wait();
-			if (transactionReceipt.status === 0) {
-				console.error('Fail to perform transaction');
-				return ({isSuccessful: false});
+			const hash = await signer.sendTransaction({
+				data: data as Hex,
+				to: toWagmiAddress(to),
+				value: toBigInt(value)
+			});
+			const receipt = await waitForTransaction({chainId: signer.chain.id, hash});
+			if (receipt.status === 'success') {
+				return ({isSuccessful: true, receipt: receipt});
 			}
-			return ({isSuccessful: true, receipt: transactionReceipt});
+			console.error('Fail to perform transaction');
+			return ({isSuccessful: false});
 		} catch (_error) {
 			console.error(_error);
 			return ({isSuccessful: false});
@@ -189,7 +199,7 @@ export function useSolverWido(): TSolverContext {
 			return toNormalizedBN(0);
 		}
 		const quoteResult = await getQuote(_request, true);
-		return toNormalizedBN(formatBN(quoteResult?.minToTokenAmount), _request.outputToken.decimals);
+		return toNormalizedBN(toBigInt(quoteResult?.minToTokenAmount), _request.outputToken.decimals);
 	}, [getQuote]);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -201,7 +211,12 @@ export function useSolverWido(): TSolverContext {
 			return toNormalizedBN(0);
 		}
 
-		const key = allowanceKey(safeChainID, toAddress(request.current.inputToken.value), toAddress(request.current.outputToken.value), toAddress(request.current.from));
+		const key = allowanceKey(
+			safeChainID,
+			toAddress(request.current.inputToken.value),
+			toAddress(request.current.outputToken.value),
+			toAddress(request.current.from)
+		);
 		if (existingAllowances.current[key] && !shouldForceRefetch) {
 			return existingAllowances.current[key];
 		}
@@ -222,33 +237,45 @@ export function useSolverWido(): TSolverContext {
 	** of the token by the Wido solver.
 	**************************************************************************/
 	const onApprove = useCallback(async (
-		amount = ethers.constants.MaxUint256,
+		amount = MaxUint256,
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
-		if (!latestQuote?.current || !request?.current || isSolverDisabled[Solver.WIDO]) {
+		if (isSolverDisabled[Solver.WIDO]) {
 			return;
 		}
-		const	widoSpenderAddress = toAddress(await getWidoSpender({
+		assert(provider, 'Provider is not set');
+		assert(request.current, 'Request is not set');
+		assert(latestQuote.current, 'Quote is not set');
+
+		//Asserting the basic request parameters
+		const {inputToken, inputAmount} = request.current;
+		assert(inputToken, 'Input token is not set');
+		assert(inputAmount, 'Input amount is not set');
+
+		const widoSpender = await getWidoSpender({
 			chainId: safeChainID as ChainId,
 			fromToken: toAddress(request.current.inputToken.value),
 			toToken: toAddress(request.current.outputToken.value)
-		}));
-		const	isApproved = await isApprovedERC20(
+		});
+		const isApproved = await isApprovedERC20(
 			provider,
 			toAddress(request.current.inputToken.value), //token to approve
-			widoSpenderAddress, //contract to approve
+			toAddress(widoSpender), //contract to approve
 			amount
 		);
 		if (!isApproved) {
-			new Transaction(provider, approveERC20, txStatusSetter)
-				.populate(
-					toAddress(request.current.inputToken.value), //token to approve
-					widoSpenderAddress, //contract to approve
-					amount
-				)
-				.onSuccess(onSuccess)
-				.perform();
+			const result = await approveERC20({
+				connector: provider,
+				contractAddress: toWagmiAddress(request.current.inputToken.value),
+				spenderAddress: toWagmiAddress(widoSpender),
+				amount: amount,
+				statusHandler: txStatusSetter
+			});
+			if (result.isSuccessful) {
+				onSuccess();
+			}
+			return;
 		}
 		onSuccess();
 		return;
@@ -263,6 +290,8 @@ export function useSolverWido(): TSolverContext {
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
+		assert(provider, 'Provider is not set');
+
 		new Transaction(provider, execute, txStatusSetter)
 			.populate()
 			.onSuccess(onSuccess)
@@ -278,12 +307,13 @@ export function useSolverWido(): TSolverContext {
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
+		assert(provider, 'Provider is not set');
+
 		new Transaction(provider, execute, txStatusSetter)
 			.populate()
 			.onSuccess(onSuccess)
 			.perform();
 	}, [execute, provider]);
-
 
 	return useMemo((): TSolverContext => ({
 		type: Solver.WIDO,

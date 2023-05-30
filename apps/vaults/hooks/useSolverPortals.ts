@@ -1,19 +1,21 @@
 import {useCallback, useMemo, useRef, useState} from 'react';
-import {BigNumber, ethers} from 'ethers';
 import axios from 'axios';
 import {useAsync} from '@react-hookz/web';
 import {isSolverDisabled, Solver} from '@vaults/contexts/useSolver';
 import usePortalsApi from '@vaults/hooks/usePortalsApi';
+import {waitForTransaction} from '@wagmi/core';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {allowanceKey, isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {allowanceKey, isZeroAddress, toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatBN, toNormalizedBN, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {MaxUint256, toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
-import {approveERC20, isApprovedERC20} from '@common/utils/actions/approveToken';
+import {approveERC20, isApprovedERC20} from '@common/utils/actions';
+import {assert} from '@common/utils/assert';
 
+import type {Hex} from 'viem';
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TTxResponse, TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TNormalizedBN} from '@common/types/types';
@@ -26,7 +28,7 @@ export type TPortalsQuoteResult = {
 	error?: Error;
 };
 
-function usePortalsQuote(): [
+function useQuote(): [
 	TPortalsQuoteResult,
 	(request: TInitSolverArgs, shouldPreventErrorToast?: boolean) => Promise<TPortalEstimate | null>
 ] {
@@ -42,14 +44,14 @@ function usePortalsQuote(): [
 	): Promise<TPortalEstimate | null> => {
 		const params = {
 			sellToken: toAddress(request.inputToken.value),
-			sellAmount: formatBN(request.inputAmount || 0).toString(),
+			sellAmount: toBigInt(request.inputAmount || 0).toString(),
 			buyToken: toAddress(request.outputToken.value),
 			slippagePercentage: String(zapSlippage / 100)
 		};
 
 		const canExecuteFetch = (
 			!(isZeroAddress(params.sellToken) || isZeroAddress(params.buyToken)) &&
-				!formatBN(request.inputAmount || 0).isZero()
+				toBigInt(request.inputAmount) !== 0n
 		);
 
 		if (!canExecuteFetch) {
@@ -90,7 +92,7 @@ function usePortalsQuote(): [
 
 export function useSolverPortals(): TSolverContext {
 	const {provider} = useWeb3();
-	const [, getQuote] = usePortalsQuote();
+	const [, getQuote] = useQuote();
 	const request = useRef<TInitSolverArgs>();
 	const latestQuote = useRef<TPortalEstimate>();
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
@@ -168,9 +170,13 @@ export function useSolverPortals(): TSolverContext {
 	** not.
 	**********************************************************************************************/
 	const execute = useCallback(async (): Promise<TTxResponse> => {
-		if (!latestQuote?.current || !request.current || isSolverDisabled[Solver.PORTALS]) {
+		if (isSolverDisabled[Solver.PORTALS]) {
 			return ({isSuccessful: false});
 		}
+
+		assert(provider, 'Provider is not set');
+		assert(request.current, 'Request is not set');
+		assert(latestQuote.current, 'Quote is not set');
 
 		try {
 			const transaction = await getTransaction({
@@ -178,7 +184,7 @@ export function useSolverPortals(): TSolverContext {
 				params: {
 					takerAddress: toAddress(address),
 					sellToken: toAddress(request.current.inputToken.value),
-					sellAmount: formatBN(request.current.inputAmount || 0).toString(),
+					sellAmount: toBigInt(request.current.inputAmount || 0).toString(),
 					buyToken: toAddress(request.current.outputToken.value),
 					slippagePercentage: String(zapSlippage / 100),
 					validate: true
@@ -189,20 +195,21 @@ export function useSolverPortals(): TSolverContext {
 				throw new Error('Fail to get transaction');
 			}
 
-			const {tx: {value, gasLimit, ...rest}} = transaction;
-
-			const signer = provider.getSigner();
-			const transactionResponse = await signer.sendTransaction({
-				value: BigNumber.from(value?.hex ?? 0),
-				gasLimit: gasLimit?.hex ? BigNumber.from(gasLimit.hex) : undefined,
+			const {tx: {value, to, gasLimit, data, ...rest}} = transaction;
+			const signer = await provider.getWalletClient();
+			const hash = await signer.sendTransaction({
+				value: toBigInt(value?.hex ?? 0),
+				gas: gasLimit?.hex ? toBigInt(gasLimit.hex) : undefined,
+				to: toWagmiAddress(to),
+				data: data as Hex,
 				...rest
 			});
-			const transactionReceipt = await transactionResponse.wait();
-			if (transactionReceipt.status === 0) {
-				console.error('Fail to perform transaction');
-				return ({isSuccessful: false});
+			const receipt = await waitForTransaction({chainId: signer.chain.id, hash});
+			if (receipt.status === 'success') {
+				return ({isSuccessful: true, receipt: receipt});
 			}
-			return ({isSuccessful: true, receipt: transactionReceipt});
+			console.error('Fail to perform transaction');
+			return ({isSuccessful: false});
 		} catch (_error) {
 			console.error(_error);
 			return ({isSuccessful: false});
@@ -229,7 +236,7 @@ export function useSolverPortals(): TSolverContext {
 			return toNormalizedBN(0);
 		}
 		const quoteResult = await getQuote(_request, true);
-		return toNormalizedBN(formatBN(quoteResult?.minBuyAmount), _request.outputToken.decimals);
+		return toNormalizedBN(toBigInt(quoteResult?.minBuyAmount), _request.outputToken.decimals);
 	}, [getQuote]);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -241,7 +248,12 @@ export function useSolverPortals(): TSolverContext {
 			return toNormalizedBN(0);
 		}
 
-		const key = allowanceKey(safeChainID, toAddress(request.current.inputToken.value), toAddress(request.current.outputToken.value), toAddress(request.current.from));
+		const key = allowanceKey(
+			safeChainID,
+			toAddress(request.current.inputToken.value),
+			toAddress(request.current.outputToken.value),
+			toAddress(request.current.from)
+		);
 		if (existingAllowances.current[key] && !shouldForceRefetch) {
 			return existingAllowances.current[key];
 		}
@@ -252,7 +264,7 @@ export function useSolverPortals(): TSolverContext {
 				params: {
 					takerAddress: toAddress(request.current.from),
 					sellToken: toAddress(request.current.inputToken.value),
-					sellAmount:formatBN(request.current.inputAmount || 0).toString(),
+					sellAmount:toBigInt(request.current.inputAmount || 0).toString(),
 					buyToken: toAddress(request.current.outputToken.value)
 				}
 			});
@@ -265,7 +277,7 @@ export function useSolverPortals(): TSolverContext {
 			return existingAllowances.current[key];
 		} catch (error) {
 			console.error(error);
-			return ({raw: Zero, normalized: 0});
+			return ({raw: 0n, normalized: 0});
 		}
 
 	}, [getApproval, safeChainID]);
@@ -276,13 +288,20 @@ export function useSolverPortals(): TSolverContext {
 	** of the token by the Portals solver.
 	**************************************************************************/
 	const onApprove = useCallback(async (
-		amount = ethers.constants.MaxUint256,
+		amount = MaxUint256,
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
-		if (!latestQuote?.current || !request?.current || isSolverDisabled[Solver.PORTALS]) {
+		if (isSolverDisabled[Solver.PORTALS]) {
 			return;
 		}
+		assert(request.current, 'Request is not set');
+		assert(provider, 'Provider is not set');
+
+		//Asserting the basic request parameters
+		const {inputToken, inputAmount} = request.current;
+		assert(inputToken, 'Input token is not set');
+		assert(inputAmount, 'Input amount is not set');
 
 		try {
 			const approval = await getApproval({
@@ -290,7 +309,7 @@ export function useSolverPortals(): TSolverContext {
 				params: {
 					takerAddress: toAddress(request.current.from),
 					sellToken: toAddress(request.current.inputToken.value),
-					sellAmount:formatBN(request.current.inputAmount || 0).toString(),
+					sellAmount:toBigInt(request.current.inputAmount || 0).toString(),
 					buyToken: toAddress(request.current.outputToken.value)
 				}
 			});
@@ -301,20 +320,23 @@ export function useSolverPortals(): TSolverContext {
 
 			const isApproved = await isApprovedERC20(
 				provider,
-				toAddress(request.current.inputToken.value), //token to approve
+				toAddress(inputToken.value), //token to approve
 				toAddress(approval.context.spender), //contract to approve
 				amount
 			);
 
 			if (!isApproved) {
-				new Transaction(provider, approveERC20, txStatusSetter)
-					.populate(
-						toAddress(request.current.inputToken.value), //token to approve
-						toAddress(approval.context.spender), //contract to approve
-						amount
-					)
-					.onSuccess(onSuccess)
-					.perform();
+				const result = await approveERC20({
+					connector: provider,
+					contractAddress: toWagmiAddress(request.current.inputToken.value),
+					spenderAddress: toWagmiAddress(approval.context.spender),
+					amount: amount,
+					statusHandler: txStatusSetter
+				});
+				if (result.isSuccessful) {
+					onSuccess();
+				}
+				return;
 			}
 			onSuccess();
 			return;
@@ -333,11 +355,14 @@ export function useSolverPortals(): TSolverContext {
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
+		assert(provider, 'Provider is not set');
+
 		new Transaction(provider, execute, txStatusSetter)
 			.populate()
 			.onSuccess(onSuccess)
 			.perform();
 	}, [execute, provider]);
+
 	return useMemo((): TSolverContext => ({
 		type: Solver.PORTALS,
 		quote: expectedOut,

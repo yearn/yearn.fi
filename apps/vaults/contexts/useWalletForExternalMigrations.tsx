@@ -1,16 +1,15 @@
 import React, {createContext, memo, useCallback, useContext, useMemo} from 'react';
 import {migrationTable} from '@vaults/utils/migrationTable';
 import {useUI} from '@yearn-finance/web-lib/contexts/useUI';
-import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {useBalances} from '@yearn-finance/web-lib/hooks/useBalances';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {useClientEffect} from '@yearn-finance/web-lib/hooks/useClientEffect';
-import {getProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import {useYearn} from '@common/contexts/useYearn';
+import {useBalances} from '@common/hooks/useBalances';
 
 import type {ReactElement} from 'react';
-import type {TBalanceData, TUseBalancesTokens} from '@yearn-finance/web-lib/hooks/types';
 import type {TDict} from '@yearn-finance/web-lib/types';
+import type {TBalanceData} from '@yearn-finance/web-lib/types/hooks';
+import type {TUseBalancesTokens} from '@common/hooks/useBalances';
 import type {TMigrationTable} from '@vaults/utils/migrationTable';
 
 export type	TWalletForExternalMigrations = {
@@ -34,12 +33,11 @@ const	defaultProps = {
 ******************************************************************************/
 const	WalletForExternalMigrations = createContext<TWalletForExternalMigrations>(defaultProps);
 export const WalletForExternalMigrationsApp = memo(function WalletForExternalMigrationsApp({children}: {children: ReactElement}): ReactElement {
-	const	{provider} = useWeb3();
 	const	{prices} = useYearn();
 	const	{chainID} = useChainID();
 	const	{onLoadStart, onLoadDone} = useUI();
 
-	const	availableTokens = useMemo((): TUseBalancesTokens[] => {
+	const availableTokens = useMemo((): TUseBalancesTokens[] => {
 		const	tokens: TUseBalancesTokens[] = [];
 		Object.values(migrationTable || {}).forEach((possibleMigrations: TMigrationTable[]): void => {
 			for (const element of possibleMigrations) {
@@ -49,14 +47,13 @@ export const WalletForExternalMigrationsApp = memo(function WalletForExternalMig
 		return tokens;
 	}, []);
 
-	const	{data: balances, update: updateBalances, isLoading, nonce} = useBalances({
+	const {data: balances, update: updateBalances, isLoading, nonce} = useBalances({
 		key: chainID,
-		provider: provider || getProvider(1),
 		tokens: availableTokens,
 		prices
 	});
 
-	const	onRefresh = useCallback(async (): Promise<TDict<TBalanceData>> => {
+	const onRefresh = useCallback(async (): Promise<TDict<TBalanceData>> => {
 		const updatedBalances = await updateBalances();
 		return updatedBalances;
 	}, [updateBalances]);

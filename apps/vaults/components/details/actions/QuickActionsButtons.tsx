@@ -9,7 +9,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, YVWETH_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatBN, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useWallet} from '@common/contexts/useWallet';
 
@@ -95,7 +95,7 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 		toAddress(actionParams?.selectedOptionFrom?.value) === ETH_TOKEN_ADDRESS
 		&& toAddress(actionParams?.selectedOptionTo?.value) === YVWETH_ADDRESS
 	);
-	const hasAllowanceSet = actionParams?.amount.raw.gt(formatBN(allowanceFrom?.raw));
+	const hasAllowanceSet = actionParams?.amount.raw.gt(toBigInt(allowanceFrom?.raw));
 	const isButtonBusy = txStatusApprove.pending || status !== 'success';
 	if (
 		!(isDepositingEthViaChainCoin && shouldUseChainCoinContract) && (isButtonBusy || hasAllowanceSet) && (

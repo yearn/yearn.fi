@@ -12,14 +12,13 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, OPT_WETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS, YVWETH_ADDRESS, YVWETH_OPT_ADDRESS, YVWFTM_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatBN, toNormalizedBN, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 
 import externalzapOutTokenList from '../../common/utils/externalZapOutTokenList.json';
 
-import type {BigNumber} from 'ethers';
 import type {ReactNode} from 'react';
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
@@ -106,17 +105,17 @@ type TGetMaxDepositPossible = {
 	vault: TYDaemonVault;
 	fromToken: TAddress;
 	fromDecimals: number;
-	fromTokenBalance: BigNumber;
+	fromTokenBalance: bigint;
 	isDepositing: boolean;
-	depositLimit: BigNumber;
+	depositLimit: bigint;
 }
 function getMaxDepositPossible(props: TGetMaxDepositPossible): TNormalizedBN {
 	const {vault, fromToken, fromDecimals, isDepositing, fromTokenBalance, depositLimit} = props;
-	const vaultDepositLimit = formatBN(depositLimit || Zero);
-	const userBalance = formatBN(fromTokenBalance);
+	const vaultDepositLimit = toBigInt(depositLimit);
+	const userBalance = toBigInt(fromTokenBalance);
 
 	if (fromToken === vault?.token?.address && isDepositing) {
-		if (userBalance.gt(vaultDepositLimit)) {
+		if (userBalance > vaultDepositLimit) {
 			return (toNormalizedBN(vaultDepositLimit, vault.token.decimals));
 		}
 	}
@@ -138,7 +137,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 	const [possibleZapOptionsFrom, set_possibleZapOptionsFrom] = useState<TDropdownOption[]>([]);
 	const [possibleOptionsTo, set_possibleOptionsTo] = useState<TDropdownOption[]>([]);
 	const [possibleZapOptionsTo, set_possibleZapOptionsTo] = useState<TDropdownOption[]>([]);
-	const [{result: depositLimit}, actions] = useAsync(async (): Promise<BigNumber> => fetchMaxPossibleDeposit({provider, vault: currentVault}), Zero);
+	const [{result: depositLimit}, actions] = useAsync(async (): Promise<bigint> => fetchMaxPossibleDeposit({provider, vault: currentVault}), 0n);
 
 	useEffect((): void => {
 		actions.execute();
@@ -190,7 +189,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 		vault: currentVault,
 		fromToken: toAddress(actionParams?.selectedOptionFrom?.value),
 		fromDecimals: actionParams?.selectedOptionFrom?.decimals || currentVault?.token?.decimals || 18,
-		fromTokenBalance: formatBN(balances?.[toAddress(actionParams?.selectedOptionFrom?.value)]?.raw),
+		fromTokenBalance: toBigInt(balances?.[toAddress(actionParams?.selectedOptionFrom?.value)]?.raw),
 		isDepositing,
 		depositLimit
 	}), [actionParams?.selectedOptionFrom?.decimals, actionParams?.selectedOptionFrom?.value, balances, currentVault, depositLimit, isDepositing]);
@@ -297,7 +296,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 				}
 			});
 		} else if (nextFlow === Flow.Migrate) {
-			const	userBalance = formatBN(balances?.[toAddress(currentVault?.address)]?.raw);
+			const	userBalance = toBigInt(balances?.[toAddress(currentVault?.address)]?.raw);
 			const	_amount = toNormalizedBN(userBalance, currentVault?.decimals || currentVault?.token?.decimals || 18);
 			actionParamsDispatcher({
 				type: 'all',
@@ -329,12 +328,12 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 	** If not, the amount is set to the user balance for that token.
 	**********************************************************************************************/
 	const	updateParams = useCallback((_selectedFrom: TDropdownOption, _selectedTo: TDropdownOption): void => {
-		const	userBalance = formatBN(balances?.[toAddress(_selectedFrom?.value)]?.raw);
+		const	userBalance = toBigInt(balances?.[toAddress(_selectedFrom?.value)]?.raw);
 		let	_amount = toNormalizedBN(userBalance, _selectedFrom?.decimals || currentVault?.token?.decimals || 18);
 		if (isDepositing) {
-			const	vaultDepositLimit = formatBN(currentVault?.details?.depositLimit);
+			const	vaultDepositLimit = toBigInt(currentVault?.details?.depositLimit);
 			if (_selectedFrom?.value === currentVault?.token?.address) {
-				if (userBalance.gt(vaultDepositLimit)) {
+				if (userBalance > vaultDepositLimit) {
 					_amount = toNormalizedBN(vaultDepositLimit, currentVault.token.decimals);
 				}
 			}

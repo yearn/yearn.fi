@@ -12,8 +12,9 @@ import {useWallet} from '@common/contexts/useWallet';
 
 import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
-import type {TBalanceData, TUseBalancesTokens} from '@yearn-finance/web-lib/hooks/types';
 import type {TDict} from '@yearn-finance/web-lib/types';
+import type {TBalanceData} from '@yearn-finance/web-lib/types/hooks';
+import type {TUseBalancesTokens} from '@common/hooks/useBalances';
 import type {TYDaemonTokensList} from '@vaults/types/yearn';
 
 export type	TWalletForZap = {

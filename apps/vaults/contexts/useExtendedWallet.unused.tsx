@@ -3,8 +3,8 @@ import {useWalletForExternalMigrations} from '@vaults/contexts/useWalletForExter
 import {useWallet} from '@common/contexts/useWallet';
 
 import type {ReactElement} from 'react';
-import type {TBalanceData} from '@yearn-finance/web-lib/hooks/types';
 import type {TDict} from '@yearn-finance/web-lib/types';
+import type {TBalanceData} from '@yearn-finance/web-lib/types/hooks';
 
 export type	TExtendedWalletContext = {
 	balances: TDict<TBalanceData>,
