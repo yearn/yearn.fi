@@ -69,9 +69,5 @@
     ".next/types/**/*.ts",
     "jest.config.js",
     "worker/index.js"
-<<<<<<< HEAD
 ]
-=======
-]
->>>>>>> 2771b36 (feat: migrate utils)
 }
