@@ -6,7 +6,7 @@ import {useAppSettings} from '@vaults/contexts/useAppSettings';
 import {useFilteredVaults} from '@vaults/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import ListHead from '@common/components/ListHead';
 import ListHero from '@common/components/ListHero';
@@ -34,7 +34,7 @@ function	VaultListFactory(): ReactElement {
 	const	curveVaults = useFilteredVaults(vaults, ({category, type}): boolean => category === 'Curve' && type === 'Automated');
 	const	holdingsVaults = useFilteredVaults(vaults, ({category, address, type}): boolean => {
 		const	holding = balances?.[toAddress(address)];
-		const	hasValidBalance = formatBN(holding?.raw).gt(0);
+		const	hasValidBalance = toBigInt(holding?.raw) > 0n;
 		const	balanceValue = holding?.normalizedValue || 0;
 		if (shouldHideDust && balanceValue < 0.01) {
 			return false;

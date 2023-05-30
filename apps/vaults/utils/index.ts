@@ -10,6 +10,9 @@ export function getMessariSubgraphEndpoint(chainID: number): string {
 			return 'https://api.thegraph.com/subgraphs/name/messari/yearn-v2-fantom';
 		case 42161:
 			return 'https://api.thegraph.com/subgraphs/name/messari/yearn-v2-arbitrum';
+		//testnets
+		case 1337:
+			return 'https://api.thegraph.com/subgraphs/name/messari/yearn-v2-ethereum';
 		default:
 			return ('https://api.thegraph.com/subgraphs/name/messari/yearn-v2-ethereum');
 	}
@@ -25,6 +28,9 @@ export function getEthZapperContract(chainID: number): TAddress {
 			return ZAP_FTM_WFTM_CONTRACT;
 		case 42161:
 			return ZERO_ADDRESS;
+			//testnets
+		case 1337:
+			return ZAP_ETH_WETH_CONTRACT;
 		default:
 			return ZERO_ADDRESS;
 	}
@@ -40,6 +46,9 @@ export function getNativeTokenWrapperContract(chainID: number): TAddress {
 			return WFTM_TOKEN_ADDRESS;
 		case 42161:
 			return ARB_WETH_TOKEN_ADDRESS;
+		//testnets
+		case 1337:
+			return WETH_TOKEN_ADDRESS;
 		default:
 			return ZERO_ADDRESS;
 	}
@@ -55,6 +64,9 @@ export function getNativeTokenWrapperName(chainID: number): string {
 			return 'FTM';
 		case 42161:
 			return 'ARB';
+		// testnets
+		case 1337:
+			return 'ETH';
 		default:
 			return 'ETH';
 	}
