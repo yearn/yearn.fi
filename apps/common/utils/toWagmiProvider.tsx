@@ -1,10 +1,14 @@
 import {captureException} from '@sentry/nextjs';
 import {waitForTransaction, writeContract as wagmiWriteContract} from '@wagmi/core';
-import {toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
+import {isZeroAddress, toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
+import {ETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {isTAddress} from '@yearn-finance/web-lib/utils/isTAddress';
+import {assert} from '@common/utils/assert';
 
 import type {BaseError} from 'viem';
 import type {Connector} from 'wagmi';
-import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
+import type {TAddress, TAddressWagmi} from '@yearn-finance/web-lib/types';
+import type {defaultTxStatus, TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {GetWalletClientResult, PrepareWriteContractResult} from '@wagmi/core';
 
 export type TWagmiProviderContract = {
@@ -23,8 +27,6 @@ export async function toWagmiProvider(connector: Connector): Promise<TWagmiProvi
 	});
 }
 
-// PrepareWriteContractResult.request.value should be bigint instead of undefined
-
 export async function writeContract(config: PrepareWriteContractResult): Promise<TTxResponse> {
 	try {
 		const {hash} = await wagmiWriteContract(config.request);
@@ -37,4 +39,16 @@ export async function writeContract(config: PrepareWriteContractResult): Promise
 		return ({isSuccessful: false, error: errorAsBaseError || ''});
 	}
 
+}
+
+export type TWriteTransaction = {
+	connector: Connector;
+	contractAddress: TAddressWagmi;
+	statusHandler?: (status: typeof defaultTxStatus) => void;
+}
+
+export function assertAddress(addr: string): asserts addr is TAddress {
+	assert(isTAddress(addr), 'Address is not an address');
+	assert(!isZeroAddress(addr), 'Address is address 0x0');
+	assert(toAddress(addr) !== ETH_TOKEN_ADDRESS, 'Address is address 0xE');
 }

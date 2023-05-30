@@ -13,7 +13,7 @@ import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
-import {approveERC20} from '@common/utils/actions/approveToken';
+import {approveERC20} from '@common/utils/actions';
 import {useBribes} from '@yBribe/contexts/useBribes';
 import {addReward} from '@yBribe/utils/actions/addReward';
 

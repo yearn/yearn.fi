@@ -1,22 +1,22 @@
 import {useCallback, useMemo, useRef} from 'react';
-import {ethers} from 'ethers';
 import useSWRMutation from 'swr/mutation';
 import {Solver} from '@vaults/contexts/useSolver';
 import {useVaultEstimateOutFetcher} from '@vaults/hooks/useVaultEstimateOutFetcher';
-import {depositAndStake} from '@vaults/utils/actions/stakingRewards';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {STAKING_REWARDS_ZAP_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
-import {approvedERC20Amount, approveERC20} from '@common/utils/actions/approveToken';
+import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
+import {allowanceKey, isZeroAddress, toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
+import {ETH_TOKEN_ADDRESS, STAKING_REWARDS_ZAP_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {MaxUint256, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {approvedERC20Amount, approveERC20, depositAndStake} from '@common/utils/actions';
+import {assert} from '@common/utils/assert';
 
+import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TNormalizedBN} from '@common/types/types';
 import type {TVaultEstimateOutFetcher} from '@vaults/hooks/useVaultEstimateOutFetcher';
 import type {TInitSolverArgs, TSolverContext, TVanillaLikeResult} from '@vaults/types/solvers';
 
-function useOptimismBoosterQuote(): [TVanillaLikeResult, (request: TInitSolverArgs, shouldPreventErrorToast?: boolean) => Promise<TNormalizedBN>] {
+function useQuote(): [TVanillaLikeResult, (request: TInitSolverArgs, shouldPreventErrorToast?: boolean) => Promise<TNormalizedBN>] {
 	const retrieveExpectedOut = useVaultEstimateOutFetcher();
 	const {data, error, trigger, isMutating} = useSWRMutation(
 		'stakingRewardsBoost',
@@ -31,7 +31,7 @@ function useOptimismBoosterQuote(): [TVanillaLikeResult, (request: TInitSolverAr
 
 		const canExecuteFetch = (
 			!request.inputToken || !request.outputToken || !request.inputAmount ||
-			!(isZeroAddress(request.inputToken.value) || isZeroAddress(request.outputToken.value) || request.inputAmount.isZero())
+			!(isZeroAddress(request.inputToken.value) || isZeroAddress(request.outputToken.value) || request.inputAmount === 0n)
 		);
 
 		if (canExecuteFetch) {
@@ -53,8 +53,10 @@ function useOptimismBoosterQuote(): [TVanillaLikeResult, (request: TInitSolverAr
 
 export function useSolverOptimismBooster(): TSolverContext {
 	const {provider} = useWeb3();
-	const [latestQuote, getQuote] = useOptimismBoosterQuote();
+	const {safeChainID} = useChainID();
+	const [latestQuote, getQuote] = useQuote();
 	const request = useRef<TInitSolverArgs>();
+	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** init will be called when the optimism booster should be used to perform the desired deposit.
@@ -71,7 +73,7 @@ export function useSolverOptimismBooster(): TSolverContext {
 	** as in the initial request and it will fails if request is not set.
 	** init should be called first to initialize the request.
 	**********************************************************************************************/
-	const	refreshQuote = useCallback(async (): Promise<void> => {
+	const refreshQuote = useCallback(async (): Promise<void> => {
 		if (request.current) {
 			getQuote(request.current);
 		}
@@ -82,7 +84,7 @@ export function useSolverOptimismBooster(): TSolverContext {
 	** display the current value to the user.
 	**************************************************************************/
 	const onRetrieveExpectedOut = useCallback(async (request: TInitSolverArgs): Promise<TNormalizedBN> => {
-		const	quoteResult = await getQuote(request, true);
+		const quoteResult = await getQuote(request, true);
 		return quoteResult;
 	}, [getQuote]);
 
@@ -90,18 +92,30 @@ export function useSolverOptimismBooster(): TSolverContext {
 	** Retrieve the allowance for the token to be used by the solver. This will
 	** be used to determine if the user should approve the token or not.
 	**************************************************************************/
-	const onRetrieveAllowance = useCallback(async (): Promise<TNormalizedBN> => {
+	const onRetrieveAllowance = useCallback(async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
 		if (!request?.current) {
 			return toNormalizedBN(0);
 		}
 
+		const key = allowanceKey(
+			safeChainID,
+			toAddress(request.current.inputToken.value),
+			toAddress(request.current.outputToken.value),
+			toAddress(request.current.from)
+		);
+		if (existingAllowances.current[key] && !shouldForceRefetch) {
+			return existingAllowances.current[key];
+		}
+
+		assert(provider, 'Provider is not defined');
 		const allowance = await approvedERC20Amount(
 			provider,
 			toAddress(request.current.inputToken.value), // Input token
-			STAKING_REWARDS_ZAP_ADDRESS // spender
+			toAddress(STAKING_REWARDS_ZAP_ADDRESS) // spender
 		);
-		return toNormalizedBN(allowance, request.current.inputToken.decimals);
-	}, [request, provider]);
+		existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals);
+		return existingAllowances.current[key];
+	}, [request, safeChainID, provider]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Trigger an approve web3 action
@@ -109,22 +123,24 @@ export function useSolverOptimismBooster(): TSolverContext {
 	** (not connected) or if the tx is still pending.
 	**************************************************************************/
 	const onApprove = useCallback(async (
-		amount = ethers.constants.MaxUint256,
+		amount = MaxUint256,
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
-		if (!request?.current?.inputToken || !request?.current?.outputToken || !request?.current?.inputAmount) {
-			return;
-		}
+		assert(provider, 'Provider is not set');
+		assert(request.current, 'Request is not set');
+		assert(request.current.inputToken, 'Input token is not set');
 
-		new Transaction(provider, approveERC20, txStatusSetter)
-			.populate(
-				toAddress(request.current.inputToken.value), //token to approve
-				STAKING_REWARDS_ZAP_ADDRESS,
-				amount //amount
-			)
-			.onSuccess(onSuccess)
-			.perform();
+		const result = await approveERC20({
+			connector: provider,
+			contractAddress: toWagmiAddress(request.current.inputToken.value),
+			spenderAddress: toWagmiAddress(STAKING_REWARDS_ZAP_ADDRESS),
+			amount: amount,
+			statusHandler: txStatusSetter
+		});
+		if (result.isSuccessful) {
+			onSuccess();
+		}
 	}, [provider]);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -135,18 +151,29 @@ export function useSolverOptimismBooster(): TSolverContext {
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
-		if (!request?.current?.inputToken || !request?.current?.outputToken || !request?.current?.inputAmount) {
-			return;
-		}
+		assert(provider, 'Provider is not set');
+		assert(request.current, 'Request is not set');
 
-		new Transaction(provider, depositAndStake, txStatusSetter)
-			.populate(
-				request.current.from,
-				toAddress(request.current.outputToken.value), // vault
-				request.current.inputAmount
-			)
-			.onSuccess(onSuccess)
-			.perform();
+		//Asserting the basic request parameters
+		const {outputToken, inputAmount} = request.current;
+		assert(outputToken, 'Output token is not set');
+		assert(inputAmount, 'Input amount is not set');
+
+		//Asserting the contextual validity of the request parameters
+		assert(!isZeroAddress(outputToken?.value), 'Output token is address 0x0');
+		assert(toAddress(outputToken?.value) !== ETH_TOKEN_ADDRESS, 'Output token is address 0xE');
+		assert(inputAmount > 0n, 'Input amount is 0');
+
+		const result = await depositAndStake({
+			connector: provider,
+			contractAddress: toWagmiAddress(STAKING_REWARDS_ZAP_ADDRESS),
+			vaultAddress: toWagmiAddress(outputToken.value),
+			amount: inputAmount,
+			statusHandler: txStatusSetter
+		});
+		if (result.isSuccessful) {
+			onSuccess();
+		}
 	}, [provider]);
 
 	return useMemo((): TSolverContext => ({

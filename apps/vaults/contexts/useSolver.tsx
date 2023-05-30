@@ -15,7 +15,6 @@ import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {hash} from '@common/utils';
 
-import type {MaybeString} from '@yearn-finance/web-lib/types';
 import type {TNormalizedBN} from '@common/types/types';
 import type {TInitSolverArgs, TSolverContext, TWithSolver} from '@vaults/types/solvers';
 
@@ -75,7 +74,7 @@ function WithSolverContextApp({children}: { children: React.ReactElement }): Rea
 	const partnerContract = useSolverPartnerContract();
 	const internalMigration = useSolverInternalMigration();
 	const optimismBooster = useSolverOptimismBooster();
-	const [currentSolverState, set_currentSolverState] = useState<TSolverContext & { hash: MaybeString }>({...vanilla, hash: undefined});
+	const [currentSolverState, set_currentSolverState] = useState<TSolverContext & { hash?: string }>({...vanilla, hash: undefined});
 	const [isLoading, set_isLoading] = useState(false);
 
 	async function handleUpdateSolver({request, quote, solver, ctx}: TUpdateSolverHandler): Promise<void> {
@@ -108,7 +107,7 @@ function WithSolverContextApp({children}: { children: React.ReactElement }): Rea
 		};
 
 		const isValidSolver = ({quote, solver}: { quote: PromiseSettledResult<TNormalizedBN>; solver: Solver }): boolean => {
-			return quote.status === 'fulfilled' && quote?.value.raw?.gt(0) && !isSolverDisabled[solver];
+			return quote.status === 'fulfilled' && (quote?.value.raw > 0n) && !isSolverDisabled[solver];
 		};
 
 		switch (currentSolver) {
@@ -138,7 +137,7 @@ function WithSolverContextApp({children}: { children: React.ReactElement }): Rea
 				solvers[Solver.NONE] = {quote: {status: 'fulfilled', value: toNormalizedBN(0)}, ctx: vanilla};
 
 				const solverPriority = [Solver.WIDO, Solver.COWSWAP, Solver.PORTALS, Solver.NONE];
-				
+
 				const newSolverPriority = [currentSolver, ...solverPriority.filter((solver): boolean => solver !== currentSolver)];
 
 				for (const solver of newSolverPriority) {

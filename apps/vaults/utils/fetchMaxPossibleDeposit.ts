@@ -1,9 +1,6 @@
-import {ethers} from 'ethers';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {getProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 
-import type {BigNumber} from 'ethers';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
 export type TMaxDepositPossibleFetcher = {
@@ -11,7 +8,7 @@ export type TMaxDepositPossibleFetcher = {
 	vault: TYDaemonVault;
 }
 
-export async function fetchMaxPossibleDeposit({provider, vault}: TMaxDepositPossibleFetcher): Promise<BigNumber> {
+export async function fetchMaxPossibleDeposit({provider, vault}: TMaxDepositPossibleFetcher): Promise<bigint> {
 	const currentProvider = provider || getProvider(vault.chainID);
 	const contract = new ethers.Contract(
 		toAddress(vault.address),

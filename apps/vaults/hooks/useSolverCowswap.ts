@@ -7,14 +7,16 @@ import {isSolverDisabled, Solver} from '@vaults/contexts/useSolver';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {allowanceKey, isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {allowanceKey, isZeroAddress, toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, SOLVER_COW_VAULT_RELAYER_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatBN, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {MaxUint256, toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
-import {approvedERC20Amount, approveERC20, isApprovedERC20} from '@common/utils/actions/approveToken';
+import {approvedERC20Amount, approveERC20, isApprovedERC20} from '@common/utils/actions';
+import {assert} from '@common/utils/assert';
 
 import type {AxiosError} from 'axios';
+import type {BaseError} from 'viem';
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TTxResponse, TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TNormalizedBN} from '@common/types/types';
@@ -22,7 +24,7 @@ import type {ApiError, Order, QuoteQuery, Timestamp} from '@gnosis.pm/gp-v2-cont
 import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
 import type {TCowAPIResult, TCowResult} from '@vaults/types/solvers.cowswap';
 
-function useCowswapQuote(): [TCowResult, (request: TInitSolverArgs, shouldPreventErrorToast?: boolean) => Promise<TCowAPIResult | undefined>] {
+function useQuote(): [TCowResult, (request: TInitSolverArgs, shouldPreventErrorToast?: boolean) => Promise<TCowAPIResult | undefined>] {
 	const {toast} = yToast();
 	const {data, error, trigger, isMutating} = useSWRMutation(
 		'https://api.cow.fi/mainnet/api/v1/quote',
@@ -36,8 +38,8 @@ function useCowswapQuote(): [TCowResult, (request: TInitSolverArgs, shouldPreven
 		request: TInitSolverArgs,
 		shouldPreventErrorToast = false
 	): Promise<TCowAPIResult | undefined> => {
-		const	YEARN_APP_DATA = '0x5d22bf49b708de1d2d9547a6cca9faccbdc2b162012e8573811c07103b163d4b';
-		const	quote: QuoteQuery = ({
+		const YEARN_APP_DATA = '0x5d22bf49b708de1d2d9547a6cca9faccbdc2b162012e8573811c07103b163d4b';
+		const quote: QuoteQuery = ({
 			from: request.from, // receiver
 			sellToken: toAddress(request.inputToken.value), // token to spend
 			buyToken: toAddress(request.outputToken.value), // token to receive
@@ -46,12 +48,12 @@ function useCowswapQuote(): [TCowResult, (request: TInitSolverArgs, shouldPreven
 			kind: OrderKind.SELL, // always sell
 			partiallyFillable: false, // always false
 			validTo: 0,
-			sellAmountBeforeFee: formatBN(request?.inputAmount || 0).toString() // amount to sell, in wei
+			sellAmountBeforeFee: toBigInt(request?.inputAmount || 0).toString() // amount to sell, in wei
 		});
 
 		const canExecuteFetch = (
 			!(isZeroAddress(quote.from) || isZeroAddress(quote.sellToken) || isZeroAddress(quote.buyToken))
-			&& !formatBN(request?.inputAmount || 0).isZero()
+			&& toBigInt(request?.inputAmount || 0) > 0
 		);
 		if (canExecuteFetch) {
 			quote.validTo = Math.round((new Date().setMinutes(new Date().getMinutes() + 10) / 1000));
@@ -59,12 +61,12 @@ function useCowswapQuote(): [TCowResult, (request: TInitSolverArgs, shouldPreven
 				const result = await trigger(quote, {revalidate: false});
 				return (result);
 			} catch (error) {
-				const	_error = error as AxiosError<ApiError>;
+				const _error = error as AxiosError<ApiError>;
 				console.error(error);
 				if (shouldPreventErrorToast) {
 					return undefined;
 				}
-				const	message = `Zap not possible. Try again later or pick another token. ${_error?.response?.data?.description ? `(Reason: [${_error?.response?.data?.description}])` : ''}`;
+				const message = `Zap not possible. Try again later or pick another token. ${_error?.response?.data?.description ? `(Reason: [${_error?.response?.data?.description}])` : ''}`;
 				toast({type: 'error', content: message});
 				return undefined;
 			}
@@ -88,7 +90,7 @@ export function useSolverCowswap(): TSolverContext {
 	const {safeChainID} = useChainID();
 	const maxIterations = 1000; // 1000 * up to 3 seconds = 3000 seconds = 50 minutes
 	const shouldUsePresign = false; //Debug only
-	const [, getQuote] = useCowswapQuote();
+	const [, getQuote] = useQuote();
 	const request = useRef<TInitSolverArgs>();
 	const latestQuote = useRef<TCowAPIResult>();
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
@@ -161,7 +163,10 @@ export function useSolverCowswap(): TSolverContext {
 		}
 		latestQuote.current = quote;
 		getBuyAmountWithSlippage(quote, request?.current?.outputToken?.decimals || 18);
-		return toNormalizedBN(quote?.quote?.buyAmount || 0, request?.current?.outputToken?.decimals || 18);
+		return toNormalizedBN(
+			toBigInt(quote?.quote?.buyAmount?.toString()),
+			request?.current?.outputToken?.decimals || 18
+		);
 	}, [getBuyAmountWithSlippage, getQuote, isDisabled]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
@@ -170,16 +175,32 @@ export function useSolverCowswap(): TSolverContext {
 	** If shouldUsePresign is set to true, the signature is not required and the approval is
 	** skipped. This should only be used for debugging purposes.
 	**********************************************************************************************/
-	const	signCowswapOrder = useCallback(async (quote: Order): Promise<string> => {
+	const signCowswapOrder = useCallback(async (quote: Order): Promise<string> => {
 		if (shouldUsePresign) {
 			return toAddress(address || '');
 		}
 
-		const	signer = provider.getSigner();
-		const	rawSignature = await signOrder(
+		assert(provider, 'Provider is not set');
+
+		const signer = await provider.getWalletClient();
+		const rawSignature = await signOrder(
 			domain(1, '0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
 			quote,
-			signer,
+			//TODO: FIX HERE FOR RELEASE
+			//TODO: FIX HERE FOR RELEASE
+			//TODO: FIX HERE FOR RELEASE
+			//TODO: FIX HERE FOR RELEASE
+			//TODO: FIX HERE FOR RELEASE
+			//TODO: FIX HERE FOR RELEASE
+			//TODO: FIX HERE FOR RELEASE
+			signer as any, //TODO: <--- THIS WILL NOT WORK
+			//TODO: FIX HERE FOR RELEASE
+			//TODO: FIX HERE FOR RELEASE
+			//TODO: FIX HERE FOR RELEASE
+			//TODO: FIX HERE FOR RELEASE
+			//TODO: FIX HERE FOR RELEASE
+			//TODO: FIX HERE FOR RELEASE
+			//TODO: FIX HERE FOR RELEASE
 			SigningScheme.EIP712
 		);
 		return ethers.utils.joinSignature(rawSignature.data);
@@ -190,7 +211,7 @@ export function useSolverCowswap(): TSolverContext {
 	** as in the initial request and it will fails if request is not set.
 	** init should be called first to initialize the request.current.
 	**********************************************************************************************/
-	const	refreshQuote = useCallback(async (): Promise<void> => {
+	const refreshQuote = useCallback(async (): Promise<void> => {
 		if (request.current) {
 			getQuote(request.current);
 		}
@@ -229,11 +250,11 @@ export function useSolverCowswap(): TSolverContext {
 		if (!latestQuote?.current || !latestQuote?.current?.quote || !request.current || isDisabled) {
 			return ({isSuccessful: false});
 		}
-		const	{quote, from, id} = latestQuote.current;
+		const {quote, from, id} = latestQuote.current;
 		try {
-			const	buyAmountWithSlippage = getBuyAmountWithSlippage(latestQuote.current, request.current.outputToken.decimals);
-			const	signature = await signCowswapOrder({...quote, buyAmount: buyAmountWithSlippage});
-			const	{data: orderUID} = await axios.post('https://api.cow.fi/mainnet/api/v1/orders', {
+			const buyAmountWithSlippage = getBuyAmountWithSlippage(latestQuote.current, request.current.outputToken.decimals);
+			const signature = await signCowswapOrder({...quote, buyAmount: buyAmountWithSlippage});
+			const {data: orderUID} = await axios.post('https://api.cow.fi/mainnet/api/v1/orders', {
 				...quote,
 				buyAmount: buyAmountWithSlippage,
 				from: from,
@@ -245,13 +266,13 @@ export function useSolverCowswap(): TSolverContext {
 				const {isSuccessful, error} = await checkOrderStatus(orderUID, quote.validTo);
 				if (error) {
 					console.error(error);
-					return ({isSuccessful: false, error});
+					return ({isSuccessful: false, error: error as BaseError || ''});
 				}
 				return {isSuccessful};
 			}
 		} catch (error) {
 			console.error(error);
-			return ({isSuccessful: false, error: error as Error});
+			return ({isSuccessful: false, error: error as BaseError || ''});
 		}
 		return ({isSuccessful: false});
 	}, [getBuyAmountWithSlippage, shouldUsePresign, signCowswapOrder, isDisabled]);
@@ -264,7 +285,12 @@ export function useSolverCowswap(): TSolverContext {
 		if (!latestQuote?.current?.quote?.buyAmount || isDisabled) {
 			return (toNormalizedBN(0));
 		}
-		return toNormalizedBN(latestQuote?.current?.quote?.buyAmount, request?.current?.outputToken?.decimals || 18);
+		return (
+			toNormalizedBN(
+				toBigInt(latestQuote?.current?.quote?.buyAmount.toString()),
+				request?.current?.outputToken?.decimals || 18
+			)
+		);
 	}, [latestQuote, isDisabled]);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -276,7 +302,12 @@ export function useSolverCowswap(): TSolverContext {
 			return (toNormalizedBN(0));
 		}
 		const quoteResult = await getQuote(_request, true);
-		return toNormalizedBN(formatBN(quoteResult?.quote?.buyAmount), _request.outputToken.decimals);
+		return (
+			toNormalizedBN(
+				toBigInt(quoteResult?.quote?.buyAmount.toString()),
+				_request.outputToken.decimals || 18
+			)
+		);
 	}, [getQuote, isDisabled]);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -284,14 +315,22 @@ export function useSolverCowswap(): TSolverContext {
 	** be used to determine if the user should approve the token or not.
 	**************************************************************************/
 	const onRetrieveAllowance = useCallback(async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
-		if (!request?.current || isDisabled || !request?.current?.inputToken?.solveVia?.includes(Solver.COWSWAP)) {
+		if (isDisabled) {
 			return toNormalizedBN(0);
 		}
+		assert(request.current, 'Request is not defined');
+		assert(request?.current?.inputToken?.solveVia?.includes(Solver.COWSWAP), 'Input token is not supported by Cowswap');
 
-		const key = allowanceKey(safeChainID, toAddress(request.current.inputToken.value), toAddress(request.current.outputToken.value), toAddress(request.current.from));
+		const key = allowanceKey(
+			safeChainID,
+			toAddress(request.current.inputToken.value),
+			toAddress(request.current.outputToken.value),
+			toAddress(request.current.from)
+		);
 		if (existingAllowances.current[key] && !shouldForceRefetch) {
 			return existingAllowances.current[key];
 		}
+		assert(provider, 'Provider is not defined');
 		const allowance = await approvedERC20Amount(
 			provider,
 			toAddress(request.current.inputToken.value), //Input token
@@ -307,32 +346,37 @@ export function useSolverCowswap(): TSolverContext {
 	** of the token by the Cowswap solver.
 	**************************************************************************/
 	const onApprove = useCallback(async (
-		amount = ethers.constants.MaxUint256,
+		amount = MaxUint256,
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
-		if (!latestQuote?.current || !latestQuote?.current?.quote || !request?.current || isDisabled) {
+		if (isDisabled) {
 			return;
 		}
+		assert(provider, 'Provider is not defined');
+		assert(latestQuote?.current?.quote, 'Quote is not defined');
+		assert(request.current, 'Request is not defined');
+		assert(request?.current?.inputToken?.solveVia?.includes(Solver.COWSWAP), 'Input token is not supported by Cowswap');
 
-		const	isApproved = await isApprovedERC20(
+		const isApproved = await isApprovedERC20(
 			provider,
 			toAddress(request.current.inputToken.value), //token to approve
 			toAddress(SOLVER_COW_VAULT_RELAYER_ADDRESS), //Cowswap relayer
-			amount
+			toBigInt(amount.toString())
 		);
 		if (isApproved) {
-			onSuccess();
-			return;
+			return onSuccess();
 		}
-		new Transaction(provider, approveERC20, txStatusSetter)
-			.populate(
-				toAddress(request.current.inputToken.value), //token to approve
-				toAddress(SOLVER_COW_VAULT_RELAYER_ADDRESS), //Cowswap relayer
-				amount
-			)
-			.onSuccess(onSuccess)
-			.perform();
+		const result = await approveERC20({
+			connector: provider,
+			contractAddress: toWagmiAddress(request.current.inputToken.value),
+			spenderAddress: toWagmiAddress(SOLVER_COW_VAULT_RELAYER_ADDRESS),
+			amount: toBigInt(amount.toString()),
+			statusHandler: txStatusSetter
+		});
+		if (result.isSuccessful) {
+			onSuccess();
+		}
 	}, [provider, isDisabled]);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -344,6 +388,8 @@ export function useSolverCowswap(): TSolverContext {
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
+		assert(provider, 'Provider is not defined');
+
 		new Transaction(provider, execute, txStatusSetter)
 			.populate()
 			.onSuccess(onSuccess)
@@ -359,6 +405,8 @@ export function useSolverCowswap(): TSolverContext {
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
+		assert(provider, 'Provider is not defined');
+
 		new Transaction(provider, execute, txStatusSetter)
 			.populate()
 			.onSuccess(onSuccess)

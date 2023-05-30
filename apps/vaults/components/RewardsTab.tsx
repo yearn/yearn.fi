@@ -13,14 +13,14 @@ import {Input} from '@common/components/Input';
 import {useWallet} from '@common/contexts/useWallet';
 import {useAllowances} from '@common/hooks/useAllowances';
 import {useBalance} from '@common/hooks/useBalance';
-import {approveERC20} from '@common/utils/actions/approveToken';
+import {approveERC20} from '@common/utils/actions';
 
 import type {ReactElement} from 'react';
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
 const DISPLAY_DECIMALS = 10;
-const trimAmount = (amount: string | number): string => Number(Number(amount).toFixed(DISPLAY_DECIMALS)).toString(); 
+const trimAmount = (amount: string | number): string => Number(Number(amount).toFixed(DISPLAY_DECIMALS)).toString();
 
 function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {provider, address, isActive} = useWeb3();
@@ -73,9 +73,9 @@ function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): ReactElement
 					/>
 					<Button
 						className={'w-full md:mt-7 md:w-[168px]'}
-						onClick={(): unknown => 
-							isApproved 
-								? stake(provider, userAddress, toAddress(stakingRewards?.address), vaultBalance.raw) 
+						onClick={(): unknown =>
+							isApproved
+								? stake(provider, userAddress, toAddress(stakingRewards?.address), vaultBalance.raw)
 								: approveStake(provider, currentVault.address, toAddress(stakingRewards?.address))
 						}
 						isBusy={stakeStatus.loading || approveStakeStatus.loading || isLoadingAllowances}
