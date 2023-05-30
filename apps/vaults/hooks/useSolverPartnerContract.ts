@@ -111,6 +111,7 @@ export function useSolverPartnerContract(): TSolverContext {
 			return existingAllowances.current[key];
 		}
 
+		assert(provider, 'Provider not set');
 		const allowance = await approvedERC20Amount(
 			provider,
 			toAddress(request.current.inputToken.value), //Input token

@@ -316,7 +316,7 @@ export function useSolverPortals(): TSolverContext {
 
 			const isApproved = await isApprovedERC20(
 				provider,
-				toAddress(request.current.inputToken.value), //token to approve
+				toAddress(inputToken.value), //token to approve
 				toAddress(approval.context.spender), //contract to approve
 				amount
 			);
