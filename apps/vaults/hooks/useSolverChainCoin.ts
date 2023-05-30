@@ -109,7 +109,6 @@ export function useSolverChainCoin(): TSolverContext {
 			return existingAllowances.current[key];
 		}
 
-		assert(provider, 'Provider not set');
 		assert(toAddress(request.current.outputToken.value) === ETH_TOKEN_ADDRESS, 'Out is not ETH');
 		const allowance = await approvedERC20Amount(
 			provider,
@@ -129,7 +128,6 @@ export function useSolverChainCoin(): TSolverContext {
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
-		assert(provider, 'Provider is not set');
 		assert(request?.current?.inputToken, 'Input token is not set');
 
 		const result = await approveERC20({
@@ -153,7 +151,6 @@ export function useSolverChainCoin(): TSolverContext {
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
-		assert(provider, 'Provider is not set');
 		assert(request.current, 'Request is not set');
 		assert(request.current.inputAmount, 'Input amount is not set');
 
@@ -177,7 +174,6 @@ export function useSolverChainCoin(): TSolverContext {
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
-		assert(provider, 'Provider is not set');
 		assert(request.current, 'Request is not set');
 		assert(request.current.inputAmount, 'Input amount is not set');
 

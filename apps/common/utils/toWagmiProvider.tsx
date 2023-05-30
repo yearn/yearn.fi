@@ -13,7 +13,9 @@ export type TWagmiProviderContract = {
 	chainId: number,
 	address: string,
 }
-export async function toWagmiProvider(connector: Connector): Promise<TWagmiProviderContract> {
+export async function toWagmiProvider(connector: Connector | undefined): Promise<TWagmiProviderContract> {
+	assert(connector, 'Connector is not set');
+
 	const signer = await connector.getWalletClient();
 	const chainId = await connector.getChainId();
 	const address = toWagmiAddress(signer.account.address);
@@ -25,7 +27,7 @@ export async function toWagmiProvider(connector: Connector): Promise<TWagmiProvi
 }
 
 export type TWriteTransaction = {
-	connector: Connector;
+	connector: Connector | undefined;
 	contractAddress: TAddressWagmi;
 	statusHandler?: (status: typeof defaultTxStatus) => void;
 }

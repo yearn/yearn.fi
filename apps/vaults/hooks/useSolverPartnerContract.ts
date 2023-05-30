@@ -111,7 +111,6 @@ export function useSolverPartnerContract(): TSolverContext {
 			return existingAllowances.current[key];
 		}
 
-		assert(provider, 'Provider not set');
 		const allowance = await approvedERC20Amount(
 			provider,
 			toAddress(request.current.inputToken.value), //Input token
@@ -133,8 +132,8 @@ export function useSolverPartnerContract(): TSolverContext {
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
-		assert(provider, 'Provider is not set');
-		assert(request?.current?.inputToken, 'Input token is not set');
+		assert(request.current, 'Request is not set');
+		assert(request.current?.inputToken, 'Input token is not set');
 
 		const result = await approveERC20({
 			connector: provider,
@@ -156,7 +155,6 @@ export function useSolverPartnerContract(): TSolverContext {
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
-		assert(provider, 'Provider is not set');
 		assert(request.current, 'Request is not set');
 		assert(request.current.outputToken, 'Output token is not set');
 		assert(request.current.inputAmount, 'Input amount is not set');
@@ -182,7 +180,6 @@ export function useSolverPartnerContract(): TSolverContext {
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
-		assert(provider, 'Provider is not set');
 		assert(request.current, 'Request is not set');
 		assert(request.current.inputToken, 'Input token is not set');
 		assert(request.current.inputAmount, 'Input amount is not set');

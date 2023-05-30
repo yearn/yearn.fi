@@ -24,7 +24,7 @@ import type {TWriteTransaction} from '@common/utils/toWagmiProvider';
 ** a spender.
 ******************************************************************************/
 export async function	isApprovedERC20(
-	connector: Connector,
+	connector: Connector | undefined,
 	tokenAddress: TAddress,
 	spender: TAddress,
 	amount = MAX_UINT_256
@@ -45,7 +45,7 @@ export async function	isApprovedERC20(
 ** that is approved for a spender.
 ******************************************************************************/
 export async function	approvedERC20Amount(
-	connector: Connector,
+	connector: Connector | undefined,
 	tokenAddress: TAddress,
 	spender: TAddress
 ): Promise<bigint> {
