@@ -1,5 +1,5 @@
-// We need the following line so that Next.js actually refetch the data a fast
-// refresh is done. Cf https://nextjs.org/docs/architecture/fast-refresh#tips
+// We need the following line so that Next.js actually refetch the data when a
+// fast refresh is done. Cf https://nextjs.org/docs/architecture/fast-refresh#tips
 // @refresh reset
 
 import {useEffect, useMemo} from 'react';
