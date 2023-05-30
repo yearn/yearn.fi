@@ -10,7 +10,7 @@ import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import type {ReactElement} from 'react';
 import type {TYDaemonHarvests} from '@common/types/yearn';
 
-function	HarvestListRow({harvest}: {harvest: TYDaemonHarvests}): ReactElement {
+function HarvestListRow({harvest}: {harvest: TYDaemonHarvests}): ReactElement {
 	return (
 		<div className={'yearn--table-wrapper'}>
 			<div className={'yearn--table-token-section'}>

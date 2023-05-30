@@ -7,7 +7,7 @@ import type {ReactElement} from 'react';
 export type TImageWithFallbackProps = ImageProps & {
 	onCatchError?: () => void;
 };
-function	ImageWithFallback(props: TImageWithFallbackProps): ReactElement {
+function ImageWithFallback(props: TImageWithFallbackProps): ReactElement {
 	const {alt, src, onCatchError, ...rest} = props;
 	const [imageSrc, set_imageSrc] = useState(src);
 

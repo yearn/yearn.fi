@@ -33,7 +33,7 @@ type TRiskScoreElementProps = {
 	value?: number;
 };
 
-function	RiskScoreElement({label, value}: TRiskScoreElementProps): ReactElement {
+function RiskScoreElement({label, value}: TRiskScoreElementProps): ReactElement {
 	return (
 		<div className={'flex flex-row items-center justify-between'}>
 			<p className={'text-sm text-neutral-500'}>{label}</p>
@@ -42,11 +42,11 @@ function	RiskScoreElement({label, value}: TRiskScoreElementProps): ReactElement 
 	);
 }
 
-function	VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
+function VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
 	const {safeChainID} = useChainID();
 	const {settings: baseAPISettings} = useSettings();
 
-	const	riskScoreElementsMap = useMemo((): TRiskScoreElementProps[] => {
+	const riskScoreElementsMap = useMemo((): TRiskScoreElementProps[] => {
 		const {riskDetails} = strategy.risk || {};
 
 		return ([
@@ -177,12 +177,12 @@ function	VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
 	);
 }
 
-function	isExceptionStrategy(strategy: TYDaemonVaultStrategy): boolean {
+function isExceptionStrategy(strategy: TYDaemonVaultStrategy): boolean {
 	// Curve DAO Fee and Bribes Reinvest
 	return strategy.address.toString() === '0x23724D764d8b3d26852BA20d3Bc2578093d2B022' && !!strategy.details?.inQueue;
 }
 
-function	VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const [searchValue, set_searchValue] = useState<string>('');
 	const [shouldHide0DebtStrategies, set_shouldHide0DebtStrategies] = useState(true);
 

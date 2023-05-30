@@ -21,11 +21,11 @@ import {LEGACY_OPTIONS_FROM, LEGACY_OPTIONS_TO} from '@yCRV/utils/zapOptions';
 import type {ChangeEvent, ReactElement} from 'react';
 import type {TDropdownOption} from '@common/types/types';
 
-function	CardMigrateLegacy(): ReactElement {
-	const	{isActive} = useWeb3();
-	const	{balances} = useWallet();
-	const	{vaults, prices} = useYearn();
-	const	{
+function CardMigrateLegacy(): ReactElement {
+	const {isActive} = useWeb3();
+	const {balances} = useWallet();
+	const {vaults, prices} = useYearn();
+	const {
 		txStatusApprove, txStatusZap,
 		selectedOptionFrom, set_selectedOptionFrom,
 		selectedOptionTo, set_selectedOptionTo,
@@ -35,22 +35,22 @@ function	CardMigrateLegacy(): ReactElement {
 		allowanceFrom, onApproveFrom, onZap
 	} = useCardTransactor();
 
-	const	ycrvPrice = useMemo((): number => (
+	const ycrvPrice = useMemo((): number => (
 		formatToNormalizedValue(
 			formatBN(prices?.[YCRV_TOKEN_ADDRESS] || 0),
 			6
 		)
 	), [prices]);
-	const	ycrvCurvePoolPrice = useMemo((): number => (
+	const ycrvCurvePoolPrice = useMemo((): number => (
 		formatToNormalizedValue(
 			formatBN(prices?.[YCRV_CURVE_POOL_ADDRESS] || 0),
 			6
 		)
 	), [prices]);
 
-	function	renderButton(): ReactElement {
-		const	balanceForInputToken = formatBN(balances?.[toAddress(selectedOptionFrom.value)]?.raw);
-		const	isAboveBalance = formatBN(amount?.raw).gt(balanceForInputToken) || balanceForInputToken.eq(Zero);
+	function renderButton(): ReactElement {
+		const balanceForInputToken = formatBN(balances?.[toAddress(selectedOptionFrom.value)]?.raw);
+		const isAboveBalance = formatBN(amount?.raw).gt(balanceForInputToken) || balanceForInputToken.eq(Zero);
 
 		if (txStatusApprove.pending || (amount.raw).gt(allowanceFrom)) {
 			return (
@@ -211,7 +211,7 @@ function	CardMigrateLegacy(): ReactElement {
 	);
 }
 
-function	CardMigrateLegacyWrapper(): ReactElement {
+function CardMigrateLegacyWrapper(): ReactElement {
 	const {txStatusApprove, txStatusZap} = useCardTransactor();
 
 	return (
@@ -237,7 +237,7 @@ function	CardMigrateLegacyWrapper(): ReactElement {
 	);
 }
 
-function	WithCardTransactor(): ReactElement {
+function WithCardTransactor(): ReactElement {
 	return (
 		<CardTransactorContextApp
 			defaultOptionFrom={LEGACY_OPTIONS_FROM[0]}

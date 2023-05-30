@@ -25,7 +25,7 @@ export type	TWalletForZap = {
 	refresh: (tokenList?: TUseBalancesTokens[]) => Promise<TDict<TBalanceData>>,
 }
 
-const	defaultProps = {
+const defaultProps = {
 	tokensList: {},
 	balances: {},
 	balancesNonce: 0,
@@ -37,7 +37,7 @@ const	defaultProps = {
 ** This context controls most of the user's wallet data we may need to
 ** interact with our app, aka mostly the balances and the token prices.
 ******************************************************************************/
-const	WalletForZap = createContext<TWalletForZap>(defaultProps);
+const WalletForZap = createContext<TWalletForZap>(defaultProps);
 export const WalletForZapApp = memo(function WalletForZapApp({children}: {children: ReactElement}): ReactElement {
 	const {address, isActive} = useWeb3();
 	const {refresh, balancesNonce} = useWallet();
@@ -50,14 +50,14 @@ export const WalletForZapApp = memo(function WalletForZapApp({children}: {childr
 	/* 🔵 - Yearn Finance ******************************************************
 	**	Fetching, for this user, the list of tokens available for zaps
 	***************************************************************************/
-	const	{data: tokensList} = useSWR(
+	const {data: tokensList} = useSWR(
 		address ? `${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/${safeChainID}/tokenlistbalances/${address}` : null,
 		baseFetcher,
 		{revalidateOnFocus: false}
 	) as SWRResponse<TDict<TYDaemonTokensList>>;
 
-	const	availableTokens = useMemo((): TUseBalancesTokens[] => {
-		const	tokens: TUseBalancesTokens[] = [];
+	const availableTokens = useMemo((): TUseBalancesTokens[] => {
+		const tokens: TUseBalancesTokens[] = [];
 		Object.values(tokensList || {}).forEach((token): void => {
 			if (token.chainID !== safeChainID) {
 				return;
@@ -73,7 +73,7 @@ export const WalletForZapApp = memo(function WalletForZapApp({children}: {childr
 	useUpdateEffect((): void => {
 		onLoadStart();
 		set_isLoading(true);
-		const	allToRefresh = availableTokens.map(({token}): TUseBalancesTokens => ({token}));
+		const allToRefresh = availableTokens.map(({token}): TUseBalancesTokens => ({token}));
 		refresh(allToRefresh).then((result): void => {
 			performBatchedUpdates((): void => {
 				set_isLoading(false);
@@ -86,7 +86,7 @@ export const WalletForZapApp = memo(function WalletForZapApp({children}: {childr
 	/* 🔵 - Yearn Finance ******************************************************
 	**	Setup and render the Context provider to use in the app.
 	***************************************************************************/
-	const	contextValue = useMemo((): TWalletForZap => ({
+	const contextValue = useMemo((): TWalletForZap => ({
 		tokensList: tokensList || {},
 		balances: zapBalances,
 		balancesNonce: balancesNonce,

@@ -3,8 +3,8 @@ import {useBribes} from '@yBribe/contexts/useBribes';
 
 import type {ReactElement} from 'react';
 
-function	GaugeListEmpty(): ReactElement {
-	const	{isLoading} = useBribes();
+function GaugeListEmpty(): ReactElement {
+	const {isLoading} = useBribes();
 
 	if (isLoading) {
 		return (
@@ -15,7 +15,7 @@ function	GaugeListEmpty(): ReactElement {
 					<span className={'loader'} />
 				</div>
 			</div>
-		);	
+		);
 	}
 	return (
 		<div className={'flex h-96 w-full flex-col items-center justify-center py-2 px-10'}>
@@ -24,7 +24,7 @@ function	GaugeListEmpty(): ReactElement {
 				{'No gauges available.'}
 			</p>
 		</div>
-	);	
+	);
 }
 
 export {GaugeListEmpty};

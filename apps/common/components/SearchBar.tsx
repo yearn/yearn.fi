@@ -7,7 +7,7 @@ export type TSearchBar = {
 	set_searchValue: (searchValue: string) => void;
 }
 
-export function	SearchBar({searchLabel, searchPlaceholder, searchValue, set_searchValue}: TSearchBar): ReactElement {
+export function SearchBar({searchLabel, searchPlaceholder, searchValue, set_searchValue}: TSearchBar): ReactElement {
 	return (
 		<div className={'w-full'}>
 			<label

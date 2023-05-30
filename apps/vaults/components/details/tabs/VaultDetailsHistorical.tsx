@@ -21,11 +21,11 @@ const GraphForVaultTVL = dynamic<TGraphForVaultTVLProps>(async (): LoaderCompone
 const GraphForVaultPPSGrowth = dynamic<TGraphForVaultPPSGrowthProps>(async (): LoaderComponent<TGraphForVaultPPSGrowthProps> => import('@vaults/components/graphs/GraphForVaultPPSGrowth'), {ssr: false});
 const GraphForVaultEarnings = dynamic<TGraphForVaultEarningsProps>(async (): LoaderComponent<TGraphForVaultEarningsProps> => import('@vaults/components/graphs/GraphForVaultEarnings'), {ssr: false});
 
-function	VaultDetailsHistorical({currentVault, harvestData}: {currentVault: TYDaemonVault, harvestData: TGraphData[]}): ReactElement {
+function VaultDetailsHistorical({currentVault, harvestData}: {currentVault: TYDaemonVault, harvestData: TGraphData[]}): ReactElement {
 	const {safeChainID} = useChainID();
 	const [selectedViewIndex, set_selectedViewIndex] = useState(0);
 
-	const	{data: messariMixedData} = useSWR(currentVault.address ? [
+	const {data: messariMixedData} = useSWR(currentVault.address ? [
 		getMessariSubgraphEndpoint(safeChainID),
 		`{
 			vaultDailySnapshots(
@@ -41,8 +41,8 @@ function	VaultDetailsHistorical({currentVault, harvestData}: {currentVault: TYDa
 		}`
 	] : null, graphFetcher);
 
-	const	messariData = useMemo((): TMessariGraphData[] => {
-		const	_messariMixedData = [...((messariMixedData?.vaultDailySnapshots as {timestamp: string, totalValueLockedUSD: string, pricePerShare: string}[]) || [])];
+	const messariData = useMemo((): TMessariGraphData[] => {
+		const _messariMixedData = [...((messariMixedData?.vaultDailySnapshots as {timestamp: string, totalValueLockedUSD: string, pricePerShare: string}[]) || [])];
 		return (
 			_messariMixedData?.map((elem): TMessariGraphData => ({
 				name: formatDate(Number(elem.timestamp) * 1000),

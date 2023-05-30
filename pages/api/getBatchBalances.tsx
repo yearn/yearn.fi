@@ -25,7 +25,7 @@ async function getBatchBalances({
 	tokens
 }: TPerformCall): Promise<TDict<TBalanceData>> {
 	const data: TDict<TBalanceData> = {};
-	const	chunks = [];
+	const chunks = [];
 	for (let i = 0; i < tokens.length; i += 5_000) {
 		chunks.push(tokens.slice(i, i + 5_000));
 	}
@@ -35,9 +35,9 @@ async function getBatchBalances({
 	for (const chunkTokens of chunks) {
 		const calls = [];
 		for (const element of chunkTokens) {
-			const	{token} = element;
-			const	ownerAddress = address;
-			const	isEth = toAddress(token) === toAddress(ETH_TOKEN_ADDRESS);
+			const {token} = element;
+			const ownerAddress = address;
+			const isEth = toAddress(token) === toAddress(ETH_TOKEN_ADDRESS);
 			if (isEth) {
 				const multicall3Contract = {address: toWagmiAddress(MULTICALL3_ADDRESS), abi: AGGREGATE3_ABI};
 				const baseContract = {address: toWagmiAddress(nativeTokenWrapper), abi: erc20ABI};
@@ -55,7 +55,7 @@ async function getBatchBalances({
 		try {
 			const results = await multicall({contracts: calls as never[], chainId: chainID});
 
-			let		rIndex = 0;
+			let rIndex = 0;
 			for (const element of tokens) {
 				const {token} = element;
 				const balanceOf = decodeAsBigInt(results[rIndex++]);

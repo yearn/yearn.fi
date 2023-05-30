@@ -17,7 +17,7 @@ function TokenIcon({
 }): ReactElement {
 	const [imageType, set_imageType] = useState<'Vault' | 'Underlying' | 'Fallback'>('Vault');
 
-	function	renderMultipleAssetImage(): ReactElement {
+	function renderMultipleAssetImage(): ReactElement {
 		if (token?.underlyingTokensAddresses?.length === 2) {
 			return (
 				<div className={'flex flex-row items-center justify-center'}>

@@ -8,7 +8,7 @@ import Wrapper from '@yBribe/Wrapper';
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
 
-function	About(): ReactElement {
+function About(): ReactElement {
 	return (
 		<section className={'mt-4 grid w-full grid-cols-1 gap-10 pb-10 md:mt-20 md:grid-cols-2'}>
 			<div>

@@ -16,15 +16,15 @@ import type {ReactElement} from 'react';
 import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 import type {TCurveGauge} from '@common/schemas/curveSchemas';
 
-function	GaugeRowItemWithExtraData({address, value}: {address: TAddress, value: BigNumber}): ReactElement {
-	const	{tokens, prices} = useYearn();
+function GaugeRowItemWithExtraData({address, value}: {address: TAddress, value: BigNumber}): ReactElement {
+	const {tokens, prices} = useYearn();
 
-	const	tokenInfo = tokens?.[address];
-	const	tokenPrice = prices?.[address];
-	const	decimals = tokenInfo?.decimals || 18;
-	const	symbol = tokenInfo?.symbol || '???';
-	const	bribeAmount = formatToNormalizedValue(formatBN(value), decimals);
-	const	bribeValue = bribeAmount * (Number(tokenPrice || 0) / 100);
+	const tokenInfo = tokens?.[address];
+	const tokenPrice = prices?.[address];
+	const decimals = tokenInfo?.decimals || 18;
+	const symbol = tokenInfo?.symbol || '???';
+	const bribeAmount = formatToNormalizedValue(formatBN(value), decimals);
+	const bribeValue = bribeAmount * (Number(tokenPrice || 0) / 100);
 
 	return (
 		<div className={'flex h-auto flex-col items-end pt-0 md:h-14'}>
@@ -40,27 +40,27 @@ function	GaugeRowItemWithExtraData({address, value}: {address: TAddress, value: 
 	);
 }
 
-function	GaugeListRow({currentGauge}: {currentGauge: TCurveGauge}): ReactElement {
-	const	{isActive} = useWeb3();
-	const	{currentRewards, nextRewards} = useBribes();
-	const	[hasModal, set_hasModal] = useState(false);
+function GaugeListRow({currentGauge}: {currentGauge: TCurveGauge}): ReactElement {
+	const {isActive} = useWeb3();
+	const {currentRewards, nextRewards} = useBribes();
+	const [hasModal, set_hasModal] = useState(false);
 
-	const	currentRewardsForCurrentGauge = useMemo((): TDict<BigNumber> => {
+	const currentRewardsForCurrentGauge = useMemo((): TDict<BigNumber> => {
 		return currentRewards?.v3?.[toAddress(currentGauge.gauge)] || {};
 	}, [currentGauge.gauge, currentRewards]);
 
-	const	nextRewardsForCurrentGauge = useMemo((): TDict<BigNumber> => {
+	const nextRewardsForCurrentGauge = useMemo((): TDict<BigNumber> => {
 		return nextRewards?.v3?.[toAddress(currentGauge.gauge)] || {};
 	}, [currentGauge.gauge, nextRewards]);
 
-	const	gaugeRelativeWeight = useMemo((): number => {
+	const gaugeRelativeWeight = useMemo((): number => {
 		return formatToNormalizedValue(formatBN(currentGauge?.gauge_controller?.gauge_relative_weight), 18);
 	}, [currentGauge]);
 
-	const	currentRewardsForCurrentGaugeMap = Object.entries(currentRewardsForCurrentGauge || {}) || [];
-	const	nextRewardsForCurrentGaugeMap = Object.entries(nextRewardsForCurrentGauge || {}) || [];
+	const currentRewardsForCurrentGaugeMap = Object.entries(currentRewardsForCurrentGauge || {}) || [];
+	const nextRewardsForCurrentGaugeMap = Object.entries(nextRewardsForCurrentGauge || {}) || [];
 
-	function	renderDefaultValueUSDFallback(): ReactElement {
+	function renderDefaultValueUSDFallback(): ReactElement {
 		return (
 			<div className={'flex h-auto flex-col items-end pt-0 md:h-14'}>
 				<p className={'yearn--table-data-section-item-value'}>

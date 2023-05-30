@@ -24,26 +24,26 @@ import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TCurveGauge} from '@common/schemas/curveSchemas';
 import type {TSortDirection} from '@common/types/types';
 
-function	GaugeList(): ReactElement {
-	const	{tokens, prices} = useYearn();
-	const	{currentRewards, nextRewards, claimable} = useBribes();
-	const	{gauges} = useCurve();
-	const	[category, set_category] = useState('all');
-	const	[searchValue, set_searchValue] = useState('');
-	const 	[sort, set_sort] = useSessionStorage<{sortBy: string, sortDirection: TSortDirection}>(
+function GaugeList(): ReactElement {
+	const {tokens, prices} = useYearn();
+	const {currentRewards, nextRewards, claimable} = useBribes();
+	const {gauges} = useCurve();
+	const [category, set_category] = useState('all');
+	const [searchValue, set_searchValue] = useState('');
+	const [sort, set_sort] = useSessionStorage<{sortBy: string, sortDirection: TSortDirection}>(
 		'yGaugeListBribeSorting', {sortBy: '', sortDirection: 'desc'}
 	);
 
-	const	getRewardValue = useCallback((address: TAddress, value: BigNumber): number => {
-		const	tokenInfo = tokens?.[address];
-		const	tokenPrice = prices?.[address];
-		const	decimals = tokenInfo?.decimals || 18;
-		const	bribeAmount = formatToNormalizedValue(formatBN(value), decimals);
-		const	bribeValue = bribeAmount * (Number(tokenPrice || 0) / 100);
+	const getRewardValue = useCallback((address: TAddress, value: BigNumber): number => {
+		const tokenInfo = tokens?.[address];
+		const tokenPrice = prices?.[address];
+		const decimals = tokenInfo?.decimals || 18;
+		const bribeAmount = formatToNormalizedValue(formatBN(value), decimals);
+		const bribeValue = bribeAmount * (Number(tokenPrice || 0) / 100);
 		return bribeValue;
 	}, [prices, tokens]);
 
-	const	filteredGauges = useMemo((): TCurveGauge[] => {
+	const filteredGauges = useMemo((): TCurveGauge[] => {
 		if (category === 'claimable') {
 			return gauges.filter((gauge): boolean => {
 				const currentClaimableMapV3 = Object.values(claimable?.v3?.[toAddress(gauge.gauge)] || {});
@@ -57,19 +57,19 @@ function	GaugeList(): ReactElement {
 		});
 	}, [category, gauges, currentRewards, nextRewards, claimable]);
 
-	const	searchedGauges = useMemo((): TCurveGauge[] => {
-		const	gaugesToSearch = [...filteredGauges];
+	const searchedGauges = useMemo((): TCurveGauge[] => {
+		const gaugesToSearch = [...filteredGauges];
 
 		if (searchValue === '') {
 			return gaugesToSearch;
 		}
 		return gaugesToSearch.filter((gauge): boolean => {
-			const	searchString = `${gauge.name} ${gauge.gauge}`;
+			const searchString = `${gauge.name} ${gauge.gauge}`;
 			return searchString.toLowerCase().includes(searchValue.toLowerCase());
 		});
 	}, [filteredGauges, searchValue]);
 
-	const	sortedGauges = useMemo((): TCurveGauge[] => {
+	const sortedGauges = useMemo((): TCurveGauge[] => {
 		if (sort.sortBy === 'name') {
 			return searchedGauges.sort((a, b): number => stringSort({a: a.name, b: b.name, sortDirection: sort.sortDirection}));
 		}
@@ -125,7 +125,7 @@ function	GaugeList(): ReactElement {
 		return searchedGauges;
 	}, [sort.sortBy, sort.sortDirection, searchedGauges, currentRewards?.v3, getRewardValue, nextRewards?.v3]);
 
-	const	onSort = useCallback((newSortBy: string, newSortDirection: string): void => {
+	const onSort = useCallback((newSortBy: string, newSortDirection: string): void => {
 		set_sort({sortBy: newSortBy, sortDirection: newSortDirection as TSortDirection});
 	}, [set_sort]);
 
@@ -174,7 +174,7 @@ function	GaugeList(): ReactElement {
 	);
 }
 
-function	Index(): ReactElement {
+function Index(): ReactElement {
 	return (
 		<>
 			<div className={'mt-8 mb-10 w-full max-w-6xl text-center'}>

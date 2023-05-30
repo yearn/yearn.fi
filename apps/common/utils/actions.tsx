@@ -23,7 +23,7 @@ import type {TWriteTransaction} from '@common/utils/toWagmiProvider';
 ** isApprovedERC20 is a _VIEW_ function that checks if a token is approved for
 ** a spender.
 ******************************************************************************/
-export async function	isApprovedERC20(
+export async function isApprovedERC20(
 	connector: Connector | undefined,
 	tokenAddress: TAddress,
 	spender: TAddress,
@@ -44,7 +44,7 @@ export async function	isApprovedERC20(
 ** approvedERC20Amount is a _VIEW_ function that returns the amount of a token
 ** that is approved for a spender.
 ******************************************************************************/
-export async function	approvedERC20Amount(
+export async function approvedERC20Amount(
 	connector: Connector | undefined,
 	tokenAddress: TAddress,
 	spender: TAddress
@@ -70,7 +70,7 @@ type TApproveERC20 = TWriteTransaction & {
 	spenderAddress: TAddressWagmi;
 	amount: bigint;
 };
-export async function	approveERC20(props: TApproveERC20): Promise<TTxResponse> {
+export async function approveERC20(props: TApproveERC20): Promise<TTxResponse> {
 	assertAddress(props.contractAddress);
 	assertAddress(props.spenderAddress);
 
@@ -162,7 +162,7 @@ export async function deposit(props: TDeposit): Promise<TTxResponse> {
 type TDepositEth = TWriteTransaction & {
 	amount: bigint;
 };
-export async function	depositETH(props: TDepositEth): Promise<TTxResponse> {
+export async function depositETH(props: TDepositEth): Promise<TTxResponse> {
 	const wagmiProvider = await toWagmiProvider(props.connector);
 	const destAddress = toWagmiAddress(getEthZapperContract(wagmiProvider.chainId));
 	assertAddress(props.contractAddress);
@@ -386,7 +386,7 @@ type TMigrateShares = TWriteTransaction & {
 	fromVault: TAddressWagmi;
 	toVault: TAddressWagmi;
 };
-export async function	migrateShares(props: TMigrateShares): Promise<TTxResponse> {
+export async function migrateShares(props: TMigrateShares): Promise<TTxResponse> {
 	assertAddress(props.contractAddress);
 	assertAddress(props.fromVault);
 	assertAddress(props.toVault);

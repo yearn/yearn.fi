@@ -8,7 +8,7 @@ import LogoYearn from '@common/icons/LogoYearn';
 
 import type {ReactElement} from 'react';
 
-const	apps = [
+const apps = [
 	{
 		href: '/vaults',
 		title: 'Vaults',
@@ -47,16 +47,16 @@ const	apps = [
 	}
 ];
 
-function	AppBox({app}: {app: typeof apps[0]}): ReactElement {
+function AppBox({app}: {app: typeof apps[0]}): ReactElement {
 	useClientEffect((): VoidFunction => {
 		const featuresEl = document.getElementById(app.href);
 		if (featuresEl) {
-			const	cleanup = (): void => {
+			const cleanup = (): void => {
 				featuresEl.removeEventListener('pointermove', pointermove);
 				featuresEl.removeEventListener('pointerleave', pointerleave);
 			};
 
-			const	pointermove = (ev: MouseEvent): void => {
+			const pointermove = (ev: MouseEvent): void => {
 				const rect = featuresEl.getBoundingClientRect();
 				if (featuresEl?.style) {
 					featuresEl.style.setProperty('--opacity', '0.3');
@@ -65,7 +65,7 @@ function	AppBox({app}: {app: typeof apps[0]}): ReactElement {
 				}
 			};
 
-			const	pointerleave = (): void => {
+			const pointerleave = (): void => {
 				if (featuresEl?.style) {
 					featuresEl.style.setProperty('--opacity', '0');
 				}
@@ -96,10 +96,10 @@ function	AppBox({app}: {app: typeof apps[0]}): ReactElement {
 	);
 }
 
-function	TextAnimation(): ReactElement {
+function TextAnimation(): ReactElement {
 	const hasBeenTriggerd = useRef<boolean>(false);
 
-	function	onStartAnimation(): void {
+	function onStartAnimation(): void {
 		hasBeenTriggerd.current = true;
 		const words = document.getElementsByClassName('word') as HTMLCollectionOf<HTMLSpanElement>;
 		const wordArray: HTMLSpanElement[][] = [];
@@ -186,7 +186,7 @@ function	TextAnimation(): ReactElement {
 	);
 }
 
-function	Index(): ReactElement {
+function Index(): ReactElement {
 	return (
 		<>
 			<div className={'mx-auto mt-6 mb-10 flex flex-col justify-center md:mt-20 md:mb-14'}>

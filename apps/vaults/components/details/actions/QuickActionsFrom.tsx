@@ -13,7 +13,7 @@ import {useTokenPrice} from '@common/hooks/useTokenPrice';
 
 import type {ChangeEvent, ReactElement} from 'react';
 
-function	VaultDetailsQuickActionsFrom(): ReactElement {
+function VaultDetailsQuickActionsFrom(): ReactElement {
 	const {isActive} = useWeb3();
 	const {balances} = useWallet();
 	const {
@@ -27,7 +27,7 @@ function	VaultDetailsQuickActionsFrom(): ReactElement {
 	const selectedFromSymbol = actionParams?.selectedOptionFrom?.symbol || 'tokens';
 	const selectedFromIcon = actionParams?.selectedOptionFrom?.icon;
 
-	function	renderMultipleOptionsFallback(): ReactElement {
+	function renderMultipleOptionsFallback(): ReactElement {
 		return (
 			<Dropdown
 				defaultOption={possibleOptionsFrom[0]}

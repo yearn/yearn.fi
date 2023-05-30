@@ -55,7 +55,7 @@ const defaultProps: TVotingEscrowContext = {
 	refresh: (): void => undefined
 };
 
-const	VotingEscrowContext = createContext<TVotingEscrowContext>(defaultProps);
+const VotingEscrowContext = createContext<TVotingEscrowContext>(defaultProps);
 export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({children}: {children: ReactElement}): ReactElement {
 	const {provider, address, isActive} = useWeb3();
 
@@ -113,17 +113,17 @@ export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({chil
 		if (!isActive || !address) {
 			return {};
 		}
-		const	currentProvider = provider || getProvider(1);
-		const	ethcallProvider = await newEthCallProvider(currentProvider);
-		const	yfiContract = new Contract(YFI_ADDRESS, ERC20_ABI);
+		const currentProvider = provider || getProvider(1);
+		const ethcallProvider = await newEthCallProvider(currentProvider);
+		const yfiContract = new Contract(YFI_ADDRESS, ERC20_ABI);
 
-		const	[yfiAllowanceVeYFI] = await ethcallProvider.tryAll([yfiContract.allowance(address, VEYFI_ADDRESS)]) as BigNumber[];
+		const [yfiAllowanceVeYFI] = await ethcallProvider.tryAll([yfiContract.allowance(address, VEYFI_ADDRESS)]) as BigNumber[];
 
 		return ({
 			[allowanceKey(1, YFI_ADDRESS, VEYFI_ADDRESS, address)]: yfiAllowanceVeYFI
 		});
 	}, [isActive, address, provider]);
-	const	{data: allowances, mutate: refreshAllowances, isLoading: isLoadingAllowances} = useSWR(isActive && provider ? 'allowances' : null, allowancesFetcher, {shouldRetryOnError: false});
+	const {data: allowances, mutate: refreshAllowances, isLoading: isLoadingAllowances} = useSWR(isActive && provider ? 'allowances' : null, allowancesFetcher, {shouldRetryOnError: false});
 
 	const refresh = useCallback((): void => {
 		refreshVotingEscrow();

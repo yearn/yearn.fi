@@ -30,9 +30,9 @@ function ContractListRow({label, address}: TContractListRowProps): ReactElement 
 	);
 }
 
-function	About(): ReactElement {
-	const	{slippage, set_slippage} = useYCRV();
-	const	[localSlippage, set_localSlippage] = useState(slippage);
+function About(): ReactElement {
+	const {slippage, set_slippage} = useYCRV();
+	const [localSlippage, set_localSlippage] = useState(slippage);
 
 	return (
 		<section className={'mt-4 grid w-full grid-cols-1 gap-10 pb-10 md:mt-20 md:grid-cols-2'}>

@@ -42,7 +42,7 @@ type TYCRVContext = {
 	set_slippage: (slippage: number) => void,
 }
 
-const	defaultProps = {
+const defaultProps = {
 	styCRVMegaBoost: 0,
 	styCRVAPY: 0,
 	harvests: [],
@@ -65,26 +65,26 @@ const	defaultProps = {
 /* 🔵 - Yearn Finance **********************************************************
 ** This context controls the Holdings computation.
 ******************************************************************************/
-const	YCRVContext = createContext<TYCRVContext>(defaultProps);
+const YCRVContext = createContext<TYCRVContext>(defaultProps);
 export const YCRVContextApp = ({children}: {children: ReactElement}): ReactElement => {
 	const {provider, address, isActive} = useWeb3();
 	const {settings: baseAPISettings} = useSettings();
 	const [slippage, set_slippage] = useState<number>(0.6);
 
-	// const	{data: styCRVExperimentalAPY} = useSWR(
+	// const {data: styCRVExperimentalAPY} = useSWR(
 	// 	`${baseAPISettings.yDaemonBaseURI}/1/vaults/apy/${STYCRV_TOKEN_ADDRESS}`,
 	// 	baseFetcher,
 	// 	{revalidateOnFocus: false}
 	// ) as SWRResponse;
 
-	const	{data: styCRVVault} = useSWR<TYDaemonVault>(
+	const {data: styCRVVault} = useSWR<TYDaemonVault>(
 		`${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/1/vaults/${STYCRV_TOKEN_ADDRESS}`,
 		baseFetcher,
 		{revalidateOnFocus: false}
 	);
 
 
-	const	{data: yCRVHarvests} = useSWR(
+	const {data: yCRVHarvests} = useSWR(
 		`${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/1/vaults/harvests/${STYCRV_TOKEN_ADDRESS},${LPYCRV_TOKEN_ADDRESS}`,
 		baseFetcher,
 		{revalidateOnFocus: false}
@@ -94,17 +94,17 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 	** SWR hook to get the holdings data for the yCRV ecosystem.
 	**************************************************************************/
 	const numbersFetchers = useCallback(async (): Promise<TDict<BigNumber>> => {
-		const	currentProvider = provider || getProvider(1);
-		const	ethcallProvider = await newEthCallProvider(currentProvider);
+		const currentProvider = provider || getProvider(1);
+		const ethcallProvider = await newEthCallProvider(currentProvider);
 
-		const	yCRVContract = new Contract(YCRV_TOKEN_ADDRESS as string, YVECRV_ABI);
-		const	styCRVContract = new Contract(STYCRV_TOKEN_ADDRESS as string, STYCRV_ABI);
-		const	lpyCRVContract = new Contract(LPYCRV_TOKEN_ADDRESS as string, YVECRV_ABI);
-		const	yveCRVContract = new Contract(YVECRV_TOKEN_ADDRESS as string, YVECRV_ABI);
-		const	veEscrowContract = new Contract(VECRV_ADDRESS as string, YVECRV_ABI);
-		const	crvYCRVLpContract = new Contract(YCRV_CURVE_POOL_ADDRESS as string, CURVE_CRV_YCRV_LP_ABI);
+		const yCRVContract = new Contract(YCRV_TOKEN_ADDRESS as string, YVECRV_ABI);
+		const styCRVContract = new Contract(STYCRV_TOKEN_ADDRESS as string, STYCRV_ABI);
+		const lpyCRVContract = new Contract(LPYCRV_TOKEN_ADDRESS as string, YVECRV_ABI);
+		const yveCRVContract = new Contract(YVECRV_TOKEN_ADDRESS as string, YVECRV_ABI);
+		const veEscrowContract = new Contract(VECRV_ADDRESS as string, YVECRV_ABI);
+		const crvYCRVLpContract = new Contract(YCRV_CURVE_POOL_ADDRESS as string, CURVE_CRV_YCRV_LP_ABI);
 
-		const	[
+		const [
 			yveCRVTotalSupply,
 			yveCRVInYCRV,
 			veCRVBalance,
@@ -136,7 +136,7 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 			['veCRVBalance']: veCRVBalance
 		});
 	}, [provider]);
-	const	{data: holdings} = useSWR('numbers', numbersFetchers, {shouldRetryOnError: false});
+	const {data: holdings} = useSWR('numbers', numbersFetchers, {shouldRetryOnError: false});
 
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -148,19 +148,19 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 		if (!isActive || !provider) {
 			return {};
 		}
-		const	currentProvider = provider || getProvider(1);
-		const	ethcallProvider = await newEthCallProvider(currentProvider);
-		const	userAddress = address;
-		const	yCRVContract = new Contract(YCRV_TOKEN_ADDRESS as string, YVECRV_ABI);
-		const	styCRVContract = new Contract(STYCRV_TOKEN_ADDRESS as string, YVECRV_ABI);
-		const	lpyCRVContract = new Contract(LPYCRV_TOKEN_ADDRESS as string, YVECRV_ABI);
-		const	yveCRVContract = new Contract(YVECRV_TOKEN_ADDRESS as string, YVECRV_ABI);
-		const	crvContract = new Contract(CRV_TOKEN_ADDRESS as string, ERC20_ABI);
-		const	yvBoostContract = new Contract(YVBOOST_TOKEN_ADDRESS as string, ERC20_ABI);
-		const	yCRVPoolContract = new Contract(YCRV_CURVE_POOL_ADDRESS as string, YVECRV_ABI);
-		const	cvxCRVContract = new Contract(CVXCRV_TOKEN_ADDRESS as string, ERC20_ABI);
+		const currentProvider = provider || getProvider(1);
+		const ethcallProvider = await newEthCallProvider(currentProvider);
+		const userAddress = address;
+		const yCRVContract = new Contract(YCRV_TOKEN_ADDRESS as string, YVECRV_ABI);
+		const styCRVContract = new Contract(STYCRV_TOKEN_ADDRESS as string, YVECRV_ABI);
+		const lpyCRVContract = new Contract(LPYCRV_TOKEN_ADDRESS as string, YVECRV_ABI);
+		const yveCRVContract = new Contract(YVECRV_TOKEN_ADDRESS as string, YVECRV_ABI);
+		const crvContract = new Contract(CRV_TOKEN_ADDRESS as string, ERC20_ABI);
+		const yvBoostContract = new Contract(YVBOOST_TOKEN_ADDRESS as string, ERC20_ABI);
+		const yCRVPoolContract = new Contract(YCRV_CURVE_POOL_ADDRESS as string, YVECRV_ABI);
+		const cvxCRVContract = new Contract(CVXCRV_TOKEN_ADDRESS as string, ERC20_ABI);
 
-		const	[
+		const [
 			yCRVAllowanceZap, styCRVAllowanceZap, lpyCRVAllowanceZap,
 			yveCRVAllowanceZap, crvAllowanceZap, yvBoostAllowanceZap,
 			cvxCRVAllowanceZap,
@@ -194,28 +194,28 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 			[allowanceKey(1, CRV_TOKEN_ADDRESS, YVECRV_POOL_LP_ADDRESS, toAddress(userAddress))]:  crvAllowanceLP
 		});
 	}, [provider, address, isActive]);
-	const	{data: allowances} = useSWR(isActive && provider ? 'allowances' : null, getAllowances, {shouldRetryOnError: false});
+	const {data: allowances} = useSWR(isActive && provider ? 'allowances' : null, getAllowances, {shouldRetryOnError: false});
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Compute the mega boost for the staked yCRV. This boost come from the
 	** donator, with 30_000 per week.
 	**************************************************************************/
-	const	styCRVMegaBoost = useMemo((): number => {
+	const styCRVMegaBoost = useMemo((): number => {
 		if (!holdings || holdings.styCRVSupply === Zero) {
 			return 0;
 		}
-		const	fromDonatorPerWeek = 30_000;
-		const	fromDonatorPerYear = fromDonatorPerWeek * 52;
-		const	fromDonatorPerYearScaled = fromDonatorPerYear * 0.9;
-		const	humanizedStyCRVSupply = Number(formatUnits(holdings.styCRVSupply, 18));
-		const	megaBoostAPR = fromDonatorPerYearScaled / humanizedStyCRVSupply;
+		const fromDonatorPerWeek = 30_000;
+		const fromDonatorPerYear = fromDonatorPerWeek * 52;
+		const fromDonatorPerYearScaled = fromDonatorPerYear * 0.9;
+		const humanizedStyCRVSupply = Number(formatUnits(holdings.styCRVSupply, 18));
+		const megaBoostAPR = fromDonatorPerYearScaled / humanizedStyCRVSupply;
 		return megaBoostAPR;
 	}, [holdings]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Compute the styCRV APY based on the experimental APY and the mega boost.
 	**************************************************************************/
-	const	styCRVAPY = useMemo((): number => {
+	const styCRVAPY = useMemo((): number => {
 		return ((styCRVVault?.apy?.net_apy || 0) * 100);
 		// return ((styCRVVault?.apy?.net_apy || 0) * 100) + (styCRVMegaBoost * 100);
 		// return (styCRVExperimentalAPY * 100) + (styCRVMegaBoost * 100);
@@ -224,7 +224,7 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 	/* 🔵 - Yearn Finance ******************************************************
 	**	Setup and render the Context provider to use in the app.
 	***************************************************************************/
-	const	contextValue = useMemo((): TYCRVContext => ({
+	const contextValue = useMemo((): TYCRVContext => ({
 		harvests: yCRVHarvests,
 		holdings: holdings as THoldings,
 		allowances: allowances as TDict<BigNumber>,
