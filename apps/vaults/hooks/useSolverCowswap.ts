@@ -53,7 +53,7 @@ function useQuote(): [TCowResult, (request: TInitSolverArgs, shouldPreventErrorT
 
 		const canExecuteFetch = (
 			!(isZeroAddress(quote.from) || isZeroAddress(quote.sellToken) || isZeroAddress(quote.buyToken))
-			&& toBigInt(request?.inputAmount || 0) > 0
+			&& toBigInt(request?.inputAmount) > 0n
 		);
 		if (canExecuteFetch) {
 			quote.validTo = Math.round((new Date().setMinutes(new Date().getMinutes() + 10) / 1000));
