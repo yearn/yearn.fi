@@ -8,7 +8,7 @@ import {useYearn} from '@common/contexts/useYearn';
 import type {ReactElement} from 'react';
 
 export default function SettingsPopover(): ReactElement {
-	const	{zapProvider, set_zapProvider, zapSlippage, set_zapSlippage} = useYearn();
+	const {zapProvider, set_zapProvider, zapSlippage, set_zapSlippage} = useYearn();
 
 	return (
 		<Popover className={'relative flex'}>

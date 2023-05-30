@@ -139,7 +139,7 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 		}
 		const results = await multicall({contracts: calls, chainId: chainID});
 
-		let	resultIndex = 0;
+		let resultIndex = 0;
 		const positionPromises = [];
 		for (const {address} of stakingRewards) {
 			const stake = decodeAsBigInt(results[resultIndex++]);

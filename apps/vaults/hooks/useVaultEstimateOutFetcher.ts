@@ -14,7 +14,7 @@ export type TVaultEstimateOutFetcher = [
 	isDepositing: boolean
 ]
 
-export function	useVaultEstimateOutFetcher(): (args: TVaultEstimateOutFetcher) => Promise<TNormalizedBN> {
+export function useVaultEstimateOutFetcher(): (args: TVaultEstimateOutFetcher) => Promise<TNormalizedBN> {
 	const {chainID} = useWeb3();
 
 	const retrieveExpectedOut = useCallback(async (args: TVaultEstimateOutFetcher): Promise<TNormalizedBN> => {

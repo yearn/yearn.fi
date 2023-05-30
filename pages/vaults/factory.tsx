@@ -37,7 +37,7 @@ type TGaugeDisplayData = {
 	gaugeAddress: TAddress
 }
 
-const	defaultOption: TDropdownGaugeOption = {
+const defaultOption: TDropdownGaugeOption = {
 	label: '',
 	value: {
 		name: '',
@@ -48,7 +48,7 @@ const	defaultOption: TDropdownGaugeOption = {
 	}
 };
 
-function	Factory(): ReactElement {
+function Factory(): ReactElement {
 	const {mutateVaultList} = useYearn();
 	const {provider, isActive} = useWeb3();
 	const {safeChainID} = useChainID();
@@ -90,7 +90,7 @@ function	Factory(): ReactElement {
 	** the extra impossible gauges and formating them to the expected
 	** TDropdownGaugeOption type
 	**************************************************************************/
-	const	gaugesOptions = useMemo((): TDropdownGaugeOption[] => {
+	const gaugesOptions = useMemo((): TDropdownGaugeOption[] => {
 		return (
 			(filteredGauges || [])
 				.filter((item: TCurveGaugeFromYearn): boolean => item.weight !== '0')
@@ -159,7 +159,7 @@ function	Factory(): ReactElement {
 				gaugeAddress: toWagmiAddress(selectedOption.value.gaugeAddress)
 			});
 		} catch (error) {
-			const	err = error as {reason: string, code: string};
+			const err = error as {reason: string, code: string};
 			if (err.code === 'UNPREDICTABLE_GAS_LIMIT') {
 				toast({type: 'warning', content: (err?.reason || '').replace('execution reverted: ', '')});
 			} else {
@@ -193,7 +193,7 @@ function	Factory(): ReactElement {
 		}
 	}, [fetchGaugesAction, gaugesFromYearn, mutateVaultList, provider, safeChainID, selectedOption.value.gaugeAddress]);
 
-	function	loadingFallback(): ReactElement {
+	function loadingFallback(): ReactElement {
 		return (
 			<div className={'flex h-10 items-center bg-neutral-200 p-2 pl-5 text-neutral-600'}>
 				<span className={'loader'} />

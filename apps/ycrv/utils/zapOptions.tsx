@@ -4,7 +4,7 @@ import {CRV_TOKEN_ADDRESS, CVXCRV_TOKEN_ADDRESS, LPYCRV_TOKEN_ADDRESS, STYCRV_TO
 
 import type {TDropdownOption} from '@common/types/types';
 
-const	LEGACY_OPTIONS_FROM: TDropdownOption[] = [
+const LEGACY_OPTIONS_FROM: TDropdownOption[] = [
 	{
 		label: 'yvBOOST',
 		symbol: 'yvBOOST',
@@ -36,7 +36,7 @@ const	LEGACY_OPTIONS_FROM: TDropdownOption[] = [
 	}
 ];
 
-const	LEGACY_OPTIONS_TO: TDropdownOption[] = [
+const LEGACY_OPTIONS_TO: TDropdownOption[] = [
 	{
 		label: 'st-yCRV',
 		symbol: 'st-yCRV',
@@ -86,7 +86,7 @@ const	LEGACY_OPTIONS_TO: TDropdownOption[] = [
 	}
 ];
 
-const	ZAP_OPTIONS_FROM: TDropdownOption[] = [
+const ZAP_OPTIONS_FROM: TDropdownOption[] = [
 	{
 		label: 'CRV',
 		symbol: 'CRV',
@@ -133,7 +133,7 @@ const	ZAP_OPTIONS_FROM: TDropdownOption[] = [
 	...LEGACY_OPTIONS_FROM
 ];
 
-const	ZAP_OPTIONS_TO: TDropdownOption[] = [...LEGACY_OPTIONS_TO];
+const ZAP_OPTIONS_TO: TDropdownOption[] = [...LEGACY_OPTIONS_TO];
 
 export {
 	LEGACY_OPTIONS_FROM,

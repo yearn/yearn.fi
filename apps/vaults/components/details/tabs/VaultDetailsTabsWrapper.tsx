@@ -39,7 +39,7 @@ type TExplorerLinkProps = {
 	currentVaultAddress: string;
 }
 
-function	Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactElement {
+function Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactElement {
 	const router = useRouter();
 
 	const tabs: TTabsOptions[] = useMemo((): TTabsOptions[] => [
@@ -147,7 +147,7 @@ function ExplorerLink({explorerBaseURI, currentVaultAddress}: TExplorerLinkProps
 	);
 }
 
-function	VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {provider} = useWeb3();
 	const {safeChainID} = useChainID();
 	const {settings: baseAPISettings, networks} = useSettings();
@@ -172,14 +172,14 @@ function	VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}):
 		}
 	}
 
-	const	{data: yDaemonHarvestsData} = useSWR(
+	const {data: yDaemonHarvestsData} = useSWR(
 		`${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/${safeChainID}/vaults/harvests/${currentVault.address}`,
 		baseFetcher,
 		{revalidateOnFocus: false}
 	) as SWRResponse;
 
-	const	harvestData = useMemo((): {name: string; value: number}[] => {
-		const	_yDaemonHarvestsData = [...(yDaemonHarvestsData || [])].reverse();
+	const harvestData = useMemo((): {name: string; value: number}[] => {
+		const _yDaemonHarvestsData = [...(yDaemonHarvestsData || [])].reverse();
 		return (
 			_yDaemonHarvestsData?.map((harvest): {name: string; value: number} => ({
 				name: formatDate(Number(harvest.timestamp) * 1000),
