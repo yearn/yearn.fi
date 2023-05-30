@@ -12,7 +12,7 @@ import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {useSessionStorage} from '@yearn-finance/web-lib/hooks/useSessionStorage';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import ListHead from '@common/components/ListHead';
 import ListHero from '@common/components/ListHero';
@@ -80,7 +80,7 @@ function	Index(): ReactElement {
 	const	filterHoldingsCallback = useCallback((address: TAddress): boolean => {
 		balancesNonce;
 		const	holding = balances?.[toAddress(address)];
-		const	hasValidBalance = formatBN(holding?.raw).gt(0);
+		const	hasValidBalance = toBigInt(holding?.raw) > 0n;
 		const	balanceValue = holding?.normalizedValue || 0;
 		if (shouldHideDust && balanceValue < 0.01) {
 			return false;
@@ -94,8 +94,8 @@ function	Index(): ReactElement {
 	const	filterMigrationCallback = useCallback((address: TAddress): boolean => {
 		balancesNonce;
 		const	holding = balances?.[toAddress(address)];
-		const	hasValidPrice = formatBN(holding?.rawPrice).gt(0);
-		const	hasValidBalance = formatBN(holding?.raw).gt(0);
+		const	hasValidPrice = toBigInt(holding?.rawPrice) > 0n;
+		const	hasValidBalance = toBigInt(holding?.raw) > 0n;
 		if (hasValidBalance && (hasValidPrice ? (holding?.normalizedValue || 0) >= 0.01 : true)) {
 			return true;
 		}

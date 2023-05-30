@@ -6,7 +6,7 @@ import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import IconCopy from '@yearn-finance/web-lib/icons/IconCopy';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {formatDuration} from '@yearn-finance/web-lib/utils/format.time';
 import {copyToClipboard, parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
@@ -108,7 +108,7 @@ function	VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
 									{'Capital Allocation'}
 								</p>
 								<b className={'font-number text-lg text-neutral-900'}>
-									{`${formatAmount(formatToNormalizedValue(formatBN(strategy.details?.totalDebt), currentVault?.decimals), 0, 0)} ${currentVault.token.symbol}`}
+									{`${formatAmount(formatToNormalizedValue(toBigInt(strategy.details?.totalDebt), currentVault?.decimals), 0, 0)} ${currentVault.token.symbol}`}
 								</b>
 							</div>
 
@@ -116,7 +116,7 @@ function	VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
 								<p className={'text-base text-neutral-600'}>{'Total Gain'}</p>
 								<b className={'font-number text-lg text-neutral-900'}>
 									{`${formatAmount(formatToNormalizedValue(
-										formatBN(strategy.details?.totalGain).sub(formatBN(strategy.details?.totalLoss)),
+										toBigInt(strategy.details?.totalGain) - toBigInt(strategy.details?.totalLoss),
 										currentVault?.decimals
 									), 0, 0)} ${currentVault.token.symbol}`}
 								</b>
