@@ -19,7 +19,7 @@
     "@react-hookz/deep-equal": "^1.0.4",
     "@sentry/nextjs": "^7.52.1",
     "@wagmi/core": "^1.0.8",
-    "@yearn-finance/web-lib": "^0.20.36",
+    "@yearn-finance/web-lib": "^0.20.39",
     "axios": "^1.2.2",
     "dayjs": "^1.11.7",
     "formidable": "^2.1.1",

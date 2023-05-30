@@ -9,8 +9,7 @@ import VAULT_ABI from '@yearn-finance/web-lib/utils/abi/vault.abi';
 import ZAP_ETH_TO_YVETH_ABI from '@yearn-finance/web-lib/utils/abi/zapEthToYvEth.abi';
 import ZAP_FTM_TO_YVFTM_ABI from '@yearn-finance/web-lib/utils/abi/zapFtmToYvFTM.abi';
 import {toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
-import {STAKING_REWARDS_ZAP_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {MaxUint256} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {MAX_UINT_256, STAKING_REWARDS_ZAP_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {assert} from '@common/utils/assert';
 import {assertAddress, toWagmiProvider} from '@common/utils/toWagmiProvider';
@@ -29,7 +28,7 @@ export async function	isApprovedERC20(
 	connector: Connector,
 	tokenAddress: TAddress,
 	spender: TAddress,
-	amount = MaxUint256
+	amount = MAX_UINT_256
 ): Promise<boolean> {
 	const wagmiProvider = await toWagmiProvider(connector);
 	const result = await readContract({

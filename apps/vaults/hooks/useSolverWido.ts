@@ -7,7 +7,8 @@ import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {allowanceKey, isZeroAddress, toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
-import {MaxUint256, toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
+import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
 import {approveERC20, isApprovedERC20} from '@common/utils/actions';
@@ -237,7 +238,7 @@ export function useSolverWido(): TSolverContext {
 	** of the token by the Wido solver.
 	**************************************************************************/
 	const onApprove = useCallback(async (
-		amount = MaxUint256,
+		amount = MAX_UINT_256,
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {

@@ -1,5 +1,5 @@
-import {isZeroAddress, toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
-import {ETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
+import {ETH_TOKEN_ADDRESS, ZERO_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {isTAddress} from '@yearn-finance/web-lib/utils/isTAddress';
 import {assert} from '@common/utils/assert';
 
@@ -32,6 +32,6 @@ export type TWriteTransaction = {
 
 export function assertAddress(addr: string): asserts addr is TAddress {
 	assert(isTAddress(addr), 'Address is not an address');
-	assert(!isZeroAddress(addr), 'Address is address 0x0');
+	assert(toAddress(addr) !== ZERO_ADDRESS, 'Address is address 0x0');
 	assert(toAddress(addr) !== ETH_TOKEN_ADDRESS, 'Address is address 0xE');
 }
