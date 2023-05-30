@@ -2,7 +2,6 @@ import type {ReactElement} from 'react';
 import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 import type {TBalanceData} from '@yearn-finance/web-lib/types/hooks';
 import type {Solver} from '@vaults/contexts/useSolver';
-import type {EXTERNAL_SERVICE_PROVIDER} from '@vaults/utils/migrationTable';
 
 export type	TClaimable = {
 	raw: bigint,
@@ -27,7 +26,6 @@ export type TDropdownOption = {
 	solveVia?: Solver[];
 	balanceSource?: string;
 	settings?: {
-		serviceID?: EXTERNAL_SERVICE_PROVIDER
 		shouldNotBeWithdrawTarget?: boolean;
 		shouldHideIfZero?: boolean
 	}
