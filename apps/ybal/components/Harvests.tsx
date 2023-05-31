@@ -2,10 +2,9 @@ import React, {useMemo, useState} from 'react';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {LPYBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {HarvestListHead} from '@yBal/components/HarvestsListHead';
+import {HarvestListRow} from '@yBal/components/HarvestsListRow';
 import {useYBal} from '@yBal/contexts/useYBal';
-
-import {HarvestListHead} from './HarvestsListHead';
-import {HarvestListRow} from './HarvestsListRow';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonHarvests} from '@common/types/yearn';

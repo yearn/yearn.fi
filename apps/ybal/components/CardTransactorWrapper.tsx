@@ -1,28 +1,25 @@
 import React, {createContext, useCallback, useContext, useEffect, useMemo, useState} from 'react';
-import {ethers} from 'ethers';
 import {useAsync, useUpdateEffect} from '@react-hookz/web';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useAddToken} from '@yearn-finance/web-lib/hooks/useAddToken';
 import {useDismissToasts} from '@yearn-finance/web-lib/hooks/useDismissToasts';
-import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {LPYBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatBN, toNormalizedBN, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {allowanceKey, toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
+import {LPYBAL_TOKEN_ADDRESS, MAX_UINT_256, STYBAL_TOKEN_ADDRESS, ZAP_YEARN_YBAL_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {formatToNormalizedValue, toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
-import {getProvider} from '@yearn-finance/web-lib/utils/web3/providers';
-import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
+import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
-import {getAmountWithSlippage, getVaultAPY} from '@common/utils';
-import {approveERC20} from '@common/utils/actions/approveToken';
-import {deposit} from '@common/utils/actions/deposit';
+import {getVaultAPY} from '@common/utils';
+import {approveERC20, deposit} from '@common/utils/actions';
 import {ZAP_OPTIONS_FROM, ZAP_OPTIONS_TO} from '@yBal/constants/tokens';
 import {useYBal} from '@yBal/contexts/useYBal';
-import {simulateZapForMinOut, zap} from '@yBal/utils/actions';
+import {simulateZapForMinOut, zapBal} from '@yBal/utils/actions';
 
-import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
-import type {TAddress, VoidPromiseFunction} from '@yearn-finance/web-lib/types';
+import type {Connector} from 'wagmi';
+import type {TAddressWagmi, VoidPromiseFunction} from '@yearn-finance/web-lib/types';
 import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
 
 type TCardTransactor = {
@@ -31,7 +28,7 @@ type TCardTransactor = {
 	amount: TNormalizedBN,
 	txStatusApprove: typeof defaultTxStatus,
 	txStatusZap: typeof defaultTxStatus,
-	allowanceFrom: BigNumber,
+	allowanceFrom: bigint,
 	fromVaultAPY: string,
 	toVaultAPY: string,
 	expectedOutWithSlippage: number,
@@ -43,13 +40,13 @@ type TCardTransactor = {
 	onZap: VoidPromiseFunction
 }
 
-const		CardTransactorContext = createContext<TCardTransactor>({
+const	CardTransactorContext = createContext<TCardTransactor>({
 	selectedOptionFrom: ZAP_OPTIONS_FROM[0],
 	selectedOptionTo: ZAP_OPTIONS_TO[0],
 	amount: toNormalizedBN(0),
 	txStatusApprove: defaultTxStatus,
 	txStatusZap: defaultTxStatus,
-	allowanceFrom: Zero,
+	allowanceFrom: 0n,
 	fromVaultAPY: '',
 	toVaultAPY: '',
 	expectedOutWithSlippage: 0,
@@ -87,14 +84,15 @@ function	CardTransactorContextApp({
 	useEffect((): void => {
 		balancesNonce; // remove warning, force deep refresh
 		set_amount((prevAmount): TNormalizedBN => {
-			if (isActive && prevAmount.raw.eq(0) && !hasTypedSomething) {
+			if (isActive && prevAmount.raw === 0n && !hasTypedSomething) {
 				return toNormalizedBN(balances[toAddress(selectedOptionFrom.value)]?.raw);
-			} if (!isActive && prevAmount.raw.gt(0)) {
+			} if (!isActive && prevAmount.raw > 0n) {
 				return toNormalizedBN(0);
 			}
 			return prevAmount;
 		});
 	}, [isActive, selectedOptionFrom.value, balances, hasTypedSomething, balancesNonce]);
+
 	useUpdateEffect((): void => {
 		if (!isActive) {
 			set_hasTypedSomething(false);
@@ -107,41 +105,52 @@ function	CardTransactorContextApp({
 	** called every 10s or when amount/in or out changes.
 	**************************************************************************/
 	const [{result: expectedOut}, actions] = useAsync(async (
-		_provider: ethers.providers.JsonRpcProvider,
-		_inputToken: TAddress,
-		_outputToken: TAddress,
-		_amountIn: BigNumber
-	): Promise<BigNumber> => {
-		const currentProvider = _provider || getProvider(1);
-		const {minOut} = await simulateZapForMinOut(currentProvider, _inputToken, _outputToken, _amountIn);
-		return minOut;
-	}, Zero);
+		_provider: Connector | undefined,
+		_inputToken: TAddressWagmi,
+		_outputToken: TAddressWagmi,
+		_amountIn: bigint
+	): Promise<{shouldMint: boolean; minOut: bigint;}> => {
+		return await simulateZapForMinOut({
+			connector: provider,
+			contractAddress: toWagmiAddress(ZAP_YEARN_YBAL_ADDRESS),
+			inputToken: _inputToken,
+			outputToken: _outputToken,
+			amountIn: _amountIn
+		});
+	}, ({shouldMint: false, minOut: 0n}));
 
 	useUpdateEffect((): void => {
-		actions.execute(provider, toAddress(selectedOptionFrom.value), toAddress(selectedOptionTo.value), amount.raw);
+		actions.execute(
+			provider,
+			toWagmiAddress(selectedOptionFrom.value),
+			toWagmiAddress(selectedOptionTo.value),
+			amount.raw
+		);
 	}, [actions, provider, amount, selectedOptionFrom.value, selectedOptionTo.value]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Approve the spending of token A by the corresponding ZAP contract to
 	** perform the swap.
 	**************************************************************************/
-	const onApproveFrom = useCallback(async (): Promise<void> => {
-		new Transaction(provider, approveERC20, set_txStatusApprove).populate(
-			toAddress(selectedOptionFrom.value),
-			selectedOptionFrom.zapVia,
-			ethers.constants.MaxUint256
-		).onSuccess(async (): Promise<void> => {
+	const onApprove = useCallback(async (): Promise<void> => {
+		const result = await approveERC20({
+			connector: provider,
+			contractAddress: toWagmiAddress(selectedOptionFrom.value),
+			spenderAddress: toWagmiAddress(selectedOptionFrom.zapVia),
+			amount: MAX_UINT_256,
+			statusHandler: set_txStatusApprove
+		});
+		if (result.isSuccessful) {
 			await refresh();
-		}).perform();
-	}, [provider, selectedOptionFrom, refresh]);
+		}
+	}, [provider, refresh, selectedOptionFrom.value, selectedOptionFrom.zapVia]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Execute a zap using the ZAP contract to migrate from a token A to a
 	** supported token B.
 	**************************************************************************/
-	async function	onZap(): Promise<void> {
+	const onZap = useCallback(async (): Promise<void> => {
 		dismissAllToasts();
-
 		const addToMetamaskToast = {
 			type: 'info' as const,
 			content: `Add ${selectedOptionTo.symbol} to Metamask?`,
@@ -158,30 +167,38 @@ function	CardTransactorContextApp({
 		};
 
 		if (selectedOptionFrom.zapVia === LPYBAL_TOKEN_ADDRESS) {
-			// Direct deposit to vault from bal/yB Curve LP Token to lp-yB Vault
-			new Transaction(provider, deposit, set_txStatusZap).populate(
-				toAddress(selectedOptionTo.value), //destination vault
-				amount.raw //amount_in
-			).onSuccess(async (): Promise<void> => {
+			// Direct deposit to vault from Bal/yBal balancer LP Token to lp-yBal Vault
+			const result = await deposit({
+				connector: provider,
+				contractAddress: toWagmiAddress(selectedOptionTo.value),
+				amount: amount.raw, //amount_in
+				statusHandler: set_txStatusZap
+			});
+			if (result.isSuccessful) {
 				set_amount(toNormalizedBN(0));
 				await refresh();
 				toast(addToMetamaskToast);
-			}).perform();
+			}
 		} else {
 			// Zap in
-			new Transaction(provider, zap, set_txStatusZap).populate(
-				toAddress(selectedOptionFrom.value), //_input_token
-				toAddress(selectedOptionTo.value), //_output_token
-				amount.raw, //amount_in
-				expectedOut, //_min_out
-				slippage
-			).onSuccess(async (): Promise<void> => {
+			const result = await zapBal({
+				connector: provider,
+				contractAddress: toWagmiAddress(ZAP_YEARN_YBAL_ADDRESS),
+				inputToken: toWagmiAddress(selectedOptionFrom.value), //_input_token
+				outputToken: toWagmiAddress(selectedOptionTo.value), //_output_token
+				amount: amount.raw, //amount_in
+				minAmount: expectedOut.minOut, //_min_out
+				slippage: toBigInt(slippage),
+				shouldMint: expectedOut.shouldMint,
+				statusHandler: set_txStatusZap
+			});
+			if (result.isSuccessful) {
 				set_amount(toNormalizedBN(0));
 				await refresh();
 				toast(addToMetamaskToast);
-			}).perform();
+			}
 		}
-	}
+	}, [addToken, amount.raw, dismissAllToasts, expectedOut, provider, refresh, selectedOptionFrom.value, selectedOptionFrom.zapVia, selectedOptionTo.decimals, selectedOptionTo.icon?.props.src, selectedOptionTo.symbol, selectedOptionTo.value, slippage, toast]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Set of memorized values to limit the number of re-rendering of the
@@ -201,16 +218,9 @@ function	CardTransactorContextApp({
 		return getVaultAPY(vaults, selectedOptionTo.value);
 	}, [vaults, selectedOptionTo, styBalAPY]);
 
-	const	expectedOutWithSlippage = useMemo((): number => getAmountWithSlippage(
-		selectedOptionFrom.value,
-		selectedOptionTo.value,
-		formatBN(expectedOut),
-		slippage
-	), [expectedOut, selectedOptionFrom.value, selectedOptionTo.value, slippage]);
-
-	const	allowanceFrom = useMemo((): BigNumber => {
+	const	allowanceFrom = useMemo((): bigint => {
 		balancesNonce; // remove warning, force deep refresh
-		return formatBN(allowances?.[allowanceKey(1, toAddress(selectedOptionFrom.value), toAddress(selectedOptionFrom.zapVia), toAddress(address))]);
+		return toBigInt(allowances?.[allowanceKey(1, toAddress(selectedOptionFrom.value), toAddress(selectedOptionFrom.zapVia), toAddress(address))]);
 	}, [balancesNonce, allowances, selectedOptionFrom.value, selectedOptionFrom.zapVia, address]);
 
 	return (
@@ -224,12 +234,14 @@ function	CardTransactorContextApp({
 				allowanceFrom,
 				fromVaultAPY,
 				toVaultAPY,
-				expectedOutWithSlippage,
+				expectedOutWithSlippage: (
+					formatToNormalizedValue(expectedOut.minOut * (1n - toBigInt(slippage) / 100n))
+				),
 				set_selectedOptionFrom,
 				set_selectedOptionTo,
 				set_amount,
 				set_hasTypedSomething,
-				onApproveFrom,
+				onApproveFrom: onApprove,
 				onZap
 			}}>
 			{children}

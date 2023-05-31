@@ -4,7 +4,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {CRV_TOKEN_ADDRESS, LPYCRV_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatBN, formatToNormalizedValue, toNormalizedBN, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatToNormalizedValue, toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
@@ -34,14 +34,14 @@ function CardZap(): ReactElement {
 
 	const ycrvPrice = useMemo((): number => (
 		formatToNormalizedValue(
-			formatBN(prices?.[YCRV_TOKEN_ADDRESS] || 0),
+			toBigInt(prices?.[YCRV_TOKEN_ADDRESS] || 0),
 			6
 		)
 	), [prices]);
 
 	const ycrvCurvePoolPrice = useMemo((): number => (
 		formatToNormalizedValue(
-			formatBN(prices?.[YCRV_CURVE_POOL_ADDRESS] || 0),
+			toBigInt(prices?.[YCRV_CURVE_POOL_ADDRESS] || 0),
 			6
 		)
 	), [prices]);
@@ -61,12 +61,12 @@ function CardZap(): ReactElement {
 	}, [selectedOptionFrom.value, selectedOptionTo.value, ZAP_OPTIONS_TO]); // eslint-disable-line react-hooks/exhaustive-deps
 
 	function renderButton(): ReactElement {
-		const balanceForInputToken = formatBN(balances?.[toAddress(selectedOptionFrom.value)]?.raw);
-		const isAboveBalance = amount.raw.gt(balanceForInputToken) || balanceForInputToken.eq(Zero);
-		const isAboveAllowance = (amount.raw).gt(allowanceFrom);
+		const balanceForInputToken = toBigInt(balances?.[toAddress(selectedOptionFrom.value)]?.raw);
+		const isAboveBalance = amount.raw > balanceForInputToken || balanceForInputToken === 0n;
+		const isAboveAllowance = amount.raw > allowanceFrom;
 
 		if (txStatusApprove.pending || isAboveAllowance) {
-			if (allowanceFrom.gt(Zero) && toAddress(selectedOptionFrom.value) === CRV_TOKEN_ADDRESS) {
+			if (allowanceFrom > 0n && toAddress(selectedOptionFrom.value) === CRV_TOKEN_ADDRESS) {
 				return (
 					<Button
 						onClick={onIncreaseCRVAllowance}
@@ -74,7 +74,7 @@ function CardZap(): ReactElement {
 						isBusy={txStatusApprove.pending}
 						isDisabled={
 							!isActive
-							|| (amount.raw).isZero()
+							|| amount.raw === 0n
 							|| isAboveBalance
 						}>
 						{'Increase Allowance'}
@@ -88,7 +88,7 @@ function CardZap(): ReactElement {
 					isBusy={txStatusApprove.pending}
 					isDisabled={
 						!isActive
-						|| (amount.raw).isZero()
+						|| amount.raw === 0n
 						|| isAboveBalance
 					}>
 					{isAboveBalance ? 'Insufficient balance' : `Approve ${selectedOptionFrom?.label || 'token'}`}
@@ -102,11 +102,11 @@ function CardZap(): ReactElement {
 				className={'w-full'}
 				isBusy={txStatusZap.pending}
 				isDisabled={
-					!isActive ||
-					(amount.raw).isZero() ||
-					amount.raw.gt(balanceForInputToken)
+					!isActive
+					|| amount.raw === 0n
+					|| amount.raw > balanceForInputToken
 				}>
-				{isAboveBalance && !amount.raw.isZero() ? 'Insufficient balance' : 'Swap'}
+				{isAboveBalance && amount.raw !== 0n ? 'Insufficient balance' : 'Swap'}
 			</Button>
 		);
 	}
@@ -129,7 +129,7 @@ function CardZap(): ReactElement {
 								set_amount(toNormalizedBN(balances[toAddress(option.value)]?.raw));
 							});
 						}} />
-					<p className={'pl-2 !text-xs font-normal !text-green-600'}>
+					<p suppressHydrationWarning className={'pl-2 !text-xs font-normal !text-green-600'}>
 						{fromVaultAPY}
 					</p>
 				</label>
@@ -143,6 +143,7 @@ function CardZap(): ReactElement {
 						<div className={'flex h-10 w-full flex-row items-center justify-between py-4 px-0'}>
 							<input
 								id={'amount'}
+								suppressHydrationWarning
 								className={`w-full overflow-x-scroll border-none bg-transparent py-4 px-0 font-bold outline-none scrollbar-none ${isActive ? '' : 'cursor-not-allowed'}`}
 								type={'text'}
 								disabled={!isActive}
@@ -192,7 +193,7 @@ function CardZap(): ReactElement {
 						options={possibleTo}
 						selected={selectedOptionTo}
 						onSelect={(option: TDropdownOption): void => set_selectedOptionTo(option)} />
-					<p className={'pl-2 !text-xs font-normal !text-green-600'}>
+					<p suppressHydrationWarning className={'pl-2 !text-xs font-normal !text-green-600'}>
 						{toVaultAPY}
 					</p>
 				</label>

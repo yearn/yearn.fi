@@ -3,7 +3,7 @@ import IconLinkOut from '@yearn-finance/web-lib/icons/IconLinkOut';
 import {toAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {STYBAL_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatBN, formatToNormalizedAmount} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatToNormalizedAmount, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatUSD} from '@yearn-finance/web-lib/utils/format.number';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
@@ -51,7 +51,7 @@ function	HarvestListRow({harvest}: {harvest: TYDaemonHarvests}): ReactElement {
 			<div className={'yearn--table-data-section md:grid-cols-9'}>
 				<Row
 					label={'Gain'}
-					value={formatToNormalizedAmount(formatBN(harvest.profit).sub(formatBN(harvest.loss)))}
+					value={formatToNormalizedAmount(toBigInt(harvest.profit) - toBigInt(harvest.loss))}
 					className={'md:col-span-1'}
 					valueClassName={'font-bold'} />
 

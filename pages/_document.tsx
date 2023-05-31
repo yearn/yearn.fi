@@ -39,7 +39,7 @@ class MyDocument extends Document {
 
 	render(): ReactElement {
 		return (
-			<Html lang={'en'}>
+			<Html suppressHydrationWarning lang={'en'}>
 				<Head>
 					<script dangerouslySetInnerHTML={{__html: modeScript}} />
 				</Head>
