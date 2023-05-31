@@ -116,6 +116,7 @@ module.exports = withTM(withBundleAnalyzer(withPWA({
 	}
 })));
 
+
 if (process.env.NODE_ENV === 'production') {
 	const {withSentryConfig} = require('@sentry/nextjs');
 	module.exports = withSentryConfig(
