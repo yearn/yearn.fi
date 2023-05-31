@@ -19,7 +19,7 @@
     "@popperjs/core": "^2.11.7",
     "@react-hookz/deep-equal": "^1.0.4",
     "@sentry/nextjs": "^7.52.1",
-    "@yearn-finance/web-lib": "^0.18.62",
+    "@yearn-finance/web-lib": "^0.18.75",
     "axios": "^1.2.2",
     "dayjs": "^1.11.7",
     "ethcall": "^4.8.13",
