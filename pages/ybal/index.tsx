@@ -17,20 +17,20 @@ import Wrapper from '@yBal/Wrapper';
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
 
-function	HeaderPosition(): ReactElement {
+function HeaderPosition(): ReactElement {
 	const {holdings} = useYBal();
 	const balanceOfStyBal = useBalance(STYBAL_TOKEN_ADDRESS);
 	const balanceOfLpyBal = useBalance(LPYBAL_TOKEN_ADDRESS);
 	const styBalPrice = useTokenPrice(STYBAL_TOKEN_ADDRESS);
 	const lpyBalPrice = useTokenPrice(LPYBAL_TOKEN_ADDRESS);
 
-	const	formatedYearnHas = useMemo((): string => (
+	const formatedYearnHas = useMemo((): string => (
 		holdings?.veBalBalance ?
 			formatAmount(formatToNormalizedValue(holdings.veBalBalance, 18), 0, 0)
 			: ''
 	), [holdings?.veBalBalance]);
 
-	const	formatedYouHave = useMemo((): string => (
+	const formatedYouHave = useMemo((): string => (
 		formatCounterValueRaw(
 			(balanceOfStyBal.normalized * styBalPrice)
 			+
@@ -65,7 +65,7 @@ function	HeaderPosition(): ReactElement {
 	);
 }
 
-function	Holdings(): ReactElement {
+function Holdings(): ReactElement {
 	const {balances} = useWallet();
 	const {holdings, styBalAPY} = useYBal();
 	const {vaults} = useYearn();
@@ -77,14 +77,14 @@ function	Holdings(): ReactElement {
 	const balanceOfStyBal = useBalance(STYBAL_TOKEN_ADDRESS);
 	const balanceOfLpyBal = useBalance(LPYBAL_TOKEN_ADDRESS);
 
-	const	formatBigNumberOver10K = useCallback((v: bigint): string => {
+	const formatBigNumberOver10K = useCallback((v: bigint): string => {
 		if (toBigInt(v) > (toBigInt(10000) * toBigInt(1e18))) {
 			return formatAmount(formatToNormalizedValue(toBigInt(v), 18), 0, 0)?.toString() ?? '';
 		}
 		return formatAmount(formatToNormalizedValue(toBigInt(v), 18))?.toString() ?? '';
 	}, []);
 
-	const	formatNumberOver10K = useCallback((v: number): string => {
+	const formatNumberOver10K = useCallback((v: number): string => {
 		if (v >= 10000) {
 			return formatAmount(v, 0, 0) ?? '';
 		}
