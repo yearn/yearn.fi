@@ -12,9 +12,5 @@ export function useYDaemonBaseURI({chainID}: TProps): {
 
 	const baseUri = settings.yDaemonBaseURI || String(process.env.YDAEMON_BASE_URI);
 
-	if (!chainID) {
-		return {yDaemonBaseUri: baseUri};
-	}
-
 	return {yDaemonBaseUri: `${baseUri}/${chainID}`};
 }
