@@ -235,7 +235,7 @@ function CardTransactorContextApp({
 				fromVaultAPY,
 				toVaultAPY,
 				expectedOutWithSlippage: (
-					formatToNormalizedValue(expectedOut.minOut * (1n - toBigInt(slippage) / 100n))
+					formatToNormalizedValue(expectedOut.minOut * (1n - toBigInt(slippage * 100) / 10000n))
 				),
 				set_selectedOptionFrom,
 				set_selectedOptionTo,

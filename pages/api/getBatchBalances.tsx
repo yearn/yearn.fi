@@ -1,5 +1,5 @@
 import {serialize} from 'wagmi';
-import * as Sentry from '@sentry/nextjs';
+import {captureException} from '@sentry/nextjs';
 import {getNativeTokenWrapperContract, getNativeTokenWrapperName} from '@vaults/utils';
 import {erc20ABI, multicall} from '@wagmi/core';
 import AGGREGATE3_ABI from '@yearn-finance/web-lib/utils/abi/aggregate.abi';
@@ -93,6 +93,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 		const balances = await getBatchBalances({chainID, address, tokens});
 		return res.status(200).json({balances: serialize(balances), chainID: req.body.chainID});
 	} catch (error) {
-		Sentry.captureException(error, {tags: {rpc: getRPC(chainID), chainID, address}});
+		captureException(error, {tags: {rpc: getRPC(chainID), chainID, address}});
 	}
 }

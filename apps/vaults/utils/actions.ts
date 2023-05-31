@@ -1,6 +1,7 @@
 import {captureException} from '@sentry/nextjs';
 import STAKING_REWARDS_ABI from '@vaults/utils/abi/stakingRewards.abi';
 import STAKING_REWARDS_ZAP_ABI from '@vaults/utils/abi/stakingRewardsZap.abi';
+import VAULT_FACTORY_ABI from '@vaults/utils/abi/vaultFactory.abi';
 import ZAP_VE_CRV_ABI from '@vaults/utils/abi/zapVeCRV.abi';
 import {prepareWriteContract, waitForTransaction, writeContract} from '@wagmi/core';
 import {toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
@@ -9,8 +10,6 @@ import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {assert} from '@common/utils/assert';
 import {assertAddress, toWagmiProvider} from '@common/utils/toWagmiProvider';
-
-import VAULT_FACTORY_ABI from './abi/vaultFactory.abi';
 
 import type {BaseError} from 'viem';
 import type {TAddressWagmi} from '@yearn-finance/web-lib/types';
