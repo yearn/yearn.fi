@@ -1,7 +1,6 @@
 import React, {Fragment, useCallback, useMemo} from 'react';
-import {ethers} from 'ethers';
 import {LPYBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, YBAL_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue, formatCounterValueRaw} from '@yearn-finance/web-lib/utils/format.value';
 import ValueAnimation from '@common/components/ValueAnimation';
@@ -15,7 +14,6 @@ import {Harvests} from '@yBal/components/Harvests';
 import {useYBal} from '@yBal/contexts/useYBal';
 import Wrapper from '@yBal/Wrapper';
 
-import type {BigNumber} from 'ethers';
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
 
@@ -79,11 +77,11 @@ function	Holdings(): ReactElement {
 	const balanceOfStyBal = useBalance(STYBAL_TOKEN_ADDRESS);
 	const balanceOfLpyBal = useBalance(LPYBAL_TOKEN_ADDRESS);
 
-	const	formatBigNumberOver10K = useCallback((v: BigNumber): string => {
-		if (formatBN(v)?.gt(ethers.constants.WeiPerEther.mul(10000))) {
-			return formatAmount(formatToNormalizedValue(v || 0, 18), 0, 0)?.toString() ?? '';
+	const	formatBigNumberOver10K = useCallback((v: bigint): string => {
+		if (toBigInt(v) > (toBigInt(10000) * toBigInt(1e18))) {
+			return formatAmount(formatToNormalizedValue(toBigInt(v), 18), 0, 0)?.toString() ?? '';
 		}
-		return formatAmount(formatToNormalizedValue(v || 0, 18))?.toString() ?? '';
+		return formatAmount(formatToNormalizedValue(toBigInt(v), 18))?.toString() ?? '';
 	}, []);
 
 	const	formatNumberOver10K = useCallback((v: number): string => {
@@ -171,7 +169,7 @@ function	Holdings(): ReactElement {
 							<p
 								suppressHydrationWarning
 								className={'font-number text-sm text-neutral-900'}>
-								{formatBigNumberOver10K(holdings?.styBalSupply || 0)}
+								{formatBigNumberOver10K(holdings.styBalSupply)}
 							</p>
 						</div>
 					</div>
@@ -234,7 +232,7 @@ function	Holdings(): ReactElement {
 							<p
 								suppressHydrationWarning
 								className={'font-number text-sm text-neutral-900'}>
-								{formatBigNumberOver10K(holdings?.lpyBalSupply || 0)}
+								{formatBigNumberOver10K(holdings.lpyBalSupply)}
 							</p>
 						</div>
 					</div>

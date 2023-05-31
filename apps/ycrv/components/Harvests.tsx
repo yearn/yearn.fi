@@ -2,10 +2,9 @@ import React, {useMemo, useState} from 'react';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {HarvestListHead} from '@yCRV/components/HarvestsListHead';
+import {HarvestListRow} from '@yCRV/components/HarvestsListRow';
 import {useYCRV} from '@yCRV/contexts/useYCRV';
-
-import {HarvestListHead} from './HarvestsListHead';
-import {HarvestListRow} from './HarvestsListRow';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonHarvests} from '@common/types/yearn';

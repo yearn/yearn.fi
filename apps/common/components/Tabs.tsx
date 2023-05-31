@@ -118,7 +118,7 @@ function Tabs({items, className}: TTabsProps): ReactElement {
 					{items.map(({id, content}): ReactElement => (
 						<div
 							key={`tab-content-${id}`}
-							className={'w-full'}
+							className={'w-full p-6'}
 							hidden={selectedTabId !== id}>
 							{content}
 						</div>

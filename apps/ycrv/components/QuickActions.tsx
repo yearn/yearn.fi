@@ -5,8 +5,8 @@ import {Dropdown} from '@common/components/TokenDropdown';
 import IconArrowRight from '@common/icons/IconArrowRight';
 
 import type {ChangeEvent, ReactElement, ReactNode} from 'react';
-import type {TBalanceData} from '@yearn-finance/web-lib/hooks/types';
 import type {TDict} from '@yearn-finance/web-lib/types';
+import type {TBalanceData} from '@yearn-finance/web-lib/types/hooks';
 import type {TDropdownOption} from '@common/types/types';
 
 export type TQASelect = {
