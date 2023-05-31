@@ -1,5 +1,4 @@
 import {z} from 'zod';
-import {Solver} from '@vaults/contexts/useSolver';
 import {addressSchema} from '@common/schemas/custom/addressSchema';
 
 const yDaemonTokenListBalance = z.object({
@@ -11,7 +10,7 @@ const yDaemonTokenListBalance = z.object({
 	logoURI: z.string().optional(),
 	balance: z.string().optional(),
 	price: z.string().optional(),
-	supportedZaps: z.nativeEnum(Solver).array().optional()
+	supportedZaps: z.string().array().optional()
 });
 
 export const yDaemonTokenListBalances = z.record(addressSchema, yDaemonTokenListBalance);
