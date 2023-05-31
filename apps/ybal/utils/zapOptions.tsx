@@ -4,7 +4,7 @@ import {BAL_TOKEN_ADDRESS, LPYBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, YBAL_TOKE
 
 import type {TDropdownOption} from '@common/types/types';
 
-const	ZAP_OPTIONS_FROM: TDropdownOption[] = [
+const ZAP_OPTIONS_FROM: TDropdownOption[] = [
 	{
 		label: 'Bal',
 		symbol: 'Bal',
@@ -68,7 +68,7 @@ const	ZAP_OPTIONS_FROM: TDropdownOption[] = [
 	}
 ];
 
-const	ZAP_OPTIONS_TO: TDropdownOption[] = [
+const ZAP_OPTIONS_TO: TDropdownOption[] = [
 	{
 		label: 'st-yBal',
 		symbol: 'st-yBal',

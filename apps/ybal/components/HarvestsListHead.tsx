@@ -18,7 +18,7 @@ function HeadLabel({label, className, datatype = 'text'}: THeadLabelProps): Reac
 	);
 }
 
-function	HarvestListHead(): ReactElement {
+function HarvestListHead(): ReactElement {
 	return (
 		<div className={'yearn--table-head-wrapper'}>
 			<div className={'yearn--table-head-token-section'}>
