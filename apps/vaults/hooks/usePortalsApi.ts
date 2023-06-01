@@ -104,8 +104,8 @@ export async function getPortalsEstimate({network, params}: TGetEstimateProps): 
 	const axiosInstance: AxiosInstance = axios.create({baseURL});
 
 	try {
-		const endpoint = `/portal/${NETWORK.get(network)}/estimate`;
-		const response: AxiosResponse<TPortalEstimate> = await axiosInstance.get(endpoint, {params});
+		const path = `/portal/${NETWORK.get(network)}/estimate`;
+		const response: AxiosResponse<TPortalEstimate> = await axiosInstance.get(path, {params});
 		return {data: response.data};
 	} catch (err) {
 		return {data: undefined, error: err as Error};
@@ -117,8 +117,8 @@ export async function getPortalsTx({network, params}: TGetTransactionProps): Pro
 	const axiosInstance: AxiosInstance = axios.create({baseURL});
 
 	try {
-		const endpoint = `/portal/${NETWORK.get(network)}`;
-		const response: AxiosResponse<TPortalTransaction> = await axiosInstance.get(endpoint, {params});
+		const path = `/portal/${NETWORK.get(network)}`;
+		const response: AxiosResponse<TPortalTransaction> = await axiosInstance.get(path, {params});
 		return response.data;
 	} catch (err) {
 		return null;
@@ -131,8 +131,8 @@ export async function getPortalsApproval({network, params}: TGetApprovalProps): 
 	const axiosInstance: AxiosInstance = axios.create({baseURL});
 
 	try {
-		const endpoint = `/approval/${NETWORK.get(network)}`;
-		const response: AxiosResponse<TPortalsApproval> = await axiosInstance.get(endpoint, {params});
+		const path = `/approval/${NETWORK.get(network)}`;
+		const response: AxiosResponse<TPortalsApproval> = await axiosInstance.get(path, {params});
 		return response.data;
 	} catch (err) {
 		return null;
