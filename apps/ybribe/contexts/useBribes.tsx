@@ -13,7 +13,7 @@ import {getLastThursday, getNextThursday} from '@yBribe/utils';
 import CURVE_BRIBE_V3 from '@yBribe/utils/abi/curveBribeV3.abi';
 import CURVE_BRIBE_V3_HELPER from '@yBribe/utils/abi/curveBribeV3Helper.abi';
 
-import type {TAddress, TAddress, TDict, VoidPromiseFunction} from '@yearn-finance/web-lib/types';
+import type {TAddress, TDict, VoidPromiseFunction} from '@yearn-finance/web-lib/types';
 import type {TCurveGaugeVersionRewards} from '@common/types/curves';
 import type {PrepareWriteContractResult} from '@wagmi/core';
 
