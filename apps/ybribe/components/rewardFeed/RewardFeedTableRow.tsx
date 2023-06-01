@@ -99,7 +99,6 @@ function RewardFeedTableRow({currentRewardAdded}: {currentRewardAdded: TYDaemonG
 					<RewardFeedRowItemWithExtraData
 						address={currentRewardAdded.rewardToken}
 						value={toBigInt(currentRewardAdded.amount)} />
-
 				</div>
 			</div>
 
