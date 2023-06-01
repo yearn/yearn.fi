@@ -11,7 +11,6 @@ import {getTimeUntil} from '@yearn-finance/web-lib/utils/time';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {AmountInput} from '@common/components/AmountInput';
 import {useWallet} from '@common/contexts/useWallet';
-import {assertAddress} from '@common/utils/toWagmiProvider';
 
 import type {ReactElement} from 'react';
 
@@ -32,7 +31,6 @@ function ClaimTab(): ReactElement {
 	}, [refreshVotingEscrow, refreshBalances]);
 
 	const onWithdrawUnlocked = useCallback(async (): Promise<void> => {
-		assertAddress(votingEscrow?.address);
 		const result = await withdrawUnlocked({
 			connector: provider,
 			contractAddress: votingEscrow?.address,

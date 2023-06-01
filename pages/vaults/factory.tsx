@@ -1,5 +1,5 @@
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
-import Balancer from 'react-wrap-balancer';
+import {Balancer} from 'react-wrap-balancer';
 import {useAsync} from '@react-hookz/web';
 import VaultListFactory from '@vaults/components/list/VaultListFactory';
 import VAULT_FACTORY_ABI from '@vaults/utils/abi/vaultFactory.abi';

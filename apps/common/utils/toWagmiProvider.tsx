@@ -4,14 +4,14 @@ import {isTAddress} from '@yearn-finance/web-lib/utils/isTAddress';
 import {assert} from '@common/utils/assert';
 
 import type {Connector} from 'wagmi';
-import type {TAddress, TAddressWagmi} from '@yearn-finance/web-lib/types';
+import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {GetWalletClientResult} from '@wagmi/core';
 
 export type TWagmiProviderContract = {
 	walletClient: GetWalletClientResult,
 	chainId: number,
-	address: TAddressWagmi,
+	address: TAddress,
 }
 export async function toWagmiProvider(connector: Connector | undefined): Promise<TWagmiProviderContract> {
 	assert(connector, 'Connector is not set');
@@ -28,13 +28,13 @@ export async function toWagmiProvider(connector: Connector | undefined): Promise
 
 export type TWriteTransaction = {
 	connector: Connector | undefined;
-	contractAddress: TAddressWagmi | undefined;
+	contractAddress: TAddress | undefined;
 	statusHandler?: (status: typeof defaultTxStatus) => void;
 }
 
-export function assertAddress(addr: string | TAddress | undefined): asserts addr is TAddress {
-	assert(addr, 'Address is not set');
-	assert(isTAddress(addr), 'Address provided is invalid');
-	assert(toAddress(addr) !== ZERO_ADDRESS, 'Address is 0x0');
-	assert(toAddress(addr) !== ETH_TOKEN_ADDRESS, 'Address is 0xE');
+export function assertAddress(addr: string | TAddress | undefined, name?: string): asserts addr is TAddress {
+	assert(addr, `${name || 'Address'} is not set`);
+	assert(isTAddress(addr), `${name || 'Address'} provided is invalid`);
+	assert(toAddress(addr) !== ZERO_ADDRESS, `${name || 'Address'} is 0x0`);
+	assert(toAddress(addr) !== ETH_TOKEN_ADDRESS, `${name || 'Address'} is 0xE`);
 }

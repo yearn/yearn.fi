@@ -105,9 +105,6 @@ export function useSolverInternalMigration(): TSolverContext {
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
 		assert(request.current, 'Request is not set');
-		assert(request.current.inputToken, 'Input token is not set');
-		assert(request.current.outputToken, 'Output token is not set');
-		assert(request.current.migrator, 'Migrator is not defined');
 
 		const result = await migrateShares({
 			connector: provider,

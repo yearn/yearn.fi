@@ -9,7 +9,7 @@ import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {BAL_TOKEN_ADDRESS, BALWETH_TOKEN_ADDRESS, LPYBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, YBAL_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {decodeAsBigInt} from '@yearn-finance/web-lib/utils/decoder';
 
-import type {TAddressWagmi, TDict} from '@yearn-finance/web-lib/types';
+import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 
 const LOCAL_ZAP_YEARN_YBAL_ADDRESS = toAddress('0x43cA9bAe8dF108684E5EAaA720C25e1b32B0A075');
 
@@ -18,8 +18,8 @@ const LOCAL_ZAP_YEARN_YBAL_ADDRESS = toAddress('0x43cA9bAe8dF108684E5EAaA720C25e
 ******************************************************************************/
 export function useAllowances(): TDict<bigint> {
 	const {address} = useWeb3();
-	const wagmiAddress = useMemo((): TAddressWagmi => toAddress(address), [address]);
-	const zapAddress = useMemo((): TAddressWagmi => LOCAL_ZAP_YEARN_YBAL_ADDRESS, []);
+	const wagmiAddress = useMemo((): TAddress => toAddress(address), [address]);
+	const zapAddress = useMemo((): TAddress => LOCAL_ZAP_YEARN_YBAL_ADDRESS, []);
 	const {data, status} = useContractReads({
 		contracts: [
 			{address: BAL_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},

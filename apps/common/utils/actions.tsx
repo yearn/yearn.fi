@@ -15,7 +15,7 @@ import {assertAddress, toWagmiProvider} from '@common/utils/toWagmiProvider';
 
 import type {BaseError, ContractFunctionExecutionError, Hex} from 'viem';
 import type {Connector} from 'wagmi';
-import type {TAddress, TAddressWagmi} from '@yearn-finance/web-lib/types';
+import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TWriteTransaction} from '@common/utils/toWagmiProvider';
 
@@ -70,12 +70,12 @@ export async function approvedERC20Amount(
 ** @param amount - The amount of collateral to deposit.
 ******************************************************************************/
 type TApproveERC20 = TWriteTransaction & {
-	spenderAddress: TAddressWagmi | undefined;
+	spenderAddress: TAddress | undefined;
 	amount: bigint;
 };
 export async function approveERC20(props: TApproveERC20): Promise<TTxResponse> {
-	assertAddress(props.contractAddress);
-	assertAddress(props.spenderAddress);
+	assertAddress(props.contractAddress, 'contractAddress');
+	assertAddress(props.spenderAddress, 'spenderAddress');
 
 	props.statusHandler?.({...defaultTxStatus, pending: true});
 	try {
@@ -141,7 +141,7 @@ type TDeposit = TWriteTransaction & {
 	amount: bigint;
 };
 export async function deposit(props: TDeposit): Promise<TTxResponse> {
-	assertAddress(props.contractAddress);
+	assertAddress(props.contractAddress, 'contractAddress');
 	assert(props.amount > 0n, 'Amount is 0');
 
 	props.statusHandler?.({...defaultTxStatus, pending: true});
@@ -190,8 +190,8 @@ type TDepositEth = TWriteTransaction & {
 export async function depositETH(props: TDepositEth): Promise<TTxResponse> {
 	const wagmiProvider = await toWagmiProvider(props.connector);
 	const destAddress = getEthZapperContract(wagmiProvider.chainId);
-	assertAddress(props.contractAddress);
-	assertAddress(destAddress);
+	assertAddress(props.contractAddress, 'contractAddress');
+	assertAddress(destAddress, 'destAddress');
 	assert(props.amount > 0n, 'Amount is 0');
 
 	props.statusHandler?.({...defaultTxStatus, pending: true});
@@ -247,13 +247,13 @@ export async function depositETH(props: TDepositEth): Promise<TTxResponse> {
 ** @param amount - The amount of ETH to deposit.
 ******************************************************************************/
 type TDepositViaPartner = TWriteTransaction & {
-	vaultAddress: TAddressWagmi;
-	partnerAddress: TAddressWagmi | undefined;
+	vaultAddress: TAddress | undefined;
+	partnerAddress: TAddress | undefined;
 	amount: bigint;
 };
 export async function depositViaPartner(props: TDepositViaPartner): Promise<TTxResponse> {
-	assertAddress(props.contractAddress);
-	assertAddress(props.vaultAddress);
+	assertAddress(props.contractAddress, 'contractAddress');
+	assertAddress(props.vaultAddress, 'vaultAddress');
 	assert(props.amount > 0n, 'Amount is 0');
 
 	props.statusHandler?.({...defaultTxStatus, pending: true});
@@ -306,8 +306,8 @@ type TWithdrawEth = TWriteTransaction & {
 export async function withdrawETH(props: TWithdrawEth): Promise<TTxResponse> {
 	const wagmiProvider = await toWagmiProvider(props.connector);
 	const destAddress = getEthZapperContract(wagmiProvider.chainId);
-	assertAddress(props.contractAddress);
-	assertAddress(destAddress);
+	assertAddress(props.contractAddress, 'contractAddress');
+	assertAddress(destAddress, 'destAddress');
 	assert(props.amount > 0n, 'Amount is 0');
 
 	props.statusHandler?.({...defaultTxStatus, pending: true});
@@ -365,7 +365,7 @@ type TWithdrawShares = TWriteTransaction & {
 	amount: bigint;
 };
 export async function withdrawShares(props: TWithdrawShares): Promise<TTxResponse> {
-	assertAddress(props.contractAddress);
+	assertAddress(props.contractAddress, 'contractAddress');
 	assert(props.amount > 0n, 'Amount is 0');
 
 	props.statusHandler?.({...defaultTxStatus, pending: true});
@@ -408,13 +408,13 @@ export async function withdrawShares(props: TWithdrawShares): Promise<TTxRespons
 ** @param toVault - The address of the vault to migrate to.
 ******************************************************************************/
 type TMigrateShares = TWriteTransaction & {
-	fromVault: TAddressWagmi;
-	toVault: TAddressWagmi;
+	fromVault: TAddress | undefined;
+	toVault: TAddress | undefined;
 };
 export async function migrateShares(props: TMigrateShares): Promise<TTxResponse> {
-	assertAddress(props.contractAddress);
-	assertAddress(props.fromVault);
-	assertAddress(props.toVault);
+	assertAddress(props.contractAddress, 'contractAddress');
+	assertAddress(props.fromVault, 'fromVault');
+	assertAddress(props.toVault, 'toVault');
 
 	const wagmiProvider = await toWagmiProvider(props.connector);
 	try {

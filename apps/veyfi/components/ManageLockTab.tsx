@@ -13,7 +13,6 @@ import {fromWeeks, getTimeUntil, toSeconds, toTime, toWeeks} from '@yearn-financ
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {AmountInput} from '@common/components/AmountInput';
 import {useWallet} from '@common/contexts/useWallet';
-import {assertAddress} from '@common/utils/toWagmiProvider';
 
 import type {ReactElement} from 'react';
 
@@ -37,8 +36,6 @@ function ManageLockTab(): ReactElement {
 	}, [refreshBalances, refreshVotingEscrow]);
 
 	const onExtendLockTime = useCallback(async (): Promise<void> => {
-		assertAddress(votingEscrow?.address);
-
 		const result = await extendLockTime({
 			connector: provider,
 			contractAddress: votingEscrow?.address,
@@ -51,8 +48,6 @@ function ManageLockTab(): ReactElement {
 	}, [newUnlockTime, onTxSuccess, provider, votingEscrow?.address]);
 
 	const onWithdrawLocked = useCallback(async (): Promise<void> => {
-		assertAddress(votingEscrow?.address);
-
 		const result = await withdrawLocked({
 			connector: provider,
 			contractAddress: votingEscrow?.address,

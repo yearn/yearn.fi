@@ -9,7 +9,7 @@ import CURVE_BRIBE_V2_ABI from '@yBribe/utils/abi/curveBribeV2.abi';
 import CURVE_BRIBE_V3_ABI from './abi/curveBribeV3.abi';
 
 import type {BaseError} from 'viem';
-import type {TAddressWagmi} from '@yearn-finance/web-lib/types';
+import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TWriteTransaction} from '@common/utils/toWagmiProvider';
 
@@ -23,14 +23,14 @@ import type {TWriteTransaction} from '@common/utils/toWagmiProvider';
 ** @param tokenAddress - The address of the token to claim rewards from.
 ******************************************************************************/
 type TClaimReward = TWriteTransaction & {
-	gaugeAddress: TAddressWagmi | undefined;
-	tokenAddress: TAddressWagmi | undefined;
+	gaugeAddress: TAddress | undefined;
+	tokenAddress: TAddress | undefined;
 };
 export async function claimRewardV2(props: TClaimReward): Promise<TTxResponse> {
-	assertAddress(CURVE_BRIBE_V2_ADDRESS);
-	assertAddress(props.contractAddress);
-	assertAddress(props.gaugeAddress);
-	assertAddress(props.tokenAddress);
+	assertAddress(CURVE_BRIBE_V2_ADDRESS, 'CURVE_BRIBE_V2_ADDRESS');
+	assertAddress(props.contractAddress, 'contractAddress');
+	assertAddress(props.gaugeAddress, 'gaugeAddress');
+	assertAddress(props.tokenAddress, 'tokenAddress');
 
 	props.statusHandler?.({...defaultTxStatus, pending: true});
 	const wagmiProvider = await toWagmiProvider(props.connector);
@@ -65,10 +65,10 @@ export async function claimRewardV2(props: TClaimReward): Promise<TTxResponse> {
 }
 
 export async function claimRewardV3(props: TClaimReward): Promise<TTxResponse> {
-	assertAddress(CURVE_BRIBE_V3_ADDRESS);
-	assertAddress(props.contractAddress);
-	assertAddress(props.gaugeAddress);
-	assertAddress(props.tokenAddress);
+	assertAddress(CURVE_BRIBE_V3_ADDRESS, 'CURVE_BRIBE_V3_ADDRESS');
+	assertAddress(props.contractAddress, 'contractAddress');
+	assertAddress(props.gaugeAddress, 'gaugeAddress');
+	assertAddress(props.tokenAddress, 'tokenAddress');
 
 	props.statusHandler?.({...defaultTxStatus, pending: true});
 	const wagmiProvider = await toWagmiProvider(props.connector);
@@ -113,15 +113,15 @@ export async function claimRewardV3(props: TClaimReward): Promise<TTxResponse> {
 ** @param tokenAddress - The address of the token to claim rewards from.
 ******************************************************************************/
 type TAddReward = TWriteTransaction & {
-	gaugeAddress: TAddressWagmi | undefined;
-	tokenAddress: TAddressWagmi | undefined;
+	gaugeAddress: TAddress | undefined;
+	tokenAddress: TAddress | undefined;
 	amount: bigint;
 };
 export async function addReward(props: TAddReward): Promise<TTxResponse> {
-	assertAddress(CURVE_BRIBE_V3_ADDRESS);
-	assertAddress(props.contractAddress);
-	assertAddress(props.gaugeAddress);
-	assertAddress(props.tokenAddress);
+	assertAddress(CURVE_BRIBE_V3_ADDRESS, 'CURVE_BRIBE_V3_ADDRESS');
+	assertAddress(props.contractAddress, 'contractAddress');
+	assertAddress(props.gaugeAddress, 'gaugeAddress');
+	assertAddress(props.tokenAddress, 'tokenAddress');
 	assert(props.amount > 0n, 'Amount must be greater than 0');
 
 	props.statusHandler?.({...defaultTxStatus, pending: true});

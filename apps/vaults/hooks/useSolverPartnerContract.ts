@@ -90,7 +90,7 @@ export function useSolverPartnerContract(): TSolverContext {
 
 		assert(request.current, 'Request is not set');
 		assert(request.current?.inputToken, 'Input token is not set');
-		assertAddress(partnerContract);
+		assertAddress(partnerContract, 'partnerContract');
 
 		const result = await approveERC20({
 			connector: provider,
@@ -115,9 +115,7 @@ export function useSolverPartnerContract(): TSolverContext {
 		const partnerContract = networks[safeChainID]?.partnerContractAddress;
 
 		assert(request.current, 'Request is not set');
-		assert(request.current.outputToken, 'Output token is not set');
 		assert(request.current.inputAmount, 'Input amount is not set');
-		assertAddress(partnerContract);
 
 		const result = await depositViaPartner({
 			connector: provider,

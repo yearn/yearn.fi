@@ -104,7 +104,6 @@ export function useSolverOptimismBooster(): TSolverContext {
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
 		assert(request.current, 'Request is not set');
-		assert(request.current.outputToken, 'Output token is not set');
 		assert(request.current.inputAmount, 'Input amount is not set');
 
 		const result = await depositAndStake({

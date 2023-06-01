@@ -8,7 +8,7 @@ import {assert} from '@common/utils/assert';
 import {assertAddress, toWagmiProvider} from '@common/utils/toWagmiProvider';
 
 import type {BaseError} from 'viem';
-import type {TAddressWagmi} from '@yearn-finance/web-lib/types';
+import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TWriteTransaction} from '@common/utils/toWagmiProvider';
 
@@ -18,8 +18,8 @@ const LOCAL_ZAP_YEARN_YBAL_ADDRESS = toAddress('0x43cA9bAe8dF108684E5EAaA720C25e
 const OUTPUT_TOKENS = [YBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, LPYBAL_TOKEN_ADDRESS];
 
 type TSimulateZapForMinOut = TWriteTransaction & {
-	inputToken: TAddressWagmi,
-	outputToken: TAddressWagmi,
+	inputToken: TAddress,
+	outputToken: TAddress,
 	amountIn: bigint
 };
 export async function simulateZapForMinOut(props: TSimulateZapForMinOut): Promise<{shouldMint: boolean, minOut: bigint}> {
@@ -81,18 +81,18 @@ export async function simulateZapForMinOut(props: TSimulateZapForMinOut): Promis
 ** @param slippage - Slippage tolerance
 ******************************************************************************/
 type TZapYBal = TWriteTransaction & {
-	inputToken: TAddressWagmi;
-	outputToken: TAddressWagmi;
+	inputToken: TAddress | undefined;
+	outputToken: TAddress | undefined;
 	amount: bigint;
 	minAmount: bigint;
 	slippage: bigint;
 	shouldMint: boolean;
 };
 export async function zapBal(props: TZapYBal): Promise<TTxResponse> {
-	assertAddress(LOCAL_ZAP_YEARN_YBAL_ADDRESS);
-	assertAddress(props.contractAddress);
-	assertAddress(props.inputToken);
-	assertAddress(props.outputToken);
+	assertAddress(LOCAL_ZAP_YEARN_YBAL_ADDRESS, 'LOCAL_ZAP_YEARN_YBAL_ADDRESS');
+	assertAddress(props.contractAddress, 'contractAddress');
+	assertAddress(props.inputToken, 'inputToken');
+	assertAddress(props.outputToken, 'outputToken');
 	assert(props.amount > 0n, 'Amount must be greater than 0');
 	assert(props.minAmount > 0n, 'Min amount must be greater than 0');
 	assert(props.minAmount <= props.amount, 'Min amount must be less than amount');

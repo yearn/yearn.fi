@@ -13,7 +13,7 @@ import {getLastThursday, getNextThursday} from '@yBribe/utils';
 import CURVE_BRIBE_V3 from '@yBribe/utils/abi/curveBribeV3.abi';
 import CURVE_BRIBE_V3_HELPER from '@yBribe/utils/abi/curveBribeV3Helper.abi';
 
-import type {TAddress, TAddressWagmi, TDict, VoidPromiseFunction} from '@yearn-finance/web-lib/types';
+import type {TAddress, TAddress, TDict, VoidPromiseFunction} from '@yearn-finance/web-lib/types';
 import type {TCurveGaugeVersionRewards} from '@common/types/curves';
 import type {PrepareWriteContractResult} from '@wagmi/core';
 
@@ -58,7 +58,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 	const [isLoading, set_isLoading] = useState<boolean>(true);
 	const [currentPeriod, set_currentPeriod] = useState<number>(getLastThursday());
 	const [nextPeriod, set_nextPeriod] = useState<number>(getNextThursday());
-	const bribeV3BaseContract = useMemo((): {address: TAddressWagmi, abi: typeof CURVE_BRIBE_V3} => ({
+	const bribeV3BaseContract = useMemo((): {address: TAddress, abi: typeof CURVE_BRIBE_V3} => ({
 		address: CURVE_BRIBE_V3_ADDRESS,
 		abi: CURVE_BRIBE_V3
 	}), []);
@@ -168,7 +168,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 		if ((rewardsPerGauges || []).length === 0) {
 			return ({rewardsList: [], multicallResult: []});
 		}
-		const rewardsPerTokensPerGaugesCalls: [TAddressWagmi, TAddressWagmi][] = [];
+		const rewardsPerTokensPerGaugesCalls: [TAddress, TAddress][] = [];
 		const rewardsList: string[] = [];
 
 		const _rewardsPerGauges = [...rewardsPerGauges];

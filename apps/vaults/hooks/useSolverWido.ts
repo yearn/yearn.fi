@@ -219,7 +219,7 @@ export function useSolverWido(): TSolverContext {
 			amount
 		);
 		if (!isApproved) {
-			assertAddress(widoSpender);
+			assertAddress(widoSpender, 'spender');
 			const result = await approveERC20({
 				connector: provider,
 				contractAddress: request.current.inputToken.value,

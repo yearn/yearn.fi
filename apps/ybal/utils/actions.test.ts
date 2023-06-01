@@ -7,7 +7,7 @@ import {BAL_TOKEN_ADDRESS, YBAL_TOKEN_ADDRESS, ZAP_YEARN_YBAL_ADDRESS} from '@ye
 import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {simulateZapForMinOut, zapBal} from '@yBal/utils/actions';
 
-import type {TAddressWagmi} from '@yearn-finance/web-lib/types';
+import type {TAddress} from '@yearn-finance/web-lib/types';
 
 const LOCAL_ZAP_YEARN_YBAL_ADDRESS = toAddress('0x43cA9bAe8dF108684E5EAaA720C25e1b32B0A075');
 
@@ -62,8 +62,8 @@ describe('actions', () => {
 					.mockReturnValueOnce(EXPECTED_AMOUNT_MINT)
 					.mockReturnValueOnce(EXPECTED_AMOUNT_SWAP);
 
-				const inputToken = BAL_TOKEN_ADDRESS as TAddressWagmi;
-				const outputToken = YBAL_TOKEN_ADDRESS as TAddressWagmi;
+				const inputToken = BAL_TOKEN_ADDRESS as TAddress;
+				const outputToken = YBAL_TOKEN_ADDRESS as TAddress;
 				const amountIn = parseEther('500'); // 500e18
 				const connector = new MockConnector({
 					options: {
@@ -96,8 +96,8 @@ describe('actions', () => {
 					.mockReturnValueOnce(EXPECTED_AMOUNT_MINT)
 					.mockReturnValueOnce(EXPECTED_AMOUNT_SWAP);
 
-				const inputToken = BAL_TOKEN_ADDRESS as TAddressWagmi;
-				const outputToken = YBAL_TOKEN_ADDRESS as TAddressWagmi;
+				const inputToken = BAL_TOKEN_ADDRESS as TAddress;
+				const outputToken = YBAL_TOKEN_ADDRESS as TAddress;
 				const amountIn = parseEther('400'); // 400e18
 				const expectedIn = parseEther('500');
 				const connector = new MockConnector({

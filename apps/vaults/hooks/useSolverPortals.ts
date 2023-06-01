@@ -278,7 +278,7 @@ export function useSolverPortals(): TSolverContext {
 			);
 
 			if (!isApproved) {
-				assertAddress(approval.context.spender);
+				assertAddress(approval.context.spender, 'spender');
 				const result = await approveERC20({
 					connector: provider,
 					contractAddress: request.current.inputToken.value,

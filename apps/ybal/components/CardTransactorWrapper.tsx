@@ -13,14 +13,13 @@ import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import {getVaultAPY} from '@common/utils';
 import {approveERC20, deposit} from '@common/utils/actions';
-import {assertAddress} from '@common/utils/toWagmiProvider';
 import {ZAP_OPTIONS_FROM, ZAP_OPTIONS_TO} from '@yBal/constants/tokens';
 import {useYBal} from '@yBal/contexts/useYBal';
 import {simulateZapForMinOut, zapBal} from '@yBal/utils/actions';
 
 import type {ReactElement} from 'react';
 import type {Connector} from 'wagmi';
-import type {TAddressWagmi, VoidPromiseFunction} from '@yearn-finance/web-lib/types';
+import type {TAddress, VoidPromiseFunction} from '@yearn-finance/web-lib/types';
 import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
 
 type TCardTransactor = {
@@ -107,8 +106,8 @@ function CardTransactorContextApp({
 	**************************************************************************/
 	const [{result: expectedOut}, actions] = useAsync(async (
 		_provider: Connector | undefined,
-		_inputToken: TAddressWagmi,
-		_outputToken: TAddressWagmi,
+		_inputToken: TAddress,
+		_outputToken: TAddress,
 		_amountIn: bigint
 	): Promise<{shouldMint: boolean; minOut: bigint;}> => {
 		return await simulateZapForMinOut({
@@ -134,8 +133,6 @@ function CardTransactorContextApp({
 	** perform the swap.
 	**************************************************************************/
 	const onApprove = useCallback(async (): Promise<void> => {
-		assertAddress(selectedOptionFrom.zapVia);
-
 		const result = await approveERC20({
 			connector: provider,
 			contractAddress: selectedOptionFrom.value,

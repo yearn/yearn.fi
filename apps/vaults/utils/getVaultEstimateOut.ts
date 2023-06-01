@@ -17,8 +17,8 @@ type TGetVaultEstimateOutProps = {
 	chainID: number;
 }
 async function getVaultEstimateOut(props: TGetVaultEstimateOutProps): Promise<TNormalizedBN> {
-	assertAddress(props.inputToken);
-	assertAddress(props.outputToken);
+	assertAddress(props.inputToken, 'inputToken');
+	assertAddress(props.outputToken, 'outputToken');
 	assert(props.inputDecimals > 0, 'inputDecimals must be greater than 0');
 	assert(props.outputDecimals > 0, 'outputDecimals must be greater than 0');
 

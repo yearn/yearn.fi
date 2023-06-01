@@ -18,7 +18,6 @@ import {AmountInput} from '@common/components/AmountInput';
 import {useWallet} from '@common/contexts/useWallet';
 import {useBalance} from '@common/hooks/useBalance';
 import {approveERC20} from '@common/utils/actions';
-import {assertAddress} from '@common/utils/toWagmiProvider';
 
 import type {ReactElement} from 'react';
 import type {TMilliseconds} from '@yearn-finance/web-lib/utils/time';
@@ -53,9 +52,6 @@ function LockTab(): ReactElement {
 	}, [refreshData]);
 
 	const onApproveLock = useCallback(async (): Promise<void> => {
-		assertAddress(votingEscrow?.token);
-		assertAddress(votingEscrow?.address);
-
 		const result = await approveERC20({
 			connector: provider,
 			contractAddress: votingEscrow?.token,
@@ -69,8 +65,6 @@ function LockTab(): ReactElement {
 	}, [lockAmount.raw, provider, refreshData, votingEscrow?.address, votingEscrow?.token]);
 
 	const onLock = useCallback(async (): Promise<void> => {
-		assertAddress(votingEscrow?.address);
-
 		const result = await lock({
 			connector: provider,
 			contractAddress: votingEscrow?.address,
@@ -84,8 +78,6 @@ function LockTab(): ReactElement {
 	}, [provider, votingEscrow?.address, lockAmount.raw, unlockTime, onTxSuccess]);
 
 	const onIncreaseLockAmount = useCallback(async (): Promise<void> => {
-		assertAddress(votingEscrow?.address);
-
 		const result = await increaseLockAmount({
 			connector: provider,
 			contractAddress: votingEscrow?.address,

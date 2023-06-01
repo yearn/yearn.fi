@@ -7,10 +7,9 @@ import {assertAddress, toWagmiProvider} from '@common/utils/toWagmiProvider';
 import ZAP_CRV_ABI from '@yCRV/utils/abi/zapCRV.abi';
 
 import type {BaseError} from 'viem';
-import type {TAddressWagmi} from '@yearn-finance/web-lib/types';
+import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TWriteTransaction} from '@common/utils/toWagmiProvider';
-
 
 /* 🔵 - Yearn Finance **********************************************************
 ** zapCRV is a _WRITE_ function that can be used to zap some supported tokens
@@ -24,17 +23,17 @@ import type {TWriteTransaction} from '@common/utils/toWagmiProvider';
 ** @param slippage - Slippage tolerance
 ******************************************************************************/
 type TZapYCRV = TWriteTransaction & {
-	inputToken: TAddressWagmi;
-	outputToken: TAddressWagmi;
+	inputToken: TAddress | undefined;
+	outputToken: TAddress | undefined;
 	amount: bigint;
 	minAmount: bigint;
 	slippage: bigint;
 };
 export async function zapCRV(props: TZapYCRV): Promise<TTxResponse> {
-	assertAddress(ZAP_YEARN_VE_CRV_ADDRESS);
-	assertAddress(props.contractAddress);
-	assertAddress(props.inputToken);
-	assertAddress(props.outputToken);
+	assertAddress(ZAP_YEARN_VE_CRV_ADDRESS, 'ZAP_YEARN_VE_CRV_ADDRESS');
+	assertAddress(props.contractAddress, 'contractAddress');
+	assertAddress(props.inputToken, 'inputToken');
+	assertAddress(props.outputToken, 'outputToken');
 	assert(props.amount > 0n, 'Amount must be greater than 0');
 	assert(props.minAmount > 0n, 'Min amount must be greater than 0');
 	assert(props.minAmount <= props.amount, 'Min amount must be less than amount');

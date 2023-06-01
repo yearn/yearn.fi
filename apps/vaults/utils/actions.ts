@@ -12,7 +12,7 @@ import {assert} from '@common/utils/assert';
 import {assertAddress, toWagmiProvider} from '@common/utils/toWagmiProvider';
 
 import type {BaseError} from 'viem';
-import type {TAddressWagmi} from '@yearn-finance/web-lib/types';
+import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TWriteTransaction} from '@common/utils/toWagmiProvider';
 
@@ -25,12 +25,12 @@ import type {TWriteTransaction} from '@common/utils/toWagmiProvider';
 ** @param amount - The amount of the underlying asset to deposit.
 ******************************************************************************/
 type TDepositAndStake = TWriteTransaction & {
-	vaultAddress: TAddressWagmi;
+	vaultAddress: TAddress | undefined;
 	amount: bigint;
 };
 export async function depositAndStake(props: TDepositAndStake): Promise<TTxResponse> {
-	assertAddress(props.contractAddress);
-	assertAddress(props.vaultAddress);
+	assertAddress(props.contractAddress, 'contractAddress');
+	assertAddress(props.vaultAddress, 'vaultAddress');
 	assert(props.amount > 0n, 'Amount is 0');
 
 	props.statusHandler?.({...defaultTxStatus, pending: true});
@@ -77,7 +77,7 @@ type TStake = TWriteTransaction & {
 	amount: bigint;
 };
 export async function stake(props: TStake): Promise<TTxResponse> {
-	assertAddress(props.contractAddress);
+	assertAddress(props.contractAddress, 'contractAddress');
 	assert(props.amount > 0n, 'Amount is 0');
 
 	props.statusHandler?.({...defaultTxStatus, pending: true});
@@ -120,7 +120,7 @@ export async function stake(props: TStake): Promise<TTxResponse> {
 ******************************************************************************/
 type TUnstake = TWriteTransaction;
 export async function unstake(props: TUnstake): Promise<TTxResponse> {
-	assertAddress(props.contractAddress);
+	assertAddress(props.contractAddress, 'contractAddress');
 
 	props.statusHandler?.({...defaultTxStatus, pending: true});
 	const wagmiProvider = await toWagmiProvider(props.connector);
@@ -161,7 +161,7 @@ export async function unstake(props: TUnstake): Promise<TTxResponse> {
 ******************************************************************************/
 type TClaim = TWriteTransaction;
 export async function claim(props: TClaim): Promise<TTxResponse> {
-	assertAddress(props.contractAddress);
+	assertAddress(props.contractAddress, 'contractAddress');
 
 	props.statusHandler?.({...defaultTxStatus, pending: true});
 	const wagmiProvider = await toWagmiProvider(props.connector);
@@ -204,14 +204,14 @@ export async function claim(props: TClaim): Promise<TTxResponse> {
 ** @param amount - The amount of inputToken to be sent to the zap
 ******************************************************************************/
 type TVeCRVZap = TWriteTransaction & {
-	inputToken: TAddressWagmi;
-	outputToken: TAddressWagmi;
+	inputToken: TAddress | undefined;
+	outputToken: TAddress | undefined;
 	amount: bigint;
 };
 export async function veCRVzap(props: TVeCRVZap): Promise<TTxResponse> {
-	assertAddress(props.contractAddress);
-	assertAddress(props.inputToken);
-	assertAddress(props.outputToken);
+	assertAddress(props.contractAddress, 'contractAddress');
+	assertAddress(props.inputToken, 'inputToken');
+	assertAddress(props.outputToken, 'outputToken');
 	assert(props.amount > 0n, 'Amount must be greater than 0n');
 
 	props.statusHandler?.({...defaultTxStatus, pending: true});
@@ -246,7 +246,6 @@ export async function veCRVzap(props: TVeCRVZap): Promise<TTxResponse> {
 	}
 }
 
-
 /* 🔵 - Yearn Finance **********************************************************
 ** createNewVaultsAndStrategies is a _WRITE_ function that creates a new vault
 ** and strategy for the given gauge.
@@ -254,13 +253,12 @@ export async function veCRVzap(props: TVeCRVZap): Promise<TTxResponse> {
 ** @app - Vaults (veCRV)
 ** @param gaugeAddress - the base gauge address
 ******************************************************************************/
-// overwrite contractAddress type to force it to VAULT_FACTORY_ADDRESS
 type TCreateNewVaultsAndStrategies = TWriteTransaction & {
-	gaugeAddress: TAddressWagmi;
+	gaugeAddress: TAddress | undefined;
 };
 export async function createNewVaultsAndStrategies(props: TCreateNewVaultsAndStrategies): Promise<TTxResponse> {
-	assertAddress(props.contractAddress);
-	assertAddress(props.gaugeAddress);
+	assertAddress(props.contractAddress, 'contractAddress');
+	assertAddress(props.gaugeAddress, 'gaugeAddress');
 
 	props.statusHandler?.({...defaultTxStatus, pending: true});
 	const wagmiProvider = await toWagmiProvider(props.connector);
@@ -302,8 +300,8 @@ export async function createNewVaultsAndStrategies(props: TCreateNewVaultsAndStr
 ** @param gaugeAddress - the base gauge address
 ******************************************************************************/
 export async function gasOfCreateNewVaultsAndStrategies(props: TCreateNewVaultsAndStrategies): Promise<bigint> {
-	assertAddress(props.contractAddress);
-	assertAddress(props.gaugeAddress);
+	assertAddress(props.contractAddress, 'contractAddress');
+	assertAddress(props.gaugeAddress, 'gaugeAddress');
 
 	const wagmiProvider = await toWagmiProvider(props.connector);
 	try {

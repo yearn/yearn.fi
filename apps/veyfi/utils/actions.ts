@@ -22,7 +22,7 @@ type TLock = TWriteTransaction & {
 	time: bigint
 };
 export async function lock(props: TLock): Promise<TTxResponse> {
-	assertAddress(props.contractAddress);
+	assertAddress(props.contractAddress, 'contractAddress');
 	assert(props.time > 0n, 'Time is 0');
 	assert(props.amount > 0n, 'Amount is 0');
 
@@ -70,7 +70,7 @@ type TIncreaseLockAmount = TWriteTransaction & {
 	amount: bigint;
 };
 export async function increaseLockAmount(props: TIncreaseLockAmount): Promise<TTxResponse> {
-	assertAddress(props.contractAddress);
+	assertAddress(props.contractAddress, 'contractAddress');
 	assert(props.amount > 0n, 'Amount is 0');
 
 	props.statusHandler?.({...defaultTxStatus, pending: true});
@@ -116,7 +116,7 @@ type TExtendLockTime = TWriteTransaction & {
 	time: bigint;
 };
 export async function extendLockTime(props: TExtendLockTime): Promise<TTxResponse> {
-	assertAddress(props.contractAddress);
+	assertAddress(props.contractAddress, 'contractAddress');
 	assert(props.time > 0n, 'Time is 0');
 
 	props.statusHandler?.({...defaultTxStatus, pending: true});
@@ -160,7 +160,7 @@ export async function extendLockTime(props: TExtendLockTime): Promise<TTxRespons
 ******************************************************************************/
 type TWithdrawUnlocked = TWriteTransaction;
 export async function withdrawUnlocked(props: TWithdrawUnlocked): Promise<TTxResponse> {
-	assertAddress(props.contractAddress);
+	assertAddress(props.contractAddress, 'contractAddress');
 
 	props.statusHandler?.({...defaultTxStatus, pending: true});
 	const wagmiProvider = await toWagmiProvider(props.connector);
@@ -204,7 +204,7 @@ export async function withdrawUnlocked(props: TWithdrawUnlocked): Promise<TTxRes
 ******************************************************************************/
 type TWithdrawLocked = TWriteTransaction;
 export async function withdrawLocked(props: TWithdrawLocked): Promise<TTxResponse> {
-	assertAddress(props.contractAddress);
+	assertAddress(props.contractAddress, 'contractAddress');
 
 	props.statusHandler?.({...defaultTxStatus, pending: true});
 	const wagmiProvider = await toWagmiProvider(props.connector);
