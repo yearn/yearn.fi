@@ -83,7 +83,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 			rewardsPerGaugesCalls.push({
 				...bribeV3BaseContract,
 				functionName: 'rewards_per_gauge',
-				args: [toAddress(gauge.gauge)]
+				args: [gauge.gauge]
 			});
 		}
 		const result = await multicall({contracts: rewardsPerGaugesCalls, chainId: safeChainID});
@@ -121,12 +121,12 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 				}
 				gauge.rewardPerGauge.push(...rewardPerGauge);
 				for (const tokenAsReward of rewardPerGauge) {
-					const args = [toAddress(gauge.gauge), toAddress(tokenAsReward)];
+					const args = [gauge.gauge, tokenAsReward];
 					rewardsList.push(allowanceKey(
 						safeChainID,
-						toAddress(gauge.gauge),
-						toAddress(tokenAsReward),
-						toAddress(address)
+						gauge.gauge,
+						tokenAsReward,
+						userAddress
 					));
 					rewardsPerTokensPerGaugesCalls.push(...[
 						{...bribeV3BaseContract, functionName: 'reward_per_token', args: args},
@@ -162,14 +162,15 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 		}
 		const rewardsPerTokensPerGaugesCalls: [TAddress, TAddress][] = [];
 		const rewardsList: string[] = [];
+		const userAddress = toAddress(address);
 
 		const _rewardsPerGauges = [...rewardsPerGauges];
 		for (const gauge of gauges) {
 			const rewardPerGauge = _rewardsPerGauges.shift();
 			if (rewardPerGauge && rewardPerGauge.length > 0) {
 				for (const tokenAsReward of rewardPerGauge) {
-					rewardsList.push(allowanceKey(safeChainID, toAddress(gauge.gauge), toAddress(tokenAsReward), toAddress(address)));
-					rewardsPerTokensPerGaugesCalls.push([toAddress(gauge.gauge), toAddress(tokenAsReward)]);
+					rewardsList.push(allowanceKey(safeChainID, gauge.gauge, tokenAsReward, userAddress));
+					rewardsPerTokensPerGaugesCalls.push([gauge.gauge, tokenAsReward]);
 				}
 			}
 		}
@@ -204,6 +205,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 		if (!multicallResult || multicallResult.length === 0 || rewardsList.length === 0) {
 			return;
 		}
+		const userAddress = toAddress(address);
 		const _currentRewards: TDict<TDict<bigint>> = {};
 		const _claimable: TDict<TDict<bigint>> = {};
 		const _periods: TDict<TDict<bigint>> = {};
@@ -216,28 +218,30 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 			const claimablePerTokenPerGauge = multicallResult[rIndex++];
 			if (Number(periodPerTokenPerGauge) >= currentPeriod) {
 				if (rewardListKey && rewardPerTokenPerGauge > 0n) {
-					const [, gauge, token] = rewardListKey.split('_');
-					if (!_currentRewards[toAddress(gauge)]) {
-						_currentRewards[toAddress(gauge)] = {};
+					const [, gaugeRaw, tokenRaw] = rewardListKey.split('_');
+					const gauge = toAddress(gaugeRaw);
+					const token = toAddress(tokenRaw);
+					if (!_currentRewards[gauge]) {
+						_currentRewards[gauge] = {};
 					}
-					if (!_periods[toAddress(gauge)]) {
-						_periods[toAddress(gauge)] = {};
+					if (!_periods[gauge]) {
+						_periods[gauge] = {};
 					}
-					if (!_claimable[toAddress(gauge)]) {
-						_claimable[toAddress(gauge)] = {};
+					if (!_claimable[gauge]) {
+						_claimable[gauge] = {};
 					}
-					if (!_dryRunClaimRewards[toAddress(gauge)]) {
-						_dryRunClaimRewards[toAddress(gauge)] = {};
+					if (!_dryRunClaimRewards[gauge]) {
+						_dryRunClaimRewards[gauge] = {};
 					}
-					_currentRewards[toAddress(gauge)][toAddress(token)] = rewardPerTokenPerGauge;
-					_periods[toAddress(gauge)][toAddress(token)] = periodPerTokenPerGauge;
-					_claimable[toAddress(gauge)][toAddress(token)] = claimablePerTokenPerGauge;
+					_currentRewards[gauge][token] = rewardPerTokenPerGauge;
+					_periods[gauge][token] = periodPerTokenPerGauge;
+					_claimable[gauge][token] = claimablePerTokenPerGauge;
 					const prepareWriteResult = await prepareWriteContract({
 						...bribeV3BaseContract,
 						functionName: 'claim_reward_for',
-						args: [toAddress(address), toAddress(gauge), toAddress(token)]
+						args: [userAddress, gauge, token]
 					});
-					_dryRunClaimRewards[toAddress(gauge)][toAddress(token)] = prepareWriteResult.result;
+					_dryRunClaimRewards[gauge][token] = prepareWriteResult.result;
 				}
 			}
 		}
@@ -261,11 +265,13 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 		for (const rewardListKey of rewardsList) {
 			const pendingForNextPeriod = multicallResult[rIndex++];
 			if (rewardListKey) {
-				const [, gauge, token] = rewardListKey.split('_');
-				if (!_nextRewards[toAddress(gauge)]) {
-					_nextRewards[toAddress(gauge)] = {};
+				const [, gaugeRaw, tokenRaw] = rewardListKey.split('_');
+				const gauge = toAddress(gaugeRaw);
+				const token = toAddress(tokenRaw);
+				if (!_nextRewards[gauge]) {
+					_nextRewards[gauge] = {};
 				}
-				_nextRewards[toAddress(gauge)][toAddress(token)] = pendingForNextPeriod;
+				_nextRewards[gauge][token] = pendingForNextPeriod;
 			}
 		}
 		set_nextRewards(_nextRewards);

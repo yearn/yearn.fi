@@ -1,4 +1,7 @@
 import {z} from 'zod';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
+
+import type {TAddress} from '@yearn-finance/web-lib/types';
 
 export const curveWeeklyFeesSchema = z.object({
 	success: z.boolean().optional(),
@@ -25,11 +28,11 @@ const curveGaugeSchema = z.object({
 		deposit: z.string().array().optional().nullable(),
 		withdraw: z.string().array().optional().nullable()
 	}).optional(),
-	swap: z.string().optional(),
-	swap_token: z.string().optional(),
+	swap: z.string().optional().transform((a): TAddress => toAddress(a)),
+	swap_token: z.string().optional().transform((a): TAddress => toAddress(a)),
 	name: z.string(),
 	shortName: z.string().optional(),
-	gauge: z.string().optional(),
+	gauge: z.string().optional().transform((a): TAddress => toAddress(a)),
 	swap_data: z
 		.object({virtual_price: z.string().or(z.number().optional())})
 		.optional(),
@@ -62,14 +65,14 @@ export const curveAllGaugesSchema = z.object({
 
 export const curveGaugeFromYearnSchema = z.object({
 	gauge_name: z.string(),
-	gauge_address: z.string(),
-	pool_address: z.string(),
+	gauge_address: z.string().transform((a): TAddress => toAddress(a)),
+	pool_address: z.string().transform((a): TAddress => toAddress(a)),
 	pool_coins: z.object({
 		name: z.string().optional(),
-		address: z.string(),
+		address: z.string().transform((a): TAddress => toAddress(a)),
 		error: z.string().optional()
 	}).array().optional(),
-	lp_token: z.string(),
+	lp_token: z.string().transform((a): TAddress => toAddress(a)),
 	weight: z.string(),
 	inflation_rate: z.string(),
 	working_supply: z.string(),
@@ -108,11 +111,7 @@ export const curveGaugeFromYearnSchema = z.object({
 export const curveGaugesFromYearnSchema = curveGaugeFromYearnSchema.array();
 
 export type TCurveWeeklyFees = z.infer<typeof curveWeeklyFeesSchema>;
-
 export type TCurveGauge = z.infer<typeof curveGaugeSchema>;
-
 export type TCurveAllGauges = z.infer<typeof curveAllGaugesSchema>;
-
 export type TCurveGaugeFromYearn = z.infer<typeof curveGaugeFromYearnSchema>;
-
 export type TCurveGaugesFromYearn = z.infer<typeof curveGaugesFromYearnSchema>;

@@ -83,19 +83,19 @@ function GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauge, cate
 	const [txStatusClaim, set_txStatusClaim] = useState(defaultTxStatus);
 
 	const currentRewardsForCurrentGauge = useMemo((): TDict<bigint> => {
-		return currentRewards?.[toAddress(currentGauge.gauge)] || {};
+		return currentRewards?.[currentGauge.gauge] || {};
 	}, [currentGauge.gauge, currentRewards, category]);
 
 	const nextRewardsForCurrentGauge = useMemo((): TDict<bigint> => {
-		return nextRewards?.[toAddress(currentGauge.gauge)] || {};
+		return nextRewards?.[currentGauge.gauge] || {};
 	}, [currentGauge.gauge, nextRewards, category]);
 
 	const claimableForCurrentGauge = useMemo((): TDict<bigint> => {
-		return claimable?.[toAddress(currentGauge.gauge)] || {};
+		return claimable?.[currentGauge.gauge] || {};
 	}, [currentGauge.gauge, claimable, category]);
 
 	const dryRunRewardsForCurrentGauge = useMemo((): TDict<bigint> => {
-		return dryRunClaimRewards?.[toAddress(currentGauge.gauge)] || {};
+		return dryRunClaimRewards?.[currentGauge.gauge] || {};
 	}, [currentGauge.gauge, dryRunClaimRewards, category]);
 
 	const claimableForCurrentGaugeMap = Object.entries(claimableForCurrentGauge || {}) || [];
@@ -110,7 +110,7 @@ function GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauge, cate
 		const result = await claimRewardV3({
 			connector: provider,
 			contractAddress: CURVE_BRIBE_V3_ADDRESS,
-			gaugeAddress: toAddress(currentGauge.gauge),
+			gaugeAddress: currentGauge.gauge,
 			tokenAddress: token,
 			statusHandler: set_txStatusClaim
 		});
@@ -179,7 +179,7 @@ function GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauge, cate
 							height={40}
 							quality={90}
 							loading={'eager'}
-							src={`${process.env.BASE_YEARN_ASSETS_URI}1/${toAddress(currentGauge.swap_token)}/logo-128.png`} />
+							src={`${process.env.BASE_YEARN_ASSETS_URI}1/${currentGauge.swap_token}/logo-128.png`} />
 					</div>
 					<p>{currentGauge.name}</p>
 				</div>

@@ -1,5 +1,5 @@
 import React, {useMemo} from 'react';
-import {toAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
+import {truncateHex} from '@yearn-finance/web-lib/utils/address';
 import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatUSD} from '@yearn-finance/web-lib/utils/format.number';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
@@ -45,12 +45,12 @@ function RewardFeedTableRow({currentRewardAdded}: {currentRewardAdded: TYDaemonG
 	const gaugesObject = useMemo((): {[key: string]: TCurveGauge} => {
 		const _gaugesObject: {[key: string]: TCurveGauge} = {};
 		for (const gauge of gauges) {
-			_gaugesObject[toAddress(gauge.gauge)] = gauge;
+			_gaugesObject[gauge.gauge] = gauge;
 		}
 		return _gaugesObject;
 	}, [gauges]);
 
-	const gaugeItem = gaugesObject[toAddress(currentRewardAdded.gauge)];
+	const gaugeItem = gaugesObject[currentRewardAdded.gauge];
 
 	if (!gaugeItem) {
 		return null;
@@ -67,7 +67,7 @@ function RewardFeedTableRow({currentRewardAdded}: {currentRewardAdded: TYDaemonG
 							width={40}
 							height={40}
 							quality={90}
-							src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${toAddress(gaugeItem?.swap_token)}/logo-128.png`}
+							src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${gaugeItem?.swap_token}/logo-128.png`}
 							loading={'eager'} />
 					</div>
 				</div>
@@ -97,7 +97,7 @@ function RewardFeedTableRow({currentRewardAdded}: {currentRewardAdded: TYDaemonG
 				<div className={'flex flex-row pt-6'}>
 					<label className={'block text-sm leading-6 text-neutral-400 md:hidden'}>{'Current Rewards per veCRV'}</label>
 					<RewardFeedRowItemWithExtraData
-						address={toAddress(currentRewardAdded.rewardToken)}
+						address={currentRewardAdded.rewardToken}
 						value={toBigInt(currentRewardAdded.amount)} />
 
 				</div>

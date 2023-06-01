@@ -45,11 +45,11 @@ function GaugeListRow({currentGauge}: {currentGauge: TCurveGauge}): ReactElement
 	const [hasModal, set_hasModal] = useState(false);
 
 	const currentRewardsForCurrentGauge = useMemo((): TDict<bigint> => {
-		return currentRewards?.[toAddress(currentGauge.gauge)] || {};
+		return currentRewards?.[currentGauge.gauge] || {};
 	}, [currentGauge.gauge, currentRewards]);
 
 	const nextRewardsForCurrentGauge = useMemo((): TDict<bigint> => {
-		return nextRewards?.[toAddress(currentGauge.gauge)] || {};
+		return nextRewards?.[currentGauge.gauge] || {};
 	}, [currentGauge.gauge, nextRewards]);
 
 	const gaugeRelativeWeight = useMemo((): number => {
@@ -83,7 +83,7 @@ function GaugeListRow({currentGauge}: {currentGauge: TCurveGauge}): ReactElement
 							height={40}
 							quality={90}
 							loading={'eager'}
-							src={`${process.env.BASE_YEARN_ASSETS_URI}1/${toAddress(currentGauge.swap_token)}/logo-128.png`} />
+							src={`${process.env.BASE_YEARN_ASSETS_URI}1/${currentGauge.swap_token}/logo-128.png`} />
 					</div>
 					<p>{currentGauge.name}</p>
 				</div>
