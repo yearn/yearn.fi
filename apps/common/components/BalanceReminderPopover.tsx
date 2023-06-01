@@ -41,9 +41,9 @@ function	TokenItem({element}: {element: TBalanceReminderElement}): ReactElement 
 				type: 'ERC20',
 				options: {
 					address: toWagmiAddress(address),
-					decimals: decimals,
-					symbol: symbol,
-					image: image
+					decimals,
+					symbol,
+					image
 				}
 			});
 		} catch (error) {
