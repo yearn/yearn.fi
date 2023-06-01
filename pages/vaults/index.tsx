@@ -233,7 +233,7 @@ function Index(): ReactElement {
 			<HeaderUserPosition />
 
 			<div className={'relative col-span-12 flex w-full flex-col bg-neutral-100'}>
-				<div className={'absolute top-8 right-8'}>
+				<div className={'absolute right-8 top-8'}>
 					<VaultListOptions />
 				</div>
 				<ListHero
@@ -250,7 +250,7 @@ function Index(): ReactElement {
 								node: (
 									<Fragment>
 										{'Holdings'}
-										<span className={`absolute -top-1 -right-1 flex h-2 w-2 ${category === 'Holdings' || (migratableVaults?.length + retiredVaults?.length) === 0 ? 'opacity-0' : 'opacity-100'}`}>
+										<span className={`absolute -right-1 -top-1 flex h-2 w-2 ${category === 'Holdings' || (migratableVaults?.length + retiredVaults?.length) === 0 ? 'opacity-0' : 'opacity-100'}`}>
 											<span className={'absolute inline-flex h-full w-full animate-ping rounded-full bg-pink-600 opacity-75'}></span>
 											<span className={'relative inline-flex h-2 w-2 rounded-full bg-pink-500'}></span>
 										</span>

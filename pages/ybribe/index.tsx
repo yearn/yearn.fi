@@ -129,7 +129,7 @@ function GaugeList(): ReactElement {
 	}, [set_sort]);
 
 	return (
-		<section className={'mt-4 mb-20 grid w-full grid-cols-12 pb-10 md:mb-40 md:mt-20'}>
+		<section className={'mb-20 mt-4 grid w-full grid-cols-12 pb-10 md:mb-40 md:mt-20'}>
 			<div className={'col-span-12 flex w-full flex-col bg-neutral-100'}>
 				<ListHero
 					headLabel={'Claim Bribe'}
@@ -176,7 +176,7 @@ function GaugeList(): ReactElement {
 function Index(): ReactElement {
 	return (
 		<>
-			<div className={'mt-8 mb-10 w-full max-w-6xl text-center'}>
+			<div className={'mb-10 mt-8 w-full max-w-6xl text-center'}>
 				<Balancer>
 					<b className={'text-center text-lg md:text-2xl'}>{'Get more for your votes.'}</b>
 					<p className={'mt-8 whitespace-pre-line text-center text-base text-neutral-600'}>

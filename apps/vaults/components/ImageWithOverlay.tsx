@@ -36,7 +36,7 @@ const ImageWithOverlay: React.FC<TImageWithOverlayProps> = ({
 			/>
 			<div className={'absolute inset-0 flex flex-col items-center justify-center'}>
 				<IconCross
-					className={'absolute top-1 right-1 cursor-pointer text-white md:top-4 md:right-3'}
+					className={'absolute right-1 top-1 cursor-pointer text-white md:right-3 md:top-4'}
 					onClick={onCloseClick} />
 				<h2 className={'text-xl font-bold text-white md:mb-5 md:text-6xl'}>{overlayText}</h2>
 				<a href={href}>

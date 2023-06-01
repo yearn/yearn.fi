@@ -200,7 +200,7 @@ function TextAnimation(): ReactElement {
 function Index(): ReactElement {
 	return (
 		<>
-			<div className={'mx-auto mt-6 mb-10 flex flex-col justify-center md:mt-20 md:mb-14'}>
+			<div className={'mx-auto mb-10 mt-6 flex flex-col justify-center md:mb-14 md:mt-20'}>
 				<div className={'relative h-12 w-[300px] self-center md:h-[104px] md:w-[600px]'}>
 					<TextAnimation />
 				</div>

@@ -25,11 +25,11 @@ export const useAllowances = (allowanceRequests: TAllowanceRequest[]): [TDict<bi
 		const calls = [];
 		for (const req of allowanceRequests) {
 			const baseContract = {
-				address: req.token,
+				address: toAddress(req.token),
 				abi: erc20ABI,
 				chainId: chainID
 			} as const;
-			calls.push({...baseContract, functionName: 'allowance', args: [userAddress, req.spender]});
+			calls.push({...baseContract, functionName: 'allowance', args: [userAddress, toAddress(req.spender)]});
 		}
 		const results = await multicall({contracts: calls, chainId: chainID});
 		const allowancesMap: TDict<bigint> = {};
