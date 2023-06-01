@@ -14,7 +14,6 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
-import useWhyDidYouUpdate from '@common/hooks/useWhyDidYouUpdate';
 import {hash} from '@common/utils';
 
 import type {TNormalizedBN} from '@common/types/types';
@@ -201,9 +200,6 @@ function WithSolverContextApp({children}: { children: React.ReactElement }): Rea
 		onExecuteDeposit: currentSolverState.onExecuteDeposit,
 		onExecuteWithdraw: currentSolverState.onExecuteWithdraw
 	}), [currentSolver, currentSolverState, isLoading]);
-
-	useWhyDidYouUpdate('WithSolverContextApp', contextValue);
-
 
 	return (
 		<WithSolverContext.Provider value={contextValue}>
