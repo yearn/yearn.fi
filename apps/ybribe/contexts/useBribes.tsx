@@ -28,18 +28,10 @@ export type	TBribesContext = {
 	refresh: VoidPromiseFunction
 }
 const defaultProps: TBribesContext = {
-	currentRewards: {
-		v3: {}
-	},
-	nextRewards: {
-		v3: {}
-	},
-	claimable: {
-		v3: {}
-	},
-	dryRunClaimRewards: {
-		v3: {}
-	},
+	currentRewards: {},
+	nextRewards: {},
+	claimable: {},
+	dryRunClaimRewards: {},
 	currentPeriod: 0,
 	nextPeriod: 0,
 	isLoading: true,
@@ -51,10 +43,10 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 	const {gauges} = useCurve();
 	const {address} = useWeb3();
 	const {safeChainID} = useChainID();
-	const [currentRewards, set_currentRewards] = useState<TCurveGaugeVersionRewards>({v3: {}});
-	const [nextRewards, set_nextRewards] = useState<TCurveGaugeVersionRewards>({v3: {}});
-	const [claimable, set_claimable] = useState<TCurveGaugeVersionRewards>({v3: {}});
-	const [dryRunClaimRewards, set_dryRunClaimRewards] = useState<TCurveGaugeVersionRewards>({v3: {}});
+	const [currentRewards, set_currentRewards] = useState<TCurveGaugeVersionRewards>({});
+	const [nextRewards, set_nextRewards] = useState<TCurveGaugeVersionRewards>({});
+	const [claimable, set_claimable] = useState<TCurveGaugeVersionRewards>({});
+	const [dryRunClaimRewards, set_dryRunClaimRewards] = useState<TCurveGaugeVersionRewards>({});
 	const [isLoading, set_isLoading] = useState<boolean>(true);
 	const [currentPeriod, set_currentPeriod] = useState<number>(getLastThursday());
 	const [nextPeriod, set_nextPeriod] = useState<number>(getNextThursday());
@@ -206,7 +198,6 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 	** 	for each gauge/token to the state to be used by the UI.
 	***************************************************************************/
 	const assignBribes = useCallback(async (
-		version: string,
 		rewardsList: string[],
 		multicallResult: bigint[]
 	): Promise<void> => {
@@ -250,9 +241,9 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 				}
 			}
 		}
-		set_currentRewards((c: TCurveGaugeVersionRewards): TCurveGaugeVersionRewards => ({...c, [version]: _currentRewards}));
-		set_claimable((c: TCurveGaugeVersionRewards): TCurveGaugeVersionRewards => ({...c, [version]: _claimable}));
-		set_dryRunClaimRewards((c: TCurveGaugeVersionRewards): TCurveGaugeVersionRewards => ({...c, [version]: _dryRunClaimRewards}));
+		set_currentRewards(_currentRewards);
+		set_claimable(_claimable);
+		set_dryRunClaimRewards(_dryRunClaimRewards);
 		set_isLoading(false);
 	}, [address, bribeV3BaseContract, currentPeriod]);
 
@@ -260,7 +251,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 	**	assignNextRewards will save the next period rewards values for each
 	**	gauge/token to the state to be used by the UI.
 	***************************************************************************/
-	const assignNextRewards = useCallback(async (version: string, rewardsList: string[], multicallResult: bigint[]): Promise<void> => {
+	const assignNextRewards = useCallback(async (rewardsList: string[], multicallResult: bigint[]): Promise<void> => {
 		if (!multicallResult || multicallResult.length === 0 || rewardsList.length === 0) {
 			return;
 		}
@@ -277,7 +268,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 				_nextRewards[toAddress(gauge)][toAddress(token)] = pendingForNextPeriod;
 			}
 		}
-		set_nextRewards((c: TCurveGaugeVersionRewards): TCurveGaugeVersionRewards => ({...c, [version]: _nextRewards}));
+		set_nextRewards(_nextRewards);
 	}, []);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -293,8 +284,8 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 		const {rewardsList: rewardsListV3, multicallResult: multicallResultV3} = rewardsPerUserV3;
 		const {rewardsList: nextRewardsListV3, multicallResult: nextMulticallResultV3} = nextPeriodRewardsV3;
 		performBatchedUpdates((): void => {
-			assignBribes('v3', rewardsListV3, multicallResultV3);
-			assignNextRewards('v3', nextRewardsListV3, nextMulticallResultV3);
+			assignBribes(rewardsListV3, multicallResultV3);
+			assignNextRewards(nextRewardsListV3, nextMulticallResultV3);
 		});
 	}, [getRewardsPerGauges, getRewardsPerUser, getNextPeriodRewards, assignBribes, assignNextRewards]);
 	useEffect((): void => {

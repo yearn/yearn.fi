@@ -83,19 +83,19 @@ function GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauge, cate
 	const [txStatusClaim, set_txStatusClaim] = useState(defaultTxStatus);
 
 	const currentRewardsForCurrentGauge = useMemo((): TDict<bigint> => {
-		return currentRewards?.v3?.[toAddress(currentGauge.gauge)] || {};
+		return currentRewards?.[toAddress(currentGauge.gauge)] || {};
 	}, [currentGauge.gauge, currentRewards, category]);
 
 	const nextRewardsForCurrentGauge = useMemo((): TDict<bigint> => {
-		return nextRewards?.v3?.[toAddress(currentGauge.gauge)] || {};
+		return nextRewards?.[toAddress(currentGauge.gauge)] || {};
 	}, [currentGauge.gauge, nextRewards, category]);
 
 	const claimableForCurrentGauge = useMemo((): TDict<bigint> => {
-		return claimable?.v3?.[toAddress(currentGauge.gauge)] || {};
+		return claimable?.[toAddress(currentGauge.gauge)] || {};
 	}, [currentGauge.gauge, claimable, category]);
 
 	const dryRunRewardsForCurrentGauge = useMemo((): TDict<bigint> => {
-		return dryRunClaimRewards?.v3?.[toAddress(currentGauge.gauge)] || {};
+		return dryRunClaimRewards?.[toAddress(currentGauge.gauge)] || {};
 	}, [currentGauge.gauge, dryRunClaimRewards, category]);
 
 	const claimableForCurrentGaugeMap = Object.entries(claimableForCurrentGauge || {}) || [];

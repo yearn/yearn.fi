@@ -45,13 +45,13 @@ function GaugeList(): ReactElement {
 	const filteredGauges = useMemo((): TCurveGauge[] => {
 		if (category === 'claimable') {
 			return gauges.filter((gauge): boolean => {
-				const currentClaimableMapV3 = Object.values(claimable?.v3?.[toAddress(gauge.gauge)] || {});
+				const currentClaimableMapV3 = Object.values(claimable?.[toAddress(gauge.gauge)] || {});
 				return currentClaimableMapV3.some((value: bigint): boolean => value > 0);
 			});
 		}
 		return gauges.filter((gauge): boolean => {
-			const hasCurrentRewardsV3 = currentRewards?.v3?.[toAddress(gauge.gauge)] !== undefined;
-			const hasNextRewardsV3 = nextRewards?.v3?.[toAddress(gauge.gauge)] !== undefined;
+			const hasCurrentRewardsV3 = currentRewards?.[toAddress(gauge.gauge)] !== undefined;
+			const hasNextRewardsV3 = nextRewards?.[toAddress(gauge.gauge)] !== undefined;
 			return hasCurrentRewardsV3 || hasNextRewardsV3;
 		});
 	}, [category, gauges, currentRewards, nextRewards, claimable]);
@@ -74,7 +74,7 @@ function GaugeList(): ReactElement {
 		}
 		if (sort.sortBy === 'rewards') {
 			return searchedGauges.sort((a, b): number => {
-				const allARewards = Object.entries(currentRewards?.v3?.[toAddress(a.gauge)] || {}).reduce((acc, [address, value]): number => {
+				const allARewards = Object.entries(currentRewards?.[toAddress(a.gauge)] || {}).reduce((acc, [address, value]): number => {
 					if (!isTAddress(address)) {
 						return 0;
 					}
@@ -82,7 +82,7 @@ function GaugeList(): ReactElement {
 					return acc + aBribeValue;
 				}, 0);
 
-				const allBRewards = Object.entries(currentRewards?.v3?.[toAddress(b.gauge)] || {}).reduce((acc, [address, value]): number => {
+				const allBRewards = Object.entries(currentRewards?.[toAddress(b.gauge)] || {}).reduce((acc, [address, value]): number => {
 					if (!isTAddress(address)) {
 						return 0;
 					}
@@ -98,7 +98,7 @@ function GaugeList(): ReactElement {
 		}
 		if (sort.sortBy === 'pendingRewards') {
 			return searchedGauges.sort((a, b): number => {
-				const allARewards = Object.entries(nextRewards?.v3?.[toAddress(a.gauge)] || {}).reduce((acc, [address, value]): number => {
+				const allARewards = Object.entries(nextRewards?.[toAddress(a.gauge)] || {}).reduce((acc, [address, value]): number => {
 					if (!isTAddress(address)) {
 						return 0;
 					}
@@ -106,7 +106,7 @@ function GaugeList(): ReactElement {
 					return acc + aBribeValue;
 				}, 0);
 
-				const allBRewards = Object.entries(nextRewards?.v3?.[toAddress(b.gauge)] || {}).reduce((acc, [address, value]): number => {
+				const allBRewards = Object.entries(nextRewards?.[toAddress(b.gauge)] || {}).reduce((acc, [address, value]): number => {
 					if (!isTAddress(address)) {
 						return 0;
 					}
@@ -122,7 +122,7 @@ function GaugeList(): ReactElement {
 		}
 
 		return searchedGauges;
-	}, [sort.sortBy, sort.sortDirection, searchedGauges, currentRewards?.v3, getRewardValue, nextRewards?.v3]);
+	}, [sort.sortBy, sort.sortDirection, searchedGauges, currentRewards, getRewardValue, nextRewards]);
 
 	const onSort = useCallback((newSortBy: string, newSortDirection: string): void => {
 		set_sort({sortBy: newSortBy, sortDirection: newSortDirection as TSortDirection});

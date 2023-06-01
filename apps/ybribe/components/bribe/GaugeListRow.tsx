@@ -45,11 +45,11 @@ function GaugeListRow({currentGauge}: {currentGauge: TCurveGauge}): ReactElement
 	const [hasModal, set_hasModal] = useState(false);
 
 	const currentRewardsForCurrentGauge = useMemo((): TDict<bigint> => {
-		return currentRewards?.v3?.[toAddress(currentGauge.gauge)] || {};
+		return currentRewards?.[toAddress(currentGauge.gauge)] || {};
 	}, [currentGauge.gauge, currentRewards]);
 
 	const nextRewardsForCurrentGauge = useMemo((): TDict<bigint> => {
-		return nextRewards?.v3?.[toAddress(currentGauge.gauge)] || {};
+		return nextRewards?.[toAddress(currentGauge.gauge)] || {};
 	}, [currentGauge.gauge, nextRewards]);
 
 	const gaugeRelativeWeight = useMemo((): number => {
