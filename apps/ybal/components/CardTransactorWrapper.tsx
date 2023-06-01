@@ -74,8 +74,8 @@ function CardTransactorContextApp({
 	const [amount, set_amount] = useState<TNormalizedBN>(toNormalizedBN(0));
 	const [hasTypedSomething, set_hasTypedSomething] = useState(false);
 	const addToken = useAddToken();
-	const 	{dismissAllToasts} = useDismissToasts();
-	const 	{toast} = yToast();
+	const {dismissAllToasts} = useDismissToasts();
+	const {toast} = yToast();
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** useEffect to set the amount to the max amount of the selected token once

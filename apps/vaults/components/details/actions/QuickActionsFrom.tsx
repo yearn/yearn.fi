@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useCallback} from 'react';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -20,7 +20,6 @@ function VaultDetailsQuickActionsFrom(): ReactElement {
 		possibleOptionsFrom, actionParams, onUpdateSelectedOptionFrom, onChangeAmount,
 		maxDepositPossible, isDepositing
 	} = useActionFlow();
-
 	const selectedFromBalance = useBalance(toAddress(actionParams?.selectedOptionFrom?.value));
 	const selectedOptionFromPricePerToken = useTokenPrice(toAddress(actionParams?.selectedOptionFrom?.value));
 	const hasMultipleInputsToChooseFrom = isActive && isDepositing && possibleOptionsFrom.length > 1;
@@ -37,8 +36,19 @@ function VaultDetailsQuickActionsFrom(): ReactElement {
 		);
 	}
 
+	const onChangeInput = useCallback((e: ChangeEvent<HTMLInputElement>): void => {
+		onChangeAmount(
+			handleInputChangeEventValue(
+				e.target.value,
+				balances?.[toAddress(actionParams?.selectedOptionFrom?.value)]?.decimals || 18
+			)
+		);
+	}, [actionParams?.selectedOptionFrom?.value, balances, onChangeAmount]);
+
 	return (
-		<section aria-label={'FROM'} className={'flex w-full flex-col space-x-0 md:flex-row md:space-x-4'}>
+		<section
+			id={isActive ? 'active' : 'not-active'}
+			className={'flex w-full flex-col space-x-0 md:flex-row md:space-x-4'}>
 			<div className={'relative z-10 w-full space-y-2'}>
 				<div className={'flex flex-row items-baseline justify-between'}>
 					<label className={'text-base text-neutral-600'}>
@@ -81,12 +91,7 @@ function VaultDetailsQuickActionsFrom(): ReactElement {
 							type={'text'}
 							disabled={!isActive}
 							value={actionParams?.amount.normalized}
-							onChange={(e: ChangeEvent<HTMLInputElement>): void => onChangeAmount(
-								handleInputChangeEventValue(
-									e.target.value,
-									balances?.[toAddress(actionParams?.selectedOptionFrom?.value)]?.decimals || 18
-								)
-							)} />
+							onChange={onChangeInput} />
 						<button
 							onClick={(): void => onChangeAmount(maxDepositPossible)}
 							className={'ml-2 cursor-pointer bg-neutral-900 px-2 py-1 text-xs text-neutral-0 transition-colors hover:bg-neutral-700'}>

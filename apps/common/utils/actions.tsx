@@ -2,7 +2,7 @@ import {captureException} from '@sentry/nextjs';
 import {getEthZapperContract} from '@vaults/utils';
 import VAULT_MIGRATOR_ABI from '@vaults/utils/abi/vaultMigrator.abi';
 import {erc20ABI, prepareWriteContract, readContract, waitForTransaction, writeContract} from '@wagmi/core';
-import {yToast} from '@yearn-finance/web-lib/components/yToast';
+import {toast} from '@yearn-finance/web-lib/components/yToast';
 import PARTNER_VAULT_ABI from '@yearn-finance/web-lib/utils/abi/partner.vault.abi';
 import VAULT_ABI from '@yearn-finance/web-lib/utils/abi/vault.abi';
 import ZAP_ETH_TO_YVETH_ABI from '@yearn-finance/web-lib/utils/abi/zapEthToYvEth.abi';
@@ -13,11 +13,14 @@ import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {assert} from '@common/utils/assert';
 import {assertAddress, toWagmiProvider} from '@common/utils/toWagmiProvider';
 
-import type {BaseError, Hex} from 'viem';
+import type {BaseError, ContractFunctionExecutionError, Hex} from 'viem';
 import type {Connector} from 'wagmi';
 import type {TAddress, TAddressWagmi} from '@yearn-finance/web-lib/types';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TWriteTransaction} from '@common/utils/toWagmiProvider';
+
+//Because USDT do not return a boolean on approve, we need to use this ABI
+const ALTERNATE_ERC20_APPROVE_ABI = [{'constant': false, 'inputs': [{'name': '_spender', 'type': 'address'}, {'name': '_value', 'type': 'uint256'}], 'name': 'approve', 'outputs': [], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function'}];
 
 /* 🔵 - Yearn Finance **********************************************************
 ** isApprovedERC20 is a _VIEW_ function that checks if a token is approved for
@@ -77,21 +80,43 @@ export async function approveERC20(props: TApproveERC20): Promise<TTxResponse> {
 	props.statusHandler?.({...defaultTxStatus, pending: true});
 	try {
 		const wagmiProvider = await toWagmiProvider(props.connector);
-		const config = await prepareWriteContract({
-			...wagmiProvider,
-			address: toWagmiAddress(props.contractAddress),
-			abi: erc20ABI,
-			functionName: 'approve',
-			args: [toWagmiAddress(props.spenderAddress), props.amount]
-		});
-		const {hash} = await writeContract(config.request);
-		const receipt = await waitForTransaction({chainId: wagmiProvider.chainId, hash});
-		if (receipt.status === 'success') {
-			props.statusHandler?.({...defaultTxStatus, success: true});
-		} else if (receipt.status === 'reverted') {
-			props.statusHandler?.({...defaultTxStatus, error: true});
+		try {
+			const config = await prepareWriteContract({
+				...wagmiProvider,
+				address: toWagmiAddress(props.contractAddress),
+				abi: erc20ABI,
+				functionName: 'approve',
+				args: [toWagmiAddress(props.spenderAddress), props.amount]
+			});
+			const {hash} = await writeContract(config.request);
+			const receipt = await waitForTransaction({chainId: wagmiProvider.chainId, hash});
+			if (receipt.status === 'success') {
+				props.statusHandler?.({...defaultTxStatus, success: true});
+			} else if (receipt.status === 'reverted') {
+				props.statusHandler?.({...defaultTxStatus, error: true});
+			}
+			return ({isSuccessful: receipt.status === 'success', receipt});
+		} catch (error) {
+			const err = error as ContractFunctionExecutionError;
+			if (err.name === 'ContractFunctionExecutionError') {
+				const alternateConfig = await prepareWriteContract({
+					...wagmiProvider,
+					address: toWagmiAddress(props.contractAddress),
+					abi: ALTERNATE_ERC20_APPROVE_ABI,
+					functionName: 'approve',
+					args: [toWagmiAddress(props.spenderAddress), props.amount]
+				});
+				const {hash} = await writeContract(alternateConfig.request);
+				const receipt = await waitForTransaction({chainId: wagmiProvider.chainId, hash});
+				if (receipt.status === 'success') {
+					props.statusHandler?.({...defaultTxStatus, success: true});
+				} else if (receipt.status === 'reverted') {
+					props.statusHandler?.({...defaultTxStatus, error: true});
+				}
+				return ({isSuccessful: receipt.status === 'success', receipt});
+			}
+			return ({isSuccessful: false, error: err || ''});
 		}
-		return ({isSuccessful: receipt.status === 'success', receipt});
 	} catch (error) {
 		console.error(error);
 		const errorAsBaseError = error as BaseError;
@@ -391,7 +416,6 @@ export async function migrateShares(props: TMigrateShares): Promise<TTxResponse>
 	assertAddress(props.fromVault);
 	assertAddress(props.toVault);
 
-	const {toast} = yToast();
 	const wagmiProvider = await toWagmiProvider(props.connector);
 	try {
 		const config = await prepareWriteContract({

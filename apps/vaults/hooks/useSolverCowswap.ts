@@ -1,98 +1,73 @@
 import {useCallback, useMemo, useRef} from 'react';
 import {ethers} from 'ethers';
 import axios from 'axios';
-import useSWRMutation from 'swr/mutation';
-import {domain, OrderKind, SigningScheme, signOrder} from '@gnosis.pm/gp-v2-contracts';
+import {OrderBookApi, OrderQuoteSide, OrderSigningUtils} from '@cowprotocol/cow-sdk';
 import {isSolverDisabled, Solver} from '@vaults/contexts/useSolver';
-import {yToast} from '@yearn-finance/web-lib/components/yToast';
+import {toast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {allowanceKey, isZeroAddress, toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, MAX_UINT_256, SOLVER_COW_VAULT_RELAYER_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
+import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
 import {approvedERC20Amount, approveERC20, isApprovedERC20} from '@common/utils/actions';
 import {assert} from '@common/utils/assert';
 
-import type {AxiosError} from 'axios';
-import type {BaseError} from 'viem';
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TTxResponse, TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TNormalizedBN} from '@common/types/types';
-import type {ApiError, Order, QuoteQuery, Timestamp} from '@gnosis.pm/gp-v2-contracts';
+import type {Order, OrderCreation, OrderQuoteResponse, SigningResult, SigningScheme, UnsignedOrder} from '@cowprotocol/cow-sdk';
 import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
-import type {TCowAPIResult, TCowResult} from '@vaults/types/solvers.cowswap';
 
-function useQuote(): [TCowResult, (request: TInitSolverArgs, shouldPreventErrorToast?: boolean) => Promise<TCowAPIResult | undefined>] {
-	const {toast} = yToast();
-	const {data, error, trigger, isMutating} = useSWRMutation(
-		'https://api.cow.fi/mainnet/api/v1/quote',
-		async (url: string, data: {arg: unknown}): Promise<TCowAPIResult> => {
-			const req = await axios.post(url, data.arg);
-			return req.data;
-		}
-	);
+const orderBookApi = new OrderBookApi({chainId: 1});
 
-	const getQuote = useCallback(async (
-		request: TInitSolverArgs,
-		shouldPreventErrorToast = false
-	): Promise<TCowAPIResult | undefined> => {
-		const YEARN_APP_DATA = '0x5d22bf49b708de1d2d9547a6cca9faccbdc2b162012e8573811c07103b163d4b';
-		const quote: QuoteQuery = ({
-			from: request.from, // receiver
-			sellToken: toAddress(request.inputToken.value), // token to spend
-			buyToken: toAddress(request.outputToken.value), // token to receive
-			receiver: request.from, // always the same as from
-			appData: YEARN_APP_DATA, // Always this
-			kind: OrderKind.SELL, // always sell
-			partiallyFillable: false, // always false
-			validTo: 0,
-			sellAmountBeforeFee: toBigInt(request?.inputAmount || 0).toString() // amount to sell, in wei
-		});
+async function getQuote(
+	request: TInitSolverArgs
+): Promise<{data: OrderQuoteResponse | undefined, error: Error | undefined}> {
+	const YEARN_APP_DATA = '0x5d22bf49b708de1d2d9547a6cca9faccbdc2b162012e8573811c07103b163d4b';
+	const quoteRequest = {
+		from: request.from, // receiver
+		sellToken: toAddress(request.inputToken.value), // token to spend
+		buyToken: toAddress(request.outputToken.value), // token to receive
+		receiver: request.from, // always the same as from
+		appData: YEARN_APP_DATA, // Always this
+		kind: OrderQuoteSide.kind.SELL, // always sell
+		partiallyFillable: false, // always false
+		validTo: 0,
+		sellAmountBeforeFee: toBigInt(request?.inputAmount || 0).toString() // amount to sell, in wei
+	};
 
-		const canExecuteFetch = (
-			!(isZeroAddress(quote.from) || isZeroAddress(quote.sellToken) || isZeroAddress(quote.buyToken))
-			&& toBigInt(request?.inputAmount) > 0n
-		);
-		if (canExecuteFetch) {
-			quote.validTo = Math.round((new Date().setMinutes(new Date().getMinutes() + 10) / 1000));
-			try {
-				const result = await trigger(quote, {revalidate: false});
-				return (result);
-			} catch (error) {
-				const _error = error as AxiosError<ApiError>;
-				console.error(error);
-				if (shouldPreventErrorToast) {
-					return undefined;
-				}
-				const message = `Zap not possible. Try again later or pick another token. ${_error?.response?.data?.description ? `(Reason: [${_error?.response?.data?.description}])` : ''}`;
-				toast({type: 'error', content: message});
-				return undefined;
-			}
-		}
-		return undefined;
-	}, [trigger]); // eslint-disable-line react-hooks/exhaustive-deps
+	if (isZeroAddress(quoteRequest.from)) {
+		return {data: undefined, error: new Error('Invalid from address')};
+	}
+	if (isZeroAddress(quoteRequest.sellToken)) {
+		return {data: undefined, error: new Error('Invalid sell token')};
+	}
+	if (isZeroAddress(quoteRequest.buyToken)) {
+		return {data: undefined, error: new Error('Invalid buy token')};
+	}
+	if (toBigInt(request?.inputAmount) <= 0n) {
+		return {data: undefined, error: new Error('Invalid sell amount')};
+	}
 
-	return [
-		useMemo((): TCowResult => ({
-			result: data,
-			isLoading: isMutating,
-			error
-		}), [data, error, isMutating]),
-		getQuote
-	];
+	quoteRequest.validTo = Math.round((new Date().setMinutes(new Date().getMinutes() + 10) / 1000));
+	try {
+		const result = await orderBookApi.getQuote(quoteRequest);
+		return {data: result, error: undefined};
+	} catch (error) {
+		return {data: undefined, error: error as Error};
+	}
 }
 
 export function useSolverCowswap(): TSolverContext {
 	const {zapSlippage} = useYearn();
-	const {address, provider} = useWeb3();
+	const {provider} = useWeb3();
 	const {safeChainID} = useChainID();
 	const maxIterations = 1000; // 1000 * up to 3 seconds = 3000 seconds = 50 minutes
 	const shouldUsePresign = false; //Debug only
-	const [, getQuote] = useQuote();
 	const request = useRef<TInitSolverArgs>();
-	const latestQuote = useRef<TCowAPIResult>();
+	const latestQuote = useRef<OrderQuoteResponse>();
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
 	const isDisabled = isSolverDisabled[Solver.COWSWAP] || safeChainID !== 1;
 
@@ -101,7 +76,7 @@ export function useSolverCowswap(): TSolverContext {
 	** fluctuations. The buyAmountWithSlippage is used to request this amount instead of the
 	** original buyAmount.
 	**********************************************************************************************/
-	const getBuyAmountWithSlippage = useCallback((currentQuote: TCowAPIResult, decimals: number): string => {
+	const getBuyAmountWithSlippage = useCallback((currentQuote: OrderQuoteResponse, decimals: number): string => {
 		if (!currentQuote) {
 			return '0';
 		}
@@ -157,17 +132,23 @@ export function useSolverCowswap(): TSolverContext {
 		** to get the current quote for the provided request.current.
 		******************************************************************************************/
 		request.current = _request;
-		const quote = await getQuote(_request, !shouldLogError);
-		if (!quote) {
+		const {data, error} = await getQuote(_request);
+		if (!data) {
+			type TCowRequestError = {body: {description: string}};
+			const err = error as unknown as TCowRequestError;
+			if (error && !shouldLogError) {
+				if (err?.body?.description) {
+					toast({type: 'error', content: err?.body?.description});
+				} else {
+					toast({type: 'error', content: 'Zap not possible. Try again later or pick another token.'});
+				}
+			}
 			return toNormalizedBN(0);
 		}
-		latestQuote.current = quote;
-		getBuyAmountWithSlippage(quote, request?.current?.outputToken?.decimals || 18);
-		return toNormalizedBN(
-			toBigInt(quote?.quote?.buyAmount?.toString()),
-			request?.current?.outputToken?.decimals || 18
-		);
-	}, [getBuyAmountWithSlippage, getQuote, isDisabled]);
+		latestQuote.current = data;
+		const buyAmountWithSlippage = getBuyAmountWithSlippage(data, _request?.outputToken?.decimals || 18);
+		return toNormalizedBN(buyAmountWithSlippage || 0, _request?.outputToken?.decimals || 18);
+	}, [getBuyAmountWithSlippage, isDisabled]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** signCowswapOrder is used to sign the order with the user's wallet. The signature is used
@@ -175,47 +156,26 @@ export function useSolverCowswap(): TSolverContext {
 	** If shouldUsePresign is set to true, the signature is not required and the approval is
 	** skipped. This should only be used for debugging purposes.
 	**********************************************************************************************/
-	const signCowswapOrder = useCallback(async (quote: Order): Promise<string> => {
+	const signCowswapOrder = useCallback(async (quote: Order): Promise<SigningResult> => {
 		if (shouldUsePresign) {
-			return toAddress(address || '');
+			await new Promise(async (resolve): Promise<NodeJS.Timeout> => setTimeout(resolve, 1000));
+			return ({signature: '0x', signingScheme: 'presign'} as any);
 		}
 
 		assert(provider, 'Provider is not set');
 
-		const signer = await provider.getWalletClient();
-		const rawSignature = await signOrder(
-			domain(1, '0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
-			quote,
-			//TODO: FIX HERE FOR RELEASE
-			//TODO: FIX HERE FOR RELEASE
-			//TODO: FIX HERE FOR RELEASE
-			//TODO: FIX HERE FOR RELEASE
-			//TODO: FIX HERE FOR RELEASE
-			//TODO: FIX HERE FOR RELEASE
-			//TODO: FIX HERE FOR RELEASE
-			signer as any, //TODO: <--- THIS WILL NOT WORK
-			//TODO: FIX HERE FOR RELEASE
-			//TODO: FIX HERE FOR RELEASE
-			//TODO: FIX HERE FOR RELEASE
-			//TODO: FIX HERE FOR RELEASE
-			//TODO: FIX HERE FOR RELEASE
-			//TODO: FIX HERE FOR RELEASE
-			//TODO: FIX HERE FOR RELEASE
-			SigningScheme.EIP712
-		);
-		return ethers.utils.joinSignature(rawSignature.data);
-	}, [provider, shouldUsePresign, address]);
+		const wagmiSigner = await provider.getWalletClient();
+		const wagmiProvider = await provider.getProvider();
+		const ethersProvider = new ethers.providers.Web3Provider(wagmiProvider);
+		const signer = ethersProvider.getSigner(toAddress(wagmiSigner.account.address));
 
-	/* 🔵 - Yearn Finance **************************************************************************
-	** refreshQuote can be called by the user to refresh the quote. The same parameters are used
-	** as in the initial request and it will fails if request is not set.
-	** init should be called first to initialize the request.current.
-	**********************************************************************************************/
-	const refreshQuote = useCallback(async (): Promise<void> => {
-		if (request.current) {
-			getQuote(request.current);
-		}
-	}, [request, getQuote]);
+		const rawSignature = await OrderSigningUtils.signOrder(
+			{...quote as UnsignedOrder},
+			safeChainID,
+			signer
+		);
+		return rawSignature;
+	}, [shouldUsePresign, provider, safeChainID]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** Cowswap orders have a validity period and the return value on submit is not the execution
@@ -223,7 +183,7 @@ export function useSolverCowswap(): TSolverContext {
 	** boolean value indicating whether the order was successful or not.
 	** It will timeout once the order is no longer valid or after 50 minutes (max should be 30mn)
 	**********************************************************************************************/
-	async function checkOrderStatus(orderUID: string, validTo: Timestamp): Promise<{isSuccessful: boolean, error?: Error}> {
+	async function checkOrderStatus(orderUID: string, validTo: number): Promise<{isSuccessful: boolean, error?: Error}> {
 		for (let i = 0; i < maxIterations; i++) {
 			const {data: order} = await axios.get(`https://api.cow.fi/mainnet/api/v1/orders/${orderUID}`);
 			if (order?.status === 'fulfilled') {
@@ -247,33 +207,39 @@ export function useSolverCowswap(): TSolverContext {
 	** not.
 	**********************************************************************************************/
 	const execute = useCallback(async (): Promise<TTxResponse> => {
-		if (!latestQuote?.current || !latestQuote?.current?.quote || !request.current || isDisabled) {
+		if (isDisabled) {
 			return ({isSuccessful: false});
 		}
+
+		assert(latestQuote?.current?.quote, 'No quote available');
+		assert(request?.current, 'No request available');
+
 		const {quote, from, id} = latestQuote.current;
-		try {
-			const buyAmountWithSlippage = getBuyAmountWithSlippage(latestQuote.current, request.current.outputToken.decimals);
-			const signature = await signCowswapOrder({...quote, buyAmount: buyAmountWithSlippage});
-			const {data: orderUID} = await axios.post('https://api.cow.fi/mainnet/api/v1/orders', {
-				...quote,
-				buyAmount: buyAmountWithSlippage,
-				from: from,
-				quoteId: id,
-				signature: signature,
-				signingScheme: shouldUsePresign ? 'presign' : 'eip712'
-			});
-			if (orderUID) {
-				const {isSuccessful, error} = await checkOrderStatus(orderUID, quote.validTo);
-				if (error) {
-					console.error(error);
-					return ({isSuccessful: false, error: error as BaseError || ''});
-				}
-				return {isSuccessful};
+		const buyAmountWithSlippage = getBuyAmountWithSlippage(
+			latestQuote.current,
+			request.current.outputToken.decimals
+		);
+		quote.buyAmount = buyAmountWithSlippage;
+		const {signature, signingScheme} = await signCowswapOrder(quote as Order);
+		const orderCreation: OrderCreation = {
+			...quote,
+			buyAmount: buyAmountWithSlippage,
+			from: from,
+			quoteId: id,
+			signature: signature,
+			signingScheme: (shouldUsePresign ? 'presign' : signingScheme) as string as SigningScheme
+		};
+
+		const orderUID = await orderBookApi.sendOrder(orderCreation);
+		if (orderUID) {
+			const {isSuccessful, error} = await checkOrderStatus(orderUID, quote.validTo);
+			if (error) {
+				console.error(error);
+				return ({isSuccessful: false, error: error as any || ''});
 			}
-		} catch (error) {
-			console.error(error);
-			return ({isSuccessful: false, error: error as BaseError || ''});
+			return {isSuccessful};
 		}
+
 		return ({isSuccessful: false});
 	}, [getBuyAmountWithSlippage, shouldUsePresign, signCowswapOrder, isDisabled]);
 
@@ -292,23 +258,6 @@ export function useSolverCowswap(): TSolverContext {
 			)
 		);
 	}, [latestQuote, isDisabled]);
-
-	/* 🔵 - Yearn Finance ******************************************************
-	** Retrieve the current outValue from the quote, which will be used to
-	** display the current value to the user.
-	**************************************************************************/
-	const onRetrieveExpectedOut = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN> => {
-		if (isDisabled || !_request.inputToken.solveVia?.includes(Solver.COWSWAP)) {
-			return (toNormalizedBN(0));
-		}
-		const quoteResult = await getQuote(_request, true);
-		return (
-			toNormalizedBN(
-				toBigInt(quoteResult?.quote?.buyAmount.toString()),
-				_request.outputToken.decimals || 18
-			)
-		);
-	}, [getQuote, isDisabled]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Retrieve the allowance for the token to be used by the solver. This will
@@ -352,7 +301,6 @@ export function useSolverCowswap(): TSolverContext {
 		if (isDisabled) {
 			return;
 		}
-		assert(latestQuote?.current?.quote, 'Quote is not defined');
 		assert(request.current, 'Request is not defined');
 		assert(request?.current?.inputToken?.solveVia?.includes(Solver.COWSWAP), 'Input token is not supported by Cowswap');
 
@@ -382,45 +330,38 @@ export function useSolverCowswap(): TSolverContext {
 	** Cowswap solver. The deposit will be executed by the Cowswap solver by
 	** simply swapping the input token for the output token.
 	**************************************************************************/
-	const onExecuteDeposit = useCallback(async (
+	const onExecute = useCallback(async (
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
 		assert(provider, 'Provider is not defined');
+		txStatusSetter({...defaultTxStatus, pending: true});
 
-		new Transaction(provider, execute, txStatusSetter)
-			.populate()
-			.onSuccess(onSuccess)
-			.perform();
-	}, [execute, provider]);
+		try {
+			const result = await execute();
+			if (result.isSuccessful) {
+				txStatusSetter({...defaultTxStatus, success: true});
+				onSuccess();
+			} else {
+				txStatusSetter({...defaultTxStatus, error: true, errorMessage: result.error?.message || 'Transaction failed'});
+			}
+		} catch (error) {
+			txStatusSetter({...defaultTxStatus, error: true, errorMessage: 'Transaction rejected'});
+		} finally {
+			setTimeout((): void => {
+				txStatusSetter({...defaultTxStatus});
+			}, 3000);
+		}
 
-	/* 🔵 - Yearn Finance ******************************************************
-	** This execute function is not an actual withdraw, but a swap using the
-	** Cowswap solver. The withdraw will be executed by the Cowswap solver by
-	** simply swapping the input token for the output token.
-	**************************************************************************/
-	const onExecuteWithdraw = useCallback(async (
-		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-		onSuccess: () => Promise<void>
-	): Promise<void> => {
-		assert(provider, 'Provider is not defined');
-
-		new Transaction(provider, execute, txStatusSetter)
-			.populate()
-			.onSuccess(onSuccess)
-			.perform();
 	}, [execute, provider]);
 
 	return useMemo((): TSolverContext => ({
 		type: Solver.COWSWAP,
 		quote: expectedOut,
-		getQuote: getQuote,
-		refreshQuote,
 		init,
-		onRetrieveExpectedOut,
 		onRetrieveAllowance,
 		onApprove,
-		onExecuteDeposit,
-		onExecuteWithdraw
-	}), [expectedOut, getQuote, refreshQuote, init, onApprove, onExecuteDeposit, onExecuteWithdraw, onRetrieveAllowance, onRetrieveExpectedOut]);
+		onExecuteDeposit: onExecute,
+		onExecuteWithdraw: onExecute
+	}), [expectedOut, init, onApprove, onExecute, onRetrieveAllowance]);
 }
