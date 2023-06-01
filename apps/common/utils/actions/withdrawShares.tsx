@@ -1,15 +1,15 @@
 import {ethers} from 'ethers';
+import VAULT_ABI from '@yearn-finance/web-lib/utils/abi/vault.abi';
 import {handleTx} from '@yearn-finance/web-lib/utils/web3/transaction';
 
-import type {BigNumber} from 'ethers';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 
-export async function	deposit(
+export async function	withdrawShares(
 	provider: ethers.providers.JsonRpcProvider,
 	vaultAddress: string,
-	amount: BigNumber
+	maxShares: ethers.BigNumber
 ): Promise<TTxResponse> {
 	const signer = provider.getSigner();
-	const contract = new ethers.Contract(vaultAddress, ['function deposit(uint256) external returns (uint256)'], signer);
-	return await handleTx(contract.deposit(amount));
+	const contract = new ethers.Contract(vaultAddress, VAULT_ABI, signer);
+	return await handleTx(contract.withdraw(maxShares));
 }

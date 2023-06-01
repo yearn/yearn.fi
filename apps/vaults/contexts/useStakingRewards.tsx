@@ -1,16 +1,16 @@
 import React, {createContext, memo, useCallback, useContext, useMemo} from 'react';
 import {useRouter} from 'next/router';
+import {Contract} from 'ethcall';
 import useSWR from 'swr';
 import STAKING_REWARDS_ABI from '@vaults/utils/abi/stakingRewards.abi';
 import STAKING_REWARDS_REGISTRY_ABI from '@vaults/utils/abi/stakingRewardsRegistry.abi';
-import {multicall, readContract} from '@wagmi/core';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
 import {STAKING_REWARDS_REGISTRY_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {decodeAsBigInt, decodeAsString} from '@yearn-finance/web-lib/utils/decoder';
+import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import {keyBy} from '@common/utils';
 
+import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
 import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 
@@ -18,13 +18,15 @@ export type TStakingRewards = {
 	address: TAddress,
 	stakingToken: TAddress,
 	rewardsToken: TAddress,
-	totalStaked: bigint,
+	totalStaked: BigNumber,
 }
+
 export type TStakePosition = {
 	address: TAddress,
-	stake: bigint,
-	reward: bigint,
+	stake: BigNumber,
+	reward: BigNumber,
 }
+
 export type	TStakingRewardsContext = {
 	stakingRewardsByVault: TDict<TAddress | undefined>,
 	stakingRewardsMap: TDict<TStakingRewards | undefined>,
@@ -32,6 +34,7 @@ export type	TStakingRewardsContext = {
 	isLoading: boolean,
 	refresh: () => void,
 }
+
 const defaultProps: TStakingRewardsContext = {
 	stakingRewardsByVault: {},
 	stakingRewardsMap: {},
@@ -50,105 +53,69 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 	const isChainSupported = [10].includes(chainID);
 
 	const stakingRewardsFetcher = useCallback(async (): Promise<TStakingRewards[]> => {
-		/* 🔵 - Yearn Finance **********************************************************************
-		** Base wagmi contract struct ready to use in the viem functions call
-		******************************************************************************************/
-		const baseContract = {
-			address: toWagmiAddress(STAKING_REWARDS_REGISTRY_ADDRESS),
-			abi: STAKING_REWARDS_REGISTRY_ABI,
-			chainId: chainID
-		} as const;
+		const currentProvider = provider || getProvider(chainID);
+		const ethcallProvider = await newEthCallProvider(currentProvider);
 
-		/* 🔵 - Yearn Finance **********************************************************************
-		** Retrieve the number of tokens in the registry, and for each token retrieve it's address
-		** so we can proceed
-		******************************************************************************************/
-		const numTokens = await readContract({...baseContract, functionName: 'numTokens'});
+		const stakingRewardsRegistryContract = new Contract(STAKING_REWARDS_REGISTRY_ADDRESS, STAKING_REWARDS_REGISTRY_ABI);
+		const [numTokens] = await ethcallProvider.tryAll([stakingRewardsRegistryContract.numTokens()]) as [BigNumber];
 		const tokensCalls = [];
-		for (let i = 0; i < numTokens; i++) {
-			tokensCalls.push({...baseContract, functionName: 'tokens', args: [i]});
+		for (let i = 0; i < numTokens.toNumber(); i++) {
+			tokensCalls.push(stakingRewardsRegistryContract.tokens(i));
 		}
-		const vaultAddressesMulticall = await multicall({contracts: tokensCalls, chainId: chainID});
-
-		/* 🔵 - Yearn Finance **********************************************************************
-		** For each address of token, retrieve the related stacking pool address
-		******************************************************************************************/
+		const vaultAddresses = await ethcallProvider.tryAll(tokensCalls) as TAddress[];
 		const stakingPoolCalls = [];
-		for (const vaultAddressMulticall of vaultAddressesMulticall) {
-			if (vaultAddressMulticall.status === 'success') {
-				const address = decodeAsString(vaultAddressMulticall);
-				stakingPoolCalls.push({...baseContract, functionName: 'stakingPool', args: [address]});
-			}
+		for (const address of vaultAddresses) {
+			stakingPoolCalls.push(stakingRewardsRegistryContract.stakingPool(address));
 		}
-		const stakingRewardsAddresses = await multicall({contracts: stakingPoolCalls, chainId: chainID});
+		const stakingRewardsAddresses = await ethcallProvider.tryAll(stakingPoolCalls) as TAddress[];
+		const stakingRewardsPromises = stakingRewardsAddresses.map(async (address): Promise<TStakingRewards> => {
+			const stakingRewardsContract = new Contract(address, STAKING_REWARDS_ABI);
+			const [
+				stakingToken,
+				rewardsToken,
+				totalSupply
+			] = await ethcallProvider.tryAll([
+				stakingRewardsContract.stakingToken(),
+				stakingRewardsContract.rewardsToken(),
+				stakingRewardsContract.totalSupply()
+			]) as [TAddress, TAddress, BigNumber];
 
-		/* 🔵 - Yearn Finance **********************************************************************
-		** For each stakingRewardsAddresses, grab the info in a multicall
-		******************************************************************************************/
-		const stackingRewards: TStakingRewards[] = [];
-		for (const stakingRewardsAddress of stakingRewardsAddresses) {
-			if (stakingRewardsAddress.status === 'success') {
-				const address = decodeAsString(stakingRewardsAddress);
-				const baseStackingContract = {
-					address: toWagmiAddress(address),
-					abi: STAKING_REWARDS_ABI,
-					chainId: chainID
-				};
-				const results = await multicall({
-					contracts: [
-						{...baseStackingContract, functionName: 'stakingToken'},
-						{...baseStackingContract, functionName: 'rewardsToken'},
-						{...baseStackingContract, functionName: 'totalSupply'}
-					],
-					chainId: chainID
-				});
-
-				const stakingToken = decodeAsString(results[0]);
-				const rewardsToken = decodeAsString(results[1]);
-				const totalSupply = decodeAsBigInt(results[2]);
-				stackingRewards.push({
-					address: toAddress(address),
-					stakingToken: toAddress(stakingToken),
-					rewardsToken: toAddress(rewardsToken),
-					totalStaked: totalSupply
-				});
-			}
-		}
-
-		return stackingRewards;
-	}, [chainID]);
+			return ({
+				address,
+				stakingToken,
+				rewardsToken,
+				totalStaked: totalSupply
+			});
+		});
+		return Promise.all(stakingRewardsPromises);
+	}, [chainID, provider]);
 	const {data: stakingRewards, mutate: refreshStakingRewards, isLoading: isLoadingStakingRewards} = useSWR(isChainSupported ? 'stakingRewards' : null, stakingRewardsFetcher, {shouldRetryOnError: false});
 
 	const positionsFetcher = useCallback(async (): Promise<TStakePosition[]> => {
 		if (!stakingRewards || !isActive|| !userAddress) {
 			return [];
 		}
-		/* 🔵 - Yearn Finance **********************************************************************
-		** Retrieve the number of tokens in the registry, and for each token retrieve it's address
-		** so we can proceed
-		******************************************************************************************/
-		const calls = [];
+		const currentProvider = provider || getProvider(chainID);
+		const ethcallProvider = await newEthCallProvider(currentProvider);
+
+		const	calls = [];
 		for (const {address} of stakingRewards) {
-			const baseContract = {
-				address: toWagmiAddress(address),
-				abi: STAKING_REWARDS_ABI,
-				chainId: chainID
-			} as const;
-			calls.push({...baseContract, functionName: 'balanceOf', args: [userAddress]});
-			calls.push({...baseContract, functionName: 'earned', args: [userAddress]});
+			const stakingRewardsContract = new Contract(address, STAKING_REWARDS_ABI);
+			calls.push(stakingRewardsContract.balanceOf(userAddress));
+			calls.push(stakingRewardsContract.earned(userAddress));
 		}
-		const results = await multicall({contracts: calls, chainId: chainID});
+		const results = await ethcallProvider.tryAll(calls) as BigNumber[];
 
 		let	resultIndex = 0;
-		const positionPromises = [];
+		const	positionPromises = [];
 		for (const {address} of stakingRewards) {
-			const stake = decodeAsBigInt(results[resultIndex++]);
-			const reward = decodeAsBigInt(results[resultIndex++]);
+			const stake = results[resultIndex++];
+			const reward = results[resultIndex++];
 			positionPromises.push({address, stake, reward});
 		}
 
 		return positionPromises;
-	}, [stakingRewards, isActive, userAddress, chainID]);
+	}, [stakingRewards, isActive, userAddress, chainID, provider]);
 	const {data: positions, mutate: refreshPositions, isLoading: isLoadingPositions} = useSWR(isActive && provider && stakingRewards ? 'stakePositions' : null, positionsFetcher, {shouldRetryOnError: false});
 
 	const positionsMap = useMemo((): TDict<TStakePosition | undefined> => {
