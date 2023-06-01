@@ -52,7 +52,7 @@ function AmountInput({
 					min={0}
 					aria-label={label}
 					value={displayedAmount}
-					onChange={onAmountChange ? (e) => onAmountChange(e.target.value) : undefined}
+					onChange={onAmountChange ? (e): void => onAmountChange(e.target.value) : undefined}
 					placeholder={loading ? '' : placeholder ?? '0'}
 					disabled={disabled}
 				/>
