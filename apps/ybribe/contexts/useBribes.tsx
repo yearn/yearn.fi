@@ -3,8 +3,8 @@ import {useContractRead} from 'wagmi';
 import {multicall, prepareWriteContract} from '@wagmi/core';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {allowanceKey, toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
-import {CURVE_BRIBE_V3_ADDRESS, CURVE_BRIBE_V3_HELPER_ADDRESS, ZERO_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {CURVE_BRIBE_V3_ADDRESS, CURVE_BRIBE_V3_HELPER_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {decodeAsBigInt} from '@yearn-finance/web-lib/utils/decoder';
 import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
@@ -59,7 +59,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 	const [currentPeriod, set_currentPeriod] = useState<number>(getLastThursday());
 	const [nextPeriod, set_nextPeriod] = useState<number>(getNextThursday());
 	const bribeV3BaseContract = useMemo((): {address: TAddressWagmi, abi: typeof CURVE_BRIBE_V3} => ({
-		address: toWagmiAddress(CURVE_BRIBE_V3_ADDRESS),
+		address: CURVE_BRIBE_V3_ADDRESS,
 		abi: CURVE_BRIBE_V3
 	}), []);
 
@@ -91,7 +91,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 			rewardsPerGaugesCalls.push({
 				...bribeV3BaseContract,
 				functionName: 'rewards_per_gauge',
-				args: [toWagmiAddress(gauge.gauge)]
+				args: [toAddress(gauge.gauge)]
 			});
 		}
 		const result = await multicall({contracts: rewardsPerGaugesCalls, chainId: safeChainID});
@@ -116,7 +116,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 		if ((rewardsPerGauges || []).length === 0) {
 			return ({rewardsList: [], multicallResult: []});
 		}
-		const userAddress = toWagmiAddress(address) || ZERO_ADDRESS;
+		const userAddress = toAddress(address);
 		const rewardsPerTokensPerGaugesCalls = [];
 		const rewardsList: string[] = [];
 
@@ -129,7 +129,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 				}
 				gauge.rewardPerGauge.push(...rewardPerGauge);
 				for (const tokenAsReward of rewardPerGauge) {
-					const args = [toWagmiAddress(gauge.gauge), toWagmiAddress(tokenAsReward)];
+					const args = [toAddress(gauge.gauge), toAddress(tokenAsReward)];
 					rewardsList.push(allowanceKey(
 						safeChainID,
 						toAddress(gauge.gauge),
@@ -177,7 +177,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 			if (rewardPerGauge && rewardPerGauge.length > 0) {
 				for (const tokenAsReward of rewardPerGauge) {
 					rewardsList.push(allowanceKey(safeChainID, toAddress(gauge.gauge), toAddress(tokenAsReward), toAddress(address)));
-					rewardsPerTokensPerGaugesCalls.push([toWagmiAddress(gauge.gauge), toWagmiAddress(tokenAsReward)]);
+					rewardsPerTokensPerGaugesCalls.push([toAddress(gauge.gauge), toAddress(tokenAsReward)]);
 				}
 			}
 		}
@@ -185,7 +185,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 		const simulate = await Promise.all(
 			rewardsPerTokensPerGaugesCalls.map(async (pair): Promise<PrepareWriteContractResult> => {
 				const config = prepareWriteContract({
-					address: toWagmiAddress(CURVE_BRIBE_V3_HELPER_ADDRESS),
+					address: CURVE_BRIBE_V3_HELPER_ADDRESS,
 					abi: CURVE_BRIBE_V3_HELPER,
 					functionName: 'getNewRewardPerToken',
 					args: pair
@@ -244,7 +244,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 					const prepareWriteResult = await prepareWriteContract({
 						...bribeV3BaseContract,
 						functionName: 'claim_reward_for',
-						args: [toWagmiAddress(address), toWagmiAddress(gauge), toWagmiAddress(token)]
+						args: [toAddress(address), toAddress(gauge), toAddress(token)]
 					});
 					_dryRunClaimRewards[toAddress(gauge)][toAddress(token)] = prepareWriteResult.result;
 				}

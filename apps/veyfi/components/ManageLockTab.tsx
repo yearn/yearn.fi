@@ -8,12 +8,12 @@ import {validateAmount, validateNetwork} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
 import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {fromWeeks, getTimeUntil, toSeconds, toTime, toWeeks} from '@yearn-finance/web-lib/utils/time';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {AmountInput} from '@common/components/AmountInput';
 import {useWallet} from '@common/contexts/useWallet';
+import {assertAddress} from '@common/utils/toWagmiProvider';
 
 import type {ReactElement} from 'react';
 
@@ -37,9 +37,11 @@ function ManageLockTab(): ReactElement {
 	}, [refreshBalances, refreshVotingEscrow]);
 
 	const onExtendLockTime = useCallback(async (): Promise<void> => {
+		assertAddress(votingEscrow?.address);
+
 		const result = await extendLockTime({
 			connector: provider,
-			contractAddress: toWagmiAddress(votingEscrow?.address),
+			contractAddress: votingEscrow?.address,
 			time: toBigInt(toSeconds(newUnlockTime)),
 			statusHandler: set_extendLockTimeStatus
 		});
@@ -49,9 +51,11 @@ function ManageLockTab(): ReactElement {
 	}, [newUnlockTime, onTxSuccess, provider, votingEscrow?.address]);
 
 	const onWithdrawLocked = useCallback(async (): Promise<void> => {
+		assertAddress(votingEscrow?.address);
+
 		const result = await withdrawLocked({
 			connector: provider,
-			contractAddress: toWagmiAddress(votingEscrow?.address),
+			contractAddress: votingEscrow?.address,
 			statusHandler: set_withdrawLockedStatus
 		});
 		if (result.isSuccessful) {

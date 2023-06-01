@@ -8,7 +8,7 @@ import {validateAllowance, validateAmount, validateNetwork} from '@veYFI/utils/v
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
@@ -18,6 +18,7 @@ import {AmountInput} from '@common/components/AmountInput';
 import {useWallet} from '@common/contexts/useWallet';
 import {useBalance} from '@common/hooks/useBalance';
 import {approveERC20} from '@common/utils/actions';
+import {assertAddress} from '@common/utils/toWagmiProvider';
 
 import type {ReactElement} from 'react';
 import type {TMilliseconds} from '@yearn-finance/web-lib/utils/time';
@@ -52,10 +53,13 @@ function LockTab(): ReactElement {
 	}, [refreshData]);
 
 	const onApproveLock = useCallback(async (): Promise<void> => {
+		assertAddress(votingEscrow?.token);
+		assertAddress(votingEscrow?.address);
+
 		const result = await approveERC20({
 			connector: provider,
-			contractAddress: toWagmiAddress(votingEscrow?.token),
-			spenderAddress: toWagmiAddress(votingEscrow?.address),
+			contractAddress: votingEscrow?.token,
+			spenderAddress: votingEscrow?.address,
 			statusHandler: set_approveLockStatus,
 			amount: lockAmount.raw
 		});
@@ -65,9 +69,11 @@ function LockTab(): ReactElement {
 	}, [lockAmount.raw, provider, refreshData, votingEscrow?.address, votingEscrow?.token]);
 
 	const onLock = useCallback(async (): Promise<void> => {
+		assertAddress(votingEscrow?.address);
+
 		const result = await lock({
 			connector: provider,
-			contractAddress: toWagmiAddress(votingEscrow?.address),
+			contractAddress: votingEscrow?.address,
 			amount: lockAmount.raw,
 			time: toBigInt(toSeconds(unlockTime)),
 			statusHandler: set_lockStatus
@@ -78,9 +84,11 @@ function LockTab(): ReactElement {
 	}, [provider, votingEscrow?.address, lockAmount.raw, unlockTime, onTxSuccess]);
 
 	const onIncreaseLockAmount = useCallback(async (): Promise<void> => {
+		assertAddress(votingEscrow?.address);
+
 		const result = await increaseLockAmount({
 			connector: provider,
-			contractAddress: toWagmiAddress(votingEscrow?.address),
+			contractAddress: votingEscrow?.address,
 			amount: lockAmount.raw,
 			statusHandler: set_increaseLockAmountStatus
 		});

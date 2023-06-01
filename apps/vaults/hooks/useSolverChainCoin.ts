@@ -4,7 +4,7 @@ import {getEthZapperContract} from '@vaults/utils';
 import getVaultEstimateOut from '@vaults/utils/getVaultEstimateOut';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {allowanceKey, toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
+import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {approvedERC20Amount, approveERC20, depositETH, withdrawETH} from '@common/utils/actions';
@@ -85,8 +85,8 @@ export function useSolverChainCoin(): TSolverContext {
 
 		const result = await approveERC20({
 			connector: provider,
-			contractAddress: toWagmiAddress(request.current.inputToken.value),
-			spenderAddress: toWagmiAddress(getEthZapperContract(safeChainID)),
+			contractAddress: toAddress(request.current.inputToken.value),
+			spenderAddress: getEthZapperContract(safeChainID),
 			amount: amount,
 			statusHandler: txStatusSetter
 		});
@@ -109,7 +109,7 @@ export function useSolverChainCoin(): TSolverContext {
 
 		const result = await depositETH({
 			connector: provider,
-			contractAddress: toWagmiAddress(getEthZapperContract(safeChainID)),
+			contractAddress: getEthZapperContract(safeChainID),
 			amount: request.current.inputAmount,
 			statusHandler: txStatusSetter
 		});
@@ -132,7 +132,7 @@ export function useSolverChainCoin(): TSolverContext {
 
 		const result = await withdrawETH({
 			connector: provider,
-			contractAddress: toWagmiAddress(getEthZapperContract(safeChainID)),
+			contractAddress: getEthZapperContract(safeChainID),
 			amount: request.current.inputAmount,
 			statusHandler: txStatusSetter
 		});

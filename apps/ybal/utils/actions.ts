@@ -1,6 +1,6 @@
 import {captureException} from '@sentry/nextjs';
 import {prepareWriteContract, readContract, waitForTransaction, writeContract} from '@wagmi/core';
-import {toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {LPYBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, YBAL_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
@@ -29,7 +29,7 @@ export async function simulateZapForMinOut(props: TSimulateZapForMinOut): Promis
 
 	try {
 		const wagmiProvider = await toWagmiProvider(props.connector);
-		const baseContract = {...wagmiProvider, address: toWagmiAddress(LOCAL_ZAP_YEARN_YBAL_ADDRESS), abi: ZAP_ABI};
+		const baseContract = {...wagmiProvider, address: LOCAL_ZAP_YEARN_YBAL_ADDRESS, abi: ZAP_ABI};
 		const {result: expectedAmountMint} = await prepareWriteContract({
 			...baseContract,
 			functionName: 'queryZapOutput',
@@ -106,7 +106,7 @@ export async function zapBal(props: TZapYBal): Promise<TTxResponse> {
 	try {
 		const config = await prepareWriteContract({
 			...wagmiProvider,
-			address: toWagmiAddress(LOCAL_ZAP_YEARN_YBAL_ADDRESS),
+			address: LOCAL_ZAP_YEARN_YBAL_ADDRESS,
 			abi: ZAP_ABI,
 			functionName: 'zap',
 			args: [

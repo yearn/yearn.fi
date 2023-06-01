@@ -7,7 +7,7 @@ import PARTNER_VAULT_ABI from '@yearn-finance/web-lib/utils/abi/partner.vault.ab
 import VAULT_ABI from '@yearn-finance/web-lib/utils/abi/vault.abi';
 import ZAP_ETH_TO_YVETH_ABI from '@yearn-finance/web-lib/utils/abi/zapEthToYvEth.abi';
 import ZAP_FTM_TO_YVFTM_ABI from '@yearn-finance/web-lib/utils/abi/zapFtmToYvFTM.abi';
-import {toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {assert} from '@common/utils/assert';
@@ -36,9 +36,9 @@ export async function isApprovedERC20(
 	const result = await readContract({
 		...wagmiProvider,
 		abi: erc20ABI,
-		address: toWagmiAddress(tokenAddress),
+		address: tokenAddress,
 		functionName: 'allowance',
-		args: [toWagmiAddress(wagmiProvider.address), toWagmiAddress(spender)]
+		args: [wagmiProvider.address, spender]
 	});
 	return (result || 0n) >= amount;
 }
@@ -56,9 +56,9 @@ export async function approvedERC20Amount(
 	const result = await readContract({
 		...wagmiProvider,
 		abi: erc20ABI,
-		address: toWagmiAddress(tokenAddress),
+		address: tokenAddress,
 		functionName: 'allowance',
-		args: [toWagmiAddress(wagmiProvider.address), toWagmiAddress(spender)]
+		args: [wagmiProvider.address, spender]
 	});
 	return result || 0n;
 }
@@ -70,7 +70,7 @@ export async function approvedERC20Amount(
 ** @param amount - The amount of collateral to deposit.
 ******************************************************************************/
 type TApproveERC20 = TWriteTransaction & {
-	spenderAddress: TAddressWagmi;
+	spenderAddress: TAddressWagmi | undefined;
 	amount: bigint;
 };
 export async function approveERC20(props: TApproveERC20): Promise<TTxResponse> {
@@ -83,10 +83,10 @@ export async function approveERC20(props: TApproveERC20): Promise<TTxResponse> {
 		try {
 			const config = await prepareWriteContract({
 				...wagmiProvider,
-				address: toWagmiAddress(props.contractAddress),
+				address: props.contractAddress,
 				abi: erc20ABI,
 				functionName: 'approve',
-				args: [toWagmiAddress(props.spenderAddress), props.amount]
+				args: [props.spenderAddress, props.amount]
 			});
 			const {hash} = await writeContract(config.request);
 			const receipt = await waitForTransaction({chainId: wagmiProvider.chainId, hash});
@@ -101,10 +101,10 @@ export async function approveERC20(props: TApproveERC20): Promise<TTxResponse> {
 			if (err.name === 'ContractFunctionExecutionError') {
 				const alternateConfig = await prepareWriteContract({
 					...wagmiProvider,
-					address: toWagmiAddress(props.contractAddress),
+					address: props.contractAddress,
 					abi: ALTERNATE_ERC20_APPROVE_ABI,
 					functionName: 'approve',
-					args: [toWagmiAddress(props.spenderAddress), props.amount]
+					args: [props.spenderAddress, props.amount]
 				});
 				const {hash} = await writeContract(alternateConfig.request);
 				const receipt = await waitForTransaction({chainId: wagmiProvider.chainId, hash});
@@ -150,7 +150,7 @@ export async function deposit(props: TDeposit): Promise<TTxResponse> {
 	try {
 		const config = await prepareWriteContract({
 			...wagmiProvider,
-			address: toWagmiAddress(props.contractAddress),
+			address: props.contractAddress,
 			abi: VAULT_ABI,
 			functionName: 'deposit',
 			args: [props.amount]
@@ -189,7 +189,7 @@ type TDepositEth = TWriteTransaction & {
 };
 export async function depositETH(props: TDepositEth): Promise<TTxResponse> {
 	const wagmiProvider = await toWagmiProvider(props.connector);
-	const destAddress = toWagmiAddress(getEthZapperContract(wagmiProvider.chainId));
+	const destAddress = getEthZapperContract(wagmiProvider.chainId);
 	assertAddress(props.contractAddress);
 	assertAddress(destAddress);
 	assert(props.amount > 0n, 'Amount is 0');
@@ -262,12 +262,12 @@ export async function depositViaPartner(props: TDepositViaPartner): Promise<TTxR
 	try {
 		const config = await prepareWriteContract({
 			...wagmiProvider,
-			address: toWagmiAddress(props.contractAddress),
+			address: props.contractAddress,
 			abi: PARTNER_VAULT_ABI,
 			functionName: 'deposit',
 			args: [
 				props.vaultAddress,
-				props.partnerAddress || toWagmiAddress(process.env.PARTNER_ID_ADDRESS),
+				props.partnerAddress || toAddress(process.env.PARTNER_ID_ADDRESS),
 				props.amount
 			]
 		});
@@ -305,7 +305,7 @@ type TWithdrawEth = TWriteTransaction & {
 };
 export async function withdrawETH(props: TWithdrawEth): Promise<TTxResponse> {
 	const wagmiProvider = await toWagmiProvider(props.connector);
-	const destAddress = toWagmiAddress(getEthZapperContract(wagmiProvider.chainId));
+	const destAddress = getEthZapperContract(wagmiProvider.chainId);
 	assertAddress(props.contractAddress);
 	assertAddress(destAddress);
 	assert(props.amount > 0n, 'Amount is 0');
@@ -373,7 +373,7 @@ export async function withdrawShares(props: TWithdrawShares): Promise<TTxRespons
 	try {
 		const config = await prepareWriteContract({
 			...wagmiProvider,
-			address: toWagmiAddress(props.contractAddress),
+			address: props.contractAddress,
 			abi: VAULT_ABI,
 			functionName: 'withdraw',
 			args: [props.amount]
@@ -420,7 +420,7 @@ export async function migrateShares(props: TMigrateShares): Promise<TTxResponse>
 	try {
 		const config = await prepareWriteContract({
 			...wagmiProvider,
-			address: toWagmiAddress(props.contractAddress),
+			address: props.contractAddress,
 			abi: VAULT_MIGRATOR_ABI,
 			functionName: 'migrateAll',
 			args: [props.fromVault, props.toVault]

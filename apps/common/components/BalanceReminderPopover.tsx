@@ -7,7 +7,7 @@ import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import IconAddToMetamask from '@yearn-finance/web-lib/icons/IconAddToMetamask';
 import IconCross from '@yearn-finance/web-lib/icons/IconCross';
 import IconWallet from '@yearn-finance/web-lib/icons/IconWallet';
-import {toAddress, toWagmiAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
+import {toAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
 import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {useWallet} from '@common/contexts/useWallet';
@@ -40,7 +40,7 @@ function TokenItem({element}: {element: TBalanceReminderElement}): ReactElement 
 			await walletClient.watchAsset({
 				type: 'ERC20',
 				options: {
-					address: toWagmiAddress(address),
+					address: toAddress(address),
 					decimals: decimals,
 					symbol: symbol,
 					image: image
@@ -151,7 +151,7 @@ export default function BalanceReminderPopover(): ReactElement {
 						leave={'transition ease-in duration-150'}
 						leaveFrom={'opacity-100 translate-y-0'}
 						leaveTo={'opacity-0 translate-y-1'}>
-						<Popover.Panel className={'yearn--shadow absolute right-0 top-6 z-[1000] mt-3 w-screen max-w-xs md:top-4 md:-right-4'}>
+						<Popover.Panel className={'yearn--shadow absolute right-0 top-6 z-[1000] mt-3 w-screen max-w-xs md:-right-4 md:top-4'}>
 							<div className={'overflow-hidden'}>
 								<div className={'relative bg-neutral-0 p-0'}>
 									<div className={'flex items-center justify-center border-b border-neutral-300 py-4 text-center'}>
@@ -163,7 +163,7 @@ export default function BalanceReminderPopover(): ReactElement {
 											) : 'Connect wallet'}
 										</b>
 									</div>
-									<div className={'absolute top-4 right-4'}>
+									<div className={'absolute right-4 top-4'}>
 										<button
 											onClick={onDesactivate}
 											className={'flex h-6 w-6 items-center justify-center rounded-full bg-neutral-200/50'}>

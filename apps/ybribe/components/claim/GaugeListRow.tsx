@@ -3,7 +3,7 @@ import React, {useCallback, useMemo, useState} from 'react';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {CRV_TOKEN_ADDRESS, CURVE_BRIBE_V3_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatPercent, formatUSD} from '@yearn-finance/web-lib/utils/format.number';
@@ -109,9 +109,9 @@ function GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauge, cate
 	const onClaimReward = useCallback(async (token: TAddress): Promise<void> => {
 		const result = await claimRewardV3({
 			connector: provider,
-			contractAddress: toWagmiAddress(CURVE_BRIBE_V3_ADDRESS),
-			gaugeAddress: toWagmiAddress(currentGauge.gauge),
-			tokenAddress: toWagmiAddress(token),
+			contractAddress: CURVE_BRIBE_V3_ADDRESS,
+			gaugeAddress: currentGauge.gauge,
+			tokenAddress: token,
 			statusHandler: set_txStatusClaim
 		});
 		if (result.isSuccessful) {

@@ -6,7 +6,7 @@ import {isSolverDisabled, Solver} from '@vaults/contexts/useSolver';
 import {toast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {allowanceKey, isZeroAddress, toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
+import {allowanceKey, isZeroAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, MAX_UINT_256, SOLVER_COW_VAULT_RELAYER_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
@@ -28,8 +28,8 @@ async function getQuote(
 	const YEARN_APP_DATA = '0x5d22bf49b708de1d2d9547a6cca9faccbdc2b162012e8573811c07103b163d4b';
 	const quoteRequest = {
 		from: request.from, // receiver
-		sellToken: toAddress(request.inputToken.value), // token to spend
-		buyToken: toAddress(request.outputToken.value), // token to receive
+		sellToken: request.inputToken.value, // token to spend
+		buyToken: request.outputToken.value, // token to receive
 		receiver: request.from, // always the same as from
 		appData: YEARN_APP_DATA, // Always this
 		kind: OrderQuoteSide.kind.SELL, // always sell
@@ -167,7 +167,7 @@ export function useSolverCowswap(): TSolverContext {
 		const wagmiSigner = await provider.getWalletClient();
 		const wagmiProvider = await provider.getProvider();
 		const ethersProvider = new ethers.providers.Web3Provider(wagmiProvider);
-		const signer = ethersProvider.getSigner(toAddress(wagmiSigner.account.address));
+		const signer = ethersProvider.getSigner(wagmiSigner.account.address);
 
 		const rawSignature = await OrderSigningUtils.signOrder(
 			{...quote as UnsignedOrder},
@@ -272,17 +272,17 @@ export function useSolverCowswap(): TSolverContext {
 
 		const key = allowanceKey(
 			safeChainID,
-			toAddress(request.current.inputToken.value),
-			toAddress(request.current.outputToken.value),
-			toAddress(request.current.from)
+			request.current.inputToken.value,
+			request.current.outputToken.value,
+			request.current.from
 		);
 		if (existingAllowances.current[key] && !shouldForceRefetch) {
 			return existingAllowances.current[key];
 		}
 		const allowance = await approvedERC20Amount(
 			provider,
-			toAddress(request.current.inputToken.value), //Input token
-			toAddress(SOLVER_COW_VAULT_RELAYER_ADDRESS) //Spender, aka Cowswap solver
+			request.current.inputToken.value, //Input token
+			SOLVER_COW_VAULT_RELAYER_ADDRESS //Spender, aka Cowswap solver
 		);
 		existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals);
 		return existingAllowances.current[key];
@@ -306,8 +306,8 @@ export function useSolverCowswap(): TSolverContext {
 
 		const isApproved = await isApprovedERC20(
 			provider,
-			toAddress(request.current.inputToken.value), //token to approve
-			toAddress(SOLVER_COW_VAULT_RELAYER_ADDRESS), //Cowswap relayer
+			request.current.inputToken.value, //token to approve
+			SOLVER_COW_VAULT_RELAYER_ADDRESS, //Cowswap relayer
 			toBigInt(amount.toString())
 		);
 		if (isApproved) {
@@ -315,8 +315,8 @@ export function useSolverCowswap(): TSolverContext {
 		}
 		const result = await approveERC20({
 			connector: provider,
-			contractAddress: toWagmiAddress(request.current.inputToken.value),
-			spenderAddress: toWagmiAddress(SOLVER_COW_VAULT_RELAYER_ADDRESS),
+			contractAddress: request.current.inputToken.value,
+			spenderAddress: SOLVER_COW_VAULT_RELAYER_ADDRESS,
 			amount: toBigInt(amount.toString()),
 			statusHandler: txStatusSetter
 		});

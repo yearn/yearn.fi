@@ -1,6 +1,5 @@
 import {captureException} from '@sentry/nextjs';
 import {prepareWriteContract, waitForTransaction, writeContract} from '@wagmi/core';
-import {toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
 import {ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {assert} from '@common/utils/assert';
@@ -49,7 +48,7 @@ export async function zapCRV(props: TZapYCRV): Promise<TTxResponse> {
 	try {
 		const config = await prepareWriteContract({
 			...wagmiProvider,
-			address: toWagmiAddress(ZAP_YEARN_VE_CRV_ADDRESS),
+			address: ZAP_YEARN_VE_CRV_ADDRESS,
 			abi: ZAP_CRV_ABI,
 			functionName: 'zap',
 			args: [props.inputToken, props.outputToken, props.amount, minAmountWithSlippage]

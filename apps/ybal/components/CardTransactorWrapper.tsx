@@ -4,7 +4,7 @@ import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useAddToken} from '@yearn-finance/web-lib/hooks/useAddToken';
 import {useDismissToasts} from '@yearn-finance/web-lib/hooks/useDismissToasts';
-import {allowanceKey, toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
+import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {LPYBAL_TOKEN_ADDRESS, MAX_UINT_256, STYBAL_TOKEN_ADDRESS, ZAP_YEARN_YBAL_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatToNormalizedValue, toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
@@ -13,6 +13,7 @@ import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import {getVaultAPY} from '@common/utils';
 import {approveERC20, deposit} from '@common/utils/actions';
+import {assertAddress} from '@common/utils/toWagmiProvider';
 import {ZAP_OPTIONS_FROM, ZAP_OPTIONS_TO} from '@yBal/constants/tokens';
 import {useYBal} from '@yBal/contexts/useYBal';
 import {simulateZapForMinOut, zapBal} from '@yBal/utils/actions';
@@ -112,7 +113,7 @@ function CardTransactorContextApp({
 	): Promise<{shouldMint: boolean; minOut: bigint;}> => {
 		return await simulateZapForMinOut({
 			connector: provider,
-			contractAddress: toWagmiAddress(ZAP_YEARN_YBAL_ADDRESS),
+			contractAddress: ZAP_YEARN_YBAL_ADDRESS,
 			inputToken: _inputToken,
 			outputToken: _outputToken,
 			amountIn: _amountIn
@@ -122,8 +123,8 @@ function CardTransactorContextApp({
 	useUpdateEffect((): void => {
 		actions.execute(
 			provider,
-			toWagmiAddress(selectedOptionFrom.value),
-			toWagmiAddress(selectedOptionTo.value),
+			selectedOptionFrom.value,
+			selectedOptionTo.value,
 			amount.raw
 		);
 	}, [actions, provider, amount, selectedOptionFrom.value, selectedOptionTo.value]);
@@ -133,10 +134,12 @@ function CardTransactorContextApp({
 	** perform the swap.
 	**************************************************************************/
 	const onApprove = useCallback(async (): Promise<void> => {
+		assertAddress(selectedOptionFrom.zapVia);
+
 		const result = await approveERC20({
 			connector: provider,
-			contractAddress: toWagmiAddress(selectedOptionFrom.value),
-			spenderAddress: toWagmiAddress(selectedOptionFrom.zapVia),
+			contractAddress: selectedOptionFrom.value,
+			spenderAddress: selectedOptionFrom.zapVia,
 			amount: MAX_UINT_256,
 			statusHandler: set_txStatusApprove
 		});
@@ -170,7 +173,7 @@ function CardTransactorContextApp({
 			// Direct deposit to vault from Bal/yBal balancer LP Token to lp-yBal Vault
 			const result = await deposit({
 				connector: provider,
-				contractAddress: toWagmiAddress(selectedOptionTo.value),
+				contractAddress: selectedOptionTo.value,
 				amount: amount.raw, //amount_in
 				statusHandler: set_txStatusZap
 			});
@@ -183,9 +186,9 @@ function CardTransactorContextApp({
 			// Zap in
 			const result = await zapBal({
 				connector: provider,
-				contractAddress: toWagmiAddress(ZAP_YEARN_YBAL_ADDRESS),
-				inputToken: toWagmiAddress(selectedOptionFrom.value), //_input_token
-				outputToken: toWagmiAddress(selectedOptionTo.value), //_output_token
+				contractAddress: ZAP_YEARN_YBAL_ADDRESS,
+				inputToken: selectedOptionFrom.value, //_input_token
+				outputToken: selectedOptionTo.value, //_output_token
 				amount: amount.raw, //amount_in
 				minAmount: expectedOut.minOut, //_min_out
 				slippage: toBigInt(slippage),

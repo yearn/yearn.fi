@@ -2,14 +2,14 @@
 import {createWalletClient, http, parseEther} from 'viem';
 import {describe, expect, it, vi} from 'vitest';
 import {MockConnector} from '@wagmi/core/connectors/mock';
-import {toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {BAL_TOKEN_ADDRESS, YBAL_TOKEN_ADDRESS, ZAP_YEARN_YBAL_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {simulateZapForMinOut, zapBal} from '@yBal/utils/actions';
 
 import type {TAddressWagmi} from '@yearn-finance/web-lib/types';
 
-const LOCAL_ZAP_YEARN_YBAL_ADDRESS = toWagmiAddress('0x43cA9bAe8dF108684E5EAaA720C25e1b32B0A075');
+const LOCAL_ZAP_YEARN_YBAL_ADDRESS = toAddress('0x43cA9bAe8dF108684E5EAaA720C25e1b32B0A075');
 
 const mockZap = vi.fn();
 const mockCallStaticZap = vi.fn();
@@ -74,7 +74,7 @@ describe('actions', () => {
 				});
 				const {shouldMint, minOut} = await simulateZapForMinOut({
 					connector: connector,
-					contractAddress: toWagmiAddress(ZAP_YEARN_YBAL_ADDRESS),
+					contractAddress: ZAP_YEARN_YBAL_ADDRESS,
 					inputToken: inputToken,
 					outputToken: outputToken,
 					amountIn: amountIn
@@ -109,7 +109,7 @@ describe('actions', () => {
 				});
 				const {shouldMint, minOut} = await simulateZapForMinOut({
 					connector: connector,
-					contractAddress: toWagmiAddress(ZAP_YEARN_YBAL_ADDRESS),
+					contractAddress: ZAP_YEARN_YBAL_ADDRESS,
 					inputToken: inputToken,
 					outputToken: outputToken,
 					amountIn: amountIn
@@ -140,9 +140,9 @@ describe('actions', () => {
 
 			await zapBal({
 				connector: connector,
-				contractAddress: toWagmiAddress(LOCAL_ZAP_YEARN_YBAL_ADDRESS),
-				inputToken: toWagmiAddress(inputToken),
-				outputToken: toWagmiAddress(outputToken),
+				contractAddress: LOCAL_ZAP_YEARN_YBAL_ADDRESS,
+				inputToken: inputToken,
+				outputToken: outputToken,
 				amount: amountIn,
 				minAmount: minOut,
 				slippage: toBigInt(slippage),

@@ -1,4 +1,4 @@
-import {toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, ZERO_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {isTAddress} from '@yearn-finance/web-lib/utils/isTAddress';
 import {assert} from '@common/utils/assert';
@@ -18,7 +18,7 @@ export async function toWagmiProvider(connector: Connector | undefined): Promise
 
 	const signer = await connector.getWalletClient();
 	const chainId = await connector.getChainId();
-	const address = toWagmiAddress(signer.account.address);
+	const {address} = signer.account;
 	return ({
 		walletClient: signer,
 		chainId,
@@ -32,7 +32,8 @@ export type TWriteTransaction = {
 	statusHandler?: (status: typeof defaultTxStatus) => void;
 }
 
-export function assertAddress(addr: string): asserts addr is TAddress {
+export function assertAddress(addr: string | TAddress | undefined): asserts addr is TAddress {
+	assert(addr, 'Address is not set');
 	assert(isTAddress(addr), 'Address provided is invalid');
 	assert(toAddress(addr) !== ZERO_ADDRESS, 'Address is 0x0');
 	assert(toAddress(addr) !== ETH_TOKEN_ADDRESS, 'Address is 0xE');

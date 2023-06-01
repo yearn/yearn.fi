@@ -4,12 +4,13 @@ import getVaultEstimateOut from '@vaults/utils/getVaultEstimateOut';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {allowanceKey, toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
+import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {useYearn} from '@common/contexts/useYearn';
 import {approvedERC20Amount, approveERC20, depositViaPartner, withdrawShares} from '@common/utils/actions';
 import {assert} from '@common/utils/assert';
+import {assertAddress} from '@common/utils/toWagmiProvider';
 
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
@@ -85,13 +86,16 @@ export function useSolverPartnerContract(): TSolverContext {
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
+		const partnerContract = networks[safeChainID]?.partnerContractAddress;
+
 		assert(request.current, 'Request is not set');
 		assert(request.current?.inputToken, 'Input token is not set');
+		assertAddress(partnerContract);
 
 		const result = await approveERC20({
 			connector: provider,
-			contractAddress: toWagmiAddress(request.current.inputToken.value),
-			spenderAddress: toWagmiAddress(networks[safeChainID].partnerContractAddress),
+			contractAddress: request.current.inputToken.value,
+			spenderAddress: partnerContract,
 			amount: amount,
 			statusHandler: txStatusSetter
 		});
@@ -108,15 +112,18 @@ export function useSolverPartnerContract(): TSolverContext {
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
+		const partnerContract = networks[safeChainID]?.partnerContractAddress;
+
 		assert(request.current, 'Request is not set');
 		assert(request.current.outputToken, 'Output token is not set');
 		assert(request.current.inputAmount, 'Input amount is not set');
+		assertAddress(partnerContract);
 
 		const result = await depositViaPartner({
 			connector: provider,
-			contractAddress: toWagmiAddress(networks[safeChainID].partnerContractAddress),
-			vaultAddress: toWagmiAddress(request.current.outputToken.value),
-			partnerAddress: currentPartner ? toWagmiAddress(currentPartner) : undefined,
+			contractAddress: partnerContract,
+			vaultAddress: request.current.outputToken.value,
+			partnerAddress: currentPartner ? currentPartner : undefined,
 			amount: request.current.inputAmount,
 			statusHandler: txStatusSetter
 		});
@@ -139,7 +146,7 @@ export function useSolverPartnerContract(): TSolverContext {
 
 		const result = await withdrawShares({
 			connector: provider,
-			contractAddress: toWagmiAddress(request.current.inputToken.value),
+			contractAddress: request.current.inputToken.value,
 			amount: request.current.inputAmount,
 			statusHandler: txStatusSetter
 		});

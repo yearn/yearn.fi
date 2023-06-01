@@ -5,13 +5,14 @@ import {waitForTransaction} from '@wagmi/core';
 import {toast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {allowanceKey, isZeroAddress, toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
+import {allowanceKey, isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
 import {approveERC20, isApprovedERC20} from '@common/utils/actions';
 import {assert} from '@common/utils/assert';
+import {assertAddress} from '@common/utils/toWagmiProvider';
 
 import type {Hex} from 'viem';
 import type {ChainId, QuoteRequest, QuoteResult} from 'wido';
@@ -133,7 +134,7 @@ export function useSolverWido(): TSolverContext {
 			const {data, to, value} = latestQuote.current;
 			const hash = await signer.sendTransaction({
 				data: data as Hex,
-				to: toWagmiAddress(to),
+				to: toAddress(to),
 				value: toBigInt(value)
 			});
 			const receipt = await waitForTransaction({chainId: signer.chain.id, hash});
@@ -218,10 +219,11 @@ export function useSolverWido(): TSolverContext {
 			amount
 		);
 		if (!isApproved) {
+			assertAddress(widoSpender);
 			const result = await approveERC20({
 				connector: provider,
-				contractAddress: toWagmiAddress(request.current.inputToken.value),
-				spenderAddress: toWagmiAddress(widoSpender),
+				contractAddress: request.current.inputToken.value,
+				spenderAddress: widoSpender,
 				amount: amount,
 				statusHandler: txStatusSetter
 			});

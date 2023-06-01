@@ -6,12 +6,12 @@ import {validateNetwork} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
 import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {getTimeUntil} from '@yearn-finance/web-lib/utils/time';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {AmountInput} from '@common/components/AmountInput';
 import {useWallet} from '@common/contexts/useWallet';
+import {assertAddress} from '@common/utils/toWagmiProvider';
 
 import type {ReactElement} from 'react';
 
@@ -32,9 +32,10 @@ function ClaimTab(): ReactElement {
 	}, [refreshVotingEscrow, refreshBalances]);
 
 	const onWithdrawUnlocked = useCallback(async (): Promise<void> => {
+		assertAddress(votingEscrow?.address);
 		const result = await withdrawUnlocked({
 			connector: provider,
-			contractAddress: toWagmiAddress(votingEscrow?.address),
+			contractAddress: votingEscrow?.address,
 			statusHandler: set_withdrawUnlockedStatus
 		});
 		if (result.isSuccessful) {

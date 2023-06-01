@@ -3,7 +3,7 @@ import {Solver} from '@vaults/contexts/useSolver';
 import getVaultEstimateOut from '@vaults/utils/getVaultEstimateOut';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {allowanceKey, toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
+import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {approvedERC20Amount, approveERC20, migrateShares} from '@common/utils/actions';
@@ -86,8 +86,8 @@ export function useSolverInternalMigration(): TSolverContext {
 
 		const result = await approveERC20({
 			connector: provider,
-			contractAddress: toWagmiAddress(request.current.inputToken.value),
-			spenderAddress: toWagmiAddress(request.current.migrator),
+			contractAddress: toAddress(request.current.inputToken.value),
+			spenderAddress: request.current.migrator,
 			amount: amount,
 			statusHandler: txStatusSetter
 		});
@@ -111,9 +111,9 @@ export function useSolverInternalMigration(): TSolverContext {
 
 		const result = await migrateShares({
 			connector: provider,
-			contractAddress: toWagmiAddress(request.current.migrator),
-			fromVault: toWagmiAddress(request.current.inputToken.value),
-			toVault: toWagmiAddress(request.current.outputToken.value),
+			contractAddress: request.current.migrator,
+			fromVault: request.current.inputToken.value,
+			toVault: request.current.outputToken.value,
 			statusHandler: txStatusSetter
 		});
 		if (result.isSuccessful) {

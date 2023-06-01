@@ -4,7 +4,7 @@ import {depositAndStake} from '@vaults/utils/actions';
 import getVaultEstimateOut from '@vaults/utils/getVaultEstimateOut';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {allowanceKey, toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
+import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {MAX_UINT_256, STAKING_REWARDS_ZAP_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {approvedERC20Amount, approveERC20} from '@common/utils/actions';
@@ -85,8 +85,8 @@ export function useSolverOptimismBooster(): TSolverContext {
 
 		const result = await approveERC20({
 			connector: provider,
-			contractAddress: toWagmiAddress(request.current.inputToken.value),
-			spenderAddress: toWagmiAddress(STAKING_REWARDS_ZAP_ADDRESS),
+			contractAddress: request.current.inputToken.value,
+			spenderAddress: STAKING_REWARDS_ZAP_ADDRESS,
 			amount: amount,
 			statusHandler: txStatusSetter
 		});
@@ -109,8 +109,8 @@ export function useSolverOptimismBooster(): TSolverContext {
 
 		const result = await depositAndStake({
 			connector: provider,
-			contractAddress: toWagmiAddress(STAKING_REWARDS_ZAP_ADDRESS),
-			vaultAddress: toWagmiAddress(request.current.outputToken.value),
+			contractAddress: STAKING_REWARDS_ZAP_ADDRESS,
+			vaultAddress: request.current.outputToken.value,
 			amount: request.current.inputAmount,
 			statusHandler: txStatusSetter
 		});

@@ -1,6 +1,5 @@
 import {readContract} from '@wagmi/core';
 import VAULT_ABI from '@yearn-finance/web-lib/utils/abi/vault.abi';
-import {toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {assert} from '@common/utils/assert';
 import {assertAddress} from '@common/utils/toWagmiProvider';
@@ -29,7 +28,7 @@ async function getVaultEstimateOut(props: TGetVaultEstimateOutProps): Promise<TN
 
 	const inputDecimals = toBigInt(props.inputDecimals || 18);
 	const powerDecimals = toBigInt(10) ** inputDecimals;
-	const contractAddress = toWagmiAddress(props.isDepositing ? props.outputToken : props.inputToken);
+	const contractAddress = props.isDepositing ? props.outputToken : props.inputToken;
 	const pps = await readContract({
 		abi: VAULT_ABI,
 		address: contractAddress,

@@ -1,6 +1,5 @@
 import {captureException} from '@sentry/nextjs';
 import {prepareWriteContract, waitForTransaction, writeContract} from '@wagmi/core';
-import {toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
 import {CURVE_BRIBE_V2_ADDRESS, CURVE_BRIBE_V3_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {assert} from '@common/utils/assert';
@@ -39,7 +38,7 @@ export async function claimRewardV2(props: TClaimReward): Promise<TTxResponse> {
 	try {
 		const config = await prepareWriteContract({
 			...wagmiProvider,
-			address: toWagmiAddress(CURVE_BRIBE_V2_ADDRESS),
+			address: CURVE_BRIBE_V2_ADDRESS,
 			abi: CURVE_BRIBE_V2_ABI,
 			functionName: 'claim_reward',
 			args: [wagmiProvider.address, props.gaugeAddress, props.tokenAddress]
@@ -78,7 +77,7 @@ export async function claimRewardV3(props: TClaimReward): Promise<TTxResponse> {
 	try {
 		const config = await prepareWriteContract({
 			...wagmiProvider,
-			address: toWagmiAddress(CURVE_BRIBE_V3_ADDRESS),
+			address: CURVE_BRIBE_V3_ADDRESS,
 			abi: CURVE_BRIBE_V3_ABI,
 			functionName: 'claim_reward_for',
 			args: [wagmiProvider.address, props.gaugeAddress, props.tokenAddress]
@@ -133,7 +132,7 @@ export async function addReward(props: TAddReward): Promise<TTxResponse> {
 	try {
 		const config = await prepareWriteContract({
 			...wagmiProvider,
-			address: toWagmiAddress(CURVE_BRIBE_V3_ADDRESS),
+			address: CURVE_BRIBE_V3_ADDRESS,
 			abi: CURVE_BRIBE_V3_ABI,
 			functionName: 'add_reward_amount',
 			args: [props.gaugeAddress, props.tokenAddress, props.amount]

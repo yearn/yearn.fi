@@ -4,7 +4,7 @@ import STAKING_REWARDS_ZAP_ABI from '@vaults/utils/abi/stakingRewardsZap.abi';
 import VAULT_FACTORY_ABI from '@vaults/utils/abi/vaultFactory.abi';
 import ZAP_VE_CRV_ABI from '@vaults/utils/abi/zapVeCRV.abi';
 import {prepareWriteContract, waitForTransaction, writeContract} from '@wagmi/core';
-import {toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
+import {} from '@yearn-finance/web-lib/utils/address';
 import {STAKING_REWARDS_ZAP_ADDRESS, VAULT_FACTORY_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
@@ -39,7 +39,7 @@ export async function depositAndStake(props: TDepositAndStake): Promise<TTxRespo
 	try {
 		const config = await prepareWriteContract({
 			...wagmiProvider,
-			address: toWagmiAddress(STAKING_REWARDS_ZAP_ADDRESS),
+			address: STAKING_REWARDS_ZAP_ADDRESS,
 			abi: STAKING_REWARDS_ZAP_ABI,
 			functionName: 'zapIn',
 			args: [props.vaultAddress, props.amount]
@@ -220,7 +220,7 @@ export async function veCRVzap(props: TVeCRVZap): Promise<TTxResponse> {
 	try {
 		const config = await prepareWriteContract({
 			...wagmiProvider,
-			address: toWagmiAddress(ZAP_YEARN_VE_CRV_ADDRESS),
+			address: ZAP_YEARN_VE_CRV_ADDRESS,
 			abi: ZAP_VE_CRV_ABI,
 			functionName: 'zap',
 			args: [props.inputToken, props.outputToken, props.amount]
@@ -268,7 +268,7 @@ export async function createNewVaultsAndStrategies(props: TCreateNewVaultsAndStr
 	try {
 		const config = await prepareWriteContract({
 			...wagmiProvider,
-			address: toWagmiAddress(VAULT_FACTORY_ADDRESS),
+			address: VAULT_FACTORY_ADDRESS,
 			abi: VAULT_FACTORY_ABI,
 			functionName: 'createNewVaultsAndStrategies',
 			args: [props.gaugeAddress]
@@ -309,7 +309,7 @@ export async function gasOfCreateNewVaultsAndStrategies(props: TCreateNewVaultsA
 	try {
 		const config = await prepareWriteContract({
 			...wagmiProvider,
-			address: toWagmiAddress(VAULT_FACTORY_ADDRESS),
+			address: VAULT_FACTORY_ADDRESS,
 			abi: VAULT_FACTORY_ABI,
 			functionName: 'createNewVaultsAndStrategies',
 			args: [props.gaugeAddress]

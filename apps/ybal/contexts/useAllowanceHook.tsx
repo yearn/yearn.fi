@@ -5,7 +5,7 @@
 import {useMemo} from 'react';
 import {erc20ABI, useContractReads} from 'wagmi';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {allowanceKey, toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
+import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {BAL_TOKEN_ADDRESS, BALWETH_TOKEN_ADDRESS, LPYBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, YBAL_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {decodeAsBigInt} from '@yearn-finance/web-lib/utils/decoder';
 
@@ -18,16 +18,16 @@ const LOCAL_ZAP_YEARN_YBAL_ADDRESS = toAddress('0x43cA9bAe8dF108684E5EAaA720C25e
 ******************************************************************************/
 export function useAllowances(): TDict<bigint> {
 	const {address} = useWeb3();
-	const wagmiAddress = useMemo((): TAddressWagmi => toWagmiAddress(address), [address]);
-	const zapAddress = useMemo((): TAddressWagmi => toWagmiAddress(LOCAL_ZAP_YEARN_YBAL_ADDRESS), []);
+	const wagmiAddress = useMemo((): TAddressWagmi => toAddress(address), [address]);
+	const zapAddress = useMemo((): TAddressWagmi => LOCAL_ZAP_YEARN_YBAL_ADDRESS, []);
 	const {data, status} = useContractReads({
 		contracts: [
-			{address: toWagmiAddress(BAL_TOKEN_ADDRESS), abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},
-			{address: toWagmiAddress(WETH_TOKEN_ADDRESS), abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},
-			{address: toWagmiAddress(BALWETH_TOKEN_ADDRESS), abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},
-			{address: toWagmiAddress(YBAL_TOKEN_ADDRESS), abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},
-			{address: toWagmiAddress(STYBAL_TOKEN_ADDRESS), abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},
-			{address: toWagmiAddress(LPYBAL_TOKEN_ADDRESS), abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]}
+			{address: BAL_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},
+			{address: WETH_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},
+			{address: BALWETH_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},
+			{address: YBAL_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},
+			{address: STYBAL_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},
+			{address: LPYBAL_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]}
 		]
 	});
 
