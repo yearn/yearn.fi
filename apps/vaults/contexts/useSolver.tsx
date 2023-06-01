@@ -84,7 +84,6 @@ function WithSolverContextApp({children}: { children: React.ReactElement }): Rea
 		if (quote.status !== 'fulfilled') {
 			return;
 		}
-		console.log({currentNonce, expectedNonce: executionNonce.current});
 		if (currentNonce !== executionNonce.current) {
 			return;
 		}
