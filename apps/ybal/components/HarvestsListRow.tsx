@@ -29,13 +29,15 @@ function Row({label, value, className, valueClassName}: TRowProps): ReactElement
 }
 
 function HarvestListRow({harvest}: {harvest: TYDaemonHarvests}): ReactElement {
+	const vaultName = toAddress(harvest.vaultAddress) === STYBAL_TOKEN_ADDRESS ? 'st-yBal' : 'lp-yBal';
+
 	return (
 		<div className={'yearn--table-wrapper'}>
 			<div className={'yearn--table-token-section'}>
 				<div className={'yearn--table-token-section-item'}>
 					<div className={'yearn--table-token-section-item-image'}>
 						<ImageWithFallback
-							alt={toAddress(harvest.vaultAddress) === STYBAL_TOKEN_ADDRESS ? 'st-yBal' : 'lp-yBal'}
+							alt={vaultName}
 							width={40}
 							height={40}
 							quality={90}
@@ -43,7 +45,7 @@ function HarvestListRow({harvest}: {harvest: TYDaemonHarvests}): ReactElement {
 							loading={'eager'} />
 					</div>
 					<p>
-						{toAddress(harvest.vaultAddress) === STYBAL_TOKEN_ADDRESS ? 'st-yBal' : 'lp-yBal'}
+						{vaultName}
 					</p>
 				</div>
 			</div>
