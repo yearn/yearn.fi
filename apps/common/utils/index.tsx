@@ -1,5 +1,6 @@
 import {request} from 'graphql-request';
 import {formatUnits, parseUnits} from 'viem';
+import {captureException} from '@sentry/nextjs';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {LPYCRV_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YVBOOST_TOKEN_ADDRESS, YVECRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -101,6 +102,7 @@ export async function hash(message: string): Promise<string> {
 export function handleSettle<T>(data: PromiseSettledResult<unknown>, fallback: T): T {
 	if (data.status !== 'fulfilled') {
 		console.error(data.reason);
+		captureException(data.reason);
 		return fallback;
 	}
 	return data.value as T;

@@ -29,13 +29,18 @@ function Row({label, value, className, valueClassName}: TRowProps): ReactElement
 }
 
 function HarvestListRow({harvest}: {harvest: TYDaemonHarvests}): ReactElement {
+	const vaultName = toAddress(harvest.vaultAddress) === STYBAL_TOKEN_ADDRESS ? 'st-yBal' : 'lp-yBal';
+	const gain = formatToNormalizedAmount(toBigInt(harvest.profit) - toBigInt(harvest.loss));
+	const value = formatUSD(Number(harvest.profitValue) - Number(harvest.lossValue));
+	const date = formatDate(Number(harvest.timestamp) * 1000);
+
 	return (
 		<div className={'yearn--table-wrapper'}>
 			<div className={'yearn--table-token-section'}>
 				<div className={'yearn--table-token-section-item'}>
 					<div className={'yearn--table-token-section-item-image'}>
 						<ImageWithFallback
-							alt={toAddress(harvest.vaultAddress) === STYBAL_TOKEN_ADDRESS ? 'st-yBal' : 'lp-yBal'}
+							alt={vaultName}
 							width={40}
 							height={40}
 							quality={90}
@@ -43,29 +48,15 @@ function HarvestListRow({harvest}: {harvest: TYDaemonHarvests}): ReactElement {
 							loading={'eager'} />
 					</div>
 					<p>
-						{toAddress(harvest.vaultAddress) === STYBAL_TOKEN_ADDRESS ? 'st-yBal' : 'lp-yBal'}
+						{vaultName}
 					</p>
 				</div>
 			</div>
 
 			<div className={'yearn--table-data-section md:grid-cols-9'}>
-				<Row
-					label={'Gain'}
-					value={formatToNormalizedAmount(toBigInt(harvest.profit) - toBigInt(harvest.loss))}
-					className={'md:col-span-1'}
-					valueClassName={'font-bold'} />
-
-				<Row
-					label={'Value'}
-					value={formatUSD(Number(harvest.profitValue) - Number(harvest.lossValue))}
-					className={'md:col-span-2'} />
-
-				<Row
-					label={'Date'}
-					value={formatDate(Number(harvest.timestamp) * 1000)}
-					className={'md:col-span-3'}
-					valueClassName={'leading-6'} />
-
+				<Row label={'Gain'} value={gain} className={'md:col-span-1'} valueClassName={'font-bold'} />
+				<Row label={'Value'} value={value} className={'md:col-span-2'} />
+				<Row label={'Date'} value={date} className={'md:col-span-3'} valueClassName={'leading-6'} />
 				<div className={'yearn--table-data-section-item md:col-span-3'} datatype={'number'}>
 					<p className={'yearn--table-data-section-item-label'}>{'Hash'}</p>
 					<a

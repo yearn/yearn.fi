@@ -41,7 +41,7 @@ export async function zapCRV(props: TZapYCRV): Promise<TTxResponse> {
 	assert(props.minAmount <= props.amount, 'Min amount must be less than amount');
 
 	const minAmountWithSlippage = props.minAmount * (1n - (props.slippage / 100n));
-	assert(props.amount >= minAmountWithSlippage, 'Amount must be greater than min amount with slippage');
+	assert(props.amount >= minAmountWithSlippage, 'Amount must be greater or equal to min amount with slippage');
 
 	props.statusHandler?.({...defaultTxStatus, pending: true});
 	const wagmiProvider = await toWagmiProvider(props.connector);
