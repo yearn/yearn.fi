@@ -39,8 +39,8 @@ export const isSolverDisabled = {
 	[Solver.OPTIMISM_BOOSTER]: false,
 
 	[Solver.COWSWAP]: false,
-	[Solver.WIDO]: true,
-	[Solver.PORTALS]: true,
+	[Solver.WIDO]: false,
+	[Solver.PORTALS]: false,
 	[Solver.NONE]: false
 };
 
