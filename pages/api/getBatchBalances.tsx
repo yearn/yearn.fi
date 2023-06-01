@@ -1,17 +1,17 @@
-import {serialize} from 'wagmi';
+import {Contract} from 'ethcall';
+import {ethers} from 'ethers';
 import * as Sentry from '@sentry/nextjs';
-import {getNativeTokenWrapperName} from '@vaults/utils';
-import {erc20ABI, multicall} from '@wagmi/core';
-import AGGREGATE3_ABI from '@yearn-finance/web-lib/utils/abi/aggregate.abi';
-import {toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
-import {ETH_TOKEN_ADDRESS, MULTICALL3_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {decodeAsBigInt, decodeAsNumber, decodeAsString} from '@yearn-finance/web-lib/utils/decoder';
-import {toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {getRPC} from '@yearn-finance/web-lib/utils/web3/providers';
+import {getNativeTokenWrapperContract, getNativeTokenWrapperName} from '@vaults/utils';
+import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {ETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {getProvider, getRPC, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 
+import type {BigNumber} from 'ethers';
 import type {NextApiRequest, NextApiResponse} from 'next';
+import type {TBalanceData} from '@yearn-finance/web-lib/hooks/types';
 import type {TDict} from '@yearn-finance/web-lib/types';
-import type {TBalanceData} from '@yearn-finance/web-lib/types/hooks';
 import type {TUseBalancesTokens} from '@common/hooks/useBalances';
 
 type TPerformCall = {
@@ -24,41 +24,64 @@ async function getBatchBalances({
 	address,
 	tokens
 }: TPerformCall): Promise<TDict<TBalanceData>> {
-	const data: TDict<TBalanceData> = {};
+	let	currentProvider: ethers.providers.JsonRpcProvider;
+	if (chainID === 1337) {
+		currentProvider = new ethers.providers.JsonRpcProvider('http://0.0.0.0:8545');
+	} else {
+		currentProvider = getProvider(chainID);
+	}
+
+	// await currentProvider.ready;
+
+	const	ethcallProvider = await newEthCallProvider(currentProvider);
+	const	data: TDict<TBalanceData> = {};
 	const	chunks = [];
 	for (let i = 0; i < tokens.length; i += 5_000) {
 		chunks.push(tokens.slice(i, i + 5_000));
 	}
 
-	const nativeTokenWrapperName = getNativeTokenWrapperName(chainID);
 	for (const chunkTokens of chunks) {
 		const calls = [];
 		for (const element of chunkTokens) {
 			const	{token} = element;
 			const	ownerAddress = address;
-			const	isEth = toAddress(token) === toAddress(ETH_TOKEN_ADDRESS);
-			if (isEth) {
-				calls.push({address: toWagmiAddress(MULTICALL3_ADDRESS), abi: AGGREGATE3_ABI, functionName: 'getEthBalance', args: [ownerAddress]});
+			const	isNativeToken = toAddress(token) === ETH_TOKEN_ADDRESS;
+			if (isNativeToken) {
+				const	tokenContract = new Contract(getNativeTokenWrapperContract(chainID), ERC20_ABI);
+				calls.push(
+					ethcallProvider.getEthBalance(ownerAddress),
+					tokenContract.decimals(),
+					tokenContract.symbol()
+				);
 			} else {
-				calls.push({address: toWagmiAddress(token), abi: erc20ABI, functionName: 'balanceOf', args: [ownerAddress]});
+				const	tokenContract = new Contract(token, ERC20_ABI);
+				calls.push(
+					tokenContract.balanceOf(ownerAddress),
+					tokenContract.decimals(),
+					tokenContract.symbol()
+				);
 			}
 		}
 
 		try {
-			const results = await multicall({contracts: calls as never[], chainId: chainID});
+			const	results = await ethcallProvider.tryAll(calls);
 
 			let		rIndex = 0;
-			for (const element of tokens) {
-				const {token} = element;
-				const balanceOf = decodeAsBigInt(results[rIndex++]);
-				const decimals = decodeAsNumber(results[rIndex++]);
-				const symbol = decodeAsString(results[rIndex++]);
+			for (const element of chunkTokens) {
+				const	{token} = element;
+				const	balanceOf = results[rIndex++] as BigNumber;
+				const	decimals = results[rIndex++] as number;
+				let symbol = results[rIndex++] as string;
+
+				if (toAddress(token) === ETH_TOKEN_ADDRESS) {
+					symbol = getNativeTokenWrapperName(chainID);
+				}
 				data[toAddress(token)] = {
-					decimals: decimals || 18,
-					symbol: toAddress(token) === ETH_TOKEN_ADDRESS ? nativeTokenWrapperName : symbol,
+					decimals: Number(decimals),
+					symbol: symbol,
 					raw: balanceOf,
-					rawPrice: 0n,
-					normalized: toNormalizedValue(balanceOf, decimals || 18),
+					rawPrice: formatBN(0),
+					normalized: formatToNormalizedValue(balanceOf, Number(decimals)),
 					normalizedPrice: 0,
 					normalizedValue: 0
 				};
@@ -67,7 +90,6 @@ async function getBatchBalances({
 			continue;
 		}
 	}
-
 	return data;
 }
 
@@ -75,15 +97,15 @@ export function isArrayOfUseBalancesTokens(value: unknown): value is TUseBalance
 	return Array.isArray(value) && value.every(({token}): boolean => !!token && typeof token === 'string');
 }
 
-export type TGetBatchBalancesResp = {balances: string, chainID: number};
+export type TGetBatchBalancesResp = {balances: TDict<TBalanceData>, chainID: number};
 export default async function handler(req: NextApiRequest, res: NextApiResponse<TGetBatchBalancesResp>): Promise<void> {
 	const chainID = Number(req.body.chainID);
 	const address = String(req.body.address);
 	const tokens = isArrayOfUseBalancesTokens(req.body.tokens) ? req.body.tokens : [];
 
-	try {
+	try {		
 		const balances = await getBatchBalances({chainID, address, tokens});
-		return res.status(200).json({balances: serialize(balances), chainID: req.body.chainID});
+		return res.status(200).json({balances, chainID: req.body.chainID});
 	} catch (error) {
 		Sentry.captureException(error, {tags: {rpc: getRPC(chainID), chainID, address}});
 	}
