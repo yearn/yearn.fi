@@ -148,14 +148,16 @@ function GaugeList(): ReactElement {
 					sortBy={sort.sortBy}
 					sortDirection={sort.sortDirection}
 					onSort={onSort}
-					dataClassName={'grid-cols-5'}
+					wrapperClassName={'grid-cols-12'}
+					tokenClassName={'col-span-4'}
+					dataClassName={'col-span-8 grid-cols-8'}
 					items={[
 						{label: 'Gauges', value: 'name', sortable: true},
-						{label: '', value: '', sortable: false},
-						{label: '$/veCRV', value: 'rewards', sortable: false},
-						{label: 'APR', value: 'apr', sortable: false},
-						{label: 'Claimable', value: 'claimable', sortable: false},
-						{label: '', value: '', sortable: false}
+						{label: '', value: '', sortable: false, className: 'col-span-1'},
+						{label: 'APR', value: 'apr', sortable: false, className: '!col-span-2'},
+						{label: '$/veCRV', value: 'rewards', sortable: false, className: '!col-span-2'},
+						{label: 'Claimable', value: 'claimable', sortable: false, className: '!col-span-2'},
+						{label: '', value: '', sortable: false, className: 'col-span-1'}
 					]} />
 
 				<Renderable

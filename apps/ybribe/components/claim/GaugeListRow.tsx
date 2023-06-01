@@ -162,8 +162,8 @@ function GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauge, cate
 	}
 
 	return (
-		<div className={'yearn--table-wrapper border-neutral-200 md:!border-t md:!border-solid'}>
-			<div className={'yearn--table-token-section'}>
+		<div className={'yearn--table-wrapper grid-cols-12 border-neutral-200 md:!border-t md:!border-solid'}>
+			<div className={'yearn--table-token-section col-span-4'}>
 				<div className={'yearn--table-token-section-item'}>
 					<div className={'yearn--table-token-section-item-image'}>
 						<ImageWithFallback
@@ -178,56 +178,23 @@ function GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauge, cate
 				</div>
 			</div>
 
-			<div className={'yearn--table-data-section grid-cols-1 md:grid-cols-5'}>
-				<div className={'yearn--table-data-section-item hidden h-auto md:block'}>
+			<div className={'yearn--table-data-section col-span-8 grid-cols-1 md:grid-cols-8'}>
+				<div className={'yearn--table-data-section-item hidden h-auto md:col-span-1 md:block'}>
 					<div>
 						<div className={'flex h-auto flex-col items-end pt-0 md:h-14'}>
-							<p className={'items-baseline text-end text-sm tabular-nums text-neutral-400'}>
+							<p className={'items-baseline whitespace-nowrap text-end text-sm tabular-nums text-neutral-400'}>
 								{'Current Period'}
 							</p>
 						</div>
 						<div className={'flex h-auto flex-col items-end pt-0 md:h-14'}>
-							<p className={'items-baseline text-end text-sm tabular-nums text-neutral-400'}>
+							<p className={'items-baseline whitespace-nowrap text-end text-sm tabular-nums text-neutral-400'}>
 								{'Pending Period'}
 							</p>
 						</div>
 					</div>
 				</div>
 
-
-				<div className={'yearn--table-data-section-item h-auto'} datatype={'number'}>
-					<div className={'w-full'}>
-						<div className={'mb-4 flex h-auto flex-row items-baseline justify-between pt-0 md:mb-0 md:h-14 md:flex-col md:items-end'}>
-							<label className={'yearn--table-data-section-item-label'}>{'Current $/veCRV'}</label>
-							<Renderable
-								shouldRender={!!currentRewardsForCurrentGaugeMap && currentRewardsForCurrentGaugeMap.length > 0}
-								fallback={renderDefaultValueUSDFallback()}>
-								{currentRewardsForCurrentGaugeMap.map(([key, value]: [string, bigint]): ReactElement =>
-									<GaugeRowItemWithExtraData
-										key={`current-rewards-${currentGauge.gauge}-${key}`}
-										address={toAddress(key)}
-										value={value} />
-								)}
-							</Renderable>
-						</div>
-						<div className={'flex h-auto flex-row items-baseline justify-between pt-0 md:h-14 md:flex-col md:items-end'}>
-							<label className={'yearn--table-data-section-item-label'}>{'Pending $/veCRV'}</label>
-							<Renderable
-								shouldRender={!!nextRewardsForCurrentGaugeMap && nextRewardsForCurrentGaugeMap.length > 0}
-								fallback={renderDefaultValueUSDFallback()}>
-								{nextRewardsForCurrentGaugeMap.map(([key, value]: [string, bigint]): ReactElement =>
-									<GaugeRowItemWithExtraData
-										key={`pending-rewards-${currentGauge.gauge}-${key}`}
-										address={toAddress(key)}
-										value={value} />
-								)}
-							</Renderable>
-						</div>
-					</div>
-				</div>
-
-
-				<div className={'yearn--table-data-section-item h-auto'} datatype={'number'}>
+				<div className={'yearn--table-data-section-item h-auto md:col-span-2'} datatype={'number'}>
 					<div className={'w-full'}>
 						<div className={'mb-4 flex h-auto flex-row items-baseline justify-between pt-0 md:mb-0 md:h-14 md:flex-col md:items-end'}>
 							<label className={'yearn--table-data-section-item-label'}>{'Current APR'}</label>
@@ -258,7 +225,38 @@ function GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauge, cate
 					</div>
 				</div>
 
-				<div className={'yearn--table-data-section-item h-auto'} datatype={'number'}>
+				<div className={'yearn--table-data-section-item h-auto md:col-span-2'} datatype={'number'}>
+					<div className={'w-full'}>
+						<div className={'mb-4 flex h-auto flex-row items-baseline justify-between pt-0 md:mb-0 md:h-14 md:flex-col md:items-end'}>
+							<label className={'yearn--table-data-section-item-label'}>{'Current $/veCRV'}</label>
+							<Renderable
+								shouldRender={!!currentRewardsForCurrentGaugeMap && currentRewardsForCurrentGaugeMap.length > 0}
+								fallback={renderDefaultValueUSDFallback()}>
+								{currentRewardsForCurrentGaugeMap.map(([key, value]: [string, bigint]): ReactElement =>
+									<GaugeRowItemWithExtraData
+										key={`current-rewards-${currentGauge.gauge}-${key}`}
+										address={toAddress(key)}
+										value={value} />
+								)}
+							</Renderable>
+						</div>
+						<div className={'flex h-auto flex-row items-baseline justify-between pt-0 md:h-14 md:flex-col md:items-end'}>
+							<label className={'yearn--table-data-section-item-label'}>{'Pending $/veCRV'}</label>
+							<Renderable
+								shouldRender={!!nextRewardsForCurrentGaugeMap && nextRewardsForCurrentGaugeMap.length > 0}
+								fallback={renderDefaultValueUSDFallback()}>
+								{nextRewardsForCurrentGaugeMap.map(([key, value]: [string, bigint]): ReactElement =>
+									<GaugeRowItemWithExtraData
+										key={`pending-rewards-${currentGauge.gauge}-${key}`}
+										address={toAddress(key)}
+										value={value} />
+								)}
+							</Renderable>
+						</div>
+					</div>
+				</div>
+
+				<div className={'yearn--table-data-section-item h-auto md:col-span-2'} datatype={'number'}>
 					<div className={'w-full'}>
 						<div className={'flex h-auto flex-row items-baseline justify-between pt-0 md:h-14 md:flex-col md:items-end'}>
 							<label className={'yearn--table-data-section-item-label'}>{'Claimable'}</label>
@@ -297,7 +295,6 @@ function GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauge, cate
 					</div>
 					<div />
 				</div>
-
 
 				<div className={'yearn--table-data-section-item md:col-span-1'} datatype={'number'}>
 					<div className={'col-span-2 hidden flex-col items-end space-y-4 md:flex'}>
