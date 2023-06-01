@@ -30,6 +30,9 @@ function Row({label, value, className, valueClassName}: TRowProps): ReactElement
 
 function HarvestListRow({harvest}: {harvest: TYDaemonHarvests}): ReactElement {
 	const vaultName = toAddress(harvest.vaultAddress) === STYBAL_TOKEN_ADDRESS ? 'st-yBal' : 'lp-yBal';
+	const gain = formatToNormalizedAmount(toBigInt(harvest.profit) - toBigInt(harvest.loss));
+	const value = formatUSD(Number(harvest.profitValue) - Number(harvest.lossValue));
+	const date = formatDate(Number(harvest.timestamp) * 1000);
 
 	return (
 		<div className={'yearn--table-wrapper'}>
@@ -51,23 +54,9 @@ function HarvestListRow({harvest}: {harvest: TYDaemonHarvests}): ReactElement {
 			</div>
 
 			<div className={'yearn--table-data-section md:grid-cols-9'}>
-				<Row
-					label={'Gain'}
-					value={formatToNormalizedAmount(toBigInt(harvest.profit) - toBigInt(harvest.loss))}
-					className={'md:col-span-1'}
-					valueClassName={'font-bold'} />
-
-				<Row
-					label={'Value'}
-					value={formatUSD(Number(harvest.profitValue) - Number(harvest.lossValue))}
-					className={'md:col-span-2'} />
-
-				<Row
-					label={'Date'}
-					value={formatDate(Number(harvest.timestamp) * 1000)}
-					className={'md:col-span-3'}
-					valueClassName={'leading-6'} />
-
+				<Row label={'Gain'} value={gain} className={'md:col-span-1'} valueClassName={'font-bold'} />
+				<Row label={'Value'} value={value} className={'md:col-span-2'} />
+				<Row label={'Date'} value={date} className={'md:col-span-3'} valueClassName={'leading-6'} />
 				<div className={'yearn--table-data-section-item md:col-span-3'} datatype={'number'}>
 					<p className={'yearn--table-data-section-item-label'}>{'Hash'}</p>
 					<a
