@@ -110,7 +110,7 @@ function GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauge, cate
 		const result = await claimRewardV3({
 			connector: provider,
 			contractAddress: CURVE_BRIBE_V3_ADDRESS,
-			gaugeAddress: currentGauge.gauge,
+			gaugeAddress: toAddress(currentGauge.gauge),
 			tokenAddress: token,
 			statusHandler: set_txStatusClaim
 		});

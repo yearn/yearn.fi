@@ -23,8 +23,8 @@ import type {TWriteTransaction} from '@common/utils/toWagmiProvider';
 ** @param tokenAddress - The address of the token to claim rewards from.
 ******************************************************************************/
 type TClaimReward = TWriteTransaction & {
-	gaugeAddress: TAddressWagmi;
-	tokenAddress: TAddressWagmi;
+	gaugeAddress: TAddressWagmi | undefined;
+	tokenAddress: TAddressWagmi | undefined;
 };
 export async function claimRewardV2(props: TClaimReward): Promise<TTxResponse> {
 	assertAddress(CURVE_BRIBE_V2_ADDRESS);
@@ -62,7 +62,6 @@ export async function claimRewardV2(props: TClaimReward): Promise<TTxResponse> {
 			props.statusHandler?.({...defaultTxStatus});
 		}, 3000);
 	}
-
 }
 
 export async function claimRewardV3(props: TClaimReward): Promise<TTxResponse> {
@@ -101,7 +100,6 @@ export async function claimRewardV3(props: TClaimReward): Promise<TTxResponse> {
 			props.statusHandler?.({...defaultTxStatus});
 		}, 3000);
 	}
-
 }
 
 
@@ -115,8 +113,8 @@ export async function claimRewardV3(props: TClaimReward): Promise<TTxResponse> {
 ** @param tokenAddress - The address of the token to claim rewards from.
 ******************************************************************************/
 type TAddReward = TWriteTransaction & {
-	gaugeAddress: TAddressWagmi;
-	tokenAddress: TAddressWagmi;
+	gaugeAddress: TAddressWagmi | undefined;
+	tokenAddress: TAddressWagmi | undefined;
 	amount: bigint;
 };
 export async function addReward(props: TAddReward): Promise<TTxResponse> {

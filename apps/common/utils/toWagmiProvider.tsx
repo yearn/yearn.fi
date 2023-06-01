@@ -28,7 +28,7 @@ export async function toWagmiProvider(connector: Connector | undefined): Promise
 
 export type TWriteTransaction = {
 	connector: Connector | undefined;
-	contractAddress: TAddressWagmi;
+	contractAddress: TAddressWagmi | undefined;
 	statusHandler?: (status: typeof defaultTxStatus) => void;
 }
 

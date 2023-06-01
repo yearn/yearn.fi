@@ -6,7 +6,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {CURVE_BRIBE_V3_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {CURVE_BRIBE_V3_ADDRESS, ZERO_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {decodeAsBigInt, decodeAsNumber, decodeAsString} from '@yearn-finance/web-lib/utils/decoder';
 import {formatToNormalizedValue, toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
@@ -90,7 +90,7 @@ function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauge, on
 		const result = await addReward({
 			connector: provider,
 			contractAddress: CURVE_BRIBE_V3_ADDRESS,
-			gaugeAddress: currentGauge.gauge,
+			gaugeAddress: toAddress(currentGauge.gauge),
 			tokenAddress: tokenAddress,
 			amount: amount.raw,
 			statusHandler: set_txStatusAddReward
@@ -180,7 +180,7 @@ function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauge, on
 										const {value} = e.target;
 										if (value === '' || value.match(/^(0[x]{0,1})[a-fA-F0-9]{0,40}/gm)?.includes(value)) {
 											if (isZeroAddress(value)) {
-												set_tokenAddress(value);
+												set_tokenAddress(ZERO_ADDRESS);
 											} else {
 												set_tokenAddress(toAddress(value));
 											}
