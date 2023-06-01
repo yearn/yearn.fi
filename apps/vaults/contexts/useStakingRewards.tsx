@@ -130,7 +130,7 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 		const calls = [];
 		for (const {address} of stakingRewards) {
 			const baseContract = {
-				address: address,
+				address,
 				abi: STAKING_REWARDS_ABI,
 				chainId: chainID
 			} as const;
