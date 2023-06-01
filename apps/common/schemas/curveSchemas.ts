@@ -28,7 +28,7 @@ const curveGaugeSchema = z.object({
 		deposit: z.string().array().optional().nullable(),
 		withdraw: z.string().array().optional().nullable()
 	}).optional(),
-	swap: z.string().optional().transform((a): TAddress => toAddress(a)),
+	swap: z.string().optional().transform(toAddress),
 	swap_token: z.string().optional().transform((a): TAddress => toAddress(a)),
 	name: z.string(),
 	shortName: z.string().optional(),
