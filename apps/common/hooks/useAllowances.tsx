@@ -24,7 +24,7 @@ export const useAllowances = (allowanceRequests: TAllowanceRequest[]): [TDict<Bi
 		if (!isActive || !userAddress) {
 			return {};
 		}
-		const currentProvider = getProvider(chainID);
+		const currentProvider = provider || getProvider(chainID);
 		const ethcallProvider = await newEthCallProvider(currentProvider);
 
 		const allowanceCalls = allowanceRequests.map(({token, spender}): Call => {
@@ -38,8 +38,8 @@ export const useAllowances = (allowanceRequests: TAllowanceRequest[]): [TDict<Bi
 		});
 
 		return allowancesMap;
-	}, [allowanceRequests, chainID, isActive, userAddress]);
+	}, [allowanceRequests, chainID, isActive, userAddress, provider]);
 	const {data: allowancesMap, isLoading, mutate: refresh} = useSWR(isActive && provider ? allowanceRequests : null, allowancesFetcher, {shouldRetryOnError: false});
-	
+
 	return [allowancesMap || {}, isLoading, refresh];
 };
