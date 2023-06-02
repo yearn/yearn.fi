@@ -68,10 +68,9 @@ export async function approvedERC20Amount(
 ******************************************************************************/
 type TApproveERC20 = TWriteTransaction & {
 	spenderAddress: TAddress | undefined;
-	amount: bigint | undefined;
+	amount: bigint;
 };
 export async function approveERC20(props: TApproveERC20): Promise<TTxResponse> {
-	assert(typeof props.amount === 'bigint', 'Amount is not a bigint');
 	assertAddress(props.spenderAddress, 'spenderAddress');
 
 	try	{
@@ -103,10 +102,9 @@ export async function approveERC20(props: TApproveERC20): Promise<TTxResponse> {
 ** @param amount - The amount of ETH to deposit.
 ******************************************************************************/
 type TDeposit = TWriteTransaction & {
-	amount: bigint | undefined;
+	amount: bigint;
 };
 export async function deposit(props: TDeposit): Promise<TTxResponse> {
-	assert(typeof props.amount === 'bigint', 'Amount is not a bigint');
 	assert(props.amount > 0n, 'Amount is 0');
 
 	return await handleTx(props, {
@@ -126,11 +124,10 @@ export async function deposit(props: TDeposit): Promise<TTxResponse> {
 ** @param amount - The amount of collateral to deposit.
 ******************************************************************************/
 type TDepositEth = TWriteTransaction & {
-	amount: bigint | undefined;
+	amount: bigint;
 };
 export async function depositETH(props: TDepositEth): Promise<TTxResponse> {
 	assert(props.connector, 'No connector');
-	assert(typeof props.amount === 'bigint', 'Amount is not a bigint');
 	assert(props.amount > 0n, 'Amount is 0');
 	const chainID = await props.connector.getChainId();
 	switch (chainID) {
@@ -167,11 +164,10 @@ export async function depositETH(props: TDepositEth): Promise<TTxResponse> {
 type TDepositViaPartner = TWriteTransaction & {
 	vaultAddress: TAddress | undefined;
 	partnerAddress: TAddress | undefined;
-	amount: bigint | undefined;
+	amount: bigint;
 };
 export async function depositViaPartner(props: TDepositViaPartner): Promise<TTxResponse> {
 	assertAddress(props.vaultAddress, 'vaultAddress');
-	assert(typeof props.amount === 'bigint', 'Amount is not a bigint');
 	assert(props.amount > 0n, 'Amount is 0');
 
 	return await handleTx(props, {
@@ -195,11 +191,10 @@ export async function depositViaPartner(props: TDepositViaPartner): Promise<TTxR
 ** @param amount - The amount of ETH to withdraw.
 ******************************************************************************/
 type TWithdrawEth = TWriteTransaction & {
-	amount: bigint | undefined;
+	amount: bigint;
 };
 export async function withdrawETH(props: TWithdrawEth): Promise<TTxResponse> {
 	assert(props.connector, 'No connector');
-	assert(typeof props.amount === 'bigint', 'Amount is not a bigint');
 	assert(props.amount > 0n, 'Amount is 0');
 	const chainID = await props.connector.getChainId();
 	switch (chainID) {
@@ -233,10 +228,9 @@ export async function withdrawETH(props: TWithdrawEth): Promise<TTxResponse> {
 ** @param amount - The amount of ETH to withdraw.
 ******************************************************************************/
 type TWithdrawShares = TWriteTransaction & {
-	amount: bigint | undefined;
+	amount: bigint;
 };
 export async function withdrawShares(props: TWithdrawShares): Promise<TTxResponse> {
-	assert(typeof props.amount === 'bigint', 'Amount is not a bigint');
 	assert(props.amount > 0n, 'Amount is 0');
 
 	return await handleTx(props, {
