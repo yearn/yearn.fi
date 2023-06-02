@@ -50,6 +50,7 @@ type TStake = TWriteTransaction & {
 };
 export async function stake(props: TStake): Promise<TTxResponse> {
 	assert(props.amount > 0n, 'Amount is 0');
+	assertAddress(props.contractAddress);
 
 	return await handleTx(props, {
 		address: props.contractAddress,
@@ -67,6 +68,8 @@ export async function stake(props: TStake): Promise<TTxResponse> {
 ******************************************************************************/
 type TUnstake = TWriteTransaction;
 export async function unstake(props: TUnstake): Promise<TTxResponse> {
+	assertAddress(props.contractAddress);
+
 	return await handleTx(props, {
 		address: props.contractAddress,
 		abi: STAKING_REWARDS_ABI,
@@ -82,6 +85,8 @@ export async function unstake(props: TUnstake): Promise<TTxResponse> {
 ******************************************************************************/
 type TClaim = TWriteTransaction;
 export async function claim(props: TClaim): Promise<TTxResponse> {
+	assertAddress(props.contractAddress);
+	
 	return await handleTx(props, {
 		address: props.contractAddress,
 		abi: STAKING_REWARDS_ABI,

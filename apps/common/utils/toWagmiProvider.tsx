@@ -47,7 +47,7 @@ type TPrepareWriteContractProp = Parameters<typeof prepareWriteContract>[0];
 
 export async function handleTx(
 	args: TWriteTransaction,
-	props: TPrepareWriteContractProp
+	props: Omit<TPrepareWriteContractProp, 'value'> & { value?: bigint; }
 ): Promise<TTxResponse> {
 	args.statusHandler?.({...defaultTxStatus, pending: true});
 	const wagmiProvider = await toWagmiProvider(args.connector);
@@ -59,7 +59,8 @@ export async function handleTx(
 		const {request} = await prepareWriteContract({
 			...wagmiProvider,
 			...props,
-			address: props.address
+			address: props.address,
+			value: undefined
 		});
 		const {hash} = await writeContract(request);
 		const receipt = await waitForTransaction({chainId: wagmiProvider.chainId, hash});

@@ -72,6 +72,7 @@ type TApproveERC20 = TWriteTransaction & {
 };
 export async function approveERC20(props: TApproveERC20): Promise<TTxResponse> {
 	assertAddress(props.spenderAddress, 'spenderAddress');
+	assertAddress(props.contractAddress);
 
 	try	{
 		return await handleTx(props, {
@@ -106,6 +107,7 @@ type TDeposit = TWriteTransaction & {
 };
 export async function deposit(props: TDeposit): Promise<TTxResponse> {
 	assert(props.amount > 0n, 'Amount is 0');
+	assertAddress(props.contractAddress);
 
 	return await handleTx(props, {
 		address: props.contractAddress,
@@ -169,6 +171,7 @@ type TDepositViaPartner = TWriteTransaction & {
 export async function depositViaPartner(props: TDepositViaPartner): Promise<TTxResponse> {
 	assertAddress(props.vaultAddress, 'vaultAddress');
 	assert(props.amount > 0n, 'Amount is 0');
+	assertAddress(props.contractAddress);
 
 	return await handleTx(props, {
 		address: props.contractAddress,
@@ -232,6 +235,7 @@ type TWithdrawShares = TWriteTransaction & {
 };
 export async function withdrawShares(props: TWithdrawShares): Promise<TTxResponse> {
 	assert(props.amount > 0n, 'Amount is 0');
+	assertAddress(props.contractAddress);
 
 	return await handleTx(props, {
 		address: props.contractAddress,
@@ -256,6 +260,7 @@ type TMigrateShares = TWriteTransaction & {
 export async function migrateShares(props: TMigrateShares): Promise<TTxResponse> {
 	assertAddress(props.fromVault, 'fromVault');
 	assertAddress(props.toVault, 'toVault');
+	assertAddress(props.contractAddress);
 
 	return await handleTx(props, {
 		address: props.contractAddress,

@@ -24,6 +24,7 @@ export async function lockVeYFI(props: TLockVeYFI): Promise<TTxResponse> {
 	assert(props.connector, 'No connector');
 	assert(props.time > 0n, 'Time is 0');
 	assert(props.amount > 0n, 'Amount is 0');
+	assertAddress(props.contractAddress);
 
 	const signerAddress = await props.connector.getAccount();
 	assertAddress(signerAddress, 'signerAddress');
@@ -49,6 +50,7 @@ type TIncreaseVeYFILockAmount = TWriteTransaction & {
 export async function increaseVeYFILockAmount(props: TIncreaseVeYFILockAmount): Promise<TTxResponse> {
 	assert(props.connector, 'No connector');
 	assert(props.amount > 0n, 'Amount is 0');
+	assertAddress(props.contractAddress);
 
 	const signerAddress = await props.connector.getAccount();
 	assertAddress(signerAddress, 'signerAddress');
@@ -74,6 +76,7 @@ type TExtendVeYFILockTime = TWriteTransaction & {
 export async function extendVeYFILockTime(props: TExtendVeYFILockTime): Promise<TTxResponse> {
 	assert(props.connector, 'No connector');
 	assert(props.time > 0n, 'Time is 0');
+	assertAddress(props.contractAddress);
 
 	const signerAddress = await props.connector.getAccount();
 	assertAddress(signerAddress, 'signerAddress');
@@ -115,6 +118,8 @@ export async function getVeYFIWithdrawPenalty(props: TGetVeYFIWithdrawPenalty): 
 ******************************************************************************/
 type TWithdrawUnlockedVeYFI = TWriteTransaction;
 export async function withdrawUnlockedVeYFI(props: TWithdrawUnlockedVeYFI): Promise<TTxResponse> {
+	assertAddress(props.contractAddress);
+
 	props.statusHandler?.({...defaultTxStatus, pending: true});
 	const penalty = await getVeYFIWithdrawPenalty(props);
 	if (penalty > 0n) {
@@ -140,6 +145,7 @@ export async function withdrawUnlockedVeYFI(props: TWithdrawUnlockedVeYFI): Prom
 ******************************************************************************/
 type TWithdrawLockedVeYFI = TWriteTransaction;
 export async function withdrawLockedVeYFI(props: TWithdrawLockedVeYFI): Promise<TTxResponse> {
+	assertAddress(props.contractAddress);
 	return await handleTx(props, {
 		address: props.contractAddress,
 		abi: VEYFI_ABI,
