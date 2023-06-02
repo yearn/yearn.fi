@@ -6,11 +6,11 @@ import {isTAddress} from '@yearn-finance/web-lib/utils/isTAddress';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {assert} from '@common/utils/assert';
 
-import type {Abi, BaseError, SimulateContractParameters} from 'viem';
+import type {BaseError} from 'viem';
 import type {Connector} from 'wagmi';
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
-import type {GetWalletClientResult, WalletClient} from '@wagmi/core';
+import type {GetWalletClientResult} from '@wagmi/core';
 
 export type TWagmiProviderContract = {
 	walletClient: GetWalletClientResult,
@@ -43,20 +43,11 @@ export function assertAddress(addr: string | TAddress | undefined, name?: string
 	assert(toAddress(addr) !== ETH_TOKEN_ADDRESS, `${name || 'Address'} is 0xE`);
 }
 
-type TPrepareWriteContractConfig<
-	TAbi extends Abi | readonly unknown[] = Abi,
-	TFunctionName extends string = string
-> = Omit<SimulateContractParameters<TAbi, TFunctionName>, 'chain' | 'address'> & {
-	chainId?: number
-	walletClient?: WalletClient
-	address: TAddress | undefined
-}
-export async function handleTx<
-	TAbi extends Abi | readonly unknown[],
-	TFunctionName extends string
->(
+type TPrepareWriteContractProp = Parameters<typeof prepareWriteContract>[0];
+
+export async function handleTx(
 	args: TWriteTransaction,
-	props: TPrepareWriteContractConfig<TAbi, TFunctionName>
+	props: TPrepareWriteContractProp
 ): Promise<TTxResponse> {
 	args.statusHandler?.({...defaultTxStatus, pending: true});
 	const wagmiProvider = await toWagmiProvider(args.connector);
@@ -65,12 +56,12 @@ export async function handleTx<
 	assertAddress(props.address, 'contractAddress');
 	assertAddress(wagmiProvider.address, 'userAddress');
 	try {
-		const config = await prepareWriteContract({
+		const {request} = await prepareWriteContract({
 			...wagmiProvider,
-			...props as TPrepareWriteContractConfig,
+			...props,
 			address: props.address
 		});
-		const {hash} = await writeContract(config.request);
+		const {hash} = await writeContract(request);
 		const receipt = await waitForTransaction({chainId: wagmiProvider.chainId, hash});
 		if (receipt.status === 'success') {
 			args.statusHandler?.({...defaultTxStatus, success: true});
