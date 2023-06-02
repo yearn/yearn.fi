@@ -1,12 +1,14 @@
 import React, {useMemo, useState} from 'react';
-import dynamic from 'next/dynamic';
+import {useIsMounted} from '@react-hookz/web';
 import {findLatestApr} from '@vaults/components/details/tabs/findLatestApr';
+import GraphForStrategyReports from '@vaults/components/graphs/GraphForStrategyReports';
 import {yDaemonReportsSchema} from '@vaults/schemas/reportsSchema';
+import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import IconCopy from '@yearn-finance/web-lib/icons/IconCopy';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {formatDuration} from '@yearn-finance/web-lib/utils/format.time';
 import {copyToClipboard, parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
@@ -15,13 +17,10 @@ import {Switch} from '@common/components/Switch';
 import {useFetch} from '@common/hooks/useFetch';
 import IconChevron from '@common/icons/IconChevron';
 
-import type {LoaderComponent} from 'next/dynamic';
 import type {ReactElement} from 'react';
 import type {TYDaemonVault, TYDaemonVaultStrategy} from '@common/schemas/yDaemonVaultsSchemas';
-import type {TGraphForStrategyReportsProps} from '@vaults/components/graphs/GraphForStrategyReports';
 import type {TYDaemonReports} from '@vaults/schemas/reportsSchema';
 
-const GraphForStrategyReports = dynamic<TGraphForStrategyReportsProps>(async (): LoaderComponent<TGraphForStrategyReportsProps> => import('@vaults/components/graphs/GraphForStrategyReports'), {ssr: false});
 
 type TProps = {
 	currentVault: TYDaemonVault;
@@ -33,7 +32,7 @@ type TRiskScoreElementProps = {
 	value?: number;
 };
 
-function	RiskScoreElement({label, value}: TRiskScoreElementProps): ReactElement {
+function RiskScoreElement({label, value}: TRiskScoreElementProps): ReactElement {
 	return (
 		<div className={'flex flex-row items-center justify-between'}>
 			<p className={'text-sm text-neutral-500'}>{label}</p>
@@ -42,11 +41,12 @@ function	RiskScoreElement({label, value}: TRiskScoreElementProps): ReactElement 
 	);
 }
 
-function	VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
+function VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
 	const {safeChainID} = useChainID();
 	const {settings: baseAPISettings} = useSettings();
+	const isMounted = useIsMounted();
 
-	const	riskScoreElementsMap = useMemo((): TRiskScoreElementProps[] => {
+	const riskScoreElementsMap = useMemo((): TRiskScoreElementProps[] => {
 		const {riskDetails} = strategy.risk || {};
 
 		return ([
@@ -69,7 +69,6 @@ function	VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
 	});
 
 	const latestApr = useMemo((): number => findLatestApr(reports), [reports]);
-
 	const {lastReport} = strategy.details || {};
 	const lastReportTime = lastReport ? formatDuration((lastReport * 1000) - new Date().valueOf(), true) : 'N/A';
 
@@ -85,7 +84,7 @@ function	VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
 			</summary>
 
 			<div className={'bg-neutral-100 px-4 md:px-6'}>
-				<div className={'mb-6 -mt-6 w-full space-y-6'}>
+				<div className={'-mt-6 mb-6 w-full space-y-6'}>
 					<div>
 						<div className={'flex flex-row items-center justify-start space-x-2 pb-4'}>
 							<p className={'text-xxs text-neutral-900 md:text-xs'}>{toAddress(strategy.address)}</p>
@@ -108,7 +107,7 @@ function	VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
 									{'Capital Allocation'}
 								</p>
 								<b className={'font-number text-lg text-neutral-900'}>
-									{`${formatAmount(formatToNormalizedValue(formatBN(strategy.details?.totalDebt), currentVault?.decimals), 0, 0)} ${currentVault.token.symbol}`}
+									{`${formatAmount(formatToNormalizedValue(toBigInt(strategy.details?.totalDebt), currentVault?.decimals), 0, 0)} ${currentVault.token.symbol}`}
 								</b>
 							</div>
 
@@ -116,7 +115,7 @@ function	VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
 								<p className={'text-base text-neutral-600'}>{'Total Gain'}</p>
 								<b className={'font-number text-lg text-neutral-900'}>
 									{`${formatAmount(formatToNormalizedValue(
-										formatBN(strategy.details?.totalGain).sub(formatBN(strategy.details?.totalLoss)),
+										toBigInt(strategy.details?.totalGain) - toBigInt(strategy.details?.totalLoss),
 										currentVault?.decimals
 									), 0, 0)} ${currentVault.token.symbol}`}
 								</b>
@@ -164,10 +163,12 @@ function	VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
 						<div className={'mt-auto pt-8'}>
 							<p className={'text-neutral-600'}>{'Historical APR'}</p>
 							<div className={'mt-4 flex flex-row border-b border-l border-neutral-300'}>
-								<GraphForStrategyReports
-									vaultDecimals={currentVault.decimals}
-									vaultTicker={currentVault?.token?.symbol || 'token'}
-									strategy={strategy} />
+								<Renderable shouldRender={isMounted()}>
+									<GraphForStrategyReports
+										vaultDecimals={currentVault.decimals}
+										vaultTicker={currentVault?.token?.symbol || 'token'}
+										strategy={strategy} />
+								</Renderable>
 							</div>
 						</div>
 					</div>
@@ -177,12 +178,12 @@ function	VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
 	);
 }
 
-function	isExceptionStrategy(strategy: TYDaemonVaultStrategy): boolean {
+function isExceptionStrategy(strategy: TYDaemonVaultStrategy): boolean {
 	// Curve DAO Fee and Bribes Reinvest
 	return strategy.address.toString() === '0x23724D764d8b3d26852BA20d3Bc2578093d2B022' && !!strategy.details?.inQueue;
 }
 
-function	VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const [searchValue, set_searchValue] = useState<string>('');
 	const [shouldHide0DebtStrategies, set_shouldHide0DebtStrategies] = useState(true);
 

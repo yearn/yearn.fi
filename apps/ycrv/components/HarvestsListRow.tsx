@@ -2,7 +2,7 @@ import React from 'react';
 import IconLinkOut from '@yearn-finance/web-lib/icons/IconLinkOut';
 import {toAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
 import {STYCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatUSD} from '@yearn-finance/web-lib/utils/format.number';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
@@ -10,7 +10,7 @@ import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import type {ReactElement} from 'react';
 import type {TYDaemonHarvests} from '@common/types/yearn';
 
-function	HarvestListRow({harvest}: {harvest: TYDaemonHarvests}): ReactElement {
+function HarvestListRow({harvest}: {harvest: TYDaemonHarvests}): ReactElement {
 	return (
 		<div className={'yearn--table-wrapper'}>
 			<div className={'yearn--table-token-section'}>
@@ -34,7 +34,7 @@ function	HarvestListRow({harvest}: {harvest: TYDaemonHarvests}): ReactElement {
 				<div className={'yearn--table-data-section-item md:col-span-1'} datatype={'number'}>
 					<p className={'yearn--table-data-section-item-label'}>{'Gain'}</p>
 					<b className={'yearn--table-data-section-item-value'}>
-						{formatAmount(formatToNormalizedValue(formatBN(harvest.profit).sub(formatBN(harvest.loss)), 18))}
+						{formatAmount(formatToNormalizedValue(toBigInt(harvest.profit) - toBigInt(harvest.loss), 18))}
 					</b>
 				</div>
 

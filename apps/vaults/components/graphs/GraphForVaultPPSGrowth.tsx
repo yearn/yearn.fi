@@ -10,7 +10,7 @@ export type TGraphForVaultPPSGrowthProps = {
 	height?: number,
 }
 
-function	GraphForVaultPPSGrowth({messariData, height = 312}: TGraphForVaultPPSGrowthProps): ReactElement {
+function GraphForVaultPPSGrowth({messariData, height = 312}: TGraphForVaultPPSGrowthProps): ReactElement {
 	if (messariData?.length === 0) {
 		return <Fragment />;
 	}
@@ -47,7 +47,7 @@ function	GraphForVaultPPSGrowth({messariData, height = 312}: TGraphForVaultPPSGr
 						delete e.verticalAnchor;
 						delete e.visibleTicksCount;
 						delete e.tickFormatter;
-						const	formatedValue = formatAmount(value, 3, 3);
+						const formatedValue = formatAmount(value, 3, 3);
 						return <text {...e}>{formatedValue}</text>;
 					}} />
 				<Tooltip

@@ -1,17 +1,15 @@
-import {captureException} from '@sentry/nextjs';
 import STAKING_REWARDS_ABI from '@vaults/utils/abi/stakingRewards.abi';
 import STAKING_REWARDS_ZAP_ABI from '@vaults/utils/abi/stakingRewardsZap.abi';
-import {prepareWriteContract, waitForTransaction, writeContract} from '@wagmi/core';
-import {toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
-import {STAKING_REWARDS_ZAP_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
+import VAULT_FACTORY_ABI from '@vaults/utils/abi/vaultFactory.abi';
+import ZAP_VE_CRV_ABI from '@vaults/utils/abi/zapVeCRV.abi';
+import {prepareWriteContract} from '@wagmi/core';
+import {} from '@yearn-finance/web-lib/utils/address';
+import {STAKING_REWARDS_ZAP_ADDRESS, VAULT_FACTORY_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {assert} from '@common/utils/assert';
-import {assertAddress, toWagmiProvider} from '@common/utils/toWagmiProvider';
+import {assertAddress, handleTx, toWagmiProvider} from '@common/utils/toWagmiProvider';
 
-import ZAP_VE_CRV_ABI from './abi/zapVeCRV.abi';
-
-import type {BaseError} from 'viem';
-import type {TAddressWagmi} from '@yearn-finance/web-lib/types';
+import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TWriteTransaction} from '@common/utils/toWagmiProvider';
 
@@ -24,45 +22,20 @@ import type {TWriteTransaction} from '@common/utils/toWagmiProvider';
 ** @param amount - The amount of the underlying asset to deposit.
 ******************************************************************************/
 type TDepositAndStake = TWriteTransaction & {
-	vaultAddress: TAddressWagmi;
+	vaultAddress: TAddress | undefined;
 	amount: bigint;
 };
 export async function depositAndStake(props: TDepositAndStake): Promise<TTxResponse> {
-	assertAddress(props.contractAddress);
-	assertAddress(props.vaultAddress);
+	assertAddress(STAKING_REWARDS_ZAP_ADDRESS, 'STAKING_REWARDS_ZAP_ADDRESS');
+	assertAddress(props.vaultAddress, 'vaultAddress');
 	assert(props.amount > 0n, 'Amount is 0');
 
-	props.statusHandler?.({...defaultTxStatus, pending: true});
-	const wagmiProvider = await toWagmiProvider(props.connector);
-
-	try {
-		const config = await prepareWriteContract({
-			...wagmiProvider,
-			address: toWagmiAddress(STAKING_REWARDS_ZAP_ADDRESS),
-			abi: STAKING_REWARDS_ZAP_ABI,
-			functionName: 'zapIn',
-			args: [props.vaultAddress, props.amount]
-		});
-		const {hash} = await writeContract(config.request);
-		const receipt = await waitForTransaction({chainId: wagmiProvider.chainId, hash});
-		if (receipt.status === 'success') {
-			props.statusHandler?.({...defaultTxStatus, success: true});
-		} else if (receipt.status === 'reverted') {
-			props.statusHandler?.({...defaultTxStatus, error: true});
-		}
-		return ({isSuccessful: receipt.status === 'success', receipt});
-	} catch (error) {
-		console.error(error);
-		const errorAsBaseError = error as BaseError;
-		captureException(errorAsBaseError);
-		props.statusHandler?.({...defaultTxStatus, error: true});
-		return ({isSuccessful: false, error: errorAsBaseError || ''});
-	} finally {
-		setTimeout((): void => {
-			props.statusHandler?.({...defaultTxStatus});
-		}, 3000);
-	}
-
+	return await handleTx(props, {
+		address: STAKING_REWARDS_ZAP_ADDRESS,
+		abi: STAKING_REWARDS_ZAP_ABI,
+		functionName: 'zapIn',
+		args: [props.vaultAddress, props.amount]
+	});
 }
 
 /* 🔵 - Yearn Finance **********************************************************
@@ -76,39 +49,15 @@ type TStake = TWriteTransaction & {
 	amount: bigint;
 };
 export async function stake(props: TStake): Promise<TTxResponse> {
-	assertAddress(props.contractAddress);
 	assert(props.amount > 0n, 'Amount is 0');
+	assertAddress(props.contractAddress);
 
-	props.statusHandler?.({...defaultTxStatus, pending: true});
-	const wagmiProvider = await toWagmiProvider(props.connector);
-
-	try {
-		const config = await prepareWriteContract({
-			...wagmiProvider,
-			address: props.contractAddress,
-			abi: STAKING_REWARDS_ABI,
-			functionName: 'stake',
-			args: [props.amount]
-		});
-		const {hash} = await writeContract(config.request);
-		const receipt = await waitForTransaction({chainId: wagmiProvider.chainId, hash});
-		if (receipt.status === 'success') {
-			props.statusHandler?.({...defaultTxStatus, success: true});
-		} else if (receipt.status === 'reverted') {
-			props.statusHandler?.({...defaultTxStatus, error: true});
-		}
-		return ({isSuccessful: receipt.status === 'success', receipt});
-	} catch (error) {
-		console.error(error);
-		const errorAsBaseError = error as BaseError;
-		captureException(errorAsBaseError);
-		props.statusHandler?.({...defaultTxStatus, error: true});
-		return ({isSuccessful: false, error: errorAsBaseError || ''});
-	} finally {
-		setTimeout((): void => {
-			props.statusHandler?.({...defaultTxStatus});
-		}, 3000);
-	}
+	return await handleTx(props, {
+		address: props.contractAddress,
+		abi: STAKING_REWARDS_ABI,
+		functionName: 'stake',
+		args: [props.amount]
+	});
 }
 
 /* 🔵 - Yearn Finance **********************************************************
@@ -121,35 +70,11 @@ type TUnstake = TWriteTransaction;
 export async function unstake(props: TUnstake): Promise<TTxResponse> {
 	assertAddress(props.contractAddress);
 
-	props.statusHandler?.({...defaultTxStatus, pending: true});
-	const wagmiProvider = await toWagmiProvider(props.connector);
-
-	try {
-		const config = await prepareWriteContract({
-			...wagmiProvider,
-			address: props.contractAddress,
-			abi: STAKING_REWARDS_ABI,
-			functionName: 'exit'
-		});
-		const {hash} = await writeContract(config.request);
-		const receipt = await waitForTransaction({chainId: wagmiProvider.chainId, hash});
-		if (receipt.status === 'success') {
-			props.statusHandler?.({...defaultTxStatus, success: true});
-		} else if (receipt.status === 'reverted') {
-			props.statusHandler?.({...defaultTxStatus, error: true});
-		}
-		return ({isSuccessful: receipt.status === 'success', receipt});
-	} catch (error) {
-		console.error(error);
-		const errorAsBaseError = error as BaseError;
-		captureException(errorAsBaseError);
-		props.statusHandler?.({...defaultTxStatus, error: true});
-		return ({isSuccessful: false, error: errorAsBaseError || ''});
-	} finally {
-		setTimeout((): void => {
-			props.statusHandler?.({...defaultTxStatus});
-		}, 3000);
-	}
+	return await handleTx(props, {
+		address: props.contractAddress,
+		abi: STAKING_REWARDS_ABI,
+		functionName: 'exit'
+	});
 }
 
 /* 🔵 - Yearn Finance **********************************************************
@@ -161,36 +86,12 @@ export async function unstake(props: TUnstake): Promise<TTxResponse> {
 type TClaim = TWriteTransaction;
 export async function claim(props: TClaim): Promise<TTxResponse> {
 	assertAddress(props.contractAddress);
-
-	props.statusHandler?.({...defaultTxStatus, pending: true});
-	const wagmiProvider = await toWagmiProvider(props.connector);
-
-	try {
-		const config = await prepareWriteContract({
-			...wagmiProvider,
-			address: props.contractAddress,
-			abi: STAKING_REWARDS_ABI,
-			functionName: 'getReward'
-		});
-		const {hash} = await writeContract(config.request);
-		const receipt = await waitForTransaction({chainId: wagmiProvider.chainId, hash});
-		if (receipt.status === 'success') {
-			props.statusHandler?.({...defaultTxStatus, success: true});
-		} else if (receipt.status === 'reverted') {
-			props.statusHandler?.({...defaultTxStatus, error: true});
-		}
-		return ({isSuccessful: receipt.status === 'success', receipt});
-	} catch (error) {
-		console.error(error);
-		const errorAsBaseError = error as BaseError;
-		captureException(errorAsBaseError);
-		props.statusHandler?.({...defaultTxStatus, error: true});
-		return ({isSuccessful: false, error: errorAsBaseError || ''});
-	} finally {
-		setTimeout((): void => {
-			props.statusHandler?.({...defaultTxStatus});
-		}, 3000);
-	}
+	
+	return await handleTx(props, {
+		address: props.contractAddress,
+		abi: STAKING_REWARDS_ABI,
+		functionName: 'getReward'
+	});
 }
 
 /* 🔵 - Yearn Finance **********************************************************
@@ -203,44 +104,69 @@ export async function claim(props: TClaim): Promise<TTxResponse> {
 ** @param amount - The amount of inputToken to be sent to the zap
 ******************************************************************************/
 type TVeCRVZap = TWriteTransaction & {
-	inputToken: TAddressWagmi;
-	outputToken: TAddressWagmi;
+	inputToken: TAddress | undefined;
+	outputToken: TAddress | undefined;
 	amount: bigint;
 };
 export async function veCRVzap(props: TVeCRVZap): Promise<TTxResponse> {
-	assertAddress(props.contractAddress);
-	assertAddress(props.inputToken);
-	assertAddress(props.outputToken);
+	assertAddress(ZAP_YEARN_VE_CRV_ADDRESS, 'ZAP_YEARN_VE_CRV_ADDRESS');
+	assertAddress(props.inputToken, 'inputToken');
+	assertAddress(props.outputToken, 'outputToken');
 	assert(props.amount > 0n, 'Amount must be greater than 0n');
 
-	props.statusHandler?.({...defaultTxStatus, pending: true});
-	const wagmiProvider = await toWagmiProvider(props.connector);
+	return await handleTx(props, {
+		address: ZAP_YEARN_VE_CRV_ADDRESS,
+		abi: ZAP_VE_CRV_ABI,
+		functionName: 'zap',
+		args: [props.inputToken, props.outputToken, props.amount]
+	});
+}
 
+/* 🔵 - Yearn Finance **********************************************************
+** createNewVaultsAndStrategies is a _WRITE_ function that creates a new vault
+** and strategy for the given gauge.
+**
+** @app - Vaults (veCRV)
+** @param gaugeAddress - the base gauge address
+******************************************************************************/
+type TCreateNewVaultsAndStrategies = TWriteTransaction & {
+	gaugeAddress: TAddress | undefined;
+};
+export async function createNewVaultsAndStrategies(props: TCreateNewVaultsAndStrategies): Promise<TTxResponse> {
+	assertAddress(VAULT_FACTORY_ADDRESS, 'VAULT_FACTORY_ADDRESS');
+	assertAddress(props.gaugeAddress, 'gaugeAddress');
+
+	return await handleTx(props, {
+		address: VAULT_FACTORY_ADDRESS,
+		abi: VAULT_FACTORY_ABI,
+		functionName: 'createNewVaultsAndStrategies',
+		args: [props.gaugeAddress]
+	});
+}
+
+/* 🔵 - Yearn Finance **********************************************************
+** gasOfCreateNewVaultsAndStrategies is a _READ_ function that estimate the gas
+** of the createNewVaultsAndStrategies function.
+**
+** @app - Vaults (veCRV)
+** @param gaugeAddress - the base gauge address
+******************************************************************************/
+export async function gasOfCreateNewVaultsAndStrategies(props: TCreateNewVaultsAndStrategies): Promise<bigint> {
 	try {
+		assertAddress(props.contractAddress, 'contractAddress');
+		assertAddress(props.gaugeAddress, 'gaugeAddress');
+
+		const wagmiProvider = await toWagmiProvider(props.connector);
 		const config = await prepareWriteContract({
 			...wagmiProvider,
-			address: toWagmiAddress(ZAP_YEARN_VE_CRV_ADDRESS),
-			abi: ZAP_VE_CRV_ABI,
-			functionName: 'zap',
-			args: [props.inputToken, props.outputToken, props.amount]
+			address: VAULT_FACTORY_ADDRESS,
+			abi: VAULT_FACTORY_ABI,
+			functionName: 'createNewVaultsAndStrategies',
+			args: [props.gaugeAddress]
 		});
-		const {hash} = await writeContract(config.request);
-		const receipt = await waitForTransaction({chainId: wagmiProvider.chainId, hash});
-		if (receipt.status === 'success') {
-			props.statusHandler?.({...defaultTxStatus, success: true});
-		} else if (receipt.status === 'reverted') {
-			props.statusHandler?.({...defaultTxStatus, error: true});
-		}
-		return ({isSuccessful: receipt.status === 'success', receipt});
+		return toBigInt(config.request.gas);
 	} catch (error) {
 		console.error(error);
-		const errorAsBaseError = error as BaseError;
-		captureException(errorAsBaseError);
-		props.statusHandler?.({...defaultTxStatus, error: true});
-		return ({isSuccessful: false, error: errorAsBaseError || ''});
-	} finally {
-		setTimeout((): void => {
-			props.statusHandler?.({...defaultTxStatus});
-		}, 3000);
+		return toBigInt(0);
 	}
 }

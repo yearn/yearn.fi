@@ -2,12 +2,12 @@ import {useCallback, useMemo, useRef, useState} from 'react';
 import {erc20ABI} from 'wagmi';
 import axios from 'axios';
 import {useUpdateEffect} from '@react-hookz/web';
-import {getNativeTokenWrapperName} from '@vaults/utils';
+import {getNativeTokenWrapperContract, getNativeTokenWrapperName} from '@vaults/utils';
 import {deserialize, multicall} from '@wagmi/core';
 import {useUI} from '@yearn-finance/web-lib/contexts/useUI';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import AGGREGATE3_ABI from '@yearn-finance/web-lib/utils/abi/aggregate.abi';
-import {isZeroAddress, toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
+import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, MULTICALL3_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {decodeAsBigInt, decodeAsNumber, decodeAsString} from '@yearn-finance/web-lib/utils/decoder';
 import {toBigInt, toNormalizedValue} from '@yearn-finance/web-lib/utils/format';
@@ -58,7 +58,7 @@ type TDataRef = {
 /* 🔵 - Yearn Finance **********************************************************
 ** Default status for the loading state.
 ******************************************************************************/
-const		defaultStatus = {
+const defaultStatus = {
 	isLoading: false,
 	isFetching: false,
 	isSuccess: false,
@@ -76,7 +76,7 @@ async function performCall(
 	const _data: TDict<TBalanceData> = {};
 	const results = await multicall({contracts: calls as never[], chainId: chainID});
 
-	let		rIndex = 0;
+	let rIndex = 0;
 	for (const element of tokens) {
 		const {token} = element;
 		const balanceOf = decodeAsBigInt(results[rIndex++]);
@@ -106,16 +106,25 @@ async function getBalances(
 	tokens: TUseBalancesTokens[],
 	prices?: TYDaemonPrices
 ): Promise<[TDict<TBalanceData>, Error | undefined]> {
-	let		result: TDict<TBalanceData> = {};
-	const	calls: ContractFunctionConfig[] = [];
+	let result: TDict<TBalanceData> = {};
+	const calls: ContractFunctionConfig[] = [];
+	const nativeTokenWrapper = getNativeTokenWrapperContract(chainID);
+
 	for (const element of tokens) {
-		const	{token} = element;
-		const	ownerAddress = address;
-		const	isEth = toAddress(token) === toAddress(ETH_TOKEN_ADDRESS);
+		const {token} = element;
+		const ownerAddress = address;
+		const isEth = toAddress(token) === toAddress(ETH_TOKEN_ADDRESS);
 		if (isEth) {
-			calls.push({address: toWagmiAddress(MULTICALL3_ADDRESS), abi: AGGREGATE3_ABI, functionName: 'getEthBalance', args: [ownerAddress]});
+			const multicall3Contract = {address: MULTICALL3_ADDRESS, abi: AGGREGATE3_ABI};
+			const baseContract = {address: nativeTokenWrapper, abi: erc20ABI};
+			calls.push({...multicall3Contract, functionName: 'getEthBalance', args: [ownerAddress]});
+			calls.push({...baseContract, functionName: 'decimals'});
+			calls.push({...baseContract, functionName: 'symbol'});
 		} else {
-			calls.push({address: toWagmiAddress(token), abi: erc20ABI, functionName: 'balanceOf', args: [ownerAddress]});
+			const baseContract = {address: toAddress(token), abi: erc20ABI};
+			calls.push({...baseContract, functionName: 'balanceOf', args: [ownerAddress]});
+			calls.push({...baseContract, functionName: 'decimals'});
+			calls.push({...baseContract, functionName: 'symbol'});
 		}
 	}
 
@@ -133,17 +142,17 @@ async function getBalances(
 /* 🔵 - Yearn Finance ******************************************************
 ** This hook can be used to fetch balance information for any ERC20 tokens.
 **************************************************************************/
-export function	useBalances(props?: TUseBalancesReq): TUseBalancesRes {
-	const	{address: web3Address, isActive, provider, chainID: web3ChainID} = useWeb3();
-	const	{onLoadStart, onLoadDone} = useUI();
-	const	[nonce, set_nonce] = useState(0);
-	const	[status, set_status] = useState<TDefaultStatus>(defaultStatus);
-	const	[error, set_error] = useState<Error | undefined>(undefined);
-	const	[balances, set_balances] = useState<TNDict<TDict<TBalanceData>>>({});
-	const	data = useRef<TNDict<TDataRef>>({1: {nonce: 0, address: toAddress(), balances: {}}});
-	const	stringifiedTokens = useMemo((): string => JSON.stringify(props?.tokens || []), [props?.tokens]);
+export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
+	const {address: web3Address, isActive, provider, chainID: web3ChainID} = useWeb3();
+	const {onLoadStart, onLoadDone} = useUI();
+	const [nonce, set_nonce] = useState(0);
+	const [status, set_status] = useState<TDefaultStatus>(defaultStatus);
+	const [error, set_error] = useState<Error | undefined>(undefined);
+	const [balances, set_balances] = useState<TNDict<TDict<TBalanceData>>>({});
+	const data = useRef<TNDict<TDataRef>>({1: {nonce: 0, address: toAddress(), balances: {}}});
+	const stringifiedTokens = useMemo((): string => JSON.stringify(props?.tokens || []), [props?.tokens]);
 
-	const	updateBalancesCall = useCallback((chainID: number, newRawData: TDict<TBalanceData>): TDict<TBalanceData> => {
+	const updateBalancesCall = useCallback((chainID: number, newRawData: TDict<TBalanceData>): TDict<TBalanceData> => {
 		if (toAddress(web3Address as string) !== data?.current?.[chainID]?.address) {
 			data.current[chainID] = {
 				address: toAddress(web3Address as string),
@@ -184,25 +193,25 @@ export function	useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	** This takes the whole list and is not optimized for performance, aka not
 	** send in a worker.
 	**************************************************************************/
-	const	onUpdate = useCallback(async (): Promise<TDict<TBalanceData>> => {
+	const onUpdate = useCallback(async (): Promise<TDict<TBalanceData>> => {
 		if (!isActive || !web3Address || !provider) {
 			return {};
 		}
-		const	tokenList = JSON.parse(stringifiedTokens) || [];
-		const	tokens = tokenList.filter(({token}: TUseBalancesTokens): boolean => !isZeroAddress(token));
+		const tokenList = JSON.parse(stringifiedTokens) || [];
+		const tokens = tokenList.filter(({token}: TUseBalancesTokens): boolean => !isZeroAddress(token));
 		if (tokens.length === 0) {
 			return {};
 		}
 		set_status({...defaultStatus, isLoading: true, isFetching: true, isRefetching: defaultStatus.isFetched});
 		onLoadStart();
 
-		const	chunks = [];
+		const chunks = [];
 		for (let i = 0; i < tokens.length; i += 5_000) {
 			chunks.push(tokens.slice(i, i + 5_000));
 		}
 
 		for (const chunkTokens of chunks) {
-			const	[newRawData, err] = await getBalances((props?.chainID || web3ChainID || 1), web3Address, chunkTokens);
+			const [newRawData, err] = await getBalances((props?.chainID || web3ChainID || 1), web3Address, chunkTokens);
 			if (toAddress(web3Address as string) !== data?.current?.[web3ChainID]?.address) {
 				data.current[web3ChainID] = {
 					address: toAddress(web3Address as string),
@@ -243,19 +252,18 @@ export function	useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	** token. Even if it's not optimized for performance, it should not be an
 	** issue as it should only be used for a little list of tokens.
 	**************************************************************************/
-	const	onUpdateSome = useCallback(async (tokenList: TUseBalancesTokens[]): Promise<TDict<TBalanceData>> => {
+	const onUpdateSome = useCallback(async (tokenList: TUseBalancesTokens[]): Promise<TDict<TBalanceData>> => {
 		set_status({...defaultStatus, isLoading: true, isFetching: true, isRefetching: defaultStatus.isFetched});
 		onLoadStart();
-		const	tokens = tokenList.filter(({token}: TUseBalancesTokens): boolean => !isZeroAddress(token));
-
-		const	chunks = [];
+		const tokens = tokenList.filter(({token}: TUseBalancesTokens): boolean => !isZeroAddress(token));
+		const chunks = [];
 		for (let i = 0; i < tokens.length; i += 2_000) {
 			chunks.push(tokens.slice(i, i + 2_000));
 		}
 
 		const tokensAdded: TDict<TBalanceData> = {};
 		for (const chunkTokens of chunks) {
-			const	[newRawData, err] = await getBalances((props?.chainID || web3ChainID || 1), toAddress(web3Address as string), chunkTokens);
+			const [newRawData, err] = await getBalances((props?.chainID || web3ChainID || 1), toAddress(web3Address as string), chunkTokens);
 			if (toAddress(web3Address as string) !== data?.current?.[web3ChainID]?.address) {
 				data.current[web3ChainID] = {
 					address: toAddress(web3Address as string),
@@ -291,7 +299,7 @@ export function	useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 		return tokensAdded;
 	}, [onLoadDone, onLoadStart, props?.chainID, web3Address, web3ChainID]);
 
-	const	assignPrices = useCallback((_rawData: TNDict<TDict<TBalanceData>>): TNDict<TDict<TBalanceData>> => {
+	const assignPrices = useCallback((_rawData: TNDict<TDict<TBalanceData>>): TNDict<TDict<TBalanceData>> => {
 		for (const chainIDStr of Object.keys(_rawData)) {
 			const chainID = Number(chainIDStr);
 			for (const address of Object.keys(_rawData[chainID])) {
@@ -323,8 +331,8 @@ export function	useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 		set_status({...defaultStatus, isLoading: true, isFetching: true, isRefetching: defaultStatus.isFetched});
 		onLoadStart();
 
-		const	tokens = JSON.parse(stringifiedTokens) || [];
-		const	chainID = props?.chainID || web3ChainID || 1;
+		const tokens = JSON.parse(stringifiedTokens) || [];
+		const chainID = props?.chainID || web3ChainID || 1;
 		axios.post('/api/getBatchBalances', {chainID, address: web3Address, tokens})
 			.then((res: AxiosResponse<TGetBatchBalancesResp>): void => {
 				console.log(`Fetched balances for ${tokens.length} tokens`);
@@ -338,7 +346,7 @@ export function	useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 
 	}, [stringifiedTokens, isActive, web3Address]);
 
-	const	contextValue = useMemo((): TUseBalancesRes => ({
+	const contextValue = useMemo((): TUseBalancesRes => ({
 		data: assignPrices(balances || {})?.[web3ChainID] || {},
 		nonce,
 		update: onUpdate,

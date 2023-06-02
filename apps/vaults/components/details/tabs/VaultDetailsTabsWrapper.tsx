@@ -12,14 +12,15 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import IconAddToMetamask from '@yearn-finance/web-lib/icons/IconAddToMetamask';
 import IconLinkOut from '@yearn-finance/web-lib/icons/IconLinkOut';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
-import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
 import IconChevron from '@common/icons/IconChevron';
+import {assert} from '@common/utils/assert';
 
 import type {ReactElement} from 'react';
 import type {SWRResponse} from 'swr';
-import type {TMetamaskInjectedProvider} from '@yearn-finance/web-lib/types';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TSettingsForNetwork} from '@common/types/yearn';
 
@@ -38,7 +39,7 @@ type TExplorerLinkProps = {
 	currentVaultAddress: string;
 }
 
-function	Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactElement {
+function Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactElement {
 	const router = useRouter();
 
 	const tabs: TTabsOptions[] = useMemo((): TTabsOptions[] => [
@@ -146,7 +147,7 @@ function ExplorerLink({explorerBaseURI, currentVaultAddress}: TExplorerLinkProps
 	);
 }
 
-function	VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {provider} = useWeb3();
 	const {safeChainID} = useChainID();
 	const {settings: baseAPISettings, networks} = useSettings();
@@ -155,32 +156,34 @@ function	VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}):
 
 	async function onAddTokenToMetamask(address: string, symbol: string, decimals: number, image: string): Promise<void> {
 		try {
-			await (provider as TMetamaskInjectedProvider).send('wallet_watchAsset', {
+			assert(provider, 'Provider is not set');
+			const walletClient = await provider.getWalletClient();
+			await walletClient.watchAsset({
 				type: 'ERC20',
 				options: {
-					address,
-					symbol,
-					decimals,
-					image
+					address: toAddress(address),
+					decimals: decimals,
+					symbol: symbol,
+					image: image
 				}
 			});
 		} catch (error) {
-			// Token has not been added to MetaMask.
+			console.warn(error);
 		}
 	}
 
-	const	{data: yDaemonHarvestsData} = useSWR(
+	const {data: yDaemonHarvestsData} = useSWR(
 		`${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/${safeChainID}/vaults/harvests/${currentVault.address}`,
 		baseFetcher,
 		{revalidateOnFocus: false}
 	) as SWRResponse;
 
-	const	harvestData = useMemo((): {name: string; value: number}[] => {
-		const	_yDaemonHarvestsData = [...(yDaemonHarvestsData || [])].reverse();
+	const harvestData = useMemo((): {name: string; value: number}[] => {
+		const _yDaemonHarvestsData = [...(yDaemonHarvestsData || [])].reverse();
 		return (
 			_yDaemonHarvestsData?.map((harvest): {name: string; value: number} => ({
 				name: formatDate(Number(harvest.timestamp) * 1000),
-				value: formatToNormalizedValue(formatBN(harvest.profit).sub(formatBN(harvest.loss)), currentVault.decimals)
+				value: formatToNormalizedValue(toBigInt(harvest.profit) - toBigInt(harvest.loss), currentVault.decimals)
 			}))
 		);
 	}, [currentVault.decimals, yDaemonHarvestsData]);

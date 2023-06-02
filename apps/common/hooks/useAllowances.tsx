@@ -4,7 +4,7 @@ import {useAsync} from '@react-hookz/web';
 import {multicall} from '@wagmi/core';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {allowanceKey, toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
+import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {decodeAsBigInt} from '@yearn-finance/web-lib/utils/decoder';
 
 import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
@@ -25,11 +25,11 @@ export const useAllowances = (allowanceRequests: TAllowanceRequest[]): [TDict<bi
 		const calls = [];
 		for (const req of allowanceRequests) {
 			const baseContract = {
-				address: toWagmiAddress(req.token),
+				address: toAddress(req.token),
 				abi: erc20ABI,
 				chainId: chainID
 			} as const;
-			calls.push({...baseContract, functionName: 'allowance', args: [userAddress, toWagmiAddress(req.spender)]});
+			calls.push({...baseContract, functionName: 'allowance', args: [userAddress, toAddress(req.spender)]});
 		}
 		const results = await multicall({contracts: calls, chainId: chainID});
 		const allowancesMap: TDict<bigint> = {};

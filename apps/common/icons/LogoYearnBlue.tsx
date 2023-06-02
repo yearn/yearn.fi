@@ -2,7 +2,7 @@ import React from 'react';
 
 import type {ReactElement} from 'react';
 
-function	LogoYearnBlue(props: React.SVGProps<SVGSVGElement>): ReactElement {
+function LogoYearnBlue(props: React.SVGProps<SVGSVGElement>): ReactElement {
 	return (
 		<svg
 			{...props}

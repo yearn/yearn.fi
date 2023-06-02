@@ -1,5 +1,6 @@
 import {request} from 'graphql-request';
 import {formatUnits, parseUnits} from 'viem';
+import {captureException} from '@sentry/nextjs';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {LPYCRV_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YVBOOST_TOKEN_ADDRESS, YVECRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -9,7 +10,7 @@ import type {GraphQLResponse} from 'graphql-request/build/esm/types';
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
-export function	max(input: bigint, balance: bigint): bigint {
+export function max(input: bigint, balance: bigint): bigint {
 	if (input > balance) {
 		return balance;
 	}
@@ -49,8 +50,8 @@ export function getVaultRawAPY(vaults: TDict<TYDaemonVault | undefined>, vaultAd
 }
 
 export function getAmountWithSlippage(from: string, to: string, value: bigint, slippage: number): number {
-	const	hasLP = (toAddress(from) === LPYCRV_TOKEN_ADDRESS|| toAddress(to) === LPYCRV_TOKEN_ADDRESS);
-	const	isDirectDeposit = (toAddress(from) === YCRV_CURVE_POOL_ADDRESS || toAddress(to) === LPYCRV_TOKEN_ADDRESS);
+	const hasLP = (toAddress(from) === LPYCRV_TOKEN_ADDRESS|| toAddress(to) === LPYCRV_TOKEN_ADDRESS);
+	const isDirectDeposit = (toAddress(from) === YCRV_CURVE_POOL_ADDRESS || toAddress(to) === LPYCRV_TOKEN_ADDRESS);
 
 	if (hasLP && !isDirectDeposit) {
 		const minAmountStr = Number(formatUnits(toBigInt(value), 18));
@@ -74,8 +75,8 @@ export const graphFetcher = async (args: [string, string]): Promise<GraphQLRespo
 };
 
 
-export function	formatDateShort(value: number): string {
-	let		locale = 'fr-FR';
+export function formatDateShort(value: number): string {
+	let locale = 'fr-FR';
 	if (typeof(navigator) !== 'undefined') {
 		locale = navigator.language || 'fr-FR';
 	}
@@ -96,4 +97,13 @@ export async function hash(message: string): Promise<string> {
 	const hashArray = Array.from(new Uint8Array(hashBuffer)); // convert buffer to byte array
 	const hashHex = hashArray.map((b): string => b.toString(16).padStart(2, '0')).join(''); // convert bytes to hex string
 	return `0x${hashHex}`;
+}
+
+export function handleSettle<T>(data: PromiseSettledResult<unknown>, fallback: T): T {
+	if (data.status !== 'fulfilled') {
+		console.error(data.reason);
+		captureException(data.reason);
+		return fallback;
+	}
+	return data.value as T;
 }

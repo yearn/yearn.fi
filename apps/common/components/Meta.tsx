@@ -28,7 +28,7 @@ export type TMetaFile = {
 	orientation: string;
 }
 
-function	Meta({meta}: {meta: TMetaFile}): ReactElement {
+function Meta({meta}: {meta: TMetaFile}): ReactElement {
 	return (
 		<>
 			<Head>

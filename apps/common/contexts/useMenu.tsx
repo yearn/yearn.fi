@@ -17,7 +17,7 @@ export type TMenu = {
 	menu: TCurrentMenu,
 	onOpenMenu: VoidFunction,
 }
-const	defaultProps: TMenu = {
+const defaultProps: TMenu = {
 	menu: {
 		app: [],
 		isOpen: false
@@ -25,10 +25,10 @@ const	defaultProps: TMenu = {
 	onOpenMenu: (): void => undefined
 };
 
-const	MenuContext = createContext<TMenu>(defaultProps);
+const MenuContext = createContext<TMenu>(defaultProps);
 export const MenuContextApp = ({children}: {children: React.ReactElement}): React.ReactElement => {
-	const	{pathname} = useRouter();
-	const	[menu, set_menu] = useState<TCurrentMenu>(defaultProps.menu);
+	const {pathname} = useRouter();
+	const [menu, set_menu] = useState<TCurrentMenu>(defaultProps.menu);
 
 	const onOpenMenu = useCallback((): void => {
 		if (pathname.startsWith('/ycrv')) {
@@ -54,7 +54,7 @@ export const MenuContextApp = ({children}: {children: React.ReactElement}): Reac
 	/* 🔵 - Yearn Finance ******************************************************
 	**	Setup and render the Context provider to use in the app.
 	***************************************************************************/
-	const	contextValue = useMemo((): TMenu => ({
+	const contextValue = useMemo((): TMenu => ({
 		menu,
 		onOpenMenu
 	}), [menu, onOpenMenu]);
