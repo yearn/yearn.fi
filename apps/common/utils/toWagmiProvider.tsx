@@ -45,22 +45,18 @@ export function assertAddress(addr: string | TAddress | undefined, name?: string
 
 type TPrepareWriteContractConfig<
 	TAbi extends Abi | readonly unknown[] = Abi,
-	TFunctionName extends string = string,
-	TChainId extends number = number,
-	TWalletClient extends WalletClient = WalletClient
+	TFunctionName extends string = string
 > = Omit<SimulateContractParameters<TAbi, TFunctionName>, 'chain' | 'address'> & {
-	chainId?: TChainId | number
-	walletClient?: TWalletClient | null
+	chainId?: number
+	walletClient?: WalletClient
 	address: TAddress | undefined
 }
 export async function handleTx<
 	TAbi extends Abi | readonly unknown[],
-	TFunctionName extends string,
-	TChainId extends number,
-	TWalletClient extends WalletClient = WalletClient
+	TFunctionName extends string
 >(
 	args: TWriteTransaction,
-	props: TPrepareWriteContractConfig<TAbi, TFunctionName, TChainId, TWalletClient>
+	props: TPrepareWriteContractConfig<TAbi, TFunctionName>
 ): Promise<TTxResponse> {
 	args.statusHandler?.({...defaultTxStatus, pending: true});
 	const wagmiProvider = await toWagmiProvider(args.connector);
