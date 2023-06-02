@@ -1,129 +1,345 @@
-import React from 'react';
-import {Button} from '@yearn-finance/web-lib/components/Button';
-import {useClientEffect} from '@yearn-finance/web-lib/hooks/useClientEffect';
-import CardMigrateLegacy from '@yCRV/components/CardMigrateLegacy';
+import React, {Fragment, useCallback, useMemo} from 'react';
+import {LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatAmount, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
+import {formatCounterValue, formatCounterValueRaw} from '@yearn-finance/web-lib/utils/format.value';
+import ValueAnimation from '@common/components/ValueAnimation';
+import {useCurve} from '@common/contexts/useCurve';
+import {useWallet} from '@common/contexts/useWallet';
+import {useYearn} from '@common/contexts/useYearn';
+import {useBalance} from '@common/hooks/useBalance';
+import {useTokenPrice} from '@common/hooks/useTokenPrice';
+import {getVaultAPY} from '@common/utils';
 import CardZap from '@yCRV/components/CardZap';
+import {Harvests} from '@yCRV/components/Harvests';
+import {useYCRV} from '@yCRV/contexts/useYCRV';
 import Wrapper from '@yCRV/Wrapper';
 
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
 
-function TextAnimation(): ReactElement {
-	function onStartAnimation(): void {
-		const words = document.getElementsByClassName('word') as HTMLCollectionOf<HTMLSpanElement>;
-		const wordArray: HTMLSpanElement[][] = [];
-		let currentWord = 0;
+function HeaderPosition(): ReactElement {
+	const {holdings} = useYCRV();
+	const balanceOfStyCRV = useBalance(STYCRV_TOKEN_ADDRESS);
+	const balanceOfLpyCRV = useBalance(LPYCRV_TOKEN_ADDRESS);
+	const stycrvPrice = useTokenPrice(STYCRV_TOKEN_ADDRESS);
+	const lpycrvPrice = useTokenPrice(LPYCRV_TOKEN_ADDRESS);
 
-		words[currentWord].style.opacity = '1';
-		for (const word of Array.from(words)) {
-			splitLetters(word);
+	const formatedYearnHas = useMemo((): string => (
+		holdings?.veCRVBalance ?
+			formatAmount(formatToNormalizedValue(holdings.veCRVBalance, 18), 0, 0)
+			: ''
+	), [holdings?.veCRVBalance]);
+
+	const formatedYouHave = useMemo((): string => (
+		formatCounterValueRaw(
+			(balanceOfStyCRV.normalized * stycrvPrice)
+			+
+			(balanceOfLpyCRV.normalized * lpycrvPrice),
+			1
+		)
+	), [balanceOfStyCRV.normalized, stycrvPrice, balanceOfLpyCRV.normalized, lpycrvPrice]);
+
+	return (
+		<Fragment>
+			<div className={'col-span-12 w-full md:col-span-8'}>
+				<p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl'}>{'Yearn has'}</p>
+				<b className={'font-number text-4xl text-neutral-900 md:text-7xl'}>
+					<ValueAnimation
+						identifier={'veCRVTreasury'}
+						value={formatedYearnHas}
+						suffix={'veCRV'}
+						defaultValue={'0,00'}
+					/>
+				</b>
+			</div>
+			<div className={'col-span-12 w-full md:col-span-4'}>
+				<p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl'}>{'You have'}</p>
+				<b className={'font-number text-3xl text-neutral-900 md:text-7xl'}>
+					<ValueAnimation
+						identifier={'youHave'}
+						value={formatedYouHave}
+						prefix={'$'}
+						defaultValue={'0,00'}
+					/>
+				</b>
+			</div>
+		</Fragment>
+	);
+}
+
+function ZapAndStats(): ReactElement {
+	const {balances} = useWallet();
+	const {holdings, styCRVMegaBoost, styCRVAPY} = useYCRV();
+	const {vaults} = useYearn();
+	const {curveWeeklyFees, cgPrices} = useCurve();
+
+	const lpCRVAPY = useMemo((): string => getVaultAPY(vaults, LPYCRV_TOKEN_ADDRESS), [vaults]);
+	const ycrvPrice = useTokenPrice(YCRV_TOKEN_ADDRESS);
+	const stycrvPrice = useTokenPrice(STYCRV_TOKEN_ADDRESS);
+	const lpycrvPrice = useTokenPrice(LPYCRV_TOKEN_ADDRESS);
+	const balanceOfStyCRV = useBalance(STYCRV_TOKEN_ADDRESS);
+	const balanceOfLpyCRV = useBalance(LPYCRV_TOKEN_ADDRESS);
+
+	const formatBigNumberOver10K = useCallback((v: bigint): string => {
+		if (toBigInt(v) > (toBigInt(10000) * toBigInt(1e18))) {
+			return formatAmount(formatToNormalizedValue(toBigInt(v), 18), 0, 0) ?? '';
 		}
-
-		function changeWord(): void {
-			const cw = wordArray[currentWord];
-			const nw = currentWord == words.length-1 ? wordArray[0] : wordArray[currentWord+1];
-			if (!cw || !nw) {
-				return;
-			}
-			for (let i = 0; i < cw.length; i++) {
-				animateLetterOut(cw, i);
-			}
-
-			for (let i = 0; i < nw.length; i++) {
-				nw[i].className = 'letter behind';
-				if (nw?.[0]?.parentElement?.style) {
-					nw[0].parentElement.style.opacity = '1';
-				}
-				animateLetterIn(nw, i);
-			}
-			currentWord = (currentWord == wordArray.length-1) ? 0 : currentWord+1;
-		}
-
-		function animateLetterOut(cw: HTMLSpanElement[], i: number): void {
-			setTimeout((): void => {
-				cw[i].className = 'letter out';
-			}, i*80);
-		}
-
-		function animateLetterIn(nw: HTMLSpanElement[], i: number): void {
-			setTimeout((): void => {
-				nw[i].className = 'letter in';
-			}, 340+(i*80));
-		}
-
-		function splitLetters(word: HTMLSpanElement): void {
-			const content = word.innerHTML;
-			word.innerHTML = '';
-			const letters = [];
-			for (let i = 0; i < content.length; i++) {
-				const letter = document.createElement('span');
-				letter.className = 'letter';
-				letter.innerHTML = content.charAt(i);
-				word.appendChild(letter);
-				letters.push(letter);
-			}
-
-			wordArray.push(letters);
-		}
-
-		setTimeout((): void => {
-			changeWord();
-			setInterval(changeWord, 3000);
-		}, 3000);
-	}
-
-	useClientEffect((): void => {
-		onStartAnimation();
+		return formatAmount(formatToNormalizedValue(toBigInt(v), 18)) ?? '';
 	}, []);
 
+	const formatNumberOver10K = useCallback((v: number): string => {
+		if (v >= 10000) {
+			return formatAmount(v, 0, 0) ?? '';
+		}
+		return formatAmount(v) ?? '';
+	}, []);
+
+	const latestCurveFeesValue = useMemo((): number => {
+		const {weeklyFeesTable} = curveWeeklyFees;
+
+		if (!weeklyFeesTable) {
+			return 0;
+		}
+
+		if (weeklyFeesTable[0]?.rawFees > 0) {
+			return weeklyFeesTable[0].rawFees;
+		}
+
+		return weeklyFeesTable[1]?.rawFees || 0;
+	}, [curveWeeklyFees]);
+
+	const currentVeCRVAPY = useMemo((): number => {
+		return (
+			latestCurveFeesValue / (
+				formatToNormalizedValue(toBigInt(holdings?.veCRVTotalSupply), 18) * cgPrices?.['curve-dao-token']?.usd
+			) * 52 * 100
+		);
+	}, [holdings, latestCurveFeesValue, cgPrices]);
+
+	const curveAdminFeePercent = useMemo((): number => {
+		return (currentVeCRVAPY * Number(holdings?.boostMultiplier) / 10000);
+	}, [holdings, currentVeCRVAPY]);
+
+
 	return (
-		<>
-			<div className={'text'}>
-				<p className={'wordWrapper'}>
-					<span className={'word'}>{'Gigantic'}</span>
-					<span className={'word'}>{'Seismic'}</span>
-					<span className={'word'}>{'Substantial'}</span>
-					<span className={'word'}>{'Immense'}</span>
-					<span className={'word'}>{'Colossal'}</span>
-					<span className={'word'}>{'Humongous'}</span>
-					<span className={'word'}>{'Giant'}</span>
-					<span className={'word'}>{'Stupendous'}</span>
-					<span className={'word'}>{'Jumbo'}</span>
-				</p>
+		<div className={'col-span-12 grid w-full grid-cols-12 gap-4'}>
+			<CardZap className={'col-span-12 md:col-span-8'} />
+			<div className={'col-span-12 flex flex-col gap-4 md:col-span-4'}>
+				<div className={'w-full bg-neutral-100 p-4'}>
+					<div className={'flex flex-row items-baseline justify-between pb-1'}>
+						<span className={'inline text-sm font-normal text-neutral-400'}>
+							{'Price/PEG: '}
+						</span>
+						<p
+							suppressHydrationWarning
+							className={'font-number text-sm text-neutral-900'}>
+							{`Price = $${(formatAmount(ycrvPrice || 0))} | Peg = ${(
+								holdings?.crvYCRVPeg ? (formatPercent(
+									(formatToNormalizedValue(holdings?.crvYCRVPeg, 18) + 0.0015) * 100)
+								): formatPercent(0)
+							)}`}
+						</p>
+					</div>
+
+					<div className={'flex flex-row items-baseline justify-between pb-1'}>
+						<span className={'inline text-sm font-normal text-neutral-400'}>
+							{'Yearn Treasury: '}
+						</span>
+						<p
+							suppressHydrationWarning
+							className={'font-number text-sm text-neutral-900'}>
+							{holdings?.treasury ? `${formatBigNumberOver10K(holdings.treasury)} ` : '- '}
+							<span className={'font-number text-neutral-600'}>{'veCRV'}</span>
+						</p>
+					</div>
+
+					<div className={'flex flex-row items-baseline justify-between pb-1'}>
+						<span className={'inline text-sm font-normal text-neutral-400'}>
+							{'Legacy system: '}
+						</span>
+						<p
+							suppressHydrationWarning
+							className={'font-number text-sm text-neutral-900'}>
+							{holdings?.legacy ? `${formatBigNumberOver10K(holdings.legacy)} ` : '- '}
+							<span className={'font-number text-neutral-600'}>{'yveCRV'}</span>
+						</p>
+					</div>
+				</div>
+
+				<div className={'w-full bg-neutral-100 p-4'}>
+					<div className={'flex flex-row items-center justify-between pb-3'}>
+						<b className={'text-neutral-900'}>
+							{'st-yCRV'}
+						</b>
+					</div>
+
+					<div className={'flex flex-row items-baseline justify-between pb-1'}>
+						<span className={'inline text-sm font-normal text-neutral-400'}>
+							{'My Balance: '}
+						</span>
+						<p
+							suppressHydrationWarning
+							className={'font-number text-sm text-neutral-900'}>
+							{formatNumberOver10K(balances[STYCRV_TOKEN_ADDRESS]?.normalized || 0)}
+						</p>
+					</div>
+					<div className={'flex flex-row items-center justify-between'}>
+						<span className={'inline text-sm font-normal text-neutral-400'}>
+							{'Value: '}
+						</span>
+						<p
+							suppressHydrationWarning
+							className={'font-number text-sm text-neutral-900'}>
+							{formatCounterValue(balanceOfStyCRV.normalized, stycrvPrice)}
+						</p>
+					</div>
+
+					<div className={'my-2 h-px w-full bg-neutral-200'} />
+
+					<div className={'flex flex-row items-center justify-between pb-1'}>
+						<span className={'mr-auto text-sm font-normal text-neutral-400'}>
+							{'APY: '}
+						</span>
+						<span className={'tooltip'}>
+							<b
+								suppressHydrationWarning
+								className={'font-number text-sm text-neutral-900'}>
+								{`${formatPercent(styCRVAPY ?? 0)}*`}
+							</b>
+							<span className={'tooltiptext'}>
+								<div className={'flex flex-col items-start justify-start text-left'}>
+									<p
+										suppressHydrationWarning
+										className={'font-number text-neutral-400 md:text-xxs'}>
+										{styCRVAPY ? `*${formatPercent(styCRVAPY)} APY: ` : `*${formatPercent(0)} APY: `}
+									</p>
+									<p
+										suppressHydrationWarning
+										className={'font-number text-neutral-400 md:text-xxs'}>
+										{`∙ ${curveAdminFeePercent ? formatPercent(curveAdminFeePercent) : formatPercent(0)} Curve Admin Fees (${formatAmount(Number(holdings?.boostMultiplier) / 10000)}x boost)`}
+									</p>
+									<p
+										suppressHydrationWarning
+										className={'font-number text-neutral-400 md:text-xxs'}>
+										{`∙ ${styCRVAPY && curveAdminFeePercent && styCRVMegaBoost ? formatAmount(styCRVAPY - (curveAdminFeePercent + (styCRVMegaBoost * 100)), 2, 2) : '0.00'}% Gauge Voting Bribes`}
+									</p>
+									<p
+										suppressHydrationWarning
+										className={'font-number text-neutral-400 md:text-xxs'}>
+										{`∙ ${styCRVMegaBoost ? formatPercent(styCRVMegaBoost * 100) : formatPercent(0)} Mega Boost`}
+									</p>
+								</div>
+							</span>
+						</span>
+					</div>
+					<div className={'flex flex-row items-center justify-between pb-1'}>
+						<span className={'inline text-sm font-normal text-neutral-400'}>
+							{'Total Assets: '}
+						</span>
+						<p
+							suppressHydrationWarning
+							className={'font-number text-sm text-neutral-900'}>
+							{holdings?.styCRVSupply ? formatCounterValue(
+								formatToNormalizedValue(holdings.styCRVSupply, 18),
+								ycrvPrice
+							) : formatAmount(0)}
+						</p>
+					</div>
+					<div className={'flex flex-row items-center justify-between pb-1'}>
+						<span className={'inline text-sm font-normal text-neutral-400'}>
+							{'yBal Deposits: '}
+						</span>
+						<p
+							suppressHydrationWarning
+							className={'font-number text-sm text-neutral-900'}>
+							{formatBigNumberOver10K(holdings.styCRVSupply)}
+						</p>
+					</div>
+				</div>
+
+				<div className={'w-full bg-neutral-100 p-4'}>
+					<div className={'flex flex-row items-center justify-between pb-3'}>
+						<b className={'text-neutral-900'}>
+							{'lp-yCRV'}
+						</b>
+					</div>
+
+					<div className={'flex flex-row items-baseline justify-between pb-1'}>
+						<span className={'inline text-sm font-normal text-neutral-400'}>
+							{'My Balance: '}
+						</span>
+						<p
+							suppressHydrationWarning
+							className={'font-number text-sm text-neutral-900'}>
+							{formatNumberOver10K(balances[LPYCRV_TOKEN_ADDRESS]?.normalized || 0)}
+						</p>
+					</div>
+					<div className={'flex flex-row items-center justify-between'}>
+						<span className={'inline text-sm font-normal text-neutral-400'}>
+							{'Value: '}
+						</span>
+						<p
+							suppressHydrationWarning
+							className={'font-number text-sm text-neutral-900'}>
+							{formatCounterValue(balanceOfLpyCRV.normalized, lpycrvPrice)}
+						</p>
+					</div>
+
+					<div className={'my-2 h-px w-full bg-neutral-200'} />
+
+					<div className={'flex flex-row items-center justify-between pb-1'}>
+						<span className={'mr-auto text-sm font-normal text-neutral-400'}>
+							{'APY: '}
+						</span>
+						<b
+							suppressHydrationWarning
+							className={'font-number text-sm text-neutral-900'}>
+							{lpCRVAPY ? `${(lpCRVAPY || '').replace('APY', '')}` : `${formatPercent(0)}`}
+						</b>
+					</div>
+					<div className={'flex flex-row items-center justify-between pb-1'}>
+						<span className={'inline text-sm font-normal text-neutral-400'}>
+							{'Total Assets: '}
+						</span>
+						<p
+							suppressHydrationWarning
+							className={'font-number text-sm text-neutral-900'}>
+							{holdings?.lpyCRVSupply ? formatCounterValue(
+								formatToNormalizedValue(holdings.lpyCRVSupply, 18),
+								lpycrvPrice
+							) : formatAmount(0)}
+						</p>
+					</div>
+					<div className={'flex flex-row items-center justify-between pb-1'}>
+						<span className={'inline text-sm font-normal text-neutral-400'}>
+							{'yBal Deposits: '}
+						</span>
+						<p
+							suppressHydrationWarning
+							className={'font-number text-sm text-neutral-900'}>
+							{formatBigNumberOver10K(holdings.lpyCRVSupply)}
+						</p>
+					</div>
+				</div>
 			</div>
-		</>
+		</div>
 	);
 }
 
-function Index(): ReactElement {
+function Holdings(): ReactElement {
 	return (
-		<>
-			<div className={'mx-auto mt-20 mb-44 flex w-full max-w-6xl flex-col items-center justify-center'}>
-				<div className={'relative h-12 w-[300px] md:h-[104px] md:w-[600px]'}>
-					<TextAnimation />
-				</div>
-				<div className={'mt-8 mb-6'}>
-					<p className={'text-center text-lg md:text-2xl'}>{'Whatever word you choose, get supercharged yields on CRV with Yearn.'}</p>
-				</div>
-				<div>
-					<Button
-						as={'a'}
-						href={'#swap'}
-						className={'w-full'}>
-						{'To the yield!'}
-					</Button>
-				</div>
-			</div>
-			<section id={'swap'} className={'mt-0 flex w-full flex-col items-center justify-center space-y-10 space-x-0 md:flex-row md:space-y-0 md:space-x-4 lg:space-x-0'}>
-				<CardMigrateLegacy />
-				<CardZap />
-			</section>
-		</>
+		<section className={'mt-4 grid w-full grid-cols-12 gap-y-10 pb-10 md:mt-20 md:gap-x-10 md:gap-y-20'}>
+			<HeaderPosition />
+			<ZapAndStats />
+			<Harvests />
+		</section>
 	);
 }
 
-Index.getLayout = function getLayout(page: ReactElement, router: NextRouter): ReactElement {
+Holdings.getLayout = function getLayout(page: ReactElement, router: NextRouter): ReactElement {
 	return <Wrapper router={router}>{page}</Wrapper>;
 };
 
-export default Index;
+
+export default Holdings;

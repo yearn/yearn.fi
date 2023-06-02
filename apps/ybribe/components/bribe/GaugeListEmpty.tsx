@@ -8,7 +8,7 @@ function GaugeListEmpty(): ReactElement {
 
 	if (isLoading) {
 		return (
-			<div className={'flex h-96 w-full flex-col items-center justify-center py-2 px-10'}>
+			<div className={'flex h-96 w-full flex-col items-center justify-center px-10 py-2'}>
 				<b className={'text-lg'}>{'Fetching gauge data'}</b>
 				<p className={'text-neutral-600'}>{'We are retrieving the gauges. Please wait.'}</p>
 				<div className={'flex h-10 items-center justify-center'}>
@@ -18,7 +18,7 @@ function GaugeListEmpty(): ReactElement {
 		);
 	}
 	return (
-		<div className={'flex h-96 w-full flex-col items-center justify-center py-2 px-10'}>
+		<div className={'flex h-96 w-full flex-col items-center justify-center px-10 py-2'}>
 			<b className={'text-lg'}>{'No Gauges'}</b>
 			<p className={'text-neutral-600'}>
 				{'No gauges available.'}

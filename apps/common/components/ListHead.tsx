@@ -1,4 +1,5 @@
 import React, {useCallback} from 'react';
+import {cl} from '@yearn-finance/web-lib/utils/cl';
 import IconChevronPlain from '@common/icons/IconChevronPlain';
 
 import type {ReactElement} from 'react';
@@ -12,12 +13,14 @@ export type TListHead = {
 		className?: string
 	}[],
 	dataClassName?: string,
+	wrapperClassName?: string,
+	tokenClassName?: string,
 	sortBy: string,
 	sortDirection: TSortDirection,
 	onSort: (sortBy: string, sortDirection: TSortDirection) => void
 }
 
-function ListHead({items, dataClassName, sortBy, sortDirection, onSort}: TListHead): ReactElement {
+function ListHead({items, dataClassName, wrapperClassName, tokenClassName, sortBy, sortDirection, onSort}: TListHead): ReactElement {
 	const toggleSortDirection = (newSortBy: string): TSortDirection => {
 		return sortBy === newSortBy ? (
 			sortDirection === '' ? 'desc' : sortDirection === 'desc' ? 'asc' : 'desc'
@@ -37,8 +40,8 @@ function ListHead({items, dataClassName, sortBy, sortDirection, onSort}: TListHe
 	const [first, ...rest] = items;
 	return (
 		<div className={'mt-4 grid w-full grid-cols-1 md:mt-0'}>
-			<div className={'yearn--table-head-wrapper'}>
-				<div className={'yearn--table-head-token-section'}>
+			<div className={cl('yearn--table-head-wrapper', wrapperClassName)}>
+				<div className={cl('yearn--table-head-token-section', tokenClassName)}>
 					<button
 						onClick={(): void => onSort(first.value, toggleSortDirection(first.value))}
 						className={'yearn--table-head-label-wrapper group'}>
@@ -49,13 +52,13 @@ function ListHead({items, dataClassName, sortBy, sortDirection, onSort}: TListHe
 					</button>
 				</div>
 
-				<div className={`yearn--table-head-data-section ${dataClassName || ''}`}>
+				<div className={cl('yearn--table-head-data-section', dataClassName)}>
 					{rest.map((item, index): ReactElement => (
 						<button
 							key={`${index}_${item.value}`}
 							onClick={(): void => onSort(item.value, toggleSortDirection(item.value))}
 							disabled={!item.sortable}
-							className={`yearn--table-head-label-wrapper group ${item.className}`}
+							className={cl('yearn--table-head-label-wrapper group', item.className)}
 							datatype={'number'}>
 							<p className={'yearn--table-head-label'}>
 							&nbsp;{item.label}

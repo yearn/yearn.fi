@@ -2,8 +2,6 @@ name: Test
 
 on:
   push:
-    branches:
-      - main
   pull_request:
   workflow_dispatch:
 
@@ -25,4 +23,4 @@ jobs:
         run: yarn --prefer-offline
 
       - name: Test project
-        run: yarn node --experimental-vm-modules $(yarn bin jest)
+        run: yarn test

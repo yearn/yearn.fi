@@ -20,7 +20,7 @@ export type TDropdownOption = {
 	label: string;
 	symbol: string;
 	decimals: number;
-	value: string;
+	value: TAddress;
 	icon?: ReactElement;
 	zapVia?: TAddress;
 	solveVia?: Solver[];
