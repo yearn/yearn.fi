@@ -1,7 +1,6 @@
 import {useCallback, useMemo, useRef} from 'react';
 import {ethers} from 'ethers';
 import useSWRMutation from 'swr/mutation';
-import {Solver} from '@vaults/contexts/useSolver';
 import {useVaultEstimateOutFetcher} from '@vaults/hooks/useVaultEstimateOutFetcher';
 import {getEthZapperContract} from '@vaults/utils';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -10,6 +9,7 @@ import {allowanceKey, isZeroAddress, toAddress} from '@yearn-finance/web-lib/uti
 import {ETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
+import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 import {approvedERC20Amount, approveERC20} from '@common/utils/actions/approveToken';
 import {depositETH} from '@common/utils/actions/depositEth';
 import {withdrawETH} from '@common/utils/actions/withdrawEth';
@@ -186,7 +186,7 @@ export function useSolverChainCoin(): TSolverContext {
 	}, [provider, safeChainID]);
 
 	return useMemo((): TSolverContext => ({
-		type: Solver.CHAIN_COIN,
+		type: Solver.enum.ChainCoin,
 		quote: latestQuote?.result || toNormalizedBN(0),
 		getQuote: getQuote,
 		refreshQuote: refreshQuote,

@@ -2,7 +2,7 @@ import {useCallback, useMemo, useRef, useState} from 'react';
 import {ethers} from 'ethers';
 import {getTokenAllowance as wiGetTokenAllowance, getWidoSpender, quote as wiQuote} from 'wido';
 import {useAsync} from '@react-hookz/web';
-import {isSolverDisabled, Solver} from '@vaults/contexts/useSolver';
+import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
@@ -10,6 +10,7 @@ import {allowanceKey, isZeroAddress, toAddress} from '@yearn-finance/web-lib/uti
 import {formatBN, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
+import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 import {approveERC20, isApprovedERC20} from '@common/utils/actions/approveToken';
 
 import type {AxiosError} from 'axios';
@@ -104,7 +105,7 @@ export function useSolverWido(): TSolverContext {
 		/******************************************************************************************
 		** This first obvious check is to see if the solver is disabled. If it is, we return 0.
 		******************************************************************************************/
-		if (isSolverDisabled[Solver.WIDO]) {
+		if (isSolverDisabled[Solver.enum.Wido]) {
 			return toNormalizedBN(0);
 		}
 
@@ -114,7 +115,7 @@ export function useSolverWido(): TSolverContext {
 		** This solveVia array is set via the yDaemon tokenList process. If a solve is not set for
 		** a token, you can contact the yDaemon team to add it.
 		******************************************************************************************/
-		if (!sellToken.solveVia?.includes(Solver.WIDO)) {
+		if (!sellToken.solveVia?.includes(Solver.enum.Wido)) {
 			return toNormalizedBN(0);
 		}
 
@@ -149,7 +150,7 @@ export function useSolverWido(): TSolverContext {
 	** not.
 	**********************************************************************************************/
 	const execute = useCallback(async (): Promise<TTxResponse> => {
-		if (!latestQuote?.current || !request.current || isSolverDisabled[Solver.WIDO]) {
+		if (!latestQuote?.current || !request.current || isSolverDisabled[Solver.enum.Wido]) {
 			return ({isSuccessful: false});
 		}
 
@@ -174,7 +175,7 @@ export function useSolverWido(): TSolverContext {
 	** process and displayed to the user.
 	**************************************************************************/
 	const expectedOut = useMemo((): TNormalizedBN => {
-		if (!latestQuote?.current?.minToTokenAmount || isSolverDisabled[Solver.WIDO]) {
+		if (!latestQuote?.current?.minToTokenAmount || isSolverDisabled[Solver.enum.Wido]) {
 			return (toNormalizedBN(0));
 		}
 		return toNormalizedBN(latestQuote?.current?.minToTokenAmount, request?.current?.outputToken?.decimals || 18);
@@ -185,7 +186,7 @@ export function useSolverWido(): TSolverContext {
 	** display the current value to the user.
 	**************************************************************************/
 	const onRetrieveExpectedOut = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN> => {
-		if (isSolverDisabled[Solver.WIDO] || !_request.inputToken.solveVia?.includes(Solver.WIDO)) {
+		if (isSolverDisabled[Solver.enum.Wido] || !_request.inputToken.solveVia?.includes(Solver.enum.Wido)) {
 			return toNormalizedBN(0);
 		}
 		const quoteResult = await getQuote(_request, true);
@@ -197,7 +198,7 @@ export function useSolverWido(): TSolverContext {
 	** be used to determine if the user should approve the token or not.
 	**************************************************************************/
 	const onRetrieveAllowance = useCallback(async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
-		if (!latestQuote?.current || !request?.current || isSolverDisabled[Solver.WIDO]) {
+		if (!latestQuote?.current || !request?.current || isSolverDisabled[Solver.enum.Wido]) {
 			return toNormalizedBN(0);
 		}
 
@@ -226,7 +227,7 @@ export function useSolverWido(): TSolverContext {
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
-		if (!latestQuote?.current || !request?.current || isSolverDisabled[Solver.WIDO]) {
+		if (!latestQuote?.current || !request?.current || isSolverDisabled[Solver.enum.Wido]) {
 			return;
 		}
 		const	widoSpenderAddress = toAddress(await getWidoSpender({
@@ -286,7 +287,7 @@ export function useSolverWido(): TSolverContext {
 
 
 	return useMemo((): TSolverContext => ({
-		type: Solver.WIDO,
+		type: Solver.enum.Wido,
 		quote: expectedOut,
 		getQuote: getQuote,
 		refreshQuote,

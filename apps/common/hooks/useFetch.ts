@@ -24,6 +24,8 @@ export function	useFetch<T>({endpoint, schema, config}: TUseZodProps<T>): SWRRes
 		return {...result, isSuccess: false};
 	}
 
+	console.log(result.data);
+
 	const parsedData = schema.safeParse(result.data);
 	
 	if (!parsedData.success) {

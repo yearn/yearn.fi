@@ -2,7 +2,7 @@ import {useCallback, useMemo, useRef, useState} from 'react';
 import {BigNumber, ethers} from 'ethers';
 import axios from 'axios';
 import {useAsync} from '@react-hookz/web';
-import {isSolverDisabled, Solver} from '@vaults/contexts/useSolver';
+import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import usePortalsApi from '@vaults/hooks/usePortalsApi';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -12,6 +12,7 @@ import {ETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatBN, toNormalizedBN, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
+import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 import {approveERC20, isApprovedERC20} from '@common/utils/actions/approveToken';
 
 import type {TDict} from '@yearn-finance/web-lib/types';
@@ -116,7 +117,7 @@ export function useSolverPortals(): TSolverContext {
 		/******************************************************************************************
 		** This first obvious check is to see if the solver is disabled. If it is, we return 0.
 		******************************************************************************************/
-		if (isSolverDisabled[Solver.PORTALS]) {
+		if (isSolverDisabled[Solver.enum.Portals]) {
 			return toNormalizedBN(0);
 		}
 
@@ -126,7 +127,7 @@ export function useSolverPortals(): TSolverContext {
 		** This solveVia array is set via the yDaemon tokenList process. If a solve is not set for
 		** a token, you can contact the yDaemon team to add it.
 		******************************************************************************************/
-		if (!sellToken.solveVia?.includes(Solver.PORTALS)) {
+		if (!sellToken.solveVia?.includes(Solver.enum.Portals)) {
 			return toNormalizedBN(0);
 		}
 
@@ -168,7 +169,7 @@ export function useSolverPortals(): TSolverContext {
 	** not.
 	**********************************************************************************************/
 	const execute = useCallback(async (): Promise<TTxResponse> => {
-		if (!latestQuote?.current || !request.current || isSolverDisabled[Solver.PORTALS]) {
+		if (!latestQuote?.current || !request.current || isSolverDisabled[Solver.enum.Portals]) {
 			return ({isSuccessful: false});
 		}
 
@@ -214,7 +215,7 @@ export function useSolverPortals(): TSolverContext {
 	** process and displayed to the user.
 	**************************************************************************/
 	const expectedOut = useMemo((): TNormalizedBN => {
-		if (!latestQuote?.current?.minBuyAmount || isSolverDisabled[Solver.PORTALS]) {
+		if (!latestQuote?.current?.minBuyAmount || isSolverDisabled[Solver.enum.Portals]) {
 			return (toNormalizedBN(0));
 		}
 		return toNormalizedBN(latestQuote?.current?.minBuyAmount, request?.current?.outputToken?.decimals || 18);
@@ -225,7 +226,7 @@ export function useSolverPortals(): TSolverContext {
 	** display the current value to the user.
 	**************************************************************************/
 	const onRetrieveExpectedOut = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN> => {
-		if (isSolverDisabled[Solver.PORTALS] || !_request.inputToken.solveVia?.includes(Solver.PORTALS)) {
+		if (isSolverDisabled[Solver.enum.Portals] || !_request.inputToken.solveVia?.includes(Solver.enum.Portals)) {
 			return toNormalizedBN(0);
 		}
 		const quoteResult = await getQuote(_request, true);
@@ -237,7 +238,7 @@ export function useSolverPortals(): TSolverContext {
 	** be used to determine if the user should approve the token or not.
 	**************************************************************************/
 	const onRetrieveAllowance = useCallback(async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
-		if (!latestQuote?.current || !request?.current || isSolverDisabled[Solver.PORTALS]) {
+		if (!latestQuote?.current || !request?.current || isSolverDisabled[Solver.enum.Portals]) {
 			return toNormalizedBN(0);
 		}
 
@@ -280,7 +281,7 @@ export function useSolverPortals(): TSolverContext {
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
-		if (!latestQuote?.current || !request?.current || isSolverDisabled[Solver.PORTALS]) {
+		if (!latestQuote?.current || !request?.current || isSolverDisabled[Solver.enum.Portals]) {
 			return;
 		}
 
@@ -339,7 +340,7 @@ export function useSolverPortals(): TSolverContext {
 			.perform();
 	}, [execute, provider]);
 	return useMemo((): TSolverContext => ({
-		type: Solver.PORTALS,
+		type: Solver.enum.Portals,
 		quote: expectedOut,
 		getQuote,
 		refreshQuote,

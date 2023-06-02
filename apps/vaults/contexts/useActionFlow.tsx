@@ -1,7 +1,6 @@
 import React, {createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState} from 'react';
 import {useRouter} from 'next/router';
 import {useAsync, useMountEffect, useUpdateEffect} from '@react-hookz/web';
-import {Solver} from '@vaults/contexts/useSolver';
 import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
 import {WOPT_TOKEN_ADDRESS} from '@vaults/utils';
@@ -16,12 +15,14 @@ import {formatBN, toNormalizedBN, Zero} from '@yearn-finance/web-lib/utils/forma
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
+import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 
 import externalzapOutTokenList from '../../common/utils/externalZapOutTokenList.json';
 
 import type {BigNumber} from 'ethers';
 import type {ReactNode} from 'react';
 import type {TAddress} from '@yearn-finance/web-lib/types';
+import type {TSolver} from '@common/schemas/yDaemonTokenListBalances';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
 
@@ -53,7 +54,7 @@ type	TActionFlowContext = {
 	onSwitchSelectedOptions: (nextFlow?: Flow) => void;
 	isDepositing: boolean;
 	maxDepositPossible: TNormalizedBN;
-	currentSolver: Solver;
+	currentSolver: TSolver;
 }
 const	DefaultActionFlowContext: TActionFlowContext = {
 	currentVault: {} as TYDaemonVault, // eslint-disable-line @typescript-eslint/consistent-type-assertions
@@ -73,7 +74,7 @@ const	DefaultActionFlowContext: TActionFlowContext = {
 	onSwitchSelectedOptions: (): void => undefined,
 	isDepositing: true,
 	maxDepositPossible: toNormalizedBN(0),
-	currentSolver: Solver?.VANILLA || 'Vanilla'
+	currentSolver: Solver.enum.Vanilla || 'Vanilla'
 };
 
 type TUseContextualIs = {
@@ -195,10 +196,10 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 		depositLimit
 	}), [actionParams?.selectedOptionFrom?.decimals, actionParams?.selectedOptionFrom?.value, balances, currentVault, depositLimit, isDepositing]);
 
-	const currentSolver = useMemo((): Solver => {
+	const currentSolver = useMemo((): TSolver => {
 		const isUnderlyingToken = toAddress(actionParams?.selectedOptionFrom?.value) === toAddress(currentVault.token.address);
 		if (hasStakingRewards && isDepositing && isUnderlyingToken) {
-			return Solver.OPTIMISM_BOOSTER;
+			return Solver.enum.OptimismBooster;
 		}
 
 		const isInputTokenEth = actionParams?.selectedOptionFrom?.value === ETH_TOKEN_ADDRESS;
@@ -211,10 +212,10 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 		);
 
 		if (isVaultTokenWrappedCoin && (isInputTokenEth || isOutputTokenEth)) {
-			return Solver.CHAIN_COIN;
+			return Solver.enum.ChainCoin;
 		}
 		if (currentVault?.migration?.available && (toAddress(actionParams?.selectedOptionTo?.value) === toAddress(currentVault?.migration?.address))) {
-			return Solver.INTERNAL_MIGRATION;
+			return Solver.enum.InternalMigration;
 		}
 		if (isDepositing && (actionParams?.selectedOptionFrom?.solveVia?.length || 0) > 0) {
 			return zapProvider;
@@ -223,9 +224,9 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 			return zapProvider;
 		}
 		if (isDepositing && isUsingPartnerContract) {
-			return Solver.PARTNER_CONTRACT;
+			return Solver.enum.PartnerContract;
 		}
-		return Solver.VANILLA;
+		return Solver.enum.Vanilla;
 	}, [actionParams?.selectedOptionFrom?.value, actionParams?.selectedOptionFrom?.solveVia?.length, actionParams?.selectedOptionTo?.value, actionParams?.selectedOptionTo?.solveVia?.length, currentVault.token.address, currentVault.address, currentVault?.migration?.available, currentVault?.migration?.address, hasStakingRewards, isDepositing, safeChainID, isUsingPartnerContract, zapProvider]);
 
 	const onSwitchSelectedOptions = useCallback((nextFlow = Flow.Switch): void => {
@@ -522,7 +523,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 						address: toAddress(tokenListData?.address),
 						chainID: currentVault?.chainID === 1337 ? safeChainID : currentVault?.chainID,
 						decimals: tokenListData?.decimals,
-						solveVia: (tokenListData?.supportedZaps as Solver[]) || []
+						solveVia: (tokenListData?.supportedZaps as TSolver[]) || []
 					})
 				);
 			});
