@@ -35,7 +35,7 @@ async function getQuote(
 		kind: OrderQuoteSide.kind.SELL, // always sell
 		partiallyFillable: false, // always false
 		validTo: 0,
-		sellAmountBeforeFee: toBigInt(request?.inputAmount || 0).toString() // amount to sell, in wei
+		sellAmountBeforeFee: toBigInt(request?.inputAmount).toString() // amount to sell, in wei
 	};
 
 	if (isZeroAddress(quoteRequest.from)) {
@@ -253,7 +253,7 @@ export function useSolverCowswap(): TSolverContext {
 		}
 		return (
 			toNormalizedBN(
-				toBigInt(latestQuote?.current?.quote?.buyAmount.toString()),
+				toBigInt(latestQuote?.current?.quote?.buyAmount),
 				request?.current?.outputToken?.decimals || 18
 			)
 		);
@@ -308,7 +308,7 @@ export function useSolverCowswap(): TSolverContext {
 			provider,
 			request.current.inputToken.value, //token to approve
 			SOLVER_COW_VAULT_RELAYER_ADDRESS, //Cowswap relayer
-			toBigInt(amount.toString())
+			toBigInt(amount)
 		);
 		if (isApproved) {
 			return onSuccess();
@@ -317,7 +317,7 @@ export function useSolverCowswap(): TSolverContext {
 			connector: provider,
 			contractAddress: request.current.inputToken.value,
 			spenderAddress: SOLVER_COW_VAULT_RELAYER_ADDRESS,
-			amount: toBigInt(amount.toString()),
+			amount: toBigInt(amount),
 			statusHandler: txStatusSetter
 		});
 		if (result.isSuccessful) {
