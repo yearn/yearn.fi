@@ -98,14 +98,15 @@ function VaultDetailsQuickActionsButtons(): ReactElement {
 		toAddress(actionParams?.selectedOptionFrom?.value) === ETH_TOKEN_ADDRESS
 		&& toAddress(actionParams?.selectedOptionTo?.value) === YVWETH_ADDRESS
 	);
-	const hasAllowanceSet = toBigInt(actionParams.amount.raw) > toBigInt(allowanceFrom?.raw);
+	const isAboveAllowance = toBigInt(actionParams.amount.raw) > toBigInt(allowanceFrom?.raw);
 	const isButtonBusy = txStatusApprove.pending || status !== 'success';
 	if (
-		!(isDepositingEthViaChainCoin && shouldUseChainCoinContract) && (isButtonBusy || hasAllowanceSet) && (
+		!(isDepositingEthViaChainCoin && shouldUseChainCoinContract) && (isButtonBusy || isAboveAllowance) && (
 			(currentSolver === Solver.VANILLA && isDepositing)
 			|| (currentSolver === Solver.INTERNAL_MIGRATION)
 			|| (currentSolver === Solver.COWSWAP)
 			|| (currentSolver === Solver.WIDO)
+			|| (currentSolver === Solver.PORTALS)
 			|| (currentSolver === Solver.PARTNER_CONTRACT)
 			|| (currentSolver === Solver.OPTIMISM_BOOSTER)
 		)

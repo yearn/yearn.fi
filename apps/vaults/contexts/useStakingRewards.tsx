@@ -54,7 +54,7 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 		** Base wagmi contract struct ready to use in the viem functions call
 		******************************************************************************************/
 		const baseContract = {
-			address: toAddress(STAKING_REWARDS_REGISTRY_ADDRESS),
+			address: STAKING_REWARDS_REGISTRY_ADDRESS,
 			abi: STAKING_REWARDS_REGISTRY_ABI,
 			chainId: chainID
 		} as const;
@@ -130,7 +130,7 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 		const calls = [];
 		for (const {address} of stakingRewards) {
 			const baseContract = {
-				address: toAddress(address),
+				address,
 				abi: STAKING_REWARDS_ABI,
 				chainId: chainID
 			} as const;

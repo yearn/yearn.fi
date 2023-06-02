@@ -1,5 +1,5 @@
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
-import Balancer from 'react-wrap-balancer';
+import {Balancer} from 'react-wrap-balancer';
 import {useAsync} from '@react-hookz/web';
 import VaultListFactory from '@vaults/components/list/VaultListFactory';
 import VAULT_FACTORY_ABI from '@vaults/utils/abi/vaultFactory.abi';
@@ -14,7 +14,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import LinkOut from '@yearn-finance/web-lib/icons/IconLinkOut';
 import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
-import {toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {VAULT_FACTORY_ADDRESS, ZERO_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {decodeAsBoolean, decodeAsString} from '@yearn-finance/web-lib/utils/decoder';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
@@ -72,10 +72,14 @@ function Factory(): ReactElement {
 			return [];
 		}
 
-		const baseContract = {address: toWagmiAddress(VAULT_FACTORY_ADDRESS), abi: VAULT_FACTORY_ABI};
+		const baseContract = {address: VAULT_FACTORY_ADDRESS, abi: VAULT_FACTORY_ABI};
 		const calls = [];
 		for (const gauge of _gaugesFromYearn) {
-			calls.push({...baseContract, functionName: 'canCreateVaultPermissionlessly', args: [toWagmiAddress(gauge.gauge_address)]});
+			calls.push({
+				...baseContract,
+				functionName: 'canCreateVaultPermissionlessly',
+				args: [toAddress(gauge.gauge_address)]
+			});
 		}
 		const canCreateVaults = await multicall({contracts: calls, chainId: _safeChainID});
 		return _gaugesFromYearn.filter((_gauge: TCurveGaugeFromYearn, index: number): boolean => decodeAsBoolean(canCreateVaults[index]));
@@ -122,7 +126,7 @@ function Factory(): ReactElement {
 		_safeChainID: number,
 		_selectedOption: TDropdownGaugeOption
 	): Promise<TGaugeDisplayData> {
-		const baseContract = {address: toWagmiAddress(_selectedOption.value.gaugeAddress), abi: ERC20_ABI};
+		const baseContract = {address: _selectedOption.value.gaugeAddress, abi: ERC20_ABI};
 		const results = await multicall({
 			contracts: [
 				{...baseContract, functionName: 'name'},
@@ -155,8 +159,8 @@ function Factory(): ReactElement {
 		try {
 			return await gasOfCreateNewVaultsAndStrategies({
 				connector: provider,
-				contractAddress: toWagmiAddress(VAULT_FACTORY_ADDRESS),
-				gaugeAddress: toWagmiAddress(selectedOption.value.gaugeAddress)
+				contractAddress: VAULT_FACTORY_ADDRESS,
+				gaugeAddress: selectedOption.value.gaugeAddress
 			});
 		} catch (error) {
 			const err = error as {reason: string, code: string};
@@ -170,7 +174,7 @@ function Factory(): ReactElement {
 		}
 	}, 0n);
 	useEffect((): void => {
-		if (!isActive || selectedOption.value.gaugeAddress === ZERO_ADDRESS || safeChainID !== 1) {
+		if (!isActive || toAddress(selectedOption.value.gaugeAddress) === ZERO_ADDRESS || safeChainID !== 1) {
 			return;
 		}
 		actions.execute();
@@ -179,8 +183,8 @@ function Factory(): ReactElement {
 	const onCreateNewVault = useCallback(async (): Promise<void> => {
 		const result = await createNewVaultsAndStrategies({
 			connector: provider,
-			contractAddress: toWagmiAddress(VAULT_FACTORY_ADDRESS),
-			gaugeAddress: toWagmiAddress(selectedOption.value.gaugeAddress),
+			contractAddress: VAULT_FACTORY_ADDRESS,
+			gaugeAddress: selectedOption.value.gaugeAddress,
 			statusHandler: set_txStatus
 		});
 		if (result.isSuccessful) {

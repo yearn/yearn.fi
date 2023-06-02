@@ -216,7 +216,7 @@ function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}):
 				{currentTab.value === 3 ? (
 					<RewardsTab currentVault={currentVault} />
 				) : (
-					<div className={'col-span-12 mb-4 flex flex-col space-x-0 space-y-2 bg-neutral-100 p-4 md:flex-row md:space-x-4 md:space-y-0 md:py-6 md:px-8'}>
+					<div className={'col-span-12 mb-4 flex flex-col space-x-0 space-y-2 bg-neutral-100 p-4 md:flex-row md:space-x-4 md:space-y-0 md:px-8 md:py-6'}>
 						<VaultDetailsQuickActionsFrom />
 						<VaultDetailsQuickActionsSwitch />
 						<VaultDetailsQuickActionsTo />

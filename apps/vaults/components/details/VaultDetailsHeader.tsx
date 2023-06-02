@@ -73,7 +73,7 @@ function VaultDetailsHeader({vault}: { vault: TYDaemonVault }): ReactElement {
 			<b className={'mx-auto flex w-full flex-row items-center justify-center text-center text-4xl tabular-nums text-neutral-900 md:text-8xl'}>
 				&nbsp;{vaultName}&nbsp;
 			</b>
-			<div className={'mt-4 mb-10 md:mt-10 md:mb-14'}>
+			<div className={'mb-10 mt-4 md:mb-14 md:mt-10'}>
 				{address ? (
 					<button onClick={(): void => copyToClipboard(address)}>
 						<p className={'font-number text-xxs text-neutral-500 md:text-xs'}>{address}</p>

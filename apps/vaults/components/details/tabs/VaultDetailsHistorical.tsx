@@ -1,6 +1,9 @@
 import React, {useMemo, useState} from 'react';
-import dynamic from 'next/dynamic';
 import useSWR from 'swr';
+import {useIsMounted} from '@react-hookz/web';
+import {GraphForVaultEarnings} from '@vaults/components/graphs/GraphForVaultEarnings';
+import {GraphForVaultPPSGrowth} from '@vaults/components/graphs/GraphForVaultPPSGrowth';
+import GraphForVaultTVL from '@vaults/components/graphs/GraphForVaultTVL';
 import {getMessariSubgraphEndpoint} from '@vaults/utils';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import Renderable from '@yearn-finance/web-lib/components/Renderable';
@@ -9,19 +12,12 @@ import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/fo
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
 import {graphFetcher} from '@common/utils';
 
-import type {LoaderComponent} from 'next/dynamic';
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TGraphData, TMessariGraphData} from '@common/types/types';
-import type {TGraphForVaultEarningsProps} from '@vaults/components/graphs/GraphForVaultEarnings';
-import type {TGraphForVaultPPSGrowthProps} from '@vaults/components/graphs/GraphForVaultPPSGrowth';
-import type {TGraphForVaultTVLProps} from '@vaults/components/graphs/GraphForVaultTVL';
-
-const GraphForVaultTVL = dynamic<TGraphForVaultTVLProps>(async (): LoaderComponent<TGraphForVaultTVLProps> => import('@vaults/components/graphs/GraphForVaultTVL'), {ssr: false});
-const GraphForVaultPPSGrowth = dynamic<TGraphForVaultPPSGrowthProps>(async (): LoaderComponent<TGraphForVaultPPSGrowthProps> => import('@vaults/components/graphs/GraphForVaultPPSGrowth'), {ssr: false});
-const GraphForVaultEarnings = dynamic<TGraphForVaultEarningsProps>(async (): LoaderComponent<TGraphForVaultEarningsProps> => import('@vaults/components/graphs/GraphForVaultEarnings'), {ssr: false});
 
 function VaultDetailsHistorical({currentVault, harvestData}: {currentVault: TYDaemonVault, harvestData: TGraphData[]}): ReactElement {
+	const isMounted = useIsMounted();
 	const {safeChainID} = useChainID();
 	const [selectedViewIndex, set_selectedViewIndex] = useState(0);
 
@@ -77,15 +73,15 @@ function VaultDetailsHistorical({currentVault, harvestData}: {currentVault: TYDa
 				</div>
 			</div>
 			<div className={'mt-4 flex flex-row space-x-8 border-b border-l border-neutral-300'} style={{height: 312}}>
-				<Renderable shouldRender={selectedViewIndex === 0}>
+				<Renderable shouldRender={isMounted() && selectedViewIndex === 0}>
 					<GraphForVaultTVL messariData={messariData} />
 				</Renderable>
 
-				<Renderable shouldRender={selectedViewIndex === 1}>
+				<Renderable shouldRender={isMounted() && selectedViewIndex === 1}>
 					<GraphForVaultPPSGrowth messariData={messariData} />
 				</Renderable>
 
-				<Renderable shouldRender={selectedViewIndex === 2}>
+				<Renderable shouldRender={isMounted() && selectedViewIndex === 2}>
 					<GraphForVaultEarnings currentVault={currentVault} harvestData={harvestData} />
 				</Renderable>
 			</div>

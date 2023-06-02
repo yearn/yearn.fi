@@ -5,8 +5,8 @@ import {Dropdown} from '@common/components/TokenDropdown';
 import IconArrowRight from '@common/icons/IconArrowRight';
 
 import type {ChangeEvent, ReactElement, ReactNode} from 'react';
-import type {TBalanceData} from '@yearn-finance/web-lib/hooks/types';
 import type {TDict} from '@yearn-finance/web-lib/types';
+import type {TBalanceData} from '@yearn-finance/web-lib/types/hooks';
 import type {TDropdownOption} from '@common/types/types';
 
 export type TQASelect = {
@@ -105,7 +105,7 @@ function QAInput(props: TQAInput): ReactElement {
 				</label>
 			)}
 			<div className={`flex h-10 items-center ${isDisabled ? 'bg-neutral-300' : 'bg-neutral-0'} p-2`}>
-				<div className={'flex h-10 w-full flex-row items-center justify-between py-4 px-0'}>
+				<div className={'flex h-10 w-full flex-row items-center justify-between px-0 py-4'}>
 					<input
 						id={inputProps.id || label}
 						className={`w-full overflow-x-scroll border-none bg-transparent px-0 font-bold outline-none scrollbar-none ${isDisabled ? 'cursor-not-allowed' : 'cursor-default'}`}

@@ -6,7 +6,7 @@ import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import VAULT_ABI from '@yearn-finance/web-lib/utils/abi/vault.abi';
-import {toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ZERO_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
@@ -39,11 +39,11 @@ function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): ReactElement
 	const stakeBalance = toNormalizedBN(toBigInt(stakingRewardsPosition?.stake), currentVault.decimals);
 	const rewardBalance = toNormalizedBN(toBigInt(stakingRewardsPosition?.reward), rewardTokenBalance.decimals);
 	const {data: allowance, isLoading, refetch} = useContractRead({
-		address: toWagmiAddress(currentVault.address),
+		address: currentVault.address,
 		abi: VAULT_ABI,
 		chainId: chainID,
 		functionName: 'allowance',
-		args: [toWagmiAddress(address), toWagmiAddress(stakingRewards?.address)],
+		args: [toAddress(address), toAddress(stakingRewards?.address)],
 		enabled: toAddress(stakingRewards?.address) !== ZERO_ADDRESS
 	});
 	const isApproved = toBigInt(allowance) >= toBigInt(vaultBalance.raw);
@@ -55,8 +55,8 @@ function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): ReactElement
 	const onApprove = useCallback(async (): Promise<void> => {
 		const result = await approveERC20({
 			connector: provider,
-			contractAddress: toWagmiAddress(currentVault.address),
-			spenderAddress: toWagmiAddress(stakingRewards?.address),
+			contractAddress: currentVault.address,
+			spenderAddress: toAddress(stakingRewards?.address),
 			amount: vaultBalance.raw,
 			statusHandler: set_approveStakeStatus
 		});
@@ -68,7 +68,7 @@ function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): ReactElement
 	const onStake = useCallback(async (): Promise<void> => {
 		const result = await stakeAction({
 			connector: provider,
-			contractAddress: toWagmiAddress(stakingRewards?.address),
+			contractAddress: toAddress(stakingRewards?.address),
 			amount: vaultBalance.raw,
 			statusHandler: set_stakeStatus
 		});
@@ -80,7 +80,7 @@ function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): ReactElement
 	const onUnstake = useCallback(async (): Promise<void> => {
 		const result = await unstakeAction({
 			connector: provider,
-			contractAddress: toWagmiAddress(stakingRewards?.address),
+			contractAddress: toAddress(stakingRewards?.address),
 			statusHandler: set_unstakeStatus
 		});
 		if (result.isSuccessful) {
@@ -91,7 +91,7 @@ function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): ReactElement
 	const onClaim = useCallback(async (): Promise<void> => {
 		const result = await claimAction({
 			connector: provider,
-			contractAddress: toWagmiAddress(stakingRewards?.address),
+			contractAddress: toAddress(stakingRewards?.address),
 			statusHandler: set_claimStatus
 		});
 		if (result.isSuccessful) {

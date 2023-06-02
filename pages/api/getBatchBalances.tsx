@@ -1,9 +1,9 @@
 import {serialize} from 'wagmi';
-import * as Sentry from '@sentry/nextjs';
+import {captureException} from '@sentry/nextjs';
 import {getNativeTokenWrapperContract, getNativeTokenWrapperName} from '@vaults/utils';
 import {erc20ABI, multicall} from '@wagmi/core';
 import AGGREGATE3_ABI from '@yearn-finance/web-lib/utils/abi/aggregate.abi';
-import {toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, MULTICALL3_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {decodeAsBigInt, decodeAsNumber, decodeAsString} from '@yearn-finance/web-lib/utils/decoder';
 import {toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -39,13 +39,13 @@ async function getBatchBalances({
 			const ownerAddress = address;
 			const isEth = toAddress(token) === toAddress(ETH_TOKEN_ADDRESS);
 			if (isEth) {
-				const multicall3Contract = {address: toWagmiAddress(MULTICALL3_ADDRESS), abi: AGGREGATE3_ABI};
-				const baseContract = {address: toWagmiAddress(nativeTokenWrapper), abi: erc20ABI};
+				const multicall3Contract = {address: MULTICALL3_ADDRESS, abi: AGGREGATE3_ABI};
+				const baseContract = {address: nativeTokenWrapper, abi: erc20ABI};
 				calls.push({...multicall3Contract, functionName: 'getEthBalance', args: [ownerAddress]});
 				calls.push({...baseContract, functionName: 'decimals'});
 				calls.push({...baseContract, functionName: 'symbol'});
 			} else {
-				const baseContract = {address: toWagmiAddress(token), abi: erc20ABI};
+				const baseContract = {address: toAddress(token), abi: erc20ABI};
 				calls.push({...baseContract, functionName: 'balanceOf', args: [ownerAddress]});
 				calls.push({...baseContract, functionName: 'decimals'});
 				calls.push({...baseContract, functionName: 'symbol'});
@@ -93,6 +93,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 		const balances = await getBatchBalances({chainID, address, tokens});
 		return res.status(200).json({balances: serialize(balances), chainID: req.body.chainID});
 	} catch (error) {
-		Sentry.captureException(error, {tags: {rpc: getRPC(chainID), chainID, address}});
+		captureException(error, {tags: {rpc: getRPC(chainID), chainID, address}});
 	}
 }
