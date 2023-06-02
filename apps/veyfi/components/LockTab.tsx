@@ -2,7 +2,7 @@ import {useCallback, useEffect, useMemo, useState} from 'react';
 import {formatUnits} from 'viem';
 import {useVotingEscrow} from '@veYFI/contexts/useVotingEscrow';
 import {getVotingPower} from '@veYFI/utils';
-import {increaseLockAmount, lock} from '@veYFI/utils/actions';
+import {increaseVeYFILockAmount, lockVeYFI} from '@veYFI/utils/actions';
 import {MAX_LOCK_TIME, MIN_LOCK_AMOUNT, MIN_LOCK_TIME} from '@veYFI/utils/constants';
 import {validateAllowance, validateAmount, validateNetwork} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
@@ -65,7 +65,7 @@ function LockTab(): ReactElement {
 	}, [lockAmount.raw, provider, refreshData, votingEscrow?.address, votingEscrow?.token]);
 
 	const onLock = useCallback(async (): Promise<void> => {
-		const result = await lock({
+		const result = await lockVeYFI({
 			connector: provider,
 			contractAddress: votingEscrow?.address,
 			amount: lockAmount.raw,
@@ -78,7 +78,7 @@ function LockTab(): ReactElement {
 	}, [provider, votingEscrow?.address, lockAmount.raw, unlockTime, onTxSuccess]);
 
 	const onIncreaseLockAmount = useCallback(async (): Promise<void> => {
-		const result = await increaseLockAmount({
+		const result = await increaseVeYFILockAmount({
 			connector: provider,
 			contractAddress: votingEscrow?.address,
 			amount: lockAmount.raw,

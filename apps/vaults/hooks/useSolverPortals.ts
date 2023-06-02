@@ -35,7 +35,7 @@ async function getQuote(
 ): Promise<{data: TPortalEstimate | undefined, error: Error | undefined}> {
 	const params = {
 		sellToken: toAddress(request.inputToken.value),
-		sellAmount: toBigInt(request.inputAmount || 0).toString(),
+		sellAmount: toBigInt(request.inputAmount).toString(),
 		buyToken: toAddress(request.outputToken.value),
 		slippagePercentage: String(zapSlippage / 100)
 	};
@@ -152,7 +152,7 @@ export function useSolverPortals(): TSolverContext {
 				params: {
 					takerAddress: toAddress(address),
 					sellToken: toAddress(request.current.inputToken.value),
-					sellAmount: toBigInt(request.current.inputAmount || 0).toString(),
+					sellAmount: toBigInt(request.current.inputAmount).toString(),
 					buyToken: toAddress(request.current.outputToken.value),
 					slippagePercentage: String(zapSlippage / 100),
 					validate: true
@@ -220,7 +220,7 @@ export function useSolverPortals(): TSolverContext {
 				params: {
 					takerAddress: toAddress(request.current.from),
 					sellToken: toAddress(request.current.inputToken.value),
-					sellAmount:toBigInt(request.current.inputAmount || 0).toString(),
+					sellAmount:toBigInt(request.current.inputAmount).toString(),
 					buyToken: toAddress(request.current.outputToken.value)
 				}
 			});
@@ -261,7 +261,7 @@ export function useSolverPortals(): TSolverContext {
 				params: {
 					takerAddress: toAddress(request.current.from),
 					sellToken: toAddress(request.current.inputToken.value),
-					sellAmount:toBigInt(request.current.inputAmount || 0).toString(),
+					sellAmount:toBigInt(request.current.inputAmount).toString(),
 					buyToken: toAddress(request.current.outputToken.value)
 				}
 			});
