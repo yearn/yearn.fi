@@ -170,7 +170,7 @@ function Factory(): ReactElement {
 		}
 	}, 0n);
 	useEffect((): void => {
-		if (!isActive || selectedOption.value.gaugeAddress === ZERO_ADDRESS || safeChainID !== 1) {
+		if (!isActive || toAddress(selectedOption.value.gaugeAddress) === ZERO_ADDRESS || safeChainID !== 1) {
 			return;
 		}
 		actions.execute();
