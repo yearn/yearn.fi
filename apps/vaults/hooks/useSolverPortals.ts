@@ -1,4 +1,5 @@
 import {useCallback, useMemo, useRef, useState} from 'react';
+import {isHex} from 'viem';
 import axios from 'axios';
 import {useAsync} from '@react-hookz/web';
 import {isSolverDisabled, Solver} from '@vaults/contexts/useSolver';
@@ -15,7 +16,6 @@ import {useYearn} from '@common/contexts/useYearn';
 import {approveERC20, isApprovedERC20} from '@common/utils/actions';
 import {assert} from '@common/utils/assert';
 
-import type {Hex} from 'viem';
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TTxResponse, TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TNormalizedBN} from '@common/types/types';
@@ -197,11 +197,14 @@ export function useSolverPortals(): TSolverContext {
 
 			const {tx: {value, to, gasLimit, data, ...rest}} = transaction;
 			const signer = await provider.getWalletClient();
+
+			assert(isHex(data), 'Data is not hex');
+
 			const hash = await signer.sendTransaction({
 				value: toBigInt(value?.hex ?? 0),
 				gas: gasLimit?.hex ? toBigInt(gasLimit.hex) : undefined,
 				to: toWagmiAddress(to),
-				data: data as Hex,
+				data: data,
 				...rest
 			});
 			const receipt = await waitForTransaction({chainId: signer.chain.id, hash});

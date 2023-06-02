@@ -1,4 +1,5 @@
 import {useCallback, useMemo, useRef, useState} from 'react';
+import {isHex} from 'viem';
 import {getTokenAllowance as wiGetTokenAllowance, getWidoSpender, quote as wiQuote} from 'wido';
 import {useAsync} from '@react-hookz/web';
 import {isSolverDisabled, Solver} from '@vaults/contexts/useSolver';
@@ -15,7 +16,6 @@ import {approveERC20, isApprovedERC20} from '@common/utils/actions';
 import {assert} from '@common/utils/assert';
 
 import type {AxiosError} from 'axios';
-import type {Hex} from 'viem';
 import type {ChainId, QuoteRequest, QuoteResult} from 'wido';
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TTxResponse, TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
@@ -163,8 +163,11 @@ export function useSolverWido(): TSolverContext {
 		try {
 			const signer = await provider.getWalletClient();
 			const {data, to, value} = latestQuote.current;
+
+			assert(isHex(data), 'Data is not hex');
+
 			const hash = await signer.sendTransaction({
-				data: data as Hex,
+				data: data,
 				to: toWagmiAddress(to),
 				value: toBigInt(value)
 			});
