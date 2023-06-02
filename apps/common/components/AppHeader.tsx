@@ -12,6 +12,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import BalanceReminderPopover from '@common/components/BalanceReminderPopover';
 import {useMenu} from '@common/contexts/useMenu';
 import LogoYearn from '@common/icons/LogoYearn';
+import {YBalHeader} from '@yBal/components/header/YBalHeader';
 import {YBribeHeader} from '@yBribe/components/header/YBribeHeader';
 import {YCrvHeader} from '@yCRV/components/header/YCrvHeader';
 
@@ -27,6 +28,7 @@ function Logo(): ReactElement {
 	return (
 		<>
 			<YCrvHeader pathname={pathname} />
+			<YBalHeader pathname={pathname} />
 			<VaultsHeader pathname={pathname} />
 			<VeYfiHeader pathname={pathname} />
 			<YBribeHeader pathname={pathname} />
@@ -107,6 +109,10 @@ export function AppHeader(): ReactElement {
 			return [HOME_MENU, ...APPS[AppName.YCRV].menu];
 		}
 
+		if (pathname.startsWith('/ybal')) {
+			return [HOME_MENU, ...APPS[AppName.YBAL].menu];
+		}
+
 		if (pathname.startsWith('/vaults')) {
 			return [HOME_MENU, ...APPS[AppName.VAULTS].menu];
 		}
@@ -126,8 +132,10 @@ export function AppHeader(): ReactElement {
 		];
 	}, [pathname]);
 
+
 	const supportedNetworks = useMemo((): number[] => {
-		if (pathname.startsWith('/ycrv') || pathname.startsWith('/veyfi') || pathname.startsWith('/ybribe')) {
+		const ethereumOnlyPaths = ['/ycrv', '/ybal', '/veyfi', '/ybribe'];
+		if (ethereumOnlyPaths.some((path): boolean => pathname.startsWith(path))) {
 			return [1];
 		}
 

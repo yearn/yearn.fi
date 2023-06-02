@@ -2,7 +2,7 @@ import {useCallback, useMemo} from 'react';
 import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {toBigInt, toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {useWallet} from '@common/contexts/useWallet';
 import {getVaultName} from '@common/utils';
 import {numberSort, stringSort} from '@common/utils/sort';
@@ -38,8 +38,8 @@ function useSortVaults(
 			vaultList.sort((a, b): number => {
 				const aDepositedBalance = balances[toAddress(a.address)]?.normalized || 0;
 				const bDepositedBalance = balances[toAddress(b.address)]?.normalized || 0;
-				const aStakedBalance = toNormalizedValue(positionsMap[toAddress(stakingRewardsByVault[a.address])]?.stake || 0, a.decimals);
-				const bStakedBalance = toNormalizedValue(positionsMap[toAddress(stakingRewardsByVault[b.address])]?.stake || 0, b.decimals);
+				const aStakedBalance = toNormalizedValue(toBigInt(positionsMap[toAddress(stakingRewardsByVault[a.address])]?.stake), a.decimals);
+				const bStakedBalance = toNormalizedValue(toBigInt(positionsMap[toAddress(stakingRewardsByVault[b.address])]?.stake), b.decimals);
 				if (sortDirection === 'asc') {
 					return (aDepositedBalance + aStakedBalance) - (bDepositedBalance + bStakedBalance);
 				}

@@ -1,3 +1,5 @@
+import {describe, expect, it} from 'vitest';
+
 import {findLatestApr} from './findLatestApr';
 
 describe('findLatestApr', (): void => {
