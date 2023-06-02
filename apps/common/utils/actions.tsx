@@ -1,26 +1,23 @@
-import {captureException} from '@sentry/nextjs';
 import {getEthZapperContract} from '@vaults/utils';
 import VAULT_MIGRATOR_ABI from '@vaults/utils/abi/vaultMigrator.abi';
-import {erc20ABI, prepareWriteContract, readContract, waitForTransaction, writeContract} from '@wagmi/core';
-import {toast} from '@yearn-finance/web-lib/components/yToast';
+import {erc20ABI, readContract} from '@wagmi/core';
 import PARTNER_VAULT_ABI from '@yearn-finance/web-lib/utils/abi/partner.vault.abi';
 import VAULT_ABI from '@yearn-finance/web-lib/utils/abi/vault.abi';
 import ZAP_ETH_TO_YVETH_ABI from '@yearn-finance/web-lib/utils/abi/zapEthToYvEth.abi';
 import ZAP_FTM_TO_YVFTM_ABI from '@yearn-finance/web-lib/utils/abi/zapFtmToYvFTM.abi';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
-import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {assert} from '@common/utils/assert';
-import {assertAddress, toWagmiProvider} from '@common/utils/toWagmiProvider';
+import {assertAddress, handleTx, toWagmiProvider} from '@common/utils/toWagmiProvider';
 
-import type {BaseError, ContractFunctionExecutionError, Hex} from 'viem';
+import type {ContractFunctionExecutionError} from 'viem';
 import type {Connector} from 'wagmi';
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TWriteTransaction} from '@common/utils/toWagmiProvider';
 
 //Because USDT do not return a boolean on approve, we need to use this ABI
-const ALTERNATE_ERC20_APPROVE_ABI = [{'constant': false, 'inputs': [{'name': '_spender', 'type': 'address'}, {'name': '_value', 'type': 'uint256'}], 'name': 'approve', 'outputs': [], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function'}];
+const ALTERNATE_ERC20_APPROVE_ABI = [{'constant': false, 'inputs': [{'name': '_spender', 'type': 'address'}, {'name': '_value', 'type': 'uint256'}], 'name': 'approve', 'outputs': [], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function'}] as const;
 
 /* 🔵 - Yearn Finance **********************************************************
 ** isApprovedERC20 is a _VIEW_ function that checks if a token is approved for
@@ -74,60 +71,28 @@ type TApproveERC20 = TWriteTransaction & {
 	amount: bigint;
 };
 export async function approveERC20(props: TApproveERC20): Promise<TTxResponse> {
-	assertAddress(props.contractAddress, 'contractAddress');
 	assertAddress(props.spenderAddress, 'spenderAddress');
+	assertAddress(props.contractAddress);
 
-	props.statusHandler?.({...defaultTxStatus, pending: true});
-	try {
-		const wagmiProvider = await toWagmiProvider(props.connector);
-		try {
-			const config = await prepareWriteContract({
-				...wagmiProvider,
+	try	{
+		return await handleTx(props, {
+			address: props.contractAddress,
+			abi: erc20ABI,
+			functionName: 'approve',
+			args: [props.spenderAddress, props.amount]
+		});
+	} catch (error) {
+		const err = error as ContractFunctionExecutionError;
+		if (err.name === 'ContractFunctionExecutionError') {
+			return await handleTx(props, {
 				address: props.contractAddress,
-				abi: erc20ABI,
+				abi: ALTERNATE_ERC20_APPROVE_ABI,
 				functionName: 'approve',
 				args: [props.spenderAddress, props.amount]
 			});
-			const {hash} = await writeContract(config.request);
-			const receipt = await waitForTransaction({chainId: wagmiProvider.chainId, hash});
-			if (receipt.status === 'success') {
-				props.statusHandler?.({...defaultTxStatus, success: true});
-			} else if (receipt.status === 'reverted') {
-				props.statusHandler?.({...defaultTxStatus, error: true});
-			}
-			return ({isSuccessful: receipt.status === 'success', receipt});
-		} catch (error) {
-			const err = error as ContractFunctionExecutionError;
-			if (err.name === 'ContractFunctionExecutionError') {
-				const alternateConfig = await prepareWriteContract({
-					...wagmiProvider,
-					address: props.contractAddress,
-					abi: ALTERNATE_ERC20_APPROVE_ABI,
-					functionName: 'approve',
-					args: [props.spenderAddress, props.amount]
-				});
-				const {hash} = await writeContract(alternateConfig.request);
-				const receipt = await waitForTransaction({chainId: wagmiProvider.chainId, hash});
-				if (receipt.status === 'success') {
-					props.statusHandler?.({...defaultTxStatus, success: true});
-				} else if (receipt.status === 'reverted') {
-					props.statusHandler?.({...defaultTxStatus, error: true});
-				}
-				return ({isSuccessful: receipt.status === 'success', receipt});
-			}
-			return ({isSuccessful: false, error: err || ''});
 		}
-	} catch (error) {
-		console.error(error);
-		const errorAsBaseError = error as BaseError;
-		captureException(errorAsBaseError);
-		props.statusHandler?.({...defaultTxStatus, error: true});
-		return ({isSuccessful: false, error: errorAsBaseError || ''});
-	} finally {
-		setTimeout((): void => {
-			props.statusHandler?.({...defaultTxStatus});
-		}, 3000);
 	}
+	return ({isSuccessful: false, error: new Error('Unknown error')});
 }
 
 /* 🔵 - Yearn Finance **********************************************************
@@ -141,39 +106,15 @@ type TDeposit = TWriteTransaction & {
 	amount: bigint;
 };
 export async function deposit(props: TDeposit): Promise<TTxResponse> {
-	assertAddress(props.contractAddress, 'contractAddress');
 	assert(props.amount > 0n, 'Amount is 0');
+	assertAddress(props.contractAddress);
 
-	props.statusHandler?.({...defaultTxStatus, pending: true});
-	const wagmiProvider = await toWagmiProvider(props.connector);
-
-	try {
-		const config = await prepareWriteContract({
-			...wagmiProvider,
-			address: props.contractAddress,
-			abi: VAULT_ABI,
-			functionName: 'deposit',
-			args: [props.amount]
-		});
-		const {hash} = await writeContract(config.request);
-		const receipt = await waitForTransaction({chainId: wagmiProvider.chainId, hash});
-		if (receipt.status === 'success') {
-			props.statusHandler?.({...defaultTxStatus, success: true});
-		} else if (receipt.status === 'reverted') {
-			props.statusHandler?.({...defaultTxStatus, error: true});
-		}
-		return ({isSuccessful: receipt.status === 'success', receipt});
-	} catch (error) {
-		console.error(error);
-		const errorAsBaseError = error as BaseError;
-		captureException(errorAsBaseError);
-		props.statusHandler?.({...defaultTxStatus, error: true});
-		return ({isSuccessful: false, error: errorAsBaseError || ''});
-	} finally {
-		setTimeout((): void => {
-			props.statusHandler?.({...defaultTxStatus});
-		}, 3000);
-	}
+	return await handleTx(props, {
+		address: props.contractAddress,
+		abi: VAULT_ABI,
+		functionName: 'deposit',
+		args: [props.amount]
+	});
 }
 
 /* 🔵 - Yearn Finance **********************************************************
@@ -188,53 +129,29 @@ type TDepositEth = TWriteTransaction & {
 	amount: bigint;
 };
 export async function depositETH(props: TDepositEth): Promise<TTxResponse> {
-	const wagmiProvider = await toWagmiProvider(props.connector);
-	const destAddress = getEthZapperContract(wagmiProvider.chainId);
-	assertAddress(props.contractAddress, 'contractAddress');
-	assertAddress(destAddress, 'destAddress');
+	assert(props.connector, 'No connector');
 	assert(props.amount > 0n, 'Amount is 0');
-
-	props.statusHandler?.({...defaultTxStatus, pending: true});
-	try {
-		let txHash: Hex;
-		if (wagmiProvider.chainId === 250) {
-			const config = await prepareWriteContract({
-				...wagmiProvider,
-				address: destAddress,
-				abi: ZAP_FTM_TO_YVFTM_ABI,
-				functionName: 'deposit',
-				value: props.amount
-			});
-			const {hash} = await writeContract(config.request);
-			txHash = hash;
-		} else {
-			const config = await prepareWriteContract({
-				...wagmiProvider,
-				address: destAddress,
+	const chainID = await props.connector.getChainId();
+	switch (chainID) {
+		case 1: {
+			return await handleTx(props, {
+				address: getEthZapperContract(1),
 				abi: ZAP_ETH_TO_YVETH_ABI,
 				functionName: 'deposit',
 				value: props.amount
 			});
-			const {hash} = await writeContract(config.request);
-			txHash = hash;
 		}
-		const receipt = await waitForTransaction({chainId: wagmiProvider.chainId, hash: txHash});
-		if (receipt.status === 'success') {
-			props.statusHandler?.({...defaultTxStatus, success: true});
-		} else if (receipt.status === 'reverted') {
-			props.statusHandler?.({...defaultTxStatus, error: true});
+		case 250: {
+			return await handleTx(props, {
+				address: getEthZapperContract(250),
+				abi: ZAP_FTM_TO_YVFTM_ABI,
+				functionName: 'deposit',
+				value: props.amount
+			});
 		}
-		return ({isSuccessful: receipt.status === 'success', receipt});
-	} catch (error) {
-		console.error(error);
-		const errorAsBaseError = error as BaseError;
-		captureException(errorAsBaseError);
-		props.statusHandler?.({...defaultTxStatus, error: true});
-		return ({isSuccessful: false, error: errorAsBaseError || ''});
-	} finally {
-		setTimeout((): void => {
-			props.statusHandler?.({...defaultTxStatus});
-		}, 3000);
+		default: {
+			throw new Error('Invalid chainId');
+		}
 	}
 }
 
@@ -252,44 +169,20 @@ type TDepositViaPartner = TWriteTransaction & {
 	amount: bigint;
 };
 export async function depositViaPartner(props: TDepositViaPartner): Promise<TTxResponse> {
-	assertAddress(props.contractAddress, 'contractAddress');
 	assertAddress(props.vaultAddress, 'vaultAddress');
 	assert(props.amount > 0n, 'Amount is 0');
+	assertAddress(props.contractAddress);
 
-	props.statusHandler?.({...defaultTxStatus, pending: true});
-	const wagmiProvider = await toWagmiProvider(props.connector);
-
-	try {
-		const config = await prepareWriteContract({
-			...wagmiProvider,
-			address: props.contractAddress,
-			abi: PARTNER_VAULT_ABI,
-			functionName: 'deposit',
-			args: [
-				props.vaultAddress,
-				props.partnerAddress || toAddress(process.env.PARTNER_ID_ADDRESS),
-				props.amount
-			]
-		});
-		const {hash} = await writeContract(config.request);
-		const receipt = await waitForTransaction({chainId: wagmiProvider.chainId, hash});
-		if (receipt.status === 'success') {
-			props.statusHandler?.({...defaultTxStatus, success: true});
-		} else if (receipt.status === 'reverted') {
-			props.statusHandler?.({...defaultTxStatus, error: true});
-		}
-		return ({isSuccessful: receipt.status === 'success', receipt});
-	} catch (error) {
-		console.error(error);
-		const errorAsBaseError = error as BaseError;
-		captureException(errorAsBaseError);
-		props.statusHandler?.({...defaultTxStatus, error: true});
-		return ({isSuccessful: false, error: errorAsBaseError || ''});
-	} finally {
-		setTimeout((): void => {
-			props.statusHandler?.({...defaultTxStatus});
-		}, 3000);
-	}
+	return await handleTx(props, {
+		address: props.contractAddress,
+		abi: PARTNER_VAULT_ABI,
+		functionName: 'deposit',
+		args: [
+			props.vaultAddress,
+			props.partnerAddress || toAddress(process.env.PARTNER_ID_ADDRESS),
+			props.amount
+		]
+	});
 }
 
 /* 🔵 - Yearn Finance **********************************************************
@@ -304,53 +197,29 @@ type TWithdrawEth = TWriteTransaction & {
 	amount: bigint;
 };
 export async function withdrawETH(props: TWithdrawEth): Promise<TTxResponse> {
-	const wagmiProvider = await toWagmiProvider(props.connector);
-	const destAddress = getEthZapperContract(wagmiProvider.chainId);
-	assertAddress(props.contractAddress, 'contractAddress');
-	assertAddress(destAddress, 'destAddress');
+	assert(props.connector, 'No connector');
 	assert(props.amount > 0n, 'Amount is 0');
-
-	props.statusHandler?.({...defaultTxStatus, pending: true});
-	try {
-		let txHash: Hex;
-		if (wagmiProvider.chainId === 250) {
-			const config = await prepareWriteContract({
-				...wagmiProvider,
-				address: destAddress,
-				abi: ZAP_FTM_TO_YVFTM_ABI,
-				functionName: 'withdraw',
-				args: [props.amount]
-			});
-			const {hash} = await writeContract(config.request);
-			txHash = hash;
-		} else {
-			const config = await prepareWriteContract({
-				...wagmiProvider,
-				address: destAddress,
+	const chainID = await props.connector.getChainId();
+	switch (chainID) {
+		case 1: {
+			return await handleTx(props, {
+				address: getEthZapperContract(1),
 				abi: ZAP_ETH_TO_YVETH_ABI,
 				functionName: 'withdraw',
 				args: [props.amount]
 			});
-			const {hash} = await writeContract(config.request);
-			txHash = hash;
 		}
-		const receipt = await waitForTransaction({chainId: wagmiProvider.chainId, hash: txHash});
-		if (receipt.status === 'success') {
-			props.statusHandler?.({...defaultTxStatus, success: true});
-		} else if (receipt.status === 'reverted') {
-			props.statusHandler?.({...defaultTxStatus, error: true});
+		case 250: {
+			return await handleTx(props, {
+				address: getEthZapperContract(250),
+				abi: ZAP_FTM_TO_YVFTM_ABI,
+				functionName: 'withdraw',
+				args: [props.amount]
+			});
 		}
-		return ({isSuccessful: receipt.status === 'success', receipt});
-	} catch (error) {
-		console.error(error);
-		const errorAsBaseError = error as BaseError;
-		captureException(errorAsBaseError);
-		props.statusHandler?.({...defaultTxStatus, error: true});
-		return ({isSuccessful: false, error: errorAsBaseError || ''});
-	} finally {
-		setTimeout((): void => {
-			props.statusHandler?.({...defaultTxStatus});
-		}, 3000);
+		default: {
+			throw new Error('Invalid chainId');
+		}
 	}
 }
 
@@ -365,38 +234,15 @@ type TWithdrawShares = TWriteTransaction & {
 	amount: bigint;
 };
 export async function withdrawShares(props: TWithdrawShares): Promise<TTxResponse> {
-	assertAddress(props.contractAddress, 'contractAddress');
 	assert(props.amount > 0n, 'Amount is 0');
+	assertAddress(props.contractAddress);
 
-	props.statusHandler?.({...defaultTxStatus, pending: true});
-	const wagmiProvider = await toWagmiProvider(props.connector);
-	try {
-		const config = await prepareWriteContract({
-			...wagmiProvider,
-			address: props.contractAddress,
-			abi: VAULT_ABI,
-			functionName: 'withdraw',
-			args: [props.amount]
-		});
-		const {hash} = await writeContract(config.request);
-		const receipt = await waitForTransaction({chainId: wagmiProvider.chainId, hash});
-		if (receipt.status === 'success') {
-			props.statusHandler?.({...defaultTxStatus, success: true});
-		} else if (receipt.status === 'reverted') {
-			props.statusHandler?.({...defaultTxStatus, error: true});
-		}
-		return ({isSuccessful: receipt.status === 'success', receipt});
-	} catch (error) {
-		console.error(error);
-		const errorAsBaseError = error as BaseError;
-		captureException(errorAsBaseError);
-		props.statusHandler?.({...defaultTxStatus, error: true});
-		return ({isSuccessful: false, error: errorAsBaseError || ''});
-	} finally {
-		setTimeout((): void => {
-			props.statusHandler?.({...defaultTxStatus});
-		}, 3000);
-	}
+	return await handleTx(props, {
+		address: props.contractAddress,
+		abi: VAULT_ABI,
+		functionName: 'withdraw',
+		args: [props.amount]
+	});
 }
 
 /* 🔵 - Yearn Finance **********************************************************
@@ -412,48 +258,14 @@ type TMigrateShares = TWriteTransaction & {
 	toVault: TAddress | undefined;
 };
 export async function migrateShares(props: TMigrateShares): Promise<TTxResponse> {
-	assertAddress(props.contractAddress, 'contractAddress');
 	assertAddress(props.fromVault, 'fromVault');
 	assertAddress(props.toVault, 'toVault');
+	assertAddress(props.contractAddress);
 
-	const wagmiProvider = await toWagmiProvider(props.connector);
-	try {
-		const config = await prepareWriteContract({
-			...wagmiProvider,
-			address: props.contractAddress,
-			abi: VAULT_MIGRATOR_ABI,
-			functionName: 'migrateAll',
-			args: [props.fromVault, props.toVault]
-		});
-
-		const gas = config?.request?.gas || 0n;
-		const estimateGas = new Intl.NumberFormat([navigator.language || 'fr-FR', 'en-US']).format(gas);
-		const safeGas = new Intl.NumberFormat([navigator.language || 'fr-FR', 'en-US']).format(gas * 13n / 10n);
-		toast({
-			type: 'info',
-			content: `Gas estimate for migration is ${estimateGas}. We'll use ${safeGas} to give some margin and reduce the risk of transaction failure.`,
-			duration: 10000
-		});
-		console.info(`Gas estimate for migration is ${estimateGas}. We'll use ${safeGas} to give some margin and reduce the risk of transaction failure.`);
-		config.request.gas = gas * 13n / 10n;
-
-		const {hash} = await writeContract(config.request);
-		const receipt = await waitForTransaction({chainId: wagmiProvider.chainId, hash});
-		if (receipt.status === 'success') {
-			props.statusHandler?.({...defaultTxStatus, success: true});
-		} else if (receipt.status === 'reverted') {
-			props.statusHandler?.({...defaultTxStatus, error: true});
-		}
-		return ({isSuccessful: receipt.status === 'success', receipt});
-	} catch (error) {
-		console.error(error);
-		const errorAsBaseError = error as BaseError;
-		captureException(errorAsBaseError);
-		props.statusHandler?.({...defaultTxStatus, error: true});
-		return ({isSuccessful: false, error: errorAsBaseError || ''});
-	} finally {
-		setTimeout((): void => {
-			props.statusHandler?.({...defaultTxStatus});
-		}, 3000);
-	}
+	return await handleTx(props, {
+		address: props.contractAddress,
+		abi: VAULT_MIGRATOR_ABI,
+		functionName: 'migrateAll',
+		args: [props.fromVault, props.toVault]
+	});
 }

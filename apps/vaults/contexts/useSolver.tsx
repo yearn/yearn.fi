@@ -89,7 +89,7 @@ function WithSolverContextApp({children}: { children: React.ReactElement }): Rea
 		if (currentNonce !== executionNonce.current) {
 			return;
 		}
-		const requestHash = await hash(serialize({...request, solver, expectedOut: quote.value.raw.toString()}));
+		const requestHash = await hash(serialize({...request, solver, expectedOut: quote.value.raw}));
 		performBatchedUpdates((): void => {
 			set_currentSolverState({...ctx, quote: quote.value, hash: requestHash});
 			set_isLoading(false);
