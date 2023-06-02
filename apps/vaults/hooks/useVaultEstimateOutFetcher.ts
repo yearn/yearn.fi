@@ -34,11 +34,9 @@ export function	useVaultEstimateOutFetcher(): (args: TVaultEstimateOutFetcher) =
 				chainId: chainID
 			});
 
-			if (isDepositing) {
-				const expectedOutFetched = inputAmount * powerDecimals / pps;
-				return toNormalizedBN(expectedOutFetched, outputToken?.decimals || 18);
-			}
-			const expectedOutFetched = inputAmount * pps / powerDecimals;
+			const expectedOutFetched = isDepositing
+				? (inputAmount * powerDecimals) / pps
+				: (inputAmount * pps) / powerDecimals;
 			return toNormalizedBN(expectedOutFetched, outputToken?.decimals || 18);
 		} catch (error) {
 			console.error(error);
