@@ -52,7 +52,6 @@ export async function handleTx(
 	args.statusHandler?.({...defaultTxStatus, pending: true});
 	const wagmiProvider = await toWagmiProvider(args.connector);
 
-	//Some extra assertions
 	assertAddress(props.address, 'contractAddress');
 	assertAddress(wagmiProvider.address, 'userAddress');
 	try {
