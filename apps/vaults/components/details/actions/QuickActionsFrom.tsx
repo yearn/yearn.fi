@@ -84,10 +84,10 @@ function VaultDetailsQuickActionsFrom(): ReactElement {
 					{'Amount'}
 				</label>
 				<div className={'flex h-10 items-center bg-neutral-0 p-2'}>
-					<div className={'flex h-10 w-full flex-row items-center justify-between py-4 px-0'}>
+					<div className={'flex h-10 w-full flex-row items-center justify-between px-0 py-4'}>
 						<input
 							id={'fromAmount'}
-							className={`w-full overflow-x-scroll border-none bg-transparent py-4 px-0 font-bold outline-none scrollbar-none ${isActive ? '' : 'cursor-not-allowed'}`}
+							className={`w-full overflow-x-scroll border-none bg-transparent px-0 py-4 font-bold outline-none scrollbar-none ${isActive ? '' : 'cursor-not-allowed'}`}
 							type={'text'}
 							disabled={!isActive}
 							value={actionParams?.amount.normalized}

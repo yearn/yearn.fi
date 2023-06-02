@@ -2,13 +2,12 @@ import {useCallback, useMemo, useState} from 'react';
 import {formatUnits} from 'viem';
 import {useVotingEscrow} from '@veYFI/contexts/useVotingEscrow';
 import {getVotingPower} from '@veYFI/utils';
-import {extendLockTime, withdrawLocked} from '@veYFI/utils/actions';
+import {extendVeYFILockTime, withdrawLockedVeYFI} from '@veYFI/utils/actions';
 import {MAX_LOCK_TIME, MIN_LOCK_TIME} from '@veYFI/utils/constants';
 import {validateAmount, validateNetwork} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
 import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {fromWeeks, getTimeUntil, toSeconds, toTime, toWeeks} from '@yearn-finance/web-lib/utils/time';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
@@ -37,9 +36,9 @@ function ManageLockTab(): ReactElement {
 	}, [refreshBalances, refreshVotingEscrow]);
 
 	const onExtendLockTime = useCallback(async (): Promise<void> => {
-		const result = await extendLockTime({
+		const result = await extendVeYFILockTime({
 			connector: provider,
-			contractAddress: toWagmiAddress(votingEscrow?.address),
+			contractAddress: votingEscrow?.address,
 			time: toBigInt(toSeconds(newUnlockTime)),
 			statusHandler: set_extendLockTimeStatus
 		});
@@ -49,9 +48,9 @@ function ManageLockTab(): ReactElement {
 	}, [newUnlockTime, onTxSuccess, provider, votingEscrow?.address]);
 
 	const onWithdrawLocked = useCallback(async (): Promise<void> => {
-		const result = await withdrawLocked({
+		const result = await withdrawLockedVeYFI({
 			connector: provider,
-			contractAddress: toWagmiAddress(votingEscrow?.address),
+			contractAddress: votingEscrow?.address,
 			statusHandler: set_withdrawLockedStatus
 		});
 		if (result.isSuccessful) {
@@ -137,7 +136,7 @@ function ManageLockTab(): ReactElement {
 					<AmountInput
 						label={'YFI you get'}
 						amount={formatUnits(toBigInt(positions?.withdrawable), 18)}
-						legend={`Penalty: ${((positions?.penaltyRatio ?? 0) * 100).toFixed(2).toString()}%`}
+						legend={`Penalty: ${((positions?.penaltyRatio ?? 0) * 100).toFixed(2)}%`}
 						disabled />
 					<Button
 						className={'w-full md:mt-7'}

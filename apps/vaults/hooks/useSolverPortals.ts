@@ -6,13 +6,14 @@ import {waitForTransaction} from '@wagmi/core';
 import {toast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {allowanceKey, isZeroAddress, toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
+import {allowanceKey, isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
 import {approveERC20, isApprovedERC20} from '@common/utils/actions';
 import {assert} from '@common/utils/assert';
+import {assertAddress} from '@common/utils/toWagmiProvider';
 
 import type {Hex} from 'viem';
 import type {TDict} from '@yearn-finance/web-lib/types';
@@ -34,7 +35,7 @@ async function getQuote(
 ): Promise<{data: TPortalEstimate | undefined, error: Error | undefined}> {
 	const params = {
 		sellToken: toAddress(request.inputToken.value),
-		sellAmount: toBigInt(request.inputAmount || 0).toString(),
+		sellAmount: toBigInt(request.inputAmount).toString(),
 		buyToken: toAddress(request.outputToken.value),
 		slippagePercentage: String(zapSlippage / 100)
 	};
@@ -151,7 +152,7 @@ export function useSolverPortals(): TSolverContext {
 				params: {
 					takerAddress: toAddress(address),
 					sellToken: toAddress(request.current.inputToken.value),
-					sellAmount: toBigInt(request.current.inputAmount || 0).toString(),
+					sellAmount: toBigInt(request.current.inputAmount).toString(),
 					buyToken: toAddress(request.current.outputToken.value),
 					slippagePercentage: String(zapSlippage / 100),
 					validate: true
@@ -167,7 +168,7 @@ export function useSolverPortals(): TSolverContext {
 			const hash = await signer.sendTransaction({
 				value: toBigInt(value?.hex ?? 0),
 				gas: gasLimit?.hex ? toBigInt(gasLimit.hex) : undefined,
-				to: toWagmiAddress(to),
+				to: toAddress(to),
 				data: data as Hex,
 				...rest
 			});
@@ -219,7 +220,7 @@ export function useSolverPortals(): TSolverContext {
 				params: {
 					takerAddress: toAddress(request.current.from),
 					sellToken: toAddress(request.current.inputToken.value),
-					sellAmount:toBigInt(request.current.inputAmount || 0).toString(),
+					sellAmount:toBigInt(request.current.inputAmount).toString(),
 					buyToken: toAddress(request.current.outputToken.value)
 				}
 			});
@@ -260,7 +261,7 @@ export function useSolverPortals(): TSolverContext {
 				params: {
 					takerAddress: toAddress(request.current.from),
 					sellToken: toAddress(request.current.inputToken.value),
-					sellAmount:toBigInt(request.current.inputAmount || 0).toString(),
+					sellAmount:toBigInt(request.current.inputAmount).toString(),
 					buyToken: toAddress(request.current.outputToken.value)
 				}
 			});
@@ -277,10 +278,11 @@ export function useSolverPortals(): TSolverContext {
 			);
 
 			if (!isApproved) {
+				assertAddress(approval.context.spender, 'spender');
 				const result = await approveERC20({
 					connector: provider,
-					contractAddress: toWagmiAddress(request.current.inputToken.value),
-					spenderAddress: toWagmiAddress(approval.context.spender),
+					contractAddress: request.current.inputToken.value,
+					spenderAddress: approval.context.spender,
 					amount: amount,
 					statusHandler: txStatusSetter
 				});

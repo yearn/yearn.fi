@@ -3,7 +3,7 @@ import {Solver} from '@vaults/contexts/useSolver';
 import getVaultEstimateOut from '@vaults/utils/getVaultEstimateOut';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {allowanceKey, toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
+import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {approvedERC20Amount, approveERC20, deposit, withdrawShares} from '@common/utils/actions';
@@ -86,8 +86,8 @@ export function useSolverVanilla(): TSolverContext {
 
 		const result = await approveERC20({
 			connector: provider,
-			contractAddress: toWagmiAddress(request.current.inputToken.value),
-			spenderAddress: toWagmiAddress(request.current.outputToken.value),
+			contractAddress: request.current.inputToken.value,
+			spenderAddress: request.current.outputToken.value,
 			amount: amount,
 			statusHandler: txStatusSetter
 		});
@@ -110,7 +110,7 @@ export function useSolverVanilla(): TSolverContext {
 
 		const result = await deposit({
 			connector: provider,
-			contractAddress: toWagmiAddress(request.current.outputToken.value),
+			contractAddress: request.current.outputToken.value,
 			amount: request.current.inputAmount,
 			statusHandler: txStatusSetter
 		});
@@ -133,7 +133,7 @@ export function useSolverVanilla(): TSolverContext {
 
 		const result = await withdrawShares({
 			connector: provider,
-			contractAddress: toWagmiAddress(request.current.inputToken.value),
+			contractAddress: request.current.inputToken.value,
 			amount: request.current.inputAmount,
 			statusHandler: txStatusSetter
 		});

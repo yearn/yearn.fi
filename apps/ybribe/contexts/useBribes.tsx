@@ -3,8 +3,8 @@ import {useContractRead} from 'wagmi';
 import {multicall, prepareWriteContract} from '@wagmi/core';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {allowanceKey, toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
-import {CURVE_BRIBE_V3_ADDRESS, CURVE_BRIBE_V3_HELPER_ADDRESS, ZERO_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {CURVE_BRIBE_V3_ADDRESS, CURVE_BRIBE_V3_HELPER_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {decodeAsBigInt} from '@yearn-finance/web-lib/utils/decoder';
 import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
@@ -13,7 +13,7 @@ import {getLastThursday, getNextThursday} from '@yBribe/utils';
 import CURVE_BRIBE_V3 from '@yBribe/utils/abi/curveBribeV3.abi';
 import CURVE_BRIBE_V3_HELPER from '@yBribe/utils/abi/curveBribeV3Helper.abi';
 
-import type {TAddress, TAddressWagmi, TDict, VoidPromiseFunction} from '@yearn-finance/web-lib/types';
+import type {TAddress, TDict, VoidPromiseFunction} from '@yearn-finance/web-lib/types';
 import type {TCurveGaugeVersionRewards} from '@common/types/curves';
 import type {PrepareWriteContractResult} from '@wagmi/core';
 
@@ -21,25 +21,15 @@ export type	TBribesContext = {
 	currentRewards: TCurveGaugeVersionRewards,
 	nextRewards: TCurveGaugeVersionRewards,
 	claimable: TCurveGaugeVersionRewards,
-	dryRunClaimRewards: TCurveGaugeVersionRewards,
 	currentPeriod: number,
 	nextPeriod: number,
 	isLoading: boolean,
 	refresh: VoidPromiseFunction
 }
 const defaultProps: TBribesContext = {
-	currentRewards: {
-		v3: {}
-	},
-	nextRewards: {
-		v3: {}
-	},
-	claimable: {
-		v3: {}
-	},
-	dryRunClaimRewards: {
-		v3: {}
-	},
+	currentRewards: {},
+	nextRewards: {},
+	claimable: {},
 	currentPeriod: 0,
 	nextPeriod: 0,
 	isLoading: true,
@@ -51,15 +41,14 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 	const {gauges} = useCurve();
 	const {address} = useWeb3();
 	const {safeChainID} = useChainID();
-	const [currentRewards, set_currentRewards] = useState<TCurveGaugeVersionRewards>({v3: {}});
-	const [nextRewards, set_nextRewards] = useState<TCurveGaugeVersionRewards>({v3: {}});
-	const [claimable, set_claimable] = useState<TCurveGaugeVersionRewards>({v3: {}});
-	const [dryRunClaimRewards, set_dryRunClaimRewards] = useState<TCurveGaugeVersionRewards>({v3: {}});
+	const [currentRewards, set_currentRewards] = useState<TCurveGaugeVersionRewards>({});
+	const [nextRewards, set_nextRewards] = useState<TCurveGaugeVersionRewards>({});
+	const [claimable, set_claimable] = useState<TCurveGaugeVersionRewards>({});
 	const [isLoading, set_isLoading] = useState<boolean>(true);
 	const [currentPeriod, set_currentPeriod] = useState<number>(getLastThursday());
 	const [nextPeriod, set_nextPeriod] = useState<number>(getNextThursday());
-	const bribeV3BaseContract = useMemo((): {address: TAddressWagmi, abi: typeof CURVE_BRIBE_V3} => ({
-		address: toWagmiAddress(CURVE_BRIBE_V3_ADDRESS),
+	const bribeV3BaseContract = useMemo((): {address: TAddress, abi: typeof CURVE_BRIBE_V3} => ({
+		address: CURVE_BRIBE_V3_ADDRESS,
 		abi: CURVE_BRIBE_V3
 	}), []);
 
@@ -80,29 +69,34 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 		});
 	}, [_currentPeriod]);
 
-
 	/* 🔵 - Yearn Finance ******************************************************
 	**	getBribes will call the bribeV2 contract to get all the rewards
 	**	per gauge.
 	***************************************************************************/
-	const getRewardsPerGauges = useCallback(async (): Promise<TAddress[][]> => {
+	const getRewardsPerGauges = useCallback(async (): Promise<TDict<TAddress[]>> => {
 		const rewardsPerGaugesCalls = [];
 		for (const gauge of gauges) {
 			rewardsPerGaugesCalls.push({
 				...bribeV3BaseContract,
 				functionName: 'rewards_per_gauge',
-				args: [toWagmiAddress(gauge.gauge)]
+				args: [gauge.gauge]
 			});
 		}
 		const result = await multicall({contracts: rewardsPerGaugesCalls, chainId: safeChainID});
-		const _rewardsPerGauges = [];
-		for (const item of result) {
+		const rewardsPerGauges: TDict<TAddress[]> = {};
+		let resultIndex = 0;
+		for (const gauge of gauges) {
+			const item = result[resultIndex++];
 			if (item.status === 'failure') {
 				continue;
 			}
-			_rewardsPerGauges.push(item.result as TAddress[]);
+			const rewardsTokensAddresses = item.result as TAddress[];
+			if (rewardsTokensAddresses.length === 0) {
+				continue;
+			}
+			rewardsPerGauges[gauge.gauge.toString()] = rewardsTokensAddresses;
 		}
-		return ([..._rewardsPerGauges]);
+		return rewardsPerGauges;
 	}, [bribeV3BaseContract, gauges, safeChainID]);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -110,192 +104,166 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 	** 	elements from the Bribe contracts, related to the user for a specific
 	** 	list of gauges/tokens.
 	***************************************************************************/
+	type TGetRewardsPerUser = {
+		gaugeAddress: TAddress,
+		tokenAddress: TAddress,
+		rewardPerToken: bigint,
+		activePeriod: bigint,
+		claimable: bigint,
+		claimRewardFor: bigint
+	}
 	const getRewardsPerUser = useCallback(async (
-		rewardsPerGauges: TAddress[][]
-	): Promise<{rewardsList: string[], multicallResult: bigint[]}> => {
-		if ((rewardsPerGauges || []).length === 0) {
-			return ({rewardsList: [], multicallResult: []});
-		}
-		const userAddress = toWagmiAddress(address) || ZERO_ADDRESS;
+		rewardsPerGauges: TDict<TAddress[]>
+	): Promise<TDict<TGetRewardsPerUser>> => {
+		const userAddress = toAddress(address);
 		const rewardsPerTokensPerGaugesCalls = [];
 		const rewardsList: string[] = [];
 
-		const _rewardsPerGauges = [...rewardsPerGauges];
-		for (const gauge of gauges) {
-			const rewardPerGauge = _rewardsPerGauges.shift();
-			if (rewardPerGauge && rewardPerGauge.length > 0) {
-				if (!gauge.rewardPerGauge) {
-					gauge.rewardPerGauge = [];
-				}
-				gauge.rewardPerGauge.push(...rewardPerGauge);
-				for (const tokenAsReward of rewardPerGauge) {
-					const args = [toWagmiAddress(gauge.gauge), toWagmiAddress(tokenAsReward)];
-					rewardsList.push(allowanceKey(
-						safeChainID,
-						toAddress(gauge.gauge),
-						toAddress(tokenAsReward),
-						toAddress(address)
-					));
-					rewardsPerTokensPerGaugesCalls.push(...[
-						{...bribeV3BaseContract, functionName: 'reward_per_token', args: args},
-						{...bribeV3BaseContract, functionName: 'active_period', args: args},
-						{...bribeV3BaseContract, functionName: 'claimable', args: [userAddress, ...args]}
-					]);
-				}
+		for (const [gaugeAddress, rewardsTokens] of Object.entries(rewardsPerGauges)) {
+			for (const tokenAsReward of rewardsTokens) {
+				const args = [toAddress(gaugeAddress), toAddress(tokenAsReward)];
+				rewardsList.push(allowanceKey(
+					safeChainID,
+					toAddress(gaugeAddress),
+					tokenAsReward,
+					userAddress
+				));
+				rewardsPerTokensPerGaugesCalls.push(...[
+					{...bribeV3BaseContract, functionName: 'reward_per_token', args: args},
+					{...bribeV3BaseContract, functionName: 'active_period', args: args},
+					{...bribeV3BaseContract, functionName: 'claimable', args: [userAddress, ...args]}
+				]);
 			}
 		}
 
-		const _rewardsPerTokensPerGaugesWithPeriods = [];
+		const rewards: TDict<TGetRewardsPerUser> = {};
 		const result = await multicall({contracts: rewardsPerTokensPerGaugesCalls, chainId: safeChainID});
-		for (const item of result) {
-			if (item.status === 'failure') {
-				continue;
+		let resultIndex = 0;
+		for (const [gaugeAddress, rewardsTokens] of Object.entries(rewardsPerGauges)) {
+			for (const tokenAsReward of rewardsTokens) {
+				const prepareWriteResult = await prepareWriteContract({
+					...bribeV3BaseContract,
+					functionName: 'claim_reward_for',
+					args: [userAddress, toAddress(gaugeAddress), toAddress(tokenAsReward)]
+				});
+				rewards[gaugeAddress] = {
+					gaugeAddress: toAddress(gaugeAddress),
+					tokenAddress: toAddress(tokenAsReward),
+					rewardPerToken: decodeAsBigInt(result[resultIndex++]),
+					activePeriod: decodeAsBigInt(result[resultIndex++]),
+					claimable: decodeAsBigInt(result[resultIndex++]),
+					claimRewardFor: prepareWriteResult.result
+				};
 			}
-			_rewardsPerTokensPerGaugesWithPeriods.push(decodeAsBigInt(item));
 		}
 
-		return ({rewardsList, multicallResult: [..._rewardsPerTokensPerGaugesWithPeriods]});
-	}, [address, safeChainID, gauges, bribeV3BaseContract]);
+		return rewards;
+	}, [address, safeChainID, bribeV3BaseContract]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	**	getNextPeriodRewards will help you retrieved the the reward_per_gauge
 	** 	and the claims_per_gauge elements from the Bribe V3 contracts to be
 	** 	able to calculate the next period rewards.
 	***************************************************************************/
+	type TGetNextPeriodRewards = {
+		gaugeAddress: TAddress,
+		tokenAddress: TAddress,
+		nextRewards: bigint,
+	}
 	const getNextPeriodRewards = useCallback(async (
-		rewardsPerGauges: TAddress[][]
-	): Promise<{rewardsList: string[], multicallResult: bigint[]}> => {
-		if ((rewardsPerGauges || []).length === 0) {
-			return ({rewardsList: [], multicallResult: []});
-		}
-		const rewardsPerTokensPerGaugesCalls: [TAddressWagmi, TAddressWagmi][] = [];
-		const rewardsList: string[] = [];
+		rewardsPerGauges: TDict<TAddress[]>
+	): Promise<TDict<TGetNextPeriodRewards>> => {
+		const rewardsPerTokensPerGaugesCalls: Promise<PrepareWriteContractResult>[] = [];
 
-		const _rewardsPerGauges = [...rewardsPerGauges];
-		for (const gauge of gauges) {
-			const rewardPerGauge = _rewardsPerGauges.shift();
-			if (rewardPerGauge && rewardPerGauge.length > 0) {
-				for (const tokenAsReward of rewardPerGauge) {
-					rewardsList.push(allowanceKey(safeChainID, toAddress(gauge.gauge), toAddress(tokenAsReward), toAddress(address)));
-					rewardsPerTokensPerGaugesCalls.push([toWagmiAddress(gauge.gauge), toWagmiAddress(tokenAsReward)]);
-				}
+		for (const [gaugeAddress, rewardsTokens] of Object.entries(rewardsPerGauges)) {
+			for (const tokenAsReward of rewardsTokens) {
+				rewardsPerTokensPerGaugesCalls.push(
+					prepareWriteContract({
+						address: CURVE_BRIBE_V3_HELPER_ADDRESS,
+						abi: CURVE_BRIBE_V3_HELPER,
+						functionName: 'getNewRewardPerToken',
+						args: [toAddress(gaugeAddress), tokenAsReward]
+					})
+				);
 			}
 		}
 
-		const simulate = await Promise.all(
-			rewardsPerTokensPerGaugesCalls.map(async (pair): Promise<PrepareWriteContractResult> => {
-				const config = prepareWriteContract({
-					address: toWagmiAddress(CURVE_BRIBE_V3_HELPER_ADDRESS),
-					abi: CURVE_BRIBE_V3_HELPER,
-					functionName: 'getNewRewardPerToken',
-					args: pair
-				});
-				return config;
-			})
-		);
-		const multicallResult: bigint[] = [];
-		for (const item of simulate) {
-			const itemResult = item.result as {newRewards?: bigint};
-			multicallResult.push(toBigInt(itemResult?.newRewards));
+		const result = await Promise.all(rewardsPerTokensPerGaugesCalls);
+		const multicallResult: TDict<TGetNextPeriodRewards> = {};
+		let resultIndex = 0;
+		for (const [gaugeAddress, rewardsTokens] of Object.entries(rewardsPerGauges)) {
+			for (const tokenAsReward of rewardsTokens) {
+				multicallResult[gaugeAddress] = {
+					gaugeAddress: toAddress(gaugeAddress),
+					tokenAddress: toAddress(tokenAsReward),
+					nextRewards: toBigInt(result[resultIndex++].result as bigint)
+				};
+			}
 		}
-		return ({rewardsList, multicallResult: [...multicallResult]});
-	}, [gauges, address, safeChainID]);
+
+		return multicallResult;
+	}, []);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	**	assignBribes will save the currentRewards,  periods and clamable values
 	** 	for each gauge/token to the state to be used by the UI.
 	***************************************************************************/
 	const assignBribes = useCallback(async (
-		version: string,
-		rewardsList: string[],
-		multicallResult: bigint[]
+		rewards: TDict<TGetRewardsPerUser>
 	): Promise<void> => {
-		if (!multicallResult || multicallResult.length === 0 || rewardsList.length === 0) {
-			return;
-		}
 		const _currentRewards: TDict<TDict<bigint>> = {};
 		const _claimable: TDict<TDict<bigint>> = {};
 		const _periods: TDict<TDict<bigint>> = {};
-		const _dryRunClaimRewards: TDict<TDict<bigint>> = {};
-		let rIndex = 0;
-
-		for (const rewardListKey of rewardsList) {
-			const rewardPerTokenPerGauge = multicallResult[rIndex++];
-			const periodPerTokenPerGauge = multicallResult[rIndex++];
-			const claimablePerTokenPerGauge = multicallResult[rIndex++];
-			if (Number(periodPerTokenPerGauge) >= currentPeriod) {
-				if (rewardListKey && rewardPerTokenPerGauge > 0n) {
-					const [, gauge, token] = rewardListKey.split('_');
-					if (!_currentRewards[toAddress(gauge)]) {
-						_currentRewards[toAddress(gauge)] = {};
-					}
-					if (!_periods[toAddress(gauge)]) {
-						_periods[toAddress(gauge)] = {};
-					}
-					if (!_claimable[toAddress(gauge)]) {
-						_claimable[toAddress(gauge)] = {};
-					}
-					if (!_dryRunClaimRewards[toAddress(gauge)]) {
-						_dryRunClaimRewards[toAddress(gauge)] = {};
-					}
-					_currentRewards[toAddress(gauge)][toAddress(token)] = rewardPerTokenPerGauge;
-					_periods[toAddress(gauge)][toAddress(token)] = periodPerTokenPerGauge;
-					_claimable[toAddress(gauge)][toAddress(token)] = claimablePerTokenPerGauge;
-					const prepareWriteResult = await prepareWriteContract({
-						...bribeV3BaseContract,
-						functionName: 'claim_reward_for',
-						args: [toWagmiAddress(address), toWagmiAddress(gauge), toWagmiAddress(token)]
-					});
-					_dryRunClaimRewards[toAddress(gauge)][toAddress(token)] = prepareWriteResult.result;
-				}
+		for (const [gaugeAddress, rewardData] of Object.entries(rewards)) {
+			const {tokenAddress, rewardPerToken, activePeriod, claimRewardFor} = rewardData;
+			if (!_currentRewards[gaugeAddress]) {
+				_currentRewards[gaugeAddress] = {};
+				_periods[gaugeAddress] = {};
+				_claimable[gaugeAddress] = {};
 			}
+			_currentRewards[gaugeAddress][tokenAddress] = rewardPerToken;
+			_periods[gaugeAddress][tokenAddress] = activePeriod;
+			_claimable[gaugeAddress][tokenAddress] = claimRewardFor;
 		}
-		set_currentRewards((c: TCurveGaugeVersionRewards): TCurveGaugeVersionRewards => ({...c, [version]: _currentRewards}));
-		set_claimable((c: TCurveGaugeVersionRewards): TCurveGaugeVersionRewards => ({...c, [version]: _claimable}));
-		set_dryRunClaimRewards((c: TCurveGaugeVersionRewards): TCurveGaugeVersionRewards => ({...c, [version]: _dryRunClaimRewards}));
+		set_currentRewards(_currentRewards);
+		set_claimable(_claimable);
 		set_isLoading(false);
-	}, [address, bribeV3BaseContract, currentPeriod]);
+	}, []);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	**	assignNextRewards will save the next period rewards values for each
 	**	gauge/token to the state to be used by the UI.
 	***************************************************************************/
-	const assignNextRewards = useCallback(async (version: string, rewardsList: string[], multicallResult: bigint[]): Promise<void> => {
-		if (!multicallResult || multicallResult.length === 0 || rewardsList.length === 0) {
-			return;
-		}
+	const assignNextRewards = useCallback(async (
+		nextPeriodRewards: TDict<TGetNextPeriodRewards>
+	): Promise<void> => {
 		const _nextRewards: TDict<TDict<bigint>> = {};
-
-		let rIndex = 0;
-		for (const rewardListKey of rewardsList) {
-			const pendingForNextPeriod = multicallResult[rIndex++];
-			if (rewardListKey) {
-				const [, gauge, token] = rewardListKey.split('_');
-				if (!_nextRewards[toAddress(gauge)]) {
-					_nextRewards[toAddress(gauge)] = {};
-				}
-				_nextRewards[toAddress(gauge)][toAddress(token)] = pendingForNextPeriod;
+		for (const [gaugeAddress, rewardData] of Object.entries(nextPeriodRewards)) {
+			const {tokenAddress, nextRewards} = rewardData;
+			if (!_nextRewards[gaugeAddress]) {
+				_nextRewards[gaugeAddress] = {};
 			}
+			_nextRewards[gaugeAddress][tokenAddress] = nextRewards;
 		}
-		set_nextRewards((c: TCurveGaugeVersionRewards): TCurveGaugeVersionRewards => ({...c, [version]: _nextRewards}));
+
+		set_nextRewards(_nextRewards);
 	}, []);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	**	getBribes will start the process to retrieve the bribe information.
 	***************************************************************************/
 	const getBribes = useCallback(async (): Promise<void> => {
-		const rewardsPerGaugesV3 = await getRewardsPerGauges();
-		const [rewardsPerUserV3, nextPeriodRewardsV3] = await Promise.all([
-			getRewardsPerUser(rewardsPerGaugesV3),
-			getNextPeriodRewards(rewardsPerGaugesV3)
+		const rewardsPerGauges = await getRewardsPerGauges();
+		const [rewardsPerUser, nextPeriodRewards] = await Promise.all([
+			getRewardsPerUser(rewardsPerGauges),
+			getNextPeriodRewards(rewardsPerGauges)
 		]);
 
-		const {rewardsList: rewardsListV3, multicallResult: multicallResultV3} = rewardsPerUserV3;
-		const {rewardsList: nextRewardsListV3, multicallResult: nextMulticallResultV3} = nextPeriodRewardsV3;
 		performBatchedUpdates((): void => {
-			assignBribes('v3', rewardsListV3, multicallResultV3);
-			assignNextRewards('v3', nextRewardsListV3, nextMulticallResultV3);
+			assignBribes(rewardsPerUser);
+			assignNextRewards(nextPeriodRewards);
 		});
+		return;
 	}, [getRewardsPerGauges, getRewardsPerUser, getNextPeriodRewards, assignBribes, assignNextRewards]);
 	useEffect((): void => {
 		getBribes();
@@ -312,12 +280,11 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 		currentRewards: currentRewards || {},
 		nextRewards: nextRewards || {},
 		claimable: claimable || {},
-		dryRunClaimRewards: dryRunClaimRewards || {},
 		isLoading: isLoading,
 		currentPeriod,
 		nextPeriod,
 		refresh: onRefresh
-	}), [currentRewards, nextRewards, claimable, dryRunClaimRewards, isLoading, currentPeriod, nextPeriod, onRefresh]);
+	}), [currentRewards, nextRewards, claimable, isLoading, currentPeriod, nextPeriod, onRefresh]);
 
 	return (
 		<BribesContext.Provider value={contextValue}>

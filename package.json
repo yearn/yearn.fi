@@ -21,7 +21,7 @@
     "@react-hookz/deep-equal": "^1.0.4",
     "@sentry/nextjs": "^7.53.1",
     "@wagmi/core": "^1.0.8",
-    "@yearn-finance/web-lib": "^0.20.47",
+    "@yearn-finance/web-lib": "^0.20.48",
     "axios": "^1.4.0",
     "dayjs": "^1.11.7",
     "formidable": "^2.1.1",
@@ -48,7 +48,7 @@
     "zod": "^3.21.4"
   },
   "devDependencies": {
-	"@testing-library/react": "^14.0.0",
+    "@testing-library/react": "^14.0.0",
     "@types/node": "^20.2.5",
     "@types/nprogress": "^0.2.0",
     "@types/react": "^18.2.7",

@@ -5,7 +5,6 @@
 import {useMemo} from 'react';
 import {parseEther} from 'viem';
 import {useContractReads} from 'wagmi';
-import {toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
 import {LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, VECRV_ADDRESS, VECRV_YEARN_TREASURY_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YCRV_TOKEN_ADDRESS, YVECRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {decodeAsBigInt} from '@yearn-finance/web-lib/utils/decoder';
 import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -41,18 +40,18 @@ export const defaultHoldings = {
 ** This context controls the Holdings computation.
 ******************************************************************************/
 export function useHoldings(): TCRVHoldings {
-	const yCRVContract = {address: toWagmiAddress(YCRV_TOKEN_ADDRESS), abi: YVECRV_ABI};
-	const styCRVContract = {address: toWagmiAddress(STYCRV_TOKEN_ADDRESS), abi: STYCRV_ABI};
-	const lpyCRVContract = {address: toWagmiAddress(LPYCRV_TOKEN_ADDRESS), abi: YVECRV_ABI};
-	const yveCRVContract = {address: toWagmiAddress(YVECRV_TOKEN_ADDRESS), abi: YVECRV_ABI};
-	const veEscrowContract = {address: toWagmiAddress(VECRV_ADDRESS), abi: YVECRV_ABI};
-	const crvYCRVLpContract = {address: toWagmiAddress(YCRV_CURVE_POOL_ADDRESS), abi: CURVE_CRV_YCRV_LP_ABI};
+	const yCRVContract = {address: YCRV_TOKEN_ADDRESS, abi: YVECRV_ABI};
+	const styCRVContract = {address: STYCRV_TOKEN_ADDRESS, abi: STYCRV_ABI};
+	const lpyCRVContract = {address: LPYCRV_TOKEN_ADDRESS, abi: YVECRV_ABI};
+	const yveCRVContract = {address: YVECRV_TOKEN_ADDRESS, abi: YVECRV_ABI};
+	const veEscrowContract = {address: VECRV_ADDRESS, abi: YVECRV_ABI};
+	const crvYCRVLpContract = {address: YCRV_CURVE_POOL_ADDRESS, abi: CURVE_CRV_YCRV_LP_ABI};
 
 	const {data, status} = useContractReads({
 		contracts: [
 			{...yveCRVContract, functionName: 'totalSupply'},
-			{...yveCRVContract, functionName: 'balanceOf', args: [toWagmiAddress(YCRV_TOKEN_ADDRESS)]},
-			{...veEscrowContract, functionName: 'balanceOf', args: [toWagmiAddress(VECRV_YEARN_TREASURY_ADDRESS)]},
+			{...yveCRVContract, functionName: 'balanceOf', args: [YCRV_TOKEN_ADDRESS]},
+			{...veEscrowContract, functionName: 'balanceOf', args: [VECRV_YEARN_TREASURY_ADDRESS]},
 			{...veEscrowContract, functionName: 'totalSupply'},
 			{...yCRVContract, functionName: 'totalSupply'},
 			{...styCRVContract, functionName: 'totalAssets'},

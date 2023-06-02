@@ -124,7 +124,7 @@ function VaultListFactory(): ReactElement {
 
 	return (
 		<div className={'relative col-span-12 flex w-full flex-col bg-neutral-100'}>
-			<div className={'absolute top-8 right-8'}>
+			<div className={'absolute right-8 top-8'}>
 				<VaultListOptions />
 			</div>
 			<ListHero

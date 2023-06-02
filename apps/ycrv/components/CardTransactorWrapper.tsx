@@ -6,7 +6,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useAddToken} from '@yearn-finance/web-lib/hooks/useAddToken';
 import {useDismissToasts} from '@yearn-finance/web-lib/hooks/useDismissToasts';
 import VAULT_ABI from '@yearn-finance/web-lib/utils/abi/vault.abi';
-import {allowanceKey, toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
+import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {LPYCRV_TOKEN_ADDRESS, MAX_UINT_256, STYCRV_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
@@ -22,7 +22,7 @@ import ZAP_CRV_ABI from '@yCRV/utils/abi/zapCRV.abi';
 import {zapCRV} from '@yCRV/utils/actions';
 
 import type {ReactElement} from 'react';
-import type {VoidPromiseFunction} from '@yearn-finance/web-lib/types';
+import type {TAddress, VoidPromiseFunction} from '@yearn-finance/web-lib/types';
 import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
 
 type TCardTransactor = {
@@ -103,7 +103,7 @@ function CardTransactorContextApp({
 	** out for a given in/out pair with a specific amount. This callback is
 	** called every 10s or when amount/in or out changes.
 	**************************************************************************/
-	const expectedOutFetcher = useCallback(async (args: [string, string, bigint]): Promise<bigint> => {
+	const expectedOutFetcher = useCallback(async (args: [TAddress, TAddress, bigint]): Promise<bigint> => {
 		const [_inputToken, _outputToken, _amountIn] = args;
 		if (_amountIn === 0n) {
 			return (0n);
@@ -112,7 +112,7 @@ function CardTransactorContextApp({
 		try {
 			if (_inputToken === YCRV_CURVE_POOL_ADDRESS) {
 				const pps = await readContract({
-					address: toWagmiAddress(LPYCRV_TOKEN_ADDRESS),
+					address: LPYCRV_TOKEN_ADDRESS,
 					abi: VAULT_ABI,
 					functionName: 'pricePerShare'
 				});
@@ -120,10 +120,10 @@ function CardTransactorContextApp({
 				return _expectedOut;
 			}
 			const _expectedOut = await readContract({
-				address: toWagmiAddress(ZAP_YEARN_VE_CRV_ADDRESS),
+				address: ZAP_YEARN_VE_CRV_ADDRESS,
 				abi: ZAP_CRV_ABI,
 				functionName: 'calc_expected_out',
-				args: [toWagmiAddress(_inputToken), toWagmiAddress(_outputToken), _amountIn]
+				args: [_inputToken, _outputToken, _amountIn]
 			});
 			return _expectedOut;
 		} catch (error) {
@@ -154,8 +154,8 @@ function CardTransactorContextApp({
 	const onApprove = useCallback(async (): Promise<void> => {
 		const result = await approveERC20({
 			connector: provider,
-			contractAddress: toWagmiAddress(selectedOptionFrom.value),
-			spenderAddress: toWagmiAddress(selectedOptionFrom.zapVia),
+			contractAddress: selectedOptionFrom.value,
+			spenderAddress: selectedOptionFrom.zapVia,
 			amount: MAX_UINT_256,
 			statusHandler: set_txStatusApprove
 		});
@@ -172,16 +172,16 @@ function CardTransactorContextApp({
 	const onIncreaseCRVAllowance = useCallback(async (): Promise<void> => {
 		const resultReset = await approveERC20({
 			connector: provider,
-			contractAddress: toWagmiAddress(selectedOptionFrom.value),
-			spenderAddress: toWagmiAddress(selectedOptionFrom.zapVia),
+			contractAddress: selectedOptionFrom.value,
+			spenderAddress: selectedOptionFrom.zapVia,
 			amount: 0n,
 			statusHandler: set_txStatusApprove
 		});
 		if (resultReset.isSuccessful) {
 			const result = await approveERC20({
 				connector: provider,
-				contractAddress: toWagmiAddress(selectedOptionFrom.value),
-				spenderAddress: toWagmiAddress(selectedOptionFrom.zapVia),
+				contractAddress: selectedOptionFrom.value,
+				spenderAddress: selectedOptionFrom.zapVia,
 				amount: MAX_UINT_256,
 				statusHandler: set_txStatusApprove
 			});
@@ -216,7 +216,7 @@ function CardTransactorContextApp({
 			// Direct deposit to vault from crv/yCRV Curve LP Token to lp-yCRV Vault
 			const result = await deposit({
 				connector: provider,
-				contractAddress: toWagmiAddress(selectedOptionTo.value),
+				contractAddress: selectedOptionTo.value,
 				amount: amount.raw, //amount_in
 				statusHandler: set_txStatusZap
 			});
@@ -229,9 +229,9 @@ function CardTransactorContextApp({
 			// Zap in
 			const result = await zapCRV({
 				connector: provider,
-				contractAddress: toWagmiAddress(ZAP_YEARN_VE_CRV_ADDRESS),
-				inputToken: toWagmiAddress(selectedOptionFrom.value), //_input_token
-				outputToken: toWagmiAddress(selectedOptionTo.value), //_output_token
+				contractAddress: ZAP_YEARN_VE_CRV_ADDRESS,
+				inputToken: selectedOptionFrom.value, //_input_token
+				outputToken: selectedOptionTo.value, //_output_token
 				amount: amount.raw, //amount_in
 				minAmount: toBigInt(expectedOut), //_min_out
 				slippage: toBigInt(slippage),

@@ -79,9 +79,9 @@ function Holdings(): ReactElement {
 
 	const formatBigNumberOver10K = useCallback((v: bigint): string => {
 		if (toBigInt(v) > (toBigInt(10000) * toBigInt(1e18))) {
-			return formatAmount(formatToNormalizedValue(toBigInt(v), 18), 0, 0)?.toString() ?? '';
+			return formatAmount(formatToNormalizedValue(toBigInt(v), 18), 0, 0) ?? '';
 		}
-		return formatAmount(formatToNormalizedValue(toBigInt(v), 18))?.toString() ?? '';
+		return formatAmount(formatToNormalizedValue(toBigInt(v), 18)) ?? '';
 	}, []);
 
 	const formatNumberOver10K = useCallback((v: number): string => {

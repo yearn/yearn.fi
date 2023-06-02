@@ -6,7 +6,7 @@ import STAKING_REWARDS_REGISTRY_ABI from '@vaults/utils/abi/stakingRewardsRegist
 import {multicall, readContract} from '@wagmi/core';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {STAKING_REWARDS_REGISTRY_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {decodeAsBigInt, decodeAsString} from '@yearn-finance/web-lib/utils/decoder';
 import {keyBy} from '@common/utils';
@@ -54,7 +54,7 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 		** Base wagmi contract struct ready to use in the viem functions call
 		******************************************************************************************/
 		const baseContract = {
-			address: toWagmiAddress(STAKING_REWARDS_REGISTRY_ADDRESS),
+			address: STAKING_REWARDS_REGISTRY_ADDRESS,
 			abi: STAKING_REWARDS_REGISTRY_ABI,
 			chainId: chainID
 		} as const;
@@ -90,7 +90,7 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 			if (stakingRewardsAddress.status === 'success') {
 				const address = decodeAsString(stakingRewardsAddress);
 				const baseStackingContract = {
-					address: toWagmiAddress(address),
+					address: toAddress(address),
 					abi: STAKING_REWARDS_ABI,
 					chainId: chainID
 				};
@@ -130,7 +130,7 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 		const calls = [];
 		for (const {address} of stakingRewards) {
 			const baseContract = {
-				address: toWagmiAddress(address),
+				address,
 				abi: STAKING_REWARDS_ABI,
 				chainId: chainID
 			} as const;
