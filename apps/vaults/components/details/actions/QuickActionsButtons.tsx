@@ -1,5 +1,4 @@
 import React, {useCallback, useEffect, useState} from 'react';
-import {ethers} from 'ethers';
 import {useAsync} from '@react-hookz/web';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useSolver} from '@vaults/contexts/useSolver';
@@ -8,8 +7,8 @@ import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {ETH_TOKEN_ADDRESS, YVWETH_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatBN, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {ETH_TOKEN_ADDRESS, MAX_UINT_256, YVWETH_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useWallet} from '@common/contexts/useWallet';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
@@ -33,7 +32,6 @@ function VaultDetailsQuickActionsButtons(): ReactElement {
 	** called when amount/in or out changes. Calls the allowanceFetcher callback.
 	**********************************************************************************************/
 	const [{result: allowanceFrom, status}, actions] = useAsync(async (): Promise<TNormalizedBN> => onRetrieveAllowance(true), toNormalizedBN(0));
-
 	useEffect((): void => {
 		actions.execute();
 	}, [actions, isActive, address, onRetrieveAllowance, hash]);
@@ -80,7 +78,7 @@ function VaultDetailsQuickActionsButtons(): ReactElement {
 	async function onApproveFrom(): Promise<void> {
 		const shouldApproveInfinite = currentSolver === Solver.enum.PartnerContract || currentSolver === Solver.enum.Vanilla || currentSolver === Solver.enum.InternalMigration;
 		onApprove(
-			shouldApproveInfinite ? ethers.constants.MaxUint256 : actionParams?.amount.raw,
+			shouldApproveInfinite ? MAX_UINT_256 : actionParams?.amount.raw,
 			set_txStatusApprove,
 			async (): Promise<void> => {
 				await actions.execute();
@@ -89,8 +87,13 @@ function VaultDetailsQuickActionsButtons(): ReactElement {
 	}
 
 	const isDiffNetwork = !!safeChainID && currentVault.chainID !== safeChainID;
-
-	const isButtonDisabled = !isActive || actionParams?.amount.raw.isZero() || actionParams?.amount.raw.gt(maxDepositPossible.raw) || isLoadingExpectedOut || isDiffNetwork;
+	const isButtonDisabled = (
+		!isActive
+		|| toBigInt(actionParams.amount.raw) == 0n
+		|| toBigInt(actionParams.amount.raw) > toBigInt(maxDepositPossible.raw)
+		|| isLoadingExpectedOut
+		|| isDiffNetwork
+	);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Wrapper to decide if we should use the partner contract or not
@@ -100,10 +103,10 @@ function VaultDetailsQuickActionsButtons(): ReactElement {
 		toAddress(actionParams?.selectedOptionFrom?.value) === ETH_TOKEN_ADDRESS
 		&& toAddress(actionParams?.selectedOptionTo?.value) === YVWETH_ADDRESS
 	);
-	const hasAllowanceSet = actionParams?.amount.raw.gt(formatBN(allowanceFrom?.raw));
+	const isAboveAllowance = toBigInt(actionParams.amount.raw) > toBigInt(allowanceFrom?.raw);
 	const isButtonBusy = txStatusApprove.pending || status !== 'success';
 	if (
-		!(isDepositingEthViaChainCoin && shouldUseChainCoinContract) && (isButtonBusy || hasAllowanceSet) && (
+		!(isDepositingEthViaChainCoin && shouldUseChainCoinContract) && (isButtonBusy || isAboveAllowance) && (
 			(currentSolver === Solver.enum.Vanilla && isDepositing)
 			|| (currentSolver === Solver.enum.InternalMigration)
 			|| (currentSolver === Solver.enum.Cowswap)
@@ -116,7 +119,7 @@ function VaultDetailsQuickActionsButtons(): ReactElement {
 			<Button
 				className={'w-full'}
 				isBusy={txStatusApprove.pending}
-				isDisabled={isButtonDisabled || expectedOut.raw.isZero()}
+				isDisabled={isButtonDisabled || toBigInt(expectedOut.raw) === 0n}
 				onClick={onApproveFrom}>
 				{'Approve'}
 			</Button>
@@ -130,7 +133,11 @@ function VaultDetailsQuickActionsButtons(): ReactElement {
 					onClick={async (): Promise<void> => onExecuteDeposit(set_txStatusExecuteDeposit, onSuccess)}
 					className={'w-full whitespace-nowrap'}
 					isBusy={txStatusExecuteDeposit.pending}
-					isDisabled={!isActive || actionParams?.amount.raw.isZero() || actionParams?.amount.raw.gt(maxDepositPossible.raw)}>
+					isDisabled={(
+						!isActive
+						|| toBigInt(actionParams.amount.raw) === 0n
+						|| toBigInt(actionParams.amount.raw) > toBigInt(maxDepositPossible.raw)
+					)}>
 					{'Deposit and Stake'}
 				</Button>
 			);

@@ -5,7 +5,7 @@ import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 
 import type {ReactElement} from 'react';
 
-function	ValueAnimation({
+function ValueAnimation({
 	identifier,
 	value,
 	defaultValue,
@@ -20,14 +20,14 @@ function	ValueAnimation({
 	suffix?: string,
 	className?: string
 }): ReactElement {
-	const	hasBeenTriggerd = useRef<boolean>(false);
+	const hasBeenTriggerd = useRef<boolean>(false);
 
-	function	initZero(): void {
+	function initZero(): void {
 		const words = document.getElementsByClassName(identifier) as HTMLCollectionOf<HTMLSpanElement>;
 		words[0].style.opacity = '1';
 	}
 
-	function	onStartAnimation(): void {
+	function onStartAnimation(): void {
 		hasBeenTriggerd.current = true;
 		const words = document.getElementsByClassName(identifier) as HTMLCollectionOf<HTMLSpanElement>;
 		const wordArray: HTMLSpanElement[][] = [];

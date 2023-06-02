@@ -1,14 +1,14 @@
 import React, {useRef} from 'react';
-import Balancer from 'react-wrap-balancer';
+import {Balancer} from 'react-wrap-balancer';
 import Image from 'next/image';
 import Link from 'next/link';
 import {useClientEffect} from '@yearn-finance/web-lib/hooks/useClientEffect';
-import {YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {YBAL_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import LogoYearn from '@common/icons/LogoYearn';
 
 import type {ReactElement} from 'react';
 
-const	apps = [
+const apps = [
 	{
 		href: '/vaults',
 		title: 'Vaults',
@@ -26,6 +26,17 @@ const	apps = [
 			width={100}
 			height={100}
 			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YCRV_TOKEN_ADDRESS}/logo-128.png`}
+			loading={'eager'}
+			priority />
+	}, {
+		href: '/ybal',
+		title: 'yBal',
+		description: 'get the best Balancer yields in DeFi.',
+		icon: <Image
+			alt={'yBal'}
+			width={100}
+			height={100}
+			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YBAL_TOKEN_ADDRESS}/logo-128.png`}
 			loading={'eager'}
 			priority />
 	}, {
@@ -47,16 +58,16 @@ const	apps = [
 	}
 ];
 
-function	AppBox({app}: {app: typeof apps[0]}): ReactElement {
+function AppBox({app}: {app: typeof apps[0]}): ReactElement {
 	useClientEffect((): VoidFunction => {
 		const featuresEl = document.getElementById(app.href);
 		if (featuresEl) {
-			const	cleanup = (): void => {
+			const cleanup = (): void => {
 				featuresEl.removeEventListener('pointermove', pointermove);
 				featuresEl.removeEventListener('pointerleave', pointerleave);
 			};
 
-			const	pointermove = (ev: MouseEvent): void => {
+			const pointermove = (ev: MouseEvent): void => {
 				const rect = featuresEl.getBoundingClientRect();
 				if (featuresEl?.style) {
 					featuresEl.style.setProperty('--opacity', '0.3');
@@ -65,7 +76,7 @@ function	AppBox({app}: {app: typeof apps[0]}): ReactElement {
 				}
 			};
 
-			const	pointerleave = (): void => {
+			const pointerleave = (): void => {
 				if (featuresEl?.style) {
 					featuresEl.style.setProperty('--opacity', '0');
 				}
@@ -96,10 +107,10 @@ function	AppBox({app}: {app: typeof apps[0]}): ReactElement {
 	);
 }
 
-function	TextAnimation(): ReactElement {
+function TextAnimation(): ReactElement {
 	const hasBeenTriggerd = useRef<boolean>(false);
 
-	function	onStartAnimation(): void {
+	function onStartAnimation(): void {
 		hasBeenTriggerd.current = true;
 		const words = document.getElementsByClassName('word') as HTMLCollectionOf<HTMLSpanElement>;
 		const wordArray: HTMLSpanElement[][] = [];
@@ -186,10 +197,10 @@ function	TextAnimation(): ReactElement {
 	);
 }
 
-function	Index(): ReactElement {
+function Index(): ReactElement {
 	return (
 		<>
-			<div className={'mx-auto mt-6 mb-10 flex flex-col justify-center md:mt-20 md:mb-14'}>
+			<div className={'mx-auto mb-10 mt-6 flex flex-col justify-center md:mb-14 md:mt-20'}>
 				<div className={'relative h-12 w-[300px] self-center md:h-[104px] md:w-[600px]'}>
 					<TextAnimation />
 				</div>

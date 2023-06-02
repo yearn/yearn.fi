@@ -11,8 +11,9 @@ import {yDaemonTokenListBalances} from '@common/schemas/yDaemonTokenListBalances
 import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 
 import type {ReactElement} from 'react';
-import type {TBalanceData, TUseBalancesTokens} from '@yearn-finance/web-lib/hooks/types';
 import type {TDict} from '@yearn-finance/web-lib/types';
+import type {TBalanceData} from '@yearn-finance/web-lib/types/hooks';
+import type {TUseBalancesTokens} from '@common/hooks/useBalances';
 import type {TYDaemonTokenListBalances} from '@common/schemas/yDaemonTokenListBalances';
 
 export type TWalletForZap = {
@@ -36,8 +37,7 @@ const defaultProps = {
 ** interact with our app, aka mostly the balances and the token prices.
 ******************************************************************************/
 const WalletForZap = createContext<TWalletForZap>(defaultProps);
-
-export const WalletForZapApp = memo(function WalletForZapApp({children}: { children: ReactElement }): ReactElement {
+export const WalletForZapApp = memo(function WalletForZapApp({children}: {children: ReactElement}): ReactElement {
 	const {address, isActive} = useWeb3();
 	const {refresh, balancesNonce} = useWallet();
 	const {safeChainID} = useChainID();
@@ -57,6 +57,9 @@ export const WalletForZapApp = memo(function WalletForZapApp({children}: { child
 	const availableTokens = useMemo((): TUseBalancesTokens[] => {
 		const tokens: TUseBalancesTokens[] = [];
 		Object.values(tokensList || {}).forEach((token): void => {
+			if (!token) {
+				return;
+			}
 			if (token.chainID !== safeChainID) {
 				return;
 			}

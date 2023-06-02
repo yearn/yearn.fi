@@ -13,7 +13,6 @@ import type {TYDaemonGaugeRewardsFeed} from '@common/schemas/yDaemonGaugeRewards
 export function RewardFeedTable(): ReactElement | null {
 	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: 1});
 	const [itemOffset, set_itemOffset] = useState(0);
-
 	const {isSuccess, data} = useFetch<TYDaemonGaugeRewardsFeed>({
 		endpoint: `${yDaemonBaseUri}/bribes/newRewardFeed`,
 		schema: yDaemonGaugeRewardsFeedSchema

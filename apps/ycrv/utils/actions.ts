@@ -1,27 +1,42 @@
-import {ethers} from 'ethers';
 import {ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {handleTx} from '@yearn-finance/web-lib/utils/web3/transaction';
+import {assert} from '@common/utils/assert';
+import {assertAddress, handleTx} from '@common/utils/toWagmiProvider';
+import ZAP_CRV_ABI from '@yCRV/utils/abi/zapCRV.abi';
 
-import type {BigNumber} from 'ethers';
+import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
+import type {TWriteTransaction} from '@common/utils/toWagmiProvider';
 
+/* 🔵 - Yearn Finance **********************************************************
+** zapCRV is a _WRITE_ function that can be used to zap some supported tokens
+** from the Curve ecosystem into one of the Yearn's yCRV ecosystem.
+**
+** @app - yCRV
+** @param inputToken - Token to be zapped from curve
+** @param outputToken - Token to be zapped into Yearn's yCRV ecosystem
+** @param amount - Amount of inputToken to be zapped
+** @param minAmount - Minimum amount of outputToken to be received
+** @param slippage - Slippage tolerance
+******************************************************************************/
+type TZapYCRV = TWriteTransaction & {
+	inputToken: TAddress | undefined;
+	outputToken: TAddress | undefined;
+	amount: bigint;
+	minAmount: bigint;
+	slippage: bigint;
+};
+export async function zapCRV(props: TZapYCRV): Promise<TTxResponse> {
+	const minAmountWithSlippage = props.minAmount * (1n - (props.slippage / 100n));
+	assertAddress(ZAP_YEARN_VE_CRV_ADDRESS, 'ZAP_YEARN_VE_CRV_ADDRESS');
+	assertAddress(props.inputToken, 'inputToken');
+	assertAddress(props.outputToken, 'outputToken');
+	assert(props.amount > 0n, 'Amount must be greater than 0');
+	assert(props.amount >= minAmountWithSlippage, 'Amount must be greater or equal to min amount with slippage');
 
-export async function	zap(
-	provider: ethers.providers.JsonRpcProvider,
-	inputToken: string,
-	outputToken: string,
-	amount: BigNumber,
-	minAmount: BigNumber,
-	slippage: number
-): Promise<TTxResponse> {
-	const signer = provider.getSigner();
-	const address = await signer.getAddress();
-	const contract = new ethers.Contract(
-		ZAP_YEARN_VE_CRV_ADDRESS,
-		['function zap(address _input, address _output, uint256 _amount, uint256 _minOut, address _recipient) external returns (uint256)'],
-		signer
-	);
-	const minAmountStr = Number(ethers.utils.formatUnits(minAmount, 18));
-	const minAmountWithSlippage = ethers.utils.parseUnits((minAmountStr * (1 - (slippage / 100))).toFixed(18), 18);
-	return await handleTx(contract.zap(inputToken, outputToken, amount, minAmountWithSlippage, address));
+	return await handleTx(props, {
+		address: ZAP_YEARN_VE_CRV_ADDRESS,
+		abi: ZAP_CRV_ABI,
+		functionName: 'zap',
+		args: [props.inputToken, props.outputToken, props.amount, minAmountWithSlippage]
+	});
 }

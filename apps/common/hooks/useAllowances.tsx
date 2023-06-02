@@ -1,14 +1,12 @@
 import {useCallback} from 'react';
-import {Contract} from 'ethcall';
-import useSWR from 'swr';
+import {erc20ABI} from 'wagmi';
+import {useAsync} from '@react-hookz/web';
+import {multicall} from '@wagmi/core';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
+import {decodeAsBigInt} from '@yearn-finance/web-lib/utils/decoder';
 
-import type {Call} from 'ethcall';
-import type {BigNumber} from 'ethers';
 import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 
 export type TAllowanceRequest = {
@@ -16,30 +14,36 @@ export type TAllowanceRequest = {
 	spender?: TAddress
 }
 
-export const useAllowances = (allowanceRequests: TAllowanceRequest[]): [TDict<BigNumber>, boolean, () => void] => {
-	const {provider, address: userAddress, isActive} = useWeb3();
+export const useAllowances = (allowanceRequests: TAllowanceRequest[]): [TDict<bigint>, boolean, () => void] => {
+	const {address: userAddress, isActive} = useWeb3();
 	const {chainID} = useChainID();
 
-	const allowancesFetcher = useCallback(async (): Promise<TDict<BigNumber>> => {
+	const allowancesFetcher = useCallback(async (): Promise<TDict<bigint>> => {
 		if (!isActive || !userAddress) {
 			return {};
 		}
-		const currentProvider = provider || getProvider(chainID);
-		const ethcallProvider = await newEthCallProvider(currentProvider);
+		const calls = [];
+		for (const req of allowanceRequests) {
+			const baseContract = {
+				address: toAddress(req.token),
+				abi: erc20ABI,
+				chainId: chainID
+			} as const;
+			calls.push({...baseContract, functionName: 'allowance', args: [userAddress, toAddress(req.spender)]});
+		}
+		const results = await multicall({contracts: calls, chainId: chainID});
+		const allowancesMap: TDict<bigint> = {};
 
-		const allowanceCalls = allowanceRequests.map(({token, spender}): Call => {
-			const erc20Contract = new Contract(token, ERC20_ABI);
-			return erc20Contract.allowance(userAddress, toAddress(spender));
-		});
-		const allowances = await ethcallProvider.tryAll(allowanceCalls) as BigNumber[];
-		const allowancesMap: TDict<BigNumber> = {};
-		allowanceRequests.forEach(({token, spender}, index): void => {
-			allowancesMap[allowanceKey(chainID, token, toAddress(spender), userAddress)] = allowances[index];
-		});
-
+		let index = 0;
+		for (const req of allowanceRequests) {
+			const key = allowanceKey(chainID, toAddress(req.token), toAddress(req.spender), userAddress);
+			allowancesMap[key] = decodeAsBigInt(results[index++]);
+		}
 		return allowancesMap;
-	}, [allowanceRequests, chainID, isActive, userAddress, provider]);
-	const {data: allowancesMap, isLoading, mutate: refresh} = useSWR(isActive && provider ? allowanceRequests : null, allowancesFetcher, {shouldRetryOnError: false});
+	}, [allowanceRequests, chainID, isActive, userAddress]);
 
-	return [allowancesMap || {}, isLoading, refresh];
+	//TODO: Ensure this works
+	const [{result: allowancesMap, status}, actions] = useAsync(async (): Promise<TDict<bigint>> => allowancesFetcher(), {});
+
+	return [allowancesMap || {}, status === 'loading', actions.execute];
 };

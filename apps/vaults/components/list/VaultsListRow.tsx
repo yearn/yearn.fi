@@ -4,7 +4,7 @@ import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {toNormalizedBN, toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {toBigInt, toNormalizedBN, toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatPercent, formatUSD} from '@yearn-finance/web-lib/utils/format.number';
 import TokenIcon from '@common/components/TokenIcon';
 import {useBalance} from '@common/hooks/useBalance';
@@ -13,7 +13,7 @@ import {getVaultName} from '@common/utils';
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
-function	VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {safeChainID} = useChainID();
 	const balanceOfWant = useBalance(currentVault.token.address);
 	const balanceOfCoin = useBalance(ETH_TOKEN_ADDRESS);
@@ -23,7 +23,7 @@ function	VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElem
 	const isEthMainnet = currentVault.chainID === 1;
 
 	const {stakingRewardsByVault, positionsMap} = useStakingRewards();
-	const stakedBalance = toNormalizedValue(positionsMap[toAddress(stakingRewardsByVault[currentVault.address])]?.stake ?? 0, currentVault.decimals);
+	const stakedBalance = toNormalizedValue(toBigInt(positionsMap[toAddress(stakingRewardsByVault[currentVault.address])]?.stake), currentVault.decimals);
 	const depositedAndStaked = deposited + stakedBalance;
 
 	const availableToDeposit = useMemo((): number => {

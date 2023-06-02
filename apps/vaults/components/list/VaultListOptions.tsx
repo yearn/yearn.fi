@@ -7,7 +7,7 @@ import {Switch} from '@common/components/Switch';
 import type {ReactElement} from 'react';
 
 export default function VaultListOptions(): ReactElement {
-	const	{shouldHideDust, onSwitchHideDust, shouldHideLowTVLVaults, onSwitchHideLowTVLVaults} = useAppSettings();
+	const {shouldHideDust, onSwitchHideDust, shouldHideLowTVLVaults, onSwitchHideLowTVLVaults} = useAppSettings();
 
 	return (
 		<Popover className={'relative flex'}>
@@ -24,7 +24,7 @@ export default function VaultListOptions(): ReactElement {
 						leave={'transition ease-in duration-150'}
 						leaveFrom={'opacity-100 translate-y-0'}
 						leaveTo={'opacity-0 translate-y-1'}>
-						<Popover.Panel className={'absolute right-0 top-6 z-[1000] mt-3 w-screen max-w-[180px] md:top-4 md:-right-4'}>
+						<Popover.Panel className={'absolute right-0 top-6 z-[1000] mt-3 w-screen max-w-[180px] md:-right-4 md:top-4'}>
 							<div className={'yearn--shadow overflow-hidden'}>
 								<div className={'relative bg-neutral-0'}>
 									<label className={'flex cursor-pointer items-center justify-between p-4 transition-colors hover:bg-neutral-100/40'}>

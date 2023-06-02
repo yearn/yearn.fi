@@ -1,12 +1,11 @@
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
-import Balancer from 'react-wrap-balancer';
-import {Contract} from 'ethcall';
-import useSWR from 'swr';
+import {Balancer} from 'react-wrap-balancer';
 import {useAsync} from '@react-hookz/web';
 import VaultListFactory from '@vaults/components/list/VaultListFactory';
 import VAULT_FACTORY_ABI from '@vaults/utils/abi/vaultFactory.abi';
-import {createNewVaultsAndStrategies, estimateGasForCreateNewVaultsAndStrategies} from '@vaults/utils/actions/createVaultFromFactory';
+import {createNewVaultsAndStrategies, gasOfCreateNewVaultsAndStrategies} from '@vaults/utils/actions';
 import Wrapper from '@vaults/Wrapper';
+import {multicall} from '@wagmi/core';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
@@ -15,18 +14,16 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import LinkOut from '@yearn-finance/web-lib/icons/IconLinkOut';
 import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
-import {addressZero, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {VAULT_FACTORY_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {VAULT_FACTORY_ADDRESS, ZERO_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {decodeAsBoolean, decodeAsString} from '@yearn-finance/web-lib/utils/decoder';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
-import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
-import {defaultTxStatus, Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
+import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {Dropdown} from '@common/components/GaugeDropdown';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {CurveContextApp, useCurve} from '@common/contexts/useCurve';
 import {useYearn} from '@common/contexts/useYearn';
 
-import type {BigNumber, providers} from 'ethers';
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
 import type {TAddress} from '@yearn-finance/web-lib/types';
@@ -40,18 +37,18 @@ type TGaugeDisplayData = {
 	gaugeAddress: TAddress
 }
 
-const	defaultOption: TDropdownGaugeOption = {
+const defaultOption: TDropdownGaugeOption = {
 	label: '',
 	value: {
 		name: '',
-		tokenAddress: addressZero,
-		poolAddress: addressZero,
-		gaugeAddress: addressZero,
+		tokenAddress: ZERO_ADDRESS,
+		poolAddress: ZERO_ADDRESS,
+		gaugeAddress: ZERO_ADDRESS,
 		APY: 0
 	}
 };
 
-function	Factory(): ReactElement {
+function Factory(): ReactElement {
 	const {mutateVaultList} = useYearn();
 	const {provider, isActive} = useWeb3();
 	const {safeChainID} = useChainID();
@@ -68,35 +65,36 @@ function	Factory(): ReactElement {
 	** associated vault.
 	**************************************************************************/
 	const [{result: filteredGauges}, fetchGaugesAction] = useAsync(async function fetchAlreadyCreatedGauges(
-		_provider: providers.JsonRpcProvider,
 		_safeChainID: number,
 		_gaugesFromYearn: TCurveGaugesFromYearn
 	): Promise<TCurveGaugesFromYearn> {
 		if ((_gaugesFromYearn || []).length === 0) {
 			return [];
 		}
-		const	currentProvider = _safeChainID === 1 ? _provider || getProvider(1) : getProvider(1);
-		const	ethcallProvider = await newEthCallProvider(currentProvider);
-		const	curveVaultFactory = new Contract(VAULT_FACTORY_ADDRESS, VAULT_FACTORY_ABI);
 
+		const baseContract = {address: VAULT_FACTORY_ADDRESS, abi: VAULT_FACTORY_ABI};
 		const calls = [];
 		for (const gauge of _gaugesFromYearn) {
-			calls.push(curveVaultFactory.canCreateVaultPermissionlessly(gauge.gauge_address));
+			calls.push({
+				...baseContract,
+				functionName: 'canCreateVaultPermissionlessly',
+				args: [toAddress(gauge.gauge_address)]
+			});
 		}
-		const	canCreateVaults = await ethcallProvider.tryAll(calls) as boolean[];
-		return _gaugesFromYearn.filter((_gauge: TCurveGaugeFromYearn, index: number): boolean => canCreateVaults[index]);
+		const canCreateVaults = await multicall({contracts: calls, chainId: _safeChainID});
+		return _gaugesFromYearn.filter((_gauge: TCurveGaugeFromYearn, index: number): boolean => decodeAsBoolean(canCreateVaults[index]));
 	}, []);
 
 	useEffect((): void => {
-		fetchGaugesAction.execute(provider, safeChainID, gaugesFromYearn);
-	}, [fetchGaugesAction, gaugesFromYearn, provider, safeChainID]);
+		fetchGaugesAction.execute(safeChainID, gaugesFromYearn);
+	}, [fetchGaugesAction, gaugesFromYearn, safeChainID]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** We need to create the possible elements for the dropdown by removing all
 	** the extra impossible gauges and formating them to the expected
 	** TDropdownGaugeOption type
 	**************************************************************************/
-	const	gaugesOptions = useMemo((): TDropdownGaugeOption[] => {
+	const gaugesOptions = useMemo((): TDropdownGaugeOption[] => {
 		return (
 			(filteredGauges || [])
 				.filter((item: TCurveGaugeFromYearn): boolean => item.weight !== '0')
@@ -125,16 +123,20 @@ function	Factory(): ReactElement {
 	** We need to fetch the name and symbol from the gauge contract.
 	**************************************************************************/
 	const [{result: gaugeDisplayData, status}, fetchGaugeDisplayDataAction] = useAsync(async function fetchGaugeDisplayData(
-		_provider: providers.JsonRpcProvider,
 		_safeChainID: number,
 		_selectedOption: TDropdownGaugeOption
 	): Promise<TGaugeDisplayData> {
-		const currentProvider = _safeChainID === 1 ? _provider || getProvider(1) : getProvider(1);
-		const ethcallProvider = await newEthCallProvider(currentProvider);
-		const curveGauge = new Contract(toAddress(_selectedOption.value.gaugeAddress), ERC20_ABI);
+		const baseContract = {address: _selectedOption.value.gaugeAddress, abi: ERC20_ABI};
+		const results = await multicall({
+			contracts: [
+				{...baseContract, functionName: 'name'},
+				{...baseContract, functionName: 'symbol'}
+			],
+			chainId: _safeChainID
+		});
 
-		const calls = [curveGauge.name(), curveGauge.symbol()];
-		const [name, symbol] = await ethcallProvider.tryAll(calls) as [string, string];
+		const name = decodeAsString(results[0]);
+		const symbol = decodeAsString(results[1]);
 		return ({
 			name: name.replace('Curve.fi', '').replace('Gauge Deposit', '') || _selectedOption.value.name,
 			symbol: symbol.replace('-gauge', '').replace('-f', '') || _selectedOption.value.name,
@@ -144,51 +146,58 @@ function	Factory(): ReactElement {
 	}, undefined);
 
 	useEffect((): void => {
-		fetchGaugeDisplayDataAction.execute(provider, safeChainID, selectedOption);
-	}, [fetchGaugeDisplayDataAction, provider, safeChainID, selectedOption]);
+		fetchGaugeDisplayDataAction.execute(safeChainID, selectedOption);
+	}, [fetchGaugeDisplayDataAction, safeChainID, selectedOption]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Perform a smartContract call to the ZAP contract to get the expected
-	** out for a given in/out pair with a specific amount. This callback is
-	** called every 10s or when amount/in or out changes.
+	** out for a given in/out pair with a specific amount.
 	**************************************************************************/
-	const fetchEstimate = useCallback(async (): Promise<BigNumber> => {
+	//TODO: ENSURE IT'S CALLED EVERY 10s
+	const [{result: estimate}, actions] = useAsync(async function fetchEstimate(): Promise<bigint> {
 		set_hasError(false);
 		try {
-			return await estimateGasForCreateNewVaultsAndStrategies(provider, toAddress(selectedOption.value.gaugeAddress));
+			return await gasOfCreateNewVaultsAndStrategies({
+				connector: provider,
+				contractAddress: VAULT_FACTORY_ADDRESS,
+				gaugeAddress: selectedOption.value.gaugeAddress
+			});
 		} catch (error) {
-			const	err = error as {reason: string, code: string};
+			const err = error as {reason: string, code: string};
 			if (err.code === 'UNPREDICTABLE_GAS_LIMIT') {
 				toast({type: 'warning', content: (err?.reason || '').replace('execution reverted: ', '')});
 			} else {
 				toast({type: 'error', content: (err?.reason || '').replace('execution reverted: ', '')});
 				set_hasError(true);
 			}
-			return Zero;
+			return 0n;
 		}
-		//eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [provider, selectedOption?.value?.gaugeAddress]); //toast is a false negative error
-	const	{data: estimate} = useSWR(
-		'gasEstimate',
-		(!isActive || selectedOption.value.gaugeAddress === addressZero || safeChainID !== 1) ? null : fetchEstimate,
-		{shouldRetryOnError: false}
-	);
+	}, 0n);
+	useEffect((): void => {
+		if (!isActive || toAddress(selectedOption.value.gaugeAddress) === ZERO_ADDRESS || safeChainID !== 1) {
+			return;
+		}
+		actions.execute();
+	}, [actions, isActive, provider, safeChainID, selectedOption, selectedOption.value.gaugeAddress]);
 
-	async function	onCreateNewVault(): Promise<void> {
-		new Transaction(provider, createNewVaultsAndStrategies, set_txStatus).populate(
-			selectedOption.value.gaugeAddress
-		).onSuccess(async (): Promise<void> => {
-			set_selectedOption(defaultOption);
+	const onCreateNewVault = useCallback(async (): Promise<void> => {
+		const result = await createNewVaultsAndStrategies({
+			connector: provider,
+			contractAddress: VAULT_FACTORY_ADDRESS,
+			gaugeAddress: selectedOption.value.gaugeAddress,
+			statusHandler: set_txStatus
+		});
+		if (result.isSuccessful) {
 			await setTimeout(async (): Promise<void> => {
 				await Promise.all([
-					fetchGaugesAction.execute(provider, safeChainID, gaugesFromYearn),
+					fetchGaugesAction.execute(safeChainID, gaugesFromYearn),
 					mutateVaultList()
 				]);
 			}, 1000);
-		}).perform();
-	}
+		}
+	}, [fetchGaugesAction, gaugesFromYearn, mutateVaultList, provider, safeChainID, selectedOption.value.gaugeAddress]);
 
-	function	loadingFallback(): ReactElement {
+	function loadingFallback(): ReactElement {
 		return (
 			<div className={'flex h-10 items-center bg-neutral-200 p-2 pl-5 text-neutral-600'}>
 				<span className={'loader'} />
@@ -294,7 +303,12 @@ function	Factory(): ReactElement {
 						<Button
 							onClick={onCreateNewVault}
 							isBusy={txStatus.pending}
-							isDisabled={!isActive || selectedOption.value.gaugeAddress === addressZero || safeChainID !== 1 || hasError}
+							isDisabled={(
+								!isActive
+								|| selectedOption.value.gaugeAddress === ZERO_ADDRESS
+								|| safeChainID !== 1
+								|| hasError
+							)}
 							className={'w-full'}>
 							{'Create new Vault'}
 						</Button>
