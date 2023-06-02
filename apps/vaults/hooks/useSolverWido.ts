@@ -255,6 +255,7 @@ export function useSolverWido(): TSolverContext {
 
 		const widoSpender = await getWidoSpender({
 			chainId: safeChainID as ChainId,
+			toChainId: safeChainID as ChainId,
 			fromToken: toAddress(request.current.inputToken.value),
 			toToken: toAddress(request.current.outputToken.value)
 		});
