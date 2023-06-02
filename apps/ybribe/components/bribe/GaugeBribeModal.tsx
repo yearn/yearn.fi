@@ -1,12 +1,11 @@
-import React, {useCallback, useState} from 'react';
-import {readContracts} from 'wagmi';
-import useSWR from 'swr';
+import React, {useCallback, useMemo, useState} from 'react';
+import {useContractReads} from 'wagmi';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
-import {isZeroAddress, toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
-import {CURVE_BRIBE_V3_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {CURVE_BRIBE_V3_ADDRESS, ZERO_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {decodeAsBigInt, decodeAsNumber, decodeAsString} from '@yearn-finance/web-lib/utils/decoder';
 import {formatToNormalizedValue, toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
@@ -18,9 +17,26 @@ import {useBribes} from '@yBribe/contexts/useBribes';
 import {addReward} from '@yBribe/utils/actions';
 
 import type {ChangeEvent, ReactElement} from 'react';
+import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TCurveGauge} from '@common/schemas/curveSchemas';
 import type {TNormalizedBN} from '@common/types/types';
 
+type TExpectedOutFetcher = {
+	name: string;
+	symbol: string;
+	decimals: number;
+	normalized: number,
+	raw: bigint,
+	allowance: bigint,
+}
+const defaultExpectedOutFetcher: TExpectedOutFetcher = {
+	name: '',
+	symbol: '',
+	decimals: 0,
+	normalized: 0,
+	raw: toBigInt(0),
+	allowance: toBigInt(0)
+};
 
 function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauge, onClose: VoidFunction}): ReactElement {
 	const {chainID} = useChainID();
@@ -28,78 +44,61 @@ function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauge, on
 	const {refresh} = useBribes();
 	const {prices} = useYearn();
 	const [amount, set_amount] = useState<TNormalizedBN>(toNormalizedBN(0));
-	const [tokenAddress, set_tokenAddress] = useState<string>('');
+	const [tokenAddress, set_tokenAddress] = useState<TAddress | undefined>();
 	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
 	const [txStatusAddReward, set_txStatusAddReward] = useState(defaultTxStatus);
+	const {data, isSuccess, refetch} = useContractReads({
+		contracts: [
+			{address: tokenAddress, abi: ERC20_ABI, functionName: 'name'},
+			{address: tokenAddress, abi: ERC20_ABI, functionName: 'symbol'},
+			{address: tokenAddress, abi: ERC20_ABI, functionName: 'decimals'},
+			{address: tokenAddress, abi: ERC20_ABI, functionName: 'balanceOf', args: [toAddress(address)]},
+			{address: tokenAddress, abi: ERC20_ABI, functionName: 'allowance', args: [toAddress(address), CURVE_BRIBE_V3_ADDRESS]}
+		]
+	});
 
-	const expectedOutFetcher = useCallback(async (args: [string]): Promise<{
-		name: string;
-		symbol: string;
-		decimals: number;
-		normalized: number,
-		raw: bigint,
-		allowance: bigint,
-	}> => {
-		const [_tokenAddress] = args;
-		const baseContract = {address: toWagmiAddress(_tokenAddress), abi: ERC20_ABI};
-		const [name, symbol, decimals, balance, allowance] = await readContracts({
-			contracts: [
-				{...baseContract, functionName: 'name'},
-				{...baseContract, functionName: 'symbol'},
-				{...baseContract, functionName: 'decimals'},
-				{...baseContract, functionName: 'balanceOf', args: [toWagmiAddress(address)]},
-				{...baseContract, functionName: 'allowance', args: [toWagmiAddress(address), toWagmiAddress(CURVE_BRIBE_V3_ADDRESS)]}
-			]
-		});
-
+	const selectedToken = useMemo((): TExpectedOutFetcher => {
+		if (!data || !isSuccess) {
+			return defaultExpectedOutFetcher;
+		}
 		return ({
-			name: decodeAsString(name),
-			symbol: decodeAsString(symbol),
-			decimals: decodeAsNumber(decimals),
-			raw: decodeAsBigInt(balance),
-			normalized: formatToNormalizedValue(decodeAsBigInt(balance), decodeAsNumber(decimals)),
-			allowance: decodeAsBigInt(allowance)
+			name: decodeAsString(data[0]),
+			symbol: decodeAsString(data[1]),
+			decimals: decodeAsNumber(data[2]),
+			raw: decodeAsBigInt(data[3]),
+			normalized: formatToNormalizedValue(decodeAsBigInt(data[3]), decodeAsNumber(data[2])),
+			allowance: decodeAsBigInt(data[4])
 		});
-	}, [address]);
-
-	/* 🔵 - Yearn Finance ******************************************************
-	** SWR hook to get the expected out for a given in/out pair with a specific
-	** amount. This hook is called every 10s or when amount/in or out changes.
-	** Calls the expectedOutFetcher callback.
-	**************************************************************************/
-	const {data: selectedToken, mutate} = useSWR(
-		isActive && !isZeroAddress(tokenAddress) ? [toAddress(tokenAddress)] : null, expectedOutFetcher,
-		{refreshInterval: 10000, shouldRetryOnError: false}
-	);
+	}, [data, isSuccess]);
 
 	const onApprove = useCallback(async (): Promise<void> => {
 		const result = await approveERC20({
 			connector: provider,
-			contractAddress: toWagmiAddress(tokenAddress),
-			spenderAddress: toWagmiAddress(CURVE_BRIBE_V3_ADDRESS),
+			contractAddress: tokenAddress,
+			spenderAddress: CURVE_BRIBE_V3_ADDRESS,
 			amount: amount.raw,
 			statusHandler: set_txStatusApprove
 		});
 		if (result.isSuccessful) {
-			mutate();
+			refetch();
 		}
-	}, [amount.raw, mutate, provider, tokenAddress]);
+	}, [amount.raw, refetch, provider, tokenAddress]);
 
 	const onAddReward = useCallback(async (): Promise<void> => {
 		const result = await addReward({
 			connector: provider,
-			contractAddress: toWagmiAddress(CURVE_BRIBE_V3_ADDRESS),
-			gaugeAddress: toWagmiAddress(currentGauge.gauge),
-			tokenAddress: toWagmiAddress(tokenAddress),
+			contractAddress: CURVE_BRIBE_V3_ADDRESS,
+			gaugeAddress: currentGauge.gauge,
+			tokenAddress: tokenAddress,
 			amount: amount.raw,
 			statusHandler: set_txStatusAddReward
 		});
 		if (result.isSuccessful) {
 			onClose();
-			mutate();
+			refetch();
 			await refresh();
 		}
-	}, [amount.raw, currentGauge.gauge, mutate, onClose, provider, refresh, tokenAddress]);
+	}, [amount.raw, currentGauge.gauge, refetch, onClose, provider, refresh, tokenAddress]);
 
 	function renderButton(): ReactElement {
 		if (!isActive) {
@@ -169,9 +168,9 @@ function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauge, on
 							{'Reward Token'}
 						</p>
 						<div className={'flex h-10 items-center bg-neutral-100 p-2'}>
-							<div className={'flex h-10 w-full flex-row items-center justify-between py-4 px-0'}>
+							<div className={'flex h-10 w-full flex-row items-center justify-between px-0 py-4'}>
 								<input
-									className={`w-full overflow-x-scroll border-none bg-transparent py-4 px-0 font-bold outline-none scrollbar-none ${isActive ? '' : 'cursor-not-allowed'}`}
+									className={`w-full overflow-x-scroll border-none bg-transparent px-0 py-4 font-bold outline-none scrollbar-none ${isActive ? '' : 'cursor-not-allowed'}`}
 									type={'text'}
 									placeholder={'0x...'}
 									value={tokenAddress}
@@ -179,7 +178,7 @@ function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauge, on
 										const {value} = e.target;
 										if (value === '' || value.match(/^(0[x]{0,1})[a-fA-F0-9]{0,40}/gm)?.includes(value)) {
 											if (isZeroAddress(value)) {
-												set_tokenAddress(value);
+												set_tokenAddress(ZERO_ADDRESS);
 											} else {
 												set_tokenAddress(toAddress(value));
 											}
@@ -192,9 +191,9 @@ function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauge, on
 					<label className={'flex flex-col space-y-1'}>
 						<p className={'text-base text-neutral-600'}>{'Reward Amount'}</p>
 						<div className={'flex h-10 items-center bg-neutral-100 p-2'}>
-							<div className={'flex h-10 w-full flex-row items-center justify-between py-4 px-0'}>
+							<div className={'flex h-10 w-full flex-row items-center justify-between px-0 py-4'}>
 								<input
-									className={`w-full overflow-x-scroll border-none bg-transparent py-4 px-0 font-bold outline-none scrollbar-none ${isActive ? '' : 'cursor-not-allowed'}`}
+									className={`w-full overflow-x-scroll border-none bg-transparent px-0 py-4 font-bold outline-none scrollbar-none ${isActive ? '' : 'cursor-not-allowed'}`}
 									type={'text'}
 									disabled={!isActive}
 									value={amount.normalized}
@@ -245,7 +244,7 @@ function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauge, on
 								{'Gauge'}
 							</p>
 							<p className={'font-number text-sm text-neutral-900'}>
-								{toAddress(currentGauge.gauge)}
+								{currentGauge.gauge}
 							</p>
 						</div>
 					</div>

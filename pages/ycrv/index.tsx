@@ -16,7 +16,7 @@ import {useYCRV} from '@yCRV/contexts/useYCRV';
 import Wrapper from '@yCRV/Wrapper';
 
 import type {NextRouter} from 'next/router';
-import type {ReactElement, ReactNode} from 'react';
+import type {ReactElement} from 'react';
 
 function HeaderPosition(): ReactElement {
 	const {holdings} = useYCRV();
@@ -25,13 +25,13 @@ function HeaderPosition(): ReactElement {
 	const stycrvPrice = useTokenPrice(STYCRV_TOKEN_ADDRESS);
 	const lpycrvPrice = useTokenPrice(LPYCRV_TOKEN_ADDRESS);
 
-	const formatedYearnHas = useMemo((): ReactNode => (
+	const formatedYearnHas = useMemo((): string => (
 		holdings?.veCRVBalance ?
 			formatAmount(formatToNormalizedValue(holdings.veCRVBalance, 18), 0, 0)
 			: ''
 	), [holdings?.veCRVBalance]);
 
-	const formatedYouHave = useMemo((): ReactNode => (
+	const formatedYouHave = useMemo((): string => (
 		formatCounterValueRaw(
 			(balanceOfStyCRV.normalized * stycrvPrice)
 			+
@@ -47,7 +47,7 @@ function HeaderPosition(): ReactElement {
 				<b className={'font-number text-4xl text-neutral-900 md:text-7xl'}>
 					<ValueAnimation
 						identifier={'veCRVTreasury'}
-						value={formatedYearnHas?.toString()}
+						value={formatedYearnHas}
 						suffix={'veCRV'}
 						defaultValue={'0,00'}
 					/>
@@ -58,7 +58,7 @@ function HeaderPosition(): ReactElement {
 				<b className={'font-number text-3xl text-neutral-900 md:text-7xl'}>
 					<ValueAnimation
 						identifier={'youHave'}
-						value={formatedYouHave?.toString()}
+						value={formatedYouHave}
 						prefix={'$'}
 						defaultValue={'0,00'}
 					/>
@@ -83,16 +83,16 @@ function ZapAndStats(): ReactElement {
 
 	const formatBigNumberOver10K = useCallback((v: bigint): string => {
 		if (toBigInt(v) > (toBigInt(10000) * toBigInt(1e18))) {
-			return formatAmount(formatToNormalizedValue(toBigInt(v), 18), 0, 0)?.toString() ?? '';
+			return formatAmount(formatToNormalizedValue(toBigInt(v), 18), 0, 0) ?? '';
 		}
-		return formatAmount(formatToNormalizedValue(toBigInt(v), 18))?.toString() ?? '';
+		return formatAmount(formatToNormalizedValue(toBigInt(v), 18)) ?? '';
 	}, []);
 
 	const formatNumberOver10K = useCallback((v: number): string => {
 		if (v >= 10000) {
-			return formatAmount(v, 0, 0)?.toString() ?? '';
+			return formatAmount(v, 0, 0) ?? '';
 		}
-		return formatAmount(v)?.toString() ?? '';
+		return formatAmount(v) ?? '';
 	}, []);
 
 	const latestCurveFeesValue = useMemo((): number => {

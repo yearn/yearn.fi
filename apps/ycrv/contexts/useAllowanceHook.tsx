@@ -5,34 +5,34 @@
 import {useMemo} from 'react';
 import {erc20ABI, useContractReads} from 'wagmi';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {allowanceKey, toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
+import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {CRV_TOKEN_ADDRESS, CVXCRV_TOKEN_ADDRESS, LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YCRV_TOKEN_ADDRESS, YVBOOST_TOKEN_ADDRESS, YVECRV_POOL_LP_ADDRESS, YVECRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {decodeAsBigInt} from '@yearn-finance/web-lib/utils/decoder';
 
-import type {TAddressWagmi, TDict} from '@yearn-finance/web-lib/types';
+import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 
 /* 🔵 - Yearn Finance **********************************************************
 ** This context controls the allowances computation for the yCRV app
 ******************************************************************************/
 export function useAllowances(): TDict<bigint> {
 	const {address} = useWeb3();
-	const wagmiAddress = useMemo((): TAddressWagmi => toWagmiAddress(address), [address]);
-	const zapAddress = useMemo((): TAddressWagmi => toWagmiAddress(ZAP_YEARN_VE_CRV_ADDRESS), []);
-	const poolAddress = useMemo((): TAddressWagmi => toWagmiAddress(YVECRV_POOL_LP_ADDRESS), []);
-	const lpyCRVAddress = useMemo((): TAddressWagmi => toWagmiAddress(LPYCRV_TOKEN_ADDRESS), []);
+	const wagmiAddress = useMemo((): TAddress => toAddress(address), [address]);
+	const zapAddress = useMemo((): TAddress => ZAP_YEARN_VE_CRV_ADDRESS, []);
+	const poolAddress = useMemo((): TAddress => YVECRV_POOL_LP_ADDRESS, []);
+	const lpyCRVAddress = useMemo((): TAddress => LPYCRV_TOKEN_ADDRESS, []);
 	const {data, status} = useContractReads({
 		contracts: [
-			{address: toWagmiAddress(YCRV_TOKEN_ADDRESS), abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},
-			{address: toWagmiAddress(STYCRV_TOKEN_ADDRESS), abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},
-			{address: toWagmiAddress(LPYCRV_TOKEN_ADDRESS), abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},
-			{address: toWagmiAddress(YVECRV_TOKEN_ADDRESS), abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},
-			{address: toWagmiAddress(CRV_TOKEN_ADDRESS), abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},
-			{address: toWagmiAddress(YVBOOST_TOKEN_ADDRESS), abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},
-			{address: toWagmiAddress(YCRV_CURVE_POOL_ADDRESS), abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},
-			{address: toWagmiAddress(CVXCRV_TOKEN_ADDRESS), abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},
-			{address: toWagmiAddress(YVECRV_TOKEN_ADDRESS), abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, poolAddress]},
-			{address: toWagmiAddress(CRV_TOKEN_ADDRESS), abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, poolAddress]},
-			{address: toWagmiAddress(YCRV_CURVE_POOL_ADDRESS), abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, lpyCRVAddress]}
+			{address: YCRV_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},
+			{address: STYCRV_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},
+			{address: LPYCRV_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},
+			{address: YVECRV_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},
+			{address: CRV_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},
+			{address: YVBOOST_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},
+			{address: YCRV_CURVE_POOL_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},
+			{address: CVXCRV_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},
+			{address: YVECRV_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, poolAddress]},
+			{address: CRV_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, poolAddress]},
+			{address: YCRV_CURVE_POOL_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, lpyCRVAddress]}
 		]
 	});
 

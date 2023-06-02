@@ -1,15 +1,13 @@
 import React from 'react';
-import dynamic from 'next/dynamic';
+import {useIsMounted} from '@react-hookz/web';
+import {GraphForVaultEarnings} from '@vaults/components/graphs/GraphForVaultEarnings';
+import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
 
-import type {LoaderComponent} from 'next/dynamic';
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TGraphData} from '@common/types/types';
-import type {TGraphForVaultEarningsProps} from '@vaults/components/graphs/GraphForVaultEarnings';
-
-const GraphForVaultEarnings = dynamic<TGraphForVaultEarningsProps>(async (): LoaderComponent<TGraphForVaultEarningsProps> => import('@vaults/components/graphs/GraphForVaultEarnings'), {ssr: false});
 
 type TAPYLineItemProps = {
 	label: string;
@@ -45,6 +43,7 @@ function YearnFeesLineItem({children, label}: TYearnFeesLineItem): ReactElement 
 }
 
 function VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYDaemonVault, harvestData: TGraphData[]}): ReactElement {
+	const isMounted = useIsMounted();
 	const {token, apy, details} = currentVault;
 
 	function getVaultDescription(): string {
@@ -101,7 +100,9 @@ function VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYDaemonV
 				<div>
 					<b className={'text-neutral-900'}>{'Cumulative Earnings'}</b>
 					<div className={'-mx-2 mt-4 flex flex-row border-b border-l border-neutral-300 md:mx-0'} style={{height: 160}}>
-						<GraphForVaultEarnings currentVault={currentVault} harvestData={harvestData} height={160} />
+						<Renderable shouldRender={isMounted()}>
+							<GraphForVaultEarnings currentVault={currentVault} harvestData={harvestData} height={160} />
+						</Renderable>
 					</div>
 				</div>
 			</div>

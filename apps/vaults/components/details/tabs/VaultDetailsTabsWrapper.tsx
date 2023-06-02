@@ -12,7 +12,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import IconAddToMetamask from '@yearn-finance/web-lib/icons/IconAddToMetamask';
 import IconLinkOut from '@yearn-finance/web-lib/icons/IconLinkOut';
-import {toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
@@ -161,7 +161,7 @@ function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}):
 			await walletClient.watchAsset({
 				type: 'ERC20',
 				options: {
-					address: toWagmiAddress(address),
+					address: toAddress(address),
 					decimals: decimals,
 					symbol: symbol,
 					image: image

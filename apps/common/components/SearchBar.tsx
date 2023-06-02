@@ -19,7 +19,7 @@ export function SearchBar({searchLabel, searchPlaceholder, searchValue, set_sear
 				<div className={'relative flex h-10 w-full flex-row items-center justify-between'}>
 					<input
 						id={'search'}
-						className={'h-10 w-full overflow-x-scroll border-none bg-transparent py-2 px-0 text-base outline-none scrollbar-none placeholder:text-neutral-400'}
+						className={'h-10 w-full overflow-x-scroll border-none bg-transparent px-0 py-2 text-base outline-none scrollbar-none placeholder:text-neutral-400'}
 						type={'text'}
 						placeholder={searchPlaceholder}
 						value={searchValue}

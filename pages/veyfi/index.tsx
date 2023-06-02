@@ -39,11 +39,11 @@ function Index(): ReactElement {
 					items={[
 						{
 							label: 'Total Locked YFI',
-							content: formatAmount(totalLockedYFI, 4)?.toString() ?? '-'
+							content: formatAmount(totalLockedYFI, 4) ?? '-'
 						},
 						{
 							label: 'Your Locked YFI',
-							content: formatAmount(yourLockedYFI, 4)?.toString() ?? '-'
+							content: formatAmount(yourLockedYFI, 4) ?? '-'
 						},
 						{
 							label: 'Expiration for the lock',

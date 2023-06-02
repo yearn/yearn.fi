@@ -6,7 +6,6 @@ import {useMemo} from 'react';
 import {parseEther} from 'viem';
 import {useContractReads, usePrepareContractWrite} from 'wagmi';
 import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
-import {toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
 import {BALWETH_TOKEN_ADDRESS, LPYBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, VEBAL_TOKEN_ADDRESS, VEBALPEG_QUERY_HELP_CONTRACT, YBAL_TOKEN_ADDRESS, YBAL_VOTER_ADDRESS, ZERO_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {decodeAsBigInt} from '@yearn-finance/web-lib/utils/decoder';
 import STYBAL_ABI from '@yBal/utils/abi/styBal.abi';
@@ -39,24 +38,24 @@ export const defaultBalHoldings = {
 ** This context controls the Holdings computation.
 ******************************************************************************/
 export function useHoldings(): TBalHoldings {
-	const yBalContract = {address: toWagmiAddress(YBAL_TOKEN_ADDRESS), abi: ERC20_ABI};
-	const lpyBalContract = {address: toWagmiAddress(LPYBAL_TOKEN_ADDRESS), abi: ERC20_ABI};
-	const styBalContract = {address: toWagmiAddress(STYBAL_TOKEN_ADDRESS), abi: STYBAL_ABI};
-	const veBalContract = {address: toWagmiAddress(VEBAL_TOKEN_ADDRESS), abi: VE_BAL_ABI};
-	const veBalQueryPegHelpContract = {address: toWagmiAddress(VEBALPEG_QUERY_HELP_CONTRACT), abi: VEBALPEG_HELPER_ABI};
+	const yBalContract = {address: YBAL_TOKEN_ADDRESS, abi: ERC20_ABI};
+	const lpyBalContract = {address: LPYBAL_TOKEN_ADDRESS, abi: ERC20_ABI};
+	const styBalContract = {address: STYBAL_TOKEN_ADDRESS, abi: STYBAL_ABI};
+	const veBalContract = {address: VEBAL_TOKEN_ADDRESS, abi: VE_BAL_ABI};
+	const veBalQueryPegHelpContract = {address: VEBALPEG_QUERY_HELP_CONTRACT, abi: VEBALPEG_HELPER_ABI};
 
 	const pegSwapArguments = {
 		poolId: '0xd61e198e139369a40818fe05f5d5e6e045cd6eaf000000000000000000000540' as Hex,
 		kind: 0,
-		assetIn: toWagmiAddress(BALWETH_TOKEN_ADDRESS), //BALWETH
-		assetOut: toWagmiAddress(YBAL_TOKEN_ADDRESS), //YBAL
+		assetIn: BALWETH_TOKEN_ADDRESS, //BALWETH
+		assetOut: YBAL_TOKEN_ADDRESS, //YBAL
 		amount: parseEther('1'),
 		userData: '0x' as Hex
 	};
 	const pegFundArguments = {
-		sender: toWagmiAddress(ZERO_ADDRESS),
+		sender: ZERO_ADDRESS,
 		fromInternalBalance: false,
-		recipient: toWagmiAddress(ZERO_ADDRESS),
+		recipient: ZERO_ADDRESS,
 		toInternalBalance: false
 	};
 
@@ -66,7 +65,7 @@ export function useHoldings(): TBalHoldings {
 			{...styBalContract, functionName: 'totalAssets'},
 			{...lpyBalContract, functionName: 'totalSupply'},
 			{...veBalContract, functionName: 'totalSupply'},
-			{...veBalContract, functionName: 'balanceOf', args: [toWagmiAddress(YBAL_VOTER_ADDRESS)]}
+			{...veBalContract, functionName: 'balanceOf', args: [YBAL_VOTER_ADDRESS]}
 		]
 	});
 	const {data: peg, status: pegStatus} = usePrepareContractWrite({

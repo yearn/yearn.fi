@@ -6,7 +6,7 @@ import type {ImageProps} from 'next/image';
 import type {CSSProperties, ReactElement} from 'react';
 
 function ImageWithFallback(props: ImageProps & {onCatchError?: VoidFunction}): ReactElement {
-	const {alt, src, ...rest} = props;
+	const {alt, src, onCatchError, ...rest} = props;
 	const [imageSrc, set_imageSrc] = useState(src);
 	const [imageStyle, set_imageStyle] = useState<CSSProperties>({});
 
@@ -19,7 +19,7 @@ function ImageWithFallback(props: ImageProps & {onCatchError?: VoidFunction}): R
 				performBatchedUpdates((): void => {
 					set_imageSrc('/placeholder.png');
 					set_imageStyle({filter: 'opacity(0.2)'});
-					props.onCatchError?.();
+					onCatchError?.();
 				});
 			}}
 			{...rest} />

@@ -26,7 +26,7 @@ function Harvests(): ReactElement {
 
 	return (
 		<div className={'col-span-12 flex w-full flex-col bg-neutral-100'}>
-			<div className={'flex flex-row items-center justify-between space-x-6 px-4 pt-4 pb-2 md:space-x-0 md:px-10 md:pt-10 md:pb-8'}>
+			<div className={'flex flex-row items-center justify-between space-x-6 px-4 pb-2 pt-4 md:space-x-0 md:px-10 md:pb-8 md:pt-10'}>
 				<div className={'w-1/2 md:w-auto'}>
 					<h2 className={'text-lg font-bold md:text-3xl'}>{'Harvests'}</h2>
 				</div>

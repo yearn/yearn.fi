@@ -140,11 +140,11 @@ function CardZap(): ReactElement {
 						{'Amount'}
 					</label>
 					<div className={'flex h-10 items-center bg-neutral-100 p-2'}>
-						<div className={'flex h-10 w-full flex-row items-center justify-between py-4 px-0'}>
+						<div className={'flex h-10 w-full flex-row items-center justify-between px-0 py-4'}>
 							<input
 								id={'amount'}
 								suppressHydrationWarning
-								className={`w-full overflow-x-scroll border-none bg-transparent py-4 px-0 font-bold outline-none scrollbar-none ${isActive ? '' : 'cursor-not-allowed'}`}
+								className={`w-full overflow-x-scroll border-none bg-transparent px-0 py-4 font-bold outline-none scrollbar-none ${isActive ? '' : 'cursor-not-allowed'}`}
 								type={'text'}
 								disabled={!isActive}
 								value={amount.normalized}
@@ -176,7 +176,7 @@ function CardZap(): ReactElement {
 				</div>
 			</div>
 
-			<div className={'mt-2 mb-4 hidden grid-cols-2 gap-4 md:grid lg:mt-8 lg:mb-10'}>
+			<div className={'mb-4 mt-2 hidden grid-cols-2 gap-4 md:grid lg:mb-10 lg:mt-8'}>
 				<div className={'flex items-center justify-center'}>
 					<ArrowDown />
 				</div>
@@ -185,7 +185,7 @@ function CardZap(): ReactElement {
 				</div>
 			</div>
 
-			<div className={'mt-4 mb-8 grid grid-cols-2 gap-4 md:mt-0'}>
+			<div className={'mb-8 mt-4 grid grid-cols-2 gap-4 md:mt-0'}>
 				<label className={'relative z-10 flex flex-col space-y-1'}>
 					<p className={'text-base text-neutral-600'}>{'Swap to'}</p>
 					<Dropdown

@@ -1,10 +1,9 @@
 import {useCallback, useMemo, useRef} from 'react';
-import useSWRMutation from 'swr/mutation';
 import {Solver} from '@vaults/contexts/useSolver';
-import {useVaultEstimateOutFetcher} from '@vaults/hooks/useVaultEstimateOutFetcher';
+import getVaultEstimateOut from '@vaults/utils/getVaultEstimateOut';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {allowanceKey, isZeroAddress, toAddress, toWagmiAddress} from '@yearn-finance/web-lib/utils/address';
+import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {approvedERC20Amount, approveERC20, migrateShares} from '@common/utils/actions';
@@ -13,48 +12,12 @@ import {assert} from '@common/utils/assert';
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TNormalizedBN} from '@common/types/types';
-import type {TVaultEstimateOutFetcher} from '@vaults/hooks/useVaultEstimateOutFetcher';
-import type {TInitSolverArgs, TSolverContext, TVanillaLikeResult} from '@vaults/types/solvers';
-
-function useQuote(): [TVanillaLikeResult, (request: TInitSolverArgs, shouldPreventErrorToast?: boolean) => Promise<TNormalizedBN>] {
-	const retrieveExpectedOut = useVaultEstimateOutFetcher();
-	const {data, error, trigger, isMutating} = useSWRMutation(
-		'InternalMigration',
-		async (_: string, data: {arg: TVaultEstimateOutFetcher}): Promise<TNormalizedBN> => retrieveExpectedOut(data.arg)
-	);
-
-	const getQuote = useCallback(async (
-		request: TInitSolverArgs,
-		shouldPreventErrorToast = false //do nothing, for consistency with other solvers
-	): Promise<TNormalizedBN> => {
-		shouldPreventErrorToast;
-
-		const canExecuteFetch = (
-			!request.inputToken || !request.outputToken || !request.inputAmount ||
-			!(isZeroAddress(request.inputToken.value) || isZeroAddress(request.outputToken.value) || request.inputAmount === 0n)
-		);
-
-		if (canExecuteFetch) {
-			const result = await trigger([request.inputToken, request.outputToken, request.inputAmount, request.isDepositing]);
-			return result || toNormalizedBN(0);
-		}
-		return toNormalizedBN(0);
-	}, [trigger]);
-
-	return [
-		useMemo((): TVanillaLikeResult => ({
-			result: data || toNormalizedBN(0),
-			isLoading: isMutating,
-			error
-		}), [data, error, isMutating]),
-		getQuote
-	];
-}
+import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
 
 export function useSolverInternalMigration(): TSolverContext {
 	const {provider} = useWeb3();
-	const {safeChainID} = useChainID();
-	const [latestQuote, getQuote] = useQuote();
+	const {chainID, safeChainID} = useChainID();
+	const latestQuote = useRef<TNormalizedBN>();
 	const request = useRef<TInitSolverArgs>();
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
 
@@ -65,28 +28,18 @@ export function useSolverInternalMigration(): TSolverContext {
 	**********************************************************************************************/
 	const init = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN> => {
 		request.current = _request;
-		return await getQuote(_request);
-	}, [getQuote]);
-
-	/* 🔵 - Yearn Finance **************************************************************************
-	** refreshQuote can be called by the user to refresh the quote. The same parameters are used
-	** as in the initial request and it will fails if request is not set.
-	** init should be called first to initialize the request.
-	**********************************************************************************************/
-	const refreshQuote = useCallback(async (): Promise<void> => {
-		if (request.current) {
-			getQuote(request.current);
-		}
-	}, [request, getQuote]);
-
-	/* 🔵 - Yearn Finance ******************************************************
-	** Retrieve the current outValue from the quote, which will be used to
-	** display the current value to the user.
-	**************************************************************************/
-	const onRetrieveExpectedOut = useCallback(async (request: TInitSolverArgs): Promise<TNormalizedBN> => {
-		const quoteResult = await getQuote(request, true);
-		return quoteResult;
-	}, [getQuote]);
+		const estimateOut = await getVaultEstimateOut({
+			inputToken: toAddress(_request.inputToken.value),
+			outputToken: toAddress(_request.outputToken.value),
+			inputDecimals: _request.inputToken.decimals,
+			outputDecimals: _request.outputToken.decimals,
+			inputAmount: _request.inputAmount,
+			isDepositing: _request.isDepositing,
+			chainID: chainID
+		});
+		latestQuote.current = estimateOut;
+		return latestQuote.current;
+	}, [chainID]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Retrieve the allowance for the token to be used by the solver. This will
@@ -133,8 +86,8 @@ export function useSolverInternalMigration(): TSolverContext {
 
 		const result = await approveERC20({
 			connector: provider,
-			contractAddress: toWagmiAddress(request.current.inputToken.value),
-			spenderAddress: toWagmiAddress(request.current.migrator),
+			contractAddress: toAddress(request.current.inputToken.value),
+			spenderAddress: request.current.migrator,
 			amount: amount,
 			statusHandler: txStatusSetter
 		});
@@ -152,15 +105,12 @@ export function useSolverInternalMigration(): TSolverContext {
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
 		assert(request.current, 'Request is not set');
-		assert(request.current.inputToken, 'Input token is not set');
-		assert(request.current.outputToken, 'Output token is not set');
-		assert(request.current.migrator, 'Migrator is not defined');
 
 		const result = await migrateShares({
 			connector: provider,
-			contractAddress: toWagmiAddress(request.current.migrator),
-			fromVault: toWagmiAddress(request.current.inputToken.value),
-			toVault: toWagmiAddress(request.current.outputToken.value),
+			contractAddress: request.current.migrator,
+			fromVault: request.current.inputToken.value,
+			toVault: request.current.outputToken.value,
 			statusHandler: txStatusSetter
 		});
 		if (result.isSuccessful) {
@@ -170,14 +120,11 @@ export function useSolverInternalMigration(): TSolverContext {
 
 	return useMemo((): TSolverContext => ({
 		type: Solver.INTERNAL_MIGRATION,
-		quote: latestQuote?.result || toNormalizedBN(0),
-		getQuote: getQuote,
-		refreshQuote: refreshQuote,
+		quote: latestQuote?.current || toNormalizedBN(0),
 		init,
-		onRetrieveExpectedOut,
 		onRetrieveAllowance,
 		onApprove,
 		onExecuteDeposit: onExecuteMigration,
 		onExecuteWithdraw: async (): Promise<void> => Promise.reject()
-	}), [latestQuote?.result, getQuote, refreshQuote, init, onApprove, onExecuteMigration, onRetrieveAllowance, onRetrieveExpectedOut]);
+	}), [latestQuote, init, onApprove, onExecuteMigration, onRetrieveAllowance]);
 }
