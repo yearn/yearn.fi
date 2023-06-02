@@ -1,6 +1,7 @@
 import React, {Fragment, useMemo} from 'react';
 import Image from 'next/image';
 import {Popover, Transition} from '@headlessui/react';
+import {captureException} from '@sentry/nextjs';
 import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
@@ -47,6 +48,7 @@ function	TokenItem({element}: {element: TBalanceReminderElement}): ReactElement 
 				}
 			});
 		} catch (error) {
+			captureException(error);
 			console.warn(error);
 		}
 	}
