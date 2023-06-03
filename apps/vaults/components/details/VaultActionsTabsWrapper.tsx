@@ -11,12 +11,12 @@ import ImageWithOverlay from '@vaults/components/ImageWithOverlay';
 import {RewardsTab} from '@vaults/components/RewardsTab';
 import SettingsPopover from '@vaults/components/SettingsPopover';
 import {Flow, useActionFlow} from '@vaults/contexts/useActionFlow';
-import {Solver} from '@vaults/contexts/useSolver';
 import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useLocalStorage} from '@yearn-finance/web-lib/hooks/useLocalStorage';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import IconChevron from '@common/icons/IconChevron';
+import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
@@ -45,7 +45,7 @@ function	VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}):
 	const {onSwitchSelectedOptions, isDepositing, actionParams, currentSolver} = useActionFlow();
 	const [possibleTabs, set_possibleTabs] = useState<TTabsOptions[]>([tabs[0], tabs[1]]);
 	const {stakingRewardsByVault} = useStakingRewards();
-	const willDepositAndStake = currentSolver === Solver.OPTIMISM_BOOSTER;
+	const willDepositAndStake = currentSolver === Solver.enum.OptimismBooster;
 	const hasStakingRewards = !!stakingRewardsByVault[currentVault.address];
 	const [currentTab, set_currentTab] = useState<TTabsOptions>(
 		getCurrentTab({isDepositing, hasMigration: currentVault?.migration?.available, isRetired: currentVault?.details?.retired})

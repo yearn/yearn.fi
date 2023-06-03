@@ -2,7 +2,7 @@ import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
 import type {TBalanceData} from '@yearn-finance/web-lib/hooks/types';
 import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
-import type {Solver} from '@vaults/contexts/useSolver';
+import type {TSolver} from '@common/schemas/yDaemonTokenListBalances';
 import type {EXTERNAL_SERVICE_PROVIDER} from '@vaults/utils/migrationTable';
 
 export type	TClaimable = {
@@ -25,7 +25,7 @@ export type TDropdownOption = {
 	value: string;
 	icon?: ReactElement;
 	zapVia?: TAddress;
-	solveVia?: Solver[];
+	solveVia?: TSolver[];
 	balanceSource?: string;
 	settings?: {
 		serviceID?: EXTERNAL_SERVICE_PROVIDER

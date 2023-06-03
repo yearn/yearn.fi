@@ -1,6 +1,5 @@
 import React, {useMemo} from 'react';
 import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
-import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -13,6 +12,7 @@ import {useFetch} from '@common/hooks/useFetch';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
 import {yDaemonEarnedSchema} from '@common/schemas/yDaemonEarnedSchema';
 import {getVaultName} from '@common/utils';
+import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonEarned} from '@common/schemas/yDaemonEarnedSchema';
@@ -43,14 +43,12 @@ function VaultHeaderLineItem({label, children, legend}: TVaultHeaderLineItemProp
 function VaultDetailsHeader({vault}: { vault: TYDaemonVault }): ReactElement {
 	const {safeChainID} = useChainID();
 	const {address: userAddress} = useWeb3();
-	const {settings: baseAPISettings} = useSettings();
+	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: safeChainID});
 
 	const {address, apy, tvl, decimals, symbol = 'token', token} = vault;
 
-	const YDAEMON_BASE_URI = `${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/${safeChainID}`;
-
 	const {data: earned} = useFetch<TYDaemonEarned>({
-		endpoint: (address && userAddress) ? `${YDAEMON_BASE_URI}/earned/${userAddress}` : null,
+		endpoint: (address && userAddress) ? `${yDaemonBaseUri}/earned/${userAddress}` : null,
 		schema: yDaemonEarnedSchema
 	});
 

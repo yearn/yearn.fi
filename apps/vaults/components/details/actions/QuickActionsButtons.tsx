@@ -2,7 +2,7 @@ import React, {useCallback, useEffect, useState} from 'react';
 import {ethers} from 'ethers';
 import {useAsync} from '@react-hookz/web';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
-import {Solver, useSolver} from '@vaults/contexts/useSolver';
+import {useSolver} from '@vaults/contexts/useSolver';
 import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -12,11 +12,12 @@ import {ETH_TOKEN_ADDRESS, YVWETH_ADDRESS} from '@yearn-finance/web-lib/utils/co
 import {formatBN, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useWallet} from '@common/contexts/useWallet';
+import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 
 import type {ReactElement} from 'react';
 import type {TNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 
-function	VaultDetailsQuickActionsButtons(): ReactElement {
+function VaultDetailsQuickActionsButtons(): ReactElement {
 	const {refresh} = useWallet();
 	const {refresh: refreshZapBalances} = useWalletForZap();
 	const {address, isActive} = useWeb3();
@@ -39,17 +40,21 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 
 	const onSuccess = useCallback(async (): Promise<void> => {
 		onChangeAmount(toNormalizedBN(0));
-		if ([Solver.VANILLA, Solver.CHAIN_COIN, Solver.PARTNER_CONTRACT, Solver.OPTIMISM_BOOSTER].includes(currentSolver)) {
+		if (
+			Solver.enum.Vanilla === currentSolver,
+			Solver.enum.ChainCoin === currentSolver,
+			Solver.enum.PartnerContract === currentSolver,
+			Solver.enum.OptimismBooster === currentSolver) {
 			await refresh([
 				{token: toAddress(actionParams?.selectedOptionFrom?.value)},
 				{token: toAddress(actionParams?.selectedOptionTo?.value)}
 			]);
-		} else if ([Solver.INTERNAL_MIGRATION].includes(currentSolver)) {
+		} else if (Solver.enum.InternalMigration === currentSolver) {
 			await refresh([
 				{token: toAddress(actionParams?.selectedOptionFrom?.value)},
 				{token: toAddress(actionParams?.selectedOptionTo?.value)}
 			]);
-		} else if ([Solver.COWSWAP, Solver.PORTALS, Solver.WIDO].includes(currentSolver)) {
+		} else if (Solver.enum.Cowswap === currentSolver || Solver.enum.Portals === currentSolver || Solver.enum.Wido === currentSolver) {
 			if (isDepositing) { //refresh input from zap wallet, refresh output from default
 				await Promise.all([
 					refreshZapBalances([{token: toAddress(actionParams?.selectedOptionFrom?.value)}]),
@@ -62,7 +67,7 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 				]);
 			}
 		}
-	// eslint-disable-next-line react-hooks/exhaustive-deps
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [currentSolver, isDepositing, onChangeAmount, actionParams?.selectedOptionFrom?.value, actionParams?.selectedOptionTo?.value]);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -72,8 +77,8 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 	** This approve can not be triggered if the wallet is not active
 	** (not connected) or if the tx is still pending.
 	**************************************************************************/
-	async function	onApproveFrom(): Promise<void> {
-		const	shouldApproveInfinite = currentSolver === Solver.PARTNER_CONTRACT || currentSolver === Solver.VANILLA || currentSolver === Solver.INTERNAL_MIGRATION;
+	async function onApproveFrom(): Promise<void> {
+		const shouldApproveInfinite = currentSolver === Solver.enum.PartnerContract || currentSolver === Solver.enum.Vanilla || currentSolver === Solver.enum.InternalMigration;
 		onApprove(
 			shouldApproveInfinite ? ethers.constants.MaxUint256 : actionParams?.amount.raw,
 			set_txStatusApprove,
@@ -90,7 +95,7 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 	/* 🔵 - Yearn Finance ******************************************************
 	** Wrapper to decide if we should use the partner contract or not
 	**************************************************************************/
-	const isDepositingEthViaChainCoin = (currentSolver === Solver.CHAIN_COIN && isDepositing);
+	const isDepositingEthViaChainCoin = (currentSolver === Solver.enum.ChainCoin && isDepositing);
 	const shouldUseChainCoinContract = (
 		toAddress(actionParams?.selectedOptionFrom?.value) === ETH_TOKEN_ADDRESS
 		&& toAddress(actionParams?.selectedOptionTo?.value) === YVWETH_ADDRESS
@@ -99,12 +104,12 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 	const isButtonBusy = txStatusApprove.pending || status !== 'success';
 	if (
 		!(isDepositingEthViaChainCoin && shouldUseChainCoinContract) && (isButtonBusy || hasAllowanceSet) && (
-			(currentSolver === Solver.VANILLA && isDepositing)
-			|| (currentSolver === Solver.INTERNAL_MIGRATION)
-			|| (currentSolver === Solver.COWSWAP)
-			|| (currentSolver === Solver.WIDO)
-			|| (currentSolver === Solver.PARTNER_CONTRACT)
-			|| (currentSolver === Solver.OPTIMISM_BOOSTER)
+			(currentSolver === Solver.enum.Vanilla && isDepositing)
+			|| (currentSolver === Solver.enum.InternalMigration)
+			|| (currentSolver === Solver.enum.Cowswap)
+			|| (currentSolver === Solver.enum.Wido)
+			|| (currentSolver === Solver.enum.PartnerContract)
+			|| (currentSolver === Solver.enum.OptimismBooster)
 		)
 	) {
 		return (
@@ -118,8 +123,8 @@ function	VaultDetailsQuickActionsButtons(): ReactElement {
 		);
 	}
 
-	if (isDepositing || currentSolver === Solver.INTERNAL_MIGRATION) {
-		if (currentSolver === Solver.OPTIMISM_BOOSTER) {
+	if (isDepositing || currentSolver === Solver.enum.InternalMigration) {
+		if (currentSolver === Solver.enum.OptimismBooster) {
 			return (
 				<Button
 					onClick={async (): Promise<void> => onExecuteDeposit(set_txStatusExecuteDeposit, onSuccess)}

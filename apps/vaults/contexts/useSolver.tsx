@@ -13,46 +13,36 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
+import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 import {hash} from '@common/utils';
 
 import type {MaybeString} from '@yearn-finance/web-lib/types';
+import type {TSolver} from '@common/schemas/yDaemonTokenListBalances';
 import type {TNormalizedBN} from '@common/types/types';
 import type {TInitSolverArgs, TSolverContext, TWithSolver} from '@vaults/types/solvers';
 
-export enum Solver {
-	VANILLA = 'Vanilla',
-	PARTNER_CONTRACT = 'PartnerContract',
-	CHAIN_COIN = 'ChainCoin',
-	INTERNAL_MIGRATION = 'InternalMigration',
-	OPTIMISM_BOOSTER = 'OptimismBooster',
-	COWSWAP = 'Cowswap',
-	WIDO = 'Wido',
-	PORTALS = 'Portals',
-	NONE = 'None'
-}
-
 export const isSolverDisabled = {
-	[Solver.VANILLA]: false,
-	[Solver.PARTNER_CONTRACT]: false,
-	[Solver.CHAIN_COIN]: false,
-	[Solver.INTERNAL_MIGRATION]: false,
-	[Solver.COWSWAP]: false,
-	[Solver.OPTIMISM_BOOSTER]: false,
-	[Solver.WIDO]: false,
-	[Solver.PORTALS]: false,
-	[Solver.NONE]: false
+	[Solver.enum.Vanilla]: false,
+	[Solver.enum.PartnerContract]: false,
+	[Solver.enum.ChainCoin]: false,
+	[Solver.enum.InternalMigration]: false,
+	[Solver.enum.Cowswap]: false,
+	[Solver.enum.OptimismBooster]: false,
+	[Solver.enum.Wido]: false,
+	[Solver.enum.Portals]: false,
+	[Solver.enum.None]: false
 };
 
 type TUpdateSolverHandler = {
 	request: TInitSolverArgs;
 	quote: PromiseSettledResult<TNormalizedBN>;
-	solver: Solver;
+	solver: TSolver;
 	ctx: TSolverContext;
 }
 
 const DefaultWithSolverContext: TWithSolver = {
-	currentSolver: Solver.VANILLA,
-	effectiveSolver: Solver.VANILLA,
+	currentSolver: Solver.enum.Vanilla,
+	effectiveSolver: Solver.enum.Vanilla,
 	expectedOut: toNormalizedBN(0),
 	hash: undefined,
 	isLoadingExpectedOut: false,
@@ -107,37 +97,37 @@ function WithSolverContextApp({children}: { children: React.ReactElement }): Rea
 			isDepositing: isDepositing
 		};
 
-		const isValidSolver = ({quote, solver}: { quote: PromiseSettledResult<TNormalizedBN>; solver: Solver }): boolean => {
+		const isValidSolver = ({quote, solver}: { quote: PromiseSettledResult<TNormalizedBN>; solver: TSolver }): boolean => {
 			return quote.status === 'fulfilled' && quote?.value.raw?.gt(0) && !isSolverDisabled[solver];
 		};
 
 		switch (currentSolver) {
-			case Solver.WIDO:
-			case Solver.PORTALS:
-			case Solver.COWSWAP: {
+			case Solver.enum.Wido:
+			case Solver.enum.Portals:
+			case Solver.enum.Cowswap: {
 				const [widoQuote, cowswapQuote, portalsQuote] = await Promise.allSettled([
-					wido.init(request, currentSolver === Solver.WIDO),
-					cowswap.init(request, currentSolver === Solver.COWSWAP),
-					portals.init(request, currentSolver === Solver.PORTALS)
+					wido.init(request, currentSolver === Solver.enum.Wido),
+					cowswap.init(request, currentSolver === Solver.enum.Cowswap),
+					portals.init(request, currentSolver === Solver.enum.Portals)
 				]);
 
 				const solvers: {
-					[key in Solver]?: { quote: PromiseSettledResult<TNormalizedBN>; ctx: TSolverContext };
+					[key in TSolver]?: { quote: PromiseSettledResult<TNormalizedBN>; ctx: TSolverContext };
 				} = {};
 
 				[
-					{solver: Solver.WIDO, quote: widoQuote, ctx: wido},
-					{solver: Solver.COWSWAP, quote: cowswapQuote, ctx: cowswap},
-					{solver: Solver.PORTALS, quote: portalsQuote, ctx: portals}
+					{solver: Solver.enum.Wido, quote: widoQuote, ctx: wido},
+					{solver: Solver.enum.Cowswap, quote: cowswapQuote, ctx: cowswap},
+					{solver: Solver.enum.Portals, quote: portalsQuote, ctx: portals}
 				].forEach(({solver, quote, ctx}): void => {
 					if (isValidSolver({quote, solver})) {
 						solvers[solver] = {quote, ctx};
 					}
 				});
 
-				solvers[Solver.NONE] = {quote: {status: 'fulfilled', value: toNormalizedBN(0)}, ctx: vanilla};
+				solvers[Solver.enum.None] = {quote: {status: 'fulfilled', value: toNormalizedBN(0)}, ctx: vanilla};
 
-				const solverPriority = [Solver.WIDO, Solver.COWSWAP, Solver.PORTALS, Solver.NONE];
+				const solverPriority = [Solver.enum.Wido, Solver.enum.Cowswap, Solver.enum.Portals, Solver.enum.None];
 				
 				const newSolverPriority = [currentSolver, ...solverPriority.filter((solver): boolean => solver !== currentSolver)];
 
@@ -146,41 +136,44 @@ function WithSolverContextApp({children}: { children: React.ReactElement }): Rea
 						continue;
 					}
 
-					const {quote, ctx} = solvers[solver] ?? solvers[Solver.NONE];
-					await handleUpdateSolver({request, quote, solver, ctx});
+					const result = solvers[solver] ?? solvers[Solver.enum.None];
+					if (result) {
+						const {quote, ctx} = result;
+						await handleUpdateSolver({request, quote, solver, ctx});
+					}
 					return;
 				}
 
 				break;
 			}
-			case Solver.OPTIMISM_BOOSTER: {
+			case Solver.enum.OptimismBooster: {
 				const quote = await optimismBooster.init(request);
-				const requestHash = await hash(JSON.stringify({...request, solver: Solver.OPTIMISM_BOOSTER, expectedOut: quote.raw.toString()}));
+				const requestHash = await hash(JSON.stringify({...request, solver: Solver.enum.OptimismBooster, expectedOut: quote.raw.toString()}));
 				performBatchedUpdates((): void => {
 					set_currentSolverState({...optimismBooster, quote, hash: requestHash});
 					set_isLoading(false);
 				});
 				break;
 			}
-			case Solver.CHAIN_COIN: {
+			case Solver.enum.ChainCoin: {
 				const [quote] = await Promise.allSettled([chainCoin.init(request)]);
-				await handleUpdateSolver({request, quote, solver: Solver.CHAIN_COIN, ctx: chainCoin});
+				await handleUpdateSolver({request, quote, solver: Solver.enum.ChainCoin, ctx: chainCoin});
 				break;
 			}
-			case Solver.PARTNER_CONTRACT: {
+			case Solver.enum.PartnerContract: {
 				const [quote] = await Promise.allSettled([partnerContract.init(request)]);
-				await handleUpdateSolver({request, quote, solver: Solver.PARTNER_CONTRACT, ctx: partnerContract});
+				await handleUpdateSolver({request, quote, solver: Solver.enum.PartnerContract, ctx: partnerContract});
 				break;
 			}
-			case Solver.INTERNAL_MIGRATION: {
+			case Solver.enum.InternalMigration: {
 				request.migrator = currentVault.migration.contract;
 				const [quote] = await Promise.allSettled([internalMigration.init(request)]);
-				await handleUpdateSolver({request, quote, solver: Solver.INTERNAL_MIGRATION, ctx: internalMigration});
+				await handleUpdateSolver({request, quote, solver: Solver.enum.InternalMigration, ctx: internalMigration});
 				break;
 			}
 			default: {
 				const [quote] = await Promise.allSettled([vanilla.init(request)]);
-				await handleUpdateSolver({request, quote, solver: Solver.VANILLA, ctx: vanilla});
+				await handleUpdateSolver({request, quote, solver: Solver.enum.Vanilla, ctx: vanilla});
 			}
 		}
 	// eslint-disable-next-line react-hooks/exhaustive-deps

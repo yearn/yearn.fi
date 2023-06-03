@@ -2,7 +2,6 @@ import React, {createContext, useCallback, useContext, useMemo, useState} from '
 import {Contract} from 'ethcall';
 import {ethers} from 'ethers';
 import useSWR from 'swr';
-import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -10,6 +9,9 @@ import {CRV_TOKEN_ADDRESS, CVXCRV_TOKEN_ADDRESS, LPYCRV_TOKEN_ADDRESS, STYCRV_TO
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import {formatUnits, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
+import {useFetch} from '@common/hooks/useFetch';
+import {yDaemonVaultSchema} from '@common/schemas/yDaemonVaultsSchemas';
+import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 import CURVE_CRV_YCRV_LP_ABI from '@yCRV/utils/abi/curveCrvYCrvLp.abi';
 import STYCRV_ABI from '@yCRV/utils/abi/styCRV.abi';
 import YVECRV_ABI from '@yCRV/utils/abi/yveCRV.abi';
@@ -68,7 +70,7 @@ const	defaultProps = {
 const	YCRVContext = createContext<TYCRVContext>(defaultProps);
 export const YCRVContextApp = ({children}: {children: ReactElement}): ReactElement => {
 	const {provider, address, isActive} = useWeb3();
-	const {settings: baseAPISettings} = useSettings();
+	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: 1});
 	const [slippage, set_slippage] = useState<number>(0.6);
 
 	// const	{data: styCRVExperimentalAPY} = useSWR(
@@ -77,15 +79,13 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 	// 	{revalidateOnFocus: false}
 	// ) as SWRResponse;
 
-	const	{data: styCRVVault} = useSWR<TYDaemonVault>(
-		`${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/1/vaults/${STYCRV_TOKEN_ADDRESS}`,
-		baseFetcher,
-		{revalidateOnFocus: false}
-	);
-
+	const {data: styCRVVault} = useFetch<TYDaemonVault>({
+		endpoint: `${yDaemonBaseUri}/vaults/${STYCRV_TOKEN_ADDRESS}`,
+		schema: yDaemonVaultSchema
+	});
 
 	const	{data: yCRVHarvests} = useSWR(
-		`${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/1/vaults/harvests/${STYCRV_TOKEN_ADDRESS},${LPYCRV_TOKEN_ADDRESS}`,
+		`${yDaemonBaseUri}/vaults/harvests/${STYCRV_TOKEN_ADDRESS},${LPYCRV_TOKEN_ADDRESS}`,
 		baseFetcher,
 		{revalidateOnFocus: false}
 	) as SWRResponse;

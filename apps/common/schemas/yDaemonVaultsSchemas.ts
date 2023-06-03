@@ -160,8 +160,25 @@ export const yDaemonVaultSchema = z.object({
 
 export const yDaemonVaultsSchema = z.array(yDaemonVaultSchema);
 
+export const yDaemonVaultHarvestSchema = z.object({
+	vaultAddress: z.string().optional(),
+	strategyAddress: z.string().optional(),
+	txHash:z.string().optional(),
+	timestamp: z.string(),
+	profit: z.string(),
+	profitValue: z.number().optional(),
+	loss: z.string(),
+	lossValue: z.number().optional()
+});
+
+export const yDaemonVaultHarvestsSchema = z.array(yDaemonVaultHarvestSchema);
+
 export type TYDaemonVault = z.infer<typeof yDaemonVaultSchema>;
 
 export type TYDaemonVaultStrategy = z.infer<typeof yDaemonVaultStrategySchema>;
 
 export type TYDaemonVaults = z.infer<typeof yDaemonVaultsSchema>;
+
+export type TYDaemonVaultHarvestSchema = z.infer<typeof yDaemonVaultHarvestSchema>;
+
+export type TYDaemonVaultHarvestsSchema = z.infer<typeof yDaemonVaultHarvestsSchema>;

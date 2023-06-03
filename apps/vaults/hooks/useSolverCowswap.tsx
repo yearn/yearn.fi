@@ -3,7 +3,7 @@ import {ethers} from 'ethers';
 import axios from 'axios';
 import useSWRMutation from 'swr/mutation';
 import {domain, OrderKind, SigningScheme, signOrder} from '@gnosis.pm/gp-v2-contracts';
-import {isSolverDisabled, Solver} from '@vaults/contexts/useSolver';
+import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
@@ -12,6 +12,7 @@ import {ETH_TOKEN_ADDRESS, SOLVER_COW_VAULT_RELAYER_ADDRESS} from '@yearn-financ
 import {formatBN, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
+import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 import {approvedERC20Amount, approveERC20, isApprovedERC20} from '@common/utils/actions/approveToken';
 
 import type {AxiosError} from 'axios';
@@ -92,7 +93,7 @@ export function useSolverCowswap(): TSolverContext {
 	const request = useRef<TInitSolverArgs>();
 	const latestQuote = useRef<TCowAPIResult>();
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
-	const isDisabled = isSolverDisabled[Solver.COWSWAP] || safeChainID !== 1;
+	const isDisabled = isSolverDisabled[Solver.enum.Cowswap] || safeChainID !== 1;
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** A slippage of 1% per default is set to avoid the transaction to fail due to price
@@ -136,7 +137,7 @@ export function useSolverCowswap(): TSolverContext {
 		** This solveVia array is set via the yDaemon tokenList process. If a solve is not set for
 		** a token, you can contact the yDaemon team to add it.
 		******************************************************************************************/
-		if (!sellToken.solveVia?.includes(Solver.COWSWAP)) {
+		if (!sellToken.solveVia?.includes(Solver.enum.Cowswap)) {
 			return toNormalizedBN(0);
 		}
 
@@ -272,7 +273,7 @@ export function useSolverCowswap(): TSolverContext {
 	** display the current value to the user.
 	**************************************************************************/
 	const onRetrieveExpectedOut = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN> => {
-		if (isDisabled || !_request.inputToken.solveVia?.includes(Solver.COWSWAP)) {
+		if (isDisabled || !_request.inputToken.solveVia?.includes(Solver.enum.Cowswap)) {
 			return (toNormalizedBN(0));
 		}
 		const quoteResult = await getQuote(_request, true);
@@ -284,7 +285,7 @@ export function useSolverCowswap(): TSolverContext {
 	** be used to determine if the user should approve the token or not.
 	**************************************************************************/
 	const onRetrieveAllowance = useCallback(async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
-		if (!request?.current || isDisabled || !request?.current?.inputToken?.solveVia?.includes(Solver.COWSWAP)) {
+		if (!request?.current || isDisabled || !request?.current?.inputToken?.solveVia?.includes(Solver.enum.Cowswap)) {
 			return toNormalizedBN(0);
 		}
 
@@ -366,7 +367,7 @@ export function useSolverCowswap(): TSolverContext {
 	}, [execute, provider]);
 
 	return useMemo((): TSolverContext => ({
-		type: Solver.COWSWAP,
+		type: Solver.enum.Cowswap,
 		quote: expectedOut,
 		getQuote: getQuote,
 		refreshQuote,
