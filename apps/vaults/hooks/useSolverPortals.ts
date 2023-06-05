@@ -3,20 +3,21 @@ import {isHex} from 'viem';
 import axios from 'axios';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {getPortalsApproval, getPortalsEstimate, getPortalsTx} from '@vaults/hooks/usePortalsApi';
-import {waitForTransaction} from '@wagmi/core';
+import {getNetwork, prepareSendTransaction, waitForTransaction} from '@wagmi/core';
 import {toast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {allowanceKey, isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
+import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
-import {approveERC20, isApprovedERC20} from '@common/utils/actions';
+import {allowanceOf, approveERC20} from '@common/utils/actions';
 import {assert} from '@common/utils/assert';
-import {assertAddress} from '@common/utils/toWagmiProvider';
+import {assertAddress, toWagmiProvider} from '@common/utils/toWagmiProvider';
 
+import type {BaseError} from 'viem';
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TTxResponse, TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TNormalizedBN} from '@common/types/types';
@@ -70,7 +71,6 @@ export function useSolverPortals(): TSolverContext {
 	const request = useRef<TInitSolverArgs>();
 	const latestQuote = useRef<TPortalEstimate>();
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
-	const {address} = useWeb3();
 	const {zapSlippage} = useYearn();
 	const {safeChainID} = useChainID();
 
@@ -106,9 +106,16 @@ export function useSolverPortals(): TSolverContext {
 		}
 
 		/******************************************************************************************
-		** Finally, we check if the sellToken is ETH. If it is, we return 0.
+		** Then, we check if the sellToken is ETH. If it is, we return 0.
 		******************************************************************************************/
 		if (sellToken.value === ETH_TOKEN_ADDRESS) {
+			return toNormalizedBN(0);
+		}
+
+		/******************************************************************************************
+		** Same is the amount is 0. If it is, we return 0.
+		******************************************************************************************/
+		if (_request.inputAmount === 0n) {
 			return toNormalizedBN(0);
 		}
 
@@ -120,8 +127,9 @@ export function useSolverPortals(): TSolverContext {
 		request.current = _request;
 		const {data, error} = await getQuote(_request, safeChainID, zapSlippage);
 		if (!data) {
+			console.log(error?.message);
 			if (error && !shouldLogError) {
-				toast({type: 'error', content: 'Zap not possible. Try again later or pick another token.'});
+				toast({type: 'error', content: `Zap not possible: ${error?.message}`});
 			}
 			return toNormalizedBN(0);
 		}
@@ -146,47 +154,56 @@ export function useSolverPortals(): TSolverContext {
 		assert(provider, 'Provider is not set');
 		assert(request.current, 'Request is not set');
 		assert(latestQuote.current, 'Quote is not set');
+		assert(zapSlippage > 0, 'Slippage cannot be 0');
 
+		let transaction;
 		try {
-			const transaction = await getPortalsTx({
+			transaction = await getPortalsTx({
 				network: safeChainID,
 				params: {
-					takerAddress: toAddress(address),
+					takerAddress: toAddress(request.current.from),
 					sellToken: toAddress(request.current.inputToken.value),
-					sellAmount: toBigInt(request.current.inputAmount).toString(),
+					sellAmount:toBigInt(request.current.inputAmount).toString(),
 					buyToken: toAddress(request.current.outputToken.value),
 					slippagePercentage: String(zapSlippage / 100),
 					validate: true
 				}
 			});
+		} catch (_error) {
+			const errorMessage = (_error as any).response.data.message;
+			console.error(errorMessage);
+			toast({type: 'error', content: `Zap not possible: ${errorMessage}`});
+			return ({isSuccessful: false});
+		}
 
-			if (!transaction) {
-				throw new Error('Fail to get transaction');
-			}
-
-			const {tx: {value, to, gasLimit, data, ...rest}} = transaction;
-			const signer = await provider.getWalletClient();
+		try {
+			const {tx: {value, to, data, ...rest}} = transaction;
+			const wagmiProvider = await toWagmiProvider(provider);
 
 			assert(isHex(data), 'Data is not hex');
-
-			const hash = await signer.sendTransaction({
+			assert(wagmiProvider.walletClient, 'Wallet client is not set');
+			const {chain} = getNetwork();
+			const tx = await prepareSendTransaction({
+				...wagmiProvider,
+				data,
 				value: toBigInt(value?.hex ?? 0),
-				gas: gasLimit?.hex ? toBigInt(gasLimit.hex) : undefined,
 				to: toAddress(to),
-				data: data,
 				...rest
 			});
-			const receipt = await waitForTransaction({chainId: signer.chain.id, hash});
+			const hash = await wagmiProvider.walletClient.sendTransaction({...tx, chain});
+			const receipt = await waitForTransaction({chainId: wagmiProvider.chainId, hash});
 			if (receipt.status === 'success') {
 				return ({isSuccessful: true, receipt: receipt});
 			}
 			console.error('Fail to perform transaction');
 			return ({isSuccessful: false});
 		} catch (_error) {
-			console.error(_error);
+			const err = _error as BaseError;
+			console.error(err);
+			toast({type: 'error', content: `Zap not possible: ${err.shortMessage}`});
 			return ({isSuccessful: false});
 		}
-	}, [address, provider, safeChainID, zapSlippage]);
+	}, [provider, safeChainID, zapSlippage]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Format the quote to a normalized value, which will be used for subsequent
@@ -229,11 +246,10 @@ export function useSolverPortals(): TSolverContext {
 				}
 			});
 
-			if (!approval) {
-				throw new Error('Fail to get approval');
-			}
-
-			existingAllowances.current[key] = toNormalizedBN(approval.context.allowance, request.current.inputToken.decimals);
+			existingAllowances.current[key] = toNormalizedBN(
+				approval.context.allowance,
+				request.current.inputToken.decimals
+			);
 			return existingAllowances.current[key];
 		} catch (error) {
 			console.error(error);
@@ -270,18 +286,12 @@ export function useSolverPortals(): TSolverContext {
 				}
 			});
 
-			if (!approval) {
-				throw new Error('Fail to get approval');
-			}
-
-			const isApproved = await isApprovedERC20(
-				provider,
-				toAddress(request.current.inputToken.value), //token to approve
-				toAddress(approval.context.spender), //contract to approve
-				amount
-			);
-
-			if (!isApproved) {
+			const allowance = await allowanceOf({
+				connector: provider,
+				tokenAddress: toAddress(request.current.inputToken.value), //token to approve
+				spenderAddress: toAddress(approval.context.spender) //contract to approve
+			});
+			if (allowance < amount) {
 				assertAddress(approval.context.spender, 'spender');
 				const result = await approveERC20({
 					connector: provider,
@@ -291,11 +301,11 @@ export function useSolverPortals(): TSolverContext {
 					statusHandler: txStatusSetter
 				});
 				if (result.isSuccessful) {
-					onSuccess();
+					await onSuccess();
 				}
 				return;
 			}
-			onSuccess();
+			await onSuccess();
 			return;
 		} catch (error) {
 			console.error(error);
@@ -314,10 +324,14 @@ export function useSolverPortals(): TSolverContext {
 	): Promise<void> => {
 		assert(provider, 'Provider is not set');
 
-		new Transaction(provider, execute, txStatusSetter)
-			.populate()
-			.onSuccess(onSuccess)
-			.perform();
+		txStatusSetter({...defaultTxStatus, pending: true});
+		const status = await execute();
+		if (status.isSuccessful) {
+			txStatusSetter({...defaultTxStatus, success: true});
+			await onSuccess();
+		} else {
+			txStatusSetter({...defaultTxStatus, error: true});
+		}
 	}, [execute, provider]);
 
 	return useMemo((): TSolverContext => ({

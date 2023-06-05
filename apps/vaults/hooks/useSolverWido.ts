@@ -134,8 +134,10 @@ export function useSolverWido(): TSolverContext {
 		try {
 			const wagmiProvider = await toWagmiProvider(provider);
 			const {data, to, value} = latestQuote.current;
+
 			assert(isHex(data), 'Data is not hex');
 			assert(wagmiProvider.walletClient, 'Wallet client is not set');
+
 			const {chain} = getNetwork();
 			const hash = await wagmiProvider.walletClient.sendTransaction({
 				...wagmiProvider,

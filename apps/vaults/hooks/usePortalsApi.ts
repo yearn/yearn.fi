@@ -112,29 +112,21 @@ export async function getPortalsEstimate({network, params}: TGetEstimateProps): 
 	}
 }
 
-export async function getPortalsTx({network, params}: TGetTransactionProps): Promise<TPortalTransaction | null> {
+export async function getPortalsTx({network, params}: TGetTransactionProps): Promise<TPortalTransaction> {
 	const baseURL = 'https://api.portals.fi/v1';
 	const axiosInstance: AxiosInstance = axios.create({baseURL});
 
-	try {
-		const path = `/portal/${NETWORK.get(network)}`;
-		const response: AxiosResponse<TPortalTransaction> = await axiosInstance.get(path, {params});
-		return response.data;
-	} catch (err) {
-		return null;
-	}
+	const path = `/portal/${NETWORK.get(network)}`;
+	const response: AxiosResponse<TPortalTransaction> = await axiosInstance.get(path, {params});
+	return response.data;
 }
 
 
-export async function getPortalsApproval({network, params}: TGetApprovalProps): Promise<TPortalsApproval | null> {
+export async function getPortalsApproval({network, params}: TGetApprovalProps): Promise<TPortalsApproval> {
 	const baseURL = 'https://api.portals.fi/v1';
 	const axiosInstance: AxiosInstance = axios.create({baseURL});
 
-	try {
-		const path = `/approval/${NETWORK.get(network)}`;
-		const response: AxiosResponse<TPortalsApproval> = await axiosInstance.get(path, {params});
-		return response.data;
-	} catch (err) {
-		return null;
-	}
+	const path = `/approval/${NETWORK.get(network)}`;
+	const response: AxiosResponse<TPortalsApproval> = await axiosInstance.get(path, {params});
+	return response.data;
 }
