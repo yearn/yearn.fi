@@ -1,5 +1,4 @@
 import React, {createContext, useContext, useMemo} from 'react';
-import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {useFetch} from '@common/hooks/useFetch';
 import {coinGeckoPricesSchema} from '@common/schemas/coinGeckoSchemas';
 import {curveAllGaugesSchema, curveGaugesFromYearnSchema, curveWeeklyFeesSchema} from '@common/schemas/curveSchemas';
@@ -44,7 +43,7 @@ export const CurveContextApp = ({children}: { children: React.ReactElement }): R
 		endpoint: `https://api.coingecko.com/api/v3/simple/price?${cgPricesQueryParams}`,
 		schema: coinGeckoPricesSchema
 	});
-		
+
 	/* 🔵 - Yearn Finance ******************************************************
 	**	Fetch all the CurveGauges to be able to create some new if required
 	***************************************************************************/
@@ -70,9 +69,6 @@ export const CurveContextApp = ({children}: { children: React.ReactElement }): R
 
 			const addressPart = /\([^()]*\)/;
 			gauge.name = gauge.name.replace(addressPart, '');
-			gauge.swap_token = toAddress(gauge.swap_token);
-			gauge.gauge = toAddress(gauge.gauge);
-			gauge.swap = toAddress(gauge.swap);
 			_gaugesForMainnet.push(gauge);
 		}
 		return _gaugesForMainnet;

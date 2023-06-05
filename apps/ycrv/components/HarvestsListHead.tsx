@@ -2,7 +2,7 @@ import React from 'react';
 
 import type {ReactElement} from 'react';
 
-function	HarvestListHead(): ReactElement {
+function HarvestListHead(): ReactElement {
 	return (
 		<div className={'yearn--table-head-wrapper'}>
 			<div className={'yearn--table-head-token-section'}>

@@ -13,9 +13,9 @@ export type TGraphForVaultEarningsProps = {
 	isCumulative?: boolean,
 }
 
-function	GraphForVaultEarnings({currentVault, harvestData, height = 312, isCumulative = true}: TGraphForVaultEarningsProps): ReactElement {
-	const	cumulativeData = useMemo((): {name: string; value: number}[] => {
-		let	cumulativeValue = 0;
+function GraphForVaultEarnings({currentVault, harvestData, height = 312, isCumulative = true}: TGraphForVaultEarningsProps): ReactElement {
+	const cumulativeData = useMemo((): {name: string; value: number}[] => {
+		let cumulativeValue = 0;
 		return (
 			harvestData.map((item: {name: string; value: number}): {name: string; value: number} => {
 				cumulativeValue += item.value;
@@ -66,7 +66,7 @@ function	GraphForVaultEarnings({currentVault, harvestData, height = 312, isCumul
 						delete e.verticalAnchor;
 						delete e.visibleTicksCount;
 						delete e.tickFormatter;
-						const	formatedValue = formatWithUnit(value, 0, 0);
+						const formatedValue = formatWithUnit(value, 0, 0);
 						return <text {...e}>{formatedValue}</text>;
 					}} />
 				<Tooltip

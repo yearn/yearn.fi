@@ -2,7 +2,7 @@ import React from 'react';
 
 import type {ReactElement} from 'react';
 
-function	IconArrowRight(props: React.SVGProps<SVGSVGElement>): ReactElement {
+function IconArrowRight(props: React.SVGProps<SVGSVGElement>): ReactElement {
 	return (
 		<svg
 			{...props}
