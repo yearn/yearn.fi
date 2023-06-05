@@ -150,6 +150,14 @@ export async function depositETH(props: TDepositEth): Promise<TTxResponse> {
 				value: props.amount
 			});
 		}
+		case 1337: {
+			return await handleTx(props, {
+				address: getEthZapperContract(1),
+				abi: ZAP_ETH_TO_YVETH_ABI,
+				functionName: 'deposit',
+				value: props.amount
+			});
+		}
 		default: {
 			throw new Error('Invalid chainId');
 		}
@@ -214,6 +222,14 @@ export async function withdrawETH(props: TWithdrawEth): Promise<TTxResponse> {
 			return await handleTx(props, {
 				address: getEthZapperContract(250),
 				abi: ZAP_FTM_TO_YVFTM_ABI,
+				functionName: 'withdraw',
+				args: [props.amount]
+			});
+		}
+		case 1337: {
+			return await handleTx(props, {
+				address: getEthZapperContract(1),
+				abi: ZAP_ETH_TO_YVETH_ABI,
 				functionName: 'withdraw',
 				args: [props.amount]
 			});

@@ -1,16 +1,17 @@
 import {captureException} from '@sentry/nextjs';
 import {prepareWriteContract, waitForTransaction, writeContract} from '@wagmi/core';
+import {toast} from '@yearn-finance/web-lib/components/yToast';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, ZERO_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {isTAddress} from '@yearn-finance/web-lib/utils/isTAddress';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {assert} from '@common/utils/assert';
 
-import type {BaseError} from 'viem';
+import type {Abi, BaseError, SimulateContractParameters} from 'viem';
 import type {Connector} from 'wagmi';
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
-import type {GetWalletClientResult} from '@wagmi/core';
+import type {GetWalletClientResult, WalletClient} from '@wagmi/core';
 
 export type TWagmiProviderContract = {
 	walletClient: GetWalletClientResult,
@@ -43,11 +44,21 @@ export function assertAddress(addr: string | TAddress | undefined, name?: string
 	assert(toAddress(addr) !== ETH_TOKEN_ADDRESS, `${name || 'Address'} is 0xE`);
 }
 
-type TPrepareWriteContractProp = Parameters<typeof prepareWriteContract>[0];
 
-export async function handleTx(
+type TPrepareWriteContractConfig<
+	TAbi extends Abi | readonly unknown[] = Abi,
+	TFunctionName extends string = string
+> = Omit<SimulateContractParameters<TAbi, TFunctionName>, 'chain' | 'address'> & {
+	chainId?: number
+	walletClient?: WalletClient
+	address: TAddress | undefined
+}
+export async function handleTx<
+	TAbi extends Abi | readonly unknown[],
+	TFunctionName extends string
+>(
 	args: TWriteTransaction,
-	props: Omit<TPrepareWriteContractProp, 'value'> & { value?: bigint; }
+	props: TPrepareWriteContractConfig<TAbi, TFunctionName>
 ): Promise<TTxResponse> {
 	args.statusHandler?.({...defaultTxStatus, pending: true});
 	const wagmiProvider = await toWagmiProvider(args.connector);
@@ -55,19 +66,19 @@ export async function handleTx(
 	assertAddress(props.address, 'contractAddress');
 	assertAddress(wagmiProvider.address, 'userAddress');
 	try {
-		const {request} = await prepareWriteContract({
+		const config = await prepareWriteContract({
 			...wagmiProvider,
-			...props,
-			address: props.address,
-			value: undefined
+			...props as TPrepareWriteContractConfig,
+			address: props.address
 		});
-		const {hash} = await writeContract(request);
+		const {hash} = await writeContract(config.request);
 		const receipt = await waitForTransaction({chainId: wagmiProvider.chainId, hash});
 		if (receipt.status === 'success') {
 			args.statusHandler?.({...defaultTxStatus, success: true});
 		} else if (receipt.status === 'reverted') {
 			args.statusHandler?.({...defaultTxStatus, error: true});
 		}
+		toast({type: 'success', content: 'Transaction successful!'});
 		return ({isSuccessful: receipt.status === 'success', receipt});
 	} catch (error) {
 		console.error(error);
@@ -75,6 +86,7 @@ export async function handleTx(
 		if (process.env.NODE_ENV === 'production') {
 			captureException(errorAsBaseError);
 		}
+		toast({type: 'error', content: errorAsBaseError.shortMessage});
 		args.statusHandler?.({...defaultTxStatus, error: true});
 		return ({isSuccessful: false, error: errorAsBaseError || ''});
 	} finally {

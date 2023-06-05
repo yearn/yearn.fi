@@ -272,9 +272,13 @@ function CardTransactorContextApp({
 	), [expectedOut, selectedOptionFrom.value, selectedOptionTo.value, slippage]);
 
 	const allowanceFrom = useMemo((): bigint => {
-		balancesNonce; // remove warning, force deep refresh
-		return toBigInt(allowances?.[allowanceKey(1, toAddress(selectedOptionFrom.value), toAddress(selectedOptionFrom.zapVia), toAddress(address))]);
-	}, [balancesNonce, allowances, selectedOptionFrom.value, selectedOptionFrom.zapVia, address]);
+		return toBigInt(allowances?.[allowanceKey(
+			1,
+			toAddress(selectedOptionFrom.value),
+			toAddress(selectedOptionFrom.zapVia),
+			toAddress(address)
+		)]);
+	}, [allowances, selectedOptionFrom.value, selectedOptionFrom.zapVia, address]);
 
 	return (
 		<CardTransactorContext.Provider

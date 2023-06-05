@@ -1,5 +1,5 @@
 import React, {createContext, memo, useContext, useMemo, useState} from 'react';
-import {useUpdateEffect} from '@react-hookz/web';
+import {useDeepCompareEffect} from '@react-hookz/web';
 import {useUI} from '@yearn-finance/web-lib/contexts/useUI';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
@@ -71,7 +71,7 @@ export const WalletForZapApp = memo(function WalletForZapApp({children}: {childr
 		return tokens;
 	}, [tokensList, safeChainID]);
 
-	useUpdateEffect((): void => {
+	useDeepCompareEffect((): void => {
 		onLoadStart();
 		set_isLoading(true);
 		const allToRefresh = availableTokens.map(({token}): TUseBalancesTokens => ({token}));

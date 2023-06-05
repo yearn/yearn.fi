@@ -184,14 +184,16 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 		currentVault
 	});
 
-	const maxDepositPossible = useMemo((): TNormalizedBN => getMaxDepositPossible({
-		vault: currentVault,
-		fromToken: toAddress(actionParams?.selectedOptionFrom?.value),
-		fromDecimals: actionParams?.selectedOptionFrom?.decimals || currentVault?.token?.decimals || 18,
-		fromTokenBalance: toBigInt(balances?.[toAddress(actionParams?.selectedOptionFrom?.value)]?.raw),
-		isDepositing,
-		depositLimit: depositLimit || 0n
-	}), [actionParams?.selectedOptionFrom?.decimals, actionParams?.selectedOptionFrom?.value, balances, currentVault, depositLimit, isDepositing]);
+	const maxDepositPossible = useMemo((): TNormalizedBN => {
+		return getMaxDepositPossible({
+			vault: currentVault,
+			fromToken: toAddress(actionParams?.selectedOptionFrom?.value),
+			fromDecimals: actionParams?.selectedOptionFrom?.decimals || currentVault?.token?.decimals || 18,
+			fromTokenBalance: toBigInt(balances?.[toAddress(actionParams?.selectedOptionFrom?.value)]?.raw),
+			isDepositing,
+			depositLimit: depositLimit || 0n
+		});
+	}, [actionParams?.selectedOptionFrom?.decimals, actionParams?.selectedOptionFrom?.value, balances, currentVault, depositLimit, isDepositing]);
 
 	const currentSolver = useMemo((): TSolver => {
 		const isUnderlyingToken = toAddress(actionParams?.selectedOptionFrom?.value) === toAddress(currentVault.token.address);

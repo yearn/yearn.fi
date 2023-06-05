@@ -39,20 +39,21 @@ function VaultDetailsQuickActionsButtons(): ReactElement {
 	const onSuccess = useCallback(async (): Promise<void> => {
 		onChangeAmount(toNormalizedBN(0));
 		if (
-			Solver.enum.Vanilla === currentSolver,
-			Solver.enum.ChainCoin === currentSolver,
-			Solver.enum.PartnerContract === currentSolver,
-			Solver.enum.OptimismBooster === currentSolver) {
+			Solver.enum.Vanilla === currentSolver
+			|| Solver.enum.ChainCoin === currentSolver
+			|| Solver.enum.PartnerContract === currentSolver
+			|| Solver.enum.OptimismBooster === currentSolver
+			|| Solver.enum.InternalMigration === currentSolver
+		) {
 			await refresh([
 				{token: toAddress(actionParams?.selectedOptionFrom?.value)},
 				{token: toAddress(actionParams?.selectedOptionTo?.value)}
 			]);
-		} else if (Solver.enum.InternalMigration === currentSolver) {
-			await refresh([
-				{token: toAddress(actionParams?.selectedOptionFrom?.value)},
-				{token: toAddress(actionParams?.selectedOptionTo?.value)}
-			]);
-		} else if (Solver.enum.Cowswap === currentSolver || Solver.enum.Portals === currentSolver || Solver.enum.Wido === currentSolver) {
+		} else if (
+			Solver.enum.Cowswap === currentSolver
+			|| Solver.enum.Portals === currentSolver
+			|| Solver.enum.Wido === currentSolver
+		) {
 			if (isDepositing) { //refresh input from zap wallet, refresh output from default
 				await Promise.all([
 					refreshZapBalances([{token: toAddress(actionParams?.selectedOptionFrom?.value)}]),
@@ -65,8 +66,7 @@ function VaultDetailsQuickActionsButtons(): ReactElement {
 				]);
 			}
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [currentSolver, isDepositing, onChangeAmount, actionParams?.selectedOptionFrom?.value, actionParams?.selectedOptionTo?.value]);
+	}, [onChangeAmount, currentSolver, refresh, actionParams?.selectedOptionFrom?.value, actionParams?.selectedOptionTo?.value, isDepositing, refreshZapBalances]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Trigger an approve web3 action, simply trying to approve `amount` tokens
@@ -76,7 +76,11 @@ function VaultDetailsQuickActionsButtons(): ReactElement {
 	** (not connected) or if the tx is still pending.
 	**************************************************************************/
 	async function onApproveFrom(): Promise<void> {
-		const shouldApproveInfinite = currentSolver === Solver.enum.PartnerContract || currentSolver === Solver.enum.Vanilla || currentSolver === Solver.enum.InternalMigration;
+		const shouldApproveInfinite = (
+			currentSolver === Solver.enum.PartnerContract
+			|| currentSolver === Solver.enum.Vanilla
+			|| currentSolver === Solver.enum.InternalMigration
+		);
 		onApprove(
 			shouldApproveInfinite ? MAX_UINT_256 : actionParams?.amount.raw,
 			set_txStatusApprove,

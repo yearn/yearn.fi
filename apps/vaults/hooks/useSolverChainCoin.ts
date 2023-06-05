@@ -1,5 +1,5 @@
 import {useCallback, useMemo, useRef} from 'react';
-import {getEthZapperContract} from '@vaults/utils';
+import {getEthZapperContract, getNativeTokenWrapperContract} from '@vaults/utils';
 import getVaultEstimateOut from '@vaults/utils/getVaultEstimateOut';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
@@ -29,8 +29,9 @@ export function useSolverChainCoin(): TSolverContext {
 	**********************************************************************************************/
 	const init = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN> => {
 		request.current = _request;
+		const wrapperToken = getNativeTokenWrapperContract(chainID);
 		const estimateOut = await getVaultEstimateOut({
-			inputToken: toAddress(_request.inputToken.value),
+			inputToken: toAddress(wrapperToken),
 			outputToken: toAddress(_request.outputToken.value),
 			inputDecimals: _request.inputToken.decimals,
 			outputDecimals: _request.outputToken.decimals,

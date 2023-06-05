@@ -153,7 +153,6 @@ function Factory(): ReactElement {
 	** Perform a smartContract call to the ZAP contract to get the expected
 	** out for a given in/out pair with a specific amount.
 	**************************************************************************/
-	//TODO: ENSURE IT'S CALLED EVERY 10s
 	const [{result: estimate}, actions] = useAsync(async function fetchEstimate(): Promise<bigint> {
 		set_hasError(false);
 		try {
