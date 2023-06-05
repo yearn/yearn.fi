@@ -86,7 +86,9 @@ function	VaultDetailsQuickActionsFrom(): ReactElement {
 									e.target.value,
 									balances?.[toAddress(actionParams?.selectedOptionFrom?.value)]?.decimals || 18
 								)
-							)} />
+							)}
+							autoComplete={'off'}
+						/>
 						<button
 							onClick={(): void => onChangeAmount(maxDepositPossible)}
 							className={'ml-2 cursor-pointer bg-neutral-900 px-2 py-1 text-xs text-neutral-0 transition-colors hover:bg-neutral-700'}>
