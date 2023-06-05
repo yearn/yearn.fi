@@ -26,8 +26,8 @@ export const isSolverDisabled = {
 	[Solver.enum.ChainCoin]: false,
 	[Solver.enum.InternalMigration]: false,
 	[Solver.enum.OptimismBooster]: false,
-	[Solver.enum.Cowswap]: true,
-	[Solver.enum.Wido]: true,
+	[Solver.enum.Cowswap]: false,
+	[Solver.enum.Wido]: false,
 	[Solver.enum.Portals]: false,
 	[Solver.enum.None]: false
 };
