@@ -118,9 +118,9 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 		return (
 			Object.entries(balances).reduce((acc, [token, balance]): number => {
 				if (vaults?.[toAddress(token)]) {
-					acc += balance.normalizedValue;
+					acc += balance.normalizedValue || 0;
 				} else if (vaultsMigrations?.[toAddress(token)]) {
-					acc += balance.normalizedValue;
+					acc += balance.normalizedValue || 0;
 				}
 				return acc;
 			}, 0)

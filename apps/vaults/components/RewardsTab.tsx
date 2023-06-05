@@ -114,7 +114,7 @@ function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): ReactElement
 					<Input
 						className={'w-full md:w-[216px]'}
 						label={'You have unstaked'}
-						legend={formatCounterValue(vaultBalance.normalized, vaultBalance.normalizedPrice)}
+						legend={formatCounterValue(vaultBalance.normalized, vaultBalance.normalizedPrice || 0)}
 						value={`${trimAmount(vaultBalance.normalized)} ${currentVault.symbol}`}
 						isDisabled />
 					<Button
@@ -139,7 +139,7 @@ function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): ReactElement
 					<Input
 						className={'w-full md:w-[216px]'}
 						label={'You have unclaimed'}
-						legend={formatCounterValue(rewardBalance.normalized, rewardTokenBalance.normalizedPrice)}
+						legend={formatCounterValue(rewardBalance.normalized, rewardTokenBalance.normalizedPrice || 0)}
 						value={`${trimAmount(rewardBalance.normalized)} ${rewardTokenBalance.symbol || 'yvOP'}`}
 						isDisabled />
 					<Button
@@ -164,7 +164,7 @@ function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): ReactElement
 					<Input
 						className={'w-full md:w-[216px]'}
 						label={'You have staked'}
-						legend={formatCounterValue(stakeBalance.normalized, vaultBalance.normalizedPrice)}
+						legend={formatCounterValue(stakeBalance.normalized, vaultBalance.normalizedPrice || 0)}
 						value={`${trimAmount(stakeBalance.normalized)} ${currentVault.symbol}`}
 						isDisabled />
 					<Button

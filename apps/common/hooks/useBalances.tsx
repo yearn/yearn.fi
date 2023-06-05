@@ -83,13 +83,16 @@ async function performCall(
 		const decimals = decodeAsNumber(results[rIndex++]) || 18;
 		const rawPrice = toBigInt(prices?.[toAddress(token)]);
 		let symbol = decodeAsString(results[rIndex++]);
+		let name = decodeAsString(results[rIndex++]);
 		if (toAddress(token) === ETH_TOKEN_ADDRESS) {
 			symbol = getNativeTokenWrapperName(chainID);
+			name = getNativeTokenWrapperName(chainID);
 		}
 
 		_data[toAddress(token)] = {
 			decimals: decimals,
 			symbol: symbol,
+			name: name,
 			raw: balanceOf,
 			rawPrice,
 			normalized: toNormalizedValue(balanceOf, decimals),
@@ -120,11 +123,13 @@ async function getBalances(
 			calls.push({...multicall3Contract, functionName: 'getEthBalance', args: [ownerAddress]});
 			calls.push({...baseContract, functionName: 'decimals'});
 			calls.push({...baseContract, functionName: 'symbol'});
+			calls.push({...baseContract, functionName: 'name'});
 		} else {
 			const baseContract = {address: toAddress(token), abi: erc20ABI};
 			calls.push({...baseContract, functionName: 'balanceOf', args: [ownerAddress]});
 			calls.push({...baseContract, functionName: 'decimals'});
 			calls.push({...baseContract, functionName: 'symbol'});
+			calls.push({...baseContract, functionName: 'name'});
 		}
 	}
 

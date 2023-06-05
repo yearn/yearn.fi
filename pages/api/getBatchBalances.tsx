@@ -44,11 +44,13 @@ async function getBatchBalances({
 				calls.push({...multicall3Contract, functionName: 'getEthBalance', args: [ownerAddress]});
 				calls.push({...baseContract, functionName: 'decimals'});
 				calls.push({...baseContract, functionName: 'symbol'});
+				calls.push({...baseContract, functionName: 'name'});
 			} else {
 				const baseContract = {address: toAddress(token), abi: erc20ABI};
 				calls.push({...baseContract, functionName: 'balanceOf', args: [ownerAddress]});
 				calls.push({...baseContract, functionName: 'decimals'});
 				calls.push({...baseContract, functionName: 'symbol'});
+				calls.push({...baseContract, functionName: 'name'});
 			}
 		}
 
@@ -61,9 +63,11 @@ async function getBatchBalances({
 				const balanceOf = decodeAsBigInt(results[rIndex++]);
 				const decimals = decodeAsNumber(results[rIndex++]);
 				const symbol = decodeAsString(results[rIndex++]);
+				const name = decodeAsString(results[rIndex++]);
 				data[toAddress(token)] = {
 					decimals: decimals || 18,
 					symbol: toAddress(token) === ETH_TOKEN_ADDRESS ? nativeTokenWrapperName : symbol,
+					name: toAddress(token) === ETH_TOKEN_ADDRESS ? nativeTokenWrapperName : name,
 					raw: balanceOf,
 					rawPrice: 0n,
 					normalized: toNormalizedValue(balanceOf, decimals || 18),

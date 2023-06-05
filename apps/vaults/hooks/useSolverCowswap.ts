@@ -1,5 +1,6 @@
 import {useCallback, useMemo, useRef} from 'react';
 import {ethers} from 'ethers';
+import {BaseError} from 'viem';
 import axios from 'axios';
 import {OrderBookApi, OrderQuoteSide, OrderSigningUtils} from '@cowprotocol/cow-sdk';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
@@ -236,7 +237,7 @@ export function useSolverCowswap(): TSolverContext {
 			const {isSuccessful, error} = await checkOrderStatus(orderUID, quote.validTo);
 			if (error) {
 				console.error(error);
-				return ({isSuccessful: false, error: error as Error});
+				return ({isSuccessful: false, error: new BaseError('Tx fail because the order was not fulfilled')});
 			}
 			return {isSuccessful};
 		}

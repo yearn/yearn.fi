@@ -1,3 +1,4 @@
+import {BaseError} from 'viem';
 import {getEthZapperContract} from '@vaults/utils';
 import VAULT_MIGRATOR_ABI from '@vaults/utils/abi/vaultMigrator.abi';
 import {erc20ABI, readContract} from '@wagmi/core';
@@ -92,7 +93,7 @@ export async function approveERC20(props: TApproveERC20): Promise<TTxResponse> {
 			});
 		}
 	}
-	return ({isSuccessful: false, error: new Error('Unknown error')});
+	return ({isSuccessful: false, error: new BaseError('Unknown error')});
 }
 
 /* 🔵 - Yearn Finance **********************************************************

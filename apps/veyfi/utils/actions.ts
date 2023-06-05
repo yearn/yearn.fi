@@ -1,3 +1,4 @@
+import {BaseError} from 'viem';
 import VEYFI_ABI from '@veYFI/utils/abi/veYFI.abi';
 import {prepareWriteContract} from '@wagmi/core';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -127,7 +128,7 @@ export async function withdrawUnlockedVeYFI(props: TWithdrawUnlockedVeYFI): Prom
 		setTimeout((): void => {
 			props.statusHandler?.({...defaultTxStatus});
 		}, 3000);
-		return ({isSuccessful: false, error: new Error('Tokens are not yet unlocked')});
+		return ({isSuccessful: false, error: new BaseError('Tokens are not yet unlocked')});
 	}
 
 	return await handleTx(props, {
