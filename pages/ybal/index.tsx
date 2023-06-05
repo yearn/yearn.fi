@@ -42,7 +42,9 @@ function HeaderPosition(): ReactElement {
 	return (
 		<Fragment>
 			<div className={'col-span-12 w-full md:col-span-8'}>
-				<p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl'}>{'Yearn has'}</p>
+				<p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl'}>
+					{'Yearn has'}
+				</p>
 				<b className={'font-number text-4xl text-neutral-900 md:text-7xl'}>
 					<ValueAnimation
 						identifier={'veBalTreasury'}
