@@ -1,21 +1,22 @@
 import {useCallback, useMemo, useRef} from 'react';
 import {isHex} from 'viem';
-import {getTokenAllowance as wiGetTokenAllowance, getWidoSpender, quote as wiQuote} from 'wido';
+import {getWidoSpender, quote as wiQuote} from 'wido';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
-import {waitForTransaction} from '@wagmi/core';
+import {getNetwork, waitForTransaction} from '@wagmi/core';
 import {toast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {allowanceKey, isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {Transaction} from '@yearn-finance/web-lib/utils/web3/transaction';
+import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
-import {approveERC20, isApprovedERC20} from '@common/utils/actions';
+import {allowanceOf, approveERC20, isApprovedERC20} from '@common/utils/actions';
 import {assert} from '@common/utils/assert';
-import {assertAddress} from '@common/utils/toWagmiProvider';
+import {assertAddress, toWagmiProvider} from '@common/utils/toWagmiProvider';
 
+import type {BaseError} from 'viem';
 import type {ChainId, QuoteRequest, QuoteResult} from 'wido';
 import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 import type {TTxResponse, TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
@@ -131,25 +132,26 @@ export function useSolverWido(): TSolverContext {
 		assert(latestQuote.current, 'Quote is not set');
 
 		try {
-			const signer = await provider.getWalletClient();
+			const wagmiProvider = await toWagmiProvider(provider);
 			const {data, to, value} = latestQuote.current;
-
 			assert(isHex(data), 'Data is not hex');
-
-			const hash = await signer.sendTransaction({
+			assert(wagmiProvider.walletClient, 'Wallet client is not set');
+			const {chain} = getNetwork();
+			const hash = await wagmiProvider.walletClient.sendTransaction({
+				...wagmiProvider,
+				chain: chain,
 				data: data,
 				to: toAddress(to),
 				value: toBigInt(value)
 			});
-			const receipt = await waitForTransaction({chainId: signer.chain.id, hash});
+			const receipt = await waitForTransaction({chainId: wagmiProvider.chainId, hash});
 			if (receipt.status === 'success') {
 				return ({isSuccessful: true, receipt: receipt});
 			}
-			console.error('Fail to perform transaction');
 			return ({isSuccessful: false});
 		} catch (_error) {
 			console.error(_error);
-			return ({isSuccessful: false});
+			return ({isSuccessful: false, error: _error as BaseError});
 		}
 	}, [provider, latestQuote]);
 
@@ -172,6 +174,7 @@ export function useSolverWido(): TSolverContext {
 		if (!latestQuote?.current || !request?.current || isSolverDisabled[Solver.enum.Wido]) {
 			return toNormalizedBN(0);
 		}
+
 		const key = allowanceKey(
 			safeChainID,
 			toAddress(request.current.inputToken.value),
@@ -181,16 +184,22 @@ export function useSolverWido(): TSolverContext {
 		if (existingAllowances.current[key] && !shouldForceRefetch) {
 			return existingAllowances.current[key];
 		}
-		const {allowance} = await wiGetTokenAllowance({
+
+		const widoSpender = await getWidoSpender({
 			chainId: safeChainID as ChainId,
+			toChainId: safeChainID as ChainId,
 			fromToken: toAddress(request.current.inputToken.value),
-			toToken: toAddress(request.current.outputToken.value),
-			accountAddress: toAddress(request.current.from)
+			toToken: toAddress(request.current.outputToken.value)
+		});
+		const allowance = await allowanceOf({
+			connector: provider,
+			tokenAddress: toAddress(request.current.inputToken.value),
+			spenderAddress: toAddress(widoSpender)
 		});
 
 		existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals);
 		return existingAllowances.current[key];
-	}, [latestQuote, request, safeChainID]);
+	}, [provider, safeChainID]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Trigger an signature to approve the token to be used by the Wido
@@ -251,10 +260,14 @@ export function useSolverWido(): TSolverContext {
 	): Promise<void> => {
 		assert(provider, 'Provider is not set');
 
-		new Transaction(provider, execute, txStatusSetter)
-			.populate()
-			.onSuccess(onSuccess)
-			.perform();
+		txStatusSetter({...defaultTxStatus, pending: true});
+		const status = await execute();
+		if (status.isSuccessful) {
+			txStatusSetter({...defaultTxStatus, success: true});
+			await onSuccess();
+		} else {
+			txStatusSetter({...defaultTxStatus, error: true});
+		}
 	}, [execute, provider]);
 
 	return useMemo((): TSolverContext => ({

@@ -7,7 +7,7 @@ import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
-import {approvedERC20Amount, approveERC20, depositETH, withdrawETH} from '@common/utils/actions';
+import {allowanceOf, approveERC20, depositETH, withdrawETH} from '@common/utils/actions';
 import {assert} from '@common/utils/assert';
 
 import type {TDict} from '@yearn-finance/web-lib/types';
@@ -64,11 +64,11 @@ export function useSolverChainCoin(): TSolverContext {
 		}
 
 		assert(toAddress(request.current.outputToken.value) === ETH_TOKEN_ADDRESS, 'Out is not ETH');
-		const allowance = await approvedERC20Amount(
-			provider,
-			toAddress(request.current.inputToken.value), //Input token
-			toAddress(getEthZapperContract(safeChainID)) //Spender, aka ethZap contract
-		);
+		const allowance = await allowanceOf({
+			connector: provider,
+			tokenAddress: toAddress(request.current.inputToken.value),
+			spenderAddress: toAddress(getEthZapperContract(safeChainID))
+		});
 		existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals);
 		return existingAllowances.current[key];
 	}, [provider, safeChainID]);

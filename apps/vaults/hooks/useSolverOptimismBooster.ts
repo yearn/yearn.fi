@@ -7,7 +7,7 @@ import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {MAX_UINT_256, STAKING_REWARDS_ZAP_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
-import {approvedERC20Amount, approveERC20} from '@common/utils/actions';
+import {allowanceOf, approveERC20} from '@common/utils/actions';
 import {assert} from '@common/utils/assert';
 
 import type {TDict} from '@yearn-finance/web-lib/types';
@@ -61,11 +61,11 @@ export function useSolverOptimismBooster(): TSolverContext {
 			return existingAllowances.current[key];
 		}
 
-		const allowance = await approvedERC20Amount(
-			provider,
-			toAddress(request.current.inputToken.value), // Input token
-			toAddress(STAKING_REWARDS_ZAP_ADDRESS) // spender
-		);
+		const allowance = await allowanceOf({
+			connector: provider,
+			tokenAddress: toAddress(request.current.inputToken.value),
+			spenderAddress: toAddress(STAKING_REWARDS_ZAP_ADDRESS)
+		});
 		existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals);
 		return existingAllowances.current[key];
 	}, [request, safeChainID, provider]);

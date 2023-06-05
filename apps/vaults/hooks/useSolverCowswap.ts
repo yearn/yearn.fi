@@ -13,7 +13,7 @@ import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigN
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
-import {approvedERC20Amount, approveERC20, isApprovedERC20} from '@common/utils/actions';
+import {allowanceOf, approveERC20, isApprovedERC20} from '@common/utils/actions';
 import {assert} from '@common/utils/assert';
 
 import type {TDict} from '@yearn-finance/web-lib/types';
@@ -281,11 +281,11 @@ export function useSolverCowswap(): TSolverContext {
 		if (existingAllowances.current[key] && !shouldForceRefetch) {
 			return existingAllowances.current[key];
 		}
-		const allowance = await approvedERC20Amount(
-			provider,
-			request.current.inputToken.value, //Input token
-			SOLVER_COW_VAULT_RELAYER_ADDRESS //Spender, aka Cowswap solver
-		);
+		const allowance = await allowanceOf({
+			connector: provider,
+			tokenAddress: request.current.inputToken.value,
+			spenderAddress: SOLVER_COW_VAULT_RELAYER_ADDRESS
+		});
 		existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals);
 		return existingAllowances.current[key];
 	}, [isDisabled, provider, safeChainID]);

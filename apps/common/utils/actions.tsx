@@ -41,21 +41,22 @@ export async function isApprovedERC20(
 }
 
 /* 🔵 - Yearn Finance **********************************************************
-** approvedERC20Amount is a _VIEW_ function that returns the amount of a token
-** that is approved for a spender.
+** allowanceOf is a _VIEW_ function that returns the amount of a token that is
+** approved for a spender.
 ******************************************************************************/
-export async function approvedERC20Amount(
+type TAllowanceOf = {
 	connector: Connector | undefined,
 	tokenAddress: TAddress,
-	spender: TAddress
-): Promise<bigint> {
-	const wagmiProvider = await toWagmiProvider(connector);
+	spenderAddress: TAddress
+}
+export async function allowanceOf(props: TAllowanceOf): Promise<bigint> {
+	const wagmiProvider = await toWagmiProvider(props.connector);
 	const result = await readContract({
 		...wagmiProvider,
 		abi: erc20ABI,
-		address: tokenAddress,
+		address: props.tokenAddress,
 		functionName: 'allowance',
-		args: [wagmiProvider.address, spender]
+		args: [wagmiProvider.address, props.spenderAddress]
 	});
 	return result || 0n;
 }

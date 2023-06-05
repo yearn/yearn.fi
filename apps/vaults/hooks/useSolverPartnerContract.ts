@@ -8,7 +8,7 @@ import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {useYearn} from '@common/contexts/useYearn';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
-import {approvedERC20Amount, approveERC20, depositViaPartner, withdrawShares} from '@common/utils/actions';
+import {allowanceOf, approveERC20, depositViaPartner, withdrawShares} from '@common/utils/actions';
 import {assert} from '@common/utils/assert';
 import {assertAddress} from '@common/utils/toWagmiProvider';
 
@@ -65,11 +65,11 @@ export function useSolverPartnerContract(): TSolverContext {
 			return existingAllowances.current[key];
 		}
 
-		const allowance = await approvedERC20Amount(
-			provider,
-			toAddress(request.current.inputToken.value), //Input token
-			toAddress(networks[safeChainID].partnerContractAddress) //spender aka partner contract
-		);
+		const allowance = await allowanceOf({
+			connector: provider,
+			tokenAddress: toAddress(request.current.inputToken.value),
+			spenderAddress: toAddress(networks[safeChainID].partnerContractAddress)
+		});
 		existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals);
 		return existingAllowances.current[key];
 	}, [request, provider, networks, safeChainID]);

@@ -25,10 +25,10 @@ export const isSolverDisabled = {
 	[Solver.enum.PartnerContract]: false,
 	[Solver.enum.ChainCoin]: false,
 	[Solver.enum.InternalMigration]: false,
-	[Solver.enum.Cowswap]: false,
 	[Solver.enum.OptimismBooster]: false,
+	[Solver.enum.Cowswap]: true,
 	[Solver.enum.Wido]: false,
-	[Solver.enum.Portals]: false,
+	[Solver.enum.Portals]: true,
 	[Solver.enum.None]: false
 };
 
