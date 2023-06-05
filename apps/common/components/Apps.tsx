@@ -30,6 +30,7 @@ type TApp = {
 	menu: TMenu[];
 	manifest: TMetaFile;
 	icon: ReactElement;
+	isDisabled?: boolean;
 }
 
 export const APPS: { [key in AppName]: TApp } = {
@@ -63,6 +64,7 @@ export const APPS: { [key in AppName]: TApp } = {
 		href: '/ybal',
 		menu: YBAL_MENU,
 		manifest: yBalManifest,
+		isDisabled: true,
 		icon: (
 			<Image
 				alt={'yBal'}

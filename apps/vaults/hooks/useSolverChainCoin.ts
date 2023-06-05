@@ -31,8 +31,8 @@ export function useSolverChainCoin(): TSolverContext {
 		request.current = _request;
 		const wrapperToken = getNativeTokenWrapperContract(chainID);
 		const estimateOut = await getVaultEstimateOut({
-			inputToken: toAddress(wrapperToken),
-			outputToken: toAddress(_request.outputToken.value),
+			inputToken: _request.isDepositing ? toAddress(wrapperToken) : toAddress(_request.inputToken.value),
+			outputToken: _request.isDepositing ? toAddress(_request.outputToken.value) : toAddress(wrapperToken),
 			inputDecimals: _request.inputToken.decimals,
 			outputDecimals: _request.outputToken.decimals,
 			inputAmount: _request.inputAmount,

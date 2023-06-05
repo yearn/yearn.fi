@@ -26,17 +26,25 @@ type TZapYCRV = TWriteTransaction & {
 	slippage: bigint;
 };
 export async function zapCRV(props: TZapYCRV): Promise<TTxResponse> {
-	const minAmountWithSlippage = props.minAmount * (1n - (props.slippage / 100n));
+	const minAmountWithSlippage = (
+		props.minAmount - (props.minAmount * props.slippage / 10_000n)
+	);
+
 	assertAddress(ZAP_YEARN_VE_CRV_ADDRESS, 'ZAP_YEARN_VE_CRV_ADDRESS');
 	assertAddress(props.inputToken, 'inputToken');
 	assertAddress(props.outputToken, 'outputToken');
 	assert(props.amount > 0n, 'Amount must be greater than 0');
-	assert(props.amount >= minAmountWithSlippage, 'Amount must be greater or equal to min amount with slippage');
+	assert(props.minAmount > 0n, 'Min amount must be greater than 0');
 
 	return await handleTx(props, {
 		address: ZAP_YEARN_VE_CRV_ADDRESS,
 		abi: ZAP_CRV_ABI,
 		functionName: 'zap',
-		args: [props.inputToken, props.outputToken, props.amount, minAmountWithSlippage]
+		args: [
+			props.inputToken,
+			props.outputToken,
+			props.amount,
+			minAmountWithSlippage
+		]
 	});
 }

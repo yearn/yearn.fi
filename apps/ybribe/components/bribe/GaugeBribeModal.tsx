@@ -1,9 +1,8 @@
 import React, {useCallback, useMemo, useState} from 'react';
-import {useContractReads} from 'wagmi';
+import {erc20ABI, useContractReads} from 'wagmi';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {CURVE_BRIBE_V3_ADDRESS, ZERO_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {decodeAsBigInt, decodeAsNumber, decodeAsString} from '@yearn-finance/web-lib/utils/decoder';
@@ -49,11 +48,11 @@ function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauge, on
 	const [txStatusAddReward, set_txStatusAddReward] = useState(defaultTxStatus);
 	const {data, isSuccess, refetch} = useContractReads({
 		contracts: [
-			{address: tokenAddress, abi: ERC20_ABI, functionName: 'name'},
-			{address: tokenAddress, abi: ERC20_ABI, functionName: 'symbol'},
-			{address: tokenAddress, abi: ERC20_ABI, functionName: 'decimals'},
-			{address: tokenAddress, abi: ERC20_ABI, functionName: 'balanceOf', args: [toAddress(address)]},
-			{address: tokenAddress, abi: ERC20_ABI, functionName: 'allowance', args: [toAddress(address), CURVE_BRIBE_V3_ADDRESS]}
+			{address: tokenAddress, abi: erc20ABI, functionName: 'name'},
+			{address: tokenAddress, abi: erc20ABI, functionName: 'symbol'},
+			{address: tokenAddress, abi: erc20ABI, functionName: 'decimals'},
+			{address: tokenAddress, abi: erc20ABI, functionName: 'balanceOf', args: [toAddress(address)]},
+			{address: tokenAddress, abi: erc20ABI, functionName: 'allowance', args: [toAddress(address), CURVE_BRIBE_V3_ADDRESS]}
 		]
 	});
 
@@ -64,7 +63,7 @@ function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauge, on
 		return ({
 			name: decodeAsString(data[0]),
 			symbol: decodeAsString(data[1]),
-			decimals: decodeAsNumber(data[2]),
+			decimals: decodeAsNumber(data[2]) || Number(decodeAsBigInt(data[2])),
 			raw: decodeAsBigInt(data[3]),
 			normalized: formatToNormalizedValue(decodeAsBigInt(data[3]), decodeAsNumber(data[2])),
 			allowance: decodeAsBigInt(data[4])
@@ -80,7 +79,7 @@ function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauge, on
 			statusHandler: set_txStatusApprove
 		});
 		if (result.isSuccessful) {
-			refetch();
+			await refetch();
 		}
 	}, [amount.raw, refetch, provider, tokenAddress]);
 
@@ -95,7 +94,7 @@ function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauge, on
 		});
 		if (result.isSuccessful) {
 			onClose();
-			refetch();
+			await refetch();
 			await refresh();
 		}
 	}, [amount.raw, currentGauge.gauge, refetch, onClose, provider, refresh, tokenAddress]);

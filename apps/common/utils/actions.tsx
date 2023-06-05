@@ -1,6 +1,6 @@
-import {BaseError} from 'viem';
 import {getEthZapperContract} from '@vaults/utils';
 import VAULT_MIGRATOR_ABI from '@vaults/utils/abi/vaultMigrator.abi';
+import ZAP_OPT_ETH_TO_YVETH_ABI from '@vaults/utils/abi/zapOptEthToYvEth';
 import {erc20ABI, readContract} from '@wagmi/core';
 import PARTNER_VAULT_ABI from '@yearn-finance/web-lib/utils/abi/partner.vault.abi';
 import VAULT_ABI from '@yearn-finance/web-lib/utils/abi/vault.abi';
@@ -11,7 +11,6 @@ import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {assert} from '@common/utils/assert';
 import {assertAddress, handleTx, toWagmiProvider} from '@common/utils/toWagmiProvider';
 
-import type {ContractFunctionExecutionError} from 'viem';
 import type {Connector} from 'wagmi';
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
@@ -75,25 +74,22 @@ export async function approveERC20(props: TApproveERC20): Promise<TTxResponse> {
 	assertAddress(props.spenderAddress, 'spenderAddress');
 	assertAddress(props.contractAddress);
 
-	try	{
+	props.onTrySomethingElse = async (): Promise<TTxResponse> => {
+		assertAddress(props.spenderAddress, 'spenderAddress');
 		return await handleTx(props, {
 			address: props.contractAddress,
-			abi: erc20ABI,
+			abi: ALTERNATE_ERC20_APPROVE_ABI,
 			functionName: 'approve',
 			args: [props.spenderAddress, props.amount]
 		});
-	} catch (error) {
-		const err = error as ContractFunctionExecutionError;
-		if (err.name === 'ContractFunctionExecutionError') {
-			return await handleTx(props, {
-				address: props.contractAddress,
-				abi: ALTERNATE_ERC20_APPROVE_ABI,
-				functionName: 'approve',
-				args: [props.spenderAddress, props.amount]
-			});
-		}
-	}
-	return ({isSuccessful: false, error: new BaseError('Unknown error')});
+	};
+
+	return await handleTx(props, {
+		address: props.contractAddress,
+		abi: erc20ABI,
+		functionName: 'approve',
+		args: [props.spenderAddress, props.amount]
+	});
 }
 
 /* 🔵 - Yearn Finance **********************************************************
@@ -138,6 +134,14 @@ export async function depositETH(props: TDepositEth): Promise<TTxResponse> {
 			return await handleTx(props, {
 				address: getEthZapperContract(1),
 				abi: ZAP_ETH_TO_YVETH_ABI,
+				functionName: 'deposit',
+				value: props.amount
+			});
+		}
+		case 10: {
+			return await handleTx(props, {
+				address: getEthZapperContract(10),
+				abi: ZAP_OPT_ETH_TO_YVETH_ABI,
 				functionName: 'deposit',
 				value: props.amount
 			});
@@ -214,6 +218,14 @@ export async function withdrawETH(props: TWithdrawEth): Promise<TTxResponse> {
 			return await handleTx(props, {
 				address: getEthZapperContract(1),
 				abi: ZAP_ETH_TO_YVETH_ABI,
+				functionName: 'withdraw',
+				args: [props.amount]
+			});
+		}
+		case 10: {
+			return await handleTx(props, {
+				address: getEthZapperContract(10),
+				abi: ZAP_OPT_ETH_TO_YVETH_ABI,
 				functionName: 'withdraw',
 				args: [props.amount]
 			});

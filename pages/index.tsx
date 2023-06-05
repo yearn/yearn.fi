@@ -3,7 +3,7 @@ import {Balancer} from 'react-wrap-balancer';
 import Image from 'next/image';
 import Link from 'next/link';
 import {useClientEffect} from '@yearn-finance/web-lib/hooks/useClientEffect';
-import {YBAL_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import LogoYearn from '@common/icons/LogoYearn';
 
 import type {ReactElement} from 'react';
@@ -17,7 +17,8 @@ const apps = [
 			className={'h-[100px] w-[100px]'}
 			back={'text-pink-400'}
 			front={'text-white'} />
-	}, {
+	},
+	{
 		href: '/ycrv',
 		title: 'yCRV',
 		description: 'get the best CRV yields in DeFi.',
@@ -28,18 +29,20 @@ const apps = [
 			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YCRV_TOKEN_ADDRESS}/logo-128.png`}
 			loading={'eager'}
 			priority />
-	}, {
-		href: '/ybal',
-		title: 'yBal',
-		description: 'get the best Balancer yields in DeFi.',
-		icon: <Image
-			alt={'yBal'}
-			width={100}
-			height={100}
-			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YBAL_TOKEN_ADDRESS}/logo-128.png`}
-			loading={'eager'}
-			priority />
-	}, {
+	},
+	// {
+	// 	href: '/ybal',
+	// 	title: 'yBal',
+	// 	description: 'get the best Balancer yields in DeFi.',
+	// 	icon: <Image
+	// 		alt={'yBal'}
+	// 		width={100}
+	// 		height={100}
+	// 		src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YBAL_TOKEN_ADDRESS}/logo-128.png`}
+	// 		loading={'eager'}
+	// 		priority />
+	// },
+	{
 		href: '/veyfi',
 		title: 'veYFI',
 		description: 'lock YFI\nto take part in governance.',
@@ -47,7 +50,8 @@ const apps = [
 			className={'h-[100px] w-[100px]'}
 			back={'text-primary'}
 			front={'text-white'} />
-	}, {
+	},
+	{
 		href: '/ybribe',
 		title: 'yBribe',
 		description: 'sell votes, or buy them.\njust like democracy.',

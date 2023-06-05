@@ -14,13 +14,13 @@ import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 /* 🔵 - Yearn Finance **********************************************************
 ** This context controls the allowances computation for the yCRV app
 ******************************************************************************/
-export function useAllowances(): TDict<bigint> {
+export function useAllowances(): [TDict<bigint>, () => void] {
 	const {address} = useWeb3();
 	const wagmiAddress = useMemo((): TAddress => toAddress(address), [address]);
 	const zapAddress = useMemo((): TAddress => ZAP_YEARN_VE_CRV_ADDRESS, []);
 	const poolAddress = useMemo((): TAddress => YVECRV_POOL_LP_ADDRESS, []);
 	const lpyCRVAddress = useMemo((): TAddress => LPYCRV_TOKEN_ADDRESS, []);
-	const {data, status} = useContractReads({
+	const {data, status, refetch} = useContractReads({
 		contracts: [
 			{address: YCRV_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},
 			{address: STYCRV_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},
@@ -36,23 +36,25 @@ export function useAllowances(): TDict<bigint> {
 		]
 	});
 
-	return useMemo((): TDict<bigint> => {
+	return useMemo((): [TDict<bigint>, () => void] => {
 		if (!data || status !== 'success') {
-			return {};
+			return [{}, refetch];
 		}
-		return {
-			[allowanceKey(1, YCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS, toAddress(address))]: decodeAsBigInt(data[0]),
-			[allowanceKey(1, STYCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS, toAddress(address))]: decodeAsBigInt(data[1]),
-			[allowanceKey(1, LPYCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS, toAddress(address))]: decodeAsBigInt(data[2]),
-			[allowanceKey(1, YVECRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS, toAddress(address))]: decodeAsBigInt(data[3]),
-			[allowanceKey(1, CRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS, toAddress(address))]:  decodeAsBigInt(data[4]),
-			[allowanceKey(1, YVBOOST_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS, toAddress(address))]: decodeAsBigInt(data[5]),
-			[allowanceKey(1, YCRV_CURVE_POOL_ADDRESS, LPYCRV_TOKEN_ADDRESS, toAddress(address))]: decodeAsBigInt(data[6]),
-			[allowanceKey(1, CVXCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS, toAddress(address))]: decodeAsBigInt(data[7]),
-			[allowanceKey(1, YVECRV_TOKEN_ADDRESS, YVECRV_POOL_LP_ADDRESS, toAddress(address))]: decodeAsBigInt(data[8]),
-			[allowanceKey(1, CRV_TOKEN_ADDRESS, YVECRV_POOL_LP_ADDRESS, toAddress(address))]: decodeAsBigInt(data[9]),
-			[allowanceKey(1, YCRV_CURVE_POOL_ADDRESS, LPYCRV_TOKEN_ADDRESS, toAddress(address))]: decodeAsBigInt(data[10])
-		};
-	}, [data, status, address]);
+		return [
+			{
+				[allowanceKey(1, YCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS, toAddress(address))]: decodeAsBigInt(data[0]),
+				[allowanceKey(1, STYCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS, toAddress(address))]: decodeAsBigInt(data[1]),
+				[allowanceKey(1, LPYCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS, toAddress(address))]: decodeAsBigInt(data[2]),
+				[allowanceKey(1, YVECRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS, toAddress(address))]: decodeAsBigInt(data[3]),
+				[allowanceKey(1, CRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS, toAddress(address))]:  decodeAsBigInt(data[4]),
+				[allowanceKey(1, YVBOOST_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS, toAddress(address))]: decodeAsBigInt(data[5]),
+				[allowanceKey(1, YCRV_CURVE_POOL_ADDRESS, LPYCRV_TOKEN_ADDRESS, toAddress(address))]: decodeAsBigInt(data[6]),
+				[allowanceKey(1, CVXCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS, toAddress(address))]: decodeAsBigInt(data[7]),
+				[allowanceKey(1, YVECRV_TOKEN_ADDRESS, YVECRV_POOL_LP_ADDRESS, toAddress(address))]: decodeAsBigInt(data[8]),
+				[allowanceKey(1, CRV_TOKEN_ADDRESS, YVECRV_POOL_LP_ADDRESS, toAddress(address))]: decodeAsBigInt(data[9]),
+				[allowanceKey(1, YCRV_CURVE_POOL_ADDRESS, LPYCRV_TOKEN_ADDRESS, toAddress(address))]: decodeAsBigInt(data[10])
+			}, refetch
+		];
+	}, [data, status, address, refetch]);
 }
 

@@ -80,7 +80,7 @@ export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({chil
 			token: toAddress(decodeAsString(token)),
 			name: decodeAsString(name),
 			symbol: decodeAsString(symbol),
-			decimals: decodeAsNumber(decimals),
+			decimals: decodeAsNumber(decimals) || Number(decodeAsBigInt(decimals)),
 			supply: decodeAsBigInt(supply),
 			rewardPool: toAddress(decodeAsString(rewardPool))
 		});

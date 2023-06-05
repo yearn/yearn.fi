@@ -11,6 +11,7 @@ import {WalletContextApp} from '@common/contexts/useWallet';
 import {YearnContextApp} from '@common/contexts/useYearn';
 import {useCurrentApp} from '@common/hooks/useCurrentApp';
 import {variants} from '@common/utils/animations';
+import config from '@common/utils/wagmiConfig';
 
 import type {NextComponentType} from 'next';
 import type {AppProps} from 'next/app';
@@ -91,6 +92,7 @@ function MyApp(props: AppProps): ReactElement {
 	return (
 		<main id={'main'} className={aeonik.className}>
 			<WithYearn
+				configOverwrite={config}
 				options={{
 					web3: {
 						supportedChainID: [1, 10, 250, 42161, 1337]

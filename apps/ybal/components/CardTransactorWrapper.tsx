@@ -64,7 +64,7 @@ function CardTransactorContextApp({
 	children = <div />
 }): ReactElement {
 	const {provider, isActive, address} = useWeb3();
-	const {styBalAPY, allowances, slippage} = useYBal();
+	const {styBalAPY, allowances, refetchAllowances, slippage} = useYBal();
 	const {balancesNonce, balances, refresh} = useWallet();
 	const {vaults} = useYearn();
 	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
@@ -141,7 +141,10 @@ function CardTransactorContextApp({
 			statusHandler: set_txStatusApprove
 		});
 		if (result.isSuccessful) {
-			await refresh();
+			await Promise.all([
+				refetchAllowances(),
+				refresh()
+			]);
 		}
 	}, [provider, refresh, selectedOptionFrom.value, selectedOptionFrom.zapVia]);
 
@@ -188,7 +191,7 @@ function CardTransactorContextApp({
 				outputToken: selectedOptionTo.value, //_output_token
 				amount: amount.raw, //amount_in
 				minAmount: expectedOut.minOut, //_min_out
-				slippage: toBigInt(slippage),
+				slippage: toBigInt(slippage * 100),
 				shouldMint: expectedOut.shouldMint,
 				statusHandler: set_txStatusZap
 			});

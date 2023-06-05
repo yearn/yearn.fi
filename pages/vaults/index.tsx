@@ -265,7 +265,7 @@ function Index(): ReactElement {
 
 
 				<Renderable shouldRender={category === 'Holdings' && retiredVaults?.length > 0}>
-					<div className={'my-4'}>
+					<div>
 						{retiredVaults.filter((vault): boolean => !!vault).map((vault): ReactNode =>
 							<VaultsListRetired key={vault.address} currentVault={vault} />
 						)}
@@ -273,13 +273,14 @@ function Index(): ReactElement {
 				</Renderable>
 
 				<Renderable shouldRender={category === 'Holdings' && migratableVaults?.length > 0}>
-					<div className={'my-4'}>
+					<div>
 						{migratableVaults.filter((vault): boolean => !!vault).map((vault): ReactNode =>
 							<VaultsListInternalMigrationRow key={vault.address} currentVault={vault} />
 						)}
 					</div>
 				</Renderable>
 
+				<div className={'mt-4'} />
 				<ListHead
 					sortBy={sort.sortBy}
 					sortDirection={sort.sortDirection}

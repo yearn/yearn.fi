@@ -69,26 +69,29 @@ function LogoPopover(): ReactElement {
 				<Popover.Panel className={'absolute left-1/2 z-10 mt-6 w-80 -translate-x-1/2 px-4 pt-4 sm:px-0 md:w-96'}>
 					<div className={'overflow-hidden border border-neutral-200 shadow-lg'}>
 						<div className={'relative grid grid-cols-2 bg-neutral-0 md:grid-cols-4'}>
-							{Object.values(APPS).map(({name, href, icon}): ReactElement => {
-								return (
-									<Link
-										prefetch={false}
-										key={name}
-										href={href}
-										onClick={(): void => set_isShowing(false)}>
-										<div
-											onClick={(): void => set_isShowing(false)}
-											className={'flex cursor-pointer flex-col items-center p-4 transition-colors hover:bg-neutral-200'}>
-											<div>
-												{cloneElement(icon)}
-											</div>
-											<div className={'pt-2 text-center'}>
-												<b className={'text-base'}>{name}</b>
-											</div>
-										</div>
-									</Link>
-								);
-							})}
+							{
+								Object.values(APPS)
+									.filter(({isDisabled}): boolean => !isDisabled)
+									.map(({name, href, icon}): ReactElement => {
+										return (
+											<Link
+												prefetch={false}
+												key={name}
+												href={href}
+												onClick={(): void => set_isShowing(false)}>
+												<div
+													onClick={(): void => set_isShowing(false)}
+													className={'flex cursor-pointer flex-col items-center p-4 transition-colors hover:bg-neutral-200'}>
+													<div>
+														{cloneElement(icon)}
+													</div>
+													<div className={'pt-2 text-center'}>
+														<b className={'text-base'}>{name}</b>
+													</div>
+												</div>
+											</Link>
+										);
+									})}
 						</div>
 					</div>
 				</Popover.Panel>

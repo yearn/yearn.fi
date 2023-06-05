@@ -16,11 +16,11 @@ const LOCAL_ZAP_YEARN_YBAL_ADDRESS = toAddress('0x43cA9bAe8dF108684E5EAaA720C25e
 /* 🔵 - Yearn Finance **********************************************************
 ** This context controls the allowances computation for the yBal app
 ******************************************************************************/
-export function useAllowances(): TDict<bigint> {
+export function useAllowances(): [TDict<bigint>, () => void] {
 	const {address} = useWeb3();
 	const wagmiAddress = useMemo((): TAddress => toAddress(address), [address]);
 	const zapAddress = useMemo((): TAddress => LOCAL_ZAP_YEARN_YBAL_ADDRESS, []);
-	const {data, status} = useContractReads({
+	const {data, status, refetch} = useContractReads({
 		contracts: [
 			{address: BAL_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},
 			{address: WETH_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},
@@ -31,18 +31,20 @@ export function useAllowances(): TDict<bigint> {
 		]
 	});
 
-	return useMemo((): TDict<bigint> => {
+	return useMemo((): [TDict<bigint>, () => void] => {
 		if (!data || status !== 'success') {
-			return {};
+			return [{}, refetch];
 		}
-		return {
-			[allowanceKey(1, BAL_TOKEN_ADDRESS, LOCAL_ZAP_YEARN_YBAL_ADDRESS, toAddress(address))]: decodeAsBigInt(data[0]),
-			[allowanceKey(1, WETH_TOKEN_ADDRESS, LOCAL_ZAP_YEARN_YBAL_ADDRESS, toAddress(address))]: decodeAsBigInt(data[1]),
-			[allowanceKey(1, BALWETH_TOKEN_ADDRESS, LOCAL_ZAP_YEARN_YBAL_ADDRESS, toAddress(address))]: decodeAsBigInt(data[2]),
-			[allowanceKey(1, YBAL_TOKEN_ADDRESS, LOCAL_ZAP_YEARN_YBAL_ADDRESS, toAddress(address))]: decodeAsBigInt(data[3]),
-			[allowanceKey(1, STYBAL_TOKEN_ADDRESS, LOCAL_ZAP_YEARN_YBAL_ADDRESS, toAddress(address))]: decodeAsBigInt(data[4]),
-			[allowanceKey(1, LPYBAL_TOKEN_ADDRESS, LOCAL_ZAP_YEARN_YBAL_ADDRESS, toAddress(address))]: decodeAsBigInt(data[5])
-		};
-	}, [data, status, address]);
+		return [
+			{
+				[allowanceKey(1, BAL_TOKEN_ADDRESS, LOCAL_ZAP_YEARN_YBAL_ADDRESS, toAddress(address))]: decodeAsBigInt(data[0]),
+				[allowanceKey(1, WETH_TOKEN_ADDRESS, LOCAL_ZAP_YEARN_YBAL_ADDRESS, toAddress(address))]: decodeAsBigInt(data[1]),
+				[allowanceKey(1, BALWETH_TOKEN_ADDRESS, LOCAL_ZAP_YEARN_YBAL_ADDRESS, toAddress(address))]: decodeAsBigInt(data[2]),
+				[allowanceKey(1, YBAL_TOKEN_ADDRESS, LOCAL_ZAP_YEARN_YBAL_ADDRESS, toAddress(address))]: decodeAsBigInt(data[3]),
+				[allowanceKey(1, STYBAL_TOKEN_ADDRESS, LOCAL_ZAP_YEARN_YBAL_ADDRESS, toAddress(address))]: decodeAsBigInt(data[4]),
+				[allowanceKey(1, LPYBAL_TOKEN_ADDRESS, LOCAL_ZAP_YEARN_YBAL_ADDRESS, toAddress(address))]: decodeAsBigInt(data[5])
+			}, refetch
+		];
+	}, [data, status, address, refetch]);
 }
 

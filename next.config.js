@@ -94,12 +94,14 @@ module.exports = withTM(withBundleAnalyzer(withPWA({
 		WEB_SOCKET_URL: {
 			1: process.env.WS_URL_MAINNET,
 			10: process.env.WS_URL_OPTIMISM,
+			137: process.env.WS_URL_POLYGON,
 			250: process.env.WS_URL_FANTOM,
 			42161: process.env.WS_URL_ARBITRUM
 		},
 		JSON_RPC_URL: {
 			1: process.env.RPC_URL_MAINNET || 'https://eth.llamarpc.com',
 			10: process.env.RPC_URL_OPTIMISM,
+			137: process.env.RPC_URL_POLYGON,
 			250: process.env.RPC_URL_FANTOM,
 			42161: process.env.RPC_URL_ARBITRUM
 		},
@@ -108,7 +110,8 @@ module.exports = withTM(withBundleAnalyzer(withPWA({
 
 		PARTNER_ID_ADDRESS: '0xFEB4acf3df3cDEA7399794D0869ef76A6EfAff52',
 		SHOULD_USE_PARTNER_CONTRACT: true,
-		YDAEMON_BASE_URI: process.env.YDAEMON_BASE_URI || 'https://ydaemon.yearn.finance',
+		YDAEMON_BASE_URI: 'https://ydaemon.ycorpo.com',
+		// YDAEMON_BASE_URI: process.env.YDAEMON_BASE_URI || 'https://ydaemon.yearn.finance',
 		// YDAEMON_BASE_URI: 'https://ydaemon-dev.yearn.finance',
 		// YDAEMON_BASE_URI: 'https://api.ycorpo.com',
 		// YDAEMON_BASE_URI: 'http://localhost:8080',

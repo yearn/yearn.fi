@@ -11,6 +11,7 @@ export function SearchBar({searchLabel, searchPlaceholder, searchValue, set_sear
 	return (
 		<div className={'w-full'}>
 			<label
+				suppressHydrationWarning
 				htmlFor={'search'}
 				className={'text-neutral-600'}>
 				{searchLabel}

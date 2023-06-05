@@ -307,7 +307,7 @@ function GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauge, cate
 								<Button
 									className={'yearn--button-smaller w-full'}
 									isBusy={txStatusClaim.pending}
-									isDisabled>
+									isDisabled={!isActive || !hasSomethingToClaim}>
 									{'Claim'}
 								</Button>
 							</div>

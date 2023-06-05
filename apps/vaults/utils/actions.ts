@@ -1,10 +1,9 @@
 import STAKING_REWARDS_ABI from '@vaults/utils/abi/stakingRewards.abi';
 import STAKING_REWARDS_ZAP_ABI from '@vaults/utils/abi/stakingRewardsZap.abi';
 import VAULT_FACTORY_ABI from '@vaults/utils/abi/vaultFactory.abi';
-import ZAP_VE_CRV_ABI from '@vaults/utils/abi/zapVeCRV.abi';
-import {prepareWriteContract} from '@wagmi/core';
+import {getPublicClient} from '@wagmi/core';
 import {} from '@yearn-finance/web-lib/utils/address';
-import {STAKING_REWARDS_ZAP_ADDRESS, VAULT_FACTORY_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {STAKING_REWARDS_ZAP_ADDRESS, VAULT_FACTORY_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {assert} from '@common/utils/assert';
 import {assertAddress, handleTx, toWagmiProvider} from '@common/utils/toWagmiProvider';
@@ -86,39 +85,11 @@ export async function unstake(props: TUnstake): Promise<TTxResponse> {
 type TClaim = TWriteTransaction;
 export async function claim(props: TClaim): Promise<TTxResponse> {
 	assertAddress(props.contractAddress);
-	
+
 	return await handleTx(props, {
 		address: props.contractAddress,
 		abi: STAKING_REWARDS_ABI,
 		functionName: 'getReward'
-	});
-}
-
-/* 🔵 - Yearn Finance **********************************************************
-** stake is a _WRITE_ function that unstake the shares of the vault from the
-** staking contract.
-**
-** @app - Vaults (veCRV)
-** @param inputToken - The token to be send to the zap
-** @param outputToken - The token to receive from the zap
-** @param amount - The amount of inputToken to be sent to the zap
-******************************************************************************/
-type TVeCRVZap = TWriteTransaction & {
-	inputToken: TAddress | undefined;
-	outputToken: TAddress | undefined;
-	amount: bigint;
-};
-export async function veCRVzap(props: TVeCRVZap): Promise<TTxResponse> {
-	assertAddress(ZAP_YEARN_VE_CRV_ADDRESS, 'ZAP_YEARN_VE_CRV_ADDRESS');
-	assertAddress(props.inputToken, 'inputToken');
-	assertAddress(props.outputToken, 'outputToken');
-	assert(props.amount > 0n, 'Amount must be greater than 0n');
-
-	return await handleTx(props, {
-		address: ZAP_YEARN_VE_CRV_ADDRESS,
-		abi: ZAP_VE_CRV_ABI,
-		functionName: 'zap',
-		args: [props.inputToken, props.outputToken, props.amount]
 	});
 }
 
@@ -157,14 +128,15 @@ export async function gasOfCreateNewVaultsAndStrategies(props: TCreateNewVaultsA
 		assertAddress(props.gaugeAddress, 'gaugeAddress');
 
 		const wagmiProvider = await toWagmiProvider(props.connector);
-		const config = await prepareWriteContract({
-			...wagmiProvider,
+		const client = await getPublicClient({chainId: wagmiProvider.chainId});
+		const gas = await client.estimateContractGas({
 			address: VAULT_FACTORY_ADDRESS,
 			abi: VAULT_FACTORY_ABI,
 			functionName: 'createNewVaultsAndStrategies',
-			args: [props.gaugeAddress]
+			args: [props.gaugeAddress],
+			account: wagmiProvider.address
 		});
-		return toBigInt(config.request.gas);
+		return toBigInt(gas);
 	} catch (error) {
 		console.error(error);
 		return toBigInt(0);

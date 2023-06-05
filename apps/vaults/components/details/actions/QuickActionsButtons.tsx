@@ -7,7 +7,7 @@ import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {ETH_TOKEN_ADDRESS, MAX_UINT_256, YVWETH_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {ETH_TOKEN_ADDRESS, MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useWallet} from '@common/contexts/useWallet';
@@ -26,6 +26,7 @@ function VaultDetailsQuickActionsButtons(): ReactElement {
 	const [txStatusExecuteWithdraw, set_txStatusExecuteWithdraw] = useState(defaultTxStatus);
 	const {actionParams, currentVault, onChangeAmount, maxDepositPossible, isDepositing} = useActionFlow();
 	const {onApprove, onExecuteDeposit, onExecuteWithdraw, onRetrieveAllowance, currentSolver, expectedOut, isLoadingExpectedOut, hash} = useSolver();
+	const isWithdrawing = !isDepositing;
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** SWR hook to get the expected out for a given in/out pair with a specific amount. This hook is
@@ -75,7 +76,7 @@ function VaultDetailsQuickActionsButtons(): ReactElement {
 	** This approve can not be triggered if the wallet is not active
 	** (not connected) or if the tx is still pending.
 	**************************************************************************/
-	async function onApproveFrom(): Promise<void> {
+	const onApproveFrom = useCallback(async (): Promise<void> => {
 		const shouldApproveInfinite = (
 			currentSolver === Solver.enum.PartnerContract
 			|| currentSolver === Solver.enum.Vanilla
@@ -88,7 +89,7 @@ function VaultDetailsQuickActionsButtons(): ReactElement {
 				await actions.execute();
 			}
 		);
-	}
+	}, [actionParams?.amount.raw, actions, currentSolver, onApprove]);
 
 	const isDiffNetwork = !!safeChainID && currentVault.chainID !== safeChainID;
 	const isButtonDisabled = (
@@ -102,22 +103,51 @@ function VaultDetailsQuickActionsButtons(): ReactElement {
 	/* 🔵 - Yearn Finance ******************************************************
 	** Wrapper to decide if we should use the partner contract or not
 	**************************************************************************/
-	const isDepositingEthViaChainCoin = (currentSolver === Solver.enum.ChainCoin && isDepositing);
-	const shouldUseChainCoinContract = (
-		toAddress(actionParams?.selectedOptionFrom?.value) === ETH_TOKEN_ADDRESS
-		&& toAddress(actionParams?.selectedOptionTo?.value) === YVWETH_ADDRESS
-	);
 	const isAboveAllowance = toBigInt(actionParams.amount.raw) > toBigInt(allowanceFrom?.raw);
 	const isButtonBusy = txStatusApprove.pending || status !== 'success';
+
 	if (
-		!(isDepositingEthViaChainCoin && shouldUseChainCoinContract) && (isButtonBusy || isAboveAllowance) && (
-			(currentSolver === Solver.enum.Vanilla && isDepositing)
-			|| (currentSolver === Solver.enum.InternalMigration)
-			|| (currentSolver === Solver.enum.Cowswap)
-			|| (currentSolver === Solver.enum.Wido)
-			|| (currentSolver === Solver.enum.PartnerContract)
-			|| (currentSolver === Solver.enum.OptimismBooster)
-		)
+		isWithdrawing //If user is withdrawing ...
+		&& currentSolver === Solver.enum.ChainCoin // ... and the solver is ChainCoin ...
+		&& toAddress(actionParams?.selectedOptionTo?.value) === ETH_TOKEN_ADDRESS // ... and the output is ETH ...
+		&& isAboveAllowance // ... and the amount is above the allowance
+	) { // ... then we need to approve the ChainCoin contract
+		return (
+			<Button
+				className={'w-full'}
+				isBusy={txStatusApprove.pending}
+				isDisabled={isButtonDisabled || toBigInt(expectedOut.raw) === 0n}
+				onClick={onApproveFrom}>
+				{'Approve'}
+			</Button>
+		);
+	}
+
+	if (
+		isDepositing //If user is depositing ...
+		&& currentSolver === Solver.enum.ChainCoin // ... and the solver is ChainCoin ...
+	) { // ... then we can deposit without approval
+		return (
+			<Button
+				onClick={async (): Promise<void> => onExecuteDeposit(set_txStatusExecuteDeposit, onSuccess)}
+				className={'w-full'}
+				isBusy={txStatusExecuteDeposit.pending}
+				isDisabled={isButtonDisabled}>
+				{'Deposit'}
+			</Button>
+		);
+	}
+
+	if (
+		(isButtonBusy || isAboveAllowance) //If the button is busy or the amount is above the allowance ...
+		&& (
+			(isDepositing && currentSolver === Solver.enum.Vanilla) // ... and the user is depositing with Vanilla ...
+			|| (currentSolver === Solver.enum.InternalMigration) // ... or the user is migrating ...
+			|| (currentSolver === Solver.enum.Cowswap) // ... or the user is using Cowswap ...
+			|| (currentSolver === Solver.enum.Wido) // ... or the user is using Wido ...
+			|| (currentSolver === Solver.enum.PartnerContract) // ... or the user is using the Partner contract ...
+			|| (currentSolver === Solver.enum.OptimismBooster) // ... or the user is using the Optimism Booster ...
+		) // ... then we need to approve the from token
 	) {
 		return (
 			<Button

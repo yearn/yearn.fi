@@ -35,6 +35,7 @@ export type TWriteTransaction = {
 	connector: Connector | undefined;
 	contractAddress: TAddress | undefined;
 	statusHandler?: (status: typeof defaultTxStatus) => void;
+	onTrySomethingElse?: () => Promise<TTxResponse>; //When the abi is incorrect, ex: usdt, we may need to bypass the error and try something else
 }
 
 export function assertAddress(addr: string | TAddress | undefined, name?: string): asserts addr is TAddress {
@@ -81,13 +82,19 @@ export async function handleTx<
 		toast({type: 'success', content: 'Transaction successful!'});
 		return ({isSuccessful: receipt.status === 'success', receipt});
 	} catch (error) {
-		console.error(error);
 		const errorAsBaseError = error as BaseError;
+		if (args.onTrySomethingElse) {
+			if (errorAsBaseError.name === 'ContractFunctionExecutionError') {
+				return await args.onTrySomethingElse();
+			}
+		}
+
 		if (process.env.NODE_ENV === 'production') {
 			captureException(errorAsBaseError);
 		}
 		toast({type: 'error', content: errorAsBaseError.shortMessage});
 		args.statusHandler?.({...defaultTxStatus, error: true});
+		console.error(error);
 		return ({isSuccessful: false, error: errorAsBaseError || ''});
 	} finally {
 		setTimeout((): void => {

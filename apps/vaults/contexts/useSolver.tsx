@@ -1,6 +1,5 @@
-import React, {createContext, useCallback, useContext, useRef, useState} from 'react';
+import React, {createContext, useCallback, useContext, useEffect, useMemo, useRef, useState} from 'react';
 import {serialize} from 'wagmi';
-import {useDebouncedEffect, useDeepCompareMemo} from '@react-hookz/web';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useSolverChainCoin} from '@vaults/hooks/useSolverChainCoin';
 import {useSolverCowswap} from '@vaults/hooks/useSolverCowswap';
@@ -87,7 +86,11 @@ function WithSolverContextApp({children}: { children: React.ReactElement }): Rea
 	** Based on the currentSolver, we initialize the solver with the required parameters.
 	**********************************************************************************************/
 	const onUpdateSolver = useCallback(async (currentNonce: number): Promise<void> => {
-		if (!actionParams?.selectedOptionFrom || !actionParams?.selectedOptionTo || !actionParams?.amount.raw) {
+		if (
+			!actionParams?.selectedOptionFrom
+			|| !actionParams?.selectedOptionTo
+			|| actionParams?.amount.raw === undefined
+		) {
 			return;
 		}
 		set_isLoading(true);
@@ -150,8 +153,7 @@ function WithSolverContextApp({children}: { children: React.ReactElement }): Rea
 			}
 			case Solver.enum.OptimismBooster: {
 				const [quote] = await Promise.allSettled([optimismBooster.init(request)]);
-				await handleUpdateSolver({currentNonce, request, quote, solver: Solver.enum.OptimismBooster, ctx: chainCoin});
-
+				await handleUpdateSolver({currentNonce, request, quote, solver: Solver.enum.OptimismBooster, ctx: optimismBooster});
 				break;
 			}
 			case Solver.enum.ChainCoin: {
@@ -177,12 +179,12 @@ function WithSolverContextApp({children}: { children: React.ReactElement }): Rea
 		}
 	}, [actionParams.selectedOptionFrom, actionParams.selectedOptionTo, actionParams.amount.raw, address, isDepositing, currentSolver, wido, cowswap, portals, vanilla, handleUpdateSolver, optimismBooster, chainCoin, partnerContract, currentVault.migration.contract, internalMigration]);
 
-	useDebouncedEffect((): void => {
+	useEffect((): void => {
 		const currentNonce = ++executionNonce.current;
 		onUpdateSolver(currentNonce);
-	}, [onUpdateSolver], 0);
+	}, [onUpdateSolver]);
 
-	const contextValue = useDeepCompareMemo((): TWithSolver => ({
+	const contextValue = useMemo((): TWithSolver => ({
 		currentSolver: currentSolver,
 		effectiveSolver: currentSolverState?.type,
 		expectedOut: currentSolverState?.quote || toNormalizedBN(0),

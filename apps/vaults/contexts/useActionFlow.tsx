@@ -203,7 +203,6 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 
 		const isInputTokenEth = actionParams?.selectedOptionFrom?.value === ETH_TOKEN_ADDRESS;
 		const isOutputTokenEth = actionParams?.selectedOptionTo?.value === ETH_TOKEN_ADDRESS;
-		// TODO Move yvWFTM address to web-lib
 		const isVaultTokenWrappedCoin = (
 			(safeChainID === 1 && currentVault.address === YVWETH_ADDRESS) ||
 			(safeChainID === 10 && currentVault.address === YVWETH_OPT_ADDRESS) ||

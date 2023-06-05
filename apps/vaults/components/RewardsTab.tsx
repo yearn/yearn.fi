@@ -146,7 +146,7 @@ function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): ReactElement
 						className={'w-full md:mt-7 md:w-[168px]'}
 						onClick={onClaim}
 						isBusy={claimStatus.pending}
-						isDisabled={!isActive || Number(rewardBalance.normalized) <= 0}>
+						isDisabled={!isActive || rewardBalance.raw === 0n}>
 						{'Claim'}
 					</Button>
 				</div>

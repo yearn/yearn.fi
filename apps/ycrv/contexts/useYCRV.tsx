@@ -24,6 +24,7 @@ type TYCRVContext = {
 	holdings: TCRVHoldings,
 	harvests: TYDaemonHarvests[],
 	set_slippage: (slippage: number) => void,
+	refetchAllowances: () => void
 }
 
 const defaultProps = {
@@ -32,8 +33,9 @@ const defaultProps = {
 	harvests: [],
 	allowances: {},
 	slippage: 0.6,
+	holdings: defaultHoldings,
 	set_slippage: (): void => undefined,
-	holdings: defaultHoldings
+	refetchAllowances: (): void => undefined
 };
 
 /* 🔵 - Yearn Finance **********************************************************
@@ -86,7 +88,8 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 	const contextValue = useMemo((): TYCRVContext => ({
 		harvests: yCRVHarvests,
 		holdings: holdings,
-		allowances: allowances,
+		allowances: allowances[0],
+		refetchAllowances: allowances[1],
 		styCRVAPY,
 		styCRVMegaBoost,
 		slippage,

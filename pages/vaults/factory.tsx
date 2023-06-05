@@ -179,6 +179,8 @@ function Factory(): ReactElement {
 		actions.execute();
 	}, [actions, isActive, provider, safeChainID, selectedOption, selectedOption.value.gaugeAddress]);
 
+	console.warn(estimate);
+
 	const onCreateNewVault = useCallback(async (): Promise<void> => {
 		const result = await createNewVaultsAndStrategies({
 			connector: provider,
@@ -210,8 +212,8 @@ function Factory(): ReactElement {
 				<div aria-label={'new vault card title'} className={'flex flex-col pb-8'}>
 					<h2 className={'pb-4 text-3xl font-bold'}>{'Create new Vault'}</h2>
 					<div className={'w-full md:w-7/12'}>
-						<Balancer>
-							<p>
+						<p>
+							<Balancer>
 								{'Deploy a new auto-compounding yVault for any Curve pool with an active liquidity gauge. All factory-deployed vaults have no management fees and a flat 10% performance fee. Permissionless finance just got permissionless-er. To learn more, check our '}
 								<a
 									href={'https://docs.yearn.finance/getting-started/products/yvaults/vault-factory'}
@@ -221,8 +223,8 @@ function Factory(): ReactElement {
 									{'docs'}
 								</a>
 								{'.'}
-							</p>
-						</Balancer>
+							</Balancer>
+						</p>
 					</div>
 				</div>
 

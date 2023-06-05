@@ -22,6 +22,7 @@ type TYBalContext = {
 	holdings: TBalHoldings,
 	harvests: TYDaemonHarvests[],
 	set_slippage: (slippage: number) => void,
+	refetchAllowances: () => void
 }
 
 const defaultProps = {
@@ -29,8 +30,9 @@ const defaultProps = {
 	harvests: [],
 	allowances: {},
 	slippage: 0.6,
+	holdings: defaultBalHoldings,
 	set_slippage: (): void => undefined,
-	holdings: defaultBalHoldings
+	refetchAllowances: (): void => undefined
 };
 
 /* 🔵 - Yearn Finance **********************************************************
@@ -68,7 +70,8 @@ export const YBalContextApp = ({children}: {children: ReactElement}): ReactEleme
 	const contextValue = useMemo((): TYBalContext => ({
 		harvests: yBalHarvests,
 		holdings: holdings,
-		allowances: allowances,
+		allowances: allowances[0],
+		refetchAllowances: allowances[1],
 		styBalAPY,
 		slippage,
 		set_slippage

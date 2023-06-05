@@ -86,14 +86,16 @@ type TZapYBal = TWriteTransaction & {
 	shouldMint: boolean;
 };
 export async function zapBal(props: TZapYBal): Promise<TTxResponse> {
-	const minAmountWithSlippage = props.minAmount * (1n - (props.slippage / 100n));
+	const minAmountWithSlippage = (
+		props.minAmount - (props.minAmount * props.slippage / 10_000n)
+	);
+
 	assert(props.connector, 'No connector');
 	assertAddress(LOCAL_ZAP_YEARN_YBAL_ADDRESS, 'LOCAL_ZAP_YEARN_YBAL_ADDRESS');
 	assertAddress(props.inputToken, 'inputToken');
 	assertAddress(props.outputToken, 'outputToken');
 	assert(props.amount > 0n, 'Amount must be greater than 0');
 	assert(props.minAmount > 0n, 'Min amount must be greater than 0');
-	assert(props.amount >= minAmountWithSlippage, 'Amount must be greater or equal to min amount with slippage');
 
 	const userAddress = await props.connector.getAccount();
 	assertAddress(userAddress, 'userAddress');

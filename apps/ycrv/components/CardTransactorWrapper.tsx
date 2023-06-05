@@ -7,7 +7,7 @@ import {useAddToken} from '@yearn-finance/web-lib/hooks/useAddToken';
 import {useDismissToasts} from '@yearn-finance/web-lib/hooks/useDismissToasts';
 import VAULT_ABI from '@yearn-finance/web-lib/utils/abi/vault.abi';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {LPYCRV_TOKEN_ADDRESS, MAX_UINT_256, STYCRV_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {LPYCRV_TOKEN_ADDRESS, MAX_UINT_256, STYCRV_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
@@ -69,7 +69,7 @@ function CardTransactorContextApp({
 	children = <div />
 }): ReactElement {
 	const {provider, isActive, address} = useWeb3();
-	const {styCRVAPY, allowances, slippage} = useYCRV();
+	const {styCRVAPY, allowances, refetchAllowances, slippage} = useYCRV();
 	const {balancesNonce, balances, refresh} = useWallet();
 	const {vaults} = useYearn();
 	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
@@ -160,9 +160,12 @@ function CardTransactorContextApp({
 			statusHandler: set_txStatusApprove
 		});
 		if (result.isSuccessful) {
-			await refresh();
+			await Promise.all([
+				refetchAllowances(),
+				refresh()
+			]);
 		}
-	}, [provider, refresh, selectedOptionFrom.value, selectedOptionFrom.zapVia]);
+	}, [provider, refresh, refetchAllowances, selectedOptionFrom.value, selectedOptionFrom.zapVia]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** CRV token require the allowance to be reset to 0 before being able to
@@ -234,7 +237,11 @@ function CardTransactorContextApp({
 				outputToken: selectedOptionTo.value, //_output_token
 				amount: amount.raw, //amount_in
 				minAmount: toBigInt(expectedOut), //_min_out
-				slippage: toBigInt(slippage),
+				slippage: (
+					selectedOptionTo.value === YCRV_TOKEN_ADDRESS ?
+						0n :
+						toBigInt(slippage * 100)
+				),
 				statusHandler: set_txStatusZap
 			});
 			if (result.isSuccessful) {
