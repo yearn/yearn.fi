@@ -33,13 +33,13 @@ function Index(vault: InferGetServerSidePropsType<typeof getServerSideProps>): R
 	const router = useRouter();
 	const {refresh} = useWallet();
 	const {toast, toastMaster} = yToast();
-	
+
 	const [toastState, set_toastState] = useState<{id?: string; isOpen: boolean}>({isOpen: false});
 	const currentVault = useRef<TYDaemonVault>(vaults[toAddress(router.query.address as string)] || vault);
 
 	useEffect((): void => {
 		if (address && isActive) {
-			const	tokensToRefresh = [];
+			const tokensToRefresh = [];
 			if (currentVault?.current?.address) {
 				tokensToRefresh.push({token: toAddress(currentVault.current.address)});
 			}
@@ -136,7 +136,7 @@ export const getServerSideProps: GetServerSideProps<TYDaemonVault> = async (cont
 	if (typeof chainID !== 'string' || !Object.keys(CHAINS).includes(chainID)) {
 		return {notFound: true};
 	}
-	
+
 	const address = getAddress(context.query.address);
 
 	if (!address || !ADDRESS_REGEX.test(address) || isZeroAddress(address)) {

@@ -6,15 +6,14 @@ import {CurveContextApp} from '@common/contexts/useCurve';
 import {useCurrentApp} from '@common/hooks/useCurrentApp';
 import {variants} from '@common/utils/animations';
 import {BribesContextApp} from '@yBribe/contexts/useBribes';
-
-import {getNextThursday} from './utils';
+import {getNextThursday} from '@yBribe/utils';
 
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
 
 export default function Wrapper({children, router}: {children: ReactElement, router: NextRouter}): ReactElement {
 	const {manifest} = useCurrentApp(router);
-	
+
 	return (
 		<CurveContextApp>
 			<>

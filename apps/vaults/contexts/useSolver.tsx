@@ -1,5 +1,5 @@
-import React, {createContext, useCallback, useContext, useState} from 'react';
-import {useDebouncedEffect, useDeepCompareMemo} from '@react-hookz/web';
+import React, {createContext, useCallback, useContext, useEffect, useMemo, useRef, useState} from 'react';
+import {serialize} from 'wagmi';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useSolverChainCoin} from '@vaults/hooks/useSolverChainCoin';
 import {useSolverCowswap} from '@vaults/hooks/useSolverCowswap';
@@ -16,7 +16,6 @@ import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUp
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 import {hash} from '@common/utils';
 
-import type {MaybeString} from '@yearn-finance/web-lib/types';
 import type {TSolver} from '@common/schemas/yDaemonTokenListBalances';
 import type {TNormalizedBN} from '@common/types/types';
 import type {TInitSolverArgs, TSolverContext, TWithSolver} from '@vaults/types/solvers';
@@ -26,14 +25,15 @@ export const isSolverDisabled = {
 	[Solver.enum.PartnerContract]: false,
 	[Solver.enum.ChainCoin]: false,
 	[Solver.enum.InternalMigration]: false,
-	[Solver.enum.Cowswap]: false,
 	[Solver.enum.OptimismBooster]: false,
+	[Solver.enum.Cowswap]: false,
 	[Solver.enum.Wido]: false,
 	[Solver.enum.Portals]: false,
 	[Solver.enum.None]: false
 };
 
 type TUpdateSolverHandler = {
+	currentNonce: number;
 	request: TInitSolverArgs;
 	quote: PromiseSettledResult<TNormalizedBN>;
 	solver: TSolver;
@@ -46,7 +46,6 @@ const DefaultWithSolverContext: TWithSolver = {
 	expectedOut: toNormalizedBN(0),
 	hash: undefined,
 	isLoadingExpectedOut: false,
-	onRetrieveExpectedOut: async (): Promise<TNormalizedBN> => toNormalizedBN(0),
 	onRetrieveAllowance: async (): Promise<TNormalizedBN> => toNormalizedBN(0),
 	onApprove: async (): Promise<void> => Promise.resolve(),
 	onExecuteDeposit: async (): Promise<void> => Promise.resolve(),
@@ -57,6 +56,7 @@ const WithSolverContext = createContext<TWithSolver>(DefaultWithSolverContext);
 function WithSolverContextApp({children}: { children: React.ReactElement }): React.ReactElement {
 	const {address} = useWeb3();
 	const {currentVault, actionParams, currentSolver, isDepositing} = useActionFlow();
+	const executionNonce = useRef<number>(0);
 	const cowswap = useSolverCowswap();
 	const wido = useSolverWido();
 	const vanilla = useSolverVanilla();
@@ -65,26 +65,32 @@ function WithSolverContextApp({children}: { children: React.ReactElement }): Rea
 	const partnerContract = useSolverPartnerContract();
 	const internalMigration = useSolverInternalMigration();
 	const optimismBooster = useSolverOptimismBooster();
-	const [currentSolverState, set_currentSolverState] = useState<TSolverContext & { hash: MaybeString }>({...vanilla, hash: undefined});
+	const [currentSolverState, set_currentSolverState] = useState<TSolverContext & { hash?: string }>(vanilla);
 	const [isLoading, set_isLoading] = useState(false);
 
-	async function handleUpdateSolver({request, quote, solver, ctx}: TUpdateSolverHandler): Promise<void> {
+	const handleUpdateSolver = useCallback(async ({currentNonce, request, quote, solver, ctx}: TUpdateSolverHandler): Promise<void> => {
 		if (quote.status !== 'fulfilled') {
 			return;
 		}
-
-		const requestHash = await hash(JSON.stringify({...request, solver, expectedOut: quote.value.raw.toString()}));
+		if (currentNonce !== executionNonce.current) {
+			return;
+		}
+		const requestHash = await hash(serialize({...request, solver, expectedOut: quote.value.raw}));
 		performBatchedUpdates((): void => {
 			set_currentSolverState({...ctx, quote: quote.value, hash: requestHash});
 			set_isLoading(false);
 		});
-	}
+	}, [executionNonce]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** Based on the currentSolver, we initialize the solver with the required parameters.
 	**********************************************************************************************/
-	const onUpdateSolver = useCallback(async (): Promise<void> => {
-		if (!actionParams?.selectedOptionFrom || !actionParams?.selectedOptionTo || !actionParams?.amount.raw) {
+	const onUpdateSolver = useCallback(async (currentNonce: number): Promise<void> => {
+		if (
+			!actionParams?.selectedOptionFrom
+			|| !actionParams?.selectedOptionTo
+			|| actionParams?.amount.raw === undefined
+		) {
 			return;
 		}
 		set_isLoading(true);
@@ -98,7 +104,7 @@ function WithSolverContextApp({children}: { children: React.ReactElement }): Rea
 		};
 
 		const isValidSolver = ({quote, solver}: { quote: PromiseSettledResult<TNormalizedBN>; solver: TSolver }): boolean => {
-			return quote.status === 'fulfilled' && quote?.value.raw?.gt(0) && !isSolverDisabled[solver];
+			return quote.status === 'fulfilled' && (quote?.value.raw > 0n) && !isSolverDisabled[solver];
 		};
 
 		switch (currentSolver) {
@@ -128,7 +134,7 @@ function WithSolverContextApp({children}: { children: React.ReactElement }): Rea
 				solvers[Solver.enum.None] = {quote: {status: 'fulfilled', value: toNormalizedBN(0)}, ctx: vanilla};
 
 				const solverPriority = [Solver.enum.Wido, Solver.enum.Cowswap, Solver.enum.Portals, Solver.enum.None];
-				
+
 				const newSolverPriority = [currentSolver, ...solverPriority.filter((solver): boolean => solver !== currentSolver)];
 
 				for (const solver of newSolverPriority) {
@@ -139,57 +145,51 @@ function WithSolverContextApp({children}: { children: React.ReactElement }): Rea
 					const result = solvers[solver] ?? solvers[Solver.enum.None];
 					if (result) {
 						const {quote, ctx} = result;
-						await handleUpdateSolver({request, quote, solver, ctx});
+						await handleUpdateSolver({currentNonce, request, quote, solver, ctx});
 					}
 					return;
 				}
-
 				break;
 			}
 			case Solver.enum.OptimismBooster: {
-				const quote = await optimismBooster.init(request);
-				const requestHash = await hash(JSON.stringify({...request, solver: Solver.enum.OptimismBooster, expectedOut: quote.raw.toString()}));
-				performBatchedUpdates((): void => {
-					set_currentSolverState({...optimismBooster, quote, hash: requestHash});
-					set_isLoading(false);
-				});
+				const [quote] = await Promise.allSettled([optimismBooster.init(request)]);
+				await handleUpdateSolver({currentNonce, request, quote, solver: Solver.enum.OptimismBooster, ctx: optimismBooster});
 				break;
 			}
 			case Solver.enum.ChainCoin: {
 				const [quote] = await Promise.allSettled([chainCoin.init(request)]);
-				await handleUpdateSolver({request, quote, solver: Solver.enum.ChainCoin, ctx: chainCoin});
+				await handleUpdateSolver({currentNonce, request, quote, solver: Solver.enum.ChainCoin, ctx: chainCoin});
 				break;
 			}
 			case Solver.enum.PartnerContract: {
 				const [quote] = await Promise.allSettled([partnerContract.init(request)]);
-				await handleUpdateSolver({request, quote, solver: Solver.enum.PartnerContract, ctx: partnerContract});
+				await handleUpdateSolver({currentNonce, request, quote, solver: Solver.enum.PartnerContract, ctx: partnerContract});
 				break;
 			}
 			case Solver.enum.InternalMigration: {
 				request.migrator = currentVault.migration.contract;
 				const [quote] = await Promise.allSettled([internalMigration.init(request)]);
-				await handleUpdateSolver({request, quote, solver: Solver.enum.InternalMigration, ctx: internalMigration});
+				await handleUpdateSolver({currentNonce, request, quote, solver: Solver.enum.InternalMigration, ctx: internalMigration});
 				break;
 			}
 			default: {
 				const [quote] = await Promise.allSettled([vanilla.init(request)]);
-				await handleUpdateSolver({request, quote, solver: Solver.enum.Vanilla, ctx: vanilla});
+				await handleUpdateSolver({currentNonce, request, quote, solver: Solver.enum.Vanilla, ctx: vanilla});
 			}
 		}
-	// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [address, actionParams, currentSolver, cowswap.init, vanilla.init, wido.init, internalMigration.init, optimismBooster.init, isDepositing, currentVault.migration.contract]); //Ignore the warning, it's a false positive
+	}, [actionParams.selectedOptionFrom, actionParams.selectedOptionTo, actionParams.amount.raw, address, isDepositing, currentSolver, wido, cowswap, portals, vanilla, handleUpdateSolver, optimismBooster, chainCoin, partnerContract, currentVault.migration.contract, internalMigration]);
 
-	useDebouncedEffect((): void => {
-		onUpdateSolver();
-	}, [onUpdateSolver], 0);
+	useEffect((): void => {
+		const currentNonce = ++executionNonce.current;
+		onUpdateSolver(currentNonce);
+	}, [onUpdateSolver]);
 
-	const contextValue = useDeepCompareMemo((): TWithSolver => ({
+	const contextValue = useMemo((): TWithSolver => ({
 		currentSolver: currentSolver,
 		effectiveSolver: currentSolverState?.type,
 		expectedOut: currentSolverState?.quote || toNormalizedBN(0),
 		hash: currentSolverState?.hash,
 		isLoadingExpectedOut: isLoading,
-		onRetrieveExpectedOut: currentSolverState.onRetrieveExpectedOut,
 		onRetrieveAllowance: currentSolverState.onRetrieveAllowance,
 		onApprove: currentSolverState.onApprove,
 		onExecuteDeposit: currentSolverState.onExecuteDeposit,

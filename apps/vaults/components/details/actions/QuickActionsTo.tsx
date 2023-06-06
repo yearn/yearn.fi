@@ -11,14 +11,13 @@ import {useTokenPrice} from '@common/hooks/useTokenPrice';
 
 import type {ReactElement} from 'react';
 
-function	VaultDetailsQuickActionsTo(): ReactElement {
+function VaultDetailsQuickActionsTo(): ReactElement {
 	const {isActive} = useWeb3();
 	const {currentVault, possibleOptionsTo, actionParams, onUpdateSelectedOptionTo, isDepositing} = useActionFlow();
 	const {expectedOut, isLoadingExpectedOut} = useSolver();
-
 	const selectedOptionToPricePerToken = useTokenPrice(toAddress(actionParams?.selectedOptionTo?.value));
 
-	function	renderMultipleOptionsFallback(): ReactElement {
+	function renderMultipleOptionsFallback(): ReactElement {
 		return (
 			<Dropdown
 				defaultOption={possibleOptionsTo[0]}
@@ -65,7 +64,7 @@ function	VaultDetailsQuickActionsTo(): ReactElement {
 					{'You will receive'}
 				</label>
 				<div className={'flex h-10 items-center bg-neutral-300 p-2'}>
-					<div className={'flex h-10 w-full flex-row items-center justify-between py-4 px-0'}>
+					<div className={'flex h-10 w-full flex-row items-center justify-between px-0 py-4'}>
 						{isLoadingExpectedOut ?
 							<div className={'relative h-10 w-full'}>
 								<div className={'absolute left-3 flex h-10 items-center justify-center'}>
@@ -74,7 +73,7 @@ function	VaultDetailsQuickActionsTo(): ReactElement {
 							</div> :
 							<input
 								id={'toAmount'}
-								className={'w-full cursor-default overflow-x-scroll border-none bg-transparent py-4 px-0 font-bold outline-none scrollbar-none'}
+								className={'w-full cursor-default overflow-x-scroll border-none bg-transparent px-0 py-4 font-bold outline-none scrollbar-none'}
 								type={'text'}
 								disabled
 								value={expectedOut?.normalized || 0}

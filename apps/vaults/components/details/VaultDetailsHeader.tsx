@@ -3,7 +3,7 @@ import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatToNormalizedValue, toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatToNormalizedValue, toBigInt, toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatPercent, formatUSD} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {copyToClipboard} from '@yearn-finance/web-lib/utils/helpers';
@@ -54,8 +54,8 @@ function VaultDetailsHeader({vault}: { vault: TYDaemonVault }): ReactElement {
 
 	const normalizedVaultEarned = useMemo((): number => {
 		const {unrealizedGains} = earned?.earned?.[toAddress(address)] || {};
-		const normalizedValue = formatToNormalizedValue(unrealizedGains || 0, decimals);
-		
+		const normalizedValue = formatToNormalizedValue(toBigInt(unrealizedGains), decimals);
+
 		return normalizedValue > -0.01 ? Math.abs(normalizedValue) : normalizedValue;
 	}, [earned?.earned, address, decimals]);
 
@@ -63,7 +63,7 @@ function VaultDetailsHeader({vault}: { vault: TYDaemonVault }): ReactElement {
 	const vaultPrice = useTokenPrice(address);
 	const vaultName = useMemo((): string => getVaultName(vault), [vault]);
 	const {stakingRewardsByVault, positionsMap} = useStakingRewards();
-	const stakedBalance = toNormalizedValue(positionsMap[toAddress(stakingRewardsByVault[address])]?.stake ?? 0, decimals);
+	const stakedBalance = toNormalizedValue(toBigInt(positionsMap[toAddress(stakingRewardsByVault[address])]?.stake), decimals);
 	const depositedAndStaked = vaultBalance + stakedBalance;
 
 	return (
@@ -71,7 +71,7 @@ function VaultDetailsHeader({vault}: { vault: TYDaemonVault }): ReactElement {
 			<b className={'mx-auto flex w-full flex-row items-center justify-center text-center text-4xl tabular-nums text-neutral-900 md:text-8xl'}>
 				&nbsp;{vaultName}&nbsp;
 			</b>
-			<div className={'mt-4 mb-10 md:mt-10 md:mb-14'}>
+			<div className={'mb-10 mt-4 md:mb-14 md:mt-10'}>
 				{address ? (
 					<button onClick={(): void => copyToClipboard(address)}>
 						<p className={'font-number text-xxs text-neutral-500 md:text-xs'}>{address}</p>
@@ -80,7 +80,7 @@ function VaultDetailsHeader({vault}: { vault: TYDaemonVault }): ReactElement {
 			</div>
 			<div className={'grid grid-cols-2 gap-6 md:grid-cols-4 md:gap-12'}>
 				<VaultHeaderLineItem label={`Total deposited, ${symbol}`} legend={formatUSD(tvl.tvl)}>
-					{formatAmount(formatToNormalizedValue(tvl.total_assets, decimals))}
+					{formatAmount(formatToNormalizedValue(toBigInt(tvl.total_assets), decimals))}
 				</VaultHeaderLineItem>
 
 				<VaultHeaderLineItem label={'Net APY'}>

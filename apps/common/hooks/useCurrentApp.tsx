@@ -4,12 +4,14 @@ import {VeYfiHeader} from 'apps/veyfi/components/header/VeYfiHeader';
 import homeManifest from 'public/manifest.json';
 import {VaultsHeader} from '@vaults/components/header/VaultsHeader';
 import {AppName, APPS} from '@common/components/Apps';
+import {YBalHeader} from '@yBal/components/header/YBalHeader';
 import {YBribeHeader} from '@yBribe/components/header/YBribeHeader';
 import {YCrvHeader} from '@yCRV/components/header/YCrvHeader';
 
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
 import type {TMenu} from '@yearn-finance/web-lib/components/Header';
+import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TMetaFile} from '@common/components/Meta';
 
 type TCurrentApp = {
@@ -21,26 +23,18 @@ type TCurrentApp = {
 
 function useCurrentApp({pathname}: NextRouter): TCurrentApp {
 	return useMemo((): TCurrentApp => {
-		if (pathname.startsWith('/vaults')) {
-			const {name, manifest, menu} = APPS[AppName.VAULTS];
-			return {name, manifest, menu, header: <VaultsHeader pathname={pathname} />};
-		}
+		const appMapping: TDict<TCurrentApp> = {
+			'/vaults': {...APPS[AppName.VAULTS], header: <VaultsHeader pathname={pathname} />},
+			'/ybribe': {...APPS[AppName.YBRIBE], header: <YBribeHeader pathname={pathname} />},
+			'/ycrv': {...APPS[AppName.YCRV], header: <YCrvHeader pathname={pathname} />},
+			'/ybal': {...APPS[AppName.YBAL], header: <YBalHeader pathname={pathname} />},
+			'/veyfi': {...APPS[AppName.VEYFI], header: <VeYfiHeader pathname={pathname} />}
+		};
 
-		if (pathname.startsWith('/ybribe')) {
-			const {name, manifest, menu} = APPS[AppName.YBRIBE];
-			return {name, manifest, menu, header: <YBribeHeader pathname={pathname} />};
+		const currentApp = Object.keys(appMapping).find((path): boolean => pathname.startsWith(path));
+		if (currentApp) {
+			return appMapping[currentApp];
 		}
-
-		if (pathname.startsWith('/ycrv')) {
-			const {name, manifest, menu} = APPS[AppName.YCRV];
-			return {name, manifest, menu, header: <YCrvHeader pathname={pathname} />};
-		}
-
-		if (pathname.startsWith('/veyfi')) {
-			const {name, manifest, menu} = APPS[AppName.VEYFI];
-			return {name, manifest, menu, header: <VeYfiHeader pathname={pathname} />};
-		}
-
 		return {name: 'Home', manifest: homeManifest, menu: []};
 	}, [pathname]);
 }

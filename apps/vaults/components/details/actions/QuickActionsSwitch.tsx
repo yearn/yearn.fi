@@ -3,7 +3,7 @@ import IconArrowRight from '@common/icons/IconArrowRight';
 
 import type {ReactElement} from 'react';
 
-function	VaultDetailsQuickActionsSwitch(): ReactElement {
+function VaultDetailsQuickActionsSwitch(): ReactElement {
 	return (
 		<div className={'mx-auto flex w-full justify-center space-y-0 md:mx-none md:block md:w-14 md:space-y-2'}>
 			<label className={'hidden text-base md:inline'}>&nbsp;</label>

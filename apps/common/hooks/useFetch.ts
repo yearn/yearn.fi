@@ -11,7 +11,7 @@ type TUseZodProps<T> = {
 	config?: Parameters<typeof useSWR<T>>[2];
 }
 
-export function	useFetch<T>({endpoint, schema, config}: TUseZodProps<T>): SWRResponse<T> & {isSuccess: boolean} {
+export function useFetch<T>({endpoint, schema, config}: TUseZodProps<T>): SWRResponse<T> & {isSuccess: boolean} {
 	const result = useSWR<T>(endpoint, baseFetcher, {revalidateOnFocus: false, ...config});
 
 	if (!result.data || result.isLoading || result.isValidating) {
@@ -26,7 +26,7 @@ export function	useFetch<T>({endpoint, schema, config}: TUseZodProps<T>): SWRRes
 
 
 	const parsedData = schema.safeParse(result.data);
-	
+
 	if (!parsedData.success) {
 		console.error(endpoint, parsedData.error);
 		Sentry.captureException(parsedData.error, {tags: {endpoint}});

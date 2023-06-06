@@ -34,8 +34,8 @@ export type TListHeroDesktopCategories<T> = {
 	onSelect: (category: T) => void;
 }
 
-function	DesktopCategories<T>({categories, onSelect}: TListHeroDesktopCategories<T>): ReactElement {
-	const	[isClientLoaded, set_isClientLoaded] = useState(false);
+function DesktopCategories<T>({categories, onSelect}: TListHeroDesktopCategories<T>): ReactElement {
+	const [isClientLoaded, set_isClientLoaded] = useState(false);
 	useEffect((): void => {
 		set_isClientLoaded(true);
 	}, []);
@@ -66,10 +66,10 @@ function	DesktopCategories<T>({categories, onSelect}: TListHeroDesktopCategories
 }
 
 function Switch(props: TSwitchProps): ReactElement {
-	const	{isEnabled, onSwitch} = props;
-	const	[isEnabledState, set_isEnabledState] = useState(isEnabled);
+	const {isEnabled, onSwitch} = props;
+	const [isEnabledState, set_isEnabledState] = useState(isEnabled);
 
-	function	safeOnSwitch(): void {
+	function safeOnSwitch(): void {
 		if (onSwitch) {
 			onSwitch(!isEnabled);
 		} else {
@@ -93,7 +93,7 @@ function Switch(props: TSwitchProps): ReactElement {
 	);
 }
 
-function	ListHero<T extends string>({
+function ListHero<T extends string>({
 	headLabel,
 	searchLabel,
 	searchPlaceholder,
@@ -104,9 +104,13 @@ function	ListHero<T extends string>({
 	switchProps
 }: TListHero<T>): ReactElement {
 	return (
-		<div className={'flex flex-col items-start justify-between space-x-0 px-4 pt-4 pb-2 md:px-10 md:pt-10 md:pb-8'}>
+		<div className={'flex flex-col items-start justify-between space-x-0 px-4 pb-2 pt-4 md:px-10 md:pb-8 md:pt-10'}>
 			<div className={'mb-6'}>
-				<h2 className={'text-lg font-bold md:text-3xl'}>{headLabel}</h2>
+				<h2
+					suppressHydrationWarning
+					className={'text-lg font-bold md:text-3xl'}>
+					{headLabel}
+				</h2>
 			</div>
 
 			<div className={'hidden w-full flex-row items-center justify-between space-x-4 md:flex'}>
@@ -148,9 +152,9 @@ function	ListHero<T extends string>({
 					))}
 				</select>
 				<div className={'flex h-8 w-full items-center border border-neutral-0 bg-neutral-0 p-2 md:w-auto'}>
-					<div className={'flex h-8 w-full flex-row items-center justify-between py-2 px-0'}>
+					<div className={'flex h-8 w-full flex-row items-center justify-between px-0 py-2'}>
 						<input
-							className={'w-full overflow-x-scroll border-none bg-transparent py-2 px-0 text-xs outline-none scrollbar-none'}
+							className={'w-full overflow-x-scroll border-none bg-transparent px-0 py-2 text-xs outline-none scrollbar-none'}
 							type={'text'}
 							placeholder={'Search'}
 							value={searchValue}

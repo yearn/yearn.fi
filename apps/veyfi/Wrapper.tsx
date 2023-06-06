@@ -1,10 +1,9 @@
 import React from 'react';
 import {AnimatePresence, motion} from 'framer-motion';
+import {VotingEscrowContextApp} from '@veYFI/contexts/useVotingEscrow';
 import Meta from '@common/components/Meta';
 import {useCurrentApp} from '@common/hooks/useCurrentApp';
 import {variants} from '@common/utils/animations';
-
-import {VotingEscrowContextApp} from './contexts/useVotingEscrow';
 
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';

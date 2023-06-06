@@ -1,6 +1,5 @@
 
-import type {BigNumber} from 'ethers';
-import type {MaybeString, TAddress} from '@yearn-finance/web-lib/types';
+import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TSolver} from '@common/schemas/yDaemonTokenListBalances';
 import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
@@ -13,12 +12,11 @@ export type TWithSolver = {
 	currentSolver: TSolver;
 	effectiveSolver: TSolver;
 	expectedOut: TNormalizedBN;
-	hash: MaybeString,
+	hash?: string,
 	isLoadingExpectedOut: boolean;
-	onRetrieveExpectedOut: (request: TInitSolverArgs) => Promise<TNormalizedBN>;
 	onRetrieveAllowance: (shouldForceRefetch?: boolean) => Promise<TNormalizedBN>;
 	onApprove: (
-		amount: BigNumber,
+		amount: bigint,
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	) => Promise<void>;
@@ -36,7 +34,7 @@ export type TInitSolverArgs = {
 	from: TAddress,
 	inputToken: TDropdownOption
 	outputToken: TDropdownOption
-	inputAmount: BigNumber
+	inputAmount: bigint
 	isDepositing: boolean
 	migrator?: TAddress
 }
@@ -44,13 +42,10 @@ export type TInitSolverArgs = {
 export type TSolverContext = {
 	type: TSolver;
 	quote: TNormalizedBN;
-	getQuote: CallableFunction;
-	refreshQuote: CallableFunction;
 	init: (args: TInitSolverArgs, shouldLogError?: boolean) => Promise<TNormalizedBN>;
-	onRetrieveExpectedOut: (request: TInitSolverArgs) => Promise<TNormalizedBN>;
 	onRetrieveAllowance: (shouldForceRefetch?: boolean) => Promise<TNormalizedBN>;
 	onApprove: (
-		amount: BigNumber,
+		amount: bigint,
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	) => Promise<void>;

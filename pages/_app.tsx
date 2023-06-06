@@ -11,13 +11,14 @@ import {WalletContextApp} from '@common/contexts/useWallet';
 import {YearnContextApp} from '@common/contexts/useYearn';
 import {useCurrentApp} from '@common/hooks/useCurrentApp';
 import {variants} from '@common/utils/animations';
+import config from '@common/utils/wagmiConfig';
 
 import type {NextComponentType} from 'next';
 import type {AppProps} from 'next/app';
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
 
-import	'../style.css';
+import '../style.css';
 
 const aeonik = localFont({
 	variable: '--font-aeonik',
@@ -37,11 +38,11 @@ const aeonik = localFont({
 
 type TGetLayout = NextComponentType & {getLayout: (p: ReactElement, router: NextRouter) => ReactElement}
 const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
-	const	{Component, pageProps, router} = props;
-	const	getLayout = (Component as TGetLayout).getLayout || ((page: ReactElement): ReactElement => page);
+	const {Component, pageProps, router} = props;
+	const getLayout = (Component as TGetLayout).getLayout || ((page: ReactElement): ReactElement => page);
 	// eslint-disable-next-line @typescript-eslint/naming-convention
-	const 	{value} = useLocalStorageValue<boolean>('yearn.finance/feedback-popover');
-	const	{name} = useCurrentApp(router);
+	const {value} = useLocalStorageValue<boolean>('yearn.finance/feedback-popover');
+	const {name} = useCurrentApp(router);
 
 	return (
 		<div id={'app'} className={'mx-auto mb-0 flex max-w-6xl font-aeonik'}>
@@ -67,8 +68,8 @@ const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 });
 
 const App = memo(function App(props: AppProps): ReactElement {
-	const	{Component, pageProps, router} = props;
-	const	{manifest} = useCurrentApp(router);
+	const {Component, pageProps, router} = props;
+	const {manifest} = useCurrentApp(router);
 
 	return (
 		<MenuContextApp>
@@ -87,10 +88,21 @@ const App = memo(function App(props: AppProps): ReactElement {
 	);
 });
 
-function	MyApp(props: AppProps): ReactElement {
+function MyApp(props: AppProps): ReactElement {
 	return (
 		<main id={'main'} className={aeonik.className}>
+			<div className={'w-full bg-red-900 p-2 text-center text-sm text-white'}>
+				{'On June 6th, Optimism Mainnet will upgrade to Bedrock. During the upgrade, we expected downtime from ~9am - 1pm PST, when new transactions will not be accepted. Check its status '}
+				<a
+					className={'underline'}
+					href={'https://oplabs.notion.site/Bedrock-Mission-Control-EXTERNAL-fca344b1f799447cb1bcf3aae62157c5'}
+					target={'_blank'}>
+					{'here'}
+				</a>
+				{'.'}
+			</div>
 			<WithYearn
+				configOverwrite={config}
 				options={{
 					web3: {
 						supportedChainID: [1, 10, 250, 42161, 1337]
