@@ -76,7 +76,9 @@ function VaultDetailsQuickActionsTo(): ReactElement {
 								className={'w-full cursor-default overflow-x-scroll border-none bg-transparent px-0 py-4 font-bold outline-none scrollbar-none'}
 								type={'text'}
 								disabled
-								value={expectedOut?.normalized || 0} />
+								value={expectedOut?.normalized || 0}
+								autoComplete={'off'}
+							/>
 						}
 					</div>
 				</div>
