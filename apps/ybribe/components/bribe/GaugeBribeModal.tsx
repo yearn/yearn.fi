@@ -112,7 +112,7 @@ function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauge, on
 		if (![1, 1337].includes(chainID)) {
 			return (
 				<Button
-					onClick={(): void => onSwitchChain(1, true)}
+					onClick={(): void => onSwitchChain(1)}
 					className={'w-full'}>
 					{'Switch to Ethereum Mainnet'}
 				</Button>

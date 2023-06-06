@@ -345,7 +345,7 @@ export function useSolverCowswap(): TSolverContext {
 				txStatusSetter({...defaultTxStatus, success: true});
 				onSuccess();
 			} else {
-				txStatusSetter({...defaultTxStatus, error: true, errorMessage: result.error?.message || 'Transaction failed'});
+				txStatusSetter({...defaultTxStatus, error: true, errorMessage: (result.error as BaseError)?.message || 'Transaction failed'});
 			}
 		} catch (error) {
 			txStatusSetter({...defaultTxStatus, error: true, errorMessage: 'Transaction rejected'});
