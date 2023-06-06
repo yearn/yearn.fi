@@ -1,3 +1,4 @@
+import {BaseError} from 'viem';
 import {captureException} from '@sentry/nextjs';
 import {prepareWriteContract, waitForTransaction, writeContract} from '@wagmi/core';
 import {toast} from '@yearn-finance/web-lib/components/yToast';
@@ -7,7 +8,7 @@ import {isTAddress} from '@yearn-finance/web-lib/utils/isTAddress';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {assert} from '@common/utils/assert';
 
-import type {Abi, BaseError, SimulateContractParameters} from 'viem';
+import type {Abi, SimulateContractParameters} from 'viem';
 import type {Connector} from 'wagmi';
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
@@ -82,20 +83,24 @@ export async function handleTx<
 		toast({type: 'success', content: 'Transaction successful!'});
 		return ({isSuccessful: receipt.status === 'success', receipt});
 	} catch (error) {
-		const errorAsBaseError = error as BaseError;
+		if (process.env.NODE_ENV === 'production') {
+			captureException(error);
+		}
+
+		if (!(error instanceof BaseError)) {
+			return ({isSuccessful: false, error});
+		}
+
 		if (args.onTrySomethingElse) {
-			if (errorAsBaseError.name === 'ContractFunctionExecutionError') {
+			if (error.name === 'ContractFunctionExecutionError') {
 				return await args.onTrySomethingElse();
 			}
 		}
 
-		if (process.env.NODE_ENV === 'production') {
-			captureException(errorAsBaseError);
-		}
-		toast({type: 'error', content: errorAsBaseError.shortMessage});
+		toast({type: 'error', content: error.shortMessage});
 		args.statusHandler?.({...defaultTxStatus, error: true});
 		console.error(error);
-		return ({isSuccessful: false, error: errorAsBaseError || ''});
+		return ({isSuccessful: false, error});
 	} finally {
 		setTimeout((): void => {
 			args.statusHandler?.({...defaultTxStatus});
