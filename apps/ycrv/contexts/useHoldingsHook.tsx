@@ -74,7 +74,7 @@ export function useHoldings(): TCRVHoldings {
 		const crvYCRVPeg = decodeAsBigInt(data[7]);
 		return ({
 			legacy: yveCRVTotalSupply - yveCRVInYCRV,
-			treasury: veCRVBalance - ((yveCRVTotalSupply - yveCRVInYCRV) - yCRVTotalSupply),
+			treasury: veCRVBalance - ((yveCRVTotalSupply - yveCRVInYCRV) + yCRVTotalSupply),
 			yCRVSupply: yCRVTotalSupply,
 			styCRVSupply: styCRVTotalSupply,
 			lpyCRVSupply: lpyCRVTotalSupply,
