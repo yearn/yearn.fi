@@ -36,18 +36,15 @@ export function Popover(): ReactElement {
 	async function onSubmit(closeCallback: VoidFunction): Promise<void> {
 		set_isSubmitDisabled(true);
 
-		const body = document.getElementById('app');
+		const {body} = document;
 		if (!body) {
 			set_isSubmitDisabled(false);
 			closeCallback();
 			return;
 		}
 		const canvas = await html2canvas(body, {
-			allowTaint: true,
-			foreignObjectRendering: true,
 			backgroundColor: null,
-			windowWidth: body.scrollWidth,
-			windowHeight: body.scrollHeight,
+			allowTaint: true,
 			ignoreElements: (element): boolean => element.id === 'headlessui-portal-root'
 		});
 		const reporter = ens || lensProtocolHandle || (address ? truncateHex(toAddress(address), 4) : '');
