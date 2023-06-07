@@ -36,7 +36,7 @@ export function Popover(): ReactElement {
 	async function onSubmit(closeCallback: VoidFunction): Promise<void> {
 		set_isSubmitDisabled(true);
 
-		const {body} = document;
+		const body = document.getElementById('app');
 		if (!body) {
 			set_isSubmitDisabled(false);
 			closeCallback();
