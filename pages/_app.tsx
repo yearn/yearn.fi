@@ -91,16 +91,6 @@ const App = memo(function App(props: AppProps): ReactElement {
 function MyApp(props: AppProps): ReactElement {
 	return (
 		<main id={'main'} className={aeonik.className}>
-			<div className={'w-full bg-red-900 p-2 text-center text-sm text-white'}>
-				{'On June 6th, Optimism Mainnet will upgrade to Bedrock. During the upgrade, we expected downtime from ~9am - 1pm PST, when new transactions will not be accepted. Check its status '}
-				<a
-					className={'underline'}
-					href={'https://oplabs.notion.site/Bedrock-Mission-Control-EXTERNAL-fca344b1f799447cb1bcf3aae62157c5'}
-					target={'_blank'}>
-					{'here'}
-				</a>
-				{'.'}
-			</div>
 			<WithYearn
 				configOverwrite={config}
 				options={{
