@@ -43,8 +43,11 @@ export function Popover(): ReactElement {
 			return;
 		}
 		const canvas = await html2canvas(body, {
-			backgroundColor: null,
 			allowTaint: true,
+			foreignObjectRendering: true,
+			backgroundColor: null,
+			windowWidth: body.scrollWidth,
+			windowHeight: body.scrollHeight,
 			ignoreElements: (element): boolean => element.id === 'headlessui-portal-root'
 		});
 		const reporter = ens || lensProtocolHandle || (address ? truncateHex(toAddress(address), 4) : '');
