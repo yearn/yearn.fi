@@ -1,13 +1,13 @@
 import {arbitrum, fantom, gnosis, optimism, polygon} from 'viem/chains';
 import {configureChains, createConfig, mainnet} from 'wagmi';
 import {CoinbaseWalletConnector} from 'wagmi/connectors/coinbaseWallet';
-import {InjectedConnector} from 'wagmi/connectors/injected';
 import {LedgerConnector} from 'wagmi/connectors/ledger';
 import {MetaMaskConnector} from 'wagmi/connectors/metaMask';
 import {SafeConnector} from 'wagmi/connectors/safe';
 import {WalletConnectLegacyConnector} from 'wagmi/connectors/walletConnectLegacy';
 import {alchemyProvider} from 'wagmi/providers/alchemy';
 import {publicProvider} from 'wagmi/providers/public';
+import {InjectedConnector} from '@yearn-finance/web-lib/utils/web3/injectedConnector';
 import {IFrameEthereumConnector} from '@yearn-finance/web-lib/utils/web3/ledgerConnector';
 import {getRPC} from '@yearn-finance/web-lib/utils/web3/providers';
 
@@ -68,6 +68,7 @@ const optimismOverride = {
 		default: {
 			http: [
 				...optimism.rpcUrls.default.http,
+				(process.env.RPC_URL_OPTIMISM_YEARN || 'https://1rpc.io/op') as string,
 				'https://opt-mainnet.g.alchemy.com/v2/demo',
 				'https://endpoints.omniatech.io/v1/op/mainnet/public',
 				'https://optimism-mainnet.public.blastapi.io',
@@ -82,6 +83,7 @@ const optimismOverride = {
 		public: {
 			http: [
 				...optimism.rpcUrls.default.http,
+				(process.env.RPC_URL_OPTIMISM_YEARN || 'https://1rpc.io/op') as string,
 				'https://opt-mainnet.g.alchemy.com/v2/demo',
 				'https://endpoints.omniatech.io/v1/op/mainnet/public',
 				'https://optimism-mainnet.public.blastapi.io',
@@ -99,10 +101,11 @@ const optimismOverride = {
 const {chains, publicClient, webSocketPublicClient} = configureChains(
 	[mainnet, optimismOverride, polygonOverride, gnosis, fantom, arbitrum, localhost],
 	[
-		publicProvider(),
-		alchemyProvider({apiKey: process.env.ALCHEMY_KEY || ''})
+		alchemyProvider({apiKey: process.env.ALCHEMY_KEY || ''}),
+		publicProvider()
 	]
 );
+
 const config = createConfig({
 	autoConnect: true,
 	publicClient,
