@@ -179,8 +179,6 @@ function Factory(): ReactElement {
 		actions.execute();
 	}, [actions, isActive, provider, safeChainID, selectedOption, selectedOption.value.gaugeAddress]);
 
-	console.warn(estimate);
-
 	const onCreateNewVault = useCallback(async (): Promise<void> => {
 		const result = await createNewVaultsAndStrategies({
 			connector: provider,
