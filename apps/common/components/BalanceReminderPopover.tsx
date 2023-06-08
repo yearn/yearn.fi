@@ -31,17 +31,14 @@ function TokenItem({element}: {element: TBalanceReminderElement}): ReactElement 
 	const {safeChainID} = useChainID();
 	const balance = useBalance(element.address);
 
-	async function addTokenToMetamask(address: string, symbol: string, decimals: number, image: string): Promise<void> {
+	async function addTokenToMetamask(address: TAddress, symbol: string, decimals: number, image: string): Promise<void> {
 		if (!provider) {
 			return;
 		}
 
 		try {
 			const walletClient = await provider.getWalletClient();
-			await walletClient.watchAsset({
-				type: 'ERC20',
-				options: {address: toAddress(address), decimals, symbol, image}
-			});
+			await walletClient.watchAsset({type: 'ERC20', options: {address, decimals, symbol, image}});
 		} catch (error) {
 			captureException(error);
 			console.warn(error);
