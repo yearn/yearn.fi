@@ -1,3 +1,5 @@
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
+
 import type {TYDaemonReport, TYDaemonReports} from '@vaults/schemas/reportsSchema';
 
 export function findLatestApr(reports?: TYDaemonReports): number {
@@ -9,7 +11,7 @@ export function findLatestApr(reports?: TYDaemonReports): number {
 		return prev.timestamp > curr.timestamp ? prev : curr;
 	});
 
-	if (!latestReport.results || latestReport.results.length === 0) {
+	if (!latestReport.results || isZero(latestReport.results.length)) {
 		return 0;
 	}
 

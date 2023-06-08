@@ -9,6 +9,7 @@ import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {allowanceKey, isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
@@ -49,7 +50,7 @@ async function getQuote(
 	if (isZeroAddress(params.toToken)) {
 		return {data: undefined, error: new Error('Invalid to token')};
 	}
-	if (toBigInt(params.amount) === 0n) {
+	if (isZero(params.amount)) {
 		return {data: undefined, error: new Error('Invalid amount')};
 	}
 

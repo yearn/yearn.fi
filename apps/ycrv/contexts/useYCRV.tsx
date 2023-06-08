@@ -3,6 +3,7 @@ import {formatUnits} from 'viem';
 import useSWR from 'swr';
 import {LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {useFetch} from '@common/hooks/useFetch';
 import {yDaemonVaultSchema} from '@common/schemas/yDaemonVaultsSchemas';
 import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
@@ -64,7 +65,7 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 	** donator, with 30_000 per week.
 	**************************************************************************/
 	const styCRVMegaBoost = useMemo((): number => {
-		if (!holdings || holdings.styCRVSupply === 0n) {
+		if (!holdings || isZero(holdings.styCRVSupply)) {
 			return 0;
 		}
 		const fromDonatorPerWeek = 30_000;

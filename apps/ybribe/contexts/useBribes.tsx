@@ -7,6 +7,7 @@ import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {CURVE_BRIBE_V3_ADDRESS, CURVE_BRIBE_V3_HELPER_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {decodeAsBigInt} from '@yearn-finance/web-lib/utils/decoder';
 import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {useCurve} from '@common/contexts/useCurve';
 import {getLastThursday, getNextThursday} from '@yBribe/utils';
@@ -91,7 +92,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 				continue;
 			}
 			const rewardsTokensAddresses = item.result as TAddress[];
-			if (rewardsTokensAddresses.length === 0) {
+			if (isZero(rewardsTokensAddresses.length)) {
 				continue;
 			}
 			rewardsPerGauges[gauge.gauge.toString()] = rewardsTokensAddresses;

@@ -10,6 +10,7 @@ import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {LPYCRV_TOKEN_ADDRESS, MAX_UINT_256, STYCRV_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useWallet} from '@common/contexts/useWallet';
@@ -88,7 +89,7 @@ function CardTransactorContextApp({
 	**************************************************************************/
 	useEffect((): void => {
 		balancesNonce; // remove warning, force deep refresh
-		if (isActive && (amount.raw === 0n) && !hasTypedSomething) {
+		if (isActive && isZero(amount.raw) && !hasTypedSomething) {
 			set_amount(toNormalizedBN(balances[toAddress(selectedOptionFrom.value)]?.raw));
 		} else if (!isActive && (amount.raw > 0n)) {
 			performBatchedUpdates((): void => {
@@ -105,7 +106,7 @@ function CardTransactorContextApp({
 	**************************************************************************/
 	const expectedOutFetcher = useCallback(async (args: [TAddress, TAddress, bigint]): Promise<bigint> => {
 		const [_inputToken, _outputToken, _amountIn] = args;
-		if (_amountIn === 0n) {
+		if (isZero(_amountIn)) {
 			return (0n);
 		}
 

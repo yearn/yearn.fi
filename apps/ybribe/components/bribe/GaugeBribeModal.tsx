@@ -9,6 +9,7 @@ import {decodeAsBigInt, decodeAsNumber, decodeAsString} from '@yearn-finance/web
 import {formatToNormalizedValue, toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
 import {approveERC20} from '@common/utils/actions';
@@ -127,7 +128,7 @@ function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauge, on
 					isDisabled={
 						!isActive ||
 						isZeroAddress(tokenAddress) ||
-						toBigInt(amount.raw) === 0n ||
+						isZero(amount.raw) ||
 						![1, 1337].includes(chainID)
 					}>
 					{`Approve ${selectedToken?.symbol || 'token'}`}
@@ -143,7 +144,7 @@ function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauge, on
 				isDisabled={
 					!isActive ||
 					isZeroAddress(tokenAddress) ||
-					toBigInt(amount?.raw) === 0n ||
+					isZero(amount.raw) ||
 					toBigInt(amount?.raw) > toBigInt(selectedToken?.raw) ||
 					![1, 1337].includes(chainID)
 				}>

@@ -2,6 +2,7 @@ import {prepareWriteContract, readContract} from '@wagmi/core';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {LPYBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, YBAL_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {assert} from '@common/utils/assert';
 import {assertAddress, handleTx, toWagmiProvider} from '@common/utils/toWagmiProvider';
 
@@ -20,7 +21,7 @@ type TSimulateZapForMinOut = TWriteTransaction & {
 	amountIn: bigint
 };
 export async function simulateZapForMinOut(props: TSimulateZapForMinOut): Promise<{shouldMint: boolean, minOut: bigint}> {
-	if (props.amountIn === 0n) {
+	if (isZero(props.amountIn)) {
 		return ({shouldMint: false, minOut: 0n});
 	}
 

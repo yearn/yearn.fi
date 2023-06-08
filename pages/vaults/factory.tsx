@@ -18,6 +18,7 @@ import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {VAULT_FACTORY_ADDRESS, ZERO_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {decodeAsBoolean, decodeAsString} from '@yearn-finance/web-lib/utils/decoder';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {Dropdown} from '@common/components/GaugeDropdown';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
@@ -68,7 +69,7 @@ function Factory(): ReactElement {
 		_safeChainID: number,
 		_gaugesFromYearn: TCurveGaugesFromYearn
 	): Promise<TCurveGaugesFromYearn> {
-		if ((_gaugesFromYearn || []).length === 0) {
+		if (isZero((_gaugesFromYearn || []).length)) {
 			return [];
 		}
 
@@ -97,7 +98,7 @@ function Factory(): ReactElement {
 	const gaugesOptions = useMemo((): TDropdownGaugeOption[] => {
 		return (
 			(filteredGauges || [])
-				.filter((item: TCurveGaugeFromYearn): boolean => item.weight !== '0')
+				.filter((item: TCurveGaugeFromYearn): boolean => !isZero(item.weight))
 				.map((gauge: TCurveGaugeFromYearn): TDropdownGaugeOption => ({
 					label: gauge.gauge_name,
 					icon: (

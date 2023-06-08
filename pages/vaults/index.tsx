@@ -14,6 +14,7 @@ import {useSessionStorage} from '@yearn-finance/web-lib/hooks/useSessionStorage'
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import ListHead from '@common/components/ListHead';
 import ListHero from '@common/components/ListHero';
 import ValueAnimation from '@common/components/ValueAnimation';
@@ -209,7 +210,7 @@ function Index(): ReactElement {
 					currentCategory={category} />
 			);
 		}
-		if (isLoadingVaultList || sortedVaultsToDisplay.length === 0) {
+		if (isLoadingVaultList || isZero(sortedVaultsToDisplay.length)) {
 			return (
 				<VaultsListEmpty
 					isLoading={isLoadingVaultList}
@@ -250,7 +251,7 @@ function Index(): ReactElement {
 								node: (
 									<Fragment>
 										{'Holdings'}
-										<span className={`absolute -right-1 -top-1 flex h-2 w-2 ${category === 'Holdings' || (migratableVaults?.length + retiredVaults?.length) === 0 ? 'opacity-0' : 'opacity-100'}`}>
+										<span className={`absolute -right-1 -top-1 flex h-2 w-2 ${category === 'Holdings' || isZero(migratableVaults?.length + retiredVaults?.length) ? 'opacity-0' : 'opacity-100'}`}>
 											<span className={'absolute inline-flex h-full w-full animate-ping rounded-full bg-pink-600 opacity-75'}></span>
 											<span className={'relative inline-flex h-2 w-2 rounded-full bg-pink-500'}></span>
 										</span>

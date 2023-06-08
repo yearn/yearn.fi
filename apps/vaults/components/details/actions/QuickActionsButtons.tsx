@@ -10,6 +10,7 @@ import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isEth} from '@yearn-finance/web-lib/utils/isEth';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useWallet} from '@common/contexts/useWallet';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
@@ -95,7 +96,7 @@ function VaultDetailsQuickActionsButtons(): ReactElement {
 	const isDiffNetwork = !!safeChainID && currentVault.chainID !== safeChainID;
 	const isButtonDisabled = (
 		!isActive
-		|| toBigInt(actionParams.amount.raw) == 0n
+		|| isZero(actionParams.amount.raw)
 		|| toBigInt(actionParams.amount.raw) > toBigInt(maxDepositPossible.raw)
 		|| isLoadingExpectedOut
 		|| isDiffNetwork
@@ -117,7 +118,7 @@ function VaultDetailsQuickActionsButtons(): ReactElement {
 			<Button
 				className={'w-full'}
 				isBusy={txStatusApprove.pending}
-				isDisabled={isButtonDisabled || toBigInt(expectedOut.raw) === 0n}
+				isDisabled={isButtonDisabled || isZero(expectedOut.raw)}
 				onClick={onApproveFrom}>
 				{'Approve'}
 			</Button>
@@ -154,7 +155,7 @@ function VaultDetailsQuickActionsButtons(): ReactElement {
 			<Button
 				className={'w-full'}
 				isBusy={txStatusApprove.pending}
-				isDisabled={isButtonDisabled || toBigInt(expectedOut.raw) === 0n}
+				isDisabled={isButtonDisabled || isZero(expectedOut.raw)}
 				onClick={onApproveFrom}>
 				{'Approve'}
 			</Button>
@@ -170,7 +171,7 @@ function VaultDetailsQuickActionsButtons(): ReactElement {
 					isBusy={txStatusExecuteDeposit.pending}
 					isDisabled={(
 						!isActive
-						|| toBigInt(actionParams.amount.raw) === 0n
+						|| isZero(actionParams.amount.raw)
 						|| toBigInt(actionParams.amount.raw) > toBigInt(maxDepositPossible.raw)
 					)}>
 					{'Deposit and Stake'}

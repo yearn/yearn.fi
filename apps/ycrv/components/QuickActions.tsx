@@ -1,6 +1,7 @@
 import React from 'react';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import Renderable from '@yearn-finance/web-lib/components/Renderable';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {Dropdown} from '@common/components/TokenDropdown';
 import IconArrowRight from '@common/icons/IconArrowRight';
 
@@ -62,7 +63,7 @@ function QASelect(props: TQASelect): ReactElement {
 
 			<Renderable
 				fallback={renderMultipleOptionsFallback()}
-				shouldRender={options.length === 0}>
+				shouldRender={isZero(options.length)}>
 				<div className={'flex h-10 w-full items-center justify-between bg-neutral-0 px-2 text-base text-neutral-900 md:px-3'}>
 					<div className={'relative flex flex-row items-center'}>
 						<div key={selected?.value} className={'h-6 w-6 flex-none rounded-full'}>

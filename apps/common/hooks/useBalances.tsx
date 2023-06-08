@@ -12,6 +12,7 @@ import {MULTICALL3_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {decodeAsBigInt, decodeAsNumber, decodeAsString} from '@yearn-finance/web-lib/utils/decoder';
 import {toBigInt, toNormalizedValue} from '@yearn-finance/web-lib/utils/format';
 import {isEth} from '@yearn-finance/web-lib/utils/isEth';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 
 import type {AxiosResponse} from 'axios';
@@ -202,7 +203,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 		}
 		const tokenList = JSON.parse(stringifiedTokens) || [];
 		const tokens = tokenList.filter(({token}: TUseBalancesTokens): boolean => !isZeroAddress(token));
-		if (tokens.length === 0) {
+		if (isZero(tokens.length)) {
 			return {};
 		}
 		set_status({...defaultStatus, isLoading: true, isFetching: true, isRefetching: defaultStatus.isFetched});

@@ -12,6 +12,7 @@ import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, OPT_WETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS, YVWETH_ADDRESS, YVWETH_OPT_ADDRESS, YVWFTM_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isEth} from '@yearn-finance/web-lib/utils/isEth';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
@@ -242,7 +243,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 				if (isDepositing && (actionParams?.selectedOptionFrom?.solveVia || []).length > 0) {
 					// We don't want to be able to withdraw to exotic tokens. If the current from is one of them, take another one.
 					_selectedOptionFrom = possibleOptionsFrom.find((option: TDropdownOption): boolean => (
-						option.value !== actionParams?.selectedOptionFrom?.value && (option.solveVia || []).length === 0
+						option.value !== actionParams?.selectedOptionFrom?.value && isZero((option.solveVia || []).length)
 					));
 				}
 				actionParamsDispatcher({
