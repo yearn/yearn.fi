@@ -1,6 +1,7 @@
 import React, {Fragment, useMemo} from 'react';
 import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
 import {formatAmount, formatWithUnit} from '@yearn-finance/web-lib/utils/format.number';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
@@ -28,10 +29,10 @@ function GraphForVaultEarnings({currentVault, harvestData, height = 312, isCumul
 	}, [harvestData]);
 
 
-	if (isCumulative && cumulativeData?.length === 0) {
+	if (isCumulative && isZero(cumulativeData?.length)) {
 		return <Fragment />;
 	}
-	if (!isCumulative && harvestData?.length === 0) {
+	if (!isCumulative && isZero(harvestData?.length)) {
 		return <Fragment />;
 	}
 	return (

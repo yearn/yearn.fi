@@ -5,6 +5,7 @@ import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {useFetch} from '@common/hooks/useFetch';
 import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 
@@ -41,7 +42,7 @@ function GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height =
 		return reportsForGraph;
 	}, [reports]);
 
-	if (!strategyData || strategyData?.length === 0) {
+	if (!strategyData || isZero(strategyData?.length)) {
 		return <Fragment />;
 	}
 

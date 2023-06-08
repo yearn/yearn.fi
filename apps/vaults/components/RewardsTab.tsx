@@ -10,6 +10,7 @@ import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ZERO_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {Input} from '@common/components/Input';
 import {useWallet} from '@common/contexts/useWallet';
@@ -146,7 +147,7 @@ function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): ReactElement
 						className={'w-full md:mt-7 md:w-[168px]'}
 						onClick={onClaim}
 						isBusy={claimStatus.pending}
-						isDisabled={!isActive || rewardBalance.raw === 0n}>
+						isDisabled={!isActive || isZero(rewardBalance.raw)}>
 						{'Claim'}
 					</Button>
 				</div>

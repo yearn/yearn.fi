@@ -18,6 +18,7 @@ import type {ReactElement, ReactNode} from 'react';
 import type {TYDaemonVaults} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TSortDirection} from '@common/types/types';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
+import { isZero } from '@yearn-finance/web-lib/utils/isZero';
 
 function VaultListFactory(): ReactElement {
 	const {balances} = useWallet();
@@ -104,7 +105,7 @@ function VaultListFactory(): ReactElement {
 	**	It contains either the list of vaults, is some are available, or a message to the user.
 	**********************************************************************************************/
 	const VaultList = useMemo((): ReactNode => {
-		if (isLoadingVaultList || sortedVaultsToDisplay.length === 0) {
+		if (isLoadingVaultList || isZero(sortedVaultsToDisplay.length)) {
 			return (
 				<VaultsListEmptyFactory
 					isLoading={isLoadingVaultList}

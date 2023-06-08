@@ -2,6 +2,7 @@
 import {useAppSettings} from '@vaults/contexts/useAppSettings';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import CHAINS from '@yearn-finance/web-lib/utils/web3/chains';
 
 import type {ReactElement} from 'react';
@@ -19,7 +20,7 @@ export function VaultsListEmpty({
 	const {safeChainID} = useChainID();
 	const {searchValue, category, set_category} = useAppSettings();
 
-	if (isLoading && sortedVaultsToDisplay.length === 0) {
+	if (isLoading && isZero(sortedVaultsToDisplay.length)) {
 		return (
 			<div className={'flex h-96 w-full flex-col items-center justify-center px-10 py-2'}>
 				<b className={'text-lg'}>{'Fetching Vaults'}</b>
@@ -30,7 +31,7 @@ export function VaultsListEmpty({
 			</div>
 		);
 	}
-	if (!isLoading && sortedVaultsToDisplay.length === 0 && currentCategory === 'Holdings') {
+	if (!isLoading && isZero(sortedVaultsToDisplay.length) && currentCategory === 'Holdings') {
 		return (
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
 				<b className={'text-center text-lg'}>{'Well this is awkward...'}</b>
@@ -40,7 +41,7 @@ export function VaultsListEmpty({
 			</div>
 		);
 	}
-	if (!isLoading && sortedVaultsToDisplay.length === 0 && safeChainID !== 1) {
+	if (!isLoading && isZero(sortedVaultsToDisplay.length) && safeChainID !== 1) {
 		const chainName = CHAINS[safeChainID]?.name || 'this network';
 		return (
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
@@ -51,7 +52,7 @@ export function VaultsListEmpty({
 			</div>
 		);
 	}
-	if (!isLoading && sortedVaultsToDisplay.length === 0) {
+	if (!isLoading && isZero(sortedVaultsToDisplay.length)) {
 		return (
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center gap-4 px-10 py-2 md:w-3/4'}>
 				<b className={'text-center text-lg'}>{'No data, reeeeeeeeeeee'}</b>
@@ -96,7 +97,7 @@ export function VaultsListEmptyFactory({
 }): ReactElement {
 	const {safeChainID} = useChainID();
 
-	if (isLoading && sortedVaultsToDisplay.length === 0) {
+	if (isLoading && isZero(sortedVaultsToDisplay.length)) {
 		return (
 			<div className={'flex h-96 w-full flex-col items-center justify-center px-10 py-2'}>
 				<b className={'text-lg'}>{'Fetching Vaults'}</b>
@@ -106,7 +107,7 @@ export function VaultsListEmptyFactory({
 				</div>
 			</div>
 		);
-	} if (!isLoading && sortedVaultsToDisplay.length === 0 && currentCategory === 'Holdings') {
+	} if (!isLoading && isZero(sortedVaultsToDisplay.length) && currentCategory === 'Holdings') {
 		return (
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
 				<b className={'text-center text-lg'}>{'Well this is awkward...'}</b>
@@ -115,7 +116,7 @@ export function VaultsListEmptyFactory({
 				</p>
 			</div>
 		);
-	} if (!isLoading && sortedVaultsToDisplay.length === 0 && safeChainID !== 1) {
+	} if (!isLoading && isZero(sortedVaultsToDisplay.length) && safeChainID !== 1) {
 		const chainName = CHAINS[safeChainID]?.name || 'this network';
 		return (
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
@@ -125,7 +126,7 @@ export function VaultsListEmptyFactory({
 				</p>
 			</div>
 		);
-	} if (!isLoading && sortedVaultsToDisplay.length === 0) {
+	} if (!isLoading && isZero(sortedVaultsToDisplay.length)) {
 		return (
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
 				<b className={'text-center text-lg'}>{'No data, reeeeeeeeeeee'}</b>

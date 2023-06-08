@@ -7,6 +7,7 @@ import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {CRV_TOKEN_ADDRESS, CURVE_BRIBE_V3_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatPercent, formatUSD} from '@yearn-finance/web-lib/utils/format.number';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useYearn} from '@common/contexts/useYearn';
@@ -61,7 +62,7 @@ function GaugeRowItemAPR({address, value}: {address: TAddress, value: bigint}): 
 	const APR = useMemo((): number => {
 		const tokenInfo = tokens?.[address];
 		const decimals = tokenInfo?.decimals || 18;
-		if (tokenPrice === 0 || crvPrice === 0) {
+		if (isZero(tokenPrice) || isZero(crvPrice)) {
 			return 0;
 		}
 		return formatToNormalizedValue(value, decimals) * tokenPrice / crvPrice * 52 * 100;
@@ -301,7 +302,7 @@ function GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauge, cate
 				<div className={'yearn--table-data-section-item md:col-span-1'} datatype={'number'}>
 					<div className={'col-span-2 hidden flex-col items-end space-y-4 md:flex'}>
 						<Renderable
-							shouldRender={currentRewardsForCurrentGaugeMap?.length === 0}
+							shouldRender={isZero(currentRewardsForCurrentGaugeMap?.length)}
 							fallback={renderMultipleButtonsFallback()}>
 							<div className={'h-14 pt-0'}>
 								<Button

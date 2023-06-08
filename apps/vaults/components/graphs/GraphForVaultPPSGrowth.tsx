@@ -1,6 +1,7 @@
 import React, {Fragment} from 'react';
 import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
 import {formatAmount, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 
 import type {ReactElement} from 'react';
 import type {TMessariGraphData} from '@common/types/types';
@@ -11,7 +12,7 @@ export type TGraphForVaultPPSGrowthProps = {
 }
 
 function GraphForVaultPPSGrowth({messariData, height = 312}: TGraphForVaultPPSGrowthProps): ReactElement {
-	if (messariData?.length === 0) {
+	if (isZero(messariData?.length)) {
 		return <Fragment />;
 	}
 

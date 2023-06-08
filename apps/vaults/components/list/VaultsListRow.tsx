@@ -6,6 +6,7 @@ import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt, toNormalizedBN, toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatPercent, formatUSD} from '@yearn-finance/web-lib/utils/format.number';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import TokenIcon from '@common/components/TokenIcon';
 import {useBalance} from '@common/hooks/useBalance';
 import {getVaultName} from '@common/utils';
@@ -57,7 +58,7 @@ function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElem
 						<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'APY'}</label>
 						<div className={'flex flex-col text-right'}>
 							<b className={'yearn--table-data-section-item-value'}>
-								{(currentVault.apy?.type === 'new' && currentVault.apy?.net_apy == 0) ? (
+								{(currentVault.apy?.type === 'new' && isZero(currentVault.apy?.net_apy)) ? (
 									'New'
 								) : (
 									formatPercent(((currentVault?.apy?.net_apy || 0) + (currentVault.apy?.staking_rewards_apr || 0)) * 100, 2, 2, 500)
@@ -74,14 +75,14 @@ function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElem
 
 					<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
 						<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Available'}</label>
-						<p className={`yearn--table-data-section-item-value ${availableToDeposit === 0 ? 'text-neutral-400' : 'text-neutral-900'}`}>
+						<p className={`yearn--table-data-section-item-value ${isZero(availableToDeposit) ? 'text-neutral-400' : 'text-neutral-900'}`}>
 							{formatAmount(availableToDeposit)}
 						</p>
 					</div>
 
 					<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
 						<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Deposited'}</label>
-						<p className={`yearn--table-data-section-item-value ${depositedAndStaked === 0 ? 'text-neutral-400' : 'text-neutral-900'}`}>
+						<p className={`yearn--table-data-section-item-value ${isZero(depositedAndStaked) ? 'text-neutral-400' : 'text-neutral-900'}`}>
 							{formatAmount(depositedAndStaked)}
 						</p>
 					</div>

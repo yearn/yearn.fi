@@ -12,6 +12,7 @@ import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {fromWeeks, getTimeUntil, toSeconds, toTime, toWeeks} from '@yearn-finance/web-lib/utils/time';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {AmountInput} from '@common/components/AmountInput';
@@ -168,7 +169,7 @@ function LockTab(): ReactElement {
 						error={lockAmountError} />
 					<AmountInput
 						label={'Current lock period (weeks)'}
-						amount={toTime(lockTime) === 0 ? '' : Math.floor(toTime(lockTime)).toString()}
+						amount={isZero(toTime(lockTime)) ? '' : Math.floor(toTime(lockTime)).toString()}
 						onAmountChange={set_lockTime}
 						maxAmount={(MAX_LOCK_TIME + 1).toString()}
 						onMaxClick={(): void => set_lockTime((MAX_LOCK_TIME + 1).toString())}

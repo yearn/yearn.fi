@@ -10,6 +10,7 @@ import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {graphFetcher} from '@common/utils';
 
 import type {ReactElement} from 'react';
@@ -54,7 +55,7 @@ function VaultDetailsHistorical({currentVault, harvestData}: {currentVault: TYDa
 				<div className={'mt-1 flex flex-row space-x-0 divide-x border-x border-neutral-900'}>
 					<Button
 						onClick={(): void => set_selectedViewIndex(0)}
-						variant={selectedViewIndex === 0 ? 'filled' : 'outlined'}
+						variant={isZero(selectedViewIndex) ? 'filled' : 'outlined'}
 						className={'yearn--button-smaller !border-x-0'}>
 						{'TVL'}
 					</Button>
@@ -73,7 +74,7 @@ function VaultDetailsHistorical({currentVault, harvestData}: {currentVault: TYDa
 				</div>
 			</div>
 			<div className={'mt-4 flex flex-row space-x-8 border-b border-l border-neutral-300'} style={{height: 312}}>
-				<Renderable shouldRender={isMounted() && selectedViewIndex === 0}>
+				<Renderable shouldRender={isMounted() && isZero(selectedViewIndex)}>
 					<GraphForVaultTVL messariData={messariData} />
 				</Renderable>
 

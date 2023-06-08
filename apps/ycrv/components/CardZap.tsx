@@ -7,6 +7,7 @@ import {CRV_TOKEN_ADDRESS, LPYCRV_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YCRV_T
 import {formatToNormalizedValue, toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {Dropdown} from '@common/components/TokenDropdown';
 import {useWallet} from '@common/contexts/useWallet';
@@ -62,7 +63,7 @@ function CardZap(): ReactElement {
 
 	function renderButton(): ReactElement {
 		const balanceForInputToken = toBigInt(balances?.[toAddress(selectedOptionFrom.value)]?.raw);
-		const isAboveBalance = amount.raw > balanceForInputToken || balanceForInputToken === 0n;
+		const isAboveBalance = amount.raw > balanceForInputToken || isZero(balanceForInputToken);
 		const isAboveAllowance = amount.raw > allowanceFrom;
 
 		if (txStatusApprove.pending || isAboveAllowance) {
@@ -74,7 +75,7 @@ function CardZap(): ReactElement {
 						isBusy={txStatusApprove.pending}
 						isDisabled={
 							!isActive
-							|| amount.raw === 0n
+							|| isZero(amount.raw)
 							|| isAboveBalance
 						}>
 						{'Increase Allowance'}
@@ -88,7 +89,7 @@ function CardZap(): ReactElement {
 					isBusy={txStatusApprove.pending}
 					isDisabled={
 						!isActive
-						|| amount.raw === 0n
+						|| isZero(amount.raw)
 						|| isAboveBalance
 					}>
 					{isAboveBalance ? 'Insufficient balance' : `Approve ${selectedOptionFrom?.label || 'token'}`}
@@ -103,10 +104,10 @@ function CardZap(): ReactElement {
 				isBusy={txStatusZap.pending}
 				isDisabled={
 					!isActive
-					|| amount.raw === 0n
+					|| isZero(amount.raw)
 					|| amount.raw > balanceForInputToken
 				}>
-				{isAboveBalance && amount.raw !== 0n ? 'Insufficient balance' : 'Swap'}
+				{isAboveBalance && !isZero(amount.raw) ? 'Insufficient balance' : 'Swap'}
 			</Button>
 		);
 	}

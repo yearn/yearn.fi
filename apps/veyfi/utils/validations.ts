@@ -1,4 +1,5 @@
 import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 
 import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 
@@ -43,7 +44,7 @@ export function validateAmount(props: TValidateAmountProps): TValidationResponse
 	const {amount, balance, minAmountAllowed, maxAmountAllowed, shouldDisplayMin} = props;
 	const amountNumber = Number(amount);
 
-	if (amountNumber === 0) {
+	if (isZero(amountNumber)) {
 		return {};
 	}
 

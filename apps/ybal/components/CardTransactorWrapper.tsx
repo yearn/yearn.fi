@@ -8,6 +8,7 @@ import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {LPYBAL_TOKEN_ADDRESS, MAX_UINT_256, STYBAL_TOKEN_ADDRESS, ZAP_YEARN_YBAL_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatToNormalizedValue, toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
@@ -84,7 +85,7 @@ function CardTransactorContextApp({
 	useEffect((): void => {
 		balancesNonce; // remove warning, force deep refresh
 		set_amount((prevAmount): TNormalizedBN => {
-			if (isActive && prevAmount.raw === 0n && !hasTypedSomething) {
+			if (isActive && isZero(prevAmount.raw) && !hasTypedSomething) {
 				return toNormalizedBN(balances[toAddress(selectedOptionFrom.value)]?.raw);
 			} if (!isActive && prevAmount.raw > 0n) {
 				return toNormalizedBN(0);

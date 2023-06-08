@@ -11,6 +11,7 @@ import {allowanceKey, isZeroAddress, toAddress} from '@yearn-finance/web-lib/uti
 import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isEth} from '@yearn-finance/web-lib/utils/isEth';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
@@ -49,7 +50,7 @@ async function getQuote(
 	if (isZeroAddress(params.buyToken)) {
 		return {data: undefined, error: new Error('Invalid buy token')};
 	}
-	if (toBigInt(params.sellAmount) === 0n) {
+	if (isZero(params.sellAmount)) {
 		return {data: undefined, error: new Error('Invalid sell amount')};
 	}
 
@@ -116,7 +117,7 @@ export function useSolverPortals(): TSolverContext {
 		/******************************************************************************************
 		** Same is the amount is 0. If it is, we return 0.
 		******************************************************************************************/
-		if (_request.inputAmount === 0n) {
+		if (isZero(_request.inputAmount)) {
 			return toNormalizedBN(0);
 		}
 

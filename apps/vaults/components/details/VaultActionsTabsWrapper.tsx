@@ -14,6 +14,7 @@ import {Flow, useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useLocalStorage} from '@yearn-finance/web-lib/hooks/useLocalStorage';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import IconChevron from '@common/icons/IconChevron';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
@@ -230,13 +231,13 @@ function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}):
 					</div>
 				)}
 
-				{currentTab.value === 0 && hasStakingRewards && willDepositAndStake ? (
+				{isZero(currentTab.value) && hasStakingRewards && willDepositAndStake ? (
 					<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
 						<div className={'w-full bg-[#34A14F] p-2 md:px-6 md:py-4'}>
 							<b className={'text-base text-white'}>{'Great news! This Vault is receiving an Optimism Boost. Deposit and stake your tokens to receive OP rewards. Nice!'}</b>
 						</div>
 					</div>
-				) : currentTab.value === 0 && hasStakingRewards && !willDepositAndStake && (
+				) : isZero(currentTab.value) && hasStakingRewards && !willDepositAndStake && (
 					<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
 						<div className={'w-full bg-[#F8A908] p-2 md:px-6 md:py-4'}>
 							<b className={'text-base text-white'}>{'This Vault is receiving an Optimism Boost. To zap into it for additional OP rewards, you\'ll have to stake your yVault tokens manually on the $OP BOOST tab after you deposit. Sorry anon, it\'s just how it works.'}</b>

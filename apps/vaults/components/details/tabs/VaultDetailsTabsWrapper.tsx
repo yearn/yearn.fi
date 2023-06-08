@@ -15,6 +15,7 @@ import IconLinkOut from '@yearn-finance/web-lib/icons/IconLinkOut';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {useFetch} from '@common/hooks/useFetch';
 import IconChevron from '@common/icons/IconChevron';
 import {yDaemonVaultHarvestsSchema} from '@common/schemas/yDaemonVaultsSchemas';
@@ -217,7 +218,7 @@ function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}):
 
 			<div className={'-mt-0.5 h-0.5 w-full bg-neutral-300'} />
 
-			<Renderable shouldRender={currentVault && selectedAboutTabIndex === 0}>
+			<Renderable shouldRender={currentVault && isZero(selectedAboutTabIndex)}>
 				<VaultDetailsAbout
 					currentVault={currentVault}
 					harvestData={harvestData} />
