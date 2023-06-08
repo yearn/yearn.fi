@@ -4,8 +4,9 @@ import getVaultEstimateOut from '@vaults/utils/getVaultEstimateOut';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {ETH_TOKEN_ADDRESS, MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
+import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {isEth} from '@yearn-finance/web-lib/utils/isEth';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 import {allowanceOf, approveERC20, depositETH, withdrawETH} from '@common/utils/actions';
 import {assert} from '@common/utils/assert';
@@ -63,7 +64,7 @@ export function useSolverChainCoin(): TSolverContext {
 			return existingAllowances.current[key];
 		}
 
-		assert(toAddress(request.current.outputToken.value) === ETH_TOKEN_ADDRESS, 'Out is not ETH');
+		assert(isEth(request.current.outputToken.value), 'Out is not ETH');
 		const allowance = await allowanceOf({
 			connector: provider,
 			tokenAddress: toAddress(request.current.inputToken.value),

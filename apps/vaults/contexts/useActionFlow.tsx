@@ -11,6 +11,7 @@ import VAULT_ABI from '@yearn-finance/web-lib/utils/abi/vault.abi';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, OPT_WETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS, YVWETH_ADDRESS, YVWETH_OPT_ADDRESS, YVWFTM_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {isEth} from '@yearn-finance/web-lib/utils/isEth';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
@@ -201,8 +202,8 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 			return Solver.enum.OptimismBooster;
 		}
 
-		const isInputTokenEth = actionParams?.selectedOptionFrom?.value === ETH_TOKEN_ADDRESS;
-		const isOutputTokenEth = actionParams?.selectedOptionTo?.value === ETH_TOKEN_ADDRESS;
+		const isInputTokenEth = isEth(actionParams?.selectedOptionFrom?.value);
+		const isOutputTokenEth = isEth(actionParams?.selectedOptionTo?.value);
 		const isVaultTokenWrappedCoin = (
 			(safeChainID === 1 && currentVault.address === YVWETH_ADDRESS) ||
 			(safeChainID === 10 && currentVault.address === YVWETH_OPT_ADDRESS) ||

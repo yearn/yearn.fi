@@ -8,9 +8,10 @@ import {useUI} from '@yearn-finance/web-lib/contexts/useUI';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import AGGREGATE3_ABI from '@yearn-finance/web-lib/utils/abi/aggregate.abi';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {ETH_TOKEN_ADDRESS, MULTICALL3_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {MULTICALL3_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {decodeAsBigInt, decodeAsNumber, decodeAsString} from '@yearn-finance/web-lib/utils/decoder';
 import {toBigInt, toNormalizedValue} from '@yearn-finance/web-lib/utils/format';
+import {isEth} from '@yearn-finance/web-lib/utils/isEth';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 
 import type {AxiosResponse} from 'axios';
@@ -81,7 +82,7 @@ async function performCall(
 		const rawPrice = toBigInt(prices?.[toAddress(token)]);
 		let symbol = decodeAsString(results[rIndex++]);
 		let name = decodeAsString(results[rIndex++]);
-		if (toAddress(token) === ETH_TOKEN_ADDRESS) {
+		if (isEth(token)) {
 			symbol = getNativeTokenWrapperName(chainID);
 			name = getNativeTokenWrapperName(chainID);
 		}
@@ -113,8 +114,7 @@ async function getBalances(
 	for (const element of tokens) {
 		const {token} = element;
 		const ownerAddress = address;
-		const isEth = toAddress(token) === toAddress(ETH_TOKEN_ADDRESS);
-		if (isEth) {
+		if (isEth(token)) {
 			const multicall3Contract = {address: MULTICALL3_ADDRESS, abi: AGGREGATE3_ABI};
 			const baseContract = {address: nativeTokenWrapper, abi: erc20ABI};
 			calls.push({...multicall3Contract, functionName: 'getEthBalance', args: [ownerAddress]});

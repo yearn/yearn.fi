@@ -4,9 +4,10 @@ import {getNativeTokenWrapperContract, getNativeTokenWrapperName} from '@vaults/
 import {erc20ABI} from '@wagmi/core';
 import AGGREGATE3_ABI from '@yearn-finance/web-lib/utils/abi/aggregate.abi';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {ETH_TOKEN_ADDRESS, MULTICALL3_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {MULTICALL3_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {decodeAsBigInt, decodeAsNumber, decodeAsString} from '@yearn-finance/web-lib/utils/decoder';
 import {toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {isEth} from '@yearn-finance/web-lib/utils/isEth';
 import {getRPC} from '@yearn-finance/web-lib/utils/web3/providers';
 import config from '@common/utils/wagmiConfig';
 
@@ -39,8 +40,7 @@ async function getBatchBalances({
 		for (const element of chunkTokens) {
 			const {token} = element;
 			const ownerAddress = toAddress(address);
-			const isEth = toAddress(token) === toAddress(ETH_TOKEN_ADDRESS);
-			if (isEth) {
+			if (isEth(token)) {
 				const multicall3Contract = {address: MULTICALL3_ADDRESS, abi: AGGREGATE3_ABI};
 				const baseContract = {address: nativeTokenWrapper, abi: erc20ABI};
 				calls.push({...multicall3Contract, functionName: 'getEthBalance', args: [ownerAddress]});
@@ -69,8 +69,8 @@ async function getBatchBalances({
 				const name = decodeAsString(results[rIndex++]);
 				data[toAddress(token)] = {
 					decimals: decimals || 18,
-					symbol: toAddress(token) === ETH_TOKEN_ADDRESS ? nativeTokenWrapperName : symbol,
-					name: toAddress(token) === ETH_TOKEN_ADDRESS ? nativeTokenWrapperName : name,
+					symbol: isEth(token) ? nativeTokenWrapperName : symbol,
+					name: isEth(token) ? nativeTokenWrapperName : name,
 					raw: balanceOf,
 					rawPrice: 0n,
 					normalized: toNormalizedValue(balanceOf, decimals || 18),
