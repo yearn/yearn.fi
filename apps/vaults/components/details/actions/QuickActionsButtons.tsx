@@ -7,8 +7,9 @@ import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {ETH_TOKEN_ADDRESS, MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
+import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {isEth} from '@yearn-finance/web-lib/utils/isEth';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useWallet} from '@common/contexts/useWallet';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
@@ -109,7 +110,7 @@ function VaultDetailsQuickActionsButtons(): ReactElement {
 	if (
 		isWithdrawing //If user is withdrawing ...
 		&& currentSolver === Solver.enum.ChainCoin // ... and the solver is ChainCoin ...
-		&& toAddress(actionParams?.selectedOptionTo?.value) === ETH_TOKEN_ADDRESS // ... and the output is ETH ...
+		&& isEth(actionParams?.selectedOptionTo?.value) // ... and the output is ETH ...
 		&& isAboveAllowance // ... and the amount is above the allowance
 	) { // ... then we need to approve the ChainCoin contract
 		return (

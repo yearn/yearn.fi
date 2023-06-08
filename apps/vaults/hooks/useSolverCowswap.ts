@@ -8,8 +8,9 @@ import {toast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {allowanceKey, isZeroAddress} from '@yearn-finance/web-lib/utils/address';
-import {ETH_TOKEN_ADDRESS, MAX_UINT_256, SOLVER_COW_VAULT_RELAYER_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {MAX_UINT_256, SOLVER_COW_VAULT_RELAYER_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {isEth} from '@yearn-finance/web-lib/utils/isEth';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
@@ -124,7 +125,7 @@ export function useSolverCowswap(): TSolverContext {
 		** sell ETH, but can be used to buy ETH. So, if we are selling ETH (aka depositing ETH vs
 		** a vault token) we return 0.
 		******************************************************************************************/
-		if (_request.isDepositing && sellToken.value === ETH_TOKEN_ADDRESS) {
+		if (_request.isDepositing && isEth(sellToken.value)) {
 			return toNormalizedBN(0);
 		}
 

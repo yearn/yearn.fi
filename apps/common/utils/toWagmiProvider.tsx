@@ -3,7 +3,8 @@ import {captureException} from '@sentry/nextjs';
 import {prepareWriteContract, waitForTransaction, writeContract} from '@wagmi/core';
 import {toast} from '@yearn-finance/web-lib/components/yToast';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {ETH_TOKEN_ADDRESS, ZERO_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {ZERO_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {isEth} from '@yearn-finance/web-lib/utils/isEth';
 import {isTAddress} from '@yearn-finance/web-lib/utils/isTAddress';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {assert} from '@common/utils/assert';
@@ -43,7 +44,7 @@ export function assertAddress(addr: string | TAddress | undefined, name?: string
 	assert(addr, `${name || 'Address'} is not set`);
 	assert(isTAddress(addr), `${name || 'Address'} provided is invalid`);
 	assert(toAddress(addr) !== ZERO_ADDRESS, `${name || 'Address'} is 0x0`);
-	assert(toAddress(addr) !== ETH_TOKEN_ADDRESS, `${name || 'Address'} is 0xE`);
+	assert(!isEth(addr), `${name || 'Address'} is 0xE`);
 }
 
 

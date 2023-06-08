@@ -8,8 +8,9 @@ import {toast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {allowanceKey, isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {ETH_TOKEN_ADDRESS, MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
+import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {isEth} from '@yearn-finance/web-lib/utils/isEth';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
@@ -108,7 +109,7 @@ export function useSolverPortals(): TSolverContext {
 		/******************************************************************************************
 		** Then, we check if the sellToken is ETH. If it is, we return 0.
 		******************************************************************************************/
-		if (sellToken.value === ETH_TOKEN_ADDRESS) {
+		if (isEth(sellToken.value)) {
 			return toNormalizedBN(0);
 		}
 
