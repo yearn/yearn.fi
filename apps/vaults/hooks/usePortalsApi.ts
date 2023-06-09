@@ -1,13 +1,14 @@
-import axios from 'axios';
+import {z} from 'zod';
+import {useFetch} from '@common/hooks/useFetch';
 
-import type {AxiosInstance, AxiosResponse} from 'axios';
+export const portalsEstimateResponseSchema = z.object({
+	buyToken: z.string(),
+	buyAmount: z.string(),
+	minBuyAmount: z.string(),
+	buyTokenDecimals: z.number()
+});
 
-export type TPortalEstimate = {
-	buyToken: string;
-	buyAmount: string;
-	minBuyAmount: string;
-	buyTokenDecimals: number;
-};
+export type TPortalsEstimateResponse = z.infer<typeof portalsEstimateResponseSchema>;
 
 type TGetEstimateProps = {
 	network: number;
@@ -22,68 +23,62 @@ type TGetEstimateProps = {
 type TGetTransactionProps = Omit<TGetEstimateProps, 'params'> & {
 	params: Required<Pick<TGetEstimateProps, 'params'>['params']> & {
 		takerAddress: string;
-		validate?: boolean;
+		validate?: string;
 	};
 };
+
+const portalsTxSchema = z.object({
+	to: z.string(),
+	from: z.string(),
+	data: z.string(),
+	value: z.object({
+		type: z.string(),
+		hex: z.string()
+	}),
+	gasLimit: z.object({
+		type: z.string(),
+		hex: z.string()
+	})
+});
+
+const portalsTransactionSchema = z.object({
+	context: z.object({
+		network: z.string(),
+		protocolId: z.string(),
+		sellToken: z.string(),
+		sellAmount: z.string(),
+		intermediateToken: z.string(),
+		buyToken: z.string(),
+		buyAmount: z.string(),
+		minBuyAmount: z.string(),
+		target: z.string(),
+		partner: z.string(),
+		takerAddress: z.string(),
+		value: z.string(),
+		gasLimit: z.string()
+	}),
+	tx: portalsTxSchema
+});
+
+export type TPortalsTransaction = z.infer<typeof portalsTransactionSchema>;
 
 type TGetApprovalProps = Omit<TGetTransactionProps, 'params'> & {
 	params: Omit<TGetTransactionProps['params'], 'slippagePercentage'>;
 };
 
-type TPortalTransaction = {
-	context: {
-		network: string;
-		protocolId: string;
-		sellToken: string;
-		sellAmount: string;
-		intermediateToken: string;
-		buyToken: string;
-		buyAmount: string;
-		minBuyAmount: string;
-		target: string;
-		partner: string;
-		takerAddress: string;
-		value: string;
-		gasLimit: string;
-	};
-	tx: {
-		to: string;
-		from: string;
-		data: string;
-		value: {
-			type: string;
-			hex: string;
-		};
-		gasLimit: {
-			type: string;
-			hex: string;
-		};
-	};
-};
+const portalsApprovalSchema = z.object({
+	context: z.object({
+		network: z.string(),
+		allowance: z.string(),
+		approvalAmount: z.string(),
+		shouldApprove: z.boolean(),
+		spender: z.string(),
+		gasLimit: z.string()
+	}),
+	tx: portalsTxSchema
+});
 
-type TPortalsApproval = {
-	context: {
-		network: string;
-		allowance: string;
-		approvalAmount: string;
-		shouldApprove: boolean;
-		spender: string;
-		gasLimit: string;
-	};
-	tx: {
-		to: string;
-		from: string;
-		data: string;
-		value: {
-			type: string;
-			hex: string;
-		};
-		gasLimit: {
-			type: string;
-			hex: string;
-		};
-	};
-};
+export type TPortalsApproval = z.infer<typeof portalsApprovalSchema>;
 
 const NETWORK = new Map<number, string>([
 	[1, 'ethereum'],
@@ -95,38 +90,38 @@ const NETWORK = new Map<number, string>([
 	[56, 'bsc']
 ]);
 
-type TPortalsEstimateResp = {
-	data: TPortalEstimate | undefined,
-	error?: Error | undefined
-}
-export async function getPortalsEstimate({network, params}: TGetEstimateProps): Promise<TPortalsEstimateResp> {
-	const baseURL = 'https://api.portals.fi/v1';
-	const axiosInstance: AxiosInstance = axios.create({baseURL});
 
-	try {
-		const path = `/portal/${NETWORK.get(network)}/estimate`;
-		const response: AxiosResponse<TPortalEstimate> = await axiosInstance.get(path, {params});
-		return {data: response.data};
-	} catch (err) {
-		return {data: undefined, error: err as Error};
-	}
+const BASE_URL = 'https://api.portals.fi/v1';
+
+export async function useGetPortalsEstimate({network, params}: TGetEstimateProps): Promise<TPortalsEstimateResponse | null> {
+	const url = `${BASE_URL}/portal/${NETWORK.get(network)}/estimate`;
+
+	const {data} = useFetch<TPortalsEstimateResponse>({
+		endpoint: `${url}?${new URLSearchParams(params)}`,
+		schema: portalsEstimateResponseSchema
+	});
+
+	return data ?? null;
 }
 
-export async function getPortalsTx({network, params}: TGetTransactionProps): Promise<TPortalTransaction> {
-	const baseURL = 'https://api.portals.fi/v1';
-	const axiosInstance: AxiosInstance = axios.create({baseURL});
+export async function useGetPortalsTx({network, params}: TGetTransactionProps): Promise<TPortalsTransaction | null> {
+	const url = `${BASE_URL}/portal/${NETWORK.get(network)}`;
 
-	const path = `/portal/${NETWORK.get(network)}`;
-	const response: AxiosResponse<TPortalTransaction> = await axiosInstance.get(path, {params});
-	return response.data;
+	const {data} = useFetch<TPortalsTransaction>({
+		endpoint: `${url}?${new URLSearchParams(params)}`,
+		schema: portalsTransactionSchema
+	});
+
+	return data ?? null;
 }
 
+export async function useGetPortalsApproval({network, params}: TGetApprovalProps): Promise<TPortalsApproval | null> {
+	const url = `${BASE_URL}/approval/${NETWORK.get(network)}`;
 
-export async function getPortalsApproval({network, params}: TGetApprovalProps): Promise<TPortalsApproval> {
-	const baseURL = 'https://api.portals.fi/v1';
-	const axiosInstance: AxiosInstance = axios.create({baseURL});
+	const {data} = useFetch<TPortalsApproval>({
+		endpoint: `${url}?${new URLSearchParams(params)}`,
+		schema: portalsApprovalSchema
+	});
 
-	const path = `/approval/${NETWORK.get(network)}`;
-	const response: AxiosResponse<TPortalsApproval> = await axiosInstance.get(path, {params});
-	return response.data;
+	return data ?? null;
 }
