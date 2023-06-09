@@ -72,7 +72,6 @@ function NetworkSelector({supportedChainID}: {supportedChainID: number[]}): Reac
 			<button
 				suppressHydrationWarning
 				onClick={(): void => {
-					console.warn(supportedNetworks[0].value);
 					onSwitchChain(supportedNetworks[0].value);
 				}}
 				className={'yearn--header-nav-item mr-4 hidden cursor-pointer flex-row items-center border-0 p-0 text-sm hover:!text-neutral-500 md:flex'}>

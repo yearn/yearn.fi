@@ -342,7 +342,6 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 				tokens
 			})
 			.then((res: AxiosResponse<TGetBatchBalancesResp>): void => {
-				console.warn(res);
 				updateBalancesCall(res.data.chainID, deserialize(res.data.balances));
 			})
 			.catch((err): void => {

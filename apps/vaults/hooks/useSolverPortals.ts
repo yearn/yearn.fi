@@ -127,7 +127,7 @@ export function useSolverPortals(): TSolverContext {
 		request.current = _request;
 		const {data, error} = await getQuote(_request, safeChainID, zapSlippage);
 		if (!data) {
-			console.log(error?.message);
+			console.error(error?.message);
 			if (error && !shouldLogError) {
 				toast({type: 'error', content: `Zap not possible: ${error?.message}`});
 			}
