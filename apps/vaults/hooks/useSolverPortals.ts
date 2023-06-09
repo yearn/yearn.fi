@@ -2,7 +2,7 @@ import {useCallback, useMemo, useRef} from 'react';
 import {isHex} from 'viem';
 import axios from 'axios';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
-import {getPortalsApproval, getPortalsTx, useGetPortalsEstimate} from '@vaults/hooks/usePortalsApi';
+import {getPortalsApproval, getPortalsEstimate, getPortalsTx} from '@vaults/hooks/usePortalsApi';
 import {getNetwork, prepareSendTransaction, waitForTransaction} from '@wagmi/core';
 import {toast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -23,6 +23,7 @@ import type {BaseError} from 'viem';
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TTxResponse, TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TNormalizedBN} from '@common/types/types';
+import type {TPortalEstimate} from '@vaults/hooks/usePortalsApi';
 import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
 
 export type TPortalsQuoteResult = {
@@ -54,7 +55,7 @@ async function getQuote(
 	}
 
 	try {
-		const {data, error} = await useGetPortalsEstimate({network: safeChainID, params});
+		const {data, error} = await getPortalsEstimate({network: safeChainID, params});
 		return {data, error};
 	} catch (error) {
 		console.error(error);
@@ -70,7 +71,7 @@ async function getQuote(
 export function useSolverPortals(): TSolverContext {
 	const {provider} = useWeb3();
 	const request = useRef<TInitSolverArgs>();
-	const latestQuote = useRef<TPortalsEstimate>();
+	const latestQuote = useRef<TPortalEstimate>();
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
 	const {zapSlippage} = useYearn();
 	const {safeChainID} = useChainID();
