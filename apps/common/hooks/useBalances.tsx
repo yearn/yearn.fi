@@ -156,8 +156,6 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	const stringifiedTokens = useMemo((): string => JSON.stringify(props?.tokens || []), [props?.tokens]);
 
 	const updateBalancesCall = useCallback((chainID: number, newRawData: TDict<TBalanceData>): TDict<TBalanceData> => {
-		console.warn(toAddress(web3Address), data?.current?.[chainID]?.address);
-		console.log(Object.entries(newRawData));
 		if (toAddress(web3Address) !== data?.current?.[chainID]?.address) {
 			data.current[chainID] = {
 				address: toAddress(web3Address),
@@ -354,8 +352,6 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 			});
 
 	}, [stringifiedTokens, isActive, web3Address]);
-
-	console.debug({balances, chainID, error, nonce, status, web3Address});
 
 	const contextValue = useMemo((): TUseBalancesRes => ({
 		data: assignPrices(balances || {})?.[chainID] || {},

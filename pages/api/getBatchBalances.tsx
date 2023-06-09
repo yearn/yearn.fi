@@ -34,10 +34,6 @@ async function getBatchBalances({
 	const nativeTokenWrapper = getNativeTokenWrapperContract(chainID);
 	const nativeTokenWrapperName = getNativeTokenWrapperName(chainID);
 
-	if (toAddress(address) === toAddress('0xe523Fc253BcdEA8373E030ee66e00c6864776d70')) {
-		console.log(chunks.length, tokens.length);
-	}
-
 	for (const chunkTokens of chunks) {
 		const calls = [];
 		for (const element of chunkTokens) {
@@ -87,10 +83,6 @@ async function getBatchBalances({
 			continue;
 		}
 	}
-	if (toAddress(address) === toAddress('0xe523Fc253BcdEA8373E030ee66e00c6864776d70')) {
-		console.log(data);
-	}
-
 	return data;
 }
 
