@@ -1,13 +1,14 @@
 import {serialize} from 'wagmi';
 import {captureException} from '@sentry/nextjs';
 import {getNativeTokenWrapperContract, getNativeTokenWrapperName} from '@vaults/utils';
-import {erc20ABI, multicall} from '@wagmi/core';
+import {erc20ABI} from '@wagmi/core';
 import AGGREGATE3_ABI from '@yearn-finance/web-lib/utils/abi/aggregate.abi';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, MULTICALL3_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {decodeAsBigInt, decodeAsNumber, decodeAsString} from '@yearn-finance/web-lib/utils/decoder';
 import {toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {getRPC} from '@yearn-finance/web-lib/utils/web3/providers';
+import config from '@common/utils/wagmiConfig';
 
 import type {NextApiRequest, NextApiResponse} from 'next';
 import type {TDict} from '@yearn-finance/web-lib/types';
@@ -55,8 +56,8 @@ async function getBatchBalances({
 		}
 
 		try {
-			const results = await multicall({contracts: calls as never[], chainId: chainID});
-
+			const multicallInstance = config.getPublicClient({chainId: chainID}).multicall;
+			const results = await multicallInstance({contracts: calls as never[]});
 			let rIndex = 0;
 			for (const element of tokens) {
 				const {token} = element;
