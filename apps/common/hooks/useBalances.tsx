@@ -25,8 +25,6 @@ import type {TYDaemonPrices} from '@common/schemas/yDaemonPricesSchema';
 /* 🔵 - Yearn Finance **********************************************************
 ** Request, Response and helpers for the useBalances hook.
 ******************************************************************************/
-type	TDefaultReqArgs = {
-}
 export type	TUseBalancesTokens = {
 	token: string,
 	for?: string,
