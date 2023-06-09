@@ -21,11 +21,6 @@ export default function Wrapper({children, router}: {children: ReactElement, rou
 				<WalletForZapApp>
 					<StakingRewardsContextApp>
 						<AnimatePresence mode={'wait'}>
-							<div className={'fixed inset-x-0 bottom-0 z-40 w-full bg-purple-500 p-2 text-center text-base text-white'}>
-								{'Rewards are currently not displaying due to an API error. We are on it, and '}
-								<b className={'underline'}>{'rewards are still live'}</b>
-								{'.'}
-							</div>
 							<motion.div
 								key={router.asPath}
 								initial={'initial'}
