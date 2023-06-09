@@ -112,6 +112,12 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 		prices
 	});
 
+	console.debug({
+		balances,
+		availableTokens,
+		chain
+	});
+
 	//Compute the cumulatedValueInVaults
 	const cumulatedValueInVaults = useMemo((): number => {
 		nonce; //Suppress warning
