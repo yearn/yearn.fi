@@ -61,7 +61,8 @@ async function getBatchBalances({
 			for (const element of tokens) {
 				const {token} = element;
 				const balanceOf = decodeAsBigInt(results[rIndex++]);
-				const decimals = decodeAsNumber(results[rIndex++]);
+				const decimalsIndex = results[rIndex++];
+				const decimals = decodeAsNumber(decimalsIndex) || Number(decodeAsBigInt(decimalsIndex));
 				const symbol = decodeAsString(results[rIndex++]);
 				const name = decodeAsString(results[rIndex++]);
 				data[toAddress(token)] = {
@@ -76,6 +77,7 @@ async function getBatchBalances({
 				};
 			}
 		} catch (error) {
+			console.error(error);
 			continue;
 		}
 	}
@@ -91,14 +93,7 @@ export type TGetBatchBalancesResp = {balances: string, chainID: number};
 export default async function handler(req: NextApiRequest, res: NextApiResponse<TGetBatchBalancesResp>): Promise<void> {
 	const chainID = Number(req.body.chainID);
 	const address = String(req.body.address);
-	console.log(isArrayOfUseBalancesTokens(req.body.tokens));
-	console.log({
-		result: isArrayOfUseBalancesTokens(req.body.tokens),
-		isArry: Array.isArray(req.body.tokens),
-		every: req.body.tokens.every(({token}: TUseBalancesTokens): boolean => !!token && typeof token === 'string')
-	});
-
-	const {tokens} = req.body;
+	const tokens = isArrayOfUseBalancesTokens(req.body.tokens) ? req.body.tokens : [];
 
 	try {
 		const balances = await getBatchBalances({chainID, address, tokens});
