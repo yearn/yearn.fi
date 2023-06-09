@@ -156,14 +156,16 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	const stringifiedTokens = useMemo((): string => JSON.stringify(props?.tokens || []), [props?.tokens]);
 
 	const updateBalancesCall = useCallback((chainID: number, newRawData: TDict<TBalanceData>): TDict<TBalanceData> => {
-		if (toAddress(web3Address as string) !== data?.current?.[chainID]?.address) {
+		console.warn(toAddress(web3Address), data?.current?.[chainID]?.address);
+		console.log(Object.entries(newRawData));
+		if (toAddress(web3Address) !== data?.current?.[chainID]?.address) {
 			data.current[chainID] = {
-				address: toAddress(web3Address as string),
+				address: toAddress(web3Address),
 				balances: {},
 				nonce: 0
 			};
 		}
-		data.current[chainID].address = toAddress(web3Address as string);
+		data.current[chainID].address = toAddress(web3Address);
 
 		for (const [address, element] of Object.entries(newRawData)) {
 			element.raw = element.raw || 0n;
