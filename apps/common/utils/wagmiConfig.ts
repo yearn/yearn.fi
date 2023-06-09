@@ -68,6 +68,7 @@ const optimismOverride = {
 		default: {
 			http: [
 				...optimism.rpcUrls.default.http,
+				(process.env.RPC_URL_OPTIMISM_YEARN_2 || 'https://1rpc.io/op') as string,
 				(process.env.RPC_URL_OPTIMISM_YEARN || 'https://1rpc.io/op') as string,
 				'https://opt-mainnet.g.alchemy.com/v2/demo',
 				'https://endpoints.omniatech.io/v1/op/mainnet/public',
@@ -83,6 +84,7 @@ const optimismOverride = {
 		public: {
 			http: [
 				...optimism.rpcUrls.default.http,
+				(process.env.RPC_URL_OPTIMISM_YEARN_2 || 'https://1rpc.io/op') as string,
 				(process.env.RPC_URL_OPTIMISM_YEARN || 'https://1rpc.io/op') as string,
 				'https://opt-mainnet.g.alchemy.com/v2/demo',
 				'https://endpoints.omniatech.io/v1/op/mainnet/public',
@@ -101,8 +103,8 @@ const optimismOverride = {
 const {chains, publicClient, webSocketPublicClient} = configureChains(
 	[mainnet, optimismOverride, polygonOverride, gnosis, fantom, arbitrum, localhost],
 	[
-		alchemyProvider({apiKey: process.env.ALCHEMY_KEY || ''}),
-		publicProvider()
+		publicProvider(),
+		alchemyProvider({apiKey: process.env.ALCHEMY_KEY || ''})
 	]
 );
 
