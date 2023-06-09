@@ -336,7 +336,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 		set_status({...defaultStatus, isLoading: true, isFetching: true, isRefetching: defaultStatus.isFetched});
 		onLoadStart();
 
-		const tokens = JSON.parse(stringifiedTokens) || [];
+		const tokens: TUseBalancesTokens[] = JSON.parse(stringifiedTokens) || [];
 		axios
 			.post('/api/getBatchBalances', {
 				chainID: chainID || 1,

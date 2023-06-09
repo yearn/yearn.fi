@@ -91,7 +91,14 @@ export type TGetBatchBalancesResp = {balances: string, chainID: number};
 export default async function handler(req: NextApiRequest, res: NextApiResponse<TGetBatchBalancesResp>): Promise<void> {
 	const chainID = Number(req.body.chainID);
 	const address = String(req.body.address);
-	const tokens = isArrayOfUseBalancesTokens(req.body.tokens) ? req.body.tokens : [];
+	console.log(isArrayOfUseBalancesTokens(req.body.tokens));
+	console.log({
+		result: isArrayOfUseBalancesTokens(req.body.tokens),
+		isArry: Array.isArray(req.body.tokens),
+		every: req.body.tokens.every(({token}: TUseBalancesTokens): boolean => !!token && typeof token === 'string')
+	});
+
+	const {tokens} = req.body;
 
 	try {
 		const balances = await getBatchBalances({chainID, address, tokens});
