@@ -1,5 +1,7 @@
 import {z} from 'zod';
-import {useFetch} from '@common/hooks/useFetch';
+import {fetch} from '@common/utils/fetch';
+
+import type {TFetchReturn} from '@common/utils/fetch';
 
 export const portalsEstimateResponseSchema = z.object({
 	buyToken: z.string(),
@@ -8,7 +10,7 @@ export const portalsEstimateResponseSchema = z.object({
 	buyTokenDecimals: z.number()
 });
 
-export type TPortalsEstimateResponse = z.infer<typeof portalsEstimateResponseSchema>;
+export type TPortalsEstimate = z.infer<typeof portalsEstimateResponseSchema>;
 
 type TGetEstimateProps = {
 	network: number;
@@ -93,35 +95,29 @@ const NETWORK = new Map<number, string>([
 
 const BASE_URL = 'https://api.portals.fi/v1';
 
-export async function useGetPortalsEstimate({network, params}: TGetEstimateProps): Promise<TPortalsEstimateResponse | null> {
+export async function getPortalsEstimate({network, params}: TGetEstimateProps): TFetchReturn<TPortalsEstimate> {
 	const url = `${BASE_URL}/portal/${NETWORK.get(network)}/estimate`;
 
-	const {data} = useFetch<TPortalsEstimateResponse>({
+	return fetch<TPortalsEstimate>({
 		endpoint: `${url}?${new URLSearchParams(params)}`,
 		schema: portalsEstimateResponseSchema
 	});
-
-	return data ?? null;
 }
 
-export async function useGetPortalsTx({network, params}: TGetTransactionProps): Promise<TPortalsTransaction | null> {
+export async function getPortalsTx({network, params}: TGetTransactionProps): TFetchReturn<TPortalsTransaction> {
 	const url = `${BASE_URL}/portal/${NETWORK.get(network)}`;
 
-	const {data} = useFetch<TPortalsTransaction>({
+	return fetch<TPortalsTransaction>({
 		endpoint: `${url}?${new URLSearchParams(params)}`,
 		schema: portalsTransactionSchema
 	});
-
-	return data ?? null;
 }
 
-export async function useGetPortalsApproval({network, params}: TGetApprovalProps): Promise<TPortalsApproval | null> {
+export async function getPortalsApproval({network, params}: TGetApprovalProps): TFetchReturn<TPortalsApproval> {
 	const url = `${BASE_URL}/approval/${NETWORK.get(network)}`;
 
-	const {data} = useFetch<TPortalsApproval>({
+	return fetch<TPortalsApproval>({
 		endpoint: `${url}?${new URLSearchParams(params)}`,
 		schema: portalsApprovalSchema
 	});
-
-	return data ?? null;
 }

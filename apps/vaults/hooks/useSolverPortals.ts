@@ -23,11 +23,11 @@ import type {BaseError} from 'viem';
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TTxResponse, TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TNormalizedBN} from '@common/types/types';
-import type {TPortalEstimate} from '@vaults/hooks/usePortalsApi';
+import type {TPortalsEstimate} from '@vaults/hooks/usePortalsApi';
 import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
 
 export type TPortalsQuoteResult = {
-	result?: TPortalEstimate | null;
+	result?: TPortalsEstimate | null;
 	isLoading: boolean;
 	error?: Error;
 };
@@ -36,7 +36,7 @@ async function getQuote(
 	request: TInitSolverArgs,
 	safeChainID: number,
 	zapSlippage: number
-): Promise<{data: TPortalEstimate | undefined, error: Error | undefined}> {
+): Promise<{data: TPortalsEstimate | undefined, error: Error | undefined}> {
 	const params = {
 		sellToken: toAddress(request.inputToken.value),
 		sellAmount: toBigInt(request.inputAmount).toString(),
@@ -71,7 +71,7 @@ async function getQuote(
 export function useSolverPortals(): TSolverContext {
 	const {provider} = useWeb3();
 	const request = useRef<TInitSolverArgs>();
-	const latestQuote = useRef<TPortalEstimate>();
+	const latestQuote = useRef<TPortalsEstimate>();
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
 	const {zapSlippage} = useYearn();
 	const {safeChainID} = useChainID();
