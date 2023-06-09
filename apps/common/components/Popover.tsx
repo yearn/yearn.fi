@@ -43,8 +43,13 @@ export function Popover(): ReactElement {
 			return;
 		}
 		const canvas = await html2canvas(body, {
-			backgroundColor: null,
 			allowTaint: true,
+			width: window.innerWidth,
+			height: window.innerHeight,
+			scrollX: window.scrollX,
+			scrollY: window.scrollY,
+			x: window.scrollX,
+			y: window.scrollY + window.scrollY,
 			ignoreElements: (element): boolean => element.id === 'headlessui-portal-root'
 		});
 		const reporter = ens || lensProtocolHandle || (address ? truncateHex(toAddress(address), 4) : '');
@@ -77,7 +82,7 @@ export function Popover(): ReactElement {
 
 	return (
 		<Portal>
-			<PopoverHeadlessUI className={'relative'}>
+			<PopoverHeadlessUI className={'relative z-50'}>
 				<PopoverHeadlessUI.Button
 					className={'fixed bottom-5 right-5 flex h-10 w-10 items-center justify-center rounded-full bg-orange-500'}
 					ref={set_referenceElement}>
