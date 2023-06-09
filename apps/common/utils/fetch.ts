@@ -10,18 +10,18 @@ type TFetchProps = {
 	config?: AxiosRequestConfig<unknown>;
 }
 
-type TFetchReturn<T> = Promise<Partial<AxiosResponse<T>> & {isSuccess: boolean}>
+export type TFetchReturn<T> = Promise<Partial<AxiosResponse<T> & {error?: Error | undefined}>>
 
 export async function fetch<T>({endpoint, schema, config}: TFetchProps): TFetchReturn<T> {
 	if (!endpoint) {
-		return {isSuccess: false};
+		return {data: undefined, error: new Error('No endpoint provided')};
 	}
 
 	try {
 		const result = await axios.get<T>(endpoint, config);
 
 		if (!result.data) {
-			return {isSuccess: false};
+			return {data: undefined, error: new Error('No data')};
 		}
 
 		const parsedData = schema.safeParse(result.data);
@@ -29,13 +29,16 @@ export async function fetch<T>({endpoint, schema, config}: TFetchProps): TFetchR
 		if (!parsedData.success) {
 			console.error(endpoint, parsedData.error);
 			Sentry.captureException(parsedData.error, {tags: {endpoint}});
-			return {...result, isSuccess: false};
+			return {...result, error: parsedData.error};
 		}
 	
-		return {...result, data: parsedData.data, isSuccess: true};
+		return {...result, data: parsedData.data};
 	} catch (error) {
 		console.error(endpoint, error);
 		Sentry.captureException(error, {tags: {endpoint}});
-		return {isSuccess: false};
+		if (error instanceof Error) {
+			return {data: undefined, error};
+		}
+		return {data: undefined, error: new Error(JSON.stringify(error))};
 	}
 }
