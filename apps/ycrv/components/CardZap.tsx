@@ -161,7 +161,9 @@ function CardZap(): ReactElement {
 							</button>
 						</div>
 					</div>
-					<p className={'pl-2 text-xs font-normal text-neutral-600'}>
+					<p
+						suppressHydrationWarning
+						className={'pl-2 text-xs font-normal text-neutral-600'}>
 						{formatCounterValue(
 							amount?.normalized || 0,
 							toAddress(selectedOptionFrom.value) === YCRV_TOKEN_ADDRESS
@@ -207,7 +209,7 @@ function CardZap(): ReactElement {
 							{expectedOutWithSlippage}
 						</b>
 					</div>
-					<p className={'pl-2 text-xs font-normal text-neutral-600'}>
+					<p suppressHydrationWarning className={'pl-2 text-xs font-normal text-neutral-600'}>
 						{formatCounterValue(
 							expectedOutWithSlippage,
 							toAddress(selectedOptionTo.value) === YCRV_TOKEN_ADDRESS

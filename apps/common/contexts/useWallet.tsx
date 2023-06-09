@@ -1,6 +1,6 @@
 import React, {createContext, memo, useCallback, useContext, useMemo} from 'react';
+import {useChainId} from 'wagmi';
 import {useUI} from '@yearn-finance/web-lib/contexts/useUI';
-import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {useClientEffect} from '@yearn-finance/web-lib/hooks/useClientEffect';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {BAL_TOKEN_ADDRESS, BALWETH_TOKEN_ADDRESS, CRV_TOKEN_ADDRESS, CVXCRV_TOKEN_ADDRESS, ETH_TOKEN_ADDRESS, LPYBAL_TOKEN_ADDRESS, LPYCRV_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, YBAL_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS, YVBOOST_TOKEN_ADDRESS, YVECRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
@@ -36,7 +36,7 @@ const defaultProps = {
 ******************************************************************************/
 const WalletContext = createContext<TWalletContext>(defaultProps);
 export const WalletContextApp = memo(function WalletContextApp({children}: {children: ReactElement}): ReactElement {
-	const {safeChainID} = useChainID();
+	const chain = useChainId();
 	const {vaults, vaultsMigrations, vaultsRetired, isLoadingVaultList, prices} = useYearn();
 	const {onLoadStart, onLoadDone} = useUI();
 
@@ -45,10 +45,11 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 		if (isLoadingVaultList) {
 			return [];
 		}
+		const safeChainID = chain === 1337 ? 1 : chain;
 		const tokens: TUseBalancesTokens[] = [];
 		const tokensExists: TDict<boolean> = {};
 		const extraTokens = [ETH_TOKEN_ADDRESS];
-		if(safeChainID === 1) {
+		if (safeChainID === 1) {
 			extraTokens.push(...[
 				YCRV_TOKEN_ADDRESS,
 				LPYCRV_TOKEN_ADDRESS,
@@ -80,7 +81,7 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 			}
 		});
 		return tokens;
-	}, [isLoadingVaultList, safeChainID, vaults]);
+	}, [isLoadingVaultList, chain, vaults]);
 
 	//List all vaults with a possible migration
 	const migratableTokens = useMemo((): TUseBalancesTokens[] => {
