@@ -31,6 +31,8 @@ export type TPortalsQuoteResult = {
 	error?: Error;
 };
 
+type TPortalsError = {response: {data: {message: string}}}
+
 async function getQuote(
 	request: TInitSolverArgs,
 	safeChainID: number,
@@ -351,8 +353,6 @@ export function useSolverPortals(): TSolverContext {
 		onExecuteWithdraw: onExecute
 	}), [expectedOut, init, onApprove, onExecute, onRetrieveAllowance]);
 }
-
-type TPortalsError = {response: {data: {message: string}}}
 
 function isValidErrorObject(error: TPortalsError | unknown): error is TPortalsError {
 	if (!error) {
