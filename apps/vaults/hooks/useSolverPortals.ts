@@ -2,6 +2,7 @@ import {useCallback, useMemo, useRef} from 'react';
 import {isHex} from 'viem';
 import axios from 'axios';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
+import {isValidPortalsErrorObject} from '@vaults/hooks/helpers/isValidPortalsErrorObject';
 import {getPortalsApproval, getPortalsEstimate, getPortalsTx} from '@vaults/hooks/usePortalsApi';
 import {getNetwork, prepareSendTransaction, waitForTransaction} from '@wagmi/core';
 import {toast} from '@yearn-finance/web-lib/components/yToast';
@@ -30,8 +31,6 @@ export type TPortalsQuoteResult = {
 	isLoading: boolean;
 	error?: Error;
 };
-
-type TPortalsError = {response: {data: {message: string}}}
 
 async function getQuote(
 	request: TInitSolverArgs,
@@ -196,7 +195,7 @@ export function useSolverPortals(): TSolverContext {
 			console.error('Fail to perform transaction');
 			return ({isSuccessful: false});
 		} catch (error) {
-			if (isValidErrorObject(error)) {
+			if (isValidPortalsErrorObject(error)) {
 				const errorMessage = error.response.data.message;
 				console.error(errorMessage);
 				toast({type: 'error', content: `Zap not possible: ${errorMessage}`});
@@ -352,28 +351,4 @@ export function useSolverPortals(): TSolverContext {
 		onExecuteDeposit: onExecute,
 		onExecuteWithdraw: onExecute
 	}), [expectedOut, init, onApprove, onExecute, onRetrieveAllowance]);
-}
-
-function isValidErrorObject(error: TPortalsError | unknown): error is TPortalsError {
-	if (!error) {
-		return false;
-	}
-
-	if (typeof error === 'object' && 'response' in error) {
-		if (!error.response) {
-			return false;
-		}
-
-		if (typeof error.response === 'object' && 'data' in error.response) {
-			if (!error.response.data) {
-				return false;
-			}
-			
-			if (typeof error.response.data === 'object' && 'message' in error.response.data) {
-				return !!error.response.data.message;
-			}
-		}
-	}
-
-	return false;
 }
