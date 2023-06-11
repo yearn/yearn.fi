@@ -19,7 +19,6 @@ import {allowanceOf, approveERC20} from '@common/utils/actions';
 import {assert} from '@common/utils/assert';
 import {assertAddress, toWagmiProvider} from '@common/utils/toWagmiProvider';
 
-import type {BaseError} from 'viem';
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TTxResponse, TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TNormalizedBN} from '@common/types/types';
@@ -27,7 +26,7 @@ import type {TPortalsEstimate} from '@vaults/hooks/usePortalsApi';
 import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
 
 export type TPortalsQuoteResult = {
-	result?: TPortalsEstimate | null;
+	result: TPortalsEstimate | null;
 	isLoading: boolean;
 	error?: Error;
 };
@@ -36,7 +35,7 @@ async function getQuote(
 	request: TInitSolverArgs,
 	safeChainID: number,
 	zapSlippage: number
-): Promise<{data: TPortalsEstimate | undefined, error: Error | undefined}> {
+): Promise<{data: TPortalsEstimate | null, error?: Error}> {
 	const params = {
 		sellToken: toAddress(request.inputToken.value),
 		sellAmount: toBigInt(request.inputAmount).toString(),
@@ -45,18 +44,17 @@ async function getQuote(
 	};
 
 	if (isZeroAddress(params.sellToken)) {
-		return {data: undefined, error: new Error('Invalid sell token')};
+		return {data: null, error: new Error('Invalid sell token')};
 	}
 	if (isZeroAddress(params.buyToken)) {
-		return {data: undefined, error: new Error('Invalid buy token')};
+		return {data: null, error: new Error('Invalid buy token')};
 	}
 	if (isZero(params.sellAmount)) {
-		return {data: undefined, error: new Error('Invalid sell amount')};
+		return {data: null, error: new Error('Invalid sell amount')};
 	}
 
 	try {
-		const {data, error} = await getPortalsEstimate({network: safeChainID, params});
-		return {data, error};
+		return getPortalsEstimate({network: safeChainID, params});
 	} catch (error) {
 		console.error(error);
 		let errorContent = 'Zap not possible. Try again later or pick another token.';
@@ -64,7 +62,7 @@ async function getQuote(
 			const description = error.response?.data?.description;
 			errorContent += `${description ? ` (Reason: [${description}])` : ''}`;
 		}
-		return {data: undefined, error: new Error(errorContent)};
+		return {data: null, error: new Error(errorContent)};
 	}
 }
 
@@ -158,9 +156,8 @@ export function useSolverPortals(): TSolverContext {
 		assert(latestQuote.current, 'Quote is not set');
 		assert(zapSlippage > 0, 'Slippage cannot be 0');
 
-		let transaction;
 		try {
-			transaction = await getPortalsTx({
+			const transaction = await getPortalsTx({
 				network: safeChainID,
 				params: {
 					takerAddress: toAddress(request.current.from),
@@ -168,18 +165,15 @@ export function useSolverPortals(): TSolverContext {
 					sellAmount:toBigInt(request.current.inputAmount).toString(),
 					buyToken: toAddress(request.current.outputToken.value),
 					slippagePercentage: String(zapSlippage / 100),
-					validate: true
+					validate: 'true'
 				}
 			});
-		} catch (_error) {
-			const errorMessage = (_error as any).response.data.message;
-			console.error(errorMessage);
-			toast({type: 'error', content: `Zap not possible: ${errorMessage}`});
-			return ({isSuccessful: false});
-		}
 
-		try {
-			const {tx: {value, to, data, ...rest}} = transaction;
+			if (!transaction.data) {
+				throw new Error('Transaction data was not fetched from Portals!');
+			}
+
+			const {tx: {value, to, data, ...rest}} = transaction.data;
 			const wagmiProvider = await toWagmiProvider(provider);
 
 			assert(isHex(data), 'Data is not hex');
@@ -199,10 +193,13 @@ export function useSolverPortals(): TSolverContext {
 			}
 			console.error('Fail to perform transaction');
 			return ({isSuccessful: false});
-		} catch (_error) {
-			const err = _error as BaseError;
-			console.error(err);
-			toast({type: 'error', content: `Zap not possible: ${err.shortMessage}`});
+		} catch (error) {
+			if (isValidErrorObject(error)) {
+				const errorMessage = error.response.data.message;
+				console.error(errorMessage);
+				toast({type: 'error', content: `Zap not possible: ${errorMessage}`});
+			}
+			
 			return ({isSuccessful: false});
 		}
 	}, [provider, safeChainID, zapSlippage]);
@@ -238,7 +235,7 @@ export function useSolverPortals(): TSolverContext {
 		}
 
 		try {
-			const approval = await getPortalsApproval({
+			const {data: approval} = await getPortalsApproval({
 				network: safeChainID,
 				params: {
 					takerAddress: toAddress(request.current.from),
@@ -247,6 +244,10 @@ export function useSolverPortals(): TSolverContext {
 					buyToken: toAddress(request.current.outputToken.value)
 				}
 			});
+
+			if (!approval) {
+				throw new Error('Portals approval not found');
+			}
 
 			existingAllowances.current[key] = toNormalizedBN(
 				approval.context.allowance,
@@ -278,7 +279,7 @@ export function useSolverPortals(): TSolverContext {
 		assert(request.current.inputAmount, 'Input amount is not set');
 
 		try {
-			const approval = await getPortalsApproval({
+			const {data: approval} = await getPortalsApproval({
 				network: safeChainID,
 				params: {
 					takerAddress: toAddress(request.current.from),
@@ -287,6 +288,10 @@ export function useSolverPortals(): TSolverContext {
 					buyToken: toAddress(request.current.outputToken.value)
 				}
 			});
+
+			if (!approval) {
+				return;
+			}
 
 			const allowance = await allowanceOf({
 				connector: provider,
@@ -347,3 +352,28 @@ export function useSolverPortals(): TSolverContext {
 	}), [expectedOut, init, onApprove, onExecute, onRetrieveAllowance]);
 }
 
+type TPortalsError = {response: {data: {message: string}}}
+
+function isValidErrorObject(error: TPortalsError | unknown): error is TPortalsError {
+	if (!error) {
+		return false;
+	}
+
+	if (typeof error === 'object' && 'response' in error) {
+		if (!error.response) {
+			return false;
+		}
+
+		if (typeof error.response === 'object' && 'data' in error.response) {
+			if (!error.response.data) {
+				return false;
+			}
+			
+			if (typeof error.response.data === 'object' && 'message' in error.response.data) {
+				return !!error.response.data.message;
+			}
+		}
+	}
+
+	return false;
+}
