@@ -92,7 +92,6 @@ const NETWORK = new Map<number, string>([
 	[56, 'bsc']
 ]);
 
-
 const BASE_URL = 'https://api.portals.fi/v1';
 
 export async function getPortalsEstimate({network, params}: TGetEstimateProps): TFetchReturn<TPortalsEstimate> {
