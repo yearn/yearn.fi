@@ -82,7 +82,7 @@ function VaultDetailsQuickActionsTo(): ReactElement {
 						}
 					</div>
 				</div>
-				<legend className={'font-number mr-1 text-end text-xs text-neutral-600 md:mr-0 md:text-start'}>
+				<legend suppressHydrationWarning className={'font-number mr-1 text-end text-xs text-neutral-600 md:mr-0 md:text-start'}>
 					{formatCounterValue(expectedOut?.normalized || 0, selectedOptionToPricePerToken)}
 				</legend>
 			</div>

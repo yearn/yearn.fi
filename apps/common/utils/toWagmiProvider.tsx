@@ -4,6 +4,7 @@ import {prepareWriteContract, waitForTransaction, writeContract} from '@wagmi/co
 import {toast} from '@yearn-finance/web-lib/components/yToast';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ZERO_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isEth} from '@yearn-finance/web-lib/utils/isEth';
 import {isTAddress} from '@yearn-finance/web-lib/utils/isTAddress';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
@@ -72,7 +73,8 @@ export async function handleTx<
 		const config = await prepareWriteContract({
 			...wagmiProvider,
 			...props as TPrepareWriteContractConfig,
-			address: props.address
+			address: props.address,
+			value: toBigInt(props.value)
 		});
 		const {hash} = await writeContract(config.request);
 		const receipt = await waitForTransaction({chainId: wagmiProvider.chainId, hash});
