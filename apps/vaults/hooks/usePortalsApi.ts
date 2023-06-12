@@ -31,12 +31,12 @@ type TGetTransactionProps = Omit<TGetEstimateProps, 'params'> & {
 
 const portalsTxSchema = z.object({
 	to: z.string(),
-	from: z.string(),
+	from: z.string().optional(),
 	data: z.string(),
 	value: z.object({
 		type: z.string(),
 		hex: z.string()
-	}),
+	}).optional(),
 	gasLimit: z.object({
 		type: z.string(),
 		hex: z.string()
@@ -49,7 +49,7 @@ const portalsTransactionSchema = z.object({
 		protocolId: z.string(),
 		sellToken: z.string(),
 		sellAmount: z.string(),
-		intermediateToken: z.string(),
+		intermediateToken: z.string().optional(),
 		buyToken: z.string(),
 		buyAmount: z.string(),
 		minBuyAmount: z.string(),
