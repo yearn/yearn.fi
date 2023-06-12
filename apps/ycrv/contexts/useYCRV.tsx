@@ -1,6 +1,5 @@
 import React, {createContext, useContext, useMemo, useState} from 'react';
 import {formatUnits} from 'viem';
-import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {useFetch} from '@common/hooks/useFetch';
@@ -41,8 +40,7 @@ const defaultProps = {
 ******************************************************************************/
 const YCRVContext = createContext<TYCRVContext>(defaultProps);
 export const YCRVContextApp = ({children}: {children: ReactElement}): ReactElement => {
-	const {safeChainID} = useChainID();
-	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: safeChainID});
+	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: 1});
 	const [slippage, set_slippage] = useState<number>(0.6);
 	const holdings = useHoldings();
 	const allowances = useAllowances();
