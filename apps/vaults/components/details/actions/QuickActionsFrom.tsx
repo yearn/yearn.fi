@@ -89,7 +89,7 @@ function VaultDetailsQuickActionsFrom(): ReactElement {
 							id={'fromAmount'}
 							className={`w-full overflow-x-scroll border-none bg-transparent px-0 py-4 font-bold outline-none scrollbar-none ${isActive ? '' : 'cursor-not-allowed'}`}
 							type={'text'}
-              autoComplete={'off'}
+							autoComplete={'off'}
 							disabled={!isActive}
 							value={actionParams?.amount.normalized}
 							onChange={onChangeInput} />
@@ -100,7 +100,7 @@ function VaultDetailsQuickActionsFrom(): ReactElement {
 						</button>
 					</div>
 				</div>
-				<legend className={'font-number mr-1 text-end text-xs text-neutral-600 md:mr-0 md:text-start'}>
+				<legend suppressHydrationWarning className={'font-number mr-1 text-end text-xs text-neutral-600 md:mr-0 md:text-start'}>
 					{formatCounterValue(actionParams?.amount?.normalized || 0, selectedOptionFromPricePerToken)}
 				</legend>
 			</div>
