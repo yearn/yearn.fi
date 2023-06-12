@@ -4,7 +4,6 @@ import {findLatestApr} from '@vaults/components/details/tabs/findLatestApr';
 import {GraphForStrategyReports} from '@vaults/components/graphs/GraphForStrategyReports';
 import {yDaemonReportsSchema} from '@vaults/schemas/reportsSchema';
 import Renderable from '@yearn-finance/web-lib/components/Renderable';
-import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import IconCopy from '@yearn-finance/web-lib/icons/IconCopy';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -16,6 +15,7 @@ import {SearchBar} from '@common/components/SearchBar';
 import {Switch} from '@common/components/Switch';
 import {useFetch} from '@common/hooks/useFetch';
 import IconChevron from '@common/icons/IconChevron';
+import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault, TYDaemonVaultStrategy} from '@common/schemas/yDaemonVaultsSchemas';
@@ -43,7 +43,7 @@ function RiskScoreElement({label, value}: TRiskScoreElementProps): ReactElement 
 
 function VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
 	const {safeChainID} = useChainID();
-	const {settings: baseAPISettings} = useSettings();
+	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: safeChainID});
 	const isMounted = useIsMounted();
 
 	const riskScoreElementsMap = useMemo((): TRiskScoreElementProps[] => {
@@ -61,10 +61,8 @@ function VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
 		]);
 	}, [strategy]);
 
-	const YDAEMON_BASE_URI = `${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/${safeChainID}`;
-
 	const {data: reports} = useFetch<TYDaemonReports>({
-		endpoint: `${YDAEMON_BASE_URI}/reports/${strategy.address}`,
+		endpoint: `${yDaemonBaseUri}/reports/${strategy.address}`,
 		schema: yDaemonReportsSchema
 	});
 

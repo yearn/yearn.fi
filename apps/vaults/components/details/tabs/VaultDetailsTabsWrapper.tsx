@@ -23,8 +23,8 @@ import {assert} from '@common/utils/assert';
 import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault, TYDaemonVaultHarvestsSchema} from '@common/schemas/yDaemonVaultsSchemas';
-import type {TSettingsForNetwork} from '@common/types/yearn';
+import type {TYDaemonVault, TYDaemonVaultHarvests} from '@common/schemas/yDaemonVaultsSchemas';
+import type {TSettingsForNetwork} from '@common/schemas/ySchemas';
 
 type TTabsOptions = {
 	value: number;
@@ -176,7 +176,7 @@ function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}):
 		}
 	}
 
-	const {data: yDaemonHarvestsData} = useFetch<TYDaemonVaultHarvestsSchema>({
+	const {data: yDaemonHarvestsData} = useFetch<TYDaemonVaultHarvests>({
 		endpoint: `${yDaemonBaseUri}/vaults/harvests/${currentVault.address}`,
 		schema: yDaemonVaultHarvestsSchema
 	});

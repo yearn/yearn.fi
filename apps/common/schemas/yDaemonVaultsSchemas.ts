@@ -60,6 +60,19 @@ const yDaemonVaultStrategySchema = z.object({
 	}).optional() // Optional for migratable
 });
 
+export const yDaemonVaultTokenSchema = z.object({
+	address: addressSchema,
+	underlyingTokensAddresses: z.array(addressSchema),
+	name: z.string(),
+	symbol: z.string(),
+	type: z.string(),
+	display_name: z.string(),
+	display_symbol: z.string(),
+	description: z.string(),
+	icon: z.string(),
+	decimals: z.number()
+});
+
 export const yDaemonVaultSchema = z.object({
 	address: addressSchema,
 	type: z.literal('Automated').or(z.literal('Standard').or(z.literal('Experimental'))),
@@ -78,18 +91,7 @@ export const yDaemonVaultSchema = z.object({
 	riskScore: z.number(),
 	endorsed: z.boolean(),
 	emergency_shutdown: z.boolean(),
-	token: z.object({
-		address: addressSchema,
-		underlyingTokensAddresses: z.array(addressSchema),
-		name: z.string(),
-		symbol: z.string(),
-		type: z.string(),
-		display_name: z.string(),
-		display_symbol: z.string(),
-		description: z.string(),
-		icon: z.string(),
-		decimals: z.number()
-	}),
+	token: yDaemonVaultTokenSchema,
 	tvl: z.object({
 		total_assets: z.string(),
 		total_delegated_assets: z.string(),
@@ -161,8 +163,8 @@ export const yDaemonVaultSchema = z.object({
 export const yDaemonVaultsSchema = z.array(yDaemonVaultSchema);
 
 export const yDaemonVaultHarvestSchema = z.object({
-	vaultAddress: z.string().optional(),
-	strategyAddress: z.string().optional(),
+	vaultAddress: addressSchema.optional(),
+	strategyAddress: addressSchema.optional(),
 	txHash:z.string().optional(),
 	timestamp: z.string(),
 	profit: z.string(),
@@ -179,6 +181,8 @@ export type TYDaemonVaultStrategy = z.infer<typeof yDaemonVaultStrategySchema>;
 
 export type TYDaemonVaults = z.infer<typeof yDaemonVaultsSchema>;
 
-export type TYDaemonVaultHarvestSchema = z.infer<typeof yDaemonVaultHarvestSchema>;
+export type TYDaemonVaultHarvest = z.infer<typeof yDaemonVaultHarvestSchema>;
 
-export type TYDaemonVaultHarvestsSchema = z.infer<typeof yDaemonVaultHarvestsSchema>;
+export type TYDaemonVaultHarvests = z.infer<typeof yDaemonVaultHarvestsSchema>;
+
+export type TYDaemonVaultTokenSchema = z.infer<typeof yDaemonVaultTokenSchema>;
