@@ -7,13 +7,13 @@ import {HarvestListRow} from '@yBal/components/HarvestsListRow';
 import {useYBal} from '@yBal/contexts/useYBal';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonHarvests} from '@common/types/yearn';
+import type {TYDaemonVaultHarvest, TYDaemonVaultHarvests} from '@common/schemas/yDaemonVaultsSchemas';
 
 function Harvests(): ReactElement {
 	const {harvests} = useYBal();
 	const [category, set_category] = useState('all');
 
-	const filteredHarvests = useMemo((): TYDaemonHarvests[] => {
+	const filteredHarvests = useMemo((): TYDaemonVaultHarvests => {
 		const _harvests = [...(harvests || [])];
 		if (category === 'st-yBal') {
 			return _harvests.filter((harvest): boolean => toAddress(harvest.vaultAddress) === STYBAL_TOKEN_ADDRESS);
@@ -55,12 +55,12 @@ function Harvests(): ReactElement {
 				<HarvestListHead />
 				{
 					(filteredHarvests || [])
-						.filter((harvest: TYDaemonHarvests): boolean => {
+						.filter((harvest: TYDaemonVaultHarvest): boolean => {
 							return (
 								!isZeroAddress(toAddress(harvest.vaultAddress)) &&
 								[STYBAL_TOKEN_ADDRESS, LPYBAL_TOKEN_ADDRESS].includes(toAddress(harvest.vaultAddress))
 							);
-						}).map((harvest: TYDaemonHarvests, index: number): ReactElement => {
+						}).map((harvest: TYDaemonVaultHarvest, index: number): ReactElement => {
 							return (
 								<HarvestListRow
 									key={`${harvest.timestamp}_${harvest.vaultAddress}_${index}`}

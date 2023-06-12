@@ -1,26 +1,22 @@
 import React, {createContext, useContext, useMemo, useState} from 'react';
-import useSWR from 'swr';
-import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {LPYBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import {useFetch} from '@common/hooks/useFetch';
-import {yDaemonVaultSchema} from '@common/schemas/yDaemonVaultsSchemas';
+import {yDaemonVaultHarvestsSchema, yDaemonVaultSchema} from '@common/schemas/yDaemonVaultsSchemas';
+import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 import {useAllowances} from '@yBal/contexts/useAllowanceHook';
 import {defaultBalHoldings, useHoldings} from '@yBal/contexts/useHoldingsHook';
 
 import type {ReactElement} from 'react';
-import type {SWRResponse} from 'swr';
 import type {TBalHoldings} from '@yBal/contexts/useHoldingsHook';
 import type {TDict} from '@yearn-finance/web-lib/types';
-import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
-import type {TYDaemonHarvests} from '@common/types/yearn';
+import type {TYDaemonVault, TYDaemonVaultHarvests} from '@common/schemas/yDaemonVaultsSchemas';
 
 type TYBalContext = {
 	styBalAPY: number,
 	slippage: number,
 	allowances: TDict<bigint>,
 	holdings: TBalHoldings,
-	harvests: TYDaemonHarvests[],
+	harvests: TYDaemonVaultHarvests,
 	set_slippage: (slippage: number) => void,
 	refetchAllowances: () => void
 }
@@ -41,23 +37,20 @@ const defaultProps = {
 const YBalContext = createContext<TYBalContext>(defaultProps);
 
 export const YBalContextApp = ({children}: {children: ReactElement}): ReactElement => {
-	const {settings: baseAPISettings} = useSettings();
+	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: 1});
 	const [slippage, set_slippage] = useState(0.6);
 	const holdings = useHoldings();
 	const allowances = useAllowances();
 
-	const YDAEMON_BASE_URI = `${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}`;
-
 	const {data: styBalVault} = useFetch<TYDaemonVault>({
-		endpoint: `${YDAEMON_BASE_URI}/1/vaults/${STYBAL_TOKEN_ADDRESS}`,
+		endpoint: `${yDaemonBaseUri}/vaults/${STYBAL_TOKEN_ADDRESS}`,
 		schema: yDaemonVaultSchema
 	});
 
-	const {data: yBalHarvests} = useSWR(
-		`${YDAEMON_BASE_URI}/1/vaults/harvests/${STYBAL_TOKEN_ADDRESS},${LPYBAL_TOKEN_ADDRESS}`,
-		baseFetcher,
-		{revalidateOnFocus: false}
-	) as SWRResponse;
+	const {data: yBalHarvests} = useFetch<TYDaemonVaultHarvests>({
+		endpoint: `${yDaemonBaseUri}/vaults/harvests/${STYBAL_TOKEN_ADDRESS},${LPYBAL_TOKEN_ADDRESS}`,
+		schema: yDaemonVaultHarvestsSchema
+	});
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Compute the styBal APY based on the experimental APY and the mega boost.
@@ -68,7 +61,7 @@ export const YBalContextApp = ({children}: {children: ReactElement}): ReactEleme
 	**	Setup and render the Context provider to use in the app.
 	***************************************************************************/
 	const contextValue = useMemo((): TYBalContext => ({
-		harvests: yBalHarvests,
+		harvests: yBalHarvests ?? [],
 		holdings: holdings,
 		allowances: allowances[0],
 		refetchAllowances: allowances[1],

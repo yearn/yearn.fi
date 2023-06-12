@@ -1,21 +1,18 @@
 import React, {createContext, useContext, useMemo, useState} from 'react';
 import {formatUnits} from 'viem';
-import useSWR from 'swr';
+import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {useFetch} from '@common/hooks/useFetch';
-import {yDaemonVaultSchema} from '@common/schemas/yDaemonVaultsSchemas';
+import {yDaemonVaultHarvestsSchema, yDaemonVaultSchema} from '@common/schemas/yDaemonVaultsSchemas';
 import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 import {useAllowances} from '@yCRV/contexts/useAllowanceHook';
 import {defaultHoldings, useHoldings} from '@yCRV/contexts/useHoldingsHook';
 
 import type {ReactElement} from 'react';
-import type {SWRResponse} from 'swr';
 import type {TCRVHoldings} from '@yCRV/contexts/useHoldingsHook';
 import type {TDict} from '@yearn-finance/web-lib/types';
-import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
-import type {TYDaemonHarvests} from '@common/types/yearn';
+import type {TYDaemonVault, TYDaemonVaultHarvests} from '@common/schemas/yDaemonVaultsSchemas';
 
 type TYCRVContext = {
 	styCRVMegaBoost: number,
@@ -23,7 +20,7 @@ type TYCRVContext = {
 	slippage: number,
 	allowances: TDict<bigint>,
 	holdings: TCRVHoldings,
-	harvests: TYDaemonHarvests[],
+	harvests: TYDaemonVaultHarvests,
 	set_slippage: (slippage: number) => void,
 	refetchAllowances: () => void
 }
@@ -44,7 +41,8 @@ const defaultProps = {
 ******************************************************************************/
 const YCRVContext = createContext<TYCRVContext>(defaultProps);
 export const YCRVContextApp = ({children}: {children: ReactElement}): ReactElement => {
-	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: 1});
+	const {safeChainID} = useChainID();
+	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: safeChainID});
 	const [slippage, set_slippage] = useState<number>(0.6);
 	const holdings = useHoldings();
 	const allowances = useAllowances();
@@ -54,11 +52,10 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 		schema: yDaemonVaultSchema
 	});
 
-	const	{data: yCRVHarvests} = useSWR(
-		`${yDaemonBaseUri}/vaults/harvests/${STYCRV_TOKEN_ADDRESS},${LPYCRV_TOKEN_ADDRESS}`,
-		baseFetcher,
-		{revalidateOnFocus: false}
-	) as SWRResponse;
+	const {data: yCRVHarvests} = useFetch<TYDaemonVaultHarvests>({
+		endpoint: `${yDaemonBaseUri}/vaults/harvests/${STYCRV_TOKEN_ADDRESS},${LPYCRV_TOKEN_ADDRESS}`,
+		schema: yDaemonVaultHarvestsSchema
+	});
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Compute the mega boost for the staked yCRV. This boost come from the
@@ -87,7 +84,7 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 	**	Setup and render the Context provider to use in the app.
 	***************************************************************************/
 	const contextValue = useMemo((): TYCRVContext => ({
-		harvests: yCRVHarvests,
+		harvests: yCRVHarvests ?? [],
 		holdings: holdings,
 		allowances: allowances[0],
 		refetchAllowances: allowances[1],
