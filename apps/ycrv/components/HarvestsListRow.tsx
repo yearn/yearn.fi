@@ -8,9 +8,9 @@ import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonHarvests} from '@common/types/yearn';
+import type {TYDaemonVaultHarvest} from '@common/schemas/yDaemonVaultsSchemas';
 
-function HarvestListRow({harvest}: {harvest: TYDaemonHarvests}): ReactElement {
+function HarvestListRow({harvest}: {harvest: TYDaemonVaultHarvest}): ReactElement {
 	return (
 		<div className={'yearn--table-wrapper'}>
 			<div className={'yearn--table-token-section'}>

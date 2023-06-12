@@ -7,13 +7,13 @@ import {HarvestListRow} from '@yCRV/components/HarvestsListRow';
 import {useYCRV} from '@yCRV/contexts/useYCRV';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonHarvests} from '@common/types/yearn';
+import type {TYDaemonVaultHarvest, TYDaemonVaultHarvests} from '@common/schemas/yDaemonVaultsSchemas';
 
 function Harvests(): ReactElement {
 	const {harvests} = useYCRV();
 	const [category, set_category] = useState('all');
 
-	const filteredHarvests = useMemo((): TYDaemonHarvests[] => {
+	const filteredHarvests = useMemo((): TYDaemonVaultHarvests => {
 		const _harvests = [...(harvests || [])];
 		if (category === 'st-yCRV') {
 			return _harvests.filter((harvest): boolean => toAddress(harvest.vaultAddress) === STYCRV_TOKEN_ADDRESS);
@@ -53,7 +53,7 @@ function Harvests(): ReactElement {
 			</div>
 			<div className={'mt-4 grid w-full grid-cols-1 md:mt-0'}>
 				<HarvestListHead />
-				{(filteredHarvests || [])?.map((harvest: TYDaemonHarvests, index: number): ReactElement => {
+				{(filteredHarvests || [])?.map((harvest: TYDaemonVaultHarvest, index: number): ReactElement => {
 					return <HarvestListRow key={`${harvest.timestamp}_${harvest.vaultAddress}_${index}`} harvest={harvest} />;
 				})}
 			</div>
