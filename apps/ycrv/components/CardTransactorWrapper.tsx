@@ -1,5 +1,5 @@
 import React, {createContext, useCallback, useContext, useEffect, useMemo, useState} from 'react';
-import useSWR from 'swr';
+import {useAsync, useIntervalEffect} from '@react-hookz/web';
 import {readContract} from '@wagmi/core';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -137,16 +137,11 @@ function CardTransactorContextApp({
 	** amount. This hook is called every 10s or when amount/in or out changes.
 	** Calls the expectedOutFetcher callback.
 	**************************************************************************/
-	//TODO: CHANGE THIS
-	const {data: expectedOut} = useSWR(
-		isActive ? [
-			selectedOptionFrom.value,
-			selectedOptionTo.value,
-			amount.raw
-		] : null,
-		expectedOutFetcher,
-		{refreshInterval: 30000, shouldRetryOnError: false, revalidateOnFocus: false}
-	);
+	const [{result: expectedOut}, {execute: fetchExpectedOut}] = useAsync(async (): Promise<bigint> => {
+		return expectedOutFetcher([selectedOptionFrom.value, selectedOptionTo.value, amount.raw]);
+	}, 0n);
+
+	useIntervalEffect(async (): Promise<bigint> => fetchExpectedOut(), 30000);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Approve the spending of token A by the corresponding ZAP contract to
