@@ -1,7 +1,7 @@
-import React, {Fragment, useCallback, useMemo} from 'react';
+import React, {Fragment, useMemo} from 'react';
 import {LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {formatAmount, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
+import {formatBigNumberOver10K, formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatAmount, formatNumberOver10K, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue, formatCounterValueRaw} from '@yearn-finance/web-lib/utils/format.value';
 import ValueAnimation from '@common/components/ValueAnimation';
 import {useCurve} from '@common/contexts/useCurve';
@@ -82,20 +82,6 @@ function ZapAndStats(): ReactElement {
 	const lpycrvPrice = useTokenPrice(LPYCRV_TOKEN_ADDRESS);
 	const balanceOfStyCRV = useBalance(STYCRV_TOKEN_ADDRESS);
 	const balanceOfLpyCRV = useBalance(LPYCRV_TOKEN_ADDRESS);
-
-	const formatBigNumberOver10K = useCallback((v: bigint): string => {
-		if (toBigInt(v) > (toBigInt(10000) * toBigInt(1e18))) {
-			return formatAmount(formatToNormalizedValue(toBigInt(v), 18), 0, 0) ?? '';
-		}
-		return formatAmount(formatToNormalizedValue(toBigInt(v), 18)) ?? '';
-	}, []);
-
-	const formatNumberOver10K = useCallback((v: number): string => {
-		if (v >= 10000) {
-			return formatAmount(v, 0, 0) ?? '';
-		}
-		return formatAmount(v) ?? '';
-	}, []);
 
 	const latestCurveFeesValue = useMemo((): number => {
 		const {weeklyFeesTable} = curveWeeklyFees;
