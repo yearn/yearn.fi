@@ -84,6 +84,24 @@ function CardTransactorContextApp({
 	const {toast} = yToast();
 
 	/* 🔵 - Yearn Finance ******************************************************
+	** SWR hook to get the expected out for a given in/out pair with a specific
+	** amount. This hook is called every 10s or when amount/in or out changes.
+	** Calls the expectedOutFetcher callback.
+	**************************************************************************/
+	const [{result: expectedOut}, {execute: fetchExpectedOut}] = useAsync(async (): Promise<bigint> => {
+		return expectedOutFetcher([selectedOptionFrom.value, selectedOptionTo.value, amount.raw]);
+	}, 0n);
+
+	useIntervalEffect(async (): Promise<bigint> => fetchExpectedOut(), 30000);
+
+	useEffect((): void => {
+		async function executeFetchExpectedOut(): Promise<void> {
+			await fetchExpectedOut();
+		}
+		executeFetchExpectedOut();
+	}, [selectedOptionFrom.value, selectedOptionTo.value, amount.raw, fetchExpectedOut]);
+
+	/* 🔵 - Yearn Finance ******************************************************
 	** useEffect to set the amount to the max amount of the selected token once
 	** the wallet is connected, or to 0 if the wallet is disconnected.
 	**************************************************************************/
@@ -95,9 +113,10 @@ function CardTransactorContextApp({
 			performBatchedUpdates((): void => {
 				set_amount(toNormalizedBN(0));
 				set_hasTypedSomething(false);
+				fetchExpectedOut();
 			});
 		}
-	}, [isActive, selectedOptionFrom, amount.raw, hasTypedSomething, balances, balancesNonce]);
+	}, [isActive, selectedOptionFrom, amount.raw, hasTypedSomething, balances, balancesNonce, fetchExpectedOut]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Perform a smartContract call to the ZAP contract to get the expected
@@ -131,17 +150,6 @@ function CardTransactorContextApp({
 			return (0n);
 		}
 	}, []);
-
-	/* 🔵 - Yearn Finance ******************************************************
-	** SWR hook to get the expected out for a given in/out pair with a specific
-	** amount. This hook is called every 10s or when amount/in or out changes.
-	** Calls the expectedOutFetcher callback.
-	**************************************************************************/
-	const [{result: expectedOut}, {execute: fetchExpectedOut}] = useAsync(async (): Promise<bigint> => {
-		return expectedOutFetcher([selectedOptionFrom.value, selectedOptionTo.value, amount.raw]);
-	}, 0n);
-
-	useIntervalEffect(async (): Promise<bigint> => fetchExpectedOut(), 30000);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Approve the spending of token A by the corresponding ZAP contract to
