@@ -108,9 +108,6 @@ function VaultDetailsQuickActionsButtons(): ReactElement {
 	const isAboveAllowance = toBigInt(actionParams.amount.raw) > toBigInt(allowanceFrom?.raw);
 	const isButtonBusy = txStatusApprove.pending || status !== 'success';
 
-	console.warn({allowanceFrom, amount: actionParams.amount, isAboveAllowance});
-
-
 	if (
 		isWithdrawing //If user is withdrawing ...
 		&& currentSolver === Solver.enum.ChainCoin // ... and the solver is ChainCoin ...
