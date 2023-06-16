@@ -200,7 +200,7 @@ export function useSolverPortals(): TSolverContext {
 				console.error(errorMessage);
 				toast({type: 'error', content: `Zap not possible: ${errorMessage}`});
 			}
-			
+
 			return ({isSuccessful: false});
 		}
 	}, [provider, safeChainID, zapSlippage]);
