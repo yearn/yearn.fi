@@ -7,6 +7,7 @@ import {useFilteredVaults} from '@vaults/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import ListHead from '@common/components/ListHead';
 import ListHero from '@common/components/ListHero';
@@ -18,7 +19,6 @@ import type {ReactElement, ReactNode} from 'react';
 import type {TYDaemonVaults} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TSortDirection} from '@common/types/types';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
-import { isZero } from '@yearn-finance/web-lib/utils/isZero';
 
 function VaultListFactory(): ReactElement {
 	const {balances} = useWallet();
