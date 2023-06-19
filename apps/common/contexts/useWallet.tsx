@@ -117,7 +117,6 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 	});
 
 
-	console.dir(balances);
 	//Compute the cumulatedValueInVaults
 	const cumulatedValueInVaults = useMemo((): number => {
 		nonce; //Suppress warning
