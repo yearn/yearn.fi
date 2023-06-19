@@ -478,6 +478,7 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 				const duplicateAddresses = [
 					isWithWETH ? WETH_TOKEN_ADDRESS : null,
 					isWithWFTM ? WFTM_TOKEN_ADDRESS : null,
+					isWithWOPT ? ETH_TOKEN_ADDRESS : null,
 					isWithWOPT ? OPT_WETH_TOKEN_ADDRESS : null,
 					toAddress(currentVault?.token?.address),
 					toAddress(currentVault?.address)
