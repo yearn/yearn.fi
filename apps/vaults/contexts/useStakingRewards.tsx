@@ -1,9 +1,10 @@
 import React, {createContext, memo, useCallback, useContext, useMemo} from 'react';
 import {useRouter} from 'next/router';
 import useSWR from 'swr';
+import {STACKING_TO_VAULT, VAULT_TO_STACKING} from '@vaults/constants/optRewards';
 import STAKING_REWARDS_ABI from '@vaults/utils/abi/stakingRewards.abi';
 import STAKING_REWARDS_REGISTRY_ABI from '@vaults/utils/abi/stakingRewardsRegistry.abi';
-import {multicall, readContract} from '@wagmi/core';
+import {multicall} from '@wagmi/core';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -63,22 +64,28 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 		** Retrieve the number of tokens in the registry, and for each token retrieve it's address
 		** so we can proceed
 		******************************************************************************************/
-		const numTokens = await readContract({...baseContract, functionName: 'numTokens'});
-		const tokensCalls = [];
-		for (let i = 0; i < numTokens; i++) {
-			tokensCalls.push({...baseContract, functionName: 'tokens', args: [i]});
-		}
-		const vaultAddressesMulticall = await multicall({contracts: tokensCalls, chainId: chainID});
+		// const numTokens = await readContract({...baseContract, functionName: 'numTokens'});
+		// const tokensCalls = [];
+		// for (let i = 0; i < numTokens; i++) {
+		// 	tokensCalls.push({...baseContract, functionName: 'tokens', args: [i]});
+		// }
+		// const vaultAddressesMulticall = await multicall({contracts: tokensCalls, chainId: chainID});
 
 		/* 🔵 - Yearn Finance **********************************************************************
 		** For each address of token, retrieve the related stacking pool address
 		******************************************************************************************/
+		// const stakingPoolCalls = [];
+		// for (const vaultAddressMulticall of vaultAddressesMulticall) {
+		// 	if (vaultAddressMulticall.status === 'success') {
+		// 		const address = decodeAsString(vaultAddressMulticall);
+		// 		stakingPoolCalls.push({...baseContract, functionName: 'stakingPool', args: [address]});
+		// 	}
+		// }
+
 		const stakingPoolCalls = [];
-		for (const vaultAddressMulticall of vaultAddressesMulticall) {
-			if (vaultAddressMulticall.status === 'success') {
-				const address = decodeAsString(vaultAddressMulticall);
-				stakingPoolCalls.push({...baseContract, functionName: 'stakingPool', args: [address]});
-			}
+		const stackingAddresses = Object.values(VAULT_TO_STACKING);
+		for (const stackingAddress of stackingAddresses) {
+			stakingPoolCalls.push({...baseContract, functionName: 'stakingPool', args: [stackingAddress]});
 		}
 		const stakingRewardsAddresses = await multicall({contracts: stakingPoolCalls, chainId: chainID});
 
@@ -98,7 +105,7 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 					contracts: [
 						{...baseStackingContract, functionName: 'stakingToken'},
 						{...baseStackingContract, functionName: 'rewardsToken'},
-						{...baseStackingContract, functionName: 'totalSupply'}
+						{...baseStackingContract, functionName: 'totalSupply'},
 					],
 					chainId: chainID
 				});
@@ -161,7 +168,7 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 	}, [refreshPositions, refreshStakingRewards]);
 
 	const contextValue = useMemo((): TStakingRewardsContext => ({
-		stakingRewardsByVault: stakingRewards?.reduce((map, {address, stakingToken}): TDict<TAddress> => ({...map, [stakingToken]: address}), {}) ?? {},
+		stakingRewardsByVault: STACKING_TO_VAULT,
 		stakingRewardsMap: keyBy(stakingRewards ?? [], 'address'),
 		positionsMap,
 		isLoading: isLoadingStakingRewards || isLoadingPositions,
