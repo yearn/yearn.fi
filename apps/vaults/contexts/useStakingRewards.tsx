@@ -105,7 +105,7 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 					contracts: [
 						{...baseStackingContract, functionName: 'stakingToken'},
 						{...baseStackingContract, functionName: 'rewardsToken'},
-						{...baseStackingContract, functionName: 'totalSupply'},
+						{...baseStackingContract, functionName: 'totalSupply'}
 					],
 					chainId: chainID
 				});

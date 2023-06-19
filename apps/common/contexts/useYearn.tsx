@@ -1,5 +1,5 @@
 import React, {createContext, memo, useContext, useMemo} from 'react';
-import {VAULT_TO_STACKING} from '@vaults/constants/optRewards';
+import {STACKING_TO_VAULT} from '@vaults/constants/optRewards';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {useLocalStorage} from '@yearn-finance/web-lib/hooks/useLocalStorage';
@@ -135,8 +135,8 @@ export const YearnContextApp = memo(function YearnContextApp({children}: { child
 			return {};
 		}
 		if (safeChainID === 10) {
-			Object.entries(VAULT_TO_STACKING).forEach(([vaultAddress, stackingAddress]): void => {
-				prices[stackingAddress] = prices[toAddress(vaultAddress)];
+			Object.entries(STACKING_TO_VAULT).forEach(([vaultAddress, stackingAddress]): void => {
+				prices[toAddress(stackingAddress)] = prices[toAddress(vaultAddress)];
 			});
 		}
 		return prices;
