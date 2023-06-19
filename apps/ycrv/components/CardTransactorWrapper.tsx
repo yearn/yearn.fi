@@ -95,10 +95,7 @@ function CardTransactorContextApp({
 	useIntervalEffect(async (): Promise<bigint> => fetchExpectedOut(), 30000);
 
 	useEffect((): void => {
-		async function executeFetchExpectedOut(): Promise<void> {
-			await fetchExpectedOut();
-		}
-		executeFetchExpectedOut();
+		fetchExpectedOut();
 	}, [selectedOptionFrom.value, selectedOptionTo.value, amount.raw, fetchExpectedOut]);
 
 	/* 🔵 - Yearn Finance ******************************************************
