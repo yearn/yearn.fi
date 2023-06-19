@@ -5,7 +5,6 @@ import {VaultsListInternalMigrationRow} from '@vaults/components/list/VaultsList
 import {VaultsListRetired} from '@vaults/components/list/VaultsListRetired';
 import {VaultsListRow} from '@vaults/components/list/VaultsListRow';
 import {useAppSettings} from '@vaults/contexts/useAppSettings';
-import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {useFilteredVaults} from '@vaults/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import Wrapper from '@vaults/Wrapper';
@@ -34,9 +33,6 @@ import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 function HeaderUserPosition(): ReactElement {
 	const {cumulatedValueInVaults} = useWallet();
 	const {earned} = useYearn();
-	const {stakingRewardsByVault, stakingRewardsMap, positionsMap, refresh: refreshStakingRewards} = useStakingRewards();
-
-	console.warn(stakingRewardsByVault, stakingRewardsMap, positionsMap);
 
 	const formatedYouEarned = useMemo((): string => {
 		const amount = (earned?.totalUnrealizedGainsUSD || 0) > 0 ? earned?.totalUnrealizedGainsUSD || 0 : 0;
