@@ -12,10 +12,14 @@ import {RewardsTab} from '@vaults/components/RewardsTab';
 import SettingsPopover from '@vaults/components/SettingsPopover';
 import {Flow, useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
+import {Banner} from '@yearn-finance/web-lib/components/Banner';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useLocalStorage} from '@yearn-finance/web-lib/hooks/useLocalStorage';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
+import {useBalance} from '@common/hooks/useBalance';
 import IconChevron from '@common/icons/IconChevron';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 
@@ -35,6 +39,10 @@ const tabs: TTabsOptions[] = [
 	{value: 2, label: 'Migrate', flowAction: Flow.Migrate, slug: 'migrate'},
 	{value: 3, label: '$OP BOOST', flowAction: Flow.None, slug: 'boost'}
 ];
+
+const DISPLAY_DECIMALS = 10;
+const trimAmount = (amount: string | number): string => Number(Number(amount).toFixed(DISPLAY_DECIMALS)).toString();
+
 function getCurrentTab({isDepositing, hasMigration, isRetired}: {isDepositing: boolean, hasMigration: boolean, isRetired: boolean}): TTabsOptions {
 	if (hasMigration || isRetired) {
 		return tabs[1];
@@ -47,13 +55,20 @@ function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}):
 	const [possibleTabs, set_possibleTabs] = useState<TTabsOptions[]>([tabs[0], tabs[1]]);
 	const {stakingRewardsByVault} = useStakingRewards();
 	const willDepositAndStake = currentSolver === Solver.enum.OptimismBooster;
+	const {stakingRewardsMap, positionsMap} = useStakingRewards();
+	const stakingRewardsAddress = stakingRewardsByVault[currentVault.address];
+	const stakingRewards = stakingRewardsAddress ? stakingRewardsMap[stakingRewardsAddress] : undefined;
+	const stakingRewardsPosition = stakingRewardsAddress ? positionsMap[stakingRewardsAddress] : undefined;
+	const rewardTokenBalance = useBalance(toAddress(stakingRewards?.rewardsToken));
 	const hasStakingRewards = !!stakingRewardsByVault[currentVault.address];
 	const [currentTab, set_currentTab] = useState<TTabsOptions>(
 		getCurrentTab({isDepositing, hasMigration: currentVault?.migration?.available, isRetired: currentVault?.details?.retired})
 	);
 	const [shouldShowLedgerPluginBanner, set_shouldShowLedgerPluginBanner] = useLocalStorage<boolean>('yearn.finance/ledger-plugin-banner', true);
+	const [shouldShowOpBoostInfo, set_shouldShowOpBoostInfo] = useLocalStorage<boolean>('yearn.finance/op-boost-banner', true);
 	const router = useRouter();
 	const {walletType} = useWeb3();
+	const rewardBalance = toNormalizedBN(toBigInt(stakingRewardsPosition?.reward), rewardTokenBalance.decimals);
 
 	useEffect((): void => {
 		const tab = tabs.find((tab): boolean => tab.slug === router.query.action);
@@ -214,6 +229,15 @@ function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}):
 				</div>
 				<div className={'-mt-0.5 h-0.5 w-full bg-neutral-300'} />
 
+				{shouldShowOpBoostInfo && !isZero(rewardBalance.normalized) && (
+					<div>
+						<Banner
+							content={`Dude where's my rewards? You have ${trimAmount(rewardBalance.normalized)} ${rewardTokenBalance.symbol || 'yvOP'} waiting for you in the OP BOOST tab (yep, the one just above here).`}
+							type={'info'}
+							onClose={(): void => set_shouldShowOpBoostInfo(false)}
+						/>
+					</div>
+				)}
 				{currentTab.value === 3 ? (
 					<RewardsTab currentVault={currentVault} />
 				) : (
