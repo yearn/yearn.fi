@@ -231,7 +231,7 @@ function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}):
 				{shouldShowOpBoostInfo && !isZero(rewardBalance.normalized) && (
 					<div>
 						<Banner
-							content={`Dude where's my rewards? You have ${trimAmount(rewardBalance.normalized)} ${rewardTokenBalance.symbol || 'yvOP'} waiting for you in the OP BOOST tab (yep, the one just above here).`}
+							content={`Ser where's my rewards? You have ${trimAmount(rewardBalance.normalized)} ${rewardTokenBalance.symbol || 'yvOP'} waiting for you in the OP BOOST tab (yep, the one just above here).`}
 							type={'info'}
 							onClose={(): void => set_shouldShowOpBoostInfo(false)}
 						/>
