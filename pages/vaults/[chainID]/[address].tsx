@@ -72,7 +72,7 @@ function Index(): ReactElement | null {
 		}
 
 		if (!!safeChainID && currentVault?.chainID !== safeChainID) {
-			const vaultChainName = CHAINS[currentVault?.chainID]?.name;
+			const vaultChainName = CHAINS[Number(currentVault?.chainID || 1)]?.name;
 			const chainName = CHAINS[safeChainID]?.name;
 
 			const toastId = toast({
