@@ -1,4 +1,5 @@
 import React, {createContext, memo, useContext, useMemo} from 'react';
+import {VAULT_TO_STACKING} from '@vaults/constants/optRewards';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {useLocalStorage} from '@yearn-finance/web-lib/hooks/useLocalStorage';
@@ -129,12 +130,24 @@ export const YearnContextApp = memo(function YearnContextApp({children}: { child
 		return _retiredVaultsObject;
 	}, [vaultsRetired]);
 
+	const pricesUpdated = useMemo((): TYDaemonPrices => {
+		if (!prices) {
+			return {};
+		}
+		if (safeChainID === 10) {
+			Object.entries(VAULT_TO_STACKING).forEach(([vaultAddress, stackingAddress]): void => {
+				prices[stackingAddress] = prices[toAddress(vaultAddress)];
+			});
+		}
+		return prices;
+	}, [prices, safeChainID]);
+
 	/* 🔵 - Yearn Finance ******************************************************
 	**	Setup and render the Context provider to use in the app.
 	***************************************************************************/
 	const contextValue = useMemo((): TYearnContext => ({
 		currentPartner: currentPartner?.id ? toAddress(currentPartner.id) : toAddress(process.env.PARTNER_ID_ADDRESS),
-		prices,
+		prices: pricesUpdated,
 		tokens,
 		earned,
 		zapSlippage,
@@ -146,7 +159,7 @@ export const YearnContextApp = memo(function YearnContextApp({children}: { child
 		vaultsRetired: vaultsRetiredObject,
 		isLoadingVaultList,
 		mutateVaultList
-	}), [currentPartner?.id, prices, tokens, earned, zapSlippage, set_zapSlippage, zapProvider, set_zapProvider, vaultsObject, vaultsMigrationsObject, isLoadingVaultList, mutateVaultList, vaultsRetiredObject]);
+	}), [currentPartner?.id, pricesUpdated, tokens, earned, zapSlippage, set_zapSlippage, zapProvider, set_zapProvider, vaultsObject, vaultsMigrationsObject, isLoadingVaultList, mutateVaultList, vaultsRetiredObject]);
 
 	return (
 		<YearnContext.Provider value={contextValue}>

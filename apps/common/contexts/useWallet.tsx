@@ -1,5 +1,6 @@
 import React, {createContext, memo, useCallback, useContext, useMemo} from 'react';
 import {useChainId} from 'wagmi';
+import {OPT_REWARDS_TOKENS} from '@vaults/constants/optRewards';
 import {useUI} from '@yearn-finance/web-lib/contexts/useUI';
 import {useClientEffect} from '@yearn-finance/web-lib/hooks/useClientEffect';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -64,6 +65,9 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 				LPYBAL_TOKEN_ADDRESS
 			]);
 		}
+		if (safeChainID === 10) {
+			extraTokens.push(...OPT_REWARDS_TOKENS);
+		}
 		for (const token of extraTokens) {
 			tokensExists[token] = true;
 			tokens.push({token});
@@ -112,21 +116,28 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 		prices
 	});
 
+
+	console.dir(balances);
 	//Compute the cumulatedValueInVaults
 	const cumulatedValueInVaults = useMemo((): number => {
 		nonce; //Suppress warning
 
 		return (
-			Object.entries(balances).reduce((acc, [token, balance]): number => {
-				if (vaults?.[toAddress(token)]) {
-					acc += balance.normalizedValue || 0;
-				} else if (vaultsMigrations?.[toAddress(token)]) {
-					acc += balance.normalizedValue || 0;
-				}
-				return acc;
-			}, 0)
+			Object
+				.entries(balances)
+				.reduce((acc, [token, balance]): number => {
+					if (vaults?.[toAddress(token)]) {
+						acc += balance.normalizedValue || 0;
+					} else if (vaultsMigrations?.[toAddress(token)]) {
+						acc += balance.normalizedValue || 0;
+					}
+					if (chain === 10 && OPT_REWARDS_TOKENS.includes(toAddress(token))) {
+						acc += balance.normalizedValue || 0;
+					}
+					return acc;
+				}, 0)
 		);
-	}, [vaults, vaultsMigrations, balances, nonce]);
+	}, [vaults, vaultsMigrations, balances, nonce, chain]);
 
 	const onRefresh = useCallback(async (tokenToUpdate?: TUseBalancesTokens[]): Promise<TDict<TBalanceData>> => {
 		if (tokenToUpdate) {

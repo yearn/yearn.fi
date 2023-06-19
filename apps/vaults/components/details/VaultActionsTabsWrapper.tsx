@@ -53,9 +53,8 @@ function getCurrentTab({isDepositing, hasMigration, isRetired}: {isDepositing: b
 function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {onSwitchSelectedOptions, isDepositing, actionParams, currentSolver} = useActionFlow();
 	const [possibleTabs, set_possibleTabs] = useState<TTabsOptions[]>([tabs[0], tabs[1]]);
-	const {stakingRewardsByVault} = useStakingRewards();
+	const {stakingRewardsMap, positionsMap, stakingRewardsByVault} = useStakingRewards();
 	const willDepositAndStake = currentSolver === Solver.enum.OptimismBooster;
-	const {stakingRewardsMap, positionsMap} = useStakingRewards();
 	const stakingRewardsAddress = stakingRewardsByVault[currentVault.address];
 	const stakingRewards = stakingRewardsAddress ? stakingRewardsMap[stakingRewardsAddress] : undefined;
 	const stakingRewardsPosition = stakingRewardsAddress ? positionsMap[stakingRewardsAddress] : undefined;
