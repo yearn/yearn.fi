@@ -1,7 +1,6 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {useRouter} from 'next/router';
 import {motion} from 'framer-motion';
-import * as Sentry from '@sentry/nextjs';
 import {VaultDetailsTabsWrapper} from '@vaults/components/details/tabs/VaultDetailsTabsWrapper';
 import {VaultActionsTabsWrapper} from '@vaults/components/details/VaultActionsTabsWrapper';
 import {VaultDetailsHeader} from '@vaults/components/details/VaultDetailsHeader';
@@ -11,56 +10,69 @@ import Wrapper from '@vaults/Wrapper';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {isTAddress} from '@yearn-finance/web-lib/utils/isTAddress';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import CHAINS from '@yearn-finance/web-lib/utils/web3/chains';
 import TokenIcon from '@common/components/TokenIcon';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
-import {ADDRESS_REGEX} from '@common/schemas/custom/addressSchema';
+import {useFetch} from '@common/hooks/useFetch';
+import {type TYDaemonVault, yDaemonVaultSchema} from '@common/schemas/yDaemonVaultsSchemas';
 import {variants} from '@common/utils/animations';
+import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 
-import type {GetServerSideProps, GetServerSidePropsContext, InferGetServerSidePropsType} from 'next';
+import type {GetServerSideProps} from 'next';
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
-import type {TAddress} from '@yearn-finance/web-lib/types';
-import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
-function Index(vault: InferGetServerSidePropsType<typeof getServerSideProps>): ReactElement | null {
+function Index(): ReactElement | null {
 	const {address, isActive} = useWeb3();
 	const {safeChainID} = useChainID();
 	const {vaults} = useYearn();
 	const router = useRouter();
 	const {refresh} = useWallet();
 	const {toast, toastMaster} = yToast();
-
 	const [toastState, set_toastState] = useState<{id?: string; isOpen: boolean}>({isOpen: false});
-	const currentVault = useRef<TYDaemonVault>(vaults[toAddress(router.query.address as string)] || vault);
+	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: safeChainID});
+	const [currentVault, set_currentVault] = useState<TYDaemonVault | undefined>(vaults[toAddress(router.query.address as string)]);
+	const {data: vault, isLoading: isLoadingVault} = useFetch<TYDaemonVault>({
+		endpoint: `${yDaemonBaseUri}/vaults/${toAddress(router.query.address as string)}?${new URLSearchParams({
+			strategiesDetails: 'withDetails',
+			strategiesRisk: 'withRisk',
+			strategiesCondition: 'inQueue'
+		})}`,
+		schema: yDaemonVaultSchema
+	});
+
+	useEffect((): void => {
+		if (vault && !currentVault) {
+			set_currentVault(vault);
+		}
+	}, [currentVault, vault]);
 
 	useEffect((): void => {
 		if (address && isActive) {
 			const tokensToRefresh = [];
-			if (currentVault?.current?.address) {
-				tokensToRefresh.push({token: toAddress(currentVault.current.address)});
+			if (currentVault?.address) {
+				tokensToRefresh.push({token: toAddress(currentVault.address)});
 			}
-			if (currentVault?.current?.token?.address) {
-				tokensToRefresh.push({token: toAddress(currentVault.current.token.address)});
+			if (currentVault?.token?.address) {
+				tokensToRefresh.push({token: toAddress(currentVault.token.address)});
 			}
 			refresh(tokensToRefresh);
 		}
-	}, [currentVault.current?.address, currentVault.current?.token?.address, address, isActive, refresh]);
+	}, [currentVault?.address, currentVault?.token?.address, address, isActive, refresh]);
 
 	useEffect((): void => {
 		if (toastState.isOpen) {
-			if (!!safeChainID && currentVault.current?.chainID === safeChainID) {
+			if (!!safeChainID && currentVault?.chainID === safeChainID) {
 				toastMaster.dismiss(toastState.id);
 				set_toastState({isOpen: false});
 			}
 			return;
 		}
 
-		if (!!safeChainID && currentVault.current?.chainID !== safeChainID) {
-			const vaultChainName = CHAINS[currentVault.current?.chainID]?.name;
+		if (!!safeChainID && currentVault?.chainID !== safeChainID) {
+			const vaultChainName = CHAINS[currentVault?.chainID]?.name;
 			const chainName = CHAINS[safeChainID]?.name;
 
 			const toastId = toast({
@@ -71,10 +83,26 @@ function Index(vault: InferGetServerSidePropsType<typeof getServerSideProps>): R
 
 			set_toastState({id: toastId, isOpen: true});
 		}
-	}, [safeChainID, toast, toastMaster, toastState.id, toastState.isOpen]);
+	}, [currentVault?.chainID, safeChainID, toast, toastMaster, toastState.id, toastState.isOpen]);
 
-	if (!vault) {
-		return null;
+	if (isLoadingVault) {
+		return (
+			<div className={'relative flex h-14 flex-col items-center justify-center px-4 text-center'}>
+				<div className={'flex h-10 items-center justify-center'}>
+					<span className={'loader'} />
+				</div>
+			</div>
+		);
+	}
+
+	if (!currentVault) {
+		return (
+			<div className={'relative flex h-14 flex-col items-center justify-center px-4 text-center'}>
+				<div className={'flex h-10 items-center justify-center'}>
+					<p className={'text-sm text-neutral-900'}>{'We couln\'t find this vault on the connected network.'}</p>
+				</div>
+			</div>
+		);
 	}
 
 	return (
@@ -87,19 +115,19 @@ function Index(vault: InferGetServerSidePropsType<typeof getServerSideProps>): R
 					variants={variants}
 					className={'z-50 -mt-6 h-12 w-12 cursor-pointer md:-mt-36 md:h-[72px] md:w-[72px]'}>
 					<TokenIcon
-						chainID={currentVault?.current?.chainID || safeChainID}
-						token={currentVault?.current?.token} />
+						chainID={currentVault?.chainID || safeChainID}
+						token={currentVault?.token} />
 				</motion.div>
 			</header>
 
 			<section className={'mt-4 grid w-full grid-cols-12 pb-10 md:mt-0'}>
-				<VaultDetailsHeader vault={currentVault.current} />
-				<ActionFlowContextApp currentVault={currentVault.current}>
+				<VaultDetailsHeader vault={currentVault} />
+				<ActionFlowContextApp currentVault={currentVault}>
 					<WithSolverContextApp>
-						<VaultActionsTabsWrapper currentVault={currentVault.current} />
+						<VaultActionsTabsWrapper currentVault={currentVault} />
 					</WithSolverContextApp>
 				</ActionFlowContextApp>
-				<VaultDetailsTabsWrapper currentVault={currentVault.current} />
+				<VaultDetailsTabsWrapper currentVault={currentVault} />
 			</section>
 		</>
 	);
@@ -130,47 +158,11 @@ Index.getLayout = function getLayout(page: ReactElement, router: NextRouter): Re
 };
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-export const getServerSideProps: GetServerSideProps<TYDaemonVault> = async (context: GetServerSidePropsContext) => {
-	const {chainID} = context.query;
+export const getServerSideProps: GetServerSideProps = async () => {
+	return {
+		props: {}
+	};
 
-	if (typeof chainID !== 'string' || !Object.keys(CHAINS).includes(chainID)) {
-		return {notFound: true};
-	}
-
-	const address = getAddress(context.query.address);
-
-	if (!address || !ADDRESS_REGEX.test(address) || isZeroAddress(address)) {
-		return {notFound: true};
-	}
-
-	const queryParams = new URLSearchParams({
-		hideAlways: 'true',
-		orderBy: 'apy.net_apy',
-		orderDirection: 'desc',
-		strategiesDetails: 'withDetails',
-		strategiesRisk: 'withRisk',
-		strategiesCondition: 'inQueue'
-	});
-
-	const endpoint = `${process.env.YDAEMON_BASE_URI}/${chainID}/vaults/${address}?${queryParams}`;
-
-	try {
-		const res = await fetch(endpoint);
-		const vault = await res.json();
-		return {props: vault};
-	} catch (error) {
-		Sentry.captureException(error, {tags: {endpoint}});
-		return {notFound: true};
-	}
 };
-
-function getAddress(address?: string | string[]): TAddress | null {
-	if (!address || typeof address !== 'string') {
-		return null;
-	}
-
-	const rawAddress = address.split('/').pop();
-	return isTAddress(rawAddress) ? rawAddress : null;
-}
 
 export default Index;
