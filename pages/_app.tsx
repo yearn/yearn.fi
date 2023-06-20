@@ -1,6 +1,6 @@
 import React, {Fragment, memo} from 'react';
+import localFont from 'next/font/local';
 import {AnimatePresence, domAnimation, LazyMotion, motion} from 'framer-motion';
-import localFont from '@next/font/local';
 import {useLocalStorageValue} from '@react-hookz/web';
 import {WithYearn} from '@yearn-finance/web-lib/contexts/WithYearn';
 import {AppHeader} from '@common/components/AppHeader';

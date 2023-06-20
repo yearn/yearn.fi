@@ -16,7 +16,6 @@
     "@cowprotocol/cow-sdk": "^2.1.0",
     "@headlessui/react": "^1.7.15",
     "@next/bundle-analyzer": "^13.4.5",
-    "@next/font": "^13.4.5",
     "@popperjs/core": "^2.11.8",
     "@react-hookz/deep-equal": "^1.0.4",
     "@sentry/nextjs": "^7.54.0",
