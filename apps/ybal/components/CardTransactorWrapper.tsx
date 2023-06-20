@@ -147,7 +147,7 @@ function CardTransactorContextApp({
 				refresh()
 			]);
 		}
-	}, [provider, refresh, selectedOptionFrom.value, selectedOptionFrom.zapVia]);
+	}, [provider, refetchAllowances, refresh, selectedOptionFrom.value, selectedOptionFrom.zapVia]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Execute a zap using the ZAP contract to migrate from a token A to a
