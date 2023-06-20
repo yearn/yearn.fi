@@ -61,19 +61,19 @@ async function getBatchBalances({
 			const results = await multicallInstance({contracts: calls as never[]});
 			let rIndex = 0;
 			for (const element of tokens) {
-				const {token} = element;
+				const {token, decimals: injectedDecimals, name: injectedName, symbol: injectedSymbol} = element;
 				const balanceOf = decodeAsBigInt(results[rIndex++]);
 				const decimalsIndex = results[rIndex++];
-				const decimals = decodeAsNumber(decimalsIndex) || Number(decodeAsBigInt(decimalsIndex));
-				const symbol = decodeAsString(results[rIndex++]);
-				const name = decodeAsString(results[rIndex++]);
+				const decimals = decodeAsNumber(decimalsIndex) || Number(decodeAsBigInt(decimalsIndex)) || injectedDecimals || 18;
+				const symbol = decodeAsString(results[rIndex++]) || injectedSymbol || '';
+				const name = decodeAsString(results[rIndex++]) || injectedName || '';
 				data[toAddress(token)] = {
-					decimals: decimals || 18,
+					decimals: decimals,
 					symbol: isEth(token) ? nativeTokenWrapperName : symbol,
 					name: isEth(token) ? nativeTokenWrapperName : name,
 					raw: balanceOf,
 					rawPrice: 0n,
-					normalized: toNormalizedValue(balanceOf, decimals || 18),
+					normalized: toNormalizedValue(balanceOf, decimals),
 					normalizedPrice: 0,
 					normalizedValue: 0
 				};

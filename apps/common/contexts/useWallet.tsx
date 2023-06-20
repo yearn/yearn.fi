@@ -1,6 +1,6 @@
 import React, {createContext, memo, useCallback, useContext, useMemo} from 'react';
 import {useChainId} from 'wagmi';
-import {OPT_REWARDS_TOKENS} from '@vaults/constants/optRewards';
+import {OPT_REWARDS_TOKENS, OPT_YVDAI_STACKING_CONTRACT, OPT_YVETH_STACKING_CONTRACT, OPT_YVUSDC_STACKING_CONTRACT, OPT_YVUSDT_STACKING_CONTRACT} from '@vaults/constants/optRewards';
 import {useUI} from '@yearn-finance/web-lib/contexts/useUI';
 import {useClientEffect} from '@yearn-finance/web-lib/hooks/useClientEffect';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -49,28 +49,31 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 		const safeChainID = chain === 1337 ? 1 : chain;
 		const tokens: TUseBalancesTokens[] = [];
 		const tokensExists: TDict<boolean> = {};
-		const extraTokens = [ETH_TOKEN_ADDRESS];
+		const extraTokens: TUseBalancesTokens[] = [{token: ETH_TOKEN_ADDRESS}];
 		if (safeChainID === 1) {
 			extraTokens.push(...[
-				YCRV_TOKEN_ADDRESS,
-				LPYCRV_TOKEN_ADDRESS,
-				CRV_TOKEN_ADDRESS,
-				YVBOOST_TOKEN_ADDRESS,
-				YVECRV_TOKEN_ADDRESS,
-				CVXCRV_TOKEN_ADDRESS,
-				BAL_TOKEN_ADDRESS,
-				YBAL_TOKEN_ADDRESS,
-				BALWETH_TOKEN_ADDRESS,
-				STYBAL_TOKEN_ADDRESS,
-				LPYBAL_TOKEN_ADDRESS
+				{token: YCRV_TOKEN_ADDRESS},
+				{token: LPYCRV_TOKEN_ADDRESS},
+				{token: CRV_TOKEN_ADDRESS},
+				{token: YVBOOST_TOKEN_ADDRESS},
+				{token: YVECRV_TOKEN_ADDRESS},
+				{token: CVXCRV_TOKEN_ADDRESS},
+				{token: BAL_TOKEN_ADDRESS},
+				{token: YBAL_TOKEN_ADDRESS},
+				{token: BALWETH_TOKEN_ADDRESS},
+				{token: STYBAL_TOKEN_ADDRESS},
+				{token: LPYBAL_TOKEN_ADDRESS}
 			]);
 		}
 		if (safeChainID === 10) {
-			extraTokens.push(...OPT_REWARDS_TOKENS);
+			extraTokens.push({token: OPT_YVETH_STACKING_CONTRACT, symbol: 'yvETH', decimals: 18});
+			extraTokens.push({token: OPT_YVDAI_STACKING_CONTRACT, symbol: 'yvDAI', decimals: 18});
+			extraTokens.push({token: OPT_YVUSDT_STACKING_CONTRACT, symbol: 'yvUSDT', decimals: 6});
+			extraTokens.push({token: OPT_YVUSDC_STACKING_CONTRACT, symbol: 'yvUSDC', decimals: 6});
 		}
 		for (const token of extraTokens) {
-			tokensExists[token] = true;
-			tokens.push({token});
+			tokensExists[token.token] = true;
+			tokens.push(token);
 		}
 
 		Object.values(vaults || {}).forEach((vault?: TYDaemonVault): void => {
@@ -121,7 +124,6 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 	const cumulatedValueInVaults = useMemo((): number => {
 		nonce; //Suppress warning
 
-		console.warn(balances);
 		return (
 			Object
 				.entries(balances)

@@ -29,6 +29,9 @@ import type {TYDaemonPrices} from '@common/schemas/yDaemonPricesSchema';
 ******************************************************************************/
 export type	TUseBalancesTokens = {
 	token: string,
+	decimals?: number,
+	name?: string,
+	symbol?: string,
 	for?: string,
 }
 export type	TUseBalancesReq = {
@@ -77,12 +80,12 @@ async function performCall(
 
 	let rIndex = 0;
 	for (const element of tokens) {
-		const {token} = element;
+		const {token, decimals: injectedDecimals, name: injectedName, symbol: injectedSymbol} = element;
 		const balanceOf = decodeAsBigInt(results[rIndex++]);
-		const decimals = decodeAsNumber(results[rIndex++]) || 18;
+		const decimals = decodeAsNumber(results[rIndex++]) || injectedDecimals || 18;
 		const rawPrice = toBigInt(prices?.[toAddress(token)]);
-		let symbol = decodeAsString(results[rIndex++]);
-		let name = decodeAsString(results[rIndex++]);
+		let symbol = decodeAsString(results[rIndex++]) || injectedSymbol || '';
+		let name = decodeAsString(results[rIndex++]) || injectedName || '';
 		if (isEth(token)) {
 			symbol = getNativeTokenWrapperName(chainID);
 			name = getNativeTokenWrapperName(chainID);
