@@ -32,7 +32,7 @@ function Index(): ReactElement | null {
 	const {refresh} = useWallet();
 	const {toast, toastMaster} = yToast();
 	const [toastState, set_toastState] = useState<{id?: string; isOpen: boolean}>({isOpen: false});
-	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: safeChainID});
+	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: Number(router.query.chainID)});
 	const [currentVault, set_currentVault] = useState<TYDaemonVault | undefined>(vaults[toAddress(router.query.address as string)]);
 	const {data: vault, isLoading: isLoadingVault} = useFetch<TYDaemonVault>({
 		endpoint: `${yDaemonBaseUri}/vaults/${toAddress(router.query.address as string)}?${new URLSearchParams({
