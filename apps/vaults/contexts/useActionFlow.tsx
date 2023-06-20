@@ -1,4 +1,4 @@
-import React, {createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState} from 'react';
+import {createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState} from 'react';
 import {useRouter} from 'next/router';
 import {useContractRead} from 'wagmi';
 import {useMountEffect, useUpdateEffect} from '@react-hookz/web';

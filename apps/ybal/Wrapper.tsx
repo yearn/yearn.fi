@@ -1,4 +1,3 @@
-import React from 'react';
 import {AnimatePresence, motion} from 'framer-motion';
 import Meta from '@common/components/Meta';
 import {useCurrentApp} from '@common/hooks/useCurrentApp';

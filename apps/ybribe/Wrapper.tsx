@@ -1,4 +1,3 @@
-import React from 'react';
 import {AnimatePresence, motion} from 'framer-motion';
 import {HeroTimer} from '@common/components/HeroTimer';
 import Meta from '@common/components/Meta';

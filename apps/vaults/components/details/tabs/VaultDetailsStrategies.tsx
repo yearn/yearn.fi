@@ -1,4 +1,4 @@
-import React, {useMemo, useState} from 'react';
+import {useMemo, useState} from 'react';
 import {useIsMounted} from '@react-hookz/web';
 import {findLatestApr} from '@vaults/components/details/tabs/findLatestApr';
 import {GraphForStrategyReports} from '@vaults/components/graphs/GraphForStrategyReports';

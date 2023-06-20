@@ -1,4 +1,4 @@
-import React, {createContext, useContext, useMemo, useState} from 'react';
+import {createContext, useContext, useMemo, useState} from 'react';
 import {formatUnits} from 'viem';
 import {LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';

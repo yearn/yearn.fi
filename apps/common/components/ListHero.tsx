@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import {useEffect, useState} from 'react';
 import {Switch as HeadlessSwitch} from '@headlessui/react';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {SearchBar} from '@common/components/SearchBar';

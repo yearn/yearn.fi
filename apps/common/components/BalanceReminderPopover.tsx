@@ -1,4 +1,4 @@
-import React, {Fragment, useMemo} from 'react';
+import {Fragment, useMemo} from 'react';
 import Image from 'next/image';
 import {Popover, Transition} from '@headlessui/react';
 import {captureException} from '@sentry/nextjs';

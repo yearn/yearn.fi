@@ -1,5 +1,5 @@
 /* eslint-disable no-irregular-whitespace */
-import React, {useCallback, useEffect, useRef} from 'react';
+import {useCallback, useEffect, useRef} from 'react';
 import {useMountEffect} from '@react-hookz/web';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 

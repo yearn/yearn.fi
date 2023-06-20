@@ -1,4 +1,4 @@
-import React, {createContext, memo, useContext, useMemo} from 'react';
+import {createContext, memo, useContext, useMemo} from 'react';
 import {useLocalStorage} from '@yearn-finance/web-lib/hooks/useLocalStorage';
 import {useSessionStorage} from '@yearn-finance/web-lib/hooks/useSessionStorage';
 

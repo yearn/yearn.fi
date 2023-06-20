@@ -1,4 +1,3 @@
-import React from 'react';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useSolver} from '@vaults/contexts/useSolver';
 import Renderable from '@yearn-finance/web-lib/components/Renderable';

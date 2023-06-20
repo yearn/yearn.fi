@@ -1,4 +1,3 @@
-import React from 'react';
 import IconArrowRight from '@common/icons/IconArrowRight';
 
 import type {ReactElement} from 'react';

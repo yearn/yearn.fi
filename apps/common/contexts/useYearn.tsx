@@ -1,4 +1,4 @@
-import React, {createContext, memo, useContext, useMemo} from 'react';
+import {createContext, memo, useContext, useMemo} from 'react';
 import {STACKING_TO_VAULT} from '@vaults/constants/optRewards';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';

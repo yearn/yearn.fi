@@ -1,4 +1,4 @@
-import React, {Fragment, memo} from 'react';
+import {Fragment, memo} from 'react';
 import {AnimatePresence, domAnimation, LazyMotion, motion} from 'framer-motion';
 import localFont from '@next/font/local';
 import {useLocalStorageValue} from '@react-hookz/web';

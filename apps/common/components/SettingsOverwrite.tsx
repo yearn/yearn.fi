@@ -1,4 +1,4 @@
-import React, {useMemo, useState} from 'react';
+import {useMemo, useState} from 'react';
 import {Balancer} from 'react-wrap-balancer';
 import {useLocalStorageValue} from '@react-hookz/web';
 import {Button} from '@yearn-finance/web-lib/components/Button';

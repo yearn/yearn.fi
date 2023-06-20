@@ -1,4 +1,4 @@
-import React, {useRef} from 'react';
+import {useRef} from 'react';
 import {Balancer} from 'react-wrap-balancer';
 import Image from 'next/image';
 import Link from 'next/link';

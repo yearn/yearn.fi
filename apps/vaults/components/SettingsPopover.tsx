@@ -1,4 +1,4 @@
-import React, {Fragment} from 'react';
+import {Fragment} from 'react';
 import {Popover, Transition} from '@headlessui/react';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import Renderable from '@yearn-finance/web-lib/components/Renderable';

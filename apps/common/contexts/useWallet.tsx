@@ -1,4 +1,4 @@
-import React, {createContext, memo, useCallback, useContext, useMemo} from 'react';
+import {createContext, memo, useCallback, useContext, useMemo} from 'react';
 import {useChainId} from 'wagmi';
 import {OPT_REWARDS_TOKENS, OPT_YVDAI_STACKING_CONTRACT, OPT_YVETH_STACKING_CONTRACT, OPT_YVUSDC_STACKING_CONTRACT, OPT_YVUSDT_STACKING_CONTRACT} from '@vaults/constants/optRewards';
 import {useUI} from '@yearn-finance/web-lib/contexts/useUI';
