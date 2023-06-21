@@ -1,6 +1,7 @@
 import {useCallback, useMemo, useRef} from 'react';
 import {isHex} from 'viem';
 import {getWidoSpender, quote as wiQuote} from 'wido';
+import {captureException} from '@sentry/nextjs';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {getNetwork, waitForTransaction} from '@wagmi/core';
 import {toast} from '@yearn-finance/web-lib/components/yToast';
@@ -9,6 +10,7 @@ import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {allowanceKey, isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {isEth} from '@yearn-finance/web-lib/utils/isEth';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
@@ -178,30 +180,44 @@ export function useSolverWido(): TSolverContext {
 			return toNormalizedBN(0);
 		}
 
+		if (isEth(toAddress(request.current.inputToken.value))) {
+			return toNormalizedBN(MAX_UINT_256);
+		}
+		
 		const key = allowanceKey(
 			safeChainID,
 			toAddress(request.current.inputToken.value),
 			toAddress(request.current.outputToken.value),
 			toAddress(request.current.from)
 		);
+		
 		if (existingAllowances.current[key] && !shouldForceRefetch) {
 			return existingAllowances.current[key];
 		}
 
-		const widoSpender = await getWidoSpender({
-			chainId: safeChainID as ChainId,
-			toChainId: safeChainID as ChainId,
-			fromToken: toAddress(request.current.inputToken.value),
-			toToken: toAddress(request.current.outputToken.value)
-		});
-		const allowance = await allowanceOf({
-			connector: provider,
-			tokenAddress: toAddress(request.current.inputToken.value),
-			spenderAddress: toAddress(widoSpender)
-		});
+		try {
+			const widoSpender = await getWidoSpender({
+				chainId: safeChainID as ChainId,
+				toChainId: safeChainID as ChainId,
+				fromToken: toAddress(request.current.inputToken.value),
+				toToken: toAddress(request.current.outputToken.value)
+			});
 
-		existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals);
-		return existingAllowances.current[key];
+			const allowance = await allowanceOf({
+				connector: provider,
+				tokenAddress: toAddress(request.current.inputToken.value),
+				spenderAddress: toAddress(widoSpender)
+			});
+
+			existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals);
+	
+			return existingAllowances.current[key];
+		} catch (error) {
+			console.error(error);
+			captureException(error);
+		}
+
+		return toNormalizedBN(0);
 	}, [provider, safeChainID]);
 
 	/* 🔵 - Yearn Finance ******************************************************
