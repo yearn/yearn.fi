@@ -12,7 +12,6 @@ import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
 import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 
 import type {Call} from 'ethcall';
-import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
 import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 
@@ -22,13 +21,13 @@ export type TGauge = {
 	name: string,
 	symbol: string,
 	decimals: number,
-	totalStaked: BigNumber,
+	totalStaked: bigint,
 	// apy?: number;
 }
 
 export type TPosition = {
-	balance: BigNumber,
-	underlyingBalance: BigNumber,
+	balance: bigint,
+	underlyingBalance: bigint,
 }
 
 export type TGaugePosition = {
@@ -42,7 +41,7 @@ export type	TGaugeContext = {
 	gaugeAddresses: TAddress[],
 	gaugesMap: TDict<TGauge | undefined>,
 	positionsMap: TDict<TGaugePosition | undefined>,
-	allowancesMap: TDict<BigNumber>,
+	allowancesMap: TDict<bigint>,
 	isLoading: boolean,
 	refresh: () => void,
 }
@@ -80,7 +79,7 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 				veYFIGaugeContract.symbol(),
 				veYFIGaugeContract.decimals(),
 				veYFIGaugeContract.totalAssets()
-			]) as [TAddress, string, string, number, BigNumber];
+			]) as [TAddress, string, string, number, bigint];
 			
 			return ({
 				address,
@@ -108,7 +107,7 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 				veYFIGaugeContract.balanceOf(userAddress), 
 				veYFIGaugeContract.earned(userAddress),
 				veYFIGaugeContract.nextBoostedBalanceOf(userAddress)
-			]) as BigNumber[];
+			]) as bigint[];
 			
 			const depositPosition: TPosition = {
 				balance,
@@ -120,7 +119,7 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 				underlyingBalance: earned // TODO: convert to underlying
 			};
 
-			const boostRatio = balance.gt(0)
+			const boostRatio = balance > 0n
 				? FixedNumber.from(boostedBalance).divUnsafe(FixedNumber.from(balance)).toUnsafeFloat()
 				: 0.1;
 			const boost = Math.min(1, boostRatio) * 10;
@@ -136,7 +135,7 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 	}, [gauges, isActive, userAddress]);
 	const {data: positions, mutate: refreshPositions, isLoading: isLoadingPositions} = useSWR(gauges && isActive && provider ? 'gaugePositions' : null, positionsFetcher, {shouldRetryOnError: false});
 
-	const allowancesFetcher = useCallback(async (): Promise<TDict<BigNumber>> => {
+	const allowancesFetcher = useCallback(async (): Promise<TDict<bigint>> => {
 		if (!gauges || !isActive || !userAddress) {
 			return {};
 		}
@@ -147,8 +146,8 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 			const erc20Contract = new Contract(vaultAddress, ERC20_ABI);
 			return erc20Contract.allowance(userAddress, address);
 		});
-		const allowances = await ethcallProvider.tryAll(allowanceCalls) as BigNumber[];
-		const allowancesMap: TDict<BigNumber> = {};
+		const allowances = await ethcallProvider.tryAll(allowanceCalls) as bigint[];
+		const allowancesMap: TDict<bigint> = {};
 		gauges.forEach(({address, vaultAddress}, index): void => {
 			allowancesMap[allowanceKey(1, vaultAddress, address, userAddress)] = allowances[index];
 		});

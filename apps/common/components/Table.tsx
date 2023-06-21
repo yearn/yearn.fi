@@ -1,6 +1,6 @@
 import {useCallback, useMemo, useState} from 'react';
-import {BigNumber} from 'ethers';
 import {sort} from '@veYFI/utils';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import IconChevronPlain from '@common/icons/IconChevronPlain';
 
 import {Pagination} from './Pagination';
@@ -82,12 +82,10 @@ function Table<T>({metadata, data, columns, initialSortBy, onRowClick, itemsPerP
 					>
 						{metadata.map(({key, label, className, fullWidth, columnSpan, format, transform}): ReactElement => {
 							const isNumber = !isNaN(item[key] as number);
-							const isBigNumber = item[key] instanceof BigNumber;
-							const isZero = (isNumber && item[key] === 0) || (isBigNumber && BigNumber.from(item[key]).eq(0));
 							return (
 								<div key={`cell_${key}_${rowIndex}`} className={`flex h-8 flex-row items-center justify-between md:h-14 md:justify-end md:first:justify-start ${`md:col-span-${columnSpan ?? 1}`} ${className || ''}`}>
 									{!fullWidth && <label className={'inline text-start text-sm text-neutral-500 md:hidden'}>{label}</label>}
-									<div className={`${isZero ? 'text-neutral-400' : 'text-neutral-900'} ${isNumber ? 'font-number' : 'font-aeonik'} ${fullWidth ? 'w-full' : ''}`}>
+									<div className={`${isZero(item[key] as number) ? 'text-neutral-400' : 'text-neutral-900'} ${isNumber ? 'font-number' : 'font-aeonik'} ${fullWidth ? 'w-full' : ''}`}>
 										{transform?.(item) ?? format?.(item).toString() ?? String(item[key])}
 									</div>
 								</div>

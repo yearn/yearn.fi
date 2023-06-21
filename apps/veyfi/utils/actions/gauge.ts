@@ -5,7 +5,6 @@ import VEYFI_CLAIM_REWARDS_ZAP_ABI from '../abi/veYFIClaimRewardsZap.abi';
 import VEYFI_GAUGE_ABI from '../abi/veYFIGauge.abi';
 import {VEYFI_CLAIM_REWARDS_ZAP_ADDRESS} from '../constants';
 
-import type {BigNumber} from 'ethers';
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 
@@ -14,7 +13,7 @@ export async function approveStake(
 	accountAddress: TAddress,
 	vaultAddress: TAddress,
 	gaugeAddress: TAddress,
-	amount?: BigNumber
+	amount?: bigint
 ): Promise<TTxResponse> {
 	const signer = provider.getSigner(accountAddress);
 	const contract = new ethers.Contract(vaultAddress, ['function approve(address _spender, uint256 _value) external'], signer);
@@ -26,8 +25,8 @@ export async function approveAndStake(
 	accountAddress: TAddress,
 	vaultAddress: TAddress,
 	gaugeAddress: TAddress,
-	amount: BigNumber,
-	allowance: BigNumber
+	amount: bigint,
+	allowance: bigint
 ): Promise<TTxResponse> {
 	const signer = provider.getSigner(accountAddress);
 	if(!allowance.gte(amount)) {
@@ -42,7 +41,7 @@ export async function stake(
 	provider: ethers.providers.Web3Provider,
 	accountAddress: TAddress,
 	gaugeAddress: TAddress,
-	amount: BigNumber
+	amount: bigint
 ): Promise<TTxResponse> {
 	const signer = provider.getSigner(accountAddress);
 	const gaugeContract = new ethers.Contract(gaugeAddress, VEYFI_GAUGE_ABI, signer);
@@ -53,7 +52,7 @@ export async function unstake(
 	provider: ethers.providers.Web3Provider,
 	accountAddress: TAddress,
 	gaugeAddress: TAddress,
-	amount: BigNumber
+	amount: bigint
 ): Promise<TTxResponse> {
 	const willClaim = false;
 	const signer = provider.getSigner(accountAddress);

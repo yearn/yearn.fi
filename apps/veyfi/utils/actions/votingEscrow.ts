@@ -5,7 +5,6 @@ import SNAPSHOT_DELEGATE_REGISTRY_ABI from '../abi/SnapshotDelegateRegistry.abi'
 import VEYFI_ABI from '../abi/veYFI.abi';
 import {SNAPSHOT_DELEGATE_REGISTRY_ADDRESS, YEARN_SNAPSHOT_SPACE} from '../constants';
 
-import type {BigNumber} from 'ethers';
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TSeconds} from '@yearn-finance/web-lib/utils/time';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
@@ -26,7 +25,7 @@ export async function lock(
 	provider: ethers.providers.JsonRpcProvider,
 	accountAddress: TAddress,
 	votingEscrowAddress: TAddress,
-	amount: BigNumber,
+	amount: bigint,
 	time: TSeconds
 ): Promise<TTxResponse> {
 	const signer = provider.getSigner(accountAddress);
@@ -38,7 +37,7 @@ export async function increaseLockAmount(
 	provider: ethers.providers.JsonRpcProvider,
 	accountAddress: TAddress,
 	votingEscrowAddress: TAddress,
-	amount: BigNumber
+	amount: bigint
 ): Promise<TTxResponse> {
 	const signer = provider.getSigner(accountAddress);
 	const votingEscrowContract = new ethers.Contract(votingEscrowAddress, VEYFI_ABI, signer);
@@ -64,7 +63,7 @@ export async function withdrawUnlocked(
 	const signer = provider.getSigner(accountAddress);
 	const votingEscrowContract = new ethers.Contract(votingEscrowAddress, VEYFI_ABI, signer);
 	const {penalty} = await votingEscrowContract.callStatic.withdraw();
-	if ((penalty as BigNumber).gt(0)) {
+	if ((penalty as bigint) > 0n) {
 		throw new Error('Tokens are not yet unlocked');
 	}
 	return await handleTx(votingEscrowContract.withdraw());

@@ -7,13 +7,15 @@ import {validateNetwork} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatBN, toNormalizedAmount} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {BIG_ZERO} from '@yearn-finance/web-lib/utils/constants';
+import {formatBigNumberAsAmount, toBigInt, toNormalizedAmount} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {AmountInput} from '@common/components/AmountInput';
 import {Dropdown} from '@common/components/Dropdown';
 import {useYearn} from '@common/contexts/useYearn';
 
-import type {BigNumber, ethers} from 'ethers';
+import type {ethers} from 'ethers';
 import type {ReactElement} from 'react';
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TDropdownOption} from '@common/components/Dropdown';
@@ -31,9 +33,9 @@ function RewardsTab(): ReactElement {
 	const web3Provider = provider as ethers.providers.Web3Provider;
 	const userAddress = address as TAddress;
 	const selectedGaugeAddress = toAddress(selectedGauge?.id);
-	const selectedGaugeRewards = formatBN(positionsMap[selectedGaugeAddress]?.reward.balance);
+	const selectedGaugeRewards = toBigInt(formatBigNumberAsAmount(positionsMap[selectedGaugeAddress]?.reward.balance));
 
-	const gaugeOptions = gaugeAddresses.filter((address): boolean => positionsMap[address]?.reward.balance.gt(0) ?? false)
+	const gaugeOptions = gaugeAddresses.filter((address): boolean => toBigInt(positionsMap[address]?.reward.balance) > 0n ?? false)
 		.map((address): TDropdownOption => {
 			const gauge = gaugesMap[address];
 			const vaultAddress = toAddress(gauge?.vaultAddress);
@@ -46,10 +48,10 @@ function RewardsTab(): ReactElement {
 			};
 		});
 
-	const gaugesRewards = useMemo((): BigNumber => {
-		return gaugeAddresses.reduce<BigNumber>((acc, address): BigNumber => {
-			return acc.add(formatBN(positionsMap[address]?.reward.balance));
-		}, formatBN(0));
+	const gaugesRewards = useMemo((): bigint => {
+		return gaugeAddresses.reduce<bigint>((acc, address): bigint => {
+			return acc + toBigInt(formatBigNumberAsAmount(positionsMap[address]?.reward.balance));
+		}, BIG_ZERO);
 	}, [gaugeAddresses, positionsMap]);
 
 	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: 1, walletNetwork: chainID});
@@ -104,7 +106,7 @@ function RewardsTab(): ReactElement {
 					<Button 
 						className={'w-full md:mt-7'}
 						onClick={(): unknown => claim(web3Provider, userAddress, selectedGaugeAddress)}
-						disabled={!isActive || !isValidNetwork || selectedGaugeRewards.eq(0)}
+						disabled={!isActive || !isValidNetwork || isZero(selectedGaugeRewards)}
 						isBusy={claimStatus.loading}
 					>
 						{'Claim'}

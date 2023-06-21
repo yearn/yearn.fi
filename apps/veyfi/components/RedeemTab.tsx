@@ -9,8 +9,8 @@ import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {ETH_TOKEN_ADDRESS, YFI_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatBN, toNormalizedBN, toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {BIG_ZERO, ETH_TOKEN_ADDRESS, YFI_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {formatBigNumberAsAmount, toNormalizedBN, toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
 import {AmountInput} from '@common/components/AmountInput';
@@ -31,14 +31,14 @@ function RedeemTab(): ReactElement {
 	const clearLockAmount = (): void => set_redeemAmount(toNormalizedBN(0));
 	const refreshData = (): unknown => Promise.all([refresh(), refreshBalances()]);
 	const onTxSuccess = (): unknown => Promise.all([refreshData(), clearLockAmount()]);
-	const [{status, result}, fetchRequiredEth] = useAsync(getRequiredEth, formatBN(0));
+	const [{status, result}, fetchRequiredEth] = useAsync(getRequiredEth, BIG_ZERO);
 	const ethBalance = useBalance(ETH_TOKEN_ADDRESS);
 	const yfiPrice = useTokenPrice(YFI_ADDRESS);
 	const [approveRedeem, approveRedeemStatus] = useTransaction(approveERC20, refreshData);
 	const [redeem, redeemStatus] = useTransaction(OptionActions.redeem, onTxSuccess);
 
 	const userAddress = address as TAddress;
-	const oYFIBalance = toNormalizedBN(formatBN(positions?.balance), 18);
+	const oYFIBalance = toNormalizedBN(formatBigNumberAsAmount(positions?.balance), 18);
 	const ethRequired = toNormalizedValue(result, 18);
 
 	const {isValid: isApproved} = validateAllowance({
@@ -90,7 +90,7 @@ function RedeemTab(): ReactElement {
 					<AmountInput
 						label={'ETH fee'}
 						amount={ethRequired}
-						legend={formatCounterValue(ethRequired, ethBalance.normalizedPrice)}
+						legend={formatCounterValue(ethRequired, ethBalance.normalizedPrice ?? 0)}
 						loading={status === 'loading'}
 						disabled
 					/>

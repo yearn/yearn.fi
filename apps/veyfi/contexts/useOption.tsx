@@ -7,30 +7,29 @@ import VEYFI_OYFI_ABI from '@veYFI/utils/abi/veYFIoYFI.abi';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
 import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
-import {ETH_TOKEN_ADDRESS, YFI_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatBN, toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {BIG_ZERO, ETH_TOKEN_ADDRESS, YFI_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {getProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
 
-import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
 import type {TDict} from '@yearn-finance/web-lib/types';
 
 export type TOptionPosition = {
-	balance: BigNumber,
+	balance: bigint,
 }
 
 export type	TOptionContext = {
-	getRequiredEth: (amount: BigNumber) => Promise<BigNumber>,
+	getRequiredEth: (amount: bigint) => Promise<bigint>,
 	price: number | undefined,
 	positions: TOptionPosition | undefined,
-	allowances: TDict<BigNumber>,
+	allowances: TDict<bigint>,
 	isLoading: boolean,
 	refresh: () => void,
 }
 
 const defaultProps: TOptionContext = {
-	getRequiredEth: async (): Promise<BigNumber> => formatBN(0),
+	getRequiredEth: async (): Promise<bigint> => BIG_ZERO,
 	price: undefined,
 	positions: undefined,
 	allowances: {},
@@ -44,7 +43,7 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 	const yfiPrice = useTokenPrice(YFI_ADDRESS);
 	const ethPrice = useTokenPrice(ETH_TOKEN_ADDRESS);
 
-	const getRequiredEth = useCallback(async (amount: BigNumber): Promise<BigNumber> => {
+	const getRequiredEth = useCallback(async (amount: bigint): Promise<bigint> => {
 		const currentProvider = getProvider(1);
 		const optionsContract = new Contract(VEYFI_OPTIONS_ADDRESS, VEYFI_OPTIONS_ABI, currentProvider); // TODO: update once abi is available
 		const requiredEth = await optionsContract.eth_required(amount);
@@ -77,7 +76,7 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 	}, [isActive, userAddress]);
 	const {data: positions, mutate: refreshPositions, isLoading: isLoadingPositions} = useSWR(isActive && provider ? 'optionPositions' : null, positionsFetcher, {shouldRetryOnError: false});
 
-	const allowancesFetcher = useCallback(async (): Promise<TDict<BigNumber>> => {
+	const allowancesFetcher = useCallback(async (): Promise<TDict<bigint>> => {
 		if (!isActive || !userAddress) {
 			return {};
 		}
