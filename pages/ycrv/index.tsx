@@ -236,7 +236,7 @@ function ZapAndStats(): ReactElement {
 					</div>
 					<div className={'flex flex-row items-center justify-between pb-1'}>
 						<span className={'inline text-sm font-normal text-neutral-400'}>
-							{'yBal Deposits: '}
+							{'yCRV Deposits: '}
 						</span>
 						<p
 							suppressHydrationWarning
@@ -301,7 +301,7 @@ function ZapAndStats(): ReactElement {
 					</div>
 					<div className={'flex flex-row items-center justify-between pb-1'}>
 						<span className={'inline text-sm font-normal text-neutral-400'}>
-							{'yBal Deposits: '}
+							{'yCRV Deposits: '}
 						</span>
 						<p
 							suppressHydrationWarning
