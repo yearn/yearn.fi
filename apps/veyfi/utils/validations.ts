@@ -1,7 +1,7 @@
 import {isAddress} from 'ethers/lib/utils';
 import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 
-import type {BigNumber} from 'ethers';
 import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 
 export type TValidationResponse = {
@@ -14,17 +14,21 @@ export type TValidateAllowanceProps = {
 	tokenAddress: TAddress;
 	spenderAddress: TAddress;
 	chainID: number;
-	allowances: TDict<BigNumber>;
-	amount: BigNumber;
+	allowances: TDict<bigint>;
+	amount: bigint;
 }
 
 export function validateAllowance(props: TValidateAllowanceProps): TValidationResponse {
 	const {tokenAddress, spenderAddress, allowances, amount, ownerAddress, chainID} = props;
 
+	if(!tokenAddress || !spenderAddress) {
+		return {isValid: false};
+	}
+
 	// TODO: return valid when is native token
 
 	const allowance = allowances[allowanceKey(chainID, tokenAddress, spenderAddress, ownerAddress)];
-	const isApproved = allowance?.gte(amount);
+	const isApproved = allowance >= amount;
 
 	return {isValid: isApproved};
 }
@@ -41,7 +45,7 @@ export function validateAmount(props: TValidateAmountProps): TValidationResponse
 	const {amount, balance, minAmountAllowed, maxAmountAllowed, shouldDisplayMin} = props;
 	const amountNumber = Number(amount);
 
-	if (amountNumber === 0) {
+	if (isZero(amountNumber)) {
 		return {};
 	}
 

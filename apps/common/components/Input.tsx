@@ -9,12 +9,13 @@ type TAmountInputProps = {
 	error?: string;
 	isDisabled?: boolean;
 	isLoading?: boolean;
+	className?: string;
 }
 
 function Input(props: TAmountInputProps): ReactElement {
-	const {value, onChange, label, placeholder, legend, error, isDisabled, isLoading} = props;
+	const {value, onChange, label, placeholder, legend, error, isDisabled, isLoading, className = ''} = props;
 	return (
-		<div className={'w-full'}>
+		<div className={`w-full ${className}`}>
 			{label && (
 				<p
 					className={'mb-1 w-full overflow-hidden text-ellipsis whitespace-nowrap text-base text-neutral-600'}>

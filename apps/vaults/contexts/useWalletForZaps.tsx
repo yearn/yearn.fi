@@ -1,30 +1,30 @@
 import React, {createContext, memo, useContext, useMemo, useState} from 'react';
-import useSWR from 'swr';
-import {useUpdateEffect} from '@react-hookz/web';
-import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
+import {useDeepCompareEffect} from '@react-hookz/web';
 import {useUI} from '@yearn-finance/web-lib/contexts/useUI';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {isZeroAddress} from '@yearn-finance/web-lib/utils/address';
-import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {useWallet} from '@common/contexts/useWallet';
+import {useFetch} from '@common/hooks/useFetch';
+import {yDaemonTokenListBalances} from '@common/schemas/yDaemonTokenListBalances';
+import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 
 import type {ReactElement} from 'react';
-import type {SWRResponse} from 'swr';
-import type {TBalanceData, TUseBalancesTokens} from '@yearn-finance/web-lib/hooks/types';
 import type {TDict} from '@yearn-finance/web-lib/types';
-import type {TYDaemonTokensList} from '@vaults/types/yearn';
+import type {TBalanceData} from '@yearn-finance/web-lib/types/hooks';
+import type {TUseBalancesTokens} from '@common/hooks/useBalances';
+import type {TYDaemonTokenListBalances} from '@common/schemas/yDaemonTokenListBalances';
 
-export type	TWalletForZap = {
-	tokensList: TDict<TYDaemonTokensList>,
+export type TWalletForZap = {
+	tokensList: TYDaemonTokenListBalances,
 	balances: TDict<TBalanceData>,
 	balancesNonce: number,
 	isLoading: boolean,
 	refresh: (tokenList?: TUseBalancesTokens[]) => Promise<TDict<TBalanceData>>,
 }
 
-const	defaultProps = {
+const defaultProps = {
 	tokensList: {},
 	balances: {},
 	balancesNonce: 0,
@@ -36,12 +36,12 @@ const	defaultProps = {
 ** This context controls most of the user's wallet data we may need to
 ** interact with our app, aka mostly the balances and the token prices.
 ******************************************************************************/
-const	WalletForZap = createContext<TWalletForZap>(defaultProps);
+const WalletForZap = createContext<TWalletForZap>(defaultProps);
 export const WalletForZapApp = memo(function WalletForZapApp({children}: {children: ReactElement}): ReactElement {
 	const {address, isActive} = useWeb3();
 	const {refresh, balancesNonce} = useWallet();
 	const {safeChainID} = useChainID();
-	const {settings: baseAPISettings} = useSettings();
+	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: safeChainID});
 	const {onLoadStart, onLoadDone} = useUI();
 	const [isLoading, set_isLoading] = useState(false);
 	const [zapBalances, set_zapMigrationBalances] = useState<TDict<TBalanceData>>({});
@@ -49,15 +49,17 @@ export const WalletForZapApp = memo(function WalletForZapApp({children}: {childr
 	/* 🔵 - Yearn Finance ******************************************************
 	**	Fetching, for this user, the list of tokens available for zaps
 	***************************************************************************/
-	const	{data: tokensList} = useSWR(
-		address ? `${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/${safeChainID}/tokenlistbalances/${address}` : null,
-		baseFetcher,
-		{revalidateOnFocus: false}
-	) as SWRResponse<TDict<TYDaemonTokensList>>;
+	const {data: tokensList} = useFetch<TYDaemonTokenListBalances>({
+		endpoint: address ? `${yDaemonBaseUri}/tokenlistbalances/${address}` : null,
+		schema: yDaemonTokenListBalances
+	});
 
-	const	availableTokens = useMemo((): TUseBalancesTokens[] => {
-		const	tokens: TUseBalancesTokens[] = [];
+	const availableTokens = useMemo((): TUseBalancesTokens[] => {
+		const tokens: TUseBalancesTokens[] = [];
 		Object.values(tokensList || {}).forEach((token): void => {
+			if (!token) {
+				return;
+			}
 			if (token.chainID !== safeChainID) {
 				return;
 			}
@@ -69,10 +71,10 @@ export const WalletForZapApp = memo(function WalletForZapApp({children}: {childr
 		return tokens;
 	}, [tokensList, safeChainID]);
 
-	useUpdateEffect((): void => {
+	useDeepCompareEffect((): void => {
 		onLoadStart();
 		set_isLoading(true);
-		const	allToRefresh = availableTokens.map(({token}): TUseBalancesTokens => ({token}));
+		const allToRefresh = availableTokens.map(({token}): TUseBalancesTokens => ({token}));
 		refresh(allToRefresh).then((result): void => {
 			performBatchedUpdates((): void => {
 				set_isLoading(false);
@@ -85,7 +87,7 @@ export const WalletForZapApp = memo(function WalletForZapApp({children}: {childr
 	/* 🔵 - Yearn Finance ******************************************************
 	**	Setup and render the Context provider to use in the app.
 	***************************************************************************/
-	const	contextValue = useMemo((): TWalletForZap => ({
+	const contextValue = useMemo((): TWalletForZap => ({
 		tokensList: tokensList || {},
 		balances: zapBalances,
 		balancesNonce: balancesNonce,
@@ -99,7 +101,6 @@ export const WalletForZapApp = memo(function WalletForZapApp({children}: {childr
 		</WalletForZap.Provider>
 	);
 });
-
 
 export const useWalletForZap = (): TWalletForZap => useContext(WalletForZap);
 export default useWalletForZap;

@@ -1,37 +1,38 @@
 import React, {Fragment, useMemo} from 'react';
 import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
-import useSWR from 'swr';
-import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
+import {yDaemonReportsSchema} from '@vaults/schemas/reportsSchema';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
-import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
+import {useFetch} from '@common/hooks/useFetch';
+import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 
 import type {ReactElement} from 'react';
-import type {SWRResponse} from 'swr';
-import type {TYDaemonReports, TYearnVaultStrategy} from '@common/types/yearn';
+import type {TYDaemonVaultStrategy} from '@common/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonReport, TYDaemonReports} from '@vaults/schemas/reportsSchema';
 
 export type TGraphForStrategyReportsProps = {
-	strategy: TYearnVaultStrategy,
+	strategy: TYDaemonVaultStrategy,
 	vaultDecimals: number,
 	vaultTicker: string
 	height?: number,
 }
 
-function	GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height = 127}: TGraphForStrategyReportsProps): ReactElement {
+function GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height = 127}: TGraphForStrategyReportsProps): ReactElement {
 	const {safeChainID} = useChainID();
-	const {settings: baseAPISettings} = useSettings();
-	const {data: reports} = useSWR(
-		`${baseAPISettings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI}/${safeChainID}/reports/${strategy.address}`,
-		baseFetcher,
-		{revalidateOnFocus: false}
-	) as SWRResponse;
+	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: safeChainID});
 
-	const	strategyData = useMemo((): {name: number; value: number, gain: string, loss: string}[] => {
+	const {data: reports} = useFetch<TYDaemonReports>({
+		endpoint: `${yDaemonBaseUri}/reports/${strategy.address}`,
+		schema: yDaemonReportsSchema
+	});
+
+	const strategyData = useMemo((): {name: number; value: number, gain: string, loss: string}[] => {
 		const	_reports = [...(reports || [])];
 		const reportsForGraph = (
-			_reports.reverse()?.map((reports: TYDaemonReports): {name: number; value: number, gain: string, loss: string} => ({
+			_reports.reverse()?.map((reports: TYDaemonReport): {name: number; value: number, gain: string, loss: string} => ({
 				name: Number(reports.timestamp),
 				value: Number(reports.results?.[0]?.APR || 0) * 100,
 				gain: reports?.gain || '0',
@@ -41,7 +42,7 @@ function	GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height =
 		return reportsForGraph;
 	}, [reports]);
 
-	if (!strategyData || strategyData?.length === 0) {
+	if (!strategyData || isZero(strategyData?.length)) {
 		return <Fragment />;
 	}
 
@@ -76,7 +77,7 @@ function	GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height =
 						delete e.verticalAnchor;
 						delete e.visibleTicksCount;
 						delete e.tickFormatter;
-						const	formatedValue = formatPercent(value);
+						const formatedValue = formatPercent(value);
 						return <text {...e}>{formatedValue}</text>;
 					}} />
 				<Tooltip
@@ -87,9 +88,9 @@ function	GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height =
 						}
 						if (payload.length > 0) {
 							const [{value, payload: innerPayload}] = payload;
-							const	{gain, loss} = innerPayload;
-							const	diff = formatBN(gain).sub(formatBN(loss));
-							const	normalizedDiff = formatToNormalizedValue(diff, vaultDecimals);
+							const {gain, loss} = innerPayload;
+							const diff = toBigInt(gain) - toBigInt(loss);
+							const normalizedDiff = formatToNormalizedValue(diff, vaultDecimals);
 
 							return (
 								<div className={'recharts-tooltip'}>

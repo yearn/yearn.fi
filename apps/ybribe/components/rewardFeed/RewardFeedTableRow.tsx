@@ -1,29 +1,29 @@
 import React, {useMemo} from 'react';
-import {toAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
-import {formatBN, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {truncateHex} from '@yearn-finance/web-lib/utils/address';
+import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatUSD} from '@yearn-finance/web-lib/utils/format.number';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useCurve} from '@common/contexts/useCurve';
 import {useYearn} from '@common/contexts/useYearn';
 
-import type {BigNumber} from 'ethers';
 import type {ReactElement} from 'react';
-import type {TCurveGauges} from '@common/types/curves';
-import type {TYDaemonGaugeRewardsFeed} from '@common/types/yearn';
+import type {TAddress} from '@yearn-finance/web-lib/types';
+import type {TCurveGauge} from '@common/schemas/curveSchemas';
+import type {TYDaemonGaugeRewardsFeed} from '@common/schemas/yDaemonGaugeRewardsFeedSchema';
 
-function	RewardFeedRowItemWithExtraData({
+function RewardFeedRowItemWithExtraData({
 	address,
 	value
-}: {address: string, value: BigNumber, minDecimals?: number}): ReactElement {
-	const	{tokens, prices} = useYearn();
+}: {address: TAddress, value: bigint, minDecimals?: number}): ReactElement {
+	const {tokens, prices} = useYearn();
 
-	const	tokenInfo = tokens?.[address];
-	const	tokenPrice = Number(prices?.[address]) / 1000000;
-	const	decimals = tokenInfo?.decimals || 18;
-	const	symbol = tokenInfo?.symbol || '???';
-	const	bribeAmount = formatToNormalizedValue(formatBN(value), decimals);
-	const	bribeValue = bribeAmount * (Number(tokenPrice || 0));
+	const tokenInfo = tokens?.[address];
+	const tokenPrice = Number(prices?.[address]) / 1000000;
+	const decimals = tokenInfo?.decimals || 18;
+	const symbol = tokenInfo?.symbol || '???';
+	const bribeAmount = formatToNormalizedValue(toBigInt(value), decimals);
+	const bribeValue = bribeAmount * (Number(tokenPrice || 0));
 
 	return (
 		<div className={'flex h-auto flex-col items-end'}>
@@ -39,18 +39,22 @@ function	RewardFeedRowItemWithExtraData({
 	);
 }
 
-function	RewardFeedTableRow({currentRewardAdded}: {currentRewardAdded: TYDaemonGaugeRewardsFeed}): ReactElement {
-	const	{gauges} = useCurve();
+function RewardFeedTableRow({currentRewardAdded}: {currentRewardAdded: TYDaemonGaugeRewardsFeed[0]}): ReactElement | null {
+	const {gauges} = useCurve();
 
-	const	gaugesObject = useMemo((): {[key: string]: TCurveGauges} => {
-		const	_gaugesObject: {[key: string]: TCurveGauges} = {};
+	const gaugesObject = useMemo((): {[key: string]: TCurveGauge} => {
+		const _gaugesObject: {[key: string]: TCurveGauge} = {};
 		for (const gauge of gauges) {
-			_gaugesObject[toAddress(gauge.gauge)] = gauge;
+			_gaugesObject[gauge.gauge] = gauge;
 		}
 		return _gaugesObject;
 	}, [gauges]);
 
-	const	gaugeItem = gaugesObject[toAddress(currentRewardAdded.gauge)];
+	const gaugeItem = gaugesObject[currentRewardAdded.gauge];
+
+	if (!gaugeItem) {
+		return null;
+	}
 
 	return (
 		<div className={'grid w-full grid-cols-2 border-t border-neutral-200 px-4 md:grid-cols-3 md:px-10'}>
@@ -63,7 +67,7 @@ function	RewardFeedTableRow({currentRewardAdded}: {currentRewardAdded: TYDaemonG
 							width={40}
 							height={40}
 							quality={90}
-							src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${toAddress(gaugeItem?.swap_token)}/logo-128.png`}
+							src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${gaugeItem?.swap_token}/logo-128.png`}
 							loading={'eager'} />
 					</div>
 				</div>
@@ -93,9 +97,8 @@ function	RewardFeedTableRow({currentRewardAdded}: {currentRewardAdded: TYDaemonG
 				<div className={'flex flex-row pt-6'}>
 					<label className={'block text-sm leading-6 text-neutral-400 md:hidden'}>{'Current Rewards per veCRV'}</label>
 					<RewardFeedRowItemWithExtraData
-						address={toAddress(currentRewardAdded.rewardToken)}
-						value={formatBN(currentRewardAdded.amount)} />
-
+						address={currentRewardAdded.rewardToken}
+						value={toBigInt(currentRewardAdded.amount)} />
 				</div>
 			</div>
 

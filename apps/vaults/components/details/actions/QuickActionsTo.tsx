@@ -11,14 +11,13 @@ import {useTokenPrice} from '@common/hooks/useTokenPrice';
 
 import type {ReactElement} from 'react';
 
-function	VaultDetailsQuickActionsTo(): ReactElement {
+function VaultDetailsQuickActionsTo(): ReactElement {
 	const {isActive} = useWeb3();
 	const {currentVault, possibleOptionsTo, actionParams, onUpdateSelectedOptionTo, isDepositing} = useActionFlow();
 	const {expectedOut, isLoadingExpectedOut} = useSolver();
-
 	const selectedOptionToPricePerToken = useTokenPrice(toAddress(actionParams?.selectedOptionTo?.value));
 
-	function	renderMultipleOptionsFallback(): ReactElement {
+	function renderMultipleOptionsFallback(): ReactElement {
 		return (
 			<Dropdown
 				defaultOption={possibleOptionsTo[0]}
@@ -36,7 +35,7 @@ function	VaultDetailsQuickActionsTo(): ReactElement {
 						{isDepositing ? 'To vault' : 'To wallet'}
 					</label>
 					<legend className={'font-number inline text-xs text-neutral-600 md:hidden'} suppressHydrationWarning>
-						{`APY ${formatPercent((currentVault?.apy?.net_apy || 0) * 100, 2, 2, 500)}`}
+						{`APY ${formatPercent(((currentVault?.apy?.net_apy || 0) + (currentVault?.apy?.staking_rewards_apr || 0)) * 100, 2, 2, 500)}`}
 					</legend>
 				</div>
 				<Renderable
@@ -54,7 +53,7 @@ function	VaultDetailsQuickActionsTo(): ReactElement {
 					</div>
 				</Renderable>
 				<legend className={'font-number hidden text-xs text-neutral-600 md:inline'} suppressHydrationWarning>
-					{isDepositing ? (formatPercent((currentVault?.apy?.net_apy || 0) * 100, 2, 2, 500)) : ''}
+					{isDepositing ? (formatPercent(((currentVault?.apy?.net_apy || 0) + (currentVault?.apy?.staking_rewards_apr || 0)) * 100, 2, 2, 500)) : ''}
 				</legend>
 			</div>
 
@@ -65,7 +64,7 @@ function	VaultDetailsQuickActionsTo(): ReactElement {
 					{'You will receive'}
 				</label>
 				<div className={'flex h-10 items-center bg-neutral-300 p-2'}>
-					<div className={'flex h-10 w-full flex-row items-center justify-between py-4 px-0'}>
+					<div className={'flex h-10 w-full flex-row items-center justify-between px-0 py-4'}>
 						{isLoadingExpectedOut ?
 							<div className={'relative h-10 w-full'}>
 								<div className={'absolute left-3 flex h-10 items-center justify-center'}>
@@ -74,14 +73,16 @@ function	VaultDetailsQuickActionsTo(): ReactElement {
 							</div> :
 							<input
 								id={'toAmount'}
-								className={'w-full cursor-default overflow-x-scroll border-none bg-transparent py-4 px-0 font-bold outline-none scrollbar-none'}
+								className={'w-full cursor-default overflow-x-scroll border-none bg-transparent px-0 py-4 font-bold outline-none scrollbar-none'}
 								type={'text'}
 								disabled
-								value={expectedOut?.normalized || 0} />
+								value={expectedOut?.normalized || 0}
+								autoComplete={'off'}
+							/>
 						}
 					</div>
 				</div>
-				<legend className={'font-number mr-1 text-end text-xs text-neutral-600 md:mr-0 md:text-start'}>
+				<legend suppressHydrationWarning className={'font-number mr-1 text-end text-xs text-neutral-600 md:mr-0 md:text-start'}>
 					{formatCounterValue(expectedOut?.normalized || 0, selectedOptionToPricePerToken)}
 				</legend>
 			</div>

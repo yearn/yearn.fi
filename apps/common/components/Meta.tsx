@@ -28,7 +28,7 @@ export type TMetaFile = {
 	orientation: string;
 }
 
-function	Meta({meta}: {meta: TMetaFile}): ReactElement {
+function Meta({meta}: {meta: TMetaFile}): ReactElement {
 	return (
 		<>
 			<Head>
@@ -97,7 +97,10 @@ function	Meta({meta}: {meta: TMetaFile}): ReactElement {
 					rel={'apple-touch-icon'}
 					sizes={'167x167'}
 					href={'/favicons/apple-icon-167x167.png'} />
-
+				<script
+					defer
+					data-domain={'yearn.finance'}
+					src={'/js/script.js'} />
 				<meta name={'robots'} content={'index,nofollow'} />
 				<meta name={'googlebot'} content={'index,nofollow'} />
 				<meta charSet={'utf-8'} />

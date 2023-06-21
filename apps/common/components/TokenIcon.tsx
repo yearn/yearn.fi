@@ -4,7 +4,7 @@ import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 
 import type {ReactElement} from 'react';
-import type {TYearnVaultToken} from '@common/types/yearn';
+import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
 function TokenIcon({
 	chainID,
@@ -13,11 +13,11 @@ function TokenIcon({
 }: {
 	chainID: number,
 	size?: number,
-	token: Partial<TYearnVaultToken>
+	token: TYDaemonVault['token']
 }): ReactElement {
 	const [imageType, set_imageType] = useState<'Vault' | 'Underlying' | 'Fallback'>('Vault');
 
-	function	renderMultipleAssetImage(): ReactElement {
+	function renderMultipleAssetImage(): ReactElement {
 		if (token?.underlyingTokensAddresses?.length === 2) {
 			return (
 				<div className={'flex flex-row items-center justify-center'}>

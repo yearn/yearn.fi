@@ -3,29 +3,32 @@ import Link from 'next/link';
 import {useRouter} from 'next/router';
 import {AnimatePresence} from 'framer-motion';
 import {Popover, Transition} from '@headlessui/react';
+import {useIsMounted} from '@react-hookz/web';
 import {VaultsHeader} from '@vaults/components/header/VaultsHeader';
 import {VeYfiHeader} from '@veYFI/components/header/VeYfiHeader';
-import Header from '@yearn-finance/web-lib/components/Header';
 import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import BalanceReminderPopover from '@common/components/BalanceReminderPopover';
 import {useMenu} from '@common/contexts/useMenu';
 import LogoYearn from '@common/icons/LogoYearn';
+import {YBalHeader} from '@yBal/components/header/YBalHeader';
 import {YBribeHeader} from '@yBribe/components/header/YBribeHeader';
 import {YCrvHeader} from '@yCRV/components/header/YCrvHeader';
 
 import {AppName, APPS} from './Apps';
+import Header from './Header';
 import {MotionDiv} from './MotionDiv';
 
 import type {ReactElement} from 'react';
 import type {TMenu} from '@yearn-finance/web-lib/components/Header';
 
-function	Logo(): ReactElement {
-	const	{pathname} = useRouter();
+function Logo(): ReactElement {
+	const {pathname} = useRouter();
 
 	return (
 		<>
 			<YCrvHeader pathname={pathname} />
+			<YBalHeader pathname={pathname} />
 			<VaultsHeader pathname={pathname} />
 			<VeYfiHeader pathname={pathname} />
 			<YBribeHeader pathname={pathname} />
@@ -40,7 +43,7 @@ function	Logo(): ReactElement {
 
 }
 
-function	LogoPopover(): ReactElement {
+function LogoPopover(): ReactElement {
 	const [isShowing, set_isShowing] = useState(false);
 
 	return (
@@ -66,26 +69,29 @@ function	LogoPopover(): ReactElement {
 				<Popover.Panel className={'absolute left-1/2 z-10 mt-6 w-80 -translate-x-1/2 px-4 pt-4 sm:px-0 md:w-96'}>
 					<div className={'overflow-hidden border border-neutral-200 shadow-lg'}>
 						<div className={'relative grid grid-cols-2 bg-neutral-0 md:grid-cols-4'}>
-							{Object.values(APPS).map(({name, href, icon}): ReactElement => {
-								return (
-									<Link
-										prefetch={false}
-										key={name}
-										href={href}
-										onClick={(): void => set_isShowing(false)}>
-										<div
-											onClick={(): void => set_isShowing(false)}
-											className={'flex cursor-pointer flex-col items-center p-4 transition-colors hover:bg-neutral-200'}>
-											<div>
-												{cloneElement(icon)}
-											</div>
-											<div className={'pt-2 text-center'}>
-												<b className={'text-base'}>{name}</b>
-											</div>
-										</div>
-									</Link>
-								);
-							})}
+							{
+								Object.values(APPS)
+									.filter(({isDisabled}): boolean => !isDisabled)
+									.map(({name, href, icon}): ReactElement => {
+										return (
+											<Link
+												prefetch={false}
+												key={name}
+												href={href}
+												onClick={(): void => set_isShowing(false)}>
+												<div
+													onClick={(): void => set_isShowing(false)}
+													className={'flex cursor-pointer flex-col items-center p-4 transition-colors hover:bg-neutral-200'}>
+													<div>
+														{cloneElement(icon)}
+													</div>
+													<div className={'pt-2 text-center'}>
+														<b className={'text-base'}>{name}</b>
+													</div>
+												</div>
+											</Link>
+										);
+									})}
 						</div>
 					</div>
 				</Popover.Panel>
@@ -94,15 +100,20 @@ function	LogoPopover(): ReactElement {
 	);
 }
 
-export function	AppHeader(): ReactElement {
-	const	{pathname} = useRouter();
-	const	{isActive} = useWeb3();
-	const	{onOpenMenu} = useMenu();
-	const	menu = useMemo((): TMenu[] => {
+export function AppHeader(): ReactElement {
+	const isMounted = useIsMounted();
+	const {pathname} = useRouter();
+	const {isActive} = useWeb3();
+	const {onOpenMenu} = useMenu();
+	const menu = useMemo((): TMenu[] => {
 		const HOME_MENU = {path: '/', label: 'Home'};
 
 		if (pathname.startsWith('/ycrv')) {
 			return [HOME_MENU, ...APPS[AppName.YCRV].menu];
+		}
+
+		if (pathname.startsWith('/ybal')) {
+			return [HOME_MENU, ...APPS[AppName.YBAL].menu];
 		}
 
 		if (pathname.startsWith('/vaults')) {
@@ -124,8 +135,10 @@ export function	AppHeader(): ReactElement {
 		];
 	}, [pathname]);
 
-	const	supportedNetworks = useMemo((): number[] => {
-		if (pathname.startsWith('/ycrv') || pathname.startsWith('/veyfi') || pathname.startsWith('/ybribe')) {
+
+	const supportedNetworks = useMemo((): number[] => {
+		const ethereumOnlyPaths = ['/ycrv', '/ybal', '/veyfi', '/ybribe'];
+		if (ethereumOnlyPaths.some((path): boolean => pathname.startsWith(path))) {
 			return [1];
 		}
 
@@ -145,7 +158,7 @@ export function	AppHeader(): ReactElement {
 				</AnimatePresence>
 			)}
 			extra={
-				<Renderable shouldRender={isActive}>
+				<Renderable shouldRender={isActive && isMounted()}>
 					<div className={'ml-4'}>
 						<BalanceReminderPopover />
 					</div>

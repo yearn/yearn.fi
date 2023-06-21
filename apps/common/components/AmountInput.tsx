@@ -1,4 +1,5 @@
 import Renderable from '@yearn-finance/web-lib/components/Renderable';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 
 import type {ReactElement} from 'react';
 
@@ -31,10 +32,10 @@ function AmountInput({
 	onMaxClick
 }: TAmountInputProps): ReactElement {
 	let displayedAmount = amount.toString();
-	if(displayedAmount === '0' && !disabled) {
+	if (isZero(displayedAmount) && !disabled) {
 		displayedAmount = '';
 	}
-	if(displayedAmount === '0.0' && disabled) {
+	if (isZero(displayedAmount) && disabled) {
 		displayedAmount = '0';
 	}
 	return (
@@ -68,6 +69,7 @@ function AmountInput({
 				<legend
 					role={onLegendClick ? 'button' : 'text'}
 					onClick={onLegendClick}
+					suppressHydrationWarning
 					className={`mt-1 pl-2 text-xs md:mr-0 ${error ? 'text-[#EA5204]' : 'text-neutral-600'}`}>
 					{error ?? legend}
 				</legend>

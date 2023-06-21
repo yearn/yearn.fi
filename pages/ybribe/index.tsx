@@ -1,11 +1,12 @@
 import React, {useCallback, useMemo, useState} from 'react';
-import Balancer from 'react-wrap-balancer';
+import {Balancer} from 'react-wrap-balancer';
 import Link from 'next/link';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {useSessionStorage} from '@yearn-finance/web-lib/hooks/useSessionStorage';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatBN, formatToNormalizedValue, Zero} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {isTAddress} from '@yearn-finance/web-lib/utils/isTAddress';
 import ListHead from '@common/components/ListHead';
 import ListHero from '@common/components/ListHero';
 import {useCurve} from '@common/contexts/useCurve';
@@ -16,70 +17,76 @@ import {GaugeListRow} from '@yBribe/components/claim/GaugeListRow';
 import {useBribes} from '@yBribe/contexts/useBribes';
 import Wrapper from '@yBribe/Wrapper';
 
-import type {BigNumber} from 'ethers';
 import type {NextRouter} from 'next/router';
 import type {ReactElement, ReactNode} from 'react';
-import type {TCurveGauges} from '@common/types/curves';
+import type {TAddress} from '@yearn-finance/web-lib/types';
+import type {TCurveGauge} from '@common/schemas/curveSchemas';
 import type {TSortDirection} from '@common/types/types';
 
-function	GaugeList(): ReactElement {
-	const	{tokens, prices} = useYearn();
-	const	{currentRewards, nextRewards, claimable} = useBribes();
-	const	{gauges} = useCurve();
-	const	[category, set_category] = useState('all');
-	const	[searchValue, set_searchValue] = useState('');
-	const 	[sort, set_sort] = useSessionStorage<{sortBy: string, sortDirection: TSortDirection}>(
+function GaugeList(): ReactElement {
+	const {tokens, prices} = useYearn();
+	const {currentRewards, nextRewards, claimable} = useBribes();
+	const {gauges} = useCurve();
+	const [category, set_category] = useState('all');
+	const [searchValue, set_searchValue] = useState('');
+	const [sort, set_sort] = useSessionStorage<{sortBy: string, sortDirection: TSortDirection}>(
 		'yGaugeListBribeSorting', {sortBy: '', sortDirection: 'desc'}
 	);
 
-	const	getRewardValue = useCallback((address: string, value: BigNumber): number => {
-		const	tokenInfo = tokens?.[address];
-		const	tokenPrice = prices?.[address];
-		const	decimals = tokenInfo?.decimals || 18;
-		const	bribeAmount = formatToNormalizedValue(formatBN(value), decimals);
-		const	bribeValue = bribeAmount * (Number(tokenPrice || 0) / 100);
+	const getRewardValue = useCallback((address: TAddress, value: bigint): number => {
+		const tokenInfo = tokens?.[address];
+		const tokenPrice = prices?.[address];
+		const decimals = tokenInfo?.decimals || 18;
+		const bribeAmount = formatToNormalizedValue(toBigInt(value), decimals);
+		const bribeValue = bribeAmount * (Number(tokenPrice || 0) / 100);
 		return bribeValue;
 	}, [prices, tokens]);
 
-	const	filteredGauges = useMemo((): TCurveGauges[] => {
+	const filteredGauges = useMemo((): TCurveGauge[] => {
 		if (category === 'claimable') {
 			return gauges.filter((gauge): boolean => {
-				const currentClaimableMapV3 = Object.values(claimable?.v3?.[toAddress(gauge.gauge)] || {});
-				return currentClaimableMapV3.some((value: BigNumber): boolean => value.gt(0));
+				const currentClaimableMapV3 = Object.values(claimable?.[toAddress(gauge.gauge)] || {});
+				return currentClaimableMapV3.some((value: bigint): boolean => value > 0);
 			});
 		}
 		return gauges.filter((gauge): boolean => {
-			const hasCurrentRewardsV3 = currentRewards?.v3?.[toAddress(gauge.gauge)] !== undefined;
-			const hasNextRewardsV3 = nextRewards?.v3?.[toAddress(gauge.gauge)] !== undefined;
+			const hasCurrentRewardsV3 = currentRewards?.[toAddress(gauge.gauge)] !== undefined;
+			const hasNextRewardsV3 = nextRewards?.[toAddress(gauge.gauge)] !== undefined;
 			return hasCurrentRewardsV3 || hasNextRewardsV3;
 		});
 	}, [category, gauges, currentRewards, nextRewards, claimable]);
 
-	const	searchedGauges = useMemo((): TCurveGauges[] => {
-		const	gaugesToSearch = [...filteredGauges];
+	const searchedGauges = useMemo((): TCurveGauge[] => {
+		const gaugesToSearch = [...filteredGauges];
 
 		if (searchValue === '') {
 			return gaugesToSearch;
 		}
 		return gaugesToSearch.filter((gauge): boolean => {
-			const	searchString = `${gauge.name} ${gauge.gauge}`;
+			const searchString = `${gauge.name} ${gauge.gauge}`;
 			return searchString.toLowerCase().includes(searchValue.toLowerCase());
 		});
 	}, [filteredGauges, searchValue]);
 
-	const	sortedGauges = useMemo((): TCurveGauges[] => {
+	const sortedGauges = useMemo((): TCurveGauge[] => {
 		if (sort.sortBy === 'name') {
 			return searchedGauges.sort((a, b): number => stringSort({a: a.name, b: b.name, sortDirection: sort.sortDirection}));
 		}
 		if (sort.sortBy === 'rewards') {
 			return searchedGauges.sort((a, b): number => {
-				const allARewards = Object.entries(currentRewards?.v3?.[toAddress(a.gauge)] || {}).reduce((acc, [address, value]): number => {
-					const aBribeValue = getRewardValue(address, value || Zero);
+				const allARewards = Object.entries(currentRewards?.[toAddress(a.gauge)] || {}).reduce((acc, [address, value]): number => {
+					if (!isTAddress(address)) {
+						return 0;
+					}
+					const aBribeValue = getRewardValue(address, value || 0n);
 					return acc + aBribeValue;
 				}, 0);
 
-				const allBRewards = Object.entries(currentRewards?.v3?.[toAddress(b.gauge)] || {}).reduce((acc, [address, value]): number => {
-					const aBribeValue = getRewardValue(address, value || Zero);
+				const allBRewards = Object.entries(currentRewards?.[toAddress(b.gauge)] || {}).reduce((acc, [address, value]): number => {
+					if (!isTAddress(address)) {
+						return 0;
+					}
+					const aBribeValue = getRewardValue(address, value || 0n);
 					return acc + aBribeValue;
 				}, 0);
 
@@ -91,13 +98,19 @@ function	GaugeList(): ReactElement {
 		}
 		if (sort.sortBy === 'pendingRewards') {
 			return searchedGauges.sort((a, b): number => {
-				const allARewards = Object.entries(nextRewards?.v3?.[toAddress(a.gauge)] || {}).reduce((acc, [address, value]): number => {
-					const aBribeValue = getRewardValue(address, value || Zero);
+				const allARewards = Object.entries(nextRewards?.[toAddress(a.gauge)] || {}).reduce((acc, [address, value]): number => {
+					if (!isTAddress(address)) {
+						return 0;
+					}
+					const aBribeValue = getRewardValue(address, value || 0n);
 					return acc + aBribeValue;
 				}, 0);
 
-				const allBRewards = Object.entries(nextRewards?.v3?.[toAddress(b.gauge)] || {}).reduce((acc, [address, value]): number => {
-					const aBribeValue = getRewardValue(address, value || Zero);
+				const allBRewards = Object.entries(nextRewards?.[toAddress(b.gauge)] || {}).reduce((acc, [address, value]): number => {
+					if (!isTAddress(address)) {
+						return 0;
+					}
+					const aBribeValue = getRewardValue(address, value || 0n);
 					return acc + aBribeValue;
 				}, 0);
 
@@ -109,14 +122,14 @@ function	GaugeList(): ReactElement {
 		}
 
 		return searchedGauges;
-	}, [sort.sortBy, sort.sortDirection, searchedGauges, currentRewards?.v3, getRewardValue, nextRewards?.v3]);
+	}, [sort.sortBy, sort.sortDirection, searchedGauges, currentRewards, getRewardValue, nextRewards]);
 
-	const	onSort = useCallback((newSortBy: string, newSortDirection: string): void => {
+	const onSort = useCallback((newSortBy: string, newSortDirection: string): void => {
 		set_sort({sortBy: newSortBy, sortDirection: newSortDirection as TSortDirection});
 	}, [set_sort]);
 
 	return (
-		<section className={'mt-4 mb-20 grid w-full grid-cols-12 pb-10 md:mb-40 md:mt-20'}>
+		<section className={'mb-20 mt-4 grid w-full grid-cols-12 pb-10 md:mb-40 md:mt-20'}>
 			<div className={'col-span-12 flex w-full flex-col bg-neutral-100'}>
 				<ListHero
 					headLabel={'Claim Bribe'}
@@ -135,14 +148,16 @@ function	GaugeList(): ReactElement {
 					sortBy={sort.sortBy}
 					sortDirection={sort.sortDirection}
 					onSort={onSort}
-					dataClassName={'grid-cols-5'}
+					wrapperClassName={'grid-cols-12'}
+					tokenClassName={'col-span-4'}
+					dataClassName={'col-span-8 grid-cols-8'}
 					items={[
 						{label: 'Gauges', value: 'name', sortable: true},
-						{label: '', value: '', sortable: false},
-						{label: '$/veCRV', value: 'rewards', sortable: false},
-						{label: 'APR', value: 'apr', sortable: false},
-						{label: 'Claimable', value: 'claimable', sortable: false},
-						{label: '', value: '', sortable: false}
+						{label: '', value: '', sortable: false, className: 'col-span-1'},
+						{label: 'APR', value: 'apr', sortable: false, className: '!col-span-2'},
+						{label: '$/veCRV', value: 'rewards', sortable: false, className: '!col-span-2'},
+						{label: 'Claimable', value: 'claimable', sortable: false, className: '!col-span-2'},
+						{label: '', value: '', sortable: false, className: 'col-span-1'}
 					]} />
 
 				<Renderable
@@ -160,10 +175,10 @@ function	GaugeList(): ReactElement {
 	);
 }
 
-function	Index(): ReactElement {
+function Index(): ReactElement {
 	return (
 		<>
-			<div className={'mt-8 mb-10 w-full max-w-6xl text-center'}>
+			<div className={'mb-10 mt-8 w-full max-w-6xl text-center'}>
 				<Balancer>
 					<b className={'text-center text-lg md:text-2xl'}>{'Get more for your votes.'}</b>
 					<p className={'mt-8 whitespace-pre-line text-center text-base text-neutral-600'}>

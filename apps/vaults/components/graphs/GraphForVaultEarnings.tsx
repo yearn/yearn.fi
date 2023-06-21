@@ -1,21 +1,22 @@
 import React, {Fragment, useMemo} from 'react';
 import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
 import {formatAmount, formatWithUnit} from '@yearn-finance/web-lib/utils/format.number';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 
 import type {ReactElement} from 'react';
+import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TGraphData} from '@common/types/types';
-import type {TYearnVault} from '@common/types/yearn';
 
 export type TGraphForVaultEarningsProps = {
-	currentVault: TYearnVault,
+	currentVault: TYDaemonVault,
 	harvestData: TGraphData[],
 	height?: number,
 	isCumulative?: boolean,
 }
 
-function	GraphForVaultEarnings({currentVault, harvestData, height = 312, isCumulative = true}: TGraphForVaultEarningsProps): ReactElement {
-	const	cumulativeData = useMemo((): {name: string; value: number}[] => {
-		let	cumulativeValue = 0;
+function GraphForVaultEarnings({currentVault, harvestData, height = 312, isCumulative = true}: TGraphForVaultEarningsProps): ReactElement {
+	const cumulativeData = useMemo((): {name: string; value: number}[] => {
+		let cumulativeValue = 0;
 		return (
 			harvestData.map((item: {name: string; value: number}): {name: string; value: number} => {
 				cumulativeValue += item.value;
@@ -28,10 +29,10 @@ function	GraphForVaultEarnings({currentVault, harvestData, height = 312, isCumul
 	}, [harvestData]);
 
 
-	if (isCumulative && cumulativeData?.length === 0) {
+	if (isCumulative && isZero(cumulativeData?.length)) {
 		return <Fragment />;
 	}
-	if (!isCumulative && harvestData?.length === 0) {
+	if (!isCumulative && isZero(harvestData?.length)) {
 		return <Fragment />;
 	}
 	return (
@@ -66,7 +67,7 @@ function	GraphForVaultEarnings({currentVault, harvestData, height = 312, isCumul
 						delete e.verticalAnchor;
 						delete e.visibleTicksCount;
 						delete e.tickFormatter;
-						const	formatedValue = formatWithUnit(value, 0, 0);
+						const formatedValue = formatWithUnit(value, 0, 0);
 						return <text {...e}>{formatedValue}</text>;
 					}} />
 				<Tooltip

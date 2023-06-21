@@ -11,7 +11,7 @@ type TProps = {
 }
 
 // TODO Check if we can use `getTimeUntil` from the web lib for this computation
-export function	computeTimeLeft({endTime}: {endTime?: TSeconds}): number {
+export function computeTimeLeft({endTime}: {endTime?: TSeconds}): number {
 	if (!endTime) {
 		return 0;
 	}
@@ -22,10 +22,10 @@ export function	computeTimeLeft({endTime}: {endTime?: TSeconds}): number {
 	return ms > 0 ? ms : 0;
 }
 
-function	useTimer({endTime}: TProps): string {
-	const	interval = useRef<NodeJS.Timeout | null>(null);
-	const	timeLeft = computeTimeLeft({endTime});
-	const	[time, set_time] = useState<TMilliseconds>(timeLeft);
+function useTimer({endTime}: TProps): string {
+	const interval = useRef<NodeJS.Timeout | null>(null);
+	const timeLeft = computeTimeLeft({endTime});
+	const [time, set_time] = useState<TMilliseconds>(timeLeft);
 
 	useEffect((): VoidFunction => {
 		interval.current = setInterval((): void => {
@@ -41,13 +41,21 @@ function	useTimer({endTime}: TProps): string {
 	}, [endTime, timeLeft]);
 
 	const formatTimestamp = useCallback((n: number): string => {
-		const	twoDP = (n: number): string | number => (n > 9 ? n : '0' + n);
-		const	duration = dayjs.duration(n, 'milliseconds');
-		const	days = duration.days();
-		const	hours = duration.hours();
-		const	minutes = duration.minutes();
-		const	seconds = duration.seconds();
-		return `${days ? `${days}d ` : ''}${twoDP(hours)}h ${twoDP(minutes)}m ${twoDP(seconds)}s`;
+		const twoDP = (n: number): string | number => (n > 9 ? n : '0' + n);
+		const duration = dayjs.duration(n, 'milliseconds');
+		const days = duration.days();
+		const hours = duration.hours();
+		const minutes = duration.minutes();
+		const seconds = duration.seconds();
+		if (days) {
+			return `${days}d ${twoDP(hours)}h ${twoDP(minutes)}m ${twoDP(seconds)}s`;
+		}
+
+		if (hours) {
+			return `${twoDP(hours)}h ${twoDP(minutes)}m ${twoDP(seconds)}s`;
+		}
+
+		return `${twoDP(minutes)}m ${twoDP(seconds)}s`;
 	}, []);
 
 	return time ? formatTimestamp(time) : '00H 00M 00S';

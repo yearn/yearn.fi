@@ -1,7 +1,9 @@
 import React, {useMemo, useState} from 'react';
-import Balancer from 'react-wrap-balancer';
+import {Balancer} from 'react-wrap-balancer';
+import {useLocalStorageValue} from '@react-hookz/web';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
+import {Switch} from '@common/components/Switch';
 
 import type {ReactElement} from 'react';
 
@@ -11,10 +13,10 @@ type TWrappedInput = {
 	onSave: (value: string) => void;
 }
 
-function	WrappedInput({title, initialValue, onSave}: TWrappedInput): ReactElement {
-	const	[isFocused, set_isFocused] = useState(false);
-	const	[value, set_value] = useState(initialValue);
-	const	isInitialValue = useMemo((): boolean => value === initialValue, [value, initialValue]);
+function WrappedInput({title, initialValue, onSave}: TWrappedInput): ReactElement {
+	const [isFocused, set_isFocused] = useState(false);
+	const [value, set_value] = useState(initialValue);
+	const isInitialValue = useMemo((): boolean => value === initialValue, [value, initialValue]);
 
 	return (
 		<label>
@@ -42,9 +44,11 @@ function	WrappedInput({title, initialValue, onSave}: TWrappedInput): ReactElemen
 	);
 }
 
-function	SettingsOverwrite(): ReactElement {
-	const	{onUpdateBaseSettings, onUpdateNetworks, settings: baseAPISettings} = useSettings();
-	const	[, set_nonce] = useState(0);
+function SettingsOverwrite(): ReactElement {
+	const {onUpdateBaseSettings, onUpdateNetworks, settings: baseAPISettings} = useSettings();
+	// eslint-disable-next-line @typescript-eslint/naming-convention
+	const {value, set} = useLocalStorageValue<boolean>('yearn.finance/feedback-popover');
+	const [, set_nonce] = useState(0);
 
 	return (
 		<div className={'bg-neutral-100 p-10'}>
@@ -81,6 +85,14 @@ function	SettingsOverwrite(): ReactElement {
 							onUpdateNetworks({1: {rpcURI: value}});
 							set_nonce((n: number): number => n + 1);
 						}} />
+				</div>
+				<div className={'grid grid-cols-1 gap-4'}>
+					<label className={'flex cursor-pointer items-center justify-between pt-4 transition-colors hover:bg-neutral-100/40'}>
+						<p>{'Show feedback popover'}</p>
+						<Switch
+							isEnabled={!value}
+							onSwitch={(): void => set(!value)} />
+					</label>
 				</div>
 			</div>
 		</div>

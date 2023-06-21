@@ -1,6 +1,7 @@
 import React, {Fragment} from 'react';
 import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
 import {formatAmount, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 
 import type {ReactElement} from 'react';
 import type {TMessariGraphData} from '@common/types/types';
@@ -10,8 +11,8 @@ export type TGraphForVaultPPSGrowthProps = {
 	height?: number,
 }
 
-function	GraphForVaultPPSGrowth({messariData, height = 312}: TGraphForVaultPPSGrowthProps): ReactElement {
-	if (messariData?.length === 0) {
+function GraphForVaultPPSGrowth({messariData, height = 312}: TGraphForVaultPPSGrowthProps): ReactElement {
+	if (isZero(messariData?.length)) {
 		return <Fragment />;
 	}
 
@@ -47,7 +48,7 @@ function	GraphForVaultPPSGrowth({messariData, height = 312}: TGraphForVaultPPSGr
 						delete e.verticalAnchor;
 						delete e.visibleTicksCount;
 						delete e.tickFormatter;
-						const	formatedValue = formatAmount(value, 3, 3);
+						const formatedValue = formatAmount(value, 3, 3);
 						return <text {...e}>{formatedValue}</text>;
 					}} />
 				<Tooltip

@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
-import Balancer from 'react-wrap-balancer';
+import {Balancer} from 'react-wrap-balancer';
 import {Button} from '@yearn-finance/web-lib/components/Button';
-import {LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, VLYCRV_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import SettingsOverwrite from '@common/components/SettingsOverwrite';
 import {useYCRV} from '@yCRV/contexts/useYCRV';
 import Wrapper from '@yCRV/Wrapper';
@@ -30,9 +30,9 @@ function ContractListRow({label, address}: TContractListRowProps): ReactElement 
 	);
 }
 
-function	About(): ReactElement {
-	const	{slippage, set_slippage} = useYCRV();
-	const	[localSlippage, set_localSlippage] = useState(slippage);
+function About(): ReactElement {
+	const {slippage, set_slippage} = useYCRV();
+	const [localSlippage, set_localSlippage] = useState(slippage);
 
 	return (
 		<section className={'mt-4 grid w-full grid-cols-1 gap-10 pb-10 md:mt-20 md:grid-cols-2'}>
@@ -159,7 +159,7 @@ function	About(): ReactElement {
 						{'Slippage tolerance'}
 					</label>
 					<div className={'flex flex-row space-x-2'}>
-						<div className={'flex h-10 w-40 min-w-[72px] items-center border-2 border-neutral-700 bg-neutral-0 py-4 px-0 md:min-w-[160px]'}>
+						<div className={'flex h-10 w-40 min-w-[72px] items-center border-2 border-neutral-700 bg-neutral-0 px-0 py-4 md:min-w-[160px]'}>
 							<input
 								id={'slippageTolerance'}
 								type={'number'}
@@ -229,8 +229,7 @@ function	About(): ReactElement {
 							{label: 'Zap', address: ZAP_YEARN_VE_CRV_ADDRESS},
 							{label: 'yCRV', address: YCRV_TOKEN_ADDRESS},
 							{label: 'st-yCRV', address: STYCRV_TOKEN_ADDRESS},
-							{label: 'lp-yCRV', address: LPYCRV_TOKEN_ADDRESS},
-							{label: 'vl-yCRV', address: VLYCRV_TOKEN_ADDRESS}
+							{label: 'lp-yCRV', address: LPYCRV_TOKEN_ADDRESS}
 						].map(ContractListRow)}
 					</Balancer>
 				</div>
