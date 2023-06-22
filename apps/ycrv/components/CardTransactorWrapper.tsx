@@ -1,4 +1,4 @@
-import React, {createContext, useCallback, useContext, useEffect, useMemo, useState} from 'react';
+import {createContext, useCallback, useContext, useEffect, useMemo, useState} from 'react';
 import {useAsync, useIntervalEffect} from '@react-hookz/web';
 import {readContract} from '@wagmi/core';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';

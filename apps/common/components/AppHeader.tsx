@@ -1,4 +1,4 @@
-import React, {cloneElement, Fragment, useMemo, useState} from 'react';
+import {cloneElement, Fragment, useMemo, useState} from 'react';
 import Link from 'next/link';
 import {useRouter} from 'next/router';
 import {AnimatePresence} from 'framer-motion';

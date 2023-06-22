@@ -1,4 +1,4 @@
-import React, {useCallback, useMemo, useState} from 'react';
+import {useCallback, useMemo, useState} from 'react';
 import {Balancer} from 'react-wrap-balancer';
 import Link from 'next/link';
 import {Button} from '@yearn-finance/web-lib/components/Button';

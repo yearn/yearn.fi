@@ -1,4 +1,3 @@
-import React from 'react';
 import {AnimatePresence, motion} from 'framer-motion';
 import {AppSettingsContextApp} from '@vaults/contexts/useAppSettings';
 import {StakingRewardsContextApp} from '@vaults/contexts/useStakingRewards';

@@ -1,4 +1,4 @@
-import React, {createContext, memo, useContext, useMemo, useState} from 'react';
+import {createContext, memo, useContext, useMemo, useState} from 'react';
 import {useDeepCompareEffect} from '@react-hookz/web';
 import {useUI} from '@yearn-finance/web-lib/contexts/useUI';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';

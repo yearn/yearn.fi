@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import {useState} from 'react';
 import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';

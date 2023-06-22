@@ -1,4 +1,4 @@
-import React, {Fragment, useEffect, useState} from 'react';
+import {Fragment, useEffect, useState} from 'react';
 import Link from 'next/link';
 import {useRouter} from 'next/router';
 import {Listbox, Transition} from '@headlessui/react';

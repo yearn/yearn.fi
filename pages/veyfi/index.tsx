@@ -1,4 +1,3 @@
-import React from 'react';
 import {ClaimTab} from '@veYFI/components/ClaimTab';
 import {LockTab} from '@veYFI/components/LockTab';
 import {ManageLockTab} from '@veYFI/components/ManageLockTab';

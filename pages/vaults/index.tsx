@@ -1,4 +1,4 @@
-import React, {Fragment, useCallback, useMemo} from 'react';
+import {Fragment, useCallback, useMemo} from 'react';
 import VaultListOptions from '@vaults/components/list/VaultListOptions';
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
 import {VaultsListInternalMigrationRow} from '@vaults/components/list/VaultsListInternalMigrationRow';

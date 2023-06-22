@@ -1,4 +1,3 @@
-import React from 'react';
 import {AnimatePresence, motion} from 'framer-motion';
 import {VotingEscrowContextApp} from '@veYFI/contexts/useVotingEscrow';
 import Meta from '@common/components/Meta';

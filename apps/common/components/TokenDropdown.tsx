@@ -1,4 +1,4 @@
-import React, {cloneElement, Fragment, useState} from 'react';
+import {cloneElement, Fragment, useState} from 'react';
 import {Combobox, Transition} from '@headlessui/react';
 import {useThrottledState} from '@react-hookz/web';
 import Renderable from '@yearn-finance/web-lib/components/Renderable';

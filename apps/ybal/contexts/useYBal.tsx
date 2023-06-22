@@ -1,4 +1,4 @@
-import React, {createContext, useContext, useMemo, useState} from 'react';
+import {createContext, useContext, useMemo, useState} from 'react';
 import {LPYBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {useFetch} from '@common/hooks/useFetch';
 import {yDaemonVaultHarvestsSchema, yDaemonVaultSchema} from '@common/schemas/yDaemonVaultsSchemas';
