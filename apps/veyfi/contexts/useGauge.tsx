@@ -1,5 +1,4 @@
 import React, {createContext, memo, useCallback, useContext, useMemo} from 'react';
-import {Contract} from 'ethcall'; // TODO: Remove this import
 import {FixedNumber} from 'ethers';
 import {useContractRead} from 'wagmi';
 import useSWR from 'swr';
@@ -7,15 +6,14 @@ import {keyBy} from '@veYFI/utils';
 import VEYFI_GAUGE_ABI from '@veYFI/utils/abi/veYFIGauge.abi';
 import VEYFI_REGISTRY_ABI from '@veYFI/utils/abi/veYFIRegistry.abi';
 import {VEYFI_REGISTRY_ADDRESS} from '@veYFI/utils/constants';
-import {getContract, multicall} from '@wagmi/core';
+import {erc20ABI, getContract, multicall} from '@wagmi/core';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
 import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
 
-import type {Call} from 'ethcall'; // TODO: Remove this import
 import type {ReactElement} from 'react';
 import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
+import type {TMulticallContract} from '@common/types/types';
 
 export type TGauge = {
 	address: TAddress,
@@ -75,36 +73,31 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 			return [];
 		}
 
-		const gaugeAddressCalls = [];
-		for (const vaultAddress of vaultAddresses as TAddress[]) {
-			gaugeAddressCalls.push({
-				...veYFIRegistryContract,
-				functionName: 'gauges',
-				args: [vaultAddress]
-			});
-		}
+		const gaugeAddressCalls = vaultAddresses?.map((vaultAddress): TMulticallContract => ({
+			...veYFIRegistryContract,
+			functionName: 'gauges',
+			args: [vaultAddress]
+		}));
 
-		// TODO: Types of property 'abi' are incompatible.
-		const gaugeAddressesResults = await multicall({contracts: gaugeAddressCalls, chainId: chainID});
+		const gaugeAddressesResults = await multicall({contracts: gaugeAddressCalls ?? [], chainId: chainID});
 		
 		const gaugeAddresses = gaugeAddressesResults.map(({result}): unknown => result) as TAddress[];
 		const gaugePromises = gaugeAddresses.map(async (address): Promise<TGauge> => {
 			// todo: update once abi is available
 			const veYFIGaugeContract = getContract({
 				address,
-				abi: VEYFI_GAUGE_ABI
+				abi: VEYFI_GAUGE_ABI,
+				chainId: chainID
 			});
 
-
 			// TODO: These should be migrated to wagmi
+			const calls: TMulticallContract[] = [];
+			['asset', 'name', 'symbol', 'decimals', 'totalAssets'].forEach((functionName): void => {
+				calls.push({...veYFIGaugeContract, functionName});
+			});
+
 			const results = await multicall({
-				contracts: [
-					veYFIGaugeContract.asset(),
-					veYFIGaugeContract.name(),
-					veYFIGaugeContract.symbol(),
-					veYFIGaugeContract.decimals(),
-					veYFIGaugeContract.totalAssets()
-				],
+				contracts: calls,
 				chainId: chainID
 			});
 
@@ -129,14 +122,20 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 		}
 
 		const positionPromises = gauges.map(async ({address}): Promise<TGaugePosition> => {
-			const veYFIGaugeContract = new Contract(address, VEYFI_GAUGE_ABI); // todo: update once abi is available
+			// todo: update once abi is available
+			const veYFIGaugeContract = getContract({
+				address,
+				abi: VEYFI_GAUGE_ABI,
+				chainId: chainID
+			});
+			
+			const calls: TMulticallContract[] = [];
+			['balanceOf', 'earned', 'nextBoostedBalanceOf'].forEach((functionName): void => {
+				calls.push({...veYFIGaugeContract, functionName, args: [userAddress]});
+			});
 
 			const results = await multicall({
-				contracts: [
-					veYFIGaugeContract.balanceOf(userAddress), 
-					veYFIGaugeContract.earned(userAddress),
-					veYFIGaugeContract.nextBoostedBalanceOf(userAddress)
-				],
+				contracts: calls,
 				chainId: chainID
 			});
 
@@ -173,9 +172,18 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 			return {};
 		}
 
-		const allowanceCalls = gauges.map(({address, vaultAddress}): Call => {
-			const erc20Contract = new Contract(vaultAddress, ERC20_ABI);
-			return erc20Contract.allowance(userAddress, address);
+		const allowanceCalls = gauges.map(({address, vaultAddress}): TMulticallContract => {
+			const erc20Contract = getContract({
+				address: vaultAddress,
+				abi: erc20ABI,
+				chainId: chainID
+			});
+			return {
+				...erc20Contract,
+				abi: erc20ABI,
+				functionName: 'allowance',
+				args: [userAddress, address]
+			};
 		});
 
 		const results = await multicall({

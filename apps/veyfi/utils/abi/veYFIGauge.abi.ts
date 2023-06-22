@@ -1408,6 +1408,6 @@ const VEYFI_GAUGE_ABI = [
 		'stateMutability': 'nonpayable',
 		'type': 'function'
 	}
-];
+] as const;
 
 export default VEYFI_GAUGE_ABI;

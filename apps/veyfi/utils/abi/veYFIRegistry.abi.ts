@@ -289,6 +289,6 @@ const VEYFI_REGISTRY_ABI = [
 		'stateMutability': 'view',
 		'type': 'function'
 	}
-];
+] as const;
 
 export default VEYFI_REGISTRY_ABI;
