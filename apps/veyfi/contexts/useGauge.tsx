@@ -8,7 +8,6 @@ import VEYFI_REGISTRY_ABI from '@veYFI/utils/abi/veYFIRegistry.abi';
 import {VEYFI_REGISTRY_ADDRESS} from '@veYFI/utils/constants';
 import {erc20ABI, getContract, multicall} from '@wagmi/core';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
 
 import type {ReactElement} from 'react';
@@ -57,7 +56,6 @@ const defaultProps: TGaugeContext = {
 const GaugeContext = createContext<TGaugeContext>(defaultProps);
 export const GaugeContextApp = memo(function GaugeContextApp({children}: {children: ReactElement}): ReactElement {
 	const {address: userAddress, isActive} = useWeb3();
-	const {chainID} = useChainID();
 	const veYFIRegistryContract = useMemo((): {address: TAddress, abi: typeof VEYFI_REGISTRY_ABI} => ({
 		address: VEYFI_REGISTRY_ADDRESS,
 		abi: VEYFI_REGISTRY_ABI
@@ -65,7 +63,7 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 	const {data: vaultAddresses} = useContractRead({
 		...veYFIRegistryContract,
 		functionName: 'getVaults',
-		chainId: chainID
+		chainId: 1
 	});
 
 	const gaugesFetcher = useCallback(async (): Promise<TGauge[]> => {
@@ -79,7 +77,7 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 			args: [vaultAddress]
 		}));
 
-		const gaugeAddressesResults = await multicall({contracts: gaugeAddressCalls ?? [], chainId: chainID});
+		const gaugeAddressesResults = await multicall({contracts: gaugeAddressCalls ?? [], chainId: 1});
 		
 		const gaugeAddresses = gaugeAddressesResults.map(({result}): unknown => result) as TAddress[];
 		const gaugePromises = gaugeAddresses.map(async (address): Promise<TGauge> => {
@@ -87,7 +85,7 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 			const veYFIGaugeContract = getContract({
 				address,
 				abi: VEYFI_GAUGE_ABI,
-				chainId: chainID
+				chainId: 1
 			});
 
 			// TODO: These should be migrated to wagmi
@@ -98,7 +96,7 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 
 			const results = await multicall({
 				contracts: calls,
-				chainId: chainID
+				chainId: 1
 			});
 
 			const [asset, name, symbol, decimals, totalAssets] = results.map(({result}): unknown => result) as [TAddress, string, string, number, bigint];
@@ -126,7 +124,7 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 			const veYFIGaugeContract = getContract({
 				address,
 				abi: VEYFI_GAUGE_ABI,
-				chainId: chainID
+				chainId: 1
 			});
 			
 			const calls: TMulticallContract[] = [];
@@ -136,7 +134,7 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 
 			const results = await multicall({
 				contracts: calls,
-				chainId: chainID
+				chainId: 1
 			});
 
 			const [balance, earned, boostedBalance] = results.map(({result}): unknown => result) as bigint[];
@@ -164,7 +162,7 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 			};
 		});
 		return Promise.all(positionPromises);
-	}, [chainID, gauges, isActive, userAddress]);
+	}, [gauges, isActive, userAddress]);
 	const {data: positions, mutate: refreshPositions, isLoading: isLoadingPositions} = useSWR(gauges && isActive ? 'gaugePositions' : null, positionsFetcher, {shouldRetryOnError: false});
 
 	const allowancesFetcher = useCallback(async (): Promise<TDict<bigint>> => {
@@ -176,7 +174,7 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 			const erc20Contract = getContract({
 				address: vaultAddress,
 				abi: erc20ABI,
-				chainId: chainID
+				chainId: 1
 			});
 			return {
 				...erc20Contract,
@@ -188,7 +186,7 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 
 		const results = await multicall({
 			contracts: allowanceCalls,
-			chainId: chainID
+			chainId: 1
 		});
 		const allowances = results.map(({result}): unknown => result) as bigint[];
 		
@@ -198,7 +196,7 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 		});
 
 		return allowancesMap;
-	}, [chainID, gauges, isActive, userAddress]);
+	}, [gauges, isActive, userAddress]);
 	const	{data: allowancesMap, mutate: refreshAllowances, isLoading: isLoadingAllowances} = useSWR(gauges && isActive ? 'gaugeAllowances' : null, allowancesFetcher, {shouldRetryOnError: false});
 
 	const refresh = useCallback((): void => {
