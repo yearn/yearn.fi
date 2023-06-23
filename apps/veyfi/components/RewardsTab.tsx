@@ -1,8 +1,8 @@
-import {useMemo, useState} from 'react';
+import {useCallback, useMemo, useState} from 'react';
 import {useGauge} from '@veYFI/contexts/useGauge';
 import {useOption} from '@veYFI/contexts/useOption';
-import {useTransaction} from '@veYFI/hooks/useTransaction';
 import * as GaugeActions from '@veYFI/utils/actions/gauge';
+import {VEYFI_CLAIM_REWARDS_ZAP_ADDRESS} from '@veYFI/utils/constants';
 import {validateNetwork} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -11,29 +11,49 @@ import {BIG_ZERO} from '@yearn-finance/web-lib/utils/constants';
 import {formatBigNumberAsAmount, toBigInt, toNormalizedAmount} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
+import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {AmountInput} from '@common/components/AmountInput';
 import {Dropdown} from '@common/components/Dropdown';
 import {useYearn} from '@common/contexts/useYearn';
 
-import type {ethers} from 'ethers';
 import type {ReactElement} from 'react';
-import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TDropdownOption} from '@common/components/Dropdown';
 
 function RewardsTab(): ReactElement {
 	const [selectedGauge, set_selectedGauge] = useState<TDropdownOption>();
-	const {provider, address, isActive, chainID} = useWeb3();
+	const {provider, isActive, chainID} = useWeb3();
 	const {gaugeAddresses, gaugesMap, positionsMap, refresh: refreshGauges} = useGauge();
 	const {price: optionPrice} = useOption();
 	const {vaults} = useYearn();
-	const refreshData = (): unknown => Promise.all([refreshGauges()]);
-	const [claim, claimStatus] = useTransaction(GaugeActions.claimRewards, refreshData);
-	const [claimAll, claimAllStatus] = useTransaction(GaugeActions.claimAllRewards, refreshData);
-	
-	const web3Provider = provider as ethers.providers.Web3Provider;
-	const userAddress = address as TAddress;
+	const refreshData = useCallback((): unknown => Promise.all([refreshGauges()]), [refreshGauges]);
+	const [claimStatus, set_claimStatus] = useState(defaultTxStatus);
+	const [claimAllStatus, set_claimAllStatus] = useState(defaultTxStatus);
 	const selectedGaugeAddress = toAddress(selectedGauge?.id);
 	const selectedGaugeRewards = toBigInt(formatBigNumberAsAmount(positionsMap[selectedGaugeAddress]?.reward.balance));
+
+	const onClaim = useCallback(async (): Promise<void> => {
+		const result = await GaugeActions.claimRewards({
+			connector: provider,
+			contractAddress: selectedGaugeAddress,
+			statusHandler: set_claimStatus
+		});
+		if (result.isSuccessful) {
+			refreshData();
+		}
+	}, [provider, refreshData, selectedGaugeAddress]);
+
+	const onClaimAll = useCallback(async (): Promise<void> => {
+		const result = await GaugeActions.claimAllRewards({
+			connector: provider,
+			contractAddress: VEYFI_CLAIM_REWARDS_ZAP_ADDRESS,
+			gaugeAddresses,
+			willLockRewards: false,
+			statusHandler: set_claimAllStatus
+		});
+		if (result.isSuccessful) {
+			refreshData();
+		}
+	}, [gaugeAddresses, provider, refreshData]);
 
 	const gaugeOptions = gaugeAddresses.filter((address): boolean => toBigInt(positionsMap[address]?.reward.balance) > 0n ?? false)
 		.map((address): TDropdownOption => {
@@ -74,9 +94,9 @@ function RewardsTab(): ReactElement {
 					/>
 					<Button 
 						className={'w-full md:mt-7'}
-						onClick={(): unknown => claimAll(web3Provider, userAddress, gaugeAddresses, true)}
-						disabled={!isActive || !isValidNetwork || gaugesRewards.eq(0)}
-						isBusy={claimAllStatus.loading}
+						onClick={onClaimAll}
+						disabled={!isActive || !isValidNetwork || isZero(gaugesRewards)}
+						isBusy={claimAllStatus.pending}
 					>
 						{'Claim All'}
 					</Button>
@@ -105,9 +125,9 @@ function RewardsTab(): ReactElement {
 					/>
 					<Button 
 						className={'w-full md:mt-7'}
-						onClick={(): unknown => claim(web3Provider, userAddress, selectedGaugeAddress)}
+						onClick={onClaim}
 						disabled={!isActive || !isValidNetwork || isZero(selectedGaugeRewards)}
-						isBusy={claimStatus.loading}
+						isBusy={claimStatus.pending}
 					>
 						{'Claim'}
 					</Button>

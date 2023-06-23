@@ -1,12 +1,13 @@
 import {ethers} from 'ethers';
 import {handleTx} from '@yearn-finance/web-lib/utils/web3/transaction';
+import {assertAddress, handleTx as handleTxWagmi} from '@common/utils/toWagmiProvider';
 
 import VEYFI_CLAIM_REWARDS_ZAP_ABI from '../abi/veYFIClaimRewardsZap.abi';
 import VEYFI_GAUGE_ABI from '../abi/veYFIGauge.abi';
-import {VEYFI_CLAIM_REWARDS_ZAP_ADDRESS} from '../constants';
 
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
+import type {TWriteTransaction} from '@common/utils/toWagmiProvider';
 
 export async function approveStake(
 	provider: ethers.providers.Web3Provider,
@@ -60,28 +61,29 @@ export async function unstake(
 	return handleTx(gaugeContract.withdraw(amount, accountAddress, accountAddress, willClaim));
 }
 
-export async function claimRewards(
-	provider: ethers.providers.Web3Provider,
-	accountAddress: TAddress,
-	gaugeAddress: TAddress
-): Promise<TTxResponse> {
-	const signer = provider.getSigner(accountAddress);
-	const gaugeContract = new ethers.Contract(gaugeAddress, VEYFI_GAUGE_ABI, signer);
-	return handleTx(gaugeContract.getReward());
+type TClaimRewards = TWriteTransaction;
+export async function claimRewards(props: TClaimRewards): Promise<TTxResponse> {
+	assertAddress(props.contractAddress);
+
+	return await handleTxWagmi(props, {
+		address: props.contractAddress,
+		abi: VEYFI_GAUGE_ABI,
+		functionName: 'getReward'
+	});
 }
 
-export async function claimAllRewards(
-	provider: ethers.providers.Web3Provider,
-	accountAddress: TAddress,
-	gaugeAddresses: TAddress[],
-	claimVotingEscrow: boolean
-): Promise<TTxResponse> {
-	const willLockRewards = false;
-	const signer = provider.getSigner(accountAddress);
-	const gaugeContract = new ethers.Contract(VEYFI_CLAIM_REWARDS_ZAP_ADDRESS, VEYFI_CLAIM_REWARDS_ZAP_ABI, signer);
-	return handleTx(gaugeContract.claim(
-		gaugeAddresses,
-		willLockRewards,
-		claimVotingEscrow ?? false
-	));
+type TClaimAllRewards = TWriteTransaction & {
+	gaugeAddresses: TAddress[];
+	willLockRewards: boolean;
+	claimVotingEscrow?: boolean;
+};
+export async function claimAllRewards(props: TClaimAllRewards): Promise<TTxResponse> {
+	assertAddress(props.contractAddress);
+
+	return await handleTxWagmi(props, {
+		address: props.contractAddress,
+		abi: VEYFI_CLAIM_REWARDS_ZAP_ABI,
+		functionName: 'claim',
+		args: [props.gaugeAddresses, props.willLockRewards, props.claimVotingEscrow]
+	});
 }
