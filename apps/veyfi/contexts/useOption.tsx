@@ -1,15 +1,14 @@
 import React, {createContext, memo, useCallback, useContext, useMemo} from 'react';
-import {Contract, ethers} from 'ethers';
+import {ethers} from 'ethers';
 import useSWR from 'swr';
 import {VEYFI_OPTIONS_ADDRESS, VEYFI_OYFI_ADDRESS} from '@veYFI/constants';
 import VEYFI_OPTIONS_ABI from '@veYFI/utils/abi/veYFIOptions.abi';
 import VEYFI_OYFI_ABI from '@veYFI/utils/abi/veYFIoYFI.abi';
+import {erc20ABI, readContract} from '@wagmi/core';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
 import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
 import {BIG_ZERO, ETH_TOKEN_ADDRESS, YFI_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {getProvider} from '@yearn-finance/web-lib/utils/web3/providers';
+import {toBigInt, toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
 
 import type {ReactElement} from 'react';
@@ -44,11 +43,14 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 	const ethPrice = useTokenPrice(ETH_TOKEN_ADDRESS);
 
 	const getRequiredEth = useCallback(async (amount: bigint): Promise<bigint> => {
-		const currentProvider = getProvider(1);
-		const optionsContract = new Contract(VEYFI_OPTIONS_ADDRESS, VEYFI_OPTIONS_ABI, currentProvider); // TODO: update once abi is available
-		const requiredEth = await optionsContract.eth_required(amount);
-
-		return requiredEth;
+		// TODO: update once abi is available
+		return readContract({
+			address: VEYFI_OPTIONS_ADDRESS,
+			abi: VEYFI_OPTIONS_ABI,
+			functionName: 'eth_required',
+			args: [amount],
+			chainId: 1
+		});
 	}, []);
 
 	const priceFetcher = useCallback(async (): Promise<number | undefined> => {
@@ -56,7 +58,7 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 			return undefined;
 		}
 		const oneOption = ethers.utils.parseEther('1');
-		const requiredEthPerOption = await getRequiredEth(oneOption);
+		const requiredEthPerOption = await getRequiredEth(toBigInt(oneOption.toString()));
 		const requiredEthValuePerOption = toNormalizedValue(requiredEthPerOption, 18) * ethPrice;
 		const pricePerOption = yfiPrice - requiredEthValuePerOption;
 		return pricePerOption;
@@ -68,11 +70,16 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 			return undefined;
 		}
         
-		const currentProvider = getProvider(1);
-		const oYFIContract = new Contract(VEYFI_OYFI_ADDRESS, VEYFI_OYFI_ABI, currentProvider); // TODO: update once abi is available
-		const balance = await oYFIContract.balanceOf(userAddress);
-			
-		return {balance};
+		// TODO: update once abi is available
+		return {
+			balance: await readContract({
+				address: VEYFI_OYFI_ADDRESS,
+				abi: VEYFI_OYFI_ABI,
+				functionName: 'balanceOf',
+				args: [userAddress],
+				chainId: 1
+			})
+		};
 	}, [isActive, userAddress]);
 	const {data: positions, mutate: refreshPositions, isLoading: isLoadingPositions} = useSWR(isActive && provider ? 'optionPositions' : null, positionsFetcher, {shouldRetryOnError: false});
 
@@ -80,9 +87,14 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 		if (!isActive || !userAddress) {
 			return {};
 		}
-		const	currentProvider = getProvider(1);
-		const	oYFIContract = new Contract(VEYFI_OYFI_ADDRESS, ERC20_ABI, currentProvider);
-		const	oYFIAllowanceOptions = await oYFIContract.allowance(userAddress, VEYFI_OPTIONS_ADDRESS);
+
+		const oYFIAllowanceOptions = await readContract({
+			address: VEYFI_OYFI_ADDRESS,
+			abi: erc20ABI,
+			functionName: 'allowance',
+			args: [userAddress, VEYFI_OPTIONS_ADDRESS],
+			chainId: 1
+		});
 
 		return ({
 			[allowanceKey(1, VEYFI_OYFI_ADDRESS, VEYFI_OPTIONS_ADDRESS, userAddress)]: oYFIAllowanceOptions
