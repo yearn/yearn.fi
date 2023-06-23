@@ -29,7 +29,7 @@ export async function approveAndStake(
 	allowance: bigint
 ): Promise<TTxResponse> {
 	const signer = provider.getSigner(accountAddress);
-	if(!allowance.gte(amount)) {
+	if(!(allowance >= amount)) {
 		const contract = new ethers.Contract(vaultAddress, ['function approve(address _spender, uint256 _value) external'], signer);
 		await contract.approve(gaugeAddress, amount);
 	}

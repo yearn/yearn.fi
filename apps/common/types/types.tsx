@@ -2,6 +2,7 @@ import type {ReactElement} from 'react';
 import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 import type {TBalanceData} from '@yearn-finance/web-lib/types/hooks';
 import type {TSolver} from '@common/schemas/yDaemonTokenListBalances';
+import type {multicall} from '@wagmi/core';
 
 export type	TClaimable = {
 	raw: bigint,
@@ -88,3 +89,5 @@ export type TMessariGraphData = {
 }
 
 export type TSortDirection = 'asc' | 'desc' | '';
+
+export type TMulticallContract = Parameters<typeof multicall>[0]['contracts'][0];

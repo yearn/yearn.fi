@@ -1,19 +1,18 @@
 import React, {createContext, memo, useCallback, useContext, useMemo} from 'react';
-import {Contract} from 'ethcall';
 import {FixedNumber} from 'ethers';
+import {useContractRead} from 'wagmi';
 import useSWR from 'swr';
 import {keyBy} from '@veYFI/utils';
 import VEYFI_GAUGE_ABI from '@veYFI/utils/abi/veYFIGauge.abi';
 import VEYFI_REGISTRY_ABI from '@veYFI/utils/abi/veYFIRegistry.abi';
 import {VEYFI_REGISTRY_ADDRESS} from '@veYFI/utils/constants';
+import {erc20ABI, getContract, multicall} from '@wagmi/core';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
 import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
-import {getProvider, newEthCallProvider} from '@yearn-finance/web-lib/utils/web3/providers';
 
-import type {Call} from 'ethcall';
 import type {ReactElement} from 'react';
 import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
+import type {TMulticallContract} from '@common/types/types';
 
 export type TGauge = {
 	address: TAddress,
@@ -56,30 +55,51 @@ const defaultProps: TGaugeContext = {
 
 const GaugeContext = createContext<TGaugeContext>(defaultProps);
 export const GaugeContextApp = memo(function GaugeContextApp({children}: {children: ReactElement}): ReactElement {
-	const {provider, address: userAddress, isActive} = useWeb3();
+	const {address: userAddress, isActive} = useWeb3();
+	const veYFIRegistryContract = useMemo((): {address: TAddress, abi: typeof VEYFI_REGISTRY_ABI} => ({
+		address: VEYFI_REGISTRY_ADDRESS,
+		abi: VEYFI_REGISTRY_ABI
+	}), []);
+	const {data: vaultAddresses} = useContractRead({
+		...veYFIRegistryContract,
+		functionName: 'getVaults',
+		chainId: 1
+	});
 
 	const gaugesFetcher = useCallback(async (): Promise<TGauge[]> => {
-		const currentProvider = getProvider(1);
-		const ethcallProvider = await newEthCallProvider(currentProvider);
-		const veYFIRegistryContract = new Contract(VEYFI_REGISTRY_ADDRESS, VEYFI_REGISTRY_ABI); // todo: update once abi is available
-		const [vaultAddresses] = await ethcallProvider.tryAll([veYFIRegistryContract.getVaults()]) as [TAddress[]];
-		const gaugeAddressCalls = vaultAddresses.map((address): Call => veYFIRegistryContract.gauges(address));
-		const gaugeAddresses = await ethcallProvider.tryAll(gaugeAddressCalls) as TAddress[];
+		if (!isActive || !userAddress) {
+			return [];
+		}
+
+		const gaugeAddressCalls = vaultAddresses?.map((vaultAddress): TMulticallContract => ({
+			...veYFIRegistryContract,
+			functionName: 'gauges',
+			args: [vaultAddress]
+		}));
+
+		const gaugeAddressesResults = await multicall({contracts: gaugeAddressCalls ?? [], chainId: 1});
+		
+		const gaugeAddresses = gaugeAddressesResults.map(({result}): unknown => result) as TAddress[];
 		const gaugePromises = gaugeAddresses.map(async (address): Promise<TGauge> => {
-			const veYFIGaugeContract = new Contract(address, VEYFI_GAUGE_ABI); // todo: update once abi is available
-			const [
-				asset,
-				name,
-				symbol,
-				decimals,
-				totalAssets
-			] = await ethcallProvider.tryAll([
-				veYFIGaugeContract.asset(),
-				veYFIGaugeContract.name(),
-				veYFIGaugeContract.symbol(),
-				veYFIGaugeContract.decimals(),
-				veYFIGaugeContract.totalAssets()
-			]) as [TAddress, string, string, number, bigint];
+			// todo: update once abi is available
+			const veYFIGaugeContract = getContract({
+				address,
+				abi: VEYFI_GAUGE_ABI,
+				chainId: 1
+			});
+
+			// TODO: These should be migrated to wagmi
+			const calls: TMulticallContract[] = [];
+			['asset', 'name', 'symbol', 'decimals', 'totalAssets'].forEach((functionName): void => {
+				calls.push({...veYFIGaugeContract, functionName});
+			});
+
+			const results = await multicall({
+				contracts: calls,
+				chainId: 1
+			});
+
+			const [asset, name, symbol, decimals, totalAssets] = results.map(({result}): unknown => result) as [TAddress, string, string, number, bigint];
 			
 			return ({
 				address,
@@ -98,16 +118,26 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 		if (!gauges|| !isActive|| !userAddress) {
 			return [];
 		}
-		const currentProvider = getProvider(1);
-		const ethcallProvider = await newEthCallProvider(currentProvider);
 
 		const positionPromises = gauges.map(async ({address}): Promise<TGaugePosition> => {
-			const veYFIGaugeContract = new Contract(address, VEYFI_GAUGE_ABI); // todo: update once abi is available
-			const [balance, earned, boostedBalance] = await ethcallProvider.tryAll([
-				veYFIGaugeContract.balanceOf(userAddress), 
-				veYFIGaugeContract.earned(userAddress),
-				veYFIGaugeContract.nextBoostedBalanceOf(userAddress)
-			]) as bigint[];
+			// todo: update once abi is available
+			const veYFIGaugeContract = getContract({
+				address,
+				abi: VEYFI_GAUGE_ABI,
+				chainId: 1
+			});
+			
+			const calls: TMulticallContract[] = [];
+			['balanceOf', 'earned', 'nextBoostedBalanceOf'].forEach((functionName): void => {
+				calls.push({...veYFIGaugeContract, functionName, args: [userAddress]});
+			});
+
+			const results = await multicall({
+				contracts: calls,
+				chainId: 1
+			});
+
+			const [balance, earned, boostedBalance] = results.map(({result}): unknown => result) as bigint[];
 			
 			const depositPosition: TPosition = {
 				balance,
@@ -133,20 +163,33 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 		});
 		return Promise.all(positionPromises);
 	}, [gauges, isActive, userAddress]);
-	const {data: positions, mutate: refreshPositions, isLoading: isLoadingPositions} = useSWR(gauges && isActive && provider ? 'gaugePositions' : null, positionsFetcher, {shouldRetryOnError: false});
+	const {data: positions, mutate: refreshPositions, isLoading: isLoadingPositions} = useSWR(gauges && isActive ? 'gaugePositions' : null, positionsFetcher, {shouldRetryOnError: false});
 
 	const allowancesFetcher = useCallback(async (): Promise<TDict<bigint>> => {
 		if (!gauges || !isActive || !userAddress) {
 			return {};
 		}
-		const currentProvider = getProvider(1);
-		const ethcallProvider = await newEthCallProvider(currentProvider);
 
-		const allowanceCalls = gauges.map(({address, vaultAddress}): Call => {
-			const erc20Contract = new Contract(vaultAddress, ERC20_ABI);
-			return erc20Contract.allowance(userAddress, address);
+		const allowanceCalls = gauges.map(({address, vaultAddress}): TMulticallContract => {
+			const erc20Contract = getContract({
+				address: vaultAddress,
+				abi: erc20ABI,
+				chainId: 1
+			});
+			return {
+				...erc20Contract,
+				abi: erc20ABI,
+				functionName: 'allowance',
+				args: [userAddress, address]
+			};
 		});
-		const allowances = await ethcallProvider.tryAll(allowanceCalls) as bigint[];
+
+		const results = await multicall({
+			contracts: allowanceCalls,
+			chainId: 1
+		});
+		const allowances = results.map(({result}): unknown => result) as bigint[];
+		
 		const allowancesMap: TDict<bigint> = {};
 		gauges.forEach(({address, vaultAddress}, index): void => {
 			allowancesMap[allowanceKey(1, vaultAddress, address, userAddress)] = allowances[index];
@@ -154,7 +197,7 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 
 		return allowancesMap;
 	}, [gauges, isActive, userAddress]);
-	const	{data: allowancesMap, mutate: refreshAllowances, isLoading: isLoadingAllowances} = useSWR(gauges && isActive && provider ? 'gaugeAllowances' : null, allowancesFetcher, {shouldRetryOnError: false});
+	const	{data: allowancesMap, mutate: refreshAllowances, isLoading: isLoadingAllowances} = useSWR(gauges && isActive ? 'gaugeAllowances' : null, allowancesFetcher, {shouldRetryOnError: false});
 
 	const refresh = useCallback((): void => {
 		refreshVotingEscrow();
