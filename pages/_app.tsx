@@ -2,7 +2,7 @@ import React, {Fragment, memo} from 'react';
 import localFont from 'next/font/local';
 import useSWR from 'swr';
 import {AnimatePresence, domAnimation, LazyMotion, motion} from 'framer-motion';
-import {useLocalStorageValue, useUpdateEffect} from '@react-hookz/web';
+import {useIsMounted, useLocalStorageValue, useUpdateEffect} from '@react-hookz/web';
 import {WithYearn} from '@yearn-finance/web-lib/contexts/WithYearn';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
@@ -75,6 +75,7 @@ const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 function NetworkStatusIndicator(): ReactElement {
 	type TStatus = 'Not Started' | 'Loading' | 'OK'
 	const {safeChainID} = useChainID();
+	const isMounted = useIsMounted();
 	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: safeChainID});
 	const {data: status, mutate} = useSWR<TStatus>(
 		`${yDaemonBaseUri}/status`,
@@ -86,9 +87,16 @@ function NetworkStatusIndicator(): ReactElement {
 		mutate();
 	}, [safeChainID]);
 
+	if (!isMounted) {
+		return <Fragment />;
+	}
 	if (status === 'OK') {
 		return <Fragment />;
 	}
+	if (!status) {
+		return <Fragment />;
+	}
+
 	return (
 		<div className={'fixed inset-x-0 bottom-0 flex items-center justify-center space-x-2 bg-yearn-blue py-2 text-center text-sm text-white'}>
 			<IconSpinner className={'h-3 w-3'} />
