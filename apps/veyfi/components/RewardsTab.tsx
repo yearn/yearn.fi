@@ -126,7 +126,7 @@ function RewardsTab(): ReactElement {
 					<Button 
 						className={'w-full md:mt-7'}
 						onClick={onClaim}
-						disabled={!isActive || !isValidNetwork || isZero(selectedGaugeRewards)}
+						isDisabled={!isActive || !isValidNetwork || isZero(selectedGaugeRewards) || !claimStatus.none}
 						isBusy={claimStatus.pending}
 					>
 						{'Claim'}
