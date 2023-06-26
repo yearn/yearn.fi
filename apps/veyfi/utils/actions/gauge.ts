@@ -1,6 +1,6 @@
 import {ethers} from 'ethers';
 import {handleTx} from '@yearn-finance/web-lib/utils/web3/transaction';
-import {assertAddress, handleTx as handleTxWagmi} from '@common/utils/toWagmiProvider';
+import {assertAddress, assertAddresses, handleTx as handleTxWagmi} from '@common/utils/toWagmiProvider';
 
 import VEYFI_CLAIM_REWARDS_ZAP_ABI from '../abi/veYFIClaimRewardsZap.abi';
 import VEYFI_GAUGE_ABI from '../abi/veYFIGauge.abi';
@@ -79,6 +79,7 @@ type TClaimAllRewards = TWriteTransaction & {
 };
 export async function claimAllRewards(props: TClaimAllRewards): Promise<TTxResponse> {
 	assertAddress(props.contractAddress);
+	assertAddresses(props.gaugeAddresses);
 
 	return await handleTxWagmi(props, {
 		address: props.contractAddress,
