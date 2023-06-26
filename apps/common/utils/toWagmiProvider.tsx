@@ -48,6 +48,9 @@ export function assertAddress(addr: string | TAddress | undefined, name?: string
 	assert(!isEth(addr), `${name || 'Address'} is 0xE`);
 }
 
+export function assertAddresses(addresses: string[] | TAddress[] | undefined[], name?: string): asserts addresses is TAddress[] {
+	addresses.forEach((addr): void => assertAddress(addr, name));
+}
 
 type TPrepareWriteContractConfig<
 	TAbi extends Abi | readonly unknown[] = Abi,
