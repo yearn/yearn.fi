@@ -375,6 +375,6 @@ const VEYFI_OYFI_ABI = [
 		'stateMutability': 'nonpayable',
 		'type': 'function'
 	}
-];
+] as const;
 
 export default VEYFI_OYFI_ABI;

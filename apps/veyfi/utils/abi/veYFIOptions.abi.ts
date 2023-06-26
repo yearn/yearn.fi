@@ -257,6 +257,6 @@ const VEYFI_OPTIONS_ABI = [
 		'stateMutability': 'view',
 		'type': 'function'
 	}
-];
+] as const;
 
 export default VEYFI_OPTIONS_ABI;
