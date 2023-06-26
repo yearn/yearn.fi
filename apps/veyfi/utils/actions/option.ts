@@ -1,3 +1,4 @@
+import {assert} from 'vitest';
 import VEYFI_OPTIONS_ABI from '@veYFI/utils/abi/veYFIOptions.abi';
 import {assertAddress, handleTx as handleTxWagmi} from '@common/utils/toWagmiProvider';
 
@@ -12,6 +13,8 @@ type TRedeem = TWriteTransaction & {
 };
 export async function redeem(props: TRedeem): Promise<TTxResponse> {
 	assertAddress(props.contractAddress);
+	assertAddress(props.accountAddress);
+	assert(props.amount > 0n, 'amount is zero');
 
 	return await handleTxWagmi(props, {
 		address: props.contractAddress,
