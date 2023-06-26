@@ -130,7 +130,7 @@ function RedeemTab(): ReactElement {
 						onClick={async (): Promise<void> => isApproved ? handleRedeem() : handleApproveRedeem()
 						}
 						isBusy={isLoadingOption || approveRedeemStatus.pending || redeemStatus.pending || status === 'loading'}
-						disabled={!isActive || !isValidNetwork || !isValidRedeemAmount || status === 'loading' || status === 'error'}
+						isDisabled={!isActive || !isValidNetwork || !isValidRedeemAmount || status === 'loading' || status === 'error' || !redeemStatus.none || !approveRedeemStatus.none}
 					>
 						{isApproved ? 'Redeem' : 'Approve'}
 					</Button>
