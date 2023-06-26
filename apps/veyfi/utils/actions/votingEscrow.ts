@@ -1,6 +1,6 @@
 import {ethers} from 'ethers';
 import {handleTx} from '@yearn-finance/web-lib/utils/web3/transaction';
-import {assertAddress, handleTx as handleTxWagmi} from '@common/utils/toWagmiProvider';
+import {assertAddresses, handleTx as handleTxWagmi} from '@common/utils/toWagmiProvider';
 
 import SNAPSHOT_DELEGATE_REGISTRY_ABI from '../abi/SnapshotDelegateRegistry.abi';
 import VEYFI_ABI from '../abi/veYFI.abi';
@@ -83,7 +83,7 @@ export async function withdrawLocked(
 
 type TDelegateVote = TWriteTransaction & {delegateAddress: TAddress};
 export async function delegateVote(props: TDelegateVote): Promise<TTxResponse> {
-	assertAddress(props.contractAddress);
+	assertAddresses([props.delegateAddress, props.contractAddress]);
 
 	return await handleTxWagmi(props, {
 		address: props.contractAddress,
