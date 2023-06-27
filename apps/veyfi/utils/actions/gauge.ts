@@ -70,6 +70,7 @@ type TUnstake = TWriteTransaction & {
 };
 export async function unstake(props: TUnstake): Promise<TTxResponse> {
 	assertAddress(props.contractAddress);
+	assertAddress(props.accountAddress);
 	assert(props.amount > 0n, 'Amount is 0');
 
 	const willClaim = false;
