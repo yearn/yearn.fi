@@ -101,7 +101,7 @@ function NetworkStatusIndicator(): ReactElement {
 		<div className={'fixed inset-x-0 bottom-0 flex items-center justify-center space-x-2 bg-yearn-blue py-2 text-center text-sm text-white'}>
 			<IconSpinner className={'h-3 w-3'} />
 			<b>
-				{'We are restarting our server. Data may be inaccurate for a few minutes.'}
+				{'Updating data points, data may be innacurate for a few minutes. Don\'t panic. DON\'T PANIC!!!'}
 			</b>
 		</div>
 	);
