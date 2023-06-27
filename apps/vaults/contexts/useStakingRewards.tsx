@@ -1,4 +1,4 @@
-import React, {createContext, memo, useCallback, useContext, useMemo} from 'react';
+import {createContext, memo, useCallback, useContext, useMemo} from 'react';
 import {useRouter} from 'next/router';
 import useSWR from 'swr';
 import {STACKING_TO_VAULT, VAULT_TO_STACKING} from '@vaults/constants/optRewards';

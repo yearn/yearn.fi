@@ -1,4 +1,4 @@
-import React, {useCallback, useState} from 'react';
+import {useCallback, useState} from 'react';
 import {useContractRead} from 'wagmi';
 import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {claim as claimAction, stake as stakeAction, unstake as unstakeAction} from '@vaults/utils/actions';

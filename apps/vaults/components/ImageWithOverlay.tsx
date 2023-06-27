@@ -1,4 +1,3 @@
-import React from 'react';
 import Image from 'next/image';
 import IconCross from '@yearn-finance/web-lib/icons/IconCross';
 

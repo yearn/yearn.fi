@@ -1,4 +1,3 @@
-import React from 'react';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useBribes} from '@yBribe/contexts/useBribes';
 

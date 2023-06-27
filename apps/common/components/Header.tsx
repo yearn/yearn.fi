@@ -1,4 +1,4 @@
-import React, {cloneElement, Fragment, useEffect, useMemo, useState} from 'react';
+import {cloneElement, Fragment, useEffect, useMemo, useState} from 'react';
 import {Listbox, Transition} from '@headlessui/react';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChain} from '@yearn-finance/web-lib/hooks/useChain';

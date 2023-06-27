@@ -1,4 +1,3 @@
-import React from 'react';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 
 import type {TAddress} from '@yearn-finance/web-lib/types';

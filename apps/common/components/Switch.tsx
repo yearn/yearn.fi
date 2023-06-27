@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import {useState} from 'react';
 import {Switch as HeadlessSwitch} from '@headlessui/react';
 
 import type {ReactElement} from 'react';

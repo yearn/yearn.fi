@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import {useCallback, useEffect, useMemo, useState} from 'react';
 import {Balancer} from 'react-wrap-balancer';
 import {useAsync} from '@react-hookz/web';
 import VaultListFactory from '@vaults/components/list/VaultListFactory';
