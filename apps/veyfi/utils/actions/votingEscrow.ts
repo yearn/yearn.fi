@@ -1,13 +1,15 @@
 import {ethers} from 'ethers';
 import {handleTx} from '@yearn-finance/web-lib/utils/web3/transaction';
+import {assertAddresses, handleTx as handleTxWagmi} from '@common/utils/toWagmiProvider';
 
 import SNAPSHOT_DELEGATE_REGISTRY_ABI from '../abi/SnapshotDelegateRegistry.abi';
 import VEYFI_ABI from '../abi/veYFI.abi';
-import {SNAPSHOT_DELEGATE_REGISTRY_ADDRESS, YEARN_SNAPSHOT_SPACE} from '../constants';
+import {YEARN_SNAPSHOT_SPACE} from '../constants';
 
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TSeconds} from '@yearn-finance/web-lib/utils/time';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
+import type {TWriteTransaction} from '@common/utils/toWagmiProvider';
 
 export async function approveLock(
 	provider: ethers.providers.JsonRpcProvider,
@@ -79,12 +81,14 @@ export async function withdrawLocked(
 	return await handleTx(votingEscrowContract.withdraw());
 }
 
-export async function delegateVote(
-	provider: ethers.providers.Web3Provider,
-	accountAddress: TAddress,
-	delegateAddress: TAddress
-): Promise<TTxResponse> {
-	const signer = provider.getSigner(accountAddress);
-	const delegateRegistryContract = new ethers.Contract(SNAPSHOT_DELEGATE_REGISTRY_ADDRESS, SNAPSHOT_DELEGATE_REGISTRY_ABI, signer);
-	return await handleTx(delegateRegistryContract.setDelegate(ethers.utils.formatBytes32String(YEARN_SNAPSHOT_SPACE), delegateAddress));
+type TDelegateVote = TWriteTransaction & {delegateAddress: TAddress};
+export async function delegateVote(props: TDelegateVote): Promise<TTxResponse> {
+	assertAddresses([props.delegateAddress, props.contractAddress]);
+
+	return await handleTxWagmi(props, {
+		address: props.contractAddress,
+		abi: SNAPSHOT_DELEGATE_REGISTRY_ABI,
+		functionName: 'setDelegate',
+		args: [ethers.utils.formatBytes32String(YEARN_SNAPSHOT_SPACE), props.delegateAddress]
+	});
 }
