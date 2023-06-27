@@ -1,9 +1,8 @@
-import {useState} from 'react';
+import {useCallback, useState} from 'react';
 import {useAsync} from '@react-hookz/web';
 import {VEYFI_OPTIONS_ADDRESS, VEYFI_OYFI_ADDRESS} from '@veYFI/constants';
 import {useOption} from '@veYFI/contexts/useOption';
-import {useTransaction} from '@veYFI/hooks/useTransaction';
-import * as OptionActions from '@veYFI/utils/actions/option';
+import {redeem} from '@veYFI/utils/actions/option';
 import {validateAllowance, validateAmount, validateNetwork} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -13,11 +12,12 @@ import {BIG_ZERO, ETH_TOKEN_ADDRESS, YFI_ADDRESS} from '@yearn-finance/web-lib/u
 import {formatBigNumberAsAmount, toNormalizedBN, toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
+import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {AmountInput} from '@common/components/AmountInput';
 import {useWallet} from '@common/contexts/useWallet';
 import {useBalance} from '@common/hooks/useBalance';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
-import {approveERC20} from '@common/utils/actions/approveToken';
+import {approveERC20} from '@common/utils/actions';
 
 import type {ReactElement} from 'react';
 import type {TAddress} from '@yearn-finance/web-lib/types';
@@ -29,17 +29,48 @@ function RedeemTab(): ReactElement {
 	const {refresh: refreshBalances} = useWallet();
 	const {getRequiredEth, price: optionPrice, positions, allowances, isLoading: isLoadingOption, refresh} = useOption();
 	const clearLockAmount = (): void => set_redeemAmount(toNormalizedBN(0));
-	const refreshData = (): unknown => Promise.all([refresh(), refreshBalances()]);
-	const onTxSuccess = (): unknown => Promise.all([refreshData(), clearLockAmount()]);
+	const refreshData = useCallback((): unknown => Promise.all([refresh(), refreshBalances()]), [refresh, refreshBalances]);
+	const onTxSuccess = useCallback((): unknown => Promise.all([refreshData(), clearLockAmount()]), [refreshData]);
 	const [{status, result}, fetchRequiredEth] = useAsync(getRequiredEth, BIG_ZERO);
 	const ethBalance = useBalance(ETH_TOKEN_ADDRESS);
 	const yfiPrice = useTokenPrice(YFI_ADDRESS);
-	const [approveRedeem, approveRedeemStatus] = useTransaction(approveERC20, refreshData);
-	const [redeem, redeemStatus] = useTransaction(OptionActions.redeem, onTxSuccess);
+	const [approveRedeemStatus, set_approveRedeemStatus] = useState(defaultTxStatus);
+	const [redeemStatus, set_redeemStatus] = useState(defaultTxStatus);
 
 	const userAddress = address as TAddress;
 	const oYFIBalance = toNormalizedBN(formatBigNumberAsAmount(positions?.balance), 18);
 	const ethRequired = toNormalizedValue(result, 18);
+
+	const handleApproveRedeem = useCallback(async (): Promise<void> => {
+		const response = await approveERC20({
+			connector: provider,
+			contractAddress: VEYFI_OYFI_ADDRESS,
+			spenderAddress: VEYFI_OPTIONS_ADDRESS,
+			statusHandler: set_approveRedeemStatus,
+			amount: redeemAmount.raw
+		});
+
+		if (response.isSuccessful) {
+			await refreshData();
+		}
+	}, [provider, redeemAmount.raw, refreshData]);
+
+	const handleRedeem = useCallback(async (): Promise<void> => {
+		const response = await redeem({
+			connector: provider,
+			contractAddress: VEYFI_OPTIONS_ADDRESS,
+			statusHandler: set_redeemStatus,
+			accountAddress: toAddress(address),
+			amount: redeemAmount.raw,
+			ethRequired: result
+			
+		});
+
+		if (response.isSuccessful) {
+			await onTxSuccess();
+		}
+	}, [address, onTxSuccess, provider, redeemAmount.raw, result]);
+
 
 	const {isValid: isApproved} = validateAllowance({
 		tokenAddress: VEYFI_OYFI_ADDRESS,
@@ -96,13 +127,10 @@ function RedeemTab(): ReactElement {
 					/>
 					<Button 
 						className={'w-full md:mt-7'}
-						onClick={(): unknown =>
-							isApproved  
-								? redeem(provider, toAddress(address), redeemAmount.raw, result)
-								: approveRedeem(provider, VEYFI_OYFI_ADDRESS, VEYFI_OPTIONS_ADDRESS)
+						onClick={async (): Promise<void> => isApproved ? handleRedeem() : handleApproveRedeem()
 						}
-						isBusy={isLoadingOption || approveRedeemStatus.loading || redeemStatus.loading || status === 'loading'}
-						disabled={!isActive || !isValidNetwork || !isValidRedeemAmount || status === 'loading' || status === 'error'}
+						isBusy={isLoadingOption || approveRedeemStatus.pending || redeemStatus.pending || status === 'loading'}
+						isDisabled={!isActive || !isValidNetwork || !isValidRedeemAmount || status === 'loading' || status === 'error' || !redeemStatus.none || !approveRedeemStatus.none}
 					>
 						{isApproved ? 'Redeem' : 'Approve'}
 					</Button>

@@ -1,19 +1,25 @@
-import {ethers} from 'ethers';
-import {VEYFI_OPTIONS_ADDRESS} from '@veYFI/constants';
-import {handleTx} from '@yearn-finance/web-lib/utils/web3/transaction';
-
-import VEYFI_OPTIONS_ABI from '../abi/veYFIOptions.abi';
+import {assert} from 'vitest';
+import VEYFI_OPTIONS_ABI from '@veYFI/utils/abi/veYFIOptions.abi';
+import {assertAddress, handleTx as handleTxWagmi} from '@common/utils/toWagmiProvider';
 
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
+import type {TWriteTransaction} from '@common/utils/toWagmiProvider';
 
-export async function redeem(
-	provider: ethers.providers.JsonRpcProvider,
-	accountAddress: TAddress,
-	amount: bigint,
-	ethRequired: bigint
-): Promise<TTxResponse> {
-	const signer = provider.getSigner(accountAddress);
-	const optionsContract = new ethers.Contract(VEYFI_OPTIONS_ADDRESS, VEYFI_OPTIONS_ABI, signer); // TODO: update once deployed
-	return handleTx(optionsContract.exercise(amount, accountAddress, {value: ethRequired}));
+type TRedeem = TWriteTransaction & {
+	accountAddress: TAddress;
+	amount: bigint;
+	ethRequired: bigint;
+};
+export async function redeem(props: TRedeem): Promise<TTxResponse> {
+	assertAddress(props.contractAddress);
+	assertAddress(props.accountAddress);
+	assert(props.amount > 0n, 'amount is zero');
+
+	return await handleTxWagmi(props, {
+		address: props.contractAddress,
+		abi: VEYFI_OPTIONS_ABI,
+		functionName: 'exercise',
+		args: [props.amount, props.accountAddress, {value: props.ethRequired}]
+	});
 }
