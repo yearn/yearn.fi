@@ -44,11 +44,7 @@ function GaugesTab(): ReactElement {
 	const [approveAndStakeStatus, set_approveAndStakeStatus] = useState(defaultTxStatus);
 	const [stakeStatus, set_stakeStatus] = useState(defaultTxStatus);
 	const [unstakeStatus, set_unstakeStatus] = useState(defaultTxStatus);
-	// const [approveAndStake, approveAndStakeStatus] = useTransaction(GaugeActions.approveAndStake, refreshData);
-	// const [stake, stakeStatus] = useTransaction(GaugeActions.stake, refreshData);
-	// const [unstake, unstakeStatus] = useTransaction(GaugeActions.unstake, refreshData);
 
-	// const web3Provider = provider as ethers.providers.Web3Provider;
 	const userAddress = address as TAddress;
 
 	const gaugesData = gaugeAddresses.map((address): TGaugeData => {
