@@ -1,6 +1,5 @@
 import {useState} from 'react';
 import {useGauge} from '@veYFI/contexts/useGauge';
-import {useTransaction} from '@veYFI/hooks/useTransaction';
 import * as GaugeActions from '@veYFI/utils/actions/gauge';
 import {validateNetwork} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
@@ -9,12 +8,12 @@ import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatBigNumberAsAmount, toBigInt, toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
+import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {Table} from '@common/components/Table';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 
-import type {ethers} from 'ethers';
 import type {ReactElement} from 'react';
 import type {TAddress} from '@yearn-finance/web-lib/types';
 
@@ -42,11 +41,14 @@ function GaugesTab(): ReactElement {
 	const {vaults} = useYearn();
 	const {balances, refresh: refreshBalances} = useWallet();
 	const refreshData = (): unknown => Promise.all([refreshGauges(), refreshBalances()]);
-	const [approveAndStake, approveAndStakeStatus] = useTransaction(GaugeActions.approveAndStake, refreshData);
-	const [stake, stakeStatus] = useTransaction(GaugeActions.stake, refreshData);
-	const [unstake, unstakeStatus] = useTransaction(GaugeActions.unstake, refreshData);
+	const [approveAndStakeStatus, set_approveAndStakeStatus] = useState(defaultTxStatus);
+	const [stakeStatus, set_stakeStatus] = useState(defaultTxStatus);
+	const [unstakeStatus, set_unstakeStatus] = useState(defaultTxStatus);
+	// const [approveAndStake, approveAndStakeStatus] = useTransaction(GaugeActions.approveAndStake, refreshData);
+	// const [stake, stakeStatus] = useTransaction(GaugeActions.stake, refreshData);
+	// const [unstake, unstakeStatus] = useTransaction(GaugeActions.unstake, refreshData);
 
-	const web3Provider = provider as ethers.providers.Web3Provider;
+	// const web3Provider = provider as ethers.providers.Web3Provider;
 	const userAddress = address as TAddress;
 
 	const gaugesData = gaugeAddresses.map((address): TGaugeData => {
@@ -73,22 +75,54 @@ function GaugesTab(): ReactElement {
 
 	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: 1, walletNetwork: chainID});
 
-	const onApproveAndStake = (vaultAddress: TAddress, gaugeAddress: TAddress, amount: bigint, allowance: bigint): void => {
+	const onApproveAndStake = async (vaultAddress: TAddress, gaugeAddress: TAddress, amount: bigint, allowance: bigint): Promise<void> => {
 		set_selectedGauge(gaugeAddress);
 		set_selectedAction('stake');
-		approveAndStake(web3Provider, userAddress, vaultAddress, gaugeAddress, amount, allowance);
+		const response = await GaugeActions.approveAndStake({
+			connector: provider,
+			contractAddress: gaugeAddress,
+			vaultAddress,
+			amount,
+			allowance,
+			statusHandler: set_approveAndStakeStatus
+		});
+
+		if (response.isSuccessful) {
+			await refreshData();
+		}
 	};
 
-	const onStake = (gaugeAddress: TAddress, amount: bigint): void => {
+	const onStake = async (gaugeAddress: TAddress, amount: bigint): Promise<void> => {
 		set_selectedGauge(gaugeAddress);
 		set_selectedAction('stake');
-		stake(web3Provider, userAddress, gaugeAddress, amount);
+
+		const response = await GaugeActions.stake({
+			connector: provider,
+			contractAddress: gaugeAddress,
+			amount,
+			statusHandler: set_stakeStatus
+		});
+
+		if (response.isSuccessful) {
+			await refreshData();
+		}
 	};
 
-	const onUnstake = (gaugeAddress: TAddress, amount: bigint): void => {
+	const onUnstake = async (gaugeAddress: TAddress, amount: bigint): Promise<void> => {
 		set_selectedGauge(gaugeAddress);
 		set_selectedAction('unstake');
-		unstake(web3Provider, userAddress, gaugeAddress, amount);
+
+		const response = await GaugeActions.unstake({
+			connector: provider,
+			contractAddress: gaugeAddress,
+			accountAddress: userAddress,
+			amount,
+			statusHandler: set_unstakeStatus
+		});
+
+		if (response.isSuccessful) {
+			await refreshData();
+		}
 	};
 
 	return (
@@ -157,18 +191,18 @@ function GaugesTab(): ReactElement {
 							<div className={'flex flex-row justify-center space-x-2 md:justify-end'}>
 								<Button 
 									className={'w-full md:w-24'}
-									onClick={(): void => onUnstake(gaugeAddress, gaugeStaked)}
+									onClick={async (): Promise<void> => onUnstake(gaugeAddress, gaugeStaked)}
 									disabled={!isActive || !isValidNetwork || isZero(gaugeStaked)}
-									isBusy={gaugeAddress === selectedGauge && selectedAction === 'unstake' && unstakeStatus.loading}
+									isBusy={gaugeAddress === selectedGauge && selectedAction === 'unstake' && unstakeStatus.none}
 								>
 									{'Unstake'}
 								</Button>
 								{!isApproved && (
 									<Button
 										className={'w-full md:w-24'}
-										onClick={(): void => onApproveAndStake(vaultAddress, gaugeAddress, vaultDeposited, allowance)}
+										onClick={async (): Promise<void> => onApproveAndStake(vaultAddress, gaugeAddress, vaultDeposited, allowance)}
 										disabled={!isActive || !isValidNetwork || isZero(vaultDeposited)}
-										isBusy={(isLoadingGauges && vaultDeposited > 0n) || (gaugeAddress === selectedGauge && selectedAction === 'stake' && approveAndStakeStatus.loading)}
+										isBusy={(isLoadingGauges && vaultDeposited > 0n) || (gaugeAddress === selectedGauge && selectedAction === 'stake' && approveAndStakeStatus.none)}
 									>
 										{'Stake'}
 									</Button>
@@ -176,9 +210,9 @@ function GaugesTab(): ReactElement {
 								{isApproved && (
 									<Button
 										className={'w-full md:w-24'}
-										onClick={(): void => onStake(gaugeAddress, vaultDeposited)}
+										onClick={async (): Promise<void> => onStake(gaugeAddress, vaultDeposited)}
 										disabled={!isActive || !isValidNetwork || isZero(vaultDeposited)}
-										isBusy={(isLoadingGauges && vaultDeposited > 0n) || (gaugeAddress === selectedGauge && selectedAction === 'stake' && stakeStatus.loading)}
+										isBusy={(isLoadingGauges && vaultDeposited > 0n) || (gaugeAddress === selectedGauge && selectedAction === 'stake' && stakeStatus.none)}
 									>
 										{'Stake'}
 									</Button>

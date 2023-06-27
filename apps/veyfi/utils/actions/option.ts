@@ -20,6 +20,7 @@ export async function redeem(props: TRedeem): Promise<TTxResponse> {
 		address: props.contractAddress,
 		abi: VEYFI_OPTIONS_ABI,
 		functionName: 'exercise',
-		args: [props.amount, props.accountAddress, {value: props.ethRequired}]
+		value: props.ethRequired,
+		args: [props.amount, props.accountAddress]
 	});
 }

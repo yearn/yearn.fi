@@ -1,5 +1,6 @@
 import {ethers} from 'ethers';
 import {handleTx} from '@yearn-finance/web-lib/utils/web3/transaction';
+import {assert} from '@common/utils/assert';
 import {assertAddress, assertAddresses, handleTx as handleTxWagmi} from '@common/utils/toWagmiProvider';
 
 import VEYFI_CLAIM_REWARDS_ZAP_ABI from '../abi/veYFIClaimRewardsZap.abi';
@@ -21,44 +22,64 @@ export async function approveStake(
 	return await handleTx(contract.approve(gaugeAddress, amount));
 }
 
-export async function approveAndStake(
-	provider: ethers.providers.Web3Provider,
-	accountAddress: TAddress,
-	vaultAddress: TAddress,
-	gaugeAddress: TAddress,
-	amount: bigint,
-	allowance: bigint
-): Promise<TTxResponse> {
-	const signer = provider.getSigner(accountAddress);
-	if(!(allowance >= amount)) {
-		const contract = new ethers.Contract(vaultAddress, ['function approve(address _spender, uint256 _value) external'], signer);
-		await contract.approve(gaugeAddress, amount);
+type TApproveAndStake = TWriteTransaction & {
+	vaultAddress: TAddress;
+	allowance: bigint;
+	amount: bigint;
+};
+export async function approveAndStake(props: TApproveAndStake): Promise<TTxResponse> {
+	assertAddress(props.contractAddress);
+	assertAddress(props.vaultAddress);
+	assert(props.amount > 0n, 'Amount is 0');
+
+	if(!(props.allowance >= props.amount)) {
+		await handleTxWagmi(props, {
+			address: props.vaultAddress,
+			abi: ['function approve(address _spender, uint256 _value) external'],
+			functionName: 'approve',
+			args: [props.contractAddress, props.amount]
+		});
 	}
-	const gaugeContract = new ethers.Contract(gaugeAddress, VEYFI_GAUGE_ABI, signer);
-	return handleTx(gaugeContract.deposit(amount));
+
+	return await handleTxWagmi(props, {
+		address: props.contractAddress,
+		abi: VEYFI_GAUGE_ABI,
+		functionName: 'deposit',
+		args: [props.amount]
+	});
 }
 
-export async function stake(
-	provider: ethers.providers.Web3Provider,
-	accountAddress: TAddress,
-	gaugeAddress: TAddress,
-	amount: bigint
-): Promise<TTxResponse> {
-	const signer = provider.getSigner(accountAddress);
-	const gaugeContract = new ethers.Contract(gaugeAddress, VEYFI_GAUGE_ABI, signer);
-	return handleTx(gaugeContract.deposit(amount));
+type TStake = TWriteTransaction & {
+	amount: bigint;
+};
+export async function stake(props: TStake): Promise<TTxResponse> {
+	assertAddress(props.contractAddress);
+	assert(props.amount > 0n, 'Amount is 0');
+
+	return await handleTxWagmi(props, {
+		address: props.contractAddress,
+		abi: VEYFI_GAUGE_ABI,
+		functionName: 'deposit',
+		args: [props.amount]
+	});
 }
 
-export async function unstake(
-	provider: ethers.providers.Web3Provider,
-	accountAddress: TAddress,
-	gaugeAddress: TAddress,
-	amount: bigint
-): Promise<TTxResponse> {
+type TUnstake = TWriteTransaction & {
+	accountAddress: TAddress;
+	amount: bigint;
+};
+export async function unstake(props: TUnstake): Promise<TTxResponse> {
+	assertAddress(props.contractAddress);
+	assert(props.amount > 0n, 'Amount is 0');
+
 	const willClaim = false;
-	const signer = provider.getSigner(accountAddress);
-	const gaugeContract = new ethers.Contract(gaugeAddress, VEYFI_GAUGE_ABI, signer);
-	return handleTx(gaugeContract.withdraw(amount, accountAddress, accountAddress, willClaim));
+
+	return await handleTxWagmi(props, {
+		address: props.contractAddress,
+		abi: VEYFI_GAUGE_ABI,
+		functionName: 'withdraw',
+		args: [props.amount, props.accountAddress, props.accountAddress, willClaim]
+	});
 }
 
 type TClaimRewards = TWriteTransaction;
