@@ -173,7 +173,7 @@ function Index(): ReactElement {
 		let _vaultList: TYDaemonVault[] = [];
 
 		if (categoriesFromJSON.includes('Featured Vaults')) {
-			_vaultList.sort((a, b): number => (b.tvl.tvl || 0) * (b?.apy?.net_apy || 0) - (a.tvl.tvl || 0) * (a?.apy?.net_apy || 0));
+			_vaultList.sort((a, b): number => (b.tvl.tvl || 0) * (b?.newApy?.net_apy || 0) - (a.tvl.tvl || 0) * (a?.newApy?.net_apy || 0));
 			_vaultList = _vaultList.slice(0, 10);
 		}
 		if (categoriesFromJSON.includes('Curve Vaults')) {

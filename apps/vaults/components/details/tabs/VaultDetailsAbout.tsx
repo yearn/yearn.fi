@@ -67,7 +67,7 @@ function YearnFeesLineItem({children, label, tooltip}: TYearnFeesLineItem): Reac
 
 export function VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYDaemonVault; harvestData: TGraphData[]}): ReactElement {
 	const isMounted = useIsMounted();
-	const {token, apy, details} = currentVault;
+	const {token, newApy, details} = currentVault;
 
 	function getVaultDescription(): string {
 		if (token.description) {
@@ -94,37 +94,31 @@ export function VaultDetailsAbout({currentVault, harvestData}: {currentVault: TY
 						<div className={'space-y-2'}>
 							<APYLineItem
 								label={'Weekly APY'}
-								apyType={currentVault.apy?.type}
-								value={apy.points.week_ago}
-							/>
+								apyType={newApy.type}
+								value={newApy.points.week_ago} />
 							<APYLineItem
 								label={'Monthly APY'}
-								apyType={currentVault.apy?.type}
-								value={apy.points.month_ago}
-							/>
+								apyType={newApy.type}
+								value={newApy.points.month_ago} />
 							<APYLineItem
 								label={'Inception APY'}
-								apyType={currentVault.apy?.type}
-								value={apy.points.inception}
-							/>
+								apyType={newApy.type}
+								value={newApy.points.inception} />
 						</div>
 						<div className={'mt-2 space-y-2 md:mt-0'}>
 							<APYLineItem
 								label={'Gross APR'}
-								apyType={currentVault.apy?.type}
-								value={apy.gross_apr}
-							/>
+								apyType={newApy.type}
+								value={newApy.gross_apr} />
 							<APYLineItem
 								label={'Net APY'}
-								apyType={currentVault.apy?.type}
-								value={(apy.net_apy || 0) + (apy.staking_rewards_apr || 0)}
-							/>
-							{apy.staking_rewards_apr > 0 && (
+								apyType={newApy.type}
+								value={(newApy.net_apy || 0) + (newApy.staking_rewards_apr || 0)} />
+							{newApy.staking_rewards_apr > 0 && (
 								<APYLineItem
 									label={'Reward APR'}
-									apyType={currentVault.apy?.type}
-									value={apy.staking_rewards_apr}
-								/>
+									apyType={newApy.type}
+									value={newApy.staking_rewards_apr} />
 							)}
 						</div>
 					</div>
