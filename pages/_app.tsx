@@ -1,8 +1,8 @@
-import React, {Fragment, memo} from 'react';
+import React, {Fragment, memo, useEffect} from 'react';
 import localFont from 'next/font/local';
 import useSWR from 'swr';
 import {AnimatePresence, domAnimation, LazyMotion, motion} from 'framer-motion';
-import {useIsMounted, useLocalStorageValue, useUpdateEffect} from '@react-hookz/web';
+import {useIntervalEffect, useIsMounted, useLocalStorageValue} from '@react-hookz/web';
 import {WithYearn} from '@yearn-finance/web-lib/contexts/WithYearn';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
@@ -83,9 +83,16 @@ function NetworkStatusIndicator(): ReactElement {
 		{revalidateOnFocus: true, revalidateOnReconnect: true, revalidateOnMount: true}
 	);
 
-	useUpdateEffect((): void => {
+	useEffect((): void => {
+		safeChainID;
 		mutate();
-	}, [safeChainID]);
+	}, [mutate, safeChainID]);
+
+	useIntervalEffect((): void => {
+		if (status !== 'OK') {
+			mutate();
+		}
+	}, 10000);
 
 	if (!isMounted) {
 		return <Fragment />;
