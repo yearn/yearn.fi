@@ -26,8 +26,8 @@ export function getVaultAPY(vaults: TDict<TYDaemonVault | undefined>, vaultAddre
 		return `APY ${formatPercent(0)}`;
 	}
 
-	if (vaults?.[toAddress(vaultAddress)]?.apy?.net_apy) {
-		return `APY ${formatPercent((vaults?.[toAddress(vaultAddress)]?.apy?.net_apy || 0) * 100, 2, 2, 500)}`;
+	if (vaults?.[toAddress(vaultAddress)]?.newApy?.net_apy) {
+		return `APY ${formatPercent((vaults?.[toAddress(vaultAddress)]?.newApy?.net_apy || 0) * 100, 2, 2, 500)}`;
 	}
 	return `APY ${formatPercent(0)}`;
 }
@@ -41,8 +41,8 @@ export function getVaultRawAPY(vaults: TDict<TYDaemonVault | undefined>, vaultAd
 		return 0;
 	}
 
-	if (vaults?.[toAddress(vaultAddress)]?.apy?.net_apy) {
-		return (vaults?.[toAddress(vaultAddress)]?.apy?.net_apy || 0) * 100;
+	if (vaults?.[toAddress(vaultAddress)]?.newApy?.net_apy) {
+		return (vaults?.[toAddress(vaultAddress)]?.newApy?.net_apy || 0) * 100;
 	}
 
 	return 0;

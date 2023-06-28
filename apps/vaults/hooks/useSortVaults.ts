@@ -30,14 +30,7 @@ export function useSortVaults(vaultList: TYDaemonVaults, sortBy: TPossibleSortBy
 	);
 
 	const sortedByAPY = useCallback(
-		(): TYDaemonVaults =>
-			vaultList.sort((a, b): number =>
-				numberSort({
-					a: a.apy?.net_apy,
-					b: b.apy?.net_apy,
-					sortDirection
-				})
-			),
+		(): TYDaemonVaults => vaultList.sort((a, b): number => numberSort({a: a.newApy?.net_apy, b: b.newApy?.net_apy, sortDirection})),
 		[sortDirection, vaultList]
 	);
 

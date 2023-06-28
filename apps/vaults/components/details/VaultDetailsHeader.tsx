@@ -46,7 +46,7 @@ function VaultHeaderLineItem({label, children, legend}: TVaultHeaderLineItemProp
 export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {address: userAddress} = useWeb3();
 	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: currentVault.chainID});
-	const {address, apy, tvl, decimals, symbol = 'token', token} = currentVault;
+	const {address, newApy, tvl, decimals, symbol = 'token', token} = currentVault;
 	const {data: earned} = useFetch<TYDaemonEarnedSingle>({
 		endpoint: address && userAddress ? `${yDaemonBaseUri}/earned/${userAddress}/${currentVault.address}` : null,
 		schema: yDaemonSingleEarnedSchema
@@ -91,7 +91,7 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 
 				<VaultHeaderLineItem label={'Net APY'}>
 					<RenderAmount
-						value={(apy?.net_apy || 0) + (apy?.staking_rewards_apr || 0)}
+						value={(newApy?.net_apy || 0) + (newApy?.staking_rewards_apr || 0)}
 						symbol={'percent'}
 						decimals={6}
 					/>

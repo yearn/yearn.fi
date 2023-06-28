@@ -115,6 +115,32 @@ export const yDaemonVaultSchema = z.object({
 		tvl: z.number(),
 		price: z.number()
 	}),
+	newApy: z.object({
+		type: z.string(),
+		gross_apr: z.number(),
+		net_apy: z.number(),
+		staking_rewards_apr: z.number(),
+		fees: z.object({
+			performance: z.number(),
+			withdrawal: z.number(),
+			management: z.number(),
+			keep_crv: z.number(),
+			cvx_keep_crv: z.number()
+		}),
+		points: z.object({
+			week_ago: z.number(),
+			month_ago: z.number(),
+			inception: z.number()
+		}),
+		composite: z.object({
+			boost: z.number(),
+			pool_apy: z.number(),
+			boosted_apr: z.number(),
+			base_apr: z.number(),
+			cvx_apr: z.number(),
+			rewards_apr: z.number()
+		})
+	}),
 	apy: z.object({
 		type: z.string(),
 		gross_apr: z.number(),
