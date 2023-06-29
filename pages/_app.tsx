@@ -144,9 +144,6 @@ function MyApp(props: AppProps): ReactElement {
 			<WithYearn
 				configOverwrite={config}
 				options={{
-					web3: {
-						supportedChainID: [1, 10, 250, 42161, 1337]
-					},
 					baseSettings: {
 						yDaemonBaseURI: process.env.YDAEMON_BASE_URI as string
 					},

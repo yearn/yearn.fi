@@ -4,8 +4,6 @@ import {CoinbaseWalletConnector} from 'wagmi/connectors/coinbaseWallet';
 import {LedgerConnector} from 'wagmi/connectors/ledger';
 import {MetaMaskConnector} from 'wagmi/connectors/metaMask';
 import {SafeConnector} from 'wagmi/connectors/safe';
-import {WalletConnectConnector} from 'wagmi/connectors/walletConnect';
-import {WalletConnectLegacyConnector} from 'wagmi/connectors/walletConnectLegacy';
 import {alchemyProvider} from 'wagmi/providers/alchemy';
 import {publicProvider} from 'wagmi/providers/public';
 import {InjectedConnector} from '@yearn-finance/web-lib/utils/web3/injectedConnector';
@@ -119,16 +117,15 @@ const config = createConfig({
 		new InjectedConnector({chains}),
 		new MetaMaskConnector(),
 		new LedgerConnector({chains}),
-		new WalletConnectLegacyConnector({options: {qrcode: true}}),
+		// new WalletConnectConnector({
+		// 	chains,
+		// 	options: {projectId: process.env.WALLETCONNECT_PROJECT_ID as string}
+		// }),
 		new CoinbaseWalletConnector({
 			options: {
 				jsonRpcUrl: getRPC(1),
 				appName: process.env.WEBSITE_TITLE as string
 			}
-		}),
-		new WalletConnectConnector({
-			chains,
-			options: {projectId: process.env.WALLETCONNECT_PROJECT_ID as string}
 		})
 	]
 });
