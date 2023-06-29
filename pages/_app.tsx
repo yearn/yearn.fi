@@ -142,7 +142,7 @@ function MyApp(props: AppProps): ReactElement {
 	return (
 		<main id={'main'} className={aeonik.className}>
 			<WithYearn
-				configOverwrite={config}
+				config={config}
 				options={{
 					baseSettings: {
 						yDaemonBaseURI: process.env.YDAEMON_BASE_URI as string
