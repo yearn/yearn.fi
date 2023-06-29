@@ -3089,10 +3089,10 @@
     "@walletconnect/window-getters" "^1.0.1"
     tslib "1.14.1"
 
-"@yearn-finance/web-lib@^0.20.84":
-  version "0.20.84"
-  resolved "https://registry.yarnpkg.com/@yearn-finance/web-lib/-/web-lib-0.20.84.tgz#2c9cf3940849c7595eaabcad4dcde1a89144db0c"
-  integrity sha512-NVoLsDVBZomq8SPUN96F8me1FwytEyC3bdmZxgbs8xHRUgfS0GAc+si5QXkhOljm5ryfBUnB0t0wkhYQlH+C8A==
+"@yearn-finance/web-lib@^0.20.85":
+  version "0.20.85"
+  resolved "https://registry.yarnpkg.com/@yearn-finance/web-lib/-/web-lib-0.20.85.tgz#884a382e1d6592344164c25ff00f51a01d0fddb7"
+  integrity sha512-jIqfll8j3CQ4Ai/VlrI9sJmQ+TyCZvb3LS2KsCBj331RgkhlkXPEPWGPpEc9MamQjBiGReHAyXugPyWsv3dYSA==
   dependencies:
     "@headlessui/react" "^1.7.15"
     "@ledgerhq/iframe-provider" "^0.4.3"

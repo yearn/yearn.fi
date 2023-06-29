@@ -9,12 +9,12 @@ import ZAP_FTM_TO_YVFTM_ABI from '@yearn-finance/web-lib/utils/abi/zapFtmToYvFTM
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {assert} from '@common/utils/assert';
-import {assertAddress, handleTx, toWagmiProvider} from '@common/utils/toWagmiProvider';
+import {assertAddress, handleTx, toWagmiProvider} from '@common/utils/wagmiUtils';
 
 import type {Connector} from 'wagmi';
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
-import type {TWriteTransaction} from '@common/utils/toWagmiProvider';
+import type {TWriteTransaction} from '@common/utils/wagmiUtils';
 
 //Because USDT do not return a boolean on approve, we need to use this ABI
 const ALTERNATE_ERC20_APPROVE_ABI = [{'constant': false, 'inputs': [{'name': '_spender', 'type': 'address'}, {'name': '_value', 'type': 'uint256'}], 'name': 'approve', 'outputs': [], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function'}] as const;
