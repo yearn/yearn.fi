@@ -1,15 +1,15 @@
 import {cloneElement, Fragment, useEffect, useMemo, useState} from 'react';
-import {useNetwork, usePublicClient} from 'wagmi';
+import {usePublicClient} from 'wagmi';
 import {Listbox, Transition} from '@headlessui/react';
 import {useIsMounted} from '@react-hookz/web';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
+import {useChain} from '@yearn-finance/web-lib/hooks/useChain';
 import {toSafeChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import IconChevronBottom from '@yearn-finance/web-lib/icons/IconChevronBottom';
 import IconWallet from '@yearn-finance/web-lib/icons/IconWallet';
 import {truncateHex} from '@yearn-finance/web-lib/utils/address';
 
 import type {AnchorHTMLAttributes, DetailedHTMLProps, ReactElement} from 'react';
-import type {Chain} from 'wagmi';
 
 const Link = (props: (DetailedHTMLProps<AnchorHTMLAttributes<HTMLAnchorElement>, HTMLAnchorElement>) & {tag: ReactElement}): ReactElement => {
 	const {tag, ...rest} = props;
@@ -45,14 +45,13 @@ export type TNetwork = {value: number, label: string};
 function NetworkSelector({networks}: {networks: number[]}): ReactElement {
 	const {onSwitchChain} = useWeb3();
 	const publicClient = usePublicClient();
-	const {chains} = useNetwork();
+	const chains = useChain();
 	const safeChainID = toSafeChainID(publicClient?.chain.id, Number(process.env.BASE_CHAINID));
 
 	const supportedNetworks = useMemo((): TNetwork[] => {
-		const noTestnet = chains.filter(({id}): boolean => id !== 1337);
-		const onlyNetworks = noTestnet.filter(({id}): boolean => networks.includes(id));
-		return onlyNetworks.map((network: Chain): TNetwork => (
-			{value: network.id, label: network.name}
+		const noTestnet = networks.filter((chainID: number): boolean => chainID !== 1337);
+		return noTestnet.map((chainID: number): TNetwork => (
+			{value: chainID, label: chains.get(chainID)?.displayName || `Chain ${chainID}`}
 		));
 	}, [chains, networks]);
 
