@@ -17,7 +17,7 @@ import {useYearn} from '@common/contexts/useYearn';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 import {allowanceOf, approveERC20, isApprovedERC20} from '@common/utils/actions';
 import {assert} from '@common/utils/assert';
-import {assertAddress, toWagmiProvider} from '@common/utils/toWagmiProvider';
+import {assertAddress, toWagmiProvider} from '@common/utils/wagmiUtils';
 
 import type {BaseError} from 'viem';
 import type {ChainId, QuoteRequest, QuoteResult} from 'wido';
@@ -183,14 +183,14 @@ export function useSolverWido(): TSolverContext {
 		if (isEth(toAddress(request.current.inputToken.value))) {
 			return toNormalizedBN(MAX_UINT_256);
 		}
-		
+
 		const key = allowanceKey(
 			safeChainID,
 			toAddress(request.current.inputToken.value),
 			toAddress(request.current.outputToken.value),
 			toAddress(request.current.from)
 		);
-		
+
 		if (existingAllowances.current[key] && !shouldForceRefetch) {
 			return existingAllowances.current[key];
 		}
@@ -210,7 +210,7 @@ export function useSolverWido(): TSolverContext {
 			});
 
 			existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals);
-	
+
 			return existingAllowances.current[key];
 		} catch (error) {
 			console.error(error);
