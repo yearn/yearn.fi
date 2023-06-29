@@ -1,13 +1,15 @@
 import {cloneElement, Fragment, useEffect, useMemo, useState} from 'react';
+import {useNetwork, usePublicClient} from 'wagmi';
 import {Listbox, Transition} from '@headlessui/react';
+import {useIsMounted} from '@react-hookz/web';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {useChain} from '@yearn-finance/web-lib/hooks/useChain';
-import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
+import {toSafeChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import IconChevronBottom from '@yearn-finance/web-lib/icons/IconChevronBottom';
 import IconWallet from '@yearn-finance/web-lib/icons/IconWallet';
 import {truncateHex} from '@yearn-finance/web-lib/utils/address';
 
 import type {AnchorHTMLAttributes, DetailedHTMLProps, ReactElement} from 'react';
+import type {Chain} from 'wagmi';
 
 const Link = (props: (DetailedHTMLProps<AnchorHTMLAttributes<HTMLAnchorElement>, HTMLAnchorElement>) & {tag: ReactElement}): ReactElement => {
 	const {tag, ...rest} = props;
@@ -40,20 +42,23 @@ function Navbar({nav, linkComponent = <a />, currentPathName}: TNavbar): ReactEl
 }
 
 export type TNetwork = {value: number, label: string};
-function NetworkSelector({supportedChainID}: {supportedChainID: number[]}): ReactElement {
-	const chains = useChain();
-	const {chainID} = useChainID();
+function NetworkSelector({networks}: {networks: number[]}): ReactElement {
 	const {onSwitchChain} = useWeb3();
+	const publicClient = usePublicClient();
+	const {chains} = useNetwork();
+	const safeChainID = toSafeChainID(publicClient?.chain.id, Number(process.env.BASE_CHAINID));
+
 	const supportedNetworks = useMemo((): TNetwork[] => {
-		const noTestnet = supportedChainID.filter((chainID: number): boolean => chainID !== 1337);
-		return noTestnet.map((chainID: number): TNetwork => (
-			{value: chainID, label: chains.get(chainID)?.displayName || `Chain ${chainID}`}
+		const noTestnet = chains.filter(({id}): boolean => id !== 1337);
+		const onlyNetworks = noTestnet.filter(({id}): boolean => networks.includes(id));
+		return onlyNetworks.map((network: Chain): TNetwork => (
+			{value: network.id, label: network.name}
 		));
-	}, [chains, supportedChainID]);
+	}, [chains, networks]);
 
 	const	currentNetwork = useMemo((): TNetwork | undefined => (
-		supportedNetworks.find((network): boolean => network.value === chainID)
-	), [chainID, supportedNetworks]);
+		supportedNetworks.find((network): boolean => network.value === safeChainID)
+	), [safeChainID, supportedNetworks]);
 
 	if (supportedNetworks.length === 1) {
 		if (currentNetwork?.value === supportedNetworks[0]?.value) {
@@ -83,9 +88,9 @@ function NetworkSelector({supportedChainID}: {supportedChainID: number[]}): Reac
 	}
 
 	return (
-		<div key={chainID} className={'relative z-50 mr-4'}>
+		<div key={safeChainID} className={'relative z-50 mr-4'}>
 			<Listbox
-				value={chainID}
+				value={safeChainID}
 				onChange={async (value: any): Promise<void> => onSwitchChain(value.value)}>
 				{({open}): ReactElement => (
 					<>
@@ -131,10 +136,14 @@ function NetworkSelector({supportedChainID}: {supportedChainID: number[]}): Reac
 }
 
 function WalletSelector(): ReactElement {
-	const	{options, isActive, address, ens, lensProtocolHandle, openLoginModal, onDesactivate, onSwitchChain} = useWeb3();
-	const	[walletIdentity, set_walletIdentity] = useState<string | undefined>(undefined);
+	const {options, isActive, address, ens, lensProtocolHandle, openLoginModal, onDesactivate, onSwitchChain} = useWeb3();
+	const [walletIdentity, set_walletIdentity] = useState<string | undefined>(undefined);
+	const isMounted = useIsMounted();
 
 	useEffect((): void => {
+		if (!isMounted()) {
+			return;
+		}
 		if (!isActive && address) {
 			set_walletIdentity('Invalid Network');
 		} else if (ens) {
@@ -146,7 +155,7 @@ function WalletSelector(): ReactElement {
 		} else {
 			set_walletIdentity(undefined);
 		}
-	}, [ens, lensProtocolHandle, address, isActive]);
+	}, [ens, lensProtocolHandle, address, isActive, isMounted]);
 
 	return (
 		<div
@@ -192,12 +201,6 @@ function Header({
 	supportedNetworks,
 	onOpenMenuMobile
 }: THeader): ReactElement {
-	const {options} = useWeb3();
-
-	const supportedChainID = useMemo((): number[] => (
-		supportedNetworks || options?.supportedChainID || [1, 10, 250, 42161]
-	), [supportedNetworks, options?.supportedChainID]);
-
 	return (
 		<header className={'yearn--header'}>
 			<Navbar
@@ -227,7 +230,7 @@ function Header({
 				</div>
 			</div>
 			<div className={'flex w-1/3 items-center justify-end'}>
-				<NetworkSelector supportedChainID={supportedChainID} />
+				<NetworkSelector networks={supportedNetworks || [1]} />
 				<WalletSelector />
 				{extra}
 			</div>
