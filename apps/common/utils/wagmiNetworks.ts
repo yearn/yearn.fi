@@ -57,7 +57,6 @@ export const optimism = {
 		default: {
 			http: [
 				...wOptimism.rpcUrls.default.http,
-				(process.env.RPC_URL_OPTIMISM_YEARN_2 || 'https://1rpc.io/op') as string,
 				(process.env.RPC_URL_OPTIMISM_YEARN || 'https://1rpc.io/op') as string,
 				'https://opt-mainnet.g.alchemy.com/v2/demo',
 				'https://endpoints.omniatech.io/v1/op/mainnet/public',
@@ -73,7 +72,6 @@ export const optimism = {
 		public: {
 			http: [
 				...wOptimism.rpcUrls.default.http,
-				(process.env.RPC_URL_OPTIMISM_YEARN_2 || 'https://1rpc.io/op') as string,
 				(process.env.RPC_URL_OPTIMISM_YEARN || 'https://1rpc.io/op') as string,
 				'https://opt-mainnet.g.alchemy.com/v2/demo',
 				'https://endpoints.omniatech.io/v1/op/mainnet/public',
