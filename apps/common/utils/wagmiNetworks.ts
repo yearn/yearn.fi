@@ -56,7 +56,6 @@ export const optimism = {
 	rpcUrls: {
 		default: {
 			http: [
-				...wOptimism.rpcUrls.default.http,
 				(process.env.RPC_URL_OPTIMISM_YEARN || 'https://1rpc.io/op') as string,
 				'https://endpoints.omniatech.io/v1/op/mainnet/public',
 				'https://optimism-mainnet.public.blastapi.io',
@@ -64,13 +63,12 @@ export const optimism = {
 				'https://rpc.ankr.com/optimism',
 				'https://1rpc.io/op',
 				'https://optimism.api.onfinality.io/public',
-				'https://rpc.optimism.gateway.fm'
-
+				'https://rpc.optimism.gateway.fm',
+				...wOptimism.rpcUrls.default.http
 			]
 		},
 		public: {
 			http: [
-				...wOptimism.rpcUrls.default.http,
 				(process.env.RPC_URL_OPTIMISM_YEARN || 'https://1rpc.io/op') as string,
 				'https://endpoints.omniatech.io/v1/op/mainnet/public',
 				'https://optimism-mainnet.public.blastapi.io',
@@ -78,7 +76,8 @@ export const optimism = {
 				'https://rpc.ankr.com/optimism',
 				'https://1rpc.io/op',
 				'https://optimism.api.onfinality.io/public',
-				'https://rpc.optimism.gateway.fm'
+				'https://rpc.optimism.gateway.fm',
+				...wOptimism.rpcUrls.default.http
 			]
 		}
 	}
