@@ -142,11 +142,8 @@ function MyApp(props: AppProps): ReactElement {
 	return (
 		<main id={'main'} className={aeonik.className}>
 			<WithYearn
-				configOverwrite={config}
+				config={config}
 				options={{
-					web3: {
-						supportedChainID: [1, 10, 250, 42161, 1337]
-					},
 					baseSettings: {
 						yDaemonBaseURI: process.env.YDAEMON_BASE_URI as string
 					},
