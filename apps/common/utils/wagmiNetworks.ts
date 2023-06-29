@@ -58,7 +58,6 @@ export const optimism = {
 			http: [
 				...wOptimism.rpcUrls.default.http,
 				(process.env.RPC_URL_OPTIMISM_YEARN || 'https://1rpc.io/op') as string,
-				'https://opt-mainnet.g.alchemy.com/v2/demo',
 				'https://endpoints.omniatech.io/v1/op/mainnet/public',
 				'https://optimism-mainnet.public.blastapi.io',
 				'https://optimism.blockpi.network/v1/rpc/public',
@@ -73,7 +72,6 @@ export const optimism = {
 			http: [
 				...wOptimism.rpcUrls.default.http,
 				(process.env.RPC_URL_OPTIMISM_YEARN || 'https://1rpc.io/op') as string,
-				'https://opt-mainnet.g.alchemy.com/v2/demo',
 				'https://endpoints.omniatech.io/v1/op/mainnet/public',
 				'https://optimism-mainnet.public.blastapi.io',
 				'https://optimism.blockpi.network/v1/rpc/public',
