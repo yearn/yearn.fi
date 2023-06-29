@@ -35,6 +35,7 @@ const config = createConfig({
 			options: {projectId: process.env.WALLETCONNECT_PROJECT_ID as string}
 		}),
 		new CoinbaseWalletConnector({
+			chains,
 			options: {
 				jsonRpcUrl: getRPC(1),
 				appName: process.env.WEBSITE_TITLE as string

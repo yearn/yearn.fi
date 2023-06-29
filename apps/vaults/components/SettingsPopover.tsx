@@ -2,7 +2,6 @@ import {Fragment} from 'react';
 import {Popover, Transition} from '@headlessui/react';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import Renderable from '@yearn-finance/web-lib/components/Renderable';
-import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import IconSettings from '@yearn-finance/web-lib/icons/IconSettings';
 import {useYearn} from '@common/contexts/useYearn';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
@@ -11,7 +10,6 @@ import type {ReactElement} from 'react';
 import type {TSolver} from '@common/schemas/yDaemonTokenListBalances';
 
 export default function SettingsPopover(): ReactElement {
-	const {chainID} = useChainID();
 	const {zapProvider, set_zapProvider, zapSlippage, set_zapSlippage} = useYearn();
 
 	return (
