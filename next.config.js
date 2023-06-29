@@ -103,7 +103,6 @@ const config = {
 		// YDAEMON_BASE_URI: 'https://ydaemon.yearn.finance',
 		// YDAEMON_BASE_URI: 'https://ydaemon-dev.yearn.finance',
 		// YDAEMON_BASE_URI: 'https://api.ycorpo.com',
-		// YDAEMON_BASE_URI: 'http://localhost:8080',
 		BASE_YEARN_ASSETS_URI: 'https://assets.smold.app/api/token'
 	}
 };
