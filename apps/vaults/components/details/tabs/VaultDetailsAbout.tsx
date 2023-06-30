@@ -5,7 +5,6 @@ import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
-import {RenderAmount} from '@common/components/RenderAmount';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
@@ -15,6 +14,7 @@ type TAPYLineItemProps = {
 	label: string;
 	value: number | string;
 	apyType: string;
+	hasUpperLimit?: boolean;
 };
 
 type TYearnFeesLineItem = {
@@ -23,25 +23,15 @@ type TYearnFeesLineItem = {
 	tooltip?: string;
 };
 
-function APYLineItem({value, label, apyType}: TAPYLineItemProps): ReactElement {
+function APYLineItem({value, label, apyType, hasUpperLimit}: TAPYLineItemProps): ReactElement {
 	const safeValue = Number(value) || 0;
 	const isNew = apyType === 'new' && isZero(safeValue);
 
 	return (
 		<div className={'flex flex-row items-center justify-between'}>
 			<p className={'text-sm text-neutral-500'}>{label}</p>
-			<p
-				className={'font-number text-sm text-neutral-900'}
-				suppressHydrationWarning>
-				{isNew ? (
-					'New'
-				) : (
-					<RenderAmount
-						value={safeValue}
-						symbol={'percent'}
-						decimals={6}
-					/>
-				)}
+			<p className={'font-number text-sm text-neutral-900'} suppressHydrationWarning>
+				{isNew ? 'New' : hasUpperLimit ? formatPercent(safeValue * 100) : formatPercent(safeValue * 100, 2, 2, 500)}
 			</p>
 		</div>
 	);
@@ -111,11 +101,13 @@ export function VaultDetailsAbout({currentVault, harvestData}: {currentVault: TY
 								apyType={newApy.type}
 								value={newApy.gross_apr} />
 							<APYLineItem
+								hasUpperLimit
 								label={'Net APY'}
 								apyType={newApy.type}
 								value={(newApy.net_apy || 0) + (newApy.staking_rewards_apr || 0)} />
 							{newApy.staking_rewards_apr > 0 && (
 								<APYLineItem
+									hasUpperLimit
 									label={'Reward APR'}
 									apyType={newApy.type}
 									value={newApy.staking_rewards_apr} />
