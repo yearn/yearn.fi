@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import {useState} from 'react';
 import ReactPaginate from 'react-paginate';
 import {useFetch} from '@common/hooks/useFetch';
 import IconChevron from '@common/icons/IconChevron';

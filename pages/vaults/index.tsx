@@ -1,4 +1,4 @@
-import React, {Fragment, useCallback, useMemo} from 'react';
+import {Fragment, useCallback, useMemo} from 'react';
 import VaultListOptions from '@vaults/components/list/VaultListOptions';
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
 import {VaultsListInternalMigrationRow} from '@vaults/components/list/VaultsListInternalMigrationRow';
@@ -8,7 +8,9 @@ import {useAppSettings} from '@vaults/contexts/useAppSettings';
 import {useFilteredVaults} from '@vaults/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import Wrapper from '@vaults/Wrapper';
+import {Button} from '@yearn-finance/web-lib/components/Button';
 import Renderable from '@yearn-finance/web-lib/components/Renderable';
+import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {useSessionStorage} from '@yearn-finance/web-lib/hooks/useSessionStorage';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -33,6 +35,7 @@ import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 function HeaderUserPosition(): ReactElement {
 	const {cumulatedValueInVaults} = useWallet();
 	const {earned} = useYearn();
+	const {options, isActive, address, openLoginModal, onSwitchChain} = useWeb3();
 
 	const formatedYouEarned = useMemo((): string => {
 		const amount = (earned?.totalUnrealizedGainsUSD || 0) > 0 ? earned?.totalUnrealizedGainsUSD || 0 : 0;
@@ -43,6 +46,25 @@ function HeaderUserPosition(): ReactElement {
 		return formatAmount(cumulatedValueInVaults || 0) ?? '';
 	}, [cumulatedValueInVaults]);
 
+	if (!isActive) {
+		return (
+			<Fragment>
+				<div className={'col-span-12 h-auto w-full md:col-span-8 md:h-[136px]'}>
+					<p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl'}>{'Wallet not connected'}</p>
+					<Button
+						onClick={(): void => {
+							if (!isActive && address) {
+								onSwitchChain(options?.defaultChainID || 1);
+							} else {
+								openLoginModal();
+							}
+						}}>
+						{'Connect Wallet'}
+					</Button>
+				</div>
+			</Fragment>
+		);
+	}
 	return (
 		<Fragment>
 			<div className={'col-span-12 w-full md:col-span-8'}>

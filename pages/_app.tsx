@@ -1,8 +1,11 @@
-import React, {Fragment, memo} from 'react';
+import React, {Fragment, memo, useEffect} from 'react';
+import localFont from 'next/font/local';
+import useSWR from 'swr';
 import {AnimatePresence, domAnimation, LazyMotion, motion} from 'framer-motion';
-import localFont from '@next/font/local';
-import {useLocalStorageValue} from '@react-hookz/web';
+import {useIntervalEffect, useIsMounted, useLocalStorageValue} from '@react-hookz/web';
 import {WithYearn} from '@yearn-finance/web-lib/contexts/WithYearn';
+import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
+import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import {AppHeader} from '@common/components/AppHeader';
 import Meta from '@common/components/Meta';
 import {Popover} from '@common/components/Popover';
@@ -10,7 +13,9 @@ import {MenuContextApp} from '@common/contexts/useMenu';
 import {WalletContextApp} from '@common/contexts/useWallet';
 import {YearnContextApp} from '@common/contexts/useYearn';
 import {useCurrentApp} from '@common/hooks/useCurrentApp';
+import IconSpinner from '@common/icons/IconSpinner';
 import {variants} from '@common/utils/animations';
+import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 import config from '@common/utils/wagmiConfig';
 
 import type {NextComponentType} from 'next';
@@ -67,6 +72,49 @@ const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 	);
 });
 
+function NetworkStatusIndicator(): ReactElement {
+	type TStatus = 'Not Started' | 'Loading' | 'OK'
+	const {safeChainID} = useChainID();
+	const isMounted = useIsMounted();
+	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: safeChainID});
+	const {data: status, mutate} = useSWR<TStatus>(
+		`${yDaemonBaseUri}/status`,
+		baseFetcher,
+		{revalidateOnFocus: true, revalidateOnReconnect: true, revalidateOnMount: true}
+	);
+
+	useEffect((): void => {
+		safeChainID;
+		mutate();
+	}, [mutate, safeChainID]);
+
+	useIntervalEffect((): void => {
+		if (status !== 'OK') {
+			mutate();
+		}
+	}, 10000);
+
+	if (!isMounted) {
+		return <Fragment />;
+	}
+	if (status === 'OK') {
+		return <Fragment />;
+	}
+	if (!status) {
+		return <Fragment />;
+	}
+
+	return (
+		<div className={'fixed inset-x-0 bottom-0 flex items-center justify-center space-x-2 bg-yearn-blue py-2 text-center text-sm text-white'}>
+			<IconSpinner className={'h-3 w-3'} />
+			<b>
+				{'Updating data points, data may be inaccurate for a few minutes. Don\'t panic. DON\'T PANIC!!!'}
+			</b>
+		</div>
+	);
+}
+
+
 const App = memo(function App(props: AppProps): ReactElement {
 	const {Component, pageProps, router} = props;
 	const {manifest} = useCurrentApp(router);
@@ -81,6 +129,7 @@ const App = memo(function App(props: AppProps): ReactElement {
 							Component={Component}
 							pageProps={pageProps}
 							router={props.router} />
+						<NetworkStatusIndicator />
 					</Fragment>
 				</WalletContextApp>
 			</YearnContextApp>
@@ -88,15 +137,13 @@ const App = memo(function App(props: AppProps): ReactElement {
 	);
 });
 
+
 function MyApp(props: AppProps): ReactElement {
 	return (
 		<main id={'main'} className={aeonik.className}>
 			<WithYearn
-				configOverwrite={config}
+				config={config}
 				options={{
-					web3: {
-						supportedChainID: [1, 10, 250, 42161, 1337]
-					},
 					baseSettings: {
 						yDaemonBaseURI: process.env.YDAEMON_BASE_URI as string
 					},

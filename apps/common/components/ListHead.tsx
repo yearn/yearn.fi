@@ -1,4 +1,4 @@
-import React, {useCallback} from 'react';
+import {useCallback} from 'react';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
 import IconChevronPlain from '@common/icons/IconChevronPlain';
 

@@ -1,4 +1,3 @@
-
 import {useAppSettings} from '@vaults/contexts/useAppSettings';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';

@@ -1,4 +1,4 @@
-import React, {Fragment, useMemo} from 'react';
+import {Fragment, useMemo} from 'react';
 import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
 import {yDaemonReportsSchema} from '@vaults/schemas/reportsSchema';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';

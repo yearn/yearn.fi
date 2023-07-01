@@ -1,11 +1,11 @@
 import {ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {assert} from '@common/utils/assert';
-import {assertAddress, handleTx} from '@common/utils/toWagmiProvider';
+import {assertAddress, handleTx} from '@common/utils/wagmiUtils';
 import ZAP_CRV_ABI from '@yCRV/utils/abi/zapCRV.abi';
 
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
-import type {TWriteTransaction} from '@common/utils/toWagmiProvider';
+import type {TWriteTransaction} from '@common/utils/wagmiUtils';
 
 /* 🔵 - Yearn Finance **********************************************************
 ** zapCRV is a _WRITE_ function that can be used to zap some supported tokens

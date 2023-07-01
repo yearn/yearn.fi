@@ -1,4 +1,4 @@
-import React, {createContext, memo, useCallback, useContext, useMemo} from 'react';
+import {createContext, memo, useCallback, useContext, useMemo} from 'react';
 import {useContractRead, useContractReads} from 'wagmi';
 import VEYFI_ABI from '@veYFI/utils/abi/veYFI.abi';
 import VEYFI_POSITION_HELPER_ABI from '@veYFI/utils/abi/veYFIPositionHelper.abi';

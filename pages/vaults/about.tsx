@@ -1,4 +1,3 @@
-import React from 'react';
 import {Balancer} from 'react-wrap-balancer';
 import Wrapper from '@vaults/Wrapper';
 import SettingsOverwrite from '@common/components/SettingsOverwrite';

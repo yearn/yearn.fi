@@ -1,4 +1,4 @@
-import React, {Fragment, useMemo} from 'react';
+import {Fragment, useMemo} from 'react';
 import {LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatBigNumberOver10K, formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatNumberOver10K, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
@@ -236,7 +236,7 @@ function ZapAndStats(): ReactElement {
 					</div>
 					<div className={'flex flex-row items-center justify-between pb-1'}>
 						<span className={'inline text-sm font-normal text-neutral-400'}>
-							{'yBal Deposits: '}
+							{'yCRV Deposits: '}
 						</span>
 						<p
 							suppressHydrationWarning
@@ -301,7 +301,7 @@ function ZapAndStats(): ReactElement {
 					</div>
 					<div className={'flex flex-row items-center justify-between pb-1'}>
 						<span className={'inline text-sm font-normal text-neutral-400'}>
-							{'yBal Deposits: '}
+							{'yCRV Deposits: '}
 						</span>
 						<p
 							suppressHydrationWarning

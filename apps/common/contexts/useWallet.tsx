@@ -1,6 +1,6 @@
-import React, {createContext, memo, useCallback, useContext, useMemo} from 'react';
+import {createContext, memo, useCallback, useContext, useMemo} from 'react';
 import {useChainId} from 'wagmi';
-import {OPT_REWARDS_TOKENS, OPT_YVDAI_STACKING_CONTRACT, OPT_YVETH_STACKING_CONTRACT, OPT_YVUSDC_STACKING_CONTRACT, OPT_YVUSDT_STACKING_CONTRACT} from '@vaults/constants/optRewards';
+import {OPT_REWARDS_TOKENS, OPT_YVDAI_STAKING_CONTRACT, OPT_YVETH_STAKING_CONTRACT, OPT_YVUSDC_STAKING_CONTRACT, OPT_YVUSDT_STAKING_CONTRACT} from '@vaults/constants/optRewards';
 import {useUI} from '@yearn-finance/web-lib/contexts/useUI';
 import {useClientEffect} from '@yearn-finance/web-lib/hooks/useClientEffect';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -66,10 +66,10 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 			]);
 		}
 		if (safeChainID === 10) {
-			extraTokens.push({token: OPT_YVETH_STACKING_CONTRACT, symbol: 'yvETH', decimals: 18});
-			extraTokens.push({token: OPT_YVDAI_STACKING_CONTRACT, symbol: 'yvDAI', decimals: 18});
-			extraTokens.push({token: OPT_YVUSDT_STACKING_CONTRACT, symbol: 'yvUSDT', decimals: 6});
-			extraTokens.push({token: OPT_YVUSDC_STACKING_CONTRACT, symbol: 'yvUSDC', decimals: 6});
+			extraTokens.push({token: OPT_YVETH_STAKING_CONTRACT, symbol: 'yvETH', decimals: 18});
+			extraTokens.push({token: OPT_YVDAI_STAKING_CONTRACT, symbol: 'yvDAI', decimals: 18});
+			extraTokens.push({token: OPT_YVUSDT_STAKING_CONTRACT, symbol: 'yvUSDT', decimals: 6});
+			extraTokens.push({token: OPT_YVUSDC_STAKING_CONTRACT, symbol: 'yvUSDC', decimals: 6});
 		}
 		for (const token of extraTokens) {
 			tokensExists[token.token] = true;

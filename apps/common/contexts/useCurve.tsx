@@ -1,4 +1,4 @@
-import React, {createContext, useContext, useMemo} from 'react';
+import {createContext, useContext, useMemo} from 'react';
 import {useFetch} from '@common/hooks/useFetch';
 import {coinGeckoPricesSchema} from '@common/schemas/coinGeckoSchemas';
 import {curveAllGaugesSchema, curveGaugesFromYearnSchema, curveWeeklyFeesSchema} from '@common/schemas/curveSchemas';

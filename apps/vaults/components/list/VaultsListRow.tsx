@@ -1,4 +1,4 @@
-import React, {useMemo} from 'react';
+import {useMemo} from 'react';
 import Link from 'next/link';
 import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';

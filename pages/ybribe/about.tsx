@@ -1,4 +1,3 @@
-import React from 'react';
 import {Balancer} from 'react-wrap-balancer';
 import SettingsOverwrite from '@common/components/SettingsOverwrite';
 import {RewardFeedTable} from '@yBribe/components/rewardFeed/RewardFeedTable';

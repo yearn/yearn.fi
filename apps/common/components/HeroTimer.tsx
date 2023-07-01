@@ -1,4 +1,3 @@
-import React from 'react';
 import {extend} from 'dayjs';
 import dayjsDuration from 'dayjs/plugin/duration.js';
 import {useTimer} from '@common/hooks/useTimer';

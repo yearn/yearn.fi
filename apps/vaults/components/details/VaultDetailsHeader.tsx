@@ -1,4 +1,4 @@
-import React, {useMemo} from 'react';
+import {useMemo} from 'react';
 import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
@@ -79,7 +79,7 @@ function VaultDetailsHeader({vault}: { vault: TYDaemonVault }): ReactElement {
 				) : <p className={'text-xxs text-neutral-500 md:text-xs'}>&nbsp;</p>}
 			</div>
 			<div className={'grid grid-cols-2 gap-6 md:grid-cols-4 md:gap-12'}>
-				<VaultHeaderLineItem label={`Total deposited, ${symbol}`} legend={formatUSD(tvl.tvl)}>
+				<VaultHeaderLineItem label={`Total deposited, ${token.symbol}`} legend={formatUSD(tvl.tvl)}>
 					{formatAmount(formatToNormalizedValue(toBigInt(tvl.total_assets), decimals))}
 				</VaultHeaderLineItem>
 

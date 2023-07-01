@@ -1,9 +1,9 @@
-import React from 'react';
 import {useIsMounted} from '@react-hookz/web';
 import {GraphForVaultEarnings} from '@vaults/components/graphs/GraphForVaultEarnings';
 import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
@@ -12,22 +12,25 @@ import type {TGraphData} from '@common/types/types';
 type TAPYLineItemProps = {
 	label: string;
 	value: number | string;
+	apyType: string;
 	hasUpperLimit?: boolean;
-}
-;
+};
+
 type TYearnFeesLineItem = {
 	children: ReactElement;
 	label: string;
 };
 
-function APYLineItem({value, label, hasUpperLimit}: TAPYLineItemProps): ReactElement {
+function APYLineItem({value, label, apyType, hasUpperLimit}: TAPYLineItemProps): ReactElement {
 	const safeValue = Number(value) || 0;
+
+	const isNew = apyType === 'new' && isZero(safeValue);
 
 	return (
 		<div className={'flex flex-row items-center justify-between'}>
 			<p className={'text-sm text-neutral-500'}>{label}</p>
 			<p className={'font-number text-sm text-neutral-900'} suppressHydrationWarning>
-				{hasUpperLimit ? formatPercent(safeValue * 100) : formatPercent(safeValue * 100, 2, 2, 500)}
+				{isNew ? 'New' : hasUpperLimit ? formatPercent(safeValue * 100) : formatPercent(safeValue * 100, 2, 2, 500)}
 			</p>
 		</div>
 	);
@@ -42,7 +45,7 @@ function YearnFeesLineItem({children, label}: TYearnFeesLineItem): ReactElement 
 	);
 }
 
-function VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYDaemonVault, harvestData: TGraphData[]}): ReactElement {
+function VaultDetailsAbout({currentVault, harvestData}: { currentVault: TYDaemonVault, harvestData: TGraphData[] }): ReactElement {
 	const isMounted = useIsMounted();
 	const {token, apy, details} = currentVault;
 
@@ -64,14 +67,14 @@ function VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYDaemonV
 					<b className={'text-neutral-900'}>{'APY'}</b>
 					<div className={'mt-4 grid grid-cols-1 gap-x-12 md:grid-cols-2'}>
 						<div className={'space-y-2'}>
-							<APYLineItem label={'Weekly APY'} value={apy.points.week_ago} />
-							<APYLineItem label={'Monthly APY'} value={apy.points.month_ago} />
-							<APYLineItem label={'Inception APY'} value={apy.points.inception} />
+							<APYLineItem label={'Weekly APY'} apyType={currentVault.apy?.type} value={apy.points.week_ago} />
+							<APYLineItem label={'Monthly APY'} apyType={currentVault.apy?.type} value={apy.points.month_ago} />
+							<APYLineItem label={'Inception APY'} apyType={currentVault.apy?.type} value={apy.points.inception} />
 						</div>
 						<div className={'mt-2 space-y-2 md:mt-0'}>
-							<APYLineItem label={'Gross APR'} value={apy.gross_apr} />
-							<APYLineItem label={'Net APY'} value={(apy.net_apy || 0) + (apy.staking_rewards_apr || 0)} hasUpperLimit />
-							{apy.staking_rewards_apr > 0 && <APYLineItem label={'Reward APR'} value={apy.staking_rewards_apr} hasUpperLimit />}
+							<APYLineItem label={'Gross APR'} apyType={currentVault.apy?.type} value={apy.gross_apr} />
+							<APYLineItem label={'Net APY'} apyType={currentVault.apy?.type} value={(apy.net_apy || 0) + (apy.staking_rewards_apr || 0)} hasUpperLimit />
+							{apy.staking_rewards_apr > 0 && <APYLineItem label={'Reward APR'} apyType={currentVault.apy?.type} value={apy.staking_rewards_apr} hasUpperLimit />}
 						</div>
 					</div>
 				</div>
