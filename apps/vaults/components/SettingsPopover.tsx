@@ -1,4 +1,4 @@
-import {Fragment} from 'react';
+import {Fragment, useMemo} from 'react';
 import {Popover, Transition} from '@headlessui/react';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import Renderable from '@yearn-finance/web-lib/components/Renderable';
@@ -9,8 +9,18 @@ import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 import type {ReactElement} from 'react';
 import type {TSolver} from '@common/schemas/yDaemonTokenListBalances';
 
-export default function SettingsPopover(): ReactElement {
+type TSettingPopover = {
+	chainID: number
+}
+export default function SettingsPopover({chainID}: TSettingPopover): ReactElement {
 	const {zapProvider, set_zapProvider, zapSlippage, set_zapSlippage} = useYearn();
+
+	const currentZapProvider = useMemo((): TSolver => {
+		if (chainID !== 1 && zapProvider === 'Cowswap') {
+			return 'Wido';
+		}
+		return zapProvider;
+	}, [chainID, zapProvider]);
 
 	return (
 		<Popover className={'relative flex'}>
@@ -36,13 +46,15 @@ export default function SettingsPopover(): ReactElement {
 										<select
 											id={'zapProvider'}
 											onChange={(e): void => set_zapProvider(e.target.value as TSolver)}
-											value={zapProvider}
+											value={currentZapProvider}
 											className={'mt-1 h-10 w-full overflow-x-scroll border-none bg-neutral-100 p-2 outline-none scrollbar-none'}>
-											<option
-												disabled={isSolverDisabled[Solver.enum.Cowswap]}
-												value={Solver.enum.Cowswap}>
-												{Solver.enum.Cowswap}
-											</option>
+											{chainID === 1 ? (
+												<option
+													disabled={isSolverDisabled[Solver.enum.Cowswap]}
+													value={Solver.enum.Cowswap}>
+													{Solver.enum.Cowswap}
+												</option>
+											): null}
 											<option
 												disabled={isSolverDisabled[Solver.enum.Wido]}
 												value={Solver.enum.Wido}>
@@ -54,7 +66,7 @@ export default function SettingsPopover(): ReactElement {
 												{Solver.enum.Portals}
 											</option>
 										</select>
-										<Renderable shouldRender={zapProvider === Solver.enum.Cowswap}>
+										<Renderable shouldRender={currentZapProvider === Solver.enum.Cowswap}>
 											<legend className={'text-xs italic text-neutral-500'}>
 												{'Submit a'}&nbsp;
 												<a
@@ -67,7 +79,7 @@ export default function SettingsPopover(): ReactElement {
 													&nbsp;{'using CoW Swap.'}
 											</legend>
 										</Renderable>
-										<Renderable shouldRender={zapProvider === Solver.enum.Wido}>
+										<Renderable shouldRender={currentZapProvider === Solver.enum.Wido}>
 											<legend className={'text-xs italic text-neutral-500'}>
 												{'Submit an order via'}&nbsp;
 												<a
@@ -80,7 +92,7 @@ export default function SettingsPopover(): ReactElement {
 													&nbsp;{'(0.3% fee).'}
 											</legend>
 										</Renderable>
-										<Renderable shouldRender={zapProvider === Solver.enum.Portals}>
+										<Renderable shouldRender={currentZapProvider === Solver.enum.Portals}>
 											<legend>&nbsp;</legend>
 										</Renderable>
 									</div>
