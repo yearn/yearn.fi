@@ -56,33 +56,30 @@ export const optimism = {
 	rpcUrls: {
 		default: {
 			http: [
-				...wOptimism.rpcUrls.default.http,
-				(process.env.RPC_URL_OPTIMISM_YEARN_2 || 'https://1rpc.io/op') as string,
 				(process.env.RPC_URL_OPTIMISM_YEARN || 'https://1rpc.io/op') as string,
-				'https://opt-mainnet.g.alchemy.com/v2/demo',
-				'https://endpoints.omniatech.io/v1/op/mainnet/public',
-				'https://optimism-mainnet.public.blastapi.io',
 				'https://optimism.blockpi.network/v1/rpc/public',
-				'https://rpc.ankr.com/optimism',
-				'https://1rpc.io/op',
 				'https://optimism.api.onfinality.io/public',
-				'https://rpc.optimism.gateway.fm'
-
+				'https://optimism.meowrpc.com',
+				'https://rpc.ankr.com/optimism',
+				'https://endpoints.omniatech.io/v1/op/mainnet/public',
+				'https://rpc.optimism.gateway.fm',
+				'https://optimism-mainnet.public.blastapi.io',
+				'https://optimism.publicnode.com',
+				'https://1rpc.io/op'
 			]
 		},
 		public: {
 			http: [
-				...wOptimism.rpcUrls.default.http,
-				(process.env.RPC_URL_OPTIMISM_YEARN_2 || 'https://1rpc.io/op') as string,
 				(process.env.RPC_URL_OPTIMISM_YEARN || 'https://1rpc.io/op') as string,
-				'https://opt-mainnet.g.alchemy.com/v2/demo',
-				'https://endpoints.omniatech.io/v1/op/mainnet/public',
-				'https://optimism-mainnet.public.blastapi.io',
 				'https://optimism.blockpi.network/v1/rpc/public',
-				'https://rpc.ankr.com/optimism',
-				'https://1rpc.io/op',
 				'https://optimism.api.onfinality.io/public',
-				'https://rpc.optimism.gateway.fm'
+				'https://optimism.meowrpc.com',
+				'https://rpc.ankr.com/optimism',
+				'https://endpoints.omniatech.io/v1/op/mainnet/public',
+				'https://rpc.optimism.gateway.fm',
+				'https://optimism-mainnet.public.blastapi.io',
+				'https://optimism.publicnode.com',
+				'https://1rpc.io/op'
 			]
 		}
 	}
