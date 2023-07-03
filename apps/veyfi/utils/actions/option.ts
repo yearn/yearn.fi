@@ -1,5 +1,5 @@
-import {assert} from 'vitest';
 import VEYFI_OPTIONS_ABI from '@veYFI/utils/abi/veYFIOptions.abi';
+import {assert} from '@common/utils/assert';
 import {assertAddress, handleTx as handleTxWagmi} from '@common/utils/toWagmiProvider';
 
 import type {TAddress} from '@yearn-finance/web-lib/types';
@@ -20,6 +20,7 @@ export async function redeem(props: TRedeem): Promise<TTxResponse> {
 		address: props.contractAddress,
 		abi: VEYFI_OPTIONS_ABI,
 		functionName: 'exercise',
-		args: [props.amount, props.accountAddress, {value: props.ethRequired}]
+		value: props.ethRequired,
+		args: [props.amount, props.accountAddress]
 	});
 }
