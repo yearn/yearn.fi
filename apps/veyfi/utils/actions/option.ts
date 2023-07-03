@@ -1,10 +1,10 @@
 import VEYFI_OPTIONS_ABI from '@veYFI/utils/abi/veYFIOptions.abi';
 import {assert} from '@common/utils/assert';
-import {assertAddress, handleTx as handleTxWagmi} from '@common/utils/toWagmiProvider';
+import {assertAddress, handleTx as handleTxWagmi} from '@common/utils/wagmiUtils';
 
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
-import type {TWriteTransaction} from '@common/utils/toWagmiProvider';
+import type {TWriteTransaction} from '@common/utils/wagmiUtils';
 
 type TRedeem = TWriteTransaction & {
 	accountAddress: TAddress;

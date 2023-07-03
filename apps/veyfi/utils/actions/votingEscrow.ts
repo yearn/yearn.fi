@@ -1,6 +1,6 @@
 import {ethers} from 'ethers';
 import {handleTx} from '@yearn-finance/web-lib/utils/web3/transaction';
-import {assertAddresses, handleTx as handleTxWagmi} from '@common/utils/toWagmiProvider';
+import {assertAddresses, handleTx as handleTxWagmi} from '@common/utils/wagmiUtils';
 
 import SNAPSHOT_DELEGATE_REGISTRY_ABI from '../abi/SnapshotDelegateRegistry.abi';
 import VEYFI_ABI from '../abi/veYFI.abi';
@@ -9,7 +9,7 @@ import {YEARN_SNAPSHOT_SPACE} from '../constants';
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TSeconds} from '@yearn-finance/web-lib/utils/time';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
-import type {TWriteTransaction} from '@common/utils/toWagmiProvider';
+import type {TWriteTransaction} from '@common/utils/wagmiUtils';
 
 export async function approveLock(
 	provider: ethers.providers.JsonRpcProvider,

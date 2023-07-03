@@ -1,14 +1,14 @@
 import {ethers} from 'ethers';
 import {handleTx} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {assert} from '@common/utils/assert';
-import {assertAddress, assertAddresses, handleTx as handleTxWagmi} from '@common/utils/toWagmiProvider';
+import {assertAddress, assertAddresses, handleTx as handleTxWagmi} from '@common/utils/wagmiUtils';
 
 import VEYFI_CLAIM_REWARDS_ZAP_ABI from '../abi/veYFIClaimRewardsZap.abi';
 import VEYFI_GAUGE_ABI from '../abi/veYFIGauge.abi';
 
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
-import type {TWriteTransaction} from '@common/utils/toWagmiProvider';
+import type {TWriteTransaction} from '@common/utils/wagmiUtils';
 
 export async function approveStake(
 	provider: ethers.providers.Web3Provider,
