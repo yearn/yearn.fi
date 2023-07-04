@@ -1,4 +1,5 @@
 import {ethers} from 'ethers';
+import {stringToHex} from 'viem';
 import {handleTx} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {assertAddresses, handleTx as handleTxWagmi} from '@common/utils/wagmiUtils';
 
@@ -89,6 +90,6 @@ export async function delegateVote(props: TDelegateVote): Promise<TTxResponse> {
 		address: props.contractAddress,
 		abi: SNAPSHOT_DELEGATE_REGISTRY_ABI,
 		functionName: 'setDelegate',
-		args: [ethers.utils.formatBytes32String(YEARN_SNAPSHOT_SPACE), props.delegateAddress]
+		args: [stringToHex(YEARN_SNAPSHOT_SPACE, {size: 32}), props.delegateAddress]
 	});
 }
