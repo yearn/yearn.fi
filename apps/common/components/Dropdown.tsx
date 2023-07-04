@@ -1,6 +1,7 @@
 import React, {Fragment, useState} from 'react';
 import {Combobox, Transition} from '@headlessui/react';
 import {useThrottledState} from '@react-hookz/web';
+import {cl} from '@yearn-finance/web-lib/utils/cl';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import IconChevron from '@common/icons/IconChevron';
 
@@ -117,7 +118,10 @@ const Dropdown = ({selected, options, onChange, label, legend, isDisabled, class
 						<>
 							<Combobox.Button
 								onClick={(): void => set_isOpen((state: boolean): boolean => !state)}
-								className={`flex h-10 w-full items-center justify-between p-2 text-base md:px-3 ${isDisabled ? 'bg-neutral-300 text-neutral-600' : 'bg-neutral-0 text-neutral-900'}`}>
+								className={cl(...[
+									'flex h-10 w-full items-center justify-between p-2 text-base md:px-3',
+									isDisabled ? 'bg-neutral-300 text-neutral-600' : 'bg-neutral-0 text-neutral-900'
+								])}>
 								<div className={'relative flex flex-row items-center'}>
 									{selected?.icon && (
 										<div className={'h-6 w-6 rounded-full'}>
