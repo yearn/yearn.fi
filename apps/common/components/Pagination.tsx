@@ -20,13 +20,13 @@ export function Pagination(props: TProps): ReactElement {
 			<div className={'flex flex-1 justify-between sm:hidden'}>
 				<a
 					href={'#'}
-					className={'border-gray-300 text-gray-700 hover:bg-gray-50 relative inline-flex items-center rounded-md border  px-4 py-2 text-sm font-medium'}
+					className={'border-gray-300 text-gray-700 hover:bg-gray-50 relative inline-flex items-center rounded-md border px-4 py-2 text-sm font-medium'}
 				>
 					{'Previous'}
 				</a>
 				<a
 					href={'#'}
-					className={'border-gray-300 text-gray-700 hover:bg-gray-50 relative ml-3 inline-flex items-center rounded-md border  px-4 py-2 text-sm font-medium'}
+					className={'border-gray-300 text-gray-700 hover:bg-gray-50 relative ml-3 inline-flex items-center rounded-md border px-4 py-2 text-sm font-medium'}
 				>
 					{'Next'}
 				</a>
