@@ -1,5 +1,3 @@
-import {ethers} from 'ethers';
-import {handleTx} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {assert} from '@common/utils/assert';
 import {assertAddress, assertAddresses, handleTx as handleTxWagmi} from '@common/utils/wagmiUtils';
 
@@ -9,18 +7,6 @@ import VEYFI_GAUGE_ABI from '../abi/veYFIGauge.abi';
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TWriteTransaction} from '@common/utils/wagmiUtils';
-
-export async function approveStake(
-	provider: ethers.providers.Web3Provider,
-	accountAddress: TAddress,
-	vaultAddress: TAddress,
-	gaugeAddress: TAddress,
-	amount?: bigint
-): Promise<TTxResponse> {
-	const signer = provider.getSigner(accountAddress);
-	const contract = new ethers.Contract(vaultAddress, ['function approve(address _spender, uint256 _value) external'], signer);
-	return await handleTx(contract.approve(gaugeAddress, amount));
-}
 
 type TApproveAndStake = TWriteTransaction & {
 	vaultAddress: TAddress;
