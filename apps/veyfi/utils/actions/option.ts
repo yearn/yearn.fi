@@ -15,6 +15,7 @@ export async function redeem(props: TRedeem): Promise<TTxResponse> {
 	assertAddress(props.contractAddress);
 	assertAddress(props.accountAddress);
 	assert(props.amount > 0n, 'amount is zero');
+	assert(props.ethRequired > 0n, 'ethRequired is zero');
 
 	return await handleTxWagmi(props, {
 		address: props.contractAddress,
