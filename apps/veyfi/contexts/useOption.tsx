@@ -66,7 +66,7 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 	const {data: price, mutate: refreshPrice, isLoading: isLoadingPrice} = useSWR(ethPrice && yfiPrice ? 'optionPrice' : null, priceFetcher, {shouldRetryOnError: false});
 
 	const positionsFetcher = useCallback(async (): Promise<TOptionPosition | undefined> => {
-		if (!isActive|| !userAddress) {
+		if (!isActive || !userAddress) {
 			return undefined;
 		}
         
