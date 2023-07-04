@@ -1,3 +1,4 @@
+/* eslint-disable tailwindcss/classnames-order */
 import {useCallback, useMemo, useState} from 'react';
 import {sort} from '@veYFI/utils';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
@@ -56,7 +57,7 @@ function Table<T>({metadata, data, columns, initialSortBy, onRowClick, itemsPerP
 
 	return (
 		<div className={'w-full'}>
-			<div className={`mb-2 hidden w-full px-6 md:grid md:grid-flow-col ${`md:grid-cols-${numberOfColumns}`}`}>
+			<div className={`mb-2 hidden w-full px-6 md:grid md:grid-flow-col md:grid-cols-${numberOfColumns}`}>
 				{metadata.map(({key, label, sortable, className, columnSpan}): ReactElement => (
 					<button
 						key={`header_${key}`} 
