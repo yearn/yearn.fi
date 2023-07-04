@@ -1,4 +1,4 @@
-import {isAddress} from 'ethers/lib/utils';
+import {isAddress} from 'viem';
 import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 
