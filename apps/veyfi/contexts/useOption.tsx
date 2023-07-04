@@ -1,9 +1,9 @@
 import React, {createContext, memo, useCallback, useContext, useMemo} from 'react';
 import {ethers} from 'ethers';
 import useSWR from 'swr';
-import {VEYFI_OPTIONS_ADDRESS, VEYFI_OYFI_ADDRESS} from '@veYFI/constants';
 import VEYFI_OPTIONS_ABI from '@veYFI/utils/abi/veYFIOptions.abi';
 import VEYFI_OYFI_ABI from '@veYFI/utils/abi/veYFIoYFI.abi';
+import {VEYFI_OPTIONS_ADDRESS, VEYFI_OYFI_ADDRESS} from '@veYFI/utils/constants';
 import {erc20ABI, readContract} from '@wagmi/core';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {allowanceKey} from '@yearn-finance/web-lib/utils/address';

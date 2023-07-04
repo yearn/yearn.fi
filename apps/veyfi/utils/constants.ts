@@ -6,6 +6,8 @@ import type {TWeeks} from '@yearn-finance/web-lib/utils/time';
 
 export const VEYFI_REGISTRY_ADDRESS: TAddress = toAddress(''); // TODO: update once deployed
 export const VEYFI_CLAIM_REWARDS_ZAP_ADDRESS: TAddress = toAddress(''); // TODO: update once deployed
+export const VEYFI_OPTIONS_ADDRESS = toAddress(''); // TODO: update once deployed
+export const VEYFI_OYFI_ADDRESS = toAddress(''); // TODO: update once deployed
 
 export const MAX_LOCK_TIME: TWeeks = 208;
 export const MIN_LOCK_TIME: TWeeks = 1;
