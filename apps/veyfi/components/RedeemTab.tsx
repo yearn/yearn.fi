@@ -127,8 +127,7 @@ function RedeemTab(): ReactElement {
 					/>
 					<Button 
 						className={'w-full md:mt-7'}
-						onClick={async (): Promise<void> => isApproved ? handleRedeem() : handleApproveRedeem()
-						}
+						onClick={async (): Promise<void> => isApproved ? handleRedeem() : handleApproveRedeem()}
 						isBusy={isLoadingOption || approveRedeemStatus.pending || redeemStatus.pending || status === 'loading'}
 						isDisabled={!isActive || !isValidNetwork || !isValidRedeemAmount || status === 'loading' || status === 'error' || !redeemStatus.none || !approveRedeemStatus.none}
 					>
