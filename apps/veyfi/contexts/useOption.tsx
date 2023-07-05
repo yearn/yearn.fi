@@ -1,6 +1,7 @@
 import React, {createContext, memo, useCallback, useContext, useMemo} from 'react';
 import {ethers} from 'ethers';
 import useSWR from 'swr';
+import {useAsync} from '@react-hookz/web';
 import VEYFI_OPTIONS_ABI from '@veYFI/utils/abi/veYFIOptions.abi';
 import VEYFI_OYFI_ABI from '@veYFI/utils/abi/veYFIoYFI.abi';
 import {VEYFI_OPTIONS_ADDRESS, VEYFI_OYFI_ADDRESS} from '@veYFI/utils/constants';
@@ -63,8 +64,11 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 		const pricePerOption = yfiPrice - requiredEthValuePerOption;
 		return pricePerOption;
 	}, [ethPrice, yfiPrice, getRequiredEth]);
-	const {data: price, mutate: refreshPrice, isLoading: isLoadingPrice} = useSWR(ethPrice && yfiPrice ? 'optionPrice' : null, priceFetcher, {shouldRetryOnError: false});
 
+	const [{result: price, status: fetchPriceStatus}, {execute: refreshPrice}] = useAsync(async (): Promise<number | undefined> => {
+		return priceFetcher();
+	}, 0);
+	
 	const positionsFetcher = useCallback(async (): Promise<TOptionPosition | undefined> => {
 		if (!isActive || !userAddress) {
 			return undefined;
@@ -114,9 +118,9 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 		price,
 		positions,
 		allowances: allowances ?? {},
-		isLoading: isLoadingPrice || isLoadingPositions || isLoadingAllowances,
+		isLoading: fetchPriceStatus === 'loading' || isLoadingPositions || isLoadingAllowances,
 		refresh
-	}), [allowances, getRequiredEth, isLoadingAllowances, isLoadingPositions, isLoadingPrice, positions, price, refresh]);
+	}), [allowances, fetchPriceStatus, getRequiredEth, isLoadingAllowances, isLoadingPositions, positions, price, refresh]);
 
 	return (
 		<OptionContext.Provider value={contextValue}>
