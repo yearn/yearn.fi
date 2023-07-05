@@ -1,6 +1,8 @@
-import {ethers} from 'ethers';
 import {stringToHex} from 'viem';
-import {handleTx} from '@yearn-finance/web-lib/utils/web3/transaction';
+import {prepareWriteContract} from '@wagmi/core';
+import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
+import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {assert} from '@common/utils/assert';
 import {assertAddresses, handleTx as handleTxWagmi} from '@common/utils/wagmiUtils';
 
 import SNAPSHOT_DELEGATE_REGISTRY_ABI from '../abi/SnapshotDelegateRegistry.abi';
@@ -12,74 +14,91 @@ import type {TSeconds} from '@yearn-finance/web-lib/utils/time';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TWriteTransaction} from '@common/utils/wagmiUtils';
 
-export async function approveLock(
-	provider: ethers.providers.JsonRpcProvider,
-	accountAddress: TAddress,
-	tokenAddress: TAddress,
-	votingEscrowAddress: TAddress,
-	amount = ethers.constants.MaxUint256
-): Promise<TTxResponse> {
-	const signer = provider.getSigner(accountAddress);
-	const contract = new ethers.Contract(tokenAddress, ['function approve(address _spender, uint256 _value) external'], signer);
-	return await handleTx(contract.approve(votingEscrowAddress, amount));
+type TApproveLock = TWriteTransaction & {votingEscrowAddress: TAddress; amount: bigint;};
+export async function approveLock(props: TApproveLock): Promise<TTxResponse> {
+	const {votingEscrowAddress, amount = MAX_UINT_256, contractAddress} = props;
+
+	assertAddresses([votingEscrowAddress, contractAddress]);
+	assert(amount > 0n, 'Amount is 0');
+
+	return await handleTxWagmi(props, {
+		address: contractAddress,
+		abi: ['function approve(address _spender, uint256 _value) external'],
+		functionName: 'approve',
+		args: [votingEscrowAddress, amount]
+	});
 }
 
-export async function lock(
-	provider: ethers.providers.JsonRpcProvider,
-	accountAddress: TAddress,
-	votingEscrowAddress: TAddress,
-	amount: bigint,
-	time: TSeconds
-): Promise<TTxResponse> {
-	const signer = provider.getSigner(accountAddress);
-	const votingEscrowContract = new ethers.Contract(votingEscrowAddress, VEYFI_ABI, signer);
-	return await handleTx(votingEscrowContract.modify_lock(amount, time, accountAddress));
+type TLock = TWriteTransaction & {votingEscrowAddress: TAddress; accountAddress: TAddress; amount: bigint; time: TSeconds};
+export async function lock(props: TLock): Promise<TTxResponse> {
+	assertAddresses([props.votingEscrowAddress, props.accountAddress, props.contractAddress]);
+	assert(props.amount > 0n, 'Amount is 0');
+	assert(props.time > 0, 'Time is 0');
+
+	return await handleTxWagmi(props, {
+		address: props.contractAddress,
+		abi: VEYFI_ABI,
+		functionName: 'modify_lock',
+		args: [props.amount, toBigInt(props.time), props.accountAddress]
+	});
 }
 
-export async function increaseLockAmount(
-	provider: ethers.providers.JsonRpcProvider,
-	accountAddress: TAddress,
-	votingEscrowAddress: TAddress,
-	amount: bigint
-): Promise<TTxResponse> {
-	const signer = provider.getSigner(accountAddress);
-	const votingEscrowContract = new ethers.Contract(votingEscrowAddress, VEYFI_ABI, signer);
-	return await handleTx(votingEscrowContract.modify_lock(amount, '0', accountAddress));
+type TIncreaseLockAmount = TWriteTransaction & {votingEscrowAddress: TAddress; accountAddress: TAddress; amount: bigint};
+export async function increaseLockAmount(props: TIncreaseLockAmount): Promise<TTxResponse> {
+	assertAddresses([props.votingEscrowAddress, props.accountAddress, props.contractAddress]);
+	assert(props.amount > 0n, 'Amount is 0');
+
+	return await handleTxWagmi(props, {
+		address: props.contractAddress,
+		abi: VEYFI_ABI,
+		functionName: 'modify_lock',
+		args: [props.amount, 0n, props.accountAddress]
+	});
 }
 
-export async function extendLockTime(
-	provider: ethers.providers.JsonRpcProvider,
-	accountAddress: TAddress,
-	votingEscrowAddress: TAddress,
-	time: TSeconds
-): Promise<TTxResponse> {
-	const signer = provider.getSigner(accountAddress);
-	const votingEscrowContract = new ethers.Contract(votingEscrowAddress, VEYFI_ABI, signer);
-	return await handleTx(votingEscrowContract.modify_lock('0', time, accountAddress));
+type TExtendLockTime = TWriteTransaction & {votingEscrowAddress: TAddress; accountAddress: TAddress; time: TSeconds};
+export async function extendLockTime(props: TExtendLockTime): Promise<TTxResponse> {
+	assertAddresses([props.votingEscrowAddress, props.accountAddress, props.contractAddress]);
+	assert(props.time > 0, 'Time is 0');
+
+	return await handleTxWagmi(props, {
+		address: props.contractAddress,
+		abi: VEYFI_ABI,
+		functionName: 'modify_lock',
+		args: [0n, toBigInt(props.time), props.accountAddress]
+	});
 }
 
-export async function withdrawUnlocked(
-	provider: ethers.providers.JsonRpcProvider,
-	accountAddress: TAddress,
-	votingEscrowAddress: TAddress
-): Promise<TTxResponse> {
-	const signer = provider.getSigner(accountAddress);
-	const votingEscrowContract = new ethers.Contract(votingEscrowAddress, VEYFI_ABI, signer);
-	const {penalty} = await votingEscrowContract.callStatic.withdraw();
-	if ((penalty as bigint) > 0n) {
+type TWithdrawUnlocked = TWriteTransaction & {votingEscrowAddress: TAddress};
+export async function withdrawUnlocked(props: TWithdrawUnlocked): Promise<TTxResponse> {
+	assertAddresses([props.votingEscrowAddress, props.contractAddress]);
+
+	const {result} = await prepareWriteContract({
+		address: props.votingEscrowAddress,
+		abi: VEYFI_ABI,
+		functionName: 'withdraw'
+	});
+
+	if (result.penalty > 0n) {
 		throw new Error('Tokens are not yet unlocked');
 	}
-	return await handleTx(votingEscrowContract.withdraw());
+
+	return await handleTxWagmi(props, {
+		address: props.contractAddress,
+		abi: VEYFI_ABI,
+		functionName: 'withdraw'
+	});
 }
 
-export async function withdrawLocked(
-	provider: ethers.providers.JsonRpcProvider,
-	accountAddress: TAddress,
-	votingEscrowAddress: TAddress
-): Promise<TTxResponse> {
-	const signer = provider.getSigner(accountAddress);
-	const votingEscrowContract = new ethers.Contract(votingEscrowAddress, VEYFI_ABI, signer);
-	return await handleTx(votingEscrowContract.withdraw());
+type TWithdrawLocked = TWriteTransaction & {votingEscrowAddress: TAddress};
+export async function withdrawLocked(props: TWithdrawLocked): Promise<TTxResponse> {
+	assertAddresses([props.votingEscrowAddress, props.contractAddress]);
+
+	return await handleTxWagmi(props, {
+		address: props.contractAddress,
+		abi: VEYFI_ABI,
+		functionName: 'withdraw'
+	});
 }
 
 type TDelegateVote = TWriteTransaction & {delegateAddress: TAddress};
