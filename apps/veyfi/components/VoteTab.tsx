@@ -74,7 +74,7 @@ function VoteTab(): ReactElement {
 						className={'w-full md:mt-7'}
 						onClick={handleExecuteDelegateVote}
 						isBusy={delegateVoteStatus.pending}
-						disabled={!isActive || !isValidNetwork || !isValidDelegateAddress || delegateVoteStatus.pending}
+						isDisabled={!isActive || !isValidNetwork || !isValidDelegateAddress || delegateVoteStatus.pending}
 					>
 						{'Submit'}
 					</Button>

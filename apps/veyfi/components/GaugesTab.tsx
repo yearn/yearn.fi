@@ -188,7 +188,7 @@ function GaugesTab(): ReactElement {
 								<Button 
 									className={'w-full md:w-24'}
 									onClick={async (): Promise<void> => onUnstake(gaugeAddress, gaugeStaked)}
-									disabled={!isActive || !isValidNetwork || isZero(gaugeStaked)}
+									isDisabled={!isActive || !isValidNetwork || isZero(gaugeStaked)}
 									isBusy={gaugeAddress === selectedGauge && selectedAction === 'unstake' && unstakeStatus.none}
 								>
 									{'Unstake'}
@@ -197,7 +197,7 @@ function GaugesTab(): ReactElement {
 									<Button
 										className={'w-full md:w-24'}
 										onClick={async (): Promise<void> => onApproveAndStake(vaultAddress, gaugeAddress, vaultDeposited, allowance)}
-										disabled={!isActive || !isValidNetwork || isZero(vaultDeposited)}
+										isDisabled={!isActive || !isValidNetwork || isZero(vaultDeposited)}
 										isBusy={(isLoadingGauges && vaultDeposited > 0n) || (gaugeAddress === selectedGauge && selectedAction === 'stake' && approveAndStakeStatus.none)}
 									>
 										{'Stake'}
@@ -207,7 +207,7 @@ function GaugesTab(): ReactElement {
 									<Button
 										className={'w-full md:w-24'}
 										onClick={async (): Promise<void> => onStake(gaugeAddress, vaultDeposited)}
-										disabled={!isActive || !isValidNetwork || isZero(vaultDeposited)}
+										isDisabled={!isActive || !isValidNetwork || isZero(vaultDeposited)}
 										isBusy={(isLoadingGauges && vaultDeposited > 0n) || (gaugeAddress === selectedGauge && selectedAction === 'stake' && stakeStatus.none)}
 									>
 										{'Stake'}
