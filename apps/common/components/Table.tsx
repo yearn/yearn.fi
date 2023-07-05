@@ -1,6 +1,7 @@
 /* eslint-disable tailwindcss/classnames-order */
 import {useCallback, useMemo, useState} from 'react';
 import {sort} from '@veYFI/utils';
+import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import IconChevronPlain from '@common/icons/IconChevronPlain';
 
@@ -78,7 +79,10 @@ function Table<T>({metadata, data, columns, initialSortBy, onRowClick, itemsPerP
 				return (
 					<div 
 						key={`row_${rowIndex}`} 
-						className={`grid w-full grid-cols-1 border-t border-neutral-200 px-4 py-2 transition-colors hover:bg-neutral-300 md:grid-flow-col md:border-none md:px-6 ${`md:grid-cols-${numberOfColumns}`} ${onRowClick ? 'cursor-pointer' : 'cursor-auto'}`}
+						className={cl(
+							`grid w-full grid-cols-1 border-t border-neutral-200 px-4 py-2 transition-colors hover:bg-neutral-300 md:grid-flow-col md:border-none md:px-6 ${`md:grid-cols-${numberOfColumns}`}`,
+							onRowClick ? 'cursor-pointer' : 'cursor-auto'
+						)}
 						onClick={(): void => onRowClick?.(item)}
 					>
 						{metadata.map(({key, label, className, fullWidth, columnSpan, format, transform}): ReactElement => {
