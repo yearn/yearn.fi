@@ -1,6 +1,5 @@
 import React, {createContext, memo, useCallback, useContext, useEffect, useMemo} from 'react';
 import {ethers} from 'ethers';
-import useSWR from 'swr';
 import {useAsync} from '@react-hookz/web';
 import VEYFI_OPTIONS_ABI from '@veYFI/utils/abi/veYFIOptions.abi';
 import VEYFI_OYFI_ABI from '@veYFI/utils/abi/veYFIoYFI.abi';
@@ -44,12 +43,35 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 	const ethPrice = useTokenPrice(ETH_TOKEN_ADDRESS);
 
 	const [{result: price, status: fetchPriceStatus}, {execute: refreshPrice}] = useAsync(async (): Promise<number | undefined> => {
+		if (!isActive || provider) {
+			return;
+		}
 		return priceFetcher();
 	}, 0);
 
-	useEffect((): void => {
+	const [{result: positions, status: fetchPositionsStatus}, {execute: refreshPositions}] = useAsync(async (): Promise<TOptionPosition | undefined> => {
+		if (!isActive || provider) {
+			return;
+		}
+		return positionsFetcher();
+	}, {balance: 0n});
+
+	const [{result: allowances, status: fetchAllowancesStatus}, {execute: refreshAllowances}] = useAsync(async (): Promise<TDict<bigint> | undefined> => {
+		if (!isActive || provider) {
+			return;
+		}
+		return allowancesFetcher();
+	}, {});
+
+	const refresh = useCallback((): void => {
 		refreshPrice();
-	}, [refreshPrice]);
+		refreshPositions();
+		refreshAllowances();
+	}, [refreshPrice, refreshPositions, refreshAllowances]);
+
+	useEffect((): void => {
+		refresh();
+	}, [refresh]);
 
 	const getRequiredEth = useCallback(async (amount: bigint): Promise<bigint> => {
 		// TODO: update once abi is available
@@ -89,7 +111,6 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 			})
 		};
 	}, [isActive, userAddress]);
-	const {data: positions, mutate: refreshPositions, isLoading: isLoadingPositions} = useSWR(isActive && provider ? 'optionPositions' : null, positionsFetcher, {shouldRetryOnError: false});
 
 	const allowancesFetcher = useCallback(async (): Promise<TDict<bigint>> => {
 		if (!isActive || !userAddress) {
@@ -108,23 +129,15 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 			[allowanceKey(1, VEYFI_OYFI_ADDRESS, VEYFI_OPTIONS_ADDRESS, userAddress)]: oYFIAllowanceOptions
 		});
 	}, [isActive, userAddress]);
-	const	{data: allowances, mutate: refreshAllowances, isLoading: isLoadingAllowances} = useSWR(isActive && provider ? 'optionAllowances' : null, allowancesFetcher, {shouldRetryOnError: false});
-
-
-	const refresh = useCallback((): void => {
-		refreshPrice();
-		refreshPositions();
-		refreshAllowances();
-	}, [refreshPrice, refreshPositions, refreshAllowances]);
 
 	const contextValue = useMemo((): TOptionContext => ({
 		getRequiredEth,
 		price,
 		positions,
 		allowances: allowances ?? {},
-		isLoading: fetchPriceStatus === 'loading' || isLoadingPositions || isLoadingAllowances,
+		isLoading: fetchPriceStatus === 'loading' || fetchPositionsStatus === 'loading' || fetchAllowancesStatus === 'loading',
 		refresh
-	}), [allowances, fetchPriceStatus, getRequiredEth, isLoadingAllowances, isLoadingPositions, positions, price, refresh]);
+	}), [allowances, fetchAllowancesStatus, fetchPositionsStatus, fetchPriceStatus, getRequiredEth, positions, price, refresh]);
 
 	return (
 		<OptionContext.Provider value={contextValue}>
