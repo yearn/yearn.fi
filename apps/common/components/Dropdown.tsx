@@ -135,7 +135,12 @@ const Dropdown = ({selected, options, onChange, label, legend, isDisabled, class
 											/>
 										</div>
 									)}
-									<p className={`max-w-[90%] overflow-x-hidden text-ellipsis whitespace-nowrap font-normal scrollbar-none md:max-w-full ${selected?.icon ? 'pl-2' : 'pl-0'} ${isDisabled ? 'text-neutral-600' : 'text-neutral-900'}`}>
+									<p
+										className={cl(
+											'max-w-[90%] overflow-x-hidden text-ellipsis whitespace-nowrap font-normal scrollbar-none md:max-w-full',
+											selected?.icon ? 'pl-2' : 'pl-0',
+											isDisabled ? 'text-neutral-600' : 'text-neutral-900'
+										)}>
 										<Combobox.Input
 											className={'w-full cursor-default overflow-x-scroll border-none bg-transparent p-0 outline-none scrollbar-none'}
 											displayValue={(option?: TDropdownOption): string => option?.label ?? '-' }
