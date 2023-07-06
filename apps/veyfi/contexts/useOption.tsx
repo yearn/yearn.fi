@@ -49,8 +49,7 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 
 	useEffect((): void => {
 		refreshPrice();
-	// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
+	}, [refreshPrice]);
 
 	const getRequiredEth = useCallback(async (amount: bigint): Promise<bigint> => {
 		// TODO: update once abi is available
