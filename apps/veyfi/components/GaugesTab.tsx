@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import {useCallback, useState} from 'react';
 import {useGauge} from '@veYFI/contexts/useGauge';
 import * as GaugeActions from '@veYFI/utils/actions/gauge';
 import {validateNetwork} from '@veYFI/utils/validations';
@@ -71,7 +71,7 @@ function GaugesTab(): ReactElement {
 
 	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: 1, walletNetwork: chainID});
 
-	const onApproveAndStake = async (vaultAddress: TAddress, gaugeAddress: TAddress, amount: bigint, allowance: bigint): Promise<void> => {
+	const onApproveAndStake = useCallback(async (vaultAddress: TAddress, gaugeAddress: TAddress, amount: bigint, allowance: bigint): Promise<void> => {
 		set_selectedGauge(gaugeAddress);
 		set_selectedAction('stake');
 		const response = await GaugeActions.approveAndStake({
@@ -86,9 +86,9 @@ function GaugesTab(): ReactElement {
 		if (response.isSuccessful) {
 			await refreshData();
 		}
-	};
+	}, [provider, refreshData]);
 
-	const onStake = async (gaugeAddress: TAddress, amount: bigint): Promise<void> => {
+	const onStake = useCallback(async (gaugeAddress: TAddress, amount: bigint): Promise<void> => {
 		set_selectedGauge(gaugeAddress);
 		set_selectedAction('stake');
 
@@ -102,9 +102,9 @@ function GaugesTab(): ReactElement {
 		if (response.isSuccessful) {
 			await refreshData();
 		}
-	};
+	}, [provider, refreshData]);
 
-	const onUnstake = async (gaugeAddress: TAddress, amount: bigint): Promise<void> => {
+	const onUnstake = useCallback(async (gaugeAddress: TAddress, amount: bigint): Promise<void> => {
 		set_selectedGauge(gaugeAddress);
 		set_selectedAction('unstake');
 
@@ -119,7 +119,7 @@ function GaugesTab(): ReactElement {
 		if (response.isSuccessful) {
 			await refreshData();
 		}
-	};
+	}, [provider, refreshData, userAddress]);
 
 	return (
 		<div className={'relative -left-6 w-[calc(100%+48px)]'}>
