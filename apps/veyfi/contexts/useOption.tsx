@@ -1,4 +1,4 @@
-import React, {createContext, memo, useCallback, useContext, useMemo} from 'react';
+import React, {createContext, memo, useCallback, useContext, useEffect, useMemo} from 'react';
 import {ethers} from 'ethers';
 import useSWR from 'swr';
 import {useAsync} from '@react-hookz/web';
@@ -43,6 +43,15 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 	const yfiPrice = useTokenPrice(YFI_ADDRESS);
 	const ethPrice = useTokenPrice(ETH_TOKEN_ADDRESS);
 
+	const [{result: price, status: fetchPriceStatus}, {execute: refreshPrice}] = useAsync(async (): Promise<number | undefined> => {
+		return priceFetcher();
+	}, 0);
+
+	useEffect((): void => {
+		refreshPrice();
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
+
 	const getRequiredEth = useCallback(async (amount: bigint): Promise<bigint> => {
 		// TODO: update once abi is available
 		return readContract({
@@ -64,10 +73,6 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 		const pricePerOption = yfiPrice - requiredEthValuePerOption;
 		return pricePerOption;
 	}, [ethPrice, yfiPrice, getRequiredEth]);
-
-	const [{result: price, status: fetchPriceStatus}, {execute: refreshPrice}] = useAsync(async (): Promise<number | undefined> => {
-		return priceFetcher();
-	}, 0);
 	
 	const positionsFetcher = useCallback(async (): Promise<TOptionPosition | undefined> => {
 		if (!isActive || !userAddress) {
