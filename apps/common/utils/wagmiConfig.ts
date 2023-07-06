@@ -28,7 +28,7 @@ const config = createConfig({
 		new SafeConnector({chains, options: {allowedDomains: [/gnosis-safe.io/, /app.safe.global/]}}),
 		new IFrameEthereumConnector({chains, options: {}}),
 		new InjectedConnector({chains}),
-		new MetaMaskConnector(),
+		new MetaMaskConnector({chains}),
 		new LedgerConnector({chains, options: {}}),
 		new WalletConnectConnector({
 			chains,
