@@ -1,7 +1,7 @@
-import React, {createContext, memo, useCallback, useContext, useMemo} from 'react';
+import React, {createContext, memo, useCallback, useContext, useEffect, useMemo} from 'react';
 import {FixedNumber} from 'ethers';
 import {useContractRead} from 'wagmi';
-import useSWR from 'swr';
+import {useAsync} from '@react-hookz/web';
 import {keyBy} from '@veYFI/utils';
 import VEYFI_GAUGE_ABI from '@veYFI/utils/abi/veYFIGauge.abi';
 import VEYFI_REGISTRY_ABI from '@veYFI/utils/abi/veYFIRegistry.abi';
@@ -112,7 +112,37 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 		});
 		return Promise.all(gaugePromises);
 	}, []);
-	const {data: gauges, mutate: refreshVotingEscrow, isLoading: isLoadingGauges} = useSWR('gauges', gaugesFetcher, {shouldRetryOnError: false});
+
+	const [{result: allowancesMap, status: fetchAllowancesMapStatus}, {execute: refreshAllowances}] = useAsync(async (): Promise<TDict<bigint> | undefined> => {
+		if (!gauges || !isActive) {
+			return;
+		}
+		return allowancesFetcher();
+	}, {});
+
+	const [{result: positions, status: fetchPositionsStatus}, {execute: refreshPositions}] = useAsync(async (): Promise<TGaugePosition[] | undefined> => {
+		if (!gauges || !isActive) {
+			return;
+		}
+		return positionsFetcher();
+	}, []);
+
+	const [{result: gauges, status: fetchGaugesStatus}, {execute: refreshVotingEscrow}] = useAsync(async (): Promise<TGauge[] | undefined> => {
+		if (!isActive) {
+			return;
+		}
+		return gaugesFetcher();
+	}, []);
+
+	const refresh = useCallback((): void => {
+		refreshVotingEscrow();
+		refreshPositions();
+		refreshAllowances();
+	}, [refreshAllowances, refreshPositions, refreshVotingEscrow]);
+
+	useEffect((): void => {
+		refresh();
+	}, [refresh]);
 
 	const positionsFetcher = useCallback(async (): Promise<TGaugePosition[]> => {
 		if (!gauges|| !isActive|| !userAddress) {
@@ -163,7 +193,6 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 		});
 		return Promise.all(positionPromises);
 	}, [gauges, isActive, userAddress]);
-	const {data: positions, mutate: refreshPositions, isLoading: isLoadingPositions} = useSWR(gauges && isActive ? 'gaugePositions' : null, positionsFetcher, {shouldRetryOnError: false});
 
 	const allowancesFetcher = useCallback(async (): Promise<TDict<bigint>> => {
 		if (!gauges || !isActive || !userAddress) {
@@ -197,22 +226,15 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 
 		return allowancesMap;
 	}, [gauges, isActive, userAddress]);
-	const	{data: allowancesMap, mutate: refreshAllowances, isLoading: isLoadingAllowances} = useSWR(gauges && isActive ? 'gaugeAllowances' : null, allowancesFetcher, {shouldRetryOnError: false});
-
-	const refresh = useCallback((): void => {
-		refreshVotingEscrow();
-		refreshPositions();
-		refreshAllowances();
-	}, [refreshAllowances, refreshPositions, refreshVotingEscrow]);
 
 	const contextValue = useMemo((): TGaugeContext => ({
 		gaugeAddresses: gauges?.map(({address}): TAddress => address) ?? [],
 		gaugesMap: keyBy(gauges ?? [], 'address'),
 		positionsMap: keyBy(positions ?? [], 'address'),
 		allowancesMap: allowancesMap ?? {},
-		isLoading: isLoadingGauges || isLoadingPositions || isLoadingAllowances,
+		isLoading: fetchGaugesStatus ==='loading' || fetchPositionsStatus === 'loading' || fetchAllowancesMapStatus === 'loading',
 		refresh
-	}), [allowancesMap, gauges, isLoadingAllowances, isLoadingGauges, isLoadingPositions, positions, refresh]);
+	}), [allowancesMap, fetchAllowancesMapStatus, fetchGaugesStatus, fetchPositionsStatus, gauges, positions, refresh]);
 
 	return (
 		<GaugeContext.Provider value={contextValue}>
