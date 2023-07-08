@@ -66,6 +66,17 @@ function VaultDetailsHeader({vault}: { vault: TYDaemonVault }): ReactElement {
 	const stakedBalance = toNormalizedValue(toBigInt(positionsMap[toAddress(stakingRewardsByVault[address])]?.stake), decimals);
 	const depositedAndStaked = vaultBalance + stakedBalance;
 
+	function renderAmount(): string {
+		const amount = formatToNormalizedValue(toBigInt(tvl.total_assets), decimals);
+		if (amount < 0.01) {
+			if (amount > 0.00000001) {
+				return formatAmount(amount, 8, 8);
+			}
+			return formatAmount(amount, decimals, decimals);
+		}
+		return formatAmount(amount);
+	}
+
 	return (
 		<div aria-label={'Vault Header'} className={'col-span-12 flex w-full flex-col items-center justify-center'}>
 			<b className={'mx-auto flex w-full flex-row items-center justify-center text-center text-4xl tabular-nums text-neutral-900 md:text-8xl'}>
@@ -80,7 +91,7 @@ function VaultDetailsHeader({vault}: { vault: TYDaemonVault }): ReactElement {
 			</div>
 			<div className={'grid grid-cols-2 gap-6 md:grid-cols-4 md:gap-12'}>
 				<VaultHeaderLineItem label={`Total deposited, ${token.symbol}`} legend={formatUSD(tvl.tvl)}>
-					{formatAmount(formatToNormalizedValue(toBigInt(tvl.total_assets), decimals))}
+					{renderAmount()}
 				</VaultHeaderLineItem>
 
 				<VaultHeaderLineItem label={'Net APY'}>
