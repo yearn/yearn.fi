@@ -38,6 +38,34 @@ function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElem
 		return balanceOfWant.normalized;
 	}, [balanceOfCoin.normalized, balanceOfCoin.raw, balanceOfWant.normalized, balanceOfWrappedCoin.normalized, currentVault.token.address]);
 
+	//TODO: EXPORT THIS AS EXTERNAL FUNCTION
+	function renderAvailableToDeposit(): string {
+		if (isZero(availableToDeposit)) {
+			return formatAmount(0);
+		}
+		if (availableToDeposit < 0.01) {
+			if (availableToDeposit > 0.00000001) {
+				return formatAmount(availableToDeposit, 8, 8);
+			}
+			return formatAmount(availableToDeposit, currentVault.token.decimals, currentVault.token.decimals);
+		}
+		return formatAmount(availableToDeposit);
+	}
+
+	//TODO: EXPORT THIS AS EXTERNAL FUNCTION
+	function renderDepositedAndStaked(): string {
+		if (isZero(depositedAndStaked)) {
+			return formatAmount(0);
+		}
+		if (depositedAndStaked < 0.01) {
+			if (depositedAndStaked > 0.00000001) {
+				return formatAmount(depositedAndStaked, 8, 8);
+			}
+			return formatAmount(depositedAndStaked, currentVault.token.decimals, currentVault.token.decimals);
+		}
+		return formatAmount(depositedAndStaked);
+	}
+
 	return (
 		<Link key={`${currentVault.address}`} href={`/vaults/${safeChainID}/${toAddress(currentVault.address)}`}>
 			<div className={'yearn--table-wrapper cursor-pointer transition-colors hover:bg-neutral-300'}>
@@ -76,14 +104,14 @@ function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElem
 					<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
 						<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Available'}</label>
 						<p className={`yearn--table-data-section-item-value ${isZero(availableToDeposit) ? 'text-neutral-400' : 'text-neutral-900'}`}>
-							{formatAmount(availableToDeposit)}
+							{renderAvailableToDeposit()}
 						</p>
 					</div>
 
 					<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
 						<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Deposited'}</label>
 						<p className={`yearn--table-data-section-item-value ${isZero(depositedAndStaked) ? 'text-neutral-400' : 'text-neutral-900'}`}>
-							{formatAmount(depositedAndStaked)}
+							{renderDepositedAndStaked()}
 						</p>
 					</div>
 

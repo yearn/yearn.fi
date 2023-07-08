@@ -7,6 +7,7 @@ import {formatToNormalizedValue, toBigInt, toNormalizedValue} from '@yearn-finan
 import {formatAmount, formatPercent, formatUSD} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {copyToClipboard} from '@yearn-finance/web-lib/utils/helpers';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {useBalance} from '@common/hooks/useBalance';
 import {useFetch} from '@common/hooks/useFetch';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
@@ -66,8 +67,12 @@ function VaultDetailsHeader({vault}: { vault: TYDaemonVault }): ReactElement {
 	const stakedBalance = toNormalizedValue(toBigInt(positionsMap[toAddress(stakingRewardsByVault[address])]?.stake), decimals);
 	const depositedAndStaked = vaultBalance + stakedBalance;
 
+	//TODO: EXPORT THIS AS EXTERNAL FUNCTION
 	function renderAmount(): string {
 		const amount = formatToNormalizedValue(toBigInt(tvl.total_assets), decimals);
+		if (isZero(amount)) {
+			return formatAmount(0);
+		}
 		if (amount < 0.01) {
 			if (amount > 0.00000001) {
 				return formatAmount(amount, 8, 8);
