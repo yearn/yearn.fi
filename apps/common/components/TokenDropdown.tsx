@@ -27,7 +27,7 @@ function DropdownItem({option, balanceSource}: TDropdownItemProps): ReactElement
 							{option.symbol}
 						</p>
 						<p className={`${option.icon ? 'pl-2' : 'pl-0'} text-xxs font-normal text-neutral-600`}>
-							{`${formatAmount(balance.normalized)} ${option.symbol}`}
+							{`${formatAmount({amount: balance.normalized})} ${option.symbol}`}
 						</p>
 					</div>
 				</div>

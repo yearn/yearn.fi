@@ -87,7 +87,7 @@ function GraphForVaultEarnings({currentVault, harvestData, height = 312, isCumul
 									<div className={'flex flex-row items-center justify-between'}>
 										<p className={'text-xs text-neutral-600'}>{'Earnings'}</p>
 										<b className={'font-number text-xs font-bold text-neutral-900'}>
-											{`${formatAmount(Number(value))} ${currentVault.token.symbol}`}
+											{`${formatAmount({amount: Number(value)})} ${currentVault.token.symbol}`}
 										</b>
 									</div>
 								</div>

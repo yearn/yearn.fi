@@ -68,7 +68,7 @@ function GraphForVaultTVL({messariData, height = 312}: TGraphForVaultTVLProps): 
 									<div className={'flex flex-row items-center justify-between'}>
 										<p className={'text-xs text-neutral-600'}>{'TVL'}</p>
 										<b className={'font-number text-xs font-bold text-neutral-900'}>
-											{`${formatAmount(Number(value))} $`}
+											{`${formatAmount({amount: Number(value)})} $`}
 										</b>
 									</div>
 								</div>

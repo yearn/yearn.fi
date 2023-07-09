@@ -31,7 +31,7 @@ function GaugeRowItemWithExtraData({address, value}: {address: TAddress, value: 
 				{formatUSD(bribeValue, 5, 5)}
 			</p>
 			<p className={'font-number inline-flex items-baseline text-right text-xs text-neutral-400'}>
-				{formatAmount(bribeAmount, 5, 5)}
+				{formatAmount({amount: bribeAmount, fractionDigits: {min: 5, max: 5}})}
 				&nbsp;
 				<span>{`${symbol}`}</span>
 			</p>

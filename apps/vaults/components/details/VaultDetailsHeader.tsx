@@ -3,11 +3,11 @@ import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {formatToNormalizedValue, toBigInt, toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatPercent, formatUSD} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {copyToClipboard} from '@yearn-finance/web-lib/utils/helpers';
-import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {useBalance} from '@common/hooks/useBalance';
 import {useFetch} from '@common/hooks/useFetch';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
@@ -21,17 +21,23 @@ import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
 type TVaultHeaderLineItemProps = {
 	label: string;
+	childTitle?: string;
 	children: string;
 	legend?: string;
 }
 
-function VaultHeaderLineItem({label, children, legend}: TVaultHeaderLineItemProps): ReactElement {
+function VaultHeaderLineItem({label, children, childTitle, legend}: TVaultHeaderLineItemProps): ReactElement {
 	return (
 		<div className={'flex flex-col items-center justify-center space-y-1 md:space-y-2'}>
 			<p className={'text-center text-xxs text-neutral-600 md:text-xs'}>
 				{label}
 			</p>
-			<b className={'font-number text-lg md:text-3xl'} suppressHydrationWarning>
+			<b
+				className={cl(
+					'font-number text-lg md:text-3xl',
+					childTitle && 'underline decoration-1 decoration-dotted decoration-neutral-600 underline-offset-4'
+				)}
+				title={childTitle} suppressHydrationWarning>
 				{children}
 			</b>
 			<legend className={'font-number text-xxs text-neutral-600 md:text-xs'} suppressHydrationWarning>
@@ -67,21 +73,6 @@ function VaultDetailsHeader({vault}: { vault: TYDaemonVault }): ReactElement {
 	const stakedBalance = toNormalizedValue(toBigInt(positionsMap[toAddress(stakingRewardsByVault[address])]?.stake), decimals);
 	const depositedAndStaked = vaultBalance + stakedBalance;
 
-	//TODO: EXPORT THIS AS EXTERNAL FUNCTION
-	function renderAmount(): string {
-		const amount = formatToNormalizedValue(toBigInt(tvl.total_assets), decimals);
-		if (isZero(amount)) {
-			return formatAmount(0);
-		}
-		if (amount < 0.01) {
-			if (amount > 0.00000001) {
-				return formatAmount(amount, 8, 8);
-			}
-			return formatAmount(amount, decimals, decimals);
-		}
-		return formatAmount(amount);
-	}
-
 	return (
 		<div aria-label={'Vault Header'} className={'col-span-12 flex w-full flex-col items-center justify-center'}>
 			<b className={'mx-auto flex w-full flex-row items-center justify-center text-center text-4xl tabular-nums text-neutral-900 md:text-8xl'}>
@@ -95,8 +86,15 @@ function VaultDetailsHeader({vault}: { vault: TYDaemonVault }): ReactElement {
 				) : <p className={'text-xxs text-neutral-500 md:text-xs'}>&nbsp;</p>}
 			</div>
 			<div className={'grid grid-cols-2 gap-6 md:grid-cols-4 md:gap-12'}>
-				<VaultHeaderLineItem label={`Total deposited, ${token.symbol}`} legend={formatUSD(tvl.tvl)}>
-					{renderAmount()}
+				<VaultHeaderLineItem
+					label={`Total deposited, ${token.symbol}`}
+					childTitle={formatToNormalizedValue(toBigInt(tvl.total_assets), decimals).toString()}
+					legend={formatUSD(tvl.tvl)}
+				>
+					{formatAmount({
+						amount: formatToNormalizedValue(toBigInt(tvl.total_assets), decimals),
+						displayDigits: decimals
+					})}
 				</VaultHeaderLineItem>
 
 				<VaultHeaderLineItem label={'Net APY'}>
@@ -104,11 +102,11 @@ function VaultDetailsHeader({vault}: { vault: TYDaemonVault }): ReactElement {
 				</VaultHeaderLineItem>
 
 				<VaultHeaderLineItem label={`Balance, ${symbol}`} legend={formatCounterValue(depositedAndStaked, vaultPrice)}>
-					{formatAmount(depositedAndStaked)}
+					{formatAmount({amount: depositedAndStaked})}
 				</VaultHeaderLineItem>
 
 				<VaultHeaderLineItem label={`Earned, ${token.symbol}`} legend={formatCounterValue(normalizedVaultEarned, vaultPrice)}>
-					{formatAmount(normalizedVaultEarned)}
+					{formatAmount({amount: normalizedVaultEarned})}
 				</VaultHeaderLineItem>
 			</div>
 		</div>

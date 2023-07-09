@@ -48,7 +48,7 @@ function GraphForVaultPPSGrowth({messariData, height = 312}: TGraphForVaultPPSGr
 						delete e.verticalAnchor;
 						delete e.visibleTicksCount;
 						delete e.tickFormatter;
-						const formatedValue = formatAmount(value, 3, 3);
+						const formatedValue = formatAmount({amount: value, fractionDigits: {min: 3, max: 3}});
 						return <text {...e}>{formatedValue}</text>;
 					}} />
 				<Tooltip

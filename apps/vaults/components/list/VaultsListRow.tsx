@@ -38,34 +38,6 @@ function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElem
 		return balanceOfWant.normalized;
 	}, [balanceOfCoin.normalized, balanceOfCoin.raw, balanceOfWant.normalized, balanceOfWrappedCoin.normalized, currentVault.token.address]);
 
-	//TODO: EXPORT THIS AS EXTERNAL FUNCTION
-	function renderAvailableToDeposit(): string {
-		if (isZero(availableToDeposit)) {
-			return formatAmount(0);
-		}
-		if (availableToDeposit < 0.01) {
-			if (availableToDeposit > 0.00000001) {
-				return formatAmount(availableToDeposit, 8, 8);
-			}
-			return formatAmount(availableToDeposit, currentVault.token.decimals, currentVault.token.decimals);
-		}
-		return formatAmount(availableToDeposit);
-	}
-
-	//TODO: EXPORT THIS AS EXTERNAL FUNCTION
-	function renderDepositedAndStaked(): string {
-		if (isZero(depositedAndStaked)) {
-			return formatAmount(0);
-		}
-		if (depositedAndStaked < 0.01) {
-			if (depositedAndStaked > 0.00000001) {
-				return formatAmount(depositedAndStaked, 8, 8);
-			}
-			return formatAmount(depositedAndStaked, currentVault.token.decimals, currentVault.token.decimals);
-		}
-		return formatAmount(depositedAndStaked);
-	}
-
 	return (
 		<Link key={`${currentVault.address}`} href={`/vaults/${safeChainID}/${toAddress(currentVault.address)}`}>
 			<div className={'yearn--table-wrapper cursor-pointer transition-colors hover:bg-neutral-300'}>
@@ -93,7 +65,7 @@ function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElem
 								)}
 							</b>
 							<small className={'text-xs text-neutral-900'}>
-								{isEthMainnet && currentVault.apy?.composite?.boost && !currentVault.apy?.staking_rewards_apr ? `BOOST ${formatAmount(currentVault.apy?.composite?.boost, 2, 2)}x` : null}
+								{isEthMainnet && currentVault.apy?.composite?.boost && !currentVault.apy?.staking_rewards_apr ? `BOOST ${formatAmount({amount: currentVault.apy?.composite?.boost})}x` : null}
 							</small>
 							<small className={'text-xs text-neutral-900'}>
 								{currentVault.apy?.staking_rewards_apr ? `REWARD ${formatPercent((currentVault.apy?.staking_rewards_apr || 0) * 100, 2, 2, 500)}` : null}
@@ -104,14 +76,14 @@ function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElem
 					<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
 						<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Available'}</label>
 						<p className={`yearn--table-data-section-item-value ${isZero(availableToDeposit) ? 'text-neutral-400' : 'text-neutral-900'}`}>
-							{renderAvailableToDeposit()}
+							{formatAmount({amount: availableToDeposit})}
 						</p>
 					</div>
 
 					<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
 						<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Deposited'}</label>
 						<p className={`yearn--table-data-section-item-value ${isZero(depositedAndStaked) ? 'text-neutral-400' : 'text-neutral-900'}`}>
-							{renderDepositedAndStaked()}
+							{formatAmount({amount: depositedAndStaked})}
 						</p>
 					</div>
 

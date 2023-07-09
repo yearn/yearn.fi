@@ -93,7 +93,7 @@ function ValueAnimation({
 	});
 
 	useEffect((): void => {
-		if (value && value !== formatAmount(0) && !hasBeenTriggerd.current) {
+		if (value && value !== formatAmount({amount: 0}) && !hasBeenTriggerd.current) {
 			onStartAnimation();
 		}
 	}, [value, onStartAnimation]);

@@ -38,7 +38,7 @@ function GaugeRowItemWithExtraData({
 				{formatUSD(bribeValue, minDecimals, minDecimals)}
 			</div>
 			<p className={'font-number inline-flex items-baseline text-right text-xs text-neutral-400'}>
-				{formatAmount(bribeAmount, minDecimals, minDecimals)}
+				{formatAmount({amount: bribeAmount, fractionDigits: {min: minDecimals, max: minDecimals}})}
 				&nbsp;
 				<span>{`${symbol}`}</span>
 			</p>

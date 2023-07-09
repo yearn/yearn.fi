@@ -30,7 +30,7 @@ function VaultsListRetired({currentVault}: {currentVault: TYDaemonVault}): React
 						</div>
 						<div className={'text-left'}>
 							<p>{vaultName}</p>
-							<p className={'font-number text-xs'}>{`${formatAmount(balanceToMigrate.normalized)} ${currentVault.token.symbol}`}</p>
+							<p className={'font-number text-xs'}>{`${formatAmount({amount: balanceToMigrate.normalized})} ${currentVault.token.symbol}`}</p>
 						</div>
 					</div>
 				</div>

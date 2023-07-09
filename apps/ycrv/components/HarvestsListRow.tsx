@@ -33,7 +33,7 @@ function HarvestListRow({harvest}: {harvest: TYDaemonVaultHarvest}): ReactElemen
 				<div className={'yearn--table-data-section-item md:col-span-1'} datatype={'number'}>
 					<p className={'yearn--table-data-section-item-label'}>{'Gain'}</p>
 					<b className={'yearn--table-data-section-item-value'}>
-						{formatAmount(formatToNormalizedValue(toBigInt(harvest.profit) - toBigInt(harvest.loss), 18))}
+						{formatAmount({amount: formatToNormalizedValue(toBigInt(harvest.profit) - toBigInt(harvest.loss), 18)})}
 					</b>
 				</div>
 

@@ -315,7 +315,7 @@ function Factory(): ReactElement {
 					</div>
 					<div>
 						<p className={'font-number text-xs'}>
-							{`Est. gas ${formatAmount(Number(estimate), 0, 0)}`}
+							{`Est. gas ${formatAmount({amount: Number(estimate), fractionDigits: {min: 0, max: 0}})}`}
 						</p>
 					</div>
 				</div>

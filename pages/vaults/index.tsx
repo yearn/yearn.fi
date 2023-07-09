@@ -39,11 +39,11 @@ function HeaderUserPosition(): ReactElement {
 
 	const formatedYouEarned = useMemo((): string => {
 		const amount = (earned?.totalUnrealizedGainsUSD || 0) > 0 ? earned?.totalUnrealizedGainsUSD || 0 : 0;
-		return formatAmount(amount) ?? '';
+		return formatAmount({amount: amount}) ?? '';
 	}, [earned?.totalUnrealizedGainsUSD]);
 
 	const formatedYouHave = useMemo((): string => {
-		return formatAmount(cumulatedValueInVaults || 0) ?? '';
+		return formatAmount({amount: cumulatedValueInVaults || 0}) ?? '';
 	}, [cumulatedValueInVaults]);
 
 	if (!isActive) {

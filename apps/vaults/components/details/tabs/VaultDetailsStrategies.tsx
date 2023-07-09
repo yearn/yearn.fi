@@ -105,17 +105,23 @@ function VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
 									{'Capital Allocation'}
 								</p>
 								<b className={'font-number text-lg text-neutral-900'}>
-									{`${formatAmount(formatToNormalizedValue(toBigInt(strategy.details?.totalDebt), currentVault?.decimals), 0, 0)} ${currentVault.token.symbol}`}
+									{`${formatAmount({
+										amount: formatToNormalizedValue(toBigInt(strategy.details?.totalDebt), currentVault?.decimals),
+										fractionDigits: {min: 0, max: 0}
+									})} ${currentVault.token.symbol}`}
 								</b>
 							</div>
 
 							<div className={'col-span-2 flex flex-col space-y-2 bg-neutral-200 p-2 md:p-4'}>
 								<p className={'text-base text-neutral-600'}>{'Total Gain'}</p>
 								<b className={'font-number text-lg text-neutral-900'}>
-									{`${formatAmount(formatToNormalizedValue(
-										toBigInt(strategy.details?.totalGain) - toBigInt(strategy.details?.totalLoss),
-										currentVault?.decimals
-									), 0, 0)} ${currentVault.token.symbol}`}
+									{`${formatAmount({
+										amount: formatToNormalizedValue(
+											toBigInt(strategy.details?.totalGain) - toBigInt(strategy.details?.totalLoss),
+											currentVault?.decimals
+										),
+										fractionDigits: {min: 0, max: 0}
+									})} ${currentVault.token.symbol}`}
 								</b>
 							</div>
 						</div>

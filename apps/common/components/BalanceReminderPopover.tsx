@@ -65,7 +65,7 @@ function TokenItem({element}: {element: TBalanceReminderElement}): ReactElement 
 					<span className={'ml-2'}>{element.symbol}</span>
 				</span>
 				<span className={'font-number flex flex-row items-center justify-center text-neutral-900'}>
-					{formatAmount(balance.normalized, 2, 4)}
+					{formatAmount({amount: balance.normalized, fractionDigits: {min: 2, max: 4}})}
 					<IconAddToMetamask
 						onClick={(e): void => {
 							e.preventDefault();

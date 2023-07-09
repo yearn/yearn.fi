@@ -31,7 +31,7 @@ function RewardFeedRowItemWithExtraData({
 				{formatUSD(bribeValue)}
 			</div>
 			<p className={'font-number inline-flex items-baseline text-right text-xs text-neutral-400'}>
-				{formatAmount(bribeAmount)}
+				{formatAmount({amount: bribeAmount})}
 				&nbsp;
 				<span>{`${symbol}`}</span>
 			</p>

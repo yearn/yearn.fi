@@ -26,7 +26,7 @@ function HeaderPosition(): ReactElement {
 
 	const formatedYearnHas = useMemo((): string => (
 		holdings?.veBalBalance ?
-			formatAmount(formatToNormalizedValue(holdings.veBalBalance, 18), 0, 0)
+			formatAmount({amount: formatToNormalizedValue(holdings.veBalBalance, 18), fractionDigits: {min: 0, max: 0}})
 			: ''
 	), [holdings?.veBalBalance]);
 
@@ -50,7 +50,7 @@ function HeaderPosition(): ReactElement {
 						identifier={'veBalTreasury'}
 						value={formatedYearnHas}
 						suffix={'veBal'}
-						defaultValue={formatAmount(0, 2, 2)} />
+						defaultValue={formatAmount({amount: 0})} />
 				</b>
 			</div>
 			<div className={'col-span-12 w-full md:col-span-4'}>
@@ -60,7 +60,7 @@ function HeaderPosition(): ReactElement {
 						identifier={'youHave'}
 						value={formatedYouHave}
 						prefix={'$'}
-						defaultValue={formatAmount(0, 2, 2)} />
+						defaultValue={formatAmount({amount: 0})} />
 				</b>
 			</div>
 		</Fragment>
@@ -147,7 +147,7 @@ function Holdings(): ReactElement {
 								{holdings?.styBalSupply ? formatCounterValue(
 									formatToNormalizedValue(holdings.styBalSupply, 18),
 									yBalPrice
-								) : formatAmount(0)}
+								) : formatAmount({amount: 0})}
 							</p>
 						</div>
 						<div className={'flex flex-row items-center justify-between pb-1'}>
@@ -210,7 +210,7 @@ function Holdings(): ReactElement {
 								{holdings?.lpyBalSupply ? formatCounterValue(
 									formatToNormalizedValue(holdings.lpyBalSupply, 18),
 									lpyBalPrice
-								) : formatAmount(0)}
+								) : formatAmount({amount: 0})}
 							</p>
 						</div>
 						<div className={'flex flex-row items-center justify-between pb-1'}>

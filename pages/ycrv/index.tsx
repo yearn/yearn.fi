@@ -27,7 +27,7 @@ function HeaderPosition(): ReactElement {
 
 	const formatedYearnHas = useMemo((): string => (
 		holdings?.veCRVBalance ?
-			formatAmount(formatToNormalizedValue(holdings.veCRVBalance, 18), 0, 0)
+			formatAmount({amount: formatToNormalizedValue(holdings.veCRVBalance, 18), fractionDigits: {min: 0, max: 0}})
 			: ''
 	), [holdings?.veCRVBalance]);
 
@@ -122,7 +122,7 @@ function ZapAndStats(): ReactElement {
 						<p
 							suppressHydrationWarning
 							className={'font-number text-sm text-neutral-900'}>
-							{`Price = $${(formatAmount(ycrvPrice || 0))} | Peg = ${(
+							{`Price = $${(formatAmount({amount: ycrvPrice || 0}))} | Peg = ${(
 								holdings?.crvYCRVPeg ? (formatPercent(
 									(formatToNormalizedValue(holdings?.crvYCRVPeg, 18) + 0.0015) * 100)
 								): formatPercent(0)
@@ -205,12 +205,12 @@ function ZapAndStats(): ReactElement {
 									<p
 										suppressHydrationWarning
 										className={'font-number text-neutral-400 md:text-xxs'}>
-										{`∙ ${curveAdminFeePercent ? formatPercent(curveAdminFeePercent) : formatPercent(0)} Curve Admin Fees (${formatAmount(Number(holdings?.boostMultiplier) / 10000)}x boost)`}
+										{`∙ ${curveAdminFeePercent ? formatPercent(curveAdminFeePercent) : formatPercent(0)} Curve Admin Fees (${formatAmount({amount: Number(holdings?.boostMultiplier) / 10000})}x boost)`}
 									</p>
 									<p
 										suppressHydrationWarning
 										className={'font-number text-neutral-400 md:text-xxs'}>
-										{`∙ ${styCRVAPY && curveAdminFeePercent && styCRVMegaBoost ? formatAmount(styCRVAPY - (curveAdminFeePercent + (styCRVMegaBoost * 100)), 2, 2) : '0.00'}% Gauge Voting Bribes`}
+										{`∙ ${styCRVAPY && curveAdminFeePercent && styCRVMegaBoost ? formatAmount({amount: styCRVAPY - (curveAdminFeePercent + (styCRVMegaBoost * 100))}) : '0.00'}% Gauge Voting Bribes`}
 									</p>
 									<p
 										suppressHydrationWarning
@@ -231,7 +231,7 @@ function ZapAndStats(): ReactElement {
 							{holdings?.styCRVSupply ? formatCounterValue(
 								formatToNormalizedValue(holdings.styCRVSupply, 18),
 								ycrvPrice
-							) : formatAmount(0)}
+							) : formatAmount({amount: 0})}
 						</p>
 					</div>
 					<div className={'flex flex-row items-center justify-between pb-1'}>
@@ -296,7 +296,7 @@ function ZapAndStats(): ReactElement {
 							{holdings?.lpyCRVSupply ? formatCounterValue(
 								formatToNormalizedValue(holdings.lpyCRVSupply, 18),
 								lpycrvPrice
-							) : formatAmount(0)}
+							) : formatAmount({amount: 0})}
 						</p>
 					</div>
 					<div className={'flex flex-row items-center justify-between pb-1'}>
