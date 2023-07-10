@@ -149,20 +149,17 @@ function formatLocalAmount(
 		if (amount > 0.00000001) {
 			return (new Intl.NumberFormat([locale, 'en-US'], {
 				...intlOptions,
-				minimumFractionDigits: 8,
 				maximumFractionDigits: Math.max(8, intlOptions.maximumFractionDigits || 8)
 			}).format(amount).replace('EUR', symbol));
 		}
 		if (amount > 0.000000000001) {
 			return (new Intl.NumberFormat([locale, 'en-US'], {
 				...intlOptions,
-				minimumFractionDigits: 12,
 				maximumFractionDigits: Math.max(12, intlOptions.maximumFractionDigits || 12)
 			}).format(amount).replace('EUR', symbol));
 		}
 		return (new Intl.NumberFormat([locale, 'en-US'], {
 			...intlOptions,
-			minimumFractionDigits: decimals,
 			maximumFractionDigits: Math.max(decimals, intlOptions.maximumFractionDigits || decimals)
 		}).format(amount).replace('EUR', symbol));
 	}
@@ -172,6 +169,7 @@ function formatLocalAmount(
 			.replace('EUR', symbol)
 	);
 }
+
 function amount(props: TAmount): string {
 	const {value} = props;
 	const options = assignOptions(props.options);
@@ -221,3 +219,10 @@ export function RenderAmount(props: TAmount): ReactElement {
 		</span>
 	);
 }
+
+export const exportedForTesting = {
+	assertValidNumber,
+	formatLocalAmount,
+	amount,
+	defaultOptions
+};
