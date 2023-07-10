@@ -108,12 +108,22 @@ function formatLocalAmount(
 	}
 	const {shouldDisplaySymbol, shouldCompactValue, ...rest} = options;
 	const intlOptions: Intl.NumberFormatOptions = rest;
+	let isPercent = false;
 	if (symbol && symbol !== '' && shouldDisplaySymbol) {
 		const uppercaseSymbol = String(symbol).toLocaleUpperCase();
 		const symbolToFormat = uppercaseSymbol === 'USD' ? 'USD' : 'EUR';
-		intlOptions.style = uppercaseSymbol === 'percent' ? 'percent' : 'currency',
+		intlOptions.style = uppercaseSymbol === 'PERCENT' ? 'percent' : 'currency',
 		intlOptions.currency = symbolToFormat,
 		intlOptions.currencyDisplay = symbolToFormat === 'EUR' ? 'code' : 'narrowSymbol';
+		isPercent = uppercaseSymbol === 'PERCENT';
+	}
+
+	if (isPercent && amount > 5 && shouldCompactValue) {
+		return (
+			`> ${new Intl.NumberFormat([locale, 'en-US'], intlOptions)
+				.format(5)
+				.replace('EUR', symbol)}`
+		);
 	}
 
 	/* 🔵 - Yearn Finance *************************************************************************

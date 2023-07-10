@@ -1,11 +1,12 @@
 import {useMemo} from 'react';
 import Link from 'next/link';
 import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
+import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {formatAmount, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
+import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useBalance} from '@common/hooks/useBalance';
@@ -19,6 +20,7 @@ function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElem
 	const {safeChainID} = useChainID();
 	const balanceOfWant = useBalance(currentVault.token.address);
 	const balanceOfCoin = useBalance(ETH_TOKEN_ADDRESS);
+	//TODO: Create a wagmi Chain upgrade to add the chain wrapper token address
 	const balanceOfWrappedCoin = useBalance(toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS ? WFTM_TOKEN_ADDRESS : WETH_TOKEN_ADDRESS);
 	const vaultName = useMemo((): string => getVaultName(currentVault), [currentVault]);
 	const isEthMainnet = currentVault.chainID === 1;
@@ -62,17 +64,29 @@ function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElem
 						<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'APY'}</label>
 						<div className={'flex flex-col text-right'}>
 							<b className={'yearn--table-data-section-item-value'}>
-								{(currentVault.apy?.type === 'new' && isZero(currentVault.apy?.net_apy)) ? (
-									'New'
-								) : (
-									formatPercent(((currentVault?.apy?.net_apy || 0) + (currentVault.apy?.staking_rewards_apr || 0)) * 100, 2, 2, 500)
-								)}
+								<Renderable
+									shouldRender={!(currentVault.apy?.type === 'new' && isZero(currentVault.apy?.net_apy))}
+									fallback={'New'}>
+									<RenderAmount
+										value={currentVault.apy?.net_apy}
+										symbol={'percent'}
+										decimals={6} />
+								</Renderable>
 							</b>
 							<small className={'text-xs text-neutral-900'}>
-								{isEthMainnet && currentVault.apy?.composite?.boost && !currentVault.apy?.staking_rewards_apr ? `BOOST ${formatAmount(currentVault.apy?.composite?.boost, 2, 2)}x` : null}
+								<Renderable
+									shouldRender={isEthMainnet && currentVault.apy?.composite?.boost > 0 && !currentVault.apy?.staking_rewards_apr}>
+									{`BOOST ${formatAmount(currentVault.apy?.composite?.boost, 2, 2)}x`}
+								</Renderable>
 							</small>
 							<small className={'text-xs text-neutral-900'}>
-								{currentVault.apy?.staking_rewards_apr ? `REWARD ${formatPercent((currentVault.apy?.staking_rewards_apr || 0) * 100, 2, 2, 500)}` : null}
+								<Renderable shouldRender={currentVault.apy?.staking_rewards_apr > 0}>
+									{'REWARD '}
+									<RenderAmount
+										value={currentVault.apy?.staking_rewards_apr}
+										symbol={'percent'}
+										decimals={6} />
+								</Renderable>
 							</small>
 						</div>
 					</div>
