@@ -28,7 +28,7 @@ function assertValidNumber(value: number | undefined, defaultValue: number, labe
 	}
 	if (value < 0) {
 		console.warn(`formatAmount: ${label} should be positive.`);
-		return (defaultValue);
+		return defaultValue;
 	}
 	if (value > 18) {
 		console.warn(`formatAmount: ${label} should be less than 18.`);
