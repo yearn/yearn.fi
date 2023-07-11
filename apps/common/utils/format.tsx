@@ -78,12 +78,8 @@ function assignOptions(options?: TAmountOptions): TAmountOptions {
 		options.maximumFractionDigits = options.minimumFractionDigits;
 	}
 
-	if (options.shouldDisplaySymbol === undefined) {
-		options.shouldDisplaySymbol = true;
-	}
-	if (options.shouldCompactValue === undefined) {
-		options.shouldCompactValue = true;
-	}
+	options.shouldDisplaySymbol ??= true;
+	options.shouldCompactValue ??= true;
 
 	return options;
 }
