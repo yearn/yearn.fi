@@ -1,4 +1,5 @@
 import {z} from 'zod';
+import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {addressSchema} from '@common/schemas/custom/addressSchema';
 
 const yDaemonVaultStrategySchema = z.object({
@@ -93,8 +94,8 @@ export const yDaemonVaultSchema = z.object({
 	emergency_shutdown: z.boolean(),
 	token: yDaemonVaultTokenSchema,
 	tvl: z.object({
-		total_assets: z.string(),
-		total_delegated_assets: z.string(),
+		total_assets: z.string().transform((val): bigint => toBigInt(val)),
+		total_delegated_assets: z.string().transform((val): bigint => toBigInt(val)),
 		tvl_deposited: z.number(),
 		tvl_delegated: z.number(),
 		tvl: z.number(),

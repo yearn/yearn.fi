@@ -1,5 +1,6 @@
 import {useCallback, useMemo} from 'react';
 import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
+import {deserialize, serialize} from '@wagmi/core';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt, toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -67,9 +68,9 @@ function useSortVaults(
 		});
 	}, [balances, balancesNonce, sortDirection, vaultList]);
 
-	const stringifiedVaultList = JSON.stringify(vaultList);
+	const stringifiedVaultList = serialize(vaultList);
 	const sortedVaults = useMemo((): TYDaemonVaults => {
-		const sortResult = JSON.parse(stringifiedVaultList);
+		const sortResult = deserialize(stringifiedVaultList);
 		if (sortDirection === '') {
 			return sortResult;
 		}

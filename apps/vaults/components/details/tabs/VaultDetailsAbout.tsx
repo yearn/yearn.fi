@@ -4,6 +4,7 @@ import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
+import {RenderAmount} from '@common/components/RenderAmount';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
@@ -13,7 +14,6 @@ type TAPYLineItemProps = {
 	label: string;
 	value: number | string;
 	apyType: string;
-	hasUpperLimit?: boolean;
 };
 
 type TYearnFeesLineItem = {
@@ -21,16 +21,20 @@ type TYearnFeesLineItem = {
 	label: string;
 };
 
-function APYLineItem({value, label, apyType, hasUpperLimit}: TAPYLineItemProps): ReactElement {
+function APYLineItem({value, label, apyType}: TAPYLineItemProps): ReactElement {
 	const safeValue = Number(value) || 0;
-
 	const isNew = apyType === 'new' && isZero(safeValue);
 
 	return (
 		<div className={'flex flex-row items-center justify-between'}>
 			<p className={'text-sm text-neutral-500'}>{label}</p>
 			<p className={'font-number text-sm text-neutral-900'} suppressHydrationWarning>
-				{isNew ? 'New' : hasUpperLimit ? formatPercent(safeValue * 100) : formatPercent(safeValue * 100, 2, 2, 500)}
+				{isNew ? 'New' : (
+					<RenderAmount
+						value={safeValue}
+						symbol={'percent'}
+						decimals={6} />
+				)}
 			</p>
 		</div>
 	);
@@ -73,8 +77,8 @@ function VaultDetailsAbout({currentVault, harvestData}: { currentVault: TYDaemon
 						</div>
 						<div className={'mt-2 space-y-2 md:mt-0'}>
 							<APYLineItem label={'Gross APR'} apyType={currentVault.apy?.type} value={apy.gross_apr} />
-							<APYLineItem label={'Net APY'} apyType={currentVault.apy?.type} value={(apy.net_apy || 0) + (apy.staking_rewards_apr || 0)} hasUpperLimit />
-							{apy.staking_rewards_apr > 0 && <APYLineItem label={'Reward APR'} apyType={currentVault.apy?.type} value={apy.staking_rewards_apr} hasUpperLimit />}
+							<APYLineItem label={'Net APY'} apyType={currentVault.apy?.type} value={(apy.net_apy || 0) + (apy.staking_rewards_apr || 0)} />
+							{apy.staking_rewards_apr > 0 && <APYLineItem label={'Reward APR'} apyType={currentVault.apy?.type} value={apy.staking_rewards_apr} />}
 						</div>
 					</div>
 				</div>
