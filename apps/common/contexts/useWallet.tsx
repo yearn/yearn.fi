@@ -4,7 +4,7 @@ import {OPT_REWARDS_TOKENS, OPT_YVDAI_STAKING_CONTRACT, OPT_YVDOLAUSDC_STAKING_C
 import {useUI} from '@yearn-finance/web-lib/contexts/useUI';
 import {useClientEffect} from '@yearn-finance/web-lib/hooks/useClientEffect';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {BAL_TOKEN_ADDRESS, BALWETH_TOKEN_ADDRESS, CRV_TOKEN_ADDRESS, CVXCRV_TOKEN_ADDRESS, ETH_TOKEN_ADDRESS, LPYBAL_TOKEN_ADDRESS, LPYCRV_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, YBAL_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS, YVBOOST_TOKEN_ADDRESS, YVECRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {BAL_TOKEN_ADDRESS, BALWETH_TOKEN_ADDRESS, CRV_TOKEN_ADDRESS, CVXCRV_TOKEN_ADDRESS, ETH_TOKEN_ADDRESS, LPYBAL_TOKEN_ADDRESS, LPYCRV_TOKEN_ADDRESS, LPYCRV_V2_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, YBAL_TOKEN_ADDRESS, YCRV_CURVE_POOL_V2_ADDRESS, YCRV_TOKEN_ADDRESS, YVBOOST_TOKEN_ADDRESS, YVECRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {useYearn} from '@common/contexts/useYearn';
 import {useBalances} from '@common/hooks/useBalances';
 
@@ -62,7 +62,9 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 				{token: YBAL_TOKEN_ADDRESS},
 				{token: BALWETH_TOKEN_ADDRESS},
 				{token: STYBAL_TOKEN_ADDRESS},
-				{token: LPYBAL_TOKEN_ADDRESS}
+				{token: LPYBAL_TOKEN_ADDRESS},
+				{token: YCRV_CURVE_POOL_V2_ADDRESS},
+				{token: LPYCRV_V2_TOKEN_ADDRESS}
 			]);
 		}
 		if (safeChainID === 10) {

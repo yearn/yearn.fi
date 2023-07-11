@@ -1,5 +1,4 @@
 import {Fragment, useMemo} from 'react';
-import Image from 'next/image';
 import {Popover, Transition} from '@headlessui/react';
 import {captureException} from '@sentry/nextjs';
 import Renderable from '@yearn-finance/web-lib/components/Renderable';
@@ -14,6 +13,8 @@ import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import {useBalance} from '@common/hooks/useBalance';
+
+import {ImageWithFallback} from './ImageWithFallback';
 
 import type {ReactElement} from 'react';
 import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
@@ -55,7 +56,7 @@ function TokenItem({element}: {element: TBalanceReminderElement}): ReactElement 
 			<span className={'flex flex-row items-center justify-between'}>
 				<span className={'flex items-center text-neutral-900'}>
 					<div className={'flex w-12'}>
-						<Image
+						<ImageWithFallback
 							alt={element.symbol}
 							width={32}
 							height={32}

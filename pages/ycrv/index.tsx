@@ -1,5 +1,5 @@
 import {Fragment, useMemo} from 'react';
-import {LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {LPYCRV_TOKEN_ADDRESS, LPYCRV_V2_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatBigNumberOver10K, formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatNumberOver10K, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue, formatCounterValueRaw} from '@yearn-finance/web-lib/utils/format.value';
@@ -22,8 +22,10 @@ function HeaderPosition(): ReactElement {
 	const {holdings} = useYCRV();
 	const balanceOfStyCRV = useBalance(STYCRV_TOKEN_ADDRESS);
 	const balanceOfLpyCRV = useBalance(LPYCRV_TOKEN_ADDRESS);
+	const balanceOfLpyCRVV2 = useBalance(LPYCRV_V2_TOKEN_ADDRESS);
 	const stycrvPrice = useTokenPrice(STYCRV_TOKEN_ADDRESS);
 	const lpycrvPrice = useTokenPrice(LPYCRV_TOKEN_ADDRESS);
+	const lpycrvV2Price = useTokenPrice(LPYCRV_V2_TOKEN_ADDRESS);
 
 	const formatedYearnHas = useMemo((): string => (
 		holdings?.veCRVBalance ?
@@ -35,10 +37,12 @@ function HeaderPosition(): ReactElement {
 		formatCounterValueRaw(
 			(balanceOfStyCRV.normalized * stycrvPrice)
 			+
-			(balanceOfLpyCRV.normalized * lpycrvPrice),
+			(balanceOfLpyCRV.normalized * lpycrvPrice)
+			+
+			(balanceOfLpyCRVV2.normalized * lpycrvV2Price),
 			1
 		)
-	), [balanceOfStyCRV.normalized, stycrvPrice, balanceOfLpyCRV.normalized, lpycrvPrice]);
+	), [balanceOfStyCRV.normalized, stycrvPrice, balanceOfLpyCRV.normalized, lpycrvPrice, balanceOfLpyCRVV2.normalized, lpycrvV2Price]);
 
 	return (
 		<Fragment>
@@ -77,11 +81,14 @@ function ZapAndStats(): ReactElement {
 	const {curveWeeklyFees, cgPrices} = useCurve();
 
 	const lpCRVAPY = useMemo((): string => getVaultAPY(vaults, LPYCRV_TOKEN_ADDRESS), [vaults]);
+	const lpCRVV2APY = useMemo((): string => getVaultAPY(vaults, LPYCRV_V2_TOKEN_ADDRESS), [vaults]);
 	const ycrvPrice = useTokenPrice(YCRV_TOKEN_ADDRESS);
 	const stycrvPrice = useTokenPrice(STYCRV_TOKEN_ADDRESS);
 	const lpycrvPrice = useTokenPrice(LPYCRV_TOKEN_ADDRESS);
+	const lpycrvV2Price = useTokenPrice(LPYCRV_V2_TOKEN_ADDRESS);
 	const balanceOfStyCRV = useBalance(STYCRV_TOKEN_ADDRESS);
 	const balanceOfLpyCRV = useBalance(LPYCRV_TOKEN_ADDRESS);
+	const balanceOfLpyCRVV2 = useBalance(LPYCRV_V2_TOKEN_ADDRESS);
 
 	const latestCurveFeesValue = useMemo((): number => {
 		const {weeklyFeesTable} = curveWeeklyFees;
@@ -112,7 +119,9 @@ function ZapAndStats(): ReactElement {
 
 	return (
 		<div className={'col-span-12 grid w-full grid-cols-12 gap-4'}>
-			<CardZap className={'col-span-12 md:col-span-8'} />
+			<div className={'col-span-12 md:col-span-8'}>
+				<CardZap className={'col-span-12 md:col-span-8'} />
+			</div>
 			<div className={'col-span-12 flex flex-col gap-4 md:col-span-4'}>
 				<div className={'w-full bg-neutral-100 p-4'}>
 					<div className={'flex flex-row items-baseline justify-between pb-1'}>
@@ -249,7 +258,7 @@ function ZapAndStats(): ReactElement {
 				<div className={'w-full bg-neutral-100 p-4'}>
 					<div className={'flex flex-row items-center justify-between pb-3'}>
 						<b className={'text-neutral-900'}>
-							{'lp-yCRV'}
+							{'lp-yCRV V2'}
 						</b>
 					</div>
 
@@ -260,7 +269,7 @@ function ZapAndStats(): ReactElement {
 						<p
 							suppressHydrationWarning
 							className={'font-number text-sm text-neutral-900'}>
-							{formatNumberOver10K(balances[LPYCRV_TOKEN_ADDRESS]?.normalized || 0)}
+							{formatNumberOver10K(balances[LPYCRV_V2_TOKEN_ADDRESS]?.normalized || 0)}
 						</p>
 					</div>
 					<div className={'flex flex-row items-center justify-between'}>
@@ -270,7 +279,7 @@ function ZapAndStats(): ReactElement {
 						<p
 							suppressHydrationWarning
 							className={'font-number text-sm text-neutral-900'}>
-							{formatCounterValue(balanceOfLpyCRV.normalized, lpycrvPrice)}
+							{formatCounterValue(balanceOfLpyCRVV2.normalized, lpycrvV2Price)}
 						</p>
 					</div>
 
@@ -283,7 +292,7 @@ function ZapAndStats(): ReactElement {
 						<b
 							suppressHydrationWarning
 							className={'font-number text-sm text-neutral-900'}>
-							{lpCRVAPY ? `${(lpCRVAPY || '').replace('APY', '')}` : `${formatPercent(0)}`}
+							{lpCRVV2APY ? `${(lpCRVV2APY || '').replace('APY', '')}` : `${formatPercent(0)}`}
 						</b>
 					</div>
 					<div className={'flex flex-row items-center justify-between pb-1'}>
@@ -293,9 +302,9 @@ function ZapAndStats(): ReactElement {
 						<p
 							suppressHydrationWarning
 							className={'font-number text-sm text-neutral-900'}>
-							{holdings?.lpyCRVSupply ? formatCounterValue(
-								formatToNormalizedValue(holdings.lpyCRVSupply, 18),
-								lpycrvPrice
+							{holdings?.lpyCRVV2Supply ? formatCounterValue(
+								formatToNormalizedValue(holdings.lpyCRVV2Supply, 18),
+								lpycrvV2Price
 							) : formatAmount(0)}
 						</p>
 					</div>
@@ -306,10 +315,78 @@ function ZapAndStats(): ReactElement {
 						<p
 							suppressHydrationWarning
 							className={'font-number text-sm text-neutral-900'}>
-							{formatBigNumberOver10K(holdings.lpyCRVSupply)}
+							{formatBigNumberOver10K(holdings.lpyCRVV2Supply)}
 						</p>
 					</div>
 				</div>
+
+				{toBigInt(balances[LPYCRV_TOKEN_ADDRESS]?.raw) > 0n ? (
+					<div className={'w-full bg-neutral-100 p-4'}>
+						<div className={'flex flex-row items-center justify-between pb-3'}>
+							<b className={'text-neutral-900'}>
+								{'lp-yCRV'}
+							</b>
+						</div>
+
+						<div className={'flex flex-row items-baseline justify-between pb-1'}>
+							<span className={'inline text-sm font-normal text-neutral-400'}>
+								{'My Balance: '}
+							</span>
+							<p
+								suppressHydrationWarning
+								className={'font-number text-sm text-neutral-900'}>
+								{formatNumberOver10K(balances[LPYCRV_TOKEN_ADDRESS]?.normalized || 0)}
+							</p>
+						</div>
+						<div className={'flex flex-row items-center justify-between'}>
+							<span className={'inline text-sm font-normal text-neutral-400'}>
+								{'Value: '}
+							</span>
+							<p
+								suppressHydrationWarning
+								className={'font-number text-sm text-neutral-900'}>
+								{formatCounterValue(balanceOfLpyCRV.normalized, lpycrvPrice)}
+							</p>
+						</div>
+
+						<div className={'my-2 h-px w-full bg-neutral-200'} />
+
+						<div className={'flex flex-row items-center justify-between pb-1'}>
+							<span className={'mr-auto text-sm font-normal text-neutral-400'}>
+								{'APY: '}
+							</span>
+							<b
+								suppressHydrationWarning
+								className={'font-number text-sm text-neutral-900'}>
+								{lpCRVAPY ? `${(lpCRVAPY || '').replace('APY', '')}` : `${formatPercent(0)}`}
+							</b>
+						</div>
+						<div className={'flex flex-row items-center justify-between pb-1'}>
+							<span className={'inline text-sm font-normal text-neutral-400'}>
+								{'Total Assets: '}
+							</span>
+							<p
+								suppressHydrationWarning
+								className={'font-number text-sm text-neutral-900'}>
+								{holdings?.lpyCRVSupply ? formatCounterValue(
+									formatToNormalizedValue(holdings.lpyCRVSupply, 18),
+									lpycrvPrice
+								) : formatAmount(0)}
+							</p>
+						</div>
+						<div className={'flex flex-row items-center justify-between pb-1'}>
+							<span className={'inline text-sm font-normal text-neutral-400'}>
+								{'yCRV Deposits: '}
+							</span>
+							<p
+								suppressHydrationWarning
+								className={'font-number text-sm text-neutral-900'}>
+								{formatBigNumberOver10K(holdings.lpyCRVSupply)}
+							</p>
+						</div>
+					</div>
+				) : <div />}
+
 			</div>
 		</div>
 	);

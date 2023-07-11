@@ -3,7 +3,7 @@ import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
-import {CRV_TOKEN_ADDRESS, LPYCRV_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {CRV_TOKEN_ADDRESS, LPYCRV_TOKEN_ADDRESS, LPYCRV_V2_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YCRV_CURVE_POOL_V2_ADDRESS, YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatToNormalizedValue, toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
@@ -51,9 +51,23 @@ function CardZap(): ReactElement {
 	** useMemo to get the current possible TO vaults path for the current FROM
 	**************************************************************************/
 	const possibleTo = useMemo((): TDropdownOption[] => {
+		if (selectedOptionFrom.value === LPYCRV_TOKEN_ADDRESS) {
+			const possibleOptions = ZAP_OPTIONS_TO.filter((option): boolean => option.value === LPYCRV_V2_TOKEN_ADDRESS);
+			if (selectedOptionTo.value !== LPYCRV_V2_TOKEN_ADDRESS) {
+				set_selectedOptionTo(possibleOptions[0]);
+			}
+			return possibleOptions;
+		}
 		if (selectedOptionFrom.value === YCRV_CURVE_POOL_ADDRESS) {
 			const possibleOptions = ZAP_OPTIONS_TO.filter((option): boolean => option.value === LPYCRV_TOKEN_ADDRESS);
 			if (selectedOptionTo.value !== LPYCRV_TOKEN_ADDRESS) {
+				set_selectedOptionTo(possibleOptions[0]);
+			}
+			return possibleOptions;
+		}
+		if (selectedOptionFrom.value === YCRV_CURVE_POOL_V2_ADDRESS) {
+			const possibleOptions = ZAP_OPTIONS_TO.filter((option): boolean => option.value === LPYCRV_V2_TOKEN_ADDRESS);
+			if (selectedOptionTo.value !== LPYCRV_V2_TOKEN_ADDRESS) {
 				set_selectedOptionTo(possibleOptions[0]);
 			}
 			return possibleOptions;

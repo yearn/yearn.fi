@@ -6,7 +6,7 @@ import {useMemo} from 'react';
 import {erc20ABI, useContractReads} from 'wagmi';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {CRV_TOKEN_ADDRESS, CVXCRV_TOKEN_ADDRESS, LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YCRV_TOKEN_ADDRESS, YVBOOST_TOKEN_ADDRESS, YVECRV_POOL_LP_ADDRESS, YVECRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {CRV_TOKEN_ADDRESS, CVXCRV_TOKEN_ADDRESS, LPYCRV_TOKEN_ADDRESS, LPYCRV_V2_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YCRV_CURVE_POOL_V2_ADDRESS, YCRV_TOKEN_ADDRESS, YVBOOST_TOKEN_ADDRESS, YVECRV_POOL_LP_ADDRESS, YVECRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {decodeAsBigInt} from '@yearn-finance/web-lib/utils/decoder';
 
 import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
@@ -17,22 +17,21 @@ import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 export function useAllowances(): [TDict<bigint>, () => void] {
 	const {address} = useWeb3();
 	const wagmiAddress = useMemo((): TAddress => toAddress(address), [address]);
-	const zapAddress = useMemo((): TAddress => ZAP_YEARN_VE_CRV_ADDRESS, []);
-	const poolAddress = useMemo((): TAddress => YVECRV_POOL_LP_ADDRESS, []);
-	const lpyCRVAddress = useMemo((): TAddress => LPYCRV_TOKEN_ADDRESS, []);
 	const {data, status, refetch} = useContractReads({
 		contracts: [
-			{address: YCRV_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},
-			{address: STYCRV_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},
-			{address: LPYCRV_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},
-			{address: YVECRV_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},
-			{address: CRV_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},
-			{address: YVBOOST_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},
-			{address: YCRV_CURVE_POOL_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},
-			{address: CVXCRV_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},
-			{address: YVECRV_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, poolAddress]},
-			{address: CRV_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, poolAddress]},
-			{address: YCRV_CURVE_POOL_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, lpyCRVAddress]}
+			{address: YCRV_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, ZAP_YEARN_VE_CRV_ADDRESS]},
+			{address: STYCRV_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, ZAP_YEARN_VE_CRV_ADDRESS]},
+			{address: LPYCRV_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, ZAP_YEARN_VE_CRV_ADDRESS]},
+			{address: YVECRV_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, ZAP_YEARN_VE_CRV_ADDRESS]},
+			{address: CRV_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, ZAP_YEARN_VE_CRV_ADDRESS]},
+			{address: YVBOOST_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, ZAP_YEARN_VE_CRV_ADDRESS]},
+			{address: YCRV_CURVE_POOL_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, ZAP_YEARN_VE_CRV_ADDRESS]},
+			{address: CVXCRV_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, ZAP_YEARN_VE_CRV_ADDRESS]},
+			{address: YCRV_CURVE_POOL_V2_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, ZAP_YEARN_VE_CRV_ADDRESS]},
+			{address: YVECRV_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, YVECRV_POOL_LP_ADDRESS]},
+			{address: CRV_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, YVECRV_POOL_LP_ADDRESS]},
+			{address: YCRV_CURVE_POOL_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, LPYCRV_TOKEN_ADDRESS]},
+			{address: YCRV_CURVE_POOL_V2_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, LPYCRV_V2_TOKEN_ADDRESS]}
 		]
 	});
 
@@ -50,9 +49,11 @@ export function useAllowances(): [TDict<bigint>, () => void] {
 				[allowanceKey(1, YVBOOST_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS, toAddress(address))]: decodeAsBigInt(data[5]),
 				[allowanceKey(1, YCRV_CURVE_POOL_ADDRESS, LPYCRV_TOKEN_ADDRESS, toAddress(address))]: decodeAsBigInt(data[6]),
 				[allowanceKey(1, CVXCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS, toAddress(address))]: decodeAsBigInt(data[7]),
-				[allowanceKey(1, YVECRV_TOKEN_ADDRESS, YVECRV_POOL_LP_ADDRESS, toAddress(address))]: decodeAsBigInt(data[8]),
-				[allowanceKey(1, CRV_TOKEN_ADDRESS, YVECRV_POOL_LP_ADDRESS, toAddress(address))]: decodeAsBigInt(data[9]),
-				[allowanceKey(1, YCRV_CURVE_POOL_ADDRESS, LPYCRV_TOKEN_ADDRESS, toAddress(address))]: decodeAsBigInt(data[10])
+				[allowanceKey(1, YCRV_CURVE_POOL_V2_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS, toAddress(address))]: decodeAsBigInt(data[8]),
+				[allowanceKey(1, YVECRV_TOKEN_ADDRESS, YVECRV_POOL_LP_ADDRESS, toAddress(address))]: decodeAsBigInt(data[9]),
+				[allowanceKey(1, CRV_TOKEN_ADDRESS, YVECRV_POOL_LP_ADDRESS, toAddress(address))]: decodeAsBigInt(data[10]),
+				[allowanceKey(1, YCRV_CURVE_POOL_ADDRESS, LPYCRV_TOKEN_ADDRESS, toAddress(address))]: decodeAsBigInt(data[11]),
+				[allowanceKey(1, YCRV_CURVE_POOL_V2_ADDRESS, LPYCRV_V2_TOKEN_ADDRESS, toAddress(address))]: decodeAsBigInt(data[12])
 			}, refetch
 		];
 	}, [data, status, address, refetch]);
