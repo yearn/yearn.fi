@@ -99,7 +99,11 @@ describe('test format', (): void => {
 			'0,000000000000123 YFI',
 			'Amount should be formatted with the specified number of decimals'
 		);
-
+		assert.equal(
+			T.formatLocalAmount(0.000000000000000000123, 18, 'YFI', T.defaultOptions).normalize('NFKC'),
+			'0,00 YFI',
+			'Amount should be 0,00 YFI when it's too small'
+		);
 	});
 
 	it('is ok for amount', (): void => {
