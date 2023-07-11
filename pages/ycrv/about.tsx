@@ -1,7 +1,7 @@
 import {useState} from 'react';
 import {Balancer} from 'react-wrap-balancer';
 import {Button} from '@yearn-finance/web-lib/components/Button';
-import {LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {LPYCRV_V2_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import SettingsOverwrite from '@common/components/SettingsOverwrite';
 import {useYCRV} from '@yCRV/contexts/useYCRV';
 import Wrapper from '@yCRV/Wrapper';
@@ -229,7 +229,7 @@ function About(): ReactElement {
 							{label: 'Zap', address: ZAP_YEARN_VE_CRV_ADDRESS},
 							{label: 'yCRV', address: YCRV_TOKEN_ADDRESS},
 							{label: 'st-yCRV', address: STYCRV_TOKEN_ADDRESS},
-							{label: 'lp-yCRV', address: LPYCRV_TOKEN_ADDRESS}
+							{label: 'lp-yCRV V2', address: LPYCRV_V2_TOKEN_ADDRESS}
 						].map(ContractListRow)}
 					</Balancer>
 				</div>
