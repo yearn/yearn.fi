@@ -157,5 +157,15 @@ describe('test format', (): void => {
 			'0,00 $',
 			'Formatted NaN amount should return infinity'
 		);
+		assert.equal(
+			T.amount({value: 0.0000000012345678, decimals: 2, symbol: 'PERCENT', options: {shouldDisplaySymbol: false}}).normalize('NFKC'),
+			'0,000000001235',
+			'Formatted small amount with decimal places and no percent symbol should be returned'
+		);
+		assert.equal(
+			T.amount({value: 0.000000000000012345678, decimals: 2, symbol: 'PERCENT', options: {shouldDisplaySymbol: false}}).normalize('NFKC'),
+			'0,00',
+			'Format small amount to 0,00 and no percent symbol should be returned'
+		);
 	});
 });
