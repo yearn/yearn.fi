@@ -105,7 +105,7 @@ function formatLocalAmount(
 	const {shouldDisplaySymbol, shouldCompactValue, ...rest} = options;
 	const intlOptions: Intl.NumberFormatOptions = rest;
 	let isPercent = false;
-	if (symbol && symbol !== '' && shouldDisplaySymbol) {
+	if (symbol && shouldDisplaySymbol) {
 		const uppercaseSymbol = String(symbol).toLocaleUpperCase();
 		const symbolToFormat = uppercaseSymbol === 'USD' ? 'USD' : 'EUR';
 		intlOptions.style = uppercaseSymbol === 'PERCENT' ? 'percent' : 'currency',
