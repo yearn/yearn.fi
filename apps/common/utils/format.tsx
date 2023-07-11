@@ -15,6 +15,13 @@ type TAmount = {
 	symbol?: string
 	options?: TAmountOptions
 }
+type TFormatCurrencyWithPrecision = {
+	amount: number;
+	maxFractionDigits: number;
+	intlOptions: Intl.NumberFormatOptions;
+	locale: string;
+	symbol: string;
+}
 const defaultOptions: TAmountOptions = {
 	minimumFractionDigits: 2,
 	maximumFractionDigits: 2,
@@ -83,6 +90,12 @@ function assignOptions(options?: TAmountOptions): TAmountOptions {
 
 	return options;
 }
+function formatCurrencyWithPrecision({amount, maxFractionDigits, intlOptions, locale, symbol}: TFormatCurrencyWithPrecision): string {
+	return new Intl.NumberFormat([locale, 'en-US'], {
+		...intlOptions,
+		maximumFractionDigits: Math.max(maxFractionDigits, intlOptions.maximumFractionDigits || maxFractionDigits)
+	}).format(amount).replace('EUR', symbol);
+}
 function formatLocalAmount(
 	amount: number,
 	decimals: number,
@@ -143,21 +156,12 @@ function formatLocalAmount(
 	**********************************************************************************************/
 	if (amount < 0.01) {
 		if (amount > 0.00000001) {
-			return (new Intl.NumberFormat([locale, 'en-US'], {
-				...intlOptions,
-				maximumFractionDigits: Math.max(8, intlOptions.maximumFractionDigits || 8)
-			}).format(amount).replace('EUR', symbol));
+			return formatCurrencyWithPrecision({amount, maxFractionDigits: 8, intlOptions, locale, symbol});
 		}
 		if (amount > 0.000000000001) {
-			return (new Intl.NumberFormat([locale, 'en-US'], {
-				...intlOptions,
-				maximumFractionDigits: Math.max(12, intlOptions.maximumFractionDigits || 12)
-			}).format(amount).replace('EUR', symbol));
+			return formatCurrencyWithPrecision({amount, maxFractionDigits: 12, intlOptions, locale, symbol});
 		}
-		return (new Intl.NumberFormat([locale, 'en-US'], {
-			...intlOptions,
-			maximumFractionDigits: Math.max(decimals, intlOptions.maximumFractionDigits || decimals)
-		}).format(amount).replace('EUR', symbol));
+		return formatCurrencyWithPrecision({amount, maxFractionDigits: decimals, intlOptions, locale, symbol});
 	}
 	return (
 		new Intl.NumberFormat([locale, 'en-US'], intlOptions)

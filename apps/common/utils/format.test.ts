@@ -102,7 +102,7 @@ describe('test format', (): void => {
 		assert.equal(
 			T.formatLocalAmount(0.000000000000000000123, 18, 'YFI', T.defaultOptions).normalize('NFKC'),
 			'0,00 YFI',
-			'Amount should be 0,00 YFI when it's too small'
+			'Amount should be 0,00 YFI when it\'s too small'
 		);
 	});
 
