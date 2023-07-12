@@ -62,28 +62,8 @@ function VaultDetailsHeader({vault}: { vault: TYDaemonVault }): ReactElement {
 	const vaultPrice = useTokenPrice(address);
 	const vaultName = useMemo((): string => getVaultName(vault), [vault]);
 	const {stakingRewardsByVault, positionsMap} = useStakingRewards();
-<<<<<<< HEAD
-	const stakedBalance = toNormalizedValue(toBigInt(positionsMap[toAddress(stakingRewardsByVault[address])]?.stake), decimals);
-	const depositedAndStaked = vaultBalance + stakedBalance;
-
-	//TODO: EXPORT THIS AS EXTERNAL FUNCTION
-	function renderAmount(): string {
-		const amount = formatToNormalizedValue(toBigInt(tvl?.total_assets || 0), decimals);
-		if (isZero(amount)) {
-			return formatAmount(0);
-		}
-		if (amount < 0.01) {
-			if (amount > 0.00000001) {
-				return formatAmount(amount, 8, 8);
-			}
-			return formatAmount(amount, decimals, decimals);
-		}
-		return formatAmount(amount);
-	}
-=======
 	const stakedBalance = toBigInt(positionsMap[toAddress(stakingRewardsByVault[address])]?.stake);
 	const depositedAndStaked = toNormalizedBN(vaultBalance.raw + stakedBalance, decimals);
->>>>>>> b8dde5b8 (feat: update number display)
 
 	return (
 		<div aria-label={'Vault Header'} className={'col-span-12 flex w-full flex-col items-center justify-center'}>
@@ -101,17 +81,14 @@ function VaultDetailsHeader({vault}: { vault: TYDaemonVault }): ReactElement {
 				<VaultHeaderLineItem label={`Total deposited, ${token?.symbol || 'tokens'}`} legend={formatUSD(tvl?.tvl || 0)}>
 					<RenderAmount
 						value={tvl?.total_assets}
-						symbol={''}
-						decimals={decimals}
-					/>
+						decimals={decimals} />
 				</VaultHeaderLineItem>
 
 				<VaultHeaderLineItem label={'Net APY'}>
 					<RenderAmount
 						value={(apy?.net_apy || 0) + (apy?.staking_rewards_apr || 0)}
 						symbol={'percent'}
-						decimals={6}
-					/>
+						decimals={6} />
 				</VaultHeaderLineItem>
 
 				<VaultHeaderLineItem
@@ -119,9 +96,7 @@ function VaultDetailsHeader({vault}: { vault: TYDaemonVault }): ReactElement {
 					legend={formatCounterValue(depositedAndStaked.normalized, vaultPrice)}>
 					<RenderAmount
 						value={depositedAndStaked.raw}
-						symbol={''}
-						decimals={decimals}
-					/>
+						decimals={decimals} />
 				</VaultHeaderLineItem>
 
 				<VaultHeaderLineItem
@@ -129,9 +104,7 @@ function VaultDetailsHeader({vault}: { vault: TYDaemonVault }): ReactElement {
 					legend={formatCounterValue(normalizedVaultEarned.normalized, vaultPrice)}>
 					<RenderAmount
 						value={normalizedVaultEarned.raw}
-						symbol={''}
-						decimals={decimals}
-					/>
+						decimals={decimals} />
 				</VaultHeaderLineItem>
 			</div>
 		</div>
