@@ -71,7 +71,6 @@ function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElem
 										value={currentVault.apy?.net_apy}
 										symbol={'percent'}
 										decimals={6}
-										shouldShowFullNumberTooltip
 									/>
 								</Renderable>
 							</b>
@@ -88,7 +87,6 @@ function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElem
 										value={currentVault.apy?.staking_rewards_apr}
 										symbol={'percent'}
 										decimals={6}
-										shouldShowFullNumberTooltip
 									/>
 								</Renderable>
 							</small>
@@ -103,7 +101,6 @@ function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElem
 								symbol={currentVault.token.symbol}
 								decimals={currentVault.token.decimals}
 								options={{shouldDisplaySymbol: false}}
-								shouldShowFullNumberTooltip
 							/>
 						</p>
 					</div>
@@ -116,7 +113,6 @@ function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElem
 								symbol={currentVault.token.symbol}
 								decimals={currentVault.token.decimals}
 								options={{shouldDisplaySymbol: false}}
-								shouldShowFullNumberTooltip
 							/>
 						</p>
 					</div>
@@ -133,7 +129,6 @@ function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElem
 									maximumFractionDigits: 0,
 									minimumFractionDigits: 0
 								}}
-								shouldShowFullNumberTooltip
 							/>
 						</p>
 					</div>

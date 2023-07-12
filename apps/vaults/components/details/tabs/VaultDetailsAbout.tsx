@@ -34,7 +34,6 @@ function APYLineItem({value, label, apyType}: TAPYLineItemProps): ReactElement {
 						value={safeValue}
 						symbol={'percent'}
 						decimals={6}
-						shouldShowFullNumberTooltip
 					/>
 				)}
 			</p>
