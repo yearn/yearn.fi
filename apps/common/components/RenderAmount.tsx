@@ -1,10 +1,11 @@
 import {type ReactElement, useMemo} from 'react';
+import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {amountV2} from '@yearn-finance/web-lib/utils/format';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 
 import type {TAmount} from '@yearn-finance/web-lib/utils/format';
 
-export function RenderAmount(props: TAmount): ReactElement {
+export function RenderAmount(props: TAmount & { shouldShowFullNumberTooltip?: boolean; }): ReactElement {
 	const normalizedRawValue = useMemo((): string => {
 		return (amountV2({
 			...props,
@@ -18,17 +19,19 @@ export function RenderAmount(props: TAmount): ReactElement {
 		}));
 	}, [props]);
 
+	const shouldShowTooltip = !isZero(props.value) && props.shouldShowFullNumberTooltip;
+
 	return (
 		<span
 			suppressHydrationWarning
-			className={isZero(props.value) ? '' : 'tooltip underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'}>
-			{isZero(props.value) ? <span /> : (
+			className={cl(shouldShowTooltip ? 'tooltip underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600' : '')}>
+			{shouldShowTooltip ? (
 				<span suppressHydrationWarning className={'tooltipLight bottom-full mb-1'}>
 					<div className={'font-number w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'}>
 						{normalizedRawValue}
 					</div>
 				</span>
-			)}
+			) : <span />}
 			{amountV2(props)}
 		</span>
 	);

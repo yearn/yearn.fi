@@ -102,14 +102,18 @@ function VaultDetailsHeader({vault}: { vault: TYDaemonVault }): ReactElement {
 					<RenderAmount
 						value={tvl?.total_assets}
 						symbol={''}
-						decimals={decimals} />
+						decimals={decimals}
+						shouldShowFullNumberTooltip
+					/>
 				</VaultHeaderLineItem>
 
 				<VaultHeaderLineItem label={'Net APY'}>
 					<RenderAmount
 						value={(apy?.net_apy || 0) + (apy?.staking_rewards_apr || 0)}
 						symbol={'percent'}
-						decimals={6} />
+						decimals={6}
+						shouldShowFullNumberTooltip
+					/>
 				</VaultHeaderLineItem>
 
 				<VaultHeaderLineItem
@@ -118,7 +122,9 @@ function VaultDetailsHeader({vault}: { vault: TYDaemonVault }): ReactElement {
 					<RenderAmount
 						value={depositedAndStaked.raw}
 						symbol={''}
-						decimals={decimals} />
+						decimals={decimals}
+						shouldShowFullNumberTooltip
+					/>
 				</VaultHeaderLineItem>
 
 				<VaultHeaderLineItem
@@ -127,7 +133,9 @@ function VaultDetailsHeader({vault}: { vault: TYDaemonVault }): ReactElement {
 					<RenderAmount
 						value={normalizedVaultEarned.raw}
 						symbol={''}
-						decimals={decimals} />
+						decimals={decimals}
+						shouldShowFullNumberTooltip
+					/>
 				</VaultHeaderLineItem>
 			</div>
 		</div>

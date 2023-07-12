@@ -70,7 +70,9 @@ function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElem
 									<RenderAmount
 										value={currentVault.apy?.net_apy}
 										symbol={'percent'}
-										decimals={6} />
+										decimals={6}
+										shouldShowFullNumberTooltip
+									/>
 								</Renderable>
 							</b>
 							<small className={'text-xs text-neutral-900'}>
@@ -85,7 +87,9 @@ function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElem
 									<RenderAmount
 										value={currentVault.apy?.staking_rewards_apr}
 										symbol={'percent'}
-										decimals={6} />
+										decimals={6}
+										shouldShowFullNumberTooltip
+									/>
 								</Renderable>
 							</small>
 						</div>
@@ -98,7 +102,9 @@ function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElem
 								value={availableToDeposit}
 								symbol={currentVault.token.symbol}
 								decimals={currentVault.token.decimals}
-								options={{shouldDisplaySymbol: false}} />
+								options={{shouldDisplaySymbol: false}}
+								shouldShowFullNumberTooltip
+							/>
 						</p>
 					</div>
 
@@ -109,7 +115,9 @@ function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElem
 								value={staked}
 								symbol={currentVault.token.symbol}
 								decimals={currentVault.token.decimals}
-								options={{shouldDisplaySymbol: false}} />
+								options={{shouldDisplaySymbol: false}}
+								shouldShowFullNumberTooltip
+							/>
 						</p>
 					</div>
 
@@ -124,7 +132,9 @@ function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElem
 									shouldCompactValue: false,
 									maximumFractionDigits: 0,
 									minimumFractionDigits: 0
-								}} />
+								}}
+								shouldShowFullNumberTooltip
+							/>
 						</p>
 					</div>
 				</div>
