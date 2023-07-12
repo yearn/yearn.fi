@@ -1,4 +1,7 @@
 import {Fragment, useMemo} from 'react';
+import {Banner} from '@yearn-finance/web-lib/components/Banner';
+import {useLocalStorage} from '@yearn-finance/web-lib/hooks/useLocalStorage';
+import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {LPYCRV_TOKEN_ADDRESS, LPYCRV_V2_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatBigNumberOver10K, formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatNumberOver10K, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
@@ -393,8 +396,22 @@ function ZapAndStats(): ReactElement {
 }
 
 function Holdings(): ReactElement {
+	const [shouldShowLPyCRV, set_shouldShowLPyCRV] = useLocalStorage<boolean>('yearn.finance/lp-yCRV-banner', true);
 	return (
-		<section className={'mt-4 grid w-full grid-cols-12 gap-y-10 pb-10 md:mt-20 md:gap-x-10 md:gap-y-20'}>
+		<section
+			className={cl(
+				'grid w-full grid-cols-12 gap-y-10 pb-10 md:gap-x-10 md:gap-y-20',
+				!shouldShowLPyCRV && 'mt-4  md:mt-20'
+			)}>
+			{shouldShowLPyCRV && (
+				<div className={'col-span-12 w-full'}>
+					<Banner
+						content={'lp-yCRV is not longer receiving CRV emissions. If you hold lp-yCRV, please migrate to lp-yCRVv2, which is now the primary liquidity yCRV source'}
+						type={'error'}
+						onClose={(): void => set_shouldShowLPyCRV(false)}
+					/>
+				</div>
+			)}
 			<HeaderPosition />
 			<ZapAndStats />
 			<Harvests />
