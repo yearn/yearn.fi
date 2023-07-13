@@ -4,6 +4,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {useLocalStorage} from '@yearn-finance/web-lib/hooks/useLocalStorage';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {LPYCRV_TOKEN_ADDRESS, LPYCRV_V2_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {useFetch} from '@common/hooks/useFetch';
 import {yDaemonEarnedSchema} from '@common/schemas/yDaemonEarnedSchema';
 import {yDaemonPricesSchema} from '@common/schemas/yDaemonPricesSchema';
@@ -120,7 +121,8 @@ export const YearnContextApp = memo(function YearnContextApp({children}: { child
 			return acc;
 		}, {});
 		return _migratableVaultsObject;
-	}, [vaultsMigrations]);
+	}, [vaultsMigrations, vaultsObject]);
+
 
 	const vaultsRetiredObject = useMemo((): TDict<TYDaemonVault> => {
 		const _retiredVaultsObject = (vaultsRetired ?? []).reduce((acc: TDict<TYDaemonVault>, vault): TDict<TYDaemonVault> => {
@@ -154,8 +156,28 @@ export const YearnContextApp = memo(function YearnContextApp({children}: { child
 		set_zapSlippage,
 		zapProvider,
 		set_zapProvider,
-		vaults: vaultsObject,
-		vaultsMigrations: vaultsMigrationsObject,
+		vaults: {
+			...vaultsObject,
+			[LPYCRV_TOKEN_ADDRESS]: {
+				...vaultsObject[LPYCRV_TOKEN_ADDRESS],
+				migration: {
+					available: true,
+					address: LPYCRV_V2_TOKEN_ADDRESS,
+					contract: ZAP_YEARN_VE_CRV_ADDRESS
+				}
+			}
+		},
+		vaultsMigrations: {
+			...vaultsMigrationsObject,
+			[LPYCRV_TOKEN_ADDRESS]: {
+				...vaultsObject[LPYCRV_TOKEN_ADDRESS],
+				migration: {
+					available: true,
+					address: LPYCRV_V2_TOKEN_ADDRESS,
+					contract: ZAP_YEARN_VE_CRV_ADDRESS
+				}
+			}
+		},
 		vaultsRetired: vaultsRetiredObject,
 		isLoadingVaultList,
 		mutateVaultList
