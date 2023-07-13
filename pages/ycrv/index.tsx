@@ -401,7 +401,7 @@ function Holdings(): ReactElement {
 		<section
 			className={cl(
 				'grid w-full grid-cols-12 gap-y-10 pb-10 md:gap-x-10 md:gap-y-20',
-				!shouldShowLPyCRV && 'mt-4  md:mt-20'
+				!shouldShowLPyCRV ? 'mt-4  md:mt-20' : ''
 			)}>
 			{shouldShowLPyCRV && (
 				<div className={'col-span-12 w-full'}>
