@@ -12,7 +12,7 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
 	enabled: process.env.ANALYZE === 'true'
 });
 
-module.exports = withTM(withBundleAnalyzer(withPWA({
+module.exports = withBundleAnalyzer(withPWA({
 	images: {
 		domains: [
 			'rawcdn.githack.com',
@@ -119,7 +119,7 @@ module.exports = withTM(withBundleAnalyzer(withPWA({
 		// YDAEMON_BASE_URI: 'http://localhost:8080',
 		BASE_YEARN_ASSETS_URI: 'https://assets.smold.app/api/token'
 	}
-})));
+}));
 
 
 if (process.env.NODE_ENV === 'production') {

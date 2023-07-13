@@ -74,7 +74,7 @@ function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElem
 						<div className={'yearn--table-token-section-item-image'}>
 							<ImageWithFallback
 								src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-128.png`}
-								alt={''}
+								alt={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-128.png`}
 								width={40}
 								height={40} />
 						</div>
