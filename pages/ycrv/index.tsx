@@ -395,9 +395,9 @@ function ZapAndStats(): ReactElement {
 }
 
 function Holdings(): ReactElement {
-	const {vaults} = useYearn();
+	const {vaultsMigrations} = useYearn();
 	const balance = useBalance(LPYCRV_TOKEN_ADDRESS);
-	const hasLegacyLpyCRV = vaults[LPYCRV_TOKEN_ADDRESS] && balance.raw > 0n;
+	const hasLegacyLpyCRV = !!vaultsMigrations[LPYCRV_TOKEN_ADDRESS] && balance.raw > 0n;
 
 	return (
 		<section
@@ -407,7 +407,7 @@ function Holdings(): ReactElement {
 			)}>
 			{hasLegacyLpyCRV && (
 				<div className={'col-span-12 w-full'}>
-					<VaultsListInternalMigrationRow currentVault={vaults[LPYCRV_TOKEN_ADDRESS]} />
+					<VaultsListInternalMigrationRow currentVault={vaultsMigrations[LPYCRV_TOKEN_ADDRESS]} />
 				</div>
 			)}
 			<HeaderPosition />
