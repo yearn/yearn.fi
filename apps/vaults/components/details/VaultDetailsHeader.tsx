@@ -69,7 +69,7 @@ function VaultDetailsHeader({vault}: { vault: TYDaemonVault }): ReactElement {
 
 	//TODO: EXPORT THIS AS EXTERNAL FUNCTION
 	function renderAmount(): string {
-		const amount = formatToNormalizedValue(toBigInt(tvl.total_assets), decimals);
+		const amount = formatToNormalizedValue(toBigInt(tvl?.total_assets || 0), decimals);
 		if (isZero(amount)) {
 			return formatAmount(0);
 		}
@@ -95,19 +95,19 @@ function VaultDetailsHeader({vault}: { vault: TYDaemonVault }): ReactElement {
 				) : <p className={'text-xxs text-neutral-500 md:text-xs'}>&nbsp;</p>}
 			</div>
 			<div className={'grid grid-cols-2 gap-6 md:grid-cols-4 md:gap-12'}>
-				<VaultHeaderLineItem label={`Total deposited, ${token.symbol}`} legend={formatUSD(tvl.tvl)}>
+				<VaultHeaderLineItem label={`Total deposited, ${token?.symbol || 'tokens'}`} legend={formatUSD(tvl?.tvl || 0)}>
 					{renderAmount()}
 				</VaultHeaderLineItem>
 
 				<VaultHeaderLineItem label={'Net APY'}>
-					{formatPercent(((apy.net_apy || 0) + (apy.staking_rewards_apr || 0)) * 100, 2, 2, 500)}
+					{formatPercent(((apy?.net_apy || 0) + (apy?.staking_rewards_apr || 0)) * 100, 2, 2, 500)}
 				</VaultHeaderLineItem>
 
 				<VaultHeaderLineItem label={`Balance, ${symbol}`} legend={formatCounterValue(depositedAndStaked, vaultPrice)}>
 					{formatAmount(depositedAndStaked)}
 				</VaultHeaderLineItem>
 
-				<VaultHeaderLineItem label={`Earned, ${token.symbol}`} legend={formatCounterValue(normalizedVaultEarned, vaultPrice)}>
+				<VaultHeaderLineItem label={`Earned, ${token?.symbol || 'tokens'}`} legend={formatCounterValue(normalizedVaultEarned, vaultPrice)}>
 					{formatAmount(normalizedVaultEarned)}
 				</VaultHeaderLineItem>
 			</div>

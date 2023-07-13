@@ -1,13 +1,16 @@
 import {useCallback, useMemo, useRef} from 'react';
 import getVaultEstimateOut from '@vaults/utils/getVaultEstimateOut';
+import {readContract} from '@wagmi/core';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
-import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {MAX_UINT_256, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 import {allowanceOf, approveERC20, migrateShares} from '@common/utils/actions';
 import {assert} from '@common/utils/assert';
+import ZAP_CRV_ABI from '@yCRV/utils/abi/zapCRV.abi';
+import {zapCRV} from '@yCRV/utils/actions';
 
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
@@ -28,6 +31,21 @@ export function useSolverInternalMigration(): TSolverContext {
 	**********************************************************************************************/
 	const init = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN> => {
 		request.current = _request;
+		if (request.current.migrator === ZAP_YEARN_VE_CRV_ADDRESS) {
+			const estimateOut = await readContract({
+				address: ZAP_YEARN_VE_CRV_ADDRESS,
+				abi: ZAP_CRV_ABI,
+				functionName: 'calc_expected_out',
+				args: [
+					request.current.inputToken.value,
+					request.current.outputToken.value,
+					request.current.inputAmount
+				]
+			});
+			const minAmountWithSlippage = (estimateOut - (estimateOut * 6n / 10_000n));
+			latestQuote.current = toNormalizedBN(minAmountWithSlippage);
+			return latestQuote.current;
+		}
 		const estimateOut = await getVaultEstimateOut({
 			inputToken: toAddress(_request.inputToken.value),
 			outputToken: toAddress(_request.outputToken.value),
@@ -105,6 +123,33 @@ export function useSolverInternalMigration(): TSolverContext {
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
 		assert(request.current, 'Request is not set');
+
+		if (request.current.migrator === ZAP_YEARN_VE_CRV_ADDRESS) {
+			const _expectedOut = await readContract({
+				address: ZAP_YEARN_VE_CRV_ADDRESS,
+				abi: ZAP_CRV_ABI,
+				functionName: 'calc_expected_out',
+				args: [
+					request.current.inputToken.value,
+					request.current.outputToken.value,
+					request.current.inputAmount
+				]
+			});
+			const result = await zapCRV({
+				connector: provider,
+				contractAddress: ZAP_YEARN_VE_CRV_ADDRESS,
+				inputToken: request.current.inputToken.value, //_input_token
+				outputToken: request.current.outputToken.value, //_output_token
+				amount: request.current.inputAmount, //_amount
+				minAmount: toBigInt(_expectedOut), //_min_out
+				slippage: toBigInt(0.06 * 100),
+				statusHandler: txStatusSetter
+			});
+			if (result.isSuccessful) {
+				onSuccess();
+			}
+			return;
+		}
 
 		const result = await migrateShares({
 			connector: provider,

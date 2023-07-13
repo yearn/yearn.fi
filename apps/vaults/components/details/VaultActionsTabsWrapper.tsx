@@ -61,7 +61,11 @@ function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}):
 	const rewardTokenBalance = useBalance(toAddress(stakingRewards?.rewardsToken));
 	const hasStakingRewards = !!stakingRewardsByVault[currentVault.address];
 	const [currentTab, set_currentTab] = useState<TTabsOptions>(
-		getCurrentTab({isDepositing, hasMigration: currentVault?.migration?.available, isRetired: currentVault?.details?.retired})
+		getCurrentTab({
+			isDepositing,
+			hasMigration: currentVault?.migration?.available,
+			isRetired: currentVault?.details?.retired
+		})
 	);
 	const [shouldShowLedgerPluginBanner, set_shouldShowLedgerPluginBanner] = useLocalStorage<boolean>('yearn.finance/ledger-plugin-banner', true);
 	const [shouldShowOpBoostInfo, set_shouldShowOpBoostInfo] = useLocalStorage<boolean>('yearn.finance/op-boost-banner', true);
