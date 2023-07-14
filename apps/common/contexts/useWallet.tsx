@@ -72,9 +72,9 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 			extraTokens.push({token: OPT_YVDAI_STAKING_CONTRACT, symbol: 'yvDAI', decimals: 18});
 			extraTokens.push({token: OPT_YVUSDT_STAKING_CONTRACT, symbol: 'yvUSDT', decimals: 6});
 			extraTokens.push({token: OPT_YVUSDC_STAKING_CONTRACT, symbol: 'yvUSDC', decimals: 6});
-			extraTokens.push({token: OPT_YVSUSCUSDC_STAKING_CONTRACT, symbol: 'yvSUSC-USDC', decimals: 18});
-			extraTokens.push({token: OPT_YVDOLAUSDC_STAKING_CONTRACT, symbol: 'yvDOLA-USDC', decimals: 18});
-			extraTokens.push({token: OPT_YVMAIUSDC_STAKING_CONTRACT, symbol: 'yvMAI-USDC', decimals: 18});
+			extraTokens.push({token: OPT_YVSUSCUSDC_STAKING_CONTRACT, symbol: 'yvVelo-USDC-sUSD', decimals: 18});
+			extraTokens.push({token: OPT_YVDOLAUSDC_STAKING_CONTRACT, symbol: 'yvVelo-DOLA-USDC', decimals: 18});
+			extraTokens.push({token: OPT_YVMAIUSDC_STAKING_CONTRACT, symbol: 'yvVelo-MAI-USDC', decimals: 18});
 			extraTokens.push({token: OPT_YVMAI_STAKING_CONTRACT, symbol: 'yvMAI', decimals: 18});
 			extraTokens.push({token: OPT_YVMAI_USDC_STAKING_CONTRACT, symbol: 'yvMAI-USDC', decimals: 18});
 			extraTokens.push({token: OPT_YVMAI_DOLA_STAKING_CONTRACT, symbol: 'yvMAI-DOLA', decimals: 18});
