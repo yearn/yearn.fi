@@ -3,7 +3,7 @@ import {erc20ABI, useChainId} from 'wagmi';
 import axios from 'axios';
 import {useUpdateEffect} from '@react-hookz/web';
 import {getNativeTokenWrapperContract, getNativeTokenWrapperName} from '@vaults/utils';
-import {deserialize, multicall} from '@wagmi/core';
+import {deserialize, multicall, serialize} from '@wagmi/core';
 import {useUI} from '@yearn-finance/web-lib/contexts/useUI';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import AGGREGATE3_ABI from '@yearn-finance/web-lib/utils/abi/aggregate.abi';
@@ -157,7 +157,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	const [error, set_error] = useState<Error | undefined>(undefined);
 	const [balances, set_balances] = useState<TNDict<TDict<TBalanceData>>>({});
 	const data = useRef<TNDict<TDataRef>>({1: {nonce: 0, address: toAddress(), balances: {}}});
-	const stringifiedTokens = useMemo((): string => JSON.stringify(props?.tokens || []), [props?.tokens]);
+	const stringifiedTokens = useMemo((): string => serialize(props?.tokens || []), [props?.tokens]);
 
 	const updateBalancesCall = useCallback((chainID: number, newRawData: TDict<TBalanceData>): TDict<TBalanceData> => {
 		if (toAddress(web3Address) !== data?.current?.[chainID]?.address) {
@@ -204,7 +204,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 		if (!web3Address || !provider) {
 			return {};
 		}
-		const tokenList = JSON.parse(stringifiedTokens) || [];
+		const tokenList = deserialize(stringifiedTokens) || [];
 		const tokens = tokenList.filter(({token}: TUseBalancesTokens): boolean => !isZeroAddress(token));
 		if (isZero(tokens.length)) {
 			return {};
@@ -338,7 +338,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 		set_status({...defaultStatus, isLoading: true, isFetching: true, isRefetching: defaultStatus.isFetched});
 		onLoadStart();
 
-		const tokens: TUseBalancesTokens[] = JSON.parse(stringifiedTokens) || [];
+		const tokens: TUseBalancesTokens[] = deserialize(stringifiedTokens) || [];
 		axios
 			.post('/api/getBatchBalances', {
 				chainID: chainID || 1,

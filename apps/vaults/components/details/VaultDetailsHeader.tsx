@@ -3,11 +3,11 @@ import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatToNormalizedValue, toBigInt, toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {formatAmount, formatPercent, formatUSD} from '@yearn-finance/web-lib/utils/format.number';
+import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatUSD} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {copyToClipboard} from '@yearn-finance/web-lib/utils/helpers';
-import {isZero} from '@yearn-finance/web-lib/utils/isZero';
+import {RenderAmount} from '@common/components/RenderAmount';
 import {useBalance} from '@common/hooks/useBalance';
 import {useFetch} from '@common/hooks/useFetch';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
@@ -18,10 +18,11 @@ import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 import type {ReactElement} from 'react';
 import type {TYDaemonEarned} from '@common/schemas/yDaemonEarnedSchema';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
+import type {TNormalizedBN} from '@common/types/types';
 
 type TVaultHeaderLineItemProps = {
 	label: string;
-	children: string;
+	children: ReactElement | string;
 	legend?: string;
 }
 
@@ -45,42 +46,24 @@ function VaultDetailsHeader({vault}: { vault: TYDaemonVault }): ReactElement {
 	const {safeChainID} = useChainID();
 	const {address: userAddress} = useWeb3();
 	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: safeChainID});
-
 	const {address, apy, tvl, decimals, symbol = 'token', token} = vault;
-
 	const {data: earned} = useFetch<TYDaemonEarned>({
 		endpoint: (address && userAddress) ? `${yDaemonBaseUri}/earned/${userAddress}` : null,
 		schema: yDaemonEarnedSchema
 	});
 
-	const normalizedVaultEarned = useMemo((): number => {
+	const normalizedVaultEarned = useMemo((): TNormalizedBN => {
 		const {unrealizedGains} = earned?.earned?.[toAddress(address)] || {};
-		const normalizedValue = formatToNormalizedValue(toBigInt(unrealizedGains), decimals);
+		const normalizedValue = toBigInt(unrealizedGains);
+		return toNormalizedBN(normalizedValue < 0n ? 0n : normalizedValue);
+	}, [earned?.earned, address]);
 
-		return normalizedValue > -0.01 ? Math.abs(normalizedValue) : normalizedValue;
-	}, [earned?.earned, address, decimals]);
-
-	const vaultBalance = useBalance(address)?.normalized;
+	const vaultBalance = useBalance(address);
 	const vaultPrice = useTokenPrice(address);
 	const vaultName = useMemo((): string => getVaultName(vault), [vault]);
 	const {stakingRewardsByVault, positionsMap} = useStakingRewards();
-	const stakedBalance = toNormalizedValue(toBigInt(positionsMap[toAddress(stakingRewardsByVault[address])]?.stake), decimals);
-	const depositedAndStaked = vaultBalance + stakedBalance;
-
-	//TODO: EXPORT THIS AS EXTERNAL FUNCTION
-	function renderAmount(): string {
-		const amount = formatToNormalizedValue(toBigInt(tvl?.total_assets || 0), decimals);
-		if (isZero(amount)) {
-			return formatAmount(0);
-		}
-		if (amount < 0.01) {
-			if (amount > 0.00000001) {
-				return formatAmount(amount, 8, 8);
-			}
-			return formatAmount(amount, decimals, decimals);
-		}
-		return formatAmount(amount);
-	}
+	const stakedBalance = toBigInt(positionsMap[toAddress(stakingRewardsByVault[address])]?.stake);
+	const depositedAndStaked = toNormalizedBN(vaultBalance.raw + stakedBalance, decimals);
 
 	return (
 		<div aria-label={'Vault Header'} className={'col-span-12 flex w-full flex-col items-center justify-center'}>
@@ -96,19 +79,32 @@ function VaultDetailsHeader({vault}: { vault: TYDaemonVault }): ReactElement {
 			</div>
 			<div className={'grid grid-cols-2 gap-6 md:grid-cols-4 md:gap-12'}>
 				<VaultHeaderLineItem label={`Total deposited, ${token?.symbol || 'tokens'}`} legend={formatUSD(tvl?.tvl || 0)}>
-					{renderAmount()}
+					<RenderAmount
+						value={tvl?.total_assets}
+						decimals={decimals} />
 				</VaultHeaderLineItem>
 
 				<VaultHeaderLineItem label={'Net APY'}>
-					{formatPercent(((apy?.net_apy || 0) + (apy?.staking_rewards_apr || 0)) * 100, 2, 2, 500)}
+					<RenderAmount
+						value={(apy?.net_apy || 0) + (apy?.staking_rewards_apr || 0)}
+						symbol={'percent'}
+						decimals={6} />
 				</VaultHeaderLineItem>
 
-				<VaultHeaderLineItem label={`Balance, ${symbol}`} legend={formatCounterValue(depositedAndStaked, vaultPrice)}>
-					{formatAmount(depositedAndStaked)}
+				<VaultHeaderLineItem
+					label={`Balance, ${symbol}`}
+					legend={formatCounterValue(depositedAndStaked.normalized, vaultPrice)}>
+					<RenderAmount
+						value={depositedAndStaked.raw}
+						decimals={decimals} />
 				</VaultHeaderLineItem>
 
-				<VaultHeaderLineItem label={`Earned, ${token?.symbol || 'tokens'}`} legend={formatCounterValue(normalizedVaultEarned, vaultPrice)}>
-					{formatAmount(normalizedVaultEarned)}
+				<VaultHeaderLineItem
+					label={`Earned, ${token?.symbol || 'tokens'}`}
+					legend={formatCounterValue(normalizedVaultEarned.normalized, vaultPrice)}>
+					<RenderAmount
+						value={normalizedVaultEarned.raw}
+						decimals={decimals} />
 				</VaultHeaderLineItem>
 			</div>
 		</div>

@@ -1,13 +1,15 @@
 import {useMemo} from 'react';
 import Link from 'next/link';
 import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
+import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {toBigInt, toNormalizedBN, toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {formatAmount, formatPercent, formatUSD} from '@yearn-finance/web-lib/utils/format.number';
+import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
+import {RenderAmount} from '@common/components/RenderAmount';
 import {useBalance} from '@common/hooks/useBalance';
 import {getVaultName} from '@common/utils';
 
@@ -18,53 +20,28 @@ function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElem
 	const {safeChainID} = useChainID();
 	const balanceOfWant = useBalance(currentVault.token.address);
 	const balanceOfCoin = useBalance(ETH_TOKEN_ADDRESS);
+	//TODO: Create a wagmi Chain upgrade to add the chain wrapper token address
 	const balanceOfWrappedCoin = useBalance(toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS ? WFTM_TOKEN_ADDRESS : WETH_TOKEN_ADDRESS);
-	const deposited = useBalance(currentVault.address)?.normalized;
 	const vaultName = useMemo((): string => getVaultName(currentVault), [currentVault]);
 	const isEthMainnet = currentVault.chainID === 1;
-
+	const deposited = useBalance(currentVault.address)?.raw;
 	const {stakingRewardsByVault, positionsMap} = useStakingRewards();
-	const stakedBalance = toNormalizedValue(toBigInt(positionsMap[toAddress(stakingRewardsByVault[currentVault.address])]?.stake), currentVault.decimals);
-	const depositedAndStaked = deposited + stakedBalance;
 
-	const availableToDeposit = useMemo((): number => {
-		// Handle ETH native coin
-		if (toAddress(currentVault.token.address) === WETH_TOKEN_ADDRESS) {
-			return (balanceOfWrappedCoin.normalized + balanceOfCoin.normalized);
+	const availableToDeposit = useMemo((): bigint => {
+		if (toAddress(currentVault.token.address) === WETH_TOKEN_ADDRESS) { // Handle ETH native coin
+			return (balanceOfWrappedCoin.raw + balanceOfCoin.raw);
 		}
-		if (toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS) {
-			return (balanceOfWrappedCoin.normalized + Number(toNormalizedBN(balanceOfCoin.raw, 18).normalized));
+		if (toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS) { // Handle FTM native coin
+			return (balanceOfWrappedCoin.raw + balanceOfCoin.raw);
 		}
-		return balanceOfWant.normalized;
-	}, [balanceOfCoin.normalized, balanceOfCoin.raw, balanceOfWant.normalized, balanceOfWrappedCoin.normalized, currentVault.token.address]);
+		return balanceOfWant.raw;
+	}, [balanceOfCoin.raw, balanceOfWant.raw, balanceOfWrappedCoin.raw, currentVault.token.address]);
 
-	//TODO: EXPORT THIS AS EXTERNAL FUNCTION
-	function renderAvailableToDeposit(): string {
-		if (isZero(availableToDeposit)) {
-			return formatAmount(0);
-		}
-		if (availableToDeposit < 0.01) {
-			if (availableToDeposit > 0.00000001) {
-				return formatAmount(availableToDeposit, 8, 8);
-			}
-			return formatAmount(availableToDeposit, currentVault.token.decimals, currentVault.token.decimals);
-		}
-		return formatAmount(availableToDeposit);
-	}
-
-	//TODO: EXPORT THIS AS EXTERNAL FUNCTION
-	function renderDepositedAndStaked(): string {
-		if (isZero(depositedAndStaked)) {
-			return formatAmount(0);
-		}
-		if (depositedAndStaked < 0.01) {
-			if (depositedAndStaked > 0.00000001) {
-				return formatAmount(depositedAndStaked, 8, 8);
-			}
-			return formatAmount(depositedAndStaked, currentVault.token.decimals, currentVault.token.decimals);
-		}
-		return formatAmount(depositedAndStaked);
-	}
+	const staked = useMemo((): bigint => {
+		const stakedBalance = toBigInt(positionsMap[toAddress(stakingRewardsByVault[currentVault.address])]?.stake);
+		const depositedAndStaked = deposited + stakedBalance;
+		return depositedAndStaked;
+	}, [currentVault.address, deposited, positionsMap, stakingRewardsByVault]);
 
 	return (
 		<Link key={`${currentVault.address}`} href={`/vaults/${safeChainID}/${toAddress(currentVault.address)}`}>
@@ -87,17 +64,31 @@ function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElem
 						<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'APY'}</label>
 						<div className={'flex flex-col text-right'}>
 							<b className={'yearn--table-data-section-item-value'}>
-								{(currentVault.apy?.type === 'new' && isZero(currentVault.apy?.net_apy)) ? (
-									'New'
-								) : (
-									formatPercent(((currentVault?.apy?.net_apy || 0) + (currentVault.apy?.staking_rewards_apr || 0)) * 100, 2, 2, 500)
-								)}
+								<Renderable
+									shouldRender={!(currentVault.apy?.type === 'new' && isZero(currentVault.apy?.net_apy))}
+									fallback={'New'}>
+									<RenderAmount
+										value={currentVault.apy?.net_apy}
+										symbol={'percent'}
+										decimals={6}
+									/>
+								</Renderable>
 							</b>
 							<small className={'text-xs text-neutral-900'}>
-								{isEthMainnet && currentVault.apy?.composite?.boost && !currentVault.apy?.staking_rewards_apr ? `BOOST ${formatAmount(currentVault.apy?.composite?.boost, 2, 2)}x` : null}
+								<Renderable
+									shouldRender={isEthMainnet && currentVault.apy?.composite?.boost > 0 && !currentVault.apy?.staking_rewards_apr}>
+									{`BOOST ${formatAmount(currentVault.apy?.composite?.boost, 2, 2)}x`}
+								</Renderable>
 							</small>
 							<small className={'text-xs text-neutral-900'}>
-								{currentVault.apy?.staking_rewards_apr ? `REWARD ${formatPercent((currentVault.apy?.staking_rewards_apr || 0) * 100, 2, 2, 500)}` : null}
+								<Renderable shouldRender={currentVault.apy?.staking_rewards_apr > 0}>
+									{'REWARD '}
+									<RenderAmount
+										value={currentVault.apy?.staking_rewards_apr}
+										symbol={'percent'}
+										decimals={6}
+									/>
+								</Renderable>
 							</small>
 						</div>
 					</div>
@@ -105,21 +96,40 @@ function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElem
 					<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
 						<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Available'}</label>
 						<p className={`yearn--table-data-section-item-value ${isZero(availableToDeposit) ? 'text-neutral-400' : 'text-neutral-900'}`}>
-							{renderAvailableToDeposit()}
+							<RenderAmount
+								value={availableToDeposit}
+								symbol={currentVault.token.symbol}
+								decimals={currentVault.token.decimals}
+								options={{shouldDisplaySymbol: false}}
+							/>
 						</p>
 					</div>
 
 					<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
 						<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Deposited'}</label>
-						<p className={`yearn--table-data-section-item-value ${isZero(depositedAndStaked) ? 'text-neutral-400' : 'text-neutral-900'}`}>
-							{renderDepositedAndStaked()}
+						<p className={`yearn--table-data-section-item-value ${isZero(staked) ? 'text-neutral-400' : 'text-neutral-900'}`}>
+							<RenderAmount
+								value={staked}
+								symbol={currentVault.token.symbol}
+								decimals={currentVault.token.decimals}
+								options={{shouldDisplaySymbol: false}}
+							/>
 						</p>
 					</div>
 
 					<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
 						<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'TVL'}</label>
 						<p className={'yearn--table-data-section-item-value'}>
-							{formatUSD(currentVault.tvl?.tvl || 0, 0, 0)}
+							<RenderAmount
+								value={currentVault.tvl?.tvl}
+								symbol={'USD'}
+								decimals={0}
+								options={{
+									shouldCompactValue: false,
+									maximumFractionDigits: 0,
+									minimumFractionDigits: 0
+								}}
+							/>
 						</p>
 					</div>
 				</div>
