@@ -97,7 +97,9 @@ function AppBox({app}: {app: typeof apps[0]}): ReactElement {
 		<Link
 			prefetch={false}
 			key={app.href}
-			href={app.href}>
+			href={app.href}
+			data-testid={`app-box-${app.href.replace('/', '')}`}
+		>
 			<div id={app.href} className={'appBox'}>
 				<div>
 					{app.icon}

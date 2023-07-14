@@ -48,6 +48,7 @@
     "zod": "^3.21.4"
   },
   "devDependencies": {
+    "@playwright/test": "^1.36.0",
     "@testing-library/react": "^14.0.0",
     "@types/node": "^20.3.0",
     "@types/nprogress": "^0.2.0",
