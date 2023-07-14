@@ -84,7 +84,7 @@ export const yDaemonVaultSchema = z.object({
 	formated_name: z.string(),
 	icon: z.string(),
 	version: z.string(),
-	category: z.literal('Curve').or(z.literal('Volatile').or(z.literal('Balancer')).or(z.literal('Stablecoin'))).or(z.literal('Velodrome')),
+	category: z.literal('Curve').or(z.literal('Volatile').or(z.literal('Balancer')).or(z.literal('Stablecoin'))).or(z.literal('Velodrome')).or(z.literal('Boosted')),
 	inception: z.number(),
 	decimals: z.number(),
 	chainID: z.number(),
