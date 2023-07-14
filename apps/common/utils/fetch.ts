@@ -1,5 +1,6 @@
 import axios from 'axios';
 import * as Sentry from '@sentry/nextjs';
+import {serialize} from '@wagmi/core';
 
 import type {AxiosRequestConfig} from 'axios';
 import type {z} from 'zod';
@@ -25,13 +26,13 @@ export async function fetch<T>({endpoint, schema, config}: TFetchProps): TFetchR
 		}
 
 		const parsedData = schema.safeParse(data);
-	
+
 		if (!parsedData.success) {
 			console.error(endpoint, parsedData.error);
 			Sentry.captureException(parsedData.error, {tags: {endpoint}});
 			return {data, error: parsedData.error};
 		}
-	
+
 		return {...data, data: parsedData.data};
 	} catch (error) {
 		console.error(endpoint, error);
@@ -39,6 +40,6 @@ export async function fetch<T>({endpoint, schema, config}: TFetchProps): TFetchR
 		if (error instanceof Error) {
 			return {data: null, error};
 		}
-		return {data: null, error: new Error(JSON.stringify(error))};
+		return {data: null, error: new Error(serialize(error))};
 	}
 }
