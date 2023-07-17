@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import vaultsManifest from 'public/apps/vaults-manifest.json';
 import veyfiManifest from 'public/apps/veyfi-manifest.json';
 import yBalManifest from 'public/apps/ybal-manifest.json';
@@ -11,6 +10,8 @@ import LogoYearn from '@common/icons/LogoYearn';
 import {YBAL_MENU} from '@yBal/constants/menu';
 import {YBRIBE_MENU} from '@yBribe/constants/menu';
 import {YCRV_MENU} from '@yCRV/constants/menu';
+
+import {ImageWithFallback} from './ImageWithFallback';
 
 import type {ReactElement} from 'react';
 import type {TMenu} from '@yearn-finance/web-lib/components/Header';
@@ -50,7 +51,7 @@ export const APPS: { [key in AppName]: TApp } = {
 		menu: YCRV_MENU,
 		manifest: ycrvManifest,
 		icon: (
-			<Image
+			<ImageWithFallback
 				alt={'yCRV'}
 				width={32}
 				height={32}
@@ -66,7 +67,7 @@ export const APPS: { [key in AppName]: TApp } = {
 		manifest: yBalManifest,
 		isDisabled: true,
 		icon: (
-			<Image
+			<ImageWithFallback
 				alt={'yBal'}
 				width={32}
 				height={32}

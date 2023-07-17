@@ -122,6 +122,7 @@ export const YearnContextApp = memo(function YearnContextApp({children}: { child
 		return _migratableVaultsObject;
 	}, [vaultsMigrations]);
 
+
 	const vaultsRetiredObject = useMemo((): TDict<TYDaemonVault> => {
 		const _retiredVaultsObject = (vaultsRetired ?? []).reduce((acc: TDict<TYDaemonVault>, vault): TDict<TYDaemonVault> => {
 			acc[toAddress(vault.address)] = vault;

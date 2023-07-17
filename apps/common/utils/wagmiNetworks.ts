@@ -57,6 +57,7 @@ export const optimism = {
 		default: {
 			http: [
 				(process.env.RPC_URL_OPTIMISM_YEARN || 'https://1rpc.io/op') as string,
+				(process.env.RPC_URL_OPTIMISM_YEARN_2 || 'https://1rpc.io/op') as string,
 				`https://opt-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_KEY}`
 				// 'https://optimism.blockpi.network/v1/rpc/public',
 				// 'https://optimism.api.onfinality.io/public',
@@ -72,6 +73,7 @@ export const optimism = {
 		public: {
 			http: [
 				(process.env.RPC_URL_OPTIMISM_YEARN || 'https://1rpc.io/op') as string,
+				(process.env.RPC_URL_OPTIMISM_YEARN_2 || 'https://1rpc.io/op') as string,
 				`https://opt-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_KEY}`
 				// 'https://optimism.blockpi.network/v1/rpc/public',
 				// 'https://optimism.api.onfinality.io/public',

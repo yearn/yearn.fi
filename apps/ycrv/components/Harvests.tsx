@@ -1,7 +1,7 @@
 import {useMemo, useState} from 'react';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {LPYCRV_TOKEN_ADDRESS, LPYCRV_V2_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {HarvestListHead} from '@yCRV/components/HarvestsListHead';
 import {HarvestListRow} from '@yCRV/components/HarvestsListRow';
 import {useYCRV} from '@yCRV/contexts/useYCRV';
@@ -19,7 +19,11 @@ function Harvests(): ReactElement {
 			return _harvests.filter((harvest): boolean => toAddress(harvest.vaultAddress) === STYCRV_TOKEN_ADDRESS);
 		}
 		if (category === 'lp-yCRV') {
-			return _harvests.filter((harvest): boolean => toAddress(harvest.vaultAddress) === LPYCRV_TOKEN_ADDRESS);
+			return _harvests.filter((harvest): boolean => (
+				toAddress(harvest.vaultAddress) === LPYCRV_TOKEN_ADDRESS
+				||
+				toAddress(harvest.vaultAddress) === LPYCRV_V2_TOKEN_ADDRESS
+			));
 		}
 		return _harvests;
 	}, [category, harvests]);

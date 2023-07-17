@@ -9,7 +9,7 @@ import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import VAULT_ABI from '@yearn-finance/web-lib/utils/abi/vault.abi';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {ETH_TOKEN_ADDRESS, OPT_WETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS, YVWETH_ADDRESS, YVWETH_OPT_ADDRESS, YVWFTM_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {ETH_TOKEN_ADDRESS, LPYCRV_TOKEN_ADDRESS, OPT_WETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS, YVWETH_ADDRESS, YVWETH_OPT_ADDRESS, YVWFTM_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isEth} from '@yearn-finance/web-lib/utils/isEth';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
@@ -300,17 +300,25 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 		} else if (nextFlow === Flow.Migrate) {
 			const userBalance = toBigInt(balances?.[toAddress(currentVault?.address)]?.raw);
 			const _amount = toNormalizedBN(userBalance, currentVault?.decimals || currentVault?.token?.decimals || 18);
+			const selectedOptionTo = {
+				name: currentVault?.name,
+				symbol: currentVault?.symbol,
+				address: currentVault?.migration?.address,
+				chainID: currentVault?.chainID,
+				decimals: currentVault?.token?.decimals
+			};
+
+			if (currentVault?.address === LPYCRV_TOKEN_ADDRESS) {
+				selectedOptionTo.name = 'lp-yCRV V2';
+				selectedOptionTo.symbol = 'lp-yCRV V2';
+			}
+
+
 			actionParamsDispatcher({
 				type: 'all',
 				payload: {
 					selectedOptionFrom: vaultToken,
-					selectedOptionTo: setZapOption({
-						name: currentVault?.name,
-						symbol: currentVault?.symbol,
-						address: currentVault?.migration?.address,
-						chainID: currentVault?.chainID,
-						decimals: currentVault?.token?.decimals
-					}),
+					selectedOptionTo: setZapOption(selectedOptionTo),
 					possibleOptionsFrom: possibleOptionsTo,
 					possibleOptionsTo: possibleOptionsFrom,
 					amount: _amount

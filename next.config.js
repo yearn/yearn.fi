@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 const runtimeCaching = require('next-pwa/cache');
-const withTM = require('next-transpile-modules')(['@yearn-finance/web-lib'], {resolveSymlinks: false});
+// eslint-disable-next-line unused-imports/no-unused-vars, @typescript-eslint/no-unused-vars
+// const withTM = require('next-transpile-modules')(['@yearn-finance/web-lib'], {resolveSymlinks: false});
 const withPWA = require('next-pwa')({
 	dest: './public/',
 	register: true,
@@ -12,7 +13,7 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
 	enabled: process.env.ANALYZE === 'true'
 });
 
-module.exports = withTM(withBundleAnalyzer(withPWA({
+module.exports = withBundleAnalyzer(withPWA({
 	images: {
 		domains: [
 			'rawcdn.githack.com',
@@ -119,7 +120,7 @@ module.exports = withTM(withBundleAnalyzer(withPWA({
 		// YDAEMON_BASE_URI: 'http://localhost:8080',
 		BASE_YEARN_ASSETS_URI: 'https://assets.smold.app/api/token'
 	}
-})));
+}));
 
 
 if (process.env.NODE_ENV === 'production') {

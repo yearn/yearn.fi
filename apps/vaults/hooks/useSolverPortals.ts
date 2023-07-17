@@ -187,7 +187,7 @@ export function useSolverPortals(): TSolverContext {
 				to: toAddress(to),
 				...rest
 			});
-			const hash = await wagmiProvider.walletClient.sendTransaction({...tx, chain});
+			const hash = await wagmiProvider.walletClient.sendTransaction({...tx as any, chain});
 			const receipt = await waitForTransaction({chainId: wagmiProvider.chainId, hash});
 			if (receipt.status === 'success') {
 				return ({isSuccessful: true, receipt: receipt});

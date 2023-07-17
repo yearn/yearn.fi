@@ -1,5 +1,5 @@
-import Image from 'next/image';
 import {BAL_TOKEN_ADDRESS, LPYBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, YBAL_TOKEN_ADDRESS, ZAP_YEARN_YBAL_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {ImageWithFallback} from '@common/components/ImageWithFallback';
 
 import type {TDropdownOption} from '@common/types/types';
 
@@ -11,7 +11,7 @@ const ZAP_OPTIONS_FROM: TDropdownOption[] = [
 		value: BAL_TOKEN_ADDRESS,
 		zapVia: ZAP_YEARN_YBAL_ADDRESS,
 		icon: (
-			<Image
+			<ImageWithFallback
 				alt={'Bal'}
 				width={24}
 				height={24}
@@ -25,7 +25,7 @@ const ZAP_OPTIONS_FROM: TDropdownOption[] = [
 		value: STYBAL_TOKEN_ADDRESS,
 		zapVia: ZAP_YEARN_YBAL_ADDRESS,
 		icon: (
-			<Image
+			<ImageWithFallback
 				alt={'st-yBal'}
 				width={24}
 				height={24}
@@ -40,7 +40,7 @@ const ZAP_OPTIONS_FROM: TDropdownOption[] = [
 		value: YBAL_TOKEN_ADDRESS,
 		zapVia: ZAP_YEARN_YBAL_ADDRESS,
 		icon: (
-			<Image
+			<ImageWithFallback
 				alt={'yBal'}
 				width={24}
 				height={24}
@@ -56,7 +56,7 @@ const ZAP_OPTIONS_FROM: TDropdownOption[] = [
 		value: LPYBAL_TOKEN_ADDRESS,
 		zapVia: ZAP_YEARN_YBAL_ADDRESS,
 		icon: (
-			<Image
+			<ImageWithFallback
 				alt={'lp-yBal'}
 				width={24}
 				height={24}
@@ -75,7 +75,7 @@ const ZAP_OPTIONS_TO: TDropdownOption[] = [
 		value: STYBAL_TOKEN_ADDRESS,
 		zapVia: ZAP_YEARN_YBAL_ADDRESS,
 		icon: (
-			<Image
+			<ImageWithFallback
 				alt={'st-yBal'}
 				width={24}
 				height={24}
@@ -90,7 +90,7 @@ const ZAP_OPTIONS_TO: TDropdownOption[] = [
 		value: YBAL_TOKEN_ADDRESS,
 		zapVia: ZAP_YEARN_YBAL_ADDRESS,
 		icon: (
-			<Image
+			<ImageWithFallback
 				alt={'yBal'}
 				width={24}
 				height={24}
@@ -106,7 +106,7 @@ const ZAP_OPTIONS_TO: TDropdownOption[] = [
 		value: LPYBAL_TOKEN_ADDRESS,
 		zapVia: ZAP_YEARN_YBAL_ADDRESS,
 		icon: (
-			<Image
+			<ImageWithFallback
 				alt={'lp-yBal'}
 				width={24}
 				height={24}

@@ -7,7 +7,7 @@ import {useAddToken} from '@yearn-finance/web-lib/hooks/useAddToken';
 import {useDismissToasts} from '@yearn-finance/web-lib/hooks/useDismissToasts';
 import VAULT_ABI from '@yearn-finance/web-lib/utils/abi/vault.abi';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {LPYCRV_TOKEN_ADDRESS, MAX_UINT_256, STYCRV_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {LPYCRV_TOKEN_ADDRESS, LPYCRV_V2_TOKEN_ADDRESS, MAX_UINT_256, STYCRV_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YCRV_CURVE_POOL_V2_ADDRESS, YCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
@@ -17,7 +17,7 @@ import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import {getAmountWithSlippage, getVaultAPY} from '@common/utils';
 import {approveERC20, deposit} from '@common/utils/actions';
-import {LEGACY_OPTIONS_FROM, LEGACY_OPTIONS_TO} from '@yCRV/constants/tokens';
+import {ZAP_OPTIONS_FROM, ZAP_OPTIONS_TO} from '@yCRV/constants/tokens';
 import {useYCRV} from '@yCRV/contexts/useYCRV';
 import ZAP_CRV_ABI from '@yCRV/utils/abi/zapCRV.abi';
 import {zapCRV} from '@yCRV/utils/actions';
@@ -46,8 +46,8 @@ type TCardTransactor = {
 }
 
 const CardTransactorContext = createContext<TCardTransactor>({
-	selectedOptionFrom: LEGACY_OPTIONS_FROM[0],
-	selectedOptionTo: LEGACY_OPTIONS_TO[0],
+	selectedOptionFrom: ZAP_OPTIONS_FROM[0],
+	selectedOptionTo: ZAP_OPTIONS_TO[0],
 	amount: toNormalizedBN(0),
 	txStatusApprove: defaultTxStatus,
 	txStatusZap: defaultTxStatus,
@@ -65,8 +65,8 @@ const CardTransactorContext = createContext<TCardTransactor>({
 });
 
 function CardTransactorContextApp({
-	defaultOptionFrom = LEGACY_OPTIONS_FROM[0],
-	defaultOptionTo = LEGACY_OPTIONS_TO[0],
+	defaultOptionFrom = ZAP_OPTIONS_FROM[0],
+	defaultOptionTo = ZAP_OPTIONS_TO[0],
 	children = <div />
 }): ReactElement {
 	const {provider, isActive, address} = useWeb3();
@@ -130,6 +130,15 @@ function CardTransactorContextApp({
 			if (_inputToken === YCRV_CURVE_POOL_ADDRESS) {
 				const pps = await readContract({
 					address: LPYCRV_TOKEN_ADDRESS,
+					abi: VAULT_ABI,
+					functionName: 'pricePerShare'
+				});
+				const _expectedOut = _amountIn * pps / toBigInt(1e18);
+				return _expectedOut;
+			}
+			if (_inputToken === YCRV_CURVE_POOL_V2_ADDRESS) {
+				const pps = await readContract({
+					address: LPYCRV_V2_TOKEN_ADDRESS,
 					abi: VAULT_ABI,
 					functionName: 'pricePerShare'
 				});
@@ -216,12 +225,16 @@ function CardTransactorContextApp({
 			}
 		};
 
-		if (selectedOptionFrom.zapVia === LPYCRV_TOKEN_ADDRESS) {
+		if (
+			selectedOptionFrom.zapVia === LPYCRV_TOKEN_ADDRESS
+			|| selectedOptionFrom.zapVia === LPYCRV_V2_TOKEN_ADDRESS
+		) {
 			// Direct deposit to vault from crv/yCRV Curve LP Token to lp-yCRV Vault
+			// This is valid for v1 and v2
 			const result = await deposit({
 				connector: provider,
 				contractAddress: selectedOptionTo.value,
-				amount: amount.raw, //amount_in
+				amount: amount.raw,
 				statusHandler: set_txStatusZap
 			});
 			if (result.isSuccessful) {
@@ -239,10 +252,8 @@ function CardTransactorContextApp({
 				amount: amount.raw, //amount_in
 				minAmount: toBigInt(expectedOut), //_min_out
 				slippage: (
-					selectedOptionTo.value === YCRV_TOKEN_ADDRESS ?
-						0n :
-						toBigInt(slippage * 100)
-				),
+					selectedOptionTo.value === YCRV_TOKEN_ADDRESS ? 0n : toBigInt(slippage * 100)
+				), // Default to 0.6
 				statusHandler: set_txStatusZap
 			});
 			if (result.isSuccessful) {

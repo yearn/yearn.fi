@@ -21,7 +21,7 @@ import type {TNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber'
 function VaultDetailsQuickActionsButtons(): ReactElement {
 	const {refresh} = useWallet();
 	const {refresh: refreshZapBalances} = useWalletForZap();
-	const {address, isActive} = useWeb3();
+	const {address, provider} = useWeb3();
 	const {safeChainID} = useChainID();
 	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
 	const [txStatusExecuteDeposit, set_txStatusExecuteDeposit] = useState(defaultTxStatus);
@@ -37,7 +37,7 @@ function VaultDetailsQuickActionsButtons(): ReactElement {
 	const [{result: allowanceFrom, status}, actions] = useAsync(async (): Promise<TNormalizedBN> => onRetrieveAllowance(true), toNormalizedBN(0));
 	useEffect((): void => {
 		actions.execute();
-	}, [actions, isActive, address, onRetrieveAllowance, hash]);
+	}, [actions, provider, address, onRetrieveAllowance, hash]);
 
 	const onSuccess = useCallback(async (): Promise<void> => {
 		onChangeAmount(toNormalizedBN(0));
@@ -95,7 +95,7 @@ function VaultDetailsQuickActionsButtons(): ReactElement {
 
 	const isDiffNetwork = !!safeChainID && currentVault.chainID !== safeChainID;
 	const isButtonDisabled = (
-		!isActive
+		(!address && !provider)
 		|| isZero(actionParams.amount.raw)
 		|| toBigInt(actionParams.amount.raw) > toBigInt(maxDepositPossible.raw)
 		|| isLoadingExpectedOut
@@ -171,7 +171,7 @@ function VaultDetailsQuickActionsButtons(): ReactElement {
 					className={'w-full whitespace-nowrap'}
 					isBusy={txStatusExecuteDeposit.pending}
 					isDisabled={(
-						!isActive
+						(!address && !provider)
 						|| isZero(actionParams.amount.raw)
 						|| toBigInt(actionParams.amount.raw) > toBigInt(maxDepositPossible.raw)
 					)}>

@@ -1,9 +1,9 @@
 import {useRef} from 'react';
 import {Balancer} from 'react-wrap-balancer';
-import Image from 'next/image';
 import Link from 'next/link';
 import {useClientEffect} from '@yearn-finance/web-lib/hooks/useClientEffect';
 import {YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import LogoYearn from '@common/icons/LogoYearn';
 
 import type {ReactElement} from 'react';
@@ -22,7 +22,7 @@ const apps = [
 		href: '/ycrv',
 		title: 'yCRV',
 		description: 'get the best CRV yields in DeFi.',
-		icon: <Image
+		icon: <ImageWithFallback
 			alt={'yCRV'}
 			width={100}
 			height={100}

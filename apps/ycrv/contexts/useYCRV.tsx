@@ -1,6 +1,6 @@
 import {createContext, useContext, useMemo, useState} from 'react';
 import {formatUnits} from 'viem';
-import {LPYCRV_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {LPYCRV_TOKEN_ADDRESS, LPYCRV_V2_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {useFetch} from '@common/hooks/useFetch';
 import {yDaemonVaultHarvestsSchema, yDaemonVaultSchema} from '@common/schemas/yDaemonVaultsSchemas';
@@ -51,7 +51,7 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 	});
 
 	const {data: yCRVHarvests} = useFetch<TYDaemonVaultHarvests>({
-		endpoint: `${yDaemonBaseUri}/vaults/harvests/${STYCRV_TOKEN_ADDRESS},${LPYCRV_TOKEN_ADDRESS}`,
+		endpoint: `${yDaemonBaseUri}/vaults/harvests/${STYCRV_TOKEN_ADDRESS},${LPYCRV_TOKEN_ADDRESS},${LPYCRV_V2_TOKEN_ADDRESS}`,
 		schema: yDaemonVaultHarvestsSchema
 	});
 
