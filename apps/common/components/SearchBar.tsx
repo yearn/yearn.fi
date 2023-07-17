@@ -1,21 +1,14 @@
 import type {ChangeEvent, ReactElement} from 'react';
 
 export type TSearchBar = {
-	searchLabel: string;
 	searchPlaceholder: string;
 	searchValue: string;
 	set_searchValue: (searchValue: string) => void;
 }
 
-export function SearchBar({searchLabel, searchPlaceholder, searchValue, set_searchValue}: TSearchBar): ReactElement {
+export function SearchBar({searchPlaceholder, searchValue, set_searchValue}: TSearchBar): ReactElement {
 	return (
-		<div className={'w-full'}>
-			<label
-				suppressHydrationWarning
-				htmlFor={'search'}
-				className={'text-neutral-600'}>
-				{searchLabel}
-			</label>
+		<>
 			<div className={'mt-1 flex h-10 w-full max-w-md items-center border border-neutral-0 bg-neutral-0 p-2 md:w-2/3'}>
 				<div className={'relative flex h-10 w-full flex-row items-center justify-between'}>
 					<input
@@ -46,6 +39,6 @@ export function SearchBar({searchLabel, searchPlaceholder, searchValue, set_sear
 
 				</div>
 			</div>
-		</div>
+		</>
 	);
 }

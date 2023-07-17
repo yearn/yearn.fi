@@ -21,7 +21,6 @@ type TSwitchProps = {
 export type TListHero<T> = {
 	headLabel: string;
 	switchProps?: TSwitchProps;
-	searchLabel: string;
 	searchPlaceholder: string;
 	categories: TListHeroCategory<T>[][];
 	onSelect: (category: T) => void;
@@ -41,8 +40,7 @@ function DesktopCategories<T>({categories, onSelect}: TListHeroDesktopCategories
 	}, []);
 
 	return (
-		<div>
-			<label className={'text-neutral-600'}>&nbsp;</label>
+		<div className={'w-full'}>
 			<div className={'mt-1 flex flex-row space-x-4'}>
 				{(categories || []).map((currentCategory, index: number): ReactElement => (
 					<div
@@ -95,7 +93,6 @@ function Switch(props: TSwitchProps): ReactElement {
 
 function ListHero<T extends string>({
 	headLabel,
-	searchLabel,
 	searchPlaceholder,
 	categories,
 	onSelect,
@@ -114,8 +111,11 @@ function ListHero<T extends string>({
 			</div>
 
 			<div className={'hidden w-full flex-row items-center justify-between space-x-4 md:flex'}>
+				<DesktopCategories
+					categories={categories}
+					onSelect={onSelect} />
+
 				<SearchBar
-					searchLabel={searchLabel}
 					searchPlaceholder={searchPlaceholder}
 					searchValue={searchValue}
 					set_searchValue={set_searchValue} />
@@ -126,10 +126,6 @@ function ListHero<T extends string>({
 						<Switch {...switchProps} />
 					</div>
 				)}
-
-				<DesktopCategories
-					categories={categories}
-					onSelect={onSelect} />
 			</div>
 
 			<div className={'flex w-full flex-row space-x-2 md:hidden md:w-2/3'}>
