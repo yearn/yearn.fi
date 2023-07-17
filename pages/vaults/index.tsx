@@ -147,6 +147,7 @@ function Index(): ReactElement {
 
 	const categoriesToDisplay = useMemo((): TListHeroCategory<string>[] => {
 		const categories = [
+			{value: 'All Vaults', label: 'All', isSelected: category === 'All Vaults'},
 			{value: 'Featured Vaults', label: 'Featured', isSelected: category === 'Featured Vaults'},
 			{value: 'Crypto Vaults', label: 'Crypto', isSelected: category === 'Crypto Vaults'},
 			{value: 'Stables Vaults', label: 'Stables', isSelected: category === 'Stables Vaults'},
@@ -159,10 +160,7 @@ function Index(): ReactElement {
 		} else {
 			categories.push({value: 'Balancer Vaults', label: 'Balancer', isSelected: category === 'Balancer Vaults'});
 		}
-		return [
-			...categories,
-			{value: 'All Vaults', label: 'All', isSelected: category === 'All Vaults'}
-		];
+		return categories;
 	}, [category, safeChainID]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
@@ -272,8 +270,7 @@ function Index(): ReactElement {
 				</div>
 				<ListHero
 					headLabel={category}
-					searchLabel={`Search ${category}`}
-					searchPlaceholder={'YFI Vault'}
+					searchPlaceholder={`Search ${category}`}
 					categories={[
 						categoriesToDisplay,
 						[

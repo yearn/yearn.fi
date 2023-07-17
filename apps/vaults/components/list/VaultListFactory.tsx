@@ -130,8 +130,7 @@ function VaultListFactory(): ReactElement {
 			</div>
 			<ListHero
 				headLabel={category}
-				searchLabel={`Search ${category}`}
-				searchPlaceholder={'YFI Vault'}
+				searchPlaceholder={`Search ${category}`}
 				categories={[
 					[
 						{value: 'Curve Factory Vaults', label: 'Curve', isSelected: category === 'Curve Factory Vaults'},
