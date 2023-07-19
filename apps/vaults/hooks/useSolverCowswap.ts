@@ -143,7 +143,7 @@ export function useSolverCowswap(): TSolverContext {
 				if (err?.body?.description) {
 					toast({type: 'error', content: err?.body?.description});
 				} else {
-					toast({type: 'error', content: 'Zap not possible. Try again later or pick another token.'});
+					toast({type: 'error', content: 'Cowswap zap not possible. Try again later or pick another token.'});
 				}
 			}
 			return toNormalizedBN(0);
