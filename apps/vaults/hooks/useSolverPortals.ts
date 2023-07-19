@@ -58,7 +58,7 @@ async function getQuote(
 		return getPortalsEstimate({network: safeChainID, params});
 	} catch (error) {
 		console.error(error);
-		let errorContent = 'Zap not possible. Try again later or pick another token.';
+		let errorContent = 'Portals.fi zap not possible. Try again later or pick another token.';
 		if (axios.isAxiosError(error)) {
 			const description = error.response?.data?.description;
 			errorContent += `${description ? ` (Reason: [${description}])` : ''}`;
@@ -130,7 +130,7 @@ export function useSolverPortals(): TSolverContext {
 		if (!data) {
 			console.error(error?.message);
 			if (error && !shouldLogError) {
-				toast({type: 'error', content: `Zap not possible: ${error?.message}`});
+				toast({type: 'error', content: `Portals.fi zap not possible: ${error?.message}`});
 			}
 			return toNormalizedBN(0);
 		}
@@ -198,7 +198,7 @@ export function useSolverPortals(): TSolverContext {
 			if (isValidPortalsErrorObject(error)) {
 				const errorMessage = error.response.data.message;
 				console.error(errorMessage);
-				toast({type: 'error', content: `Zap not possible: ${errorMessage}`});
+				toast({type: 'error', content: `Portals.fi zap not possible: ${errorMessage}`});
 			}
 
 			return ({isSuccessful: false});

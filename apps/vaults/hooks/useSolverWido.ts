@@ -112,7 +112,7 @@ export function useSolverWido(): TSolverContext {
 		const {data, error} = await getQuote(_request, currentPartner, safeChainID, zapSlippage);
 		if (!data) {
 			if (error && !shouldLogError) {
-				toast({type: 'error', content: 'Zap not possible. Try again later or pick another token.'});
+				toast({type: 'error', content: 'Wido zap not possible. Try again later or pick another token.'});
 			}
 			return toNormalizedBN(0);
 		}
