@@ -97,6 +97,13 @@ export function useSolverPortals(): TSolverContext {
 		}
 
 		/******************************************************************************************
+		** Then, we check if the we are on optimist. If we are, we return 0.
+		******************************************************************************************/
+		if (safeChainID === 10) {
+			return toNormalizedBN(0);
+		}
+
+		/******************************************************************************************
 		** Then, we check if the solver can be used for this specific sellToken. If it can't, we
 		** return 0.
 		** This solveVia array is set via the yDaemon tokenList process. If a solve is not set for
