@@ -4,7 +4,7 @@ import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
 import {VaultsListInternalMigrationRow} from '@vaults/components/list/VaultsListInternalMigrationRow';
 import {VaultsListRetired} from '@vaults/components/list/VaultsListRetired';
 import {VaultsListRow} from '@vaults/components/list/VaultsListRow';
-import {OPT_VAULTS_WITH_REWARDS} from '@vaults/constants/optRewards';
+import {OPT_VAULTS_WITH_REWARDS, STACKING_TO_VAULT} from '@vaults/constants/optRewards';
 import {useAppSettings} from '@vaults/contexts/useAppSettings';
 import {useFilteredVaults} from '@vaults/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
@@ -104,6 +104,20 @@ function Index(): ReactElement {
 	const filterHoldingsCallback = useCallback((address: TAddress): boolean => {
 		balancesNonce;
 		const holding = balances?.[toAddress(address)];
+
+		// [Optimism] Check if staked vaults have holdings
+		if (safeChainID === 10) {
+			const stakedVaultAddress = STACKING_TO_VAULT[toAddress(address)];
+			const stakedHolding = balances?.[toAddress(stakedVaultAddress)];
+
+			const hasValidStakedBalance = toBigInt(stakedHolding?.raw) > 0n;
+			const stakedBalanceValue = stakedHolding?.normalizedValue || 0;
+			
+			if (hasValidStakedBalance && !(shouldHideDust && stakedBalanceValue < 0.01)) {
+				return true;
+			}
+		}
+		
 		const hasValidBalance = toBigInt(holding?.raw) > 0n;
 		const balanceValue = holding?.normalizedValue || 0;
 		if (shouldHideDust && balanceValue < 0.01) {
@@ -113,7 +127,7 @@ function Index(): ReactElement {
 			return true;
 		}
 		return false;
-	}, [balances, shouldHideDust, balancesNonce]);
+	}, [balancesNonce, balances, safeChainID, shouldHideDust]);
 
 	const filterMigrationCallback = useCallback((address: TAddress): boolean => {
 		balancesNonce;
