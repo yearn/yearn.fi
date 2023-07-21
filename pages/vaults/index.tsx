@@ -216,14 +216,13 @@ function Index(): ReactElement {
 	**	implemented as a simple string.includes() on the vault name.
 	**********************************************************************************************/
 	const searchedVaultsToDisplay = useMemo((): TYDaemonVault[] => {
-		const vaultsToUse = [...vaultsToDisplay];
-
 		if (searchValue === '') {
-			return vaultsToUse;
+			return vaultsToDisplay;
 		}
-		return vaultsToUse.filter((vault): boolean => {
-			const searchString = getVaultName(vault);
-			return searchString.toLowerCase().includes(searchValue.toLowerCase());
+		return vaultsToDisplay.filter((vault: TYDaemonVault): boolean => {
+			const vaultName = getVaultName(vault).toLowerCase();
+			const vaultSymbol = vault.symbol.toLowerCase();
+			return [vaultName, vaultSymbol].some((attribute): boolean => attribute.includes(searchValue.toLowerCase()));
 		});
 	}, [vaultsToDisplay, searchValue]);
 
