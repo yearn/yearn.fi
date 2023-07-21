@@ -84,7 +84,7 @@ function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElem
 								<Renderable shouldRender={currentVault.apy?.staking_rewards_apr > 0}>
 									{'REWARD '}
 									<RenderAmount
-										value={currentVault.apy?.staking_rewards_apr}
+										value={currentVault.apy.staking_rewards_apr + currentVault.apy.gross_apr}
 										symbol={'percent'}
 										decimals={6}
 									/>
