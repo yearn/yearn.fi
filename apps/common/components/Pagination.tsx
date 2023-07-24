@@ -47,7 +47,6 @@ export function Pagination(props: TProps): ReactElement {
 					activeLinkClassName={'text-gray-900 font-bold border-b-2 items-center mx-2 my-2 px-0.5 md:inline-flex'}
 					disabledLinkClassName={'cursor-not-allowed hover:bg-neutral-100'}
 					disabledClassName={'text-neutral-300'}
-					renderOnZeroPageCount={(): null => null}
 					breakLabel={'...'}
 					onPageChange={onPageChange}
 					pageRangeDisplayed={3}
