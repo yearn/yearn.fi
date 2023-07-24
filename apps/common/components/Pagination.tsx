@@ -26,6 +26,7 @@ export function Pagination(props: TProps): ReactElement {
 					{'Previous'}
 				</a>
 				<a
+					role={'button'}
 					href={'#'}
 					className={'border-gray-300 text-gray-700 hover:bg-gray-50 relative ml-3 inline-flex items-center rounded-md border px-4 py-2 text-sm font-medium'}
 				>
