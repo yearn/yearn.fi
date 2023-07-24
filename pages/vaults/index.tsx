@@ -4,6 +4,7 @@ import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
 import {VaultsListInternalMigrationRow} from '@vaults/components/list/VaultsListInternalMigrationRow';
 import {VaultsListRetired} from '@vaults/components/list/VaultsListRetired';
 import {VaultsListRow} from '@vaults/components/list/VaultsListRow';
+import {OPT_VAULTS_WITH_REWARDS, STACKING_TO_VAULT} from '@vaults/constants/optRewards';
 import {useAppSettings} from '@vaults/contexts/useAppSettings';
 import {useFilteredVaults} from '@vaults/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
@@ -103,6 +104,20 @@ function Index(): ReactElement {
 	const filterHoldingsCallback = useCallback((address: TAddress): boolean => {
 		balancesNonce;
 		const holding = balances?.[toAddress(address)];
+
+		// [Optimism] Check if staked vaults have holdings
+		if (safeChainID === 10) {
+			const stakedVaultAddress = STACKING_TO_VAULT[toAddress(address)];
+			const stakedHolding = balances?.[toAddress(stakedVaultAddress)];
+
+			const hasValidStakedBalance = toBigInt(stakedHolding?.raw) > 0n;
+			const stakedBalanceValue = stakedHolding?.normalizedValue || 0;
+			
+			if (hasValidStakedBalance && !(shouldHideDust && stakedBalanceValue < 0.01)) {
+				return true;
+			}
+		}
+		
 		const hasValidBalance = toBigInt(holding?.raw) > 0n;
 		const balanceValue = holding?.normalizedValue || 0;
 		if (shouldHideDust && balanceValue < 0.01) {
@@ -112,7 +127,7 @@ function Index(): ReactElement {
 			return true;
 		}
 		return false;
-	}, [balances, shouldHideDust, balancesNonce]);
+	}, [balancesNonce, balances, safeChainID, shouldHideDust]);
 
 	const filterMigrationCallback = useCallback((address: TAddress): boolean => {
 		balancesNonce;
@@ -130,6 +145,12 @@ function Index(): ReactElement {
 	**	performing the filtering once.
 	**********************************************************************************************/
 	const curveVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Curve');
+	const boostedVaults = useFilteredVaults(vaults, ({address}): boolean => {
+		if (safeChainID !== 10) {
+			return false;
+		}
+		return OPT_VAULTS_WITH_REWARDS.some((token): boolean => token === address);
+	});
 	const velodromeVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Velodrome');
 	const stablesVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Stablecoin');
 	const balancerVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Balancer');
@@ -140,20 +161,20 @@ function Index(): ReactElement {
 
 	const categoriesToDisplay = useMemo((): TListHeroCategory<string>[] => {
 		const categories = [
+			{value: 'All Vaults', label: 'All', isSelected: category === 'All Vaults'},
 			{value: 'Featured Vaults', label: 'Featured', isSelected: category === 'Featured Vaults'},
 			{value: 'Crypto Vaults', label: 'Crypto', isSelected: category === 'Crypto Vaults'},
 			{value: 'Stables Vaults', label: 'Stables', isSelected: category === 'Stables Vaults'},
 			{value: 'Curve Vaults', label: 'Curve', isSelected: category === 'Curve Vaults'}
 		];
+
 		if (safeChainID === 10) {
+			categories.splice(1, 0, {value: 'Boosted Vaults', label: 'Boosted', isSelected: category === 'Boosted Vaults'});
 			categories.push({value: 'Velodrome Vaults', label: 'Velodrome', isSelected: category === 'Velodrome Vaults'});
 		} else {
 			categories.push({value: 'Balancer Vaults', label: 'Balancer', isSelected: category === 'Balancer Vaults'});
 		}
-		return [
-			...categories,
-			{value: 'All Vaults', label: 'All', isSelected: category === 'All Vaults'}
-		];
+		return categories;
 	}, [category, safeChainID]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
@@ -170,6 +191,8 @@ function Index(): ReactElement {
 			_vaultList = balancerVaults;
 		} else if (category === 'Velodrome Vaults') {
 			_vaultList = velodromeVaults;
+		} else if (category === 'Boosted Vaults') {
+			_vaultList = boostedVaults;
 		} else if (category === 'Stables Vaults') {
 			_vaultList = stablesVaults;
 		} else if (category === 'Crypto Vaults') {
@@ -186,21 +209,20 @@ function Index(): ReactElement {
 		}
 
 		return _vaultList;
-	}, [vaults, category, shouldHideLowTVLVaults, curveVaults, balancerVaults, velodromeVaults, stablesVaults, cryptoVaults, holdingsVaults]);
+	}, [vaults, category, shouldHideLowTVLVaults, curveVaults, balancerVaults, velodromeVaults, boostedVaults, stablesVaults, cryptoVaults, holdingsVaults]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	**	Then, on the vaultsToDisplay list, we apply the search filter. The search filter is
 	**	implemented as a simple string.includes() on the vault name.
 	**********************************************************************************************/
 	const searchedVaultsToDisplay = useMemo((): TYDaemonVault[] => {
-		const vaultsToUse = [...vaultsToDisplay];
-
 		if (searchValue === '') {
-			return vaultsToUse;
+			return vaultsToDisplay;
 		}
-		return vaultsToUse.filter((vault): boolean => {
-			const searchString = getVaultName(vault);
-			return searchString.toLowerCase().includes(searchValue.toLowerCase());
+		return vaultsToDisplay.filter((vault: TYDaemonVault): boolean => {
+			const vaultName = getVaultName(vault).toLowerCase();
+			const vaultSymbol = vault.symbol.toLowerCase();
+			return [vaultName, vaultSymbol].some((attribute): boolean => attribute.includes(searchValue.toLowerCase()));
 		});
 	}, [vaultsToDisplay, searchValue]);
 
@@ -261,8 +283,7 @@ function Index(): ReactElement {
 				</div>
 				<ListHero
 					headLabel={category}
-					searchLabel={`Search ${category}`}
-					searchPlaceholder={'YFI Vault'}
+					searchPlaceholder={`Search ${category}`}
 					categories={[
 						categoriesToDisplay,
 						[

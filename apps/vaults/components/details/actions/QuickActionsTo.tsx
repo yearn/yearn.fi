@@ -16,6 +16,8 @@ function VaultDetailsQuickActionsTo(): ReactElement {
 	const {expectedOut, isLoadingExpectedOut} = useSolver();
 	const selectedOptionToPricePerToken = useTokenPrice(toAddress(actionParams?.selectedOptionTo?.value));
 
+	const isMigrationAvailable = currentVault?.migration?.available;
+
 	function renderMultipleOptionsFallback(): ReactElement {
 		return (
 			<Dropdown
@@ -31,7 +33,7 @@ function VaultDetailsQuickActionsTo(): ReactElement {
 			<div className={'relative z-10 w-full space-y-2'}>
 				<div className={'flex flex-row items-baseline justify-between'}>
 					<label className={'text-base text-neutral-600'}>
-						{isDepositing ? 'To vault' : 'To wallet'}
+						{isDepositing || isMigrationAvailable ? 'To vault' : 'To wallet'}
 					</label>
 					<legend className={'font-number inline text-xs text-neutral-600 md:hidden'} suppressHydrationWarning>
 						{`APY ${formatPercent(((currentVault?.apy?.net_apy || 0) + (currentVault?.apy?.staking_rewards_apr || 0)) * 100, 2, 2, 500)}`}

@@ -1,5 +1,4 @@
 import {createContext, useCallback, useContext, useEffect, useMemo, useRef, useState} from 'react';
-import {serialize} from 'wagmi';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useSolverChainCoin} from '@vaults/hooks/useSolverChainCoin';
 import {useSolverCowswap} from '@vaults/hooks/useSolverCowswap';
@@ -9,6 +8,7 @@ import {useSolverPartnerContract} from '@vaults/hooks/useSolverPartnerContract';
 import {useSolverPortals} from '@vaults/hooks/useSolverPortals';
 import {useSolverVanilla} from '@vaults/hooks/useSolverVanilla';
 import {useSolverWido} from '@vaults/hooks/useSolverWido';
+import {serialize} from '@wagmi/core';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';

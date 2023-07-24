@@ -206,7 +206,6 @@ function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVault}): 
 			<div className={'col-span-1 w-full space-y-6 p-4 md:p-6'}>
 				<div className={'w-full flex-row items-center justify-between md:flex md:space-x-4'}>
 					<SearchBar
-						searchLabel={'Search'}
 						searchPlaceholder={'Aave'}
 						searchValue={searchValue}
 						set_searchValue={(value): void => {
