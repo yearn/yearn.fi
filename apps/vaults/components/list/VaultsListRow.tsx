@@ -16,6 +16,112 @@ import {getVaultName} from '@common/utils';
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
+function VaultAPR({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+	const isEthMainnet = currentVault.chainID === 1;
+
+	if (currentVault.apy?.staking_rewards_apr > 0) {
+		const boostedAPR = currentVault.apy.staking_rewards_apr + currentVault.apy.gross_apr;
+		return (
+			<div className={'flex flex-col text-right'}>
+				<span className={'tooltip'}>
+					<b className={'yearn--table-data-section-item-value'}>
+						<Renderable
+							shouldRender={!(currentVault.apy?.type === 'new' && isZero(boostedAPR))}
+							fallback={'New'}>
+							{'⚡️ '}
+							<RenderAmount
+								value={boostedAPR}
+								symbol={'percent'}
+								decimals={6} />
+						</Renderable>
+					</b>
+					<span className={'tooltipLight bottom-full mb-1'}>
+						<div className={'font-number w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'}>
+							<div className={'flex flex-col items-start justify-start text-left'}>
+								<div className={'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'}>
+									<p>{'• Base APR '}</p>
+									<RenderAmount
+										value={currentVault.apy?.gross_apr}
+										symbol={'percent'}
+										decimals={6} />
+								</div>
+
+								<div className={'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'}>
+									<p>{'• Rewards APR '}</p>
+									<RenderAmount
+										value={currentVault.apy?.staking_rewards_apr}
+										symbol={'percent'}
+										decimals={6} />
+								</div>
+							</div>
+						</div>
+					</span>
+				</span>
+			</div>
+		);
+	}
+
+	if (isEthMainnet && currentVault.apy?.composite?.boost > 0 && !currentVault.apy?.staking_rewards_apr) {
+		const unBoostedAPR = currentVault.apy.gross_apr / currentVault.apy.composite.boost;
+		return (
+			<span className={'tooltip'}>
+				<div className={'flex flex-col text-right'}>
+					<b className={'yearn--table-data-section-item-value'}>
+						<Renderable
+							shouldRender={!(currentVault.apy?.type === 'new' && isZero(currentVault.apy?.net_apy))}
+							fallback={'New'}>
+							<RenderAmount
+								value={currentVault.apy?.net_apy}
+								symbol={'percent'}
+								decimals={6}
+							/>
+						</Renderable>
+					</b>
+					<small className={'text-xs text-neutral-900'}>
+						<Renderable
+							shouldRender={isEthMainnet && currentVault.apy?.composite?.boost > 0 && !currentVault.apy?.staking_rewards_apr}>
+							{`BOOST ${formatAmount(currentVault.apy?.composite?.boost, 2, 2)}x`}
+						</Renderable>
+					</small>
+					<span className={'tooltipLight bottom-full mb-1'}>
+						<div className={'font-number w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'}>
+							<div className={'flex flex-col items-start justify-start text-left'}>
+								<div className={'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'}>
+									<p>{'• Base APR '}</p>
+									<RenderAmount
+										value={unBoostedAPR}
+										symbol={'percent'}
+										decimals={6} />
+								</div>
+
+								<div className={'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'}>
+									<p>{'• Boost '}</p>
+									<p>{`${formatAmount(currentVault.apy?.composite?.boost, 2, 2)} x`}</p>
+								</div>
+							</div>
+						</div>
+					</span>
+				</div>
+			</span>
+		);
+	}
+
+	return (
+		<div className={'flex flex-col text-right'}>
+			<b className={'yearn--table-data-section-item-value'}>
+				<Renderable
+					shouldRender={!(currentVault.apy?.type === 'new' && isZero(currentVault.apy?.net_apy))}
+					fallback={'New'}>
+					<RenderAmount
+						value={currentVault.apy?.net_apy}
+						symbol={'percent'}
+						decimals={6} />
+				</Renderable>
+			</b>
+		</div>
+	);
+}
+
 function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {safeChainID} = useChainID();
 	const balanceOfWant = useBalance(currentVault.token.address);
@@ -23,7 +129,6 @@ function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElem
 	//TODO: Create a wagmi Chain upgrade to add the chain wrapper token address
 	const balanceOfWrappedCoin = useBalance(toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS ? WFTM_TOKEN_ADDRESS : WETH_TOKEN_ADDRESS);
 	const vaultName = useMemo((): string => getVaultName(currentVault), [currentVault]);
-	const isEthMainnet = currentVault.chainID === 1;
 	const deposited = useBalance(currentVault.address)?.raw;
 	const {stakingRewardsByVault, positionsMap} = useStakingRewards();
 
@@ -62,35 +167,7 @@ function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElem
 				<div className={'yearn--table-data-section'}>
 					<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
 						<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'APY'}</label>
-						<div className={'flex flex-col text-right'}>
-							<b className={'yearn--table-data-section-item-value'}>
-								<Renderable
-									shouldRender={!(currentVault.apy?.type === 'new' && isZero(currentVault.apy?.net_apy))}
-									fallback={'New'}>
-									<RenderAmount
-										value={currentVault.apy?.net_apy}
-										symbol={'percent'}
-										decimals={6}
-									/>
-								</Renderable>
-							</b>
-							<small className={'text-xs text-neutral-900'}>
-								<Renderable
-									shouldRender={isEthMainnet && currentVault.apy?.composite?.boost > 0 && !currentVault.apy?.staking_rewards_apr}>
-									{`BOOST ${formatAmount(currentVault.apy?.composite?.boost, 2, 2)}x`}
-								</Renderable>
-							</small>
-							<small className={'text-xs text-neutral-900'}>
-								<Renderable shouldRender={currentVault.apy?.staking_rewards_apr > 0}>
-									{'REWARD '}
-									<RenderAmount
-										value={currentVault.apy.staking_rewards_apr + currentVault.apy.gross_apr}
-										symbol={'percent'}
-										decimals={6}
-									/>
-								</Renderable>
-							</small>
-						</div>
+						<VaultAPR currentVault={currentVault} />
 					</div>
 
 					<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
