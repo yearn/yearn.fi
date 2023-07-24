@@ -53,7 +53,7 @@ function Table<T>({metadata, data, columns, initialSortBy, onRowClick, itemsPerP
 		set_state({sortedBy: newOrder ? key : undefined, order: newOrder});
 	}, [order, sortedBy]);
 
-	const numberOfColumns = Math.min(columns ?? (metadata.length), 12).toString();
+	const numberOfColumns = Math.min(columns ?? (metadata.length), 12);
 
 	return (
 		<div className={'w-full'}>
