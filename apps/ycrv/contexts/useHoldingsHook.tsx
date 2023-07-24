@@ -85,7 +85,7 @@ export function useHoldings(): TCRVHoldings {
 			lpyCRVSupply: lpyCRVTotalSupply,
 			lpyCRVV2Supply: lpyCRVV2TotalSupply,
 			crvYCRVPeg: crvYCRVPeg,
-			boostMultiplier: veCRVBalance * (toBigInt(1e4) / (styCRVTotalSupply || 1n)),
+			boostMultiplier: veCRVBalance * toBigInt(1e4) / (styCRVTotalSupply || 1n),
 			veCRVTotalSupply: veCRVTotalSupply,
 			veCRVBalance: veCRVBalance
 		});
