@@ -90,7 +90,7 @@ function NetworkSelector({networks}: {networks: number[]}): ReactElement {
 		<div key={safeChainID} className={'relative z-50 mr-4'}>
 			<Listbox
 				value={safeChainID}
-				onChange={async (value: any): Promise<void> => onSwitchChain(value.value)}>
+				onChange={async (value: unknown): Promise<void> => onSwitchChain((value as {value: number}).value)}>
 				{({open}): ReactElement => (
 					<>
 						<Listbox.Button

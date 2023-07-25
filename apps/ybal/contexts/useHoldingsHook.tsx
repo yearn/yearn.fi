@@ -45,7 +45,7 @@ export function useHoldings(): TBalHoldings {
 	const veBalQueryPegHelpContract = {address: VEBALPEG_QUERY_HELP_CONTRACT, abi: VEBALPEG_HELPER_ABI};
 
 	const pegSwapArguments = {
-		poolId: '0xd61e198e139369a40818fe05f5d5e6e045cd6eaf000000000000000000000540' as Hex,
+		poolId: '0x5c6ee304399dbdb9c8ef030ab642b10820db8f56000200000000000000000014' as Hex,
 		kind: 0,
 		assetIn: BALWETH_TOKEN_ADDRESS, //BALWETH
 		assetOut: YBAL_TOKEN_ADDRESS, //YBAL
