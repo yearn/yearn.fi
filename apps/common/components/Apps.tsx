@@ -65,7 +65,6 @@ export const APPS: { [key in AppName]: TApp } = {
 		href: '/ybal',
 		menu: YBAL_MENU,
 		manifest: yBalManifest,
-		isDisabled: true,
 		icon: (
 			<ImageWithFallback
 				alt={'yBal'}

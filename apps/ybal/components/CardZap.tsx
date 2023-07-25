@@ -28,7 +28,6 @@ function CardZap(): ReactElement {
 		selectedOptionFrom, set_selectedOptionFrom,
 		selectedOptionTo, set_selectedOptionTo,
 		amount, set_amount,
-		set_hasTypedSomething,
 		fromVaultAPY, toVaultAPY, expectedOutWithSlippage,
 		allowanceFrom, onApproveFrom, onZap
 	} = useCardTransactor();
@@ -130,7 +129,6 @@ function CardZap(): ReactElement {
 								onChange={(e: ChangeEvent<HTMLInputElement>): void => {
 									performBatchedUpdates((): void => {
 										set_amount(handleInputChangeEventValue(e.target.value, balances[toAddress(selectedOptionFrom.value)]?.decimals || 18));
-										set_hasTypedSomething(true);
 									});
 								}} />
 							<button

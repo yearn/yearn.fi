@@ -60,7 +60,7 @@ function NetworkSelector({networks}: {networks: number[]}): ReactElement {
 	), [safeChainID, supportedNetworks]);
 
 	if (supportedNetworks.length === 1) {
-		if (currentNetwork?.value === supportedNetworks[0]?.value) {
+		if (currentNetwork?.value === supportedNetworks[0]?.value || publicClient?.chain.id === 1337) {
 			return (
 				<button
 					disabled

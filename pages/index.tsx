@@ -2,7 +2,7 @@ import {useRef} from 'react';
 import {Balancer} from 'react-wrap-balancer';
 import Link from 'next/link';
 import {useClientEffect} from '@yearn-finance/web-lib/hooks/useClientEffect';
-import {YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {YBAL_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import LogoYearn from '@common/icons/LogoYearn';
 
@@ -30,18 +30,18 @@ const apps = [
 			loading={'eager'}
 			priority />
 	},
-	// {
-	// 	href: '/ybal',
-	// 	title: 'yBal',
-	// 	description: 'get the best Balancer yields in DeFi.',
-	// 	icon: <Image
-	// 		alt={'yBal'}
-	// 		width={100}
-	// 		height={100}
-	// 		src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YBAL_TOKEN_ADDRESS}/logo-128.png`}
-	// 		loading={'eager'}
-	// 		priority />
-	// },
+	{
+		href: '/ybal',
+		title: 'yBal',
+		description: 'get the best Balancer yields in DeFi.',
+		icon: <ImageWithFallback
+			alt={'yBal'}
+			width={100}
+			height={100}
+			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YBAL_TOKEN_ADDRESS}/logo-128.png`}
+			loading={'eager'}
+			priority />
+	},
 	{
 		href: '/veyfi',
 		title: 'veYFI',

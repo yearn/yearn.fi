@@ -68,7 +68,7 @@ function LogoPopover(): ReactElement {
 				leaveTo={'opacity-0 translate-y-1'}>
 				<Popover.Panel className={'absolute left-1/2 z-10 mt-6 w-80 -translate-x-1/2 px-4 pt-4 sm:px-0 md:w-96'}>
 					<div className={'overflow-hidden border border-neutral-200 shadow-lg'}>
-						<div className={'relative grid grid-cols-2 bg-neutral-0 md:grid-cols-4'}>
+						<div className={'relative grid grid-cols-2 bg-neutral-0 md:grid-cols-5'}>
 							{
 								Object.values(APPS)
 									.filter(({isDisabled}): boolean => !isDisabled)

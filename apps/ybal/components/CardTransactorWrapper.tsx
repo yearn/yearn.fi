@@ -8,7 +8,6 @@ import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {LPYBAL_TOKEN_ADDRESS, MAX_UINT_256, STYBAL_TOKEN_ADDRESS, ZAP_YEARN_YBAL_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatToNormalizedValue, toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
-import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
@@ -36,7 +35,6 @@ type TCardTransactor = {
 	set_selectedOptionFrom: (option: TDropdownOption) => void,
 	set_selectedOptionTo: (option: TDropdownOption) => void,
 	set_amount: (amount: TNormalizedBN) => void,
-	set_hasTypedSomething: (hasTypedSomething: boolean) => void,
 	onApproveFrom: VoidPromiseFunction,
 	onZap: VoidPromiseFunction
 }
@@ -54,7 +52,6 @@ const CardTransactorContext = createContext<TCardTransactor>({
 	set_selectedOptionFrom: (): void => undefined,
 	set_selectedOptionTo: (): void => undefined,
 	set_amount: (): void => undefined,
-	set_hasTypedSomething: (): void => undefined,
 	onApproveFrom: async (): Promise<void> => undefined,
 	onZap: async (): Promise<void> => undefined
 });
@@ -66,14 +63,13 @@ function CardTransactorContextApp({
 }): ReactElement {
 	const {provider, isActive, address} = useWeb3();
 	const {styBalAPY, allowances, refetchAllowances, slippage} = useYBal();
-	const {balancesNonce, balances, refresh} = useWallet();
+	const {balancesNonce, refresh} = useWallet();
 	const {vaults} = useYearn();
 	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
 	const [txStatusZap, set_txStatusZap] = useState(defaultTxStatus);
 	const [selectedOptionFrom, set_selectedOptionFrom] = useState(defaultOptionFrom);
 	const [selectedOptionTo, set_selectedOptionTo] = useState(defaultOptionTo);
 	const [amount, set_amount] = useState<TNormalizedBN>(toNormalizedBN(0));
-	const [hasTypedSomething, set_hasTypedSomething] = useState(false);
 	const addToken = useAddToken();
 	const {dismissAllToasts} = useDismissToasts();
 	const {toast} = yToast();
@@ -83,22 +79,13 @@ function CardTransactorContextApp({
 	** the wallet is connected, or to 0 if the wallet is disconnected.
 	**************************************************************************/
 	useEffect((): void => {
-		balancesNonce; // remove warning, force deep refresh
 		set_amount((prevAmount): TNormalizedBN => {
-			if (isActive && isZero(prevAmount.raw) && !hasTypedSomething) {
-				return toNormalizedBN(balances[toAddress(selectedOptionFrom.value)]?.raw);
-			} if (!isActive && prevAmount.raw > 0n) {
+			if (!isActive && prevAmount.raw > 0n) {
 				return toNormalizedBN(0);
 			}
 			return prevAmount;
 		});
-	}, [isActive, selectedOptionFrom.value, balances, hasTypedSomething, balancesNonce]);
-
-	useUpdateEffect((): void => {
-		if (!isActive) {
-			set_hasTypedSomething(false);
-		}
-	}, [isActive]);
+	}, [isActive, balancesNonce]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Perform a smartContract call to the ZAP contract to get the expected
@@ -147,7 +134,7 @@ function CardTransactorContextApp({
 				refresh()
 			]);
 		}
-	}, [provider, refresh, selectedOptionFrom.value, selectedOptionFrom.zapVia]);
+	}, [provider, refetchAllowances, refresh, selectedOptionFrom.value, selectedOptionFrom.zapVia]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Execute a zap using the ZAP contract to migrate from a token A to a
@@ -244,7 +231,6 @@ function CardTransactorContextApp({
 				set_selectedOptionFrom,
 				set_selectedOptionTo,
 				set_amount,
-				set_hasTypedSomething,
 				onApproveFrom: onApprove,
 				onZap
 			}}>
