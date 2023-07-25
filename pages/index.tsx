@@ -59,6 +59,20 @@ const apps = [
 			className={'h-[100px] w-[100px]'}
 			back={'text-neutral-900'}
 			front={'text-neutral-0'} />
+	},
+	{
+		href: 'https://yeth.yearn.finance',
+		title: 'yETH',
+		description: 'Simple, straight forward, risk adjusted liquid staking yield.',
+		icon: (
+			<ImageWithFallback
+				alt={'yETH'}
+				width={100}
+				height={100}
+				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/0x1BED97CBC3c24A4fb5C069C6E311a967386131f7/logo-128.png`}
+				loading={'eager'}
+				priority />
+		)
 	}
 ];
 
@@ -222,7 +236,7 @@ function Index(): ReactElement {
 					</p>
 				</div>
 			</div>
-			<section className={'grid grid-cols-1 gap-10 md:grid-cols-3 lg:grid-cols-4'}>
+			<section className={'grid grid-cols-1 gap-10 md:grid-cols-3 lg:grid-cols-3'}>
 				{apps.map((app): ReactElement => <AppBox key={app.href} app={app} />)}
 			</section>
 		</>

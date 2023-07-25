@@ -58,7 +58,7 @@ async function getQuote(
 		return getPortalsEstimate({network: safeChainID, params});
 	} catch (error) {
 		console.error(error);
-		let errorContent = 'Zap not possible. Try again later or pick another token.';
+		let errorContent = 'Portals.fi zap not possible. Try again later or pick another token.';
 		if (axios.isAxiosError(error)) {
 			const description = error.response?.data?.description;
 			errorContent += `${description ? ` (Reason: [${description}])` : ''}`;
@@ -97,6 +97,13 @@ export function useSolverPortals(): TSolverContext {
 		}
 
 		/******************************************************************************************
+		** Then, we check if the we are on optimist. If we are, we return 0.
+		******************************************************************************************/
+		if (safeChainID === 10) {
+			return toNormalizedBN(0);
+		}
+
+		/******************************************************************************************
 		** Then, we check if the solver can be used for this specific sellToken. If it can't, we
 		** return 0.
 		** This solveVia array is set via the yDaemon tokenList process. If a solve is not set for
@@ -130,7 +137,7 @@ export function useSolverPortals(): TSolverContext {
 		if (!data) {
 			console.error(error?.message);
 			if (error && !shouldLogError) {
-				toast({type: 'error', content: `Zap not possible: ${error?.message}`});
+				toast({type: 'error', content: `Portals.fi zap not possible: ${error?.message}`});
 			}
 			return toNormalizedBN(0);
 		}
@@ -198,7 +205,7 @@ export function useSolverPortals(): TSolverContext {
 			if (isValidPortalsErrorObject(error)) {
 				const errorMessage = error.response.data.message;
 				console.error(errorMessage);
-				toast({type: 'error', content: `Zap not possible: ${errorMessage}`});
+				toast({type: 'error', content: `Portals.fi zap not possible: ${errorMessage}`});
 			}
 
 			return ({isSuccessful: false});

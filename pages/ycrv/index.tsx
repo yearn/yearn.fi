@@ -78,7 +78,7 @@ function HeaderPosition(): ReactElement {
 
 function ZapAndStats(): ReactElement {
 	const {balances} = useWallet();
-	const {holdings, styCRVMegaBoost, styCRVAPY} = useYCRV();
+	const {holdings, styCRVAPY} = useYCRV();
 	const {vaults} = useYearn();
 	const {curveWeeklyFees, cgPrices} = useCurve();
 
@@ -221,12 +221,7 @@ function ZapAndStats(): ReactElement {
 									<p
 										suppressHydrationWarning
 										className={'font-number text-neutral-400 md:text-xxs'}>
-										{`∙ ${styCRVAPY && curveAdminFeePercent && styCRVMegaBoost ? formatAmount(styCRVAPY - (curveAdminFeePercent + (styCRVMegaBoost * 100)), 2, 2) : '0.00'}% Gauge Voting Bribes`}
-									</p>
-									<p
-										suppressHydrationWarning
-										className={'font-number text-neutral-400 md:text-xxs'}>
-										{`∙ ${styCRVMegaBoost ? formatPercent(styCRVMegaBoost * 100) : formatPercent(0)} Mega Boost`}
+										{`∙ ${styCRVAPY && curveAdminFeePercent ? formatAmount(styCRVAPY - curveAdminFeePercent, 2, 2) : '0.00'}% Gauge Voting Bribes`}
 									</p>
 								</div>
 							</span>

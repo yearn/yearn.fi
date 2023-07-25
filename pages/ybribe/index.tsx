@@ -133,8 +133,7 @@ function GaugeList(): ReactElement {
 			<div className={'col-span-12 flex w-full flex-col bg-neutral-100'}>
 				<ListHero
 					headLabel={'Claim Bribe'}
-					searchLabel={`Search ${category}`}
-					searchPlaceholder={'f-yfieth'}
+					searchPlaceholder={`Search ${category}`}
 					categories={[
 						[
 							{value: 'claimable', label: 'Claimable', isSelected: category === 'claimable'},

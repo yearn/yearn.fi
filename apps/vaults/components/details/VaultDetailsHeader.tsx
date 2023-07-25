@@ -59,7 +59,7 @@ function VaultDetailsHeader({vault}: { vault: TYDaemonVault }): ReactElement {
 	}, [earned?.earned, address]);
 
 	const vaultBalance = useBalance(address);
-	const vaultPrice = useTokenPrice(address);
+	const vaultPrice = useTokenPrice(address) || vault?.tvl?.price || 0;
 	const vaultName = useMemo((): string => getVaultName(vault), [vault]);
 	const {stakingRewardsByVault, positionsMap} = useStakingRewards();
 	const stakedBalance = toBigInt(positionsMap[toAddress(stakingRewardsByVault[address])]?.stake);

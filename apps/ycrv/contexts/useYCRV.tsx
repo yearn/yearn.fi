@@ -1,7 +1,5 @@
 import {createContext, useContext, useMemo, useState} from 'react';
-import {formatUnits} from 'viem';
 import {LPYCRV_TOKEN_ADDRESS, LPYCRV_V2_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {useFetch} from '@common/hooks/useFetch';
 import {yDaemonVaultHarvestsSchema, yDaemonVaultSchema} from '@common/schemas/yDaemonVaultsSchemas';
 import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
@@ -14,7 +12,6 @@ import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TYDaemonVault, TYDaemonVaultHarvests} from '@common/schemas/yDaemonVaultsSchemas';
 
 type TYCRVContext = {
-	styCRVMegaBoost: number,
 	styCRVAPY: number,
 	slippage: number,
 	allowances: TDict<bigint>,
@@ -25,7 +22,6 @@ type TYCRVContext = {
 }
 
 const defaultProps = {
-	styCRVMegaBoost: 0,
 	styCRVAPY: 0,
 	harvests: [],
 	allowances: {},
@@ -56,22 +52,6 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 	});
 
 	/* 🔵 - Yearn Finance ******************************************************
-	** Compute the mega boost for the staked yCRV. This boost come from the
-	** donator, with 30_000 per week.
-	**************************************************************************/
-	const styCRVMegaBoost = useMemo((): number => {
-		if (!holdings || isZero(holdings.styCRVSupply)) {
-			return 0;
-		}
-		const fromDonatorPerWeek = 30_000;
-		const fromDonatorPerYear = fromDonatorPerWeek * 52;
-		const fromDonatorPerYearScaled = fromDonatorPerYear * 0.9;
-		const humanizedStyCRVSupply = Number(formatUnits(holdings.styCRVSupply, 18));
-		const megaBoostAPR = fromDonatorPerYearScaled / humanizedStyCRVSupply;
-		return megaBoostAPR;
-	}, [holdings]);
-
-	/* 🔵 - Yearn Finance ******************************************************
 	** Compute the styCRV APY based on the experimental APY and the mega boost.
 	**************************************************************************/
 	const styCRVAPY = useMemo((): number => {
@@ -87,10 +67,9 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 		allowances: allowances[0],
 		refetchAllowances: allowances[1],
 		styCRVAPY,
-		styCRVMegaBoost,
 		slippage,
 		set_slippage
-	}), [yCRVHarvests, holdings, allowances, styCRVAPY, styCRVMegaBoost, slippage, set_slippage]);
+	}), [yCRVHarvests, holdings, allowances, styCRVAPY, slippage, set_slippage]);
 
 	return (
 		<YCRVContext.Provider value={contextValue}>
