@@ -2,12 +2,14 @@ import {cloneElement, Fragment, useEffect, useMemo, useState} from 'react';
 import {usePublicClient} from 'wagmi';
 import {Listbox, Transition} from '@headlessui/react';
 import {useIsMounted} from '@react-hookz/web';
+import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChain} from '@yearn-finance/web-lib/hooks/useChain';
 import {toSafeChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import IconChevronBottom from '@yearn-finance/web-lib/icons/IconChevronBottom';
 import IconWallet from '@yearn-finance/web-lib/icons/IconWallet';
 import {truncateHex} from '@yearn-finance/web-lib/utils/address';
+import {cl} from '@yearn-finance/web-lib/utils/cl';
 
 import type {AnchorHTMLAttributes, DetailedHTMLProps, ReactElement} from 'react';
 
@@ -157,28 +159,49 @@ function WalletSelector(): ReactElement {
 	}, [ens, lensProtocolHandle, address, isActive, isMounted]);
 
 	return (
-		<div
-			onClick={(): void => {
-				if (isActive) {
-					onDesactivate();
-				} else if (!isActive && address) {
-					onSwitchChain(options?.defaultChainID || 1);
-				} else {
-					openLoginModal();
-				}
-			}}>
-			<p suppressHydrationWarning className={'yearn--header-nav-item text-sm'}>
-				{walletIdentity ? walletIdentity : (
-					<span>
-						<IconWallet
-							className={'yearn--header-nav-item mt-0.5 block h-4 w-4 md:hidden'} />
-						<span className={'relative hidden h-8 cursor-pointer items-center justify-center border border-transparent bg-neutral-900 px-2 text-xs font-normal text-neutral-0 transition-all hover:bg-neutral-800 md:flex'}>
-							{'Connect wallet'}
+		<>
+			<div
+				onClick={(): void => {
+					if (isActive) {
+						onDesactivate();
+					} else if (!isActive && address) {
+						onSwitchChain(options?.defaultChainID || 1);
+					} else {
+						openLoginModal();
+					}
+				}}>
+				<p suppressHydrationWarning className={'yearn--header-nav-item text-sm'}>
+					{walletIdentity ? walletIdentity : (
+						<span>
+							<IconWallet className={'yearn--header-nav-item mt-0.5 block h-4 w-4 md:hidden'} />
+							<span className={'relative hidden h-8 cursor-pointer items-center justify-center border border-transparent bg-neutral-900 px-2 text-xs font-normal text-neutral-0 transition-all hover:bg-neutral-800 md:flex'}>
+								{'Connect wallet'}
+							</span>
 						</span>
-					</span>
-				)}
-			</p>
-		</div>
+					)}
+				</p>
+			</div>
+			<div
+				onClick={(): void => {
+					if (isActive) {
+						onDesactivate();
+					} else if (!isActive && address) {
+						onSwitchChain(options?.defaultChainID || 1);
+					} else {
+						openLoginModal();
+					}
+				}}
+				className={cl('fixed inset-x-0 bottom-0 z-[87] border-t border-neutral-900 bg-neutral-0 md:hidden', walletIdentity ? 'hidden pointer-events-none' : '')}>
+				<div className={'flex flex-col items-center justify-center pb-6 pt-4 text-center'}>
+					{'You are not connected. Please connect to a wallet to continue.'}
+					<Button className={'mt-3 space-x-2'}>
+						<IconWallet className={'h-4 w-4'} />
+						<p>{'Connect wallet'}</p>
+					</Button>
+				</div>
+
+			</div>
+		</>
 	);
 }
 
