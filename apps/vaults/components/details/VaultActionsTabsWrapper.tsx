@@ -124,7 +124,7 @@ function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}):
 			{currentVault?.migration?.available && (
 				<div aria-label={'Migration Warning'} className={'col-span-12 mt-10'}>
 					<div className={'w-full bg-neutral-900 p-6 text-neutral-0'}>
-						<b className={'text-lg'}>{'Looks like this an old Vault.'}</b>
+						<b className={'text-lg'}>{'Looks like this is an old vault.'}</b>
 						<p className={'mt-2'}>{'This Vault is no longer earning yield, but good news, there’s a shiny up to date version just waiting for you to deposit your tokens into. Click migrate, and your tokens will be migrated to the current Vault, which will be mi-great!'}</p>
 					</div>
 				</div>
