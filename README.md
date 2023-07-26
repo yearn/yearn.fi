@@ -42,10 +42,10 @@ This project can be run with Docker.
 
 ### Making Changes
 
-- Create a new local branch from upstream/develop for each PR that you will submit
+- Create a new local branch from upstream/main for each PR that you will submit
   ```
   git fetch
-  git checkout -b <your branch name> upstream/develop
+  git checkout -b <your branch name> upstream/main
   ```
 - Commit your changes as you work
   ```
@@ -60,7 +60,7 @@ This project can be run with Docker.
 - When ready to push
   ```
   git fetch
-  git merge upstream/develop
+  git merge upstream/main
   git push origin <branch-name>
   ```
 
