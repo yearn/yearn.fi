@@ -1,7 +1,6 @@
-import {useRef} from 'react';
+import {useEffect, useRef} from 'react';
 import {Balancer} from 'react-wrap-balancer';
 import Link from 'next/link';
-import {useClientEffect} from '@yearn-finance/web-lib/hooks/useClientEffect';
 import {YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import LogoYearn from '@common/icons/LogoYearn';
@@ -77,7 +76,7 @@ const apps = [
 ];
 
 function AppBox({app}: {app: typeof apps[0]}): ReactElement {
-	useClientEffect((): VoidFunction => {
+	useEffect((): VoidFunction => {
 		const featuresEl = document.getElementById(app.href);
 		if (featuresEl) {
 			const cleanup = (): void => {
@@ -192,11 +191,11 @@ function TextAnimation(): ReactElement {
 		}, 3000);
 	}
 
-	useClientEffect((): void => {
+	useEffect((): void => {
 		if (!hasBeenTriggerd.current) {
 			onStartAnimation();
 		}
-	}, [hasBeenTriggerd.current]);
+	}, []);
 
 	return (
 		<>
