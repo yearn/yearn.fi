@@ -3516,10 +3516,10 @@
   resolved "https://registry.yarnpkg.com/@xtuc/long/-/long-4.2.2.tgz#d291c6a4e97989b5c61d9acf396ae4fe133a718d"
   integrity sha512-NuHqBY1PB/D8xU6s/thBgOAiAP7HOYDQ32+BFZILJ8ivkUkAHQnWfn6WhL79Owj1qmUnoN/YPhktdIoucipkAQ==
 
-"@yearn-finance/web-lib@^0.20.96":
-  version "0.20.96"
-  resolved "https://registry.yarnpkg.com/@yearn-finance/web-lib/-/web-lib-0.20.96.tgz#cd2368486ff51b1bbcb692872bab1b5a3916d3f5"
-  integrity sha512-HCOroqfIo9aX8qzl7BdBwWZdmONRhs2BspxqahZamVxHU+FyqsqrpmGhEsBYqsPHU8xib/R2iu3dVbuDYJANew==
+"@yearn-finance/web-lib@^0.20.101":
+  version "0.20.101"
+  resolved "https://registry.yarnpkg.com/@yearn-finance/web-lib/-/web-lib-0.20.101.tgz#c1c5f91b41dcea64f11ceb55cd048a499df874b9"
+  integrity sha512-P/4mYwDhyM6YIQlNrS4i0KBHPNQqA6Q/9oEEgA3htfbq7/b2I+1KIUtG0v+qUSxq86mXmUyYl8yuUF7vN8zMwQ==
   dependencies:
     "@babel/preset-typescript" "^7.22.5"
     "@headlessui/react" "^1.7.15"
@@ -3885,20 +3885,12 @@ b4a@^1.6.4:
   resolved "https://registry.yarnpkg.com/b4a/-/b4a-1.6.4.tgz#ef1c1422cae5ce6535ec191baeed7567443f36c9"
   integrity sha512-fpWrvyVHEKyeEvbKZTVOeZF3VSKKWtJxFIxX/jaVPf+cLbGUSitjb49pHLqPV2BUNNZ0LcoeEGfE/YCpyDYHIw==
 
-babel-loader@9.1.0, babel-loader@^8.2.5:
+babel-loader@9.1.0, babel-loader@^8.2.5, babel-loader@^9.1.3:
   version "9.1.0"
   resolved "https://registry.yarnpkg.com/babel-loader/-/babel-loader-9.1.0.tgz#839e9ae88aea930864ef9ec0f356dfca96ecf238"
   integrity sha512-Antt61KJPinUMwHwIIz9T5zfMgevnfZkEVWYDWlG888fgdvRRGD0JTuf/fFozQnfT+uq64sk1bmdHDy/mOEWnA==
   dependencies:
     find-cache-dir "^3.3.2"
-    schema-utils "^4.0.0"
-
-babel-loader@^9.1.3:
-  version "9.1.3"
-  resolved "https://registry.yarnpkg.com/babel-loader/-/babel-loader-9.1.3.tgz#3d0e01b4e69760cc694ee306fe16d358aa1c6f9a"
-  integrity sha512-xG3ST4DglodGf8qSwv0MdeWLhrDsw/32QMdTO5T1ZIp9gQur0HkCyFs7Awskr10JKXFXwpAhiCuYX5oGXnRGbw==
-  dependencies:
-    find-cache-dir "^4.0.0"
     schema-utils "^4.0.0"
 
 babel-plugin-polyfill-corejs2@^0.4.4:
