@@ -1,4 +1,3 @@
-import {optimism as wOptimism, polygon as wPolygon} from 'viem/chains';
 
 import type {Chain} from 'wagmi';
 
@@ -28,64 +27,4 @@ export const localhost = {
 			blockCreated: 14353601
 		}
 	}
-} as const satisfies Chain;
-
-export const polygon = {
-	...wPolygon,
-	rpcUrls: {
-		default: {
-			http: [
-				...wPolygon.rpcUrls.default.http,
-				'https://polygon.llamarpc.com',
-				process.env.RPC_URL_POLYGON_TENDERLY || 'https://1rpc.io/matic'
-			]
-		},
-		public: {
-			http: [
-				...wPolygon.rpcUrls.default.http,
-				'https://polygon.llamarpc.com',
-				process.env.RPC_URL_POLYGON_TENDERLY || 'https://1rpc.io/matic'
-			]
-		}
-	}
-
-} as const satisfies Chain;
-
-export const optimism = {
-	...wOptimism,
-	rpcUrls: {
-		default: {
-			http: [
-				(process.env.RPC_URL_OPTIMISM_YEARN || 'https://1rpc.io/op') as string,
-				(process.env.RPC_URL_OPTIMISM_YEARN_2 || 'https://1rpc.io/op') as string,
-				`https://opt-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_KEY}`
-				// 'https://optimism.blockpi.network/v1/rpc/public',
-				// 'https://optimism.api.onfinality.io/public',
-				// 'https://optimism.meowrpc.com',
-				// 'https://rpc.ankr.com/optimism',
-				// 'https://endpoints.omniatech.io/v1/op/mainnet/public',
-				// 'https://rpc.optimism.gateway.fm',
-				// 'https://optimism-mainnet.public.blastapi.io',
-				// 'https://optimism.publicnode.com',
-				// 'https://1rpc.io/op'
-			]
-		},
-		public: {
-			http: [
-				(process.env.RPC_URL_OPTIMISM_YEARN || 'https://1rpc.io/op') as string,
-				(process.env.RPC_URL_OPTIMISM_YEARN_2 || 'https://1rpc.io/op') as string,
-				`https://opt-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_KEY}`
-				// 'https://optimism.blockpi.network/v1/rpc/public',
-				// 'https://optimism.api.onfinality.io/public',
-				// 'https://optimism.meowrpc.com',
-				// 'https://rpc.ankr.com/optimism',
-				// 'https://endpoints.omniatech.io/v1/op/mainnet/public',
-				// 'https://rpc.optimism.gateway.fm',
-				// 'https://optimism-mainnet.public.blastapi.io',
-				// 'https://optimism.publicnode.com',
-				// 'https://1rpc.io/op'
-			]
-		}
-	}
-
 } as const satisfies Chain;

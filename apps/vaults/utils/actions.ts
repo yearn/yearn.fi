@@ -6,11 +6,12 @@ import {} from '@yearn-finance/web-lib/utils/address';
 import {STAKING_REWARDS_ZAP_ADDRESS, VAULT_FACTORY_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {assert} from '@common/utils/assert';
-import {assertAddress, handleTx, toWagmiProvider} from '@common/utils/wagmiUtils';
+import {handleTx, toWagmiProvider} from '@common/utils/wagmiProvider';
+import {assertAddress} from '@common/utils/wagmiUtils';
 
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
-import type {TWriteTransaction} from '@common/utils/wagmiUtils';
+import type {TWriteTransaction} from '@common/utils/wagmiProvider';
 
 /* 🔵 - Yearn Finance **********************************************************
 ** depositAndStake is a _WRITE_ function that deposit the underlying asset into

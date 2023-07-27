@@ -1,44 +1,77 @@
-import {BaseError} from 'viem';
-import {captureException} from '@sentry/nextjs';
-import {prepareWriteContract, waitForTransaction, writeContract} from '@wagmi/core';
-import {toast} from '@yearn-finance/web-lib/components/yToast';
+import assert from 'assert';
+import {createPublicClient, http} from 'viem';
+import wagmiChains from '@wagmi/chains';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ZERO_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isEth} from '@yearn-finance/web-lib/utils/isEth';
 import {isTAddress} from '@yearn-finance/web-lib/utils/isTAddress';
-import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
-import {assert} from '@common/utils/assert';
+import {localhost} from '@common/utils/wagmiNetworks';
 
-import type {Abi, SimulateContractParameters} from 'viem';
-import type {Connector} from 'wagmi';
+import type {Chain, PublicClient} from 'viem';
 import type {TAddress} from '@yearn-finance/web-lib/types';
-import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
-import type {GetWalletClientResult, WalletClient} from '@wagmi/core';
 
-export type TWagmiProviderContract = {
-	walletClient: GetWalletClientResult,
-	chainId: number,
-	address: TAddress,
+type TChainContract = {
+	address: TAddress
+	blockCreated?: number
 }
-export async function toWagmiProvider(connector: Connector | undefined): Promise<TWagmiProviderContract> {
-	assert(connector, 'Connector is not set');
 
-	const signer = await connector.getWalletClient();
-	const chainId = await connector.getChainId();
-	const {address} = signer.account;
-	return ({
-		walletClient: signer,
-		chainId,
-		address
+const partnerContractAddress: {[key: number]: TChainContract} = {
+	1: {
+		address: toAddress('0x8ee392a4787397126C163Cb9844d7c447da419D8'),
+		blockCreated: 14166636
+	},
+	10: {
+		address: toAddress('0x7E08735690028cdF3D81e7165493F1C34065AbA2'),
+		blockCreated: 29675215
+	},
+	250: {
+		address: toAddress('0x086865B2983320b36C42E48086DaDc786c9Ac73B'),
+		blockCreated: 40499061
+	},
+	42161: {
+		address: toAddress('0x0e5b46E4b2a05fd53F5a4cD974eb98a9a613bcb7'),
+		blockCreated: 30385403
+	},
+	1337: {
+		address: toAddress('0x8ee392a4787397126C163Cb9844d7c447da419D8'),
+		blockCreated: 14166636
+	}
+};
+
+type TExtendedChain = Chain & {
+	contracts: {
+		partnerContract?: TChainContract
+	}
+}
+export const indexedWagmiChains = Object.values(wagmiChains).reduce((acc: {[key: number]: TExtendedChain}, chain: Chain): {[key: number]: TExtendedChain} => {
+	const extendedChain = chain as TExtendedChain;
+	extendedChain.contracts = {
+		...chain.contracts,
+		partnerContract: partnerContractAddress[chain.id]
+	};
+	if (extendedChain.id === 1337) {
+		acc[extendedChain.id] = localhost;
+		return acc;
+	}
+	acc[chain.id] = extendedChain;
+	return acc;
+}, {});
+
+export function getNetwork(chainID: number): TExtendedChain {
+	if (!indexedWagmiChains[chainID]) {
+		throw new Error(`Chain ${chainID} is not supported`);
+	}
+	return indexedWagmiChains[chainID];
+}
+
+export function getClient(chainID: number): PublicClient {
+	if (!indexedWagmiChains[chainID]) {
+		throw new Error(`Chain ${chainID} is not supported`);
+	}
+	return createPublicClient({
+		chain: indexedWagmiChains[chainID],
+		transport: http(process.env.JSON_RPC_URL?.[chainID] || indexedWagmiChains[chainID].rpcUrls.public.http[0])
 	});
-}
-
-export type TWriteTransaction = {
-	connector: Connector | undefined;
-	contractAddress: TAddress | undefined;
-	statusHandler?: (status: typeof defaultTxStatus) => void;
-	onTrySomethingElse?: () => Promise<TTxResponse>; //When the abi is incorrect, ex: usdt, we may need to bypass the error and try something else
 }
 
 export function assertAddress(addr: string | TAddress | undefined, name?: string): asserts addr is TAddress {
@@ -46,67 +79,4 @@ export function assertAddress(addr: string | TAddress | undefined, name?: string
 	assert(isTAddress(addr), `${name || 'Address'} provided is invalid`);
 	assert(toAddress(addr) !== ZERO_ADDRESS, `${name || 'Address'} is 0x0`);
 	assert(!isEth(addr), `${name || 'Address'} is 0xE`);
-}
-
-
-type TPrepareWriteContractConfig<
-	TAbi extends Abi | readonly unknown[] = Abi,
-	TFunctionName extends string = string
-> = Omit<SimulateContractParameters<TAbi, TFunctionName>, 'chain' | 'address'> & {
-	chainId?: number
-	walletClient?: WalletClient
-	address: TAddress | undefined
-}
-export async function handleTx<
-	TAbi extends Abi | readonly unknown[],
-	TFunctionName extends string
->(
-	args: TWriteTransaction,
-	props: TPrepareWriteContractConfig<TAbi, TFunctionName>
-): Promise<TTxResponse> {
-	args.statusHandler?.({...defaultTxStatus, pending: true});
-	const wagmiProvider = await toWagmiProvider(args.connector);
-
-	assertAddress(props.address, 'contractAddress');
-	assertAddress(wagmiProvider.address, 'userAddress');
-	try {
-		const config = await prepareWriteContract({
-			...wagmiProvider,
-			...props as TPrepareWriteContractConfig,
-			address: props.address,
-			value: toBigInt(props.value)
-		});
-		const {hash} = await writeContract(config.request);
-		const receipt = await waitForTransaction({chainId: wagmiProvider.chainId, hash});
-		if (receipt.status === 'success') {
-			args.statusHandler?.({...defaultTxStatus, success: true});
-		} else if (receipt.status === 'reverted') {
-			args.statusHandler?.({...defaultTxStatus, error: true});
-		}
-		toast({type: 'success', content: 'Transaction successful!'});
-		return ({isSuccessful: receipt.status === 'success', receipt});
-	} catch (error) {
-		if (process.env.NODE_ENV === 'production') {
-			captureException(error);
-		}
-
-		if (!(error instanceof BaseError)) {
-			return ({isSuccessful: false, error});
-		}
-
-		if (args.onTrySomethingElse) {
-			if (error.name === 'ContractFunctionExecutionError') {
-				return await args.onTrySomethingElse();
-			}
-		}
-
-		toast({type: 'error', content: error.shortMessage});
-		args.statusHandler?.({...defaultTxStatus, error: true});
-		console.error(error);
-		return ({isSuccessful: false, error});
-	} finally {
-		setTimeout((): void => {
-			args.statusHandler?.({...defaultTxStatus});
-		}, 3000);
-	}
 }

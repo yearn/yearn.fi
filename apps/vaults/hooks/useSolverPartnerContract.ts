@@ -1,6 +1,5 @@
 import {useCallback, useMemo, useRef} from 'react';
 import getVaultEstimateOut from '@vaults/utils/getVaultEstimateOut';
-import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -10,7 +9,7 @@ import {useYearn} from '@common/contexts/useYearn';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 import {allowanceOf, approveERC20, depositViaPartner, withdrawShares} from '@common/utils/actions';
 import {assert} from '@common/utils/assert';
-import {assertAddress} from '@common/utils/wagmiUtils';
+import {assertAddress, getNetwork} from '@common/utils/wagmiUtils';
 
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
@@ -18,7 +17,6 @@ import type {TNormalizedBN} from '@common/types/types';
 import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
 
 export function useSolverPartnerContract(): TSolverContext {
-	const {networks} = useSettings();
 	const {provider} = useWeb3();
 	const {chainID, safeChainID} = useChainID();
 	const {currentPartner} = useYearn();
@@ -68,11 +66,11 @@ export function useSolverPartnerContract(): TSolverContext {
 		const allowance = await allowanceOf({
 			connector: provider,
 			tokenAddress: toAddress(request.current.inputToken.value),
-			spenderAddress: toAddress(networks[safeChainID].partnerContractAddress)
+			spenderAddress: toAddress(getNetwork(safeChainID)?.contracts?.partnerContract?.address)
 		});
 		existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals);
 		return existingAllowances.current[key];
-	}, [request, provider, networks, safeChainID]);
+	}, [request, provider, safeChainID]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Trigger an approve web3 action, simply trying to approve `amount` tokens
@@ -86,7 +84,7 @@ export function useSolverPartnerContract(): TSolverContext {
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
-		const partnerContract = networks[safeChainID]?.partnerContractAddress;
+		const partnerContract = getNetwork(safeChainID)?.contracts?.partnerContract?.address;
 
 		assert(request.current, 'Request is not set');
 		assert(request.current?.inputToken, 'Input token is not set');
@@ -102,7 +100,7 @@ export function useSolverPartnerContract(): TSolverContext {
 		if (result.isSuccessful) {
 			onSuccess();
 		}
-	}, [networks, provider, safeChainID]);
+	}, [provider, safeChainID]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Trigger a deposit web3 action, simply trying to deposit `amount` tokens
@@ -112,7 +110,7 @@ export function useSolverPartnerContract(): TSolverContext {
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
-		const partnerContract = networks[safeChainID]?.partnerContractAddress;
+		const partnerContract = getNetwork(safeChainID)?.contracts?.partnerContract?.address;
 
 		assert(request.current, 'Request is not set');
 		assert(request.current.inputAmount, 'Input amount is not set');
@@ -128,7 +126,7 @@ export function useSolverPartnerContract(): TSolverContext {
 		if (result.isSuccessful) {
 			onSuccess();
 		}
-	}, [currentPartner, networks, provider, safeChainID]);
+	}, [currentPartner, provider, safeChainID]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Trigger a withdraw web3 action using the vault contract to take back

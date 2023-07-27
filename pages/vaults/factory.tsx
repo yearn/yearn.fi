@@ -9,7 +9,6 @@ import {multicall} from '@wagmi/core';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
-import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import LinkOut from '@yearn-finance/web-lib/icons/IconLinkOut';
@@ -24,6 +23,7 @@ import {Dropdown} from '@common/components/GaugeDropdown';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {CurveContextApp, useCurve} from '@common/contexts/useCurve';
 import {useYearn} from '@common/contexts/useYearn';
+import {getNetwork} from '@common/utils/wagmiUtils';
 
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
@@ -53,7 +53,6 @@ function Factory(): ReactElement {
 	const {mutateVaultList} = useYearn();
 	const {provider, isActive} = useWeb3();
 	const {safeChainID} = useChainID();
-	const {networks} = useSettings();
 	const {gaugesFromYearn} = useCurve();
 	const {toast} = yToast();
 	const [selectedOption, set_selectedOption] = useState(defaultOption);
@@ -265,7 +264,7 @@ function Factory(): ReactElement {
 											{toAddress(gaugeDisplayData?.poolAddress)}
 										</p>
 										<a
-											href={`${networks[1].explorerBaseURI}/address/${toAddress(gaugeDisplayData?.poolAddress)}`}
+											href={`${getNetwork(safeChainID)?.blockExplorers?.[0]?.url || 'https://etherscan.io'}/address/${toAddress(gaugeDisplayData?.poolAddress)}`}
 											target={'_blank'}
 											rel={'noreferrer'}
 											className={'ml-4 cursor-pointer text-neutral-900'}>
@@ -284,7 +283,7 @@ function Factory(): ReactElement {
 											{toAddress(gaugeDisplayData?.gaugeAddress)}
 										</p>
 										<a
-											href={`${networks[1].explorerBaseURI}/address/${toAddress(gaugeDisplayData?.gaugeAddress)}`}
+											href={`${getNetwork(safeChainID)?.blockExplorers?.[0]?.url || 'https://etherscan.io'}/address/${toAddress(gaugeDisplayData?.gaugeAddress)}`}
 											target={'_blank'}
 											rel={'noreferrer'}
 											className={'ml-4 cursor-pointer text-neutral-900'}>

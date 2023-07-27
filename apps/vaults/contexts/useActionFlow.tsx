@@ -5,7 +5,6 @@ import {useMountEffect, useUpdateEffect} from '@react-hookz/web';
 import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
 import {setZapOption} from '@vaults/utils/zapOptions';
-import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import VAULT_ABI from '@yearn-finance/web-lib/utils/abi/vault.abi';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -17,6 +16,7 @@ import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUp
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
+import {getNetwork} from '@common/utils/wagmiUtils';
 
 import externalzapOutTokenList from '../../common/utils/externalZapOutTokenList.json';
 
@@ -83,7 +83,6 @@ type TUseContextualIs = {
 }
 
 function useContextualIs({selectedTo, currentVault}: TUseContextualIs): [boolean, boolean] {
-	const {networks} = useSettings();
 	const {safeChainID} = useChainID();
 	const router = useRouter();
 
@@ -93,8 +92,8 @@ function useContextualIs({selectedTo, currentVault}: TUseContextualIs): [boolean
 	), [selectedTo?.value, currentVault.address, router.query.action]);
 
 	const isPartnerAddressValid = useMemo((): boolean => (
-		!isZeroAddress(toAddress(networks?.[safeChainID]?.partnerContractAddress))
-	), [networks, safeChainID]);
+		!isZeroAddress(getNetwork(safeChainID)?.contracts?.partnerContract?.address)
+	), [safeChainID]);
 
 	const isUsingPartnerContract = useMemo((): boolean => (
 		(process?.env?.SHOULD_USE_PARTNER_CONTRACT === undefined ? true : Boolean(process?.env?.SHOULD_USE_PARTNER_CONTRACT)) && isPartnerAddressValid
