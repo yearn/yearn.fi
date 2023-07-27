@@ -16,6 +16,7 @@ import {useYearn} from '@common/contexts/useYearn';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 import {allowanceOf, approveERC20, isApprovedERC20} from '@common/utils/actions';
 import {assert} from '@common/utils/assert';
+import {getEthersSigner} from '@common/utils/wagmiEthersAdapter';
 
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TTxResponse, TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
@@ -166,11 +167,8 @@ export function useSolverCowswap(): TSolverContext {
 		}
 
 		assert(provider, 'Provider is not set');
-
-		const wagmiSigner = await provider.getWalletClient();
-		const wagmiProvider = await provider.getProvider();
-		const ethersProvider = new ethers.providers.Web3Provider(wagmiProvider);
-		const signer = ethersProvider.getSigner(wagmiSigner.account.address);
+		const signer = await getEthersSigner({chainId: 1});
+		assert(signer, 'No signer available');
 
 		const rawSignature = await OrderSigningUtils.signOrder(
 			{...quote as UnsignedOrder},

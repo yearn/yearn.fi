@@ -45,10 +45,9 @@ function WrappedInput({title, initialValue, onSave}: TWrappedInput): ReactElemen
 }
 
 function SettingsOverwrite(): ReactElement {
-	const {onUpdateBaseSettings, onUpdateNetworks, settings: baseAPISettings} = useSettings();
+	const {onUpdateBaseSettings, settings: baseAPISettings} = useSettings();
 	// eslint-disable-next-line @typescript-eslint/naming-convention
 	const {value, set} = useLocalStorageValue<boolean>('yearn.finance/feedback-popover');
-	const [, set_nonce] = useState(0);
 
 	return (
 		<div className={'bg-neutral-100 p-10'}>
@@ -78,13 +77,6 @@ function SettingsOverwrite(): ReactElement {
 							...baseAPISettings,
 							yDaemonBaseURI: value
 						})} />
-					<WrappedInput
-						title={'Ethereum RPC endpoint'}
-						initialValue={''}
-						onSave={(value): void => {
-							onUpdateNetworks({1: {rpcURI: value}});
-							set_nonce((n: number): number => n + 1);
-						}} />
 				</div>
 				<div className={'grid grid-cols-1 gap-4'}>
 					<label className={'flex cursor-pointer items-center justify-between pt-4 transition-colors hover:bg-neutral-100/40'}>

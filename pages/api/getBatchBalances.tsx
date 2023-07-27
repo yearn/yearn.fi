@@ -8,8 +8,8 @@ import {MULTICALL3_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {decodeAsBigInt, decodeAsNumber, decodeAsString} from '@yearn-finance/web-lib/utils/decoder';
 import {toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isEth} from '@yearn-finance/web-lib/utils/isEth';
-import {getRPC} from '@yearn-finance/web-lib/utils/web3/providers';
 import config from '@common/utils/wagmiConfig';
+import {indexedWagmiChains} from '@common/utils/wagmiUtils';
 
 import type {NextApiRequest, NextApiResponse} from 'next';
 import type {TDict} from '@yearn-finance/web-lib/types';
@@ -100,6 +100,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 		const balances = await getBatchBalances({chainID, address, tokens});
 		return res.status(200).json({balances: serialize(balances), chainID: req.body.chainID});
 	} catch (error) {
-		captureException(error, {tags: {rpc: getRPC(chainID), chainID, address}});
+		captureException(error, {
+			tags: {
+				rpc: process.env.JSON_RPC_URL?.[chainID] || indexedWagmiChains[chainID].rpcUrls.public.http[0],
+				chainID,
+				address
+			}
+		});
 	}
 }

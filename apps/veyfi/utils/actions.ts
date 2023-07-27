@@ -4,10 +4,11 @@ import {prepareWriteContract} from '@wagmi/core';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {assert} from '@common/utils/assert';
-import {assertAddress, handleTx} from '@common/utils/wagmiUtils';
+import {handleTx} from '@common/utils/wagmiProvider';
+import {assertAddress} from '@common/utils/wagmiUtils';
 
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
-import type {TWriteTransaction} from '@common/utils/wagmiUtils';
+import type {TWriteTransaction} from '@common/utils/wagmiProvider';
 
 /* 🔵 - Yearn Finance **********************************************************
 ** lockVeYFI is a _WRITE_ function that locks funds in the veYFI contract in

@@ -18,7 +18,8 @@ import {useYearn} from '@common/contexts/useYearn';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 import {allowanceOf, approveERC20} from '@common/utils/actions';
 import {assert} from '@common/utils/assert';
-import {assertAddress, toWagmiProvider} from '@common/utils/wagmiUtils';
+import {toWagmiProvider} from '@common/utils/wagmiProvider';
+import {assertAddress} from '@common/utils/wagmiUtils';
 
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TTxResponse, TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
@@ -194,6 +195,8 @@ export function useSolverPortals(): TSolverContext {
 				to: toAddress(to),
 				...rest
 			});
+
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			const hash = await wagmiProvider.walletClient.sendTransaction({...tx as any, chain});
 			const receipt = await waitForTransaction({chainId: wagmiProvider.chainId, hash});
 			if (receipt.status === 'success') {
