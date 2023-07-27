@@ -37,7 +37,7 @@ function VaultsListInternalMigrationRow({currentVault}: {currentVault: TYDaemonV
 
 				<div className={'yearn--table-data-section'}>
 					<div className={'yearn--table-data-section-item h-auto text-left text-neutral-0 md:col-span-6 md:py-2'}>
-						{'Looks like you\'re holding tokens for an old version of this Vault. To keep earning yield on your assets, migrate to the current Vault.'}
+						{'Looks like you\'re holding tokens from a previous version of this vault. To keep earning yield on your assets, migrate to the current vault.'}
 					</div>
 
 					<div className={'col-span-2 flex h-auto flex-row items-center justify-between space-x-4 py-4 md:justify-end'}>
