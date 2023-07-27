@@ -1,6 +1,6 @@
 import assert from 'assert';
 import {createPublicClient, http} from 'viem';
-import wagmiChains from '@wagmi/chains';
+import * as wagmiChains from '@wagmi/chains';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ZERO_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {isEth} from '@yearn-finance/web-lib/utils/isEth';
