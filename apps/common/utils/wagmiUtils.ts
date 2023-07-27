@@ -39,20 +39,24 @@ const partnerContractAddress: {[key: number]: TChainContract} = {
 };
 
 type TExtendedChain = Chain & {
+	defaultRPC: string
+	defaultBlockExplorer: string
 	contracts: {
 		partnerContract?: TChainContract
 	}
 }
 export const indexedWagmiChains = Object.values(wagmiChains).reduce((acc: {[key: number]: TExtendedChain}, chain: Chain): {[key: number]: TExtendedChain} => {
-	const extendedChain = chain as TExtendedChain;
+	let extendedChain = chain as TExtendedChain;
+	if (extendedChain.id === 1337) {
+		extendedChain = localhost as unknown as TExtendedChain;
+	}
+
 	extendedChain.contracts = {
 		...chain.contracts,
 		partnerContract: partnerContractAddress[chain.id]
 	};
-	if (extendedChain.id === 1337) {
-		acc[extendedChain.id] = localhost;
-		return acc;
-	}
+	extendedChain.defaultRPC = process.env.JSON_RPC_URL?.[chain.id] || chain.rpcUrls.public.http[0];
+	extendedChain.defaultBlockExplorer = chain.blockExplorers?.[0]?.url || 'https://etherscan.io';
 	acc[chain.id] = extendedChain;
 	return acc;
 }, {});

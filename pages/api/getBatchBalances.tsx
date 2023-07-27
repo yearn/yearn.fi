@@ -9,7 +9,7 @@ import {decodeAsBigInt, decodeAsNumber, decodeAsString} from '@yearn-finance/web
 import {toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isEth} from '@yearn-finance/web-lib/utils/isEth';
 import config from '@common/utils/wagmiConfig';
-import {indexedWagmiChains} from '@common/utils/wagmiUtils';
+import {getNetwork} from '@common/utils/wagmiUtils';
 
 import type {NextApiRequest, NextApiResponse} from 'next';
 import type {TDict} from '@yearn-finance/web-lib/types';
@@ -102,7 +102,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
 	} catch (error) {
 		captureException(error, {
 			tags: {
-				rpc: process.env.JSON_RPC_URL?.[chainID] || indexedWagmiChains[chainID].rpcUrls.public.http[0],
+				rpc: getNetwork(chainID).defaultRPC,
 				chainID,
 				address
 			}
