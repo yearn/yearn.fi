@@ -1,7 +1,5 @@
+import {type ReactElement, useEffect} from 'react';
 import {useUI} from '@yearn-finance/web-lib/contexts/useUI';
-import {useClientEffect} from '@yearn-finance/web-lib/hooks/useClientEffect';
-
-import type {ReactElement} from 'react';
 
 type TPageProgressBarProps = {
 	isLoading: boolean;
@@ -10,7 +8,7 @@ type TPageProgressBarProps = {
 function PageProgressBar({isLoading}: TPageProgressBarProps): ReactElement {
 	const {onLoadStart, onLoadDone} = useUI();
 
-	useClientEffect((): VoidFunction => {
+	useEffect((): VoidFunction => {
 		if (isLoading) {
 			onLoadStart();
 		} else {
@@ -20,7 +18,7 @@ function PageProgressBar({isLoading}: TPageProgressBarProps): ReactElement {
 		return (): void => {
 			onLoadDone();
 		};
-	}, [isLoading]);
+	}, [isLoading, onLoadDone, onLoadStart]);
 
 	return <></>;
 }
