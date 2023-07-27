@@ -264,7 +264,7 @@ function Factory(): ReactElement {
 											{toAddress(gaugeDisplayData?.poolAddress)}
 										</p>
 										<a
-											href={`${getNetwork(safeChainID)?.blockExplorers?.[0]?.url || 'https://etherscan.io'}/address/${toAddress(gaugeDisplayData?.poolAddress)}`}
+											href={`${getNetwork(safeChainID)?.defaultBlockExplorer}/address/${toAddress(gaugeDisplayData?.poolAddress)}`}
 											target={'_blank'}
 											rel={'noreferrer'}
 											className={'ml-4 cursor-pointer text-neutral-900'}>
@@ -283,7 +283,7 @@ function Factory(): ReactElement {
 											{toAddress(gaugeDisplayData?.gaugeAddress)}
 										</p>
 										<a
-											href={`${getNetwork(safeChainID)?.blockExplorers?.[0]?.url || 'https://etherscan.io'}/address/${toAddress(gaugeDisplayData?.gaugeAddress)}`}
+											href={`${getNetwork(safeChainID)?.defaultBlockExplorer}/address/${toAddress(gaugeDisplayData?.gaugeAddress)}`}
 											target={'_blank'}
 											rel={'noreferrer'}
 											className={'ml-4 cursor-pointer text-neutral-900'}>

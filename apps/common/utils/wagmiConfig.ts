@@ -13,7 +13,7 @@ import {InjectedConnector} from '@yearn-finance/web-lib/utils/web3/injectedConne
 import {IFrameEthereumConnector} from '@yearn-finance/web-lib/utils/web3/ledgerConnector';
 import {configureChains} from '@common/utils/wagmiConfigChain.tmp';
 import {localhost} from '@common/utils/wagmiNetworks';
-import {indexedWagmiChains} from '@common/utils/wagmiUtils';
+import {getNetwork} from '@common/utils/wagmiUtils';
 
 import type {Chain, ChainProviderFn} from 'wagmi';
 
@@ -21,10 +21,10 @@ function getSupportedProviders<TChain extends Chain = Chain>(): ChainProviderFn<
 	const supportedProviders = [
 		jsonRpcProvider({
 			rpc: (chain): {http: string} => {
-				if (!indexedWagmiChains[chain.id]) {
+				if (!getNetwork(chain.id)) {
 					return {http: ''};
 				}
-				return ({http: process.env.JSON_RPC_URL?.[chain.id] || indexedWagmiChains[chain.id].rpcUrls.public.http[0]});
+				return ({http: getNetwork(chain.id).defaultRPC});
 			}
 		}),
 		publicProvider()
@@ -61,7 +61,7 @@ const config = createConfig({
 		new CoinbaseWalletConnector({
 			chains,
 			options: {
-				jsonRpcUrl: process.env.JSON_RPC_URL?.[1] || indexedWagmiChains[1].rpcUrls.public.http[0],
+				jsonRpcUrl: getNetwork(1).defaultRPC,
 				appName: process.env.WEBSITE_TITLE as string
 			}
 		})

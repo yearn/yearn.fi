@@ -210,7 +210,7 @@ function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}):
 						<IconAddToMetamask className={'h-5 w-5 text-neutral-600 transition-colors hover:text-neutral-900 md:h-6 md:w-6'} />
 					</button>
 					<ExplorerLink
-						explorerBaseURI={getNetwork(safeChainID)?.blockExplorers?.[0]?.url || 'https://etherscan.io'}
+						explorerBaseURI={getNetwork(safeChainID)?.defaultBlockExplorer}
 						currentVaultAddress={currentVault.address} />
 				</div>
 			</div>
