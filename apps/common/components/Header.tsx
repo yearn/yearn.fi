@@ -55,11 +55,14 @@ function NetworkSelector({networks}: {networks: number[]}): ReactElement {
 		const injectedConnector = connectors.find((e): boolean => (e.id).toLocaleLowerCase() === 'injected');
 		assert(injectedConnector, 'No injected connector found');
 		const chainsForInjected = injectedConnector.chains;
-		const noTestnet = chainsForInjected.filter(({id}): boolean => id !== 1337);
-		const onlySpecificNetworks = noTestnet.filter(({id}): boolean => networks.includes(id));
-		return onlySpecificNetworks.map((network: Chain): TNetwork => (
-			{value: network.id, label: network.name}
-		));
+
+		return (
+			chainsForInjected
+				.filter(({id}): boolean => id !== 1337 && networks.includes(id))
+				.map((network: Chain): TNetwork => (
+					{value: network.id, label: network.name}
+				))
+		);
 	}, [connectors, networks]);
 
 	const	currentNetwork = useMemo((): TNetwork | undefined => (
