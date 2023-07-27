@@ -52,7 +52,7 @@ function HeaderPosition(): ReactElement {
 				<p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl'}>
 					{'Yearn has'}
 				</p>
-				<b className={'font-number text-4xl text-neutral-900 md:text-7xl'}>
+				<b className={'font-number text-3xl text-neutral-900 md:text-7xl'}>
 					<ValueAnimation
 						identifier={'veCRVTreasury'}
 						value={formatedYearnHas}
@@ -120,7 +120,7 @@ function ZapAndStats(): ReactElement {
 
 
 	return (
-		<div className={'col-span-12 grid w-full grid-cols-12 gap-4'}>
+		<div className={'col-span-12 grid w-full grid-cols-12 gap-4 overflow-x-hidden md:overflow-auto'}>
 			<div className={'col-span-12 md:col-span-8'}>
 				<CardZap className={'col-span-12 md:col-span-8'} />
 			</div>
