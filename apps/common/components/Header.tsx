@@ -44,6 +44,24 @@ function Navbar({nav, linkComponent = <a />, currentPathName}: TNavbar): ReactEl
 	);
 }
 
+function NetworkButton({label, isDisabled, onClick}: {
+	label: string,
+	isDisabled?: boolean,
+	onClick?: () => void,
+}): ReactElement {
+	return (
+		<button
+			disabled={isDisabled}
+			onClick={onClick}
+			suppressHydrationWarning
+			className={'yearn--header-nav-item mr-4 hidden !cursor-default flex-row items-center border-0 p-0 text-sm hover:!text-neutral-500 md:flex'}>
+			<div suppressHydrationWarning className={'relative flex flex-row items-center'}>
+				{label}
+			</div>
+		</button>
+	);
+}
+
 export type TNetwork = {value: number, label: string};
 function NetworkSelector({networks}: {networks: number[]}): ReactElement {
 	const {onSwitchChain} = useWeb3();
@@ -71,40 +89,15 @@ function NetworkSelector({networks}: {networks: number[]}): ReactElement {
 
 	if (supportedNetworks.length === 1) {
 		if (publicClient?.chain.id === 1337) {
-			return (
-				<button
-					disabled
-					suppressHydrationWarning
-					className={'yearn--header-nav-item mr-4 hidden !cursor-default flex-row items-center border-0 p-0 text-sm hover:!text-neutral-500 md:flex'}>
-					<div suppressHydrationWarning className={'relative flex flex-row items-center'}>
-						{'Localhost'}
-					</div>
-				</button>
-			);
+			return <NetworkButton label={'Localhost'} isDisabled />;
 		}
 		if (currentNetwork?.value === supportedNetworks[0]?.value) {
-			return (
-				<button
-					disabled
-					suppressHydrationWarning
-					className={'yearn--header-nav-item mr-4 hidden !cursor-default flex-row items-center border-0 p-0 text-sm hover:!text-neutral-500 md:flex'}>
-					<div suppressHydrationWarning className={'relative flex flex-row items-center'}>
-						{supportedNetworks[0]?.label || 'Ethereum'}
-					</div>
-				</button>
-			);
+			return <NetworkButton label={supportedNetworks[0]?.label || 'Ethereum'} isDisabled />;
 		}
 		return (
-			<button
-				suppressHydrationWarning
-				onClick={(): void => {
-					onSwitchChain(supportedNetworks[0].value);
-				}}
-				className={'yearn--header-nav-item mr-4 hidden cursor-pointer flex-row items-center border-0 p-0 text-sm hover:!text-neutral-500 md:flex'}>
-				<div suppressHydrationWarning className={'relative flex flex-row items-center'}>
-					{'Invalid Network'}
-				</div>
-			</button>
+			<NetworkButton
+				label={'Invalid Network'}
+				onClick={(): void => onSwitchChain(supportedNetworks[0].value)} />
 		);
 	}
 
