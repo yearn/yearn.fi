@@ -11,12 +11,12 @@ import {allowanceKey, isZeroAddress} from '@yearn-finance/web-lib/utils/address'
 import {MAX_UINT_256, SOLVER_COW_VAULT_RELAYER_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isEth} from '@yearn-finance/web-lib/utils/isEth';
+import {getEthersSigner} from '@yearn-finance/web-lib/utils/wagmi/ethersAdapter';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 import {allowanceOf, approveERC20, isApprovedERC20} from '@common/utils/actions';
 import {assert} from '@common/utils/assert';
-import {getEthersSigner} from '@common/utils/wagmiEthersAdapter';
 
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TTxResponse, TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';

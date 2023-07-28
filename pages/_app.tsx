@@ -15,8 +15,8 @@ import {YearnContextApp} from '@common/contexts/useYearn';
 import {useCurrentApp} from '@common/hooks/useCurrentApp';
 import IconSpinner from '@common/icons/IconSpinner';
 import {variants} from '@common/utils/animations';
+import {SUPPORTED_CHAINS} from '@common/utils/constants';
 import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
-import config from '@common/utils/wagmiConfig';
 
 import type {NextComponentType} from 'next';
 import type {AppProps} from 'next/app';
@@ -142,14 +142,10 @@ function MyApp(props: AppProps): ReactElement {
 	return (
 		<main id={'main'} className={aeonik.className}>
 			<WithYearn
-				config={config}
+				supportedChains={SUPPORTED_CHAINS}
 				options={{
-					baseSettings: {
-						yDaemonBaseURI: process.env.YDAEMON_BASE_URI as string
-					},
-					ui: {
-						shouldUseThemes: false
-					}
+					baseSettings: {yDaemonBaseURI: process.env.YDAEMON_BASE_URI as string},
+					ui: {shouldUseThemes: false}
 				}}>
 				<App {...props} />
 			</WithYearn>

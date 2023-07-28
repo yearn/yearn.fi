@@ -5,11 +5,11 @@ import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {assertAddress, getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {useYearn} from '@common/contexts/useYearn';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 import {allowanceOf, approveERC20, depositViaPartner, withdrawShares} from '@common/utils/actions';
 import {assert} from '@common/utils/assert';
-import {assertAddress, getNetwork} from '@common/utils/wagmiUtils';
 
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';

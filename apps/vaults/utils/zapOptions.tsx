@@ -1,4 +1,4 @@
-import {ImageWithFallback} from '@common/components/ImageWithFallback';
+import {ImageWithFallback} from '@yearn-finance/web-lib/components/ImageWithFallback';
 
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TSolver} from '@common/schemas/yDaemonTokenListBalances';

@@ -6,6 +6,7 @@ import {Popover, Transition} from '@headlessui/react';
 import {useIsMounted} from '@react-hookz/web';
 import {VaultsHeader} from '@vaults/components/header/VaultsHeader';
 import {VeYfiHeader} from '@veYFI/components/header/VeYfiHeader';
+import Header from '@yearn-finance/web-lib/components/Header';
 import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import BalanceReminderPopover from '@common/components/BalanceReminderPopover';
@@ -16,7 +17,6 @@ import {YBribeHeader} from '@yBribe/components/header/YBribeHeader';
 import {YCrvHeader} from '@yCRV/components/header/YCrvHeader';
 
 import {AppName, APPS} from './Apps';
-import Header from './Header';
 import {MotionDiv} from './MotionDiv';
 
 import type {ReactElement} from 'react';

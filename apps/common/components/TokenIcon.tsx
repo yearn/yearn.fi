@@ -1,7 +1,7 @@
 import {useState} from 'react';
+import {ImageWithFallback} from '@yearn-finance/web-lib/components/ImageWithFallback';
 import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {ImageWithFallback} from '@common/components/ImageWithFallback';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';

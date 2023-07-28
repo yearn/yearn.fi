@@ -1,6 +1,7 @@
 import {Fragment, useMemo} from 'react';
 import {Popover, Transition} from '@headlessui/react';
 import {captureException} from '@sentry/nextjs';
+import {ImageWithFallback} from '@yearn-finance/web-lib/components/ImageWithFallback';
 import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
@@ -13,8 +14,6 @@ import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import {useBalance} from '@common/hooks/useBalance';
-
-import {ImageWithFallback} from './ImageWithFallback';
 
 import type {ReactElement} from 'react';
 import type {TAddress, TDict} from '@yearn-finance/web-lib/types';

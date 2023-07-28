@@ -1,6 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import {useCallback, useMemo, useState} from 'react';
 import {Button} from '@yearn-finance/web-lib/components/Button';
+import {ImageWithFallback} from '@yearn-finance/web-lib/components/ImageWithFallback';
 import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -9,7 +10,6 @@ import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/fo
 import {formatAmount, formatPercent, formatUSD} from '@yearn-finance/web-lib/utils/format.number';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
-import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useYearn} from '@common/contexts/useYearn';
 import {useBribes} from '@yBribe/contexts/useBribes';
 import {claimRewardV3} from '@yBribe/utils/actions';

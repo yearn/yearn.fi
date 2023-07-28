@@ -1,5 +1,5 @@
 import {z} from 'zod';
-import {addressSchema} from '@common/schemas/custom/addressSchema';
+import {addressSchema} from '@yearn-finance/web-lib/utils/schemas/addressSchema';
 
 const SOLVER = [
 	'Vanilla',

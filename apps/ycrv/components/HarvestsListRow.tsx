@@ -1,10 +1,10 @@
+import {ImageWithFallback} from '@yearn-finance/web-lib/components/ImageWithFallback';
 import IconLinkOut from '@yearn-finance/web-lib/icons/IconLinkOut';
 import {toAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
 import {STYCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatUSD} from '@yearn-finance/web-lib/utils/format.number';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
-import {ImageWithFallback} from '@common/components/ImageWithFallback';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVaultHarvest} from '@common/schemas/yDaemonVaultsSchemas';

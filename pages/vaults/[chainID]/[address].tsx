@@ -11,6 +11,7 @@ import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import TokenIcon from '@common/components/TokenIcon';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
@@ -18,7 +19,6 @@ import {useFetch} from '@common/hooks/useFetch';
 import {type TYDaemonVault, yDaemonVaultSchema} from '@common/schemas/yDaemonVaultsSchemas';
 import {variants} from '@common/utils/animations';
 import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
-import {getNetwork} from '@common/utils/wagmiUtils';
 
 import type {GetServerSideProps} from 'next';
 import type {NextRouter} from 'next/router';
