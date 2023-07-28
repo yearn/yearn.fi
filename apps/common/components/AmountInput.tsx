@@ -42,7 +42,7 @@ function AmountInput({
 		<div className={'w-full'}>
 			{label && (
 				<p
-					className={'mb-1 w-full overflow-hidden text-ellipsis whitespace-nowrap text-base text-neutral-600'}>
+					className={'mb-1 w-full truncate text-base text-neutral-600'}>
 					{label}
 				</p>
 			)}
