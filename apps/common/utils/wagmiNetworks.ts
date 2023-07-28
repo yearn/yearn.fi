@@ -49,7 +49,7 @@ export const polygon = {
 		}
 	}
 
-};
+} as const satisfies Chain;
 
 export const optimism = {
 	...wOptimism,
@@ -88,4 +88,4 @@ export const optimism = {
 		}
 	}
 
-};
+} as const satisfies Chain;
