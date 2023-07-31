@@ -1,8 +1,8 @@
 import {useEffect, useRef} from 'react';
 import {Balancer} from 'react-wrap-balancer';
 import Link from 'next/link';
-import {ImageWithFallback} from '@yearn-finance/web-lib/components/ImageWithFallback';
 import {YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import LogoYearn from '@common/icons/LogoYearn';
 
 import type {ReactElement} from 'react';
