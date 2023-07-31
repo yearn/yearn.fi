@@ -3,9 +3,11 @@ import localFont from 'next/font/local';
 import useSWR from 'swr';
 import {AnimatePresence, domAnimation, LazyMotion, motion} from 'framer-motion';
 import {useIntervalEffect, useIsMounted, useLocalStorageValue} from '@react-hookz/web';
+import {arbitrum, fantom, mainnet, optimism} from '@wagmi/chains';
 import {WithYearn} from '@yearn-finance/web-lib/contexts/WithYearn';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
+import {localhost} from '@yearn-finance/web-lib/utils/wagmi/networks';
 import {AppHeader} from '@common/components/AppHeader';
 import Meta from '@common/components/Meta';
 import {Popover} from '@common/components/Popover';
@@ -15,7 +17,6 @@ import {YearnContextApp} from '@common/contexts/useYearn';
 import {useCurrentApp} from '@common/hooks/useCurrentApp';
 import IconSpinner from '@common/icons/IconSpinner';
 import {variants} from '@common/utils/animations';
-import {SUPPORTED_CHAINS} from '@common/utils/constants';
 import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 
 import type {NextComponentType} from 'next';
@@ -141,7 +142,13 @@ function MyApp(props: AppProps): ReactElement {
 	return (
 		<main id={'main'} className={aeonik.className}>
 			<WithYearn
-				supportedChains={SUPPORTED_CHAINS}
+				supportedChains={[
+					mainnet,
+					optimism,
+					fantom,
+					arbitrum,
+					localhost
+				]}
 				options={{
 					baseSettings: {yDaemonBaseURI: process.env.YDAEMON_BASE_URI as string},
 					ui: {shouldUseThemes: false}
