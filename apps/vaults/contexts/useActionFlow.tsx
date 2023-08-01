@@ -13,10 +13,10 @@ import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigN
 import {isEth} from '@yearn-finance/web-lib/utils/isEth';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
+import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
-import {getNetwork} from '@common/utils/wagmiUtils';
 
 import externalzapOutTokenList from '../../common/utils/externalZapOutTokenList.json';
 

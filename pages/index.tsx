@@ -104,7 +104,7 @@ function AppBox({app}: {app: typeof apps[0]}): ReactElement {
 			return cleanup;
 		}
 		return (): void => undefined;
-	}, []);
+	}, [app.href]);
 
 	return (
 		<Link

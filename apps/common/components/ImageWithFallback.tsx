@@ -1,12 +1,12 @@
-import {useState} from 'react';
+import React, {useState} from 'react';
 import Image from 'next/image';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 
 import type {ImageProps} from 'next/image';
 import type {CSSProperties, ReactElement} from 'react';
 
-function ImageWithFallback(props: ImageProps & {onCatchError?: VoidFunction}): ReactElement {
-	const {alt, src, onCatchError, ...rest} = props;
+function ImageWithFallback(props: ImageProps): ReactElement {
+	const {alt, src, ...rest} = props;
 	const [imageSrc, set_imageSrc] = useState(`${src}?fallback=true`);
 	const [imageStyle, set_imageStyle] = useState<CSSProperties>({});
 
@@ -19,7 +19,6 @@ function ImageWithFallback(props: ImageProps & {onCatchError?: VoidFunction}): R
 				performBatchedUpdates((): void => {
 					set_imageSrc('/placeholder.png');
 					set_imageStyle({filter: 'opacity(0.2)'});
-					onCatchError?.();
 				});
 			}}
 			{...rest} />

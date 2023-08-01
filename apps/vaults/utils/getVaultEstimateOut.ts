@@ -1,8 +1,8 @@
 import {readContract} from '@wagmi/core';
 import VAULT_ABI from '@yearn-finance/web-lib/utils/abi/vault.abi';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {assertAddress} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {assert} from '@common/utils/assert';
-import {assertAddress} from '@common/utils/wagmiUtils';
 
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TNormalizedBN} from '@common/types/types';
