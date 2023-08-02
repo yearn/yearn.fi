@@ -111,6 +111,7 @@ export const yDaemonVaultSchema = z.object({
 			withdrawal: z.number(),
 			management: z.number(),
 			keep_crv: z.number(),
+			keep_velo: z.number(),
 			cvx_keep_crv: z.number()
 		}),
 		points: z.object({

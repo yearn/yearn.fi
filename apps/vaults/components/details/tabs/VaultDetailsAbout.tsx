@@ -1,6 +1,7 @@
 import {useIsMounted} from '@react-hookz/web';
 import {GraphForVaultEarnings} from '@vaults/components/graphs/GraphForVaultEarnings';
 import Renderable from '@yearn-finance/web-lib/components/Renderable';
+import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
@@ -19,6 +20,7 @@ type TAPYLineItemProps = {
 type TYearnFeesLineItem = {
 	children: ReactElement;
 	label: string;
+	tooltip?: string;
 };
 
 function APYLineItem({value, label, apyType}: TAPYLineItemProps): ReactElement {
@@ -41,11 +43,21 @@ function APYLineItem({value, label, apyType}: TAPYLineItemProps): ReactElement {
 	);
 }
 
-function YearnFeesLineItem({children, label}: TYearnFeesLineItem): ReactElement {
+function YearnFeesLineItem({children, label, tooltip}: TYearnFeesLineItem): ReactElement {
 	return (
 		<div className={'flex flex-col space-y-0 md:space-y-2'}>
 			<p className={'text-xxs text-neutral-600 md:text-xs'}>{label}</p>
-			{children}
+			<div
+				className={cl(tooltip ? 'tooltip underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600' : '')}>
+				{tooltip ? (
+					<span suppressHydrationWarning className={'tooltipFees bottom-full'}>
+						<div className={'font-number w-96 border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'}>
+							{tooltip}
+						</div>
+					</span>
+				) : null}
+				{children}
+			</div>
 		</div>
 	);
 }
@@ -103,6 +115,16 @@ function VaultDetailsAbout({currentVault, harvestData}: { currentVault: TYDaemon
 								{formatPercent((details.performanceFee || 0) / 100, 0)}
 							</b>
 						</YearnFeesLineItem>
+						{currentVault.category === 'Velodrome' ? (
+							<YearnFeesLineItem
+								label={'keepVELO'}
+								tooltip={'Percentage of VELO locked in each harvest. This is used to boost Velodrome vault pools, and is offset via yvOP staking rewards.'}
+							>
+								<b className={'font-number text-xl text-neutral-500'}>
+									{formatPercent((currentVault.apy.fees.keep_velo) * 100, 0)}
+								</b>
+							</YearnFeesLineItem>
+						) : null}
 					</div>
 				</div>
 				<div>
