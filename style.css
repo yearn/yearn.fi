@@ -286,6 +286,9 @@ details {
 .tooltip:hover .tooltiptext {
 	@apply visible opacity-100;
 }
+.tooltip:hover .tooltipLight {
+	@apply visible opacity-100;
+}
 .tooltip:hover .tooltipFees {
 	@apply visible opacity-100;
 }
