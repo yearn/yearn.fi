@@ -273,6 +273,9 @@ details {
 .tooltip .tooltipLight {
 	@apply invisible inset-x-0 absolute z-50 opacity-0 transition-opacity flex justify-center items-center;
 }
+.tooltip .tooltipFees {
+	@apply invisible right-0 absolute z-50 opacity-0 transition-opacity;
+}
 .tooltip .tooltiptext {
 	@apply text-xs text-center invisible bg-neutral-0 text-neutral-900 absolute z-50 right-1 opacity-0 transition-opacity p-2;
 	width: 15rem;
@@ -284,6 +287,9 @@ details {
 	@apply visible opacity-100;
 }
 .tooltip:hover .tooltipLight {
+	@apply visible opacity-100;
+}
+.tooltip:hover .tooltipFees {
 	@apply visible opacity-100;
 }
 

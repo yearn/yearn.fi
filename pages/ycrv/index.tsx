@@ -120,7 +120,7 @@ function ZapAndStats(): ReactElement {
 
 
 	return (
-		<div className={'col-span-12 grid w-full grid-cols-12 gap-4 overflow-x-hidden md:overflow-auto'}>
+		<div className={'col-span-12 grid w-full grid-cols-12 gap-4 '}>
 			<div className={'col-span-12 md:col-span-8'}>
 				<CardZap className={'col-span-12 md:col-span-8'} />
 			</div>
@@ -206,23 +206,25 @@ function ZapAndStats(): ReactElement {
 								className={'font-number text-sm text-neutral-900'}>
 								{`${formatPercent(styCRVAPY ?? 0)}*`}
 							</b>
-							<span className={'tooltiptext'}>
-								<div className={'flex flex-col items-start justify-start text-left'}>
-									<p
-										suppressHydrationWarning
-										className={'font-number text-neutral-400 md:text-xxs'}>
-										{styCRVAPY ? `*${formatPercent(styCRVAPY)} APY: ` : `*${formatPercent(0)} APY: `}
-									</p>
-									<p
-										suppressHydrationWarning
-										className={'font-number text-neutral-400 md:text-xxs'}>
-										{`∙ ${curveAdminFeePercent ? formatPercent(curveAdminFeePercent) : formatPercent(0)} Curve Admin Fees (${formatAmount(Number(holdings?.boostMultiplier) / 10000)}x boost)`}
-									</p>
-									<p
-										suppressHydrationWarning
-										className={'font-number text-neutral-400 md:text-xxs'}>
-										{`∙ ${styCRVAPY && curveAdminFeePercent ? formatAmount(styCRVAPY - curveAdminFeePercent, 2, 2) : '0.00'}% Gauge Voting Bribes`}
-									</p>
+							<span suppressHydrationWarning className={'tooltipLight !-left-[132px] bottom-full mb-1 w-fit'}>
+								<div className={'font-number w-52 border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'}>
+									<div className={'flex flex-col items-start justify-start text-left'}>
+										<p
+											suppressHydrationWarning
+											className={'font-number text-neutral-400 md:text-xxs'}>
+											{styCRVAPY ? `*${formatPercent(styCRVAPY)} APY: ` : `*${formatPercent(0)} APY: `}
+										</p>
+										<p
+											suppressHydrationWarning
+											className={'font-number text-neutral-400 md:text-xxs'}>
+											{`∙ ${curveAdminFeePercent ? formatPercent(curveAdminFeePercent) : formatPercent(0)} Curve Admin Fees (${formatAmount(Number(holdings?.boostMultiplier) / 10000)}x boost)`}
+										</p>
+										<p
+											suppressHydrationWarning
+											className={'font-number text-neutral-400 md:text-xxs'}>
+											{`∙ ${styCRVAPY && curveAdminFeePercent ? formatAmount(styCRVAPY - curveAdminFeePercent, 2, 2) : '0.00'}% Gauge Voting Bribes`}
+										</p>
+									</div>
 								</div>
 							</span>
 						</span>
