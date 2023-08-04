@@ -92,6 +92,7 @@ function NetworkSelector({networks}: {networks: number[]}): ReactElement {
 		<div key={safeChainID} className={'relative z-50 mr-4'}>
 			<Listbox
 				value={safeChainID}
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
 				onChange={async (value: any): Promise<void> => onSwitchChain(value.value)}>
 				{({open}): ReactElement => (
 					<>

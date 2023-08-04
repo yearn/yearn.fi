@@ -9,6 +9,7 @@ import {VeYfiHeader} from '@veYFI/components/header/VeYfiHeader';
 import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import BalanceReminderPopover from '@common/components/BalanceReminderPopover';
+import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useMenu} from '@common/contexts/useMenu';
 import LogoYearn from '@common/icons/LogoYearn';
 import {YBalHeader} from '@yBal/components/header/YBalHeader';
@@ -46,6 +47,20 @@ function Logo(): ReactElement {
 function LogoPopover(): ReactElement {
 	const [isShowing, set_isShowing] = useState(false);
 
+	const YETH = {
+		name: 'yETH',
+		href: 'https://yeth.yearn.finance',
+		isDisabled: false,										
+		icon: <ImageWithFallback
+			alt={'yETH'}
+			className={'h-8 w-8'}
+			width={100}
+			height={100}
+			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/0x1BED97CBC3c24A4fb5C069C6E311a967386131f7/logo-128.png`}
+			loading={'eager'}
+			priority />
+	};
+
 	return (
 		<Popover
 			onMouseEnter={(): void => set_isShowing(true)}
@@ -70,7 +85,7 @@ function LogoPopover(): ReactElement {
 					<div className={'overflow-hidden border border-neutral-200 shadow-lg'}>
 						<div className={'relative grid grid-cols-2 bg-neutral-0 md:grid-cols-3'}>
 							{
-								Object.values(APPS)
+								[...Object.values(APPS), YETH]
 									.filter(({isDisabled}): boolean => !isDisabled)
 									.map(({name, href, icon}): ReactElement => {
 										return (
