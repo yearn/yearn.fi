@@ -194,6 +194,7 @@ export function useSolverPortals(): TSolverContext {
 				to: toAddress(to),
 				...rest
 			});
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			const hash = await wagmiProvider.walletClient.sendTransaction({...tx as any, chain});
 			const receipt = await waitForTransaction({chainId: wagmiProvider.chainId, hash});
 			if (receipt.status === 'success') {
