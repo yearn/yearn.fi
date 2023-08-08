@@ -1,6 +1,6 @@
 import {z} from 'zod';
 import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {addressSchema} from '@common/schemas/custom/addressSchema';
+import {addressSchema} from '@yearn-finance/web-lib/utils/schemas/addressSchema';
 
 const yDaemonVaultStrategySchema = z.object({
 	address: addressSchema,

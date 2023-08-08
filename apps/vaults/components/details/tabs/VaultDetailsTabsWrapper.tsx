@@ -7,7 +7,6 @@ import {VaultDetailsAbout} from '@vaults/components/details/tabs/VaultDetailsAbo
 import {VaultDetailsHistorical} from '@vaults/components/details/tabs/VaultDetailsHistorical';
 import {VaultDetailsStrategies} from '@vaults/components/details/tabs/VaultDetailsStrategies';
 import Renderable from '@yearn-finance/web-lib/components/Renderable';
-import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import IconAddToMetamask from '@yearn-finance/web-lib/icons/IconAddToMetamask';
@@ -16,6 +15,7 @@ import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
+import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {useFetch} from '@common/hooks/useFetch';
 import IconChevron from '@common/icons/IconChevron';
 import {yDaemonVaultHarvestsSchema} from '@common/schemas/yDaemonVaultsSchemas';
@@ -24,7 +24,6 @@ import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault, TYDaemonVaultHarvests} from '@common/schemas/yDaemonVaultsSchemas';
-import type {TSettingsForNetwork} from '@common/schemas/ySchemas';
 
 type TTabsOptions = {
 	value: number;
@@ -152,10 +151,8 @@ function ExplorerLink({explorerBaseURI, currentVaultAddress}: TExplorerLinkProps
 function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {provider} = useWeb3();
 	const {safeChainID} = useChainID();
-	const {networks} = useSettings();
 	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: safeChainID});
 	const [selectedAboutTabIndex, set_selectedAboutTabIndex] = useState(0);
-	const networkSettings = useMemo((): TSettingsForNetwork => networks[safeChainID], [networks, safeChainID]);
 
 	async function onAddTokenToMetamask(address: string, symbol: string, decimals: number, image: string): Promise<void> {
 		try {
@@ -212,7 +209,9 @@ function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}):
 						<span className={'sr-only'}>{'Add to wallet'}</span>
 						<IconAddToMetamask className={'h-5 w-5 text-neutral-600 transition-colors hover:text-neutral-900 md:h-6 md:w-6'} />
 					</button>
-					<ExplorerLink explorerBaseURI={networkSettings?.explorerBaseURI} currentVaultAddress={currentVault.address} />
+					<ExplorerLink
+						explorerBaseURI={getNetwork(safeChainID)?.defaultBlockExplorer}
+						currentVaultAddress={currentVault.address} />
 				</div>
 			</div>
 

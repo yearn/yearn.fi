@@ -3,12 +3,13 @@ import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {LPYBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, YBAL_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
+import {handleTx, toWagmiProvider} from '@yearn-finance/web-lib/utils/wagmi/provider';
+import {assertAddress} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {assert} from '@common/utils/assert';
-import {assertAddress, handleTx, toWagmiProvider} from '@common/utils/wagmiUtils';
 
 import type {TAddress} from '@yearn-finance/web-lib/types';
+import type {TWriteTransaction} from '@yearn-finance/web-lib/utils/wagmi/provider';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
-import type {TWriteTransaction} from '@common/utils/wagmiUtils';
 
 const ZAP_BAL_ABI = [{'inputs':[{'name':'_input_token', 'type':'address'}, {'name':'_output_token', 'type':'address'}, {'name':'_amount_in', 'type':'uint256'}, {'name':'_min_out', 'type':'uint256'}, {'name':'_recipient', 'type':'address'}, {'name':'_mint', 'type':'bool'}], 'name':'zap', 'outputs':[{'name':'', 'type':'uint256'}], 'stateMutability':'nonpayable', 'type':'function'}, {'inputs':[], 'name':'mint_buffer', 'outputs':[{'name':'', 'type':'uint256'}], 'stateMutability':'view', 'type':'function'}, {'inputs':[{'name':'_input_token', 'type':'address'}, {'name':'_output_token', 'type':'address'}, {'name':'_amount_in', 'type':'uint256'}, {'name':'_mint', 'type':'bool'}], 'name':'queryZapOutput', 'outputs':[{'name':'', 'type':'uint256'}], 'stateMutability':'nonpayable', 'type':'function'}] as const;
 

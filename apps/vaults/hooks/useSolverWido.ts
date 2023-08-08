@@ -12,12 +12,13 @@ import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isEth} from '@yearn-finance/web-lib/utils/isEth';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
+import {toWagmiProvider} from '@yearn-finance/web-lib/utils/wagmi/provider';
+import {assertAddress} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 import {allowanceOf, approveERC20, isApprovedERC20} from '@common/utils/actions';
 import {assert} from '@common/utils/assert';
-import {assertAddress, toWagmiProvider} from '@common/utils/wagmiUtils';
 
 import type {BaseError} from 'viem';
 import type {ChainId, QuoteRequest, QuoteResult} from 'wido';
