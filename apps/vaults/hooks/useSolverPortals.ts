@@ -21,6 +21,7 @@ import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 import {allowanceOf, approveERC20} from '@common/utils/actions';
 import {assert} from '@common/utils/assert';
 
+import type {Transaction} from 'viem';
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TTxResponse, TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TNormalizedBN} from '@common/types/types';
@@ -66,6 +67,13 @@ async function getQuote(
 		}
 		return {data: null, error: new Error(errorContent)};
 	}
+}
+
+function isEip2930(txType?: Transaction['type']): txType is 'eip2930' {
+	if (!txType) {
+		return false;
+	}
+	return txType === 'eip2930';
 }
 
 export function useSolverPortals(): TSolverContext {
@@ -195,8 +203,14 @@ export function useSolverPortals(): TSolverContext {
 				to: toAddress(to),
 				...rest
 			});
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			const hash = await wagmiProvider.walletClient.sendTransaction({...tx as any, chain});
+			const hash = await wagmiProvider.walletClient.sendTransaction({
+				...tx,
+				type: isEip2930(tx.type) ? tx.type : undefined,
+				maxFeePerGas: undefined,
+				maxPriorityFeePerGas: undefined,
+				gasPrice: undefined,
+				chain
+			});
 			const receipt = await waitForTransaction({chainId: wagmiProvider.chainId, hash});
 			if (receipt.status === 'success') {
 				return ({isSuccessful: true, receipt: receipt});
