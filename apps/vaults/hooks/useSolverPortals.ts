@@ -70,10 +70,7 @@ async function getQuote(
 }
 
 function isEip2930(txType?: Transaction['type']): txType is 'eip2930' {
-	if (!txType) {
-		return false;
-	}
-	return txType === 'eip2930';
+	return !!txType && txType === 'eip2930';
 }
 
 export function useSolverPortals(): TSolverContext {
