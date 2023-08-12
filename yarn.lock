@@ -3387,10 +3387,10 @@
   resolved "https://registry.yarnpkg.com/@xtuc/long/-/long-4.2.2.tgz#d291c6a4e97989b5c61d9acf396ae4fe133a718d"
   integrity sha512-NuHqBY1PB/D8xU6s/thBgOAiAP7HOYDQ32+BFZILJ8ivkUkAHQnWfn6WhL79Owj1qmUnoN/YPhktdIoucipkAQ==
 
-"@yearn-finance/web-lib@^0.20.135":
-  version "0.20.135"
-  resolved "https://registry.yarnpkg.com/@yearn-finance/web-lib/-/web-lib-0.20.135.tgz#93e7921f6a788e2f30fa443ba45ee3d06d6475e8"
-  integrity sha512-/R1/IO/+3bUQgB2y9RC84uVzPqpOxQGtc/LSXrmL3Z6JMtCTGh/l9vXjp1q4pwiYnp3QZ9uiJhGDykgPVQYaPQ==
+"@yearn-finance/web-lib@^0.20.136":
+  version "0.20.136"
+  resolved "https://registry.yarnpkg.com/@yearn-finance/web-lib/-/web-lib-0.20.136.tgz#ccf42aa574eba4b47d778b847b5e02410aeadf02"
+  integrity sha512-BV/gnhonp7exIi0P3NeS4JtVesOEhWMidNVCM23SPVg+H4yW3HdaKPNmMka4bzsv9uQNQVipg3R9fzJX/WZluw==
   dependencies:
     "@babel/preset-typescript" "^7.22.5"
     "@headlessui/react" "^1.7.16"
