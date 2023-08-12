@@ -150,6 +150,7 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 		tokens: [...availableTokens, ...migratableTokens, ...retiredTokens],
 		prices
 	});
+	console.warn(balances);
 
 
 	//Compute the cumulatedValueInVaults

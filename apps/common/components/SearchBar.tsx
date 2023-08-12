@@ -13,6 +13,7 @@ export function SearchBar({searchPlaceholder, searchValue, set_searchValue}: TSe
 				<div className={'relative flex h-10 w-full flex-row items-center justify-between'}>
 					<input
 						id={'search'}
+						suppressHydrationWarning
 						className={'h-10 w-full overflow-x-scroll border-none bg-transparent px-0 py-2 text-base outline-none scrollbar-none placeholder:text-neutral-400'}
 						type={'text'}
 						placeholder={searchPlaceholder}
