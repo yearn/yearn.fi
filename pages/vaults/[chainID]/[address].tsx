@@ -71,8 +71,8 @@ function Index(): ReactElement | null {
 			return;
 		}
 
-		if (!!safeChainID && currentVault?.chainID !== safeChainID) {
-			const vaultChainName = getNetwork(currentVault?.chainID || 1)?.name || 'Unknown';
+		if (isActive && !!currentVault && !!safeChainID && currentVault.chainID !== safeChainID) {
+			const vaultChainName = getNetwork(currentVault.chainID || 1)?.name || 'Unknown';
 			const chainName = getNetwork(safeChainID)?.name || 'Unknown';
 
 			const toastId = toast({
@@ -83,7 +83,7 @@ function Index(): ReactElement | null {
 
 			set_toastState({id: toastId, isOpen: true});
 		}
-	}, [currentVault?.chainID, safeChainID, toast, toastMaster, toastState.id, toastState.isOpen]);
+	}, [currentVault, currentVault?.chainID, isActive, safeChainID, toast, toastMaster, toastState.id, toastState.isOpen]);
 
 	if (isLoadingVault) {
 		return (
