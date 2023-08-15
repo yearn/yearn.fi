@@ -1,6 +1,7 @@
 import {useCallback, useMemo, useRef} from 'react';
 import {isHex} from 'viem';
 import {getWidoSpender, quote as wiQuote} from 'wido';
+import {useDebouncedCallback} from '@react-hookz/web';
 import {captureException} from '@sentry/nextjs';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {getNetwork, waitForTransaction} from '@wagmi/core';
@@ -72,6 +73,7 @@ export function useSolverWido(): TSolverContext {
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
 	const {safeChainID} = useChainID();
 	const {zapSlippage, currentPartner} = useYearn();
+	const debouncedToast = useDebouncedCallback((args): string => toast(args), [toast], 500);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** init will be called when the Wido solver should be used to perform the desired swap.
@@ -90,7 +92,7 @@ export function useSolverWido(): TSolverContext {
 		/******************************************************************************************
 		** This first obvious check is to see if the solver is disabled. If it is, we return 0.
 		******************************************************************************************/
-		if (isSolverDisabled[Solver.enum.Wido]) {
+		if (isSolverDisabled(safeChainID)[Solver.enum.Wido]) {
 			return toNormalizedBN(0);
 		}
 
@@ -112,14 +114,14 @@ export function useSolverWido(): TSolverContext {
 		request.current = _request;
 		const {data, error} = await getQuote(_request, currentPartner, safeChainID, zapSlippage);
 		if (!data) {
-			if (error && !shouldLogError) {
-				toast({type: 'error', content: 'Wido zap not possible. Try again later or pick another token.'});
+			if (error && shouldLogError) {
+				debouncedToast({type: 'error', content: 'Wido zap not possible. Try again later or pick another token.'});
 			}
 			return toNormalizedBN(0);
 		}
 		latestQuote.current = data;
 		return toNormalizedBN(data?.minToTokenAmount || 0, request?.current?.outputToken?.decimals || 18);
-	}, [currentPartner, safeChainID, zapSlippage]);
+	}, [currentPartner, debouncedToast, safeChainID, zapSlippage]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** execute will send the post request to execute the order and wait for it to be executed, no
@@ -127,7 +129,7 @@ export function useSolverWido(): TSolverContext {
 	** not.
 	**********************************************************************************************/
 	const execute = useCallback(async (): Promise<TTxResponse> => {
-		if (isSolverDisabled[Solver.enum.Wido]) {
+		if (isSolverDisabled(safeChainID)[Solver.enum.Wido]) {
 			return ({isSuccessful: false});
 		}
 
@@ -159,25 +161,25 @@ export function useSolverWido(): TSolverContext {
 			console.error(_error);
 			return ({isSuccessful: false, error: _error as BaseError});
 		}
-	}, [provider, latestQuote]);
+	}, [provider, latestQuote, safeChainID]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Format the quote to a normalized value, which will be used for subsequent
 	** process and displayed to the user.
 	**************************************************************************/
 	const expectedOut = useMemo((): TNormalizedBN => {
-		if (!latestQuote?.current?.minToTokenAmount || isSolverDisabled[Solver.enum.Wido]) {
+		if (!latestQuote?.current?.minToTokenAmount || isSolverDisabled(safeChainID)[Solver.enum.Wido]) {
 			return (toNormalizedBN(0));
 		}
 		return toNormalizedBN(latestQuote?.current?.minToTokenAmount, request?.current?.outputToken?.decimals || 18);
-	}, [latestQuote, request]);
+	}, [latestQuote, request, safeChainID]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Retrieve the allowance for the token to be used by the solver. This will
 	** be used to determine if the user should approve the token or not.
 	**************************************************************************/
 	const onRetrieveAllowance = useCallback(async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
-		if (!latestQuote?.current || !request?.current || isSolverDisabled[Solver.enum.Wido]) {
+		if (!latestQuote?.current || !request?.current || isSolverDisabled(safeChainID)[Solver.enum.Wido]) {
 			return toNormalizedBN(0);
 		}
 
@@ -231,7 +233,7 @@ export function useSolverWido(): TSolverContext {
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
-		if (isSolverDisabled[Solver.enum.Wido]) {
+		if (isSolverDisabled(safeChainID)[Solver.enum.Wido]) {
 			return;
 		}
 		assert(request.current, 'Request is not set');

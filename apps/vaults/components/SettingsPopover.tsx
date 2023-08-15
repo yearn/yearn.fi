@@ -46,22 +46,22 @@ export default function SettingsPopover({chainID}: TSettingPopover): ReactElemen
 										<select
 											id={'zapProvider'}
 											onChange={(e): void => set_zapProvider(e.target.value as TSolver)}
-											value={currentZapProvider}
+											value={!isSolverDisabled(chainID)[currentZapProvider] ? currentZapProvider : Solver.enum.Wido}
 											className={'mt-1 h-10 w-full overflow-x-scroll border-none bg-neutral-100 p-2 outline-none scrollbar-none'}>
 											{chainID === 1 ? (
 												<option
-													disabled={isSolverDisabled[Solver.enum.Cowswap]}
+													disabled={isSolverDisabled(chainID)[Solver.enum.Cowswap]}
 													value={Solver.enum.Cowswap}>
 													{Solver.enum.Cowswap}
 												</option>
 											): null}
 											<option
-												disabled={isSolverDisabled[Solver.enum.Wido]}
+												disabled={isSolverDisabled(chainID)[Solver.enum.Wido]}
 												value={Solver.enum.Wido}>
 												{Solver.enum.Wido}
 											</option>
 											<option
-												disabled={isSolverDisabled[Solver.enum.Portals]}
+												disabled={isSolverDisabled(chainID)[Solver.enum.Portals]}
 												value={Solver.enum.Portals}>
 												{Solver.enum.Portals}
 											</option>

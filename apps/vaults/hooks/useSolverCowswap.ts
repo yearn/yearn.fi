@@ -73,7 +73,7 @@ export function useSolverCowswap(): TSolverContext {
 	const request = useRef<TInitSolverArgs>();
 	const latestQuote = useRef<OrderQuoteResponse>();
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
-	const isDisabled = isSolverDisabled[Solver.enum.Cowswap] || safeChainID !== 1;
+	const isDisabled = isSolverDisabled(safeChainID)[Solver.enum.Cowswap] || safeChainID !== 1;
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** A slippage of 1% per default is set to avoid the transaction to fail due to price
@@ -140,7 +140,7 @@ export function useSolverCowswap(): TSolverContext {
 		if (!data) {
 			type TCowRequestError = {body: {description: string}};
 			const err = error as unknown as TCowRequestError;
-			if (error && !shouldLogError) {
+			if (error && shouldLogError) {
 				if (err?.body?.description) {
 					toast({type: 'error', content: err?.body?.description});
 				} else {
