@@ -100,7 +100,7 @@ const config = {
 		YDAEMON_BASE_URI: process.env.YDAEMON_BASE_URI,
 
 		// YDAEMON_BASE_URI: 'https://ydaemon.ycorpo.com',
-		// YDAEMON_BASE_URI: 'https://ydaemon.yearn.finance',
+		YDAEMON_BASE_URI: 'https://ydaemon.yearn.finance',
 		// YDAEMON_BASE_URI: 'https://ydaemon-dev.yearn.finance',
 		// YDAEMON_BASE_URI: 'https://api.ycorpo.com',
 		BASE_YEARN_ASSETS_URI: 'https://assets.smold.app/api/token'
