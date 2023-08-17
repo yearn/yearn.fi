@@ -76,8 +76,8 @@ export function VaultAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 		);
 	}
 
-	if (isEthMainnet && currentVault.newApy?.composite?.boost > 0 && !currentVault.newApy?.staking_rewards_apr) {
-		const unBoostedAPR = currentVault.newApy.gross_apr / currentVault.newApy.composite.boost;
+	if (isEthMainnet && currentVault.newApy?.forward_apr?.composite?.boost > 0 && !currentVault.newApy?.staking_rewards_apr) {
+		const unBoostedAPR = currentVault.newApy.gross_apr / currentVault.newApy.forward_apr.composite.boost;
 		return (
 			<span className={'tooltip'}>
 				<div className={'flex flex-col text-right'}>
@@ -93,8 +93,8 @@ export function VaultAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 						</Renderable>
 					</b>
 					<small className={'text-xs text-neutral-900'}>
-						<Renderable shouldRender={isEthMainnet && currentVault.newApy?.composite?.boost > 0 && !currentVault.newApy?.staking_rewards_apr}>
-							{`BOOST ${formatAmount(currentVault.newApy?.composite?.boost, 2, 2)}x`}
+						<Renderable shouldRender={isEthMainnet && currentVault.newApy?.forward_apr?.composite?.boost > 0 && !currentVault.newApy?.staking_rewards_apr}>
+							{`BOOST ${formatAmount(currentVault.newApy?.forward_apr?.composite?.boost, 2, 2)}x`}
 						</Renderable>
 					</small>
 					<span className={'tooltipLight bottom-full mb-1'}>
@@ -111,7 +111,7 @@ export function VaultAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 
 								<div className={'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'}>
 									<p>{'• Boost '}</p>
-									<p>{`${formatAmount(currentVault.newApy?.composite?.boost, 2, 2)} x`}</p>
+									<p>{`${formatAmount(currentVault.newApy?.forward_apr?.composite?.boost, 2, 2)} x`}</p>
 								</div>
 							</div>
 						</div>

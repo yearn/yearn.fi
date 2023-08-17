@@ -276,7 +276,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 					</div>
 				)}
 
-				{isZero(currentTab.value) && currentVault.apy?.composite?.boost && hasStakingRewards && willDepositAndStake ? (
+				{isZero(currentTab.value) && currentVault.newApy?.forward_apr?.composite?.boost && hasStakingRewards && willDepositAndStake ? (
 					<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
 						<div className={'w-full bg-[#34A14F] p-2 md:px-6 md:py-4'}>
 							<b className={'text-base text-white'}>
