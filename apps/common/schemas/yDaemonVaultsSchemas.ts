@@ -139,6 +139,19 @@ export const yDaemonVaultSchema = z.object({
 			base_apr: z.number(),
 			cvx_apr: z.number(),
 			rewards_apr: z.number()
+		}),
+		forward_apr: z.object({
+			type: z.string(),
+			gross_apr: z.number(),
+			net_apy: z.number(),
+			composite: z.object({
+				boost: z.number(),
+				pool_apy: z.number(),
+				boosted_apr: z.number(),
+				base_apr: z.number(),
+				cvx_apr: z.number(),
+				rewards_apr: z.number()
+			})
 		})
 	}),
 	apy: z.object({
