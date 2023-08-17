@@ -115,9 +115,11 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 			}
 			if (vault?.address && !tokensExists[toAddress(vault?.address)]) {
 				tokens.push({token: vault.address});
+				tokensExists[vault.address] = true;
 			}
 			if (vault?.token?.address && !tokensExists[toAddress(vault?.token?.address)]) {
 				tokens.push({token: vault.token.address});
+				tokensExists[vault.token.address] = true;
 			}
 		});
 		return tokens;
