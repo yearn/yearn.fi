@@ -1,11 +1,13 @@
-import {createContext, memo, useContext, useMemo} from 'react';
+import {createContext, memo, useContext, useEffect, useMemo} from 'react';
 import {STACKING_TO_VAULT} from '@vaults/constants/optRewards';
+import {toast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {useLocalStorage} from '@yearn-finance/web-lib/hooks/useLocalStorage';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {yDaemonPricesSchema} from '@yearn-finance/web-lib/utils/schemas/yDaemonPricesSchema';
 import {useFetch} from '@common/hooks/useFetch';
+import {useYDaemonStatus} from '@common/hooks/useYDaemonStatus';
 import {yDaemonEarnedSchema} from '@common/schemas/yDaemonEarnedSchema';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 import {yDaemonTokensSchema} from '@common/schemas/yDaemonTokensSchema';
@@ -61,9 +63,16 @@ const YearnContext = createContext<TYearnContext>({
 export const YearnContextApp = memo(function YearnContextApp({children}: { children: ReactElement }): ReactElement {
 	const {safeChainID} = useChainID();
 	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: safeChainID});
+	const result = useYDaemonStatus({chainID: safeChainID});
 	const {address, currentPartner} = useWeb3();
 	const [zapSlippage, set_zapSlippage] = useLocalStorage<number>('yearn.finance/zap-slippage', DEFAULT_SLIPPAGE);
 	const [zapProvider, set_zapProvider] = useLocalStorage<TSolver>('yearn.finance/zap-provider', Solver.enum.Cowswap);
+
+	useEffect((): void => {
+		if (result?.error?.code === 'ERR_NETWORK') {
+			toast({type: 'error', content: 'AxiosError: Network Error'});
+		}
+	}, [result?.error?.code]);
 
 	const {data: prices} = useFetch<TYDaemonPrices>({
 		endpoint: `${yDaemonBaseUri}/prices/all`,
