@@ -62,7 +62,7 @@ export function Popover(): ReactElement {
 		}
 		formData.append('messages', [
 			`*🔵 New ${type} submitted*`,
-			`\n*Telegram:* ${telegramHandle}`,
+			`\n*Telegram/Email:* ${telegramHandle}`,
 			description,
 			'\n*👀 - Info:*',
 			reporter ?
@@ -128,7 +128,7 @@ export function Popover(): ReactElement {
 									id={'telegramHandle'}
 									className={'resize-none border border-neutral-300/50 bg-transparent p-2 text-xs transition-colors hover:bg-neutral-100/40 focus:border-neutral-300/50'}
 									onChange={({target:{value}}): void => set_telegramHandle(value)}
-									placeholder={'Your telegram handle'}
+									placeholder={'Your telegram handle or email'}
 								/>
 								<button
 									disabled={!description || description.length < 10 || isCoolingOff || isSubmitDisabled}
