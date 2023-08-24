@@ -1,3 +1,6 @@
+# 0.1.24 (24/08/2023)
+- Add `useFeatureFlag` hook to handle feature flags
+
 # 0.1.23 (14/02/2023)
 - Add the vl-yCRV page by @karelianpie
 
