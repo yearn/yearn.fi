@@ -4,8 +4,7 @@
 
 import {useMemo} from 'react';
 import {parseEther} from 'viem';
-import {useContractReads, usePrepareContractWrite} from 'wagmi';
-import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
+import {erc20ABI, useContractReads, usePrepareContractWrite} from 'wagmi';
 import {BALWETH_TOKEN_ADDRESS, LPYBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, VEBAL_TOKEN_ADDRESS, VEBALPEG_QUERY_HELP_CONTRACT, YBAL_TOKEN_ADDRESS, YBAL_VOTER_ADDRESS, ZERO_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {decodeAsBigInt} from '@yearn-finance/web-lib/utils/decoder';
 import STYBAL_ABI from '@yBal/utils/abi/styBal.abi';
@@ -38,8 +37,8 @@ export const defaultBalHoldings = {
 ** This context controls the Holdings computation.
 ******************************************************************************/
 export function useHoldings(): TBalHoldings {
-	const yBalContract = {address: YBAL_TOKEN_ADDRESS, abi: ERC20_ABI};
-	const lpyBalContract = {address: LPYBAL_TOKEN_ADDRESS, abi: ERC20_ABI};
+	const yBalContract = {address: YBAL_TOKEN_ADDRESS, abi: erc20ABI};
+	const lpyBalContract = {address: LPYBAL_TOKEN_ADDRESS, abi: erc20ABI};
 	const styBalContract = {address: STYBAL_TOKEN_ADDRESS, abi: STYBAL_ABI};
 	const veBalContract = {address: VEBAL_TOKEN_ADDRESS, abi: VE_BAL_ABI};
 	const veBalQueryPegHelpContract = {address: VEBALPEG_QUERY_HELP_CONTRACT, abi: VEBALPEG_HELPER_ABI};

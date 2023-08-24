@@ -13,13 +13,15 @@ import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isEth} from '@yearn-finance/web-lib/utils/isEth';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
+import {toWagmiProvider} from '@yearn-finance/web-lib/utils/wagmi/provider';
+import {assertAddress} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 import {allowanceOf, approveERC20} from '@common/utils/actions';
 import {assert} from '@common/utils/assert';
-import {assertAddress, toWagmiProvider} from '@common/utils/wagmiUtils';
 
+import type {Transaction} from 'viem';
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TTxResponse, TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TNormalizedBN} from '@common/types/types';
@@ -67,6 +69,10 @@ async function getQuote(
 	}
 }
 
+function isEip2930(txType?: Transaction['type']): txType is 'eip2930' {
+	return txType === 'eip2930';
+}
+
 export function useSolverPortals(): TSolverContext {
 	const {provider} = useWeb3();
 	const request = useRef<TInitSolverArgs>();
@@ -92,14 +98,7 @@ export function useSolverPortals(): TSolverContext {
 		/******************************************************************************************
 		** This first obvious check is to see if the solver is disabled. If it is, we return 0.
 		******************************************************************************************/
-		if (isSolverDisabled[Solver.enum.Portals]) {
-			return toNormalizedBN(0);
-		}
-
-		/******************************************************************************************
-		** Then, we check if the we are on optimist. If we are, we return 0.
-		******************************************************************************************/
-		if (safeChainID === 10) {
+		if (isSolverDisabled(safeChainID)[Solver.enum.Portals]) {
 			return toNormalizedBN(0);
 		}
 
@@ -136,7 +135,7 @@ export function useSolverPortals(): TSolverContext {
 		const {data, error} = await getQuote(_request, safeChainID, zapSlippage);
 		if (!data) {
 			console.error(error?.message);
-			if (error && !shouldLogError) {
+			if (error && shouldLogError) {
 				toast({type: 'error', content: `Portals.fi zap not possible: ${error?.message}`});
 			}
 			return toNormalizedBN(0);
@@ -155,7 +154,7 @@ export function useSolverPortals(): TSolverContext {
 	** not.
 	**********************************************************************************************/
 	const execute = useCallback(async (): Promise<TTxResponse> => {
-		if (isSolverDisabled[Solver.enum.Portals]) {
+		if (isSolverDisabled(safeChainID)[Solver.enum.Portals]) {
 			return ({isSuccessful: false});
 		}
 
@@ -194,7 +193,14 @@ export function useSolverPortals(): TSolverContext {
 				to: toAddress(to),
 				...rest
 			});
-			const hash = await wagmiProvider.walletClient.sendTransaction({...tx as any, chain});
+			const hash = await wagmiProvider.walletClient.sendTransaction({
+				...tx,
+				type: isEip2930(tx.type) ? tx.type : undefined,
+				maxFeePerGas: undefined,
+				maxPriorityFeePerGas: undefined,
+				gasPrice: undefined,
+				chain
+			});
 			const receipt = await waitForTransaction({chainId: wagmiProvider.chainId, hash});
 			if (receipt.status === 'success') {
 				return ({isSuccessful: true, receipt: receipt});
@@ -217,18 +223,18 @@ export function useSolverPortals(): TSolverContext {
 	** process and displayed to the user.
 	**************************************************************************/
 	const expectedOut = useMemo((): TNormalizedBN => {
-		if (!latestQuote?.current?.minBuyAmount || isSolverDisabled[Solver.enum.Portals]) {
+		if (!latestQuote?.current?.minBuyAmount || isSolverDisabled(safeChainID)[Solver.enum.Portals]) {
 			return (toNormalizedBN(0));
 		}
 		return toNormalizedBN(latestQuote?.current?.minBuyAmount, request?.current?.outputToken?.decimals || 18);
-	}, [latestQuote, request]);
+	}, [latestQuote, request, safeChainID]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	** Retrieve the allowance for the token to be used by the solver. This will
 	** be used to determine if the user should approve the token or not.
 	**************************************************************************/
 	const onRetrieveAllowance = useCallback(async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
-		if (!latestQuote?.current || !request?.current || isSolverDisabled[Solver.enum.Portals]) {
+		if (!latestQuote?.current || !request?.current || isSolverDisabled(safeChainID)[Solver.enum.Portals]) {
 			return toNormalizedBN(0);
 		}
 
@@ -279,7 +285,7 @@ export function useSolverPortals(): TSolverContext {
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 		onSuccess: () => Promise<void>
 	): Promise<void> => {
-		if (isSolverDisabled[Solver.enum.Portals]) {
+		if (isSolverDisabled(safeChainID)[Solver.enum.Portals]) {
 			return;
 		}
 		assert(request.current, 'Request is not set');

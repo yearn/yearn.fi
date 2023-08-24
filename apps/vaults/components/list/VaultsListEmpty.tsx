@@ -2,7 +2,7 @@ import {useAppSettings} from '@vaults/contexts/useAppSettings';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
-import CHAINS from '@yearn-finance/web-lib/utils/web3/chains';
+import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVaults} from '@common/schemas/yDaemonVaultsSchemas';
@@ -41,7 +41,7 @@ export function VaultsListEmpty({
 		);
 	}
 	if (!isLoading && isZero(sortedVaultsToDisplay.length) && safeChainID !== 1) {
-		const chainName = CHAINS[safeChainID]?.name || 'this network';
+		const chainName = getNetwork(safeChainID)?.name || 'this network';
 		return (
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
 				<b className={'text-center text-lg'}>{'👀 Where Vaults ser?'}</b>
@@ -116,7 +116,7 @@ export function VaultsListEmptyFactory({
 			</div>
 		);
 	} if (!isLoading && isZero(sortedVaultsToDisplay.length) && safeChainID !== 1) {
-		const chainName = CHAINS[safeChainID]?.name || 'this network';
+		const chainName = getNetwork(safeChainID)?.name || 'this network';
 		return (
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
 				<b className={'text-center text-lg'}>{'👀 Where Vaults ser?'}</b>

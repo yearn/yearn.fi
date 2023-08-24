@@ -11,9 +11,9 @@ import {yDaemonTokenListBalances} from '@common/schemas/yDaemonTokenListBalances
 import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 
 import type {ReactElement} from 'react';
+import type {TUseBalancesTokens} from '@yearn-finance/web-lib/hooks/useBalances';
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TBalanceData} from '@yearn-finance/web-lib/types/hooks';
-import type {TUseBalancesTokens} from '@common/hooks/useBalances';
 import type {TYDaemonTokenListBalances} from '@common/schemas/yDaemonTokenListBalances';
 
 export type TWalletForZap = {

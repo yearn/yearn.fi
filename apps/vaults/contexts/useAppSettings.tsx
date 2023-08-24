@@ -29,7 +29,7 @@ const AppSettingsContext = createContext<TAppSettingsContext>(defaultProps);
 export const AppSettingsContextApp = memo(function AppSettingsContextApp({children}: {children: ReactElement}): ReactElement {
 	const [category, set_category] = useSessionStorage('yearn.finance/vaults-category', 'All Vaults');
 	const [searchValue, set_searchValue] = useSessionStorage('yearn.finance/vaults-search', '');
-	const [shouldHideDust, set_shouldHideDust] = useLocalStorage('yearn.finance/hide-dust', true);
+	const [shouldHideDust, set_shouldHideDust] = useLocalStorage('yearn.finance/should-hide-dust', false);
 	const [shouldHideLowTVLVaults, set_shouldHideLowTVLVaults] = useLocalStorage('yearn.finance/hide-low-tvl', false);
 
 	/* 🔵 - Yearn Finance ******************************************************

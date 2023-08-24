@@ -11,6 +11,7 @@ import {allowanceKey, isZeroAddress} from '@yearn-finance/web-lib/utils/address'
 import {MAX_UINT_256, SOLVER_COW_VAULT_RELAYER_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isEth} from '@yearn-finance/web-lib/utils/isEth';
+import {getEthersSigner} from '@yearn-finance/web-lib/utils/wagmi/ethersAdapter';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
@@ -72,7 +73,7 @@ export function useSolverCowswap(): TSolverContext {
 	const request = useRef<TInitSolverArgs>();
 	const latestQuote = useRef<OrderQuoteResponse>();
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
-	const isDisabled = isSolverDisabled[Solver.enum.Cowswap] || safeChainID !== 1;
+	const isDisabled = isSolverDisabled(safeChainID)[Solver.enum.Cowswap] || safeChainID !== 1;
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	** A slippage of 1% per default is set to avoid the transaction to fail due to price
@@ -139,7 +140,7 @@ export function useSolverCowswap(): TSolverContext {
 		if (!data) {
 			type TCowRequestError = {body: {description: string}};
 			const err = error as unknown as TCowRequestError;
-			if (error && !shouldLogError) {
+			if (error && shouldLogError) {
 				if (err?.body?.description) {
 					toast({type: 'error', content: err?.body?.description});
 				} else {
@@ -166,11 +167,8 @@ export function useSolverCowswap(): TSolverContext {
 		}
 
 		assert(provider, 'Provider is not set');
-
-		const wagmiSigner = await provider.getWalletClient();
-		const wagmiProvider = await provider.getProvider();
-		const ethersProvider = new ethers.providers.Web3Provider(wagmiProvider);
-		const signer = ethersProvider.getSigner(wagmiSigner.account.address);
+		const signer = await getEthersSigner({chainId: 1});
+		assert(signer, 'No signer available');
 
 		const rawSignature = await OrderSigningUtils.signOrder(
 			{...quote as UnsignedOrder},

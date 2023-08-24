@@ -11,7 +11,7 @@ import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import CHAINS from '@yearn-finance/web-lib/utils/web3/chains';
+import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import TokenIcon from '@common/components/TokenIcon';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
@@ -71,9 +71,9 @@ function Index(): ReactElement | null {
 			return;
 		}
 
-		if (!!safeChainID && currentVault?.chainID !== safeChainID) {
-			const vaultChainName = CHAINS[Number(currentVault?.chainID || 1)]?.name;
-			const chainName = CHAINS[safeChainID]?.name;
+		if (isActive && !!currentVault && !!safeChainID && currentVault.chainID !== safeChainID) {
+			const vaultChainName = getNetwork(currentVault.chainID || 1)?.name || 'Unknown';
+			const chainName = getNetwork(safeChainID)?.name || 'Unknown';
 
 			const toastId = toast({
 				type: 'warning',
@@ -83,7 +83,7 @@ function Index(): ReactElement | null {
 
 			set_toastState({id: toastId, isOpen: true});
 		}
-	}, [currentVault?.chainID, safeChainID, toast, toastMaster, toastState.id, toastState.isOpen]);
+	}, [currentVault, currentVault?.chainID, isActive, safeChainID, toast, toastMaster, toastState.id, toastState.isOpen]);
 
 	if (isLoadingVault) {
 		return (

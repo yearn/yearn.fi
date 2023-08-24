@@ -1,17 +1,16 @@
-import {createContext, memo, useCallback, useContext, useMemo} from 'react';
+import {createContext, memo, useCallback, useContext, useEffect, useMemo, useState} from 'react';
 import {useChainId} from 'wagmi';
-import {OPT_REWARDS_TOKENS, OPT_YVAGEUR_USDC_STAKING_CONTRACT, OPT_YVALETH_FRXETH_STAKING_CONTRACT, OPT_YVALETH_WETH_STAKING_CONTRACT, OPT_YVALUSD_FRAX_STAKING_CONTRACT, OPT_YVALUSD_USDC_STAKING_CONTRACT, OPT_YVDAI_STAKING_CONTRACT, OPT_YVDOLA_USDC_STAKING_CONTRACT, OPT_YVDOLAUSDC_STAKING_CONTRACT, OPT_YVERN_DOLA_STAKING_CONTRACT, OPT_YVERN_LUSD_STAKING_CONTRACT, OPT_YVETH_STAKING_CONTRACT, OPT_YVEXA_WETH_STAKING_CONTRACT, OPT_YVFRAX_DOLA_STAKING_CONTRACT, OPT_YVIB_WETH_STAKING_CONTRACT, OPT_YVLDO_WSTETH_STAKING_CONTRACT, OPT_YVLUSD_WETH_STAKING_CONTRACT, OPT_YVMAI_ALUSD_STAKING_CONTRACT, OPT_YVMAI_DOLA_STAKING_CONTRACT, OPT_YVMAI_STAKING_CONTRACT, OPT_YVMAI_USDC_STAKING_CONTRACT, OPT_YVMAIUSDC_STAKING_CONTRACT, OPT_YVMIM_USDC_STAKING_CONTRACT, OPT_YVMTA_USDC_STAKING_CONTRACT, OPT_YVOP_USDC_STAKING_CONTRACT, OPT_YVOP_VELO_STAKING_CONTRACT, OPT_YVSNX_USDC_STAKING_CONTRACT, OPT_YVSUSCUSDC_STAKING_CONTRACT, OPT_YVTBTC_WBTC_STAKING_CONTRACT,OPT_YVTBTC_WETH_STAKING_CONTRACT, OPT_YVUSDC_STAKING_CONTRACT, OPT_YVUSDT_STAKING_CONTRACT, OPT_YVVELO_USDC_STAKING_CONTRACT, OPT_YVWUSDR_USDC_STAKING_CONTRACT} from '@vaults/constants/optRewards';
+import {OPT_YVAGEUR_USDC_STAKING_CONTRACT, OPT_YVALETH_FRXETH_STAKING_CONTRACT, OPT_YVALETH_WETH_STAKING_CONTRACT, OPT_YVALUSD_FRAX_STAKING_CONTRACT, OPT_YVALUSD_USDC_STAKING_CONTRACT, OPT_YVDAI_STAKING_CONTRACT, OPT_YVDOLA_USDC_STAKING_CONTRACT, OPT_YVDOLAUSDC_STAKING_CONTRACT, OPT_YVERN_DOLA_STAKING_CONTRACT, OPT_YVERN_LUSD_STAKING_CONTRACT, OPT_YVETH_STAKING_CONTRACT, OPT_YVEXA_WETH_STAKING_CONTRACT, OPT_YVFRAX_DOLA_STAKING_CONTRACT, OPT_YVIB_WETH_STAKING_CONTRACT, OPT_YVLDO_WSTETH_STAKING_CONTRACT, OPT_YVLUSD_WETH_STAKING_CONTRACT, OPT_YVMAI_ALUSD_STAKING_CONTRACT, OPT_YVMAI_DOLA_STAKING_CONTRACT, OPT_YVMAI_STAKING_CONTRACT, OPT_YVMAI_USDC_STAKING_CONTRACT, OPT_YVMAIUSDC_STAKING_CONTRACT, OPT_YVMIM_USDC_STAKING_CONTRACT, OPT_YVMTA_USDC_STAKING_CONTRACT, OPT_YVOP_USDC_STAKING_CONTRACT, OPT_YVOP_VELO_STAKING_CONTRACT, OPT_YVOP_WETH_STAKING_CONTRACT, OPT_YVSNX_USDC_STAKING_CONTRACT, OPT_YVSUSCUSDC_STAKING_CONTRACT, OPT_YVTBTC_WBTC_STAKING_CONTRACT, OPT_YVTBTC_WETH_STAKING_CONTRACT, OPT_YVUSDC_STAKING_CONTRACT, OPT_YVUSDT_STAKING_CONTRACT, OPT_YVVELO_USDC_STAKING_CONTRACT, OPT_YVWUSDR_USDC_STAKING_CONTRACT, OPT_YVWUSDRV2_USDC_STAKING_CONTRACT, STACKING_TO_VAULT} from '@vaults/constants/optRewards';
 import {useUI} from '@yearn-finance/web-lib/contexts/useUI';
-import {useClientEffect} from '@yearn-finance/web-lib/hooks/useClientEffect';
+import {useBalances} from '@yearn-finance/web-lib/hooks/useBalances';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {BAL_TOKEN_ADDRESS, BALWETH_TOKEN_ADDRESS, CRV_TOKEN_ADDRESS, CVXCRV_TOKEN_ADDRESS, ETH_TOKEN_ADDRESS, LPYBAL_TOKEN_ADDRESS, LPYCRV_TOKEN_ADDRESS, LPYCRV_V2_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, YBAL_TOKEN_ADDRESS, YCRV_CURVE_POOL_V2_ADDRESS, YCRV_TOKEN_ADDRESS, YVBOOST_TOKEN_ADDRESS, YVECRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {useYearn} from '@common/contexts/useYearn';
-import {useBalances} from '@common/hooks/useBalances';
 
 import type {ReactElement} from 'react';
+import type {TUseBalancesTokens} from '@yearn-finance/web-lib/hooks/useBalances';
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TBalanceData} from '@yearn-finance/web-lib/types/hooks';
-import type {TUseBalancesTokens} from '@common/hooks/useBalances';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
 export type	TWalletContext = {
@@ -40,6 +39,7 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 	const chain = useChainId();
 	const {vaults, vaultsMigrations, vaultsRetired, isLoadingVaultList, prices} = useYearn();
 	const {onLoadStart, onLoadDone} = useUI();
+	const [balances, set_balances] = useState<TDict<TBalanceData>>({});
 
 	//List all tokens related to yearn vaults
 	const availableTokens = useMemo((): TUseBalancesTokens[] => {
@@ -101,6 +101,8 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 			extraTokens.push({token: OPT_YVEXA_WETH_STAKING_CONTRACT, symbol: 'yvVelo-EXA-WETH', decimals: 18});
 			extraTokens.push({token: OPT_YVTBTC_WETH_STAKING_CONTRACT, symbol: 'yvVelo-tBTC-WETH', decimals: 18});
 			extraTokens.push({token: OPT_YVTBTC_WBTC_STAKING_CONTRACT, symbol: 'yvVelo-tBTC-WBTC', decimals: 18});
+			extraTokens.push({token: OPT_YVOP_WETH_STAKING_CONTRACT, symbol: 'yvVelo-OP-WETH', decimals: 18});
+			extraTokens.push({token: OPT_YVWUSDRV2_USDC_STAKING_CONTRACT, symbol: 'yvVelo-wUSDRv2-USDC', decimals: 18});
 		}
 		for (const token of extraTokens) {
 			tokensExists[token.token] = true;
@@ -113,9 +115,11 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 			}
 			if (vault?.address && !tokensExists[toAddress(vault?.address)]) {
 				tokens.push({token: vault.address});
+				tokensExists[vault.address] = true;
 			}
 			if (vault?.token?.address && !tokensExists[toAddress(vault?.token?.address)]) {
 				tokens.push({token: vault.token.address});
+				tokensExists[vault.token.address] = true;
 			}
 		});
 		return tokens;
@@ -145,11 +149,22 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 	}, [vaultsRetired]);
 
 	// Fetch the balances
-	const {data: balances, update, updateSome, nonce, isLoading} = useBalances({
+	const {data: balancesRaw, update, updateSome, nonce, isLoading} = useBalances({
 		tokens: [...availableTokens, ...migratableTokens, ...retiredTokens],
 		prices
 	});
 
+	useEffect((): void => {
+		const _balances = {...balancesRaw};
+		for (const [token] of Object.entries(_balances)) {
+			if (STACKING_TO_VAULT[token] && _balances[STACKING_TO_VAULT[token]]) {
+				// _balances[token].normalized += _balances[STACKING_TO_VAULT[token]].normalized;
+				// _balances[token].raw += _balances[STACKING_TO_VAULT[token]].raw;
+				_balances[token].normalizedValue = (_balances[token].normalizedValue || 0) + (_balances[STACKING_TO_VAULT[token]].normalizedValue || 0);
+			}
+		}
+		set_balances(_balances);
+	}, [balancesRaw]);
 
 	//Compute the cumulatedValueInVaults
 	const cumulatedValueInVaults = useMemo((): number => {
@@ -164,13 +179,10 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 					} else if (vaultsMigrations?.[toAddress(token)]) {
 						acc += balance.normalizedValue || 0;
 					}
-					if (chain === 10 && OPT_REWARDS_TOKENS.includes(toAddress(token))) {
-						acc += balance.normalizedValue || 0;
-					}
 					return acc;
 				}, 0)
 		);
-	}, [vaults, vaultsMigrations, balances, nonce, chain]);
+	}, [vaults, vaultsMigrations, balances, nonce]);
 
 	const onRefresh = useCallback(async (tokenToUpdate?: TUseBalancesTokens[]): Promise<TDict<TBalanceData>> => {
 		if (tokenToUpdate) {
@@ -182,13 +194,13 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 
 	}, [update, updateSome]);
 
-	useClientEffect((): void => {
+	useEffect((): void => {
 		if (isLoading) {
 			onLoadStart();
 		} else {
 			onLoadDone();
 		}
-	}, [isLoading]);
+	}, [isLoading, onLoadDone, onLoadStart]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	**	Setup and render the Context provider to use in the app.

@@ -6,12 +6,11 @@ import ycrvManifest from 'public/apps/ycrv-manifest.json';
 import {VAULTS_MENU} from '@vaults/constants/menu';
 import {VEYFI_MENU} from '@veYFI/constants/menu';
 import {YBAL_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import LogoYearn from '@common/icons/LogoYearn';
 import {YBAL_MENU} from '@yBal/constants/menu';
 import {YBRIBE_MENU} from '@yBribe/constants/menu';
 import {YCRV_MENU} from '@yCRV/constants/menu';
-
-import {ImageWithFallback} from './ImageWithFallback';
 
 import type {ReactElement} from 'react';
 import type {TMenu} from '@yearn-finance/web-lib/components/Header';

@@ -6,9 +6,11 @@ import {Popover, Transition} from '@headlessui/react';
 import {useIsMounted} from '@react-hookz/web';
 import {VaultsHeader} from '@vaults/components/header/VaultsHeader';
 import {VeYfiHeader} from '@veYFI/components/header/VeYfiHeader';
+import Header from '@yearn-finance/web-lib/components/Header';
 import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import BalanceReminderPopover from '@common/components/BalanceReminderPopover';
+import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useMenu} from '@common/contexts/useMenu';
 import LogoYearn from '@common/icons/LogoYearn';
 import {YBalHeader} from '@yBal/components/header/YBalHeader';
@@ -16,7 +18,6 @@ import {YBribeHeader} from '@yBribe/components/header/YBribeHeader';
 import {YCrvHeader} from '@yCRV/components/header/YCrvHeader';
 
 import {AppName, APPS} from './Apps';
-import Header from './Header';
 import {MotionDiv} from './MotionDiv';
 
 import type {ReactElement} from 'react';
@@ -46,6 +47,20 @@ function Logo(): ReactElement {
 function LogoPopover(): ReactElement {
 	const [isShowing, set_isShowing] = useState(false);
 
+	const YETH = {
+		name: 'yETH',
+		href: 'https://yeth.yearn.finance',
+		isDisabled: false,										
+		icon: <ImageWithFallback
+			alt={'yETH'}
+			className={'h-8 w-8'}
+			width={100}
+			height={100}
+			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/0x1BED97CBC3c24A4fb5C069C6E311a967386131f7/logo-128.png`}
+			loading={'eager'}
+			priority />
+	};
+
 	return (
 		<Popover
 			onMouseEnter={(): void => set_isShowing(true)}
@@ -68,9 +83,9 @@ function LogoPopover(): ReactElement {
 				leaveTo={'opacity-0 translate-y-1'}>
 				<Popover.Panel className={'absolute left-1/2 z-10 mt-6 w-80 -translate-x-1/2 px-4 pt-4 sm:px-0 md:w-96'}>
 					<div className={'overflow-hidden border border-neutral-200 shadow-lg'}>
-						<div className={'relative grid grid-cols-2 bg-neutral-0 md:grid-cols-4'}>
+						<div className={'relative grid grid-cols-2 bg-neutral-0 md:grid-cols-3'}>
 							{
-								Object.values(APPS)
+								[...Object.values(APPS), YETH]
 									.filter(({isDisabled}): boolean => !isDisabled)
 									.map(({name, href, icon}): ReactElement => {
 										return (

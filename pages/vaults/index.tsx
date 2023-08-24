@@ -112,12 +112,12 @@ function Index(): ReactElement {
 
 			const hasValidStakedBalance = toBigInt(stakedHolding?.raw) > 0n;
 			const stakedBalanceValue = stakedHolding?.normalizedValue || 0;
-			
+
 			if (hasValidStakedBalance && !(shouldHideDust && stakedBalanceValue < 0.01)) {
 				return true;
 			}
 		}
-		
+
 		const hasValidBalance = toBigInt(holding?.raw) > 0n;
 		const balanceValue = holding?.normalizedValue || 0;
 		if (shouldHideDust && balanceValue < 0.01) {

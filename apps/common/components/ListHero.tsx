@@ -1,5 +1,6 @@
 import {useEffect, useState} from 'react';
 import {Switch as HeadlessSwitch} from '@headlessui/react';
+import {useIsMounted} from '@react-hookz/web';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {SearchBar} from '@common/components/SearchBar';
 import {isValidCategory} from '@common/types/category';
@@ -39,12 +40,17 @@ function DesktopCategories<T>({categories, onSelect}: TListHeroDesktopCategories
 		set_isClientLoaded(true);
 	}, []);
 
+	if (!isClientLoaded) {
+		return <div />;
+	}
+
 	return (
 		<div className={'w-full'}>
-			<div className={'mt-1 flex flex-row space-x-4'}>
+			<div suppressHydrationWarning className={'mt-1 flex flex-row space-x-4'}>
 				{(categories || []).map((currentCategory, index: number): ReactElement => (
 					<div
 						key={`${index}-${isClientLoaded}`}
+						suppressHydrationWarning
 						className={'flex flex-row space-x-0 divide-x border-x border-neutral-900'}>
 						{currentCategory.map((item): ReactElement => (
 							<Button
@@ -100,6 +106,8 @@ function ListHero<T extends string>({
 	set_searchValue,
 	switchProps
 }: TListHero<T>): ReactElement {
+	const isMounted = useIsMounted();
+
 	return (
 		<div className={'flex flex-col items-start justify-between space-x-0 px-4 pb-2 pt-4 md:px-10 md:pb-8 md:pt-10'}>
 			<div className={'mb-6'}>
@@ -130,13 +138,14 @@ function ListHero<T extends string>({
 
 			<div className={'flex w-full flex-row space-x-2 md:hidden md:w-2/3'}>
 				<select
+					suppressHydrationWarning
 					className={'yearn--button-smaller !w-[120%] border-none bg-neutral-900 text-neutral-0'}
 					onChange={({target: {value}}): void => {
 						if (isValidCategory<T>(value)) {
 							onSelect(value);
 						}
 					}}>
-					{categories.map((currentCategory): ReactNode => (
+					{isMounted() && categories.map((currentCategory): ReactNode => (
 						currentCategory.map((item): ReactElement => (
 							<option
 								suppressHydrationWarning

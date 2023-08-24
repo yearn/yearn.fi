@@ -5,20 +5,19 @@ import VaultListFactory from '@vaults/components/list/VaultListFactory';
 import VAULT_FACTORY_ABI from '@vaults/utils/abi/vaultFactory.abi';
 import {createNewVaultsAndStrategies, gasOfCreateNewVaultsAndStrategies} from '@vaults/utils/actions';
 import Wrapper from '@vaults/Wrapper';
-import {multicall} from '@wagmi/core';
+import {erc20ABI, multicall} from '@wagmi/core';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import Renderable from '@yearn-finance/web-lib/components/Renderable';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
-import {useSettings} from '@yearn-finance/web-lib/contexts/useSettings';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import LinkOut from '@yearn-finance/web-lib/icons/IconLinkOut';
-import ERC20_ABI from '@yearn-finance/web-lib/utils/abi/erc20.abi';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {VAULT_FACTORY_ADDRESS, ZERO_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {decodeAsBoolean, decodeAsString} from '@yearn-finance/web-lib/utils/decoder';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
+import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {Dropdown} from '@common/components/GaugeDropdown';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
@@ -53,7 +52,6 @@ function Factory(): ReactElement {
 	const {mutateVaultList} = useYearn();
 	const {provider, isActive} = useWeb3();
 	const {safeChainID} = useChainID();
-	const {networks} = useSettings();
 	const {gaugesFromYearn} = useCurve();
 	const {toast} = yToast();
 	const [selectedOption, set_selectedOption] = useState(defaultOption);
@@ -127,7 +125,7 @@ function Factory(): ReactElement {
 		_safeChainID: number,
 		_selectedOption: TDropdownGaugeOption
 	): Promise<TGaugeDisplayData> {
-		const baseContract = {address: _selectedOption.value.gaugeAddress, abi: ERC20_ABI};
+		const baseContract = {address: _selectedOption.value.gaugeAddress, abi: erc20ABI};
 		const results = await multicall({
 			contracts: [
 				{...baseContract, functionName: 'name'},
@@ -265,7 +263,7 @@ function Factory(): ReactElement {
 											{toAddress(gaugeDisplayData?.poolAddress)}
 										</p>
 										<a
-											href={`${networks[1].explorerBaseURI}/address/${toAddress(gaugeDisplayData?.poolAddress)}`}
+											href={`${getNetwork(safeChainID)?.defaultBlockExplorer}/address/${toAddress(gaugeDisplayData?.poolAddress)}`}
 											target={'_blank'}
 											rel={'noreferrer'}
 											className={'ml-4 cursor-pointer text-neutral-900'}>
@@ -284,7 +282,7 @@ function Factory(): ReactElement {
 											{toAddress(gaugeDisplayData?.gaugeAddress)}
 										</p>
 										<a
-											href={`${networks[1].explorerBaseURI}/address/${toAddress(gaugeDisplayData?.gaugeAddress)}`}
+											href={`${getNetwork(safeChainID)?.defaultBlockExplorer}/address/${toAddress(gaugeDisplayData?.gaugeAddress)}`}
 											target={'_blank'}
 											rel={'noreferrer'}
 											className={'ml-4 cursor-pointer text-neutral-900'}>

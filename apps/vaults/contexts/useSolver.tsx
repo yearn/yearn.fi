@@ -10,26 +10,30 @@ import {useSolverVanilla} from '@vaults/hooks/useSolverVanilla';
 import {useSolverWido} from '@vaults/hooks/useSolverWido';
 import {serialize} from '@wagmi/core';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
+import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 import {hash} from '@common/utils';
 
+import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TSolver} from '@common/schemas/yDaemonTokenListBalances';
 import type {TNormalizedBN} from '@common/types/types';
 import type {TInitSolverArgs, TSolverContext, TWithSolver} from '@vaults/types/solvers';
 
-export const isSolverDisabled = {
-	[Solver.enum.Vanilla]: false,
-	[Solver.enum.PartnerContract]: false,
-	[Solver.enum.ChainCoin]: false,
-	[Solver.enum.InternalMigration]: false,
-	[Solver.enum.OptimismBooster]: false,
-	[Solver.enum.Cowswap]: false,
-	[Solver.enum.Wido]: false,
-	[Solver.enum.Portals]: false,
-	[Solver.enum.None]: false
+export const isSolverDisabled = (safeChainID: number): TDict<boolean> => {
+	return {
+		[Solver.enum.Vanilla]: false,
+		[Solver.enum.PartnerContract]: false,
+		[Solver.enum.ChainCoin]: false,
+		[Solver.enum.InternalMigration]: false,
+		[Solver.enum.OptimismBooster]: false,
+		[Solver.enum.Cowswap]: false,
+		[Solver.enum.Wido]: false,
+		[Solver.enum.Portals]: safeChainID === 10 || false,
+		[Solver.enum.None]: false
+	};
 };
 
 type TUpdateSolverHandler = {
@@ -61,6 +65,7 @@ function WithSolverContextApp({children}: { children: React.ReactElement }): Rea
 	const wido = useSolverWido();
 	const vanilla = useSolverVanilla();
 	const portals = useSolverPortals();
+	const {safeChainID} = useChainID();
 	const chainCoin = useSolverChainCoin();
 	const partnerContract = useSolverPartnerContract();
 	const internalMigration = useSolverInternalMigration();
@@ -104,7 +109,7 @@ function WithSolverContextApp({children}: { children: React.ReactElement }): Rea
 		};
 
 		const isValidSolver = ({quote, solver}: { quote: PromiseSettledResult<TNormalizedBN>; solver: TSolver }): boolean => {
-			return quote.status === 'fulfilled' && (quote?.value.raw > 0n) && !isSolverDisabled[solver];
+			return quote.status === 'fulfilled' && (quote?.value.raw > 0n) && !isSolverDisabled(safeChainID)[solver];
 		};
 
 		switch (currentSolver) {
