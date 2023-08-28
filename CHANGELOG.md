@@ -1,3 +1,6 @@
+# 0.1.25 (28/08/2023)
+- Gauge voting for veYFI under the `gauge-voting` feature flag
+
 # 0.1.24 (24/08/2023)
 - Add `useFeatureFlag` hook to handle feature flags
 
