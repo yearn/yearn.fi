@@ -1,5 +1,6 @@
 import {Fragment, useState} from 'react';
 import {usePopper} from 'react-popper';
+import Link from 'next/link';
 import {useRouter} from 'next/router';
 import dayjs from 'dayjs';
 import html2canvas from 'html2canvas';
@@ -130,6 +131,19 @@ export function Popover(): ReactElement {
 									onChange={({target:{value}}): void => set_telegramHandle(value)}
 									placeholder={'Your telegram handle for follow up'}
 								/>
+								<label className={'max-w-xs items-center justify-end pt-1'}>
+									<p className={'text-xs'}>
+										{'If you don\'t have telegram please '}
+										<Link href={'https://discord.yearn.finance'}>
+											{'join our discord'}
+										</Link>
+										{' and ask in '}
+										<Link href={'https://discord.com/channels/734804446353031319/734811808401063966'}>
+											{'#support-questions'}
+										</Link>
+										{', admins will never dm first.'}
+									</p>
+								</label>
 								<button
 									disabled={!description || description.length < 10 || isCoolingOff || isSubmitDisabled}
 									className={'relative h-8 cursor-pointer items-center justify-center border border-transparent bg-neutral-900 px-2 text-xs text-neutral-0 transition-all hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-40'}
