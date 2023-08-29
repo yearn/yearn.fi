@@ -71,7 +71,7 @@ function GaugesTab(): ReactElement {
 
 	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: 1, walletNetwork: chainID});
 
-	const onApproveAndStake = useCallback(async (vaultAddress: TAddress, gaugeAddress: TAddress, amount: bigint, allowance: bigint): Promise<void> => {
+	const onApproveAndStake = useCallback(async (vaultAddress: TAddress, gaugeAddress: TAddress, amount: bigint): Promise<void> => {
 		set_selectedGauge(gaugeAddress);
 		set_selectedAction('stake');
 		const response = await GaugeActions.approveAndStake({
@@ -79,7 +79,6 @@ function GaugesTab(): ReactElement {
 			contractAddress: gaugeAddress,
 			vaultAddress,
 			amount,
-			allowance,
 			statusHandler: set_approveAndStakeStatus
 		});
 
@@ -183,7 +182,7 @@ function GaugesTab(): ReactElement {
 						columnSpan: 2,
 						fullWidth: true,
 						className: 'my-4 md:my-0',
-						transform: ({isApproved, vaultAddress, gaugeAddress, vaultDeposited, gaugeStaked, allowance}): ReactElement => (
+						transform: ({isApproved, vaultAddress, gaugeAddress, vaultDeposited, gaugeStaked}): ReactElement => (
 							<div className={'flex flex-row justify-center space-x-2 md:justify-end'}>
 								<Button 
 									className={'w-full md:w-24'}
@@ -196,7 +195,7 @@ function GaugesTab(): ReactElement {
 								{!isApproved && (
 									<Button
 										className={'w-full md:w-24'}
-										onClick={async (): Promise<void> => onApproveAndStake(vaultAddress, gaugeAddress, vaultDeposited, allowance)}
+										onClick={async (): Promise<void> => onApproveAndStake(vaultAddress, gaugeAddress, vaultDeposited)}
 										isDisabled={!isActive || !isValidNetwork || isZero(vaultDeposited)}
 										isBusy={(isLoadingGauges && vaultDeposited > 0n) || (gaugeAddress === selectedGauge && selectedAction === 'stake' && approveAndStakeStatus.none)}
 									>

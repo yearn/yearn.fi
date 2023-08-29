@@ -1,3 +1,4 @@
+import {allowanceOf} from '@common/utils/actions';
 import {assert} from '@common/utils/assert';
 import {assertAddress, assertAddresses, handleTx as handleTxWagmi} from '@common/utils/wagmiUtils';
 
@@ -10,7 +11,6 @@ import type {TWriteTransaction} from '@common/utils/wagmiUtils';
 
 type TApproveAndStake = TWriteTransaction & {
 	vaultAddress: TAddress;
-	allowance: bigint;
 	amount: bigint;
 };
 export async function approveAndStake(props: TApproveAndStake): Promise<TTxResponse> {
@@ -18,7 +18,13 @@ export async function approveAndStake(props: TApproveAndStake): Promise<TTxRespo
 	assertAddress(props.vaultAddress);
 	assert(props.amount > 0n, 'Amount is 0');
 
-	if(!(props.allowance >= props.amount)) {
+	const allowance = await allowanceOf({
+		connector: props.connector,
+		tokenAddress: props.vaultAddress,
+		spenderAddress: props.contractAddress
+	});
+
+	if(!(allowance >= props.amount)) {
 		await handleTxWagmi(props, {
 			address: props.vaultAddress,
 			abi: ['function approve(address _spender, uint256 _value) external'],
