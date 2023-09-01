@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@babel/core": "^7.0.0-0",
-    "@cowprotocol/cow-sdk": "^2.1.0",
+    "@cowprotocol/cow-sdk": "2.1.0",
     "@headlessui/react": "^1.7.15",
     "@next/bundle-analyzer": "^13.4.9",
     "@popperjs/core": "^2.11.8",

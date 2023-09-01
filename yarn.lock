@@ -1047,10 +1047,10 @@
   resolved "https://registry.yarnpkg.com/@cowprotocol/contracts/-/contracts-1.4.0.tgz#e93e5f25aac76feeaa348fa57231903274676247"
   integrity sha512-XLs3SlPmXD4lbiWIO7mxxuCn1eE5isuO6EUlE1cj17HqN/wukDAN0xXYPx6umOH/XdjGS33miMiPHELEyY9siw==
 
-"@cowprotocol/cow-sdk@^2.1.0":
-  version "2.3.1"
-  resolved "https://registry.yarnpkg.com/@cowprotocol/cow-sdk/-/cow-sdk-2.3.1.tgz#ea7347869eada629b706cc24567ddcaa48bcc1ed"
-  integrity sha512-Rn3zCo3VCPqi3Wzqov0mDHXVVxBVhkLpnxnxcEZW7Kpv9WGcudl1vpz9e3Gs3YMzUQ5G6IA+kHxm5l81boIPhQ==
+"@cowprotocol/cow-sdk@2.1.0":
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/@cowprotocol/cow-sdk/-/cow-sdk-2.1.0.tgz#b66adf0c4f6d9e6690762a1c3e169db5ba8feff1"
+  integrity sha512-/2bM58kddP1um9COO5XNPl88gOmnzAPr8fK6EGsdPkPuAQZtCfOWGvqajTtM+shixA21ZaATcSnNL57s5Zd8qw==
   dependencies:
     "@cowprotocol/contracts" "^1.4.0"
     "@ethersproject/abstract-signer" "^5.7.0"
