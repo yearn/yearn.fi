@@ -45,7 +45,7 @@
     "react-popper": "^2.3.0",
     "react-wrap-balancer": "^0.5.0",
     "recharts": "^2.6.2",
-    "swr": "^2.1.5",
+    "swr": "2.1.5",
     "tailwindcss": "^3.3.2",
     "telegraf": "^4.12.2",
     "viem": "^1.5.3",
