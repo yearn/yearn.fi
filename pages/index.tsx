@@ -60,7 +60,7 @@ const apps = [
 			front={'text-neutral-0'} />
 	},
 	{
-		href: 'https://yeth.yearn.finance',
+		href: 'https://yeth.yearn.fi',
 		title: 'yETH',
 		description: 'Simple, straight forward, risk adjusted liquid staking yield.',
 		icon: (

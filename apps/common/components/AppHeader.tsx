@@ -49,7 +49,7 @@ function LogoPopover(): ReactElement {
 
 	const YETH = {
 		name: 'yETH',
-		href: 'https://yeth.yearn.finance',
+		href: 'https://yeth.yearn.fi',
 		isDisabled: false,										
 		icon: <ImageWithFallback
 			alt={'yETH'}
