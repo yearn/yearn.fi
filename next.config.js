@@ -38,18 +38,6 @@ module.exports = withBundleAnalyzer(withPWA({
 		return [
 			{
 				source: '/:path*',
-				has: [{type: 'host', value: 'yearn.fi'}],
-				destination: 'https://yearn.finance/vaults/:path*',
-				permanent: true
-			},
-			{
-				source: '/:path*',
-				has: [{type: 'host', value: 'y.finance'}],
-				destination: 'https://yearn.finance/ycrv/:path*',
-				permanent: true
-			},
-			{
-				source: '/:path*',
 				has: [{type: 'host', value: 'ybribe.com'}],
 				destination: 'https://yearn.finance/ybribe/:path*',
 				permanent: true
