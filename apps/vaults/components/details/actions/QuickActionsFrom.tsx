@@ -108,4 +108,4 @@ function VaultDetailsQuickActionsFrom(): ReactElement {
 	);
 }
 
-export VaultDetailsQuickActionsFrom;
+export {VaultDetailsQuickActionsFrom};

@@ -1,5 +1,5 @@
 import {useCallback, useMemo, useState} from 'react';
-import VaultListOptions from '@vaults/components/list/VaultListOptions';
+import {VaultListOptions} from '@vaults/components/list/VaultListOptions';
 import {VaultsListEmptyFactory} from '@vaults/components/list/VaultsListEmpty';
 import {VaultsListRow} from '@vaults/components/list/VaultsListRow';
 import {useAppSettings} from '@vaults/contexts/useAppSettings';
@@ -9,8 +9,8 @@ import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {performBatchedUpdates} from '@yearn-finance/web-lib/utils/performBatchedUpdates';
-import ListHead from '@common/components/ListHead';
-import ListHero from '@common/components/ListHero';
+import {ListHead} from '@common/components/ListHead';
+import {ListHero} from '@common/components/ListHero';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import {getVaultName} from '@common/utils';
@@ -159,4 +159,4 @@ function VaultListFactory(): ReactElement {
 	);
 }
 
-export VaultListFactory;
+export {VaultListFactory};

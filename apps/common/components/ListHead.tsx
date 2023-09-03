@@ -1,6 +1,6 @@
 import {useCallback} from 'react';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
-import IconChevronPlain from '@common/icons/IconChevronPlain';
+import {IconChevronPlain} from '@common/icons/IconChevronPlain';
 
 import type {ReactElement} from 'react';
 import type {TSortDirection} from '@common/types/types';
@@ -72,4 +72,4 @@ function ListHead({items, dataClassName, wrapperClassName, tokenClassName, sortB
 	);
 }
 
-export default ListHead;
+export {ListHead};

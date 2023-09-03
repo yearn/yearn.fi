@@ -291,4 +291,4 @@ const VEYFI_REGISTRY_ABI = [
 	}
 ] as const;
 
-export VEYFI_REGISTRY_ABI;
+export {VEYFI_REGISTRY_ABI};

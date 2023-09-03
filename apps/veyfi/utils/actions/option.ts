@@ -1,4 +1,4 @@
-import VEYFI_OPTIONS_ABI from '@veYFI/utils/abi/veYFIOptions.abi';
+import {VEYFI_OPTIONS_ABI} from '@veYFI/utils/abi/veYFIOptions.abi';
 import {assert} from '@common/utils/assert';
 import {assertAddress, handleTx as handleTxWagmi} from '@common/utils/wagmiUtils';
 

@@ -12,8 +12,8 @@ import {performBatchedUpdates} from '@yearn-finance/web-lib/utils/performBatched
 import {Dropdown} from '@common/components/TokenDropdown';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
-import ArrowDown from '@common/icons/ArrowDown';
-import CardTransactorContextApp, {useCardTransactor} from '@yCRV/components/CardTransactorWrapper';
+import {ArrowDown} from '@common/icons/ArrowDown';
+import {CardTransactorContextApp, useCardTransactor} from '@yCRV/components/CardTransactorWrapper';
 import {ZAP_OPTIONS_FROM, ZAP_OPTIONS_TO} from '@yCRV/constants/tokens';
 
 import type {ChangeEvent, ReactElement} from 'react';
@@ -73,7 +73,7 @@ function CardZap(): ReactElement {
 			return possibleOptions;
 		}
 		return ZAP_OPTIONS_TO.filter((option): boolean => option.value !== selectedOptionFrom.value);
-	}, [selectedOptionFrom.value, selectedOptionTo.value, ZAP_OPTIONS_TO]); // eslint-disable-line react-hooks/exhaustive-deps
+	}, [selectedOptionFrom.value, selectedOptionTo.value, ZAP_OPTIONS_TO]);
 
 	function renderButton(): ReactElement {
 		const balanceForInputToken = toBigInt(balances?.[toAddress(selectedOptionFrom.value)]?.raw);
@@ -265,4 +265,4 @@ function WithCardTransactor({className}: {className: string}): ReactElement {
 		</CardTransactorContextApp>
 	);
 }
-export WithCardTransactor;
+export {WithCardTransactor};

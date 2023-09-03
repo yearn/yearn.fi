@@ -1,8 +1,8 @@
 import React, {createContext, memo, useCallback, useContext, useEffect, useMemo} from 'react';
 import {ethers} from 'ethers';
 import {useAsync} from '@react-hookz/web';
-import VEYFI_OPTIONS_ABI from '@veYFI/utils/abi/veYFIOptions.abi';
-import VEYFI_OYFI_ABI from '@veYFI/utils/abi/veYFIoYFI.abi';
+import {VEYFI_OPTIONS_ABI} from '@veYFI/utils/abi/veYFIOptions.abi';
+import {VEYFI_OYFI_ABI} from '@veYFI/utils/abi/veYFIoYFI.abi';
 import {VEYFI_OPTIONS_ADDRESS, VEYFI_OYFI_ADDRESS} from '@veYFI/utils/constants';
 import {erc20ABI, readContract} from '@wagmi/core';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -147,4 +147,3 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 });
 
 export const useOption = (): TOptionContext => useContext(OptionContext);
-export useOption;

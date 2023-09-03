@@ -3,7 +3,7 @@ import {Balancer} from 'react-wrap-balancer';
 import Link from 'next/link';
 import {YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
-import LogoYearn from '@common/icons/LogoYearn';
+import {LogoYearn} from '@common/icons/LogoYearn';
 
 import type {ReactElement} from 'react';
 
@@ -242,4 +242,4 @@ function Index(): ReactElement {
 	);
 }
 
-export Index;
+export default Index;

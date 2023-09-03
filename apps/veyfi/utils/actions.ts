@@ -1,5 +1,5 @@
 import {BaseError} from 'viem';
-import VEYFI_ABI from '@veYFI/utils/abi/veYFI.abi';
+import {VEYFI_ABI} from '@veYFI/utils/abi/veYFI.abi';
 import {prepareWriteContract} from '@wagmi/core';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {handleTx} from '@yearn-finance/web-lib/utils/wagmi/provider';

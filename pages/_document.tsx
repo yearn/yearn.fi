@@ -64,4 +64,4 @@ class MyDocument extends Document {
 	}
 }
 
-export MyDocument;
+export default MyDocument;

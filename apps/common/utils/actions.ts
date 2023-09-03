@@ -1,6 +1,6 @@
 import {getEthZapperContract} from '@vaults/utils';
-import VAULT_MIGRATOR_ABI from '@vaults/utils/abi/vaultMigrator.abi';
-import ZAP_OPT_ETH_TO_YVETH_ABI from '@vaults/utils/abi/zapOptEthToYvEth';
+import {VAULT_MIGRATOR_ABI} from '@vaults/utils/abi/vaultMigrator.abi';
+import {ZAP_OPT_ETH_TO_YVETH_ABI} from '@vaults/utils/abi/zapOptEthToYvEth';
 import {erc20ABI, readContract} from '@wagmi/core';
 import {PARTNER_VAULT_ABI} from '@yearn-finance/web-lib/utils/abi/partner.vault.abi';
 import {VAULT_ABI} from '@yearn-finance/web-lib/utils/abi/vault.abi';

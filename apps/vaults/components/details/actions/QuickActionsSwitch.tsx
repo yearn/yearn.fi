@@ -1,4 +1,4 @@
-import IconArrowRight from '@common/icons/IconArrowRight';
+import {IconArrowRight} from '@common/icons/IconArrowRight';
 
 import type {ReactElement} from 'react';
 
@@ -18,4 +18,4 @@ function VaultDetailsQuickActionsSwitch(): ReactElement {
 }
 
 
-export VaultDetailsQuickActionsSwitch;
+export {VaultDetailsQuickActionsSwitch};

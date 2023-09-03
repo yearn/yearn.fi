@@ -1,5 +1,5 @@
 import {useCallback, useMemo, useRef} from 'react';
-import getVaultEstimateOut from '@vaults/utils/getVaultEstimateOut';
+import {getVaultEstimateOut} from '@vaults/utils/getVaultEstimateOut';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';

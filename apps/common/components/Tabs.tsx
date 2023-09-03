@@ -2,7 +2,7 @@ import {useEffect, useState} from 'react';
 import {useRouter} from 'next/router';
 import {AnimatePresence, motion} from 'framer-motion';
 import {Listbox, Transition} from '@headlessui/react';
-import IconChevron from '@common/icons/IconChevron';
+import {IconChevron} from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
 

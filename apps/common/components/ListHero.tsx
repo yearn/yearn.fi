@@ -170,4 +170,4 @@ function ListHero<T extends string>({
 		</div>
 	);
 }
-export default ListHero;
+export {ListHero};

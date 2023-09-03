@@ -3,16 +3,16 @@ import {LPYBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, YBAL_TOKEN_ADDRESS} from '@y
 import {formatBigNumberOver10K, formatToNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatNumberOver10K, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue, formatCounterValueRaw} from '@yearn-finance/web-lib/utils/format.value';
-import ValueAnimation from '@common/components/ValueAnimation';
+import {ValueAnimation} from '@common/components/ValueAnimation';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import {useBalance} from '@common/hooks/useBalance';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
 import {getVaultAPY} from '@common/utils';
-import CardZap from '@yBal/components/CardZap';
+import {WithCardTransactor} from '@yBal/components/CardZap';
 import {Harvests} from '@yBal/components/Harvests';
 import {useYBal} from '@yBal/contexts/useYBal';
-import Wrapper from '@yBal/Wrapper';
+import {Wrapper} from '@yBal/Wrapper';
 
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
@@ -84,7 +84,7 @@ function Holdings(): ReactElement {
 			<HeaderPosition />
 
 			<div className={'col-span-12 grid w-full grid-cols-12 gap-4'}>
-				<CardZap className={'col-span-12 md:col-span-8'} />
+				<WithCardTransactor className={'col-span-12 md:col-span-8'} />
 				<div className={'col-span-12 flex flex-col gap-4 md:col-span-4'}>
 					<div className={'w-full bg-neutral-100 p-4'}>
 						<div className={'flex flex-row items-baseline justify-between pb-1'}>
@@ -237,4 +237,4 @@ Holdings.getLayout = function getLayout(page: ReactElement, router: NextRouter):
 };
 
 
-export Holdings;
+export default Holdings;

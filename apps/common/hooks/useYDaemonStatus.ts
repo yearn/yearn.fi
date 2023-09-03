@@ -8,7 +8,7 @@ type TProps = {
 	chainID: number | string;
 };
 
-export function useYDaemonStatus<T>({chainID}: TProps): SWRResponse<T> | null {
+function useYDaemonStatus<T>({chainID}: TProps): SWRResponse<T> | null {
 	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID});
 	const result = useSWR<T>(`${yDaemonBaseUri}/status`, baseFetcher, {revalidateOnFocus: false});
 
@@ -18,3 +18,5 @@ export function useYDaemonStatus<T>({chainID}: TProps): SWRResponse<T> | null {
 
 	return result;
 }
+
+export {useYDaemonStatus};

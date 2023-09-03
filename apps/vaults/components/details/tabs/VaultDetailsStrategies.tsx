@@ -14,7 +14,7 @@ import {copyToClipboard, parseMarkdown} from '@yearn-finance/web-lib/utils/helpe
 import {SearchBar} from '@common/components/SearchBar';
 import {Switch} from '@common/components/Switch';
 import {useFetch} from '@common/hooks/useFetch';
-import IconChevron from '@common/icons/IconChevron';
+import {IconChevron} from '@common/icons/IconChevron';
 import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 
 import type {ReactElement} from 'react';

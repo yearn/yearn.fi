@@ -1,6 +1,6 @@
-import STAKING_REWARDS_ABI from '@vaults/utils/abi/stakingRewards.abi';
-import STAKING_REWARDS_ZAP_ABI from '@vaults/utils/abi/stakingRewardsZap.abi';
-import VAULT_FACTORY_ABI from '@vaults/utils/abi/vaultFactory.abi';
+import {STAKING_REWARDS_ABI} from '@vaults/utils/abi/stakingRewards.abi';
+import {STAKING_REWARDS_ZAP_ABI} from '@vaults/utils/abi/stakingRewardsZap.abi';
+import {VAULT_FACTORY_ABI} from '@vaults/utils/abi/vaultFactory.abi';
 import {getPublicClient} from '@wagmi/core';
 import {} from '@yearn-finance/web-lib/utils/address';
 import {STAKING_REWARDS_ZAP_ADDRESS, VAULT_FACTORY_ADDRESS} from '@yearn-finance/web-lib/utils/constants';

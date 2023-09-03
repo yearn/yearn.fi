@@ -3,13 +3,13 @@ import Link from 'next/link';
 import {useRouter} from 'next/router';
 import {Listbox, Transition} from '@headlessui/react';
 import {useUpdateEffect} from '@react-hookz/web';
-import VaultDetailsQuickActionsButtons from '@vaults/components/details/actions/QuickActionsButtons';
-import VaultDetailsQuickActionsFrom from '@vaults/components/details/actions/QuickActionsFrom';
-import VaultDetailsQuickActionsSwitch from '@vaults/components/details/actions/QuickActionsSwitch';
-import VaultDetailsQuickActionsTo from '@vaults/components/details/actions/QuickActionsTo';
-import ImageWithOverlay from '@vaults/components/ImageWithOverlay';
+import {VaultDetailsQuickActionsButtons} from '@vaults/components/details/actions/QuickActionsButtons';
+import {VaultDetailsQuickActionsFrom} from '@vaults/components/details/actions/QuickActionsFrom';
+import {VaultDetailsQuickActionsSwitch} from '@vaults/components/details/actions/QuickActionsSwitch';
+import {VaultDetailsQuickActionsTo} from '@vaults/components/details/actions/QuickActionsTo';
+import {ImageWithOverlay} from '@vaults/components/ImageWithOverlay';
 import {RewardsTab} from '@vaults/components/RewardsTab';
-import SettingsPopover from '@vaults/components/SettingsPopover';
+import {SettingsPopover} from '@vaults/components/SettingsPopover';
 import {Flow, useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {Banner} from '@yearn-finance/web-lib/components/Banner';
@@ -20,7 +20,7 @@ import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigN
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {performBatchedUpdates} from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {useBalance} from '@common/hooks/useBalance';
-import IconChevron from '@common/icons/IconChevron';
+import {IconChevron} from '@common/icons/IconChevron';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 
 import type {ReactElement} from 'react';

@@ -110,4 +110,4 @@ function ValueAnimation({
 	);
 }
 
-export ValueAnimation;
+export {ValueAnimation};

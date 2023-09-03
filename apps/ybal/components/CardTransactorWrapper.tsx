@@ -59,7 +59,7 @@ const CardTransactorContext = createContext<TCardTransactor>({
 	onZap: async (): Promise<void> => undefined
 });
 
-function CardTransactorContextApp({
+export function CardTransactorContextApp({
 	defaultOptionFrom = ZAP_OPTIONS_FROM[0],
 	defaultOptionTo = ZAP_OPTIONS_TO[0],
 	children = <div />
@@ -254,4 +254,3 @@ function CardTransactorContextApp({
 }
 
 export const useCardTransactor = (): TCardTransactor => useContext(CardTransactorContext);
-export CardTransactorContextApp;

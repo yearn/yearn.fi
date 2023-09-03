@@ -15,7 +15,7 @@ import {MenuContextApp} from '@common/contexts/useMenu';
 import {WalletContextApp} from '@common/contexts/useWallet';
 import {YearnContextApp} from '@common/contexts/useYearn';
 import {useCurrentApp} from '@common/hooks/useCurrentApp';
-import IconSpinner from '@common/icons/IconSpinner';
+import {IconSpinner} from '@common/icons/IconSpinner';
 import {variants} from '@common/utils/animations';
 import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 
@@ -159,4 +159,4 @@ function MyApp(props: AppProps): ReactElement {
 	);
 }
 
-export MyApp;
+export default MyApp;

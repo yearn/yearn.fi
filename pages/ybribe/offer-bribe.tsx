@@ -7,15 +7,15 @@ import {useSessionStorage} from '@yearn-finance/web-lib/hooks/useSessionStorage'
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isTAddress} from '@yearn-finance/web-lib/utils/isTAddress';
-import ListHead from '@common/components/ListHead';
-import ListHero from '@common/components/ListHero';
+import {ListHead} from '@common/components/ListHead';
+import {ListHero} from '@common/components/ListHero';
 import {useCurve} from '@common/contexts/useCurve';
 import {useYearn} from '@common/contexts/useYearn';
 import {stringSort} from '@common/utils/sort';
 import {GaugeListEmpty} from '@yBribe/components/bribe/GaugeListEmpty';
 import {GaugeListRow} from '@yBribe/components/bribe/GaugeListRow';
 import {useBribes} from '@yBribe/contexts/useBribes';
-import Wrapper from '@yBribe/Wrapper';
+import {Wrapper} from '@yBribe/Wrapper';
 
 import type {NextRouter} from 'next/router';
 import type {ReactElement, ReactNode} from 'react';
@@ -191,4 +191,4 @@ OfferBribe.getLayout = function getLayout(page: ReactElement, router: NextRouter
 	return <Wrapper router={router}>{page}</Wrapper>;
 };
 
-export OfferBribe;
+export default OfferBribe;

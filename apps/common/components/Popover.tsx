@@ -10,7 +10,7 @@ import {useLocalStorageValue} from '@react-hookz/web';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
 import {useTimer} from '@common/hooks/useTimer';
-import MessageIcon from '@common/icons/MessageIcon';
+import {MessageIcon} from '@common/icons/MessageIcon';
 
 import type {ReactElement} from 'react';
 

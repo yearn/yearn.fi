@@ -11,7 +11,7 @@ type TProps = {
 }
 
 // TODO Check if we can use `getTimeUntil` from the web lib for this computation
-export function computeTimeLeft({endTime}: {endTime?: TSeconds}): number {
+function computeTimeLeft({endTime}: {endTime?: TSeconds}): number {
 	if (!endTime) {
 		return 0;
 	}
@@ -61,4 +61,4 @@ function useTimer({endTime}: TProps): string {
 	return time ? formatTimestamp(time) : '00H 00M 00S';
 }
 
-export {useTimer};
+export {computeTimeLeft, useTimer};

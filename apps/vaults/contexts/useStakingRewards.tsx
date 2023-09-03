@@ -2,8 +2,8 @@ import {createContext, memo, useCallback, useContext, useMemo} from 'react';
 import {useRouter} from 'next/router';
 import useSWR from 'swr';
 import {STACKING_TO_VAULT, VAULT_TO_STACKING} from '@vaults/constants/optRewards';
-import STAKING_REWARDS_ABI from '@vaults/utils/abi/stakingRewards.abi';
-import STAKING_REWARDS_REGISTRY_ABI from '@vaults/utils/abi/stakingRewardsRegistry.abi';
+import {STAKING_REWARDS_ABI} from '@vaults/utils/abi/stakingRewards.abi';
+import {STAKING_REWARDS_REGISTRY_ABI} from '@vaults/utils/abi/stakingRewardsRegistry.abi';
 import {multicall} from '@wagmi/core';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
@@ -183,4 +183,3 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 });
 
 export const useStakingRewards = (): TStakingRewardsContext => useContext(StakingRewardsContext);
-export useStakingRewards;

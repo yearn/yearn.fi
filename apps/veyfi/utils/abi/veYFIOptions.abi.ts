@@ -259,4 +259,4 @@ const VEYFI_OPTIONS_ABI = [
 	}
 ] as const;
 
-export VEYFI_OPTIONS_ABI;
+export {VEYFI_OPTIONS_ABI};

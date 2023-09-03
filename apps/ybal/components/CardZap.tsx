@@ -12,8 +12,8 @@ import {performBatchedUpdates} from '@yearn-finance/web-lib/utils/performBatched
 import {Dropdown} from '@common/components/TokenDropdown';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
-import ArrowDown from '@common/icons/ArrowDown';
-import CardTransactorContextApp, {useCardTransactor} from '@yBal/components/CardTransactorWrapper';
+import {ArrowDown} from '@common/icons/ArrowDown';
+import {CardTransactorContextApp, useCardTransactor} from '@yBal/components/CardTransactorWrapper';
 import {ZAP_OPTIONS_FROM, ZAP_OPTIONS_TO} from '@yBal/constants/tokens';
 
 import type {ChangeEvent, ReactElement} from 'react';
@@ -227,4 +227,4 @@ function WithCardTransactor({className}: {className: string}): ReactElement {
 		</CardTransactorContextApp>
 	);
 }
-export WithCardTransactor;
+export {WithCardTransactor};

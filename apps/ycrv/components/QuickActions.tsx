@@ -2,7 +2,7 @@ import {Button} from '@yearn-finance/web-lib/components/Button';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {Dropdown} from '@common/components/TokenDropdown';
-import IconArrowRight from '@common/icons/IconArrowRight';
+import {IconArrowRight} from '@common/icons/IconArrowRight';
 
 import type {ChangeEvent, ReactElement, ReactNode} from 'react';
 import type {TDict} from '@yearn-finance/web-lib/types';

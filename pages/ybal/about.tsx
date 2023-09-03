@@ -4,7 +4,7 @@ import {Button} from '@yearn-finance/web-lib/components/Button';
 import {LPYBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, YBAL_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import SettingsOverwrite from '@common/components/SettingsOverwrite';
 import {useYBal} from '@yBal/contexts/useYBal';
-import Wrapper from '@yBal/Wrapper';
+import {Wrapper} from '@yBal/Wrapper';
 
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
@@ -179,4 +179,4 @@ About.getLayout = function getLayout(page: ReactElement, router: NextRouter): Re
 	return <Wrapper router={router}>{page}</Wrapper>;
 };
 
-export About;
+export default About;

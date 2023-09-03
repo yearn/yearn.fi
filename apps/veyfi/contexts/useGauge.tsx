@@ -3,8 +3,8 @@ import {FixedNumber} from 'ethers';
 import {useContractRead} from 'wagmi';
 import {useAsync} from '@react-hookz/web';
 import {keyBy} from '@veYFI/utils';
-import VEYFI_GAUGE_ABI from '@veYFI/utils/abi/veYFIGauge.abi';
-import VEYFI_REGISTRY_ABI from '@veYFI/utils/abi/veYFIRegistry.abi';
+import {VEYFI_GAUGE_ABI} from '@veYFI/utils/abi/veYFIGauge.abi';
+import {VEYFI_REGISTRY_ABI} from '@veYFI/utils/abi/veYFIRegistry.abi';
 import {VEYFI_REGISTRY_ADDRESS} from '@veYFI/utils/constants';
 import {erc20ABI, getContract, multicall} from '@wagmi/core';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -244,4 +244,3 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 });
 
 export const useGauge = (): TGaugeContext => useContext(GaugeContext);
-export useGauge;

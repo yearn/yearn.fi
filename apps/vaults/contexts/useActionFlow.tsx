@@ -125,7 +125,7 @@ function getMaxDepositPossible(props: TGetMaxDepositPossible): TNormalizedBN {
 }
 
 const ActionFlowContext = createContext<TActionFlowContext>(DefaultActionFlowContext);
-function ActionFlowContextApp({children, currentVault}: {children: ReactNode, currentVault: TYDaemonVault}): React.ReactElement {
+export function ActionFlowContextApp({children, currentVault}: {children: ReactNode, currentVault: TYDaemonVault}): React.ReactElement {
 	const {balances, balancesNonce} = useWallet();
 	const {chainID, safeChainID} = useChainID();
 	const {balances: zapBalances, tokensList} = useWalletForZap();
@@ -569,4 +569,3 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 }
 
 export const useActionFlow = (): TActionFlowContext => useContext(ActionFlowContext);
-export ActionFlowContextApp;

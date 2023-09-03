@@ -1,9 +1,8 @@
+import {VEYFI_CLAIM_REWARDS_ZAP_ABI} from '@veYFI/utils/abi/veYFIClaimRewardsZap.abi';
+import {VEYFI_GAUGE_ABI} from '@veYFI/utils/abi/veYFIGauge.abi';
 import {allowanceOf} from '@common/utils/actions';
 import {assert} from '@common/utils/assert';
 import {assertAddress, assertAddresses, handleTx as handleTxWagmi} from '@common/utils/wagmiUtils';
-
-import VEYFI_CLAIM_REWARDS_ZAP_ABI from '../abi/veYFIClaimRewardsZap.abi';
-import VEYFI_GAUGE_ABI from '../abi/veYFIGauge.abi';
 
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';

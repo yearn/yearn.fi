@@ -17,7 +17,7 @@ import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {useFetch} from '@common/hooks/useFetch';
-import IconChevron from '@common/icons/IconChevron';
+import {IconChevron} from '@common/icons/IconChevron';
 import {yDaemonVaultHarvestsSchema} from '@common/schemas/yDaemonVaultsSchemas';
 import {assert} from '@common/utils/assert';
 import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';

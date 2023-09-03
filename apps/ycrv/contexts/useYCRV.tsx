@@ -80,4 +80,3 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 
 
 export const useYCRV = (): TYCRVContext => useContext(YCRVContext);
-export useYCRV;

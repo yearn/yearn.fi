@@ -1,5 +1,5 @@
 import {Balancer} from 'react-wrap-balancer';
-import Wrapper from '@vaults/Wrapper';
+import {Wrapper} from '@vaults/Wrapper';
 import SettingsOverwrite from '@common/components/SettingsOverwrite';
 
 import type {NextRouter} from 'next/router';
@@ -114,4 +114,4 @@ About.getLayout = function getLayout(page: ReactElement, router: NextRouter): Re
 	return <Wrapper router={router}>{page}</Wrapper>;
 };
 
-export About;
+export default About;

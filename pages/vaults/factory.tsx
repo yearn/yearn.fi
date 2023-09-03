@@ -1,10 +1,10 @@
 import {useCallback, useEffect, useMemo, useState} from 'react';
 import {Balancer} from 'react-wrap-balancer';
 import {useAsync} from '@react-hookz/web';
-import VaultListFactory from '@vaults/components/list/VaultListFactory';
-import VAULT_FACTORY_ABI from '@vaults/utils/abi/vaultFactory.abi';
+import {VaultListFactory} from '@vaults/components/list/VaultListFactory';
+import {VAULT_FACTORY_ABI} from '@vaults/utils/abi/vaultFactory.abi';
 import {createNewVaultsAndStrategies, gasOfCreateNewVaultsAndStrategies} from '@vaults/utils/actions';
-import Wrapper from '@vaults/Wrapper';
+import {Wrapper} from '@vaults/Wrapper';
 import {erc20ABI, multicall} from '@wagmi/core';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
@@ -335,4 +335,4 @@ Factory.getLayout = function getLayout(page: ReactElement, router: NextRouter): 
 	);
 };
 
-export Factory;
+export default Factory;
