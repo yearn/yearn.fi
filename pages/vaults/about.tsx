@@ -42,7 +42,7 @@ function About(): ReactElement {
 						<p className={'text-neutral-600'}>
 							{'For a full breakdown read more about our '}
 							<a
-								href={'https://docs.yearn.finance/resources/risks/risk-score'}
+								href={'https://docs.yearn.fi/resources/risks/risk-score'}
 								target={'_blank'}
 								className={'text-neutral-900 underline'}
 								rel={'noreferrer'}>

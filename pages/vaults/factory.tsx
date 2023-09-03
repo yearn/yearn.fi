@@ -213,7 +213,7 @@ function Factory(): ReactElement {
 							<Balancer>
 								{'Deploy a new auto-compounding yVault for any Curve pool with an active liquidity gauge. All factory-deployed vaults have no management fees and a flat 10% performance fee. Permissionless finance just got permissionless-er. To learn more, check our '}
 								<a
-									href={'https://docs.yearn.finance/getting-started/products/yvaults/vault-factory'}
+									href={'https://docs.yearn.fi/getting-started/products/yvaults/vault-factory'}
 									target={'_blank'}
 									className={'text-neutral-900 underline'}
 									rel={'noreferrer'}>

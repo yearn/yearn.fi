@@ -86,7 +86,7 @@
 	{
 		"chainID": 1,
 		"address": "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e",
-		"name": "yearn.finance",
+		"name": "yearn.fi",
 		"symbol": "YFI",
 		"logoURI": "https://tokens.1inch.io/0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e.png",
 		"decimals": 18,

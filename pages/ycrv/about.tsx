@@ -47,7 +47,7 @@ function About(): ReactElement {
 						<p className={'text-neutral-600'}>
 							{'For more info on each token, and how to use the UI read our '}
 							<a
-								href={'https://docs.yearn.finance/getting-started/products/ycrv/overview'}
+								href={'https://docs.yearn.fi/getting-started/products/ycrv/overview'}
 								target={'_blank'}
 								className={'text-neutral-900 underline'}
 								rel={'noreferrer'}>{'docs'}
