@@ -70,7 +70,7 @@ function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}):
 	const [shouldShowLedgerPluginBanner, set_shouldShowLedgerPluginBanner] = useLocalStorage<boolean>('yearn.fi/ledger-plugin-banner', true);
 	const [shouldShowOpBoostInfo, set_shouldShowOpBoostInfo] = useLocalStorage<boolean>('yearn.fi/op-boost-banner', true);
 	const router = useRouter();
-	const {walletType} = useWeb3();
+	const {isWalletLedger} = useWeb3();
 	const rewardBalance = toNormalizedBN(toBigInt(stakingRewardsPosition?.reward), rewardTokenBalance.decimals);
 
 	useEffect((): void => {
@@ -102,7 +102,7 @@ function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}):
 		}
 	}, [currentVault?.migration?.available, currentVault?.details?.retired, actionParams.isReady, hasStakingRewards]);
 
-	const isLedgerPluginVisible = ['EMBED_LEDGER', 'INJECTED_LEDGER'].includes(walletType) && shouldShowLedgerPluginBanner;
+	const isLedgerPluginVisible = isWalletLedger && shouldShowLedgerPluginBanner;
 
 	return (
 		<>
