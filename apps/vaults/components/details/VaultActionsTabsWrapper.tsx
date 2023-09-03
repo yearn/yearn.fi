@@ -18,7 +18,7 @@ import {useLocalStorage} from '@yearn-finance/web-lib/hooks/useLocalStorage';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
-import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
+import {performBatchedUpdates} from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {useBalance} from '@common/hooks/useBalance';
 import IconChevron from '@common/icons/IconChevron';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';

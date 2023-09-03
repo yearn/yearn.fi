@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import IconCross from '@yearn-finance/web-lib/icons/IconCross';
+import {IconCross} from '@yearn-finance/web-lib/icons/IconCross';
 
 import type {ReactElement} from 'react';
 

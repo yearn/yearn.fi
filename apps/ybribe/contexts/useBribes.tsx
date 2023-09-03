@@ -8,7 +8,7 @@ import {CURVE_BRIBE_V3_ADDRESS, CURVE_BRIBE_V3_HELPER_ADDRESS} from '@yearn-fina
 import {decodeAsBigInt} from '@yearn-finance/web-lib/utils/decoder';
 import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
-import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
+import {performBatchedUpdates} from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {useCurve} from '@common/contexts/useCurve';
 import {getLastThursday, getNextThursday} from '@yBribe/utils';
 import CURVE_BRIBE_V3 from '@yBribe/utils/abi/curveBribeV3.abi';

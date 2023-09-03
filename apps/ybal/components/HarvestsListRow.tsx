@@ -1,4 +1,4 @@
-import IconLinkOut from '@yearn-finance/web-lib/icons/IconLinkOut';
+import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
 import {toAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {STYBAL_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';

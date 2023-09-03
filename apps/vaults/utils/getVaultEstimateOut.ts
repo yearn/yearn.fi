@@ -1,5 +1,5 @@
 import {readContract} from '@wagmi/core';
-import VAULT_ABI from '@yearn-finance/web-lib/utils/abi/vault.abi';
+import {VAULT_ABI} from '@yearn-finance/web-lib/utils/abi/vault.abi';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {assertAddress} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {assert} from '@common/utils/assert';

@@ -55,7 +55,8 @@ const YearnContext = createContext<TYearnContext>({
 	isLoadingVaultList: false,
 	zapSlippage: 0.1,
 	zapProvider: Solver.enum.Cowswap,
-	mutateVaultList: async (): Promise<TYDaemonVaults> => Promise.resolve([]),
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	mutateVaultList: (): any => undefined,
 	set_zapSlippage: (): void => undefined,
 	set_zapProvider: (): void => undefined
 });

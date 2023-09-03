@@ -1,8 +1,8 @@
 import {Fragment, useMemo} from 'react';
 import {Popover, Transition} from '@headlessui/react';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
-import Renderable from '@yearn-finance/web-lib/components/Renderable';
-import IconSettings from '@yearn-finance/web-lib/icons/IconSettings';
+import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
+import {IconSettings} from '@yearn-finance/web-lib/icons/IconSettings';
 import {useYearn} from '@common/contexts/useYearn';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 
