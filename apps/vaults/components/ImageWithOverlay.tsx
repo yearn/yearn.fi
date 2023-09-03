@@ -48,4 +48,4 @@ const ImageWithOverlay: React.FC<TImageWithOverlayProps> = ({
 	);
 };
 
-export default ImageWithOverlay;
+export ImageWithOverlay;

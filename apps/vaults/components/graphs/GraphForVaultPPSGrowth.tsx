@@ -82,4 +82,4 @@ function GraphForVaultPPSGrowth({messariData, height = 312}: TGraphForVaultPPSGr
 }
 
 export {GraphForVaultPPSGrowth};
-export default GraphForVaultPPSGrowth;
+export GraphForVaultPPSGrowth;

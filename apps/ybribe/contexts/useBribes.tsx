@@ -296,4 +296,4 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 
 
 export const useBribes = (): TBribesContext => useContext(BribesContext);
-export default useBribes;
+export useBribes;

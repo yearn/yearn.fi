@@ -242,4 +242,4 @@ function Index(): ReactElement {
 	);
 }
 
-export default Index;
+export Index;

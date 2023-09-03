@@ -94,12 +94,12 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 		const pricePerOption = yfiPrice - requiredEthValuePerOption;
 		return pricePerOption;
 	}, [ethPrice, yfiPrice, getRequiredEth]);
-	
+
 	const positionsFetcher = useCallback(async (): Promise<TOptionPosition | undefined> => {
 		if (!isActive || !userAddress) {
 			return undefined;
 		}
-        
+
 		// TODO: update once abi is available
 		return {
 			balance: await readContract({
@@ -147,4 +147,4 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 });
 
 export const useOption = (): TOptionContext => useContext(OptionContext);
-export default useOption;
+export useOption;

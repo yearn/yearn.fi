@@ -103,4 +103,4 @@ export const WalletForZapApp = memo(function WalletForZapApp({children}: {childr
 });
 
 export const useWalletForZap = (): TWalletForZap => useContext(WalletForZap);
-export default useWalletForZap;
+export useWalletForZap;

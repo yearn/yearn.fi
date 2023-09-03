@@ -25,5 +25,5 @@ function LogoYearnBlue(props: React.SVGProps<SVGSVGElement>): ReactElement {
 	);
 }
 
-export default LogoYearnBlue;
+export {LogoYearnBlue};
 

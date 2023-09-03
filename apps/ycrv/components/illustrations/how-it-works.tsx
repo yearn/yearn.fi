@@ -103,4 +103,4 @@ function HowItWorksDiagram(props: React.SVGProps<SVGSVGElement>): ReactElement {
 	);
 }
 
-export default HowItWorksDiagram;
+export HowItWorksDiagram;

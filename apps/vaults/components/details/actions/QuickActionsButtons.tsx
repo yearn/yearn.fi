@@ -202,4 +202,4 @@ function VaultDetailsQuickActionsButtons(): ReactElement {
 
 }
 
-export default VaultDetailsQuickActionsButtons;
+export VaultDetailsQuickActionsButtons;

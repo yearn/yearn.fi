@@ -14,4 +14,4 @@ function IconArrow(props: React.SVGProps<SVGSVGElement>): ReactElement {
 	);
 }
 
-export default IconArrow;
+export {IconArrow};

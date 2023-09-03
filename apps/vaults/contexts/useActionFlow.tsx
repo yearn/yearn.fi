@@ -569,4 +569,4 @@ function ActionFlowContextApp({children, currentVault}: {children: ReactNode, cu
 }
 
 export const useActionFlow = (): TActionFlowContext => useContext(ActionFlowContext);
-export default ActionFlowContextApp;
+export ActionFlowContextApp;

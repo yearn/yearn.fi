@@ -35,4 +35,4 @@ function useWhyDidYouUpdate(name: string, props: any): void {
 	});
 }
 
-export default useWhyDidYouUpdate;
+export useWhyDidYouUpdate;

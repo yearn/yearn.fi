@@ -377,4 +377,4 @@ const VEYFI_OYFI_ABI = [
 	}
 ] as const;
 
-export default VEYFI_OYFI_ABI;
+export VEYFI_OYFI_ABI;

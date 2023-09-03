@@ -25,5 +25,5 @@ function LogoYearn(props: React.SVGProps<SVGSVGElement> & {back?: string, front?
 	);
 }
 
-export default LogoYearn;
+export {LogoYearn};
 

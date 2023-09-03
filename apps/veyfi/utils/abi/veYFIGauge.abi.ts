@@ -1410,4 +1410,4 @@ const VEYFI_GAUGE_ABI = [
 	}
 ] as const;
 
-export default VEYFI_GAUGE_ABI;
+export VEYFI_GAUGE_ABI;

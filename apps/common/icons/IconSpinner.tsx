@@ -27,4 +27,4 @@ function	IconSpinner(props: React.SVGProps<SVGSVGElement>): ReactElement {
 	);
 }
 
-export default IconSpinner;
+export {IconSpinner};

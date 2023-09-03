@@ -91,4 +91,4 @@ function VaultDetailsQuickActionsTo(): ReactElement {
 	);
 }
 
-export default VaultDetailsQuickActionsTo;
+export VaultDetailsQuickActionsTo;

@@ -78,4 +78,4 @@ export const YBalContextApp = ({children}: {children: ReactElement}): ReactEleme
 };
 
 export const useYBal = (): TYBalContext => useContext(YBalContext);
-export default useYBal;
+export useYBal;

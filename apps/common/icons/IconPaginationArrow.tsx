@@ -24,4 +24,4 @@ function	IconPaginationArrow(props: React.SVGProps<SVGSVGElement>): ReactElement
 	);
 }
 
-export default IconPaginationArrow;
+export {IconPaginationArrow};

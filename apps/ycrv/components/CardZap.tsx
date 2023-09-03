@@ -265,4 +265,4 @@ function WithCardTransactor({className}: {className: string}): ReactElement {
 		</CardTransactorContextApp>
 	);
 }
-export default WithCardTransactor;
+export WithCardTransactor;

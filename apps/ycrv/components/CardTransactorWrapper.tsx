@@ -325,4 +325,4 @@ function CardTransactorContextApp({
 }
 
 export const useCardTransactor = (): TCardTransactor => useContext(CardTransactorContext);
-export default CardTransactorContextApp;
+export CardTransactorContextApp;

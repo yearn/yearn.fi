@@ -191,4 +191,4 @@ OfferBribe.getLayout = function getLayout(page: ReactElement, router: NextRouter
 	return <Wrapper router={router}>{page}</Wrapper>;
 };
 
-export default OfferBribe;
+export OfferBribe;

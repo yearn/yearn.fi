@@ -183,4 +183,4 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 });
 
 export const useStakingRewards = (): TStakingRewardsContext => useContext(StakingRewardsContext);
-export default useStakingRewards;
+export useStakingRewards;

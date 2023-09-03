@@ -93,4 +93,4 @@ export const CurveContextApp = ({children}: { children: React.ReactElement }): R
 };
 
 export const useCurve = (): TCurveContext => useContext(CurveContext);
-export default useCurve;
+export useCurve;

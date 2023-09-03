@@ -159,4 +159,4 @@ function VaultListFactory(): ReactElement {
 	);
 }
 
-export default VaultListFactory;
+export VaultListFactory;

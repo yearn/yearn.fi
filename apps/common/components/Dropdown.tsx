@@ -3,7 +3,7 @@ import {Combobox, Transition} from '@headlessui/react';
 import {useThrottledState} from '@react-hookz/web';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {performBatchedUpdates} from '@yearn-finance/web-lib/utils/performBatchedUpdates';
-import IconChevron from '@common/icons/IconChevron';
+import {IconChevron} from '@common/icons/IconChevron';
 
 import {ImageWithFallback} from './ImageWithFallback';
 

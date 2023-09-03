@@ -157,4 +157,4 @@ export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({chil
 });
 
 export const useVotingEscrow = (): TVotingEscrowContext => useContext(VotingEscrowContext);
-export default useVotingEscrow;
+export useVotingEscrow;

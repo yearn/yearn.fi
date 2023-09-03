@@ -18,4 +18,4 @@ function VaultDetailsQuickActionsSwitch(): ReactElement {
 }
 
 
-export default VaultDetailsQuickActionsSwitch;
+export VaultDetailsQuickActionsSwitch;

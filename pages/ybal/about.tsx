@@ -179,4 +179,4 @@ About.getLayout = function getLayout(page: ReactElement, router: NextRouter): Re
 	return <Wrapper router={router}>{page}</Wrapper>;
 };
 
-export default About;
+export About;

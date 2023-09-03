@@ -6,7 +6,7 @@ import {Switch} from '@common/components/Switch';
 
 import type {ReactElement} from 'react';
 
-export default function VaultListOptions(): ReactElement {
+export function VaultListOptions(): ReactElement {
 	const {shouldHideDust, onSwitchHideDust, shouldHideLowTVLVaults, onSwitchHideLowTVLVaults} = useAppSettings();
 
 	return (

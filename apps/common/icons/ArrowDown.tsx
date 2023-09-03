@@ -15,4 +15,4 @@ function ArrowDown(props: React.SVGProps<SVGSVGElement>): ReactElement {
 	);
 }
 
-export default ArrowDown;
+export {ArrowDown};

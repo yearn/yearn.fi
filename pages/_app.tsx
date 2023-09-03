@@ -159,4 +159,4 @@ function MyApp(props: AppProps): ReactElement {
 	);
 }
 
-export default MyApp;
+export MyApp;

@@ -237,4 +237,4 @@ Holdings.getLayout = function getLayout(page: ReactElement, router: NextRouter):
 };
 
 
-export default Holdings;
+export Holdings;

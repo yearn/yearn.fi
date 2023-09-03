@@ -335,4 +335,4 @@ Factory.getLayout = function getLayout(page: ReactElement, router: NextRouter): 
 	);
 };
 
-export default Factory;
+export Factory;

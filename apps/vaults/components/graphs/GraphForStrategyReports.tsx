@@ -122,4 +122,4 @@ function GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height =
 }
 
 export {GraphForStrategyReports};
-export default GraphForStrategyReports;
+export GraphForStrategyReports;

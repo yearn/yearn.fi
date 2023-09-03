@@ -78,7 +78,7 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 		}));
 
 		const gaugeAddressesResults = await multicall({contracts: gaugeAddressCalls ?? [], chainId: 1});
-		
+
 		const gaugeAddresses = gaugeAddressesResults.map(({result}): unknown => result) as TAddress[];
 		const gaugePromises = gaugeAddresses.map(async (address): Promise<TGauge> => {
 			// todo: update once abi is available
@@ -100,7 +100,7 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 			});
 
 			const [asset, name, symbol, decimals, totalAssets] = results.map(({result}): unknown => result) as [TAddress, string, string, number, bigint];
-			
+
 			return ({
 				address,
 				vaultAddress: asset,
@@ -156,7 +156,7 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 				abi: VEYFI_GAUGE_ABI,
 				chainId: 1
 			});
-			
+
 			const calls: TMulticallContract[] = [];
 			['balanceOf', 'earned', 'nextBoostedBalanceOf'].forEach((functionName): void => {
 				calls.push({...veYFIGaugeContract, functionName, args: [userAddress]});
@@ -168,7 +168,7 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 			});
 
 			const [balance, earned, boostedBalance] = results.map(({result}): unknown => result) as bigint[];
-			
+
 			const depositPosition: TPosition = {
 				balance,
 				underlyingBalance: balance
@@ -218,7 +218,7 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 			chainId: 1
 		});
 		const allowances = results.map(({result}): unknown => result) as bigint[];
-		
+
 		const allowancesMap: TDict<bigint> = {};
 		gauges.forEach(({address, vaultAddress}, index): void => {
 			allowancesMap[allowanceKey(1, vaultAddress, address, userAddress)] = allowances[index];
@@ -244,4 +244,4 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 });
 
 export const useGauge = (): TGaugeContext => useContext(GaugeContext);
-export default useGauge;
+export useGauge;

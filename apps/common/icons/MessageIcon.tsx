@@ -16,5 +16,5 @@ function MessageIcon(props: React.SVGProps<SVGSVGElement>): ReactElement {
 	);
 }
 
-export default MessageIcon;
+export {MessageIcon};
 

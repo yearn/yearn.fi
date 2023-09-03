@@ -85,4 +85,4 @@ export const MenuContextApp = ({children}: {children: React.ReactElement}): Reac
 
 
 export const useMenu = (): TMenu => useContext(MenuContext);
-export default useMenu;
+export useMenu;

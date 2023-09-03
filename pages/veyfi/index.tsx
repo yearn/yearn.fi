@@ -72,4 +72,4 @@ Index.getLayout = function getLayout(page: ReactElement, router: NextRouter): Re
 	return <Wrapper router={router}>{page}</Wrapper>;
 };
 
-export default Index;
+export Index;

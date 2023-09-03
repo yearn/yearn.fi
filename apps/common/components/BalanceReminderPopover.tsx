@@ -84,7 +84,7 @@ function TokenItem({element}: {element: TBalanceReminderElement}): ReactElement 
 	);
 }
 
-export default function BalanceReminderPopover(): ReactElement {
+export function BalanceReminderPopover(): ReactElement {
 	const {balances, isLoading} = useWallet();
 	const {address, ens, isActive, onDesactivate} = useWeb3();
 	const {vaults} = useYearn();

@@ -180,4 +180,4 @@ export const YearnContextApp = memo(function YearnContextApp({children}: { child
 });
 
 export const useYearn = (): TYearnContext => useContext(YearnContext);
-export default useYearn;
+export useYearn;

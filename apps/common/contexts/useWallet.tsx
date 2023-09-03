@@ -222,4 +222,4 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 
 
 export const useWallet = (): TWalletContext => useContext(WalletContext);
-export default useWallet;
+export useWallet;

@@ -165,4 +165,4 @@ export const getServerSideProps: GetServerSideProps = async () => {
 
 };
 
-export default Index;
+export Index;

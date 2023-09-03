@@ -44,4 +44,4 @@ async function getVaultEstimateOut(props: TGetVaultEstimateOutProps): Promise<TN
 	return toNormalizedBN(expectedOutFetched, Number(outputDecimals));
 }
 
-export default getVaultEstimateOut;
+export getVaultEstimateOut;

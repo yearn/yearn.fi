@@ -12,7 +12,7 @@ import type {TSolver} from '@common/schemas/yDaemonTokenListBalances';
 type TSettingPopover = {
 	chainID: number
 }
-export default function SettingsPopover({chainID}: TSettingPopover): ReactElement {
+export function SettingsPopover({chainID}: TSettingPopover): ReactElement {
 	const {zapProvider, set_zapProvider, zapSlippage, set_zapSlippage} = useYearn();
 
 	const currentZapProvider = useMemo((): TSolver => {
