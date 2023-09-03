@@ -199,7 +199,8 @@ function TextAnimation(): ReactElement {
 
 	return (
 		<>
-			<div className={'text sticky'}>
+			<div
+				className={'text sticky'}>
 				<p className={'wordWrapper'}>
 					<span className={'word'}>{'STAKE'}</span>
 					<span className={'word'}>{'INVEST'}</span>

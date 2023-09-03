@@ -98,10 +98,10 @@ module.exports = withBundleAnalyzer(withPWA({
 		ALCHEMY_API_KEY: process.env.ALCHEMY_API_KEY,
 		INFURA_PROJECT_ID: process.env.INFURA_PROJECT_ID,
 		WALLETCONNECT_PROJECT_ID: process.env.WALLETCONNECT_PROJECT_ID,
+		YDAEMON_BASE_URI: process.env.YDAEMON_BASE_URI,
 
 		PARTNER_ID_ADDRESS: '0xFEB4acf3df3cDEA7399794D0869ef76A6EfAff52',
 		SHOULD_USE_PARTNER_CONTRACT: true,
-		YDAEMON_BASE_URI: process.env.YDAEMON_BASE_URI,
 
 		// YDAEMON_BASE_URI: 'https://ydaemon.ycorpo.com',
 		// YDAEMON_BASE_URI: 'https://ydaemon.yearn.finance',
