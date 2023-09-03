@@ -100,7 +100,7 @@ function Meta({meta}: {meta: TMetaFile}): ReactElement {
 			</Head>
 			<Script
 				defer
-				data-domain={'yearn.finance'}
+				data-domain={'yearn.fi'}
 				src={'/js/script.js'} />
 			<meta name={'robots'} content={'index,nofollow'} />
 			<meta name={'googlebot'} content={'index,nofollow'} />

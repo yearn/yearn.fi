@@ -41,9 +41,9 @@ export const MenuContextApp = ({children}: {children: React.ReactElement}): Reac
 			set_menu({
 				app: [
 					{path: '/', label: 'Home'},
-					{path: 'https://gov.yearn.finance/', label: 'Governance'},
-					{path: 'https://blog.yearn.finance/', label: 'Blog'},
-					{path: 'https://docs.yearn.finance/', label: 'Docs'}
+					{path: 'https://gov.yearn.fi/', label: 'Governance'},
+					{path: 'https://blog.yearn.fi/', label: 'Blog'},
+					{path: 'https://docs.yearn.fi/', label: 'Docs'}
 				],
 				isOpen: true
 			});

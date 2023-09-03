@@ -65,8 +65,8 @@ export const YearnContextApp = memo(function YearnContextApp({children}: { child
 	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: safeChainID});
 	const result = useYDaemonStatus({chainID: safeChainID});
 	const {address, currentPartner} = useWeb3();
-	const [zapSlippage, set_zapSlippage] = useLocalStorage<number>('yearn.finance/zap-slippage', DEFAULT_SLIPPAGE);
-	const [zapProvider, set_zapProvider] = useLocalStorage<TSolver>('yearn.finance/zap-provider', Solver.enum.Cowswap);
+	const [zapSlippage, set_zapSlippage] = useLocalStorage<number>('yearn.fi/zap-slippage', DEFAULT_SLIPPAGE);
+	const [zapProvider, set_zapProvider] = useLocalStorage<TSolver>('yearn.fi/zap-provider', Solver.enum.Cowswap);
 
 	useEffect((): void => {
 		if (result?.error?.code === 'ERR_NETWORK') {

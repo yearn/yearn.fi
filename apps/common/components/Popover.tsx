@@ -25,8 +25,8 @@ export function Popover(): ReactElement {
 	const [description, set_description] = useState<string>();
 	const {address, chainID, ens, lensProtocolHandle, walletType} = useWeb3();
 	const router = useRouter();
-	const {value: hasPopover, set: set_hasPopover} = useLocalStorageValue<boolean>('yearn.finance/feedback-popover');
-	const {value: nextSubmissionTime, set: set_nextSubmissionTime} = useLocalStorageValue<number>('yearn.finance/popover-cooling-off');
+	const {value: hasPopover, set: set_hasPopover} = useLocalStorageValue<boolean>('yearn.fi/feedback-popover');
+	const {value: nextSubmissionTime, set: set_nextSubmissionTime} = useLocalStorageValue<number>('yearn.fi/popover-cooling-off');
 	const {styles, attributes} = usePopper(referenceElement, popperElement, {
 		modifiers: [{name: 'offset', options: {offset: [0, 10]}}],
 		placement: 'bottom-end'
@@ -71,7 +71,7 @@ export function Popover(): ReactElement {
 				'\t\t\t\tFrom: [wallet-not-connected]',
 			`\t\t\t\tChain: ${chainID}`,
 			`\t\t\t\tWallet: ${walletType}`,
-			`\t\t\t\tOrigin: [${router.asPath}](https://yearn.finance/${router.asPath})`
+			`\t\t\t\tOrigin: [${router.asPath}](https://yearn.fi/${router.asPath})`
 		].join('\n'));
 		await axios.post('/api/notify', formData, {
 			headers: {'Content-Type': 'multipart/form-data'}
@@ -134,7 +134,7 @@ export function Popover(): ReactElement {
 								<label className={'max-w-xs items-center justify-end pt-1'}>
 									<p className={'text-xs'}>
 										{'If you don\'t have telegram please '}
-										<Link href={'https://discord.yearn.finance'}>
+										<Link href={'https://discord.gg/yearn'}>
 											{'join our discord'}
 										</Link>
 										{' and ask in '}

@@ -144,9 +144,9 @@ export function AppHeader(): ReactElement {
 		}
 		return [
 			HOME_MENU,
-			{path: 'https://gov.yearn.finance/', label: 'Governance', target: '_blank'},
-			{path: 'https://blog.yearn.finance/', label: 'Blog', target: '_blank'},
-			{path: 'https://docs.yearn.finance/', label: 'Docs', target: '_blank'}
+			{path: 'https://gov.yearn.fi/', label: 'Governance', target: '_blank'},
+			{path: 'https://blog.yearn.fi/', label: 'Blog', target: '_blank'},
+			{path: 'https://docs.yearn.fi/', label: 'Docs', target: '_blank'}
 		];
 	}, [pathname]);
 

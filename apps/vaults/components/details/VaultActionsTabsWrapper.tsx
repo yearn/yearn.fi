@@ -67,8 +67,8 @@ function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}):
 			isRetired: currentVault?.details?.retired
 		})
 	);
-	const [shouldShowLedgerPluginBanner, set_shouldShowLedgerPluginBanner] = useLocalStorage<boolean>('yearn.finance/ledger-plugin-banner', true);
-	const [shouldShowOpBoostInfo, set_shouldShowOpBoostInfo] = useLocalStorage<boolean>('yearn.finance/op-boost-banner', true);
+	const [shouldShowLedgerPluginBanner, set_shouldShowLedgerPluginBanner] = useLocalStorage<boolean>('yearn.fi/ledger-plugin-banner', true);
+	const [shouldShowOpBoostInfo, set_shouldShowOpBoostInfo] = useLocalStorage<boolean>('yearn.fi/op-boost-banner', true);
 	const router = useRouter();
 	const {walletType} = useWeb3();
 	const rewardBalance = toNormalizedBN(toBigInt(stakingRewardsPosition?.reward), rewardTokenBalance.decimals);

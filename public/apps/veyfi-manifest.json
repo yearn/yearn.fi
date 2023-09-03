@@ -4,8 +4,8 @@
 	"description": "Stake YFI to take part in governance.",
 	"iconPath": "./favicons/favicon.svg",
 	"locale": "en-US",
-	"uri": "https://yearn.finance/veyfi/",
-	"og": "https://yearn.finance/apps/veyfi-og.png",
+	"uri": "https://yearn.fi/veyfi/",
+	"og": "https://yearn.fi/apps/veyfi-og.png",
 	"twitter": "@iearnfinance",
 	"github": "https://github.com/yearn/yearn.fi",
 	"icons": [

@@ -47,7 +47,7 @@ function WrappedInput({title, initialValue, onSave}: TWrappedInput): ReactElemen
 function SettingsOverwrite(): ReactElement {
 	const {onUpdateBaseSettings, settings: baseAPISettings} = useSettings();
 	// eslint-disable-next-line @typescript-eslint/naming-convention
-	const {value, set} = useLocalStorageValue<boolean>('yearn.finance/feedback-popover');
+	const {value, set} = useLocalStorageValue<boolean>('yearn.fi/feedback-popover');
 
 	return (
 		<div className={'bg-neutral-100 p-10'}>

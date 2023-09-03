@@ -53,7 +53,7 @@ export const CurveContextApp = ({children}: { children: React.ReactElement }): R
 	});
 
 	const {data: gaugesFromYearn} = useFetch<TCurveGaugesFromYearn>({
-		endpoint: 'https://api.yearn.finance/v1/chains/1/apy-previews/curve-factory',
+		endpoint: 'https://api.yearn.fi/v1/chains/1/apy-previews/curve-factory',
 		schema: curveGaugesFromYearnSchema
 	});
 

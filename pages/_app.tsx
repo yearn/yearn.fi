@@ -47,7 +47,7 @@ const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 	const {Component, pageProps, router} = props;
 	const getLayout = (Component as TGetLayout).getLayout || ((page: ReactElement): ReactElement => page);
 	// eslint-disable-next-line @typescript-eslint/naming-convention
-	const {value} = useLocalStorageValue<boolean>('yearn.finance/feedback-popover');
+	const {value} = useLocalStorageValue<boolean>('yearn.fi/feedback-popover');
 	const {name} = useCurrentApp(router);
 
 	return (
