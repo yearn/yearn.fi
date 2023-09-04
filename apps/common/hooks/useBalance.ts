@@ -7,7 +7,7 @@ import {useWallet} from '@common/contexts/useWallet';
 import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 import type {TBalanceData} from '@yearn-finance/web-lib/types/hooks';
 
-function useBalance(
+export function useBalance(
 	address: string | TAddress,
 	source?: TDict<TBalanceData>
 ): TBalanceData {
@@ -22,5 +22,3 @@ function useBalance(
 
 	return balance;
 }
-
-export {useBalance};

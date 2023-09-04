@@ -1,6 +1,6 @@
 import type {ReactElement} from 'react';
 
-function HowItWorksDiagram(props: React.SVGProps<SVGSVGElement>): ReactElement {
+export function HowItWorksDiagram(props: React.SVGProps<SVGSVGElement>): ReactElement {
 	return (
 		<svg
 			{...props}
@@ -102,5 +102,3 @@ function HowItWorksDiagram(props: React.SVGProps<SVGSVGElement>): ReactElement {
 
 	);
 }
-
-export {HowItWorksDiagram};

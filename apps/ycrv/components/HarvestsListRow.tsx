@@ -9,7 +9,7 @@ import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import type {ReactElement} from 'react';
 import type {TYDaemonVaultHarvest} from '@common/schemas/yDaemonVaultsSchemas';
 
-function HarvestListRow({harvest}: {harvest: TYDaemonVaultHarvest}): ReactElement {
+export function HarvestListRow({harvest}: {harvest: TYDaemonVaultHarvest}): ReactElement {
 	return (
 		<div className={'yearn--table-wrapper'}>
 			<div className={'yearn--table-token-section'}>
@@ -71,4 +71,3 @@ function HarvestListRow({harvest}: {harvest: TYDaemonVaultHarvest}): ReactElemen
 	);
 }
 
-export {HarvestListRow};

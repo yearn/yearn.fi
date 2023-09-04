@@ -6,7 +6,7 @@ import type {VoidPromiseFunction} from '@yearn-finance/web-lib/types';
 /**
  * @deprecated Use `@react-hookz/web` instead
  */
-function useAsync<T>(
+export function useAsync<T>(
 	callback: (...args: unknown[]) => Promise<T | undefined>,
 	defaultValue?: T,
 	effectDependencies: unknown[] = []
@@ -34,10 +34,7 @@ function useAsync<T>(
 	useEffect((): void => {
 		runNonce.current += 1;
 		callCallback();
-	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [callCallback, ...effectDependencies]);
 
 	return ([isLoading ? defaultValue : (data || defaultValue), isLoading, callCallback]);
 }
-
-export {useAsync};

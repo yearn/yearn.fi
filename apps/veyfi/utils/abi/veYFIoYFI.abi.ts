@@ -1,4 +1,4 @@
-const VEYFI_OYFI_ABI = [
+export const VEYFI_OYFI_ABI = [
 	{
 		'inputs': [],
 		'stateMutability': 'nonpayable',
@@ -376,5 +376,3 @@ const VEYFI_OYFI_ABI = [
 		'type': 'function'
 	}
 ] as const;
-
-export {VEYFI_OYFI_ABI};

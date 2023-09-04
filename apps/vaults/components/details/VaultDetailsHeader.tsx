@@ -42,7 +42,7 @@ function VaultHeaderLineItem({label, children, legend}: TVaultHeaderLineItemProp
 	);
 }
 
-function VaultDetailsHeader({vault}: { vault: TYDaemonVault }): ReactElement {
+export function VaultDetailsHeader({vault}: { vault: TYDaemonVault }): ReactElement {
 	const {safeChainID} = useChainID();
 	const {address: userAddress} = useWeb3();
 	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: safeChainID});
@@ -110,5 +110,3 @@ function VaultDetailsHeader({vault}: { vault: TYDaemonVault }): ReactElement {
 		</div>
 	);
 }
-
-export {VaultDetailsHeader};

@@ -16,7 +16,7 @@ import {getVaultName} from '@common/utils';
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
-function VaultAPR({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+export function VaultAPR({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const isEthMainnet = currentVault.chainID === 1;
 
 	if (currentVault.apy?.staking_rewards_apr > 0) {
@@ -214,5 +214,3 @@ function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElem
 		</Link>
 	);
 }
-
-export {VaultsListRow};

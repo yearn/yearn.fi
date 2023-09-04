@@ -10,7 +10,7 @@ import {useTokenPrice} from '@common/hooks/useTokenPrice';
 
 import type {ReactElement} from 'react';
 
-function VaultDetailsQuickActionsTo(): ReactElement {
+export function VaultDetailsQuickActionsTo(): ReactElement {
 	const {isActive} = useWeb3();
 	const {currentVault, possibleOptionsTo, actionParams, onUpdateSelectedOptionTo, isDepositing} = useActionFlow();
 	const {expectedOut, isLoadingExpectedOut} = useSolver();
@@ -90,5 +90,3 @@ function VaultDetailsQuickActionsTo(): ReactElement {
 		</section>
 	);
 }
-
-export {VaultDetailsQuickActionsTo};

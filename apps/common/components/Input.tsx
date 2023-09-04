@@ -12,7 +12,7 @@ type TAmountInputProps = {
 	className?: string;
 }
 
-function Input(props: TAmountInputProps): ReactElement {
+export function Input(props: TAmountInputProps): ReactElement {
 	const {value, onChange, label, placeholder, legend, error, isDisabled, isLoading, className = ''} = props;
 	return (
 		<div className={`w-full ${className}`}>
@@ -42,5 +42,3 @@ function Input(props: TAmountInputProps): ReactElement {
 		</div>
 	);
 }
-
-export {Input};

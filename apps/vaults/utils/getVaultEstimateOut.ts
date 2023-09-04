@@ -16,7 +16,7 @@ type TGetVaultEstimateOutProps = {
 	isDepositing: boolean
 	chainID: number;
 }
-async function getVaultEstimateOut(props: TGetVaultEstimateOutProps): Promise<TNormalizedBN> {
+export async function getVaultEstimateOut(props: TGetVaultEstimateOutProps): Promise<TNormalizedBN> {
 	assertAddress(props.inputToken, 'inputToken');
 	assertAddress(props.outputToken, 'outputToken');
 	assert(props.inputDecimals > 0, 'inputDecimals must be greater than 0');
@@ -43,5 +43,3 @@ async function getVaultEstimateOut(props: TGetVaultEstimateOutProps): Promise<TN
 	const expectedOutFetched = props.inputAmount * pps / powerDecimals;
 	return toNormalizedBN(expectedOutFetched, Number(outputDecimals));
 }
-
-export {getVaultEstimateOut};

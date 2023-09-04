@@ -19,7 +19,7 @@ import {useYearn} from '@common/contexts/useYearn';
 import type {ReactElement} from 'react';
 import type {TDropdownOption} from '@common/components/Dropdown';
 
-function RewardsTab(): ReactElement {
+export function RewardsTab(): ReactElement {
 	const [selectedGauge, set_selectedGauge] = useState<TDropdownOption>();
 	const {provider, isActive, chainID} = useWeb3();
 	const {gaugeAddresses, gaugesMap, positionsMap, refresh: refreshGauges} = useGauge();
@@ -92,7 +92,7 @@ function RewardsTab(): ReactElement {
 						legend={formatCounterValue(toNormalizedAmount(gaugesRewards, 18), optionPrice ?? 0)}
 						disabled
 					/>
-					<Button 
+					<Button
 						className={'w-full md:mt-7'}
 						onClick={onClaimAll}
 						isDisabled={!isActive || !isValidNetwork || isZero(gaugesRewards) || !claimAllStatus.none}
@@ -111,7 +111,7 @@ function RewardsTab(): ReactElement {
 				</div>
 
 				<div className={'grid grid-cols-1 gap-4 md:grid-cols-4'}>
-					<Dropdown 
+					<Dropdown
 						label={'Gauge'}
 						selected={selectedGauge}
 						options={gaugeOptions}
@@ -123,7 +123,7 @@ function RewardsTab(): ReactElement {
 						legend={formatCounterValue(toNormalizedAmount(selectedGaugeRewards, 18), optionPrice ?? 0)}
 						disabled
 					/>
-					<Button 
+					<Button
 						className={'w-full md:mt-7'}
 						onClick={onClaim}
 						isDisabled={!isActive || !isValidNetwork || isZero(selectedGaugeRewards) || !claimStatus.none}
@@ -137,4 +137,3 @@ function RewardsTab(): ReactElement {
 	);
 }
 
-export {RewardsTab};

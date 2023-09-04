@@ -11,7 +11,7 @@ type TProps = {
 }
 
 // TODO Check if we can use `getTimeUntil` from the web lib for this computation
-function computeTimeLeft({endTime}: {endTime?: TSeconds}): number {
+export function computeTimeLeft({endTime}: {endTime?: TSeconds}): number {
 	if (!endTime) {
 		return 0;
 	}
@@ -22,7 +22,7 @@ function computeTimeLeft({endTime}: {endTime?: TSeconds}): number {
 	return ms > 0 ? ms : 0;
 }
 
-function useTimer({endTime}: TProps): string {
+export function useTimer({endTime}: TProps): string {
 	const interval = useRef<NodeJS.Timeout | null>(null);
 	const timeLeft = computeTimeLeft({endTime});
 	const [time, set_time] = useState<TMilliseconds>(timeLeft);
@@ -60,5 +60,3 @@ function useTimer({endTime}: TProps): string {
 
 	return time ? formatTimestamp(time) : '00H 00M 00S';
 }
-
-export {computeTimeLeft, useTimer};

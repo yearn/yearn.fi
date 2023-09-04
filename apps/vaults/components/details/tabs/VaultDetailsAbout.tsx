@@ -62,7 +62,7 @@ function YearnFeesLineItem({children, label, tooltip}: TYearnFeesLineItem): Reac
 	);
 }
 
-function VaultDetailsAbout({currentVault, harvestData}: { currentVault: TYDaemonVault, harvestData: TGraphData[] }): ReactElement {
+export function VaultDetailsAbout({currentVault, harvestData}: { currentVault: TYDaemonVault, harvestData: TGraphData[] }): ReactElement {
 	const isMounted = useIsMounted();
 	const {token, apy, details} = currentVault;
 
@@ -139,5 +139,3 @@ function VaultDetailsAbout({currentVault, harvestData}: { currentVault: TYDaemon
 		</div>
 	);
 }
-
-export {VaultDetailsAbout};

@@ -14,7 +14,7 @@ import {useSearchParams} from 'next/navigation';
  *    // render or implement the new feature
  * }
  */
-function useFeatureFlag(flag: string): [boolean] {
+export function useFeatureFlag(flag: string): [boolean] {
 	const searchParams = useSearchParams();
 
 	const flags = searchParams.get('features')?.split(',') ?? [];
@@ -23,5 +23,3 @@ function useFeatureFlag(flag: string): [boolean] {
 
 	return [isEnabled];
 }
-
-export {useFeatureFlag};

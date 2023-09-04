@@ -50,7 +50,7 @@ function getCurrentTab({isDepositing, hasMigration, isRetired}: {isDepositing: b
 	return tabs.find((tab): boolean => tab.value === (isDepositing ? 0 : 1)) as TTabsOptions;
 }
 
-function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {onSwitchSelectedOptions, isDepositing, actionParams, currentSolver} = useActionFlow();
 	const [possibleTabs, set_possibleTabs] = useState<TTabsOptions[]>([tabs[0], tabs[1]]);
 	const {stakingRewardsMap, positionsMap, stakingRewardsByVault} = useStakingRewards();
@@ -276,5 +276,3 @@ function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}):
 		</>
 	);
 }
-
-export {VaultActionsTabsWrapper};

@@ -5,7 +5,7 @@ type TPageProgressBarProps = {
 	isLoading: boolean;
 }
 
-function PageProgressBar({isLoading}: TPageProgressBarProps): ReactElement {
+export function PageProgressBar({isLoading}: TPageProgressBarProps): ReactElement {
 	const {onLoadStart, onLoadDone} = useUI();
 
 	useEffect((): VoidFunction => {
@@ -22,5 +22,3 @@ function PageProgressBar({isLoading}: TPageProgressBarProps): ReactElement {
 
 	return <></>;
 }
-
-export {PageProgressBar};

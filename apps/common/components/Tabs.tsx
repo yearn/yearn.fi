@@ -23,7 +23,7 @@ type TTabsProps = {
 	className?: string,
 }
 
-function Tabs({items, className}: TTabsProps): ReactElement {
+export function Tabs({items, className}: TTabsProps): ReactElement {
 	const [selectedTabId, set_selectedTabId] = useState(items[0]?.id);
 	const router = useRouter();
 
@@ -128,5 +128,3 @@ function Tabs({items, className}: TTabsProps): ReactElement {
 		</div>
 	);
 }
-
-export {Tabs};

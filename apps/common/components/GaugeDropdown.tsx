@@ -48,7 +48,7 @@ function DropdownEmpty({query}: {query: string}): ReactElement {
 	);
 }
 
-function Dropdown({
+export function Dropdown({
 	options,
 	selected,
 	onSelect,
@@ -134,5 +134,3 @@ function Dropdown({
 		</div>
 	);
 }
-
-export {Dropdown};

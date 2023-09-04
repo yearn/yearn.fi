@@ -208,7 +208,7 @@ function CardZap(): ReactElement {
 	);
 }
 
-function WithCardTransactor({className}: {className: string}): ReactElement {
+export function WithCardTransactor({className}: {className: string}): ReactElement {
 	return (
 		<CardTransactorContextApp
 			defaultOptionFrom={ZAP_OPTIONS_FROM[0]}
@@ -227,4 +227,3 @@ function WithCardTransactor({className}: {className: string}): ReactElement {
 		</CardTransactorContextApp>
 	);
 }
-export {WithCardTransactor};

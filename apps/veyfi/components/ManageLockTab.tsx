@@ -16,7 +16,7 @@ import {useWallet} from '@common/contexts/useWallet';
 
 import type {ReactElement} from 'react';
 
-function ManageLockTab(): ReactElement {
+export function ManageLockTab(): ReactElement {
 	const [lockTime, set_lockTime] = useState('');
 	const {provider, address, isActive} = useWeb3();
 	const {safeChainID} = useChainID();
@@ -150,5 +150,3 @@ function ManageLockTab(): ReactElement {
 		</div>
 	);
 }
-
-export {ManageLockTab};

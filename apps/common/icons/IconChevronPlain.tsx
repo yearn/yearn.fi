@@ -1,6 +1,6 @@
 import type {ReactElement} from 'react';
 
-function IconChevronPlain(props: React.SVGProps<SVGSVGElement>): ReactElement {
+export function IconChevronPlain(props: React.SVGProps<SVGSVGElement>): ReactElement {
 	return (
 		<svg
 			{...props}
@@ -13,5 +13,3 @@ function IconChevronPlain(props: React.SVGProps<SVGSVGElement>): ReactElement {
 		</svg>
 	);
 }
-
-export {IconChevronPlain};

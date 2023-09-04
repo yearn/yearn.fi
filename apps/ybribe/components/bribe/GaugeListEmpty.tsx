@@ -2,7 +2,7 @@ import {useBribes} from '@yBribe/contexts/useBribes';
 
 import type {ReactElement} from 'react';
 
-function GaugeListEmpty(): ReactElement {
+export function GaugeListEmpty(): ReactElement {
 	const {isLoading} = useBribes();
 
 	if (isLoading) {
@@ -26,4 +26,3 @@ function GaugeListEmpty(): ReactElement {
 	);
 }
 
-export {GaugeListEmpty};

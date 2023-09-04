@@ -80,7 +80,7 @@ export type TDropdownProps = {
 	className?: string;
 }
 
-const Dropdown = ({selected, options, onChange, label, legend, isDisabled, className}: TDropdownProps): ReactElement => {
+export const Dropdown = ({selected, options, onChange, label, legend, isDisabled, className}: TDropdownProps): ReactElement => {
 	const [isOpen, set_isOpen] = useThrottledState(false, 400);
 	const [search, set_search] = useState('');
 
@@ -204,4 +204,3 @@ const Dropdown = ({selected, options, onChange, label, legend, isDisabled, class
 	);
 };
 
-export {Dropdown};

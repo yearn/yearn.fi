@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import {useCallback, useMemo, useState} from 'react';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
@@ -77,8 +76,7 @@ function GaugeRowItemAPR({address, value}: {address: TAddress, value: bigint}): 
 	);
 }
 
-
-function GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauge, category: string}): ReactElement {
+export function GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauge, category: string}): ReactElement {
 	const {isActive, provider} = useWeb3();
 	const {currentRewards, nextRewards, claimable, refresh} = useBribes();
 	const [txStatusClaim, set_txStatusClaim] = useState(defaultTxStatus);
@@ -320,5 +318,3 @@ function GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauge, cate
 		</div>
 	);
 }
-
-export {GaugeListRow};

@@ -20,7 +20,7 @@ export type TGraphForStrategyReportsProps = {
 	height?: number,
 }
 
-function GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height = 127}: TGraphForStrategyReportsProps): ReactElement {
+export function GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height = 127}: TGraphForStrategyReportsProps): ReactElement {
 	const {safeChainID} = useChainID();
 	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: safeChainID});
 
@@ -120,5 +120,3 @@ function GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height =
 		</ResponsiveContainer>
 	);
 }
-
-export {GraphForStrategyReports};

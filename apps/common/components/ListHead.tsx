@@ -20,7 +20,7 @@ export type TListHead = {
 	onSort: (sortBy: string, sortDirection: TSortDirection) => void
 }
 
-function ListHead({items, dataClassName, wrapperClassName, tokenClassName, sortBy, sortDirection, onSort}: TListHead): ReactElement {
+export function ListHead({items, dataClassName, wrapperClassName, tokenClassName, sortBy, sortDirection, onSort}: TListHead): ReactElement {
 	const toggleSortDirection = (newSortBy: string): TSortDirection => {
 		return sortBy === newSortBy ? (
 			sortDirection === '' ? 'desc' : sortDirection === 'desc' ? 'asc' : 'desc'
@@ -72,4 +72,3 @@ function ListHead({items, dataClassName, wrapperClassName, tokenClassName, sortB
 	);
 }
 
-export {ListHead};

@@ -11,7 +11,7 @@ export type TGraphForVaultPPSGrowthProps = {
 	height?: number,
 }
 
-function GraphForVaultPPSGrowth({messariData, height = 312}: TGraphForVaultPPSGrowthProps): ReactElement {
+export function GraphForVaultPPSGrowth({messariData, height = 312}: TGraphForVaultPPSGrowthProps): ReactElement {
 	if (isZero(messariData?.length)) {
 		return <Fragment />;
 	}
@@ -80,5 +80,3 @@ function GraphForVaultPPSGrowth({messariData, height = 312}: TGraphForVaultPPSGr
 		</ResponsiveContainer>
 	);
 }
-
-export {GraphForVaultPPSGrowth};

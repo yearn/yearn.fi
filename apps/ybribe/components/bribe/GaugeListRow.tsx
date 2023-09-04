@@ -39,7 +39,7 @@ function GaugeRowItemWithExtraData({address, value}: {address: TAddress, value: 
 	);
 }
 
-function GaugeListRow({currentGauge}: {currentGauge: TCurveGauge}): ReactElement {
+export function GaugeListRow({currentGauge}: {currentGauge: TCurveGauge}): ReactElement {
 	const {isActive} = useWeb3();
 	const {currentRewards, nextRewards} = useBribes();
 	const [hasModal, set_hasModal] = useState(false);
@@ -159,5 +159,3 @@ function GaugeListRow({currentGauge}: {currentGauge: TCurveGauge}): ReactElement
 		</div>
 	);
 }
-
-export {GaugeListRow};

@@ -20,7 +20,7 @@ import type {TYDaemonVaults} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TSortDirection} from '@common/types/types';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 
-function VaultListFactory(): ReactElement {
+export function VaultListFactory(): ReactElement {
 	const {balances} = useWallet();
 	const {vaults, isLoadingVaultList} = useYearn();
 	const [sortBy, set_sortBy] = useState<TPossibleSortBy>('apy');
@@ -158,5 +158,3 @@ function VaultListFactory(): ReactElement {
 		</div>
 	);
 }
-
-export {VaultListFactory};

@@ -181,7 +181,7 @@ function isExceptionStrategy(strategy: TYDaemonVaultStrategy): boolean {
 	return strategy.address.toString() === '0x23724D764d8b3d26852BA20d3Bc2578093d2B022' && !!strategy.details?.inQueue;
 }
 
-function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const [searchValue, set_searchValue] = useState<string>('');
 	const [shouldHide0DebtStrategies, set_shouldHide0DebtStrategies] = useState(true);
 
@@ -233,5 +233,3 @@ function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVault}): 
 		</div>
 	);
 }
-
-export {VaultDetailsStrategies};

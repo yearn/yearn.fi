@@ -1,6 +1,6 @@
 import type {ReactElement} from 'react';
 
-function LogoYearn(props: React.SVGProps<SVGSVGElement> & {back?: string, front?: string}): ReactElement {
+export function LogoYearn(props: React.SVGProps<SVGSVGElement> & {back?: string, front?: string}): ReactElement {
 	return (
 		<svg
 			{...props}
@@ -24,6 +24,3 @@ function LogoYearn(props: React.SVGProps<SVGSVGElement> & {back?: string, front?
 		</svg>
 	);
 }
-
-export {LogoYearn};
-

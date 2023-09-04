@@ -14,7 +14,7 @@ import {useWallet} from '@common/contexts/useWallet';
 
 import type {ReactElement} from 'react';
 
-function ClaimTab(): ReactElement {
+export function ClaimTab(): ReactElement {
 	const {provider, address, isActive} = useWeb3();
 	const {safeChainID} = useChainID();
 	const {refresh: refreshBalances} = useWallet();
@@ -72,5 +72,3 @@ function ClaimTab(): ReactElement {
 		</div>
 	);
 }
-
-export {ClaimTab};

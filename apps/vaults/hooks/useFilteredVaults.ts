@@ -3,7 +3,7 @@ import {useMemo} from 'react';
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
-function useFilteredVaults(
+export function useFilteredVaults(
 	vaultMap: TDict<TYDaemonVault>,
 	condition: (v: TYDaemonVault) => boolean
 ): TYDaemonVault[] {
@@ -12,4 +12,3 @@ function useFilteredVaults(
 	), [vaultMap, condition]);
 }
 
-export {useFilteredVaults};

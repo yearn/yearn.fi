@@ -17,7 +17,7 @@ type TUsePaginationReturn<T> = {
 	}
 }
 
-function usePagination<T>({data, itemsPerPage}: TProps<T>): TUsePaginationReturn<T> {
+export function usePagination<T>({data, itemsPerPage}: TProps<T>): TUsePaginationReturn<T> {
 	const [itemOffset, set_itemOffset] = useState(0);
 
 	const endOffset = itemOffset + itemsPerPage;
@@ -38,5 +38,3 @@ function usePagination<T>({data, itemsPerPage}: TProps<T>): TUsePaginationReturn
 		}
 	};
 }
-
-export {usePagination};

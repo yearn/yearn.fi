@@ -8,7 +8,7 @@ type TSwitch = {
 	onSwitch?: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
-function Switch(props: TSwitch): ReactElement {
+export function Switch(props: TSwitch): ReactElement {
 	const {isEnabled, onSwitch} = props;
 	const [isEnabledState, set_isEnabledState] = useState(isEnabled);
 
@@ -35,5 +35,3 @@ function Switch(props: TSwitch): ReactElement {
 		</div>
 	);
 }
-
-export {Switch};

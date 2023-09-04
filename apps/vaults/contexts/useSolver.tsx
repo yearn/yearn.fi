@@ -57,7 +57,7 @@ const DefaultWithSolverContext: TWithSolver = {
 };
 
 const WithSolverContext = createContext<TWithSolver>(DefaultWithSolverContext);
-function WithSolverContextApp({children}: { children: React.ReactElement }): React.ReactElement {
+export function WithSolverContextApp({children}: { children: React.ReactElement }): React.ReactElement {
 	const {address} = useWeb3();
 	const {currentVault, actionParams, currentSolver, isDepositing} = useActionFlow();
 	const executionNonce = useRef<number>(0);
@@ -208,6 +208,4 @@ function WithSolverContextApp({children}: { children: React.ReactElement }): Rea
 	);
 }
 
-
-export {WithSolverContextApp};
 export const useSolver = (): TWithSolver => useContext(WithSolverContext);

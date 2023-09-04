@@ -2,7 +2,7 @@ import {cl} from '@yearn-finance/web-lib/utils/cl';
 
 import type {ReactElement} from 'react';
 
-function	IconSpinner(props: React.SVGProps<SVGSVGElement>): ReactElement {
+export function IconSpinner(props: React.SVGProps<SVGSVGElement>): ReactElement {
 	return (
 		<svg
 			{...props}
@@ -26,5 +26,3 @@ function	IconSpinner(props: React.SVGProps<SVGSVGElement>): ReactElement {
 		</svg>
 	);
 }
-
-export {IconSpinner};

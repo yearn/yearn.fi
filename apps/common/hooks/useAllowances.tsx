@@ -14,7 +14,7 @@ export type TAllowanceRequest = {
 	spender?: TAddress
 }
 
-const useAllowances = (allowanceRequests: TAllowanceRequest[]): [TDict<bigint>, boolean, () => void] => {
+export const useAllowances = (allowanceRequests: TAllowanceRequest[]): [TDict<bigint>, boolean, () => void] => {
 	const {address: userAddress, isActive} = useWeb3();
 	const {chainID} = useChainID();
 
@@ -46,5 +46,3 @@ const useAllowances = (allowanceRequests: TAllowanceRequest[]): [TDict<bigint>, 
 
 	return [allowancesMap || {}, status === 'loading', actions.execute];
 };
-
-export {useAllowances};

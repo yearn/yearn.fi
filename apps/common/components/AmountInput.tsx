@@ -18,7 +18,7 @@ type TAmountInputProps = {
 	onMaxClick?: () => void;
 }
 
-function AmountInput({
+export function AmountInput({
 	amount,
 	maxAmount,
 	label,
@@ -78,4 +78,3 @@ function AmountInput({
 	);
 }
 
-export {AmountInput};

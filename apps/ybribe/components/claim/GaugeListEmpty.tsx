@@ -3,7 +3,7 @@ import {useBribes} from '@yBribe/contexts/useBribes';
 
 import type {ReactElement} from 'react';
 
-function GaugeListEmpty({category}: {category: string}): ReactElement {
+export function GaugeListEmpty({category}: {category: string}): ReactElement {
 	const {isLoading} = useBribes();
 	const {isActive} = useWeb3();
 
@@ -43,5 +43,3 @@ function GaugeListEmpty({category}: {category: string}): ReactElement {
 		</div>
 	);
 }
-
-export {GaugeListEmpty};

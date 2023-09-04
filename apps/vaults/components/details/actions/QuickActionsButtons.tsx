@@ -18,7 +18,7 @@ import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 import type {ReactElement} from 'react';
 import type {TNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 
-function VaultDetailsQuickActionsButtons(): ReactElement {
+export function VaultDetailsQuickActionsButtons(): ReactElement {
 	const {refresh} = useWallet();
 	const {refresh: refreshZapBalances} = useWalletForZap();
 	const {address, provider} = useWeb3();
@@ -201,5 +201,3 @@ function VaultDetailsQuickActionsButtons(): ReactElement {
 	);
 
 }
-
-export {VaultDetailsQuickActionsButtons};

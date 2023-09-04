@@ -13,7 +13,7 @@ import type {TSortDirection} from '@common/types/types';
 
 export type TPossibleSortBy = 'apy' | 'tvl' | 'name' | 'deposited' | 'available';
 
-function useSortVaults(
+export function useSortVaults(
 	vaultList: TYDaemonVaults,
 	sortBy: TPossibleSortBy,
 	sortDirection: TSortDirection
@@ -96,4 +96,3 @@ function useSortVaults(
 	return (sortedVaults);
 }
 
-export {useSortVaults};

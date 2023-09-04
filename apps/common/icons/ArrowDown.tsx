@@ -1,6 +1,6 @@
 import type {ReactElement} from 'react';
 
-function ArrowDown(props: React.SVGProps<SVGSVGElement>): ReactElement {
+export function ArrowDown(props: React.SVGProps<SVGSVGElement>): ReactElement {
 	return (
 		<svg
 			{...props}
@@ -15,4 +15,3 @@ function ArrowDown(props: React.SVGProps<SVGSVGElement>): ReactElement {
 	);
 }
 
-export {ArrowDown};
