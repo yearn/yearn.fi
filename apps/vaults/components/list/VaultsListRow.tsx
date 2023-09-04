@@ -122,7 +122,7 @@ export function VaultAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 	);
 }
 
-function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {safeChainID} = useChainID();
 	const balanceOfWant = useBalance(currentVault.token.address);
 	const balanceOfCoin = useBalance(ETH_TOKEN_ADDRESS);
