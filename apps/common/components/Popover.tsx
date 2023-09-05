@@ -4,13 +4,14 @@ import Link from 'next/link';
 import {useRouter} from 'next/router';
 import dayjs from 'dayjs';
 import html2canvas from 'html2canvas';
+import {useAccount} from 'wagmi';
 import axios from 'axios';
 import {Popover as PopoverHeadlessUI, Portal, Transition} from '@headlessui/react';
 import {useLocalStorageValue} from '@react-hookz/web';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
 import {useTimer} from '@common/hooks/useTimer';
-import MessageIcon from '@common/icons/MessageIcon';
+import {MessageIcon} from '@common/icons/MessageIcon';
 
 import type {ReactElement} from 'react';
 
@@ -23,7 +24,8 @@ export function Popover(): ReactElement {
 	const [telegramHandle, set_telegramHandle] = useState<string>();
 	const [isSubmitDisabled, set_isSubmitDisabled] = useState<boolean>(false);
 	const [description, set_description] = useState<string>();
-	const {address, chainID, ens, lensProtocolHandle, walletType} = useWeb3();
+	const {connector} = useAccount();
+	const {address, chainID, ens, lensProtocolHandle, isWalletLedger, isWalletSafe} = useWeb3();
 	const router = useRouter();
 	const {value: hasPopover, set: set_hasPopover} = useLocalStorageValue<boolean>('yearn.fi/feedback-popover');
 	const {value: nextSubmissionTime, set: set_nextSubmissionTime} = useLocalStorageValue<number>('yearn.fi/popover-cooling-off');
@@ -70,7 +72,7 @@ export function Popover(): ReactElement {
 				`\t\t\t\tFrom: [${reporter}](https://etherscan.io/address/${address})` :
 				'\t\t\t\tFrom: [wallet-not-connected]',
 			`\t\t\t\tChain: ${chainID}`,
-			`\t\t\t\tWallet: ${walletType}`,
+			`\t\t\t\tWallet: ${isWalletLedger ? 'ledger' : isWalletSafe ? 'safe' : connector?.id || 'Unknown'}`,
 			`\t\t\t\tOrigin: [${router.asPath}](https://yearn.fi/${router.asPath})`
 		].join('\n'));
 		await axios.post('/api/notify', formData, {

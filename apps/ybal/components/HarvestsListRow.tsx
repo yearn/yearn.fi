@@ -1,4 +1,4 @@
-import IconLinkOut from '@yearn-finance/web-lib/icons/IconLinkOut';
+import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
 import {toAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {STYBAL_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
@@ -27,7 +27,7 @@ function Row({label, value, className, valueClassName}: TRowProps): ReactElement
 	);
 }
 
-function HarvestListRow({harvest}: {harvest: TYDaemonVaultHarvest}): ReactElement {
+export function HarvestListRow({harvest}: {harvest: TYDaemonVaultHarvest}): ReactElement {
 	const vaultName = toAddress(harvest.vaultAddress) === STYBAL_TOKEN_ADDRESS ? 'st-yBal' : 'lp-yBal';
 	const gain = formatToNormalizedAmount(toBigInt(harvest.profit) - toBigInt(harvest.loss));
 	const value = formatUSD(Number(harvest.profitValue) - Number(harvest.lossValue));
@@ -75,5 +75,3 @@ function HarvestListRow({harvest}: {harvest: TYDaemonVaultHarvest}): ReactElemen
 		</div>
 	);
 }
-
-export {HarvestListRow};

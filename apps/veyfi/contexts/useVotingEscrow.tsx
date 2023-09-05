@@ -1,7 +1,7 @@
 import {createContext, memo, useCallback, useContext, useMemo} from 'react';
 import {erc20ABI, useContractRead, useContractReads} from 'wagmi';
-import VEYFI_ABI from '@veYFI/utils/abi/veYFI.abi';
-import VEYFI_POSITION_HELPER_ABI from '@veYFI/utils/abi/veYFIPositionHelper.abi';
+import {VEYFI_ABI} from '@veYFI/utils/abi/veYFI.abi';
+import {VEYFI_POSITION_HELPER_ABI} from '@veYFI/utils/abi/veYFIPositionHelper.abi';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {allowanceKey, isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {VEYFI_ADDRESS, VEYFI_POSITION_HELPER_ADDRESS, YFI_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
@@ -157,4 +157,3 @@ export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({chil
 });
 
 export const useVotingEscrow = (): TVotingEscrowContext => useContext(VotingEscrowContext);
-export default useVotingEscrow;

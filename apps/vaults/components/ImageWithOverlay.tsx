@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import IconCross from '@yearn-finance/web-lib/icons/IconCross';
+import {IconCross} from '@yearn-finance/web-lib/icons/IconCross';
 
 import type {ReactElement} from 'react';
 
@@ -14,7 +14,7 @@ type TImageWithOverlayProps = {
 	onCloseClick: () => void;
 }
 
-const ImageWithOverlay: React.FC<TImageWithOverlayProps> = ({
+export const ImageWithOverlay: React.FC<TImageWithOverlayProps> = ({
 	imageSrc,
 	imageAlt,
 	imageWidth,
@@ -47,5 +47,3 @@ const ImageWithOverlay: React.FC<TImageWithOverlayProps> = ({
 		</div>
 	);
 };
-
-export default ImageWithOverlay;

@@ -6,18 +6,18 @@ import * as Sentry from '@sentry/nextjs';
 import {VaultDetailsAbout} from '@vaults/components/details/tabs/VaultDetailsAbout';
 import {VaultDetailsHistorical} from '@vaults/components/details/tabs/VaultDetailsHistorical';
 import {VaultDetailsStrategies} from '@vaults/components/details/tabs/VaultDetailsStrategies';
-import Renderable from '@yearn-finance/web-lib/components/Renderable';
+import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import IconAddToMetamask from '@yearn-finance/web-lib/icons/IconAddToMetamask';
-import IconLinkOut from '@yearn-finance/web-lib/icons/IconLinkOut';
+import {IconAddToMetamask} from '@yearn-finance/web-lib/icons/IconAddToMetamask';
+import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {useFetch} from '@common/hooks/useFetch';
-import IconChevron from '@common/icons/IconChevron';
+import {IconChevron} from '@common/icons/IconChevron';
 import {yDaemonVaultHarvestsSchema} from '@common/schemas/yDaemonVaultsSchemas';
 import {assert} from '@common/utils/assert';
 import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
@@ -148,7 +148,7 @@ function ExplorerLink({explorerBaseURI, currentVaultAddress}: TExplorerLinkProps
 	);
 }
 
-function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {provider} = useWeb3();
 	const {safeChainID} = useChainID();
 	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: safeChainID});
@@ -237,5 +237,3 @@ function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}):
 		</div>
 	);
 }
-
-export {VaultDetailsTabsWrapper};

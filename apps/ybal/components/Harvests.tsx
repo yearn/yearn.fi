@@ -9,7 +9,7 @@ import {useYBal} from '@yBal/contexts/useYBal';
 import type {ReactElement} from 'react';
 import type {TYDaemonVaultHarvest, TYDaemonVaultHarvests} from '@common/schemas/yDaemonVaultsSchemas';
 
-function Harvests(): ReactElement {
+export function Harvests(): ReactElement {
 	const {harvests} = useYBal();
 	const [category, set_category] = useState('all');
 
@@ -71,5 +71,3 @@ function Harvests(): ReactElement {
 		</div>
 	);
 }
-
-export {Harvests};

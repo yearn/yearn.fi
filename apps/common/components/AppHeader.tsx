@@ -6,13 +6,13 @@ import {Popover, Transition} from '@headlessui/react';
 import {useIsMounted} from '@react-hookz/web';
 import {VaultsHeader} from '@vaults/components/header/VaultsHeader';
 import {VeYfiHeader} from '@veYFI/components/header/VeYfiHeader';
-import Header from '@yearn-finance/web-lib/components/Header';
-import Renderable from '@yearn-finance/web-lib/components/Renderable';
+import {Header} from '@yearn-finance/web-lib/components/Header';
+import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import BalanceReminderPopover from '@common/components/BalanceReminderPopover';
+import {BalanceReminderPopover} from '@common/components/BalanceReminderPopover';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useMenu} from '@common/contexts/useMenu';
-import LogoYearn from '@common/icons/LogoYearn';
+import {LogoYearn} from '@common/icons/LogoYearn';
 import {YBalHeader} from '@yBal/components/header/YBalHeader';
 import {YBribeHeader} from '@yBribe/components/header/YBribeHeader';
 import {YCrvHeader} from '@yCRV/components/header/YCrvHeader';
@@ -50,7 +50,7 @@ function LogoPopover(): ReactElement {
 	const YETH = {
 		name: 'yETH',
 		href: 'https://yeth.yearn.fi',
-		isDisabled: false,										
+		isDisabled: false,
 		icon: <ImageWithFallback
 			alt={'yETH'}
 			className={'h-8 w-8'}

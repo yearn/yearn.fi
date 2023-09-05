@@ -3,13 +3,13 @@ import Link from 'next/link';
 import {useRouter} from 'next/router';
 import {Listbox, Transition} from '@headlessui/react';
 import {useUpdateEffect} from '@react-hookz/web';
-import VaultDetailsQuickActionsButtons from '@vaults/components/details/actions/QuickActionsButtons';
-import VaultDetailsQuickActionsFrom from '@vaults/components/details/actions/QuickActionsFrom';
-import VaultDetailsQuickActionsSwitch from '@vaults/components/details/actions/QuickActionsSwitch';
-import VaultDetailsQuickActionsTo from '@vaults/components/details/actions/QuickActionsTo';
-import ImageWithOverlay from '@vaults/components/ImageWithOverlay';
+import {VaultDetailsQuickActionsButtons} from '@vaults/components/details/actions/QuickActionsButtons';
+import {VaultDetailsQuickActionsFrom} from '@vaults/components/details/actions/QuickActionsFrom';
+import {VaultDetailsQuickActionsSwitch} from '@vaults/components/details/actions/QuickActionsSwitch';
+import {VaultDetailsQuickActionsTo} from '@vaults/components/details/actions/QuickActionsTo';
+import {ImageWithOverlay} from '@vaults/components/ImageWithOverlay';
 import {RewardsTab} from '@vaults/components/RewardsTab';
-import SettingsPopover from '@vaults/components/SettingsPopover';
+import {SettingsPopover} from '@vaults/components/SettingsPopover';
 import {Flow, useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {Banner} from '@yearn-finance/web-lib/components/Banner';
@@ -18,9 +18,9 @@ import {useLocalStorage} from '@yearn-finance/web-lib/hooks/useLocalStorage';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
-import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
+import {performBatchedUpdates} from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {useBalance} from '@common/hooks/useBalance';
-import IconChevron from '@common/icons/IconChevron';
+import {IconChevron} from '@common/icons/IconChevron';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 
 import type {ReactElement} from 'react';
@@ -50,7 +50,7 @@ function getCurrentTab({isDepositing, hasMigration, isRetired}: {isDepositing: b
 	return tabs.find((tab): boolean => tab.value === (isDepositing ? 0 : 1)) as TTabsOptions;
 }
 
-function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {onSwitchSelectedOptions, isDepositing, actionParams, currentSolver} = useActionFlow();
 	const [possibleTabs, set_possibleTabs] = useState<TTabsOptions[]>([tabs[0], tabs[1]]);
 	const {stakingRewardsMap, positionsMap, stakingRewardsByVault} = useStakingRewards();
@@ -70,7 +70,7 @@ function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}):
 	const [shouldShowLedgerPluginBanner, set_shouldShowLedgerPluginBanner] = useLocalStorage<boolean>('yearn.fi/ledger-plugin-banner', true);
 	const [shouldShowOpBoostInfo, set_shouldShowOpBoostInfo] = useLocalStorage<boolean>('yearn.fi/op-boost-banner', true);
 	const router = useRouter();
-	const {walletType} = useWeb3();
+	const {isWalletLedger} = useWeb3();
 	const rewardBalance = toNormalizedBN(toBigInt(stakingRewardsPosition?.reward), rewardTokenBalance.decimals);
 
 	useEffect((): void => {
@@ -102,7 +102,7 @@ function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}):
 		}
 	}, [currentVault?.migration?.available, currentVault?.details?.retired, actionParams.isReady, hasStakingRewards]);
 
-	const isLedgerPluginVisible = ['EMBED_LEDGER', 'INJECTED_LEDGER'].includes(walletType) && shouldShowLedgerPluginBanner;
+	const isLedgerPluginVisible = isWalletLedger && shouldShowLedgerPluginBanner;
 
 	return (
 		<>
@@ -276,5 +276,3 @@ function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}):
 		</>
 	);
 }
-
-export {VaultActionsTabsWrapper};

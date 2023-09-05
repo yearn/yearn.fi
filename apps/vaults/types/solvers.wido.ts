@@ -1,5 +1,3 @@
-
-
 import type {QuoteResult} from 'wido';
 
 /* 🔵 - Yearn Finance ******************************************************

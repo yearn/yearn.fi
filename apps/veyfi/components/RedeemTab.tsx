@@ -22,7 +22,7 @@ import {approveERC20} from '@common/utils/actions';
 import type {ReactElement} from 'react';
 import type {TAddress} from '@yearn-finance/web-lib/types';
 
-function RedeemTab(): ReactElement {
+export function RedeemTab(): ReactElement {
 	const [redeemAmount, set_redeemAmount] = useState(toNormalizedBN(0));
 	const {provider, address, isActive} = useWeb3();
 	const {safeChainID} = useChainID();
@@ -63,7 +63,7 @@ function RedeemTab(): ReactElement {
 			accountAddress: toAddress(address),
 			amount: redeemAmount.raw,
 			ethRequired: result
-			
+
 		});
 
 		if (response.isSuccessful) {
@@ -125,7 +125,7 @@ function RedeemTab(): ReactElement {
 						loading={status === 'loading'}
 						disabled
 					/>
-					<Button 
+					<Button
 						className={'w-full md:mt-7'}
 						onClick={async (): Promise<void> => isApproved ? handleRedeem() : handleApproveRedeem()}
 						isBusy={isLoadingOption || approveRedeemStatus.pending || redeemStatus.pending || status === 'loading'}
@@ -138,5 +138,3 @@ function RedeemTab(): ReactElement {
 		</div>
 	);
 }
-
-export {RedeemTab};

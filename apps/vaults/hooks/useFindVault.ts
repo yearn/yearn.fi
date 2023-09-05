@@ -3,7 +3,7 @@ import {useMemo} from 'react';
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
-function useFindVault(
+export function useFindVault(
 	vaultMap: TDict<TYDaemonVault>,
 	condition: (v: TYDaemonVault) => boolean
 ): TYDaemonVault | null {
@@ -13,5 +13,3 @@ function useFindVault(
 
 	return foundVault ? foundVault : null;
 }
-
-export {useFindVault};

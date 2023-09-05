@@ -1,6 +1,6 @@
 import type {ReactElement} from 'react';
 
-function IconArrow(props: React.SVGProps<SVGSVGElement>): ReactElement {
+export function IconArrow(props: React.SVGProps<SVGSVGElement>): ReactElement {
 	return (
 		<svg
 			{...props}
@@ -13,5 +13,3 @@ function IconArrow(props: React.SVGProps<SVGSVGElement>): ReactElement {
 		</svg>
 	);
 }
-
-export default IconArrow;

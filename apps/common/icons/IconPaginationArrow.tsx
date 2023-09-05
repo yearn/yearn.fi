@@ -2,7 +2,7 @@ import React from 'react';
 
 import type {ReactElement} from 'react';
 
-function	IconPaginationArrow(props: React.SVGProps<SVGSVGElement>): ReactElement {
+export function IconPaginationArrow(props: React.SVGProps<SVGSVGElement>): ReactElement {
 	return (
 		<svg
 			{...props}
@@ -23,5 +23,3 @@ function	IconPaginationArrow(props: React.SVGProps<SVGSVGElement>): ReactElement
 		</svg>
 	);
 }
-
-export default IconPaginationArrow;

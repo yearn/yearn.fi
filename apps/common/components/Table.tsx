@@ -5,7 +5,7 @@ import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {Pagination} from '@common/components/Pagination';
 import {usePagination} from '@common/hooks/usePagination';
-import IconChevronPlain from '@common/icons/IconChevronPlain';
+import {IconChevronPlain} from '@common/icons/IconChevronPlain';
 
 import type {ReactElement} from 'react';
 
@@ -38,7 +38,7 @@ type TTableProps<T> = {
 	itemsPerPage?: number;
 }
 
-function Table<T>({metadata, data, columns, initialSortBy, onRowClick, itemsPerPage}: TTableProps<T>): ReactElement {
+export function Table<T>({metadata, data, columns, initialSortBy, onRowClick, itemsPerPage}: TTableProps<T>): ReactElement {
 	const [{sortedBy, order}, set_state] = useState<TState<T>>({sortedBy: initialSortBy, order: 'desc'});
 
 	const sortedData = useMemo((): T[] => {
@@ -158,5 +158,3 @@ function Table<T>({metadata, data, columns, initialSortBy, onRowClick, itemsPerP
 		</div>
 	);
 }
-
-export {Table};

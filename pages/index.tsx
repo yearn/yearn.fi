@@ -3,7 +3,7 @@ import {Balancer} from 'react-wrap-balancer';
 import Link from 'next/link';
 import {YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
-import LogoYearn from '@common/icons/LogoYearn';
+import {LogoYearn} from '@common/icons/LogoYearn';
 
 import type {ReactElement} from 'react';
 
@@ -199,7 +199,8 @@ function TextAnimation(): ReactElement {
 
 	return (
 		<>
-			<div className={'text sticky'}>
+			<div
+				className={'text sticky'}>
 				<p className={'wordWrapper'}>
 					<span className={'word'}>{'STAKE'}</span>
 					<span className={'word'}>{'INVEST'}</span>

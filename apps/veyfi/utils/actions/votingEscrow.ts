@@ -1,13 +1,12 @@
 import {stringToHex} from 'viem';
+import {SNAPSHOT_DELEGATE_REGISTRY_ABI} from '@veYFI/utils/abi/SnapshotDelegateRegistry.abi';
+import {VEYFI_ABI} from '@veYFI/utils/abi/veYFI.abi';
+import {YEARN_SNAPSHOT_SPACE} from '@veYFI/utils/constants';
 import {prepareWriteContract} from '@wagmi/core';
 import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {assert} from '@common/utils/assert';
 import {assertAddresses, handleTx as handleTxWagmi} from '@common/utils/wagmiUtils';
-
-import SNAPSHOT_DELEGATE_REGISTRY_ABI from '../abi/SnapshotDelegateRegistry.abi';
-import VEYFI_ABI from '../abi/veYFI.abi';
-import {YEARN_SNAPSHOT_SPACE} from '../constants';
 
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TSeconds} from '@yearn-finance/web-lib/utils/time';

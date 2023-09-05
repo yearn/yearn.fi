@@ -21,7 +21,7 @@ type TCurrentApp = {
 	menu: TMenu[];
 };
 
-function useCurrentApp({pathname}: NextRouter): TCurrentApp {
+export function useCurrentApp({pathname}: NextRouter): TCurrentApp {
 	return useMemo((): TCurrentApp => {
 		const appMapping: TDict<TCurrentApp> = {
 			'/vaults': {...APPS[AppName.VAULTS], header: <VaultsHeader pathname={pathname} />},
@@ -38,5 +38,3 @@ function useCurrentApp({pathname}: NextRouter): TCurrentApp {
 		return {name: 'Home', manifest: homeManifest, menu: []};
 	}, [pathname]);
 }
-
-export {useCurrentApp};

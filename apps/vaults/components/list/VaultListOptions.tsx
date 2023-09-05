@@ -1,12 +1,12 @@
 import {Fragment} from 'react';
 import {Popover, Transition} from '@headlessui/react';
 import {useAppSettings} from '@vaults/contexts/useAppSettings';
-import IconSettings from '@yearn-finance/web-lib/icons/IconSettings';
+import {IconSettings} from '@yearn-finance/web-lib/icons/IconSettings';
 import {Switch} from '@common/components/Switch';
 
 import type {ReactElement} from 'react';
 
-export default function VaultListOptions(): ReactElement {
+export function VaultListOptions(): ReactElement {
 	const {shouldHideDust, onSwitchHideDust, shouldHideLowTVLVaults, onSwitchHideLowTVLVaults} = useAppSettings();
 
 	return (

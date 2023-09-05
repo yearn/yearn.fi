@@ -23,7 +23,7 @@ import {approveERC20} from '@common/utils/actions';
 import type {ReactElement} from 'react';
 import type {TMilliseconds} from '@yearn-finance/web-lib/utils/time';
 
-function LockTab(): ReactElement {
+export function LockTab(): ReactElement {
 	const [lockAmount, set_lockAmount] = useState(toNormalizedBN(0));
 	const [lockTime, set_lockTime] = useState('');
 	const {provider, address, isActive} = useWeb3();
@@ -194,5 +194,3 @@ function LockTab(): ReactElement {
 		</div>
 	);
 }
-
-export {LockTab};

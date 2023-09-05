@@ -1,5 +1,5 @@
 import {Balancer} from 'react-wrap-balancer';
-import Wrapper from '@vaults/Wrapper';
+import {Wrapper} from '@vaults/Wrapper';
 import SettingsOverwrite from '@common/components/SettingsOverwrite';
 
 import type {NextRouter} from 'next/router';

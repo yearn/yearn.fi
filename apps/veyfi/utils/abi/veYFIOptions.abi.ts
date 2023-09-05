@@ -1,4 +1,4 @@
-const VEYFI_OPTIONS_ABI = [
+export const VEYFI_OPTIONS_ABI = [
 	{
 		'anonymous': false,
 		'inputs': [
@@ -258,5 +258,3 @@ const VEYFI_OPTIONS_ABI = [
 		'type': 'function'
 	}
 ] as const;
-
-export default VEYFI_OPTIONS_ABI;

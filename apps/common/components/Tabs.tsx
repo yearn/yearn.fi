@@ -2,7 +2,7 @@ import {useEffect, useState} from 'react';
 import {useRouter} from 'next/router';
 import {AnimatePresence, motion} from 'framer-motion';
 import {Listbox, Transition} from '@headlessui/react';
-import IconChevron from '@common/icons/IconChevron';
+import {IconChevron} from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
 
@@ -23,7 +23,7 @@ type TTabsProps = {
 	className?: string,
 }
 
-function Tabs({items, className}: TTabsProps): ReactElement {
+export function Tabs({items, className}: TTabsProps): ReactElement {
 	const [selectedTabId, set_selectedTabId] = useState(items[0]?.id);
 	const router = useRouter();
 
@@ -128,5 +128,3 @@ function Tabs({items, className}: TTabsProps): ReactElement {
 		</div>
 	);
 }
-
-export {Tabs};

@@ -5,7 +5,7 @@ import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 
 import type {ReactElement} from 'react';
 
-function ValueAnimation({
+export function ValueAnimation({
 	identifier,
 	value,
 	defaultValue,
@@ -109,5 +109,3 @@ function ValueAnimation({
 		</>
 	);
 }
-
-export default ValueAnimation;

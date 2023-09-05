@@ -26,3 +26,5 @@ jobs:
 
       - name: Build project
         run: yarn build
+        env:
+          WALLETCONNECT_PROJECT_ID: ${{ secrets.WALLETCONNECT_PROJECT_ID }}

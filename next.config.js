@@ -3,12 +3,13 @@ const runtimeCaching = require('next-pwa/cache');
 // eslint-disable-next-line unused-imports/no-unused-vars, @typescript-eslint/no-unused-vars
 // const withTM = require('next-transpile-modules')(['@yearn-finance/web-lib'], {resolveSymlinks: false});
 const withPWA = require('next-pwa')({
-	dest: './public/',
+	dest: 'public',
 	register: true,
 	skipWaiting: true,
 	runtimeCaching,
 	buildExcludes: [/middleware-manifest.json$/]
 });
+
 const withBundleAnalyzer = require('@next/bundle-analyzer')({
 	enabled: process.env.ANALYZE === 'true'
 });
@@ -98,7 +99,7 @@ module.exports = withBundleAnalyzer(withPWA({
 		ALCHEMY_API_KEY: process.env.ALCHEMY_API_KEY,
 		INFURA_PROJECT_ID: process.env.INFURA_PROJECT_ID,
 		WALLETCONNECT_PROJECT_ID: process.env.WALLETCONNECT_PROJECT_ID,
-
+		
 		PARTNER_ID_ADDRESS: '0xFEB4acf3df3cDEA7399794D0869ef76A6EfAff52',
 		SHOULD_USE_PARTNER_CONTRACT: true,
 		YDAEMON_BASE_URI: process.env.YDAEMON_BASE_URI,

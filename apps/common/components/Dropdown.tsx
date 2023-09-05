@@ -2,8 +2,8 @@ import React, {Fragment, useState} from 'react';
 import {Combobox, Transition} from '@headlessui/react';
 import {useThrottledState} from '@react-hookz/web';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
-import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
-import IconChevron from '@common/icons/IconChevron';
+import {performBatchedUpdates} from '@yearn-finance/web-lib/utils/performBatchedUpdates';
+import {IconChevron} from '@common/icons/IconChevron';
 
 import {ImageWithFallback} from './ImageWithFallback';
 
@@ -23,7 +23,7 @@ const DropdownOption = (option: TDropdownOption): ReactElement => {
 								height={24}
 								quality={90}
 								src={icon}
-								loading={'eager'} 
+								loading={'eager'}
 							/>
 						</div>
 					)}
@@ -69,7 +69,7 @@ export type TDropdownOption = {
 	description?: string;
 	icon?: string;
 }
-  
+
 export type TDropdownProps = {
 	selected?: TDropdownOption;
 	options: TDropdownOption[];
@@ -80,7 +80,7 @@ export type TDropdownProps = {
 	className?: string;
 }
 
-const Dropdown = ({selected, options, onChange, label, legend, isDisabled, className}: TDropdownProps): ReactElement => {
+export const Dropdown = ({selected, options, onChange, label, legend, isDisabled, className}: TDropdownProps): ReactElement => {
 	const [isOpen, set_isOpen] = useThrottledState(false, 400);
 	const [search, set_search] = useState('');
 
@@ -131,7 +131,7 @@ const Dropdown = ({selected, options, onChange, label, legend, isDisabled, class
 												height={24}
 												quality={90}
 												src={selected.icon}
-												loading={'eager'} 
+												loading={'eager'}
 											/>
 										</div>
 									)}
@@ -150,7 +150,7 @@ const Dropdown = ({selected, options, onChange, label, legend, isDisabled, class
 													set_isOpen(true);
 													set_search(event.target.value);
 												});
-											}} 
+											}}
 										/>
 									</p>
 								</div>
@@ -204,4 +204,3 @@ const Dropdown = ({selected, options, onChange, label, legend, isDisabled, class
 	);
 };
 
-export {Dropdown};

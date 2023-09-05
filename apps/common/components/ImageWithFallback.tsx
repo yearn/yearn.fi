@@ -1,12 +1,12 @@
 import React, {useState} from 'react';
 import Image from 'next/image';
 import {useUpdateEffect} from '@react-hookz/web';
-import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
+import {performBatchedUpdates} from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 
 import type {ImageProps} from 'next/image';
 import type {CSSProperties, ReactElement} from 'react';
 
-function ImageWithFallback(props: ImageProps): ReactElement {
+export function ImageWithFallback(props: ImageProps): ReactElement {
 	const {alt, src, ...rest} = props;
 	const [imageSrc, set_imageSrc] = useState(`${src}?fallback=true`);
 	const [imageStyle, set_imageStyle] = useState<CSSProperties>({});
@@ -30,5 +30,3 @@ function ImageWithFallback(props: ImageProps): ReactElement {
 			{...rest} />
 	);
 }
-
-export {ImageWithFallback};

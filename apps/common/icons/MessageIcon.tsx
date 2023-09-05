@@ -1,6 +1,6 @@
 import type {ReactElement} from 'react';
 
-function MessageIcon(props: React.SVGProps<SVGSVGElement>): ReactElement {
+export function MessageIcon(props: React.SVGProps<SVGSVGElement>): ReactElement {
 	return (
 		<svg
 			{...props}
@@ -15,6 +15,3 @@ function MessageIcon(props: React.SVGProps<SVGSVGElement>): ReactElement {
 		</svg>
 	);
 }
-
-export default MessageIcon;
-

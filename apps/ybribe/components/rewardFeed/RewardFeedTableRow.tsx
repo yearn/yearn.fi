@@ -39,7 +39,7 @@ function RewardFeedRowItemWithExtraData({
 	);
 }
 
-function RewardFeedTableRow({currentRewardAdded}: {currentRewardAdded: TYDaemonGaugeRewardsFeed[0]}): ReactElement | null {
+export function RewardFeedTableRow({currentRewardAdded}: {currentRewardAdded: TYDaemonGaugeRewardsFeed[0]}): ReactElement | null {
 	const {gauges} = useCurve();
 
 	const gaugesObject = useMemo((): {[key: string]: TCurveGauge} => {
@@ -105,5 +105,3 @@ function RewardFeedTableRow({currentRewardAdded}: {currentRewardAdded: TYDaemonG
 		</div>
 	);
 }
-
-export {RewardFeedTableRow};

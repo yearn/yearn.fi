@@ -5,17 +5,17 @@ import {LPYCRV_TOKEN_ADDRESS, LPYCRV_V2_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, YCR
 import {formatBigNumberOver10K, formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatNumberOver10K, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue, formatCounterValueRaw} from '@yearn-finance/web-lib/utils/format.value';
-import ValueAnimation from '@common/components/ValueAnimation';
+import {ValueAnimation} from '@common/components/ValueAnimation';
 import {useCurve} from '@common/contexts/useCurve';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import {useBalance} from '@common/hooks/useBalance';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
 import {getVaultAPY} from '@common/utils';
-import CardZap from '@yCRV/components/CardZap';
+import {WithCardTransactor} from '@yCRV/components/CardZap';
 import {Harvests} from '@yCRV/components/Harvests';
 import {useYCRV} from '@yCRV/contexts/useYCRV';
-import Wrapper from '@yCRV/Wrapper';
+import {Wrapper} from '@yCRV/Wrapper';
 
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
@@ -122,7 +122,7 @@ function ZapAndStats(): ReactElement {
 	return (
 		<div className={'col-span-12 grid w-full grid-cols-12 gap-4 '}>
 			<div className={'col-span-12 md:col-span-8'}>
-				<CardZap className={'col-span-12 md:col-span-8'} />
+				<WithCardTransactor className={'col-span-12 md:col-span-8'} />
 			</div>
 			<div className={'col-span-12 flex flex-col gap-4 md:col-span-4'}>
 				<div className={'w-full bg-neutral-100 p-4'}>

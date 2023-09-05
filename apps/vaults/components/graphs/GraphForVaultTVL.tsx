@@ -11,7 +11,7 @@ export type TGraphForVaultTVLProps = {
 	height?: number,
 }
 
-function GraphForVaultTVL({messariData, height = 312}: TGraphForVaultTVLProps): ReactElement {
+export function GraphForVaultTVL({messariData, height = 312}: TGraphForVaultTVLProps): ReactElement {
 	if (isZero(messariData?.length)) {
 		return <Fragment />;
 	}
@@ -80,5 +80,3 @@ function GraphForVaultTVL({messariData, height = 312}: TGraphForVaultTVLProps): 
 		</ResponsiveContainer>
 	);
 }
-
-export default GraphForVaultTVL;

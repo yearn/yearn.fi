@@ -13,7 +13,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
+import {performBatchedUpdates} from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 import {hash} from '@common/utils';
 
@@ -57,7 +57,7 @@ const DefaultWithSolverContext: TWithSolver = {
 };
 
 const WithSolverContext = createContext<TWithSolver>(DefaultWithSolverContext);
-function WithSolverContextApp({children}: { children: React.ReactElement }): React.ReactElement {
+export function WithSolverContextApp({children}: { children: React.ReactElement }): React.ReactElement {
 	const {address} = useWeb3();
 	const {currentVault, actionParams, currentSolver, isDepositing} = useActionFlow();
 	const executionNonce = useRef<number>(0);
@@ -208,6 +208,4 @@ function WithSolverContextApp({children}: { children: React.ReactElement }): Rea
 	);
 }
 
-
-export {WithSolverContextApp};
 export const useSolver = (): TWithSolver => useContext(WithSolverContext);

@@ -8,12 +8,12 @@ import {formatToNormalizedValue, toBigInt, toNormalizedBN} from '@yearn-finance/
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
-import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
+import {performBatchedUpdates} from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {Dropdown} from '@common/components/TokenDropdown';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
-import ArrowDown from '@common/icons/ArrowDown';
-import CardTransactorContextApp, {useCardTransactor} from '@yBal/components/CardTransactorWrapper';
+import {ArrowDown} from '@common/icons/ArrowDown';
+import {CardTransactorContextApp, useCardTransactor} from '@yBal/components/CardTransactorWrapper';
 import {ZAP_OPTIONS_FROM, ZAP_OPTIONS_TO} from '@yBal/constants/tokens';
 
 import type {ChangeEvent, ReactElement} from 'react';
@@ -208,7 +208,7 @@ function CardZap(): ReactElement {
 	);
 }
 
-function WithCardTransactor({className}: {className: string}): ReactElement {
+export function WithCardTransactor({className}: {className: string}): ReactElement {
 	return (
 		<CardTransactorContextApp
 			defaultOptionFrom={ZAP_OPTIONS_FROM[0]}
@@ -227,4 +227,3 @@ function WithCardTransactor({className}: {className: string}): ReactElement {
 		</CardTransactorContextApp>
 	);
 }
-export default WithCardTransactor;

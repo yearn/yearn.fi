@@ -54,4 +54,3 @@ export const AppSettingsContextApp = memo(function AppSettingsContextApp({childr
 });
 
 export const useAppSettings = (): TAppSettingsContext => useContext(AppSettingsContext);
-export default useAppSettings;

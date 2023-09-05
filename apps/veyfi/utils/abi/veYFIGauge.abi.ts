@@ -1,5 +1,5 @@
 // TODO: update once final version deployed
-const VEYFI_GAUGE_ABI = [
+export const VEYFI_GAUGE_ABI = [
 	{
 		'inputs': [
 			{
@@ -1409,5 +1409,3 @@ const VEYFI_GAUGE_ABI = [
 		'type': 'function'
 	}
 ] as const;
-
-export default VEYFI_GAUGE_ABI;

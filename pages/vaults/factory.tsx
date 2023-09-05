@@ -1,17 +1,17 @@
 import {useCallback, useEffect, useMemo, useState} from 'react';
 import {Balancer} from 'react-wrap-balancer';
 import {useAsync} from '@react-hookz/web';
-import VaultListFactory from '@vaults/components/list/VaultListFactory';
-import VAULT_FACTORY_ABI from '@vaults/utils/abi/vaultFactory.abi';
+import {VaultListFactory} from '@vaults/components/list/VaultListFactory';
+import {VAULT_FACTORY_ABI} from '@vaults/utils/abi/vaultFactory.abi';
 import {createNewVaultsAndStrategies, gasOfCreateNewVaultsAndStrategies} from '@vaults/utils/actions';
-import Wrapper from '@vaults/Wrapper';
+import {Wrapper} from '@vaults/Wrapper';
 import {erc20ABI, multicall} from '@wagmi/core';
 import {Button} from '@yearn-finance/web-lib/components/Button';
-import Renderable from '@yearn-finance/web-lib/components/Renderable';
+import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import LinkOut from '@yearn-finance/web-lib/icons/IconLinkOut';
+import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {VAULT_FACTORY_ADDRESS, ZERO_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {decodeAsBoolean, decodeAsString} from '@yearn-finance/web-lib/utils/decoder';
@@ -267,7 +267,7 @@ function Factory(): ReactElement {
 											target={'_blank'}
 											rel={'noreferrer'}
 											className={'ml-4 cursor-pointer text-neutral-900'}>
-											<LinkOut className={'h-6 w-6'} />
+											<IconLinkOut className={'h-6 w-6'} />
 										</a>
 									</Renderable>
 								</div>
@@ -286,7 +286,7 @@ function Factory(): ReactElement {
 											target={'_blank'}
 											rel={'noreferrer'}
 											className={'ml-4 cursor-pointer text-neutral-900'}>
-											<LinkOut className={'h-6 w-6'} />
+											<IconLinkOut className={'h-6 w-6'} />
 										</a>
 									</Renderable>
 								</div>

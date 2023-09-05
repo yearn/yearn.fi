@@ -3,10 +3,10 @@ import useSWR from 'swr';
 import {useIsMounted} from '@react-hookz/web';
 import {GraphForVaultEarnings} from '@vaults/components/graphs/GraphForVaultEarnings';
 import {GraphForVaultPPSGrowth} from '@vaults/components/graphs/GraphForVaultPPSGrowth';
-import GraphForVaultTVL from '@vaults/components/graphs/GraphForVaultTVL';
+import {GraphForVaultTVL} from '@vaults/components/graphs/GraphForVaultTVL';
 import {getMessariSubgraphEndpoint} from '@vaults/utils';
 import {Button} from '@yearn-finance/web-lib/components/Button';
-import Renderable from '@yearn-finance/web-lib/components/Renderable';
+import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
@@ -17,7 +17,7 @@ import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TGraphData, TMessariGraphData} from '@common/types/types';
 
-function VaultDetailsHistorical({currentVault, harvestData}: {currentVault: TYDaemonVault, harvestData: TGraphData[]}): ReactElement {
+export function VaultDetailsHistorical({currentVault, harvestData}: {currentVault: TYDaemonVault, harvestData: TGraphData[]}): ReactElement {
 	const isMounted = useIsMounted();
 	const {safeChainID} = useChainID();
 	const [selectedViewIndex, set_selectedViewIndex] = useState(0);
@@ -89,5 +89,3 @@ function VaultDetailsHistorical({currentVault, harvestData}: {currentVault: TYDa
 		</div>
 	);
 }
-
-export {VaultDetailsHistorical};

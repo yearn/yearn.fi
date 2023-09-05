@@ -2,7 +2,7 @@ import {Balancer} from 'react-wrap-balancer';
 import SettingsOverwrite from '@common/components/SettingsOverwrite';
 import {RewardFeedTable} from '@yBribe/components/rewardFeed/RewardFeedTable';
 import {RewardFeedTableHead} from '@yBribe/components/rewardFeed/RewardFeedTableHead';
-import Wrapper from '@yBribe/Wrapper';
+import {Wrapper} from '@yBribe/Wrapper';
 
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';

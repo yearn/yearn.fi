@@ -7,9 +7,9 @@ import {parseEther} from 'viem';
 import {erc20ABI, useContractReads, usePrepareContractWrite} from 'wagmi';
 import {BALWETH_TOKEN_ADDRESS, LPYBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, VEBAL_TOKEN_ADDRESS, VEBALPEG_QUERY_HELP_CONTRACT, YBAL_TOKEN_ADDRESS, YBAL_VOTER_ADDRESS, ZERO_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {decodeAsBigInt} from '@yearn-finance/web-lib/utils/decoder';
-import STYBAL_ABI from '@yBal/utils/abi/styBal.abi';
-import VE_BAL_ABI from '@yBal/utils/abi/veBAL.abi';
-import VEBALPEG_HELPER_ABI from '@yBal/utils/abi/veBalPegHelper.abi';
+import {STYBAL_ABI} from '@yBal/utils/abi/styBal.abi';
+import {VE_BAL_ABI} from '@yBal/utils/abi/veBAL.abi';
+import {VEBALPEG_HELPER_ABI} from '@yBal/utils/abi/veBalPegHelper.abi';
 
 import type {Hex} from 'viem';
 

@@ -4,7 +4,7 @@ import {Button} from '@yearn-finance/web-lib/components/Button';
 import {LPYCRV_V2_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import SettingsOverwrite from '@common/components/SettingsOverwrite';
 import {useYCRV} from '@yCRV/contexts/useYCRV';
-import Wrapper from '@yCRV/Wrapper';
+import {Wrapper} from '@yCRV/Wrapper';
 
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';

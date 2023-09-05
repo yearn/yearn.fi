@@ -1,4 +1,4 @@
-import Renderable from '@yearn-finance/web-lib/components/Renderable';
+import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 
 import type {ReactElement} from 'react';
@@ -18,7 +18,7 @@ type TAmountInputProps = {
 	onMaxClick?: () => void;
 }
 
-function AmountInput({
+export function AmountInput({
 	amount,
 	maxAmount,
 	label,
@@ -78,4 +78,3 @@ function AmountInput({
 	);
 }
 
-export {AmountInput};

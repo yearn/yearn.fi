@@ -2,7 +2,7 @@ import {ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {handleTx} from '@yearn-finance/web-lib/utils/wagmi/provider';
 import {assertAddress} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {assert} from '@common/utils/assert';
-import ZAP_CRV_ABI from '@yCRV/utils/abi/zapCRV.abi';
+import {ZAP_CRV_ABI} from '@yCRV/utils/abi/zapCRV.abi';
 
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TWriteTransaction} from '@yearn-finance/web-lib/utils/wagmi/provider';

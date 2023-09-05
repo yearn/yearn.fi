@@ -1,12 +1,12 @@
 import {Fragment, useMemo} from 'react';
 import {Popover, Transition} from '@headlessui/react';
 import {captureException} from '@sentry/nextjs';
-import Renderable from '@yearn-finance/web-lib/components/Renderable';
+import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import IconAddToMetamask from '@yearn-finance/web-lib/icons/IconAddToMetamask';
-import IconCross from '@yearn-finance/web-lib/icons/IconCross';
-import IconWallet from '@yearn-finance/web-lib/icons/IconWallet';
+import {IconAddToMetamask} from '@yearn-finance/web-lib/icons/IconAddToMetamask';
+import {IconCross} from '@yearn-finance/web-lib/icons/IconCross';
+import {IconWallet} from '@yearn-finance/web-lib/icons/IconWallet';
 import {toAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
 import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
@@ -84,7 +84,7 @@ function TokenItem({element}: {element: TBalanceReminderElement}): ReactElement 
 	);
 }
 
-export default function BalanceReminderPopover(): ReactElement {
+export function BalanceReminderPopover(): ReactElement {
 	const {balances, isLoading} = useWallet();
 	const {address, ens, isActive, onDesactivate} = useWeb3();
 	const {vaults} = useYearn();

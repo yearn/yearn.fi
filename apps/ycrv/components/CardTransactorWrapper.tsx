@@ -5,13 +5,13 @@ import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useAddToken} from '@yearn-finance/web-lib/hooks/useAddToken';
 import {useDismissToasts} from '@yearn-finance/web-lib/hooks/useDismissToasts';
-import VAULT_ABI from '@yearn-finance/web-lib/utils/abi/vault.abi';
+import {VAULT_ABI} from '@yearn-finance/web-lib/utils/abi/vault.abi';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {LPYCRV_TOKEN_ADDRESS, LPYCRV_V2_TOKEN_ADDRESS, MAX_UINT_256, STYCRV_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YCRV_CURVE_POOL_V2_ADDRESS, YCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
-import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
+import {performBatchedUpdates} from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
@@ -19,7 +19,7 @@ import {getAmountWithSlippage, getVaultAPY} from '@common/utils';
 import {approveERC20, deposit} from '@common/utils/actions';
 import {ZAP_OPTIONS_FROM, ZAP_OPTIONS_TO} from '@yCRV/constants/tokens';
 import {useYCRV} from '@yCRV/contexts/useYCRV';
-import ZAP_CRV_ABI from '@yCRV/utils/abi/zapCRV.abi';
+import {ZAP_CRV_ABI} from '@yCRV/utils/abi/zapCRV.abi';
 import {zapCRV} from '@yCRV/utils/actions';
 
 import type {ReactElement} from 'react';
@@ -64,7 +64,7 @@ const CardTransactorContext = createContext<TCardTransactor>({
 	onIncreaseCRVAllowance: async (): Promise<void> => undefined
 });
 
-function CardTransactorContextApp({
+export function CardTransactorContextApp({
 	defaultOptionFrom = ZAP_OPTIONS_FROM[0],
 	defaultOptionTo = ZAP_OPTIONS_TO[0],
 	children = <div />
@@ -325,4 +325,3 @@ function CardTransactorContextApp({
 }
 
 export const useCardTransactor = (): TCardTransactor => useContext(CardTransactorContext);
-export default CardTransactorContextApp;

@@ -10,7 +10,7 @@ import {getVaultName} from '@common/utils';
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
-function VaultsListRetired({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+export function VaultsListRetired({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {balances} = useWallet();
 	const vaultName = useMemo((): string => getVaultName(currentVault), [currentVault]);
 	const balanceToMigrate = useBalance(currentVault.address, balances);
@@ -53,5 +53,3 @@ function VaultsListRetired({currentVault}: {currentVault: TYDaemonVault}): React
 		</Link>
 	);
 }
-
-export {VaultsListRetired};

@@ -1,11 +1,11 @@
 import {getEthZapperContract} from '@vaults/utils';
-import VAULT_MIGRATOR_ABI from '@vaults/utils/abi/vaultMigrator.abi';
-import ZAP_OPT_ETH_TO_YVETH_ABI from '@vaults/utils/abi/zapOptEthToYvEth';
+import {VAULT_MIGRATOR_ABI} from '@vaults/utils/abi/vaultMigrator.abi';
+import {ZAP_OPT_ETH_TO_YVETH_ABI} from '@vaults/utils/abi/zapOptEthToYvEth';
 import {erc20ABI, readContract} from '@wagmi/core';
-import PARTNER_VAULT_ABI from '@yearn-finance/web-lib/utils/abi/partner.vault.abi';
-import VAULT_ABI from '@yearn-finance/web-lib/utils/abi/vault.abi';
-import ZAP_ETH_TO_YVETH_ABI from '@yearn-finance/web-lib/utils/abi/zapEthToYvEth.abi';
-import ZAP_FTM_TO_YVFTM_ABI from '@yearn-finance/web-lib/utils/abi/zapFtmToYvFTM.abi';
+import {PARTNER_VAULT_ABI} from '@yearn-finance/web-lib/utils/abi/partner.vault.abi';
+import {VAULT_ABI} from '@yearn-finance/web-lib/utils/abi/vault.abi';
+import {ZAP_ETH_TO_YVETH_ABI} from '@yearn-finance/web-lib/utils/abi/zapEthToYvEth.abi';
+import {ZAP_FTM_TO_YVFTM_ABI} from '@yearn-finance/web-lib/utils/abi/zapFtmToYvFTM.abi';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {handleTx, toWagmiProvider} from '@yearn-finance/web-lib/utils/wagmi/provider';

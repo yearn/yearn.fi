@@ -8,9 +8,9 @@ import {useContractReads} from 'wagmi';
 import {LPYCRV_TOKEN_ADDRESS, LPYCRV_V2_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, VECRV_ADDRESS, VECRV_YEARN_TREASURY_ADDRESS, YCRV_CURVE_POOL_V2_ADDRESS, YCRV_TOKEN_ADDRESS, YVECRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {decodeAsBigInt} from '@yearn-finance/web-lib/utils/decoder';
 import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import CURVE_CRV_YCRV_LP_ABI from '@yCRV/utils/abi/curveCrvYCrvLp.abi';
-import STYCRV_ABI from '@yCRV/utils/abi/styCRV.abi';
-import YVECRV_ABI from '@yCRV/utils/abi/yveCRV.abi';
+import {CURVE_CRV_YCRV_LP} from '@yCRV/utils/abi/curveCrvYCrvLp.abi';
+import {STYCRV_ABI} from '@yCRV/utils/abi/styCRV.abi';
+import {YVECRV_ABI} from '@yCRV/utils/abi/yveCRV.abi';
 
 export type TCRVHoldings = {
 	legacy: bigint;
@@ -48,7 +48,7 @@ export function useHoldings(): TCRVHoldings {
 	const lpyCRVV2Contract = {address: LPYCRV_V2_TOKEN_ADDRESS, abi: YVECRV_ABI};
 	const yveCRVContract = {address: YVECRV_TOKEN_ADDRESS, abi: YVECRV_ABI};
 	const veEscrowContract = {address: VECRV_ADDRESS, abi: YVECRV_ABI};
-	const crvYCRVLpContract = {address: YCRV_CURVE_POOL_V2_ADDRESS, abi: CURVE_CRV_YCRV_LP_ABI};
+	const crvYCRVLpContract = {address: YCRV_CURVE_POOL_V2_ADDRESS, abi: CURVE_CRV_YCRV_LP};
 
 	const {data, status} = useContractReads({
 		contracts: [

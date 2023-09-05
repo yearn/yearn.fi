@@ -8,11 +8,11 @@ import {CURVE_BRIBE_V3_ADDRESS, CURVE_BRIBE_V3_HELPER_ADDRESS} from '@yearn-fina
 import {decodeAsBigInt} from '@yearn-finance/web-lib/utils/decoder';
 import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
-import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
+import {performBatchedUpdates} from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {useCurve} from '@common/contexts/useCurve';
 import {getLastThursday, getNextThursday} from '@yBribe/utils';
-import CURVE_BRIBE_V3 from '@yBribe/utils/abi/curveBribeV3.abi';
-import CURVE_BRIBE_V3_HELPER from '@yBribe/utils/abi/curveBribeV3Helper.abi';
+import {CURVE_BRIBE_V3_ABI} from '@yBribe/utils/abi/curveBribeV3.abi';
+import {CURVE_BRIBE_V3_HELPER_ABI} from '@yBribe/utils/abi/curveBribeV3Helper.abi';
 
 import type {TAddress, TDict, VoidPromiseFunction} from '@yearn-finance/web-lib/types';
 import type {TCurveGaugeVersionRewards} from '@common/types/curves';
@@ -48,9 +48,9 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 	const [isLoading, set_isLoading] = useState<boolean>(true);
 	const [currentPeriod, set_currentPeriod] = useState<number>(getLastThursday());
 	const [nextPeriod, set_nextPeriod] = useState<number>(getNextThursday());
-	const bribeV3BaseContract = useMemo((): {address: TAddress, abi: typeof CURVE_BRIBE_V3} => ({
+	const bribeV3BaseContract = useMemo((): {address: TAddress, abi: typeof CURVE_BRIBE_V3_ABI} => ({
 		address: CURVE_BRIBE_V3_ADDRESS,
-		abi: CURVE_BRIBE_V3
+		abi: CURVE_BRIBE_V3_ABI
 	}), []);
 
 	const {data: _currentPeriod} = useContractRead({
@@ -181,7 +181,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 				rewardsPerTokensPerGaugesCalls.push(
 					prepareWriteContract({
 						address: CURVE_BRIBE_V3_HELPER_ADDRESS,
-						abi: CURVE_BRIBE_V3_HELPER,
+						abi: CURVE_BRIBE_V3_HELPER_ABI,
 						functionName: 'getNewRewardPerToken',
 						args: [toAddress(gaugeAddress), tokenAsReward]
 					})
@@ -296,4 +296,3 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 
 
 export const useBribes = (): TBribesContext => useContext(BribesContext);
-export default useBribes;

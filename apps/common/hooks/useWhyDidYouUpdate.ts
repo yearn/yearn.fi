@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {useEffect, useRef} from 'react';
 
-function useWhyDidYouUpdate(name: string, props: any): void {
+export function useWhyDidYouUpdate(name: string, props: any): void {
 	// Get a mutable ref object where we can store props ...
 	// ... for comparison next time this hook runs.
 	const previousProps = useRef<any>();
@@ -34,5 +34,3 @@ function useWhyDidYouUpdate(name: string, props: any): void {
 		previousProps.current = props;
 	});
 }
-
-export default useWhyDidYouUpdate;

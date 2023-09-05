@@ -3,9 +3,9 @@ import {useIsMounted} from '@react-hookz/web';
 import {findLatestApr} from '@vaults/components/details/tabs/findLatestApr';
 import {GraphForStrategyReports} from '@vaults/components/graphs/GraphForStrategyReports';
 import {yDaemonReportsSchema} from '@vaults/schemas/reportsSchema';
-import Renderable from '@yearn-finance/web-lib/components/Renderable';
+import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import IconCopy from '@yearn-finance/web-lib/icons/IconCopy';
+import {IconCopy} from '@yearn-finance/web-lib/icons/IconCopy';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
@@ -14,7 +14,7 @@ import {copyToClipboard, parseMarkdown} from '@yearn-finance/web-lib/utils/helpe
 import {SearchBar} from '@common/components/SearchBar';
 import {Switch} from '@common/components/Switch';
 import {useFetch} from '@common/hooks/useFetch';
-import IconChevron from '@common/icons/IconChevron';
+import {IconChevron} from '@common/icons/IconChevron';
 import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 
 import type {ReactElement} from 'react';
@@ -181,7 +181,7 @@ function isExceptionStrategy(strategy: TYDaemonVaultStrategy): boolean {
 	return strategy.address.toString() === '0x23724D764d8b3d26852BA20d3Bc2578093d2B022' && !!strategy.details?.inQueue;
 }
 
-function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const [searchValue, set_searchValue] = useState<string>('');
 	const [shouldHide0DebtStrategies, set_shouldHide0DebtStrategies] = useState(true);
 
@@ -233,5 +233,3 @@ function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVault}): 
 		</div>
 	);
 }
-
-export {VaultDetailsStrategies};

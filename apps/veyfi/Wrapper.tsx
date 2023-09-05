@@ -10,7 +10,7 @@ import {OptionContextApp} from './contexts/useOption';
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
 
-export default function Wrapper({children, router}: {children: ReactElement, router: NextRouter}): ReactElement {
+export function Wrapper({children, router}: {children: ReactElement, router: NextRouter}): ReactElement {
 	const {manifest} = useCurrentApp(router);
 
 	return (

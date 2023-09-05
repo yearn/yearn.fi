@@ -2,7 +2,7 @@ import {CURVE_BRIBE_V3_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {handleTx} from '@yearn-finance/web-lib/utils/wagmi/provider';
 import {assertAddress} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {assert} from '@common/utils/assert';
-import CURVE_BRIBE_V3_ABI from '@yBribe/utils/abi/curveBribeV3.abi';
+import {CURVE_BRIBE_V3_ABI} from '@yBribe/utils/abi/curveBribeV3.abi';
 
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TWriteTransaction} from '@yearn-finance/web-lib/utils/wagmi/provider';

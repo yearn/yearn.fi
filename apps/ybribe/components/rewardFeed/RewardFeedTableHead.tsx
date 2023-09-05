@@ -1,6 +1,6 @@
 import type {ReactElement} from 'react';
 
-function RewardFeedTableHead(): ReactElement {
+export function RewardFeedTableHead(): ReactElement {
 	return (
 		<div className={'grid w-full grid-cols-2 px-4 pb-6 md:grid-cols-3 md:px-10'}>
 			<p className={'col-span-1 text-start text-base text-neutral-400'}>{'Gauge'}</p>
@@ -9,5 +9,3 @@ function RewardFeedTableHead(): ReactElement {
 		</div>
 	);
 }
-
-export {RewardFeedTableHead};

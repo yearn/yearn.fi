@@ -97,7 +97,7 @@ function Switch(props: TSwitchProps): ReactElement {
 	);
 }
 
-function ListHero<T extends string>({
+export function ListHero<T extends string>({
 	headLabel,
 	searchPlaceholder,
 	categories,
@@ -170,4 +170,3 @@ function ListHero<T extends string>({
 		</div>
 	);
 }
-export default ListHero;

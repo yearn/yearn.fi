@@ -5,10 +5,10 @@ import {claim as claimAction, stake as stakeAction, unstake as unstakeAction} fr
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import VAULT_ABI from '@yearn-finance/web-lib/utils/abi/vault.abi';
+import {VAULT_ABI} from '@yearn-finance/web-lib/utils/abi/vault.abi';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ZERO_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format';
+import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
@@ -23,7 +23,7 @@ import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 const DISPLAY_DECIMALS = 10;
 const trimAmount = (amount: string | number): string => Number(Number(amount).toFixed(DISPLAY_DECIMALS)).toString();
 
-function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+export function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {provider, address, isActive} = useWeb3();
 	const {chainID} = useChainID();
 	const {refresh: refreshBalances} = useWallet();
@@ -180,5 +180,3 @@ function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): ReactElement
 		</div>
 	);
 }
-
-export {RewardsTab};

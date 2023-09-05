@@ -6,7 +6,7 @@ import {RedeemTab} from '@veYFI/components/RedeemTab';
 import {RewardsTab} from '@veYFI/components/RewardsTab';
 import {VoteTab} from '@veYFI/components/VoteTab';
 import {useVotingEscrow} from '@veYFI/contexts/useVotingEscrow';
-import Wrapper from '@veYFI/Wrapper';
+import {Wrapper} from '@veYFI/Wrapper';
 import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {PageProgressBar} from '@common/components/PageProgressBar';

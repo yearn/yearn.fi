@@ -1,5 +1,5 @@
 // TODO: update once final version deployed
-const VEYFI_REGISTRY_ABI = [
+export const VEYFI_REGISTRY_ABI = [
 	{
 		'inputs': [
 			{
@@ -290,5 +290,3 @@ const VEYFI_REGISTRY_ABI = [
 		'type': 'function'
 	}
 ] as const;
-
-export default VEYFI_REGISTRY_ABI;

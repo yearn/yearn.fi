@@ -12,14 +12,14 @@ import {Input} from '@common/components/Input';
 import type {ReactElement} from 'react';
 import type {TAddress} from '@yearn-finance/web-lib/types';
 
-function VoteTab(): ReactElement {
+export function VoteTab(): ReactElement {
 	const [delegateAddress, set_delegateAddress] = useState('');
 	const {provider, address, isActive, chainID} = useWeb3();
 
 	const [delegateVoteStatus, set_delegateVoteStatus] = useState(defaultTxStatus);
 
 	const userAddress = address as TAddress;
-    
+
 	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: 1, walletNetwork: chainID});
 	const {isValid: isValidDelegateAddress, error: delegateAddressError} = validateAddress({address: delegateAddress});
 
@@ -63,14 +63,14 @@ function VoteTab(): ReactElement {
 				</div>
 
 				<div className={'grid grid-cols-1 gap-6 md:grid-cols-2'}>
-					<Input 
+					<Input
 						label={'Delegate to'}
 						value={delegateAddress}
-						onChange={set_delegateAddress} 
+						onChange={set_delegateAddress}
 						placeholder={'0x...'}
 						error={delegateAddressError}
 					/>
-					<Button 
+					<Button
 						className={'w-full md:mt-7'}
 						onClick={handleExecuteDelegateVote}
 						isBusy={delegateVoteStatus.pending}
@@ -83,5 +83,3 @@ function VoteTab(): ReactElement {
 		</div>
 	);
 }
-
-export {VoteTab};

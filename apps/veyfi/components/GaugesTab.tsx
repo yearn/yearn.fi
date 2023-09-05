@@ -33,7 +33,7 @@ type TGaugeData = {
 	actions: undefined
 }
 
-function GaugesTab(): ReactElement {
+export function GaugesTab(): ReactElement {
 	const [selectedGauge, set_selectedGauge] = useState('');
 	const [selectedAction, set_selectedAction] = useState<'stake' | 'unstake' | undefined>();
 	const {provider, address, isActive, chainID} = useWeb3();
@@ -122,7 +122,7 @@ function GaugesTab(): ReactElement {
 
 	return (
 		<div className={'relative -left-6 w-[calc(100%+48px)]'}>
-			<Table 
+			<Table
 				metadata={[
 					{
 						key: 'vaultName',
@@ -140,12 +140,12 @@ function GaugesTab(): ReactElement {
 										height={40}
 										quality={90}
 										src={vaultIcon}
-										loading={'eager'} 
+										loading={'eager'}
 									/>
 								</div>
 								<p>{vaultName}</p>
 							</div>
-						) 
+						)
 					},
 					{
 						key: 'vaultApy',
@@ -184,7 +184,7 @@ function GaugesTab(): ReactElement {
 						className: 'my-4 md:my-0',
 						transform: ({isApproved, vaultAddress, gaugeAddress, vaultDeposited, gaugeStaked}): ReactElement => (
 							<div className={'flex flex-row justify-center space-x-2 md:justify-end'}>
-								<Button 
+								<Button
 									className={'w-full md:w-24'}
 									onClick={async (): Promise<void> => onUnstake(gaugeAddress, gaugeStaked)}
 									isDisabled={!isActive || !isValidNetwork || isZero(gaugeStaked)}
@@ -223,5 +223,3 @@ function GaugesTab(): ReactElement {
 		</div>
 	);
 }
-
-export {GaugesTab};

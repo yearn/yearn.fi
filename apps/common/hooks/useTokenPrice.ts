@@ -5,7 +5,7 @@ import {useYearn} from '@common/contexts/useYearn';
 
 import type {TAddress} from '@yearn-finance/web-lib/types';
 
-function useTokenPrice(address: TAddress): number {
+export function useTokenPrice(address: TAddress): number {
 	const {prices} = useYearn();
 
 	const tokenPrice = useMemo((): number => (
@@ -14,5 +14,3 @@ function useTokenPrice(address: TAddress): number {
 
 	return tokenPrice;
 }
-
-export {useTokenPrice};

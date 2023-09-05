@@ -11,7 +11,7 @@ type TRequest = {
 	};
 } & NextApiRequest
 
-export default async function handler(req: TRequest, res: NextApiResponse<{ message: string }>): Promise<void> {
+export async function handler(req: TRequest, res: NextApiResponse<{ message: string }>): Promise<void> {
 	const telegram = new Telegram(process.env.TELEGRAM_BOT as string);
 	try {
 		const form = formidable();

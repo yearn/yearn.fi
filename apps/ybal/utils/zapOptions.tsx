@@ -3,7 +3,7 @@ import {ImageWithFallback} from '@common/components/ImageWithFallback';
 
 import type {TDropdownOption} from '@common/types/types';
 
-const ZAP_OPTIONS_FROM: TDropdownOption[] = [
+export const ZAP_OPTIONS_FROM: TDropdownOption[] = [
 	{
 		label: 'Bal',
 		symbol: 'Bal',
@@ -67,7 +67,7 @@ const ZAP_OPTIONS_FROM: TDropdownOption[] = [
 	}
 ];
 
-const ZAP_OPTIONS_TO: TDropdownOption[] = [
+export const ZAP_OPTIONS_TO: TDropdownOption[] = [
 	{
 		label: 'st-yBal',
 		symbol: 'st-yBal',
@@ -116,8 +116,3 @@ const ZAP_OPTIONS_TO: TDropdownOption[] = [
 		)
 	}
 ];
-
-export {
-	ZAP_OPTIONS_FROM,
-	ZAP_OPTIONS_TO
-};

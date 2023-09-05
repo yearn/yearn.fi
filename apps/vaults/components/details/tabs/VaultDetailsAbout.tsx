@@ -1,6 +1,6 @@
 import {useIsMounted} from '@react-hookz/web';
 import {GraphForVaultEarnings} from '@vaults/components/graphs/GraphForVaultEarnings';
-import Renderable from '@yearn-finance/web-lib/components/Renderable';
+import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
@@ -62,7 +62,7 @@ function YearnFeesLineItem({children, label, tooltip}: TYearnFeesLineItem): Reac
 	);
 }
 
-function VaultDetailsAbout({currentVault, harvestData}: { currentVault: TYDaemonVault, harvestData: TGraphData[] }): ReactElement {
+export function VaultDetailsAbout({currentVault, harvestData}: { currentVault: TYDaemonVault, harvestData: TGraphData[] }): ReactElement {
 	const isMounted = useIsMounted();
 	const {token, apy, details} = currentVault;
 
@@ -139,5 +139,3 @@ function VaultDetailsAbout({currentVault, harvestData}: { currentVault: TYDaemon
 		</div>
 	);
 }
-
-export {VaultDetailsAbout};

@@ -38,7 +38,7 @@ const defaultExpectedOutFetcher: TExpectedOutFetcher = {
 	allowance: toBigInt(0)
 };
 
-function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauge, onClose: VoidFunction}): ReactElement {
+export function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauge, onClose: VoidFunction}): ReactElement {
 	const {chainID} = useChainID();
 	const {address, provider, isActive, openLoginModal, onSwitchChain} = useWeb3();
 	const {refresh} = useBribes();
@@ -256,4 +256,3 @@ function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauge, on
 	);
 }
 
-export {GaugeBribeModal};

@@ -4,7 +4,7 @@ import {useUI} from '@yearn-finance/web-lib/contexts/useUI';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {isZeroAddress} from '@yearn-finance/web-lib/utils/address';
-import performBatchedUpdates from '@yearn-finance/web-lib/utils/performBatchedUpdates';
+import {performBatchedUpdates} from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {useWallet} from '@common/contexts/useWallet';
 import {useFetch} from '@common/hooks/useFetch';
 import {yDaemonTokenListBalances} from '@common/schemas/yDaemonTokenListBalances';
@@ -103,4 +103,3 @@ export const WalletForZapApp = memo(function WalletForZapApp({children}: {childr
 });
 
 export const useWalletForZap = (): TWalletForZap => useContext(WalletForZap);
-export default useWalletForZap;

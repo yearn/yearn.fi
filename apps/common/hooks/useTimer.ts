@@ -22,7 +22,7 @@ export function computeTimeLeft({endTime}: {endTime?: TSeconds}): number {
 	return ms > 0 ? ms : 0;
 }
 
-function useTimer({endTime}: TProps): string {
+export function useTimer({endTime}: TProps): string {
 	const interval = useRef<NodeJS.Timeout | null>(null);
 	const timeLeft = computeTimeLeft({endTime});
 	const [time, set_time] = useState<TMilliseconds>(timeLeft);
@@ -60,5 +60,3 @@ function useTimer({endTime}: TProps): string {
 
 	return time ? formatTimestamp(time) : '00H 00M 00S';
 }
-
-export {useTimer};

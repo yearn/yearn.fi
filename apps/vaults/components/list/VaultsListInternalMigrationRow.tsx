@@ -10,7 +10,7 @@ import {getVaultName} from '@common/utils';
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
-function VaultsListInternalMigrationRow({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+export function VaultsListInternalMigrationRow({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {balances} = useWallet();
 	const vaultName = useMemo((): string => getVaultName(currentVault), [currentVault]);
 	const balanceToMigrate = useBalance(currentVault.address, balances);
@@ -52,5 +52,3 @@ function VaultsListInternalMigrationRow({currentVault}: {currentVault: TYDaemonV
 		</Link>
 	);
 }
-
-export {VaultsListInternalMigrationRow};

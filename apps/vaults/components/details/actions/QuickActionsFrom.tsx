@@ -1,6 +1,6 @@
 import {useCallback} from 'react';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
-import Renderable from '@yearn-finance/web-lib/components/Renderable';
+import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
@@ -13,7 +13,7 @@ import {useTokenPrice} from '@common/hooks/useTokenPrice';
 
 import type {ChangeEvent, ReactElement} from 'react';
 
-function VaultDetailsQuickActionsFrom(): ReactElement {
+export function VaultDetailsQuickActionsFrom(): ReactElement {
 	const {isActive} = useWeb3();
 	const {balances} = useWallet();
 	const {
@@ -107,5 +107,3 @@ function VaultDetailsQuickActionsFrom(): ReactElement {
 		</section>
 	);
 }
-
-export default VaultDetailsQuickActionsFrom;
