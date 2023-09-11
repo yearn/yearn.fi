@@ -184,6 +184,7 @@ export function AppHeader(): ReactElement {
 					</div>
 				</Renderable>
 			}
+			showNetworkSelector={false}
 		/>
 	);
 }
