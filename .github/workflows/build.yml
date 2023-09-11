@@ -28,3 +28,4 @@ jobs:
         run: yarn build
         env:
           WALLETCONNECT_PROJECT_ID: ${{ secrets.WALLETCONNECT_PROJECT_ID }}
+          YDAEMON_BASE_URI: ${{ secrets.YDAEMON_BASE_URI }}
