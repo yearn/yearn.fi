@@ -179,6 +179,8 @@ export function AppHeader(): ReactElement {
 						<BalanceReminderPopover />
 					</div>
 				</Renderable>
-			} />
+			}
+			showNetworkSelector={false}
+		/>
 	);
 }
