@@ -1,11 +1,12 @@
 import {useState} from 'react';
 import {Switch as HeadlessSwitch} from '@headlessui/react';
+import {cl} from '@yearn-finance/web-lib/utils/cl';
 
-import type {ReactElement} from 'react';
+import type {KeyboardEvent, ReactElement} from 'react';
 
 type TSwitch = {
 	isEnabled: boolean;
-	onSwitch?: React.Dispatch<React.SetStateAction<boolean>>;
+	onSwitch?: () => void;
 };
 
 export function Switch(props: TSwitch): ReactElement {
@@ -13,24 +14,30 @@ export function Switch(props: TSwitch): ReactElement {
 	const [isEnabledState, set_isEnabledState] = useState(isEnabled);
 
 	function safeOnSwitch(): void {
-		if (onSwitch) {
-			onSwitch(!isEnabled);
-		} else {
-			set_isEnabledState(!isEnabledState);
+		onSwitch ? onSwitch() : set_isEnabledState(!isEnabledState);
+	}
+
+	const isChecked = onSwitch ? isEnabled : isEnabledState;
+
+	function handleOnKeyDown({key}: KeyboardEvent<HTMLButtonElement>): void | null {
+		if (key !== 'Enter') {
+			return;
 		}
+
+		safeOnSwitch();
 	}
 
 	return (
 		<div>
 			<HeadlessSwitch
-				checked={onSwitch ? isEnabled : isEnabledState}
+				checked={isChecked}
 				onChange={safeOnSwitch}
-				onKeyDown={({keyCode}: {keyCode: number}): unknown => keyCode === 13 ? safeOnSwitch() : null}
+				onKeyDown={handleOnKeyDown}
 				className={'yearn--next-switch'}>
 				<span className={'sr-only'}>{'Use setting'}</span>
 				<div
 					aria-hidden={'true'}
-					className={(onSwitch ? isEnabled : isEnabledState) ? 'translate-x-[14px]' : 'translate-x-0'} />
+					className={cl(isChecked ? 'translate-x-[14px]' : 'translate-x-0')} />
 			</HeadlessSwitch>
 		</div>
 	);
