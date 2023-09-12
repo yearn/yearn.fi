@@ -3,6 +3,7 @@ import {Popover, Transition} from '@headlessui/react';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {IconSettings} from '@yearn-finance/web-lib/icons/IconSettings';
+import {Switch} from '@common/components/Switch';
 import {useYearn} from '@common/contexts/useYearn';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 
@@ -13,7 +14,7 @@ type TSettingPopover = {
 	chainID: number
 }
 export function SettingsPopover({chainID}: TSettingPopover): ReactElement {
-	const {zapProvider, set_zapProvider, zapSlippage, set_zapSlippage} = useYearn();
+	const {zapProvider, set_zapProvider, zapSlippage, set_zapSlippage, isStakingOpBoostedVaults, set_isStakingOpBoostedVaults} = useYearn();
 
 	const currentZapProvider = useMemo((): TSolver => {
 		if (chainID !== 1 && zapProvider === 'Cowswap') {
@@ -96,11 +97,11 @@ export function SettingsPopover({chainID}: TSettingPopover): ReactElement {
 											<legend>&nbsp;</legend>
 										</Renderable>
 									</div>
-									<div>
+									<div className={'flex flex-col space-y-1'}>
 										<label
 											htmlFor={'slippageTolerance'}
 											className={'text-neutral-900'}>
-											{'Slippage tolerance'}
+											{'Slippage Tolerance'}
 										</label>
 										<div className={'mt-1 flex flex-row space-x-2'}>
 											<button
@@ -129,6 +130,23 @@ export function SettingsPopover({chainID}: TSettingPopover): ReactElement {
 											</div>
 										</div>
 									</div>
+									{chainID === 10 ?
+										<div className={'mt-7'}>
+											<label
+												htmlFor={'opBoostedVaults'}
+												className={'text-neutral-900'}>
+												{'OP Boosted Vaults'}
+											</label>
+											<div className={'mt-1 flex flex-row space-x-2'}>
+												<label className={'flex items-center justify-between'}>
+													<p className={'mr-2 text-sm'}>{'Stake automatically'}</p>
+													<Switch
+														isEnabled={isStakingOpBoostedVaults}
+														onSwitch={(): void => set_isStakingOpBoostedVaults(!isStakingOpBoostedVaults)} />
+												</label>
+
+											</div>
+										</div> : null}
 								</div>
 							</div>
 						</Popover.Panel>

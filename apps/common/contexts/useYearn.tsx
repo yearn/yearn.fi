@@ -35,9 +35,11 @@ export type TYearnContext = {
 	isLoadingVaultList: boolean,
 	zapSlippage: number,
 	zapProvider: TSolver,
+	isStakingOpBoostedVaults: boolean,
 	mutateVaultList: KeyedMutator<TYDaemonVaults>,
 	set_zapSlippage: (value: number) => void
 	set_zapProvider: (value: TSolver) => void
+	set_isStakingOpBoostedVaults: (value: boolean) => void
 }
 
 const YearnContext = createContext<TYearnContext>({
@@ -55,10 +57,12 @@ const YearnContext = createContext<TYearnContext>({
 	isLoadingVaultList: false,
 	zapSlippage: 0.1,
 	zapProvider: Solver.enum.Cowswap,
+	isStakingOpBoostedVaults: true,
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	mutateVaultList: (): any => undefined,
 	set_zapSlippage: (): void => undefined,
-	set_zapProvider: (): void => undefined
+	set_zapProvider: (): void => undefined,
+	set_isStakingOpBoostedVaults: (): void => undefined
 });
 
 export const YearnContextApp = memo(function YearnContextApp({children}: { children: ReactElement }): ReactElement {
@@ -68,6 +72,7 @@ export const YearnContextApp = memo(function YearnContextApp({children}: { child
 	const {address, currentPartner} = useWeb3();
 	const [zapSlippage, set_zapSlippage] = useLocalStorage<number>('yearn.fi/zap-slippage', DEFAULT_SLIPPAGE);
 	const [zapProvider, set_zapProvider] = useLocalStorage<TSolver>('yearn.fi/zap-provider', Solver.enum.Cowswap);
+	const [isStakingOpBoostedVaults, set_isStakingOpBoostedVaults] = useLocalStorage<boolean>('yearn.fi/staking-op-boosted-vaults', true);
 
 	useEffect((): void => {
 		if (result?.error?.code === 'ERR_NETWORK') {
@@ -165,12 +170,14 @@ export const YearnContextApp = memo(function YearnContextApp({children}: { child
 		set_zapSlippage,
 		zapProvider,
 		set_zapProvider,
+		isStakingOpBoostedVaults,
+		set_isStakingOpBoostedVaults,
 		vaults: vaultsObject,
 		vaultsMigrations: vaultsMigrationsObject,
 		vaultsRetired: vaultsRetiredObject,
 		isLoadingVaultList,
 		mutateVaultList
-	}), [currentPartner?.id, pricesUpdated, tokens, earned, zapSlippage, set_zapSlippage, zapProvider, set_zapProvider, vaultsObject, vaultsMigrationsObject, isLoadingVaultList, mutateVaultList, vaultsRetiredObject]);
+	}), [currentPartner?.id, pricesUpdated, tokens, earned, zapSlippage, set_zapSlippage, zapProvider, set_zapProvider, isStakingOpBoostedVaults, set_isStakingOpBoostedVaults, vaultsObject, vaultsMigrationsObject, isLoadingVaultList, mutateVaultList, vaultsRetiredObject]);
 
 	return (
 		<YearnContext.Provider value={contextValue}>
