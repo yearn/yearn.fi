@@ -1,3 +1,4 @@
+const path = require('path');
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 const runtimeCaching = require('next-pwa/cache');
 // eslint-disable-next-line unused-imports/no-unused-vars, @typescript-eslint/no-unused-vars
@@ -110,6 +111,14 @@ module.exports = withBundleAnalyzer(withPWA({
 		// YDAEMON_BASE_URI: 'https://api.ycorpo.com',
 		// YDAEMON_BASE_URI: 'http://localhost:8080',
 		BASE_YEARN_ASSETS_URI: 'https://assets.smold.app/api/token'
+	},
+	webpack: (config) => {
+		config.resolve.alias = {
+			...config.resolve.alias,
+			react: path.resolve(__dirname, './node_modules/react')
+		};
+
+		return config;
 	}
 }));
 
