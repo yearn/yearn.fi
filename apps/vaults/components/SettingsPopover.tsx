@@ -13,6 +13,11 @@ import type {TSolver} from '@common/schemas/yDaemonTokenListBalances';
 type TSettingPopover = {
 	chainID: number
 }
+
+function Label({children}: {children: string}): ReactElement {
+	return <label htmlFor={'zapProvider'} className={'font-bold text-neutral-900'}>{children}</label>;
+}
+
 export function SettingsPopover({chainID}: TSettingPopover): ReactElement {
 	const {zapProvider, set_zapProvider, zapSlippage, set_zapSlippage, isStakingOpBoostedVaults, set_isStakingOpBoostedVaults} = useYearn();
 
@@ -42,8 +47,8 @@ export function SettingsPopover({chainID}: TSettingPopover): ReactElement {
 						<Popover.Panel className={'absolute right-0 top-6 z-[1000] mt-3 w-screen max-w-xs md:-right-4 md:top-4'}>
 							<div className={'yearn--shadow'}>
 								<div className={'relative bg-neutral-0 p-4'}>
-									<div className={'mb-7 flex flex-col space-y-1'}>
-										<label htmlFor={'zapProvider'} className={'text-neutral-900'}>{'Zap Provider'}</label>
+									<div className={'mb-6 flex flex-col space-y-1'}>
+										<Label>{'Zap Provider'}</Label>
 										<select
 											id={'zapProvider'}
 											onChange={(e): void => set_zapProvider(e.target.value as TSolver)}
@@ -81,7 +86,7 @@ export function SettingsPopover({chainID}: TSettingPopover): ReactElement {
 											</legend>
 										</Renderable>
 										<Renderable shouldRender={currentZapProvider === Solver.enum.Wido}>
-											<legend className={'text-xs italic text-neutral-500'}>
+											<legend className={'ml-2 text-xs text-neutral-500'}>
 												{'Submit an order via'}&nbsp;
 												<a
 													className={'underline'}
@@ -98,11 +103,7 @@ export function SettingsPopover({chainID}: TSettingPopover): ReactElement {
 										</Renderable>
 									</div>
 									<div className={'flex flex-col space-y-1'}>
-										<label
-											htmlFor={'slippageTolerance'}
-											className={'text-neutral-900'}>
-											{'Slippage Tolerance'}
-										</label>
+										<Label>{'Slippage'}</Label>
 										<div className={'mt-1 flex flex-row space-x-2'}>
 											<button
 												onClick={(): void => set_zapSlippage(1)}
@@ -131,19 +132,15 @@ export function SettingsPopover({chainID}: TSettingPopover): ReactElement {
 										</div>
 									</div>
 									{chainID === 10 ?
-										<div className={'mt-7'}>
-											<label
-												htmlFor={'opBoostedVaults'}
-												className={'text-neutral-900'}>
-												{'OP Boosted Vaults'}
-											</label>
+										<div className={'mt-6'}>
+											<Label>{'OP Boosted Vaults'}</Label>
 											<div className={'mt-1 flex flex-row space-x-2'}>
-												<label className={'flex items-center justify-between'}>
-													<p className={'mr-2 text-sm'}>{'Stake automatically'}</p>
+												<div className={'flex grow items-center justify-between'}>
+													<p className={'mr-2'}>{'Stake automatically'}</p>
 													<Switch
 														isEnabled={isStakingOpBoostedVaults}
 														onSwitch={(): void => set_isStakingOpBoostedVaults(!isStakingOpBoostedVaults)} />
-												</label>
+												</div>
 
 											</div>
 										</div> : null}
