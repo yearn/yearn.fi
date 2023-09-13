@@ -10,7 +10,11 @@ export function useYDaemonBaseURI({chainID}: TProps): {
 	// eslint-disable-next-line @typescript-eslint/naming-convention
 	const {settings} = useSettings();
 
-	const baseUri = settings.yDaemonBaseURI || String(process.env.YDAEMON_BASE_URI);
+	const baseUri = settings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI;
+
+	if (!baseUri) {
+		throw new Error('YDAEMON_BASE_URI is not defined');
+	}
 
 	return {yDaemonBaseUri: `${baseUri}/${chainID}`};
 }
