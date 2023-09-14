@@ -3,7 +3,11 @@ import localFont from 'next/font/local';
 import useSWR from 'swr';
 import {AnimatePresence, domAnimation, LazyMotion, motion} from 'framer-motion';
 import {useIntervalEffect, useIsMounted, useLocalStorageValue} from '@react-hookz/web';
+<<<<<<< HEAD
 import {arbitrum, base, fantom, mainnet, optimism} from '@wagmi/chains';
+=======
+import {arbitrum, base,fantom, mainnet, optimism} from '@wagmi/chains';
+>>>>>>> e548a48f (feat: bump lib)
 import {WithYearn} from '@yearn-finance/web-lib/contexts/WithYearn';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
