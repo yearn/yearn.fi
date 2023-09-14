@@ -106,14 +106,14 @@ export function Dropdown({
 				<>
 					<Combobox.Button
 						onClick={(): void => set_isOpen((o: boolean): boolean => !o)}
-						className={'flex h-10 w-full items-center justify-between bg-neutral-0 p-2 text-base text-neutral-900 md:px-3'}>
+						className={'flex h-10 w-full items-center justify-between bg-neutral-0 p-2 text-base text-neutral-900 md:w-56 md:px-3'}>
 						<div className={'relative flex flex-row items-center'}>
 							<div key={selected?.label} className={'h-6 w-6 flex-none rounded-full'}>
 								{selected?.icon ? cloneElement(selected.icon) : <div className={'h-6 w-6 flex-none rounded-full bg-neutral-500'} />}
 							</div>
-							<p className={'max-w-[90%] overflow-x-hidden text-ellipsis whitespace-nowrap pl-2 font-normal text-neutral-900 scrollbar-none md:max-w-full'}>
+							<p className={'whitespace-nowrap px-2 font-normal text-neutral-900 scrollbar-none md:max-w-full'}>
 								<Combobox.Input
-									className={'w-full cursor-default overflow-x-scroll border-none bg-transparent p-0 outline-none scrollbar-none'}
+									className={'w-full cursor-default text-ellipsis border-none bg-transparent p-0 outline-none scrollbar-none'}
 									displayValue={(option: TDropdownOption): string => option.symbol}
 									placeholder={placeholder}
 									spellCheck={false}
@@ -124,11 +124,11 @@ export function Dropdown({
 										});
 									}} />
 							</p>
-						</div>
-						<div className={'absolute right-2 md:right-3'}>
-							<IconChevron
-								aria-hidden={'true'}
-								className={`h-6 w-6 transition-transform ${isOpen ? '-rotate-180' : 'rotate-0'}`} />
+							<div>
+								<IconChevron
+									aria-hidden={'true'}
+									className={`h-6 w-6 transition-transform ${isOpen ? '-rotate-180' : 'rotate-0'}`} />
+							</div>
 						</div>
 					</Combobox.Button>
 					<Transition
