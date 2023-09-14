@@ -162,6 +162,7 @@ export function AppHeader(): ReactElement {
 
 	return (
 		<Header
+			showNetworkSelector
 			linkComponent={<Link href={''} />}
 			currentPathName={pathname}
 			onOpenMenuMobile={onOpenMenu}
