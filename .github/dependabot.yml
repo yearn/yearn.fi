@@ -11,5 +11,16 @@ updates:
       interval: "weekly"
       day: "monday"
       time: "10:00"
-    allow:
-      - dependency-name: "@yearn-finance/*"
+    ignore:
+      - dependency-name: "@types/*" #Ignore updates for all `@types/` packages
+      - dependency-name: "eslint*" #Ignore updates for all `eslint` packages
+      - dependency-name: "ts-loader" #Ignore updates for ts-loader
+      - dependency-name: "dotenv-webpack" #Ignore updates for dotenv-webpack
+      - dependency-name: "@typescript*" #Ignore updates for all `@typescript` packages
+      - dependency-name: "postcss*" #Ignore updates for all `postcss` packages
+      - dependency-name: "sharp" #Ignore updates for sharp
+      - dependency-name: "sass" #Ignore updates for sass
+      - dependency-name: "typescript" #Ignore patch for typescript
+        update-types: ["version-update:semver-patch"]
+
+      
