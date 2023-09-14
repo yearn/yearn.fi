@@ -1,6 +1,7 @@
 import {Fragment, useMemo} from 'react';
 import {Popover, Transition} from '@headlessui/react';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
+import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {IconSettings} from '@yearn-finance/web-lib/icons/IconSettings';
 import {Switch} from '@common/components/Switch';
@@ -9,17 +10,22 @@ import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 
 import type {ReactElement} from 'react';
 import type {TSolver} from '@common/schemas/yDaemonTokenListBalances';
+import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
 type TSettingPopover = {
-	chainID: number
+	vault: TYDaemonVault
 }
 
 function Label({children}: {children: string}): ReactElement {
 	return <label htmlFor={'zapProvider'} className={'font-bold text-neutral-900'}>{children}</label>;
 }
 
-export function SettingsPopover({chainID}: TSettingPopover): ReactElement {
+export function SettingsPopover({vault}: TSettingPopover): ReactElement {
 	const {zapProvider, set_zapProvider, zapSlippage, set_zapSlippage, isStakingOpBoostedVaults, set_isStakingOpBoostedVaults} = useYearn();
+	const {stakingRewardsByVault} = useStakingRewards();
+	
+	const {address, chainID} = vault;
+	const hasStakingRewards = !!stakingRewardsByVault?.[address];
 
 	const currentZapProvider = useMemo((): TSolver => {
 		if (chainID !== 1 && zapProvider === 'Cowswap') {
@@ -131,7 +137,7 @@ export function SettingsPopover({chainID}: TSettingPopover): ReactElement {
 											</div>
 										</div>
 									</div>
-									{chainID === 10 ?
+									{hasStakingRewards ?
 										<div className={'mt-6'}>
 											<Label>{'OP Boosted Vaults'}</Label>
 											<div className={'mt-1 flex flex-row space-x-2'}>
