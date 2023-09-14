@@ -40,7 +40,7 @@
     "react-popper": "^2.3.0",
     "react-wrap-balancer": "^1.1.0",
     "recharts": "^2.8.0",
-    "swr": "2.1.5",
+    "swr": "2.2.2",
     "telegraf": "^4.13.1",
     "viem": "^1.10.12",
     "vite": "^4.2.0",
