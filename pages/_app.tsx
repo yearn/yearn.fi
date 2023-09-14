@@ -42,12 +42,25 @@ const aeonik = localFont({
 	]
 });
 
+/** 🔵 - Yearn Finance ***************************************************************************
+** The 'WithLayout' function is a React functional component that returns a ReactElement. It is used
+** to wrap the current page component and provide layout for the page.
+**
+** It uses the 'useLocalStorageValue' hook to get the value of 'yearn.fi/feedback-popover' from
+** local storage. This value is used to determine whether to show the feedback popover.
+**
+** The 'useCurrentApp' hook is used to get the current app name.
+** The 'getLayout' function is used to get the layout of the current page component. If the current
+** page component does not have a 'getLayout' function, it defaults to a function that returns the
+** page as is.
+** The returned JSX structure is a div with the 'AppHeader' component, the current page component
+** wrapped with layout, and the feedback popover if it should not be hidden.
+**************************************************************************************************/
 type TGetLayout = NextComponentType & {getLayout: (p: ReactElement, router: NextRouter) => ReactElement}
 const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 	const {Component, pageProps, router} = props;
 	const getLayout = (Component as TGetLayout).getLayout || ((page: ReactElement): ReactElement => page);
-	// eslint-disable-next-line @typescript-eslint/naming-convention
-	const {value} = useLocalStorageValue<boolean>('yearn.fi/feedback-popover');
+	const {value: shouldHidePopover} = useLocalStorageValue<boolean>('yearn.fi/feedback-popover');
 	const {name} = useCurrentApp(router);
 
 	return (
@@ -64,7 +77,7 @@ const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 							className={'my-0 h-full md:mb-0 md:mt-16'}
 							variants={variants}>
 							{getLayout(<Component router={props.router} {...pageProps} />, router)}
-							{!value && <Popover />}
+							{!shouldHidePopover && <Popover />}
 						</motion.div>
 					</AnimatePresence>
 				</LazyMotion>
@@ -73,12 +86,31 @@ const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 	);
 });
 
+
+/* 🔵 - Yearn Finance ******************************************************************************
+** The function 'NetworkStatusIndicator' is a React functional component that returns a
+** ReactElement.
+** It uses several hooks and functions to fetch and display the status of the network.
+**
+** The 'useChainID' hook is used to get the current chain ID.
+** The 'useIsMounted' hook is used to check if the component is currently mounted.
+** The 'useYDaemonBaseURI' function is used to get the base URI of the yDaemon for the current
+** chain ID.
+** The 'useSWR' hook is used to fetch the status of the network from the yDaemon.
+**
+** The 'useEffect' hook is used to re-fetch the status whenever the chain ID changes.
+** The 'useIntervalEffect' hook is used to re-fetch the status every 10 seconds if the status is
+** not 'OK'.
+**
+** If the component is not mounted, or the status is 'OK' or undefined it returns an empty Fragment
+** Otherwise, it returns a div with a spinner icon and a message indicating that the data points
+** are being updated.
+**************************************************************************************************/
 function NetworkStatusIndicator(): ReactElement {
-	type TStatus = 'Not Started' | 'Loading' | 'OK'
 	const {safeChainID} = useChainID();
 	const isMounted = useIsMounted();
 	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: safeChainID});
-	const {data: status, mutate} = useSWR<TStatus>(
+	const {data: status, mutate} = useSWR<'Not Started' | 'Loading' | 'OK'>(
 		`${yDaemonBaseUri}/status`,
 		baseFetcher,
 		{revalidateOnFocus: true, revalidateOnReconnect: true, revalidateOnMount: true}
@@ -116,6 +148,22 @@ function NetworkStatusIndicator(): ReactElement {
 }
 
 
+/**** 🔵 - Yearn Finance ***************************************************************************
+** The 'App' function is a React functional component that returns a ReactElement. It uses several
+** hooks and components to build the main structure of the application.
+**
+** The 'useCurrentApp' hook is used to get the current app manifest.
+**
+** The 'MenuContextApp', 'YearnContextApp', and 'WalletContextApp' are context providers that
+** provide global state for the menu, Yearn, and wallet respectively.
+** The 'Meta' component is used to set the meta tags for the page.
+** The 'WithLayout' component is a higher-order component that wraps the current page component
+** and provides layout for the page.
+**
+** The 'NetworkStatusIndicator' component is used to display the network status.
+** The returned JSX structure is wrapped with the context providers and includes the meta tags,
+** layout, and network status indicator.
+**************************************************************************************************/
 const App = memo(function App(props: AppProps): ReactElement {
 	const {Component, pageProps, router} = props;
 	const {manifest} = useCurrentApp(router);
@@ -138,6 +186,19 @@ const App = memo(function App(props: AppProps): ReactElement {
 	);
 });
 
+
+/**** 🔵 - Yearn Finance ***************************************************************************
+** The 'MyApp' function is a React functional component that returns a ReactElement. It is the main
+** entry point of the application.
+**
+** It uses the 'WithYearn' context provider to provide global state for Yearn. The 'WithYearn'
+** component is configured with a list of supported chains and some options.
+**
+** The 'App' component is wrapped with the 'WithYearn' component to provide it with the Yearn
+** context.
+**
+** The returned JSX structure is a main element with the 'WithYearn' and 'App' components.
+**************************************************************************************************/
 function MyApp(props: AppProps): ReactElement {
 	return (
 		<main id={'main'} className={aeonik.className}>
@@ -146,6 +207,7 @@ function MyApp(props: AppProps): ReactElement {
 					mainnet,
 					optimism,
 					fantom,
+					base,
 					arbitrum,
 					base,
 					localhost
