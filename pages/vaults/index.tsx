@@ -160,20 +160,36 @@ function Index(): ReactElement {
 	const retiredVaults = useFilteredVaults(vaultsRetired, ({address}): boolean => filterMigrationCallback(address));
 
 	const categoriesToDisplay = useMemo((): TListHeroCategory<string>[] => {
-		const categories = [
-			{value: 'All Vaults', label: 'All', isSelected: category === 'All Vaults'},
-			{value: 'Featured Vaults', label: 'Featured', isSelected: category === 'Featured Vaults'},
-			{value: 'Crypto Vaults', label: 'Crypto', isSelected: category === 'Crypto Vaults'},
-			{value: 'Stables Vaults', label: 'Stables', isSelected: category === 'Stables Vaults'},
-			{value: 'Curve Vaults', label: 'Curve', isSelected: category === 'Curve Vaults'}
-		];
+		const categories = [];
 
-		if (safeChainID === 10) {
-			categories.splice(1, 0, {value: 'Boosted Vaults', label: 'Boosted', isSelected: category === 'Boosted Vaults'});
-			categories.push({value: 'Velodrome Vaults', label: 'Velodrome', isSelected: category === 'Velodrome Vaults'});
-		} else {
+		if ([1, 250, 42161].includes(safeChainID)) {
+			categories.push({value: 'All Vaults', label: 'All', isSelected: category === 'All Vaults'});
+			categories.push({value: 'Featured Vaults', label: 'Featured', isSelected: category === 'Featured Vaults'});
+			categories.push({value: 'Crypto Vaults', label: 'Crypto', isSelected: category === 'Crypto Vaults'});
+			categories.push({value: 'Stables Vaults', label: 'Stables', isSelected: category === 'Stables Vaults'});
+			categories.push({value: 'Curve Vaults', label: 'Curve', isSelected: category === 'Curve Vaults'});
 			categories.push({value: 'Balancer Vaults', label: 'Balancer', isSelected: category === 'Balancer Vaults'});
 		}
+
+		if ([10].includes(safeChainID)) {
+			categories.push({value: 'All Vaults', label: 'All', isSelected: category === 'All Vaults'});
+			categories.push({value: 'Boosted Vaults', label: 'Boosted', isSelected: category === 'Boosted Vaults'});
+			categories.push({value: 'Featured Vaults', label: 'Featured', isSelected: category === 'Featured Vaults'});
+			categories.push({value: 'Crypto Vaults', label: 'Crypto', isSelected: category === 'Crypto Vaults'});
+			categories.push({value: 'Stables Vaults', label: 'Stables', isSelected: category === 'Stables Vaults'});
+			categories.push({value: 'Curve Vaults', label: 'Curve', isSelected: category === 'Curve Vaults'});
+			categories.push({value: 'Velodrome Vaults', label: 'Velodrome', isSelected: category === 'Velodrome Vaults'});
+		}
+
+		if (safeChainID === 8453) {
+			categories.push({value: 'All Vaults', label: 'All', isSelected: category === 'All Vaults'});
+			categories.push({value: 'Featured Vaults', label: 'Featured', isSelected: category === 'Featured Vaults'});
+			categories.push({value: 'Crypto Vaults', label: 'Crypto', isSelected: category === 'Crypto Vaults'});
+			categories.push({value: 'Stables Vaults', label: 'Stables', isSelected: category === 'Stables Vaults'});
+			categories.push({value: 'Curve Vaults', label: 'Curve', isSelected: category === 'Curve Vaults'});
+			categories.push({value: 'Aerodrome Vaults', label: 'Aerodrome', isSelected: category === 'Aerodrome Vaults'});
+		}
+
 		return categories;
 	}, [category, safeChainID]);
 
