@@ -1,5 +1,5 @@
-import Image from 'next/image';
 import {IconCross} from '@yearn-finance/web-lib/icons/IconCross';
+import {ImageWithFallback} from '@common/components/ImageWithFallback';
 
 import type {ReactElement} from 'react';
 
@@ -26,7 +26,7 @@ export const ImageWithOverlay: React.FC<TImageWithOverlayProps> = ({
 }): ReactElement => {
 	return (
 		<div className={'relative h-full w-full'}>
-			<Image
+			<ImageWithFallback
 				src={imageSrc}
 				alt={imageAlt}
 				width={imageWidth}

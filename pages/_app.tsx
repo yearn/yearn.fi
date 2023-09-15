@@ -3,7 +3,7 @@ import localFont from 'next/font/local';
 import useSWR from 'swr';
 import {AnimatePresence, domAnimation, LazyMotion, motion} from 'framer-motion';
 import {useIntervalEffect, useIsMounted, useLocalStorageValue} from '@react-hookz/web';
-import {arbitrum, base,fantom, mainnet, optimism} from '@wagmi/chains';
+import {arbitrum, base, fantom, mainnet, optimism} from '@wagmi/chains';
 import {WithYearn} from '@yearn-finance/web-lib/contexts/WithYearn';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
@@ -209,6 +209,7 @@ function MyApp(props: AppProps): ReactElement {
 					fantom,
 					base,
 					arbitrum,
+					base,
 					localhost
 				]}
 				options={{
