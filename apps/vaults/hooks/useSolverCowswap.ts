@@ -2,7 +2,7 @@ import {useCallback, useMemo, useRef} from 'react';
 import {ethers} from 'ethers';
 import {BaseError} from 'viem';
 import axios from 'axios';
-import {OrderBookApi, OrderQuoteSide, OrderSigningUtils} from '@cowprotocol/cow-sdk';
+import {OrderBookApi, OrderQuoteSideKindSell, OrderSigningUtils} from '@cowprotocol/cow-sdk';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {toast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -36,7 +36,7 @@ async function getQuote(
 		buyToken: request.outputToken.value, // token to receive
 		receiver: request.from, // always the same as from
 		appData: YEARN_APP_DATA, // Always this
-		kind: OrderQuoteSide.kind.SELL, // always sell
+		kind: OrderQuoteSideKindSell.SELL, // always sell
 		partiallyFillable: false, // always false
 		validTo: 0,
 		sellAmountBeforeFee: toBigInt(request?.inputAmount).toString() // amount to sell, in wei
