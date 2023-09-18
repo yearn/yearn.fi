@@ -37,18 +37,24 @@ export function ListHead({items, dataClassName, wrapperClassName, tokenClassName
 		return <IconChevronPlain className={'yearn--sort-chevron--off text-neutral-300 group-hover:text-neutral-500'} />;
 	}, [sortDirection]);
 
-	const [first, ...rest] = items;
+	const [chain, token, ...rest] = items;
 	return (
 		<div className={'mt-4 grid w-full grid-cols-1 md:mt-0'}>
 			<div className={cl('yearn--table-head-wrapper', wrapperClassName)}>
+				<div className={'col-span-1'}>
+					<p className={'yearn--table-head-label'}>
+						{chain.label}
+					</p>
+				</div>
+
 				<div className={cl('yearn--table-head-token-section', tokenClassName)}>
 					<button
-						onClick={(): void => onSort(first.value, toggleSortDirection(first.value))}
+						onClick={(): void => onSort(token.value, toggleSortDirection(token.value))}
 						className={'yearn--table-head-label-wrapper group'}>
 						<p className={'yearn--table-head-label'}>
-							{first.label}
+							{token.label}
 						</p>
-						{renderChevron(sortBy === first.value)}
+						{renderChevron(sortBy === token.value)}
 					</button>
 				</div>
 
