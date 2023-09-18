@@ -129,7 +129,7 @@ export function ActionFlowContextApp({children, currentVault}: {children: ReactN
 	const {balances, balancesNonce} = useWallet();
 	const {chainID, safeChainID} = useChainID();
 	const {balances: zapBalances, tokensList} = useWalletForZap();
-	const {zapProvider} = useYearn();
+	const {zapProvider, isStakingOpBoostedVaults} = useYearn();
 	const {stakingRewardsByVault} = useStakingRewards();
 	const hasStakingRewards = !!stakingRewardsByVault[currentVault.address];
 	const [possibleOptionsFrom, set_possibleOptionsFrom] = useState<TDropdownOption[]>([]);
@@ -198,7 +198,9 @@ export function ActionFlowContextApp({children, currentVault}: {children: ReactN
 
 	const currentSolver = useMemo((): TSolver => {
 		const isUnderlyingToken = toAddress(actionParams?.selectedOptionFrom?.value) === toAddress(currentVault.token.address);
-		if (hasStakingRewards && isDepositing && isUnderlyingToken) {
+
+		// Only use OptimismBooster if the user chose to stake automatically
+		if ((hasStakingRewards && isStakingOpBoostedVaults) && isDepositing && isUnderlyingToken) {
 			return Solver.enum.OptimismBooster;
 		}
 
@@ -226,7 +228,7 @@ export function ActionFlowContextApp({children, currentVault}: {children: ReactN
 			return Solver.enum.PartnerContract;
 		}
 		return Solver.enum.Vanilla;
-	}, [actionParams?.selectedOptionFrom?.value, actionParams?.selectedOptionFrom?.solveVia?.length, actionParams?.selectedOptionTo?.value, actionParams?.selectedOptionTo?.solveVia?.length, currentVault.token.address, currentVault.address, currentVault?.migration?.available, currentVault?.migration?.address, hasStakingRewards, isDepositing, safeChainID, isUsingPartnerContract, zapProvider]);
+	}, [actionParams?.selectedOptionFrom?.value, actionParams?.selectedOptionFrom?.solveVia?.length, actionParams?.selectedOptionTo?.value, actionParams?.selectedOptionTo?.solveVia?.length, currentVault.token.address, currentVault.address, currentVault?.migration?.available, currentVault?.migration?.address, hasStakingRewards, isDepositing, safeChainID, isUsingPartnerContract, zapProvider, isStakingOpBoostedVaults]);
 
 	const onSwitchSelectedOptions = useCallback((nextFlow = Flow.Switch): void => {
 		balancesNonce;

@@ -13,6 +13,7 @@ import {isEth} from '@yearn-finance/web-lib/utils/isEth';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useWallet} from '@common/contexts/useWallet';
+import {useYearn} from '@common/contexts/useYearn';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 
 import type {ReactElement} from 'react';
@@ -22,6 +23,7 @@ export function VaultDetailsQuickActionsButtons(): ReactElement {
 	const {refresh} = useWallet();
 	const {refresh: refreshZapBalances} = useWalletForZap();
 	const {address, provider} = useWeb3();
+	const {isStakingOpBoostedVaults} = useYearn();
 	const {safeChainID} = useChainID();
 	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
 	const [txStatusExecuteDeposit, set_txStatusExecuteDeposit] = useState(defaultTxStatus);
@@ -164,7 +166,7 @@ export function VaultDetailsQuickActionsButtons(): ReactElement {
 	}
 
 	if (isDepositing || currentSolver === Solver.enum.InternalMigration) {
-		if (currentSolver === Solver.enum.OptimismBooster) {
+		if (currentSolver === Solver.enum.OptimismBooster && isStakingOpBoostedVaults) {
 			return (
 				<Button
 					onClick={async (): Promise<void> => onExecuteDeposit(set_txStatusExecuteDeposit, onSuccess)}

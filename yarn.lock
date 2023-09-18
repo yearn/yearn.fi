@@ -3564,7 +3564,7 @@
   resolved "https://registry.yarnpkg.com/@xtuc/long/-/long-4.2.2.tgz#d291c6a4e97989b5c61d9acf396ae4fe133a718d"
   integrity sha512-NuHqBY1PB/D8xU6s/thBgOAiAP7HOYDQ32+BFZILJ8ivkUkAHQnWfn6WhL79Owj1qmUnoN/YPhktdIoucipkAQ==
 
-"@yearn-finance/web-lib@^3.0.37":
+"@yearn-finance/web-lib@3.0.37":
   version "3.0.37"
   resolved "https://registry.yarnpkg.com/@yearn-finance/web-lib/-/web-lib-3.0.37.tgz#e2e8679e2acbcc5041aeb13f9338a4b85aa3d466"
   integrity sha512-ocQFwO2QPiK9HIbtkYnqWIVUGRbsAQ/WsYcHKElvc4IUUSpxGm537eFCwwWApLaYXtHIRvb1LHafja+62DDhbg==

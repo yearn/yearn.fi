@@ -227,7 +227,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 					</div>
 
 					<div className={'flex flex-row items-center justify-end space-x-2 pb-0 md:pb-4 md:last:space-x-4'}>
-						<SettingsPopover chainID={currentVault.chainID} />
+						<SettingsPopover vault={currentVault} />
 					</div>
 				</div>
 				<div className={'-mt-0.5 h-0.5 w-full bg-neutral-300'} />
