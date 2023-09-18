@@ -412,6 +412,7 @@ function Index(): ReactElement {
 					sortDirection={sort.sortDirection}
 					onSort={onSort}
 					items={[
+						{label: '🔗', value: 'name', sortable: false, className: 'col-span-1'},
 						{label: 'Token', value: 'name', sortable: true},
 						{label: 'APY', value: 'apy', sortable: true, className: 'col-span-2'},
 						{label: 'Available', value: 'available', sortable: true, className: 'col-span-2'},

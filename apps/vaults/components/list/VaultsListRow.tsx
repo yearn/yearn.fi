@@ -184,6 +184,13 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 			key={`${currentVault.address}`}
 			href={`/vaults/${safeChainID}/${toAddress(currentVault.address)}`}>
 			<div className={'yearn--table-wrapper cursor-pointer transition-colors hover:bg-neutral-300'}>
+				<div className={'col-span-1'}>
+					<div className={'yearn--table-token-section-item'}>
+						<div className={'yearn--table-token-section-item-image'}>
+							{currentVault.chainID}
+						</div>
+					</div>
+				</div>
 				<div className={'yearn--table-token-section'}>
 					<div className={'yearn--table-token-section-item'}>
 						<div className={'yearn--table-token-section-item-image'}>

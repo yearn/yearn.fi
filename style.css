@@ -92,7 +92,7 @@
 	@apply mb-2 hidden w-full grid-cols-8 px-10 md:grid;
 }
 .yearn--table-head-token-section {
-	@apply col-span-3;
+	@apply col-span-2;
 }
 .yearn--table-head-data-section {
 	@apply col-span-5 grid grid-cols-8 gap-x-7;
@@ -114,7 +114,7 @@
 	@apply grid w-full grid-cols-1 border-t border-neutral-200 py-2 px-4 md:grid-cols-8 md:border-none md:px-10;
 }
 .yearn--table-token-section {
-	@apply col-span-3 mb-2 flex flex-row items-center justify-between py-4 md:mb-0 md:py-0;
+	@apply col-span-2 mb-2 flex flex-row items-center justify-between py-4 md:mb-0 md:py-0;
 }
 .yearn--table-token-section-item {
 	@apply flex flex-row items-center space-x-4 md:space-x-6;
