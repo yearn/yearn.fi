@@ -2053,18 +2053,6 @@
   resolved "https://registry.yarnpkg.com/@popperjs/core/-/core-2.11.8.tgz#6b79032e760a0899cd4204710beede972a3a185f"
   integrity sha512-P1st0aksCrn9sGZhp8GMYwBnQsbvAWsZAX44oXNNvLHGqAOcoVxmjZiohstwQ7SqKnbR47akdNi+uleWD8+g6A==
 
-"@rainbow-me/rainbowkit@^1.0.10":
-  version "1.0.10"
-  resolved "https://registry.yarnpkg.com/@rainbow-me/rainbowkit/-/rainbowkit-1.0.10.tgz#fa6d38d962c9fa8113f2478af73b309f08c59bf0"
-  integrity sha512-nXo1mPO8c7aV8mtog0QN9Kn1DoNRJmjd5V8zMU+kIUDAmZFzUhwrBKNcL/X24ie67NjOtbmIKlSBlwWdGZlcvg==
-  dependencies:
-    "@vanilla-extract/css" "1.9.1"
-    "@vanilla-extract/dynamic" "2.0.2"
-    "@vanilla-extract/sprinkles" "1.5.0"
-    clsx "1.1.1"
-    qrcode "1.5.0"
-    react-remove-scroll "2.5.4"
-
 "@rainbow-me/rainbowkit@^1.0.11":
   version "1.0.11"
   resolved "https://registry.yarnpkg.com/@rainbow-me/rainbowkit/-/rainbowkit-1.0.11.tgz#5d03a8b1f8b8d7f8b3dee14dae378574ea3e6f8b"
