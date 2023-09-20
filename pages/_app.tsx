@@ -209,7 +209,6 @@ function MyApp(props: AppProps): ReactElement {
 					fantom,
 					base,
 					arbitrum,
-					base,
 					localhost
 				]}
 				options={{
