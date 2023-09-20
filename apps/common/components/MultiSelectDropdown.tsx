@@ -1,0 +1,154 @@
+import {Fragment, useState} from 'react';
+import {Combobox, Transition} from '@headlessui/react';
+import {useThrottledState} from '@react-hookz/web';
+import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
+import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
+import {IconChevron} from '@common/icons/IconChevron';
+
+import type {ReactElement} from 'react';
+import type {TDropdownOption} from '@common/types/types';
+
+export type TMultiSelectOptionProps = {
+	label: string;
+	value: string;
+	selected: boolean;
+	icon?: ReactElement;
+};
+
+type TMultiSelectProps = {
+	options: TMultiSelectOptionProps[];
+	currentOptions: TMultiSelectOptionProps[];
+	defaultOption: TMultiSelectOptionProps;
+	placeholder?: string;
+	onSelect: (options: TMultiSelectOptionProps[]) => void;
+};
+
+function Option(option: TMultiSelectOptionProps): ReactElement {
+	return (
+		<Combobox.Option value={option}>
+			{({active}): ReactElement =>
+				<div data-active={active} className={'flex w-full items-center justify-between p-2'}>
+					<div className={'flex items-center'}>
+						{option?.icon ? (
+							<div className={'h-8 w-8 rounded-full'}>
+								{option.icon}
+							</div>
+						) : null}
+						<p className={`${option.icon ? 'pl-2' : 'pl-0'} font-normal text-neutral-900`}>
+							{option.label}
+						</p>
+					</div>
+					<input type={'checkbox'} checked={option.selected} />
+				</div>
+			}
+		</Combobox.Option>
+	);
+}
+
+function DropdownEmpty({query}: {query: string}): ReactElement {
+	const {isActive, openLoginModal} = useWeb3();
+
+	if (!isActive) {
+		return (
+			<div
+				onClick={(): void => openLoginModal()}
+				className={'flex h-14 cursor-pointer flex-col items-center justify-center px-4 text-center transition-colors hover:bg-neutral-300'}>
+				<b className={'text-neutral-900'}>{'Connect Wallet'}</b>
+			</div>
+		);
+	}
+	if (query !== '') {
+		return (
+			<div className={'relative flex h-14 flex-col items-center justify-center px-4 text-center'}>
+				<div className={'flex h-10 items-center justify-center'}>
+					<p className={'text-sm text-neutral-900'}>{'Nothing found.'}</p>
+				</div>
+			</div>
+		);
+	}
+	return (
+		<div className={'relative flex h-14 flex-col items-center justify-center px-4 text-center'}>
+			<div className={'flex h-10 items-center justify-center'}>
+				<span className={'loader'} />
+			</div>
+		</div>
+	);
+}
+
+export function MultiSelectDropdown({
+	options,
+	currentOptions,
+	onSelect,
+	placeholder = ''
+}: TMultiSelectProps): ReactElement {
+	const [isOpen, set_isOpen] = useThrottledState(false, 400);
+	const [query, set_query] = useState('');
+
+	const filteredOptions = query === ''
+		? options
+		: options.filter((option): boolean => {
+			return option.value.toLowerCase().includes(query.toLowerCase());
+		});
+
+	return (
+		<Combobox
+			value={currentOptions}
+			onChange={onSelect}
+			nullable
+			multiple
+		>
+			<div className={'relative w-[32rem]'}>
+				<Combobox.Button
+					onClick={(): void => set_isOpen((o: boolean): boolean => !o)}
+					className={'flex h-10 w-full items-center justify-between bg-neutral-0 p-2 text-base text-neutral-900 md:px-3'}
+				>
+					<Combobox.Input
+						className={'w-full cursor-default overflow-x-scroll border-none bg-transparent p-0 outline-none scrollbar-none'}
+						displayValue={(options: TDropdownOption[]): string => {
+							if (options.length === 0) {
+								return 'Select chain';
+							}
+
+							if (options.length === 1) {
+								return options[0].label;
+							}
+
+							return 'Multiple';
+						}}
+						placeholder={placeholder}
+						spellCheck={false}
+						onChange={(event): void => set_query(event.target.value)} />
+					<IconChevron
+						aria-hidden={'true'}
+						className={`h-6 w-6 transition-transform ${isOpen ? '-rotate-180' : 'rotate-0'}`}
+					/>
+				</Combobox.Button>
+				<Transition
+					as={Fragment}
+					show={isOpen}
+					enter={'transition duration-100 ease-out'}
+					enterFrom={'transform scale-95 opacity-0'}
+					enterTo={'transform scale-100 opacity-100'}
+					leave={'transition duration-75 ease-out'}
+					leaveFrom={'transform scale-100 opacity-100'}
+					leaveTo={'transform scale-95 opacity-0'}
+					afterLeave={(): void => {
+						set_query('');
+					}}>
+					<Combobox.Options className={'absolute top-12 z-50 flex w-full flex-col overflow-y-auto bg-white scrollbar-none'}>
+						<Renderable
+							shouldRender={filteredOptions.length > 0}
+							fallback={<DropdownEmpty query={query} />}>
+							{filteredOptions.map((option): ReactElement => <Option
+								key={option.label}
+								{...option}
+								selected={currentOptions.map((co): string => co.value).includes(option.value)}
+							/>
+							)}
+						</Renderable>
+					</Combobox.Options>
+				</Transition>
+			</div>
+		</Combobox>
+	);
+}

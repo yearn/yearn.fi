@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@cowprotocol/cow-sdk": "2.1.0",
-    "@headlessui/react": "^1.7.17",
+    "@headlessui/react": "1.7.17",
     "@popperjs/core": "^2.11.8",
     "@rainbow-me/rainbowkit": "1.0.11",
     "@wagmi/chains": "1.8.0",
