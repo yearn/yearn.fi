@@ -6,7 +6,6 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {IconChevron} from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
-import type {TDropdownOption} from '@common/types/types';
 
 export type TMultiSelectOptionProps = {
 	label: string;
@@ -17,7 +16,6 @@ export type TMultiSelectOptionProps = {
 
 type TMultiSelectProps = {
 	options: TMultiSelectOptionProps[];
-	currentOptions: TMultiSelectOptionProps[];
 	defaultOption: TMultiSelectOptionProps;
 	placeholder?: string;
 	onSelect: (options: TMultiSelectOptionProps[]) => void;
@@ -26,21 +24,19 @@ type TMultiSelectProps = {
 function Option(option: TMultiSelectOptionProps): ReactElement {
 	return (
 		<Combobox.Option value={option}>
-			{({active}): ReactElement =>
-				<div data-active={active} className={'flex w-full items-center justify-between p-2'}>
-					<div className={'flex items-center'}>
-						{option?.icon ? (
-							<div className={'h-8 w-8 rounded-full'}>
-								{option.icon}
-							</div>
-						) : null}
-						<p className={`${option.icon ? 'pl-2' : 'pl-0'} font-normal text-neutral-900`}>
-							{option.label}
-						</p>
-					</div>
-					<input type={'checkbox'} checked={option.selected} />
+			<div className={'flex w-full items-center justify-between p-2'}>
+				<div className={'flex items-center'}>
+					{option?.icon ? (
+						<div className={'h-8 w-8 rounded-full'}>
+							{option.icon}
+						</div>
+					) : null}
+					<p className={`${option.icon ? 'pl-2' : 'pl-0'} font-normal text-neutral-900`}>
+						{option.label}
+					</p>
 				</div>
-			}
+				<input type={'checkbox'} checked={option.selected} readOnly />
+			</div>
 		</Combobox.Option>
 	);
 }
@@ -77,23 +73,35 @@ function DropdownEmpty({query}: {query: string}): ReactElement {
 
 export function MultiSelectDropdown({
 	options,
-	currentOptions,
 	onSelect,
 	placeholder = ''
 }: TMultiSelectProps): ReactElement {
 	const [isOpen, set_isOpen] = useThrottledState(false, 400);
+	const [currentOptions, set_currentOptions] = useState<TMultiSelectOptionProps[]>(options);
 	const [query, set_query] = useState('');
 
 	const filteredOptions = query === ''
-		? options
-		: options.filter((option): boolean => {
+		? currentOptions
+		: currentOptions.filter((option): boolean => {
 			return option.value.toLowerCase().includes(query.toLowerCase());
 		});
 
 	return (
 		<Combobox
 			value={currentOptions}
-			onChange={onSelect}
+			onChange={(options): void => {
+				// Hack(ish) because with this Combobox component we cannot unselect items
+				const lastIndex = options.length - 1;
+				const elementSelected = options[lastIndex];
+				const currentElements = options.slice(0, lastIndex);
+
+				const currentState = currentElements.map((option): TMultiSelectOptionProps => {
+					return option.value === elementSelected.value ? {...option, selected: !option.selected} : option;
+				});
+
+				set_currentOptions(currentState);
+				onSelect(currentState);
+			}}
 			nullable
 			multiple
 		>
@@ -104,13 +112,14 @@ export function MultiSelectDropdown({
 				>
 					<Combobox.Input
 						className={'w-full cursor-default overflow-x-scroll border-none bg-transparent p-0 outline-none scrollbar-none'}
-						displayValue={(options: TDropdownOption[]): string => {
-							if (options.length === 0) {
+						displayValue={(options: TMultiSelectOptionProps[]): string => {
+							const selectedOptions = options.filter((option): boolean => option.selected);
+							if (selectedOptions.length === 0) {
 								return 'Select chain';
 							}
 
-							if (options.length === 1) {
-								return options[0].label;
+							if (selectedOptions.length === 1) {
+								return selectedOptions[0].label;
 							}
 
 							return 'Multiple';
@@ -139,11 +148,9 @@ export function MultiSelectDropdown({
 						<Renderable
 							shouldRender={filteredOptions.length > 0}
 							fallback={<DropdownEmpty query={query} />}>
-							{filteredOptions.map((option): ReactElement => <Option
-								key={option.label}
-								{...option}
-								selected={currentOptions.map((co): string => co.value).includes(option.value)}
-							/>
+							{filteredOptions.map((option): ReactElement => {
+								return <Option key={option.value} {...option} />;
+							}
 							)}
 						</Renderable>
 					</Combobox.Options>
