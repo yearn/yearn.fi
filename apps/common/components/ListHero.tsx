@@ -2,10 +2,14 @@ import {useEffect, useState} from 'react';
 import {Switch as HeadlessSwitch} from '@headlessui/react';
 import {useIsMounted} from '@react-hookz/web';
 import {Button} from '@yearn-finance/web-lib/components/Button';
+import {WETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {ImageWithFallback} from '@common/components/ImageWithFallback';
+import {MultiSelectDropdown} from '@common/components/MultiSelectDropdown';
 import {SearchBar} from '@common/components/SearchBar';
 import {isValidCategory} from '@common/types/category';
 
 import type {ChangeEvent, ReactElement, ReactNode} from 'react';
+import type {TMultiSelectOptionProps} from '@common/components/MultiSelectDropdown';
 
 export type TListHeroCategory<T> = {
 	label: string;
@@ -106,6 +110,34 @@ export function ListHero<T extends string>({
 	set_searchValue,
 	switchProps
 }: TListHero<T>): ReactElement {
+	const OPTIONS = [
+		{
+			label: 'Optimism',
+			value: 'optimism',
+			selected: false,
+			icon: (
+				<ImageWithFallback
+					src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${WETH_TOKEN_ADDRESS}/logo-128.png`}
+					alt={'foobar'}
+					width={36}
+					height={36} />
+			)
+		},
+		{
+			label: 'BNB',
+			value: 'bnb',
+			selected: false,
+			icon: (
+				<ImageWithFallback
+					src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${WETH_TOKEN_ADDRESS}/logo-128.png`}
+					alt={'foobar'}
+					width={36}
+					height={36} />
+			)
+		}
+	];
+
+	const [currentOptions, set_currentOptions] = useState<TMultiSelectOptionProps[]>(OPTIONS);
 	const isMounted = useIsMounted();
 
 	return (
@@ -122,6 +154,17 @@ export function ListHero<T extends string>({
 				<DesktopCategories
 					categories={categories}
 					onSelect={onSelect} />
+
+				<MultiSelectDropdown
+					defaultOption={OPTIONS[0]}
+					options={OPTIONS}
+					currentOptions={currentOptions}
+					placeholder={'Select chain'}
+					onSelect={(options): void => {
+						console.log(options);
+						set_currentOptions(options);
+					}}
+				/>
 
 				<SearchBar
 					searchPlaceholder={searchPlaceholder}
