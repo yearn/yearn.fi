@@ -9,7 +9,6 @@ import {SearchBar} from '@common/components/SearchBar';
 import {isValidCategory} from '@common/types/category';
 
 import type {ChangeEvent, ReactElement, ReactNode} from 'react';
-import type {TMultiSelectOptionProps} from '@common/components/MultiSelectDropdown';
 
 export type TListHeroCategory<T> = {
 	label: string;
@@ -137,7 +136,6 @@ export function ListHero<T extends string>({
 		}
 	];
 
-	const [currentOptions, set_currentOptions] = useState<TMultiSelectOptionProps[]>(OPTIONS);
 	const isMounted = useIsMounted();
 
 	return (
@@ -158,11 +156,9 @@ export function ListHero<T extends string>({
 				<MultiSelectDropdown
 					defaultOption={OPTIONS[0]}
 					options={OPTIONS}
-					currentOptions={currentOptions}
 					placeholder={'Select chain'}
 					onSelect={(options): void => {
-						console.log(options);
-						set_currentOptions(options);
+						console.log({options});
 					}}
 				/>
 
