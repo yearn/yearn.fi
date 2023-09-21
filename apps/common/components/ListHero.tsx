@@ -2,8 +2,11 @@ import {useEffect, useState} from 'react';
 import {Switch as HeadlessSwitch} from '@headlessui/react';
 import {useIsMounted} from '@react-hookz/web';
 import {Button} from '@yearn-finance/web-lib/components/Button';
-import {WETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {ImageWithFallback} from '@common/components/ImageWithFallback';
+import {IconArbitrumChain} from '@common/components/icons/IconArbitrumChain';
+import {IconBaseChain} from '@common/components/icons/IconBaseChain';
+import {IconEtherumChain} from '@common/components/icons/IconEtherumChain';
+import {IconFantomChain} from '@common/components/icons/IconFantomChain';
+import {IconOptimismChain} from '@common/components/icons/IconOptimismChain';
 import {MultiSelectDropdown} from '@common/components/MultiSelectDropdown';
 import {SearchBar} from '@common/components/SearchBar';
 import {isValidCategory} from '@common/types/category';
@@ -109,30 +112,38 @@ export function ListHero<T extends string>({
 	set_searchValue,
 	switchProps
 }: TListHero<T>): ReactElement {
+	// TODO: Use the icons from web-lib
+	// https://github.com/yearn/web-lib/pull/339
 	const OPTIONS = [
 		{
-			label: 'Optimism',
-			value: 'optimism',
+			label: 'Ethereum',
+			value: 'ethereum',
 			selected: false,
-			icon: (
-				<ImageWithFallback
-					src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${WETH_TOKEN_ADDRESS}/logo-128.png`}
-					alt={'foobar'}
-					width={36}
-					height={36} />
-			)
+			icon: <IconEtherumChain />
 		},
 		{
-			label: 'BNB',
-			value: 'bnb',
+			label: 'OP Mainnet',
+			value: 'optimism',
 			selected: false,
-			icon: (
-				<ImageWithFallback
-					src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${WETH_TOKEN_ADDRESS}/logo-128.png`}
-					alt={'foobar'}
-					width={36}
-					height={36} />
-			)
+			icon: <IconOptimismChain />
+		},
+		{
+			label: 'Fantom',
+			value: 'fantom',
+			selected: false,
+			icon: <IconFantomChain />
+		},
+		{
+			label: 'Base',
+			value: 'base',
+			selected: false,
+			icon: <IconBaseChain />
+		},
+		{
+			label: 'Arbitrum One',
+			value: 'arbitrum',
+			selected: false,
+			icon: <IconArbitrumChain />
 		}
 	];
 
