@@ -95,11 +95,7 @@ export const yDaemonVaultSchema = z.object({
 	formated_name: z.string(),
 	icon: z.string(),
 	version: z.string(),
-	category: z
-		.literal('Curve')
-		.or(z.literal('Volatile').or(z.literal('Balancer')).or(z.literal('Stablecoin')))
-		.or(z.literal('Velodrome'))
-		.or(z.literal('Boosted')),
+	category: z.literal('Curve').or(z.literal('Volatile').or(z.literal('Balancer')).or(z.literal('Stablecoin'))).or(z.literal('Velodrome')).or(z.literal('Boosted')).or(z.literal('Aerodrome')),
 	inception: z.number(),
 	decimals: z.number(),
 	chainID: z.number(),
@@ -110,47 +106,40 @@ export const yDaemonVaultSchema = z.object({
 	tvl: z.object({
 		total_assets: z.string().transform((val): bigint => toBigInt(val)),
 		total_delegated_assets: z.string().transform((val): bigint => toBigInt(val)),
-		tvl_deposited: z.number(),
-		tvl_delegated: z.number(),
-		tvl: z.number(),
-		price: z.number()
+		tvl_deposited: z.number().default(0),
+		tvl_delegated: z.number().default(0),
+		tvl: z.number().default(0),
+		price: z.number().default(0)
 	}),
-	newApy: z.object({
+	apr: z.object({
 		type: z.string(),
-		gross_apr: z.number(),
-		net_apy: z.number(),
-		staking_rewards_apr: z.number(),
+		netAPR: z.number().default(0),
 		fees: z.object({
-			performance: z.number(),
-			withdrawal: z.number(),
-			management: z.number(),
-			keep_crv: z.number(),
-			cvx_keep_crv: z.number()
+			performance: z.number().default(0),
+			withdrawal: z.number().default(0),
+			management: z.number().default(0),
+			keepCRV: z.number().default(0),
+			keepVelo: z.number().default(0),
+			cvxKeepCRV: z.number().default(0)
+		}),
+		extra: z.object({
+			stakingRewardsAPR: z.number().default(0)
 		}),
 		points: z.object({
-			week_ago: z.number(),
-			month_ago: z.number(),
-			inception: z.number()
+			weekAgo: z.number().default(0),
+			monthAgo: z.number().default(0),
+			inception: z.number().default(0)
 		}),
-		composite: z.object({
-			boost: z.number(),
-			pool_apy: z.number(),
-			boosted_apr: z.number(),
-			base_apr: z.number(),
-			cvx_apr: z.number(),
-			rewards_apr: z.number()
-		}),
-		forward_apr: z.object({
+		forwardAPR: z.object({
 			type: z.string(),
-			gross_apr: z.number(),
-			net_apy: z.number(),
+			netAPR: z.number().default(0),
 			composite: z.object({
-				boost: z.number(),
-				pool_apy: z.number(),
-				boosted_apr: z.number(),
-				base_apr: z.number(),
-				cvx_apr: z.number(),
-				rewards_apr: z.number()
+				boost: z.number().default(0),
+				poolAPY: z.number().default(0),
+				boostedAPR: z.number().default(0),
+				baseAPR: z.number().default(0),
+				cvxAPR: z.number().default(0),
+				rewardsAPR: z.number().default(0)
 			})
 		})
 	}),

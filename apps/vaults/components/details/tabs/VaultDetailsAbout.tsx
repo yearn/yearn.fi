@@ -10,7 +10,7 @@ import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TGraphData} from '@common/types/types';
 
-type TAPYLineItemProps = {
+type TAPRLineItemProps = {
 	label: string;
 	value: number | string;
 	apyType: string;
@@ -23,7 +23,7 @@ type TYearnFeesLineItem = {
 	tooltip?: string;
 };
 
-function APYLineItem({value, label, apyType, hasUpperLimit}: TAPYLineItemProps): ReactElement {
+function APRLineItem({value, label, apyType, hasUpperLimit}: TAPRLineItemProps): ReactElement {
 	const safeValue = Number(value) || 0;
 	const isNew = apyType === 'new' && isZero(safeValue);
 
@@ -57,7 +57,7 @@ function YearnFeesLineItem({children, label, tooltip}: TYearnFeesLineItem): Reac
 
 export function VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYDaemonVault; harvestData: TGraphData[]}): ReactElement {
 	const isMounted = useIsMounted();
-	const {token, newApy, details} = currentVault;
+	const {token, apr, details} = currentVault;
 
 	function getVaultDescription(): string {
 		if (token.description) {
@@ -79,38 +79,41 @@ export function VaultDetailsAbout({currentVault, harvestData}: {currentVault: TY
 					/>
 				</div>
 				<div>
-					<b className={'text-neutral-900'}>{'APY'}</b>
+					<b className={'text-neutral-900'}>{'APR'}</b>
 					<div className={'mt-4 grid grid-cols-1 gap-x-12 md:grid-cols-2'}>
 						<div className={'space-y-2'}>
-							<APYLineItem
-								label={'Weekly APY'}
-								apyType={newApy.type}
-								value={newApy.points.week_ago} />
-							<APYLineItem
-								label={'Monthly APY'}
-								apyType={newApy.type}
-								value={newApy.points.month_ago} />
-							<APYLineItem
-								label={'Inception APY'}
-								apyType={newApy.type}
-								value={newApy.points.inception} />
+							<APRLineItem
+								label={'Weekly APR'}
+								apyType={apr.type}
+								value={apr.points.weekAgo} />
+							<APRLineItem
+								label={'Monthly APR'}
+								apyType={apr.type}
+								value={apr.points.monthAgo} />
+							<APRLineItem
+								label={'Inception APR'}
+								apyType={apr.type}
+								value={apr.points.inception} />
 						</div>
-						<div className={'mt-2 space-y-2 md:mt-0'}>
-							<APYLineItem
-								label={'Gross APR'}
-								apyType={newApy.type}
-								value={newApy.gross_apr} />
-							<APYLineItem
+						<div className={'mt-2 space-y-0 md:mt-0'}>
+							<APRLineItem
 								hasUpperLimit
-								label={'Net APY'}
-								apyType={newApy.type}
-								value={(newApy.net_apy || 0) + (newApy.staking_rewards_apr || 0)} />
-							{newApy.staking_rewards_apr > 0 && (
-								<APYLineItem
-									hasUpperLimit
-									label={'Reward APR'}
-									apyType={newApy.type}
-									value={newApy.staking_rewards_apr} />
+								label={'Net APR'}
+								apyType={apr.type}
+								value={apr.netAPR + apr.extra.stakingRewardsAPR} />
+							{apr.extra.stakingRewardsAPR > 0 && (
+								<div className={'pl-2'}>
+									<APRLineItem
+										hasUpperLimit
+										label={'• Base APR'}
+										apyType={apr.type}
+										value={apr.netAPR} />
+									<APRLineItem
+										hasUpperLimit
+										label={'• Staking Reward APR'}
+										apyType={apr.type}
+										value={apr.extra.stakingRewardsAPR} />
+								</div>
 							)}
 						</div>
 					</div>
@@ -129,11 +132,13 @@ export function VaultDetailsAbout({currentVault, harvestData}: {currentVault: TY
 						<YearnFeesLineItem label={'Performance fee'}>
 							<b className={'font-number text-xl text-neutral-500'}>{formatPercent((details.performanceFee || 0) / 100, 0)}</b>
 						</YearnFeesLineItem>
-						{currentVault.category === 'Velodrome' ? (
+						{currentVault.category === 'Velodrome' || currentVault.category === 'Aerodrome' ? (
 							<YearnFeesLineItem
 								label={'keepVELO'}
-								tooltip={'Percentage of VELO locked in each harvest. This is used to boost Velodrome vault pools, and is offset via yvOP staking rewards.'}>
-								<b className={'font-number text-xl text-neutral-500'}>{formatPercent(currentVault.apy.fees.keep_velo * 100, 0)}</b>
+								tooltip={`Percentage of VELO locked in each harvest. This is used to boost ${currentVault.category} vault pools, and is offset via yvOP staking rewards.`}>
+								<b className={'font-number text-xl text-neutral-500'}>
+									{formatPercent((currentVault.apr.fees.keepVelo) * 100, 0)}
+								</b>
 							</YearnFeesLineItem>
 						) : null}
 					</div>

@@ -39,7 +39,7 @@ export function VaultDetailsQuickActionsTo(): ReactElement {
 						{isDepositing || isMigrationAvailable ? 'To vault' : 'To wallet'}
 					</label>
 					<legend className={'font-number inline text-xs text-neutral-600 md:hidden'} suppressHydrationWarning>
-						{`APY ${formatPercent(((currentVault?.newApy?.net_apy || 0) + (currentVault?.newApy?.staking_rewards_apr || 0)) * 100, 2, 2, 500)}`}
+						{`APR ${formatPercent((currentVault.apr.netAPR + currentVault.apr.extra.stakingRewardsAPR) * 100, 2, 2, 500)}`}
 					</legend>
 				</div>
 				<Renderable
@@ -55,7 +55,7 @@ export function VaultDetailsQuickActionsTo(): ReactElement {
 					</div>
 				</Renderable>
 				<legend className={'font-number hidden text-xs text-neutral-600 md:inline'} suppressHydrationWarning>
-					{isDepositing ? (formatPercent(((currentVault?.newApy?.net_apy || 0) + (currentVault?.newApy?.staking_rewards_apr || 0)) * 100, 2, 2, 500)) : ''}
+					{isDepositing ? (formatPercent((currentVault.apr.netAPR + currentVault.apr.extra.stakingRewardsAPR) * 100, 2, 2, 500)) : ''}
 				</legend>
 			</div>
 

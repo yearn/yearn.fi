@@ -17,7 +17,7 @@ export function max(input: bigint, balance: bigint): bigint {
 	return input;
 }
 
-export function getVaultAPY(vaults: TDict<TYDaemonVault | undefined>, vaultAddress: string): string {
+export function getVaultAPR(vaults: TDict<TYDaemonVault | undefined>, vaultAddress: string): string {
 	if (!vaults?.[toAddress(vaultAddress)]) {
 		return '';
 	}
@@ -26,26 +26,10 @@ export function getVaultAPY(vaults: TDict<TYDaemonVault | undefined>, vaultAddre
 		return `APY ${formatPercent(0)}`;
 	}
 
-	if (vaults?.[toAddress(vaultAddress)]?.newApy?.net_apy) {
-		return `APY ${formatPercent((vaults?.[toAddress(vaultAddress)]?.newApy?.net_apy || 0) * 100, 2, 2, 500)}`;
+	if (vaults?.[toAddress(vaultAddress)]?.apr?.netAPR) {
+		return `APY ${formatPercent((vaults?.[toAddress(vaultAddress)]?.apr?.netAPR || 0) * 100, 2, 2, 500)}`;
 	}
 	return `APY ${formatPercent(0)}`;
-}
-
-export function getVaultRawAPY(vaults: TDict<TYDaemonVault | undefined>, vaultAddress: string): number {
-	if (!vaults?.[toAddress(vaultAddress)]) {
-		return 0;
-	}
-
-	if (toAddress(vaultAddress) === YVECRV_TOKEN_ADDRESS || toAddress(vaultAddress) === YVBOOST_TOKEN_ADDRESS) {
-		return 0;
-	}
-
-	if (vaults?.[toAddress(vaultAddress)]?.newApy?.net_apy) {
-		return (vaults?.[toAddress(vaultAddress)]?.newApy?.net_apy || 0) * 100;
-	}
-
-	return 0;
 }
 
 export function getAmountWithSlippage(from: string, to: string, value: bigint, slippage: number): number {

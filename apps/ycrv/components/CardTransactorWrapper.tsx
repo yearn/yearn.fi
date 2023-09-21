@@ -23,7 +23,7 @@ import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
-import {getAmountWithSlippage, getVaultAPY} from '@common/utils';
+import {getAmountWithSlippage, getVaultAPR} from '@common/utils';
 import {approveERC20, deposit} from '@common/utils/actions';
 import {ZAP_OPTIONS_FROM, ZAP_OPTIONS_TO} from '@yCRV/constants/tokens';
 import {useYCRV} from '@yCRV/contexts/useYCRV';
@@ -281,14 +281,14 @@ export function CardTransactorContextApp({defaultOptionFrom = ZAP_OPTIONS_FROM[0
 		if (toAddress(selectedOptionFrom.value) === STYCRV_TOKEN_ADDRESS) {
 			return `APY ${formatPercent(styCRVAPY)}`;
 		}
-		return getVaultAPY(vaults, selectedOptionFrom.value);
+		return getVaultAPR(vaults, selectedOptionFrom.value);
 	}, [vaults, selectedOptionFrom, styCRVAPY]);
 
 	const toVaultAPY = useMemo((): string => {
 		if (toAddress(selectedOptionTo.value) === STYCRV_TOKEN_ADDRESS) {
 			return `APY ${formatPercent(styCRVAPY)}`;
 		}
-		return getVaultAPY(vaults, selectedOptionTo.value);
+		return getVaultAPR(vaults, selectedOptionTo.value);
 	}, [vaults, selectedOptionTo, styCRVAPY]);
 
 	const expectedOutWithSlippage = useMemo(
