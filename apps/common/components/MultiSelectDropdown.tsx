@@ -21,6 +21,19 @@ type TMultiSelectProps = {
 	onSelect: (options: TMultiSelectOptionProps[]) => void;
 };
 
+function SelectAllOption(option: TMultiSelectOptionProps): ReactElement {
+	return (
+		<Combobox.Option value={option}>
+			<div className={'flex w-full items-center justify-between p-2'}>
+				<p className={'pl-0 font-normal text-neutral-400'}>
+					{option.label}
+				</p>
+				<input type={'checkbox'} checked={option.selected} className={'checked:bg-black'} readOnly />
+			</div>
+		</Combobox.Option>
+	);
+}
+
 function Option(option: TMultiSelectOptionProps): ReactElement {
 	return (
 		<Combobox.Option value={option}>
@@ -35,7 +48,7 @@ function Option(option: TMultiSelectOptionProps): ReactElement {
 						{option.label}
 					</p>
 				</div>
-				<input type={'checkbox'} checked={option.selected} readOnly />
+				<input type={'checkbox'} checked={option.selected} className={'checked:bg-black'} readOnly />
 			</div>
 		</Combobox.Option>
 	);
@@ -78,6 +91,7 @@ export function MultiSelectDropdown({
 }: TMultiSelectProps): ReactElement {
 	const [isOpen, set_isOpen] = useThrottledState(false, 400);
 	const [currentOptions, set_currentOptions] = useState<TMultiSelectOptionProps[]>(options);
+	const [isSelectAll, set_isSelectAll] = useState(false);
 	const [query, set_query] = useState('');
 
 	const filteredOptions = query === ''
@@ -95,9 +109,20 @@ export function MultiSelectDropdown({
 				const elementSelected = options[lastIndex];
 				const currentElements = options.slice(0, lastIndex);
 
-				const currentState = currentElements.map((option): TMultiSelectOptionProps => {
-					return option.value === elementSelected.value ? {...option, selected: !option.selected} : option;
-				});
+				let currentState: TMultiSelectOptionProps[] = [];
+
+				if (elementSelected.value === 'select_all') {
+					currentState = currentElements.map((option): TMultiSelectOptionProps => {
+						return {...option, selected: !elementSelected.selected};
+					});
+					set_isSelectAll(!elementSelected.selected);
+				} else {
+					currentState = currentElements.map((option): TMultiSelectOptionProps => {
+						return option.value === elementSelected.value ? {...option, selected: !option.selected} : option;
+					});
+
+					set_isSelectAll(!currentState.some((option): boolean => !option.selected));
+				}
 
 				set_currentOptions(currentState);
 				onSelect(currentState);
@@ -144,7 +169,8 @@ export function MultiSelectDropdown({
 					afterLeave={(): void => {
 						set_query('');
 					}}>
-					<Combobox.Options className={'absolute top-12 z-50 flex w-full flex-col overflow-y-auto bg-white scrollbar-none'}>
+					<Combobox.Options className={'absolute top-12 z-50 flex w-full cursor-pointer flex-col overflow-y-auto bg-white scrollbar-none'}>
+						<SelectAllOption key={'select-all'} label={'Select all'} selected={isSelectAll} value={'select_all'} />
 						<Renderable
 							shouldRender={filteredOptions.length > 0}
 							fallback={<DropdownEmpty query={query} />}>
