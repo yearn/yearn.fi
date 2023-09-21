@@ -10,7 +10,8 @@ import {RenderAmount} from '@common/components/RenderAmount';
 import {useBalance} from '@common/hooks/useBalance';
 import {useFetch} from '@common/hooks/useFetch';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
-import {yDaemonSingleEarnedSchema} from '@common/schemas/yDaemonEarnedSchema';
+import {IconQuestion} from '@common/icons/IconQuestion';
+import {yDaemonEarnedSchema} from '@common/schemas/yDaemonEarnedSchema';
 import {getVaultName} from '@common/utils';
 import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 
@@ -22,8 +23,8 @@ import type {TNormalizedBN} from '@common/types/types';
 type TVaultHeaderLineItemProps = {
 	label: string;
 	children: ReactElement | string;
-	legend?: string;
-};
+	legend?: ReactElement | string;
+}
 
 function VaultHeaderLineItem({label, children, legend}: TVaultHeaderLineItemProps): ReactElement {
 	return (
@@ -43,13 +44,58 @@ function VaultHeaderLineItem({label, children, legend}: TVaultHeaderLineItemProp
 	);
 }
 
+function VaultAPR({apr}: {apr: TYDaemonVault['apr']}): ReactElement {
+	if (apr.forwardAPR.type === '' && apr.extra.stakingRewardsAPR === 0) {
+		return (
+			<VaultHeaderLineItem label={'Historical APR'}>
+				<RenderAmount
+					value={apr.netAPR + apr.extra.stakingRewardsAPR}
+					symbol={'percent'}
+					decimals={6} />
+			</VaultHeaderLineItem>
+		);
+	}
+	return (
+		<VaultHeaderLineItem
+			label={'Historical APR'}
+			legend={(
+				<span className={'tooltip'}>
+
+					<div className={'flex flex-row items-center space-x-2'}>
+						<div>
+							{'Est. APR - '}
+							<RenderAmount
+								value={apr.forwardAPR.netAPR + apr.extra.stakingRewardsAPR}
+								symbol={'percent'}
+								decimals={6} />
+						</div>
+						<IconQuestion />
+					</div>
+					<span className={'tooltipLight top-full mt-2'}>
+						<div className={'font-number -mx-12 w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'}>
+							<p className={'font-number flex w-full flex-row justify-between text-neutral-400 md:text-xs'}>
+								{'Estimated APR for the next period based on current data.'}
+							</p>
+						</div>
+					</span>
+				</span>
+			)}>
+			<RenderAmount
+				value={apr?.netAPR + apr.extra.stakingRewardsAPR}
+				symbol={'percent'}
+				decimals={6} />
+		</VaultHeaderLineItem>
+	);
+}
+
 export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {address: userAddress} = useWeb3();
 	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: currentVault.chainID});
-	const {address, newApy, tvl, decimals, symbol = 'token', token} = currentVault;
+	const {address, apr, tvl, decimals, symbol = 'token', token} = currentVault;
+
 	const {data: earned} = useFetch<TYDaemonEarnedSingle>({
 		endpoint: address && userAddress ? `${yDaemonBaseUri}/earned/${userAddress}/${currentVault.address}` : null,
-		schema: yDaemonSingleEarnedSchema
+		schema: yDaemonEarnedSchema
 	});
 
 	const normalizedVaultEarned = useMemo((): TNormalizedBN => {
@@ -80,22 +126,14 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 				)}
 			</div>
 			<div className={'grid grid-cols-2 gap-6 md:grid-cols-4 md:gap-12'}>
-				<VaultHeaderLineItem
-					label={`Total deposited, ${token?.symbol || 'tokens'}`}
-					legend={formatUSD(tvl?.tvl || 0)}>
+				<VaultHeaderLineItem label={`Total deposited, ${token?.symbol || 'tokens'}`} legend={formatUSD(tvl.tvl)}>
 					<RenderAmount
 						value={tvl?.total_assets}
 						decimals={decimals}
 					/>
 				</VaultHeaderLineItem>
 
-				<VaultHeaderLineItem label={'Net APY'}>
-					<RenderAmount
-						value={(newApy?.net_apy || 0) + (newApy?.staking_rewards_apr || 0)}
-						symbol={'percent'}
-						decimals={6}
-					/>
-				</VaultHeaderLineItem>
+				<VaultAPR apr={apr} />
 
 				<VaultHeaderLineItem
 					label={`Balance, ${symbol}`}

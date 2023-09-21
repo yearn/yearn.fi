@@ -99,7 +99,7 @@ function Index(): ReactElement {
 	const [sort, set_sort] = useSessionStorage<{
 		sortBy: TPossibleSortBy;
 		sortDirection: TSortDirection;
-	}>('yVaultsSorting', {sortBy: 'apy', sortDirection: 'desc'});
+	}>('yVaultsSorting', {sortBy: 'apr', sortDirection: 'desc'});
 	const {shouldHideDust, shouldHideLowTVLVaults, category, searchValue, selectedChains, set_category, set_searchValue, set_selectedChains} = useAppSettings();
 	const chainsFromJSON = JSON.parse(selectedChains || '[]') as number[];
 	const categoriesFromJSON = JSON.parse(category || '[]') as string[];
@@ -173,7 +173,7 @@ function Index(): ReactElement {
 		let _vaultList: TYDaemonVault[] = [];
 
 		if (categoriesFromJSON.includes('Featured Vaults')) {
-			_vaultList.sort((a, b): number => (b.tvl.tvl || 0) * (b?.newApy?.net_apy || 0) - (a.tvl.tvl || 0) * (a?.newApy?.net_apy || 0));
+			_vaultList.sort((a, b): number => (b.tvl.tvl || 0) * (b?.apr?.netAPR || 0) - (a.tvl.tvl || 0) * (a?.apr?.netAPR || 0));
 			_vaultList = _vaultList.slice(0, 10);
 		}
 		if (categoriesFromJSON.includes('Curve Vaults')) {
@@ -330,6 +330,7 @@ function Index(): ReactElement {
 					sortBy={sort.sortBy}
 					sortDirection={sort.sortDirection}
 					onSort={onSort}
+					dataClassName={'grid-cols-10'}
 					items={[
 						{
 							label: <IconChain />,
@@ -338,30 +339,11 @@ function Index(): ReactElement {
 							className: 'col-span-1'
 						},
 						{label: 'Token', value: 'name', sortable: true},
-						{
-							label: 'APY',
-							value: 'apy',
-							sortable: true,
-							className: 'col-span-2'
-						},
-						{
-							label: 'Available',
-							value: 'available',
-							sortable: true,
-							className: 'col-span-2'
-						},
-						{
-							label: 'Deposited',
-							value: 'deposited',
-							sortable: true,
-							className: 'col-span-2'
-						},
-						{
-							label: 'TVL',
-							value: 'tvl',
-							sortable: true,
-							className: 'col-span-2'
-						}
+						{label: 'Est. APR', value: 'forwardAPR', sortable: true, className: 'col-span-2'},
+						{label: 'Hist. APR', value: 'apr', sortable: true, className: 'col-span-2'},
+						{label: 'Available', value: 'available', sortable: true, className: 'col-span-2'},
+						{label: 'Deposited', value: 'deposited', sortable: true, className: 'col-span-2'},
+						{label: 'TVL', value: 'tvl', sortable: true, className: 'col-span-2'}
 					]}
 				/>
 

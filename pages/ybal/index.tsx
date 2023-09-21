@@ -7,7 +7,7 @@ import {ValueAnimation} from '@common/components/ValueAnimation';
 import {useYearn} from '@common/contexts/useYearn';
 import {useBalance} from '@common/hooks/useBalance';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
-import {getVaultAPY} from '@common/utils';
+import {getVaultAPR} from '@common/utils';
 import {WithCardTransactor} from '@yBal/components/CardZap';
 import {Harvests} from '@yBal/components/Harvests';
 import {useYBal} from '@yBal/contexts/useYBal';
@@ -65,7 +65,7 @@ function Holdings(): ReactElement {
 	const {holdings, styBalAPY} = useYBal();
 	const {vaults} = useYearn();
 
-	const lpyBalAPY = useMemo((): number => Number(getVaultAPY(vaults, LPYBAL_TOKEN_ADDRESS)), [vaults]);
+	const lpyBalAPY = useMemo((): number => Number(getVaultAPR(vaults, LPYBAL_TOKEN_ADDRESS)), [vaults]);
 	const yBalPrice = useTokenPrice(YBAL_TOKEN_ADDRESS);
 	const styBalPrice = useTokenPrice(STYBAL_TOKEN_ADDRESS);
 	const lpyBalPrice = useTokenPrice(LPYBAL_TOKEN_ADDRESS);

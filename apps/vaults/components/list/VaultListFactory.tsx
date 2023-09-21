@@ -21,7 +21,7 @@ import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 export function VaultListFactory(): ReactElement {
 	const {getToken} = useWallet();
 	const {vaults, isLoadingVaultList} = useYearn();
-	const [sortBy, set_sortBy] = useState<TPossibleSortBy>('apy');
+	const [sortBy, set_sortBy] = useState<TPossibleSortBy>('apr');
 	const [sortDirection, set_sortDirection] = useState<TSortDirection>('');
 	const {shouldHideLowTVLVaults, shouldHideDust, searchValue, set_searchValue} = useAppSettings();
 	const [category, set_category] = useState('Curve Factory Vaults');
@@ -60,7 +60,7 @@ export function VaultListFactory(): ReactElement {
 		}
 
 		if (shouldHideLowTVLVaults && category !== 'Holdings') {
-			_vaultList = _vaultList.filter((vault): boolean => (vault?.tvl?.tvl || 0) > 10_000);
+			_vaultList = _vaultList.filter((vault): boolean => vault.tvl.tvl > 10_000);
 		}
 
 		return _vaultList;

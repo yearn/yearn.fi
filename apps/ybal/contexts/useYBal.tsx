@@ -55,7 +55,7 @@ export const YBalContextApp = ({children}: {children: ReactElement}): ReactEleme
 	/* 🔵 - Yearn Finance ******************************************************
 	** Compute the styBal APY based on the experimental APY and the mega boost.
 	**************************************************************************/
-	const styBalAPY = useMemo((): number => (styBalVault?.newApy?.net_apy || 0) * 100, [styBalVault]);
+	const styBalAPY = useMemo((): number => (styBalVault?.apr?.netAPR || 0) * 100, [styBalVault]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 **	Setup and render the Context provider to use in the app.

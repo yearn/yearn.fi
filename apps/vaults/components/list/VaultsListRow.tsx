@@ -28,20 +28,21 @@ export const ChainIconMap = new Map<number, ReactElement>([
 	[42161, <IconArbitrumChain />]
 ]);
 
-export function VaultAPR({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const isEthMainnet = currentVault.chainID === 1;
 
-	if (currentVault.newApy?.staking_rewards_apr > 0) {
-		const boostedAPR = currentVault.newApy.staking_rewards_apr + currentVault.newApy.gross_apr;
+	if (currentVault.apr?.extra.stakingRewardsAPR > 0) {
+		const boostedAPR = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.forwardAPR.netAPR;
 		return (
 			<div className={'flex flex-col text-right'}>
 				<span className={'tooltip'}>
 					<b className={'yearn--table-data-section-item-value'}>
 						<Renderable
-							shouldRender={!(currentVault.newApy?.type === 'new' && isZero(boostedAPR))}
+							shouldRender={!(currentVault.apr?.type === 'new' && isZero(boostedAPR))}
 							fallback={'New'}>
 							{'⚡️ '}
 							<RenderAmount
+								shouldHideTooltip
 								value={boostedAPR}
 								symbol={'percent'}
 								decimals={6}
@@ -54,7 +55,8 @@ export function VaultAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 								<div className={'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'}>
 									<p>{'• Base APR '}</p>
 									<RenderAmount
-										value={currentVault.newApy?.gross_apr}
+										shouldHideTooltip
+										value={currentVault.apr.forwardAPR.netAPR}
 										symbol={'percent'}
 										decimals={6}
 									/>
@@ -63,7 +65,8 @@ export function VaultAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 								<div className={'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'}>
 									<p>{'• Rewards APR '}</p>
 									<RenderAmount
-										value={currentVault.newApy?.staking_rewards_apr}
+										shouldHideTooltip
+										value={currentVault.apr.extra.stakingRewardsAPR}
 										symbol={'percent'}
 										decimals={6}
 									/>
@@ -76,25 +79,26 @@ export function VaultAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 		);
 	}
 
-	if (isEthMainnet && currentVault.newApy?.forward_apr?.composite?.boost > 0 && !currentVault.newApy?.staking_rewards_apr) {
-		const unBoostedAPR = currentVault.newApy.gross_apr / currentVault.newApy.forward_apr.composite.boost;
+	if (isEthMainnet && currentVault.apr.forwardAPR.composite?.boost > 0 && !currentVault.apr.extra.stakingRewardsAPR) {
+		const unBoostedAPR = currentVault.apr.forwardAPR.netAPR / currentVault.apr.forwardAPR.composite.boost;
 		return (
 			<span className={'tooltip'}>
 				<div className={'flex flex-col text-right'}>
 					<b className={'yearn--table-data-section-item-value'}>
 						<Renderable
-							shouldRender={!(currentVault.newApy?.type === 'new' && isZero(currentVault.newApy?.net_apy))}
+							shouldRender={!(currentVault.apr?.type === 'new' && isZero(currentVault.apr.forwardAPR.netAPR))}
 							fallback={'New'}>
 							<RenderAmount
-								value={currentVault.newApy?.net_apy}
+								value={currentVault.apr.forwardAPR.netAPR}
 								symbol={'percent'}
 								decimals={6}
 							/>
 						</Renderable>
 					</b>
 					<small className={'text-xs text-neutral-900'}>
-						<Renderable shouldRender={isEthMainnet && currentVault.newApy?.forward_apr?.composite?.boost > 0 && !currentVault.newApy?.staking_rewards_apr}>
-							{`BOOST ${formatAmount(currentVault.newApy?.forward_apr?.composite?.boost, 2, 2)}x`}
+						<Renderable
+							shouldRender={isEthMainnet && currentVault.apr.forwardAPR.composite?.boost > 0 && !currentVault.apr.extra.stakingRewardsAPR}>
+							{`BOOST ${formatAmount(currentVault.apr.forwardAPR.composite?.boost, 2, 2)}x`}
 						</Renderable>
 					</small>
 					<span className={'tooltipLight bottom-full mb-1'}>
@@ -111,7 +115,7 @@ export function VaultAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 
 								<div className={'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'}>
 									<p>{'• Boost '}</p>
-									<p>{`${formatAmount(currentVault.newApy?.forward_apr?.composite?.boost, 2, 2)} x`}</p>
+									<p>{`${formatAmount(currentVault.apr.forwardAPR.composite.boost, 2, 2)} x`}</p>
 								</div>
 							</div>
 						</div>
@@ -125,10 +129,50 @@ export function VaultAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 		<div className={'flex flex-col text-right'}>
 			<b className={'yearn--table-data-section-item-value'}>
 				<Renderable
-					shouldRender={!(currentVault.newApy?.type === 'new' && isZero(currentVault.newApy?.net_apy))}
+					shouldRender={!(currentVault.apr?.type === 'new' && isZero(currentVault.apr.forwardAPR.netAPR))}
 					fallback={'New'}>
 					<RenderAmount
-						value={currentVault.newApy?.net_apy}
+						value={currentVault.apr.forwardAPR.netAPR}
+						symbol={'percent'}
+						decimals={6} />
+				</Renderable>
+			</b>
+		</div>
+	);
+}
+
+
+export function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+	if (currentVault.apr?.extra.stakingRewardsAPR > 0) {
+
+		const boostedAPR = currentVault.apr.netAPR + currentVault.apr.extra.stakingRewardsAPR;
+
+		return (
+			<div className={'flex flex-col text-right'}>
+				<span className={'tooltip'}>
+					<b className={'yearn--table-data-section-item-value'}>
+						<Renderable
+							shouldRender={!(currentVault.apr?.type === 'new' && isZero(boostedAPR))}
+							fallback={'New'}>
+							<RenderAmount
+								value={boostedAPR}
+								symbol={'percent'}
+								decimals={6} />
+						</Renderable>
+					</b>
+				</span>
+			</div>
+		);
+	}
+
+	return (
+		<div className={'flex flex-col text-right'}>
+			<b className={'yearn--table-data-section-item-value'}>
+				<Renderable
+					shouldRender={!(currentVault.apr?.type === 'new' && isZero(currentVault.apr?.netAPR))}
+					fallback={'New'}>
+					<RenderAmount
+						value={currentVault.apr?.netAPR}
 						symbol={'percent'}
 						decimals={6}
 					/>
@@ -187,12 +231,15 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 					</div>
 				</div>
 
-				<div className={'yearn--table-data-section'}>
-					<div
-						className={'yearn--table-data-section-item md:col-span-2'}
-						datatype={'number'}>
-						<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'APY'}</label>
-						<VaultAPR currentVault={currentVault} />
+				<div className={'col-span-5 grid grid-cols-1 gap-0 md:grid-cols-10 md:gap-x-7'}>
+					<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
+						<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Estimated APR'}</label>
+						<VaultForwardAPR currentVault={currentVault} />
+					</div>
+
+					<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
+						<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Historical APR'}</label>
+						<VaultHistoricalAPR currentVault={currentVault} />
 					</div>
 
 					<div

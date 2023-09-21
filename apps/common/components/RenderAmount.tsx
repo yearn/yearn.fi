@@ -5,7 +5,7 @@ import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 
 import type {TAmount} from '@yearn-finance/web-lib/utils/format.number';
 
-export function RenderAmount(props: TAmount): ReactElement {
+export function RenderAmount(props: TAmount & {shouldHideTooltip?: boolean}): ReactElement {
 	const normalizedRawValue = useMemo((): string => {
 		return amountV2({
 			...props,
@@ -19,7 +19,15 @@ export function RenderAmount(props: TAmount): ReactElement {
 		});
 	}, [props]);
 
-	const shouldShowTooltip = !isZero(props.value) && props.value < 0.001;
+	if (props.shouldHideTooltip) {
+		return (
+			<span>
+				{amountV2(props)}
+			</span>
+		);
+	}
+
+	const shouldShowTooltip = (!isZero(props.value) && props.value < 0.001);
 
 	return (
 		<span

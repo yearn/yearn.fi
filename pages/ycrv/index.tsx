@@ -10,7 +10,7 @@ import {useCurve} from '@common/contexts/useCurve';
 import {useYearn} from '@common/contexts/useYearn';
 import {useBalance} from '@common/hooks/useBalance';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
-import {getVaultAPY} from '@common/utils';
+import {getVaultAPR} from '@common/utils';
 import {WithCardTransactor} from '@yCRV/components/CardZap';
 import {Harvests} from '@yCRV/components/Harvests';
 import {useYCRV} from '@yCRV/contexts/useYCRV';
@@ -75,8 +75,8 @@ function ZapAndStats(): ReactElement {
 	const {vaults} = useYearn();
 	const {curveWeeklyFees, cgPrices} = useCurve();
 
-	const lpCRVAPY = useMemo((): string => getVaultAPY(vaults, LPYCRV_TOKEN_ADDRESS), [vaults]);
-	const lpCRVV2APY = useMemo((): string => getVaultAPY(vaults, LPYCRV_V2_TOKEN_ADDRESS), [vaults]);
+	const lpCRVAPY = useMemo((): string => getVaultAPR(vaults, LPYCRV_TOKEN_ADDRESS), [vaults]);
+	const lpCRVV2APY = useMemo((): string => getVaultAPR(vaults, LPYCRV_V2_TOKEN_ADDRESS), [vaults]);
 	const ycrvPrice = useTokenPrice(YCRV_TOKEN_ADDRESS);
 	const stycrvPrice = useTokenPrice(STYCRV_TOKEN_ADDRESS);
 	const lpycrvPrice = useTokenPrice(LPYCRV_TOKEN_ADDRESS);

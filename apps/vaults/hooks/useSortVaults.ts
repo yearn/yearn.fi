@@ -11,7 +11,7 @@ import {numberSort, stringSort} from '@common/utils/sort';
 import type {TYDaemonVaults} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TSortDirection} from '@common/types/types';
 
-export type TPossibleSortBy = 'apy' | 'tvl' | 'name' | 'deposited' | 'available';
+export type TPossibleSortBy = 'apr' | 'forwardAPR' | 'tvl' | 'name' | 'deposited' | 'available';
 
 export function useSortVaults(vaultList: TYDaemonVaults, sortBy: TPossibleSortBy, sortDirection: TSortDirection): TYDaemonVaults {
 	const {getBalance} = useWallet();
@@ -29,10 +29,13 @@ export function useSortVaults(vaultList: TYDaemonVaults, sortBy: TPossibleSortBy
 		[sortDirection, vaultList]
 	);
 
-	const sortedByAPY = useCallback(
-		(): TYDaemonVaults => vaultList.sort((a, b): number => numberSort({a: a.newApy?.net_apy, b: b.newApy?.net_apy, sortDirection})),
-		[sortDirection, vaultList]
-	);
+	const sortedByForwardAPR = useCallback((): TYDaemonVaults => (
+		vaultList.sort((a, b): number => numberSort({a: a.apr?.forwardAPR.netAPR, b: b.apr?.forwardAPR.netAPR, sortDirection}))
+	), [sortDirection, vaultList]);
+
+	const sortedByAPR = useCallback((): TYDaemonVaults => (
+		vaultList.sort((a, b): number => numberSort({a: a.apr?.netAPR, b: b.apr?.netAPR, sortDirection}))
+	), [sortDirection, vaultList]);
 
 	const sortedByTVL = useCallback((): TYDaemonVaults => vaultList.sort((a, b): number => numberSort({a: a.tvl.tvl, b: b.tvl.tvl, sortDirection})), [sortDirection, vaultList]);
 
@@ -75,8 +78,11 @@ export function useSortVaults(vaultList: TYDaemonVaults, sortBy: TPossibleSortBy
 		if (sortBy === 'name') {
 			return sortedByName();
 		}
-		if (sortBy === 'apy') {
-			return sortedByAPY();
+		if (sortBy === 'forwardAPR') {
+			return sortedByForwardAPR();
+		}
+		if (sortBy === 'apr') {
+			return sortedByAPR();
 		}
 		if (sortBy === 'tvl') {
 			return sortedByTVL();
@@ -89,7 +95,7 @@ export function useSortVaults(vaultList: TYDaemonVaults, sortBy: TPossibleSortBy
 		}
 
 		return sortResult;
-	}, [sortBy, sortDirection, sortedByAPY, sortedByAvailable, sortedByDeposited, sortedByName, sortedByTVL, stringifiedVaultList]);
+	}, [sortBy, sortDirection, sortedByForwardAPR, sortedByAvailable, sortedByDeposited, sortedByName, sortedByTVL, stringifiedVaultList]);
 
 	return sortedVaults;
 }
