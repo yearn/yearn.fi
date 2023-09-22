@@ -162,7 +162,7 @@ export function AppHeader(): ReactElement {
 
 	return (
 		<Header
-			showNetworkSelector
+			showNetworkSelector={false}
 			linkComponent={<Link href={''} />}
 			currentPathName={pathname}
 			onOpenMenuMobile={onOpenMenu}
@@ -180,7 +180,6 @@ export function AppHeader(): ReactElement {
 					</div>
 				</Renderable>
 			}
-			showNetworkSelector={false}
 		/>
 	);
 }
