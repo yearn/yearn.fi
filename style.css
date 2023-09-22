@@ -89,7 +89,7 @@
 ** Fake table properties
 ***************************************************************************************************/
 .yearn--table-head-wrapper {
-	@apply mb-2 hidden w-full grid-cols-8 px-10 md:grid;
+	@apply mb-2 hidden w-full px-10 md:grid md:grid-cols-[64px_repeat(7,_minmax(0,_1fr))];
 }
 .yearn--table-head-token-section {
 	@apply col-span-2;
@@ -111,7 +111,7 @@
 }
 
 .yearn--table-wrapper {
-	@apply grid w-full grid-cols-1 border-t border-neutral-200 py-2 px-4 md:grid-cols-8 md:border-none md:px-10;
+	@apply grid w-full grid-cols-1 border-t border-neutral-200 py-2 px-4 md:grid-cols-[64px_repeat(7,_minmax(0,_1fr))] md:border-none md:px-10;
 }
 .yearn--table-token-section {
 	@apply col-span-2 mb-2 flex flex-row items-center justify-between py-4 md:mb-0 md:py-0;

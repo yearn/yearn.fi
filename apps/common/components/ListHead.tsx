@@ -41,11 +41,9 @@ export function ListHead({items, dataClassName, wrapperClassName, tokenClassName
 	return (
 		<div className={'mt-4 grid w-full grid-cols-1 md:mt-0'}>
 			<div className={cl('yearn--table-head-wrapper', wrapperClassName)}>
-				<div className={'col-span-1'}>
-					<p className={'yearn--table-head-label'}>
-						{chain.label}
-					</p>
-				</div>
+				<p className={'yearn--table-head-label max-w-[32px]'}>
+					{chain.label}
+				</p>
 
 				<div className={cl('yearn--table-head-token-section', tokenClassName)}>
 					<button

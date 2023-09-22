@@ -8,6 +8,7 @@ import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-
 import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
+import {IconEtherumChain} from '@common/components/icons/IconEtherumChain';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {RenderAmount} from '@common/components/RenderAmount';
 import {useBalance} from '@common/hooks/useBalance';
@@ -151,12 +152,9 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 	return (
 		<Link key={`${currentVault.address}`} href={`/vaults/${safeChainID}/${toAddress(currentVault.address)}`}>
 			<div className={'yearn--table-wrapper cursor-pointer transition-colors hover:bg-neutral-300'}>
-				<div className={'col-span-1'}>
-					<div className={'yearn--table-token-section-item'}>
-						<div className={'yearn--table-token-section-item-image'}>
-							{currentVault.chainID}
-						</div>
-					</div>
+				<div className={'flex max-w-[32px] flex-row items-center'}>
+					{/* {currentVault.chainID} */}
+					<IconEtherumChain />
 				</div>
 				<div className={'yearn--table-token-section'}>
 					<div className={'yearn--table-token-section-item'}>
