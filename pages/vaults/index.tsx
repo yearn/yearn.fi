@@ -14,6 +14,7 @@ import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {useSessionStorage} from '@yearn-finance/web-lib/hooks/useSessionStorage';
+import {IconChain} from '@yearn-finance/web-lib/icons/IconChain';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
@@ -346,7 +347,7 @@ function Index(): ReactElement {
 					sortDirection={sort.sortDirection}
 					onSort={onSort}
 					items={[
-						{label: '🔗', value: 'name', sortable: false, className: 'col-span-1'},
+						{label: <IconChain />, value: 'name', sortable: false, className: 'col-span-1'},
 						{label: 'Token', value: 'name', sortable: true},
 						{label: 'APY', value: 'apy', sortable: true, className: 'col-span-2'},
 						{label: 'Available', value: 'available', sortable: true, className: 'col-span-2'},

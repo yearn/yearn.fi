@@ -7,7 +7,7 @@ import type {TSortDirection} from '@common/types/types';
 
 export type TListHead = {
 	items: {
-		label: string,
+		label: string | ReactElement,
 		value: string,
 		sortable?: boolean,
 		className?: string
