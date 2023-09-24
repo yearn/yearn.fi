@@ -7,18 +7,18 @@ import type {TSortDirection} from '@common/types/types';
 
 export type TListHead = {
 	items: {
-		label: string;
-		value: string;
-		sortable?: boolean;
-		className?: string;
-	}[];
-	dataClassName?: string;
-	wrapperClassName?: string;
-	tokenClassName?: string;
-	sortBy: string;
-	sortDirection: TSortDirection;
-	onSort: (sortBy: string, sortDirection: TSortDirection) => void;
-};
+		label: string | ReactElement,
+		value: string,
+		sortable?: boolean,
+		className?: string
+	}[],
+	dataClassName?: string,
+	wrapperClassName?: string,
+	tokenClassName?: string,
+	sortBy: string,
+	sortDirection: TSortDirection,
+	onSort: (sortBy: string, sortDirection: TSortDirection) => void
+}
 
 export function ListHead({
 	items,
