@@ -68,6 +68,7 @@ const YearnContext = createContext<TYearnContext>({
 export const YearnContextApp = memo(function YearnContextApp({children}: {children: ReactElement}): ReactElement {
 	const {safeChainID} = useChainID();
 	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: safeChainID});
+	const {yDaemonBaseUri: yDaemonBaseUriWithoutChain} = useYDaemonBaseURI();
 	const result = useYDaemonStatus({chainID: safeChainID});
 	const {address, currentPartner} = useWeb3();
 	const [zapSlippage, set_zapSlippage] = useLocalStorage<number>('yearn.fi/zap-slippage', DEFAULT_SLIPPAGE);
@@ -93,19 +94,15 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 		schema: yDaemonTokensSchema
 	});
 
-	const {
-		data: vaults,
-		isLoading: isLoadingVaultList,
-		mutate: mutateVaultList
-	} = useFetch<TYDaemonVaults>({
-		endpoint: `${yDaemonBaseUri}/vaults/all?${new URLSearchParams({
+	const {data: vaults, isLoading: isLoadingVaultList, mutate: mutateVaultList} = useFetch<TYDaemonVaults>({
+		endpoint: `${yDaemonBaseUriWithoutChain}/vaults/all?${new URLSearchParams({
 			hideAlways: 'true',
 			orderBy: 'apy.net_apy',
 			orderDirection: 'desc',
 			strategiesDetails: 'withDetails',
 			strategiesRisk: 'withRisk',
 			strategiesCondition: 'inQueue'
-		})}`,
+		})}&chainIDs=${[1, 10].join(',')}`,
 		schema: yDaemonVaultsSchema
 	});
 
