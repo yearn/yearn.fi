@@ -2,7 +2,6 @@ import {useMemo} from 'react';
 import Link from 'next/link';
 import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {IconArbitrumChain} from '@yearn-finance/web-lib/icons/chains/IconArbitrumChain';
 import {IconBaseChain} from '@yearn-finance/web-lib/icons/chains/IconBaseChain';
 import {IconEtherumChain} from '@yearn-finance/web-lib/icons/chains/IconEtherumChain';
@@ -163,7 +162,6 @@ export function VaultAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 }
 
 export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const {safeChainID} = useChainID();
 	const balanceOfWant = useBalance(currentVault.token.address);
 	const balanceOfCoin = useBalance(ETH_TOKEN_ADDRESS);
 	//TODO: Create a wagmi Chain upgrade to add the chain wrapper token address
@@ -193,9 +191,7 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 	}, [currentVault.address, deposited, positionsMap, stakingRewardsByVault]);
 
 	return (
-		<Link
-			key={`${currentVault.address}`}
-			href={`/vaults/${safeChainID}/${toAddress(currentVault.address)}`}>
+		<Link key={`${currentVault.address}`} href={`/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`}>
 			<div className={'yearn--table-wrapper cursor-pointer transition-colors hover:bg-neutral-300'}>
 				<div className={'flex max-w-[32px] flex-row items-center'}>
 					{ChainIconMap.get(currentVault.chainID) ?? <IconEtherumChain />}
