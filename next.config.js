@@ -40,13 +40,39 @@ module.exports = withBundleAnalyzer(withPWA({
 			{
 				source: '/:path*',
 				has: [{type: 'host', value: 'ybribe.com'}],
-				destination: 'https://yearn.finance/ybribe/:path*',
+				destination: 'https://yearn.fi/ybribe/:path*',
 				permanent: true
 			},
 			{
 				source: '/:path*',
-				has: [{type: 'host', value: 'vote.yearn.finance'}],
-				destination: 'https://yearn.finance/veyfi/:path*',
+				has: [{type: 'host', value: 'vote.yearn.fi'}],
+				destination: 'https://yearn.fi/veyfi/:path*',
+				permanent: true
+			},
+			//
+			{
+				source: '/twitter',
+				destination: 'https://twitter.com/yearnfi',
+				permanent: true
+			},
+			{
+				source: '/telegram',
+				destination: 'https://t.me/yearnfinance/',
+				permanent: true
+			},
+			{
+				source: '/medium',
+				destination: 'https://medium.com/iearn',
+				permanent: true
+			},
+			{
+				source: '/governance',
+				destination: 'https://gov.yearn.fi/',
+				permanent: true
+			},
+			{
+				source: '/snapshot',
+				destination: 'https://snapshot.org/#/ybaby.eth',
 				permanent: true
 			}
 		];
