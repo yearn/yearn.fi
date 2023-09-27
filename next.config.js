@@ -72,7 +72,7 @@ module.exports = withBundleAnalyzer(withPWA({
 			},
 			{
 				source: '/snapshot',
-				destination: 'https://snapshot.org/#/ybaby.eth',
+				destination: 'https://snapshot.org/#/veyfi.eth',
 				permanent: true
 			}
 		];
