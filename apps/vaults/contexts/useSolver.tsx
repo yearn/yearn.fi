@@ -10,7 +10,6 @@ import {useSolverVanilla} from '@vaults/hooks/useSolverVanilla';
 import {useSolverWido} from '@vaults/hooks/useSolverWido';
 import {serialize} from '@wagmi/core';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {performBatchedUpdates} from '@yearn-finance/web-lib/utils/performBatchedUpdates';
@@ -22,7 +21,7 @@ import type {TSolver} from '@common/schemas/yDaemonTokenListBalances';
 import type {TNormalizedBN} from '@common/types/types';
 import type {TInitSolverArgs, TSolverContext, TWithSolver} from '@vaults/types/solvers';
 
-export const isSolverDisabled = (safeChainID: number): TDict<boolean> => {
+export const isSolverDisabled = (vaultChainID: number): TDict<boolean> => {
 	return {
 		[Solver.enum.Vanilla]: false,
 		[Solver.enum.PartnerContract]: false,
@@ -31,7 +30,7 @@ export const isSolverDisabled = (safeChainID: number): TDict<boolean> => {
 		[Solver.enum.OptimismBooster]: false,
 		[Solver.enum.Cowswap]: false,
 		[Solver.enum.Wido]: false,
-		[Solver.enum.Portals]: safeChainID === 10 || false,
+		[Solver.enum.Portals]: vaultChainID === 10 || false,
 		[Solver.enum.None]: false
 	};
 };
@@ -65,7 +64,6 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 	const wido = useSolverWido();
 	const vanilla = useSolverVanilla();
 	const portals = useSolverPortals();
-	const {safeChainID} = useChainID();
 	const chainCoin = useSolverChainCoin();
 	const partnerContract = useSolverPartnerContract();
 	const internalMigration = useSolverInternalMigration();
@@ -112,15 +110,9 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 				isDepositing: isDepositing
 			};
 
-			const isValidSolver = ({
-				quote,
-				solver
-			}: {
-				quote: PromiseSettledResult<TNormalizedBN>;
-				solver: TSolver;
-			}): boolean => {
-				return quote.status === 'fulfilled' && quote?.value.raw > 0n && !isSolverDisabled(safeChainID)[solver];
-			};
+		const isValidSolver = ({quote, solver}: { quote: PromiseSettledResult<TNormalizedBN>; solver: TSolver }): boolean => {
+			return quote.status === 'fulfilled' && (quote?.value.raw > 0n) && !isSolverDisabled(currentVault.chainID)[solver];
+		};
 
 			switch (currentSolver) {
 				case Solver.enum.Wido:

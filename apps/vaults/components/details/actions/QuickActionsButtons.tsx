@@ -5,7 +5,6 @@ import {useSolver} from '@vaults/contexts/useSolver';
 import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -24,21 +23,11 @@ export function VaultDetailsQuickActionsButtons(): ReactElement {
 	const {refresh: refreshZapBalances} = useWalletForZap();
 	const {address, provider} = useWeb3();
 	const {isStakingOpBoostedVaults} = useYearn();
-	const {safeChainID} = useChainID();
 	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
 	const [txStatusExecuteDeposit, set_txStatusExecuteDeposit] = useState(defaultTxStatus);
 	const [txStatusExecuteWithdraw, set_txStatusExecuteWithdraw] = useState(defaultTxStatus);
-	const {actionParams, currentVault, onChangeAmount, maxDepositPossible, isDepositing} = useActionFlow();
-	const {
-		onApprove,
-		onExecuteDeposit,
-		onExecuteWithdraw,
-		onRetrieveAllowance,
-		currentSolver,
-		expectedOut,
-		isLoadingExpectedOut,
-		hash
-	} = useSolver();
+	const {actionParams, onChangeAmount, maxDepositPossible, isDepositing} = useActionFlow();
+	const {onApprove, onExecuteDeposit, onExecuteWithdraw, onRetrieveAllowance, currentSolver, expectedOut, isLoadingExpectedOut, hash} = useSolver();
 	const isWithdrawing = !isDepositing;
 
 	/* 🔵 - Yearn Finance **************************************************************************
@@ -115,13 +104,12 @@ export function VaultDetailsQuickActionsButtons(): ReactElement {
 		);
 	}, [actionParams?.amount.raw, actions, currentSolver, onApprove]);
 
-	const isDiffNetwork = !!safeChainID && currentVault.chainID !== safeChainID;
-	const isButtonDisabled =
-		(!address && !provider) ||
-		isZero(actionParams.amount.raw) ||
-		toBigInt(actionParams.amount.raw) > toBigInt(maxDepositPossible.raw) ||
-		isLoadingExpectedOut ||
-		isDiffNetwork;
+	const isButtonDisabled = (
+		(!address && !provider)
+		|| isZero(actionParams.amount.raw)
+		|| toBigInt(actionParams.amount.raw) > toBigInt(maxDepositPossible.raw)
+		|| isLoadingExpectedOut
+	);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** Wrapper to decide if we should use the partner contract or not

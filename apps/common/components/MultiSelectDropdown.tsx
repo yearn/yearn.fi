@@ -9,7 +9,7 @@ import type {ReactElement} from 'react';
 
 export type TMultiSelectOptionProps = {
 	label: string;
-	value: string;
+	value: number | string;
 	selected: boolean;
 	icon?: ReactElement;
 };
@@ -97,7 +97,7 @@ export function MultiSelectDropdown({
 	const filteredOptions = query === ''
 		? currentOptions
 		: currentOptions.filter((option): boolean => {
-			return option.value.toLowerCase().includes(query.toLowerCase());
+			return option.label.toLowerCase().includes(query.toLowerCase());
 		});
 
 	return (

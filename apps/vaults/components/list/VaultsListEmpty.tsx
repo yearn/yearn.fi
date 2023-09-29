@@ -1,8 +1,6 @@
 import {useAppSettings} from '@vaults/contexts/useAppSettings';
 import {Button} from '@yearn-finance/web-lib/components/Button';
-import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
-import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVaults} from '@common/schemas/yDaemonVaultsSchemas';
@@ -16,7 +14,6 @@ export function VaultsListEmpty({
 	currentCategory: string;
 	isLoading: boolean;
 }): ReactElement {
-	const {safeChainID} = useChainID();
 	const {searchValue, category, set_category} = useAppSettings();
 
 	if (isLoading && isZero(sortedVaultsToDisplay.length)) {
@@ -30,6 +27,7 @@ export function VaultsListEmpty({
 			</div>
 		);
 	}
+
 	if (!isLoading && isZero(sortedVaultsToDisplay.length) && currentCategory === 'Holdings') {
 		return (
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
@@ -40,17 +38,7 @@ export function VaultsListEmpty({
 			</div>
 		);
 	}
-	if (!isLoading && isZero(sortedVaultsToDisplay.length) && safeChainID !== 1) {
-		const chainName = getNetwork(safeChainID)?.name || 'this network';
-		return (
-			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
-				<b className={'text-center text-lg'}>{'👀 Where Vaults ser?'}</b>
-				<p className={'text-center text-neutral-600'}>
-					{`It seems we don’t have ${currentCategory} on ${chainName} (yet). Feel free to check out other vaults on ${chainName} or change network. New Vaults and strategies are added often, so check back later. Don’t be a stranger.`}
-				</p>
-			</div>
-		);
-	}
+
 	if (!isLoading && isZero(sortedVaultsToDisplay.length)) {
 		return (
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center gap-4 px-10 py-2 md:w-3/4'}>
@@ -97,8 +85,6 @@ export function VaultsListEmptyFactory({
 	currentCategory: string;
 	isLoading: boolean;
 }): ReactElement {
-	const {safeChainID} = useChainID();
-
 	if (isLoading && isZero(sortedVaultsToDisplay.length)) {
 		return (
 			<div className={'flex h-96 w-full flex-col items-center justify-center px-10 py-2'}>
@@ -118,17 +104,6 @@ export function VaultsListEmptyFactory({
 					{
 						"You don't appear to have any deposits in our Factory Vaults. There's an easy way to change that 😏"
 					}
-				</p>
-			</div>
-		);
-	}
-	if (!isLoading && isZero(sortedVaultsToDisplay.length) && safeChainID !== 1) {
-		const chainName = getNetwork(safeChainID)?.name || 'this network';
-		return (
-			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
-				<b className={'text-center text-lg'}>{'👀 Where Vaults ser?'}</b>
-				<p className={'text-center text-neutral-600'}>
-					{`It seems we don’t have ${currentCategory} on ${chainName} (yet). Feel free to check out other vaults on ${chainName} or change network. New Vaults and strategies are added often, so check back later. Don’t be a stranger.`}
 				</p>
 			</div>
 		);

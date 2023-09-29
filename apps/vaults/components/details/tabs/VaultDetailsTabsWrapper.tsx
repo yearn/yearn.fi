@@ -8,7 +8,6 @@ import {VaultDetailsHistorical} from '@vaults/components/details/tabs/VaultDetai
 import {VaultDetailsStrategies} from '@vaults/components/details/tabs/VaultDetailsStrategies';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {IconAddToMetamask} from '@yearn-finance/web-lib/icons/IconAddToMetamask';
 import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -164,8 +163,7 @@ function ExplorerLink({explorerBaseURI, currentVaultAddress}: TExplorerLinkProps
 
 export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {provider} = useWeb3();
-	const {safeChainID} = useChainID();
-	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: safeChainID});
+	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: currentVault.chainID});
 	const [selectedAboutTabIndex, set_selectedAboutTabIndex] = useState(0);
 
 	async function onAddTokenToMetamask(
@@ -233,9 +231,8 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 						/>
 					</button>
 					<ExplorerLink
-						explorerBaseURI={getNetwork(safeChainID)?.defaultBlockExplorer}
-						currentVaultAddress={currentVault.address}
-					/>
+						explorerBaseURI={getNetwork(currentVault.chainID)?.defaultBlockExplorer}
+						currentVaultAddress={currentVault.address} />
 				</div>
 			</div>
 

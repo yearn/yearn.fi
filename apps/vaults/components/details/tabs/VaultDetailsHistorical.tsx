@@ -7,7 +7,6 @@ import {GraphForVaultTVL} from '@vaults/components/graphs/GraphForVaultTVL';
 import {getMessariSubgraphEndpoint} from '@vaults/utils';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
@@ -25,14 +24,11 @@ export function VaultDetailsHistorical({
 	harvestData: TGraphData[];
 }): ReactElement {
 	const isMounted = useIsMounted();
-	const {safeChainID} = useChainID();
 	const [selectedViewIndex, set_selectedViewIndex] = useState(0);
 
-	const {data: messariMixedData} = useSWR(
-		currentVault.address
-			? [
-					getMessariSubgraphEndpoint(safeChainID),
-					`{
+	const {data: messariMixedData} = useSWR(currentVault.address ? [
+		getMessariSubgraphEndpoint(currentVault.chainID),
+		`{
 			vaultDailySnapshots(
 				where: {vault: "${currentVault.address.toLowerCase()}"}
 				orderBy: timestamp
