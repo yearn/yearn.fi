@@ -4,7 +4,6 @@ import {findLatestApr} from '@vaults/components/details/tabs/findLatestApr';
 import {GraphForStrategyReports} from '@vaults/components/graphs/GraphForStrategyReports';
 import {yDaemonReportsSchema} from '@vaults/schemas/reportsSchema';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {IconCopy} from '@yearn-finance/web-lib/icons/IconCopy';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -42,8 +41,7 @@ function RiskScoreElement({label, value}: TRiskScoreElementProps): ReactElement 
 }
 
 function VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
-	const {safeChainID} = useChainID();
-	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: safeChainID});
+	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: currentVault.chainID});
 	const isMounted = useIsMounted();
 
 	const riskScoreElementsMap = useMemo((): TRiskScoreElementProps[] => {
@@ -163,6 +161,7 @@ function VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
 							<div className={'mt-4 flex flex-row border-b border-l border-neutral-300'}>
 								<Renderable shouldRender={isMounted()}>
 									<GraphForStrategyReports
+										vaultChainID={currentVault.chainID}
 										vaultDecimals={currentVault.decimals}
 										vaultTicker={currentVault?.token?.symbol || 'token'}
 										strategy={strategy} />

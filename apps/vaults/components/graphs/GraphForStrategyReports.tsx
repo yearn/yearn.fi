@@ -1,7 +1,6 @@
 import {Fragment, useMemo} from 'react';
 import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
 import {yDaemonReportsSchema} from '@vaults/schemas/reportsSchema';
-import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
@@ -14,15 +13,15 @@ import type {TYDaemonVaultStrategy} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TYDaemonReport, TYDaemonReports} from '@vaults/schemas/reportsSchema';
 
 export type TGraphForStrategyReportsProps = {
-	strategy: TYDaemonVaultStrategy,
-	vaultDecimals: number,
-	vaultTicker: string
-	height?: number,
+	strategy: TYDaemonVaultStrategy;
+	vaultChainID: number;
+	vaultDecimals: number;
+	vaultTicker: string;
+	height?: number;
 }
 
-export function GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, height = 127}: TGraphForStrategyReportsProps): ReactElement {
-	const {safeChainID} = useChainID();
-	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: safeChainID});
+export function GraphForStrategyReports({strategy, vaultChainID, vaultDecimals, vaultTicker, height = 127}: TGraphForStrategyReportsProps): ReactElement {
+	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: vaultChainID});
 
 	const {data: reports} = useFetch<TYDaemonReports>({
 		endpoint: `${yDaemonBaseUri}/reports/${strategy.address}`,

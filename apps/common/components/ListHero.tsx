@@ -31,6 +31,8 @@ export type TListHero<T> = {
 	searchPlaceholder: string;
 	categories: TListHeroCategory<T>[][];
 	onSelect: (category: T) => void;
+	selectedChains?: string;
+	set_selectedChains?: (chains: string) => void;
 	searchValue: string;
 	set_searchValue: (searchValue: string) => void;
 }
@@ -109,40 +111,42 @@ export function ListHero<T extends string>({
 	categories,
 	onSelect,
 	searchValue,
+	selectedChains,
 	set_searchValue,
+	set_selectedChains,
 	switchProps
 }: TListHero<T>): ReactElement {
-	// TODO: Use the icons from web-lib
-	// https://github.com/yearn/web-lib/pull/339
+	const chains = JSON.parse(selectedChains || '[]') as number[];
+
 	const OPTIONS = [
 		{
 			label: 'Ethereum',
-			value: 'ethereum',
-			selected: false,
+			value: 1,
+			selected: chains.includes(1),
 			icon: <IconEtherumChain />
 		},
 		{
 			label: 'OP Mainnet',
-			value: 'optimism',
-			selected: false,
+			value: 10,
+			selected: chains.includes(10),
 			icon: <IconOptimismChain />
 		},
 		{
 			label: 'Fantom',
-			value: 'fantom',
-			selected: false,
+			value: 250,
+			selected: chains.includes(250),
 			icon: <IconFantomChain />
 		},
 		{
 			label: 'Base',
-			value: 'base',
-			selected: false,
+			value: 8453,
+			selected: chains.includes(8453),
 			icon: <IconBaseChain />
 		},
 		{
 			label: 'Arbitrum One',
-			value: 'arbitrum',
-			selected: false,
+			value: 42161,
+			selected: chains.includes(42161),
 			icon: <IconArbitrumChain />
 		}
 	];
@@ -169,7 +173,8 @@ export function ListHero<T extends string>({
 					options={OPTIONS}
 					placeholder={'Select chain'}
 					onSelect={(options): void => {
-						console.log({options});
+						const selectedChains = options.filter((o): boolean => o.selected).map((option): number => Number(option.value));
+						set_selectedChains?.(JSON.stringify(selectedChains));
 					}}
 				/>
 

@@ -12,7 +12,6 @@ import {Wrapper} from '@vaults/Wrapper';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {useSessionStorage} from '@yearn-finance/web-lib/hooks/useSessionStorage';
 import {IconChain} from '@yearn-finance/web-lib/icons/IconChain';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -94,20 +93,22 @@ function HeaderUserPosition(): ReactElement {
 }
 
 function Index(): ReactElement {
-	const {safeChainID} = useChainID();
+	// const {safeChainID} = useChainID();
 	const {balances, balancesNonce} = useWallet();
 	const {vaults, vaultsMigrations, vaultsRetired, isLoadingVaultList} = useYearn();
 	const [sort, set_sort] = useSessionStorage<{sortBy: TPossibleSortBy, sortDirection: TSortDirection}>(
 		'yVaultsSorting', {sortBy: 'apy', sortDirection: 'desc'}
 	);
-	const {shouldHideDust, shouldHideLowTVLVaults, category, searchValue, set_category, set_searchValue} = useAppSettings();
+	const {shouldHideDust, shouldHideLowTVLVaults, category, searchValue, selectedChains, set_category, set_searchValue, set_selectedChains} = useAppSettings();
+
+	const chains = JSON.parse(selectedChains) as number[];
 
 	const filterHoldingsCallback = useCallback((address: TAddress): boolean => {
 		balancesNonce;
 		const holding = balances?.[toAddress(address)];
 
 		// [Optimism] Check if staked vaults have holdings
-		if (safeChainID === 10) {
+		if (chains.includes(10)) {
 			const stakedVaultAddress = STACKING_TO_VAULT[toAddress(address)];
 			const stakedHolding = balances?.[toAddress(stakedVaultAddress)];
 
@@ -128,7 +129,7 @@ function Index(): ReactElement {
 			return true;
 		}
 		return false;
-	}, [balancesNonce, balances, safeChainID, shouldHideDust]);
+	}, [balancesNonce, balances, chains, shouldHideDust]);
 
 	const filterMigrationCallback = useCallback((address: TAddress): boolean => {
 		balancesNonce;
@@ -147,7 +148,7 @@ function Index(): ReactElement {
 	**********************************************************************************************/
 	const curveVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Curve');
 	const boostedVaults = useFilteredVaults(vaults, ({address}): boolean => {
-		if (safeChainID !== 10) {
+		if (chains.includes(10)) {
 			return false;
 		}
 		return OPT_VAULTS_WITH_REWARDS.some((token): boolean => token === address);
@@ -163,36 +164,24 @@ function Index(): ReactElement {
 	const categoriesToDisplay = useMemo((): TListHeroCategory<string>[] => {
 		const categories = [];
 
-		if ([1, 250, 42161].includes(safeChainID)) {
-			categories.push({value: 'All Vaults', label: 'All', isSelected: category === 'All Vaults'});
-			categories.push({value: 'Featured Vaults', label: 'Featured', isSelected: category === 'Featured Vaults'});
-			categories.push({value: 'Crypto Vaults', label: 'Crypto', isSelected: category === 'Crypto Vaults'});
-			categories.push({value: 'Stables Vaults', label: 'Stables', isSelected: category === 'Stables Vaults'});
-			categories.push({value: 'Curve Vaults', label: 'Curve', isSelected: category === 'Curve Vaults'});
-			categories.push({value: 'Balancer Vaults', label: 'Balancer', isSelected: category === 'Balancer Vaults'});
-		}
+		categories.push({value: 'All Vaults', label: 'All', isSelected: category === 'All Vaults'});
+		categories.push({value: 'Featured Vaults', label: 'Featured', isSelected: category === 'Featured Vaults'});
+		categories.push({value: 'Crypto Vaults', label: 'Crypto', isSelected: category === 'Crypto Vaults'});
+		categories.push({value: 'Stables Vaults', label: 'Stables', isSelected: category === 'Stables Vaults'});
+		categories.push({value: 'Curve Vaults', label: 'Curve', isSelected: category === 'Curve Vaults'});
+		categories.push({value: 'Balancer Vaults', label: 'Balancer', isSelected: category === 'Balancer Vaults'});
 
-		if ([10].includes(safeChainID)) {
-			categories.push({value: 'All Vaults', label: 'All', isSelected: category === 'All Vaults'});
+		if (chains.includes(10)) {
 			categories.push({value: 'Boosted Vaults', label: 'Boosted', isSelected: category === 'Boosted Vaults'});
-			categories.push({value: 'Featured Vaults', label: 'Featured', isSelected: category === 'Featured Vaults'});
-			categories.push({value: 'Crypto Vaults', label: 'Crypto', isSelected: category === 'Crypto Vaults'});
-			categories.push({value: 'Stables Vaults', label: 'Stables', isSelected: category === 'Stables Vaults'});
-			categories.push({value: 'Curve Vaults', label: 'Curve', isSelected: category === 'Curve Vaults'});
 			categories.push({value: 'Velodrome Vaults', label: 'Velodrome', isSelected: category === 'Velodrome Vaults'});
 		}
 
-		if (safeChainID === 8453) {
-			categories.push({value: 'All Vaults', label: 'All', isSelected: category === 'All Vaults'});
-			categories.push({value: 'Featured Vaults', label: 'Featured', isSelected: category === 'Featured Vaults'});
-			categories.push({value: 'Crypto Vaults', label: 'Crypto', isSelected: category === 'Crypto Vaults'});
-			categories.push({value: 'Stables Vaults', label: 'Stables', isSelected: category === 'Stables Vaults'});
-			categories.push({value: 'Curve Vaults', label: 'Curve', isSelected: category === 'Curve Vaults'});
+		if (chains.includes(8453)) {
 			categories.push({value: 'Aerodrome Vaults', label: 'Aerodrome', isSelected: category === 'Aerodrome Vaults'});
 		}
 
 		return categories;
-	}, [category, safeChainID]);
+	}, [category, chains]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	**	First, we need to determine in which category we are. The vaultsToDisplay function will
@@ -200,7 +189,7 @@ function Index(): ReactElement {
 	**	The possible lists are memoized to avoid unnecessary re-renders.
 	**********************************************************************************************/
 	const vaultsToDisplay = useMemo((): TYDaemonVault[] => {
-		let _vaultList: TYDaemonVault[] = [...Object.values(vaults || {})] as TYDaemonVault[];
+		let _vaultList: TYDaemonVault[] = [...Object.values(vaults || {})].filter((v): boolean => chains.includes(v.chainID)) as TYDaemonVault[];
 
 		if (category === 'Curve Vaults') {
 			_vaultList = curveVaults;
@@ -322,7 +311,10 @@ function Index(): ReactElement {
 					]}
 					onSelect={set_category}
 					searchValue={searchValue}
-					set_searchValue={set_searchValue} />
+					selectedChains={selectedChains}
+					set_selectedChains={set_selectedChains}
+					set_searchValue={set_searchValue}
+				/>
 
 
 				<Renderable shouldRender={category === 'Holdings' && retiredVaults?.length > 0}>

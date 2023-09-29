@@ -8,7 +8,6 @@ import {VaultDetailsHistorical} from '@vaults/components/details/tabs/VaultDetai
 import {VaultDetailsStrategies} from '@vaults/components/details/tabs/VaultDetailsStrategies';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {IconAddToMetamask} from '@yearn-finance/web-lib/icons/IconAddToMetamask';
 import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -150,8 +149,7 @@ function ExplorerLink({explorerBaseURI, currentVaultAddress}: TExplorerLinkProps
 
 export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {provider} = useWeb3();
-	const {safeChainID} = useChainID();
-	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: safeChainID});
+	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: currentVault.chainID});
 	const [selectedAboutTabIndex, set_selectedAboutTabIndex] = useState(0);
 
 	async function onAddTokenToMetamask(address: string, symbol: string, decimals: number, image: string): Promise<void> {
@@ -210,7 +208,7 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 						<IconAddToMetamask className={'h-5 w-5 text-neutral-600 transition-colors hover:text-neutral-900 md:h-6 md:w-6'} />
 					</button>
 					<ExplorerLink
-						explorerBaseURI={getNetwork(safeChainID)?.defaultBlockExplorer}
+						explorerBaseURI={getNetwork(currentVault.chainID)?.defaultBlockExplorer}
 						currentVaultAddress={currentVault.address} />
 				</div>
 			</div>

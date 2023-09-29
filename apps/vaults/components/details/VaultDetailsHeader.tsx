@@ -1,7 +1,6 @@
 import {useMemo} from 'react';
 import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatUSD} from '@yearn-finance/web-lib/utils/format.number';
@@ -43,9 +42,8 @@ function VaultHeaderLineItem({label, children, legend}: TVaultHeaderLineItemProp
 }
 
 export function VaultDetailsHeader({vault}: { vault: TYDaemonVault }): ReactElement {
-	const {safeChainID} = useChainID();
 	const {address: userAddress} = useWeb3();
-	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: safeChainID});
+	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: vault.chainID});
 	const {address, apy, tvl, decimals, symbol = 'token', token} = vault;
 	const {data: earned} = useFetch<TYDaemonEarned>({
 		endpoint: (address && userAddress) ? `${yDaemonBaseUri}/earned/${userAddress}` : null,
