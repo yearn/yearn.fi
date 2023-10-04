@@ -176,15 +176,18 @@ export function ListHero<T extends string>({
 					onSelect={onSelect}
 				/>
 
-				<MultiSelectDropdown
-					defaultOption={OPTIONS[0]}
-					options={OPTIONS}
-					placeholder={'Select chain'}
-					onSelect={(options): void => {
-						const selectedChains = options.filter((o): boolean => o.selected).map((option): number => Number(option.value));
-						set_selectedChains?.(JSON.stringify(selectedChains));
-					}}
-				/>
+				<div>
+					<small>{'Select Blockchain'}</small>
+					<MultiSelectDropdown
+						defaultOption={OPTIONS[0]}
+						options={OPTIONS}
+						placeholder={'Select chain'}
+						onSelect={(options): void => {
+							const selectedChains = options.filter((o): boolean => o.selected).map((option): number => Number(option.value));
+							set_selectedChains?.(JSON.stringify(selectedChains));
+						}}
+					/>
+				</div>
 
 				<SearchBar
 					searchPlaceholder={searchPlaceholder}
