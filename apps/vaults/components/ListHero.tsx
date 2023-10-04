@@ -56,10 +56,8 @@ function Switch(props: TSwitchProps): ReactElement {
 }
 
 export function ListHero({categories, set_categories, searchValue, selectedChains, set_searchValue, set_selectedChains, switchProps}: TListHero): ReactElement {
-	const chainsFromJSON = JSON.parse(selectedChains || '[]') as number[];
-	const categoriesFromJSON = JSON.parse(categories || '[]') as string[];
-
 	const chainOptions = useMemo((): TMultiSelectOptionProps[] => {
+		const chainsFromJSON = JSON.parse(selectedChains || '[]') as number[];
 		return [
 			{
 				label: 'Ethereum',
@@ -92,48 +90,51 @@ export function ListHero({categories, set_categories, searchValue, selectedChain
 				icon: <IconArbitrumChain />
 			}
 		];
-	}, [chainsFromJSON]);
+	}, [selectedChains]);
 
 	const categoryOptions = useMemo((): TMultiSelectOptionProps[] => {
-		const categories: TMultiSelectOptionProps[] = [];
-		categories.push({
+		const chainsFromJSON = JSON.parse(selectedChains || '[]') as number[];
+		const categoriesFromJSON = JSON.parse(categories || '[]') as string[];
+		const options: TMultiSelectOptionProps[] = [];
+
+		options.push({
 			value: 'Holdings',
 			label: 'Holdings',
 			isSelected: categoriesFromJSON.includes('Holdings')
 		});
-		// categories.push({
+		// options.push({
 		// 	value: 'Featured Vaults',
 		// 	label: 'Featured',
 		// 	isSelected: categoriesFromJSON.includes('Featured Vaults')
 		// });
-		categories.push({
+		options.push({
 			value: 'Crypto Vaults',
 			label: 'Crypto',
 			isSelected: categoriesFromJSON.includes('Crypto Vaults')
 		});
-		categories.push({
+		options.push({
 			value: 'Stables Vaults',
 			label: 'Stables',
 			isSelected: categoriesFromJSON.includes('Stables Vaults')
 		});
-		categories.push({
+		options.push({
 			value: 'Curve Vaults',
 			label: 'Curve',
 			isSelected: categoriesFromJSON.includes('Curve Vaults')
 		});
-		categories.push({
+		options.push({
 			value: 'Balancer Vaults',
 			label: 'Balancer',
 			isSelected: categoriesFromJSON.includes('Balancer Vaults')
 		});
 
 		if (chainsFromJSON.includes(10)) {
-			categories.push({
+			options.push({
 				value: 'Boosted Vaults',
 				label: 'Boosted',
 				isSelected: categoriesFromJSON.includes('Boosted Vaults')
 			});
-			categories.push({
+			options.push({
 				value: 'Velodrome Vaults',
 				label: 'Velodrome',
 				isSelected: categoriesFromJSON.includes('Velodrome Vaults')
@@ -141,15 +142,15 @@ export function ListHero({categories, set_categories, searchValue, selectedChain
 		}
 
 		if (chainsFromJSON.includes(8453)) {
-			categories.push({
+			options.push({
 				value: 'Aerodrome Vaults',
 				label: 'Aerodrome',
 				isSelected: categoriesFromJSON.includes('Aerodrome Vaults')
 			});
 		}
 
-		return categories;
-	}, [categoriesFromJSON, chainsFromJSON]);
+		return options;
+	}, [selectedChains, categories]);
 
 	return (
 		<div className={'flex flex-col items-start justify-between space-x-0 px-4 pb-2 pt-4 md:px-10 md:pb-8 md:pt-10'}>

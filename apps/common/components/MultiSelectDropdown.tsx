@@ -1,4 +1,4 @@
-import {Fragment, useRef, useState} from 'react';
+import {Fragment, useEffect, useRef, useState} from 'react';
 import {Combobox, Transition} from '@headlessui/react';
 import {useClickOutside, useThrottledState} from '@react-hookz/web';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
@@ -94,6 +94,10 @@ export function MultiSelectDropdown({options, onSelect, placeholder = ''}: TMult
 	const [areAllSelected, set_areAllSelected] = useState(false);
 	const [query, set_query] = useState('');
 	const componentRef = useRef(null);
+
+	useEffect((): void => {
+		set_areAllSelected(currentOptions.every((option): boolean => option.isSelected));
+	}, [currentOptions]);
 
 	useClickOutside(componentRef, (): void => {
 		set_isOpen(false);

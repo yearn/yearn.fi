@@ -31,7 +31,10 @@ const defaultProps: TAppSettingsContext = {
 
 const AppSettingsContext = createContext<TAppSettingsContext>(defaultProps);
 export const AppSettingsContextApp = memo(function AppSettingsContextApp({children}: {children: ReactElement}): ReactElement {
-	const [category, set_category] = useSessionStorage('yearn.fi/vaults-categories', '["All Vaults"]');
+	const [category, set_category] = useSessionStorage(
+		'yearn.fi/vaults-categories',
+		'["Holdings","Crypto Vaults","Stables Vaults","Curve Vaults","Balancer Vaults","Boosted Vaults","Velodrome Vaults","Aerodrome Vaults"]'
+	);
 	const [searchValue, set_searchValue] = useSessionStorage('yearn.fi/vaults-search', '');
 	const [selectedChains, set_selectedChains] = useSessionStorage('yearn.fi/selected-chains', '[1]');
 	const [shouldHideDust, set_shouldHideDust] = useLocalStorage('yearn.fi/should-hide-dust', false);
