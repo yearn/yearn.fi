@@ -70,9 +70,7 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 						}`}
 					</legend>
 				</div>
-				<Renderable
-					shouldRender={!hasMultipleInputsToChooseFrom}
-					fallback={renderMultipleOptionsFallback()}>
+				<Renderable shouldRender={!hasMultipleInputsToChooseFrom} fallback={renderMultipleOptionsFallback()}>
 					<div
 						className={
 							'flex h-10 w-full items-center justify-between bg-neutral-300 px-2 text-base text-neutral-900 md:w-56 md:px-3'
@@ -89,18 +87,14 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 					</div>
 				</Renderable>
 
-				<legend
-					className={'font-number hidden text-xs text-neutral-600 md:inline'}
-					suppressHydrationWarning>
+				<legend className={'font-number hidden text-xs text-neutral-600 md:inline'} suppressHydrationWarning>
 					{`You have ${formatAmount(selectedFromBalance.normalized)} ${
 						actionParams?.selectedOptionFrom?.symbol || 'tokens'
 					}`}
 				</legend>
 			</div>
 			<div className={'w-full space-y-2'}>
-				<label
-					htmlFor={'fromAmount'}
-					className={'hidden text-base text-neutral-600 md:inline'}>
+				<label htmlFor={'fromAmount'} className={'hidden text-base text-neutral-600 md:inline'}>
 					{'Amount'}
 				</label>
 				<div className={'flex h-10 items-center bg-neutral-0 p-2'}>

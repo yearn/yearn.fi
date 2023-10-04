@@ -41,11 +41,7 @@ export function VaultAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 							shouldRender={!(currentVault.apy?.type === 'new' && isZero(boostedAPR))}
 							fallback={'New'}>
 							{'⚡️ '}
-							<RenderAmount
-								value={boostedAPR}
-								symbol={'percent'}
-								decimals={6}
-							/>
+							<RenderAmount value={boostedAPR} symbol={'percent'} decimals={6} />
 						</Renderable>
 					</b>
 					<span className={'tooltipLight bottom-full mb-1'}>
@@ -59,11 +55,7 @@ export function VaultAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 										'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
 									}>
 									<p>{'• Base APR '}</p>
-									<RenderAmount
-										value={currentVault.apy?.gross_apr}
-										symbol={'percent'}
-										decimals={6}
-									/>
+									<RenderAmount value={currentVault.apy?.gross_apr} symbol={'percent'} decimals={6} />
 								</div>
 
 								<div
@@ -94,11 +86,7 @@ export function VaultAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 						<Renderable
 							shouldRender={!(currentVault.apy?.type === 'new' && isZero(currentVault.apy?.net_apy))}
 							fallback={'New'}>
-							<RenderAmount
-								value={currentVault.apy?.net_apy}
-								symbol={'percent'}
-								decimals={6}
-							/>
+							<RenderAmount value={currentVault.apy?.net_apy} symbol={'percent'} decimals={6} />
 						</Renderable>
 					</b>
 					<small className={'text-xs text-neutral-900'}>
@@ -122,11 +110,7 @@ export function VaultAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 										'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
 									}>
 									<p>{'• Base APR '}</p>
-									<RenderAmount
-										value={unBoostedAPR}
-										symbol={'percent'}
-										decimals={6}
-									/>
+									<RenderAmount value={unBoostedAPR} symbol={'percent'} decimals={6} />
 								</div>
 
 								<div
@@ -150,11 +134,7 @@ export function VaultAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 				<Renderable
 					shouldRender={!(currentVault.apy?.type === 'new' && isZero(currentVault.apy?.net_apy))}
 					fallback={'New'}>
-					<RenderAmount
-						value={currentVault.apy?.net_apy}
-						symbol={'percent'}
-						decimals={6}
-					/>
+					<RenderAmount value={currentVault.apy?.net_apy} symbol={'percent'} decimals={6} />
 				</Renderable>
 			</b>
 		</div>
@@ -191,7 +171,9 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 	}, [currentVault.address, deposited, positionsMap, stakingRewardsByVault]);
 
 	return (
-		<Link key={`${currentVault.address}`} href={`/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`}>
+		<Link
+			key={`${currentVault.address}`}
+			href={`/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`}>
 			<div className={'yearn--table-wrapper cursor-pointer transition-colors hover:bg-neutral-300'}>
 				<div className={'flex max-w-[32px] flex-row items-center'}>
 					{ChainIconMap.get(currentVault.chainID) ?? <IconEtherumChain />}

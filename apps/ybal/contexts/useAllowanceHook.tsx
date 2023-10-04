@@ -29,17 +29,42 @@ export function useAllowances(): [TDict<bigint>, () => void] {
 	const zapAddress = useMemo((): TAddress => LOCAL_ZAP_YEARN_YBAL_ADDRESS, []);
 	const {data, status, refetch} = useContractReads({
 		contracts: [
-			{address: BAL_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},
-			{address: WETH_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},
+			{
+				address: BAL_TOKEN_ADDRESS,
+				abi: erc20ABI,
+				functionName: 'allowance',
+				args: [wagmiAddress, zapAddress]
+			},
+			{
+				address: WETH_TOKEN_ADDRESS,
+				abi: erc20ABI,
+				functionName: 'allowance',
+				args: [wagmiAddress, zapAddress]
+			},
 			{
 				address: BALWETH_TOKEN_ADDRESS,
 				abi: erc20ABI,
 				functionName: 'allowance',
 				args: [wagmiAddress, zapAddress]
 			},
-			{address: YBAL_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},
-			{address: STYBAL_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]},
-			{address: LPYBAL_TOKEN_ADDRESS, abi: erc20ABI, functionName: 'allowance', args: [wagmiAddress, zapAddress]}
+			{
+				address: YBAL_TOKEN_ADDRESS,
+				abi: erc20ABI,
+				functionName: 'allowance',
+				args: [wagmiAddress, zapAddress]
+			},
+			{
+				address: STYBAL_TOKEN_ADDRESS,
+				abi: erc20ABI,
+				functionName: 'allowance',
+				args: [wagmiAddress, zapAddress]
+			},
+			{
+				address: LPYBAL_TOKEN_ADDRESS,
+				abi: erc20ABI,
+				functionName: 'allowance',
+				args: [wagmiAddress, zapAddress]
+			}
 		]
 	});
 

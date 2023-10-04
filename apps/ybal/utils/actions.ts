@@ -64,7 +64,11 @@ export async function simulateZapForMinOut(
 
 	try {
 		const wagmiProvider = await toWagmiProvider(props.connector);
-		const baseContract = {...wagmiProvider, address: LOCAL_ZAP_YEARN_YBAL_ADDRESS, abi: ZAP_BAL_ABI};
+		const baseContract = {
+			...wagmiProvider,
+			address: LOCAL_ZAP_YEARN_YBAL_ADDRESS,
+			abi: ZAP_BAL_ABI
+		};
 		const {result: expectedAmountMint} = await prepareWriteContract({
 			...baseContract,
 			functionName: 'queryZapOutput',

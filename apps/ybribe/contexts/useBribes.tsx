@@ -86,7 +86,10 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 				args: [gauge.gauge]
 			});
 		}
-		const result = await multicall({contracts: rewardsPerGaugesCalls, chainId: safeChainID});
+		const result = await multicall({
+			contracts: rewardsPerGaugesCalls,
+			chainId: safeChainID
+		});
 		const rewardsPerGauges: TDict<TAddress[]> = {};
 		let resultIndex = 0;
 		for (const gauge of gauges) {
@@ -128,16 +131,31 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 					rewardsList.push(allowanceKey(safeChainID, toAddress(gaugeAddress), tokenAsReward, userAddress));
 					rewardsPerTokensPerGaugesCalls.push(
 						...[
-							{...bribeV3BaseContract, functionName: 'reward_per_token', args: args},
-							{...bribeV3BaseContract, functionName: 'active_period', args: args},
-							{...bribeV3BaseContract, functionName: 'claimable', args: [userAddress, ...args]}
+							{
+								...bribeV3BaseContract,
+								functionName: 'reward_per_token',
+								args: args
+							},
+							{
+								...bribeV3BaseContract,
+								functionName: 'active_period',
+								args: args
+							},
+							{
+								...bribeV3BaseContract,
+								functionName: 'claimable',
+								args: [userAddress, ...args]
+							}
 						]
 					);
 				}
 			}
 
 			const rewards: TDict<TGetRewardsPerUser> = {};
-			const result = await multicall({contracts: rewardsPerTokensPerGaugesCalls, chainId: safeChainID});
+			const result = await multicall({
+				contracts: rewardsPerTokensPerGaugesCalls,
+				chainId: safeChainID
+			});
 			let resultIndex = 0;
 			for (const [gaugeAddress, rewardsTokens] of Object.entries(rewardsPerGauges)) {
 				for (const tokenAsReward of rewardsTokens) {

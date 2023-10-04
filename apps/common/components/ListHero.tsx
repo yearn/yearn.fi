@@ -54,9 +54,7 @@ function DesktopCategories<T>({categories, onSelect}: TListHeroDesktopCategories
 
 	return (
 		<div className={'w-full'}>
-			<div
-				suppressHydrationWarning
-				className={'mt-1 flex flex-row space-x-4'}>
+			<div suppressHydrationWarning className={'mt-1 flex flex-row space-x-4'}>
 				{(categories || []).map(
 					(currentCategory, index: number): ReactElement => (
 						<div
@@ -163,25 +161,22 @@ export function ListHero<T extends string>({
 	return (
 		<div className={'flex flex-col items-start justify-between space-x-0 px-4 pb-2 pt-4 md:px-10 md:pb-8 md:pt-10'}>
 			<div className={'mb-6'}>
-				<h2
-					suppressHydrationWarning
-					className={'text-lg font-bold md:text-3xl'}>
+				<h2 suppressHydrationWarning className={'text-lg font-bold md:text-3xl'}>
 					{headLabel}
 				</h2>
 			</div>
 
 			<div className={'hidden w-full flex-row items-center justify-between space-x-4 md:flex'}>
-				<DesktopCategories
-					categories={categories}
-					onSelect={onSelect}
-				/>
+				<DesktopCategories categories={categories} onSelect={onSelect} />
 
 				<MultiSelectDropdown
 					defaultOption={OPTIONS[0]}
 					options={OPTIONS}
 					placeholder={'Select chain'}
 					onSelect={(options): void => {
-						const selectedChains = options.filter((o): boolean => o.selected).map((option): number => Number(option.value));
+						const selectedChains = options
+							.filter((o): boolean => o.selected)
+							.map((option): number => Number(option.value));
 						set_selectedChains?.(JSON.stringify(selectedChains));
 					}}
 				/>
@@ -214,10 +209,7 @@ export function ListHero<T extends string>({
 							(currentCategory): ReactNode =>
 								currentCategory.map(
 									(item): ReactElement => (
-										<option
-											suppressHydrationWarning
-											key={item.value}
-											value={item.value}>
+										<option suppressHydrationWarning key={item.value} value={item.value}>
 											{item.label}
 										</option>
 									)

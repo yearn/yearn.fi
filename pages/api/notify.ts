@@ -14,19 +14,17 @@ export async function handler(req: TRequest, res: NextApiResponse<{message: stri
 	const telegram = new Telegram(process.env.TELEGRAM_BOT as string);
 	try {
 		const form = formidable();
-		const formData = await new Promise<{fields: TRequest['body']; files: TRequest['body']}>(
-			async (resolve, reject): Promise<void> => {
-				form.parse(
-					req,
-					async (err: Error, fields: TRequest['body'], files: TRequest['body']): Promise<void> => {
-						if (err) {
-							reject('error');
-						}
-						resolve({fields, files});
-					}
-				);
-			}
-		);
+		const formData = await new Promise<{
+			fields: TRequest['body'];
+			files: TRequest['body'];
+		}>(async (resolve, reject): Promise<void> => {
+			form.parse(req, async (err: Error, fields: TRequest['body'], files: TRequest['body']): Promise<void> => {
+				if (err) {
+					reject('error');
+				}
+				resolve({fields, files});
+			});
+		});
 		const {
 			fields,
 			files: {screenshot}

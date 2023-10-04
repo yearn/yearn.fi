@@ -35,10 +35,7 @@ export function VaultListOptions(): ReactElement {
 											'flex cursor-pointer items-center justify-between p-4 transition-colors hover:bg-neutral-100/40'
 										}>
 										<p className={'text-xs'}>{'Hide dust'}</p>
-										<Switch
-											isEnabled={shouldHideDust}
-											onSwitch={onSwitchHideDust}
-										/>
+										<Switch isEnabled={shouldHideDust} onSwitch={onSwitchHideDust} />
 									</label>
 
 									<label

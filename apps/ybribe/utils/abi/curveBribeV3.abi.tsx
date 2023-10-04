@@ -1,36 +1,77 @@
 export const CURVE_BRIBE_V3_ABI = [
 	{
 		anonymous: false,
-		inputs: [{indexed: true, internalType: 'address', name: 'user', type: 'address'}],
+		inputs: [
+			{
+				indexed: true,
+				internalType: 'address',
+				name: 'user',
+				type: 'address'
+			}
+		],
 		name: 'Blacklisted',
 		type: 'event'
 	},
 	{
 		anonymous: false,
-		inputs: [{indexed: false, internalType: 'address', name: 'owner', type: 'address'}],
+		inputs: [
+			{
+				indexed: false,
+				internalType: 'address',
+				name: 'owner',
+				type: 'address'
+			}
+		],
 		name: 'ChangeOwner',
 		type: 'event'
 	},
 	{
 		anonymous: false,
 		inputs: [
-			{indexed: true, internalType: 'address', name: 'user', type: 'address'},
-			{indexed: false, internalType: 'address', name: 'recipient', type: 'address'}
+			{
+				indexed: true,
+				internalType: 'address',
+				name: 'user',
+				type: 'address'
+			},
+			{
+				indexed: false,
+				internalType: 'address',
+				name: 'recipient',
+				type: 'address'
+			}
 		],
 		name: 'ClearRewardRecipient',
 		type: 'event'
 	},
 	{
 		anonymous: false,
-		inputs: [{indexed: false, internalType: 'uint256', name: 'fee', type: 'uint256'}],
+		inputs: [
+			{
+				indexed: false,
+				internalType: 'uint256',
+				name: 'fee',
+				type: 'uint256'
+			}
+		],
 		name: 'FeeUpdated',
 		type: 'event'
 	},
 	{
 		anonymous: false,
 		inputs: [
-			{indexed: true, internalType: 'address', name: 'gauge', type: 'address'},
-			{indexed: true, internalType: 'address', name: 'reward_token', type: 'address'}
+			{
+				indexed: true,
+				internalType: 'address',
+				name: 'gauge',
+				type: 'address'
+			},
+			{
+				indexed: true,
+				internalType: 'address',
+				name: 'reward_token',
+				type: 'address'
+			}
 		],
 		name: 'NewTokenReward',
 		type: 'event'
@@ -38,28 +79,80 @@ export const CURVE_BRIBE_V3_ABI = [
 	{
 		anonymous: false,
 		inputs: [
-			{indexed: true, internalType: 'address', name: 'gauge', type: 'address'},
-			{indexed: true, internalType: 'uint256', name: 'period', type: 'uint256'},
-			{indexed: false, internalType: 'uint256', name: 'bias', type: 'uint256'},
-			{indexed: false, internalType: 'uint256', name: 'blacklisted_bias', type: 'uint256'}
+			{
+				indexed: true,
+				internalType: 'address',
+				name: 'gauge',
+				type: 'address'
+			},
+			{
+				indexed: true,
+				internalType: 'uint256',
+				name: 'period',
+				type: 'uint256'
+			},
+			{
+				indexed: false,
+				internalType: 'uint256',
+				name: 'bias',
+				type: 'uint256'
+			},
+			{
+				indexed: false,
+				internalType: 'uint256',
+				name: 'blacklisted_bias',
+				type: 'uint256'
+			}
 		],
 		name: 'PeriodUpdated',
 		type: 'event'
 	},
 	{
 		anonymous: false,
-		inputs: [{indexed: true, internalType: 'address', name: 'user', type: 'address'}],
+		inputs: [
+			{
+				indexed: true,
+				internalType: 'address',
+				name: 'user',
+				type: 'address'
+			}
+		],
 		name: 'RemovedFromBlacklist',
 		type: 'event'
 	},
 	{
 		anonymous: false,
 		inputs: [
-			{indexed: true, internalType: 'address', name: 'briber', type: 'address'},
-			{indexed: true, internalType: 'address', name: 'gauge', type: 'address'},
-			{indexed: true, internalType: 'address', name: 'reward_token', type: 'address'},
-			{indexed: false, internalType: 'uint256', name: 'amount', type: 'uint256'},
-			{indexed: false, internalType: 'uint256', name: 'fee', type: 'uint256'}
+			{
+				indexed: true,
+				internalType: 'address',
+				name: 'briber',
+				type: 'address'
+			},
+			{
+				indexed: true,
+				internalType: 'address',
+				name: 'gauge',
+				type: 'address'
+			},
+			{
+				indexed: true,
+				internalType: 'address',
+				name: 'reward_token',
+				type: 'address'
+			},
+			{
+				indexed: false,
+				internalType: 'uint256',
+				name: 'amount',
+				type: 'uint256'
+			},
+			{
+				indexed: false,
+				internalType: 'uint256',
+				name: 'fee',
+				type: 'uint256'
+			}
 		],
 		name: 'RewardAdded',
 		type: 'event'
@@ -67,10 +160,30 @@ export const CURVE_BRIBE_V3_ABI = [
 	{
 		anonymous: false,
 		inputs: [
-			{indexed: true, internalType: 'address', name: 'user', type: 'address'},
-			{indexed: true, internalType: 'address', name: 'gauge', type: 'address'},
-			{indexed: true, internalType: 'address', name: 'reward_token', type: 'address'},
-			{indexed: false, internalType: 'uint256', name: 'amount', type: 'uint256'}
+			{
+				indexed: true,
+				internalType: 'address',
+				name: 'user',
+				type: 'address'
+			},
+			{
+				indexed: true,
+				internalType: 'address',
+				name: 'gauge',
+				type: 'address'
+			},
+			{
+				indexed: true,
+				internalType: 'address',
+				name: 'reward_token',
+				type: 'address'
+			},
+			{
+				indexed: false,
+				internalType: 'uint256',
+				name: 'amount',
+				type: 'uint256'
+			}
 		],
 		name: 'RewardClaimed',
 		type: 'event'
@@ -78,8 +191,18 @@ export const CURVE_BRIBE_V3_ABI = [
 	{
 		anonymous: false,
 		inputs: [
-			{indexed: true, internalType: 'address', name: 'user', type: 'address'},
-			{indexed: false, internalType: 'address', name: 'recipient', type: 'address'}
+			{
+				indexed: true,
+				internalType: 'address',
+				name: 'user',
+				type: 'address'
+			},
+			{
+				indexed: false,
+				internalType: 'address',
+				name: 'recipient',
+				type: 'address'
+			}
 		],
 		name: 'SetRewardRecipient',
 		type: 'event'
@@ -114,7 +237,13 @@ export const CURVE_BRIBE_V3_ABI = [
 		stateMutability: 'view',
 		type: 'function'
 	},
-	{inputs: [], name: 'accept_owner', outputs: [], stateMutability: 'nonpayable', type: 'function'},
+	{
+		inputs: [],
+		name: 'accept_owner',
+		outputs: [],
+		stateMutability: 'nonpayable',
+		type: 'function'
+	},
 	{
 		inputs: [
 			{internalType: 'address', name: '', type: 'address'},
@@ -168,7 +297,11 @@ export const CURVE_BRIBE_V3_ABI = [
 		inputs: [
 			{internalType: 'address[]', name: '_users', type: 'address[]'},
 			{internalType: 'address[]', name: '_gauges', type: 'address[]'},
-			{internalType: 'address[]', name: '_reward_tokens', type: 'address[]'}
+			{
+				internalType: 'address[]',
+				name: '_reward_tokens',
+				type: 'address[]'
+			}
 		],
 		name: 'claim_reward_for_many',
 		outputs: [{internalType: 'uint256[]', name: 'amounts', type: 'uint256[]'}],
@@ -196,7 +329,13 @@ export const CURVE_BRIBE_V3_ABI = [
 		stateMutability: 'view',
 		type: 'function'
 	},
-	{inputs: [], name: 'clear_recipient', outputs: [], stateMutability: 'nonpayable', type: 'function'},
+	{
+		inputs: [],
+		name: 'clear_recipient',
+		outputs: [],
+		stateMutability: 'nonpayable',
+		type: 'function'
+	},
 	{
 		inputs: [],
 		name: 'current_period',
@@ -240,7 +379,13 @@ export const CURVE_BRIBE_V3_ABI = [
 		type: 'function'
 	},
 	{
-		inputs: [{internalType: 'address', name: 'address_to_check', type: 'address'}],
+		inputs: [
+			{
+				internalType: 'address',
+				name: 'address_to_check',
+				type: 'address'
+			}
+		],
 		name: 'is_blacklisted',
 		outputs: [{internalType: 'bool', name: '', type: 'bool'}],
 		stateMutability: 'view',

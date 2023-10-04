@@ -71,7 +71,10 @@ function Factory(): ReactElement {
 			return [];
 		}
 
-		const baseContract = {address: VAULT_FACTORY_ADDRESS, abi: VAULT_FACTORY_ABI};
+		const baseContract = {
+			address: VAULT_FACTORY_ADDRESS,
+			abi: VAULT_FACTORY_ABI
+		};
 		const calls = [];
 		for (const gauge of _gaugesFromYearn) {
 			calls.push({
@@ -80,7 +83,10 @@ function Factory(): ReactElement {
 				args: [toAddress(gauge.gauge_address)]
 			});
 		}
-		const canCreateVaults = await multicall({contracts: calls, chainId: _safeChainID});
+		const canCreateVaults = await multicall({
+			contracts: calls,
+			chainId: _safeChainID
+		});
 		return _gaugesFromYearn.filter((_gauge: TCurveGaugeFromYearn, index: number): boolean =>
 			decodeAsBoolean(canCreateVaults[index])
 		);
@@ -129,7 +135,10 @@ function Factory(): ReactElement {
 			_safeChainID: number,
 			_selectedOption: TDropdownGaugeOption
 		): Promise<TGaugeDisplayData> {
-			const baseContract = {address: _selectedOption.value.gaugeAddress, abi: erc20ABI};
+			const baseContract = {
+				address: _selectedOption.value.gaugeAddress,
+				abi: erc20ABI
+			};
 			const results = await multicall({
 				contracts: [
 					{...baseContract, functionName: 'name'},
@@ -170,9 +179,15 @@ function Factory(): ReactElement {
 		} catch (error) {
 			const err = error as {reason: string; code: string};
 			if (err.code === 'UNPREDICTABLE_GAS_LIMIT') {
-				toast({type: 'warning', content: (err?.reason || '').replace('execution reverted: ', '')});
+				toast({
+					type: 'warning',
+					content: (err?.reason || '').replace('execution reverted: ', '')
+				});
 			} else {
-				toast({type: 'error', content: (err?.reason || '').replace('execution reverted: ', '')});
+				toast({
+					type: 'error',
+					content: (err?.reason || '').replace('execution reverted: ', '')
+				});
 				set_hasError(true);
 			}
 			return 0n;
@@ -272,9 +287,7 @@ function Factory(): ReactElement {
 
 						<div className={'col-span-3 w-full space-y-1'}>
 							<p className={'text-neutral-600'}>{'Pool address'}</p>
-							<Renderable
-								shouldRender={status !== 'loading'}
-								fallback={loadingFallback()}>
+							<Renderable shouldRender={status !== 'loading'} fallback={loadingFallback()}>
 								<div
 									className={
 										'flex h-10 flex-row items-center justify-between bg-neutral-200 p-2 font-mono'
@@ -298,9 +311,7 @@ function Factory(): ReactElement {
 						</div>
 						<div className={'col-span-3 w-full space-y-1'}>
 							<p className={'text-neutral-600'}>{'Gauge address'}</p>
-							<Renderable
-								shouldRender={status !== 'loading'}
-								fallback={loadingFallback()}>
+							<Renderable shouldRender={status !== 'loading'} fallback={loadingFallback()}>
 								<div
 									className={
 										'flex h-10 flex-row items-center justify-between bg-neutral-200 p-2 font-mono'

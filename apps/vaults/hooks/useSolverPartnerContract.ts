@@ -69,7 +69,6 @@ export function useSolverPartnerContract(): TSolverContext {
 
 			const allowance = await allowanceOf({
 				connector: provider,
-				chainID: safeChainID,
 				tokenAddress: toAddress(request.current.inputToken.value),
 				spenderAddress: toAddress(getNetwork(safeChainID)?.contracts?.partnerContract?.address)
 			});
@@ -100,7 +99,6 @@ export function useSolverPartnerContract(): TSolverContext {
 
 			const result = await approveERC20({
 				connector: provider,
-				chainID: safeChainID,
 				contractAddress: request.current.inputToken.value,
 				spenderAddress: partnerContract,
 				amount: amount,
@@ -129,7 +127,6 @@ export function useSolverPartnerContract(): TSolverContext {
 
 			const result = await depositViaPartner({
 				connector: provider,
-				chainID: safeChainID,
 				contractAddress: partnerContract,
 				vaultAddress: request.current.outputToken.value,
 				partnerAddress: currentPartner ? currentPartner : undefined,
@@ -158,7 +155,6 @@ export function useSolverPartnerContract(): TSolverContext {
 
 			const result = await withdrawShares({
 				connector: provider,
-				chainID: safeChainID,
 				contractAddress: request.current.inputToken.value,
 				amount: request.current.inputAmount,
 				statusHandler: txStatusSetter

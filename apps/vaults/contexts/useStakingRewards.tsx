@@ -89,9 +89,16 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 		const stakingPoolCalls = [];
 		const stackingAddresses = Object.values(VAULT_TO_STACKING);
 		for (const stackingAddress of stackingAddresses) {
-			stakingPoolCalls.push({...baseContract, functionName: 'stakingPool', args: [stackingAddress]});
+			stakingPoolCalls.push({
+				...baseContract,
+				functionName: 'stakingPool',
+				args: [stackingAddress]
+			});
 		}
-		const stakingRewardsAddresses = await multicall({contracts: stakingPoolCalls, chainId: chainID});
+		const stakingRewardsAddresses = await multicall({
+			contracts: stakingPoolCalls,
+			chainId: chainID
+		});
 
 		/* 🔵 - Yearn Finance **********************************************************************
 		 ** For each stakingRewardsAddresses, grab the info in a multicall
@@ -149,8 +156,16 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 				abi: STAKING_REWARDS_ABI,
 				chainId: chainID
 			} as const;
-			calls.push({...baseContract, functionName: 'balanceOf', args: [userAddress]});
-			calls.push({...baseContract, functionName: 'earned', args: [userAddress]});
+			calls.push({
+				...baseContract,
+				functionName: 'balanceOf',
+				args: [userAddress]
+			});
+			calls.push({
+				...baseContract,
+				functionName: 'earned',
+				args: [userAddress]
+			});
 		}
 		const results = await multicall({contracts: calls, chainId: chainID});
 

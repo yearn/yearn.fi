@@ -59,7 +59,12 @@ export function GaugeBribeModal({
 			{address: tokenAddress, abi: erc20ABI, functionName: 'name'},
 			{address: tokenAddress, abi: erc20ABI, functionName: 'symbol'},
 			{address: tokenAddress, abi: erc20ABI, functionName: 'decimals'},
-			{address: tokenAddress, abi: erc20ABI, functionName: 'balanceOf', args: [toAddress(address)]},
+			{
+				address: tokenAddress,
+				abi: erc20ABI,
+				functionName: 'balanceOf',
+				args: [toAddress(address)]
+			},
 			{
 				address: tokenAddress,
 				abi: erc20ABI,
@@ -117,18 +122,14 @@ export function GaugeBribeModal({
 	function renderButton(): ReactElement {
 		if (!isActive) {
 			return (
-				<Button
-					onClick={openLoginModal}
-					className={'w-full'}>
+				<Button onClick={openLoginModal} className={'w-full'}>
 					{'Connect wallet'}
 				</Button>
 			);
 		}
 		if (![1, 1337].includes(chainID)) {
 			return (
-				<Button
-					onClick={(): void => onSwitchChain(1)}
-					className={'w-full'}>
+				<Button onClick={(): void => onSwitchChain(1)} className={'w-full'}>
 					{'Switch to Ethereum Mainnet'}
 				</Button>
 			);

@@ -37,10 +37,7 @@ function WrappedInput({title, initialValue, onSave}: TWrappedInput): ReactElemen
 						onChange={(e): void => set_value(e.target.value)}
 					/>
 				</div>
-				<Button
-					isDisabled={isInitialValue}
-					className={'w-full md:w-48'}
-					onClick={(): void => onSave(value)}>
+				<Button isDisabled={isInitialValue} className={'w-full md:w-48'} onClick={(): void => onSave(value)}>
 					{'Submit'}
 				</Button>
 			</div>
@@ -90,10 +87,7 @@ function SettingsOverwrite(): ReactElement {
 							'flex cursor-pointer items-center justify-between pt-4 transition-colors hover:bg-neutral-100/40'
 						}>
 						<p>{'Show feedback popover'}</p>
-						<Switch
-							isEnabled={!value}
-							onSwitch={(): void => set(!value)}
-						/>
+						<Switch isEnabled={!value} onSwitch={(): void => set(!value)} />
 					</label>
 				</div>
 			</div>

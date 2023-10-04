@@ -97,7 +97,12 @@ export const CURVE_CRV_YCRV_LP = [
 		anonymous: false,
 		type: 'event'
 	},
-	{stateMutability: 'nonpayable', type: 'constructor', inputs: [], outputs: []},
+	{
+		stateMutability: 'nonpayable',
+		type: 'constructor',
+		inputs: [],
+		outputs: []
+	},
 	{
 		stateMutability: 'nonpayable',
 		type: 'function',
@@ -112,7 +117,13 @@ export const CURVE_CRV_YCRV_LP = [
 		],
 		outputs: []
 	},
-	{stateMutability: 'view', type: 'function', name: 'decimals', inputs: [], outputs: [{name: '', type: 'uint256'}]},
+	{
+		stateMutability: 'view',
+		type: 'function',
+		name: 'decimals',
+		inputs: [],
+		outputs: [{name: '', type: 'uint256'}]
+	},
 	{
 		stateMutability: 'nonpayable',
 		type: 'function',
@@ -151,9 +162,27 @@ export const CURVE_CRV_YCRV_LP = [
 		inputs: [],
 		outputs: [{name: '', type: 'uint256[2]'}]
 	},
-	{stateMutability: 'view', type: 'function', name: 'admin_fee', inputs: [], outputs: [{name: '', type: 'uint256'}]},
-	{stateMutability: 'view', type: 'function', name: 'A', inputs: [], outputs: [{name: '', type: 'uint256'}]},
-	{stateMutability: 'view', type: 'function', name: 'A_precise', inputs: [], outputs: [{name: '', type: 'uint256'}]},
+	{
+		stateMutability: 'view',
+		type: 'function',
+		name: 'admin_fee',
+		inputs: [],
+		outputs: [{name: '', type: 'uint256'}]
+	},
+	{
+		stateMutability: 'view',
+		type: 'function',
+		name: 'A',
+		inputs: [],
+		outputs: [{name: '', type: 'uint256'}]
+	},
+	{
+		stateMutability: 'view',
+		type: 'function',
+		name: 'A_precise',
+		inputs: [],
+		outputs: [{name: '', type: 'uint256'}]
+	},
 	{
 		stateMutability: 'view',
 		type: 'function',
@@ -324,7 +353,13 @@ export const CURVE_CRV_YCRV_LP = [
 		],
 		outputs: []
 	},
-	{stateMutability: 'nonpayable', type: 'function', name: 'stop_ramp_A', inputs: [], outputs: []},
+	{
+		stateMutability: 'nonpayable',
+		type: 'function',
+		name: 'stop_ramp_A',
+		inputs: [],
+		outputs: []
+	},
 	{
 		stateMutability: 'view',
 		type: 'function',
@@ -332,7 +367,13 @@ export const CURVE_CRV_YCRV_LP = [
 		inputs: [{name: 'i', type: 'uint256'}],
 		outputs: [{name: '', type: 'uint256'}]
 	},
-	{stateMutability: 'nonpayable', type: 'function', name: 'withdraw_admin_fees', inputs: [], outputs: []},
+	{
+		stateMutability: 'nonpayable',
+		type: 'function',
+		name: 'withdraw_admin_fees',
+		inputs: [],
+		outputs: []
+	},
 	{
 		stateMutability: 'view',
 		type: 'function',
@@ -347,9 +388,27 @@ export const CURVE_CRV_YCRV_LP = [
 		inputs: [{name: 'arg0', type: 'uint256'}],
 		outputs: [{name: '', type: 'uint256'}]
 	},
-	{stateMutability: 'view', type: 'function', name: 'fee', inputs: [], outputs: [{name: '', type: 'uint256'}]},
-	{stateMutability: 'view', type: 'function', name: 'initial_A', inputs: [], outputs: [{name: '', type: 'uint256'}]},
-	{stateMutability: 'view', type: 'function', name: 'future_A', inputs: [], outputs: [{name: '', type: 'uint256'}]},
+	{
+		stateMutability: 'view',
+		type: 'function',
+		name: 'fee',
+		inputs: [],
+		outputs: [{name: '', type: 'uint256'}]
+	},
+	{
+		stateMutability: 'view',
+		type: 'function',
+		name: 'initial_A',
+		inputs: [],
+		outputs: [{name: '', type: 'uint256'}]
+	},
+	{
+		stateMutability: 'view',
+		type: 'function',
+		name: 'future_A',
+		inputs: [],
+		outputs: [{name: '', type: 'uint256'}]
+	},
 	{
 		stateMutability: 'view',
 		type: 'function',
@@ -364,8 +423,20 @@ export const CURVE_CRV_YCRV_LP = [
 		inputs: [],
 		outputs: [{name: '', type: 'uint256'}]
 	},
-	{stateMutability: 'view', type: 'function', name: 'name', inputs: [], outputs: [{name: '', type: 'string'}]},
-	{stateMutability: 'view', type: 'function', name: 'symbol', inputs: [], outputs: [{name: '', type: 'string'}]},
+	{
+		stateMutability: 'view',
+		type: 'function',
+		name: 'name',
+		inputs: [],
+		outputs: [{name: '', type: 'string'}]
+	},
+	{
+		stateMutability: 'view',
+		type: 'function',
+		name: 'symbol',
+		inputs: [],
+		outputs: [{name: '', type: 'string'}]
+	},
 	{
 		stateMutability: 'view',
 		type: 'function',
@@ -383,5 +454,11 @@ export const CURVE_CRV_YCRV_LP = [
 		],
 		outputs: [{name: '', type: 'uint256'}]
 	},
-	{stateMutability: 'view', type: 'function', name: 'totalSupply', inputs: [], outputs: [{name: '', type: 'uint256'}]}
+	{
+		stateMutability: 'view',
+		type: 'function',
+		name: 'totalSupply',
+		inputs: [],
+		outputs: [{name: '', type: 'uint256'}]
+	}
 ] as const;

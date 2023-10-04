@@ -2,7 +2,11 @@ export const STAKING_REWARDS_ABI = [
 	{
 		inputs: [
 			{internalType: 'address', name: '_owner', type: 'address'},
-			{internalType: 'address', name: '_rewardsDistribution', type: 'address'},
+			{
+				internalType: 'address',
+				name: '_rewardsDistribution',
+				type: 'address'
+			},
 			{internalType: 'address', name: '_rewardsToken', type: 'address'},
 			{internalType: 'address', name: '_stakingToken', type: 'address'},
 			{internalType: 'address', name: '_zapContract', type: 'address'}
@@ -14,59 +18,127 @@ export const STAKING_REWARDS_ABI = [
 	{
 		anonymous: false,
 		inputs: [
-			{indexed: false, internalType: 'address', name: 'oldOwner', type: 'address'},
-			{indexed: false, internalType: 'address', name: 'newOwner', type: 'address'}
+			{
+				indexed: false,
+				internalType: 'address',
+				name: 'oldOwner',
+				type: 'address'
+			},
+			{
+				indexed: false,
+				internalType: 'address',
+				name: 'newOwner',
+				type: 'address'
+			}
 		],
 		name: 'OwnerChanged',
 		type: 'event'
 	},
 	{
 		anonymous: false,
-		inputs: [{indexed: false, internalType: 'address', name: 'newOwner', type: 'address'}],
+		inputs: [
+			{
+				indexed: false,
+				internalType: 'address',
+				name: 'newOwner',
+				type: 'address'
+			}
+		],
 		name: 'OwnerNominated',
 		type: 'event'
 	},
 	{
 		anonymous: false,
-		inputs: [{indexed: false, internalType: 'bool', name: 'isPaused', type: 'bool'}],
+		inputs: [
+			{
+				indexed: false,
+				internalType: 'bool',
+				name: 'isPaused',
+				type: 'bool'
+			}
+		],
 		name: 'PauseChanged',
 		type: 'event'
 	},
 	{
 		anonymous: false,
 		inputs: [
-			{indexed: false, internalType: 'address', name: 'token', type: 'address'},
-			{indexed: false, internalType: 'uint256', name: 'amount', type: 'uint256'}
+			{
+				indexed: false,
+				internalType: 'address',
+				name: 'token',
+				type: 'address'
+			},
+			{
+				indexed: false,
+				internalType: 'uint256',
+				name: 'amount',
+				type: 'uint256'
+			}
 		],
 		name: 'Recovered',
 		type: 'event'
 	},
 	{
 		anonymous: false,
-		inputs: [{indexed: false, internalType: 'uint256', name: 'reward', type: 'uint256'}],
+		inputs: [
+			{
+				indexed: false,
+				internalType: 'uint256',
+				name: 'reward',
+				type: 'uint256'
+			}
+		],
 		name: 'RewardAdded',
 		type: 'event'
 	},
 	{
 		anonymous: false,
 		inputs: [
-			{indexed: true, internalType: 'address', name: 'user', type: 'address'},
-			{indexed: false, internalType: 'uint256', name: 'reward', type: 'uint256'}
+			{
+				indexed: true,
+				internalType: 'address',
+				name: 'user',
+				type: 'address'
+			},
+			{
+				indexed: false,
+				internalType: 'uint256',
+				name: 'reward',
+				type: 'uint256'
+			}
 		],
 		name: 'RewardPaid',
 		type: 'event'
 	},
 	{
 		anonymous: false,
-		inputs: [{indexed: false, internalType: 'uint256', name: 'newDuration', type: 'uint256'}],
+		inputs: [
+			{
+				indexed: false,
+				internalType: 'uint256',
+				name: 'newDuration',
+				type: 'uint256'
+			}
+		],
 		name: 'RewardsDurationUpdated',
 		type: 'event'
 	},
 	{
 		anonymous: false,
 		inputs: [
-			{indexed: true, internalType: 'address', name: 'user', type: 'address'},
-			{indexed: false, internalType: 'uint256', name: 'amount', type: 'uint256'}
+			{
+				indexed: true,
+				internalType: 'address',
+				name: 'user',
+				type: 'address'
+			},
+			{
+				indexed: false,
+				internalType: 'uint256',
+				name: 'amount',
+				type: 'uint256'
+			}
 		],
 		name: 'Staked',
 		type: 'event'
@@ -74,8 +146,18 @@ export const STAKING_REWARDS_ABI = [
 	{
 		anonymous: false,
 		inputs: [
-			{indexed: true, internalType: 'address', name: 'user', type: 'address'},
-			{indexed: false, internalType: 'uint256', name: 'amount', type: 'uint256'}
+			{
+				indexed: true,
+				internalType: 'address',
+				name: 'user',
+				type: 'address'
+			},
+			{
+				indexed: false,
+				internalType: 'uint256',
+				name: 'amount',
+				type: 'uint256'
+			}
 		],
 		name: 'StakedFor',
 		type: 'event'
@@ -83,15 +165,32 @@ export const STAKING_REWARDS_ABI = [
 	{
 		anonymous: false,
 		inputs: [
-			{indexed: true, internalType: 'address', name: 'user', type: 'address'},
-			{indexed: false, internalType: 'uint256', name: 'amount', type: 'uint256'}
+			{
+				indexed: true,
+				internalType: 'address',
+				name: 'user',
+				type: 'address'
+			},
+			{
+				indexed: false,
+				internalType: 'uint256',
+				name: 'amount',
+				type: 'uint256'
+			}
 		],
 		name: 'Withdrawn',
 		type: 'event'
 	},
 	{
 		anonymous: false,
-		inputs: [{indexed: false, internalType: 'address', name: '_zapContract', type: 'address'}],
+		inputs: [
+			{
+				indexed: false,
+				internalType: 'address',
+				name: '_zapContract',
+				type: 'address'
+			}
+		],
 		name: 'ZapContractUpdated',
 		type: 'event'
 	},
@@ -325,7 +424,13 @@ export const STAKING_REWARDS_ABI = [
 	},
 	{
 		constant: false,
-		inputs: [{internalType: 'address', name: '_rewardsDistribution', type: 'address'}],
+		inputs: [
+			{
+				internalType: 'address',
+				name: '_rewardsDistribution',
+				type: 'address'
+			}
+		],
 		name: 'setRewardsDistribution',
 		outputs: [],
 		payable: false,
@@ -334,7 +439,13 @@ export const STAKING_REWARDS_ABI = [
 	},
 	{
 		constant: false,
-		inputs: [{internalType: 'uint256', name: '_rewardsDuration', type: 'uint256'}],
+		inputs: [
+			{
+				internalType: 'uint256',
+				name: '_rewardsDuration',
+				type: 'uint256'
+			}
+		],
 		name: 'setRewardsDuration',
 		outputs: [],
 		payable: false,

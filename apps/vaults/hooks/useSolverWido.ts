@@ -158,7 +158,10 @@ export function useSolverWido(): TSolverContext {
 				to: toAddress(to),
 				value: toBigInt(value)
 			});
-			const receipt = await waitForTransaction({chainId: wagmiProvider.chainId, hash});
+			const receipt = await waitForTransaction({
+				chainId: wagmiProvider.chainId,
+				hash
+			});
 			if (receipt.status === 'success') {
 				return {isSuccessful: true, receipt: receipt};
 			}
@@ -215,7 +218,6 @@ export function useSolverWido(): TSolverContext {
 
 				const allowance = await allowanceOf({
 					connector: provider,
-					chainID: safeChainID,
 					tokenAddress: toAddress(request.current.inputToken.value),
 					spenderAddress: toAddress(widoSpender)
 				});
@@ -268,7 +270,6 @@ export function useSolverWido(): TSolverContext {
 				assertAddress(widoSpender, 'spender');
 				const result = await approveERC20({
 					connector: provider,
-					chainID: safeChainID,
 					contractAddress: request.current.inputToken.value,
 					spenderAddress: widoSpender,
 					amount: amount,

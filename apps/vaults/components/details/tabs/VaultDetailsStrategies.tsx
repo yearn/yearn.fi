@@ -52,8 +52,14 @@ function VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
 			{label: 'Code Review Score', value: riskDetails?.codeReviewScore},
 			{label: 'Complexity Score', value: riskDetails?.complexityScore},
 			{label: 'Longevity Impact', value: riskDetails?.longevityImpact},
-			{label: 'Protocol Safety Score', value: riskDetails?.protocolSafetyScore},
-			{label: 'Team Knowledge Score', value: riskDetails?.teamKnowledgeScore},
+			{
+				label: 'Protocol Safety Score',
+				value: riskDetails?.protocolSafetyScore
+			},
+			{
+				label: 'Team Knowledge Score',
+				value: riskDetails?.teamKnowledgeScore
+			},
 			{label: 'Testing Score', value: riskDetails?.testingScore}
 		];
 	}, [strategy]);
@@ -83,9 +89,7 @@ function VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
 					<div>
 						<div className={'flex flex-row items-center justify-start space-x-2 pb-4'}>
 							<p className={'text-xxs text-neutral-900 md:text-xs'}>{toAddress(strategy.address)}</p>
-							<button
-								onClick={(): void => copyToClipboard(strategy.address)}
-								className={'cursor-copy'}>
+							<button onClick={(): void => copyToClipboard(strategy.address)} className={'cursor-copy'}>
 								<IconCopy
 									className={'h-4 w-4 text-neutral-600 transition-colors hover:text-neutral-900'}
 								/>
@@ -141,11 +145,7 @@ function VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
 							<div className={'mt-0 grid grid-cols-1 gap-x-12 gap-y-2 md:grid-cols-2'}>
 								{riskScoreElementsMap.map(
 									({label, value}): ReactElement => (
-										<RiskScoreElement
-											key={label}
-											label={label}
-											value={value || 0}
-										/>
+										<RiskScoreElement key={label} label={label} value={value || 0} />
 									)
 								)}
 							</div>
@@ -244,11 +244,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 			<div className={'col-span-1 w-full border-t border-neutral-300'}>
 				{filteredStrategies.map(
 					(strategy): ReactElement => (
-						<VaultDetailsStrategy
-							currentVault={currentVault}
-							strategy={strategy}
-							key={strategy.address}
-						/>
+						<VaultDetailsStrategy currentVault={currentVault} strategy={strategy} key={strategy.address} />
 					)
 				)}
 			</div>

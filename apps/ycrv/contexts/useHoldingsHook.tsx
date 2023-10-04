@@ -54,22 +54,40 @@ export function useHoldings(): TCRVHoldings {
 	const yCRVContract = {address: YCRV_TOKEN_ADDRESS, abi: YVECRV_ABI};
 	const styCRVContract = {address: STYCRV_TOKEN_ADDRESS, abi: STYCRV_ABI};
 	const lpyCRVContract = {address: LPYCRV_TOKEN_ADDRESS, abi: YVECRV_ABI};
-	const lpyCRVV2Contract = {address: LPYCRV_V2_TOKEN_ADDRESS, abi: YVECRV_ABI};
+	const lpyCRVV2Contract = {
+		address: LPYCRV_V2_TOKEN_ADDRESS,
+		abi: YVECRV_ABI
+	};
 	const yveCRVContract = {address: YVECRV_TOKEN_ADDRESS, abi: YVECRV_ABI};
 	const veEscrowContract = {address: VECRV_ADDRESS, abi: YVECRV_ABI};
-	const crvYCRVLpContract = {address: YCRV_CURVE_POOL_V2_ADDRESS, abi: CURVE_CRV_YCRV_LP};
+	const crvYCRVLpContract = {
+		address: YCRV_CURVE_POOL_V2_ADDRESS,
+		abi: CURVE_CRV_YCRV_LP
+	};
 
 	const {data, status} = useContractReads({
 		contracts: [
 			{...yveCRVContract, functionName: 'totalSupply'},
-			{...yveCRVContract, functionName: 'balanceOf', args: [YCRV_TOKEN_ADDRESS]},
-			{...veEscrowContract, functionName: 'balanceOf', args: [VECRV_YEARN_TREASURY_ADDRESS]},
+			{
+				...yveCRVContract,
+				functionName: 'balanceOf',
+				args: [YCRV_TOKEN_ADDRESS]
+			},
+			{
+				...veEscrowContract,
+				functionName: 'balanceOf',
+				args: [VECRV_YEARN_TREASURY_ADDRESS]
+			},
 			{...veEscrowContract, functionName: 'totalSupply'},
 			{...yCRVContract, functionName: 'totalSupply'},
 			{...styCRVContract, functionName: 'totalAssets'},
 			{...lpyCRVContract, functionName: 'totalSupply'},
 			{...lpyCRVV2Contract, functionName: 'totalSupply'},
-			{...crvYCRVLpContract, functionName: 'get_dy', args: [1n, 0n, parseEther('1')]}
+			{
+				...crvYCRVLpContract,
+				functionName: 'get_dy',
+				args: [1n, 0n, parseEther('1')]
+			}
 		]
 	});
 

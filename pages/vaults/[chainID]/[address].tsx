@@ -26,7 +26,9 @@ function Index(): ReactElement | null {
 	const {vaults} = useYearn();
 	const router = useRouter();
 	const {refresh} = useWallet();
-	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: Number(router.query.chainID)});
+	const {yDaemonBaseUri} = useYDaemonBaseURI({
+		chainID: Number(router.query.chainID)
+	});
 	const [currentVault, set_currentVault] = useState<TYDaemonVault | undefined>(
 		vaults[toAddress(router.query.address as string)]
 	);
@@ -52,7 +54,9 @@ function Index(): ReactElement | null {
 				tokensToRefresh.push({token: toAddress(currentVault.address)});
 			}
 			if (currentVault?.token?.address) {
-				tokensToRefresh.push({token: toAddress(currentVault.token.address)});
+				tokensToRefresh.push({
+					token: toAddress(currentVault.token.address)
+				});
 			}
 			refresh(tokensToRefresh);
 		}
@@ -89,9 +93,7 @@ function Index(): ReactElement | null {
 					animate={'enter'}
 					variants={variants}
 					className={'z-50 -mt-6 h-12 w-12 cursor-pointer md:-mt-36 md:h-[72px] md:w-[72px]'}>
-					<TokenIcon
-						chainID={currentVault.chainID}
-						token={currentVault.token} />
+					<TokenIcon chainID={currentVault.chainID} token={currentVault.token} />
 				</motion.div>
 			</header>
 

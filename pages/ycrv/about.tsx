@@ -188,9 +188,7 @@ function About(): ReactElement {
 					</Balancer>
 				</div>
 				<div className={'mt-8'}>
-					<label
-						htmlFor={'slippageTolerance'}
-						className={'pb-1 text-neutral-900'}>
+					<label htmlFor={'slippageTolerance'} className={'pb-1 text-neutral-900'}>
 						{'Slippage tolerance'}
 					</label>
 					<div className={'flex flex-row space-x-2'}>
@@ -281,7 +279,10 @@ function About(): ReactElement {
 							{label: 'Zap', address: ZAP_YEARN_VE_CRV_ADDRESS},
 							{label: 'yCRV', address: YCRV_TOKEN_ADDRESS},
 							{label: 'st-yCRV', address: STYCRV_TOKEN_ADDRESS},
-							{label: 'lp-yCRV V2', address: LPYCRV_V2_TOKEN_ADDRESS}
+							{
+								label: 'lp-yCRV V2',
+								address: LPYCRV_V2_TOKEN_ADDRESS
+							}
 						].map(ContractListRow)}
 					</Balancer>
 				</div>

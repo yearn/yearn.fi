@@ -43,7 +43,10 @@ function TokenItem({element}: {element: TBalanceReminderElement}): ReactElement 
 
 		try {
 			const walletClient = await provider.getWalletClient();
-			await walletClient.watchAsset({type: 'ERC20', options: {address, decimals, symbol, image}});
+			await walletClient.watchAsset({
+				type: 'ERC20',
+				options: {address, decimals, symbol, image}
+			});
 		} catch (error) {
 			captureException(error);
 			console.warn(error);
@@ -188,10 +191,7 @@ export function BalanceReminderPopover(): ReactElement {
 										fallback={renderNoTokenFallback(isLoading)}>
 										{nonNullBalancesForVault.map(
 											(element): ReactElement => (
-												<TokenItem
-													key={element.address}
-													element={element}
-												/>
+												<TokenItem key={element.address} element={element} />
 											)
 										)}
 									</Renderable>

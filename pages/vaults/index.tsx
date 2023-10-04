@@ -71,12 +71,7 @@ function HeaderUserPosition(): ReactElement {
 			<div className={'col-span-12 w-full md:col-span-8'}>
 				<p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl'}>{'Deposited'}</p>
 				<b className={'font-number text-4xl text-neutral-900 md:text-7xl'}>
-					<ValueAnimation
-						identifier={'youHave'}
-						value={formatedYouHave}
-						defaultValue={'0,00'}
-						prefix={'$'}
-					/>
+					<ValueAnimation identifier={'youHave'} value={formatedYouHave} defaultValue={'0,00'} prefix={'$'} />
 				</b>
 			</div>
 			<div className={'col-span-12 w-full md:col-span-4'}>
@@ -98,11 +93,20 @@ function Index(): ReactElement {
 	// const {safeChainID} = useChainID();
 	const {balances, balancesNonce} = useWallet();
 	const {vaults, vaultsMigrations, vaultsRetired, isLoadingVaultList} = useYearn();
-	const [sort, set_sort] = useSessionStorage<{sortBy: TPossibleSortBy; sortDirection: TSortDirection}>(
-		'yVaultsSorting',
-		{sortBy: 'apy', sortDirection: 'desc'}
-	);
-	const {shouldHideDust, shouldHideLowTVLVaults, category, searchValue, selectedChains, set_category, set_searchValue, set_selectedChains} = useAppSettings();
+	const [sort, set_sort] = useSessionStorage<{
+		sortBy: TPossibleSortBy;
+		sortDirection: TSortDirection;
+	}>('yVaultsSorting', {sortBy: 'apy', sortDirection: 'desc'});
+	const {
+		shouldHideDust,
+		shouldHideLowTVLVaults,
+		category,
+		searchValue,
+		selectedChains,
+		set_category,
+		set_searchValue,
+		set_selectedChains
+	} = useAppSettings();
 
 	const chains = JSON.parse(selectedChains) as number[];
 
@@ -111,10 +115,10 @@ function Index(): ReactElement {
 			balancesNonce;
 			const holding = balances?.[toAddress(address)];
 
-		// [Optimism] Check if staked vaults have holdings
-		if (chains.includes(10)) {
-			const stakedVaultAddress = STACKING_TO_VAULT[toAddress(address)];
-			const stakedHolding = balances?.[toAddress(stakedVaultAddress)];
+			// [Optimism] Check if staked vaults have holdings
+			if (chains.includes(10)) {
+				const stakedVaultAddress = STACKING_TO_VAULT[toAddress(address)];
+				const stakedHolding = balances?.[toAddress(stakedVaultAddress)];
 
 				const hasValidStakedBalance = toBigInt(stakedHolding?.raw) > 0n;
 				const stakedBalanceValue = stakedHolding?.normalizedValue || 0;
@@ -133,12 +137,9 @@ function Index(): ReactElement {
 				return true;
 			}
 			return false;
-		}
-		if (hasValidBalance) {
-			return true;
-		}
-		return false;
-	}, [balancesNonce, balances, chains, shouldHideDust]);
+		},
+		[balancesNonce, balances, chains, shouldHideDust]
+	);
 
 	const filterMigrationCallback = useCallback(
 		(address: TAddress): boolean => {
@@ -178,20 +179,56 @@ function Index(): ReactElement {
 	const categoriesToDisplay = useMemo((): TListHeroCategory<string>[] => {
 		const categories = [];
 
-		categories.push({value: 'All Vaults', label: 'All', isSelected: category === 'All Vaults'});
-		categories.push({value: 'Featured Vaults', label: 'Featured', isSelected: category === 'Featured Vaults'});
-		categories.push({value: 'Crypto Vaults', label: 'Crypto', isSelected: category === 'Crypto Vaults'});
-		categories.push({value: 'Stables Vaults', label: 'Stables', isSelected: category === 'Stables Vaults'});
-		categories.push({value: 'Curve Vaults', label: 'Curve', isSelected: category === 'Curve Vaults'});
-		categories.push({value: 'Balancer Vaults', label: 'Balancer', isSelected: category === 'Balancer Vaults'});
+		categories.push({
+			value: 'All Vaults',
+			label: 'All',
+			isSelected: category === 'All Vaults'
+		});
+		categories.push({
+			value: 'Featured Vaults',
+			label: 'Featured',
+			isSelected: category === 'Featured Vaults'
+		});
+		categories.push({
+			value: 'Crypto Vaults',
+			label: 'Crypto',
+			isSelected: category === 'Crypto Vaults'
+		});
+		categories.push({
+			value: 'Stables Vaults',
+			label: 'Stables',
+			isSelected: category === 'Stables Vaults'
+		});
+		categories.push({
+			value: 'Curve Vaults',
+			label: 'Curve',
+			isSelected: category === 'Curve Vaults'
+		});
+		categories.push({
+			value: 'Balancer Vaults',
+			label: 'Balancer',
+			isSelected: category === 'Balancer Vaults'
+		});
 
 		if (chains.includes(10)) {
-			categories.push({value: 'Boosted Vaults', label: 'Boosted', isSelected: category === 'Boosted Vaults'});
-			categories.push({value: 'Velodrome Vaults', label: 'Velodrome', isSelected: category === 'Velodrome Vaults'});
+			categories.push({
+				value: 'Boosted Vaults',
+				label: 'Boosted',
+				isSelected: category === 'Boosted Vaults'
+			});
+			categories.push({
+				value: 'Velodrome Vaults',
+				label: 'Velodrome',
+				isSelected: category === 'Velodrome Vaults'
+			});
 		}
 
 		if (chains.includes(8453)) {
-			categories.push({value: 'Aerodrome Vaults', label: 'Aerodrome', isSelected: category === 'Aerodrome Vaults'});
+			categories.push({
+				value: 'Aerodrome Vaults',
+				label: 'Aerodrome',
+				isSelected: category === 'Aerodrome Vaults'
+			});
 		}
 
 		return categories;
@@ -203,7 +240,9 @@ function Index(): ReactElement {
 	 **	The possible lists are memoized to avoid unnecessary re-renders.
 	 **********************************************************************************************/
 	const vaultsToDisplay = useMemo((): TYDaemonVault[] => {
-		let _vaultList: TYDaemonVault[] = [...Object.values(vaults || {})].filter((v): boolean => chains.includes(v.chainID)) as TYDaemonVault[];
+		let _vaultList: TYDaemonVault[] = [...Object.values(vaults || {})].filter((v): boolean =>
+			chains.includes(v.chainID)
+		) as TYDaemonVault[];
 
 		if (category === 'Curve Vaults') {
 			_vaultList = curveVaults;
@@ -272,7 +311,10 @@ function Index(): ReactElement {
 	 **********************************************************************************************/
 	const onSort = useCallback(
 		(newSortBy: string, newSortDirection: string): void => {
-			set_sort({sortBy: newSortBy as TPossibleSortBy, sortDirection: newSortDirection as TSortDirection});
+			set_sort({
+				sortBy: newSortBy as TPossibleSortBy,
+				sortDirection: newSortDirection as TSortDirection
+			});
 		},
 		[set_sort]
 	);
@@ -304,12 +346,7 @@ function Index(): ReactElement {
 			if (!vault) {
 				return null;
 			}
-			return (
-				<VaultsListRow
-					key={vault.address}
-					currentVault={vault}
-				/>
-			);
+			return <VaultsListRow key={vault.address} currentVault={vault} />;
 		});
 	}, [category, isLoadingVaultList, sortedVaultsToDisplay]);
 
@@ -362,17 +399,13 @@ function Index(): ReactElement {
 					set_searchValue={set_searchValue}
 				/>
 
-
 				<Renderable shouldRender={category === 'Holdings' && retiredVaults?.length > 0}>
 					<div>
 						{retiredVaults
 							.filter((vault): boolean => !!vault)
 							.map(
 								(vault): ReactNode => (
-									<VaultsListRetired
-										key={vault.address}
-										currentVault={vault}
-									/>
+									<VaultsListRetired key={vault.address} currentVault={vault} />
 								)
 							)}
 					</div>
@@ -384,10 +417,7 @@ function Index(): ReactElement {
 							.filter((vault): boolean => !!vault)
 							.map(
 								(vault): ReactNode => (
-									<VaultsListInternalMigrationRow
-										key={vault.address}
-										currentVault={vault}
-									/>
+									<VaultsListInternalMigrationRow key={vault.address} currentVault={vault} />
 								)
 							)}
 					</div>
@@ -399,12 +429,37 @@ function Index(): ReactElement {
 					sortDirection={sort.sortDirection}
 					onSort={onSort}
 					items={[
-						{label: <IconChain />, value: 'name', sortable: false, className: 'col-span-1'},
+						{
+							label: <IconChain />,
+							value: 'name',
+							sortable: false,
+							className: 'col-span-1'
+						},
 						{label: 'Token', value: 'name', sortable: true},
-						{label: 'APY', value: 'apy', sortable: true, className: 'col-span-2'},
-						{label: 'Available', value: 'available', sortable: true, className: 'col-span-2'},
-						{label: 'Deposited', value: 'deposited', sortable: true, className: 'col-span-2'},
-						{label: 'TVL', value: 'tvl', sortable: true, className: 'col-span-2'}
+						{
+							label: 'APY',
+							value: 'apy',
+							sortable: true,
+							className: 'col-span-2'
+						},
+						{
+							label: 'Available',
+							value: 'available',
+							sortable: true,
+							className: 'col-span-2'
+						},
+						{
+							label: 'Deposited',
+							value: 'deposited',
+							sortable: true,
+							className: 'col-span-2'
+						},
+						{
+							label: 'TVL',
+							value: 'tvl',
+							sortable: true,
+							className: 'col-span-2'
+						}
 					]}
 				/>
 

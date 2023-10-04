@@ -17,12 +17,8 @@ export function GraphForVaultTVL({messariData, height = 312}: TGraphForVaultTVLP
 	}
 
 	return (
-		<ResponsiveContainer
-			width={'100%'}
-			height={height}>
-			<LineChart
-				margin={{top: 0, right: -28, bottom: 0, left: 0}}
-				data={messariData}>
+		<ResponsiveContainer width={'100%'} height={height}>
+			<LineChart margin={{top: 0, right: -28, bottom: 0, left: 0}} data={messariData}>
 				<Line
 					className={'text-primary-600'}
 					type={'step'}
@@ -36,10 +32,7 @@ export function GraphForVaultTVL({messariData, height = 312}: TGraphForVaultTVLP
 						return <circle {...e}></circle>;
 					}}
 				/>
-				<XAxis
-					dataKey={'name'}
-					hide
-				/>
+				<XAxis dataKey={'name'} hide />
 				<YAxis
 					orientation={'right'}
 					domain={['dataMin', 'auto']}

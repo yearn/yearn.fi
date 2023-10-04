@@ -27,7 +27,16 @@ export function VaultDetailsQuickActionsButtons(): ReactElement {
 	const [txStatusExecuteDeposit, set_txStatusExecuteDeposit] = useState(defaultTxStatus);
 	const [txStatusExecuteWithdraw, set_txStatusExecuteWithdraw] = useState(defaultTxStatus);
 	const {actionParams, onChangeAmount, maxDepositPossible, isDepositing} = useActionFlow();
-	const {onApprove, onExecuteDeposit, onExecuteWithdraw, onRetrieveAllowance, currentSolver, expectedOut, isLoadingExpectedOut, hash} = useSolver();
+	const {
+		onApprove,
+		onExecuteDeposit,
+		onExecuteWithdraw,
+		onRetrieveAllowance,
+		currentSolver,
+		expectedOut,
+		isLoadingExpectedOut,
+		hash
+	} = useSolver();
 	const isWithdrawing = !isDepositing;
 
 	/* 🔵 - Yearn Finance **************************************************************************
@@ -63,13 +72,29 @@ export function VaultDetailsQuickActionsButtons(): ReactElement {
 			if (isDepositing) {
 				//refresh input from zap wallet, refresh output from default
 				await Promise.all([
-					refreshZapBalances([{token: toAddress(actionParams?.selectedOptionFrom?.value)}]),
-					refresh([{token: toAddress(actionParams?.selectedOptionTo?.value)}])
+					refreshZapBalances([
+						{
+							token: toAddress(actionParams?.selectedOptionFrom?.value)
+						}
+					]),
+					refresh([
+						{
+							token: toAddress(actionParams?.selectedOptionTo?.value)
+						}
+					])
 				]);
 			} else {
 				await Promise.all([
-					refreshZapBalances([{token: toAddress(actionParams?.selectedOptionTo?.value)}]),
-					refresh([{token: toAddress(actionParams?.selectedOptionFrom?.value)}])
+					refreshZapBalances([
+						{
+							token: toAddress(actionParams?.selectedOptionTo?.value)
+						}
+					]),
+					refresh([
+						{
+							token: toAddress(actionParams?.selectedOptionFrom?.value)
+						}
+					])
 				]);
 			}
 		}
@@ -104,12 +129,11 @@ export function VaultDetailsQuickActionsButtons(): ReactElement {
 		);
 	}, [actionParams?.amount.raw, actions, currentSolver, onApprove]);
 
-	const isButtonDisabled = (
-		(!address && !provider)
-		|| isZero(actionParams.amount.raw)
-		|| toBigInt(actionParams.amount.raw) > toBigInt(maxDepositPossible.raw)
-		|| isLoadingExpectedOut
-	);
+	const isButtonDisabled =
+		(!address && !provider) ||
+		isZero(actionParams.amount.raw) ||
+		toBigInt(actionParams.amount.raw) > toBigInt(maxDepositPossible.raw) ||
+		isLoadingExpectedOut;
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** Wrapper to decide if we should use the partner contract or not

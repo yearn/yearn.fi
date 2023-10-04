@@ -39,13 +39,7 @@ export const APPS: {[key in AppName]: TApp} = {
 		href: '/vaults',
 		menu: VAULTS_MENU,
 		manifest: vaultsManifest,
-		icon: (
-			<LogoYearn
-				className={'h-8 w-8'}
-				back={'text-pink-400'}
-				front={'text-white'}
-			/>
-		)
+		icon: <LogoYearn className={'h-8 w-8'} back={'text-pink-400'} front={'text-white'} />
 	},
 	yCRV: {
 		name: AppName.YCRV,
@@ -85,25 +79,13 @@ export const APPS: {[key in AppName]: TApp} = {
 		menu: VEYFI_MENU,
 		href: '/veyfi',
 		manifest: veyfiManifest,
-		icon: (
-			<LogoYearn
-				className={'h-8 w-8'}
-				back={'text-primary'}
-				front={'text-white'}
-			/>
-		)
+		icon: <LogoYearn className={'h-8 w-8'} back={'text-primary'} front={'text-white'} />
 	},
 	yBribe: {
 		name: AppName.YBRIBE,
 		href: '/ybribe',
 		menu: YBRIBE_MENU,
 		manifest: ybribeManifest,
-		icon: (
-			<LogoYearn
-				className={'h-8 w-8'}
-				back={'text-neutral-900'}
-				front={'text-neutral-0'}
-			/>
-		)
+		icon: <LogoYearn className={'h-8 w-8'} back={'text-neutral-900'} front={'text-neutral-0'} />
 	}
 };

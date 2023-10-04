@@ -26,9 +26,11 @@ export function VaultDetailsHistorical({
 	const isMounted = useIsMounted();
 	const [selectedViewIndex, set_selectedViewIndex] = useState(0);
 
-	const {data: messariMixedData} = useSWR(currentVault.address ? [
-		getMessariSubgraphEndpoint(currentVault.chainID),
-		`{
+	const {data: messariMixedData} = useSWR(
+		currentVault.address
+			? [
+					getMessariSubgraphEndpoint(currentVault.chainID),
+					`{
 			vaultDailySnapshots(
 				where: {vault: "${currentVault.address.toLowerCase()}"}
 				orderBy: timestamp

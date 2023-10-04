@@ -166,9 +166,7 @@ export function AboutContent(): ReactElement {
 					</Balancer>
 				</div>
 				<div className={'mt-8'}>
-					<label
-						htmlFor={'slippageTolerance'}
-						className={'pb-1 text-neutral-900'}>
+					<label htmlFor={'slippageTolerance'} className={'pb-1 text-neutral-900'}>
 						{'Slippage tolerance'}
 					</label>
 					<div className={'flex flex-row space-x-2'}>

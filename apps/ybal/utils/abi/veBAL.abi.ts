@@ -41,11 +41,41 @@ export const VE_BAL_ABI = [
 		],
 		outputs: []
 	},
-	{stateMutability: 'view', type: 'function', name: 'token', inputs: [], outputs: [{name: '', type: 'address'}]},
-	{stateMutability: 'view', type: 'function', name: 'name', inputs: [], outputs: [{name: '', type: 'string'}]},
-	{stateMutability: 'view', type: 'function', name: 'symbol', inputs: [], outputs: [{name: '', type: 'string'}]},
-	{stateMutability: 'view', type: 'function', name: 'decimals', inputs: [], outputs: [{name: '', type: 'uint256'}]},
-	{stateMutability: 'view', type: 'function', name: 'admin', inputs: [], outputs: [{name: '', type: 'address'}]},
+	{
+		stateMutability: 'view',
+		type: 'function',
+		name: 'token',
+		inputs: [],
+		outputs: [{name: '', type: 'address'}]
+	},
+	{
+		stateMutability: 'view',
+		type: 'function',
+		name: 'name',
+		inputs: [],
+		outputs: [{name: '', type: 'string'}]
+	},
+	{
+		stateMutability: 'view',
+		type: 'function',
+		name: 'symbol',
+		inputs: [],
+		outputs: [{name: '', type: 'string'}]
+	},
+	{
+		stateMutability: 'view',
+		type: 'function',
+		name: 'decimals',
+		inputs: [],
+		outputs: [{name: '', type: 'uint256'}]
+	},
+	{
+		stateMutability: 'view',
+		type: 'function',
+		name: 'admin',
+		inputs: [],
+		outputs: [{name: '', type: 'address'}]
+	},
 	{
 		stateMutability: 'nonpayable',
 		type: 'function',
@@ -53,7 +83,13 @@ export const VE_BAL_ABI = [
 		inputs: [{name: 'addr', type: 'address'}],
 		outputs: []
 	},
-	{stateMutability: 'nonpayable', type: 'function', name: 'apply_smart_wallet_checker', inputs: [], outputs: []},
+	{
+		stateMutability: 'nonpayable',
+		type: 'function',
+		name: 'apply_smart_wallet_checker',
+		inputs: [],
+		outputs: []
+	},
 	{
 		stateMutability: 'view',
 		type: 'function',
@@ -78,7 +114,13 @@ export const VE_BAL_ABI = [
 		inputs: [{name: '_addr', type: 'address'}],
 		outputs: [{name: '', type: 'uint256'}]
 	},
-	{stateMutability: 'nonpayable', type: 'function', name: 'checkpoint', inputs: [], outputs: []},
+	{
+		stateMutability: 'nonpayable',
+		type: 'function',
+		name: 'checkpoint',
+		inputs: [],
+		outputs: []
+	},
 	{
 		stateMutability: 'nonpayable',
 		type: 'function',
@@ -113,7 +155,13 @@ export const VE_BAL_ABI = [
 		inputs: [{name: '_unlock_time', type: 'uint256'}],
 		outputs: []
 	},
-	{stateMutability: 'nonpayable', type: 'function', name: 'withdraw', inputs: [], outputs: []},
+	{
+		stateMutability: 'nonpayable',
+		type: 'function',
+		name: 'withdraw',
+		inputs: [],
+		outputs: []
+	},
 	{
 		stateMutability: 'view',
 		type: 'function',
@@ -162,7 +210,13 @@ export const VE_BAL_ABI = [
 		inputs: [{name: '_block', type: 'uint256'}],
 		outputs: [{name: '', type: 'uint256'}]
 	},
-	{stateMutability: 'view', type: 'function', name: 'supply', inputs: [], outputs: [{name: '', type: 'uint256'}]},
+	{
+		stateMutability: 'view',
+		type: 'function',
+		name: 'supply',
+		inputs: [],
+		outputs: [{name: '', type: 'uint256'}]
+	},
 	{
 		stateMutability: 'view',
 		type: 'function',
@@ -179,7 +233,13 @@ export const VE_BAL_ABI = [
 			}
 		]
 	},
-	{stateMutability: 'view', type: 'function', name: 'epoch', inputs: [], outputs: [{name: '', type: 'uint256'}]},
+	{
+		stateMutability: 'view',
+		type: 'function',
+		name: 'epoch',
+		inputs: [],
+		outputs: [{name: '', type: 'uint256'}]
+	},
 	{
 		stateMutability: 'view',
 		type: 'function',

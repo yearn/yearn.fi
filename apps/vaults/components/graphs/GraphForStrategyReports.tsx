@@ -18,9 +18,15 @@ export type TGraphForStrategyReportsProps = {
 	vaultDecimals: number;
 	vaultTicker: string;
 	height?: number;
-}
+};
 
-export function GraphForStrategyReports({strategy, vaultChainID, vaultDecimals, vaultTicker, height = 127}: TGraphForStrategyReportsProps): ReactElement {
+export function GraphForStrategyReports({
+	strategy,
+	vaultChainID,
+	vaultDecimals,
+	vaultTicker,
+	height = 127
+}: TGraphForStrategyReportsProps): ReactElement {
 	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: vaultChainID});
 
 	const {data: reports} = useFetch<TYDaemonReports>({
@@ -28,16 +34,28 @@ export function GraphForStrategyReports({strategy, vaultChainID, vaultDecimals, 
 		schema: yDaemonReportsSchema
 	});
 
-	const strategyData = useMemo((): {name: number; value: number; gain: string; loss: string}[] => {
+	const strategyData = useMemo((): {
+		name: number;
+		value: number;
+		gain: string;
+		loss: string;
+	}[] => {
 		const _reports = [...(reports || [])];
-		const reportsForGraph = _reports
-			.reverse()
-			?.map((reports: TYDaemonReport): {name: number; value: number; gain: string; loss: string} => ({
+		const reportsForGraph = _reports.reverse()?.map(
+			(
+				reports: TYDaemonReport
+			): {
+				name: number;
+				value: number;
+				gain: string;
+				loss: string;
+			} => ({
 				name: Number(reports.timestamp),
 				value: Number(reports.results?.[0]?.APR || 0) * 100,
 				gain: reports?.gain || '0',
 				loss: reports?.loss || '0'
-			}));
+			})
+		);
 		return reportsForGraph;
 	}, [reports]);
 
@@ -46,12 +64,8 @@ export function GraphForStrategyReports({strategy, vaultChainID, vaultDecimals, 
 	}
 
 	return (
-		<ResponsiveContainer
-			width={'100%'}
-			height={height}>
-			<LineChart
-				margin={{top: 0, right: -28, bottom: 0, left: 0}}
-				data={strategyData}>
+		<ResponsiveContainer width={'100%'} height={height}>
+			<LineChart margin={{top: 0, right: -28, bottom: 0, left: 0}} data={strategyData}>
 				<Line
 					className={'text-primary-600'}
 					type={'step'}
@@ -65,10 +79,7 @@ export function GraphForStrategyReports({strategy, vaultChainID, vaultDecimals, 
 						return <circle {...e}></circle>;
 					}}
 				/>
-				<XAxis
-					dataKey={'name'}
-					hide
-				/>
+				<XAxis dataKey={'name'} hide />
 				<YAxis
 					orientation={'right'}
 					hide={false}

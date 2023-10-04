@@ -122,12 +122,7 @@ export function VaultListFactory(): ReactElement {
 			if (!vault) {
 				return null;
 			}
-			return (
-				<VaultsListRow
-					key={vault.address}
-					currentVault={vault}
-				/>
-			);
+			return <VaultsListRow key={vault.address} currentVault={vault} />;
 		});
 	}, [category, isLoadingVaultList, sortedVaultsToDisplay]);
 
@@ -146,7 +141,11 @@ export function VaultListFactory(): ReactElement {
 							label: 'Curve',
 							isSelected: category === 'Curve Factory Vaults'
 						},
-						{value: 'Holdings', label: 'Holdings', isSelected: category === 'Holdings'}
+						{
+							value: 'Holdings',
+							label: 'Holdings',
+							isSelected: category === 'Holdings'
+						}
 					]
 				]}
 				onSelect={set_category}
@@ -160,10 +159,30 @@ export function VaultListFactory(): ReactElement {
 				onSort={onSort}
 				items={[
 					{label: 'Token', value: 'name', sortable: true},
-					{label: 'APY', value: 'apy', sortable: true, className: 'col-span-2'},
-					{label: 'Available', value: 'available', sortable: true, className: 'col-span-2'},
-					{label: 'Deposited', value: 'deposited', sortable: true, className: 'col-span-2'},
-					{label: 'TVL', value: 'tvl', sortable: true, className: 'col-span-2'}
+					{
+						label: 'APY',
+						value: 'apy',
+						sortable: true,
+						className: 'col-span-2'
+					},
+					{
+						label: 'Available',
+						value: 'available',
+						sortable: true,
+						className: 'col-span-2'
+					},
+					{
+						label: 'Deposited',
+						value: 'deposited',
+						sortable: true,
+						className: 'col-span-2'
+					},
+					{
+						label: 'TVL',
+						value: 'tvl',
+						sortable: true,
+						className: 'col-span-2'
+					}
 				]}
 			/>
 

@@ -154,14 +154,8 @@ export function GaugeListRow({currentGauge}: {currentGauge: TCurveGauge}): React
 				</div>
 			</div>
 
-			<Modal
-				className={'yearn--modal-bigger'}
-				isOpen={hasModal}
-				onClose={(): void => set_hasModal(false)}>
-				<GaugeBribeModal
-					currentGauge={currentGauge}
-					onClose={(): void => set_hasModal(false)}
-				/>
+			<Modal className={'yearn--modal-bigger'} isOpen={hasModal} onClose={(): void => set_hasModal(false)}>
+				<GaugeBribeModal currentGauge={currentGauge} onClose={(): void => set_hasModal(false)} />
 			</Modal>
 		</div>
 	);

@@ -33,14 +33,8 @@ function Logo(): ReactElement {
 			<VaultsHeader pathname={pathname} />
 			<VeYfiHeader pathname={pathname} />
 			<YBribeHeader pathname={pathname} />
-			<MotionDiv
-				name={'yearn'}
-				animate={pathname === '/' ? 'enter' : 'exit'}>
-				<LogoYearn
-					className={'h-8 w-8'}
-					back={'text-neutral-900'}
-					front={'text-neutral-0'}
-				/>
+			<MotionDiv name={'yearn'} animate={pathname === '/' ? 'enter' : 'exit'}>
+				<LogoYearn className={'h-8 w-8'} back={'text-neutral-900'} front={'text-neutral-0'} />
 			</MotionDiv>
 		</>
 	);
@@ -149,7 +143,11 @@ export function AppHeader(): ReactElement {
 		}
 		return [
 			HOME_MENU,
-			{path: 'https://gov.yearn.fi/', label: 'Governance', target: '_blank'},
+			{
+				path: 'https://gov.yearn.fi/',
+				label: 'Governance',
+				target: '_blank'
+			},
 			{path: 'https://blog.yearn.fi/', label: 'Blog', target: '_blank'},
 			{path: 'https://docs.yearn.fi/', label: 'Docs', target: '_blank'}
 		];

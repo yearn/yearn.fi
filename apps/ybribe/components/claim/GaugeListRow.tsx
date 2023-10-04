@@ -105,7 +105,6 @@ export function GaugeListRow({currentGauge, category}: {currentGauge: TCurveGaug
 		async (token: TAddress): Promise<void> => {
 			const result = await claimRewardV3({
 				connector: provider,
-				chainID: YBRIBE_CHAIN_ID,
 				contractAddress: CURVE_BRIBE_V3_ADDRESS,
 				gaugeAddress: currentGauge.gauge,
 				tokenAddress: token,
@@ -146,9 +145,7 @@ export function GaugeListRow({currentGauge, category}: {currentGauge: TCurveGaug
 	function renderMultipleButtonsFallback(): ReactElement[] {
 		return currentRewardsForCurrentGaugeMap.map(
 			([key]: [string, bigint]): ReactElement => (
-				<div
-					key={`claim-${key}`}
-					className={'h-14 pt-0'}>
+				<div key={`claim-${key}`} className={'h-14 pt-0'}>
 					<Button
 						className={'yearn--button-smaller w-full'}
 						onClick={async (): Promise<void> => onClaimReward(toAddress(key))}
@@ -319,10 +316,7 @@ export function GaugeListRow({currentGauge, category}: {currentGauge: TCurveGaug
 											<div
 												key={`dry-run-rewards-${currentGauge.gauge}-${key}`}
 												className={'flex flex-col items-end space-y-2'}>
-												<GaugeRowItemWithExtraData
-													address={toAddress(key)}
-													value={value}
-												/>
+												<GaugeRowItemWithExtraData address={toAddress(key)} value={value} />
 											</div>
 										)
 									)}
@@ -337,10 +331,7 @@ export function GaugeListRow({currentGauge, category}: {currentGauge: TCurveGaug
 											<div
 												key={`claimable-${currentGauge.gauge}-${key}`}
 												className={'flex flex-col items-end space-y-2'}>
-												<GaugeRowItemWithExtraData
-													address={toAddress(key)}
-													value={value}
-												/>
+												<GaugeRowItemWithExtraData address={toAddress(key)} value={value} />
 												<div className={'block h-auto pt-0 md:hidden md:h-16 md:pt-7'}>
 													<Button
 														className={'yearn--button-smaller w-full'}

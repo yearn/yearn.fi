@@ -106,10 +106,7 @@ export function Popover(): ReactElement {
 					leave={'transition ease-in duration-150'}
 					leaveFrom={'opacity-100'}
 					leaveTo={'opacity-0'}>
-					<PopoverHeadlessUI.Panel
-						ref={set_popperElement}
-						style={styles.popper}
-						{...attributes.popper}>
+					<PopoverHeadlessUI.Panel ref={set_popperElement} style={styles.popper} {...attributes.popper}>
 						{({close}): ReactElement => (
 							<div
 								className={

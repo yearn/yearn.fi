@@ -10,8 +10,16 @@ export const VEBALPEG_HELPER_ABI = [
 			{
 				components: [
 					{internalType: 'bytes32', name: 'poolId', type: 'bytes32'},
-					{internalType: 'uint256', name: 'assetInIndex', type: 'uint256'},
-					{internalType: 'uint256', name: 'assetOutIndex', type: 'uint256'},
+					{
+						internalType: 'uint256',
+						name: 'assetInIndex',
+						type: 'uint256'
+					},
+					{
+						internalType: 'uint256',
+						name: 'assetOutIndex',
+						type: 'uint256'
+					},
 					{internalType: 'uint256', name: 'amount', type: 'uint256'},
 					{internalType: 'bytes', name: 'userData', type: 'bytes'}
 				],
@@ -19,13 +27,29 @@ export const VEBALPEG_HELPER_ABI = [
 				name: 'swaps',
 				type: 'tuple[]'
 			},
-			{internalType: 'contract IAsset[]', name: 'assets', type: 'address[]'},
+			{
+				internalType: 'contract IAsset[]',
+				name: 'assets',
+				type: 'address[]'
+			},
 			{
 				components: [
 					{internalType: 'address', name: 'sender', type: 'address'},
-					{internalType: 'bool', name: 'fromInternalBalance', type: 'bool'},
-					{internalType: 'address payable', name: 'recipient', type: 'address'},
-					{internalType: 'bool', name: 'toInternalBalance', type: 'bool'}
+					{
+						internalType: 'bool',
+						name: 'fromInternalBalance',
+						type: 'bool'
+					},
+					{
+						internalType: 'address payable',
+						name: 'recipient',
+						type: 'address'
+					},
+					{
+						internalType: 'bool',
+						name: 'toInternalBalance',
+						type: 'bool'
+					}
 				],
 				internalType: 'struct IVault.FundManagement',
 				name: 'funds',
@@ -44,10 +68,22 @@ export const VEBALPEG_HELPER_ABI = [
 			{internalType: 'address', name: 'recipient', type: 'address'},
 			{
 				components: [
-					{internalType: 'contract IAsset[]', name: 'assets', type: 'address[]'},
-					{internalType: 'uint256[]', name: 'minAmountsOut', type: 'uint256[]'},
+					{
+						internalType: 'contract IAsset[]',
+						name: 'assets',
+						type: 'address[]'
+					},
+					{
+						internalType: 'uint256[]',
+						name: 'minAmountsOut',
+						type: 'uint256[]'
+					},
 					{internalType: 'bytes', name: 'userData', type: 'bytes'},
-					{internalType: 'bool', name: 'toInternalBalance', type: 'bool'}
+					{
+						internalType: 'bool',
+						name: 'toInternalBalance',
+						type: 'bool'
+					}
 				],
 				internalType: 'struct IVault.ExitPoolRequest',
 				name: 'request',
@@ -69,10 +105,22 @@ export const VEBALPEG_HELPER_ABI = [
 			{internalType: 'address', name: 'recipient', type: 'address'},
 			{
 				components: [
-					{internalType: 'contract IAsset[]', name: 'assets', type: 'address[]'},
-					{internalType: 'uint256[]', name: 'maxAmountsIn', type: 'uint256[]'},
+					{
+						internalType: 'contract IAsset[]',
+						name: 'assets',
+						type: 'address[]'
+					},
+					{
+						internalType: 'uint256[]',
+						name: 'maxAmountsIn',
+						type: 'uint256[]'
+					},
 					{internalType: 'bytes', name: 'userData', type: 'bytes'},
-					{internalType: 'bool', name: 'fromInternalBalance', type: 'bool'}
+					{
+						internalType: 'bool',
+						name: 'fromInternalBalance',
+						type: 'bool'
+					}
 				],
 				internalType: 'struct IVault.JoinPoolRequest',
 				name: 'request',
@@ -92,9 +140,21 @@ export const VEBALPEG_HELPER_ABI = [
 			{
 				components: [
 					{internalType: 'bytes32', name: 'poolId', type: 'bytes32'},
-					{internalType: 'enum IVault.SwapKind', name: 'kind', type: 'uint8'},
-					{internalType: 'contract IAsset', name: 'assetIn', type: 'address'},
-					{internalType: 'contract IAsset', name: 'assetOut', type: 'address'},
+					{
+						internalType: 'enum IVault.SwapKind',
+						name: 'kind',
+						type: 'uint8'
+					},
+					{
+						internalType: 'contract IAsset',
+						name: 'assetIn',
+						type: 'address'
+					},
+					{
+						internalType: 'contract IAsset',
+						name: 'assetOut',
+						type: 'address'
+					},
 					{internalType: 'uint256', name: 'amount', type: 'uint256'},
 					{internalType: 'bytes', name: 'userData', type: 'bytes'}
 				],
@@ -105,9 +165,21 @@ export const VEBALPEG_HELPER_ABI = [
 			{
 				components: [
 					{internalType: 'address', name: 'sender', type: 'address'},
-					{internalType: 'bool', name: 'fromInternalBalance', type: 'bool'},
-					{internalType: 'address payable', name: 'recipient', type: 'address'},
-					{internalType: 'bool', name: 'toInternalBalance', type: 'bool'}
+					{
+						internalType: 'bool',
+						name: 'fromInternalBalance',
+						type: 'bool'
+					},
+					{
+						internalType: 'address payable',
+						name: 'recipient',
+						type: 'address'
+					},
+					{
+						internalType: 'bool',
+						name: 'toInternalBalance',
+						type: 'bool'
+					}
 				],
 				internalType: 'struct IVault.FundManagement',
 				name: 'funds',

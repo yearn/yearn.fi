@@ -23,13 +23,25 @@ export function useSortVaults(
 
 	const sortedByName = useCallback(
 		(): TYDaemonVaults =>
-			vaultList.sort((a, b): number => stringSort({a: getVaultName(a), b: getVaultName(b), sortDirection})),
+			vaultList.sort((a, b): number =>
+				stringSort({
+					a: getVaultName(a),
+					b: getVaultName(b),
+					sortDirection
+				})
+			),
 		[sortDirection, vaultList]
 	);
 
 	const sortedByAPY = useCallback(
 		(): TYDaemonVaults =>
-			vaultList.sort((a, b): number => numberSort({a: a.apy?.net_apy, b: b.apy?.net_apy, sortDirection})),
+			vaultList.sort((a, b): number =>
+				numberSort({
+					a: a.apy?.net_apy,
+					b: b.apy?.net_apy,
+					sortDirection
+				})
+			),
 		[sortDirection, vaultList]
 	);
 

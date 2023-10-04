@@ -137,7 +137,10 @@ export function useSolverPortals(): TSolverContext {
 			if (!data) {
 				console.error(error?.message);
 				if (error && shouldLogError) {
-					toast({type: 'error', content: `Portals.fi zap not possible: ${error?.message}`});
+					toast({
+						type: 'error',
+						content: `Portals.fi zap not possible: ${error?.message}`
+					});
 				}
 				return toNormalizedBN(0);
 			}
@@ -202,7 +205,10 @@ export function useSolverPortals(): TSolverContext {
 				gasPrice: undefined,
 				chain
 			});
-			const receipt = await waitForTransaction({chainId: wagmiProvider.chainId, hash});
+			const receipt = await waitForTransaction({
+				chainId: wagmiProvider.chainId,
+				hash
+			});
 			if (receipt.status === 'success') {
 				return {isSuccessful: true, receipt: receipt};
 			}
@@ -212,7 +218,10 @@ export function useSolverPortals(): TSolverContext {
 			if (isValidPortalsErrorObject(error)) {
 				const errorMessage = error.response.data.message;
 				console.error(errorMessage);
-				toast({type: 'error', content: `Portals.fi zap not possible: ${errorMessage}`});
+				toast({
+					type: 'error',
+					content: `Portals.fi zap not possible: ${errorMessage}`
+				});
 			}
 
 			return {isSuccessful: false};
@@ -313,7 +322,6 @@ export function useSolverPortals(): TSolverContext {
 
 				const allowance = await allowanceOf({
 					connector: provider,
-					chainID: safeChainID,
 					tokenAddress: toAddress(request.current.inputToken.value), //token to approve
 					spenderAddress: toAddress(approval.context.spender) //contract to approve
 				});
@@ -321,7 +329,6 @@ export function useSolverPortals(): TSolverContext {
 					assertAddress(approval.context.spender, 'spender');
 					const result = await approveERC20({
 						connector: provider,
-						chainID: safeChainID,
 						contractAddress: request.current.inputToken.value,
 						spenderAddress: approval.context.spender,
 						amount: amount,

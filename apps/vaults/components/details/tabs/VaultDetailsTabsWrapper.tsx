@@ -91,9 +91,7 @@ function Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactE
 				)}
 			</nav>
 			<div className={'relative z-50'}>
-				<Listbox
-					value={selectedAboutTabIndex}
-					onChange={(value): void => set_selectedAboutTabIndex(value)}>
+				<Listbox value={selectedAboutTabIndex} onChange={(value): void => set_selectedAboutTabIndex(value)}>
 					{({open}): ReactElement => (
 						<>
 							<Listbox.Button
@@ -147,10 +145,7 @@ function ExplorerLink({explorerBaseURI, currentVaultAddress}: TExplorerLinkProps
 	}
 
 	return (
-		<a
-			href={`${explorerBaseURI}/address/${currentVaultAddress}`}
-			target={'_blank'}
-			rel={'noopener noreferrer'}>
+		<a href={`${explorerBaseURI}/address/${currentVaultAddress}`} target={'_blank'} rel={'noopener noreferrer'}>
 			<span className={'sr-only'}>{'Open in explorer'}</span>
 			<IconLinkOut
 				className={
@@ -232,17 +227,15 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 					</button>
 					<ExplorerLink
 						explorerBaseURI={getNetwork(currentVault.chainID)?.defaultBlockExplorer}
-						currentVaultAddress={currentVault.address} />
+						currentVaultAddress={currentVault.address}
+					/>
 				</div>
 			</div>
 
 			<div className={'-mt-0.5 h-0.5 w-full bg-neutral-300'} />
 
 			<Renderable shouldRender={currentVault && isZero(selectedAboutTabIndex)}>
-				<VaultDetailsAbout
-					currentVault={currentVault}
-					harvestData={harvestData}
-				/>
+				<VaultDetailsAbout currentVault={currentVault} harvestData={harvestData} />
 			</Renderable>
 
 			<Renderable shouldRender={currentVault && selectedAboutTabIndex === 1}>
@@ -250,10 +243,7 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 			</Renderable>
 
 			<Renderable shouldRender={currentVault && selectedAboutTabIndex === 2}>
-				<VaultDetailsHistorical
-					currentVault={currentVault}
-					harvestData={harvestData}
-				/>
+				<VaultDetailsHistorical currentVault={currentVault} harvestData={harvestData} />
 			</Renderable>
 		</div>
 	);

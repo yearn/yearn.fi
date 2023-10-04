@@ -3,7 +3,11 @@ export const YBAL_BALANCER_POOL_ABI = [
 		inputs: [
 			{
 				components: [
-					{internalType: 'contract IVault', name: 'vault', type: 'address'},
+					{
+						internalType: 'contract IVault',
+						name: 'vault',
+						type: 'address'
+					},
 					{
 						internalType: 'contract IProtocolFeePercentagesProvider',
 						name: 'protocolFeeProvider',
@@ -11,14 +15,46 @@ export const YBAL_BALANCER_POOL_ABI = [
 					},
 					{internalType: 'string', name: 'name', type: 'string'},
 					{internalType: 'string', name: 'symbol', type: 'string'},
-					{internalType: 'contract IERC20[]', name: 'tokens', type: 'address[]'},
-					{internalType: 'contract IRateProvider[]', name: 'rateProviders', type: 'address[]'},
-					{internalType: 'uint256[]', name: 'tokenRateCacheDurations', type: 'uint256[]'},
-					{internalType: 'bool[]', name: 'exemptFromYieldProtocolFeeFlags', type: 'bool[]'},
-					{internalType: 'uint256', name: 'amplificationParameter', type: 'uint256'},
-					{internalType: 'uint256', name: 'swapFeePercentage', type: 'uint256'},
-					{internalType: 'uint256', name: 'pauseWindowDuration', type: 'uint256'},
-					{internalType: 'uint256', name: 'bufferPeriodDuration', type: 'uint256'},
+					{
+						internalType: 'contract IERC20[]',
+						name: 'tokens',
+						type: 'address[]'
+					},
+					{
+						internalType: 'contract IRateProvider[]',
+						name: 'rateProviders',
+						type: 'address[]'
+					},
+					{
+						internalType: 'uint256[]',
+						name: 'tokenRateCacheDurations',
+						type: 'uint256[]'
+					},
+					{
+						internalType: 'bool[]',
+						name: 'exemptFromYieldProtocolFeeFlags',
+						type: 'bool[]'
+					},
+					{
+						internalType: 'uint256',
+						name: 'amplificationParameter',
+						type: 'uint256'
+					},
+					{
+						internalType: 'uint256',
+						name: 'swapFeePercentage',
+						type: 'uint256'
+					},
+					{
+						internalType: 'uint256',
+						name: 'pauseWindowDuration',
+						type: 'uint256'
+					},
+					{
+						internalType: 'uint256',
+						name: 'bufferPeriodDuration',
+						type: 'uint256'
+					},
 					{internalType: 'address', name: 'owner', type: 'address'},
 					{internalType: 'string', name: 'version', type: 'string'}
 				],
@@ -33,62 +69,145 @@ export const YBAL_BALANCER_POOL_ABI = [
 	{
 		anonymous: false,
 		inputs: [
-			{indexed: false, internalType: 'uint256', name: 'startValue', type: 'uint256'},
-			{indexed: false, internalType: 'uint256', name: 'endValue', type: 'uint256'},
-			{indexed: false, internalType: 'uint256', name: 'startTime', type: 'uint256'},
-			{indexed: false, internalType: 'uint256', name: 'endTime', type: 'uint256'}
+			{
+				indexed: false,
+				internalType: 'uint256',
+				name: 'startValue',
+				type: 'uint256'
+			},
+			{
+				indexed: false,
+				internalType: 'uint256',
+				name: 'endValue',
+				type: 'uint256'
+			},
+			{
+				indexed: false,
+				internalType: 'uint256',
+				name: 'startTime',
+				type: 'uint256'
+			},
+			{
+				indexed: false,
+				internalType: 'uint256',
+				name: 'endTime',
+				type: 'uint256'
+			}
 		],
 		name: 'AmpUpdateStarted',
 		type: 'event'
 	},
 	{
 		anonymous: false,
-		inputs: [{indexed: false, internalType: 'uint256', name: 'currentValue', type: 'uint256'}],
+		inputs: [
+			{
+				indexed: false,
+				internalType: 'uint256',
+				name: 'currentValue',
+				type: 'uint256'
+			}
+		],
 		name: 'AmpUpdateStopped',
 		type: 'event'
 	},
 	{
 		anonymous: false,
 		inputs: [
-			{indexed: true, internalType: 'address', name: 'owner', type: 'address'},
-			{indexed: true, internalType: 'address', name: 'spender', type: 'address'},
-			{indexed: false, internalType: 'uint256', name: 'value', type: 'uint256'}
+			{
+				indexed: true,
+				internalType: 'address',
+				name: 'owner',
+				type: 'address'
+			},
+			{
+				indexed: true,
+				internalType: 'address',
+				name: 'spender',
+				type: 'address'
+			},
+			{
+				indexed: false,
+				internalType: 'uint256',
+				name: 'value',
+				type: 'uint256'
+			}
 		],
 		name: 'Approval',
 		type: 'event'
 	},
 	{
 		anonymous: false,
-		inputs: [{indexed: false, internalType: 'bool', name: 'paused', type: 'bool'}],
+		inputs: [
+			{
+				indexed: false,
+				internalType: 'bool',
+				name: 'paused',
+				type: 'bool'
+			}
+		],
 		name: 'PausedStateChanged',
 		type: 'event'
 	},
 	{
 		anonymous: false,
 		inputs: [
-			{indexed: true, internalType: 'uint256', name: 'feeType', type: 'uint256'},
-			{indexed: false, internalType: 'uint256', name: 'protocolFeePercentage', type: 'uint256'}
+			{
+				indexed: true,
+				internalType: 'uint256',
+				name: 'feeType',
+				type: 'uint256'
+			},
+			{
+				indexed: false,
+				internalType: 'uint256',
+				name: 'protocolFeePercentage',
+				type: 'uint256'
+			}
 		],
 		name: 'ProtocolFeePercentageCacheUpdated',
 		type: 'event'
 	},
 	{
 		anonymous: false,
-		inputs: [{indexed: false, internalType: 'bool', name: 'enabled', type: 'bool'}],
+		inputs: [
+			{
+				indexed: false,
+				internalType: 'bool',
+				name: 'enabled',
+				type: 'bool'
+			}
+		],
 		name: 'RecoveryModeStateChanged',
 		type: 'event'
 	},
 	{
 		anonymous: false,
-		inputs: [{indexed: false, internalType: 'uint256', name: 'swapFeePercentage', type: 'uint256'}],
+		inputs: [
+			{
+				indexed: false,
+				internalType: 'uint256',
+				name: 'swapFeePercentage',
+				type: 'uint256'
+			}
+		],
 		name: 'SwapFeePercentageChanged',
 		type: 'event'
 	},
 	{
 		anonymous: false,
 		inputs: [
-			{indexed: true, internalType: 'uint256', name: 'tokenIndex', type: 'uint256'},
-			{indexed: false, internalType: 'uint256', name: 'rate', type: 'uint256'}
+			{
+				indexed: true,
+				internalType: 'uint256',
+				name: 'tokenIndex',
+				type: 'uint256'
+			},
+			{
+				indexed: false,
+				internalType: 'uint256',
+				name: 'rate',
+				type: 'uint256'
+			}
 		],
 		name: 'TokenRateCacheUpdated',
 		type: 'event'
@@ -96,9 +215,24 @@ export const YBAL_BALANCER_POOL_ABI = [
 	{
 		anonymous: false,
 		inputs: [
-			{indexed: true, internalType: 'uint256', name: 'tokenIndex', type: 'uint256'},
-			{indexed: true, internalType: 'contract IRateProvider', name: 'provider', type: 'address'},
-			{indexed: false, internalType: 'uint256', name: 'cacheDuration', type: 'uint256'}
+			{
+				indexed: true,
+				internalType: 'uint256',
+				name: 'tokenIndex',
+				type: 'uint256'
+			},
+			{
+				indexed: true,
+				internalType: 'contract IRateProvider',
+				name: 'provider',
+				type: 'address'
+			},
+			{
+				indexed: false,
+				internalType: 'uint256',
+				name: 'cacheDuration',
+				type: 'uint256'
+			}
 		],
 		name: 'TokenRateProviderSet',
 		type: 'event'
@@ -106,9 +240,24 @@ export const YBAL_BALANCER_POOL_ABI = [
 	{
 		anonymous: false,
 		inputs: [
-			{indexed: true, internalType: 'address', name: 'from', type: 'address'},
-			{indexed: true, internalType: 'address', name: 'to', type: 'address'},
-			{indexed: false, internalType: 'uint256', name: 'value', type: 'uint256'}
+			{
+				indexed: true,
+				internalType: 'address',
+				name: 'from',
+				type: 'address'
+			},
+			{
+				indexed: true,
+				internalType: 'address',
+				name: 'to',
+				type: 'address'
+			},
+			{
+				indexed: false,
+				internalType: 'uint256',
+				name: 'value',
+				type: 'uint256'
+			}
 		],
 		name: 'Transfer',
 		type: 'event'
@@ -171,8 +320,20 @@ export const YBAL_BALANCER_POOL_ABI = [
 		stateMutability: 'nonpayable',
 		type: 'function'
 	},
-	{inputs: [], name: 'disableRecoveryMode', outputs: [], stateMutability: 'nonpayable', type: 'function'},
-	{inputs: [], name: 'enableRecoveryMode', outputs: [], stateMutability: 'nonpayable', type: 'function'},
+	{
+		inputs: [],
+		name: 'disableRecoveryMode',
+		outputs: [],
+		stateMutability: 'nonpayable',
+		type: 'function'
+	},
+	{
+		inputs: [],
+		name: 'enableRecoveryMode',
+		outputs: [],
+		stateMutability: 'nonpayable',
+		type: 'function'
+	},
 	{
 		inputs: [{internalType: 'bytes4', name: 'selector', type: 'bytes4'}],
 		name: 'getActionId',
@@ -223,8 +384,16 @@ export const YBAL_BALANCER_POOL_ABI = [
 		inputs: [],
 		name: 'getLastJoinExitData',
 		outputs: [
-			{internalType: 'uint256', name: 'lastJoinExitAmplification', type: 'uint256'},
-			{internalType: 'uint256', name: 'lastPostJoinExitInvariant', type: 'uint256'}
+			{
+				internalType: 'uint256',
+				name: 'lastJoinExitAmplification',
+				type: 'uint256'
+			},
+			{
+				internalType: 'uint256',
+				name: 'lastPostJoinExitInvariant',
+				type: 'uint256'
+			}
 		],
 		stateMutability: 'view',
 		type: 'function'
@@ -255,8 +424,16 @@ export const YBAL_BALANCER_POOL_ABI = [
 		name: 'getPausedState',
 		outputs: [
 			{internalType: 'bool', name: 'paused', type: 'bool'},
-			{internalType: 'uint256', name: 'pauseWindowEndTime', type: 'uint256'},
-			{internalType: 'uint256', name: 'bufferPeriodEndTime', type: 'uint256'}
+			{
+				internalType: 'uint256',
+				name: 'pauseWindowEndTime',
+				type: 'uint256'
+			},
+			{
+				internalType: 'uint256',
+				name: 'bufferPeriodEndTime',
+				type: 'uint256'
+			}
 		],
 		stateMutability: 'view',
 		type: 'function'
@@ -278,7 +455,13 @@ export const YBAL_BALANCER_POOL_ABI = [
 	{
 		inputs: [],
 		name: 'getProtocolFeesCollector',
-		outputs: [{internalType: 'contract IProtocolFeesCollector', name: '', type: 'address'}],
+		outputs: [
+			{
+				internalType: 'contract IProtocolFeesCollector',
+				name: '',
+				type: 'address'
+			}
+		],
 		stateMutability: 'view',
 		type: 'function'
 	},
@@ -299,7 +482,13 @@ export const YBAL_BALANCER_POOL_ABI = [
 	{
 		inputs: [],
 		name: 'getRateProviders',
-		outputs: [{internalType: 'contract IRateProvider[]', name: '', type: 'address[]'}],
+		outputs: [
+			{
+				internalType: 'contract IRateProvider[]',
+				name: '',
+				type: 'address[]'
+			}
+		],
 		stateMutability: 'view',
 		type: 'function'
 	},
@@ -388,7 +577,11 @@ export const YBAL_BALANCER_POOL_ABI = [
 			{internalType: 'address', name: 'recipient', type: 'address'},
 			{internalType: 'uint256[]', name: 'balances', type: 'uint256[]'},
 			{internalType: 'uint256', name: 'lastChangeBlock', type: 'uint256'},
-			{internalType: 'uint256', name: 'protocolSwapFeePercentage', type: 'uint256'},
+			{
+				internalType: 'uint256',
+				name: 'protocolSwapFeePercentage',
+				type: 'uint256'
+			},
 			{internalType: 'bytes', name: 'userData', type: 'bytes'}
 		],
 		name: 'onExitPool',
@@ -406,7 +599,11 @@ export const YBAL_BALANCER_POOL_ABI = [
 			{internalType: 'address', name: 'recipient', type: 'address'},
 			{internalType: 'uint256[]', name: 'balances', type: 'uint256[]'},
 			{internalType: 'uint256', name: 'lastChangeBlock', type: 'uint256'},
-			{internalType: 'uint256', name: 'protocolSwapFeePercentage', type: 'uint256'},
+			{
+				internalType: 'uint256',
+				name: 'protocolSwapFeePercentage',
+				type: 'uint256'
+			},
 			{internalType: 'bytes', name: 'userData', type: 'bytes'}
 		],
 		name: 'onJoinPool',
@@ -421,12 +618,28 @@ export const YBAL_BALANCER_POOL_ABI = [
 		inputs: [
 			{
 				components: [
-					{internalType: 'enum IVault.SwapKind', name: 'kind', type: 'uint8'},
-					{internalType: 'contract IERC20', name: 'tokenIn', type: 'address'},
-					{internalType: 'contract IERC20', name: 'tokenOut', type: 'address'},
+					{
+						internalType: 'enum IVault.SwapKind',
+						name: 'kind',
+						type: 'uint8'
+					},
+					{
+						internalType: 'contract IERC20',
+						name: 'tokenIn',
+						type: 'address'
+					},
+					{
+						internalType: 'contract IERC20',
+						name: 'tokenOut',
+						type: 'address'
+					},
 					{internalType: 'uint256', name: 'amount', type: 'uint256'},
 					{internalType: 'bytes32', name: 'poolId', type: 'bytes32'},
-					{internalType: 'uint256', name: 'lastChangeBlock', type: 'uint256'},
+					{
+						internalType: 'uint256',
+						name: 'lastChangeBlock',
+						type: 'uint256'
+					},
 					{internalType: 'address', name: 'from', type: 'address'},
 					{internalType: 'address', name: 'to', type: 'address'},
 					{internalType: 'bytes', name: 'userData', type: 'bytes'}
@@ -444,7 +657,13 @@ export const YBAL_BALANCER_POOL_ABI = [
 		stateMutability: 'nonpayable',
 		type: 'function'
 	},
-	{inputs: [], name: 'pause', outputs: [], stateMutability: 'nonpayable', type: 'function'},
+	{
+		inputs: [],
+		name: 'pause',
+		outputs: [],
+		stateMutability: 'nonpayable',
+		type: 'function'
+	},
 	{
 		inputs: [
 			{internalType: 'address', name: 'owner', type: 'address'},
@@ -467,7 +686,11 @@ export const YBAL_BALANCER_POOL_ABI = [
 			{internalType: 'address', name: 'recipient', type: 'address'},
 			{internalType: 'uint256[]', name: 'balances', type: 'uint256[]'},
 			{internalType: 'uint256', name: 'lastChangeBlock', type: 'uint256'},
-			{internalType: 'uint256', name: 'protocolSwapFeePercentage', type: 'uint256'},
+			{
+				internalType: 'uint256',
+				name: 'protocolSwapFeePercentage',
+				type: 'uint256'
+			},
 			{internalType: 'bytes', name: 'userData', type: 'bytes'}
 		],
 		name: 'queryExit',
@@ -485,7 +708,11 @@ export const YBAL_BALANCER_POOL_ABI = [
 			{internalType: 'address', name: 'recipient', type: 'address'},
 			{internalType: 'uint256[]', name: 'balances', type: 'uint256[]'},
 			{internalType: 'uint256', name: 'lastChangeBlock', type: 'uint256'},
-			{internalType: 'uint256', name: 'protocolSwapFeePercentage', type: 'uint256'},
+			{
+				internalType: 'uint256',
+				name: 'protocolSwapFeePercentage',
+				type: 'uint256'
+			},
 			{internalType: 'bytes', name: 'userData', type: 'bytes'}
 		],
 		name: 'queryJoin',
@@ -507,7 +734,13 @@ export const YBAL_BALANCER_POOL_ABI = [
 		type: 'function'
 	},
 	{
-		inputs: [{internalType: 'uint256', name: 'swapFeePercentage', type: 'uint256'}],
+		inputs: [
+			{
+				internalType: 'uint256',
+				name: 'swapFeePercentage',
+				type: 'uint256'
+			}
+		],
 		name: 'setSwapFeePercentage',
 		outputs: [],
 		stateMutability: 'nonpayable',
@@ -575,7 +808,13 @@ export const YBAL_BALANCER_POOL_ABI = [
 		stateMutability: 'nonpayable',
 		type: 'function'
 	},
-	{inputs: [], name: 'unpause', outputs: [], stateMutability: 'nonpayable', type: 'function'},
+	{
+		inputs: [],
+		name: 'unpause',
+		outputs: [],
+		stateMutability: 'nonpayable',
+		type: 'function'
+	},
 	{
 		inputs: [],
 		name: 'updateProtocolFeePercentageCache',

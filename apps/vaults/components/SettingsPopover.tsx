@@ -18,9 +18,7 @@ type TSettingPopover = {
 
 function Label({children}: {children: string}): ReactElement {
 	return (
-		<label
-			htmlFor={'zapProvider'}
-			className={'font-bold text-neutral-900'}>
+		<label htmlFor={'zapProvider'} className={'font-bold text-neutral-900'}>
 			{children}
 		</label>
 	);

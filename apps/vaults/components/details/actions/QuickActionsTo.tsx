@@ -69,9 +69,7 @@ export function VaultDetailsQuickActionsTo(): ReactElement {
 						</div>
 					</div>
 				</Renderable>
-				<legend
-					className={'font-number hidden text-xs text-neutral-600 md:inline'}
-					suppressHydrationWarning>
+				<legend className={'font-number hidden text-xs text-neutral-600 md:inline'} suppressHydrationWarning>
 					{isDepositing
 						? formatPercent(
 								((currentVault?.apy?.net_apy || 0) + (currentVault?.apy?.staking_rewards_apr || 0)) *
@@ -85,9 +83,7 @@ export function VaultDetailsQuickActionsTo(): ReactElement {
 			</div>
 
 			<div className={'w-full space-y-2'}>
-				<label
-					htmlFor={'toAmount'}
-					className={'hidden text-base text-neutral-600 md:inline'}>
+				<label htmlFor={'toAmount'} className={'hidden text-base text-neutral-600 md:inline'}>
 					{'You will receive'}
 				</label>
 				<div className={'flex h-10 items-center bg-neutral-300 p-2'}>

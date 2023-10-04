@@ -79,9 +79,7 @@ export function Tabs({items, className}: TTabsProps): ReactElement {
 				)}
 			</nav>
 			<div className={'relative z-50 px-4 pt-4 md:hidden'}>
-				<Listbox
-					value={selectedTabId}
-					onChange={(value): void => set_selectedTabId(value)}>
+				<Listbox value={selectedTabId} onChange={(value): void => set_selectedTabId(value)}>
 					{({open}): ReactElement => (
 						<>
 							<Listbox.Button
@@ -108,10 +106,7 @@ export function Tabs({items, className}: TTabsProps): ReactElement {
 								<Listbox.Options className={'yearn--listbox-menu'}>
 									{items.map(
 										({id, label}): ReactElement => (
-											<Listbox.Option
-												className={'yearn--listbox-menu-item'}
-												key={id}
-												value={id}>
+											<Listbox.Option className={'yearn--listbox-menu-item'} key={id} value={id}>
 												{label}
 											</Listbox.Option>
 										)
@@ -132,10 +127,7 @@ export function Tabs({items, className}: TTabsProps): ReactElement {
 					transition={{duration: 0.15}}>
 					{items.map(
 						({id, content}): ReactElement => (
-							<div
-								key={`tab-content-${id}`}
-								className={'w-full p-6'}
-								hidden={selectedTabId !== id}>
+							<div key={`tab-content-${id}`} className={'w-full p-6'} hidden={selectedTabId !== id}>
 								{content}
 							</div>
 						)

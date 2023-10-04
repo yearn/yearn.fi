@@ -50,7 +50,10 @@ export function useHoldings(): TBalHoldings {
 	const lpyBalContract = {address: LPYBAL_TOKEN_ADDRESS, abi: erc20ABI};
 	const styBalContract = {address: STYBAL_TOKEN_ADDRESS, abi: STYBAL_ABI};
 	const veBalContract = {address: VEBAL_TOKEN_ADDRESS, abi: VE_BAL_ABI};
-	const veBalQueryPegHelpContract = {address: VEBALPEG_QUERY_HELP_CONTRACT, abi: VEBALPEG_HELPER_ABI};
+	const veBalQueryPegHelpContract = {
+		address: VEBALPEG_QUERY_HELP_CONTRACT,
+		abi: VEBALPEG_HELPER_ABI
+	};
 
 	const pegSwapArguments = {
 		poolId: '0xd61e198e139369a40818fe05f5d5e6e045cd6eaf000000000000000000000540' as Hex,
@@ -73,7 +76,11 @@ export function useHoldings(): TBalHoldings {
 			{...styBalContract, functionName: 'totalAssets'},
 			{...lpyBalContract, functionName: 'totalSupply'},
 			{...veBalContract, functionName: 'totalSupply'},
-			{...veBalContract, functionName: 'balanceOf', args: [YBAL_VOTER_ADDRESS]}
+			{
+				...veBalContract,
+				functionName: 'balanceOf',
+				args: [YBAL_VOTER_ADDRESS]
+			}
 		]
 	});
 	const {data: peg, status: pegStatus} = usePrepareContractWrite({

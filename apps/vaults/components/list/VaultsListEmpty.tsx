@@ -50,9 +50,7 @@ export function VaultsListEmpty({
 						<p className={'text-center text-neutral-600'}>
 							{`There doesn’t seem to be anything here. It might be because you searched for a token in the ${currentCategory} category, or because there’s a rodent infestation in our server room. You check the search box, we’ll check the rodents. Deal?`}
 						</p>
-						<Button
-							className={'w-full md:w-48'}
-							onClick={(): void => set_category('All Vaults')}>
+						<Button className={'w-full md:w-48'} onClick={(): void => set_category('All Vaults')}>
 							{'Search all vaults'}
 						</Button>
 					</>

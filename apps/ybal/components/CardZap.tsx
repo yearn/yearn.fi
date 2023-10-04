@@ -123,9 +123,7 @@ function CardZap(): ReactElement {
 					<p className={'pl-2 !text-xs font-normal !text-green-600'}>{fromVaultAPY}</p>
 				</label>
 				<div className={'flex flex-col space-y-1'}>
-					<label
-						htmlFor={'amount'}
-						className={'text-ba text-neutral-600'}>
+					<label htmlFor={'amount'} className={'text-ba text-neutral-600'}>
 						{'Amount'}
 					</label>
 					<div className={'flex h-10 items-center bg-neutral-100 p-2'}>
@@ -230,9 +228,7 @@ function CardZap(): ReactElement {
 
 export function WithCardTransactor({className}: {className: string}): ReactElement {
 	return (
-		<CardTransactorContextApp
-			defaultOptionFrom={ZAP_OPTIONS_FROM[0]}
-			defaultOptionTo={ZAP_OPTIONS_TO[0]}>
+		<CardTransactorContextApp defaultOptionFrom={ZAP_OPTIONS_FROM[0]} defaultOptionTo={ZAP_OPTIONS_TO[0]}>
 			<div className={cl('mx-auto w-full bg-neutral-200 p-4 md:p-6', className)}>
 				<div className={'flex flex-col pb-2'}>
 					<h2 className={'text-2xl font-bold'}>{'Supercharge your yield with yBal'}</h2>

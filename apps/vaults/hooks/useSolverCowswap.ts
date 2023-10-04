@@ -183,7 +183,10 @@ export function useSolverCowswap(): TSolverContext {
 		async (quote: Order): Promise<SigningResult> => {
 			if (shouldUsePresign) {
 				await new Promise(async (resolve): Promise<NodeJS.Timeout> => setTimeout(resolve, 1000));
-				return {signature: '0x', signingScheme: 'presign'} as unknown as SigningResult;
+				return {
+					signature: '0x',
+					signingScheme: 'presign'
+				} as unknown as SigningResult;
 			}
 
 			assert(provider, 'Provider is not set');
@@ -212,15 +215,24 @@ export function useSolverCowswap(): TSolverContext {
 				return {isSuccessful: true};
 			}
 			if (order?.status === 'cancelled' || order?.status === 'expired') {
-				return {isSuccessful: false, error: new Error('TX fail because the order was not fulfilled')};
+				return {
+					isSuccessful: false,
+					error: new Error('TX fail because the order was not fulfilled')
+				};
 			}
 			if (validTo.valueOf() < new Date().valueOf() / 1000) {
-				return {isSuccessful: false, error: new Error('TX fail because the order expired')};
+				return {
+					isSuccessful: false,
+					error: new Error('TX fail because the order expired')
+				};
 			}
 			// Sleep for 3 seconds before checking the status again
 			await new Promise((resolve): NodeJS.Timeout => setTimeout(resolve, 3000));
 		}
-		return {isSuccessful: false, error: new Error('TX fail because the order expired')};
+		return {
+			isSuccessful: false,
+			error: new Error('TX fail because the order expired')
+		};
 	}
 
 	/* 🔵 - Yearn Finance **************************************************************************
@@ -257,7 +269,10 @@ export function useSolverCowswap(): TSolverContext {
 			const {isSuccessful, error} = await checkOrderStatus(orderUID, quote.validTo);
 			if (error) {
 				console.error(error);
-				return {isSuccessful: false, error: new BaseError('Tx fail because the order was not fulfilled')};
+				return {
+					isSuccessful: false,
+					error: new BaseError('Tx fail because the order was not fulfilled')
+				};
 			}
 			return {isSuccessful};
 		}
@@ -305,7 +320,6 @@ export function useSolverCowswap(): TSolverContext {
 			}
 			const allowance = await allowanceOf({
 				connector: provider,
-				chainID: safeChainID,
 				tokenAddress: request.current.inputToken.value,
 				spenderAddress: SOLVER_COW_VAULT_RELAYER_ADDRESS
 			});
@@ -346,7 +360,6 @@ export function useSolverCowswap(): TSolverContext {
 			}
 			const result = await approveERC20({
 				connector: provider,
-				chainID: safeChainID,
 				contractAddress: request.current.inputToken.value,
 				spenderAddress: SOLVER_COW_VAULT_RELAYER_ADDRESS,
 				amount: toBigInt(amount),
@@ -385,7 +398,11 @@ export function useSolverCowswap(): TSolverContext {
 					});
 				}
 			} catch (error) {
-				txStatusSetter({...defaultTxStatus, error: true, errorMessage: 'Transaction rejected'});
+				txStatusSetter({
+					...defaultTxStatus,
+					error: true,
+					errorMessage: 'Transaction rejected'
+				});
 			} finally {
 				setTimeout((): void => {
 					txStatusSetter({...defaultTxStatus});

@@ -92,7 +92,11 @@ export function formatDateShort(value: number): string {
 		locale = navigator.language || 'fr-FR';
 	}
 
-	return new Intl.DateTimeFormat([locale, 'en-US'], {year: 'numeric', month: 'short', day: '2-digit'}).format(value);
+	return new Intl.DateTimeFormat([locale, 'en-US'], {
+		year: 'numeric',
+		month: 'short',
+		day: '2-digit'
+	}).format(value);
 }
 
 /* 🔵 - Yearn Finance **************************************************************************

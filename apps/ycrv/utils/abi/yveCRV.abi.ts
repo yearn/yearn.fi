@@ -3,9 +3,24 @@ export const YVECRV_ABI = [
 	{
 		anonymous: false,
 		inputs: [
-			{indexed: true, internalType: 'address', name: 'owner', type: 'address'},
-			{indexed: true, internalType: 'address', name: 'spender', type: 'address'},
-			{indexed: false, internalType: 'uint256', name: 'amount', type: 'uint256'}
+			{
+				indexed: true,
+				internalType: 'address',
+				name: 'owner',
+				type: 'address'
+			},
+			{
+				indexed: true,
+				internalType: 'address',
+				name: 'spender',
+				type: 'address'
+			},
+			{
+				indexed: false,
+				internalType: 'uint256',
+				name: 'amount',
+				type: 'uint256'
+			}
 		],
 		name: 'Approval',
 		type: 'event'
@@ -13,9 +28,24 @@ export const YVECRV_ABI = [
 	{
 		anonymous: false,
 		inputs: [
-			{indexed: true, internalType: 'address', name: 'delegator', type: 'address'},
-			{indexed: true, internalType: 'address', name: 'fromDelegate', type: 'address'},
-			{indexed: true, internalType: 'address', name: 'toDelegate', type: 'address'}
+			{
+				indexed: true,
+				internalType: 'address',
+				name: 'delegator',
+				type: 'address'
+			},
+			{
+				indexed: true,
+				internalType: 'address',
+				name: 'fromDelegate',
+				type: 'address'
+			},
+			{
+				indexed: true,
+				internalType: 'address',
+				name: 'toDelegate',
+				type: 'address'
+			}
 		],
 		name: 'DelegateChanged',
 		type: 'event'
@@ -23,9 +53,24 @@ export const YVECRV_ABI = [
 	{
 		anonymous: false,
 		inputs: [
-			{indexed: true, internalType: 'address', name: 'delegate', type: 'address'},
-			{indexed: false, internalType: 'uint256', name: 'previousBalance', type: 'uint256'},
-			{indexed: false, internalType: 'uint256', name: 'newBalance', type: 'uint256'}
+			{
+				indexed: true,
+				internalType: 'address',
+				name: 'delegate',
+				type: 'address'
+			},
+			{
+				indexed: false,
+				internalType: 'uint256',
+				name: 'previousBalance',
+				type: 'uint256'
+			},
+			{
+				indexed: false,
+				internalType: 'uint256',
+				name: 'newBalance',
+				type: 'uint256'
+			}
 		],
 		name: 'DelegateVotesChanged',
 		type: 'event'
@@ -33,9 +78,24 @@ export const YVECRV_ABI = [
 	{
 		anonymous: false,
 		inputs: [
-			{indexed: true, internalType: 'address', name: 'from', type: 'address'},
-			{indexed: true, internalType: 'address', name: 'to', type: 'address'},
-			{indexed: false, internalType: 'uint256', name: 'amount', type: 'uint256'}
+			{
+				indexed: true,
+				internalType: 'address',
+				name: 'from',
+				type: 'address'
+			},
+			{
+				indexed: true,
+				internalType: 'address',
+				name: 'to',
+				type: 'address'
+			},
+			{
+				indexed: false,
+				internalType: 'uint256',
+				name: 'amount',
+				type: 'uint256'
+			}
 		],
 		name: 'Transfer',
 		type: 'event'
@@ -82,7 +142,13 @@ export const YVECRV_ABI = [
 		stateMutability: 'view',
 		type: 'function'
 	},
-	{inputs: [], name: 'acceptGovernance', outputs: [], stateMutability: 'nonpayable', type: 'function'},
+	{
+		inputs: [],
+		name: 'acceptGovernance',
+		outputs: [],
+		stateMutability: 'nonpayable',
+		type: 'function'
+	},
 	{
 		inputs: [
 			{internalType: 'address', name: 'account', type: 'address'},
@@ -130,7 +196,13 @@ export const YVECRV_ABI = [
 		stateMutability: 'view',
 		type: 'function'
 	},
-	{inputs: [], name: 'claim', outputs: [], stateMutability: 'nonpayable', type: 'function'},
+	{
+		inputs: [],
+		name: 'claim',
+		outputs: [],
+		stateMutability: 'nonpayable',
+		type: 'function'
+	},
 	{
 		inputs: [{internalType: 'address', name: 'recipient', type: 'address'}],
 		name: 'claimFor',
@@ -187,7 +259,13 @@ export const YVECRV_ABI = [
 		stateMutability: 'nonpayable',
 		type: 'function'
 	},
-	{inputs: [], name: 'depositAll', outputs: [], stateMutability: 'nonpayable', type: 'function'},
+	{
+		inputs: [],
+		name: 'depositAll',
+		outputs: [],
+		stateMutability: 'nonpayable',
+		type: 'function'
+	},
 	{
 		inputs: [],
 		name: 'feeDistribution',
@@ -284,7 +362,13 @@ export const YVECRV_ABI = [
 		type: 'function'
 	},
 	{
-		inputs: [{internalType: 'address', name: '_feeDistribution', type: 'address'}],
+		inputs: [
+			{
+				internalType: 'address',
+				name: '_feeDistribution',
+				type: 'address'
+			}
+		],
 		name: 'setFeeDistribution',
 		outputs: [],
 		stateMutability: 'nonpayable',
@@ -346,7 +430,13 @@ export const YVECRV_ABI = [
 		stateMutability: 'nonpayable',
 		type: 'function'
 	},
-	{inputs: [], name: 'update', outputs: [], stateMutability: 'nonpayable', type: 'function'},
+	{
+		inputs: [],
+		name: 'update',
+		outputs: [],
+		stateMutability: 'nonpayable',
+		type: 'function'
+	},
 	{
 		inputs: [{internalType: 'address', name: 'recipient', type: 'address'}],
 		name: 'updateFor',

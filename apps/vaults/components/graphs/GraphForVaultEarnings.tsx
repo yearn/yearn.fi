@@ -57,10 +57,7 @@ export function GraphForVaultEarnings({
 					dataKey={'value'}
 					stroke={'currentcolor'}
 				/>
-				<XAxis
-					dataKey={'name'}
-					hide
-				/>
+				<XAxis dataKey={'name'} hide />
 				<YAxis
 					orientation={'right'}
 					domain={['dataMin', 'auto']}

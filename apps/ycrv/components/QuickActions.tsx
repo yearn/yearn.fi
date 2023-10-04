@@ -63,9 +63,7 @@ function QASelect(props: TQASelect): ReactElement {
 				</legend>
 			</div>
 
-			<Renderable
-				fallback={renderMultipleOptionsFallback()}
-				shouldRender={isZero(options.length)}>
+			<Renderable fallback={renderMultipleOptionsFallback()} shouldRender={isZero(options.length)}>
 				<div
 					className={
 						'flex h-10 w-full items-center justify-between bg-neutral-0 px-2 text-base text-neutral-900 md:px-3'
@@ -159,9 +157,7 @@ function QAButton({label, ...props}: TQAButton): ReactElement {
 		<div className={'w-full space-y-0 md:w-42 md:min-w-42 md:space-y-2'}>
 			<label className={'hidden text-base md:inline'}>&nbsp;</label>
 			<div>
-				<Button
-					className={'w-full'}
-					{...props}>
+				<Button className={'w-full'} {...props}>
 					{label}
 				</Button>
 			</div>

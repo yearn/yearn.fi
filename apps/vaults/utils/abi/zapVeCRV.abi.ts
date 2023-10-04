@@ -11,7 +11,12 @@ export const ZAP_VE_CRV_ABI = [
 		anonymous: false,
 		type: 'event'
 	},
-	{stateMutability: 'nonpayable', type: 'constructor', inputs: [], outputs: []},
+	{
+		stateMutability: 'nonpayable',
+		type: 'constructor',
+		inputs: [],
+		outputs: []
+	},
 	{
 		stateMutability: 'nonpayable',
 		type: 'function',
@@ -111,7 +116,13 @@ export const ZAP_VE_CRV_ABI = [
 		inputs: [{name: '_new_buffer', type: 'uint256'}],
 		outputs: []
 	},
-	{stateMutability: 'view', type: 'function', name: 'name', inputs: [], outputs: [{name: '', type: 'string'}]},
+	{
+		stateMutability: 'view',
+		type: 'function',
+		name: 'name',
+		inputs: [],
+		outputs: [{name: '', type: 'string'}]
+	},
 	{
 		stateMutability: 'view',
 		type: 'function',

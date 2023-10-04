@@ -7,18 +7,18 @@ import type {TSortDirection} from '@common/types/types';
 
 export type TListHead = {
 	items: {
-		label: string | ReactElement,
-		value: string,
-		sortable?: boolean,
-		className?: string
-	}[],
-	dataClassName?: string,
-	wrapperClassName?: string,
-	tokenClassName?: string,
-	sortBy: string,
-	sortDirection: TSortDirection,
-	onSort: (sortBy: string, sortDirection: TSortDirection) => void
-}
+		label: string | ReactElement;
+		value: string;
+		sortable?: boolean;
+		className?: string;
+	}[];
+	dataClassName?: string;
+	wrapperClassName?: string;
+	tokenClassName?: string;
+	sortBy: string;
+	sortDirection: TSortDirection;
+	onSort: (sortBy: string, sortDirection: TSortDirection) => void;
+};
 
 export function ListHead({
 	items,
@@ -60,17 +60,13 @@ export function ListHead({
 	return (
 		<div className={'mt-4 grid w-full grid-cols-1 md:mt-0'}>
 			<div className={cl('yearn--table-head-wrapper', wrapperClassName)}>
-				<p className={'yearn--table-head-label max-w-[32px]'}>
-					{chain.label}
-				</p>
+				<p className={'yearn--table-head-label max-w-[32px]'}>{chain.label}</p>
 
 				<div className={cl('yearn--table-head-token-section', tokenClassName)}>
 					<button
 						onClick={(): void => onSort(token.value, toggleSortDirection(token.value))}
 						className={'yearn--table-head-label-wrapper group'}>
-						<p className={'yearn--table-head-label'}>
-							{token.label}
-						</p>
+						<p className={'yearn--table-head-label'}>{token.label}</p>
 						{renderChevron(sortBy === token.value)}
 					</button>
 				</div>

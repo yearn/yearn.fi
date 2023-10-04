@@ -13,7 +13,10 @@ import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TSeconds} from '@yearn-finance/web-lib/utils/time';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 
-type TApproveLock = TWriteTransaction & {votingEscrowAddress: TAddress; amount: bigint};
+type TApproveLock = TWriteTransaction & {
+	votingEscrowAddress: TAddress;
+	amount: bigint;
+};
 export async function approveLock(props: TApproveLock): Promise<TTxResponse> {
 	const {votingEscrowAddress, amount = MAX_UINT_256, contractAddress} = props;
 	assertAddress(votingEscrowAddress, 'votingEscrowAddress');
@@ -68,7 +71,11 @@ export async function increaseLockAmount(props: TIncreaseLockAmount): Promise<TT
 	});
 }
 
-type TExtendLockTime = TWriteTransaction & {votingEscrowAddress: TAddress; accountAddress: TAddress; time: TSeconds};
+type TExtendLockTime = TWriteTransaction & {
+	votingEscrowAddress: TAddress;
+	accountAddress: TAddress;
+	time: TSeconds;
+};
 export async function extendLockTime(props: TExtendLockTime): Promise<TTxResponse> {
 	assertAddress(props.votingEscrowAddress, 'votingEscrowAddress');
 	assertAddress(props.accountAddress, 'accountAddress');

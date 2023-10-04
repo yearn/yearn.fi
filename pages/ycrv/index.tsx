@@ -74,12 +74,7 @@ function HeaderPosition(): ReactElement {
 			<div className={'col-span-12 w-full md:col-span-4'}>
 				<p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl'}>{'You have'}</p>
 				<b className={'font-number text-3xl text-neutral-900 md:text-7xl'}>
-					<ValueAnimation
-						identifier={'youHave'}
-						value={formatedYouHave}
-						prefix={'$'}
-						defaultValue={'0,00'}
-					/>
+					<ValueAnimation identifier={'youHave'} value={formatedYouHave} prefix={'$'} defaultValue={'0,00'} />
 				</b>
 			</div>
 		</Fragment>
@@ -130,6 +125,10 @@ function ZapAndStats(): ReactElement {
 		return (currentVeCRVAPY * Number(holdings?.boostMultiplier)) / 10000;
 	}, [holdings, currentVeCRVAPY]);
 
+	const crvYCRVPeg = useMemo((): number => {
+		return formatToNormalizedValue(holdings?.crvYCRVPeg, 18) + 0.0015;
+	}, [holdings]);
+
 	return (
 		<div className={'col-span-12 grid w-full grid-cols-12 gap-4 '}>
 			<div className={'col-span-12 md:col-span-8'}>
@@ -139,22 +138,16 @@ function ZapAndStats(): ReactElement {
 				<div className={'w-full bg-neutral-100 p-4'}>
 					<div className={'flex flex-row items-baseline justify-between pb-1'}>
 						<span className={'inline text-sm font-normal text-neutral-400'}>{'Price/PEG: '}</span>
-						<p
-							suppressHydrationWarning
-							className={'font-number text-sm text-neutral-900'}>
+						<p suppressHydrationWarning className={'font-number text-sm text-neutral-900'}>
 							{`Price = $${formatAmount(ycrvPrice || 0)} | Peg = ${
-								holdings?.crvYCRVPeg
-									? formatPercent((formatToNormalizedValue(holdings?.crvYCRVPeg, 18) + 0.0015) * 100)
-									: formatPercent(0)
+								holdings?.crvYCRVPeg ? formatPercent(crvYCRVPeg * 100) : formatPercent(0)
 							}`}
 						</p>
 					</div>
 
 					<div className={'flex flex-row items-baseline justify-between pb-1'}>
 						<span className={'inline text-sm font-normal text-neutral-400'}>{'Yearn Treasury: '}</span>
-						<p
-							suppressHydrationWarning
-							className={'font-number text-sm text-neutral-900'}>
+						<p suppressHydrationWarning className={'font-number text-sm text-neutral-900'}>
 							{holdings?.treasury ? `${formatBigNumberOver10K(holdings.treasury)} ` : '- '}
 							<span className={'font-number text-neutral-600'}>{'veCRV'}</span>
 						</p>
@@ -162,9 +155,7 @@ function ZapAndStats(): ReactElement {
 
 					<div className={'flex flex-row items-baseline justify-between pb-1'}>
 						<span className={'inline text-sm font-normal text-neutral-400'}>{'Legacy system: '}</span>
-						<p
-							suppressHydrationWarning
-							className={'font-number text-sm text-neutral-900'}>
+						<p suppressHydrationWarning className={'font-number text-sm text-neutral-900'}>
 							{holdings?.legacy ? `${formatBigNumberOver10K(holdings.legacy)} ` : '- '}
 							<span className={'font-number text-neutral-600'}>{'yveCRV'}</span>
 						</p>
@@ -178,17 +169,13 @@ function ZapAndStats(): ReactElement {
 
 					<div className={'flex flex-row items-baseline justify-between pb-1'}>
 						<span className={'inline text-sm font-normal text-neutral-400'}>{'My Balance: '}</span>
-						<p
-							suppressHydrationWarning
-							className={'font-number text-sm text-neutral-900'}>
+						<p suppressHydrationWarning className={'font-number text-sm text-neutral-900'}>
 							{formatNumberOver10K(balances[STYCRV_TOKEN_ADDRESS]?.normalized || 0)}
 						</p>
 					</div>
 					<div className={'flex flex-row items-center justify-between'}>
 						<span className={'inline text-sm font-normal text-neutral-400'}>{'Value: '}</span>
-						<p
-							suppressHydrationWarning
-							className={'font-number text-sm text-neutral-900'}>
+						<p suppressHydrationWarning className={'font-number text-sm text-neutral-900'}>
 							{formatCounterValue(balanceOfStyCRV.normalized, stycrvPrice)}
 						</p>
 					</div>
@@ -198,9 +185,7 @@ function ZapAndStats(): ReactElement {
 					<div className={'flex flex-row items-center justify-between pb-1'}>
 						<span className={'mr-auto text-sm font-normal text-neutral-400'}>{'APY: '}</span>
 						<span className={'tooltip'}>
-							<b
-								suppressHydrationWarning
-								className={'font-number text-sm text-neutral-900'}>
+							<b suppressHydrationWarning className={'font-number text-sm text-neutral-900'}>
 								{`${formatPercent(styCRVAPY ?? 0)}*`}
 							</b>
 							<span
@@ -245,9 +230,7 @@ function ZapAndStats(): ReactElement {
 					</div>
 					<div className={'flex flex-row items-center justify-between pb-1'}>
 						<span className={'inline text-sm font-normal text-neutral-400'}>{'Total Assets: '}</span>
-						<p
-							suppressHydrationWarning
-							className={'font-number text-sm text-neutral-900'}>
+						<p suppressHydrationWarning className={'font-number text-sm text-neutral-900'}>
 							{holdings?.styCRVSupply
 								? formatCounterValue(formatToNormalizedValue(holdings.styCRVSupply, 18), ycrvPrice)
 								: formatAmount(0)}
@@ -255,9 +238,7 @@ function ZapAndStats(): ReactElement {
 					</div>
 					<div className={'flex flex-row items-center justify-between pb-1'}>
 						<span className={'inline text-sm font-normal text-neutral-400'}>{'yCRV Deposits: '}</span>
-						<p
-							suppressHydrationWarning
-							className={'font-number text-sm text-neutral-900'}>
+						<p suppressHydrationWarning className={'font-number text-sm text-neutral-900'}>
 							{formatBigNumberOver10K(holdings.styCRVSupply)}
 						</p>
 					</div>
@@ -270,17 +251,13 @@ function ZapAndStats(): ReactElement {
 
 					<div className={'flex flex-row items-baseline justify-between pb-1'}>
 						<span className={'inline text-sm font-normal text-neutral-400'}>{'My Balance: '}</span>
-						<p
-							suppressHydrationWarning
-							className={'font-number text-sm text-neutral-900'}>
+						<p suppressHydrationWarning className={'font-number text-sm text-neutral-900'}>
 							{formatNumberOver10K(balances[LPYCRV_V2_TOKEN_ADDRESS]?.normalized || 0)}
 						</p>
 					</div>
 					<div className={'flex flex-row items-center justify-between'}>
 						<span className={'inline text-sm font-normal text-neutral-400'}>{'Value: '}</span>
-						<p
-							suppressHydrationWarning
-							className={'font-number text-sm text-neutral-900'}>
+						<p suppressHydrationWarning className={'font-number text-sm text-neutral-900'}>
 							{formatCounterValue(balanceOfLpyCRVV2.normalized, lpycrvV2Price)}
 						</p>
 					</div>
@@ -289,17 +266,13 @@ function ZapAndStats(): ReactElement {
 
 					<div className={'flex flex-row items-center justify-between pb-1'}>
 						<span className={'mr-auto text-sm font-normal text-neutral-400'}>{'APY: '}</span>
-						<b
-							suppressHydrationWarning
-							className={'font-number text-sm text-neutral-900'}>
+						<b suppressHydrationWarning className={'font-number text-sm text-neutral-900'}>
 							{lpCRVV2APY ? `${(lpCRVV2APY || '').replace('APY', '')}` : `${formatPercent(0)}`}
 						</b>
 					</div>
 					<div className={'flex flex-row items-center justify-between pb-1'}>
 						<span className={'inline text-sm font-normal text-neutral-400'}>{'Total Assets: '}</span>
-						<p
-							suppressHydrationWarning
-							className={'font-number text-sm text-neutral-900'}>
+						<p suppressHydrationWarning className={'font-number text-sm text-neutral-900'}>
 							{holdings?.lpyCRVV2Supply
 								? formatCounterValue(
 										formatToNormalizedValue(holdings.lpyCRVV2Supply, 18),
@@ -310,9 +283,7 @@ function ZapAndStats(): ReactElement {
 					</div>
 					<div className={'flex flex-row items-center justify-between pb-1'}>
 						<span className={'inline text-sm font-normal text-neutral-400'}>{'yCRV Deposits: '}</span>
-						<p
-							suppressHydrationWarning
-							className={'font-number text-sm text-neutral-900'}>
+						<p suppressHydrationWarning className={'font-number text-sm text-neutral-900'}>
 							{formatBigNumberOver10K(holdings.lpyCRVV2Supply)}
 						</p>
 					</div>
@@ -326,17 +297,13 @@ function ZapAndStats(): ReactElement {
 
 						<div className={'flex flex-row items-baseline justify-between pb-1'}>
 							<span className={'inline text-sm font-normal text-neutral-400'}>{'My Balance: '}</span>
-							<p
-								suppressHydrationWarning
-								className={'font-number text-sm text-neutral-900'}>
+							<p suppressHydrationWarning className={'font-number text-sm text-neutral-900'}>
 								{formatNumberOver10K(balances[LPYCRV_TOKEN_ADDRESS]?.normalized || 0)}
 							</p>
 						</div>
 						<div className={'flex flex-row items-center justify-between'}>
 							<span className={'inline text-sm font-normal text-neutral-400'}>{'Value: '}</span>
-							<p
-								suppressHydrationWarning
-								className={'font-number text-sm text-neutral-900'}>
+							<p suppressHydrationWarning className={'font-number text-sm text-neutral-900'}>
 								{formatCounterValue(balanceOfLpyCRV.normalized, lpycrvPrice)}
 							</p>
 						</div>
@@ -345,17 +312,13 @@ function ZapAndStats(): ReactElement {
 
 						<div className={'flex flex-row items-center justify-between pb-1'}>
 							<span className={'mr-auto text-sm font-normal text-neutral-400'}>{'APY: '}</span>
-							<b
-								suppressHydrationWarning
-								className={'font-number text-sm text-neutral-900'}>
+							<b suppressHydrationWarning className={'font-number text-sm text-neutral-900'}>
 								{lpCRVAPY ? `${(lpCRVAPY || '').replace('APY', '')}` : `${formatPercent(0)}`}
 							</b>
 						</div>
 						<div className={'flex flex-row items-center justify-between pb-1'}>
 							<span className={'inline text-sm font-normal text-neutral-400'}>{'Total Assets: '}</span>
-							<p
-								suppressHydrationWarning
-								className={'font-number text-sm text-neutral-900'}>
+							<p suppressHydrationWarning className={'font-number text-sm text-neutral-900'}>
 								{holdings?.lpyCRVSupply
 									? formatCounterValue(
 											formatToNormalizedValue(holdings.lpyCRVSupply, 18),
@@ -366,9 +329,7 @@ function ZapAndStats(): ReactElement {
 						</div>
 						<div className={'flex flex-row items-center justify-between pb-1'}>
 							<span className={'inline text-sm font-normal text-neutral-400'}>{'yCRV Deposits: '}</span>
-							<p
-								suppressHydrationWarning
-								className={'font-number text-sm text-neutral-900'}>
+							<p suppressHydrationWarning className={'font-number text-sm text-neutral-900'}>
 								{formatBigNumberOver10K(holdings.lpyCRVSupply)}
 							</p>
 						</div>

@@ -153,9 +153,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 			)}
 
 			{!currentVault?.migration.available && currentVault?.details?.retired && (
-				<div
-					aria-label={'Deprecation Warning'}
-					className={'col-span-12 mt-10'}>
+				<div aria-label={'Deprecation Warning'} className={'col-span-12 mt-10'}>
 					<div className={'w-full bg-neutral-900 p-6 text-neutral-0'}>
 						<b className={'text-lg'}>{'This Vault is no longer supported (oh no).'}</b>
 						<p className={'mt-2'}>

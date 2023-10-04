@@ -12,9 +12,7 @@ export function YBribeHeader({pathname}: TProps): ReactElement {
 	const {name, icon} = APPS[AppName.YBRIBE];
 
 	return (
-		<MotionDiv
-			animate={pathname.startsWith('/ybribe') ? 'enter' : 'exit'}
-			name={name}>
+		<MotionDiv animate={pathname.startsWith('/ybribe') ? 'enter' : 'exit'} name={name}>
 			{icon}
 		</MotionDiv>
 	);

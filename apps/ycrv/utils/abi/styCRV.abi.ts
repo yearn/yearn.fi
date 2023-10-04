@@ -206,7 +206,13 @@ export const STYCRV_ABI = [
 		],
 		outputs: []
 	},
-	{stateMutability: 'pure', type: 'function', name: 'apiVersion', inputs: [], outputs: [{name: '', type: 'string'}]},
+	{
+		stateMutability: 'pure',
+		type: 'function',
+		name: 'apiVersion',
+		inputs: [],
+		outputs: [{name: '', type: 'string'}]
+	},
 	{
 		stateMutability: 'nonpayable',
 		type: 'function',
@@ -228,7 +234,13 @@ export const STYCRV_ABI = [
 		inputs: [{name: 'governance', type: 'address'}],
 		outputs: []
 	},
-	{stateMutability: 'nonpayable', type: 'function', name: 'acceptGovernance', inputs: [], outputs: []},
+	{
+		stateMutability: 'nonpayable',
+		type: 'function',
+		name: 'acceptGovernance',
+		inputs: [],
+		outputs: []
+	},
 	{
 		stateMutability: 'nonpayable',
 		type: 'function',
@@ -499,7 +511,13 @@ export const STYCRV_ABI = [
 		],
 		outputs: []
 	},
-	{stateMutability: 'nonpayable', type: 'function', name: 'revokeStrategy', inputs: [], outputs: []},
+	{
+		stateMutability: 'nonpayable',
+		type: 'function',
+		name: 'revokeStrategy',
+		inputs: [],
+		outputs: []
+	},
 	{
 		stateMutability: 'nonpayable',
 		type: 'function',
@@ -598,9 +616,27 @@ export const STYCRV_ABI = [
 		],
 		outputs: []
 	},
-	{stateMutability: 'view', type: 'function', name: 'name', inputs: [], outputs: [{name: '', type: 'string'}]},
-	{stateMutability: 'view', type: 'function', name: 'symbol', inputs: [], outputs: [{name: '', type: 'string'}]},
-	{stateMutability: 'view', type: 'function', name: 'decimals', inputs: [], outputs: [{name: '', type: 'uint256'}]},
+	{
+		stateMutability: 'view',
+		type: 'function',
+		name: 'name',
+		inputs: [],
+		outputs: [{name: '', type: 'string'}]
+	},
+	{
+		stateMutability: 'view',
+		type: 'function',
+		name: 'symbol',
+		inputs: [],
+		outputs: [{name: '', type: 'string'}]
+	},
+	{
+		stateMutability: 'view',
+		type: 'function',
+		name: 'decimals',
+		inputs: [],
+		outputs: [{name: '', type: 'uint256'}]
+	},
 	{
 		stateMutability: 'view',
 		type: 'function',
@@ -625,10 +661,34 @@ export const STYCRV_ABI = [
 		inputs: [],
 		outputs: [{name: '', type: 'uint256'}]
 	},
-	{stateMutability: 'view', type: 'function', name: 'token', inputs: [], outputs: [{name: '', type: 'address'}]},
-	{stateMutability: 'view', type: 'function', name: 'governance', inputs: [], outputs: [{name: '', type: 'address'}]},
-	{stateMutability: 'view', type: 'function', name: 'management', inputs: [], outputs: [{name: '', type: 'address'}]},
-	{stateMutability: 'view', type: 'function', name: 'guardian', inputs: [], outputs: [{name: '', type: 'address'}]},
+	{
+		stateMutability: 'view',
+		type: 'function',
+		name: 'token',
+		inputs: [],
+		outputs: [{name: '', type: 'address'}]
+	},
+	{
+		stateMutability: 'view',
+		type: 'function',
+		name: 'governance',
+		inputs: [],
+		outputs: [{name: '', type: 'address'}]
+	},
+	{
+		stateMutability: 'view',
+		type: 'function',
+		name: 'management',
+		inputs: [],
+		outputs: [{name: '', type: 'address'}]
+	},
+	{
+		stateMutability: 'view',
+		type: 'function',
+		name: 'guardian',
+		inputs: [],
+		outputs: [{name: '', type: 'address'}]
+	},
 	{
 		stateMutability: 'view',
 		type: 'function',
@@ -667,10 +727,34 @@ export const STYCRV_ABI = [
 		inputs: [],
 		outputs: [{name: '', type: 'uint256'}]
 	},
-	{stateMutability: 'view', type: 'function', name: 'debtRatio', inputs: [], outputs: [{name: '', type: 'uint256'}]},
-	{stateMutability: 'view', type: 'function', name: 'totalDebt', inputs: [], outputs: [{name: '', type: 'uint256'}]},
-	{stateMutability: 'view', type: 'function', name: 'lastReport', inputs: [], outputs: [{name: '', type: 'uint256'}]},
-	{stateMutability: 'view', type: 'function', name: 'activation', inputs: [], outputs: [{name: '', type: 'uint256'}]},
+	{
+		stateMutability: 'view',
+		type: 'function',
+		name: 'debtRatio',
+		inputs: [],
+		outputs: [{name: '', type: 'uint256'}]
+	},
+	{
+		stateMutability: 'view',
+		type: 'function',
+		name: 'totalDebt',
+		inputs: [],
+		outputs: [{name: '', type: 'uint256'}]
+	},
+	{
+		stateMutability: 'view',
+		type: 'function',
+		name: 'lastReport',
+		inputs: [],
+		outputs: [{name: '', type: 'uint256'}]
+	},
+	{
+		stateMutability: 'view',
+		type: 'function',
+		name: 'activation',
+		inputs: [],
+		outputs: [{name: '', type: 'uint256'}]
+	},
 	{
 		stateMutability: 'view',
 		type: 'function',
@@ -685,7 +769,13 @@ export const STYCRV_ABI = [
 		inputs: [],
 		outputs: [{name: '', type: 'uint256'}]
 	},
-	{stateMutability: 'view', type: 'function', name: 'rewards', inputs: [], outputs: [{name: '', type: 'address'}]},
+	{
+		stateMutability: 'view',
+		type: 'function',
+		name: 'rewards',
+		inputs: [],
+		outputs: [{name: '', type: 'address'}]
+	},
 	{
 		stateMutability: 'view',
 		type: 'function',

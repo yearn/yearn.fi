@@ -9,70 +9,14 @@ export function HowItWorksDiagram(props: React.SVGProps<SVGSVGElement>): ReactEl
 			viewBox={'0 0 980 288'}
 			fill={'none'}
 			xmlns={'http://www.w3.org/2000/svg'}>
-			<rect
-				x={'475'}
-				y={'64'}
-				width={'40'}
-				height={'80'}
-				fill={'#9D9D9D'}
-				stroke={'#0C0C0C'}
-			/>
-			<rect
-				x={'115'}
-				y={'144'}
-				width={'200'}
-				height={'80'}
-				fill={'#EBEBEB'}
-				stroke={'#0C0C0C'}
-			/>
-			<rect
-				x={'315'}
-				y={'144'}
-				width={'200'}
-				height={'80'}
-				fill={'#EBEBEB'}
-				stroke={'#0C0C0C'}
-			/>
-			<rect
-				x={'515'}
-				y={'144'}
-				width={'200'}
-				height={'80'}
-				fill={'#EBEBEB'}
-				stroke={'#0C0C0C'}
-			/>
-			<rect
-				x={'715'}
-				y={'144'}
-				width={'200'}
-				height={'80'}
-				fill={'#EBEBEB'}
-				stroke={'#0C0C0C'}
-			/>
-			<rect
-				x={'115'}
-				y={'64'}
-				width={'400'}
-				height={'80'}
-				fill={'#E1E1E1'}
-				stroke={'#0C0C0C'}
-			/>
-			<rect
-				x={'475'}
-				y={'64'}
-				width={'40'}
-				height={'80'}
-				fill={'#9D9D9D'}
-				stroke={'#0C0C0C'}
-			/>
-			<rect
-				x={'515'}
-				y={'64'}
-				width={'400'}
-				height={'80'}
-				fill={'#E1E1E1'}
-				stroke={'#0C0C0C'}
-			/>
+			<rect x={'475'} y={'64'} width={'40'} height={'80'} fill={'#9D9D9D'} stroke={'#0C0C0C'} />
+			<rect x={'115'} y={'144'} width={'200'} height={'80'} fill={'#EBEBEB'} stroke={'#0C0C0C'} />
+			<rect x={'315'} y={'144'} width={'200'} height={'80'} fill={'#EBEBEB'} stroke={'#0C0C0C'} />
+			<rect x={'515'} y={'144'} width={'200'} height={'80'} fill={'#EBEBEB'} stroke={'#0C0C0C'} />
+			<rect x={'715'} y={'144'} width={'200'} height={'80'} fill={'#EBEBEB'} stroke={'#0C0C0C'} />
+			<rect x={'115'} y={'64'} width={'400'} height={'80'} fill={'#E1E1E1'} stroke={'#0C0C0C'} />
+			<rect x={'475'} y={'64'} width={'40'} height={'80'} fill={'#9D9D9D'} stroke={'#0C0C0C'} />
+			<rect x={'515'} y={'64'} width={'400'} height={'80'} fill={'#E1E1E1'} stroke={'#0C0C0C'} />
 			<path
 				d={
 					'M431.836 44V37.52L436.348 44H437.308V35.6H436.288V42.08L431.776 35.6H430.816V44H431.836ZM441.613 44.072C443.401 44.072 444.649 42.8 444.649 40.94C444.649 39.08 443.401 37.808 441.613 37.808C439.825 37.808 438.577 39.08 438.577 40.94C438.577 42.8 439.825 44.072 441.613 44.072ZM441.613 43.196C440.401 43.196 439.585 42.248 439.585 40.94C439.585 39.632 440.401 38.684 441.613 38.684C442.825 38.684 443.641 39.632 443.641 40.94C443.641 42.248 442.825 43.196 441.613 43.196ZM446.982 44H448.062L449.598 39.452L451.074 44H452.154L454.194 37.88H453.198L451.602 42.86L450.078 37.88H449.166L447.558 42.86L446.034 37.88H445.002L446.982 44Z'
@@ -163,27 +107,9 @@ export function HowItWorksDiagram(props: React.SVGProps<SVGSVGElement>): ReactEl
 				}
 				fill={'currentcolor'}
 			/>
-			<rect
-				x={'442'}
-				y={'56'}
-				width={'2'}
-				height={'176'}
-				fill={'#999'}
-			/>
-			<rect
-				x={'474'}
-				y={'24'}
-				width={'2'}
-				height={'240'}
-				fill={'#999'}
-			/>
-			<rect
-				x={'914'}
-				y={'24'}
-				width={'2'}
-				height={'240'}
-				fill={'#999'}
-			/>
+			<rect x={'442'} y={'56'} width={'2'} height={'176'} fill={'#999'} />
+			<rect x={'474'} y={'24'} width={'2'} height={'240'} fill={'#999'} />
+			<rect x={'914'} y={'24'} width={'2'} height={'240'} fill={'#999'} />
 		</svg>
 	);
 }

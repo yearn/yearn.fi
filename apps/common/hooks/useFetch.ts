@@ -12,7 +12,10 @@ type TUseZodProps<T> = {
 };
 
 export function useFetch<T>({endpoint, schema, config}: TUseZodProps<T>): SWRResponse<T> & {isSuccess: boolean} {
-	const result = useSWR<T>(endpoint, baseFetcher, {revalidateOnFocus: false, ...config});
+	const result = useSWR<T>(endpoint, baseFetcher, {
+		revalidateOnFocus: false,
+		...config
+	});
 
 	if (!result.data || result.isLoading || result.isValidating) {
 		return {...result, isSuccess: false};

@@ -22,9 +22,7 @@ export function HeroTimer({endTime}: TProps): ReactElement {
 						className={
 							'flex w-full items-center justify-center text-center text-4xl font-bold uppercase text-neutral-900 md:text-8xl'
 						}>
-						<b
-							className={'font-number'}
-							suppressHydrationWarning>
+						<b className={'font-number'} suppressHydrationWarning>
 							{time}
 						</b>
 					</div>

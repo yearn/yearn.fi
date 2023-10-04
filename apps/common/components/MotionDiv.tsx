@@ -4,7 +4,11 @@ import {variants} from '@common/utils/animations';
 import type {AnimationProps} from 'framer-motion';
 import type {ReactElement} from 'react';
 
-type TMotionDiv = {animate: AnimationProps['animate']; name: string; children: ReactElement};
+type TMotionDiv = {
+	animate: AnimationProps['animate'];
+	name: string;
+	children: ReactElement;
+};
 
 export function MotionDiv({animate, name, children}: TMotionDiv): ReactElement {
 	return (

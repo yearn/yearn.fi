@@ -8,14 +8,14 @@ export type TAppSettingsContext = {
 	category: string;
 	selectedChains: string;
 	searchValue: string;
-	shouldHideDust: boolean,
-	shouldHideLowTVLVaults: boolean,
-	onSwitchHideDust: VoidFunction,
-	onSwitchHideLowTVLVaults: VoidFunction,
-	set_category: (v: string) => void
-	set_searchValue: (v: string) => void
-	set_selectedChains: (v: string) => void
-}
+	shouldHideDust: boolean;
+	shouldHideLowTVLVaults: boolean;
+	onSwitchHideDust: VoidFunction;
+	onSwitchHideLowTVLVaults: VoidFunction;
+	set_category: (v: string) => void;
+	set_searchValue: (v: string) => void;
+	set_selectedChains: (v: string) => void;
+};
 const defaultProps: TAppSettingsContext = {
 	category: '',
 	selectedChains: '[1]',
@@ -42,25 +42,31 @@ export const AppSettingsContextApp = memo(function AppSettingsContextApp({
 	const [shouldHideLowTVLVaults, set_shouldHideLowTVLVaults] = useLocalStorage('yearn.fi/hide-low-tvl', false);
 
 	/* 🔵 - Yearn Finance ******************************************************
-	**	Setup and render the Context provider to use in the app.
-	***************************************************************************/
-	const contextValue = useMemo((): TAppSettingsContext => ({
-		shouldHideDust,
-		onSwitchHideDust: (): void => set_shouldHideDust(!shouldHideDust),
-		shouldHideLowTVLVaults,
-		onSwitchHideLowTVLVaults: (): void => set_shouldHideLowTVLVaults(!shouldHideLowTVLVaults),
-		category,
-		selectedChains,
-		searchValue,
-		set_category,
-		set_searchValue,
-		set_selectedChains
-	}), [shouldHideDust, shouldHideLowTVLVaults, category, searchValue, set_category, set_searchValue, set_shouldHideDust, set_shouldHideLowTVLVaults]);
-
-	return (
-		<AppSettingsContext.Provider value={contextValue}>
-			{children}
-		</AppSettingsContext.Provider>
+	 **	Setup and render the Context provider to use in the app.
+	 ***************************************************************************/
+	const contextValue = useMemo(
+		(): TAppSettingsContext => ({
+			shouldHideDust,
+			onSwitchHideDust: (): void => set_shouldHideDust(!shouldHideDust),
+			shouldHideLowTVLVaults,
+			onSwitchHideLowTVLVaults: (): void => set_shouldHideLowTVLVaults(!shouldHideLowTVLVaults),
+			category,
+			selectedChains,
+			searchValue,
+			set_category,
+			set_searchValue,
+			set_selectedChains
+		}),
+		[
+			shouldHideDust,
+			shouldHideLowTVLVaults,
+			category,
+			searchValue,
+			set_category,
+			set_searchValue,
+			set_shouldHideDust,
+			set_shouldHideLowTVLVaults
+		]
 	);
 
 	return <AppSettingsContext.Provider value={contextValue}>{children}</AppSettingsContext.Provider>;

@@ -11,9 +11,7 @@ function DropdownItem({option}: TDropdownGaugeItemProps): ReactElement {
 	return (
 		<Combobox.Option value={option}>
 			{({active}): ReactElement => (
-				<div
-					data-active={active}
-					className={'yearn--dropdown-menu-item w-full hover:bg-neutral-0/40'}>
+				<div data-active={active} className={'yearn--dropdown-menu-item w-full hover:bg-neutral-0/40'}>
 					<div className={'h-6 w-6 flex-none rounded-full'}>
 						{option?.icon ? cloneElement(option.icon) : null}
 					</div>
@@ -88,9 +86,7 @@ export function Dropdown({options, selected, onSelect, placeholder = ''}: TDropd
 				/>
 			</Renderable>
 
-			<Combobox
-				value={selected}
-				onChange={onSelect}>
+			<Combobox value={selected} onChange={onSelect}>
 				<>
 					<Combobox.Button
 						onClick={(): void => set_isOpen(!isOpen)}
@@ -98,9 +94,7 @@ export function Dropdown({options, selected, onSelect, placeholder = ''}: TDropd
 							'flex h-10 w-full items-center justify-between bg-neutral-0 p-2 text-base text-neutral-900 md:px-3'
 						}>
 						<div className={'relative flex flex-row items-center'}>
-							<div
-								key={selected?.label}
-								className={'h-6 w-6 flex-none rounded-full'}>
+							<div key={selected?.label} className={'h-6 w-6 flex-none rounded-full'}>
 								{selected?.icon ? (
 									cloneElement(selected.icon)
 								) : (
@@ -147,10 +141,7 @@ export function Dropdown({options, selected, onSelect, placeholder = ''}: TDropd
 								fallback={<DropdownEmpty query={query} />}>
 								{filteredOptions.map(
 									(option): ReactElement => (
-										<DropdownItem
-											key={option.label}
-											option={option}
-										/>
+										<DropdownItem key={option.label} option={option} />
 									)
 								)}
 							</Renderable>

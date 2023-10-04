@@ -2,9 +2,21 @@ export const VAULT_FACTORY_ABI = [
 	{
 		inputs: [
 			{internalType: 'address', name: '_registry', type: 'address'},
-			{internalType: 'address', name: '_convexStratImplementation', type: 'address'},
-			{internalType: 'address', name: '_curveStratImplementation', type: 'address'},
-			{internalType: 'address', name: '_convexFraxStratImplementation', type: 'address'},
+			{
+				internalType: 'address',
+				name: '_convexStratImplementation',
+				type: 'address'
+			},
+			{
+				internalType: 'address',
+				name: '_curveStratImplementation',
+				type: 'address'
+			},
+			{
+				internalType: 'address',
+				name: '_convexFraxStratImplementation',
+				type: 'address'
+			},
 			{internalType: 'address', name: '_owner', type: 'address'}
 		],
 		stateMutability: 'nonpayable',
@@ -13,13 +25,48 @@ export const VAULT_FACTORY_ABI = [
 	{
 		anonymous: false,
 		inputs: [
-			{indexed: true, internalType: 'uint256', name: 'category', type: 'uint256'},
-			{indexed: true, internalType: 'address', name: 'lpToken', type: 'address'},
-			{indexed: false, internalType: 'address', name: 'gauge', type: 'address'},
-			{indexed: true, internalType: 'address', name: 'vault', type: 'address'},
-			{indexed: false, internalType: 'address', name: 'convexStrategy', type: 'address'},
-			{indexed: false, internalType: 'address', name: 'curveStrategy', type: 'address'},
-			{indexed: false, internalType: 'address', name: 'convexFraxStrategy', type: 'address'}
+			{
+				indexed: true,
+				internalType: 'uint256',
+				name: 'category',
+				type: 'uint256'
+			},
+			{
+				indexed: true,
+				internalType: 'address',
+				name: 'lpToken',
+				type: 'address'
+			},
+			{
+				indexed: false,
+				internalType: 'address',
+				name: 'gauge',
+				type: 'address'
+			},
+			{
+				indexed: true,
+				internalType: 'address',
+				name: 'vault',
+				type: 'address'
+			},
+			{
+				indexed: false,
+				internalType: 'address',
+				name: 'convexStrategy',
+				type: 'address'
+			},
+			{
+				indexed: false,
+				internalType: 'address',
+				name: 'curveStrategy',
+				type: 'address'
+			},
+			{
+				indexed: false,
+				internalType: 'address',
+				name: 'convexFraxStrategy',
+				type: 'address'
+			}
 		],
 		name: 'NewAutomatedVault',
 		type: 'event'
@@ -38,7 +85,13 @@ export const VAULT_FACTORY_ABI = [
 		stateMutability: 'view',
 		type: 'function'
 	},
-	{inputs: [], name: 'acceptOwner', outputs: [], stateMutability: 'nonpayable', type: 'function'},
+	{
+		inputs: [],
+		name: 'acceptOwner',
+		outputs: [],
+		stateMutability: 'nonpayable',
+		type: 'function'
+	},
 	{
 		inputs: [],
 		name: 'allDeployedVaults',
@@ -109,7 +162,11 @@ export const VAULT_FACTORY_ABI = [
 			{internalType: 'address', name: 'vault', type: 'address'},
 			{internalType: 'address', name: 'convexStrategy', type: 'address'},
 			{internalType: 'address', name: 'curveStrategy', type: 'address'},
-			{internalType: 'address', name: 'convexFraxStrategy', type: 'address'}
+			{
+				internalType: 'address',
+				name: 'convexFraxStrategy',
+				type: 'address'
+			}
 		],
 		stateMutability: 'nonpayable',
 		type: 'function'
@@ -125,7 +182,11 @@ export const VAULT_FACTORY_ABI = [
 			{internalType: 'address', name: 'vault', type: 'address'},
 			{internalType: 'address', name: 'convexStrategy', type: 'address'},
 			{internalType: 'address', name: 'curveStrategy', type: 'address'},
-			{internalType: 'address', name: 'convexFraxStrategy', type: 'address'}
+			{
+				internalType: 'address',
+				name: 'convexFraxStrategy',
+				type: 'address'
+			}
 		],
 		stateMutability: 'nonpayable',
 		type: 'function'
@@ -338,35 +399,65 @@ export const VAULT_FACTORY_ABI = [
 		type: 'function'
 	},
 	{
-		inputs: [{internalType: 'address', name: '_convexFraxPoolRegistry', type: 'address'}],
+		inputs: [
+			{
+				internalType: 'address',
+				name: '_convexFraxPoolRegistry',
+				type: 'address'
+			}
+		],
 		name: 'setConvexFraxPoolRegistry',
 		outputs: [],
 		stateMutability: 'nonpayable',
 		type: 'function'
 	},
 	{
-		inputs: [{internalType: 'address', name: '_convexFraxStratImplementation', type: 'address'}],
+		inputs: [
+			{
+				internalType: 'address',
+				name: '_convexFraxStratImplementation',
+				type: 'address'
+			}
+		],
 		name: 'setConvexFraxStratImplementation',
 		outputs: [],
 		stateMutability: 'nonpayable',
 		type: 'function'
 	},
 	{
-		inputs: [{internalType: 'address', name: '_convexPoolManager', type: 'address'}],
+		inputs: [
+			{
+				internalType: 'address',
+				name: '_convexPoolManager',
+				type: 'address'
+			}
+		],
 		name: 'setConvexPoolManager',
 		outputs: [],
 		stateMutability: 'nonpayable',
 		type: 'function'
 	},
 	{
-		inputs: [{internalType: 'address', name: '_convexStratImplementation', type: 'address'}],
+		inputs: [
+			{
+				internalType: 'address',
+				name: '_convexStratImplementation',
+				type: 'address'
+			}
+		],
 		name: 'setConvexStratImplementation',
 		outputs: [],
 		stateMutability: 'nonpayable',
 		type: 'function'
 	},
 	{
-		inputs: [{internalType: 'address', name: '_curveStratImplementation', type: 'address'}],
+		inputs: [
+			{
+				internalType: 'address',
+				name: '_curveStratImplementation',
+				type: 'address'
+			}
+		],
 		name: 'setCurveStratImplementation',
 		outputs: [],
 		stateMutability: 'nonpayable',
@@ -401,14 +492,26 @@ export const VAULT_FACTORY_ABI = [
 		type: 'function'
 	},
 	{
-		inputs: [{internalType: 'uint256', name: '_harvestProfitMaxInUsdc', type: 'uint256'}],
+		inputs: [
+			{
+				internalType: 'uint256',
+				name: '_harvestProfitMaxInUsdc',
+				type: 'uint256'
+			}
+		],
 		name: 'setHarvestProfitMaxInUsdc',
 		outputs: [],
 		stateMutability: 'nonpayable',
 		type: 'function'
 	},
 	{
-		inputs: [{internalType: 'uint256', name: '_harvestProfitMinInUsdc', type: 'uint256'}],
+		inputs: [
+			{
+				internalType: 'uint256',
+				name: '_harvestProfitMinInUsdc',
+				type: 'uint256'
+			}
+		],
 		name: 'setHarvestProfitMinInUsdc',
 		outputs: [],
 		stateMutability: 'nonpayable',

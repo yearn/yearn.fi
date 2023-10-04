@@ -29,9 +29,7 @@ function VaultHeaderLineItem({label, children, legend}: TVaultHeaderLineItemProp
 	return (
 		<div className={'flex flex-col items-center justify-center space-y-1 md:space-y-2'}>
 			<p className={'text-center text-xxs text-neutral-600 md:text-xs'}>{label}</p>
-			<b
-				className={'font-number text-lg md:text-3xl'}
-				suppressHydrationWarning>
+			<b className={'font-number text-lg md:text-3xl'} suppressHydrationWarning>
 				{children}
 			</b>
 			<legend
@@ -43,7 +41,7 @@ function VaultHeaderLineItem({label, children, legend}: TVaultHeaderLineItemProp
 	);
 }
 
-export function VaultDetailsHeader({vault}: { vault: TYDaemonVault }): ReactElement {
+export function VaultDetailsHeader({vault}: {vault: TYDaemonVault}): ReactElement {
 	const {address: userAddress} = useWeb3();
 	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: vault.chainID});
 	const {address, apy, tvl, decimals, symbol = 'token', token} = vault;
@@ -66,9 +64,7 @@ export function VaultDetailsHeader({vault}: { vault: TYDaemonVault }): ReactElem
 	const depositedAndStaked = toNormalizedBN(vaultBalance.raw + stakedBalance, decimals);
 
 	return (
-		<div
-			aria-label={'Vault Header'}
-			className={'col-span-12 flex w-full flex-col items-center justify-center'}>
+		<div aria-label={'Vault Header'} className={'col-span-12 flex w-full flex-col items-center justify-center'}>
 			<b
 				className={
 					'mx-auto flex w-full flex-row items-center justify-center text-center text-4xl tabular-nums text-neutral-900 md:text-8xl'
@@ -88,10 +84,7 @@ export function VaultDetailsHeader({vault}: { vault: TYDaemonVault }): ReactElem
 				<VaultHeaderLineItem
 					label={`Total deposited, ${token?.symbol || 'tokens'}`}
 					legend={formatUSD(tvl?.tvl || 0)}>
-					<RenderAmount
-						value={tvl?.total_assets}
-						decimals={decimals}
-					/>
+					<RenderAmount value={tvl?.total_assets} decimals={decimals} />
 				</VaultHeaderLineItem>
 
 				<VaultHeaderLineItem label={'Net APY'}>
@@ -105,19 +98,13 @@ export function VaultDetailsHeader({vault}: { vault: TYDaemonVault }): ReactElem
 				<VaultHeaderLineItem
 					label={`Balance, ${symbol}`}
 					legend={formatCounterValue(depositedAndStaked.normalized, vaultPrice)}>
-					<RenderAmount
-						value={depositedAndStaked.raw}
-						decimals={decimals}
-					/>
+					<RenderAmount value={depositedAndStaked.raw} decimals={decimals} />
 				</VaultHeaderLineItem>
 
 				<VaultHeaderLineItem
 					label={`Earned, ${token?.symbol || 'tokens'}`}
 					legend={formatCounterValue(normalizedVaultEarned.normalized, vaultPrice)}>
-					<RenderAmount
-						value={normalizedVaultEarned.raw}
-						decimals={decimals}
-					/>
+					<RenderAmount value={normalizedVaultEarned.raw} decimals={decimals} />
 				</VaultHeaderLineItem>
 			</div>
 		</div>

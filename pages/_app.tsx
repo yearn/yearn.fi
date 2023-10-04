@@ -62,7 +62,9 @@ const aeonik = localFont({
  ** The returned JSX structure is a div with the 'AppHeader' component, the current page component
  ** wrapped with layout, and the feedback popover if it should not be hidden.
  **************************************************************************************************/
-type TGetLayout = NextComponentType & {getLayout: (p: ReactElement, router: NextRouter) => ReactElement};
+type TGetLayout = NextComponentType & {
+	getLayout: (p: ReactElement, router: NextRouter) => ReactElement;
+};
 const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 	const {Component, pageProps, router} = props;
 	const getLayout = (Component as TGetLayout).getLayout || ((page: ReactElement): ReactElement => page);
@@ -187,11 +189,7 @@ const App = memo(function App(props: AppProps): ReactElement {
 				<WalletContextApp>
 					<Fragment>
 						<Meta meta={manifest} />
-						<WithLayout
-							Component={Component}
-							pageProps={pageProps}
-							router={props.router}
-						/>
+						<WithLayout Component={Component} pageProps={pageProps} router={props.router} />
 						<NetworkStatusIndicator />
 					</Fragment>
 				</WalletContextApp>
@@ -220,7 +218,9 @@ function MyApp(props: AppProps): ReactElement {
 			<WithYearn
 				supportedChains={[mainnet, optimism, fantom, base, arbitrum, localhost]}
 				options={{
-					baseSettings: {yDaemonBaseURI: process.env.YDAEMON_BASE_URI as string},
+					baseSettings: {
+						yDaemonBaseURI: process.env.YDAEMON_BASE_URI as string
+					},
 					ui: {shouldUseThemes: false}
 				}}>
 				<App {...props} />

@@ -81,7 +81,11 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 			}
 			const requestHash = await hash(serialize({...request, solver, expectedOut: quote.value.raw}));
 			performBatchedUpdates((): void => {
-				set_currentSolverState({...ctx, quote: quote.value, hash: requestHash});
+				set_currentSolverState({
+					...ctx,
+					quote: quote.value,
+					hash: requestHash
+				});
 				set_isLoading(false);
 			});
 		},
@@ -110,9 +114,19 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 				isDepositing: isDepositing
 			};
 
-		const isValidSolver = ({quote, solver}: { quote: PromiseSettledResult<TNormalizedBN>; solver: TSolver }): boolean => {
-			return quote.status === 'fulfilled' && (quote?.value.raw > 0n) && !isSolverDisabled(currentVault.chainID)[solver];
-		};
+			const isValidSolver = ({
+				quote,
+				solver
+			}: {
+				quote: PromiseSettledResult<TNormalizedBN>;
+				solver: TSolver;
+			}): boolean => {
+				return (
+					quote.status === 'fulfilled' &&
+					quote?.value.raw > 0n &&
+					!isSolverDisabled(currentVault.chainID)[solver]
+				);
+			};
 
 			switch (currentSolver) {
 				case Solver.enum.Wido:
@@ -125,20 +139,34 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 					]);
 
 					const solvers: {
-						[key in TSolver]?: {quote: PromiseSettledResult<TNormalizedBN>; ctx: TSolverContext};
+						[key in TSolver]?: {
+							quote: PromiseSettledResult<TNormalizedBN>;
+							ctx: TSolverContext;
+						};
 					} = {};
 
 					[
 						{solver: Solver.enum.Wido, quote: widoQuote, ctx: wido},
-						{solver: Solver.enum.Cowswap, quote: cowswapQuote, ctx: cowswap},
-						{solver: Solver.enum.Portals, quote: portalsQuote, ctx: portals}
+						{
+							solver: Solver.enum.Cowswap,
+							quote: cowswapQuote,
+							ctx: cowswap
+						},
+						{
+							solver: Solver.enum.Portals,
+							quote: portalsQuote,
+							ctx: portals
+						}
 					].forEach(({solver, quote, ctx}): void => {
 						if (isValidSolver({quote, solver})) {
 							solvers[solver] = {quote, ctx};
 						}
 					});
 
-					solvers[Solver.enum.None] = {quote: {status: 'fulfilled', value: toNormalizedBN(0)}, ctx: vanilla};
+					solvers[Solver.enum.None] = {
+						quote: {status: 'fulfilled', value: toNormalizedBN(0)},
+						ctx: vanilla
+					};
 
 					const solverPriority = [
 						Solver.enum.Wido,
@@ -160,7 +188,13 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 						const result = solvers[solver] ?? solvers[Solver.enum.None];
 						if (result) {
 							const {quote, ctx} = result;
-							await handleUpdateSolver({currentNonce, request, quote, solver, ctx});
+							await handleUpdateSolver({
+								currentNonce,
+								request,
+								quote,
+								solver,
+								ctx
+							});
 						}
 						return;
 					}
@@ -213,7 +247,13 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 				}
 				default: {
 					const [quote] = await Promise.allSettled([vanilla.init(request)]);
-					await handleUpdateSolver({currentNonce, request, quote, solver: Solver.enum.Vanilla, ctx: vanilla});
+					await handleUpdateSolver({
+						currentNonce,
+						request,
+						quote,
+						solver: Solver.enum.Vanilla,
+						ctx: vanilla
+					});
 				}
 			}
 		},

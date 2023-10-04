@@ -2,8 +2,18 @@ export const STAKING_REWARDS_REGISTRY_ABI = [
 	{
 		anonymous: false,
 		inputs: [
-			{indexed: false, internalType: 'address', name: 'account', type: 'address'},
-			{indexed: false, internalType: 'bool', name: 'canEndorse', type: 'bool'}
+			{
+				indexed: false,
+				internalType: 'address',
+				name: 'account',
+				type: 'address'
+			},
+			{
+				indexed: false,
+				internalType: 'bool',
+				name: 'canEndorse',
+				type: 'bool'
+			}
 		],
 		name: 'ApprovedPoolEndorser',
 		type: 'event'
@@ -11,8 +21,18 @@ export const STAKING_REWARDS_REGISTRY_ABI = [
 	{
 		anonymous: false,
 		inputs: [
-			{indexed: false, internalType: 'address', name: 'governance', type: 'address'},
-			{indexed: false, internalType: 'bool', name: 'approved', type: 'bool'}
+			{
+				indexed: false,
+				internalType: 'address',
+				name: 'governance',
+				type: 'address'
+			},
+			{
+				indexed: false,
+				internalType: 'bool',
+				name: 'approved',
+				type: 'bool'
+			}
 		],
 		name: 'ApprovedPoolOwnerUpdated',
 		type: 'event'
@@ -20,8 +40,18 @@ export const STAKING_REWARDS_REGISTRY_ABI = [
 	{
 		anonymous: false,
 		inputs: [
-			{indexed: true, internalType: 'address', name: 'previousOwner', type: 'address'},
-			{indexed: true, internalType: 'address', name: 'newOwner', type: 'address'}
+			{
+				indexed: true,
+				internalType: 'address',
+				name: 'previousOwner',
+				type: 'address'
+			},
+			{
+				indexed: true,
+				internalType: 'address',
+				name: 'newOwner',
+				type: 'address'
+			}
 		],
 		name: 'OwnershipTransferred',
 		type: 'event'
@@ -29,8 +59,18 @@ export const STAKING_REWARDS_REGISTRY_ABI = [
 	{
 		anonymous: false,
 		inputs: [
-			{indexed: true, internalType: 'address', name: 'token', type: 'address'},
-			{indexed: true, internalType: 'address', name: 'stakingPool', type: 'address'}
+			{
+				indexed: true,
+				internalType: 'address',
+				name: 'token',
+				type: 'address'
+			},
+			{
+				indexed: true,
+				internalType: 'address',
+				name: 'stakingPool',
+				type: 'address'
+			}
 		],
 		name: 'StakingPoolAdded',
 		type: 'event'
@@ -88,7 +128,13 @@ export const STAKING_REWARDS_REGISTRY_ABI = [
 		stateMutability: 'view',
 		type: 'function'
 	},
-	{inputs: [], name: 'renounceOwnership', outputs: [], stateMutability: 'nonpayable', type: 'function'},
+	{
+		inputs: [],
+		name: 'renounceOwnership',
+		outputs: [],
+		stateMutability: 'nonpayable',
+		type: 'function'
+	},
 	{
 		inputs: [
 			{internalType: 'address', name: '_addr', type: 'address'},

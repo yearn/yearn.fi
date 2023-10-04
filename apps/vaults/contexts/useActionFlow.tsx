@@ -169,11 +169,17 @@ export function ActionFlowContextApp({
 	const [actionParams, actionParamsDispatcher] = useReducer(
 		(
 			state: TActionParams,
-			action: {type: 'amount' | 'options' | 'all'; payload: Partial<TActionParams>}
+			action: {
+				type: 'amount' | 'options' | 'all';
+				payload: Partial<TActionParams>;
+			}
 		): TActionParams => {
 			switch (action.type) {
 				case 'amount':
-					return {...state, amount: action.payload.amount || toNormalizedBN(0)};
+					return {
+						...state,
+						amount: action.payload.amount || toNormalizedBN(0)
+					};
 				case 'options':
 					return {
 						...state,
@@ -679,7 +685,10 @@ export function ActionFlowContextApp({
 			possibleOptionsTo: [...actionParams.possibleOptionsTo, ...possibleZapOptionsTo],
 			actionParams,
 			onChangeAmount: (newAmount: TNormalizedBN): void => {
-				actionParamsDispatcher({type: 'amount', payload: {amount: newAmount}});
+				actionParamsDispatcher({
+					type: 'amount',
+					payload: {amount: newAmount}
+				});
 			},
 			onUpdateSelectedOptionFrom: (newSelectedOptionFrom: TDropdownOption): void => {
 				updateParams(newSelectedOptionFrom, actionParams?.selectedOptionTo as TDropdownOption);

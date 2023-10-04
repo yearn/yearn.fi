@@ -30,18 +30,8 @@ function APYLineItem({value, label, apyType}: TAPYLineItemProps): ReactElement {
 	return (
 		<div className={'flex flex-row items-center justify-between'}>
 			<p className={'text-sm text-neutral-500'}>{label}</p>
-			<p
-				className={'font-number text-sm text-neutral-900'}
-				suppressHydrationWarning>
-				{isNew ? (
-					'New'
-				) : (
-					<RenderAmount
-						value={safeValue}
-						symbol={'percent'}
-						decimals={6}
-					/>
-				)}
+			<p className={'font-number text-sm text-neutral-900'} suppressHydrationWarning>
+				{isNew ? 'New' : <RenderAmount value={safeValue} symbol={'percent'} decimals={6} />}
 			</p>
 		</div>
 	);
@@ -58,9 +48,7 @@ function YearnFeesLineItem({children, label, tooltip}: TYearnFeesLineItem): Reac
 						: ''
 				)}>
 				{tooltip ? (
-					<span
-						suppressHydrationWarning
-						className={'tooltipFees bottom-full'}>
+					<span suppressHydrationWarning className={'tooltipFees bottom-full'}>
 						<div
 							className={
 								'font-number w-96 border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
@@ -99,7 +87,9 @@ export function VaultDetailsAbout({
 					<b className={'text-neutral-900'}>{'Description'}</b>
 					<p
 						className={'mt-4 text-neutral-600'}
-						dangerouslySetInnerHTML={{__html: getVaultDescription()}}
+						dangerouslySetInnerHTML={{
+							__html: getVaultDescription()
+						}}
 					/>
 				</div>
 				<div>
@@ -123,11 +113,7 @@ export function VaultDetailsAbout({
 							/>
 						</div>
 						<div className={'mt-2 space-y-2 md:mt-0'}>
-							<APYLineItem
-								label={'Gross APR'}
-								apyType={currentVault.apy?.type}
-								value={apy.gross_apr}
-							/>
+							<APYLineItem label={'Gross APR'} apyType={currentVault.apy?.type} value={apy.gross_apr} />
 							<APYLineItem
 								label={'Net APY'}
 								apyType={currentVault.apy?.type}
