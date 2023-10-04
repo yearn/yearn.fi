@@ -18,7 +18,9 @@ type TSettingPopover = {
 
 function Label({children}: {children: string}): ReactElement {
 	return (
-		<label htmlFor={'zapProvider'} className={'font-bold text-neutral-900'}>
+		<label
+			htmlFor={'zapProvider'}
+			className={'font-bold text-neutral-900'}>
 			{children}
 		</label>
 	);
@@ -65,21 +67,31 @@ export function SettingsPopover({vault}: TSettingPopover): ReactElement {
 											value={!isSolverDisabled(chainID)[currentZapProvider] ? currentZapProvider : Solver.enum.Wido}
 											className={'mt-1 h-10 w-full overflow-x-scroll border-none bg-neutral-100 p-2 outline-none scrollbar-none'}>
 											{chainID === 1 ? (
-												<option disabled={isSolverDisabled(chainID)[Solver.enum.Cowswap]} value={Solver.enum.Cowswap}>
+												<option
+													disabled={isSolverDisabled(chainID)[Solver.enum.Cowswap]}
+													value={Solver.enum.Cowswap}>
 													{Solver.enum.Cowswap}
 												</option>
 											) : null}
-											<option disabled={isSolverDisabled(chainID)[Solver.enum.Wido]} value={Solver.enum.Wido}>
+											<option
+												disabled={isSolverDisabled(chainID)[Solver.enum.Wido]}
+												value={Solver.enum.Wido}>
 												{Solver.enum.Wido}
 											</option>
-											<option disabled={isSolverDisabled(chainID)[Solver.enum.Portals]} value={Solver.enum.Portals}>
+											<option
+												disabled={isSolverDisabled(chainID)[Solver.enum.Portals]}
+												value={Solver.enum.Portals}>
 												{Solver.enum.Portals}
 											</option>
 										</select>
 										<Renderable shouldRender={currentZapProvider === Solver.enum.Cowswap}>
 											<legend className={'text-xs italic text-neutral-500'}>
 												{'Submit a'}&nbsp;
-												<a className={'underline'} href={'https://docs.cow.fi/front-end/cowswap'} target={'_blank'} rel={'noreferrer'}>
+												<a
+													className={'underline'}
+													href={'https://docs.cow.fi/front-end/cowswap'}
+													target={'_blank'}
+													rel={'noreferrer'}>
 													{'gasless order'}
 												</a>
 												&nbsp;{'using CoW Swap.'}
@@ -88,7 +100,11 @@ export function SettingsPopover({vault}: TSettingPopover): ReactElement {
 										<Renderable shouldRender={currentZapProvider === Solver.enum.Wido}>
 											<legend className={'ml-2 text-xs text-neutral-500'}>
 												{'Submit an order via'}&nbsp;
-												<a className={'underline'} href={'https://www.joinwido.com/'} target={'_blank'} rel={'noreferrer'}>
+												<a
+													className={'underline'}
+													href={'https://www.joinwido.com/'}
+													target={'_blank'}
+													rel={'noreferrer'}>
 													{'Wido'}
 												</a>
 												&nbsp;{'(0.3% fee).'}
@@ -141,7 +157,10 @@ export function SettingsPopover({vault}: TSettingPopover): ReactElement {
 											<div className={'mt-1 flex flex-row space-x-2'}>
 												<div className={'flex grow items-center justify-between'}>
 													<p className={'mr-2'}>{'Stake automatically'}</p>
-													<Switch isEnabled={isStakingOpBoostedVaults} onSwitch={(): void => set_isStakingOpBoostedVaults(!isStakingOpBoostedVaults)} />
+													<Switch
+														isEnabled={isStakingOpBoostedVaults}
+														onSwitch={(): void => set_isStakingOpBoostedVaults(!isStakingOpBoostedVaults)}
+													/>
 												</div>
 											</div>
 										</div>

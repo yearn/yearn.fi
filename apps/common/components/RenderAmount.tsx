@@ -28,7 +28,9 @@ export function RenderAmount(props: TAmount): ReactElement {
 				shouldShowTooltip ? 'tooltip underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600' : ''
 			)}>
 			{shouldShowTooltip ? (
-				<span suppressHydrationWarning className={'tooltipLight bottom-full mb-1'}>
+				<span
+					suppressHydrationWarning
+					className={'tooltipLight bottom-full mb-1'}>
 					<div className={'font-number w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'}>{normalizedRawValue}</div>
 				</span>
 			) : (

@@ -37,9 +37,15 @@ export function VaultAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 			<div className={'flex flex-col text-right'}>
 				<span className={'tooltip'}>
 					<b className={'yearn--table-data-section-item-value'}>
-						<Renderable shouldRender={!(currentVault.apy?.type === 'new' && isZero(boostedAPR))} fallback={'New'}>
+						<Renderable
+							shouldRender={!(currentVault.apy?.type === 'new' && isZero(boostedAPR))}
+							fallback={'New'}>
 							{'⚡️ '}
-							<RenderAmount value={boostedAPR} symbol={'percent'} decimals={6} />
+							<RenderAmount
+								value={boostedAPR}
+								symbol={'percent'}
+								decimals={6}
+							/>
 						</Renderable>
 					</b>
 					<span className={'tooltipLight bottom-full mb-1'}>
@@ -47,12 +53,20 @@ export function VaultAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 							<div className={'flex flex-col items-start justify-start text-left'}>
 								<div className={'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'}>
 									<p>{'• Base APR '}</p>
-									<RenderAmount value={currentVault.apy?.gross_apr} symbol={'percent'} decimals={6} />
+									<RenderAmount
+										value={currentVault.apy?.gross_apr}
+										symbol={'percent'}
+										decimals={6}
+									/>
 								</div>
 
 								<div className={'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'}>
 									<p>{'• Rewards APR '}</p>
-									<RenderAmount value={currentVault.apy?.staking_rewards_apr} symbol={'percent'} decimals={6} />
+									<RenderAmount
+										value={currentVault.apy?.staking_rewards_apr}
+										symbol={'percent'}
+										decimals={6}
+									/>
 								</div>
 							</div>
 						</div>
@@ -68,8 +82,14 @@ export function VaultAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 			<span className={'tooltip'}>
 				<div className={'flex flex-col text-right'}>
 					<b className={'yearn--table-data-section-item-value'}>
-						<Renderable shouldRender={!(currentVault.apy?.type === 'new' && isZero(currentVault.apy?.net_apy))} fallback={'New'}>
-							<RenderAmount value={currentVault.apy?.net_apy} symbol={'percent'} decimals={6} />
+						<Renderable
+							shouldRender={!(currentVault.apy?.type === 'new' && isZero(currentVault.apy?.net_apy))}
+							fallback={'New'}>
+							<RenderAmount
+								value={currentVault.apy?.net_apy}
+								symbol={'percent'}
+								decimals={6}
+							/>
 						</Renderable>
 					</b>
 					<small className={'text-xs text-neutral-900'}>
@@ -82,7 +102,11 @@ export function VaultAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 							<div className={'flex flex-col items-start justify-start text-left'}>
 								<div className={'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'}>
 									<p>{'• Base APR '}</p>
-									<RenderAmount value={unBoostedAPR} symbol={'percent'} decimals={6} />
+									<RenderAmount
+										value={unBoostedAPR}
+										symbol={'percent'}
+										decimals={6}
+									/>
 								</div>
 
 								<div className={'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'}>
@@ -100,8 +124,14 @@ export function VaultAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 	return (
 		<div className={'flex flex-col text-right'}>
 			<b className={'yearn--table-data-section-item-value'}>
-				<Renderable shouldRender={!(currentVault.apy?.type === 'new' && isZero(currentVault.apy?.net_apy))} fallback={'New'}>
-					<RenderAmount value={currentVault.apy?.net_apy} symbol={'percent'} decimals={6} />
+				<Renderable
+					shouldRender={!(currentVault.apy?.type === 'new' && isZero(currentVault.apy?.net_apy))}
+					fallback={'New'}>
+					<RenderAmount
+						value={currentVault.apy?.net_apy}
+						symbol={'percent'}
+						decimals={6}
+					/>
 				</Renderable>
 			</b>
 		</div>
@@ -136,7 +166,9 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 	}, [currentVault.address, deposited, positionsMap, stakingRewardsByVault]);
 
 	return (
-		<Link key={`${currentVault.address}`} href={`/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`}>
+		<Link
+			key={`${currentVault.address}`}
+			href={`/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`}>
 			<div className={'yearn--table-wrapper cursor-pointer transition-colors hover:bg-neutral-300'}>
 				<div className={'flex max-w-[32px] flex-row items-center'}>{ChainIconMap.get(currentVault.chainID) ?? <IconEtherumChain />}</div>
 				<div className={'yearn--table-token-section'}>
@@ -154,12 +186,16 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 				</div>
 
 				<div className={'yearn--table-data-section'}>
-					<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
+					<div
+						className={'yearn--table-data-section-item md:col-span-2'}
+						datatype={'number'}>
 						<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'APY'}</label>
 						<VaultAPR currentVault={currentVault} />
 					</div>
 
-					<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
+					<div
+						className={'yearn--table-data-section-item md:col-span-2'}
+						datatype={'number'}>
 						<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Available'}</label>
 						<p className={`yearn--table-data-section-item-value ${isZero(availableToDeposit) ? 'text-neutral-400' : 'text-neutral-900'}`}>
 							<RenderAmount
@@ -171,14 +207,23 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 						</p>
 					</div>
 
-					<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
+					<div
+						className={'yearn--table-data-section-item md:col-span-2'}
+						datatype={'number'}>
 						<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Deposited'}</label>
 						<p className={`yearn--table-data-section-item-value ${isZero(staked) ? 'text-neutral-400' : 'text-neutral-900'}`}>
-							<RenderAmount value={staked} symbol={currentVault.token.symbol} decimals={currentVault.token.decimals} options={{shouldDisplaySymbol: false}} />
+							<RenderAmount
+								value={staked}
+								symbol={currentVault.token.symbol}
+								decimals={currentVault.token.decimals}
+								options={{shouldDisplaySymbol: false}}
+							/>
 						</p>
 					</div>
 
-					<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
+					<div
+						className={'yearn--table-data-section-item md:col-span-2'}
+						datatype={'number'}>
 						<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'TVL'}</label>
 						<p className={'yearn--table-data-section-item-value'}>
 							<RenderAmount

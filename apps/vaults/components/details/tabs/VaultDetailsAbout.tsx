@@ -30,8 +30,18 @@ function APYLineItem({value, label, apyType}: TAPYLineItemProps): ReactElement {
 	return (
 		<div className={'flex flex-row items-center justify-between'}>
 			<p className={'text-sm text-neutral-500'}>{label}</p>
-			<p className={'font-number text-sm text-neutral-900'} suppressHydrationWarning>
-				{isNew ? 'New' : <RenderAmount value={safeValue} symbol={'percent'} decimals={6} />}
+			<p
+				className={'font-number text-sm text-neutral-900'}
+				suppressHydrationWarning>
+				{isNew ? (
+					'New'
+				) : (
+					<RenderAmount
+						value={safeValue}
+						symbol={'percent'}
+						decimals={6}
+					/>
+				)}
 			</p>
 		</div>
 	);
@@ -43,7 +53,9 @@ function YearnFeesLineItem({children, label, tooltip}: TYearnFeesLineItem): Reac
 			<p className={'text-xxs text-neutral-600 md:text-xs'}>{label}</p>
 			<div className={cl(tooltip ? 'tooltip underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600' : '')}>
 				{tooltip ? (
-					<span suppressHydrationWarning className={'tooltipFees bottom-full'}>
+					<span
+						suppressHydrationWarning
+						className={'tooltipFees bottom-full'}>
 						<div className={'font-number w-96 border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'}>{tooltip}</div>
 					</span>
 				) : null}
@@ -80,14 +92,40 @@ export function VaultDetailsAbout({currentVault, harvestData}: {currentVault: TY
 					<b className={'text-neutral-900'}>{'APY'}</b>
 					<div className={'mt-4 grid grid-cols-1 gap-x-12 md:grid-cols-2'}>
 						<div className={'space-y-2'}>
-							<APYLineItem label={'Weekly APY'} apyType={currentVault.apy?.type} value={apy.points.week_ago} />
-							<APYLineItem label={'Monthly APY'} apyType={currentVault.apy?.type} value={apy.points.month_ago} />
-							<APYLineItem label={'Inception APY'} apyType={currentVault.apy?.type} value={apy.points.inception} />
+							<APYLineItem
+								label={'Weekly APY'}
+								apyType={currentVault.apy?.type}
+								value={apy.points.week_ago}
+							/>
+							<APYLineItem
+								label={'Monthly APY'}
+								apyType={currentVault.apy?.type}
+								value={apy.points.month_ago}
+							/>
+							<APYLineItem
+								label={'Inception APY'}
+								apyType={currentVault.apy?.type}
+								value={apy.points.inception}
+							/>
 						</div>
 						<div className={'mt-2 space-y-2 md:mt-0'}>
-							<APYLineItem label={'Gross APR'} apyType={currentVault.apy?.type} value={apy.gross_apr} />
-							<APYLineItem label={'Net APY'} apyType={currentVault.apy?.type} value={(apy.net_apy || 0) + (apy.staking_rewards_apr || 0)} />
-							{apy.staking_rewards_apr > 0 && <APYLineItem label={'Reward APR'} apyType={currentVault.apy?.type} value={apy.staking_rewards_apr} />}
+							<APYLineItem
+								label={'Gross APR'}
+								apyType={currentVault.apy?.type}
+								value={apy.gross_apr}
+							/>
+							<APYLineItem
+								label={'Net APY'}
+								apyType={currentVault.apy?.type}
+								value={(apy.net_apy || 0) + (apy.staking_rewards_apr || 0)}
+							/>
+							{apy.staking_rewards_apr > 0 && (
+								<APYLineItem
+									label={'Reward APR'}
+									apyType={currentVault.apy?.type}
+									value={apy.staking_rewards_apr}
+								/>
+							)}
 						</div>
 					</div>
 				</div>
@@ -116,9 +154,15 @@ export function VaultDetailsAbout({currentVault, harvestData}: {currentVault: TY
 				</div>
 				<div>
 					<b className={'text-neutral-900'}>{'Cumulative Earnings'}</b>
-					<div className={'-mx-2 mt-4 flex flex-row border-b border-l border-neutral-300 md:mx-0'} style={{height: 160}}>
+					<div
+						className={'-mx-2 mt-4 flex flex-row border-b border-l border-neutral-300 md:mx-0'}
+						style={{height: 160}}>
 						<Renderable shouldRender={isMounted()}>
-							<GraphForVaultEarnings currentVault={currentVault} harvestData={harvestData} height={160} />
+							<GraphForVaultEarnings
+								currentVault={currentVault}
+								harvestData={harvestData}
+								height={160}
+							/>
 						</Renderable>
 					</div>
 				</div>

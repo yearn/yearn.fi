@@ -89,7 +89,10 @@ function Index(): ReactElement | null {
 					animate={'enter'}
 					variants={variants}
 					className={'z-50 -mt-6 h-12 w-12 cursor-pointer md:-mt-36 md:h-[72px] md:w-[72px]'}>
-					<TokenIcon chainID={currentVault.chainID} token={currentVault.token} />
+					<TokenIcon
+						chainID={currentVault.chainID}
+						token={currentVault.token}
+					/>
 				</motion.div>
 			</header>
 

@@ -149,14 +149,21 @@ export function BalanceReminderPopover(): ReactElement {
 										<b>{isActive && address && ens ? ens : isActive && address ? truncateHex(address, 5) : 'Connect wallet'}</b>
 									</div>
 									<div className={'absolute right-4 top-4'}>
-										<button onClick={onDesactivate} className={'flex h-6 w-6 items-center justify-center rounded-full bg-neutral-200/50'}>
+										<button
+											onClick={onDesactivate}
+											className={'flex h-6 w-6 items-center justify-center rounded-full bg-neutral-200/50'}>
 											<IconCross className={'h-4 w-4 text-neutral-600'} />
 										</button>
 									</div>
-									<Renderable shouldRender={nonNullBalancesForVault.length > 0} fallback={renderNoTokenFallback(isLoading)}>
+									<Renderable
+										shouldRender={nonNullBalancesForVault.length > 0}
+										fallback={renderNoTokenFallback(isLoading)}>
 										{nonNullBalancesForVault.map(
 											(element): ReactElement => (
-												<TokenItem key={element.address} element={element} />
+												<TokenItem
+													key={element.address}
+													element={element}
+												/>
 											)
 										)}
 									</Renderable>

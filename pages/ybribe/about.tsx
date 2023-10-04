@@ -12,7 +12,9 @@ function About(): ReactElement {
 		<section className={'mt-4 grid w-full grid-cols-1 gap-10 pb-10 md:mt-20 md:grid-cols-2'}>
 			<div>
 				<div className={'mb-10 w-full bg-neutral-100 p-10'}>
-					<div aria-label={'Better Bribes'} className={'flex flex-col pb-6'}>
+					<div
+						aria-label={'Better Bribes'}
+						className={'flex flex-col pb-6'}>
 						<h2 className={'text-3xl font-bold'}>{'Better Bribes'}</h2>
 					</div>
 					<div aria-label={'Better Bribes details'}>
@@ -31,7 +33,9 @@ function About(): ReactElement {
 				</div>
 
 				<div className={'mb-10 w-full bg-neutral-100 p-10'}>
-					<div aria-label={'Claim Period'} className={'flex flex-col pb-6'}>
+					<div
+						aria-label={'Claim Period'}
+						className={'flex flex-col pb-6'}>
 						<h2 className={'text-3xl font-bold'}>{'Claim Period'}</h2>
 					</div>
 					<div aria-label={'Claim Period details'}>
@@ -50,7 +54,9 @@ function About(): ReactElement {
 				</div>
 
 				<div className={'mb-10 w-full bg-neutral-100 p-10'}>
-					<div aria-label={'Why Bribe?'} className={'flex flex-col pb-6'}>
+					<div
+						aria-label={'Why Bribe?'}
+						className={'flex flex-col pb-6'}>
 						<h2 className={'text-3xl font-bold'}>{'Why Bribe?'}</h2>
 					</div>
 					<div aria-label={'Why Bribe? details'}>

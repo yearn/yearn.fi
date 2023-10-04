@@ -64,11 +64,19 @@ export const MenuContextApp = ({children}: {children: React.ReactElement}): Reac
 	return (
 		<MenuContext.Provider value={contextValue}>
 			{children}
-			<ModalMobileMenu shouldUseWallets={true} shouldUseNetworks={true} isOpen={menu.isOpen} onClose={(): void => set_menu(defaultProps.menu)}>
+			<ModalMobileMenu
+				shouldUseWallets={true}
+				shouldUseNetworks={true}
+				isOpen={menu.isOpen}
+				onClose={(): void => set_menu(defaultProps.menu)}>
 				{(menu?.app || [])?.map(
 					(option): ReactElement => (
-						<Link key={option.path} href={option.path}>
-							<div className={'mobile-nav-item'} onClick={(): void => set_menu(defaultProps.menu)}>
+						<Link
+							key={option.path}
+							href={option.path}>
+							<div
+								className={'mobile-nav-item'}
+								onClick={(): void => set_menu(defaultProps.menu)}>
 								<p className={'font-bold'}>{option.label}</p>
 							</div>
 						</Link>

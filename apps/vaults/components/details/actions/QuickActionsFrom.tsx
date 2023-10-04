@@ -24,7 +24,14 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 	const selectedFromIcon = actionParams?.selectedOptionFrom?.icon;
 
 	function renderMultipleOptionsFallback(): ReactElement {
-		return <Dropdown defaultOption={possibleOptionsFrom[0]} options={possibleOptionsFrom} selected={actionParams?.selectedOptionFrom} onSelect={onUpdateSelectedOptionFrom} />;
+		return (
+			<Dropdown
+				defaultOption={possibleOptionsFrom[0]}
+				options={possibleOptionsFrom}
+				selected={actionParams?.selectedOptionFrom}
+				onSelect={onUpdateSelectedOptionFrom}
+			/>
+		);
 	}
 
 	const onChangeInput = useCallback(
@@ -35,15 +42,21 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 	);
 
 	return (
-		<section id={isActive ? 'active' : 'not-active'} className={'flex w-full flex-col space-x-0 md:flex-row md:space-x-4'}>
+		<section
+			id={isActive ? 'active' : 'not-active'}
+			className={'flex w-full flex-col space-x-0 md:flex-row md:space-x-4'}>
 			<div className={'relative z-10 w-full space-y-2'}>
 				<div className={'flex flex-row items-baseline justify-between'}>
 					<label className={'text-base text-neutral-600'}>{isDepositing ? 'From wallet' : 'From vault'}</label>
-					<legend className={'font-number inline text-xs text-neutral-600 md:hidden'} suppressHydrationWarning>
+					<legend
+						className={'font-number inline text-xs text-neutral-600 md:hidden'}
+						suppressHydrationWarning>
 						{`You have ${formatAmount(selectedFromBalance.normalized)} ${actionParams?.selectedOptionFrom?.symbol || 'tokens'}`}
 					</legend>
 				</div>
-				<Renderable shouldRender={!hasMultipleInputsToChooseFrom} fallback={renderMultipleOptionsFallback()}>
+				<Renderable
+					shouldRender={!hasMultipleInputsToChooseFrom}
+					fallback={renderMultipleOptionsFallback()}>
 					<div className={'flex h-10 w-full items-center justify-between bg-neutral-300 px-2 text-base text-neutral-900 md:w-56 md:px-3'}>
 						<div className={'relative flex flex-row items-center'}>
 							<div className={'h-6 w-6 flex-none rounded-full'}>{selectedFromIcon}</div>
@@ -52,12 +65,16 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 					</div>
 				</Renderable>
 
-				<legend className={'font-number hidden text-xs text-neutral-600 md:inline'} suppressHydrationWarning>
+				<legend
+					className={'font-number hidden text-xs text-neutral-600 md:inline'}
+					suppressHydrationWarning>
 					{`You have ${formatAmount(selectedFromBalance.normalized)} ${actionParams?.selectedOptionFrom?.symbol || 'tokens'}`}
 				</legend>
 			</div>
 			<div className={'w-full space-y-2'}>
-				<label htmlFor={'fromAmount'} className={'hidden text-base text-neutral-600 md:inline'}>
+				<label
+					htmlFor={'fromAmount'}
+					className={'hidden text-base text-neutral-600 md:inline'}>
 					{'Amount'}
 				</label>
 				<div className={'flex h-10 items-center bg-neutral-0 p-2'}>
@@ -80,7 +97,9 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 						</button>
 					</div>
 				</div>
-				<legend suppressHydrationWarning className={'font-number mr-1 text-end text-xs text-neutral-600 md:mr-0 md:text-start'}>
+				<legend
+					suppressHydrationWarning
+					className={'font-number mr-1 text-end text-xs text-neutral-600 md:mr-0 md:text-start'}>
 					{formatCounterValue(actionParams?.amount?.normalized || 0, selectedOptionFromPricePerToken)}
 				</legend>
 			</div>

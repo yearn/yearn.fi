@@ -33,8 +33,14 @@ function Logo(): ReactElement {
 			<VaultsHeader pathname={pathname} />
 			<VeYfiHeader pathname={pathname} />
 			<YBribeHeader pathname={pathname} />
-			<MotionDiv name={'yearn'} animate={pathname === '/' ? 'enter' : 'exit'}>
-				<LogoYearn className={'h-8 w-8'} back={'text-neutral-900'} front={'text-neutral-0'} />
+			<MotionDiv
+				name={'yearn'}
+				animate={pathname === '/' ? 'enter' : 'exit'}>
+				<LogoYearn
+					className={'h-8 w-8'}
+					back={'text-neutral-900'}
+					front={'text-neutral-0'}
+				/>
 			</MotionDiv>
 		</>
 	);
@@ -61,7 +67,10 @@ function LogoPopover(): ReactElement {
 	};
 
 	return (
-		<Popover onMouseEnter={(): void => set_isShowing(true)} onMouseLeave={(): void => set_isShowing(false)} className={'relative'}>
+		<Popover
+			onMouseEnter={(): void => set_isShowing(true)}
+			onMouseLeave={(): void => set_isShowing(false)}
+			className={'relative'}>
 			<Popover.Button className={'flex items-center'}>
 				<Link href={'/'}>
 					<span className={'sr-only'}>{'Back to home'}</span>
@@ -84,7 +93,11 @@ function LogoPopover(): ReactElement {
 								.filter(({isDisabled}): boolean => !isDisabled)
 								.map(({name, href, icon}): ReactElement => {
 									return (
-										<Link prefetch={false} key={name} href={href} onClick={(): void => set_isShowing(false)}>
+										<Link
+											prefetch={false}
+											key={name}
+											href={href}
+											onClick={(): void => set_isShowing(false)}>
 											<div
 												onClick={(): void => set_isShowing(false)}
 												className={'flex cursor-pointer flex-col items-center p-4 transition-colors hover:bg-neutral-200'}>

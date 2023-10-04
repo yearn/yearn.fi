@@ -31,13 +31,22 @@ export function Harvests(): ReactElement {
 					<h2 className={'text-lg font-bold md:text-3xl'}>{'Harvests'}</h2>
 				</div>
 				<div className={'flex flex-row space-x-0 divide-x border-x border-neutral-900'}>
-					<Button onClick={(): void => set_category('all')} variant={category === 'all' ? 'filled' : 'outlined'} className={'yearn--button-smaller !border-x-0'}>
+					<Button
+						onClick={(): void => set_category('all')}
+						variant={category === 'all' ? 'filled' : 'outlined'}
+						className={'yearn--button-smaller !border-x-0'}>
 						{'All'}
 					</Button>
-					<Button onClick={(): void => set_category('st-yCRV')} variant={category === 'st-yCRV' ? 'filled' : 'outlined'} className={'yearn--button-smaller !border-x-0'}>
+					<Button
+						onClick={(): void => set_category('st-yCRV')}
+						variant={category === 'st-yCRV' ? 'filled' : 'outlined'}
+						className={'yearn--button-smaller !border-x-0'}>
 						{'st-yCRV'}
 					</Button>
-					<Button onClick={(): void => set_category('lp-yCRV')} variant={category === 'lp-yCRV' ? 'filled' : 'outlined'} className={'yearn--button-smaller !border-x-0'}>
+					<Button
+						onClick={(): void => set_category('lp-yCRV')}
+						variant={category === 'lp-yCRV' ? 'filled' : 'outlined'}
+						className={'yearn--button-smaller !border-x-0'}>
 						{'lp-yCRV'}
 					</Button>
 				</div>
@@ -45,7 +54,12 @@ export function Harvests(): ReactElement {
 			<div className={'mt-4 grid w-full grid-cols-1 md:mt-0'}>
 				<HarvestListHead />
 				{(filteredHarvests || [])?.map((harvest: TYDaemonVaultHarvest, index: number): ReactElement => {
-					return <HarvestListRow key={`${harvest.timestamp}_${harvest.vaultAddress}_${index}`} harvest={harvest} />;
+					return (
+						<HarvestListRow
+							key={`${harvest.timestamp}_${harvest.vaultAddress}_${index}`}
+							harvest={harvest}
+						/>
+					);
 				})}
 			</div>
 		</div>

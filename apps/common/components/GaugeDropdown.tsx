@@ -11,7 +11,9 @@ function DropdownItem({option}: TDropdownGaugeItemProps): ReactElement {
 	return (
 		<Combobox.Option value={option}>
 			{({active}): ReactElement => (
-				<div data-active={active} className={'yearn--dropdown-menu-item w-full hover:bg-neutral-0/40'}>
+				<div
+					data-active={active}
+					className={'yearn--dropdown-menu-item w-full hover:bg-neutral-0/40'}>
 					<div className={'h-6 w-6 flex-none rounded-full'}>{option?.icon ? cloneElement(option.icon) : null}</div>
 					<div className={'flex w-full flex-row items-center justify-between'}>
 						<p className={`${option.icon ? 'pl-2' : 'pl-0'} font-normal text-neutral-900`}>{option.label}</p>
@@ -82,13 +84,17 @@ export function Dropdown({options, selected, onSelect, placeholder = ''}: TDropd
 				/>
 			</Renderable>
 
-			<Combobox value={selected} onChange={onSelect}>
+			<Combobox
+				value={selected}
+				onChange={onSelect}>
 				<>
 					<Combobox.Button
 						onClick={(): void => set_isOpen(!isOpen)}
 						className={'flex h-10 w-full items-center justify-between bg-neutral-0 p-2 text-base text-neutral-900 md:px-3'}>
 						<div className={'relative flex flex-row items-center'}>
-							<div key={selected?.label} className={'h-6 w-6 flex-none rounded-full'}>
+							<div
+								key={selected?.label}
+								className={'h-6 w-6 flex-none rounded-full'}>
 								{selected?.icon ? cloneElement(selected.icon) : <div className={'h-6 w-6 flex-none rounded-full bg-neutral-500'} />}
 							</div>
 							<p className={'max-w-[90%] overflow-x-hidden text-ellipsis whitespace-nowrap pl-2 font-normal text-neutral-900 scrollbar-none md:max-w-full'}>
@@ -102,7 +108,10 @@ export function Dropdown({options, selected, onSelect, placeholder = ''}: TDropd
 							</p>
 						</div>
 						<div className={'absolute right-2 md:right-3'}>
-							<IconChevron aria-hidden={'true'} className={`h-6 w-6 transition-transform ${isOpen ? '-rotate-180' : 'rotate-0'}`} />
+							<IconChevron
+								aria-hidden={'true'}
+								className={`h-6 w-6 transition-transform ${isOpen ? '-rotate-180' : 'rotate-0'}`}
+							/>
 						</div>
 					</Combobox.Button>
 					<Transition
@@ -115,11 +124,18 @@ export function Dropdown({options, selected, onSelect, placeholder = ''}: TDropd
 						leaveFrom={'transform scale-100 opacity-100'}
 						leaveTo={'transform scale-95 opacity-0'}
 						afterLeave={(): void => set_query('')}>
-						<Combobox.Options static className={'yearn--dropdown-menu z-50'}>
-							<Renderable shouldRender={filteredOptions.length > 0} fallback={<DropdownEmpty query={query} />}>
+						<Combobox.Options
+							static
+							className={'yearn--dropdown-menu z-50'}>
+							<Renderable
+								shouldRender={filteredOptions.length > 0}
+								fallback={<DropdownEmpty query={query} />}>
 								{filteredOptions.map(
 									(option): ReactElement => (
-										<DropdownItem key={option.label} option={option} />
+										<DropdownItem
+											key={option.label}
+											option={option}
+										/>
 									)
 								)}
 							</Renderable>

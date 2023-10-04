@@ -87,7 +87,9 @@ export function Popover(): ReactElement {
 	return (
 		<Portal>
 			<PopoverHeadlessUI className={'relative z-50'}>
-				<PopoverHeadlessUI.Button className={'fixed bottom-5 right-5 flex h-10 w-10 items-center justify-center rounded-full bg-orange-500'} ref={set_referenceElement}>
+				<PopoverHeadlessUI.Button
+					className={'fixed bottom-5 right-5 flex h-10 w-10 items-center justify-center rounded-full bg-orange-500'}
+					ref={set_referenceElement}>
 					<MessageIcon />
 				</PopoverHeadlessUI.Button>
 				<PopoverHeadlessUI.Overlay className={'fixed inset-0 bg-black opacity-30'} />
@@ -99,7 +101,10 @@ export function Popover(): ReactElement {
 					leave={'transition ease-in duration-150'}
 					leaveFrom={'opacity-100'}
 					leaveTo={'opacity-0'}>
-					<PopoverHeadlessUI.Panel ref={set_popperElement} style={styles.popper} {...attributes.popper}>
+					<PopoverHeadlessUI.Panel
+						ref={set_popperElement}
+						style={styles.popper}
+						{...attributes.popper}>
 						{({close}): ReactElement => (
 							<div className={'flex flex-col space-y-2 overflow-hidden rounded-lg border border-neutral-300/50 bg-neutral-0 p-6 pb-3 shadow shadow-transparent'}>
 								{isCoolingOff && <small>{`You can submit another report in ${timeLeft}`}</small>}

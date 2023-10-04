@@ -97,7 +97,12 @@ export function RedeemTab(): ReactElement {
 				</div>
 
 				<div className={'grid grid-cols-1 gap-4 md:grid-cols-4'}>
-					<AmountInput label={'You have oYFI'} amount={oYFIBalance.normalized} legend={formatCounterValue(oYFIBalance.normalized, optionPrice ?? 0)} disabled />
+					<AmountInput
+						label={'You have oYFI'}
+						amount={oYFIBalance.normalized}
+						legend={formatCounterValue(oYFIBalance.normalized, optionPrice ?? 0)}
+						disabled
+					/>
 					<AmountInput
 						label={'YFI you want to redeem'}
 						amount={redeemAmount.normalized}

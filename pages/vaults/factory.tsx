@@ -106,7 +106,12 @@ function Factory(): ReactElement {
 				(gauge: TCurveGaugeFromYearn): TDropdownGaugeOption => ({
 					label: gauge.gauge_name,
 					icon: (
-						<ImageWithFallback src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${toAddress(gauge.lp_token)}/logo-128.png`} alt={gauge.gauge_name} width={36} height={36} />
+						<ImageWithFallback
+							src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${toAddress(gauge.lp_token)}/logo-128.png`}
+							alt={gauge.gauge_name}
+							width={36}
+							height={36}
+						/>
 					),
 					value: {
 						name: gauge.gauge_name,
@@ -214,7 +219,9 @@ function Factory(): ReactElement {
 	return (
 		<section>
 			<div className={'mb-4 w-full bg-neutral-100 p-4 md:p-8'}>
-				<div aria-label={'new vault card title'} className={'flex flex-col pb-8'}>
+				<div
+					aria-label={'new vault card title'}
+					className={'flex flex-col pb-8'}>
 					<h2 className={'pb-4 text-3xl font-bold'}>{'Create new Vault'}</h2>
 					<div className={'w-full md:w-7/12'}>
 						<p>
@@ -235,30 +242,43 @@ function Factory(): ReactElement {
 					</div>
 				</div>
 
-				<div aria-label={'Available Curve pools'} className={'flex flex-col pb-[52px]'}>
+				<div
+					aria-label={'Available Curve pools'}
+					className={'flex flex-col pb-[52px]'}>
 					<div className={'grid grid-cols-1 gap-x-0 gap-y-5 md:grid-cols-6 md:gap-x-8'}>
 						<label className={'yearn--input relative z-10 col-span-2'}>
 							<p className={'!text-neutral-600'}>{'Available Curve pools'}</p>
-							<Dropdown placeholder={'Select Curve Pool'} options={gaugesOptions} selected={selectedOption} onSelect={set_selectedOption} />
+							<Dropdown
+								placeholder={'Select Curve Pool'}
+								options={gaugesOptions}
+								selected={selectedOption}
+								onSelect={set_selectedOption}
+							/>
 						</label>
 
 						<div className={'col-span-2 w-full space-y-1'}>
 							<p className={'text-neutral-600'}>{'Vault name'}</p>
-							<Renderable shouldRender={status !== 'loading'} fallback={loadingFallback()}>
+							<Renderable
+								shouldRender={status !== 'loading'}
+								fallback={loadingFallback()}>
 								<div className={'h-10 bg-neutral-200 p-2 text-neutral-600'}>{!gaugeDisplayData ? '' : `Curve ${gaugeDisplayData.name} Factory`}</div>
 							</Renderable>
 						</div>
 
 						<div className={'col-span-2 w-full space-y-1'}>
 							<p className={'text-neutral-600'}>{'Symbol'}</p>
-							<Renderable shouldRender={status !== 'loading'} fallback={loadingFallback()}>
+							<Renderable
+								shouldRender={status !== 'loading'}
+								fallback={loadingFallback()}>
 								<div className={'h-10 bg-neutral-200 p-2 text-neutral-600'}>{!gaugeDisplayData ? '' : `yvCurve-${gaugeDisplayData.symbol}-f`}</div>
 							</Renderable>
 						</div>
 
 						<div className={'col-span-3 w-full space-y-1'}>
 							<p className={'text-neutral-600'}>{'Pool address'}</p>
-							<Renderable shouldRender={status !== 'loading'} fallback={loadingFallback()}>
+							<Renderable
+								shouldRender={status !== 'loading'}
+								fallback={loadingFallback()}>
 								<div className={'flex h-10 flex-row items-center justify-between bg-neutral-200 p-2 font-mono'}>
 									<Renderable shouldRender={!!gaugeDisplayData}>
 										<p className={'overflow-hidden text-ellipsis text-neutral-600'}>{toAddress(gaugeDisplayData?.poolAddress)}</p>
@@ -275,7 +295,9 @@ function Factory(): ReactElement {
 						</div>
 						<div className={'col-span-3 w-full space-y-1'}>
 							<p className={'text-neutral-600'}>{'Gauge address'}</p>
-							<Renderable shouldRender={status !== 'loading'} fallback={loadingFallback()}>
+							<Renderable
+								shouldRender={status !== 'loading'}
+								fallback={loadingFallback()}>
 								<div className={'flex h-10 flex-row items-center justify-between bg-neutral-200 p-2 font-mono'}>
 									<Renderable shouldRender={!!gaugeDisplayData}>
 										<p className={'overflow-hidden text-ellipsis text-neutral-600'}>{toAddress(gaugeDisplayData?.gaugeAddress)}</p>
@@ -293,7 +315,9 @@ function Factory(): ReactElement {
 					</div>
 				</div>
 
-				<div aria-label={'actions'} className={'flex flex-row items-center space-x-6'}>
+				<div
+					aria-label={'actions'}
+					className={'flex flex-row items-center space-x-6'}>
 					<div>
 						<Button
 							onClick={onCreateNewVault}

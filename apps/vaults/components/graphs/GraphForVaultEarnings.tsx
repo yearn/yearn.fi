@@ -33,8 +33,12 @@ export function GraphForVaultEarnings({currentVault, harvestData, height = 312, 
 		return <Fragment />;
 	}
 	return (
-		<ResponsiveContainer width={'100%'} height={height}>
-			<LineChart margin={{top: 0, right: -28, bottom: 0, left: 0}} data={isCumulative ? cumulativeData : harvestData}>
+		<ResponsiveContainer
+			width={'100%'}
+			height={height}>
+			<LineChart
+				margin={{top: 0, right: -28, bottom: 0, left: 0}}
+				data={isCumulative ? cumulativeData : harvestData}>
 				<Line
 					className={'text-primary-600'}
 					type={'step'}
@@ -48,7 +52,10 @@ export function GraphForVaultEarnings({currentVault, harvestData, height = 312, 
 					dataKey={'value'}
 					stroke={'currentcolor'}
 				/>
-				<XAxis dataKey={'name'} hide />
+				<XAxis
+					dataKey={'name'}
+					hide
+				/>
 				<YAxis
 					orientation={'right'}
 					domain={['dataMin', 'auto']}

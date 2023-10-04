@@ -181,8 +181,16 @@ export function LockTab(): ReactElement {
 					/>
 				</div>
 				<div className={'grid grid-cols-1 gap-6 md:grid-cols-2'}>
-					<AmountInput label={'Total veYFI'} amount={formatUnits(votingPower, 18)} disabled />
-					<Button className={'w-full md:mt-7'} onClick={txAction.onAction} isDisabled={txAction.isDisabled || txAction.isLoading} isBusy={txAction.isLoading}>
+					<AmountInput
+						label={'Total veYFI'}
+						amount={formatUnits(votingPower, 18)}
+						disabled
+					/>
+					<Button
+						className={'w-full md:mt-7'}
+						onClick={txAction.onAction}
+						isDisabled={txAction.isDisabled || txAction.isLoading}
+						isBusy={txAction.isLoading}>
 						{txAction.label}
 					</Button>
 				</div>

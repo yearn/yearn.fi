@@ -26,7 +26,12 @@ function SelectAllOption(option: TMultiSelectOptionProps): ReactElement {
 		<Combobox.Option value={option}>
 			<div className={'flex w-full items-center justify-between p-2'}>
 				<p className={'pl-0 font-normal text-neutral-400'}>{option.label}</p>
-				<input type={'checkbox'} checked={option.selected} className={'checked:bg-black'} readOnly />
+				<input
+					type={'checkbox'}
+					checked={option.selected}
+					className={'checked:bg-black'}
+					readOnly
+				/>
 			</div>
 		</Combobox.Option>
 	);
@@ -40,7 +45,12 @@ function Option(option: TMultiSelectOptionProps): ReactElement {
 					{option?.icon ? <div className={'h-8 w-8 rounded-full'}>{option.icon}</div> : null}
 					<p className={`${option.icon ? 'pl-2' : 'pl-0'} font-normal text-neutral-900`}>{option.label}</p>
 				</div>
-				<input type={'checkbox'} checked={option.selected} className={'checked:bg-black'} readOnly />
+				<input
+					type={'checkbox'}
+					checked={option.selected}
+					className={'checked:bg-black'}
+					readOnly
+				/>
 			</div>
 		</Combobox.Option>
 	);
@@ -143,7 +153,10 @@ export function MultiSelectDropdown({options, onSelect, placeholder = ''}: TMult
 						spellCheck={false}
 						onChange={(event): void => set_query(event.target.value)}
 					/>
-					<IconChevron aria-hidden={'true'} className={`h-6 w-6 transition-transform ${isOpen ? '-rotate-180' : 'rotate-0'}`} />
+					<IconChevron
+						aria-hidden={'true'}
+						className={`h-6 w-6 transition-transform ${isOpen ? '-rotate-180' : 'rotate-0'}`}
+					/>
 				</Combobox.Button>
 				<Transition
 					as={Fragment}
@@ -158,10 +171,22 @@ export function MultiSelectDropdown({options, onSelect, placeholder = ''}: TMult
 						set_query('');
 					}}>
 					<Combobox.Options className={'absolute top-12 z-50 flex w-full cursor-pointer flex-col overflow-y-auto bg-white px-2 py-3 scrollbar-none'}>
-						<SelectAllOption key={'select-all'} label={'Select all'} selected={isSelectAll} value={'select_all'} />
-						<Renderable shouldRender={filteredOptions.length > 0} fallback={<DropdownEmpty query={query} />}>
+						<SelectAllOption
+							key={'select-all'}
+							label={'Select all'}
+							selected={isSelectAll}
+							value={'select_all'}
+						/>
+						<Renderable
+							shouldRender={filteredOptions.length > 0}
+							fallback={<DropdownEmpty query={query} />}>
 							{filteredOptions.map((option): ReactElement => {
-								return <Option key={option.value} {...option} />;
+								return (
+									<Option
+										key={option.value}
+										{...option}
+									/>
+								);
 							})}
 						</Renderable>
 					</Combobox.Options>

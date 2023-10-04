@@ -36,7 +36,10 @@ export function RewardFeedTable(): ReactElement | null {
 		<>
 			{currentItems.filter(Boolean).map(
 				(item, index): ReactNode => (
-					<RewardFeedTableRow key={`${index}-${item.txHash}_${item.briber}_${item.rewardToken}`} currentRewardAdded={item} />
+					<RewardFeedTableRow
+						key={`${index}-${item.txHash}_${item.briber}_${item.rewardToken}`}
+						currentRewardAdded={item}
+					/>
 				)
 			)}
 			<div className={'mt-4'}>

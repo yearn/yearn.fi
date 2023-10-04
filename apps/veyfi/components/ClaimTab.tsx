@@ -57,7 +57,11 @@ export function ClaimTab(): ReactElement {
 
 			<div className={'col-span-1 grid w-full gap-6'}>
 				<div className={'grid grid-cols-1 gap-6 md:mt-14 md:grid-cols-2'}>
-					<AmountInput label={'Unlocked YFI'} amount={formatUnits(toBigInt(claimableAmount), 18)} disabled />
+					<AmountInput
+						label={'Unlocked YFI'}
+						amount={formatUnits(toBigInt(claimableAmount), 18)}
+						disabled
+					/>
 					<Button
 						className={'w-full md:mt-7'}
 						onClick={onWithdrawUnlocked}

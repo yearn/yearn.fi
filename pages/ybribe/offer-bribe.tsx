@@ -194,12 +194,17 @@ function GaugeList(): ReactElement {
 					]}
 				/>
 
-				<Renderable shouldRender={sortedGauges.length > 0} fallback={<GaugeListEmpty />}>
+				<Renderable
+					shouldRender={sortedGauges.length > 0}
+					fallback={<GaugeListEmpty />}>
 					{sortedGauges
 						.filter((gauge): boolean => !!gauge)
 						.map(
 							(gauge): ReactNode => (
-								<GaugeListRow key={gauge.name} currentGauge={gauge} />
+								<GaugeListRow
+									key={gauge.name}
+									currentGauge={gauge}
+								/>
 							)
 						)}
 				</Renderable>
@@ -220,10 +225,15 @@ function OfferBribe(): ReactElement {
 				</Balancer>
 			</div>
 			<div className={'mb-10 flex flex-row items-center justify-center space-x-4 md:mb-0 md:space-x-10'}>
-				<Link href={'https://dao.curve.fi/gaugeweight'} target={'_blank'} className={'w-full md:w-auto'}>
+				<Link
+					href={'https://dao.curve.fi/gaugeweight'}
+					target={'_blank'}
+					className={'w-full md:w-auto'}>
 					<Button className={'w-full'}>{'Vote for Gauge'}</Button>
 				</Link>
-				<Link href={'/ybribe'} className={'w-full md:w-auto'}>
+				<Link
+					href={'/ybribe'}
+					className={'w-full md:w-auto'}>
 					<Button className={'w-full'}>{'Claim Bribe'}</Button>
 				</Link>
 			</div>

@@ -112,7 +112,11 @@ export function VaultDetailsQuickActionsButtons(): ReactElement {
 	) {
 		// ... then we need to approve the ChainCoin contract
 		return (
-			<Button className={'w-full'} isBusy={txStatusApprove.pending} isDisabled={isButtonDisabled || isZero(expectedOut.raw)} onClick={onApproveFrom}>
+			<Button
+				className={'w-full'}
+				isBusy={txStatusApprove.pending}
+				isDisabled={isButtonDisabled || isZero(expectedOut.raw)}
+				onClick={onApproveFrom}>
 				{'Approve'}
 			</Button>
 		);
@@ -145,7 +149,11 @@ export function VaultDetailsQuickActionsButtons(): ReactElement {
 			currentSolver === Solver.enum.OptimismBooster) // ... or the user is using the Optimism Booster ... // ... then we need to approve the from token
 	) {
 		return (
-			<Button className={'w-full'} isBusy={txStatusApprove.pending} isDisabled={isButtonDisabled || isZero(expectedOut.raw)} onClick={onApproveFrom}>
+			<Button
+				className={'w-full'}
+				isBusy={txStatusApprove.pending}
+				isDisabled={isButtonDisabled || isZero(expectedOut.raw)}
+				onClick={onApproveFrom}>
 				{'Approve'}
 			</Button>
 		);

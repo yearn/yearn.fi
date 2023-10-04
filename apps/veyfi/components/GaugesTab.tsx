@@ -148,7 +148,14 @@ export function GaugesTab(): ReactElement {
 						transform: ({vaultIcon, vaultName}): ReactElement => (
 							<div className={'flex flex-row items-center space-x-4 md:space-x-6'}>
 								<div className={'flex h-8 min-h-[32px] w-8 min-w-[32px] items-center justify-center rounded-full md:h-10 md:w-10'}>
-									<ImageWithFallback alt={vaultName} width={40} height={40} quality={90} src={vaultIcon} loading={'eager'} />
+									<ImageWithFallback
+										alt={vaultName}
+										width={40}
+										height={40}
+										quality={90}
+										src={vaultIcon}
+										loading={'eager'}
+									/>
 								</div>
 								<p>{vaultName}</p>
 							</div>

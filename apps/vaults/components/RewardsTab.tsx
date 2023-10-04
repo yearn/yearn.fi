@@ -145,7 +145,11 @@ export function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): React
 						value={`${trimAmount(rewardBalance.normalized)} ${rewardTokenBalance.symbol || 'yvOP'}`}
 						isDisabled
 					/>
-					<Button className={'w-full md:mt-7 md:w-[168px]'} onClick={onClaim} isBusy={claimStatus.pending} isDisabled={!isActive || isZero(rewardBalance.raw)}>
+					<Button
+						className={'w-full md:mt-7 md:w-[168px]'}
+						onClick={onClaim}
+						isBusy={claimStatus.pending}
+						isDisabled={!isActive || isZero(rewardBalance.raw)}>
 						{'Claim'}
 					</Button>
 				</div>

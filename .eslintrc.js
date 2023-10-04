@@ -24,7 +24,6 @@ module.exports = {
 				ImportDeclaration: {multiline: true, consistent: true},
 				ExportDeclaration: {multiline: true, minProperties: 3}
 			}
-		],
-		'react/jsx-max-props-per-line': 'off'
+		]
 	}
 };

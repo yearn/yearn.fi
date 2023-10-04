@@ -9,7 +9,9 @@ function About(): ReactElement {
 	return (
 		<section className={'mt-4 grid w-full grid-cols-1 gap-10 pb-10 md:mt-20 md:grid-cols-2'}>
 			<div className={'w-full bg-neutral-100 p-10'}>
-				<div aria-label={'Wtf is a Vault?'} className={'flex flex-col pb-6'}>
+				<div
+					aria-label={'Wtf is a Vault?'}
+					className={'flex flex-col pb-6'}>
 					<h2 className={'text-3xl font-bold'}>{'Wtf is a Vault?'}</h2>
 				</div>
 				<div aria-label={'Wtf is a Vault? details'}>
@@ -34,7 +36,9 @@ function About(): ReactElement {
 			</div>
 
 			<div className={'w-full bg-neutral-100 p-10'}>
-				<div aria-label={'Risk Score'} className={'flex flex-col pb-6'}>
+				<div
+					aria-label={'Risk Score'}
+					className={'flex flex-col pb-6'}>
 					<h2 className={'text-3xl font-bold'}>{'Risk Score'}</h2>
 				</div>
 				<div aria-label={'Risk Score details'}>
@@ -51,7 +55,11 @@ function About(): ReactElement {
 						</p>
 						<p className={'text-neutral-600'}>
 							{'For a full breakdown read more about our '}
-							<a href={'https://docs.yearn.fi/resources/risks/risk-score'} target={'_blank'} className={'text-neutral-900 underline'} rel={'noreferrer'}>
+							<a
+								href={'https://docs.yearn.fi/resources/risks/risk-score'}
+								target={'_blank'}
+								className={'text-neutral-900 underline'}
+								rel={'noreferrer'}>
 								{'Risk Scores'}
 							</a>
 							{'.'}
@@ -61,7 +69,9 @@ function About(): ReactElement {
 			</div>
 
 			<div className={'w-full bg-neutral-100 p-10'}>
-				<div aria-label={'Fees'} className={'flex flex-col pb-6'}>
+				<div
+					aria-label={'Fees'}
+					className={'flex flex-col pb-6'}>
 					<h2 className={'text-3xl font-bold'}>{'Fees'}</h2>
 				</div>
 				<div aria-label={'Fees'}>
@@ -76,7 +86,9 @@ function About(): ReactElement {
 			</div>
 
 			<div className={'w-full bg-neutral-100 p-10'}>
-				<div aria-label={'APY'} className={'flex flex-col pb-6'}>
+				<div
+					aria-label={'APY'}
+					className={'flex flex-col pb-6'}>
 					<h2 className={'text-3xl font-bold'}>{'APY'}</h2>
 				</div>
 				<div aria-label={'APY'}>
@@ -91,7 +103,9 @@ function About(): ReactElement {
 			</div>
 
 			<div className={'w-full bg-neutral-100 p-10'}>
-				<div aria-label={'Yearn? DeFi? I think I’m lost…'} className={'flex flex-col pb-6'}>
+				<div
+					aria-label={'Yearn? DeFi? I think I’m lost…'}
+					className={'flex flex-col pb-6'}>
 					<h2 className={'text-3xl font-bold'}>{'Yearn? DeFi? I think I’m lost…'}</h2>
 				</div>
 				<div aria-label={'Yearn? DeFi? I think I’m lost… details'}>
@@ -108,7 +122,11 @@ function About(): ReactElement {
 						</p>
 						<p className={'text-neutral-600'}>
 							{'We can’t offer you a phone number with ambient jazz hold music to listen to - but please feel free to hop into our '}
-							<a href={'https://discord.com/invite/6PNv2nF'} target={'_blank'} className={'text-neutral-900 underline'} rel={'noreferrer'}>
+							<a
+								href={'https://discord.com/invite/6PNv2nF'}
+								target={'_blank'}
+								className={'text-neutral-900 underline'}
+								rel={'noreferrer'}>
 								{'discord'}
 							</a>
 							{' if you have any questions, we’d love to chat.'}

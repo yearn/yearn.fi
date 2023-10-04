@@ -107,7 +107,9 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 	return (
 		<>
 			{isLedgerPluginVisible && (
-				<div aria-label={'Ledger Plugin'} className={'col-span-12 mt-10'}>
+				<div
+					aria-label={'Ledger Plugin'}
+					className={'col-span-12 mt-10'}>
 					<ImageWithOverlay
 						imageAlt={''}
 						imageWidth={2400}
@@ -122,7 +124,9 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 			)}
 
 			{currentVault?.migration?.available && (
-				<div aria-label={'Migration Warning'} className={'col-span-12 mt-10'}>
+				<div
+					aria-label={'Migration Warning'}
+					className={'col-span-12 mt-10'}>
 					<div className={'w-full bg-neutral-900 p-6 text-neutral-0'}>
 						<b className={'text-lg'}>{'Looks like this is an old vault.'}</b>
 						<p className={'mt-2'}>
@@ -135,7 +139,9 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 			)}
 
 			{!currentVault?.migration.available && currentVault?.details?.retired && (
-				<div aria-label={'Deprecation Warning'} className={'col-span-12 mt-10'}>
+				<div
+					aria-label={'Deprecation Warning'}
+					className={'col-span-12 mt-10'}>
 					<div className={'w-full bg-neutral-900 p-6 text-neutral-0'}>
 						<b className={'text-lg'}>{'This Vault is no longer supported (oh no).'}</b>
 						<p className={'mt-2'}>
@@ -152,7 +158,9 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 					<p className={'yearn--header-nav-item w-full whitespace-nowrap opacity-30'}>{'Back to vaults'}</p>
 				</Link>
 			</nav>
-			<div aria-label={'Vault Actions'} className={'col-span-12 mb-4 flex flex-col bg-neutral-100'}>
+			<div
+				aria-label={'Vault Actions'}
+				className={'col-span-12 mb-4 flex flex-col bg-neutral-100'}>
 				<div className={'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'}>
 					<nav className={'hidden flex-row items-center space-x-10 md:flex'}>
 						{possibleTabs.map(
@@ -175,7 +183,10 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 										);
 										onSwitchSelectedOptions(tab.flowAction);
 									}}>
-									<p title={tab.label} aria-selected={currentTab.value === tab.value} className={'hover-fix tab'}>
+									<p
+										title={tab.label}
+										aria-selected={currentTab.value === tab.value}
+										className={'hover-fix tab'}>
 										{tab.label}
 									</p>
 								</button>
@@ -216,7 +227,10 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 										<Listbox.Options className={'yearn--listbox-menu'}>
 											{possibleTabs.map(
 												(tab): ReactElement => (
-													<Listbox.Option className={'yearn--listbox-menu-item'} key={tab.value} value={tab.value}>
+													<Listbox.Option
+														className={'yearn--listbox-menu-item'}
+														key={tab.value}
+														value={tab.value}>
 														{tab.label}
 													</Listbox.Option>
 												)

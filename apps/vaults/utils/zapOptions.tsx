@@ -19,6 +19,13 @@ export function setZapOption({name, symbol, address, chainID, decimals, solveVia
 		value: address,
 		decimals,
 		solveVia,
-		icon: <ImageWithFallback src={`${process.env.BASE_YEARN_ASSETS_URI}/${chainID}/${address}/logo-128.png`} alt={name} width={36} height={36} />
+		icon: (
+			<ImageWithFallback
+				src={`${process.env.BASE_YEARN_ASSETS_URI}/${chainID}/${address}/logo-128.png`}
+				alt={name}
+				width={36}
+				height={36}
+			/>
+		)
 	};
 }

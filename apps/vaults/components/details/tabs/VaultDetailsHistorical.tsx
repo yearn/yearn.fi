@@ -82,7 +82,9 @@ export function VaultDetailsHistorical({currentVault, harvestData}: {currentVaul
 					</Button>
 				</div>
 			</div>
-			<div className={'mt-4 flex flex-row space-x-8 border-b border-l border-neutral-300'} style={{height: 312}}>
+			<div
+				className={'mt-4 flex flex-row space-x-8 border-b border-l border-neutral-300'}
+				style={{height: 312}}>
 				<Renderable shouldRender={isMounted() && isZero(selectedViewIndex)}>
 					<GraphForVaultTVL messariData={messariData} />
 				</Renderable>
@@ -92,7 +94,10 @@ export function VaultDetailsHistorical({currentVault, harvestData}: {currentVaul
 				</Renderable>
 
 				<Renderable shouldRender={isMounted() && selectedViewIndex === 2}>
-					<GraphForVaultEarnings currentVault={currentVault} harvestData={harvestData} />
+					<GraphForVaultEarnings
+						currentVault={currentVault}
+						harvestData={harvestData}
+					/>
 				</Renderable>
 			</div>
 		</div>

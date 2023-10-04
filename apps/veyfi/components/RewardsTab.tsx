@@ -110,7 +110,12 @@ export function RewardsTab(): ReactElement {
 				</div>
 
 				<div className={'grid grid-cols-1 gap-4 md:grid-cols-4'}>
-					<Dropdown label={'Gauge'} selected={selectedGauge} options={gaugeOptions} onChange={set_selectedGauge} />
+					<Dropdown
+						label={'Gauge'}
+						selected={selectedGauge}
+						options={gaugeOptions}
+						onChange={set_selectedGauge}
+					/>
 					<AmountInput
 						label={'Unclaimed rewards (oYFI)'}
 						amount={toNormalizedAmount(selectedGaugeRewards, 18)}

@@ -16,12 +16,18 @@ export function VaultsListInternalMigrationRow({currentVault}: {currentVault: TY
 	const balanceToMigrate = useBalance(currentVault.address, balances);
 
 	return (
-		<Link href={`/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`} className={'w-full'}>
+		<Link
+			href={`/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`}
+			className={'w-full'}>
 			<div className={'yearn--table-wrapper bg-neutral-900 text-neutral-0'}>
 				<div className={'yearn--table-token-section'}>
 					<div className={'yearn--table-token-section-item'}>
 						<div className={'yearn--table-token-section-item-image'}>
-							<TokenIcon chainID={currentVault.chainID} size={40} token={currentVault.token} />
+							<TokenIcon
+								chainID={currentVault.chainID}
+								size={40}
+								token={currentVault.token}
+							/>
 						</div>
 						<div className={'text-left'}>
 							<p>{vaultName}</p>
@@ -36,7 +42,9 @@ export function VaultsListInternalMigrationRow({currentVault}: {currentVault: TY
 					</div>
 
 					<div className={'col-span-2 flex h-auto flex-row items-center justify-between space-x-4 py-4 md:justify-end'}>
-						<button data-variant={'reverted'} className={'yearn--button-smaller reverted !w-full text-center'}>
+						<button
+							data-variant={'reverted'}
+							className={'yearn--button-smaller reverted !w-full text-center'}>
 							{'Migrate'}
 						</button>
 					</div>
