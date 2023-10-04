@@ -21,21 +21,12 @@ import {assert} from '@common/utils/assert';
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TTxResponse, TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TNormalizedBN} from '@common/types/types';
-import type {
-	Order,
-	OrderCreation,
-	OrderQuoteResponse,
-	SigningResult,
-	SigningScheme,
-	UnsignedOrder
-} from '@cowprotocol/cow-sdk';
+import type {Order, OrderCreation, OrderQuoteResponse, SigningResult, SigningScheme, UnsignedOrder} from '@cowprotocol/cow-sdk';
 import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
 
 const orderBookApi = new OrderBookApi({chainId: 1});
 
-async function getQuote(
-	request: TInitSolverArgs
-): Promise<{data: OrderQuoteResponse | undefined; error: Error | undefined}> {
+async function getQuote(request: TInitSolverArgs): Promise<{data: OrderQuoteResponse | undefined; error: Error | undefined}> {
 	const YEARN_APP_DATA = '0x5d22bf49b708de1d2d9547a6cca9faccbdc2b162012e8573811c07103b163d4b';
 	const quoteRequest = {
 		from: request.from, // receiver
@@ -94,10 +85,7 @@ export function useSolverCowswap(): TSolverContext {
 			}
 			const {quote} = currentQuote;
 			const buyAmount = Number(ethers.utils.formatUnits(quote.buyAmount, decimals));
-			const withSlippage = ethers.utils.parseUnits(
-				(buyAmount * (1 - Number(zapSlippage / 100))).toFixed(decimals),
-				decimals
-			);
+			const withSlippage = ethers.utils.parseUnits((buyAmount * (1 - Number(zapSlippage / 100))).toFixed(decimals), decimals);
 			return withSlippage.toString();
 		},
 		[zapSlippage]
@@ -205,10 +193,7 @@ export function useSolverCowswap(): TSolverContext {
 	 ** boolean value indicating whether the order was successful or not.
 	 ** It will timeout once the order is no longer valid or after 50 minutes (max should be 30mn)
 	 **********************************************************************************************/
-	async function checkOrderStatus(
-		orderUID: string,
-		validTo: number
-	): Promise<{isSuccessful: boolean; error?: Error}> {
+	async function checkOrderStatus(orderUID: string, validTo: number): Promise<{isSuccessful: boolean; error?: Error}> {
 		for (let i = 0; i < maxIterations; i++) {
 			const {data: order} = await axios.get(`https://api.cow.fi/mainnet/api/v1/orders/${orderUID}`);
 			if (order?.status === 'fulfilled') {
@@ -249,10 +234,7 @@ export function useSolverCowswap(): TSolverContext {
 		assert(request?.current, 'No request available');
 
 		const {quote, from, id} = latestQuote.current;
-		const buyAmountWithSlippage = getBuyAmountWithSlippage(
-			latestQuote.current,
-			request.current.outputToken.decimals
-		);
+		const buyAmountWithSlippage = getBuyAmountWithSlippage(latestQuote.current, request.current.outputToken.decimals);
 		quote.buyAmount = buyAmountWithSlippage;
 		const {signature, signingScheme} = await signCowswapOrder(quote as Order);
 		const orderCreation: OrderCreation = {
@@ -288,10 +270,7 @@ export function useSolverCowswap(): TSolverContext {
 		if (!latestQuote?.current?.quote?.buyAmount || isDisabled) {
 			return toNormalizedBN(0);
 		}
-		return toNormalizedBN(
-			toBigInt(latestQuote?.current?.quote?.buyAmount),
-			request?.current?.outputToken?.decimals || 18
-		);
+		return toNormalizedBN(toBigInt(latestQuote?.current?.quote?.buyAmount), request?.current?.outputToken?.decimals || 18);
 	}, [latestQuote, isDisabled]);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -304,17 +283,9 @@ export function useSolverCowswap(): TSolverContext {
 				return toNormalizedBN(0);
 			}
 			assert(request.current, 'Request is not defined');
-			assert(
-				request?.current?.inputToken?.solveVia?.includes(Solver.enum.Cowswap),
-				'Input token is not supported by Cowswap'
-			);
+			assert(request?.current?.inputToken?.solveVia?.includes(Solver.enum.Cowswap), 'Input token is not supported by Cowswap');
 
-			const key = allowanceKey(
-				safeChainID,
-				request.current.inputToken.value,
-				request.current.outputToken.value,
-				request.current.from
-			);
+			const key = allowanceKey(safeChainID, request.current.inputToken.value, request.current.outputToken.value, request.current.from);
 			if (existingAllowances.current[key] && !shouldForceRefetch) {
 				return existingAllowances.current[key];
 			}
@@ -335,19 +306,12 @@ export function useSolverCowswap(): TSolverContext {
 	 ** of the token by the Cowswap solver.
 	 **************************************************************************/
 	const onApprove = useCallback(
-		async (
-			amount = MAX_UINT_256,
-			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: () => Promise<void>
-		): Promise<void> => {
+		async (amount = MAX_UINT_256, txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>, onSuccess: () => Promise<void>): Promise<void> => {
 			if (isDisabled) {
 				return;
 			}
 			assert(request.current, 'Request is not defined');
-			assert(
-				request?.current?.inputToken?.solveVia?.includes(Solver.enum.Cowswap),
-				'Input token is not supported by Cowswap'
-			);
+			assert(request?.current?.inputToken?.solveVia?.includes(Solver.enum.Cowswap), 'Input token is not supported by Cowswap');
 
 			const isApproved = await isApprovedERC20(
 				provider,
@@ -378,10 +342,7 @@ export function useSolverCowswap(): TSolverContext {
 	 ** simply swapping the input token for the output token.
 	 **************************************************************************/
 	const onExecute = useCallback(
-		async (
-			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: () => Promise<void>
-		): Promise<void> => {
+		async (txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>, onSuccess: () => Promise<void>): Promise<void> => {
 			assert(provider, 'Provider is not defined');
 			txStatusSetter({...defaultTxStatus, pending: true});
 

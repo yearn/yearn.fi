@@ -37,11 +37,7 @@ export function useSolverInternalMigration(): TSolverContext {
 					address: ZAP_YEARN_VE_CRV_ADDRESS,
 					abi: ZAP_CRV_ABI,
 					functionName: 'calc_expected_out',
-					args: [
-						request.current.inputToken.value,
-						request.current.outputToken.value,
-						request.current.inputAmount
-					]
+					args: [request.current.inputToken.value, request.current.outputToken.value, request.current.inputAmount]
 				});
 				const minAmountWithSlippage = estimateOut - (estimateOut * 6n) / 10_000n;
 				latestQuote.current = toNormalizedBN(minAmountWithSlippage);
@@ -72,12 +68,7 @@ export function useSolverInternalMigration(): TSolverContext {
 				return toNormalizedBN(0);
 			}
 
-			const key = allowanceKey(
-				safeChainID,
-				toAddress(request.current.inputToken.value),
-				toAddress(request.current.outputToken.value),
-				toAddress(request.current.from)
-			);
+			const key = allowanceKey(safeChainID, toAddress(request.current.inputToken.value), toAddress(request.current.outputToken.value), toAddress(request.current.from));
 			if (existingAllowances.current[key] && !shouldForceRefetch) {
 				return existingAllowances.current[key];
 			}
@@ -100,11 +91,7 @@ export function useSolverInternalMigration(): TSolverContext {
 	 ** (not connected) or if the tx is still pending.
 	 **************************************************************************/
 	const onApprove = useCallback(
-		async (
-			amount = MAX_UINT_256,
-			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: () => Promise<void>
-		): Promise<void> => {
+		async (amount = MAX_UINT_256, txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>, onSuccess: () => Promise<void>): Promise<void> => {
 			assert(request.current, 'Request is not set');
 			assert(request.current.inputToken, 'Input token is not defined');
 			assert(request.current.migrator, 'Input token is not defined');
@@ -128,10 +115,7 @@ export function useSolverInternalMigration(): TSolverContext {
 	 ** the selected vault.
 	 **************************************************************************/
 	const onExecuteMigration = useCallback(
-		async (
-			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: () => Promise<void>
-		): Promise<void> => {
+		async (txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>, onSuccess: () => Promise<void>): Promise<void> => {
 			assert(request.current, 'Request is not set');
 
 			if (request.current.migrator === ZAP_YEARN_VE_CRV_ADDRESS) {
@@ -139,11 +123,7 @@ export function useSolverInternalMigration(): TSolverContext {
 					address: ZAP_YEARN_VE_CRV_ADDRESS,
 					abi: ZAP_CRV_ABI,
 					functionName: 'calc_expected_out',
-					args: [
-						request.current.inputToken.value,
-						request.current.outputToken.value,
-						request.current.inputAmount
-					]
+					args: [request.current.inputToken.value, request.current.outputToken.value, request.current.inputAmount]
 				});
 				const result = await zapCRV({
 					connector: provider,

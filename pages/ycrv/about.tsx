@@ -1,12 +1,7 @@
 import {useState} from 'react';
 import {Balancer} from 'react-wrap-balancer';
 import {Button} from '@yearn-finance/web-lib/components/Button';
-import {
-	LPYCRV_V2_TOKEN_ADDRESS,
-	STYCRV_TOKEN_ADDRESS,
-	YCRV_TOKEN_ADDRESS,
-	ZAP_YEARN_VE_CRV_ADDRESS
-} from '@yearn-finance/web-lib/utils/constants';
+import {LPYCRV_V2_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import SettingsOverwrite from '@common/components/SettingsOverwrite';
 import {useYCRV} from '@yCRV/contexts/useYCRV';
 import {Wrapper} from '@yCRV/Wrapper';
@@ -24,11 +19,7 @@ function ContractListRow({label, address}: TContractListRowProps): ReactElement 
 		<p key={address} className={'pb-4 text-neutral-600'}>
 			<b>{label}</b>
 			{': '}
-			<a
-				href={`https://etherscan.io/address/${address}#code`}
-				target={'_blank'}
-				className={'text-neutral-900 underline'}
-				rel={'noreferrer'}>
+			<a href={`https://etherscan.io/address/${address}#code`} target={'_blank'} className={'text-neutral-900 underline'} rel={'noreferrer'}>
 				{address}
 			</a>
 		</p>
@@ -55,11 +46,7 @@ function About(): ReactElement {
 						</p>
 						<p className={'text-neutral-600'}>
 							{'For more info on each token, and how to use the UI read our '}
-							<a
-								href={'https://docs.yearn.fi/getting-started/products/ycrv/overview'}
-								target={'_blank'}
-								className={'text-neutral-900 underline'}
-								rel={'noreferrer'}>
+							<a href={'https://docs.yearn.fi/getting-started/products/ycrv/overview'} target={'_blank'} className={'text-neutral-900 underline'} rel={'noreferrer'}>
 								{'docs'}
 							</a>
 							{'.'}
@@ -82,9 +69,7 @@ function About(): ReactElement {
 							<span className={'text-neutral-900'}>{'lp-yCRV'}</span>
 							{' is generating better yield, you can swap anytime on the main page. Or vice versa.'}
 						</p>
-						<p className={'text-neutral-600'}>
-							{'You get more yield, and a fun swap experience. Win win.'}
-						</p>
+						<p className={'text-neutral-600'}>{'You get more yield, and a fun swap experience. Win win.'}</p>
 					</Balancer>
 				</div>
 			</div>
@@ -97,9 +82,7 @@ function About(): ReactElement {
 				<div aria-label={'Better tokens, better yield details'}>
 					<Balancer>
 						<p className={'pb-4 text-neutral-600'}>
-							{
-								'By simplifying our product (and naming conventions) we can focus on getting users the best ‘hands off’ yield around.'
-							}
+							{'By simplifying our product (and naming conventions) we can focus on getting users the best ‘hands off’ yield around.'}
 						</p>
 						<p className={'pb-4 text-neutral-600'}>
 							<span className={'text-neutral-900'}>{'yCRV'}</span>
@@ -152,26 +135,16 @@ function About(): ReactElement {
 				</div>
 				<div aria-label={'Don’t get caught slippin’ details'}>
 					<Balancer>
-						<p className={'pb-4 text-neutral-600'}>
-							{
-								'Slippage is set to 1% and hidden by default to streamline the experience for the average user.'
-							}
-						</p>
+						<p className={'pb-4 text-neutral-600'}>{'Slippage is set to 1% and hidden by default to streamline the experience for the average user.'}</p>
 						<p className={'pb-4 text-neutral-600'}>
 							{'For advanced apes users worried about MEV we advise using '}
-							<a
-								href={'https://securerpc.com/'}
-								target={'_blank'}
-								className={'text-neutral-900 underline'}
-								rel={'noreferrer'}>
+							<a href={'https://securerpc.com/'} target={'_blank'} className={'text-neutral-900 underline'} rel={'noreferrer'}>
 								{'SecureRpc'}
 							</a>
 							{'.'}
 						</p>
 						<p className={'text-neutral-600'}>
-							{
-								'If the above sentence causes your brain to wrinkle and eyes to glaze over, then you do not need to worry about this step. '
-							}
+							{'If the above sentence causes your brain to wrinkle and eyes to glaze over, then you do not need to worry about this step. '}
 						</p>
 					</Balancer>
 				</div>
@@ -180,19 +153,14 @@ function About(): ReactElement {
 						{'Slippage tolerance'}
 					</label>
 					<div className={'flex flex-row space-x-2'}>
-						<div
-							className={
-								'flex h-10 w-40 min-w-[72px] items-center border-2 border-neutral-700 bg-neutral-0 px-0 py-4 md:min-w-[160px]'
-							}>
+						<div className={'flex h-10 w-40 min-w-[72px] items-center border-2 border-neutral-700 bg-neutral-0 px-0 py-4 md:min-w-[160px]'}>
 							<input
 								id={'slippageTolerance'}
 								type={'number'}
 								min={0}
 								step={0.1}
 								max={100}
-								className={
-									'h-10 w-full overflow-x-scroll border-none bg-transparent p-2 text-right outline-none scrollbar-none'
-								}
+								className={'h-10 w-full overflow-x-scroll border-none bg-transparent p-2 text-right outline-none scrollbar-none'}
 								value={localSlippage}
 								onChange={(e): void => {
 									set_localSlippage(parseFloat(e.target.value) || 0);
@@ -200,20 +168,13 @@ function About(): ReactElement {
 							/>
 							<p className={'mt-1 pr-2 text-neutral-900/60'}>{'%'}</p>
 						</div>
-						<button
-							onClick={(): void => set_localSlippage(2)}
-							className={'flex h-10 items-center bg-neutral-300 p-2'}>
+						<button onClick={(): void => set_localSlippage(2)} className={'flex h-10 items-center bg-neutral-300 p-2'}>
 							<p className={'pr-5 text-neutral-900'}>{'2%'}</p>
 						</button>
-						<button
-							onClick={(): void => set_localSlippage(3)}
-							className={'flex h-10 items-center bg-neutral-300 p-2'}>
+						<button onClick={(): void => set_localSlippage(3)} className={'flex h-10 items-center bg-neutral-300 p-2'}>
 							<p className={'pr-5 text-neutral-900'}>{'3%'}</p>
 						</button>
-						<Button
-							isDisabled={slippage === localSlippage}
-							className={'w-full'}
-							onClick={(): void => set_slippage(localSlippage)}>
+						<Button isDisabled={slippage === localSlippage} className={'w-full'} onClick={(): void => set_slippage(localSlippage)}>
 							{'Submit'}
 						</Button>
 					</div>
@@ -227,9 +188,7 @@ function About(): ReactElement {
 				</div>
 				<div aria-label={'‘Mum... where do yields come from?’ details'}>
 					<Balancer>
-						<p className={'pb-6 text-neutral-600'}>
-							{'Well anon, when a gauge and a pool love each other very much...'}
-						</p>
+						<p className={'pb-6 text-neutral-600'}>{'Well anon, when a gauge and a pool love each other very much...'}</p>
 						<b>{'st-yCRV'}</b>
 						<p className={'pb-4 text-neutral-600'}>
 							{

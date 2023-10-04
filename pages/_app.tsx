@@ -72,13 +72,7 @@ const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 				<AppHeader />
 				<LazyMotion features={domAnimation}>
 					<AnimatePresence mode={'wait'}>
-						<motion.div
-							key={name}
-							initial={'initial'}
-							animate={'enter'}
-							exit={'exit'}
-							className={'my-0 h-full md:mb-0 md:mt-16'}
-							variants={variants}>
+						<motion.div key={name} initial={'initial'} animate={'enter'} exit={'exit'} className={'my-0 h-full md:mb-0 md:mt-16'} variants={variants}>
 							{getLayout(<Component router={props.router} {...pageProps} />, router)}
 							{!shouldHidePopover && <Popover />}
 						</motion.div>
@@ -140,10 +134,7 @@ function NetworkStatusIndicator(): ReactElement {
 	}
 
 	return (
-		<div
-			className={
-				'fixed inset-x-0 bottom-0 flex items-center justify-center space-x-2 bg-yearn-blue py-2 text-center text-sm text-white'
-			}>
+		<div className={'fixed inset-x-0 bottom-0 flex items-center justify-center space-x-2 bg-yearn-blue py-2 text-center text-sm text-white'}>
 			<IconSpinner className={'h-3 w-3'} />
 			<b>{"Updating data points, data may be inaccurate for a few minutes. Don't panic. DON'T PANIC!!!"}</b>
 		</div>

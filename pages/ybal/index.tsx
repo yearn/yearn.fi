@@ -25,17 +25,12 @@ function HeaderPosition(): ReactElement {
 	const lpyBalPrice = useTokenPrice(LPYBAL_TOKEN_ADDRESS);
 
 	const formatedYearnHas = useMemo(
-		(): string =>
-			holdings?.veBalBalance ? formatAmount(formatToNormalizedValue(holdings.veBalBalance, 18), 0, 0) : '',
+		(): string => (holdings?.veBalBalance ? formatAmount(formatToNormalizedValue(holdings.veBalBalance, 18), 0, 0) : ''),
 		[holdings?.veBalBalance]
 	);
 
 	const formatedYouHave = useMemo(
-		(): string =>
-			formatCounterValueRaw(
-				balanceOfStyBal.normalized * styBalPrice + balanceOfLpyBal.normalized * lpyBalPrice,
-				1
-			),
+		(): string => formatCounterValueRaw(balanceOfStyBal.normalized * styBalPrice + balanceOfLpyBal.normalized * lpyBalPrice, 1),
 		[balanceOfStyBal.normalized, styBalPrice, balanceOfLpyBal.normalized, lpyBalPrice]
 	);
 
@@ -44,23 +39,13 @@ function HeaderPosition(): ReactElement {
 			<div className={'col-span-12 w-full md:col-span-8'}>
 				<p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl'}>{'Yearn has'}</p>
 				<b className={'font-number text-4xl text-neutral-900 md:text-7xl'}>
-					<ValueAnimation
-						identifier={'veBalTreasury'}
-						value={formatedYearnHas}
-						suffix={'veBal'}
-						defaultValue={formatAmount(0, 2, 2)}
-					/>
+					<ValueAnimation identifier={'veBalTreasury'} value={formatedYearnHas} suffix={'veBal'} defaultValue={formatAmount(0, 2, 2)} />
 				</b>
 			</div>
 			<div className={'col-span-12 w-full md:col-span-4'}>
 				<p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl'}>{'You have'}</p>
 				<b className={'font-number text-3xl text-neutral-900 md:text-7xl'}>
-					<ValueAnimation
-						identifier={'youHave'}
-						value={formatedYouHave}
-						prefix={'$'}
-						defaultValue={formatAmount(0, 2, 2)}
-					/>
+					<ValueAnimation identifier={'youHave'} value={formatedYouHave} prefix={'$'} defaultValue={formatAmount(0, 2, 2)} />
 				</b>
 			</div>
 		</Fragment>
@@ -90,9 +75,7 @@ function Holdings(): ReactElement {
 						<div className={'flex flex-row items-baseline justify-between pb-1'}>
 							<span className={'inline text-sm font-normal text-neutral-400'}>{'PEG: '}</span>
 							<p suppressHydrationWarning className={'font-number text-sm text-neutral-900'}>
-								{holdings?.balYBalPeg
-									? formatPercent((formatToNormalizedValue(holdings?.balYBalPeg, 18) + 0.0015) * 100)
-									: formatPercent(0)}
+								{holdings?.balYBalPeg ? formatPercent((formatToNormalizedValue(holdings?.balYBalPeg, 18) + 0.0015) * 100) : formatPercent(0)}
 							</p>
 						</div>
 					</div>
@@ -126,9 +109,7 @@ function Holdings(): ReactElement {
 						<div className={'flex flex-row items-center justify-between pb-1'}>
 							<span className={'inline text-sm font-normal text-neutral-400'}>{'Total Assets: '}</span>
 							<p suppressHydrationWarning className={'font-number text-sm text-neutral-900'}>
-								{holdings?.styBalSupply
-									? formatCounterValue(formatToNormalizedValue(holdings.styBalSupply, 18), yBalPrice)
-									: formatAmount(0)}
+								{holdings?.styBalSupply ? formatCounterValue(formatToNormalizedValue(holdings.styBalSupply, 18), yBalPrice) : formatAmount(0)}
 							</p>
 						</div>
 						<div className={'flex flex-row items-center justify-between pb-1'}>
@@ -168,12 +149,7 @@ function Holdings(): ReactElement {
 						<div className={'flex flex-row items-center justify-between pb-1'}>
 							<span className={'inline text-sm font-normal text-neutral-400'}>{'Total Assets: '}</span>
 							<p suppressHydrationWarning className={'font-number text-sm text-neutral-900'}>
-								{holdings?.lpyBalSupply
-									? formatCounterValue(
-											formatToNormalizedValue(holdings.lpyBalSupply, 18),
-											lpyBalPrice
-									  )
-									: formatAmount(0)}
+								{holdings?.lpyBalSupply ? formatCounterValue(formatToNormalizedValue(holdings.lpyBalSupply, 18), lpyBalPrice) : formatAmount(0)}
 							</p>
 						</div>
 						<div className={'flex flex-row items-center justify-between pb-1'}>

@@ -62,9 +62,7 @@ export function ManageLockTab(): ReactElement {
 		if (!positions?.deposit || !newUnlockTime) {
 			return 0n;
 		}
-		return willExtendLock
-			? getVotingPower(positions?.deposit?.underlyingBalance, newUnlockTime)
-			: toBigInt(positions?.deposit?.balance);
+		return willExtendLock ? getVotingPower(positions?.deposit?.underlyingBalance, newUnlockTime) : toBigInt(positions?.deposit?.balance);
 	}, [positions?.deposit, newUnlockTime, willExtendLock]);
 
 	const {isValid: isValidLockTime, error: lockTimeError} = validateAmount({
@@ -93,13 +91,7 @@ export function ManageLockTab(): ReactElement {
 						amount={lockTime}
 						onAmountChange={(amount): void => set_lockTime(Math.floor(toTime(amount)).toString())}
 						maxAmount={MAX_LOCK_TIME - weeksToUnlock > 0 ? MAX_LOCK_TIME - weeksToUnlock : 0}
-						onMaxClick={(): void =>
-							set_lockTime(
-								Math.floor(
-									toTime(MAX_LOCK_TIME - weeksToUnlock > 0 ? MAX_LOCK_TIME - weeksToUnlock : 0)
-								).toString()
-							)
-						}
+						onMaxClick={(): void => set_lockTime(Math.floor(toTime(MAX_LOCK_TIME - weeksToUnlock > 0 ? MAX_LOCK_TIME - weeksToUnlock : 0)).toString())}
 						disabled={!hasLockedAmount}
 						error={lockTimeError}
 						legend={'Minimum: 1 week'}
@@ -111,14 +103,7 @@ export function ManageLockTab(): ReactElement {
 						className={'w-full md:mt-7'}
 						onClick={onExtendLockTime}
 						isBusy={extendLockTimeStatus.pending}
-						isDisabled={
-							!isActive ||
-							!isValidNetwork ||
-							!isValidLockTime ||
-							extendLockTimeStatus.pending ||
-							!votingEscrow ||
-							!address
-						}>
+						isDisabled={!isActive || !isValidNetwork || !isValidLockTime || extendLockTimeStatus.pending || !votingEscrow || !address}>
 						{'Extend'}
 					</Button>
 				</div>
@@ -132,11 +117,7 @@ export function ManageLockTab(): ReactElement {
 					</div>
 				</div>
 				<div className={'grid grid-cols-1 gap-6 md:grid-cols-2 md:pb-5'}>
-					<AmountInput
-						label={'veYFI you have'}
-						amount={formatUnits(toBigInt(positions?.deposit?.balance), 18)}
-						disabled
-					/>
+					<AmountInput label={'veYFI you have'} amount={formatUnits(toBigInt(positions?.deposit?.balance), 18)} disabled />
 					<AmountInput label={'Current lock time (weeks)'} amount={weeksToUnlock} disabled />
 				</div>
 				<div className={'grid grid-cols-1 gap-6 md:grid-cols-2'}>
@@ -150,14 +131,7 @@ export function ManageLockTab(): ReactElement {
 						className={'w-full md:mt-7'}
 						onClick={onWithdrawLocked}
 						isBusy={withdrawLockedStatus.pending}
-						isDisabled={
-							!isActive ||
-							!isValidNetwork ||
-							!hasPenalty ||
-							withdrawLockedStatus.pending ||
-							!votingEscrow ||
-							!address
-						}>
+						isDisabled={!isActive || !isValidNetwork || !hasPenalty || withdrawLockedStatus.pending || !votingEscrow || !address}>
 						{'Exit'}
 					</Button>
 				</div>

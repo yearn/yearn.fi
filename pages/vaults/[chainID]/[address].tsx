@@ -29,9 +29,7 @@ function Index(): ReactElement | null {
 	const {yDaemonBaseUri} = useYDaemonBaseURI({
 		chainID: Number(router.query.chainID)
 	});
-	const [currentVault, set_currentVault] = useState<TYDaemonVault | undefined>(
-		vaults[toAddress(router.query.address as string)]
-	);
+	const [currentVault, set_currentVault] = useState<TYDaemonVault | undefined>(vaults[toAddress(router.query.address as string)]);
 	const {data: vault, isLoading: isLoadingVault} = useFetch<TYDaemonVault>({
 		endpoint: `${yDaemonBaseUri}/vaults/${toAddress(router.query.address as string)}?${new URLSearchParams({
 			strategiesDetails: 'withDetails',
@@ -76,9 +74,7 @@ function Index(): ReactElement | null {
 		return (
 			<div className={'relative flex h-14 flex-col items-center justify-center px-4 text-center'}>
 				<div className={'flex h-10 items-center justify-center'}>
-					<p className={'text-sm text-neutral-900'}>
-						{"We couln't find this vault on the connected network."}
-					</p>
+					<p className={'text-sm text-neutral-900'}>{"We couln't find this vault on the connected network."}</p>
 				</div>
 			</div>
 		);

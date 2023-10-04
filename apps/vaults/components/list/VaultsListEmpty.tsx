@@ -32,9 +32,7 @@ export function VaultsListEmpty({
 		return (
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
 				<b className={'text-center text-lg'}>{'Well this is awkward...'}</b>
-				<p className={'text-center text-neutral-600'}>
-					{"You don't appear to have any deposits in our Vaults. There's an easy way to change that 😏"}
-				</p>
+				<p className={'text-center text-neutral-600'}>{"You don't appear to have any deposits in our Vaults. There's an easy way to change that 😏"}</p>
 			</div>
 		);
 	}
@@ -99,11 +97,7 @@ export function VaultsListEmptyFactory({
 		return (
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
 				<b className={'text-center text-lg'}>{'Well this is awkward...'}</b>
-				<p className={'text-center text-neutral-600'}>
-					{
-						"You don't appear to have any deposits in our Factory Vaults. There's an easy way to change that 😏"
-					}
-				</p>
+				<p className={'text-center text-neutral-600'}>{"You don't appear to have any deposits in our Factory Vaults. There's an easy way to change that 😏"}</p>
 			</div>
 		);
 	}

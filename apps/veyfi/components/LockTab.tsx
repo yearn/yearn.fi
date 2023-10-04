@@ -29,13 +29,7 @@ export function LockTab(): ReactElement {
 	const {provider, address, isActive} = useWeb3();
 	const {safeChainID} = useChainID();
 	const {refresh: refreshBalances} = useWallet();
-	const {
-		votingEscrow,
-		positions,
-		allowances,
-		isLoading: isLoadingVotingEscrow,
-		refresh: refreshVotingEscrow
-	} = useVotingEscrow();
+	const {votingEscrow, positions, allowances, isLoading: isLoadingVotingEscrow, refresh: refreshVotingEscrow} = useVotingEscrow();
 	const tokenBalance = useBalance(toAddress(votingEscrow?.token));
 	const hasLockedAmount = toBigInt(positions?.deposit?.underlyingBalance) > 0n;
 	const [approveLockStatus, set_approveLockStatus] = useState(defaultTxStatus);
@@ -129,17 +123,8 @@ export function LockTab(): ReactElement {
 		walletNetwork: safeChainID
 	});
 
-	const isApproveDisabled =
-		!isActive || !isValidNetwork || isApproved || isLoadingVotingEscrow || !votingEscrow || !address;
-	const isLockDisabled =
-		!isActive ||
-		!isValidNetwork ||
-		!isApproved ||
-		!isValidLockAmount ||
-		!isValidLockTime ||
-		isLoadingVotingEscrow ||
-		!votingEscrow ||
-		!address;
+	const isApproveDisabled = !isActive || !isValidNetwork || isApproved || isLoadingVotingEscrow || !votingEscrow || !address;
+	const isLockDisabled = !isActive || !isValidNetwork || !isApproved || !isValidLockAmount || !isValidLockTime || isLoadingVotingEscrow || !votingEscrow || !address;
 	const txAction = !isApproved
 		? {
 				label: 'Approve',
@@ -168,11 +153,7 @@ export function LockTab(): ReactElement {
 				<div className={'mt-6 text-neutral-600'}>
 					<p>{'Lock your YFI for veYFI to take part in Yearn governance.'}</p>
 					<br />
-					<p>
-						{
-							'Please note, governance is currently the only use for veYFI until the full platform launches ‘soon’. Stay tuned anon.'
-						}
-					</p>
+					<p>{'Please note, governance is currently the only use for veYFI until the full platform launches ‘soon’. Stay tuned anon.'}</p>
 				</div>
 			</div>
 
@@ -201,11 +182,7 @@ export function LockTab(): ReactElement {
 				</div>
 				<div className={'grid grid-cols-1 gap-6 md:grid-cols-2'}>
 					<AmountInput label={'Total veYFI'} amount={formatUnits(votingPower, 18)} disabled />
-					<Button
-						className={'w-full md:mt-7'}
-						onClick={txAction.onAction}
-						isDisabled={txAction.isDisabled || txAction.isLoading}
-						isBusy={txAction.isLoading}>
+					<Button className={'w-full md:mt-7'} onClick={txAction.onAction} isDisabled={txAction.isDisabled || txAction.isLoading} isBusy={txAction.isLoading}>
 						{txAction.label}
 					</Button>
 				</div>

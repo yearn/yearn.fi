@@ -13,11 +13,7 @@ import type {TSortDirection} from '@common/types/types';
 
 export type TPossibleSortBy = 'apy' | 'tvl' | 'name' | 'deposited' | 'available';
 
-export function useSortVaults(
-	vaultList: TYDaemonVaults,
-	sortBy: TPossibleSortBy,
-	sortDirection: TSortDirection
-): TYDaemonVaults {
+export function useSortVaults(vaultList: TYDaemonVaults, sortBy: TPossibleSortBy, sortDirection: TSortDirection): TYDaemonVaults {
 	const {balances, balancesNonce} = useWallet();
 	const {stakingRewardsByVault, positionsMap} = useStakingRewards();
 
@@ -45,24 +41,15 @@ export function useSortVaults(
 		[sortDirection, vaultList]
 	);
 
-	const sortedByTVL = useCallback(
-		(): TYDaemonVaults => vaultList.sort((a, b): number => numberSort({a: a.tvl.tvl, b: b.tvl.tvl, sortDirection})),
-		[sortDirection, vaultList]
-	);
+	const sortedByTVL = useCallback((): TYDaemonVaults => vaultList.sort((a, b): number => numberSort({a: a.tvl.tvl, b: b.tvl.tvl, sortDirection})), [sortDirection, vaultList]);
 
 	const sortedByDeposited = useCallback((): TYDaemonVaults => {
 		balancesNonce; // remove warning, force deep refresh
 		return vaultList.sort((a, b): number => {
 			const aDepositedBalance = balances[toAddress(a.address)]?.normalized || 0;
 			const bDepositedBalance = balances[toAddress(b.address)]?.normalized || 0;
-			const aStakedBalance = toNormalizedValue(
-				toBigInt(positionsMap[toAddress(stakingRewardsByVault[a.address])]?.stake),
-				a.decimals
-			);
-			const bStakedBalance = toNormalizedValue(
-				toBigInt(positionsMap[toAddress(stakingRewardsByVault[b.address])]?.stake),
-				b.decimals
-			);
+			const aStakedBalance = toNormalizedValue(toBigInt(positionsMap[toAddress(stakingRewardsByVault[a.address])]?.stake), a.decimals);
+			const bStakedBalance = toNormalizedValue(toBigInt(positionsMap[toAddress(stakingRewardsByVault[b.address])]?.stake), b.decimals);
 			if (sortDirection === 'asc') {
 				return aDepositedBalance + aStakedBalance - (bDepositedBalance + bStakedBalance);
 			}
@@ -112,16 +99,7 @@ export function useSortVaults(
 		}
 
 		return sortResult;
-	}, [
-		sortBy,
-		sortDirection,
-		sortedByAPY,
-		sortedByAvailable,
-		sortedByDeposited,
-		sortedByName,
-		sortedByTVL,
-		stringifiedVaultList
-	]);
+	}, [sortBy, sortDirection, sortedByAPY, sortedByAvailable, sortedByDeposited, sortedByName, sortedByTVL, stringifiedVaultList]);
 
 	return sortedVaults;
 }

@@ -107,13 +107,7 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 				chainId: 1
 			});
 
-			const [asset, name, symbol, decimals, totalAssets] = results.map(({result}): unknown => result) as [
-				TAddress,
-				string,
-				string,
-				number,
-				bigint
-			];
+			const [asset, name, symbol, decimals, totalAssets] = results.map(({result}): unknown => result) as [TAddress, string, string, number, bigint];
 
 			return {
 				address,
@@ -127,28 +121,21 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 		return Promise.all(gaugePromises);
 	}, []);
 
-	const [{result: allowancesMap, status: fetchAllowancesMapStatus}, {execute: refreshAllowances}] = useAsync(
-		async (): Promise<TDict<bigint> | undefined> => {
-			if (!gauges || !isActive) {
-				return;
-			}
-			return allowancesFetcher();
-		},
-		{}
-	);
+	const [{result: allowancesMap, status: fetchAllowancesMapStatus}, {execute: refreshAllowances}] = useAsync(async (): Promise<TDict<bigint> | undefined> => {
+		if (!gauges || !isActive) {
+			return;
+		}
+		return allowancesFetcher();
+	}, {});
 
-	const [{result: positions, status: fetchPositionsStatus}, {execute: refreshPositions}] = useAsync(async (): Promise<
-		TGaugePosition[] | undefined
-	> => {
+	const [{result: positions, status: fetchPositionsStatus}, {execute: refreshPositions}] = useAsync(async (): Promise<TGaugePosition[] | undefined> => {
 		if (!gauges || !isActive) {
 			return;
 		}
 		return positionsFetcher();
 	}, []);
 
-	const [{result: gauges, status: fetchGaugesStatus}, {execute: refreshVotingEscrow}] = useAsync(async (): Promise<
-		TGauge[] | undefined
-	> => {
+	const [{result: gauges, status: fetchGaugesStatus}, {execute: refreshVotingEscrow}] = useAsync(async (): Promise<TGauge[] | undefined> => {
 		if (!isActive) {
 			return;
 		}
@@ -204,10 +191,7 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 				underlyingBalance: earned // TODO: convert to underlying
 			};
 
-			const boostRatio =
-				balance > 0n
-					? FixedNumber.from(boostedBalance).divUnsafe(FixedNumber.from(balance)).toUnsafeFloat()
-					: 0.1;
+			const boostRatio = balance > 0n ? FixedNumber.from(boostedBalance).divUnsafe(FixedNumber.from(balance)).toUnsafeFloat() : 0.1;
 			const boost = Math.min(1, boostRatio) * 10;
 
 			return {
@@ -259,10 +243,7 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 			gaugesMap: keyBy(gauges ?? [], 'address'),
 			positionsMap: keyBy(positions ?? [], 'address'),
 			allowancesMap: allowancesMap ?? {},
-			isLoading:
-				fetchGaugesStatus === 'loading' ||
-				fetchPositionsStatus === 'loading' ||
-				fetchAllowancesMapStatus === 'loading',
+			isLoading: fetchGaugesStatus === 'loading' || fetchPositionsStatus === 'loading' || fetchAllowancesMapStatus === 'loading',
 			refresh
 		}),
 		[allowancesMap, fetchAllowancesMapStatus, fetchGaugesStatus, fetchPositionsStatus, gauges, positions, refresh]

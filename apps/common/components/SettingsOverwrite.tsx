@@ -26,9 +26,7 @@ function WrappedInput({title, initialValue, onSave}: TWrappedInput): ReactElemen
 					<input
 						onFocus={(): void => set_isFocused(true)}
 						onBlur={(): void => set_isFocused(false)}
-						className={
-							'h-10 w-full overflow-x-scroll border-2 border-neutral-700 bg-neutral-0 p-2 outline-none scrollbar-none'
-						}
+						className={'h-10 w-full overflow-x-scroll border-2 border-neutral-700 bg-neutral-0 p-2 outline-none scrollbar-none'}
 						placeholder={'Use default'}
 						value={value}
 						type={'text'}
@@ -57,11 +55,7 @@ function SettingsOverwrite(): ReactElement {
 				<p className={'pb-6'}>
 					<Balancer>
 						{'Configure the default settings for this application, such as the '}
-						<a
-							href={'https://ydaemon.yearn.farm'}
-							target={'_blank'}
-							className={'text-neutral-900 underline'}
-							rel={'noreferrer'}>
+						<a href={'https://ydaemon.yearn.farm'} target={'_blank'} className={'text-neutral-900 underline'} rel={'noreferrer'}>
 							{'yDaemon API'}
 						</a>
 						{' base URI and the default network.'}
@@ -80,10 +74,7 @@ function SettingsOverwrite(): ReactElement {
 					/>
 				</div>
 				<div className={'grid grid-cols-1 gap-4'}>
-					<label
-						className={
-							'flex cursor-pointer items-center justify-between pt-4 transition-colors hover:bg-neutral-100/40'
-						}>
+					<label className={'flex cursor-pointer items-center justify-between pt-4 transition-colors hover:bg-neutral-100/40'}>
 						<p>{'Show feedback popover'}</p>
 						<Switch isEnabled={!value} onSwitch={(): void => set(!value)} />
 					</label>

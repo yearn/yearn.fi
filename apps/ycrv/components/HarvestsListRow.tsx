@@ -20,9 +20,7 @@ export function HarvestListRow({harvest}: {harvest: TYDaemonVaultHarvest}): Reac
 							width={40}
 							height={40}
 							quality={90}
-							src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${toAddress(
-								harvest.vaultAddress
-							)}/logo-128.png`}
+							src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${toAddress(harvest.vaultAddress)}/logo-128.png`}
 							loading={'eager'}
 						/>
 					</div>
@@ -33,16 +31,12 @@ export function HarvestListRow({harvest}: {harvest: TYDaemonVaultHarvest}): Reac
 			<div className={'yearn--table-data-section md:grid-cols-9'}>
 				<div className={'yearn--table-data-section-item md:col-span-1'} datatype={'number'}>
 					<p className={'yearn--table-data-section-item-label'}>{'Gain'}</p>
-					<b className={'yearn--table-data-section-item-value'}>
-						{formatAmount(formatToNormalizedValue(toBigInt(harvest.profit) - toBigInt(harvest.loss), 18))}
-					</b>
+					<b className={'yearn--table-data-section-item-value'}>{formatAmount(formatToNormalizedValue(toBigInt(harvest.profit) - toBigInt(harvest.loss), 18))}</b>
 				</div>
 
 				<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
 					<p className={'yearn--table-data-section-item-label'}>{'Value'}</p>
-					<p className={'yearn--table-data-section-item-value'}>
-						{formatUSD(Number(harvest.profitValue) - Number(harvest.lossValue))}
-					</p>
+					<p className={'yearn--table-data-section-item-value'}>{formatUSD(Number(harvest.profitValue) - Number(harvest.lossValue))}</p>
 				</div>
 
 				<div className={'yearn--table-data-section-item md:col-span-3'} datatype={'number'}>
@@ -55,9 +49,7 @@ export function HarvestListRow({harvest}: {harvest: TYDaemonVaultHarvest}): Reac
 				<div className={'yearn--table-data-section-item md:col-span-3'} datatype={'number'}>
 					<p className={'yearn--table-data-section-item-label'}>{'Hash'}</p>
 					<a href={`https://etherscan.io/tx/${harvest.txHash}`} target={'_blank'} rel={'noreferrer'}>
-						<div
-							className={'font-number flex flex-row items-center space-x-2 text-neutral-900'}
-							style={{lineHeight: '24px'}}>
+						<div className={'font-number flex flex-row items-center space-x-2 text-neutral-900'} style={{lineHeight: '24px'}}>
 							{truncateHex(harvest.txHash, 6)}
 							<IconLinkOut className={'ml-2 h-4 w-4 md:ml-4'} />
 						</div>

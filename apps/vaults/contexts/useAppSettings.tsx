@@ -30,11 +30,7 @@ const defaultProps: TAppSettingsContext = {
 };
 
 const AppSettingsContext = createContext<TAppSettingsContext>(defaultProps);
-export const AppSettingsContextApp = memo(function AppSettingsContextApp({
-	children
-}: {
-	children: ReactElement;
-}): ReactElement {
+export const AppSettingsContextApp = memo(function AppSettingsContextApp({children}: {children: ReactElement}): ReactElement {
 	const [category, set_category] = useSessionStorage('yearn.fi/vaults-category', 'All Vaults');
 	const [searchValue, set_searchValue] = useSessionStorage('yearn.fi/vaults-search', '');
 	const [selectedChains, set_selectedChains] = useSessionStorage('yearn.fi/selected-chains', '[1]');
@@ -57,16 +53,7 @@ export const AppSettingsContextApp = memo(function AppSettingsContextApp({
 			set_searchValue,
 			set_selectedChains
 		}),
-		[
-			shouldHideDust,
-			shouldHideLowTVLVaults,
-			category,
-			searchValue,
-			set_category,
-			set_searchValue,
-			set_shouldHideDust,
-			set_shouldHideLowTVLVaults
-		]
+		[shouldHideDust, shouldHideLowTVLVaults, category, searchValue, set_category, set_searchValue, set_shouldHideDust, set_shouldHideLowTVLVaults]
 	);
 
 	return <AppSettingsContext.Provider value={contextValue}>{children}</AppSettingsContext.Provider>;

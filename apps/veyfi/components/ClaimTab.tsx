@@ -62,14 +62,7 @@ export function ClaimTab(): ReactElement {
 						className={'w-full md:mt-7'}
 						onClick={onWithdrawUnlocked}
 						isBusy={withdrawUnlockedStatus.pending}
-						isDisabled={
-							!isActive ||
-							!isValidNetwork ||
-							!isClaimable ||
-							withdrawUnlockedStatus.pending ||
-							!votingEscrow ||
-							!address
-						}>
+						isDisabled={!isActive || !isValidNetwork || !isClaimable || withdrawUnlockedStatus.pending || !votingEscrow || !address}>
 						{'Claim'}
 					</Button>
 				</div>

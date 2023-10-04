@@ -32,10 +32,7 @@ export function VaultListFactory(): ReactElement {
 	 **	It's best to memorize the filtered vaults, which saves a lot of processing time by only
 	 **	performing the filtering once.
 	 **********************************************************************************************/
-	const curveVaults = useFilteredVaults(
-		vaults,
-		({category, type}): boolean => category === 'Curve' && type === 'Automated'
-	);
+	const curveVaults = useFilteredVaults(vaults, ({category, type}): boolean => category === 'Curve' && type === 'Automated');
 	const holdingsVaults = useFilteredVaults(vaults, ({category, address, type}): boolean => {
 		const holding = balances?.[toAddress(address)];
 		const hasValidBalance = toBigInt(holding?.raw) > 0n;
@@ -110,13 +107,7 @@ export function VaultListFactory(): ReactElement {
 	 **********************************************************************************************/
 	const VaultList = useMemo((): ReactNode => {
 		if (isLoadingVaultList || isZero(sortedVaultsToDisplay.length)) {
-			return (
-				<VaultsListEmptyFactory
-					isLoading={isLoadingVaultList}
-					sortedVaultsToDisplay={sortedVaultsToDisplay}
-					currentCategory={category}
-				/>
-			);
+			return <VaultsListEmptyFactory isLoading={isLoadingVaultList} sortedVaultsToDisplay={sortedVaultsToDisplay} currentCategory={category} />;
 		}
 		return sortedVaultsToDisplay.map((vault): ReactNode => {
 			if (!vault) {

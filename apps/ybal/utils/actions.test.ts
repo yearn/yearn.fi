@@ -77,20 +77,8 @@ describe('actions', () => {
 					amountIn: amountIn
 				});
 
-				expect(mockCallStaticZap).toHaveBeenNthCalledWith(
-					1,
-					BAL_TOKEN_ADDRESS,
-					YBAL_TOKEN_ADDRESS,
-					amountIn,
-					true
-				);
-				expect(mockCallStaticZap).toHaveBeenNthCalledWith(
-					2,
-					BAL_TOKEN_ADDRESS,
-					YBAL_TOKEN_ADDRESS,
-					amountIn,
-					false
-				);
+				expect(mockCallStaticZap).toHaveBeenNthCalledWith(1, BAL_TOKEN_ADDRESS, YBAL_TOKEN_ADDRESS, amountIn, true);
+				expect(mockCallStaticZap).toHaveBeenNthCalledWith(2, BAL_TOKEN_ADDRESS, YBAL_TOKEN_ADDRESS, amountIn, false);
 				expect(shouldMint).toBe(false);
 				expect(minOut).toEqual(toBigInt('197752499999999997726'));
 			});
@@ -122,20 +110,8 @@ describe('actions', () => {
 					amountIn: amountIn
 				});
 
-				expect(mockCallStaticZap).toHaveBeenNthCalledWith(
-					1,
-					BAL_TOKEN_ADDRESS,
-					YBAL_TOKEN_ADDRESS,
-					expectedIn,
-					true
-				);
-				expect(mockCallStaticZap).toHaveBeenNthCalledWith(
-					2,
-					BAL_TOKEN_ADDRESS,
-					YBAL_TOKEN_ADDRESS,
-					expectedIn,
-					false
-				);
+				expect(mockCallStaticZap).toHaveBeenNthCalledWith(1, BAL_TOKEN_ADDRESS, YBAL_TOKEN_ADDRESS, expectedIn, true);
+				expect(mockCallStaticZap).toHaveBeenNthCalledWith(2, BAL_TOKEN_ADDRESS, YBAL_TOKEN_ADDRESS, expectedIn, false);
 				expect(shouldMint).toBe(true);
 				expect(minOut).toEqual(toBigInt('41579999999999998295'));
 			});

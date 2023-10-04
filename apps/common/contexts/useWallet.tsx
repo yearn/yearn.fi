@@ -359,9 +359,7 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 			if (STACKING_TO_VAULT[token] && _balances[STACKING_TO_VAULT[token]]) {
 				// _balances[token].normalized += _balances[STACKING_TO_VAULT[token]].normalized;
 				// _balances[token].raw += _balances[STACKING_TO_VAULT[token]].raw;
-				_balances[token].normalizedValue =
-					(_balances[token].normalizedValue || 0) +
-					(_balances[STACKING_TO_VAULT[token]].normalizedValue || 0);
+				_balances[token].normalizedValue = (_balances[token].normalizedValue || 0) + (_balances[STACKING_TO_VAULT[token]].normalizedValue || 0);
 			}
 		}
 		set_balances(_balances);

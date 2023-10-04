@@ -9,17 +9,12 @@ export type TSearchBar = {
 export function SearchBar({searchPlaceholder, searchValue, set_searchValue}: TSearchBar): ReactElement {
 	return (
 		<>
-			<div
-				className={
-					'mt-1 flex h-10 w-full max-w-md items-center border border-neutral-0 bg-neutral-0 p-2 md:w-2/3'
-				}>
+			<div className={'mt-1 flex h-10 w-full max-w-md items-center border border-neutral-0 bg-neutral-0 p-2 md:w-2/3'}>
 				<div className={'relative flex h-10 w-full flex-row items-center justify-between'}>
 					<input
 						id={'search'}
 						suppressHydrationWarning
-						className={
-							'h-10 w-full overflow-x-scroll border-none bg-transparent px-0 py-2 text-base outline-none scrollbar-none placeholder:text-neutral-400'
-						}
+						className={'h-10 w-full overflow-x-scroll border-none bg-transparent px-0 py-2 text-base outline-none scrollbar-none placeholder:text-neutral-400'}
 						type={'text'}
 						placeholder={searchPlaceholder}
 						value={searchValue}
@@ -30,12 +25,7 @@ export function SearchBar({searchPlaceholder, searchValue, set_searchValue}: TSe
 						}}
 					/>
 					<div className={'absolute right-0 text-neutral-400'}>
-						<svg
-							width={'20'}
-							height={'20'}
-							viewBox={'0 0 24 24'}
-							fill={'none'}
-							xmlns={'http://www.w3.org/2000/svg'}>
+						<svg width={'20'} height={'20'} viewBox={'0 0 24 24'} fill={'none'} xmlns={'http://www.w3.org/2000/svg'}>
 							<path
 								fillRule={'evenodd'}
 								clipRule={'evenodd'}

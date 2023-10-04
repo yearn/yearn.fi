@@ -19,14 +19,7 @@ const apps = [
 		title: 'yCRV',
 		description: 'get the best CRV yields in DeFi.',
 		icon: (
-			<ImageWithFallback
-				alt={'yCRV'}
-				width={100}
-				height={100}
-				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YCRV_TOKEN_ADDRESS}/logo-128.png`}
-				loading={'eager'}
-				priority
-			/>
+			<ImageWithFallback alt={'yCRV'} width={100} height={100} src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YCRV_TOKEN_ADDRESS}/logo-128.png`} loading={'eager'} priority />
 		)
 	},
 	// {
@@ -225,11 +218,7 @@ function Index(): ReactElement {
 				</div>
 				<div className={'mb-6'}>
 					<p className={'text-center text-sm text-neutral-500 md:text-base'}>
-						<Balancer>
-							{
-								'Yearn is a decentralized suite of products helping individuals, DAOs, and other protocols\nearn yield on their digital assets.'
-							}
-						</Balancer>
+						<Balancer>{'Yearn is a decentralized suite of products helping individuals, DAOs, and other protocols\nearn yield on their digital assets.'}</Balancer>
 					</p>
 				</div>
 			</div>

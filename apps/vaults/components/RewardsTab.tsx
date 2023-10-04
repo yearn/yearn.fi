@@ -27,12 +27,7 @@ export function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): React
 	const {provider, address, isActive} = useWeb3();
 	const {chainID} = useChainID();
 	const {refresh: refreshBalances} = useWallet();
-	const {
-		stakingRewardsByVault,
-		stakingRewardsMap,
-		positionsMap,
-		refresh: refreshStakingRewards
-	} = useStakingRewards();
+	const {stakingRewardsByVault, stakingRewardsMap, positionsMap, refresh: refreshStakingRewards} = useStakingRewards();
 	const stakingRewardsAddress = stakingRewardsByVault[currentVault.address];
 	const stakingRewards = stakingRewardsAddress ? stakingRewardsMap[stakingRewardsAddress] : undefined;
 	const stakingRewardsPosition = stakingRewardsAddress ? positionsMap[stakingRewardsAddress] : undefined;
@@ -150,11 +145,7 @@ export function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): React
 						value={`${trimAmount(rewardBalance.normalized)} ${rewardTokenBalance.symbol || 'yvOP'}`}
 						isDisabled
 					/>
-					<Button
-						className={'w-full md:mt-7 md:w-[168px]'}
-						onClick={onClaim}
-						isBusy={claimStatus.pending}
-						isDisabled={!isActive || isZero(rewardBalance.raw)}>
+					<Button className={'w-full md:mt-7 md:w-[168px]'} onClick={onClaim} isBusy={claimStatus.pending} isDisabled={!isActive || isZero(rewardBalance.raw)}>
 						{'Claim'}
 					</Button>
 				</div>
@@ -163,11 +154,7 @@ export function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): React
 				<div>
 					<div className={'font-bold'}>{'Unstake'}</div>
 					<div className={'mt-2 text-neutral-600'}>
-						<p>
-							{
-								'Unstake your yVault tokens and your remaining $OP rewards will be claimed automatically. Boom.'
-							}
-						</p>
+						<p>{'Unstake your yVault tokens and your remaining $OP rewards will be claimed automatically. Boom.'}</p>
 					</div>
 				</div>
 				<div className={'flex flex-col gap-4 md:flex-row'}>

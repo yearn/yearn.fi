@@ -9,11 +9,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {BIG_ZERO, ETH_TOKEN_ADDRESS, YFI_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {
-	formatBigNumberAsAmount,
-	toNormalizedBN,
-	toNormalizedValue
-} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatBigNumberAsAmount, toNormalizedBN, toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
@@ -31,19 +27,9 @@ export function RedeemTab(): ReactElement {
 	const {provider, address, isActive} = useWeb3();
 	const {safeChainID} = useChainID();
 	const {refresh: refreshBalances} = useWallet();
-	const {
-		getRequiredEth,
-		price: optionPrice,
-		positions,
-		allowances,
-		isLoading: isLoadingOption,
-		refresh
-	} = useOption();
+	const {getRequiredEth, price: optionPrice, positions, allowances, isLoading: isLoadingOption, refresh} = useOption();
 	const clearLockAmount = (): void => set_redeemAmount(toNormalizedBN(0));
-	const refreshData = useCallback(
-		(): unknown => Promise.all([refresh(), refreshBalances()]),
-		[refresh, refreshBalances]
-	);
+	const refreshData = useCallback((): unknown => Promise.all([refresh(), refreshBalances()]), [refresh, refreshBalances]);
 	const onTxSuccess = useCallback((): unknown => Promise.all([refreshData(), clearLockAmount()]), [refreshData]);
 	const [{status, result}, fetchRequiredEth] = useAsync(getRequiredEth, BIG_ZERO);
 	const ethBalance = useBalance(ETH_TOKEN_ADDRESS);
@@ -111,12 +97,7 @@ export function RedeemTab(): ReactElement {
 				</div>
 
 				<div className={'grid grid-cols-1 gap-4 md:grid-cols-4'}>
-					<AmountInput
-						label={'You have oYFI'}
-						amount={oYFIBalance.normalized}
-						legend={formatCounterValue(oYFIBalance.normalized, optionPrice ?? 0)}
-						disabled
-					/>
+					<AmountInput label={'You have oYFI'} amount={oYFIBalance.normalized} legend={formatCounterValue(oYFIBalance.normalized, optionPrice ?? 0)} disabled />
 					<AmountInput
 						label={'YFI you want to redeem'}
 						amount={redeemAmount.normalized}
@@ -141,20 +122,9 @@ export function RedeemTab(): ReactElement {
 					<Button
 						className={'w-full md:mt-7'}
 						onClick={async (): Promise<void> => (isApproved ? handleRedeem() : handleApproveRedeem())}
-						isBusy={
-							isLoadingOption ||
-							approveRedeemStatus.pending ||
-							redeemStatus.pending ||
-							status === 'loading'
-						}
+						isBusy={isLoadingOption || approveRedeemStatus.pending || redeemStatus.pending || status === 'loading'}
 						isDisabled={
-							!isActive ||
-							!isValidNetwork ||
-							!isValidRedeemAmount ||
-							status === 'loading' ||
-							status === 'error' ||
-							!redeemStatus.none ||
-							!approveRedeemStatus.none
+							!isActive || !isValidNetwork || !isValidRedeemAmount || status === 'loading' || status === 'error' || !redeemStatus.none || !approveRedeemStatus.none
 						}>
 						{isApproved ? 'Redeem' : 'Approve'}
 					</Button>

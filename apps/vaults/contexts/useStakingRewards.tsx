@@ -42,11 +42,7 @@ const defaultProps: TStakingRewardsContext = {
 };
 
 const StakingRewardsContext = createContext<TStakingRewardsContext>(defaultProps);
-export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
-	children
-}: {
-	children: ReactElement;
-}): ReactElement {
+export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({children}: {children: ReactElement}): ReactElement {
 	const {provider, address: userAddress, isActive} = useWeb3();
 	const {chainID: appChainID} = useChainID();
 	const router = useRouter();

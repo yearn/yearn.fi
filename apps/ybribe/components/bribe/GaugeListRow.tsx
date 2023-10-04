@@ -84,10 +84,7 @@ export function GaugeListRow({currentGauge}: {currentGauge: TCurveGauge}): React
 				</div>
 				<div className={'flex md:hidden'}>
 					<div className={'h-16 pt-4 md:pt-7'}>
-						<Button
-							className={'yearn--button-smaller w-full'}
-							isDisabled={!isActive}
-							onClick={(): void => set_hasModal(true)}>
+						<Button className={'yearn--button-smaller w-full'} isDisabled={!isActive} onClick={(): void => set_hasModal(true)}>
 							{'Bribe'}
 						</Button>
 					</div>
@@ -102,16 +99,10 @@ export function GaugeListRow({currentGauge}: {currentGauge: TCurveGauge}): React
 
 				<div className={'yearn--table-data-section-item md:col-span-3'} datatype={'number'}>
 					<label className={'yearn--table-data-section-item-label'}>{'Current Bribes'}</label>
-					<Renderable
-						shouldRender={!!currentRewardsForCurrentGaugeMap && currentRewardsForCurrentGaugeMap.length > 0}
-						fallback={renderDefaultValueUSDFallback()}>
+					<Renderable shouldRender={!!currentRewardsForCurrentGaugeMap && currentRewardsForCurrentGaugeMap.length > 0} fallback={renderDefaultValueUSDFallback()}>
 						{currentRewardsForCurrentGaugeMap.map(
 							([key, value]: [string, bigint]): ReactElement => (
-								<GaugeRowItemWithExtraData
-									key={`rewards-${currentGauge.gauge}-${key}`}
-									address={toAddress(key)}
-									value={value}
-								/>
+								<GaugeRowItemWithExtraData key={`rewards-${currentGauge.gauge}-${key}`} address={toAddress(key)} value={value} />
 							)
 						)}
 					</Renderable>
@@ -119,16 +110,10 @@ export function GaugeListRow({currentGauge}: {currentGauge: TCurveGauge}): React
 
 				<div className={'yearn--table-data-section-item md:col-span-3'} datatype={'number'}>
 					<label className={'yearn--table-data-section-item-label'}>{'Current Bribes'}</label>
-					<Renderable
-						shouldRender={!!nextRewardsForCurrentGaugeMap && nextRewardsForCurrentGaugeMap.length > 0}
-						fallback={renderDefaultValueUSDFallback()}>
+					<Renderable shouldRender={!!nextRewardsForCurrentGaugeMap && nextRewardsForCurrentGaugeMap.length > 0} fallback={renderDefaultValueUSDFallback()}>
 						{nextRewardsForCurrentGaugeMap.map(
 							([key, value]: [string, bigint]): ReactElement => (
-								<GaugeRowItemWithExtraData
-									key={`rewards-${currentGauge.gauge}-${key}`}
-									address={toAddress(key)}
-									value={value}
-								/>
+								<GaugeRowItemWithExtraData key={`rewards-${currentGauge.gauge}-${key}`} address={toAddress(key)} value={value} />
 							)
 						)}
 					</Renderable>
@@ -136,10 +121,7 @@ export function GaugeListRow({currentGauge}: {currentGauge: TCurveGauge}): React
 
 				<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
 					<div className={'h-14 pt-0'}>
-						<Button
-							className={'yearn--button-smaller w-full'}
-							isDisabled={!isActive}
-							onClick={(): void => set_hasModal(true)}>
+						<Button className={'yearn--button-smaller w-full'} isDisabled={!isActive} onClick={(): void => set_hasModal(true)}>
 							{'Bribe'}
 						</Button>
 					</div>

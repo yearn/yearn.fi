@@ -84,21 +84,15 @@ function GaugeList(): ReactElement {
 		}
 		if (sort.sortBy === 'rewards') {
 			return searchedGauges.sort((a, b): number => {
-				const allARewards = Object.entries(currentRewards?.[toAddress(a.gauge)] || {}).reduce(
-					(acc, [address, value]): number => {
-						const aBribeValue = getRewardValue(address, value || 0n);
-						return acc + aBribeValue;
-					},
-					0
-				);
+				const allARewards = Object.entries(currentRewards?.[toAddress(a.gauge)] || {}).reduce((acc, [address, value]): number => {
+					const aBribeValue = getRewardValue(address, value || 0n);
+					return acc + aBribeValue;
+				}, 0);
 
-				const allBRewards = Object.entries(currentRewards?.[toAddress(b.gauge)] || {}).reduce(
-					(acc, [address, value]): number => {
-						const aBribeValue = getRewardValue(address, value || 0n);
-						return acc + aBribeValue;
-					},
-					0
-				);
+				const allBRewards = Object.entries(currentRewards?.[toAddress(b.gauge)] || {}).reduce((acc, [address, value]): number => {
+					const aBribeValue = getRewardValue(address, value || 0n);
+					return acc + aBribeValue;
+				}, 0);
 
 				if (sort.sortDirection === 'desc') {
 					return allBRewards - allARewards;
@@ -108,21 +102,15 @@ function GaugeList(): ReactElement {
 		}
 		if (sort.sortBy === 'pendingRewards') {
 			return searchedGauges.sort((a, b): number => {
-				const allARewards = Object.entries(nextRewards?.[toAddress(a.gauge)] || {}).reduce(
-					(acc, [address, value]): number => {
-						const aBribeValue = getRewardValue(address, value || 0n);
-						return acc + aBribeValue;
-					},
-					0
-				);
+				const allARewards = Object.entries(nextRewards?.[toAddress(a.gauge)] || {}).reduce((acc, [address, value]): number => {
+					const aBribeValue = getRewardValue(address, value || 0n);
+					return acc + aBribeValue;
+				}, 0);
 
-				const allBRewards = Object.entries(nextRewards?.[toAddress(b.gauge)] || {}).reduce(
-					(acc, [address, value]): number => {
-						const aBribeValue = getRewardValue(address, value || 0n);
-						return acc + aBribeValue;
-					},
-					0
-				);
+				const allBRewards = Object.entries(nextRewards?.[toAddress(b.gauge)] || {}).reduce((acc, [address, value]): number => {
+					const aBribeValue = getRewardValue(address, value || 0n);
+					return acc + aBribeValue;
+				}, 0);
 
 				if (sort.sortDirection === 'desc') {
 					return allBRewards - allARewards;
@@ -227,9 +215,7 @@ function OfferBribe(): ReactElement {
 				<Balancer>
 					<b className={'text-center text-lg md:text-2xl'}>{'Buy votes to boost emissions.'}</b>
 					<p className={'mt-8 whitespace-pre-line text-center text-base text-neutral-600'}>
-						{
-							'Offer a bribe to increase CRV emissions to your favorite Curve pool.\nJust like democracy, minus the suit and expense account.'
-						}
+						{'Offer a bribe to increase CRV emissions to your favorite Curve pool.\nJust like democracy, minus the suit and expense account.'}
 					</p>
 				</Balancer>
 			</div>

@@ -47,11 +47,7 @@ export function VoteTab(): ReactElement {
 					<div className={'text-neutral-600'}>
 						<p>{'Vote to direct future YFI rewards to a particular gauge.'}</p>
 						<br />
-						<p>
-							{
-								'If you prefer your democracy on the representative side, you can delegate your vote to another address.'
-							}
-						</p>
+						<p>{'If you prefer your democracy on the representative side, you can delegate your vote to another address.'}</p>
 					</div>
 				</div>
 
@@ -62,20 +58,12 @@ export function VoteTab(): ReactElement {
 				</div>
 
 				<div className={'grid grid-cols-1 gap-6 md:grid-cols-2'}>
-					<Input
-						label={'Delegate to'}
-						value={delegateAddress}
-						onChange={set_delegateAddress}
-						placeholder={'0x...'}
-						error={delegateAddressError}
-					/>
+					<Input label={'Delegate to'} value={delegateAddress} onChange={set_delegateAddress} placeholder={'0x...'} error={delegateAddressError} />
 					<Button
 						className={'w-full md:mt-7'}
 						onClick={handleExecuteDelegateVote}
 						isBusy={delegateVoteStatus.pending}
-						isDisabled={
-							!isActive || !isValidNetwork || !isValidDelegateAddress || delegateVoteStatus.pending
-						}>
+						isDisabled={!isActive || !isValidNetwork || !isValidDelegateAddress || delegateVoteStatus.pending}>
 						{'Submit'}
 					</Button>
 				</div>

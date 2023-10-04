@@ -87,9 +87,7 @@ function Factory(): ReactElement {
 			contracts: calls,
 			chainId: _safeChainID
 		});
-		return _gaugesFromYearn.filter((_gauge: TCurveGaugeFromYearn, index: number): boolean =>
-			decodeAsBoolean(canCreateVaults[index])
-		);
+		return _gaugesFromYearn.filter((_gauge: TCurveGaugeFromYearn, index: number): boolean => decodeAsBoolean(canCreateVaults[index]));
 	}, []);
 
 	useEffect((): void => {
@@ -108,12 +106,7 @@ function Factory(): ReactElement {
 				(gauge: TCurveGaugeFromYearn): TDropdownGaugeOption => ({
 					label: gauge.gauge_name,
 					icon: (
-						<ImageWithFallback
-							src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${toAddress(gauge.lp_token)}/logo-128.png`}
-							alt={gauge.gauge_name}
-							width={36}
-							height={36}
-						/>
+						<ImageWithFallback src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${toAddress(gauge.lp_token)}/logo-128.png`} alt={gauge.gauge_name} width={36} height={36} />
 					),
 					value: {
 						name: gauge.gauge_name,
@@ -130,34 +123,31 @@ function Factory(): ReactElement {
 	 ** Name and symbol from the Curve API are not the one we want to display.
 	 ** We need to fetch the name and symbol from the gauge contract.
 	 **************************************************************************/
-	const [{result: gaugeDisplayData, status}, fetchGaugeDisplayDataAction] = useAsync(
-		async function fetchGaugeDisplayData(
-			_safeChainID: number,
-			_selectedOption: TDropdownGaugeOption
-		): Promise<TGaugeDisplayData> {
-			const baseContract = {
-				address: _selectedOption.value.gaugeAddress,
-				abi: erc20ABI
-			};
-			const results = await multicall({
-				contracts: [
-					{...baseContract, functionName: 'name'},
-					{...baseContract, functionName: 'symbol'}
-				],
-				chainId: _safeChainID
-			});
+	const [{result: gaugeDisplayData, status}, fetchGaugeDisplayDataAction] = useAsync(async function fetchGaugeDisplayData(
+		_safeChainID: number,
+		_selectedOption: TDropdownGaugeOption
+	): Promise<TGaugeDisplayData> {
+		const baseContract = {
+			address: _selectedOption.value.gaugeAddress,
+			abi: erc20ABI
+		};
+		const results = await multicall({
+			contracts: [
+				{...baseContract, functionName: 'name'},
+				{...baseContract, functionName: 'symbol'}
+			],
+			chainId: _safeChainID
+		});
 
-			const name = decodeAsString(results[0]);
-			const symbol = decodeAsString(results[1]);
-			return {
-				name: name.replace('Curve.fi', '').replace('Gauge Deposit', '') || _selectedOption.value.name,
-				symbol: symbol.replace('-gauge', '').replace('-f', '') || _selectedOption.value.name,
-				poolAddress: _selectedOption.value.poolAddress,
-				gaugeAddress: _selectedOption.value.gaugeAddress
-			};
-		},
-		undefined
-	);
+		const name = decodeAsString(results[0]);
+		const symbol = decodeAsString(results[1]);
+		return {
+			name: name.replace('Curve.fi', '').replace('Gauge Deposit', '') || _selectedOption.value.name,
+			symbol: symbol.replace('-gauge', '').replace('-f', '') || _selectedOption.value.name,
+			poolAddress: _selectedOption.value.poolAddress,
+			gaugeAddress: _selectedOption.value.gaugeAddress
+		};
+	}, undefined);
 
 	useEffect((): void => {
 		fetchGaugeDisplayDataAction.execute(safeChainID, selectedOption);
@@ -249,47 +239,31 @@ function Factory(): ReactElement {
 					<div className={'grid grid-cols-1 gap-x-0 gap-y-5 md:grid-cols-6 md:gap-x-8'}>
 						<label className={'yearn--input relative z-10 col-span-2'}>
 							<p className={'!text-neutral-600'}>{'Available Curve pools'}</p>
-							<Dropdown
-								placeholder={'Select Curve Pool'}
-								options={gaugesOptions}
-								selected={selectedOption}
-								onSelect={set_selectedOption}
-							/>
+							<Dropdown placeholder={'Select Curve Pool'} options={gaugesOptions} selected={selectedOption} onSelect={set_selectedOption} />
 						</label>
 
 						<div className={'col-span-2 w-full space-y-1'}>
 							<p className={'text-neutral-600'}>{'Vault name'}</p>
 							<Renderable shouldRender={status !== 'loading'} fallback={loadingFallback()}>
-								<div className={'h-10 bg-neutral-200 p-2 text-neutral-600'}>
-									{!gaugeDisplayData ? '' : `Curve ${gaugeDisplayData.name} Factory`}
-								</div>
+								<div className={'h-10 bg-neutral-200 p-2 text-neutral-600'}>{!gaugeDisplayData ? '' : `Curve ${gaugeDisplayData.name} Factory`}</div>
 							</Renderable>
 						</div>
 
 						<div className={'col-span-2 w-full space-y-1'}>
 							<p className={'text-neutral-600'}>{'Symbol'}</p>
 							<Renderable shouldRender={status !== 'loading'} fallback={loadingFallback()}>
-								<div className={'h-10 bg-neutral-200 p-2 text-neutral-600'}>
-									{!gaugeDisplayData ? '' : `yvCurve-${gaugeDisplayData.symbol}-f`}
-								</div>
+								<div className={'h-10 bg-neutral-200 p-2 text-neutral-600'}>{!gaugeDisplayData ? '' : `yvCurve-${gaugeDisplayData.symbol}-f`}</div>
 							</Renderable>
 						</div>
 
 						<div className={'col-span-3 w-full space-y-1'}>
 							<p className={'text-neutral-600'}>{'Pool address'}</p>
 							<Renderable shouldRender={status !== 'loading'} fallback={loadingFallback()}>
-								<div
-									className={
-										'flex h-10 flex-row items-center justify-between bg-neutral-200 p-2 font-mono'
-									}>
+								<div className={'flex h-10 flex-row items-center justify-between bg-neutral-200 p-2 font-mono'}>
 									<Renderable shouldRender={!!gaugeDisplayData}>
-										<p className={'overflow-hidden text-ellipsis text-neutral-600'}>
-											{toAddress(gaugeDisplayData?.poolAddress)}
-										</p>
+										<p className={'overflow-hidden text-ellipsis text-neutral-600'}>{toAddress(gaugeDisplayData?.poolAddress)}</p>
 										<a
-											href={`${getNetwork(safeChainID)?.defaultBlockExplorer}/address/${toAddress(
-												gaugeDisplayData?.poolAddress
-											)}`}
+											href={`${getNetwork(safeChainID)?.defaultBlockExplorer}/address/${toAddress(gaugeDisplayData?.poolAddress)}`}
 											target={'_blank'}
 											rel={'noreferrer'}
 											className={'ml-4 cursor-pointer text-neutral-900'}>
@@ -302,18 +276,11 @@ function Factory(): ReactElement {
 						<div className={'col-span-3 w-full space-y-1'}>
 							<p className={'text-neutral-600'}>{'Gauge address'}</p>
 							<Renderable shouldRender={status !== 'loading'} fallback={loadingFallback()}>
-								<div
-									className={
-										'flex h-10 flex-row items-center justify-between bg-neutral-200 p-2 font-mono'
-									}>
+								<div className={'flex h-10 flex-row items-center justify-between bg-neutral-200 p-2 font-mono'}>
 									<Renderable shouldRender={!!gaugeDisplayData}>
-										<p className={'overflow-hidden text-ellipsis text-neutral-600'}>
-											{toAddress(gaugeDisplayData?.gaugeAddress)}
-										</p>
+										<p className={'overflow-hidden text-ellipsis text-neutral-600'}>{toAddress(gaugeDisplayData?.gaugeAddress)}</p>
 										<a
-											href={`${getNetwork(safeChainID)?.defaultBlockExplorer}/address/${toAddress(
-												gaugeDisplayData?.gaugeAddress
-											)}`}
+											href={`${getNetwork(safeChainID)?.defaultBlockExplorer}/address/${toAddress(gaugeDisplayData?.gaugeAddress)}`}
 											target={'_blank'}
 											rel={'noreferrer'}
 											className={'ml-4 cursor-pointer text-neutral-900'}>
@@ -331,12 +298,7 @@ function Factory(): ReactElement {
 						<Button
 							onClick={onCreateNewVault}
 							isBusy={txStatus.pending}
-							isDisabled={
-								!isActive ||
-								selectedOption.value.gaugeAddress === ZERO_ADDRESS ||
-								safeChainID !== 1 ||
-								hasError
-							}
+							isDisabled={!isActive || selectedOption.value.gaugeAddress === ZERO_ADDRESS || safeChainID !== 1 || hasError}
 							className={'w-full'}>
 							{'Create new Vault'}
 						</Button>

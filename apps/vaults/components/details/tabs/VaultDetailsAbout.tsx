@@ -41,20 +41,10 @@ function YearnFeesLineItem({children, label, tooltip}: TYearnFeesLineItem): Reac
 	return (
 		<div className={'flex flex-col space-y-0 md:space-y-2'}>
 			<p className={'text-xxs text-neutral-600 md:text-xs'}>{label}</p>
-			<div
-				className={cl(
-					tooltip
-						? 'tooltip underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
-						: ''
-				)}>
+			<div className={cl(tooltip ? 'tooltip underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600' : '')}>
 				{tooltip ? (
 					<span suppressHydrationWarning className={'tooltipFees bottom-full'}>
-						<div
-							className={
-								'font-number w-96 border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
-							}>
-							{tooltip}
-						</div>
+						<div className={'font-number w-96 border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'}>{tooltip}</div>
 					</span>
 				) : null}
 				{children}
@@ -63,13 +53,7 @@ function YearnFeesLineItem({children, label, tooltip}: TYearnFeesLineItem): Reac
 	);
 }
 
-export function VaultDetailsAbout({
-	currentVault,
-	harvestData
-}: {
-	currentVault: TYDaemonVault;
-	harvestData: TGraphData[];
-}): ReactElement {
+export function VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYDaemonVault; harvestData: TGraphData[]}): ReactElement {
 	const isMounted = useIsMounted();
 	const {token, apy, details} = currentVault;
 
@@ -96,36 +80,14 @@ export function VaultDetailsAbout({
 					<b className={'text-neutral-900'}>{'APY'}</b>
 					<div className={'mt-4 grid grid-cols-1 gap-x-12 md:grid-cols-2'}>
 						<div className={'space-y-2'}>
-							<APYLineItem
-								label={'Weekly APY'}
-								apyType={currentVault.apy?.type}
-								value={apy.points.week_ago}
-							/>
-							<APYLineItem
-								label={'Monthly APY'}
-								apyType={currentVault.apy?.type}
-								value={apy.points.month_ago}
-							/>
-							<APYLineItem
-								label={'Inception APY'}
-								apyType={currentVault.apy?.type}
-								value={apy.points.inception}
-							/>
+							<APYLineItem label={'Weekly APY'} apyType={currentVault.apy?.type} value={apy.points.week_ago} />
+							<APYLineItem label={'Monthly APY'} apyType={currentVault.apy?.type} value={apy.points.month_ago} />
+							<APYLineItem label={'Inception APY'} apyType={currentVault.apy?.type} value={apy.points.inception} />
 						</div>
 						<div className={'mt-2 space-y-2 md:mt-0'}>
 							<APYLineItem label={'Gross APR'} apyType={currentVault.apy?.type} value={apy.gross_apr} />
-							<APYLineItem
-								label={'Net APY'}
-								apyType={currentVault.apy?.type}
-								value={(apy.net_apy || 0) + (apy.staking_rewards_apr || 0)}
-							/>
-							{apy.staking_rewards_apr > 0 && (
-								<APYLineItem
-									label={'Reward APR'}
-									apyType={currentVault.apy?.type}
-									value={apy.staking_rewards_apr}
-								/>
-							)}
+							<APYLineItem label={'Net APY'} apyType={currentVault.apy?.type} value={(apy.net_apy || 0) + (apy.staking_rewards_apr || 0)} />
+							{apy.staking_rewards_apr > 0 && <APYLineItem label={'Reward APR'} apyType={currentVault.apy?.type} value={apy.staking_rewards_apr} />}
 						</div>
 					</div>
 				</div>
@@ -138,33 +100,23 @@ export function VaultDetailsAbout({
 							<b className={'font-number text-xl text-neutral-900'}>{formatPercent(0, 0, 0)}</b>
 						</YearnFeesLineItem>
 						<YearnFeesLineItem label={'Management fee'}>
-							<b className={'font-number text-xl text-neutral-900'}>
-								{formatPercent((details.managementFee || 0) / 100, 0)}
-							</b>
+							<b className={'font-number text-xl text-neutral-900'}>{formatPercent((details.managementFee || 0) / 100, 0)}</b>
 						</YearnFeesLineItem>
 						<YearnFeesLineItem label={'Performance fee'}>
-							<b className={'font-number text-xl text-neutral-500'}>
-								{formatPercent((details.performanceFee || 0) / 100, 0)}
-							</b>
+							<b className={'font-number text-xl text-neutral-500'}>{formatPercent((details.performanceFee || 0) / 100, 0)}</b>
 						</YearnFeesLineItem>
 						{currentVault.category === 'Velodrome' ? (
 							<YearnFeesLineItem
 								label={'keepVELO'}
-								tooltip={
-									'Percentage of VELO locked in each harvest. This is used to boost Velodrome vault pools, and is offset via yvOP staking rewards.'
-								}>
-								<b className={'font-number text-xl text-neutral-500'}>
-									{formatPercent(currentVault.apy.fees.keep_velo * 100, 0)}
-								</b>
+								tooltip={'Percentage of VELO locked in each harvest. This is used to boost Velodrome vault pools, and is offset via yvOP staking rewards.'}>
+								<b className={'font-number text-xl text-neutral-500'}>{formatPercent(currentVault.apy.fees.keep_velo * 100, 0)}</b>
 							</YearnFeesLineItem>
 						) : null}
 					</div>
 				</div>
 				<div>
 					<b className={'text-neutral-900'}>{'Cumulative Earnings'}</b>
-					<div
-						className={'-mx-2 mt-4 flex flex-row border-b border-l border-neutral-300 md:mx-0'}
-						style={{height: 160}}>
+					<div className={'-mx-2 mt-4 flex flex-row border-b border-l border-neutral-300 md:mx-0'} style={{height: 160}}>
 						<Renderable shouldRender={isMounted()}>
 							<GraphForVaultEarnings currentVault={currentVault} harvestData={harvestData} height={160} />
 						</Renderable>

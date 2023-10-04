@@ -3,11 +3,7 @@ import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
-import {
-	LPYBAL_TOKEN_ADDRESS,
-	YBAL_BALANCER_POOL_ADDRESS,
-	YBAL_TOKEN_ADDRESS
-} from '@yearn-finance/web-lib/utils/constants';
+import {LPYBAL_TOKEN_ADDRESS, YBAL_BALANCER_POOL_ADDRESS, YBAL_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatToNormalizedValue, toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
@@ -45,15 +41,9 @@ function CardZap(): ReactElement {
 		onZap
 	} = useCardTransactor();
 
-	const yBalPrice = useMemo(
-		(): number => formatToNormalizedValue(toBigInt(prices?.[YBAL_TOKEN_ADDRESS] || 0), 6),
-		[prices]
-	);
+	const yBalPrice = useMemo((): number => formatToNormalizedValue(toBigInt(prices?.[YBAL_TOKEN_ADDRESS] || 0), 6), [prices]);
 
-	const yBalCurvePoolPrice = useMemo(
-		(): number => formatToNormalizedValue(toBigInt(prices?.[YBAL_BALANCER_POOL_ADDRESS] || 0), 6),
-		[prices]
-	);
+	const yBalCurvePoolPrice = useMemo((): number => formatToNormalizedValue(toBigInt(prices?.[YBAL_BALANCER_POOL_ADDRESS] || 0), 6), [prices]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** useMemo to get the current possible TO vaults path for the current FROM
@@ -76,22 +66,14 @@ function CardZap(): ReactElement {
 
 		if (txStatusApprove.pending || isAboveAllowance) {
 			return (
-				<Button
-					onClick={onApproveFrom}
-					className={'w-full'}
-					isBusy={txStatusApprove.pending}
-					isDisabled={!isActive || isZero(amount.raw) || isAboveBalance}>
+				<Button onClick={onApproveFrom} className={'w-full'} isBusy={txStatusApprove.pending} isDisabled={!isActive || isZero(amount.raw) || isAboveBalance}>
 					{isAboveBalance ? 'Insufficient balance' : `Approve ${selectedOptionFrom?.label || 'token'}`}
 				</Button>
 			);
 		}
 
 		return (
-			<Button
-				onClick={onZap}
-				className={'w-full'}
-				isBusy={txStatusZap.pending}
-				isDisabled={!isActive || isZero(amount.raw) || amount.raw > balanceForInputToken}>
+			<Button onClick={onZap} className={'w-full'} isBusy={txStatusZap.pending} isDisabled={!isActive || isZero(amount.raw) || amount.raw > balanceForInputToken}>
 				{isAboveBalance && !isZero(amount.raw) ? 'Insufficient balance' : 'Swap'}
 			</Button>
 		);
@@ -109,11 +91,7 @@ function CardZap(): ReactElement {
 						onSelect={(option: TDropdownOption): void => {
 							performBatchedUpdates((): void => {
 								if (option.value === selectedOptionTo.value) {
-									set_selectedOptionTo(
-										ZAP_OPTIONS_TO.find(
-											(o: TDropdownOption): boolean => o.value !== option.value
-										) as TDropdownOption
-									);
+									set_selectedOptionTo(ZAP_OPTIONS_TO.find((o: TDropdownOption): boolean => o.value !== option.value) as TDropdownOption);
 								}
 								set_selectedOptionFrom(option);
 								set_amount(toNormalizedBN(balances[toAddress(option.value)]?.raw));
@@ -138,23 +116,14 @@ function CardZap(): ReactElement {
 								value={amount.normalized}
 								onChange={(e: ChangeEvent<HTMLInputElement>): void => {
 									performBatchedUpdates((): void => {
-										set_amount(
-											handleInputChangeEventValue(
-												e.target.value,
-												balances[toAddress(selectedOptionFrom.value)]?.decimals || 18
-											)
-										);
+										set_amount(handleInputChangeEventValue(e.target.value, balances[toAddress(selectedOptionFrom.value)]?.decimals || 18));
 										set_hasTypedSomething(true);
 									});
 								}}
 							/>
 							<button
-								onClick={(): void =>
-									set_amount(toNormalizedBN(balances[toAddress(selectedOptionFrom.value)]?.raw))
-								}
-								className={
-									'cursor-pointer text-sm text-neutral-500 transition-colors hover:text-neutral-900'
-								}>
+								onClick={(): void => set_amount(toNormalizedBN(balances[toAddress(selectedOptionFrom.value)]?.raw))}
+								className={'cursor-pointer text-sm text-neutral-500 transition-colors hover:text-neutral-900'}>
 								{'max'}
 							</button>
 						</div>
@@ -166,9 +135,7 @@ function CardZap(): ReactElement {
 								? yBalPrice || 0
 								: toAddress(selectedOptionFrom.value) === YBAL_BALANCER_POOL_ADDRESS
 								? yBalCurvePoolPrice || 0
-								: balances?.[toAddress(selectedOptionFrom.value)]?.normalizedPrice ||
-								  vaults?.[toAddress(selectedOptionFrom.value)]?.tvl?.price ||
-								  0
+								: balances?.[toAddress(selectedOptionFrom.value)]?.normalizedPrice || vaults?.[toAddress(selectedOptionFrom.value)]?.tvl?.price || 0
 						)}
 					</p>
 				</div>
@@ -209,9 +176,7 @@ function CardZap(): ReactElement {
 								? yBalPrice || 0
 								: toAddress(selectedOptionFrom.value) === YBAL_BALANCER_POOL_ADDRESS
 								? yBalCurvePoolPrice || 0
-								: balances?.[toAddress(selectedOptionTo.value)]?.normalizedPrice ||
-								  vaults?.[toAddress(selectedOptionTo.value)]?.tvl?.price ||
-								  0
+								: balances?.[toAddress(selectedOptionTo.value)]?.normalizedPrice || vaults?.[toAddress(selectedOptionTo.value)]?.tvl?.price || 0
 						)}
 					</p>
 				</div>

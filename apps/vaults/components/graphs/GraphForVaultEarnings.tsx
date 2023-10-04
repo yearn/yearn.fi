@@ -14,12 +14,7 @@ export type TGraphForVaultEarningsProps = {
 	isCumulative?: boolean;
 };
 
-export function GraphForVaultEarnings({
-	currentVault,
-	harvestData,
-	height = 312,
-	isCumulative = true
-}: TGraphForVaultEarningsProps): ReactElement {
+export function GraphForVaultEarnings({currentVault, harvestData, height = 312, isCumulative = true}: TGraphForVaultEarningsProps): ReactElement {
 	const cumulativeData = useMemo((): {name: string; value: number}[] => {
 		let cumulativeValue = 0;
 		return harvestData.map((item: {name: string; value: number}): {name: string; value: number} => {
@@ -39,9 +34,7 @@ export function GraphForVaultEarnings({
 	}
 	return (
 		<ResponsiveContainer width={'100%'} height={height}>
-			<LineChart
-				margin={{top: 0, right: -28, bottom: 0, left: 0}}
-				data={isCumulative ? cumulativeData : harvestData}>
+			<LineChart margin={{top: 0, right: -28, bottom: 0, left: 0}} data={isCumulative ? cumulativeData : harvestData}>
 				<Line
 					className={'text-primary-600'}
 					type={'step'}
@@ -90,9 +83,7 @@ export function GraphForVaultEarnings({
 									</div>
 									<div className={'flex flex-row items-center justify-between'}>
 										<p className={'text-xs text-neutral-600'}>{'Earnings'}</p>
-										<b className={'font-number text-xs font-bold text-neutral-900'}>
-											{`${formatAmount(Number(value))} ${currentVault.token.symbol}`}
-										</b>
+										<b className={'font-number text-xs font-bold text-neutral-900'}>{`${formatAmount(Number(value))} ${currentVault.token.symbol}`}</b>
 									</div>
 								</div>
 							);

@@ -61,10 +61,7 @@ function LogoPopover(): ReactElement {
 	};
 
 	return (
-		<Popover
-			onMouseEnter={(): void => set_isShowing(true)}
-			onMouseLeave={(): void => set_isShowing(false)}
-			className={'relative'}>
+		<Popover onMouseEnter={(): void => set_isShowing(true)} onMouseLeave={(): void => set_isShowing(false)} className={'relative'}>
 			<Popover.Button className={'flex items-center'}>
 				<Link href={'/'}>
 					<span className={'sr-only'}>{'Back to home'}</span>
@@ -80,24 +77,17 @@ function LogoPopover(): ReactElement {
 				leave={'transition ease-in duration-150'}
 				leaveFrom={'opacity-100 translate-y-0'}
 				leaveTo={'opacity-0 translate-y-1'}>
-				<Popover.Panel
-					className={'absolute left-1/2 z-10 mt-6 w-80 -translate-x-1/2 px-4 pt-4 sm:px-0 md:w-96'}>
+				<Popover.Panel className={'absolute left-1/2 z-10 mt-6 w-80 -translate-x-1/2 px-4 pt-4 sm:px-0 md:w-96'}>
 					<div className={'overflow-hidden border border-neutral-200 shadow-lg'}>
 						<div className={'relative grid grid-cols-2 bg-neutral-0 md:grid-cols-3'}>
 							{[...Object.values(APPS), YETH]
 								.filter(({isDisabled}): boolean => !isDisabled)
 								.map(({name, href, icon}): ReactElement => {
 									return (
-										<Link
-											prefetch={false}
-											key={name}
-											href={href}
-											onClick={(): void => set_isShowing(false)}>
+										<Link prefetch={false} key={name} href={href} onClick={(): void => set_isShowing(false)}>
 											<div
 												onClick={(): void => set_isShowing(false)}
-												className={
-													'flex cursor-pointer flex-col items-center p-4 transition-colors hover:bg-neutral-200'
-												}>
+												className={'flex cursor-pointer flex-col items-center p-4 transition-colors hover:bg-neutral-200'}>
 												<div>{cloneElement(icon)}</div>
 												<div className={'pt-2 text-center'}>
 													<b className={'text-base'}>{name}</b>

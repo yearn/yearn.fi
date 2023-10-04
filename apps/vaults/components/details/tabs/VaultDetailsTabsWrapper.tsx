@@ -80,10 +80,7 @@ function Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactE
 								);
 								set_selectedAboutTabIndex(tab.value);
 							}}>
-							<p
-								title={tab.label}
-								aria-selected={selectedAboutTabIndex === tab.value}
-								className={'hover-fix tab'}>
+							<p title={tab.label} aria-selected={selectedAboutTabIndex === tab.value} className={'hover-fix tab'}>
 								{tab.label}
 							</p>
 						</button>
@@ -98,13 +95,9 @@ function Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactE
 								className={
 									'flex h-10 w-40 flex-row items-center border-0 border-b-2 border-neutral-900 bg-neutral-100 p-0 font-bold focus:border-neutral-900 md:hidden'
 								}>
-								<div className={'relative flex flex-row items-center'}>
-									{tabs[selectedAboutTabIndex]?.label || 'Menu'}
-								</div>
+								<div className={'relative flex flex-row items-center'}>{tabs[selectedAboutTabIndex]?.label || 'Menu'}</div>
 								<div className={'absolute right-0'}>
-									<IconChevron
-										className={`h-6 w-6 transition-transform ${open ? '-rotate-180' : 'rotate-0'}`}
-									/>
+									<IconChevron className={`h-6 w-6 transition-transform ${open ? '-rotate-180' : 'rotate-0'}`} />
 								</div>
 							</Listbox.Button>
 							<Transition
@@ -119,10 +112,7 @@ function Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactE
 								<Listbox.Options className={'yearn--listbox-menu'}>
 									{tabs.map(
 										(tab): ReactElement => (
-											<Listbox.Option
-												className={'yearn--listbox-menu-item'}
-												key={tab.value}
-												value={tab.value}>
+											<Listbox.Option className={'yearn--listbox-menu-item'} key={tab.value} value={tab.value}>
 												{tab.label}
 											</Listbox.Option>
 										)
@@ -147,11 +137,7 @@ function ExplorerLink({explorerBaseURI, currentVaultAddress}: TExplorerLinkProps
 	return (
 		<a href={`${explorerBaseURI}/address/${currentVaultAddress}`} target={'_blank'} rel={'noopener noreferrer'}>
 			<span className={'sr-only'}>{'Open in explorer'}</span>
-			<IconLinkOut
-				className={
-					'h-5 w-5 cursor-alias text-neutral-600 transition-colors hover:text-neutral-900 md:h-6 md:w-6'
-				}
-			/>
+			<IconLinkOut className={'h-5 w-5 cursor-alias text-neutral-600 transition-colors hover:text-neutral-900 md:h-6 md:w-6'} />
 		</a>
 	);
 }
@@ -161,12 +147,7 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: currentVault.chainID});
 	const [selectedAboutTabIndex, set_selectedAboutTabIndex] = useState(0);
 
-	async function onAddTokenToMetamask(
-		address: string,
-		symbol: string,
-		decimals: number,
-		image: string
-	): Promise<void> {
+	async function onAddTokenToMetamask(address: string, symbol: string, decimals: number, image: string): Promise<void> {
 		try {
 			assert(provider, 'Provider is not set');
 			const walletClient = await provider.getWalletClient();
@@ -201,32 +182,17 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 	return (
 		<div aria-label={'Vault Details'} className={'col-span-12 mb-4 flex flex-col bg-neutral-100'}>
 			<div className={'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'}>
-				<Tabs
-					selectedAboutTabIndex={selectedAboutTabIndex}
-					set_selectedAboutTabIndex={set_selectedAboutTabIndex}
-				/>
+				<Tabs selectedAboutTabIndex={selectedAboutTabIndex} set_selectedAboutTabIndex={set_selectedAboutTabIndex} />
 
 				<div className={'flex flex-row items-center justify-end space-x-2 pb-0 md:pb-4 md:last:space-x-4'}>
 					<button
 						onClick={(): void => {
-							onAddTokenToMetamask(
-								currentVault.address,
-								currentVault.symbol,
-								currentVault.decimals,
-								currentVault.icon
-							);
+							onAddTokenToMetamask(currentVault.address, currentVault.symbol, currentVault.decimals, currentVault.icon);
 						}}>
 						<span className={'sr-only'}>{'Add to wallet'}</span>
-						<IconAddToMetamask
-							className={
-								'h-5 w-5 text-neutral-600 transition-colors hover:text-neutral-900 md:h-6 md:w-6'
-							}
-						/>
+						<IconAddToMetamask className={'h-5 w-5 text-neutral-600 transition-colors hover:text-neutral-900 md:h-6 md:w-6'} />
 					</button>
-					<ExplorerLink
-						explorerBaseURI={getNetwork(currentVault.chainID)?.defaultBlockExplorer}
-						currentVaultAddress={currentVault.address}
-					/>
+					<ExplorerLink explorerBaseURI={getNetwork(currentVault.chainID)?.defaultBlockExplorer} currentVaultAddress={currentVault.address} />
 				</div>
 			</div>
 

@@ -12,12 +12,7 @@ type TMotionDiv = {
 
 export function MotionDiv({animate, name, children}: TMotionDiv): ReactElement {
 	return (
-		<motion.div
-			key={name}
-			initial={'initial'}
-			animate={animate}
-			variants={variants}
-			className={'absolute cursor-pointer'}>
+		<motion.div key={name} initial={'initial'} animate={animate} variants={variants} className={'absolute cursor-pointer'}>
 			{children}
 		</motion.div>
 	);

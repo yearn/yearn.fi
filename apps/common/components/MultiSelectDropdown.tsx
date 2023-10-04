@@ -53,9 +53,7 @@ function DropdownEmpty({query}: {query: string}): ReactElement {
 		return (
 			<div
 				onClick={(): void => openLoginModal()}
-				className={
-					'flex h-14 cursor-pointer flex-col items-center justify-center px-4 text-center transition-colors hover:bg-neutral-300'
-				}>
+				className={'flex h-14 cursor-pointer flex-col items-center justify-center px-4 text-center transition-colors hover:bg-neutral-300'}>
 				<b className={'text-neutral-900'}>{'Connect Wallet'}</b>
 			</div>
 		);
@@ -112,9 +110,7 @@ export function MultiSelectDropdown({options, onSelect, placeholder = ''}: TMult
 					set_isSelectAll(!elementSelected.selected);
 				} else {
 					currentState = currentElements.map((option): TMultiSelectOptionProps => {
-						return option.value === elementSelected.value
-							? {...option, selected: !option.selected}
-							: option;
+						return option.value === elementSelected.value ? {...option, selected: !option.selected} : option;
 					});
 
 					set_isSelectAll(!currentState.some((option): boolean => !option.selected));
@@ -128,13 +124,9 @@ export function MultiSelectDropdown({options, onSelect, placeholder = ''}: TMult
 			<div className={'relative w-[32rem]'}>
 				<Combobox.Button
 					onClick={(): void => set_isOpen((o: boolean): boolean => !o)}
-					className={
-						'flex h-10 w-full items-center justify-between bg-neutral-0 p-2 text-base text-neutral-900 md:px-3'
-					}>
+					className={'flex h-10 w-full items-center justify-between bg-neutral-0 p-2 text-base text-neutral-900 md:px-3'}>
 					<Combobox.Input
-						className={
-							'w-full cursor-default overflow-x-scroll border-none bg-transparent p-0 outline-none scrollbar-none'
-						}
+						className={'w-full cursor-default overflow-x-scroll border-none bg-transparent p-0 outline-none scrollbar-none'}
 						displayValue={(options: TMultiSelectOptionProps[]): string => {
 							const selectedOptions = options.filter((option): boolean => option.selected);
 							if (selectedOptions.length === 0) {
@@ -151,10 +143,7 @@ export function MultiSelectDropdown({options, onSelect, placeholder = ''}: TMult
 						spellCheck={false}
 						onChange={(event): void => set_query(event.target.value)}
 					/>
-					<IconChevron
-						aria-hidden={'true'}
-						className={`h-6 w-6 transition-transform ${isOpen ? '-rotate-180' : 'rotate-0'}`}
-					/>
+					<IconChevron aria-hidden={'true'} className={`h-6 w-6 transition-transform ${isOpen ? '-rotate-180' : 'rotate-0'}`} />
 				</Combobox.Button>
 				<Transition
 					as={Fragment}
@@ -168,19 +157,9 @@ export function MultiSelectDropdown({options, onSelect, placeholder = ''}: TMult
 					afterLeave={(): void => {
 						set_query('');
 					}}>
-					<Combobox.Options
-						className={
-							'absolute top-12 z-50 flex w-full cursor-pointer flex-col overflow-y-auto bg-white px-2 py-3 scrollbar-none'
-						}>
-						<SelectAllOption
-							key={'select-all'}
-							label={'Select all'}
-							selected={isSelectAll}
-							value={'select_all'}
-						/>
-						<Renderable
-							shouldRender={filteredOptions.length > 0}
-							fallback={<DropdownEmpty query={query} />}>
+					<Combobox.Options className={'absolute top-12 z-50 flex w-full cursor-pointer flex-col overflow-y-auto bg-white px-2 py-3 scrollbar-none'}>
+						<SelectAllOption key={'select-all'} label={'Select all'} selected={isSelectAll} value={'select_all'} />
+						<Renderable shouldRender={filteredOptions.length > 0} fallback={<DropdownEmpty query={query} />}>
 							{filteredOptions.map((option): ReactElement => {
 								return <Option key={option.value} {...option} />;
 							})}

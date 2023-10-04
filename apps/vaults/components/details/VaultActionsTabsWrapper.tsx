@@ -43,15 +43,7 @@ const tabs: TTabsOptions[] = [
 const DISPLAY_DECIMALS = 10;
 const trimAmount = (amount: string | number): string => Number(Number(amount).toFixed(DISPLAY_DECIMALS)).toString();
 
-function getCurrentTab({
-	isDepositing,
-	hasMigration,
-	isRetired
-}: {
-	isDepositing: boolean;
-	hasMigration: boolean;
-	isRetired: boolean;
-}): TTabsOptions {
+function getCurrentTab({isDepositing, hasMigration, isRetired}: {isDepositing: boolean; hasMigration: boolean; isRetired: boolean}): TTabsOptions {
 	if (hasMigration || isRetired) {
 		return tabs[1];
 	}
@@ -75,14 +67,8 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 			isRetired: currentVault?.details?.retired
 		})
 	);
-	const [shouldShowLedgerPluginBanner, set_shouldShowLedgerPluginBanner] = useLocalStorage<boolean>(
-		'yearn.fi/ledger-plugin-banner',
-		true
-	);
-	const [shouldShowOpBoostInfo, set_shouldShowOpBoostInfo] = useLocalStorage<boolean>(
-		'yearn.fi/op-boost-banner',
-		true
-	);
+	const [shouldShowLedgerPluginBanner, set_shouldShowLedgerPluginBanner] = useLocalStorage<boolean>('yearn.fi/ledger-plugin-banner', true);
+	const [shouldShowOpBoostInfo, set_shouldShowOpBoostInfo] = useLocalStorage<boolean>('yearn.fi/op-boost-banner', true);
 	const router = useRouter();
 	const {isWalletLedger} = useWeb3();
 	const rewardBalance = toNormalizedBN(toBigInt(stakingRewardsPosition?.reward), rewardTokenBalance.decimals);
@@ -161,10 +147,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 				</div>
 			)}
 
-			<nav
-				className={`mb-2 w-full ${
-					isLedgerPluginVisible || currentVault?.details?.retired ? 'mt-1 md:mt-4' : 'mt-10 md:mt-20'
-				}`}>
+			<nav className={`mb-2 w-full ${isLedgerPluginVisible || currentVault?.details?.retired ? 'mt-1 md:mt-4' : 'mt-10 md:mt-20'}`}>
 				<Link href={'/vaults'}>
 					<p className={'yearn--header-nav-item w-full whitespace-nowrap opacity-30'}>{'Back to vaults'}</p>
 				</Link>
@@ -192,10 +175,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 										);
 										onSwitchSelectedOptions(tab.flowAction);
 									}}>
-									<p
-										title={tab.label}
-										aria-selected={currentTab.value === tab.value}
-										className={'hover-fix tab'}>
+									<p title={tab.label} aria-selected={currentTab.value === tab.value} className={'hover-fix tab'}>
 										{tab.label}
 									</p>
 								</button>
@@ -219,15 +199,9 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 										className={
 											'flex h-10 w-40 flex-row items-center border-0 border-b-2 border-neutral-900 bg-neutral-100 p-0 font-bold focus:border-neutral-900 md:hidden'
 										}>
-										<div className={'relative flex flex-row items-center'}>
-											{currentTab?.label || 'Menu'}
-										</div>
+										<div className={'relative flex flex-row items-center'}>{currentTab?.label || 'Menu'}</div>
 										<div className={'absolute right-0'}>
-											<IconChevron
-												className={`h-6 w-6 transition-transform ${
-													open ? '-rotate-180' : 'rotate-0'
-												}`}
-											/>
+											<IconChevron className={`h-6 w-6 transition-transform ${open ? '-rotate-180' : 'rotate-0'}`} />
 										</div>
 									</Listbox.Button>
 									<Transition
@@ -242,10 +216,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 										<Listbox.Options className={'yearn--listbox-menu'}>
 											{possibleTabs.map(
 												(tab): ReactElement => (
-													<Listbox.Option
-														className={'yearn--listbox-menu-item'}
-														key={tab.value}
-														value={tab.value}>
+													<Listbox.Option className={'yearn--listbox-menu-item'} key={tab.value} value={tab.value}>
 														{tab.label}
 													</Listbox.Option>
 												)
@@ -277,10 +248,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 				{currentTab.value === 3 ? (
 					<RewardsTab currentVault={currentVault} />
 				) : (
-					<div
-						className={
-							'col-span-12 mb-4 flex flex-col space-x-0 space-y-2 bg-neutral-100 p-4 md:flex-row md:space-x-4 md:space-y-0 md:px-8 md:py-6'
-						}>
+					<div className={'col-span-12 mb-4 flex flex-col space-x-0 space-y-2 bg-neutral-100 p-4 md:flex-row md:space-x-4 md:space-y-0 md:px-8 md:py-6'}>
 						<VaultDetailsQuickActionsFrom />
 						<VaultDetailsQuickActionsSwitch />
 						<VaultDetailsQuickActionsTo />
@@ -294,16 +262,11 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 					</div>
 				)}
 
-				{isZero(currentTab.value) &&
-				currentVault.apy?.composite?.boost &&
-				hasStakingRewards &&
-				willDepositAndStake ? (
+				{isZero(currentTab.value) && currentVault.apy?.composite?.boost && hasStakingRewards && willDepositAndStake ? (
 					<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
 						<div className={'w-full bg-[#34A14F] p-2 md:px-6 md:py-4'}>
 							<b className={'text-base text-white'}>
-								{
-									'Great news! This Vault is receiving an Optimism Boost. Deposit and stake your tokens to receive OP rewards. Nice!'
-								}
+								{'Great news! This Vault is receiving an Optimism Boost. Deposit and stake your tokens to receive OP rewards. Nice!'}
 							</b>
 						</div>
 					</div>

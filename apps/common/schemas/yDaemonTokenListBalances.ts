@@ -1,17 +1,7 @@
 import {z} from 'zod';
 import {addressSchema} from '@yearn-finance/web-lib/utils/schemas/addressSchema';
 
-const SOLVER = [
-	'Vanilla',
-	'PartnerContract',
-	'ChainCoin',
-	'InternalMigration',
-	'OptimismBooster',
-	'Cowswap',
-	'Wido',
-	'Portals',
-	'None'
-] as const;
+const SOLVER = ['Vanilla', 'PartnerContract', 'ChainCoin', 'InternalMigration', 'OptimismBooster', 'Cowswap', 'Wido', 'Portals', 'None'] as const;
 
 export const Solver = z.enum(SOLVER);
 

@@ -37,14 +37,7 @@ export function GaugesTab(): ReactElement {
 	const [selectedGauge, set_selectedGauge] = useState('');
 	const [selectedAction, set_selectedAction] = useState<'stake' | 'unstake' | undefined>();
 	const {provider, address, isActive, chainID} = useWeb3();
-	const {
-		gaugeAddresses,
-		gaugesMap,
-		positionsMap,
-		allowancesMap,
-		refresh: refreshGauges,
-		isLoading: isLoadingGauges
-	} = useGauge();
+	const {gaugeAddresses, gaugesMap, positionsMap, allowancesMap, refresh: refreshGauges, isLoading: isLoadingGauges} = useGauge();
 	const {vaults} = useYearn();
 	const {balances, refresh: refreshBalances} = useWallet();
 	const refreshData = (): unknown => Promise.all([refreshGauges(), refreshBalances()]);
@@ -70,9 +63,7 @@ export function GaugesTab(): ReactElement {
 			gaugeApy: 0, // TODO: gauge apy calcs
 			gaugeBoost: positionsMap[address]?.boost ?? 1,
 			gaugeStaked: toBigInt(formatBigNumberAsAmount(positionsMap[address]?.deposit.balance)),
-			allowance: toBigInt(
-				formatBigNumberAsAmount(allowancesMap[allowanceKey(1, vaultAddress, address, userAddress)])
-			),
+			allowance: toBigInt(formatBigNumberAsAmount(allowancesMap[allowanceKey(1, vaultAddress, address, userAddress)])),
 			isApproved:
 				toBigInt(formatBigNumberAsAmount(allowancesMap[allowanceKey(1, vaultAddress, address, userAddress)])) >=
 				toBigInt(formatBigNumberAsAmount(balances[vaultAddress]?.raw)),
@@ -156,18 +147,8 @@ export function GaugesTab(): ReactElement {
 						className: 'my-4 md:my-0',
 						transform: ({vaultIcon, vaultName}): ReactElement => (
 							<div className={'flex flex-row items-center space-x-4 md:space-x-6'}>
-								<div
-									className={
-										'flex h-8 min-h-[32px] w-8 min-w-[32px] items-center justify-center rounded-full md:h-10 md:w-10'
-									}>
-									<ImageWithFallback
-										alt={vaultName}
-										width={40}
-										height={40}
-										quality={90}
-										src={vaultIcon}
-										loading={'eager'}
-									/>
+								<div className={'flex h-8 min-h-[32px] w-8 min-w-[32px] items-center justify-center rounded-full md:h-10 md:w-10'}>
+									<ImageWithFallback alt={vaultName} width={40} height={40} quality={90} src={vaultIcon} loading={'eager'} />
 								</div>
 								<p>{vaultName}</p>
 							</div>
@@ -183,8 +164,7 @@ export function GaugesTab(): ReactElement {
 						key: 'vaultDeposited',
 						label: 'Deposited in Vault',
 						sortable: true,
-						format: ({vaultDeposited, decimals}): string =>
-							formatAmount(toNormalizedValue(vaultDeposited, decimals))
+						format: ({vaultDeposited, decimals}): string => formatAmount(toNormalizedValue(vaultDeposited, decimals))
 					},
 					{
 						key: 'gaugeApy',
@@ -201,8 +181,7 @@ export function GaugesTab(): ReactElement {
 						key: 'gaugeStaked',
 						label: 'Staked in Gauge',
 						sortable: true,
-						format: ({gaugeStaked, decimals}): string =>
-							formatAmount(toNormalizedValue(gaugeStaked, decimals))
+						format: ({gaugeStaked, decimals}): string => formatAmount(toNormalizedValue(gaugeStaked, decimals))
 					},
 					{
 						key: 'actions',
@@ -210,37 +189,22 @@ export function GaugesTab(): ReactElement {
 						columnSpan: 2,
 						fullWidth: true,
 						className: 'my-4 md:my-0',
-						transform: ({
-							isApproved,
-							vaultAddress,
-							gaugeAddress,
-							vaultDeposited,
-							gaugeStaked
-						}): ReactElement => (
+						transform: ({isApproved, vaultAddress, gaugeAddress, vaultDeposited, gaugeStaked}): ReactElement => (
 							<div className={'flex flex-row justify-center space-x-2 md:justify-end'}>
 								<Button
 									className={'w-full md:w-24'}
 									onClick={async (): Promise<void> => onUnstake(gaugeAddress, gaugeStaked)}
 									isDisabled={!isActive || !isValidNetwork || isZero(gaugeStaked)}
-									isBusy={
-										gaugeAddress === selectedGauge &&
-										selectedAction === 'unstake' &&
-										unstakeStatus.none
-									}>
+									isBusy={gaugeAddress === selectedGauge && selectedAction === 'unstake' && unstakeStatus.none}>
 									{'Unstake'}
 								</Button>
 								{!isApproved && (
 									<Button
 										className={'w-full md:w-24'}
-										onClick={async (): Promise<void> =>
-											onApproveAndStake(vaultAddress, gaugeAddress, vaultDeposited)
-										}
+										onClick={async (): Promise<void> => onApproveAndStake(vaultAddress, gaugeAddress, vaultDeposited)}
 										isDisabled={!isActive || !isValidNetwork || isZero(vaultDeposited)}
 										isBusy={
-											(isLoadingGauges && vaultDeposited > 0n) ||
-											(gaugeAddress === selectedGauge &&
-												selectedAction === 'stake' &&
-												approveAndStakeStatus.none)
+											(isLoadingGauges && vaultDeposited > 0n) || (gaugeAddress === selectedGauge && selectedAction === 'stake' && approveAndStakeStatus.none)
 										}>
 										{'Stake'}
 									</Button>
@@ -250,12 +214,7 @@ export function GaugesTab(): ReactElement {
 										className={'w-full md:w-24'}
 										onClick={async (): Promise<void> => onStake(gaugeAddress, vaultDeposited)}
 										isDisabled={!isActive || !isValidNetwork || isZero(vaultDeposited)}
-										isBusy={
-											(isLoadingGauges && vaultDeposited > 0n) ||
-											(gaugeAddress === selectedGauge &&
-												selectedAction === 'stake' &&
-												stakeStatus.none)
-										}>
+										isBusy={(isLoadingGauges && vaultDeposited > 0n) || (gaugeAddress === selectedGauge && selectedAction === 'stake' && stakeStatus.none)}>
 										{'Stake'}
 									</Button>
 								)}

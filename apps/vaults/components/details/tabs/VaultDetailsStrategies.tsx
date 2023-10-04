@@ -90,17 +90,13 @@ function VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
 						<div className={'flex flex-row items-center justify-start space-x-2 pb-4'}>
 							<p className={'text-xxs text-neutral-900 md:text-xs'}>{toAddress(strategy.address)}</p>
 							<button onClick={(): void => copyToClipboard(strategy.address)} className={'cursor-copy'}>
-								<IconCopy
-									className={'h-4 w-4 text-neutral-600 transition-colors hover:text-neutral-900'}
-								/>
+								<IconCopy className={'h-4 w-4 text-neutral-600 transition-colors hover:text-neutral-900'} />
 							</button>
 						</div>
 						<p
 							className={'text-neutral-600'}
 							dangerouslySetInnerHTML={{
-								__html: parseMarkdown(
-									strategy.description.replaceAll('{{token}}', currentVault.token.symbol)
-								)
+								__html: parseMarkdown(strategy.description.replaceAll('{{token}}', currentVault.token.symbol))
 							}}
 						/>
 						<p className={'text-neutral-600'}>{`Last report ${lastReportTime}.`}</p>
@@ -113,14 +109,7 @@ function VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
 							<div className={'col-span-2 flex flex-col space-y-2 bg-neutral-200 p-2 md:p-4'}>
 								<p className={'text-base text-neutral-600'}>{'Capital Allocation'}</p>
 								<b className={'font-number text-lg text-neutral-900'}>
-									{`${formatAmount(
-										formatToNormalizedValue(
-											toBigInt(strategy.details?.totalDebt),
-											currentVault?.decimals
-										),
-										0,
-										0
-									)} ${currentVault.token.symbol}`}
+									{`${formatAmount(formatToNormalizedValue(toBigInt(strategy.details?.totalDebt), currentVault?.decimals), 0, 0)} ${currentVault.token.symbol}`}
 								</b>
 							</div>
 
@@ -128,11 +117,7 @@ function VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
 								<p className={'text-base text-neutral-600'}>{'Total Gain'}</p>
 								<b className={'font-number text-lg text-neutral-900'}>
 									{`${formatAmount(
-										formatToNormalizedValue(
-											toBigInt(strategy.details?.totalGain) -
-												toBigInt(strategy.details?.totalLoss),
-											currentVault?.decimals
-										),
+										formatToNormalizedValue(toBigInt(strategy.details?.totalGain) - toBigInt(strategy.details?.totalLoss), currentVault?.decimals),
 										0,
 										0
 									)} ${currentVault.token.symbol}`}
@@ -160,16 +145,12 @@ function VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
 
 							<div className={'col-span-2 flex flex-col space-y-0 md:space-y-2'}>
 								<p className={'text-xxs text-neutral-600 md:text-xs'}>{'Allocation'}</p>
-								<b className={'font-number text-xl text-neutral-900'}>
-									{formatPercent((strategy.details?.debtRatio || 0) / 100, 0)}
-								</b>
+								<b className={'font-number text-xl text-neutral-900'}>{formatPercent((strategy.details?.debtRatio || 0) / 100, 0)}</b>
 							</div>
 
 							<div className={'col-span-2 flex flex-col space-y-0 md:space-y-2'}>
 								<p className={'text-xxs text-neutral-600 md:text-xs'}>{'Perfomance fee'}</p>
-								<b className={'font-number text-xl text-neutral-600'}>
-									{formatPercent((strategy.details?.performanceFee || 0) * 100, 0)}
-								</b>
+								<b className={'font-number text-xl text-neutral-600'}>{formatPercent((strategy.details?.performanceFee || 0) * 100, 0)}</b>
 							</div>
 						</div>
 
@@ -211,9 +192,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 	};
 
 	const sortedStrategies = useMemo((): TYDaemonVault['strategies'] => {
-		return currentVault.strategies.sort(
-			(a, b): number => (b.details?.debtRatio || 0) - (a.details?.debtRatio || 0)
-		);
+		return currentVault.strategies.sort((a, b): number => (b.details?.debtRatio || 0) - (a.details?.debtRatio || 0));
 	}, [currentVault.strategies]);
 
 	const filteredStrategies = sortedStrategies.filter(hide0DebtStrategyFilter).filter(nameSearchFilter);

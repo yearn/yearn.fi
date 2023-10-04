@@ -18,19 +18,7 @@ type TAmountInputProps = {
 	onMaxClick?: () => void;
 };
 
-export function AmountInput({
-	amount,
-	maxAmount,
-	label,
-	placeholder,
-	legend,
-	error,
-	disabled,
-	loading,
-	onAmountChange,
-	onLegendClick,
-	onMaxClick
-}: TAmountInputProps): ReactElement {
+export function AmountInput({amount, maxAmount, label, placeholder, legend, error, disabled, loading, onAmountChange, onLegendClick, onMaxClick}: TAmountInputProps): ReactElement {
 	let displayedAmount = amount.toString();
 	if (isZero(displayedAmount) && !disabled) {
 		displayedAmount = '';
@@ -43,9 +31,7 @@ export function AmountInput({
 			{label && <p className={'mb-1 w-full truncate text-base text-neutral-600'}>{label}</p>}
 			<div className={'relative flex w-full items-center justify-center'}>
 				<input
-					className={`h-10 w-full p-2 font-mono text-base font-normal outline-none ${
-						maxAmount && !disabled ? 'pr-12' : null
-					} ${
+					className={`h-10 w-full p-2 font-mono text-base font-normal outline-none ${maxAmount && !disabled ? 'pr-12' : null} ${
 						error ? 'border border-solid border-[#EA5204] focus:border-[#EA5204]' : 'border-0 border-none'
 					} ${disabled ? 'bg-neutral-300 text-neutral-600' : 'bg-neutral-0'}`}
 					type={'number'}
@@ -59,9 +45,7 @@ export function AmountInput({
 				<Renderable shouldRender={!!maxAmount && !disabled}>
 					<button
 						onClick={onMaxClick ? (): void => onMaxClick() : undefined}
-						className={
-							'absolute right-2 ml-2 h-6 cursor-pointer border-none bg-neutral-900 px-2 py-1 text-xs text-neutral-0 transition-colors hover:bg-neutral-700'
-						}>
+						className={'absolute right-2 ml-2 h-6 cursor-pointer border-none bg-neutral-900 px-2 py-1 text-xs text-neutral-0 transition-colors hover:bg-neutral-700'}>
 						{'Max'}
 					</button>
 				</Renderable>

@@ -32,9 +32,7 @@ export const sort = <T>(data: T[], by: Extract<keyof T, string>, order?: 'asc' |
 			return order === 'desc' ? Number(elementA) - Number(elementB) : Number(elementB) - Number(elementA);
 		}
 		if (isString(elementA) && isString(elementB)) {
-			return order === 'desc'
-				? elementA.toLowerCase().localeCompare(elementB.toLowerCase())
-				: elementB.toLowerCase().localeCompare(elementA.toLowerCase());
+			return order === 'desc' ? elementA.toLowerCase().localeCompare(elementB.toLowerCase()) : elementB.toLowerCase().localeCompare(elementA.toLowerCase());
 		}
 		return 0;
 	};

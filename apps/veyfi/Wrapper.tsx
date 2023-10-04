@@ -20,13 +20,7 @@ export function Wrapper({children, router}: {children: ReactElement; router: Nex
 				<GaugeContextApp>
 					<OptionContextApp>
 						<AnimatePresence mode={'wait'}>
-							<motion.div
-								key={router.asPath}
-								initial={'initial'}
-								animate={'enter'}
-								exit={'exit'}
-								className={'my-0 h-full md:mb-0 md:mt-16'}
-								variants={variants}>
+							<motion.div key={router.asPath} initial={'initial'} animate={'enter'} exit={'exit'} className={'my-0 h-full md:mb-0 md:mt-16'} variants={variants}>
 								{children}
 							</motion.div>
 						</AnimatePresence>
