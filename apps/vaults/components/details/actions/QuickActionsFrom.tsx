@@ -15,9 +15,9 @@ import type {ChangeEvent, ReactElement} from 'react';
 
 export function VaultDetailsQuickActionsFrom(): ReactElement {
 	const {isActive} = useWeb3();
-	const {balances} = useWallet();
+	const {getToken} = useWallet();
 	const {possibleOptionsFrom, actionParams, onUpdateSelectedOptionFrom, onChangeAmount, maxDepositPossible, isDepositing} = useActionFlow();
-	const selectedFromBalance = useBalance(toAddress(actionParams?.selectedOptionFrom?.value));
+	const selectedFromBalance = useBalance({address: toAddress(actionParams?.selectedOptionFrom?.value), chainID: Number(actionParams?.selectedOptionFrom?.chainID)});
 	const selectedOptionFromPricePerToken = useTokenPrice(toAddress(actionParams?.selectedOptionFrom?.value));
 	const hasMultipleInputsToChooseFrom = isActive && isDepositing && possibleOptionsFrom.length > 1;
 	const selectedFromSymbol = actionParams?.selectedOptionFrom?.symbol || 'tokens';
@@ -36,9 +36,17 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 
 	const onChangeInput = useCallback(
 		(e: ChangeEvent<HTMLInputElement>): void => {
-			onChangeAmount(handleInputChangeEventValue(e.target.value, balances?.[toAddress(actionParams?.selectedOptionFrom?.value)]?.decimals || 18));
+			onChangeAmount(
+				handleInputChangeEventValue(
+					e.target.value,
+					getToken({
+						address: toAddress(actionParams?.selectedOptionFrom?.value),
+						chainID: Number(actionParams?.selectedOptionFrom?.chainID)
+					}).decimals
+				)
+			);
 		},
-		[actionParams?.selectedOptionFrom?.value, balances, onChangeAmount]
+		[actionParams?.selectedOptionFrom?.value, getToken, onChangeAmount]
 	);
 
 	return (

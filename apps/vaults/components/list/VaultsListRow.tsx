@@ -139,12 +139,14 @@ export function VaultAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 }
 
 export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const balanceOfWant = useBalance(currentVault.token.address);
-	const balanceOfCoin = useBalance(ETH_TOKEN_ADDRESS);
-	//TODO: Create a wagmi Chain upgrade to add the chain wrapper token address
-	const balanceOfWrappedCoin = useBalance(toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS ? WFTM_TOKEN_ADDRESS : WETH_TOKEN_ADDRESS);
+	const balanceOfWant = useBalance({chainID: currentVault.chainID, address: currentVault.token.address});
+	const balanceOfCoin = useBalance({chainID: currentVault.chainID, address: ETH_TOKEN_ADDRESS});
+	const balanceOfWrappedCoin = useBalance({
+		chainID: currentVault.chainID,
+		address: toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS ? WFTM_TOKEN_ADDRESS : WETH_TOKEN_ADDRESS //TODO: Create a wagmi Chain upgrade to add the chain wrapper token address
+	});
+	const deposited = useBalance({chainID: currentVault.chainID, address: currentVault.address}).raw;
 	const vaultName = useMemo((): string => getVaultName(currentVault), [currentVault]);
-	const deposited = useBalance(currentVault.address)?.raw;
 	const {stakingRewardsByVault, positionsMap} = useStakingRewards();
 
 	const availableToDeposit = useMemo((): bigint => {

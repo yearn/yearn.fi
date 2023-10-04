@@ -54,11 +54,11 @@ export function VaultDetailsHeader({vault}: {vault: TYDaemonVault}): ReactElemen
 
 	const normalizedVaultEarned = useMemo((): TNormalizedBN => {
 		const {unrealizedGains} = earned?.earned?.[toAddress(address)] || {};
-		const normalizedValue = toBigInt(unrealizedGains);
-		return toNormalizedBN(normalizedValue < 0n ? 0n : normalizedValue);
+		const value = toBigInt(unrealizedGains);
+		return toNormalizedBN(value < 0n ? 0n : value);
 	}, [earned?.earned, address]);
 
-	const vaultBalance = useBalance(address);
+	const vaultBalance = useBalance({address, chainID: vault.chainID});
 	const vaultPrice = useTokenPrice(address) || vault?.tvl?.price || 0;
 	const vaultName = useMemo((): string => getVaultName(vault), [vault]);
 	const {stakingRewardsByVault, positionsMap} = useStakingRewards();

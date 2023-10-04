@@ -129,31 +129,31 @@ export function ListHero<T extends string>({
 		{
 			label: 'Ethereum',
 			value: 1,
-			selected: chains.includes(1),
+			isSelected: chains.includes(1),
 			icon: <IconEtherumChain />
 		},
 		{
 			label: 'OP Mainnet',
 			value: 10,
-			selected: chains.includes(10),
+			isSelected: chains.includes(10),
 			icon: <IconOptimismChain />
 		},
 		{
 			label: 'Fantom',
 			value: 250,
-			selected: chains.includes(250),
+			isSelected: chains.includes(250),
 			icon: <IconFantomChain />
 		},
 		{
 			label: 'Base',
 			value: 8453,
-			selected: chains.includes(8453),
+			isSelected: chains.includes(8453),
 			icon: <IconBaseChain />
 		},
 		{
 			label: 'Arbitrum One',
 			value: 42161,
-			selected: chains.includes(42161),
+			isSelected: chains.includes(42161),
 			icon: <IconArbitrumChain />
 		}
 	];
@@ -176,18 +176,14 @@ export function ListHero<T extends string>({
 					onSelect={onSelect}
 				/>
 
-				<div>
-					<small>{'Select Blockchain'}</small>
-					<MultiSelectDropdown
-						defaultOption={OPTIONS[0]}
-						options={OPTIONS}
-						placeholder={'Select chain'}
-						onSelect={(options): void => {
-							const selectedChains = options.filter((o): boolean => o.selected).map((option): number => Number(option.value));
-							set_selectedChains?.(JSON.stringify(selectedChains));
-						}}
-					/>
-				</div>
+				<MultiSelectDropdown
+					options={OPTIONS}
+					placeholder={'Select chain'}
+					onSelect={(options): void => {
+						const selectedChains = options.filter((o): boolean => o.isSelected).map((option): number => Number(option.value));
+						set_selectedChains?.(JSON.stringify(selectedChains));
+					}}
+				/>
 
 				<SearchBar
 					searchPlaceholder={searchPlaceholder}

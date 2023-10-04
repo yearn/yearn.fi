@@ -30,7 +30,7 @@ export function LockVeYFI(): ReactElement {
 	const {safeChainID} = useChainID();
 	const {refresh: refreshBalances} = useWallet();
 	const {votingEscrow, positions, allowances, isLoading: isLoadingVotingEscrow, refresh: refreshVotingEscrow} = useVotingEscrow();
-	const tokenBalance = useBalance(toAddress(votingEscrow?.token));
+	const tokenBalance = useBalance({address: toAddress(votingEscrow?.token), chainID: 1}); //veYFI is on ETH mainnet only
 	const hasLockedAmount = toBigInt(positions?.deposit?.underlyingBalance) > 0n;
 	const [approveLockStatus, set_approveLockStatus] = useState(defaultTxStatus);
 	const [lockStatus, set_lockStatus] = useState(defaultTxStatus);

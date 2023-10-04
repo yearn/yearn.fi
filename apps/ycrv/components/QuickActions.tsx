@@ -5,8 +5,6 @@ import {Dropdown} from '@common/components/TokenDropdown';
 import {IconArrowRight} from '@common/icons/IconArrowRight';
 
 import type {ChangeEvent, ReactElement, ReactNode} from 'react';
-import type {TDict} from '@yearn-finance/web-lib/types';
-import type {TBalanceData} from '@yearn-finance/web-lib/types/hooks';
 import type {TDropdownOption} from '@common/types/types';
 
 export type TQASelect = {
@@ -14,7 +12,6 @@ export type TQASelect = {
 	legend?: string;
 	options: TDropdownOption[];
 	selected?: TDropdownOption;
-	balanceSource?: TDict<TBalanceData>; // only 'from'
 	onSelect?: (option: TDropdownOption) => void;
 };
 
@@ -38,7 +35,7 @@ export type TQAButton = {
 };
 
 function QASelect(props: TQASelect): ReactElement {
-	const {label, legend, options, selected, balanceSource, onSelect} = props;
+	const {label, legend, options, selected, onSelect} = props;
 
 	function renderMultipleOptionsFallback(): ReactElement {
 		return (
@@ -46,7 +43,6 @@ function QASelect(props: TQASelect): ReactElement {
 				defaultOption={options[0]}
 				options={options}
 				selected={selected}
-				balanceSource={balanceSource}
 				onSelect={onSelect ? onSelect : (): void => undefined}
 			/>
 		);

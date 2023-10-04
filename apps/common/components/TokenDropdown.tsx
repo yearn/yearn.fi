@@ -11,8 +11,8 @@ import {IconChevron} from '@common/icons/IconChevron';
 import type {ReactElement} from 'react';
 import type {TDropdownItemProps, TDropdownOption, TDropdownProps} from '@common/types/types';
 
-function DropdownItem({option, balanceSource}: TDropdownItemProps): ReactElement {
-	const balance = useBalance(option.value, balanceSource);
+function DropdownItem({option}: TDropdownItemProps): ReactElement {
+	const balance = useBalance({address: option.value, chainID: option.chainID});
 
 	return (
 		<Combobox.Option value={option}>
@@ -61,7 +61,7 @@ function DropdownEmpty({query}: {query: string}): ReactElement {
 	);
 }
 
-export function Dropdown({options, selected, onSelect, placeholder = '', balanceSource}: TDropdownProps): ReactElement {
+export function Dropdown({options, selected, onSelect, placeholder = ''}: TDropdownProps): ReactElement {
 	const [isOpen, set_isOpen] = useThrottledState(false, 400);
 	const [query, set_query] = useState('');
 
@@ -149,7 +149,6 @@ export function Dropdown({options, selected, onSelect, placeholder = '', balance
 										<DropdownItem
 											key={option.label}
 											option={option}
-											balanceSource={balanceSource}
 										/>
 									)
 								)}

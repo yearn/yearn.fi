@@ -63,7 +63,7 @@ const CardTransactorContext = createContext<TCardTransactor>({
 export function CardTransactorContextApp({defaultOptionFrom = ZAP_OPTIONS_FROM[0], defaultOptionTo = ZAP_OPTIONS_TO[0], children = <div />}): ReactElement {
 	const {provider, isActive, address} = useWeb3();
 	const {styBalAPY, allowances, refetchAllowances, slippage} = useYBal();
-	const {balancesNonce, balances, refresh} = useWallet();
+	const {getBalance, refresh} = useWallet();
 	const {vaults} = useYearn();
 	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
 	const [txStatusZap, set_txStatusZap] = useState(defaultTxStatus);
@@ -80,17 +80,16 @@ export function CardTransactorContextApp({defaultOptionFrom = ZAP_OPTIONS_FROM[0
 	 ** the wallet is connected, or to 0 if the wallet is disconnected.
 	 **************************************************************************/
 	useEffect((): void => {
-		balancesNonce; // remove warning, force deep refresh
 		set_amount((prevAmount): TNormalizedBN => {
 			if (isActive && isZero(prevAmount.raw) && !hasTypedSomething) {
-				return toNormalizedBN(balances[toAddress(selectedOptionFrom.value)]?.raw);
+				return toNormalizedBN(getBalance({address: selectedOptionFrom.value, chainID: selectedOptionFrom.chainID}).raw);
 			}
 			if (!isActive && prevAmount.raw > 0n) {
 				return toNormalizedBN(0);
 			}
 			return prevAmount;
 		});
-	}, [isActive, selectedOptionFrom.value, balances, hasTypedSomething, balancesNonce]);
+	}, [isActive, selectedOptionFrom.value, getBalance, hasTypedSomething]);
 
 	useUpdateEffect((): void => {
 		if (!isActive) {
@@ -231,9 +230,8 @@ export function CardTransactorContextApp({defaultOptionFrom = ZAP_OPTIONS_FROM[0
 	}, [vaults, selectedOptionTo, styBalAPY]);
 
 	const allowanceFrom = useMemo((): bigint => {
-		balancesNonce; // remove warning, force deep refresh
 		return toBigInt(allowances?.[allowanceKey(1, toAddress(selectedOptionFrom.value), toAddress(selectedOptionFrom.zapVia), toAddress(address))]);
-	}, [balancesNonce, allowances, selectedOptionFrom.value, selectedOptionFrom.zapVia, address]);
+	}, [allowances, selectedOptionFrom.value, selectedOptionFrom.zapVia, address]);
 
 	return (
 		<CardTransactorContext.Provider

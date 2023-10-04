@@ -7,7 +7,6 @@ import {formatAmount, formatNumberOver10K, formatPercent} from '@yearn-finance/w
 import {formatCounterValue, formatCounterValueRaw} from '@yearn-finance/web-lib/utils/format.value';
 import {ValueAnimation} from '@common/components/ValueAnimation';
 import {useCurve} from '@common/contexts/useCurve';
-import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import {useBalance} from '@common/hooks/useBalance';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
@@ -22,9 +21,9 @@ import type {ReactElement} from 'react';
 
 function HeaderPosition(): ReactElement {
 	const {holdings} = useYCRV();
-	const balanceOfStyCRV = useBalance(STYCRV_TOKEN_ADDRESS);
-	const balanceOfLpyCRV = useBalance(LPYCRV_TOKEN_ADDRESS);
-	const balanceOfLpyCRVV2 = useBalance(LPYCRV_V2_TOKEN_ADDRESS);
+	const balanceOfStyCRV = useBalance({address: STYCRV_TOKEN_ADDRESS, chainID: 1}); //yCRV is on ETH mainnet only
+	const balanceOfLpyCRV = useBalance({address: LPYCRV_TOKEN_ADDRESS, chainID: 1}); //yCRV is on ETH mainnet only
+	const balanceOfLpyCRVV2 = useBalance({address: LPYCRV_V2_TOKEN_ADDRESS, chainID: 1}); //yCRV is on ETH mainnet only
 	const stycrvPrice = useTokenPrice(STYCRV_TOKEN_ADDRESS);
 	const lpycrvPrice = useTokenPrice(LPYCRV_TOKEN_ADDRESS);
 	const lpycrvV2Price = useTokenPrice(LPYCRV_V2_TOKEN_ADDRESS);
@@ -35,7 +34,11 @@ function HeaderPosition(): ReactElement {
 	);
 
 	const formatedYouHave = useMemo(
-		(): string => formatCounterValueRaw(balanceOfStyCRV.normalized * stycrvPrice + balanceOfLpyCRV.normalized * lpycrvPrice + balanceOfLpyCRVV2.normalized * lpycrvV2Price, 1),
+		(): string =>
+			formatCounterValueRaw(
+				Number(balanceOfStyCRV.normalized) * stycrvPrice + Number(balanceOfLpyCRV.normalized) * lpycrvPrice + Number(balanceOfLpyCRVV2.normalized) * lpycrvV2Price,
+				1
+			),
 		[balanceOfStyCRV.normalized, stycrvPrice, balanceOfLpyCRV.normalized, lpycrvPrice, balanceOfLpyCRVV2.normalized, lpycrvV2Price]
 	);
 
@@ -68,7 +71,6 @@ function HeaderPosition(): ReactElement {
 }
 
 function ZapAndStats(): ReactElement {
-	const {balances} = useWallet();
 	const {holdings, styCRVAPY} = useYCRV();
 	const {vaults} = useYearn();
 	const {curveWeeklyFees, cgPrices} = useCurve();
@@ -79,9 +81,9 @@ function ZapAndStats(): ReactElement {
 	const stycrvPrice = useTokenPrice(STYCRV_TOKEN_ADDRESS);
 	const lpycrvPrice = useTokenPrice(LPYCRV_TOKEN_ADDRESS);
 	const lpycrvV2Price = useTokenPrice(LPYCRV_V2_TOKEN_ADDRESS);
-	const balanceOfStyCRV = useBalance(STYCRV_TOKEN_ADDRESS);
-	const balanceOfLpyCRV = useBalance(LPYCRV_TOKEN_ADDRESS);
-	const balanceOfLpyCRVV2 = useBalance(LPYCRV_V2_TOKEN_ADDRESS);
+	const balanceOfStyCRV = useBalance({address: STYCRV_TOKEN_ADDRESS, chainID: 1}); //yCRV is on ETH mainnet only
+	const balanceOfLpyCRV = useBalance({address: LPYCRV_TOKEN_ADDRESS, chainID: 1}); //yCRV is on ETH mainnet only
+	const balanceOfLpyCRVV2 = useBalance({address: LPYCRV_V2_TOKEN_ADDRESS, chainID: 1}); //yCRV is on ETH mainnet only
 
 	const latestCurveFeesValue = useMemo((): number => {
 		const {weeklyFeesTable} = curveWeeklyFees;
@@ -156,7 +158,7 @@ function ZapAndStats(): ReactElement {
 						<p
 							suppressHydrationWarning
 							className={'font-number text-sm text-neutral-900'}>
-							{formatNumberOver10K(balances[STYCRV_TOKEN_ADDRESS]?.normalized || 0)}
+							{formatNumberOver10K(Number(balanceOfStyCRV.normalized))}
 						</p>
 					</div>
 					<div className={'flex flex-row items-center justify-between'}>
@@ -233,7 +235,7 @@ function ZapAndStats(): ReactElement {
 						<p
 							suppressHydrationWarning
 							className={'font-number text-sm text-neutral-900'}>
-							{formatNumberOver10K(balances[LPYCRV_V2_TOKEN_ADDRESS]?.normalized || 0)}
+							{formatNumberOver10K(Number(balanceOfLpyCRVV2.normalized))}
 						</p>
 					</div>
 					<div className={'flex flex-row items-center justify-between'}>
@@ -273,7 +275,7 @@ function ZapAndStats(): ReactElement {
 					</div>
 				</div>
 
-				{toBigInt(balances[LPYCRV_TOKEN_ADDRESS]?.raw) > 0n ? (
+				{toBigInt(balanceOfLpyCRV.raw) > 0n ? (
 					<div className={'w-full bg-neutral-100 p-4'}>
 						<div className={'flex flex-row items-center justify-between pb-3'}>
 							<b className={'text-neutral-900'}>{'lp-yCRV'}</b>
@@ -284,7 +286,7 @@ function ZapAndStats(): ReactElement {
 							<p
 								suppressHydrationWarning
 								className={'font-number text-sm text-neutral-900'}>
-								{formatNumberOver10K(balances[LPYCRV_TOKEN_ADDRESS]?.normalized || 0)}
+								{formatNumberOver10K(Number(balanceOfLpyCRV.normalized))}
 							</p>
 						</div>
 						<div className={'flex flex-row items-center justify-between'}>
@@ -333,8 +335,8 @@ function ZapAndStats(): ReactElement {
 
 function Holdings(): ReactElement {
 	const {vaultsMigrations} = useYearn();
-	const balance = useBalance(LPYCRV_TOKEN_ADDRESS);
-	const hasLegacyLpyCRV = !!vaultsMigrations[LPYCRV_TOKEN_ADDRESS] && balance.raw > 0n;
+	const balanceOfLpyCRV = useBalance({address: LPYCRV_TOKEN_ADDRESS, chainID: 1}); //yCRV is on ETH mainnet only
+	const hasLegacyLpyCRV = !!vaultsMigrations[LPYCRV_TOKEN_ADDRESS] && balanceOfLpyCRV.raw > 0n;
 
 	return (
 		<section className={cl('grid w-full grid-cols-12 gap-y-10 pb-10 md:gap-x-10 md:gap-y-20', !hasLegacyLpyCRV ? 'mt-4  md:mt-20' : '')}>

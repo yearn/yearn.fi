@@ -3,7 +3,7 @@ import {erc20ABI, useContractRead} from 'wagmi';
 import {useOption} from '@veYFI/contexts/useOption';
 import {redeem} from '@veYFI/utils/actions/option';
 import {VEYFI_CHAIN_ID, VEYFI_DYFI_ADDRESS, VEYFI_OPTIONS_ADDRESS} from '@veYFI/utils/constants';
-import { validateAmount} from '@veYFI/utils/validations';
+import {validateAmount} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -17,6 +17,7 @@ import {AmountInput} from '@common/components/AmountInput';
 import {useWallet} from '@common/contexts/useWallet';
 import {useAsyncTrigger} from '@common/hooks/useAsyncEffect';
 import {useBalance} from '@common/hooks/useBalance';
+import {useToken} from '@common/hooks/useToken';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
 import {approveERC20} from '@common/utils/actions';
 
@@ -28,12 +29,13 @@ export function RedeemTab(): ReactElement {
 	const {refresh: refreshBalances} = useWallet();
 	const {getRequiredEth, position: dYFIBalance, discount, refresh, dYFIPrice} = useOption();
 	const clearLockAmount = (): void => set_redeemAmount(toNormalizedBN(0));
-	const ethBalance = useBalance(ETH_TOKEN_ADDRESS);
-	const yfiBalance = useBalance(YFI_ADDRESS);
+	const ethBalance = useToken({address: ETH_TOKEN_ADDRESS, chainID: VEYFI_CHAIN_ID}); //VeYFI is on ETH mainnet only
+	const yfiBalance = useBalance({address: YFI_ADDRESS, chainID: VEYFI_CHAIN_ID}); //VeYFI is on ETH mainnet only
 	const yfiPrice = useTokenPrice(YFI_ADDRESS);
 	const [approveRedeemStatus, set_approveRedeemStatus] = useState(defaultTxStatus);
 	const [redeemStatus, set_redeemStatus] = useState(defaultTxStatus);
 	const [ethRequired, set_ethRequired] = useState(toNormalizedBN(0));
+
 	const {data: isApproved, refetch: refreshAllowances} = useContractRead({
 		address: VEYFI_DYFI_ADDRESS,
 		abi: erc20ABI,
@@ -43,22 +45,17 @@ export function RedeemTab(): ReactElement {
 		select: (value: bigint): boolean => value >= redeemAmount.raw
 	});
 
-	const refreshData = useCallback((): unknown => Promise.all([
-		refresh(),
-		refreshAllowances(),
-		refreshBalances()
-	]), [refresh, refreshBalances, refreshAllowances]);
+	const refreshData = useCallback(
+		(): unknown => Promise.all([refresh(), refreshAllowances(), refreshBalances()]),
+		[refresh, refreshBalances, refreshAllowances]
+	);
 
-	const onTxSuccess = useCallback((): unknown => Promise.all([
-		refreshData(),
-		clearLockAmount()
-	]), [refreshData]);
+	const onTxSuccess = useCallback((): unknown => Promise.all([refreshData(), clearLockAmount()]), [refreshData]);
 
 	useAsyncTrigger(async (): Promise<void> => {
 		const result = await getRequiredEth(redeemAmount.raw);
 		set_ethRequired(toNormalizedBN(result));
 	}, [getRequiredEth, redeemAmount.raw]);
-
 
 	const onApproveRedeem = useCallback(async (): Promise<void> => {
 		const response = await approveERC20({
@@ -111,7 +108,7 @@ export function RedeemTab(): ReactElement {
 								'Got dYFI, want YFI? You’ve come to the right place. Redeem dYFI for YFI by paying the redemption cost in ETH. Enjoy your cheap YFI anon.'
 							}
 						</p>
-						<b className={'mt-4 block'} suppressHydrationWarning>
+						<b className={'mt-4 block'}>
 							{`Current discount: ${formatAmount(Number(discount.normalized) * 100, 2, 2)}%`}
 						</b>
 					</div>
@@ -128,8 +125,14 @@ export function RedeemTab(): ReactElement {
 						error={redeemAmountError}
 						legend={
 							<div className={'flex flex-row justify-between'}>
-								<p className={'text-neutral-400'} suppressHydrationWarning>{formatCounterValue(redeemAmount.normalized, dYFIPrice)}</p>
-								<p className={'text-neutral-400'} suppressHydrationWarning>{`You have: ${formatAmount(dYFIBalance.normalized, 2, 6)} dYFI`}</p>
+								<p className={'text-neutral-400'}>
+									{formatCounterValue(redeemAmount.normalized, dYFIPrice)}
+								</p>
+								<p className={'text-neutral-400'}>{`You have: ${formatAmount(
+									dYFIBalance.normalized,
+									2,
+									6
+								)} dYFI`}</p>
 							</div>
 						}
 					/>
@@ -139,8 +142,17 @@ export function RedeemTab(): ReactElement {
 						amount={ethRequired}
 						legend={
 							<div className={'flex flex-row justify-between'}>
-								<p className={'text-neutral-400'} suppressHydrationWarning>{formatCounterValue(ethRequired.normalized, ethBalance.normalizedPrice ?? 0)}</p>
-								<p className={'text-neutral-400'} suppressHydrationWarning>{`You have: ${formatAmount(ethBalance.normalized, 2, 6)} ETH`}</p>
+								<p className={'text-neutral-400'}>
+									{formatCounterValue(
+										ethRequired.normalized,
+										Number(ethBalance.price.normalized) ?? 0
+									)}
+								</p>
+								<p className={'text-neutral-400'}>{`You have: ${formatAmount(
+									ethBalance.balance.normalized,
+									2,
+									6
+								)} ETH`}</p>
 							</div>
 						}
 						disabled
@@ -151,8 +163,14 @@ export function RedeemTab(): ReactElement {
 						amount={redeemAmount}
 						legend={
 							<div className={'flex flex-row justify-between'}>
-								<p className={'text-neutral-400'} suppressHydrationWarning>{formatCounterValue(redeemAmount.normalized, yfiPrice)}</p>
-								<p className={'text-neutral-400'} suppressHydrationWarning>{`You have: ${formatAmount(yfiBalance.normalized, 2, 6)} YFI`}</p>
+								<p className={'text-neutral-400'}>
+									{formatCounterValue(redeemAmount.normalized, yfiPrice)}
+								</p>
+								<p className={'text-neutral-400'}>{`You have: ${formatAmount(
+									yfiBalance.normalized,
+									2,
+									6
+								)} YFI`}</p>
 							</div>
 						}
 						disabled

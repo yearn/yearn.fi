@@ -8,7 +8,6 @@ import {IconAddToMetamask} from '@yearn-finance/web-lib/icons/IconAddToMetamask'
 import {IconCross} from '@yearn-finance/web-lib/icons/IconCross';
 import {IconWallet} from '@yearn-finance/web-lib/icons/IconWallet';
 import {toAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
-import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useWallet} from '@common/contexts/useWallet';
@@ -16,11 +15,12 @@ import {useYearn} from '@common/contexts/useYearn';
 import {useBalance} from '@common/hooks/useBalance';
 
 import type {ReactElement} from 'react';
-import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
-import type {TBalanceData} from '@yearn-finance/web-lib/types/hooks';
+import type {TAddress} from '@yearn-finance/web-lib/types';
+import type {TChainTokens} from '@common/types/types';
 
 type TBalanceReminderElement = {
 	address: TAddress;
+	chainID: number;
 	normalizedBalance: number;
 	decimals: number;
 	symbol: string;
@@ -29,7 +29,7 @@ type TBalanceReminderElement = {
 function TokenItem({element}: {element: TBalanceReminderElement}): ReactElement {
 	const {provider} = useWeb3();
 	const {safeChainID} = useChainID();
-	const balance = useBalance(element.address);
+	const balance = useBalance({address: element.address, chainID: element.chainID});
 
 	async function addTokenToMetamask(address: TAddress, symbol: string, decimals: number, image: string): Promise<void> {
 		if (!provider) {
@@ -90,35 +90,46 @@ function TokenItem({element}: {element: TBalanceReminderElement}): ReactElement 
 }
 
 export function BalanceReminderPopover(): ReactElement {
-	const {balances, isLoading} = useWallet();
+	const {balances: tokens, isLoading} = useWallet();
 	const {address, ens, isActive, onDesactivate} = useWeb3();
 	const {vaults} = useYearn();
 
-	const nonNullBalances = useMemo((): TDict<TBalanceData> => {
-		const nonNullBalances = Object.entries(balances).reduce((acc: TDict<TBalanceData>, [address, balance]): TDict<TBalanceData> => {
-			if (toBigInt(balance?.raw) > 0n) {
-				acc[toAddress(address)] = balance;
+	const nonNullBalances = useMemo((): TChainTokens => {
+		const nonNullBalances: TChainTokens = {};
+
+		for (const [chainIDStr, chainTokens] of Object.entries(tokens)) {
+			const chainID = Number(chainIDStr);
+			nonNullBalances[chainID] = {};
+			for (const [, token] of Object.entries(chainTokens)) {
+				if (token.balance.raw > 0n) {
+					nonNullBalances[chainID][token.address] = token;
+				}
 			}
-			return acc;
-		}, {});
+		}
 		return nonNullBalances;
-	}, [balances]);
+	}, [tokens]);
 
 	const nonNullBalancesForVault = useMemo((): TBalanceReminderElement[] => {
-		const nonNullBalancesForVault = Object.entries(nonNullBalances).reduce((acc: TBalanceReminderElement[], [address, balance]): TBalanceReminderElement[] => {
-			const currentVault = vaults?.[toAddress(address)];
-			if (currentVault) {
-				acc.push({
-					address: toAddress(address),
-					normalizedBalance: balance.normalized,
-					decimals: balance.decimals,
-					symbol: currentVault.symbol
-				});
+		const nonNullBalancesForVault: TBalanceReminderElement[] = [];
+
+		for (const [, chainBalanceData] of Object.entries(nonNullBalances)) {
+			for (const [address, token] of Object.entries(chainBalanceData)) {
+				if (token.balance.raw > 0n) {
+					const currentVault = vaults?.[toAddress(address)];
+					if (currentVault) {
+						nonNullBalancesForVault.push({
+							address: toAddress(address),
+							chainID: currentVault.chainID,
+							normalizedBalance: Number(token.balance.normalized),
+							decimals: token.decimals,
+							symbol: currentVault.symbol
+						});
+					}
+				}
 			}
-			return acc;
-		}, []);
+		}
 		return nonNullBalancesForVault;
-	}, [nonNullBalances, vaults]);
+	}, [nonNullBalances]);
 
 	function renderNoTokenFallback(isLoading: boolean): ReactElement {
 		if (isLoading) {
@@ -161,7 +172,7 @@ export function BalanceReminderPopover(): ReactElement {
 										{nonNullBalancesForVault.map(
 											(element): ReactElement => (
 												<TokenItem
-													key={element.address}
+													key={`${element.chainID}-${element.address}`}
 													element={element}
 												/>
 											)

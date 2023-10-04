@@ -6,7 +6,6 @@ import {VaultActionsTabsWrapper} from '@vaults/components/details/VaultActionsTa
 import {VaultDetailsHeader} from '@vaults/components/details/VaultDetailsHeader';
 import {ActionFlowContextApp} from '@vaults/contexts/useActionFlow';
 import {WithSolverContextApp} from '@vaults/contexts/useSolver';
-import {Wrapper} from '@vaults/Wrapper';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import TokenIcon from '@common/components/TokenIcon';
@@ -18,8 +17,8 @@ import {variants} from '@common/utils/animations';
 import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 
 import type {GetServerSideProps} from 'next';
-import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
+import type {TUseBalancesTokens} from '@common/hooks/useMultichainBalances';
 
 function Index(): ReactElement | null {
 	const {address, isActive} = useWeb3();
@@ -47,14 +46,12 @@ function Index(): ReactElement | null {
 
 	useEffect((): void => {
 		if (address && isActive) {
-			const tokensToRefresh = [];
+			const tokensToRefresh: TUseBalancesTokens[] = [];
 			if (currentVault?.address) {
-				tokensToRefresh.push({token: toAddress(currentVault.address)});
+				tokensToRefresh.push({address: currentVault.address, chainID: currentVault.chainID});
 			}
 			if (currentVault?.token?.address) {
-				tokensToRefresh.push({
-					token: toAddress(currentVault.token.address)
-				});
+				tokensToRefresh.push({address: currentVault.token.address, chainID: currentVault.chainID});
 			}
 			refresh(tokensToRefresh);
 		}
@@ -108,10 +105,6 @@ function Index(): ReactElement | null {
 		</>
 	);
 }
-
-Index.getLayout = function getLayout(page: ReactElement, router: NextRouter): ReactElement {
-	return <Wrapper router={router}>{page}</Wrapper>;
-};
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export const getServerSideProps: GetServerSideProps = async () => {
