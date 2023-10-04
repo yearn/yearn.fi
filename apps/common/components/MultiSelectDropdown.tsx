@@ -170,7 +170,7 @@ export function MultiSelectDropdown({options, onSelect, placeholder = ''}: TMult
 					afterLeave={(): void => {
 						set_query('');
 					}}>
-					<Combobox.Options className={'absolute top-12 z-50 flex w-full cursor-pointer flex-col overflow-y-auto bg-white px-2 py-3 scrollbar-none'}>
+					<Combobox.Options className={'absolute top-12 z-50 flex w-full cursor-pointer flex-col overflow-y-auto bg-neutral-0 px-2 py-3 scrollbar-none'}>
 						<SelectAllOption
 							key={'select-all'}
 							label={'Select all'}
