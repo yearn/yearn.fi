@@ -23,7 +23,9 @@ type TMultiSelectProps = {
 
 function SelectAllOption(option: TMultiSelectOptionProps): ReactElement {
 	return (
-		<Combobox.Option value={option}>
+		<Combobox.Option
+			value={option}
+			className={'transition-colors hover:bg-neutral-100'}>
 			<div className={'flex w-full items-center justify-between p-2'}>
 				<p className={'pl-0 font-normal text-neutral-400'}>{option.label}</p>
 				<input
@@ -39,7 +41,9 @@ function SelectAllOption(option: TMultiSelectOptionProps): ReactElement {
 
 function Option(option: TMultiSelectOptionProps): ReactElement {
 	return (
-		<Combobox.Option value={option}>
+		<Combobox.Option
+			value={option}
+			className={'transition-colors hover:bg-neutral-100'}>
 			<div className={'flex w-full items-center justify-between p-2'}>
 				<div className={'flex items-center'}>
 					{option?.icon ? <div className={'h-8 w-8 rounded-full'}>{option.icon}</div> : null}
