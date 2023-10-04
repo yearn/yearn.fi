@@ -91,7 +91,7 @@ function DropdownEmpty({query}: {query: string}): ReactElement {
 export function MultiSelectDropdown({options, onSelect, placeholder = ''}: TMultiSelectProps): ReactElement {
 	const [isOpen, set_isOpen] = useThrottledState(false, 400);
 	const [currentOptions, set_currentOptions] = useState<TMultiSelectOptionProps[]>(options);
-	const [areAllSelected, set_areAllSelected] = useState(true);
+	const [areAllSelected, set_areAllSelected] = useState(false);
 	const [query, set_query] = useState('');
 	const componentRef = useRef(null);
 
