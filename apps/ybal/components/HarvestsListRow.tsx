@@ -73,8 +73,13 @@ export function HarvestListRow({harvest}: {harvest: TYDaemonVaultHarvest}): Reac
 					className={'yearn--table-data-section-item md:col-span-3'}
 					datatype={'number'}>
 					<p className={'yearn--table-data-section-item-label'}>{'Hash'}</p>
-					<a href={`https://etherscan.io/tx/${harvest.txHash}`} target={'_blank'} rel={'noreferrer'}>
-						<div className={'font-number flex flex-row items-center space-x-2 text-neutral-900'} style={{lineHeight: '24px'}}>
+					<a
+						href={`https://etherscan.io/tx/${harvest.txHash}`}
+						target={'_blank'}
+						rel={'noreferrer'}>
+						<div
+							className={'font-number flex flex-row items-center space-x-2 text-neutral-900'}
+							style={{lineHeight: '24px'}}>
 							{truncateHex(harvest.txHash, 6)}
 							<IconLinkOut className={'ml-2 h-4 w-4 md:ml-4'} />
 						</div>

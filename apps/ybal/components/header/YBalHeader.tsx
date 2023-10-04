@@ -12,7 +12,9 @@ export function YBalHeader({pathname}: TProps): ReactElement {
 	const {name, icon} = APPS[AppName.YBAL];
 
 	return (
-		<MotionDiv animate={pathname.startsWith('/ybal') ? 'enter' : 'exit'} name={name}>
+		<MotionDiv
+			animate={pathname.startsWith('/ybal') ? 'enter' : 'exit'}
+			name={name}>
 			{icon}
 		</MotionDiv>
 	);

@@ -89,20 +89,32 @@ function CardZap(): ReactElement {
 		if (txStatusApprove.pending || isAboveAllowance) {
 			if (allowanceFrom > 0n && toAddress(selectedOptionFrom.value) === CRV_TOKEN_ADDRESS) {
 				return (
-					<Button onClick={onIncreaseCRVAllowance} className={'w-full'} isBusy={txStatusApprove.pending} isDisabled={!isActive || isZero(amount.raw) || isAboveBalance}>
+					<Button
+						onClick={onIncreaseCRVAllowance}
+						className={'w-full'}
+						isBusy={txStatusApprove.pending}
+						isDisabled={!isActive || isZero(amount.raw) || isAboveBalance}>
 						{'Increase Allowance'}
 					</Button>
 				);
 			}
 			return (
-				<Button onClick={onApproveFrom} className={'w-full'} isBusy={txStatusApprove.pending} isDisabled={!isActive || isZero(amount.raw) || isAboveBalance}>
+				<Button
+					onClick={onApproveFrom}
+					className={'w-full'}
+					isBusy={txStatusApprove.pending}
+					isDisabled={!isActive || isZero(amount.raw) || isAboveBalance}>
 					{isAboveBalance ? 'Insufficient balance' : `Approve ${selectedOptionFrom?.label || 'token'}`}
 				</Button>
 			);
 		}
 
 		return (
-			<Button onClick={onZap} className={'w-full'} isBusy={txStatusZap.pending} isDisabled={!isActive || isZero(amount.raw) || amount.raw > balanceForInputToken}>
+			<Button
+				onClick={onZap}
+				className={'w-full'}
+				isBusy={txStatusZap.pending}
+				isDisabled={!isActive || isZero(amount.raw) || amount.raw > balanceForInputToken}>
 				{isAboveBalance && !isZero(amount.raw) ? 'Insufficient balance' : 'Swap'}
 			</Button>
 		);
@@ -127,12 +139,16 @@ function CardZap(): ReactElement {
 							});
 						}}
 					/>
-					<p suppressHydrationWarning className={'pl-2 !text-xs font-normal !text-green-600'}>
+					<p
+						suppressHydrationWarning
+						className={'pl-2 !text-xs font-normal !text-green-600'}>
 						{fromVaultAPY}
 					</p>
 				</label>
 				<div className={'flex flex-col space-y-1'}>
-					<label htmlFor={'amount'} className={'text-base text-neutral-600'}>
+					<label
+						htmlFor={'amount'}
+						className={'text-base text-neutral-600'}>
 						{'Amount'}
 					</label>
 					<div className={'flex h-10 items-center bg-neutral-100 p-2'}>
@@ -160,7 +176,9 @@ function CardZap(): ReactElement {
 							</button>
 						</div>
 					</div>
-					<p suppressHydrationWarning className={'pl-2 text-xs font-normal text-neutral-600'}>
+					<p
+						suppressHydrationWarning
+						className={'pl-2 text-xs font-normal text-neutral-600'}>
 						{formatCounterValue(
 							amount?.normalized || 0,
 							toAddress(selectedOptionFrom.value) === YCRV_TOKEN_ADDRESS
@@ -191,7 +209,9 @@ function CardZap(): ReactElement {
 						selected={selectedOptionTo}
 						onSelect={(option: TDropdownOption): void => set_selectedOptionTo(option)}
 					/>
-					<p suppressHydrationWarning className={'pl-2 !text-xs font-normal !text-green-600'}>
+					<p
+						suppressHydrationWarning
+						className={'pl-2 !text-xs font-normal !text-green-600'}>
 						{toVaultAPY}
 					</p>
 				</label>
@@ -227,7 +247,9 @@ function CardZap(): ReactElement {
 
 export function WithCardTransactor({className}: {className: string}): ReactElement {
 	return (
-		<CardTransactorContextApp defaultOptionFrom={ZAP_OPTIONS_FROM[0]} defaultOptionTo={ZAP_OPTIONS_TO[0]}>
+		<CardTransactorContextApp
+			defaultOptionFrom={ZAP_OPTIONS_FROM[0]}
+			defaultOptionTo={ZAP_OPTIONS_TO[0]}>
 			<div className={cl('mx-auto w-full bg-neutral-200 p-4 md:p-6', className)}>
 				<div className={'flex flex-col pb-2'}>
 					<h2 className={'text-2xl font-bold'}>{'Supercharge your yield with yCRV'}</h2>

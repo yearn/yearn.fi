@@ -12,14 +12,27 @@ const apps = [
 		href: '/vaults',
 		title: 'Vaults',
 		description: 'deposit tokens and receive yield.',
-		icon: <LogoYearn className={'h-[100px] w-[100px]'} back={'text-pink-400'} front={'text-white'} />
+		icon: (
+			<LogoYearn
+				className={'h-[100px] w-[100px]'}
+				back={'text-pink-400'}
+				front={'text-white'}
+			/>
+		)
 	},
 	{
 		href: '/ycrv',
 		title: 'yCRV',
 		description: 'get the best CRV yields in DeFi.',
 		icon: (
-			<ImageWithFallback alt={'yCRV'} width={100} height={100} src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YCRV_TOKEN_ADDRESS}/logo-128.png`} loading={'eager'} priority />
+			<ImageWithFallback
+				alt={'yCRV'}
+				width={100}
+				height={100}
+				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YCRV_TOKEN_ADDRESS}/logo-128.png`}
+				loading={'eager'}
+				priority
+			/>
 		)
 	},
 	// {
@@ -38,13 +51,25 @@ const apps = [
 		href: '/veyfi',
 		title: 'veYFI',
 		description: 'lock YFI\nto take part in governance.',
-		icon: <LogoYearn className={'h-[100px] w-[100px]'} back={'text-primary'} front={'text-white'} />
+		icon: (
+			<LogoYearn
+				className={'h-[100px] w-[100px]'}
+				back={'text-primary'}
+				front={'text-white'}
+			/>
+		)
 	},
 	{
 		href: '/ybribe',
 		title: 'yBribe',
 		description: 'sell votes, or buy them.\njust like democracy.',
-		icon: <LogoYearn className={'h-[100px] w-[100px]'} back={'text-neutral-900'} front={'text-neutral-0'} />
+		icon: (
+			<LogoYearn
+				className={'h-[100px] w-[100px]'}
+				back={'text-neutral-900'}
+				front={'text-neutral-0'}
+			/>
+		)
 	},
 	{
 		href: 'https://yeth.yearn.fi',
@@ -95,8 +120,13 @@ function AppBox({app}: {app: (typeof apps)[0]}): ReactElement {
 	}, [app.href]);
 
 	return (
-		<Link prefetch={false} key={app.href} href={app.href}>
-			<div id={app.href} className={'appBox'}>
+		<Link
+			prefetch={false}
+			key={app.href}
+			href={app.href}>
+			<div
+				id={app.href}
+				className={'appBox'}>
 				<div>{app.icon}</div>
 				<div className={'pt-6 text-center'}>
 					<b className={'text-lg'}>{app.title}</b>
@@ -225,7 +255,10 @@ function Index(): ReactElement {
 			<section className={'grid grid-cols-1 gap-10 md:grid-cols-3 lg:grid-cols-3'}>
 				{apps.map(
 					(app): ReactElement => (
-						<AppBox key={app.href} app={app} />
+						<AppBox
+							key={app.href}
+							app={app}
+						/>
 					)
 				)}
 			</section>

@@ -107,13 +107,24 @@ export function VaultListFactory(): ReactElement {
 	 **********************************************************************************************/
 	const VaultList = useMemo((): ReactNode => {
 		if (isLoadingVaultList || isZero(sortedVaultsToDisplay.length)) {
-			return <VaultsListEmptyFactory isLoading={isLoadingVaultList} sortedVaultsToDisplay={sortedVaultsToDisplay} currentCategory={category} />;
+			return (
+				<VaultsListEmptyFactory
+					isLoading={isLoadingVaultList}
+					sortedVaultsToDisplay={sortedVaultsToDisplay}
+					currentCategory={category}
+				/>
+			);
 		}
 		return sortedVaultsToDisplay.map((vault): ReactNode => {
 			if (!vault) {
 				return null;
 			}
-			return <VaultsListRow key={vault.address} currentVault={vault} />;
+			return (
+				<VaultsListRow
+					key={vault.address}
+					currentVault={vault}
+				/>
+			);
 		});
 	}, [category, isLoadingVaultList, sortedVaultsToDisplay]);
 

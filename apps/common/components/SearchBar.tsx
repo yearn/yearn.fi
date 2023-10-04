@@ -32,7 +32,12 @@ export function SearchBar({searchPlaceholder, searchValue, set_searchValue, clas
 						}}
 					/>
 					<div className={'absolute right-0 text-neutral-400'}>
-						<svg width={'20'} height={'20'} viewBox={'0 0 24 24'} fill={'none'} xmlns={'http://www.w3.org/2000/svg'}>
+						<svg
+							width={'20'}
+							height={'20'}
+							viewBox={'0 0 24 24'}
+							fill={'none'}
+							xmlns={'http://www.w3.org/2000/svg'}>
 							<path
 								fillRule={'evenodd'}
 								clipRule={'evenodd'}

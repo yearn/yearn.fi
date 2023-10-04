@@ -17,7 +17,9 @@ function DropdownItem({option, balanceSource}: TDropdownItemProps): ReactElement
 	return (
 		<Combobox.Option value={option}>
 			{({active}): ReactElement => (
-				<div data-active={active} className={'yearn--dropdown-menu-item w-full hover:bg-neutral-0/40'}>
+				<div
+					data-active={active}
+					className={'yearn--dropdown-menu-item w-full hover:bg-neutral-0/40'}>
 					<div className={'h-6 w-6 flex-none rounded-full'}>{option?.icon ? option.icon : null}</div>
 					<div>
 						<p className={`${option.icon ? 'pl-2' : 'pl-0'} font-normal text-neutral-900`}>{option.symbol}</p>
@@ -96,7 +98,9 @@ export function Dropdown({options, selected, onSelect, placeholder = '', balance
 						onClick={(): void => set_isOpen((o: boolean): boolean => !o)}
 						className={'flex h-10 w-full items-center justify-between bg-neutral-0 p-2 text-base text-neutral-900 md:w-56 md:px-3'}>
 						<div className={'relative flex flex-row items-center'}>
-							<div key={selected?.label} className={'h-6 w-6 flex-none rounded-full'}>
+							<div
+								key={selected?.label}
+								className={'h-6 w-6 flex-none rounded-full'}>
 								{selected?.icon ? cloneElement(selected.icon) : <div className={'h-6 w-6 flex-none rounded-full bg-neutral-500'} />}
 							</div>
 							<p className={'whitespace-nowrap px-2 font-normal text-neutral-900 scrollbar-none md:max-w-full'}>
@@ -114,7 +118,10 @@ export function Dropdown({options, selected, onSelect, placeholder = '', balance
 								/>
 							</p>
 							<div>
-								<IconChevron aria-hidden={'true'} className={`h-6 w-6 transition-transform ${isOpen ? '-rotate-180' : 'rotate-0'}`} />
+								<IconChevron
+									aria-hidden={'true'}
+									className={`h-6 w-6 transition-transform ${isOpen ? '-rotate-180' : 'rotate-0'}`}
+								/>
 							</div>
 						</div>
 					</Combobox.Button>
@@ -134,10 +141,16 @@ export function Dropdown({options, selected, onSelect, placeholder = '', balance
 							});
 						}}>
 						<Combobox.Options className={'yearn--dropdown-menu z-50'}>
-							<Renderable shouldRender={filteredOptions.length > 0} fallback={<DropdownEmpty query={query} />}>
+							<Renderable
+								shouldRender={filteredOptions.length > 0}
+								fallback={<DropdownEmpty query={query} />}>
 								{filteredOptions.map(
 									(option): ReactElement => (
-										<DropdownItem key={option.label} option={option} balanceSource={balanceSource} />
+										<DropdownItem
+											key={option.label}
+											option={option}
+											balanceSource={balanceSource}
+										/>
 									)
 								)}
 							</Renderable>

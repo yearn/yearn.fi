@@ -58,8 +58,12 @@ export function GraphForStrategyReports({strategy, vaultChainID, vaultDecimals, 
 	}
 
 	return (
-		<ResponsiveContainer width={'100%'} height={height}>
-			<LineChart margin={{top: 0, right: -28, bottom: 0, left: 0}} data={strategyData}>
+		<ResponsiveContainer
+			width={'100%'}
+			height={height}>
+			<LineChart
+				margin={{top: 0, right: -28, bottom: 0, left: 0}}
+				data={strategyData}>
 				<Line
 					className={'text-primary-600'}
 					type={'step'}
@@ -73,7 +77,10 @@ export function GraphForStrategyReports({strategy, vaultChainID, vaultDecimals, 
 						return <circle {...e}></circle>;
 					}}
 				/>
-				<XAxis dataKey={'name'} hide />
+				<XAxis
+					dataKey={'name'}
+					hide
+				/>
 				<YAxis
 					orientation={'right'}
 					hide={false}

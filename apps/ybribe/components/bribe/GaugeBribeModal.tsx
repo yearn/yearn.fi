@@ -116,14 +116,18 @@ export function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGa
 	function renderButton(): ReactElement {
 		if (!isActive) {
 			return (
-				<Button onClick={openLoginModal} className={'w-full'}>
+				<Button
+					onClick={openLoginModal}
+					className={'w-full'}>
 					{'Connect wallet'}
 				</Button>
 			);
 		}
 		if (![1, 1337].includes(chainID)) {
 			return (
-				<Button onClick={(): void => onSwitchChain(1)} className={'w-full'}>
+				<Button
+					onClick={(): void => onSwitchChain(1)}
+					className={'w-full'}>
 					{'Switch to Ethereum Mainnet'}
 				</Button>
 			);

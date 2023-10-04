@@ -57,17 +57,27 @@ export function Tabs({items, className}: TTabsProps): ReactElement {
 								);
 								set_selectedTabId(id);
 							}}>
-							<p title={label} aria-selected={selectedTabId === id} className={'hover-fix align-center flex grow flex-col justify-center'}>
+							<p
+								title={label}
+								aria-selected={selectedTabId === id}
+								className={'hover-fix align-center flex grow flex-col justify-center'}>
 								{label}
 							</p>
-							{selectedTabId === id && <motion.div className={'relative -bottom-0.5 w-full border-b-[3px] border-neutral-700'} layoutId={'tab-label-underline'} />}
+							{selectedTabId === id && (
+								<motion.div
+									className={'relative -bottom-0.5 w-full border-b-[3px] border-neutral-700'}
+									layoutId={'tab-label-underline'}
+								/>
+							)}
 							{selectedTabId !== id && <motion.div className={'relative -bottom-0.5 w-full border-b-[3px] border-transparent'} />}
 						</div>
 					)
 				)}
 			</nav>
 			<div className={'relative z-50 px-4 pt-4 md:hidden'}>
-				<Listbox value={selectedTabId} onChange={(value): void => set_selectedTabId(value)}>
+				<Listbox
+					value={selectedTabId}
+					onChange={(value): void => set_selectedTabId(value)}>
 					{({open}): ReactElement => (
 						<>
 							<Listbox.Button
@@ -90,7 +100,10 @@ export function Tabs({items, className}: TTabsProps): ReactElement {
 								<Listbox.Options className={'yearn--listbox-menu'}>
 									{items.map(
 										({id, label}): ReactElement => (
-											<Listbox.Option className={'yearn--listbox-menu-item'} key={id} value={id}>
+											<Listbox.Option
+												className={'yearn--listbox-menu-item'}
+												key={id}
+												value={id}>
 												{label}
 											</Listbox.Option>
 										)
@@ -102,10 +115,19 @@ export function Tabs({items, className}: TTabsProps): ReactElement {
 				</Listbox>
 			</div>
 			<AnimatePresence mode={'wait'}>
-				<motion.div key={selectedTabId} initial={'initial'} animate={'enter'} exit={'exit'} variants={variants} transition={{duration: 0.15}}>
+				<motion.div
+					key={selectedTabId}
+					initial={'initial'}
+					animate={'enter'}
+					exit={'exit'}
+					variants={variants}
+					transition={{duration: 0.15}}>
 					{items.map(
 						({id, content}): ReactElement => (
-							<div key={`tab-content-${id}`} className={'w-full p-6'} hidden={selectedTabId !== id}>
+							<div
+								key={`tab-content-${id}`}
+								className={'w-full p-6'}
+								hidden={selectedTabId !== id}>
 								{content}
 							</div>
 						)

@@ -19,7 +19,14 @@ const DropdownOption = (option: TDropdownOption): ReactElement => {
 					className={'yearn--dropdown-menu-item w-full hover:bg-neutral-0/40'}>
 					{icon && (
 						<div className={'h-6 w-6 rounded-full'}>
-							<ImageWithFallback alt={label} width={24} height={24} quality={90} src={icon} loading={'eager'} />
+							<ImageWithFallback
+								alt={label}
+								width={24}
+								height={24}
+								quality={90}
+								src={icon}
+								loading={'eager'}
+							/>
 						</div>
 					)}
 					<div>
@@ -112,7 +119,14 @@ export const Dropdown = ({selected, options, onChange, label, legend, isDisabled
 								<div className={'relative flex flex-row items-center'}>
 									{selected?.icon && (
 										<div className={'h-6 w-6 rounded-full'}>
-											<ImageWithFallback alt={selected.label} width={24} height={24} quality={90} src={selected.icon} loading={'eager'} />
+											<ImageWithFallback
+												alt={selected.label}
+												width={24}
+												height={24}
+												quality={90}
+												src={selected.icon}
+												loading={'eager'}
+											/>
 										</div>
 									)}
 									<p
@@ -135,7 +149,10 @@ export const Dropdown = ({selected, options, onChange, label, legend, isDisabled
 									</p>
 								</div>
 								<div className={'absolute right-2 md:right-3'}>
-									<IconChevron aria-hidden={'true'} className={`h-6 w-6 transition-transform ${isOpen ? '-rotate-180' : 'rotate-0'}`} />
+									<IconChevron
+										aria-hidden={'true'}
+										className={`h-6 w-6 transition-transform ${isOpen ? '-rotate-180' : 'rotate-0'}`}
+									/>
 								</div>
 							</Combobox.Button>
 							<Transition
@@ -157,7 +174,13 @@ export const Dropdown = ({selected, options, onChange, label, legend, isDisabled
 									) : (
 										filteredOptions.map(
 											({id, label, description, icon}): ReactElement => (
-												<DropdownOption key={id} id={id} label={label} description={description} icon={icon} />
+												<DropdownOption
+													key={id}
+													id={id}
+													label={label}
+													description={description}
+													icon={icon}
+												/>
 											)
 										)
 									)}

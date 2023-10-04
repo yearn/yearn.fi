@@ -45,7 +45,9 @@ export function ListHead({items, dataClassName, wrapperClassName, tokenClassName
 				<p className={'yearn--table-head-label max-w-[32px]'}>{chain.label}</p>
 
 				<div className={cl('yearn--table-head-token-section', tokenClassName)}>
-					<button onClick={(): void => onSort(token.value, toggleSortDirection(token.value))} className={'yearn--table-head-label-wrapper group'}>
+					<button
+						onClick={(): void => onSort(token.value, toggleSortDirection(token.value))}
+						className={'yearn--table-head-label-wrapper group'}>
 						<p className={'yearn--table-head-label'}>{token.label}</p>
 						{renderChevron(sortBy === token.value)}
 					</button>

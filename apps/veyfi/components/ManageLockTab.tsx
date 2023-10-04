@@ -85,7 +85,11 @@ export function ManageLockTab(): ReactElement {
 					</div>
 				</div>
 				<div className={'grid grid-cols-1 gap-6 md:grid-cols-2'}>
-					<AmountInput label={'Current lock period (weeks)'} amount={weeksToUnlock} disabled />
+					<AmountInput
+						label={'Current lock period (weeks)'}
+						amount={weeksToUnlock}
+						disabled
+					/>
 					<AmountInput
 						label={'Increase lock period (weeks)'}
 						amount={lockTime}
@@ -98,7 +102,11 @@ export function ManageLockTab(): ReactElement {
 					/>
 				</div>
 				<div className={'grid grid-cols-1 gap-6 md:grid-cols-2 md:pb-5'}>
-					<AmountInput label={'Total veYFI'} amount={formatUnits(votingPower, 18)} disabled />
+					<AmountInput
+						label={'Total veYFI'}
+						amount={formatUnits(votingPower, 18)}
+						disabled
+					/>
 					<Button
 						className={'w-full md:mt-7'}
 						onClick={onExtendLockTime}
@@ -117,8 +125,16 @@ export function ManageLockTab(): ReactElement {
 					</div>
 				</div>
 				<div className={'grid grid-cols-1 gap-6 md:grid-cols-2 md:pb-5'}>
-					<AmountInput label={'veYFI you have'} amount={formatUnits(toBigInt(positions?.deposit?.balance), 18)} disabled />
-					<AmountInput label={'Current lock time (weeks)'} amount={weeksToUnlock} disabled />
+					<AmountInput
+						label={'veYFI you have'}
+						amount={formatUnits(toBigInt(positions?.deposit?.balance), 18)}
+						disabled
+					/>
+					<AmountInput
+						label={'Current lock time (weeks)'}
+						amount={weeksToUnlock}
+						disabled
+					/>
 				</div>
 				<div className={'grid grid-cols-1 gap-6 md:grid-cols-2'}>
 					<AmountInput

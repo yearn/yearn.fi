@@ -54,10 +54,15 @@ function DesktopCategories<T>({categories, onSelect}: TListHeroDesktopCategories
 
 	return (
 		<div className={'w-full'}>
-			<div suppressHydrationWarning className={'mt-1 flex flex-row space-x-4'}>
+			<div
+				suppressHydrationWarning
+				className={'mt-1 flex flex-row space-x-4'}>
 				{(categories || []).map(
 					(currentCategory, index: number): ReactElement => (
-						<div key={`${index}-${isClientLoaded}`} suppressHydrationWarning className={'flex flex-row space-x-0 divide-x border-x border-neutral-900'}>
+						<div
+							key={`${index}-${isClientLoaded}`}
+							suppressHydrationWarning
+							className={'flex flex-row space-x-0 divide-x border-x border-neutral-900'}>
 							{currentCategory.map(
 								(item): ReactElement => (
 									<Button
@@ -98,7 +103,10 @@ function Switch(props: TSwitchProps): ReactElement {
 				onKeyDown={({keyCode}: {keyCode: number}): unknown => (keyCode === 13 ? safeOnSwitch() : null)}
 				className={'yearn--next-switch'}>
 				<span className={'sr-only'}>{'Use setting'}</span>
-				<div aria-hidden={'true'} className={(onSwitch ? isEnabled : isEnabledState) ? 'translate-x-[14px]' : 'translate-x-0'} />
+				<div
+					aria-hidden={'true'}
+					className={(onSwitch ? isEnabled : isEnabledState) ? 'translate-x-[14px]' : 'translate-x-0'}
+				/>
 			</HeadlessSwitch>
 		</div>
 	);
@@ -155,13 +163,18 @@ export function ListHero<T extends string>({
 	return (
 		<div className={'flex flex-col items-start justify-between space-x-0 px-4 pb-2 pt-4 md:px-10 md:pb-8 md:pt-10'}>
 			<div className={'mb-6'}>
-				<h2 suppressHydrationWarning className={'text-lg font-bold md:text-3xl'}>
+				<h2
+					suppressHydrationWarning
+					className={'text-lg font-bold md:text-3xl'}>
 					{headLabel}
 				</h2>
 			</div>
 
 			<div className={'hidden w-full flex-row items-center justify-between space-x-4 md:flex'}>
-				<DesktopCategories categories={categories} onSelect={onSelect} />
+				<DesktopCategories
+					categories={categories}
+					onSelect={onSelect}
+				/>
 
 				<MultiSelectDropdown
 					defaultOption={OPTIONS[0]}
@@ -173,7 +186,11 @@ export function ListHero<T extends string>({
 					}}
 				/>
 
-				<SearchBar searchPlaceholder={searchPlaceholder} searchValue={searchValue} set_searchValue={set_searchValue} />
+				<SearchBar
+					searchPlaceholder={searchPlaceholder}
+					searchValue={searchValue}
+					set_searchValue={set_searchValue}
+				/>
 
 				{!!switchProps && (
 					<div className={'mr-4 mt-7 flex h-full min-w-fit flex-row'}>
@@ -197,7 +214,10 @@ export function ListHero<T extends string>({
 							(currentCategory): ReactNode =>
 								currentCategory.map(
 									(item): ReactElement => (
-										<option suppressHydrationWarning key={item.value} value={item.value}>
+										<option
+											suppressHydrationWarning
+											key={item.value}
+											value={item.value}>
 											{item.label}
 										</option>
 									)

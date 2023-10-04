@@ -71,13 +71,23 @@ function HeaderUserPosition(): ReactElement {
 			<div className={'col-span-12 w-full md:col-span-8'}>
 				<p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl'}>{'Deposited'}</p>
 				<b className={'font-number text-4xl text-neutral-900 md:text-7xl'}>
-					<ValueAnimation identifier={'youHave'} value={formatedYouHave} defaultValue={'0,00'} prefix={'$'} />
+					<ValueAnimation
+						identifier={'youHave'}
+						value={formatedYouHave}
+						defaultValue={'0,00'}
+						prefix={'$'}
+					/>
 				</b>
 			</div>
 			<div className={'col-span-12 w-full md:col-span-4'}>
 				<p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl'}>{'Earnings'}</p>
 				<b className={'font-number text-3xl text-neutral-900 md:text-7xl'}>
-					<ValueAnimation identifier={'youEarned'} value={formatedYouEarned} defaultValue={'0,00'} prefix={'$'} />
+					<ValueAnimation
+						identifier={'youEarned'}
+						value={formatedYouEarned}
+						defaultValue={'0,00'}
+						prefix={'$'}
+					/>
 				</b>
 			</div>
 		</Fragment>
@@ -294,16 +304,33 @@ function Index(): ReactElement {
 	 **********************************************************************************************/
 	const VaultList = useMemo((): ReactNode => {
 		if (isLoadingVaultList && category === 'Holdings') {
-			return <VaultsListEmpty isLoading={isLoadingVaultList} sortedVaultsToDisplay={sortedVaultsToDisplay} currentCategory={category} />;
+			return (
+				<VaultsListEmpty
+					isLoading={isLoadingVaultList}
+					sortedVaultsToDisplay={sortedVaultsToDisplay}
+					currentCategory={category}
+				/>
+			);
 		}
 		if (isLoadingVaultList || isZero(sortedVaultsToDisplay.length)) {
-			return <VaultsListEmpty isLoading={isLoadingVaultList} sortedVaultsToDisplay={sortedVaultsToDisplay} currentCategory={category} />;
+			return (
+				<VaultsListEmpty
+					isLoading={isLoadingVaultList}
+					sortedVaultsToDisplay={sortedVaultsToDisplay}
+					currentCategory={category}
+				/>
+			);
 		}
 		return sortedVaultsToDisplay.map((vault): ReactNode => {
 			if (!vault) {
 				return null;
 			}
-			return <VaultsListRow key={vault.address} currentVault={vault} />;
+			return (
+				<VaultsListRow
+					key={vault.address}
+					currentVault={vault}
+				/>
+			);
 		});
 	}, [category, isLoadingVaultList, sortedVaultsToDisplay]);
 
@@ -353,7 +380,10 @@ function Index(): ReactElement {
 							.filter((vault): boolean => !!vault)
 							.map(
 								(vault): ReactNode => (
-									<VaultsListRetired key={vault.address} currentVault={vault} />
+									<VaultsListRetired
+										key={vault.address}
+										currentVault={vault}
+									/>
 								)
 							)}
 					</div>
@@ -365,7 +395,10 @@ function Index(): ReactElement {
 							.filter((vault): boolean => !!vault)
 							.map(
 								(vault): ReactNode => (
-									<VaultsListInternalMigrationRow key={vault.address} currentVault={vault} />
+									<VaultsListInternalMigrationRow
+										key={vault.address}
+										currentVault={vault}
+									/>
 								)
 							)}
 					</div>

@@ -53,7 +53,13 @@ export function VoteTab(): ReactElement {
 				</div>
 
 				<div className={'grid grid-cols-1 gap-6 md:grid-cols-2'}>
-					<Input label={'Delegate to'} value={delegateAddress} onChange={set_delegateAddress} placeholder={'0x...'} error={delegateAddressError} />
+					<Input
+						label={'Delegate to'}
+						value={delegateAddress}
+						onChange={set_delegateAddress}
+						placeholder={'0x...'}
+						error={delegateAddressError}
+					/>
 					<Button
 						className={'w-full md:mt-7'}
 						onClick={onHandleExecuteDelegateVote}

@@ -80,7 +80,10 @@ function Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactE
 								);
 								set_selectedAboutTabIndex(tab.value);
 							}}>
-							<p title={tab.label} aria-selected={selectedAboutTabIndex === tab.value} className={'hover-fix tab'}>
+							<p
+								title={tab.label}
+								aria-selected={selectedAboutTabIndex === tab.value}
+								className={'hover-fix tab'}>
 								{tab.label}
 							</p>
 						</button>
@@ -88,7 +91,9 @@ function Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactE
 				)}
 			</nav>
 			<div className={'relative z-50'}>
-				<Listbox value={selectedAboutTabIndex} onChange={(value): void => set_selectedAboutTabIndex(value)}>
+				<Listbox
+					value={selectedAboutTabIndex}
+					onChange={(value): void => set_selectedAboutTabIndex(value)}>
 					{({open}): ReactElement => (
 						<>
 							<Listbox.Button
@@ -112,7 +117,10 @@ function Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactE
 								<Listbox.Options className={'yearn--listbox-menu'}>
 									{tabs.map(
 										(tab): ReactElement => (
-											<Listbox.Option className={'yearn--listbox-menu-item'} key={tab.value} value={tab.value}>
+											<Listbox.Option
+												className={'yearn--listbox-menu-item'}
+												key={tab.value}
+												value={tab.value}>
 												{tab.label}
 											</Listbox.Option>
 										)
@@ -135,7 +143,10 @@ function ExplorerLink({explorerBaseURI, currentVaultAddress}: TExplorerLinkProps
 	}
 
 	return (
-		<a href={`${explorerBaseURI}/address/${currentVaultAddress}`} target={'_blank'} rel={'noopener noreferrer'}>
+		<a
+			href={`${explorerBaseURI}/address/${currentVaultAddress}`}
+			target={'_blank'}
+			rel={'noopener noreferrer'}>
 			<span className={'sr-only'}>{'Open in explorer'}</span>
 			<IconLinkOut className={'h-5 w-5 cursor-alias text-neutral-600 transition-colors hover:text-neutral-900 md:h-6 md:w-6'} />
 		</a>
@@ -184,7 +195,10 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 			aria-label={'Vault Details'}
 			className={'col-span-12 mb-4 flex flex-col bg-neutral-100'}>
 			<div className={'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'}>
-				<Tabs selectedAboutTabIndex={selectedAboutTabIndex} set_selectedAboutTabIndex={set_selectedAboutTabIndex} />
+				<Tabs
+					selectedAboutTabIndex={selectedAboutTabIndex}
+					set_selectedAboutTabIndex={set_selectedAboutTabIndex}
+				/>
 
 				<div className={'flex flex-row items-center justify-end space-x-2 pb-0 md:pb-4 md:last:space-x-4'}>
 					<button
@@ -194,14 +208,20 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 						<span className={'sr-only'}>{'Add to wallet'}</span>
 						<IconAddToMetamask className={'h-5 w-5 text-neutral-600 transition-colors hover:text-neutral-900 md:h-6 md:w-6'} />
 					</button>
-					<ExplorerLink explorerBaseURI={getNetwork(currentVault.chainID)?.defaultBlockExplorer} currentVaultAddress={currentVault.address} />
+					<ExplorerLink
+						explorerBaseURI={getNetwork(currentVault.chainID)?.defaultBlockExplorer}
+						currentVaultAddress={currentVault.address}
+					/>
 				</div>
 			</div>
 
 			<div className={'-mt-0.5 h-0.5 w-full bg-neutral-300'} />
 
 			<Renderable shouldRender={currentVault && isZero(selectedAboutTabIndex)}>
-				<VaultDetailsAbout currentVault={currentVault} harvestData={harvestData} />
+				<VaultDetailsAbout
+					currentVault={currentVault}
+					harvestData={harvestData}
+				/>
 			</Renderable>
 
 			<Renderable shouldRender={currentVault && selectedAboutTabIndex === 1}>
@@ -209,7 +229,10 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 			</Renderable>
 
 			<Renderable shouldRender={currentVault && selectedAboutTabIndex === 2}>
-				<VaultDetailsHistorical currentVault={currentVault} harvestData={harvestData} />
+				<VaultDetailsHistorical
+					currentVault={currentVault}
+					harvestData={harvestData}
+				/>
 			</Renderable>
 		</div>
 	);

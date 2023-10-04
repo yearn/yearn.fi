@@ -139,7 +139,9 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 			)}
 
 			{!currentVault?.migration.available && currentVault?.details?.retired && (
-				<div aria-label={'Deprecation Warning'} className={'col-span-12 mt-10'}>
+				<div
+					aria-label={'Deprecation Warning'}
+					className={'col-span-12 mt-10'}>
 					<div className={'w-full bg-neutral-900 p-6 text-neutral-0'}>
 						<b className={'text-lg'}>{'This Vault is no longer supported (oh no).'}</b>
 						<p className={'mt-2'}>
@@ -181,7 +183,10 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 										);
 										onSwitchSelectedOptions(tab.flowAction);
 									}}>
-									<p title={tab.label} aria-selected={currentTab.value === tab.value} className={'hover-fix tab'}>
+									<p
+										title={tab.label}
+										aria-selected={currentTab.value === tab.value}
+										className={'hover-fix tab'}>
 										{tab.label}
 									</p>
 								</button>
@@ -222,7 +227,10 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 										<Listbox.Options className={'yearn--listbox-menu'}>
 											{possibleTabs.map(
 												(tab): ReactElement => (
-													<Listbox.Option className={'yearn--listbox-menu-item'} key={tab.value} value={tab.value}>
+													<Listbox.Option
+														className={'yearn--listbox-menu-item'}
+														key={tab.value}
+														value={tab.value}>
 														{tab.label}
 													</Listbox.Option>
 												)

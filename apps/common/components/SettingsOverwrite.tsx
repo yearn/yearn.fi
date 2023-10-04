@@ -35,7 +35,10 @@ function WrappedInput({title, initialValue, onSave}: TWrappedInput): ReactElemen
 						onChange={(e): void => set_value(e.target.value)}
 					/>
 				</div>
-				<Button isDisabled={isInitialValue} className={'w-full md:w-48'} onClick={(): void => onSave(value)}>
+				<Button
+					isDisabled={isInitialValue}
+					className={'w-full md:w-48'}
+					onClick={(): void => onSave(value)}>
 					{'Submit'}
 				</Button>
 			</div>
@@ -57,7 +60,11 @@ function SettingsOverwrite(): ReactElement {
 				<p className={'pb-6'}>
 					<Balancer>
 						{'Configure the default settings for this application, such as the '}
-						<a href={'https://ydaemon.yearn.farm'} target={'_blank'} className={'text-neutral-900 underline'} rel={'noreferrer'}>
+						<a
+							href={'https://ydaemon.yearn.farm'}
+							target={'_blank'}
+							className={'text-neutral-900 underline'}
+							rel={'noreferrer'}>
 							{'yDaemon API'}
 						</a>
 						{' base URI and the default network.'}
@@ -78,7 +85,10 @@ function SettingsOverwrite(): ReactElement {
 				<div className={'grid grid-cols-1 gap-4'}>
 					<label className={'flex cursor-pointer items-center justify-between pt-4 transition-colors hover:bg-neutral-100/40'}>
 						<p>{'Show feedback popover'}</p>
-						<Switch isEnabled={!value} onSwitch={(): void => set(!value)} />
+						<Switch
+							isEnabled={!value}
+							onSwitch={(): void => set(!value)}
+						/>
 					</label>
 				</div>
 			</div>

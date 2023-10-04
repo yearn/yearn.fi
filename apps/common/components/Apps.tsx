@@ -39,14 +39,29 @@ export const APPS: {[key in AppName]: TApp} = {
 		href: '/vaults',
 		menu: VAULTS_MENU,
 		manifest: vaultsManifest,
-		icon: <LogoYearn className={'h-8 w-8'} back={'text-pink-400'} front={'text-white'} />
+		icon: (
+			<LogoYearn
+				className={'h-8 w-8'}
+				back={'text-pink-400'}
+				front={'text-white'}
+			/>
+		)
 	},
 	yCRV: {
 		name: AppName.YCRV,
 		href: '/ycrv',
 		menu: YCRV_MENU,
 		manifest: ycrvManifest,
-		icon: <ImageWithFallback alt={'yCRV'} width={32} height={32} src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YCRV_TOKEN_ADDRESS}/logo-128.png`} loading={'eager'} priority />
+		icon: (
+			<ImageWithFallback
+				alt={'yCRV'}
+				width={32}
+				height={32}
+				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YCRV_TOKEN_ADDRESS}/logo-128.png`}
+				loading={'eager'}
+				priority
+			/>
+		)
 	},
 	yBal: {
 		name: AppName.YBAL,
@@ -54,20 +69,41 @@ export const APPS: {[key in AppName]: TApp} = {
 		menu: YBAL_MENU,
 		manifest: yBalManifest,
 		isDisabled: true,
-		icon: <ImageWithFallback alt={'yBal'} width={32} height={32} src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YBAL_TOKEN_ADDRESS}/logo-128.png`} loading={'eager'} priority />
+		icon: (
+			<ImageWithFallback
+				alt={'yBal'}
+				width={32}
+				height={32}
+				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YBAL_TOKEN_ADDRESS}/logo-128.png`}
+				loading={'eager'}
+				priority
+			/>
+		)
 	},
 	veYFI: {
 		name: AppName.VEYFI,
 		menu: VEYFI_MENU,
 		href: '/veyfi',
 		manifest: veyfiManifest,
-		icon: <LogoYearn className={'h-8 w-8'} back={'text-primary'} front={'text-white'} />
+		icon: (
+			<LogoYearn
+				className={'h-8 w-8'}
+				back={'text-primary'}
+				front={'text-white'}
+			/>
+		)
 	},
 	yBribe: {
 		name: AppName.YBRIBE,
 		href: '/ybribe',
 		menu: YBRIBE_MENU,
 		manifest: ybribeManifest,
-		icon: <LogoYearn className={'h-8 w-8'} back={'text-neutral-900'} front={'text-neutral-0'} />
+		icon: (
+			<LogoYearn
+				className={'h-8 w-8'}
+				back={'text-neutral-900'}
+				front={'text-neutral-0'}
+			/>
+		)
 	}
 };

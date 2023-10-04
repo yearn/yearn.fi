@@ -79,8 +79,20 @@ const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 				<AppHeader />
 				<LazyMotion features={domAnimation}>
 					<AnimatePresence mode={'wait'}>
-						<motion.div key={name} initial={'initial'} animate={'enter'} exit={'exit'} className={'my-0 h-full md:mb-0 md:mt-16'} variants={variants}>
-							{getLayout(<Component router={props.router} {...pageProps} />, router)}
+						<motion.div
+							key={name}
+							initial={'initial'}
+							animate={'enter'}
+							exit={'exit'}
+							className={'my-0 h-full md:mb-0 md:mt-16'}
+							variants={variants}>
+							{getLayout(
+								<Component
+									router={props.router}
+									{...pageProps}
+								/>,
+								router
+							)}
 							{!shouldHidePopover && <Popover />}
 						</motion.div>
 					</AnimatePresence>
@@ -174,7 +186,11 @@ const App = memo(function App(props: AppProps): ReactElement {
 				<WalletContextApp>
 					<Fragment>
 						<Meta meta={manifest} />
-						<WithLayout Component={Component} pageProps={pageProps} router={props.router} />
+						<WithLayout
+							Component={Component}
+							pageProps={pageProps}
+							router={props.router}
+						/>
 						<NetworkStatusIndicator />
 					</Fragment>
 				</WalletContextApp>
