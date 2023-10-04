@@ -20,7 +20,6 @@ import {
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
-import {performBatchedUpdates} from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
@@ -76,7 +75,7 @@ const CardTransactorContext = createContext<TCardTransactor>({
 export function CardTransactorContextApp({defaultOptionFrom = ZAP_OPTIONS_FROM[0], defaultOptionTo = ZAP_OPTIONS_TO[0], children = <div />}): ReactElement {
 	const {provider, isActive, address} = useWeb3();
 	const {styCRVAPY, allowances, refetchAllowances, slippage} = useYCRV();
-	const {balancesNonce, balances, refresh} = useWallet();
+	const {getBalance, refresh} = useWallet();
 	const {vaults} = useYearn();
 	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
 	const [txStatusZap, set_txStatusZap] = useState(defaultTxStatus);
@@ -108,17 +107,14 @@ export function CardTransactorContextApp({defaultOptionFrom = ZAP_OPTIONS_FROM[0
 	 ** the wallet is connected, or to 0 if the wallet is disconnected.
 	 **************************************************************************/
 	useEffect((): void => {
-		balancesNonce; // remove warning, force deep refresh
 		if (isActive && isZero(amount.raw) && !hasTypedSomething) {
-			set_amount(toNormalizedBN(balances[toAddress(selectedOptionFrom.value)]?.raw));
+			set_amount(toNormalizedBN(getBalance({address: selectedOptionFrom.value, chainID: selectedOptionFrom.chainID})?.raw));
 		} else if (!isActive && amount.raw > 0n) {
-			performBatchedUpdates((): void => {
-				set_amount(toNormalizedBN(0));
-				set_hasTypedSomething(false);
-				fetchExpectedOut();
-			});
+			set_amount(toNormalizedBN(0));
+			set_hasTypedSomething(false);
+			fetchExpectedOut();
 		}
-	}, [isActive, selectedOptionFrom, amount.raw, hasTypedSomething, balances, balancesNonce, fetchExpectedOut]);
+	}, [isActive, selectedOptionFrom, amount.raw, hasTypedSomething, getBalance, fetchExpectedOut]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** Perform a smartContract call to the ZAP contract to get the expected

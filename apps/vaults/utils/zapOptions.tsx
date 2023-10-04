@@ -19,6 +19,7 @@ export function setZapOption({name, symbol, address, chainID, decimals, solveVia
 		value: address,
 		decimals,
 		solveVia,
+		chainID,
 		icon: (
 			<ImageWithFallback
 				src={`${process.env.BASE_YEARN_ASSETS_URI}/${chainID}/${address}/logo-128.png`}

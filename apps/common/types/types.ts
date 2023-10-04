@@ -1,31 +1,17 @@
 import type {ReactElement} from 'react';
-import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
-import type {TBalanceData} from '@yearn-finance/web-lib/types/hooks';
+import type {TAddress, TDict, TNDict} from '@yearn-finance/web-lib/types';
 import type {TSolver} from '@common/schemas/yDaemonTokenListBalances';
 import type {multicall} from '@wagmi/core';
-
-export type TClaimable = {
-	raw: bigint;
-	normalized: number;
-};
-
-export type TSimplifiedBalanceData = {
-	decimals: number;
-	symbol: string;
-	raw: bigint;
-	normalized: number;
-	normalizedPrice: number;
-};
 
 export type TDropdownOption = {
 	label: string;
 	symbol: string;
 	decimals: number;
+	chainID: number;
 	value: TAddress;
 	icon?: ReactElement;
 	zapVia?: TAddress;
 	solveVia?: TSolver[];
-	balanceSource?: string;
 	settings?: {
 		shouldNotBeWithdrawTarget?: boolean;
 		shouldHideIfZero?: boolean;
@@ -38,12 +24,10 @@ export type TDropdownProps = {
 	selected?: TDropdownOption;
 	placeholder?: string;
 	onSelect: React.Dispatch<React.SetStateAction<TDropdownOption>> | ((option: TDropdownOption) => void);
-	balanceSource?: TDict<TBalanceData>;
 };
 
 export type TDropdownItemProps = {
 	option: TDropdownOption;
-	balanceSource?: TDict<TBalanceData>;
 };
 
 export type TDropdownGaugeOption = {
@@ -72,6 +56,19 @@ export type TNormalizedBN = {
 	raw: bigint;
 	normalized: number | string;
 };
+
+export type TToken = {
+	address: TAddress;
+	name: string;
+	symbol: string;
+	decimals: number;
+	chainID: number;
+	logoURI?: string;
+	value: number;
+	price: TNormalizedBN;
+	balance: TNormalizedBN;
+};
+export type TChainTokens = TNDict<TDict<TToken>>;
 
 export type TGraphData = {
 	name: string;

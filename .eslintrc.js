@@ -1,5 +1,5 @@
 module.exports = {
-	extends: ['./node_modules/@yearn-finance/web-lib/.eslintrc.cjs', 'prettier'],
+	extends: ['./node_modules/@yearn-finance/web-lib/.eslintrc.cjs', 'plugin:@next/next/recommended', 'prettier'],
 	parser: '@typescript-eslint/parser',
 	parserOptions: {
 		ecmaFeatures: {

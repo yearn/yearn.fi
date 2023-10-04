@@ -3,7 +3,6 @@ import Link from 'next/link';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import TokenIcon from '@common/components/TokenIcon';
-import {useWallet} from '@common/contexts/useWallet';
 import {useBalance} from '@common/hooks/useBalance';
 import {getVaultName} from '@common/utils';
 
@@ -11,9 +10,8 @@ import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
 export function VaultsListInternalMigrationRow({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const {balances} = useWallet();
 	const vaultName = useMemo((): string => getVaultName(currentVault), [currentVault]);
-	const balanceToMigrate = useBalance(currentVault.address, balances);
+	const balanceToMigrate = useBalance({address: currentVault.address, chainID: currentVault.chainID});
 
 	return (
 		<Link

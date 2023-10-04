@@ -14,7 +14,7 @@ import type {TSortDirection} from '@common/types/types';
 export type TPossibleSortBy = 'apy' | 'tvl' | 'name' | 'deposited' | 'available';
 
 export function useSortVaults(vaultList: TYDaemonVaults, sortBy: TPossibleSortBy, sortDirection: TSortDirection): TYDaemonVaults {
-	const {balances, balancesNonce} = useWallet();
+	const {getBalance} = useWallet();
 	const {stakingRewardsByVault, positionsMap} = useStakingRewards();
 
 	const sortedByName = useCallback(
@@ -44,10 +44,9 @@ export function useSortVaults(vaultList: TYDaemonVaults, sortBy: TPossibleSortBy
 	const sortedByTVL = useCallback((): TYDaemonVaults => vaultList.sort((a, b): number => numberSort({a: a.tvl.tvl, b: b.tvl.tvl, sortDirection})), [sortDirection, vaultList]);
 
 	const sortedByDeposited = useCallback((): TYDaemonVaults => {
-		balancesNonce; // remove warning, force deep refresh
 		return vaultList.sort((a, b): number => {
-			const aDepositedBalance = balances[toAddress(a.address)]?.normalized || 0;
-			const bDepositedBalance = balances[toAddress(b.address)]?.normalized || 0;
+			const aDepositedBalance = Number(getBalance({address: a.address, chainID: a.chainID})?.normalized || 0);
+			const bDepositedBalance = Number(getBalance({address: b.address, chainID: b.chainID})?.normalized || 0);
 			const aStakedBalance = toNormalizedValue(toBigInt(positionsMap[toAddress(stakingRewardsByVault[a.address])]?.stake), a.decimals);
 			const bStakedBalance = toNormalizedValue(toBigInt(positionsMap[toAddress(stakingRewardsByVault[b.address])]?.stake), b.decimals);
 			if (sortDirection === 'asc') {
@@ -55,18 +54,16 @@ export function useSortVaults(vaultList: TYDaemonVaults, sortBy: TPossibleSortBy
 			}
 			return bDepositedBalance + bStakedBalance - (aDepositedBalance + aStakedBalance);
 		});
-	}, [balancesNonce, vaultList, balances, positionsMap, stakingRewardsByVault, sortDirection]);
+	}, [vaultList, getBalance, positionsMap, stakingRewardsByVault, sortDirection]);
 
 	const sortedByAvailable = useCallback((): TYDaemonVaults => {
-		balancesNonce; // remove warning, force deep refresh
-		const chainCoinBalance = balances[ETH_TOKEN_ADDRESS]?.normalized || 0;
 		return vaultList.sort((a, b): number => {
-			let aBalance = balances[toAddress(a.token.address)]?.normalized || 0;
-			let bBalance = balances[toAddress(b.token.address)]?.normalized || 0;
+			let aBalance = Number(getBalance({address: a.token.address, chainID: a.chainID})?.normalized || 0);
+			let bBalance = Number(getBalance({address: b.token.address, chainID: b.chainID})?.normalized || 0);
 			if ([WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS].includes(toAddress(a.token.address))) {
-				aBalance += chainCoinBalance;
+				aBalance += Number(getBalance({address: ETH_TOKEN_ADDRESS, chainID: a.chainID})?.normalized || 0);
 			} else if ([WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS].includes(toAddress(b.token.address))) {
-				bBalance += chainCoinBalance;
+				bBalance += Number(getBalance({address: ETH_TOKEN_ADDRESS, chainID: b.chainID})?.normalized || 0);
 			}
 
 			if (sortDirection === 'asc') {
@@ -74,7 +71,7 @@ export function useSortVaults(vaultList: TYDaemonVaults, sortBy: TPossibleSortBy
 			}
 			return bBalance - aBalance;
 		});
-	}, [balances, balancesNonce, sortDirection, vaultList]);
+	}, [getBalance, sortDirection, vaultList]);
 
 	const stringifiedVaultList = serialize(vaultList);
 	const sortedVaults = useMemo((): TYDaemonVaults => {

@@ -15,7 +15,7 @@ import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {AmountInput} from '@common/components/AmountInput';
 import {useWallet} from '@common/contexts/useWallet';
-import {useBalance} from '@common/hooks/useBalance';
+import {usePrice} from '@common/hooks/usePrice';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
 import {approveERC20} from '@common/utils/actions';
 
@@ -32,7 +32,7 @@ export function RedeemTab(): ReactElement {
 	const refreshData = useCallback((): unknown => Promise.all([refresh(), refreshBalances()]), [refresh, refreshBalances]);
 	const onTxSuccess = useCallback((): unknown => Promise.all([refreshData(), clearLockAmount()]), [refreshData]);
 	const [{status, result}, fetchRequiredEth] = useAsync(getRequiredEth, BIG_ZERO);
-	const ethBalance = useBalance(ETH_TOKEN_ADDRESS);
+	const ethPrice = usePrice({address: ETH_TOKEN_ADDRESS, chainID: 1}); //VeYFI is on ETH mainnet only
 	const yfiPrice = useTokenPrice(YFI_ADDRESS);
 	const [approveRedeemStatus, set_approveRedeemStatus] = useState(defaultTxStatus);
 	const [redeemStatus, set_redeemStatus] = useState(defaultTxStatus);
@@ -120,7 +120,7 @@ export function RedeemTab(): ReactElement {
 					<AmountInput
 						label={'ETH fee'}
 						amount={ethRequired}
-						legend={formatCounterValue(ethRequired, ethBalance.normalizedPrice ?? 0)}
+						legend={formatCounterValue(ethRequired, Number(ethPrice.normalized))}
 						loading={status === 'loading'}
 						disabled
 					/>

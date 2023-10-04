@@ -15,6 +15,13 @@ module.exports = {
 	],
 	theme: {
 		extend: {
+			colors: {
+				black: 'hsl(0, 0%, 0%)',
+				white: 'rgb(255, 255, 255)',
+				transparent: 'transparent',
+				inherit: 'inherit',
+				primary: '#0657F9'
+			},
 			fontFamily: {
 				aeonik: ['var(--font-aeonik)', 'Aeonik', ...defaultTheme.fontFamily.sans],
 				mono: ['Aeonik Mono', ...defaultTheme.fontFamily.mono]

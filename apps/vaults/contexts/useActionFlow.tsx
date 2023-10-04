@@ -134,7 +134,7 @@ function getMaxDepositPossible(props: TGetMaxDepositPossible): TNormalizedBN {
 
 const ActionFlowContext = createContext<TActionFlowContext>(DefaultActionFlowContext);
 export function ActionFlowContextApp({children, currentVault}: {children: ReactNode; currentVault: TYDaemonVault}): React.ReactElement {
-	const {balances, balancesNonce} = useWallet();
+	const {getBalance} = useWallet();
 	const {chainID, safeChainID} = useChainID();
 	const {balances: zapBalances, tokensList} = useWalletForZap();
 	const {zapProvider, isStakingOpBoostedVaults} = useYearn();
@@ -207,11 +207,14 @@ export function ActionFlowContextApp({children, currentVault}: {children: ReactN
 			vault: currentVault,
 			fromToken: toAddress(actionParams?.selectedOptionFrom?.value),
 			fromDecimals: actionParams?.selectedOptionFrom?.decimals || currentVault?.token?.decimals || 18,
-			fromTokenBalance: toBigInt(balances?.[toAddress(actionParams?.selectedOptionFrom?.value)]?.raw),
+			fromTokenBalance: getBalance({
+				address: toAddress(actionParams?.selectedOptionFrom?.value),
+				chainID: currentVault.chainID
+			}).raw,
 			isDepositing,
 			depositLimit: depositLimit || 0n
 		});
-	}, [actionParams?.selectedOptionFrom?.decimals, actionParams?.selectedOptionFrom?.value, balances, currentVault, depositLimit, isDepositing]);
+	}, [actionParams?.selectedOptionFrom?.decimals, actionParams?.selectedOptionFrom?.value, getBalance, currentVault, depositLimit, isDepositing]);
 
 	const currentSolver = useMemo((): TSolver => {
 		const isUnderlyingToken = toAddress(actionParams?.selectedOptionFrom?.value) === toAddress(currentVault.token.address);
@@ -263,7 +266,6 @@ export function ActionFlowContextApp({children, currentVault}: {children: ReactN
 
 	const onSwitchSelectedOptions = useCallback(
 		(nextFlow = Flow.Switch): void => {
-			balancesNonce;
 			if (nextFlow === Flow.None) {
 				return;
 			}
@@ -330,7 +332,10 @@ export function ActionFlowContextApp({children, currentVault}: {children: ReactN
 					}
 				});
 			} else if (nextFlow === Flow.Migrate) {
-				const userBalance = toBigInt(balances?.[toAddress(currentVault?.address)]?.raw);
+				const userBalance = getBalance({
+					address: toAddress(currentVault?.address),
+					chainID: currentVault?.chainID
+				}).raw;
 				const _amount = toNormalizedBN(userBalance, currentVault?.decimals || currentVault?.token?.decimals || 18);
 				const selectedOptionTo = {
 					name: currentVault?.name,
@@ -365,8 +370,7 @@ export function ActionFlowContextApp({children, currentVault}: {children: ReactN
 			isDepositing,
 			maxDepositPossible,
 			currentVault,
-			balances,
-			balancesNonce,
+			getBalance,
 			safeChainID
 		]
 	);
@@ -383,7 +387,10 @@ export function ActionFlowContextApp({children, currentVault}: {children: ReactN
 	 **********************************************************************************************/
 	const updateParams = useCallback(
 		(_selectedFrom: TDropdownOption, _selectedTo: TDropdownOption): void => {
-			const userBalance = toBigInt(balances?.[toAddress(_selectedFrom?.value)]?.raw);
+			const userBalance = getBalance({
+				address: toAddress(_selectedFrom?.value),
+				chainID: currentVault.chainID
+			}).raw;
 			let _amount = toNormalizedBN(userBalance, _selectedFrom?.decimals || currentVault?.token?.decimals || 18);
 			if (isDepositing) {
 				const vaultDepositLimit = toBigInt(currentVault?.details?.depositLimit);
@@ -403,7 +410,7 @@ export function ActionFlowContextApp({children, currentVault}: {children: ReactN
 				}
 			});
 		},
-		[balances, currentVault.details.depositLimit, currentVault.token?.address, currentVault.token.decimals, isDepositing]
+		[getBalance, currentVault.details.depositLimit, currentVault.token?.address, currentVault.token.decimals, isDepositing]
 	);
 
 	/* 🔵 - Yearn Finance **************************************************************************
@@ -598,7 +605,7 @@ export function ActionFlowContextApp({children, currentVault}: {children: ReactN
 				);
 			});
 		set_possibleZapOptionsFrom(_possibleZapOptionsFrom);
-	}, [safeChainID, tokensList, zapBalances, balancesNonce, currentVault]);
+	}, [safeChainID, tokensList, zapBalances, currentVault]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	 ** FLOW: Init the possibleZapOptionsTo array.

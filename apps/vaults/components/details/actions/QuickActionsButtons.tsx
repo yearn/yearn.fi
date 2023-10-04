@@ -17,8 +17,9 @@ import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 
 import type {ReactElement} from 'react';
 import type {TNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
-export function VaultDetailsQuickActionsButtons(): ReactElement {
+export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {refresh} = useWallet();
 	const {refresh: refreshZapBalances} = useWalletForZap();
 	const {address, provider} = useWeb3();
@@ -48,19 +49,30 @@ export function VaultDetailsQuickActionsButtons(): ReactElement {
 			Solver.enum.OptimismBooster === currentSolver ||
 			Solver.enum.InternalMigration === currentSolver
 		) {
-			await refresh([{token: toAddress(actionParams?.selectedOptionFrom?.value)}, {token: toAddress(actionParams?.selectedOptionTo?.value)}]);
+			await refresh([
+				{
+					address: toAddress(actionParams?.selectedOptionFrom?.value),
+					chainID: currentVault.chainID
+				},
+				{
+					address: toAddress(actionParams?.selectedOptionTo?.value),
+					chainID: currentVault.chainID
+				}
+			]);
 		} else if (Solver.enum.Cowswap === currentSolver || Solver.enum.Portals === currentSolver || Solver.enum.Wido === currentSolver) {
 			if (isDepositing) {
 				//refresh input from zap wallet, refresh output from default
 				await Promise.all([
 					refreshZapBalances([
 						{
-							token: toAddress(actionParams?.selectedOptionFrom?.value)
+							address: toAddress(actionParams?.selectedOptionFrom?.value),
+							chainID: currentVault.chainID
 						}
 					]),
 					refresh([
 						{
-							token: toAddress(actionParams?.selectedOptionTo?.value)
+							address: toAddress(actionParams?.selectedOptionTo?.value),
+							chainID: currentVault.chainID
 						}
 					])
 				]);
@@ -68,12 +80,14 @@ export function VaultDetailsQuickActionsButtons(): ReactElement {
 				await Promise.all([
 					refreshZapBalances([
 						{
-							token: toAddress(actionParams?.selectedOptionTo?.value)
+							address: toAddress(actionParams?.selectedOptionTo?.value),
+							chainID: currentVault.chainID
 						}
 					]),
 					refresh([
 						{
-							token: toAddress(actionParams?.selectedOptionFrom?.value)
+							address: toAddress(actionParams?.selectedOptionFrom?.value),
+							chainID: currentVault.chainID
 						}
 					])
 				]);

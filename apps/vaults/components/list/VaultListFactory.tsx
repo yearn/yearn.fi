@@ -5,23 +5,21 @@ import {VaultsListRow} from '@vaults/components/list/VaultsListRow';
 import {useAppSettings} from '@vaults/contexts/useAppSettings';
 import {useFilteredVaults} from '@vaults/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
-import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {performBatchedUpdates} from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {ListHead} from '@common/components/ListHead';
 import {ListHero} from '@common/components/ListHero';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
+import {isAutomatedVault, type TYDaemonVaults} from '@common/schemas/yDaemonVaultsSchemas';
 import {getVaultName} from '@common/utils';
 
 import type {ReactElement, ReactNode} from 'react';
-import type {TYDaemonVaults} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TSortDirection} from '@common/types/types';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 
 export function VaultListFactory(): ReactElement {
-	const {balances} = useWallet();
+	const {getToken} = useWallet();
 	const {vaults, isLoadingVaultList} = useYearn();
 	const [sortBy, set_sortBy] = useState<TPossibleSortBy>('apy');
 	const [sortDirection, set_sortDirection] = useState<TSortDirection>('');
@@ -32,15 +30,16 @@ export function VaultListFactory(): ReactElement {
 	 **	It's best to memorize the filtered vaults, which saves a lot of processing time by only
 	 **	performing the filtering once.
 	 **********************************************************************************************/
-	const curveVaults = useFilteredVaults(vaults, ({category, type}): boolean => category === 'Curve' && type === 'Automated');
-	const holdingsVaults = useFilteredVaults(vaults, ({category, address, type}): boolean => {
-		const holding = balances?.[toAddress(address)];
-		const hasValidBalance = toBigInt(holding?.raw) > 0n;
-		const balanceValue = holding?.normalizedValue || 0;
+	const curveVaults = useFilteredVaults(vaults, (vault): boolean => vault.category === 'Curve' && isAutomatedVault(vault));
+	const holdingsVaults = useFilteredVaults(vaults, (vault): boolean => {
+		const {category, address, chainID} = vault;
+		const holding = getToken({address, chainID});
+		const hasValidBalance = holding.balance.raw > 0n;
+		const balanceValue = holding.value || 0;
 		if (shouldHideDust && balanceValue < 0.01) {
 			return false;
 		}
-		if (hasValidBalance && category === 'Curve' && type === 'Automated') {
+		if (hasValidBalance && category === 'Curve' && isAutomatedVault(vault)) {
 			return true;
 		}
 		return false;

@@ -19,7 +19,7 @@ import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {performBatchedUpdates} from '@yearn-finance/web-lib/utils/performBatchedUpdates';
-import {useBalance} from '@common/hooks/useBalance';
+import {useToken} from '@common/hooks/useToken';
 import {IconChevron} from '@common/icons/IconChevron';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 
@@ -58,7 +58,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 	const stakingRewardsAddress = stakingRewardsByVault[currentVault.address];
 	const stakingRewards = stakingRewardsAddress ? stakingRewardsMap[stakingRewardsAddress] : undefined;
 	const stakingRewardsPosition = stakingRewardsAddress ? positionsMap[stakingRewardsAddress] : undefined;
-	const rewardTokenBalance = useBalance(toAddress(stakingRewards?.rewardsToken));
+	const rewardTokenBalance = useToken({address: toAddress(stakingRewards?.rewardsToken), chainID: currentVault.chainID});
 	const hasStakingRewards = !!stakingRewardsByVault[currentVault.address];
 	const [currentTab, set_currentTab] = useState<TTabsOptions>(
 		getCurrentTab({
@@ -269,7 +269,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 						<div className={'w-full space-y-0 md:w-42 md:min-w-42 md:space-y-2'}>
 							<label className={'hidden text-base md:inline'}>&nbsp;</label>
 							<div>
-								<VaultDetailsQuickActionsButtons />
+								<VaultDetailsQuickActionsButtons currentVault={currentVault} />
 							</div>
 							<legend className={'hidden text-xs md:inline'}>&nbsp;</legend>
 						</div>

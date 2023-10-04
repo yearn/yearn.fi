@@ -4,7 +4,6 @@ import {formatBigNumberOver10K, formatToNormalizedValue} from '@yearn-finance/we
 import {formatAmount, formatNumberOver10K, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue, formatCounterValueRaw} from '@yearn-finance/web-lib/utils/format.value';
 import {ValueAnimation} from '@common/components/ValueAnimation';
-import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import {useBalance} from '@common/hooks/useBalance';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
@@ -19,8 +18,8 @@ import type {ReactElement} from 'react';
 
 function HeaderPosition(): ReactElement {
 	const {holdings} = useYBal();
-	const balanceOfStyBal = useBalance(STYBAL_TOKEN_ADDRESS);
-	const balanceOfLpyBal = useBalance(LPYBAL_TOKEN_ADDRESS);
+	const balanceOfStyBal = useBalance({address: STYBAL_TOKEN_ADDRESS, chainID: 1}); //yBal is on ETH mainnet only
+	const balanceOfLpyBal = useBalance({address: LPYBAL_TOKEN_ADDRESS, chainID: 1}); //yBal is on ETH mainnet only
 	const styBalPrice = useTokenPrice(STYBAL_TOKEN_ADDRESS);
 	const lpyBalPrice = useTokenPrice(LPYBAL_TOKEN_ADDRESS);
 
@@ -30,7 +29,7 @@ function HeaderPosition(): ReactElement {
 	);
 
 	const formatedYouHave = useMemo(
-		(): string => formatCounterValueRaw(balanceOfStyBal.normalized * styBalPrice + balanceOfLpyBal.normalized * lpyBalPrice, 1),
+		(): string => formatCounterValueRaw(Number(balanceOfStyBal.normalized) * styBalPrice + Number(balanceOfLpyBal.normalized) * lpyBalPrice, 1),
 		[balanceOfStyBal.normalized, styBalPrice, balanceOfLpyBal.normalized, lpyBalPrice]
 	);
 
@@ -63,7 +62,6 @@ function HeaderPosition(): ReactElement {
 }
 
 function Holdings(): ReactElement {
-	const {balances} = useWallet();
 	const {holdings, styBalAPY} = useYBal();
 	const {vaults} = useYearn();
 
@@ -71,8 +69,8 @@ function Holdings(): ReactElement {
 	const yBalPrice = useTokenPrice(YBAL_TOKEN_ADDRESS);
 	const styBalPrice = useTokenPrice(STYBAL_TOKEN_ADDRESS);
 	const lpyBalPrice = useTokenPrice(LPYBAL_TOKEN_ADDRESS);
-	const balanceOfStyBal = useBalance(STYBAL_TOKEN_ADDRESS);
-	const balanceOfLpyBal = useBalance(LPYBAL_TOKEN_ADDRESS);
+	const balanceOfStyBal = useBalance({address: STYBAL_TOKEN_ADDRESS, chainID: 1}); //yBal is on ETH mainnet only
+	const balanceOfLpyBal = useBalance({address: LPYBAL_TOKEN_ADDRESS, chainID: 1}); //yBal is on ETH mainnet only
 
 	return (
 		<section className={'mt-4 grid w-full grid-cols-12 gap-y-10 pb-10 md:mt-20 md:gap-x-10 md:gap-y-20'}>
@@ -102,7 +100,7 @@ function Holdings(): ReactElement {
 							<p
 								suppressHydrationWarning
 								className={'font-number text-sm text-neutral-900'}>
-								{formatNumberOver10K(balances[STYBAL_TOKEN_ADDRESS]?.normalized || 0)}
+								{formatNumberOver10K(Number(balanceOfStyBal.normalized))}
 							</p>
 						</div>
 						<div className={'flex flex-row items-center justify-between'}>
@@ -152,7 +150,7 @@ function Holdings(): ReactElement {
 							<p
 								suppressHydrationWarning
 								className={'font-number text-sm text-neutral-900'}>
-								{formatNumberOver10K(balances[LPYBAL_TOKEN_ADDRESS]?.normalized || 0)}
+								{formatNumberOver10K(Number(balanceOfLpyBal.normalized))}
 							</p>
 						</div>
 						<div className={'flex flex-row items-center justify-between'}>

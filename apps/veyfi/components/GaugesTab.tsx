@@ -39,18 +39,18 @@ export function GaugesTab(): ReactElement {
 	const {provider, address, isActive, chainID} = useWeb3();
 	const {gaugeAddresses, gaugesMap, positionsMap, allowancesMap, refresh: refreshGauges, isLoading: isLoadingGauges} = useGauge();
 	const {vaults} = useYearn();
-	const {balances, refresh: refreshBalances} = useWallet();
+	const {getBalance, refresh: refreshBalances} = useWallet();
 	const refreshData = (): unknown => Promise.all([refreshGauges(), refreshBalances()]);
 	const [approveAndStakeStatus, set_approveAndStakeStatus] = useState(defaultTxStatus);
 	const [stakeStatus, set_stakeStatus] = useState(defaultTxStatus);
 	const [unstakeStatus, set_unstakeStatus] = useState(defaultTxStatus);
-
 	const userAddress = address as TAddress;
 
 	const gaugesData = gaugeAddresses.map((address): TGaugeData => {
 		const gauge = gaugesMap[address];
 		const vaultAddress = toAddress(gauge?.vaultAddress);
 		const vault = vaults[vaultAddress];
+		const vaultBalance = getBalance({address: vaultAddress, chainID: vault.chainID});
 
 		return {
 			gaugeAddress: address,
@@ -59,14 +59,14 @@ export function GaugesTab(): ReactElement {
 			vaultIcon: `${process.env.BASE_YEARN_ASSETS_URI}/1/${vaultAddress}/logo-128.png`,
 			vaultName: vault?.display_name ?? '',
 			vaultApy: vault?.apy.net_apy ?? 0,
-			vaultDeposited: toBigInt(formatBigNumberAsAmount(balances[vaultAddress]?.raw)),
+			vaultDeposited: toBigInt(formatBigNumberAsAmount(vaultBalance.raw)),
 			gaugeApy: 0, // TODO: gauge apy calcs
 			gaugeBoost: positionsMap[address]?.boost ?? 1,
 			gaugeStaked: toBigInt(formatBigNumberAsAmount(positionsMap[address]?.deposit.balance)),
-			allowance: toBigInt(formatBigNumberAsAmount(allowancesMap[allowanceKey(1, vaultAddress, address, userAddress)])),
+			allowance: toBigInt(formatBigNumberAsAmount(allowancesMap[allowanceKey(vault.chainID, vaultAddress, address, userAddress)])),
 			isApproved:
-				toBigInt(formatBigNumberAsAmount(allowancesMap[allowanceKey(1, vaultAddress, address, userAddress)])) >=
-				toBigInt(formatBigNumberAsAmount(balances[vaultAddress]?.raw)),
+				toBigInt(formatBigNumberAsAmount(allowancesMap[allowanceKey(vault.chainID, vaultAddress, address, userAddress)])) >=
+				toBigInt(formatBigNumberAsAmount(vaultBalance.raw)),
 			actions: undefined
 		};
 	});

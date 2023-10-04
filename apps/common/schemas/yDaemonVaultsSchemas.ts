@@ -80,7 +80,7 @@ export const yDaemonVaultTokenSchema = z.object({
 
 export const yDaemonVaultSchema = z.object({
 	address: addressSchema,
-	type: z.literal('Automated').or(z.literal('Standard').or(z.literal('Experimental'))),
+	type: z.literal('Automated').or(z.literal('Automated Yearn Vault')).or(z.literal('Experimental')).or(z.literal('Experimental Yearn Vault')).or(z.literal('Standard')),
 	symbol: z.string(),
 	display_symbol: z.string(),
 	formated_symbol: z.string(),
@@ -196,3 +196,6 @@ export type TYDaemonVaultHarvest = z.infer<typeof yDaemonVaultHarvestSchema>;
 export type TYDaemonVaultHarvests = z.infer<typeof yDaemonVaultHarvestsSchema>;
 
 export type TYDaemonVaultTokenSchema = z.infer<typeof yDaemonVaultTokenSchema>;
+
+export const isAutomatedVault = (vault: TYDaemonVault): boolean => vault.type === 'Automated' || vault.type === 'Automated Yearn Vault';
+export const isExperimentalVault = (vault: TYDaemonVault): boolean => vault.type === 'Experimental' || vault.type === 'Experimental Yearn Vault';

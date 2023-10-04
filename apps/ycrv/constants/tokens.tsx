@@ -19,6 +19,7 @@ export const YVBOOST = {
 	label: 'yvBOOST',
 	symbol: 'yvBOOST',
 	decimals: 18,
+	chainID: 1,
 	value: YVBOOST_TOKEN_ADDRESS,
 	zapVia: ZAP_YEARN_VE_CRV_ADDRESS,
 	icon: (
@@ -35,6 +36,7 @@ export const YVECRV = {
 	label: 'yveCRV',
 	symbol: 'yveCRV',
 	decimals: 18,
+	chainID: 1,
 	value: YVECRV_TOKEN_ADDRESS,
 	zapVia: ZAP_YEARN_VE_CRV_ADDRESS,
 	icon: (
@@ -53,6 +55,7 @@ export const STYCRV = {
 	label: 'st-yCRV',
 	symbol: 'st-yCRV',
 	decimals: 18,
+	chainID: 1,
 	value: STYCRV_TOKEN_ADDRESS,
 	zapVia: ZAP_YEARN_VE_CRV_ADDRESS,
 	icon: (
@@ -71,6 +74,7 @@ export const YCRV = {
 	label: 'yCRV',
 	symbol: 'yCRV',
 	decimals: 18,
+	chainID: 1,
 	value: YCRV_TOKEN_ADDRESS,
 	zapVia: ZAP_YEARN_VE_CRV_ADDRESS,
 	icon: (
@@ -89,6 +93,7 @@ export const LPYCRV = {
 	label: 'lp-yCRV (deprecated)',
 	symbol: 'lp-yCRV (deprecated)',
 	decimals: 18,
+	chainID: 1,
 	value: LPYCRV_TOKEN_ADDRESS,
 	zapVia: ZAP_YEARN_VE_CRV_ADDRESS,
 	icon: (
@@ -107,6 +112,7 @@ export const LPYCRV2 = {
 	label: 'lp-yCRV V2',
 	symbol: 'lp-yCRV V2',
 	decimals: 18,
+	chainID: 1,
 	value: LPYCRV_V2_TOKEN_ADDRESS,
 	zapVia: ZAP_YEARN_VE_CRV_ADDRESS,
 	icon: (
@@ -125,6 +131,7 @@ export const CRV = {
 	label: 'CRV',
 	symbol: 'CRV',
 	decimals: 18,
+	chainID: 1,
 	value: CRV_TOKEN_ADDRESS,
 	zapVia: ZAP_YEARN_VE_CRV_ADDRESS,
 	icon: (
@@ -141,6 +148,7 @@ export const CVXCRV = {
 	label: 'cvxCRV',
 	symbol: 'cvxCRV',
 	decimals: 18,
+	chainID: 1,
 	value: CVXCRV_TOKEN_ADDRESS,
 	zapVia: ZAP_YEARN_VE_CRV_ADDRESS,
 	icon: (
@@ -157,6 +165,7 @@ export const CRVYCRV = {
 	label: 'Curve CRV/yCRV (deprecated)',
 	symbol: 'CRV/yCRV (deprecated)',
 	decimals: 18,
+	chainID: 1,
 	value: YCRV_CURVE_POOL_ADDRESS,
 	zapVia: LPYCRV_TOKEN_ADDRESS,
 	icon: (
@@ -173,6 +182,7 @@ export const CRVYCRV2 = {
 	label: 'Curve CRV/yCRV V2',
 	symbol: 'CRV/yCRV V2',
 	decimals: 18,
+	chainID: 1,
 	value: YCRV_CURVE_POOL_V2_ADDRESS,
 	zapVia: LPYCRV_V2_TOKEN_ADDRESS,
 	icon: (
