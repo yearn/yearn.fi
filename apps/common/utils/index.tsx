@@ -2,7 +2,13 @@ import {request} from 'graphql-request';
 import {formatUnits, parseUnits} from 'viem';
 import {captureException} from '@sentry/nextjs';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {LPYCRV_TOKEN_ADDRESS, LPYCRV_V2_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YVBOOST_TOKEN_ADDRESS, YVECRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {
+	LPYCRV_TOKEN_ADDRESS,
+	LPYCRV_V2_TOKEN_ADDRESS,
+	YCRV_CURVE_POOL_ADDRESS,
+	YVBOOST_TOKEN_ADDRESS,
+	YVECRV_TOKEN_ADDRESS
+} from '@yearn-finance/web-lib/utils/constants';
 import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 
@@ -22,8 +28,7 @@ export function getVaultAPY(vaults: TDict<TYDaemonVault | undefined>, vaultAddre
 		return '';
 	}
 
-	if (toAddress(vaultAddress) === YVECRV_TOKEN_ADDRESS
-		|| toAddress(vaultAddress) === YVBOOST_TOKEN_ADDRESS) {
+	if (toAddress(vaultAddress) === YVECRV_TOKEN_ADDRESS || toAddress(vaultAddress) === YVBOOST_TOKEN_ADDRESS) {
 		return `APY ${formatPercent(0)}`;
 	}
 
@@ -50,16 +55,19 @@ export function getVaultRawAPY(vaults: TDict<TYDaemonVault | undefined>, vaultAd
 }
 
 export function getAmountWithSlippage(from: string, to: string, value: bigint, slippage: number): number {
-	const hasLP = (
-		(toAddress(from) === LPYCRV_TOKEN_ADDRESS || toAddress(to) === LPYCRV_TOKEN_ADDRESS)
-		||
-		(toAddress(from) === LPYCRV_V2_TOKEN_ADDRESS || toAddress(to) === LPYCRV_V2_TOKEN_ADDRESS)
-	);
-	const isDirectDeposit = (toAddress(from) === YCRV_CURVE_POOL_ADDRESS || toAddress(to) === LPYCRV_TOKEN_ADDRESS || toAddress(to) === LPYCRV_V2_TOKEN_ADDRESS);
+	const hasLP =
+		toAddress(from) === LPYCRV_TOKEN_ADDRESS ||
+		toAddress(to) === LPYCRV_TOKEN_ADDRESS ||
+		toAddress(from) === LPYCRV_V2_TOKEN_ADDRESS ||
+		toAddress(to) === LPYCRV_V2_TOKEN_ADDRESS;
+	const isDirectDeposit =
+		toAddress(from) === YCRV_CURVE_POOL_ADDRESS ||
+		toAddress(to) === LPYCRV_TOKEN_ADDRESS ||
+		toAddress(to) === LPYCRV_V2_TOKEN_ADDRESS;
 
 	if (hasLP && !isDirectDeposit) {
 		const minAmountStr = Number(formatUnits(toBigInt(value), 18));
-		const minAmountWithSlippage = parseUnits(((minAmountStr * (1 - (slippage / 100))).toFixed(18) as `${number}`), 18);
+		const minAmountWithSlippage = parseUnits((minAmountStr * (1 - slippage / 100)).toFixed(18) as `${number}`, 18);
 		return formatToNormalizedValue(toBigInt(minAmountWithSlippage), 18);
 	}
 	return formatToNormalizedValue(value, 18);
@@ -78,20 +86,23 @@ export const graphFetcher = async (args: [string, string]): Promise<GraphQLRespo
 	return request(url, query);
 };
 
-
 export function formatDateShort(value: number): string {
 	let locale = 'fr-FR';
-	if (typeof(navigator) !== 'undefined') {
+	if (typeof navigator !== 'undefined') {
 		locale = navigator.language || 'fr-FR';
 	}
 
-	return (new Intl.DateTimeFormat([locale, 'en-US'], {year: 'numeric', month: 'short', day: '2-digit'}).format(value));
+	return new Intl.DateTimeFormat([locale, 'en-US'], {
+		year: 'numeric',
+		month: 'short',
+		day: '2-digit'
+	}).format(value);
 }
 
 /* 🔵 - Yearn Finance **************************************************************************
-**	Returns an object composed of each element of an array, using one of the elements
-**  properties as its key
-**********************************************************************************************/
+ **	Returns an object composed of each element of an array, using one of the elements
+ **  properties as its key
+ **********************************************************************************************/
 export const keyBy = <T1, T2 extends keyof T1 & string>(array: T1[], key: T2): TDict<T1 | undefined> =>
 	(array || []).reduce((r, x): TDict<T1> => ({...r, [x[key] as string]: x}), {});
 

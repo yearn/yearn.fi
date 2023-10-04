@@ -10,7 +10,7 @@ import type {TDropdownGaugeItemProps, TDropdownGaugeOption, TDropdownGaugeProps}
 function DropdownItem({option}: TDropdownGaugeItemProps): ReactElement {
 	return (
 		<Combobox.Option value={option}>
-			{({active}): ReactElement =>
+			{({active}): ReactElement => (
 				<div data-active={active} className={'yearn--dropdown-menu-item w-full hover:bg-neutral-0/40'}>
 					<div className={'h-6 w-6 flex-none rounded-full'}>
 						{option?.icon ? cloneElement(option.icon) : null}
@@ -24,7 +24,7 @@ function DropdownItem({option}: TDropdownGaugeItemProps): ReactElement {
 						</p>
 					</div>
 				</div>
-			}
+			)}
 		</Combobox.Option>
 	);
 }
@@ -48,30 +48,30 @@ function DropdownEmpty({query}: {query: string}): ReactElement {
 	);
 }
 
-export function Dropdown({
-	options,
-	selected,
-	onSelect,
-	placeholder = ''
-}: TDropdownGaugeProps): ReactElement {
+export function Dropdown({options, selected, onSelect, placeholder = ''}: TDropdownGaugeProps): ReactElement {
 	const [isOpen, set_isOpen] = useState(false);
 	const [query, set_query] = useState('');
 
-	const orderedOptions = useMemo((): TDropdownGaugeOption[] => (options || []).sort((a, b): number => {
-		if (a.value.APY < b.value.APY) {
-			return 1;
-		}
-		if (a.value.APY > b.value.APY) {
-			return -1;
-		}
-		return 0;
-	}), [options]);
+	const orderedOptions = useMemo(
+		(): TDropdownGaugeOption[] =>
+			(options || []).sort((a, b): number => {
+				if (a.value.APY < b.value.APY) {
+					return 1;
+				}
+				if (a.value.APY > b.value.APY) {
+					return -1;
+				}
+				return 0;
+			}),
+		[options]
+	);
 
-	const filteredOptions = query === ''
-		? orderedOptions
-		: orderedOptions.filter((option): boolean => {
-			return option.label.toLowerCase().includes(query.toLowerCase());
-		});
+	const filteredOptions =
+		query === ''
+			? orderedOptions
+			: orderedOptions.filter((option): boolean => {
+					return option.label.toLowerCase().includes(query.toLowerCase());
+			  });
 
 	return (
 		<div>
@@ -82,33 +82,45 @@ export function Dropdown({
 						e.stopPropagation();
 						e.preventDefault();
 						set_isOpen(false);
-					}} />
+					}}
+				/>
 			</Renderable>
 
-			<Combobox
-				value={selected}
-				onChange={onSelect}>
+			<Combobox value={selected} onChange={onSelect}>
 				<>
 					<Combobox.Button
 						onClick={(): void => set_isOpen(!isOpen)}
-						className={'flex h-10 w-full items-center justify-between bg-neutral-0 p-2 text-base text-neutral-900 md:px-3'}>
+						className={
+							'flex h-10 w-full items-center justify-between bg-neutral-0 p-2 text-base text-neutral-900 md:px-3'
+						}>
 						<div className={'relative flex flex-row items-center'}>
 							<div key={selected?.label} className={'h-6 w-6 flex-none rounded-full'}>
-								{selected?.icon ? cloneElement(selected.icon) : <div className={'h-6 w-6 flex-none rounded-full bg-neutral-500'} />}
+								{selected?.icon ? (
+									cloneElement(selected.icon)
+								) : (
+									<div className={'h-6 w-6 flex-none rounded-full bg-neutral-500'} />
+								)}
 							</div>
-							<p className={'max-w-[90%] overflow-x-hidden text-ellipsis whitespace-nowrap pl-2 font-normal text-neutral-900 scrollbar-none md:max-w-full'}>
+							<p
+								className={
+									'max-w-[90%] overflow-x-hidden text-ellipsis whitespace-nowrap pl-2 font-normal text-neutral-900 scrollbar-none md:max-w-full'
+								}>
 								<Combobox.Input
-									className={'w-full cursor-default overflow-x-scroll border-none bg-transparent p-0 outline-none scrollbar-none'}
+									className={
+										'w-full cursor-default overflow-x-scroll border-none bg-transparent p-0 outline-none scrollbar-none'
+									}
 									displayValue={(option: TDropdownGaugeOption): string => option.label}
 									placeholder={placeholder}
 									spellCheck={false}
-									onChange={(event): void => set_query(event.target.value)} />
+									onChange={(event): void => set_query(event.target.value)}
+								/>
 							</p>
 						</div>
 						<div className={'absolute right-2 md:right-3'}>
 							<IconChevron
 								aria-hidden={'true'}
-								className={`h-6 w-6 transition-transform ${isOpen ? '-rotate-180' : 'rotate-0'}`} />
+								className={`h-6 w-6 transition-transform ${isOpen ? '-rotate-180' : 'rotate-0'}`}
+							/>
 						</div>
 					</Combobox.Button>
 					<Transition
@@ -125,7 +137,11 @@ export function Dropdown({
 							<Renderable
 								shouldRender={filteredOptions.length > 0}
 								fallback={<DropdownEmpty query={query} />}>
-								{filteredOptions.map((option): ReactElement => <DropdownItem key={option.label} option={option} />)}
+								{filteredOptions.map(
+									(option): ReactElement => (
+										<DropdownItem key={option.label} option={option} />
+									)
+								)}
 							</Renderable>
 						</Combobox.Options>
 					</Transition>

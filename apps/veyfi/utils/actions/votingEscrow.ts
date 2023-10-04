@@ -13,7 +13,10 @@ import type {TSeconds} from '@yearn-finance/web-lib/utils/time';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 import type {TWriteTransaction} from '@common/utils/wagmiUtils';
 
-type TApproveLock = TWriteTransaction & {votingEscrowAddress: TAddress; amount: bigint;};
+type TApproveLock = TWriteTransaction & {
+	votingEscrowAddress: TAddress;
+	amount: bigint;
+};
 export async function approveLock(props: TApproveLock): Promise<TTxResponse> {
 	const {votingEscrowAddress, amount = MAX_UINT_256, contractAddress} = props;
 
@@ -28,7 +31,12 @@ export async function approveLock(props: TApproveLock): Promise<TTxResponse> {
 	});
 }
 
-type TLock = TWriteTransaction & {votingEscrowAddress: TAddress; accountAddress: TAddress; amount: bigint; time: TSeconds};
+type TLock = TWriteTransaction & {
+	votingEscrowAddress: TAddress;
+	accountAddress: TAddress;
+	amount: bigint;
+	time: TSeconds;
+};
 export async function lock(props: TLock): Promise<TTxResponse> {
 	assertAddresses([props.votingEscrowAddress, props.accountAddress, props.contractAddress]);
 	assert(props.amount > 0n, 'Amount is 0');
@@ -42,7 +50,11 @@ export async function lock(props: TLock): Promise<TTxResponse> {
 	});
 }
 
-type TIncreaseLockAmount = TWriteTransaction & {votingEscrowAddress: TAddress; accountAddress: TAddress; amount: bigint};
+type TIncreaseLockAmount = TWriteTransaction & {
+	votingEscrowAddress: TAddress;
+	accountAddress: TAddress;
+	amount: bigint;
+};
 export async function increaseLockAmount(props: TIncreaseLockAmount): Promise<TTxResponse> {
 	assertAddresses([props.votingEscrowAddress, props.accountAddress, props.contractAddress]);
 	assert(props.amount > 0n, 'Amount is 0');
@@ -55,7 +67,11 @@ export async function increaseLockAmount(props: TIncreaseLockAmount): Promise<TT
 	});
 }
 
-type TExtendLockTime = TWriteTransaction & {votingEscrowAddress: TAddress; accountAddress: TAddress; time: TSeconds};
+type TExtendLockTime = TWriteTransaction & {
+	votingEscrowAddress: TAddress;
+	accountAddress: TAddress;
+	time: TSeconds;
+};
 export async function extendLockTime(props: TExtendLockTime): Promise<TTxResponse> {
 	assertAddresses([props.votingEscrowAddress, props.accountAddress, props.contractAddress]);
 	assert(props.time > 0, 'Time is 0');

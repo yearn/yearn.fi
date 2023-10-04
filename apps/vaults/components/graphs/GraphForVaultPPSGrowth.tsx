@@ -7,9 +7,9 @@ import type {ReactElement} from 'react';
 import type {TMessariGraphData} from '@common/types/types';
 
 export type TGraphForVaultPPSGrowthProps = {
-	messariData: TMessariGraphData[],
-	height?: number,
-}
+	messariData: TMessariGraphData[];
+	height?: number;
+};
 
 export function GraphForVaultPPSGrowth({messariData, height = 312}: TGraphForVaultPPSGrowthProps): ReactElement {
 	if (isZero(messariData?.length)) {
@@ -18,9 +18,7 @@ export function GraphForVaultPPSGrowth({messariData, height = 312}: TGraphForVau
 
 	return (
 		<ResponsiveContainer width={'100%'} height={height}>
-			<LineChart
-				margin={{top: 0, right: -26, bottom: 0, left: 0}}
-				data={messariData}>
+			<LineChart margin={{top: 0, right: -26, bottom: 0, left: 0}} data={messariData}>
 				<Line
 					className={'text-primary-600'}
 					type={'step'}
@@ -32,16 +30,17 @@ export function GraphForVaultPPSGrowth({messariData, height = 312}: TGraphForVau
 						e.className = `${e.className} activeDot`;
 						delete e.dataKey;
 						return <circle {...e}></circle>;
-					}} />
-				<XAxis
-					dataKey={'name'}
-					hide />
+					}}
+				/>
+				<XAxis dataKey={'name'} hide />
 				<YAxis
 					orientation={'right'}
 					domain={['dataMin', 'auto']}
 					hide={false}
 					tick={(e): ReactElement => {
-						const {payload: {value}} = e;
+						const {
+							payload: {value}
+						} = e;
 						e.fill = '#5B5B5B';
 						e.className = 'text-xxs md:text-xs font-number';
 						e.alignmentBaseline = 'middle';
@@ -50,7 +49,8 @@ export function GraphForVaultPPSGrowth({messariData, height = 312}: TGraphForVau
 						delete e.tickFormatter;
 						const formatedValue = formatAmount(value, 3, 3);
 						return <text {...e}>{formatedValue}</text>;
-					}} />
+					}}
+				/>
 				<Tooltip
 					content={(e): ReactElement => {
 						const {active: isTooltipActive, payload, label} = e;
@@ -75,7 +75,8 @@ export function GraphForVaultPPSGrowth({messariData, height = 312}: TGraphForVau
 							);
 						}
 						return <div />;
-					}} />
+					}}
+				/>
 			</LineChart>
 		</ResponsiveContainer>
 	);

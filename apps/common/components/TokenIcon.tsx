@@ -9,9 +9,9 @@ function TokenIcon({
 	size = 72,
 	token
 }: {
-	chainID: number,
-	size?: number,
-	token: TYDaemonVault['token']
+	chainID: number;
+	size?: number;
+	token: TYDaemonVault['token'];
 }): ReactElement {
 	return (
 		<>
@@ -20,9 +20,9 @@ function TokenIcon({
 				src={`${process.env.BASE_YEARN_ASSETS_URI}/${chainID}/${toAddress(token?.address)}/logo-128.png`}
 				alt={''}
 				width={size}
-				height={size} />
+				height={size}
+			/>
 		</>
-
 	);
 }
 export default TokenIcon;

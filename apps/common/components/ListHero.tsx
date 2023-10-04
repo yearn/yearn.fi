@@ -17,13 +17,13 @@ export type TListHeroCategory<T> = {
 	label: string;
 	node?: ReactNode;
 	value: T;
-	isSelected?: boolean,
-}
+	isSelected?: boolean;
+};
 
 type TSwitchProps = {
 	isEnabled: boolean;
 	onSwitch?: (state: boolean) => void;
-}
+};
 
 export type TListHero<T> = {
 	headLabel: string;
@@ -35,12 +35,12 @@ export type TListHero<T> = {
 	set_selectedChains?: (chains: string) => void;
 	searchValue: string;
 	set_searchValue: (searchValue: string) => void;
-}
+};
 
 export type TListHeroDesktopCategories<T> = {
 	categories: TListHeroCategory<T>[][];
 	onSelect: (category: T) => void;
-}
+};
 
 function DesktopCategories<T>({categories, onSelect}: TListHeroDesktopCategories<T>): ReactElement {
 	const [isClientLoaded, set_isClientLoaded] = useState(false);
@@ -55,23 +55,27 @@ function DesktopCategories<T>({categories, onSelect}: TListHeroDesktopCategories
 	return (
 		<div className={'w-full'}>
 			<div suppressHydrationWarning className={'mt-1 flex flex-row space-x-4'}>
-				{(categories || []).map((currentCategory, index: number): ReactElement => (
-					<div
-						key={`${index}-${isClientLoaded}`}
-						suppressHydrationWarning
-						className={'flex flex-row space-x-0 divide-x border-x border-neutral-900'}>
-						{currentCategory.map((item): ReactElement => (
-							<Button
-								key={item.label}
-								onClick={(): void => onSelect(item.value)}
-								suppressHydrationWarning
-								variant={item.isSelected ? 'filled' : 'outlined'}
-								className={'yearn--button-smaller relative !border-x-0'}>
-								{item?.node || item.label}
-							</Button>
-						))}
-					</div>
-				))}
+				{(categories || []).map(
+					(currentCategory, index: number): ReactElement => (
+						<div
+							key={`${index}-${isClientLoaded}`}
+							suppressHydrationWarning
+							className={'flex flex-row space-x-0 divide-x border-x border-neutral-900'}>
+							{currentCategory.map(
+								(item): ReactElement => (
+									<Button
+										key={item.label}
+										onClick={(): void => onSelect(item.value)}
+										suppressHydrationWarning
+										variant={item.isSelected ? 'filled' : 'outlined'}
+										className={'yearn--button-smaller relative !border-x-0'}>
+										{item?.node || item.label}
+									</Button>
+								)
+							)}
+						</div>
+					)
+				)}
 			</div>
 		</div>
 	);
@@ -94,12 +98,13 @@ function Switch(props: TSwitchProps): ReactElement {
 			<HeadlessSwitch
 				checked={onSwitch ? isEnabled : isEnabledState}
 				onChange={safeOnSwitch}
-				onKeyDown={({keyCode}: {keyCode: number}): unknown => keyCode === 13 ? safeOnSwitch() : null}
+				onKeyDown={({keyCode}: {keyCode: number}): unknown => (keyCode === 13 ? safeOnSwitch() : null)}
 				className={'yearn--next-switch'}>
 				<span className={'sr-only'}>{'Use setting'}</span>
 				<div
 					aria-hidden={'true'}
-					className={(onSwitch ? isEnabled : isEnabledState) ? 'translate-x-[14px]' : 'translate-x-0'} />
+					className={(onSwitch ? isEnabled : isEnabledState) ? 'translate-x-[14px]' : 'translate-x-0'}
+				/>
 			</HeadlessSwitch>
 		</div>
 	);
@@ -156,24 +161,22 @@ export function ListHero<T extends string>({
 	return (
 		<div className={'flex flex-col items-start justify-between space-x-0 px-4 pb-2 pt-4 md:px-10 md:pb-8 md:pt-10'}>
 			<div className={'mb-6'}>
-				<h2
-					suppressHydrationWarning
-					className={'text-lg font-bold md:text-3xl'}>
+				<h2 suppressHydrationWarning className={'text-lg font-bold md:text-3xl'}>
 					{headLabel}
 				</h2>
 			</div>
 
 			<div className={'hidden w-full flex-row items-center justify-between space-x-4 md:flex'}>
-				<DesktopCategories
-					categories={categories}
-					onSelect={onSelect} />
+				<DesktopCategories categories={categories} onSelect={onSelect} />
 
 				<MultiSelectDropdown
 					defaultOption={OPTIONS[0]}
 					options={OPTIONS}
 					placeholder={'Select chain'}
 					onSelect={(options): void => {
-						const selectedChains = options.filter((o): boolean => o.selected).map((option): number => Number(option.value));
+						const selectedChains = options
+							.filter((o): boolean => o.selected)
+							.map((option): number => Number(option.value));
 						set_selectedChains?.(JSON.stringify(selectedChains));
 					}}
 				/>
@@ -181,7 +184,8 @@ export function ListHero<T extends string>({
 				<SearchBar
 					searchPlaceholder={searchPlaceholder}
 					searchValue={searchValue}
-					set_searchValue={set_searchValue} />
+					set_searchValue={set_searchValue}
+				/>
 
 				{!!switchProps && (
 					<div className={'mr-4 mt-7 flex h-full min-w-fit flex-row'}>
@@ -200,25 +204,29 @@ export function ListHero<T extends string>({
 							onSelect(value);
 						}
 					}}>
-					{isMounted() && categories.map((currentCategory): ReactNode => (
-						currentCategory.map((item): ReactElement => (
-							<option
-								suppressHydrationWarning
-								key={item.value}
-								value={item.value}>
-								{item.label}
-							</option>
-						))
-					))}
+					{isMounted() &&
+						categories.map(
+							(currentCategory): ReactNode =>
+								currentCategory.map(
+									(item): ReactElement => (
+										<option suppressHydrationWarning key={item.value} value={item.value}>
+											{item.label}
+										</option>
+									)
+								)
+						)}
 				</select>
 				<div className={'flex h-8 w-full items-center border border-neutral-0 bg-neutral-0 p-2 md:w-auto'}>
 					<div className={'flex h-8 w-full flex-row items-center justify-between px-0 py-2'}>
 						<input
-							className={'w-full overflow-x-scroll border-none bg-transparent px-0 py-2 text-xs outline-none scrollbar-none'}
+							className={
+								'w-full overflow-x-scroll border-none bg-transparent px-0 py-2 text-xs outline-none scrollbar-none'
+							}
 							type={'text'}
 							placeholder={'Search'}
 							value={searchValue}
-							onChange={(e: ChangeEvent<HTMLInputElement>): void => set_searchValue(e.target.value)} />
+							onChange={(e: ChangeEvent<HTMLInputElement>): void => set_searchValue(e.target.value)}
+						/>
 					</div>
 				</div>
 			</div>

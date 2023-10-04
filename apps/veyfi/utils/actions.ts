@@ -11,16 +11,16 @@ import type {TWriteTransaction} from '@yearn-finance/web-lib/utils/wagmi/provide
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 
 /* 🔵 - Yearn Finance **********************************************************
-** lockVeYFI is a _WRITE_ function that locks funds in the veYFI contract in
-** exchange of some voting power.
-**
-** @app - veYFI
-** @param amount - The amount of the underlying asset to deposit.
-** @param time - The amount of time to lock the funds for.
-******************************************************************************/
+ ** lockVeYFI is a _WRITE_ function that locks funds in the veYFI contract in
+ ** exchange of some voting power.
+ **
+ ** @app - veYFI
+ ** @param amount - The amount of the underlying asset to deposit.
+ ** @param time - The amount of time to lock the funds for.
+ ******************************************************************************/
 type TLockVeYFI = TWriteTransaction & {
 	amount: bigint;
-	time: bigint
+	time: bigint;
 };
 export async function lockVeYFI(props: TLockVeYFI): Promise<TTxResponse> {
 	assert(props.connector, 'No connector');
@@ -40,12 +40,12 @@ export async function lockVeYFI(props: TLockVeYFI): Promise<TTxResponse> {
 }
 
 /* 🔵 - Yearn Finance **********************************************************
-** increaseVeYFILockAmount is a _WRITE_ function that increases the amount of
-** funds locked in the veYFI contract in exchange of some voting power.
-**
-** @app - veYFI
-** @param amount - The amount of the underlying asset to deposit.
-******************************************************************************/
+ ** increaseVeYFILockAmount is a _WRITE_ function that increases the amount of
+ ** funds locked in the veYFI contract in exchange of some voting power.
+ **
+ ** @app - veYFI
+ ** @param amount - The amount of the underlying asset to deposit.
+ ******************************************************************************/
 type TIncreaseVeYFILockAmount = TWriteTransaction & {
 	amount: bigint;
 };
@@ -66,12 +66,12 @@ export async function increaseVeYFILockAmount(props: TIncreaseVeYFILockAmount): 
 }
 
 /* 🔵 - Yearn Finance **********************************************************
-** extendVeYFILockTime is a _WRITE_ function that increases the amount of time funds
-** are locked in the veYFI contract in exchange of some voting power.
-**
-** @app - veYFI
-** @param time - The amount of time to lock the funds for.
-******************************************************************************/
+ ** extendVeYFILockTime is a _WRITE_ function that increases the amount of time funds
+ ** are locked in the veYFI contract in exchange of some voting power.
+ **
+ ** @app - veYFI
+ ** @param time - The amount of time to lock the funds for.
+ ******************************************************************************/
 type TExtendVeYFILockTime = TWriteTransaction & {
 	time: bigint;
 };
@@ -92,11 +92,11 @@ export async function extendVeYFILockTime(props: TExtendVeYFILockTime): Promise<
 }
 
 /* 🔵 - Yearn Finance **********************************************************
-** getVeYFIWithdrawPenalty is a _READ_ function that simulates a withdrawal from
-** the veYFI contract and returns the penalty to be paid.
-**
-** @app - veYFI
-******************************************************************************/
+ ** getVeYFIWithdrawPenalty is a _READ_ function that simulates a withdrawal from
+ ** the veYFI contract and returns the penalty to be paid.
+ **
+ ** @app - veYFI
+ ******************************************************************************/
 type TGetVeYFIWithdrawPenalty = TWriteTransaction;
 export async function getVeYFIWithdrawPenalty(props: TGetVeYFIWithdrawPenalty): Promise<bigint> {
 	try {
@@ -112,12 +112,12 @@ export async function getVeYFIWithdrawPenalty(props: TGetVeYFIWithdrawPenalty): 
 }
 
 /* 🔵 - Yearn Finance **********************************************************
-** withdrawUnlockedVeYFI is a _WRITE_ function that withdraws unlocked funds from
-** the veYFI contract.
-** Note: will fail if there is a penalty to be paid.
-**
-** @app - veYFI
-******************************************************************************/
+ ** withdrawUnlockedVeYFI is a _WRITE_ function that withdraws unlocked funds from
+ ** the veYFI contract.
+ ** Note: will fail if there is a penalty to be paid.
+ **
+ ** @app - veYFI
+ ******************************************************************************/
 type TWithdrawUnlockedVeYFI = TWriteTransaction;
 export async function withdrawUnlockedVeYFI(props: TWithdrawUnlockedVeYFI): Promise<TTxResponse> {
 	assertAddress(props.contractAddress);
@@ -129,7 +129,10 @@ export async function withdrawUnlockedVeYFI(props: TWithdrawUnlockedVeYFI): Prom
 		setTimeout((): void => {
 			props.statusHandler?.({...defaultTxStatus});
 		}, 3000);
-		return ({isSuccessful: false, error: new BaseError('Tokens are not yet unlocked')});
+		return {
+			isSuccessful: false,
+			error: new BaseError('Tokens are not yet unlocked')
+		};
 	}
 
 	return await handleTx(props, {
@@ -140,11 +143,11 @@ export async function withdrawUnlockedVeYFI(props: TWithdrawUnlockedVeYFI): Prom
 }
 
 /* 🔵 - Yearn Finance **********************************************************
-** withdrawLockedVeYFI is a _WRITE_ function that withdraws locked funds from the
-** veYFI contract.
-**
-** @app - veYFI
-******************************************************************************/
+ ** withdrawLockedVeYFI is a _WRITE_ function that withdraws locked funds from the
+ ** veYFI contract.
+ **
+ ** @app - veYFI
+ ******************************************************************************/
 type TWithdrawLockedVeYFI = TWriteTransaction;
 export async function withdrawLockedVeYFI(props: TWithdrawLockedVeYFI): Promise<TTxResponse> {
 	assertAddress(props.contractAddress);

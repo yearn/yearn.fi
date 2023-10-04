@@ -3,7 +3,7 @@ import {useState} from 'react';
 type TProps<T> = {
 	data: T[];
 	itemsPerPage: number;
-}
+};
 
 type TUsePaginationReturn<T> = {
 	currentItems: T[];
@@ -11,11 +11,9 @@ type TUsePaginationReturn<T> = {
 		range: [from: number, to: number];
 		pageCount: number;
 		numberOfItems: number;
-		onPageChange: (selectedItem: {
-			selected: number;
-		}) => void;
-	}
-}
+		onPageChange: (selectedItem: {selected: number}) => void;
+	};
+};
 
 export function usePagination<T>({data, itemsPerPage}: TProps<T>): TUsePaginationReturn<T> {
 	const [itemOffset, set_itemOffset] = useState(0);

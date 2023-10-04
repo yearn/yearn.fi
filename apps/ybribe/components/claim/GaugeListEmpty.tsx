@@ -37,9 +37,7 @@ export function GaugeListEmpty({category}: {category: string}): ReactElement {
 	return (
 		<div className={'flex h-96 w-full flex-col items-center justify-center px-10 py-2'}>
 			<b className={'text-lg'}>{'No Gauges'}</b>
-			<p className={'text-neutral-600'}>
-				{'No gauges available.'}
-			</p>
+			<p className={'text-neutral-600'}>{'No gauges available.'}</p>
 		</div>
 	);
 }

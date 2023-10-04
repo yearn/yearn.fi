@@ -59,10 +59,12 @@ export function ManageLockTab(): ReactElement {
 	}, [onTxSuccess, provider, votingEscrow?.address]);
 
 	const votingPower = useMemo((): bigint => {
-		if(!positions?.deposit || !newUnlockTime) {
+		if (!positions?.deposit || !newUnlockTime) {
 			return 0n;
 		}
-		return willExtendLock ? getVotingPower(positions?.deposit?.underlyingBalance, newUnlockTime) : toBigInt(positions?.deposit?.balance);
+		return willExtendLock
+			? getVotingPower(positions?.deposit?.underlyingBalance, newUnlockTime)
+			: toBigInt(positions?.deposit?.balance);
 	}, [positions?.deposit, newUnlockTime, willExtendLock]);
 
 	const {isValid: isValidLockTime, error: lockTimeError} = validateAmount({
@@ -70,44 +72,53 @@ export function ManageLockTab(): ReactElement {
 		minAmountAllowed: MIN_LOCK_TIME
 	});
 
-	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: 1, walletNetwork: safeChainID});
+	const {isValid: isValidNetwork} = validateNetwork({
+		supportedNetwork: 1,
+		walletNetwork: safeChainID
+	});
 
 	return (
 		<div className={'grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-16'}>
 			<div className={'col-span-1 grid w-full gap-6'}>
 				<div className={'md:min-h-[104px]'}>
-					<h2 className={'m-0 text-2xl font-bold'}>
-						{'Extend lock'}
-					</h2>
-					<div className={'mt-6 text-neutral-600'} >
+					<h2 className={'m-0 text-2xl font-bold'}>{'Extend lock'}</h2>
+					<div className={'mt-6 text-neutral-600'}>
 						<p>{'Want to lock for longer? Extend your lock period to increase your gauge boost weight.'}</p>
 					</div>
 				</div>
 				<div className={'grid grid-cols-1 gap-6 md:grid-cols-2'}>
-					<AmountInput
-						label={'Current lock period (weeks)'}
-						amount={weeksToUnlock}
-						disabled />
+					<AmountInput label={'Current lock period (weeks)'} amount={weeksToUnlock} disabled />
 					<AmountInput
 						label={'Increase lock period (weeks)'}
 						amount={lockTime}
 						onAmountChange={(amount): void => set_lockTime(Math.floor(toTime(amount)).toString())}
 						maxAmount={MAX_LOCK_TIME - weeksToUnlock > 0 ? MAX_LOCK_TIME - weeksToUnlock : 0}
-						onMaxClick={(): void => set_lockTime(Math.floor(toTime(MAX_LOCK_TIME - weeksToUnlock > 0 ? MAX_LOCK_TIME - weeksToUnlock : 0)).toString())}
+						onMaxClick={(): void =>
+							set_lockTime(
+								Math.floor(
+									toTime(MAX_LOCK_TIME - weeksToUnlock > 0 ? MAX_LOCK_TIME - weeksToUnlock : 0)
+								).toString()
+							)
+						}
 						disabled={!hasLockedAmount}
 						error={lockTimeError}
-						legend={'Minimum: 1 week'} />
+						legend={'Minimum: 1 week'}
+					/>
 				</div>
 				<div className={'grid grid-cols-1 gap-6 md:grid-cols-2 md:pb-5'}>
-					<AmountInput
-						label={'Total veYFI'}
-						amount={formatUnits(votingPower, 18)}
-						disabled />
+					<AmountInput label={'Total veYFI'} amount={formatUnits(votingPower, 18)} disabled />
 					<Button
 						className={'w-full md:mt-7'}
 						onClick={onExtendLockTime}
 						isBusy={extendLockTimeStatus.pending}
-						isDisabled={!isActive || !isValidNetwork || !isValidLockTime || extendLockTimeStatus.pending || !votingEscrow || !address}>
+						isDisabled={
+							!isActive ||
+							!isValidNetwork ||
+							!isValidLockTime ||
+							extendLockTimeStatus.pending ||
+							!votingEscrow ||
+							!address
+						}>
 						{'Extend'}
 					</Button>
 				</div>
@@ -115,10 +126,8 @@ export function ManageLockTab(): ReactElement {
 
 			<div className={'col-span-1 grid w-full gap-6'}>
 				<div className={'md:min-h-[104px]'}>
-					<h2 className={'m-0 text-2xl font-bold'}>
-						{'Early exit'}
-					</h2>
-					<div className={'mt-6 text-neutral-600'} >
+					<h2 className={'m-0 text-2xl font-bold'}>{'Early exit'}</h2>
+					<div className={'mt-6 text-neutral-600'}>
 						<p>{'Or you can exit early by paying a penalty based on lock duration.'}</p>
 					</div>
 				</div>
@@ -126,23 +135,29 @@ export function ManageLockTab(): ReactElement {
 					<AmountInput
 						label={'veYFI you have'}
 						amount={formatUnits(toBigInt(positions?.deposit?.balance), 18)}
-						disabled />
-					<AmountInput
-						label={'Current lock time (weeks)'}
-						amount={weeksToUnlock}
-						disabled />
+						disabled
+					/>
+					<AmountInput label={'Current lock time (weeks)'} amount={weeksToUnlock} disabled />
 				</div>
 				<div className={'grid grid-cols-1 gap-6 md:grid-cols-2'}>
 					<AmountInput
 						label={'YFI you get'}
 						amount={formatUnits(toBigInt(positions?.withdrawable), 18)}
 						legend={`Penalty: ${((positions?.penaltyRatio ?? 0) * 100).toFixed(2)}%`}
-						disabled />
+						disabled
+					/>
 					<Button
 						className={'w-full md:mt-7'}
 						onClick={onWithdrawLocked}
 						isBusy={withdrawLockedStatus.pending}
-						isDisabled={!isActive || !isValidNetwork || !hasPenalty || withdrawLockedStatus.pending || !votingEscrow || !address}>
+						isDisabled={
+							!isActive ||
+							!isValidNetwork ||
+							!hasPenalty ||
+							withdrawLockedStatus.pending ||
+							!votingEscrow ||
+							!address
+						}>
 						{'Exit'}
 					</Button>
 				</div>

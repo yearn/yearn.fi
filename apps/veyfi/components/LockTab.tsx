@@ -29,7 +29,13 @@ export function LockTab(): ReactElement {
 	const {provider, address, isActive} = useWeb3();
 	const {safeChainID} = useChainID();
 	const {refresh: refreshBalances} = useWallet();
-	const {votingEscrow, positions, allowances, isLoading: isLoadingVotingEscrow, refresh: refreshVotingEscrow} = useVotingEscrow();
+	const {
+		votingEscrow,
+		positions,
+		allowances,
+		isLoading: isLoadingVotingEscrow,
+		refresh: refreshVotingEscrow
+	} = useVotingEscrow();
 	const tokenBalance = useBalance(toAddress(votingEscrow?.token));
 	const hasLockedAmount = toBigInt(positions?.deposit?.underlyingBalance) > 0n;
 	const [approveLockStatus, set_approveLockStatus] = useState(defaultTxStatus);
@@ -91,7 +97,7 @@ export function LockTab(): ReactElement {
 	}, [provider, votingEscrow?.address, lockAmount.raw, onTxSuccess]);
 
 	useEffect((): void => {
-		if(!positions?.unlockTime) {
+		if (!positions?.unlockTime) {
 			return;
 		}
 		set_lockTime(toWeeks(getTimeUntil(positions.unlockTime), false).toString());
@@ -118,41 +124,55 @@ export function LockTab(): ReactElement {
 		minAmountAllowed: hasLockedAmount ? 0 : MIN_LOCK_TIME
 	});
 
-	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: 1, walletNetwork: safeChainID});
+	const {isValid: isValidNetwork} = validateNetwork({
+		supportedNetwork: 1,
+		walletNetwork: safeChainID
+	});
 
-	const isApproveDisabled = !isActive || !isValidNetwork || isApproved || isLoadingVotingEscrow || !votingEscrow || !address;
-	const isLockDisabled = !isActive || !isValidNetwork || !isApproved || !isValidLockAmount || !isValidLockTime || isLoadingVotingEscrow || !votingEscrow || !address;
+	const isApproveDisabled =
+		!isActive || !isValidNetwork || isApproved || isLoadingVotingEscrow || !votingEscrow || !address;
+	const isLockDisabled =
+		!isActive ||
+		!isValidNetwork ||
+		!isApproved ||
+		!isValidLockAmount ||
+		!isValidLockTime ||
+		isLoadingVotingEscrow ||
+		!votingEscrow ||
+		!address;
 	const txAction = !isApproved
 		? {
-			label: 'Approve',
-			onAction: onApproveLock,
-			isLoading: approveLockStatus.pending,
-			isDisabled: isApproveDisabled
-		}
+				label: 'Approve',
+				onAction: onApproveLock,
+				isLoading: approveLockStatus.pending,
+				isDisabled: isApproveDisabled
+		  }
 		: hasLockedAmount
-			? {
+		? {
 				label: 'Lock',
 				onAction: onIncreaseLockAmount,
 				isLoading: increaseLockAmountStatus.pending,
 				isDisabled: isLockDisabled
-			}
-			: {
+		  }
+		: {
 				label: 'Lock',
 				onAction: onLock,
 				isLoading: lockStatus.pending,
 				isDisabled: isLockDisabled
-			};
+		  };
 
 	return (
 		<div className={'grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-16'}>
 			<div className={'col-span-1 w-full'}>
-				<h2 className={'m-0 text-2xl font-bold'}>
-					{"YFI holders, time to Lock' ‘N Load"}
-				</h2>
-				<div className={'mt-6 text-neutral-600'} >
-					<p >{'Lock your YFI for veYFI to take part in Yearn governance.'}</p>
+				<h2 className={'m-0 text-2xl font-bold'}>{"YFI holders, time to Lock' ‘N Load"}</h2>
+				<div className={'mt-6 text-neutral-600'}>
+					<p>{'Lock your YFI for veYFI to take part in Yearn governance.'}</p>
 					<br />
-					<p>{'Please note, governance is currently the only use for veYFI until the full platform launches ‘soon’. Stay tuned anon.'}</p>
+					<p>
+						{
+							'Please note, governance is currently the only use for veYFI until the full platform launches ‘soon’. Stay tuned anon.'
+						}
+					</p>
 				</div>
 			</div>
 
@@ -166,7 +186,8 @@ export function LockTab(): ReactElement {
 						onLegendClick={(): void => set_lockAmount(tokenBalance)}
 						onMaxClick={(): void => set_lockAmount(tokenBalance)}
 						legend={`Available: ${formatAmount(tokenBalance.normalized, 4)} YFI`}
-						error={lockAmountError} />
+						error={lockAmountError}
+					/>
 					<AmountInput
 						label={'Current lock period (weeks)'}
 						amount={isZero(toTime(lockTime)) ? '' : Math.floor(toTime(lockTime)).toString()}
@@ -175,13 +196,11 @@ export function LockTab(): ReactElement {
 						onMaxClick={(): void => set_lockTime((MAX_LOCK_TIME + 1).toString())}
 						disabled={hasLockedAmount}
 						legend={'Minimum: 1 week'}
-						error={lockTimeError} />
+						error={lockTimeError}
+					/>
 				</div>
 				<div className={'grid grid-cols-1 gap-6 md:grid-cols-2'}>
-					<AmountInput
-						label={'Total veYFI'}
-						amount={formatUnits(votingPower, 18)}
-						disabled />
+					<AmountInput label={'Total veYFI'} amount={formatUnits(votingPower, 18)} disabled />
 					<Button
 						className={'w-full md:mt-7'}
 						onClick={txAction.onAction}

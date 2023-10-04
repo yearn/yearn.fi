@@ -1,5 +1,9 @@
 import {createContext, useContext, useMemo, useState} from 'react';
-import {LPYCRV_TOKEN_ADDRESS, LPYCRV_V2_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {
+	LPYCRV_TOKEN_ADDRESS,
+	LPYCRV_V2_TOKEN_ADDRESS,
+	STYCRV_TOKEN_ADDRESS
+} from '@yearn-finance/web-lib/utils/constants';
 import {useFetch} from '@common/hooks/useFetch';
 import {yDaemonVaultHarvestsSchema, yDaemonVaultSchema} from '@common/schemas/yDaemonVaultsSchemas';
 import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
@@ -12,14 +16,14 @@ import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TYDaemonVault, TYDaemonVaultHarvests} from '@common/schemas/yDaemonVaultsSchemas';
 
 type TYCRVContext = {
-	styCRVAPY: number,
-	slippage: number,
-	allowances: TDict<bigint>,
-	holdings: TCRVHoldings,
-	harvests: TYDaemonVaultHarvests,
-	set_slippage: (slippage: number) => void,
-	refetchAllowances: () => void
-}
+	styCRVAPY: number;
+	slippage: number;
+	allowances: TDict<bigint>;
+	holdings: TCRVHoldings;
+	harvests: TYDaemonVaultHarvests;
+	set_slippage: (slippage: number) => void;
+	refetchAllowances: () => void;
+};
 
 const defaultProps = {
 	styCRVAPY: 0,
@@ -32,8 +36,8 @@ const defaultProps = {
 };
 
 /* 🔵 - Yearn Finance **********************************************************
-** This context controls the Holdings computation.
-******************************************************************************/
+ ** This context controls the Holdings computation.
+ ******************************************************************************/
 const YCRVContext = createContext<TYCRVContext>(defaultProps);
 export const YCRVContextApp = ({children}: {children: ReactElement}): ReactElement => {
 	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: 1});
@@ -52,31 +56,29 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 	});
 
 	/* 🔵 - Yearn Finance ******************************************************
-	** Compute the styCRV APY based on the experimental APY and the mega boost.
-	**************************************************************************/
+	 ** Compute the styCRV APY based on the experimental APY and the mega boost.
+	 **************************************************************************/
 	const styCRVAPY = useMemo((): number => {
-		return ((styCRVVault?.apy?.net_apy || 0) * 100);
+		return (styCRVVault?.apy?.net_apy || 0) * 100;
 	}, [styCRVVault]);
 
 	/* 🔵 - Yearn Finance ******************************************************
-	**	Setup and render the Context provider to use in the app.
-	***************************************************************************/
-	const contextValue = useMemo((): TYCRVContext => ({
-		harvests: yCRVHarvests ?? [],
-		holdings: holdings,
-		allowances: allowances[0],
-		refetchAllowances: allowances[1],
-		styCRVAPY,
-		slippage,
-		set_slippage
-	}), [yCRVHarvests, holdings, allowances, styCRVAPY, slippage, set_slippage]);
-
-	return (
-		<YCRVContext.Provider value={contextValue}>
-			{children}
-		</YCRVContext.Provider>
+	 **	Setup and render the Context provider to use in the app.
+	 ***************************************************************************/
+	const contextValue = useMemo(
+		(): TYCRVContext => ({
+			harvests: yCRVHarvests ?? [],
+			holdings: holdings,
+			allowances: allowances[0],
+			refetchAllowances: allowances[1],
+			styCRVAPY,
+			slippage,
+			set_slippage
+		}),
+		[yCRVHarvests, holdings, allowances, styCRVAPY, slippage, set_slippage]
 	);
-};
 
+	return <YCRVContext.Provider value={contextValue}>{children}</YCRVContext.Provider>;
+};
 
 export const useYCRV = (): TYCRVContext => useContext(YCRVContext);

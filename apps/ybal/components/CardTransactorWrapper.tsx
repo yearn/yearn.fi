@@ -5,7 +5,12 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useAddToken} from '@yearn-finance/web-lib/hooks/useAddToken';
 import {useDismissToasts} from '@yearn-finance/web-lib/hooks/useDismissToasts';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {LPYBAL_TOKEN_ADDRESS, MAX_UINT_256, STYBAL_TOKEN_ADDRESS, ZAP_YEARN_YBAL_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {
+	LPYBAL_TOKEN_ADDRESS,
+	MAX_UINT_256,
+	STYBAL_TOKEN_ADDRESS,
+	ZAP_YEARN_YBAL_ADDRESS
+} from '@yearn-finance/web-lib/utils/constants';
 import {formatToNormalizedValue, toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
@@ -24,22 +29,22 @@ import type {TAddress, VoidPromiseFunction} from '@yearn-finance/web-lib/types';
 import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
 
 type TCardTransactor = {
-	selectedOptionFrom: TDropdownOption,
-	selectedOptionTo: TDropdownOption,
-	amount: TNormalizedBN,
-	txStatusApprove: typeof defaultTxStatus,
-	txStatusZap: typeof defaultTxStatus,
-	allowanceFrom: bigint,
-	fromVaultAPY: string,
-	toVaultAPY: string,
-	expectedOutWithSlippage: number,
-	set_selectedOptionFrom: (option: TDropdownOption) => void,
-	set_selectedOptionTo: (option: TDropdownOption) => void,
-	set_amount: (amount: TNormalizedBN) => void,
-	set_hasTypedSomething: (hasTypedSomething: boolean) => void,
-	onApproveFrom: VoidPromiseFunction,
-	onZap: VoidPromiseFunction
-}
+	selectedOptionFrom: TDropdownOption;
+	selectedOptionTo: TDropdownOption;
+	amount: TNormalizedBN;
+	txStatusApprove: typeof defaultTxStatus;
+	txStatusZap: typeof defaultTxStatus;
+	allowanceFrom: bigint;
+	fromVaultAPY: string;
+	toVaultAPY: string;
+	expectedOutWithSlippage: number;
+	set_selectedOptionFrom: (option: TDropdownOption) => void;
+	set_selectedOptionTo: (option: TDropdownOption) => void;
+	set_amount: (amount: TNormalizedBN) => void;
+	set_hasTypedSomething: (hasTypedSomething: boolean) => void;
+	onApproveFrom: VoidPromiseFunction;
+	onZap: VoidPromiseFunction;
+};
 
 const CardTransactorContext = createContext<TCardTransactor>({
 	selectedOptionFrom: ZAP_OPTIONS_FROM[0],
@@ -79,15 +84,16 @@ export function CardTransactorContextApp({
 	const {toast} = yToast();
 
 	/* 🔵 - Yearn Finance ******************************************************
-	** useEffect to set the amount to the max amount of the selected token once
-	** the wallet is connected, or to 0 if the wallet is disconnected.
-	**************************************************************************/
+	 ** useEffect to set the amount to the max amount of the selected token once
+	 ** the wallet is connected, or to 0 if the wallet is disconnected.
+	 **************************************************************************/
 	useEffect((): void => {
 		balancesNonce; // remove warning, force deep refresh
 		set_amount((prevAmount): TNormalizedBN => {
 			if (isActive && isZero(prevAmount.raw) && !hasTypedSomething) {
 				return toNormalizedBN(balances[toAddress(selectedOptionFrom.value)]?.raw);
-			} if (!isActive && prevAmount.raw > 0n) {
+			}
+			if (!isActive && prevAmount.raw > 0n) {
 				return toNormalizedBN(0);
 			}
 			return prevAmount;
@@ -101,38 +107,36 @@ export function CardTransactorContextApp({
 	}, [isActive]);
 
 	/* 🔵 - Yearn Finance ******************************************************
-	** Perform a smartContract call to the ZAP contract to get the expected
-	** out for a given in/out pair with a specific amount. This callback is
-	** called every 10s or when amount/in or out changes.
-	**************************************************************************/
-	const [{result: expectedOut}, actions] = useAsync(async (
-		_provider: Connector | undefined,
-		_inputToken: TAddress,
-		_outputToken: TAddress,
-		_amountIn: bigint
-	): Promise<{shouldMint: boolean; minOut: bigint;}> => {
-		return await simulateZapForMinOut({
-			connector: provider,
-			contractAddress: ZAP_YEARN_YBAL_ADDRESS,
-			inputToken: _inputToken,
-			outputToken: _outputToken,
-			amountIn: _amountIn
-		});
-	}, ({shouldMint: false, minOut: 0n}));
+	 ** Perform a smartContract call to the ZAP contract to get the expected
+	 ** out for a given in/out pair with a specific amount. This callback is
+	 ** called every 10s or when amount/in or out changes.
+	 **************************************************************************/
+	const [{result: expectedOut}, actions] = useAsync(
+		async (
+			_provider: Connector | undefined,
+			_inputToken: TAddress,
+			_outputToken: TAddress,
+			_amountIn: bigint
+		): Promise<{shouldMint: boolean; minOut: bigint}> => {
+			return await simulateZapForMinOut({
+				connector: provider,
+				contractAddress: ZAP_YEARN_YBAL_ADDRESS,
+				inputToken: _inputToken,
+				outputToken: _outputToken,
+				amountIn: _amountIn
+			});
+		},
+		{shouldMint: false, minOut: 0n}
+	);
 
 	useUpdateEffect((): void => {
-		actions.execute(
-			provider,
-			selectedOptionFrom.value,
-			selectedOptionTo.value,
-			amount.raw
-		);
+		actions.execute(provider, selectedOptionFrom.value, selectedOptionTo.value, amount.raw);
 	}, [actions, provider, amount, selectedOptionFrom.value, selectedOptionTo.value]);
 
 	/* 🔵 - Yearn Finance ******************************************************
-	** Approve the spending of token A by the corresponding ZAP contract to
-	** perform the swap.
-	**************************************************************************/
+	 ** Approve the spending of token A by the corresponding ZAP contract to
+	 ** perform the swap.
+	 **************************************************************************/
 	const onApprove = useCallback(async (): Promise<void> => {
 		const result = await approveERC20({
 			connector: provider,
@@ -142,17 +146,14 @@ export function CardTransactorContextApp({
 			statusHandler: set_txStatusApprove
 		});
 		if (result.isSuccessful) {
-			await Promise.all([
-				refetchAllowances(),
-				refresh()
-			]);
+			await Promise.all([refetchAllowances(), refresh()]);
 		}
 	}, [provider, refresh, selectedOptionFrom.value, selectedOptionFrom.zapVia]);
 
 	/* 🔵 - Yearn Finance ******************************************************
-	** Execute a zap using the ZAP contract to migrate from a token A to a
-	** supported token B.
-	**************************************************************************/
+	 ** Execute a zap using the ZAP contract to migrate from a token A to a
+	 ** supported token B.
+	 **************************************************************************/
 	const onZap = useCallback(async (): Promise<void> => {
 		dismissAllToasts();
 		const addToMetamaskToast = {
@@ -161,12 +162,13 @@ export function CardTransactorContextApp({
 			duration: Infinity,
 			cta: {
 				label: 'Add +',
-				onClick: (): void => addToken({
-					address: selectedOptionTo.value,
-					symbol: selectedOptionTo.symbol,
-					decimals: selectedOptionTo.decimals,
-					image: selectedOptionTo.icon?.props.src
-				})
+				onClick: (): void =>
+					addToken({
+						address: selectedOptionTo.value,
+						symbol: selectedOptionTo.symbol,
+						decimals: selectedOptionTo.decimals,
+						image: selectedOptionTo.icon?.props.src
+					})
 			}
 		};
 
@@ -202,12 +204,27 @@ export function CardTransactorContextApp({
 				toast(addToMetamaskToast);
 			}
 		}
-	}, [addToken, amount.raw, dismissAllToasts, expectedOut, provider, refresh, selectedOptionFrom.value, selectedOptionFrom.zapVia, selectedOptionTo.decimals, selectedOptionTo.icon?.props.src, selectedOptionTo.symbol, selectedOptionTo.value, slippage, toast]);
+	}, [
+		addToken,
+		amount.raw,
+		dismissAllToasts,
+		expectedOut,
+		provider,
+		refresh,
+		selectedOptionFrom.value,
+		selectedOptionFrom.zapVia,
+		selectedOptionTo.decimals,
+		selectedOptionTo.icon?.props.src,
+		selectedOptionTo.symbol,
+		selectedOptionTo.value,
+		slippage,
+		toast
+	]);
 
 	/* 🔵 - Yearn Finance ******************************************************
-	** Set of memorized values to limit the number of re-rendering of the
-	** component.
-	**************************************************************************/
+	 ** Set of memorized values to limit the number of re-rendering of the
+	 ** component.
+	 **************************************************************************/
 	const fromVaultAPY = useMemo((): string => {
 		if (toAddress(selectedOptionFrom.value) === STYBAL_TOKEN_ADDRESS) {
 			return `APY ${formatPercent(styBalAPY)}`;
@@ -224,7 +241,16 @@ export function CardTransactorContextApp({
 
 	const allowanceFrom = useMemo((): bigint => {
 		balancesNonce; // remove warning, force deep refresh
-		return toBigInt(allowances?.[allowanceKey(1, toAddress(selectedOptionFrom.value), toAddress(selectedOptionFrom.zapVia), toAddress(address))]);
+		return toBigInt(
+			allowances?.[
+				allowanceKey(
+					1,
+					toAddress(selectedOptionFrom.value),
+					toAddress(selectedOptionFrom.zapVia),
+					toAddress(address)
+				)
+			]
+		);
 	}, [balancesNonce, allowances, selectedOptionFrom.value, selectedOptionFrom.zapVia, address]);
 
 	return (
@@ -238,8 +264,8 @@ export function CardTransactorContextApp({
 				allowanceFrom,
 				fromVaultAPY,
 				toVaultAPY,
-				expectedOutWithSlippage: (
-					formatToNormalizedValue(expectedOut.minOut * (1n - toBigInt(slippage * 100) / 10000n))
+				expectedOutWithSlippage: formatToNormalizedValue(
+					expectedOut.minOut * (1n - toBigInt(slippage * 100) / 10000n)
 				),
 				set_selectedOptionFrom,
 				set_selectedOptionTo,

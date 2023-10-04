@@ -13,35 +13,35 @@ import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 import type {TMilliseconds} from '@yearn-finance/web-lib/utils/time';
 
 export type TVotingEscrow = {
-	address: TAddress,
-	token: TAddress,
-	name: string,
-	symbol: string,
-	decimals: number,
-	supply: bigint,
-	rewardPool: TAddress,
-}
+	address: TAddress;
+	token: TAddress;
+	name: string;
+	symbol: string;
+	decimals: number;
+	supply: bigint;
+	rewardPool: TAddress;
+};
 
 export type TPosition = {
-	balance: bigint,
-	underlyingBalance: bigint,
-}
+	balance: bigint;
+	underlyingBalance: bigint;
+};
 
 export type TVotingEscrowPosition = {
-	deposit?: TPosition,
-	unlockTime?: TMilliseconds,
-	penalty?: bigint,
-	penaltyRatio?: number,
-	withdrawable?: bigint,
-}
+	deposit?: TPosition;
+	unlockTime?: TMilliseconds;
+	penalty?: bigint;
+	penaltyRatio?: number;
+	withdrawable?: bigint;
+};
 
-export type	TVotingEscrowContext = {
-	votingEscrow: TVotingEscrow | undefined,
-	positions: TVotingEscrowPosition | undefined,
-	allowances: TDict<bigint>,
-	isLoading: boolean,
-	refresh: VoidFunction,
-}
+export type TVotingEscrowContext = {
+	votingEscrow: TVotingEscrow | undefined;
+	positions: TVotingEscrowPosition | undefined;
+	allowances: TDict<bigint>;
+	isLoading: boolean;
+	refresh: VoidFunction;
+};
 const defaultProps: TVotingEscrowContext = {
 	votingEscrow: undefined,
 	positions: undefined,
@@ -51,15 +51,23 @@ const defaultProps: TVotingEscrowContext = {
 };
 
 const VotingEscrowContext = createContext<TVotingEscrowContext>(defaultProps);
-export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({children}: {children: ReactElement}): ReactElement {
+export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({
+	children
+}: {
+	children: ReactElement;
+}): ReactElement {
 	const {address, isActive} = useWeb3();
 
 	/* 🔵 - Yearn Finance **********************************************************
-	** Retrieving the basic information of the veYFI contract. They are not linked
-	** to the user's address, so they are not affected by the `isActive` flag.
-	******************************************************************************/
+	 ** Retrieving the basic information of the veYFI contract. They are not linked
+	 ** to the user's address, so they are not affected by the `isActive` flag.
+	 ******************************************************************************/
 	const baseVeYFIContract = {address: VEYFI_ADDRESS, abi: VEYFI_ABI};
-	const {data: votingEscrowData, status: votingEscrowStatus, refetch: refreshVotingEscrow} = useContractReads({
+	const {
+		data: votingEscrowData,
+		status: votingEscrowStatus,
+		refetch: refreshVotingEscrow
+	} = useContractReads({
 		contracts: [
 			{...baseVeYFIContract, functionName: 'token'},
 			{...baseVeYFIContract, functionName: 'name'},
@@ -74,7 +82,7 @@ export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({chil
 			return undefined;
 		}
 		const [token, name, symbol, decimals, supply, rewardPool] = votingEscrowData;
-		return ({
+		return {
 			address: VEYFI_ADDRESS,
 			token: toAddress(decodeAsString(token)),
 			name: decodeAsString(name),
@@ -82,16 +90,22 @@ export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({chil
 			decimals: decodeAsNumber(decimals) || Number(decodeAsBigInt(decimals)),
 			supply: decodeAsBigInt(supply),
 			rewardPool: toAddress(decodeAsString(rewardPool))
-		});
+		};
 	}, [votingEscrowData, votingEscrowStatus]);
 
-
 	/* 🔵 - Yearn Finance **********************************************************
-	** Retrieving the user's positions in the veYFI contract. They are linked to the
-	** user's address, so they are affected by the `isActive` flag.
-	******************************************************************************/
-	const baseVeYFIPositionContract = {address: VEYFI_POSITION_HELPER_ADDRESS, abi: VEYFI_POSITION_HELPER_ABI};
-	const {data: positionData, status: positionStatus, refetch: refreshPosition} = useContractRead({
+	 ** Retrieving the user's positions in the veYFI contract. They are linked to the
+	 ** user's address, so they are affected by the `isActive` flag.
+	 ******************************************************************************/
+	const baseVeYFIPositionContract = {
+		address: VEYFI_POSITION_HELPER_ADDRESS,
+		abi: VEYFI_POSITION_HELPER_ABI
+	};
+	const {
+		data: positionData,
+		status: positionStatus,
+		refetch: refreshPosition
+	} = useContractRead({
 		...baseVeYFIPositionContract,
 		functionName: 'getPositionDetails',
 		args: [toAddress(address)],
@@ -115,12 +129,15 @@ export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({chil
 		};
 	}, [positionData, positionStatus]);
 
-
 	/* 🔵 - Yearn Finance **********************************************************
-	** Retrieving the user's allowances of YFI for the veYFI contract.
-	******************************************************************************/
+	 ** Retrieving the user's allowances of YFI for the veYFI contract.
+	 ******************************************************************************/
 	const baseYFIContract = {address: YFI_ADDRESS, abi: erc20ABI};
-	const {data: allowance, status: allowanceStatus, refetch: refreshAllowance} = useContractRead({
+	const {
+		data: allowance,
+		status: allowanceStatus,
+		refetch: refreshAllowance
+	} = useContractRead({
 		...baseYFIContract,
 		functionName: 'allowance',
 		args: [toAddress(address), VEYFI_ADDRESS],
@@ -130,9 +147,9 @@ export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({chil
 		if (!address || !allowance || allowanceStatus !== 'success') {
 			return {};
 		}
-		return ({
+		return {
 			[allowanceKey(1, YFI_ADDRESS, VEYFI_ADDRESS, address)]: allowance
-		});
+		};
 	}, [address, allowance, allowanceStatus]);
 
 	const refresh = useCallback((): void => {
@@ -141,19 +158,19 @@ export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({chil
 		refreshAllowance();
 	}, [refreshVotingEscrow, refreshPosition, refreshAllowance]);
 
-	const contextValue = useMemo((): TVotingEscrowContext => ({
-		votingEscrow,
-		positions,
-		allowances: allowances ?? {},
-		isLoading: votingEscrowStatus === 'loading' && positionStatus === 'loading' && allowanceStatus === 'loading',
-		refresh
-	}), [votingEscrow, positions, allowances, votingEscrowStatus, positionStatus, allowanceStatus, refresh]);
-
-	return (
-		<VotingEscrowContext.Provider value={contextValue}>
-			{children}
-		</VotingEscrowContext.Provider>
+	const contextValue = useMemo(
+		(): TVotingEscrowContext => ({
+			votingEscrow,
+			positions,
+			allowances: allowances ?? {},
+			isLoading:
+				votingEscrowStatus === 'loading' && positionStatus === 'loading' && allowanceStatus === 'loading',
+			refresh
+		}),
+		[votingEscrow, positions, allowances, votingEscrowStatus, positionStatus, allowanceStatus, refresh]
 	);
+
+	return <VotingEscrowContext.Provider value={contextValue}>{children}</VotingEscrowContext.Provider>;
 });
 
 export const useVotingEscrow = (): TVotingEscrowContext => useContext(VotingEscrowContext);

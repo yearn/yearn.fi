@@ -8,26 +8,28 @@ import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TGraphData} from '@common/types/types';
 
 export type TGraphForVaultEarningsProps = {
-	currentVault: TYDaemonVault,
-	harvestData: TGraphData[],
-	height?: number,
-	isCumulative?: boolean,
-}
+	currentVault: TYDaemonVault;
+	harvestData: TGraphData[];
+	height?: number;
+	isCumulative?: boolean;
+};
 
-export function GraphForVaultEarnings({currentVault, harvestData, height = 312, isCumulative = true}: TGraphForVaultEarningsProps): ReactElement {
+export function GraphForVaultEarnings({
+	currentVault,
+	harvestData,
+	height = 312,
+	isCumulative = true
+}: TGraphForVaultEarningsProps): ReactElement {
 	const cumulativeData = useMemo((): {name: string; value: number}[] => {
 		let cumulativeValue = 0;
-		return (
-			harvestData.map((item: {name: string; value: number}): {name: string; value: number} => {
-				cumulativeValue += item.value;
-				return ({
-					name: item.name,
-					value: cumulativeValue
-				});
-			})
-		);
+		return harvestData.map((item: {name: string; value: number}): {name: string; value: number} => {
+			cumulativeValue += item.value;
+			return {
+				name: item.name,
+				value: cumulativeValue
+			};
+		});
 	}, [harvestData]);
-
 
 	if (isCumulative && isZero(cumulativeData?.length)) {
 		return <Fragment />;
@@ -51,16 +53,17 @@ export function GraphForVaultEarnings({currentVault, harvestData, height = 312, 
 					}}
 					strokeWidth={2}
 					dataKey={'value'}
-					stroke={'currentcolor'} />
-				<XAxis
-					dataKey={'name'}
-					hide />
+					stroke={'currentcolor'}
+				/>
+				<XAxis dataKey={'name'} hide />
 				<YAxis
 					orientation={'right'}
 					domain={['dataMin', 'auto']}
 					hide={false}
 					tick={(e): ReactElement => {
-						const {payload: {value}} = e;
+						const {
+							payload: {value}
+						} = e;
 						e.fill = '#5B5B5B';
 						e.className = 'text-xxs md:text-xs font-number';
 						e.alignmentBaseline = 'middle';
@@ -69,7 +72,8 @@ export function GraphForVaultEarnings({currentVault, harvestData, height = 312, 
 						delete e.tickFormatter;
 						const formatedValue = formatWithUnit(value, 0, 0);
 						return <text {...e}>{formatedValue}</text>;
-					}} />
+					}}
+				/>
 				<Tooltip
 					content={(e): ReactElement => {
 						const {active: isTooltipActive, payload, label} = e;
@@ -94,7 +98,8 @@ export function GraphForVaultEarnings({currentVault, harvestData, height = 312, 
 							);
 						}
 						return <div />;
-					}} />
+					}}
+				/>
 			</LineChart>
 		</ResponsiveContainer>
 	);

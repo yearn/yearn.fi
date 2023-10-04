@@ -6,15 +6,13 @@ import type {ReactElement} from 'react';
 
 type TProps = {
 	pathname: NextRouter['pathname'];
-}
+};
 
 export function VeYfiHeader({pathname}: TProps): ReactElement {
 	const {name, icon} = APPS[AppName.VEYFI];
 
 	return (
-		<MotionDiv
-			animate={pathname.startsWith('/veyfi') ? 'enter' : 'exit'}
-			name={name}>
+		<MotionDiv animate={pathname.startsWith('/veyfi') ? 'enter' : 'exit'} name={name}>
 			{icon}
 		</MotionDiv>
 	);

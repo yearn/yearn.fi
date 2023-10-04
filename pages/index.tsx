@@ -12,22 +12,22 @@ const apps = [
 		href: '/vaults',
 		title: 'Vaults',
 		description: 'deposit tokens and receive yield.',
-		icon: <LogoYearn
-			className={'h-[100px] w-[100px]'}
-			back={'text-pink-400'}
-			front={'text-white'} />
+		icon: <LogoYearn className={'h-[100px] w-[100px]'} back={'text-pink-400'} front={'text-white'} />
 	},
 	{
 		href: '/ycrv',
 		title: 'yCRV',
 		description: 'get the best CRV yields in DeFi.',
-		icon: <ImageWithFallback
-			alt={'yCRV'}
-			width={100}
-			height={100}
-			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YCRV_TOKEN_ADDRESS}/logo-128.png`}
-			loading={'eager'}
-			priority />
+		icon: (
+			<ImageWithFallback
+				alt={'yCRV'}
+				width={100}
+				height={100}
+				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YCRV_TOKEN_ADDRESS}/logo-128.png`}
+				loading={'eager'}
+				priority
+			/>
+		)
 	},
 	// {
 	// 	href: '/ybal',
@@ -45,19 +45,13 @@ const apps = [
 		href: '/veyfi',
 		title: 'veYFI',
 		description: 'lock YFI\nto take part in governance.',
-		icon: <LogoYearn
-			className={'h-[100px] w-[100px]'}
-			back={'text-primary'}
-			front={'text-white'} />
+		icon: <LogoYearn className={'h-[100px] w-[100px]'} back={'text-primary'} front={'text-white'} />
 	},
 	{
 		href: '/ybribe',
 		title: 'yBribe',
 		description: 'sell votes, or buy them.\njust like democracy.',
-		icon: <LogoYearn
-			className={'h-[100px] w-[100px]'}
-			back={'text-neutral-900'}
-			front={'text-neutral-0'} />
+		icon: <LogoYearn className={'h-[100px] w-[100px]'} back={'text-neutral-900'} front={'text-neutral-0'} />
 	},
 	{
 		href: 'https://yeth.yearn.fi',
@@ -70,12 +64,13 @@ const apps = [
 				height={100}
 				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/0x1BED97CBC3c24A4fb5C069C6E311a967386131f7/logo-128.png`}
 				loading={'eager'}
-				priority />
+				priority
+			/>
 		)
 	}
 ];
 
-function AppBox({app}: {app: typeof apps[0]}): ReactElement {
+function AppBox({app}: {app: (typeof apps)[0]}): ReactElement {
 	useEffect((): VoidFunction => {
 		const featuresEl = document.getElementById(app.href);
 		if (featuresEl) {
@@ -107,17 +102,14 @@ function AppBox({app}: {app: typeof apps[0]}): ReactElement {
 	}, [app.href]);
 
 	return (
-		<Link
-			prefetch={false}
-			key={app.href}
-			href={app.href}>
+		<Link prefetch={false} key={app.href} href={app.href}>
 			<div id={app.href} className={'appBox'}>
-				<div>
-					{app.icon}
-				</div>
+				<div>{app.icon}</div>
 				<div className={'pt-6 text-center'}>
 					<b className={'text-lg'}>{app.title}</b>
-					<p><Balancer>{app.description}</Balancer></p>
+					<p>
+						<Balancer>{app.description}</Balancer>
+					</p>
 				</div>
 			</div>
 		</Link>
@@ -140,7 +132,7 @@ function TextAnimation(): ReactElement {
 
 		function changeWord(): void {
 			const cw = wordArray[currentWord];
-			const nw = currentWord == words.length-1 ? wordArray[0] : wordArray[currentWord+1];
+			const nw = currentWord == words.length - 1 ? wordArray[0] : wordArray[currentWord + 1];
 			if (!cw || !nw) {
 				return;
 			}
@@ -155,19 +147,22 @@ function TextAnimation(): ReactElement {
 				}
 				animateLetterIn(nw, i);
 			}
-			currentWord = (currentWord == wordArray.length-1) ? 0 : currentWord+1;
+			currentWord = currentWord == wordArray.length - 1 ? 0 : currentWord + 1;
 		}
 
 		function animateLetterOut(cw: HTMLSpanElement[], i: number): void {
 			setTimeout((): void => {
 				cw[i].className = 'letter out';
-			}, i*80);
+			}, i * 80);
 		}
 
 		function animateLetterIn(nw: HTMLSpanElement[], i: number): void {
-			setTimeout((): void => {
-				nw[i].className = 'letter in';
-			}, 340+(i*80));
+			setTimeout(
+				(): void => {
+					nw[i].className = 'letter in';
+				},
+				340 + i * 80
+			);
 		}
 
 		function splitLetters(word: HTMLSpanElement): void {
@@ -199,8 +194,7 @@ function TextAnimation(): ReactElement {
 
 	return (
 		<>
-			<div
-				className={'text sticky'}>
+			<div className={'text sticky'}>
 				<p className={'wordWrapper'}>
 					<span className={'word'}>{'STAKE'}</span>
 					<span className={'word'}>{'INVEST'}</span>
@@ -230,14 +224,21 @@ function Index(): ReactElement {
 					</p>
 				</div>
 				<div className={'mb-6'}>
-
 					<p className={'text-center text-sm text-neutral-500 md:text-base'}>
-						<Balancer>{'Yearn is a decentralized suite of products helping individuals, DAOs, and other protocols\nearn yield on their digital assets.'}</Balancer>
+						<Balancer>
+							{
+								'Yearn is a decentralized suite of products helping individuals, DAOs, and other protocols\nearn yield on their digital assets.'
+							}
+						</Balancer>
 					</p>
 				</div>
 			</div>
 			<section className={'grid grid-cols-1 gap-10 md:grid-cols-3 lg:grid-cols-3'}>
-				{apps.map((app): ReactElement => <AppBox key={app.href} app={app} />)}
+				{apps.map(
+					(app): ReactElement => (
+						<AppBox key={app.href} app={app} />
+					)
+				)}
 			</section>
 		</>
 	);

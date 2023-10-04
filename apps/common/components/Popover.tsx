@@ -28,7 +28,8 @@ export function Popover(): ReactElement {
 	const {address, chainID, ens, lensProtocolHandle, isWalletLedger, isWalletSafe} = useWeb3();
 	const router = useRouter();
 	const {value: hasPopover, set: set_hasPopover} = useLocalStorageValue<boolean>('yearn.fi/feedback-popover');
-	const {value: nextSubmissionTime, set: set_nextSubmissionTime} = useLocalStorageValue<number>('yearn.fi/popover-cooling-off');
+	const {value: nextSubmissionTime, set: set_nextSubmissionTime} =
+		useLocalStorageValue<number>('yearn.fi/popover-cooling-off');
 	const {styles, attributes} = usePopper(referenceElement, popperElement, {
 		modifiers: [{name: 'offset', options: {offset: [0, 10]}}],
 		placement: 'bottom-end'
@@ -63,18 +64,21 @@ export function Popover(): ReactElement {
 		if (blob) {
 			formData.append('screenshot', blob);
 		}
-		formData.append('messages', [
-			`*🔵 New ${type} submitted*`,
-			`\n*Telegram:* ${telegramHandle}`,
-			description,
-			'\n*👀 - Info:*',
-			reporter ?
-				`\t\t\t\tFrom: [${reporter}](https://etherscan.io/address/${address})` :
-				'\t\t\t\tFrom: [wallet-not-connected]',
-			`\t\t\t\tChain: ${chainID}`,
-			`\t\t\t\tWallet: ${isWalletLedger ? 'ledger' : isWalletSafe ? 'safe' : connector?.id || 'Unknown'}`,
-			`\t\t\t\tOrigin: [${router.asPath}](https://yearn.fi/${router.asPath})`
-		].join('\n'));
+		formData.append(
+			'messages',
+			[
+				`*🔵 New ${type} submitted*`,
+				`\n*Telegram:* ${telegramHandle}`,
+				description,
+				'\n*👀 - Info:*',
+				reporter
+					? `\t\t\t\tFrom: [${reporter}](https://etherscan.io/address/${address})`
+					: '\t\t\t\tFrom: [wallet-not-connected]',
+				`\t\t\t\tChain: ${chainID}`,
+				`\t\t\t\tWallet: ${isWalletLedger ? 'ledger' : isWalletSafe ? 'safe' : connector?.id || 'Unknown'}`,
+				`\t\t\t\tOrigin: [${router.asPath}](https://yearn.fi/${router.asPath})`
+			].join('\n')
+		);
 		await axios.post('/api/notify', formData, {
 			headers: {'Content-Type': 'multipart/form-data'}
 		});
@@ -87,7 +91,9 @@ export function Popover(): ReactElement {
 		<Portal>
 			<PopoverHeadlessUI className={'relative z-50'}>
 				<PopoverHeadlessUI.Button
-					className={'fixed bottom-5 right-5 flex h-10 w-10 items-center justify-center rounded-full bg-orange-500'}
+					className={
+						'fixed bottom-5 right-5 flex h-10 w-10 items-center justify-center rounded-full bg-orange-500'
+					}
 					ref={set_referenceElement}>
 					<MessageIcon />
 				</PopoverHeadlessUI.Button>
@@ -100,18 +106,20 @@ export function Popover(): ReactElement {
 					leave={'transition ease-in duration-150'}
 					leaveFrom={'opacity-100'}
 					leaveTo={'opacity-0'}>
-					<PopoverHeadlessUI.Panel
-						ref={set_popperElement}
-						style={styles.popper}
-						{...attributes.popper}>
+					<PopoverHeadlessUI.Panel ref={set_popperElement} style={styles.popper} {...attributes.popper}>
 						{({close}): ReactElement => (
-							<div className={'flex flex-col space-y-2 overflow-hidden rounded-lg border border-neutral-300/50 bg-neutral-0 p-6 pb-3 shadow shadow-transparent'}>
+							<div
+								className={
+									'flex flex-col space-y-2 overflow-hidden rounded-lg border border-neutral-300/50 bg-neutral-0 p-6 pb-3 shadow shadow-transparent'
+								}>
 								{isCoolingOff && <small>{`You can submit another report in ${timeLeft}`}</small>}
 								<select
 									name={'type'}
 									id={'type'}
-									className={'cursor-pointer border border-neutral-300/50 bg-transparent text-xs transition-colors hover:bg-neutral-100/40 focus:border-neutral-300/50'}
-									onChange={({target:{value}}): void => {
+									className={
+										'cursor-pointer border border-neutral-300/50 bg-transparent text-xs transition-colors hover:bg-neutral-100/40 focus:border-neutral-300/50'
+									}
+									onChange={({target: {value}}): void => {
 										if (isRequestTypeKnown(value)) {
 											set_type(value);
 										}
@@ -123,32 +131,39 @@ export function Popover(): ReactElement {
 									id={'description'}
 									cols={30}
 									rows={4}
-									className={'resize-none border border-neutral-300/50 bg-transparent p-2 text-xs transition-colors hover:bg-neutral-100/40 focus:border-neutral-300/50'}
-									onChange={({target:{value}}): void => set_description(value)}
+									className={
+										'resize-none border border-neutral-300/50 bg-transparent p-2 text-xs transition-colors hover:bg-neutral-100/40 focus:border-neutral-300/50'
+									}
+									onChange={({target: {value}}): void => set_description(value)}
 									placeholder={`Describe the ${type} in detail`}
 								/>
 								<input
 									id={'telegramHandle'}
-									className={'resize-none border border-neutral-300/50 bg-transparent p-2 text-xs transition-colors hover:bg-neutral-100/40 focus:border-neutral-300/50'}
-									onChange={({target:{value}}): void => set_telegramHandle(value)}
+									className={
+										'resize-none border border-neutral-300/50 bg-transparent p-2 text-xs transition-colors hover:bg-neutral-100/40 focus:border-neutral-300/50'
+									}
+									onChange={({target: {value}}): void => set_telegramHandle(value)}
 									placeholder={'Your telegram handle for follow up'}
 								/>
 								<label className={'max-w-xs items-center justify-end pt-1'}>
 									<p className={'text-xs'}>
-										{'If you don\'t have telegram please '}
-										<Link href={'https://discord.gg/yearn'}>
-											{'join our discord'}
-										</Link>
+										{"If you don't have telegram please "}
+										<Link href={'https://discord.gg/yearn'}>{'join our discord'}</Link>
 										{' and ask in '}
-										<Link href={'https://discord.com/channels/734804446353031319/734811808401063966'}>
+										<Link
+											href={'https://discord.com/channels/734804446353031319/734811808401063966'}>
 											{'#support-questions'}
 										</Link>
 										{', admins will never dm first.'}
 									</p>
 								</label>
 								<button
-									disabled={!description || description.length < 10 || isCoolingOff || isSubmitDisabled}
-									className={'relative h-8 cursor-pointer items-center justify-center border border-transparent bg-neutral-900 px-2 text-xs text-neutral-0 transition-all hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-40'}
+									disabled={
+										!description || description.length < 10 || isCoolingOff || isSubmitDisabled
+									}
+									className={
+										'relative h-8 cursor-pointer items-center justify-center border border-transparent bg-neutral-900 px-2 text-xs text-neutral-0 transition-all hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-40'
+									}
 									onClick={async (): Promise<void> => onSubmit(close)}>
 									{!isCoolingOff ? 'Submit' : `Please wait ${timeLeft}`}
 								</button>
@@ -162,14 +177,15 @@ export function Popover(): ReactElement {
 								</label>
 								<label className={'flex cursor-pointer items-center justify-end'}>
 									<button
-										className={'text-right text-xs text-neutral-200 underline transition-colors hover:text-neutral-400'}
+										className={
+											'text-right text-xs text-neutral-200 underline transition-colors hover:text-neutral-400'
+										}
 										onClick={(): void => set_hasPopover(!hasPopover)}>
 										{'Hide me forever'}
 									</button>
 								</label>
 							</div>
 						)}
-
 					</PopoverHeadlessUI.Panel>
 				</Transition>
 			</PopoverHeadlessUI>

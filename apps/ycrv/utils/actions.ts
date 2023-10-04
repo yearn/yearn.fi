@@ -9,16 +9,16 @@ import type {TWriteTransaction} from '@yearn-finance/web-lib/utils/wagmi/provide
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 
 /* 🔵 - Yearn Finance **********************************************************
-** zapCRV is a _WRITE_ function that can be used to zap some supported tokens
-** from the Curve ecosystem into one of the Yearn's yCRV ecosystem.
-**
-** @app - yCRV
-** @param inputToken - Token to be zapped from curve
-** @param outputToken - Token to be zapped into Yearn's yCRV ecosystem
-** @param amount - Amount of inputToken to be zapped
-** @param minAmount - Minimum amount of outputToken to be received
-** @param slippage - Slippage tolerance
-******************************************************************************/
+ ** zapCRV is a _WRITE_ function that can be used to zap some supported tokens
+ ** from the Curve ecosystem into one of the Yearn's yCRV ecosystem.
+ **
+ ** @app - yCRV
+ ** @param inputToken - Token to be zapped from curve
+ ** @param outputToken - Token to be zapped into Yearn's yCRV ecosystem
+ ** @param amount - Amount of inputToken to be zapped
+ ** @param minAmount - Minimum amount of outputToken to be received
+ ** @param slippage - Slippage tolerance
+ ******************************************************************************/
 type TZapYCRV = TWriteTransaction & {
 	inputToken: TAddress | undefined;
 	outputToken: TAddress | undefined;
@@ -27,9 +27,7 @@ type TZapYCRV = TWriteTransaction & {
 	slippage: bigint;
 };
 export async function zapCRV(props: TZapYCRV): Promise<TTxResponse> {
-	const minAmountWithSlippage = (
-		props.minAmount - (props.minAmount * props.slippage / 10_000n)
-	);
+	const minAmountWithSlippage = props.minAmount - (props.minAmount * props.slippage) / 10_000n;
 
 	assertAddress(ZAP_YEARN_VE_CRV_ADDRESS, 'ZAP_YEARN_VE_CRV_ADDRESS');
 	assertAddress(props.inputToken, 'inputToken');
@@ -41,11 +39,6 @@ export async function zapCRV(props: TZapYCRV): Promise<TTxResponse> {
 		address: ZAP_YEARN_VE_CRV_ADDRESS,
 		abi: ZAP_CRV_ABI,
 		functionName: 'zap',
-		args: [
-			props.inputToken,
-			props.outputToken,
-			props.amount,
-			minAmountWithSlippage
-		]
+		args: [props.inputToken, props.outputToken, props.amount, minAmountWithSlippage]
 	});
 }

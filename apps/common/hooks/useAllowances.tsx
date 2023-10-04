@@ -10,9 +10,9 @@ import {decodeAsBigInt} from '@yearn-finance/web-lib/utils/decoder';
 import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 
 export type TAllowanceRequest = {
-	token: TAddress,
-	spender?: TAddress
-}
+	token: TAddress;
+	spender?: TAddress;
+};
 
 export const useAllowances = (allowanceRequests: TAllowanceRequest[]): [TDict<bigint>, boolean, () => void] => {
 	const {address: userAddress, isActive} = useWeb3();
@@ -29,7 +29,11 @@ export const useAllowances = (allowanceRequests: TAllowanceRequest[]): [TDict<bi
 				abi: erc20ABI,
 				chainId: chainID
 			} as const;
-			calls.push({...baseContract, functionName: 'allowance', args: [userAddress, toAddress(req.spender)]});
+			calls.push({
+				...baseContract,
+				functionName: 'allowance',
+				args: [userAddress, toAddress(req.spender)]
+			});
 		}
 		const results = await multicall({contracts: calls, chainId: chainID});
 		const allowancesMap: TDict<bigint> = {};
@@ -42,7 +46,10 @@ export const useAllowances = (allowanceRequests: TAllowanceRequest[]): [TDict<bi
 		return allowancesMap;
 	}, [allowanceRequests, chainID, isActive, userAddress]);
 
-	const [{result: allowancesMap, status}, actions] = useAsync(async (): Promise<TDict<bigint>> => allowancesFetcher(), {});
+	const [{result: allowancesMap, status}, actions] = useAsync(
+		async (): Promise<TDict<bigint>> => allowancesFetcher(),
+		{}
+	);
 
 	return [allowancesMap || {}, status === 'loading', actions.execute];
 };

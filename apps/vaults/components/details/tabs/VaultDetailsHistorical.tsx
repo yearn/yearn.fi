@@ -16,13 +16,21 @@ import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TGraphData, TMessariGraphData} from '@common/types/types';
 
-export function VaultDetailsHistorical({currentVault, harvestData}: {currentVault: TYDaemonVault, harvestData: TGraphData[]}): ReactElement {
+export function VaultDetailsHistorical({
+	currentVault,
+	harvestData
+}: {
+	currentVault: TYDaemonVault;
+	harvestData: TGraphData[];
+}): ReactElement {
 	const isMounted = useIsMounted();
 	const [selectedViewIndex, set_selectedViewIndex] = useState(0);
 
-	const {data: messariMixedData} = useSWR(currentVault.address ? [
-		getMessariSubgraphEndpoint(currentVault.chainID),
-		`{
+	const {data: messariMixedData} = useSWR(
+		currentVault.address
+			? [
+					getMessariSubgraphEndpoint(currentVault.chainID),
+					`{
 			vaultDailySnapshots(
 				where: {vault: "${currentVault.address.toLowerCase()}"}
 				orderBy: timestamp
@@ -34,16 +42,25 @@ export function VaultDetailsHistorical({currentVault, harvestData}: {currentVaul
 				timestamp
 			}
 		}`
-	] : null, graphFetcher);
+			  ]
+			: null,
+		graphFetcher
+	);
 
 	const messariData = useMemo((): TMessariGraphData[] => {
-		const _messariMixedData = [...((messariMixedData?.vaultDailySnapshots as {timestamp: string, totalValueLockedUSD: string, pricePerShare: string}[]) || [])];
-		return (
-			_messariMixedData?.map((elem): TMessariGraphData => ({
+		const _messariMixedData = [
+			...((messariMixedData?.vaultDailySnapshots as {
+				timestamp: string;
+				totalValueLockedUSD: string;
+				pricePerShare: string;
+			}[]) || [])
+		];
+		return _messariMixedData?.map(
+			(elem): TMessariGraphData => ({
 				name: formatDate(Number(elem.timestamp) * 1000),
 				tvl: Number(elem.totalValueLockedUSD),
 				pps: formatToNormalizedValue(toBigInt(elem.pricePerShare), currentVault.decimals)
-			}))
+			})
 		);
 	}, [currentVault.decimals, messariMixedData?.vaultDailySnapshots]);
 

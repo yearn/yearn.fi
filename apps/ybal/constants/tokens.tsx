@@ -1,5 +1,12 @@
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {BAL_TOKEN_ADDRESS, BALWETH_TOKEN_ADDRESS, LPYBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, YBAL_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {
+	BAL_TOKEN_ADDRESS,
+	BALWETH_TOKEN_ADDRESS,
+	LPYBAL_TOKEN_ADDRESS,
+	STYBAL_TOKEN_ADDRESS,
+	WETH_TOKEN_ADDRESS,
+	YBAL_TOKEN_ADDRESS
+} from '@yearn-finance/web-lib/utils/constants';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 
 import type {TDropdownOption} from '@common/types/types';
@@ -16,7 +23,8 @@ export const BAL = {
 			alt={'Bal'}
 			width={24}
 			height={24}
-			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${BAL_TOKEN_ADDRESS}/logo-128.png`} />
+			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${BAL_TOKEN_ADDRESS}/logo-128.png`}
+		/>
 	)
 };
 export const YBAL = {
@@ -32,7 +40,8 @@ export const YBAL = {
 			height={24}
 			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YBAL_TOKEN_ADDRESS}/logo-128.png`}
 			loading={'eager'}
-			priority />
+			priority
+		/>
 	)
 };
 export const BALWETH = {
@@ -48,7 +57,8 @@ export const BALWETH = {
 			height={24}
 			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${BALWETH_TOKEN_ADDRESS}/logo-128.png`}
 			loading={'eager'}
-			priority />
+			priority
+		/>
 	)
 };
 export const STYBAL = {
@@ -64,7 +74,8 @@ export const STYBAL = {
 			height={24}
 			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${STYBAL_TOKEN_ADDRESS}/logo-128.png`}
 			loading={'eager'}
-			priority />
+			priority
+		/>
 	)
 };
 export const LPYBAL = {
@@ -80,7 +91,8 @@ export const LPYBAL = {
 			height={24}
 			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${LPYBAL_TOKEN_ADDRESS}/logo-128.png`}
 			loading={'eager'}
-			priority />
+			priority
+		/>
 	)
 };
 export const WETH = {
@@ -94,7 +106,8 @@ export const WETH = {
 			alt={'wETH'}
 			width={24}
 			height={24}
-			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${WETH_TOKEN_ADDRESS}/logo-128.png`} />
+			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${WETH_TOKEN_ADDRESS}/logo-128.png`}
+		/>
 	)
 };
 

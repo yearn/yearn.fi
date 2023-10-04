@@ -34,7 +34,8 @@ const aeonik = localFont({
 			path: '../public/fonts/Aeonik-Regular.woff2',
 			weight: '400',
 			style: 'normal'
-		}, {
+		},
+		{
 			path: '../public/fonts/Aeonik-Bold.woff2',
 			weight: '700',
 			style: 'normal'
@@ -43,20 +44,22 @@ const aeonik = localFont({
 });
 
 /** 🔵 - Yearn Finance ***************************************************************************
-** The 'WithLayout' function is a React functional component that returns a ReactElement. It is used
-** to wrap the current page component and provide layout for the page.
-**
-** It uses the 'useLocalStorageValue' hook to get the value of 'yearn.fi/feedback-popover' from
-** local storage. This value is used to determine whether to show the feedback popover.
-**
-** The 'useCurrentApp' hook is used to get the current app name.
-** The 'getLayout' function is used to get the layout of the current page component. If the current
-** page component does not have a 'getLayout' function, it defaults to a function that returns the
-** page as is.
-** The returned JSX structure is a div with the 'AppHeader' component, the current page component
-** wrapped with layout, and the feedback popover if it should not be hidden.
-**************************************************************************************************/
-type TGetLayout = NextComponentType & {getLayout: (p: ReactElement, router: NextRouter) => ReactElement}
+ ** The 'WithLayout' function is a React functional component that returns a ReactElement. It is used
+ ** to wrap the current page component and provide layout for the page.
+ **
+ ** It uses the 'useLocalStorageValue' hook to get the value of 'yearn.fi/feedback-popover' from
+ ** local storage. This value is used to determine whether to show the feedback popover.
+ **
+ ** The 'useCurrentApp' hook is used to get the current app name.
+ ** The 'getLayout' function is used to get the layout of the current page component. If the current
+ ** page component does not have a 'getLayout' function, it defaults to a function that returns the
+ ** page as is.
+ ** The returned JSX structure is a div with the 'AppHeader' component, the current page component
+ ** wrapped with layout, and the feedback popover if it should not be hidden.
+ **************************************************************************************************/
+type TGetLayout = NextComponentType & {
+	getLayout: (p: ReactElement, router: NextRouter) => ReactElement;
+};
 const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 	const {Component, pageProps, router} = props;
 	const getLayout = (Component as TGetLayout).getLayout || ((page: ReactElement): ReactElement => page);
@@ -86,35 +89,34 @@ const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 	);
 });
 
-
 /* 🔵 - Yearn Finance ******************************************************************************
-** The function 'NetworkStatusIndicator' is a React functional component that returns a
-** ReactElement.
-** It uses several hooks and functions to fetch and display the status of the network.
-**
-** The 'useChainID' hook is used to get the current chain ID.
-** The 'useIsMounted' hook is used to check if the component is currently mounted.
-** The 'useYDaemonBaseURI' function is used to get the base URI of the yDaemon for the current
-** chain ID.
-** The 'useSWR' hook is used to fetch the status of the network from the yDaemon.
-**
-** The 'useEffect' hook is used to re-fetch the status whenever the chain ID changes.
-** The 'useIntervalEffect' hook is used to re-fetch the status every 10 seconds if the status is
-** not 'OK'.
-**
-** If the component is not mounted, or the status is 'OK' or undefined it returns an empty Fragment
-** Otherwise, it returns a div with a spinner icon and a message indicating that the data points
-** are being updated.
-**************************************************************************************************/
+ ** The function 'NetworkStatusIndicator' is a React functional component that returns a
+ ** ReactElement.
+ ** It uses several hooks and functions to fetch and display the status of the network.
+ **
+ ** The 'useChainID' hook is used to get the current chain ID.
+ ** The 'useIsMounted' hook is used to check if the component is currently mounted.
+ ** The 'useYDaemonBaseURI' function is used to get the base URI of the yDaemon for the current
+ ** chain ID.
+ ** The 'useSWR' hook is used to fetch the status of the network from the yDaemon.
+ **
+ ** The 'useEffect' hook is used to re-fetch the status whenever the chain ID changes.
+ ** The 'useIntervalEffect' hook is used to re-fetch the status every 10 seconds if the status is
+ ** not 'OK'.
+ **
+ ** If the component is not mounted, or the status is 'OK' or undefined it returns an empty Fragment
+ ** Otherwise, it returns a div with a spinner icon and a message indicating that the data points
+ ** are being updated.
+ **************************************************************************************************/
 function NetworkStatusIndicator(): ReactElement {
 	const {safeChainID} = useChainID();
 	const isMounted = useIsMounted();
 	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: safeChainID});
-	const {data: status, mutate} = useSWR<'Not Started' | 'Loading' | 'OK'>(
-		`${yDaemonBaseUri}/status`,
-		baseFetcher,
-		{revalidateOnFocus: true, revalidateOnReconnect: true, revalidateOnMount: true}
-	);
+	const {data: status, mutate} = useSWR<'Not Started' | 'Loading' | 'OK'>(`${yDaemonBaseUri}/status`, baseFetcher, {
+		revalidateOnFocus: true,
+		revalidateOnReconnect: true,
+		revalidateOnMount: true
+	});
 
 	useEffect((): void => {
 		safeChainID;
@@ -138,32 +140,32 @@ function NetworkStatusIndicator(): ReactElement {
 	}
 
 	return (
-		<div className={'fixed inset-x-0 bottom-0 flex items-center justify-center space-x-2 bg-yearn-blue py-2 text-center text-sm text-white'}>
+		<div
+			className={
+				'fixed inset-x-0 bottom-0 flex items-center justify-center space-x-2 bg-yearn-blue py-2 text-center text-sm text-white'
+			}>
 			<IconSpinner className={'h-3 w-3'} />
-			<b>
-				{'Updating data points, data may be inaccurate for a few minutes. Don\'t panic. DON\'T PANIC!!!'}
-			</b>
+			<b>{"Updating data points, data may be inaccurate for a few minutes. Don't panic. DON'T PANIC!!!"}</b>
 		</div>
 	);
 }
 
-
 /**** 🔵 - Yearn Finance ***************************************************************************
-** The 'App' function is a React functional component that returns a ReactElement. It uses several
-** hooks and components to build the main structure of the application.
-**
-** The 'useCurrentApp' hook is used to get the current app manifest.
-**
-** The 'MenuContextApp', 'YearnContextApp', and 'WalletContextApp' are context providers that
-** provide global state for the menu, Yearn, and wallet respectively.
-** The 'Meta' component is used to set the meta tags for the page.
-** The 'WithLayout' component is a higher-order component that wraps the current page component
-** and provides layout for the page.
-**
-** The 'NetworkStatusIndicator' component is used to display the network status.
-** The returned JSX structure is wrapped with the context providers and includes the meta tags,
-** layout, and network status indicator.
-**************************************************************************************************/
+ ** The 'App' function is a React functional component that returns a ReactElement. It uses several
+ ** hooks and components to build the main structure of the application.
+ **
+ ** The 'useCurrentApp' hook is used to get the current app manifest.
+ **
+ ** The 'MenuContextApp', 'YearnContextApp', and 'WalletContextApp' are context providers that
+ ** provide global state for the menu, Yearn, and wallet respectively.
+ ** The 'Meta' component is used to set the meta tags for the page.
+ ** The 'WithLayout' component is a higher-order component that wraps the current page component
+ ** and provides layout for the page.
+ **
+ ** The 'NetworkStatusIndicator' component is used to display the network status.
+ ** The returned JSX structure is wrapped with the context providers and includes the meta tags,
+ ** layout, and network status indicator.
+ **************************************************************************************************/
 const App = memo(function App(props: AppProps): ReactElement {
 	const {Component, pageProps, router} = props;
 	const {manifest} = useCurrentApp(router);
@@ -174,10 +176,7 @@ const App = memo(function App(props: AppProps): ReactElement {
 				<WalletContextApp>
 					<Fragment>
 						<Meta meta={manifest} />
-						<WithLayout
-							Component={Component}
-							pageProps={pageProps}
-							router={props.router} />
+						<WithLayout Component={Component} pageProps={pageProps} router={props.router} />
 						<NetworkStatusIndicator />
 					</Fragment>
 				</WalletContextApp>
@@ -186,33 +185,27 @@ const App = memo(function App(props: AppProps): ReactElement {
 	);
 });
 
-
 /**** 🔵 - Yearn Finance ***************************************************************************
-** The 'MyApp' function is a React functional component that returns a ReactElement. It is the main
-** entry point of the application.
-**
-** It uses the 'WithYearn' context provider to provide global state for Yearn. The 'WithYearn'
-** component is configured with a list of supported chains and some options.
-**
-** The 'App' component is wrapped with the 'WithYearn' component to provide it with the Yearn
-** context.
-**
-** The returned JSX structure is a main element with the 'WithYearn' and 'App' components.
-**************************************************************************************************/
+ ** The 'MyApp' function is a React functional component that returns a ReactElement. It is the main
+ ** entry point of the application.
+ **
+ ** It uses the 'WithYearn' context provider to provide global state for Yearn. The 'WithYearn'
+ ** component is configured with a list of supported chains and some options.
+ **
+ ** The 'App' component is wrapped with the 'WithYearn' component to provide it with the Yearn
+ ** context.
+ **
+ ** The returned JSX structure is a main element with the 'WithYearn' and 'App' components.
+ **************************************************************************************************/
 function MyApp(props: AppProps): ReactElement {
 	return (
 		<main id={'main'} className={aeonik.className}>
 			<WithYearn
-				supportedChains={[
-					mainnet,
-					optimism,
-					fantom,
-					base,
-					arbitrum,
-					localhost
-				]}
+				supportedChains={[mainnet, optimism, fantom, base, arbitrum, localhost]}
 				options={{
-					baseSettings: {yDaemonBaseURI: process.env.YDAEMON_BASE_URI as string},
+					baseSettings: {
+						yDaemonBaseURI: process.env.YDAEMON_BASE_URI as string
+					},
 					ui: {shouldUseThemes: false}
 				}}>
 				<App {...props} />

@@ -10,21 +10,18 @@ type TAmountInputProps = {
 	isDisabled?: boolean;
 	isLoading?: boolean;
 	className?: string;
-}
+};
 
 export function Input(props: TAmountInputProps): ReactElement {
 	const {value, onChange, label, placeholder, legend, error, isDisabled, isLoading, className = ''} = props;
 	return (
 		<div className={`w-full ${className}`}>
-			{label && (
-				<p
-					className={'mb-1 w-full truncate text-base text-neutral-600'}>
-					{label}
-				</p>
-			)}
+			{label && <p className={'mb-1 w-full truncate text-base text-neutral-600'}>{label}</p>}
 			<div className={'relative flex w-full items-center justify-center'}>
 				<input
-					className={`h-10 w-full p-2 font-mono text-base font-normal outline-none ${error ? 'border border-solid border-[#EA5204] focus:border-[#EA5204]' : 'border-0 border-none'} ${isDisabled ? 'bg-neutral-300 text-neutral-600' : 'bg-neutral-0'}`}
+					className={`h-10 w-full p-2 font-mono text-base font-normal outline-none ${
+						error ? 'border border-solid border-[#EA5204] focus:border-[#EA5204]' : 'border-0 border-none'
+					} ${isDisabled ? 'bg-neutral-300 text-neutral-600' : 'bg-neutral-0'}`}
 					type={'text'}
 					min={0}
 					aria-label={label}
@@ -35,7 +32,9 @@ export function Input(props: TAmountInputProps): ReactElement {
 				/>
 			</div>
 			{(error ?? legend) && (
-				<legend className={`mt-1 pl-2 text-xs md:mr-0 ${error ? 'text-[#EA5204]' : 'text-neutral-600'}`} suppressHydrationWarning>
+				<legend
+					className={`mt-1 pl-2 text-xs md:mr-0 ${error ? 'text-[#EA5204]' : 'text-neutral-600'}`}
+					suppressHydrationWarning>
 					{error ?? legend}
 				</legend>
 			)}

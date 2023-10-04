@@ -16,31 +16,36 @@ export function VaultsListInternalMigrationRow({currentVault}: {currentVault: TY
 	const balanceToMigrate = useBalance(currentVault.address, balances);
 
 	return (
-		<Link
-			href={`/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`}
-			className={'w-full'}>
+		<Link href={`/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`} className={'w-full'}>
 			<div className={'yearn--table-wrapper bg-neutral-900 text-neutral-0'}>
 				<div className={'yearn--table-token-section'}>
 					<div className={'yearn--table-token-section-item'}>
 						<div className={'yearn--table-token-section-item-image'}>
-							<TokenIcon
-								chainID={currentVault.chainID}
-								size={40}
-								token={currentVault.token} />
+							<TokenIcon chainID={currentVault.chainID} size={40} token={currentVault.token} />
 						</div>
 						<div className={'text-left'}>
 							<p>{vaultName}</p>
-							<p className={'font-number text-xs'}>{`${formatAmount(balanceToMigrate.normalized)} ${currentVault.token.symbol}`}</p>
+							<p className={'font-number text-xs'}>{`${formatAmount(balanceToMigrate.normalized)} ${
+								currentVault.token.symbol
+							}`}</p>
 						</div>
 					</div>
 				</div>
 
 				<div className={'yearn--table-data-section'}>
-					<div className={'yearn--table-data-section-item h-auto text-left text-neutral-0 md:col-span-6 md:py-2'}>
-						{'Looks like you\'re holding tokens from a previous version of this vault. To keep earning yield on your assets, migrate to the current vault.'}
+					<div
+						className={
+							'yearn--table-data-section-item h-auto text-left text-neutral-0 md:col-span-6 md:py-2'
+						}>
+						{
+							"Looks like you're holding tokens from a previous version of this vault. To keep earning yield on your assets, migrate to the current vault."
+						}
 					</div>
 
-					<div className={'col-span-2 flex h-auto flex-row items-center justify-between space-x-4 py-4 md:justify-end'}>
+					<div
+						className={
+							'col-span-2 flex h-auto flex-row items-center justify-between space-x-4 py-4 md:justify-end'
+						}>
 						<button
 							data-variant={'reverted'}
 							className={'yearn--button-smaller reverted !w-full text-center'}>

@@ -9,13 +9,13 @@ import type {TWriteTransaction} from '@yearn-finance/web-lib/utils/wagmi/provide
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 
 /* 🔵 - Yearn Finance **********************************************************
-** claimReward is a _WRITE_ function that claims the rewards from the yBribe
-** contract.
-**
-** @app - yBribe
-** @param gaugeAddress - The address of the gauge to claim rewards from.
-** @param tokenAddress - The address of the token to claim rewards from.
-******************************************************************************/
+ ** claimReward is a _WRITE_ function that claims the rewards from the yBribe
+ ** contract.
+ **
+ ** @app - yBribe
+ ** @param gaugeAddress - The address of the gauge to claim rewards from.
+ ** @param tokenAddress - The address of the token to claim rewards from.
+ ******************************************************************************/
 type TClaimReward = TWriteTransaction & {
 	gaugeAddress: TAddress | undefined;
 	tokenAddress: TAddress | undefined;
@@ -37,16 +37,15 @@ export async function claimRewardV3(props: TClaimReward): Promise<TTxResponse> {
 	});
 }
 
-
 /* 🔵 - Yearn Finance **********************************************************
-** claimReward is a _WRITE_ function that claims the rewards from the yBribe
-** contract.
-** The correct function for V2 or V3 should be used.
-**
-** @app - yBribe
-** @param gaugeAddress - The address of the gauge to claim rewards from.
-** @param tokenAddress - The address of the token to claim rewards from.
-******************************************************************************/
+ ** claimReward is a _WRITE_ function that claims the rewards from the yBribe
+ ** contract.
+ ** The correct function for V2 or V3 should be used.
+ **
+ ** @app - yBribe
+ ** @param gaugeAddress - The address of the gauge to claim rewards from.
+ ** @param tokenAddress - The address of the token to claim rewards from.
+ ******************************************************************************/
 type TAddReward = TWriteTransaction & {
 	gaugeAddress: TAddress | undefined;
 	tokenAddress: TAddress | undefined;

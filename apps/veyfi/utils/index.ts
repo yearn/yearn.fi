@@ -14,10 +14,10 @@ export function getVotingPower(lockAmount: bigint, unlockTime: TMilliseconds): b
 	if (duration >= MAX_LOCK) {
 		return lockAmount;
 	}
-	return lockAmount / toBigInt(MAX_LOCK) * toBigInt(duration);
+	return (lockAmount / toBigInt(MAX_LOCK)) * toBigInt(duration);
 }
 
-export const keyBy = <T1, T2 extends keyof T1 & string>(array: T1[], key: T2): TDict<T1 | undefined> => 
+export const keyBy = <T1, T2 extends keyof T1 & string>(array: T1[], key: T2): TDict<T1 | undefined> =>
 	(array || []).reduce((r, x): TDict<T1> => ({...r, [x[key] as string]: x}), {});
 
 export const isNumberable = (value: unknown): boolean => !isNaN(value as number);
@@ -32,7 +32,9 @@ export const sort = <T>(data: T[], by: Extract<keyof T, string>, order?: 'asc' |
 			return order === 'desc' ? Number(elementA) - Number(elementB) : Number(elementB) - Number(elementA);
 		}
 		if (isString(elementA) && isString(elementB)) {
-			return order === 'desc' ? elementA.toLowerCase().localeCompare(elementB.toLowerCase()) : elementB.toLowerCase().localeCompare(elementA.toLowerCase());
+			return order === 'desc'
+				? elementA.toLowerCase().localeCompare(elementB.toLowerCase())
+				: elementB.toLowerCase().localeCompare(elementA.toLowerCase());
 		}
 		return 0;
 	};

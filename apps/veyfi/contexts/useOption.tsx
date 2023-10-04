@@ -15,17 +15,17 @@ import type {ReactElement} from 'react';
 import type {TDict} from '@yearn-finance/web-lib/types';
 
 export type TOptionPosition = {
-	balance: bigint,
-}
+	balance: bigint;
+};
 
-export type	TOptionContext = {
-	getRequiredEth: (amount: bigint) => Promise<bigint>,
-	price: number | undefined,
-	positions: TOptionPosition | undefined,
-	allowances: TDict<bigint>,
-	isLoading: boolean,
-	refresh: () => void,
-}
+export type TOptionContext = {
+	getRequiredEth: (amount: bigint) => Promise<bigint>;
+	price: number | undefined;
+	positions: TOptionPosition | undefined;
+	allowances: TDict<bigint>;
+	isLoading: boolean;
+	refresh: () => void;
+};
 
 const defaultProps: TOptionContext = {
 	getRequiredEth: async (): Promise<bigint> => BIG_ZERO,
@@ -42,26 +42,35 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 	const yfiPrice = useTokenPrice(YFI_ADDRESS);
 	const ethPrice = useTokenPrice(ETH_TOKEN_ADDRESS);
 
-	const [{result: price, status: fetchPriceStatus}, {execute: refreshPrice}] = useAsync(async (): Promise<number | undefined> => {
-		if (!isActive || provider) {
-			return;
-		}
-		return priceFetcher();
-	}, 0);
+	const [{result: price, status: fetchPriceStatus}, {execute: refreshPrice}] = useAsync(
+		async (): Promise<number | undefined> => {
+			if (!isActive || provider) {
+				return;
+			}
+			return priceFetcher();
+		},
+		0
+	);
 
-	const [{result: positions, status: fetchPositionsStatus}, {execute: refreshPositions}] = useAsync(async (): Promise<TOptionPosition | undefined> => {
-		if (!isActive || provider) {
-			return;
-		}
-		return positionsFetcher();
-	}, {balance: 0n});
+	const [{result: positions, status: fetchPositionsStatus}, {execute: refreshPositions}] = useAsync(
+		async (): Promise<TOptionPosition | undefined> => {
+			if (!isActive || provider) {
+				return;
+			}
+			return positionsFetcher();
+		},
+		{balance: 0n}
+	);
 
-	const [{result: allowances, status: fetchAllowancesStatus}, {execute: refreshAllowances}] = useAsync(async (): Promise<TDict<bigint> | undefined> => {
-		if (!isActive || provider) {
-			return;
-		}
-		return allowancesFetcher();
-	}, {});
+	const [{result: allowances, status: fetchAllowancesStatus}, {execute: refreshAllowances}] = useAsync(
+		async (): Promise<TDict<bigint> | undefined> => {
+			if (!isActive || provider) {
+				return;
+			}
+			return allowancesFetcher();
+		},
+		{}
+	);
 
 	const refresh = useCallback((): void => {
 		refreshPrice();
@@ -85,7 +94,7 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 	}, []);
 
 	const priceFetcher = useCallback(async (): Promise<number | undefined> => {
-		if(!ethPrice || !yfiPrice) {
+		if (!ethPrice || !yfiPrice) {
 			return undefined;
 		}
 		const oneOption = ethers.utils.parseEther('1');
@@ -125,25 +134,36 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 			chainId: 1
 		});
 
-		return ({
+		return {
 			[allowanceKey(1, VEYFI_OYFI_ADDRESS, VEYFI_OPTIONS_ADDRESS, userAddress)]: oYFIAllowanceOptions
-		});
+		};
 	}, [isActive, userAddress]);
 
-	const contextValue = useMemo((): TOptionContext => ({
-		getRequiredEth,
-		price,
-		positions,
-		allowances: allowances ?? {},
-		isLoading: fetchPriceStatus === 'loading' || fetchPositionsStatus === 'loading' || fetchAllowancesStatus === 'loading',
-		refresh
-	}), [allowances, fetchAllowancesStatus, fetchPositionsStatus, fetchPriceStatus, getRequiredEth, positions, price, refresh]);
-
-	return (
-		<OptionContext.Provider value={contextValue}>
-			{children}
-		</OptionContext.Provider>
+	const contextValue = useMemo(
+		(): TOptionContext => ({
+			getRequiredEth,
+			price,
+			positions,
+			allowances: allowances ?? {},
+			isLoading:
+				fetchPriceStatus === 'loading' ||
+				fetchPositionsStatus === 'loading' ||
+				fetchAllowancesStatus === 'loading',
+			refresh
+		}),
+		[
+			allowances,
+			fetchAllowancesStatus,
+			fetchPositionsStatus,
+			fetchPriceStatus,
+			getRequiredEth,
+			positions,
+			price,
+			refresh
+		]
 	);
+
+	return <OptionContext.Provider value={contextValue}>{children}</OptionContext.Provider>;
 });
 
 export const useOption = (): TOptionContext => useContext(OptionContext);

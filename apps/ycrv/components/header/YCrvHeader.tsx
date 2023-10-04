@@ -6,15 +6,13 @@ import type {ReactElement} from 'react';
 
 type TProps = {
 	pathname: NextRouter['pathname'];
-}
+};
 
 export function YCrvHeader({pathname}: TProps): ReactElement {
 	const {name, icon} = APPS[AppName.YCRV];
 
 	return (
-		<MotionDiv
-			animate={pathname.startsWith('/ycrv') ? 'enter' : 'exit'}
-			name={name}>
+		<MotionDiv animate={pathname.startsWith('/ycrv') ? 'enter' : 'exit'} name={name}>
 			{icon}
 		</MotionDiv>
 	);

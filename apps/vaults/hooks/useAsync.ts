@@ -26,7 +26,7 @@ export function useAsync<T>(
 					set_data(res);
 				});
 			}
-		} catch(e) {
+		} catch (e) {
 			set_isLoading(false);
 		}
 	}, [callback]);
@@ -36,5 +36,5 @@ export function useAsync<T>(
 		callCallback();
 	}, [callCallback, ...effectDependencies]);
 
-	return ([isLoading ? defaultValue : (data || defaultValue), isLoading, callCallback]);
+	return [isLoading ? defaultValue : data || defaultValue, isLoading, callCallback];
 }

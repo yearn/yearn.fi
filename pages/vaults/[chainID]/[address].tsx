@@ -26,8 +26,12 @@ function Index(): ReactElement | null {
 	const {vaults} = useYearn();
 	const router = useRouter();
 	const {refresh} = useWallet();
-	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: Number(router.query.chainID)});
-	const [currentVault, set_currentVault] = useState<TYDaemonVault | undefined>(vaults[toAddress(router.query.address as string)]);
+	const {yDaemonBaseUri} = useYDaemonBaseURI({
+		chainID: Number(router.query.chainID)
+	});
+	const [currentVault, set_currentVault] = useState<TYDaemonVault | undefined>(
+		vaults[toAddress(router.query.address as string)]
+	);
 	const {data: vault, isLoading: isLoadingVault} = useFetch<TYDaemonVault>({
 		endpoint: `${yDaemonBaseUri}/vaults/${toAddress(router.query.address as string)}?${new URLSearchParams({
 			strategiesDetails: 'withDetails',
@@ -50,7 +54,9 @@ function Index(): ReactElement | null {
 				tokensToRefresh.push({token: toAddress(currentVault.address)});
 			}
 			if (currentVault?.token?.address) {
-				tokensToRefresh.push({token: toAddress(currentVault.token.address)});
+				tokensToRefresh.push({
+					token: toAddress(currentVault.token.address)
+				});
 			}
 			refresh(tokensToRefresh);
 		}
@@ -70,7 +76,9 @@ function Index(): ReactElement | null {
 		return (
 			<div className={'relative flex h-14 flex-col items-center justify-center px-4 text-center'}>
 				<div className={'flex h-10 items-center justify-center'}>
-					<p className={'text-sm text-neutral-900'}>{'We couln\'t find this vault on the connected network.'}</p>
+					<p className={'text-sm text-neutral-900'}>
+						{"We couln't find this vault on the connected network."}
+					</p>
 				</div>
 			</div>
 		);
@@ -85,9 +93,7 @@ function Index(): ReactElement | null {
 					animate={'enter'}
 					variants={variants}
 					className={'z-50 -mt-6 h-12 w-12 cursor-pointer md:-mt-36 md:h-[72px] md:w-[72px]'}>
-					<TokenIcon
-						chainID={currentVault.chainID}
-						token={currentVault.token} />
+					<TokenIcon chainID={currentVault.chainID} token={currentVault.token} />
 				</motion.div>
 			</header>
 
@@ -105,11 +111,7 @@ function Index(): ReactElement | null {
 }
 
 Index.getLayout = function getLayout(page: ReactElement, router: NextRouter): ReactElement {
-	return (
-		<Wrapper router={router}>
-			{page}
-		</Wrapper>
-	);
+	return <Wrapper router={router}>{page}</Wrapper>;
 };
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
@@ -117,7 +119,6 @@ export const getServerSideProps: GetServerSideProps = async () => {
 	return {
 		props: {}
 	};
-
 };
 
 export default Index;

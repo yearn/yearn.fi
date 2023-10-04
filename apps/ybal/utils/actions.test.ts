@@ -44,7 +44,6 @@ vi.mock('@yearn-finance/web-lib/utils/web3/transaction', () => ({
 	handleTx: vi.fn()
 }));
 
-
 describe('actions', () => {
 	it('should export the correct actions', () => {
 		expect(zapBal).toBeDefined();
@@ -58,9 +57,7 @@ describe('actions', () => {
 				const EXPECTED_AMOUNT_MINT = parseEther('100'); // 100e18
 				const EXPECTED_AMOUNT_SWAP = parseEther('200'); // 200e18
 
-				mockCallStaticZap
-					.mockReturnValueOnce(EXPECTED_AMOUNT_MINT)
-					.mockReturnValueOnce(EXPECTED_AMOUNT_SWAP);
+				mockCallStaticZap.mockReturnValueOnce(EXPECTED_AMOUNT_MINT).mockReturnValueOnce(EXPECTED_AMOUNT_SWAP);
 
 				const inputToken = BAL_TOKEN_ADDRESS as TAddress;
 				const outputToken = YBAL_TOKEN_ADDRESS as TAddress;
@@ -80,8 +77,20 @@ describe('actions', () => {
 					amountIn: amountIn
 				});
 
-				expect(mockCallStaticZap).toHaveBeenNthCalledWith(1, BAL_TOKEN_ADDRESS, YBAL_TOKEN_ADDRESS, amountIn, true);
-				expect(mockCallStaticZap).toHaveBeenNthCalledWith(2, BAL_TOKEN_ADDRESS, YBAL_TOKEN_ADDRESS, amountIn, false);
+				expect(mockCallStaticZap).toHaveBeenNthCalledWith(
+					1,
+					BAL_TOKEN_ADDRESS,
+					YBAL_TOKEN_ADDRESS,
+					amountIn,
+					true
+				);
+				expect(mockCallStaticZap).toHaveBeenNthCalledWith(
+					2,
+					BAL_TOKEN_ADDRESS,
+					YBAL_TOKEN_ADDRESS,
+					amountIn,
+					false
+				);
 				expect(shouldMint).toBe(false);
 				expect(minOut).toEqual(toBigInt('197752499999999997726'));
 			});
@@ -92,9 +101,7 @@ describe('actions', () => {
 				const EXPECTED_AMOUNT_MINT = parseEther('42'); // 42e18
 				const EXPECTED_AMOUNT_SWAP = parseEther('42'); // 42e18
 
-				mockCallStaticZap
-					.mockReturnValueOnce(EXPECTED_AMOUNT_MINT)
-					.mockReturnValueOnce(EXPECTED_AMOUNT_SWAP);
+				mockCallStaticZap.mockReturnValueOnce(EXPECTED_AMOUNT_MINT).mockReturnValueOnce(EXPECTED_AMOUNT_SWAP);
 
 				const inputToken = BAL_TOKEN_ADDRESS as TAddress;
 				const outputToken = YBAL_TOKEN_ADDRESS as TAddress;
@@ -115,8 +122,20 @@ describe('actions', () => {
 					amountIn: amountIn
 				});
 
-				expect(mockCallStaticZap).toHaveBeenNthCalledWith(1, BAL_TOKEN_ADDRESS, YBAL_TOKEN_ADDRESS, expectedIn, true);
-				expect(mockCallStaticZap).toHaveBeenNthCalledWith(2, BAL_TOKEN_ADDRESS, YBAL_TOKEN_ADDRESS, expectedIn, false);
+				expect(mockCallStaticZap).toHaveBeenNthCalledWith(
+					1,
+					BAL_TOKEN_ADDRESS,
+					YBAL_TOKEN_ADDRESS,
+					expectedIn,
+					true
+				);
+				expect(mockCallStaticZap).toHaveBeenNthCalledWith(
+					2,
+					BAL_TOKEN_ADDRESS,
+					YBAL_TOKEN_ADDRESS,
+					expectedIn,
+					false
+				);
 				expect(shouldMint).toBe(true);
 				expect(minOut).toEqual(toBigInt('41579999999999998295'));
 			});
@@ -154,7 +173,7 @@ describe('actions', () => {
 				YBAL_TOKEN_ADDRESS,
 				toBigInt('100000000000000000000'),
 				toBigInt('98000000000000000000'),
-				(await connector.getAccount()),
+				await connector.getAccount(),
 				true
 			);
 		});

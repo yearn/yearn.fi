@@ -55,7 +55,8 @@ export function RewardsTab(): ReactElement {
 		}
 	}, [gaugeAddresses, provider, refreshData]);
 
-	const gaugeOptions = gaugeAddresses.filter((address): boolean => toBigInt(positionsMap[address]?.reward.balance) > 0n ?? false)
+	const gaugeOptions = gaugeAddresses
+		.filter((address): boolean => toBigInt(positionsMap[address]?.reward.balance) > 0n ?? false)
 		.map((address): TDropdownOption => {
 			const gauge = gaugesMap[address];
 			const vaultAddress = toAddress(gauge?.vaultAddress);
@@ -74,15 +75,16 @@ export function RewardsTab(): ReactElement {
 		}, BIG_ZERO);
 	}, [gaugeAddresses, positionsMap]);
 
-	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: 1, walletNetwork: chainID});
+	const {isValid: isValidNetwork} = validateNetwork({
+		supportedNetwork: 1,
+		walletNetwork: chainID
+	});
 
 	return (
 		<div className={'flex flex-col gap-6 md:gap-10'}>
 			<div className={'flex flex-col gap-4'}>
 				<div className={'flex flex-col gap-4'}>
-					<h2 className={'m-0 text-2xl font-bold'}>
-						{'Claim Rewards'}
-					</h2>
+					<h2 className={'m-0 text-2xl font-bold'}>{'Claim Rewards'}</h2>
 				</div>
 
 				<div className={'grid grid-cols-1 gap-4 md:grid-cols-4'}>
@@ -96,8 +98,7 @@ export function RewardsTab(): ReactElement {
 						className={'w-full md:mt-7'}
 						onClick={onClaimAll}
 						isDisabled={!isActive || !isValidNetwork || isZero(gaugesRewards) || !claimAllStatus.none}
-						isBusy={claimAllStatus.pending}
-					>
+						isBusy={claimAllStatus.pending}>
 						{'Claim All'}
 					</Button>
 				</div>
@@ -105,9 +106,7 @@ export function RewardsTab(): ReactElement {
 
 			<div className={'flex flex-col gap-4'}>
 				<div className={'flex flex-col gap-4'}>
-					<h2 className={'m-0 text-2xl font-bold'}>
-						{'Claim Separately'}
-					</h2>
+					<h2 className={'m-0 text-2xl font-bold'}>{'Claim Separately'}</h2>
 				</div>
 
 				<div className={'grid grid-cols-1 gap-4 md:grid-cols-4'}>
@@ -127,8 +126,7 @@ export function RewardsTab(): ReactElement {
 						className={'w-full md:mt-7'}
 						onClick={onClaim}
 						isDisabled={!isActive || !isValidNetwork || isZero(selectedGaugeRewards) || !claimStatus.none}
-						isBusy={claimStatus.pending}
-					>
+						isBusy={claimStatus.pending}>
 						{'Claim'}
 					</Button>
 				</div>
@@ -136,4 +134,3 @@ export function RewardsTab(): ReactElement {
 		</div>
 	);
 }
-

@@ -23,7 +23,7 @@ export async function approveAndStake(props: TApproveAndStake): Promise<TTxRespo
 		spenderAddress: props.contractAddress
 	});
 
-	if(!(allowance >= props.amount)) {
+	if (!(allowance >= props.amount)) {
 		await handleTxWagmi(props, {
 			address: props.vaultAddress,
 			abi: ['function approve(address _spender, uint256 _value) external'],

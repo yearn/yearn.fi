@@ -41,29 +41,33 @@ export function VaultAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 							shouldRender={!(currentVault.apy?.type === 'new' && isZero(boostedAPR))}
 							fallback={'New'}>
 							{'⚡️ '}
-							<RenderAmount
-								value={boostedAPR}
-								symbol={'percent'}
-								decimals={6} />
+							<RenderAmount value={boostedAPR} symbol={'percent'} decimals={6} />
 						</Renderable>
 					</b>
 					<span className={'tooltipLight bottom-full mb-1'}>
-						<div className={'font-number w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'}>
+						<div
+							className={
+								'font-number w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
+							}>
 							<div className={'flex flex-col items-start justify-start text-left'}>
-								<div className={'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'}>
+								<div
+									className={
+										'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
+									}>
 									<p>{'• Base APR '}</p>
-									<RenderAmount
-										value={currentVault.apy?.gross_apr}
-										symbol={'percent'}
-										decimals={6} />
+									<RenderAmount value={currentVault.apy?.gross_apr} symbol={'percent'} decimals={6} />
 								</div>
 
-								<div className={'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'}>
+								<div
+									className={
+										'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
+									}>
 									<p>{'• Rewards APR '}</p>
 									<RenderAmount
 										value={currentVault.apy?.staking_rewards_apr}
 										symbol={'percent'}
-										decimals={6} />
+										decimals={6}
+									/>
 								</div>
 							</div>
 						</div>
@@ -82,31 +86,37 @@ export function VaultAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 						<Renderable
 							shouldRender={!(currentVault.apy?.type === 'new' && isZero(currentVault.apy?.net_apy))}
 							fallback={'New'}>
-							<RenderAmount
-								value={currentVault.apy?.net_apy}
-								symbol={'percent'}
-								decimals={6}
-							/>
+							<RenderAmount value={currentVault.apy?.net_apy} symbol={'percent'} decimals={6} />
 						</Renderable>
 					</b>
 					<small className={'text-xs text-neutral-900'}>
 						<Renderable
-							shouldRender={isEthMainnet && currentVault.apy?.composite?.boost > 0 && !currentVault.apy?.staking_rewards_apr}>
+							shouldRender={
+								isEthMainnet &&
+								currentVault.apy?.composite?.boost > 0 &&
+								!currentVault.apy?.staking_rewards_apr
+							}>
 							{`BOOST ${formatAmount(currentVault.apy?.composite?.boost, 2, 2)}x`}
 						</Renderable>
 					</small>
 					<span className={'tooltipLight bottom-full mb-1'}>
-						<div className={'font-number w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'}>
+						<div
+							className={
+								'font-number w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
+							}>
 							<div className={'flex flex-col items-start justify-start text-left'}>
-								<div className={'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'}>
+								<div
+									className={
+										'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
+									}>
 									<p>{'• Base APR '}</p>
-									<RenderAmount
-										value={unBoostedAPR}
-										symbol={'percent'}
-										decimals={6} />
+									<RenderAmount value={unBoostedAPR} symbol={'percent'} decimals={6} />
 								</div>
 
-								<div className={'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'}>
+								<div
+									className={
+										'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
+									}>
 									<p>{'• Boost '}</p>
 									<p>{`${formatAmount(currentVault.apy?.composite?.boost, 2, 2)} x`}</p>
 								</div>
@@ -124,10 +134,7 @@ export function VaultAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 				<Renderable
 					shouldRender={!(currentVault.apy?.type === 'new' && isZero(currentVault.apy?.net_apy))}
 					fallback={'New'}>
-					<RenderAmount
-						value={currentVault.apy?.net_apy}
-						symbol={'percent'}
-						decimals={6} />
+					<RenderAmount value={currentVault.apy?.net_apy} symbol={'percent'} decimals={6} />
 				</Renderable>
 			</b>
 		</div>
@@ -138,17 +145,21 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 	const balanceOfWant = useBalance(currentVault.token.address);
 	const balanceOfCoin = useBalance(ETH_TOKEN_ADDRESS);
 	//TODO: Create a wagmi Chain upgrade to add the chain wrapper token address
-	const balanceOfWrappedCoin = useBalance(toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS ? WFTM_TOKEN_ADDRESS : WETH_TOKEN_ADDRESS);
+	const balanceOfWrappedCoin = useBalance(
+		toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS ? WFTM_TOKEN_ADDRESS : WETH_TOKEN_ADDRESS
+	);
 	const vaultName = useMemo((): string => getVaultName(currentVault), [currentVault]);
 	const deposited = useBalance(currentVault.address)?.raw;
 	const {stakingRewardsByVault, positionsMap} = useStakingRewards();
 
 	const availableToDeposit = useMemo((): bigint => {
-		if (toAddress(currentVault.token.address) === WETH_TOKEN_ADDRESS) { // Handle ETH native coin
-			return (balanceOfWrappedCoin.raw + balanceOfCoin.raw);
+		if (toAddress(currentVault.token.address) === WETH_TOKEN_ADDRESS) {
+			// Handle ETH native coin
+			return balanceOfWrappedCoin.raw + balanceOfCoin.raw;
 		}
-		if (toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS) { // Handle FTM native coin
-			return (balanceOfWrappedCoin.raw + balanceOfCoin.raw);
+		if (toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS) {
+			// Handle FTM native coin
+			return balanceOfWrappedCoin.raw + balanceOfCoin.raw;
 		}
 		return balanceOfWant.raw;
 	}, [balanceOfCoin.raw, balanceOfWant.raw, balanceOfWrappedCoin.raw, currentVault.token.address]);
@@ -160,7 +171,9 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 	}, [currentVault.address, deposited, positionsMap, stakingRewardsByVault]);
 
 	return (
-		<Link key={`${currentVault.address}`} href={`/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`}>
+		<Link
+			key={`${currentVault.address}`}
+			href={`/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`}>
 			<div className={'yearn--table-wrapper cursor-pointer transition-colors hover:bg-neutral-300'}>
 				<div className={'flex max-w-[32px] flex-row items-center'}>
 					{ChainIconMap.get(currentVault.chainID) ?? <IconEtherumChain />}
@@ -172,7 +185,8 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 								src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-128.png`}
 								alt={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-128.png`}
 								width={40}
-								height={40} />
+								height={40}
+							/>
 						</div>
 						<p>{vaultName}</p>
 					</div>
@@ -186,7 +200,10 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 
 					<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
 						<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Available'}</label>
-						<p className={`yearn--table-data-section-item-value ${isZero(availableToDeposit) ? 'text-neutral-400' : 'text-neutral-900'}`}>
+						<p
+							className={`yearn--table-data-section-item-value ${
+								isZero(availableToDeposit) ? 'text-neutral-400' : 'text-neutral-900'
+							}`}>
 							<RenderAmount
 								value={availableToDeposit}
 								symbol={currentVault.token.symbol}
@@ -198,7 +215,10 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 
 					<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
 						<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Deposited'}</label>
-						<p className={`yearn--table-data-section-item-value ${isZero(staked) ? 'text-neutral-400' : 'text-neutral-900'}`}>
+						<p
+							className={`yearn--table-data-section-item-value ${
+								isZero(staked) ? 'text-neutral-400' : 'text-neutral-900'
+							}`}>
 							<RenderAmount
 								value={staked}
 								symbol={currentVault.token.symbol}

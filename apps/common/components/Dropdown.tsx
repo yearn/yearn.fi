@@ -28,9 +28,7 @@ const DropdownOption = (option: TDropdownOption): ReactElement => {
 						</div>
 					)}
 					<div>
-						<p className={`font-normal text-neutral-900 ${icon ? 'pl-2' : 'pl-0'}`}>
-							{label}
-						</p>
+						<p className={`font-normal text-neutral-900 ${icon ? 'pl-2' : 'pl-0'}`}>{label}</p>
 						{description && (
 							<p className={`text-xxs font-normal text-neutral-600 ${icon ? 'pl-2' : 'pl-0'}`}>
 								{description}
@@ -44,7 +42,7 @@ const DropdownOption = (option: TDropdownOption): ReactElement => {
 };
 
 const DropdownEmpty = ({isSearching}: {isSearching: boolean}): ReactElement => {
-	if(isSearching) {
+	if (isSearching) {
 		return (
 			<div className={'relative flex h-14 flex-col items-center justify-center px-4 text-center'}>
 				<div className={'flex h-10 items-center justify-center'}>
@@ -68,7 +66,7 @@ export type TDropdownOption = {
 	label: string;
 	description?: string;
 	icon?: string;
-}
+};
 
 export type TDropdownProps = {
 	selected?: TDropdownOption;
@@ -78,9 +76,17 @@ export type TDropdownProps = {
 	legend?: string;
 	isDisabled?: boolean;
 	className?: string;
-}
+};
 
-export const Dropdown = ({selected, options, onChange, label, legend, isDisabled, className}: TDropdownProps): ReactElement => {
+export const Dropdown = ({
+	selected,
+	options,
+	onChange,
+	label,
+	legend,
+	isDisabled,
+	className
+}: TDropdownProps): ReactElement => {
 	const [isOpen, set_isOpen] = useThrottledState(false, 400);
 	const [search, set_search] = useState('');
 
@@ -101,20 +107,20 @@ export const Dropdown = ({selected, options, onChange, label, legend, isDisabled
 								e.stopPropagation();
 								e.preventDefault();
 								set_isOpen(false);
-							}} />
+							}}
+						/>
 					) : null}
 					<Combobox
 						value={selected}
 						onChange={(option: TDropdownOption): void => {
 							performBatchedUpdates((): void => {
-								if(onChange) {
+								if (onChange) {
 									onChange(option);
 								}
 								set_isOpen(false);
 							});
 						}}
-						disabled={isDisabled}
-					>
+						disabled={isDisabled}>
 						<>
 							<Combobox.Button
 								onClick={(): void => set_isOpen((state: boolean): boolean => !state)}
@@ -142,8 +148,10 @@ export const Dropdown = ({selected, options, onChange, label, legend, isDisabled
 											isDisabled ? 'text-neutral-600' : 'text-neutral-900'
 										)}>
 										<Combobox.Input
-											className={'w-full cursor-default overflow-x-scroll border-none bg-transparent p-0 outline-none scrollbar-none'}
-											displayValue={(option?: TDropdownOption): string => option?.label ?? '-' }
+											className={
+												'w-full cursor-default overflow-x-scroll border-none bg-transparent p-0 outline-none scrollbar-none'
+											}
+											displayValue={(option?: TDropdownOption): string => option?.label ?? '-'}
 											spellCheck={false}
 											onChange={(event): void => {
 												performBatchedUpdates((): void => {
@@ -157,7 +165,10 @@ export const Dropdown = ({selected, options, onChange, label, legend, isDisabled
 								<div className={'absolute right-2 md:right-3'}>
 									<IconChevron
 										aria-hidden={'true'}
-										className={`h-6 w-6 transition-transform ${isOpen ? '-rotate-180' : 'rotate-0'}`} />
+										className={`h-6 w-6 transition-transform ${
+											isOpen ? '-rotate-180' : 'rotate-0'
+										}`}
+									/>
 								</div>
 							</Combobox.Button>
 							<Transition
@@ -179,28 +190,25 @@ export const Dropdown = ({selected, options, onChange, label, legend, isDisabled
 									{filteredOptions.length === 0 ? (
 										<DropdownEmpty isSearching={isSearching} />
 									) : (
-										filteredOptions.map(({id, label, description, icon}): ReactElement => (
-											<DropdownOption
-												key={id}
-												id={id}
-												label={label}
-												description={description}
-												icon={icon}
-											/>
-										))
+										filteredOptions.map(
+											({id, label, description, icon}): ReactElement => (
+												<DropdownOption
+													key={id}
+													id={id}
+													label={label}
+													description={description}
+													icon={icon}
+												/>
+											)
+										)
 									)}
 								</Combobox.Options>
 							</Transition>
 						</>
 					</Combobox>
 				</div>
-				{legend && (
-					<p className={'pl-2 text-xs font-normal text-neutral-600'}>
-						{legend}
-					</p>
-				)}
+				{legend && <p className={'pl-2 text-xs font-normal text-neutral-600'}>{legend}</p>}
 			</div>
 		</div>
 	);
 };
-

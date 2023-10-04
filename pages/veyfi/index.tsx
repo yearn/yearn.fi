@@ -29,21 +29,29 @@ function Index(): ReactElement {
 		{id: 'lock', label: 'Lock YFI', content: <LockTab />},
 		{id: 'manage', label: 'Manage lock', content: <ManageLockTab />},
 		{id: 'claim', label: 'Claim', content: <ClaimTab />},
-		...isGaugeVotingFeatureEnabled ? [
-			{id: 'gauges', label: 'Stake / Unstake', content: <GaugesTab />},
-			{id: 'rewards', label: 'Rewards', content: <RewardsTab />},
-			{id: 'redeem', label: 'Redeem oYFI', content: <RedeemTab />},
-			{id: 'vote', label: 'Vote for Gauge', content: <VoteTab />}
-		] : []
+		...(isGaugeVotingFeatureEnabled
+			? [
+					{
+						id: 'gauges',
+						label: 'Stake / Unstake',
+						content: <GaugesTab />
+					},
+					{id: 'rewards', label: 'Rewards', content: <RewardsTab />},
+					{
+						id: 'redeem',
+						label: 'Redeem oYFI',
+						content: <RedeemTab />
+					},
+					{id: 'vote', label: 'Vote for Gauge', content: <VoteTab />}
+			  ]
+			: [])
 	].filter(Boolean);
 
 	return (
 		<>
 			<PageProgressBar isLoading={isLoading} />
 
-			<h1 className={'w-full text-center text-8xl font-bold'}>
-				{'veYFI'}
-			</h1>
+			<h1 className={'w-full text-center text-8xl font-bold'}>{'veYFI'}</h1>
 
 			<div className={'my-14 w-full'}>
 				<SummaryData
@@ -60,7 +68,8 @@ function Index(): ReactElement {
 							label: 'Expiration for the lock',
 							content: positions?.unlockTime ? formatDateShort(positions.unlockTime) : '-'
 						}
-					]} />
+					]}
+				/>
 			</div>
 
 			<Tabs items={tabs} />

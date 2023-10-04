@@ -9,9 +9,9 @@ type TFetchProps = {
 	endpoint: string | null;
 	schema: z.ZodSchema;
 	config?: AxiosRequestConfig<unknown>;
-}
+};
 
-export type TFetchReturn<T> = Promise<{data: T | null, error?: Error}>
+export type TFetchReturn<T> = Promise<{data: T | null; error?: Error}>;
 
 export async function fetch<T>({endpoint, schema, config}: TFetchProps): TFetchReturn<T> {
 	if (!endpoint) {

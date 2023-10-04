@@ -15,14 +15,12 @@ type TRowProps = {
 	value: string;
 	className?: string;
 	valueClassName?: string;
-}
+};
 function Row({label, value, className, valueClassName}: TRowProps): ReactElement {
 	return (
 		<div className={cl('yearn--table-data-section-item', className)} datatype={'number'}>
 			<p className={'yearn--table-data-section-item-label'}>{label}</p>
-			<p className={cl('yearn--table-data-section-item-value', valueClassName)}>
-				{value}
-			</p>
+			<p className={cl('yearn--table-data-section-item-value', valueClassName)}>{value}</p>
 		</div>
 	);
 }
@@ -43,12 +41,13 @@ export function HarvestListRow({harvest}: {harvest: TYDaemonVaultHarvest}): Reac
 							width={40}
 							height={40}
 							quality={90}
-							src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${toAddress(harvest.vaultAddress)}/logo-128.png`}
-							loading={'eager'} />
+							src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${toAddress(
+								harvest.vaultAddress
+							)}/logo-128.png`}
+							loading={'eager'}
+						/>
 					</div>
-					<p>
-						{vaultName}
-					</p>
+					<p>{vaultName}</p>
 				</div>
 			</div>
 
@@ -58,10 +57,7 @@ export function HarvestListRow({harvest}: {harvest: TYDaemonVaultHarvest}): Reac
 				<Row label={'Date'} value={date} className={'md:col-span-3'} valueClassName={'leading-6'} />
 				<div className={'yearn--table-data-section-item md:col-span-3'} datatype={'number'}>
 					<p className={'yearn--table-data-section-item-label'}>{'Hash'}</p>
-					<a
-						href={`https://etherscan.io/tx/${harvest.txHash}`}
-						target={'_blank'}
-						rel={'noreferrer'}>
+					<a href={`https://etherscan.io/tx/${harvest.txHash}`} target={'_blank'} rel={'noreferrer'}>
 						<div
 							className={'font-number flex flex-row items-center space-x-2 text-neutral-900'}
 							style={{lineHeight: '24px'}}>
@@ -70,7 +66,6 @@ export function HarvestListRow({harvest}: {harvest: TYDaemonVaultHarvest}): Reac
 						</div>
 					</a>
 				</div>
-
 			</div>
 		</div>
 	);

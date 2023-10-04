@@ -11,24 +11,64 @@ import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TWriteTransaction} from '@yearn-finance/web-lib/utils/wagmi/provider';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 
-const ZAP_BAL_ABI = [{'inputs':[{'name':'_input_token', 'type':'address'}, {'name':'_output_token', 'type':'address'}, {'name':'_amount_in', 'type':'uint256'}, {'name':'_min_out', 'type':'uint256'}, {'name':'_recipient', 'type':'address'}, {'name':'_mint', 'type':'bool'}], 'name':'zap', 'outputs':[{'name':'', 'type':'uint256'}], 'stateMutability':'nonpayable', 'type':'function'}, {'inputs':[], 'name':'mint_buffer', 'outputs':[{'name':'', 'type':'uint256'}], 'stateMutability':'view', 'type':'function'}, {'inputs':[{'name':'_input_token', 'type':'address'}, {'name':'_output_token', 'type':'address'}, {'name':'_amount_in', 'type':'uint256'}, {'name':'_mint', 'type':'bool'}], 'name':'queryZapOutput', 'outputs':[{'name':'', 'type':'uint256'}], 'stateMutability':'nonpayable', 'type':'function'}] as const;
+const ZAP_BAL_ABI = [
+	{
+		inputs: [
+			{name: '_input_token', type: 'address'},
+			{name: '_output_token', type: 'address'},
+			{name: '_amount_in', type: 'uint256'},
+			{name: '_min_out', type: 'uint256'},
+			{name: '_recipient', type: 'address'},
+			{name: '_mint', type: 'bool'}
+		],
+		name: 'zap',
+		outputs: [{name: '', type: 'uint256'}],
+		stateMutability: 'nonpayable',
+		type: 'function'
+	},
+	{
+		inputs: [],
+		name: 'mint_buffer',
+		outputs: [{name: '', type: 'uint256'}],
+		stateMutability: 'view',
+		type: 'function'
+	},
+	{
+		inputs: [
+			{name: '_input_token', type: 'address'},
+			{name: '_output_token', type: 'address'},
+			{name: '_amount_in', type: 'uint256'},
+			{name: '_mint', type: 'bool'}
+		],
+		name: 'queryZapOutput',
+		outputs: [{name: '', type: 'uint256'}],
+		stateMutability: 'nonpayable',
+		type: 'function'
+	}
+] as const;
 
 const LOCAL_ZAP_YEARN_YBAL_ADDRESS = toAddress('0x43cA9bAe8dF108684E5EAaA720C25e1b32B0A075');
 const OUTPUT_TOKENS = [YBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, LPYBAL_TOKEN_ADDRESS];
 
 type TSimulateZapForMinOut = TWriteTransaction & {
-	inputToken: TAddress,
-	outputToken: TAddress,
-	amountIn: bigint
+	inputToken: TAddress;
+	outputToken: TAddress;
+	amountIn: bigint;
 };
-export async function simulateZapForMinOut(props: TSimulateZapForMinOut): Promise<{shouldMint: boolean, minOut: bigint}> {
+export async function simulateZapForMinOut(
+	props: TSimulateZapForMinOut
+): Promise<{shouldMint: boolean; minOut: bigint}> {
 	if (isZero(props.amountIn)) {
-		return ({shouldMint: false, minOut: 0n});
+		return {shouldMint: false, minOut: 0n};
 	}
 
 	try {
 		const wagmiProvider = await toWagmiProvider(props.connector);
-		const baseContract = {...wagmiProvider, address: LOCAL_ZAP_YEARN_YBAL_ADDRESS, abi: ZAP_BAL_ABI};
+		const baseContract = {
+			...wagmiProvider,
+			address: LOCAL_ZAP_YEARN_YBAL_ADDRESS,
+			abi: ZAP_BAL_ABI
+		};
 		const {result: expectedAmountMint} = await prepareWriteContract({
 			...baseContract,
 			functionName: 'queryZapOutput',
@@ -53,32 +93,32 @@ export async function simulateZapForMinOut(props: TSimulateZapForMinOut): Promis
 			...baseContract,
 			functionName: 'mint_buffer'
 		});
-		const amountInBuffered = props.amountIn * buffer / 10_000n;
+		const amountInBuffered = (props.amountIn * buffer) / 10_000n;
 		const bufferedAmount = expectedAmountSwap - amountInBuffered;
 
 		if (bufferedAmount > expectedAmountMint) {
-			const minOut = bufferedAmount * (1n - (toBigInt(slippage) / 100n));
-			return ({shouldMint: false, minOut});
+			const minOut = bufferedAmount * (1n - toBigInt(slippage) / 100n);
+			return {shouldMint: false, minOut};
 		}
-		const minOut = expectedAmountMint * (1n - (toBigInt(slippage) / 100n));
-		return ({shouldMint: true, minOut});
+		const minOut = expectedAmountMint * (1n - toBigInt(slippage) / 100n);
+		return {shouldMint: true, minOut};
 	} catch (error) {
 		console.error(error);
-		return ({shouldMint: false, minOut: 0n});
+		return {shouldMint: false, minOut: 0n};
 	}
 }
 
 /* 🔵 - Yearn Finance **********************************************************
-** zapBal is a _WRITE_ function that can be used to zap some supported tokens
-** from the Balancer ecosystem into one of the Yearn's yBal ecosystem.
-**
-** @app - yBal
-** @param inputToken - Token to be zapped from Balancer
-** @param outputToken - Token to be zapped into Yearn's yBal ecosystem
-** @param amount - Amount of inputToken to be zapped
-** @param minAmount - Minimum amount of outputToken to be received
-** @param slippage - Slippage tolerance
-******************************************************************************/
+ ** zapBal is a _WRITE_ function that can be used to zap some supported tokens
+ ** from the Balancer ecosystem into one of the Yearn's yBal ecosystem.
+ **
+ ** @app - yBal
+ ** @param inputToken - Token to be zapped from Balancer
+ ** @param outputToken - Token to be zapped into Yearn's yBal ecosystem
+ ** @param amount - Amount of inputToken to be zapped
+ ** @param minAmount - Minimum amount of outputToken to be received
+ ** @param slippage - Slippage tolerance
+ ******************************************************************************/
 type TZapYBal = TWriteTransaction & {
 	inputToken: TAddress | undefined;
 	outputToken: TAddress | undefined;
@@ -88,9 +128,7 @@ type TZapYBal = TWriteTransaction & {
 	shouldMint: boolean;
 };
 export async function zapBal(props: TZapYBal): Promise<TTxResponse> {
-	const minAmountWithSlippage = (
-		props.minAmount - (props.minAmount * props.slippage / 10_000n)
-	);
+	const minAmountWithSlippage = props.minAmount - (props.minAmount * props.slippage) / 10_000n;
 
 	assert(props.connector, 'No connector');
 	assertAddress(LOCAL_ZAP_YEARN_YBAL_ADDRESS, 'LOCAL_ZAP_YEARN_YBAL_ADDRESS');
@@ -105,13 +143,6 @@ export async function zapBal(props: TZapYBal): Promise<TTxResponse> {
 		address: LOCAL_ZAP_YEARN_YBAL_ADDRESS,
 		abi: ZAP_BAL_ABI,
 		functionName: 'zap',
-		args: [
-			props.inputToken,
-			props.outputToken,
-			props.amount,
-			minAmountWithSlippage,
-			userAddress,
-			props.shouldMint
-		]
+		args: [props.inputToken, props.outputToken, props.amount, minAmountWithSlippage, userAddress, props.shouldMint]
 	});
 }
