@@ -1,4 +1,5 @@
-import {Fragment, useCallback, useMemo} from 'react';
+import {Fragment, useCallback, useEffect, useMemo} from 'react';
+import {motion, useSpring, useTransform} from 'framer-motion';
 import {VaultListOptions} from '@vaults/components/list/VaultListOptions';
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
 import {VaultsListInternalMigrationRow} from '@vaults/components/list/VaultsListInternalMigrationRow';
@@ -19,7 +20,6 @@ import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {ListHead} from '@common/components/ListHead';
-import {ValueAnimation} from '@common/components/ValueAnimation';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import {getVaultName} from '@common/utils';
@@ -30,6 +30,17 @@ import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TSortDirection} from '@common/types/types';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
+
+function Counter({value}: {value: number}): ReactElement {
+	const v = useSpring(value, {mass: 1, stiffness: 75, damping: 15});
+	const display = useTransform(v, (current): string => `$${formatAmount(current)}`);
+
+	useEffect((): void => {
+		v.set(value);
+	}, [v, value]);
+
+	return <motion.span>{display}</motion.span>;
+}
 
 function HeaderUserPosition(): ReactElement {
 	const {cumulatedValueInVaults} = useWallet();
@@ -69,23 +80,13 @@ function HeaderUserPosition(): ReactElement {
 			<div className={'col-span-12 w-full md:col-span-8'}>
 				<p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl'}>{'Deposited'}</p>
 				<b className={'font-number text-4xl text-neutral-900 md:text-7xl'}>
-					<ValueAnimation
-						identifier={'youHave'}
-						value={formatedYouHave}
-						defaultValue={'0,00'}
-						prefix={'$'}
-					/>
+					<Counter value={Number(formatedYouHave)} />
 				</b>
 			</div>
 			<div className={'col-span-12 w-full md:col-span-4'}>
 				<p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl'}>{'Earnings'}</p>
 				<b className={'font-number text-3xl text-neutral-900 md:text-7xl'}>
-					<ValueAnimation
-						identifier={'youEarned'}
-						value={formatedYouEarned}
-						defaultValue={'0,00'}
-						prefix={'$'}
-					/>
+					<Counter value={Number(formatedYouEarned)} />
 				</b>
 			</div>
 		</Fragment>
