@@ -1,6 +1,6 @@
-import {Fragment, useState} from 'react';
+import {Fragment, useRef, useState} from 'react';
 import {Combobox, Transition} from '@headlessui/react';
-import {useThrottledState} from '@react-hookz/web';
+import {useClickOutside, useThrottledState} from '@react-hookz/web';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {IconChevron} from '@common/icons/IconChevron';
@@ -93,6 +93,11 @@ export function MultiSelectDropdown({options, onSelect, placeholder = ''}: TMult
 	const [currentOptions, set_currentOptions] = useState<TMultiSelectOptionProps[]>(options);
 	const [areAllSelected, set_areAllSelected] = useState(true);
 	const [query, set_query] = useState('');
+	const componentRef = useRef(null);
+
+	useClickOutside(componentRef, (): void => {
+		set_isOpen(false);
+	});
 
 	const filteredOptions =
 		query === ''
@@ -102,116 +107,111 @@ export function MultiSelectDropdown({options, onSelect, placeholder = ''}: TMult
 			  });
 
 	return (
-		<>
-			<div
-				className={!isOpen ? 'pointer-events-none hidden' : 'fixed inset-0 z-10'}
-				onClick={(): void => set_isOpen(false)}
-			/>
-			<Combobox
-				value={currentOptions}
-				onChange={(options): void => {
-					// Hack(ish) because with this Combobox component we cannot unselect items
-					const lastIndex = options.length - 1;
-					const elementSelected = options[lastIndex];
-					const currentElements = options.slice(0, lastIndex);
-					let currentState: TMultiSelectOptionProps[] = [];
+		<Combobox
+			ref={componentRef}
+			value={currentOptions}
+			onChange={(options): void => {
+				// Hack(ish) because with this Combobox component we cannot unselect items
+				const lastIndex = options.length - 1;
+				const elementSelected = options[lastIndex];
+				const currentElements = options.slice(0, lastIndex);
+				let currentState: TMultiSelectOptionProps[] = [];
 
-					if (elementSelected.value === 'select_all') {
-						currentState = currentElements.map((option): TMultiSelectOptionProps => {
-							return {
-								...option,
-								isSelected: !elementSelected.isSelected
-							};
-						});
-						set_areAllSelected(!elementSelected.isSelected);
-					} else {
-						currentState = currentElements.map((option): TMultiSelectOptionProps => {
-							return option.value === elementSelected.value ? {...option, isSelected: !option.isSelected} : option;
-						});
-						set_areAllSelected(!currentState.some((option): boolean => !option.isSelected));
-					}
+				if (elementSelected.value === 'select_all') {
+					currentState = currentElements.map((option): TMultiSelectOptionProps => {
+						return {
+							...option,
+							isSelected: !elementSelected.isSelected
+						};
+					});
+					set_areAllSelected(!elementSelected.isSelected);
+				} else {
+					currentState = currentElements.map((option): TMultiSelectOptionProps => {
+						return option.value === elementSelected.value ? {...option, isSelected: !option.isSelected} : option;
+					});
+					set_areAllSelected(!currentState.some((option): boolean => !option.isSelected));
+				}
 
-					// if none are selected in currentState, then select all
-					if (!currentState.some((option): boolean => option.isSelected)) {
-						currentState = currentOptions.map((option): TMultiSelectOptionProps => {
-							return {
-								...option,
-								isSelected: true
-							};
-						});
-						set_areAllSelected(true);
-					}
+				// if none are selected in currentState, then select all
+				if (!currentState.some((option): boolean => option.isSelected)) {
+					currentState = currentOptions.map((option): TMultiSelectOptionProps => {
+						return {
+							...option,
+							isSelected: true
+						};
+					});
+					set_areAllSelected(true);
+				}
 
-					set_currentOptions(currentState);
-					onSelect(currentState);
-				}}
-				multiple>
-				<div className={'relative w-full'}>
-					<Combobox.Button
-						onClick={(): void => set_isOpen((o: boolean): boolean => !o)}
-						className={'flex h-10 w-full items-center justify-between bg-neutral-0 p-2 text-base text-neutral-900 md:px-3'}>
-						<Combobox.Input
-							className={'w-full cursor-default overflow-x-scroll border-none bg-transparent p-0 outline-none scrollbar-none'}
-							displayValue={(options: TMultiSelectOptionProps[]): string => {
-								const selectedOptions = options.filter((option): boolean => option.isSelected);
-								if (selectedOptions.length === 0) {
-									return placeholder;
-								}
+				set_currentOptions(currentState);
+				onSelect(currentState);
+			}}
+			multiple>
+			<div className={'relative w-full'}>
+				<Combobox.Button
+					onClick={(): void => set_isOpen((o: boolean): boolean => !o)}
+					className={'flex h-10 w-full items-center justify-between bg-neutral-0 p-2 text-base text-neutral-900 md:px-3'}>
+					<Combobox.Input
+						className={'w-full cursor-default overflow-x-scroll border-none bg-transparent p-0 outline-none scrollbar-none'}
+						displayValue={(options: TMultiSelectOptionProps[]): string => {
+							const selectedOptions = options.filter((option): boolean => option.isSelected);
+							if (selectedOptions.length === 0) {
+								return placeholder;
+							}
 
-								if (selectedOptions.length === 1) {
-									return selectedOptions[0].label;
-								}
+							if (selectedOptions.length === 1) {
+								return selectedOptions[0].label;
+							}
 
-								if (areAllSelected) {
-									return 'All';
-								}
+							if (areAllSelected) {
+								return 'All';
+							}
 
-								return 'Multiple';
-							}}
-							placeholder={placeholder}
-							spellCheck={false}
-							onChange={(event): void => set_query(event.target.value)}
+							return 'Multiple';
+						}}
+						placeholder={placeholder}
+						spellCheck={false}
+						onChange={(event): void => set_query(event.target.value)}
+					/>
+					<IconChevron
+						aria-hidden={'true'}
+						className={`h-6 w-6 transition-transform ${isOpen ? '-rotate-180' : 'rotate-0'}`}
+					/>
+				</Combobox.Button>
+				<Transition
+					as={Fragment}
+					show={isOpen}
+					enter={'transition duration-100 ease-out'}
+					enterFrom={'transform scale-95 opacity-0'}
+					enterTo={'transform scale-100 opacity-100'}
+					leave={'transition duration-75 ease-out'}
+					leaveFrom={'transform scale-100 opacity-100'}
+					leaveTo={'transform scale-95 opacity-0'}
+					afterLeave={(): void => {
+						set_query('');
+					}}>
+					<Combobox.Options className={'absolute top-12 z-50 flex w-full cursor-pointer flex-col overflow-y-auto bg-neutral-0 px-2 py-3 scrollbar-none'}>
+						<SelectAllOption
+							key={'select-all'}
+							label={'All'}
+							isSelected={areAllSelected}
+							value={'select_all'}
 						/>
-						<IconChevron
-							aria-hidden={'true'}
-							className={`h-6 w-6 transition-transform ${isOpen ? '-rotate-180' : 'rotate-0'}`}
-						/>
-					</Combobox.Button>
-					<Transition
-						as={Fragment}
-						show={isOpen}
-						enter={'transition duration-100 ease-out'}
-						enterFrom={'transform scale-95 opacity-0'}
-						enterTo={'transform scale-100 opacity-100'}
-						leave={'transition duration-75 ease-out'}
-						leaveFrom={'transform scale-100 opacity-100'}
-						leaveTo={'transform scale-95 opacity-0'}
-						afterLeave={(): void => {
-							set_query('');
-						}}>
-						<Combobox.Options className={'absolute top-12 z-50 flex w-full cursor-pointer flex-col overflow-y-auto bg-neutral-0 px-2 py-3 scrollbar-none'}>
-							<SelectAllOption
-								key={'select-all'}
-								label={'All'}
-								isSelected={areAllSelected}
-								value={'select_all'}
-							/>
-							<Renderable
-								shouldRender={filteredOptions.length > 0}
-								fallback={<DropdownEmpty query={query} />}>
-								{filteredOptions.map((option): ReactElement => {
-									return (
-										<Option
-											key={option.value}
-											{...option}
-										/>
-									);
-								})}
-							</Renderable>
-						</Combobox.Options>
-					</Transition>
-				</div>
-			</Combobox>
-		</>
+						<Renderable
+							shouldRender={filteredOptions.length > 0}
+							fallback={<DropdownEmpty query={query} />}>
+							{filteredOptions.map((option): ReactElement => {
+								return (
+									<Option
+										key={option.value}
+										{...option}
+									/>
+								);
+							})}
+						</Renderable>
+					</Combobox.Options>
+				</Transition>
+			</div>
+		</Combobox>
 	);
 }

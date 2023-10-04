@@ -51,7 +51,7 @@ export type TUseBalancesRes = {
 type TDataRef = {
 	nonce: number;
 	address: TAddress;
-	balances: TDict<TToken>;
+	balances: TChainTokens;
 };
 
 /* 🔵 - Yearn Finance **********************************************************
@@ -145,7 +145,7 @@ async function getBalances(chainID: number, address: TAddress, tokens: TUseBalan
  ** This hook can be used to fetch balance information for any ERC20 tokens.
  **************************************************************************/
 export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
-	const {address: web3Address, isActive, provider} = useWeb3();
+	const {address: userAddress, isActive, provider} = useWeb3();
 	const chainID = useChainId();
 	const {onLoadStart, onLoadDone} = useUI();
 	const [nonce, set_nonce] = useState(0);
@@ -156,19 +156,22 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	const stringifiedTokens = useMemo((): string => serialize(props?.tokens || []), [props?.tokens]);
 
 	const updateBalancesCall = useCallback(
-		(chainID: number, newRawData: TDict<TToken>): TDict<TToken> => {
-			if (toAddress(web3Address) !== data?.current?.address) {
+		(chainID: number, newRawData: TDict<TToken>): TChainTokens => {
+			if (toAddress(userAddress) !== data?.current?.address) {
 				data.current = {
-					address: toAddress(web3Address),
+					address: toAddress(userAddress),
 					balances: {},
 					nonce: 0
 				};
 			}
-			data.current.address = toAddress(web3Address);
+			data.current.address = toAddress(userAddress);
 
 			for (const [address, element] of Object.entries(newRawData)) {
-				data.current.balances[address] = {
-					...data.current.balances[address],
+				if (!data.current.balances[chainID]) {
+					data.current.balances[chainID] = {};
+				}
+				data.current.balances[chainID][address] = {
+					...data.current.balances[chainID][address],
 					...element
 				};
 			}
@@ -179,14 +182,14 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 					...b,
 					[chainID]: {
 						...(b[chainID] || {}),
-						...data.current.balances
+						...data.current.balances[chainID]
 					}
 				})
 			);
 			set_nonce((n): number => n + 1);
 			return data.current.balances;
 		},
-		[web3Address]
+		[userAddress]
 	);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -196,7 +199,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	 ** send in a worker.
 	 **************************************************************************/
 	const onUpdate = useCallback(async (): Promise<TChainTokens> => {
-		if (!web3Address || !provider) {
+		if (!userAddress || !provider) {
 			return {};
 		}
 		const tokenList = deserialize(stringifiedTokens) || [];
@@ -229,24 +232,28 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 			}
 
 			for (const chunkTokens of chunks) {
-				const [newRawData, err] = await getBalances(chainID || 1, web3Address, chunkTokens);
+				const [newRawData, err] = await getBalances(chainID || 1, userAddress, chunkTokens);
 				if (err) set_error(err as Error);
 
-				if (toAddress(web3Address) !== data?.current?.address) {
+				if (toAddress(userAddress) !== data?.current?.address) {
 					data.current = {
-						address: toAddress(web3Address),
+						address: toAddress(userAddress),
 						balances: {},
 						nonce: 0
 					};
 				}
-				data.current.address = toAddress(web3Address);
+				data.current.address = toAddress(userAddress);
 				for (const [address, element] of Object.entries(newRawData)) {
 					if (!updated[chainID]) {
 						updated[chainID] = {};
 					}
 					updated[chainID][address] = element;
-					data.current.balances[address] = {
-						...data.current.balances[address],
+
+					if (!data.current.balances[chainID]) {
+						data.current.balances[chainID] = {};
+					}
+					data.current.balances[chainID][address] = {
+						...data.current.balances[chainID][address],
 						...element
 					};
 				}
@@ -258,21 +265,17 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 					...b,
 					[chainID]: {
 						...(b[chainID] || {}),
-						...data.current.balances
+						...data.current.balances[chainID]
 					}
 				})
 			);
 			set_nonce((n): number => n + 1);
-			set_status({
-				...defaultStatus,
-				isSuccess: true,
-				isFetched: true
-			});
+			set_status({...defaultStatus, isSuccess: true, isFetched: true});
 		}
 		onLoadDone();
 
 		return updated;
-	}, [onLoadDone, onLoadStart, provider, stringifiedTokens, web3Address, chainID]);
+	}, [onLoadDone, onLoadStart, provider, stringifiedTokens, userAddress, chainID]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** onUpdateSome takes a list of tokens and fetches the balances for each
@@ -306,76 +309,77 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 				}
 
 				for (const chunkTokens of chunks) {
-					const [newRawData, err] = await getBalances(chainID || 1, toAddress(web3Address), chunkTokens);
+					const [newRawData, err] = await getBalances(chainID || 1, toAddress(userAddress), chunkTokens);
 					if (err) set_error(err as Error);
-					if (toAddress(web3Address) !== data?.current?.address) {
+					if (toAddress(userAddress) !== data?.current?.address) {
 						data.current = {
-							address: toAddress(web3Address),
+							address: toAddress(userAddress),
 							balances: {},
 							nonce: 0
 						};
 					}
-					data.current.address = toAddress(web3Address);
+					data.current.address = toAddress(userAddress);
 
 					for (const [address, element] of Object.entries(newRawData)) {
 						if (!updated[chainID]) {
 							updated[chainID] = {};
 						}
 						updated[chainID][address] = element;
-						data.current.balances[address] = {
-							...data.current.balances[address],
+
+						if (!data.current.balances[chainID]) {
+							data.current.balances[chainID] = {};
+						}
+						data.current.balances[chainID][address] = {
+							...data.current.balances[chainID][address],
 							...element
 						};
 					}
 					data.current.nonce += 1;
 				}
-
-				set_balances(
-					(b): TChainTokens => ({
-						...b,
-						[chainID]: {
-							...(b[chainID] || {}),
-							...data.current.balances
-						}
-					})
-				);
-				set_nonce((n): number => n + 1);
-				set_status({
-					...defaultStatus,
-					isSuccess: true,
-					isFetched: true
-				});
 			}
+
+			set_balances(
+				(b): TChainTokens => ({
+					...b,
+					[chainID]: {
+						...(b[chainID] || {}),
+						...data.current.balances[chainID]
+					}
+				})
+			);
+			set_nonce((n): number => n + 1);
+			set_status({...defaultStatus, isSuccess: true, isFetched: true});
 			onLoadDone();
 			return updated;
 		},
-		[onLoadDone, onLoadStart, web3Address, chainID]
+		[onLoadDone, onLoadStart, userAddress, chainID]
 	);
 
 	const assignPrices = useCallback(
 		(_rawData: TChainTokens): TChainTokens => {
-			for (const chainIDStr of Object.keys(_rawData)) {
+			const newData = {..._rawData};
+			for (const chainIDStr of Object.keys(newData)) {
 				const chainID = Number(chainIDStr);
-				for (const address of Object.keys(_rawData[chainID])) {
+				for (const address of Object.keys(newData[chainID])) {
 					const tokenAddress = toAddress(address);
 					const rawPrice = toBigInt(props?.prices?.[tokenAddress]);
-					if (!_rawData[chainID]) {
-						_rawData[chainID] = {};
+					if (!newData[chainID]) {
+						newData[chainID] = {};
 					}
-					_rawData[chainID][tokenAddress] = {
-						..._rawData[chainID][tokenAddress],
+					newData[chainID][tokenAddress] = {
+						...newData[chainID][tokenAddress],
 						price: toNormalizedBN(rawPrice, 6),
-						value: Number(_rawData?.[chainID]?.[tokenAddress]?.balance?.normalized || 0) * toNormalizedValue(rawPrice, 6)
+						value: Number(newData?.[chainID]?.[tokenAddress]?.balance?.normalized || 0) * toNormalizedValue(rawPrice, 6)
 					};
 				}
 			}
-			return _rawData;
+			return newData;
 		},
 		[props?.prices]
 	);
 
 	const asyncUseEffect = useCallback(async (): Promise<void> => {
-		if (!isActive || !web3Address || !provider) {
+		if (!isActive || !userAddress || !provider) {
 			return;
 		}
 		set_status({
@@ -404,7 +408,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 			const allPromises = [];
 			for (const chunkTokens of chunks) {
 				allPromises.push(
-					getBalances(chainID, web3Address, chunkTokens).then(async ([newRawData, err]): Promise<void> => {
+					getBalances(chainID, userAddress, chunkTokens).then(async ([newRawData, err]): Promise<void> => {
 						updateBalancesCall(chainID, newRawData);
 						set_error(err);
 					})
@@ -414,7 +418,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 		}
 		onLoadDone();
 		set_status({...defaultStatus, isSuccess: true, isFetched: true});
-	}, [stringifiedTokens, isActive, web3Address, provider, onLoadStart, chainID, updateBalancesCall, onLoadDone]);
+	}, [stringifiedTokens, isActive, userAddress, provider, onLoadStart, chainID, updateBalancesCall, onLoadDone]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** Everytime the stringifiedTokens change, we need to update the balances.

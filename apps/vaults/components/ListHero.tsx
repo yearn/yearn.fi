@@ -101,11 +101,11 @@ export function ListHero({categories, set_categories, searchValue, selectedChain
 			label: 'Holdings',
 			isSelected: categoriesFromJSON.includes('Holdings')
 		});
-		categories.push({
-			value: 'Featured Vaults',
-			label: 'Featured',
-			isSelected: categoriesFromJSON.includes('Featured Vaults')
-		});
+		// categories.push({
+		// 	value: 'Featured Vaults',
+		// 	label: 'Featured',
+		// 	isSelected: categoriesFromJSON.includes('Featured Vaults')
+		// });
 		categories.push({
 			value: 'Crypto Vaults',
 			label: 'Crypto',

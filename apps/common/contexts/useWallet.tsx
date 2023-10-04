@@ -117,66 +117,6 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 		}
 		const tokens: TUseBalancesTokens[] = [];
 		const tokensExists: TDict<boolean> = {};
-<<<<<<< HEAD
-		const extraTokens: TUseBalancesTokens[] = [{token: ETH_TOKEN_ADDRESS}];
-		if (safeChainID === 1) {
-			extraTokens.push(
-				...[
-					{token: YCRV_TOKEN_ADDRESS},
-					{token: LPYCRV_TOKEN_ADDRESS},
-					{token: CRV_TOKEN_ADDRESS},
-					{token: YVBOOST_TOKEN_ADDRESS},
-					{token: YVECRV_TOKEN_ADDRESS},
-					{token: CVXCRV_TOKEN_ADDRESS},
-					{token: BAL_TOKEN_ADDRESS},
-					{token: YBAL_TOKEN_ADDRESS},
-					{token: BALWETH_TOKEN_ADDRESS},
-					{token: STYBAL_TOKEN_ADDRESS},
-					{token: LPYBAL_TOKEN_ADDRESS},
-					{token: YCRV_CURVE_POOL_V2_ADDRESS},
-					{token: LPYCRV_V2_TOKEN_ADDRESS}
-				]
-			);
-		}
-		if (safeChainID === 10) {
-			extraTokens.push({token: OPT_YVETH_STAKING_CONTRACT, symbol: 'yvETH', decimals: 18});
-			extraTokens.push({token: OPT_YVDAI_STAKING_CONTRACT, symbol: 'yvDAI', decimals: 18});
-			extraTokens.push({token: OPT_YVUSDT_STAKING_CONTRACT, symbol: 'yvUSDT', decimals: 6});
-			extraTokens.push({token: OPT_YVUSDC_STAKING_CONTRACT, symbol: 'yvUSDC', decimals: 6});
-			extraTokens.push({token: OPT_YVSUSCUSDC_STAKING_CONTRACT, symbol: 'yvVelo-USDC-sUSD', decimals: 18});
-			extraTokens.push({token: OPT_YVDOLAUSDC_STAKING_CONTRACT, symbol: 'yvVelo-DOLA-USDC', decimals: 18});
-			extraTokens.push({token: OPT_YVMAIUSDC_STAKING_CONTRACT, symbol: 'yvVelo-MAI-USDC', decimals: 18});
-			extraTokens.push({token: OPT_YVMAI_STAKING_CONTRACT, symbol: 'yvMAI', decimals: 18});
-			extraTokens.push({token: OPT_YVMAI_USDC_STAKING_CONTRACT, symbol: 'yvMAI-USDC', decimals: 18});
-			extraTokens.push({token: OPT_YVMAI_DOLA_STAKING_CONTRACT, symbol: 'yvMAI-DOLA', decimals: 18});
-			extraTokens.push({token: OPT_YVLDO_WSTETH_STAKING_CONTRACT, symbol: 'yvLDO-WSTETH', decimals: 18});
-			extraTokens.push({token: OPT_YVWUSDR_USDC_STAKING_CONTRACT, symbol: 'yvWUSDR-USDC', decimals: 18});
-			extraTokens.push({token: OPT_YVVELO_USDC_STAKING_CONTRACT, symbol: 'yvVELO-USDC', decimals: 18});
-			extraTokens.push({token: OPT_YVMAI_ALUSD_STAKING_CONTRACT, symbol: 'yvVelo-MAI-alUSD', decimals: 18});
-			extraTokens.push({token: OPT_YVALUSD_FRAX_STAKING_CONTRACT, symbol: 'yvVelo-alUSD-FRAX', decimals: 18});
-			extraTokens.push({token: OPT_YVALETH_FRXETH_STAKING_CONTRACT, symbol: 'yvVelo-alETH-frxETH', decimals: 18});
-			extraTokens.push({token: OPT_YVALETH_WETH_STAKING_CONTRACT, symbol: 'yvVelo-alETH-WETH', decimals: 18});
-			extraTokens.push({token: OPT_YVERN_DOLA_STAKING_CONTRACT, symbol: 'yvVelo-ERN-DOLA', decimals: 18});
-			extraTokens.push({token: OPT_YVERN_LUSD_STAKING_CONTRACT, symbol: 'yvVelo-ERN-LUSD', decimals: 18});
-			extraTokens.push({token: OPT_YVLUSD_WETH_STAKING_CONTRACT, symbol: 'yvVelo-LUSD-WETH', decimals: 18});
-			extraTokens.push({token: OPT_YVAGEUR_USDC_STAKING_CONTRACT, symbol: 'yvVelo-agEUR-USDC', decimals: 18});
-			extraTokens.push({token: OPT_YVMIM_USDC_STAKING_CONTRACT, symbol: 'yvVelo-MIM-USDC', decimals: 18});
-			extraTokens.push({token: OPT_YVDOLA_USDC_STAKING_CONTRACT, symbol: 'yvVelo-DOLA-USDC', decimals: 18});
-			extraTokens.push({token: OPT_YVOP_USDC_STAKING_CONTRACT, symbol: 'yvVelo-OP-USDC', decimals: 18});
-			extraTokens.push({token: OPT_YVOP_VELO_STAKING_CONTRACT, symbol: 'yvVelo-OP-VELO', decimals: 18});
-			extraTokens.push({token: OPT_YVSNX_USDC_STAKING_CONTRACT, symbol: 'yvVelo-SNX-USDC', decimals: 18});
-			extraTokens.push({token: OPT_YVFRAX_DOLA_STAKING_CONTRACT, symbol: 'yvVelo-DOLA-FRAX', decimals: 18});
-			extraTokens.push({token: OPT_YVALUSD_USDC_STAKING_CONTRACT, symbol: 'yvVelo-ALUSD-USDC', decimals: 18});
-			extraTokens.push({token: OPT_YVMTA_USDC_STAKING_CONTRACT, symbol: 'yvVelo-MTA-USDC', decimals: 18});
-			extraTokens.push({token: OPT_YVIB_WETH_STAKING_CONTRACT, symbol: 'yvVelo-IB-WETH', decimals: 18});
-			extraTokens.push({token: OPT_YVEXA_WETH_STAKING_CONTRACT, symbol: 'yvVelo-EXA-WETH', decimals: 18});
-			extraTokens.push({token: OPT_YVTBTC_WETH_STAKING_CONTRACT, symbol: 'yvVelo-tBTC-WETH', decimals: 18});
-			extraTokens.push({token: OPT_YVTBTC_WBTC_STAKING_CONTRACT, symbol: 'yvVelo-tBTC-WBTC', decimals: 18});
-			extraTokens.push({token: OPT_YVOP_WETH_STAKING_CONTRACT, symbol: 'yvVelo-OP-WETH', decimals: 18});
-			extraTokens.push({token: OPT_YVWUSDRV2_USDC_STAKING_CONTRACT, symbol: 'yvVelo-wUSDRv2-USDC', decimals: 18});
-			extraTokens.push({token: OPT_YVSTERN_ERN_STAKING_CONTRACT, symbol: 'yvVelo-stERN-ERN', decimals: 18});
-		}
-=======
 		const extraTokens: TUseBalancesTokens[] = [{chainID: 1, address: toAddress(ETH_TOKEN_ADDRESS)}];
 		extraTokens.push(
 			...[
@@ -371,7 +311,6 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 			]
 		);
 
->>>>>>> e03b5eb3 (feat: refactor)
 		for (const token of extraTokens) {
 			tokensExists[token.address] = true;
 			tokens.push(token);
@@ -432,7 +371,8 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 		const _balances = {...balancesRaw};
 		for (const [token] of Object.entries(_balances)) {
 			if (STACKING_TO_VAULT[token] && _balances?.[10]?.[STACKING_TO_VAULT[token]]) {
-				_balances[10][token].value = (_balances[10][token].value || 0) + (_balances[10][STACKING_TO_VAULT[token]].value || 0);
+				_balances[10][token].value =
+					(_balances[10][token].value || 0) + (_balances[10][STACKING_TO_VAULT[token]].value || 0);
 			}
 		}
 		set_balances(_balances);
