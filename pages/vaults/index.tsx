@@ -169,7 +169,7 @@ function Index(): ReactElement {
 	 **	The possible lists are memoized to avoid unnecessary re-renders.
 	 **********************************************************************************************/
 	const vaultsToDisplay = useMemo((): TYDaemonVault[] => {
-		let _vaultList: TYDaemonVault[] = [...Object.values(vaults || {})].filter((v): boolean => chainsFromJSON.includes(v.chainID)) as TYDaemonVault[];
+		let _vaultList: TYDaemonVault[] = [];
 
 		if (categoriesFromJSON.includes('Featured Vaults')) {
 			_vaultList.sort((a, b): number => (b.tvl.tvl || 0) * (b?.apy?.net_apy || 0) - (a.tvl.tvl || 0) * (a?.apy?.net_apy || 0));
@@ -262,17 +262,19 @@ function Index(): ReactElement {
 				/>
 			);
 		}
-		return sortedVaultsToDisplay.map((vault): ReactNode => {
-			if (!vault) {
-				return null;
-			}
-			return (
-				<VaultsListRow
-					key={`${vault.chainID}_${vault.address}`}
-					currentVault={vault}
-				/>
-			);
-		});
+		return sortedVaultsToDisplay
+			.filter((vault): boolean => chainsFromJSON.includes(vault.chainID))
+			.map((vault): ReactNode => {
+				if (!vault) {
+					return null;
+				}
+				return (
+					<VaultsListRow
+						key={`${vault.chainID}_${vault.address}`}
+						currentVault={vault}
+					/>
+				);
+			});
 	}, [category, isLoadingVaultList, sortedVaultsToDisplay]);
 
 	return (
