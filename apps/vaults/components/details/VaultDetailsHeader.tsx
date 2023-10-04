@@ -65,12 +65,7 @@ export function VaultDetailsHeader({vault}: {vault: TYDaemonVault}): ReactElemen
 
 	return (
 		<div aria-label={'Vault Header'} className={'col-span-12 flex w-full flex-col items-center justify-center'}>
-			<b
-				className={
-					'mx-auto flex w-full flex-row items-center justify-center text-center text-4xl tabular-nums text-neutral-900 md:text-8xl'
-				}>
-				&nbsp;{vaultName}&nbsp;
-			</b>
+			<b className={'mx-auto flex w-full flex-row items-center justify-center text-center text-4xl tabular-nums text-neutral-900 md:text-8xl'}>&nbsp;{vaultName}&nbsp;</b>
 			<div className={'mb-10 mt-4 md:mb-14 md:mt-10'}>
 				{address ? (
 					<button onClick={(): void => copyToClipboard(address)}>
@@ -81,29 +76,19 @@ export function VaultDetailsHeader({vault}: {vault: TYDaemonVault}): ReactElemen
 				)}
 			</div>
 			<div className={'grid grid-cols-2 gap-6 md:grid-cols-4 md:gap-12'}>
-				<VaultHeaderLineItem
-					label={`Total deposited, ${token?.symbol || 'tokens'}`}
-					legend={formatUSD(tvl?.tvl || 0)}>
+				<VaultHeaderLineItem label={`Total deposited, ${token?.symbol || 'tokens'}`} legend={formatUSD(tvl?.tvl || 0)}>
 					<RenderAmount value={tvl?.total_assets} decimals={decimals} />
 				</VaultHeaderLineItem>
 
 				<VaultHeaderLineItem label={'Net APY'}>
-					<RenderAmount
-						value={(apy?.net_apy || 0) + (apy?.staking_rewards_apr || 0)}
-						symbol={'percent'}
-						decimals={6}
-					/>
+					<RenderAmount value={(apy?.net_apy || 0) + (apy?.staking_rewards_apr || 0)} symbol={'percent'} decimals={6} />
 				</VaultHeaderLineItem>
 
-				<VaultHeaderLineItem
-					label={`Balance, ${symbol}`}
-					legend={formatCounterValue(depositedAndStaked.normalized, vaultPrice)}>
+				<VaultHeaderLineItem label={`Balance, ${symbol}`} legend={formatCounterValue(depositedAndStaked.normalized, vaultPrice)}>
 					<RenderAmount value={depositedAndStaked.raw} decimals={decimals} />
 				</VaultHeaderLineItem>
 
-				<VaultHeaderLineItem
-					label={`Earned, ${token?.symbol || 'tokens'}`}
-					legend={formatCounterValue(normalizedVaultEarned.normalized, vaultPrice)}>
+				<VaultHeaderLineItem label={`Earned, ${token?.symbol || 'tokens'}`} legend={formatCounterValue(normalizedVaultEarned.normalized, vaultPrice)}>
 					<RenderAmount value={normalizedVaultEarned.raw} decimals={decimals} />
 				</VaultHeaderLineItem>
 			</div>

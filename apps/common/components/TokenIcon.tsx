@@ -4,15 +4,7 @@ import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
-function TokenIcon({
-	chainID,
-	size = 72,
-	token
-}: {
-	chainID: number;
-	size?: number;
-	token: TYDaemonVault['token'];
-}): ReactElement {
+function TokenIcon({chainID, size = 72, token}: {chainID: number; size?: number; token: TYDaemonVault['token']}): ReactElement {
 	return (
 		<>
 			<ImageWithFallback

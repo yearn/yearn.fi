@@ -55,11 +55,7 @@ function About(): ReactElement {
 						</p>
 						<p className={'text-neutral-600'}>
 							{'For a full breakdown read more about our '}
-							<a
-								href={'https://docs.yearn.fi/resources/risks/risk-score'}
-								target={'_blank'}
-								className={'text-neutral-900 underline'}
-								rel={'noreferrer'}>
+							<a href={'https://docs.yearn.fi/resources/risks/risk-score'} target={'_blank'} className={'text-neutral-900 underline'} rel={'noreferrer'}>
 								{'Risk Scores'}
 							</a>
 							{'.'}
@@ -121,14 +117,8 @@ function About(): ReactElement {
 							}
 						</p>
 						<p className={'text-neutral-600'}>
-							{
-								'We can’t offer you a phone number with ambient jazz hold music to listen to - but please feel free to hop into our '
-							}
-							<a
-								href={'https://discord.com/invite/6PNv2nF'}
-								target={'_blank'}
-								className={'text-neutral-900 underline'}
-								rel={'noreferrer'}>
+							{'We can’t offer you a phone number with ambient jazz hold music to listen to - but please feel free to hop into our '}
+							<a href={'https://discord.com/invite/6PNv2nF'} target={'_blank'} className={'text-neutral-900 underline'} rel={'noreferrer'}>
 								{'discord'}
 							</a>
 							{' if you have any questions, we’d love to chat.'}

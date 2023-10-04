@@ -20,12 +20,8 @@ function DropdownItem({option, balanceSource}: TDropdownItemProps): ReactElement
 				<div data-active={active} className={'yearn--dropdown-menu-item w-full hover:bg-neutral-0/40'}>
 					<div className={'h-6 w-6 flex-none rounded-full'}>{option?.icon ? option.icon : null}</div>
 					<div>
-						<p className={`${option.icon ? 'pl-2' : 'pl-0'} font-normal text-neutral-900`}>
-							{option.symbol}
-						</p>
-						<p className={`${option.icon ? 'pl-2' : 'pl-0'} text-xxs font-normal text-neutral-600`}>
-							{`${formatAmount(balance.normalized)} ${option.symbol}`}
-						</p>
+						<p className={`${option.icon ? 'pl-2' : 'pl-0'} font-normal text-neutral-900`}>{option.symbol}</p>
+						<p className={`${option.icon ? 'pl-2' : 'pl-0'} text-xxs font-normal text-neutral-600`}>{`${formatAmount(balance.normalized)} ${option.symbol}`}</p>
 					</div>
 				</div>
 			)}
@@ -40,9 +36,7 @@ function DropdownEmpty({query}: {query: string}): ReactElement {
 		return (
 			<div
 				onClick={(): void => openLoginModal()}
-				className={
-					'flex h-14 cursor-pointer flex-col items-center justify-center px-4 text-center transition-colors hover:bg-neutral-300'
-				}>
+				className={'flex h-14 cursor-pointer flex-col items-center justify-center px-4 text-center transition-colors hover:bg-neutral-300'}>
 				<b className={'text-neutral-900'}>{'Connect Wallet'}</b>
 			</div>
 		);
@@ -100,25 +94,14 @@ export function Dropdown({options, selected, onSelect, placeholder = '', balance
 				<>
 					<Combobox.Button
 						onClick={(): void => set_isOpen((o: boolean): boolean => !o)}
-						className={
-							'flex h-10 w-full items-center justify-between bg-neutral-0 p-2 text-base text-neutral-900 md:w-56 md:px-3'
-						}>
+						className={'flex h-10 w-full items-center justify-between bg-neutral-0 p-2 text-base text-neutral-900 md:w-56 md:px-3'}>
 						<div className={'relative flex flex-row items-center'}>
 							<div key={selected?.label} className={'h-6 w-6 flex-none rounded-full'}>
-								{selected?.icon ? (
-									cloneElement(selected.icon)
-								) : (
-									<div className={'h-6 w-6 flex-none rounded-full bg-neutral-500'} />
-								)}
+								{selected?.icon ? cloneElement(selected.icon) : <div className={'h-6 w-6 flex-none rounded-full bg-neutral-500'} />}
 							</div>
-							<p
-								className={
-									'whitespace-nowrap px-2 font-normal text-neutral-900 scrollbar-none md:max-w-full'
-								}>
+							<p className={'whitespace-nowrap px-2 font-normal text-neutral-900 scrollbar-none md:max-w-full'}>
 								<Combobox.Input
-									className={
-										'w-full cursor-default text-ellipsis border-none bg-transparent p-0 outline-none scrollbar-none'
-									}
+									className={'w-full cursor-default text-ellipsis border-none bg-transparent p-0 outline-none scrollbar-none'}
 									displayValue={(option: TDropdownOption): string => option.symbol}
 									placeholder={placeholder}
 									spellCheck={false}
@@ -131,10 +114,7 @@ export function Dropdown({options, selected, onSelect, placeholder = '', balance
 								/>
 							</p>
 							<div>
-								<IconChevron
-									aria-hidden={'true'}
-									className={`h-6 w-6 transition-transform ${isOpen ? '-rotate-180' : 'rotate-0'}`}
-								/>
+								<IconChevron aria-hidden={'true'} className={`h-6 w-6 transition-transform ${isOpen ? '-rotate-180' : 'rotate-0'}`} />
 							</div>
 						</div>
 					</Combobox.Button>
@@ -154,16 +134,10 @@ export function Dropdown({options, selected, onSelect, placeholder = '', balance
 							});
 						}}>
 						<Combobox.Options className={'yearn--dropdown-menu z-50'}>
-							<Renderable
-								shouldRender={filteredOptions.length > 0}
-								fallback={<DropdownEmpty query={query} />}>
+							<Renderable shouldRender={filteredOptions.length > 0} fallback={<DropdownEmpty query={query} />}>
 								{filteredOptions.map(
 									(option): ReactElement => (
-										<DropdownItem
-											key={option.label}
-											option={option}
-											balanceSource={balanceSource}
-										/>
+										<DropdownItem key={option.label} option={option} balanceSource={balanceSource} />
 									)
 								)}
 							</Renderable>

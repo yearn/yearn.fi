@@ -2,13 +2,7 @@ import type {ReactElement} from 'react';
 
 export function HowItWorksDiagram(props: React.SVGProps<SVGSVGElement>): ReactElement {
 	return (
-		<svg
-			{...props}
-			width={'100%'}
-			height={'100%'}
-			viewBox={'0 0 980 288'}
-			fill={'none'}
-			xmlns={'http://www.w3.org/2000/svg'}>
+		<svg {...props} width={'100%'} height={'100%'} viewBox={'0 0 980 288'} fill={'none'} xmlns={'http://www.w3.org/2000/svg'}>
 			<rect x={'475'} y={'64'} width={'40'} height={'80'} fill={'#9D9D9D'} stroke={'#0C0C0C'} />
 			<rect x={'115'} y={'144'} width={'200'} height={'80'} fill={'#EBEBEB'} stroke={'#0C0C0C'} />
 			<rect x={'315'} y={'144'} width={'200'} height={'80'} fill={'#EBEBEB'} stroke={'#0C0C0C'} />

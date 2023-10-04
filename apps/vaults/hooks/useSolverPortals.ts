@@ -34,11 +34,7 @@ export type TPortalsQuoteResult = {
 	error?: Error;
 };
 
-async function getQuote(
-	request: TInitSolverArgs,
-	safeChainID: number,
-	zapSlippage: number
-): Promise<{data: TPortalsEstimate | null; error?: Error}> {
+async function getQuote(request: TInitSolverArgs, safeChainID: number, zapSlippage: number): Promise<{data: TPortalsEstimate | null; error?: Error}> {
 	const params = {
 		sellToken: toAddress(request.inputToken.value),
 		sellAmount: toBigInt(request.inputAmount).toString(),
@@ -249,12 +245,7 @@ export function useSolverPortals(): TSolverContext {
 				return toNormalizedBN(0);
 			}
 
-			const key = allowanceKey(
-				safeChainID,
-				toAddress(request.current.inputToken.value),
-				toAddress(request.current.outputToken.value),
-				toAddress(request.current.from)
-			);
+			const key = allowanceKey(safeChainID, toAddress(request.current.inputToken.value), toAddress(request.current.outputToken.value), toAddress(request.current.from));
 			if (existingAllowances.current[key] && !shouldForceRefetch) {
 				return existingAllowances.current[key];
 			}
@@ -274,10 +265,7 @@ export function useSolverPortals(): TSolverContext {
 					throw new Error('Portals approval not found');
 				}
 
-				existingAllowances.current[key] = toNormalizedBN(
-					approval.context.allowance,
-					request.current.inputToken.decimals
-				);
+				existingAllowances.current[key] = toNormalizedBN(approval.context.allowance, request.current.inputToken.decimals);
 				return existingAllowances.current[key];
 			} catch (error) {
 				console.error(error);
@@ -293,11 +281,7 @@ export function useSolverPortals(): TSolverContext {
 	 ** of the token by the Portals solver.
 	 **************************************************************************/
 	const onApprove = useCallback(
-		async (
-			amount = MAX_UINT_256,
-			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: () => Promise<void>
-		): Promise<void> => {
+		async (amount = MAX_UINT_256, txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>, onSuccess: () => Promise<void>): Promise<void> => {
 			if (isSolverDisabled(safeChainID)[Solver.enum.Portals]) {
 				return;
 			}
@@ -355,10 +339,7 @@ export function useSolverPortals(): TSolverContext {
 	 ** simply swapping the input token for the output token.
 	 **************************************************************************/
 	const onExecute = useCallback(
-		async (
-			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: () => Promise<void>
-		): Promise<void> => {
+		async (txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>, onSuccess: () => Promise<void>): Promise<void> => {
 			assert(provider, 'Provider is not set');
 
 			txStatusSetter({...defaultTxStatus, pending: true});

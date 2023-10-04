@@ -29,13 +29,7 @@ export function LockVeYFI(): ReactElement {
 	const {provider, address, isActive} = useWeb3();
 	const {safeChainID} = useChainID();
 	const {refresh: refreshBalances} = useWallet();
-	const {
-		votingEscrow,
-		positions,
-		allowances,
-		isLoading: isLoadingVotingEscrow,
-		refresh: refreshVotingEscrow
-	} = useVotingEscrow();
+	const {votingEscrow, positions, allowances, isLoading: isLoadingVotingEscrow, refresh: refreshVotingEscrow} = useVotingEscrow();
 	const tokenBalance = useBalance(toAddress(votingEscrow?.token));
 	const hasLockedAmount = toBigInt(positions?.deposit?.underlyingBalance) > 0n;
 	const [approveLockStatus, set_approveLockStatus] = useState(defaultTxStatus);

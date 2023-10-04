@@ -57,23 +57,11 @@ export function Tabs({items, className}: TTabsProps): ReactElement {
 								);
 								set_selectedTabId(id);
 							}}>
-							<p
-								title={label}
-								aria-selected={selectedTabId === id}
-								className={'hover-fix align-center flex grow flex-col justify-center'}>
+							<p title={label} aria-selected={selectedTabId === id} className={'hover-fix align-center flex grow flex-col justify-center'}>
 								{label}
 							</p>
-							{selectedTabId === id && (
-								<motion.div
-									className={'relative -bottom-0.5 w-full border-b-[3px] border-neutral-700'}
-									layoutId={'tab-label-underline'}
-								/>
-							)}
-							{selectedTabId !== id && (
-								<motion.div
-									className={'relative -bottom-0.5 w-full border-b-[3px] border-transparent'}
-								/>
-							)}
+							{selectedTabId === id && <motion.div className={'relative -bottom-0.5 w-full border-b-[3px] border-neutral-700'} layoutId={'tab-label-underline'} />}
+							{selectedTabId !== id && <motion.div className={'relative -bottom-0.5 w-full border-b-[3px] border-transparent'} />}
 						</div>
 					)
 				)}
@@ -86,13 +74,9 @@ export function Tabs({items, className}: TTabsProps): ReactElement {
 								className={
 									'flex h-10 w-full flex-row items-center border-0 border-b-2 border-neutral-900 bg-neutral-100 p-0 font-bold focus:border-neutral-900 md:hidden'
 								}>
-								<div className={'relative flex flex-row items-center'}>
-									{items.find(({id}): boolean => id === selectedTabId)?.label || 'Menu'}
-								</div>
+								<div className={'relative flex flex-row items-center'}>{items.find(({id}): boolean => id === selectedTabId)?.label || 'Menu'}</div>
 								<div className={'absolute right-4'}>
-									<IconChevron
-										className={`h-6 w-6 transition-transform ${open ? '-rotate-180' : 'rotate-0'}`}
-									/>
+									<IconChevron className={`h-6 w-6 transition-transform ${open ? '-rotate-180' : 'rotate-0'}`} />
 								</div>
 							</Listbox.Button>
 							<Transition
@@ -118,13 +102,7 @@ export function Tabs({items, className}: TTabsProps): ReactElement {
 				</Listbox>
 			</div>
 			<AnimatePresence mode={'wait'}>
-				<motion.div
-					key={selectedTabId}
-					initial={'initial'}
-					animate={'enter'}
-					exit={'exit'}
-					variants={variants}
-					transition={{duration: 0.15}}>
+				<motion.div key={selectedTabId} initial={'initial'} animate={'enter'} exit={'exit'} variants={variants} transition={{duration: 0.15}}>
 					{items.map(
 						({id, content}): ReactElement => (
 							<div key={`tab-content-${id}`} className={'w-full p-6'} hidden={selectedTabId !== id}>

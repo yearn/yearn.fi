@@ -52,11 +52,7 @@ const defaultProps: TVotingEscrowContext = {
 };
 
 const VotingEscrowContext = createContext<TVotingEscrowContext>(defaultProps);
-export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({
-	children
-}: {
-	children: ReactElement;
-}): ReactElement {
+export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({children}: {children: ReactElement}): ReactElement {
 	const {address, isActive} = useWeb3();
 
 	/* 🔵 - Yearn Finance **********************************************************
@@ -161,8 +157,7 @@ export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({
 			votingEscrow,
 			positions,
 			allowances: allowances ?? {},
-			isLoading:
-				votingEscrowStatus === 'loading' && positionStatus === 'loading' && allowanceStatus === 'loading',
+			isLoading: votingEscrowStatus === 'loading' && positionStatus === 'loading' && allowanceStatus === 'loading',
 			refresh
 		}),
 		[votingEscrow, positions, allowances, votingEscrowStatus, positionStatus, allowanceStatus, refresh]

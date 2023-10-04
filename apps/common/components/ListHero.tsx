@@ -57,10 +57,7 @@ function DesktopCategories<T>({categories, onSelect}: TListHeroDesktopCategories
 			<div suppressHydrationWarning className={'mt-1 flex flex-row space-x-4'}>
 				{(categories || []).map(
 					(currentCategory, index: number): ReactElement => (
-						<div
-							key={`${index}-${isClientLoaded}`}
-							suppressHydrationWarning
-							className={'flex flex-row space-x-0 divide-x border-x border-neutral-900'}>
+						<div key={`${index}-${isClientLoaded}`} suppressHydrationWarning className={'flex flex-row space-x-0 divide-x border-x border-neutral-900'}>
 							{currentCategory.map(
 								(item): ReactElement => (
 									<Button
@@ -101,10 +98,7 @@ function Switch(props: TSwitchProps): ReactElement {
 				onKeyDown={({keyCode}: {keyCode: number}): unknown => (keyCode === 13 ? safeOnSwitch() : null)}
 				className={'yearn--next-switch'}>
 				<span className={'sr-only'}>{'Use setting'}</span>
-				<div
-					aria-hidden={'true'}
-					className={(onSwitch ? isEnabled : isEnabledState) ? 'translate-x-[14px]' : 'translate-x-0'}
-				/>
+				<div aria-hidden={'true'} className={(onSwitch ? isEnabled : isEnabledState) ? 'translate-x-[14px]' : 'translate-x-0'} />
 			</HeadlessSwitch>
 		</div>
 	);
@@ -174,18 +168,12 @@ export function ListHero<T extends string>({
 					options={OPTIONS}
 					placeholder={'Select chain'}
 					onSelect={(options): void => {
-						const selectedChains = options
-							.filter((o): boolean => o.selected)
-							.map((option): number => Number(option.value));
+						const selectedChains = options.filter((o): boolean => o.selected).map((option): number => Number(option.value));
 						set_selectedChains?.(JSON.stringify(selectedChains));
 					}}
 				/>
 
-				<SearchBar
-					searchPlaceholder={searchPlaceholder}
-					searchValue={searchValue}
-					set_searchValue={set_searchValue}
-				/>
+				<SearchBar searchPlaceholder={searchPlaceholder} searchValue={searchValue} set_searchValue={set_searchValue} />
 
 				{!!switchProps && (
 					<div className={'mr-4 mt-7 flex h-full min-w-fit flex-row'}>
@@ -219,9 +207,7 @@ export function ListHero<T extends string>({
 				<div className={'flex h-8 w-full items-center border border-neutral-0 bg-neutral-0 p-2 md:w-auto'}>
 					<div className={'flex h-8 w-full flex-row items-center justify-between px-0 py-2'}>
 						<input
-							className={
-								'w-full overflow-x-scroll border-none bg-transparent px-0 py-2 text-xs outline-none scrollbar-none'
-							}
+							className={'w-full overflow-x-scroll border-none bg-transparent px-0 py-2 text-xs outline-none scrollbar-none'}
 							type={'text'}
 							placeholder={'Search'}
 							value={searchValue}

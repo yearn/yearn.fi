@@ -5,12 +5,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useAddToken} from '@yearn-finance/web-lib/hooks/useAddToken';
 import {useDismissToasts} from '@yearn-finance/web-lib/hooks/useDismissToasts';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {
-	LPYBAL_TOKEN_ADDRESS,
-	MAX_UINT_256,
-	STYBAL_TOKEN_ADDRESS,
-	ZAP_YEARN_YBAL_ADDRESS
-} from '@yearn-finance/web-lib/utils/constants';
+import {LPYBAL_TOKEN_ADDRESS, MAX_UINT_256, STYBAL_TOKEN_ADDRESS, ZAP_YEARN_YBAL_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatToNormalizedValue, toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
@@ -65,11 +60,7 @@ const CardTransactorContext = createContext<TCardTransactor>({
 	onZap: async (): Promise<void> => undefined
 });
 
-export function CardTransactorContextApp({
-	defaultOptionFrom = ZAP_OPTIONS_FROM[0],
-	defaultOptionTo = ZAP_OPTIONS_TO[0],
-	children = <div />
-}): ReactElement {
+export function CardTransactorContextApp({defaultOptionFrom = ZAP_OPTIONS_FROM[0], defaultOptionTo = ZAP_OPTIONS_TO[0], children = <div />}): ReactElement {
 	const {provider, isActive, address} = useWeb3();
 	const {styBalAPY, allowances, refetchAllowances, slippage} = useYBal();
 	const {balancesNonce, balances, refresh} = useWallet();
@@ -113,12 +104,7 @@ export function CardTransactorContextApp({
 	 ** called every 10s or when amount/in or out changes.
 	 **************************************************************************/
 	const [{result: expectedOut}, actions] = useAsync(
-		async (
-			_provider: Connector | undefined,
-			_inputToken: TAddress,
-			_outputToken: TAddress,
-			_amountIn: bigint
-		): Promise<{shouldMint: boolean; minOut: bigint}> => {
+		async (_provider: Connector | undefined, _inputToken: TAddress, _outputToken: TAddress, _amountIn: bigint): Promise<{shouldMint: boolean; minOut: bigint}> => {
 			return await simulateZapForMinOut({
 				connector: provider,
 				chainID: YBAL_CHAIN_ID,
@@ -246,16 +232,7 @@ export function CardTransactorContextApp({
 
 	const allowanceFrom = useMemo((): bigint => {
 		balancesNonce; // remove warning, force deep refresh
-		return toBigInt(
-			allowances?.[
-				allowanceKey(
-					1,
-					toAddress(selectedOptionFrom.value),
-					toAddress(selectedOptionFrom.zapVia),
-					toAddress(address)
-				)
-			]
-		);
+		return toBigInt(allowances?.[allowanceKey(1, toAddress(selectedOptionFrom.value), toAddress(selectedOptionFrom.zapVia), toAddress(address))]);
 	}, [balancesNonce, allowances, selectedOptionFrom.value, selectedOptionFrom.zapVia, address]);
 
 	return (
@@ -269,9 +246,7 @@ export function CardTransactorContextApp({
 				allowanceFrom,
 				fromVaultAPY,
 				toVaultAPY,
-				expectedOutWithSlippage: formatToNormalizedValue(
-					expectedOut.minOut * (1n - toBigInt(slippage * 100) / 10000n)
-				),
+				expectedOutWithSlippage: formatToNormalizedValue(expectedOut.minOut * (1n - toBigInt(slippage * 100) / 10000n)),
 				set_selectedOptionFrom,
 				set_selectedOptionTo,
 				set_amount,

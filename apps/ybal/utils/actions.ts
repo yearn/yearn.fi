@@ -55,9 +55,7 @@ type TSimulateZapForMinOut = TWriteTransaction & {
 	outputToken: TAddress;
 	amountIn: bigint;
 };
-export async function simulateZapForMinOut(
-	props: TSimulateZapForMinOut
-): Promise<{shouldMint: boolean; minOut: bigint}> {
+export async function simulateZapForMinOut(props: TSimulateZapForMinOut): Promise<{shouldMint: boolean; minOut: bigint}> {
 	if (isZero(props.amountIn)) {
 		return {shouldMint: false, minOut: 0n};
 	}

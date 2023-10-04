@@ -49,24 +49,16 @@ function CardZap(): ReactElement {
 		onIncreaseCRVAllowance
 	} = useCardTransactor();
 
-	const ycrvPrice = useMemo(
-		(): number => formatToNormalizedValue(toBigInt(prices?.[YCRV_TOKEN_ADDRESS] || 0), 6),
-		[prices]
-	);
+	const ycrvPrice = useMemo((): number => formatToNormalizedValue(toBigInt(prices?.[YCRV_TOKEN_ADDRESS] || 0), 6), [prices]);
 
-	const ycrvCurvePoolPrice = useMemo(
-		(): number => formatToNormalizedValue(toBigInt(prices?.[YCRV_CURVE_POOL_ADDRESS] || 0), 6),
-		[prices]
-	);
+	const ycrvCurvePoolPrice = useMemo((): number => formatToNormalizedValue(toBigInt(prices?.[YCRV_CURVE_POOL_ADDRESS] || 0), 6), [prices]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** useMemo to get the current possible TO vaults path for the current FROM
 	 **************************************************************************/
 	const possibleTo = useMemo((): TDropdownOption[] => {
 		if (selectedOptionFrom.value === LPYCRV_TOKEN_ADDRESS) {
-			const possibleOptions = ZAP_OPTIONS_TO.filter(
-				(option): boolean => option.value === LPYCRV_V2_TOKEN_ADDRESS
-			);
+			const possibleOptions = ZAP_OPTIONS_TO.filter((option): boolean => option.value === LPYCRV_V2_TOKEN_ADDRESS);
 			if (selectedOptionTo.value !== LPYCRV_V2_TOKEN_ADDRESS) {
 				set_selectedOptionTo(possibleOptions[0]);
 			}
@@ -80,9 +72,7 @@ function CardZap(): ReactElement {
 			return possibleOptions;
 		}
 		if (selectedOptionFrom.value === YCRV_CURVE_POOL_V2_ADDRESS) {
-			const possibleOptions = ZAP_OPTIONS_TO.filter(
-				(option): boolean => option.value === LPYCRV_V2_TOKEN_ADDRESS
-			);
+			const possibleOptions = ZAP_OPTIONS_TO.filter((option): boolean => option.value === LPYCRV_V2_TOKEN_ADDRESS);
 			if (selectedOptionTo.value !== LPYCRV_V2_TOKEN_ADDRESS) {
 				set_selectedOptionTo(possibleOptions[0]);
 			}
@@ -99,32 +89,20 @@ function CardZap(): ReactElement {
 		if (txStatusApprove.pending || isAboveAllowance) {
 			if (allowanceFrom > 0n && toAddress(selectedOptionFrom.value) === CRV_TOKEN_ADDRESS) {
 				return (
-					<Button
-						onClick={onIncreaseCRVAllowance}
-						className={'w-full'}
-						isBusy={txStatusApprove.pending}
-						isDisabled={!isActive || isZero(amount.raw) || isAboveBalance}>
+					<Button onClick={onIncreaseCRVAllowance} className={'w-full'} isBusy={txStatusApprove.pending} isDisabled={!isActive || isZero(amount.raw) || isAboveBalance}>
 						{'Increase Allowance'}
 					</Button>
 				);
 			}
 			return (
-				<Button
-					onClick={onApproveFrom}
-					className={'w-full'}
-					isBusy={txStatusApprove.pending}
-					isDisabled={!isActive || isZero(amount.raw) || isAboveBalance}>
+				<Button onClick={onApproveFrom} className={'w-full'} isBusy={txStatusApprove.pending} isDisabled={!isActive || isZero(amount.raw) || isAboveBalance}>
 					{isAboveBalance ? 'Insufficient balance' : `Approve ${selectedOptionFrom?.label || 'token'}`}
 				</Button>
 			);
 		}
 
 		return (
-			<Button
-				onClick={onZap}
-				className={'w-full'}
-				isBusy={txStatusZap.pending}
-				isDisabled={!isActive || isZero(amount.raw) || amount.raw > balanceForInputToken}>
+			<Button onClick={onZap} className={'w-full'} isBusy={txStatusZap.pending} isDisabled={!isActive || isZero(amount.raw) || amount.raw > balanceForInputToken}>
 				{isAboveBalance && !isZero(amount.raw) ? 'Insufficient balance' : 'Swap'}
 			</Button>
 		);
@@ -142,11 +120,7 @@ function CardZap(): ReactElement {
 						onSelect={(option: TDropdownOption): void => {
 							performBatchedUpdates((): void => {
 								if (option.value === selectedOptionTo.value) {
-									set_selectedOptionTo(
-										ZAP_OPTIONS_TO.find(
-											(o: TDropdownOption): boolean => o.value !== option.value
-										) as TDropdownOption
-									);
+									set_selectedOptionTo(ZAP_OPTIONS_TO.find((o: TDropdownOption): boolean => o.value !== option.value) as TDropdownOption);
 								}
 								set_selectedOptionFrom(option);
 								set_amount(toNormalizedBN(balances[toAddress(option.value)]?.raw));
@@ -174,23 +148,14 @@ function CardZap(): ReactElement {
 								value={amount.normalized}
 								onChange={(e: ChangeEvent<HTMLInputElement>): void => {
 									performBatchedUpdates((): void => {
-										set_amount(
-											handleInputChangeEventValue(
-												e.target.value,
-												balances[toAddress(selectedOptionFrom.value)]?.decimals || 18
-											)
-										);
+										set_amount(handleInputChangeEventValue(e.target.value, balances[toAddress(selectedOptionFrom.value)]?.decimals || 18));
 										set_hasTypedSomething(true);
 									});
 								}}
 							/>
 							<button
-								onClick={(): void =>
-									set_amount(toNormalizedBN(balances[toAddress(selectedOptionFrom.value)]?.raw))
-								}
-								className={
-									'cursor-pointer text-sm text-neutral-500 transition-colors hover:text-neutral-900'
-								}>
+								onClick={(): void => set_amount(toNormalizedBN(balances[toAddress(selectedOptionFrom.value)]?.raw))}
+								className={'cursor-pointer text-sm text-neutral-500 transition-colors hover:text-neutral-900'}>
 								{'max'}
 							</button>
 						</div>
@@ -202,9 +167,7 @@ function CardZap(): ReactElement {
 								? ycrvPrice || 0
 								: toAddress(selectedOptionFrom.value) === YCRV_CURVE_POOL_ADDRESS
 								? ycrvCurvePoolPrice || 0
-								: balances?.[toAddress(selectedOptionFrom.value)]?.normalizedPrice ||
-								  vaults?.[toAddress(selectedOptionFrom.value)]?.tvl?.price ||
-								  0
+								: balances?.[toAddress(selectedOptionFrom.value)]?.normalizedPrice || vaults?.[toAddress(selectedOptionFrom.value)]?.tvl?.price || 0
 						)}
 					</p>
 				</div>
@@ -249,9 +212,7 @@ function CardZap(): ReactElement {
 								? ycrvPrice || 0
 								: toAddress(selectedOptionFrom.value) === YCRV_CURVE_POOL_ADDRESS
 								? ycrvCurvePoolPrice || 0
-								: balances?.[toAddress(selectedOptionTo.value)]?.normalizedPrice ||
-								  vaults?.[toAddress(selectedOptionTo.value)]?.tvl?.price ||
-								  0
+								: balances?.[toAddress(selectedOptionTo.value)]?.normalizedPrice || vaults?.[toAddress(selectedOptionTo.value)]?.tvl?.price || 0
 						)}
 					</p>
 				</div>

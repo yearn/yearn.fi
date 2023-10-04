@@ -105,12 +105,8 @@ export function ValueAnimation({
 		<>
 			<div className={'text'}>
 				<p className={'wordWrapper'}>
-					<span suppressHydrationWarning className={`${className} ${identifier}`}>{`${
-						prefix ? `${prefix} ` : ''
-					}${defaultValue}${suffix ? ` ${suffix}` : ''}`}</span>
-					<span suppressHydrationWarning className={`${className} ${identifier}`}>{`${
-						prefix ? `${prefix} ` : ''
-					}${value}${suffix ? ` ${suffix}` : ''}`}</span>
+					<span suppressHydrationWarning className={`${className} ${identifier}`}>{`${prefix ? `${prefix} ` : ''}${defaultValue}${suffix ? ` ${suffix}` : ''}`}</span>
+					<span suppressHydrationWarning className={`${className} ${identifier}`}>{`${prefix ? `${prefix} ` : ''}${value}${suffix ? ` ${suffix}` : ''}`}</span>
 				</p>
 			</div>
 		</>

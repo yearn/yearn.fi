@@ -46,16 +46,7 @@ export const APPS: {[key in AppName]: TApp} = {
 		href: '/ycrv',
 		menu: YCRV_MENU,
 		manifest: ycrvManifest,
-		icon: (
-			<ImageWithFallback
-				alt={'yCRV'}
-				width={32}
-				height={32}
-				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YCRV_TOKEN_ADDRESS}/logo-128.png`}
-				loading={'eager'}
-				priority
-			/>
-		)
+		icon: <ImageWithFallback alt={'yCRV'} width={32} height={32} src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YCRV_TOKEN_ADDRESS}/logo-128.png`} loading={'eager'} priority />
 	},
 	yBal: {
 		name: AppName.YBAL,
@@ -63,16 +54,7 @@ export const APPS: {[key in AppName]: TApp} = {
 		menu: YBAL_MENU,
 		manifest: yBalManifest,
 		isDisabled: true,
-		icon: (
-			<ImageWithFallback
-				alt={'yBal'}
-				width={32}
-				height={32}
-				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YBAL_TOKEN_ADDRESS}/logo-128.png`}
-				loading={'eager'}
-				priority
-			/>
-		)
+		icon: <ImageWithFallback alt={'yBal'} width={32} height={32} src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YBAL_TOKEN_ADDRESS}/logo-128.png`} loading={'eager'} priority />
 	},
 	veYFI: {
 		name: AppName.VEYFI,

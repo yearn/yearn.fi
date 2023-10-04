@@ -190,40 +190,37 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 		tokenAddress: TAddress;
 		nextRewards: bigint;
 	};
-	const getNextPeriodRewards = useCallback(
-		async (rewardsPerGauges: TDict<TAddress[]>): Promise<TDict<TGetNextPeriodRewards>> => {
-			const rewardsPerTokensPerGaugesCalls: Promise<PrepareWriteContractResult>[] = [];
+	const getNextPeriodRewards = useCallback(async (rewardsPerGauges: TDict<TAddress[]>): Promise<TDict<TGetNextPeriodRewards>> => {
+		const rewardsPerTokensPerGaugesCalls: Promise<PrepareWriteContractResult>[] = [];
 
-			for (const [gaugeAddress, rewardsTokens] of Object.entries(rewardsPerGauges)) {
-				for (const tokenAsReward of rewardsTokens) {
-					rewardsPerTokensPerGaugesCalls.push(
-						prepareWriteContract({
-							address: CURVE_BRIBE_V3_HELPER_ADDRESS,
-							abi: CURVE_BRIBE_V3_HELPER_ABI,
-							functionName: 'getNewRewardPerToken',
-							args: [toAddress(gaugeAddress), tokenAsReward]
-						})
-					);
-				}
+		for (const [gaugeAddress, rewardsTokens] of Object.entries(rewardsPerGauges)) {
+			for (const tokenAsReward of rewardsTokens) {
+				rewardsPerTokensPerGaugesCalls.push(
+					prepareWriteContract({
+						address: CURVE_BRIBE_V3_HELPER_ADDRESS,
+						abi: CURVE_BRIBE_V3_HELPER_ABI,
+						functionName: 'getNewRewardPerToken',
+						args: [toAddress(gaugeAddress), tokenAsReward]
+					})
+				);
 			}
+		}
 
-			const result = await Promise.all(rewardsPerTokensPerGaugesCalls);
-			const multicallResult: TDict<TGetNextPeriodRewards> = {};
-			let resultIndex = 0;
-			for (const [gaugeAddress, rewardsTokens] of Object.entries(rewardsPerGauges)) {
-				for (const tokenAsReward of rewardsTokens) {
-					multicallResult[gaugeAddress] = {
-						gaugeAddress: toAddress(gaugeAddress),
-						tokenAddress: toAddress(tokenAsReward),
-						nextRewards: toBigInt(result[resultIndex++].result as bigint)
-					};
-				}
+		const result = await Promise.all(rewardsPerTokensPerGaugesCalls);
+		const multicallResult: TDict<TGetNextPeriodRewards> = {};
+		let resultIndex = 0;
+		for (const [gaugeAddress, rewardsTokens] of Object.entries(rewardsPerGauges)) {
+			for (const tokenAsReward of rewardsTokens) {
+				multicallResult[gaugeAddress] = {
+					gaugeAddress: toAddress(gaugeAddress),
+					tokenAddress: toAddress(tokenAsReward),
+					nextRewards: toBigInt(result[resultIndex++].result as bigint)
+				};
 			}
+		}
 
-			return multicallResult;
-		},
-		[]
-	);
+		return multicallResult;
+	}, []);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 **	assignBribes will save the currentRewards,  periods and clamable values
@@ -271,10 +268,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 	 ***************************************************************************/
 	const getBribes = useCallback(async (): Promise<void> => {
 		const rewardsPerGauges = await getRewardsPerGauges();
-		const [rewardsPerUser, nextPeriodRewards] = await Promise.all([
-			getRewardsPerUser(rewardsPerGauges),
-			getNextPeriodRewards(rewardsPerGauges)
-		]);
+		const [rewardsPerUser, nextPeriodRewards] = await Promise.all([getRewardsPerUser(rewardsPerGauges), getNextPeriodRewards(rewardsPerGauges)]);
 
 		performBatchedUpdates((): void => {
 			assignBribes(rewardsPerUser);

@@ -1,9 +1,5 @@
 import {createContext, useContext, useMemo, useState} from 'react';
-import {
-	LPYCRV_TOKEN_ADDRESS,
-	LPYCRV_V2_TOKEN_ADDRESS,
-	STYCRV_TOKEN_ADDRESS
-} from '@yearn-finance/web-lib/utils/constants';
+import {LPYCRV_TOKEN_ADDRESS, LPYCRV_V2_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {useFetch} from '@common/hooks/useFetch';
 import {yDaemonVaultHarvestsSchema, yDaemonVaultSchema} from '@common/schemas/yDaemonVaultsSchemas';
 import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';

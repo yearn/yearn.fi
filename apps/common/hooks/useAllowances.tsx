@@ -46,10 +46,7 @@ export const useAllowances = (allowanceRequests: TAllowanceRequest[]): [TDict<bi
 		return allowancesMap;
 	}, [allowanceRequests, chainID, isActive, userAddress]);
 
-	const [{result: allowancesMap, status}, actions] = useAsync(
-		async (): Promise<TDict<bigint>> => allowancesFetcher(),
-		{}
-	);
+	const [{result: allowancesMap, status}, actions] = useAsync(async (): Promise<TDict<bigint>> => allowancesFetcher(), {});
 
 	return [allowancesMap || {}, status === 'loading', actions.execute];
 };

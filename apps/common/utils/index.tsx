@@ -2,13 +2,7 @@ import {request} from 'graphql-request';
 import {formatUnits, parseUnits} from 'viem';
 import {captureException} from '@sentry/nextjs';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {
-	LPYCRV_TOKEN_ADDRESS,
-	LPYCRV_V2_TOKEN_ADDRESS,
-	YCRV_CURVE_POOL_ADDRESS,
-	YVBOOST_TOKEN_ADDRESS,
-	YVECRV_TOKEN_ADDRESS
-} from '@yearn-finance/web-lib/utils/constants';
+import {LPYCRV_TOKEN_ADDRESS, LPYCRV_V2_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YVBOOST_TOKEN_ADDRESS, YVECRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 
@@ -60,10 +54,7 @@ export function getAmountWithSlippage(from: string, to: string, value: bigint, s
 		toAddress(to) === LPYCRV_TOKEN_ADDRESS ||
 		toAddress(from) === LPYCRV_V2_TOKEN_ADDRESS ||
 		toAddress(to) === LPYCRV_V2_TOKEN_ADDRESS;
-	const isDirectDeposit =
-		toAddress(from) === YCRV_CURVE_POOL_ADDRESS ||
-		toAddress(to) === LPYCRV_TOKEN_ADDRESS ||
-		toAddress(to) === LPYCRV_V2_TOKEN_ADDRESS;
+	const isDirectDeposit = toAddress(from) === YCRV_CURVE_POOL_ADDRESS || toAddress(to) === LPYCRV_TOKEN_ADDRESS || toAddress(to) === LPYCRV_V2_TOKEN_ADDRESS;
 
 	if (hasLP && !isDirectDeposit) {
 		const minAmountStr = Number(formatUnits(toBigInt(value), 18));

@@ -197,12 +197,7 @@ export function useSolverWido(): TSolverContext {
 				return toNormalizedBN(MAX_UINT_256);
 			}
 
-			const key = allowanceKey(
-				safeChainID,
-				toAddress(request.current.inputToken.value),
-				toAddress(request.current.outputToken.value),
-				toAddress(request.current.from)
-			);
+			const key = allowanceKey(safeChainID, toAddress(request.current.inputToken.value), toAddress(request.current.outputToken.value), toAddress(request.current.from));
 
 			if (existingAllowances.current[key] && !shouldForceRefetch) {
 				return existingAllowances.current[key];
@@ -241,11 +236,7 @@ export function useSolverWido(): TSolverContext {
 	 ** of the token by the Wido solver.
 	 **************************************************************************/
 	const onApprove = useCallback(
-		async (
-			amount = MAX_UINT_256,
-			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: () => Promise<void>
-		): Promise<void> => {
+		async (amount = MAX_UINT_256, txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>, onSuccess: () => Promise<void>): Promise<void> => {
 			if (isSolverDisabled(safeChainID)[Solver.enum.Wido]) {
 				return;
 			}
@@ -292,10 +283,7 @@ export function useSolverWido(): TSolverContext {
 	 ** simply swapping the input token for the output token.
 	 **************************************************************************/
 	const onExecute = useCallback(
-		async (
-			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: () => Promise<void>
-		): Promise<void> => {
+		async (txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>, onSuccess: () => Promise<void>): Promise<void> => {
 			assert(provider, 'Provider is not set');
 
 			txStatusSetter({...defaultTxStatus, pending: true});

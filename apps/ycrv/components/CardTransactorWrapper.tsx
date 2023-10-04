@@ -74,11 +74,7 @@ const CardTransactorContext = createContext<TCardTransactor>({
 	onIncreaseCRVAllowance: async (): Promise<void> => undefined
 });
 
-export function CardTransactorContextApp({
-	defaultOptionFrom = ZAP_OPTIONS_FROM[0],
-	defaultOptionTo = ZAP_OPTIONS_TO[0],
-	children = <div />
-}): ReactElement {
+export function CardTransactorContextApp({defaultOptionFrom = ZAP_OPTIONS_FROM[0], defaultOptionTo = ZAP_OPTIONS_TO[0], children = <div />}): ReactElement {
 	const {provider, isActive, address} = useWeb3();
 	const {styCRVAPY, allowances, refetchAllowances, slippage} = useYCRV();
 	const {balancesNonce, balances, refresh} = useWallet();
@@ -236,10 +232,7 @@ export function CardTransactorContextApp({
 			}
 		};
 
-		if (
-			selectedOptionFrom.zapVia === LPYCRV_TOKEN_ADDRESS ||
-			selectedOptionFrom.zapVia === LPYCRV_V2_TOKEN_ADDRESS
-		) {
+		if (selectedOptionFrom.zapVia === LPYCRV_TOKEN_ADDRESS || selectedOptionFrom.zapVia === LPYCRV_V2_TOKEN_ADDRESS) {
 			// Direct deposit to vault from crv/yCRV Curve LP Token to lp-yCRV Vault
 			// This is valid for v1 and v2
 			const result = await deposit({
@@ -309,22 +302,12 @@ export function CardTransactorContextApp({
 	}, [vaults, selectedOptionTo, styCRVAPY]);
 
 	const expectedOutWithSlippage = useMemo(
-		(): number =>
-			getAmountWithSlippage(selectedOptionFrom.value, selectedOptionTo.value, toBigInt(expectedOut), slippage),
+		(): number => getAmountWithSlippage(selectedOptionFrom.value, selectedOptionTo.value, toBigInt(expectedOut), slippage),
 		[expectedOut, selectedOptionFrom.value, selectedOptionTo.value, slippage]
 	);
 
 	const allowanceFrom = useMemo((): bigint => {
-		return toBigInt(
-			allowances?.[
-				allowanceKey(
-					1,
-					toAddress(selectedOptionFrom.value),
-					toAddress(selectedOptionFrom.zapVia),
-					toAddress(address)
-				)
-			]
-		);
+		return toBigInt(allowances?.[allowanceKey(1, toAddress(selectedOptionFrom.value), toAddress(selectedOptionFrom.zapVia), toAddress(address))]);
 	}, [allowances, selectedOptionFrom.value, selectedOptionFrom.zapVia, address]);
 
 	return (

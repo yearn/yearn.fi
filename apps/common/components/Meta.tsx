@@ -34,12 +34,7 @@ function Meta({meta}: {meta: TMetaFile}): ReactElement {
 			<Head>
 				<title>{meta.name}</title>
 				<meta httpEquiv={'X-UA-Compatible'} content={'IE=edge'} />
-				<meta
-					name={'viewport'}
-					content={
-						'minimum-scale=1, initial-scale=1, width=device-width, shrink-to-fit=no, viewport-fit=cover'
-					}
-				/>
+				<meta name={'viewport'} content={'minimum-scale=1, initial-scale=1, width=device-width, shrink-to-fit=no, viewport-fit=cover'} />
 				<meta name={'description'} content={meta.name} />
 				<meta name={'msapplication-TileColor'} content={meta.title_color} />
 				<meta name={'theme-color'} content={meta.theme_color} />

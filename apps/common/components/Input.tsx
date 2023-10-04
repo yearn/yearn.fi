@@ -32,9 +32,7 @@ export function Input(props: TAmountInputProps): ReactElement {
 				/>
 			</div>
 			{(error ?? legend) && (
-				<legend
-					className={`mt-1 pl-2 text-xs md:mr-0 ${error ? 'text-[#EA5204]' : 'text-neutral-600'}`}
-					suppressHydrationWarning>
+				<legend className={`mt-1 pl-2 text-xs md:mr-0 ${error ? 'text-[#EA5204]' : 'text-neutral-600'}`} suppressHydrationWarning>
 					{error ?? legend}
 				</legend>
 			)}

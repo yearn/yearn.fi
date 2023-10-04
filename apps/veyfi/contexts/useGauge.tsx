@@ -128,10 +128,7 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 			const depositPosition: TNormalizedBN = toNormalizedBN(balance, decimals);
 			const rewardPosition: TNormalizedBN = toNormalizedBN(earned, decimals);
 
-			const boostRatio =
-				balance > 0n
-					? FixedNumber.from(boostedBalance).divUnsafe(FixedNumber.from(balance)).toUnsafeFloat()
-					: 0.1;
+			const boostRatio = balance > 0n ? FixedNumber.from(boostedBalance).divUnsafe(FixedNumber.from(balance)).toUnsafeFloat() : 0.1;
 			const boost = Math.min(1, boostRatio) * 10;
 
 			return {

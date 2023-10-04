@@ -27,26 +27,14 @@ export function VaultDetailsQuickActionsButtons(): ReactElement {
 	const [txStatusExecuteDeposit, set_txStatusExecuteDeposit] = useState(defaultTxStatus);
 	const [txStatusExecuteWithdraw, set_txStatusExecuteWithdraw] = useState(defaultTxStatus);
 	const {actionParams, onChangeAmount, maxDepositPossible, isDepositing} = useActionFlow();
-	const {
-		onApprove,
-		onExecuteDeposit,
-		onExecuteWithdraw,
-		onRetrieveAllowance,
-		currentSolver,
-		expectedOut,
-		isLoadingExpectedOut,
-		hash
-	} = useSolver();
+	const {onApprove, onExecuteDeposit, onExecuteWithdraw, onRetrieveAllowance, currentSolver, expectedOut, isLoadingExpectedOut, hash} = useSolver();
 	const isWithdrawing = !isDepositing;
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	 ** SWR hook to get the expected out for a given in/out pair with a specific amount. This hook is
 	 ** called when amount/in or out changes. Calls the allowanceFetcher callback.
 	 **********************************************************************************************/
-	const [{result: allowanceFrom, status}, actions] = useAsync(
-		async (): Promise<TNormalizedBN> => onRetrieveAllowance(true),
-		toNormalizedBN(0)
-	);
+	const [{result: allowanceFrom, status}, actions] = useAsync(async (): Promise<TNormalizedBN> => onRetrieveAllowance(true), toNormalizedBN(0));
 	useEffect((): void => {
 		actions.execute();
 	}, [actions, provider, address, onRetrieveAllowance, hash]);
@@ -60,15 +48,8 @@ export function VaultDetailsQuickActionsButtons(): ReactElement {
 			Solver.enum.OptimismBooster === currentSolver ||
 			Solver.enum.InternalMigration === currentSolver
 		) {
-			await refresh([
-				{token: toAddress(actionParams?.selectedOptionFrom?.value)},
-				{token: toAddress(actionParams?.selectedOptionTo?.value)}
-			]);
-		} else if (
-			Solver.enum.Cowswap === currentSolver ||
-			Solver.enum.Portals === currentSolver ||
-			Solver.enum.Wido === currentSolver
-		) {
+			await refresh([{token: toAddress(actionParams?.selectedOptionFrom?.value)}, {token: toAddress(actionParams?.selectedOptionTo?.value)}]);
+		} else if (Solver.enum.Cowswap === currentSolver || Solver.enum.Portals === currentSolver || Solver.enum.Wido === currentSolver) {
 			if (isDepositing) {
 				//refresh input from zap wallet, refresh output from default
 				await Promise.all([
@@ -98,15 +79,7 @@ export function VaultDetailsQuickActionsButtons(): ReactElement {
 				]);
 			}
 		}
-	}, [
-		onChangeAmount,
-		currentSolver,
-		refresh,
-		actionParams?.selectedOptionFrom?.value,
-		actionParams?.selectedOptionTo?.value,
-		isDepositing,
-		refreshZapBalances
-	]);
+	}, [onChangeAmount, currentSolver, refresh, actionParams?.selectedOptionFrom?.value, actionParams?.selectedOptionTo?.value, isDepositing, refreshZapBalances]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** Trigger an approve web3 action, simply trying to approve `amount` tokens
@@ -116,24 +89,14 @@ export function VaultDetailsQuickActionsButtons(): ReactElement {
 	 ** (not connected) or if the tx is still pending.
 	 **************************************************************************/
 	const onApproveFrom = useCallback(async (): Promise<void> => {
-		const shouldApproveInfinite =
-			currentSolver === Solver.enum.PartnerContract ||
-			currentSolver === Solver.enum.Vanilla ||
-			currentSolver === Solver.enum.InternalMigration;
-		onApprove(
-			shouldApproveInfinite ? MAX_UINT_256 : actionParams?.amount.raw,
-			set_txStatusApprove,
-			async (): Promise<void> => {
-				await actions.execute();
-			}
-		);
+		const shouldApproveInfinite = currentSolver === Solver.enum.PartnerContract || currentSolver === Solver.enum.Vanilla || currentSolver === Solver.enum.InternalMigration;
+		onApprove(shouldApproveInfinite ? MAX_UINT_256 : actionParams?.amount.raw, set_txStatusApprove, async (): Promise<void> => {
+			await actions.execute();
+		});
 	}, [actionParams?.amount.raw, actions, currentSolver, onApprove]);
 
 	const isButtonDisabled =
-		(!address && !provider) ||
-		isZero(actionParams.amount.raw) ||
-		toBigInt(actionParams.amount.raw) > toBigInt(maxDepositPossible.raw) ||
-		isLoadingExpectedOut;
+		(!address && !provider) || isZero(actionParams.amount.raw) || toBigInt(actionParams.amount.raw) > toBigInt(maxDepositPossible.raw) || isLoadingExpectedOut;
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** Wrapper to decide if we should use the partner contract or not
@@ -149,11 +112,7 @@ export function VaultDetailsQuickActionsButtons(): ReactElement {
 	) {
 		// ... then we need to approve the ChainCoin contract
 		return (
-			<Button
-				className={'w-full'}
-				isBusy={txStatusApprove.pending}
-				isDisabled={isButtonDisabled || isZero(expectedOut.raw)}
-				onClick={onApproveFrom}>
+			<Button className={'w-full'} isBusy={txStatusApprove.pending} isDisabled={isButtonDisabled || isZero(expectedOut.raw)} onClick={onApproveFrom}>
 				{'Approve'}
 			</Button>
 		);
@@ -186,11 +145,7 @@ export function VaultDetailsQuickActionsButtons(): ReactElement {
 			currentSolver === Solver.enum.OptimismBooster) // ... or the user is using the Optimism Booster ... // ... then we need to approve the from token
 	) {
 		return (
-			<Button
-				className={'w-full'}
-				isBusy={txStatusApprove.pending}
-				isDisabled={isButtonDisabled || isZero(expectedOut.raw)}
-				onClick={onApproveFrom}>
+			<Button className={'w-full'} isBusy={txStatusApprove.pending} isDisabled={isButtonDisabled || isZero(expectedOut.raw)} onClick={onApproveFrom}>
 				{'Approve'}
 			</Button>
 		);
@@ -203,11 +158,7 @@ export function VaultDetailsQuickActionsButtons(): ReactElement {
 					onClick={async (): Promise<void> => onExecuteDeposit(set_txStatusExecuteDeposit, onSuccess)}
 					className={'w-full whitespace-nowrap'}
 					isBusy={txStatusExecuteDeposit.pending}
-					isDisabled={
-						(!address && !provider) ||
-						isZero(actionParams.amount.raw) ||
-						toBigInt(actionParams.amount.raw) > toBigInt(maxDepositPossible.raw)
-					}>
+					isDisabled={(!address && !provider) || isZero(actionParams.amount.raw) || toBigInt(actionParams.amount.raw) > toBigInt(maxDepositPossible.raw)}>
 					{'Deposit and Stake'}
 				</Button>
 			);

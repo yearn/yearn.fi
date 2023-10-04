@@ -77,12 +77,7 @@ function HeaderUserPosition(): ReactElement {
 			<div className={'col-span-12 w-full md:col-span-4'}>
 				<p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl'}>{'Earnings'}</p>
 				<b className={'font-number text-3xl text-neutral-900 md:text-7xl'}>
-					<ValueAnimation
-						identifier={'youEarned'}
-						value={formatedYouEarned}
-						defaultValue={'0,00'}
-						prefix={'$'}
-					/>
+					<ValueAnimation identifier={'youEarned'} value={formatedYouEarned} defaultValue={'0,00'} prefix={'$'} />
 				</b>
 			</div>
 		</Fragment>
@@ -97,16 +92,7 @@ function Index(): ReactElement {
 		sortBy: TPossibleSortBy;
 		sortDirection: TSortDirection;
 	}>('yVaultsSorting', {sortBy: 'apy', sortDirection: 'desc'});
-	const {
-		shouldHideDust,
-		shouldHideLowTVLVaults,
-		category,
-		searchValue,
-		selectedChains,
-		set_category,
-		set_searchValue,
-		set_selectedChains
-	} = useAppSettings();
+	const {shouldHideDust, shouldHideLowTVLVaults, category, searchValue, selectedChains, set_category, set_searchValue, set_selectedChains} = useAppSettings();
 
 	const chains = JSON.parse(selectedChains) as number[];
 
@@ -171,9 +157,7 @@ function Index(): ReactElement {
 	const balancerVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Balancer');
 	const cryptoVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Volatile');
 	const holdingsVaults = useFilteredVaults(vaults, ({address}): boolean => filterHoldingsCallback(address));
-	const migratableVaults = useFilteredVaults(vaultsMigrations, ({address}): boolean =>
-		filterMigrationCallback(address)
-	);
+	const migratableVaults = useFilteredVaults(vaultsMigrations, ({address}): boolean => filterMigrationCallback(address));
 	const retiredVaults = useFilteredVaults(vaultsRetired, ({address}): boolean => filterMigrationCallback(address));
 
 	const categoriesToDisplay = useMemo((): TListHeroCategory<string>[] => {
@@ -240,9 +224,7 @@ function Index(): ReactElement {
 	 **	The possible lists are memoized to avoid unnecessary re-renders.
 	 **********************************************************************************************/
 	const vaultsToDisplay = useMemo((): TYDaemonVault[] => {
-		let _vaultList: TYDaemonVault[] = [...Object.values(vaults || {})].filter((v): boolean =>
-			chains.includes(v.chainID)
-		) as TYDaemonVault[];
+		let _vaultList: TYDaemonVault[] = [...Object.values(vaults || {})].filter((v): boolean => chains.includes(v.chainID)) as TYDaemonVault[];
 
 		if (category === 'Curve Vaults') {
 			_vaultList = curveVaults;
@@ -259,9 +241,7 @@ function Index(): ReactElement {
 		} else if (category === 'Holdings') {
 			_vaultList = holdingsVaults;
 		} else if (category === 'Featured Vaults') {
-			_vaultList.sort(
-				(a, b): number => (b.tvl.tvl || 0) * (b?.apy?.net_apy || 0) - (a.tvl.tvl || 0) * (a?.apy?.net_apy || 0)
-			);
+			_vaultList.sort((a, b): number => (b.tvl.tvl || 0) * (b?.apy?.net_apy || 0) - (a.tvl.tvl || 0) * (a?.apy?.net_apy || 0));
 			_vaultList = _vaultList.slice(0, 10);
 		}
 
@@ -270,18 +250,7 @@ function Index(): ReactElement {
 		}
 
 		return _vaultList;
-	}, [
-		vaults,
-		category,
-		shouldHideLowTVLVaults,
-		curveVaults,
-		balancerVaults,
-		velodromeVaults,
-		boostedVaults,
-		stablesVaults,
-		cryptoVaults,
-		holdingsVaults
-	]);
+	}, [vaults, category, shouldHideLowTVLVaults, curveVaults, balancerVaults, velodromeVaults, boostedVaults, stablesVaults, cryptoVaults, holdingsVaults]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	 **	Then, on the vaultsToDisplay list, we apply the search filter. The search filter is
@@ -325,22 +294,10 @@ function Index(): ReactElement {
 	 **********************************************************************************************/
 	const VaultList = useMemo((): ReactNode => {
 		if (isLoadingVaultList && category === 'Holdings') {
-			return (
-				<VaultsListEmpty
-					isLoading={isLoadingVaultList}
-					sortedVaultsToDisplay={sortedVaultsToDisplay}
-					currentCategory={category}
-				/>
-			);
+			return <VaultsListEmpty isLoading={isLoadingVaultList} sortedVaultsToDisplay={sortedVaultsToDisplay} currentCategory={category} />;
 		}
 		if (isLoadingVaultList || isZero(sortedVaultsToDisplay.length)) {
-			return (
-				<VaultsListEmpty
-					isLoading={isLoadingVaultList}
-					sortedVaultsToDisplay={sortedVaultsToDisplay}
-					currentCategory={category}
-				/>
-			);
+			return <VaultsListEmpty isLoading={isLoadingVaultList} sortedVaultsToDisplay={sortedVaultsToDisplay} currentCategory={category} />;
 		}
 		return sortedVaultsToDisplay.map((vault): ReactNode => {
 			if (!vault) {
@@ -373,19 +330,10 @@ function Index(): ReactElement {
 										{'Holdings'}
 										<span
 											className={`absolute -right-1 -top-1 flex h-2 w-2 ${
-												category === 'Holdings' ||
-												isZero(migratableVaults?.length + retiredVaults?.length)
-													? 'opacity-0'
-													: 'opacity-100'
+												category === 'Holdings' || isZero(migratableVaults?.length + retiredVaults?.length) ? 'opacity-0' : 'opacity-100'
 											}`}>
-											<span
-												className={
-													'absolute inline-flex h-full w-full animate-ping rounded-full bg-pink-600 opacity-75'
-												}></span>
-											<span
-												className={
-													'relative inline-flex h-2 w-2 rounded-full bg-pink-500'
-												}></span>
+											<span className={'absolute inline-flex h-full w-full animate-ping rounded-full bg-pink-600 opacity-75'}></span>
+											<span className={'relative inline-flex h-2 w-2 rounded-full bg-pink-500'}></span>
 										</span>
 									</Fragment>
 								)

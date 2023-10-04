@@ -21,14 +21,7 @@ export const YVBOOST = {
 	decimals: 18,
 	value: YVBOOST_TOKEN_ADDRESS,
 	zapVia: ZAP_YEARN_VE_CRV_ADDRESS,
-	icon: (
-		<ImageWithFallback
-			alt={'yvBOOST'}
-			width={24}
-			height={24}
-			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YVBOOST_TOKEN_ADDRESS}/logo-128.png`}
-		/>
-	)
+	icon: <ImageWithFallback alt={'yvBOOST'} width={24} height={24} src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YVBOOST_TOKEN_ADDRESS}/logo-128.png`} />
 };
 
 export const YVECRV = {
@@ -37,16 +30,7 @@ export const YVECRV = {
 	decimals: 18,
 	value: YVECRV_TOKEN_ADDRESS,
 	zapVia: ZAP_YEARN_VE_CRV_ADDRESS,
-	icon: (
-		<ImageWithFallback
-			alt={'yveCRV'}
-			width={24}
-			height={24}
-			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YVECRV_TOKEN_ADDRESS}/logo-128.png`}
-			loading={'eager'}
-			priority
-		/>
-	)
+	icon: <ImageWithFallback alt={'yveCRV'} width={24} height={24} src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YVECRV_TOKEN_ADDRESS}/logo-128.png`} loading={'eager'} priority />
 };
 
 export const STYCRV = {
@@ -56,14 +40,7 @@ export const STYCRV = {
 	value: STYCRV_TOKEN_ADDRESS,
 	zapVia: ZAP_YEARN_VE_CRV_ADDRESS,
 	icon: (
-		<ImageWithFallback
-			alt={'st-yCRV'}
-			width={24}
-			height={24}
-			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${STYCRV_TOKEN_ADDRESS}/logo-128.png`}
-			loading={'eager'}
-			priority
-		/>
+		<ImageWithFallback alt={'st-yCRV'} width={24} height={24} src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${STYCRV_TOKEN_ADDRESS}/logo-128.png`} loading={'eager'} priority />
 	)
 };
 
@@ -73,16 +50,7 @@ export const YCRV = {
 	decimals: 18,
 	value: YCRV_TOKEN_ADDRESS,
 	zapVia: ZAP_YEARN_VE_CRV_ADDRESS,
-	icon: (
-		<ImageWithFallback
-			alt={'yCRV'}
-			width={24}
-			height={24}
-			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YCRV_TOKEN_ADDRESS}/logo-128.png`}
-			loading={'eager'}
-			priority
-		/>
-	)
+	icon: <ImageWithFallback alt={'yCRV'} width={24} height={24} src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YCRV_TOKEN_ADDRESS}/logo-128.png`} loading={'eager'} priority />
 };
 
 export const LPYCRV = {
@@ -127,14 +95,7 @@ export const CRV = {
 	decimals: 18,
 	value: CRV_TOKEN_ADDRESS,
 	zapVia: ZAP_YEARN_VE_CRV_ADDRESS,
-	icon: (
-		<ImageWithFallback
-			alt={'CRV'}
-			width={24}
-			height={24}
-			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${CRV_TOKEN_ADDRESS}/logo-128.png`}
-		/>
-	)
+	icon: <ImageWithFallback alt={'CRV'} width={24} height={24} src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${CRV_TOKEN_ADDRESS}/logo-128.png`} />
 };
 
 export const CVXCRV = {
@@ -143,14 +104,7 @@ export const CVXCRV = {
 	decimals: 18,
 	value: CVXCRV_TOKEN_ADDRESS,
 	zapVia: ZAP_YEARN_VE_CRV_ADDRESS,
-	icon: (
-		<ImageWithFallback
-			alt={'cvxCRV'}
-			width={24}
-			height={24}
-			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${CVXCRV_TOKEN_ADDRESS}/logo-128.png`}
-		/>
-	)
+	icon: <ImageWithFallback alt={'cvxCRV'} width={24} height={24} src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${CVXCRV_TOKEN_ADDRESS}/logo-128.png`} />
 };
 
 export const CRVYCRV = {
@@ -159,14 +113,7 @@ export const CRVYCRV = {
 	decimals: 18,
 	value: YCRV_CURVE_POOL_ADDRESS,
 	zapVia: LPYCRV_TOKEN_ADDRESS,
-	icon: (
-		<ImageWithFallback
-			alt={'Curve CRV/yCRV (deprecated)'}
-			width={24}
-			height={24}
-			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YCRV_CURVE_POOL_ADDRESS}/logo-128.png`}
-		/>
-	)
+	icon: <ImageWithFallback alt={'Curve CRV/yCRV (deprecated)'} width={24} height={24} src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YCRV_CURVE_POOL_ADDRESS}/logo-128.png`} />
 };
 
 export const CRVYCRV2 = {
@@ -175,26 +122,8 @@ export const CRVYCRV2 = {
 	decimals: 18,
 	value: YCRV_CURVE_POOL_V2_ADDRESS,
 	zapVia: LPYCRV_V2_TOKEN_ADDRESS,
-	icon: (
-		<ImageWithFallback
-			alt={'Curve CRV/yCRV V2'}
-			width={24}
-			height={24}
-			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YCRV_CURVE_POOL_V2_ADDRESS}/logo-128.png`}
-		/>
-	)
+	icon: <ImageWithFallback alt={'Curve CRV/yCRV V2'} width={24} height={24} src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YCRV_CURVE_POOL_V2_ADDRESS}/logo-128.png`} />
 };
 
-export const ZAP_OPTIONS_FROM: TDropdownOption[] = [
-	CRV,
-	STYCRV,
-	YCRV,
-	LPYCRV,
-	LPYCRV2,
-	CVXCRV,
-	CRVYCRV,
-	CRVYCRV2,
-	YVBOOST,
-	YVECRV
-];
+export const ZAP_OPTIONS_FROM: TDropdownOption[] = [CRV, STYCRV, YCRV, LPYCRV, LPYCRV2, CVXCRV, CRVYCRV, CRVYCRV2, YVBOOST, YVECRV];
 export const ZAP_OPTIONS_TO: TDropdownOption[] = [STYCRV, YCRV, LPYCRV2];
