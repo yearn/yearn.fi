@@ -2,6 +2,39 @@ import {z} from 'zod';
 import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {addressSchema} from '@yearn-finance/web-lib/utils/schemas/addressSchema';
 
+const zodDefaultAPR = {
+	type: 'unknown',
+	netAPR: 0,
+	fees: {
+		performance: 0,
+		withdrawal: 0,
+		management: 0,
+		keepCRV: 0,
+		keepVelo: 0,
+		cvxKeepCRV: 0
+	},
+	extra: {
+		stakingRewardsAPR: 0
+	},
+	points: {
+		weekAgo: 0,
+		monthAgo: 0,
+		inception: 0
+	},
+	forwardAPR: {
+		type: 'unknown',
+		netAPR: 0,
+		composite: {
+			boost: 0,
+			poolAPY: 0,
+			boostedAPR: 0,
+			baseAPR: 0,
+			cvxAPR: 0,
+			rewardsAPR: 0
+		}
+	}
+};
+
 const yDaemonVaultStrategySchema = z.object({
 	address: addressSchema,
 	name: z.string(),
@@ -106,69 +139,42 @@ export const yDaemonVaultSchema = z.object({
 	tvl: z.object({
 		total_assets: z.string().transform((val): bigint => toBigInt(val)),
 		total_delegated_assets: z.string().transform((val): bigint => toBigInt(val)),
-		tvl_deposited: z.number().default(0),
-		tvl_delegated: z.number().default(0),
-		tvl: z.number().default(0),
-		price: z.number().default(0)
+		tvl_deposited: z.number().default(0).catch(0),
+		tvl_delegated: z.number().default(0).catch(0),
+		tvl: z.number().default(0).catch(0),
+		price: z.number().default(0).catch(0)
 	}),
 	apr: z.object({
-		type: z.string(),
-		netAPR: z.number().default(0),
+		type: z.string().min(1).default('unknown').catch('unknown'),
+		netAPR: z.number().default(0).catch(0),
 		fees: z.object({
-			performance: z.number().default(0),
-			withdrawal: z.number().default(0),
-			management: z.number().default(0),
-			keepCRV: z.number().default(0),
-			keepVelo: z.number().default(0),
-			cvxKeepCRV: z.number().default(0)
-		}),
+			performance: z.number().default(0).catch(0),
+			withdrawal: z.number().default(0).catch(0),
+			management: z.number().default(0).catch(0),
+			keepCRV: z.number().default(0).catch(0),
+			keepVelo: z.number().default(0).catch(0),
+			cvxKeepCRV: z.number().default(0).catch(0)
+		}).default({}),
 		extra: z.object({
-			stakingRewardsAPR: z.number().default(0)
-		}),
+			stakingRewardsAPR: z.number().default(0).catch(0)
+		}).default({}),
 		points: z.object({
-			weekAgo: z.number().default(0),
-			monthAgo: z.number().default(0),
-			inception: z.number().default(0)
-		}),
+			weekAgo: z.number().default(0).catch(0),
+			monthAgo: z.number().default(0).catch(0),
+			inception: z.number().default(0).catch(0)
+		}).default({}),
 		forwardAPR: z.object({
-			type: z.string(),
-			netAPR: z.number().default(0),
+			type: z.string().default('unknown').catch('unknown'),
+			netAPR: z.number().default(0).catch(0),
 			composite: z.object({
-				boost: z.number().default(0),
-				poolAPY: z.number().default(0),
-				boostedAPR: z.number().default(0),
-				baseAPR: z.number().default(0),
-				cvxAPR: z.number().default(0),
-				rewardsAPR: z.number().default(0)
-			})
-		})
-	}),
-	apy: z.object({
-		type: z.string(),
-		gross_apr: z.number(),
-		net_apy: z.number(),
-		staking_rewards_apr: z.number(),
-		fees: z.object({
-			performance: z.number(),
-			withdrawal: z.number(),
-			management: z.number(),
-			keep_crv: z.number(),
-			keep_velo: z.number(),
-			cvx_keep_crv: z.number()
-		}),
-		points: z.object({
-			week_ago: z.number(),
-			month_ago: z.number(),
-			inception: z.number()
-		}),
-		composite: z.object({
-			boost: z.number(),
-			pool_apy: z.number(),
-			boosted_apr: z.number(),
-			base_apr: z.number(),
-			cvx_apr: z.number(),
-			rewards_apr: z.number()
-		})
+				boost: z.number().default(0).catch(0),
+				poolAPY: z.number().default(0).catch(0),
+				boostedAPR: z.number().default(0).catch(0),
+				baseAPR: z.number().default(0).catch(0),
+				cvxAPR: z.number().default(0).catch(0),
+				rewardsAPR: z.number().default(0).catch(0)
+			}).default({})
+		}).default({})
 	}),
 	details: z.object({
 		management: addressSchema,

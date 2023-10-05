@@ -27,7 +27,14 @@ export function RenderAmount(props: TAmount & {shouldHideTooltip?: boolean}): Re
 		);
 	}
 
-	const shouldShowTooltip = (!isZero(props.value) && props.value < 0.001);
+	const shouldShowTooltip = (
+		props.value && !isZero(props.value)
+		&& (
+			(props.value < 0.001 && props.symbol !== 'percent')
+			||
+			(props.value < 0.0001 && props.symbol === 'percent')
+		)
+	);
 
 	return (
 		<span

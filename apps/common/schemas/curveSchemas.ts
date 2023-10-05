@@ -78,41 +78,37 @@ export const curveGaugeFromYearnSchema = z.object({
 	weight: z.string(),
 	inflation_rate: z.string(),
 	working_supply: z.string(),
-	apy: z.object({
+	apr: z.object({
 		type: z.string(),
-		gross_apr: z.number(),
-		net_apy: z.number(),
-		fees: z
-			.object({
-				performance: z.number(),
-				withdrawal: z.number().nullable(),
-				management: z.number().nullable(),
-				keep_crv: z.number().nullable(),
-				cvx_keep_crv: z.number().nullable()
+		netAPR: z.number().default(0),
+		fees: z.object({
+			performance: z.number().default(0),
+			withdrawal: z.number().default(0),
+			management: z.number().default(0),
+			keepCRV: z.number().default(0),
+			keepVelo: z.number().default(0),
+			cvxKeepCRV: z.number().default(0)
+		}),
+		extra: z.object({
+			stakingRewardsAPR: z.number().default(0)
+		}),
+		points: z.object({
+			weekAgo: z.number().default(0),
+			monthAgo: z.number().default(0),
+			inception: z.number().default(0)
+		}),
+		forwardAPR: z.object({
+			type: z.string(),
+			netAPR: z.number().default(0),
+			composite: z.object({
+				boost: z.number().default(0),
+				poolAPY: z.number().default(0),
+				boostedAPR: z.number().default(0),
+				baseAPR: z.number().default(0),
+				cvxAPR: z.number().default(0),
+				rewardsAPR: z.number().default(0)
 			})
-			.optional(),
-		points: z
-			.object({
-				week_ago: z.number(),
-				month_ago: z.number(),
-				inception: z.number()
-			})
-			.nullable()
-			.optional(),
-		blocks: z.any().nullable().optional(),
-		composite: z
-			.object({
-				boost: z.number(),
-				pool_apy: z.number(),
-				boosted_apr: z.number(),
-				base_apr: z.number(),
-				cvx_apr: z.number(),
-				rewards_apr: z.number()
-			})
-			.nullable()
-			.optional(),
-		error_reason: z.string().nullable().optional(),
-		staking_rewards_apr: z.number().optional()
+		})
 	}),
 	updated: z.number(),
 	block: z.number()

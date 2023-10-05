@@ -118,7 +118,7 @@ function Factory(): ReactElement {
 						tokenAddress: toAddress(gauge.lp_token),
 						poolAddress: toAddress(gauge.pool_address),
 						gaugeAddress: toAddress(gauge.gauge_address),
-						APY: gauge.apy.net_apy
+						APY: gauge.apr.netAPR
 					}
 				})
 			);
