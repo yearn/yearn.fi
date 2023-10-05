@@ -203,7 +203,12 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 				<div className={'flex flex-row items-center justify-end space-x-2 pb-0 md:pb-4 md:last:space-x-4'}>
 					<button
 						onClick={(): void => {
-							onAddTokenToMetamask(currentVault.address, currentVault.symbol, currentVault.decimals, currentVault.icon);
+							onAddTokenToMetamask(
+								currentVault.address,
+								currentVault.symbol,
+								currentVault.decimals,
+								`https://assets.smold.app/api/token/${currentVault.chainID}/${currentVault.address}/logo-128.png`
+							);
 						}}>
 						<span className={'sr-only'}>{'Add to wallet'}</span>
 						<IconAddToMetamask className={'h-5 w-5 text-neutral-600 transition-colors hover:text-neutral-900 md:h-6 md:w-6'} />

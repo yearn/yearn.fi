@@ -2,39 +2,6 @@ import {z} from 'zod';
 import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {addressSchema} from '@yearn-finance/web-lib/utils/schemas/addressSchema';
 
-const zodDefaultAPR = {
-	type: 'unknown',
-	netAPR: 0,
-	fees: {
-		performance: 0,
-		withdrawal: 0,
-		management: 0,
-		keepCRV: 0,
-		keepVelo: 0,
-		cvxKeepCRV: 0
-	},
-	extra: {
-		stakingRewardsAPR: 0
-	},
-	points: {
-		weekAgo: 0,
-		monthAgo: 0,
-		inception: 0
-	},
-	forwardAPR: {
-		type: 'unknown',
-		netAPR: 0,
-		composite: {
-			boost: 0,
-			poolAPY: 0,
-			boostedAPR: 0,
-			baseAPR: 0,
-			cvxAPR: 0,
-			rewardsAPR: 0
-		}
-	}
-};
-
 const yDaemonVaultStrategySchema = z.object({
 	address: addressSchema,
 	name: z.string(),
@@ -100,14 +67,9 @@ const yDaemonVaultStrategySchema = z.object({
 
 export const yDaemonVaultTokenSchema = z.object({
 	address: addressSchema,
-	underlyingTokensAddresses: z.array(addressSchema),
 	name: z.string(),
 	symbol: z.string(),
-	type: z.string(),
-	display_name: z.string(),
-	display_symbol: z.string(),
 	description: z.string(),
-	icon: z.string(),
 	decimals: z.number()
 });
 
@@ -121,26 +83,13 @@ export const yDaemonVaultSchema = z.object({
 		.or(z.literal('Standard'))
 		.or(z.literal('Yearn Vault')),
 	symbol: z.string(),
-	display_symbol: z.string(),
-	formated_symbol: z.string(),
 	name: z.string(),
-	display_name: z.string(),
-	formated_name: z.string(),
-	icon: z.string(),
-	version: z.string(),
 	category: z.literal('Curve').or(z.literal('Volatile').or(z.literal('Balancer')).or(z.literal('Stablecoin'))).or(z.literal('Velodrome')).or(z.literal('Boosted')).or(z.literal('Aerodrome')),
-	inception: z.number(),
 	decimals: z.number(),
 	chainID: z.number(),
-	riskScore: z.number(),
-	endorsed: z.boolean(),
-	emergency_shutdown: z.boolean(),
 	token: yDaemonVaultTokenSchema,
 	tvl: z.object({
 		total_assets: z.string().transform((val): bigint => toBigInt(val)),
-		total_delegated_assets: z.string().transform((val): bigint => toBigInt(val)),
-		tvl_deposited: z.number().default(0).catch(0),
-		tvl_delegated: z.number().default(0).catch(0),
 		tvl: z.number().default(0).catch(0),
 		price: z.number().default(0).catch(0)
 	}),
@@ -176,37 +125,13 @@ export const yDaemonVaultSchema = z.object({
 			}).default({})
 		}).default({})
 	}),
-	details: z.object({
-		management: addressSchema,
-		governance: addressSchema,
-		guardian: addressSchema,
-		rewards: addressSchema,
-		depositLimit: z.string(),
-		availableDepositLimit: z.string(),
-		comment: z.string(),
-		apyTypeOverride: z.string(),
-		apyOverride: z.number(),
-		order: z.number(),
-		performanceFee: z.number(),
-		managementFee: z.number(),
-		depositsDisabled: z.boolean(),
-		withdrawalsDisabled: z.boolean(),
-		allowZapIn: z.boolean(),
-		allowZapOut: z.boolean(),
-		retired: z.boolean(),
-		hideAlways: z.boolean()
-	}),
+	retired: z.boolean().default(false).catch(false),
+	depositLimit: z.string(),
 	strategies: z.array(yDaemonVaultStrategySchema),
 	migration: z.object({
 		available: z.boolean(),
 		address: addressSchema,
 		contract: addressSchema
-	}),
-	staking: z.object({
-		available: z.boolean(),
-		address: addressSchema,
-		tvl: z.number(),
-		risk: z.number()
 	})
 });
 

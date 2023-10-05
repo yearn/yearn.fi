@@ -57,7 +57,7 @@ export function GaugesTab(): ReactElement {
 			vaultAddress,
 			decimals: gauge?.decimals ?? 18,
 			vaultIcon: `${process.env.BASE_YEARN_ASSETS_URI}/1/${vaultAddress}/logo-128.png`,
-			vaultName: vault?.display_name ?? '',
+			vaultName: vault?.name ?? '',
 			vaultApy: vault?.apr.netAPR ?? 0,
 			vaultDeposited: toBigInt(formatBigNumberAsAmount(vaultBalance.raw)),
 			gaugeApy: 0, // TODO: gauge apy calcs

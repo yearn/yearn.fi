@@ -50,7 +50,7 @@ export function RewardsTab(): ReactElement {
 
 			options.push({
 				id: gauge.address,
-				label: vault?.display_name ?? `Vault ${truncateHex(vault.address, 4)}`,
+				label: vault?.name ?? `Vault ${truncateHex(vault.address, 4)}`,
 				icon: `${process.env.BASE_YEARN_ASSETS_URI}/1/${vault.address}/logo-128.png`
 			});
 		}

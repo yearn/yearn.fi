@@ -95,7 +95,7 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 		isLoading: isLoadingVaultList,
 		mutate: mutateVaultList
 	} = useFetch<TYDaemonVaults>({
-		endpoint: `${yDaemonBaseUriWithoutChain}/vaults/all?${new URLSearchParams({
+		endpoint: `${yDaemonBaseUriWithoutChain}/vaults?${new URLSearchParams({
 			hideAlways: 'true',
 			orderBy: 'apr.netAPR',
 			orderDirection: 'desc',
@@ -109,7 +109,7 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 	});
 
 	const {data: vaultsMigrations} = useFetch<TYDaemonVaults>({
-		endpoint: `${yDaemonBaseUriWithoutChain}/vaults/all?${new URLSearchParams({
+		endpoint: `${yDaemonBaseUriWithoutChain}/vaults?${new URLSearchParams({
 			migratable: 'nodust'
 		})}`,
 		schema: yDaemonVaultsSchema

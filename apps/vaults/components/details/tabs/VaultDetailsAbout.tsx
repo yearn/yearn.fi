@@ -57,7 +57,7 @@ function YearnFeesLineItem({children, label, tooltip}: TYearnFeesLineItem): Reac
 
 export function VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYDaemonVault; harvestData: TGraphData[]}): ReactElement {
 	const isMounted = useIsMounted();
-	const {token, apr, details} = currentVault;
+	const {token, apr} = currentVault;
 
 	function getVaultDescription(): string {
 		if (token.description) {
@@ -127,10 +127,14 @@ export function VaultDetailsAbout({currentVault, harvestData}: {currentVault: TY
 							<b className={'font-number text-xl text-neutral-900'}>{formatPercent(0, 0, 0)}</b>
 						</YearnFeesLineItem>
 						<YearnFeesLineItem label={'Management fee'}>
-							<b className={'font-number text-xl text-neutral-900'}>{formatPercent((details.managementFee || 0) / 100, 0)}</b>
+							<b className={'font-number text-xl text-neutral-900'}>
+								{formatPercent((apr.fees.management || 0) / 100, 0)}
+							</b>
 						</YearnFeesLineItem>
 						<YearnFeesLineItem label={'Performance fee'}>
-							<b className={'font-number text-xl text-neutral-500'}>{formatPercent((details.performanceFee || 0) / 100, 0)}</b>
+							<b className={'font-number text-xl text-neutral-500'}>
+								{formatPercent((apr.fees.performance || 0) / 100, 0)}
+							</b>
 						</YearnFeesLineItem>
 						{currentVault.category === 'Velodrome' || currentVault.category === 'Aerodrome' ? (
 							<YearnFeesLineItem

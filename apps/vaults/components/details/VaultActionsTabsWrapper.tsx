@@ -64,7 +64,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 		getCurrentTab({
 			isDepositing,
 			hasMigration: currentVault?.migration?.available,
-			isRetired: currentVault?.details?.retired
+			isRetired: currentVault?.retired
 		})
 	);
 	const [shouldShowLedgerPluginBanner, set_shouldShowLedgerPluginBanner] = useLocalStorage<boolean>('yearn.fi/ledger-plugin-banner', true);
@@ -87,7 +87,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 				set_currentTab(tabs[2]);
 				onSwitchSelectedOptions(Flow.Migrate);
 			});
-		} else if (currentVault?.details?.retired && actionParams.isReady) {
+		} else if (currentVault?.retired && actionParams.isReady) {
 			performBatchedUpdates((): void => {
 				set_possibleTabs([tabs[1]]);
 				set_currentTab(tabs[1]);
@@ -100,7 +100,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 				set_possibleTabs([tabs[0], tabs[1], tabs[3]]);
 			});
 		}
-	}, [currentVault?.migration?.available, currentVault?.details?.retired, actionParams.isReady, hasStakingRewards]);
+	}, [currentVault?.migration?.available, currentVault?.retired, actionParams.isReady, hasStakingRewards]);
 
 	const isLedgerPluginVisible = isWalletLedger && shouldShowLedgerPluginBanner;
 
@@ -138,7 +138,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 				</div>
 			)}
 
-			{!currentVault?.migration.available && currentVault?.details?.retired && (
+			{!currentVault?.migration.available && currentVault?.retired && (
 				<div
 					aria-label={'Deprecation Warning'}
 					className={'col-span-12 mt-10'}>
@@ -153,7 +153,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 				</div>
 			)}
 
-			<nav className={`mb-2 w-full ${isLedgerPluginVisible || currentVault?.details?.retired ? 'mt-1 md:mt-4' : 'mt-10 md:mt-20'}`}>
+			<nav className={`mb-2 w-full ${isLedgerPluginVisible || currentVault?.retired ? 'mt-1 md:mt-4' : 'mt-10 md:mt-20'}`}>
 				<Link href={'/vaults'}>
 					<p className={'yearn--header-nav-item w-full whitespace-nowrap opacity-30'}>{'Back to vaults'}</p>
 				</Link>

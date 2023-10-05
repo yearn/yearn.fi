@@ -49,7 +49,7 @@ export function getAmountWithSlippage(from: string, to: string, value: bigint, s
 }
 
 export function getVaultName(vault: TYDaemonVault): string {
-	const baseName = vault.display_name || vault.name || vault.formated_name || 'unknown';
+	const baseName = vault.name;
 	if (baseName.includes(' yVault')) {
 		return baseName.replace(' yVault', '');
 	}
