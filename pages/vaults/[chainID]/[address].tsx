@@ -94,7 +94,7 @@ function Index(): ReactElement | null {
 			</header>
 
 			<section className={'mt-4 grid w-full grid-cols-12 pb-10 md:mt-0'}>
-				<VaultDetailsHeader vault={currentVault} />
+				<VaultDetailsHeader currentVault={currentVault} />
 				<ActionFlowContextApp currentVault={currentVault}>
 					<WithSolverContextApp>
 						<VaultActionsTabsWrapper currentVault={currentVault} />

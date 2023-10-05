@@ -234,9 +234,8 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 		const _tokens = {...tokensRaw};
 		for (const [chainIDStr, perChain] of Object.entries(_tokens)) {
 			const chainID = Number(chainIDStr);
-			for (const [tokenAddress, tokenData] of Object.entries(perChain)) {
+			for (const [tokenAddress] of Object.entries(perChain)) {
 				if (STACKING_TO_VAULT[tokenAddress] && _tokens?.[chainID]?.[STACKING_TO_VAULT[tokenAddress]]) {
-					console.warn(tokenAddress, tokenData);
 					_tokens[chainID][tokenAddress].stakingBalance = _tokens[chainID][STACKING_TO_VAULT[tokenAddress]].balance;
 					_tokens[chainID][tokenAddress].stakingValue = _tokens[chainID][STACKING_TO_VAULT[tokenAddress]].value;
 				}

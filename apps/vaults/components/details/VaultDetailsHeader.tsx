@@ -10,12 +10,12 @@ import {RenderAmount} from '@common/components/RenderAmount';
 import {useBalance} from '@common/hooks/useBalance';
 import {useFetch} from '@common/hooks/useFetch';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
-import {yDaemonEarnedSchema} from '@common/schemas/yDaemonEarnedSchema';
+import {yDaemonSingleEarnedSchema} from '@common/schemas/yDaemonEarnedSchema';
 import {getVaultName} from '@common/utils';
 import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonEarned} from '@common/schemas/yDaemonEarnedSchema';
+import type {TYDaemonEarnedSingle} from '@common/schemas/yDaemonEarnedSchema';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TNormalizedBN} from '@common/types/types';
 
@@ -43,24 +43,24 @@ function VaultHeaderLineItem({label, children, legend}: TVaultHeaderLineItemProp
 	);
 }
 
-export function VaultDetailsHeader({vault}: {vault: TYDaemonVault}): ReactElement {
+export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {address: userAddress} = useWeb3();
-	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: vault.chainID});
-	const {address, apy, tvl, decimals, symbol = 'token', token} = vault;
-	const {data: earned} = useFetch<TYDaemonEarned>({
-		endpoint: address && userAddress ? `${yDaemonBaseUri}/earned/${userAddress}` : null,
-		schema: yDaemonEarnedSchema
+	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: currentVault.chainID});
+	const {address, apy, tvl, decimals, symbol = 'token', token} = currentVault;
+	const {data: earned} = useFetch<TYDaemonEarnedSingle>({
+		endpoint: address && userAddress ? `${yDaemonBaseUri}/earned/${userAddress}/${currentVault.address}` : null,
+		schema: yDaemonSingleEarnedSchema
 	});
 
 	const normalizedVaultEarned = useMemo((): TNormalizedBN => {
-		const {unrealizedGains} = earned?.earned?.[toAddress(address)] || {};
+		const {unrealizedGains} = earned?.earned?.[toAddress(currentVault.address)] || {};
 		const value = toBigInt(unrealizedGains);
 		return toNormalizedBN(value < 0n ? 0n : value);
 	}, [earned?.earned, address]);
 
-	const vaultBalance = useBalance({address, chainID: vault.chainID});
-	const vaultPrice = useTokenPrice(address) || vault?.tvl?.price || 0;
-	const vaultName = useMemo((): string => getVaultName(vault), [vault]);
+	const vaultBalance = useBalance({address, chainID: currentVault.chainID});
+	const vaultPrice = useTokenPrice(address) || currentVault?.tvl?.price || 0;
+	const vaultName = useMemo((): string => getVaultName(currentVault), [currentVault]);
 	const {stakingRewardsByVault, positionsMap} = useStakingRewards();
 	const stakedBalance = toBigInt(positionsMap[toAddress(stakingRewardsByVault[address])]?.stake);
 	const depositedAndStaked = toNormalizedBN(vaultBalance.raw + stakedBalance, decimals);

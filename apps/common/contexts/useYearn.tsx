@@ -67,7 +67,6 @@ const YearnContext = createContext<TYearnContext>({
 
 export const YearnContextApp = memo(function YearnContextApp({children}: {children: ReactElement}): ReactElement {
 	const {safeChainID} = useChainID();
-	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: safeChainID});
 	const {yDaemonBaseUri: yDaemonBaseUriWithoutChain} = useYDaemonBaseURI();
 	const result = useYDaemonStatus({chainID: safeChainID});
 	const {address, currentPartner} = useWeb3();
@@ -102,8 +101,10 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 			orderDirection: 'desc',
 			strategiesDetails: 'withDetails',
 			strategiesRisk: 'withRisk',
-			strategiesCondition: 'inQueue'
-		})}&chainIDs=${[1, 10].join(',')}&limit=2500`,
+			strategiesCondition: 'inQueue',
+			chainIDs: [1, 10].join(','),
+			limit: `2500`
+		})}`,
 		schema: yDaemonVaultsSchema
 	});
 
@@ -120,7 +121,11 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 	});
 
 	const {data: earned} = useFetch<TYDaemonEarned>({
-		endpoint: address ? `${yDaemonBaseUri}/earned/${address}` : null,
+		endpoint: address
+			? `${yDaemonBaseUriWithoutChain}/earned/${address}?${new URLSearchParams({
+					chainIDs: [1, 10].join(',')
+			  })}`
+			: null,
 		schema: yDaemonEarnedSchema
 	});
 
