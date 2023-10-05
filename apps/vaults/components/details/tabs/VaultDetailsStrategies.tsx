@@ -198,10 +198,10 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 	};
 
 	const sortedStrategies = useMemo((): TYDaemonVault['strategies'] => {
-		return currentVault.strategies.sort((a, b): number => (b.details?.debtRatio || 0) - (a.details?.debtRatio || 0));
+		return (currentVault.strategies || []).sort((a, b): number => (b.details?.debtRatio || 0) - (a.details?.debtRatio || 0));
 	}, [currentVault.strategies]);
 
-	const filteredStrategies = sortedStrategies.filter(hide0DebtStrategyFilter).filter(nameSearchFilter);
+	const filteredStrategies = (sortedStrategies || []).filter(hide0DebtStrategyFilter).filter(nameSearchFilter);
 
 	return (
 		<div className={'grid grid-cols-1 bg-neutral-100'}>
