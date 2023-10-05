@@ -35,10 +35,10 @@ export function VaultDetailsQuickActionsTo(): ReactElement {
 			className={'flex w-full flex-col space-x-0 md:flex-row md:space-x-4'}>
 			<div className={'relative z-10 w-full space-y-2'}>
 				<div className={'flex flex-row items-baseline justify-between'}>
-					<label className={'text-base text-neutral-600'}>
-						{isDepositing || isMigrationAvailable ? 'To vault' : 'To wallet'}
-					</label>
-					<legend className={'font-number inline text-xs text-neutral-600 md:hidden'} suppressHydrationWarning>
+					<label className={'text-base text-neutral-600'}>{isDepositing || isMigrationAvailable ? 'To vault' : 'To wallet'}</label>
+					<legend
+						className={'font-number inline text-xs text-neutral-600 md:hidden'}
+						suppressHydrationWarning>
 						{`APR ${formatPercent((currentVault.apr.netAPR + currentVault.apr.extra.stakingRewardsAPR) * 100, 2, 2, 500)}`}
 					</legend>
 				</div>
@@ -54,8 +54,10 @@ export function VaultDetailsQuickActionsTo(): ReactElement {
 						</div>
 					</div>
 				</Renderable>
-				<legend className={'font-number hidden text-xs text-neutral-600 md:inline'} suppressHydrationWarning>
-					{isDepositing ? (formatPercent((currentVault.apr.netAPR + currentVault.apr.extra.stakingRewardsAPR) * 100, 2, 2, 500)) : ''}
+				<legend
+					className={'font-number hidden text-xs text-neutral-600 md:inline'}
+					suppressHydrationWarning>
+					{isDepositing ? formatPercent((currentVault.apr.netAPR + currentVault.apr.extra.stakingRewardsAPR) * 100, 2, 2, 500) : ''}
 				</legend>
 			</div>
 

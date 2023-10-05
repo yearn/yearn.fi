@@ -84,7 +84,12 @@ export const yDaemonVaultSchema = z.object({
 		.or(z.literal('Yearn Vault')),
 	symbol: z.string(),
 	name: z.string(),
-	category: z.literal('Curve').or(z.literal('Volatile').or(z.literal('Balancer')).or(z.literal('Stablecoin'))).or(z.literal('Velodrome')).or(z.literal('Boosted')).or(z.literal('Aerodrome')),
+	category: z
+		.literal('Curve')
+		.or(z.literal('Volatile').or(z.literal('Balancer')).or(z.literal('Stablecoin')))
+		.or(z.literal('Velodrome'))
+		.or(z.literal('Boosted'))
+		.or(z.literal('Aerodrome')),
 	decimals: z.number(),
 	chainID: z.number(),
 	token: yDaemonVaultTokenSchema,
@@ -96,34 +101,44 @@ export const yDaemonVaultSchema = z.object({
 	apr: z.object({
 		type: z.string().min(1).default('unknown').catch('unknown'),
 		netAPR: z.number().default(0).catch(0),
-		fees: z.object({
-			performance: z.number().default(0).catch(0),
-			withdrawal: z.number().default(0).catch(0),
-			management: z.number().default(0).catch(0),
-			keepCRV: z.number().default(0).catch(0),
-			keepVelo: z.number().default(0).catch(0),
-			cvxKeepCRV: z.number().default(0).catch(0)
-		}).default({}),
-		extra: z.object({
-			stakingRewardsAPR: z.number().default(0).catch(0)
-		}).default({}),
-		points: z.object({
-			weekAgo: z.number().default(0).catch(0),
-			monthAgo: z.number().default(0).catch(0),
-			inception: z.number().default(0).catch(0)
-		}).default({}),
-		forwardAPR: z.object({
-			type: z.string().default('unknown').catch('unknown'),
-			netAPR: z.number().default(0).catch(0),
-			composite: z.object({
-				boost: z.number().default(0).catch(0),
-				poolAPY: z.number().default(0).catch(0),
-				boostedAPR: z.number().default(0).catch(0),
-				baseAPR: z.number().default(0).catch(0),
-				cvxAPR: z.number().default(0).catch(0),
-				rewardsAPR: z.number().default(0).catch(0)
-			}).default({})
-		}).default({})
+		fees: z
+			.object({
+				performance: z.number().default(0).catch(0),
+				withdrawal: z.number().default(0).catch(0),
+				management: z.number().default(0).catch(0),
+				keepCRV: z.number().default(0).catch(0),
+				keepVelo: z.number().default(0).catch(0),
+				cvxKeepCRV: z.number().default(0).catch(0)
+			})
+			.default({}),
+		extra: z
+			.object({
+				stakingRewardsAPR: z.number().default(0).catch(0)
+			})
+			.default({}),
+		points: z
+			.object({
+				weekAgo: z.number().default(0).catch(0),
+				monthAgo: z.number().default(0).catch(0),
+				inception: z.number().default(0).catch(0)
+			})
+			.default({}),
+		forwardAPR: z
+			.object({
+				type: z.string().default('unknown').catch('unknown'),
+				netAPR: z.number().default(0).catch(0),
+				composite: z
+					.object({
+						boost: z.number().default(0).catch(0),
+						poolAPY: z.number().default(0).catch(0),
+						boostedAPR: z.number().default(0).catch(0),
+						baseAPR: z.number().default(0).catch(0),
+						cvxAPR: z.number().default(0).catch(0),
+						rewardsAPR: z.number().default(0).catch(0)
+					})
+					.default({})
+			})
+			.default({})
 	}),
 	retired: z.boolean().default(false).catch(false),
 	depositLimit: z.string(),

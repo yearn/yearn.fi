@@ -96,8 +96,7 @@ export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): 
 						</Renderable>
 					</b>
 					<small className={'text-xs text-neutral-900'}>
-						<Renderable
-							shouldRender={isEthMainnet && currentVault.apr.forwardAPR.composite?.boost > 0 && !currentVault.apr.extra.stakingRewardsAPR}>
+						<Renderable shouldRender={isEthMainnet && currentVault.apr.forwardAPR.composite?.boost > 0 && !currentVault.apr.extra.stakingRewardsAPR}>
 							{`BOOST ${formatAmount(currentVault.apr.forwardAPR.composite?.boost, 2, 2)}x`}
 						</Renderable>
 					</small>
@@ -134,17 +133,16 @@ export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): 
 					<RenderAmount
 						value={currentVault.apr.forwardAPR.netAPR}
 						symbol={'percent'}
-						decimals={6} />
+						decimals={6}
+					/>
 				</Renderable>
 			</b>
 		</div>
 	);
 }
 
-
 export function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	if (currentVault.apr?.extra.stakingRewardsAPR > 0) {
-
 		const boostedAPR = currentVault.apr.netAPR + currentVault.apr.extra.stakingRewardsAPR;
 
 		return (
@@ -157,7 +155,8 @@ export function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}
 							<RenderAmount
 								value={boostedAPR}
 								symbol={'percent'}
-								decimals={6} />
+								decimals={6}
+							/>
 						</Renderable>
 					</b>
 				</span>
@@ -232,12 +231,16 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 				</div>
 
 				<div className={'col-span-5 grid grid-cols-1 gap-0 md:grid-cols-10 md:gap-x-7'}>
-					<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
+					<div
+						className={'yearn--table-data-section-item md:col-span-2'}
+						datatype={'number'}>
 						<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Estimated APR'}</label>
 						<VaultForwardAPR currentVault={currentVault} />
 					</div>
 
-					<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
+					<div
+						className={'yearn--table-data-section-item md:col-span-2'}
+						datatype={'number'}>
 						<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Historical APR'}</label>
 						<VaultHistoricalAPR currentVault={currentVault} />
 					</div>
