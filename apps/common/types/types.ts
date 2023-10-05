@@ -65,8 +65,10 @@ export type TToken = {
 	chainID: number;
 	logoURI?: string;
 	value: number;
+	stakingValue: number;
 	price: TNormalizedBN;
 	balance: TNormalizedBN;
+	stakingBalance: TNormalizedBN;
 };
 export type TChainTokens = TNDict<TDict<TToken>>;
 

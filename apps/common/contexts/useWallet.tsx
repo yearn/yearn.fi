@@ -1,5 +1,4 @@
 import {createContext, memo, useCallback, useContext, useEffect, useMemo} from 'react';
-import {useChainId} from 'wagmi';
 import {
 	OPT_YVAGEUR_USDC_STAKING_CONTRACT,
 	OPT_YVALETH_FRXETH_STAKING_CONTRACT,
@@ -83,8 +82,10 @@ const defaultToken: TToken = {
 	decimals: 18,
 	chainID: 1,
 	value: 0,
+	stakingValue: 0,
 	price: toNormalizedBN(0),
-	balance: toNormalizedBN(0)
+	balance: toNormalizedBN(0),
+	stakingBalance: toNormalizedBN(0)
 };
 
 const defaultProps = {
@@ -104,7 +105,6 @@ const defaultProps = {
  ******************************************************************************/
 const WalletContext = createContext<TWalletContext>(defaultProps);
 export const WalletContextApp = memo(function WalletContextApp({children}: {children: ReactElement}): ReactElement {
-	const chain = useChainId();
 	const {vaults, vaultsMigrations, vaultsRetired, isLoadingVaultList, prices} = useYearn();
 	const {onLoadStart, onLoadDone} = useUI();
 
@@ -118,12 +118,11 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 		const extraTokens: TUseBalancesTokens[] = [];
 		extraTokens.push(
 			...[
-				{chainID: 1, address: toAddress(ETH_TOKEN_ADDRESS)},
-				{chainID: 10, address: toAddress(ETH_TOKEN_ADDRESS)},
-				{chainID: 137, address: toAddress(ETH_TOKEN_ADDRESS)},
-				{chainID: 250, address: toAddress(ETH_TOKEN_ADDRESS)},
-				{chainID: 8453, address: toAddress(ETH_TOKEN_ADDRESS)},
-				{chainID: 42161, address: toAddress(ETH_TOKEN_ADDRESS)},
+				{chainID: 1, address: ETH_TOKEN_ADDRESS},
+				{chainID: 10, address: ETH_TOKEN_ADDRESS},
+				{chainID: 250, address: ETH_TOKEN_ADDRESS},
+				{chainID: 8453, address: ETH_TOKEN_ADDRESS},
+				{chainID: 42161, address: ETH_TOKEN_ADDRESS},
 				{chainID: 1, address: YCRV_TOKEN_ADDRESS},
 				{chainID: 1, address: LPYCRV_TOKEN_ADDRESS},
 				{chainID: 1, address: CRV_TOKEN_ADDRESS},
@@ -194,7 +193,7 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 			}
 		});
 		return tokens;
-	}, [isLoadingVaultList, chain, vaults]);
+	}, [isLoadingVaultList, vaults]);
 
 	//List all vaults with a possible migration
 	const migratableTokens = useMemo((): TUseBalancesTokens[] => {
@@ -233,9 +232,14 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 
 	const tokens = useMemo((): TChainTokens => {
 		const _tokens = {...tokensRaw};
-		for (const [token] of Object.entries(_tokens)) {
-			if (STACKING_TO_VAULT[token] && _tokens?.[10]?.[STACKING_TO_VAULT[token]]) {
-				_tokens[10][token].value = (_tokens[10][token].value || 0) + (_tokens[10][STACKING_TO_VAULT[token]].value || 0);
+		for (const [chainIDStr, perChain] of Object.entries(_tokens)) {
+			const chainID = Number(chainIDStr);
+			for (const [tokenAddress, tokenData] of Object.entries(perChain)) {
+				if (STACKING_TO_VAULT[tokenAddress] && _tokens?.[chainID]?.[STACKING_TO_VAULT[tokenAddress]]) {
+					console.warn(tokenAddress, tokenData);
+					_tokens[chainID][tokenAddress].stakingBalance = _tokens[chainID][STACKING_TO_VAULT[tokenAddress]].balance;
+					_tokens[chainID][tokenAddress].stakingValue = _tokens[chainID][STACKING_TO_VAULT[tokenAddress]].value;
+				}
 			}
 		}
 		return _tokens;
@@ -243,20 +247,15 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 
 	const cumulatedValueInVaults = useMemo((): number => {
 		let cumulatedValueInVaults = 0;
-		for (const [chainIDStr, perChain] of Object.entries(tokens)) {
-			const chainID = Number(chainIDStr);
-			for (const [tokenAddress, balanceData] of Object.entries(perChain)) {
-				if (vaults?.[toAddress(tokenAddress)] && balanceData.value > 0) {
-					cumulatedValueInVaults += balanceData.value;
-				} else if (vaultsMigrations?.[toAddress(tokenAddress)] && balanceData.value > 0) {
-					cumulatedValueInVaults += balanceData.value;
+		for (const [, perChain] of Object.entries(tokens)) {
+			for (const [tokenAddress, tokenData] of Object.entries(perChain)) {
+				if (tokenData.value + tokenData.stakingValue === 0) {
+					continue;
 				}
-
-				if (STACKING_TO_VAULT[tokenAddress] && tokens[chainID][STACKING_TO_VAULT[tokenAddress]]) {
-					const valueInStakingContract = tokens[chainID][STACKING_TO_VAULT[tokenAddress]].value || 0;
-					if (valueInStakingContract > 0) {
-						cumulatedValueInVaults += valueInStakingContract;
-					}
+				if (vaults?.[toAddress(tokenAddress)]) {
+					cumulatedValueInVaults += tokenData.value + tokenData.stakingValue;
+				} else if (vaultsMigrations?.[toAddress(tokenAddress)]) {
+					cumulatedValueInVaults += tokenData.value + tokenData.stakingValue;
 				}
 			}
 		}
