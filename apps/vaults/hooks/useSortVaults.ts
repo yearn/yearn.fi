@@ -11,7 +11,7 @@ import {numberSort, stringSort} from '@common/utils/sort';
 import type {TYDaemonVaults} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TSortDirection} from '@common/types/types';
 
-export type TPossibleSortBy = 'apr' | 'forwardAPR' | 'tvl' | 'name' | 'deposited' | 'available';
+export type TPossibleSortBy = 'apr' | 'forwardAPR' | 'tvl' | 'name' | 'deposited' | 'available' | 'featuringScore';
 
 export function useSortVaults(vaultList: TYDaemonVaults, sortBy: TPossibleSortBy, sortDirection: TSortDirection): TYDaemonVaults {
 	const {getBalance} = useWallet();
@@ -71,6 +71,11 @@ export function useSortVaults(vaultList: TYDaemonVaults, sortBy: TPossibleSortBy
 		});
 	}, [getBalance, sortDirection, vaultList]);
 
+	const sortedByFeaturingScore = useCallback(
+		(): TYDaemonVaults => vaultList.sort((a, b): number => numberSort({a: a.featuringScore, b: b.featuringScore, sortDirection})),
+		[sortDirection, vaultList]
+	);
+
 	const stringifiedVaultList = serialize(vaultList);
 	const sortedVaults = useMemo((): TYDaemonVaults => {
 		const sortResult = deserialize(stringifiedVaultList);
@@ -94,6 +99,9 @@ export function useSortVaults(vaultList: TYDaemonVaults, sortBy: TPossibleSortBy
 		}
 		if (sortBy === 'available') {
 			return sortedByAvailable();
+		}
+		if (sortBy === 'featuringScore') {
+			return sortedByFeaturingScore();
 		}
 
 		return sortResult;

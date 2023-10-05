@@ -97,7 +97,7 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 	} = useFetch<TYDaemonVaults>({
 		endpoint: `${yDaemonBaseUriWithoutChain}/vaults?${new URLSearchParams({
 			hideAlways: 'true',
-			orderBy: 'apr.netAPR',
+			orderBy: 'featuringScore',
 			orderDirection: 'desc',
 			strategiesDetails: 'withDetails',
 			strategiesRisk: 'withRisk',

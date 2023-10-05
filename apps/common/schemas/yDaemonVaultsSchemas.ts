@@ -140,6 +140,7 @@ export const yDaemonVaultSchema = z.object({
 			})
 			.default({})
 	}),
+	featuringScore: z.number().default(0).catch(0),
 	retired: z.boolean().default(false).catch(false),
 	depositLimit: z.string(),
 	strategies: z.array(yDaemonVaultStrategySchema).nullable().default([]),
