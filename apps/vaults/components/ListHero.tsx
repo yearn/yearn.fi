@@ -1,5 +1,4 @@
-import {useMemo, useState} from 'react';
-import {Switch as HeadlessSwitch} from '@headlessui/react';
+import {useMemo} from 'react';
 import {IconArbitrumChain} from '@yearn-finance/web-lib/icons/chains/IconArbitrumChain';
 import {IconBaseChain} from '@yearn-finance/web-lib/icons/chains/IconBaseChain';
 import {IconEtherumChain} from '@yearn-finance/web-lib/icons/chains/IconEtherumChain';
@@ -8,16 +7,10 @@ import {IconOptimismChain} from '@yearn-finance/web-lib/icons/chains/IconOptimis
 import {MultiSelectDropdown} from '@common/components/MultiSelectDropdown';
 import {SearchBar} from '@common/components/SearchBar';
 
-import type {ChangeEvent, ReactElement} from 'react';
+import type {ReactElement} from 'react';
 import type {TMultiSelectOptionProps} from '@common/components/MultiSelectDropdown';
 
-type TSwitchProps = {
-	isEnabled: boolean;
-	onSwitch?: (state: boolean) => void;
-};
-
 type TListHero = {
-	switchProps?: TSwitchProps;
 	categories: string;
 	selectedChains: string;
 	searchValue: string;
@@ -26,36 +19,7 @@ type TListHero = {
 	set_searchValue: (searchValue: string) => void;
 };
 
-function Switch(props: TSwitchProps): ReactElement {
-	const {isEnabled, onSwitch} = props;
-	const [isEnabledState, set_isEnabledState] = useState(isEnabled);
-
-	function safeOnSwitch(): void {
-		if (onSwitch) {
-			onSwitch(!isEnabled);
-		} else {
-			set_isEnabledState(!isEnabledState);
-		}
-	}
-
-	return (
-		<div>
-			<HeadlessSwitch
-				checked={onSwitch ? isEnabled : isEnabledState}
-				onChange={safeOnSwitch}
-				onKeyDown={({keyCode}: {keyCode: number}): unknown => (keyCode === 13 ? safeOnSwitch() : null)}
-				className={'yearn--next-switch'}>
-				<span className={'sr-only'}>{'Use setting'}</span>
-				<div
-					aria-hidden={'true'}
-					className={(onSwitch ? isEnabled : isEnabledState) ? 'translate-x-[14px]' : 'translate-x-0'}
-				/>
-			</HeadlessSwitch>
-		</div>
-	);
-}
-
-export function ListHero({categories, set_categories, searchValue, selectedChains, set_searchValue, set_selectedChains, switchProps}: TListHero): ReactElement {
+export function ListHero({categories, set_categories, searchValue, selectedChains, set_searchValue, set_selectedChains}: TListHero): ReactElement {
 	const chainOptions = useMemo((): TMultiSelectOptionProps[] => {
 		const chainsFromJSON = JSON.parse(selectedChains || '[]') as number[];
 		return [
@@ -154,8 +118,8 @@ export function ListHero({categories, set_categories, searchValue, selectedChain
 
 	return (
 		<div className={'flex flex-col items-start justify-between space-x-0 px-4 pb-2 pt-4 md:px-10 md:pb-8 md:pt-10'}>
-			<div className={'hidden w-full flex-row items-center justify-between space-x-4 md:flex'}>
-				<div className={'w-1/3'}>
+			<div className={'mt-0 flex w-full flex-col items-center justify-between gap-4 md:mt-0 md:flex-row'}>
+				<div className={'w-full md:w-1/3'}>
 					<small>{'Filter'}</small>
 					<MultiSelectDropdown
 						options={categoryOptions}
@@ -167,7 +131,7 @@ export function ListHero({categories, set_categories, searchValue, selectedChain
 					/>
 				</div>
 
-				<div className={'w-1/3'}>
+				<div className={'w-full md:w-1/3'}>
 					<small>{'Select Blockchain'}</small>
 					<MultiSelectDropdown
 						options={chainOptions}
@@ -179,34 +143,14 @@ export function ListHero({categories, set_categories, searchValue, selectedChain
 					/>
 				</div>
 
-				<div className={'w-1/3'}>
+				<div className={'w-full md:w-1/3'}>
 					<small>{'Search'}</small>
 					<SearchBar
+						className={'md:w-full'}
 						searchPlaceholder={'YFI Vault'}
 						searchValue={searchValue}
 						set_searchValue={set_searchValue}
 					/>
-				</div>
-
-				{!!switchProps && (
-					<div className={'mr-4 mt-7 flex h-full min-w-fit flex-row'}>
-						<small className={'mr-2'}>{'Hide gauges with 0 votes'}</small>
-						<Switch {...switchProps} />
-					</div>
-				)}
-			</div>
-
-			<div className={'flex w-full flex-row space-x-2 md:hidden md:w-2/3'}>
-				<div className={'flex h-8 w-full items-center border border-neutral-0 bg-neutral-0 p-2 md:w-auto'}>
-					<div className={'flex h-8 w-full flex-row items-center justify-between px-0 py-2'}>
-						<input
-							className={'w-full overflow-x-scroll border-none bg-transparent px-0 py-2 text-xs outline-none scrollbar-none'}
-							type={'text'}
-							placeholder={'Search'}
-							value={searchValue}
-							onChange={(e: ChangeEvent<HTMLInputElement>): void => set_searchValue(e.target.value)}
-						/>
-					</div>
 				</div>
 			</div>
 		</div>

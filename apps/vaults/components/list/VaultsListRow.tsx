@@ -84,11 +84,15 @@ export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): 
 		return (
 			<span className={'tooltip'}>
 				<div className={'flex flex-col text-right'}>
-					<b className={'yearn--table-data-section-item-value'}>
+					<b
+						className={
+							'yearn--table-data-section-item-value underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
+						}>
 						<Renderable
 							shouldRender={!(currentVault.apr?.type === 'new' && isZero(currentVault.apr.forwardAPR.netAPR))}
 							fallback={'New'}>
 							<RenderAmount
+								shouldHideTooltip
 								value={currentVault.apr.forwardAPR.netAPR}
 								symbol={'percent'}
 								decimals={6}
@@ -106,6 +110,7 @@ export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): 
 								<div className={'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'}>
 									<p>{'• Base APR '}</p>
 									<RenderAmount
+										shouldHideTooltip
 										value={unBoostedAPR}
 										symbol={'percent'}
 										decimals={6}
