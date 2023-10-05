@@ -36,7 +36,7 @@ export const AppSettingsContextApp = memo(function AppSettingsContextApp({childr
 		'["Holdings","Crypto Vaults","Stables Vaults","Curve Vaults","Balancer Vaults","Boosted Vaults","Velodrome Vaults","Aerodrome Vaults"]'
 	);
 	const [searchValue, set_searchValue] = useSessionStorage('yearn.fi/vaults-search', '');
-	const [selectedChains, set_selectedChains] = useSessionStorage('yearn.fi/selected-chains', '[1]');
+	const [selectedChains, set_selectedChains] = useSessionStorage('yearn.fi/selected-chains', '[1,10,250,8453,42161]');
 	const [shouldHideDust, set_shouldHideDust] = useLocalStorage('yearn.fi/should-hide-dust', false);
 	const [shouldHideLowTVLVaults, set_shouldHideLowTVLVaults] = useLocalStorage('yearn.fi/hide-low-tvl', false);
 
