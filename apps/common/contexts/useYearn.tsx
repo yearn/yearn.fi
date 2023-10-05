@@ -108,14 +108,14 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 	});
 
 	const {data: vaultsMigrations} = useFetch<TYDaemonVaults>({
-		endpoint: `${yDaemonBaseUri}/vaults/all?${new URLSearchParams({
+		endpoint: `${yDaemonBaseUriWithoutChain}/vaults/all?${new URLSearchParams({
 			migratable: 'nodust'
 		})}`,
 		schema: yDaemonVaultsSchema
 	});
 
 	const {data: vaultsRetired} = useFetch<TYDaemonVaults>({
-		endpoint: `${yDaemonBaseUri}/vaults/retired`,
+		endpoint: `${yDaemonBaseUriWithoutChain}/vaults/retired`,
 		schema: yDaemonVaultsSchema
 	});
 
@@ -167,13 +167,11 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 				}
 			}
 		}
-		if (safeChainID === 10) {
-			Object.entries(STACKING_TO_VAULT).forEach(([vaultAddress, stackingAddress]): void => {
-				allPrices[toAddress(stackingAddress)] = allPrices[toAddress(vaultAddress)];
-			});
-		}
+		Object.entries(STACKING_TO_VAULT).forEach(([vaultAddress, stackingAddress]): void => {
+			allPrices[toAddress(stackingAddress)] = allPrices[toAddress(vaultAddress)];
+		});
 		return allPrices;
-	}, [prices, safeChainID]);
+	}, [prices]);
 
 	const toTokens = (obj: TYDaemonTokensChain | undefined): TYDaemonTokens => {
 		if (!obj) {

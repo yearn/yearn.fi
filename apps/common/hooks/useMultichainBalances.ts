@@ -97,7 +97,9 @@ async function performCall(chainID: number, calls: ContractFunctionConfig[], tok
 			chainID: chainID,
 			balance: toNormalizedBN(balanceOf, decimals),
 			price: toNormalizedBN(rawPrice, 6),
-			value: toNormalizedValue(balanceOf, decimals) * toNormalizedValue(rawPrice, 6)
+			value: toNormalizedValue(balanceOf, decimals) * toNormalizedValue(rawPrice, 6),
+			stakingBalance: toNormalizedBN(0),
+			stakingValue: 0
 		};
 	}
 	return [_data, undefined];

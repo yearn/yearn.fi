@@ -9,11 +9,11 @@ import {IconFantomChain} from '@yearn-finance/web-lib/icons/chains/IconFantomCha
 import {IconOptimismChain} from '@yearn-finance/web-lib/icons/chains/IconOptimismChain';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {RenderAmount} from '@common/components/RenderAmount';
+import {useWallet} from '@common/contexts/useWallet';
 import {useBalance} from '@common/hooks/useBalance';
 import {getVaultName} from '@common/utils';
 
@@ -139,13 +139,13 @@ export function VaultAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 }
 
 export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+	const {getToken} = useWallet();
 	const balanceOfWant = useBalance({chainID: currentVault.chainID, address: currentVault.token.address});
 	const balanceOfCoin = useBalance({chainID: currentVault.chainID, address: ETH_TOKEN_ADDRESS});
 	const balanceOfWrappedCoin = useBalance({
 		chainID: currentVault.chainID,
 		address: toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS ? WFTM_TOKEN_ADDRESS : WETH_TOKEN_ADDRESS //TODO: Create a wagmi Chain upgrade to add the chain wrapper token address
 	});
-	const deposited = useBalance({chainID: currentVault.chainID, address: currentVault.address}).raw;
 	const vaultName = useMemo((): string => getVaultName(currentVault), [currentVault]);
 	const {stakingRewardsByVault, positionsMap} = useStakingRewards();
 
@@ -162,10 +162,10 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 	}, [balanceOfCoin.raw, balanceOfWant.raw, balanceOfWrappedCoin.raw, currentVault.token.address]);
 
 	const staked = useMemo((): bigint => {
-		const stakedBalance = toBigInt(positionsMap[toAddress(stakingRewardsByVault[currentVault.address])]?.stake);
-		const depositedAndStaked = deposited + stakedBalance;
+		const token = getToken({chainID: currentVault.chainID, address: currentVault.address});
+		const depositedAndStaked = token.balance.raw + token.stakingBalance.raw;
 		return depositedAndStaked;
-	}, [currentVault.address, deposited, positionsMap, stakingRewardsByVault]);
+	}, [currentVault.address, positionsMap, stakingRewardsByVault]);
 
 	return (
 		<Link
