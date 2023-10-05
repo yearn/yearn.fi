@@ -64,7 +64,7 @@ export function RewardsTab(): ReactElement {
 
 			return {
 				id: address,
-				label: vault?.display_name ?? '',
+				label: vault?.name ?? '',
 				icon: `${process.env.BASE_YEARN_ASSETS_URI}/1/${vaultAddress}/logo-128.png`
 			};
 		});

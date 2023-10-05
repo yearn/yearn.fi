@@ -295,15 +295,15 @@ export function ActionFlowContextApp({children, currentVault}: {children: ReactN
 			}
 
 			const vaultUnderlying = setZapOption({
-				name: currentVault?.token?.display_name || currentVault?.token?.name,
+				name: currentVault?.token?.name,
 				symbol: currentVault?.token?.symbol,
 				address: toAddress(currentVault.token.address),
 				chainID: currentVault?.chainID === 1337 ? safeChainID : currentVault?.chainID,
 				decimals: currentVault?.token?.decimals || 18
 			});
 			const vaultToken = setZapOption({
-				name: currentVault?.display_name || currentVault?.name || currentVault.formated_name,
-				symbol: currentVault?.display_symbol || currentVault.symbol,
+				name: currentVault?.name,
+				symbol: currentVault.symbol,
 				address: toAddress(currentVault.address),
 				chainID: currentVault?.chainID === 1337 ? safeChainID : currentVault?.chainID,
 				decimals: currentVault?.decimals || 18
@@ -393,7 +393,7 @@ export function ActionFlowContextApp({children, currentVault}: {children: ReactN
 			}).raw;
 			let _amount = toNormalizedBN(userBalance, _selectedFrom?.decimals || currentVault?.token?.decimals || 18);
 			if (isDepositing) {
-				const vaultDepositLimit = toBigInt(currentVault?.details?.depositLimit);
+				const vaultDepositLimit = toBigInt(currentVault?.depositLimit);
 				if (_selectedFrom?.value === currentVault?.token?.address) {
 					if (userBalance > vaultDepositLimit) {
 						_amount = toNormalizedBN(vaultDepositLimit, currentVault.token.decimals);
@@ -410,7 +410,7 @@ export function ActionFlowContextApp({children, currentVault}: {children: ReactN
 				}
 			});
 		},
-		[getBalance, currentVault.details.depositLimit, currentVault.token?.address, currentVault.token.decimals, isDepositing]
+		[getBalance, currentVault.depositLimit, currentVault.token?.address, currentVault.token.decimals, isDepositing]
 	);
 
 	/* 🔵 - Yearn Finance **************************************************************************
@@ -490,7 +490,7 @@ export function ActionFlowContextApp({children, currentVault}: {children: ReactN
 		} else {
 			payloadFrom.push(
 				setZapOption({
-					name: currentVault?.token?.display_name || currentVault?.token?.name,
+					name: currentVault?.token?.name,
 					symbol: currentVault?.token?.symbol,
 					address: toAddress(currentVault.token.address),
 					chainID: currentVault?.chainID === 1337 ? safeChainID : currentVault?.chainID,
@@ -499,7 +499,7 @@ export function ActionFlowContextApp({children, currentVault}: {children: ReactN
 			);
 			payloadTo.push(
 				setZapOption({
-					name: currentVault?.display_name || currentVault?.name,
+					name: currentVault?.name,
 					symbol: currentVault?.symbol,
 					address: toAddress(currentVault.address),
 					chainID: currentVault?.chainID === 1337 ? safeChainID : currentVault?.chainID,
@@ -512,15 +512,15 @@ export function ActionFlowContextApp({children, currentVault}: {children: ReactN
 		 ** Init selectedFrom and selectedTo as default, aka underlyingToken to vaultToken.
 		 ******************************************************************************************/
 		const _selectedFrom = setZapOption({
-			name: currentVault?.token?.display_name || currentVault?.token?.name,
+			name: currentVault?.token?.name,
 			symbol: currentVault?.token?.symbol,
 			address: toAddress(currentVault.token.address),
 			chainID: currentVault?.chainID === 1337 ? safeChainID : currentVault?.chainID,
 			decimals: currentVault?.token?.decimals || 18
 		});
 		const _selectedTo = setZapOption({
-			name: currentVault?.display_name || currentVault?.name || currentVault.formated_name,
-			symbol: currentVault?.display_symbol || currentVault.symbol,
+			name: currentVault?.name,
+			symbol: currentVault.symbol,
 			address: toAddress(currentVault.address),
 			chainID: currentVault?.chainID === 1337 ? safeChainID : currentVault?.chainID,
 			decimals: currentVault?.decimals || 18
