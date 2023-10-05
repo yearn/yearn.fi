@@ -99,7 +99,7 @@ function Index(): ReactElement {
 	const [sort, set_sort] = useSessionStorage<{
 		sortBy: TPossibleSortBy;
 		sortDirection: TSortDirection;
-	}>('yVaultsSorting', {sortBy: 'apr', sortDirection: 'desc'});
+	}>('yVaultsSorting', {sortBy: 'featuringScore', sortDirection: 'desc'});
 	const {shouldHideDust, shouldHideLowTVLVaults, category, searchValue, selectedChains, set_category, set_searchValue, set_selectedChains} = useAppSettings();
 	const chainsFromJSON = JSON.parse(selectedChains || '[]') as number[];
 	const categoriesFromJSON = JSON.parse(category || '[]') as string[];
