@@ -55,7 +55,7 @@ export const YCRVContextApp = ({children}: {children: ReactElement}): ReactEleme
 	 ** Compute the styCRV APY based on the experimental APY and the mega boost.
 	 **************************************************************************/
 	const styCRVAPY = useMemo((): number => {
-		return ((styCRVVault?.apr?.netAPR || 0) * 100);
+		return (styCRVVault?.apr?.netAPR || 0) * 100;
 	}, [styCRVVault]);
 
 	/* 🔵 - Yearn Finance ******************************************************

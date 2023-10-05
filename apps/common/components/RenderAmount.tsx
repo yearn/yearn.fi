@@ -20,21 +20,10 @@ export function RenderAmount(props: TAmount & {shouldHideTooltip?: boolean}): Re
 	}, [props]);
 
 	if (props.shouldHideTooltip) {
-		return (
-			<span>
-				{amountV2(props)}
-			</span>
-		);
+		return <span>{amountV2(props)}</span>;
 	}
 
-	const shouldShowTooltip = (
-		props.value && !isZero(props.value)
-		&& (
-			(props.value < 0.001 && props.symbol !== 'percent')
-			||
-			(props.value < 0.0001 && props.symbol === 'percent')
-		)
-	);
+	const shouldShowTooltip = props.value && !isZero(props.value) && ((props.value < 0.001 && props.symbol !== 'percent') || (props.value < 0.0001 && props.symbol === 'percent'));
 
 	return (
 		<span

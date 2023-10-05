@@ -29,13 +29,15 @@ export function useSortVaults(vaultList: TYDaemonVaults, sortBy: TPossibleSortBy
 		[sortDirection, vaultList]
 	);
 
-	const sortedByForwardAPR = useCallback((): TYDaemonVaults => (
-		vaultList.sort((a, b): number => numberSort({a: a.apr?.forwardAPR.netAPR, b: b.apr?.forwardAPR.netAPR, sortDirection}))
-	), [sortDirection, vaultList]);
+	const sortedByForwardAPR = useCallback(
+		(): TYDaemonVaults => vaultList.sort((a, b): number => numberSort({a: a.apr?.forwardAPR.netAPR, b: b.apr?.forwardAPR.netAPR, sortDirection})),
+		[sortDirection, vaultList]
+	);
 
-	const sortedByAPR = useCallback((): TYDaemonVaults => (
-		vaultList.sort((a, b): number => numberSort({a: a.apr?.netAPR, b: b.apr?.netAPR, sortDirection}))
-	), [sortDirection, vaultList]);
+	const sortedByAPR = useCallback(
+		(): TYDaemonVaults => vaultList.sort((a, b): number => numberSort({a: a.apr?.netAPR, b: b.apr?.netAPR, sortDirection})),
+		[sortDirection, vaultList]
+	);
 
 	const sortedByTVL = useCallback((): TYDaemonVaults => vaultList.sort((a, b): number => numberSort({a: a.tvl.tvl, b: b.tvl.tvl, sortDirection})), [sortDirection, vaultList]);
 

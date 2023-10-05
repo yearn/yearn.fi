@@ -30,7 +30,9 @@ function APRLineItem({value, label, apyType, hasUpperLimit}: TAPRLineItemProps):
 	return (
 		<div className={'flex flex-row items-center justify-between'}>
 			<p className={'text-sm text-neutral-500'}>{label}</p>
-			<p className={'font-number text-sm text-neutral-900'} suppressHydrationWarning>
+			<p
+				className={'font-number text-sm text-neutral-900'}
+				suppressHydrationWarning>
 				{isNew ? 'New' : hasUpperLimit ? formatPercent(safeValue * 100) : formatPercent(safeValue * 100, 2, 2, 500)}
 			</p>
 		</div>
@@ -85,34 +87,40 @@ export function VaultDetailsAbout({currentVault, harvestData}: {currentVault: TY
 							<APRLineItem
 								label={'Weekly APR'}
 								apyType={apr.type}
-								value={apr.points.weekAgo} />
+								value={apr.points.weekAgo}
+							/>
 							<APRLineItem
 								label={'Monthly APR'}
 								apyType={apr.type}
-								value={apr.points.monthAgo} />
+								value={apr.points.monthAgo}
+							/>
 							<APRLineItem
 								label={'Inception APR'}
 								apyType={apr.type}
-								value={apr.points.inception} />
+								value={apr.points.inception}
+							/>
 						</div>
 						<div className={'mt-2 space-y-0 md:mt-0'}>
 							<APRLineItem
 								hasUpperLimit
 								label={'Net APR'}
 								apyType={apr.type}
-								value={apr.netAPR + apr.extra.stakingRewardsAPR} />
+								value={apr.netAPR + apr.extra.stakingRewardsAPR}
+							/>
 							{apr.extra.stakingRewardsAPR > 0 && (
 								<div className={'pl-2'}>
 									<APRLineItem
 										hasUpperLimit
 										label={'• Base APR'}
 										apyType={apr.type}
-										value={apr.netAPR} />
+										value={apr.netAPR}
+									/>
 									<APRLineItem
 										hasUpperLimit
 										label={'• Staking Reward APR'}
 										apyType={apr.type}
-										value={apr.extra.stakingRewardsAPR} />
+										value={apr.extra.stakingRewardsAPR}
+									/>
 								</div>
 							)}
 						</div>
@@ -127,22 +135,16 @@ export function VaultDetailsAbout({currentVault, harvestData}: {currentVault: TY
 							<b className={'font-number text-xl text-neutral-900'}>{formatPercent(0, 0, 0)}</b>
 						</YearnFeesLineItem>
 						<YearnFeesLineItem label={'Management fee'}>
-							<b className={'font-number text-xl text-neutral-900'}>
-								{formatPercent((apr.fees.management || 0) / 100, 0)}
-							</b>
+							<b className={'font-number text-xl text-neutral-900'}>{formatPercent((apr.fees.management || 0) / 100, 0)}</b>
 						</YearnFeesLineItem>
 						<YearnFeesLineItem label={'Performance fee'}>
-							<b className={'font-number text-xl text-neutral-500'}>
-								{formatPercent((apr.fees.performance || 0) / 100, 0)}
-							</b>
+							<b className={'font-number text-xl text-neutral-500'}>{formatPercent((apr.fees.performance || 0) / 100, 0)}</b>
 						</YearnFeesLineItem>
 						{currentVault.category === 'Velodrome' || currentVault.category === 'Aerodrome' ? (
 							<YearnFeesLineItem
 								label={'keepVELO'}
 								tooltip={`Percentage of VELO locked in each harvest. This is used to boost ${currentVault.category} vault pools, and is offset via yvOP staking rewards.`}>
-								<b className={'font-number text-xl text-neutral-500'}>
-									{formatPercent((currentVault.apr.fees.keepVelo) * 100, 0)}
-								</b>
+								<b className={'font-number text-xl text-neutral-500'}>{formatPercent(currentVault.apr.fees.keepVelo * 100, 0)}</b>
 							</YearnFeesLineItem>
 						) : null}
 					</div>

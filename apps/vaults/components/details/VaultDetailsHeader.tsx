@@ -24,7 +24,7 @@ type TVaultHeaderLineItemProps = {
 	label: string;
 	children: ReactElement | string;
 	legend?: ReactElement | string;
-}
+};
 
 function VaultHeaderLineItem({label, children, legend}: TVaultHeaderLineItemProps): ReactElement {
 	return (
@@ -51,23 +51,24 @@ function VaultAPR({apr}: {apr: TYDaemonVault['apr']}): ReactElement {
 				<RenderAmount
 					value={apr.netAPR + apr.extra.stakingRewardsAPR}
 					symbol={'percent'}
-					decimals={6} />
+					decimals={6}
+				/>
 			</VaultHeaderLineItem>
 		);
 	}
 	return (
 		<VaultHeaderLineItem
 			label={'Historical APR'}
-			legend={(
+			legend={
 				<span className={'tooltip'}>
-
 					<div className={'flex flex-row items-center space-x-2'}>
 						<div>
 							{'Est. APR - '}
 							<RenderAmount
 								value={apr.forwardAPR.netAPR + apr.extra.stakingRewardsAPR}
 								symbol={'percent'}
-								decimals={6} />
+								decimals={6}
+							/>
 						</div>
 						<IconQuestion />
 					</div>
@@ -79,11 +80,12 @@ function VaultAPR({apr}: {apr: TYDaemonVault['apr']}): ReactElement {
 						</div>
 					</span>
 				</span>
-			)}>
+			}>
 			<RenderAmount
 				value={apr?.netAPR + apr.extra.stakingRewardsAPR}
 				symbol={'percent'}
-				decimals={6} />
+				decimals={6}
+			/>
 		</VaultHeaderLineItem>
 	);
 }
@@ -126,7 +128,9 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 				)}
 			</div>
 			<div className={'grid grid-cols-2 gap-6 md:grid-cols-4 md:gap-12'}>
-				<VaultHeaderLineItem label={`Total deposited, ${token?.symbol || 'tokens'}`} legend={formatUSD(tvl.tvl)}>
+				<VaultHeaderLineItem
+					label={`Total deposited, ${token?.symbol || 'tokens'}`}
+					legend={formatUSD(tvl.tvl)}>
 					<RenderAmount
 						value={tvl?.total_assets}
 						decimals={decimals}
