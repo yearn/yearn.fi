@@ -1,15 +1,18 @@
+import {cl} from '@yearn-finance/web-lib/utils/cl';
+
 import type {ChangeEvent, ReactElement} from 'react';
 
 export type TSearchBar = {
 	searchPlaceholder: string;
 	searchValue: string;
 	set_searchValue: (searchValue: string) => void;
+	className?: string;
 };
 
-export function SearchBar({searchPlaceholder, searchValue, set_searchValue}: TSearchBar): ReactElement {
+export function SearchBar({searchPlaceholder, searchValue, set_searchValue, className}: TSearchBar): ReactElement {
 	return (
 		<>
-			<div className={'mt-1 flex h-10 w-full max-w-md items-center border border-neutral-0 bg-neutral-0 p-2 md:w-2/3'}>
+			<div className={cl(className, 'mt-1 flex h-10 w-full max-w-md items-center border border-neutral-0 bg-neutral-0 p-2 md:w-2/3')}>
 				<div className={'relative flex h-10 w-full flex-row items-center justify-between'}>
 					<input
 						id={'search'}
