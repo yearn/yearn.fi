@@ -11,7 +11,7 @@ import {useBalance} from '@common/hooks/useBalance';
 import {useFetch} from '@common/hooks/useFetch';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
 import {IconQuestion} from '@common/icons/IconQuestion';
-import {yDaemonEarnedSchema} from '@common/schemas/yDaemonEarnedSchema';
+import {yDaemonSingleEarnedSchema} from '@common/schemas/yDaemonEarnedSchema';
 import {getVaultName} from '@common/utils';
 import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 
@@ -97,7 +97,7 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 
 	const {data: earned} = useFetch<TYDaemonEarnedSingle>({
 		endpoint: address && userAddress ? `${yDaemonBaseUri}/earned/${userAddress}/${currentVault.address}` : null,
-		schema: yDaemonEarnedSchema
+		schema: yDaemonSingleEarnedSchema
 	});
 
 	const normalizedVaultEarned = useMemo((): TNormalizedBN => {
