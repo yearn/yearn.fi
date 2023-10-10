@@ -1,12 +1,12 @@
+import {type NextRouter} from 'next/router';
 import {AnimatePresence, motion} from 'framer-motion';
 import {AppSettingsContextApp} from '@vaults/contexts/useAppSettings';
 import {StakingRewardsContextApp} from '@vaults/contexts/useStakingRewards';
-import {WalletForZapApp} from '@vaults/contexts/useWalletForZaps';
+import {WalletForZapAppContextApp} from '@vaults/contexts/useWalletForZaps';
 import Meta from '@common/components/Meta';
 import {useCurrentApp} from '@common/hooks/useCurrentApp';
 import {variants} from '@common/utils/animations';
 
-import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
 
 export function Wrapper({children, router}: {children: ReactElement; router: NextRouter}): ReactElement {
@@ -16,7 +16,7 @@ export function Wrapper({children, router}: {children: ReactElement; router: Nex
 		<>
 			<Meta meta={manifest} />
 			<AppSettingsContextApp>
-				<WalletForZapApp>
+				<WalletForZapAppContextApp>
 					<StakingRewardsContextApp>
 						<AnimatePresence mode={'wait'}>
 							<motion.div
@@ -30,7 +30,7 @@ export function Wrapper({children, router}: {children: ReactElement; router: Nex
 							</motion.div>
 						</AnimatePresence>
 					</StakingRewardsContextApp>
-				</WalletForZapApp>
+				</WalletForZapAppContextApp>
 			</AppSettingsContextApp>
 		</>
 	);

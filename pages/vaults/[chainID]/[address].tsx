@@ -6,35 +6,35 @@ import {VaultActionsTabsWrapper} from '@vaults/components/details/VaultActionsTa
 import {VaultDetailsHeader} from '@vaults/components/details/VaultDetailsHeader';
 import {ActionFlowContextApp} from '@vaults/contexts/useActionFlow';
 import {WithSolverContextApp} from '@vaults/contexts/useSolver';
+import {Wrapper} from '@vaults/Wrapper';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import TokenIcon from '@common/components/TokenIcon';
 import {useWallet} from '@common/contexts/useWallet';
-import {useYearn} from '@common/contexts/useYearn';
 import {useFetch} from '@common/hooks/useFetch';
 import {type TYDaemonVault, yDaemonVaultSchema} from '@common/schemas/yDaemonVaultsSchemas';
 import {variants} from '@common/utils/animations';
 import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 
-import type {GetServerSideProps} from 'next';
+import type {GetStaticPaths, GetStaticProps} from 'next';
+import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
 import type {TUseBalancesTokens} from '@common/hooks/useMultichainBalances';
 
 function Index(): ReactElement | null {
 	const {address, isActive} = useWeb3();
-	const {vaults} = useYearn();
 	const router = useRouter();
 	const {refresh} = useWallet();
-	const {yDaemonBaseUri} = useYDaemonBaseURI({
-		chainID: Number(router.query.chainID)
-	});
-	const [currentVault, set_currentVault] = useState<TYDaemonVault | undefined>(vaults[toAddress(router.query.address as string)]);
+	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: Number(router.query.chainID)});
+	const [currentVault, set_currentVault] = useState<TYDaemonVault | undefined>(undefined);
 	const {data: vault, isLoading: isLoadingVault} = useFetch<TYDaemonVault>({
-		endpoint: `${yDaemonBaseUri}/vaults/${toAddress(router.query.address as string)}?${new URLSearchParams({
-			strategiesDetails: 'withDetails',
-			strategiesRisk: 'withRisk',
-			strategiesCondition: 'inQueue'
-		})}`,
+		endpoint: router.query.address
+			? `${yDaemonBaseUri}/vaults/${toAddress(router.query.address as string)}?${new URLSearchParams({
+					strategiesDetails: 'withDetails',
+					strategiesRisk: 'withRisk',
+					strategiesCondition: 'inQueue'
+			  })}`
+			: null,
 		schema: yDaemonVaultSchema
 	});
 
@@ -57,10 +57,10 @@ function Index(): ReactElement | null {
 		}
 	}, [currentVault?.address, currentVault?.token?.address, address, isActive, refresh]);
 
-	if (isLoadingVault) {
+	if (isLoadingVault || !router.query.address) {
 		return (
-			<div className={'relative flex h-14 flex-col items-center justify-center px-4 text-center'}>
-				<div className={'flex h-10 items-center justify-center'}>
+			<div className={'relative flex min-h-[100dvh] flex-col bg-neutral-0 px-4 text-center'}>
+				<div className={'mt-[20%] flex h-10 items-center justify-center'}>
 					<span className={'loader'} />
 				</div>
 			</div>
@@ -69,7 +69,7 @@ function Index(): ReactElement | null {
 
 	if (!currentVault) {
 		return (
-			<div className={'relative flex h-14 flex-col items-center justify-center px-4 text-center'}>
+			<div className={'relative flex h-14 flex-col items-center justify-center bg-neutral-0 px-4 text-center'}>
 				<div className={'flex h-10 items-center justify-center'}>
 					<p className={'text-sm text-neutral-900'}>{"We couln't find this vault on the connected network."}</p>
 				</div>
@@ -107,10 +107,22 @@ function Index(): ReactElement | null {
 }
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-export const getServerSideProps: GetServerSideProps = async () => {
+export const getStaticPaths = (async () => {
+	return {
+		paths: [],
+		fallback: true
+	};
+}) satisfies GetStaticPaths;
+
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+export const getStaticProps: GetStaticProps = async () => {
 	return {
 		props: {}
 	};
+};
+
+Index.getLayout = function getLayout(page: ReactElement, router: NextRouter): ReactElement {
+	return <Wrapper router={router}>{page}</Wrapper>;
 };
 
 export default Index;
