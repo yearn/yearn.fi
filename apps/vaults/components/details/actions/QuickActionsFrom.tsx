@@ -66,9 +66,9 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 					shouldRender={!hasMultipleInputsToChooseFrom}
 					fallback={renderMultipleOptionsFallback()}>
 					<div className={'flex h-10 w-full items-center justify-between bg-neutral-300 px-2 text-base text-neutral-900 md:w-56 md:px-3'}>
-						<div className={'relative flex flex-row items-center'}>
+						<div className={'relative flex flex-row items-center truncate'}>
 							<div className={'h-6 w-6 flex-none rounded-full'}>{selectedFromIcon}</div>
-							<p className={'overflow-x-hidden text-ellipsis whitespace-nowrap pl-2 font-normal text-neutral-900 scrollbar-none'}>{selectedFromSymbol}</p>
+							<p className={'truncate whitespace-nowrap pl-2 font-normal text-neutral-900 scrollbar-none'}>{selectedFromSymbol}</p>
 						</div>
 					</div>
 				</Renderable>

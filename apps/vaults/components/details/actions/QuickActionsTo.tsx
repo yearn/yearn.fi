@@ -46,11 +46,9 @@ export function VaultDetailsQuickActionsTo(): ReactElement {
 					shouldRender={!isActive || isDepositing || possibleOptionsTo.length === 1}
 					fallback={renderMultipleOptionsFallback()}>
 					<div className={'flex h-10 w-full items-center justify-between bg-neutral-300 px-2 text-base text-neutral-900 md:px-3'}>
-						<div className={'relative flex flex-row items-center'}>
+						<div className={'relative flex flex-row items-center truncate'}>
 							<div className={'h-6 w-6 flex-none rounded-full'}>{actionParams?.selectedOptionTo?.icon}</div>
-							<p className={'overflow-x-hidden text-ellipsis whitespace-nowrap pl-2 font-normal text-neutral-900 scrollbar-none'}>
-								{actionParams?.selectedOptionTo?.symbol}
-							</p>
+							<p className={'truncate whitespace-nowrap pl-2 font-normal text-neutral-900 scrollbar-none'}>{actionParams?.selectedOptionTo?.symbol}</p>
 						</div>
 					</div>
 				</Renderable>
