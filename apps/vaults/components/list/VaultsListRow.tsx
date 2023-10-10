@@ -41,12 +41,14 @@ export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): 
 							shouldRender={!(currentVault.apr?.type === 'new' && isZero(boostedAPR))}
 							fallback={'New'}>
 							{'⚡️ '}
-							<RenderAmount
-								shouldHideTooltip
-								value={boostedAPR}
-								symbol={'percent'}
-								decimals={6}
-							/>
+							<span className={'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'}>
+								<RenderAmount
+									shouldHideTooltip
+									value={boostedAPR}
+									symbol={'percent'}
+									decimals={6}
+								/>
+							</span>
 						</Renderable>
 					</b>
 					<span className={'tooltipLight bottom-full mb-1'}>
