@@ -3,6 +3,7 @@ import {Combobox, Transition} from '@headlessui/react';
 import {useClickOutside, useThrottledState} from '@react-hookz/web';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
+import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {IconChevron} from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
@@ -74,7 +75,7 @@ function DropdownEmpty({query}: {query: string}): ReactElement {
 		return (
 			<div className={'relative flex h-14 flex-col items-center justify-center px-4 text-center'}>
 				<div className={'flex h-10 items-center justify-center'}>
-					<p className={'text-sm text-neutral-900'}>{'Nothing found.'}</p>
+					<p className={'text-sm text-neutral-400'}>{'Nothing found.'}</p>
 				</div>
 			</div>
 		);
@@ -145,7 +146,10 @@ export function MultiSelectDropdown({options, onSelect, placeholder = ''}: TMult
 					onClick={(): void => set_isOpen((o: boolean): boolean => !o)}
 					className={'flex h-10 w-full items-center justify-between bg-neutral-0 p-2 text-base text-neutral-900 md:px-3'}>
 					<Combobox.Input
-						className={'w-full cursor-default overflow-x-scroll border-none bg-transparent p-0 outline-none scrollbar-none'}
+						className={cl(
+							'w-full cursor-default overflow-x-scroll border-none bg-transparent p-0 outline-none scrollbar-none',
+							options.every((option): boolean => !option.isSelected) ? 'text-neutral-400' : 'text-neutral-900'
+						)}
 						displayValue={(options: TMultiSelectOptionProps[]): string => {
 							const selectedOptions = options.filter((option): boolean => option.isSelected);
 							if (selectedOptions.length === 0) {
