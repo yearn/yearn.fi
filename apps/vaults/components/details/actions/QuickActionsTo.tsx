@@ -15,7 +15,6 @@ export function VaultDetailsQuickActionsTo(): ReactElement {
 	const {currentVault, possibleOptionsTo, actionParams, onUpdateSelectedOptionTo, isDepositing} = useActionFlow();
 	const {expectedOut, isLoadingExpectedOut} = useSolver();
 	const selectedOptionToPricePerToken = useTokenPrice(toAddress(actionParams?.selectedOptionTo?.value));
-
 	const isMigrationAvailable = currentVault?.migration?.available;
 
 	function renderMultipleOptionsFallback(): ReactElement {
