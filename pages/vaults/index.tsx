@@ -251,15 +251,17 @@ function Index(): ReactElement {
 					isLoading={isLoadingVaultList}
 					sortedVaultsToDisplay={sortedVaultsToDisplay}
 					currentCategory={category}
+					currentChains={chainsFromJSON}
 				/>
 			);
 		}
-		if (isLoadingVaultList || isZero(sortedVaultsToDisplay.length)) {
+		if (isLoadingVaultList || isZero(sortedVaultsToDisplay.length) || chainsFromJSON.length === 0) {
 			return (
 				<VaultsListEmpty
 					isLoading={isLoadingVaultList}
 					sortedVaultsToDisplay={sortedVaultsToDisplay}
 					currentCategory={category}
+					currentChains={chainsFromJSON}
 				/>
 			);
 		}
@@ -282,7 +284,7 @@ function Index(): ReactElement {
 		<section className={'mt-4 grid w-full grid-cols-12 gap-y-10 pb-10 md:mt-20 md:gap-x-10 md:gap-y-20'}>
 			<HeaderUserPosition />
 
-			<div className={'relative col-span-12 flex w-full flex-col overflow-x-hidden bg-neutral-100'}>
+			<div className={'relative col-span-12 flex w-full flex-col overflow-x-hidden bg-neutral-100 md:overflow-x-visible'}>
 				<div className={'absolute right-5 top-3 md:right-8 md:top-8'}>
 					<VaultListOptions />
 				</div>

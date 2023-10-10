@@ -59,7 +59,7 @@ function Index(): ReactElement | null {
 
 	if (isLoadingVault || !router.query.address) {
 		return (
-			<div className={'relative flex min-h-[100dvh] flex-col bg-neutral-0 px-4 text-center'}>
+			<div className={'relative flex min-h-[100dvh] flex-col px-4 text-center'}>
 				<div className={'mt-[20%] flex h-10 items-center justify-center'}>
 					<span className={'loader'} />
 				</div>
@@ -69,7 +69,7 @@ function Index(): ReactElement | null {
 
 	if (!currentVault) {
 		return (
-			<div className={'relative flex h-14 flex-col items-center justify-center bg-neutral-0 px-4 text-center'}>
+			<div className={'relative flex h-14 flex-col items-center justify-center px-4 text-center'}>
 				<div className={'flex h-10 items-center justify-center'}>
 					<p className={'text-sm text-neutral-900'}>{"We couln't find this vault on the connected network."}</p>
 				</div>

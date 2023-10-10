@@ -8,10 +8,12 @@ import type {TYDaemonVaults} from '@common/schemas/yDaemonVaultsSchemas';
 export function VaultsListEmpty({
 	sortedVaultsToDisplay,
 	currentCategory,
+	currentChains,
 	isLoading
 }: {
 	sortedVaultsToDisplay: TYDaemonVaults;
 	currentCategory: string;
+	currentChains: number[];
 	isLoading: boolean;
 }): ReactElement {
 	const {searchValue, category, set_category} = useAppSettings();
@@ -57,6 +59,21 @@ export function VaultsListEmpty({
 						</Button>
 					</>
 				)}
+			</div>
+		);
+	}
+	if (!isLoading && currentChains.length === 0) {
+		return (
+			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center gap-4 px-10 py-2 md:w-3/4'}>
+				<b className={'text-center text-lg'}>{'No data, reeeeeeeeeeee'}</b>
+				<>
+					<p className={'text-center text-neutral-600'}>{`Please, select a chain. At least one, just one.`}</p>
+					<Button
+						className={'w-full md:w-48'}
+						onClick={(): void => set_category('All Vaults')}>
+						{'Search all vaults'}
+					</Button>
+				</>
 			</div>
 		);
 	}

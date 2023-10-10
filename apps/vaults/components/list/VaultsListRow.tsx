@@ -259,7 +259,7 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 								value={availableToDeposit}
 								symbol={currentVault.token.symbol}
 								decimals={currentVault.token.decimals}
-								options={{shouldDisplaySymbol: false}}
+								options={{shouldDisplaySymbol: false, maximumFractionDigits: 4}}
 							/>
 						</p>
 					</div>
@@ -273,7 +273,7 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 								value={staked}
 								symbol={currentVault.token.symbol}
 								decimals={currentVault.token.decimals}
-								options={{shouldDisplaySymbol: false}}
+								options={{shouldDisplaySymbol: false, maximumFractionDigits: 4}}
 							/>
 						</p>
 					</div>
