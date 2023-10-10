@@ -12,7 +12,7 @@ export function RenderAmount(props: TAmount & {shouldHideTooltip?: boolean}): Re
 			options: {
 				...props.options,
 				minimumFractionDigits: 2,
-				maximumFractionDigits: Math.max(2, Number(props.decimals)),
+				maximumFractionDigits: props?.options?.maximumFractionDigits || Math.max(2, Number(props.decimals)),
 				shouldDisplaySymbol: true,
 				shouldCompactValue: false
 			}

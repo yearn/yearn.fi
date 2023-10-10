@@ -24,7 +24,7 @@ export function Wrapper({children, router}: {children: ReactElement; router: Nex
 								initial={'initial'}
 								animate={'enter'}
 								exit={'exit'}
-								className={'my-0 h-full md:mb-0 md:mt-16'}
+								className={'my-0 h-full bg-neutral-0 md:mb-0 md:mt-16'}
 								variants={variants}>
 								{children}
 							</motion.div>
