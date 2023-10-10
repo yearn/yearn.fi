@@ -136,7 +136,7 @@ const ActionFlowContext = createContext<TActionFlowContext>(DefaultActionFlowCon
 export function ActionFlowContextApp({children, currentVault}: {children: ReactNode; currentVault: TYDaemonVault}): React.ReactElement {
 	const {getBalance} = useWallet();
 	const {chainID, safeChainID} = useChainID();
-	const {balances: zapBalances, tokensList} = useWalletForZap();
+	const {listTokens: listZapTokens, tokensList} = useWalletForZap();
 	const {zapProvider, isStakingOpBoostedVaults} = useYearn();
 	const {stakingRewardsByVault} = useStakingRewards();
 	const hasStakingRewards = !!stakingRewardsByVault[currentVault.address];
@@ -570,41 +570,38 @@ export function ActionFlowContextApp({children, currentVault}: {children: ReactN
 		const isWithWOPT = safeChainID === 10 && currentVault && toAddress(currentVault.token.address) === OPT_WETH_TOKEN_ADDRESS;
 		const isWithWFTM = safeChainID === 250 && currentVault && toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS;
 
-		Object.entries(zapBalances || {})
-			.filter((): boolean => safeChainID === currentVault?.chainID) // Disable if we are on the wrong chain
-			.forEach(([tokenAddress]): void => {
-				const tokenListData = tokensList[toAddress(tokenAddress)];
-				if (!tokenListData) {
-					return;
-				}
+		Object.values(listZapTokens({chainID: currentVault.chainID})).forEach((tokenData): void => {
+			const tokenListData = tokensList[toAddress(tokenData.address)];
+			if (!tokenListData) {
+				return;
+			}
 
-				const duplicateAddresses = [
-					isWithWETH ? WETH_TOKEN_ADDRESS : null,
-					isWithWFTM ? WFTM_TOKEN_ADDRESS : null,
-					isWithWOPT ? ETH_TOKEN_ADDRESS : null,
-					isWithWOPT ? OPT_WETH_TOKEN_ADDRESS : null,
-					toAddress(currentVault?.token?.address),
-					toAddress(currentVault?.address)
-				].filter(Boolean);
+			const duplicateAddresses = [
+				isWithWETH ? WETH_TOKEN_ADDRESS : null,
+				isWithWFTM ? WFTM_TOKEN_ADDRESS : null,
+				isWithWOPT ? ETH_TOKEN_ADDRESS : null,
+				isWithWOPT ? OPT_WETH_TOKEN_ADDRESS : null,
+				toAddress(currentVault?.token?.address),
+				toAddress(currentVault?.address)
+			].filter(Boolean);
 
-				if (duplicateAddresses.includes(toAddress(tokenListData.address))) {
-					// Do nothing to avoid duplicate token in the list
-					return;
-				}
+			if (duplicateAddresses.includes(toAddress(tokenData.address))) {
+				return; // Do nothing to avoid duplicate token in the list
+			}
 
-				_possibleZapOptionsFrom.push(
-					setZapOption({
-						name: tokenListData.name,
-						symbol: tokenListData.symbol,
-						address: toAddress(tokenListData.address),
-						chainID: currentVault?.chainID === 1337 ? safeChainID : currentVault?.chainID,
-						decimals: tokenListData.decimals,
-						solveVia: tokenListData.supportedZaps || []
-					})
-				);
-			});
+			_possibleZapOptionsFrom.push(
+				setZapOption({
+					name: tokenData.name,
+					symbol: tokenData.symbol,
+					address: toAddress(tokenData.address),
+					chainID: currentVault?.chainID === 1337 ? safeChainID : currentVault?.chainID,
+					decimals: tokenData.decimals,
+					solveVia: tokenListData.supportedZaps || []
+				})
+			);
+		});
 		set_possibleZapOptionsFrom(_possibleZapOptionsFrom);
-	}, [safeChainID, tokensList, zapBalances, currentVault]);
+	}, [safeChainID, tokensList, listZapTokens, currentVault]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	 ** FLOW: Init the possibleZapOptionsTo array.

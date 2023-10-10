@@ -1,30 +1,49 @@
-import {createContext, memo, useContext, useMemo, useState} from 'react';
+import {createContext, memo, useCallback, useContext, useMemo, useState} from 'react';
 import {useDeepCompareEffect} from '@react-hookz/web';
 import {useUI} from '@yearn-finance/web-lib/contexts/useUI';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {isZeroAddress, toAddress, zeroAddress} from '@yearn-finance/web-lib/utils/address';
+import {type TNormalizedBN, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {useWallet} from '@common/contexts/useWallet';
 import {useFetch} from '@common/hooks/useFetch';
 import {yDaemonTokenListBalances} from '@common/schemas/yDaemonTokenListBalances';
 import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 
 import type {ReactElement} from 'react';
+import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 import type {TUseBalancesTokens} from '@common/hooks/useMultichainBalances';
 import type {TYDaemonTokenListBalances} from '@common/schemas/yDaemonTokenListBalances';
-import type {TChainTokens} from '@common/types/types';
+import type {TChainTokens, TToken} from '@common/types/types';
 
 export type TWalletForZap = {
 	tokensList: TYDaemonTokenListBalances;
-	balances: TChainTokens; //TODO: Replace with a getter
-	isLoading: boolean;
+	listTokens: ({chainID}: {chainID: number}) => TDict<TToken>;
+	getToken: ({address, chainID}: {address: TAddress; chainID: number}) => TToken;
+	getBalance: ({address, chainID}: {address: TAddress; chainID: number}) => TNormalizedBN;
+	getPrice: ({address, chainID}: {address: TAddress; chainID: number}) => TNormalizedBN;
 	refresh: (tokenList?: TUseBalancesTokens[]) => Promise<TChainTokens>;
+};
+
+const defaultToken: TToken = {
+	address: zeroAddress,
+	name: '',
+	symbol: '',
+	decimals: 18,
+	chainID: 1,
+	value: 0,
+	stakingValue: 0,
+	price: toNormalizedBN(0),
+	balance: toNormalizedBN(0),
+	stakingBalance: toNormalizedBN(0)
 };
 
 const defaultProps = {
 	tokensList: {},
-	balances: {},
-	isLoading: true,
+	listTokens: (): TDict<TToken> => ({}),
+	getToken: (): TToken => defaultToken,
+	getBalance: (): TNormalizedBN => toNormalizedBN(0),
+	getPrice: (): TNormalizedBN => toNormalizedBN(0),
 	refresh: async (): Promise<TChainTokens> => ({})
 };
 
@@ -33,14 +52,13 @@ const defaultProps = {
  ** interact with our app, aka mostly the balances and the token prices.
  ******************************************************************************/
 const WalletForZap = createContext<TWalletForZap>(defaultProps);
-export const WalletForZapApp = memo(function WalletForZapApp({children}: {children: ReactElement}): ReactElement {
-	const {address, isActive} = useWeb3();
+export const WalletForZapAppContextApp = memo(function WalletForZapAppContextApp({children}: {children: ReactElement}): ReactElement {
+	const {address} = useWeb3();
 	const {refresh} = useWallet();
 	const {safeChainID} = useChainID();
 	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: safeChainID});
 	const {onLoadStart, onLoadDone} = useUI();
-	const [isLoading, set_isLoading] = useState(false);
-	const [zapBalances, set_zapMigrationBalances] = useState<TChainTokens>({});
+	const [zapTokens, set_zapTokens] = useState<TChainTokens>({});
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 **	Fetching, for this user, the list of tokens available for zaps
@@ -69,14 +87,38 @@ export const WalletForZapApp = memo(function WalletForZapApp({children}: {childr
 
 	useDeepCompareEffect((): void => {
 		onLoadStart();
-		set_isLoading(true);
 		const allToRefresh = availableTokens.map(({address, chainID}): TUseBalancesTokens => ({address, chainID}));
 		refresh(allToRefresh).then((result): void => {
-			set_isLoading(false);
-			set_zapMigrationBalances(result);
+			set_zapTokens(result);
 			onLoadDone();
 		});
-	}, [availableTokens, address, isActive]);
+	}, [availableTokens]);
+
+	const listTokens = useCallback(
+		({chainID}: {chainID: number}): TDict<TToken> => {
+			return zapTokens?.[chainID || 1] || {};
+		},
+		[zapTokens]
+	);
+
+	const getToken = useCallback(
+		({address, chainID}: {address: TAddress; chainID: number}): TToken => {
+			return zapTokens?.[chainID || 1]?.[address] || defaultToken;
+		},
+		[zapTokens]
+	);
+	const getBalance = useCallback(
+		({address, chainID}: {address: TAddress; chainID: number}): TNormalizedBN => {
+			return zapTokens?.[chainID || 1]?.[address]?.balance || toNormalizedBN(0);
+		},
+		[zapTokens]
+	);
+	const getPrice = useCallback(
+		({address, chainID}: {address: TAddress; chainID: number}): TNormalizedBN => {
+			return zapTokens?.[chainID || 1]?.[address]?.price || toNormalizedBN(0);
+		},
+		[zapTokens]
+	);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 **	Setup and render the Context provider to use in the app.
@@ -84,11 +126,13 @@ export const WalletForZapApp = memo(function WalletForZapApp({children}: {childr
 	const contextValue = useMemo(
 		(): TWalletForZap => ({
 			tokensList: tokensList || {},
-			balances: zapBalances,
-			isLoading: isLoading,
+			listTokens,
+			getToken,
+			getBalance,
+			getPrice,
 			refresh: refresh
 		}),
-		[zapBalances, isLoading, refresh, tokensList]
+		[zapTokens, listTokens, getToken, getBalance, getPrice, refresh, tokensList]
 	);
 
 	return <WalletForZap.Provider value={contextValue}>{children}</WalletForZap.Provider>;
