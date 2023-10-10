@@ -7,12 +7,12 @@ import type {TYDaemonVaults} from '@common/schemas/yDaemonVaultsSchemas';
 
 export function VaultsListEmpty({
 	sortedVaultsToDisplay,
-	currentCategory,
+	currentCategories,
 	currentChains,
 	isLoading
 }: {
 	sortedVaultsToDisplay: TYDaemonVaults;
-	currentCategory: string;
+	currentCategories: string[];
 	currentChains: number[];
 	isLoading: boolean;
 }): ReactElement {
@@ -30,11 +30,18 @@ export function VaultsListEmpty({
 		);
 	}
 
-	if (!isLoading && isZero(sortedVaultsToDisplay.length) && currentCategory === 'Holdings') {
+	if (
+		!isLoading &&
+		isZero(sortedVaultsToDisplay.length) &&
+		currentCategories.length === 1 &&
+		currentCategories.includes('Holdings')
+	) {
 		return (
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
 				<b className={'text-center text-lg'}>{'Well this is awkward...'}</b>
-				<p className={'text-center text-neutral-600'}>{"You don't appear to have any deposits in our Vaults. There's an easy way to change that 😏"}</p>
+				<p className={'text-center text-neutral-600'}>
+					{"You don't appear to have any deposits in our Vaults. There's an easy way to change that 😏"}
+				</p>
 			</div>
 		);
 	}
@@ -48,9 +55,7 @@ export function VaultsListEmpty({
 				) : (
 					<>
 						<p className={'text-center text-neutral-600'}>
-							{currentCategory.length === 0 || currentCategory === '[]'
-								? `There doesn’t seem to be anything here. It might be because you selected no filters, or because there’s a rodent infestation in our server room. You check the filters, we’ll check the rodents. Deal?`
-								: `There doesn’t seem to be anything here. It might be because you searched for a token in the ${currentCategory} category, or because there’s a rodent infestation in our server room. You check the search box, we’ll check the rodents. Deal?`}
+							{`There doesn’t seem to be anything here. It might be because you of your filters, or because there’s a rodent infestation in our server room. You check the filters, we’ll check the rodents. Deal?`}
 						</p>
 						<Button
 							className={'w-full md:w-48'}
@@ -67,7 +72,10 @@ export function VaultsListEmpty({
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center gap-4 px-10 py-2 md:w-3/4'}>
 				<b className={'text-center text-lg'}>{'No data, reeeeeeeeeeee'}</b>
 				<>
-					<p className={'text-center text-neutral-600'}>{`Please, select a chain. At least one, just one.`}</p>
+					<p
+						className={
+							'text-center text-neutral-600'
+						}>{`Please, select a chain. At least one, just one.`}</p>
 					<Button
 						className={'w-full md:w-48'}
 						onClick={(): void => set_category('All Vaults')}>
@@ -95,11 +103,11 @@ export function VaultListEmptyExternalMigration(): ReactElement {
 
 export function VaultsListEmptyFactory({
 	sortedVaultsToDisplay,
-	currentCategory,
+	currentCategories,
 	isLoading
 }: {
 	sortedVaultsToDisplay: TYDaemonVaults;
-	currentCategory: string;
+	currentCategories: string;
 	isLoading: boolean;
 }): ReactElement {
 	if (isLoading && isZero(sortedVaultsToDisplay.length)) {
@@ -113,11 +121,16 @@ export function VaultsListEmptyFactory({
 			</div>
 		);
 	}
-	if (!isLoading && isZero(sortedVaultsToDisplay.length) && currentCategory === 'Holdings') {
+
+	if (!isLoading && isZero(sortedVaultsToDisplay.length) && currentCategories === 'Holdings') {
 		return (
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
 				<b className={'text-center text-lg'}>{'Well this is awkward...'}</b>
-				<p className={'text-center text-neutral-600'}>{"You don't appear to have any deposits in our Factory Vaults. There's an easy way to change that 😏"}</p>
+				<p className={'text-center text-neutral-600'}>
+					{
+						"You don't appear to have any deposits in our Factory Vaults. There's an easy way to change that 😏"
+					}
+				</p>
 			</div>
 		);
 	}
