@@ -136,17 +136,6 @@ export function MultiSelectDropdown({options, onSelect, placeholder = ''}: TMult
 					set_areAllSelected(!currentState.some((option): boolean => !option.isSelected));
 				}
 
-				// if none are selected in currentState, then select all
-				if (!currentState.some((option): boolean => option.isSelected)) {
-					currentState = currentOptions.map((option): TMultiSelectOptionProps => {
-						return {
-							...option,
-							isSelected: true
-						};
-					});
-					set_areAllSelected(true);
-				}
-
 				set_currentOptions(currentState);
 				onSelect(currentState);
 			}}

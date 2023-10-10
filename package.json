@@ -22,7 +22,7 @@
 		"@rainbow-me/rainbowkit": "1.0.11",
 		"@wagmi/chains": "1.8.0",
 		"@wagmi/core": "1.4.1",
-		"@yearn-finance/web-lib": "3.0.41",
+		"@yearn-finance/web-lib": "3.0.43",
 		"axios": "^1.5.0",
 		"dayjs": "^1.11.9",
 		"eslint-config-prettier": "^9.0.0",

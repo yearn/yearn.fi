@@ -46,7 +46,9 @@ export function VaultsListEmpty({
 				) : (
 					<>
 						<p className={'text-center text-neutral-600'}>
-							{`There doesn’t seem to be anything here. It might be because you searched for a token in the ${currentCategory} category, or because there’s a rodent infestation in our server room. You check the search box, we’ll check the rodents. Deal?`}
+							{currentCategory.length === 0 || currentCategory === '[]'
+								? `There doesn’t seem to be anything here. It might be because you selected no filters, or because there’s a rodent infestation in our server room. You check the filters, we’ll check the rodents. Deal?`
+								: `There doesn’t seem to be anything here. It might be because you searched for a token in the ${currentCategory} category, or because there’s a rodent infestation in our server room. You check the search box, we’ll check the rodents. Deal?`}
 						</p>
 						<Button
 							className={'w-full md:w-48'}
