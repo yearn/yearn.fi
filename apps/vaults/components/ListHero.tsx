@@ -120,18 +120,6 @@ export function ListHero({categories, set_categories, searchValue, selectedChain
 		<div className={'flex flex-col items-start justify-between space-x-0 px-4 pb-2 pt-4 md:px-10 md:pb-8 md:pt-10'}>
 			<div className={'mt-0 flex w-full flex-col items-center justify-between gap-4 md:mt-0 md:flex-row'}>
 				<div className={'w-full md:w-1/3'}>
-					<small>{'Filter'}</small>
-					<MultiSelectDropdown
-						options={categoryOptions}
-						placeholder={'Filter list'}
-						onSelect={(options): void => {
-							const selectedCategories = options.filter((o): boolean => o.isSelected).map((option): string => String(option.value));
-							set_categories(JSON.stringify(selectedCategories));
-						}}
-					/>
-				</div>
-
-				<div className={'w-full md:w-1/3'}>
 					<small>{'Select Blockchain'}</small>
 					<MultiSelectDropdown
 						options={chainOptions}
@@ -139,6 +127,18 @@ export function ListHero({categories, set_categories, searchValue, selectedChain
 						onSelect={(options): void => {
 							const selectedChains = options.filter((o): boolean => o.isSelected).map((option): number => Number(option.value));
 							set_selectedChains(JSON.stringify(selectedChains));
+						}}
+					/>
+				</div>
+
+				<div className={'w-full md:w-1/3'}>
+					<small>{'Filter'}</small>
+					<MultiSelectDropdown
+						options={categoryOptions}
+						placeholder={'Filter list'}
+						onSelect={(options): void => {
+							const selectedCategories = options.filter((o): boolean => o.isSelected).map((option): string => String(option.value));
+							set_categories(JSON.stringify(selectedCategories));
 						}}
 					/>
 				</div>
