@@ -393,10 +393,9 @@ export function ActionFlowContextApp({children, currentVault}: {children: ReactN
 			}).raw;
 			let _amount = toNormalizedBN(userBalance, _selectedFrom?.decimals || currentVault?.token?.decimals || 18);
 			if (isDepositing) {
-				const vaultDepositLimit = toBigInt(currentVault?.depositLimit);
 				if (_selectedFrom?.value === currentVault?.token?.address) {
-					if (userBalance > vaultDepositLimit) {
-						_amount = toNormalizedBN(vaultDepositLimit, currentVault.token.decimals);
+					if (userBalance > toBigInt(depositLimit)) {
+						_amount = toNormalizedBN(toBigInt(depositLimit), currentVault.token.decimals);
 					}
 				}
 			}
@@ -410,7 +409,7 @@ export function ActionFlowContextApp({children, currentVault}: {children: ReactN
 				}
 			});
 		},
-		[getBalance, currentVault.depositLimit, currentVault.token?.address, currentVault.token.decimals, isDepositing]
+		[getBalance, currentVault.token?.address, currentVault.token.decimals, isDepositing]
 	);
 
 	/* 🔵 - Yearn Finance **************************************************************************
