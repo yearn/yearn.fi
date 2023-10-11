@@ -25,8 +25,8 @@ function SelectAllOption(option: TMultiSelectOptionProps): ReactElement {
 	return (
 		<Combobox.Option
 			value={option}
-			className={option.isSelected ? 'cursor-default opacity-60' : 'transition-colors hover:bg-neutral-100'}>
-			<div className={'flex w-full items-center justify-between p-2'}>
+			className={'mb-2 border-b border-neutral-100 pb-2'}>
+			<div className={'flex w-full items-center justify-between p-2 transition-colors hover:bg-neutral-100'}>
 				<p className={'pl-0 font-normal text-neutral-900'}>{option.label}</p>
 				<input
 					type={'checkbox'}
