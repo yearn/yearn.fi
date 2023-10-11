@@ -110,7 +110,7 @@ export function VaultListFactory(): ReactElement {
 				<VaultsListEmptyFactory
 					isLoading={isLoadingVaultList}
 					sortedVaultsToDisplay={sortedVaultsToDisplay}
-					currentCategory={category}
+					currentCategories={category}
 				/>
 			);
 		}
