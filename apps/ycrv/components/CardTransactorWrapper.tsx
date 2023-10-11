@@ -25,6 +25,7 @@ import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import {getAmountWithSlippage, getVaultAPR} from '@common/utils';
 import {approveERC20, deposit} from '@common/utils/actions';
+import {YCRV_SUPPORTED_NETWORK} from '@yCRV/constants';
 import {ZAP_OPTIONS_FROM, ZAP_OPTIONS_TO} from '@yCRV/constants/tokens';
 import {useYCRV} from '@yCRV/contexts/useYCRV';
 import {ZAP_CRV_ABI} from '@yCRV/utils/abi/zapCRV.abi';
@@ -131,6 +132,7 @@ export function CardTransactorContextApp({defaultOptionFrom = ZAP_OPTIONS_FROM[0
 			if (_inputToken === YCRV_CURVE_POOL_ADDRESS) {
 				const pps = await readContract({
 					address: LPYCRV_TOKEN_ADDRESS,
+					chainId: YCRV_SUPPORTED_NETWORK,
 					abi: VAULT_ABI,
 					functionName: 'pricePerShare'
 				});
@@ -140,6 +142,7 @@ export function CardTransactorContextApp({defaultOptionFrom = ZAP_OPTIONS_FROM[0
 			if (_inputToken === YCRV_CURVE_POOL_V2_ADDRESS) {
 				const pps = await readContract({
 					address: LPYCRV_V2_TOKEN_ADDRESS,
+					chainId: YCRV_SUPPORTED_NETWORK,
 					abi: VAULT_ABI,
 					functionName: 'pricePerShare'
 				});
@@ -148,6 +151,7 @@ export function CardTransactorContextApp({defaultOptionFrom = ZAP_OPTIONS_FROM[0
 			}
 			const _expectedOut = await readContract({
 				address: ZAP_YEARN_VE_CRV_ADDRESS,
+				chainId: YCRV_SUPPORTED_NETWORK,
 				abi: ZAP_CRV_ABI,
 				functionName: 'calc_expected_out',
 				args: [_inputToken, _outputToken, _amountIn]
@@ -165,6 +169,7 @@ export function CardTransactorContextApp({defaultOptionFrom = ZAP_OPTIONS_FROM[0
 	const onApprove = useCallback(async (): Promise<void> => {
 		const result = await approveERC20({
 			connector: provider,
+			chainID: selectedOptionFrom.chainID,
 			contractAddress: selectedOptionFrom.value,
 			spenderAddress: selectedOptionFrom.zapVia,
 			amount: MAX_UINT_256,
@@ -183,6 +188,7 @@ export function CardTransactorContextApp({defaultOptionFrom = ZAP_OPTIONS_FROM[0
 	const onIncreaseCRVAllowance = useCallback(async (): Promise<void> => {
 		const resultReset = await approveERC20({
 			connector: provider,
+			chainID: selectedOptionFrom.chainID,
 			contractAddress: selectedOptionFrom.value,
 			spenderAddress: selectedOptionFrom.zapVia,
 			amount: 0n,
@@ -191,6 +197,7 @@ export function CardTransactorContextApp({defaultOptionFrom = ZAP_OPTIONS_FROM[0
 		if (resultReset.isSuccessful) {
 			const result = await approveERC20({
 				connector: provider,
+				chainID: selectedOptionFrom.chainID,
 				contractAddress: selectedOptionFrom.value,
 				spenderAddress: selectedOptionFrom.zapVia,
 				amount: MAX_UINT_256,
@@ -229,6 +236,7 @@ export function CardTransactorContextApp({defaultOptionFrom = ZAP_OPTIONS_FROM[0
 			// This is valid for v1 and v2
 			const result = await deposit({
 				connector: provider,
+				chainID: selectedOptionFrom.chainID,
 				contractAddress: selectedOptionTo.value,
 				amount: amount.raw,
 				statusHandler: set_txStatusZap
@@ -242,6 +250,7 @@ export function CardTransactorContextApp({defaultOptionFrom = ZAP_OPTIONS_FROM[0
 			// Zap in
 			const result = await zapCRV({
 				connector: provider,
+				chainID: selectedOptionFrom.chainID,
 				contractAddress: ZAP_YEARN_VE_CRV_ADDRESS,
 				inputToken: selectedOptionFrom.value, //_input_token
 				outputToken: selectedOptionTo.value, //_output_token

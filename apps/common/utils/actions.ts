@@ -37,11 +37,12 @@ const ALTERNATE_ERC20_APPROVE_ABI = [
  ** isApprovedERC20 is a _VIEW_ function that checks if a token is approved for
  ** a spender.
  ******************************************************************************/
-export async function isApprovedERC20(connector: Connector | undefined, tokenAddress: TAddress, spender: TAddress, amount = MAX_UINT_256): Promise<boolean> {
+export async function isApprovedERC20(connector: Connector | undefined, chainID: number, tokenAddress: TAddress, spender: TAddress, amount = MAX_UINT_256): Promise<boolean> {
 	const wagmiProvider = await toWagmiProvider(connector);
 	const result = await readContract({
 		...wagmiProvider,
 		abi: erc20ABI,
+		chainId: chainID,
 		address: tokenAddress,
 		functionName: 'allowance',
 		args: [wagmiProvider.address, spender]
@@ -55,6 +56,7 @@ export async function isApprovedERC20(connector: Connector | undefined, tokenAdd
  ******************************************************************************/
 type TAllowanceOf = {
 	connector: Connector | undefined;
+	chainID: number;
 	tokenAddress: TAddress;
 	spenderAddress: TAddress;
 };
@@ -62,6 +64,7 @@ export async function allowanceOf(props: TAllowanceOf): Promise<bigint> {
 	const wagmiProvider = await toWagmiProvider(props.connector);
 	const result = await readContract({
 		...wagmiProvider,
+		chainId: props.chainID,
 		abi: erc20ABI,
 		address: props.tokenAddress,
 		functionName: 'allowance',

@@ -1,12 +1,13 @@
 import {VEYFI_CLAIM_REWARDS_ZAP_ABI} from '@veYFI/utils/abi/veYFIClaimRewardsZap.abi';
 import {VEYFI_GAUGE_ABI} from '@veYFI/utils/abi/veYFIGauge.abi';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {handleTx, type TWriteTransaction} from '@yearn-finance/web-lib/utils/wagmi/provider';
+import {assertAddress} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {allowanceOf} from '@common/utils/actions';
 import {assert} from '@common/utils/assert';
-import {assertAddress, assertAddresses, handleTx as handleTxWagmi} from '@common/utils/wagmiUtils';
 
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
-import type {TWriteTransaction} from '@common/utils/wagmiUtils';
 
 type TApproveAndStake = TWriteTransaction & {
 	vaultAddress: TAddress;
@@ -19,12 +20,13 @@ export async function approveAndStake(props: TApproveAndStake): Promise<TTxRespo
 
 	const allowance = await allowanceOf({
 		connector: props.connector,
+		chainID: props.chainID,
 		tokenAddress: props.vaultAddress,
-		spenderAddress: props.contractAddress
+		spenderAddress: toAddress(props.contractAddress)
 	});
 
 	if (!(allowance >= props.amount)) {
-		await handleTxWagmi(props, {
+		await handleTx(props, {
 			address: props.vaultAddress,
 			abi: ['function approve(address _spender, uint256 _value) external'],
 			functionName: 'approve',
@@ -32,7 +34,7 @@ export async function approveAndStake(props: TApproveAndStake): Promise<TTxRespo
 		});
 	}
 
-	return await handleTxWagmi(props, {
+	return await handleTx(props, {
 		address: props.contractAddress,
 		abi: VEYFI_GAUGE_ABI,
 		functionName: 'deposit',
@@ -47,7 +49,7 @@ export async function stake(props: TStake): Promise<TTxResponse> {
 	assertAddress(props.contractAddress);
 	assert(props.amount > 0n, 'Amount is 0');
 
-	return await handleTxWagmi(props, {
+	return await handleTx(props, {
 		address: props.contractAddress,
 		abi: VEYFI_GAUGE_ABI,
 		functionName: 'deposit',
@@ -66,7 +68,7 @@ export async function unstake(props: TUnstake): Promise<TTxResponse> {
 
 	const willClaim = false;
 
-	return await handleTxWagmi(props, {
+	return await handleTx(props, {
 		address: props.contractAddress,
 		abi: VEYFI_GAUGE_ABI,
 		functionName: 'withdraw',
@@ -78,7 +80,7 @@ type TClaimRewards = TWriteTransaction;
 export async function claimRewards(props: TClaimRewards): Promise<TTxResponse> {
 	assertAddress(props.contractAddress);
 
-	return await handleTxWagmi(props, {
+	return await handleTx(props, {
 		address: props.contractAddress,
 		abi: VEYFI_GAUGE_ABI,
 		functionName: 'getReward'
@@ -92,9 +94,11 @@ type TClaimAllRewards = TWriteTransaction & {
 };
 export async function claimAllRewards(props: TClaimAllRewards): Promise<TTxResponse> {
 	assertAddress(props.contractAddress);
-	assertAddresses(props.gaugeAddresses);
+	for (const gaugeAddress of props.gaugeAddresses) {
+		assertAddress(gaugeAddress);
+	}
 
-	return await handleTxWagmi(props, {
+	return await handleTx(props, {
 		address: props.contractAddress,
 		abi: VEYFI_CLAIM_REWARDS_ZAP_ABI,
 		functionName: 'claim',

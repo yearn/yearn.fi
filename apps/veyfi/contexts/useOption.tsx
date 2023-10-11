@@ -3,7 +3,7 @@ import {ethers} from 'ethers';
 import {useAsync} from '@react-hookz/web';
 import {VEYFI_OPTIONS_ABI} from '@veYFI/utils/abi/veYFIOptions.abi';
 import {VEYFI_OYFI_ABI} from '@veYFI/utils/abi/veYFIoYFI.abi';
-import {VEYFI_OPTIONS_ADDRESS, VEYFI_OYFI_ADDRESS} from '@veYFI/utils/constants';
+import {VEYFI_OPTIONS_ADDRESS, VEYFI_OYFI_ADDRESS, VEYFI_SUPPORTED_NETWORK} from '@veYFI/utils/constants';
 import {erc20ABI, readContract} from '@wagmi/core';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
@@ -83,7 +83,7 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 			abi: VEYFI_OPTIONS_ABI,
 			functionName: 'eth_required',
 			args: [amount],
-			chainId: 1
+			chainId: VEYFI_SUPPORTED_NETWORK
 		});
 	}, []);
 
@@ -110,7 +110,7 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 				abi: VEYFI_OYFI_ABI,
 				functionName: 'balanceOf',
 				args: [userAddress],
-				chainId: 1
+				chainId: VEYFI_SUPPORTED_NETWORK
 			})
 		};
 	}, [isActive, userAddress]);
@@ -125,11 +125,11 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 			abi: erc20ABI,
 			functionName: 'allowance',
 			args: [userAddress, VEYFI_OPTIONS_ADDRESS],
-			chainId: 1
+			chainId: VEYFI_SUPPORTED_NETWORK
 		});
 
 		return {
-			[allowanceKey(1, VEYFI_OYFI_ADDRESS, VEYFI_OPTIONS_ADDRESS, userAddress)]: oYFIAllowanceOptions
+			[allowanceKey(VEYFI_SUPPORTED_NETWORK, VEYFI_OYFI_ADDRESS, VEYFI_OPTIONS_ADDRESS, userAddress)]: oYFIAllowanceOptions
 		};
 	}, [isActive, userAddress]);
 

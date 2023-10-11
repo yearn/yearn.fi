@@ -211,6 +211,7 @@ export function useSolverWido(): TSolverContext {
 
 				const allowance = await allowanceOf({
 					connector: provider,
+					chainID: request.current.inputToken.chainID,
 					tokenAddress: toAddress(request.current.inputToken.value),
 					spenderAddress: toAddress(widoSpender)
 				});
@@ -244,13 +245,14 @@ export function useSolverWido(): TSolverContext {
 			assert(request.current.inputAmount, 'Input amount is not set');
 
 			const widoSpender = await getWidoSpender({
-				chainId: request.current.chainID as ChainId,
-				toChainId: request.current.chainID as ChainId,
+				chainId: request.current.inputToken.chainID as ChainId,
+				toChainId: request.current.outputToken.chainID as ChainId,
 				fromToken: toAddress(request.current.inputToken.value),
 				toToken: toAddress(request.current.outputToken.value)
 			});
 			const isApproved = await isApprovedERC20(
 				provider,
+				request.current.inputToken.chainID,
 				toAddress(request.current.inputToken.value), //token to approve
 				toAddress(widoSpender), //contract to approve
 				amount
@@ -259,6 +261,7 @@ export function useSolverWido(): TSolverContext {
 				assertAddress(widoSpender, 'spender');
 				const result = await approveERC20({
 					connector: provider,
+					chainID: request.current.inputToken.chainID,
 					contractAddress: request.current.inputToken.value,
 					spenderAddress: widoSpender,
 					amount: amount,

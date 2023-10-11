@@ -2,6 +2,7 @@ import {useCallback, useState} from 'react';
 import {formatUnits} from 'viem';
 import {useVotingEscrow} from '@veYFI/contexts/useVotingEscrow';
 import {withdrawUnlockedVeYFI} from '@veYFI/utils/actions';
+import {VEYFI_SUPPORTED_NETWORK} from '@veYFI/utils/constants';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -29,6 +30,7 @@ export function ClaimTab(): ReactElement {
 	const onWithdrawUnlocked = useCallback(async (): Promise<void> => {
 		const result = await withdrawUnlockedVeYFI({
 			connector: provider,
+			chainID: VEYFI_SUPPORTED_NETWORK,
 			contractAddress: votingEscrow?.address,
 			statusHandler: set_withdrawUnlockedStatus
 		});

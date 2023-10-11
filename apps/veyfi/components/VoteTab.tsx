@@ -1,7 +1,7 @@
 import {useCallback, useState} from 'react';
 import Link from 'next/link';
 import {delegateVote} from '@veYFI/utils/actions/votingEscrow';
-import {SNAPSHOT_DELEGATE_REGISTRY_ADDRESS} from '@veYFI/utils/constants';
+import {SNAPSHOT_DELEGATE_REGISTRY_ADDRESS, VEYFI_SUPPORTED_NETWORK} from '@veYFI/utils/constants';
 import {validateAddress, validateNetwork} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -33,6 +33,7 @@ export function VoteTab(): ReactElement {
 
 		await delegateVote({
 			connector: provider,
+			chainID: VEYFI_SUPPORTED_NETWORK,
 			contractAddress: SNAPSHOT_DELEGATE_REGISTRY_ADDRESS,
 			statusHandler: set_delegateVoteStatus,
 			delegateAddress: toAddress(delegateAddress)

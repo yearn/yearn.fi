@@ -2,7 +2,7 @@ import {useCallback, useMemo, useState} from 'react';
 import {useGauge} from '@veYFI/contexts/useGauge';
 import {useOption} from '@veYFI/contexts/useOption';
 import * as GaugeActions from '@veYFI/utils/actions/gauge';
-import {VEYFI_CLAIM_REWARDS_ZAP_ADDRESS} from '@veYFI/utils/constants';
+import {VEYFI_CLAIM_REWARDS_ZAP_ADDRESS, VEYFI_SUPPORTED_NETWORK} from '@veYFI/utils/constants';
 import {validateNetwork} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -34,6 +34,7 @@ export function RewardsTab(): ReactElement {
 	const onClaim = useCallback(async (): Promise<void> => {
 		const result = await GaugeActions.claimRewards({
 			connector: provider,
+			chainID: VEYFI_SUPPORTED_NETWORK,
 			contractAddress: selectedGaugeAddress,
 			statusHandler: set_claimStatus
 		});
@@ -45,6 +46,7 @@ export function RewardsTab(): ReactElement {
 	const onClaimAll = useCallback(async (): Promise<void> => {
 		const result = await GaugeActions.claimAllRewards({
 			connector: provider,
+			chainID: VEYFI_SUPPORTED_NETWORK,
 			contractAddress: VEYFI_CLAIM_REWARDS_ZAP_ADDRESS,
 			gaugeAddresses,
 			willLockRewards: false,

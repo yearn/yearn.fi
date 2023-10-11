@@ -53,6 +53,7 @@ export function LockTab(): ReactElement {
 	const onApproveLock = useCallback(async (): Promise<void> => {
 		const result = await approveERC20({
 			connector: provider,
+			chainID: VEYFI_SUPPORTED_NETWORK,
 			contractAddress: votingEscrow?.token,
 			spenderAddress: votingEscrow?.address,
 			statusHandler: set_approveLockStatus,
@@ -66,6 +67,7 @@ export function LockTab(): ReactElement {
 	const onLock = useCallback(async (): Promise<void> => {
 		const result = await lockVeYFI({
 			connector: provider,
+			chainID: VEYFI_SUPPORTED_NETWORK,
 			contractAddress: votingEscrow?.address,
 			amount: lockAmount.raw,
 			time: toBigInt(toSeconds(unlockTime)),
@@ -79,6 +81,7 @@ export function LockTab(): ReactElement {
 	const onIncreaseLockAmount = useCallback(async (): Promise<void> => {
 		const result = await increaseVeYFILockAmount({
 			connector: provider,
+			chainID: VEYFI_SUPPORTED_NETWORK,
 			contractAddress: votingEscrow?.address,
 			amount: lockAmount.raw,
 			statusHandler: set_increaseLockAmountStatus

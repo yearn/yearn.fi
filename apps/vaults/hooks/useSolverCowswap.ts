@@ -287,6 +287,7 @@ export function useSolverCowswap(): TSolverContext {
 			}
 			const allowance = await allowanceOf({
 				connector: provider,
+				chainID: request.current.inputToken.chainID,
 				tokenAddress: request.current.inputToken.value,
 				spenderAddress: SOLVER_COW_VAULT_RELAYER_ADDRESS
 			});
@@ -311,6 +312,7 @@ export function useSolverCowswap(): TSolverContext {
 
 			const isApproved = await isApprovedERC20(
 				provider,
+				request.current.inputToken.chainID,
 				request.current.inputToken.value, //token to approve
 				SOLVER_COW_VAULT_RELAYER_ADDRESS, //Cowswap relayer
 				toBigInt(amount)
@@ -320,6 +322,7 @@ export function useSolverCowswap(): TSolverContext {
 			}
 			const result = await approveERC20({
 				connector: provider,
+				chainID: request.current.chainID,
 				contractAddress: request.current.inputToken.value,
 				spenderAddress: SOLVER_COW_VAULT_RELAYER_ADDRESS,
 				amount: toBigInt(amount),

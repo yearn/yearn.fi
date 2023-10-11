@@ -306,6 +306,7 @@ export function useSolverPortals(): TSolverContext {
 
 				const allowance = await allowanceOf({
 					connector: provider,
+					chainID: request.current.inputToken.chainID,
 					tokenAddress: toAddress(request.current.inputToken.value), //token to approve
 					spenderAddress: toAddress(approval.context.spender) //contract to approve
 				});
@@ -313,6 +314,7 @@ export function useSolverPortals(): TSolverContext {
 					assertAddress(approval.context.spender, 'spender');
 					const result = await approveERC20({
 						connector: provider,
+						chainID: request.current.chainID,
 						contractAddress: request.current.inputToken.value,
 						spenderAddress: approval.context.spender,
 						amount: amount,

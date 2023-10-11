@@ -10,6 +10,7 @@ import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useYearn} from '@common/contexts/useYearn';
+import {YBRIBE_SUPPORTED_NETWORK} from '@yBribe/constants';
 import {useBribes} from '@yBribe/contexts/useBribes';
 import {claimRewardV3} from '@yBribe/utils/actions';
 
@@ -94,6 +95,7 @@ export function GaugeListRow({currentGauge, category}: {currentGauge: TCurveGaug
 		async (token: TAddress): Promise<void> => {
 			const result = await claimRewardV3({
 				connector: provider,
+				chainID: YBRIBE_SUPPORTED_NETWORK,
 				contractAddress: CURVE_BRIBE_V3_ADDRESS,
 				gaugeAddress: currentGauge.gauge,
 				tokenAddress: token,

@@ -164,6 +164,7 @@ function Factory(): ReactElement {
 		try {
 			return await gasOfCreateNewVaultsAndStrategies({
 				connector: provider,
+				chainID: YFACTORY_SUPPORTED_NETWORK,
 				contractAddress: VAULT_FACTORY_ADDRESS,
 				gaugeAddress: selectedOption.value.gaugeAddress
 			});
@@ -194,6 +195,7 @@ function Factory(): ReactElement {
 	const onCreateNewVault = useCallback(async (): Promise<void> => {
 		const result = await createNewVaultsAndStrategies({
 			connector: provider,
+			chainID: YFACTORY_SUPPORTED_NETWORK,
 			contractAddress: VAULT_FACTORY_ADDRESS,
 			gaugeAddress: selectedOption.value.gaugeAddress,
 			statusHandler: set_txStatus

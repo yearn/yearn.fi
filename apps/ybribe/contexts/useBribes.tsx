@@ -160,6 +160,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 				for (const tokenAsReward of rewardsTokens) {
 					const prepareWriteResult = await prepareWriteContract({
 						...bribeV3BaseContract,
+						chainId: YBRIBE_SUPPORTED_NETWORK,
 						functionName: 'claim_reward_for',
 						args: [userAddress, toAddress(gaugeAddress), toAddress(tokenAsReward)]
 					});
@@ -196,6 +197,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 			for (const tokenAsReward of rewardsTokens) {
 				rewardsPerTokensPerGaugesCalls.push(
 					prepareWriteContract({
+						chainId: YBRIBE_SUPPORTED_NETWORK,
 						address: CURVE_BRIBE_V3_HELPER_ADDRESS,
 						abi: CURVE_BRIBE_V3_HELPER_ABI,
 						functionName: 'getNewRewardPerToken',
