@@ -2,7 +2,6 @@ import {useCallback, useMemo, useState} from 'react';
 import {erc20ABI, useContractReads} from 'wagmi';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {CURVE_BRIBE_V3_ADDRESS, ZERO_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {decodeAsBigInt, decodeAsNumber, decodeAsString} from '@yearn-finance/web-lib/utils/decoder';
@@ -40,8 +39,7 @@ const defaultExpectedOutFetcher: TExpectedOutFetcher = {
 };
 
 export function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauge; onClose: VoidFunction}): ReactElement {
-	const {chainID} = useChainID();
-	const {address, provider, isActive, openLoginModal, onSwitchChain} = useWeb3();
+	const {address, provider, isActive, openLoginModal} = useWeb3();
 	const {refresh} = useBribes();
 	const {prices} = useYearn();
 	const [amount, set_amount] = useState<TNormalizedBN>(toNormalizedBN(0));
@@ -123,22 +121,13 @@ export function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGa
 				</Button>
 			);
 		}
-		if (![1, 1337].includes(chainID)) {
-			return (
-				<Button
-					onClick={(): void => onSwitchChain(1)}
-					className={'w-full'}>
-					{'Switch to Ethereum Mainnet'}
-				</Button>
-			);
-		}
 		if (txStatusApprove.pending || toBigInt(amount.raw) > toBigInt(selectedToken?.allowance)) {
 			return (
 				<Button
 					onClick={onApprove}
 					className={'w-full'}
 					isBusy={txStatusApprove.pending}
-					isDisabled={!isActive || isZeroAddress(tokenAddress) || isZero(amount.raw) || ![1, 1337].includes(chainID)}>
+					isDisabled={!isActive || isZeroAddress(tokenAddress) || isZero(amount.raw)}>
 					{`Approve ${selectedToken?.symbol || 'token'}`}
 				</Button>
 			);
@@ -149,7 +138,7 @@ export function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGa
 				onClick={onAddReward}
 				className={'w-full'}
 				isBusy={txStatusAddReward.pending}
-				isDisabled={!isActive || isZeroAddress(tokenAddress) || isZero(amount.raw) || toBigInt(amount?.raw) > toBigInt(selectedToken?.raw) || ![1, 1337].includes(chainID)}>
+				isDisabled={!isActive || isZeroAddress(tokenAddress) || isZero(amount.raw) || toBigInt(amount?.raw) > toBigInt(selectedToken?.raw)}>
 				{'Deposit'}
 			</Button>
 		);

@@ -3,10 +3,8 @@ import {ethers} from 'ethers';
 import {BaseError} from 'viem';
 import axios from 'axios';
 import {OrderBookApi, OrderQuoteSide, OrderSigningUtils} from '@cowprotocol/cow-sdk';
-import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {toast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {allowanceKey, isZeroAddress} from '@yearn-finance/web-lib/utils/address';
 import {MAX_UINT_256, SOLVER_COW_VAULT_RELAYER_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -65,13 +63,11 @@ async function getQuote(request: TInitSolverArgs): Promise<{data: OrderQuoteResp
 export function useSolverCowswap(): TSolverContext {
 	const {zapSlippage} = useYearn();
 	const {provider} = useWeb3();
-	const {safeChainID} = useChainID();
 	const maxIterations = 1000; // 1000 * up to 3 seconds = 3000 seconds = 50 minutes
 	const shouldUsePresign = false; //Debug only
 	const request = useRef<TInitSolverArgs>();
 	const latestQuote = useRef<OrderQuoteResponse>();
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
-	const isDisabled = isSolverDisabled(safeChainID)[Solver.enum.Cowswap] || safeChainID !== 1;
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	 ** A slippage of 1% per default is set to avoid the transaction to fail due to price
@@ -109,7 +105,7 @@ export function useSolverCowswap(): TSolverContext {
 			/******************************************************************************************
 			 ** This first obvious check is to see if the solver is disabled. If it is, we return 0.
 			 ******************************************************************************************/
-			if (isDisabled) {
+			if (_request.chainID !== 1) {
 				return toNormalizedBN(0);
 			}
 
@@ -158,7 +154,7 @@ export function useSolverCowswap(): TSolverContext {
 			const buyAmountWithSlippage = getBuyAmountWithSlippage(data, _request?.outputToken?.decimals || 18);
 			return toNormalizedBN(buyAmountWithSlippage || 0, _request?.outputToken?.decimals || 18);
 		},
-		[getBuyAmountWithSlippage, isDisabled]
+		[getBuyAmountWithSlippage]
 	);
 
 	/* 🔵 - Yearn Finance **************************************************************************
@@ -168,7 +164,7 @@ export function useSolverCowswap(): TSolverContext {
 	 ** skipped. This should only be used for debugging purposes.
 	 **********************************************************************************************/
 	const signCowswapOrder = useCallback(
-		async (quote: Order): Promise<SigningResult> => {
+		async (chainID: number, quote: Order): Promise<SigningResult> => {
 			if (shouldUsePresign) {
 				await new Promise(async (resolve): Promise<NodeJS.Timeout> => setTimeout(resolve, 1000));
 				return {
@@ -178,13 +174,13 @@ export function useSolverCowswap(): TSolverContext {
 			}
 
 			assert(provider, 'Provider is not set');
-			const signer = await getEthersSigner({chainId: 1});
+			const signer = await getEthersSigner({chainId: chainID});
 			assert(signer, 'No signer available');
 
-			const rawSignature = await OrderSigningUtils.signOrder({...(quote as UnsignedOrder)}, safeChainID, signer);
+			const rawSignature = await OrderSigningUtils.signOrder({...(quote as UnsignedOrder)}, chainID, signer);
 			return rawSignature;
 		},
-		[shouldUsePresign, provider, safeChainID]
+		[shouldUsePresign, provider]
 	);
 
 	/* 🔵 - Yearn Finance **************************************************************************
@@ -226,7 +222,7 @@ export function useSolverCowswap(): TSolverContext {
 	 ** not.
 	 **********************************************************************************************/
 	const execute = useCallback(async (): Promise<TTxResponse> => {
-		if (isDisabled) {
+		if (!request?.current || request.current.chainID !== 1) {
 			return {isSuccessful: false};
 		}
 
@@ -236,7 +232,7 @@ export function useSolverCowswap(): TSolverContext {
 		const {quote, from, id} = latestQuote.current;
 		const buyAmountWithSlippage = getBuyAmountWithSlippage(latestQuote.current, request.current.outputToken.decimals);
 		quote.buyAmount = buyAmountWithSlippage;
-		const {signature, signingScheme} = await signCowswapOrder(quote as Order);
+		const {signature, signingScheme} = await signCowswapOrder(request.current.chainID, quote as Order);
 		const orderCreation: OrderCreation = {
 			...quote,
 			buyAmount: buyAmountWithSlippage,
@@ -260,18 +256,18 @@ export function useSolverCowswap(): TSolverContext {
 		}
 
 		return {isSuccessful: false};
-	}, [getBuyAmountWithSlippage, shouldUsePresign, signCowswapOrder, isDisabled]);
+	}, [getBuyAmountWithSlippage, shouldUsePresign, signCowswapOrder]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** Format the quote to a normalized value, which will be used for subsequent
 	 ** process and displayed to the user.
 	 **************************************************************************/
 	const expectedOut = useMemo((): TNormalizedBN => {
-		if (!latestQuote?.current?.quote?.buyAmount || isDisabled) {
+		if (!latestQuote?.current?.quote?.buyAmount || !request?.current || request.current.chainID !== 1) {
 			return toNormalizedBN(0);
 		}
 		return toNormalizedBN(toBigInt(latestQuote?.current?.quote?.buyAmount), request?.current?.outputToken?.decimals || 18);
-	}, [latestQuote, isDisabled]);
+	}, [latestQuote]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** Retrieve the allowance for the token to be used by the solver. This will
@@ -279,13 +275,13 @@ export function useSolverCowswap(): TSolverContext {
 	 **************************************************************************/
 	const onRetrieveAllowance = useCallback(
 		async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
-			if (isDisabled) {
+			if (!request?.current || request.current.chainID !== 1) {
 				return toNormalizedBN(0);
 			}
 			assert(request.current, 'Request is not defined');
 			assert(request?.current?.inputToken?.solveVia?.includes(Solver.enum.Cowswap), 'Input token is not supported by Cowswap');
 
-			const key = allowanceKey(safeChainID, request.current.inputToken.value, request.current.outputToken.value, request.current.from);
+			const key = allowanceKey(request.current.chainID, request.current.inputToken.value, request.current.outputToken.value, request.current.from);
 			if (existingAllowances.current[key] && !shouldForceRefetch) {
 				return existingAllowances.current[key];
 			}
@@ -297,7 +293,7 @@ export function useSolverCowswap(): TSolverContext {
 			existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals);
 			return existingAllowances.current[key];
 		},
-		[isDisabled, provider, safeChainID]
+		[provider]
 	);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -307,7 +303,7 @@ export function useSolverCowswap(): TSolverContext {
 	 **************************************************************************/
 	const onApprove = useCallback(
 		async (amount = MAX_UINT_256, txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>, onSuccess: () => Promise<void>): Promise<void> => {
-			if (isDisabled) {
+			if (!request?.current || request.current.chainID !== 1) {
 				return;
 			}
 			assert(request.current, 'Request is not defined');
@@ -333,7 +329,7 @@ export function useSolverCowswap(): TSolverContext {
 				onSuccess();
 			}
 		},
-		[provider, isDisabled]
+		[provider]
 	);
 
 	/* 🔵 - Yearn Finance ******************************************************

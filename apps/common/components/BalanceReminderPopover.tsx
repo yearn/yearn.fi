@@ -3,7 +3,6 @@ import {Popover, Transition} from '@headlessui/react';
 import {captureException} from '@sentry/nextjs';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {IconAddToMetamask} from '@yearn-finance/web-lib/icons/IconAddToMetamask';
 import {IconCross} from '@yearn-finance/web-lib/icons/IconCross';
 import {IconWallet} from '@yearn-finance/web-lib/icons/IconWallet';
@@ -28,7 +27,6 @@ type TBalanceReminderElement = {
 
 function TokenItem({element}: {element: TBalanceReminderElement}): ReactElement {
 	const {provider} = useWeb3();
-	const {safeChainID} = useChainID();
 	const balance = useBalance({address: element.address, chainID: element.chainID});
 
 	async function addTokenToMetamask(address: TAddress, symbol: string, decimals: number, image: string): Promise<void> {
@@ -63,7 +61,7 @@ function TokenItem({element}: {element: TBalanceReminderElement}): ReactElement 
 							width={32}
 							height={32}
 							quality={90}
-							src={`${process.env.BASE_YEARN_ASSETS_URI}/${safeChainID}/${toAddress(element.address)}/logo-128.png`}
+							src={`${process.env.BASE_YEARN_ASSETS_URI}/${element.chainID}/${toAddress(element.address)}/logo-128.png`}
 						/>
 					</div>
 					<span className={'ml-2'}>{element.symbol}</span>
@@ -78,7 +76,7 @@ function TokenItem({element}: {element: TBalanceReminderElement}): ReactElement 
 								element.address,
 								element.symbol,
 								element.decimals,
-								`${process.env.BASE_YEARN_ASSETS_URI}/${safeChainID}/${toAddress(element.address)}/logo-128.png`
+								`${process.env.BASE_YEARN_ASSETS_URI}/${element.chainID}/${toAddress(element.address)}/logo-128.png`
 							);
 						}}
 						className={'ml-4 h-4 w-4 cursor-pointer text-neutral-400 transition-colors hover:text-neutral-900'}

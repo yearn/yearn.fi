@@ -6,7 +6,6 @@ import {MAX_LOCK_TIME, MIN_LOCK_AMOUNT, MIN_LOCK_TIME, VEYFI_CHAIN_ID} from '@ve
 import {validateAllowance, validateAmount} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
@@ -27,9 +26,14 @@ export function LockVeYFI(): ReactElement {
 	const [lockAmount, set_lockAmount] = useState(toNormalizedBN(0));
 	const [lockTime, set_lockTime] = useState('');
 	const {provider, address, isActive} = useWeb3();
-	const {safeChainID} = useChainID();
 	const {refresh: refreshBalances} = useWallet();
-	const {votingEscrow, positions, allowances, isLoading: isLoadingVotingEscrow, refresh: refreshVotingEscrow} = useVotingEscrow();
+	const {
+		votingEscrow,
+		positions,
+		allowances,
+		isLoading: isLoadingVotingEscrow,
+		refresh: refreshVotingEscrow
+	} = useVotingEscrow();
 	const tokenBalance = useBalance({address: toAddress(votingEscrow?.token), chainID: 1}); //veYFI is on ETH mainnet only
 	const hasLockedAmount = toBigInt(positions?.deposit?.underlyingBalance) > 0n;
 	const [approveLockStatus, set_approveLockStatus] = useState(defaultTxStatus);
@@ -107,7 +111,7 @@ export function LockVeYFI(): ReactElement {
 		ownerAddress: toAddress(address),
 		tokenAddress: toAddress(votingEscrow?.token),
 		spenderAddress: toAddress(votingEscrow?.address),
-		chainID: safeChainID,
+		chainID: VEYFI_CHAIN_ID,
 		allowances,
 		amount: lockAmount.raw
 	});

@@ -7,7 +7,6 @@ import {getPortalsApproval, getPortalsEstimate, getPortalsTx} from '@vaults/hook
 import {getNetwork, prepareSendTransaction, waitForTransaction} from '@wagmi/core';
 import {toast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {allowanceKey, isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -34,7 +33,7 @@ export type TPortalsQuoteResult = {
 	error?: Error;
 };
 
-async function getQuote(request: TInitSolverArgs, safeChainID: number, zapSlippage: number): Promise<{data: TPortalsEstimate | null; error?: Error}> {
+async function getQuote(request: TInitSolverArgs, zapSlippage: number): Promise<{data: TPortalsEstimate | null; error?: Error}> {
 	const params = {
 		sellToken: toAddress(request.inputToken.value),
 		sellAmount: toBigInt(request.inputAmount).toString(),
@@ -53,7 +52,7 @@ async function getQuote(request: TInitSolverArgs, safeChainID: number, zapSlippa
 	}
 
 	try {
-		return getPortalsEstimate({network: safeChainID, params});
+		return getPortalsEstimate({network: request.chainID, params});
 	} catch (error) {
 		console.error(error);
 		let errorContent = 'Portals.fi zap not possible. Try again later or pick another token.';
@@ -75,7 +74,6 @@ export function useSolverPortals(): TSolverContext {
 	const latestQuote = useRef<TPortalsEstimate>();
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
 	const {zapSlippage} = useYearn();
-	const {safeChainID} = useChainID();
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	 ** init will be called when the Portals solver should be used to perform the desired swap.
@@ -95,7 +93,7 @@ export function useSolverPortals(): TSolverContext {
 			/******************************************************************************************
 			 ** This first obvious check is to see if the solver is disabled. If it is, we return 0.
 			 ******************************************************************************************/
-			if (isSolverDisabled(safeChainID)[Solver.enum.Portals]) {
+			if (isSolverDisabled(_request.chainID)[Solver.enum.Portals]) {
 				return toNormalizedBN(0);
 			}
 
@@ -129,7 +127,7 @@ export function useSolverPortals(): TSolverContext {
 			 ** to get the current quote for the provided request.current.
 			 ******************************************************************************************/
 			request.current = _request;
-			const {data, error} = await getQuote(_request, safeChainID, zapSlippage);
+			const {data, error} = await getQuote(_request, zapSlippage);
 			if (!data) {
 				console.error(error?.message);
 				if (error && shouldLogError) {
@@ -143,7 +141,7 @@ export function useSolverPortals(): TSolverContext {
 			latestQuote.current = data;
 			return toNormalizedBN(data?.minBuyAmount || 0, request?.current?.outputToken?.decimals || 18);
 		},
-		[safeChainID, zapSlippage]
+		[zapSlippage]
 	);
 
 	/* 🔵 - Yearn Finance **************************************************************************
@@ -152,7 +150,7 @@ export function useSolverPortals(): TSolverContext {
 	 ** not.
 	 **********************************************************************************************/
 	const execute = useCallback(async (): Promise<TTxResponse> => {
-		if (isSolverDisabled(safeChainID)[Solver.enum.Portals]) {
+		if (!request.current || isSolverDisabled(request.current.chainID)[Solver.enum.Portals]) {
 			return {isSuccessful: false};
 		}
 
@@ -163,7 +161,7 @@ export function useSolverPortals(): TSolverContext {
 
 		try {
 			const transaction = await getPortalsTx({
-				network: safeChainID,
+				network: request.current.chainID,
 				params: {
 					takerAddress: toAddress(request.current.from),
 					sellToken: toAddress(request.current.inputToken.value),
@@ -222,58 +220,60 @@ export function useSolverPortals(): TSolverContext {
 
 			return {isSuccessful: false};
 		}
-	}, [provider, safeChainID, zapSlippage]);
+	}, [provider, zapSlippage]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** Format the quote to a normalized value, which will be used for subsequent
 	 ** process and displayed to the user.
 	 **************************************************************************/
 	const expectedOut = useMemo((): TNormalizedBN => {
-		if (!latestQuote?.current?.minBuyAmount || isSolverDisabled(safeChainID)[Solver.enum.Portals]) {
+		if (!latestQuote?.current?.minBuyAmount || !request.current || isSolverDisabled(request.current.chainID)[Solver.enum.Portals]) {
 			return toNormalizedBN(0);
 		}
 		return toNormalizedBN(latestQuote?.current?.minBuyAmount, request?.current?.outputToken?.decimals || 18);
-	}, [latestQuote, request, safeChainID]);
+	}, [latestQuote, request]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** Retrieve the allowance for the token to be used by the solver. This will
 	 ** be used to determine if the user should approve the token or not.
 	 **************************************************************************/
-	const onRetrieveAllowance = useCallback(
-		async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
-			if (!latestQuote?.current || !request?.current || isSolverDisabled(safeChainID)[Solver.enum.Portals]) {
-				return toNormalizedBN(0);
-			}
+	const onRetrieveAllowance = useCallback(async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
+		if (!latestQuote?.current || !request?.current || isSolverDisabled(request.current.chainID)[Solver.enum.Portals]) {
+			return toNormalizedBN(0);
+		}
 
-			const key = allowanceKey(safeChainID, toAddress(request.current.inputToken.value), toAddress(request.current.outputToken.value), toAddress(request.current.from));
-			if (existingAllowances.current[key] && !shouldForceRefetch) {
-				return existingAllowances.current[key];
-			}
+		const key = allowanceKey(
+			request.current.chainID,
+			toAddress(request.current.inputToken.value),
+			toAddress(request.current.outputToken.value),
+			toAddress(request.current.from)
+		);
+		if (existingAllowances.current[key] && !shouldForceRefetch) {
+			return existingAllowances.current[key];
+		}
 
-			try {
-				const {data: approval} = await getPortalsApproval({
-					network: safeChainID,
-					params: {
-						takerAddress: toAddress(request.current.from),
-						sellToken: toAddress(request.current.inputToken.value),
-						sellAmount: toBigInt(request.current.inputAmount).toString(),
-						buyToken: toAddress(request.current.outputToken.value)
-					}
-				});
-
-				if (!approval) {
-					throw new Error('Portals approval not found');
+		try {
+			const {data: approval} = await getPortalsApproval({
+				network: request.current.chainID,
+				params: {
+					takerAddress: toAddress(request.current.from),
+					sellToken: toAddress(request.current.inputToken.value),
+					sellAmount: toBigInt(request.current.inputAmount).toString(),
+					buyToken: toAddress(request.current.outputToken.value)
 				}
+			});
 
-				existingAllowances.current[key] = toNormalizedBN(approval.context.allowance, request.current.inputToken.decimals);
-				return existingAllowances.current[key];
-			} catch (error) {
-				console.error(error);
-				return {raw: 0n, normalized: 0};
+			if (!approval) {
+				throw new Error('Portals approval not found');
 			}
-		},
-		[safeChainID]
-	);
+
+			existingAllowances.current[key] = toNormalizedBN(approval.context.allowance, request.current.inputToken.decimals);
+			return existingAllowances.current[key];
+		} catch (error) {
+			console.error(error);
+			return {raw: 0n, normalized: 0};
+		}
+	}, []);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** Trigger an signature to approve the token to be used by the Portals
@@ -282,7 +282,7 @@ export function useSolverPortals(): TSolverContext {
 	 **************************************************************************/
 	const onApprove = useCallback(
 		async (amount = MAX_UINT_256, txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>, onSuccess: () => Promise<void>): Promise<void> => {
-			if (isSolverDisabled(safeChainID)[Solver.enum.Portals]) {
+			if (!request.current || isSolverDisabled(request.current.chainID)[Solver.enum.Portals]) {
 				return;
 			}
 			assert(request.current, 'Request is not set');
@@ -291,7 +291,7 @@ export function useSolverPortals(): TSolverContext {
 
 			try {
 				const {data: approval} = await getPortalsApproval({
-					network: safeChainID,
+					network: request.current.chainID,
 					params: {
 						takerAddress: toAddress(request.current.from),
 						sellToken: toAddress(request.current.inputToken.value),
@@ -330,7 +330,7 @@ export function useSolverPortals(): TSolverContext {
 				return;
 			}
 		},
-		[provider, safeChainID]
+		[provider]
 	);
 
 	/* 🔵 - Yearn Finance ******************************************************

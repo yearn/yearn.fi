@@ -74,16 +74,13 @@ export const WalletForZapAppContextApp = memo(function WalletForZapAppContextApp
 			if (!token) {
 				return;
 			}
-			if (token.chainID !== safeChainID) {
-				return;
-			}
 			if (isZeroAddress(token.address)) {
 				return;
 			}
-			tokens.push({address: toAddress(token.address), chainID: token.chainID});
+			tokens.push({address: toAddress(token.address), chainID: Number(token.chainID)});
 		});
 		return tokens;
-	}, [tokensList, safeChainID]);
+	}, [tokensList]);
 
 	useDeepCompareEffect((): void => {
 		onLoadStart();
