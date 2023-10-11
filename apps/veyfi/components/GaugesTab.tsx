@@ -1,6 +1,7 @@
 import {useCallback, useState} from 'react';
 import {useGauge} from '@veYFI/contexts/useGauge';
 import * as GaugeActions from '@veYFI/utils/actions/gauge';
+import {VEYFI_SUPPORTED_NETWORK} from '@veYFI/utils/constants';
 import {validateNetwork} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -82,6 +83,7 @@ export function GaugesTab(): ReactElement {
 			set_selectedAction('stake');
 			const response = await GaugeActions.approveAndStake({
 				connector: provider,
+				chainID: VEYFI_SUPPORTED_NETWORK,
 				contractAddress: gaugeAddress,
 				vaultAddress,
 				amount,
@@ -102,6 +104,7 @@ export function GaugesTab(): ReactElement {
 
 			const response = await GaugeActions.stake({
 				connector: provider,
+				chainID: VEYFI_SUPPORTED_NETWORK,
 				contractAddress: gaugeAddress,
 				amount,
 				statusHandler: set_stakeStatus
@@ -121,6 +124,7 @@ export function GaugesTab(): ReactElement {
 
 			const response = await GaugeActions.unstake({
 				connector: provider,
+				chainID: VEYFI_SUPPORTED_NETWORK,
 				contractAddress: gaugeAddress,
 				accountAddress: userAddress,
 				amount,

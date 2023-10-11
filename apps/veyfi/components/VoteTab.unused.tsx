@@ -39,7 +39,11 @@ export function VoteTab(): ReactElement {
 					<div className={'text-neutral-600'}>
 						<p>{'Vote to direct future YFI rewards to a particular gauge.'}</p>
 						<br />
-						<p>{'If you prefer your democracy on the representative side, you can delegate your vote to another address.'}</p>
+						<p>
+							{
+								'If you prefer your democracy on the representative side, you can delegate your vote to another address.'
+							}
+						</p>
 					</div>
 				</div>
 

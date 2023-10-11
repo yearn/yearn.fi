@@ -11,6 +11,7 @@ import {assert} from '@common/utils/assert';
 
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TSeconds} from '@yearn-finance/web-lib/utils/time';
+import type {TWriteTransaction} from '@yearn-finance/web-lib/utils/wagmi/provider';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 
 type TApproveLock = TWriteTransaction & {
@@ -97,6 +98,7 @@ export async function withdrawUnlocked(props: TWithdrawUnlocked): Promise<TTxRes
 
 	const {result} = await prepareWriteContract({
 		address: props.votingEscrowAddress,
+		chainId: props.chainID,
 		abi: VEYFI_ABI,
 		functionName: 'withdraw'
 	});

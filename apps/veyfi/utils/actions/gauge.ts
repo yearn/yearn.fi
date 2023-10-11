@@ -23,7 +23,7 @@ export async function approveAndStake(props: TApproveAndStake): Promise<TTxRespo
 		connector: props.connector,
 		chainID: props.chainID,
 		tokenAddress: props.vaultAddress,
-		spenderAddress: props.contractAddress
+		spenderAddress: toAddress(props.contractAddress)
 	});
 
 	if (allowance < props.amount) {

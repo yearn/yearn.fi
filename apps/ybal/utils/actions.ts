@@ -65,10 +65,12 @@ export async function simulateZapForMinOut(props: TSimulateZapForMinOut): Promis
 		const baseContract = {
 			...wagmiProvider,
 			address: LOCAL_ZAP_YEARN_YBAL_ADDRESS,
-			abi: ZAP_BAL_ABI
+			abi: ZAP_BAL_ABI,
+			chainID: props.chainID
 		};
 		const {result: expectedAmountMint} = await prepareWriteContract({
 			...baseContract,
+			chainId: props.chainID,
 			functionName: 'queryZapOutput',
 			args: [props.inputToken, props.outputToken, props.amountIn, true]
 		});
@@ -79,6 +81,7 @@ export async function simulateZapForMinOut(props: TSimulateZapForMinOut): Promis
 			// Do another Static Call - simulating output
 			const {result} = await prepareWriteContract({
 				...baseContract,
+				chainId: props.chainID,
 				functionName: 'queryZapOutput',
 				args: [props.inputToken, props.outputToken, props.amountIn, false]
 			});

@@ -62,6 +62,7 @@ export function useSolverOptimismBooster(): TSolverContext {
 
 			const allowance = await allowanceOf({
 				connector: provider,
+				chainID: request.current.inputToken.chainID,
 				tokenAddress: toAddress(request.current.inputToken.value),
 				spenderAddress: toAddress(STAKING_REWARDS_ZAP_ADDRESS)
 			});
@@ -83,6 +84,7 @@ export function useSolverOptimismBooster(): TSolverContext {
 
 			const result = await approveERC20({
 				connector: provider,
+				chainID: request.current.chainID,
 				contractAddress: request.current.inputToken.value,
 				spenderAddress: STAKING_REWARDS_ZAP_ADDRESS,
 				amount: amount,
@@ -106,6 +108,7 @@ export function useSolverOptimismBooster(): TSolverContext {
 
 			const result = await depositAndStake({
 				connector: provider,
+				chainID: request.current.chainID,
 				contractAddress: STAKING_REWARDS_ZAP_ADDRESS,
 				vaultAddress: request.current.outputToken.value,
 				amount: request.current.inputAmount,

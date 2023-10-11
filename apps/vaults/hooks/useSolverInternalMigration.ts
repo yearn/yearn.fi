@@ -33,6 +33,7 @@ export function useSolverInternalMigration(): TSolverContext {
 			const estimateOut = await readContract({
 				address: ZAP_YEARN_VE_CRV_ADDRESS,
 				abi: ZAP_CRV_ABI,
+				chainId: request.current.chainID,
 				functionName: 'calc_expected_out',
 				args: [request.current.inputToken.value, request.current.outputToken.value, request.current.inputAmount]
 			});
@@ -75,6 +76,7 @@ export function useSolverInternalMigration(): TSolverContext {
 
 			const allowance = await allowanceOf({
 				connector: provider,
+				chainID: request.current.inputToken.chainID,
 				tokenAddress: toAddress(request.current.inputToken.value),
 				spenderAddress: toAddress(request.current.migrator)
 			});
@@ -98,6 +100,7 @@ export function useSolverInternalMigration(): TSolverContext {
 
 			const result = await approveERC20({
 				connector: provider,
+				chainID: request.current.chainID,
 				contractAddress: toAddress(request.current.inputToken.value),
 				spenderAddress: request.current.migrator,
 				amount: amount,
@@ -122,11 +125,13 @@ export function useSolverInternalMigration(): TSolverContext {
 				const _expectedOut = await readContract({
 					address: ZAP_YEARN_VE_CRV_ADDRESS,
 					abi: ZAP_CRV_ABI,
+					chainId: request.current.chainID,
 					functionName: 'calc_expected_out',
 					args: [request.current.inputToken.value, request.current.outputToken.value, request.current.inputAmount]
 				});
 				const result = await zapCRV({
 					connector: provider,
+					chainID: request.current.chainID,
 					contractAddress: ZAP_YEARN_VE_CRV_ADDRESS,
 					inputToken: request.current.inputToken.value, //_input_token
 					outputToken: request.current.outputToken.value, //_output_token
@@ -143,6 +148,7 @@ export function useSolverInternalMigration(): TSolverContext {
 
 			const result = await migrateShares({
 				connector: provider,
+				chainID: request.current.chainID,
 				contractAddress: request.current.migrator,
 				fromVault: request.current.inputToken.value,
 				toVault: request.current.outputToken.value,

@@ -102,6 +102,7 @@ export async function getVeYFIWithdrawPenalty(props: TGetVeYFIWithdrawPenalty): 
 	try {
 		const {result} = await prepareWriteContract({
 			address: toAddress(props.contractAddress),
+			chainId: props.chainID,
 			abi: VEYFI_ABI,
 			functionName: 'withdraw'
 		});

@@ -25,7 +25,7 @@ import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import {getAmountWithSlippage, getVaultAPR} from '@common/utils';
 import {approveERC20, deposit} from '@common/utils/actions';
-import {YCRV_CHAIN_ID} from '@yCRV/constants';
+import {YCRV_SUPPORTED_NETWORK} from '@yCRV/constants';
 import {ZAP_OPTIONS_FROM, ZAP_OPTIONS_TO} from '@yCRV/constants/tokens';
 import {useYCRV} from '@yCRV/contexts/useYCRV';
 import {ZAP_CRV_ABI} from '@yCRV/utils/abi/zapCRV.abi';
@@ -73,7 +73,11 @@ const CardTransactorContext = createContext<TCardTransactor>({
 	onIncreaseCRVAllowance: async (): Promise<void> => undefined
 });
 
-export function CardTransactorContextApp({defaultOptionFrom = ZAP_OPTIONS_FROM[0], defaultOptionTo = ZAP_OPTIONS_TO[0], children = <div />}): ReactElement {
+export function CardTransactorContextApp({
+	defaultOptionFrom = ZAP_OPTIONS_FROM[0],
+	defaultOptionTo = ZAP_OPTIONS_TO[0],
+	children = <div />
+}): ReactElement {
 	const {provider, isActive, address} = useWeb3();
 	const {styCRVAPY, allowances, refetchAllowances, slippage} = useYCRV();
 	const {getBalance, refresh} = useWallet();
@@ -109,7 +113,11 @@ export function CardTransactorContextApp({defaultOptionFrom = ZAP_OPTIONS_FROM[0
 	 **************************************************************************/
 	useEffect((): void => {
 		if (isActive && isZero(amount.raw) && !hasTypedSomething) {
-			set_amount(toNormalizedBN(getBalance({address: selectedOptionFrom.value, chainID: selectedOptionFrom.chainID})?.raw));
+			set_amount(
+				toNormalizedBN(
+					getBalance({address: selectedOptionFrom.value, chainID: selectedOptionFrom.chainID})?.raw
+				)
+			);
 		} else if (!isActive && amount.raw > 0n) {
 			set_amount(toNormalizedBN(0));
 			set_hasTypedSomething(false);
@@ -132,6 +140,7 @@ export function CardTransactorContextApp({defaultOptionFrom = ZAP_OPTIONS_FROM[0
 			if (_inputToken === YCRV_CURVE_POOL_ADDRESS) {
 				const pps = await readContract({
 					address: LPYCRV_TOKEN_ADDRESS,
+					chainId: YCRV_SUPPORTED_NETWORK,
 					abi: VAULT_ABI,
 					functionName: 'pricePerShare'
 				});
@@ -141,6 +150,7 @@ export function CardTransactorContextApp({defaultOptionFrom = ZAP_OPTIONS_FROM[0
 			if (_inputToken === YCRV_CURVE_POOL_V2_ADDRESS) {
 				const pps = await readContract({
 					address: LPYCRV_V2_TOKEN_ADDRESS,
+					chainId: YCRV_SUPPORTED_NETWORK,
 					abi: VAULT_ABI,
 					functionName: 'pricePerShare'
 				});
@@ -149,6 +159,7 @@ export function CardTransactorContextApp({defaultOptionFrom = ZAP_OPTIONS_FROM[0
 			}
 			const _expectedOut = await readContract({
 				address: ZAP_YEARN_VE_CRV_ADDRESS,
+				chainId: YCRV_SUPPORTED_NETWORK,
 				abi: ZAP_CRV_ABI,
 				functionName: 'calc_expected_out',
 				args: [_inputToken, _outputToken, _amountIn]
@@ -166,7 +177,7 @@ export function CardTransactorContextApp({defaultOptionFrom = ZAP_OPTIONS_FROM[0
 	const onApprove = useCallback(async (): Promise<void> => {
 		const result = await approveERC20({
 			connector: provider,
-			chainID: YCRV_CHAIN_ID,
+			chainID: selectedOptionFrom.chainID,
 			contractAddress: selectedOptionFrom.value,
 			spenderAddress: selectedOptionFrom.zapVia,
 			amount: MAX_UINT_256,
@@ -185,7 +196,7 @@ export function CardTransactorContextApp({defaultOptionFrom = ZAP_OPTIONS_FROM[0
 	const onIncreaseCRVAllowance = useCallback(async (): Promise<void> => {
 		const resultReset = await approveERC20({
 			connector: provider,
-			chainID: YCRV_CHAIN_ID,
+			chainID: selectedOptionFrom.chainID,
 			contractAddress: selectedOptionFrom.value,
 			spenderAddress: selectedOptionFrom.zapVia,
 			amount: 0n,
@@ -194,7 +205,7 @@ export function CardTransactorContextApp({defaultOptionFrom = ZAP_OPTIONS_FROM[0
 		if (resultReset.isSuccessful) {
 			const result = await approveERC20({
 				connector: provider,
-				chainID: YCRV_CHAIN_ID,
+				chainID: selectedOptionFrom.chainID,
 				contractAddress: selectedOptionFrom.value,
 				spenderAddress: selectedOptionFrom.zapVia,
 				amount: MAX_UINT_256,
@@ -228,12 +239,15 @@ export function CardTransactorContextApp({defaultOptionFrom = ZAP_OPTIONS_FROM[0
 			}
 		};
 
-		if (selectedOptionFrom.zapVia === LPYCRV_TOKEN_ADDRESS || selectedOptionFrom.zapVia === LPYCRV_V2_TOKEN_ADDRESS) {
+		if (
+			selectedOptionFrom.zapVia === LPYCRV_TOKEN_ADDRESS ||
+			selectedOptionFrom.zapVia === LPYCRV_V2_TOKEN_ADDRESS
+		) {
 			// Direct deposit to vault from crv/yCRV Curve LP Token to lp-yCRV Vault
 			// This is valid for v1 and v2
 			const result = await deposit({
 				connector: provider,
-				chainID: YCRV_CHAIN_ID,
+				chainID: selectedOptionFrom.chainID,
 				contractAddress: selectedOptionTo.value,
 				amount: amount.raw,
 				statusHandler: set_txStatusZap
@@ -247,7 +261,7 @@ export function CardTransactorContextApp({defaultOptionFrom = ZAP_OPTIONS_FROM[0
 			// Zap in
 			const result = await zapCRV({
 				connector: provider,
-				chainID: YCRV_CHAIN_ID,
+				chainID: selectedOptionFrom.chainID,
 				contractAddress: ZAP_YEARN_VE_CRV_ADDRESS,
 				inputToken: selectedOptionFrom.value, //_input_token
 				outputToken: selectedOptionTo.value, //_output_token
@@ -298,12 +312,22 @@ export function CardTransactorContextApp({defaultOptionFrom = ZAP_OPTIONS_FROM[0
 	}, [vaults, selectedOptionTo, styCRVAPY]);
 
 	const expectedOutWithSlippage = useMemo(
-		(): number => getAmountWithSlippage(selectedOptionFrom.value, selectedOptionTo.value, toBigInt(expectedOut), slippage),
+		(): number =>
+			getAmountWithSlippage(selectedOptionFrom.value, selectedOptionTo.value, toBigInt(expectedOut), slippage),
 		[expectedOut, selectedOptionFrom.value, selectedOptionTo.value, slippage]
 	);
 
 	const allowanceFrom = useMemo((): bigint => {
-		return toBigInt(allowances?.[allowanceKey(1, toAddress(selectedOptionFrom.value), toAddress(selectedOptionFrom.zapVia), toAddress(address))]);
+		return toBigInt(
+			allowances?.[
+				allowanceKey(
+					1,
+					toAddress(selectedOptionFrom.value),
+					toAddress(selectedOptionFrom.zapVia),
+					toAddress(address)
+				)
+			]
+		);
 	}, [allowances, selectedOptionFrom.value, selectedOptionFrom.zapVia, address]);
 
 	return (
