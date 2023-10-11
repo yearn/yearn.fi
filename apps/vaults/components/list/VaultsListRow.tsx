@@ -131,6 +131,10 @@ export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): 
 		);
 	}
 
+	if (currentVault.apr.forwardAPR.type === '') {
+		return <VaultHistoricalAPR currentVault={currentVault} />;
+	}
+
 	return (
 		<div className={'flex flex-col text-right'}>
 			<b className={'yearn--table-data-section-item-value'}>
