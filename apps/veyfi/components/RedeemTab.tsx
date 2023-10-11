@@ -3,10 +3,9 @@ import {useAsync} from '@react-hookz/web';
 import {useOption} from '@veYFI/contexts/useOption';
 import {redeem} from '@veYFI/utils/actions/option';
 import {VEYFI_OPTIONS_ADDRESS, VEYFI_OYFI_ADDRESS} from '@veYFI/utils/constants';
-import {validateAllowance, validateAmount, validateNetwork} from '@veYFI/utils/validations';
+import {validateAllowance, validateAmount} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {BIG_ZERO, ETH_TOKEN_ADDRESS, YFI_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatBigNumberAsAmount, toNormalizedBN, toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -25,7 +24,6 @@ import type {TAddress} from '@yearn-finance/web-lib/types';
 export function RedeemTab(): ReactElement {
 	const [redeemAmount, set_redeemAmount] = useState(toNormalizedBN(0));
 	const {provider, address, isActive} = useWeb3();
-	const {safeChainID} = useChainID();
 	const {refresh: refreshBalances} = useWallet();
 	const {getRequiredEth, price: optionPrice, positions, allowances, isLoading: isLoadingOption, refresh} = useOption();
 	const clearLockAmount = (): void => set_redeemAmount(toNormalizedBN(0));
@@ -84,11 +82,6 @@ export function RedeemTab(): ReactElement {
 		balance: oYFIBalance.normalized
 	});
 
-	const {isValid: isValidNetwork} = validateNetwork({
-		supportedNetwork: 1,
-		walletNetwork: safeChainID
-	});
-
 	return (
 		<div className={'flex flex-col gap-6 md:gap-10'}>
 			<div className={'flex flex-col gap-4'}>
@@ -128,9 +121,7 @@ export function RedeemTab(): ReactElement {
 						className={'w-full md:mt-7'}
 						onClick={async (): Promise<void> => (isApproved ? handleRedeem() : handleApproveRedeem())}
 						isBusy={isLoadingOption || approveRedeemStatus.pending || redeemStatus.pending || status === 'loading'}
-						isDisabled={
-							!isActive || !isValidNetwork || !isValidRedeemAmount || status === 'loading' || status === 'error' || !redeemStatus.none || !approveRedeemStatus.none
-						}>
+						isDisabled={!isActive || !isValidRedeemAmount || status === 'loading' || status === 'error' || !redeemStatus.none || !approveRedeemStatus.none}>
 						{isApproved ? 'Redeem' : 'Approve'}
 					</Button>
 				</div>

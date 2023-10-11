@@ -103,6 +103,7 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 			set_isLoading(true);
 
 			const request: TInitSolverArgs = {
+				chainID: currentVault.chainID,
 				from: toAddress(address || ''),
 				inputToken: actionParams.selectedOptionFrom,
 				outputToken: actionParams.selectedOptionTo,

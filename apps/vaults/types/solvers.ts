@@ -20,6 +20,7 @@ export type TWithSolver = {
 };
 
 export type TInitSolverArgs = {
+	chainID: number;
 	from: TAddress;
 	inputToken: TDropdownOption;
 	outputToken: TDropdownOption;

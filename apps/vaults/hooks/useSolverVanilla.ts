@@ -1,7 +1,6 @@
 import {useCallback, useMemo, useRef} from 'react';
 import {getVaultEstimateOut} from '@vaults/utils/getVaultEstimateOut';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -16,7 +15,6 @@ import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
 
 export function useSolverVanilla(): TSolverContext {
 	const {provider} = useWeb3();
-	const {chainID, safeChainID} = useChainID();
 	const latestQuote = useRef<TNormalizedBN>();
 	const request = useRef<TInitSolverArgs>();
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
@@ -26,23 +24,20 @@ export function useSolverVanilla(): TSolverContext {
 	 ** It will set the request to the provided value, as it's required to get the quote, and will
 	 ** call getQuote to get the current quote for the provided request.
 	 **********************************************************************************************/
-	const init = useCallback(
-		async (_request: TInitSolverArgs): Promise<TNormalizedBN> => {
-			request.current = _request;
-			const estimateOut = await getVaultEstimateOut({
-				inputToken: toAddress(_request.inputToken.value),
-				outputToken: toAddress(_request.outputToken.value),
-				inputDecimals: _request.inputToken.decimals,
-				outputDecimals: _request.outputToken.decimals,
-				inputAmount: _request.inputAmount,
-				isDepositing: _request.isDepositing,
-				chainID: chainID
-			});
-			latestQuote.current = estimateOut;
-			return latestQuote.current;
-		},
-		[chainID]
-	);
+	const init = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN> => {
+		request.current = _request;
+		const estimateOut = await getVaultEstimateOut({
+			inputToken: toAddress(_request.inputToken.value),
+			outputToken: toAddress(_request.outputToken.value),
+			inputDecimals: _request.inputToken.decimals,
+			outputDecimals: _request.outputToken.decimals,
+			inputAmount: _request.inputAmount,
+			isDepositing: _request.isDepositing,
+			chainID: _request.chainID
+		});
+		latestQuote.current = estimateOut;
+		return latestQuote.current;
+	}, []);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** Retrieve the allowance for the token to be used by the solver. This will
@@ -54,7 +49,12 @@ export function useSolverVanilla(): TSolverContext {
 				return toNormalizedBN(0);
 			}
 
-			const key = allowanceKey(safeChainID, toAddress(request.current.inputToken.value), toAddress(request.current.outputToken.value), toAddress(request.current.from));
+			const key = allowanceKey(
+				request.current.chainID,
+				toAddress(request.current.inputToken.value),
+				toAddress(request.current.outputToken.value),
+				toAddress(request.current.from)
+			);
 			if (existingAllowances.current[key] && !shouldForceRefetch) {
 				return existingAllowances.current[key];
 			}
@@ -67,7 +67,7 @@ export function useSolverVanilla(): TSolverContext {
 			existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals);
 			return existingAllowances.current[key];
 		},
-		[request, safeChainID, provider]
+		[request, provider]
 	);
 
 	/* 🔵 - Yearn Finance ******************************************************

@@ -2,7 +2,6 @@ import {useCallback, useMemo, useRef} from 'react';
 import {getVaultEstimateOut} from '@vaults/utils/getVaultEstimateOut';
 import {readContract} from '@wagmi/core';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {MAX_UINT_256, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -19,7 +18,6 @@ import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
 
 export function useSolverInternalMigration(): TSolverContext {
 	const {provider} = useWeb3();
-	const {chainID, safeChainID} = useChainID();
 	const latestQuote = useRef<TNormalizedBN>();
 	const request = useRef<TInitSolverArgs>();
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
@@ -29,34 +27,31 @@ export function useSolverInternalMigration(): TSolverContext {
 	 ** It will set the request to the provided value, as it's required to get the quote, and will
 	 ** call getQuote to get the current quote for the provided request.
 	 **********************************************************************************************/
-	const init = useCallback(
-		async (_request: TInitSolverArgs): Promise<TNormalizedBN> => {
-			request.current = _request;
-			if (request.current.migrator === ZAP_YEARN_VE_CRV_ADDRESS) {
-				const estimateOut = await readContract({
-					address: ZAP_YEARN_VE_CRV_ADDRESS,
-					abi: ZAP_CRV_ABI,
-					functionName: 'calc_expected_out',
-					args: [request.current.inputToken.value, request.current.outputToken.value, request.current.inputAmount]
-				});
-				const minAmountWithSlippage = estimateOut - (estimateOut * 6n) / 10_000n;
-				latestQuote.current = toNormalizedBN(minAmountWithSlippage);
-				return latestQuote.current;
-			}
-			const estimateOut = await getVaultEstimateOut({
-				inputToken: toAddress(_request.inputToken.value),
-				outputToken: toAddress(_request.outputToken.value),
-				inputDecimals: _request.inputToken.decimals,
-				outputDecimals: _request.outputToken.decimals,
-				inputAmount: _request.inputAmount,
-				isDepositing: _request.isDepositing,
-				chainID: chainID
+	const init = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN> => {
+		request.current = _request;
+		if (request.current.migrator === ZAP_YEARN_VE_CRV_ADDRESS) {
+			const estimateOut = await readContract({
+				address: ZAP_YEARN_VE_CRV_ADDRESS,
+				abi: ZAP_CRV_ABI,
+				functionName: 'calc_expected_out',
+				args: [request.current.inputToken.value, request.current.outputToken.value, request.current.inputAmount]
 			});
-			latestQuote.current = estimateOut;
+			const minAmountWithSlippage = estimateOut - (estimateOut * 6n) / 10_000n;
+			latestQuote.current = toNormalizedBN(minAmountWithSlippage);
 			return latestQuote.current;
-		},
-		[chainID]
-	);
+		}
+		const estimateOut = await getVaultEstimateOut({
+			inputToken: toAddress(_request.inputToken.value),
+			outputToken: toAddress(_request.outputToken.value),
+			inputDecimals: _request.inputToken.decimals,
+			outputDecimals: _request.outputToken.decimals,
+			inputAmount: _request.inputAmount,
+			isDepositing: _request.isDepositing,
+			chainID: _request.chainID
+		});
+		latestQuote.current = estimateOut;
+		return latestQuote.current;
+	}, []);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** Retrieve the allowance for the token to be used by the solver. This will
@@ -68,7 +63,12 @@ export function useSolverInternalMigration(): TSolverContext {
 				return toNormalizedBN(0);
 			}
 
-			const key = allowanceKey(safeChainID, toAddress(request.current.inputToken.value), toAddress(request.current.outputToken.value), toAddress(request.current.from));
+			const key = allowanceKey(
+				request.current.chainID,
+				toAddress(request.current.inputToken.value),
+				toAddress(request.current.outputToken.value),
+				toAddress(request.current.from)
+			);
 			if (existingAllowances.current[key] && !shouldForceRefetch) {
 				return existingAllowances.current[key];
 			}
@@ -81,7 +81,7 @@ export function useSolverInternalMigration(): TSolverContext {
 			existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals);
 			return existingAllowances.current[key];
 		},
-		[request, safeChainID, provider]
+		[request, provider]
 	);
 
 	/* 🔵 - Yearn Finance ******************************************************

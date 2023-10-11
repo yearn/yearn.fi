@@ -2,6 +2,7 @@ import {useCallback, useEffect, useMemo, useState} from 'react';
 import {Balancer} from 'react-wrap-balancer';
 import {useAsync} from '@react-hookz/web';
 import {VaultListFactory} from '@vaults/components/list/VaultListFactory';
+import {YFACTORY_SUPPORTED_NETWORK} from '@vaults/constants';
 import {VAULT_FACTORY_ABI} from '@vaults/utils/abi/vaultFactory.abi';
 import {createNewVaultsAndStrategies, gasOfCreateNewVaultsAndStrategies} from '@vaults/utils/actions';
 import {Wrapper} from '@vaults/Wrapper';
@@ -10,7 +11,6 @@ import {Button} from '@yearn-finance/web-lib/components/Button';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {VAULT_FACTORY_ADDRESS, ZERO_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
@@ -51,7 +51,6 @@ const defaultOption: TDropdownGaugeOption = {
 function Factory(): ReactElement {
 	const {mutateVaultList} = useYearn();
 	const {provider, isActive} = useWeb3();
-	const {safeChainID} = useChainID();
 	const {gaugesFromYearn} = useCurve();
 	const {toast} = yToast();
 	const [selectedOption, set_selectedOption] = useState(defaultOption);
@@ -64,7 +63,6 @@ function Factory(): ReactElement {
 	 ** associated vault.
 	 **************************************************************************/
 	const [{result: filteredGauges}, fetchGaugesAction] = useAsync(async function fetchAlreadyCreatedGauges(
-		_safeChainID: number,
 		_gaugesFromYearn: TCurveGaugesFromYearn
 	): Promise<TCurveGaugesFromYearn> {
 		if (isZero((_gaugesFromYearn || []).length)) {
@@ -85,14 +83,14 @@ function Factory(): ReactElement {
 		}
 		const canCreateVaults = await multicall({
 			contracts: calls,
-			chainId: _safeChainID
+			chainId: YFACTORY_SUPPORTED_NETWORK
 		});
 		return _gaugesFromYearn.filter((_gauge: TCurveGaugeFromYearn, index: number): boolean => decodeAsBoolean(canCreateVaults[index]));
 	}, []);
 
 	useEffect((): void => {
-		fetchGaugesAction.execute(safeChainID, gaugesFromYearn);
-	}, [fetchGaugesAction, gaugesFromYearn, safeChainID]);
+		fetchGaugesAction.execute(gaugesFromYearn);
+	}, [fetchGaugesAction, gaugesFromYearn]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** We need to create the possible elements for the dropdown by removing all
@@ -129,7 +127,6 @@ function Factory(): ReactElement {
 	 ** We need to fetch the name and symbol from the gauge contract.
 	 **************************************************************************/
 	const [{result: gaugeDisplayData, status}, fetchGaugeDisplayDataAction] = useAsync(async function fetchGaugeDisplayData(
-		_safeChainID: number,
 		_selectedOption: TDropdownGaugeOption
 	): Promise<TGaugeDisplayData> {
 		const baseContract = {
@@ -141,7 +138,7 @@ function Factory(): ReactElement {
 				{...baseContract, functionName: 'name'},
 				{...baseContract, functionName: 'symbol'}
 			],
-			chainId: _safeChainID
+			chainId: YFACTORY_SUPPORTED_NETWORK
 		});
 
 		const name = decodeAsString(results[0]);
@@ -155,8 +152,8 @@ function Factory(): ReactElement {
 	}, undefined);
 
 	useEffect((): void => {
-		fetchGaugeDisplayDataAction.execute(safeChainID, selectedOption);
-	}, [fetchGaugeDisplayDataAction, safeChainID, selectedOption]);
+		fetchGaugeDisplayDataAction.execute(selectedOption);
+	}, [fetchGaugeDisplayDataAction, selectedOption]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** Perform a smartContract call to the ZAP contract to get the expected
@@ -188,11 +185,11 @@ function Factory(): ReactElement {
 		}
 	}, 0n);
 	useEffect((): void => {
-		if (!isActive || toAddress(selectedOption.value.gaugeAddress) === ZERO_ADDRESS || safeChainID !== 1) {
+		if (!isActive || toAddress(selectedOption.value.gaugeAddress) === ZERO_ADDRESS) {
 			return;
 		}
 		actions.execute();
-	}, [actions, isActive, provider, safeChainID, selectedOption, selectedOption.value.gaugeAddress]);
+	}, [actions, isActive, provider, selectedOption, selectedOption.value.gaugeAddress]);
 
 	const onCreateNewVault = useCallback(async (): Promise<void> => {
 		const result = await createNewVaultsAndStrategies({
@@ -203,10 +200,10 @@ function Factory(): ReactElement {
 		});
 		if (result.isSuccessful) {
 			await setTimeout(async (): Promise<void> => {
-				await Promise.all([fetchGaugesAction.execute(safeChainID, gaugesFromYearn), mutateVaultList()]);
+				await Promise.all([fetchGaugesAction.execute(gaugesFromYearn), mutateVaultList()]);
 			}, 1000);
 		}
-	}, [fetchGaugesAction, gaugesFromYearn, mutateVaultList, provider, safeChainID, selectedOption.value.gaugeAddress]);
+	}, [fetchGaugesAction, gaugesFromYearn, mutateVaultList, provider, selectedOption.value.gaugeAddress]);
 
 	function loadingFallback(): ReactElement {
 		return (
@@ -283,7 +280,7 @@ function Factory(): ReactElement {
 									<Renderable shouldRender={!!gaugeDisplayData}>
 										<p className={'overflow-hidden text-ellipsis text-neutral-600'}>{toAddress(gaugeDisplayData?.poolAddress)}</p>
 										<a
-											href={`${getNetwork(safeChainID)?.defaultBlockExplorer}/address/${toAddress(gaugeDisplayData?.poolAddress)}`}
+											href={`${getNetwork(YFACTORY_SUPPORTED_NETWORK)?.defaultBlockExplorer}/address/${toAddress(gaugeDisplayData?.poolAddress)}`}
 											target={'_blank'}
 											rel={'noreferrer'}
 											className={'ml-4 cursor-pointer text-neutral-900'}>
@@ -302,7 +299,7 @@ function Factory(): ReactElement {
 									<Renderable shouldRender={!!gaugeDisplayData}>
 										<p className={'overflow-hidden text-ellipsis text-neutral-600'}>{toAddress(gaugeDisplayData?.gaugeAddress)}</p>
 										<a
-											href={`${getNetwork(safeChainID)?.defaultBlockExplorer}/address/${toAddress(gaugeDisplayData?.gaugeAddress)}`}
+											href={`${getNetwork(YFACTORY_SUPPORTED_NETWORK)?.defaultBlockExplorer}/address/${toAddress(gaugeDisplayData?.gaugeAddress)}`}
 											target={'_blank'}
 											rel={'noreferrer'}
 											className={'ml-4 cursor-pointer text-neutral-900'}>
@@ -322,7 +319,7 @@ function Factory(): ReactElement {
 						<Button
 							onClick={onCreateNewVault}
 							isBusy={txStatus.pending}
-							isDisabled={!isActive || selectedOption.value.gaugeAddress === ZERO_ADDRESS || safeChainID !== 1 || hasError}
+							isDisabled={!isActive || selectedOption.value.gaugeAddress === ZERO_ADDRESS || hasError}
 							className={'w-full'}>
 							{'Create new Vault'}
 						</Button>

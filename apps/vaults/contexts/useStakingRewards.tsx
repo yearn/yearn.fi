@@ -1,12 +1,11 @@
 import {createContext, memo, useCallback, useContext, useMemo} from 'react';
-import {useRouter} from 'next/router';
 import useSWR from 'swr';
+import {OPT_STAKING_REWARD_SUPPORTED_NETWORK} from '@vaults/constants';
 import {STACKING_TO_VAULT, VAULT_TO_STACKING} from '@vaults/constants/optRewards';
 import {STAKING_REWARDS_ABI} from '@vaults/utils/abi/stakingRewards.abi';
 import {STAKING_REWARDS_REGISTRY_ABI} from '@vaults/utils/abi/stakingRewardsRegistry.abi';
 import {multicall} from '@wagmi/core';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {STAKING_REWARDS_REGISTRY_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {decodeAsBigInt, decodeAsString} from '@yearn-finance/web-lib/utils/decoder';
@@ -44,11 +43,6 @@ const defaultProps: TStakingRewardsContext = {
 const StakingRewardsContext = createContext<TStakingRewardsContext>(defaultProps);
 export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({children}: {children: ReactElement}): ReactElement {
 	const {provider, address: userAddress, isActive} = useWeb3();
-	const {chainID: appChainID} = useChainID();
-	const router = useRouter();
-	const routeChainID = Number(router.query.chainID || '0');
-	const chainID = routeChainID || appChainID;
-	const isChainSupported = [10].includes(chainID);
 
 	const stakingRewardsFetcher = useCallback(async (): Promise<TStakingRewards[]> => {
 		/* 🔵 - Yearn Finance **********************************************************************
@@ -57,7 +51,7 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 		const baseContract = {
 			address: STAKING_REWARDS_REGISTRY_ADDRESS,
 			abi: STAKING_REWARDS_REGISTRY_ABI,
-			chainId: chainID
+			chainId: OPT_STAKING_REWARD_SUPPORTED_NETWORK
 		} as const;
 
 		/* 🔵 - Yearn Finance **********************************************************************
@@ -93,7 +87,7 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 		}
 		const stakingRewardsAddresses = await multicall({
 			contracts: stakingPoolCalls,
-			chainId: chainID
+			chainId: OPT_STAKING_REWARD_SUPPORTED_NETWORK
 		});
 
 		/* 🔵 - Yearn Finance **********************************************************************
@@ -106,7 +100,7 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 				const baseStackingContract = {
 					address: toAddress(address),
 					abi: STAKING_REWARDS_ABI,
-					chainId: chainID
+					chainId: OPT_STAKING_REWARD_SUPPORTED_NETWORK
 				};
 				const results = await multicall({
 					contracts: [
@@ -114,7 +108,7 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 						{...baseStackingContract, functionName: 'rewardsToken'},
 						{...baseStackingContract, functionName: 'totalSupply'}
 					],
-					chainId: chainID
+					chainId: OPT_STAKING_REWARD_SUPPORTED_NETWORK
 				});
 
 				const stakingToken = decodeAsString(results[0]);
@@ -130,12 +124,8 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 		}
 
 		return stackingRewards;
-	}, [chainID]);
-	const {
-		data: stakingRewards,
-		mutate: refreshStakingRewards,
-		isLoading: isLoadingStakingRewards
-	} = useSWR(isChainSupported ? 'stakingRewards' : null, stakingRewardsFetcher, {shouldRetryOnError: false});
+	}, []);
+	const {data: stakingRewards, mutate: refreshStakingRewards, isLoading: isLoadingStakingRewards} = useSWR('stakingRewards', stakingRewardsFetcher, {shouldRetryOnError: false});
 
 	const positionsFetcher = useCallback(async (): Promise<TStakePosition[]> => {
 		if (!stakingRewards || !isActive || !userAddress) {
@@ -150,7 +140,7 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 			const baseContract = {
 				address,
 				abi: STAKING_REWARDS_ABI,
-				chainId: chainID
+				chainId: OPT_STAKING_REWARD_SUPPORTED_NETWORK
 			} as const;
 			calls.push({
 				...baseContract,
@@ -163,7 +153,7 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 				args: [userAddress]
 			});
 		}
-		const results = await multicall({contracts: calls, chainId: chainID});
+		const results = await multicall({contracts: calls, chainId: OPT_STAKING_REWARD_SUPPORTED_NETWORK});
 
 		let resultIndex = 0;
 		const positionPromises = [];
@@ -174,7 +164,7 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 		}
 
 		return positionPromises;
-	}, [stakingRewards, isActive, userAddress, chainID]);
+	}, [stakingRewards, isActive, userAddress, OPT_STAKING_REWARD_SUPPORTED_NETWORK]);
 	const {
 		data: positions,
 		mutate: refreshPositions,

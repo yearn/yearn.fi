@@ -7,7 +7,6 @@ import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {getNetwork, waitForTransaction} from '@wagmi/core';
 import {toast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {allowanceKey, isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -28,16 +27,11 @@ import type {TTxResponse, TTxStatus} from '@yearn-finance/web-lib/utils/web3/tra
 import type {TNormalizedBN} from '@common/types/types';
 import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
 
-async function getQuote(
-	request: TInitSolverArgs,
-	currentPartner: TAddress,
-	safeChainID: number,
-	zapSlippage: number
-): Promise<{data: QuoteResult | undefined; error: Error | undefined}> {
+async function getQuote(request: TInitSolverArgs, currentPartner: TAddress, zapSlippage: number): Promise<{data: QuoteResult | undefined; error: Error | undefined}> {
 	const params: QuoteRequest = {
-		fromChainId: safeChainID as ChainId, // Chain Id of from token
+		fromChainId: request.chainID as ChainId, // Chain Id of from token
 		fromToken: toAddress(request.inputToken.value), // token to spend
-		toChainId: safeChainID as ChainId, // Chain Id of to token
+		toChainId: request.chainID as ChainId, // Chain Id of to token
 		toToken: toAddress(request.outputToken.value), // token to receive
 		amount: toBigInt(request?.inputAmount).toString(), // Token amount of from token
 		slippagePercentage: zapSlippage / 100, // Acceptable max slippage for the swap
@@ -71,7 +65,6 @@ export function useSolverWido(): TSolverContext {
 	const request = useRef<TInitSolverArgs>();
 	const latestQuote = useRef<QuoteResult>();
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
-	const {safeChainID} = useChainID();
 	const {zapSlippage, currentPartner} = useYearn();
 	const debouncedToast = useDebouncedCallback((args): string => toast(args), [toast], 500);
 
@@ -93,7 +86,7 @@ export function useSolverWido(): TSolverContext {
 			/******************************************************************************************
 			 ** This first obvious check is to see if the solver is disabled. If it is, we return 0.
 			 ******************************************************************************************/
-			if (isSolverDisabled(safeChainID)[Solver.enum.Wido]) {
+			if (isSolverDisabled(_request.chainID)[Solver.enum.Wido]) {
 				return toNormalizedBN(0);
 			}
 
@@ -113,7 +106,7 @@ export function useSolverWido(): TSolverContext {
 			 ** to get the current quote for the provided request.current.
 			 ******************************************************************************************/
 			request.current = _request;
-			const {data, error} = await getQuote(_request, currentPartner, safeChainID, zapSlippage);
+			const {data, error} = await getQuote(_request, currentPartner, zapSlippage);
 			if (!data) {
 				if (error && shouldLogError) {
 					debouncedToast({
@@ -126,7 +119,7 @@ export function useSolverWido(): TSolverContext {
 			latestQuote.current = data;
 			return toNormalizedBN(data?.minToTokenAmount || 0, request?.current?.outputToken?.decimals || 18);
 		},
-		[currentPartner, debouncedToast, safeChainID, zapSlippage]
+		[currentPartner, debouncedToast, zapSlippage]
 	);
 
 	/* 🔵 - Yearn Finance **************************************************************************
@@ -135,7 +128,7 @@ export function useSolverWido(): TSolverContext {
 	 ** not.
 	 **********************************************************************************************/
 	const execute = useCallback(async (): Promise<TTxResponse> => {
-		if (isSolverDisabled(safeChainID)[Solver.enum.Wido]) {
+		if (!request.current || isSolverDisabled(request.current.chainID)[Solver.enum.Wido]) {
 			return {isSuccessful: false};
 		}
 
@@ -170,18 +163,18 @@ export function useSolverWido(): TSolverContext {
 			console.error(_error);
 			return {isSuccessful: false, error: _error as BaseError};
 		}
-	}, [provider, latestQuote, safeChainID]);
+	}, [provider, latestQuote]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** Format the quote to a normalized value, which will be used for subsequent
 	 ** process and displayed to the user.
 	 **************************************************************************/
 	const expectedOut = useMemo((): TNormalizedBN => {
-		if (!latestQuote?.current?.minToTokenAmount || isSolverDisabled(safeChainID)[Solver.enum.Wido]) {
+		if (!latestQuote?.current?.minToTokenAmount || !request.current || isSolverDisabled(request.current.chainID)[Solver.enum.Wido]) {
 			return toNormalizedBN(0);
 		}
 		return toNormalizedBN(latestQuote?.current?.minToTokenAmount, request?.current?.outputToken?.decimals || 18);
-	}, [latestQuote, request, safeChainID]);
+	}, [latestQuote, request]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** Retrieve the allowance for the token to be used by the solver. This will
@@ -189,7 +182,7 @@ export function useSolverWido(): TSolverContext {
 	 **************************************************************************/
 	const onRetrieveAllowance = useCallback(
 		async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
-			if (!latestQuote?.current || !request?.current || isSolverDisabled(safeChainID)[Solver.enum.Wido]) {
+			if (!latestQuote?.current || !request?.current || isSolverDisabled(request.current.chainID)[Solver.enum.Wido]) {
 				return toNormalizedBN(0);
 			}
 
@@ -197,7 +190,12 @@ export function useSolverWido(): TSolverContext {
 				return toNormalizedBN(MAX_UINT_256);
 			}
 
-			const key = allowanceKey(safeChainID, toAddress(request.current.inputToken.value), toAddress(request.current.outputToken.value), toAddress(request.current.from));
+			const key = allowanceKey(
+				request.current.chainID,
+				toAddress(request.current.inputToken.value),
+				toAddress(request.current.outputToken.value),
+				toAddress(request.current.from)
+			);
 
 			if (existingAllowances.current[key] && !shouldForceRefetch) {
 				return existingAllowances.current[key];
@@ -205,8 +203,8 @@ export function useSolverWido(): TSolverContext {
 
 			try {
 				const widoSpender = await getWidoSpender({
-					chainId: safeChainID as ChainId,
-					toChainId: safeChainID as ChainId,
+					chainId: request.current.chainID as ChainId,
+					toChainId: request.current.chainID as ChainId,
 					fromToken: toAddress(request.current.inputToken.value),
 					toToken: toAddress(request.current.outputToken.value)
 				});
@@ -227,7 +225,7 @@ export function useSolverWido(): TSolverContext {
 
 			return toNormalizedBN(0);
 		},
-		[provider, safeChainID]
+		[provider]
 	);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -237,7 +235,7 @@ export function useSolverWido(): TSolverContext {
 	 **************************************************************************/
 	const onApprove = useCallback(
 		async (amount = MAX_UINT_256, txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>, onSuccess: () => Promise<void>): Promise<void> => {
-			if (isSolverDisabled(safeChainID)[Solver.enum.Wido]) {
+			if (!request.current || isSolverDisabled(request.current.chainID)[Solver.enum.Wido]) {
 				return;
 			}
 			assert(request.current, 'Request is not set');
@@ -246,8 +244,8 @@ export function useSolverWido(): TSolverContext {
 			assert(request.current.inputAmount, 'Input amount is not set');
 
 			const widoSpender = await getWidoSpender({
-				chainId: safeChainID as ChainId,
-				toChainId: safeChainID as ChainId,
+				chainId: request.current.chainID as ChainId,
+				toChainId: request.current.chainID as ChainId,
 				fromToken: toAddress(request.current.inputToken.value),
 				toToken: toAddress(request.current.outputToken.value)
 			});
@@ -272,9 +270,8 @@ export function useSolverWido(): TSolverContext {
 				return;
 			}
 			onSuccess();
-			return;
 		},
-		[provider, safeChainID]
+		[provider]
 	);
 
 	/* 🔵 - Yearn Finance ******************************************************

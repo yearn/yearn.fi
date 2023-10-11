@@ -4,7 +4,6 @@ import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {claim as claimAction, stake as stakeAction, unstake as unstakeAction} from '@vaults/utils/actions';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {VAULT_ABI} from '@yearn-finance/web-lib/utils/abi/vault.abi';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ZERO_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
@@ -25,7 +24,6 @@ const trimAmount = (amount: string | number): string => Number(Number(amount).to
 
 export function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {provider, address, isActive} = useWeb3();
-	const {chainID} = useChainID();
 	const {refresh: refreshBalances} = useWallet();
 	const {stakingRewardsByVault, stakingRewardsMap, positionsMap, refresh: refreshStakingRewards} = useStakingRewards();
 	const stakingRewardsAddress = stakingRewardsByVault[currentVault.address];
@@ -47,7 +45,7 @@ export function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): React
 	} = useContractRead({
 		address: currentVault.address,
 		abi: VAULT_ABI,
-		chainId: chainID,
+		chainId: currentVault.chainID,
 		functionName: 'allowance',
 		args: [toAddress(address), toAddress(stakingRewards?.address)],
 		enabled: toAddress(stakingRewards?.address) !== ZERO_ADDRESS

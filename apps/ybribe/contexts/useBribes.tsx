@@ -2,7 +2,6 @@ import {createContext, useCallback, useContext, useEffect, useMemo, useState} fr
 import {useContractRead} from 'wagmi';
 import {multicall, prepareWriteContract} from '@wagmi/core';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {CURVE_BRIBE_V3_ADDRESS, CURVE_BRIBE_V3_HELPER_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {decodeAsBigInt} from '@yearn-finance/web-lib/utils/decoder';
@@ -10,6 +9,7 @@ import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {performBatchedUpdates} from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {useCurve} from '@common/contexts/useCurve';
+import {YBRIBE_SUPPORTED_NETWORK} from '@yBribe/constants';
 import {getLastThursday, getNextThursday} from '@yBribe/utils';
 import {CURVE_BRIBE_V3_ABI} from '@yBribe/utils/abi/curveBribeV3.abi';
 import {CURVE_BRIBE_V3_HELPER_ABI} from '@yBribe/utils/abi/curveBribeV3Helper.abi';
@@ -41,7 +41,6 @@ const BribesContext = createContext<TBribesContext>(defaultProps);
 export const BribesContextApp = ({children}: {children: React.ReactElement}): React.ReactElement => {
 	const {gauges} = useCurve();
 	const {address} = useWeb3();
-	const {safeChainID} = useChainID();
 	const [currentRewards, set_currentRewards] = useState<TCurveGaugeVersionRewards>({});
 	const [nextRewards, set_nextRewards] = useState<TCurveGaugeVersionRewards>({});
 	const [claimable, set_claimable] = useState<TCurveGaugeVersionRewards>({});
@@ -88,7 +87,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 		}
 		const result = await multicall({
 			contracts: rewardsPerGaugesCalls,
-			chainId: safeChainID
+			chainId: YBRIBE_SUPPORTED_NETWORK
 		});
 		const rewardsPerGauges: TDict<TAddress[]> = {};
 		let resultIndex = 0;
@@ -104,7 +103,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 			rewardsPerGauges[gauge.gauge.toString()] = rewardsTokensAddresses;
 		}
 		return rewardsPerGauges;
-	}, [bribeV3BaseContract, gauges, safeChainID]);
+	}, [bribeV3BaseContract, gauges]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 **	getRewardsPerUser will help you retrieved the claimable and rewards
@@ -128,7 +127,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 			for (const [gaugeAddress, rewardsTokens] of Object.entries(rewardsPerGauges)) {
 				for (const tokenAsReward of rewardsTokens) {
 					const args = [toAddress(gaugeAddress), toAddress(tokenAsReward)];
-					rewardsList.push(allowanceKey(safeChainID, toAddress(gaugeAddress), tokenAsReward, userAddress));
+					rewardsList.push(allowanceKey(YBRIBE_SUPPORTED_NETWORK, toAddress(gaugeAddress), tokenAsReward, userAddress));
 					rewardsPerTokensPerGaugesCalls.push(
 						...[
 							{
@@ -154,7 +153,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 			const rewards: TDict<TGetRewardsPerUser> = {};
 			const result = await multicall({
 				contracts: rewardsPerTokensPerGaugesCalls,
-				chainId: safeChainID
+				chainId: YBRIBE_SUPPORTED_NETWORK
 			});
 			let resultIndex = 0;
 			for (const [gaugeAddress, rewardsTokens] of Object.entries(rewardsPerGauges)) {
@@ -177,7 +176,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 
 			return rewards;
 		},
-		[address, safeChainID, bribeV3BaseContract]
+		[address, bribeV3BaseContract]
 	);
 
 	/* 🔵 - Yearn Finance ******************************************************
