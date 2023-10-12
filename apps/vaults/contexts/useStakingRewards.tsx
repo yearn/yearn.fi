@@ -1,5 +1,4 @@
-import {createContext, memo, useCallback, useContext, useMemo} from 'react';
-import useSWR from 'swr';
+import {createContext, memo, useCallback, useContext, useEffect, useMemo, useState} from 'react';
 import {OPT_STAKING_REWARD_SUPPORTED_NETWORK} from '@vaults/constants';
 import {STACKING_TO_VAULT, VAULT_TO_STACKING} from '@vaults/constants/optRewards';
 import {STAKING_REWARDS_ABI} from '@vaults/utils/abi/stakingRewards.abi';
@@ -29,58 +28,29 @@ export type TStakingRewardsContext = {
 	stakingRewardsByVault: TDict<TAddress | undefined>;
 	stakingRewardsMap: TDict<TStakingRewards | undefined>;
 	positionsMap: TDict<TStakePosition | undefined>;
-	isLoading: boolean;
 	refresh: () => void;
 };
 const defaultProps: TStakingRewardsContext = {
 	stakingRewardsByVault: {},
 	stakingRewardsMap: {},
 	positionsMap: {},
-	isLoading: true,
 	refresh: (): void => undefined
 };
 
 const StakingRewardsContext = createContext<TStakingRewardsContext>(defaultProps);
 export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({children}: {children: ReactElement}): ReactElement {
-	const {provider, address: userAddress, isActive} = useWeb3();
+	const {address: userAddress, isActive} = useWeb3();
+	const [stakingRewards, set_stakingRewards] = useState<TStakingRewards[]>([]);
+	const [positions, set_positions] = useState<TStakePosition[]>([]);
 
 	const stakingRewardsFetcher = useCallback(async (): Promise<TStakingRewards[]> => {
-		/* 🔵 - Yearn Finance **********************************************************************
-		 ** Base wagmi contract struct ready to use in the viem functions call
-		 ******************************************************************************************/
-		const baseContract = {
-			address: STAKING_REWARDS_REGISTRY_ADDRESS,
-			abi: STAKING_REWARDS_REGISTRY_ABI,
-			chainId: OPT_STAKING_REWARD_SUPPORTED_NETWORK
-		} as const;
-
-		/* 🔵 - Yearn Finance **********************************************************************
-		 ** Retrieve the number of tokens in the registry, and for each token retrieve it's address
-		 ** so we can proceed
-		 ******************************************************************************************/
-		// const numTokens = await readContract({...baseContract, functionName: 'numTokens'});
-		// const tokensCalls = [];
-		// for (let i = 0; i < numTokens; i++) {
-		// 	tokensCalls.push({...baseContract, functionName: 'tokens', args: [i]});
-		// }
-		// const vaultAddressesMulticall = await multicall({contracts: tokensCalls, chainId: chainID});
-
-		/* 🔵 - Yearn Finance **********************************************************************
-		 ** For each address of token, retrieve the related stacking pool address
-		 ******************************************************************************************/
-		// const stakingPoolCalls = [];
-		// for (const vaultAddressMulticall of vaultAddressesMulticall) {
-		// 	if (vaultAddressMulticall.status === 'success') {
-		// 		const address = decodeAsString(vaultAddressMulticall);
-		// 		stakingPoolCalls.push({...baseContract, functionName: 'stakingPool', args: [address]});
-		// 	}
-		// }
-
 		const stakingPoolCalls = [];
 		const stackingAddresses = Object.values(VAULT_TO_STACKING);
 		for (const stackingAddress of stackingAddresses) {
 			stakingPoolCalls.push({
-				...baseContract,
+				address: STAKING_REWARDS_REGISTRY_ADDRESS,
+				abi: STAKING_REWARDS_REGISTRY_ABI,
+				chainId: OPT_STAKING_REWARD_SUPPORTED_NETWORK,
 				functionName: 'stakingPool',
 				args: [stackingAddress]
 			});
@@ -93,7 +63,7 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 		/* 🔵 - Yearn Finance **********************************************************************
 		 ** For each stakingRewardsAddresses, grab the info in a multicall
 		 ******************************************************************************************/
-		const stackingRewards: TStakingRewards[] = [];
+		const _stackingRewards: TStakingRewards[] = [];
 		for (const stakingRewardsAddress of stakingRewardsAddresses) {
 			if (stakingRewardsAddress.status === 'success') {
 				const address = decodeAsString(stakingRewardsAddress);
@@ -114,7 +84,7 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 				const stakingToken = decodeAsString(results[0]);
 				const rewardsToken = decodeAsString(results[1]);
 				const totalSupply = decodeAsBigInt(results[2]);
-				stackingRewards.push({
+				_stackingRewards.push({
 					address: toAddress(address),
 					stakingToken: toAddress(stakingToken),
 					rewardsToken: toAddress(rewardsToken),
@@ -123,9 +93,13 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 			}
 		}
 
-		return stackingRewards;
+		set_stakingRewards(_stackingRewards);
+		return _stackingRewards;
 	}, []);
-	const {data: stakingRewards, mutate: refreshStakingRewards, isLoading: isLoadingStakingRewards} = useSWR('stakingRewards', stakingRewardsFetcher, {shouldRetryOnError: false});
+
+	useEffect((): void => {
+		stakingRewardsFetcher();
+	}, [stakingRewardsFetcher]);
 
 	const positionsFetcher = useCallback(async (): Promise<TStakePosition[]> => {
 		if (!stakingRewards || !isActive || !userAddress) {
@@ -163,34 +137,31 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 			positionPromises.push({address, stake, reward});
 		}
 
+		set_positions(positionPromises);
 		return positionPromises;
 	}, [stakingRewards, isActive, userAddress, OPT_STAKING_REWARD_SUPPORTED_NETWORK]);
-	const {
-		data: positions,
-		mutate: refreshPositions,
-		isLoading: isLoadingPositions
-	} = useSWR(isActive && provider && stakingRewards ? 'stakePositions' : null, positionsFetcher, {
-		shouldRetryOnError: false
-	});
+
+	useEffect((): void => {
+		positionsFetcher();
+	}, [positionsFetcher]);
 
 	const positionsMap = useMemo((): TDict<TStakePosition | undefined> => {
 		return keyBy(positions ?? [], 'address');
 	}, [positions]);
 
 	const refresh = useCallback((): void => {
-		refreshStakingRewards();
-		refreshPositions();
-	}, [refreshPositions, refreshStakingRewards]);
+		stakingRewardsFetcher();
+		positionsFetcher();
+	}, [positionsFetcher, stakingRewardsFetcher]);
 
 	const contextValue = useMemo(
 		(): TStakingRewardsContext => ({
 			stakingRewardsByVault: STACKING_TO_VAULT,
 			stakingRewardsMap: keyBy(stakingRewards ?? [], 'address'),
 			positionsMap,
-			isLoading: isLoadingStakingRewards || isLoadingPositions,
 			refresh
 		}),
-		[stakingRewards, positionsMap, isLoadingStakingRewards, isLoadingPositions, refresh]
+		[stakingRewards, positionsMap, refresh]
 	);
 
 	return <StakingRewardsContext.Provider value={contextValue}>{children}</StakingRewardsContext.Provider>;

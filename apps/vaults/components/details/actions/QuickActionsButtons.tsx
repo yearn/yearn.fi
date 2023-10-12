@@ -2,6 +2,7 @@ import {useCallback, useEffect, useState} from 'react';
 import {useAsync} from '@react-hookz/web';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useSolver} from '@vaults/contexts/useSolver';
+import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -22,6 +23,7 @@ import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {refresh} = useWallet();
 	const {refresh: refreshZapBalances} = useWalletForZap();
+	const {refresh: refreshStakingRewards} = useStakingRewards();
 	const {address, provider} = useWeb3();
 	const {isStakingOpBoostedVaults} = useYearn();
 	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
@@ -59,6 +61,9 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 					chainID: currentVault.chainID
 				}
 			]);
+			if (Solver.enum.OptimismBooster === currentSolver) {
+				await refreshStakingRewards();
+			}
 		} else if (Solver.enum.Cowswap === currentSolver || Solver.enum.Portals === currentSolver || Solver.enum.Wido === currentSolver) {
 			if (isDepositing) {
 				//refresh input from zap wallet, refresh output from default

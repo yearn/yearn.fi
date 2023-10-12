@@ -22,7 +22,6 @@ import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {ListHead} from '@common/components/ListHead';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
-import {getVaultName} from '@common/utils';
 
 import type {NextRouter} from 'next/router';
 import type {ReactElement, ReactNode} from 'react';
@@ -213,9 +212,15 @@ function Index(): ReactElement {
 			return vaultsToDisplay;
 		}
 		return vaultsToDisplay.filter((vault: TYDaemonVault): boolean => {
-			const vaultName = getVaultName(vault).toLowerCase();
-			const vaultSymbol = vault.symbol.toLowerCase();
-			return [vaultName, vaultSymbol].some((attribute): boolean => attribute.includes(searchValue.toLowerCase()));
+			const lowercaseSearch = searchValue.toLowerCase();
+			return (
+				vault.name.toLowerCase().startsWith(lowercaseSearch) ||
+				vault.symbol.toLowerCase().startsWith(lowercaseSearch) ||
+				vault.token.name.toLowerCase().startsWith(lowercaseSearch) ||
+				vault.token.symbol.toLowerCase().startsWith(lowercaseSearch) ||
+				vault.address.toLowerCase().startsWith(lowercaseSearch) ||
+				vault.token.address.toLowerCase().startsWith(lowercaseSearch)
+			);
 		});
 	}, [vaultsToDisplay, searchValue]);
 

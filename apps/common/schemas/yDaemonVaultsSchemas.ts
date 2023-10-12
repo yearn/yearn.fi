@@ -32,7 +32,6 @@ const yDaemonVaultStrategySchema = z.object({
 			activation: z.number(),
 			keepCRV: z.number(),
 			debtLimit: z.number(),
-			withdrawalQueuePosition: z.number(),
 			doHealthCheck: z.boolean(),
 			inQueue: z.boolean(),
 			emergencyExit: z.boolean(),
