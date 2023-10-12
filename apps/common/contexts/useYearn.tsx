@@ -102,7 +102,7 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 			strategiesDetails: 'withDetails',
 			strategiesRisk: 'withRisk',
 			strategiesCondition: 'inQueue',
-			chainIDs: [1, 10].join(','),
+			chainIDs: [1, 10, 250, 8453, 42161].join(','),
 			limit: `2500`
 		})}`,
 		schema: yDaemonVaultsSchema
