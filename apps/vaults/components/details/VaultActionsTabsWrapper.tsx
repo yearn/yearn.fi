@@ -41,7 +41,6 @@ const tabs: TTabsOptions[] = [
 ];
 
 const DISPLAY_DECIMALS = 10;
-const trimAmount = (amount: string | number): string => Number(Number(amount).toFixed(DISPLAY_DECIMALS)).toString();
 
 function getCurrentTab({isDepositing, hasMigration, isRetired}: {isDepositing: boolean; hasMigration: boolean; isRetired: boolean}): TTabsOptions {
 	if (hasMigration || isRetired) {
@@ -251,7 +250,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 				{shouldShowOpBoostInfo && !isZero(rewardBalance.normalized) && (
 					<div>
 						<Banner
-							content={`Ser where's my rewards? You have ${trimAmount(rewardBalance.normalized)} ${
+							content={`Ser where's my rewards? You have ${Number(rewardBalance.normalized).toFixed(DISPLAY_DECIMALS)} ${
 								rewardTokenBalance.symbol || 'yvOP'
 							} waiting for you in the OP BOOST tab (yep, the one just above here).`}
 							type={'info'}

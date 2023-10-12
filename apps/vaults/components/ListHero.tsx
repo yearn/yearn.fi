@@ -57,7 +57,6 @@ export function ListHero({categories, set_categories, searchValue, selectedChain
 	}, [selectedChains]);
 
 	const categoryOptions = useMemo((): TMultiSelectOptionProps[] => {
-		const chainsFromJSON = JSON.parse(selectedChains || '[]') as number[];
 		const categoriesFromJSON = JSON.parse(categories || '[]') as string[];
 		const options: TMultiSelectOptionProps[] = [];
 
@@ -91,27 +90,21 @@ export function ListHero({categories, set_categories, searchValue, selectedChain
 			label: 'Balancer',
 			isSelected: categoriesFromJSON.includes('Balancer Vaults')
 		});
-
-		if (chainsFromJSON.includes(10)) {
-			options.push({
-				value: 'Boosted Vaults',
-				label: 'Boosted',
-				isSelected: categoriesFromJSON.includes('Boosted Vaults')
-			});
-			options.push({
-				value: 'Velodrome Vaults',
-				label: 'Velodrome',
-				isSelected: categoriesFromJSON.includes('Velodrome Vaults')
-			});
-		}
-
-		if (chainsFromJSON.includes(8453)) {
-			options.push({
-				value: 'Aerodrome Vaults',
-				label: 'Aerodrome',
-				isSelected: categoriesFromJSON.includes('Aerodrome Vaults')
-			});
-		}
+		options.push({
+			value: 'Boosted Vaults',
+			label: 'Boosted',
+			isSelected: categoriesFromJSON.includes('Boosted Vaults')
+		});
+		options.push({
+			value: 'Velodrome Vaults',
+			label: 'Velodrome',
+			isSelected: categoriesFromJSON.includes('Velodrome Vaults')
+		});
+		options.push({
+			value: 'Aerodrome Vaults',
+			label: 'Aerodrome',
+			isSelected: categoriesFromJSON.includes('Aerodrome Vaults')
+		});
 
 		return options;
 	}, [selectedChains, categories]);
