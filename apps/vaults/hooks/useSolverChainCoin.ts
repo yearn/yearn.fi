@@ -67,6 +67,7 @@ export function useSolverChainCoin(): TSolverContext {
 		assert(isEth(request.current.outputToken.value), 'Out is not ETH');
 		const allowance = await allowanceOf({
 			connector: provider,
+			chainID: safeChainID,
 			tokenAddress: toAddress(request.current.inputToken.value),
 			spenderAddress: toAddress(getEthZapperContract(safeChainID))
 		});
