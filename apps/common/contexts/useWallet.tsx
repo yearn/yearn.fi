@@ -228,6 +228,7 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 		refresh: onRefresh
 	}), [balances, cumulatedValueInVaults, isLoading, onRefresh, nonce]);
 
+
 	return (
 		<WalletContext.Provider value={contextValue}>
 			{children}

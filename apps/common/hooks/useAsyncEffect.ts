@@ -1,11 +1,11 @@
-import {useCallback, useEffect} from 'react';
+/* eslint-disable react-hooks/exhaustive-deps */
 
-import type {DependencyList} from 'react';
+import {type DependencyList, useCallback,useEffect} from 'react';
 
-function useAsyncEffect(effect: () => Promise<void>, deps?: DependencyList): () => Promise<void> {
+function useAsync(effect: () => Promise<void>, deps: DependencyList): () => Promise<void> {
 	const asyncEffectInCallback = useCallback(async (): Promise<void> => {
 		effect();
-	}, [deps]);
+	}, [...deps]);
 
 	useEffect((): void => {
 		asyncEffectInCallback();
@@ -15,4 +15,4 @@ function useAsyncEffect(effect: () => Promise<void>, deps?: DependencyList): () 
 }
 
 
-export {useAsyncEffect};
+export {useAsync};

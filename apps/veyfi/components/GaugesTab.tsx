@@ -1,4 +1,5 @@
 import {useCallback, useState} from 'react';
+import {useDeepCompareMemo} from '@react-hookz/web';
 import {useGauge} from '@veYFI/contexts/useGauge';
 import {approveAndStake, stake, unstake} from '@veYFI/utils/actions/gauge';
 import {VEYFI_CHAIN_ID} from '@veYFI/utils/constants';
@@ -127,27 +128,32 @@ export function GaugesTab(): ReactElement {
 	const {balances} = useWallet();
 	const userAddress = address as TAddress;
 
-	const gaugesData = gaugeAddresses.map((address): TGaugeData => {
-		const gauge = gaugesMap[address];
-		const vaultAddress = toAddress(gauge?.vaultAddress);
-		const vault = vaults[vaultAddress];
+	const gaugesData = useDeepCompareMemo((): TGaugeData[] => {
+		return (
+			gaugeAddresses.map((address): TGaugeData => {
+				const gauge = gaugesMap[address];
+				const vaultAddress = toAddress(gauge?.vaultAddress);
+				const vault = vaults[vaultAddress];
 
-		return {
-			gaugeAddress: address,
-			vaultAddress,
-			decimals: gauge?.decimals ?? 18,
-			vaultIcon: `${process.env.BASE_YEARN_ASSETS_URI}/1/${vaultAddress}/logo-128.png`,
-			vaultName: vault?.display_name ?? `Vault ${truncateHex(vaultAddress, 4)}`,
-			vaultApy: vault?.apy.net_apy ?? 0,
-			vaultDeposited: balances[vaultAddress],
-			gaugeApy: 0, // TODO: gauge apy calcs
-			gaugeBoost: positionsMap[address]?.boost ?? 1,
-			gaugeStaked: positionsMap[address]?.deposit.balance ?? toNormalizedBN(0),
-			allowance: allowancesMap[allowanceKey(1, vaultAddress, address, userAddress)],
-			isApproved: toBigInt(allowancesMap[allowanceKey(1, vaultAddress, address, userAddress)]?.raw) >= toBigInt(balances[vaultAddress]?.raw),
-			actions: undefined
-		};
-	});
+				return ({
+					gaugeAddress: address,
+					vaultAddress,
+					decimals: gauge?.decimals ?? 18,
+					vaultIcon: `${process.env.BASE_YEARN_ASSETS_URI}/1/${vaultAddress}/logo-128.png`,
+					vaultName: vault?.display_name ?? `Vault ${truncateHex(vaultAddress, 4)}`,
+					vaultApy: vault?.apy.net_apy ?? 0,
+					vaultDeposited: balances[vaultAddress],
+					gaugeApy: 0, // TODO: gauge apy calcs
+					gaugeBoost: positionsMap[address]?.boost ?? 1,
+					gaugeStaked: positionsMap[address]?.deposit.balance ?? toNormalizedBN(0),
+					allowance: allowancesMap[allowanceKey(VEYFI_CHAIN_ID, vaultAddress, address, userAddress)],
+					isApproved: toBigInt(allowancesMap[allowanceKey(VEYFI_CHAIN_ID, vaultAddress, address, userAddress)]?.raw) >= toBigInt(balances[vaultAddress]?.raw),
+					actions: undefined
+				});
+			})
+		);
+	}, [gaugesMap, gaugeAddresses, vaults, balances, positionsMap, allowancesMap, userAddress]);
+
 
 	return (
 		<div className={'relative -left-6 w-[calc(100%+48px)]'}>

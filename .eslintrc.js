@@ -1,5 +1,5 @@
 module.exports = {
-	'extends': ['./node_modules/@yearn-finance/web-lib/.eslintrc.cjs'],
+	'extends': ['./node_modules/@yearn-finance/web-lib/.eslintrc.cjs', 'plugin:react-hooks/recommended'],
 	'parser': '@typescript-eslint/parser',
 	'parserOptions': {
 		'ecmaFeatures': {
@@ -16,6 +16,11 @@ module.exports = {
 		'@typescript-eslint/indent': ['error', 'tab'],
 		'no-multi-spaces': ['error', {ignoreEOLComments: false}],
 		'no-mixed-spaces-and-tabs': 'error',
-		'react/jsx-max-props-per-line': 'off'
+		'react/jsx-max-props-per-line': 'off',
+		'react-hooks/exhaustive-deps': [
+			'warn', {
+				'additionalHooks': '(useAsync)'
+			}
+		]
 	}
 };
