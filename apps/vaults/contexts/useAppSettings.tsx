@@ -4,6 +4,9 @@ import {useSessionStorage} from '@yearn-finance/web-lib/hooks/useSessionStorage'
 
 import type {ReactElement} from 'react';
 
+export const ALL_CATEGORIES = '["Holdings","Crypto Vaults","Stables Vaults","Curve Vaults","Balancer Vaults","Boosted Vaults","Velodrome Vaults","Aerodrome Vaults"]';
+export const ALL_CHAINS = '[1,10,250,8453,42161]';
+
 export type TAppSettingsContext = {
 	category: string;
 	selectedChains: string;
@@ -31,14 +34,11 @@ const defaultProps: TAppSettingsContext = {
 
 const AppSettingsContext = createContext<TAppSettingsContext>(defaultProps);
 export const AppSettingsContextApp = memo(function AppSettingsContextApp({children}: {children: ReactElement}): ReactElement {
-	const [category, set_category] = useSessionStorage(
-		'yearn.fi/vaults-categories',
-		'["Holdings","Crypto Vaults","Stables Vaults","Curve Vaults","Balancer Vaults","Boosted Vaults","Velodrome Vaults","Aerodrome Vaults"]'
-	);
-	const [searchValue, set_searchValue] = useSessionStorage('yearn.fi/vaults-search', '');
-	const [selectedChains, set_selectedChains] = useSessionStorage('yearn.fi/selected-chains', '[1,10,250,8453,42161]');
-	const [shouldHideDust, set_shouldHideDust] = useLocalStorage('yearn.fi/should-hide-dust', false);
-	const [shouldHideLowTVLVaults, set_shouldHideLowTVLVaults] = useLocalStorage('yearn.fi/hide-low-tvl', false);
+	const [category, set_category] = useSessionStorage('yearn.fi/vaults-categories@0.0.1', ALL_CATEGORIES);
+	const [searchValue, set_searchValue] = useSessionStorage('yearn.fi/vaults-search@0.0.1', '');
+	const [selectedChains, set_selectedChains] = useSessionStorage('yearn.fi/selected-chains@0.0.1', ALL_CHAINS);
+	const [shouldHideDust, set_shouldHideDust] = useLocalStorage('yearn.fi/should-hide-dust@0.0.1', false);
+	const [shouldHideLowTVLVaults, set_shouldHideLowTVLVaults] = useLocalStorage('yearn.fi/hide-low-tvl@0.0.1', false);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 **	Setup and render the Context provider to use in the app.

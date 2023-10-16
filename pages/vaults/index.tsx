@@ -99,10 +99,10 @@ function Index(): ReactElement {
 		sortBy: TPossibleSortBy;
 		sortDirection: TSortDirection;
 	}>('yVaultsSorting', {sortBy: 'featuringScore', sortDirection: 'desc'});
-	const {shouldHideDust, shouldHideLowTVLVaults, category, searchValue, selectedChains, set_category, set_searchValue, set_selectedChains} = useAppSettings();
-	const chainsFromJSON = JSON.parse(selectedChains || '[]') as number[];
-	const categoriesFromJSON = JSON.parse(category || '[]') as string[];
+	const {shouldHideDust, category, searchValue, selectedChains, set_category, set_searchValue, set_selectedChains} = useAppSettings();
 
+	const chainsFromJSON = useMemo((): number[] => JSON.parse(selectedChains || '[]') as number[], [selectedChains]);
+	const categoriesFromJSON = useMemo((): string[] => JSON.parse(category || '[]') as string[], [category]);
 	const filterHoldingsCallback = useCallback(
 		(address: TAddress, chainID: number): boolean => {
 			const holding = getToken({address, chainID});
@@ -201,7 +201,7 @@ function Index(): ReactElement {
 		_vaultList = _vaultList.filter((vault, index, self): boolean => index === self.findIndex((v): boolean => v.address === vault.address));
 
 		return _vaultList;
-	}, [vaults, categoriesFromJSON, shouldHideLowTVLVaults, curveVaults, balancerVaults, velodromeVaults, boostedVaults, stablesVaults, cryptoVaults, holdingsVaults]);
+	}, [categoriesFromJSON, curveVaults, balancerVaults, velodromeVaults, boostedVaults, stablesVaults, cryptoVaults, holdingsVaults]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	 **	Then, on the vaultsToDisplay list, we apply the search filter. The search filter is
@@ -283,7 +283,7 @@ function Index(): ReactElement {
 				/>
 			);
 		});
-	}, [category, isLoadingVaultList, sortedVaultsToDisplay]);
+	}, [categoriesFromJSON, chainsFromJSON, isLoadingVaultList, sortedVaultsToDisplay]);
 
 	return (
 		<section className={'mt-4 grid w-full grid-cols-12 gap-y-10 pb-10 md:mt-20 md:gap-x-10 md:gap-y-20'}>

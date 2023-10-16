@@ -1,4 +1,4 @@
-import {useAppSettings} from '@vaults/contexts/useAppSettings';
+import {ALL_CATEGORIES, ALL_CHAINS, useAppSettings} from '@vaults/contexts/useAppSettings';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 
@@ -16,7 +16,7 @@ export function VaultsListEmpty({
 	currentChains: number[];
 	isLoading: boolean;
 }): ReactElement {
-	const {searchValue, category, set_category} = useAppSettings();
+	const {searchValue, category, set_category, set_selectedChains} = useAppSettings();
 
 	if (isLoading && isZero(sortedVaultsToDisplay.length)) {
 		return (
@@ -59,7 +59,10 @@ export function VaultsListEmpty({
 						</p>
 						<Button
 							className={'w-full md:w-48'}
-							onClick={(): void => set_category('All Vaults')}>
+							onClick={(): void => {
+								set_category(ALL_CATEGORIES);
+								set_selectedChains(ALL_CHAINS);
+							}}>
 							{'Search all vaults'}
 						</Button>
 					</>
@@ -78,7 +81,10 @@ export function VaultsListEmpty({
 						}>{`Please, select a chain. At least one, just one.`}</p>
 					<Button
 						className={'w-full md:w-48'}
-						onClick={(): void => set_category('All Vaults')}>
+						onClick={(): void => {
+							set_category(ALL_CATEGORIES);
+							set_selectedChains(ALL_CHAINS);
+						}}>
 						{'Search all vaults'}
 					</Button>
 				</>
