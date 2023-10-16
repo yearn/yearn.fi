@@ -1,4 +1,4 @@
-import React, {createContext, memo, useCallback, useContext, useEffect, useMemo} from 'react';
+import React, {createContext, memo, useCallback, useContext, useMemo} from 'react';
 import {FixedNumber} from 'ethers';
 import {useContractRead} from 'wagmi';
 import {useAsync} from '@react-hookz/web';
@@ -9,6 +9,7 @@ import {VEYFI_REGISTRY_ADDRESS} from '@veYFI/utils/constants';
 import {erc20ABI, getContract, multicall} from '@wagmi/core';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
+import {useAsyncEffect} from '@common/hooks/useAsyncEffect';
 
 import type {ReactElement} from 'react';
 import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
@@ -142,15 +143,11 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 		return gaugesFetcher();
 	}, []);
 
-	const refresh = useCallback((): void => {
+	const refresh = useAsyncEffect(async (): Promise<void> => {
 		refreshVotingEscrow();
 		refreshPositions();
 		refreshAllowances();
 	}, [refreshAllowances, refreshPositions, refreshVotingEscrow]);
-
-	useEffect((): void => {
-		refresh();
-	}, [refresh]);
 
 	const positionsFetcher = useCallback(async (): Promise<TGaugePosition[]> => {
 		if (!gauges || !isActive || !userAddress) {

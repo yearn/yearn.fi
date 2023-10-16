@@ -1,4 +1,4 @@
-import React, {createContext, memo, useCallback, useContext, useEffect, useMemo} from 'react';
+import React, {createContext, memo, useCallback, useContext, useMemo} from 'react';
 import {ethers} from 'ethers';
 import {useAsync} from '@react-hookz/web';
 import {VEYFI_OPTIONS_ABI} from '@veYFI/utils/abi/veYFIOptions.abi';
@@ -9,6 +9,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
 import {BIG_ZERO, ETH_TOKEN_ADDRESS, YFI_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt, toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {useAsyncEffect} from '@common/hooks/useAsyncEffect';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
 
 import type {ReactElement} from 'react';
@@ -66,15 +67,11 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 		return allowancesFetcher();
 	}, {});
 
-	const refresh = useCallback((): void => {
+	const refresh = useAsyncEffect(async (): Promise<void> => {
 		refreshPrice();
 		refreshPositions();
 		refreshAllowances();
 	}, [refreshPrice, refreshPositions, refreshAllowances]);
-
-	useEffect((): void => {
-		refresh();
-	}, [refresh]);
 
 	const getRequiredEth = useCallback(async (amount: bigint): Promise<bigint> => {
 		// TODO: update once abi is available

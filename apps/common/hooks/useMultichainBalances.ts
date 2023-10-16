@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {useCallback, useMemo, useRef, useState} from 'react';
 import {erc20ABI, useChainId} from 'wagmi';
 import {deserialize, multicall, serialize} from '@wagmi/core';
 import {useUI} from '@yearn-finance/web-lib/contexts/useUI';
@@ -11,6 +11,8 @@ import {toBigInt, toNormalizedBN, toNormalizedValue} from '@yearn-finance/web-li
 import {isEth} from '@yearn-finance/web-lib/utils/isEth';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
+
+import {useAsyncEffect} from './useAsyncEffect';
 
 import type {DependencyList} from 'react';
 import type {ContractFunctionConfig} from 'viem';
@@ -380,7 +382,12 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 		[props?.prices]
 	);
 
-	const asyncUseEffect = useCallback(async (): Promise<void> => {
+	/* 🔵 - Yearn Finance ******************************************************
+	 ** Everytime the stringifiedTokens change, we need to update the balances.
+	 ** This is the main hook and is optimized for performance, using a worker
+	 ** to fetch the balances, preventing the UI to freeze.
+	 **************************************************************************/
+	useAsyncEffect(async (): Promise<void> => {
 		if (!isActive || !userAddress || !provider) {
 			return;
 		}
@@ -421,15 +428,6 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 		onLoadDone();
 		set_status({...defaultStatus, isSuccess: true, isFetched: true});
 	}, [stringifiedTokens, isActive, userAddress, provider, onLoadStart, chainID, updateBalancesCall, onLoadDone]);
-
-	/* 🔵 - Yearn Finance ******************************************************
-	 ** Everytime the stringifiedTokens change, we need to update the balances.
-	 ** This is the main hook and is optimized for performance, using a worker
-	 ** to fetch the balances, preventing the UI to freeze.
-	 **************************************************************************/
-	useEffect((): void => {
-		asyncUseEffect();
-	}, [asyncUseEffect]);
 
 	const contextValue = useMemo(
 		(): TUseBalancesRes => ({
