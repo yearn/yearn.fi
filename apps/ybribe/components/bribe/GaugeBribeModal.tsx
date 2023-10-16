@@ -13,6 +13,7 @@ import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
 import {approveERC20} from '@common/utils/actions';
+import {YBRIBE_CHAIN_ID} from '@yBribe/constants';
 import {useBribes} from '@yBribe/contexts/useBribes';
 import {addReward} from '@yBribe/utils/actions';
 
@@ -74,6 +75,7 @@ export function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGa
 	const onApprove = useCallback(async (): Promise<void> => {
 		const result = await approveERC20({
 			connector: provider,
+			chainID: YBRIBE_CHAIN_ID,
 			contractAddress: tokenAddress,
 			spenderAddress: CURVE_BRIBE_V3_ADDRESS,
 			amount: amount.raw,
@@ -87,6 +89,7 @@ export function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGa
 	const onAddReward = useCallback(async (): Promise<void> => {
 		const result = await addReward({
 			connector: provider,
+			chainID: YBRIBE_CHAIN_ID,
 			contractAddress: CURVE_BRIBE_V3_ADDRESS,
 			gaugeAddress: currentGauge.gauge,
 			tokenAddress: tokenAddress,

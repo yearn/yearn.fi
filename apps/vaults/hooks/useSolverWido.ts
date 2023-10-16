@@ -208,6 +208,7 @@ export function useSolverWido(): TSolverContext {
 
 			const allowance = await allowanceOf({
 				connector: provider,
+				chainID: safeChainID,
 				tokenAddress: toAddress(request.current.inputToken.value),
 				spenderAddress: toAddress(widoSpender)
 			});
@@ -257,6 +258,7 @@ export function useSolverWido(): TSolverContext {
 			assertAddress(widoSpender, 'spender');
 			const result = await approveERC20({
 				connector: provider,
+				chainID: safeChainID,
 				contractAddress: request.current.inputToken.value,
 				spenderAddress: widoSpender,
 				amount: amount,
