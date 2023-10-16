@@ -1,4 +1,4 @@
-import {createContext, memo, useCallback, useContext, useEffect, useMemo} from 'react';
+import {createContext, memo, useCallback, useContext, useEffect, useMemo, useState} from 'react';
 import {
 	OPT_YVAGEUR_USDC_STAKING_CONTRACT,
 	OPT_YVALETH_FRXETH_STAKING_CONTRACT,
@@ -73,6 +73,7 @@ export type TWalletContext = {
 	balancesNonce: number;
 	isLoading: boolean;
 	refresh: (tokenList?: TUseBalancesTokens[]) => Promise<TChainTokens>;
+	triggerForknetBalances: () => void;
 };
 
 const defaultToken: TToken = {
@@ -96,7 +97,8 @@ const defaultProps = {
 	cumulatedValueInVaults: 0,
 	balancesNonce: 0,
 	isLoading: true,
-	refresh: async (): Promise<TChainTokens> => ({})
+	refresh: async (): Promise<TChainTokens> => ({}),
+	triggerForknetBalances: (): void => {}
 };
 
 /* 🔵 - Yearn Finance **********************************************************
@@ -107,6 +109,7 @@ const WalletContext = createContext<TWalletContext>(defaultProps);
 export const WalletContextApp = memo(function WalletContextApp({children}: {children: ReactElement}): ReactElement {
 	const {vaults, vaultsMigrations, vaultsRetired, isLoadingVaultList, prices} = useYearn();
 	const {onLoadStart, onLoadDone} = useUI();
+	const [shouldUseForknetBalances, set_shouldUseForknetBalances] = useState<boolean>(false);
 
 	//List all tokens related to yearn vaults
 	const availableTokens = useMemo((): TUseBalancesTokens[] => {
@@ -192,6 +195,7 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 				tokensExists[vault.token.address] = true;
 			}
 		});
+
 		return tokens;
 	}, [isLoadingVaultList, vaults]);
 
@@ -218,6 +222,19 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 		return tokens;
 	}, [vaultsRetired]);
 
+	const allTokens = useMemo((): TUseBalancesTokens[] => {
+		const tokens = [...availableTokens, ...migratableTokens, ...retiredTokens];
+		if (!shouldUseForknetBalances) {
+			return tokens;
+		}
+		for (const token of tokens) {
+			if (token.chainID === 1) {
+				tokens.push({...token, chainID: 1337});
+			}
+		}
+		return tokens;
+	}, [availableTokens, migratableTokens, retiredTokens, shouldUseForknetBalances]);
+
 	// Fetch the balances
 	const {
 		data: tokensRaw,
@@ -226,7 +243,7 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 		nonce,
 		isLoading
 	} = useBalances({
-		tokens: [...availableTokens, ...migratableTokens, ...retiredTokens],
+		tokens: [...allTokens],
 		prices
 	});
 
@@ -300,6 +317,8 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 		[tokens]
 	);
 
+	console.log(tokens);
+
 	/* 🔵 - Yearn Finance ******************************************************
 	 **	Setup and render the Context provider to use in the app.
 	 ***************************************************************************/
@@ -312,7 +331,8 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 			balancesNonce: nonce,
 			cumulatedValueInVaults,
 			isLoading: isLoading || false,
-			refresh: onRefresh
+			refresh: onRefresh,
+			triggerForknetBalances: (): void => set_shouldUseForknetBalances((s): boolean => !s)
 		}),
 		[tokens, cumulatedValueInVaults, isLoading, onRefresh, nonce]
 	);

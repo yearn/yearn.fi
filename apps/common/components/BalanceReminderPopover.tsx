@@ -12,6 +12,7 @@ import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import {useBalance} from '@common/hooks/useBalance';
+import {IconQuestion} from '@common/icons/IconQuestion';
 
 import type {ReactElement} from 'react';
 import type {TAddress} from '@yearn-finance/web-lib/types';
@@ -88,7 +89,7 @@ function TokenItem({element}: {element: TBalanceReminderElement}): ReactElement 
 }
 
 export function BalanceReminderPopover(): ReactElement {
-	const {balances: tokens, isLoading} = useWallet();
+	const {balances: tokens, isLoading, triggerForknetBalances} = useWallet();
 	const {address, ens, isActive, onDesactivate} = useWeb3();
 	const {vaults} = useYearn();
 
@@ -154,6 +155,16 @@ export function BalanceReminderPopover(): ReactElement {
 						<Popover.Panel className={'yearn--shadow absolute right-0 top-6 z-[1000] mt-3 w-screen max-w-xs md:-right-4 md:top-4'}>
 							<div className={'overflow-hidden'}>
 								<div className={'relative bg-neutral-0 p-0'}>
+									<div className={'absolute left-4 top-4 opacity-0 transition-colors hover:opacity-100'}>
+										<button
+											onClick={(): void => {
+												// Special command to enable dev forknet balances
+												triggerForknetBalances();
+											}}
+											className={'flex h-6 w-6 items-center justify-center rounded-full bg-neutral-200/50'}>
+											<IconQuestion className={'h-4 w-4 text-neutral-600'} />
+										</button>
+									</div>
 									<div className={'flex items-center justify-center border-b border-neutral-300 py-4 text-center'}>
 										<b>{isActive && address && ens ? ens : isActive && address ? truncateHex(address, 5) : 'Connect wallet'}</b>
 									</div>
