@@ -1,6 +1,5 @@
 import {useMemo} from 'react';
 import Link from 'next/link';
-import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {IconArbitrumChain} from '@yearn-finance/web-lib/icons/chains/IconArbitrumChain';
 import {IconBaseChain} from '@yearn-finance/web-lib/icons/chains/IconBaseChain';
@@ -153,6 +152,8 @@ export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): 
 }
 
 export function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+	const hasZeroAPR = isZero(currentVault.apr?.netAPR) || Number(currentVault.apr?.netAPR.toFixed(2)) === 0;
+
 	if (currentVault.apr?.extra.stakingRewardsAPR > 0) {
 		const boostedAPR = currentVault.apr.netAPR + currentVault.apr.extra.stakingRewardsAPR;
 
@@ -161,9 +162,10 @@ export function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}
 				<span className={'tooltip'}>
 					<b className={'yearn--table-data-section-item-value'}>
 						<Renderable
-							shouldRender={!(currentVault.apr?.type === 'new' && isZero(boostedAPR))}
+							shouldRender={!(currentVault.apr?.type === 'new' && hasZeroAPR)}
 							fallback={'New'}>
 							<RenderAmount
+								shouldHideTooltip={hasZeroAPR}
 								value={boostedAPR}
 								symbol={'percent'}
 								decimals={6}
@@ -179,10 +181,11 @@ export function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}
 		<div className={'flex flex-col text-right'}>
 			<b className={'yearn--table-data-section-item-value'}>
 				<Renderable
-					shouldRender={!(currentVault.apr?.type === 'new' && isZero(currentVault.apr?.netAPR))}
+					shouldRender={!(currentVault.apr?.type === 'new' && hasZeroAPR)}
 					fallback={'New'}>
 					<RenderAmount
 						value={currentVault.apr?.netAPR}
+						shouldHideTooltip={hasZeroAPR}
 						symbol={'percent'}
 						decimals={6}
 					/>
@@ -201,7 +204,6 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 		address: toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS ? WFTM_TOKEN_ADDRESS : WETH_TOKEN_ADDRESS //TODO: Create a wagmi Chain upgrade to add the chain wrapper token address
 	});
 	const vaultName = useMemo((): string => getVaultName(currentVault), [currentVault]);
-	const {stakingRewardsByVault, positionsMap} = useStakingRewards();
 
 	const availableToDeposit = useMemo((): bigint => {
 		if (toAddress(currentVault.token.address) === WETH_TOKEN_ADDRESS) {
@@ -219,7 +221,7 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 		const token = getToken({chainID: currentVault.chainID, address: currentVault.address});
 		const depositedAndStaked = token.balance.raw + token.stakingBalance.raw;
 		return depositedAndStaked;
-	}, [currentVault.address, positionsMap, stakingRewardsByVault]);
+	}, [currentVault.address, currentVault.chainID, getToken]);
 
 	return (
 		<Link
