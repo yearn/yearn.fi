@@ -8,7 +8,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {decodeAsAddress, decodeAsBigInt, decodeAsNumber, decodeAsString} from '@yearn-finance/web-lib/utils/decoder';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {useAsyncTrigger} from '@common/hooks/useAsyncTrigger';
+import {useAsyncTrigger} from '@common/hooks/useAsyncEffect';
 import {keyBy} from '@common/utils';
 
 import type {ReactElement} from 'react';
