@@ -284,7 +284,7 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 			}
 		}
 		return cumulatedValueInVaults;
-	}, [vaults, vaultsMigrations, tokens, nonce]);
+	}, [vaults, vaultsMigrations, tokens]);
 
 	const onRefresh = useCallback(
 		async (tokenToUpdate?: TUseBalancesTokens[]): Promise<TChainTokens> => {
@@ -339,9 +339,17 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 			isLoading: isLoading || false,
 			shouldUseForknetBalances,
 			refresh: onRefresh,
-			triggerForknetBalances: (): void => set_shouldUseForknetBalances((s): boolean => !s)
+			triggerForknetBalances: (): void =>
+				set_shouldUseForknetBalances((s): boolean => {
+					const isEnabled = !s;
+					if (!(window as any).ethereum) {
+						(window as any).ethereum = {};
+					}
+					(window as any).ethereum.useForknetForMainnet = isEnabled;
+					return isEnabled;
+				})
 		}),
-		[tokens, cumulatedValueInVaults, isLoading, onRefresh, nonce]
+		[getToken, getBalance, getPrice, tokens, nonce, cumulatedValueInVaults, isLoading, shouldUseForknetBalances, onRefresh]
 	);
 
 	return <WalletContext.Provider value={contextValue}>{children}</WalletContext.Provider>;

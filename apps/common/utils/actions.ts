@@ -17,6 +17,15 @@ import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TWriteTransaction} from '@yearn-finance/web-lib/utils/wagmi/provider';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 
+function getChainID(chainID: number): number {
+	if ((window as any).ethereum.useForknetForMainnet) {
+		if (chainID === 1) {
+			return 1337;
+		}
+	}
+	return chainID;
+}
+
 //Because USDT do not return a boolean on approve, we need to use this ABI
 const ALTERNATE_ERC20_APPROVE_ABI = [
 	{
@@ -42,7 +51,7 @@ export async function isApprovedERC20(connector: Connector | undefined, chainID:
 	const result = await readContract({
 		...wagmiProvider,
 		abi: erc20ABI,
-		chainId: chainID,
+		chainId: getChainID(chainID),
 		address: tokenAddress,
 		functionName: 'allowance',
 		args: [wagmiProvider.address, spender]
@@ -64,7 +73,7 @@ export async function allowanceOf(props: TAllowanceOf): Promise<bigint> {
 	const wagmiProvider = await toWagmiProvider(props.connector);
 	const result = await readContract({
 		...wagmiProvider,
-		chainId: props.chainID,
+		chainId: getChainID(props.chainID),
 		abi: erc20ABI,
 		address: props.tokenAddress,
 		functionName: 'allowance',
