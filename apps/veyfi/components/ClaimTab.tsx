@@ -25,7 +25,7 @@ export function ClaimTab(): ReactElement {
 	const timeUntilUnlock = positions?.unlockTime ? getTimeUntil(positions?.unlockTime) : 0;
 	const isClaimable = hasLockedAmount && !timeUntilUnlock;
 	const claimableAmount = isClaimable ? positions?.deposit?.underlyingBalance : '0';
-	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: 1, walletNetwork: safeChainID});
+	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: VEYFI_CHAIN_ID, walletNetwork: safeChainID});
 
 	const refreshData = useCallback(async (): Promise<void> => {
 		await Promise.all([refreshVotingEscrow(), refreshBalances()]);

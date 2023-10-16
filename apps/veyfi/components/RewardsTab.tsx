@@ -76,7 +76,7 @@ export function RewardsTab(): ReactElement {
 		}, BIG_ZERO);
 	}, [gaugeAddresses, positionsMap]);
 
-	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: 1, walletNetwork: chainID});
+	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: VEYFI_CHAIN_ID, walletNetwork: chainID});
 
 	return (
 		<div className={'flex flex-col gap-6 md:gap-10'}>

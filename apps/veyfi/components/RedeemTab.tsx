@@ -87,7 +87,7 @@ export function RedeemTab(): ReactElement {
 		balance: dYFIBalance.normalized
 	});
 
-	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: 1, walletNetwork: safeChainID});
+	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: VEYFI_CHAIN_ID, walletNetwork: safeChainID});
 
 	return (
 		<div className={'flex flex-col gap-6 md:gap-10'}>

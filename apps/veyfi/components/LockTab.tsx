@@ -121,7 +121,7 @@ export function LockTab(): ReactElement {
 		minAmountAllowed: hasLockedAmount ? 0 : MIN_LOCK_TIME
 	});
 
-	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: 1, walletNetwork: safeChainID});
+	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: VEYFI_CHAIN_ID, walletNetwork: safeChainID});
 
 	const isApproveDisabled = !isActive || !isValidNetwork || isApproved || isLoadingVotingEscrow || !votingEscrow || !address;
 	const isLockDisabled = !isActive || !isValidNetwork || !isApproved || !isValidLockAmount || !isValidLockTime || isLoadingVotingEscrow || !votingEscrow || !address;

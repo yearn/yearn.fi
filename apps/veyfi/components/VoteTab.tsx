@@ -1,7 +1,7 @@
 import {useCallback, useState} from 'react';
 import Link from 'next/link';
 import {delegateVote} from '@veYFI/utils/actions/votingEscrow';
-import {SNAPSHOT_DELEGATE_REGISTRY_ADDRESS} from '@veYFI/utils/constants';
+import {SNAPSHOT_DELEGATE_REGISTRY_ADDRESS, VEYFI_CHAIN_ID} from '@veYFI/utils/constants';
 import {validateAddress, validateNetwork} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -19,7 +19,7 @@ export function VoteTab(): ReactElement {
 
 	const userAddress = address as TAddress;
 
-	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: 1, walletNetwork: chainID});
+	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: VEYFI_CHAIN_ID, walletNetwork: chainID});
 	const {isValid: isValidDelegateAddress, error: delegateAddressError} = validateAddress({address: delegateAddress});
 
 	const handleExecuteDelegateVote = useCallback(async (): Promise<void> => {

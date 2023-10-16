@@ -72,7 +72,7 @@ export function ManageLockTab(): ReactElement {
 		minAmountAllowed: MIN_LOCK_TIME
 	});
 
-	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: 1, walletNetwork: safeChainID});
+	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: VEYFI_CHAIN_ID, walletNetwork: safeChainID});
 
 	return (
 		<div className={'grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-16'}>
