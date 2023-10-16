@@ -1,11 +1,12 @@
-
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {YFI_ADDRESS as MAINNET_YFI_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TWeeks} from '@yearn-finance/web-lib/utils/time';
 
 export const VEYFI_CHAIN_ID = 250; //TODO: change it to 1 - veYFI test
 
+export const YFI_ADDRESS = toAddress('0x52Ca0fC251e7a28cf8E67357BCD3d771B105eCa9') || MAINNET_YFI_ADDRESS; // TODO: change to MAINNET_YFI_ADDRESS
 export const VEYFI_REGISTRY_ADDRESS: TAddress = toAddress(''); // TODO: update once deployed
 export const VEYFI_CLAIM_REWARDS_ZAP_ADDRESS: TAddress = toAddress(''); // TODO: update once deployed
 export const VEYFI_OPTIONS_ADDRESS = toAddress('0x16A0cE5957642aDa37F58d5115E38fF3B0C30dc6'); //TODO: change it - veYFI test

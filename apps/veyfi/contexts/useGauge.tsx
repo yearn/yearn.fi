@@ -1,6 +1,5 @@
-import React, {createContext, memo, useCallback, useContext, useEffect, useMemo} from 'react';
+import React, {createContext, memo, useCallback, useContext, useEffect, useMemo, useState} from 'react';
 import {FixedNumber} from 'ethers';
-import {useAsync} from '@react-hookz/web';
 import {keyBy} from '@veYFI/utils';
 import {VEYFI_GAUGE_ABI} from '@veYFI/utils/abi/veYFIGauge.abi';
 import {VEYFI_CHAIN_ID} from '@veYFI/utils/constants';
@@ -9,6 +8,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {decodeAsAddress, decodeAsBigInt, decodeAsNumber, decodeAsString} from '@yearn-finance/web-lib/utils/decoder';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {useAsyncEffect} from '@common/hooks/useAsyncEffect';
 
 import type {ReactElement} from 'react';
 import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
@@ -41,7 +41,6 @@ export type	TGaugeContext = {
 	gaugesMap: TDict<TGauge | undefined>,
 	positionsMap: TDict<TGaugePosition | undefined>,
 	allowancesMap: TDict<TNormalizedBN>,
-	isLoading: boolean,
 	refresh: () => void,
 }
 const defaultProps: TGaugeContext = {
@@ -49,13 +48,15 @@ const defaultProps: TGaugeContext = {
 	gaugesMap: {},
 	positionsMap: {},
 	allowancesMap: {},
-	isLoading: true,
 	refresh: (): void => undefined
 };
 
 const GaugeContext = createContext<TGaugeContext>(defaultProps);
 export const GaugeContextApp = memo(function GaugeContextApp({children}: {children: ReactElement}): ReactElement {
 	const {address: userAddress, isActive} = useWeb3();
+	const [gauges, set_gauges] = useState<TGauge[]>([]);
+	const [allowancesMap, set_allowancesMap] = useState<TDict<TNormalizedBN>>({});
+	const [positions, set_positions] = useState<TGaugePosition[]>([]);
 
 	// const {data: vaultAddresses} = useContractRead({
 	// 	address: VEYFI_REGISTRY_ADDRESS,
@@ -70,20 +71,7 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 	// 	toAddress('0x9Cb511D44930c0C3D3114FFAaBedC3e0876D791a')
 	// ];
 
-	const gaugesFetcher = useCallback(async (): Promise<TGauge[]> => {
-		// if (!isActive || !userAddress) {
-		// 	return [];
-		// }
-
-		// const gaugeAddressCalls = vaultAddresses?.map((vaultAddress): TMulticallContract => ({
-		// 	address: VEYFI_REGISTRY_ADDRESS,
-		// 	abi: VEYFI_REGISTRY_ABI,
-		// 	functionName: 'gauges',
-		// 	args: [vaultAddress]
-		// }));
-		// const gaugeAddressesResults = await multicall({contracts: gaugeAddressCalls ?? [], chainId: VEYFI_CHAIN_ID});
-		// const gaugeAddresses = gaugeAddressesResults.map(({result}): unknown => result) as TAddress[];
-
+	const refreshVotingEscrow = useAsyncEffect(async (): Promise<void> => {
 		const gaugeAddresses = [
 			toAddress('0xbADfbF563C6C85F76e086E7a1915A1A46d683810'),
 			toAddress('0xd5947C01dBaEFeFF05186FE34A976b2E28d90542'),
@@ -110,14 +98,12 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 				totalStaked: toNormalizedBN(decodeAsBigInt(results[4]), decimals)
 			});
 		});
-		return Promise.all(gaugePromises);
-	}, []);
-	const [{result: gauges, status: fetchGaugesStatus}, {execute: refreshVotingEscrow}] = useAsync(async (): Promise<TGauge[] | undefined> => gaugesFetcher(), []);
+		set_gauges(await Promise.all(gaugePromises));
+	});
 
-
-	const allowancesFetcher = useCallback(async (): Promise<TDict<TNormalizedBN>> => {
+	const refreshAllowances = useAsyncEffect(async (): Promise<void> => {
 		if (!gauges || !userAddress) {
-			return {};
+			return;
 		}
 		const calls = [];
 		for (const gauge of gauges) {
@@ -137,21 +123,19 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 
 		}
 		const results = await readContracts({contracts: calls});
-		const allowancesMap: TDict<TNormalizedBN> = {};
+		const _allowancesMap: TDict<TNormalizedBN> = {};
 		let index = 0;
 		for (const gauge of gauges) {
 			const allowance = decodeAsBigInt(results[index++]);
 			const decimals = Number(decodeAsBigInt(results[index++])) || decodeAsNumber(results[index++]);
-			allowancesMap[allowanceKey(VEYFI_CHAIN_ID, gauge.vaultAddress, gauge.address, userAddress)] = toNormalizedBN(allowance, decimals);
+			_allowancesMap[allowanceKey(VEYFI_CHAIN_ID, gauge.vaultAddress, gauge.address, userAddress)] = toNormalizedBN(allowance, decimals);
 		}
-		return allowancesMap;
-	}, [gauges, isActive, userAddress]);
-	const [{result: allowancesMap, status: fetchAllowancesMapStatus}, {execute: refreshAllowances}] = useAsync(async (): Promise<TDict<TNormalizedBN> | undefined> => allowancesFetcher(), {});
+		set_allowancesMap(_allowancesMap);
+	});
 
-
-	const positionsFetcher = useCallback(async (): Promise<TGaugePosition[]> => {
+	const refreshPositions = useAsyncEffect(async (): Promise<void> => {
 		if (!gauges|| !isActive|| !userAddress) {
-			return [];
+			return;
 		}
 
 		const positionPromises = gauges.map(async ({address}): Promise<TGaugePosition> => {
@@ -213,10 +197,8 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 				boost
 			};
 		});
-		return Promise.all(positionPromises);
-	}, [gauges, isActive, userAddress]);
-	const [{result: positions, status: fetchPositionsStatus}, {execute: refreshPositions}] = useAsync(async (): Promise<TGaugePosition[] | undefined> => positionsFetcher(), []);
-
+		set_positions(await Promise.all(positionPromises));
+	});
 
 	const refresh = useCallback((): void => {
 		refreshVotingEscrow();
@@ -233,9 +215,8 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 		gaugesMap: keyBy(gauges ?? [], 'address'),
 		positionsMap: keyBy(positions ?? [], 'address'),
 		allowancesMap: allowancesMap ?? {},
-		isLoading: fetchGaugesStatus ==='loading' || fetchPositionsStatus === 'loading' || fetchAllowancesMapStatus === 'loading',
 		refresh
-	}), [allowancesMap, fetchAllowancesMapStatus, fetchGaugesStatus, fetchPositionsStatus, gauges, positions, refresh]);
+	}), [allowancesMap, gauges, positions, refresh]);
 
 	return (
 		<GaugeContext.Provider value={contextValue}>
