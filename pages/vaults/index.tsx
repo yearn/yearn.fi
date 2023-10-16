@@ -6,9 +6,8 @@ import {VaultsListInternalMigrationRow} from '@vaults/components/list/VaultsList
 import {VaultsListRetired} from '@vaults/components/list/VaultsListRetired';
 import {VaultsListRow} from '@vaults/components/list/VaultsListRow';
 import {ListHero} from '@vaults/components/ListHero';
-import {OPT_VAULTS_WITH_REWARDS, STACKING_TO_VAULT} from '@vaults/constants/optRewards';
 import {useAppSettings} from '@vaults/contexts/useAppSettings';
-import {useFilteredVaults} from '@vaults/hooks/useFilteredVaults';
+import {useVaultFilter} from '@vaults/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import {Wrapper} from '@vaults/Wrapper';
 import {Button} from '@yearn-finance/web-lib/components/Button';
@@ -16,7 +15,6 @@ import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useSessionStorage} from '@yearn-finance/web-lib/hooks/useSessionStorage';
 import {IconChain} from '@yearn-finance/web-lib/icons/IconChain';
-import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {ListHead} from '@common/components/ListHead';
@@ -25,7 +23,6 @@ import {useYearn} from '@common/contexts/useYearn';
 
 import type {NextRouter} from 'next/router';
 import type {ReactElement, ReactNode} from 'react';
-import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TSortDirection} from '@common/types/types';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
@@ -93,135 +90,25 @@ function HeaderUserPosition(): ReactElement {
 }
 
 function Index(): ReactElement {
-	const {getToken} = useWallet();
-	const {vaults, vaultsMigrations, vaultsRetired, isLoadingVaultList} = useYearn();
+	const {isLoadingVaultList} = useYearn();
 	const [sort, set_sort] = useSessionStorage<{
 		sortBy: TPossibleSortBy;
 		sortDirection: TSortDirection;
 	}>('yVaultsSorting', {sortBy: 'featuringScore', sortDirection: 'desc'});
-	const {shouldHideDust, category, searchValue, selectedChains, set_category, set_searchValue, set_selectedChains} = useAppSettings();
-
+	const {category, searchValue, selectedChains, set_category, set_searchValue, set_selectedChains} = useAppSettings();
 	const chainsFromJSON = useMemo((): number[] => JSON.parse(selectedChains || '[]') as number[], [selectedChains]);
 	const categoriesFromJSON = useMemo((): string[] => JSON.parse(category || '[]') as string[], [category]);
-	const filterHoldingsCallback = useCallback(
-		(address: TAddress, chainID: number): boolean => {
-			const holding = getToken({address, chainID});
-
-			// [Optimism] Check if staked vaults have holdings
-			if (chainsFromJSON.includes(10)) {
-				const stakedVaultAddress = STACKING_TO_VAULT[toAddress(address)];
-				const stakedHolding = getToken({address: stakedVaultAddress, chainID});
-				const hasValidStakedBalance = stakedHolding.balance.raw > 0n;
-				const stakedBalanceValue = stakedHolding.value || 0;
-				if (hasValidStakedBalance && !(shouldHideDust && stakedBalanceValue < 0.01)) {
-					return true;
-				}
-			}
-
-			const hasValidBalance = holding.balance.raw > 0n;
-			const balanceValue = holding.value || 0;
-			if (shouldHideDust && balanceValue < 0.01) {
-				return false;
-			}
-			if (hasValidBalance) {
-				return true;
-			}
-			return false;
-		},
-		[getToken, chainsFromJSON, shouldHideDust]
-	);
-
-	const filterMigrationCallback = useCallback(
-		(address: TAddress, chainID: number): boolean => {
-			const holding = getToken({address, chainID});
-			const hasValidPrice = holding.price.raw > 0n;
-			const hasValidBalance = holding.balance.raw > 0n;
-			if (hasValidBalance && (hasValidPrice ? (holding?.value || 0) >= 0.01 : true)) {
-				return true;
-			}
-			return false;
-		},
-		[getToken]
-	);
+	const {activeVaults, migratableVaults, retiredVaults} = useVaultFilter();
 
 	/* 🔵 - Yearn Finance **************************************************************************
-	 **	It's best to memorize the filtered vaults, which saves a lot of processing time by only
-	 **	performing the filtering once.
-	 **********************************************************************************************/
-	const curveVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Curve');
-	const boostedVaults = useFilteredVaults(vaults, ({address}): boolean => {
-		if (chainsFromJSON.includes(10)) {
-			return false;
-		}
-		return OPT_VAULTS_WITH_REWARDS.some((token): boolean => token === address);
-	});
-	const velodromeVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Velodrome');
-	const aerodromeVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Aerodrome');
-	const stablesVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Stablecoin');
-	const balancerVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Balancer');
-	const cryptoVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Volatile');
-	const holdingsVaults = useFilteredVaults(vaults, ({address, chainID}): boolean => filterHoldingsCallback(address, chainID));
-	const migratableVaults = useFilteredVaults(vaultsMigrations, ({address, chainID}): boolean => filterMigrationCallback(address, chainID));
-	const retiredVaults = useFilteredVaults(vaultsRetired, ({address, chainID}): boolean => filterMigrationCallback(address, chainID));
-
-	/* 🔵 - Yearn Finance **************************************************************************
-	 **	First, we need to determine in which category we are. The vaultsToDisplay function will
-	 **	decide which vaults to display based on the category. No extra filters are applied.
-	 **	The possible lists are memoized to avoid unnecessary re-renders.
-	 **********************************************************************************************/
-	const vaultsToDisplay = useMemo((): TYDaemonVault[] => {
-		let _vaultList: TYDaemonVault[] = [];
-
-		if (categoriesFromJSON.includes('Featured Vaults')) {
-			_vaultList.sort((a, b): number => (b.tvl.tvl || 0) * (b?.apr?.netAPR || 0) - (a.tvl.tvl || 0) * (a?.apr?.netAPR || 0));
-			_vaultList = _vaultList.slice(0, 10);
-		}
-		if (categoriesFromJSON.includes('Curve Vaults')) {
-			_vaultList = [..._vaultList, ...curveVaults];
-		}
-		if (categoriesFromJSON.includes('Balancer Vaults')) {
-			_vaultList = [..._vaultList, ...balancerVaults];
-		}
-		if (categoriesFromJSON.includes('Velodrome Vaults')) {
-			_vaultList = [..._vaultList, ...velodromeVaults];
-		}
-		if (categoriesFromJSON.includes('Aerodrome Vaults')) {
-			_vaultList = [..._vaultList, ...aerodromeVaults];
-		}
-		if (categoriesFromJSON.includes('Boosted Vaults')) {
-			_vaultList = [..._vaultList, ...boostedVaults];
-		}
-		if (categoriesFromJSON.includes('Stables Vaults')) {
-			_vaultList = [..._vaultList, ...stablesVaults];
-		}
-		if (categoriesFromJSON.includes('Crypto Vaults')) {
-			_vaultList = [..._vaultList, ...cryptoVaults];
-		}
-		if (categoriesFromJSON.includes('Holdings')) {
-			_vaultList = [..._vaultList, ...holdingsVaults];
-		}
-
-		//remove duplicates
-		_vaultList = _vaultList.filter((vault, index, self): boolean => index === self.findIndex((v): boolean => v.address === vault.address));
-
-		for (const vault of _vaultList) {
-			if (vault.apr.forwardAPR.type !== '' && vault.apr.forwardAPR.netAPR === 0) {
-				console.log(`DebtRatio for vault ${vault.address} - ${vault.name}: 0`);
-			}
-		}
-
-		return _vaultList;
-	}, [categoriesFromJSON, curveVaults, balancerVaults, velodromeVaults, aerodromeVaults, boostedVaults, stablesVaults, cryptoVaults, holdingsVaults]);
-
-	/* 🔵 - Yearn Finance **************************************************************************
-	 **	Then, on the vaultsToDisplay list, we apply the search filter. The search filter is
+	 **	Then, on the activeVaults list, we apply the search filter. The search filter is
 	 **	implemented as a simple string.includes() on the vault name.
 	 **********************************************************************************************/
 	const searchedVaultsToDisplay = useMemo((): TYDaemonVault[] => {
 		if (searchValue === '') {
-			return vaultsToDisplay;
+			return activeVaults;
 		}
-		return vaultsToDisplay.filter((vault: TYDaemonVault): boolean => {
+		return activeVaults.filter((vault: TYDaemonVault): boolean => {
 			const lowercaseSearch = searchValue.toLowerCase();
 			return (
 				vault.name.toLowerCase().startsWith(lowercaseSearch) ||
@@ -232,7 +119,7 @@ function Index(): ReactElement {
 				vault.token.address.toLowerCase().startsWith(lowercaseSearch)
 			);
 		});
-	}, [vaultsToDisplay, searchValue]);
+	}, [activeVaults, searchValue]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	 **	Then, once we have reduced the list of vaults to display, we can sort them. The sorting
