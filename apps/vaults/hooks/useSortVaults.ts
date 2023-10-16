@@ -30,7 +30,14 @@ export function useSortVaults(vaultList: TYDaemonVaults, sortBy: TPossibleSortBy
 	);
 
 	const sortedByForwardAPR = useCallback(
-		(): TYDaemonVaults => vaultList.sort((a, b): number => numberSort({a: a.apr?.forwardAPR.netAPR, b: b.apr?.forwardAPR.netAPR, sortDirection})),
+		(): TYDaemonVaults =>
+			vaultList.sort((a, b): number =>
+				numberSort({
+					a: a.apr?.forwardAPR?.type === '' ? a.apr?.netAPR : a.apr?.forwardAPR.netAPR,
+					b: b.apr?.forwardAPR?.type === '' ? b.apr?.netAPR : b.apr?.forwardAPR.netAPR,
+					sortDirection
+				})
+			),
 		[sortDirection, vaultList]
 	);
 
@@ -86,10 +93,9 @@ export function useSortVaults(vaultList: TYDaemonVaults, sortBy: TPossibleSortBy
 			return sortedByName();
 		}
 		if (sortBy === 'forwardAPR') {
-			return sortedByForwardAPR();
-		}
-		if (sortBy === 'apr') {
-			return sortedByAPR();
+			const sort = sortedByForwardAPR();
+			console.log(sort);
+			return sort;
 		}
 		if (sortBy === 'tvl') {
 			return sortedByTVL();
@@ -105,7 +111,7 @@ export function useSortVaults(vaultList: TYDaemonVaults, sortBy: TPossibleSortBy
 		}
 
 		return sortResult;
-	}, [sortBy, sortDirection, sortedByForwardAPR, sortedByAvailable, sortedByDeposited, sortedByName, sortedByTVL, stringifiedVaultList]);
+	}, [stringifiedVaultList, sortDirection, sortBy, sortedByName, sortedByForwardAPR, sortedByAPR, sortedByTVL, sortedByDeposited, sortedByAvailable, sortedByFeaturingScore]);
 
 	return sortedVaults;
 }
