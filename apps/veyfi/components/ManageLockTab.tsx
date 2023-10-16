@@ -3,7 +3,7 @@ import {formatUnits} from 'viem';
 import {useVotingEscrow} from '@veYFI/contexts/useVotingEscrow';
 import {getVotingPower} from '@veYFI/utils';
 import {extendVeYFILockTime, withdrawLockedVeYFI} from '@veYFI/utils/actions';
-import {MAX_LOCK_TIME, MIN_LOCK_TIME} from '@veYFI/utils/constants';
+import {MAX_LOCK_TIME, MIN_LOCK_TIME, VEYFI_CHAIN_ID} from '@veYFI/utils/constants';
 import {validateAmount, validateNetwork} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -38,6 +38,7 @@ export function ManageLockTab(): ReactElement {
 	const onExtendLockTime = useCallback(async (): Promise<void> => {
 		const result = await extendVeYFILockTime({
 			connector: provider,
+			chainID: VEYFI_CHAIN_ID,
 			contractAddress: votingEscrow?.address,
 			time: toBigInt(toSeconds(newUnlockTime)),
 			statusHandler: set_extendLockTimeStatus
@@ -50,6 +51,7 @@ export function ManageLockTab(): ReactElement {
 	const onWithdrawLocked = useCallback(async (): Promise<void> => {
 		const result = await withdrawLockedVeYFI({
 			connector: provider,
+			chainID: VEYFI_CHAIN_ID,
 			contractAddress: votingEscrow?.address,
 			statusHandler: set_withdrawLockedStatus
 		});

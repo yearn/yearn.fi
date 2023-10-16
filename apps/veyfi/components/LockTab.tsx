@@ -3,7 +3,7 @@ import {formatUnits} from 'viem';
 import {useVotingEscrow} from '@veYFI/contexts/useVotingEscrow';
 import {getVotingPower} from '@veYFI/utils';
 import {increaseVeYFILockAmount, lockVeYFI} from '@veYFI/utils/actions';
-import {MAX_LOCK_TIME, MIN_LOCK_AMOUNT, MIN_LOCK_TIME} from '@veYFI/utils/constants';
+import {MAX_LOCK_TIME, MIN_LOCK_AMOUNT, MIN_LOCK_TIME, VEYFI_CHAIN_ID} from '@veYFI/utils/constants';
 import {validateAllowance, validateAmount, validateNetwork} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -55,6 +55,7 @@ export function LockTab(): ReactElement {
 	const onApproveLock = useCallback(async (): Promise<void> => {
 		const result = await approveERC20({
 			connector: provider,
+			chainID: VEYFI_CHAIN_ID,
 			contractAddress: votingEscrow?.token,
 			spenderAddress: votingEscrow?.address,
 			statusHandler: set_approveLockStatus,
@@ -68,6 +69,7 @@ export function LockTab(): ReactElement {
 	const onLock = useCallback(async (): Promise<void> => {
 		const result = await lockVeYFI({
 			connector: provider,
+			chainID: VEYFI_CHAIN_ID,
 			contractAddress: votingEscrow?.address,
 			amount: lockAmount.raw,
 			time: toBigInt(toSeconds(unlockTime)),
@@ -81,6 +83,7 @@ export function LockTab(): ReactElement {
 	const onIncreaseLockAmount = useCallback(async (): Promise<void> => {
 		const result = await increaseVeYFILockAmount({
 			connector: provider,
+			chainID: VEYFI_CHAIN_ID,
 			contractAddress: votingEscrow?.address,
 			amount: lockAmount.raw,
 			statusHandler: set_increaseLockAmountStatus

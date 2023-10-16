@@ -12,7 +12,6 @@ import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {PageProgressBar} from '@common/components/PageProgressBar';
 import {SummaryData} from '@common/components/SummaryData';
 import {Tabs} from '@common/components/Tabs';
-import {useFeatureFlag} from '@common/hooks/useFeatureFlag';
 import {formatDateShort} from '@common/utils';
 
 import type {NextRouter} from 'next/router';
@@ -20,7 +19,6 @@ import type {ReactElement} from 'react';
 
 function Index(): ReactElement {
 	const {votingEscrow, positions, isLoading} = useVotingEscrow();
-	const [isGaugeVotingFeatureEnabled] = useFeatureFlag('gauge-voting');
 
 	const totalLockedYFI = formatToNormalizedValue(toBigInt(votingEscrow?.supply), 18);
 	const yourLockedYFI = formatToNormalizedValue(toBigInt(positions?.deposit?.underlyingBalance), 18);
@@ -29,12 +27,10 @@ function Index(): ReactElement {
 		{id: 'lock', label: 'Lock YFI', content: <LockTab />},
 		{id: 'manage', label: 'Manage lock', content: <ManageLockTab />},
 		{id: 'claim', label: 'Claim', content: <ClaimTab />},
-		...isGaugeVotingFeatureEnabled ? [
-			{id: 'gauges', label: 'Stake / Unstake', content: <GaugesTab />},
-			{id: 'rewards', label: 'Rewards', content: <RewardsTab />},
-			{id: 'redeem', label: 'Redeem oYFI', content: <RedeemTab />},
-			{id: 'vote', label: 'Vote for Gauge', content: <VoteTab />}
-		] : []
+		{id: 'gauges', label: 'Stake / Unstake', content: <GaugesTab />},
+		{id: 'rewards', label: 'Rewards', content: <RewardsTab />},
+		{id: 'redeem', label: 'Redeem oYFI', content: <RedeemTab />},
+		{id: 'vote', label: 'Vote for Gauge', content: <VoteTab />}
 	].filter(Boolean);
 
 	return (

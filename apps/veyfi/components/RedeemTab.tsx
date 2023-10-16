@@ -2,7 +2,7 @@ import {useCallback, useState} from 'react';
 import {useAsync} from '@react-hookz/web';
 import {useOption} from '@veYFI/contexts/useOption';
 import {redeem} from '@veYFI/utils/actions/option';
-import {VEYFI_OPTIONS_ADDRESS, VEYFI_OYFI_ADDRESS} from '@veYFI/utils/constants';
+import {VEYFI_CHAIN_ID, VEYFI_OPTIONS_ADDRESS, VEYFI_OYFI_ADDRESS} from '@veYFI/utils/constants';
 import {validateAllowance, validateAmount, validateNetwork} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -44,6 +44,7 @@ export function RedeemTab(): ReactElement {
 	const handleApproveRedeem = useCallback(async (): Promise<void> => {
 		const response = await approveERC20({
 			connector: provider,
+			chainID: VEYFI_CHAIN_ID,
 			contractAddress: VEYFI_OYFI_ADDRESS,
 			spenderAddress: VEYFI_OPTIONS_ADDRESS,
 			statusHandler: set_approveRedeemStatus,

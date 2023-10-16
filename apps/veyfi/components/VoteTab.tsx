@@ -15,7 +15,6 @@ import type {TAddress} from '@yearn-finance/web-lib/types';
 export function VoteTab(): ReactElement {
 	const [delegateAddress, set_delegateAddress] = useState('');
 	const {provider, address, isActive, chainID} = useWeb3();
-
 	const [delegateVoteStatus, set_delegateVoteStatus] = useState(defaultTxStatus);
 
 	const userAddress = address as TAddress;

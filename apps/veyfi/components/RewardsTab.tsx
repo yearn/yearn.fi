@@ -2,13 +2,13 @@ import {useCallback, useMemo, useState} from 'react';
 import {useGauge} from '@veYFI/contexts/useGauge';
 import {useOption} from '@veYFI/contexts/useOption';
 import * as GaugeActions from '@veYFI/utils/actions/gauge';
-import {VEYFI_CLAIM_REWARDS_ZAP_ADDRESS} from '@veYFI/utils/constants';
+import {VEYFI_CHAIN_ID, VEYFI_CLAIM_REWARDS_ZAP_ADDRESS} from '@veYFI/utils/constants';
 import {validateNetwork} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {BIG_ZERO} from '@yearn-finance/web-lib/utils/constants';
-import {formatBigNumberAsAmount, toBigInt, toNormalizedAmount} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {toBigInt, toNormalizedAmount} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
@@ -29,11 +29,12 @@ export function RewardsTab(): ReactElement {
 	const [claimStatus, set_claimStatus] = useState(defaultTxStatus);
 	const [claimAllStatus, set_claimAllStatus] = useState(defaultTxStatus);
 	const selectedGaugeAddress = toAddress(selectedGauge?.id);
-	const selectedGaugeRewards = toBigInt(formatBigNumberAsAmount(positionsMap[selectedGaugeAddress]?.reward.balance));
+	const selectedGaugeRewards = toBigInt(positionsMap[selectedGaugeAddress]?.reward?.balance?.raw);
 
 	const onClaim = useCallback(async (): Promise<void> => {
 		const result = await GaugeActions.claimRewards({
 			connector: provider,
+			chainID: VEYFI_CHAIN_ID,
 			contractAddress: selectedGaugeAddress,
 			statusHandler: set_claimStatus
 		});
@@ -45,6 +46,7 @@ export function RewardsTab(): ReactElement {
 	const onClaimAll = useCallback(async (): Promise<void> => {
 		const result = await GaugeActions.claimAllRewards({
 			connector: provider,
+			chainID: VEYFI_CHAIN_ID,
 			contractAddress: VEYFI_CLAIM_REWARDS_ZAP_ADDRESS,
 			gaugeAddresses,
 			willLockRewards: false,
@@ -55,7 +57,7 @@ export function RewardsTab(): ReactElement {
 		}
 	}, [gaugeAddresses, provider, refreshData]);
 
-	const gaugeOptions = gaugeAddresses.filter((address): boolean => toBigInt(positionsMap[address]?.reward.balance) > 0n ?? false)
+	const gaugeOptions = gaugeAddresses.filter((address): boolean => toBigInt(positionsMap[address]?.reward?.balance?.raw) > 0n ?? false)
 		.map((address): TDropdownOption => {
 			const gauge = gaugesMap[address];
 			const vaultAddress = toAddress(gauge?.vaultAddress);
@@ -70,7 +72,7 @@ export function RewardsTab(): ReactElement {
 
 	const gaugesRewards = useMemo((): bigint => {
 		return gaugeAddresses.reduce<bigint>((acc, address): bigint => {
-			return acc + toBigInt(formatBigNumberAsAmount(positionsMap[address]?.reward.balance));
+			return acc + toBigInt(positionsMap[address]?.reward?.balance?.raw);
 		}, BIG_ZERO);
 	}, [gaugeAddresses, positionsMap]);
 

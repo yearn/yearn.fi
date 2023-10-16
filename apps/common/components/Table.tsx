@@ -123,7 +123,13 @@ export function Table<T>({metadata, data, columns, initialSortBy, onRowClick, it
 					onClick={(): void => onRowClick?.(item)}
 				>
 					{metadata.map(({key, label, className, fullWidth, columnSpan, format, transform}): ReactElement => {
-						const isNumber = !isNaN(item[key] as number);
+						let isNumberLike = false;
+						if (typeof item[key] === 'bigint') {
+							isNumberLike = true;
+						} else {
+							isNumberLike = !isNaN(Number(item[key]));
+						}
+						const isNumber = isNumberLike;
 
 						return (
 							<div

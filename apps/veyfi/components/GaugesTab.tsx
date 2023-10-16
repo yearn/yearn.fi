@@ -1,13 +1,13 @@
 import {useCallback, useState} from 'react';
 import {useGauge} from '@veYFI/contexts/useGauge';
-import * as GaugeActions from '@veYFI/utils/actions/gauge';
+import {approveAndStake, stake, unstake} from '@veYFI/utils/actions/gauge';
+import {VEYFI_CHAIN_ID} from '@veYFI/utils/constants';
 import {validateNetwork} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatBigNumberAsAmount, toBigInt, toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {allowanceKey, toAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
+import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
-import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {Table} from '@common/components/Table';
@@ -16,6 +16,7 @@ import {useYearn} from '@common/contexts/useYearn';
 
 import type {ReactElement} from 'react';
 import type {TAddress} from '@yearn-finance/web-lib/types';
+import type {TNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 
 type TGaugeData = {
 	gaugeAddress: TAddress,
@@ -24,58 +25,30 @@ type TGaugeData = {
 	vaultIcon: string,
 	vaultName: string,
 	vaultApy: number,
-	vaultDeposited: bigint,
+	vaultDeposited: TNormalizedBN,
 	gaugeApy: number,
 	gaugeBoost: number,
-	gaugeStaked: bigint,
-	allowance: bigint,
+	gaugeStaked: TNormalizedBN,
+	allowance: TNormalizedBN,
 	isApproved: boolean,
 	actions: undefined
 }
 
-export function GaugesTab(): ReactElement {
-	const [selectedGauge, set_selectedGauge] = useState('');
-	const [selectedAction, set_selectedAction] = useState<'stake' | 'unstake' | undefined>();
+function GaugeTabButtons({isApproved, vaultAddress, gaugeAddress, vaultDeposited, gaugeStaked}: TGaugeData): ReactElement {
 	const {provider, address, isActive, chainID} = useWeb3();
-	const {gaugeAddresses, gaugesMap, positionsMap, allowancesMap, refresh: refreshGauges, isLoading: isLoadingGauges} = useGauge();
-	const {vaults} = useYearn();
-	const {balances, refresh: refreshBalances} = useWallet();
+	const {refresh: refreshGauges} = useGauge();
+	const {refresh: refreshBalances} = useWallet();
 	const refreshData = (): unknown => Promise.all([refreshGauges(), refreshBalances()]);
 	const [approveAndStakeStatus, set_approveAndStakeStatus] = useState(defaultTxStatus);
 	const [stakeStatus, set_stakeStatus] = useState(defaultTxStatus);
 	const [unstakeStatus, set_unstakeStatus] = useState(defaultTxStatus);
-
 	const userAddress = address as TAddress;
-
-	const gaugesData = gaugeAddresses.map((address): TGaugeData => {
-		const gauge = gaugesMap[address];
-		const vaultAddress = toAddress(gauge?.vaultAddress);
-		const vault = vaults[vaultAddress];
-
-		return {
-			gaugeAddress: address,
-			vaultAddress,
-			decimals: gauge?.decimals ?? 18,
-			vaultIcon: `${process.env.BASE_YEARN_ASSETS_URI}/1/${vaultAddress}/logo-128.png`,
-			vaultName: vault?.display_name ?? '',
-			vaultApy: vault?.apy.net_apy ?? 0,
-			vaultDeposited: toBigInt(formatBigNumberAsAmount(balances[vaultAddress]?.raw)),
-			gaugeApy: 0, // TODO: gauge apy calcs
-			gaugeBoost: positionsMap[address]?.boost ?? 1,
-			gaugeStaked: toBigInt(formatBigNumberAsAmount(positionsMap[address]?.deposit.balance)),
-			allowance: toBigInt(formatBigNumberAsAmount(allowancesMap[allowanceKey(1, vaultAddress, address, userAddress)])),
-			isApproved: toBigInt(formatBigNumberAsAmount(allowancesMap[allowanceKey(1, vaultAddress, address, userAddress)])) >= toBigInt(formatBigNumberAsAmount(balances[vaultAddress]?.raw)),
-			actions: undefined
-		};
-	});
-
-	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: 1, walletNetwork: chainID});
+	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: VEYFI_CHAIN_ID, walletNetwork: chainID});
 
 	const onApproveAndStake = useCallback(async (vaultAddress: TAddress, gaugeAddress: TAddress, amount: bigint): Promise<void> => {
-		set_selectedGauge(gaugeAddress);
-		set_selectedAction('stake');
-		const response = await GaugeActions.approveAndStake({
+		const response = await approveAndStake({
 			connector: provider,
+			chainID: VEYFI_CHAIN_ID,
 			contractAddress: gaugeAddress,
 			vaultAddress,
 			amount,
@@ -88,11 +61,9 @@ export function GaugesTab(): ReactElement {
 	}, [provider, refreshData]);
 
 	const onStake = useCallback(async (gaugeAddress: TAddress, amount: bigint): Promise<void> => {
-		set_selectedGauge(gaugeAddress);
-		set_selectedAction('stake');
-
-		const response = await GaugeActions.stake({
+		const response = await stake({
 			connector: provider,
+			chainID: VEYFI_CHAIN_ID,
 			contractAddress: gaugeAddress,
 			amount,
 			statusHandler: set_stakeStatus
@@ -104,11 +75,9 @@ export function GaugesTab(): ReactElement {
 	}, [provider, refreshData]);
 
 	const onUnstake = useCallback(async (gaugeAddress: TAddress, amount: bigint): Promise<void> => {
-		set_selectedGauge(gaugeAddress);
-		set_selectedAction('unstake');
-
-		const response = await GaugeActions.unstake({
+		const response = await unstake({
 			connector: provider,
+			chainID: VEYFI_CHAIN_ID,
 			contractAddress: gaugeAddress,
 			accountAddress: userAddress,
 			amount,
@@ -119,6 +88,66 @@ export function GaugesTab(): ReactElement {
 			await refreshData();
 		}
 	}, [provider, refreshData, userAddress]);
+
+	return (
+		<div className={'flex flex-row justify-center space-x-2 md:justify-end'}>
+			<Button
+				className={'w-full md:w-24'}
+				onClick={async (): Promise<void> => onUnstake(gaugeAddress, toBigInt(gaugeStaked.raw))}
+				isDisabled={!isActive || !isValidNetwork || toBigInt(gaugeStaked.raw) == 0n}
+				isBusy={unstakeStatus.pending}>
+				{'Unstake'}
+			</Button>
+			{!isApproved && (
+				<Button
+					className={'w-full md:w-24'}
+					onClick={async (): Promise<void> => onApproveAndStake(vaultAddress, gaugeAddress, toBigInt(vaultDeposited?.raw))}
+					isDisabled={!isActive || !isValidNetwork || toBigInt(vaultDeposited?.raw) == 0n}
+					isBusy={approveAndStakeStatus.pending}>
+					{'Approve'}
+				</Button>
+			)}
+			{isApproved && (
+				<Button
+					className={'w-full md:w-24'}
+					onClick={async (): Promise<void> => onStake(gaugeAddress, toBigInt(vaultDeposited?.raw))}
+					isDisabled={!isActive || !isValidNetwork || toBigInt(vaultDeposited?.raw) == 0n}
+					isBusy={stakeStatus.pending}>
+					{'Stake'}
+				</Button>
+			)}
+		</div>
+	);
+}
+
+export function GaugesTab(): ReactElement {
+	const {address} = useWeb3();
+	const {gaugeAddresses, gaugesMap, positionsMap, allowancesMap} = useGauge();
+	const {vaults} = useYearn();
+	const {balances} = useWallet();
+	const userAddress = address as TAddress;
+
+	const gaugesData = gaugeAddresses.map((address): TGaugeData => {
+		const gauge = gaugesMap[address];
+		const vaultAddress = toAddress(gauge?.vaultAddress);
+		const vault = vaults[vaultAddress];
+
+		return {
+			gaugeAddress: address,
+			vaultAddress,
+			decimals: gauge?.decimals ?? 18,
+			vaultIcon: `${process.env.BASE_YEARN_ASSETS_URI}/1/${vaultAddress}/logo-128.png`,
+			vaultName: vault?.display_name ?? `Vault ${truncateHex(vaultAddress, 4)}`,
+			vaultApy: vault?.apy.net_apy ?? 0,
+			vaultDeposited: balances[vaultAddress],
+			gaugeApy: 0, // TODO: gauge apy calcs
+			gaugeBoost: positionsMap[address]?.boost ?? 1,
+			gaugeStaked: positionsMap[address]?.deposit.balance ?? toNormalizedBN(0),
+			allowance: allowancesMap[allowanceKey(1, vaultAddress, address, userAddress)],
+			isApproved: toBigInt(allowancesMap[allowanceKey(1, vaultAddress, address, userAddress)]?.raw) >= toBigInt(balances[vaultAddress]?.raw),
+			actions: undefined
+		};
+	});
 
 	return (
 		<div className={'relative -left-6 w-[calc(100%+48px)]'}>
@@ -155,9 +184,9 @@ export function GaugesTab(): ReactElement {
 					},
 					{
 						key: 'vaultDeposited',
-						label: 'Deposited in Vault',
+						label: 'Deposited',
 						sortable: true,
-						format: ({vaultDeposited, decimals}): string => formatAmount(toNormalizedValue(vaultDeposited, decimals))
+						format: ({vaultDeposited}): string => formatAmount(vaultDeposited?.normalized || 0, 2, 6)
 					},
 					{
 						key: 'gaugeApy',
@@ -172,9 +201,9 @@ export function GaugesTab(): ReactElement {
 					},
 					{
 						key: 'gaugeStaked',
-						label: 'Staked in Gauge',
+						label: 'Staked',
 						sortable: true,
-						format: ({gaugeStaked, decimals}): string => formatAmount(toNormalizedValue(gaugeStaked, decimals))
+						format: ({gaugeStaked}): string => formatAmount(gaugeStaked?.normalized || 0, 2, 6)
 					},
 					{
 						key: 'actions',
@@ -182,38 +211,7 @@ export function GaugesTab(): ReactElement {
 						columnSpan: 2,
 						fullWidth: true,
 						className: 'my-4 md:my-0',
-						transform: ({isApproved, vaultAddress, gaugeAddress, vaultDeposited, gaugeStaked}): ReactElement => (
-							<div className={'flex flex-row justify-center space-x-2 md:justify-end'}>
-								<Button
-									className={'w-full md:w-24'}
-									onClick={async (): Promise<void> => onUnstake(gaugeAddress, gaugeStaked)}
-									isDisabled={!isActive || !isValidNetwork || isZero(gaugeStaked)}
-									isBusy={gaugeAddress === selectedGauge && selectedAction === 'unstake' && unstakeStatus.none}
-								>
-									{'Unstake'}
-								</Button>
-								{!isApproved && (
-									<Button
-										className={'w-full md:w-24'}
-										onClick={async (): Promise<void> => onApproveAndStake(vaultAddress, gaugeAddress, vaultDeposited)}
-										isDisabled={!isActive || !isValidNetwork || isZero(vaultDeposited)}
-										isBusy={(isLoadingGauges && vaultDeposited > 0n) || (gaugeAddress === selectedGauge && selectedAction === 'stake' && approveAndStakeStatus.none)}
-									>
-										{'Stake'}
-									</Button>
-								)}
-								{isApproved && (
-									<Button
-										className={'w-full md:w-24'}
-										onClick={async (): Promise<void> => onStake(gaugeAddress, vaultDeposited)}
-										isDisabled={!isActive || !isValidNetwork || isZero(vaultDeposited)}
-										isBusy={(isLoadingGauges && vaultDeposited > 0n) || (gaugeAddress === selectedGauge && selectedAction === 'stake' && stakeStatus.none)}
-									>
-										{'Stake'}
-									</Button>
-								)}
-							</div>
-						)
+						transform: (props): ReactElement => <GaugeTabButtons {...props} />
 					}
 				]}
 				data={gaugesData}
