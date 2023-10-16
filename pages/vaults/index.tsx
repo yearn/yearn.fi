@@ -156,6 +156,7 @@ function Index(): ReactElement {
 		return OPT_VAULTS_WITH_REWARDS.some((token): boolean => token === address);
 	});
 	const velodromeVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Velodrome');
+	const aerodromeVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Aerodrome');
 	const stablesVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Stablecoin');
 	const balancerVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Balancer');
 	const cryptoVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Volatile');
@@ -184,6 +185,9 @@ function Index(): ReactElement {
 		if (categoriesFromJSON.includes('Velodrome Vaults')) {
 			_vaultList = [..._vaultList, ...velodromeVaults];
 		}
+		if (categoriesFromJSON.includes('Aerodrome Vaults')) {
+			_vaultList = [..._vaultList, ...aerodromeVaults];
+		}
 		if (categoriesFromJSON.includes('Boosted Vaults')) {
 			_vaultList = [..._vaultList, ...boostedVaults];
 		}
@@ -200,8 +204,14 @@ function Index(): ReactElement {
 		//remove duplicates
 		_vaultList = _vaultList.filter((vault, index, self): boolean => index === self.findIndex((v): boolean => v.address === vault.address));
 
+		for (const vault of _vaultList) {
+			if (vault.apr.forwardAPR.type !== '' && vault.apr.forwardAPR.netAPR === 0) {
+				console.log(`DebtRatio for vault ${vault.address} - ${vault.name}: 0`);
+			}
+		}
+
 		return _vaultList;
-	}, [categoriesFromJSON, curveVaults, balancerVaults, velodromeVaults, boostedVaults, stablesVaults, cryptoVaults, holdingsVaults]);
+	}, [categoriesFromJSON, curveVaults, balancerVaults, velodromeVaults, aerodromeVaults, boostedVaults, stablesVaults, cryptoVaults, holdingsVaults]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	 **	Then, on the vaultsToDisplay list, we apply the search filter. The search filter is
