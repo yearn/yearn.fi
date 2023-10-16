@@ -19,7 +19,7 @@ module.exports = {
 		'react/jsx-max-props-per-line': 'off',
 		'react-hooks/exhaustive-deps': [
 			'warn', {
-				'additionalHooks': '(useAsync)'
+				'additionalHooks': '^useAsyncTrigger$'
 			}
 		]
 	}

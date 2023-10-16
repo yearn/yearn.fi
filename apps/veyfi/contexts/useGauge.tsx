@@ -8,7 +8,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {decodeAsAddress, decodeAsBigInt, decodeAsNumber, decodeAsString} from '@yearn-finance/web-lib/utils/decoder';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {useAsync} from '@common/hooks/useAsyncEffect';
+import {useAsyncTrigger} from '@common/hooks/useAsyncTrigger';
 import {keyBy} from '@common/utils';
 
 import type {ReactElement} from 'react';
@@ -72,7 +72,7 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 	// 	toAddress('0x9Cb511D44930c0C3D3114FFAaBedC3e0876D791a')
 	// ];
 
-	const refreshVotingEscrow = useAsync(async (): Promise<void> => {
+	const refreshVotingEscrow = useAsyncTrigger(async (): Promise<void> => {
 		const gaugeAddresses = [
 			toAddress('0xbADfbF563C6C85F76e086E7a1915A1A46d683810'),
 			toAddress('0xd5947C01dBaEFeFF05186FE34A976b2E28d90542'),
@@ -104,7 +104,7 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 		set_gauges(allGauges);
 	}, []);
 
-	const refreshAllowances = useAsync(async (): Promise<void> => {
+	const refreshAllowances = useAsyncTrigger(async (): Promise<void> => {
 		if (!gauges || !address) {
 			return;
 		}
@@ -136,7 +136,7 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 		set_allowancesMap(_allowancesMap);
 	}, [address, gauges]);
 
-	const refreshPositions = useAsync(async (): Promise<void> => {
+	const refreshPositions = useAsyncTrigger(async (): Promise<void> => {
 		if (!gauges || !isActive || !address) {
 			return;
 		}
