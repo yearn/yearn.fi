@@ -24,6 +24,11 @@ module.exports = {
 				ImportDeclaration: {multiline: true, consistent: true},
 				ExportDeclaration: {multiline: true, minProperties: 3}
 			}
+		],
+		'react-hooks/exhaustive-deps': [
+			'warn', {
+				'additionalHooks': '^useAsync$'
+			}
 		]
 	}
 };

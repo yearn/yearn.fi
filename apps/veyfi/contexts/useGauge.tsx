@@ -1,7 +1,7 @@
 import React, {createContext, memo, useCallback, useContext, useMemo} from 'react';
 import {FixedNumber} from 'ethers';
 import {useContractRead} from 'wagmi';
-import {useAsync} from '@react-hookz/web';
+import {useAsync as useAsyncHookz} from '@react-hookz/web';
 import {keyBy} from '@veYFI/utils';
 import {VEYFI_GAUGE_ABI} from '@veYFI/utils/abi/veYFIGauge.abi';
 import {VEYFI_REGISTRY_ABI} from '@veYFI/utils/abi/veYFIRegistry.abi';
@@ -9,7 +9,7 @@ import {VEYFI_REGISTRY_ADDRESS} from '@veYFI/utils/constants';
 import {erc20ABI, getContract, multicall} from '@wagmi/core';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
-import {useAsyncEffect} from '@common/hooks/useAsyncEffect';
+import {useAsync} from '@common/hooks/useAsyncEffect';
 
 import type {ReactElement} from 'react';
 import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
@@ -120,30 +120,30 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 			};
 		});
 		return Promise.all(gaugePromises);
-	}, []);
+	}, [isActive, userAddress, vaultAddresses, veYFIRegistryContract]);
 
-	const [{result: allowancesMap, status: fetchAllowancesMapStatus}, {execute: refreshAllowances}] = useAsync(async (): Promise<TDict<bigint> | undefined> => {
+	const [{result: allowancesMap, status: fetchAllowancesMapStatus}, {execute: refreshAllowances}] = useAsyncHookz(async (): Promise<TDict<bigint> | undefined> => {
 		if (!gauges || !isActive) {
 			return;
 		}
 		return allowancesFetcher();
 	}, {});
 
-	const [{result: positions, status: fetchPositionsStatus}, {execute: refreshPositions}] = useAsync(async (): Promise<TGaugePosition[] | undefined> => {
+	const [{result: positions, status: fetchPositionsStatus}, {execute: refreshPositions}] = useAsyncHookz(async (): Promise<TGaugePosition[] | undefined> => {
 		if (!gauges || !isActive) {
 			return;
 		}
 		return positionsFetcher();
 	}, []);
 
-	const [{result: gauges, status: fetchGaugesStatus}, {execute: refreshVotingEscrow}] = useAsync(async (): Promise<TGauge[] | undefined> => {
+	const [{result: gauges, status: fetchGaugesStatus}, {execute: refreshVotingEscrow}] = useAsyncHookz(async (): Promise<TGauge[] | undefined> => {
 		if (!isActive) {
 			return;
 		}
 		return gaugesFetcher();
 	}, []);
 
-	const refresh = useAsyncEffect(async (): Promise<void> => {
+	const refresh = useAsync(async (): Promise<void> => {
 		refreshVotingEscrow();
 		refreshPositions();
 		refreshAllowances();

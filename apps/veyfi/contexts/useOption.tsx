@@ -1,6 +1,6 @@
 import React, {createContext, memo, useCallback, useContext, useMemo} from 'react';
 import {ethers} from 'ethers';
-import {useAsync} from '@react-hookz/web';
+import {useAsync as useAsyncHookz} from '@react-hookz/web';
 import {VEYFI_OPTIONS_ABI} from '@veYFI/utils/abi/veYFIOptions.abi';
 import {VEYFI_OYFI_ABI} from '@veYFI/utils/abi/veYFIoYFI.abi';
 import {VEYFI_OPTIONS_ADDRESS, VEYFI_OYFI_ADDRESS, VEYFI_SUPPORTED_NETWORK} from '@veYFI/utils/constants';
@@ -9,7 +9,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
 import {BIG_ZERO, ETH_TOKEN_ADDRESS, YFI_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt, toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {useAsyncEffect} from '@common/hooks/useAsyncEffect';
+import {useAsync} from '@common/hooks/useAsyncEffect';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
 
 import type {ReactElement} from 'react';
@@ -43,14 +43,14 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 	const yfiPrice = useTokenPrice(YFI_ADDRESS);
 	const ethPrice = useTokenPrice(ETH_TOKEN_ADDRESS);
 
-	const [{result: price, status: fetchPriceStatus}, {execute: refreshPrice}] = useAsync(async (): Promise<number | undefined> => {
+	const [{result: price, status: fetchPriceStatus}, {execute: refreshPrice}] = useAsyncHookz(async (): Promise<number | undefined> => {
 		if (!isActive || provider) {
 			return;
 		}
 		return priceFetcher();
 	}, 0);
 
-	const [{result: positions, status: fetchPositionsStatus}, {execute: refreshPositions}] = useAsync(
+	const [{result: positions, status: fetchPositionsStatus}, {execute: refreshPositions}] = useAsyncHookz(
 		async (): Promise<TOptionPosition | undefined> => {
 			if (!isActive || provider) {
 				return;
@@ -60,18 +60,18 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 		{balance: 0n}
 	);
 
-	const [{result: allowances, status: fetchAllowancesStatus}, {execute: refreshAllowances}] = useAsync(async (): Promise<TDict<bigint> | undefined> => {
+	const [{result: allowances, status: fetchAllowancesStatus}, {execute: refreshAllowances}] = useAsyncHookz(async (): Promise<TDict<bigint> | undefined> => {
 		if (!isActive || provider) {
 			return;
 		}
 		return allowancesFetcher();
 	}, {});
 
-	const refresh = useAsyncEffect(async (): Promise<void> => {
+	const refresh = useAsync(async (): Promise<void> => {
 		refreshPrice();
 		refreshPositions();
 		refreshAllowances();
-	}, [refreshPrice, refreshPositions, refreshAllowances]);
+	}, [refreshAllowances, refreshPositions, refreshPrice]);
 
 	const getRequiredEth = useCallback(async (amount: bigint): Promise<bigint> => {
 		// TODO: update once abi is available

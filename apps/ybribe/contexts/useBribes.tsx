@@ -9,7 +9,7 @@ import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {performBatchedUpdates} from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {useCurve} from '@common/contexts/useCurve';
-import {useAsyncEffect} from '@common/hooks/useAsyncEffect';
+import {useAsync} from '@common/hooks/useAsyncEffect';
 import {YBRIBE_SUPPORTED_NETWORK} from '@yBribe/constants';
 import {getLastThursday, getNextThursday} from '@yBribe/utils';
 import {CURVE_BRIBE_V3_ABI} from '@yBribe/utils/abi/curveBribeV3.abi';
@@ -266,7 +266,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 	/* 🔵 - Yearn Finance ******************************************************
 	 **	getBribes will start the process to retrieve the bribe information.
 	 ***************************************************************************/
-	const getBribes = useAsyncEffect(async (): Promise<void> => {
+	const getBribes = useAsync(async (): Promise<void> => {
 		const rewardsPerGauges = await getRewardsPerGauges();
 		const [rewardsPerUser, nextPeriodRewards] = await Promise.all([getRewardsPerUser(rewardsPerGauges), getNextPeriodRewards(rewardsPerGauges)]);
 
