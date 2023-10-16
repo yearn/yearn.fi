@@ -20,8 +20,10 @@ type TListHero = {
 };
 
 export function ListHero({categories, set_categories, searchValue, selectedChains, set_searchValue, set_selectedChains}: TListHero): ReactElement {
+	const chainsFromJSON = useMemo((): number[] => JSON.parse(selectedChains || '[]') as number[], [selectedChains]);
+	const categoriesFromJSON = useMemo((): string[] => JSON.parse(categories || '[]') as string[], [categories]);
+
 	const chainOptions = useMemo((): TMultiSelectOptionProps[] => {
-		const chainsFromJSON = JSON.parse(selectedChains || '[]') as number[];
 		return [
 			{
 				label: 'Ethereum',
@@ -54,10 +56,9 @@ export function ListHero({categories, set_categories, searchValue, selectedChain
 				icon: <IconArbitrumChain />
 			}
 		];
-	}, [selectedChains]);
+	}, [chainsFromJSON]);
 
 	const categoryOptions = useMemo((): TMultiSelectOptionProps[] => {
-		const categoriesFromJSON = JSON.parse(categories || '[]') as string[];
 		const options: TMultiSelectOptionProps[] = [];
 
 		options.push({
@@ -107,7 +108,7 @@ export function ListHero({categories, set_categories, searchValue, selectedChain
 		});
 
 		return options;
-	}, [selectedChains, categories]);
+	}, [categoriesFromJSON]);
 
 	return (
 		<div className={'flex flex-col items-start justify-between space-x-0 px-4 pb-2 pt-4 md:px-10 md:pb-8 md:pt-10'}>

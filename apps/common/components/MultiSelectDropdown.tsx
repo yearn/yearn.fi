@@ -97,6 +97,10 @@ export function MultiSelectDropdown({options, onSelect, placeholder = ''}: TMult
 	const componentRef = useRef(null);
 
 	useEffect((): void => {
+		set_currentOptions(options);
+	}, [options]);
+
+	useEffect((): void => {
 		set_areAllSelected(currentOptions.every((option): boolean => option.isSelected));
 	}, [currentOptions]);
 
