@@ -7,6 +7,7 @@ import {IconAddToMetamask} from '@yearn-finance/web-lib/icons/IconAddToMetamask'
 import {IconCross} from '@yearn-finance/web-lib/icons/IconCross';
 import {IconWallet} from '@yearn-finance/web-lib/icons/IconWallet';
 import {toAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
+import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useWallet} from '@common/contexts/useWallet';
@@ -89,7 +90,7 @@ function TokenItem({element}: {element: TBalanceReminderElement}): ReactElement 
 }
 
 export function BalanceReminderPopover(): ReactElement {
-	const {balances: tokens, isLoading, triggerForknetBalances} = useWallet();
+	const {balances: tokens, isLoading, triggerForknetBalances, shouldUseForknetBalances} = useWallet();
 	const {address, ens, isActive, onDesactivate} = useWeb3();
 	const {vaults} = useYearn();
 
@@ -155,7 +156,11 @@ export function BalanceReminderPopover(): ReactElement {
 						<Popover.Panel className={'yearn--shadow absolute right-0 top-6 z-[1000] mt-3 w-screen max-w-xs md:-right-4 md:top-4'}>
 							<div className={'overflow-hidden'}>
 								<div className={'relative bg-neutral-0 p-0'}>
-									<div className={'absolute left-4 top-4 opacity-0 transition-colors hover:opacity-100'}>
+									<div
+										className={cl(
+											'absolute left-4 top-4 opacity-0 transition-colors hover:opacity-100',
+											shouldUseForknetBalances ? 'opacity-100' : 'opacity-0'
+										)}>
 										<button
 											onClick={(): void => {
 												// Special command to enable dev forknet balances

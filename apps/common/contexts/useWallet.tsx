@@ -72,6 +72,7 @@ export type TWalletContext = {
 	cumulatedValueInVaults: number;
 	balancesNonce: number;
 	isLoading: boolean;
+	shouldUseForknetBalances: boolean;
 	refresh: (tokenList?: TUseBalancesTokens[]) => Promise<TChainTokens>;
 	triggerForknetBalances: () => void;
 };
@@ -97,6 +98,7 @@ const defaultProps = {
 	cumulatedValueInVaults: 0,
 	balancesNonce: 0,
 	isLoading: true,
+	shouldUseForknetBalances: false,
 	refresh: async (): Promise<TChainTokens> => ({}),
 	triggerForknetBalances: (): void => {}
 };
@@ -335,6 +337,7 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 			balancesNonce: nonce,
 			cumulatedValueInVaults,
 			isLoading: isLoading || false,
+			shouldUseForknetBalances,
 			refresh: onRefresh,
 			triggerForknetBalances: (): void => set_shouldUseForknetBalances((s): boolean => !s)
 		}),
