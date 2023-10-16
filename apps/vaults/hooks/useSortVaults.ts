@@ -93,9 +93,10 @@ export function useSortVaults(vaultList: TYDaemonVaults, sortBy: TPossibleSortBy
 			return sortedByName();
 		}
 		if (sortBy === 'forwardAPR') {
-			const sort = sortedByForwardAPR();
-			console.log(sort);
-			return sort;
+			return sortedByForwardAPR();
+		}
+		if (sortBy === 'apr') {
+			return sortedByAPR();
 		}
 		if (sortBy === 'tvl') {
 			return sortedByTVL();
@@ -111,7 +112,7 @@ export function useSortVaults(vaultList: TYDaemonVaults, sortBy: TPossibleSortBy
 		}
 
 		return sortResult;
-	}, [stringifiedVaultList, sortDirection, sortBy, sortedByName, sortedByForwardAPR, sortedByAPR, sortedByTVL, sortedByDeposited, sortedByAvailable, sortedByFeaturingScore]);
+	}, [stringifiedVaultList, sortDirection, sortBy, sortedByName, sortedByForwardAPR, sortedByTVL, sortedByAPR, sortedByDeposited, sortedByAvailable, sortedByFeaturingScore]);
 
 	return sortedVaults;
 }
