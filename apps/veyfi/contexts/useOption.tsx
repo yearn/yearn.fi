@@ -1,9 +1,9 @@
 import React, {createContext, memo, useCallback, useContext, useEffect, useMemo} from 'react';
 import {ethers} from 'ethers';
 import {useAsync} from '@react-hookz/web';
+import {VEYFI_DYFI_ABI} from '@veYFI/utils/abi/veYFIdYFI.abi';
 import {VEYFI_OPTIONS_ABI} from '@veYFI/utils/abi/veYFIOptions.abi';
-import {VEYFI_OYFI_ABI} from '@veYFI/utils/abi/veYFIoYFI.abi';
-import {VEYFI_CHAIN_ID, VEYFI_OPTIONS_ADDRESS, VEYFI_OYFI_ADDRESS} from '@veYFI/utils/constants';
+import {VEYFI_CHAIN_ID, VEYFI_DYFI_ADDRESS,VEYFI_OPTIONS_ADDRESS} from '@veYFI/utils/constants';
 import {erc20ABI, readContract} from '@wagmi/core';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
@@ -103,8 +103,8 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 		// TODO: update once abi is available
 		return {
 			balance: await readContract({
-				address: VEYFI_OYFI_ADDRESS,
-				abi: VEYFI_OYFI_ABI,
+				address: VEYFI_DYFI_ADDRESS,
+				abi: VEYFI_DYFI_ABI,
 				functionName: 'balanceOf',
 				args: [userAddress],
 				chainId: VEYFI_CHAIN_ID
@@ -117,8 +117,8 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 			return {};
 		}
 
-		const oYFIAllowanceOptions = await readContract({
-			address: VEYFI_OYFI_ADDRESS,
+		const dYFIAllowanceOptions = await readContract({
+			address: VEYFI_DYFI_ADDRESS,
 			abi: erc20ABI,
 			functionName: 'allowance',
 			args: [userAddress, VEYFI_OPTIONS_ADDRESS],
@@ -126,7 +126,7 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 		});
 
 		return ({
-			[allowanceKey(VEYFI_CHAIN_ID, VEYFI_OYFI_ADDRESS, VEYFI_OPTIONS_ADDRESS, userAddress)]: oYFIAllowanceOptions
+			[allowanceKey(VEYFI_CHAIN_ID, VEYFI_DYFI_ADDRESS, VEYFI_OPTIONS_ADDRESS, userAddress)]: dYFIAllowanceOptions
 		});
 	}, [isActive, userAddress]);
 

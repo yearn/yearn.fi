@@ -29,7 +29,7 @@ function Index(): ReactElement {
 		{id: 'claim', label: 'Claim', content: <ClaimTab />},
 		{id: 'gauges', label: 'Stake / Unstake', content: <GaugesTab />},
 		{id: 'rewards', label: 'Rewards', content: <RewardsTab />},
-		{id: 'redeem', label: 'Redeem oYFI', content: <RedeemTab />},
+		{id: 'redeem', label: 'Redeem dYFI', content: <RedeemTab />},
 		{id: 'vote', label: 'Vote for Gauge', content: <VoteTab />}
 	].filter(Boolean);
 

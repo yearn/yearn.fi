@@ -2,7 +2,7 @@ import {useCallback, useState} from 'react';
 import {useAsync} from '@react-hookz/web';
 import {useOption} from '@veYFI/contexts/useOption';
 import {redeem} from '@veYFI/utils/actions/option';
-import {VEYFI_CHAIN_ID, VEYFI_OPTIONS_ADDRESS, VEYFI_OYFI_ADDRESS} from '@veYFI/utils/constants';
+import {VEYFI_CHAIN_ID, VEYFI_DYFI_ADDRESS,VEYFI_OPTIONS_ADDRESS} from '@veYFI/utils/constants';
 import {validateAllowance, validateAmount, validateNetwork} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -38,14 +38,14 @@ export function RedeemTab(): ReactElement {
 	const [redeemStatus, set_redeemStatus] = useState(defaultTxStatus);
 
 	const userAddress = address as TAddress;
-	const oYFIBalance = toNormalizedBN(formatBigNumberAsAmount(positions?.balance), 18);
+	const dYFIBalance = toNormalizedBN(formatBigNumberAsAmount(positions?.balance), 18);
 	const ethRequired = toNormalizedValue(result, 18);
 
 	const handleApproveRedeem = useCallback(async (): Promise<void> => {
 		const response = await approveERC20({
 			connector: provider,
 			chainID: VEYFI_CHAIN_ID,
-			contractAddress: VEYFI_OYFI_ADDRESS,
+			contractAddress: VEYFI_DYFI_ADDRESS,
 			spenderAddress: VEYFI_OPTIONS_ADDRESS,
 			statusHandler: set_approveRedeemStatus,
 			amount: redeemAmount.raw
@@ -74,7 +74,7 @@ export function RedeemTab(): ReactElement {
 
 
 	const {isValid: isApproved} = validateAllowance({
-		tokenAddress: VEYFI_OYFI_ADDRESS,
+		tokenAddress: VEYFI_DYFI_ADDRESS,
 		spenderAddress: VEYFI_OPTIONS_ADDRESS,
 		allowances,
 		amount: redeemAmount.raw,
@@ -84,7 +84,7 @@ export function RedeemTab(): ReactElement {
 
 	const {isValid: isValidRedeemAmount, error: redeemAmountError} = validateAmount({
 		amount: redeemAmount.normalized,
-		balance: oYFIBalance.normalized
+		balance: dYFIBalance.normalized
 	});
 
 	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: 1, walletNetwork: safeChainID});
@@ -100,22 +100,22 @@ export function RedeemTab(): ReactElement {
 
 				<div className={'grid grid-cols-1 gap-4 md:grid-cols-4'}>
 					<AmountInput
-						label={'You have oYFI'}
-						amount={oYFIBalance.normalized}
-						legend={formatCounterValue(oYFIBalance.normalized, optionPrice ?? 0)}
+						label={'You have dYFI'}
+						amount={dYFIBalance.normalized}
+						legend={formatCounterValue(dYFIBalance.normalized, optionPrice ?? 0)}
 						disabled
 					/>
 					<AmountInput
 						label={'YFI you want to redeem'}
 						amount={redeemAmount.normalized}
-						maxAmount={oYFIBalance.normalized}
+						maxAmount={dYFIBalance.normalized}
 						onAmountChange={(value): void => {
 							const amount = handleInputChangeEventValue(value, 18);
 							set_redeemAmount(amount);
 							fetchRequiredEth.execute(amount.raw);
 						}}
-						onLegendClick={(): void => set_redeemAmount(oYFIBalance)}
-						onMaxClick={(): void => set_redeemAmount(oYFIBalance)}
+						onLegendClick={(): void => set_redeemAmount(dYFIBalance)}
+						onMaxClick={(): void => set_redeemAmount(dYFIBalance)}
 						legend={formatCounterValue(redeemAmount.normalized, yfiPrice)}
 						error={redeemAmountError}
 					/>

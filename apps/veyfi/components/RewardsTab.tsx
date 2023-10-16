@@ -89,7 +89,7 @@ export function RewardsTab(): ReactElement {
 
 				<div className={'grid grid-cols-1 gap-4 md:grid-cols-4'}>
 					<AmountInput
-						label={'Total unclaimed rewards (oYFI)'}
+						label={'Total unclaimed rewards (dYFI)'}
 						amount={toNormalizedAmount(gaugesRewards, 18)}
 						legend={formatCounterValue(toNormalizedAmount(gaugesRewards, 18), optionPrice ?? 0)}
 						disabled
@@ -120,7 +120,7 @@ export function RewardsTab(): ReactElement {
 						onChange={set_selectedGauge}
 					/>
 					<AmountInput
-						label={'Unclaimed rewards (oYFI)'}
+						label={'Unclaimed rewards (dYFI)'}
 						amount={toNormalizedAmount(selectedGaugeRewards, 18)}
 						legend={formatCounterValue(toNormalizedAmount(selectedGaugeRewards, 18), optionPrice ?? 0)}
 						disabled
