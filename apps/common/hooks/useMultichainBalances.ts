@@ -12,7 +12,7 @@ import {isEth} from '@yearn-finance/web-lib/utils/isEth';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
 
-import {useAsyncEffect} from './useAsyncEffect';
+import {useAsync} from './useAsyncEffect';
 
 import type {DependencyList} from 'react';
 import type {ContractFunctionConfig} from 'viem';
@@ -279,7 +279,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 		onLoadDone();
 
 		return updated;
-	}, [onLoadDone, onLoadStart, provider, stringifiedTokens, userAddress, chainID]);
+	}, [onLoadDone, onLoadStart, provider, stringifiedTokens, userAddress]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** onUpdateSome takes a list of tokens and fetches the balances for each
@@ -387,7 +387,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	 ** This is the main hook and is optimized for performance, using a worker
 	 ** to fetch the balances, preventing the UI to freeze.
 	 **************************************************************************/
-	useAsyncEffect(async (): Promise<void> => {
+	useAsync(async (): Promise<void> => {
 		if (!isActive || !userAddress || !provider) {
 			return;
 		}
@@ -427,7 +427,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 		}
 		onLoadDone();
 		set_status({...defaultStatus, isSuccess: true, isFetched: true});
-	}, [stringifiedTokens, isActive, userAddress, provider, onLoadStart, chainID, updateBalancesCall, onLoadDone]);
+	}, [stringifiedTokens, isActive, userAddress, provider, onLoadStart, updateBalancesCall, onLoadDone]);
 
 	const contextValue = useMemo(
 		(): TUseBalancesRes => ({
@@ -444,21 +444,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 			isRefetching: status.isRefetching,
 			status: status.isError ? 'error' : status.isLoading || status.isFetching ? 'loading' : status.isSuccess ? 'success' : 'unknown'
 		}),
-		[
-			assignPrices,
-			balances,
-			chainID,
-			error,
-			nonce,
-			onUpdate,
-			onUpdateSome,
-			status.isError,
-			status.isFetched,
-			status.isFetching,
-			status.isLoading,
-			status.isRefetching,
-			status.isSuccess
-		]
+		[assignPrices, balances, error, nonce, onUpdate, onUpdateSome, status.isError, status.isFetched, status.isFetching, status.isLoading, status.isRefetching, status.isSuccess]
 	);
 
 	return contextValue;

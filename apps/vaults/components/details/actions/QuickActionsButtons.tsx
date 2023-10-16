@@ -13,7 +13,7 @@ import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
-import {useAsyncEffect} from '@common/hooks/useAsyncEffect';
+import {useAsync} from '@common/hooks/useAsyncEffect';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 
 import type {ReactElement} from 'react';
@@ -38,8 +38,9 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 	 ** SWR hook to get the expected out for a given in/out pair with a specific amount. This hook is
 	 ** called when amount/in or out changes. Calls the allowanceFetcher callback.
 	 **********************************************************************************************/
-	const triggerRetrieveAllowance = useAsyncEffect(async (): Promise<void> => {
+	const triggerRetrieveAllowance = useAsync(async (): Promise<void> => {
 		set_allowanceFrom(await onRetrieveAllowance(true));
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [address, onRetrieveAllowance, hash]);
 
 	const onSuccess = useCallback(async (): Promise<void> => {
@@ -98,7 +99,17 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 				]);
 			}
 		}
-	}, [onChangeAmount, currentSolver, refresh, actionParams?.selectedOptionFrom?.value, actionParams?.selectedOptionTo?.value, isDepositing, refreshZapBalances]);
+	}, [
+		onChangeAmount,
+		currentSolver,
+		refresh,
+		actionParams?.selectedOptionFrom?.value,
+		actionParams?.selectedOptionTo?.value,
+		currentVault.chainID,
+		refreshStakingRewards,
+		isDepositing,
+		refreshZapBalances
+	]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** Trigger an approve web3 action, simply trying to approve `amount` tokens

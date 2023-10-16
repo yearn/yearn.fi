@@ -149,7 +149,7 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 		set_positionsMap(allPositionsAsMap);
 	}, [address, gauges, isActive]);
 
-	const refresh = useAsyncEffect(async (): Promise<void> => {
+	const refresh = useAsync(async (): Promise<void> => {
 		refreshVotingEscrow();
 		refreshPositions();
 	}, [refreshPositions, refreshVotingEscrow]);

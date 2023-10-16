@@ -13,13 +13,13 @@ import {useTokenPrice} from '@common/hooks/useTokenPrice';
 import type {ReactElement} from 'react';
 import type {TNormalizedBN} from '@common/types/types';
 
-export type	TOptionContext = {
-	getRequiredEth: (amount: bigint) => Promise<bigint>,
-	dYFIPrice: number,
-	position: TNormalizedBN,
-	discount: TNormalizedBN,
-	refresh: () => void,
-}
+export type TOptionContext = {
+	getRequiredEth: (amount: bigint) => Promise<bigint>;
+	dYFIPrice: number;
+	position: TNormalizedBN;
+	discount: TNormalizedBN;
+	refresh: () => void;
+};
 
 const defaultProps: TOptionContext = {
 	getRequiredEth: async (): Promise<bigint> => BIG_ZERO,
@@ -75,23 +75,20 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 		set_position(toNormalizedBN(dYFIBalance));
 	}, [userAddress]);
 
-	const refresh = useAsyncEffect(async (): Promise<void> => {
+	const refresh = useAsync(async (): Promise<void> => {
 		refreshPrice();
 		refreshPositions();
 	}, [refreshPrice, refreshPositions]);
 
-	const contextValue = useDeepCompareMemo((): TOptionContext => ({
-		getRequiredEth,
-		dYFIPrice,
-		position,
-		discount,
-		refresh
-	}), [getRequiredEth, position, dYFIPrice, refresh]);
-
-	return (
-		<OptionContext.Provider value={contextValue}>
-			{children}
-		</OptionContext.Provider>
+	const contextValue = useDeepCompareMemo(
+		(): TOptionContext => ({
+			getRequiredEth,
+			dYFIPrice,
+			position,
+			discount,
+			refresh
+		}),
+		[getRequiredEth, dYFIPrice, position, discount, refresh]
 	);
 
 	return <OptionContext.Provider value={contextValue}>{children}</OptionContext.Provider>;
