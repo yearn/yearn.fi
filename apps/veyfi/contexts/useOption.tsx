@@ -75,7 +75,7 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 		set_position(toNormalizedBN(dYFIBalance));
 	}, [userAddress]);
 
-	const refresh = useCallback((): void => {
+	const refresh = useAsyncEffect(async (): Promise<void> => {
 		refreshPrice();
 		refreshPositions();
 	}, [refreshPrice, refreshPositions]);

@@ -1,4 +1,4 @@
-import {createContext, memo, useCallback, useContext, useEffect, useMemo, useState} from 'react';
+import {createContext, memo, useCallback, useContext, useMemo, useState} from 'react';
 import {OPT_STAKING_REWARD_SUPPORTED_NETWORK} from '@vaults/constants';
 import {STACKING_TO_VAULT, VAULT_TO_STACKING} from '@vaults/constants/optRewards';
 import {STAKING_REWARDS_ABI} from '@vaults/utils/abi/stakingRewards.abi';
@@ -8,6 +8,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {STAKING_REWARDS_REGISTRY_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {decodeAsBigInt, decodeAsString} from '@yearn-finance/web-lib/utils/decoder';
+import {useAsyncEffect} from '@common/hooks/useAsyncEffect';
 import {keyBy} from '@common/utils';
 
 import type {ReactElement} from 'react';
@@ -43,7 +44,7 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 	const [stakingRewards, set_stakingRewards] = useState<TStakingRewards[]>([]);
 	const [positions, set_positions] = useState<TStakePosition[]>([]);
 
-	const stakingRewardsFetcher = useCallback(async (): Promise<TStakingRewards[]> => {
+	const stakingRewardsFetcher = useAsyncEffect(async (): Promise<void> => {
 		const stakingPoolCalls = [];
 		const stackingAddresses = Object.values(VAULT_TO_STACKING);
 		for (const stackingAddress of stackingAddresses) {
@@ -94,16 +95,11 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 		}
 
 		set_stakingRewards(_stackingRewards);
-		return _stackingRewards;
 	}, []);
 
-	useEffect((): void => {
-		stakingRewardsFetcher();
-	}, [stakingRewardsFetcher]);
-
-	const positionsFetcher = useCallback(async (): Promise<TStakePosition[]> => {
+	const positionsFetcher = useAsyncEffect(async (): Promise<void> => {
 		if (!stakingRewards || !isActive || !userAddress) {
-			return [];
+			return;
 		}
 		/* 🔵 - Yearn Finance **********************************************************************
 		 ** Retrieve the number of tokens in the registry, and for each token retrieve it's address
@@ -138,12 +134,7 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 		}
 
 		set_positions(positionPromises);
-		return positionPromises;
 	}, [stakingRewards, isActive, userAddress, OPT_STAKING_REWARD_SUPPORTED_NETWORK]);
-
-	useEffect((): void => {
-		positionsFetcher();
-	}, [positionsFetcher]);
 
 	const positionsMap = useMemo((): TDict<TStakePosition | undefined> => {
 		return keyBy(positions ?? [], 'address');

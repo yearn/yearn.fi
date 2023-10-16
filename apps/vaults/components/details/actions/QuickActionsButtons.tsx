@@ -1,5 +1,4 @@
-import {useCallback, useEffect, useState} from 'react';
-import {useAsync} from '@react-hookz/web';
+import {useCallback, useState} from 'react';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useSolver} from '@vaults/contexts/useSolver';
 import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
@@ -14,6 +13,7 @@ import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
+import {useAsyncEffect} from '@common/hooks/useAsyncEffect';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 
 import type {ReactElement} from 'react';
@@ -29,6 +29,7 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
 	const [txStatusExecuteDeposit, set_txStatusExecuteDeposit] = useState(defaultTxStatus);
 	const [txStatusExecuteWithdraw, set_txStatusExecuteWithdraw] = useState(defaultTxStatus);
+	const [allowanceFrom, set_allowanceFrom] = useState<TNormalizedBN>(toNormalizedBN(0));
 	const {actionParams, onChangeAmount, maxDepositPossible, isDepositing} = useActionFlow();
 	const {onApprove, onExecuteDeposit, onExecuteWithdraw, onRetrieveAllowance, currentSolver, expectedOut, isLoadingExpectedOut, hash} = useSolver();
 	const isWithdrawing = !isDepositing;
@@ -37,10 +38,9 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 	 ** SWR hook to get the expected out for a given in/out pair with a specific amount. This hook is
 	 ** called when amount/in or out changes. Calls the allowanceFetcher callback.
 	 **********************************************************************************************/
-	const [{result: allowanceFrom, status}, actions] = useAsync(async (): Promise<TNormalizedBN> => onRetrieveAllowance(true), toNormalizedBN(0));
-	useEffect((): void => {
-		actions.execute();
-	}, [actions, provider, address, onRetrieveAllowance, hash]);
+	const triggerRetrieveAllowance = useAsyncEffect(async (): Promise<void> => {
+		set_allowanceFrom(await onRetrieveAllowance(true));
+	}, [address, onRetrieveAllowance, hash]);
 
 	const onSuccess = useCallback(async (): Promise<void> => {
 		onChangeAmount(toNormalizedBN(0));
@@ -110,9 +110,9 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 	const onApproveFrom = useCallback(async (): Promise<void> => {
 		const shouldApproveInfinite = currentSolver === Solver.enum.PartnerContract || currentSolver === Solver.enum.Vanilla || currentSolver === Solver.enum.InternalMigration;
 		onApprove(shouldApproveInfinite ? MAX_UINT_256 : actionParams?.amount.raw, set_txStatusApprove, async (): Promise<void> => {
-			await actions.execute();
+			await triggerRetrieveAllowance();
 		});
-	}, [actionParams?.amount.raw, actions, currentSolver, onApprove]);
+	}, [actionParams?.amount.raw, triggerRetrieveAllowance, currentSolver, onApprove]);
 
 	const isButtonDisabled =
 		(!address && !provider) || isZero(actionParams.amount.raw) || toBigInt(actionParams.amount.raw) > toBigInt(maxDepositPossible.raw) || isLoadingExpectedOut;

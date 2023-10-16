@@ -9,6 +9,7 @@ import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {performBatchedUpdates} from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {useCurve} from '@common/contexts/useCurve';
+import {useAsyncEffect} from '@common/hooks/useAsyncEffect';
 import {YBRIBE_SUPPORTED_NETWORK} from '@yBribe/constants';
 import {getLastThursday, getNextThursday} from '@yBribe/utils';
 import {CURVE_BRIBE_V3_ABI} from '@yBribe/utils/abi/curveBribeV3.abi';
@@ -66,10 +67,8 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 	 **  Bribe contracts, not related to the user.
 	 ***************************************************************************/
 	useEffect((): void => {
-		performBatchedUpdates((): void => {
-			set_currentPeriod(Number(_currentPeriod));
-			set_nextPeriod(Number(_currentPeriod) + 86400 * 7);
-		});
+		set_currentPeriod(Number(_currentPeriod));
+		set_nextPeriod(Number(_currentPeriod) + 86400 * 7);
 	}, [_currentPeriod]);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -267,7 +266,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 	/* 🔵 - Yearn Finance ******************************************************
 	 **	getBribes will start the process to retrieve the bribe information.
 	 ***************************************************************************/
-	const getBribes = useCallback(async (): Promise<void> => {
+	const getBribes = useAsyncEffect(async (): Promise<void> => {
 		const rewardsPerGauges = await getRewardsPerGauges();
 		const [rewardsPerUser, nextPeriodRewards] = await Promise.all([getRewardsPerUser(rewardsPerGauges), getNextPeriodRewards(rewardsPerGauges)]);
 
@@ -277,9 +276,6 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 		});
 		return;
 	}, [getRewardsPerGauges, getRewardsPerUser, getNextPeriodRewards, assignBribes, assignNextRewards]);
-	useEffect((): void => {
-		getBribes();
-	}, [getBribes]);
 
 	const onRefresh = useCallback(async (): Promise<void> => {
 		await getBribes();
