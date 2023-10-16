@@ -229,6 +229,7 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 		}
 		for (const token of tokens) {
 			if (token.chainID === 1) {
+				//remove it
 				tokens.push({...token, chainID: 1337});
 			}
 		}
@@ -258,8 +259,13 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 				}
 			}
 		}
+
+		if (shouldUseForknetBalances) {
+			// eslint-disable-next-line prefer-destructuring
+			_tokens[1] = _tokens[1337];
+		}
 		return _tokens;
-	}, [tokensRaw]);
+	}, [tokensRaw, shouldUseForknetBalances]);
 
 	const cumulatedValueInVaults = useMemo((): number => {
 		let cumulatedValueInVaults = 0;
@@ -316,8 +322,6 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 		},
 		[tokens]
 	);
-
-	console.log(tokens);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 **	Setup and render the Context provider to use in the app.
