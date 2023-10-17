@@ -37,8 +37,6 @@ function useQueryArguments(): TQueryArgs {
 	const [sortDirection, set_sortDirection] = useState(sortDirectionParam);
 	const [sortBy, set_sortBy] = useState(sortByParam);
 
-	console.log({chainsParam, chains});
-
 	/** 🔵 - Yearn *********************************************************************************
 	 **	This useEffect hook is used to synchronize the search state with the query parameter
 	 *********************************************************************************************/
