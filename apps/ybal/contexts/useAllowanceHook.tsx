@@ -6,7 +6,14 @@ import {useMemo} from 'react';
 import {erc20ABI, useContractReads} from 'wagmi';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {BAL_TOKEN_ADDRESS, BALWETH_TOKEN_ADDRESS, LPYBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, YBAL_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {
+	BAL_TOKEN_ADDRESS,
+	BALWETH_TOKEN_ADDRESS,
+	LPYBAL_TOKEN_ADDRESS,
+	STYBAL_TOKEN_ADDRESS,
+	WETH_TOKEN_ADDRESS,
+	YBAL_TOKEN_ADDRESS
+} from '@yearn-finance/web-lib/utils/constants';
 import {decodeAsBigInt} from '@yearn-finance/web-lib/utils/decoder';
 
 import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
@@ -67,12 +74,21 @@ export function useAllowances(): [TDict<bigint>, () => void] {
 		}
 		return [
 			{
-				[allowanceKey(1, BAL_TOKEN_ADDRESS, LOCAL_ZAP_YEARN_YBAL_ADDRESS, toAddress(address))]: decodeAsBigInt(data[0]),
-				[allowanceKey(1, WETH_TOKEN_ADDRESS, LOCAL_ZAP_YEARN_YBAL_ADDRESS, toAddress(address))]: decodeAsBigInt(data[1]),
-				[allowanceKey(1, BALWETH_TOKEN_ADDRESS, LOCAL_ZAP_YEARN_YBAL_ADDRESS, toAddress(address))]: decodeAsBigInt(data[2]),
-				[allowanceKey(1, YBAL_TOKEN_ADDRESS, LOCAL_ZAP_YEARN_YBAL_ADDRESS, toAddress(address))]: decodeAsBigInt(data[3]),
-				[allowanceKey(1, STYBAL_TOKEN_ADDRESS, LOCAL_ZAP_YEARN_YBAL_ADDRESS, toAddress(address))]: decodeAsBigInt(data[4]),
-				[allowanceKey(1, LPYBAL_TOKEN_ADDRESS, LOCAL_ZAP_YEARN_YBAL_ADDRESS, toAddress(address))]: decodeAsBigInt(data[5])
+				[allowanceKey(1, BAL_TOKEN_ADDRESS, LOCAL_ZAP_YEARN_YBAL_ADDRESS, toAddress(address))]: decodeAsBigInt(
+					data[0]
+				),
+				[allowanceKey(1, WETH_TOKEN_ADDRESS, LOCAL_ZAP_YEARN_YBAL_ADDRESS, toAddress(address))]: decodeAsBigInt(
+					data[1]
+				),
+				[allowanceKey(1, BALWETH_TOKEN_ADDRESS, LOCAL_ZAP_YEARN_YBAL_ADDRESS, toAddress(address))]:
+					decodeAsBigInt(data[2]),
+				[allowanceKey(1, YBAL_TOKEN_ADDRESS, LOCAL_ZAP_YEARN_YBAL_ADDRESS, toAddress(address))]: decodeAsBigInt(
+					data[3]
+				),
+				[allowanceKey(1, STYBAL_TOKEN_ADDRESS, LOCAL_ZAP_YEARN_YBAL_ADDRESS, toAddress(address))]:
+					decodeAsBigInt(data[4]),
+				[allowanceKey(1, LPYBAL_TOKEN_ADDRESS, LOCAL_ZAP_YEARN_YBAL_ADDRESS, toAddress(address))]:
+					decodeAsBigInt(data[5])
 			},
 			refetch
 		];

@@ -169,6 +169,9 @@ export type TYDaemonVaultHarvest = z.infer<typeof yDaemonVaultHarvestSchema>;
 export type TYDaemonVaultHarvests = z.infer<typeof yDaemonVaultHarvestsSchema>;
 export type TYDaemonVaultTokenSchema = z.infer<typeof yDaemonVaultTokenSchema>;
 
-export const isStandardVault = (vault: TYDaemonVault): boolean => vault.type === 'Standard' || vault.type === 'Yearn Vault';
-export const isAutomatedVault = (vault: TYDaemonVault): boolean => vault.type === 'Automated' || vault.type === 'Automated Yearn Vault';
-export const isExperimentalVault = (vault: TYDaemonVault): boolean => vault.type === 'Experimental' || vault.type === 'Experimental Yearn Vault';
+export const isStandardVault = (vault: TYDaemonVault): boolean =>
+	vault.type === 'Standard' || vault.type === 'Yearn Vault';
+export const isAutomatedVault = (vault: TYDaemonVault): boolean =>
+	vault.type === 'Automated' || vault.type === 'Automated Yearn Vault';
+export const isExperimentalVault = (vault: TYDaemonVault): boolean =>
+	vault.type === 'Experimental' || vault.type === 'Experimental Yearn Vault';

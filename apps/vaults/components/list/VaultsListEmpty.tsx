@@ -30,11 +30,18 @@ export function VaultsListEmpty({
 		);
 	}
 
-	if (!isLoading && isZero(sortedVaultsToDisplay.length) && currentCategories.length === 1 && currentCategories.includes('Holdings')) {
+	if (
+		!isLoading &&
+		isZero(sortedVaultsToDisplay.length) &&
+		currentCategories.length === 1 &&
+		currentCategories.includes('Holdings')
+	) {
 		return (
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
 				<b className={'text-center text-lg'}>{'Well this is awkward...'}</b>
-				<p className={'text-center text-neutral-600'}>{"You don't appear to have any deposits in our Vaults. There's an easy way to change that 😏"}</p>
+				<p className={'text-center text-neutral-600'}>
+					{"You don't appear to have any deposits in our Vaults. There's an easy way to change that 😏"}
+				</p>
 			</div>
 		);
 	}
@@ -68,7 +75,10 @@ export function VaultsListEmpty({
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center gap-4 px-10 py-2 md:w-3/4'}>
 				<b className={'text-center text-lg'}>{'No data, reeeeeeeeeeee'}</b>
 				<>
-					<p className={'text-center text-neutral-600'}>{`Please, select a chain. At least one, just one.`}</p>
+					<p
+						className={
+							'text-center text-neutral-600'
+						}>{`Please, select a chain. At least one, just one.`}</p>
 					<Button
 						className={'w-full md:w-48'}
 						onClick={(): void => {
@@ -122,7 +132,11 @@ export function VaultsListEmptyFactory({
 		return (
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
 				<b className={'text-center text-lg'}>{'Well this is awkward...'}</b>
-				<p className={'text-center text-neutral-600'}>{"You don't appear to have any deposits in our Factory Vaults. There's an easy way to change that 😏"}</p>
+				<p className={'text-center text-neutral-600'}>
+					{
+						"You don't appear to have any deposits in our Factory Vaults. There's an easy way to change that 😏"
+					}
+				</p>
 			</div>
 		);
 	}

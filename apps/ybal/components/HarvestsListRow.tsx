@@ -43,7 +43,9 @@ export function HarvestListRow({harvest}: {harvest: TYDaemonVaultHarvest}): Reac
 							width={40}
 							height={40}
 							quality={90}
-							src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${toAddress(harvest.vaultAddress)}/logo-128.png`}
+							src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${toAddress(
+								harvest.vaultAddress
+							)}/logo-128.png`}
 							loading={'eager'}
 						/>
 					</div>

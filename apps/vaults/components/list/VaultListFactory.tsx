@@ -30,7 +30,10 @@ export function VaultListFactory(): ReactElement {
 	 **	It's best to memorize the filtered vaults, which saves a lot of processing time by only
 	 **	performing the filtering once.
 	 **********************************************************************************************/
-	const curveVaults = useFilteredVaults(vaults, (vault): boolean => vault.category === 'Curve' && isAutomatedVault(vault));
+	const curveVaults = useFilteredVaults(
+		vaults,
+		(vault): boolean => vault.category === 'Curve' && isAutomatedVault(vault)
+	);
 	const holdingsVaults = useFilteredVaults(vaults, (vault): boolean => {
 		const {category, address, chainID} = vault;
 		const holding = getToken({address, chainID});

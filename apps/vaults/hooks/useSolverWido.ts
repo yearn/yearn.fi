@@ -27,7 +27,11 @@ import type {TTxResponse, TTxStatus} from '@yearn-finance/web-lib/utils/web3/tra
 import type {TNormalizedBN} from '@common/types/types';
 import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
 
-async function getQuote(request: TInitSolverArgs, currentPartner: TAddress, zapSlippage: number): Promise<{data: QuoteResult | undefined; error: Error | undefined}> {
+async function getQuote(
+	request: TInitSolverArgs,
+	currentPartner: TAddress,
+	zapSlippage: number
+): Promise<{data: QuoteResult | undefined; error: Error | undefined}> {
 	const params: QuoteRequest = {
 		fromChainId: request.chainID as ChainId, // Chain Id of from token
 		fromToken: toAddress(request.inputToken.value), // token to spend
@@ -170,7 +174,11 @@ export function useSolverWido(): TSolverContext {
 	 ** process and displayed to the user.
 	 **************************************************************************/
 	const expectedOut = useMemo((): TNormalizedBN => {
-		if (!latestQuote?.current?.minToTokenAmount || !request.current || isSolverDisabled(request.current.chainID)[Solver.enum.Wido]) {
+		if (
+			!latestQuote?.current?.minToTokenAmount ||
+			!request.current ||
+			isSolverDisabled(request.current.chainID)[Solver.enum.Wido]
+		) {
 			return toNormalizedBN(0);
 		}
 		return toNormalizedBN(latestQuote?.current?.minToTokenAmount, request?.current?.outputToken?.decimals || 18);
@@ -182,7 +190,12 @@ export function useSolverWido(): TSolverContext {
 	 **************************************************************************/
 	const onRetrieveAllowance = useCallback(
 		async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
-			if (!latestQuote?.current || !request?.current || isSolverDisabled(request.current.chainID)[Solver.enum.Wido] || !provider) {
+			if (
+				!latestQuote?.current ||
+				!request?.current ||
+				isSolverDisabled(request.current.chainID)[Solver.enum.Wido] ||
+				!provider
+			) {
 				return toNormalizedBN(0);
 			}
 
@@ -235,7 +248,11 @@ export function useSolverWido(): TSolverContext {
 	 ** of the token by the Wido solver.
 	 **************************************************************************/
 	const onApprove = useCallback(
-		async (amount = MAX_UINT_256, txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>, onSuccess: () => Promise<void>): Promise<void> => {
+		async (
+			amount = MAX_UINT_256,
+			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
+			onSuccess: () => Promise<void>
+		): Promise<void> => {
 			if (!request.current || isSolverDisabled(request.current.chainID)[Solver.enum.Wido]) {
 				return;
 			}
@@ -283,7 +300,10 @@ export function useSolverWido(): TSolverContext {
 	 ** simply swapping the input token for the output token.
 	 **************************************************************************/
 	const onExecute = useCallback(
-		async (txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>, onSuccess: () => Promise<void>): Promise<void> => {
+		async (
+			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
+			onSuccess: () => Promise<void>
+		): Promise<void> => {
 			assert(provider, 'Provider is not set');
 
 			txStatusSetter({...defaultTxStatus, pending: true});

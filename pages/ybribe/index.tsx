@@ -84,21 +84,27 @@ function GaugeList(): ReactElement {
 		}
 		if (sort.sortBy === 'rewards') {
 			return searchedGauges.sort((a, b): number => {
-				const allARewards = Object.entries(currentRewards?.[toAddress(a.gauge)] || {}).reduce((acc, [address, value]): number => {
-					if (!isTAddress(address)) {
-						return 0;
-					}
-					const aBribeValue = getRewardValue(address, value || 0n);
-					return acc + aBribeValue;
-				}, 0);
+				const allARewards = Object.entries(currentRewards?.[toAddress(a.gauge)] || {}).reduce(
+					(acc, [address, value]): number => {
+						if (!isTAddress(address)) {
+							return 0;
+						}
+						const aBribeValue = getRewardValue(address, value || 0n);
+						return acc + aBribeValue;
+					},
+					0
+				);
 
-				const allBRewards = Object.entries(currentRewards?.[toAddress(b.gauge)] || {}).reduce((acc, [address, value]): number => {
-					if (!isTAddress(address)) {
-						return 0;
-					}
-					const aBribeValue = getRewardValue(address, value || 0n);
-					return acc + aBribeValue;
-				}, 0);
+				const allBRewards = Object.entries(currentRewards?.[toAddress(b.gauge)] || {}).reduce(
+					(acc, [address, value]): number => {
+						if (!isTAddress(address)) {
+							return 0;
+						}
+						const aBribeValue = getRewardValue(address, value || 0n);
+						return acc + aBribeValue;
+					},
+					0
+				);
 
 				if (sort.sortDirection === 'desc') {
 					return allBRewards - allARewards;
@@ -108,21 +114,27 @@ function GaugeList(): ReactElement {
 		}
 		if (sort.sortBy === 'pendingRewards') {
 			return searchedGauges.sort((a, b): number => {
-				const allARewards = Object.entries(nextRewards?.[toAddress(a.gauge)] || {}).reduce((acc, [address, value]): number => {
-					if (!isTAddress(address)) {
-						return 0;
-					}
-					const aBribeValue = getRewardValue(address, value || 0n);
-					return acc + aBribeValue;
-				}, 0);
+				const allARewards = Object.entries(nextRewards?.[toAddress(a.gauge)] || {}).reduce(
+					(acc, [address, value]): number => {
+						if (!isTAddress(address)) {
+							return 0;
+						}
+						const aBribeValue = getRewardValue(address, value || 0n);
+						return acc + aBribeValue;
+					},
+					0
+				);
 
-				const allBRewards = Object.entries(nextRewards?.[toAddress(b.gauge)] || {}).reduce((acc, [address, value]): number => {
-					if (!isTAddress(address)) {
-						return 0;
-					}
-					const aBribeValue = getRewardValue(address, value || 0n);
-					return acc + aBribeValue;
-				}, 0);
+				const allBRewards = Object.entries(nextRewards?.[toAddress(b.gauge)] || {}).reduce(
+					(acc, [address, value]): number => {
+						if (!isTAddress(address)) {
+							return 0;
+						}
+						const aBribeValue = getRewardValue(address, value || 0n);
+						return acc + aBribeValue;
+					},
+					0
+				);
 
 				if (sort.sortDirection === 'desc') {
 					return allBRewards - allARewards;
@@ -237,7 +249,9 @@ function Index(): ReactElement {
 				<Balancer>
 					<b className={'text-center text-lg md:text-2xl'}>{'Get more for your votes.'}</b>
 					<p className={'mt-8 whitespace-pre-line text-center text-base text-neutral-600'}>
-						{"Sell your vote to the highest bidder by voting on the briber's gauge and claiming a reward.\nIt's like DC lobbying, but without the long lunches."}
+						{
+							"Sell your vote to the highest bidder by voting on the briber's gauge and claiming a reward.\nIt's like DC lobbying, but without the long lunches."
+						}
 					</p>
 				</Balancer>
 			</div>

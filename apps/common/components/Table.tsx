@@ -38,7 +38,14 @@ type TTableProps<T> = {
 	itemsPerPage?: number;
 };
 
-export function Table<T>({metadata, data, columns, initialSortBy, onRowClick, itemsPerPage}: TTableProps<T>): ReactElement {
+export function Table<T>({
+	metadata,
+	data,
+	columns,
+	initialSortBy,
+	onRowClick,
+	itemsPerPage
+}: TTableProps<T>): ReactElement {
 	const [{sortedBy, order}, set_state] = useState<TState<T>>({
 		sortedBy: initialSortBy,
 		order: 'desc'
@@ -109,8 +116,16 @@ export function Table<T>({metadata, data, columns, initialSortBy, onRowClick, it
 								className || ''
 							)}>
 							<p className={'text-xs font-bold text-neutral-400'}>{label}</p>
-							{sortable && sortedBy === key && <IconChevronPlain className={`yearn--sort-chevron ${order === 'asc' ? 'rotate-180' : ''}`} />}
-							{sortable && sortedBy !== key && <IconChevronPlain className={'yearn--sort-chevron--off text-neutral-300 group-hover:text-neutral-500'} />}
+							{sortable && sortedBy === key && (
+								<IconChevronPlain
+									className={`yearn--sort-chevron ${order === 'asc' ? 'rotate-180' : ''}`}
+								/>
+							)}
+							{sortable && sortedBy !== key && (
+								<IconChevronPlain
+									className={'yearn--sort-chevron--off text-neutral-300 group-hover:text-neutral-500'}
+								/>
+							)}
 						</button>
 					)
 				)}
@@ -126,29 +141,35 @@ export function Table<T>({metadata, data, columns, initialSortBy, onRowClick, it
 							onRowClick ? 'cursor-pointer' : 'cursor-auto'
 						)}
 						onClick={(): void => onRowClick?.(item)}>
-						{metadata.map(({key, label, className, fullWidth, columnSpan, format, transform}): ReactElement => {
-							const isNumber = !isNaN(item[key] as number);
+						{metadata.map(
+							({key, label, className, fullWidth, columnSpan, format, transform}): ReactElement => {
+								const isNumber = !isNaN(item[key] as number);
 
-							return (
-								<div
-									key={`cell_${key}_${rowIndex}`}
-									className={cl(
-										'flex h-8 flex-row items-center justify-between md:h-14 md:justify-end md:first:justify-start',
-										colSpanVariants[(columnSpan as keyof typeof gridColsVariants) ?? 1],
-										className
-									)}>
-									{!fullWidth && <label className={'inline text-start text-sm text-neutral-500 md:hidden'}>{label}</label>}
+								return (
 									<div
+										key={`cell_${key}_${rowIndex}`}
 										className={cl(
-											isZero(item[key] as number) ? 'text-neutral-400' : 'text-neutral-900',
-											isNumber ? 'font-number' : 'font-aeonik',
-											fullWidth ? 'w-full' : undefined
+											'flex h-8 flex-row items-center justify-between md:h-14 md:justify-end md:first:justify-start',
+											colSpanVariants[(columnSpan as keyof typeof gridColsVariants) ?? 1],
+											className
 										)}>
-										{transform?.(item) ?? format?.(item).toString() ?? String(item[key])}
+										{!fullWidth && (
+											<label className={'inline text-start text-sm text-neutral-500 md:hidden'}>
+												{label}
+											</label>
+										)}
+										<div
+											className={cl(
+												isZero(item[key] as number) ? 'text-neutral-400' : 'text-neutral-900',
+												isNumber ? 'font-number' : 'font-aeonik',
+												fullWidth ? 'w-full' : undefined
+											)}>
+											{transform?.(item) ?? format?.(item).toString() ?? String(item[key])}
+										</div>
 									</div>
-								</div>
-							);
-						})}
+								);
+							}
+						)}
 					</div>
 				)
 			)}

@@ -19,7 +19,14 @@ type TListHero = {
 	onSearch: (searchValue: string) => void;
 };
 
-export function ListHero({categories, set_categories, searchValue, selectedChains, onSearch, set_selectedChains}: TListHero): ReactElement {
+export function ListHero({
+	categories,
+	set_categories,
+	searchValue,
+	selectedChains,
+	onSearch,
+	set_selectedChains
+}: TListHero): ReactElement {
 	const chainsFromJSON = useMemo((): number[] => JSON.parse(selectedChains || '[]') as number[], [selectedChains]);
 	const categoriesFromJSON = useMemo((): string[] => JSON.parse(categories || '[]') as string[], [categories]);
 
@@ -119,7 +126,9 @@ export function ListHero({categories, set_categories, searchValue, selectedChain
 						options={chainOptions}
 						placeholder={'Select chain'}
 						onSelect={(options): void => {
-							const selectedChains = options.filter((o): boolean => o.isSelected).map((option): number => Number(option.value));
+							const selectedChains = options
+								.filter((o): boolean => o.isSelected)
+								.map((option): number => Number(option.value));
 							set_selectedChains(JSON.stringify(selectedChains));
 						}}
 					/>
@@ -131,7 +140,9 @@ export function ListHero({categories, set_categories, searchValue, selectedChain
 						options={categoryOptions}
 						placeholder={'Filter list'}
 						onSelect={(options): void => {
-							const selectedCategories = options.filter((o): boolean => o.isSelected).map((option): string => String(option.value));
+							const selectedCategories = options
+								.filter((o): boolean => o.isSelected)
+								.map((option): string => String(option.value));
 							set_categories(JSON.stringify(selectedCategories));
 						}}
 					/>

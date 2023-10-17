@@ -12,7 +12,14 @@ type TSetZapOptionProps = {
 	decimals: number;
 	solveVia?: TSolver[];
 };
-export function setZapOption({name, symbol, address, chainID, decimals, solveVia}: TSetZapOptionProps): TDropdownOption {
+export function setZapOption({
+	name,
+	symbol,
+	address,
+	chainID,
+	decimals,
+	solveVia
+}: TSetZapOptionProps): TDropdownOption {
 	return {
 		label: name,
 		symbol,

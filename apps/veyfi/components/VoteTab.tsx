@@ -2,7 +2,7 @@ import {useCallback, useState} from 'react';
 import Link from 'next/link';
 import {delegateVote} from '@veYFI/utils/actions/votingEscrow';
 import {SNAPSHOT_DELEGATE_REGISTRY_ADDRESS, VEYFI_SUPPORTED_NETWORK} from '@veYFI/utils/constants';
-import {validateAddress, validateNetwork} from '@veYFI/utils/validations';
+import {validateAddress} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -14,16 +14,10 @@ import type {TAddress} from '@yearn-finance/web-lib/types';
 
 export function VoteTab(): ReactElement {
 	const [delegateAddress, set_delegateAddress] = useState('');
-	const {provider, address, isActive, chainID} = useWeb3();
-
+	const {provider, address, isActive} = useWeb3();
 	const [delegateVoteStatus, set_delegateVoteStatus] = useState(defaultTxStatus);
-
 	const userAddress = address as TAddress;
 
-	const {isValid: isValidNetwork} = validateNetwork({
-		supportedNetwork: 1,
-		walletNetwork: chainID
-	});
 	const {isValid: isValidDelegateAddress, error: delegateAddressError} = validateAddress({address: delegateAddress});
 
 	const handleExecuteDelegateVote = useCallback(async (): Promise<void> => {
@@ -48,7 +42,11 @@ export function VoteTab(): ReactElement {
 					<div className={'text-neutral-600'}>
 						<p>{'Vote to direct future YFI rewards to a particular gauge.'}</p>
 						<br />
-						<p>{'If you prefer your democracy on the representative side, you can delegate your vote to another address.'}</p>
+						<p>
+							{
+								'If you prefer your democracy on the representative side, you can delegate your vote to another address.'
+							}
+						</p>
 					</div>
 				</div>
 
@@ -73,7 +71,7 @@ export function VoteTab(): ReactElement {
 						className={'w-full md:mt-7'}
 						onClick={handleExecuteDelegateVote}
 						isBusy={delegateVoteStatus.pending}
-						isDisabled={!isActive || !isValidNetwork || !isValidDelegateAddress || delegateVoteStatus.pending}>
+						isDisabled={!isActive || !isValidDelegateAddress || delegateVoteStatus.pending}>
 						{'Submit'}
 					</Button>
 				</div>

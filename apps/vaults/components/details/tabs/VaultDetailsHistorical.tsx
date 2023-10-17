@@ -16,7 +16,13 @@ import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TGraphData, TMessariGraphData} from '@common/types/types';
 
-export function VaultDetailsHistorical({currentVault, harvestData}: {currentVault: TYDaemonVault; harvestData: TGraphData[]}): ReactElement {
+export function VaultDetailsHistorical({
+	currentVault,
+	harvestData
+}: {
+	currentVault: TYDaemonVault;
+	harvestData: TGraphData[];
+}): ReactElement {
 	const isMounted = useIsMounted();
 	const [selectedViewIndex, set_selectedViewIndex] = useState(0);
 

@@ -4,7 +4,8 @@ import {useSessionStorage} from '@yearn-finance/web-lib/hooks/useSessionStorage'
 
 import type {ReactElement} from 'react';
 
-export const ALL_CATEGORIES = '["Holdings","Crypto Vaults","Stables Vaults","Curve Vaults","Balancer Vaults","Boosted Vaults","Velodrome Vaults","Aerodrome Vaults"]';
+export const ALL_CATEGORIES =
+	'["Holdings","Crypto Vaults","Stables Vaults","Curve Vaults","Balancer Vaults","Boosted Vaults","Velodrome Vaults","Aerodrome Vaults"]';
 export const ALL_CHAINS = '[1,10,250,8453,42161]';
 
 export type TAppSettingsContext = {
@@ -33,7 +34,11 @@ const defaultProps: TAppSettingsContext = {
 };
 
 const AppSettingsContext = createContext<TAppSettingsContext>(defaultProps);
-export const AppSettingsContextApp = memo(function AppSettingsContextApp({children}: {children: ReactElement}): ReactElement {
+export const AppSettingsContextApp = memo(function AppSettingsContextApp({
+	children
+}: {
+	children: ReactElement;
+}): ReactElement {
 	/**
 	 * @deprecated Use use-query-params instead
 	 */

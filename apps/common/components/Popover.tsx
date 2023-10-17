@@ -28,7 +28,8 @@ export function Popover(): ReactElement {
 	const {address, chainID, ens, lensProtocolHandle, isWalletLedger, isWalletSafe} = useWeb3();
 	const router = useRouter();
 	const {value: hasPopover, set: set_hasPopover} = useLocalStorageValue<boolean>('yearn.fi/feedback-popover');
-	const {value: nextSubmissionTime, set: set_nextSubmissionTime} = useLocalStorageValue<number>('yearn.fi/popover-cooling-off');
+	const {value: nextSubmissionTime, set: set_nextSubmissionTime} =
+		useLocalStorageValue<number>('yearn.fi/popover-cooling-off');
 	const {styles, attributes} = usePopper(referenceElement, popperElement, {
 		modifiers: [{name: 'offset', options: {offset: [0, 10]}}],
 		placement: 'bottom-end'
@@ -70,7 +71,9 @@ export function Popover(): ReactElement {
 				`\n*Telegram:* ${telegramHandle}`,
 				description,
 				'\n*👀 - Info:*',
-				reporter ? `\t\t\t\tFrom: [${reporter}](https://etherscan.io/address/${address})` : '\t\t\t\tFrom: [wallet-not-connected]',
+				reporter
+					? `\t\t\t\tFrom: [${reporter}](https://etherscan.io/address/${address})`
+					: '\t\t\t\tFrom: [wallet-not-connected]',
 				`\t\t\t\tChain: ${chainID}`,
 				`\t\t\t\tWallet: ${isWalletLedger ? 'ledger' : isWalletSafe ? 'safe' : connector?.id || 'Unknown'}`,
 				`\t\t\t\tOrigin: [${router.asPath}](https://yearn.fi/${router.asPath})`
@@ -88,7 +91,9 @@ export function Popover(): ReactElement {
 		<Portal>
 			<PopoverHeadlessUI className={'relative z-50'}>
 				<PopoverHeadlessUI.Button
-					className={'fixed bottom-5 right-5 flex h-10 w-10 items-center justify-center rounded-full bg-orange-500'}
+					className={
+						'fixed bottom-5 right-5 flex h-10 w-10 items-center justify-center rounded-full bg-orange-500'
+					}
 					ref={set_referenceElement}>
 					<MessageIcon />
 				</PopoverHeadlessUI.Button>
@@ -106,7 +111,10 @@ export function Popover(): ReactElement {
 						style={styles.popper}
 						{...attributes.popper}>
 						{({close}): ReactElement => (
-							<div className={'flex flex-col space-y-2 overflow-hidden rounded-lg border border-neutral-300/50 bg-neutral-0 p-6 pb-3 shadow shadow-transparent'}>
+							<div
+								className={
+									'flex flex-col space-y-2 overflow-hidden rounded-lg border border-neutral-300/50 bg-neutral-0 p-6 pb-3 shadow shadow-transparent'
+								}>
 								{isCoolingOff && <small>{`You can submit another report in ${timeLeft}`}</small>}
 								<select
 									name={'type'}
@@ -145,12 +153,17 @@ export function Popover(): ReactElement {
 										{"If you don't have telegram please "}
 										<Link href={'https://discord.gg/yearn'}>{'join our discord'}</Link>
 										{' and ask in '}
-										<Link href={'https://discord.com/channels/734804446353031319/734811808401063966'}>{'#support-questions'}</Link>
+										<Link
+											href={'https://discord.com/channels/734804446353031319/734811808401063966'}>
+											{'#support-questions'}
+										</Link>
 										{', admins will never dm first.'}
 									</p>
 								</label>
 								<button
-									disabled={!description || description.length < 10 || isCoolingOff || isSubmitDisabled}
+									disabled={
+										!description || description.length < 10 || isCoolingOff || isSubmitDisabled
+									}
 									className={
 										'relative h-8 cursor-pointer items-center justify-center border border-transparent bg-neutral-900 px-2 text-xs text-neutral-0 transition-all hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-40'
 									}
@@ -158,12 +171,18 @@ export function Popover(): ReactElement {
 									{!isCoolingOff ? 'Submit' : `Please wait ${timeLeft}`}
 								</button>
 								<label className={'max-w-xs items-center justify-end pt-2'}>
-									<p className={'text-right text-xs italic text-neutral-200'}>{'Address and screenshot of page will be attached'}</p>
-									<p className={'text-right text-xs italic text-neutral-200'}>{'For internal use only'}</p>
+									<p className={'text-right text-xs italic text-neutral-200'}>
+										{'Address and screenshot of page will be attached'}
+									</p>
+									<p className={'text-right text-xs italic text-neutral-200'}>
+										{'For internal use only'}
+									</p>
 								</label>
 								<label className={'flex cursor-pointer items-center justify-end'}>
 									<button
-										className={'text-right text-xs text-neutral-200 underline transition-colors hover:text-neutral-400'}
+										className={
+											'text-right text-xs text-neutral-200 underline transition-colors hover:text-neutral-400'
+										}
 										onClick={(): void => set_hasPopover(!hasPopover)}>
 										{'Hide me forever'}
 									</button>

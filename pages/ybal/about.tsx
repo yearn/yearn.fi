@@ -1,7 +1,12 @@
 import {useState} from 'react';
 import {Balancer} from 'react-wrap-balancer';
 import {Button} from '@yearn-finance/web-lib/components/Button';
-import {LPYBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, YBAL_TOKEN_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {
+	LPYBAL_TOKEN_ADDRESS,
+	STYBAL_TOKEN_ADDRESS,
+	YBAL_TOKEN_ADDRESS,
+	ZAP_YEARN_VE_CRV_ADDRESS
+} from '@yearn-finance/web-lib/utils/constants';
 import SettingsOverwrite from '@common/components/SettingsOverwrite';
 import {useYBal} from '@yBal/contexts/useYBal';
 import {Wrapper} from '@yBal/Wrapper';
@@ -137,7 +142,11 @@ export function AboutContent(): ReactElement {
 				</div>
 				<div aria-label={'Don’t get caught slippin’ details'}>
 					<Balancer>
-						<p className={'pb-4 text-neutral-600'}>{'Slippage is set to 1% and hidden by default to streamline the experience for the average user.'}</p>
+						<p className={'pb-4 text-neutral-600'}>
+							{
+								'Slippage is set to 1% and hidden by default to streamline the experience for the average user.'
+							}
+						</p>
 						<p className={'pb-4 text-neutral-600'}>
 							{'For advanced apes users worried about MEV we advise using '}
 							<a
@@ -150,7 +159,9 @@ export function AboutContent(): ReactElement {
 							{'.'}
 						</p>
 						<p className={'text-neutral-600'}>
-							{'If the above sentence causes your brain to wrinkle and eyes to glaze over, then you do not need to worry about this step. '}
+							{
+								'If the above sentence causes your brain to wrinkle and eyes to glaze over, then you do not need to worry about this step. '
+							}
 						</p>
 					</Balancer>
 				</div>
@@ -161,14 +172,19 @@ export function AboutContent(): ReactElement {
 						{'Slippage tolerance'}
 					</label>
 					<div className={'flex flex-row space-x-2'}>
-						<div className={'bg-neutral-1000 border-neutral-700py-4 flex h-10 w-40 min-w-[72px] items-center border-2 px-0 md:min-w-[160px]'}>
+						<div
+							className={
+								'bg-neutral-1000 border-neutral-700py-4 flex h-10 w-40 min-w-[72px] items-center border-2 px-0 md:min-w-[160px]'
+							}>
 							<input
 								id={'slippageTolerance'}
 								type={'number'}
 								min={0}
 								step={0.1}
 								max={100}
-								className={'h-10 w-full overflow-x-scroll border-none bg-transparent p-2 text-right outline-none scrollbar-none'}
+								className={
+									'h-10 w-full overflow-x-scroll border-none bg-transparent p-2 text-right outline-none scrollbar-none'
+								}
 								value={localSlippage}
 								onChange={(e): void => {
 									set_localSlippage(parseFloat(e.target.value) || 0);

@@ -8,7 +8,11 @@ import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {BIG_ZERO, ETH_TOKEN_ADDRESS, YFI_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatBigNumberAsAmount, toNormalizedBN, toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {
+	formatBigNumberAsAmount,
+	toNormalizedBN,
+	toNormalizedValue
+} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
@@ -25,9 +29,19 @@ export function RedeemTab(): ReactElement {
 	const [redeemAmount, set_redeemAmount] = useState(toNormalizedBN(0));
 	const {provider, address, isActive} = useWeb3();
 	const {refresh: refreshBalances} = useWallet();
-	const {getRequiredEth, price: optionPrice, positions, allowances, isLoading: isLoadingOption, refresh} = useOption();
+	const {
+		getRequiredEth,
+		price: optionPrice,
+		positions,
+		allowances,
+		isLoading: isLoadingOption,
+		refresh
+	} = useOption();
 	const clearLockAmount = (): void => set_redeemAmount(toNormalizedBN(0));
-	const refreshData = useCallback((): unknown => Promise.all([refresh(), refreshBalances()]), [refresh, refreshBalances]);
+	const refreshData = useCallback(
+		(): unknown => Promise.all([refresh(), refreshBalances()]),
+		[refresh, refreshBalances]
+	);
 	const onTxSuccess = useCallback((): unknown => Promise.all([refreshData(), clearLockAmount()]), [refreshData]);
 	const [{status, result}, fetchRequiredEth] = useAsync(getRequiredEth, BIG_ZERO);
 	const ethPrice = usePrice({address: ETH_TOKEN_ADDRESS, chainID: 1}); //VeYFI is on ETH mainnet only
@@ -122,8 +136,20 @@ export function RedeemTab(): ReactElement {
 					<Button
 						className={'w-full md:mt-7'}
 						onClick={async (): Promise<void> => (isApproved ? handleRedeem() : handleApproveRedeem())}
-						isBusy={isLoadingOption || approveRedeemStatus.pending || redeemStatus.pending || status === 'loading'}
-						isDisabled={!isActive || !isValidRedeemAmount || status === 'loading' || status === 'error' || !redeemStatus.none || !approveRedeemStatus.none}>
+						isBusy={
+							isLoadingOption ||
+							approveRedeemStatus.pending ||
+							redeemStatus.pending ||
+							status === 'loading'
+						}
+						isDisabled={
+							!isActive ||
+							!isValidRedeemAmount ||
+							status === 'loading' ||
+							status === 'error' ||
+							!redeemStatus.none ||
+							!approveRedeemStatus.none
+						}>
 						{isApproved ? 'Redeem' : 'Approve'}
 					</Button>
 				</div>

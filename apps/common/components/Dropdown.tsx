@@ -31,7 +31,11 @@ const DropdownOption = (option: TDropdownOption): ReactElement => {
 					)}
 					<div>
 						<p className={`font-normal text-neutral-900 ${icon ? 'pl-2' : 'pl-0'}`}>{label}</p>
-						{description && <p className={`text-xxs font-normal text-neutral-600 ${icon ? 'pl-2' : 'pl-0'}`}>{description}</p>}
+						{description && (
+							<p className={`text-xxs font-normal text-neutral-600 ${icon ? 'pl-2' : 'pl-0'}`}>
+								{description}
+							</p>
+						)}
 					</div>
 				</div>
 			)}
@@ -76,12 +80,22 @@ export type TDropdownProps = {
 	className?: string;
 };
 
-export const Dropdown = ({selected, options, onChange, label, legend, isDisabled, className}: TDropdownProps): ReactElement => {
+export const Dropdown = ({
+	selected,
+	options,
+	onChange,
+	label,
+	legend,
+	isDisabled,
+	className
+}: TDropdownProps): ReactElement => {
 	const [isOpen, set_isOpen] = useThrottledState(false, 400);
 	const [search, set_search] = useState('');
 
 	const isSearching = search !== '';
-	const filteredOptions = isSearching ? options.filter(({label}): boolean => label.toLowerCase().includes(search.toLowerCase())) : options;
+	const filteredOptions = isSearching
+		? options.filter(({label}): boolean => label.toLowerCase().includes(search.toLowerCase()))
+		: options;
 
 	return (
 		<div className={className}>
@@ -136,7 +150,9 @@ export const Dropdown = ({selected, options, onChange, label, legend, isDisabled
 											isDisabled ? 'text-neutral-600' : 'text-neutral-900'
 										)}>
 										<Combobox.Input
-											className={'w-full cursor-default overflow-x-scroll border-none bg-transparent p-0 outline-none scrollbar-none'}
+											className={
+												'w-full cursor-default overflow-x-scroll border-none bg-transparent p-0 outline-none scrollbar-none'
+											}
 											displayValue={(option?: TDropdownOption): string => option?.label ?? '-'}
 											spellCheck={false}
 											onChange={(event): void => {
@@ -151,7 +167,9 @@ export const Dropdown = ({selected, options, onChange, label, legend, isDisabled
 								<div className={'absolute right-2 md:right-3'}>
 									<IconChevron
 										aria-hidden={'true'}
-										className={`h-6 w-6 transition-transform ${isOpen ? '-rotate-180' : 'rotate-0'}`}
+										className={`h-6 w-6 transition-transform ${
+											isOpen ? '-rotate-180' : 'rotate-0'
+										}`}
 									/>
 								</div>
 							</Combobox.Button>

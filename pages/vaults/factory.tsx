@@ -85,7 +85,9 @@ function Factory(): ReactElement {
 			contracts: calls,
 			chainId: YFACTORY_SUPPORTED_NETWORK
 		});
-		return _gaugesFromYearn.filter((_gauge: TCurveGaugeFromYearn, index: number): boolean => decodeAsBoolean(canCreateVaults[index]));
+		return _gaugesFromYearn.filter((_gauge: TCurveGaugeFromYearn, index: number): boolean =>
+			decodeAsBoolean(canCreateVaults[index])
+		);
 	}, []);
 
 	useEffect((): void => {
@@ -126,30 +128,31 @@ function Factory(): ReactElement {
 	 ** Name and symbol from the Curve API are not the one we want to display.
 	 ** We need to fetch the name and symbol from the gauge contract.
 	 **************************************************************************/
-	const [{result: gaugeDisplayData, status}, fetchGaugeDisplayDataAction] = useAsync(async function fetchGaugeDisplayData(
-		_selectedOption: TDropdownGaugeOption
-	): Promise<TGaugeDisplayData> {
-		const baseContract = {
-			address: _selectedOption.value.gaugeAddress,
-			abi: erc20ABI
-		};
-		const results = await multicall({
-			contracts: [
-				{...baseContract, functionName: 'name'},
-				{...baseContract, functionName: 'symbol'}
-			],
-			chainId: YFACTORY_SUPPORTED_NETWORK
-		});
+	const [{result: gaugeDisplayData, status}, fetchGaugeDisplayDataAction] = useAsync(
+		async function fetchGaugeDisplayData(_selectedOption: TDropdownGaugeOption): Promise<TGaugeDisplayData> {
+			const baseContract = {
+				address: _selectedOption.value.gaugeAddress,
+				abi: erc20ABI
+			};
+			const results = await multicall({
+				contracts: [
+					{...baseContract, functionName: 'name'},
+					{...baseContract, functionName: 'symbol'}
+				],
+				chainId: YFACTORY_SUPPORTED_NETWORK
+			});
 
-		const name = decodeAsString(results[0]);
-		const symbol = decodeAsString(results[1]);
-		return {
-			name: name.replace('Curve.fi', '').replace('Gauge Deposit', '') || _selectedOption.value.name,
-			symbol: symbol.replace('-gauge', '').replace('-f', '') || _selectedOption.value.name,
-			poolAddress: _selectedOption.value.poolAddress,
-			gaugeAddress: _selectedOption.value.gaugeAddress
-		};
-	}, undefined);
+			const name = decodeAsString(results[0]);
+			const symbol = decodeAsString(results[1]);
+			return {
+				name: name.replace('Curve.fi', '').replace('Gauge Deposit', '') || _selectedOption.value.name,
+				symbol: symbol.replace('-gauge', '').replace('-f', '') || _selectedOption.value.name,
+				poolAddress: _selectedOption.value.poolAddress,
+				gaugeAddress: _selectedOption.value.gaugeAddress
+			};
+		},
+		undefined
+	);
 
 	useEffect((): void => {
 		fetchGaugeDisplayDataAction.execute(selectedOption);
@@ -260,7 +263,9 @@ function Factory(): ReactElement {
 							<Renderable
 								shouldRender={status !== 'loading'}
 								fallback={loadingFallback()}>
-								<div className={'h-10 bg-neutral-200 p-2 text-neutral-600'}>{!gaugeDisplayData ? '' : `Curve ${gaugeDisplayData.name} Factory`}</div>
+								<div className={'h-10 bg-neutral-200 p-2 text-neutral-600'}>
+									{!gaugeDisplayData ? '' : `Curve ${gaugeDisplayData.name} Factory`}
+								</div>
 							</Renderable>
 						</div>
 
@@ -269,7 +274,9 @@ function Factory(): ReactElement {
 							<Renderable
 								shouldRender={status !== 'loading'}
 								fallback={loadingFallback()}>
-								<div className={'h-10 bg-neutral-200 p-2 text-neutral-600'}>{!gaugeDisplayData ? '' : `yvCurve-${gaugeDisplayData.symbol}-f`}</div>
+								<div className={'h-10 bg-neutral-200 p-2 text-neutral-600'}>
+									{!gaugeDisplayData ? '' : `yvCurve-${gaugeDisplayData.symbol}-f`}
+								</div>
 							</Renderable>
 						</div>
 
@@ -278,11 +285,19 @@ function Factory(): ReactElement {
 							<Renderable
 								shouldRender={status !== 'loading'}
 								fallback={loadingFallback()}>
-								<div className={'flex h-10 flex-row items-center justify-between bg-neutral-200 p-2 font-mono'}>
+								<div
+									className={
+										'flex h-10 flex-row items-center justify-between bg-neutral-200 p-2 font-mono'
+									}>
 									<Renderable shouldRender={!!gaugeDisplayData}>
-										<p className={'overflow-hidden text-ellipsis text-neutral-600'}>{toAddress(gaugeDisplayData?.poolAddress)}</p>
+										<p className={'overflow-hidden text-ellipsis text-neutral-600'}>
+											{toAddress(gaugeDisplayData?.poolAddress)}
+										</p>
 										<a
-											href={`${getNetwork(YFACTORY_SUPPORTED_NETWORK)?.defaultBlockExplorer}/address/${toAddress(gaugeDisplayData?.poolAddress)}`}
+											href={`${getNetwork(YFACTORY_SUPPORTED_NETWORK)
+												?.defaultBlockExplorer}/address/${toAddress(
+												gaugeDisplayData?.poolAddress
+											)}`}
 											target={'_blank'}
 											rel={'noreferrer'}
 											className={'ml-4 cursor-pointer text-neutral-900'}>
@@ -297,11 +312,19 @@ function Factory(): ReactElement {
 							<Renderable
 								shouldRender={status !== 'loading'}
 								fallback={loadingFallback()}>
-								<div className={'flex h-10 flex-row items-center justify-between bg-neutral-200 p-2 font-mono'}>
+								<div
+									className={
+										'flex h-10 flex-row items-center justify-between bg-neutral-200 p-2 font-mono'
+									}>
 									<Renderable shouldRender={!!gaugeDisplayData}>
-										<p className={'overflow-hidden text-ellipsis text-neutral-600'}>{toAddress(gaugeDisplayData?.gaugeAddress)}</p>
+										<p className={'overflow-hidden text-ellipsis text-neutral-600'}>
+											{toAddress(gaugeDisplayData?.gaugeAddress)}
+										</p>
 										<a
-											href={`${getNetwork(YFACTORY_SUPPORTED_NETWORK)?.defaultBlockExplorer}/address/${toAddress(gaugeDisplayData?.gaugeAddress)}`}
+											href={`${getNetwork(YFACTORY_SUPPORTED_NETWORK)
+												?.defaultBlockExplorer}/address/${toAddress(
+												gaugeDisplayData?.gaugeAddress
+											)}`}
 											target={'_blank'}
 											rel={'noreferrer'}
 											className={'ml-4 cursor-pointer text-neutral-900'}>

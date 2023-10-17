@@ -195,5 +195,16 @@ export const CRVYCRV2 = {
 	)
 };
 
-export const ZAP_OPTIONS_FROM: TDropdownOption[] = [CRV, STYCRV, YCRV, LPYCRV, LPYCRV2, CVXCRV, CRVYCRV, CRVYCRV2, YVBOOST, YVECRV];
+export const ZAP_OPTIONS_FROM: TDropdownOption[] = [
+	CRV,
+	STYCRV,
+	YCRV,
+	LPYCRV,
+	LPYCRV2,
+	CVXCRV,
+	CRVYCRV,
+	CRVYCRV2,
+	YVBOOST,
+	YVECRV
+];
 export const ZAP_OPTIONS_TO: TDropdownOption[] = [STYCRV, YCRV, LPYCRV2];

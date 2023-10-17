@@ -38,7 +38,13 @@ const defaultExpectedOutFetcher: TExpectedOutFetcher = {
 	allowance: toBigInt(0)
 };
 
-export function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauge; onClose: VoidFunction}): ReactElement {
+export function GaugeBribeModal({
+	currentGauge,
+	onClose
+}: {
+	currentGauge: TCurveGauge;
+	onClose: VoidFunction;
+}): ReactElement {
 	const {address, provider, isActive, openLoginModal} = useWeb3();
 	const {refresh} = useBribes();
 	const {prices} = useYearn();
@@ -138,7 +144,12 @@ export function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGa
 				onClick={onAddReward}
 				className={'w-full'}
 				isBusy={txStatusAddReward.pending}
-				isDisabled={!isActive || isZeroAddress(tokenAddress) || isZero(amount.raw) || toBigInt(amount?.raw) > toBigInt(selectedToken?.raw)}>
+				isDisabled={
+					!isActive ||
+					isZeroAddress(tokenAddress) ||
+					isZero(amount.raw) ||
+					toBigInt(amount?.raw) > toBigInt(selectedToken?.raw)
+				}>
 				{'Deposit'}
 			</Button>
 		);
@@ -149,7 +160,9 @@ export function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGa
 			<div className={'relative z-20 col-span-6 flex flex-col space-y-1'}>
 				<div>
 					<b className={'text-3xl text-neutral-900'}>{`Offer bribe to ${currentGauge.name}`}</b>
-					<p className={'pt-4'}>{'Choose your reward token contract and reward amount to offer a bribe on your chosen gauge.'}</p>
+					<p className={'pt-4'}>
+						{'Choose your reward token contract and reward amount to offer a bribe on your chosen gauge.'}
+					</p>
 				</div>
 			</div>
 			<div className={'mt-6 grid grid-cols-12 gap-4'}>
@@ -167,7 +180,10 @@ export function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGa
 									value={tokenAddress}
 									onChange={(e: ChangeEvent<HTMLInputElement>): void => {
 										const {value} = e.target;
-										if (value === '' || value.match(/^(0[x]{0,1})[a-fA-F0-9]{0,40}/gm)?.includes(value)) {
+										if (
+											value === '' ||
+											value.match(/^(0[x]{0,1})[a-fA-F0-9]{0,40}/gm)?.includes(value)
+										) {
 											if (isZeroAddress(value)) {
 												set_tokenAddress(ZERO_ADDRESS);
 											} else {
@@ -192,7 +208,9 @@ export function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGa
 									disabled={!isActive}
 									value={amount.normalized}
 									onChange={(e: ChangeEvent<HTMLInputElement>): void => {
-										set_amount(handleInputChangeEventValue(e.target.value, selectedToken?.decimals || 18));
+										set_amount(
+											handleInputChangeEventValue(e.target.value, selectedToken?.decimals || 18)
+										);
 									}}
 								/>
 								<button
@@ -202,7 +220,9 @@ export function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGa
 											normalized: selectedToken?.normalized || 0
 										});
 									}}
-									className={'cursor-pointer bg-neutral-900 px-2 py-1 text-xs text-neutral-0 transition-colors hover:bg-neutral-700'}>
+									className={
+										'cursor-pointer bg-neutral-900 px-2 py-1 text-xs text-neutral-0 transition-colors hover:bg-neutral-700'
+									}>
 									{'Max'}
 								</button>
 							</div>
@@ -212,17 +232,26 @@ export function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGa
 					<div className={'space-y-1 border-t border-neutral-200 bg-neutral-0 py-6'}>
 						<div className={'flex flex-row items-center justify-between'}>
 							<p className={'text-sm text-neutral-400'}>{'Token'}</p>
-							<p className={'text-base tabular-nums text-neutral-900'}>{selectedToken ? `${selectedToken?.name} (${selectedToken?.symbol})` : '-'}</p>
+							<p className={'text-base tabular-nums text-neutral-900'}>
+								{selectedToken ? `${selectedToken?.name} (${selectedToken?.symbol})` : '-'}
+							</p>
 						</div>
 						<div className={'flex flex-row items-center justify-between'}>
 							<p className={'text-sm text-neutral-400'}>{'Value'}</p>
 							<p className={'font-number text-base text-neutral-900'}>
-								{selectedToken ? formatCounterValue(amount?.normalized || 0, Number(prices?.[toAddress(tokenAddress)] || 0) / 1000000) : '-'}
+								{selectedToken
+									? formatCounterValue(
+											amount?.normalized || 0,
+											Number(prices?.[toAddress(tokenAddress)] || 0) / 1000000
+									  )
+									: '-'}
 							</p>
 						</div>
 						<div className={'flex flex-row items-center justify-between'}>
 							<p className={'text-sm text-neutral-400'}>{'Amount'}</p>
-							<p className={'font-number text-sm text-neutral-900'}>{selectedToken ? `${amount.raw.toString()}` : '-'}</p>
+							<p className={'font-number text-sm text-neutral-900'}>
+								{selectedToken ? `${amount.raw.toString()}` : '-'}
+							</p>
 						</div>
 						<div className={'flex flex-row items-center justify-between'}>
 							<p className={'text-sm text-neutral-400'}>{'Gauge'}</p>

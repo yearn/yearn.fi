@@ -26,7 +26,10 @@ export function Harvests(): ReactElement {
 
 	return (
 		<div className={'col-span-12 flex w-full flex-col bg-neutral-100'}>
-			<div className={'flex flex-row items-center justify-between space-x-6 px-4 pb-2 pt-4 md:space-x-0 md:px-10 md:pb-8 md:pt-10'}>
+			<div
+				className={
+					'flex flex-row items-center justify-between space-x-6 px-4 pb-2 pt-4 md:space-x-0 md:px-10 md:pb-8 md:pt-10'
+				}>
 				<div className={'w-1/2 md:w-auto'}>
 					<h2 className={'text-lg font-bold md:text-3xl'}>{'Harvests'}</h2>
 				</div>
@@ -55,7 +58,10 @@ export function Harvests(): ReactElement {
 				<HarvestListHead />
 				{(filteredHarvests || [])
 					.filter((harvest: TYDaemonVaultHarvest): boolean => {
-						return !isZeroAddress(toAddress(harvest.vaultAddress)) && [STYBAL_TOKEN_ADDRESS, LPYBAL_TOKEN_ADDRESS].includes(toAddress(harvest.vaultAddress));
+						return (
+							!isZeroAddress(toAddress(harvest.vaultAddress)) &&
+							[STYBAL_TOKEN_ADDRESS, LPYBAL_TOKEN_ADDRESS].includes(toAddress(harvest.vaultAddress))
+						);
 					})
 					.map((harvest: TYDaemonVaultHarvest, index: number): ReactElement => {
 						return (

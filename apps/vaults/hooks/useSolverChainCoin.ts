@@ -81,7 +81,11 @@ export function useSolverChainCoin(): TSolverContext {
 	 ** need to approve the yvWrappedCoin to be used by the zap contract.
 	 **************************************************************************/
 	const onApprove = useCallback(
-		async (amount = MAX_UINT_256, txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>, onSuccess: () => Promise<void>): Promise<void> => {
+		async (
+			amount = MAX_UINT_256,
+			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
+			onSuccess: () => Promise<void>
+		): Promise<void> => {
 			assert(request?.current?.inputToken, 'Input token is not set');
 
 			const result = await approveERC20({
@@ -105,7 +109,10 @@ export function useSolverChainCoin(): TSolverContext {
 	 ** aka the vault underlying token, and then deposit it to the vault.
 	 **************************************************************************/
 	const onExecuteDeposit = useCallback(
-		async (txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>, onSuccess: () => Promise<void>): Promise<void> => {
+		async (
+			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
+			onSuccess: () => Promise<void>
+		): Promise<void> => {
 			assert(request.current, 'Request is not set');
 			assert(request.current.inputAmount, 'Input amount is not set');
 
@@ -129,7 +136,10 @@ export function useSolverChainCoin(): TSolverContext {
 	 ** yvETH to wETH, unwrap the wETH and send them to the user.
 	 **************************************************************************/
 	const onExecuteWithdraw = useCallback(
-		async (txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>, onSuccess: () => Promise<void>): Promise<void> => {
+		async (
+			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
+			onSuccess: () => Promise<void>
+		): Promise<void> => {
 			assert(request.current, 'Request is not set');
 			assert(request.current.inputAmount, 'Input amount is not set');
 

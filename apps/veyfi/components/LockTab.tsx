@@ -27,7 +27,13 @@ export function LockTab(): ReactElement {
 	const [lockTime, set_lockTime] = useState('');
 	const {provider, address, isActive} = useWeb3();
 	const {refresh: refreshBalances} = useWallet();
-	const {votingEscrow, positions, allowances, isLoading: isLoadingVotingEscrow, refresh: refreshVotingEscrow} = useVotingEscrow();
+	const {
+		votingEscrow,
+		positions,
+		allowances,
+		isLoading: isLoadingVotingEscrow,
+		refresh: refreshVotingEscrow
+	} = useVotingEscrow();
 	const tokenBalance = useBalance({address: toAddress(votingEscrow?.token), chainID: 1}); //veYFI is on ETH mainnet only
 	const hasLockedAmount = toBigInt(positions?.deposit?.underlyingBalance) > 0n;
 	const [approveLockStatus, set_approveLockStatus] = useState(defaultTxStatus);
@@ -120,7 +126,14 @@ export function LockTab(): ReactElement {
 	});
 
 	const isApproveDisabled = !isActive || isApproved || isLoadingVotingEscrow || !votingEscrow || !address;
-	const isLockDisabled = !isActive || !isApproved || !isValidLockAmount || !isValidLockTime || isLoadingVotingEscrow || !votingEscrow || !address;
+	const isLockDisabled =
+		!isActive ||
+		!isApproved ||
+		!isValidLockAmount ||
+		!isValidLockTime ||
+		isLoadingVotingEscrow ||
+		!votingEscrow ||
+		!address;
 	const txAction = !isApproved
 		? {
 				label: 'Approve',
@@ -149,7 +162,11 @@ export function LockTab(): ReactElement {
 				<div className={'mt-6 text-neutral-600'}>
 					<p>{'Lock your YFI for veYFI to take part in Yearn governance.'}</p>
 					<br />
-					<p>{'Please note, governance is currently the only use for veYFI until the full platform launches ‘soon’. Stay tuned anon.'}</p>
+					<p>
+						{
+							'Please note, governance is currently the only use for veYFI until the full platform launches ‘soon’. Stay tuned anon.'
+						}
+					</p>
 				</div>
 			</div>
 

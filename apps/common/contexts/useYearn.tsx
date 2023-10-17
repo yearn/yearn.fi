@@ -72,7 +72,10 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 	const {address, currentPartner} = useWeb3();
 	const [zapSlippage, set_zapSlippage] = useLocalStorage<number>('yearn.fi/zap-slippage', DEFAULT_SLIPPAGE);
 	const [zapProvider, set_zapProvider] = useLocalStorage<TSolver>('yearn.fi/zap-provider', Solver.enum.Cowswap);
-	const [isStakingOpBoostedVaults, set_isStakingOpBoostedVaults] = useLocalStorage<boolean>('yearn.fi/staking-op-boosted-vaults', true);
+	const [isStakingOpBoostedVaults, set_isStakingOpBoostedVaults] = useLocalStorage<boolean>(
+		'yearn.fi/staking-op-boosted-vaults',
+		true
+	);
 
 	useEffect((): void => {
 		if (result?.error?.code === 'ERR_NETWORK') {
@@ -140,20 +143,26 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 	}, [vaults]);
 
 	const vaultsMigrationsObject = useMemo((): TDict<TYDaemonVault> => {
-		const _migratableVaultsObject = (vaultsMigrations ?? []).reduce((acc: TDict<TYDaemonVault>, vault): TDict<TYDaemonVault> => {
-			if (toAddress(vault.address) !== toAddress(vault.migration.address)) {
-				acc[toAddress(vault.address)] = vault;
-			}
-			return acc;
-		}, {});
+		const _migratableVaultsObject = (vaultsMigrations ?? []).reduce(
+			(acc: TDict<TYDaemonVault>, vault): TDict<TYDaemonVault> => {
+				if (toAddress(vault.address) !== toAddress(vault.migration.address)) {
+					acc[toAddress(vault.address)] = vault;
+				}
+				return acc;
+			},
+			{}
+		);
 		return _migratableVaultsObject;
 	}, [vaultsMigrations]);
 
 	const vaultsRetiredObject = useMemo((): TDict<TYDaemonVault> => {
-		const _retiredVaultsObject = (vaultsRetired ?? []).reduce((acc: TDict<TYDaemonVault>, vault): TDict<TYDaemonVault> => {
-			acc[toAddress(vault.address)] = vault;
-			return acc;
-		}, {});
+		const _retiredVaultsObject = (vaultsRetired ?? []).reduce(
+			(acc: TDict<TYDaemonVault>, vault): TDict<TYDaemonVault> => {
+				acc[toAddress(vault.address)] = vault;
+				return acc;
+			},
+			{}
+		);
 		return _retiredVaultsObject;
 	}, [vaultsRetired]);
 
@@ -198,7 +207,9 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 	 ***************************************************************************/
 	const contextValue = useMemo(
 		(): TYearnContext => ({
-			currentPartner: currentPartner?.id ? toAddress(currentPartner.id) : toAddress(process.env.PARTNER_ID_ADDRESS),
+			currentPartner: currentPartner?.id
+				? toAddress(currentPartner.id)
+				: toAddress(process.env.PARTNER_ID_ADDRESS),
 			prices: pricesUpdated,
 			tokens: toTokens(tokens),
 			earned,

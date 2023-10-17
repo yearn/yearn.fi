@@ -43,12 +43,15 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 	const yfiPrice = useTokenPrice(YFI_ADDRESS);
 	const ethPrice = useTokenPrice(ETH_TOKEN_ADDRESS);
 
-	const [{result: price, status: fetchPriceStatus}, {execute: refreshPrice}] = useAsyncHookz(async (): Promise<number | undefined> => {
-		if (!isActive || provider) {
-			return;
-		}
-		return priceFetcher();
-	}, 0);
+	const [{result: price, status: fetchPriceStatus}, {execute: refreshPrice}] = useAsyncHookz(
+		async (): Promise<number | undefined> => {
+			if (!isActive || provider) {
+				return;
+			}
+			return priceFetcher();
+		},
+		0
+	);
 
 	const [{result: positions, status: fetchPositionsStatus}, {execute: refreshPositions}] = useAsyncHookz(
 		async (): Promise<TOptionPosition | undefined> => {
@@ -60,12 +63,15 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 		{balance: 0n}
 	);
 
-	const [{result: allowances, status: fetchAllowancesStatus}, {execute: refreshAllowances}] = useAsyncHookz(async (): Promise<TDict<bigint> | undefined> => {
-		if (!isActive || provider) {
-			return;
-		}
-		return allowancesFetcher();
-	}, {});
+	const [{result: allowances, status: fetchAllowancesStatus}, {execute: refreshAllowances}] = useAsyncHookz(
+		async (): Promise<TDict<bigint> | undefined> => {
+			if (!isActive || provider) {
+				return;
+			}
+			return allowancesFetcher();
+		},
+		{}
+	);
 
 	const refresh = useAsyncTrigger(async (): Promise<void> => {
 		refreshPrice();
@@ -126,7 +132,8 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 		});
 
 		return {
-			[allowanceKey(VEYFI_SUPPORTED_NETWORK, VEYFI_OYFI_ADDRESS, VEYFI_OPTIONS_ADDRESS, userAddress)]: oYFIAllowanceOptions
+			[allowanceKey(VEYFI_SUPPORTED_NETWORK, VEYFI_OYFI_ADDRESS, VEYFI_OPTIONS_ADDRESS, userAddress)]:
+				oYFIAllowanceOptions
 		};
 	}, [isActive, userAddress]);
 
@@ -136,10 +143,22 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 			price,
 			positions,
 			allowances: allowances ?? {},
-			isLoading: fetchPriceStatus === 'loading' || fetchPositionsStatus === 'loading' || fetchAllowancesStatus === 'loading',
+			isLoading:
+				fetchPriceStatus === 'loading' ||
+				fetchPositionsStatus === 'loading' ||
+				fetchAllowancesStatus === 'loading',
 			refresh
 		}),
-		[allowances, fetchAllowancesStatus, fetchPositionsStatus, fetchPriceStatus, getRequiredEth, positions, price, refresh]
+		[
+			allowances,
+			fetchAllowancesStatus,
+			fetchPositionsStatus,
+			fetchPriceStatus,
+			getRequiredEth,
+			positions,
+			price,
+			refresh
+		]
 	);
 
 	return <OptionContext.Provider value={contextValue}>{children}</OptionContext.Provider>;

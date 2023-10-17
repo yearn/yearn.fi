@@ -62,14 +62,22 @@ function QASelect(props: TQASelect): ReactElement {
 			<Renderable
 				fallback={renderMultipleOptionsFallback()}
 				shouldRender={isZero(options.length)}>
-				<div className={'flex h-10 w-full items-center justify-between bg-neutral-0 px-2 text-base text-neutral-900 md:px-3'}>
+				<div
+					className={
+						'flex h-10 w-full items-center justify-between bg-neutral-0 px-2 text-base text-neutral-900 md:px-3'
+					}>
 					<div className={'relative flex flex-row items-center'}>
 						<div
 							key={selected?.value}
 							className={'h-6 w-6 flex-none rounded-full'}>
 							{selected?.icon}
 						</div>
-						<p className={'overflow-x-hidden text-ellipsis whitespace-nowrap pl-2 font-normal text-neutral-900 scrollbar-none'}>{selected?.symbol}</p>
+						<p
+							className={
+								'overflow-x-hidden text-ellipsis whitespace-nowrap pl-2 font-normal text-neutral-900 scrollbar-none'
+							}>
+							{selected?.symbol}
+						</p>
 					</div>
 				</div>
 			</Renderable>
@@ -96,7 +104,8 @@ function QASwitch(): ReactElement {
 }
 
 function QAInput(props: TQAInput): ReactElement {
-	const {className, label, legend, value, isDisabled, isMaxDisabled, onChange, onSetMaxAmount, type, ...inputProps} = props;
+	const {className, label, legend, value, isDisabled, isMaxDisabled, onChange, onSetMaxAmount, type, ...inputProps} =
+		props;
 
 	return (
 		<div className={className ? className : 'w-full space-y-2'}>
@@ -124,7 +133,9 @@ function QAInput(props: TQAInput): ReactElement {
 						<button
 							onClick={!isMaxDisabled ? onSetMaxAmount : undefined}
 							className={`ml-2 px-2 py-1 text-xs font-normal text-neutral-0 transition-colors ${
-								isMaxDisabled ? 'cursor-not-allowed bg-neutral-300 hover:bg-neutral-300' : 'cursor-pointer bg-neutral-900 hover:bg-neutral-700'
+								isMaxDisabled
+									? 'cursor-not-allowed bg-neutral-300 hover:bg-neutral-300'
+									: 'cursor-pointer bg-neutral-900 hover:bg-neutral-700'
 							}`}
 							disabled={isMaxDisabled}>
 							{'Max'}
@@ -132,7 +143,9 @@ function QAInput(props: TQAInput): ReactElement {
 					)}
 				</div>
 			</div>
-			<legend className={'font-number mr-1 text-end text-xs text-neutral-600 md:mr-0 md:text-start'}>{legend}</legend>
+			<legend className={'font-number mr-1 text-end text-xs text-neutral-600 md:mr-0 md:text-start'}>
+				{legend}
+			</legend>
 		</div>
 	);
 }

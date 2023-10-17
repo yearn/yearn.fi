@@ -20,7 +20,13 @@ export type TGraphForStrategyReportsProps = {
 	height?: number;
 };
 
-export function GraphForStrategyReports({strategy, vaultChainID, vaultDecimals, vaultTicker, height = 127}: TGraphForStrategyReportsProps): ReactElement {
+export function GraphForStrategyReports({
+	strategy,
+	vaultChainID,
+	vaultDecimals,
+	vaultTicker,
+	height = 127
+}: TGraphForStrategyReportsProps): ReactElement {
 	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: vaultChainID});
 
 	const {data: reports} = useFetch<TYDaemonReports>({
@@ -117,11 +123,18 @@ export function GraphForStrategyReports({strategy, vaultChainID, vaultDecimals, 
 									</div>
 									<div className={'flex flex-row items-center justify-between'}>
 										<p className={'text-xs text-neutral-600'}>{'APR'}</p>
-										<b className={'font-number text-xs font-bold text-neutral-900'}>{formatPercent(Number(value))}</b>
+										<b className={'font-number text-xs font-bold text-neutral-900'}>
+											{formatPercent(Number(value))}
+										</b>
 									</div>
 									<div className={'flex flex-row items-center justify-between'}>
-										<p className={'text-xs text-neutral-600'}>{normalizedDiff > 0 ? 'Gain' : 'Loss'}</p>
-										<b className={'font-number text-xs font-bold text-neutral-900'}>{`${formatAmount(normalizedDiff)} ${vaultTicker}`}</b>
+										<p className={'text-xs text-neutral-600'}>
+											{normalizedDiff > 0 ? 'Gain' : 'Loss'}
+										</p>
+										<b
+											className={
+												'font-number text-xs font-bold text-neutral-900'
+											}>{`${formatAmount(normalizedDiff)} ${vaultTicker}`}</b>
 									</div>
 								</div>
 							);

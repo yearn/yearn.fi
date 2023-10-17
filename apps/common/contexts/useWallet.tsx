@@ -156,7 +156,12 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 				{chainID: 10, address: OPT_YVVELO_USDC_STAKING_CONTRACT, symbol: 'yvVELO-USDC', decimals: 18},
 				{chainID: 10, address: OPT_YVMAI_ALUSD_STAKING_CONTRACT, symbol: 'yvVelo-MAI-alUSD', decimals: 18},
 				{chainID: 10, address: OPT_YVALUSD_FRAX_STAKING_CONTRACT, symbol: 'yvVelo-alUSD-FRAX', decimals: 18},
-				{chainID: 10, address: OPT_YVALETH_FRXETH_STAKING_CONTRACT, symbol: 'yvVelo-alETH-frxETH', decimals: 18},
+				{
+					chainID: 10,
+					address: OPT_YVALETH_FRXETH_STAKING_CONTRACT,
+					symbol: 'yvVelo-alETH-frxETH',
+					decimals: 18
+				},
 				{chainID: 10, address: OPT_YVALETH_WETH_STAKING_CONTRACT, symbol: 'yvVelo-alETH-WETH', decimals: 18},
 				{chainID: 10, address: OPT_YVERN_DOLA_STAKING_CONTRACT, symbol: 'yvVelo-ERN-DOLA', decimals: 18},
 				{chainID: 10, address: OPT_YVERN_LUSD_STAKING_CONTRACT, symbol: 'yvVelo-ERN-LUSD', decimals: 18},
@@ -256,8 +261,10 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 			const chainID = Number(chainIDStr);
 			for (const [tokenAddress] of Object.entries(perChain)) {
 				if (STACKING_TO_VAULT[tokenAddress] && _tokens?.[chainID]?.[STACKING_TO_VAULT[tokenAddress]]) {
-					_tokens[chainID][tokenAddress].stakingBalance = _tokens[chainID][STACKING_TO_VAULT[tokenAddress]].balance;
-					_tokens[chainID][tokenAddress].stakingValue = _tokens[chainID][STACKING_TO_VAULT[tokenAddress]].value;
+					_tokens[chainID][tokenAddress].stakingBalance =
+						_tokens[chainID][STACKING_TO_VAULT[tokenAddress]].balance;
+					_tokens[chainID][tokenAddress].stakingValue =
+						_tokens[chainID][STACKING_TO_VAULT[tokenAddress]].value;
 				}
 			}
 		}
@@ -349,7 +356,17 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 					return isEnabled;
 				})
 		}),
-		[getToken, getBalance, getPrice, tokens, nonce, cumulatedValueInVaults, isLoading, shouldUseForknetBalances, onRefresh]
+		[
+			getToken,
+			getBalance,
+			getPrice,
+			tokens,
+			nonce,
+			cumulatedValueInVaults,
+			isLoading,
+			shouldUseForknetBalances,
+			onRefresh
+		]
 	);
 
 	return <WalletContext.Provider value={contextValue}>{children}</WalletContext.Provider>;

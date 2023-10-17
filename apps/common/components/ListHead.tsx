@@ -20,9 +20,23 @@ export type TListHead = {
 	onSort: (sortBy: string, sortDirection: TSortDirection) => void;
 };
 
-export function ListHead({items, dataClassName, wrapperClassName, tokenClassName, sortBy, sortDirection, onSort}: TListHead): ReactElement {
+export function ListHead({
+	items,
+	dataClassName,
+	wrapperClassName,
+	tokenClassName,
+	sortBy,
+	sortDirection,
+	onSort
+}: TListHead): ReactElement {
 	const toggleSortDirection = (newSortBy: string): TSortDirection => {
-		return sortBy === newSortBy ? (sortDirection === '' ? 'desc' : sortDirection === 'desc' ? 'asc' : 'desc') : 'desc';
+		return sortBy === newSortBy
+			? sortDirection === ''
+				? 'desc'
+				: sortDirection === 'desc'
+				? 'asc'
+				: 'desc'
+			: 'desc';
 	};
 
 	const renderChevron = useCallback(
@@ -33,7 +47,11 @@ export function ListHead({items, dataClassName, wrapperClassName, tokenClassName
 			if (shouldSortBy && sortDirection === 'asc') {
 				return <IconChevronPlain className={'yearn--sort-chevron rotate-180'} />;
 			}
-			return <IconChevronPlain className={'yearn--sort-chevron--off text-neutral-300 group-hover:text-neutral-500'} />;
+			return (
+				<IconChevronPlain
+					className={'yearn--sort-chevron--off text-neutral-300 group-hover:text-neutral-500'}
+				/>
+			);
 		},
 		[sortDirection]
 	);
