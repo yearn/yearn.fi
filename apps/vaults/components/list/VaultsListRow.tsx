@@ -162,6 +162,7 @@ export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): 
 		return <VaultHistoricalAPR currentVault={currentVault} />;
 	}
 
+	const hasZeroAPR = isZero(currentVault.apr?.netAPR) || Number(currentVault.apr?.netAPR.toFixed(2)) === 0;
 	return (
 		<div className={'flex flex-col text-right'}>
 			<b className={'yearn--table-data-section-item-value'}>
@@ -169,6 +170,7 @@ export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): 
 					shouldRender={!(currentVault.apr?.type === 'new' && isZero(currentVault.apr.forwardAPR.netAPR))}
 					fallback={'New'}>
 					<RenderAmount
+						shouldHideTooltip={hasZeroAPR}
 						value={currentVault.apr.forwardAPR.netAPR}
 						symbol={'percent'}
 						decimals={6}
