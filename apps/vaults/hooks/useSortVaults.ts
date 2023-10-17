@@ -11,7 +11,7 @@ import {numberSort, stringSort} from '@common/utils/sort';
 import type {TYDaemonVaults} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TSortDirection} from '@common/types/types';
 
-export type TPossibleSortBy = 'apr' | 'forwardAPR' | 'tvl' | 'name' | 'deposited' | 'available' | 'featuringScore';
+export type TPossibleSortBy = 'apr' | 'estAPR' | 'tvl' | 'name' | 'deposited' | 'available' | 'featuringScore';
 
 export function useSortVaults(
 	vaultList: TYDaemonVaults,
@@ -119,7 +119,7 @@ export function useSortVaults(
 		if (sortBy === 'name') {
 			return sortedByName();
 		}
-		if (sortBy === 'forwardAPR') {
+		if (sortBy === 'estAPR') {
 			return sortedByForwardAPR();
 		}
 		if (sortBy === 'apr') {

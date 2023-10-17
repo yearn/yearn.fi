@@ -133,7 +133,7 @@ export const WalletForZapAppContextApp = memo(function WalletForZapAppContextApp
 			getPrice,
 			refresh: refresh
 		}),
-		[zapTokens, listTokens, getToken, getBalance, getPrice, refresh, tokensList]
+		[listTokens, getToken, getBalance, getPrice, refresh, tokensList]
 	);
 
 	return <WalletForZap.Provider value={contextValue}>{children}</WalletForZap.Provider>;

@@ -19,23 +19,24 @@ export function useFilteredVaults(
 	);
 }
 
-export function useVaultFilter(): {
+export function useVaultFilter(
+	categories: string[],
+	chains: number[]
+): {
 	activeVaults: TYDaemonVault[];
 	retiredVaults: TYDaemonVault[];
 	migratableVaults: TYDaemonVault[];
 } {
 	const {vaults, vaultsMigrations, vaultsRetired} = useYearn();
 	const {getToken} = useWallet();
-	const {shouldHideDust, category, selectedChains} = useAppSettings();
-	const chainsFromJSON = useMemo((): number[] => JSON.parse(selectedChains || '[]') as number[], [selectedChains]);
-	const categoriesFromJSON = useMemo((): string[] => JSON.parse(category || '[]') as string[], [category]);
+	const {shouldHideDust} = useAppSettings();
 
 	const filterHoldingsCallback = useCallback(
 		(address: TAddress, chainID: number): boolean => {
 			const holding = getToken({address, chainID});
 
 			// [Optimism] Check if staked vaults have holdings
-			if (chainsFromJSON.includes(10)) {
+			if (chains.includes(10)) {
 				const stakedVaultAddress = STACKING_TO_VAULT[toAddress(address)];
 				const stakedHolding = getToken({address: stakedVaultAddress, chainID});
 				const hasValidStakedBalance = stakedHolding.balance.raw > 0n;
@@ -55,7 +56,7 @@ export function useVaultFilter(): {
 			}
 			return false;
 		},
-		[getToken, chainsFromJSON, shouldHideDust]
+		[getToken, chains, shouldHideDust]
 	);
 
 	const filterMigrationCallback = useCallback(
@@ -98,34 +99,34 @@ export function useVaultFilter(): {
 	const activeVaults = useDeepCompareMemo((): TYDaemonVault[] => {
 		let _vaultList: TYDaemonVault[] = [];
 
-		if (categoriesFromJSON.includes('Featured Vaults')) {
+		if (categories.includes('featured')) {
 			_vaultList.sort(
 				(a, b): number => (b.tvl.tvl || 0) * (b?.apr?.netAPR || 0) - (a.tvl.tvl || 0) * (a?.apr?.netAPR || 0)
 			);
 			_vaultList = _vaultList.slice(0, 10);
 		}
-		if (categoriesFromJSON.includes('Curve Vaults')) {
+		if (categories.includes('curve')) {
 			_vaultList = [..._vaultList, ...curveVaults];
 		}
-		if (categoriesFromJSON.includes('Balancer Vaults')) {
+		if (categories.includes('balancer')) {
 			_vaultList = [..._vaultList, ...balancerVaults];
 		}
-		if (categoriesFromJSON.includes('Velodrome Vaults')) {
+		if (categories.includes('velodrome')) {
 			_vaultList = [..._vaultList, ...velodromeVaults];
 		}
-		if (categoriesFromJSON.includes('Aerodrome Vaults')) {
+		if (categories.includes('aerodrome')) {
 			_vaultList = [..._vaultList, ...aerodromeVaults];
 		}
-		if (categoriesFromJSON.includes('Boosted Vaults')) {
+		if (categories.includes('boosted')) {
 			_vaultList = [..._vaultList, ...boostedVaults];
 		}
-		if (categoriesFromJSON.includes('Stables Vaults')) {
+		if (categories.includes('stables')) {
 			_vaultList = [..._vaultList, ...stablesVaults];
 		}
-		if (categoriesFromJSON.includes('Crypto Vaults')) {
+		if (categories.includes('crypto')) {
 			_vaultList = [..._vaultList, ...cryptoVaults];
 		}
-		if (categoriesFromJSON.includes('Holdings')) {
+		if (categories.includes('holdings')) {
 			_vaultList = [..._vaultList, ...holdingsVaults];
 		}
 
@@ -136,7 +137,7 @@ export function useVaultFilter(): {
 
 		return _vaultList;
 	}, [
-		categoriesFromJSON,
+		categories,
 		curveVaults,
 		balancerVaults,
 		velodromeVaults,

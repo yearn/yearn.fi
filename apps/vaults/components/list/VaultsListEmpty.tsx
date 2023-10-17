@@ -1,4 +1,4 @@
-import {ALL_CATEGORIES, ALL_CHAINS, useAppSettings} from '@vaults/contexts/useAppSettings';
+import {ALL_CATEGORIES_KEYS, ALL_CHAINS, useAppSettings} from '@vaults/contexts/useAppSettings';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 
@@ -9,14 +9,18 @@ export function VaultsListEmpty({
 	sortedVaultsToDisplay,
 	currentCategories,
 	currentChains,
+	onChangeCategories,
+	onChangeChains,
 	isLoading
 }: {
 	sortedVaultsToDisplay: TYDaemonVaults;
 	currentCategories: string[];
 	currentChains: number[];
+	onChangeCategories: (value: string[]) => void;
+	onChangeChains: (value: number[]) => void;
 	isLoading: boolean;
 }): ReactElement {
-	const {searchValue, category, set_category, set_selectedChains} = useAppSettings();
+	const {searchValue} = useAppSettings();
 
 	if (isLoading && isZero(sortedVaultsToDisplay.length)) {
 		return (
@@ -34,7 +38,7 @@ export function VaultsListEmpty({
 		!isLoading &&
 		isZero(sortedVaultsToDisplay.length) &&
 		currentCategories.length === 1 &&
-		currentCategories.includes('Holdings')
+		currentCategories.includes('holdings')
 	) {
 		return (
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
@@ -50,7 +54,7 @@ export function VaultsListEmpty({
 		return (
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center gap-4 px-10 py-2 md:w-3/4'}>
 				<b className={'text-center text-lg'}>{'No data, reeeeeeeeeeee'}</b>
-				{category === 'All Vaults' ? (
+				{currentCategories.length === ALL_CATEGORIES_KEYS.length ? (
 					<p className={'text-center text-neutral-600'}>{`The vault "${searchValue}" does not exist`}</p>
 				) : (
 					<>
@@ -60,8 +64,8 @@ export function VaultsListEmpty({
 						<Button
 							className={'w-full md:w-48'}
 							onClick={(): void => {
-								set_category(ALL_CATEGORIES);
-								set_selectedChains(ALL_CHAINS);
+								onChangeCategories(ALL_CATEGORIES_KEYS);
+								onChangeChains(ALL_CHAINS);
 							}}>
 							{'Search all vaults'}
 						</Button>
@@ -82,8 +86,8 @@ export function VaultsListEmpty({
 					<Button
 						className={'w-full md:w-48'}
 						onClick={(): void => {
-							set_category(ALL_CATEGORIES);
-							set_selectedChains(ALL_CHAINS);
+							onChangeCategories(ALL_CATEGORIES_KEYS);
+							onChangeChains(ALL_CHAINS);
 						}}>
 						{'Search all vaults'}
 					</Button>

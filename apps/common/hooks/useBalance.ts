@@ -22,7 +22,7 @@ export function useBalance({
 			return source?.[toAddress(address)] || toNormalizedBN(0);
 		}
 		return getBalance({address: toAddress(address), chainID: chainID});
-	}, [source, getBalance, address]);
+	}, [source, getBalance, address, chainID]);
 
 	return balance;
 }
