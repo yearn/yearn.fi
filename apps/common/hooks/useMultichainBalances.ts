@@ -159,7 +159,7 @@ async function getBalances(
  ** This hook can be used to fetch balance information for any ERC20 tokens.
  **************************************************************************/
 export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
-	const {address: userAddress, isActive, provider} = useWeb3();
+	const {address: userAddress, isActive} = useWeb3();
 	const chainID = useChainId();
 	const {onLoadStart, onLoadDone} = useUI();
 	const [nonce, set_nonce] = useState(0);
@@ -213,7 +213,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	 ** send in a worker.
 	 **************************************************************************/
 	const onUpdate = useCallback(async (): Promise<TChainTokens> => {
-		if (!userAddress || !provider) {
+		if (!userAddress) {
 			return {};
 		}
 		const tokenList = deserialize(stringifiedTokens) || [];
@@ -289,7 +289,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 		onLoadDone();
 
 		return updated;
-	}, [onLoadDone, onLoadStart, provider, stringifiedTokens, userAddress]);
+	}, [onLoadDone, onLoadStart, stringifiedTokens, userAddress]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** onUpdateSome takes a list of tokens and fetches the balances for each
@@ -400,7 +400,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	 ** to fetch the balances, preventing the UI to freeze.
 	 **************************************************************************/
 	useAsyncTrigger(async (): Promise<void> => {
-		if (!isActive || !userAddress || !provider) {
+		if (!isActive || !userAddress) {
 			return;
 		}
 		set_status({
@@ -439,7 +439,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 		}
 		onLoadDone();
 		set_status({...defaultStatus, isSuccess: true, isFetched: true});
-	}, [stringifiedTokens, isActive, userAddress, provider, onLoadStart, updateBalancesCall, onLoadDone]);
+	}, [stringifiedTokens, isActive, userAddress, onLoadStart, updateBalancesCall, onLoadDone]);
 
 	const contextValue = useMemo(
 		(): TUseBalancesRes => ({
