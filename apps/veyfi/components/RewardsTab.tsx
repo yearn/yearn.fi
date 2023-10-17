@@ -7,9 +7,9 @@ import {validateNetwork} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
-import {toBigInt, toNormalizedAmount} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
-import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {AmountInput} from '@common/components/AmountInput';
 import {Dropdown} from '@common/components/Dropdown';
@@ -27,7 +27,7 @@ export function RewardsTab(): ReactElement {
 	const refreshData = useCallback((): unknown => Promise.all([refreshGauges()]), [refreshGauges]);
 	const [claimStatus, set_claimStatus] = useState(defaultTxStatus);
 	const selectedGaugeAddress = toAddress(selectedGauge?.id);
-	const selectedGaugeRewards = toBigInt(positionsMap[selectedGaugeAddress]?.reward?.balance?.raw);
+	const selectedGaugeRewards = toNormalizedBN(toBigInt(positionsMap[selectedGaugeAddress]?.reward?.balance?.raw));
 
 	const onClaim = useCallback(async (): Promise<void> => {
 		const result = await GaugeActions.claimRewards({
@@ -74,16 +74,15 @@ export function RewardsTab(): ReactElement {
 					/>
 					<AmountInput
 						label={'Unclaimed rewards (dYFI)'}
-						amount={toNormalizedAmount(selectedGaugeRewards, 18)}
-						legend={formatCounterValue(toNormalizedAmount(selectedGaugeRewards, 18), optionPrice ?? 0)}
+						amount={selectedGaugeRewards}
+						legend={formatCounterValue(formatAmount(selectedGaugeRewards.normalized, 2, 2), optionPrice ?? 0)}
 						disabled
 					/>
 					<Button
 						className={'w-full md:mt-7'}
 						onClick={onClaim}
-						isDisabled={!isActive || !isValidNetwork || isZero(selectedGaugeRewards) || !claimStatus.none}
-						isBusy={claimStatus.pending}
-					>
+						isDisabled={!isActive || !isValidNetwork || toBigInt(selectedGaugeRewards.raw) === 0n || !claimStatus.none}
+						isBusy={claimStatus.pending}>
 						{'Claim'}
 					</Button>
 				</div>

@@ -1,5 +1,4 @@
 import {useCallback, useEffect, useMemo, useState} from 'react';
-import {formatUnits} from 'viem';
 import {useVotingEscrow} from '@veYFI/contexts/useVotingEscrow';
 import {getVotingPower} from '@veYFI/utils';
 import {increaseVeYFILockAmount, lockVeYFI} from '@veYFI/utils/actions';
@@ -21,6 +20,7 @@ import {useBalance} from '@common/hooks/useBalance';
 import {approveERC20} from '@common/utils/actions';
 
 import type {ReactElement} from 'react';
+import type {TNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import type {TMilliseconds} from '@yearn-finance/web-lib/utils/time';
 
 export function LockTab(): ReactElement {
@@ -40,8 +40,8 @@ export function LockTab(): ReactElement {
 		return positions?.unlockTime || Date.now() + fromWeeks(toTime(lockTime));
 	}, [positions?.unlockTime, lockTime]);
 
-	const votingPower = useMemo((): bigint => {
-		return getVotingPower(toBigInt(positions?.deposit?.underlyingBalance) + toBigInt(lockAmount.raw), unlockTime);
+	const votingPower = useMemo((): TNormalizedBN => {
+		return toNormalizedBN(getVotingPower(toBigInt(positions?.deposit?.underlyingBalance) + toBigInt(lockAmount.raw), unlockTime), 18);
 	}, [positions?.deposit?.underlyingBalance, lockAmount, unlockTime]);
 
 	const refreshData = useCallback(async (): Promise<void> => {
@@ -163,8 +163,8 @@ export function LockTab(): ReactElement {
 				<div className={'mt-0 grid grid-cols-1 gap-6 md:mt-14 md:grid-cols-2'}>
 					<AmountInput
 						label={'YFI'}
-						amount={lockAmount.normalized}
-						maxAmount={formatAmount(tokenBalance.normalized, 0, 6)}
+						amount={lockAmount}
+						maxAmount={tokenBalance}
 						onAmountChange={(amount): void => set_lockAmount(handleInputChangeEventValue(amount, 18))}
 						onLegendClick={(): void => set_lockAmount(tokenBalance)}
 						onMaxClick={(): void => set_lockAmount(tokenBalance)}
@@ -172,9 +172,16 @@ export function LockTab(): ReactElement {
 						error={lockAmountError} />
 					<AmountInput
 						label={'Current lock period (weeks)'}
-						amount={isZero(toTime(lockTime)) ? '' : Math.floor(toTime(lockTime)).toString()}
-						onAmountChange={set_lockTime}
-						maxAmount={(MAX_LOCK_TIME + 1).toString()}
+						amount={toNormalizedBN(isZero(toTime(lockTime)) ? '' : Math.floor(toTime(lockTime)).toString(), 0)}
+						onAmountChange={(v: string): void => {
+							const inputed = handleInputChangeEventValue(v, 0);
+							if (Number(inputed.normalized) > MAX_LOCK_TIME + 1) {
+								set_lockTime((MAX_LOCK_TIME + 1).toString());
+							} else {
+								set_lockTime(inputed.normalized.toString());
+							}
+						}}
+						maxAmount={toNormalizedBN(MAX_LOCK_TIME + 1, 0)}
 						onMaxClick={(): void => set_lockTime((MAX_LOCK_TIME + 1).toString())}
 						disabled={hasLockedAmount}
 						legend={'Minimum: 1 week'}
@@ -183,7 +190,7 @@ export function LockTab(): ReactElement {
 				<div className={'grid grid-cols-1 gap-6 md:grid-cols-2'}>
 					<AmountInput
 						label={'Total veYFI'}
-						amount={formatUnits(votingPower, 18)}
+						amount={votingPower}
 						disabled />
 					<Button
 						className={'w-full md:mt-7'}

@@ -1,5 +1,4 @@
 import {useCallback, useMemo, useState} from 'react';
-import {formatUnits} from 'viem';
 import {useVotingEscrow} from '@veYFI/contexts/useVotingEscrow';
 import {getVotingPower} from '@veYFI/utils';
 import {extendVeYFILockTime, withdrawLockedVeYFI} from '@veYFI/utils/actions';
@@ -8,31 +7,33 @@ import {validateAmount, validateNetwork} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
 import {fromWeeks, getTimeUntil, toSeconds, toTime, toWeeks} from '@yearn-finance/web-lib/utils/time';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {AmountInput} from '@common/components/AmountInput';
 import {useWallet} from '@common/contexts/useWallet';
 
 import type {ReactElement} from 'react';
+import type {TNormalizedBN} from '@common/types/types';
 
 export function ManageLockTab(): ReactElement {
-	const [lockTime, set_lockTime] = useState('');
+	const [lockTime, set_lockTime] = useState<TNormalizedBN>(toNormalizedBN(0, 0));
 	const {provider, address, isActive} = useWeb3();
 	const {safeChainID} = useChainID();
 	const {refresh: refreshBalances} = useWallet();
 	const {votingEscrow, positions, refresh: refreshVotingEscrow} = useVotingEscrow();
 	const hasLockedAmount = toBigInt(positions?.deposit?.underlyingBalance) > 0n;
-	const willExtendLock = toBigInt(lockTime) > 0n;
+	const willExtendLock = toBigInt(lockTime.raw) > 0n;
 	const timeUntilUnlock = positions?.unlockTime ? getTimeUntil(positions?.unlockTime) : undefined;
-	const weeksToUnlock = toWeeks(timeUntilUnlock);
-	const newUnlockTime = toTime(positions?.unlockTime) + fromWeeks(toTime(lockTime));
+	const weeksToUnlock = toNormalizedBN(toWeeks(timeUntilUnlock), 0);
+	const newUnlockTime = toTime(positions?.unlockTime) + fromWeeks(toTime(lockTime.normalized));
 	const hasPenalty = toBigInt(positions?.penalty) > 0n;
 	const [extendLockTimeStatus, set_extendLockTimeStatus] = useState(defaultTxStatus);
 	const [withdrawLockedStatus, set_withdrawLockedStatus] = useState(defaultTxStatus);
 
 	const onTxSuccess = useCallback(async (): Promise<void> => {
-		await Promise.all([refreshVotingEscrow(), refreshBalances(), set_lockTime('')]);
+		await Promise.all([refreshVotingEscrow(), refreshBalances(), set_lockTime(toNormalizedBN(0, 0))]);
 	}, [refreshBalances, refreshVotingEscrow]);
 
 	const onExtendLockTime = useCallback(async (): Promise<void> => {
@@ -60,20 +61,21 @@ export function ManageLockTab(): ReactElement {
 		}
 	}, [onTxSuccess, provider, votingEscrow?.address]);
 
-	const votingPower = useMemo((): bigint => {
+	const votingPower = useMemo((): TNormalizedBN => {
 		if(!positions?.deposit || !newUnlockTime) {
-			return 0n;
+			return toNormalizedBN(0);
 		}
-		return willExtendLock ? getVotingPower(positions?.deposit?.underlyingBalance, newUnlockTime) : toBigInt(positions?.deposit?.balance);
+		return toNormalizedBN(willExtendLock ? getVotingPower(positions?.deposit?.underlyingBalance, newUnlockTime) : toBigInt(positions?.deposit?.balance));
 	}, [positions?.deposit, newUnlockTime, willExtendLock]);
 
 	const {isValid: isValidLockTime, error: lockTimeError} = validateAmount({
-		amount: lockTime,
+		amount: lockTime.normalized,
 		minAmountAllowed: MIN_LOCK_TIME
 	});
 
 	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: VEYFI_CHAIN_ID, walletNetwork: safeChainID});
 
+	const maxTime = MAX_LOCK_TIME - Number(weeksToUnlock?.normalized || 0) > 0 ? MAX_LOCK_TIME - Number(weeksToUnlock?.normalized || 0) : 0;
 	return (
 		<div className={'grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-16'}>
 			<div className={'col-span-1 grid w-full gap-6'}>
@@ -93,9 +95,16 @@ export function ManageLockTab(): ReactElement {
 					<AmountInput
 						label={'Increase lock period (weeks)'}
 						amount={lockTime}
-						onAmountChange={(amount): void => set_lockTime(Math.floor(toTime(amount)).toString())}
-						maxAmount={MAX_LOCK_TIME - weeksToUnlock > 0 ? MAX_LOCK_TIME - weeksToUnlock : 0}
-						onMaxClick={(): void => set_lockTime(Math.floor(toTime(MAX_LOCK_TIME - weeksToUnlock > 0 ? MAX_LOCK_TIME - weeksToUnlock : 0)).toString())}
+						onAmountChange={(v: string): void => {
+							const inputed = handleInputChangeEventValue(v, 0);
+							if (Number(inputed.normalized) > maxTime) {
+								set_lockTime(toNormalizedBN(maxTime, 0));
+							} else {
+								set_lockTime(toNormalizedBN(Math.floor(toTime(v)), 0));
+							}
+						}}
+						maxAmount={toNormalizedBN(maxTime, 0)}
+						onMaxClick={(): void => set_lockTime(toNormalizedBN(Math.floor(toTime(maxTime)), 0))}
 						disabled={!hasLockedAmount}
 						error={lockTimeError}
 						legend={'Minimum: 1 week'} />
@@ -103,7 +112,7 @@ export function ManageLockTab(): ReactElement {
 				<div className={'grid grid-cols-1 gap-6 md:grid-cols-2 md:pb-5'}>
 					<AmountInput
 						label={'Total veYFI'}
-						amount={formatUnits(votingPower, 18)}
+						amount={votingPower}
 						disabled />
 					<Button
 						className={'w-full md:mt-7'}
@@ -127,7 +136,7 @@ export function ManageLockTab(): ReactElement {
 				<div className={'grid grid-cols-1 gap-6 md:grid-cols-2 md:pb-5'}>
 					<AmountInput
 						label={'veYFI you have'}
-						amount={formatUnits(toBigInt(positions?.deposit?.balance), 18)}
+						amount={toNormalizedBN(toBigInt(positions?.deposit?.underlyingBalance), 18)}
 						disabled />
 					<AmountInput
 						label={'Current lock time (weeks)'}
@@ -137,7 +146,7 @@ export function ManageLockTab(): ReactElement {
 				<div className={'grid grid-cols-1 gap-6 md:grid-cols-2'}>
 					<AmountInput
 						label={'YFI you get'}
-						amount={formatUnits(toBigInt(positions?.withdrawable), 18)}
+						amount={toNormalizedBN(toBigInt(positions?.withdrawable), 18)}
 						legend={`Penalty: ${((positions?.penaltyRatio ?? 0) * 100).toFixed(2)}%`}
 						disabled />
 					<Button

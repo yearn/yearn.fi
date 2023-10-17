@@ -1,5 +1,4 @@
 import {useCallback, useState} from 'react';
-import {formatUnits} from 'viem';
 import {useVotingEscrow} from '@veYFI/contexts/useVotingEscrow';
 import {withdrawUnlockedVeYFI} from '@veYFI/utils/actions';
 import {VEYFI_CHAIN_ID} from '@veYFI/utils/constants';
@@ -7,7 +6,7 @@ import {validateNetwork} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
-import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {getTimeUntil} from '@yearn-finance/web-lib/utils/time';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {AmountInput} from '@common/components/AmountInput';
@@ -24,7 +23,7 @@ export function ClaimTab(): ReactElement {
 	const hasLockedAmount = toBigInt(positions?.deposit?.underlyingBalance) > 0n;
 	const timeUntilUnlock = positions?.unlockTime ? getTimeUntil(positions?.unlockTime) : 0;
 	const isClaimable = hasLockedAmount && !timeUntilUnlock;
-	const claimableAmount = isClaimable ? positions?.deposit?.underlyingBalance : '0';
+	const claimableAmount = toNormalizedBN(toBigInt(isClaimable ? positions?.deposit?.underlyingBalance : 0));
 	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: VEYFI_CHAIN_ID, walletNetwork: safeChainID});
 
 	const refreshData = useCallback(async (): Promise<void> => {
@@ -60,7 +59,7 @@ export function ClaimTab(): ReactElement {
 				<div className={'grid grid-cols-1 gap-6 md:mt-14 md:grid-cols-2'}>
 					<AmountInput
 						label={'Unlocked YFI'}
-						amount={formatUnits(toBigInt(claimableAmount), 18)}
+						amount={claimableAmount}
 						disabled />
 					<Button
 						className={'w-full md:mt-7'}
