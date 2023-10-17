@@ -71,12 +71,9 @@ export function useVaultFilter(): {
 		[getToken]
 	);
 
-	const boostedVaults = useFilteredVaults(vaults, ({address}): boolean => {
-		if (chainsFromJSON.includes(10)) {
-			return false;
-		}
-		return OPT_VAULTS_WITH_REWARDS.some((token): boolean => token === address);
-	});
+	const boostedVaults = useFilteredVaults(vaults, ({address}): boolean =>
+		OPT_VAULTS_WITH_REWARDS.some((token): boolean => token === address)
+	);
 	const curveVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Curve');
 	const velodromeVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Velodrome');
 	const aerodromeVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Aerodrome');
