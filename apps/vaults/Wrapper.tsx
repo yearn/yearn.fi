@@ -20,7 +20,7 @@ export function Wrapper({children, router}: {children: ReactElement; router: Nex
 					<StakingRewardsContextApp>
 						<AnimatePresence mode={'wait'}>
 							<motion.div
-								key={router.asPath}
+								key={router.basePath}
 								initial={'initial'}
 								animate={'enter'}
 								exit={'exit'}

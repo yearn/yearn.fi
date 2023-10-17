@@ -182,7 +182,7 @@ export function useSolverWido(): TSolverContext {
 	 **************************************************************************/
 	const onRetrieveAllowance = useCallback(
 		async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
-			if (!latestQuote?.current || !request?.current || isSolverDisabled(request.current.chainID)[Solver.enum.Wido]) {
+			if (!latestQuote?.current || !request?.current || isSolverDisabled(request.current.chainID)[Solver.enum.Wido] || !provider) {
 				return toNormalizedBN(0);
 			}
 

@@ -275,7 +275,7 @@ export function useSolverCowswap(): TSolverContext {
 	 **************************************************************************/
 	const onRetrieveAllowance = useCallback(
 		async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
-			if (!request?.current || request.current.chainID !== 1) {
+			if (!request?.current || request.current.chainID !== 1 || !provider) {
 				return toNormalizedBN(0);
 			}
 			assert(request.current, 'Request is not defined');

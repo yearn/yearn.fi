@@ -282,7 +282,7 @@ export function useSolverPortals(): TSolverContext {
 	 **************************************************************************/
 	const onApprove = useCallback(
 		async (amount = MAX_UINT_256, txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>, onSuccess: () => Promise<void>): Promise<void> => {
-			if (!request.current || isSolverDisabled(request.current.chainID)[Solver.enum.Portals]) {
+			if (!request.current || isSolverDisabled(request.current.chainID)[Solver.enum.Portals] || !provider) {
 				return;
 			}
 			assert(request.current, 'Request is not set');

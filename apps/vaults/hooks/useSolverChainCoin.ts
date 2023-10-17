@@ -49,7 +49,7 @@ export function useSolverChainCoin(): TSolverContext {
 	 **************************************************************************/
 	const onRetrieveAllowance = useCallback(
 		async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
-			if (!request?.current) {
+			if (!request?.current || !provider) {
 				return toNormalizedBN(0);
 			}
 

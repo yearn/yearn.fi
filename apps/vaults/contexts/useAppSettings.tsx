@@ -34,8 +34,11 @@ const defaultProps: TAppSettingsContext = {
 
 const AppSettingsContext = createContext<TAppSettingsContext>(defaultProps);
 export const AppSettingsContextApp = memo(function AppSettingsContextApp({children}: {children: ReactElement}): ReactElement {
-	const [category, set_category] = useSessionStorage('yearn.fi/vaults-categories@0.0.1', ALL_CATEGORIES);
+	/**
+	 * @deprecated Use use-query-params instead
+	 */
 	const [searchValue, set_searchValue] = useSessionStorage('yearn.fi/vaults-search@0.0.1', '');
+	const [category, set_category] = useSessionStorage('yearn.fi/vaults-categories@0.0.1', ALL_CATEGORIES);
 	const [selectedChains, set_selectedChains] = useSessionStorage('yearn.fi/selected-chains@0.0.1', ALL_CHAINS);
 	const [shouldHideDust, set_shouldHideDust] = useLocalStorage('yearn.fi/should-hide-dust@0.0.1', false);
 	const [shouldHideLowTVLVaults, set_shouldHideLowTVLVaults] = useLocalStorage('yearn.fi/hide-low-tvl@0.0.1', false);
@@ -56,7 +59,18 @@ export const AppSettingsContextApp = memo(function AppSettingsContextApp({childr
 			set_searchValue,
 			set_selectedChains
 		}),
-		[shouldHideDust, shouldHideLowTVLVaults, category, searchValue, set_category, set_searchValue, set_shouldHideDust, set_shouldHideLowTVLVaults]
+		[
+			shouldHideDust,
+			shouldHideLowTVLVaults,
+			category,
+			selectedChains,
+			searchValue,
+			set_category,
+			set_searchValue,
+			set_selectedChains,
+			set_shouldHideDust,
+			set_shouldHideLowTVLVaults
+		]
 	);
 
 	return <AppSettingsContext.Provider value={contextValue}>{children}</AppSettingsContext.Provider>;

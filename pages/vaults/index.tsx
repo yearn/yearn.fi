@@ -1,4 +1,5 @@
-import {Fragment, useCallback, useEffect, useMemo} from 'react';
+import {Fragment, useCallback, useEffect, useMemo, useState} from 'react';
+import {QueryParamProvider, StringParam, useQueryParams} from 'use-query-params';
 import {motion, useSpring, useTransform} from 'framer-motion';
 import {VaultListOptions} from '@vaults/components/list/VaultListOptions';
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
@@ -20,6 +21,7 @@ import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {ListHead} from '@common/components/ListHead';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
+import {NextQueryParamAdapter} from '@common/utils/QueryParamsProvider';
 
 import type {NextRouter} from 'next/router';
 import type {ReactElement, ReactNode} from 'react';
@@ -95,21 +97,53 @@ function Index(): ReactElement {
 		sortBy: TPossibleSortBy;
 		sortDirection: TSortDirection;
 	}>('yVaultsSorting', {sortBy: 'featuringScore', sortDirection: 'desc'});
-	const {category, searchValue, selectedChains, set_category, set_searchValue, set_selectedChains} = useAppSettings();
+	const {category, selectedChains, set_category, set_selectedChains} = useAppSettings();
 	const chainsFromJSON = useMemo((): number[] => JSON.parse(selectedChains || '[]') as number[], [selectedChains]);
 	const categoriesFromJSON = useMemo((): string[] => JSON.parse(category || '[]') as string[], [category]);
 	const {activeVaults, migratableVaults, retiredVaults} = useVaultFilter();
+	const [searchParam, set_searchParam] = useQueryParams({search: StringParam});
+	const [search, set_search] = useState(searchParam?.search);
+
+	/** 🔵 - Yearn *********************************************************************************
+	 **	This useEffect hook is used to synchronize the search state with the query parameter
+	 **	It checks if the search state and the search query parameter are the same, if they are,
+	 ** it does nothing.
+	 **	If the search state is undefined and the search query parameter is not, it sets the search
+	 ** state to the value of the search query parameter.
+	 **	If the search state is not undefined, it updates the search query parameter to match the
+	 ** search state.
+	 **	If the search state is undefined, it removes the search query parameter.
+	 *********************************************************************************************/
+	useEffect((): void => {
+		// If the search state and the search query parameter are the same, do nothing
+		if (searchParam.search === search) {
+			return;
+		}
+		// If the search state is undefined and the search query parameter is not, set the search
+		// state to the value of the search query parameter
+		if (search === undefined && searchParam.search !== undefined) {
+			set_search(searchParam.search);
+			return;
+		}
+		// If the search state is not undefined, update the search query parameter to match
+		// the search state
+		if (!search) {
+			set_searchParam({}, 'push');
+		} else {
+			set_searchParam({search: search}, 'push');
+		}
+	}, [searchParam, search, set_searchParam]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	 **	Then, on the activeVaults list, we apply the search filter. The search filter is
 	 **	implemented as a simple string.includes() on the vault name.
 	 **********************************************************************************************/
 	const searchedVaultsToDisplay = useMemo((): TYDaemonVault[] => {
-		if (searchValue === '') {
+		if (!search) {
 			return activeVaults;
 		}
 		return activeVaults.filter((vault: TYDaemonVault): boolean => {
-			const lowercaseSearch = searchValue.toLowerCase();
+			const lowercaseSearch = search.toLowerCase();
 			return (
 				vault.name.toLowerCase().startsWith(lowercaseSearch) ||
 				vault.symbol.toLowerCase().startsWith(lowercaseSearch) ||
@@ -119,7 +153,7 @@ function Index(): ReactElement {
 				vault.token.address.toLowerCase().startsWith(lowercaseSearch)
 			);
 		});
-	}, [activeVaults, searchValue]);
+	}, [activeVaults, search]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	 **	Then, once we have reduced the list of vaults to display, we can sort them. The sorting
@@ -193,10 +227,10 @@ function Index(): ReactElement {
 				<ListHero
 					categories={category}
 					set_categories={set_category}
-					searchValue={searchValue}
+					searchValue={search || ''}
 					selectedChains={selectedChains}
 					set_selectedChains={set_selectedChains}
-					set_searchValue={set_searchValue}
+					onSearch={(value: string): void => set_search(value)}
 				/>
 
 				<Renderable shouldRender={category === 'Holdings' && retiredVaults?.length > 0}>
@@ -253,7 +287,11 @@ function Index(): ReactElement {
 }
 
 Index.getLayout = function getLayout(page: ReactElement, router: NextRouter): ReactElement {
-	return <Wrapper router={router}>{page}</Wrapper>;
+	return (
+		<Wrapper router={router}>
+			<QueryParamProvider adapter={NextQueryParamAdapter}>{page}</QueryParamProvider>
+		</Wrapper>
+	);
 };
 
 export default Index;
