@@ -9,11 +9,21 @@ import {useYearn} from '@common/contexts/useYearn';
 import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
-export function useFilteredVaults(vaultMap: TDict<TYDaemonVault>, condition: (v: TYDaemonVault) => boolean): TYDaemonVault[] {
-	return useMemo((): TYDaemonVault[] => Object.values(vaultMap).filter((vault): boolean => condition(vault)), [vaultMap, condition]);
+export function useFilteredVaults(
+	vaultMap: TDict<TYDaemonVault>,
+	condition: (v: TYDaemonVault) => boolean
+): TYDaemonVault[] {
+	return useMemo(
+		(): TYDaemonVault[] => Object.values(vaultMap).filter((vault): boolean => condition(vault)),
+		[vaultMap, condition]
+	);
 }
 
-export function useVaultFilter(): {activeVaults: TYDaemonVault[]; retiredVaults: TYDaemonVault[]; migratableVaults: TYDaemonVault[]} {
+export function useVaultFilter(): {
+	activeVaults: TYDaemonVault[];
+	retiredVaults: TYDaemonVault[];
+	migratableVaults: TYDaemonVault[];
+} {
 	const {vaults, vaultsMigrations, vaultsRetired} = useYearn();
 	const {getToken} = useWallet();
 	const {shouldHideDust, category, selectedChains} = useAppSettings();
@@ -73,9 +83,15 @@ export function useVaultFilter(): {activeVaults: TYDaemonVault[]; retiredVaults:
 	const stablesVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Stablecoin');
 	const balancerVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Balancer');
 	const cryptoVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Volatile');
-	const holdingsVaults = useFilteredVaults(vaults, ({address, chainID}): boolean => filterHoldingsCallback(address, chainID));
-	const migratableVaults = useFilteredVaults(vaultsMigrations, ({address, chainID}): boolean => filterMigrationCallback(address, chainID));
-	const retiredVaults = useFilteredVaults(vaultsRetired, ({address, chainID}): boolean => filterMigrationCallback(address, chainID));
+	const holdingsVaults = useFilteredVaults(vaults, ({address, chainID}): boolean =>
+		filterHoldingsCallback(address, chainID)
+	);
+	const migratableVaults = useFilteredVaults(vaultsMigrations, ({address, chainID}): boolean =>
+		filterMigrationCallback(address, chainID)
+	);
+	const retiredVaults = useFilteredVaults(vaultsRetired, ({address, chainID}): boolean =>
+		filterMigrationCallback(address, chainID)
+	);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	 **	First, we need to determine in which category we are. The activeVaults function will
@@ -86,7 +102,9 @@ export function useVaultFilter(): {activeVaults: TYDaemonVault[]; retiredVaults:
 		let _vaultList: TYDaemonVault[] = [];
 
 		if (categoriesFromJSON.includes('Featured Vaults')) {
-			_vaultList.sort((a, b): number => (b.tvl.tvl || 0) * (b?.apr?.netAPR || 0) - (a.tvl.tvl || 0) * (a?.apr?.netAPR || 0));
+			_vaultList.sort(
+				(a, b): number => (b.tvl.tvl || 0) * (b?.apr?.netAPR || 0) - (a.tvl.tvl || 0) * (a?.apr?.netAPR || 0)
+			);
 			_vaultList = _vaultList.slice(0, 10);
 		}
 		if (categoriesFromJSON.includes('Curve Vaults')) {
@@ -115,10 +133,22 @@ export function useVaultFilter(): {activeVaults: TYDaemonVault[]; retiredVaults:
 		}
 
 		//remove duplicates
-		_vaultList = _vaultList.filter((vault, index, self): boolean => index === self.findIndex((v): boolean => v.address === vault.address));
+		_vaultList = _vaultList.filter(
+			(vault, index, self): boolean => index === self.findIndex((v): boolean => v.address === vault.address)
+		);
 
 		return _vaultList;
-	}, [categoriesFromJSON, curveVaults, balancerVaults, velodromeVaults, aerodromeVaults, boostedVaults, stablesVaults, cryptoVaults, holdingsVaults]);
+	}, [
+		categoriesFromJSON,
+		curveVaults,
+		balancerVaults,
+		velodromeVaults,
+		aerodromeVaults,
+		boostedVaults,
+		stablesVaults,
+		cryptoVaults,
+		holdingsVaults
+	]);
 
 	return {activeVaults, migratableVaults, retiredVaults};
 }

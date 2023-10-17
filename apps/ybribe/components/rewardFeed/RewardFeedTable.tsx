@@ -43,16 +43,23 @@ export function RewardFeedTable(): ReactElement | null {
 				)
 			)}
 			<div className={'mt-4'}>
-				<div className={'flex flex-col justify-between gap-4 border-t border-neutral-300 p-4 sm:flex-row sm:items-center sm:px-6'}>
+				<div
+					className={
+						'flex flex-col justify-between gap-4 border-t border-neutral-300 p-4 sm:flex-row sm:items-center sm:px-6'
+					}>
 					<div className={'flex flex-1 justify-between sm:hidden'}>
 						<a
 							href={'#'}
-							className={'border-gray-300 text-gray-700 hover:bg-gray-50 relative inline-flex items-center rounded-md border  px-4 py-2 text-sm font-medium'}>
+							className={
+								'border-gray-300 text-gray-700 hover:bg-gray-50 relative inline-flex items-center rounded-md border  px-4 py-2 text-sm font-medium'
+							}>
 							{'Previous'}
 						</a>
 						<a
 							href={'#'}
-							className={'border-gray-300 text-gray-700 hover:bg-gray-50 relative ml-3 inline-flex items-center rounded-md border  px-4 py-2 text-sm font-medium'}>
+							className={
+								'border-gray-300 text-gray-700 hover:bg-gray-50 relative ml-3 inline-flex items-center rounded-md border  px-4 py-2 text-sm font-medium'
+							}>
 							{'Next'}
 						</a>
 					</div>
@@ -74,8 +81,12 @@ export function RewardFeedTable(): ReactElement | null {
 							previousLinkClassName={
 								'text-gray-500 hover:bg-neutral-300 relative inline-flex items-center p-2 text-sm font-medium focus:z-20 border border-neutral-400'
 							}
-							nextLinkClassName={'text-gray-500 hover:bg-neutral-300 relative inline-flex items-center p-2 text-sm font-medium focus:z-20 border border-neutral-400'}
-							breakLinkClassName={'text-gray-700 relative inline-flex items-center px-4 py-2 text-sm font-medium hover:bg-neutral-300 border border-neutral-400'}
+							nextLinkClassName={
+								'text-gray-500 hover:bg-neutral-300 relative inline-flex items-center p-2 text-sm font-medium focus:z-20 border border-neutral-400'
+							}
+							breakLinkClassName={
+								'text-gray-700 relative inline-flex items-center px-4 py-2 text-sm font-medium hover:bg-neutral-300 border border-neutral-400'
+							}
 							activeLinkClassName={
 								'text-gray-500 hover:bg-neutral-300 relative hidden items-center px-4 py-2 text-sm font-medium focus:z-20 md:inline-flex bg-neutral-300'
 							}

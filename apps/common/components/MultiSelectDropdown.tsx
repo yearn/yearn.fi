@@ -66,7 +66,9 @@ function DropdownEmpty({query}: {query: string}): ReactElement {
 		return (
 			<div
 				onClick={(): void => openLoginModal()}
-				className={'flex h-14 cursor-pointer flex-col items-center justify-center px-4 text-center transition-colors hover:bg-neutral-300'}>
+				className={
+					'flex h-14 cursor-pointer flex-col items-center justify-center px-4 text-center transition-colors hover:bg-neutral-300'
+				}>
 				<b className={'text-neutral-900'}>{'Connect Wallet'}</b>
 			</div>
 		);
@@ -136,7 +138,9 @@ export function MultiSelectDropdown({options, onSelect, placeholder = ''}: TMult
 					set_areAllSelected(!elementSelected.isSelected);
 				} else {
 					currentState = currentElements.map((option): TMultiSelectOptionProps => {
-						return option.value === elementSelected.value ? {...option, isSelected: !option.isSelected} : option;
+						return option.value === elementSelected.value
+							? {...option, isSelected: !option.isSelected}
+							: option;
 					});
 					set_areAllSelected(!currentState.some((option): boolean => !option.isSelected));
 				}
@@ -148,11 +152,15 @@ export function MultiSelectDropdown({options, onSelect, placeholder = ''}: TMult
 			<div className={'relative w-full'}>
 				<Combobox.Button
 					onClick={(): void => set_isOpen((o: boolean): boolean => !o)}
-					className={'flex h-10 w-full items-center justify-between bg-neutral-0 p-2 text-base text-neutral-900 md:px-3'}>
+					className={
+						'flex h-10 w-full items-center justify-between bg-neutral-0 p-2 text-base text-neutral-900 md:px-3'
+					}>
 					<Combobox.Input
 						className={cl(
 							'w-full cursor-default overflow-x-scroll border-none bg-transparent p-0 outline-none scrollbar-none',
-							options.every((option): boolean => !option.isSelected) ? 'text-neutral-400' : 'text-neutral-900'
+							options.every((option): boolean => !option.isSelected)
+								? 'text-neutral-400'
+								: 'text-neutral-900'
 						)}
 						displayValue={(options: TMultiSelectOptionProps[]): string => {
 							const selectedOptions = options.filter((option): boolean => option.isSelected);
@@ -191,7 +199,10 @@ export function MultiSelectDropdown({options, onSelect, placeholder = ''}: TMult
 					afterLeave={(): void => {
 						set_query('');
 					}}>
-					<Combobox.Options className={'absolute top-12 z-50 flex w-full cursor-pointer flex-col overflow-y-auto bg-neutral-0 px-2 py-3 scrollbar-none'}>
+					<Combobox.Options
+						className={
+							'absolute top-12 z-50 flex w-full cursor-pointer flex-col overflow-y-auto bg-neutral-0 px-2 py-3 scrollbar-none'
+						}>
 						<SelectAllOption
 							key={'select-all'}
 							label={'All'}

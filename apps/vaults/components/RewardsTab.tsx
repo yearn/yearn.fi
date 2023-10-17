@@ -25,12 +25,20 @@ const trimAmount = (amount: string | number): string => Number(Number(amount).to
 export function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {provider, address, isActive} = useWeb3();
 	const {refresh: refreshBalances} = useWallet();
-	const {stakingRewardsByVault, stakingRewardsMap, positionsMap, refresh: refreshStakingRewards} = useStakingRewards();
+	const {
+		stakingRewardsByVault,
+		stakingRewardsMap,
+		positionsMap,
+		refresh: refreshStakingRewards
+	} = useStakingRewards();
 	const stakingRewardsAddress = stakingRewardsByVault[currentVault.address];
 	const stakingRewards = stakingRewardsAddress ? stakingRewardsMap[stakingRewardsAddress] : undefined;
 	const stakingRewardsPosition = stakingRewardsAddress ? positionsMap[stakingRewardsAddress] : undefined;
 	const vaultToken = useToken({address: currentVault.address, chainID: currentVault.chainID});
-	const rewardTokenBalance = useToken({address: toAddress(stakingRewards?.rewardsToken), chainID: currentVault.chainID});
+	const rewardTokenBalance = useToken({
+		address: toAddress(stakingRewards?.rewardsToken),
+		chainID: currentVault.chainID
+	});
 	const [approveStakeStatus, set_approveStakeStatus] = useState(defaultTxStatus);
 	const [stakeStatus, set_stakeStatus] = useState(defaultTxStatus);
 	const [claimStatus, set_claimStatus] = useState(defaultTxStatus);
@@ -144,7 +152,10 @@ export function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): React
 					<Input
 						className={'w-full md:w-[216px]'}
 						label={'You have unclaimed'}
-						legend={formatCounterValue(rewardBalance.normalized, Number(rewardTokenBalance.price.normalized))}
+						legend={formatCounterValue(
+							rewardBalance.normalized,
+							Number(rewardTokenBalance.price.normalized)
+						)}
 						value={`${trimAmount(rewardBalance.normalized)} ${rewardTokenBalance.symbol || 'yvOP'}`}
 						isDisabled
 					/>
@@ -161,7 +172,11 @@ export function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): React
 				<div>
 					<div className={'font-bold'}>{'Unstake'}</div>
 					<div className={'mt-2 text-neutral-600'}>
-						<p>{'Unstake your yVault tokens and your remaining $OP rewards will be claimed automatically. Boom.'}</p>
+						<p>
+							{
+								'Unstake your yVault tokens and your remaining $OP rewards will be claimed automatically. Boom.'
+							}
+						</p>
 					</div>
 				</div>
 				<div className={'flex flex-col gap-4 md:flex-row'}>

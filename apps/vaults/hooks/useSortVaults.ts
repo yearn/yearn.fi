@@ -13,7 +13,11 @@ import type {TSortDirection} from '@common/types/types';
 
 export type TPossibleSortBy = 'apr' | 'forwardAPR' | 'tvl' | 'name' | 'deposited' | 'available' | 'featuringScore';
 
-export function useSortVaults(vaultList: TYDaemonVaults, sortBy: TPossibleSortBy, sortDirection: TSortDirection): TYDaemonVaults {
+export function useSortVaults(
+	vaultList: TYDaemonVaults,
+	sortBy: TPossibleSortBy,
+	sortDirection: TSortDirection
+): TYDaemonVaults {
 	const {getBalance} = useWallet();
 	const {stakingRewardsByVault, positionsMap} = useStakingRewards();
 
@@ -33,8 +37,14 @@ export function useSortVaults(vaultList: TYDaemonVaults, sortBy: TPossibleSortBy
 		(): TYDaemonVaults =>
 			vaultList.sort((a, b): number =>
 				numberSort({
-					a: a.apr?.forwardAPR?.type === '' ? a.apr?.netAPR : a.apr?.forwardAPR.netAPR,
-					b: b.apr?.forwardAPR?.type === '' ? b.apr?.netAPR : b.apr?.forwardAPR.netAPR,
+					a:
+						a.apr?.forwardAPR?.type === ''
+							? (a.apr?.netAPR || 0) + (a.apr?.extra?.stakingRewardsAPR || 0)
+							: (a.apr?.forwardAPR?.netAPR || 0) + (a.apr?.extra?.stakingRewardsAPR || 0),
+					b:
+						b.apr?.forwardAPR?.type === ''
+							? (b.apr?.netAPR || 0) + (b.apr?.extra?.stakingRewardsAPR || 0)
+							: (b.apr?.forwardAPR?.netAPR || 0) + (b.apr?.extra?.stakingRewardsAPR || 0),
 					sortDirection
 				})
 			),
@@ -42,18 +52,34 @@ export function useSortVaults(vaultList: TYDaemonVaults, sortBy: TPossibleSortBy
 	);
 
 	const sortedByAPR = useCallback(
-		(): TYDaemonVaults => vaultList.sort((a, b): number => numberSort({a: a.apr?.netAPR, b: b.apr?.netAPR, sortDirection})),
+		(): TYDaemonVaults =>
+			vaultList.sort((a, b): number =>
+				numberSort({
+					a: (a.apr?.netAPR || 0) + (a.apr?.extra?.stakingRewardsAPR || 0),
+					b: (b.apr?.netAPR || 0) + (b.apr?.extra?.stakingRewardsAPR || 0),
+					sortDirection
+				})
+			),
 		[sortDirection, vaultList]
 	);
 
-	const sortedByTVL = useCallback((): TYDaemonVaults => vaultList.sort((a, b): number => numberSort({a: a.tvl.tvl, b: b.tvl.tvl, sortDirection})), [sortDirection, vaultList]);
+	const sortedByTVL = useCallback(
+		(): TYDaemonVaults => vaultList.sort((a, b): number => numberSort({a: a.tvl.tvl, b: b.tvl.tvl, sortDirection})),
+		[sortDirection, vaultList]
+	);
 
 	const sortedByDeposited = useCallback((): TYDaemonVaults => {
 		return vaultList.sort((a, b): number => {
 			const aDepositedBalance = Number(getBalance({address: a.address, chainID: a.chainID})?.normalized || 0);
 			const bDepositedBalance = Number(getBalance({address: b.address, chainID: b.chainID})?.normalized || 0);
-			const aStakedBalance = toNormalizedValue(toBigInt(positionsMap[toAddress(stakingRewardsByVault[a.address])]?.stake), a.decimals);
-			const bStakedBalance = toNormalizedValue(toBigInt(positionsMap[toAddress(stakingRewardsByVault[b.address])]?.stake), b.decimals);
+			const aStakedBalance = toNormalizedValue(
+				toBigInt(positionsMap[toAddress(stakingRewardsByVault[a.address])]?.stake),
+				a.decimals
+			);
+			const bStakedBalance = toNormalizedValue(
+				toBigInt(positionsMap[toAddress(stakingRewardsByVault[b.address])]?.stake),
+				b.decimals
+			);
 			if (sortDirection === 'asc') {
 				return aDepositedBalance + aStakedBalance - (bDepositedBalance + bStakedBalance);
 			}
@@ -79,7 +105,8 @@ export function useSortVaults(vaultList: TYDaemonVaults, sortBy: TPossibleSortBy
 	}, [getBalance, sortDirection, vaultList]);
 
 	const sortedByFeaturingScore = useCallback(
-		(): TYDaemonVaults => vaultList.sort((a, b): number => numberSort({a: a.featuringScore, b: b.featuringScore, sortDirection})),
+		(): TYDaemonVaults =>
+			vaultList.sort((a, b): number => numberSort({a: a.featuringScore, b: b.featuringScore, sortDirection})),
 		[sortDirection, vaultList]
 	);
 
@@ -112,7 +139,18 @@ export function useSortVaults(vaultList: TYDaemonVaults, sortBy: TPossibleSortBy
 		}
 
 		return sortResult;
-	}, [stringifiedVaultList, sortDirection, sortBy, sortedByName, sortedByForwardAPR, sortedByTVL, sortedByAPR, sortedByDeposited, sortedByAvailable, sortedByFeaturingScore]);
+	}, [
+		stringifiedVaultList,
+		sortDirection,
+		sortBy,
+		sortedByName,
+		sortedByForwardAPR,
+		sortedByTVL,
+		sortedByAPR,
+		sortedByDeposited,
+		sortedByAvailable,
+		sortedByFeaturingScore
+	]);
 
 	return sortedVaults;
 }

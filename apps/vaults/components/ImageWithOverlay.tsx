@@ -14,7 +14,16 @@ type TImageWithOverlayProps = {
 	onCloseClick: () => void;
 };
 
-export const ImageWithOverlay: React.FC<TImageWithOverlayProps> = ({imageSrc, imageAlt, imageWidth, imageHeight, overlayText, buttonText, href, onCloseClick}): ReactElement => {
+export const ImageWithOverlay: React.FC<TImageWithOverlayProps> = ({
+	imageSrc,
+	imageAlt,
+	imageWidth,
+	imageHeight,
+	overlayText,
+	buttonText,
+	href,
+	onCloseClick
+}): ReactElement => {
 	return (
 		<div className={'relative h-full w-full'}>
 			<ImageWithFallback
@@ -31,7 +40,12 @@ export const ImageWithOverlay: React.FC<TImageWithOverlayProps> = ({imageSrc, im
 				/>
 				<h2 className={'text-xl font-bold text-white md:mb-5 md:text-6xl'}>{overlayText}</h2>
 				<a href={href}>
-					<button className={'w-auto bg-white p-1 text-sm font-bold text-[#0657F9] hover:bg-[#EBEBEB] md:w-[314px] md:p-2 md:text-intermediate'}>{buttonText}</button>
+					<button
+						className={
+							'w-auto bg-white p-1 text-sm font-bold text-[#0657F9] hover:bg-[#EBEBEB] md:w-[314px] md:p-2 md:text-intermediate'
+						}>
+						{buttonText}
+					</button>
 				</a>
 			</div>
 		</div>

@@ -31,7 +31,16 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 	const [txStatusExecuteWithdraw, set_txStatusExecuteWithdraw] = useState(defaultTxStatus);
 	const [allowanceFrom, set_allowanceFrom] = useState<TNormalizedBN>(toNormalizedBN(0));
 	const {actionParams, onChangeAmount, maxDepositPossible, isDepositing} = useActionFlow();
-	const {onApprove, onExecuteDeposit, onExecuteWithdraw, onRetrieveAllowance, currentSolver, expectedOut, isLoadingExpectedOut, hash} = useSolver();
+	const {
+		onApprove,
+		onExecuteDeposit,
+		onExecuteWithdraw,
+		onRetrieveAllowance,
+		currentSolver,
+		expectedOut,
+		isLoadingExpectedOut,
+		hash
+	} = useSolver();
 	const isWithdrawing = !isDepositing;
 
 	/* 🔵 - Yearn Finance **************************************************************************
@@ -65,7 +74,11 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 			if (Solver.enum.OptimismBooster === currentSolver) {
 				await refreshStakingRewards();
 			}
-		} else if (Solver.enum.Cowswap === currentSolver || Solver.enum.Portals === currentSolver || Solver.enum.Wido === currentSolver) {
+		} else if (
+			Solver.enum.Cowswap === currentSolver ||
+			Solver.enum.Portals === currentSolver ||
+			Solver.enum.Wido === currentSolver
+		) {
 			if (isDepositing) {
 				//refresh input from zap wallet, refresh output from default
 				await Promise.all([
@@ -119,14 +132,24 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 	 ** (not connected) or if the tx is still pending.
 	 **************************************************************************/
 	const onApproveFrom = useCallback(async (): Promise<void> => {
-		const shouldApproveInfinite = currentSolver === Solver.enum.PartnerContract || currentSolver === Solver.enum.Vanilla || currentSolver === Solver.enum.InternalMigration;
-		onApprove(shouldApproveInfinite ? MAX_UINT_256 : actionParams?.amount.raw, set_txStatusApprove, async (): Promise<void> => {
-			await triggerRetrieveAllowance();
-		});
+		const shouldApproveInfinite =
+			currentSolver === Solver.enum.PartnerContract ||
+			currentSolver === Solver.enum.Vanilla ||
+			currentSolver === Solver.enum.InternalMigration;
+		onApprove(
+			shouldApproveInfinite ? MAX_UINT_256 : actionParams?.amount.raw,
+			set_txStatusApprove,
+			async (): Promise<void> => {
+				await triggerRetrieveAllowance();
+			}
+		);
 	}, [actionParams?.amount.raw, triggerRetrieveAllowance, currentSolver, onApprove]);
 
 	const isButtonDisabled =
-		(!address && !provider) || isZero(actionParams.amount.raw) || toBigInt(actionParams.amount.raw) > toBigInt(maxDepositPossible.raw) || isLoadingExpectedOut;
+		(!address && !provider) ||
+		isZero(actionParams.amount.raw) ||
+		toBigInt(actionParams.amount.raw) > toBigInt(maxDepositPossible.raw) ||
+		isLoadingExpectedOut;
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** Wrapper to decide if we should use the partner contract or not
@@ -196,7 +219,11 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 					onClick={async (): Promise<void> => onExecuteDeposit(set_txStatusExecuteDeposit, onSuccess)}
 					className={'w-full whitespace-nowrap'}
 					isBusy={txStatusExecuteDeposit.pending}
-					isDisabled={(!address && !provider) || isZero(actionParams.amount.raw) || toBigInt(actionParams.amount.raw) > toBigInt(maxDepositPossible.raw)}>
+					isDisabled={
+						(!address && !provider) ||
+						isZero(actionParams.amount.raw) ||
+						toBigInt(actionParams.amount.raw) > toBigInt(maxDepositPossible.raw)
+					}>
 					{'Deposit and Stake'}
 				</Button>
 			);

@@ -59,7 +59,9 @@ export function validateAmount(props: TValidateAmountProps): TValidationResponse
 	if (minAmountAllowed !== undefined && amountNumber < Number(minAmountAllowed)) {
 		return {
 			isValid: false,
-			error: `Amount under minimum allowed ${shouldDisplayMin && minAmountAllowed !== undefined ? `(min ${minAmountAllowed})` : ''}`
+			error: `Amount under minimum allowed ${
+				shouldDisplayMin && minAmountAllowed !== undefined ? `(min ${minAmountAllowed})` : ''
+			}`
 		};
 	}
 

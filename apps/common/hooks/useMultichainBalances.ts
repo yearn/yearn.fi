@@ -68,7 +68,12 @@ const defaultStatus = {
 	isRefetching: false
 };
 
-async function performCall(chainID: number, calls: ContractFunctionConfig[], tokens: TUseBalancesTokens[], prices?: TYDaemonPrices): Promise<[TDict<TToken>, Error | undefined]> {
+async function performCall(
+	chainID: number,
+	calls: ContractFunctionConfig[],
+	tokens: TUseBalancesTokens[],
+	prices?: TYDaemonPrices
+): Promise<[TDict<TToken>, Error | undefined]> {
 	const _data: TDict<TToken> = {};
 	const results = await multicall({
 		contracts: calls as never[],
@@ -107,7 +112,12 @@ async function performCall(chainID: number, calls: ContractFunctionConfig[], tok
 	return [_data, undefined];
 }
 
-async function getBalances(chainID: number, address: TAddress, tokens: TUseBalancesTokens[], prices?: TYDaemonPrices): Promise<[TDict<TToken>, Error | undefined]> {
+async function getBalances(
+	chainID: number,
+	address: TAddress,
+	tokens: TUseBalancesTokens[],
+	prices?: TYDaemonPrices
+): Promise<[TDict<TToken>, Error | undefined]> {
 	let result: TDict<TToken> = {};
 	const calls: ContractFunctionConfig[] = [];
 
@@ -373,7 +383,9 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 					newData[chainID][tokenAddress] = {
 						...newData[chainID][tokenAddress],
 						price: toNormalizedBN(rawPrice, 6),
-						value: Number(newData?.[chainID]?.[tokenAddress]?.balance?.normalized || 0) * toNormalizedValue(rawPrice, 6)
+						value:
+							Number(newData?.[chainID]?.[tokenAddress]?.balance?.normalized || 0) *
+							toNormalizedValue(rawPrice, 6)
 					};
 				}
 			}
@@ -442,9 +454,28 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 			isError: status.isError,
 			isFetched: status.isFetched,
 			isRefetching: status.isRefetching,
-			status: status.isError ? 'error' : status.isLoading || status.isFetching ? 'loading' : status.isSuccess ? 'success' : 'unknown'
+			status: status.isError
+				? 'error'
+				: status.isLoading || status.isFetching
+				? 'loading'
+				: status.isSuccess
+				? 'success'
+				: 'unknown'
 		}),
-		[assignPrices, balances, error, nonce, onUpdate, onUpdateSome, status.isError, status.isFetched, status.isFetching, status.isLoading, status.isRefetching, status.isSuccess]
+		[
+			assignPrices,
+			balances,
+			error,
+			nonce,
+			onUpdate,
+			onUpdateSome,
+			status.isError,
+			status.isFetched,
+			status.isFetching,
+			status.isLoading,
+			status.isRefetching,
+			status.isSuccess
+		]
 	);
 
 	return contextValue;

@@ -121,7 +121,9 @@ function About(): ReactElement {
 							}
 						</p>
 						<p className={'text-neutral-600'}>
-							{'We can’t offer you a phone number with ambient jazz hold music to listen to - but please feel free to hop into our '}
+							{
+								'We can’t offer you a phone number with ambient jazz hold music to listen to - but please feel free to hop into our '
+							}
 							<a
 								href={'https://discord.com/invite/6PNv2nF'}
 								target={'_blank'}

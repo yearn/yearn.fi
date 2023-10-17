@@ -85,7 +85,11 @@ export function useSolverVanilla(): TSolverContext {
 	 ** (not connected) or if the tx is still pending.
 	 **************************************************************************/
 	const onApprove = useCallback(
-		async (amount = MAX_UINT_256, txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>, onSuccess: () => Promise<void>): Promise<void> => {
+		async (
+			amount = MAX_UINT_256,
+			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
+			onSuccess: () => Promise<void>
+		): Promise<void> => {
 			assert(request.current, 'Request is not set');
 			assert(request.current.inputToken, 'Input token is not set');
 			assert(request.current.outputToken, 'Output token is not set');
@@ -117,7 +121,10 @@ export function useSolverVanilla(): TSolverContext {
 	 ** the selected vault.
 	 **************************************************************************/
 	const onExecuteDeposit = useCallback(
-		async (txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>, onSuccess: () => Promise<void>): Promise<void> => {
+		async (
+			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
+			onSuccess: () => Promise<void>
+		): Promise<void> => {
 			assert(request.current, 'Request is not set');
 			assert(request.current.outputToken, 'Output token is not set');
 			assert(request.current.inputAmount, 'Input amount is not set');
@@ -148,7 +155,10 @@ export function useSolverVanilla(): TSolverContext {
 	 ** some underlying token from this specific vault.
 	 **************************************************************************/
 	const onExecuteWithdraw = useCallback(
-		async (txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>, onSuccess: () => Promise<void>): Promise<void> => {
+		async (
+			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
+			onSuccess: () => Promise<void>
+		): Promise<void> => {
 			assert(request.current, 'Request is not set');
 			assert(request.current.inputToken, 'Output token is not set');
 			assert(request.current.inputAmount, 'Input amount is not set');

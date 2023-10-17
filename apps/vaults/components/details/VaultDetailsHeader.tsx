@@ -73,8 +73,14 @@ function VaultAPR({apr}: {apr: TYDaemonVault['apr']}): ReactElement {
 						<IconQuestion />
 					</div>
 					<span className={'tooltipLight top-full mt-2'}>
-						<div className={'font-number -mx-12 w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'}>
-							<p className={'font-number flex w-full flex-row justify-between text-neutral-400 md:text-xs'}>
+						<div
+							className={
+								'font-number -mx-12 w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
+							}>
+							<p
+								className={
+									'font-number flex w-full flex-row justify-between text-neutral-400 md:text-xs'
+								}>
 								{'Estimated APR for the next period based on current data.'}
 							</p>
 						</div>
@@ -117,7 +123,12 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 		<div
 			aria-label={'Vault Header'}
 			className={'col-span-12 flex w-full flex-col items-center justify-center'}>
-			<b className={'mx-auto flex w-full flex-row items-center justify-center text-center text-4xl tabular-nums text-neutral-900 md:text-8xl'}>&nbsp;{vaultName}&nbsp;</b>
+			<b
+				className={
+					'mx-auto flex w-full flex-row items-center justify-center text-center text-4xl tabular-nums text-neutral-900 md:text-8xl'
+				}>
+				&nbsp;{vaultName}&nbsp;
+			</b>
 			<div className={'mb-10 mt-4 md:mb-14 md:mt-10'}>
 				{address ? (
 					<button onClick={(): void => copyToClipboard(address)}>

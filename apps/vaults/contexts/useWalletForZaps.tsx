@@ -52,7 +52,11 @@ const defaultProps = {
  ** interact with our app, aka mostly the balances and the token prices.
  ******************************************************************************/
 const WalletForZap = createContext<TWalletForZap>(defaultProps);
-export const WalletForZapAppContextApp = memo(function WalletForZapAppContextApp({children}: {children: ReactElement}): ReactElement {
+export const WalletForZapAppContextApp = memo(function WalletForZapAppContextApp({
+	children
+}: {
+	children: ReactElement;
+}): ReactElement {
 	const {address} = useWeb3();
 	const {refresh} = useWallet();
 	const {safeChainID} = useChainID();

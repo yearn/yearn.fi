@@ -33,7 +33,10 @@ export type TPortalsQuoteResult = {
 	error?: Error;
 };
 
-async function getQuote(request: TInitSolverArgs, zapSlippage: number): Promise<{data: TPortalsEstimate | null; error?: Error}> {
+async function getQuote(
+	request: TInitSolverArgs,
+	zapSlippage: number
+): Promise<{data: TPortalsEstimate | null; error?: Error}> {
 	const params = {
 		sellToken: toAddress(request.inputToken.value),
 		sellAmount: toBigInt(request.inputAmount).toString(),
@@ -227,7 +230,11 @@ export function useSolverPortals(): TSolverContext {
 	 ** process and displayed to the user.
 	 **************************************************************************/
 	const expectedOut = useMemo((): TNormalizedBN => {
-		if (!latestQuote?.current?.minBuyAmount || !request.current || isSolverDisabled(request.current.chainID)[Solver.enum.Portals]) {
+		if (
+			!latestQuote?.current?.minBuyAmount ||
+			!request.current ||
+			isSolverDisabled(request.current.chainID)[Solver.enum.Portals]
+		) {
 			return toNormalizedBN(0);
 		}
 		return toNormalizedBN(latestQuote?.current?.minBuyAmount, request?.current?.outputToken?.decimals || 18);
@@ -238,7 +245,11 @@ export function useSolverPortals(): TSolverContext {
 	 ** be used to determine if the user should approve the token or not.
 	 **************************************************************************/
 	const onRetrieveAllowance = useCallback(async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
-		if (!latestQuote?.current || !request?.current || isSolverDisabled(request.current.chainID)[Solver.enum.Portals]) {
+		if (
+			!latestQuote?.current ||
+			!request?.current ||
+			isSolverDisabled(request.current.chainID)[Solver.enum.Portals]
+		) {
 			return toNormalizedBN(0);
 		}
 
@@ -267,7 +278,10 @@ export function useSolverPortals(): TSolverContext {
 				throw new Error('Portals approval not found');
 			}
 
-			existingAllowances.current[key] = toNormalizedBN(approval.context.allowance, request.current.inputToken.decimals);
+			existingAllowances.current[key] = toNormalizedBN(
+				approval.context.allowance,
+				request.current.inputToken.decimals
+			);
 			return existingAllowances.current[key];
 		} catch (error) {
 			console.error(error);
@@ -281,7 +295,11 @@ export function useSolverPortals(): TSolverContext {
 	 ** of the token by the Portals solver.
 	 **************************************************************************/
 	const onApprove = useCallback(
-		async (amount = MAX_UINT_256, txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>, onSuccess: () => Promise<void>): Promise<void> => {
+		async (
+			amount = MAX_UINT_256,
+			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
+			onSuccess: () => Promise<void>
+		): Promise<void> => {
 			if (!request.current || isSolverDisabled(request.current.chainID)[Solver.enum.Portals] || !provider) {
 				return;
 			}
@@ -341,7 +359,10 @@ export function useSolverPortals(): TSolverContext {
 	 ** simply swapping the input token for the output token.
 	 **************************************************************************/
 	const onExecute = useCallback(
-		async (txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>, onSuccess: () => Promise<void>): Promise<void> => {
+		async (
+			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
+			onSuccess: () => Promise<void>
+		): Promise<void> => {
 			assert(provider, 'Provider is not set');
 
 			txStatusSetter({...defaultTxStatus, pending: true});

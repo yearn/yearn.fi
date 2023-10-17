@@ -31,7 +31,12 @@ function TokenItem({element}: {element: TBalanceReminderElement}): ReactElement 
 	const {provider} = useWeb3();
 	const balance = useBalance({address: element.address, chainID: element.chainID});
 
-	async function addTokenToMetamask(address: TAddress, symbol: string, decimals: number, image: string): Promise<void> {
+	async function addTokenToMetamask(
+		address: TAddress,
+		symbol: string,
+		decimals: number,
+		image: string
+	): Promise<void> {
 		if (!provider) {
 			return;
 		}
@@ -63,7 +68,9 @@ function TokenItem({element}: {element: TBalanceReminderElement}): ReactElement 
 							width={32}
 							height={32}
 							quality={90}
-							src={`${process.env.BASE_YEARN_ASSETS_URI}/${element.chainID}/${toAddress(element.address)}/logo-128.png`}
+							src={`${process.env.BASE_YEARN_ASSETS_URI}/${element.chainID}/${toAddress(
+								element.address
+							)}/logo-128.png`}
 						/>
 					</div>
 					<span className={'ml-2'}>{element.symbol}</span>
@@ -78,10 +85,14 @@ function TokenItem({element}: {element: TBalanceReminderElement}): ReactElement 
 								element.address,
 								element.symbol,
 								element.decimals,
-								`${process.env.BASE_YEARN_ASSETS_URI}/${element.chainID}/${toAddress(element.address)}/logo-128.png`
+								`${process.env.BASE_YEARN_ASSETS_URI}/${element.chainID}/${toAddress(
+									element.address
+								)}/logo-128.png`
 							);
 						}}
-						className={'ml-4 h-4 w-4 cursor-pointer text-neutral-400 transition-colors hover:text-neutral-900'}
+						className={
+							'ml-4 h-4 w-4 cursor-pointer text-neutral-400 transition-colors hover:text-neutral-900'
+						}
 					/>
 				</span>
 			</span>
@@ -153,7 +164,10 @@ export function BalanceReminderPopover(): ReactElement {
 						leave={'transition ease-in duration-150'}
 						leaveFrom={'opacity-100 translate-y-0'}
 						leaveTo={'opacity-0 translate-y-1'}>
-						<Popover.Panel className={'yearn--shadow absolute right-0 top-6 z-[1000] mt-3 w-screen max-w-xs md:-right-4 md:top-4'}>
+						<Popover.Panel
+							className={
+								'yearn--shadow absolute right-0 top-6 z-[1000] mt-3 w-screen max-w-xs md:-right-4 md:top-4'
+							}>
 							<div className={'overflow-hidden'}>
 								<div className={'relative bg-neutral-0 p-0'}>
 									<div
@@ -166,17 +180,30 @@ export function BalanceReminderPopover(): ReactElement {
 												// Special command to enable dev forknet balances
 												triggerForknetBalances();
 											}}
-											className={'flex h-6 w-6 items-center justify-center rounded-full bg-neutral-200/50'}>
+											className={
+												'flex h-6 w-6 items-center justify-center rounded-full bg-neutral-200/50'
+											}>
 											<IconQuestion className={'h-4 w-4 text-neutral-600'} />
 										</button>
 									</div>
-									<div className={'flex items-center justify-center border-b border-neutral-300 py-4 text-center'}>
-										<b>{isActive && address && ens ? ens : isActive && address ? truncateHex(address, 5) : 'Connect wallet'}</b>
+									<div
+										className={
+											'flex items-center justify-center border-b border-neutral-300 py-4 text-center'
+										}>
+										<b>
+											{isActive && address && ens
+												? ens
+												: isActive && address
+												? truncateHex(address, 5)
+												: 'Connect wallet'}
+										</b>
 									</div>
 									<div className={'absolute right-4 top-4'}>
 										<button
 											onClick={onDesactivate}
-											className={'flex h-6 w-6 items-center justify-center rounded-full bg-neutral-200/50'}>
+											className={
+												'flex h-6 w-6 items-center justify-center rounded-full bg-neutral-200/50'
+											}>
 											<IconCross className={'h-4 w-4 text-neutral-600'} />
 										</button>
 									</div>

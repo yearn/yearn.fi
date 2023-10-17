@@ -33,7 +33,11 @@ function APRLineItem({value, label, apyType, hasUpperLimit}: TAPRLineItemProps):
 			<p
 				className={'font-number text-sm text-neutral-900'}
 				suppressHydrationWarning>
-				{isNew ? 'New' : hasUpperLimit ? formatPercent(safeValue * 100) : formatPercent(safeValue * 100, 2, 2, 500)}
+				{isNew
+					? 'New'
+					: hasUpperLimit
+					? formatPercent(safeValue * 100)
+					: formatPercent(safeValue * 100, 2, 2, 500)}
 			</p>
 		</div>
 	);
@@ -43,12 +47,22 @@ function YearnFeesLineItem({children, label, tooltip}: TYearnFeesLineItem): Reac
 	return (
 		<div className={'flex flex-col space-y-0 md:space-y-2'}>
 			<p className={'text-xxs text-neutral-600 md:text-xs'}>{label}</p>
-			<div className={cl(tooltip ? 'tooltip underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600' : '')}>
+			<div
+				className={cl(
+					tooltip
+						? 'tooltip underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
+						: ''
+				)}>
 				{tooltip ? (
 					<span
 						suppressHydrationWarning
 						className={'tooltipFees bottom-full'}>
-						<div className={'font-number w-96 border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'}>{tooltip}</div>
+						<div
+							className={
+								'font-number w-96 border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
+							}>
+							{tooltip}
+						</div>
 					</span>
 				) : null}
 				{children}
@@ -57,7 +71,13 @@ function YearnFeesLineItem({children, label, tooltip}: TYearnFeesLineItem): Reac
 	);
 }
 
-export function VaultDetailsAbout({currentVault, harvestData}: {currentVault: TYDaemonVault; harvestData: TGraphData[]}): ReactElement {
+export function VaultDetailsAbout({
+	currentVault,
+	harvestData
+}: {
+	currentVault: TYDaemonVault;
+	harvestData: TGraphData[];
+}): ReactElement {
 	const isMounted = useIsMounted();
 	const {token, apr} = currentVault;
 
@@ -135,16 +155,22 @@ export function VaultDetailsAbout({currentVault, harvestData}: {currentVault: TY
 							<b className={'font-number text-xl text-neutral-900'}>{formatPercent(0, 0, 0)}</b>
 						</YearnFeesLineItem>
 						<YearnFeesLineItem label={'Management fee'}>
-							<b className={'font-number text-xl text-neutral-900'}>{formatPercent((apr.fees.management || 0) / 100, 0)}</b>
+							<b className={'font-number text-xl text-neutral-900'}>
+								{formatPercent((apr.fees.management || 0) / 100, 0)}
+							</b>
 						</YearnFeesLineItem>
 						<YearnFeesLineItem label={'Performance fee'}>
-							<b className={'font-number text-xl text-neutral-500'}>{formatPercent((apr.fees.performance || 0) / 100, 0)}</b>
+							<b className={'font-number text-xl text-neutral-500'}>
+								{formatPercent((apr.fees.performance || 0) / 100, 0)}
+							</b>
 						</YearnFeesLineItem>
 						{currentVault.category === 'Velodrome' || currentVault.category === 'Aerodrome' ? (
 							<YearnFeesLineItem
 								label={'keepVELO'}
 								tooltip={`Percentage of VELO locked in each harvest. This is used to boost ${currentVault.category} vault pools, and is offset via yvOP staking rewards.`}>
-								<b className={'font-number text-xl text-neutral-500'}>{formatPercent(currentVault.apr.fees.keepVelo * 100, 0)}</b>
+								<b className={'font-number text-xl text-neutral-500'}>
+									{formatPercent(currentVault.apr.fees.keepVelo * 100, 0)}
+								</b>
 							</YearnFeesLineItem>
 						) : null}
 					</div>

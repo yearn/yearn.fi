@@ -14,9 +14,19 @@ export type TWithSolver = {
 	hash?: string;
 	isLoadingExpectedOut: boolean;
 	onRetrieveAllowance: (shouldForceRefetch?: boolean) => Promise<TNormalizedBN>;
-	onApprove: (amount: bigint, txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>, onSuccess: () => Promise<void>) => Promise<void>;
-	onExecuteDeposit: (txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>, onSuccess: () => Promise<void>) => Promise<void>;
-	onExecuteWithdraw: (txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>, onSuccess: () => Promise<void>) => Promise<void>;
+	onApprove: (
+		amount: bigint,
+		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
+		onSuccess: () => Promise<void>
+	) => Promise<void>;
+	onExecuteDeposit: (
+		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
+		onSuccess: () => Promise<void>
+	) => Promise<void>;
+	onExecuteWithdraw: (
+		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
+		onSuccess: () => Promise<void>
+	) => Promise<void>;
 };
 
 export type TInitSolverArgs = {
@@ -34,9 +44,19 @@ export type TSolverContext = {
 	quote: TNormalizedBN;
 	init: (args: TInitSolverArgs, shouldLogError?: boolean) => Promise<TNormalizedBN>;
 	onRetrieveAllowance: (shouldForceRefetch?: boolean) => Promise<TNormalizedBN>;
-	onApprove: (amount: bigint, txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>, onSuccess: () => Promise<void>) => Promise<void>;
-	onExecuteDeposit: (txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>, onSuccess: () => Promise<void>) => Promise<void>;
-	onExecuteWithdraw: (txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>, onSuccess: () => Promise<void>) => Promise<void>;
+	onApprove: (
+		amount: bigint,
+		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
+		onSuccess: () => Promise<void>
+	) => Promise<void>;
+	onExecuteDeposit: (
+		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
+		onSuccess: () => Promise<void>
+	) => Promise<void>;
+	onExecuteWithdraw: (
+		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
+		onSuccess: () => Promise<void>
+	) => Promise<void>;
 };
 
 /* 🔵 - Yearn Finance ******************************************************

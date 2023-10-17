@@ -180,7 +180,9 @@ export function ListHero<T extends string>({
 					options={OPTIONS}
 					placeholder={'Select chain'}
 					onSelect={(options): void => {
-						const selectedChains = options.filter((o): boolean => o.isSelected).map((option): number => Number(option.value));
+						const selectedChains = options
+							.filter((o): boolean => o.isSelected)
+							.map((option): number => Number(option.value));
 						set_selectedChains?.(JSON.stringify(selectedChains));
 					}}
 				/>
@@ -226,7 +228,9 @@ export function ListHero<T extends string>({
 				<div className={'flex h-8 w-full items-center border border-neutral-0 bg-neutral-0 p-2 md:w-auto'}>
 					<div className={'flex h-8 w-full flex-row items-center justify-between px-0 py-2'}>
 						<input
-							className={'w-full overflow-x-scroll border-none bg-transparent px-0 py-2 text-xs outline-none scrollbar-none'}
+							className={
+								'w-full overflow-x-scroll border-none bg-transparent px-0 py-2 text-xs outline-none scrollbar-none'
+							}
 							type={'text'}
 							placeholder={'Search'}
 							value={searchValue}

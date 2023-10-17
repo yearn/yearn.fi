@@ -97,7 +97,11 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 	 **********************************************************************************************/
 	const onUpdateSolver = useCallback(
 		async (currentNonce: number): Promise<void> => {
-			if (!actionParams?.selectedOptionFrom || !actionParams?.selectedOptionTo || actionParams?.amount.raw === undefined) {
+			if (
+				!actionParams?.selectedOptionFrom ||
+				!actionParams?.selectedOptionTo ||
+				actionParams?.amount.raw === undefined
+			) {
 				return;
 			}
 			set_isLoading(true);
@@ -111,8 +115,18 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 				isDepositing: isDepositing
 			};
 
-			const isValidSolver = ({quote, solver}: {quote: PromiseSettledResult<TNormalizedBN>; solver: TSolver}): boolean => {
-				return quote.status === 'fulfilled' && quote?.value.raw > 0n && !isSolverDisabled(currentVault.chainID)[solver];
+			const isValidSolver = ({
+				quote,
+				solver
+			}: {
+				quote: PromiseSettledResult<TNormalizedBN>;
+				solver: TSolver;
+			}): boolean => {
+				return (
+					quote.status === 'fulfilled' &&
+					quote?.value.raw > 0n &&
+					!isSolverDisabled(currentVault.chainID)[solver]
+				);
 			};
 
 			switch (currentSolver) {
@@ -155,9 +169,17 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 						ctx: vanilla
 					};
 
-					const solverPriority = [Solver.enum.Wido, Solver.enum.Cowswap, Solver.enum.Portals, Solver.enum.None];
+					const solverPriority = [
+						Solver.enum.Wido,
+						Solver.enum.Cowswap,
+						Solver.enum.Portals,
+						Solver.enum.None
+					];
 
-					const newSolverPriority = [currentSolver, ...solverPriority.filter((solver): boolean => solver !== currentSolver)];
+					const newSolverPriority = [
+						currentSolver,
+						...solverPriority.filter((solver): boolean => solver !== currentSolver)
+					];
 
 					for (const solver of newSolverPriority) {
 						if (!solvers[solver]) {

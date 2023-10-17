@@ -1,7 +1,12 @@
 import {Fragment, useMemo} from 'react';
 import {VaultsListInternalMigrationRow} from '@vaults/components/list/VaultsListInternalMigrationRow';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
-import {LPYCRV_TOKEN_ADDRESS, LPYCRV_V2_TOKEN_ADDRESS, STYCRV_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {
+	LPYCRV_TOKEN_ADDRESS,
+	LPYCRV_V2_TOKEN_ADDRESS,
+	STYCRV_TOKEN_ADDRESS,
+	YCRV_TOKEN_ADDRESS
+} from '@yearn-finance/web-lib/utils/constants';
 import {formatBigNumberOver10K, formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatNumberOver10K, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue, formatCounterValueRaw} from '@yearn-finance/web-lib/utils/format.value';
@@ -29,17 +34,27 @@ function HeaderPosition(): ReactElement {
 	const lpycrvV2Price = useTokenPrice(LPYCRV_V2_TOKEN_ADDRESS);
 
 	const formatedYearnHas = useMemo(
-		(): string => (holdings?.veCRVBalance ? formatAmount(formatToNormalizedValue(holdings.veCRVBalance, 18), 0, 0) : ''),
+		(): string =>
+			holdings?.veCRVBalance ? formatAmount(formatToNormalizedValue(holdings.veCRVBalance, 18), 0, 0) : '',
 		[holdings?.veCRVBalance]
 	);
 
 	const formatedYouHave = useMemo(
 		(): string =>
 			formatCounterValueRaw(
-				Number(balanceOfStyCRV.normalized) * stycrvPrice + Number(balanceOfLpyCRV.normalized) * lpycrvPrice + Number(balanceOfLpyCRVV2.normalized) * lpycrvV2Price,
+				Number(balanceOfStyCRV.normalized) * stycrvPrice +
+					Number(balanceOfLpyCRV.normalized) * lpycrvPrice +
+					Number(balanceOfLpyCRVV2.normalized) * lpycrvV2Price,
 				1
 			),
-		[balanceOfStyCRV.normalized, stycrvPrice, balanceOfLpyCRV.normalized, lpycrvPrice, balanceOfLpyCRVV2.normalized, lpycrvV2Price]
+		[
+			balanceOfStyCRV.normalized,
+			stycrvPrice,
+			balanceOfLpyCRV.normalized,
+			lpycrvPrice,
+			balanceOfLpyCRVV2.normalized,
+			lpycrvV2Price
+		]
 	);
 
 	return (
@@ -100,7 +115,13 @@ function ZapAndStats(): ReactElement {
 	}, [curveWeeklyFees]);
 
 	const currentVeCRVAPY = useMemo((): number => {
-		return (latestCurveFeesValue / (formatToNormalizedValue(toBigInt(holdings?.veCRVTotalSupply), 18) * cgPrices?.['curve-dao-token']?.usd)) * 52 * 100;
+		return (
+			(latestCurveFeesValue /
+				(formatToNormalizedValue(toBigInt(holdings?.veCRVTotalSupply), 18) *
+					cgPrices?.['curve-dao-token']?.usd)) *
+			52 *
+			100
+		);
 	}, [holdings, latestCurveFeesValue, cgPrices]);
 
 	const curveAdminFeePercent = useMemo((): number => {
@@ -123,7 +144,9 @@ function ZapAndStats(): ReactElement {
 						<p
 							suppressHydrationWarning
 							className={'font-number text-sm text-neutral-900'}>
-							{`Price = $${formatAmount(ycrvPrice || 0)} | Peg = ${holdings?.crvYCRVPeg ? formatPercent(crvYCRVPeg * 100) : formatPercent(0)}`}
+							{`Price = $${formatAmount(ycrvPrice || 0)} | Peg = ${
+								holdings?.crvYCRVPeg ? formatPercent(crvYCRVPeg * 100) : formatPercent(0)
+							}`}
 						</p>
 					</div>
 
@@ -183,24 +206,37 @@ function ZapAndStats(): ReactElement {
 							<span
 								suppressHydrationWarning
 								className={'tooltipLight !-left-[132px] bottom-full mb-1 w-fit'}>
-								<div className={'font-number w-52 border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'}>
+								<div
+									className={
+										'font-number w-52 border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
+									}>
 									<div className={'flex flex-col items-start justify-start text-left'}>
 										<p
 											suppressHydrationWarning
 											className={'font-number text-neutral-400 md:text-xxs'}>
-											{styCRVAPY ? `*${formatPercent(styCRVAPY)} APY: ` : `*${formatPercent(0)} APY: `}
+											{styCRVAPY
+												? `*${formatPercent(styCRVAPY)} APY: `
+												: `*${formatPercent(0)} APY: `}
 										</p>
 										<p
 											suppressHydrationWarning
 											className={'font-number text-neutral-400 md:text-xxs'}>
-											{`∙ ${curveAdminFeePercent ? formatPercent(curveAdminFeePercent) : formatPercent(0)} Curve Admin Fees (${formatAmount(
+											{`∙ ${
+												curveAdminFeePercent
+													? formatPercent(curveAdminFeePercent)
+													: formatPercent(0)
+											} Curve Admin Fees (${formatAmount(
 												Number(holdings?.boostMultiplier) / 10000
 											)}x boost)`}
 										</p>
 										<p
 											suppressHydrationWarning
 											className={'font-number text-neutral-400 md:text-xxs'}>
-											{`∙ ${styCRVAPY && curveAdminFeePercent ? formatAmount(styCRVAPY - curveAdminFeePercent, 2, 2) : '0.00'}% Gauge Voting Bribes`}
+											{`∙ ${
+												styCRVAPY && curveAdminFeePercent
+													? formatAmount(styCRVAPY - curveAdminFeePercent, 2, 2)
+													: '0.00'
+											}% Gauge Voting Bribes`}
 										</p>
 									</div>
 								</div>
@@ -212,7 +248,9 @@ function ZapAndStats(): ReactElement {
 						<p
 							suppressHydrationWarning
 							className={'font-number text-sm text-neutral-900'}>
-							{holdings?.styCRVSupply ? formatCounterValue(formatToNormalizedValue(holdings.styCRVSupply, 18), ycrvPrice) : formatAmount(0)}
+							{holdings?.styCRVSupply
+								? formatCounterValue(formatToNormalizedValue(holdings.styCRVSupply, 18), ycrvPrice)
+								: formatAmount(0)}
 						</p>
 					</div>
 					<div className={'flex flex-row items-center justify-between pb-1'}>
@@ -262,7 +300,12 @@ function ZapAndStats(): ReactElement {
 						<p
 							suppressHydrationWarning
 							className={'font-number text-sm text-neutral-900'}>
-							{holdings?.lpyCRVV2Supply ? formatCounterValue(formatToNormalizedValue(holdings.lpyCRVV2Supply, 18), lpycrvV2Price) : formatAmount(0)}
+							{holdings?.lpyCRVV2Supply
+								? formatCounterValue(
+										formatToNormalizedValue(holdings.lpyCRVV2Supply, 18),
+										lpycrvV2Price
+								  )
+								: formatAmount(0)}
 						</p>
 					</div>
 					<div className={'flex flex-row items-center justify-between pb-1'}>
@@ -313,7 +356,12 @@ function ZapAndStats(): ReactElement {
 							<p
 								suppressHydrationWarning
 								className={'font-number text-sm text-neutral-900'}>
-								{holdings?.lpyCRVSupply ? formatCounterValue(formatToNormalizedValue(holdings.lpyCRVSupply, 18), lpycrvPrice) : formatAmount(0)}
+								{holdings?.lpyCRVSupply
+									? formatCounterValue(
+											formatToNormalizedValue(holdings.lpyCRVSupply, 18),
+											lpycrvPrice
+									  )
+									: formatAmount(0)}
 							</p>
 						</div>
 						<div className={'flex flex-row items-center justify-between pb-1'}>
@@ -339,7 +387,11 @@ function Holdings(): ReactElement {
 	const hasLegacyLpyCRV = !!vaultsMigrations[LPYCRV_TOKEN_ADDRESS] && balanceOfLpyCRV.raw > 0n;
 
 	return (
-		<section className={cl('grid w-full grid-cols-12 gap-y-10 pb-10 md:gap-x-10 md:gap-y-20', !hasLegacyLpyCRV ? 'mt-4  md:mt-20' : '')}>
+		<section
+			className={cl(
+				'grid w-full grid-cols-12 gap-y-10 pb-10 md:gap-x-10 md:gap-y-20',
+				!hasLegacyLpyCRV ? 'mt-4  md:mt-20' : ''
+			)}>
 			{hasLegacyLpyCRV && (
 				<div className={'col-span-12 w-full'}>
 					<VaultsListInternalMigrationRow currentVault={vaultsMigrations[LPYCRV_TOKEN_ADDRESS]} />

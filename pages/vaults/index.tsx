@@ -181,7 +181,9 @@ function Index(): ReactElement {
 	 **	It contains either the list of vaults, is some are available, or a message to the user.
 	 **********************************************************************************************/
 	const VaultList = useMemo((): ReactNode => {
-		const filteredByChains = sortedVaultsToDisplay.filter((vault): boolean => chainsFromJSON.includes(vault.chainID));
+		const filteredByChains = sortedVaultsToDisplay.filter((vault): boolean =>
+			chainsFromJSON.includes(vault.chainID)
+		);
 
 		if (isLoadingVaultList && categoriesFromJSON.includes('Holdings')) {
 			return (
@@ -220,7 +222,10 @@ function Index(): ReactElement {
 		<section className={'mt-4 grid w-full grid-cols-12 gap-y-10 pb-10 md:mt-20 md:gap-x-10 md:gap-y-20'}>
 			<HeaderUserPosition />
 
-			<div className={'relative col-span-12 flex min-h-[240px] w-full flex-col overflow-x-hidden bg-neutral-100 md:overflow-x-visible'}>
+			<div
+				className={
+					'relative col-span-12 flex min-h-[240px] w-full flex-col overflow-x-hidden bg-neutral-100 md:overflow-x-visible'
+				}>
 				<div className={'absolute right-5 top-3 md:right-8 md:top-8'}>
 					<VaultListOptions />
 				</div>

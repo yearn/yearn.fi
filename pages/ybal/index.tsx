@@ -24,12 +24,17 @@ function HeaderPosition(): ReactElement {
 	const lpyBalPrice = useTokenPrice(LPYBAL_TOKEN_ADDRESS);
 
 	const formatedYearnHas = useMemo(
-		(): string => (holdings?.veBalBalance ? formatAmount(formatToNormalizedValue(holdings.veBalBalance, 18), 0, 0) : ''),
+		(): string =>
+			holdings?.veBalBalance ? formatAmount(formatToNormalizedValue(holdings.veBalBalance, 18), 0, 0) : '',
 		[holdings?.veBalBalance]
 	);
 
 	const formatedYouHave = useMemo(
-		(): string => formatCounterValueRaw(Number(balanceOfStyBal.normalized) * styBalPrice + Number(balanceOfLpyBal.normalized) * lpyBalPrice, 1),
+		(): string =>
+			formatCounterValueRaw(
+				Number(balanceOfStyBal.normalized) * styBalPrice + Number(balanceOfLpyBal.normalized) * lpyBalPrice,
+				1
+			),
 		[balanceOfStyBal.normalized, styBalPrice, balanceOfLpyBal.normalized, lpyBalPrice]
 	);
 
@@ -85,7 +90,9 @@ function Holdings(): ReactElement {
 							<p
 								suppressHydrationWarning
 								className={'font-number text-sm text-neutral-900'}>
-								{holdings?.balYBalPeg ? formatPercent((formatToNormalizedValue(holdings?.balYBalPeg, 18) + 0.0015) * 100) : formatPercent(0)}
+								{holdings?.balYBalPeg
+									? formatPercent((formatToNormalizedValue(holdings?.balYBalPeg, 18) + 0.0015) * 100)
+									: formatPercent(0)}
 							</p>
 						</div>
 					</div>
@@ -127,7 +134,9 @@ function Holdings(): ReactElement {
 							<p
 								suppressHydrationWarning
 								className={'font-number text-sm text-neutral-900'}>
-								{holdings?.styBalSupply ? formatCounterValue(formatToNormalizedValue(holdings.styBalSupply, 18), yBalPrice) : formatAmount(0)}
+								{holdings?.styBalSupply
+									? formatCounterValue(formatToNormalizedValue(holdings.styBalSupply, 18), yBalPrice)
+									: formatAmount(0)}
 							</p>
 						</div>
 						<div className={'flex flex-row items-center justify-between pb-1'}>
@@ -177,7 +186,12 @@ function Holdings(): ReactElement {
 							<p
 								suppressHydrationWarning
 								className={'font-number text-sm text-neutral-900'}>
-								{holdings?.lpyBalSupply ? formatCounterValue(formatToNormalizedValue(holdings.lpyBalSupply, 18), lpyBalPrice) : formatAmount(0)}
+								{holdings?.lpyBalSupply
+									? formatCounterValue(
+											formatToNormalizedValue(holdings.lpyBalSupply, 18),
+											lpyBalPrice
+									  )
+									: formatAmount(0)}
 							</p>
 						</div>
 						<div className={'flex flex-row items-center justify-between pb-1'}>

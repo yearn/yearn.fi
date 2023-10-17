@@ -2,7 +2,7 @@
 import {useCallback, useMemo, useState} from 'react';
 import {sort} from '@veYFI/utils';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
-import { isZero } from '@yearn-finance/web-lib/utils/isZero';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {Pagination} from '@common/components/Pagination';
 import {usePagination} from '@common/hooks/usePagination';
 import {IconChevronPlain} from '@common/icons/IconChevronPlain';
@@ -176,20 +176,13 @@ export function Table<T>({
 								}
 								const isNumber = isNumberLike;
 
-							return (
-								<div
-									key={`cell_${key}_${rowIndex}`}
-									className={cl(
-										'flex h-8 flex-row items-center justify-between md:h-14 md:justify-end md:first:justify-start',
-										colSpanVariants[(columnSpan as keyof typeof gridColsVariants) ?? 1],
-										className
-									)}>
-									{!fullWidth && <label className={'inline text-start text-sm text-neutral-500 md:hidden'}>{label}</label>}
+								return (
 									<div
+										key={`cell_${key}_${rowIndex}`}
 										className={cl(
-											isZero(item[key] as number) ? 'text-neutral-400' : 'text-neutral-900',
-											isNumber ? 'font-number' : 'font-aeonik',
-											fullWidth ? 'w-full' : undefined
+											'flex h-8 flex-row items-center justify-between md:h-14 md:justify-end md:first:justify-start',
+											colSpanVariants[(columnSpan as keyof typeof gridColsVariants) ?? 1],
+											className
 										)}>
 										{!fullWidth && (
 											<label className={'inline text-start text-sm text-neutral-500 md:hidden'}>
@@ -207,9 +200,9 @@ export function Table<T>({
 											{transform?.(item) ?? format?.(item).toString() ?? String(item[key])}
 										</div>
 									</div>
-								</div>
-							);
-						})}
+								);
+							}
+						)}
 					</div>
 				)
 			)}

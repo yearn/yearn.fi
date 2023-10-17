@@ -27,7 +27,14 @@ function Label({children}: {children: string}): ReactElement {
 }
 
 export function SettingsPopover({vault}: TSettingPopover): ReactElement {
-	const {zapProvider, set_zapProvider, zapSlippage, set_zapSlippage, isStakingOpBoostedVaults, set_isStakingOpBoostedVaults} = useYearn();
+	const {
+		zapProvider,
+		set_zapProvider,
+		zapSlippage,
+		set_zapSlippage,
+		isStakingOpBoostedVaults,
+		set_isStakingOpBoostedVaults
+	} = useYearn();
 	const {stakingRewardsByVault} = useStakingRewards();
 
 	const {address, chainID} = vault;
@@ -56,7 +63,8 @@ export function SettingsPopover({vault}: TSettingPopover): ReactElement {
 						leave={'transition ease-in duration-150'}
 						leaveFrom={'opacity-100 translate-y-0'}
 						leaveTo={'opacity-0 translate-y-1'}>
-						<Popover.Panel className={'absolute right-0 top-6 z-[1000] mt-3 w-screen max-w-xs md:-right-4 md:top-4'}>
+						<Popover.Panel
+							className={'absolute right-0 top-6 z-[1000] mt-3 w-screen max-w-xs md:-right-4 md:top-4'}>
 							<div className={'yearn--shadow'}>
 								<div className={'relative bg-neutral-0 p-4'}>
 									<div className={'mb-6 flex flex-col space-y-1'}>
@@ -64,8 +72,14 @@ export function SettingsPopover({vault}: TSettingPopover): ReactElement {
 										<select
 											id={'zapProvider'}
 											onChange={(e): void => set_zapProvider(e.target.value as TSolver)}
-											value={!isSolverDisabled(chainID)[currentZapProvider] ? currentZapProvider : Solver.enum.Wido}
-											className={'mt-1 h-10 w-full overflow-x-scroll border-none bg-neutral-100 p-2 outline-none scrollbar-none'}>
+											value={
+												!isSolverDisabled(chainID)[currentZapProvider]
+													? currentZapProvider
+													: Solver.enum.Wido
+											}
+											className={
+												'mt-1 h-10 w-full overflow-x-scroll border-none bg-neutral-100 p-2 outline-none scrollbar-none'
+											}>
 											{chainID === 1 ? (
 												<option
 													disabled={isSolverDisabled(chainID)[Solver.enum.Cowswap]}
@@ -133,7 +147,9 @@ export function SettingsPopover({vault}: TSettingPopover): ReactElement {
 											</button>
 											<div
 												className={`flex h-10 w-full min-w-[72px] items-center border bg-neutral-100 px-0 py-4 md:min-w-[160px] ${
-													zapSlippage !== 1 && zapSlippage !== 2 ? 'border-neutral-900' : 'border-transparent'
+													zapSlippage !== 1 && zapSlippage !== 2
+														? 'border-neutral-900'
+														: 'border-transparent'
 												}`}>
 												<input
 													id={'slippageTolerance'}
@@ -141,7 +157,9 @@ export function SettingsPopover({vault}: TSettingPopover): ReactElement {
 													min={0}
 													step={0.1}
 													max={100}
-													className={'font-number h-10 w-full overflow-x-scroll border-none bg-transparent p-2 text-right outline-none scrollbar-none'}
+													className={
+														'font-number h-10 w-full overflow-x-scroll border-none bg-transparent p-2 text-right outline-none scrollbar-none'
+													}
 													value={zapSlippage}
 													onChange={(e): void => {
 														set_zapSlippage(parseFloat(e.target.value) || 0);
@@ -159,7 +177,9 @@ export function SettingsPopover({vault}: TSettingPopover): ReactElement {
 													<p className={'mr-2'}>{'Stake automatically'}</p>
 													<Switch
 														isEnabled={isStakingOpBoostedVaults}
-														onSwitch={(): void => set_isStakingOpBoostedVaults(!isStakingOpBoostedVaults)}
+														onSwitch={(): void =>
+															set_isStakingOpBoostedVaults(!isStakingOpBoostedVaults)
+														}
 													/>
 												</div>
 											</div>
