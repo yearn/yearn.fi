@@ -1,20 +1,10 @@
 import {useEffect, useState} from 'react';
-import {
-	DelimitedArrayParam,
-	DelimitedNumericArrayParam,
-	StringParam,
-	useQueryParam,
-	withDefault
-} from 'use-query-params';
+import {DelimitedArrayParam, DelimitedNumericArrayParam, StringParam, useQueryParam} from 'use-query-params';
 import {ALL_CATEGORIES_KEYS, ALL_CHAINS} from '@vaults/contexts/useAppSettings';
 
 import type {TSortDirection} from '@common/types/types';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 
-const CategoriesParams = withDefault(DelimitedArrayParam, ALL_CATEGORIES_KEYS);
-const ChainsParams = withDefault(DelimitedNumericArrayParam, ALL_CHAINS);
-const SortDirectionParams = withDefault(StringParam, 'desc');
-const SortByParams = withDefault(StringParam, 'featuringScore');
 type TQueryArgs = {
 	search: string | null | undefined;
 	categories: string[];
@@ -33,10 +23,10 @@ function useQueryArguments(): TQueryArgs {
 	 ** is slower than the state of the component.
 	 *********************************************************************************************/
 	const [searchParam, set_searchParam] = useQueryParam('search', StringParam);
-	const [categoriesParam, set_categoriesParam] = useQueryParam('categories', CategoriesParams);
-	const [chainsParam, set_chainsParam] = useQueryParam('chains', ChainsParams);
-	const [sortDirectionParam, set_sortDirectionParam] = useQueryParam('sortDir', SortDirectionParams);
-	const [sortByParam, set_sortByParam] = useQueryParam('sortBy', SortByParams);
+	const [categoriesParam, set_categoriesParam] = useQueryParam('categories', DelimitedArrayParam);
+	const [chainsParam, set_chainsParam] = useQueryParam('chains', DelimitedNumericArrayParam);
+	const [sortDirectionParam, set_sortDirectionParam] = useQueryParam('sortDir', StringParam);
+	const [sortByParam, set_sortByParam] = useQueryParam('sortBy', StringParam);
 
 	/** 🔵 - Yearn *********************************************************************************
 	 **	Theses are our actual state.
@@ -46,6 +36,8 @@ function useQueryArguments(): TQueryArgs {
 	const [chains, set_chains] = useState(chainsParam);
 	const [sortDirection, set_sortDirection] = useState(sortDirectionParam);
 	const [sortBy, set_sortBy] = useState(sortByParam);
+
+	console.log({chainsParam, chains});
 
 	/** 🔵 - Yearn *********************************************************************************
 	 **	This useEffect hook is used to synchronize the search state with the query parameter
@@ -76,8 +68,8 @@ function useQueryArguments(): TQueryArgs {
 			set_categories(categoriesParam);
 			return;
 		}
-		if (!categories) {
-			set_categoriesParam(ALL_CATEGORIES_KEYS);
+		if (!categories || Object.values(categories).length === ALL_CATEGORIES_KEYS.length) {
+			set_categoriesParam(undefined);
 		} else {
 			set_categoriesParam(categories);
 		}
@@ -91,11 +83,11 @@ function useQueryArguments(): TQueryArgs {
 			return;
 		}
 		if (chains === undefined && chainsParam !== undefined) {
-			set_chains(chainsParam);
+			set_chains(chainsParam as number[]);
 			return;
 		}
-		if (!chains) {
-			set_chainsParam(ALL_CHAINS);
+		if (!chains || Object.values(chains).length === ALL_CHAINS.length) {
+			set_chainsParam(undefined);
 		} else {
 			set_chainsParam(chains);
 		}
@@ -139,10 +131,10 @@ function useQueryArguments(): TQueryArgs {
 
 	return {
 		search,
-		categories: (categories || []) as string[],
-		chains: (chains || []) as number[],
-		sortDirection: sortDirection as TSortDirection,
-		sortBy: sortBy as TPossibleSortBy,
+		categories: (categories || ALL_CATEGORIES_KEYS) as string[],
+		chains: (chains || ALL_CHAINS) as number[],
+		sortDirection: (sortDirection || 'desc') as TSortDirection,
+		sortBy: (sortBy || 'featuringScore') as TPossibleSortBy,
 		onSearch: set_search,
 		onChangeCategories: set_categories,
 		onChangeChains: set_chains,
