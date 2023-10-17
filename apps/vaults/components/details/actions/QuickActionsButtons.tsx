@@ -13,7 +13,7 @@ import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
-import {useAsync} from '@common/hooks/useAsyncEffect';
+import {useAsyncTrigger} from '@common/hooks/useAsyncEffect';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 
 import type {ReactElement} from 'react';
@@ -38,7 +38,7 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 	 ** SWR hook to get the expected out for a given in/out pair with a specific amount. This hook is
 	 ** called when amount/in or out changes. Calls the allowanceFetcher callback.
 	 **********************************************************************************************/
-	const triggerRetrieveAllowance = useAsync(async (): Promise<void> => {
+	const triggerRetrieveAllowance = useAsyncTrigger(async (): Promise<void> => {
 		set_allowanceFrom(await onRetrieveAllowance(true));
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [address, onRetrieveAllowance, hash]);
