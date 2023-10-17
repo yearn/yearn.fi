@@ -20,7 +20,6 @@ import {useTokenPrice} from '@common/hooks/useTokenPrice';
 import {approveERC20} from '@common/utils/actions';
 
 import type {ReactElement} from 'react';
-import type {TAddress} from '@yearn-finance/web-lib/types';
 
 export function RedeemTab(): ReactElement {
 	const [redeemAmount, set_redeemAmount] = useState(toNormalizedBN(0));
@@ -37,11 +36,10 @@ export function RedeemTab(): ReactElement {
 	const [approveRedeemStatus, set_approveRedeemStatus] = useState(defaultTxStatus);
 	const [redeemStatus, set_redeemStatus] = useState(defaultTxStatus);
 
-	const userAddress = address as TAddress;
 	const dYFIBalance = toNormalizedBN(formatBigNumberAsAmount(positions?.balance), 18);
 	const ethRequired = toNormalizedValue(result, 18);
 
-	const handleApproveRedeem = useCallback(async (): Promise<void> => {
+	const onApproveRedeem = useCallback(async (): Promise<void> => {
 		const response = await approveERC20({
 			connector: provider,
 			chainID: VEYFI_CHAIN_ID,
@@ -56,9 +54,10 @@ export function RedeemTab(): ReactElement {
 		}
 	}, [provider, redeemAmount.raw, refreshData]);
 
-	const handleRedeem = useCallback(async (): Promise<void> => {
+	const onRedeem = useCallback(async (): Promise<void> => {
 		const response = await redeem({
 			connector: provider,
+			chainID: VEYFI_CHAIN_ID,
 			contractAddress: VEYFI_OPTIONS_ADDRESS,
 			statusHandler: set_redeemStatus,
 			accountAddress: toAddress(address),
@@ -78,7 +77,7 @@ export function RedeemTab(): ReactElement {
 		spenderAddress: VEYFI_OPTIONS_ADDRESS,
 		allowances,
 		amount: redeemAmount.raw,
-		ownerAddress: userAddress,
+		ownerAddress: toAddress(address),
 		chainID: 1
 	});
 
@@ -128,10 +127,9 @@ export function RedeemTab(): ReactElement {
 					/>
 					<Button
 						className={'w-full md:mt-7'}
-						onClick={async (): Promise<void> => isApproved ? handleRedeem() : handleApproveRedeem()}
+						onClick={async (): Promise<void> => isApproved ? onRedeem() : onApproveRedeem()}
 						isBusy={isLoadingOption || approveRedeemStatus.pending || redeemStatus.pending || status === 'loading'}
-						isDisabled={!isActive || !isValidNetwork || !isValidRedeemAmount || status === 'loading' || status === 'error' || !redeemStatus.none || !approveRedeemStatus.none}
-					>
+						isDisabled={!isActive || !isValidNetwork || !isValidRedeemAmount || status === 'loading' || status === 'error' || !redeemStatus.none || !approveRedeemStatus.none}>
 						{isApproved ? 'Redeem' : 'Approve'}
 					</Button>
 				</div>

@@ -25,6 +25,7 @@ export function VoteTab(): ReactElement {
 
 		await delegateVote({
 			connector: provider,
+			chainID: VEYFI_CHAIN_ID,
 			contractAddress: SNAPSHOT_DELEGATE_REGISTRY_ADDRESS,
 			statusHandler: set_delegateVoteStatus,
 			delegateAddress: toAddress(delegateAddress)

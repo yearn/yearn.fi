@@ -5,22 +5,22 @@ import {YEARN_SNAPSHOT_SPACE} from '@veYFI/utils/constants';
 import {prepareWriteContract} from '@wagmi/core';
 import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {handleTx, type TWriteTransaction} from '@yearn-finance/web-lib/utils/wagmi/provider';
+import {assertAddress} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {assert} from '@common/utils/assert';
-import {assertAddresses, handleTx as handleTxWagmi} from '@common/utils/wagmiUtils';
 
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TSeconds} from '@yearn-finance/web-lib/utils/time';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
-import type {TWriteTransaction} from '@common/utils/wagmiUtils';
 
 type TApproveLock = TWriteTransaction & {votingEscrowAddress: TAddress; amount: bigint;};
 export async function approveLock(props: TApproveLock): Promise<TTxResponse> {
 	const {votingEscrowAddress, amount = MAX_UINT_256, contractAddress} = props;
-
-	assertAddresses([votingEscrowAddress, contractAddress]);
+	assertAddress(votingEscrowAddress, 'votingEscrowAddress');
+	assertAddress(contractAddress, 'contractAddress');
 	assert(amount > 0n, 'Amount is 0');
 
-	return await handleTxWagmi(props, {
+	return await handleTx(props, {
 		address: contractAddress,
 		abi: ['function approve(address _spender, uint256 _value) external'],
 		functionName: 'approve',
@@ -30,11 +30,13 @@ export async function approveLock(props: TApproveLock): Promise<TTxResponse> {
 
 type TLock = TWriteTransaction & {votingEscrowAddress: TAddress; accountAddress: TAddress; amount: bigint; time: TSeconds};
 export async function lock(props: TLock): Promise<TTxResponse> {
-	assertAddresses([props.votingEscrowAddress, props.accountAddress, props.contractAddress]);
+	assertAddress(props.votingEscrowAddress, 'votingEscrowAddress');
+	assertAddress(props.accountAddress, 'accountAddress');
+	assertAddress(props.contractAddress, 'contractAddress');
 	assert(props.amount > 0n, 'Amount is 0');
 	assert(props.time > 0, 'Time is 0');
 
-	return await handleTxWagmi(props, {
+	return await handleTx(props, {
 		address: props.contractAddress,
 		abi: VEYFI_ABI,
 		functionName: 'modify_lock',
@@ -44,10 +46,12 @@ export async function lock(props: TLock): Promise<TTxResponse> {
 
 type TIncreaseLockAmount = TWriteTransaction & {votingEscrowAddress: TAddress; accountAddress: TAddress; amount: bigint};
 export async function increaseLockAmount(props: TIncreaseLockAmount): Promise<TTxResponse> {
-	assertAddresses([props.votingEscrowAddress, props.accountAddress, props.contractAddress]);
+	assertAddress(props.votingEscrowAddress, 'votingEscrowAddress');
+	assertAddress(props.accountAddress, 'accountAddress');
+	assertAddress(props.contractAddress, 'contractAddress');
 	assert(props.amount > 0n, 'Amount is 0');
 
-	return await handleTxWagmi(props, {
+	return await handleTx(props, {
 		address: props.contractAddress,
 		abi: VEYFI_ABI,
 		functionName: 'modify_lock',
@@ -57,10 +61,12 @@ export async function increaseLockAmount(props: TIncreaseLockAmount): Promise<TT
 
 type TExtendLockTime = TWriteTransaction & {votingEscrowAddress: TAddress; accountAddress: TAddress; time: TSeconds};
 export async function extendLockTime(props: TExtendLockTime): Promise<TTxResponse> {
-	assertAddresses([props.votingEscrowAddress, props.accountAddress, props.contractAddress]);
+	assertAddress(props.votingEscrowAddress, 'votingEscrowAddress');
+	assertAddress(props.accountAddress, 'accountAddress');
+	assertAddress(props.contractAddress, 'contractAddress');
 	assert(props.time > 0, 'Time is 0');
 
-	return await handleTxWagmi(props, {
+	return await handleTx(props, {
 		address: props.contractAddress,
 		abi: VEYFI_ABI,
 		functionName: 'modify_lock',
@@ -70,7 +76,8 @@ export async function extendLockTime(props: TExtendLockTime): Promise<TTxRespons
 
 type TWithdrawUnlocked = TWriteTransaction & {votingEscrowAddress: TAddress};
 export async function withdrawUnlocked(props: TWithdrawUnlocked): Promise<TTxResponse> {
-	assertAddresses([props.votingEscrowAddress, props.contractAddress]);
+	assertAddress(props.votingEscrowAddress, 'votingEscrowAddress');
+	assertAddress(props.contractAddress, 'contractAddress');
 
 	const {result} = await prepareWriteContract({
 		address: props.votingEscrowAddress,
@@ -82,7 +89,7 @@ export async function withdrawUnlocked(props: TWithdrawUnlocked): Promise<TTxRes
 		throw new Error('Tokens are not yet unlocked');
 	}
 
-	return await handleTxWagmi(props, {
+	return await handleTx(props, {
 		address: props.contractAddress,
 		abi: VEYFI_ABI,
 		functionName: 'withdraw'
@@ -91,9 +98,10 @@ export async function withdrawUnlocked(props: TWithdrawUnlocked): Promise<TTxRes
 
 type TWithdrawLocked = TWriteTransaction & {votingEscrowAddress: TAddress};
 export async function withdrawLocked(props: TWithdrawLocked): Promise<TTxResponse> {
-	assertAddresses([props.votingEscrowAddress, props.contractAddress]);
+	assertAddress(props.votingEscrowAddress, 'votingEscrowAddress');
+	assertAddress(props.contractAddress, 'contractAddress');
 
-	return await handleTxWagmi(props, {
+	return await handleTx(props, {
 		address: props.contractAddress,
 		abi: VEYFI_ABI,
 		functionName: 'withdraw'
@@ -102,9 +110,10 @@ export async function withdrawLocked(props: TWithdrawLocked): Promise<TTxRespons
 
 type TDelegateVote = TWriteTransaction & {delegateAddress: TAddress};
 export async function delegateVote(props: TDelegateVote): Promise<TTxResponse> {
-	assertAddresses([props.delegateAddress, props.contractAddress]);
+	assertAddress(props.delegateAddress, 'delegateAddress');
+	assertAddress(props.contractAddress, 'contractAddress');
 
-	return await handleTxWagmi(props, {
+	return await handleTx(props, {
 		address: props.contractAddress,
 		abi: SNAPSHOT_DELEGATE_REGISTRY_ABI,
 		functionName: 'setDelegate',
