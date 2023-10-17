@@ -2,7 +2,8 @@
 
 import {type DependencyList, useCallback, useEffect} from 'react';
 
-function useAsync(effect: () => Promise<void>, deps: DependencyList): () => Promise<void> {
+//Should be useAsyncEffect, but exhaustive-deps is messing with this.
+function useAsyncTrigger(effect: () => Promise<void>, deps: DependencyList): () => Promise<void> {
 	const asyncEffectInCallback = useCallback(async (): Promise<void> => {
 		effect();
 	}, [...deps]);
@@ -14,4 +15,4 @@ function useAsync(effect: () => Promise<void>, deps: DependencyList): () => Prom
 	return asyncEffectInCallback;
 }
 
-export {useAsync};
+export {useAsyncTrigger};

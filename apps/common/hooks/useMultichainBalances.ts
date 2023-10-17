@@ -12,7 +12,7 @@ import {isEth} from '@yearn-finance/web-lib/utils/isEth';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
 
-import {useAsync} from './useAsyncEffect';
+import {useAsyncTrigger} from './useAsyncEffect';
 
 import type {DependencyList} from 'react';
 import type {ContractFunctionConfig} from 'viem';
@@ -387,7 +387,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	 ** This is the main hook and is optimized for performance, using a worker
 	 ** to fetch the balances, preventing the UI to freeze.
 	 **************************************************************************/
-	useAsync(async (): Promise<void> => {
+	useAsyncTrigger(async (): Promise<void> => {
 		if (!isActive || !userAddress || !provider) {
 			return;
 		}

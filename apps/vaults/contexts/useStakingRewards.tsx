@@ -8,7 +8,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {STAKING_REWARDS_REGISTRY_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {decodeAsBigInt, decodeAsString} from '@yearn-finance/web-lib/utils/decoder';
-import {useAsync} from '@common/hooks/useAsyncEffect';
+import {useAsyncTrigger} from '@common/hooks/useAsyncEffect';
 import {keyBy} from '@common/utils';
 
 import type {ReactElement} from 'react';
@@ -44,7 +44,7 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 	const [stakingRewards, set_stakingRewards] = useState<TStakingRewards[]>([]);
 	const [positions, set_positions] = useState<TStakePosition[]>([]);
 
-	const stakingRewardsFetcher = useAsync(async (): Promise<void> => {
+	const stakingRewardsFetcher = useAsyncTrigger(async (): Promise<void> => {
 		const stakingPoolCalls = [];
 		const stackingAddresses = Object.values(VAULT_TO_STACKING);
 		for (const stackingAddress of stackingAddresses) {
@@ -97,7 +97,7 @@ export const StakingRewardsContextApp = memo(function StakingRewardsContextApp({
 		set_stakingRewards(_stackingRewards);
 	}, []);
 
-	const positionsFetcher = useAsync(async (): Promise<void> => {
+	const positionsFetcher = useAsyncTrigger(async (): Promise<void> => {
 		if (!stakingRewards || !isActive || !userAddress) {
 			return;
 		}

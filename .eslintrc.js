@@ -28,7 +28,7 @@ module.exports = {
 		'react-hooks/exhaustive-deps': [
 			'warn',
 			{
-				additionalHooks: '^useAsync$'
+				additionalHooks: '^useAsyncTrigger$'
 			}
 		]
 	}

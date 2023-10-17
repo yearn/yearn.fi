@@ -9,7 +9,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
 import {BIG_ZERO, ETH_TOKEN_ADDRESS, YFI_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt, toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {useAsync} from '@common/hooks/useAsyncEffect';
+import {useAsyncTrigger} from '@common/hooks/useAsyncEffect';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
 
 import type {ReactElement} from 'react';
@@ -67,7 +67,7 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 		return allowancesFetcher();
 	}, {});
 
-	const refresh = useAsync(async (): Promise<void> => {
+	const refresh = useAsyncTrigger(async (): Promise<void> => {
 		refreshPrice();
 		refreshPositions();
 		refreshAllowances();
