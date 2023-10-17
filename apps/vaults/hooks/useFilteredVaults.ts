@@ -117,13 +117,6 @@ export function useVaultFilter(): {activeVaults: TYDaemonVault[]; retiredVaults:
 		//remove duplicates
 		_vaultList = _vaultList.filter((vault, index, self): boolean => index === self.findIndex((v): boolean => v.address === vault.address));
 
-		for (const vault of _vaultList) {
-			if (vault.apr.forwardAPR.netAPR === 0) {
-				// console.log(`DebtRatio for vault ${vault.address} - ${vault.name}: 0`);
-			}
-		}
-		// console.log('-------------------')
-
 		return _vaultList;
 	}, [categoriesFromJSON, curveVaults, balancerVaults, velodromeVaults, aerodromeVaults, boostedVaults, stablesVaults, cryptoVaults, holdingsVaults]);
 

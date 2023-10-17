@@ -16,10 +16,10 @@ type TListHero = {
 	searchValue: string;
 	set_categories: (categories: string) => void;
 	set_selectedChains: (chains: string) => void;
-	set_searchValue: (searchValue: string) => void;
+	onSearch: (searchValue: string) => void;
 };
 
-export function ListHero({categories, set_categories, searchValue, selectedChains, set_searchValue, set_selectedChains}: TListHero): ReactElement {
+export function ListHero({categories, set_categories, searchValue, selectedChains, onSearch, set_selectedChains}: TListHero): ReactElement {
 	const chainsFromJSON = useMemo((): number[] => JSON.parse(selectedChains || '[]') as number[], [selectedChains]);
 	const categoriesFromJSON = useMemo((): string[] => JSON.parse(categories || '[]') as string[], [categories]);
 
@@ -143,7 +143,7 @@ export function ListHero({categories, set_categories, searchValue, selectedChain
 						className={'md:w-full'}
 						searchPlaceholder={'YFI Vault'}
 						searchValue={searchValue}
-						set_searchValue={set_searchValue}
+						set_searchValue={onSearch}
 					/>
 				</div>
 			</div>
