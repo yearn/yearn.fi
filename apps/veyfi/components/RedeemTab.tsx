@@ -6,7 +6,7 @@ import {validateAllowance, validateAmount} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {ETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {ETH_TOKEN_ADDRESS, YFI_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
@@ -24,15 +24,16 @@ export function RedeemTab(): ReactElement {
 	const [redeemAmount, set_redeemAmount] = useState(toNormalizedBN(0));
 	const {provider, address, isActive} = useWeb3();
 	const {refresh: refreshBalances} = useWallet();
-	const {getRequiredEth, price: optionPrice, position: dYFIBalance, allowances, refresh} = useOption();
+	const {getRequiredEth, position: dYFIBalance, allowances, refresh, dYFIPrice} = useOption();
 	const clearLockAmount = (): void => set_redeemAmount(toNormalizedBN(0));
 	const refreshData = useCallback((): unknown => Promise.all([refresh(), refreshBalances()]), [refresh, refreshBalances]);
 	const onTxSuccess = useCallback((): unknown => Promise.all([refreshData(), clearLockAmount()]), [refreshData]);
 	const ethBalance = useBalance(ETH_TOKEN_ADDRESS);
-	const dYFIPrice = useTokenPrice(VEYFI_DYFI_ADDRESS);
+	const yfiPrice = useTokenPrice(YFI_ADDRESS);
 	const [approveRedeemStatus, set_approveRedeemStatus] = useState(defaultTxStatus);
 	const [redeemStatus, set_redeemStatus] = useState(defaultTxStatus);
 	const [ethRequired, set_ethRequired] = useState(toNormalizedBN(0));
+
 
 	useAsyncTrigger(async (): Promise<void> => {
 		const result = await getRequiredEth(redeemAmount.raw);
@@ -101,7 +102,7 @@ export function RedeemTab(): ReactElement {
 					<AmountInput
 						label={'You have dYFI'}
 						amount={dYFIBalance}
-						legend={formatCounterValue(dYFIBalance.normalized, optionPrice ?? 0)}
+						legend={formatCounterValue(dYFIBalance.normalized, dYFIPrice)}
 						disabled
 					/>
 					<AmountInput
@@ -111,7 +112,7 @@ export function RedeemTab(): ReactElement {
 						onAmountChange={onChangeInput}
 						onLegendClick={(): void => set_redeemAmount(dYFIBalance)}
 						onMaxClick={(): void => set_redeemAmount(dYFIBalance)}
-						legend={formatCounterValue(redeemAmount.normalized, dYFIPrice)}
+						legend={formatCounterValue(redeemAmount.normalized, yfiPrice)}
 						error={redeemAmountError}
 					/>
 					<AmountInput

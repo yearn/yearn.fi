@@ -7,7 +7,6 @@ import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {AmountInput} from '@common/components/AmountInput';
@@ -21,7 +20,7 @@ export function RewardsTab(): ReactElement {
 	const [selectedGauge, set_selectedGauge] = useState<TDropdownOption>();
 	const {provider, isActive} = useWeb3();
 	const {gaugeAddresses, gaugesMap, positionsMap, refresh: refreshGauges} = useGauge();
-	const {price: optionPrice} = useOption();
+	const {dYFIPrice} = useOption();
 	const {vaults} = useYearn();
 	const refreshData = useCallback((): unknown => Promise.all([refreshGauges()]), [refreshGauges]);
 	const [claimStatus, set_claimStatus] = useState(defaultTxStatus);
@@ -72,7 +71,7 @@ export function RewardsTab(): ReactElement {
 					<AmountInput
 						label={'Unclaimed rewards (dYFI)'}
 						amount={selectedGaugeRewards}
-						legend={formatCounterValue(formatAmount(selectedGaugeRewards.normalized, 2, 2), optionPrice ?? 0)}
+						legend={formatCounterValue(selectedGaugeRewards.normalized, dYFIPrice)}
 						disabled
 					/>
 					<Button

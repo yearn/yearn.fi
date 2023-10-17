@@ -6,8 +6,8 @@ import {VEYFI_CHAIN_ID, VEYFI_DYFI_ADDRESS,VEYFI_OPTIONS_ADDRESS} from '@veYFI/u
 import {erc20ABI, readContract} from '@wagmi/core';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
-import {BIG_ZERO, ETH_TOKEN_ADDRESS, YFI_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {toBigInt, toNormalizedBN, toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {BIG_ZERO, YFI_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {useAsyncTrigger} from '@common/hooks/useAsyncEffect';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
 
@@ -17,7 +17,7 @@ import type {TNormalizedBN} from '@common/types/types';
 
 export type	TOptionContext = {
 	getRequiredEth: (amount: bigint) => Promise<bigint>,
-	price: number | undefined,
+	dYFIPrice: number,
 	position: TNormalizedBN,
 	allowances: TDict<bigint>,
 	refresh: () => void,
@@ -25,7 +25,7 @@ export type	TOptionContext = {
 
 const defaultProps: TOptionContext = {
 	getRequiredEth: async (): Promise<bigint> => BIG_ZERO,
-	price: undefined,
+	dYFIPrice: 0,
 	position: toNormalizedBN(0),
 	allowances: {},
 	refresh: (): void => undefined
@@ -34,11 +34,10 @@ const defaultProps: TOptionContext = {
 const OptionContext = createContext<TOptionContext>(defaultProps);
 export const OptionContextApp = memo(function OptionContextApp({children}: {children: ReactElement}): ReactElement {
 	const {address: userAddress, isActive} = useWeb3();
-	const [price, set_price] = useState<number | undefined>(undefined);
+	const [dYFIPrice, set_dYFIPrice] = useState<number>(0);
 	const [position, set_position] = useState<TNormalizedBN>(toNormalizedBN(0));
 	const [allowances, set_allowances] = useState<TDict<bigint>>({});
 	const yfiPrice = useTokenPrice(YFI_ADDRESS);
-	const ethPrice = useTokenPrice(ETH_TOKEN_ADDRESS);
 
 	const getRequiredEth = useCallback(async (amount: bigint): Promise<bigint> => {
 		return readContract({
@@ -51,16 +50,16 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 	}, []);
 
 	const refreshPrice = useAsyncTrigger(async (): Promise<void> => {
-		console.log(ethPrice, yfiPrice);
-		if(!ethPrice || !yfiPrice) {
-			return undefined;
-		}
-		const oneOption = toBigInt(1e18);
-		const requiredEthPerOption = await getRequiredEth(oneOption);
-		const requiredEthValuePerOption = toNormalizedValue(requiredEthPerOption, 18) * ethPrice;
-		const pricePerOption = yfiPrice - requiredEthValuePerOption;
-		set_price(pricePerOption);
-	}, [ethPrice, yfiPrice, getRequiredEth]);
+		const discountRaw = await readContract({
+			address: VEYFI_OPTIONS_ADDRESS,
+			abi: VEYFI_OPTIONS_ABI,
+			functionName: 'discount',
+			chainId: VEYFI_CHAIN_ID
+		});
+		const discount = toNormalizedBN(discountRaw);
+		const dYFIPrice = yfiPrice * Number(discount?.normalized || 0);
+		set_dYFIPrice(dYFIPrice);
+	}, [yfiPrice]);
 
 	const refreshPositions = useAsyncTrigger(async (): Promise<void> => {
 		if (!isActive || !userAddress) {
@@ -103,11 +102,11 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 
 	const contextValue = useDeepCompareMemo((): TOptionContext => ({
 		getRequiredEth,
-		price,
+		dYFIPrice,
 		position,
 		allowances: allowances ?? {},
 		refresh
-	}), [allowances, getRequiredEth, position, price, refresh]);
+	}), [allowances, getRequiredEth, position, dYFIPrice, refresh]);
 
 	return (
 		<OptionContext.Provider value={contextValue}>
