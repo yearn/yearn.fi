@@ -21,7 +21,7 @@ export async function redeem(props: TRedeem): Promise<TTxResponse> {
 	return await handleTx(props, {
 		address: props.contractAddress,
 		abi: VEYFI_OPTIONS_ABI,
-		functionName: 'exercise',
+		functionName: 'redeem',
 		value: props.ethRequired,
 		args: [props.amount, props.accountAddress]
 	});

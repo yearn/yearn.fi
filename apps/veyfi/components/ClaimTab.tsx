@@ -2,10 +2,8 @@ import {useCallback, useState} from 'react';
 import {useVotingEscrow} from '@veYFI/contexts/useVotingEscrow';
 import {withdrawUnlockedVeYFI} from '@veYFI/utils/actions';
 import {VEYFI_CHAIN_ID} from '@veYFI/utils/constants';
-import {validateNetwork} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {getTimeUntil} from '@yearn-finance/web-lib/utils/time';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
@@ -16,7 +14,6 @@ import type {ReactElement} from 'react';
 
 export function ClaimTab(): ReactElement {
 	const {provider, address, isActive} = useWeb3();
-	const {safeChainID} = useChainID();
 	const {refresh: refreshBalances} = useWallet();
 	const {votingEscrow, positions, refresh: refreshVotingEscrow} = useVotingEscrow();
 	const [withdrawUnlockedStatus, set_withdrawUnlockedStatus] = useState(defaultTxStatus);
@@ -24,7 +21,6 @@ export function ClaimTab(): ReactElement {
 	const timeUntilUnlock = positions?.unlockTime ? getTimeUntil(positions?.unlockTime) : 0;
 	const isClaimable = hasLockedAmount && !timeUntilUnlock;
 	const claimableAmount = toNormalizedBN(toBigInt(isClaimable ? positions?.deposit?.underlyingBalance : 0));
-	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: VEYFI_CHAIN_ID, walletNetwork: safeChainID});
 
 	const refreshData = useCallback(async (): Promise<void> => {
 		await Promise.all([refreshVotingEscrow(), refreshBalances()]);
@@ -65,7 +61,7 @@ export function ClaimTab(): ReactElement {
 						className={'w-full md:mt-7'}
 						onClick={onWithdrawUnlocked}
 						isBusy={withdrawUnlockedStatus.pending}
-						isDisabled={!isActive || !isValidNetwork || !isClaimable || withdrawUnlockedStatus.pending || !votingEscrow || !address}>
+						isDisabled={!isActive || !isClaimable || withdrawUnlockedStatus.pending || !votingEscrow || !address}>
 						{'Claim'}
 					</Button>
 				</div>

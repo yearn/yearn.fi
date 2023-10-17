@@ -3,10 +3,9 @@ import {useVotingEscrow} from '@veYFI/contexts/useVotingEscrow';
 import {getVotingPower} from '@veYFI/utils';
 import {extendVeYFILockTime, withdrawLockedVeYFI} from '@veYFI/utils/actions';
 import {MAX_LOCK_TIME, MIN_LOCK_TIME, VEYFI_CHAIN_ID} from '@veYFI/utils/constants';
-import {validateAmount, validateNetwork} from '@veYFI/utils/validations';
+import {validateAmount} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
 import {fromWeeks, getTimeUntil, toSeconds, toTime, toWeeks} from '@yearn-finance/web-lib/utils/time';
@@ -20,7 +19,6 @@ import type {TNormalizedBN} from '@common/types/types';
 export function ManageLockTab(): ReactElement {
 	const [lockTime, set_lockTime] = useState<TNormalizedBN>(toNormalizedBN(0, 0));
 	const {provider, address, isActive} = useWeb3();
-	const {safeChainID} = useChainID();
 	const {refresh: refreshBalances} = useWallet();
 	const {votingEscrow, positions, refresh: refreshVotingEscrow} = useVotingEscrow();
 	const hasLockedAmount = toBigInt(positions?.deposit?.underlyingBalance) > 0n;
@@ -73,8 +71,6 @@ export function ManageLockTab(): ReactElement {
 		minAmountAllowed: MIN_LOCK_TIME
 	});
 
-	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: VEYFI_CHAIN_ID, walletNetwork: safeChainID});
-
 	const maxTime = MAX_LOCK_TIME - Number(weeksToUnlock?.normalized || 0) > 0 ? MAX_LOCK_TIME - Number(weeksToUnlock?.normalized || 0) : 0;
 	return (
 		<div className={'grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-16'}>
@@ -118,7 +114,7 @@ export function ManageLockTab(): ReactElement {
 						className={'w-full md:mt-7'}
 						onClick={onExtendLockTime}
 						isBusy={extendLockTimeStatus.pending}
-						isDisabled={!isActive || !isValidNetwork || !isValidLockTime || extendLockTimeStatus.pending || !votingEscrow || !address}>
+						isDisabled={!isActive || !isValidLockTime || extendLockTimeStatus.pending || !votingEscrow || !address}>
 						{'Extend'}
 					</Button>
 				</div>
@@ -153,7 +149,7 @@ export function ManageLockTab(): ReactElement {
 						className={'w-full md:mt-7'}
 						onClick={onWithdrawLocked}
 						isBusy={withdrawLockedStatus.pending}
-						isDisabled={!isActive || !isValidNetwork || !hasPenalty || withdrawLockedStatus.pending || !votingEscrow || !address}>
+						isDisabled={!isActive || !hasPenalty || withdrawLockedStatus.pending || !votingEscrow || !address}>
 						{'Exit'}
 					</Button>
 				</div>

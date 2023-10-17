@@ -3,7 +3,6 @@ import {useGauge} from '@veYFI/contexts/useGauge';
 import {useOption} from '@veYFI/contexts/useOption';
 import * as GaugeActions from '@veYFI/utils/actions/gauge';
 import {VEYFI_CHAIN_ID} from '@veYFI/utils/constants';
-import {validateNetwork} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
@@ -20,7 +19,7 @@ import type {TDropdownOption} from '@common/components/Dropdown';
 
 export function RewardsTab(): ReactElement {
 	const [selectedGauge, set_selectedGauge] = useState<TDropdownOption>();
-	const {provider, isActive, chainID} = useWeb3();
+	const {provider, isActive} = useWeb3();
 	const {gaugeAddresses, gaugesMap, positionsMap, refresh: refreshGauges} = useGauge();
 	const {price: optionPrice} = useOption();
 	const {vaults} = useYearn();
@@ -54,8 +53,6 @@ export function RewardsTab(): ReactElement {
 			};
 		});
 
-	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: VEYFI_CHAIN_ID, walletNetwork: chainID});
-
 	return (
 		<div className={'flex flex-col gap-6 md:gap-10'}>
 			<div className={'flex flex-col gap-4'}>
@@ -81,7 +78,7 @@ export function RewardsTab(): ReactElement {
 					<Button
 						className={'w-full md:mt-7'}
 						onClick={onClaim}
-						isDisabled={!isActive || !isValidNetwork || toBigInt(selectedGaugeRewards.raw) === 0n || !claimStatus.none}
+						isDisabled={!isActive || toBigInt(selectedGaugeRewards.raw) === 0n || !claimStatus.none}
 						isBusy={claimStatus.pending}>
 						{'Claim'}
 					</Button>

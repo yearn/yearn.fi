@@ -2,7 +2,7 @@ import {useCallback, useState} from 'react';
 import Link from 'next/link';
 import {delegateVote} from '@veYFI/utils/actions/votingEscrow';
 import {SNAPSHOT_DELEGATE_REGISTRY_ADDRESS, VEYFI_CHAIN_ID} from '@veYFI/utils/constants';
-import {validateAddress, validateNetwork} from '@veYFI/utils/validations';
+import {validateAddress} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -13,9 +13,8 @@ import type {ReactElement} from 'react';
 
 export function VoteTab(): ReactElement {
 	const [delegateAddress, set_delegateAddress] = useState('');
-	const {provider, address, isActive, chainID} = useWeb3();
+	const {provider, address, isActive} = useWeb3();
 	const [delegateVoteStatus, set_delegateVoteStatus] = useState(defaultTxStatus);
-	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: VEYFI_CHAIN_ID, walletNetwork: chainID});
 	const {isValid: isValidDelegateAddress, error: delegateAddressError} = validateAddress({address: delegateAddress});
 
 	const onHandleExecuteDelegateVote = useCallback(async (): Promise<void> => {
@@ -70,7 +69,7 @@ export function VoteTab(): ReactElement {
 						className={'w-full md:mt-7'}
 						onClick={onHandleExecuteDelegateVote}
 						isBusy={delegateVoteStatus.pending}
-						isDisabled={!isActive || !isValidNetwork || !isValidDelegateAddress || delegateVoteStatus.pending}
+						isDisabled={!isActive || !isValidDelegateAddress || delegateVoteStatus.pending}
 					>
 						{'Submit'}
 					</Button>

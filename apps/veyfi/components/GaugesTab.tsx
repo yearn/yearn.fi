@@ -3,7 +3,6 @@ import {useDeepCompareMemo} from '@react-hookz/web';
 import {useGauge} from '@veYFI/contexts/useGauge';
 import {approveAndStake, stake, unstake} from '@veYFI/utils/actions/gauge';
 import {VEYFI_CHAIN_ID} from '@veYFI/utils/constants';
-import {validateNetwork} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {allowanceKey, toAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
@@ -36,7 +35,7 @@ type TGaugeData = {
 }
 
 function GaugeTabButtons({isApproved, vaultAddress, gaugeAddress, vaultDeposited, gaugeStaked}: TGaugeData): ReactElement {
-	const {provider, address, isActive, chainID} = useWeb3();
+	const {provider, address, isActive} = useWeb3();
 	const {refresh: refreshGauges} = useGauge();
 	const {refresh: refreshBalances} = useWallet();
 	const refreshData = (): unknown => Promise.all([refreshGauges(), refreshBalances()]);
@@ -44,7 +43,6 @@ function GaugeTabButtons({isApproved, vaultAddress, gaugeAddress, vaultDeposited
 	const [stakeStatus, set_stakeStatus] = useState(defaultTxStatus);
 	const [unstakeStatus, set_unstakeStatus] = useState(defaultTxStatus);
 	const userAddress = address as TAddress;
-	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: VEYFI_CHAIN_ID, walletNetwork: chainID});
 
 	const onApproveAndStake = useCallback(async (vaultAddress: TAddress, gaugeAddress: TAddress, amount: bigint): Promise<void> => {
 		const response = await approveAndStake({
@@ -95,7 +93,7 @@ function GaugeTabButtons({isApproved, vaultAddress, gaugeAddress, vaultDeposited
 			<Button
 				className={'w-full md:w-24'}
 				onClick={async (): Promise<void> => onUnstake(gaugeAddress, toBigInt(gaugeStaked.raw))}
-				isDisabled={!isActive || !isValidNetwork || toBigInt(gaugeStaked.raw) == 0n}
+				isDisabled={!isActive || toBigInt(gaugeStaked.raw) == 0n}
 				isBusy={unstakeStatus.pending}>
 				{'Unstake'}
 			</Button>
@@ -103,7 +101,7 @@ function GaugeTabButtons({isApproved, vaultAddress, gaugeAddress, vaultDeposited
 				<Button
 					className={'w-full md:w-24'}
 					onClick={async (): Promise<void> => onApproveAndStake(vaultAddress, gaugeAddress, toBigInt(vaultDeposited?.raw))}
-					isDisabled={!isActive || !isValidNetwork || toBigInt(vaultDeposited?.raw) == 0n}
+					isDisabled={!isActive || toBigInt(vaultDeposited?.raw) == 0n}
 					isBusy={approveAndStakeStatus.pending}>
 					{'Approve'}
 				</Button>
@@ -112,7 +110,7 @@ function GaugeTabButtons({isApproved, vaultAddress, gaugeAddress, vaultDeposited
 				<Button
 					className={'w-full md:w-24'}
 					onClick={async (): Promise<void> => onStake(gaugeAddress, toBigInt(vaultDeposited?.raw))}
-					isDisabled={!isActive || !isValidNetwork || toBigInt(vaultDeposited?.raw) == 0n}
+					isDisabled={!isActive || toBigInt(vaultDeposited?.raw) == 0n}
 					isBusy={stakeStatus.pending}>
 					{'Stake'}
 				</Button>

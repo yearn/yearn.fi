@@ -3,7 +3,7 @@ import {useVotingEscrow} from '@veYFI/contexts/useVotingEscrow';
 import {getVotingPower} from '@veYFI/utils';
 import {increaseVeYFILockAmount, lockVeYFI} from '@veYFI/utils/actions';
 import {MAX_LOCK_TIME, MIN_LOCK_AMOUNT, MIN_LOCK_TIME, VEYFI_CHAIN_ID} from '@veYFI/utils/constants';
-import {validateAllowance, validateAmount, validateNetwork} from '@veYFI/utils/validations';
+import {validateAllowance, validateAmount} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
@@ -121,10 +121,8 @@ export function LockTab(): ReactElement {
 		minAmountAllowed: hasLockedAmount ? 0 : MIN_LOCK_TIME
 	});
 
-	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: VEYFI_CHAIN_ID, walletNetwork: safeChainID});
-
-	const isApproveDisabled = !isActive || !isValidNetwork || isApproved || isLoadingVotingEscrow || !votingEscrow || !address;
-	const isLockDisabled = !isActive || !isValidNetwork || !isApproved || !isValidLockAmount || !isValidLockTime || isLoadingVotingEscrow || !votingEscrow || !address;
+	const isApproveDisabled = !isActive || isApproved || isLoadingVotingEscrow || !votingEscrow || !address;
+	const isLockDisabled = !isActive || !isApproved || !isValidLockAmount || !isValidLockTime || isLoadingVotingEscrow || !votingEscrow || !address;
 	const txAction = !isApproved
 		? {
 			label: 'Approve',

@@ -2,10 +2,9 @@ import {useCallback, useState} from 'react';
 import {useOption} from '@veYFI/contexts/useOption';
 import {redeem} from '@veYFI/utils/actions/option';
 import {VEYFI_CHAIN_ID, VEYFI_DYFI_ADDRESS,VEYFI_OPTIONS_ADDRESS} from '@veYFI/utils/constants';
-import {validateAllowance, validateAmount, validateNetwork} from '@veYFI/utils/validations';
+import {validateAllowance, validateAmount} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, YFI_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -24,7 +23,6 @@ import type {ReactElement} from 'react';
 export function RedeemTab(): ReactElement {
 	const [redeemAmount, set_redeemAmount] = useState(toNormalizedBN(0));
 	const {provider, address, isActive} = useWeb3();
-	const {safeChainID} = useChainID();
 	const {refresh: refreshBalances} = useWallet();
 	const {getRequiredEth, price: optionPrice, position: dYFIBalance, allowances, refresh} = useOption();
 	const clearLockAmount = (): void => set_redeemAmount(toNormalizedBN(0));
@@ -86,8 +84,6 @@ export function RedeemTab(): ReactElement {
 		balance: dYFIBalance.normalized
 	});
 
-	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: VEYFI_CHAIN_ID, walletNetwork: safeChainID});
-
 	const onChangeInput = useCallback((value: string): void => {
 		set_redeemAmount(handleInputChangeEventValue(value, 18));
 	}, []);
@@ -128,7 +124,7 @@ export function RedeemTab(): ReactElement {
 						className={'w-full md:mt-7'}
 						onClick={async (): Promise<void> => isApproved ? onRedeem() : onApproveRedeem()}
 						isBusy={approveRedeemStatus.pending || redeemStatus.pending}
-						isDisabled={!isActive || !isValidNetwork || !isValidRedeemAmount || !redeemStatus.none || !approveRedeemStatus.none}>
+						isDisabled={!isActive || !isValidRedeemAmount || !redeemStatus.none || !approveRedeemStatus.none}>
 						{isApproved ? 'Redeem' : 'Approve'}
 					</Button>
 				</div>

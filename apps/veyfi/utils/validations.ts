@@ -73,19 +73,6 @@ export type TValidateNetworkProps = {
 	walletNetwork?: number;
 }
 
-export function validateNetwork(props: TValidateNetworkProps): TValidationResponse {
-	const {supportedNetwork, walletNetwork} = props;
-
-	if (!walletNetwork) {
-		return {isValid: false, error: 'Wallet Not Connected'};
-	}
-	if (supportedNetwork !== walletNetwork) {
-		return {isValid: false, error: 'Incorrect Network Selected'};
-	}
-
-	return {isValid: true};
-}
-
 export type TValidateAddressProps = {
 	address?: string;
 }
