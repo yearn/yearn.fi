@@ -6,7 +6,7 @@ import {validateAllowance, validateAmount} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {ETH_TOKEN_ADDRESS, YFI_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {ETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
@@ -29,7 +29,7 @@ export function RedeemTab(): ReactElement {
 	const refreshData = useCallback((): unknown => Promise.all([refresh(), refreshBalances()]), [refresh, refreshBalances]);
 	const onTxSuccess = useCallback((): unknown => Promise.all([refreshData(), clearLockAmount()]), [refreshData]);
 	const ethBalance = useBalance(ETH_TOKEN_ADDRESS);
-	const yfiPrice = useTokenPrice(YFI_ADDRESS);
+	const dYFIPrice = useTokenPrice(VEYFI_DYFI_ADDRESS);
 	const [approveRedeemStatus, set_approveRedeemStatus] = useState(defaultTxStatus);
 	const [redeemStatus, set_redeemStatus] = useState(defaultTxStatus);
 	const [ethRequired, set_ethRequired] = useState(toNormalizedBN(0));
@@ -111,7 +111,7 @@ export function RedeemTab(): ReactElement {
 						onAmountChange={onChangeInput}
 						onLegendClick={(): void => set_redeemAmount(dYFIBalance)}
 						onMaxClick={(): void => set_redeemAmount(dYFIBalance)}
-						legend={formatCounterValue(redeemAmount.normalized, yfiPrice)}
+						legend={formatCounterValue(redeemAmount.normalized, dYFIPrice)}
 						error={redeemAmountError}
 					/>
 					<AmountInput

@@ -10,7 +10,7 @@ export const YFI_ADDRESS = toAddress('0x52Ca0fC251e7a28cf8E67357BCD3d771B105eCa9
 export const VEYFI_REGISTRY_ADDRESS: TAddress = toAddress(''); // TODO: update once deployed
 export const VEYFI_CLAIM_REWARDS_ZAP_ADDRESS: TAddress = toAddress(''); // TODO: update once deployed
 export const VEYFI_OPTIONS_ADDRESS = toAddress('0x16A0cE5957642aDa37F58d5115E38fF3B0C30dc6'); //TODO: change it - veYFI test
-export const VEYFI_DYFI_ADDRESS = toAddress('0xC85509a31F218e66A7151A48e218AD98469Cbf4A'); //TODO: change it - veYFI test
+export const VEYFI_DYFI_ADDRESS = toAddress('0xC85509a31F218e66A7151A48e218AD98469Cbf4A'); //TODO: change it for prod: 0x41252E8691e964f7DE35156B68493bAb6797a275
 
 export const SNAPSHOT_DELEGATE_REGISTRY_ADDRESS = toAddress('0x469788fE6E9E9681C6ebF3bF78e7Fd26Fc015446');
 export const YEARN_SNAPSHOT_SPACE = 'veyfi.eth';
