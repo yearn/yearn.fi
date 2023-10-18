@@ -8,6 +8,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, YFI_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
@@ -29,6 +30,7 @@ export function RedeemTab(): ReactElement {
 	const refreshData = useCallback((): unknown => Promise.all([refresh(), refreshBalances()]), [refresh, refreshBalances]);
 	const onTxSuccess = useCallback((): unknown => Promise.all([refreshData(), clearLockAmount()]), [refreshData]);
 	const ethBalance = useBalance(ETH_TOKEN_ADDRESS);
+	const yfiBalance = useBalance(YFI_ADDRESS);
 	const yfiPrice = useTokenPrice(YFI_ADDRESS);
 	const [approveRedeemStatus, set_approveRedeemStatus] = useState(defaultTxStatus);
 	const [redeemStatus, set_redeemStatus] = useState(defaultTxStatus);
@@ -105,25 +107,42 @@ export function RedeemTab(): ReactElement {
 
 				<div className={'mt-10 grid grid-cols-1 gap-4 md:grid-cols-4'}>
 					<AmountInput
-						label={'You have dYFI'}
-						amount={dYFIBalance}
-						legend={formatCounterValue(dYFIBalance.normalized, dYFIPrice)}
-						disabled
-					/>
-					<AmountInput
-						label={'YFI you want to redeem'}
+						label={'dYFI to use'}
 						amount={redeemAmount}
 						maxAmount={dYFIBalance}
 						onAmountChange={onChangeInput}
 						onLegendClick={(): void => set_redeemAmount(dYFIBalance)}
 						onMaxClick={(): void => set_redeemAmount(dYFIBalance)}
-						legend={formatCounterValue(redeemAmount.normalized, yfiPrice)}
 						error={redeemAmountError}
+						legend={
+							<div className={'flex flex-row justify-between'}>
+								<p className={'text-neutral-400'}>{formatCounterValue(redeemAmount.normalized, dYFIPrice)}</p>
+								<p className={'text-neutral-400'}>{`You have: ${formatAmount(dYFIBalance.normalized, 2, 6)} dYFI`}</p>
+							</div>
+						}
 					/>
+
 					<AmountInput
 						label={'Redemption cost (in ETH)'}
 						amount={ethRequired}
-						legend={formatCounterValue(ethRequired.normalized, ethBalance.normalizedPrice ?? 0)}
+						legend={
+							<div className={'flex flex-row justify-between'}>
+								<p className={'text-neutral-400'}>{formatCounterValue(ethRequired.normalized, ethBalance.normalizedPrice ?? 0)}</p>
+								<p className={'text-neutral-400'}>{`You have: ${formatAmount(ethBalance.normalized, 2, 6)} ETH`}</p>
+							</div>
+						}
+						disabled
+					/>
+
+					<AmountInput
+						label={'Redeems YFI'}
+						amount={redeemAmount}
+						legend={
+							<div className={'flex flex-row justify-between'}>
+								<p className={'text-neutral-400'}>{formatCounterValue(redeemAmount.normalized, yfiPrice)}</p>
+								<p className={'text-neutral-400'}>{`You have: ${formatAmount(yfiBalance.normalized, 2, 6)} YFI`}</p>
+							</div>
+						}
 						disabled
 					/>
 					<Button

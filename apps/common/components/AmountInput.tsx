@@ -9,7 +9,7 @@ type TAmountInputProps = {
 	maxLabel?: string;
 	label?: string;
 	placeholder?: string;
-	legend?: string;
+	legend?: string | ReactElement;
 	error?: string;
 	disabled?: boolean;
 	loading?: boolean;
@@ -63,7 +63,7 @@ export function AmountInput({
 					role={onLegendClick ? 'button' : 'text'}
 					onClick={onLegendClick}
 					suppressHydrationWarning
-					className={`mt-1 pl-2 text-xs md:mr-0 ${error ? 'text-[#EA5204]' : 'text-neutral-600'}`}>
+					className={`mt-1 pl-1 text-xs md:mr-0 ${error ? 'text-[#EA5204]' : 'text-neutral-600'}`}>
 					{error ?? legend}
 				</legend>
 			</Renderable>
