@@ -11,6 +11,7 @@ import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {AmountInput} from '@common/components/AmountInput';
 import {Dropdown} from '@common/components/Dropdown';
+import {Input} from '@common/components/Input';
 import {useYearn} from '@common/contexts/useYearn';
 
 import type {ReactElement} from 'react';
@@ -61,7 +62,7 @@ export function RewardsTab(): ReactElement {
 			<div className={'flex flex-col'}>
 				<div className={'flex flex-col gap-4'}>
 					<h2 className={'m-0 text-2xl font-bold'}>
-						{'Claim Rewards'}
+						{'Gauge Rewards'}
 					</h2>
 					<div className={'text-neutral-600'} >
 						<p className={'w-2/3 whitespace-break-spaces'}>
@@ -82,6 +83,66 @@ export function RewardsTab(): ReactElement {
 						amount={selectedGaugeRewards}
 						legend={formatCounterValue(selectedGaugeRewards.normalized, dYFIPrice)}
 						disabled
+					/>
+					<Button
+						className={'w-full md:mt-7'}
+						onClick={onClaim}
+						isDisabled={!isActive || toBigInt(selectedGaugeRewards.raw) === 0n || !claimStatus.none}
+						isBusy={claimStatus.pending}>
+						{'Claim'}
+					</Button>
+				</div>
+			</div>
+
+			<div className={'h-[1px] w-full bg-neutral-300'} />
+
+			<div className={'flex flex-col opacity-40'}>
+				<div className={'flex flex-col gap-4'}>
+					<h2 className={'m-0 text-2xl font-bold'}>
+						{'veYFI boost rewards'}
+					</h2>
+					<div className={'text-neutral-600'} >
+						<p className={'w-2/3 whitespace-break-spaces'}>
+							{'These are rewards clawed from the game theoretically suboptimal hands of gauge stakers who farm without a max boost. Their loss is your gain (literally).'}
+						</p>
+					</div>
+				</div>
+
+				<div className={'mt-10 grid grid-cols-1 gap-4 md:grid-cols-4'}>
+					<Input
+						label={'Unclaimed veYFI boost rewards (dYFI)'}
+						value={'Coming soon…'}
+						isDisabled
+					/>
+					<Button
+						className={'w-full md:mt-7'}
+						onClick={onClaim}
+						isDisabled={!isActive || toBigInt(selectedGaugeRewards.raw) === 0n || !claimStatus.none}
+						isBusy={claimStatus.pending}>
+						{'Claim'}
+					</Button>
+				</div>
+			</div>
+
+			<div className={'h-[1px] w-full bg-neutral-300'} />
+
+			<div className={'flex flex-col opacity-40'}>
+				<div className={'flex flex-col gap-4'}>
+					<h2 className={'m-0 text-2xl font-bold'}>
+						{'veYFI exit rewards'}
+					</h2>
+					<div className={'text-neutral-600'} >
+						<p className={'w-2/3 whitespace-break-spaces'}>
+							{'When some spaghetti handed locker takes an early exit from their veYFI lock, their penalty is distributed amongst other lockers. It’s like a loyalty bonus, but instead of cheaper groceries you get sweet sweet YFI.'}
+						</p>
+					</div>
+				</div>
+
+				<div className={'mt-10 grid grid-cols-1 gap-4 md:grid-cols-4'}>
+					<Input
+						label={'Unclaimed veYFI exit rewards (YFI)'}
+						value={'Coming soon…'}
+						isDisabled
 					/>
 					<Button
 						className={'w-full md:mt-7'}
