@@ -62,7 +62,6 @@ export function RewardsTab(): ReactElement {
 				<div className={'flex flex-col gap-4'}>
 					<h2 className={'m-0 text-2xl font-bold'}>
 						{'Claim Rewards'}
-						{'Redeem'}
 					</h2>
 					<div className={'text-neutral-600'} >
 						<p className={'w-2/3 whitespace-break-spaces'}>
