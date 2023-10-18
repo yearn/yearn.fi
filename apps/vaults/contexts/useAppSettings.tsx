@@ -4,19 +4,6 @@ import {useSessionStorage} from '@yearn-finance/web-lib/hooks/useSessionStorage'
 
 import type {ReactElement} from 'react';
 
-export const ALL_CATEGORIES = {
-	holdings: 'Holdings',
-	crypto: 'Crypto Vaults',
-	stables: 'Stables Vaults',
-	curve: 'Curve Vaults',
-	balancer: 'Balancer Vaults',
-	boosted: 'Boosted Vaults',
-	velodrome: 'Velodrome Vaults',
-	aerodrome: 'Aerodrome Vaults'
-};
-export const ALL_CATEGORIES_KEYS = Object.keys(ALL_CATEGORIES);
-export const ALL_CHAINS = [1, 10, 250, 8453, 42161];
-
 export type TAppSettingsContext = {
 	searchValue: string;
 	shouldHideDust: boolean;

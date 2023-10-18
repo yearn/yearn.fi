@@ -1,5 +1,5 @@
 import {useMemo} from 'react';
-import {ALL_CATEGORIES} from '@vaults/contexts/useAppSettings';
+import {ALL_CATEGORIES} from '@vaults/constants';
 import {IconArbitrumChain} from '@yearn-finance/web-lib/icons/chains/IconArbitrumChain';
 import {IconBaseChain} from '@yearn-finance/web-lib/icons/chains/IconBaseChain';
 import {IconEtherumChain} from '@yearn-finance/web-lib/icons/chains/IconEtherumChain';
