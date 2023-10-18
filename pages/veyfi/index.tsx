@@ -21,8 +21,8 @@ function Index(): ReactElement {
 	const yourLockedYFI = formatToNormalizedValue(toBigInt(positions?.deposit?.underlyingBalance), 18);
 
 	const tabs = [
-		{id: 'manage', label: 'Manage veYFI', content: <TabManageVeYFI />},
 		{id: 'gauges', label: 'Manage Gauges', content: <TabManageGauges />},
+		{id: 'manage', label: 'Manage veYFI', content: <TabManageVeYFI />},
 		{id: 'rewards', label: 'Claim Rewards', content: <RewardsTab />},
 		{id: 'redeem', label: 'Redeem dYFI', content: <RedeemTab />}
 	].filter(Boolean);
