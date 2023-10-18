@@ -2,7 +2,7 @@ import React, {createContext, memo, useCallback, useContext, useState} from 'rea
 import {FixedNumber} from 'ethers';
 import {useDeepCompareMemo} from '@react-hookz/web';
 import {VEYFI_GAUGE_ABI} from '@veYFI/utils/abi/veYFIGauge.abi';
-import {VEYFI_CHAIN_ID} from '@veYFI/utils/constants';
+import {VE_YFI_GAUGES,VEYFI_CHAIN_ID} from '@veYFI/utils/constants';
 import {erc20ABI, readContracts} from '@wagmi/core';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -25,15 +25,10 @@ export type TGauge = {
 	// apy?: number;
 }
 
-export type TPosition = {
-	balance: TNormalizedBN,
-	underlyingBalance: TNormalizedBN,
-}
-
 export type TGaugePosition = {
 	address: TAddress,
-	deposit: TPosition,
-	reward: TPosition,
+	deposit: TNormalizedBN,
+	reward: TNormalizedBN,
 	boost: number,
 }
 
@@ -59,27 +54,8 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 	const [allowancesMap, set_allowancesMap] = useState<TDict<TNormalizedBN>>({});
 	const [positionsMap, set_positionsMap] = useState<TDict<TGaugePosition>>({});
 
-	// const {data: vaultAddresses} = useContractRead({
-	// 	address: VEYFI_REGISTRY_ADDRESS,
-	// 	abi: VEYFI_REGISTRY_ABI,
-	// 	functionName: 'getVaults',
-	// 	chainId: VEYFI_CHAIN_ID
-	// });
-	// const vaultAddresses = [
-	// 	toAddress('0x28D374F0cdabb327A034BA41B9A2967E2959fb1F'),
-	// 	toAddress('0xb8E45b5C3E49A9a4C2A086deAF59f7De19c100cC'),
-	// 	toAddress('0x2Cc4b29771fcAA71313dC946a89eDd1AA68292E2'),
-	// 	toAddress('0x9Cb511D44930c0C3D3114FFAaBedC3e0876D791a')
-	// ];
-
 	const refreshVotingEscrow = useAsyncTrigger(async (): Promise<void> => {
-		const gaugeAddresses = [
-			toAddress('0xbADfbF563C6C85F76e086E7a1915A1A46d683810'),
-			toAddress('0xd5947C01dBaEFeFF05186FE34A976b2E28d90542'),
-			toAddress('0x2262ef7F5A0171D9dBC16963727249787575cE42'),
-			toAddress('0x79a37e400bC591f1B38e4Fe020Ec1f985F670218')
-		];
-		const gaugePromises = gaugeAddresses.map(async (gaugeAddress): Promise<TGauge> => {
+		const gaugePromises = VE_YFI_GAUGES.map(async (gaugeAddress): Promise<TGauge> => {
 			const results = await readContracts({
 				contracts: [
 					{address: gaugeAddress, abi: VEYFI_GAUGE_ABI, chainId: VEYFI_CHAIN_ID, functionName: 'asset'},
@@ -177,15 +153,8 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 			const earned = decodeAsBigInt(results[1]);
 			const boostedBalance = decodeAsBigInt(results[2]);
 			const decimals = Number(decodeAsBigInt(results[3])) || decodeAsNumber(results[3]);
-			const depositPosition: TPosition = {
-				balance: toNormalizedBN(balance, decimals),
-				underlyingBalance: toNormalizedBN(balance, decimals) // TODO: convert to underlying
-			};
-
-			const rewardPosition: TPosition = {
-				balance: toNormalizedBN(earned, decimals),
-				underlyingBalance: toNormalizedBN(earned, decimals) // TODO: convert to underlying
-			};
+			const depositPosition: TNormalizedBN = toNormalizedBN(balance, decimals);
+			const rewardPosition: TNormalizedBN = toNormalizedBN(earned, decimals);
 
 			const boostRatio = balance > 0n
 				? FixedNumber.from(boostedBalance).divUnsafe(FixedNumber.from(balance)).toUnsafeFloat()

@@ -105,20 +105,6 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 			extraTokens.push({token: OPT_YVWUSDRV2_USDC_STAKING_CONTRACT, symbol: 'yvVelo-wUSDRv2-USDC', decimals: 18});
 			extraTokens.push({token: OPT_YVSTERN_ERN_STAKING_CONTRACT, symbol: 'yvVelo-stERN-ERN', decimals: 18});
 		}
-		if (safeChainID === 250) {
-			extraTokens.push(...[
-				{token: toAddress('0x28D374F0cdabb327A034BA41B9A2967E2959fb1F')}, //TODO: Remove it - veYFI test
-				{token: toAddress('0xb8E45b5C3E49A9a4C2A086deAF59f7De19c100cC')}, //TODO: Remove it - veYFI test
-				{token: toAddress('0x2Cc4b29771fcAA71313dC946a89eDd1AA68292E2')}, //TODO: Remove it - veYFI test
-				{token: toAddress('0x9Cb511D44930c0C3D3114FFAaBedC3e0876D791a')}, //TODO: Remove it - veYFI test
-				{token: toAddress('0xC85509a31F218e66A7151A48e218AD98469Cbf4A')}, //TODO: Remove it - veYFI test
-				{token: toAddress('0x52Ca0fC251e7a28cf8E67357BCD3d771B105eCa9')}, //TODO: Remove it - veYFI test
-				{token: toAddress('0xbADfbF563C6C85F76e086E7a1915A1A46d683810')}, //TODO: Remove it - veYFI test
-				{token: toAddress('0xd5947C01dBaEFeFF05186FE34A976b2E28d90542')}, //TODO: Remove it - veYFI test
-				{token: toAddress('0x2262ef7F5A0171D9dBC16963727249787575cE42')}, //TODO: Remove it - veYFI test
-				{token: toAddress('0x79a37e400bC591f1B38e4Fe020Ec1f985F670218')} //TODO: Remove it - veYFI test
-			]);
-		}
 		for (const token of extraTokens) {
 			tokensExists[token.token] = true;
 			tokens.push(token);

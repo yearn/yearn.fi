@@ -2,10 +2,10 @@ import {createContext, memo, useCallback, useContext, useMemo} from 'react';
 import {erc20ABI, useContractRead, useContractReads} from 'wagmi';
 import {VEYFI_ABI} from '@veYFI/utils/abi/veYFI.abi';
 import {VEYFI_POSITION_HELPER_ABI} from '@veYFI/utils/abi/veYFIPositionHelper.abi';
-import {VEYFI_CHAIN_ID, YFI_ADDRESS} from '@veYFI/utils/constants';
+import {VEYFI_CHAIN_ID} from '@veYFI/utils/constants';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {allowanceKey, isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {VEYFI_ADDRESS, VEYFI_POSITION_HELPER_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {VEYFI_ADDRESS, VEYFI_POSITION_HELPER_ADDRESS,YFI_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {decodeAsBigInt, decodeAsNumber, decodeAsString} from '@yearn-finance/web-lib/utils/decoder';
 import {toMilliseconds} from '@yearn-finance/web-lib/utils/time';
 

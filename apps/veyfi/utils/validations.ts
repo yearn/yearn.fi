@@ -26,7 +26,6 @@ export function validateAllowance(props: TValidateAllowanceProps): TValidationRe
 	}
 
 	// TODO: return valid when is native token
-
 	const allowance = allowances[allowanceKey(chainID, tokenAddress, spenderAddress, ownerAddress)];
 	const isApproved = allowance >= amount;
 

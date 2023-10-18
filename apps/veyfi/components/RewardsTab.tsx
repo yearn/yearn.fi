@@ -25,7 +25,7 @@ export function RewardsTab(): ReactElement {
 	const refreshData = useCallback((): unknown => Promise.all([refreshGauges()]), [refreshGauges]);
 	const [claimStatus, set_claimStatus] = useState(defaultTxStatus);
 	const selectedGaugeAddress = toAddress(selectedGauge?.id);
-	const selectedGaugeRewards = toNormalizedBN(toBigInt(positionsMap[selectedGaugeAddress]?.reward?.balance?.raw));
+	const selectedGaugeRewards = positionsMap[selectedGaugeAddress]?.reward ?? toNormalizedBN(0n);
 
 	const onClaim = useCallback(async (): Promise<void> => {
 		const result = await GaugeActions.claimRewards({
@@ -39,7 +39,7 @@ export function RewardsTab(): ReactElement {
 		}
 	}, [provider, refreshData, selectedGaugeAddress]);
 
-	const gaugeOptions = gaugeAddresses.filter((address): boolean => toBigInt(positionsMap[address]?.reward?.balance?.raw) > 0n ?? false)
+	const gaugeOptions = gaugeAddresses.filter((address): boolean => toBigInt(positionsMap[address]?.reward?.raw) > 0n ?? false)
 		.map((address): TDropdownOption => {
 			const gauge = gaugesMap[address];
 			const vaultAddress = toAddress(gauge?.vaultAddress);

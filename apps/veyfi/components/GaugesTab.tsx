@@ -143,7 +143,7 @@ export function GaugesTab(): ReactElement {
 					vaultDeposited: balances[vaultAddress],
 					gaugeApy: 0, // TODO: gauge apy calcs
 					gaugeBoost: positionsMap[address]?.boost ?? 1,
-					gaugeStaked: positionsMap[address]?.deposit.balance ?? toNormalizedBN(0),
+					gaugeStaked: positionsMap[address]?.deposit ?? toNormalizedBN(0),
 					allowance: allowancesMap[allowanceKey(VEYFI_CHAIN_ID, vaultAddress, address, userAddress)],
 					isApproved: toBigInt(allowancesMap[allowanceKey(VEYFI_CHAIN_ID, vaultAddress, address, userAddress)]?.raw) >= toBigInt(balances[vaultAddress]?.raw),
 					actions: undefined

@@ -44,7 +44,7 @@ const DropdownOption = (option: TDropdownOption): ReactElement => {
 };
 
 const DropdownEmpty = ({isSearching}: {isSearching: boolean}): ReactElement => {
-	if(isSearching) {
+	if (!isSearching) {
 		return (
 			<div className={'relative flex h-14 flex-col items-center justify-center px-4 text-center'}>
 				<div className={'flex h-10 items-center justify-center'}>
@@ -170,10 +170,8 @@ export const Dropdown = ({selected, options, onChange, label, legend, isDisabled
 								leaveFrom={'transform scale-100 opacity-100'}
 								leaveTo={'transform scale-95 opacity-0'}
 								afterLeave={(): void => {
-									performBatchedUpdates((): void => {
-										set_isOpen(false);
-										set_search('');
-									});
+									set_isOpen(false);
+									set_search('');
 								}}>
 								<Combobox.Options className={'yearn--dropdown-menu z-50'}>
 									{filteredOptions.length === 0 ? (
