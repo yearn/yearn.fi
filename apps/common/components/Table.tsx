@@ -2,13 +2,11 @@
 import {useCallback, useMemo, useState} from 'react';
 import {sort} from '@veYFI/utils';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
-import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {Pagination} from '@common/components/Pagination';
 import {usePagination} from '@common/hooks/usePagination';
 import {IconChevronPlain} from '@common/icons/IconChevronPlain';
 
 import type {ReactElement} from 'react';
-import type {TNormalizedBN} from '@common/types/types';
 
 type TSortOrder = 'asc' | 'desc';
 
@@ -26,6 +24,7 @@ type TMetadata<T> = {
 	sortable?: boolean;
 	fullWidth?: boolean;
 	columnSpan?: number;
+	isDisabled?: (item: T) => boolean;
 	format?: (item: T) => string | number;
 	transform?: (item: T) => ReactElement;
 }
@@ -67,10 +66,11 @@ export function Table<T>({metadata, data, columns, initialSortBy, onRowClick, it
 		9: 'md:grid-cols-9',
 		10: 'md:grid-cols-10',
 		11: 'md:grid-cols-11',
-		12: 'md:grid-cols-12'
+		12: 'md:grid-cols-12',
+		13: 'md:grid-cols-13'
 	};
 
-	const numberOfColumns = Math.min(columns ?? (metadata.length), 12) as keyof typeof gridColsVariants;
+	const numberOfColumns = Math.min(columns ?? (metadata.length), 13) as keyof typeof gridColsVariants;
 
 	const colSpanVariants = {
 		1: 'md:col-span-1',
@@ -84,7 +84,8 @@ export function Table<T>({metadata, data, columns, initialSortBy, onRowClick, it
 		9: 'md:col-span-9',
 		10: 'md:col-span-10',
 		11: 'md:col-span-11',
-		12: 'md:col-span-12'
+		12: 'md:col-span-12',
+		13: 'md:col-span-13'
 	};
 
 	return (
@@ -105,7 +106,7 @@ export function Table<T>({metadata, data, columns, initialSortBy, onRowClick, it
 							className || ''
 						)}
 					>
-						<p className={'text-xs font-bold text-neutral-400'}>
+						<p className={'text-xs text-neutral-500'}>
 							{label}
 						</p>
 						{sortable && sortedBy === key && <IconChevronPlain className={`yearn--sort-chevron ${order === 'asc' ? 'rotate-180' : ''}`} />}
@@ -143,7 +144,7 @@ export function Table<T>({metadata, data, columns, initialSortBy, onRowClick, it
 					)}
 					onClick={(): void => onRowClick?.(item)}
 				>
-					{metadata.map(({key, label, className, fullWidth, columnSpan, format, transform}): ReactElement => {
+					{metadata.map(({key, label, className, fullWidth, columnSpan, format, transform, isDisabled}): ReactElement => {
 						let isNumberLike = false;
 						if (typeof item[key] === 'bigint') {
 							isNumberLike = true;
@@ -165,11 +166,7 @@ export function Table<T>({metadata, data, columns, initialSortBy, onRowClick, it
 								<div
 									className={cl(
 										(
-											isZero(item[key] as number)
-											||
-											(item[key] as TNormalizedBN)?.raw !== undefined && isZero((item[key] as TNormalizedBN).raw)
-											||
-											(item[key] === undefined || item[key] === null)
+											isDisabled && isDisabled?.(item)
 										) ? 'text-neutral-400' : 'text-neutral-900',
 										isNumber ? 'font-number' : 'font-aeonik',
 										fullWidth ? 'w-full' : undefined

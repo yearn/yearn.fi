@@ -116,7 +116,7 @@ export function RedeemTab(): ReactElement {
 						error={redeemAmountError}
 					/>
 					<AmountInput
-						label={'ETH fee'}
+						label={'ETH to pay to redeem YFI from dYFI'}
 						amount={ethRequired}
 						legend={formatCounterValue(ethRequired.normalized, ethBalance.normalizedPrice ?? 0)}
 						disabled

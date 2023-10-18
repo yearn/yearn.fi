@@ -13,10 +13,14 @@ import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {AmountInput} from '@common/components/AmountInput';
 import {useWallet} from '@common/contexts/useWallet';
 
+import {ClaimTab} from './ClaimTab';
+import {LockTab} from './LockTab';
+
 import type {ReactElement} from 'react';
 import type {TNormalizedBN} from '@common/types/types';
 
-export function ManageLockTab(): ReactElement {
+
+function ExtendLock(): ReactElement {
 	const [lockTime, set_lockTime] = useState<TNormalizedBN>(toNormalizedBN(0, 0));
 	const {provider, address, isActive} = useWeb3();
 	const {refresh: refreshBalances} = useWallet();
@@ -26,9 +30,7 @@ export function ManageLockTab(): ReactElement {
 	const timeUntilUnlock = positions?.unlockTime ? getTimeUntil(positions?.unlockTime) : undefined;
 	const weeksToUnlock = toNormalizedBN(toWeeks(timeUntilUnlock), 0);
 	const newUnlockTime = toTime(positions?.unlockTime) + fromWeeks(toTime(lockTime.normalized));
-	const hasPenalty = toBigInt(positions?.penalty) > 0n;
 	const [extendLockTimeStatus, set_extendLockTimeStatus] = useState(defaultTxStatus);
-	const [withdrawLockedStatus, set_withdrawLockedStatus] = useState(defaultTxStatus);
 
 	const onTxSuccess = useCallback(async (): Promise<void> => {
 		await Promise.all([refreshVotingEscrow(), refreshBalances(), set_lockTime(toNormalizedBN(0, 0))]);
@@ -47,18 +49,6 @@ export function ManageLockTab(): ReactElement {
 		}
 	}, [newUnlockTime, onTxSuccess, provider, votingEscrow?.address]);
 
-	const onWithdrawLocked = useCallback(async (): Promise<void> => {
-		const result = await withdrawLockedVeYFI({
-			connector: provider,
-			chainID: VEYFI_CHAIN_ID,
-			contractAddress: votingEscrow?.address,
-			statusHandler: set_withdrawLockedStatus
-		});
-		if (result.isSuccessful) {
-			onTxSuccess();
-		}
-	}, [onTxSuccess, provider, votingEscrow?.address]);
-
 	const votingPower = useMemo((): TNormalizedBN => {
 		if(!positions?.deposit || !newUnlockTime) {
 			return toNormalizedBN(0);
@@ -74,16 +64,17 @@ export function ManageLockTab(): ReactElement {
 	const maxTime = MAX_LOCK_TIME - Number(weeksToUnlock?.normalized || 0) > 0 ? MAX_LOCK_TIME - Number(weeksToUnlock?.normalized || 0) : 0;
 	return (
 		<div className={'grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-16'}>
-			<div className={'col-span-1 grid w-full gap-6'}>
-				<div className={'md:min-h-[104px]'}>
-					<h2 className={'m-0 text-2xl font-bold'}>
-						{'Extend lock'}
-					</h2>
-					<div className={'mt-6 text-neutral-600'} >
-						<p>{'Want to lock for longer? Extend your lock period to increase your gauge boost weight.'}</p>
-					</div>
+			<div className={'col-span-1 w-full'}>
+				<h2 className={'m-0 text-2xl font-bold'}>
+					{'Extend lock'}
+				</h2>
+				<div className={'mt-6 text-neutral-600'} >
+					<p>{'Want to lock for longer? Extend your lock period to increase your gauge boost weight.'}</p>
 				</div>
-				<div className={'grid grid-cols-1 gap-6 md:grid-cols-2'}>
+			</div>
+
+			<div className={'col-span-1 grid w-full gap-6'}>
+				<div className={'mt-0 grid grid-cols-1 gap-6 md:mt-14 md:grid-cols-2'}>
 					<AmountInput
 						label={'Current lock period (weeks)'}
 						amount={weeksToUnlock}
@@ -119,17 +110,48 @@ export function ManageLockTab(): ReactElement {
 					</Button>
 				</div>
 			</div>
+		</div>
+	);
+}
+
+function EarlyExit(): ReactElement {
+	const {provider, address, isActive} = useWeb3();
+	const {refresh: refreshBalances} = useWallet();
+	const {votingEscrow, positions, refresh: refreshVotingEscrow} = useVotingEscrow();
+	const timeUntilUnlock = positions?.unlockTime ? getTimeUntil(positions?.unlockTime) : undefined;
+	const weeksToUnlock = toNormalizedBN(toWeeks(timeUntilUnlock), 0);
+	const hasPenalty = toBigInt(positions?.penalty) > 0n;
+	const [withdrawLockedStatus, set_withdrawLockedStatus] = useState(defaultTxStatus);
+
+	const onTxSuccess = useCallback(async (): Promise<void> => {
+		await Promise.all([refreshVotingEscrow(), refreshBalances()]);
+	}, [refreshBalances, refreshVotingEscrow]);
+
+	const onWithdrawLocked = useCallback(async (): Promise<void> => {
+		const result = await withdrawLockedVeYFI({
+			connector: provider,
+			chainID: VEYFI_CHAIN_ID,
+			contractAddress: votingEscrow?.address,
+			statusHandler: set_withdrawLockedStatus
+		});
+		if (result.isSuccessful) {
+			onTxSuccess();
+		}
+	}, [onTxSuccess, provider, votingEscrow?.address]);
+
+	return (
+		<div className={'grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-16'}>
+			<div className={'col-span-1 w-full'}>
+				<h2 className={'m-0 text-2xl font-bold'}>
+					{'Early exit'}
+				</h2>
+				<div className={'mt-6 text-neutral-600'} >
+					<p>{'Or you can exit early by paying a penalty based on lock duration.'}</p>
+				</div>
+			</div>
 
 			<div className={'col-span-1 grid w-full gap-6'}>
-				<div className={'md:min-h-[104px]'}>
-					<h2 className={'m-0 text-2xl font-bold'}>
-						{'Early exit'}
-					</h2>
-					<div className={'mt-6 text-neutral-600'} >
-						<p>{'Or you can exit early by paying a penalty based on lock duration.'}</p>
-					</div>
-				</div>
-				<div className={'grid grid-cols-1 gap-6 md:grid-cols-2 md:pb-5'}>
+				<div className={'mt-0 grid grid-cols-1 gap-6 md:mt-14 md:grid-cols-2'}>
 					<AmountInput
 						label={'veYFI you have'}
 						amount={toNormalizedBN(toBigInt(positions?.deposit?.underlyingBalance), 18)}
@@ -154,6 +176,29 @@ export function ManageLockTab(): ReactElement {
 					</Button>
 				</div>
 			</div>
+		</div>
+	);
+}
+
+export function ManageLockTab(): ReactElement {
+	const {positions} = useVotingEscrow();
+	const hasLock = toNormalizedBN(toBigInt(positions?.deposit?.underlyingBalance), 18);
+	const timeUntilUnlock = positions?.unlockTime ? getTimeUntil(positions?.unlockTime) : undefined;
+	const weeksToUnlock = toWeeks(timeUntilUnlock);
+
+	return (
+		<div className={'grid gap-10'}>
+			<LockTab />
+			{(hasLock && weeksToUnlock > 0) ? (
+				<>
+					<div className={'h-[1px] w-full bg-neutral-300'} />
+					<ExtendLock />
+					<div className={'h-[1px] w-full bg-neutral-300'} />
+					<EarlyExit />
+					<div className={'h-[1px] w-full bg-neutral-300'} />
+					<ClaimTab />
+				</>
+			) : null}
 		</div>
 	);
 }
