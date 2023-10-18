@@ -29,6 +29,9 @@ export const ChainIconMap = new Map<number, ReactElement>([
 
 export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const isEthMainnet = currentVault.chainID === 1;
+	if (currentVault.apr.forwardAPR.type === '') {
+		return <VaultHistoricalAPR currentVault={currentVault} />;
+	}
 
 	if (currentVault.apr?.extra.stakingRewardsAPR > 0) {
 		const boostedAPR = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.forwardAPR.netAPR;
@@ -156,10 +159,6 @@ export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): 
 				</div>
 			</span>
 		);
-	}
-
-	if (currentVault.apr.forwardAPR.type === '') {
-		return <VaultHistoricalAPR currentVault={currentVault} />;
 	}
 
 	const hasZeroAPR = isZero(currentVault.apr?.netAPR) || Number(currentVault.apr?.netAPR.toFixed(2)) === 0;
