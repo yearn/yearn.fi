@@ -1,5 +1,6 @@
 import {useCallback, useMemo, useState} from 'react';
 import Link from 'next/link';
+import {erc20ABI, useContractRead} from 'wagmi';
 import {useDeepCompareMemo} from '@react-hookz/web';
 import {useGauge} from '@veYFI/contexts/useGauge';
 import {useOption} from '@veYFI/contexts/useOption';
@@ -9,7 +10,7 @@ import {SECONDS_PER_YEAR, VEYFI_CHAIN_ID} from '@veYFI/utils/constants';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
-import {allowanceKey, toAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
+import {toAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
 import {formatToNormalizedValue, toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
@@ -34,12 +35,10 @@ type TGaugeData = {
 	gaugeAPR: number,
 	gaugeBoost: number,
 	gaugeStaked: TNormalizedBN,
-	allowance: TNormalizedBN,
-	isApproved: boolean,
 	actions: undefined
 }
 
-function StakeUnstakeButtons({isApproved, vaultAddress, gaugeAddress, vaultDeposited, gaugeStaked}: TGaugeData): ReactElement {
+function StakeUnstakeButtons({vaultAddress, gaugeAddress, vaultDeposited, gaugeStaked}: TGaugeData): ReactElement {
 	const {provider, address, isActive} = useWeb3();
 	const {refresh: refreshGauges} = useGauge();
 	const {refresh: refreshBalances} = useWallet();
@@ -48,6 +47,18 @@ function StakeUnstakeButtons({isApproved, vaultAddress, gaugeAddress, vaultDepos
 	const [unstakeStatus, set_unstakeStatus] = useState(defaultTxStatus);
 	const userAddress = address as TAddress;
 	const refreshData = useCallback((): unknown => Promise.all([refreshGauges(), refreshBalances()]), [refreshGauges, refreshBalances]);
+
+	const {data: allowance, refetch: refreshAllowances} = useContractRead({
+		address: vaultAddress,
+		abi: erc20ABI,
+		chainId: VEYFI_CHAIN_ID,
+		functionName: 'allowance',
+		args: [toAddress(address), gaugeAddress]
+	});
+
+	const isApproved = useMemo((): boolean => {
+		return toBigInt(allowance) >= toBigInt(vaultDeposited?.raw);
+	}, [allowance, vaultDeposited]);
 
 	const onApproveAndStake = useCallback(async (vaultAddress: TAddress, gaugeAddress: TAddress, amount: bigint): Promise<void> => {
 		const response = await approveAndStake({
@@ -60,9 +71,9 @@ function StakeUnstakeButtons({isApproved, vaultAddress, gaugeAddress, vaultDepos
 		});
 
 		if (response.isSuccessful) {
-			await refreshData();
+			await Promise.all([refreshData(), refreshAllowances()]);
 		}
-	}, [provider, refreshData]);
+	}, [provider, refreshAllowances, refreshData]);
 
 	const onStake = useCallback(async (gaugeAddress: TAddress, amount: bigint): Promise<void> => {
 		const response = await stake({
@@ -127,7 +138,7 @@ function StakeUnstakeButtons({isApproved, vaultAddress, gaugeAddress, vaultDepos
 
 export function StakeUnstakeGauges(): ReactElement {
 	const {isActive, address} = useWeb3();
-	const {gaugesMap, positionsMap, allowancesMap} = useGauge();
+	const {gaugesMap, positionsMap} = useGauge();
 	const {vaults, prices} = useYearn();
 	const {balances} = useWallet();
 	const {dYFIPrice} = useOption();
@@ -164,14 +175,12 @@ export function StakeUnstakeGauges(): ReactElement {
 				gaugeAPR: APRFor10xBoost,
 				gaugeBoost: boost,
 				gaugeStaked: positionsMap[gauge.address]?.deposit ?? toNormalizedBN(0),
-				allowance: allowancesMap[allowanceKey(VEYFI_CHAIN_ID, vault.address, gauge.address, toAddress(address))],
-				isApproved: toBigInt(allowancesMap[allowanceKey(VEYFI_CHAIN_ID, vault.address, gauge.address, toAddress(address))]?.raw) >= toBigInt(balances[vault.address]?.raw),
 				actions: undefined
 			});
 		}
 		set_isLoadingGauges(false);
 		return data;
-	}, [gaugesMap, vaults, balances, positionsMap, allowancesMap, address]);
+	}, [gaugesMap, vaults, balances, positionsMap, address]);
 
 	const searchedGaugesData = useMemo((): TGaugeData[] => {
 		if (!search) {

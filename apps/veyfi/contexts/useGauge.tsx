@@ -3,9 +3,9 @@ import {FixedNumber} from 'ethers';
 import {useDeepCompareMemo} from '@react-hookz/web';
 import {VEYFI_GAUGE_ABI} from '@veYFI/utils/abi/veYFIGauge.abi';
 import {VE_YFI_GAUGES,VEYFI_CHAIN_ID} from '@veYFI/utils/constants';
-import {erc20ABI, readContracts} from '@wagmi/core';
+import {readContracts} from '@wagmi/core';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {decodeAsAddress, decodeAsBigInt, decodeAsNumber, decodeAsString} from '@yearn-finance/web-lib/utils/decoder';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {useAsyncTrigger} from '@common/hooks/useAsyncEffect';
@@ -35,13 +35,11 @@ export type TGaugePosition = {
 export type	TGaugeContext = {
 	gaugesMap: TDict<TGauge | undefined>,
 	positionsMap: TDict<TGaugePosition | undefined>,
-	allowancesMap: TDict<TNormalizedBN>,
 	refresh: () => void,
 }
 const defaultProps: TGaugeContext = {
 	gaugesMap: {},
 	positionsMap: {},
-	allowancesMap: {},
 	refresh: (): void => undefined
 };
 
@@ -49,7 +47,6 @@ const GaugeContext = createContext<TGaugeContext>(defaultProps);
 export const GaugeContextApp = memo(function GaugeContextApp({children}: {children: ReactElement}): ReactElement {
 	const {address, isActive} = useWeb3();
 	const [gauges, set_gauges] = useState<TGauge[]>([]);
-	const [allowancesMap, set_allowancesMap] = useState<TDict<TNormalizedBN>>({});
 	const [positionsMap, set_positionsMap] = useState<TDict<TGaugePosition>>({});
 
 	const refreshVotingEscrow = useAsyncTrigger(async (): Promise<void> => {
@@ -86,38 +83,6 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 		const allGauges = await Promise.all(gaugePromises);
 		set_gauges(allGauges);
 	}, []);
-
-	const refreshAllowances = useAsyncTrigger(async (): Promise<void> => {
-		if (!gauges || !address) {
-			return;
-		}
-		const calls = [];
-		for (const gauge of Object.values(gauges)) {
-			calls.push({
-				address: gauge.vaultAddress,
-				abi: erc20ABI,
-				chainId: VEYFI_CHAIN_ID,
-				functionName: 'allowance',
-				args: [toAddress(address), gauge.address]
-			});
-			calls.push({
-				address: gauge.vaultAddress,
-				abi: erc20ABI,
-				chainId: VEYFI_CHAIN_ID,
-				functionName: 'decimals'
-			});
-
-		}
-		const results = await readContracts({contracts: calls});
-		const _allowancesMap: TDict<TNormalizedBN> = {};
-		let index = 0;
-		for (const gauge of Object.values(gauges)) {
-			const allowance = decodeAsBigInt(results[index++]);
-			const decimals = Number(decodeAsBigInt(results[index++])) || decodeAsNumber(results[index++]);
-			_allowancesMap[allowanceKey(VEYFI_CHAIN_ID, gauge.vaultAddress, gauge.address, toAddress(address))] = toNormalizedBN(allowance, decimals);
-		}
-		set_allowancesMap(_allowancesMap);
-	}, [address, gauges]);
 
 	const refreshPositions = useAsyncTrigger(async (): Promise<void> => {
 		if (!gauges || !isActive || !address) {
@@ -186,15 +151,13 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 	const refresh = useCallback((): void => {
 		refreshVotingEscrow();
 		refreshPositions();
-		refreshAllowances();
-	}, [refreshAllowances, refreshPositions, refreshVotingEscrow]);
+	}, [refreshPositions, refreshVotingEscrow]);
 
 	const contextValue = useDeepCompareMemo((): TGaugeContext => ({
 		gaugesMap: keyBy(gauges, 'address'),
 		positionsMap: positionsMap,
-		allowancesMap: allowancesMap ?? {},
 		refresh
-	}), [allowancesMap, gauges, positionsMap, refresh]);
+	}), [gauges, positionsMap, refresh]);
 
 	return (
 		<GaugeContext.Provider value={contextValue}>
