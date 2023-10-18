@@ -55,7 +55,7 @@ function Index(): ReactElement | null {
 			}
 			refresh(tokensToRefresh);
 		}
-	}, [currentVault?.address, currentVault?.token?.address, address, isActive, refresh]);
+	}, [currentVault?.address, currentVault?.token.address, address, isActive, refresh, currentVault?.chainID]);
 
 	if (isLoadingVault || !router.query.address) {
 		return (
