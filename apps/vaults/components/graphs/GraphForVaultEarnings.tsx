@@ -48,7 +48,7 @@ export function GraphForVaultEarnings({
 					className={'text-primary-600'}
 					type={'step'}
 					dot={false}
-					activeDot={(e): ReactElement => {
+					activeDot={(e: any): ReactElement => {
 						e.className = `${e.className} activeDot`;
 						delete e.dataKey;
 						return <circle {...e}></circle>;

@@ -30,7 +30,7 @@ export function GraphForVaultTVL({messariData, height = 312}: TGraphForVaultTVLP
 					dataKey={'tvl'}
 					stroke={'currentcolor'}
 					dot={false}
-					activeDot={(e): ReactElement => {
+					activeDot={(e: any): ReactElement => {
 						e.className = `${e.className} activeDot`;
 						delete e.dataKey;
 						return <circle {...e}></circle>;
