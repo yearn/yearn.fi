@@ -76,7 +76,7 @@ export const yDaemonVaultTokenSchema = z.object({
 
 export const yDaemonVaultSchema = z.object({
 	address: addressSchema,
-	type: z.literal('Automated').or(z.literal('Standard').or(z.literal('Experimental'))),
+	type: z.literal('Automated').or(z.literal('Standard').or(z.literal('Experimental').or(z.literal('Automated Yearn Vault').or(z.literal('Yearn Vault'))))),
 	symbol: z.string(),
 	display_symbol: z.string(),
 	formated_symbol: z.string(),

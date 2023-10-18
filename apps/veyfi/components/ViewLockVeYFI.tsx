@@ -1,10 +1,9 @@
 import {useCallback, useEffect, useMemo, useState} from 'react';
-import {formatUnits} from 'viem';
 import {useVotingEscrow} from '@veYFI/contexts/useVotingEscrow';
 import {getVotingPower} from '@veYFI/utils';
 import {increaseVeYFILockAmount, lockVeYFI} from '@veYFI/utils/actions';
-import {MAX_LOCK_TIME, MIN_LOCK_AMOUNT, MIN_LOCK_TIME} from '@veYFI/utils/constants';
-import {validateAllowance, validateAmount, validateNetwork} from '@veYFI/utils/validations';
+import {MAX_LOCK_TIME, MIN_LOCK_AMOUNT, MIN_LOCK_TIME, VEYFI_CHAIN_ID} from '@veYFI/utils/constants';
+import {validateAllowance, validateAmount} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
@@ -21,9 +20,10 @@ import {useBalance} from '@common/hooks/useBalance';
 import {approveERC20} from '@common/utils/actions';
 
 import type {ReactElement} from 'react';
+import type {TNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import type {TMilliseconds} from '@yearn-finance/web-lib/utils/time';
 
-export function LockTab(): ReactElement {
+export function LockVeYFI(): ReactElement {
 	const [lockAmount, set_lockAmount] = useState(toNormalizedBN(0));
 	const [lockTime, set_lockTime] = useState('');
 	const {provider, address, isActive} = useWeb3();
@@ -40,8 +40,8 @@ export function LockTab(): ReactElement {
 		return positions?.unlockTime || Date.now() + fromWeeks(toTime(lockTime));
 	}, [positions?.unlockTime, lockTime]);
 
-	const votingPower = useMemo((): bigint => {
-		return getVotingPower(toBigInt(positions?.deposit?.underlyingBalance) + toBigInt(lockAmount.raw), unlockTime);
+	const votingPower = useMemo((): TNormalizedBN => {
+		return toNormalizedBN(getVotingPower(toBigInt(positions?.deposit?.underlyingBalance) + toBigInt(lockAmount.raw), unlockTime), 18);
 	}, [positions?.deposit?.underlyingBalance, lockAmount, unlockTime]);
 
 	const refreshData = useCallback(async (): Promise<void> => {
@@ -55,6 +55,7 @@ export function LockTab(): ReactElement {
 	const onApproveLock = useCallback(async (): Promise<void> => {
 		const result = await approveERC20({
 			connector: provider,
+			chainID: VEYFI_CHAIN_ID,
 			contractAddress: votingEscrow?.token,
 			spenderAddress: votingEscrow?.address,
 			statusHandler: set_approveLockStatus,
@@ -68,6 +69,7 @@ export function LockTab(): ReactElement {
 	const onLock = useCallback(async (): Promise<void> => {
 		const result = await lockVeYFI({
 			connector: provider,
+			chainID: VEYFI_CHAIN_ID,
 			contractAddress: votingEscrow?.address,
 			amount: lockAmount.raw,
 			time: toBigInt(toSeconds(unlockTime)),
@@ -81,6 +83,7 @@ export function LockTab(): ReactElement {
 	const onIncreaseLockAmount = useCallback(async (): Promise<void> => {
 		const result = await increaseVeYFILockAmount({
 			connector: provider,
+			chainID: VEYFI_CHAIN_ID,
 			contractAddress: votingEscrow?.address,
 			amount: lockAmount.raw,
 			statusHandler: set_increaseLockAmountStatus
@@ -118,10 +121,8 @@ export function LockTab(): ReactElement {
 		minAmountAllowed: hasLockedAmount ? 0 : MIN_LOCK_TIME
 	});
 
-	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: 1, walletNetwork: safeChainID});
-
-	const isApproveDisabled = !isActive || !isValidNetwork || isApproved || isLoadingVotingEscrow || !votingEscrow || !address;
-	const isLockDisabled = !isActive || !isValidNetwork || !isApproved || !isValidLockAmount || !isValidLockTime || isLoadingVotingEscrow || !votingEscrow || !address;
+	const isApproveDisabled = !isActive || isApproved || isLoadingVotingEscrow || !votingEscrow || !address;
+	const isLockDisabled = !isActive || !isApproved || !isValidLockAmount || !isValidLockTime || isLoadingVotingEscrow || !votingEscrow || !address;
 	const txAction = !isApproved
 		? {
 			label: 'Approve',
@@ -150,9 +151,12 @@ export function LockTab(): ReactElement {
 					{"YFI holders, time to Lock' ‘N Load"}
 				</h2>
 				<div className={'mt-6 text-neutral-600'} >
-					<p >{'Lock your YFI for veYFI to take part in Yearn governance.'}</p>
-					<br />
-					<p>{'Please note, governance is currently the only use for veYFI until the full platform launches ‘soon’. Stay tuned anon.'}</p>
+					<p >{'Lock your YFI to veYFI to:'}</p>
+					<ul>
+						<li className={'list-inside list-disc'}>{'Take part in Yearn governance.'}</li>
+						<li className={'list-inside list-disc'}>{'Direct YFI rewards to Vaults.'}</li>
+						<li className={'list-inside list-disc'}>{'Receive dYFI (the longer you lock, the more you keep).'}</li>
+					</ul>
 				</div>
 			</div>
 
@@ -160,8 +164,8 @@ export function LockTab(): ReactElement {
 				<div className={'mt-0 grid grid-cols-1 gap-6 md:mt-14 md:grid-cols-2'}>
 					<AmountInput
 						label={'YFI'}
-						amount={lockAmount.normalized}
-						maxAmount={formatAmount(tokenBalance.normalized, 0, 6)}
+						amount={lockAmount}
+						maxAmount={tokenBalance}
 						onAmountChange={(amount): void => set_lockAmount(handleInputChangeEventValue(amount, 18))}
 						onLegendClick={(): void => set_lockAmount(tokenBalance)}
 						onMaxClick={(): void => set_lockAmount(tokenBalance)}
@@ -169,9 +173,16 @@ export function LockTab(): ReactElement {
 						error={lockAmountError} />
 					<AmountInput
 						label={'Current lock period (weeks)'}
-						amount={isZero(toTime(lockTime)) ? '' : Math.floor(toTime(lockTime)).toString()}
-						onAmountChange={set_lockTime}
-						maxAmount={(MAX_LOCK_TIME + 1).toString()}
+						amount={toNormalizedBN(isZero(toTime(lockTime)) ? '' : Math.floor(toTime(lockTime)).toString(), 0)}
+						onAmountChange={(v: string): void => {
+							const inputed = handleInputChangeEventValue(v, 0);
+							if (Number(inputed.normalized) > MAX_LOCK_TIME + 1) {
+								set_lockTime((MAX_LOCK_TIME + 1).toString());
+							} else {
+								set_lockTime(inputed.normalized.toString());
+							}
+						}}
+						maxAmount={toNormalizedBN(MAX_LOCK_TIME + 1, 0)}
 						onMaxClick={(): void => set_lockTime((MAX_LOCK_TIME + 1).toString())}
 						disabled={hasLockedAmount}
 						legend={'Minimum: 1 week'}
@@ -180,7 +191,7 @@ export function LockTab(): ReactElement {
 				<div className={'grid grid-cols-1 gap-6 md:grid-cols-2'}>
 					<AmountInput
 						label={'Total veYFI'}
-						amount={formatUnits(votingPower, 18)}
+						amount={votingPower}
 						disabled />
 					<Button
 						className={'w-full md:mt-7'}

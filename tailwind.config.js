@@ -40,7 +40,9 @@ module.exports = {
 			},
 			gridTemplateColumns: {
 				'13': 'repeat(13, minmax(0, 1fr))',
-				'14': 'repeat(14, minmax(0, 1fr))'
+				'14': 'repeat(14, minmax(0, 1fr))',
+				'20': 'repeat(20, minmax(0, 1fr))',
+				'30': 'repeat(30, minmax(0, 1fr))'
 			},
 			fontSize: {
 				'xxs': ['10px', '16px'],

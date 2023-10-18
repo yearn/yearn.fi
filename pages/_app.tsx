@@ -38,6 +38,10 @@ const aeonik = localFont({
 			path: '../public/fonts/Aeonik-Bold.woff2',
 			weight: '700',
 			style: 'normal'
+		}, {
+			path: '../public/fonts/Aeonik-Black.ttf',
+			weight: '900',
+			style: 'normal'
 		}
 	]
 });

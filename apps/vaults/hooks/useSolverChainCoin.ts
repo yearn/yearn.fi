@@ -67,6 +67,7 @@ export function useSolverChainCoin(): TSolverContext {
 		assert(isEth(request.current.outputToken.value), 'Out is not ETH');
 		const allowance = await allowanceOf({
 			connector: provider,
+			chainID: safeChainID,
 			tokenAddress: toAddress(request.current.inputToken.value),
 			spenderAddress: toAddress(getEthZapperContract(safeChainID))
 		});
@@ -87,6 +88,7 @@ export function useSolverChainCoin(): TSolverContext {
 
 		const result = await approveERC20({
 			connector: provider,
+			chainID: safeChainID,
 			contractAddress: toAddress(request.current.inputToken.value),
 			spenderAddress: getEthZapperContract(safeChainID),
 			amount: amount,
@@ -111,6 +113,7 @@ export function useSolverChainCoin(): TSolverContext {
 
 		const result = await depositETH({
 			connector: provider,
+			chainID: safeChainID,
 			contractAddress: getEthZapperContract(safeChainID),
 			amount: request.current.inputAmount,
 			statusHandler: txStatusSetter
@@ -134,6 +137,7 @@ export function useSolverChainCoin(): TSolverContext {
 
 		const result = await withdrawETH({
 			connector: provider,
+			chainID: safeChainID,
 			contractAddress: getEthZapperContract(safeChainID),
 			amount: request.current.inputAmount,
 			statusHandler: txStatusSetter

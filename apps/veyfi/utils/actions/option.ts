@@ -1,10 +1,11 @@
 import {VEYFI_OPTIONS_ABI} from '@veYFI/utils/abi/veYFIOptions.abi';
+import {handleTx} from '@yearn-finance/web-lib/utils/wagmi/provider';
+import {assertAddress} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {assert} from '@common/utils/assert';
-import {assertAddress, handleTx as handleTxWagmi} from '@common/utils/wagmiUtils';
 
 import type {TAddress} from '@yearn-finance/web-lib/types';
+import type {TWriteTransaction} from '@yearn-finance/web-lib/utils/wagmi/provider';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
-import type {TWriteTransaction} from '@common/utils/wagmiUtils';
 
 type TRedeem = TWriteTransaction & {
 	accountAddress: TAddress;
@@ -17,10 +18,10 @@ export async function redeem(props: TRedeem): Promise<TTxResponse> {
 	assert(props.amount > 0n, 'amount is zero');
 	assert(props.ethRequired > 0n, 'ethRequired is zero');
 
-	return await handleTxWagmi(props, {
+	return await handleTx(props, {
 		address: props.contractAddress,
 		abi: VEYFI_OPTIONS_ABI,
-		functionName: 'exercise',
+		functionName: 'redeem',
 		value: props.ethRequired,
 		args: [props.amount, props.accountAddress]
 	});

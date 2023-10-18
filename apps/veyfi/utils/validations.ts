@@ -26,7 +26,6 @@ export function validateAllowance(props: TValidateAllowanceProps): TValidationRe
 	}
 
 	// TODO: return valid when is native token
-
 	const allowance = allowances[allowanceKey(chainID, tokenAddress, spenderAddress, ownerAddress)];
 	const isApproved = allowance >= amount;
 
@@ -71,19 +70,6 @@ export function validateAmount(props: TValidateAmountProps): TValidationResponse
 export type TValidateNetworkProps = {
 	supportedNetwork: number;
 	walletNetwork?: number;
-}
-
-export function validateNetwork(props: TValidateNetworkProps): TValidationResponse {
-	const {supportedNetwork, walletNetwork} = props;
-
-	if (!walletNetwork) {
-		return {isValid: false, error: 'Wallet Not Connected'};
-	}
-	if (supportedNetwork !== walletNetwork) {
-		return {isValid: false, error: 'Incorrect Network Selected'};
-	}
-
-	return {isValid: true};
 }
 
 export type TValidateAddressProps = {

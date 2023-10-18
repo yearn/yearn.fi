@@ -58,7 +58,7 @@ export function GraphForStrategyReports({strategy, vaultDecimals, vaultTicker, h
 					dataKey={'value'}
 					stroke={'currentcolor'}
 					dot={false}
-					activeDot={(e): ReactElement => {
+					activeDot={(e: any): ReactElement => {
 						e.className = `${e.className} activeDot`;
 						delete e.dataKey;
 						return <circle {...e}></circle>;

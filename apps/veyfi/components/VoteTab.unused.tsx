@@ -1,8 +1,8 @@
 import {useCallback, useState} from 'react';
 import Link from 'next/link';
 import {delegateVote} from '@veYFI/utils/actions/votingEscrow';
-import {SNAPSHOT_DELEGATE_REGISTRY_ADDRESS} from '@veYFI/utils/constants';
-import {validateAddress, validateNetwork} from '@veYFI/utils/validations';
+import {SNAPSHOT_DELEGATE_REGISTRY_ADDRESS, VEYFI_CHAIN_ID} from '@veYFI/utils/constants';
+import {validateAddress} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -10,31 +10,26 @@ import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {Input} from '@common/components/Input';
 
 import type {ReactElement} from 'react';
-import type {TAddress} from '@yearn-finance/web-lib/types';
 
 export function VoteTab(): ReactElement {
 	const [delegateAddress, set_delegateAddress] = useState('');
-	const {provider, address, isActive, chainID} = useWeb3();
-
+	const {provider, address, isActive} = useWeb3();
 	const [delegateVoteStatus, set_delegateVoteStatus] = useState(defaultTxStatus);
-
-	const userAddress = address as TAddress;
-
-	const {isValid: isValidNetwork} = validateNetwork({supportedNetwork: 1, walletNetwork: chainID});
 	const {isValid: isValidDelegateAddress, error: delegateAddressError} = validateAddress({address: delegateAddress});
 
-	const handleExecuteDelegateVote = useCallback(async (): Promise<void> => {
-		if (!userAddress || !isValidDelegateAddress) {
+	const onHandleExecuteDelegateVote = useCallback(async (): Promise<void> => {
+		if (!address || !isValidDelegateAddress) {
 			return;
 		}
 
 		await delegateVote({
 			connector: provider,
+			chainID: VEYFI_CHAIN_ID,
 			contractAddress: SNAPSHOT_DELEGATE_REGISTRY_ADDRESS,
 			statusHandler: set_delegateVoteStatus,
 			delegateAddress: toAddress(delegateAddress)
 		});
-	}, [delegateAddress, isValidDelegateAddress, provider, userAddress]);
+	}, [delegateAddress, isValidDelegateAddress, provider, address]);
 
 	return (
 		<div className={'grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-16'}>
@@ -72,9 +67,9 @@ export function VoteTab(): ReactElement {
 					/>
 					<Button
 						className={'w-full md:mt-7'}
-						onClick={handleExecuteDelegateVote}
+						onClick={onHandleExecuteDelegateVote}
 						isBusy={delegateVoteStatus.pending}
-						isDisabled={!isActive || !isValidNetwork || !isValidDelegateAddress || delegateVoteStatus.pending}
+						isDisabled={!isActive || !isValidDelegateAddress || delegateVoteStatus.pending}
 					>
 						{'Submit'}
 					</Button>

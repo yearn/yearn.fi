@@ -1,4 +1,3 @@
-// TODO: update once final version deployed
 export const VEYFI_REGISTRY_ABI = [
 	{
 		'inputs': [

@@ -56,6 +56,7 @@ export function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): React
 	const onApprove = useCallback(async (): Promise<void> => {
 		const result = await approveERC20({
 			connector: provider,
+			chainID: currentVault.chainID,
 			contractAddress: currentVault.address,
 			spenderAddress: toAddress(stakingRewards?.address),
 			amount: vaultBalance.raw,
@@ -69,6 +70,7 @@ export function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): React
 	const onStake = useCallback(async (): Promise<void> => {
 		const result = await stakeAction({
 			connector: provider,
+			chainID: currentVault.chainID,
 			contractAddress: toAddress(stakingRewards?.address),
 			amount: vaultBalance.raw,
 			statusHandler: set_stakeStatus
@@ -81,6 +83,7 @@ export function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): React
 	const onUnstake = useCallback(async (): Promise<void> => {
 		const result = await unstakeAction({
 			connector: provider,
+			chainID: currentVault.chainID,
 			contractAddress: toAddress(stakingRewards?.address),
 			statusHandler: set_unstakeStatus
 		});
@@ -92,6 +95,7 @@ export function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): React
 	const onClaim = useCallback(async (): Promise<void> => {
 		const result = await claimAction({
 			connector: provider,
+			chainID: currentVault.chainID,
 			contractAddress: toAddress(stakingRewards?.address),
 			statusHandler: set_claimStatus
 		});

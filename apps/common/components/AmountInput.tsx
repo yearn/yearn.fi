@@ -1,15 +1,15 @@
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 
 import type {ReactElement} from 'react';
+import type {TNormalizedBN} from '@common/types/types';
 
 type TAmountInputProps = {
-	amount: string | number;
-	maxAmount?: string | number;
+	amount: TNormalizedBN;
+	maxAmount?: TNormalizedBN;
 	maxLabel?: string;
 	label?: string;
 	placeholder?: string;
-	legend?: string;
+	legend?: string | ReactElement;
 	error?: string;
 	disabled?: boolean;
 	loading?: boolean;
@@ -31,13 +31,6 @@ export function AmountInput({
 	onLegendClick,
 	onMaxClick
 }: TAmountInputProps): ReactElement {
-	let displayedAmount = amount.toString();
-	if (isZero(displayedAmount) && !disabled) {
-		displayedAmount = '';
-	}
-	if (isZero(displayedAmount) && disabled) {
-		displayedAmount = '0';
-	}
 	return (
 		<div className={'w-full'}>
 			{label && (
@@ -49,10 +42,10 @@ export function AmountInput({
 			<div className={'relative flex w-full items-center justify-center'}>
 				<input
 					className={`h-10 w-full p-2 font-mono text-base font-normal outline-none ${maxAmount && !disabled ? 'pr-12' : null} ${error ? 'border border-solid border-[#EA5204] focus:border-[#EA5204]' : 'border-0 border-none'} ${disabled ? 'bg-neutral-300 text-neutral-600' : 'bg-neutral-0'}`}
-					type={'number'}
-					min={0}
+					type={'text'}
+					autoComplete={'off'}
 					aria-label={label}
-					value={displayedAmount}
+					value={amount.normalized}
 					onChange={onAmountChange ? (e): void => onAmountChange(e.target.value) : undefined}
 					placeholder={loading ? '' : placeholder ?? '0'}
 					disabled={disabled}
@@ -70,7 +63,7 @@ export function AmountInput({
 					role={onLegendClick ? 'button' : 'text'}
 					onClick={onLegendClick}
 					suppressHydrationWarning
-					className={`mt-1 pl-2 text-xs md:mr-0 ${error ? 'text-[#EA5204]' : 'text-neutral-600'}`}>
+					className={`mt-1 pl-1 text-xs md:mr-0 ${error ? 'text-[#EA5204]' : 'text-neutral-600'}`}>
 					{error ?? legend}
 				</legend>
 			</Renderable>

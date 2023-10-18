@@ -14,6 +14,7 @@ import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import {getVaultAPY} from '@common/utils';
 import {approveERC20, deposit} from '@common/utils/actions';
+import {YBAL_CHAIN_ID} from '@yBal/constants';
 import {ZAP_OPTIONS_FROM, ZAP_OPTIONS_TO} from '@yBal/constants/tokens';
 import {useYBal} from '@yBal/contexts/useYBal';
 import {simulateZapForMinOut, zapBal} from '@yBal/utils/actions';
@@ -113,6 +114,7 @@ export function CardTransactorContextApp({
 	): Promise<{shouldMint: boolean; minOut: bigint;}> => {
 		return await simulateZapForMinOut({
 			connector: provider,
+			chainID: YBAL_CHAIN_ID,
 			contractAddress: ZAP_YEARN_YBAL_ADDRESS,
 			inputToken: _inputToken,
 			outputToken: _outputToken,
@@ -136,6 +138,7 @@ export function CardTransactorContextApp({
 	const onApprove = useCallback(async (): Promise<void> => {
 		const result = await approveERC20({
 			connector: provider,
+			chainID: YBAL_CHAIN_ID,
 			contractAddress: selectedOptionFrom.value,
 			spenderAddress: selectedOptionFrom.zapVia,
 			amount: MAX_UINT_256,
@@ -174,6 +177,7 @@ export function CardTransactorContextApp({
 			// Direct deposit to vault from Bal/yBal balancer LP Token to lp-yBal Vault
 			const result = await deposit({
 				connector: provider,
+				chainID: YBAL_CHAIN_ID,
 				contractAddress: selectedOptionTo.value,
 				amount: amount.raw, //amount_in
 				statusHandler: set_txStatusZap
@@ -187,6 +191,7 @@ export function CardTransactorContextApp({
 			// Zap in
 			const result = await zapBal({
 				connector: provider,
+				chainID: YBAL_CHAIN_ID,
 				contractAddress: ZAP_YEARN_YBAL_ADDRESS,
 				inputToken: selectedOptionFrom.value, //_input_token
 				outputToken: selectedOptionTo.value, //_output_token

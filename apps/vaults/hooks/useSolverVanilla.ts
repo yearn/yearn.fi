@@ -62,6 +62,7 @@ export function useSolverVanilla(): TSolverContext {
 
 		const allowance = await allowanceOf({
 			connector: provider,
+			chainID: safeChainID,
 			tokenAddress: toAddress(request.current.inputToken.value),
 			spenderAddress: toAddress(request.current.outputToken.value)
 		});
@@ -86,6 +87,7 @@ export function useSolverVanilla(): TSolverContext {
 
 		const result = await approveERC20({
 			connector: provider,
+			chainID: safeChainID,
 			contractAddress: request.current.inputToken.value,
 			spenderAddress: request.current.outputToken.value,
 			amount: amount,
@@ -110,6 +112,7 @@ export function useSolverVanilla(): TSolverContext {
 
 		const result = await deposit({
 			connector: provider,
+			chainID: safeChainID,
 			contractAddress: request.current.outputToken.value,
 			amount: request.current.inputAmount,
 			statusHandler: txStatusSetter
@@ -133,6 +136,7 @@ export function useSolverVanilla(): TSolverContext {
 
 		const result = await withdrawShares({
 			connector: provider,
+			chainID: safeChainID,
 			contractAddress: request.current.inputToken.value,
 			amount: request.current.inputAmount,
 			statusHandler: txStatusSetter

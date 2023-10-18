@@ -80,6 +80,7 @@ export function useSolverInternalMigration(): TSolverContext {
 
 		const allowance = await allowanceOf({
 			connector: provider,
+			chainID: safeChainID,
 			tokenAddress: toAddress(request.current.inputToken.value),
 			spenderAddress: toAddress(request.current.migrator)
 		});
@@ -104,6 +105,7 @@ export function useSolverInternalMigration(): TSolverContext {
 
 		const result = await approveERC20({
 			connector: provider,
+			chainID: safeChainID,
 			contractAddress: toAddress(request.current.inputToken.value),
 			spenderAddress: request.current.migrator,
 			amount: amount,
@@ -137,6 +139,7 @@ export function useSolverInternalMigration(): TSolverContext {
 			});
 			const result = await zapCRV({
 				connector: provider,
+				chainID: safeChainID,
 				contractAddress: ZAP_YEARN_VE_CRV_ADDRESS,
 				inputToken: request.current.inputToken.value, //_input_token
 				outputToken: request.current.outputToken.value, //_output_token
@@ -153,6 +156,7 @@ export function useSolverInternalMigration(): TSolverContext {
 
 		const result = await migrateShares({
 			connector: provider,
+			chainID: safeChainID,
 			contractAddress: request.current.migrator,
 			fromVault: request.current.inputToken.value,
 			toVault: request.current.outputToken.value,

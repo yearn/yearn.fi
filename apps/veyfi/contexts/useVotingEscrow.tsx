@@ -2,9 +2,10 @@ import {createContext, memo, useCallback, useContext, useMemo} from 'react';
 import {erc20ABI, useContractRead, useContractReads} from 'wagmi';
 import {VEYFI_ABI} from '@veYFI/utils/abi/veYFI.abi';
 import {VEYFI_POSITION_HELPER_ABI} from '@veYFI/utils/abi/veYFIPositionHelper.abi';
+import {VEYFI_CHAIN_ID} from '@veYFI/utils/constants';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {allowanceKey, isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {VEYFI_ADDRESS, VEYFI_POSITION_HELPER_ADDRESS, YFI_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {VEYFI_ADDRESS, VEYFI_POSITION_HELPER_ADDRESS,YFI_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {decodeAsBigInt, decodeAsNumber, decodeAsString} from '@yearn-finance/web-lib/utils/decoder';
 import {toMilliseconds} from '@yearn-finance/web-lib/utils/time';
 
@@ -119,9 +120,9 @@ export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({chil
 	/* 🔵 - Yearn Finance **********************************************************
 	** Retrieving the user's allowances of YFI for the veYFI contract.
 	******************************************************************************/
-	const baseYFIContract = {address: YFI_ADDRESS, abi: erc20ABI};
 	const {data: allowance, status: allowanceStatus, refetch: refreshAllowance} = useContractRead({
-		...baseYFIContract,
+		address: YFI_ADDRESS,
+		abi: erc20ABI,
 		functionName: 'allowance',
 		args: [toAddress(address), VEYFI_ADDRESS],
 		enabled: isActive && address !== undefined && !isZeroAddress(address)
@@ -131,7 +132,7 @@ export const VotingEscrowContextApp = memo(function VotingEscrowContextApp({chil
 			return {};
 		}
 		return ({
-			[allowanceKey(1, YFI_ADDRESS, VEYFI_ADDRESS, address)]: allowance
+			[allowanceKey(VEYFI_CHAIN_ID, YFI_ADDRESS, VEYFI_ADDRESS, address)]: allowance
 		});
 	}, [address, allowance, allowanceStatus]);
 

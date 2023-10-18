@@ -47,6 +47,7 @@ export async function isApprovedERC20(
 ******************************************************************************/
 type TAllowanceOf = {
 	connector: Connector | undefined,
+	chainID: number,
 	tokenAddress: TAddress,
 	spenderAddress: TAddress
 }
@@ -54,6 +55,7 @@ export async function allowanceOf(props: TAllowanceOf): Promise<bigint> {
 	const wagmiProvider = await toWagmiProvider(props.connector);
 	const result = await readContract({
 		...wagmiProvider,
+		chainId: props.chainID,
 		abi: erc20ABI,
 		address: props.tokenAddress,
 		functionName: 'allowance',

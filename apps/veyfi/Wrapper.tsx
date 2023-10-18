@@ -21,7 +21,7 @@ export function Wrapper({children, router}: {children: ReactElement, router: Nex
 					<OptionContextApp>
 						<AnimatePresence mode={'wait'}>
 							<motion.div
-								key={router.asPath}
+								key={router.basePath}
 								initial={'initial'}
 								animate={'enter'}
 								exit={'exit'}
