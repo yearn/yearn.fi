@@ -9,8 +9,6 @@ import type {ReactElement} from 'react';
 export function TabManageGauges(): ReactElement {
 	return (
 		<div className={'grid gap-10'}>
-			<VoteGauge />
-			<div className={'h-[1px] w-full bg-neutral-300'} />
 			<div>
 				<QueryParamProvider
 					adapter={NextQueryParamAdapter}
@@ -18,6 +16,8 @@ export function TabManageGauges(): ReactElement {
 					<StakeUnstakeGauges />
 				</QueryParamProvider>
 			</div>
+			<div className={'h-[1px] w-full bg-neutral-300'} />
+			<VoteGauge />
 		</div>
 	);
 }

@@ -116,7 +116,7 @@ function StakeUnstakeButtons({isApproved, vaultAddress, gaugeAddress, vaultDepos
 				<Button
 					className={'h-8 w-full text-xs md:w-24'}
 					onClick={async (): Promise<void> => onStake(gaugeAddress, toBigInt(vaultDeposited?.raw))}
-					// isDisabled={!isActive || toBigInt(vaultDeposited?.raw) == 0n}
+					isDisabled={!isActive || toBigInt(vaultDeposited?.raw) == 0n}
 					isBusy={stakeStatus.pending}>
 					{'Stake'}
 				</Button>
