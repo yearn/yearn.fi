@@ -1,6 +1,6 @@
 import {useCallback, useMemo} from 'react';
 import {useDeepCompareMemo} from '@react-hookz/web';
-import {OPT_VAULTS_WITH_REWARDS, STACKING_TO_VAULT} from '@vaults/constants/optRewards';
+import {STACKING_TO_VAULT} from '@vaults/constants/optRewards';
 import {useAppSettings} from '@vaults/contexts/useAppSettings';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {useWallet} from '@common/contexts/useWallet';
@@ -72,9 +72,7 @@ export function useVaultFilter(
 		[getToken]
 	);
 
-	const boostedVaults = useFilteredVaults(vaults, ({address}): boolean =>
-		OPT_VAULTS_WITH_REWARDS.some((token): boolean => token === address)
-	);
+	const boostedVaults = useFilteredVaults(vaults, ({apr}): boolean => apr.extra.stakingRewardsAPR > 0);
 	const curveVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Curve');
 	const velodromeVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Velodrome');
 	const aerodromeVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Aerodrome');
