@@ -1,6 +1,6 @@
 import {useEffect, useState} from 'react';
 import {DelimitedArrayParam, DelimitedNumericArrayParam, StringParam, useQueryParam} from 'use-query-params';
-import {ALL_CATEGORIES_KEYS, ALL_CHAINS} from '@vaults/contexts/useAppSettings';
+import {ALL_CATEGORIES_KEYS, ALL_CHAINS} from '@vaults/constants';
 
 import type {TSortDirection} from '@common/types/types';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';

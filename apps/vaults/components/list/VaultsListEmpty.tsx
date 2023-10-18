@@ -1,4 +1,5 @@
-import {ALL_CATEGORIES_KEYS, ALL_CHAINS, useAppSettings} from '@vaults/contexts/useAppSettings';
+import {ALL_CATEGORIES_KEYS, ALL_CHAINS} from '@vaults/constants';
+import {useAppSettings} from '@vaults/contexts/useAppSettings';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 
