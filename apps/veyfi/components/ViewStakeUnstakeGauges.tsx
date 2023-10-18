@@ -151,7 +151,7 @@ function StakeUnstakeButtons({vaultAddress, gaugeAddress, vaultDeposited, gaugeS
 }
 
 export function StakeUnstakeGauges(): ReactElement {
-	const {isActive} = useWeb3();
+	const {address} = useWeb3();
 	const {gaugesMap, positionsMap} = useGauge();
 	const {vaults, prices} = useYearn();
 	const {balances, getBalance} = useWallet();
@@ -171,6 +171,7 @@ export function StakeUnstakeGauges(): ReactElement {
 				continue;
 			}
 
+			const vaultBalance = getBalance({address: vault.address, chainID: vault.chainID});
 			const tokenPrice = formatToNormalizedValue(toBigInt(prices?.[vault.token.address] || 0), 6);
 			const boost = Number(positionsMap[gauge.address]?.boost || 1);
 			let APRFor10xBoost =
@@ -181,7 +182,6 @@ export function StakeUnstakeGauges(): ReactElement {
 			if (tokenPrice === 0 || Number(gauge?.totalStaked.normalized || 0) === 0) {
 				APRFor10xBoost = 0;
 			}
-			const vaultBalance = getBalance({address: vault.address, chainID: vault.chainID});
 
 			data.push({
 				gaugeAddress: gauge.address,
@@ -330,9 +330,9 @@ export function StakeUnstakeGauges(): ReactElement {
 									toBigInt(props?.gaugeStaked.raw) === 0n
 								) {
 									return (
-										<Link href={isActive ? `/vaults/${VEYFI_CHAIN_ID}/${props.vaultAddress}` : ''}>
+										<Link href={address ? `/vaults/${VEYFI_CHAIN_ID}/${props.vaultAddress}` : ''}>
 											<Button
-												isDisabled={!isActive}
+												isDisabled={!address}
 												className={'h-8 w-full cursor-alias text-xs'}>
 												{'Deposit in vault'}
 												<IconLinkOut className={'ml-2 h-4 w-4'} />
