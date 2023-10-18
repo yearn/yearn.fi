@@ -91,14 +91,19 @@ export function RedeemTab(): ReactElement {
 
 	return (
 		<div className={'flex flex-col gap-6 md:gap-10'}>
-			<div className={'flex flex-col gap-4'}>
+			<div className={'flex flex-col'}>
 				<div className={'flex flex-col gap-4'}>
 					<h2 className={'m-0 text-2xl font-bold'}>
 						{'Redeem'}
 					</h2>
+					<div className={'text-neutral-600'} >
+						<p className={'w-2/3 whitespace-break-spaces'}>
+							{'Got dYFI, want YFI? You’ve come to the right place. Redeem dYFI for YFI by paying the redemption cost in ETH. Enjoy your cheap YFI anon.'}
+						</p>
+					</div>
 				</div>
 
-				<div className={'grid grid-cols-1 gap-4 md:grid-cols-4'}>
+				<div className={'mt-10 grid grid-cols-1 gap-4 md:grid-cols-4'}>
 					<AmountInput
 						label={'You have dYFI'}
 						amount={dYFIBalance}
@@ -116,7 +121,7 @@ export function RedeemTab(): ReactElement {
 						error={redeemAmountError}
 					/>
 					<AmountInput
-						label={'ETH to pay to redeem YFI from dYFI'}
+						label={'Redemption cost (in ETH)'}
 						amount={ethRequired}
 						legend={formatCounterValue(ethRequired.normalized, ethBalance.normalizedPrice ?? 0)}
 						disabled

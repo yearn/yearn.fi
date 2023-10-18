@@ -1,6 +1,5 @@
 import {useCallback, useMemo, useState} from 'react';
 import Link from 'next/link';
-import {QueryParamProvider} from 'use-query-params';
 import {useDeepCompareMemo} from '@react-hookz/web';
 import {useGauge} from '@veYFI/contexts/useGauge';
 import {useOption} from '@veYFI/contexts/useOption';
@@ -19,7 +18,6 @@ import {SearchBar} from '@common/components/SearchBar';
 import {Table} from '@common/components/Table';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
-import {NextQueryParamAdapter} from '@common/utils/QueryParamsProvider';
 
 import type {ReactElement} from 'react';
 import type {TAddress} from '@yearn-finance/web-lib/types';
@@ -127,7 +125,7 @@ function StakeUnstakeButtons({isApproved, vaultAddress, gaugeAddress, vaultDepos
 	);
 }
 
-function StakeUnstake(): ReactElement {
+export function StakeUnstakeGauges(): ReactElement {
 	const {isActive, address} = useWeb3();
 	const {gaugesMap, positionsMap, allowancesMap} = useGauge();
 	const {vaults, prices} = useYearn();
@@ -326,49 +324,5 @@ function StakeUnstake(): ReactElement {
 			</div>
 		</div>
 
-	);
-}
-
-function Vote(): ReactElement {
-	return (
-		<div className={'grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-16'}>
-			<div className={'col-span-2 grid w-full'}>
-				<div className={'flex flex-col gap-4'}>
-					<h2 className={'m-0 text-2xl font-bold'}>
-						{'Vote for Gauge'}
-					</h2>
-					<div className={'text-neutral-600'} >
-						<p>{'Vote to direct future YFI rewards to a particular gauge.'}</p>
-					</div>
-					<div>
-						<Link
-							href={'https://snapshot.org/#/veyfi.eth'}
-							className={'block w-full md:w-64'}
-							target={'_blank'}>
-							<Button className={'w-full md:w-64'}>
-								{'Vote on Snapshot'}
-							</Button>
-						</Link>
-					</div>
-				</div>
-			</div>
-		</div>
-	);
-}
-
-
-export function GaugesTab(): ReactElement {
-	return (
-		<div className={'grid gap-10'}>
-			<Vote />
-			<div className={'h-[1px] w-full bg-neutral-300'} />
-			<div>
-				<QueryParamProvider
-					adapter={NextQueryParamAdapter}
-					options={{removeDefaultsFromUrl: true}}>
-					<StakeUnstake />
-				</QueryParamProvider>
-			</div>
-		</div>
 	);
 }

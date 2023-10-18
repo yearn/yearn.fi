@@ -12,7 +12,7 @@ import {useWallet} from '@common/contexts/useWallet';
 
 import type {ReactElement} from 'react';
 
-export function ClaimTab(): ReactElement {
+export function ClaimVeYFI(): ReactElement {
 	const {provider, address, isActive} = useWeb3();
 	const {refresh: refreshBalances} = useWallet();
 	const {votingEscrow, positions, refresh: refreshVotingEscrow} = useVotingEscrow();

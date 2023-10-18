@@ -1,7 +1,7 @@
-import {GaugesTab} from '@veYFI/components/GaugesTab';
-import {ManageLockTab} from '@veYFI/components/ManageLockTab';
 import {RedeemTab} from '@veYFI/components/RedeemTab';
 import {RewardsTab} from '@veYFI/components/RewardsTab';
+import {TabManageGauges} from '@veYFI/components/TabManageGauges';
+import {TabManageVeYFI} from '@veYFI/components/TabManageVeYFI';
 import {useVotingEscrow} from '@veYFI/contexts/useVotingEscrow';
 import {Wrapper} from '@veYFI/Wrapper';
 import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -21,10 +21,8 @@ function Index(): ReactElement {
 	const yourLockedYFI = formatToNormalizedValue(toBigInt(positions?.deposit?.underlyingBalance), 18);
 
 	const tabs = [
-		// {id: 'lock', label: 'Lock YFI', content: <LockTab />},
-		{id: 'manage', label: 'Manage veYFI', content: <ManageLockTab />},
-		// {id: 'claim', label: 'Claim', content: <ClaimTab />},
-		{id: 'gauges', label: 'Manage Gauges', content: <GaugesTab />},
+		{id: 'manage', label: 'Manage veYFI', content: <TabManageVeYFI />},
+		{id: 'gauges', label: 'Manage Gauges', content: <TabManageGauges />},
 		{id: 'rewards', label: 'Rewards', content: <RewardsTab />},
 		{id: 'redeem', label: 'Redeem dYFI', content: <RedeemTab />}
 	].filter(Boolean);

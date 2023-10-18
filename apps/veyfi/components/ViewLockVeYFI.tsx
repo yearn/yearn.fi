@@ -23,7 +23,7 @@ import type {ReactElement} from 'react';
 import type {TNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import type {TMilliseconds} from '@yearn-finance/web-lib/utils/time';
 
-export function LockTab(): ReactElement {
+export function LockVeYFI(): ReactElement {
 	const [lockAmount, set_lockAmount] = useState(toNormalizedBN(0));
 	const [lockTime, set_lockTime] = useState('');
 	const {provider, address, isActive} = useWeb3();

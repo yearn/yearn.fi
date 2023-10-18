@@ -58,14 +58,20 @@ export function RewardsTab(): ReactElement {
 
 	return (
 		<div className={'flex flex-col gap-6 md:gap-10'}>
-			<div className={'flex flex-col gap-4'}>
+			<div className={'flex flex-col'}>
 				<div className={'flex flex-col gap-4'}>
 					<h2 className={'m-0 text-2xl font-bold'}>
 						{'Claim Rewards'}
+						{'Redeem'}
 					</h2>
+					<div className={'text-neutral-600'} >
+						<p className={'w-2/3 whitespace-break-spaces'}>
+							{'Select a gauge below and claim any dYFI rewards you’re eligible for. Remember, to earn rewards you must stake your Vault token into the corresponding gauge. '}
+						</p>
+					</div>
 				</div>
 
-				<div className={'grid grid-cols-1 gap-4 md:grid-cols-4'}>
+				<div className={'mt-10 grid grid-cols-1 gap-4 md:grid-cols-4'}>
 					<Dropdown
 						label={'Gauge'}
 						selected={selectedGauge}
