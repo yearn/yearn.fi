@@ -309,7 +309,7 @@ export function StakeUnstakeGauges(): ReactElement {
 							className: 'my-4 md:my-0',
 							fullWidth: true,
 							transform: (props): ReactElement => {
-								if (toBigInt(props?.vaultDeposited?.raw) === 0n) {
+								if (toBigInt(props?.vaultDeposited?.raw) === 0n && toBigInt(props?.gaugeStaked.raw) === 0n) {
 									return (
 										<Link href={isActive ? `/vaults/${VEYFI_CHAIN_ID}/${props.vaultAddress}` : ''}>
 											<Button
