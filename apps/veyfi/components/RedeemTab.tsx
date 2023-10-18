@@ -25,7 +25,7 @@ export function RedeemTab(): ReactElement {
 	const [redeemAmount, set_redeemAmount] = useState(toNormalizedBN(0));
 	const {provider, address, isActive} = useWeb3();
 	const {refresh: refreshBalances} = useWallet();
-	const {getRequiredEth, position: dYFIBalance, allowances, refresh, dYFIPrice} = useOption();
+	const {getRequiredEth, position: dYFIBalance, discount, allowances, refresh, dYFIPrice} = useOption();
 	const clearLockAmount = (): void => set_redeemAmount(toNormalizedBN(0));
 	const refreshData = useCallback((): unknown => Promise.all([refresh(), refreshBalances()]), [refresh, refreshBalances]);
 	const onTxSuccess = useCallback((): unknown => Promise.all([refreshData(), clearLockAmount()]), [refreshData]);
@@ -102,6 +102,9 @@ export function RedeemTab(): ReactElement {
 						<p className={'w-2/3 whitespace-break-spaces'}>
 							{'Got dYFI, want YFI? You’ve come to the right place. Redeem dYFI for YFI by paying the redemption cost in ETH. Enjoy your cheap YFI anon.'}
 						</p>
+						<b className={'mt-4 block'}>
+							{`Current discount: ${formatAmount(Number(discount.normalized) * 100, 2, 2)}%`}
+						</b>
 					</div>
 				</div>
 

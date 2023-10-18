@@ -19,6 +19,7 @@ export type	TOptionContext = {
 	getRequiredEth: (amount: bigint) => Promise<bigint>,
 	dYFIPrice: number,
 	position: TNormalizedBN,
+	discount: TNormalizedBN,
 	allowances: TDict<bigint>,
 	refresh: () => void,
 }
@@ -26,6 +27,7 @@ export type	TOptionContext = {
 const defaultProps: TOptionContext = {
 	getRequiredEth: async (): Promise<bigint> => BIG_ZERO,
 	dYFIPrice: 0,
+	discount: toNormalizedBN(0),
 	position: toNormalizedBN(0),
 	allowances: {},
 	refresh: (): void => undefined
@@ -36,6 +38,7 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 	const {address: userAddress, isActive} = useWeb3();
 	const [dYFIPrice, set_dYFIPrice] = useState<number>(0);
 	const [position, set_position] = useState<TNormalizedBN>(toNormalizedBN(0));
+	const [discount, set_discount] = useState<TNormalizedBN>(toNormalizedBN(0));
 	const [allowances, set_allowances] = useState<TDict<bigint>>({});
 	const yfiPrice = useTokenPrice(YFI_ADDRESS);
 
@@ -59,6 +62,7 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 		const discount = toNormalizedBN(discountRaw);
 		const dYFIPrice = yfiPrice * Number(discount?.normalized || 0);
 		set_dYFIPrice(dYFIPrice);
+		set_discount(discount);
 	}, [yfiPrice]);
 
 	const refreshPositions = useAsyncTrigger(async (): Promise<void> => {
@@ -104,6 +108,7 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 		getRequiredEth,
 		dYFIPrice,
 		position,
+		discount,
 		allowances: allowances ?? {},
 		refresh
 	}), [allowances, getRequiredEth, position, dYFIPrice, refresh]);
