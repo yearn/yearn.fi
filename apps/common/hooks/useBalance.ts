@@ -1,4 +1,3 @@
-
 import {useMemo} from 'react';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -7,10 +6,7 @@ import {useWallet} from '@common/contexts/useWallet';
 import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 import type {TBalanceData} from '@yearn-finance/web-lib/types/hooks';
 
-export function useBalance(
-	address: string | TAddress,
-	source?: TDict<TBalanceData>
-): TBalanceData {
+export function useBalance(address: string | TAddress, source?: TDict<TBalanceData>): TBalanceData {
 	const {balances, balancesNonce} = useWallet();
 	const balance = useMemo((): TBalanceData => {
 		balancesNonce; // remove warning, force deep refresh

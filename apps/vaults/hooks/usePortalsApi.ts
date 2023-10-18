@@ -33,10 +33,12 @@ const portalsTxSchema = z.object({
 	to: z.string(),
 	from: z.string().optional(),
 	data: z.string(),
-	value: z.object({
-		type: z.string(),
-		hex: z.string()
-	}).optional(),
+	value: z
+		.object({
+			type: z.string(),
+			hex: z.string()
+		})
+		.optional(),
 	gasLimit: z.object({
 		type: z.string(),
 		hex: z.string()

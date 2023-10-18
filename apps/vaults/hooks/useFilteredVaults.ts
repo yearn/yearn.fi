@@ -7,8 +7,8 @@ export function useFilteredVaults(
 	vaultMap: TDict<TYDaemonVault>,
 	condition: (v: TYDaemonVault) => boolean
 ): TYDaemonVault[] {
-	return useMemo((): TYDaemonVault[] => (
-		Object.values(vaultMap).filter((vault): boolean => condition(vault))
-	), [vaultMap, condition]);
+	return useMemo(
+		(): TYDaemonVault[] => Object.values(vaultMap).filter((vault): boolean => condition(vault)),
+		[vaultMap, condition]
+	);
 }
-

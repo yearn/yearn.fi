@@ -14,11 +14,11 @@ export function ValueAnimation({
 	className = 'wordLeft'
 }: {
 	identifier: string;
-	value: string | undefined,
-	defaultValue?: string,
-	prefix?: string,
-	suffix?: string,
-	className?: string
+	value: string | undefined;
+	defaultValue?: string;
+	prefix?: string;
+	suffix?: string;
+	className?: string;
 }): ReactElement {
 	const hasBeenTriggerd = useRef<boolean>(false);
 
@@ -40,7 +40,7 @@ export function ValueAnimation({
 
 		function changeWord(): void {
 			const cw = wordArray[currentWord];
-			const nw = currentWord == words.length-1 ? wordArray[0] : wordArray[currentWord+1];
+			const nw = currentWord == words.length - 1 ? wordArray[0] : wordArray[currentWord + 1];
 			if (!cw || !nw) {
 				return;
 			}
@@ -55,19 +55,22 @@ export function ValueAnimation({
 				}
 				animateLetterIn(nw, i);
 			}
-			currentWord = (currentWord == wordArray.length-1) ? 0 : currentWord+1;
+			currentWord = currentWord == wordArray.length - 1 ? 0 : currentWord + 1;
 		}
 
 		function animateLetterOut(cw: HTMLSpanElement[], i: number): void {
 			setTimeout((): void => {
 				cw[i].className = 'letter out';
-			}, i*80);
+			}, i * 80);
 		}
 
 		function animateLetterIn(nw: HTMLSpanElement[], i: number): void {
-			setTimeout((): void => {
-				nw[i].className = 'letter in';
-			}, 340+(i*80));
+			setTimeout(
+				(): void => {
+					nw[i].className = 'letter in';
+				},
+				340 + i * 80
+			);
 		}
 
 		function splitLetters(word: HTMLSpanElement): void {
@@ -102,8 +105,16 @@ export function ValueAnimation({
 		<>
 			<div className={'text'}>
 				<p className={'wordWrapper'}>
-					<span suppressHydrationWarning className={`${className} ${identifier}`}>{`${prefix ? `${prefix} ` : ''}${defaultValue}${suffix ? ` ${suffix}` : ''}`}</span>
-					<span suppressHydrationWarning className={`${className} ${identifier}`}>{`${prefix ? `${prefix} ` : ''}${value}${suffix ? ` ${suffix}` : ''}`}</span>
+					<span
+						suppressHydrationWarning
+						className={`${className} ${identifier}`}>{`${prefix ? `${prefix} ` : ''}${defaultValue}${
+						suffix ? ` ${suffix}` : ''
+					}`}</span>
+					<span
+						suppressHydrationWarning
+						className={`${className} ${identifier}`}>{`${prefix ? `${prefix} ` : ''}${value}${
+						suffix ? ` ${suffix}` : ''
+					}`}</span>
 				</p>
 			</div>
 		</>

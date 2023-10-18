@@ -1,4 +1,3 @@
-
 import {useMemo} from 'react';
 import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {useYearn} from '@common/contexts/useYearn';

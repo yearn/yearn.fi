@@ -3,7 +3,7 @@ import {useUI} from '@yearn-finance/web-lib/contexts/useUI';
 
 type TPageProgressBarProps = {
 	isLoading: boolean;
-}
+};
 
 export function PageProgressBar({isLoading}: TPageProgressBarProps): ReactElement {
 	const {onLoadStart, onLoadDone} = useUI();

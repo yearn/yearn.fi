@@ -11,7 +11,7 @@ type TWrappedInput = {
 	title: string;
 	initialValue: string;
 	onSave: (value: string) => void;
-}
+};
 
 function WrappedInput({title, initialValue, onSave}: TWrappedInput): ReactElement {
 	const [isFocused, set_isFocused] = useState(false);
@@ -22,11 +22,15 @@ function WrappedInput({title, initialValue, onSave}: TWrappedInput): ReactElemen
 		<label>
 			<p className={'pb-1 text-neutral-900'}>{title}</p>
 			<div className={'flex flex-row space-x-2'}>
-				<div data-focused={isFocused} className={'yearn--input relative w-full'}>
+				<div
+					data-focused={isFocused}
+					className={'yearn--input relative w-full'}>
 					<input
 						onFocus={(): void => set_isFocused(true)}
 						onBlur={(): void => set_isFocused(false)}
-						className={'h-10 w-full overflow-x-scroll border-2 border-neutral-700 bg-neutral-0 p-2 outline-none scrollbar-none'}
+						className={
+							'h-10 w-full overflow-x-scroll border-2 border-neutral-700 bg-neutral-0 p-2 outline-none scrollbar-none'
+						}
 						placeholder={'Use default'}
 						value={value}
 						type={'text'}
@@ -52,9 +56,7 @@ function SettingsOverwrite(): ReactElement {
 	return (
 		<div className={'bg-neutral-100 p-10'}>
 			<div className={'flex w-full flex-row justify-between pb-6'}>
-				<h2 className={'text-3xl font-bold'}>
-					{'Settings'}
-				</h2>
+				<h2 className={'text-3xl font-bold'}>{'Settings'}</h2>
 			</div>
 			<div className={'text-justify'}>
 				<p className={'pb-6'}>
@@ -64,7 +66,8 @@ function SettingsOverwrite(): ReactElement {
 							href={'https://ydaemon.yearn.farm'}
 							target={'_blank'}
 							className={'text-neutral-900 underline'}
-							rel={'noreferrer'}>{'yDaemon API'}
+							rel={'noreferrer'}>
+							{'yDaemon API'}
 						</a>
 						{' base URI and the default network.'}
 					</Balancer>
@@ -73,17 +76,24 @@ function SettingsOverwrite(): ReactElement {
 					<WrappedInput
 						title={'yDaemon API URI'}
 						initialValue={baseAPISettings.yDaemonBaseURI}
-						onSave={(value): void => onUpdateBaseSettings({
-							...baseAPISettings,
-							yDaemonBaseURI: value
-						})} />
+						onSave={(value): void =>
+							onUpdateBaseSettings({
+								...baseAPISettings,
+								yDaemonBaseURI: value
+							})
+						}
+					/>
 				</div>
 				<div className={'grid grid-cols-1 gap-4'}>
-					<label className={'flex cursor-pointer items-center justify-between pt-4 transition-colors hover:bg-neutral-100/40'}>
+					<label
+						className={
+							'flex cursor-pointer items-center justify-between pt-4 transition-colors hover:bg-neutral-100/40'
+						}>
 						<p>{'Show feedback popover'}</p>
 						<Switch
 							isEnabled={!value}
-							onSwitch={(): void => set(!value)} />
+							onSwitch={(): void => set(!value)}
+						/>
 					</label>
 				</div>
 			</div>

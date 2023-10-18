@@ -27,6 +27,7 @@ export function ImageWithFallback(props: ImageProps): ReactElement {
 					set_imageStyle({filter: 'opacity(0.2)'});
 				});
 			}}
-			{...rest} />
+			{...rest}
+		/>
 	);
 }

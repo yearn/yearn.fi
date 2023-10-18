@@ -29,7 +29,13 @@ export function LockVeYFI(): ReactElement {
 	const {provider, address, isActive} = useWeb3();
 	const {safeChainID} = useChainID();
 	const {refresh: refreshBalances} = useWallet();
-	const {votingEscrow, positions, allowances, isLoading: isLoadingVotingEscrow, refresh: refreshVotingEscrow} = useVotingEscrow();
+	const {
+		votingEscrow,
+		positions,
+		allowances,
+		isLoading: isLoadingVotingEscrow,
+		refresh: refreshVotingEscrow
+	} = useVotingEscrow();
 	const tokenBalance = useBalance(toAddress(votingEscrow?.token));
 	const hasLockedAmount = toBigInt(positions?.deposit?.underlyingBalance) > 0n;
 	const [approveLockStatus, set_approveLockStatus] = useState(defaultTxStatus);
@@ -41,7 +47,10 @@ export function LockVeYFI(): ReactElement {
 	}, [positions?.unlockTime, lockTime]);
 
 	const votingPower = useMemo((): TNormalizedBN => {
-		return toNormalizedBN(getVotingPower(toBigInt(positions?.deposit?.underlyingBalance) + toBigInt(lockAmount.raw), unlockTime), 18);
+		return toNormalizedBN(
+			getVotingPower(toBigInt(positions?.deposit?.underlyingBalance) + toBigInt(lockAmount.raw), unlockTime),
+			18
+		);
 	}, [positions?.deposit?.underlyingBalance, lockAmount, unlockTime]);
 
 	const refreshData = useCallback(async (): Promise<void> => {
@@ -94,7 +103,7 @@ export function LockVeYFI(): ReactElement {
 	}, [provider, votingEscrow?.address, lockAmount.raw, onTxSuccess]);
 
 	useEffect((): void => {
-		if(!positions?.unlockTime) {
+		if (!positions?.unlockTime) {
 			return;
 		}
 		set_lockTime(toWeeks(getTimeUntil(positions.unlockTime), false).toString());
@@ -122,40 +131,47 @@ export function LockVeYFI(): ReactElement {
 	});
 
 	const isApproveDisabled = !isActive || isApproved || isLoadingVotingEscrow || !votingEscrow || !address;
-	const isLockDisabled = !isActive || !isApproved || !isValidLockAmount || !isValidLockTime || isLoadingVotingEscrow || !votingEscrow || !address;
+	const isLockDisabled =
+		!isActive ||
+		!isApproved ||
+		!isValidLockAmount ||
+		!isValidLockTime ||
+		isLoadingVotingEscrow ||
+		!votingEscrow ||
+		!address;
 	const txAction = !isApproved
 		? {
-			label: 'Approve',
-			onAction: onApproveLock,
-			isLoading: approveLockStatus.pending,
-			isDisabled: isApproveDisabled
-		}
+				label: 'Approve',
+				onAction: onApproveLock,
+				isLoading: approveLockStatus.pending,
+				isDisabled: isApproveDisabled
+		  }
 		: hasLockedAmount
-			? {
+		? {
 				label: 'Lock',
 				onAction: onIncreaseLockAmount,
 				isLoading: increaseLockAmountStatus.pending,
 				isDisabled: isLockDisabled
-			}
-			: {
+		  }
+		: {
 				label: 'Lock',
 				onAction: onLock,
 				isLoading: lockStatus.pending,
 				isDisabled: isLockDisabled
-			};
+		  };
 
 	return (
 		<div className={'grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-16'}>
 			<div className={'col-span-1 w-full'}>
-				<h2 className={'m-0 text-2xl font-bold'}>
-					{"YFI holders, time to Lock' ‘N Load"}
-				</h2>
-				<div className={'mt-6 text-neutral-600'} >
-					<p >{'Lock your YFI to veYFI to:'}</p>
+				<h2 className={'m-0 text-2xl font-bold'}>{"YFI holders, time to Lock' ‘N Load"}</h2>
+				<div className={'mt-6 text-neutral-600'}>
+					<p>{'Lock your YFI to veYFI to:'}</p>
 					<ul>
 						<li className={'list-inside list-disc'}>{'Take part in Yearn governance.'}</li>
 						<li className={'list-inside list-disc'}>{'Direct YFI rewards to Vaults.'}</li>
-						<li className={'list-inside list-disc'}>{'Receive dYFI (the longer you lock, the more you keep).'}</li>
+						<li className={'list-inside list-disc'}>
+							{'Receive dYFI (the longer you lock, the more you keep).'}
+						</li>
 					</ul>
 				</div>
 			</div>
@@ -170,10 +186,14 @@ export function LockVeYFI(): ReactElement {
 						onLegendClick={(): void => set_lockAmount(tokenBalance)}
 						onMaxClick={(): void => set_lockAmount(tokenBalance)}
 						legend={`Available: ${formatAmount(tokenBalance.normalized, 4)} YFI`}
-						error={lockAmountError} />
+						error={lockAmountError}
+					/>
 					<AmountInput
 						label={'Current lock period (weeks)'}
-						amount={toNormalizedBN(isZero(toTime(lockTime)) ? '' : Math.floor(toTime(lockTime)).toString(), 0)}
+						amount={toNormalizedBN(
+							isZero(toTime(lockTime)) ? '' : Math.floor(toTime(lockTime)).toString(),
+							0
+						)}
 						onAmountChange={(v: string): void => {
 							const inputed = handleInputChangeEventValue(v, 0);
 							if (Number(inputed.normalized) > MAX_LOCK_TIME + 1) {
@@ -186,13 +206,15 @@ export function LockVeYFI(): ReactElement {
 						onMaxClick={(): void => set_lockTime((MAX_LOCK_TIME + 1).toString())}
 						disabled={hasLockedAmount}
 						legend={'Minimum: 1 week'}
-						error={lockTimeError} />
+						error={lockTimeError}
+					/>
 				</div>
 				<div className={'grid grid-cols-1 gap-6 md:grid-cols-2'}>
 					<AmountInput
 						label={'Total veYFI'}
 						amount={votingPower}
-						disabled />
+						disabled
+					/>
 					<Button
 						className={'w-full md:mt-7'}
 						onClick={txAction.onAction}

@@ -35,7 +35,7 @@ export async function approveAndStake(props: TApproveAndStake): Promise<TTxRespo
 				args: [props.contractAddress, props.amount]
 			});
 		} catch (error) {
-			return ({isSuccessful: false, error: error});
+			return {isSuccessful: false, error: error};
 		}
 	}
 

@@ -2,7 +2,7 @@ import React, {createContext, memo, useCallback, useContext, useState} from 'rea
 import {useDeepCompareMemo} from '@react-hookz/web';
 import {VEYFI_DYFI_ABI} from '@veYFI/utils/abi/veYFIdYFI.abi';
 import {VEYFI_OPTIONS_ABI} from '@veYFI/utils/abi/veYFIOptions.abi';
-import {VEYFI_CHAIN_ID, VEYFI_DYFI_ADDRESS,VEYFI_OPTIONS_ADDRESS} from '@veYFI/utils/constants';
+import {VEYFI_CHAIN_ID, VEYFI_DYFI_ADDRESS, VEYFI_OPTIONS_ADDRESS} from '@veYFI/utils/constants';
 import {readContract} from '@wagmi/core';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {BIG_ZERO, YFI_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
@@ -93,6 +93,8 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 			{children}
 		</OptionContext.Provider>
 	);
+
+	return <OptionContext.Provider value={contextValue}>{children}</OptionContext.Provider>;
 });
 
 export const useOption = (): TOptionContext => useContext(OptionContext);

@@ -7,7 +7,7 @@ import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 export type TValidationResponse = {
 	isValid?: boolean;
 	error?: string;
-}
+};
 
 export type TValidateAllowanceProps = {
 	ownerAddress: TAddress;
@@ -16,12 +16,12 @@ export type TValidateAllowanceProps = {
 	chainID: number;
 	allowances: TDict<bigint>;
 	amount: bigint;
-}
+};
 
 export function validateAllowance(props: TValidateAllowanceProps): TValidationResponse {
 	const {tokenAddress, spenderAddress, allowances, amount, ownerAddress, chainID} = props;
 
-	if(!tokenAddress || !spenderAddress) {
+	if (!tokenAddress || !spenderAddress) {
 		return {isValid: false};
 	}
 
@@ -38,7 +38,7 @@ export type TValidateAmountProps = {
 	minAmountAllowed?: string | number;
 	maxAmountAllowed?: string | number;
 	shouldDisplayMin?: boolean;
-}
+};
 
 export function validateAmount(props: TValidateAmountProps): TValidationResponse {
 	const {amount, balance, minAmountAllowed, maxAmountAllowed, shouldDisplayMin} = props;
@@ -57,7 +57,12 @@ export function validateAmount(props: TValidateAmountProps): TValidationResponse
 	}
 
 	if (minAmountAllowed !== undefined && amountNumber < Number(minAmountAllowed)) {
-		return {isValid: false, error: `Amount under minimum allowed ${shouldDisplayMin && minAmountAllowed !== undefined ? `(min ${minAmountAllowed})` : ''}`};
+		return {
+			isValid: false,
+			error: `Amount under minimum allowed ${
+				shouldDisplayMin && minAmountAllowed !== undefined ? `(min ${minAmountAllowed})` : ''
+			}`
+		};
 	}
 
 	if (balance !== undefined && amountNumber > Number(balance)) {
@@ -70,16 +75,16 @@ export function validateAmount(props: TValidateAmountProps): TValidationResponse
 export type TValidateNetworkProps = {
 	supportedNetwork: number;
 	walletNetwork?: number;
-}
+};
 
 export type TValidateAddressProps = {
 	address?: string;
-}
+};
 
 export function validateAddress(props: TValidateAddressProps): TValidationResponse {
 	const {address} = props;
 
-	if(!address) {
+	if (!address) {
 		return {isValid: false};
 	}
 

@@ -30,7 +30,6 @@ const modeScript = `
   }
 `;
 
-
 // export const indexedWagmiChains = Object.values(wagmiChains).reduce((acc: {[key: number]: TExtendedChain}, chain: Chain): {[key: number]: any} => {
 // 	const extendedChain = chain as any;
 // 	if (!chain?.rpcUrls?.public?.http?.[0]) {
@@ -40,8 +39,6 @@ const modeScript = `
 // 	acc[chain.id] = extendedChain;
 // 	return acc;
 // }, {});
-
-
 
 class MyDocument extends Document {
 	static async getInitialProps(ctx: DocumentContext): Promise<DocumentInitialProps> {

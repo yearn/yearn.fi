@@ -20,18 +20,23 @@ import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 import type {TBalanceData} from '@yearn-finance/web-lib/types/hooks';
 
 type TBalanceReminderElement = {
-	address: TAddress,
-	normalizedBalance: number,
-	decimals: number,
-	symbol: string,
-}
+	address: TAddress;
+	normalizedBalance: number;
+	decimals: number;
+	symbol: string;
+};
 
 function TokenItem({element}: {element: TBalanceReminderElement}): ReactElement {
 	const {provider} = useWeb3();
 	const {safeChainID} = useChainID();
 	const balance = useBalance(element.address);
 
-	async function addTokenToMetamask(address: TAddress, symbol: string, decimals: number, image: string): Promise<void> {
+	async function addTokenToMetamask(
+		address: TAddress,
+		symbol: string,
+		decimals: number,
+		image: string
+	): Promise<void> {
 		if (!provider) {
 			return;
 		}
@@ -60,7 +65,10 @@ function TokenItem({element}: {element: TBalanceReminderElement}): ReactElement 
 							width={32}
 							height={32}
 							quality={90}
-							src={`${process.env.BASE_YEARN_ASSETS_URI}/${safeChainID}/${toAddress(element.address)}/logo-128.png`} />
+							src={`${process.env.BASE_YEARN_ASSETS_URI}/${safeChainID}/${toAddress(
+								element.address
+							)}/logo-128.png`}
+						/>
 					</div>
 					<span className={'ml-2'}>{element.symbol}</span>
 				</span>
@@ -74,10 +82,15 @@ function TokenItem({element}: {element: TBalanceReminderElement}): ReactElement 
 								element.address,
 								element.symbol,
 								element.decimals,
-								`${process.env.BASE_YEARN_ASSETS_URI}/${safeChainID}/${toAddress(element.address)}/logo-128.png`
+								`${process.env.BASE_YEARN_ASSETS_URI}/${safeChainID}/${toAddress(
+									element.address
+								)}/logo-128.png`
 							);
 						}}
-						className={'ml-4 h-4 w-4 cursor-pointer text-neutral-400 transition-colors hover:text-neutral-900'} />
+						className={
+							'ml-4 h-4 w-4 cursor-pointer text-neutral-400 transition-colors hover:text-neutral-900'
+						}
+					/>
 				</span>
 			</span>
 		</a>
@@ -90,44 +103,42 @@ export function BalanceReminderPopover(): ReactElement {
 	const {vaults} = useYearn();
 
 	const nonNullBalances = useMemo((): TDict<TBalanceData> => {
-		const nonNullBalances = Object.entries(balances).reduce((acc: TDict<TBalanceData>, [address, balance]): TDict<TBalanceData> => {
-			if (toBigInt(balance?.raw) > 0n) {
-				acc[toAddress(address)] = balance;
-			}
-			return acc;
-		}, {});
+		const nonNullBalances = Object.entries(balances).reduce(
+			(acc: TDict<TBalanceData>, [address, balance]): TDict<TBalanceData> => {
+				if (toBigInt(balance?.raw) > 0n) {
+					acc[toAddress(address)] = balance;
+				}
+				return acc;
+			},
+			{}
+		);
 		return nonNullBalances;
 	}, [balances]);
 
 	const nonNullBalancesForVault = useMemo((): TBalanceReminderElement[] => {
-		const nonNullBalancesForVault = Object.entries(nonNullBalances).reduce((acc: TBalanceReminderElement[], [address, balance]): TBalanceReminderElement[] => {
-			const currentVault = vaults?.[toAddress(address)];
-			if (currentVault) {
-				acc.push({
-					address: toAddress(address),
-					normalizedBalance: balance.normalized,
-					decimals: balance.decimals,
-					symbol: currentVault.symbol
-				});
-			}
-			return acc;
-		}, []);
+		const nonNullBalancesForVault = Object.entries(nonNullBalances).reduce(
+			(acc: TBalanceReminderElement[], [address, balance]): TBalanceReminderElement[] => {
+				const currentVault = vaults?.[toAddress(address)];
+				if (currentVault) {
+					acc.push({
+						address: toAddress(address),
+						normalizedBalance: balance.normalized,
+						decimals: balance.decimals,
+						symbol: currentVault.symbol
+					});
+				}
+				return acc;
+			},
+			[]
+		);
 		return nonNullBalancesForVault;
 	}, [nonNullBalances, vaults]);
 
 	function renderNoTokenFallback(isLoading: boolean): ReactElement {
 		if (isLoading) {
-			return (
-				<div className={'py-4 text-center text-sm text-neutral-400'}>
-					{'Retrieving your yvTokens ...'}
-				</div>
-			);
+			return <div className={'py-4 text-center text-sm text-neutral-400'}>{'Retrieving your yvTokens ...'}</div>;
 		}
-		return (
-			<div className={'py-4 text-center text-sm text-neutral-400'}>
-				{'No position in Yearn found.'}
-			</div>
-		);
+		return <div className={'py-4 text-center text-sm text-neutral-400'}>{'No position in Yearn found.'}</div>;
 	}
 
 	return (
@@ -145,29 +156,44 @@ export function BalanceReminderPopover(): ReactElement {
 						leave={'transition ease-in duration-150'}
 						leaveFrom={'opacity-100 translate-y-0'}
 						leaveTo={'opacity-0 translate-y-1'}>
-						<Popover.Panel className={'yearn--shadow absolute right-0 top-6 z-[1000] mt-3 w-screen max-w-xs md:-right-4 md:top-4'}>
+						<Popover.Panel
+							className={
+								'yearn--shadow absolute right-0 top-6 z-[1000] mt-3 w-screen max-w-xs md:-right-4 md:top-4'
+							}>
 							<div className={'overflow-hidden'}>
 								<div className={'relative bg-neutral-0 p-0'}>
-									<div className={'flex items-center justify-center border-b border-neutral-300 py-4 text-center'}>
+									<div
+										className={
+											'flex items-center justify-center border-b border-neutral-300 py-4 text-center'
+										}>
 										<b>
-											{isActive && address && ens ? (
-												ens
-											) : isActive && address ? (
-												truncateHex(address, 5)
-											) : 'Connect wallet'}
+											{isActive && address && ens
+												? ens
+												: isActive && address
+												? truncateHex(address, 5)
+												: 'Connect wallet'}
 										</b>
 									</div>
 									<div className={'absolute right-4 top-4'}>
 										<button
 											onClick={onDesactivate}
-											className={'flex h-6 w-6 items-center justify-center rounded-full bg-neutral-200/50'}>
+											className={
+												'flex h-6 w-6 items-center justify-center rounded-full bg-neutral-200/50'
+											}>
 											<IconCross className={'h-4 w-4 text-neutral-600'} />
 										</button>
 									</div>
 									<Renderable
 										shouldRender={nonNullBalancesForVault.length > 0}
 										fallback={renderNoTokenFallback(isLoading)}>
-										{nonNullBalancesForVault.map((element): ReactElement => <TokenItem key={element.address} element={element} />)}
+										{nonNullBalancesForVault.map(
+											(element): ReactElement => (
+												<TokenItem
+													key={element.address}
+													element={element}
+												/>
+											)
+										)}
 									</Renderable>
 								</div>
 							</div>

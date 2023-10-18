@@ -6,7 +6,7 @@ import type {ReactElement} from 'react';
 
 type TProps = {
 	pathname: NextRouter['pathname'];
-}
+};
 
 export function VeYfiHeader({pathname}: TProps): ReactElement {
 	const {name, icon} = APPS[AppName.VEYFI];

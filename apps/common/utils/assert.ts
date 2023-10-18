@@ -11,4 +11,3 @@ export function assert(expression: unknown, message?: string | Error): asserts e
 		throw error;
 	}
 }
-

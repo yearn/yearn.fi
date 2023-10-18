@@ -25,22 +25,22 @@ import type {TYDaemonTokens} from '@common/schemas/yDaemonTokensSchema';
 import type {TYDaemonVault, TYDaemonVaults} from '@common/schemas/yDaemonVaultsSchemas';
 
 export type TYearnContext = {
-	currentPartner: TAddress,
-	earned?: TYDaemonEarned,
-	prices?: TYDaemonPrices,
-	tokens?: TYDaemonTokens,
-	vaults: TDict<TYDaemonVault>,
-	vaultsMigrations: TDict<TYDaemonVault>,
-	vaultsRetired: TDict<TYDaemonVault>,
-	isLoadingVaultList: boolean,
-	zapSlippage: number,
-	zapProvider: TSolver,
-	isStakingOpBoostedVaults: boolean,
-	mutateVaultList: KeyedMutator<TYDaemonVaults>,
-	set_zapSlippage: (value: number) => void
-	set_zapProvider: (value: TSolver) => void
-	set_isStakingOpBoostedVaults: (value: boolean) => void
-}
+	currentPartner: TAddress;
+	earned?: TYDaemonEarned;
+	prices?: TYDaemonPrices;
+	tokens?: TYDaemonTokens;
+	vaults: TDict<TYDaemonVault>;
+	vaultsMigrations: TDict<TYDaemonVault>;
+	vaultsRetired: TDict<TYDaemonVault>;
+	isLoadingVaultList: boolean;
+	zapSlippage: number;
+	zapProvider: TSolver;
+	isStakingOpBoostedVaults: boolean;
+	mutateVaultList: KeyedMutator<TYDaemonVaults>;
+	set_zapSlippage: (value: number) => void;
+	set_zapProvider: (value: TSolver) => void;
+	set_isStakingOpBoostedVaults: (value: boolean) => void;
+};
 
 const YearnContext = createContext<TYearnContext>({
 	currentPartner: toAddress(process.env.PARTNER_ID_ADDRESS),
@@ -65,14 +65,17 @@ const YearnContext = createContext<TYearnContext>({
 	set_isStakingOpBoostedVaults: (): void => undefined
 });
 
-export const YearnContextApp = memo(function YearnContextApp({children}: { children: ReactElement }): ReactElement {
+export const YearnContextApp = memo(function YearnContextApp({children}: {children: ReactElement}): ReactElement {
 	const {safeChainID} = useChainID();
 	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: safeChainID});
 	const result = useYDaemonStatus({chainID: safeChainID});
 	const {address, currentPartner} = useWeb3();
 	const [zapSlippage, set_zapSlippage] = useLocalStorage<number>('yearn.fi/zap-slippage', DEFAULT_SLIPPAGE);
 	const [zapProvider, set_zapProvider] = useLocalStorage<TSolver>('yearn.fi/zap-provider', Solver.enum.Cowswap);
-	const [isStakingOpBoostedVaults, set_isStakingOpBoostedVaults] = useLocalStorage<boolean>('yearn.fi/staking-op-boosted-vaults', true);
+	const [isStakingOpBoostedVaults, set_isStakingOpBoostedVaults] = useLocalStorage<boolean>(
+		'yearn.fi/staking-op-boosted-vaults',
+		true
+	);
 
 	useEffect((): void => {
 		if (result?.error?.code === 'ERR_NETWORK') {
@@ -90,7 +93,11 @@ export const YearnContextApp = memo(function YearnContextApp({children}: { child
 		schema: yDaemonTokensSchema
 	});
 
-	const {data: vaults, isLoading: isLoadingVaultList, mutate: mutateVaultList} = useFetch<TYDaemonVaults>({
+	const {
+		data: vaults,
+		isLoading: isLoadingVaultList,
+		mutate: mutateVaultList
+	} = useFetch<TYDaemonVaults>({
 		endpoint: `${yDaemonBaseUri}/vaults/all?${new URLSearchParams({
 			hideAlways: 'true',
 			orderBy: 'apy.net_apy',
@@ -128,21 +135,26 @@ export const YearnContextApp = memo(function YearnContextApp({children}: { child
 	}, [vaults]);
 
 	const vaultsMigrationsObject = useMemo((): TDict<TYDaemonVault> => {
-		const _migratableVaultsObject = (vaultsMigrations ?? []).reduce((acc: TDict<TYDaemonVault>, vault): TDict<TYDaemonVault> => {
-			if (toAddress(vault.address) !== toAddress(vault.migration.address)) {
-				acc[toAddress(vault.address)] = vault;
-			}
-			return acc;
-		}, {});
+		const _migratableVaultsObject = (vaultsMigrations ?? []).reduce(
+			(acc: TDict<TYDaemonVault>, vault): TDict<TYDaemonVault> => {
+				if (toAddress(vault.address) !== toAddress(vault.migration.address)) {
+					acc[toAddress(vault.address)] = vault;
+				}
+				return acc;
+			},
+			{}
+		);
 		return _migratableVaultsObject;
 	}, [vaultsMigrations]);
 
-
 	const vaultsRetiredObject = useMemo((): TDict<TYDaemonVault> => {
-		const _retiredVaultsObject = (vaultsRetired ?? []).reduce((acc: TDict<TYDaemonVault>, vault): TDict<TYDaemonVault> => {
-			acc[toAddress(vault.address)] = vault;
-			return acc;
-		}, {});
+		const _retiredVaultsObject = (vaultsRetired ?? []).reduce(
+			(acc: TDict<TYDaemonVault>, vault): TDict<TYDaemonVault> => {
+				acc[toAddress(vault.address)] = vault;
+				return acc;
+			},
+			{}
+		);
 		return _retiredVaultsObject;
 	}, [vaultsRetired]);
 
@@ -159,31 +171,48 @@ export const YearnContextApp = memo(function YearnContextApp({children}: { child
 	}, [prices, safeChainID]);
 
 	/* 🔵 - Yearn Finance ******************************************************
-	**	Setup and render the Context provider to use in the app.
-	***************************************************************************/
-	const contextValue = useMemo((): TYearnContext => ({
-		currentPartner: currentPartner?.id ? toAddress(currentPartner.id) : toAddress(process.env.PARTNER_ID_ADDRESS),
-		prices: pricesUpdated,
-		tokens,
-		earned,
-		zapSlippage,
-		set_zapSlippage,
-		zapProvider,
-		set_zapProvider,
-		isStakingOpBoostedVaults,
-		set_isStakingOpBoostedVaults,
-		vaults: vaultsObject,
-		vaultsMigrations: vaultsMigrationsObject,
-		vaultsRetired: vaultsRetiredObject,
-		isLoadingVaultList,
-		mutateVaultList
-	}), [currentPartner?.id, pricesUpdated, tokens, earned, zapSlippage, set_zapSlippage, zapProvider, set_zapProvider, isStakingOpBoostedVaults, set_isStakingOpBoostedVaults, vaultsObject, vaultsMigrationsObject, isLoadingVaultList, mutateVaultList, vaultsRetiredObject]);
-
-	return (
-		<YearnContext.Provider value={contextValue}>
-			{children}
-		</YearnContext.Provider>
+	 **	Setup and render the Context provider to use in the app.
+	 ***************************************************************************/
+	const contextValue = useMemo(
+		(): TYearnContext => ({
+			currentPartner: currentPartner?.id
+				? toAddress(currentPartner.id)
+				: toAddress(process.env.PARTNER_ID_ADDRESS),
+			prices: pricesUpdated,
+			tokens,
+			earned,
+			zapSlippage,
+			set_zapSlippage,
+			zapProvider,
+			set_zapProvider,
+			isStakingOpBoostedVaults,
+			set_isStakingOpBoostedVaults,
+			vaults: vaultsObject,
+			vaultsMigrations: vaultsMigrationsObject,
+			vaultsRetired: vaultsRetiredObject,
+			isLoadingVaultList,
+			mutateVaultList
+		}),
+		[
+			currentPartner?.id,
+			pricesUpdated,
+			tokens,
+			earned,
+			zapSlippage,
+			set_zapSlippage,
+			zapProvider,
+			set_zapProvider,
+			isStakingOpBoostedVaults,
+			set_isStakingOpBoostedVaults,
+			vaultsObject,
+			vaultsMigrationsObject,
+			isLoadingVaultList,
+			mutateVaultList,
+			vaultsRetiredObject
+		]
 	);
+
+	return <YearnContext.Provider value={contextValue}>{children}</YearnContext.Provider>;
 });
 
 export const useYearn = (): TYearnContext => useContext(YearnContext);

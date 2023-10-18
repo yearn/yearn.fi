@@ -7,58 +7,62 @@ const yDaemonVaultStrategySchema = z.object({
 	name: z.string(),
 	displayName: z.string(),
 	description: z.string(),
-	details: z.object({
-		keeper: addressSchema,
-		strategist: addressSchema,
-		rewards: addressSchema,
-		healthCheck: addressSchema,
-		totalDebt: z.string(),
-		totalLoss: z.string(),
-		totalGain: z.string(),
-		minDebtPerHarvest: z.string(),
-		maxDebtPerHarvest: z.string(),
-		estimatedTotalAssets: z.string(),
-		creditAvailable: z.string(),
-		debtOutstanding: z.string(),
-		expectedReturn: z.string(),
-		delegatedAssets: z.string(),
-		delegatedValue: z.string(),
-		version: z.string(),
-		protocols: z.array(z.string()).or(z.null()),
-		apr: z.number(),
-		performanceFee: z.number(),
-		lastReport: z.number(),
-		activation: z.number(),
-		keepCRV: z.number(),
-		debtLimit: z.number(),
-		withdrawalQueuePosition: z.number(),
-		doHealthCheck: z.boolean(),
-		inQueue: z.boolean(),
-		emergencyExit: z.boolean(),
-		isActive: z.boolean(),
-		debtRatio: z.number().optional()
-	}).optional(), // Optional for migratable
-	risk: z.object({
-		riskScore: z.number(),
-		riskGroup: z.string(),
-		riskDetails: z.object({
-			TVLImpact: z.number(),
-			auditScore: z.number(),
-			codeReviewScore: z.number(),
-			complexityScore: z.number(),
-			longevityImpact: z.number(),
-			protocolSafetyScore: z.number(),
-			teamKnowledgeScore: z.number(),
-			testingScore: z.number()
-		}),
-		allocation: z.object({
-			status: z.string(),
-			currentTVL: z.number().or(z.null()),
-			availableTVL: z.number(),
-			currentAmount: z.number().or(z.null()),
-			availableAmount: z.number().or(z.null())
+	details: z
+		.object({
+			keeper: addressSchema,
+			strategist: addressSchema,
+			rewards: addressSchema,
+			healthCheck: addressSchema,
+			totalDebt: z.string(),
+			totalLoss: z.string(),
+			totalGain: z.string(),
+			minDebtPerHarvest: z.string(),
+			maxDebtPerHarvest: z.string(),
+			estimatedTotalAssets: z.string(),
+			creditAvailable: z.string(),
+			debtOutstanding: z.string(),
+			expectedReturn: z.string(),
+			delegatedAssets: z.string(),
+			delegatedValue: z.string(),
+			version: z.string(),
+			protocols: z.array(z.string()).or(z.null()),
+			apr: z.number(),
+			performanceFee: z.number(),
+			lastReport: z.number(),
+			activation: z.number(),
+			keepCRV: z.number(),
+			debtLimit: z.number(),
+			withdrawalQueuePosition: z.number(),
+			doHealthCheck: z.boolean(),
+			inQueue: z.boolean(),
+			emergencyExit: z.boolean(),
+			isActive: z.boolean(),
+			debtRatio: z.number().optional()
 		})
-	}).optional() // Optional for migratable
+		.optional(), // Optional for migratable
+	risk: z
+		.object({
+			riskScore: z.number(),
+			riskGroup: z.string(),
+			riskDetails: z.object({
+				TVLImpact: z.number(),
+				auditScore: z.number(),
+				codeReviewScore: z.number(),
+				complexityScore: z.number(),
+				longevityImpact: z.number(),
+				protocolSafetyScore: z.number(),
+				teamKnowledgeScore: z.number(),
+				testingScore: z.number()
+			}),
+			allocation: z.object({
+				status: z.string(),
+				currentTVL: z.number().or(z.null()),
+				availableTVL: z.number(),
+				currentAmount: z.number().or(z.null()),
+				availableAmount: z.number().or(z.null())
+			})
+		})
+		.optional() // Optional for migratable
 });
 
 export const yDaemonVaultTokenSchema = z.object({
@@ -76,7 +80,13 @@ export const yDaemonVaultTokenSchema = z.object({
 
 export const yDaemonVaultSchema = z.object({
 	address: addressSchema,
-	type: z.literal('Automated').or(z.literal('Standard').or(z.literal('Experimental').or(z.literal('Automated Yearn Vault').or(z.literal('Yearn Vault'))))),
+	type: z
+		.literal('Automated')
+		.or(
+			z
+				.literal('Standard')
+				.or(z.literal('Experimental').or(z.literal('Automated Yearn Vault').or(z.literal('Yearn Vault'))))
+		),
 	symbol: z.string(),
 	display_symbol: z.string(),
 	formated_symbol: z.string(),
@@ -85,7 +95,11 @@ export const yDaemonVaultSchema = z.object({
 	formated_name: z.string(),
 	icon: z.string(),
 	version: z.string(),
-	category: z.literal('Curve').or(z.literal('Volatile').or(z.literal('Balancer')).or(z.literal('Stablecoin'))).or(z.literal('Velodrome')).or(z.literal('Boosted')),
+	category: z
+		.literal('Curve')
+		.or(z.literal('Volatile').or(z.literal('Balancer')).or(z.literal('Stablecoin')))
+		.or(z.literal('Velodrome'))
+		.or(z.literal('Boosted')),
 	inception: z.number(),
 	decimals: z.number(),
 	chainID: z.number(),
@@ -167,7 +181,7 @@ export const yDaemonVaultsSchema = z.array(yDaemonVaultSchema);
 export const yDaemonVaultHarvestSchema = z.object({
 	vaultAddress: addressSchema.optional(),
 	strategyAddress: addressSchema.optional(),
-	txHash:z.string().optional(),
+	txHash: z.string().optional(),
 	timestamp: z.string(),
 	profit: z.string(),
 	profitValue: z.number().optional(),

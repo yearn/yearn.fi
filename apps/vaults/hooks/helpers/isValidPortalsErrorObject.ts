@@ -1,4 +1,4 @@
-type TPortalsError = {response: {data: {message: string}}}
+type TPortalsError = {response: {data: {message: string}}};
 
 export function isValidPortalsErrorObject(error: TPortalsError | unknown): error is TPortalsError {
 	if (!error) {
@@ -14,7 +14,7 @@ export function isValidPortalsErrorObject(error: TPortalsError | unknown): error
 			if (!error.response.data) {
 				return false;
 			}
-			
+
 			if (typeof error.response.data === 'object' && 'message' in error.response.data) {
 				return !!error.response.data.message;
 			}

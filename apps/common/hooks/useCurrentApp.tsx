@@ -1,4 +1,3 @@
-
 import {useMemo} from 'react';
 import {VeYfiHeader} from 'apps/veyfi/components/header/VeYfiHeader';
 import homeManifest from 'public/manifest.json';

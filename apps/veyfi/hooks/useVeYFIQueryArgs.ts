@@ -1,7 +1,6 @@
 import {useEffect, useState} from 'react';
 import {StringParam, useQueryParam} from 'use-query-params';
 
-
 type TQueryArgs = {
 	search: string | null | undefined;
 	onSearch: (value: string) => void;

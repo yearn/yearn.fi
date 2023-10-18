@@ -1,291 +1,291 @@
 export const VEYFI_REGISTRY_ABI = [
 	{
-		'inputs': [
+		inputs: [
 			{
-				'internalType': 'address',
-				'name': '_ve',
-				'type': 'address'
+				internalType: 'address',
+				name: '_ve',
+				type: 'address'
 			},
 			{
-				'internalType': 'address',
-				'name': '_yfi',
-				'type': 'address'
+				internalType: 'address',
+				name: '_yfi',
+				type: 'address'
 			},
 			{
-				'internalType': 'address',
-				'name': '_gaugefactory',
-				'type': 'address'
+				internalType: 'address',
+				name: '_gaugefactory',
+				type: 'address'
 			},
 			{
-				'internalType': 'address',
-				'name': '_veYfiRewardPool',
-				'type': 'address'
+				internalType: 'address',
+				name: '_veYfiRewardPool',
+				type: 'address'
 			}
 		],
-		'stateMutability': 'nonpayable',
-		'type': 'constructor'
+		stateMutability: 'nonpayable',
+		type: 'constructor'
 	},
 	{
-		'anonymous': false,
-		'inputs': [
+		anonymous: false,
+		inputs: [
 			{
-				'indexed': true,
-				'internalType': 'address',
-				'name': 'previousOwner',
-				'type': 'address'
+				indexed: true,
+				internalType: 'address',
+				name: 'previousOwner',
+				type: 'address'
 			},
 			{
-				'indexed': true,
-				'internalType': 'address',
-				'name': 'newOwner',
-				'type': 'address'
+				indexed: true,
+				internalType: 'address',
+				name: 'newOwner',
+				type: 'address'
 			}
 		],
-		'name': 'OwnershipTransferred',
-		'type': 'event'
+		name: 'OwnershipTransferred',
+		type: 'event'
 	},
 	{
-		'anonymous': false,
-		'inputs': [
+		anonymous: false,
+		inputs: [
 			{
-				'indexed': true,
-				'internalType': 'address',
-				'name': 've',
-				'type': 'address'
+				indexed: true,
+				internalType: 'address',
+				name: 've',
+				type: 'address'
 			}
 		],
-		'name': 'UpdatedVeToken',
-		'type': 'event'
+		name: 'UpdatedVeToken',
+		type: 'event'
 	},
 	{
-		'anonymous': false,
-		'inputs': [
+		anonymous: false,
+		inputs: [
 			{
-				'indexed': true,
-				'internalType': 'address',
-				'name': 'vault',
-				'type': 'address'
+				indexed: true,
+				internalType: 'address',
+				name: 'vault',
+				type: 'address'
 			}
 		],
-		'name': 'VaultAdded',
-		'type': 'event'
+		name: 'VaultAdded',
+		type: 'event'
 	},
 	{
-		'anonymous': false,
-		'inputs': [
+		anonymous: false,
+		inputs: [
 			{
-				'indexed': true,
-				'internalType': 'address',
-				'name': 'vault',
-				'type': 'address'
+				indexed: true,
+				internalType: 'address',
+				name: 'vault',
+				type: 'address'
 			}
 		],
-		'name': 'VaultRemoved',
-		'type': 'event'
+		name: 'VaultRemoved',
+		type: 'event'
 	},
 	{
-		'inputs': [
+		inputs: [
 			{
-				'internalType': 'address',
-				'name': '_vault',
-				'type': 'address'
+				internalType: 'address',
+				name: '_vault',
+				type: 'address'
 			},
 			{
-				'internalType': 'address',
-				'name': '_owner',
-				'type': 'address'
+				internalType: 'address',
+				name: '_owner',
+				type: 'address'
 			}
 		],
-		'name': 'addVaultToRewards',
-		'outputs': [
+		name: 'addVaultToRewards',
+		outputs: [
 			{
-				'internalType': 'address',
-				'name': '',
-				'type': 'address'
+				internalType: 'address',
+				name: '',
+				type: 'address'
 			}
 		],
-		'stateMutability': 'nonpayable',
-		'type': 'function'
+		stateMutability: 'nonpayable',
+		type: 'function'
 	},
 	{
-		'inputs': [],
-		'name': 'gaugefactory',
-		'outputs': [
+		inputs: [],
+		name: 'gaugefactory',
+		outputs: [
 			{
-				'internalType': 'address',
-				'name': '',
-				'type': 'address'
+				internalType: 'address',
+				name: '',
+				type: 'address'
 			}
 		],
-		'stateMutability': 'view',
-		'type': 'function'
+		stateMutability: 'view',
+		type: 'function'
 	},
 	{
-		'inputs': [
+		inputs: [
 			{
-				'internalType': 'address',
-				'name': '',
-				'type': 'address'
+				internalType: 'address',
+				name: '',
+				type: 'address'
 			}
 		],
-		'name': 'gauges',
-		'outputs': [
+		name: 'gauges',
+		outputs: [
 			{
-				'internalType': 'address',
-				'name': '',
-				'type': 'address'
+				internalType: 'address',
+				name: '',
+				type: 'address'
 			}
 		],
-		'stateMutability': 'view',
-		'type': 'function'
+		stateMutability: 'view',
+		type: 'function'
 	},
 	{
-		'inputs': [],
-		'name': 'getVaults',
-		'outputs': [
+		inputs: [],
+		name: 'getVaults',
+		outputs: [
 			{
-				'internalType': 'address[]',
-				'name': '',
-				'type': 'address[]'
+				internalType: 'address[]',
+				name: '',
+				type: 'address[]'
 			}
 		],
-		'stateMutability': 'view',
-		'type': 'function'
+		stateMutability: 'view',
+		type: 'function'
 	},
 	{
-		'inputs': [
+		inputs: [
 			{
-				'internalType': 'address',
-				'name': '',
-				'type': 'address'
+				internalType: 'address',
+				name: '',
+				type: 'address'
 			}
 		],
-		'name': 'isGauge',
-		'outputs': [
+		name: 'isGauge',
+		outputs: [
 			{
-				'internalType': 'bool',
-				'name': '',
-				'type': 'bool'
+				internalType: 'bool',
+				name: '',
+				type: 'bool'
 			}
 		],
-		'stateMutability': 'view',
-		'type': 'function'
+		stateMutability: 'view',
+		type: 'function'
 	},
 	{
-		'inputs': [],
-		'name': 'owner',
-		'outputs': [
+		inputs: [],
+		name: 'owner',
+		outputs: [
 			{
-				'internalType': 'address',
-				'name': '',
-				'type': 'address'
+				internalType: 'address',
+				name: '',
+				type: 'address'
 			}
 		],
-		'stateMutability': 'view',
-		'type': 'function'
+		stateMutability: 'view',
+		type: 'function'
 	},
 	{
-		'inputs': [
+		inputs: [
 			{
-				'internalType': 'address',
-				'name': '_vault',
-				'type': 'address'
+				internalType: 'address',
+				name: '_vault',
+				type: 'address'
 			}
 		],
-		'name': 'removeVaultFromRewards',
-		'outputs': [],
-		'stateMutability': 'nonpayable',
-		'type': 'function'
+		name: 'removeVaultFromRewards',
+		outputs: [],
+		stateMutability: 'nonpayable',
+		type: 'function'
 	},
 	{
-		'inputs': [],
-		'name': 'renounceOwnership',
-		'outputs': [],
-		'stateMutability': 'nonpayable',
-		'type': 'function'
+		inputs: [],
+		name: 'renounceOwnership',
+		outputs: [],
+		stateMutability: 'nonpayable',
+		type: 'function'
 	},
 	{
-		'inputs': [
+		inputs: [
 			{
-				'internalType': 'address',
-				'name': '_veToken',
-				'type': 'address'
+				internalType: 'address',
+				name: '_veToken',
+				type: 'address'
 			}
 		],
-		'name': 'setVe',
-		'outputs': [],
-		'stateMutability': 'nonpayable',
-		'type': 'function'
+		name: 'setVe',
+		outputs: [],
+		stateMutability: 'nonpayable',
+		type: 'function'
 	},
 	{
-		'inputs': [
+		inputs: [
 			{
-				'internalType': 'address',
-				'name': 'newOwner',
-				'type': 'address'
+				internalType: 'address',
+				name: 'newOwner',
+				type: 'address'
 			}
 		],
-		'name': 'transferOwnership',
-		'outputs': [],
-		'stateMutability': 'nonpayable',
-		'type': 'function'
+		name: 'transferOwnership',
+		outputs: [],
+		stateMutability: 'nonpayable',
+		type: 'function'
 	},
 	{
-		'inputs': [
+		inputs: [
 			{
-				'internalType': 'address',
-				'name': '',
-				'type': 'address'
+				internalType: 'address',
+				name: '',
+				type: 'address'
 			}
 		],
-		'name': 'vaultForGauge',
-		'outputs': [
+		name: 'vaultForGauge',
+		outputs: [
 			{
-				'internalType': 'address',
-				'name': '',
-				'type': 'address'
+				internalType: 'address',
+				name: '',
+				type: 'address'
 			}
 		],
-		'stateMutability': 'view',
-		'type': 'function'
+		stateMutability: 'view',
+		type: 'function'
 	},
 	{
-		'inputs': [],
-		'name': 'veToken',
-		'outputs': [
+		inputs: [],
+		name: 'veToken',
+		outputs: [
 			{
-				'internalType': 'address',
-				'name': '',
-				'type': 'address'
+				internalType: 'address',
+				name: '',
+				type: 'address'
 			}
 		],
-		'stateMutability': 'view',
-		'type': 'function'
+		stateMutability: 'view',
+		type: 'function'
 	},
 	{
-		'inputs': [],
-		'name': 'veYfiRewardPool',
-		'outputs': [
+		inputs: [],
+		name: 'veYfiRewardPool',
+		outputs: [
 			{
-				'internalType': 'address',
-				'name': '',
-				'type': 'address'
+				internalType: 'address',
+				name: '',
+				type: 'address'
 			}
 		],
-		'stateMutability': 'view',
-		'type': 'function'
+		stateMutability: 'view',
+		type: 'function'
 	},
 	{
-		'inputs': [],
-		'name': 'yfi',
-		'outputs': [
+		inputs: [],
+		name: 'yfi',
+		outputs: [
 			{
-				'internalType': 'address',
-				'name': '',
-				'type': 'address'
+				internalType: 'address',
+				name: '',
+				type: 'address'
 			}
 		],
-		'stateMutability': 'view',
-		'type': 'function'
+		stateMutability: 'view',
+		type: 'function'
 	}
 ] as const;

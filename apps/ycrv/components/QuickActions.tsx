@@ -16,7 +16,7 @@ export type TQASelect = {
 	selected?: TDropdownOption;
 	balanceSource?: TDict<TBalanceData>; // only 'from'
 	onSelect?: (option: TDropdownOption) => void;
-}
+};
 
 export type TQAInput = {
 	label?: string;
@@ -34,8 +34,8 @@ export type TQAButton = {
 	className?: string;
 	isBusy?: boolean;
 	isDisabled?: boolean;
-	onClick: VoidFunction
-}
+	onClick: VoidFunction;
+};
 
 function QASelect(props: TQASelect): ReactElement {
 	const {label, legend, options, selected, balanceSource, onSelect} = props;
@@ -47,7 +47,8 @@ function QASelect(props: TQASelect): ReactElement {
 				options={options}
 				selected={selected}
 				balanceSource={balanceSource}
-				onSelect={onSelect ? onSelect : (): void => undefined} />
+				onSelect={onSelect ? onSelect : (): void => undefined}
+			/>
 		);
 	}
 
@@ -55,7 +56,9 @@ function QASelect(props: TQASelect): ReactElement {
 		<div className={'relative z-10 w-full space-y-2'}>
 			<div className={'flex flex-row items-baseline justify-between'}>
 				<label className={'text-base text-neutral-600'}>{label}</label>
-				<legend className={'font-number inline text-xs text-neutral-600 md:hidden'} suppressHydrationWarning>
+				<legend
+					className={'font-number inline text-xs text-neutral-600 md:hidden'}
+					suppressHydrationWarning>
 					{legend}
 				</legend>
 			</div>
@@ -63,18 +66,28 @@ function QASelect(props: TQASelect): ReactElement {
 			<Renderable
 				fallback={renderMultipleOptionsFallback()}
 				shouldRender={isZero(options.length)}>
-				<div className={'flex h-10 w-full items-center justify-between bg-neutral-0 px-2 text-base text-neutral-900 md:px-3'}>
+				<div
+					className={
+						'flex h-10 w-full items-center justify-between bg-neutral-0 px-2 text-base text-neutral-900 md:px-3'
+					}>
 					<div className={'relative flex flex-row items-center'}>
-						<div key={selected?.value} className={'h-6 w-6 flex-none rounded-full'}>
+						<div
+							key={selected?.value}
+							className={'h-6 w-6 flex-none rounded-full'}>
 							{selected?.icon}
 						</div>
-						<p className={'overflow-x-hidden text-ellipsis whitespace-nowrap pl-2 font-normal text-neutral-900 scrollbar-none'}>
+						<p
+							className={
+								'overflow-x-hidden text-ellipsis whitespace-nowrap pl-2 font-normal text-neutral-900 scrollbar-none'
+							}>
 							{selected?.symbol}
 						</p>
 					</div>
 				</div>
 			</Renderable>
-			<legend className={'font-number hidden text-xs text-neutral-600 md:inline'} suppressHydrationWarning>
+			<legend
+				className={'font-number hidden text-xs text-neutral-600 md:inline'}
+				suppressHydrationWarning>
 				{legend}
 			</legend>
 		</div>
@@ -95,12 +108,15 @@ function QASwitch(): ReactElement {
 }
 
 function QAInput(props: TQAInput): ReactElement {
-	const {className, label, legend, value, isDisabled, isMaxDisabled, onChange, onSetMaxAmount, type, ...inputProps} = props;
+	const {className, label, legend, value, isDisabled, isMaxDisabled, onChange, onSetMaxAmount, type, ...inputProps} =
+		props;
 
 	return (
 		<div className={className ? className : 'w-full space-y-2'}>
 			{!!label && (
-				<label htmlFor={label} className={'hidden text-base text-neutral-600 md:inline'}>
+				<label
+					htmlFor={label}
+					className={'hidden text-base text-neutral-600 md:inline'}>
 					{label}
 				</label>
 			)}
@@ -108,21 +124,27 @@ function QAInput(props: TQAInput): ReactElement {
 				<div className={'flex h-10 w-full flex-row items-center justify-between px-0 py-4'}>
 					<input
 						id={inputProps.id || label}
-						className={`w-full overflow-x-scroll border-none bg-transparent px-0 font-bold outline-none scrollbar-none ${isDisabled ? 'cursor-not-allowed' : 'cursor-default'}`}
+						className={`w-full overflow-x-scroll border-none bg-transparent px-0 font-bold outline-none scrollbar-none ${
+							isDisabled ? 'cursor-not-allowed' : 'cursor-default'
+						}`}
 						type={type || 'text'}
 						disabled={isDisabled}
 						value={value}
 						onChange={onChange}
 						{...inputProps}
 					/>
-					{onSetMaxAmount &&
+					{onSetMaxAmount && (
 						<button
 							onClick={!isMaxDisabled ? onSetMaxAmount : undefined}
-							className={`ml-2 px-2 py-1 text-xs font-normal text-neutral-0 transition-colors ${isMaxDisabled ? 'cursor-not-allowed bg-neutral-300 hover:bg-neutral-300' : 'cursor-pointer bg-neutral-900 hover:bg-neutral-700'}`}
+							className={`ml-2 px-2 py-1 text-xs font-normal text-neutral-0 transition-colors ${
+								isMaxDisabled
+									? 'cursor-not-allowed bg-neutral-300 hover:bg-neutral-300'
+									: 'cursor-pointer bg-neutral-900 hover:bg-neutral-700'
+							}`}
 							disabled={isMaxDisabled}>
 							{'Max'}
 						</button>
-					}
+					)}
 				</div>
 			</div>
 			<legend className={'font-number mr-1 text-end text-xs text-neutral-600 md:mr-0 md:text-start'}>
@@ -150,7 +172,9 @@ function QAButton({label, ...props}: TQAButton): ReactElement {
 
 export function QuickActions({label, children}: {label: string; children: ReactNode}): ReactElement {
 	return (
-		<section aria-label={label} className={'flex w-full flex-col space-x-0 md:flex-row md:space-x-4'}>
+		<section
+			aria-label={label}
+			className={'flex w-full flex-col space-x-0 md:flex-row md:space-x-4'}>
 			{children}
 		</section>
 	);

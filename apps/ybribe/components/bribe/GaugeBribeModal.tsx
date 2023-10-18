@@ -26,10 +26,10 @@ type TExpectedOutFetcher = {
 	name: string;
 	symbol: string;
 	decimals: number;
-	normalized: number,
-	raw: bigint,
-	allowance: bigint,
-}
+	normalized: number;
+	raw: bigint;
+	allowance: bigint;
+};
 const defaultExpectedOutFetcher: TExpectedOutFetcher = {
 	name: '',
 	symbol: '',
@@ -39,7 +39,13 @@ const defaultExpectedOutFetcher: TExpectedOutFetcher = {
 	allowance: toBigInt(0)
 };
 
-export function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGauge, onClose: VoidFunction}): ReactElement {
+export function GaugeBribeModal({
+	currentGauge,
+	onClose
+}: {
+	currentGauge: TCurveGauge;
+	onClose: VoidFunction;
+}): ReactElement {
 	const {chainID} = useChainID();
 	const {address, provider, isActive, openLoginModal, onSwitchChain} = useWeb3();
 	const {refresh} = useBribes();
@@ -54,7 +60,12 @@ export function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGa
 			{address: tokenAddress, abi: erc20ABI, functionName: 'symbol'},
 			{address: tokenAddress, abi: erc20ABI, functionName: 'decimals'},
 			{address: tokenAddress, abi: erc20ABI, functionName: 'balanceOf', args: [toAddress(address)]},
-			{address: tokenAddress, abi: erc20ABI, functionName: 'allowance', args: [toAddress(address), CURVE_BRIBE_V3_ADDRESS]}
+			{
+				address: tokenAddress,
+				abi: erc20ABI,
+				functionName: 'allowance',
+				args: [toAddress(address), CURVE_BRIBE_V3_ADDRESS]
+			}
 		]
 	});
 
@@ -62,14 +73,14 @@ export function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGa
 		if (!data || !isSuccess) {
 			return defaultExpectedOutFetcher;
 		}
-		return ({
+		return {
 			name: decodeAsString(data[0]),
 			symbol: decodeAsString(data[1]),
 			decimals: decodeAsNumber(data[2]) || Number(decodeAsBigInt(data[2])),
 			raw: decodeAsBigInt(data[3]),
 			normalized: formatToNormalizedValue(decodeAsBigInt(data[3]), decodeAsNumber(data[2])),
 			allowance: decodeAsBigInt(data[4])
-		});
+		};
 	}, [data, isSuccess]);
 
 	const onApprove = useCallback(async (): Promise<void> => {
@@ -129,10 +140,7 @@ export function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGa
 					className={'w-full'}
 					isBusy={txStatusApprove.pending}
 					isDisabled={
-						!isActive ||
-						isZeroAddress(tokenAddress) ||
-						isZero(amount.raw) ||
-						![1, 1337].includes(chainID)
+						!isActive || isZeroAddress(tokenAddress) || isZero(amount.raw) || ![1, 1337].includes(chainID)
 					}>
 					{`Approve ${selectedToken?.symbol || 'token'}`}
 				</Button>
@@ -161,32 +169,38 @@ export function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGa
 			<div className={'relative z-20 col-span-6 flex flex-col space-y-1'}>
 				<div>
 					<b className={'text-3xl text-neutral-900'}>{`Offer bribe to ${currentGauge.name}`}</b>
-					<p className={'pt-4'}>{'Choose your reward token contract and reward amount to offer a bribe on your chosen gauge.'}</p>
+					<p className={'pt-4'}>
+						{'Choose your reward token contract and reward amount to offer a bribe on your chosen gauge.'}
+					</p>
 				</div>
 			</div>
 			<div className={'mt-6 grid grid-cols-12 gap-4'}>
 				<div className={'relative z-20 col-span-12 flex flex-col space-y-4'}>
 					<label className={'flex flex-col space-y-1 '}>
-						<p className={'text-base text-neutral-600'}>
-							{'Reward Token'}
-						</p>
+						<p className={'text-base text-neutral-600'}>{'Reward Token'}</p>
 						<div className={'flex h-10 items-center bg-neutral-100 p-2'}>
 							<div className={'flex h-10 w-full flex-row items-center justify-between px-0 py-4'}>
 								<input
-									className={`w-full overflow-x-scroll border-none bg-transparent px-0 py-4 font-bold outline-none scrollbar-none ${isActive ? '' : 'cursor-not-allowed'}`}
+									className={`w-full overflow-x-scroll border-none bg-transparent px-0 py-4 font-bold outline-none scrollbar-none ${
+										isActive ? '' : 'cursor-not-allowed'
+									}`}
 									type={'text'}
 									placeholder={'0x...'}
 									value={tokenAddress}
 									onChange={(e: ChangeEvent<HTMLInputElement>): void => {
 										const {value} = e.target;
-										if (value === '' || value.match(/^(0[x]{0,1})[a-fA-F0-9]{0,40}/gm)?.includes(value)) {
+										if (
+											value === '' ||
+											value.match(/^(0[x]{0,1})[a-fA-F0-9]{0,40}/gm)?.includes(value)
+										) {
 											if (isZeroAddress(value)) {
 												set_tokenAddress(ZERO_ADDRESS);
 											} else {
 												set_tokenAddress(toAddress(value));
 											}
 										}
-									}} />
+									}}
+								/>
 							</div>
 						</div>
 					</label>
@@ -196,13 +210,18 @@ export function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGa
 						<div className={'flex h-10 items-center bg-neutral-100 p-2'}>
 							<div className={'flex h-10 w-full flex-row items-center justify-between px-0 py-4'}>
 								<input
-									className={`w-full overflow-x-scroll border-none bg-transparent px-0 py-4 font-bold outline-none scrollbar-none ${isActive ? '' : 'cursor-not-allowed'}`}
+									className={`w-full overflow-x-scroll border-none bg-transparent px-0 py-4 font-bold outline-none scrollbar-none ${
+										isActive ? '' : 'cursor-not-allowed'
+									}`}
 									type={'text'}
 									disabled={!isActive}
 									value={amount.normalized}
 									onChange={(e: ChangeEvent<HTMLInputElement>): void => {
-										set_amount(handleInputChangeEventValue(e.target.value, selectedToken?.decimals || 18));
-									}} />
+										set_amount(
+											handleInputChangeEventValue(e.target.value, selectedToken?.decimals || 18)
+										);
+									}}
+								/>
 								<button
 									onClick={(): void => {
 										set_amount({
@@ -210,7 +229,9 @@ export function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGa
 											normalized: selectedToken?.normalized || 0
 										});
 									}}
-									className={'cursor-pointer bg-neutral-900 px-2 py-1 text-xs text-neutral-0 transition-colors hover:bg-neutral-700'}>
+									className={
+										'cursor-pointer bg-neutral-900 px-2 py-1 text-xs text-neutral-0 transition-colors hover:bg-neutral-700'
+									}>
 									{'Max'}
 								</button>
 							</div>
@@ -219,36 +240,31 @@ export function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGa
 
 					<div className={'space-y-1 border-t border-neutral-200 bg-neutral-0 py-6'}>
 						<div className={'flex flex-row items-center justify-between'}>
-							<p className={'text-sm text-neutral-400'}>
-								{'Token'}
-							</p>
+							<p className={'text-sm text-neutral-400'}>{'Token'}</p>
 							<p className={'text-base tabular-nums text-neutral-900'}>
 								{selectedToken ? `${selectedToken?.name} (${selectedToken?.symbol})` : '-'}
 							</p>
 						</div>
 						<div className={'flex flex-row items-center justify-between'}>
-							<p className={'text-sm text-neutral-400'}>
-								{'Value'}
-							</p>
+							<p className={'text-sm text-neutral-400'}>{'Value'}</p>
 							<p className={'font-number text-base text-neutral-900'}>
-								{selectedToken ? formatCounterValue(amount?.normalized || 0, (Number(prices?.[toAddress(tokenAddress)] || 0) / 1000000)) : '-'}
+								{selectedToken
+									? formatCounterValue(
+											amount?.normalized || 0,
+											Number(prices?.[toAddress(tokenAddress)] || 0) / 1000000
+									  )
+									: '-'}
 							</p>
 						</div>
 						<div className={'flex flex-row items-center justify-between'}>
-							<p className={'text-sm text-neutral-400'}>
-								{'Amount'}
-							</p>
+							<p className={'text-sm text-neutral-400'}>{'Amount'}</p>
 							<p className={'font-number text-sm text-neutral-900'}>
 								{selectedToken ? `${amount.raw.toString()}` : '-'}
 							</p>
 						</div>
 						<div className={'flex flex-row items-center justify-between'}>
-							<p className={'text-sm text-neutral-400'}>
-								{'Gauge'}
-							</p>
-							<p className={'font-number text-sm text-neutral-900'}>
-								{currentGauge.gauge}
-							</p>
+							<p className={'text-sm text-neutral-400'}>{'Gauge'}</p>
+							<p className={'font-number text-sm text-neutral-900'}>{currentGauge.gauge}</p>
 						</div>
 					</div>
 
@@ -258,4 +274,3 @@ export function GaugeBribeModal({currentGauge, onClose}: {currentGauge: TCurveGa
 		</div>
 	);
 }
-

@@ -12,7 +12,7 @@ export type TCurveContext = {
 	gauges: TCurveGauge[];
 	isLoadingGauges: boolean;
 	gaugesFromYearn: TCurveGaugesFromYearn;
-}
+};
 
 const defaultProps: TCurveContext = {
 	curveWeeklyFees: {
@@ -28,7 +28,7 @@ const defaultProps: TCurveContext = {
 };
 
 const CurveContext = createContext<TCurveContext>(defaultProps);
-export const CurveContextApp = ({children}: { children: React.ReactElement }): React.ReactElement => {
+export const CurveContextApp = ({children}: {children: React.ReactElement}): React.ReactElement => {
 	const {data: curveWeeklyFees} = useFetch<TCurveWeeklyFees>({
 		endpoint: 'https://api.curve.fi/api/getWeeklyFees',
 		schema: curveWeeklyFeesSchema
@@ -45,8 +45,8 @@ export const CurveContextApp = ({children}: { children: React.ReactElement }): R
 	});
 
 	/* 🔵 - Yearn Finance ******************************************************
-	**	Fetch all the CurveGauges to be able to create some new if required
-	***************************************************************************/
+	 **	Fetch all the CurveGauges to be able to create some new if required
+	 ***************************************************************************/
 	const {data: gaugesWrapper, isLoading: isLoadingGauges} = useFetch<TCurveAllGauges>({
 		endpoint: 'https://api.curve.fi/api/getAllGauges?blockchainId=ethereum',
 		schema: curveAllGaugesSchema
@@ -75,21 +75,20 @@ export const CurveContextApp = ({children}: { children: React.ReactElement }): R
 	}, [gaugesWrapper]);
 
 	/* 🔵 - Yearn Finance ******************************************************
-	**	Setup and render the Context provider to use in the app.
-	***************************************************************************/
-	const contextValue = useMemo((): TCurveContext => ({
-		curveWeeklyFees: curveWeeklyFees?.data || defaultProps.curveWeeklyFees,
-		cgPrices: cgPrices || defaultProps.cgPrices,
-		gauges: gauges || defaultProps.gauges,
-		isLoadingGauges: isLoadingGauges || defaultProps.isLoadingGauges,
-		gaugesFromYearn: gaugesFromYearn || defaultProps.gaugesFromYearn
-	}), [curveWeeklyFees, cgPrices, gauges, isLoadingGauges, gaugesFromYearn]);
-
-	return (
-		<CurveContext.Provider value={contextValue}>
-			{children}
-		</CurveContext.Provider>
+	 **	Setup and render the Context provider to use in the app.
+	 ***************************************************************************/
+	const contextValue = useMemo(
+		(): TCurveContext => ({
+			curveWeeklyFees: curveWeeklyFees?.data || defaultProps.curveWeeklyFees,
+			cgPrices: cgPrices || defaultProps.cgPrices,
+			gauges: gauges || defaultProps.gauges,
+			isLoadingGauges: isLoadingGauges || defaultProps.isLoadingGauges,
+			gaugesFromYearn: gaugesFromYearn || defaultProps.gaugesFromYearn
+		}),
+		[curveWeeklyFees, cgPrices, gauges, isLoadingGauges, gaugesFromYearn]
 	);
+
+	return <CurveContext.Provider value={contextValue}>{children}</CurveContext.Provider>;
 };
 
 export const useCurve = (): TCurveContext => useContext(CurveContext);

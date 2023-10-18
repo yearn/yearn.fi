@@ -33,15 +33,17 @@ function Logo(): ReactElement {
 			<VaultsHeader pathname={pathname} />
 			<VeYfiHeader pathname={pathname} />
 			<YBribeHeader pathname={pathname} />
-			<MotionDiv name={'yearn'} animate={pathname === '/' ? 'enter' : 'exit'}>
+			<MotionDiv
+				name={'yearn'}
+				animate={pathname === '/' ? 'enter' : 'exit'}>
 				<LogoYearn
 					className={'h-8 w-8'}
 					back={'text-neutral-900'}
-					front={'text-neutral-0'} />
+					front={'text-neutral-0'}
+				/>
 			</MotionDiv>
 		</>
 	);
-
 }
 
 function LogoPopover(): ReactElement {
@@ -51,14 +53,17 @@ function LogoPopover(): ReactElement {
 		name: 'yETH',
 		href: 'https://yeth.yearn.fi',
 		isDisabled: false,
-		icon: <ImageWithFallback
-			alt={'yETH'}
-			className={'h-8 w-8'}
-			width={100}
-			height={100}
-			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/0x1BED97CBC3c24A4fb5C069C6E311a967386131f7/logo-128.png`}
-			loading={'eager'}
-			priority />
+		icon: (
+			<ImageWithFallback
+				alt={'yETH'}
+				className={'h-8 w-8'}
+				width={100}
+				height={100}
+				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/0x1BED97CBC3c24A4fb5C069C6E311a967386131f7/logo-128.png`}
+				loading={'eager'}
+				priority
+			/>
+		)
 	};
 
 	return (
@@ -81,32 +86,32 @@ function LogoPopover(): ReactElement {
 				leave={'transition ease-in duration-150'}
 				leaveFrom={'opacity-100 translate-y-0'}
 				leaveTo={'opacity-0 translate-y-1'}>
-				<Popover.Panel className={'absolute left-1/2 z-10 mt-6 w-80 -translate-x-1/2 px-4 pt-4 sm:px-0 md:w-96'}>
+				<Popover.Panel
+					className={'absolute left-1/2 z-10 mt-6 w-80 -translate-x-1/2 px-4 pt-4 sm:px-0 md:w-96'}>
 					<div className={'overflow-hidden border border-neutral-200 shadow-lg'}>
 						<div className={'relative grid grid-cols-2 bg-neutral-0 md:grid-cols-3'}>
-							{
-								[...Object.values(APPS), YETH]
-									.filter(({isDisabled}): boolean => !isDisabled)
-									.map(({name, href, icon}): ReactElement => {
-										return (
-											<Link
-												prefetch={false}
-												key={name}
-												href={href}
-												onClick={(): void => set_isShowing(false)}>
-												<div
-													onClick={(): void => set_isShowing(false)}
-													className={'flex cursor-pointer flex-col items-center p-4 transition-colors hover:bg-neutral-200'}>
-													<div>
-														{cloneElement(icon)}
-													</div>
-													<div className={'pt-2 text-center'}>
-														<b className={'text-base'}>{name}</b>
-													</div>
+							{[...Object.values(APPS), YETH]
+								.filter(({isDisabled}): boolean => !isDisabled)
+								.map(({name, href, icon}): ReactElement => {
+									return (
+										<Link
+											prefetch={false}
+											key={name}
+											href={href}
+											onClick={(): void => set_isShowing(false)}>
+											<div
+												onClick={(): void => set_isShowing(false)}
+												className={
+													'flex cursor-pointer flex-col items-center p-4 transition-colors hover:bg-neutral-200'
+												}>
+												<div>{cloneElement(icon)}</div>
+												<div className={'pt-2 text-center'}>
+													<b className={'text-base'}>{name}</b>
 												</div>
-											</Link>
-										);
-									})}
+											</div>
+										</Link>
+									);
+								})}
 						</div>
 					</div>
 				</Popover.Panel>
@@ -150,7 +155,6 @@ export function AppHeader(): ReactElement {
 		];
 	}, [pathname]);
 
-
 	const supportedNetworks = useMemo((): number[] => {
 		const ethereumOnlyPaths = ['/ycrv', '/ybal', '/veyfi', '/ybribe'];
 		if (ethereumOnlyPaths.some((path): boolean => pathname.startsWith(path))) {
@@ -168,17 +172,18 @@ export function AppHeader(): ReactElement {
 			onOpenMenuMobile={onOpenMenu}
 			nav={menu}
 			supportedNetworks={supportedNetworks}
-			logo={(
+			logo={
 				<AnimatePresence mode={'wait'}>
 					<LogoPopover />
 				</AnimatePresence>
-			)}
+			}
 			extra={
 				<Renderable shouldRender={isActive && isMounted()}>
 					<div className={'ml-4'}>
 						<BalanceReminderPopover />
 					</div>
 				</Renderable>
-			} />
+			}
+		/>
 	);
 }

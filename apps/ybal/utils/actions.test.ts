@@ -32,11 +32,9 @@ vi.mock('@yearn-finance/web-lib/utils/web3/transaction', () => ({
 	handleTx: vi.fn()
 }));
 
-
 describe('actions', () => {
 	it('should export the correct actions', () => {
 		expect(zapBal).toBeDefined();
 	});
 	return;
-
 });

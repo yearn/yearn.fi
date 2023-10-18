@@ -40,10 +40,8 @@ export function EarlyExitVeYFI(): ReactElement {
 	return (
 		<div className={'grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-16'}>
 			<div className={'col-span-1 w-full'}>
-				<h2 className={'m-0 text-2xl font-bold'}>
-					{'Early exit'}
-				</h2>
-				<div className={'mt-6 text-neutral-600'} >
+				<h2 className={'m-0 text-2xl font-bold'}>{'Early exit'}</h2>
+				<div className={'mt-6 text-neutral-600'}>
 					<p>{'Or you can exit early by paying a penalty based on lock duration.'}</p>
 				</div>
 			</div>
@@ -53,23 +51,28 @@ export function EarlyExitVeYFI(): ReactElement {
 					<AmountInput
 						label={'veYFI you have'}
 						amount={toNormalizedBN(toBigInt(positions?.deposit?.underlyingBalance), 18)}
-						disabled />
+						disabled
+					/>
 					<AmountInput
 						label={'Current lock time (weeks)'}
 						amount={weeksToUnlock}
-						disabled />
+						disabled
+					/>
 				</div>
 				<div className={'grid grid-cols-1 gap-6 md:grid-cols-2'}>
 					<AmountInput
 						label={'YFI you get'}
 						amount={toNormalizedBN(toBigInt(positions?.withdrawable), 18)}
 						legend={`Penalty: ${((positions?.penaltyRatio ?? 0) * 100).toFixed(2)}%`}
-						disabled />
+						disabled
+					/>
 					<Button
 						className={'w-full md:mt-7'}
 						onClick={onWithdrawLocked}
 						isBusy={withdrawLockedStatus.pending}
-						isDisabled={!isActive || !hasPenalty || withdrawLockedStatus.pending || !votingEscrow || !address}>
+						isDisabled={
+							!isActive || !hasPenalty || withdrawLockedStatus.pending || !votingEscrow || !address
+						}>
 						{'Exit'}
 					</Button>
 				</div>

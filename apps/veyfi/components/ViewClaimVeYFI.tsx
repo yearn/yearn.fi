@@ -42,10 +42,8 @@ export function ClaimVeYFI(): ReactElement {
 		<div className={'grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-16'}>
 			<div className={'col-span-1 grid w-full gap-6'}>
 				<div className={'md:min-h-[104px]'}>
-					<h2 className={'m-0 text-2xl font-bold'}>
-						{'Claim expired lock'}
-					</h2>
-					<div className={'mt-6 text-neutral-600'} >
+					<h2 className={'m-0 text-2xl font-bold'}>{'Claim expired lock'}</h2>
+					<div className={'mt-6 text-neutral-600'}>
 						<p>{'Claim your YFI from expired veYFI lock.'}</p>
 					</div>
 				</div>
@@ -56,12 +54,15 @@ export function ClaimVeYFI(): ReactElement {
 					<AmountInput
 						label={'Unlocked YFI'}
 						amount={claimableAmount}
-						disabled />
+						disabled
+					/>
 					<Button
 						className={'w-full md:mt-7'}
 						onClick={onWithdrawUnlocked}
 						isBusy={withdrawUnlockedStatus.pending}
-						isDisabled={!isActive || !isClaimable || withdrawUnlockedStatus.pending || !votingEscrow || !address}>
+						isDisabled={
+							!isActive || !isClaimable || withdrawUnlockedStatus.pending || !votingEscrow || !address
+						}>
 						{'Claim'}
 					</Button>
 				</div>

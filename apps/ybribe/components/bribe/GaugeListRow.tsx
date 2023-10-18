@@ -15,7 +15,7 @@ import type {ReactElement} from 'react';
 import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 import type {TCurveGauge} from '@common/schemas/curveSchemas';
 
-function GaugeRowItemWithExtraData({address, value}: {address: TAddress, value: bigint}): ReactElement {
+function GaugeRowItemWithExtraData({address, value}: {address: TAddress; value: bigint}): ReactElement {
 	const {tokens, prices} = useYearn();
 
 	const tokenInfo = tokens?.[address];
@@ -27,9 +27,7 @@ function GaugeRowItemWithExtraData({address, value}: {address: TAddress, value: 
 
 	return (
 		<div className={'flex h-auto flex-col items-end pt-0 md:h-14'}>
-			<p className={'yearn--table-data-section-item-value'}>
-				{formatUSD(bribeValue, 5, 5)}
-			</p>
+			<p className={'yearn--table-data-section-item-value'}>{formatUSD(bribeValue, 5, 5)}</p>
 			<p className={'font-number inline-flex items-baseline text-right text-xs text-neutral-400'}>
 				{formatAmount(bribeAmount, 5, 5)}
 				&nbsp;
@@ -62,12 +60,8 @@ export function GaugeListRow({currentGauge}: {currentGauge: TCurveGauge}): React
 	function renderDefaultValueUSDFallback(): ReactElement {
 		return (
 			<div className={'flex h-auto flex-col items-end pt-0 md:h-14'}>
-				<p className={'yearn--table-data-section-item-value'}>
-					{formatUSD(0, 5, 5)}
-				</p>
-				<p className={'font-number inline-flex items-baseline text-right text-xs text-neutral-400'}>
-					{'-'}
-				</p>
+				<p className={'yearn--table-data-section-item-value'}>{formatUSD(0, 5, 5)}</p>
+				<p className={'font-number inline-flex items-baseline text-right text-xs text-neutral-400'}>{'-'}</p>
 			</div>
 		);
 	}
@@ -83,7 +77,8 @@ export function GaugeListRow({currentGauge}: {currentGauge: TCurveGauge}): React
 							height={40}
 							quality={90}
 							loading={'eager'}
-							src={`${process.env.BASE_YEARN_ASSETS_URI}1/${currentGauge.swap_token}/logo-128.png`} />
+							src={`${process.env.BASE_YEARN_ASSETS_URI}1/${currentGauge.swap_token}/logo-128.png`}
+						/>
 					</div>
 					<p>{currentGauge.name}</p>
 				</div>
@@ -99,44 +94,55 @@ export function GaugeListRow({currentGauge}: {currentGauge: TCurveGauge}): React
 				</div>
 			</div>
 
-
 			<div className={'yearn--table-data-section grid-cols-9'}>
-				<div className={'yearn--table-data-section-item'} datatype={'number'}>
+				<div
+					className={'yearn--table-data-section-item'}
+					datatype={'number'}>
 					<label className={'yearn--table-data-section-item-label'}>{'Weight'}</label>
-					<p className={'yearn--table-data-section-item-value'}>
-						{formatPercent(gaugeRelativeWeight * 100)}
-					</p>
+					<p className={'yearn--table-data-section-item-value'}>{formatPercent(gaugeRelativeWeight * 100)}</p>
 				</div>
 
-				<div className={'yearn--table-data-section-item md:col-span-3'} datatype={'number'}>
+				<div
+					className={'yearn--table-data-section-item md:col-span-3'}
+					datatype={'number'}>
 					<label className={'yearn--table-data-section-item-label'}>{'Current Bribes'}</label>
 					<Renderable
 						shouldRender={!!currentRewardsForCurrentGaugeMap && currentRewardsForCurrentGaugeMap.length > 0}
 						fallback={renderDefaultValueUSDFallback()}>
-						{currentRewardsForCurrentGaugeMap.map(([key, value]: [string, bigint]): ReactElement =>
-							<GaugeRowItemWithExtraData
-								key={`rewards-${currentGauge.gauge}-${key}`}
-								address={toAddress(key)}
-								value={value} />
+						{currentRewardsForCurrentGaugeMap.map(
+							([key, value]: [string, bigint]): ReactElement => (
+								<GaugeRowItemWithExtraData
+									key={`rewards-${currentGauge.gauge}-${key}`}
+									address={toAddress(key)}
+									value={value}
+								/>
+							)
 						)}
 					</Renderable>
 				</div>
 
-				<div className={'yearn--table-data-section-item md:col-span-3'} datatype={'number'}>
+				<div
+					className={'yearn--table-data-section-item md:col-span-3'}
+					datatype={'number'}>
 					<label className={'yearn--table-data-section-item-label'}>{'Current Bribes'}</label>
 					<Renderable
 						shouldRender={!!nextRewardsForCurrentGaugeMap && nextRewardsForCurrentGaugeMap.length > 0}
 						fallback={renderDefaultValueUSDFallback()}>
-						{nextRewardsForCurrentGaugeMap.map(([key, value]: [string, bigint]): ReactElement =>
-							<GaugeRowItemWithExtraData
-								key={`rewards-${currentGauge.gauge}-${key}`}
-								address={toAddress(key)}
-								value={value} />
+						{nextRewardsForCurrentGaugeMap.map(
+							([key, value]: [string, bigint]): ReactElement => (
+								<GaugeRowItemWithExtraData
+									key={`rewards-${currentGauge.gauge}-${key}`}
+									address={toAddress(key)}
+									value={value}
+								/>
+							)
 						)}
 					</Renderable>
 				</div>
 
-				<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
+				<div
+					className={'yearn--table-data-section-item md:col-span-2'}
+					datatype={'number'}>
 					<div className={'h-14 pt-0'}>
 						<Button
 							className={'yearn--button-smaller w-full'}
@@ -154,7 +160,8 @@ export function GaugeListRow({currentGauge}: {currentGauge: TCurveGauge}): React
 				onClose={(): void => set_hasModal(false)}>
 				<GaugeBribeModal
 					currentGauge={currentGauge}
-					onClose={(): void => set_hasModal(false)} />
+					onClose={(): void => set_hasModal(false)}
+				/>
 			</Modal>
 		</div>
 	);

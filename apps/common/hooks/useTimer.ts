@@ -8,7 +8,7 @@ extend(dayjsDuration);
 
 type TProps = {
 	endTime?: TSeconds;
-}
+};
 
 export function computeTimeLeft({endTime}: {endTime?: TSeconds}): number {
 	if (!endTime) {

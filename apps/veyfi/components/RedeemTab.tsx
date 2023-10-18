@@ -2,8 +2,8 @@ import {useCallback, useState} from 'react';
 import {erc20ABI, useContractRead} from 'wagmi';
 import {useOption} from '@veYFI/contexts/useOption';
 import {redeem} from '@veYFI/utils/actions/option';
-import {VEYFI_CHAIN_ID, VEYFI_DYFI_ADDRESS,VEYFI_OPTIONS_ADDRESS} from '@veYFI/utils/constants';
-import {validateAmount} from '@veYFI/utils/validations';
+import {VEYFI_CHAIN_ID, VEYFI_DYFI_ADDRESS, VEYFI_OPTIONS_ADDRESS} from '@veYFI/utils/constants';
+import { validateAmount} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -104,12 +104,12 @@ export function RedeemTab(): ReactElement {
 		<div className={'flex flex-col gap-6 md:gap-10'}>
 			<div className={'flex flex-col'}>
 				<div className={'flex flex-col gap-4'}>
-					<h2 className={'m-0 text-2xl font-bold'}>
-						{'Redeem'}
-					</h2>
-					<div className={'text-neutral-600'} >
+					<h2 className={'m-0 text-2xl font-bold'}>{'Redeem'}</h2>
+					<div className={'text-neutral-600'}>
 						<p className={'w-2/3 whitespace-break-spaces'}>
-							{'Got dYFI, want YFI? You’ve come to the right place. Redeem dYFI for YFI by paying the redemption cost in ETH. Enjoy your cheap YFI anon.'}
+							{
+								'Got dYFI, want YFI? You’ve come to the right place. Redeem dYFI for YFI by paying the redemption cost in ETH. Enjoy your cheap YFI anon.'
+							}
 						</p>
 						<b className={'mt-4 block'} suppressHydrationWarning>
 							{`Current discount: ${formatAmount(Number(discount.normalized) * 100, 2, 2)}%`}
@@ -159,9 +159,11 @@ export function RedeemTab(): ReactElement {
 					/>
 					<Button
 						className={'w-full md:mt-7'}
-						onClick={async (): Promise<void> => isApproved ? onRedeem() : onApproveRedeem()}
+						onClick={async (): Promise<void> => (isApproved ? onRedeem() : onApproveRedeem())}
 						isBusy={approveRedeemStatus.pending || redeemStatus.pending}
-						isDisabled={!isActive || !isValidRedeemAmount || !redeemStatus.none || !approveRedeemStatus.none}>
+						isDisabled={
+							!isActive || !isValidRedeemAmount || !redeemStatus.none || !approveRedeemStatus.none
+						}>
 						{isApproved ? 'Redeem' : 'Approve'}
 					</Button>
 				</div>

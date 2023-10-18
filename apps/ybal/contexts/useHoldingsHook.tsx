@@ -5,7 +5,16 @@
 import {useMemo} from 'react';
 import {parseEther} from 'viem';
 import {erc20ABI, useContractReads, usePrepareContractWrite} from 'wagmi';
-import {BALWETH_TOKEN_ADDRESS, LPYBAL_TOKEN_ADDRESS, STYBAL_TOKEN_ADDRESS, VEBAL_TOKEN_ADDRESS, VEBALPEG_QUERY_HELP_CONTRACT, YBAL_TOKEN_ADDRESS, YBAL_VOTER_ADDRESS, ZERO_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {
+	BALWETH_TOKEN_ADDRESS,
+	LPYBAL_TOKEN_ADDRESS,
+	STYBAL_TOKEN_ADDRESS,
+	VEBAL_TOKEN_ADDRESS,
+	VEBALPEG_QUERY_HELP_CONTRACT,
+	YBAL_TOKEN_ADDRESS,
+	YBAL_VOTER_ADDRESS,
+	ZERO_ADDRESS
+} from '@yearn-finance/web-lib/utils/constants';
 import {decodeAsBigInt} from '@yearn-finance/web-lib/utils/decoder';
 import {STYBAL_ABI} from '@yBal/utils/abi/styBal.abi';
 import {VE_BAL_ABI} from '@yBal/utils/abi/veBAL.abi';
@@ -21,7 +30,7 @@ export type TBalHoldings = {
 	treasury: bigint;
 	veBalTotalSupply: bigint;
 	veBalBalance: bigint;
-}
+};
 
 export const defaultBalHoldings = {
 	yBalSupply: 0n,
@@ -34,8 +43,8 @@ export const defaultBalHoldings = {
 };
 
 /* 🔵 - Yearn Finance **********************************************************
-** This context controls the Holdings computation.
-******************************************************************************/
+ ** This context controls the Holdings computation.
+ ******************************************************************************/
 export function useHoldings(): TBalHoldings {
 	const yBalContract = {address: YBAL_TOKEN_ADDRESS, abi: erc20ABI};
 	const lpyBalContract = {address: LPYBAL_TOKEN_ADDRESS, abi: erc20ABI};
@@ -82,7 +91,7 @@ export function useHoldings(): TBalHoldings {
 		const lpyBalTotalSupply = decodeAsBigInt(data[2]);
 		const veBalTotalSupply = decodeAsBigInt(data[3]);
 		const veBalBalance = decodeAsBigInt(data[4]);
-		return ({
+		return {
 			yBalSupply: yBalTotalSupply,
 			styBalSupply: styBalTotalSupply,
 			lpyBalSupply: lpyBalTotalSupply,
@@ -90,7 +99,7 @@ export function useHoldings(): TBalHoldings {
 			veBalTotalSupply: veBalTotalSupply,
 			veBalBalance: veBalBalance,
 			balYBalPeg: 0n
-		});
+		};
 	}, [data, status]);
 
 	const basePeg = useMemo((): bigint => {
@@ -100,9 +109,8 @@ export function useHoldings(): TBalHoldings {
 		return peg.result;
 	}, [peg, pegStatus]);
 
-	return ({
-		...baseHolding as TBalHoldings,
+	return {
+		...(baseHolding as TBalHoldings),
 		balYBalPeg: basePeg
-	});
+	};
 }
-

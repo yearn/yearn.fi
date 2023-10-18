@@ -18,4 +18,3 @@ export function useYDaemonStatus<T>({chainID}: TProps): SWRResponse<T> | null {
 
 	return result;
 }
-

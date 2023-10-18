@@ -33,7 +33,9 @@ function Index(): ReactElement | null {
 	const {toast, toastMaster} = yToast();
 	const [toastState, set_toastState] = useState<{id?: string; isOpen: boolean}>({isOpen: false});
 	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: Number(router.query.chainID)});
-	const [currentVault, set_currentVault] = useState<TYDaemonVault | undefined>(vaults[toAddress(router.query.address as string)]);
+	const [currentVault, set_currentVault] = useState<TYDaemonVault | undefined>(
+		vaults[toAddress(router.query.address as string)]
+	);
 	const {data: vault, isLoading: isLoadingVault} = useFetch<TYDaemonVault>({
 		endpoint: `${yDaemonBaseUri}/vaults/${toAddress(router.query.address as string)}?${new URLSearchParams({
 			strategiesDetails: 'withDetails',
@@ -83,7 +85,16 @@ function Index(): ReactElement | null {
 
 			set_toastState({id: toastId, isOpen: true});
 		}
-	}, [currentVault, currentVault?.chainID, isActive, safeChainID, toast, toastMaster, toastState.id, toastState.isOpen]);
+	}, [
+		currentVault,
+		currentVault?.chainID,
+		isActive,
+		safeChainID,
+		toast,
+		toastMaster,
+		toastState.id,
+		toastState.isOpen
+	]);
 
 	if (isLoadingVault) {
 		return (
@@ -99,7 +110,9 @@ function Index(): ReactElement | null {
 		return (
 			<div className={'relative flex h-14 flex-col items-center justify-center px-4 text-center'}>
 				<div className={'flex h-10 items-center justify-center'}>
-					<p className={'text-sm text-neutral-900'}>{'We couln\'t find this vault on the connected network.'}</p>
+					<p className={'text-sm text-neutral-900'}>
+						{"We couln't find this vault on the connected network."}
+					</p>
 				</div>
 			</div>
 		);
@@ -116,7 +129,8 @@ function Index(): ReactElement | null {
 					className={'z-50 -mt-6 h-12 w-12 cursor-pointer md:-mt-36 md:h-[72px] md:w-[72px]'}>
 					<TokenIcon
 						chainID={currentVault?.chainID || safeChainID}
-						token={currentVault?.token} />
+						token={currentVault?.token}
+					/>
 				</motion.div>
 			</header>
 
@@ -133,7 +147,7 @@ function Index(): ReactElement | null {
 	);
 }
 
-export function getToastMessage({vaultChainName, chainName}: {vaultChainName?: string, chainName?: string}): string {
+export function getToastMessage({vaultChainName, chainName}: {vaultChainName?: string; chainName?: string}): string {
 	if (vaultChainName && chainName) {
 		return `Please note, this Vault is on ${vaultChainName}. You're currently connected to ${chainName}.`;
 	}
@@ -146,15 +160,11 @@ export function getToastMessage({vaultChainName, chainName}: {vaultChainName?: s
 		return `Please note, you're currently connected to ${chainName} and this Vault is on a different network.`;
 	}
 
-	return 'Please note, you\'re currently connected to a different network than this Vault.';
+	return "Please note, you're currently connected to a different network than this Vault.";
 }
 
 Index.getLayout = function getLayout(page: ReactElement, router: NextRouter): ReactElement {
-	return (
-		<Wrapper router={router}>
-			{page}
-		</Wrapper>
-	);
+	return <Wrapper router={router}>{page}</Wrapper>;
 };
 
 // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
@@ -162,7 +172,6 @@ export const getServerSideProps: GetServerSideProps = async () => {
 	return {
 		props: {}
 	};
-
 };
 
 export default Index;

@@ -46,7 +46,10 @@ function StakeUnstakeButtons({vaultAddress, gaugeAddress, vaultDeposited, gaugeS
 	const [stakeStatus, set_stakeStatus] = useState(defaultTxStatus);
 	const [unstakeStatus, set_unstakeStatus] = useState(defaultTxStatus);
 	const userAddress = address as TAddress;
-	const refreshData = useCallback((): unknown => Promise.all([refreshGauges(), refreshBalances()]), [refreshGauges, refreshBalances]);
+	const refreshData = useCallback(
+		(): unknown => Promise.all([refreshGauges(), refreshBalances()]),
+		[refreshGauges, refreshBalances]
+	);
 
 	const {data: allowance, refetch: refreshAllowances} = useContractRead({
 		address: vaultAddress,
@@ -75,34 +78,40 @@ function StakeUnstakeButtons({vaultAddress, gaugeAddress, vaultDeposited, gaugeS
 		}
 	}, [provider, refreshAllowances, refreshData]);
 
-	const onStake = useCallback(async (gaugeAddress: TAddress, amount: bigint): Promise<void> => {
-		const response = await stake({
-			connector: provider,
-			chainID: VEYFI_CHAIN_ID,
-			contractAddress: gaugeAddress,
-			amount,
-			statusHandler: set_stakeStatus
-		});
+	const onStake = useCallback(
+		async (gaugeAddress: TAddress, amount: bigint): Promise<void> => {
+			const response = await stake({
+				connector: provider,
+				chainID: VEYFI_CHAIN_ID,
+				contractAddress: gaugeAddress,
+				amount,
+				statusHandler: set_stakeStatus
+			});
 
-		if (response.isSuccessful) {
-			await refreshData();
-		}
-	}, [provider, refreshData]);
+			if (response.isSuccessful) {
+				await refreshData();
+			}
+		},
+		[provider, refreshData]
+	);
 
-	const onUnstake = useCallback(async (gaugeAddress: TAddress, amount: bigint): Promise<void> => {
-		const response = await unstake({
-			connector: provider,
-			chainID: VEYFI_CHAIN_ID,
-			contractAddress: gaugeAddress,
-			accountAddress: userAddress,
-			amount,
-			statusHandler: set_unstakeStatus
-		});
+	const onUnstake = useCallback(
+		async (gaugeAddress: TAddress, amount: bigint): Promise<void> => {
+			const response = await unstake({
+				connector: provider,
+				chainID: VEYFI_CHAIN_ID,
+				contractAddress: gaugeAddress,
+				accountAddress: userAddress,
+				amount,
+				statusHandler: set_unstakeStatus
+			});
 
-		if (response.isSuccessful) {
-			await refreshData();
-		}
-	}, [provider, refreshData, userAddress]);
+			if (response.isSuccessful) {
+				await refreshData();
+			}
+		},
+		[provider, refreshData, userAddress]
+	);
 
 	return (
 		<div className={'flex flex-row justify-center space-x-2 md:justify-end'}>
@@ -117,7 +126,9 @@ function StakeUnstakeButtons({vaultAddress, gaugeAddress, vaultDeposited, gaugeS
 			{!isApproved && (
 				<Button
 					className={'h-8 w-full text-xs md:w-24'}
-					onClick={async (): Promise<void> => onApproveAndStake(vaultAddress, gaugeAddress, toBigInt(vaultDeposited?.raw))}
+					onClick={async (): Promise<void> =>
+						onApproveAndStake(vaultAddress, gaugeAddress, toBigInt(vaultDeposited?.raw))
+					}
 					isDisabled={!isActive || toBigInt(vaultDeposited?.raw) == 0n}
 					isBusy={approveAndStakeStatus.pending}>
 					{'Approve'}
@@ -159,7 +170,11 @@ export function StakeUnstakeGauges(): ReactElement {
 
 			const tokenPrice = formatToNormalizedValue(toBigInt(prices?.[vault.token.address] || 0), 6);
 			const boost = Number(positionsMap[gauge.address]?.boost || 1);
-			let APRFor10xBoost = Number(gauge?.rewardRate.normalized || 0) * dYFIPrice * SECONDS_PER_YEAR / Number(gauge?.totalStaked.normalized || 0) / tokenPrice * 100;
+			let APRFor10xBoost =
+				((Number(gauge?.rewardRate.normalized || 0) * dYFIPrice * SECONDS_PER_YEAR) /
+					Number(gauge?.totalStaked.normalized || 0) /
+					tokenPrice) *
+				100;
 			if (tokenPrice === 0 || Number(gauge?.totalStaked.normalized || 0) === 0) {
 				APRFor10xBoost = 0;
 			}
@@ -188,11 +203,7 @@ export function StakeUnstakeGauges(): ReactElement {
 		}
 		return gaugesData.filter((gauge: TGaugeData): boolean => {
 			const lowercaseSearch = search.toLowerCase();
-			const splitted =
-				`${gauge.gaugeAddress} ${gauge.vaultName}`
-					.replaceAll('-', ' ')
-					.toLowerCase()
-					.split(' ');
+			const splitted = `${gauge.gaugeAddress} ${gauge.vaultName}`.replaceAll('-', ' ').toLowerCase().split(' ');
 			return splitted.some((word): boolean => word.startsWith(lowercaseSearch));
 		});
 	}, [gaugesData, search]);
@@ -200,13 +211,15 @@ export function StakeUnstakeGauges(): ReactElement {
 	return (
 		<div className={'col-span-2 grid w-full'}>
 			<div className={'flex flex-col gap-4'}>
-				<h2 className={'m-0 text-2xl font-bold'}>
-					{'Stake/Unstake'}
-				</h2>
+				<h2 className={'m-0 text-2xl font-bold'}>{'Stake/Unstake'}</h2>
 				<div className={'text-neutral-600'}>
 					<p className={'w-2/3 whitespace-break-spaces'}>
-						{'To earn rewards deposit into the Yearn Vault you want to vote for, and then stake that Vault token into its gauge below.\n'}
-						<i className={'text-sm'}>{'e.g yETH into curve-yETH and then stake curve-yETH into its gauge.'}</i>
+						{
+							'To earn rewards deposit into the Yearn Vault you want to vote for, and then stake that Vault token into its gauge below.\n'
+						}
+						<i className={'text-sm'}>
+							{'e.g yETH into curve-yETH and then stake curve-yETH into its gauge.'}
+						</i>
 					</p>
 				</div>
 				<div>
@@ -230,7 +243,10 @@ export function StakeUnstakeGauges(): ReactElement {
 							className: 'my-4 md:my-0',
 							transform: ({vaultIcon, vaultName}): ReactElement => (
 								<div className={'flex flex-row items-center space-x-4 md:space-x-6'}>
-									<div className={'flex h-8 min-h-[40px] w-8 min-w-[40px] items-center justify-center rounded-full md:h-10 md:w-10'}>
+									<div
+										className={
+											'flex h-8 min-h-[40px] w-8 min-w-[40px] items-center justify-center rounded-full md:h-10 md:w-10'
+										}>
 										<ImageWithFallback
 											alt={vaultName}
 											width={40}
@@ -248,7 +264,7 @@ export function StakeUnstakeGauges(): ReactElement {
 							key: 'vaultApy',
 							label: 'Vault APY',
 							sortable: true,
-							format: ({vaultApy}): string => formatPercent((vaultApy) * 100, 2, 2, 500)
+							format: ({vaultApy}): string => formatPercent(vaultApy * 100, 2, 2, 500)
 						},
 						{
 							key: 'vaultDeposited',
@@ -292,13 +308,9 @@ export function StakeUnstakeGauges(): ReactElement {
 							isDisabled: ({gaugeStaked}): boolean => toBigInt(gaugeStaked?.raw) === 0n,
 							transform: ({gaugeBoost, gaugeStaked}): ReactElement => {
 								if (toBigInt(gaugeStaked?.raw) === 0n) {
-									return (
-										<p>{'N/A'}</p>
-									);
+									return <p>{'N/A'}</p>;
 								}
-								return (
-									<p>{`${gaugeBoost.toFixed(2)}x`}</p>
-								);
+								return <p>{`${gaugeBoost.toFixed(2)}x`}</p>;
 							}
 						},
 
@@ -332,6 +344,5 @@ export function StakeUnstakeGauges(): ReactElement {
 				/>
 			</div>
 		</div>
-
 	);
 }

@@ -61,12 +61,12 @@ export function RewardsTab(): ReactElement {
 		<div className={'flex flex-col gap-6 md:gap-10'}>
 			<div className={'flex flex-col'}>
 				<div className={'flex flex-col gap-4'}>
-					<h2 className={'m-0 text-2xl font-bold'}>
-						{'Gauge Rewards'}
-					</h2>
-					<div className={'text-neutral-600'} >
+					<h2 className={'m-0 text-2xl font-bold'}>{'Gauge Rewards'}</h2>
+					<div className={'text-neutral-600'}>
 						<p className={'w-2/3 whitespace-break-spaces'}>
-							{'Select a gauge below and claim any dYFI rewards you’re eligible for. Remember, to earn rewards you must stake your Vault token into the corresponding gauge. '}
+							{
+								'Select a gauge below and claim any dYFI rewards you’re eligible for. Remember, to earn rewards you must stake your Vault token into the corresponding gauge. '
+							}
 						</p>
 					</div>
 				</div>
@@ -98,12 +98,12 @@ export function RewardsTab(): ReactElement {
 
 			<div className={'flex flex-col opacity-40'}>
 				<div className={'flex flex-col gap-4'}>
-					<h2 className={'m-0 text-2xl font-bold'}>
-						{'veYFI boost rewards'}
-					</h2>
-					<div className={'text-neutral-600'} >
+					<h2 className={'m-0 text-2xl font-bold'}>{'veYFI boost rewards'}</h2>
+					<div className={'text-neutral-600'}>
 						<p className={'w-2/3 whitespace-break-spaces'}>
-							{'These are rewards clawed from the game theoretically suboptimal hands of gauge stakers who farm without a max boost. Their loss is your gain (literally).'}
+							{
+								'These are rewards clawed from the game theoretically suboptimal hands of gauge stakers who farm without a max boost. Their loss is your gain (literally).'
+							}
 						</p>
 					</div>
 				</div>
@@ -128,12 +128,12 @@ export function RewardsTab(): ReactElement {
 
 			<div className={'flex flex-col opacity-40'}>
 				<div className={'flex flex-col gap-4'}>
-					<h2 className={'m-0 text-2xl font-bold'}>
-						{'veYFI exit rewards'}
-					</h2>
-					<div className={'text-neutral-600'} >
+					<h2 className={'m-0 text-2xl font-bold'}>{'veYFI exit rewards'}</h2>
+					<div className={'text-neutral-600'}>
 						<p className={'w-2/3 whitespace-break-spaces'}>
-							{'When some spaghetti handed locker takes an early exit from their veYFI lock, their penalty is distributed amongst other lockers. It’s like a loyalty bonus, but instead of cheaper groceries you get sweet sweet YFI.'}
+							{
+								'When some spaghetti handed locker takes an early exit from their veYFI lock, their penalty is distributed amongst other lockers. It’s like a loyalty bonus, but instead of cheaper groceries you get sweet sweet YFI.'
+							}
 						</p>
 					</div>
 				</div>
@@ -156,4 +156,3 @@ export function RewardsTab(): ReactElement {
 		</div>
 	);
 }
-

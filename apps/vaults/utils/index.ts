@@ -1,4 +1,13 @@
-import {ARB_WETH_TOKEN_ADDRESS, OPT_WETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS, ZAP_ETH_WETH_CONTRACT, ZAP_ETH_WETH_OPT_CONTRACT, ZAP_FTM_WFTM_CONTRACT, ZERO_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {
+	ARB_WETH_TOKEN_ADDRESS,
+	OPT_WETH_TOKEN_ADDRESS,
+	WETH_TOKEN_ADDRESS,
+	WFTM_TOKEN_ADDRESS,
+	ZAP_ETH_WETH_CONTRACT,
+	ZAP_ETH_WETH_OPT_CONTRACT,
+	ZAP_FTM_WFTM_CONTRACT,
+	ZERO_ADDRESS
+} from '@yearn-finance/web-lib/utils/constants';
 
 import type {TAddress} from '@yearn-finance/web-lib/types';
 
@@ -14,7 +23,7 @@ export function getMessariSubgraphEndpoint(chainID: number): string {
 		case 1337:
 			return 'https://api.thegraph.com/subgraphs/name/messari/yearn-v2-ethereum';
 		default:
-			return ('https://api.thegraph.com/subgraphs/name/messari/yearn-v2-ethereum');
+			return 'https://api.thegraph.com/subgraphs/name/messari/yearn-v2-ethereum';
 	}
 }
 
@@ -28,7 +37,7 @@ export function getEthZapperContract(chainID: number): TAddress {
 			return ZAP_FTM_WFTM_CONTRACT;
 		case 42161:
 			return ZERO_ADDRESS;
-			//testnets
+		//testnets
 		case 1337:
 			return ZAP_ETH_WETH_CONTRACT;
 		default:

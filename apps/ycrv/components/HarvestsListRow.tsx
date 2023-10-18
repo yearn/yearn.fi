@@ -20,38 +20,49 @@ export function HarvestListRow({harvest}: {harvest: TYDaemonVaultHarvest}): Reac
 							width={40}
 							height={40}
 							quality={90}
-							src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${toAddress(harvest.vaultAddress)}/logo-128.png`}
-							loading={'eager'} />
+							src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${toAddress(
+								harvest.vaultAddress
+							)}/logo-128.png`}
+							loading={'eager'}
+						/>
 					</div>
-					<p>
-						{toAddress(harvest.vaultAddress) === STYCRV_TOKEN_ADDRESS ? 'st-yCRV' : 'lp-yCRV'}
-					</p>
+					<p>{toAddress(harvest.vaultAddress) === STYCRV_TOKEN_ADDRESS ? 'st-yCRV' : 'lp-yCRV'}</p>
 				</div>
 			</div>
 
 			<div className={'yearn--table-data-section md:grid-cols-9'}>
-				<div className={'yearn--table-data-section-item md:col-span-1'} datatype={'number'}>
+				<div
+					className={'yearn--table-data-section-item md:col-span-1'}
+					datatype={'number'}>
 					<p className={'yearn--table-data-section-item-label'}>{'Gain'}</p>
 					<b className={'yearn--table-data-section-item-value'}>
 						{formatAmount(formatToNormalizedValue(toBigInt(harvest.profit) - toBigInt(harvest.loss), 18))}
 					</b>
 				</div>
 
-				<div className={'yearn--table-data-section-item md:col-span-2'} datatype={'number'}>
+				<div
+					className={'yearn--table-data-section-item md:col-span-2'}
+					datatype={'number'}>
 					<p className={'yearn--table-data-section-item-label'}>{'Value'}</p>
 					<p className={'yearn--table-data-section-item-value'}>
 						{formatUSD(Number(harvest.profitValue) - Number(harvest.lossValue))}
 					</p>
 				</div>
 
-				<div className={'yearn--table-data-section-item md:col-span-3'} datatype={'number'}>
+				<div
+					className={'yearn--table-data-section-item md:col-span-3'}
+					datatype={'number'}>
 					<p className={'yearn--table-data-section-item-label'}>{'Date'}</p>
-					<p className={'yearn--table-data-section-item-value'} style={{lineHeight: '24px'}}>
+					<p
+						className={'yearn--table-data-section-item-value'}
+						style={{lineHeight: '24px'}}>
 						{formatDate(Number(harvest.timestamp) * 1000)}
 					</p>
 				</div>
 
-				<div className={'yearn--table-data-section-item md:col-span-3'} datatype={'number'}>
+				<div
+					className={'yearn--table-data-section-item md:col-span-3'}
+					datatype={'number'}>
 					<p className={'yearn--table-data-section-item-label'}>{'Hash'}</p>
 					<a
 						href={`https://etherscan.io/tx/${harvest.txHash}`}
@@ -65,9 +76,7 @@ export function HarvestListRow({harvest}: {harvest: TYDaemonVaultHarvest}): Reac
 						</div>
 					</a>
 				</div>
-
 			</div>
 		</div>
 	);
 }
-

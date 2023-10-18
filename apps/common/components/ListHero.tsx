@@ -11,13 +11,13 @@ export type TListHeroCategory<T> = {
 	label: string;
 	node?: ReactNode;
 	value: T;
-	isSelected?: boolean,
-}
+	isSelected?: boolean;
+};
 
 type TSwitchProps = {
 	isEnabled: boolean;
 	onSwitch?: (state: boolean) => void;
-}
+};
 
 export type TListHero<T> = {
 	headLabel: string;
@@ -27,12 +27,12 @@ export type TListHero<T> = {
 	onSelect: (category: T) => void;
 	searchValue: string;
 	set_searchValue: (searchValue: string) => void;
-}
+};
 
 export type TListHeroDesktopCategories<T> = {
 	categories: TListHeroCategory<T>[][];
 	onSelect: (category: T) => void;
-}
+};
 
 function DesktopCategories<T>({categories, onSelect}: TListHeroDesktopCategories<T>): ReactElement {
 	const [isClientLoaded, set_isClientLoaded] = useState(false);
@@ -46,24 +46,30 @@ function DesktopCategories<T>({categories, onSelect}: TListHeroDesktopCategories
 
 	return (
 		<div className={'w-full'}>
-			<div suppressHydrationWarning className={'mt-1 flex flex-row space-x-4'}>
-				{(categories || []).map((currentCategory, index: number): ReactElement => (
-					<div
-						key={`${index}-${isClientLoaded}`}
-						suppressHydrationWarning
-						className={'flex flex-row space-x-0 divide-x border-x border-neutral-900'}>
-						{currentCategory.map((item): ReactElement => (
-							<Button
-								key={item.label}
-								onClick={(): void => onSelect(item.value)}
-								suppressHydrationWarning
-								variant={item.isSelected ? 'filled' : 'outlined'}
-								className={'yearn--button-smaller relative !border-x-0'}>
-								{item?.node || item.label}
-							</Button>
-						))}
-					</div>
-				))}
+			<div
+				suppressHydrationWarning
+				className={'mt-1 flex flex-row space-x-4'}>
+				{(categories || []).map(
+					(currentCategory, index: number): ReactElement => (
+						<div
+							key={`${index}-${isClientLoaded}`}
+							suppressHydrationWarning
+							className={'flex flex-row space-x-0 divide-x border-x border-neutral-900'}>
+							{currentCategory.map(
+								(item): ReactElement => (
+									<Button
+										key={item.label}
+										onClick={(): void => onSelect(item.value)}
+										suppressHydrationWarning
+										variant={item.isSelected ? 'filled' : 'outlined'}
+										className={'yearn--button-smaller relative !border-x-0'}>
+										{item?.node || item.label}
+									</Button>
+								)
+							)}
+						</div>
+					)
+				)}
 			</div>
 		</div>
 	);
@@ -86,12 +92,13 @@ function Switch(props: TSwitchProps): ReactElement {
 			<HeadlessSwitch
 				checked={onSwitch ? isEnabled : isEnabledState}
 				onChange={safeOnSwitch}
-				onKeyDown={({keyCode}: {keyCode: number}): unknown => keyCode === 13 ? safeOnSwitch() : null}
+				onKeyDown={({keyCode}: {keyCode: number}): unknown => (keyCode === 13 ? safeOnSwitch() : null)}
 				className={'yearn--next-switch'}>
 				<span className={'sr-only'}>{'Use setting'}</span>
 				<div
 					aria-hidden={'true'}
-					className={(onSwitch ? isEnabled : isEnabledState) ? 'translate-x-[14px]' : 'translate-x-0'} />
+					className={(onSwitch ? isEnabled : isEnabledState) ? 'translate-x-[14px]' : 'translate-x-0'}
+				/>
 			</HeadlessSwitch>
 		</div>
 	);
@@ -121,12 +128,14 @@ export function ListHero<T extends string>({
 			<div className={'hidden w-full flex-row items-center justify-between space-x-4 md:flex'}>
 				<DesktopCategories
 					categories={categories}
-					onSelect={onSelect} />
+					onSelect={onSelect}
+				/>
 
 				<SearchBar
 					searchPlaceholder={searchPlaceholder}
 					searchValue={searchValue}
-					set_searchValue={set_searchValue} />
+					set_searchValue={set_searchValue}
+				/>
 
 				{!!switchProps && (
 					<div className={'mr-4 mt-7 flex h-full min-w-fit flex-row'}>
@@ -145,25 +154,32 @@ export function ListHero<T extends string>({
 							onSelect(value);
 						}
 					}}>
-					{isMounted() && categories.map((currentCategory): ReactNode => (
-						currentCategory.map((item): ReactElement => (
-							<option
-								suppressHydrationWarning
-								key={item.value}
-								value={item.value}>
-								{item.label}
-							</option>
-						))
-					))}
+					{isMounted() &&
+						categories.map(
+							(currentCategory): ReactNode =>
+								currentCategory.map(
+									(item): ReactElement => (
+										<option
+											suppressHydrationWarning
+											key={item.value}
+											value={item.value}>
+											{item.label}
+										</option>
+									)
+								)
+						)}
 				</select>
 				<div className={'flex h-8 w-full items-center border border-neutral-0 bg-neutral-0 p-2 md:w-auto'}>
 					<div className={'flex h-8 w-full flex-row items-center justify-between px-0 py-2'}>
 						<input
-							className={'w-full overflow-x-scroll border-none bg-transparent px-0 py-2 text-xs outline-none scrollbar-none'}
+							className={
+								'w-full overflow-x-scroll border-none bg-transparent px-0 py-2 text-xs outline-none scrollbar-none'
+							}
 							type={'text'}
 							placeholder={'Search'}
 							value={searchValue}
-							onChange={(e: ChangeEvent<HTMLInputElement>): void => set_searchValue(e.target.value)} />
+							onChange={(e: ChangeEvent<HTMLInputElement>): void => set_searchValue(e.target.value)}
+						/>
 					</div>
 				</div>
 			</div>

@@ -20,32 +20,32 @@ module.exports = {
 				mono: ['Aeonik Mono', ...defaultTheme.fontFamily.mono]
 			},
 			width: {
-				'22': '5.5rem',
-				'42': '10.5rem',
-				'50': '12.5rem',
-				'54': '13.5rem'
+				22: '5.5rem',
+				42: '10.5rem',
+				50: '12.5rem',
+				54: '13.5rem'
 			},
 			minWidth: {
-				'42': '10.5rem'
+				42: '10.5rem'
 			},
 			maxWidth: {
-				'50': '12.5rem',
-				'54': '13.5rem'
+				50: '12.5rem',
+				54: '13.5rem'
 			},
 			height: {
-				'inherit': 'inherit'
+				inherit: 'inherit'
 			},
 			screens: {
-				'lg': '1200px'
+				lg: '1200px'
 			},
 			gridTemplateColumns: {
-				'13': 'repeat(13, minmax(0, 1fr))',
-				'14': 'repeat(14, minmax(0, 1fr))',
-				'20': 'repeat(20, minmax(0, 1fr))',
-				'30': 'repeat(30, minmax(0, 1fr))'
+				13: 'repeat(13, minmax(0, 1fr))',
+				14: 'repeat(14, minmax(0, 1fr))',
+				20: 'repeat(20, minmax(0, 1fr))',
+				30: 'repeat(30, minmax(0, 1fr))'
 			},
 			fontSize: {
-				'xxs': ['10px', '16px'],
+				xxs: ['10px', '16px'],
 				'2xl': ['24px', '32px'],
 				'3xl': ['32px', '40px'],
 				'7xl': ['64px', '72px'],
