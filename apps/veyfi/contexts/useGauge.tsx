@@ -22,7 +22,7 @@ export type TGauge = {
 	symbol: string,
 	decimals: number,
 	totalStaked: TNormalizedBN,
-	// apy?: number;
+	rewardRate: TNormalizedBN,
 }
 
 export type TGaugePosition = {
@@ -33,14 +33,12 @@ export type TGaugePosition = {
 }
 
 export type	TGaugeContext = {
-	gaugeAddresses: TAddress[],
 	gaugesMap: TDict<TGauge | undefined>,
 	positionsMap: TDict<TGaugePosition | undefined>,
 	allowancesMap: TDict<TNormalizedBN>,
 	refresh: () => void,
 }
 const defaultProps: TGaugeContext = {
-	gaugeAddresses: [],
 	gaugesMap: {},
 	positionsMap: {},
 	allowancesMap: {},
@@ -62,17 +60,26 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 					{address: gaugeAddress, abi: VEYFI_GAUGE_ABI, chainId: VEYFI_CHAIN_ID, functionName: 'name'},
 					{address: gaugeAddress, abi: VEYFI_GAUGE_ABI, chainId: VEYFI_CHAIN_ID, functionName: 'symbol'},
 					{address: gaugeAddress, abi: VEYFI_GAUGE_ABI, chainId: VEYFI_CHAIN_ID, functionName: 'decimals'},
-					{address: gaugeAddress, abi: VEYFI_GAUGE_ABI, chainId: VEYFI_CHAIN_ID, functionName: 'totalAssets'}
+					{address: gaugeAddress, abi: VEYFI_GAUGE_ABI, chainId: VEYFI_CHAIN_ID, functionName: 'totalAssets'},
+					{address: gaugeAddress, abi: VEYFI_GAUGE_ABI, chainId: VEYFI_CHAIN_ID, functionName: 'rewardRate'}
 				]
 			});
 			const decimals = Number(decodeAsBigInt(results[3])) || decodeAsNumber(results[3]);
+			const totalAssets = toNormalizedBN(decodeAsBigInt(results[4]), decimals);
+			const rewardRate = toNormalizedBN(decodeAsBigInt(results[5]), 18);
+
+			//Debug value to test
+			// const totalAssets = toNormalizedBN(400000000000000000000n, decimals);
+			// const rewardRate = toNormalizedBN(3306878306878n, 18);
+
 			return ({
 				address: gaugeAddress,
 				vaultAddress: decodeAsAddress(results[0]),
 				name: decodeAsString(results[1]),
 				symbol: decodeAsString(results[2]),
 				decimals: decimals,
-				totalStaked: toNormalizedBN(decodeAsBigInt(results[4]), decimals)
+				totalStaked: totalAssets,
+				rewardRate
 			});
 		});
 
@@ -183,7 +190,6 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 	}, [refreshAllowances, refreshPositions, refreshVotingEscrow]);
 
 	const contextValue = useDeepCompareMemo((): TGaugeContext => ({
-		gaugeAddresses: gauges.map((gauge): TAddress => toAddress(gauge.address)),
 		gaugesMap: keyBy(gauges, 'address'),
 		positionsMap: positionsMap,
 		allowancesMap: allowancesMap ?? {},

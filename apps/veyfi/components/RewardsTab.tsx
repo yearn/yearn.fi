@@ -1,4 +1,4 @@
-import {useCallback, useState} from 'react';
+import {useCallback, useMemo, useState} from 'react';
 import {useGauge} from '@veYFI/contexts/useGauge';
 import {useOption} from '@veYFI/contexts/useOption';
 import * as GaugeActions from '@veYFI/utils/actions/gauge';
@@ -19,7 +19,7 @@ import type {TDropdownOption} from '@common/components/Dropdown';
 export function RewardsTab(): ReactElement {
 	const [selectedGauge, set_selectedGauge] = useState<TDropdownOption>();
 	const {provider, isActive} = useWeb3();
-	const {gaugeAddresses, gaugesMap, positionsMap, refresh: refreshGauges} = useGauge();
+	const {gaugesMap, positionsMap, refresh: refreshGauges} = useGauge();
 	const {dYFIPrice} = useOption();
 	const {vaults} = useYearn();
 	const refreshData = useCallback((): unknown => Promise.all([refreshGauges()]), [refreshGauges]);
@@ -39,18 +39,22 @@ export function RewardsTab(): ReactElement {
 		}
 	}, [provider, refreshData, selectedGaugeAddress]);
 
-	const gaugeOptions = gaugeAddresses.filter((address): boolean => toBigInt(positionsMap[address]?.reward?.raw) > 0n ?? false)
-		.map((address): TDropdownOption => {
-			const gauge = gaugesMap[address];
-			const vaultAddress = toAddress(gauge?.vaultAddress);
-			const vault = vaults[vaultAddress];
+	const gaugeOptions = useMemo((): TDropdownOption[] => {
+		const options: TDropdownOption[] = [];
+		for (const gauge of Object.values(gaugesMap)) {
+			if (!gauge || toBigInt(positionsMap[gauge.address]?.reward?.raw) === 0n) {
+				continue;
+			}
+			const vault = vaults[toAddress(gauge?.vaultAddress)];
 
-			return {
-				id: address,
-				label: vault?.display_name ?? `Vault ${truncateHex(vaultAddress, 4)}`,
-				icon: `${process.env.BASE_YEARN_ASSETS_URI}/1/${vaultAddress}/logo-128.png`
-			};
-		});
+			options.push({
+				id: gauge.address,
+				label: vault?.display_name ?? `Vault ${truncateHex(vault.address, 4)}`,
+				icon: `${process.env.BASE_YEARN_ASSETS_URI}/1/${vault.address}/logo-128.png`
+			});
+		}
+		return options;
+	}, [gaugesMap, positionsMap, vaults]);
 
 	return (
 		<div className={'flex flex-col gap-6 md:gap-10'}>

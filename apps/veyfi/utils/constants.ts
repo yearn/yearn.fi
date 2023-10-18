@@ -12,6 +12,7 @@ export const VEYFI_DYFI_ADDRESS = toAddress('0x41252E8691e964f7DE35156B68493bAb6
 export const SNAPSHOT_DELEGATE_REGISTRY_ADDRESS = toAddress('0x469788fE6E9E9681C6ebF3bF78e7Fd26Fc015446');
 export const YEARN_SNAPSHOT_SPACE = 'veyfi.eth';
 
+export const SECONDS_PER_YEAR = 31556952;
 export const MAX_LOCK_TIME: TWeeks = 208;
 export const MIN_LOCK_TIME: TWeeks = 1;
 export const MIN_LOCK_AMOUNT: TWeeks = 1;

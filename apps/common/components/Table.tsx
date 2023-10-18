@@ -8,6 +8,7 @@ import {usePagination} from '@common/hooks/usePagination';
 import {IconChevronPlain} from '@common/icons/IconChevronPlain';
 
 import type {ReactElement} from 'react';
+import type {TNormalizedBN} from '@common/types/types';
 
 type TSortOrder = 'asc' | 'desc';
 
@@ -36,9 +37,10 @@ type TTableProps<T> = {
 	initialSortBy?: Extract<keyof T, string>;
 	onRowClick?: (item: T) => void;
 	itemsPerPage?: number;
+	isLoading?: boolean;
 }
 
-export function Table<T>({metadata, data, columns, initialSortBy, onRowClick, itemsPerPage}: TTableProps<T>): ReactElement {
+export function Table<T>({metadata, data, columns, initialSortBy, onRowClick, itemsPerPage, isLoading}: TTableProps<T>): ReactElement {
 	const [{sortedBy, order}, set_state] = useState<TState<T>>({sortedBy: initialSortBy, order: 'desc'});
 
 	const sortedData = useMemo((): T[] => {
@@ -112,6 +114,25 @@ export function Table<T>({metadata, data, columns, initialSortBy, onRowClick, it
 				))}
 			</div>
 
+			{currentItems.length === 0 && isLoading ?
+				(
+					<div className={'flex h-96 w-full flex-col items-center justify-center px-10 py-2'}>
+						<b className={'text-lg'}>{'Fetching gauge data'}</b>
+						<p className={'text-neutral-600'}>{'We are retrieving the gauges. Please wait.'}</p>
+						<div className={'flex h-10 items-center justify-center'}>
+							<span className={'loader'} />
+						</div>
+					</div>
+				) : currentItems.length === 0 && !isLoading ?
+					(
+						<div className={'flex h-96 w-full flex-col items-center justify-center px-10 py-2'}>
+							<b className={'text-lg'}>{'No Gauges'}</b>
+							<p className={'text-neutral-600'}>
+								{'No gauges available.'}
+							</p>
+						</div>
+					) : null
+			}
 			{currentItems.map((item, rowIndex): ReactElement => (
 				<div
 					key={`row_${rowIndex}`}
@@ -143,7 +164,13 @@ export function Table<T>({metadata, data, columns, initialSortBy, onRowClick, it
 								{!fullWidth && <label className={'inline text-start text-sm text-neutral-500 md:hidden'}>{label}</label>}
 								<div
 									className={cl(
-										isZero(item[key] as number) ? 'text-neutral-400' : 'text-neutral-900',
+										(
+											isZero(item[key] as number)
+											||
+											(item[key] as TNormalizedBN)?.raw !== undefined && isZero((item[key] as TNormalizedBN).raw)
+											||
+											(item[key] === undefined || item[key] === null)
+										) ? 'text-neutral-400' : 'text-neutral-900',
 										isNumber ? 'font-number' : 'font-aeonik',
 										fullWidth ? 'w-full' : undefined
 									)}>
