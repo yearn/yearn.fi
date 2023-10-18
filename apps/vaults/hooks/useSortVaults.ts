@@ -55,8 +55,8 @@ export function useSortVaults(
 		(): TYDaemonVaults =>
 			vaultList.sort((a, b): number =>
 				numberSort({
-					a: (a.apr?.netAPR || 0) + (a.apr?.extra?.stakingRewardsAPR || 0),
-					b: (b.apr?.netAPR || 0) + (b.apr?.extra?.stakingRewardsAPR || 0),
+					a: a.apr?.netAPR || 0,
+					b: b.apr?.netAPR || 0,
 					sortDirection
 				})
 			),

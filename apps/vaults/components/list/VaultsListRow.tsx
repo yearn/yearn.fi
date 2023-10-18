@@ -30,67 +30,84 @@ export const ChainIconMap = new Map<number, ReactElement>([
 export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const isEthMainnet = currentVault.chainID === 1;
 	if (currentVault.apr.forwardAPR.type === '') {
-		return <VaultHistoricalAPR currentVault={currentVault} />;
-	}
+		const hasZeroAPR = isZero(currentVault.apr?.netAPR) || Number(currentVault.apr?.netAPR.toFixed(2)) === 0;
+		const boostedAPR = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.netAPR;
+		const hasZeroBoostedAPR = isZero(boostedAPR) || Number(boostedAPR.toFixed(2)) === 0;
 
-	if (currentVault.apr?.extra.stakingRewardsAPR > 0) {
-		const boostedAPR = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.forwardAPR.netAPR;
-		return (
-			<div className={'flex flex-col text-right'}>
-				<span className={'tooltip'}>
-					<b className={'yearn--table-data-section-item-value'}>
-						<Renderable
-							shouldRender={!(currentVault.apr?.type === 'new' && isZero(boostedAPR))}
-							fallback={'New'}>
-							{'⚡️ '}
-							<span
+		if (currentVault.apr?.extra.stakingRewardsAPR > 0) {
+			return (
+				<div className={'flex flex-col text-right'}>
+					<span className={'tooltip'}>
+						<b className={'yearn--table-data-section-item-value'}>
+							<Renderable
+								shouldRender={!(currentVault.apr?.type === 'new' && hasZeroBoostedAPR)}
+								fallback={'New'}>
+								{'⚡️ '}
+								<span
+									className={
+										'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
+									}>
+									<RenderAmount
+										shouldHideTooltip={hasZeroBoostedAPR}
+										value={boostedAPR}
+										symbol={'percent'}
+										decimals={6}
+									/>
+								</span>
+							</Renderable>
+						</b>
+						<span className={'tooltipLight bottom-full mb-1'}>
+							<div
 								className={
-									'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
+									'font-number w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
 								}>
-								<RenderAmount
-									shouldHideTooltip
-									value={boostedAPR}
-									symbol={'percent'}
-									decimals={6}
-								/>
-							</span>
-						</Renderable>
-					</b>
-					<span className={'tooltipLight bottom-full mb-1'}>
-						<div
-							className={
-								'font-number w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
-							}>
-							<div className={'flex flex-col items-start justify-start text-left'}>
-								<div
-									className={
-										'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-									}>
-									<p>{'• Base APR '}</p>
-									<RenderAmount
-										shouldHideTooltip
-										value={currentVault.apr.forwardAPR.netAPR}
-										symbol={'percent'}
-										decimals={6}
-									/>
-								</div>
+								<div className={'flex flex-col items-start justify-start text-left'}>
+									<div
+										className={
+											'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
+										}>
+										<p>{'• Base APR '}</p>
+										<RenderAmount
+											shouldHideTooltip
+											value={currentVault.apr.netAPR}
+											symbol={'percent'}
+											decimals={6}
+										/>
+									</div>
 
-								<div
-									className={
-										'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
-									}>
-									<p>{'• Rewards APR '}</p>
-									<RenderAmount
-										shouldHideTooltip
-										value={currentVault.apr.extra.stakingRewardsAPR}
-										symbol={'percent'}
-										decimals={6}
-									/>
+									<div
+										className={
+											'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
+										}>
+										<p>{'• Rewards APR '}</p>
+										<RenderAmount
+											shouldHideTooltip
+											value={currentVault.apr.extra.stakingRewardsAPR}
+											symbol={'percent'}
+											decimals={6}
+										/>
+									</div>
 								</div>
 							</div>
-						</div>
+						</span>
 					</span>
-				</span>
+				</div>
+			);
+		}
+		return (
+			<div className={'flex flex-col text-right'}>
+				<b className={'yearn--table-data-section-item-value'}>
+					<Renderable
+						shouldRender={!(currentVault.apr?.type === 'new' && hasZeroAPR)}
+						fallback={'New'}>
+						<RenderAmount
+							value={currentVault.apr?.netAPR}
+							shouldHideTooltip={hasZeroAPR}
+							symbol={'percent'}
+							decimals={6}
+						/>
+					</Renderable>
+				</b>
 			</div>
 		);
 	}
@@ -161,6 +178,69 @@ export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): 
 		);
 	}
 
+	if (currentVault.apr?.extra.stakingRewardsAPR > 0) {
+		const boostedAPR = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.forwardAPR.netAPR;
+		const hasZeroBoostedAPR = isZero(boostedAPR) || Number(boostedAPR.toFixed(2)) === 0;
+		return (
+			<div className={'flex flex-col text-right'}>
+				<span className={'tooltip'}>
+					<b className={'yearn--table-data-section-item-value'}>
+						<Renderable
+							shouldRender={!(currentVault.apr?.type === 'new' && hasZeroBoostedAPR)}
+							fallback={'New'}>
+							{'⚡️ '}
+							<span
+								className={
+									'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
+								}>
+								<RenderAmount
+									shouldHideTooltip={hasZeroBoostedAPR}
+									value={boostedAPR}
+									symbol={'percent'}
+									decimals={6}
+								/>
+							</span>
+						</Renderable>
+					</b>
+					<span className={'tooltipLight bottom-full mb-1'}>
+						<div
+							className={
+								'font-number w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
+							}>
+							<div className={'flex flex-col items-start justify-start text-left'}>
+								<div
+									className={
+										'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
+									}>
+									<p>{'• Base APR '}</p>
+									<RenderAmount
+										shouldHideTooltip
+										value={currentVault.apr.forwardAPR.netAPR}
+										symbol={'percent'}
+										decimals={6}
+									/>
+								</div>
+
+								<div
+									className={
+										'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
+									}>
+									<p>{'• Rewards APR '}</p>
+									<RenderAmount
+										shouldHideTooltip
+										value={currentVault.apr.extra.stakingRewardsAPR}
+										symbol={'percent'}
+										decimals={6}
+									/>
+								</div>
+							</div>
+						</div>
+					</span>
+				</span>
+			</div>
+		);
+	}
+
 	const hasZeroAPR = isZero(currentVault.apr?.netAPR) || Number(currentVault.apr?.netAPR.toFixed(2)) === 0;
 	return (
 		<div className={'flex flex-col text-right'}>
@@ -184,8 +264,6 @@ export function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}
 	const hasZeroAPR = isZero(currentVault.apr?.netAPR) || Number(currentVault.apr?.netAPR.toFixed(2)) === 0;
 
 	if (currentVault.apr?.extra.stakingRewardsAPR > 0) {
-		const boostedAPR = currentVault.apr.netAPR + currentVault.apr.extra.stakingRewardsAPR;
-
 		return (
 			<div className={'flex flex-col text-right'}>
 				<span className={'tooltip'}>
@@ -193,14 +271,49 @@ export function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}
 						<Renderable
 							shouldRender={!(currentVault.apr?.type === 'new' && hasZeroAPR)}
 							fallback={'New'}>
-							<RenderAmount
-								shouldHideTooltip={hasZeroAPR}
-								value={boostedAPR}
-								symbol={'percent'}
-								decimals={6}
-							/>
+							{'⚡️ '}
+							<span
+								className={
+									'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
+								}>
+								<RenderAmount
+									shouldHideTooltip={hasZeroAPR}
+									value={currentVault.apr?.netAPR}
+									symbol={'percent'}
+									decimals={6}
+								/>
+							</span>
 						</Renderable>
 					</b>
+					<span className={'tooltipLight bottom-full mb-1'}>
+						<div
+							className={
+								'font-number w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
+							}>
+							<div className={'flex flex-col items-start justify-start text-left'}>
+								<div
+									className={
+										'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
+									}>
+									<p>{'• Base APR '}</p>
+									<RenderAmount
+										shouldHideTooltip
+										value={currentVault.apr.netAPR}
+										symbol={'percent'}
+										decimals={6}
+									/>
+								</div>
+
+								<div
+									className={
+										'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
+									}>
+									<p>{'• Rewards APR '}</p>
+									<p>{'N/A'}</p>
+								</div>
+							</div>
+						</div>
+					</span>
 				</span>
 			</div>
 		);
