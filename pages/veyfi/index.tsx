@@ -23,7 +23,7 @@ function Index(): ReactElement {
 	const tabs = [
 		{id: 'manage', label: 'Manage veYFI', content: <TabManageVeYFI />},
 		{id: 'gauges', label: 'Manage Gauges', content: <TabManageGauges />},
-		{id: 'rewards', label: 'Rewards', content: <RewardsTab />},
+		{id: 'rewards', label: 'Claim Rewards', content: <RewardsTab />},
 		{id: 'redeem', label: 'Redeem dYFI', content: <RedeemTab />}
 	].filter(Boolean);
 
