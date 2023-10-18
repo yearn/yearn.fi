@@ -20,7 +20,7 @@ export function RenderAmount(props: TAmount & {shouldHideTooltip?: boolean}): Re
 	}, [props]);
 
 	if (props.shouldHideTooltip) {
-		return <span>{amountV2(props)}</span>;
+		return <span className={'font-number'}>{amountV2(props)}</span>;
 	}
 
 	const shouldShowTooltip =
@@ -33,8 +33,8 @@ export function RenderAmount(props: TAmount & {shouldHideTooltip?: boolean}): Re
 			suppressHydrationWarning
 			className={cl(
 				shouldShowTooltip
-					? 'tooltip underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
-					: ''
+					? 'tooltip underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600 font-number'
+					: 'font-number'
 			)}>
 			{shouldShowTooltip ? (
 				<span
