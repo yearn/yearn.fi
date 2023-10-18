@@ -25,18 +25,18 @@ import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 
 type TGaugeData = {
-	gaugeAddress: TAddress,
-	vaultAddress: TAddress,
-	decimals: number,
-	vaultIcon: string,
-	vaultName: string,
-	vaultApy: number,
-	vaultDeposited: TNormalizedBN,
-	gaugeAPR: number,
-	gaugeBoost: number,
-	gaugeStaked: TNormalizedBN,
-	actions: undefined
-}
+	gaugeAddress: TAddress;
+	vaultAddress: TAddress;
+	decimals: number;
+	vaultIcon: string;
+	vaultName: string;
+	vaultApy: number;
+	vaultDeposited: TNormalizedBN;
+	gaugeAPR: number;
+	gaugeBoost: number;
+	gaugeStaked: TNormalizedBN;
+	actions: undefined;
+};
 
 function StakeUnstakeButtons({vaultAddress, gaugeAddress, vaultDeposited, gaugeStaked}: TGaugeData): ReactElement {
 	const {provider, address, isActive} = useWeb3();
@@ -63,20 +63,23 @@ function StakeUnstakeButtons({vaultAddress, gaugeAddress, vaultDeposited, gaugeS
 		return toBigInt(allowance) >= toBigInt(vaultDeposited?.raw);
 	}, [allowance, vaultDeposited]);
 
-	const onApproveAndStake = useCallback(async (vaultAddress: TAddress, gaugeAddress: TAddress, amount: bigint): Promise<void> => {
-		const response = await approveAndStake({
-			connector: provider,
-			chainID: VEYFI_CHAIN_ID,
-			contractAddress: gaugeAddress,
-			vaultAddress,
-			amount,
-			statusHandler: set_approveAndStakeStatus
-		});
+	const onApproveAndStake = useCallback(
+		async (vaultAddress: TAddress, gaugeAddress: TAddress, amount: bigint): Promise<void> => {
+			const response = await approveAndStake({
+				connector: provider,
+				chainID: VEYFI_CHAIN_ID,
+				contractAddress: gaugeAddress,
+				vaultAddress,
+				amount,
+				statusHandler: set_approveAndStakeStatus
+			});
 
-		if (response.isSuccessful) {
-			await Promise.all([refreshData(), refreshAllowances()]);
-		}
-	}, [provider, refreshAllowances, refreshData]);
+			if (response.isSuccessful) {
+				await Promise.all([refreshData(), refreshAllowances()]);
+			}
+		},
+		[provider, refreshAllowances, refreshData]
+	);
 
 	const onStake = useCallback(
 		async (gaugeAddress: TAddress, amount: bigint): Promise<void> => {
@@ -151,7 +154,7 @@ export function StakeUnstakeGauges(): ReactElement {
 	const {isActive} = useWeb3();
 	const {gaugesMap, positionsMap} = useGauge();
 	const {vaults, prices} = useYearn();
-	const {balances} = useWallet();
+	const {balances, getBalance} = useWallet();
 	const {dYFIPrice} = useOption();
 	const [isLoadingGauges, set_isLoadingGauges] = useState(true);
 	const {search, onSearch} = useQueryArguments();
@@ -178,15 +181,16 @@ export function StakeUnstakeGauges(): ReactElement {
 			if (tokenPrice === 0 || Number(gauge?.totalStaked.normalized || 0) === 0) {
 				APRFor10xBoost = 0;
 			}
+			const vaultBalance = getBalance({address: vault.address, chainID: vault.chainID});
 
 			data.push({
 				gaugeAddress: gauge.address,
 				vaultAddress: vault.address,
 				decimals: gauge.decimals,
 				vaultIcon: `${process.env.BASE_YEARN_ASSETS_URI}/1/${vault.address}/logo-128.png`,
-				vaultName: vault?.display_name ?? `Vault ${truncateHex(vault.address, 4)}`,
-				vaultApy: vault?.apy.net_apy ?? 0,
-				vaultDeposited: balances[vault.address],
+				vaultName: vault?.name ?? `Vault ${truncateHex(vault.address, 4)}`,
+				vaultApy: vault?.apr.netAPR ?? 0,
+				vaultDeposited: vaultBalance,
 				gaugeAPR: APRFor10xBoost,
 				gaugeBoost: boost,
 				gaugeStaked: positionsMap[gauge.address]?.deposit ?? toNormalizedBN(0),
@@ -321,7 +325,10 @@ export function StakeUnstakeGauges(): ReactElement {
 							className: 'my-4 md:my-0',
 							fullWidth: true,
 							transform: (props): ReactElement => {
-								if (toBigInt(props?.vaultDeposited?.raw) === 0n && toBigInt(props?.gaugeStaked.raw) === 0n) {
+								if (
+									toBigInt(props?.vaultDeposited?.raw) === 0n &&
+									toBigInt(props?.gaugeStaked.raw) === 0n
+								) {
 									return (
 										<Link href={isActive ? `/vaults/${VEYFI_CHAIN_ID}/${props.vaultAddress}` : ''}>
 											<Button

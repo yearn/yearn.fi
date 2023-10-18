@@ -2,7 +2,6 @@
 import {useCallback, useMemo, useState} from 'react';
 import {sort} from '@veYFI/utils';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
-import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {Pagination} from '@common/components/Pagination';
 import {usePagination} from '@common/hooks/usePagination';
 import {IconChevronPlain} from '@common/icons/IconChevronPlain';

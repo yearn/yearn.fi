@@ -61,14 +61,7 @@ export function useSolverVanilla(): TSolverContext {
 
 			const allowance = await allowanceOf({
 				connector: provider,
-<<<<<<< HEAD
-<<<<<<< HEAD
-				chainID: safeChainID,
-=======
->>>>>>> ba8e0bb9 (feat: add prettier)
-=======
 				chainID: request.current.inputToken.chainID,
->>>>>>> d3744700 (fix: more chain fixes)
 				tokenAddress: toAddress(request.current.inputToken.value),
 				spenderAddress: toAddress(request.current.outputToken.value)
 			});
@@ -96,14 +89,7 @@ export function useSolverVanilla(): TSolverContext {
 
 			const result = await approveERC20({
 				connector: provider,
-<<<<<<< HEAD
-<<<<<<< HEAD
-				chainID: safeChainID,
-=======
->>>>>>> ba8e0bb9 (feat: add prettier)
-=======
 				chainID: request.current.chainID,
->>>>>>> d3744700 (fix: more chain fixes)
 				contractAddress: request.current.inputToken.value,
 				spenderAddress: request.current.outputToken.value,
 				amount: amount,
@@ -131,14 +117,7 @@ export function useSolverVanilla(): TSolverContext {
 
 			const result = await deposit({
 				connector: provider,
-<<<<<<< HEAD
-<<<<<<< HEAD
-				chainID: safeChainID,
-=======
->>>>>>> ba8e0bb9 (feat: add prettier)
-=======
 				chainID: request.current.chainID,
->>>>>>> d3744700 (fix: more chain fixes)
 				contractAddress: request.current.outputToken.value,
 				amount: request.current.inputAmount,
 				statusHandler: txStatusSetter
@@ -165,14 +144,7 @@ export function useSolverVanilla(): TSolverContext {
 
 			const result = await withdrawShares({
 				connector: provider,
-<<<<<<< HEAD
-<<<<<<< HEAD
-				chainID: safeChainID,
-=======
->>>>>>> ba8e0bb9 (feat: add prettier)
-=======
 				chainID: request.current.chainID,
->>>>>>> d3744700 (fix: more chain fixes)
 				contractAddress: request.current.inputToken.value,
 				amount: request.current.inputAmount,
 				statusHandler: txStatusSetter

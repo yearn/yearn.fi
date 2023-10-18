@@ -5,7 +5,7 @@ import {YEARN_SNAPSHOT_SPACE} from '@veYFI/utils/constants';
 import {prepareWriteContract} from '@wagmi/core';
 import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {handleTx, type TWriteTransaction} from '@yearn-finance/web-lib/utils/wagmi/provider';
+import {handleTx} from '@yearn-finance/web-lib/utils/wagmi/provider';
 import {assertAddress} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {assert} from '@common/utils/assert';
 
