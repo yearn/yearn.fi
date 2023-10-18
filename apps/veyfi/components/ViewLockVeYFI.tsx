@@ -151,9 +151,12 @@ export function LockVeYFI(): ReactElement {
 					{"YFI holders, time to Lock' ‘N Load"}
 				</h2>
 				<div className={'mt-6 text-neutral-600'} >
-					<p >{'Lock your YFI for veYFI to take part in Yearn governance.'}</p>
-					<br />
-					<p>{'Please note, governance is currently the only use for veYFI until the full platform launches ‘soon’. Stay tuned anon.'}</p>
+					<p >{'Lock your YFI to veYFI to:'}</p>
+					<ul>
+						<li className={'list-inside list-disc'}>{'Direct YFI rewards to Vaults.'}</li>
+						<li className={'list-inside list-disc'}>{'Receive dYFI (the longer you lock, the more you keep).'}</li>
+						<li className={'list-inside list-disc'}>{'Take part in Yearn governance.'}</li>
+					</ul>
 				</div>
 			</div>
 
