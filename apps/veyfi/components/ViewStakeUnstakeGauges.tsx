@@ -154,7 +154,7 @@ export function StakeUnstakeGauges(): ReactElement {
 	const {address} = useWeb3();
 	const {gaugesMap, positionsMap} = useGauge();
 	const {vaults, prices} = useYearn();
-	const {balances, getBalance} = useWallet();
+	const {getBalance} = useWallet();
 	const {dYFIPrice} = useOption();
 	const [isLoadingGauges, set_isLoadingGauges] = useState(true);
 	const {search, onSearch} = useQueryArguments();
@@ -199,7 +199,7 @@ export function StakeUnstakeGauges(): ReactElement {
 		}
 		set_isLoadingGauges(false);
 		return data;
-	}, [gaugesMap, vaults, prices, positionsMap, dYFIPrice, balances]);
+	}, [vaults, gaugesMap, getBalance, prices, positionsMap, dYFIPrice]);
 
 	const searchedGaugesData = useMemo((): TGaugeData[] => {
 		if (!search) {
