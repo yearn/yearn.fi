@@ -14,7 +14,7 @@ export function RenderAmount(props: TAmount & {shouldHideTooltip?: boolean}): Re
 				minimumFractionDigits: 2,
 				maximumFractionDigits: props?.options?.maximumFractionDigits || Math.max(2, Number(props.decimals)),
 				shouldDisplaySymbol: true,
-				shouldCompactValue: false
+				shouldCompactValue: props.options?.shouldCompactValue || false
 			}
 		});
 	}, [props]);

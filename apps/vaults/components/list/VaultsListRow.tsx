@@ -365,6 +365,7 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 		return depositedAndStaked;
 	}, [currentVault.address, currentVault.chainID, getToken]);
 
+	console.warn(currentVault);
 	return (
 		<Link
 			key={`${currentVault.address}`}
@@ -448,7 +449,7 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 								symbol={'USD'}
 								decimals={0}
 								options={{
-									shouldCompactValue: false,
+									shouldCompactValue: true,
 									maximumFractionDigits: 0,
 									minimumFractionDigits: 0
 								}}
