@@ -137,7 +137,7 @@ function StakeUnstakeButtons({vaultAddress, gaugeAddress, vaultDeposited, gaugeS
 }
 
 export function StakeUnstakeGauges(): ReactElement {
-	const {isActive, address} = useWeb3();
+	const {isActive} = useWeb3();
 	const {gaugesMap, positionsMap} = useGauge();
 	const {vaults, prices} = useYearn();
 	const {balances} = useWallet();
@@ -180,7 +180,7 @@ export function StakeUnstakeGauges(): ReactElement {
 		}
 		set_isLoadingGauges(false);
 		return data;
-	}, [gaugesMap, vaults, balances, positionsMap, address]);
+	}, [gaugesMap, vaults, prices, positionsMap, dYFIPrice, balances]);
 
 	const searchedGaugesData = useMemo((): TGaugeData[] => {
 		if (!search) {

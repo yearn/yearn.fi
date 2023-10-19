@@ -111,7 +111,7 @@ export function RedeemTab(): ReactElement {
 						<p className={'w-2/3 whitespace-break-spaces'}>
 							{'Got dYFI, want YFI? You’ve come to the right place. Redeem dYFI for YFI by paying the redemption cost in ETH. Enjoy your cheap YFI anon.'}
 						</p>
-						<b className={'mt-4 block'}>
+						<b className={'mt-4 block'} suppressHydrationWarning>
 							{`Current discount: ${formatAmount(Number(discount.normalized) * 100, 2, 2)}%`}
 						</b>
 					</div>
@@ -128,8 +128,8 @@ export function RedeemTab(): ReactElement {
 						error={redeemAmountError}
 						legend={
 							<div className={'flex flex-row justify-between'}>
-								<p className={'text-neutral-400'}>{formatCounterValue(redeemAmount.normalized, dYFIPrice)}</p>
-								<p className={'text-neutral-400'}>{`You have: ${formatAmount(dYFIBalance.normalized, 2, 6)} dYFI`}</p>
+								<p className={'text-neutral-400'} suppressHydrationWarning>{formatCounterValue(redeemAmount.normalized, dYFIPrice)}</p>
+								<p className={'text-neutral-400'} suppressHydrationWarning>{`You have: ${formatAmount(dYFIBalance.normalized, 2, 6)} dYFI`}</p>
 							</div>
 						}
 					/>
@@ -139,8 +139,8 @@ export function RedeemTab(): ReactElement {
 						amount={ethRequired}
 						legend={
 							<div className={'flex flex-row justify-between'}>
-								<p className={'text-neutral-400'}>{formatCounterValue(ethRequired.normalized, ethBalance.normalizedPrice ?? 0)}</p>
-								<p className={'text-neutral-400'}>{`You have: ${formatAmount(ethBalance.normalized, 2, 6)} ETH`}</p>
+								<p className={'text-neutral-400'} suppressHydrationWarning>{formatCounterValue(ethRequired.normalized, ethBalance.normalizedPrice ?? 0)}</p>
+								<p className={'text-neutral-400'} suppressHydrationWarning>{`You have: ${formatAmount(ethBalance.normalized, 2, 6)} ETH`}</p>
 							</div>
 						}
 						disabled
@@ -151,8 +151,8 @@ export function RedeemTab(): ReactElement {
 						amount={redeemAmount}
 						legend={
 							<div className={'flex flex-row justify-between'}>
-								<p className={'text-neutral-400'}>{formatCounterValue(redeemAmount.normalized, yfiPrice)}</p>
-								<p className={'text-neutral-400'}>{`You have: ${formatAmount(yfiBalance.normalized, 2, 6)} YFI`}</p>
+								<p className={'text-neutral-400'} suppressHydrationWarning>{formatCounterValue(redeemAmount.normalized, yfiPrice)}</p>
+								<p className={'text-neutral-400'} suppressHydrationWarning>{`You have: ${formatAmount(yfiBalance.normalized, 2, 6)} YFI`}</p>
 							</div>
 						}
 						disabled
