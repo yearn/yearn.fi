@@ -1,28 +1,28 @@
 import {ALL_CATEGORIES_KEYS, ALL_CHAINS} from '@vaults/constants';
-import {useAppSettings} from '@vaults/contexts/useAppSettings';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVaults} from '@common/schemas/yDaemonVaultsSchemas';
 
-export function VaultsListEmpty({
-	sortedVaultsToDisplay,
-	currentCategories,
-	currentChains,
-	onChangeCategories,
-	onChangeChains,
-	isLoading
-}: {
+type TVaultListEmpty = {
 	sortedVaultsToDisplay: TYDaemonVaults;
+	currentSearch: string;
 	currentCategories: string[];
 	currentChains: number[];
 	onChangeCategories: (value: string[]) => void;
 	onChangeChains: (value: number[]) => void;
 	isLoading: boolean;
-}): ReactElement {
-	const {searchValue} = useAppSettings();
-
+};
+export function VaultsListEmpty({
+	sortedVaultsToDisplay,
+	currentSearch,
+	currentCategories,
+	currentChains,
+	onChangeCategories,
+	onChangeChains,
+	isLoading
+}: TVaultListEmpty): ReactElement {
 	if (isLoading && isZero(sortedVaultsToDisplay.length)) {
 		return (
 			<div className={'flex h-96 w-full flex-col items-center justify-center px-10 py-2'}>
@@ -56,7 +56,7 @@ export function VaultsListEmpty({
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center gap-4 px-10 py-2 md:w-3/4'}>
 				<b className={'text-center text-lg'}>{'No data, reeeeeeeeeeee'}</b>
 				{currentCategories.length === ALL_CATEGORIES_KEYS.length ? (
-					<p className={'text-center text-neutral-600'}>{`The vault "${searchValue}" does not exist`}</p>
+					<p className={'text-center text-neutral-600'}>{`The vault "${currentSearch}" does not exist`}</p>
 				) : (
 					<>
 						<p className={'text-center text-neutral-600'}>

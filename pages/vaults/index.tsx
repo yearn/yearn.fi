@@ -143,6 +143,7 @@ function ListOfVaults(): ReactElement {
 				<VaultsListEmpty
 					isLoading={isLoadingVaultList}
 					sortedVaultsToDisplay={filteredByChains}
+					currentSearch={search || ''}
 					currentCategories={categories}
 					currentChains={chains}
 					onChangeCategories={onChangeCategories}
@@ -161,7 +162,7 @@ function ListOfVaults(): ReactElement {
 				/>
 			);
 		});
-	}, [categories, chains, isLoadingVaultList, onChangeCategories, onChangeChains, sortedVaultsToDisplay]);
+	}, [categories, chains, isLoadingVaultList, onChangeCategories, onChangeChains, search, sortedVaultsToDisplay]);
 
 	return (
 		<div
