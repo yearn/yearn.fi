@@ -1,8 +1,9 @@
 import {useCallback, useState} from 'react';
+import {erc20ABI, useContractRead} from 'wagmi';
 import {useOption} from '@veYFI/contexts/useOption';
 import {redeem} from '@veYFI/utils/actions/option';
 import {VEYFI_CHAIN_ID, VEYFI_DYFI_ADDRESS,VEYFI_OPTIONS_ADDRESS} from '@veYFI/utils/constants';
-import {validateAllowance, validateAmount} from '@veYFI/utils/validations';
+import {validateAmount} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -25,22 +26,39 @@ export function RedeemTab(): ReactElement {
 	const [redeemAmount, set_redeemAmount] = useState(toNormalizedBN(0));
 	const {provider, address, isActive} = useWeb3();
 	const {refresh: refreshBalances} = useWallet();
-	const {getRequiredEth, position: dYFIBalance, discount, allowances, refresh, dYFIPrice} = useOption();
+	const {getRequiredEth, position: dYFIBalance, discount, refresh, dYFIPrice} = useOption();
 	const clearLockAmount = (): void => set_redeemAmount(toNormalizedBN(0));
-	const refreshData = useCallback((): unknown => Promise.all([refresh(), refreshBalances()]), [refresh, refreshBalances]);
-	const onTxSuccess = useCallback((): unknown => Promise.all([refreshData(), clearLockAmount()]), [refreshData]);
 	const ethBalance = useBalance(ETH_TOKEN_ADDRESS);
 	const yfiBalance = useBalance(YFI_ADDRESS);
 	const yfiPrice = useTokenPrice(YFI_ADDRESS);
 	const [approveRedeemStatus, set_approveRedeemStatus] = useState(defaultTxStatus);
 	const [redeemStatus, set_redeemStatus] = useState(defaultTxStatus);
 	const [ethRequired, set_ethRequired] = useState(toNormalizedBN(0));
+	const {data: isApproved, refetch: refreshAllowances} = useContractRead({
+		address: VEYFI_DYFI_ADDRESS,
+		abi: erc20ABI,
+		chainId: VEYFI_CHAIN_ID,
+		functionName: 'allowance',
+		args: [toAddress(address), VEYFI_OPTIONS_ADDRESS],
+		select: (value: bigint): boolean => value >= redeemAmount.raw
+	});
 
+	const refreshData = useCallback((): unknown => Promise.all([
+		refresh(),
+		refreshAllowances(),
+		refreshBalances()
+	]), [refresh, refreshBalances, refreshAllowances]);
+
+	const onTxSuccess = useCallback((): unknown => Promise.all([
+		refreshData(),
+		clearLockAmount()
+	]), [refreshData]);
 
 	useAsyncTrigger(async (): Promise<void> => {
 		const result = await getRequiredEth(redeemAmount.raw);
 		set_ethRequired(toNormalizedBN(result));
 	}, [getRequiredEth, redeemAmount.raw]);
+
 
 	const onApproveRedeem = useCallback(async (): Promise<void> => {
 		const response = await approveERC20({
@@ -72,15 +90,6 @@ export function RedeemTab(): ReactElement {
 			await onTxSuccess();
 		}
 	}, [address, onTxSuccess, provider, redeemAmount.raw, ethRequired.raw]);
-
-	const {isValid: isApproved} = validateAllowance({
-		tokenAddress: VEYFI_DYFI_ADDRESS,
-		spenderAddress: VEYFI_OPTIONS_ADDRESS,
-		allowances,
-		amount: redeemAmount.raw,
-		ownerAddress: toAddress(address),
-		chainID: VEYFI_CHAIN_ID
-	});
 
 	const {isValid: isValidRedeemAmount, error: redeemAmountError} = validateAmount({
 		amount: redeemAmount.normalized,
