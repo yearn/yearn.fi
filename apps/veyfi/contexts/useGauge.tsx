@@ -65,10 +65,6 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 			const totalAssets = toNormalizedBN(decodeAsBigInt(results[4]), decimals);
 			const rewardRate = toNormalizedBN(decodeAsBigInt(results[5]), 18);
 
-			//Debug value to test
-			// const totalAssets = toNormalizedBN(40000000000000000000n, decimals);
-			// const rewardRate = toNormalizedBN(330687830n, 18);
-
 			return {
 				address: gaugeAddress,
 				vaultAddress: decodeAsAddress(results[0]),

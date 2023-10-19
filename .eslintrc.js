@@ -31,8 +31,9 @@ module.exports = {
 			}
 		],
 		'react-hooks/exhaustive-deps': [
-			'warn', {
-				'additionalHooks': '(^useAsyncTrigger$|^useDeepCompareMemo$)'
+			'warn',
+			{
+				additionalHooks: '(^useAsyncTrigger$|^useDeepCompareMemo$)'
 			}
 		]
 	}
