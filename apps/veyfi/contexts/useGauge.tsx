@@ -32,11 +32,11 @@ export type TGaugePosition = {
 	boost: number;
 };
 
-export type	TGaugeContext = {
-	gaugesMap: TDict<TGauge | undefined>,
-	positionsMap: TDict<TGaugePosition | undefined>,
-	refresh: () => void,
-}
+export type TGaugeContext = {
+	gaugesMap: TDict<TGauge | undefined>;
+	positionsMap: TDict<TGaugePosition | undefined>;
+	refresh: () => void;
+};
 const defaultProps: TGaugeContext = {
 	gaugesMap: {},
 	positionsMap: {},
@@ -150,16 +150,13 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 		refreshPositions();
 	}, [refreshPositions, refreshVotingEscrow]);
 
-	const contextValue = useDeepCompareMemo((): TGaugeContext => ({
-		gaugesMap: keyBy(gauges, 'address'),
-		positionsMap: positionsMap,
-		refresh
-	}), [gauges, positionsMap, refresh]);
-
-	return (
-		<GaugeContext.Provider value={contextValue}>
-			{children}
-		</GaugeContext.Provider>
+	const contextValue = useDeepCompareMemo(
+		(): TGaugeContext => ({
+			gaugesMap: keyBy(gauges, 'address'),
+			positionsMap: positionsMap,
+			refresh
+		}),
+		[gauges, positionsMap, refresh]
 	);
 
 	return <GaugeContext.Provider value={contextValue}>{children}</GaugeContext.Provider>;
