@@ -1,11 +1,6 @@
 import {useMemo} from 'react';
 import Link from 'next/link';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {IconArbitrumChain} from '@yearn-finance/web-lib/icons/chains/IconArbitrumChain';
-import {IconBaseChain} from '@yearn-finance/web-lib/icons/chains/IconBaseChain';
-import {IconEtherumChain} from '@yearn-finance/web-lib/icons/chains/IconEtherumChain';
-import {IconFantomChain} from '@yearn-finance/web-lib/icons/chains/IconFantomChain';
-import {IconOptimismChain} from '@yearn-finance/web-lib/icons/chains/IconOptimismChain';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
@@ -18,14 +13,6 @@ import {getVaultName} from '@common/utils';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
-
-export const ChainIconMap = new Map<number, ReactElement>([
-	[1, <IconEtherumChain />],
-	[10, <IconOptimismChain />],
-	[250, <IconFantomChain />],
-	[8453, <IconBaseChain />],
-	[42161, <IconArbitrumChain />]
-]);
 
 export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const isEthMainnet = currentVault.chainID === 1;
@@ -365,14 +352,18 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 		return depositedAndStaked;
 	}, [currentVault.address, currentVault.chainID, getToken]);
 
-	console.warn(currentVault);
 	return (
 		<Link
 			key={`${currentVault.address}`}
 			href={`/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`}>
 			<div className={'yearn--table-wrapper cursor-pointer transition-colors hover:bg-neutral-300'}>
 				<div className={'flex max-w-[32px] flex-row items-center'}>
-					{ChainIconMap.get(currentVault.chainID) ?? <IconEtherumChain />}
+					<ImageWithFallback
+						src={`${process.env.BASE_YEARN_CHAIN_URI}/${currentVault.chainID}/logo-128.png`}
+						alt={`Chain ${currentVault.chainID}`}
+						width={40}
+						height={40}
+					/>
 				</div>
 				<div className={'yearn--table-token-section'}>
 					<div className={'yearn--table-token-section-item'}>
