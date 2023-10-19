@@ -450,7 +450,7 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 								decimals={0}
 								options={{
 									shouldCompactValue: true,
-									maximumFractionDigits: 0,
+									maximumFractionDigits: 2,
 									minimumFractionDigits: 0
 								}}
 							/>
