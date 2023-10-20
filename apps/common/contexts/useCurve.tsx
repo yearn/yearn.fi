@@ -1,4 +1,5 @@
 import {createContext, useContext, useMemo} from 'react';
+import {isZeroAddress} from '@yearn-finance/web-lib/utils/address';
 import {useFetch} from '@common/hooks/useFetch';
 import {coinGeckoPricesSchema} from '@common/schemas/coinGeckoSchemas';
 import {curveAllGaugesSchema, curveGaugesFromYearnSchema, curveWeeklyFeesSchema} from '@common/schemas/curveSchemas';
@@ -53,7 +54,7 @@ export const CurveContextApp = ({children}: {children: React.ReactElement}): Rea
 	});
 
 	const {data: gaugesFromYearn} = useFetch<TCurveGaugesFromYearn>({
-		endpoint: 'https://api.yearn.fi/v1/chains/1/apy-previews/curve-factory',
+		endpoint: 'https://api.yexporter.io/v1/chains/1/apy-previews/curve-factory',
 		schema: curveGaugesFromYearnSchema
 	});
 
@@ -83,7 +84,9 @@ export const CurveContextApp = ({children}: {children: React.ReactElement}): Rea
 			cgPrices: cgPrices || defaultProps.cgPrices,
 			gauges: gauges || defaultProps.gauges,
 			isLoadingGauges: isLoadingGauges || defaultProps.isLoadingGauges,
-			gaugesFromYearn: gaugesFromYearn || defaultProps.gaugesFromYearn
+			gaugesFromYearn: (gaugesFromYearn || defaultProps.gaugesFromYearn).filter(
+				(props): boolean => !isZeroAddress(props.gauge_address)
+			)
 		}),
 		[curveWeeklyFees, cgPrices, gauges, isLoadingGauges, gaugesFromYearn]
 	);
