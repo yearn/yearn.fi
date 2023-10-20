@@ -5,15 +5,19 @@ import {YEARN_SNAPSHOT_SPACE} from '@veYFI/utils/constants';
 import {prepareWriteContract} from '@wagmi/core';
 import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {handleTx, type TWriteTransaction} from '@yearn-finance/web-lib/utils/wagmi/provider';
+import {handleTx} from '@yearn-finance/web-lib/utils/wagmi/provider';
 import {assertAddress} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {assert} from '@common/utils/assert';
 
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TSeconds} from '@yearn-finance/web-lib/utils/time';
+import type {TWriteTransaction} from '@yearn-finance/web-lib/utils/wagmi/provider';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 
-type TApproveLock = TWriteTransaction & {votingEscrowAddress: TAddress; amount: bigint;};
+type TApproveLock = TWriteTransaction & {
+	votingEscrowAddress: TAddress;
+	amount: bigint;
+};
 export async function approveLock(props: TApproveLock): Promise<TTxResponse> {
 	const {votingEscrowAddress, amount = MAX_UINT_256, contractAddress} = props;
 	assertAddress(votingEscrowAddress, 'votingEscrowAddress');
@@ -28,7 +32,12 @@ export async function approveLock(props: TApproveLock): Promise<TTxResponse> {
 	});
 }
 
-type TLock = TWriteTransaction & {votingEscrowAddress: TAddress; accountAddress: TAddress; amount: bigint; time: TSeconds};
+type TLock = TWriteTransaction & {
+	votingEscrowAddress: TAddress;
+	accountAddress: TAddress;
+	amount: bigint;
+	time: TSeconds;
+};
 export async function lock(props: TLock): Promise<TTxResponse> {
 	assertAddress(props.votingEscrowAddress, 'votingEscrowAddress');
 	assertAddress(props.accountAddress, 'accountAddress');
@@ -44,7 +53,11 @@ export async function lock(props: TLock): Promise<TTxResponse> {
 	});
 }
 
-type TIncreaseLockAmount = TWriteTransaction & {votingEscrowAddress: TAddress; accountAddress: TAddress; amount: bigint};
+type TIncreaseLockAmount = TWriteTransaction & {
+	votingEscrowAddress: TAddress;
+	accountAddress: TAddress;
+	amount: bigint;
+};
 export async function increaseLockAmount(props: TIncreaseLockAmount): Promise<TTxResponse> {
 	assertAddress(props.votingEscrowAddress, 'votingEscrowAddress');
 	assertAddress(props.accountAddress, 'accountAddress');
@@ -59,7 +72,11 @@ export async function increaseLockAmount(props: TIncreaseLockAmount): Promise<TT
 	});
 }
 
-type TExtendLockTime = TWriteTransaction & {votingEscrowAddress: TAddress; accountAddress: TAddress; time: TSeconds};
+type TExtendLockTime = TWriteTransaction & {
+	votingEscrowAddress: TAddress;
+	accountAddress: TAddress;
+	time: TSeconds;
+};
 export async function extendLockTime(props: TExtendLockTime): Promise<TTxResponse> {
 	assertAddress(props.votingEscrowAddress, 'votingEscrowAddress');
 	assertAddress(props.accountAddress, 'accountAddress');
@@ -81,6 +98,7 @@ export async function withdrawUnlocked(props: TWithdrawUnlocked): Promise<TTxRes
 
 	const {result} = await prepareWriteContract({
 		address: props.votingEscrowAddress,
+		chainId: props.chainID,
 		abi: VEYFI_ABI,
 		functionName: 'withdraw'
 	});

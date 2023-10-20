@@ -46,10 +46,14 @@ export function ExtendLockVeYFI(): ReactElement {
 	}, [newUnlockTime, onTxSuccess, provider, votingEscrow?.address]);
 
 	const votingPower = useMemo((): TNormalizedBN => {
-		if(!positions?.deposit || !newUnlockTime) {
+		if (!positions?.deposit || !newUnlockTime) {
 			return toNormalizedBN(0);
 		}
-		return toNormalizedBN(willExtendLock ? getVotingPower(positions?.deposit?.underlyingBalance, newUnlockTime) : toBigInt(positions?.deposit?.balance));
+		return toNormalizedBN(
+			willExtendLock
+				? getVotingPower(positions?.deposit?.underlyingBalance, newUnlockTime)
+				: toBigInt(positions?.deposit?.balance)
+		);
 	}, [positions?.deposit, newUnlockTime, willExtendLock]);
 
 	const {isValid: isValidLockTime, error: lockTimeError} = validateAmount({
@@ -57,14 +61,15 @@ export function ExtendLockVeYFI(): ReactElement {
 		minAmountAllowed: MIN_LOCK_TIME
 	});
 
-	const maxTime = MAX_LOCK_TIME - Number(weeksToUnlock?.normalized || 0) > 0 ? MAX_LOCK_TIME - Number(weeksToUnlock?.normalized || 0) : 0;
+	const maxTime =
+		MAX_LOCK_TIME - Number(weeksToUnlock?.normalized || 0) > 0
+			? MAX_LOCK_TIME - Number(weeksToUnlock?.normalized || 0)
+			: 0;
 	return (
 		<div className={'grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-16'}>
 			<div className={'col-span-1 w-full'}>
-				<h2 className={'m-0 text-2xl font-bold'}>
-					{'Extend lock'}
-				</h2>
-				<div className={'mt-6 text-neutral-600'} >
+				<h2 className={'m-0 text-2xl font-bold'}>{'Extend lock'}</h2>
+				<div className={'mt-6 text-neutral-600'}>
 					<p>{'Want to lock for longer? Extend your lock period to increase your gauge boost weight.'}</p>
 				</div>
 			</div>
@@ -74,7 +79,8 @@ export function ExtendLockVeYFI(): ReactElement {
 					<AmountInput
 						label={'Current lock period (weeks)'}
 						amount={weeksToUnlock}
-						disabled />
+						disabled
+					/>
 					<AmountInput
 						label={'Increase lock period (weeks)'}
 						amount={lockTime}
@@ -90,18 +96,22 @@ export function ExtendLockVeYFI(): ReactElement {
 						onMaxClick={(): void => set_lockTime(toNormalizedBN(Math.floor(toTime(maxTime)), 0))}
 						disabled={!hasLockedAmount}
 						error={lockTimeError}
-						legend={'Minimum: 1 week'} />
+						legend={'Minimum: 1 week'}
+					/>
 				</div>
 				<div className={'grid grid-cols-1 gap-6 md:grid-cols-2 md:pb-5'}>
 					<AmountInput
 						label={'Total veYFI'}
 						amount={votingPower}
-						disabled />
+						disabled
+					/>
 					<Button
 						className={'w-full md:mt-7'}
 						onClick={onExtendLockTime}
 						isBusy={extendLockTimeStatus.pending}
-						isDisabled={!isActive || !isValidLockTime || extendLockTimeStatus.pending || !votingEscrow || !address}>
+						isDisabled={
+							!isActive || !isValidLockTime || extendLockTimeStatus.pending || !votingEscrow || !address
+						}>
 						{'Extend'}
 					</Button>
 				</div>

@@ -15,5 +15,4 @@ function useAsyncTrigger(effect: () => Promise<void>, deps: DependencyList): () 
 	return asyncEffectInCallback;
 }
 
-
 export {useAsyncTrigger};

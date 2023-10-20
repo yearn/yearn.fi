@@ -4,53 +4,59 @@ import {useSessionStorage} from '@yearn-finance/web-lib/hooks/useSessionStorage'
 
 import type {ReactElement} from 'react';
 
-export type	TAppSettingsContext = {
-	category: string;
+export type TAppSettingsContext = {
 	searchValue: string;
-	shouldHideDust: boolean,
-	shouldHideLowTVLVaults: boolean,
-	onSwitchHideDust: VoidFunction,
-	onSwitchHideLowTVLVaults: VoidFunction,
-	set_category: (v: string) => void
-	set_searchValue: (v: string) => void
-}
+	shouldHideDust: boolean;
+	shouldHideLowTVLVaults: boolean;
+	onSwitchHideDust: VoidFunction;
+	onSwitchHideLowTVLVaults: VoidFunction;
+	set_searchValue: (v: string) => void;
+};
 const defaultProps: TAppSettingsContext = {
-	category: '',
 	searchValue: '',
 	shouldHideDust: false,
 	shouldHideLowTVLVaults: false,
 	onSwitchHideDust: (): void => undefined,
 	onSwitchHideLowTVLVaults: (): void => undefined,
-	set_category: (): void => undefined,
 	set_searchValue: (): void => undefined
 };
 
 const AppSettingsContext = createContext<TAppSettingsContext>(defaultProps);
-export const AppSettingsContextApp = memo(function AppSettingsContextApp({children}: {children: ReactElement}): ReactElement {
-	const [category, set_category] = useSessionStorage('yearn.fi/vaults-category', 'All Vaults');
-	const [searchValue, set_searchValue] = useSessionStorage('yearn.fi/vaults-search', '');
-	const [shouldHideDust, set_shouldHideDust] = useLocalStorage('yearn.fi/should-hide-dust', false);
-	const [shouldHideLowTVLVaults, set_shouldHideLowTVLVaults] = useLocalStorage('yearn.fi/hide-low-tvl', false);
+export const AppSettingsContextApp = memo(function AppSettingsContextApp({
+	children
+}: {
+	children: ReactElement;
+}): ReactElement {
+	/**
+	 * @deprecated Use use-query-params instead
+	 */
+	const [searchValue, set_searchValue] = useSessionStorage('yearn.fi/vaults-search@0.0.1', '');
+	const [shouldHideDust, set_shouldHideDust] = useLocalStorage('yearn.fi/should-hide-dust@0.0.1', false);
+	const [shouldHideLowTVLVaults, set_shouldHideLowTVLVaults] = useLocalStorage('yearn.fi/hide-low-tvl@0.0.1', false);
 
 	/* 🔵 - Yearn Finance ******************************************************
-	**	Setup and render the Context provider to use in the app.
-	***************************************************************************/
-	const contextValue = useMemo((): TAppSettingsContext => ({
-		shouldHideDust,
-		onSwitchHideDust: (): void => set_shouldHideDust(!shouldHideDust),
-		shouldHideLowTVLVaults,
-		onSwitchHideLowTVLVaults: (): void => set_shouldHideLowTVLVaults(!shouldHideLowTVLVaults),
-		category,
-		searchValue,
-		set_category,
-		set_searchValue
-	}), [shouldHideDust, shouldHideLowTVLVaults, category, searchValue, set_category, set_searchValue, set_shouldHideDust, set_shouldHideLowTVLVaults]);
-
-	return (
-		<AppSettingsContext.Provider value={contextValue}>
-			{children}
-		</AppSettingsContext.Provider>
+	 **	Setup and render the Context provider to use in the app.
+	 ***************************************************************************/
+	const contextValue = useMemo(
+		(): TAppSettingsContext => ({
+			shouldHideDust,
+			onSwitchHideDust: (): void => set_shouldHideDust(!shouldHideDust),
+			shouldHideLowTVLVaults,
+			onSwitchHideLowTVLVaults: (): void => set_shouldHideLowTVLVaults(!shouldHideLowTVLVaults),
+			searchValue,
+			set_searchValue
+		}),
+		[
+			shouldHideDust,
+			shouldHideLowTVLVaults,
+			searchValue,
+			set_searchValue,
+			set_shouldHideDust,
+			set_shouldHideLowTVLVaults
+		]
 	);
+
+	return <AppSettingsContext.Provider value={contextValue}>{children}</AppSettingsContext.Provider>;
 });
 
 export const useAppSettings = (): TAppSettingsContext => useContext(AppSettingsContext);

@@ -1,24 +1,28 @@
-import {useAppSettings} from '@vaults/contexts/useAppSettings';
+import {ALL_CATEGORIES_KEYS, ALL_CHAINS} from '@vaults/constants';
 import {Button} from '@yearn-finance/web-lib/components/Button';
-import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
-import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVaults} from '@common/schemas/yDaemonVaultsSchemas';
 
+type TVaultListEmpty = {
+	sortedVaultsToDisplay: TYDaemonVaults;
+	currentSearch: string;
+	currentCategories: string[];
+	currentChains: number[];
+	onChangeCategories: (value: string[]) => void;
+	onChangeChains: (value: number[]) => void;
+	isLoading: boolean;
+};
 export function VaultsListEmpty({
 	sortedVaultsToDisplay,
-	currentCategory,
+	currentSearch,
+	currentCategories,
+	currentChains,
+	onChangeCategories,
+	onChangeChains,
 	isLoading
-}: {
-	sortedVaultsToDisplay: TYDaemonVaults,
-	currentCategory: string,
-	isLoading: boolean
-}): ReactElement {
-	const {safeChainID} = useChainID();
-	const {searchValue, category, set_category} = useAppSettings();
-
+}: TVaultListEmpty): ReactElement {
 	if (isLoading && isZero(sortedVaultsToDisplay.length)) {
 		return (
 			<div className={'flex h-96 w-full flex-col items-center justify-center px-10 py-2'}>
@@ -30,44 +34,65 @@ export function VaultsListEmpty({
 			</div>
 		);
 	}
-	if (!isLoading && isZero(sortedVaultsToDisplay.length) && currentCategory === 'Holdings') {
+
+	if (
+		!isLoading &&
+		isZero(sortedVaultsToDisplay.length) &&
+		currentCategories.length === 1 &&
+		currentCategories.includes('holdings')
+	) {
 		return (
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
 				<b className={'text-center text-lg'}>{'Well this is awkward...'}</b>
 				<p className={'text-center text-neutral-600'}>
-					{'You don\'t appear to have any deposits in our Vaults. There\'s an easy way to change that 😏'}
+					{"You don't appear to have any deposits in our Vaults. There's an easy way to change that 😏"}
 				</p>
 			</div>
 		);
 	}
-	if (!isLoading && isZero(sortedVaultsToDisplay.length) && safeChainID !== 1) {
-		const chainName = getNetwork(safeChainID)?.name || 'this network';
-		return (
-			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
-				<b className={'text-center text-lg'}>{'👀 Where Vaults ser?'}</b>
-				<p className={'text-center text-neutral-600'}>
-					{`It seems we don’t have ${currentCategory} on ${chainName} (yet). Feel free to check out other vaults on ${chainName} or change network. New Vaults and strategies are added often, so check back later. Don’t be a stranger.`}
-				</p>
-			</div>
-		);
-	}
+
 	if (!isLoading && isZero(sortedVaultsToDisplay.length)) {
 		return (
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center gap-4 px-10 py-2 md:w-3/4'}>
 				<b className={'text-center text-lg'}>{'No data, reeeeeeeeeeee'}</b>
-				{category === 'All Vaults' ?
-					<p className={'text-center text-neutral-600'}>{`The vault "${searchValue}" does not exist`}</p> :
+				{currentCategories.length === ALL_CATEGORIES_KEYS.length ? (
+					<p className={'text-center text-neutral-600'}>{`The vault "${currentSearch}" does not exist`}</p>
+				) : (
 					<>
 						<p className={'text-center text-neutral-600'}>
-							{`There doesn’t seem to be anything here. It might be because you searched for a token in the ${currentCategory} category, or because there’s a rodent infestation in our server room. You check the search box, we’ll check the rodents. Deal?`}
+							{`There doesn’t seem to be anything here. It might be because you of your filters, or because there’s a rodent infestation in our server room. You check the filters, we’ll check the rodents. Deal?`}
 						</p>
 						<Button
 							className={'w-full md:w-48'}
-							onClick={(): void => set_category('All Vaults')}>
+							onClick={(): void => {
+								onChangeCategories(ALL_CATEGORIES_KEYS);
+								onChangeChains(ALL_CHAINS);
+							}}>
 							{'Search all vaults'}
 						</Button>
 					</>
-				}
+				)}
+			</div>
+		);
+	}
+	if (!isLoading && currentChains.length === 0) {
+		return (
+			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center gap-4 px-10 py-2 md:w-3/4'}>
+				<b className={'text-center text-lg'}>{'No data, reeeeeeeeeeee'}</b>
+				<>
+					<p
+						className={
+							'text-center text-neutral-600'
+						}>{`Please, select a chain. At least one, just one.`}</p>
+					<Button
+						className={'w-full md:w-48'}
+						onClick={(): void => {
+							onChangeCategories(ALL_CATEGORIES_KEYS);
+							onChangeChains(ALL_CHAINS);
+						}}>
+						{'Search all vaults'}
+					</Button>
+				</>
 			</div>
 		);
 	}
@@ -79,7 +104,9 @@ export function VaultListEmptyExternalMigration(): ReactElement {
 		<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
 			<b className={'text-center text-lg'}>{'We looked under the cushions...'}</b>
 			<p className={'text-center text-neutral-600'}>
-				{'Looks like you don\'t have any tokens to migrate. That could mean that you\'re already earning the best risk-adjusted yields in DeFi (go you), or you don\'t have any vault tokens at all. In which case... you know what to do.'}
+				{
+					"Looks like you don't have any tokens to migrate. That could mean that you're already earning the best risk-adjusted yields in DeFi (go you), or you don't have any vault tokens at all. In which case... you know what to do."
+				}
 			</p>
 		</div>
 	);
@@ -87,15 +114,13 @@ export function VaultListEmptyExternalMigration(): ReactElement {
 
 export function VaultsListEmptyFactory({
 	sortedVaultsToDisplay,
-	currentCategory,
+	currentCategories,
 	isLoading
 }: {
-	sortedVaultsToDisplay: TYDaemonVaults,
-	currentCategory: string,
-	isLoading: boolean
+	sortedVaultsToDisplay: TYDaemonVaults;
+	currentCategories: string;
+	isLoading: boolean;
 }): ReactElement {
-	const {safeChainID} = useChainID();
-
 	if (isLoading && isZero(sortedVaultsToDisplay.length)) {
 		return (
 			<div className={'flex h-96 w-full flex-col items-center justify-center px-10 py-2'}>
@@ -106,31 +131,28 @@ export function VaultsListEmptyFactory({
 				</div>
 			</div>
 		);
-	} if (!isLoading && isZero(sortedVaultsToDisplay.length) && currentCategory === 'Holdings') {
+	}
+
+	if (!isLoading && isZero(sortedVaultsToDisplay.length) && currentCategories === 'Holdings') {
 		return (
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
 				<b className={'text-center text-lg'}>{'Well this is awkward...'}</b>
 				<p className={'text-center text-neutral-600'}>
-					{'You don\'t appear to have any deposits in our Factory Vaults. There\'s an easy way to change that 😏'}
+					{
+						"You don't appear to have any deposits in our Factory Vaults. There's an easy way to change that 😏"
+					}
 				</p>
 			</div>
 		);
-	} if (!isLoading && isZero(sortedVaultsToDisplay.length) && safeChainID !== 1) {
-		const chainName = getNetwork(safeChainID)?.name || 'this network';
-		return (
-			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
-				<b className={'text-center text-lg'}>{'👀 Where Vaults ser?'}</b>
-				<p className={'text-center text-neutral-600'}>
-					{`It seems we don’t have ${currentCategory} on ${chainName} (yet). Feel free to check out other vaults on ${chainName} or change network. New Vaults and strategies are added often, so check back later. Don’t be a stranger.`}
-				</p>
-			</div>
-		);
-	} if (!isLoading && isZero(sortedVaultsToDisplay.length)) {
+	}
+	if (!isLoading && isZero(sortedVaultsToDisplay.length)) {
 		return (
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
 				<b className={'text-center text-lg'}>{'No data, reeeeeeeeeeee'}</b>
 				<p className={'text-center text-neutral-600'}>
-					{'There doesn’t seem to be anything here. It might be because you searched for a token in the wrong category, or because there’s a rodent infestation in our server room. You check the search box, we’ll check the rodents. Deal?'}
+					{
+						'There doesn’t seem to be anything here. It might be because you searched for a token in the wrong category, or because there’s a rodent infestation in our server room. You check the search box, we’ll check the rodents. Deal?'
+					}
 				</p>
 			</div>
 		);

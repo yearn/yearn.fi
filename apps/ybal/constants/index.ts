@@ -1,0 +1,1 @@
+export const YBAL_SUPPORTED_NETWORK = 1;

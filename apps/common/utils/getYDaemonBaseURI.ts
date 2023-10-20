@@ -4,17 +4,21 @@ type TProps = {
 	chainID: number | string;
 };
 
-export function useYDaemonBaseURI({chainID}: TProps): {
+export function useYDaemonBaseURI(props?: TProps): {
 	yDaemonBaseUri: string;
 } {
 	// eslint-disable-next-line @typescript-eslint/naming-convention
 	const {settings} = useSettings();
 
-	const baseUri = settings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI;
+	const yDaemonBaseUri = settings.yDaemonBaseURI || process.env.YDAEMON_BASE_URI;
 
-	if (!baseUri) {
+	if (!yDaemonBaseUri) {
 		throw new Error('YDAEMON_BASE_URI is not defined');
 	}
 
-	return {yDaemonBaseUri: `${baseUri}/${chainID}`};
+	if (!props?.chainID) {
+		return {yDaemonBaseUri};
+	}
+
+	return {yDaemonBaseUri: `${yDaemonBaseUri}/${props.chainID}`};
 }

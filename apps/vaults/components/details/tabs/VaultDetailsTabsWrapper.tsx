@@ -8,7 +8,6 @@ import {VaultDetailsHistorical} from '@vaults/components/details/tabs/VaultDetai
 import {VaultDetailsStrategies} from '@vaults/components/details/tabs/VaultDetailsStrategies';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {IconAddToMetamask} from '@yearn-finance/web-lib/icons/IconAddToMetamask';
 import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -29,25 +28,28 @@ type TTabsOptions = {
 	value: number;
 	label: string;
 	slug?: string;
-}
+};
 type TTabs = {
-	selectedAboutTabIndex: number,
-	set_selectedAboutTabIndex: (arg0: number) => void
-}
+	selectedAboutTabIndex: number;
+	set_selectedAboutTabIndex: (arg0: number) => void;
+};
 
 type TExplorerLinkProps = {
 	explorerBaseURI?: string;
 	currentVaultAddress: string;
-}
+};
 
 function Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactElement {
 	const router = useRouter();
 
-	const tabs: TTabsOptions[] = useMemo((): TTabsOptions[] => [
-		{value: 0, label: 'About', slug: 'about'},
-		{value: 1, label: 'Strategies', slug: 'strategies'},
-		{value: 2, label: 'Historical rates', slug: 'historical-rates'}
-	], []);
+	const tabs: TTabsOptions[] = useMemo(
+		(): TTabsOptions[] => [
+			{value: 0, label: 'About', slug: 'about'},
+			{value: 1, label: 'Strategies', slug: 'strategies'},
+			{value: 2, label: 'Historical rates', slug: 'historical-rates'}
+		],
+		[]
+	);
 
 	useEffect((): void => {
 		const tab = tabs.find((tab): boolean => tab.slug === router.query.tab);
@@ -59,32 +61,34 @@ function Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactE
 	return (
 		<>
 			<nav className={'hidden flex-row items-center space-x-10 md:flex'}>
-				{tabs.map((tab): ReactElement => (
-					<button
-						key={`desktop-${tab.value}`}
-						onClick={(): void => {
-							router.replace(
-								{
-									query: {
-										...router.query,
-										tab: tab.slug
+				{tabs.map(
+					(tab): ReactElement => (
+						<button
+							key={`desktop-${tab.value}`}
+							onClick={(): void => {
+								router.replace(
+									{
+										query: {
+											...router.query,
+											tab: tab.slug
+										}
+									},
+									undefined,
+									{
+										shallow: true
 									}
-								},
-								undefined,
-								{
-									shallow: true
-								}
-							);
-							set_selectedAboutTabIndex(tab.value);
-						}}>
-						<p
-							title={tab.label}
-							aria-selected={selectedAboutTabIndex === tab.value}
-							className={'hover-fix tab'}>
-							{tab.label}
-						</p>
-					</button>
-				))}
+								);
+								set_selectedAboutTabIndex(tab.value);
+							}}>
+							<p
+								title={tab.label}
+								aria-selected={selectedAboutTabIndex === tab.value}
+								className={'hover-fix tab'}>
+								{tab.label}
+							</p>
+						</button>
+					)
+				)}
 			</nav>
 			<div className={'relative z-50'}>
 				<Listbox
@@ -93,13 +97,16 @@ function Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactE
 					{({open}): ReactElement => (
 						<>
 							<Listbox.Button
-								className={'flex h-10 w-40 flex-row items-center border-0 border-b-2 border-neutral-900 bg-neutral-100 p-0 font-bold focus:border-neutral-900 md:hidden'}>
+								className={
+									'flex h-10 w-40 flex-row items-center border-0 border-b-2 border-neutral-900 bg-neutral-100 p-0 font-bold focus:border-neutral-900 md:hidden'
+								}>
 								<div className={'relative flex flex-row items-center'}>
 									{tabs[selectedAboutTabIndex]?.label || 'Menu'}
 								</div>
 								<div className={'absolute right-0'}>
 									<IconChevron
-										className={`h-6 w-6 transition-transform ${open ? '-rotate-180' : 'rotate-0'}`} />
+										className={`h-6 w-6 transition-transform ${open ? '-rotate-180' : 'rotate-0'}`}
+									/>
 								</div>
 							</Listbox.Button>
 							<Transition
@@ -112,14 +119,16 @@ function Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactE
 								leaveFrom={'transform scale-100 opacity-100'}
 								leaveTo={'transform scale-95 opacity-0'}>
 								<Listbox.Options className={'yearn--listbox-menu'}>
-									{tabs.map((tab): ReactElement => (
-										<Listbox.Option
-											className={'yearn--listbox-menu-item'}
-											key={tab.value}
-											value={tab.value}>
-											{tab.label}
-										</Listbox.Option>
-									))}
+									{tabs.map(
+										(tab): ReactElement => (
+											<Listbox.Option
+												className={'yearn--listbox-menu-item'}
+												key={tab.value}
+												value={tab.value}>
+												{tab.label}
+											</Listbox.Option>
+										)
+									)}
 								</Listbox.Options>
 							</Transition>
 						</>
@@ -143,18 +152,26 @@ function ExplorerLink({explorerBaseURI, currentVaultAddress}: TExplorerLinkProps
 			target={'_blank'}
 			rel={'noopener noreferrer'}>
 			<span className={'sr-only'}>{'Open in explorer'}</span>
-			<IconLinkOut className={'h-5 w-5 cursor-alias text-neutral-600 transition-colors hover:text-neutral-900 md:h-6 md:w-6'} />
+			<IconLinkOut
+				className={
+					'h-5 w-5 cursor-alias text-neutral-600 transition-colors hover:text-neutral-900 md:h-6 md:w-6'
+				}
+			/>
 		</a>
 	);
 }
 
 export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {provider} = useWeb3();
-	const {safeChainID} = useChainID();
-	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: safeChainID});
+	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: currentVault.chainID});
 	const [selectedAboutTabIndex, set_selectedAboutTabIndex] = useState(0);
 
-	async function onAddTokenToMetamask(address: string, symbol: string, decimals: number, image: string): Promise<void> {
+	async function onAddTokenToMetamask(
+		address: string,
+		symbol: string,
+		decimals: number,
+		image: string
+	): Promise<void> {
 		try {
 			assert(provider, 'Provider is not set');
 			const walletClient = await provider.getWalletClient();
@@ -178,22 +195,23 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 		schema: yDaemonVaultHarvestsSchema
 	});
 
-	const harvestData = useMemo((): { name: string; value: number }[] => {
+	const harvestData = useMemo((): {name: string; value: number}[] => {
 		const _yDaemonHarvestsData = [...(yDaemonHarvestsData || [])].reverse();
-		return (
-			_yDaemonHarvestsData.map((harvest): { name: string; value: number } => ({
-				name: formatDate(Number(harvest.timestamp) * 1000),
-				value: formatToNormalizedValue(toBigInt(harvest.profit) - toBigInt(harvest.loss), currentVault.decimals)
-			}))
-		);
+		return _yDaemonHarvestsData.map((harvest): {name: string; value: number} => ({
+			name: formatDate(Number(harvest.timestamp) * 1000),
+			value: formatToNormalizedValue(toBigInt(harvest.profit) - toBigInt(harvest.loss), currentVault.decimals)
+		}));
 	}, [currentVault.decimals, yDaemonHarvestsData]);
 
 	return (
-		<div aria-label={'Vault Details'} className={'col-span-12 mb-4 flex flex-col bg-neutral-100'}>
+		<div
+			aria-label={'Vault Details'}
+			className={'col-span-12 mb-4 flex flex-col bg-neutral-100'}>
 			<div className={'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'}>
 				<Tabs
 					selectedAboutTabIndex={selectedAboutTabIndex}
-					set_selectedAboutTabIndex={set_selectedAboutTabIndex} />
+					set_selectedAboutTabIndex={set_selectedAboutTabIndex}
+				/>
 
 				<div className={'flex flex-row items-center justify-end space-x-2 pb-0 md:pb-4 md:last:space-x-4'}>
 					<button
@@ -202,16 +220,20 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 								currentVault.address,
 								currentVault.symbol,
 								currentVault.decimals,
-								currentVault.icon
+								`https://assets.smold.app/api/token/${currentVault.chainID}/${currentVault.address}/logo-128.png`
 							);
-						}
-						}>
+						}}>
 						<span className={'sr-only'}>{'Add to wallet'}</span>
-						<IconAddToMetamask className={'h-5 w-5 text-neutral-600 transition-colors hover:text-neutral-900 md:h-6 md:w-6'} />
+						<IconAddToMetamask
+							className={
+								'h-5 w-5 text-neutral-600 transition-colors hover:text-neutral-900 md:h-6 md:w-6'
+							}
+						/>
 					</button>
 					<ExplorerLink
-						explorerBaseURI={getNetwork(safeChainID)?.defaultBlockExplorer}
-						currentVaultAddress={currentVault.address} />
+						explorerBaseURI={getNetwork(currentVault.chainID)?.defaultBlockExplorer}
+						currentVaultAddress={currentVault.address}
+					/>
 				</div>
 			</div>
 
@@ -220,20 +242,20 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 			<Renderable shouldRender={currentVault && isZero(selectedAboutTabIndex)}>
 				<VaultDetailsAbout
 					currentVault={currentVault}
-					harvestData={harvestData} />
+					harvestData={harvestData}
+				/>
 			</Renderable>
 
 			<Renderable shouldRender={currentVault && selectedAboutTabIndex === 1}>
-				<VaultDetailsStrategies
-					currentVault={currentVault} />
+				<VaultDetailsStrategies currentVault={currentVault} />
 			</Renderable>
 
 			<Renderable shouldRender={currentVault && selectedAboutTabIndex === 2}>
 				<VaultDetailsHistorical
 					currentVault={currentVault}
-					harvestData={harvestData} />
+					harvestData={harvestData}
+				/>
 			</Renderable>
-
 		</div>
 	);
 }

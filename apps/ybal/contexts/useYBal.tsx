@@ -12,14 +12,14 @@ import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TYDaemonVault, TYDaemonVaultHarvests} from '@common/schemas/yDaemonVaultsSchemas';
 
 type TYBalContext = {
-	styBalAPY: number,
-	slippage: number,
-	allowances: TDict<bigint>,
-	holdings: TBalHoldings,
-	harvests: TYDaemonVaultHarvests,
-	set_slippage: (slippage: number) => void,
-	refetchAllowances: () => void
-}
+	styBalAPY: number;
+	slippage: number;
+	allowances: TDict<bigint>;
+	holdings: TBalHoldings;
+	harvests: TYDaemonVaultHarvests;
+	set_slippage: (slippage: number) => void;
+	refetchAllowances: () => void;
+};
 
 const defaultProps = {
 	styBalAPY: 0,
@@ -32,8 +32,8 @@ const defaultProps = {
 };
 
 /* 🔵 - Yearn Finance **********************************************************
-** This context controls the Holdings computation.
-******************************************************************************/
+ ** This context controls the Holdings computation.
+ ******************************************************************************/
 const YBalContext = createContext<TYBalContext>(defaultProps);
 
 export const YBalContextApp = ({children}: {children: ReactElement}): ReactElement => {
@@ -53,28 +53,27 @@ export const YBalContextApp = ({children}: {children: ReactElement}): ReactEleme
 	});
 
 	/* 🔵 - Yearn Finance ******************************************************
-	** Compute the styBal APY based on the experimental APY and the mega boost.
-	**************************************************************************/
-	const styBalAPY = useMemo((): number => (styBalVault?.apy?.net_apy || 0) * 100, [styBalVault]);
+	 ** Compute the styBal APY based on the experimental APY and the mega boost.
+	 **************************************************************************/
+	const styBalAPY = useMemo((): number => (styBalVault?.apr?.netAPR || 0) * 100, [styBalVault]);
 
 	/* 🔵 - Yearn Finance ******************************************************
-	**	Setup and render the Context provider to use in the app.
-	***************************************************************************/
-	const contextValue = useMemo((): TYBalContext => ({
-		harvests: yBalHarvests ?? [],
-		holdings: holdings,
-		allowances: allowances[0],
-		refetchAllowances: allowances[1],
-		styBalAPY,
-		slippage,
-		set_slippage
-	}), [yBalHarvests, holdings, allowances, styBalAPY, slippage, set_slippage]);
-
-	return (
-		<YBalContext.Provider value={contextValue}>
-			{children}
-		</YBalContext.Provider>
+	 **	Setup and render the Context provider to use in the app.
+	 ***************************************************************************/
+	const contextValue = useMemo(
+		(): TYBalContext => ({
+			harvests: yBalHarvests ?? [],
+			holdings: holdings,
+			allowances: allowances[0],
+			refetchAllowances: allowances[1],
+			styBalAPY,
+			slippage,
+			set_slippage
+		}),
+		[yBalHarvests, holdings, allowances, styBalAPY, slippage, set_slippage]
 	);
+
+	return <YBalContext.Provider value={contextValue}>{children}</YBalContext.Provider>;
 };
 
 export const useYBal = (): TYBalContext => useContext(YBalContext);

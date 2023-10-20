@@ -1,8 +1,8 @@
 const BRIBE_CATEGORIES = ['claimable', 'all'] as const;
-export type TBribeListHeroCategory = typeof BRIBE_CATEGORIES[number];
+export type TBribeListHeroCategory = (typeof BRIBE_CATEGORIES)[number];
 
 const BRIBE_OFFER_CATEGORIES = ['standard', 'factory', 'all'] as const;
-export type TBribeOfferListHeroCategory = typeof BRIBE_OFFER_CATEGORIES[number];
+export type TBribeOfferListHeroCategory = (typeof BRIBE_OFFER_CATEGORIES)[number];
 
 const VAULT_CATEGORIES = [
 	'All Vaults',
@@ -18,7 +18,7 @@ const VAULT_CATEGORIES = [
 	'Holdings',
 	'Migrations'
 ] as const;
-export type TVaultListHeroCategory = typeof VAULT_CATEGORIES[number];
+export type TVaultListHeroCategory = (typeof VAULT_CATEGORIES)[number];
 
 export function isValidCategory<T extends string>(input: string): input is T {
 	return (

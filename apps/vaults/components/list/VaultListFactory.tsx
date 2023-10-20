@@ -5,51 +5,54 @@ import {VaultsListRow} from '@vaults/components/list/VaultsListRow';
 import {useAppSettings} from '@vaults/contexts/useAppSettings';
 import {useFilteredVaults} from '@vaults/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
-import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {performBatchedUpdates} from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {ListHead} from '@common/components/ListHead';
 import {ListHero} from '@common/components/ListHero';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
+import {isAutomatedVault, type TYDaemonVaults} from '@common/schemas/yDaemonVaultsSchemas';
 import {getVaultName} from '@common/utils';
 
 import type {ReactElement, ReactNode} from 'react';
-import type {TYDaemonVaults} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TSortDirection} from '@common/types/types';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 
 export function VaultListFactory(): ReactElement {
-	const {balances} = useWallet();
+	const {getToken} = useWallet();
 	const {vaults, isLoadingVaultList} = useYearn();
-	const [sortBy, set_sortBy] = useState<TPossibleSortBy>('apy');
+	const [sortBy, set_sortBy] = useState<TPossibleSortBy>('apr');
 	const [sortDirection, set_sortDirection] = useState<TSortDirection>('');
 	const {shouldHideLowTVLVaults, shouldHideDust, searchValue, set_searchValue} = useAppSettings();
 	const [category, set_category] = useState('Curve Factory Vaults');
 
 	/* 🔵 - Yearn Finance **************************************************************************
-	**	It's best to memorize the filtered vaults, which saves a lot of processing time by only
-	**	performing the filtering once.
-	**********************************************************************************************/
-	const curveVaults = useFilteredVaults(vaults, ({category, type}): boolean => category === 'Curve' && type === 'Automated');
-	const holdingsVaults = useFilteredVaults(vaults, ({category, address, type}): boolean => {
-		const holding = balances?.[toAddress(address)];
-		const hasValidBalance = toBigInt(holding?.raw) > 0n;
-		const balanceValue = holding?.normalizedValue || 0;
+	 **	It's best to memorize the filtered vaults, which saves a lot of processing time by only
+	 **	performing the filtering once.
+	 **********************************************************************************************/
+	const curveVaults = useFilteredVaults(
+		vaults,
+		(vault): boolean => vault.category === 'Curve' && isAutomatedVault(vault)
+	);
+	const holdingsVaults = useFilteredVaults(vaults, (vault): boolean => {
+		const {category, address, chainID} = vault;
+		const holding = getToken({address, chainID});
+		const hasValidBalance = holding.balance.raw > 0n;
+		const balanceValue = holding.value || 0;
 		if (shouldHideDust && balanceValue < 0.01) {
 			return false;
-		} if (hasValidBalance && category === 'Curve' && type === 'Automated') {
+		}
+		if (hasValidBalance && category === 'Curve' && isAutomatedVault(vault)) {
 			return true;
 		}
 		return false;
 	});
 
 	/* 🔵 - Yearn Finance **************************************************************************
-	**	First, we need to determine in which category we are. The vaultsToDisplay function will
-	**	decide which vaults to display based on the category. No extra filters are applied.
-	**	The possible lists are memoized to avoid unnecessary re-renders.
-	**********************************************************************************************/
+	 **	First, we need to determine in which category we are. The vaultsToDisplay function will
+	 **	decide which vaults to display based on the category. No extra filters are applied.
+	 **	The possible lists are memoized to avoid unnecessary re-renders.
+	 **********************************************************************************************/
 	const vaultsToDisplay = useMemo((): TYDaemonVaults => {
 		let _vaultList: TYDaemonVaults = [...Object.values(vaults || {})];
 
@@ -60,16 +63,16 @@ export function VaultListFactory(): ReactElement {
 		}
 
 		if (shouldHideLowTVLVaults && category !== 'Holdings') {
-			_vaultList = _vaultList.filter((vault): boolean => (vault?.tvl?.tvl || 0) > 10_000);
+			_vaultList = _vaultList.filter((vault): boolean => vault.tvl.tvl > 10_000);
 		}
 
 		return _vaultList;
 	}, [category, curveVaults, holdingsVaults, shouldHideLowTVLVaults, vaults]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
-	**	Then, on the vaultsToDisplay list, we apply the search filter. The search filter is
-	**	implemented as a simple string.includes() on the vault name.
-	**********************************************************************************************/
+	 **	Then, on the vaultsToDisplay list, we apply the search filter. The search filter is
+	 **	implemented as a simple string.includes() on the vault name.
+	 **********************************************************************************************/
 	const searchedVaults = useMemo((): TYDaemonVaults => {
 		const vaultsToUse = [...vaultsToDisplay];
 
@@ -83,16 +86,16 @@ export function VaultListFactory(): ReactElement {
 	}, [vaultsToDisplay, searchValue]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
-	**	Then, once we have reduced the list of vaults to display, we can sort them. The sorting
-	**	is done via a custom method that will sort the vaults based on the sortBy and
-	**	sortDirection values.
-	**********************************************************************************************/
+	 **	Then, once we have reduced the list of vaults to display, we can sort them. The sorting
+	 **	is done via a custom method that will sort the vaults based on the sortBy and
+	 **	sortDirection values.
+	 **********************************************************************************************/
 	const sortedVaultsToDisplay = useSortVaults([...searchedVaults], sortBy, sortDirection);
 
 	/* 🔵 - Yearn Finance **************************************************************************
-	**	Callback method used to sort the vaults list.
-	**	The use of useCallback() is to prevent the method from being re-created on every render.
-	**********************************************************************************************/
+	 **	Callback method used to sort the vaults list.
+	 **	The use of useCallback() is to prevent the method from being re-created on every render.
+	 **********************************************************************************************/
 	const onSort = useCallback((newSortBy: string, newSortDirection: string): void => {
 		performBatchedUpdates((): void => {
 			set_sortBy(newSortBy as TPossibleSortBy);
@@ -101,26 +104,30 @@ export function VaultListFactory(): ReactElement {
 	}, []);
 
 	/* 🔵 - Yearn Finance **************************************************************************
-	**	The VaultList component is memoized to prevent it from being re-created on every render.
-	**	It contains either the list of vaults, is some are available, or a message to the user.
-	**********************************************************************************************/
+	 **	The VaultList component is memoized to prevent it from being re-created on every render.
+	 **	It contains either the list of vaults, is some are available, or a message to the user.
+	 **********************************************************************************************/
 	const VaultList = useMemo((): ReactNode => {
 		if (isLoadingVaultList || isZero(sortedVaultsToDisplay.length)) {
 			return (
 				<VaultsListEmptyFactory
 					isLoading={isLoadingVaultList}
 					sortedVaultsToDisplay={sortedVaultsToDisplay}
-					currentCategory={category} />
+					currentCategories={category}
+				/>
 			);
 		}
-		return (
-			sortedVaultsToDisplay.map((vault): ReactNode => {
-				if (!vault) {
-					return (null);
-				}
-				return <VaultsListRow key={vault.address} currentVault={vault} />;
-			})
-		);
+		return sortedVaultsToDisplay.map((vault): ReactNode => {
+			if (!vault) {
+				return null;
+			}
+			return (
+				<VaultsListRow
+					key={vault.address}
+					currentVault={vault}
+				/>
+			);
+		});
 	}, [category, isLoadingVaultList, sortedVaultsToDisplay]);
 
 	return (
@@ -133,14 +140,22 @@ export function VaultListFactory(): ReactElement {
 				searchPlaceholder={`Search ${category}`}
 				categories={[
 					[
-						{value: 'Curve Factory Vaults', label: 'Curve', isSelected: category === 'Curve Factory Vaults'},
-						{value: 'Holdings', label: 'Holdings', isSelected: category === 'Holdings'}
-
+						{
+							value: 'Curve Factory Vaults',
+							label: 'Curve',
+							isSelected: category === 'Curve Factory Vaults'
+						},
+						{
+							value: 'Holdings',
+							label: 'Holdings',
+							isSelected: category === 'Holdings'
+						}
 					]
 				]}
 				onSelect={set_category}
 				searchValue={searchValue}
-				set_searchValue={set_searchValue} />
+				set_searchValue={set_searchValue}
+			/>
 
 			<ListHead
 				sortBy={sortBy}
@@ -148,11 +163,32 @@ export function VaultListFactory(): ReactElement {
 				onSort={onSort}
 				items={[
 					{label: 'Token', value: 'name', sortable: true},
-					{label: 'APY', value: 'apy', sortable: true, className: 'col-span-2'},
-					{label: 'Available', value: 'available', sortable: true, className: 'col-span-2'},
-					{label: 'Deposited', value: 'deposited', sortable: true, className: 'col-span-2'},
-					{label: 'TVL', value: 'tvl', sortable: true, className: 'col-span-2'}
-				]} />
+					{
+						label: 'APY',
+						value: 'apy',
+						sortable: true,
+						className: 'col-span-2'
+					},
+					{
+						label: 'Available',
+						value: 'available',
+						sortable: true,
+						className: 'col-span-2'
+					},
+					{
+						label: 'Deposited',
+						value: 'deposited',
+						sortable: true,
+						className: 'col-span-2'
+					},
+					{
+						label: 'TVL',
+						value: 'tvl',
+						sortable: true,
+						className: 'col-span-2'
+					}
+				]}
+			/>
 
 			{VaultList}
 		</div>

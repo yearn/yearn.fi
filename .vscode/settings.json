@@ -1,0 +1,37 @@
+{
+	"eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
+	"files.trimTrailingWhitespace": true,
+	"search.exclude": {
+		"**/node_modules": true
+	},
+	"editor.defaultFormatter": "esbenp.prettier-vscode",
+	"editor.formatOnSave": true,
+	"editor.wordWrap": "off",
+	"editor.autoIndent": "keep",
+	"editor.codeActionsOnSave": {
+		"source.fixAll": true
+	},
+	"editor.quickSuggestions": {
+		"strings": true
+	},
+	"css.validate": false,
+	"less.validate": false,
+	"scss.validate": false,
+	"[jsonc]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"[typescript]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"[typescriptreact]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"[postcss]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"[json]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"typescript.tsdk": "node_modules/typescript/lib",
+	"typescript.enablePromptUseWorkspaceTsdk": true
+}

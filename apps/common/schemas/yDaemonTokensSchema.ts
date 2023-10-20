@@ -11,7 +11,8 @@ export const yDaemonTokenSchema = z.object({
 });
 
 export const yDaemonTokensSchema = z.record(addressSchema, yDaemonTokenSchema);
+export const yDaemonTokensChainSchema = z.record(z.string(), yDaemonTokensSchema);
 
 export type TYDaemonToken = z.infer<typeof yDaemonTokenSchema>;
-
 export type TYDaemonTokens = z.infer<typeof yDaemonTokensSchema>;
+export type TYDaemonTokensChain = z.infer<typeof yDaemonTokensChainSchema>;

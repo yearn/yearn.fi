@@ -15,7 +15,11 @@ import type {TYDaemonGaugeRewardsFeed} from '@common/schemas/yDaemonGaugeRewards
 function RewardFeedRowItemWithExtraData({
 	address,
 	value
-}: {address: TAddress, value: bigint, minDecimals?: number}): ReactElement {
+}: {
+	address: TAddress;
+	value: bigint;
+	minDecimals?: number;
+}): ReactElement {
 	const {tokens, prices} = useYearn();
 
 	const tokenInfo = tokens?.[address];
@@ -23,7 +27,7 @@ function RewardFeedRowItemWithExtraData({
 	const decimals = tokenInfo?.decimals || 18;
 	const symbol = tokenInfo?.symbol || '???';
 	const bribeAmount = formatToNormalizedValue(toBigInt(value), decimals);
-	const bribeValue = bribeAmount * (Number(tokenPrice || 0));
+	const bribeValue = bribeAmount * Number(tokenPrice || 0);
 
 	return (
 		<div className={'flex h-auto flex-col items-end'}>
@@ -39,7 +43,11 @@ function RewardFeedRowItemWithExtraData({
 	);
 }
 
-export function RewardFeedTableRow({currentRewardAdded}: {currentRewardAdded: TYDaemonGaugeRewardsFeed[0]}): ReactElement | null {
+export function RewardFeedTableRow({
+	currentRewardAdded
+}: {
+	currentRewardAdded: TYDaemonGaugeRewardsFeed[0];
+}): ReactElement | null {
 	const {gauges} = useCurve();
 
 	const gaugesObject = useMemo((): {[key: string]: TCurveGauge} => {
@@ -58,7 +66,6 @@ export function RewardFeedTableRow({currentRewardAdded}: {currentRewardAdded: TY
 
 	return (
 		<div className={'grid w-full grid-cols-2 border-t border-neutral-200 px-4 md:grid-cols-3 md:px-10'}>
-
 			<div className={'col-span-1 flex h-20 w-full space-x-4'}>
 				<div className={'flex flex-row items-start pt-6'}>
 					<div className={'flex h-6 w-6 rounded-full md:flex md:h-10 md:w-10'}>
@@ -68,7 +75,8 @@ export function RewardFeedTableRow({currentRewardAdded}: {currentRewardAdded: TY
 							height={40}
 							quality={90}
 							src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${gaugeItem?.swap_token}/logo-128.png`}
-							loading={'eager'} />
+							loading={'eager'}
+						/>
 					</div>
 				</div>
 				<div className={'flex h-auto flex-col items-start pt-6'}>
@@ -79,7 +87,9 @@ export function RewardFeedTableRow({currentRewardAdded}: {currentRewardAdded: TY
 						href={`https://etherscan.io/address/${gaugeItem.gauge}`}
 						target={'_blank'}
 						rel={'noreferrer'}
-						className={'font-number inline-flex cursor-alias items-baseline text-right text-xs text-neutral-400 transition-colors hover:text-neutral-900'}>
+						className={
+							'font-number inline-flex cursor-alias items-baseline text-right text-xs text-neutral-400 transition-colors hover:text-neutral-900'
+						}>
 						{truncateHex(gaugeItem.gauge, 6)}
 					</a>
 				</div>
@@ -95,13 +105,15 @@ export function RewardFeedTableRow({currentRewardAdded}: {currentRewardAdded: TY
 
 			<div className={'col-span-1 flex h-20 w-full justify-end'}>
 				<div className={'flex flex-row pt-6'}>
-					<label className={'block text-sm leading-6 text-neutral-400 md:hidden'}>{'Current Rewards per veCRV'}</label>
+					<label className={'block text-sm leading-6 text-neutral-400 md:hidden'}>
+						{'Current Rewards per veCRV'}
+					</label>
 					<RewardFeedRowItemWithExtraData
 						address={currentRewardAdded.rewardToken}
-						value={toBigInt(currentRewardAdded.amount)} />
+						value={toBigInt(currentRewardAdded.amount)}
+					/>
 				</div>
 			</div>
-
 		</div>
 	);
 }

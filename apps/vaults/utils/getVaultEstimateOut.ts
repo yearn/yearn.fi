@@ -8,14 +8,14 @@ import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TNormalizedBN} from '@common/types/types';
 
 type TGetVaultEstimateOutProps = {
-	inputToken: TAddress
-	outputToken: TAddress
-	inputDecimals: number
-	outputDecimals: number
-	inputAmount: bigint
-	isDepositing: boolean
+	inputToken: TAddress;
+	outputToken: TAddress;
+	inputDecimals: number;
+	outputDecimals: number;
+	inputAmount: bigint;
+	isDepositing: boolean;
 	chainID: number;
-}
+};
 export async function getVaultEstimateOut(props: TGetVaultEstimateOutProps): Promise<TNormalizedBN> {
 	assertAddress(props.inputToken, 'inputToken');
 	assertAddress(props.outputToken, 'outputToken');
@@ -36,10 +36,10 @@ export async function getVaultEstimateOut(props: TGetVaultEstimateOutProps): Pro
 		chainId: props.chainID
 	});
 	if (props.isDepositing) {
-		const expectedOutFetched = props.inputAmount * powerDecimals / pps;
+		const expectedOutFetched = (props.inputAmount * powerDecimals) / pps;
 		return toNormalizedBN(expectedOutFetched, Number(inputDecimals));
 	}
 	const outputDecimals = toBigInt(props.outputDecimals || 18);
-	const expectedOutFetched = props.inputAmount * pps / powerDecimals;
+	const expectedOutFetched = (props.inputAmount * pps) / powerDecimals;
 	return toNormalizedBN(expectedOutFetched, Number(outputDecimals));
 }

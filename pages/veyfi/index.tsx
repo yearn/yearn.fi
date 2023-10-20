@@ -31,9 +31,7 @@ function Index(): ReactElement {
 		<>
 			<PageProgressBar isLoading={isLoading} />
 
-			<h1 className={'w-full text-center text-8xl font-bold'}>
-				{'veYFI'}
-			</h1>
+			<h1 className={'w-full text-center text-8xl font-bold'}>{'veYFI'}</h1>
 
 			<div className={'my-14 w-full'}>
 				<SummaryData
@@ -50,7 +48,8 @@ function Index(): ReactElement {
 							label: 'Expiration for the lock',
 							content: positions?.unlockTime ? formatDateShort(positions.unlockTime) : '-'
 						}
-					]} />
+					]}
+				/>
 			</div>
 
 			<Tabs items={tabs} />

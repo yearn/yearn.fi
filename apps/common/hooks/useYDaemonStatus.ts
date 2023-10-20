@@ -10,7 +10,9 @@ type TProps = {
 
 export function useYDaemonStatus<T>({chainID}: TProps): SWRResponse<T> | null {
 	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID});
-	const result = useSWR<T>(`${yDaemonBaseUri}/status`, baseFetcher, {revalidateOnFocus: false});
+	const result = useSWR<T>(`${yDaemonBaseUri}/status`, baseFetcher, {
+		revalidateOnFocus: false
+	});
 
 	if (!result.data || result.isLoading || result.isValidating) {
 		return result;
@@ -18,4 +20,3 @@ export function useYDaemonStatus<T>({chainID}: TProps): SWRResponse<T> | null {
 
 	return result;
 }
-

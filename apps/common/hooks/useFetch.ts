@@ -9,10 +9,13 @@ type TUseZodProps<T> = {
 	endpoint: string | null;
 	schema: z.ZodSchema;
 	config?: Parameters<typeof useSWR<T>>[2];
-}
+};
 
 export function useFetch<T>({endpoint, schema, config}: TUseZodProps<T>): SWRResponse<T> & {isSuccess: boolean} {
-	const result = useSWR<T>(endpoint, baseFetcher, {revalidateOnFocus: false, ...config});
+	const result = useSWR<T>(endpoint, baseFetcher, {
+		revalidateOnFocus: false,
+		...config
+	});
 
 	if (!result.data || result.isLoading || result.isValidating) {
 		return {...result, isSuccess: false};
@@ -23,7 +26,6 @@ export function useFetch<T>({endpoint, schema, config}: TUseZodProps<T>): SWRRes
 		Sentry.captureException(result.error, {tags: {endpoint}});
 		return {...result, isSuccess: false};
 	}
-
 
 	const parsedData = schema.safeParse(result.data);
 

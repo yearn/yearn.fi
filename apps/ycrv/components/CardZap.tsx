@@ -3,7 +3,14 @@ import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
-import {CRV_TOKEN_ADDRESS, LPYCRV_TOKEN_ADDRESS, LPYCRV_V2_TOKEN_ADDRESS, YCRV_CURVE_POOL_ADDRESS, YCRV_CURVE_POOL_V2_ADDRESS, YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {
+	CRV_TOKEN_ADDRESS,
+	LPYCRV_TOKEN_ADDRESS,
+	LPYCRV_V2_TOKEN_ADDRESS,
+	YCRV_CURVE_POOL_ADDRESS,
+	YCRV_CURVE_POOL_V2_ADDRESS,
+	YCRV_TOKEN_ADDRESS
+} from '@yearn-finance/web-lib/utils/constants';
 import {formatToNormalizedValue, toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
@@ -21,38 +28,45 @@ import type {TDropdownOption} from '@common/types/types';
 
 function CardZap(): ReactElement {
 	const {isActive} = useWeb3();
-	const {balances} = useWallet();
+	const {getToken, getBalance} = useWallet();
 	const {vaults, prices} = useYearn();
 	const {
-		txStatusApprove, txStatusZap,
-		selectedOptionFrom, set_selectedOptionFrom,
-		selectedOptionTo, set_selectedOptionTo,
-		amount, set_amount,
+		txStatusApprove,
+		txStatusZap,
+		selectedOptionFrom,
+		set_selectedOptionFrom,
+		selectedOptionTo,
+		set_selectedOptionTo,
+		amount,
+		set_amount,
 		set_hasTypedSomething,
-		fromVaultAPY, toVaultAPY, expectedOutWithSlippage,
-		allowanceFrom, onApproveFrom, onZap, onIncreaseCRVAllowance
+		fromVaultAPY,
+		toVaultAPY,
+		expectedOutWithSlippage,
+		allowanceFrom,
+		onApproveFrom,
+		onZap,
+		onIncreaseCRVAllowance
 	} = useCardTransactor();
 
-	const ycrvPrice = useMemo((): number => (
-		formatToNormalizedValue(
-			toBigInt(prices?.[YCRV_TOKEN_ADDRESS] || 0),
-			6
-		)
-	), [prices]);
+	const ycrvPrice = useMemo(
+		(): number => formatToNormalizedValue(toBigInt(prices?.[YCRV_TOKEN_ADDRESS] || 0), 6),
+		[prices]
+	);
 
-	const ycrvCurvePoolPrice = useMemo((): number => (
-		formatToNormalizedValue(
-			toBigInt(prices?.[YCRV_CURVE_POOL_ADDRESS] || 0),
-			6
-		)
-	), [prices]);
+	const ycrvCurvePoolPrice = useMemo(
+		(): number => formatToNormalizedValue(toBigInt(prices?.[YCRV_CURVE_POOL_ADDRESS] || 0), 6),
+		[prices]
+	);
 
 	/* 🔵 - Yearn Finance ******************************************************
-	** useMemo to get the current possible TO vaults path for the current FROM
-	**************************************************************************/
+	 ** useMemo to get the current possible TO vaults path for the current FROM
+	 **************************************************************************/
 	const possibleTo = useMemo((): TDropdownOption[] => {
 		if (selectedOptionFrom.value === LPYCRV_TOKEN_ADDRESS) {
-			const possibleOptions = ZAP_OPTIONS_TO.filter((option): boolean => option.value === LPYCRV_V2_TOKEN_ADDRESS);
+			const possibleOptions = ZAP_OPTIONS_TO.filter(
+				(option): boolean => option.value === LPYCRV_V2_TOKEN_ADDRESS
+			);
 			if (selectedOptionTo.value !== LPYCRV_V2_TOKEN_ADDRESS) {
 				set_selectedOptionTo(possibleOptions[0]);
 			}
@@ -66,7 +80,9 @@ function CardZap(): ReactElement {
 			return possibleOptions;
 		}
 		if (selectedOptionFrom.value === YCRV_CURVE_POOL_V2_ADDRESS) {
-			const possibleOptions = ZAP_OPTIONS_TO.filter((option): boolean => option.value === LPYCRV_V2_TOKEN_ADDRESS);
+			const possibleOptions = ZAP_OPTIONS_TO.filter(
+				(option): boolean => option.value === LPYCRV_V2_TOKEN_ADDRESS
+			);
 			if (selectedOptionTo.value !== LPYCRV_V2_TOKEN_ADDRESS) {
 				set_selectedOptionTo(possibleOptions[0]);
 			}
@@ -76,7 +92,10 @@ function CardZap(): ReactElement {
 	}, [selectedOptionFrom.value, selectedOptionTo.value, ZAP_OPTIONS_TO]);
 
 	function renderButton(): ReactElement {
-		const balanceForInputToken = toBigInt(balances?.[toAddress(selectedOptionFrom.value)]?.raw);
+		const balanceForInputToken = getBalance({
+			address: selectedOptionFrom.value,
+			chainID: selectedOptionFrom.chainID
+		}).raw;
 		const isAboveBalance = amount.raw > balanceForInputToken || isZero(balanceForInputToken);
 		const isAboveAllowance = amount.raw > allowanceFrom;
 
@@ -87,11 +106,7 @@ function CardZap(): ReactElement {
 						onClick={onIncreaseCRVAllowance}
 						className={'w-full'}
 						isBusy={txStatusApprove.pending}
-						isDisabled={
-							!isActive
-							|| isZero(amount.raw)
-							|| isAboveBalance
-						}>
+						isDisabled={!isActive || isZero(amount.raw) || isAboveBalance}>
 						{'Increase Allowance'}
 					</Button>
 				);
@@ -101,11 +116,7 @@ function CardZap(): ReactElement {
 					onClick={onApproveFrom}
 					className={'w-full'}
 					isBusy={txStatusApprove.pending}
-					isDisabled={
-						!isActive
-						|| isZero(amount.raw)
-						|| isAboveBalance
-					}>
+					isDisabled={!isActive || isZero(amount.raw) || isAboveBalance}>
 					{isAboveBalance ? 'Insufficient balance' : `Approve ${selectedOptionFrom?.label || 'token'}`}
 				</Button>
 			);
@@ -116,11 +127,7 @@ function CardZap(): ReactElement {
 				onClick={onZap}
 				className={'w-full'}
 				isBusy={txStatusZap.pending}
-				isDisabled={
-					!isActive
-					|| isZero(amount.raw)
-					|| amount.raw > balanceForInputToken
-				}>
+				isDisabled={!isActive || isZero(amount.raw) || amount.raw > balanceForInputToken}>
 				{isAboveBalance && !isZero(amount.raw) ? 'Insufficient balance' : 'Swap'}
 			</Button>
 		);
@@ -138,13 +145,22 @@ function CardZap(): ReactElement {
 						onSelect={(option: TDropdownOption): void => {
 							performBatchedUpdates((): void => {
 								if (option.value === selectedOptionTo.value) {
-									set_selectedOptionTo(ZAP_OPTIONS_TO.find((o: TDropdownOption): boolean => o.value !== option.value) as TDropdownOption);
+									set_selectedOptionTo(
+										ZAP_OPTIONS_TO.find(
+											(o: TDropdownOption): boolean => o.value !== option.value
+										) as TDropdownOption
+									);
 								}
 								set_selectedOptionFrom(option);
-								set_amount(toNormalizedBN(balances[toAddress(option.value)]?.raw));
+								set_amount(
+									toNormalizedBN(getBalance({address: option.value, chainID: option.chainID}).raw)
+								);
 							});
-						}} />
-					<p suppressHydrationWarning className={'pl-2 !text-xs font-normal !text-green-600'}>
+						}}
+					/>
+					<p
+						suppressHydrationWarning
+						className={'pl-2 !text-xs font-normal !text-green-600'}>
 						{fromVaultAPY}
 					</p>
 				</label>
@@ -159,19 +175,41 @@ function CardZap(): ReactElement {
 							<input
 								id={'amount'}
 								suppressHydrationWarning
-								className={`w-full overflow-x-scroll border-none bg-transparent px-0 py-4 font-bold outline-none scrollbar-none ${isActive ? '' : 'cursor-not-allowed'}`}
+								className={`w-full overflow-x-scroll border-none bg-transparent px-0 py-4 font-bold outline-none scrollbar-none ${
+									isActive ? '' : 'cursor-not-allowed'
+								}`}
 								type={'text'}
 								disabled={!isActive}
 								value={amount.normalized}
 								onChange={(e: ChangeEvent<HTMLInputElement>): void => {
 									performBatchedUpdates((): void => {
-										set_amount(handleInputChangeEventValue(e.target.value, balances[toAddress(selectedOptionFrom.value)]?.decimals || 18));
+										set_amount(
+											handleInputChangeEventValue(
+												e.target.value,
+												getToken({
+													address: selectedOptionFrom.value,
+													chainID: selectedOptionFrom.chainID
+												}).decimals || 18
+											)
+										);
 										set_hasTypedSomething(true);
 									});
-								}} />
+								}}
+							/>
 							<button
-								onClick={(): void => set_amount(toNormalizedBN(balances[toAddress(selectedOptionFrom.value)]?.raw))}
-								className={'cursor-pointer text-sm text-neutral-500 transition-colors hover:text-neutral-900'}>
+								onClick={(): void =>
+									set_amount(
+										toNormalizedBN(
+											getBalance({
+												address: selectedOptionFrom.value,
+												chainID: selectedOptionFrom.chainID
+											}).raw
+										)
+									)
+								}
+								className={
+									'cursor-pointer text-sm text-neutral-500 transition-colors hover:text-neutral-900'
+								}>
 								{'max'}
 							</button>
 						</div>
@@ -184,10 +222,15 @@ function CardZap(): ReactElement {
 							toAddress(selectedOptionFrom.value) === YCRV_TOKEN_ADDRESS
 								? ycrvPrice || 0
 								: toAddress(selectedOptionFrom.value) === YCRV_CURVE_POOL_ADDRESS
-									? ycrvCurvePoolPrice || 0
-									: balances?.[toAddress(selectedOptionFrom.value)]?.normalizedPrice
-									|| vaults?.[toAddress(selectedOptionFrom.value)]?.tvl?.price
-									|| 0
+								? ycrvCurvePoolPrice || 0
+								: Number(
+										getToken({
+											address: selectedOptionFrom.value,
+											chainID: selectedOptionFrom.chainID
+										}).price.normalized
+								  ) ||
+								  vaults?.[toAddress(selectedOptionFrom.value)]?.tvl?.price ||
+								  0
 						)}
 					</p>
 				</div>
@@ -209,8 +252,11 @@ function CardZap(): ReactElement {
 						defaultOption={possibleTo[0]}
 						options={possibleTo}
 						selected={selectedOptionTo}
-						onSelect={(option: TDropdownOption): void => set_selectedOptionTo(option)} />
-					<p suppressHydrationWarning className={'pl-2 !text-xs font-normal !text-green-600'}>
+						onSelect={(option: TDropdownOption): void => set_selectedOptionTo(option)}
+					/>
+					<p
+						suppressHydrationWarning
+						className={'pl-2 !text-xs font-normal !text-green-600'}>
 						{toVaultAPY}
 					</p>
 				</label>
@@ -220,29 +266,30 @@ function CardZap(): ReactElement {
 						<p className={'block text-base text-neutral-600 md:hidden'}>{'You will receive min'}</p>
 					</div>
 					<div className={'flex h-10 items-center bg-neutral-300 p-2'}>
-						<b className={'overflow-x-scroll scrollbar-none'}>
-							{expectedOutWithSlippage}
-						</b>
+						<b className={'overflow-x-scroll scrollbar-none'}>{expectedOutWithSlippage}</b>
 					</div>
-					<p suppressHydrationWarning className={'pl-2 text-xs font-normal text-neutral-600'}>
+					<p
+						suppressHydrationWarning
+						className={'pl-2 text-xs font-normal text-neutral-600'}>
 						{formatCounterValue(
 							expectedOutWithSlippage,
 							toAddress(selectedOptionTo.value) === YCRV_TOKEN_ADDRESS
 								? ycrvPrice || 0
 								: toAddress(selectedOptionFrom.value) === YCRV_CURVE_POOL_ADDRESS
-									? ycrvCurvePoolPrice || 0
-									: balances?.[toAddress(selectedOptionTo.value)]?.normalizedPrice
-									|| vaults?.[toAddress(selectedOptionTo.value)]?.tvl?.price
-									|| 0
+								? ycrvCurvePoolPrice || 0
+								: Number(
+										getToken({address: selectedOptionTo.value, chainID: selectedOptionTo.chainID})
+											.price.normalized
+								  ) ||
+								  vaults?.[toAddress(selectedOptionTo.value)]?.tvl?.price ||
+								  0
 						)}
 					</p>
 				</div>
 			</div>
 
 			<div aria-label={'card actions'}>
-				<div className={'mb-3'}>
-					{renderButton()}
-				</div>
+				<div className={'mb-3'}>{renderButton()}</div>
 			</div>
 		</>
 	);
@@ -258,7 +305,11 @@ export function WithCardTransactor({className}: {className: string}): ReactEleme
 					<h2 className={'text-2xl font-bold'}>{'Supercharge your yield with yCRV'}</h2>
 				</div>
 				<div className={'w-full pb-8'}>
-					<p className={'text-sm text-neutral-600'}>{'Swap any token within the yCRV ecosystem for any other. Maybe you want to swap for a higher yield, or maybe you just like swapping. It’s ok, we don’t judge.'}</p>
+					<p className={'text-sm text-neutral-600'}>
+						{
+							'Swap any token within the yCRV ecosystem for any other. Maybe you want to swap for a higher yield, or maybe you just like swapping. It’s ok, we don’t judge.'
+						}
+					</p>
 				</div>
 				<CardZap />
 			</div>

@@ -1,6 +1,7 @@
 import {erc20ABI} from 'wagmi';
 import {VEYFI_CLAIM_REWARDS_ZAP_ABI} from '@veYFI/utils/abi/veYFIClaimRewardsZap.abi';
 import {VEYFI_GAUGE_ABI} from '@veYFI/utils/abi/veYFIGauge.abi';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {handleTx} from '@yearn-finance/web-lib/utils/wagmi/provider';
 import {assertAddress} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {allowanceOf} from '@common/utils/actions';
@@ -23,7 +24,7 @@ export async function approveAndStake(props: TApproveAndStake): Promise<TTxRespo
 		connector: props.connector,
 		chainID: props.chainID,
 		tokenAddress: props.vaultAddress,
-		spenderAddress: props.contractAddress
+		spenderAddress: toAddress(props.contractAddress)
 	});
 
 	if (allowance < props.amount) {
@@ -35,7 +36,7 @@ export async function approveAndStake(props: TApproveAndStake): Promise<TTxRespo
 				args: [props.contractAddress, props.amount]
 			});
 		} catch (error) {
-			return ({isSuccessful: false, error: error});
+			return {isSuccessful: false, error: error};
 		}
 	}
 

@@ -35,13 +35,15 @@ export function VoteTab(): ReactElement {
 		<div className={'grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-16'}>
 			<div className={'col-span-1 grid w-full gap-8'}>
 				<div className={'flex flex-col gap-6 md:min-h-[104px]'}>
-					<h2 className={'m-0 text-2xl font-bold'}>
-						{'Vote for Gauge'}
-					</h2>
-					<div className={'text-neutral-600'} >
+					<h2 className={'m-0 text-2xl font-bold'}>{'Vote for Gauge'}</h2>
+					<div className={'text-neutral-600'}>
 						<p>{'Vote to direct future YFI rewards to a particular gauge.'}</p>
 						<br />
-						<p>{'If you prefer your democracy on the representative side, you can delegate your vote to another address.'}</p>
+						<p>
+							{
+								'If you prefer your democracy on the representative side, you can delegate your vote to another address.'
+							}
+						</p>
 					</div>
 				</div>
 
@@ -49,11 +51,8 @@ export function VoteTab(): ReactElement {
 					<Link
 						className={'w-full md:w-auto'}
 						href={'https://snapshot.org/#/veyfi.eth'}
-						target={'_blank'}
-					>
-						<Button className={'w-full'}>
-							{'Vote on Snapshot'}
-						</Button>
+						target={'_blank'}>
+						<Button className={'w-full'}>{'Vote on Snapshot'}</Button>
 					</Link>
 				</div>
 
@@ -69,8 +68,7 @@ export function VoteTab(): ReactElement {
 						className={'w-full md:mt-7'}
 						onClick={onHandleExecuteDelegateVote}
 						isBusy={delegateVoteStatus.pending}
-						isDisabled={!isActive || !isValidDelegateAddress || delegateVoteStatus.pending}
-					>
+						isDisabled={!isActive || !isValidDelegateAddress || delegateVoteStatus.pending}>
 						{'Submit'}
 					</Button>
 				</div>

@@ -37,7 +37,8 @@ export function Switch(props: TSwitch): ReactElement {
 				<span className={'sr-only'}>{'Use setting'}</span>
 				<div
 					aria-hidden={'true'}
-					className={cl(isChecked ? 'translate-x-[14px]' : 'translate-x-0')} />
+					className={cl(isChecked ? 'translate-x-[14px]' : 'translate-x-0')}
+				/>
 			</HeadlessSwitch>
 		</div>
 	);

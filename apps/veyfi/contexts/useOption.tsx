@@ -2,7 +2,7 @@ import React, {createContext, memo, useCallback, useContext, useState} from 'rea
 import {useDeepCompareMemo} from '@react-hookz/web';
 import {VEYFI_DYFI_ABI} from '@veYFI/utils/abi/veYFIdYFI.abi';
 import {VEYFI_OPTIONS_ABI} from '@veYFI/utils/abi/veYFIOptions.abi';
-import {VEYFI_CHAIN_ID, VEYFI_DYFI_ADDRESS,VEYFI_OPTIONS_ADDRESS} from '@veYFI/utils/constants';
+import {VEYFI_CHAIN_ID, VEYFI_DYFI_ADDRESS, VEYFI_OPTIONS_ADDRESS} from '@veYFI/utils/constants';
 import {readContract} from '@wagmi/core';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {BIG_ZERO, YFI_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
@@ -13,13 +13,13 @@ import {useTokenPrice} from '@common/hooks/useTokenPrice';
 import type {ReactElement} from 'react';
 import type {TNormalizedBN} from '@common/types/types';
 
-export type	TOptionContext = {
-	getRequiredEth: (amount: bigint) => Promise<bigint>,
-	dYFIPrice: number,
-	position: TNormalizedBN,
-	discount: TNormalizedBN,
-	refresh: () => void,
-}
+export type TOptionContext = {
+	getRequiredEth: (amount: bigint) => Promise<bigint>;
+	dYFIPrice: number;
+	position: TNormalizedBN;
+	discount: TNormalizedBN;
+	refresh: () => void;
+};
 
 const defaultProps: TOptionContext = {
 	getRequiredEth: async (): Promise<bigint> => BIG_ZERO,
@@ -75,24 +75,23 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 		set_position(toNormalizedBN(dYFIBalance));
 	}, [userAddress]);
 
-	const refresh = useCallback((): void => {
+	const refresh = useAsyncTrigger(async (): Promise<void> => {
 		refreshPrice();
 		refreshPositions();
 	}, [refreshPrice, refreshPositions]);
 
-	const contextValue = useDeepCompareMemo((): TOptionContext => ({
-		getRequiredEth,
-		dYFIPrice,
-		position,
-		discount,
-		refresh
-	}), [getRequiredEth, position, dYFIPrice, refresh]);
-
-	return (
-		<OptionContext.Provider value={contextValue}>
-			{children}
-		</OptionContext.Provider>
+	const contextValue = useDeepCompareMemo(
+		(): TOptionContext => ({
+			getRequiredEth,
+			dYFIPrice,
+			position,
+			discount,
+			refresh
+		}),
+		[getRequiredEth, dYFIPrice, position, discount, refresh]
 	);
+
+	return <OptionContext.Provider value={contextValue}>{children}</OptionContext.Provider>;
 });
 
 export const useOption = (): TOptionContext => useContext(OptionContext);

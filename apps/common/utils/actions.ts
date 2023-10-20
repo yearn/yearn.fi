@@ -17,15 +17,38 @@ import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TWriteTransaction} from '@yearn-finance/web-lib/utils/wagmi/provider';
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 
+function getChainID(chainID: number): number {
+	if ((window as any).ethereum.useForknetForMainnet) {
+		if (chainID === 1) {
+			return 1337;
+		}
+	}
+	return chainID;
+}
+
 //Because USDT do not return a boolean on approve, we need to use this ABI
-const ALTERNATE_ERC20_APPROVE_ABI = [{'constant': false, 'inputs': [{'name': '_spender', 'type': 'address'}, {'name': '_value', 'type': 'uint256'}], 'name': 'approve', 'outputs': [], 'payable': false, 'stateMutability': 'nonpayable', 'type': 'function'}] as const;
+const ALTERNATE_ERC20_APPROVE_ABI = [
+	{
+		constant: false,
+		inputs: [
+			{name: '_spender', type: 'address'},
+			{name: '_value', type: 'uint256'}
+		],
+		name: 'approve',
+		outputs: [],
+		payable: false,
+		stateMutability: 'nonpayable',
+		type: 'function'
+	}
+] as const;
 
 /* 🔵 - Yearn Finance **********************************************************
-** isApprovedERC20 is a _VIEW_ function that checks if a token is approved for
-** a spender.
-******************************************************************************/
+ ** isApprovedERC20 is a _VIEW_ function that checks if a token is approved for
+ ** a spender.
+ ******************************************************************************/
 export async function isApprovedERC20(
 	connector: Connector | undefined,
+	chainID: number,
 	tokenAddress: TAddress,
 	spender: TAddress,
 	amount = MAX_UINT_256
@@ -34,6 +57,7 @@ export async function isApprovedERC20(
 	const result = await readContract({
 		...wagmiProvider,
 		abi: erc20ABI,
+		chainId: getChainID(chainID),
 		address: tokenAddress,
 		functionName: 'allowance',
 		args: [wagmiProvider.address, spender]
@@ -42,20 +66,20 @@ export async function isApprovedERC20(
 }
 
 /* 🔵 - Yearn Finance **********************************************************
-** allowanceOf is a _VIEW_ function that returns the amount of a token that is
-** approved for a spender.
-******************************************************************************/
+ ** allowanceOf is a _VIEW_ function that returns the amount of a token that is
+ ** approved for a spender.
+ ******************************************************************************/
 type TAllowanceOf = {
-	connector: Connector | undefined,
-	chainID: number,
-	tokenAddress: TAddress,
-	spenderAddress: TAddress
-}
+	connector: Connector | undefined;
+	chainID: number;
+	tokenAddress: TAddress;
+	spenderAddress: TAddress;
+};
 export async function allowanceOf(props: TAllowanceOf): Promise<bigint> {
 	const wagmiProvider = await toWagmiProvider(props.connector);
 	const result = await readContract({
 		...wagmiProvider,
-		chainId: props.chainID,
+		chainId: getChainID(props.chainID),
 		abi: erc20ABI,
 		address: props.tokenAddress,
 		functionName: 'allowance',
@@ -65,11 +89,11 @@ export async function allowanceOf(props: TAllowanceOf): Promise<bigint> {
 }
 
 /* 🔵 - Yearn Finance **********************************************************
-** approveERC20 is a _WRITE_ function that approves a token for a spender.
-**
-** @param spenderAddress - The address of the spender.
-** @param amount - The amount of collateral to deposit.
-******************************************************************************/
+ ** approveERC20 is a _WRITE_ function that approves a token for a spender.
+ **
+ ** @param spenderAddress - The address of the spender.
+ ** @param amount - The amount of collateral to deposit.
+ ******************************************************************************/
 type TApproveERC20 = TWriteTransaction & {
 	spenderAddress: TAddress | undefined;
 	amount: bigint;
@@ -97,12 +121,12 @@ export async function approveERC20(props: TApproveERC20): Promise<TTxResponse> {
 }
 
 /* 🔵 - Yearn Finance **********************************************************
-** deposit is a _WRITE_ function that deposits a collateral into a vault using
-** the vanilla direct deposit function.
-**
-** @app - Vaults
-** @param amount - The amount of ETH to deposit.
-******************************************************************************/
+ ** deposit is a _WRITE_ function that deposits a collateral into a vault using
+ ** the vanilla direct deposit function.
+ **
+ ** @app - Vaults
+ ** @param amount - The amount of ETH to deposit.
+ ******************************************************************************/
 type TDeposit = TWriteTransaction & {
 	amount: bigint;
 };
@@ -119,13 +143,13 @@ export async function deposit(props: TDeposit): Promise<TTxResponse> {
 }
 
 /* 🔵 - Yearn Finance **********************************************************
-** depositETH is a _WRITE_ function that deposits ETH into a vault accepting
-** wETH as collateral. Based on the chainId, it will use the appropriate
-** contract.
-**
-** @app - Vaults
-** @param amount - The amount of collateral to deposit.
-******************************************************************************/
+ ** depositETH is a _WRITE_ function that deposits ETH into a vault accepting
+ ** wETH as collateral. Based on the chainId, it will use the appropriate
+ ** contract.
+ **
+ ** @app - Vaults
+ ** @param amount - The amount of collateral to deposit.
+ ******************************************************************************/
 type TDepositEth = TWriteTransaction & {
 	amount: bigint;
 };
@@ -173,13 +197,13 @@ export async function depositETH(props: TDepositEth): Promise<TTxResponse> {
 }
 
 /* 🔵 - Yearn Finance **********************************************************
-** depositViaPartner is a _WRITE_ function that deposits a collateral into a
-** vault using a partner contract. This is used to keep track of the delegated
-** amount.
-**
-** @app - Vaults
-** @param amount - The amount of ETH to deposit.
-******************************************************************************/
+ ** depositViaPartner is a _WRITE_ function that deposits a collateral into a
+ ** vault using a partner contract. This is used to keep track of the delegated
+ ** amount.
+ **
+ ** @app - Vaults
+ ** @param amount - The amount of ETH to deposit.
+ ******************************************************************************/
 type TDepositViaPartner = TWriteTransaction & {
 	vaultAddress: TAddress | undefined;
 	partnerAddress: TAddress | undefined;
@@ -194,22 +218,18 @@ export async function depositViaPartner(props: TDepositViaPartner): Promise<TTxR
 		address: props.contractAddress,
 		abi: PARTNER_VAULT_ABI,
 		functionName: 'deposit',
-		args: [
-			props.vaultAddress,
-			props.partnerAddress || toAddress(process.env.PARTNER_ID_ADDRESS),
-			props.amount
-		]
+		args: [props.vaultAddress, props.partnerAddress || toAddress(process.env.PARTNER_ID_ADDRESS), props.amount]
 	});
 }
 
 /* 🔵 - Yearn Finance **********************************************************
-** withdrawETH is a _WRITE_ function that withdraws ETH from a vault accepting
-** wETH as collateral. Based on the chainId, it will use the appropriate
-** contract.
-**
-** @app - Vaults
-** @param amount - The amount of ETH to withdraw.
-******************************************************************************/
+ ** withdrawETH is a _WRITE_ function that withdraws ETH from a vault accepting
+ ** wETH as collateral. Based on the chainId, it will use the appropriate
+ ** contract.
+ **
+ ** @app - Vaults
+ ** @param amount - The amount of ETH to withdraw.
+ ******************************************************************************/
 type TWithdrawEth = TWriteTransaction & {
 	amount: bigint;
 };
@@ -257,12 +277,12 @@ export async function withdrawETH(props: TWithdrawEth): Promise<TTxResponse> {
 }
 
 /* 🔵 - Yearn Finance **********************************************************
-** withdrawShares is a _WRITE_ function that withdraws a share of underlying
-** collateral from a vault.
-**
-** @app - Vaults
-** @param amount - The amount of ETH to withdraw.
-******************************************************************************/
+ ** withdrawShares is a _WRITE_ function that withdraws a share of underlying
+ ** collateral from a vault.
+ **
+ ** @app - Vaults
+ ** @param amount - The amount of ETH to withdraw.
+ ******************************************************************************/
 type TWithdrawShares = TWriteTransaction & {
 	amount: bigint;
 };
@@ -279,13 +299,13 @@ export async function withdrawShares(props: TWithdrawShares): Promise<TTxRespons
 }
 
 /* 🔵 - Yearn Finance **********************************************************
-** migrateShares is a _WRITE_ function that migrates the tokens from one vault
-** to another. This is used to migrate from deprecated vaults to new ones.
-**
-** @app - Vaults
-** @param fromVault - The address of the vault to migrate from.
-** @param toVault - The address of the vault to migrate to.
-******************************************************************************/
+ ** migrateShares is a _WRITE_ function that migrates the tokens from one vault
+ ** to another. This is used to migrate from deprecated vaults to new ones.
+ **
+ ** @app - Vaults
+ ** @param fromVault - The address of the vault to migrate from.
+ ** @param toVault - The address of the vault to migrate to.
+ ******************************************************************************/
 type TMigrateShares = TWriteTransaction & {
 	fromVault: TAddress | undefined;
 	toVault: TAddress | undefined;

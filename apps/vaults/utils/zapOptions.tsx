@@ -10,8 +10,8 @@ type TSetZapOptionProps = {
 	address: TAddress;
 	chainID: number;
 	decimals: number;
-	solveVia?: TSolver[]
-}
+	solveVia?: TSolver[];
+};
 export function setZapOption({
 	name,
 	symbol,
@@ -20,16 +20,20 @@ export function setZapOption({
 	decimals,
 	solveVia
 }: TSetZapOptionProps): TDropdownOption {
-	return ({
+	return {
 		label: name,
 		symbol,
 		value: address,
 		decimals,
 		solveVia,
-		icon: <ImageWithFallback
-			src={`${process.env.BASE_YEARN_ASSETS_URI}/${chainID}/${address}/logo-128.png`}
-			alt={name}
-			width={36}
-			height={36} />
-	});
+		chainID,
+		icon: (
+			<ImageWithFallback
+				src={`${process.env.BASE_YEARN_ASSETS_URI}/${chainID}/${address}/logo-128.png`}
+				alt={name}
+				width={36}
+				height={36}
+			/>
+		)
+	};
 }

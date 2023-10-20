@@ -1,8 +1,8 @@
-import React, {createContext, memo, useCallback, useContext, useState} from 'react';
+import React, {createContext, memo, useContext, useState} from 'react';
 import {FixedNumber} from 'ethers';
 import {useDeepCompareMemo} from '@react-hookz/web';
 import {VEYFI_GAUGE_ABI} from '@veYFI/utils/abi/veYFIGauge.abi';
-import {VE_YFI_GAUGES,VEYFI_CHAIN_ID} from '@veYFI/utils/constants';
+import {VE_YFI_GAUGES, VEYFI_CHAIN_ID} from '@veYFI/utils/constants';
 import {readContracts} from '@wagmi/core';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -16,27 +16,27 @@ import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 import type {TNormalizedBN} from '@common/types/types';
 
 export type TGauge = {
-	address: TAddress,
-	vaultAddress: TAddress,
-	name: string,
-	symbol: string,
-	decimals: number,
-	totalStaked: TNormalizedBN,
-	rewardRate: TNormalizedBN,
-}
+	address: TAddress;
+	vaultAddress: TAddress;
+	name: string;
+	symbol: string;
+	decimals: number;
+	totalStaked: TNormalizedBN;
+	rewardRate: TNormalizedBN;
+};
 
 export type TGaugePosition = {
-	address: TAddress,
-	deposit: TNormalizedBN,
-	reward: TNormalizedBN,
-	boost: number,
-}
+	address: TAddress;
+	deposit: TNormalizedBN;
+	reward: TNormalizedBN;
+	boost: number;
+};
 
-export type	TGaugeContext = {
-	gaugesMap: TDict<TGauge | undefined>,
-	positionsMap: TDict<TGaugePosition | undefined>,
-	refresh: () => void,
-}
+export type TGaugeContext = {
+	gaugesMap: TDict<TGauge | undefined>;
+	positionsMap: TDict<TGaugePosition | undefined>;
+	refresh: () => void;
+};
 const defaultProps: TGaugeContext = {
 	gaugesMap: {},
 	positionsMap: {},
@@ -65,11 +65,7 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 			const totalAssets = toNormalizedBN(decodeAsBigInt(results[4]), decimals);
 			const rewardRate = toNormalizedBN(decodeAsBigInt(results[5]), 18);
 
-			//Debug value to test
-			// const totalAssets = toNormalizedBN(40000000000000000000n, decimals);
-			// const rewardRate = toNormalizedBN(330687830n, 18);
-
-			return ({
+			return {
 				address: gaugeAddress,
 				vaultAddress: decodeAsAddress(results[0]),
 				name: decodeAsString(results[1]),
@@ -77,7 +73,7 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 				decimals: decimals,
 				totalStaked: totalAssets,
 				rewardRate
-			});
+			};
 		});
 
 		const allGauges = await Promise.all(gaugePromises);
@@ -128,9 +124,10 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 			const depositPosition: TNormalizedBN = toNormalizedBN(balance, decimals);
 			const rewardPosition: TNormalizedBN = toNormalizedBN(earned, decimals);
 
-			const boostRatio = balance > 0n
-				? FixedNumber.from(boostedBalance).divUnsafe(FixedNumber.from(balance)).toUnsafeFloat()
-				: 0.1;
+			const boostRatio =
+				balance > 0n
+					? FixedNumber.from(boostedBalance).divUnsafe(FixedNumber.from(balance)).toUnsafeFloat()
+					: 0.1;
 			const boost = Math.min(1, boostRatio) * 10;
 
 			return {
@@ -148,22 +145,21 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 		set_positionsMap(allPositionsAsMap);
 	}, [address, gauges, isActive]);
 
-	const refresh = useCallback((): void => {
+	const refresh = useAsyncTrigger(async (): Promise<void> => {
 		refreshVotingEscrow();
 		refreshPositions();
 	}, [refreshPositions, refreshVotingEscrow]);
 
-	const contextValue = useDeepCompareMemo((): TGaugeContext => ({
-		gaugesMap: keyBy(gauges, 'address'),
-		positionsMap: positionsMap,
-		refresh
-	}), [gauges, positionsMap, refresh]);
-
-	return (
-		<GaugeContext.Provider value={contextValue}>
-			{children}
-		</GaugeContext.Provider>
+	const contextValue = useDeepCompareMemo(
+		(): TGaugeContext => ({
+			gaugesMap: keyBy(gauges, 'address'),
+			positionsMap: positionsMap,
+			refresh
+		}),
+		[gauges, positionsMap, refresh]
 	);
+
+	return <GaugeContext.Provider value={contextValue}>{children}</GaugeContext.Provider>;
 });
 
 export const useGauge = (): TGaugeContext => useContext(GaugeContext);

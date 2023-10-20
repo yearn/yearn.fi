@@ -28,21 +28,25 @@ function GaugeList(): ReactElement {
 	const {currentRewards, nextRewards} = useBribes();
 	const [category, set_category] = useState('all');
 	const [searchValue, set_searchValue] = useState('');
-	const [sort, set_sort] = useSessionStorage<{sortBy: string, sortDirection: TSortDirection}>(
-		'yGaugeListOfferBribeSorting', {sortBy: '', sortDirection: 'desc'}
-	);
+	const [sort, set_sort] = useSessionStorage<{
+		sortBy: string;
+		sortDirection: TSortDirection;
+	}>('yGaugeListOfferBribeSorting', {sortBy: '', sortDirection: 'desc'});
 
-	const getRewardValue = useCallback((address: string, value: bigint): number => {
-		if (!isTAddress(address)) {
-			return 0;
-		}
-		const tokenInfo = tokens?.[address];
-		const tokenPrice = prices?.[address];
-		const decimals = tokenInfo?.decimals || 18;
-		const bribeAmount = formatToNormalizedValue(toBigInt(value), decimals);
-		const bribeValue = bribeAmount * (Number(tokenPrice || 0) / 100);
-		return bribeValue;
-	}, [prices, tokens]);
+	const getRewardValue = useCallback(
+		(address: string, value: bigint): number => {
+			if (!isTAddress(address)) {
+				return 0;
+			}
+			const tokenInfo = tokens?.[address];
+			const tokenPrice = prices?.[address];
+			const decimals = tokenInfo?.decimals || 18;
+			const bribeAmount = formatToNormalizedValue(toBigInt(value), decimals);
+			const bribeValue = bribeAmount * (Number(tokenPrice || 0) / 100);
+			return bribeValue;
+		},
+		[prices, tokens]
+	);
 
 	const standardGauges = useMemo((): TCurveGauge[] => gauges.filter((gauge): boolean => !gauge.factory), [gauges]);
 	const factoryGauges = useMemo((): TCurveGauge[] => gauges.filter((gauge): boolean => gauge.factory), [gauges]);
@@ -70,19 +74,31 @@ function GaugeList(): ReactElement {
 
 	const sortedGauges = useMemo((): TCurveGauge[] => {
 		if (sort.sortBy === 'name') {
-			return searchedGauges.sort((a, b): number => stringSort({a: a.name, b: b.name, sortDirection: sort.sortDirection}));
+			return searchedGauges.sort((a, b): number =>
+				stringSort({
+					a: a.name,
+					b: b.name,
+					sortDirection: sort.sortDirection
+				})
+			);
 		}
 		if (sort.sortBy === 'rewards') {
 			return searchedGauges.sort((a, b): number => {
-				const allARewards = Object.entries(currentRewards?.[toAddress(a.gauge)] || {}).reduce((acc, [address, value]): number => {
-					const aBribeValue = getRewardValue(address, value || 0n);
-					return acc + aBribeValue;
-				}, 0);
+				const allARewards = Object.entries(currentRewards?.[toAddress(a.gauge)] || {}).reduce(
+					(acc, [address, value]): number => {
+						const aBribeValue = getRewardValue(address, value || 0n);
+						return acc + aBribeValue;
+					},
+					0
+				);
 
-				const allBRewards = Object.entries(currentRewards?.[toAddress(b.gauge)] || {}).reduce((acc, [address, value]): number => {
-					const aBribeValue = getRewardValue(address, value || 0n);
-					return acc + aBribeValue;
-				}, 0);
+				const allBRewards = Object.entries(currentRewards?.[toAddress(b.gauge)] || {}).reduce(
+					(acc, [address, value]): number => {
+						const aBribeValue = getRewardValue(address, value || 0n);
+						return acc + aBribeValue;
+					},
+					0
+				);
 
 				if (sort.sortDirection === 'desc') {
 					return allBRewards - allARewards;
@@ -92,15 +108,21 @@ function GaugeList(): ReactElement {
 		}
 		if (sort.sortBy === 'pendingRewards') {
 			return searchedGauges.sort((a, b): number => {
-				const allARewards = Object.entries(nextRewards?.[toAddress(a.gauge)] || {}).reduce((acc, [address, value]): number => {
-					const aBribeValue = getRewardValue(address, value || 0n);
-					return acc + aBribeValue;
-				}, 0);
+				const allARewards = Object.entries(nextRewards?.[toAddress(a.gauge)] || {}).reduce(
+					(acc, [address, value]): number => {
+						const aBribeValue = getRewardValue(address, value || 0n);
+						return acc + aBribeValue;
+					},
+					0
+				);
 
-				const allBRewards = Object.entries(nextRewards?.[toAddress(b.gauge)] || {}).reduce((acc, [address, value]): number => {
-					const aBribeValue = getRewardValue(address, value || 0n);
-					return acc + aBribeValue;
-				}, 0);
+				const allBRewards = Object.entries(nextRewards?.[toAddress(b.gauge)] || {}).reduce(
+					(acc, [address, value]): number => {
+						const aBribeValue = getRewardValue(address, value || 0n);
+						return acc + aBribeValue;
+					},
+					0
+				);
 
 				if (sort.sortDirection === 'desc') {
 					return allBRewards - allARewards;
@@ -111,9 +133,15 @@ function GaugeList(): ReactElement {
 		return searchedGauges;
 	}, [sort.sortBy, sort.sortDirection, searchedGauges, currentRewards, getRewardValue, nextRewards]);
 
-	const onSort = useCallback((newSortBy: string, newSortDirection: string): void => {
-		set_sort({sortBy: newSortBy, sortDirection: newSortDirection as TSortDirection});
-	}, [set_sort]);
+	const onSort = useCallback(
+		(newSortBy: string, newSortDirection: string): void => {
+			set_sort({
+				sortBy: newSortBy,
+				sortDirection: newSortDirection as TSortDirection
+			});
+		},
+		[set_sort]
+	);
 
 	return (
 		<section className={'mb-20 mt-4 grid w-full grid-cols-12 pb-10 md:mb-40 md:mt-20'}>
@@ -123,14 +151,27 @@ function GaugeList(): ReactElement {
 					searchPlaceholder={`Search ${category}`}
 					categories={[
 						[
-							{value: 'standard', label: 'Standard', isSelected: category === 'standard'},
-							{value: 'factory', label: 'Factory', isSelected: category === 'factory'},
-							{value: 'all', label: 'All', isSelected: category === 'all'}
+							{
+								value: 'standard',
+								label: 'Standard',
+								isSelected: category === 'standard'
+							},
+							{
+								value: 'factory',
+								label: 'Factory',
+								isSelected: category === 'factory'
+							},
+							{
+								value: 'all',
+								label: 'All',
+								isSelected: category === 'all'
+							}
 						]
 					]}
 					onSelect={set_category}
 					searchValue={searchValue}
-					set_searchValue={set_searchValue} />
+					set_searchValue={set_searchValue}
+				/>
 				<ListHead
 					sortBy={sort.sortBy}
 					sortDirection={sort.sortDirection}
@@ -138,18 +179,46 @@ function GaugeList(): ReactElement {
 					dataClassName={'grid-cols-9'}
 					items={[
 						{label: 'Gauges', value: 'name', sortable: true},
-						{label: 'Weight', value: 'weight', sortable: false, className: 'col-span-1'},
-						{label: 'Current $/veCRV', value: 'rewards', sortable: true, className: 'col-span-3'},
-						{label: 'Pending $/veCRV', value: 'pendingRewards', sortable: true, className: 'col-span-3'},
-						{label: '', value: '', sortable: false, className: 'col-span-1'}
-					]} />
+						{
+							label: 'Weight',
+							value: 'weight',
+							sortable: false,
+							className: 'col-span-1'
+						},
+						{
+							label: 'Current $/veCRV',
+							value: 'rewards',
+							sortable: true,
+							className: 'col-span-3'
+						},
+						{
+							label: 'Pending $/veCRV',
+							value: 'pendingRewards',
+							sortable: true,
+							className: 'col-span-3'
+						},
+						{
+							label: '',
+							value: '',
+							sortable: false,
+							className: 'col-span-1'
+						}
+					]}
+				/>
 
 				<Renderable
 					shouldRender={sortedGauges.length > 0}
 					fallback={<GaugeListEmpty />}>
-					{sortedGauges.filter((gauge): boolean => !!gauge).map((gauge): ReactNode =>
-						<GaugeListRow key={gauge.name} currentGauge={gauge} />
-					)}
+					{sortedGauges
+						.filter((gauge): boolean => !!gauge)
+						.map(
+							(gauge): ReactNode => (
+								<GaugeListRow
+									key={gauge.name}
+									currentGauge={gauge}
+								/>
+							)
+						)}
 				</Renderable>
 			</div>
 		</section>
@@ -163,7 +232,9 @@ function OfferBribe(): ReactElement {
 				<Balancer>
 					<b className={'text-center text-lg md:text-2xl'}>{'Buy votes to boost emissions.'}</b>
 					<p className={'mt-8 whitespace-pre-line text-center text-base text-neutral-600'}>
-						{'Offer a bribe to increase CRV emissions to your favorite Curve pool.\nJust like democracy, minus the suit and expense account.'}
+						{
+							'Offer a bribe to increase CRV emissions to your favorite Curve pool.\nJust like democracy, minus the suit and expense account.'
+						}
 					</p>
 				</Balancer>
 			</div>
@@ -172,14 +243,12 @@ function OfferBribe(): ReactElement {
 					href={'https://dao.curve.fi/gaugeweight'}
 					target={'_blank'}
 					className={'w-full md:w-auto'}>
-					<Button className={'w-full'}>
-						{'Vote for Gauge'}
-					</Button>
+					<Button className={'w-full'}>{'Vote for Gauge'}</Button>
 				</Link>
-				<Link href={'/ybribe'} className={'w-full md:w-auto'}>
-					<Button className={'w-full'}>
-						{'Claim Bribe'}
-					</Button>
+				<Link
+					href={'/ybribe'}
+					className={'w-full md:w-auto'}>
+					<Button className={'w-full'}>{'Claim Bribe'}</Button>
 				</Link>
 			</div>
 			<GaugeList />

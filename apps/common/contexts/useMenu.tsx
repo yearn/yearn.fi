@@ -10,13 +10,13 @@ export type TCurrentMenu = {
 	app: {
 		path: string;
 		label: ReactElement | string;
-	}[],
-	isOpen: boolean,
-}
+	}[];
+	isOpen: boolean;
+};
 export type TMenu = {
-	menu: TCurrentMenu,
-	onOpenMenu: VoidFunction,
-}
+	menu: TCurrentMenu;
+	onOpenMenu: VoidFunction;
+};
 const defaultProps: TMenu = {
 	menu: {
 		app: [],
@@ -48,16 +48,18 @@ export const MenuContextApp = ({children}: {children: React.ReactElement}): Reac
 				isOpen: true
 			});
 		}
-
 	}, [pathname]);
 
 	/* 🔵 - Yearn Finance ******************************************************
-	**	Setup and render the Context provider to use in the app.
-	***************************************************************************/
-	const contextValue = useMemo((): TMenu => ({
-		menu,
-		onOpenMenu
-	}), [menu, onOpenMenu]);
+	 **	Setup and render the Context provider to use in the app.
+	 ***************************************************************************/
+	const contextValue = useMemo(
+		(): TMenu => ({
+			menu,
+			onOpenMenu
+		}),
+		[menu, onOpenMenu]
+	);
 
 	return (
 		<MenuContext.Provider value={contextValue}>
@@ -67,21 +69,22 @@ export const MenuContextApp = ({children}: {children: React.ReactElement}): Reac
 				shouldUseNetworks={true}
 				isOpen={menu.isOpen}
 				onClose={(): void => set_menu(defaultProps.menu)}>
-				{(menu?.app || [])?.map((option): ReactElement => (
-					<Link key={option.path} href={option.path}>
-						<div
-							className={'mobile-nav-item'}
-							onClick={(): void => set_menu(defaultProps.menu)}>
-							<p className={'font-bold'}>
-								{option.label}
-							</p>
-						</div>
-					</Link>
-				))}
+				{(menu?.app || [])?.map(
+					(option): ReactElement => (
+						<Link
+							key={option.path}
+							href={option.path}>
+							<div
+								className={'mobile-nav-item'}
+								onClick={(): void => set_menu(defaultProps.menu)}>
+								<p className={'font-bold'}>{option.label}</p>
+							</div>
+						</Link>
+					)
+				)}
 			</ModalMobileMenu>
 		</MenuContext.Provider>
 	);
 };
-
 
 export const useMenu = (): TMenu => useContext(MenuContext);
