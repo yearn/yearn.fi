@@ -1,6 +1,4 @@
-import {useCallback, useEffect, useMemo, useState} from 'react';
-import {Balancer} from 'react-wrap-balancer';
-import {useAsync} from '@react-hookz/web';
+import {useCallback, useMemo, useState} from 'react';
 import {VaultListFactory} from '@vaults/components/list/VaultListFactory';
 import {YFACTORY_SUPPORTED_NETWORK} from '@vaults/constants';
 import {VAULT_FACTORY_ABI} from '@vaults/utils/abi/vaultFactory.abi';
@@ -9,10 +7,10 @@ import {Wrapper} from '@vaults/Wrapper';
 import {erc20ABI, multicall} from '@wagmi/core';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {yToast} from '@yearn-finance/web-lib/components/yToast';
+import {toast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
-import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {VAULT_FACTORY_ADDRESS, ZERO_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {decodeAsBoolean, decodeAsString} from '@yearn-finance/web-lib/utils/decoder';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
@@ -23,6 +21,7 @@ import {Dropdown} from '@common/components/GaugeDropdown';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {CurveContextApp, useCurve} from '@common/contexts/useCurve';
 import {useYearn} from '@common/contexts/useYearn';
+import {useAsyncTrigger} from '@common/hooks/useAsyncEffect';
 
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
@@ -52,7 +51,10 @@ function Factory(): ReactElement {
 	const {mutateVaultList} = useYearn();
 	const {provider, isActive} = useWeb3();
 	const {gaugesFromYearn} = useCurve();
-	const {toast} = yToast();
+	const [filteredGauges, set_filteredGauges] = useState<TCurveGaugesFromYearn>([]);
+	const [gaugeDisplayData, set_gaugeDisplayData] = useState<TGaugeDisplayData | undefined>(undefined);
+	const [isLoadingGaugeDisplay, set_isLoadingGaugeDisplay] = useState(false);
+	const [estimate, set_estimate] = useState(0n);
 	const [selectedOption, set_selectedOption] = useState(defaultOption);
 	const [hasError, set_hasError] = useState(false);
 	const [txStatus, set_txStatus] = useState(defaultTxStatus);
@@ -62,11 +64,9 @@ function Factory(): ReactElement {
 	 ** This means we need to check, for all the gauges if we already have an
 	 ** associated vault.
 	 **************************************************************************/
-	const [{result: filteredGauges}, fetchGaugesAction] = useAsync(async function fetchAlreadyCreatedGauges(
-		_gaugesFromYearn: TCurveGaugesFromYearn
-	): Promise<TCurveGaugesFromYearn> {
-		if (isZero((_gaugesFromYearn || []).length)) {
-			return [];
+	const onRetriggerGaugesAction = useAsyncTrigger(async (): Promise<void> => {
+		if (isZero((gaugesFromYearn || []).length)) {
+			return set_filteredGauges([]);
 		}
 
 		const baseContract = {
@@ -74,7 +74,7 @@ function Factory(): ReactElement {
 			abi: VAULT_FACTORY_ABI
 		};
 		const calls = [];
-		for (const gauge of _gaugesFromYearn) {
+		for (const gauge of gaugesFromYearn) {
 			calls.push({
 				...baseContract,
 				functionName: 'canCreateVaultPermissionlessly',
@@ -85,14 +85,12 @@ function Factory(): ReactElement {
 			contracts: calls,
 			chainId: YFACTORY_SUPPORTED_NETWORK
 		});
-		return _gaugesFromYearn.filter((_gauge: TCurveGaugeFromYearn, index: number): boolean =>
-			decodeAsBoolean(canCreateVaults[index])
+		set_filteredGauges(
+			gaugesFromYearn.filter((_gauge: TCurveGaugeFromYearn, index: number): boolean =>
+				decodeAsBoolean(canCreateVaults[index])
+			)
 		);
-	}, []);
-
-	useEffect((): void => {
-		fetchGaugesAction.execute(gaugesFromYearn);
-	}, [fetchGaugesAction, gaugesFromYearn]);
+	}, [gaugesFromYearn]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** We need to create the possible elements for the dropdown by removing all
@@ -118,7 +116,7 @@ function Factory(): ReactElement {
 						tokenAddress: toAddress(gauge.lp_token),
 						poolAddress: toAddress(gauge.pool_address),
 						gaugeAddress: toAddress(gauge.gauge_address),
-						APY: gauge.apr.netAPR
+						APY: gauge?.apy?.net_apy || 0
 					}
 				})
 			);
@@ -128,49 +126,50 @@ function Factory(): ReactElement {
 	 ** Name and symbol from the Curve API are not the one we want to display.
 	 ** We need to fetch the name and symbol from the gauge contract.
 	 **************************************************************************/
-	const [{result: gaugeDisplayData, status}, fetchGaugeDisplayDataAction] = useAsync(
-		async function fetchGaugeDisplayData(_selectedOption: TDropdownGaugeOption): Promise<TGaugeDisplayData> {
-			const baseContract = {
-				address: _selectedOption.value.gaugeAddress,
-				abi: erc20ABI
-			};
-			const results = await multicall({
-				contracts: [
-					{...baseContract, functionName: 'name'},
-					{...baseContract, functionName: 'symbol'}
-				],
-				chainId: YFACTORY_SUPPORTED_NETWORK
-			});
+	useAsyncTrigger(async (): Promise<void> => {
+		set_isLoadingGaugeDisplay(true);
+		const baseContract = {
+			address: selectedOption.value.gaugeAddress,
+			abi: erc20ABI
+		};
+		const results = await multicall({
+			contracts: [
+				{...baseContract, functionName: 'name'},
+				{...baseContract, functionName: 'symbol'}
+			],
+			chainId: YFACTORY_SUPPORTED_NETWORK
+		});
 
-			const name = decodeAsString(results[0]);
-			const symbol = decodeAsString(results[1]);
-			return {
-				name: name.replace('Curve.fi', '').replace('Gauge Deposit', '') || _selectedOption.value.name,
-				symbol: symbol.replace('-gauge', '').replace('-f', '') || _selectedOption.value.name,
-				poolAddress: _selectedOption.value.poolAddress,
-				gaugeAddress: _selectedOption.value.gaugeAddress
-			};
-		},
-		undefined
-	);
-
-	useEffect((): void => {
-		fetchGaugeDisplayDataAction.execute(selectedOption);
-	}, [fetchGaugeDisplayDataAction, selectedOption]);
+		const name = decodeAsString(results[0]);
+		const symbol = decodeAsString(results[1]);
+		set_gaugeDisplayData({
+			name: name.replace('Curve.fi', '').replace('Gauge Deposit', '') || selectedOption.value.name,
+			symbol: symbol.replace('-gauge', '').replace('-f', '') || selectedOption.value.name,
+			poolAddress: selectedOption.value.poolAddress,
+			gaugeAddress: selectedOption.value.gaugeAddress
+		});
+		set_isLoadingGaugeDisplay(false);
+	}, [selectedOption]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** Perform a smartContract call to the ZAP contract to get the expected
 	 ** out for a given in/out pair with a specific amount.
 	 **************************************************************************/
-	const [{result: estimate}, actions] = useAsync(async function fetchEstimate(): Promise<bigint> {
+	useAsyncTrigger(async (): Promise<void> => {
+		if (!isActive || toAddress(selectedOption.value.gaugeAddress) === ZERO_ADDRESS) {
+			return;
+		}
+
 		set_hasError(false);
 		try {
-			return await gasOfCreateNewVaultsAndStrategies({
-				connector: provider,
-				chainID: YFACTORY_SUPPORTED_NETWORK,
-				contractAddress: VAULT_FACTORY_ADDRESS,
-				gaugeAddress: selectedOption.value.gaugeAddress
-			});
+			set_estimate(
+				await gasOfCreateNewVaultsAndStrategies({
+					connector: provider,
+					chainID: YFACTORY_SUPPORTED_NETWORK,
+					contractAddress: VAULT_FACTORY_ADDRESS,
+					gaugeAddress: selectedOption.value.gaugeAddress
+				})
+			);
 		} catch (error) {
 			const err = error as {reason: string; code: string};
 			if (err.code === 'UNPREDICTABLE_GAS_LIMIT') {
@@ -185,15 +184,9 @@ function Factory(): ReactElement {
 				});
 				set_hasError(true);
 			}
-			return 0n;
+			set_estimate(0n);
 		}
-	}, 0n);
-	useEffect((): void => {
-		if (!isActive || toAddress(selectedOption.value.gaugeAddress) === ZERO_ADDRESS) {
-			return;
-		}
-		actions.execute();
-	}, [actions, isActive, provider, selectedOption, selectedOption.value.gaugeAddress]);
+	}, [isActive, provider, selectedOption.value.gaugeAddress]);
 
 	const onCreateNewVault = useCallback(async (): Promise<void> => {
 		const result = await createNewVaultsAndStrategies({
@@ -205,10 +198,10 @@ function Factory(): ReactElement {
 		});
 		if (result.isSuccessful) {
 			await setTimeout(async (): Promise<void> => {
-				await Promise.all([fetchGaugesAction.execute(gaugesFromYearn), mutateVaultList()]);
+				await Promise.all([onRetriggerGaugesAction(), mutateVaultList()]);
 			}, 1000);
 		}
-	}, [fetchGaugesAction, gaugesFromYearn, mutateVaultList, provider, selectedOption.value.gaugeAddress]);
+	}, [onRetriggerGaugesAction, mutateVaultList, provider, selectedOption.value.gaugeAddress]);
 
 	function loadingFallback(): ReactElement {
 		return (
@@ -227,19 +220,17 @@ function Factory(): ReactElement {
 					<h2 className={'pb-4 text-3xl font-bold'}>{'Create new Vault'}</h2>
 					<div className={'w-full md:w-7/12'}>
 						<p>
-							<Balancer>
-								{
-									'Deploy a new auto-compounding yVault for any Curve pool with an active liquidity gauge. All factory-deployed vaults have no management fees and a flat 10% performance fee. Permissionless finance just got permissionless-er. To learn more, check our '
-								}
-								<a
-									href={'https://docs.yearn.fi/getting-started/products/yvaults/vault-factory'}
-									target={'_blank'}
-									className={'text-neutral-900 underline'}
-									rel={'noreferrer'}>
-									{'docs'}
-								</a>
-								{'.'}
-							</Balancer>
+							{
+								'Deploy a new auto-compounding yVault for any Curve pool with an active liquidity gauge. All factory-deployed vaults have no management fees and a flat 10% performance fee. Permissionless finance just got permissionless-er. To learn more, check our '
+							}
+							<a
+								href={'https://docs.yearn.fi/getting-started/products/yvaults/vault-factory'}
+								target={'_blank'}
+								className={'text-neutral-900 underline'}
+								rel={'noreferrer'}>
+								{'docs'}
+							</a>
+							{'.'}
 						</p>
 					</div>
 				</div>
@@ -261,10 +252,10 @@ function Factory(): ReactElement {
 						<div className={'col-span-2 w-full space-y-1'}>
 							<p className={'text-neutral-600'}>{'Vault name'}</p>
 							<Renderable
-								shouldRender={status !== 'loading'}
+								shouldRender={!isLoadingGaugeDisplay}
 								fallback={loadingFallback()}>
 								<div className={'h-10 bg-neutral-200 p-2 text-neutral-600'}>
-									{!gaugeDisplayData ? '' : `Curve ${gaugeDisplayData.name} Factory`}
+									{!gaugeDisplayData?.name ? '' : `Curve ${gaugeDisplayData.name} Factory`}
 								</div>
 							</Renderable>
 						</div>
@@ -272,10 +263,10 @@ function Factory(): ReactElement {
 						<div className={'col-span-2 w-full space-y-1'}>
 							<p className={'text-neutral-600'}>{'Symbol'}</p>
 							<Renderable
-								shouldRender={status !== 'loading'}
+								shouldRender={!isLoadingGaugeDisplay}
 								fallback={loadingFallback()}>
 								<div className={'h-10 bg-neutral-200 p-2 text-neutral-600'}>
-									{!gaugeDisplayData ? '' : `yvCurve-${gaugeDisplayData.symbol}-f`}
+									{!gaugeDisplayData?.symbol ? '' : `yvCurve-${gaugeDisplayData.symbol}-f`}
 								</div>
 							</Renderable>
 						</div>
@@ -283,7 +274,7 @@ function Factory(): ReactElement {
 						<div className={'col-span-3 w-full space-y-1'}>
 							<p className={'text-neutral-600'}>{'Pool address'}</p>
 							<Renderable
-								shouldRender={status !== 'loading'}
+								shouldRender={!isLoadingGaugeDisplay}
 								fallback={loadingFallback()}>
 								<div
 									className={
@@ -291,7 +282,10 @@ function Factory(): ReactElement {
 									}>
 									<Renderable shouldRender={!!gaugeDisplayData}>
 										<p className={'overflow-hidden text-ellipsis text-neutral-600'}>
-											{toAddress(gaugeDisplayData?.poolAddress)}
+											{!gaugeDisplayData?.poolAddress ||
+											isZeroAddress(gaugeDisplayData?.poolAddress)
+												? '-'
+												: toAddress(gaugeDisplayData?.poolAddress)}
 										</p>
 										<a
 											href={`${getNetwork(YFACTORY_SUPPORTED_NETWORK)
@@ -310,7 +304,7 @@ function Factory(): ReactElement {
 						<div className={'col-span-3 w-full space-y-1'}>
 							<p className={'text-neutral-600'}>{'Gauge address'}</p>
 							<Renderable
-								shouldRender={status !== 'loading'}
+								shouldRender={!isLoadingGaugeDisplay}
 								fallback={loadingFallback()}>
 								<div
 									className={
@@ -318,7 +312,10 @@ function Factory(): ReactElement {
 									}>
 									<Renderable shouldRender={!!gaugeDisplayData}>
 										<p className={'overflow-hidden text-ellipsis text-neutral-600'}>
-											{toAddress(gaugeDisplayData?.gaugeAddress)}
+											{!gaugeDisplayData?.gaugeAddress ||
+											isZeroAddress(gaugeDisplayData?.gaugeAddress)
+												? '-'
+												: toAddress(gaugeDisplayData?.gaugeAddress)}
 										</p>
 										<a
 											href={`${getNetwork(YFACTORY_SUPPORTED_NETWORK)

@@ -64,8 +64,8 @@ export const curveAllGaugesSchema = z.object({
 
 export const curveGaugeFromYearnSchema = z.object({
 	gauge_name: z.string(),
-	gauge_address: z.string().transform(toAddress),
-	pool_address: z.string().transform(toAddress),
+	gauge_address: z.string().optional().transform(toAddress),
+	pool_address: z.string().optional().transform(toAddress),
 	pool_coins: z
 		.object({
 			name: z.string().optional(),
@@ -74,44 +74,15 @@ export const curveGaugeFromYearnSchema = z.object({
 		})
 		.array()
 		.optional(),
-	lp_token: z.string().transform(toAddress),
-	weight: z.string(),
-	inflation_rate: z.string(),
-	working_supply: z.string(),
-	apr: z.object({
+	lp_token: z.string().optional().transform(toAddress),
+	weight: z.string().optional().default('0'),
+	inflation_rate: z.string().default('0'),
+	working_supply: z.string().default('0'),
+	apy: z.object({
 		type: z.string(),
-		netAPR: z.number().default(0),
-		fees: z.object({
-			performance: z.number().default(0),
-			withdrawal: z.number().default(0),
-			management: z.number().default(0),
-			keepCRV: z.number().default(0),
-			keepVelo: z.number().default(0),
-			cvxKeepCRV: z.number().default(0)
-		}),
-		extra: z.object({
-			stakingRewardsAPR: z.number().default(0)
-		}),
-		points: z.object({
-			weekAgo: z.number().default(0),
-			monthAgo: z.number().default(0),
-			inception: z.number().default(0)
-		}),
-		forwardAPR: z.object({
-			type: z.string(),
-			netAPR: z.number().default(0),
-			composite: z.object({
-				boost: z.number().default(0),
-				poolAPY: z.number().default(0),
-				boostedAPR: z.number().default(0),
-				baseAPR: z.number().default(0),
-				cvxAPR: z.number().default(0),
-				rewardsAPR: z.number().default(0)
-			})
-		})
-	}),
-	updated: z.number(),
-	block: z.number()
+		gross_apr: z.number().default(0),
+		net_apy: z.number().default(0)
+	})
 });
 
 export const curveGaugesFromYearnSchema = curveGaugeFromYearnSchema.array();
