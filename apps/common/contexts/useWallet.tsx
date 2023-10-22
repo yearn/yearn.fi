@@ -35,6 +35,8 @@ import {
 	OPT_YVVELO_USDC_STAKING_CONTRACT,
 	OPT_YVWUSDR_USDC_STAKING_CONTRACT,
 	OPT_YVWUSDRV2_USDC_STAKING_CONTRACT,
+	OPT_YVSTERN_ERN_STAKING_CONTRACT,
+	OPT_YVSTG_USDC_STAKING_CONTRACT,
 	STACKING_TO_VAULT
 } from '@vaults/constants/optRewards';
 import {useUI} from '@yearn-finance/web-lib/contexts/useUI';
@@ -180,7 +182,9 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 				{chainID: 10, address: OPT_YVTBTC_WETH_STAKING_CONTRACT, symbol: 'yvVelo-tBTC-WETH', decimals: 18},
 				{chainID: 10, address: OPT_YVTBTC_WBTC_STAKING_CONTRACT, symbol: 'yvVelo-tBTC-WBTC', decimals: 18},
 				{chainID: 10, address: OPT_YVOP_WETH_STAKING_CONTRACT, symbol: 'yvVelo-OP-WETH', decimals: 18},
-				{chainID: 10, address: OPT_YVWUSDRV2_USDC_STAKING_CONTRACT, symbol: 'yvVelo-wUSDRv2-USDC', decimals: 18}
+				{chainID: 10, address: OPT_YVWUSDRV2_USDC_STAKING_CONTRACT, symbol: 'yvVelo-wUSDRv2-USDC', decimals: 18},
+				{chainID: 10, address: OPT_YVSTERN_ERN_STAKING_CONTRACT, symbol: 'yvVelo-stERN-ERN', decimals: 18},
+				{chainID: 10, address: OPT_YVSTG_USDC_STAKING_CONTRACT, symbol: 'yvVelo-STG-USDC', decimals: 18}
 			]
 		);
 
