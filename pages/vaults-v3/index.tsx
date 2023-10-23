@@ -54,25 +54,6 @@ function HeaderUserPosition(): ReactElement {
 
 	if (!isActive) {
 		return (
-			<Fragment>
-				<div className={'col-span-12 h-auto w-full md:col-span-8 md:h-[136px]'}>
-					<p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl'}>{'Wallet not connected'}</p>
-					<Button
-						onClick={(): void => {
-							if (!isActive && address) {
-								onSwitchChain(options?.defaultChainID || 1);
-							} else {
-								openLoginModal();
-							}
-						}}>
-						{'Connect Wallet'}
-					</Button>
-				</div>
-			</Fragment>
-		);
-	}
-	return (
-		<Fragment>
 			<div className={'col-span-12 w-full rounded-3xl bg-neutral-0 p-6 md:col-span-6'}>
 				<strong
 					className={'block pb-2 text-lg font-black text-neutral-900 md:pb-6 md:text-4xl md:leading-[48px]'}>
@@ -80,20 +61,45 @@ function HeaderUserPosition(): ReactElement {
 				</strong>
 				<div className={'flex flex-row gap-32'}>
 					<div>
-						<p className={'pb-2 text-[#757CA6]'}>{'Deposited'}</p>
-						<b className={'font-number text-3xl text-neutral-900 md:text-3xl'}>
-							<Counter value={Number(formatedYouHave)} />
-						</b>
-					</div>
-					<div>
-						<p className={'pb-2 text-[#757CA6]'}>{'Earnings'}</p>
-						<b className={'font-number text-3xl text-neutral-900 md:text-3xl'}>
-							<Counter value={Number(formatedYouEarned)} />
-						</b>
+						<p className={'pb-2 text-[#757CA6]'}>
+							{'Looks like you need to connect your wallet. And call your mum. Always important.'}
+						</p>
+						<Button
+							className={'rounded-3xl'}
+							onClick={(): void => {
+								if (!isActive && address) {
+									onSwitchChain(options?.defaultChainID || 1);
+								} else {
+									openLoginModal();
+								}
+							}}>
+							<b>{'Connect Wallet'}</b>
+						</Button>
 					</div>
 				</div>
 			</div>
-		</Fragment>
+		);
+	}
+	return (
+		<div className={'col-span-12 w-full rounded-3xl bg-neutral-0 p-6 md:col-span-6'}>
+			<strong className={'block pb-2 text-lg font-black text-neutral-900 md:pb-6 md:text-4xl md:leading-[48px]'}>
+				{'Portfolio'}
+			</strong>
+			<div className={'flex flex-row gap-32'}>
+				<div>
+					<p className={'pb-2 text-[#757CA6]'}>{'Deposited'}</p>
+					<b className={'font-number text-3xl text-neutral-900 md:text-3xl'}>
+						<Counter value={Number(formatedYouHave)} />
+					</b>
+				</div>
+				<div>
+					<p className={'pb-2 text-[#757CA6]'}>{'Earnings'}</p>
+					<b className={'font-number text-3xl text-neutral-900 md:text-3xl'}>
+						<Counter value={Number(formatedYouEarned)} />
+					</b>
+				</div>
+			</div>
+		</div>
 	);
 }
 

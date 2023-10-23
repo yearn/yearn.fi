@@ -76,10 +76,11 @@ function useCurrentTheme({name}: {name: string}): void {
 			document.documentElement.classList.remove('dark');
 			document.documentElement.classList.add('v3');
 		} else {
-			switchToPreferedColorScheme();
+			if (document.documentElement.classList.contains('v3')) {
+				switchToPreferedColorScheme();
+			}
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [name === 'V3', switchToPreferedColorScheme]);
+	}, [name, switchToPreferedColorScheme]);
 }
 
 /** 🔵 - Yearn Finance ***************************************************************************
@@ -115,7 +116,7 @@ const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 			<div
 				id={'app'}
 				className={cl('mx-auto mb-0 flex font-aeonik', name === 'V3' ? '' : 'max-w-6xl')}>
-				<div className={'block h-full min-h-[100vh] w-full'}>
+				<div className={'block h-full min-h-max w-full'}>
 					<LazyMotion features={domAnimation}>
 						<AnimatePresence mode={'wait'}>
 							<motion.div
