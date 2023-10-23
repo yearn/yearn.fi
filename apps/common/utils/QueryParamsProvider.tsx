@@ -12,10 +12,10 @@ export const NextQueryParamAdapter: QueryParamAdapterComponent = ({children}): R
 	const adapter = useMemo((): any => {
 		return {
 			replace(location: PartialLocation): void {
-				router.replace(pathname + location.search);
+				router.replace(pathname + location.search, {scroll: false});
 			},
 			push(location: PartialLocation): void {
-				router.push(pathname + location.search);
+				router.push(pathname + location.search, {scroll: false});
 			},
 			get location(): {search: string} {
 				return {

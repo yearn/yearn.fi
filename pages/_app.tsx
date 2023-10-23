@@ -115,7 +115,7 @@ const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 			<div
 				id={'app'}
 				className={cl('mx-auto mb-0 flex font-aeonik', name === 'V3' ? '' : 'max-w-6xl')}>
-				<div className={'block min-h-[100vh] w-full'}>
+				<div className={'block h-full min-h-[100vh] w-full'}>
 					<LazyMotion features={domAnimation}>
 						<AnimatePresence mode={'wait'}>
 							<motion.div

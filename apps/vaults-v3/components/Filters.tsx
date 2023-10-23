@@ -1,4 +1,5 @@
 import {useMemo} from 'react';
+import {VaultListOptions} from '@vaults/components/list/VaultListOptions';
 import {ALL_CATEGORIES} from '@vaults/constants';
 import {IconArbitrumChain} from '@yearn-finance/web-lib/icons/chains/IconArbitrumChain';
 import {IconBaseChain} from '@yearn-finance/web-lib/icons/chains/IconBaseChain';
@@ -20,7 +21,7 @@ type TListHero = {
 	onSearch: (searchValue: string) => void;
 };
 
-export function ListHero({
+export function Filters({
 	categories,
 	onChangeCategories,
 	searchValue,
@@ -75,11 +76,31 @@ export function ListHero({
 	}, [categories]);
 
 	return (
-		<div className={'flex flex-col items-start justify-between space-x-0 px-4 pb-2 pt-4 md:px-10 md:pb-8 md:pt-10'}>
-			<div className={'mt-0 flex w-full flex-col items-center justify-between gap-4 md:mt-0 md:flex-row'}>
-				<div className={'w-full md:w-1/3'}>
-					<small>{'Select Blockchain'}</small>
+		<div className={'relative col-span-12 w-full rounded-3xl bg-neutral-0 p-6 md:col-span-6'}>
+			<strong className={'block pb-2 text-lg font-black text-neutral-900 md:pb-6 md:text-4xl md:leading-[48px]'}>
+				{'Filters'}
+			</strong>
+
+			<div className={'absolute right-5 top-3 md:right-8 md:top-8'}>
+				<VaultListOptions panelClassName={'bg-neutral-100 rounded-lg'} />
+			</div>
+
+			<div className={'mb-5 w-full'}>
+				<p className={'pb-2 text-[#757CA6]'}>{'Search'}</p>
+				<SearchBar
+					className={'max-w-none rounded-lg bg-neutral-300 text-neutral-900 md:w-full'}
+					iconClassName={'text-neutral-900'}
+					searchPlaceholder={'YFI Vault'}
+					searchValue={searchValue}
+					set_searchValue={onSearch}
+				/>
+			</div>
+			<div className={'grid grid-cols-2 gap-x-6'}>
+				<div className={'w-full'}>
+					<p className={'pb-2 text-[#757CA6]'}>{'Select Blockchain'}</p>
 					<MultiSelectDropdown
+						buttonClassName={'max-w-none rounded-lg bg-neutral-300 text-neutral-900 md:w-full'}
+						comboboxOptionsClassName={'bg-neutral-300 rounded-lg'}
 						options={chainOptions}
 						placeholder={'Select chain'}
 						onSelect={(options): void => {
@@ -90,10 +111,11 @@ export function ListHero({
 						}}
 					/>
 				</div>
-
-				<div className={'w-full md:w-1/3'}>
-					<small>{'Filter'}</small>
+				<div className={'w-full'}>
+					<p className={'pb-2 text-[#757CA6]'}>{'Filter'}</p>
 					<MultiSelectDropdown
+						buttonClassName={'max-w-none rounded-lg bg-neutral-300 text-neutral-900 md:w-full'}
+						comboboxOptionsClassName={'bg-neutral-300 rounded-lg'}
 						options={categoryOptions}
 						placeholder={'Filter list'}
 						onSelect={(options): void => {
@@ -102,16 +124,6 @@ export function ListHero({
 								.map((option): string => String(option.value));
 							onChangeCategories(selectedCategories);
 						}}
-					/>
-				</div>
-
-				<div className={'w-full md:w-1/3'}>
-					<small>{'Search'}</small>
-					<SearchBar
-						className={'md:w-full'}
-						searchPlaceholder={'YFI Vault'}
-						searchValue={searchValue}
-						set_searchValue={onSearch}
 					/>
 				</div>
 			</div>

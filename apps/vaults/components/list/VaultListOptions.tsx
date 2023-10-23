@@ -2,11 +2,15 @@ import {Fragment} from 'react';
 import {Popover, Transition} from '@headlessui/react';
 import {useAppSettings} from '@vaults/contexts/useAppSettings';
 import {IconSettings} from '@yearn-finance/web-lib/icons/IconSettings';
+import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {Switch} from '@common/components/Switch';
 
 import type {ReactElement} from 'react';
 
-export function VaultListOptions(): ReactElement {
+type TVautListOptions = {
+	panelClassName?: string;
+};
+export function VaultListOptions(props: TVautListOptions): ReactElement {
 	const {shouldHideDust, onSwitchHideDust, shouldHideLowTVLVaults, onSwitchHideLowTVLVaults} = useAppSettings();
 
 	return (
@@ -29,7 +33,7 @@ export function VaultListOptions(): ReactElement {
 								'absolute right-0 top-6 z-[1000] mt-3 w-screen max-w-[180px] md:-right-4 md:top-4'
 							}>
 							<div className={'yearn--shadow overflow-hidden'}>
-								<div className={'relative bg-neutral-0'}>
+								<div className={cl(props.panelClassName, 'relative bg-neutral-0')}>
 									<label
 										className={
 											'flex cursor-pointer items-center justify-between p-4 transition-colors hover:bg-neutral-100/40'

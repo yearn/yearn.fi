@@ -19,6 +19,8 @@ type TMultiSelectProps = {
 	options: TMultiSelectOptionProps[];
 	placeholder?: string;
 	onSelect: (options: TMultiSelectOptionProps[]) => void;
+	buttonClassName?: string;
+	comboboxOptionsClassName?: string;
 };
 
 function SelectAllOption(option: TMultiSelectOptionProps): ReactElement {
@@ -45,7 +47,7 @@ function Option(option: TMultiSelectOptionProps): ReactElement {
 			className={'transition-colors hover:bg-neutral-100'}>
 			<div className={'flex w-full items-center justify-between p-2'}>
 				<div className={'flex items-center'}>
-					{option?.icon ? <div className={'h-8 w-8 rounded-full'}>{option.icon}</div> : null}
+					{option?.icon ? <div className={'h-8 w-8 overflow-hidden rounded-full'}>{option.icon}</div> : null}
 					<p className={`${option.icon ? 'pl-2' : 'pl-0'} font-normal text-neutral-900`}>{option.label}</p>
 				</div>
 				<input
@@ -91,16 +93,16 @@ function DropdownEmpty({query}: {query: string}): ReactElement {
 	);
 }
 
-export function MultiSelectDropdown({options, onSelect, placeholder = ''}: TMultiSelectProps): ReactElement {
+export function MultiSelectDropdown(props: TMultiSelectProps): ReactElement {
 	const [isOpen, set_isOpen] = useThrottledState(false, 400);
-	const [currentOptions, set_currentOptions] = useState<TMultiSelectOptionProps[]>(options);
+	const [currentOptions, set_currentOptions] = useState<TMultiSelectOptionProps[]>(props.options);
 	const [areAllSelected, set_areAllSelected] = useState(false);
 	const [query, set_query] = useState('');
 	const componentRef = useRef(null);
 
 	useEffect((): void => {
-		set_currentOptions(options);
-	}, [options]);
+		set_currentOptions(props.options);
+	}, [props.options]);
 
 	useEffect((): void => {
 		set_areAllSelected(currentOptions.every((option): boolean => option.isSelected));
@@ -146,26 +148,27 @@ export function MultiSelectDropdown({options, onSelect, placeholder = ''}: TMult
 				}
 
 				set_currentOptions(currentState);
-				onSelect(currentState);
+				props.onSelect(currentState);
 			}}
 			multiple>
 			<div className={'relative w-full'}>
 				<Combobox.Button
 					onClick={(): void => set_isOpen((o: boolean): boolean => !o)}
-					className={
+					className={cl(
+						props.buttonClassName,
 						'flex h-10 w-full items-center justify-between bg-neutral-0 p-2 text-base text-neutral-900 md:px-3'
-					}>
+					)}>
 					<Combobox.Input
 						className={cl(
 							'w-full cursor-default overflow-x-scroll border-none bg-transparent p-0 outline-none scrollbar-none',
-							options.every((option): boolean => !option.isSelected)
+							props.options.every((option): boolean => !option.isSelected)
 								? 'text-neutral-400'
 								: 'text-neutral-900'
 						)}
 						displayValue={(options: TMultiSelectOptionProps[]): string => {
 							const selectedOptions = options.filter((option): boolean => option.isSelected);
 							if (selectedOptions.length === 0) {
-								return placeholder;
+								return props.placeholder || '';
 							}
 
 							if (selectedOptions.length === 1) {
@@ -178,7 +181,7 @@ export function MultiSelectDropdown({options, onSelect, placeholder = ''}: TMult
 
 							return 'Multiple';
 						}}
-						placeholder={placeholder}
+						placeholder={props.placeholder || ''}
 						spellCheck={false}
 						onChange={(event): void => set_query(event.target.value)}
 					/>
@@ -200,9 +203,10 @@ export function MultiSelectDropdown({options, onSelect, placeholder = ''}: TMult
 						set_query('');
 					}}>
 					<Combobox.Options
-						className={
+						className={cl(
+							props.comboboxOptionsClassName,
 							'absolute top-12 z-50 flex w-full cursor-pointer flex-col overflow-y-auto bg-neutral-0 px-2 py-3 scrollbar-none'
-						}>
+						)}>
 						<SelectAllOption
 							key={'select-all'}
 							label={'All'}

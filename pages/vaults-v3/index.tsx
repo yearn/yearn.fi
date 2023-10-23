@@ -1,24 +1,22 @@
 import {Fragment, useEffect, useMemo} from 'react';
 import {QueryParamProvider} from 'use-query-params';
 import {motion, useSpring, useTransform} from 'framer-motion';
-import {VaultListOptions} from '@vaults/components/list/VaultListOptions';
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
 import {VaultsListInternalMigrationRow} from '@vaults/components/list/VaultsListInternalMigrationRow';
 import {VaultsListRetired} from '@vaults/components/list/VaultsListRetired';
-import {VaultsListRow} from '@vaults/components/list/VaultsListRow';
-import {ListHero} from '@vaults/components/ListHero';
 import {useVaultFilter} from '@vaults/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
 import {Wrapper} from '@vaults/Wrapper';
+import {Filters} from '@vaults-v3/components/Filters';
+import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
+import {VaultsV3ListRow} from '@vaults-v3/components/list/VaultsV3ListRow';
 import {V3Mask} from '@vaults-v3/Mark';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {IconChain} from '@yearn-finance/web-lib/icons/IconChain';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
-import {ListHead} from '@common/components/ListHead';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import {NextQueryParamAdapter} from '@common/utils/QueryParamsProvider';
@@ -95,12 +93,6 @@ function HeaderUserPosition(): ReactElement {
 					</div>
 				</div>
 			</div>
-			<div className={'col-span-12 w-full md:col-span-6'}>
-				<p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl'}>{'Earnings'}</p>
-				<b className={'font-number text-3xl text-neutral-900 md:text-7xl'}>
-					<Counter value={Number(formatedYouEarned)} />
-				</b>
-			</div>
 		</Fragment>
 	);
 }
@@ -171,7 +163,7 @@ function ListOfVaults(): ReactElement {
 				return null;
 			}
 			return (
-				<VaultsListRow
+				<VaultsV3ListRow
 					key={`${vault.chainID}_${vault.address}`}
 					currentVault={vault}
 				/>
@@ -180,14 +172,8 @@ function ListOfVaults(): ReactElement {
 	}, [categories, chains, isLoadingVaultList, onChangeCategories, onChangeChains, search, sortedVaultsToDisplay]);
 
 	return (
-		<div
-			className={
-				'relative col-span-12 flex min-h-[240px] w-full flex-col overflow-x-hidden bg-neutral-100 md:overflow-x-visible'
-			}>
-			<div className={'absolute right-5 top-3 md:right-8 md:top-8'}>
-				<VaultListOptions />
-			</div>
-			<ListHero
+		<Fragment>
+			<Filters
 				categories={categories}
 				searchValue={search || ''}
 				chains={chains}
@@ -196,58 +182,57 @@ function ListOfVaults(): ReactElement {
 				onSearch={onSearch}
 			/>
 
-			<Renderable shouldRender={(categories || []).includes('holdings') && retiredVaults?.length > 0}>
-				<div>
-					{retiredVaults
-						.filter((vault): boolean => !!vault)
-						.map(
-							(vault): ReactNode => (
-								<VaultsListRetired
-									key={`${vault.chainID}_${vault.address}`}
-									currentVault={vault}
-								/>
-							)
-						)}
-				</div>
-			</Renderable>
+			<div className={'col-span-12 flex min-h-[240px] w-full flex-col bg-neutral-100'}>
+				<Renderable shouldRender={(categories || []).includes('holdings') && retiredVaults?.length > 0}>
+					<div>
+						{retiredVaults
+							.filter((vault): boolean => !!vault)
+							.map(
+								(vault): ReactNode => (
+									<VaultsListRetired
+										key={`${vault.chainID}_${vault.address}`}
+										currentVault={vault}
+									/>
+								)
+							)}
+					</div>
+				</Renderable>
 
-			<Renderable shouldRender={(categories || []).includes('holdings') && migratableVaults?.length > 0}>
-				<div>
-					{migratableVaults
-						.filter((vault): boolean => !!vault)
-						.map(
-							(vault): ReactNode => (
-								<VaultsListInternalMigrationRow
-									key={`${vault.chainID}_${vault.address}`}
-									currentVault={vault}
-								/>
-							)
-						)}
-				</div>
-			</Renderable>
+				<Renderable shouldRender={(categories || []).includes('holdings') && migratableVaults?.length > 0}>
+					<div>
+						{migratableVaults
+							.filter((vault): boolean => !!vault)
+							.map(
+								(vault): ReactNode => (
+									<VaultsListInternalMigrationRow
+										key={`${vault.chainID}_${vault.address}`}
+										currentVault={vault}
+									/>
+								)
+							)}
+					</div>
+				</Renderable>
 
-			<div className={'mt-4'} />
-			<ListHead
-				dataClassName={'grid-cols-10'}
-				sortBy={sortBy}
-				sortDirection={sortDirection}
-				onSort={(newSortBy: string, newSortDirection: string): void => {
-					onChangeSortBy(newSortBy as TPossibleSortBy);
-					onChangeSortDirection(newSortDirection as TSortDirection);
-				}}
-				items={[
-					{label: <IconChain />, value: 'chain', sortable: false, className: 'col-span-1'},
-					{label: 'Token', value: 'name', sortable: true},
-					{label: 'Est. APR', value: 'estAPR', sortable: true, className: 'col-span-2'},
-					{label: 'Hist. APR', value: 'apr', sortable: true, className: 'col-span-2'},
-					{label: 'Available', value: 'available', sortable: true, className: 'col-span-2'},
-					{label: 'Deposited', value: 'deposited', sortable: true, className: 'col-span-2'},
-					{label: 'TVL', value: 'tvl', sortable: true, className: 'col-span-2'}
-				]}
-			/>
-
-			{VaultList}
-		</div>
+				<div className={'mt-4'} />
+				<VaultsV3ListHead
+					sortBy={sortBy}
+					sortDirection={sortDirection}
+					onSort={(newSortBy: string, newSortDirection: string): void => {
+						onChangeSortBy(newSortBy as TPossibleSortBy);
+						onChangeSortDirection(newSortDirection as TSortDirection);
+					}}
+					items={[
+						{label: 'Vault', value: 'name', sortable: true, className: 'col-span-2'},
+						{label: 'Est. APR', value: 'estAPR', sortable: true, className: 'col-span-2'},
+						{label: 'Hist. APR', value: 'apr', sortable: true, className: 'col-span-2'},
+						{label: 'Available', value: 'available', sortable: true, className: 'col-span-2'},
+						{label: 'Deposited', value: 'deposited', sortable: true, className: 'col-span-2'},
+						{label: 'TVL', value: 'tvl', sortable: true, className: 'col-span-2'}
+					]}
+				/>
+				<div className={'grid gap-4'}>{VaultList}</div>
+			</div>
+		</Fragment>
 	);
 }
 
@@ -279,14 +264,16 @@ function Index(): ReactElement {
 							<strong className={'mb-2 block text-4xl font-black leading-[48px] text-neutral-900'}>
 								{'TVL'}
 							</strong>
-							<b className={'font-number block text-4xl font-bold text-neutral-900'}>
+							<b
+								suppressHydrationWarning
+								className={'font-number block text-4xl font-bold text-neutral-900'}>
 								{formatAmount(420420690, 0, 0)}
 							</b>
 						</div>
 					</div>
 				</div>
 			</div>
-			<section className={'relative mt-20 w-full bg-neutral-100'}>
+			<section className={'relative mt-20 w-full bg-neutral-100 pb-10'}>
 				<div className={'absolute inset-x-0 top-0 flex w-full items-center justify-center'}>
 					<div className={'relative z-50 -mt-8 flex justify-center rounded-t-3xl'}>
 						<svg
@@ -322,12 +309,6 @@ function Index(): ReactElement {
 
 				<div className={'mx-auto grid w-full max-w-6xl grid-cols-12 gap-6 pt-6'}>
 					<HeaderUserPosition />
-				</div>
-
-				<div
-					className={
-						'mx-auto mt-4 grid w-full max-w-6xl grid-cols-12 gap-y-10 pb-10 pt-6 md:mt-20 md:gap-x-10 md:gap-y-20'
-					}>
 					<QueryParamProvider
 						adapter={NextQueryParamAdapter}
 						options={{removeDefaultsFromUrl: true}}>

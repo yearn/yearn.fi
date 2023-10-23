@@ -2,6 +2,7 @@ import {useMemo} from 'react';
 import Link from 'next/link';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
@@ -9,12 +10,11 @@ import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {RenderAmount} from '@common/components/RenderAmount';
 import {useWallet} from '@common/contexts/useWallet';
 import {useBalance} from '@common/hooks/useBalance';
-import {getVaultName} from '@common/utils';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
-export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const isEthMainnet = currentVault.chainID === 1;
 	if (currentVault.apr.forwardAPR.type === '') {
 		const hasZeroAPR = isZero(currentVault.apr?.netAPR) || Number(currentVault.apr?.netAPR.toFixed(2)) === 0;
@@ -247,7 +247,7 @@ export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): 
 	);
 }
 
-export function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const hasZeroAPR = isZero(currentVault.apr?.netAPR) || Number(currentVault.apr?.netAPR.toFixed(2)) === 0;
 
 	if (currentVault.apr?.extra.stakingRewardsAPR > 0) {
@@ -324,7 +324,58 @@ export function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}
 	);
 }
 
-export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+function VaultChainTag({chainID}: {chainID: number}): ReactElement {
+	switch (chainID) {
+		case 1:
+			return (
+				<div className={'w-fit'}>
+					<div className={'rounded-2xl bg-[#627EEA] px-3.5 py-1 text-neutral-900'}>{'Ethereum'}</div>
+				</div>
+			);
+		case 10:
+			return (
+				<div className={'w-fit'}>
+					<div className={'rounded-2xl bg-[#C80016] px-3.5 py-1 text-neutral-900'}>{'Optimism'}</div>
+				</div>
+			);
+		case 137:
+			return (
+				<div className={'w-fit'}>
+					<div
+						style={{background: 'linear-gradient(244deg, #7B3FE4 5.89%, #A726C1 94.11%)'}}
+						className={'rounded-2xl px-3.5 py-1 text-neutral-900'}>
+						{'Polygon PoS'}
+					</div>
+				</div>
+			);
+		case 250:
+			return (
+				<div className={'w-fit'}>
+					<div className={'rounded-2xl bg-[#1969FF] px-3.5 py-1 text-neutral-900'}>{'Fantom'}</div>
+				</div>
+			);
+		case 8453:
+			return (
+				<div className={'w-fit'}>
+					<div className={'rounded-2xl bg-[#1C55F5] px-3.5 py-1 text-neutral-900'}>{'Base'}</div>
+				</div>
+			);
+		case 42161:
+			return (
+				<div className={'w-fit'}>
+					<div className={'rounded-2xl bg-[#2F3749] px-3.5 py-1 text-neutral-900'}>{'Arbitrum'}</div>
+				</div>
+			);
+		default:
+			return (
+				<div className={'w-fit'}>
+					<div className={'rounded-2xl bg-[#627EEA] px-3.5 py-1 text-neutral-900'}>{'Ethereum'}</div>
+				</div>
+			);
+	}
+}
+
+export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {getToken} = useWallet();
 	const balanceOfWant = useBalance({chainID: currentVault.chainID, address: currentVault.token.address});
 	const balanceOfCoin = useBalance({chainID: currentVault.chainID, address: ETH_TOKEN_ADDRESS});
@@ -332,15 +383,11 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 		chainID: currentVault.chainID,
 		address: toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS ? WFTM_TOKEN_ADDRESS : WETH_TOKEN_ADDRESS //TODO: Create a wagmi Chain upgrade to add the chain wrapper token address
 	});
-	const vaultName = useMemo((): string => getVaultName(currentVault), [currentVault]);
-
 	const availableToDeposit = useMemo((): bigint => {
 		if (toAddress(currentVault.token.address) === WETH_TOKEN_ADDRESS) {
-			// Handle ETH native coin
 			return balanceOfWrappedCoin.raw + balanceOfCoin.raw;
 		}
 		if (toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS) {
-			// Handle FTM native coin
 			return balanceOfWrappedCoin.raw + balanceOfCoin.raw;
 		}
 		return balanceOfWant.raw;
@@ -356,18 +403,29 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 		<Link
 			key={`${currentVault.address}`}
 			href={`/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`}>
-			<div className={'yearn--table-wrapper cursor-pointer transition-colors hover:bg-neutral-300'}>
-				<div className={'flex max-w-[32px] flex-row items-center'}>
-					<ImageWithFallback
-						src={`${process.env.BASE_YEARN_CHAIN_URI}/${currentVault.chainID}/logo-128.png`}
-						alt={`Chain ${currentVault.chainID}`}
-						width={40}
-						height={40}
-					/>
-				</div>
-				<div className={'yearn--table-token-section'}>
-					<div className={'yearn--table-token-section-item'}>
-						<div className={'yearn--table-token-section-item-image'}>
+			<div
+				className={cl(
+					'grid w-full grid-cols-1 md:grid-cols-12 rounded-3xl',
+					'p-6 pt-2 pr-10',
+					'border-t border-neutral-200 md:border-none',
+					'cursor-pointer relative group'
+				)}>
+				<div
+					className={cl(
+						'absolute inset-0 rounded-3xl',
+						'opacity-20 transition-opacity group-hover:opacity-100 pointer-events-none',
+						'bg-[linear-gradient(80deg,_#D21162,_#2C3DA6)]'
+					)}
+				/>
+
+				<div
+					className={cl(
+						'col-span-5 z-10',
+						'flex flex-row items-center justify-between',
+						'mb-2 py-4 md:mb-0 md:py-0'
+					)}>
+					<div className={'flex flex-row md:space-x-6'}>
+						<div className={'mt-2.5 h-10 min-h-[40px] w-10 min-w-[40px] rounded-full md:flex'}>
 							<ImageWithFallback
 								src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-128.png`}
 								alt={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-128.png`}
@@ -375,11 +433,17 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 								height={40}
 							/>
 						</div>
-						<p>{vaultName}</p>
+						<div>
+							<strong className={'mb-1 block text-xl font-black text-neutral-800'}>
+								{currentVault.name}
+							</strong>
+							<p className={'mb-2 block text-neutral-800'}>{currentVault.token.name}</p>
+							<VaultChainTag chainID={currentVault.chainID} />
+						</div>
 					</div>
 				</div>
 
-				<div className={'col-span-5 grid grid-cols-1 gap-0 md:grid-cols-10 md:gap-x-7'}>
+				<div className={cl('col-span-7 z-10', 'grid grid-cols-1 md:grid-cols-10', 'gap-0 md:gap-x-7')}>
 					<div
 						className={'yearn--table-data-section-item md:col-span-2'}
 						datatype={'number'}>
