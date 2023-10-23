@@ -39,6 +39,32 @@
 		@apply scroll-mt-12 mb-0 md:mb-44;
 	}
 
+	:root.v3 {
+		--color-primary: 220 95% 50%;
+		--color-neutral-900: 0 0% 100%;
+		--color-neutral-800: 0 0% 96%;
+		--color-neutral-700: 0 0% 92%;
+		--color-neutral-600: 0 0% 88%;
+		--color-neutral-500: 0 0% 62%;
+		--color-neutral-400: 0 0% 50%;
+		--color-neutral-300: 0 0% 36%;
+		--color-neutral-200: 0 0% 26%;
+		/* --color-primary: 220 95% 50%; */
+		/* --color-neutral-900: 231 100% 11%; */
+		/* --color-neutral-800: 0 0% 96%;
+		--color-neutral-700: 0 0% 92%;
+		--color-neutral-600: 0 0% 88%;
+		--color-neutral-500: 0 0% 62%;
+		--color-neutral-400: 0 0% 50%;
+		--color-neutral-300: 0 0% 36%;
+		--color-neutral-200: 0 0% 26%;
+		--color-neutral-100: 0 0% 16%; */
+		--color-neutral-200: 242 54% 27%;
+		--color-neutral-100: 231 100% 6%;
+		--color-neutral-0: 231 100% 11%;
+		/* background-color: #000836; */
+	}
+
 	/* 🔵 - Yearn Finance ******************************************************************************
 	** AppBox is the style used to make the nices animations on the home page feel nice and smooth
 	** A custom overwrite is required for dark/light mode

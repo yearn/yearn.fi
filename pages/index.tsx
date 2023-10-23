@@ -9,6 +9,18 @@ import type {ReactElement} from 'react';
 
 const apps = [
 	{
+		href: '/vaults-v3',
+		title: 'V3',
+		description: 'deposit tokens and receive yield.',
+		icon: (
+			<LogoYearn
+				className={'h-[100px] w-[100px]'}
+				back={'text-pink-400'}
+				front={'text-white'}
+			/>
+		)
+	},
+	{
 		href: '/vaults',
 		title: 'Vaults',
 		description: 'deposit tokens and receive yield.',

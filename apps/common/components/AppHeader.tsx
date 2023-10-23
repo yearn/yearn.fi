@@ -12,6 +12,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {BalanceReminderPopover} from '@common/components/BalanceReminderPopover';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useMenu} from '@common/contexts/useMenu';
+import {useCurrentApp} from '@common/hooks/useCurrentApp';
 import {LogoYearn} from '@common/icons/LogoYearn';
 import {YBalHeader} from '@yBal/components/header/YBalHeader';
 import {YBribeHeader} from '@yBribe/components/header/YBribeHeader';
@@ -48,6 +49,12 @@ function Logo(): ReactElement {
 
 function LogoPopover(): ReactElement {
 	const [isShowing, set_isShowing] = useState(false);
+	const router = useRouter();
+	const {name} = useCurrentApp(router);
+
+	if (name === 'V3') {
+		return <Fragment />;
+	}
 
 	const YETH = {
 		name: 'yETH',
@@ -136,6 +143,10 @@ export function AppHeader(): ReactElement {
 			return [HOME_MENU, ...APPS[AppName.YBAL].menu];
 		}
 
+		if (pathname.startsWith('/vaults-v3')) {
+			return [HOME_MENU, ...APPS[AppName.VAULTSV3].menu];
+		}
+
 		if (pathname.startsWith('/vaults')) {
 			return [HOME_MENU, ...APPS[AppName.VAULTS].menu];
 		}
@@ -159,15 +170,6 @@ export function AppHeader(): ReactElement {
 		];
 	}, [pathname]);
 
-	const supportedNetworks = useMemo((): number[] => {
-		const ethereumOnlyPaths = ['/ycrv', '/ybal', '/veyfi', '/ybribe'];
-		if (ethereumOnlyPaths.some((path): boolean => pathname.startsWith(path))) {
-			return [1];
-		}
-
-		return [1, 10, 250, 42161];
-	}, [pathname]);
-
 	return (
 		<Header
 			showNetworkSelector={false}
@@ -175,7 +177,6 @@ export function AppHeader(): ReactElement {
 			currentPathName={pathname}
 			onOpenMenuMobile={onOpenMenu}
 			nav={menu}
-			supportedNetworks={supportedNetworks}
 			logo={
 				<AnimatePresence mode={'wait'}>
 					<LogoPopover />

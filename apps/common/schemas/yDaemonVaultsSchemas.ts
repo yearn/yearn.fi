@@ -9,33 +9,11 @@ const yDaemonVaultStrategySchema = z.object({
 	description: z.string(),
 	details: z
 		.object({
-			keeper: addressSchema,
-			strategist: addressSchema,
-			rewards: addressSchema,
-			healthCheck: addressSchema,
 			totalDebt: z.string(),
 			totalLoss: z.string(),
 			totalGain: z.string(),
-			minDebtPerHarvest: z.string(),
-			maxDebtPerHarvest: z.string(),
-			estimatedTotalAssets: z.string(),
-			creditAvailable: z.string(),
-			debtOutstanding: z.string(),
-			expectedReturn: z.string(),
-			delegatedAssets: z.string(),
-			delegatedValue: z.string(),
-			version: z.string(),
-			protocols: z.array(z.string()).or(z.null()),
-			apr: z.number(),
 			performanceFee: z.number(),
 			lastReport: z.number(),
-			activation: z.number(),
-			keepCRV: z.number(),
-			debtLimit: z.number(),
-			doHealthCheck: z.boolean(),
-			inQueue: z.boolean(),
-			emergencyExit: z.boolean(),
-			isActive: z.boolean(),
 			debtRatio: z.number().optional()
 		})
 		.optional(), // Optional for migratable

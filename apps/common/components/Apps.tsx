@@ -4,6 +4,7 @@ import yBalManifest from 'public/apps/ybal-manifest.json';
 import ybribeManifest from 'public/apps/ybribe-manifest.json';
 import ycrvManifest from 'public/apps/ycrv-manifest.json';
 import {VAULTS_MENU} from '@vaults/constants/menu';
+import {VAULTS_V3_MENU} from '@vaults-v3/constants/menu';
 import {VEYFI_MENU} from '@veYFI/constants/menu';
 import {YBAL_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
@@ -17,6 +18,7 @@ import type {TMenu} from '@yearn-finance/web-lib/components/Header';
 import type {TMetaFile} from './Meta';
 
 export enum AppName {
+	VAULTSV3 = 'V3',
 	VAULTS = 'Vaults',
 	YCRV = 'yCRV',
 	YBAL = 'yBal',
@@ -34,6 +36,19 @@ type TApp = {
 };
 
 export const APPS: {[key in AppName]: TApp} = {
+	V3: {
+		name: AppName.VAULTSV3,
+		href: '/vaults-v3',
+		menu: VAULTS_V3_MENU,
+		manifest: vaultsManifest,
+		icon: (
+			<LogoYearn
+				className={'h-8 w-8'}
+				back={'text-pink-400'}
+				front={'text-white'}
+			/>
+		)
+	},
 	Vaults: {
 		name: AppName.VAULTS,
 		href: '/vaults',

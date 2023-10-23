@@ -1,4 +1,4 @@
-import React, {Fragment, memo, useEffect} from 'react';
+import React, {Fragment, memo, useCallback, useEffect} from 'react';
 import localFont from 'next/font/local';
 import useSWR from 'swr';
 import {AnimatePresence, domAnimation, LazyMotion, motion} from 'framer-motion';
@@ -6,6 +6,7 @@ import {useIntervalEffect, useIsMounted, useLocalStorageValue} from '@react-hook
 import {arbitrum, base, fantom, mainnet, optimism} from '@wagmi/chains';
 import {WithYearn} from '@yearn-finance/web-lib/contexts/WithYearn';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
+import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import {localhost} from '@yearn-finance/web-lib/utils/wagmi/networks';
 import {AppHeader} from '@common/components/AppHeader';
@@ -48,6 +49,39 @@ const aeonik = localFont({
 	]
 });
 
+function useCurrentTheme({name}: {name: string}): void {
+	const switchToPreferedColorScheme = useCallback((): void => {
+		const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+		const isSystemDarkMode = darkModeMediaQuery.matches;
+		const isDarkMode =
+			window.localStorage.isDarkMode === 'true' || (!('isDarkMode' in window.localStorage) && isSystemDarkMode);
+
+		if (isDarkMode) {
+			document.documentElement.classList.add('dark');
+			document.documentElement.classList.remove('v3');
+		} else {
+			document.documentElement.classList.remove('dark');
+			document.documentElement.classList.remove('v3');
+		}
+
+		if (isDarkMode === isSystemDarkMode) {
+			delete window.localStorage.isDarkMode;
+		}
+	}, []);
+
+	useEffect((): void => {
+		//whevener we reach this page and `name === v3`, add the `.v3` css tag to the root element (html).
+		// otherwise, remove it.
+		if (name === 'V3') {
+			document.documentElement.classList.remove('dark');
+			document.documentElement.classList.add('v3');
+		} else {
+			switchToPreferedColorScheme();
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [name === 'V3', switchToPreferedColorScheme]);
+}
+
 /** 🔵 - Yearn Finance ***************************************************************************
  ** The 'WithLayout' function is a React functional component that returns a ReactElement. It is used
  ** to wrap the current page component and provide layout for the page.
@@ -71,34 +105,40 @@ const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 	const {value: shouldHidePopover} = useLocalStorageValue<boolean>('yearn.fi/feedback-popover');
 	const {name} = useCurrentApp(router);
 
+	useCurrentTheme({name});
+
 	return (
-		<div
-			id={'app'}
-			className={'mx-auto mb-0 flex max-w-6xl font-aeonik'}>
-			<div className={'block min-h-[100vh] w-full'}>
+		<>
+			<div className={cl('mx-auto mb-0 flex font-aeonik max-w-6xl')}>
 				<AppHeader />
-				<LazyMotion features={domAnimation}>
-					<AnimatePresence mode={'wait'}>
-						<motion.div
-							key={name}
-							initial={'initial'}
-							animate={'enter'}
-							exit={'exit'}
-							className={'my-0 h-full md:mb-0 md:mt-16'}
-							variants={variants}>
-							{getLayout(
-								<Component
-									router={props.router}
-									{...pageProps}
-								/>,
-								router
-							)}
-							{!shouldHidePopover && <Popover />}
-						</motion.div>
-					</AnimatePresence>
-				</LazyMotion>
 			</div>
-		</div>
+			<div
+				id={'app'}
+				className={cl('mx-auto mb-0 flex font-aeonik', name === 'V3' ? '' : 'max-w-6xl')}>
+				<div className={'block min-h-[100vh] w-full'}>
+					<LazyMotion features={domAnimation}>
+						<AnimatePresence mode={'wait'}>
+							<motion.div
+								key={name}
+								initial={'initial'}
+								animate={'enter'}
+								exit={'exit'}
+								className={'my-0 h-full md:mb-0 md:mt-16'}
+								variants={variants}>
+								{getLayout(
+									<Component
+										router={props.router}
+										{...pageProps}
+									/>,
+									router
+								)}
+								{!shouldHidePopover && <Popover />}
+							</motion.div>
+						</AnimatePresence>
+					</LazyMotion>
+				</div>
+			</div>
+		</>
 	);
 });
 
