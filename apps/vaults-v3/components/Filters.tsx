@@ -1,11 +1,7 @@
 import {useMemo} from 'react';
 import {VaultListOptions} from '@vaults/components/list/VaultListOptions';
 import {ALL_CATEGORIES} from '@vaults/constants';
-import {IconArbitrumChain} from '@yearn-finance/web-lib/icons/chains/IconArbitrumChain';
-import {IconBaseChain} from '@yearn-finance/web-lib/icons/chains/IconBaseChain';
-import {IconEtherumChain} from '@yearn-finance/web-lib/icons/chains/IconEtherumChain';
-import {IconFantomChain} from '@yearn-finance/web-lib/icons/chains/IconFantomChain';
-import {IconOptimismChain} from '@yearn-finance/web-lib/icons/chains/IconOptimismChain';
+import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {MultiSelectDropdown} from '@common/components/MultiSelectDropdown';
 import {SearchBar} from '@common/components/SearchBar';
 
@@ -35,31 +31,79 @@ export function Filters({
 				label: 'Ethereum',
 				value: 1,
 				isSelected: chains.includes(1),
-				icon: <IconEtherumChain />
+				icon: (
+					<ImageWithFallback
+						src={`${process.env.BASE_YEARN_CHAIN_URI}/1/logo-128.png`}
+						alt={`Chain 1`}
+						width={40}
+						height={40}
+					/>
+				)
 			},
 			{
 				label: 'OP Mainnet',
 				value: 10,
 				isSelected: chains.includes(10),
-				icon: <IconOptimismChain />
+				icon: (
+					<ImageWithFallback
+						src={`${process.env.BASE_YEARN_CHAIN_URI}/10/logo-128.png`}
+						alt={`Chain 10`}
+						width={40}
+						height={40}
+					/>
+				)
+			},
+			{
+				label: 'Polygon PoS',
+				value: 137,
+				isSelected: chains.includes(137),
+				icon: (
+					<ImageWithFallback
+						src={`${process.env.BASE_YEARN_CHAIN_URI}/137/logo-128.png`}
+						alt={`Chain 137`}
+						width={40}
+						height={40}
+					/>
+				)
 			},
 			{
 				label: 'Fantom',
 				value: 250,
 				isSelected: chains.includes(250),
-				icon: <IconFantomChain />
+				icon: (
+					<ImageWithFallback
+						src={`${process.env.BASE_YEARN_CHAIN_URI}/250/logo-128.png`}
+						alt={`Chain 250`}
+						width={40}
+						height={40}
+					/>
+				)
 			},
 			{
 				label: 'Base',
 				value: 8453,
 				isSelected: chains.includes(8453),
-				icon: <IconBaseChain />
+				icon: (
+					<ImageWithFallback
+						src={`${process.env.BASE_YEARN_CHAIN_URI}/8453/logo-128.png`}
+						alt={`Chain 8453`}
+						width={40}
+						height={40}
+					/>
+				)
 			},
 			{
 				label: 'Arbitrum One',
 				value: 42161,
 				isSelected: chains.includes(42161),
-				icon: <IconArbitrumChain />
+				icon: (
+					<ImageWithFallback
+						src={`${process.env.BASE_YEARN_CHAIN_URI}/42161/logo-128.png`}
+						alt={`Chain 42161`}
+						width={40}
+						height={40}
+					/>
+				)
 			}
 		];
 	}, [chains]);

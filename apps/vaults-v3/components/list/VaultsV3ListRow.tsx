@@ -121,7 +121,7 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 							/>
 						</Renderable>
 					</b>
-					<small className={'text-xs text-neutral-900'}>
+					<small className={'text-xs text-neutral-800'}>
 						<Renderable
 							shouldRender={
 								isEthMainnet &&
@@ -329,13 +329,13 @@ function VaultChainTag({chainID}: {chainID: number}): ReactElement {
 		case 1:
 			return (
 				<div className={'w-fit'}>
-					<div className={'rounded-2xl bg-[#627EEA] px-3.5 py-1 text-neutral-900'}>{'Ethereum'}</div>
+					<div className={'rounded-2xl bg-[#627EEA] px-3.5 py-1 text-xs text-neutral-800'}>{'Ethereum'}</div>
 				</div>
 			);
 		case 10:
 			return (
 				<div className={'w-fit'}>
-					<div className={'rounded-2xl bg-[#C80016] px-3.5 py-1 text-neutral-900'}>{'Optimism'}</div>
+					<div className={'rounded-2xl bg-[#C80016] px-3.5 py-1 text-xs text-neutral-800'}>{'Optimism'}</div>
 				</div>
 			);
 		case 137:
@@ -351,25 +351,25 @@ function VaultChainTag({chainID}: {chainID: number}): ReactElement {
 		case 250:
 			return (
 				<div className={'w-fit'}>
-					<div className={'rounded-2xl bg-[#1969FF] px-3.5 py-1 text-neutral-900'}>{'Fantom'}</div>
+					<div className={'rounded-2xl bg-[#1969FF] px-3.5 py-1 text-xs text-neutral-800'}>{'Fantom'}</div>
 				</div>
 			);
 		case 8453:
 			return (
 				<div className={'w-fit'}>
-					<div className={'rounded-2xl bg-[#1C55F5] px-3.5 py-1 text-neutral-900'}>{'Base'}</div>
+					<div className={'rounded-2xl bg-[#1C55F5] px-3.5 py-1 text-xs text-neutral-800'}>{'Base'}</div>
 				</div>
 			);
 		case 42161:
 			return (
 				<div className={'w-fit'}>
-					<div className={'rounded-2xl bg-[#2F3749] px-3.5 py-1 text-neutral-900'}>{'Arbitrum'}</div>
+					<div className={'rounded-2xl bg-[#2F3749] px-3.5 py-1 text-xs text-neutral-800'}>{'Arbitrum'}</div>
 				</div>
 			);
 		default:
 			return (
 				<div className={'w-fit'}>
-					<div className={'rounded-2xl bg-[#627EEA] px-3.5 py-1 text-neutral-900'}>{'Ethereum'}</div>
+					<div className={'rounded-2xl bg-[#627EEA] px-3.5 py-1 text-xs text-neutral-800'}>{'Ethereum'}</div>
 				</div>
 			);
 	}

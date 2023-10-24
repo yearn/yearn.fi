@@ -3,7 +3,7 @@ import localFont from 'next/font/local';
 import useSWR from 'swr';
 import {AnimatePresence, domAnimation, LazyMotion, motion} from 'framer-motion';
 import {useIntervalEffect, useIsMounted, useLocalStorageValue} from '@react-hookz/web';
-import {arbitrum, base, fantom, mainnet, optimism} from '@wagmi/chains';
+import {arbitrum, base, fantom, mainnet, optimism, polygon} from '@wagmi/chains';
 import {WithYearn} from '@yearn-finance/web-lib/contexts/WithYearn';
 import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
@@ -261,7 +261,7 @@ function MyApp(props: AppProps): ReactElement {
 			id={'main'}
 			className={aeonik.className}>
 			<WithYearn
-				supportedChains={[mainnet, optimism, fantom, base, arbitrum, localhost]}
+				supportedChains={[mainnet, optimism, polygon, fantom, base, arbitrum, localhost]}
 				options={{
 					baseSettings: {
 						yDaemonBaseURI: process.env.YDAEMON_BASE_URI as string
