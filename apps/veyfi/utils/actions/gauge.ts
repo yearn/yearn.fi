@@ -2,10 +2,12 @@ import {erc20ABI} from 'wagmi';
 import {VEYFI_CLAIM_REWARDS_ZAP_ABI} from '@veYFI/utils/abi/veYFIClaimRewardsZap.abi';
 import {VEYFI_GAUGE_ABI} from '@veYFI/utils/abi/veYFIGauge.abi';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {handleTx} from '@yearn-finance/web-lib/utils/wagmi/provider';
+import {handleTx, toWagmiProvider} from '@yearn-finance/web-lib/utils/wagmi/provider';
 import {assertAddress} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {allowanceOf} from '@common/utils/actions';
 import {assert} from '@common/utils/assert';
+
+import {YFI_REWARD_POOL_ABI} from '../abi/YFIRewardPool.abi';
 
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TWriteTransaction} from '@yearn-finance/web-lib/utils/wagmi/provider';
@@ -90,6 +92,20 @@ export async function claimRewards(props: TClaimRewards): Promise<TTxResponse> {
 		address: props.contractAddress,
 		abi: VEYFI_GAUGE_ABI,
 		functionName: 'getReward'
+	});
+}
+
+type TClaimBoostRewards = TWriteTransaction;
+export async function claimBoostRewards(props: TClaimBoostRewards): Promise<TTxResponse> {
+	assertAddress(props.contractAddress);
+	const wagmiProvider = await toWagmiProvider(props.connector);
+	assertAddress(wagmiProvider.address, 'ownerAddress');
+
+	return await handleTx(props, {
+		address: props.contractAddress,
+		abi: YFI_REWARD_POOL_ABI,
+		functionName: 'claim',
+		args: [wagmiProvider.address]
 	});
 }
 
