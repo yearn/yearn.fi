@@ -246,9 +246,9 @@ function TextAnimation(): ReactElement {
 
 function Index(): ReactElement {
 	return (
-		<>
+		<div className={'bg-red-9000 mx-auto h-full w-full max-w-6xl'}>
 			<div className={'mx-auto mb-10 mt-6 flex flex-col justify-center md:mb-14 md:mt-20'}>
-				<div className={'relative h-12 w-[300px] self-center md:h-[104px] md:w-[600px]'}>
+				<div className={'relative h-12 w-[300px] self-center overflow-hidden md:h-[104px] md:w-[600px]'}>
 					<TextAnimation />
 				</div>
 				<div className={'my-8'}>
@@ -278,7 +278,7 @@ function Index(): ReactElement {
 					)
 				)}
 			</section>
-		</>
+		</div>
 	);
 }
 

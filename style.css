@@ -34,34 +34,27 @@
 	font-display: swap;
 }
 
+#main {
+	@apply flex flex-col w-full h-full min-h-screen bg-neutral-0;
+}
+
+:root.v3 {
+	--color-primary: 220 95% 50%;
+	--color-neutral-900: 0 0% 96%;
+	--color-neutral-800: 0 0% 96%;
+	--color-neutral-700: 0 0% 92%;
+	--color-neutral-600: 0 0% 88%;
+	--color-neutral-500: 0 0% 62%;
+	--color-neutral-400: 0 0% 50%;
+	--color-neutral-300: 231 51% 19%;
+	--color-neutral-200: 242 54% 27%;
+	--color-neutral-100: 231 100% 6%;
+	--color-neutral-0: 231 100% 11%;
+}
+
 @layer base {
 	#swap {
 		@apply scroll-mt-12 mb-0 md:mb-44;
-	}
-
-	:root.v3 {
-		--color-primary: 220 95% 50%;
-		--color-neutral-900: 0 0% 100%;
-		--color-neutral-800: 0 0% 96%;
-		--color-neutral-700: 0 0% 92%;
-		--color-neutral-600: 0 0% 88%;
-		--color-neutral-500: 0 0% 62%;
-		--color-neutral-400: 0 0% 50%;
-		/* --color-primary: 220 95% 50%; */
-		/* --color-neutral-900: 231 100% 11%; */
-		/* --color-neutral-800: 0 0% 96%;
-		--color-neutral-700: 0 0% 92%;
-		--color-neutral-600: 0 0% 88%;
-		--color-neutral-500: 0 0% 62%;
-		--color-neutral-400: 0 0% 50%;
-		--color-neutral-300: 0 0% 36%;
-		--color-neutral-200: 0 0% 26%;
-		--color-neutral-100: 0 0% 16%; */
-		--color-neutral-300: 231 51% 19%;
-		--color-neutral-200: 242 54% 27%;
-		--color-neutral-100: 231 100% 6%;
-		--color-neutral-0: 231 100% 11%;
-		/* background-color: #000836; */
 	}
 
 	/* 🔵 - Yearn Finance ******************************************************************************
@@ -157,11 +150,11 @@
 		@apply text-neutral-900;
 	}
 	.yearn--table-data-section-item {
-		@apply col-span-1 flex h-min flex-row justify-between pt-0 px-0 md:h-14 md:pt-4;
+		@apply col-span-1 flex h-min flex-col md:flex-row justify-between pt-0 px-0 md:h-14 md:pt-4;
 		&[datatype='number'] {
 			@apply md:justify-end;
 			& > .yearn--table-data-section-item-value {
-				@apply font-number text-end;
+				@apply font-number md:text-end;
 			}
 		}
 	}

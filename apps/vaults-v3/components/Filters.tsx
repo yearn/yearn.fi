@@ -112,7 +112,7 @@ export function Filters({
 		const options: TMultiSelectOptionProps[] = Object.entries(ALL_CATEGORIES).map(
 			([key, value]): TMultiSelectOptionProps => ({
 				value: key,
-				label: value,
+				label: value.replaceAll(' Vaults', ''),
 				isSelected: categories.includes(key)
 			})
 		);
@@ -125,21 +125,20 @@ export function Filters({
 				{'Filters'}
 			</strong>
 
-			<div className={'absolute right-5 top-3 md:right-8 md:top-8'}>
+			<div className={'absolute right-8 top-8'}>
 				<VaultListOptions panelClassName={'bg-neutral-100 rounded-lg'} />
 			</div>
-
-			<div className={'mb-5 w-full'}>
-				<p className={'pb-2 text-[#757CA6]'}>{'Search'}</p>
-				<SearchBar
-					className={'max-w-none rounded-lg bg-neutral-300 text-neutral-900 md:w-full'}
-					iconClassName={'text-neutral-900'}
-					searchPlaceholder={'YFI Vault'}
-					searchValue={searchValue}
-					set_searchValue={onSearch}
-				/>
-			</div>
 			<div className={'grid grid-cols-2 gap-x-6'}>
+				<div className={'w-full'}>
+					<p className={'pb-2 text-[#757CA6]'}>{'Search'}</p>
+					<SearchBar
+						className={'!mt-0 max-w-none rounded-lg bg-neutral-300 text-neutral-900 md:w-full'}
+						iconClassName={'text-neutral-900'}
+						searchPlaceholder={'YFI Vault'}
+						searchValue={searchValue}
+						set_searchValue={onSearch}
+					/>
+				</div>
 				<div className={'w-full'}>
 					<p className={'pb-2 text-[#757CA6]'}>{'Select Blockchain'}</p>
 					<MultiSelectDropdown
@@ -155,8 +154,8 @@ export function Filters({
 						}}
 					/>
 				</div>
-				<div className={'w-full'}>
-					<p className={'pb-2 text-[#757CA6]'}>{'Filter'}</p>
+				<div className={'hidden w-full'}>
+					<p className={'pb-2 text-[#757CA6]'}>{'Vault Type'}</p>
 					<MultiSelectDropdown
 						buttonClassName={'max-w-none rounded-lg bg-neutral-300 text-neutral-900 md:w-full'}
 						comboboxOptionsClassName={'bg-neutral-300 rounded-lg'}

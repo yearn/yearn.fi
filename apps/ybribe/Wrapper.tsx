@@ -14,9 +14,9 @@ export function Wrapper({children, router}: {children: ReactElement; router: Nex
 	const {manifest} = useCurrentApp(router);
 
 	return (
-		<CurveContextApp>
-			<>
-				<Meta meta={manifest} />
+		<div className={'mx-auto my-0 max-w-6xl md:mb-0 md:mt-16'}>
+			<Meta meta={manifest} />
+			<CurveContextApp>
 				<BribesContextApp>
 					<AnimatePresence mode={'wait'}>
 						<motion.div
@@ -31,7 +31,7 @@ export function Wrapper({children, router}: {children: ReactElement; router: Nex
 						</motion.div>
 					</AnimatePresence>
 				</BribesContextApp>
-			</>
-		</CurveContextApp>
+			</CurveContextApp>
+		</div>
 	);
 }

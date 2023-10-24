@@ -53,8 +53,11 @@ module.exports = {
 				75: 'repeat(75, minmax(0, 1fr))'
 			},
 			gridColumn: {
+				'span-75': 'span 75 / span 75',
+				'span-50': 'span 50 / span 50',
 				'span-46': 'span 46 / span 46',
-				'span-29': 'span 29 / span 29'
+				'span-29': 'span 29 / span 29',
+				'span-25': 'span 25 / span 25'
 			},
 			fontSize: {
 				xxs: ['10px', '16px'],

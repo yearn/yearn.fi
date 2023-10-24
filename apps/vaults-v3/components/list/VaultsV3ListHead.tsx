@@ -51,7 +51,7 @@ export function VaultsV3ListHead({items, sortBy, sortDirection, onSort}: TListHe
 
 	const [token, ...rest] = items;
 	return (
-		<div className={'mt-4 grid w-full grid-cols-1 md:mt-0'}>
+		<div className={'mt-4 hidden w-full grid-cols-1 md:mt-0 md:grid'}>
 			<div
 				className={cl(
 					'grid w-full grid-cols-1 md:grid-cols-12 px-4 py-2 md:px-8',

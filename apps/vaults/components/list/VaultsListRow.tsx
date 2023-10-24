@@ -17,7 +17,8 @@ import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const isEthMainnet = currentVault.chainID === 1;
 	if (currentVault.apr.forwardAPR.type === '') {
-		const hasZeroAPR = isZero(currentVault.apr?.netAPR) || Number(currentVault.apr?.netAPR.toFixed(2)) === 0;
+		const hasZeroAPR =
+			isZero(currentVault.apr?.netAPR) || Number(Number(currentVault.apr?.netAPR || 0).toFixed(2)) === 0;
 		const boostedAPR = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.netAPR;
 		const hasZeroBoostedAPR = isZero(boostedAPR) || Number(boostedAPR.toFixed(2)) === 0;
 
@@ -228,7 +229,8 @@ export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): 
 		);
 	}
 
-	const hasZeroAPR = isZero(currentVault.apr?.netAPR) || Number(currentVault.apr?.netAPR.toFixed(2)) === 0;
+	const hasZeroAPR =
+		isZero(currentVault.apr?.netAPR) || Number(Number(currentVault.apr?.netAPR || 0).toFixed(2)) === 0;
 	return (
 		<div className={'flex flex-col text-right'}>
 			<b className={'yearn--table-data-section-item-value'}>
@@ -248,7 +250,8 @@ export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): 
 }
 
 export function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const hasZeroAPR = isZero(currentVault.apr?.netAPR) || Number(currentVault.apr?.netAPR.toFixed(2)) === 0;
+	const hasZeroAPR =
+		isZero(currentVault.apr?.netAPR) || Number(Number(currentVault.apr?.netAPR || 0).toFixed(2)) === 0;
 
 	if (currentVault.apr?.extra.stakingRewardsAPR > 0) {
 		return (

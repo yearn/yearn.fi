@@ -33,7 +33,7 @@ function SelectAllOption(option: TMultiSelectOptionProps): ReactElement {
 				<input
 					type={'checkbox'}
 					checked={option.isSelected}
-					className={'checkbox'}
+					className={'checkbox hidden'}
 				/>
 			</div>
 		</Combobox.Option>
@@ -209,7 +209,7 @@ export function MultiSelectDropdown(props: TMultiSelectProps): ReactElement {
 						)}>
 						<SelectAllOption
 							key={'select-all'}
-							label={'All'}
+							label={areAllSelected ? 'Unselect All' : 'Select All'}
 							isSelected={areAllSelected}
 							value={'select_all'}
 						/>

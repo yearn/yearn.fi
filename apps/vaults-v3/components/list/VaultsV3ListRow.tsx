@@ -17,13 +17,13 @@ import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const isEthMainnet = currentVault.chainID === 1;
 	if (currentVault.apr.forwardAPR.type === '') {
-		const hasZeroAPR = isZero(currentVault.apr?.netAPR) || Number(currentVault.apr?.netAPR.toFixed(2)) === 0;
+		const hasZeroAPR = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0;
 		const boostedAPR = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.netAPR;
 		const hasZeroBoostedAPR = isZero(boostedAPR) || Number(boostedAPR.toFixed(2)) === 0;
 
 		if (currentVault.apr?.extra.stakingRewardsAPR > 0) {
 			return (
-				<div className={'flex flex-col text-right'}>
+				<div className={'flex flex-col md:text-right'}>
 					<span className={'tooltip'}>
 						<b className={'yearn--table-data-section-item-value'}>
 							<Renderable
@@ -82,7 +82,7 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 			);
 		}
 		return (
-			<div className={'flex flex-col text-right'}>
+			<div className={'flex flex-col md:text-right'}>
 				<b className={'yearn--table-data-section-item-value'}>
 					<Renderable
 						shouldRender={!(currentVault.apr?.type === 'new' && hasZeroAPR)}
@@ -103,7 +103,7 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 		const unBoostedAPR = currentVault.apr.forwardAPR.netAPR / currentVault.apr.forwardAPR.composite.boost;
 		return (
 			<span className={'tooltip'}>
-				<div className={'flex flex-col text-right'}>
+				<div className={'flex flex-col md:text-right'}>
 					<b
 						className={
 							'yearn--table-data-section-item-value underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
@@ -169,7 +169,7 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 		const boostedAPR = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.forwardAPR.netAPR;
 		const hasZeroBoostedAPR = isZero(boostedAPR) || Number(boostedAPR.toFixed(2)) === 0;
 		return (
-			<div className={'flex flex-col text-right'}>
+			<div className={'flex flex-col md:text-right'}>
 				<span className={'tooltip'}>
 					<b className={'yearn--table-data-section-item-value'}>
 						<Renderable
@@ -228,9 +228,9 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 		);
 	}
 
-	const hasZeroAPR = isZero(currentVault.apr?.netAPR) || Number(currentVault.apr?.netAPR.toFixed(2)) === 0;
+	const hasZeroAPR = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0;
 	return (
-		<div className={'flex flex-col text-right'}>
+		<div className={'flex flex-col md:text-right'}>
 			<b className={'yearn--table-data-section-item-value'}>
 				<Renderable
 					shouldRender={!(currentVault.apr?.type === 'new' && isZero(currentVault.apr.forwardAPR.netAPR))}
@@ -248,11 +248,11 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 }
 
 function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const hasZeroAPR = isZero(currentVault.apr?.netAPR) || Number(currentVault.apr?.netAPR.toFixed(2)) === 0;
+	const hasZeroAPR = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0;
 
 	if (currentVault.apr?.extra.stakingRewardsAPR > 0) {
 		return (
-			<div className={'flex flex-col text-right'}>
+			<div className={'flex flex-col md:text-right'}>
 				<span className={'tooltip'}>
 					<b className={'yearn--table-data-section-item-value'}>
 						<Renderable
@@ -307,7 +307,7 @@ function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}): Reac
 	}
 
 	return (
-		<div className={'flex flex-col text-right'}>
+		<div className={'flex flex-col md:text-right'}>
 			<b className={'yearn--table-data-section-item-value'}>
 				<Renderable
 					shouldRender={!(currentVault.apr?.type === 'new' && hasZeroAPR)}
@@ -406,25 +406,19 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 			<div
 				className={cl(
 					'grid w-full grid-cols-1 md:grid-cols-12 rounded-3xl',
-					'p-6 pt-2 pr-10',
-					'border-t border-neutral-200 md:border-none',
+					'p-6 pt-2 md:pr-10',
 					'cursor-pointer relative group'
 				)}>
 				<div
 					className={cl(
 						'absolute inset-0 rounded-3xl',
 						'opacity-20 transition-opacity group-hover:opacity-100 pointer-events-none',
-						'bg-[linear-gradient(80deg,_#D21162,_#2C3DA6)]'
+						'bg-[linear-gradient(80deg,_#2C3DA6,_#D21162)]'
 					)}
 				/>
 
-				<div
-					className={cl(
-						'col-span-5 z-10',
-						'flex flex-row items-center justify-between',
-						'mb-2 py-4 md:mb-0 md:py-0'
-					)}>
-					<div className={'flex flex-row md:space-x-6'}>
+				<div className={cl('col-span-5 z-10', 'flex flex-row items-center justify-between')}>
+					<div className={'flex flex-row space-x-6'}>
 						<div className={'mt-2.5 h-10 min-h-[40px] w-10 min-w-[40px] rounded-full md:flex'}>
 							<ImageWithFallback
 								src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-128.png`}
@@ -443,18 +437,26 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 					</div>
 				</div>
 
-				<div className={cl('col-span-7 z-10', 'grid grid-cols-1 md:grid-cols-10', 'gap-0 md:gap-x-7')}>
+				<div
+					className={cl(
+						'col-span-7 z-10',
+						'grid grid-cols-2 md:grid-cols-10',
+						'gap-4 md:gap-x-7',
+						'mt-8 md:mt-0'
+					)}>
 					<div
 						className={'yearn--table-data-section-item md:col-span-2'}
 						datatype={'number'}>
-						<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Estimated APR'}</label>
+						<label className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>
+							{'Estimated APR'}
+						</label>
 						<VaultForwardAPR currentVault={currentVault} />
 					</div>
 
 					<div
 						className={'yearn--table-data-section-item md:col-span-2'}
 						datatype={'number'}>
-						<label className={'yearn--table-data-section-item-label !font-aeonik'}>
+						<label className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>
 							{'Historical APR'}
 						</label>
 						<VaultHistoricalAPR currentVault={currentVault} />
@@ -463,7 +465,9 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 					<div
 						className={'yearn--table-data-section-item md:col-span-2'}
 						datatype={'number'}>
-						<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Available'}</label>
+						<label className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>
+							{'Available'}
+						</label>
 						<p
 							className={`yearn--table-data-section-item-value ${
 								isZero(availableToDeposit) ? 'text-neutral-400' : 'text-neutral-900'
@@ -480,7 +484,9 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 					<div
 						className={'yearn--table-data-section-item md:col-span-2'}
 						datatype={'number'}>
-						<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Deposited'}</label>
+						<label className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>
+							{'Deposited'}
+						</label>
 						<p
 							className={`yearn--table-data-section-item-value ${
 								isZero(staked) ? 'text-neutral-400' : 'text-neutral-900'
@@ -497,7 +503,7 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 					<div
 						className={'yearn--table-data-section-item md:col-span-2'}
 						datatype={'number'}>
-						<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'TVL'}</label>
+						<label className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'TVL'}</label>
 						<p className={'yearn--table-data-section-item-value'}>
 							<RenderAmount
 								value={currentVault.tvl?.tvl}

@@ -55,13 +55,17 @@ function useCurrentTheme({name}: {name: string}): void {
 		const isSystemDarkMode = darkModeMediaQuery.matches;
 		const isDarkMode =
 			window.localStorage.isDarkMode === 'true' || (!('isDarkMode' in window.localStorage) && isSystemDarkMode);
+		const isV3 = window.location.pathname.includes('vaults-v3');
 
-		if (isDarkMode) {
+		if (isV3) {
+			document.documentElement.classList.add('v3');
+			document.documentElement.classList.remove('dark');
+		} else if (isDarkMode) {
 			document.documentElement.classList.add('dark');
 			document.documentElement.classList.remove('v3');
 		} else {
-			document.documentElement.classList.remove('dark');
 			document.documentElement.classList.remove('v3');
+			document.documentElement.classList.remove('dark');
 		}
 
 		if (isDarkMode === isSystemDarkMode) {
@@ -115,7 +119,7 @@ const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 			</div>
 			<div
 				id={'app'}
-				className={cl('mx-auto mb-0 flex font-aeonik', name === 'V3' ? '' : 'max-w-6xl')}>
+				className={cl('mx-auto mb-0 flex font-aeonik')}>
 				<div className={'block h-full min-h-max w-full'}>
 					<LazyMotion features={domAnimation}>
 						<AnimatePresence mode={'wait'}>
@@ -165,7 +169,7 @@ const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 function NetworkStatusIndicator(): ReactElement {
 	const {safeChainID} = useChainID();
 	const isMounted = useIsMounted();
-	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: safeChainID});
+	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: 137});
 	const {data: status, mutate} = useSWR<'Not Started' | 'Loading' | 'OK'>(`${yDaemonBaseUri}/status`, baseFetcher, {
 		revalidateOnFocus: true,
 		revalidateOnReconnect: true,
@@ -225,21 +229,23 @@ const App = memo(function App(props: AppProps): ReactElement {
 	const {manifest} = useCurrentApp(router);
 
 	return (
-		<MenuContextApp>
-			<YearnContextApp>
-				<WalletContextApp>
-					<Fragment>
-						<Meta meta={manifest} />
-						<WithLayout
-							Component={Component}
-							pageProps={pageProps}
-							router={props.router}
-						/>
-						<NetworkStatusIndicator />
-					</Fragment>
-				</WalletContextApp>
-			</YearnContextApp>
-		</MenuContextApp>
+		<>
+			<MenuContextApp>
+				<YearnContextApp>
+					<WalletContextApp>
+						<Fragment>
+							<Meta meta={manifest} />
+							<WithLayout
+								Component={Component}
+								pageProps={pageProps}
+								router={props.router}
+							/>
+						</Fragment>
+					</WalletContextApp>
+				</YearnContextApp>
+			</MenuContextApp>
+			<NetworkStatusIndicator />
+		</>
 	);
 });
 
@@ -257,9 +263,7 @@ const App = memo(function App(props: AppProps): ReactElement {
  **************************************************************************************************/
 function MyApp(props: AppProps): ReactElement {
 	return (
-		<main
-			id={'main'}
-			className={aeonik.className}>
+		<main className={cl(aeonik.className, 'h-full min-h-screen w-full font-aeonik', '')}>
 			<WithYearn
 				supportedChains={[mainnet, optimism, polygon, fantom, base, arbitrum, localhost]}
 				options={{
