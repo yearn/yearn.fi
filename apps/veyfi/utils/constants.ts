@@ -3,7 +3,7 @@ import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TWeeks} from '@yearn-finance/web-lib/utils/time';
 
-export const VEYFI_CHAIN_ID = 1337;
+export const VEYFI_CHAIN_ID = 1;
 
 export const VEYFI_REGISTRY_ADDRESS: TAddress = toAddress(''); // TODO: update once deployed
 export const VEYFI_OPTIONS_ADDRESS = toAddress('0x2fBa208E1B2106d40DaA472Cb7AE0c6C7EFc0224');
