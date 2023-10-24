@@ -32,13 +32,13 @@ function useVeYFIAPR({dYFIPrice}: TUseVeYFIAPR): number {
 		const publicClient = getClient(VEYFI_CHAIN_ID);
 		const rangeLimit = toBigInt(process.env.RANGE_LIMIT);
 		const currentBlockNumber = await publicClient.getBlockNumber();
-		const lastDay = currentBlockNumber - toBigInt(7200 * 30);
+		const from = 18373500n;
 
 		const depositors: [{address: TAddress; gauge: TAddress; balance: TNormalizedBN}] = [] as any;
 		/* 🔵 - Yearn Finance **********************************************************************
 		 ** First we need to retrieve all the depositors in a gauge
 		 ******************************************************************************************/
-		for (let i = lastDay; i < currentBlockNumber; i += rangeLimit) {
+		for (let i = from; i < currentBlockNumber; i += rangeLimit) {
 			const logs = await publicClient.getLogs({
 				address: VE_YFI_GAUGES,
 				events: [
