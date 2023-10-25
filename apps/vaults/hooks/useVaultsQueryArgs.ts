@@ -1,6 +1,7 @@
 import {useEffect, useState} from 'react';
 import {DelimitedArrayParam, DelimitedNumericArrayParam, StringParam, useQueryParam} from 'use-query-params';
 import {ALL_CHAINS, ALL_VAULTS_CATEGORIES_KEYS} from '@vaults/constants';
+import {useSupportedChains} from '@common/hooks/useChains';
 
 import type {TSortDirection} from '@common/types/types';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
@@ -18,6 +19,8 @@ type TQueryArgs = {
 	onChangeSortBy: (value: TPossibleSortBy) => void;
 };
 function useQueryArguments(): TQueryArgs {
+	const allChains = useSupportedChains().map((chain): number => chain.id);
+
 	/** 🔵 - Yearn *********************************************************************************
 	 **	Theses elements are not exported, they are just used to keep the state of the query, which
 	 ** is slower than the state of the component.
@@ -84,12 +87,12 @@ function useQueryArguments(): TQueryArgs {
 			set_chains(chainsParam as number[]);
 			return;
 		}
-		if (!chains || Object.values(chains).length === ALL_CHAINS.length) {
+		if (!chains || Object.values(chains).length === allChains.length) {
 			set_chainsParam(undefined);
 		} else {
 			set_chainsParam(chains);
 		}
-	}, [chainsParam, chains, set_chainsParam]);
+	}, [chainsParam, chains, set_chainsParam, allChains.length]);
 
 	/** 🔵 - Yearn *********************************************************************************
 	 **	This useEffect hook is used to synchronize the sortDirection

@@ -4,9 +4,8 @@ import {useIsMounted} from '@react-hookz/web';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {MultiSelectDropdown} from '@common/components/MultiSelectDropdown';
 import {SearchBar} from '@common/components/SearchBar';
+import {useChainOptions} from '@common/hooks/useChains';
 import {isValidCategory} from '@common/types/category';
-
-import {ImageWithFallback} from './ImageWithFallback';
 
 import type {ChangeEvent, ReactElement, ReactNode} from 'react';
 
@@ -121,88 +120,7 @@ export function ListHero<T extends string>({
 	switchProps
 }: TListHero<T>): ReactElement {
 	const chains = JSON.parse(selectedChains || '[]') as number[];
-
-	const OPTIONS = [
-		{
-			label: 'Ethereum',
-			value: 1,
-			isSelected: chains.includes(1),
-			icon: (
-				<ImageWithFallback
-					src={`${process.env.BASE_YEARN_CHAIN_URI}/1/logo-128.png`}
-					alt={`Chain 1`}
-					width={40}
-					height={40}
-				/>
-			)
-		},
-		{
-			label: 'OP Mainnet',
-			value: 10,
-			isSelected: chains.includes(10),
-			icon: (
-				<ImageWithFallback
-					src={`${process.env.BASE_YEARN_CHAIN_URI}/10/logo-128.png`}
-					alt={`Chain 10`}
-					width={40}
-					height={40}
-				/>
-			)
-		},
-		{
-			label: 'Polygon PoS',
-			value: 137,
-			isSelected: chains.includes(137),
-			icon: (
-				<ImageWithFallback
-					src={`${process.env.BASE_YEARN_CHAIN_URI}/137/logo-128.png`}
-					alt={`Chain 137`}
-					width={40}
-					height={40}
-				/>
-			)
-		},
-		{
-			label: 'Fantom',
-			value: 250,
-			isSelected: chains.includes(250),
-			icon: (
-				<ImageWithFallback
-					src={`${process.env.BASE_YEARN_CHAIN_URI}/250/logo-128.png`}
-					alt={`Chain 250`}
-					width={40}
-					height={40}
-				/>
-			)
-		},
-		{
-			label: 'Base',
-			value: 8453,
-			isSelected: chains.includes(8453),
-			icon: (
-				<ImageWithFallback
-					src={`${process.env.BASE_YEARN_CHAIN_URI}/8453/logo-128.png`}
-					alt={`Chain 8453`}
-					width={40}
-					height={40}
-				/>
-			)
-		},
-		{
-			label: 'Arbitrum One',
-			value: 42161,
-			isSelected: chains.includes(42161),
-			icon: (
-				<ImageWithFallback
-					src={`${process.env.BASE_YEARN_CHAIN_URI}/42161/logo-128.png`}
-					alt={`Chain 42161`}
-					width={40}
-					height={40}
-				/>
-			)
-		}
-	];
-
+	const chainOptions = useChainOptions(chains);
 	const isMounted = useIsMounted();
 
 	return (
@@ -222,7 +140,7 @@ export function ListHero<T extends string>({
 				/>
 
 				<MultiSelectDropdown
-					options={OPTIONS}
+					options={chainOptions}
 					placeholder={'Select chain'}
 					onSelect={(options): void => {
 						const selectedChains = options

@@ -24,7 +24,7 @@ export function VaultsListRetired({currentVault}: {currentVault: TYDaemonVault})
 							<TokenIcon
 								chainID={currentVault.chainID}
 								size={40}
-								token={currentVault.token}
+								address={currentVault.token.address}
 							/>
 						</div>
 						<div className={'text-left'}>

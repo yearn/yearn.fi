@@ -1,9 +1,9 @@
 import {useMemo} from 'react';
 import {VaultListOptions} from '@vaults/components/list/VaultListOptions';
 import {ALL_CATEGORIES} from '@vaults/constants';
-import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {MultiSelectDropdown} from '@common/components/MultiSelectDropdown';
 import {SearchBar} from '@common/components/SearchBar';
+import {useChainOptions} from '@common/hooks/useChains';
 
 import type {ReactElement} from 'react';
 import type {TMultiSelectOptionProps} from '@common/components/MultiSelectDropdown';
@@ -25,89 +25,7 @@ export function Filters({
 	onSearch,
 	onChangeChains
 }: TListHero): ReactElement {
-	const chainOptions = useMemo((): TMultiSelectOptionProps[] => {
-		return [
-			{
-				label: 'Ethereum',
-				value: 1,
-				isSelected: chains.includes(1),
-				icon: (
-					<ImageWithFallback
-						src={`${process.env.BASE_YEARN_CHAIN_URI}/1/logo-128.png`}
-						alt={`Chain 1`}
-						width={40}
-						height={40}
-					/>
-				)
-			},
-			{
-				label: 'OP Mainnet',
-				value: 10,
-				isSelected: chains.includes(10),
-				icon: (
-					<ImageWithFallback
-						src={`${process.env.BASE_YEARN_CHAIN_URI}/10/logo-128.png`}
-						alt={`Chain 10`}
-						width={40}
-						height={40}
-					/>
-				)
-			},
-			{
-				label: 'Polygon PoS',
-				value: 137,
-				isSelected: chains.includes(137),
-				icon: (
-					<ImageWithFallback
-						src={`${process.env.BASE_YEARN_CHAIN_URI}/137/logo-128.png`}
-						alt={`Chain 137`}
-						width={40}
-						height={40}
-					/>
-				)
-			},
-			{
-				label: 'Fantom',
-				value: 250,
-				isSelected: chains.includes(250),
-				icon: (
-					<ImageWithFallback
-						src={`${process.env.BASE_YEARN_CHAIN_URI}/250/logo-128.png`}
-						alt={`Chain 250`}
-						width={40}
-						height={40}
-					/>
-				)
-			},
-			{
-				label: 'Base',
-				value: 8453,
-				isSelected: chains.includes(8453),
-				icon: (
-					<ImageWithFallback
-						src={`${process.env.BASE_YEARN_CHAIN_URI}/8453/logo-128.png`}
-						alt={`Chain 8453`}
-						width={40}
-						height={40}
-					/>
-				)
-			},
-			{
-				label: 'Arbitrum One',
-				value: 42161,
-				isSelected: chains.includes(42161),
-				icon: (
-					<ImageWithFallback
-						src={`${process.env.BASE_YEARN_CHAIN_URI}/42161/logo-128.png`}
-						alt={`Chain 42161`}
-						width={40}
-						height={40}
-					/>
-				)
-			}
-		];
-	}, [chains]);
-
+	const chainOptions = useChainOptions(chains);
 	const categoryOptions = useMemo((): TMultiSelectOptionProps[] => {
 		const options: TMultiSelectOptionProps[] = Object.entries(ALL_CATEGORIES).map(
 			([key, value]): TMultiSelectOptionProps => ({
@@ -126,13 +44,13 @@ export function Filters({
 			</strong>
 
 			<div className={'absolute right-10 top-10'}>
-				<VaultListOptions panelClassName={'bg-neutral-100 rounded-lg'} />
+				<VaultListOptions panelClassName={'bg-neutral-300 rounded-lg'} />
 			</div>
 
 			<div className={'mb-5 w-full'}>
 				<p className={'pb-2 text-[#757CA6]'}>{'Search'}</p>
 				<SearchBar
-					className={'max-w-none rounded-lg bg-neutral-300 text-neutral-900 md:w-full'}
+					className={'max-w-none rounded-lg border-none bg-neutral-300 text-neutral-900 md:w-full'}
 					iconClassName={'text-neutral-900'}
 					searchPlaceholder={'YFI Vault'}
 					searchValue={searchValue}
@@ -156,7 +74,7 @@ export function Filters({
 					/>
 				</div>
 				<div className={'w-full'}>
-					<p className={'pb-2 text-[#757CA6]'}>{'Vault Type'}</p>
+					<p className={'pb-2 text-[#757CA6]'}>{'Select Type'}</p>
 					<MultiSelectDropdown
 						buttonClassName={'max-w-none rounded-lg bg-neutral-300 text-neutral-900 md:w-full'}
 						comboboxOptionsClassName={'bg-neutral-300 rounded-lg'}

@@ -90,7 +90,7 @@ function Index(): ReactElement | null {
 					className={'z-50 -mt-6 h-12 w-12 cursor-pointer md:-mt-36 md:h-[72px] md:w-[72px]'}>
 					<TokenIcon
 						chainID={currentVault.chainID}
-						token={currentVault.token}
+						address={currentVault.token.address}
 					/>
 				</motion.div>
 			</header>
