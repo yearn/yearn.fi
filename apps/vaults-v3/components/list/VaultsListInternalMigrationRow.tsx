@@ -1,63 +1,77 @@
-import {useMemo} from 'react';
 import Link from 'next/link';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
-import TokenIcon from '@common/components/TokenIcon';
+import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useBalance} from '@common/hooks/useBalance';
-import {getVaultName} from '@common/utils';
+
+import {VaultChainTag} from '../VaultChainTag';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
 export function VaultsListInternalMigrationRow({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const vaultName = useMemo((): string => getVaultName(currentVault), [currentVault]);
 	const balanceToMigrate = useBalance({address: currentVault.address, chainID: currentVault.chainID});
 
 	return (
-		<Link
-			href={`/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`}
-			className={'w-full'}>
-			<div className={'yearn--table-wrapper bg-neutral-900 text-neutral-0'}>
-				<div className={'yearn--table-token-section'}>
-					<div className={'yearn--table-token-section-item'}>
-						<div className={'yearn--table-token-section-item-image'}>
-							<TokenIcon
-								chainID={currentVault.chainID}
-								size={40}
-								token={currentVault.token}
-							/>
-						</div>
-						<div className={'text-left'}>
-							<p>{vaultName}</p>
-							<p className={'font-number text-xs'}>{`${formatAmount(balanceToMigrate.normalized)} ${
-								currentVault.token.symbol
-							}`}</p>
-						</div>
+		<div className={cl('grid w-full grid-cols-1 md:grid-cols-12 rounded-3xl', 'p-6 pt-2 md:pr-10', 'relative')}>
+			<div
+				className={cl(
+					'absolute inset-0 rounded-3xl',
+					'opacity-20 pointer-events-none',
+					'bg-[linear-gradient(80deg,_#2C3DA6,_#D21162)]'
+				)}
+			/>
+			<div className={cl('col-span-3 z-10', 'flex flex-row items-center justify-between')}>
+				<div className={'flex flex-row space-x-6'}>
+					<div className={'mt-2.5 h-10 min-h-[40px] w-10 min-w-[40px] rounded-full md:flex'}>
+						<ImageWithFallback
+							src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-128.png`}
+							alt={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-128.png`}
+							width={40}
+							height={40}
+						/>
 					</div>
-				</div>
-
-				<div className={'yearn--table-data-section'}>
-					<div
-						className={
-							'yearn--table-data-section-item h-auto text-left text-neutral-0 md:col-span-6 md:py-2'
-						}>
-						{
-							"Looks like you're holding tokens from a previous version of this vault. To keep earning yield on your assets, migrate to the current vault."
-						}
-					</div>
-
-					<div
-						className={
-							'col-span-2 flex h-auto flex-row items-center justify-between space-x-4 py-4 md:justify-end'
-						}>
-						<button
-							data-variant={'reverted'}
-							className={'yearn--button-smaller reverted !w-full text-center'}>
-							{'Migrate'}
-						</button>
+					<div>
+						<strong className={'mb-1 block text-xl font-black text-neutral-800'}>
+							{currentVault.name}
+						</strong>
+						<p className={'mb-2 block text-neutral-800'}>{currentVault.token.name}</p>
+						<VaultChainTag chainID={currentVault.chainID} />
 					</div>
 				</div>
 			</div>
-		</Link>
+
+			<div className={cl('col-span-9 z-10', 'flex items-center', 'gap-x-7', 'mt-8 md:mt-0')}>
+				<div className={cl('flex justify-between', 'text-left text-neutral-800/80 whitespace-break-spaces')}>
+					{"Looks like you're holding tokens from a previous version of this vault.\n"}
+					{'To keep earning yield on your assets, migrate to the current vault.'}
+				</div>
+
+				<div className={'ml-auto flex w-50 items-center justify-end'}>
+					<Link href={`/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`}>
+						<button
+							className={cl(
+								'rounded-lg overflow-hidden flex',
+								'px-[42px] py-2 w-50',
+								'relative group',
+								'border-none'
+							)}>
+							<div
+								className={cl(
+									'absolute inset-0',
+									'opacity-80 transition-opacity group-hover:opacity-100 pointer-events-none',
+									'bg-[linear-gradient(80deg,_#D21162,_#2C3DA6)]'
+								)}
+							/>
+							<p className={'z-10 whitespace-nowrap text-neutral-900 '}>
+								{'Migrate '}
+								{`${formatAmount(balanceToMigrate.normalized)} ${currentVault.token.symbol}`}
+							</p>
+						</button>
+					</Link>
+				</div>
+			</div>
+		</div>
 	);
 }

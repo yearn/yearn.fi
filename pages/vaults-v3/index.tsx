@@ -2,17 +2,16 @@ import {Fragment, useEffect, useMemo, useState} from 'react';
 import {QueryParamProvider} from 'use-query-params';
 import {motion, useSpring, useTransform} from 'framer-motion';
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
-import {VaultsListInternalMigrationRow} from '@vaults/components/list/VaultsListInternalMigrationRow';
 import {VaultsListRetired} from '@vaults/components/list/VaultsListRetired';
 import {useVaultFilter} from '@vaults/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
 import {Filters} from '@vaults-v3/components/Filters';
+import {VaultsListInternalMigrationRow} from '@vaults-v3/components/list/VaultsListInternalMigrationRow';
 import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
 import {VaultsV3ListRow} from '@vaults-v3/components/list/VaultsV3ListRow';
 import {V3Mask} from '@vaults-v3/Mark';
 import {Wrapper} from '@vaults-v3/Wrapper';
-import {Button} from '@yearn-finance/web-lib/components/Button';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
@@ -103,16 +102,21 @@ function PortfolioCard(): ReactElement {
 		return (
 			<div className={'col-span-12 w-full rounded-3xl bg-neutral-0 p-6 md:col-span-6'}>
 				<strong
-					className={'block pb-2 text-3xl font-black text-neutral-900 md:pb-6 md:text-4xl md:leading-[48px]'}>
+					className={'block pb-2 text-3xl font-black text-neutral-900 md:pb-4 md:text-4xl md:leading-[48px]'}>
 					{'Portfolio'}
 				</strong>
 				<div className={'flex'}>
 					<div>
-						<p className={'pb-0md:pb-2 text-[#757CA6]'}>
+						<p className={'pb-0 text-[#757CA6] md:pb-2'}>
 							{'Looks like you need to connect your wallet. And call your mum. Always important.'}
 						</p>
-						<Button
-							className={'rounded-3xl'}
+						<button
+							className={cl(
+								'rounded-lg overflow-hidden flex',
+								'px-[42px] py-2 mt-16',
+								'relative group',
+								'border-none'
+							)}
 							onClick={(): void => {
 								if (!isActive && address) {
 									onSwitchChain(options?.defaultChainID || 1);
@@ -120,8 +124,15 @@ function PortfolioCard(): ReactElement {
 									openLoginModal();
 								}
 							}}>
-							<b>{'Connect Wallet'}</b>
-						</Button>
+							<div
+								className={cl(
+									'absolute inset-0',
+									'opacity-80 transition-opacity group-hover:opacity-100 pointer-events-none',
+									'bg-[linear-gradient(80deg,_#D21162,_#2C3DA6)]'
+								)}
+							/>
+							<p className={'z-10 text-neutral-900'}>{'Connect Wallet'}</p>
+						</button>
 					</div>
 				</div>
 			</div>
@@ -235,8 +246,8 @@ function ListOfVaults(): ReactElement {
 			/>
 
 			<div className={'col-span-12 flex min-h-[240px] w-full flex-col bg-neutral-100'}>
-				<Renderable shouldRender={(categories || []).includes('holdings') && retiredVaults?.length > 0}>
-					<div>
+				<Renderable shouldRender={retiredVaults?.length > 0}>
+					<div className={'grid gap-4'}>
 						{retiredVaults
 							.filter((vault): boolean => !!vault)
 							.map(
@@ -250,8 +261,8 @@ function ListOfVaults(): ReactElement {
 					</div>
 				</Renderable>
 
-				<Renderable shouldRender={(categories || []).includes('holdings') && migratableVaults?.length > 0}>
-					<div>
+				<Renderable shouldRender={migratableVaults?.length > 0}>
+					<div className={'grid gap-4'}>
 						{migratableVaults
 							.filter((vault): boolean => !!vault)
 							.map(
@@ -266,6 +277,7 @@ function ListOfVaults(): ReactElement {
 				</Renderable>
 
 				<div className={'mt-4'} />
+
 				<VaultsV3ListHead
 					sortBy={sortBy}
 					sortDirection={sortDirection}
@@ -298,7 +310,7 @@ function Index(): ReactElement {
 	return (
 		<div className={'z-50 w-full'}>
 			<div className={'relative mx-auto w-full max-w-6xl'}>
-				<div className={'absolute inset-x-0 top-0 w-full pt-16'}>
+				<div className={'absolute inset-x-0 top-0 w-full px-4 pt-16'}>
 					<div className={'grid h-[448px] grid-cols-75'}>
 						<BrandNewVaultCard />
 						<V3TVLCard />

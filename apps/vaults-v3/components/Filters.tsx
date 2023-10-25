@@ -121,24 +121,25 @@ export function Filters({
 
 	return (
 		<div className={'relative col-span-12 w-full rounded-3xl bg-neutral-0 p-6 md:col-span-6'}>
-			<strong className={'block pb-2 text-lg font-black text-neutral-900 md:pb-6 md:text-4xl md:leading-[48px]'}>
+			<strong className={'block pb-2 text-lg font-black text-neutral-900 md:pb-4 md:text-4xl md:leading-[48px]'}>
 				{'Filters'}
 			</strong>
 
 			<div className={'absolute right-8 top-8'}>
 				<VaultListOptions panelClassName={'bg-neutral-100 rounded-lg'} />
 			</div>
+
+			<div className={'mb-5 w-full'}>
+				<p className={'pb-2 text-[#757CA6]'}>{'Search'}</p>
+				<SearchBar
+					className={'max-w-none rounded-lg bg-neutral-300 text-neutral-900 md:w-full'}
+					iconClassName={'text-neutral-900'}
+					searchPlaceholder={'YFI Vault'}
+					searchValue={searchValue}
+					set_searchValue={onSearch}
+				/>
+			</div>
 			<div className={'grid grid-cols-2 gap-x-6'}>
-				<div className={'w-full'}>
-					<p className={'pb-2 text-[#757CA6]'}>{'Search'}</p>
-					<SearchBar
-						className={'!mt-0 max-w-none rounded-lg bg-neutral-300 text-neutral-900 md:w-full'}
-						iconClassName={'text-neutral-900'}
-						searchPlaceholder={'YFI Vault'}
-						searchValue={searchValue}
-						set_searchValue={onSearch}
-					/>
-				</div>
 				<div className={'w-full'}>
 					<p className={'pb-2 text-[#757CA6]'}>{'Select Blockchain'}</p>
 					<MultiSelectDropdown
@@ -154,7 +155,7 @@ export function Filters({
 						}}
 					/>
 				</div>
-				<div className={'hidden w-full'}>
+				<div className={'w-full'}>
 					<p className={'pb-2 text-[#757CA6]'}>{'Vault Type'}</p>
 					<MultiSelectDropdown
 						buttonClassName={'max-w-none rounded-lg bg-neutral-300 text-neutral-900 md:w-full'}
