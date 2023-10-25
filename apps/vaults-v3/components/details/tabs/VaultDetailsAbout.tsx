@@ -125,11 +125,6 @@ export function VaultDetailsAbout({currentVault}: {currentVault: TYDaemonVault})
 						<div className={'space-y-4'}>
 							<b className={'text-neutral-900'}>{'Fees'}</b>
 							<APRLineItem
-								label={'Deposit/Withdrawal fee'}
-								apyType={''}
-								value={0}
-							/>
-							<APRLineItem
 								label={'Management fee'}
 								apyType={''}
 								value={apr.fees.management}
