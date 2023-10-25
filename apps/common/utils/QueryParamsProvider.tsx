@@ -1,5 +1,6 @@
 import {useMemo} from 'react';
 import {usePathname, useRouter, useSearchParams} from 'next/navigation';
+import {useUnmountEffect} from 'framer-motion';
 
 import type {ReactElement} from 'react';
 import type {PartialLocation, QueryParamAdapterComponent} from 'use-query-params';
@@ -24,6 +25,13 @@ export const NextQueryParamAdapter: QueryParamAdapterComponent = ({children}): R
 			}
 		};
 	}, [router, pathname, searchParams]);
+
+	useUnmountEffect((): void => {
+		const url = new URL(window.location.href);
+		const {search} = url;
+		const noSearchInHref = url.href.replace(search, '');
+		window.history.replaceState({}, '', noSearchInHref);
+	});
 
 	return children(adapter);
 };

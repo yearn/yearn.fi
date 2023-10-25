@@ -369,7 +369,7 @@ function Index(): ReactElement {
 						<PortfolioCard />
 						<QueryParamProvider
 							adapter={NextQueryParamAdapter}
-							options={{removeDefaultsFromUrl: true}}>
+							options={{removeDefaultsFromUrl: true, updateType: 'replaceIn'}}>
 							<ListOfVaults />
 						</QueryParamProvider>
 					</div>

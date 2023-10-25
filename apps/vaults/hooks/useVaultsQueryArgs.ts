@@ -40,7 +40,7 @@ function useQueryArguments(): TQueryArgs {
 	/** 🔵 - Yearn *********************************************************************************
 	 **	This useEffect hook is used to synchronize the search state with the query parameter
 	 *********************************************************************************************/
-	useEffect((): void => {
+	useEffect((): void | VoidFunction => {
 		if (searchParam === search) {
 			return;
 		}
