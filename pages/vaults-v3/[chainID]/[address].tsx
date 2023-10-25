@@ -114,14 +114,14 @@ function Index(): ReactElement | null {
 						</p>
 					</Link>
 				</nav>
-				<div className={'absolute -top-6'}>
+				<div className={'absolute -top-10 md:-top-6'}>
 					<div
 						className={cl(
-							'h-20 w-20 rounded-2xl bg-[#FAD1ED7A] backdrop-blur',
+							'h-16 w-16 md:h-20 md:w-20 rounded-2xl bg-[#FAD1ED7A] backdrop-blur',
 							'flex justify-center items-center'
 						)}>
 						<TokenIcon
-							className={'md:h-12 md:w-12'}
+							className={'h-10 w-10 md:h-12 md:w-12'}
 							chainID={currentVault.chainID}
 							address={currentVault.address}
 						/>

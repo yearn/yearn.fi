@@ -44,8 +44,8 @@ export function VaultDetailsAbout({currentVault}: {currentVault: TYDaemonVault})
 	}
 
 	return (
-		<div className={'grid grid-cols-1 gap-10 p-4 md:grid-cols-12 md:p-8'}>
-			<div className={'col-span-7 w-full pr-28'}>
+		<div className={'grid grid-cols-1 gap-4 p-4 md:grid-cols-12 md:gap-10 md:p-8'}>
+			<div className={'col-span-12 w-full pr-0 md:col-span-7 md:pr-28'}>
 				<div>
 					<b className={'text-neutral-900'}>{'Description'}</b>
 					<p
@@ -57,11 +57,11 @@ export function VaultDetailsAbout({currentVault}: {currentVault: TYDaemonVault})
 				</div>
 			</div>
 
-			<div className={'col-span-5 w-full space-y-10'}>
+			<div className={'col-span-12 mt-6 w-full space-y-10 md:col-span-5 md:mt-0'}>
 				<div className={'grid grid-cols-1 gap-x-12 md:grid-cols-1'}>
-					<div className={'mb-10'}>
+					<div className={'mb-4 md:mb-10'}>
 						<b className={'text-neutral-900'}>{'APR'}</b>
-						<div className={'mt-4 flex flex-row space-x-6 md:space-x-8'}>
+						<div className={'mt-4 grid grid-cols-4 gap-8'}>
 							<YearnFeesLineItem label={'Last 7 days'}>
 								<b className={'font-number text-xl text-neutral-900'}>
 									{formatPercent(apr.points.weekAgo * 100, 0)}
@@ -82,7 +82,7 @@ export function VaultDetailsAbout({currentVault}: {currentVault: TYDaemonVault})
 					</div>
 					<div>
 						<b className={'text-neutral-900'}>{'Fees'}</b>
-						<div className={'mt-4 flex flex-row space-x-6 md:space-x-8'}>
+						<div className={'mt-4 grid grid-cols-4 gap-8'}>
 							<YearnFeesLineItem label={'Management'}>
 								<b className={'font-number text-xl text-neutral-900'}>
 									{formatPercent((apr.fees.management || 0) / 100, 0)}
