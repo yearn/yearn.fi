@@ -65,8 +65,8 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 		<section
 			id={isActive ? 'active' : 'not-active'}
 			className={'flex w-full flex-col space-x-0 md:flex-row md:space-x-4'}>
-			<div className={'relative z-10 w-full space-y-2'}>
-				<div className={'flex flex-col items-baseline justify-between md:flex-row'}>
+			<div className={'relative z-10 w-full'}>
+				<div className={'flex flex-col items-baseline justify-between pb-2 pl-1 md:flex-row'}>
 					<label className={'text-base text-neutral-600'}>
 						{isDepositing ? 'From wallet' : 'From vault'}
 					</label>
@@ -78,6 +78,7 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 						}`}
 					</legend>
 				</div>
+
 				<Renderable
 					shouldRender={!hasMultipleInputsToChooseFrom}
 					fallback={renderMultipleOptionsFallback()}>
@@ -97,20 +98,24 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 					</div>
 				</Renderable>
 
-				<legend
-					className={'font-number hidden text-xs text-neutral-900/50 md:inline'}
-					suppressHydrationWarning>
-					{`You have ${formatAmount(selectedFromBalance.normalized)} ${
-						actionParams?.selectedOptionFrom?.symbol || 'tokens'
-					}`}
-				</legend>
+				<div className={'mt-1 pl-1'}>
+					<legend
+						className={'font-number hidden text-xs text-neutral-900/50 md:inline'}
+						suppressHydrationWarning>
+						{`You have ${formatAmount(selectedFromBalance.normalized)} ${
+							actionParams?.selectedOptionFrom?.symbol || 'tokens'
+						}`}
+					</legend>
+				</div>
 			</div>
-			<div className={'w-full space-y-2'}>
-				<label
-					htmlFor={'fromAmount'}
-					className={'hidden text-base text-neutral-600 md:inline'}>
-					{'Amount'}
-				</label>
+			<div className={'w-full'}>
+				<div className={'pb-2 pl-1'}>
+					<label
+						htmlFor={'fromAmount'}
+						className={'hidden text-base text-neutral-600 md:inline'}>
+						{'Amount'}
+					</label>
+				</div>
 				<div className={'flex h-10 items-center rounded-lg bg-neutral-300 p-2'}>
 					<div className={'flex h-10 w-full flex-row items-center justify-between px-0 py-4'}>
 						<input
@@ -133,11 +138,13 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 						</button>
 					</div>
 				</div>
-				<legend
-					suppressHydrationWarning
-					className={'font-number mr-1 text-end text-xs text-neutral-900/50 md:mr-0 md:text-start'}>
-					{formatCounterValue(actionParams?.amount?.normalized || 0, selectedOptionFromPricePerToken)}
-				</legend>
+				<div className={'mt-1 pl-1'}>
+					<legend
+						suppressHydrationWarning
+						className={'font-number hidden text-xs text-neutral-900/50 md:mr-0 md:inline md:text-start'}>
+						{formatCounterValue(actionParams?.amount?.normalized || 0, selectedOptionFromPricePerToken)}
+					</legend>
+				</div>
 			</div>
 		</section>
 	);

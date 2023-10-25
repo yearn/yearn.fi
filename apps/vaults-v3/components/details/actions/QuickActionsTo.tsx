@@ -32,11 +32,9 @@ export function VaultDetailsQuickActionsTo(): ReactElement {
 	}
 
 	return (
-		<section
-			aria-label={'TO'}
-			className={'flex w-full flex-col space-x-0 md:flex-row md:space-x-4'}>
-			<div className={'relative z-10 w-full space-y-2'}>
-				<div className={'flex flex-row items-baseline justify-between'}>
+		<section className={'flex w-full flex-col space-x-0 md:flex-row md:space-x-4'}>
+			<div className={'relative z-10 w-full'}>
+				<div className={'flex flex-col items-baseline justify-between pb-2 pl-1 md:flex-row'}>
 					<label className={'text-base text-neutral-600'}>
 						{isDepositing || isMigrationAvailable ? 'To vault' : 'To wallet'}
 					</label>
@@ -56,7 +54,7 @@ export function VaultDetailsQuickActionsTo(): ReactElement {
 					fallback={renderMultipleOptionsFallback()}>
 					<div
 						className={
-							'flex h-10 w-full items-center justify-between rounded-lg bg-neutral-300 px-2 text-base text-neutral-900 md:px-3'
+							'flex h-10 w-full items-center justify-between rounded-lg bg-neutral-300 px-2 text-base text-neutral-900 md:w-56 md:px-3'
 						}>
 						<div className={'relative flex flex-row items-center truncate'}>
 							<div className={'h-6 w-6 flex-none rounded-full'}>
@@ -71,26 +69,30 @@ export function VaultDetailsQuickActionsTo(): ReactElement {
 						</div>
 					</div>
 				</Renderable>
-				<legend
-					className={'font-number hidden text-xs text-neutral-900/50 md:inline'}
-					suppressHydrationWarning>
-					{isDepositing
-						? formatPercent(
-								(currentVault.apr.netAPR + currentVault.apr.extra.stakingRewardsAPR) * 100,
-								2,
-								2,
-								500
-						  )
-						: ''}
-				</legend>
+				<div className={'mt-1 pl-1'}>
+					<legend
+						className={'font-number hidden text-xs text-neutral-900/50 md:inline'}
+						suppressHydrationWarning>
+						{isDepositing
+							? formatPercent(
+									(currentVault.apr.netAPR + currentVault.apr.extra.stakingRewardsAPR) * 100,
+									2,
+									2,
+									500
+							  )
+							: ''}
+					</legend>
+				</div>
 			</div>
 
-			<div className={'w-full space-y-2'}>
-				<label
-					htmlFor={'toAmount'}
-					className={'hidden text-base text-neutral-600 md:inline'}>
-					{'You will receive'}
-				</label>
+			<div className={'w-full'}>
+				<div className={'pb-2 pl-1'}>
+					<label
+						htmlFor={'toAmount'}
+						className={'hidden text-base text-neutral-600 md:inline'}>
+						{'You will receive'}
+					</label>
+				</div>
 				<div className={'flex h-10 items-center rounded-lg bg-neutral-300 p-2'}>
 					<div className={'flex h-10 w-full flex-row items-center justify-between px-0 py-4'}>
 						{isLoadingExpectedOut ? (
@@ -115,11 +117,13 @@ export function VaultDetailsQuickActionsTo(): ReactElement {
 						)}
 					</div>
 				</div>
-				<legend
-					suppressHydrationWarning
-					className={'font-number mr-1 text-end text-xs text-neutral-900/50 md:mr-0 md:text-start'}>
-					{formatCounterValue(expectedOut?.normalized || 0, selectedOptionToPricePerToken)}
-				</legend>
+				<div className={'mt-1 pl-1'}>
+					<legend
+						suppressHydrationWarning
+						className={'font-number hidden text-xs text-neutral-900/50 md:mr-0 md:inline md:text-start'}>
+						{formatCounterValue(expectedOut?.normalized || 0, selectedOptionToPricePerToken)}
+					</legend>
+				</div>
 			</div>
 		</section>
 	);

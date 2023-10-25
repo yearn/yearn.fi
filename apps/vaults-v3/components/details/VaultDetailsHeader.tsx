@@ -126,15 +126,16 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 			<strong
 				className={cl(
 					'mx-auto flex w-full flex-row items-center justify-center text-center',
-					'text-3xl md:text-[96px] leading-[36px] md:leading-[104px]',
+					'text-3xl md:text-[64px] leading-[36px] md:leading-[72px]',
 					'tabular-nums text-neutral-900 font-black'
 				)}>
 				{vaultName}
 			</strong>
-			<div className={'mb-10 mt-2 flex flex-col justify-center md:mt-0'}>
+
+			<div className={'mb-10 mt-6 flex flex-col justify-center md:mt-4'}>
 				{address ? (
 					<button onClick={(): void => copyToClipboard(address)}>
-						<p className={'font-number text-center text-xxs text-neutral-900 md:text-xs'}>{address}</p>
+						<p className={'font-number text-center text-xxs text-neutral-900/70 md:text-xs'}>{address}</p>
 					</button>
 				) : (
 					<p className={'text-xxs md:text-xs'}>&nbsp;</p>

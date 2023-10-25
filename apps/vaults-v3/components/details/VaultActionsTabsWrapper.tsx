@@ -260,7 +260,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 				) : (
 					<div
 						className={
-							'col-span-12 mb-4 flex flex-col space-x-0 space-y-2 bg-neutral-100 p-4 md:flex-row md:space-x-4 md:space-y-0 md:px-8 md:py-10'
+							'col-span-12 flex flex-col space-x-0 space-y-2 bg-neutral-100 p-4 md:flex-row md:space-x-4 md:space-y-0 md:px-8 md:py-10'
 						}>
 						<VaultDetailsQuickActionsFrom />
 						<VaultDetailsQuickActionsSwitch />

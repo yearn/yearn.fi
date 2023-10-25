@@ -114,11 +114,19 @@ function Index(): ReactElement | null {
 						</p>
 					</Link>
 				</nav>
-				<TokenIcon
-					className={'h-[56px] w-[56px] md:h-[72px] md:w-[72px]'}
-					chainID={currentVault.chainID}
-					token={currentVault.token}
-				/>
+				<div className={'absolute -top-6'}>
+					<div
+						className={cl(
+							'h-20 w-20 rounded-2xl bg-[#FAD1ED7A] backdrop-blur',
+							'flex justify-center items-center'
+						)}>
+						<TokenIcon
+							className={'md:h-12 md:w-12'}
+							chainID={currentVault.chainID}
+							address={currentVault.address}
+						/>
+					</div>
+				</div>
 				<VaultDetailsHeader currentVault={currentVault} />
 			</header>
 
