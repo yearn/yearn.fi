@@ -27,6 +27,10 @@ function HeadingData(): ReactElement {
 		<SummaryData
 			items={[
 				{
+					label: 'Max veYFI lock vAPR',
+					content: APR ? formatPercent(APR * 100) : '-'
+				},
+				{
 					label: 'Total Locked YFI',
 					content: formatAmount(totalLockedYFI, 4) ?? '-'
 				},
@@ -37,15 +41,12 @@ function HeadingData(): ReactElement {
 				{
 					label: 'Expiration for the lock',
 					content: positions?.unlockTime ? formatDateShort(positions.unlockTime) : '-'
-				},
-				{
-					label: 'veYFI APR',
-					content: APR ? formatPercent(APR * 100) : '-'
 				}
 			]}
 		/>
 	);
 }
+
 function Index(): ReactElement {
 	const {isLoading} = useVotingEscrow();
 

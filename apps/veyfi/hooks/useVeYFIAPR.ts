@@ -129,7 +129,6 @@ function useVeYFIAPR({dYFIPrice}: TUseVeYFIAPR): number {
 			yfiPrice
 		);
 	}, [rate, dYFIPrice, yfiPrice, veYFISupply]);
-	console.warn(APR);
 
 	return APR;
 }
