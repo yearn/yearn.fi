@@ -78,6 +78,19 @@ function useVeYFIAPR({dYFIPrice}: TUseVeYFIAPR): number {
 			depositors[i].balance = toNormalizedBN(decodeAsBigInt(allDepositorsBalances[i]), 18);
 		}
 
+		// Remove duplicates (on address and gauge)
+		const seen = new Set();
+		const depositorsWithoutDuplicates = depositors.filter((depositor): boolean => {
+			const isDuplicate = seen.has(depositor.address + depositor.gauge);
+			seen.add(depositor.address + depositor.gauge);
+			return !isDuplicate;
+		});
+
+		// remove depositors with 0 balance
+		const depositorsWithBalance = depositorsWithoutDuplicates.filter(
+			(depositor): boolean => depositor.balance.raw > 0n
+		);
+
 		/* 🔵 - Yearn Finance **********************************************************************
 		 ** Then, for each gauge we need to know the totalSupply and the rewardRate
 		 ******************************************************************************************/
@@ -98,12 +111,12 @@ function useVeYFIAPR({dYFIPrice}: TUseVeYFIAPR): number {
 		for (const gauge of VE_YFI_GAUGES) {
 			const supply = decodeAsBigInt(totalSupplyAndRewardRate[index++]);
 			const rewardRate = decodeAsBigInt(totalSupplyAndRewardRate[index++]);
-			const boosted = depositors
-				.filter((depositor): boolean => depositor.gauge === gauge)
-				.reduce((acc, depositor): bigint => {
-					return acc + depositor.balance.raw;
-				}, 0n);
-
+			let boosted = 0n;
+			for (const depositor of depositorsWithBalance) {
+				if (toAddress(depositor.gauge) === toAddress(gauge)) {
+					boosted += depositor.balance.raw;
+				}
+			}
 			rate += (rewardRate * (supply - boosted)) / supply;
 		}
 		set_rate(rate);
