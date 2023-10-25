@@ -96,30 +96,14 @@ export function VaultDetailsAbout({currentVault}: {currentVault: TYDaemonVault})
 								apyType={apr.type}
 								value={apr.points.inception}
 							/>
-							<div className={'space-y-2'}>
+							{apr.extra.stakingRewardsAPR > 0 && (
 								<APRLineItem
 									hasUpperLimit
-									label={'Net APR'}
+									label={'• Staking Reward APR'}
 									apyType={apr.type}
-									value={apr.netAPR + apr.extra.stakingRewardsAPR}
+									value={apr.extra.stakingRewardsAPR}
 								/>
-								{apr.extra.stakingRewardsAPR > 0 && (
-									<div className={'space-y-1 pl-2'}>
-										<APRLineItem
-											hasUpperLimit
-											label={'• Base APR'}
-											apyType={apr.type}
-											value={apr.netAPR}
-										/>
-										<APRLineItem
-											hasUpperLimit
-											label={'• Staking Reward APR'}
-											apyType={apr.type}
-											value={apr.extra.stakingRewardsAPR}
-										/>
-									</div>
-								)}
-							</div>
+							)}
 						</div>
 
 						<div className={'space-y-4'}>
