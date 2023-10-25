@@ -1,9 +1,10 @@
 import {createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState} from 'react';
 import {useRouter} from 'next/router';
-import {useContractRead} from 'wagmi';
+import {useContractReads} from 'wagmi';
 import {useMountEffect, useUpdateEffect} from '@react-hookz/web';
 import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
+import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
 import {setZapOption} from '@vaults/utils/zapOptions';
 import {VAULT_ABI} from '@yearn-finance/web-lib/utils/abi/vault.abi';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -17,6 +18,7 @@ import {
 	YVWETH_OPT_ADDRESS,
 	YVWFTM_ADDRESS
 } from '@yearn-finance/web-lib/utils/constants';
+import {decodeAsBigInt} from '@yearn-finance/web-lib/utils/decoder';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isEth} from '@yearn-finance/web-lib/utils/isEth';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
@@ -155,11 +157,22 @@ export function ActionFlowContextApp({
 	const [possibleZapOptionsFrom, set_possibleZapOptionsFrom] = useState<TDropdownOption[]>([]);
 	const [possibleOptionsTo, set_possibleOptionsTo] = useState<TDropdownOption[]>([]);
 	const [possibleZapOptionsTo, set_possibleZapOptionsTo] = useState<TDropdownOption[]>([]);
-	const {data: depositLimit} = useContractRead({
-		address: currentVault.address,
-		abi: VAULT_ABI,
-		chainId: currentVault.chainID,
-		functionName: 'depositLimit'
+	const {data: depositLimit} = useContractReads({
+		contracts: [
+			{
+				address: currentVault.address,
+				abi: VAULT_ABI,
+				chainId: currentVault.chainID,
+				functionName: 'depositLimit'
+			},
+			{
+				address: currentVault.address,
+				abi: VAULT_V3_ABI,
+				chainId: currentVault.chainID,
+				functionName: 'deposit_limit'
+			}
+		],
+		select: (results): bigint => decodeAsBigInt(results[0], decodeAsBigInt(results[1], 0n))
 	});
 
 	//Combine selectedOptionFrom, selectedOptionTo and amount in a useReducer
@@ -275,14 +288,15 @@ export function ActionFlowContextApp({
 		actionParams?.selectedOptionTo?.value,
 		actionParams?.selectedOptionTo?.solveVia?.length,
 		currentVault.token.address,
+		currentVault.chainID,
 		currentVault.address,
 		currentVault?.migration?.available,
 		currentVault?.migration?.address,
 		hasStakingRewards,
+		isStakingOpBoostedVaults,
 		isDepositing,
 		isUsingPartnerContract,
-		zapProvider,
-		isStakingOpBoostedVaults
+		zapProvider
 	]);
 
 	const onSwitchSelectedOptions = useCallback(
@@ -434,7 +448,14 @@ export function ActionFlowContextApp({
 				}
 			});
 		},
-		[getBalance, currentVault.token?.address, currentVault.token.decimals, isDepositing]
+		[
+			getBalance,
+			currentVault.chainID,
+			currentVault.token.decimals,
+			currentVault.token?.address,
+			isDepositing,
+			depositLimit
+		]
 	);
 
 	/* 🔵 - Yearn Finance **************************************************************************
@@ -565,31 +586,29 @@ export function ActionFlowContextApp({
 		/* 🔵 - Yearn Finance **********************************************************************
 		 ** Update the possibleOptions local state and the actionParams global state.
 		 ******************************************************************************************/
-		performBatchedUpdates((): void => {
-			set_possibleOptionsFrom(payloadFrom);
-			set_possibleOptionsTo(payloadTo);
-			if (!isDepositing) {
-				actionParamsDispatcher({
-					type: 'options',
-					payload: {
-						selectedOptionFrom: _selectedTo,
-						selectedOptionTo: _selectedFrom,
-						possibleOptionsFrom: payloadTo,
-						possibleOptionsTo: payloadFrom
-					}
-				});
-			} else {
-				actionParamsDispatcher({
-					type: 'options',
-					payload: {
-						selectedOptionFrom: _selectedFrom,
-						selectedOptionTo: _selectedTo,
-						possibleOptionsFrom: payloadFrom,
-						possibleOptionsTo: payloadTo
-					}
-				});
-			}
-		});
+		set_possibleOptionsFrom(payloadFrom);
+		set_possibleOptionsTo(payloadTo);
+		if (!isDepositing) {
+			actionParamsDispatcher({
+				type: 'options',
+				payload: {
+					selectedOptionFrom: _selectedTo,
+					selectedOptionTo: _selectedFrom,
+					possibleOptionsFrom: payloadTo,
+					possibleOptionsTo: payloadFrom
+				}
+			});
+		} else {
+			actionParamsDispatcher({
+				type: 'options',
+				payload: {
+					selectedOptionFrom: _selectedFrom,
+					selectedOptionTo: _selectedTo,
+					possibleOptionsFrom: payloadFrom,
+					possibleOptionsTo: payloadTo
+				}
+			});
+		}
 	});
 
 	/* 🔵 - Yearn Finance **************************************************************************
@@ -673,7 +692,7 @@ export function ActionFlowContextApp({
 				);
 			});
 		set_possibleZapOptionsTo(_possibleZapOptionsTo);
-	}, [currentVault?.chainID, currentVault.chainID]);
+	}, [currentVault.chainID]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	 ** FLOW: Store the value from that context in a Memoized variable to avoid useless re-renders

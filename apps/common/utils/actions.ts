@@ -1,5 +1,6 @@
 import {getEthZapperContract} from '@vaults/utils';
 import {VAULT_MIGRATOR_ABI} from '@vaults/utils/abi/vaultMigrator.abi';
+import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
 import {ZAP_OPT_ETH_TO_YVETH_ABI} from '@vaults/utils/abi/zapOptEthToYvEth';
 import {erc20ABI, readContract} from '@wagmi/core';
 import {PARTNER_VAULT_ABI} from '@yearn-finance/web-lib/utils/abi/partner.vault.abi';
@@ -133,12 +134,14 @@ type TDeposit = TWriteTransaction & {
 export async function deposit(props: TDeposit): Promise<TTxResponse> {
 	assert(props.amount > 0n, 'Amount is 0');
 	assertAddress(props.contractAddress);
+	const wagmiProvider = await toWagmiProvider(props.connector);
+	assertAddress(wagmiProvider.address, 'wagmiProvider.address');
 
 	return await handleTx(props, {
 		address: props.contractAddress,
 		abi: VAULT_ABI,
 		functionName: 'deposit',
-		args: [props.amount]
+		args: [props.amount, wagmiProvider.address]
 	});
 }
 
@@ -295,6 +298,30 @@ export async function withdrawShares(props: TWithdrawShares): Promise<TTxRespons
 		abi: VAULT_ABI,
 		functionName: 'withdraw',
 		args: [props.amount]
+	});
+}
+
+/* 🔵 - Yearn Finance **********************************************************
+ ** redeemV3Shares is a _WRITE_ function that withdraws a share of underlying
+ ** collateral from a v3 vault.
+ **
+ ** @app - Vaults
+ ** @param amount - The amount of ETH to withdraw.
+ ******************************************************************************/
+type TRedeemV3Shares = TWriteTransaction & {
+	amount: bigint;
+};
+export async function redeemV3Shares(props: TRedeemV3Shares): Promise<TTxResponse> {
+	assert(props.amount > 0n, 'Amount is 0');
+	assertAddress(props.contractAddress);
+	const wagmiProvider = await toWagmiProvider(props.connector);
+	assertAddress(wagmiProvider.address, 'wagmiProvider.address');
+
+	return await handleTx(props, {
+		address: props.contractAddress,
+		abi: VAULT_V3_ABI,
+		functionName: 'redeem',
+		args: [props.amount, wagmiProvider.address, wagmiProvider.address, 100n]
 	});
 }
 

@@ -59,6 +59,27 @@ export function VaultDetailsAbout({currentVault}: {currentVault: TYDaemonVault})
 
 			<div className={'col-span-5 w-full space-y-10'}>
 				<div className={'grid grid-cols-1 gap-x-12 md:grid-cols-1'}>
+					<div className={'mb-10'}>
+						<b className={'text-neutral-900'}>{'APR'}</b>
+						<div className={'mt-4 flex flex-row space-x-6 md:space-x-8'}>
+							<YearnFeesLineItem label={'Last 7 days'}>
+								<b className={'font-number text-xl text-neutral-900'}>
+									{formatPercent(apr.points.weekAgo * 100, 0)}
+								</b>
+							</YearnFeesLineItem>
+							<YearnFeesLineItem label={'Last 30 days'}>
+								<b className={'font-number text-xl text-neutral-900'}>
+									{formatPercent(apr.points.monthAgo * 100, 0)}
+								</b>
+							</YearnFeesLineItem>
+
+							<YearnFeesLineItem label={'Inception'}>
+								<b className={'font-number text-xl text-neutral-900'}>
+									{formatPercent(apr.points.inception * 100, 0)}
+								</b>
+							</YearnFeesLineItem>
+						</div>
+					</div>
 					<div>
 						<b className={'text-neutral-900'}>{'Fees'}</b>
 						<div className={'mt-4 flex flex-row space-x-6 md:space-x-8'}>
@@ -81,28 +102,6 @@ export function VaultDetailsAbout({currentVault}: {currentVault: TYDaemonVault})
 									</b>
 								</YearnFeesLineItem>
 							) : null}
-						</div>
-					</div>
-
-					<div className={'mt-10'}>
-						<b className={'text-neutral-900'}>{'APR'}</b>
-						<div className={'mt-4 flex flex-row space-x-6 md:space-x-8'}>
-							<YearnFeesLineItem label={'Last 7 days'}>
-								<b className={'font-number text-xl text-neutral-900'}>
-									{formatPercent(apr.points.weekAgo * 100, 0)}
-								</b>
-							</YearnFeesLineItem>
-							<YearnFeesLineItem label={'Last 30 days'}>
-								<b className={'font-number text-xl text-neutral-900'}>
-									{formatPercent(apr.points.monthAgo * 100, 0)}
-								</b>
-							</YearnFeesLineItem>
-
-							<YearnFeesLineItem label={'Inception'}>
-								<b className={'font-number text-xl text-neutral-900'}>
-									{formatPercent(apr.points.inception * 100, 0)}
-								</b>
-							</YearnFeesLineItem>
 						</div>
 					</div>
 				</div>

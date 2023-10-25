@@ -52,6 +52,7 @@ export const yDaemonVaultTokenSchema = z.object({
 
 export const yDaemonVaultSchema = z.object({
 	address: addressSchema,
+	version: z.string(),
 	type: z
 		.literal('Automated')
 		.or(z.literal('Automated Yearn Vault'))

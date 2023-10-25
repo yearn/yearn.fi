@@ -155,7 +155,6 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 	 ** Wrapper to decide if we should use the partner contract or not
 	 **************************************************************************/
 	const isAboveAllowance = toBigInt(actionParams.amount.raw) > toBigInt(allowanceFrom?.raw);
-	const isButtonBusy = txStatusApprove.pending || status !== 'success';
 
 	if (
 		isWithdrawing && //If user is withdrawing ...
@@ -166,8 +165,8 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 		// ... then we need to approve the ChainCoin contract
 		return (
 			<Button
-				className={'w-full'}
 				variant={'v3'}
+				className={'w-full'}
 				isBusy={txStatusApprove.pending}
 				isDisabled={isButtonDisabled || isZero(expectedOut.raw)}
 				onClick={onApproveFrom}>
@@ -183,8 +182,8 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 		// ... then we can deposit without approval
 		return (
 			<Button
-				onClick={async (): Promise<void> => onExecuteDeposit(set_txStatusExecuteDeposit, onSuccess)}
 				variant={'v3'}
+				onClick={async (): Promise<void> => onExecuteDeposit(set_txStatusExecuteDeposit, onSuccess)}
 				className={'w-full'}
 				isBusy={txStatusExecuteDeposit.pending}
 				isDisabled={isButtonDisabled}>
@@ -194,7 +193,7 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 	}
 
 	if (
-		(isButtonBusy || isAboveAllowance) && //If the button is busy or the amount is above the allowance ...
+		(txStatusApprove.pending || isAboveAllowance) && //If the button is busy or the amount is above the allowance ...
 		((isDepositing && currentSolver === Solver.enum.Vanilla) || // ... and the user is depositing with Vanilla ...
 			currentSolver === Solver.enum.InternalMigration || // ... or the user is migrating ...
 			currentSolver === Solver.enum.Cowswap || // ... or the user is using Cowswap ...
@@ -203,17 +202,10 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 			currentSolver === Solver.enum.PartnerContract || // ... or the user is using the Partner contract ...
 			currentSolver === Solver.enum.OptimismBooster) // ... or the user is using the Optimism Booster ... // ... then we need to approve the from token
 	) {
-		console.log(isButtonBusy, expectedOut, isButtonDisabled);
-		console.log(
-			!address && !provider,
-			isZero(actionParams.amount.raw),
-			toBigInt(actionParams.amount.raw) > toBigInt(maxDepositPossible.raw),
-			isLoadingExpectedOut
-		);
 		return (
 			<Button
-				className={'w-full'}
 				variant={'v3'}
+				className={'w-full'}
 				isBusy={txStatusApprove.pending}
 				isDisabled={isButtonDisabled || isZero(expectedOut.raw)}
 				onClick={onApproveFrom}>
@@ -226,8 +218,8 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 		if (currentSolver === Solver.enum.OptimismBooster && isStakingOpBoostedVaults) {
 			return (
 				<Button
-					onClick={async (): Promise<void> => onExecuteDeposit(set_txStatusExecuteDeposit, onSuccess)}
 					variant={'v3'}
+					onClick={async (): Promise<void> => onExecuteDeposit(set_txStatusExecuteDeposit, onSuccess)}
 					className={'w-full whitespace-nowrap'}
 					isBusy={txStatusExecuteDeposit.pending}
 					isDisabled={
@@ -241,8 +233,8 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 		}
 		return (
 			<Button
-				onClick={async (): Promise<void> => onExecuteDeposit(set_txStatusExecuteDeposit, onSuccess)}
 				variant={'v3'}
+				onClick={async (): Promise<void> => onExecuteDeposit(set_txStatusExecuteDeposit, onSuccess)}
 				className={'w-full'}
 				isBusy={txStatusExecuteDeposit.pending}
 				isDisabled={isButtonDisabled}>
@@ -253,8 +245,8 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 
 	return (
 		<Button
-			onClick={async (): Promise<void> => onExecuteWithdraw(set_txStatusExecuteWithdraw, onSuccess)}
 			variant={'v3'}
+			onClick={async (): Promise<void> => onExecuteWithdraw(set_txStatusExecuteWithdraw, onSuccess)}
 			className={'w-full'}
 			isBusy={txStatusExecuteWithdraw.pending}
 			isDisabled={isButtonDisabled}>

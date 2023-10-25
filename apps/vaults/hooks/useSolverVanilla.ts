@@ -5,7 +5,7 @@ import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
-import {allowanceOf, approveERC20, deposit, withdrawShares} from '@common/utils/actions';
+import {allowanceOf, approveERC20, deposit, redeemV3Shares, withdrawShares} from '@common/utils/actions';
 import {assert} from '@common/utils/assert';
 
 import type {TDict} from '@yearn-finance/web-lib/types';
@@ -141,7 +141,21 @@ export function useSolverVanilla(): TSolverContext {
 			assert(request.current, 'Request is not set');
 			assert(request.current.inputToken, 'Output token is not set');
 			assert(request.current.inputAmount, 'Input amount is not set');
+			const isV3 = request.current?.version.split('.')?.[0] === '3';
 
+			if (isV3) {
+				const result = await redeemV3Shares({
+					connector: provider,
+					chainID: request.current.chainID,
+					contractAddress: request.current.inputToken.value,
+					amount: request.current.inputAmount,
+					statusHandler: txStatusSetter
+				});
+				if (result.isSuccessful) {
+					onSuccess();
+				}
+				return;
+			}
 			const result = await withdrawShares({
 				connector: provider,
 				chainID: request.current.chainID,
