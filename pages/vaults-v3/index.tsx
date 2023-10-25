@@ -43,19 +43,20 @@ function BrandNewVaultCard(): ReactElement {
 		<div
 			className={cl(
 				'h-full rounded-3xl',
-				'pr-2 pl-4 md:px-10 pb-4 md:pb-8 pt-6 md:pt-10',
+				'pr-2 pl-4 pb-4 pt-6 md:p-10',
 				'col-span-75 md:col-span-46',
-				'bg-[linear-gradient(73deg,_#2C3DA6_24.91%,_#D21162_99.66%)]'
+				'bg-[linear-gradient(73deg,_#D21162_24.91%,_#2C3DA6_99.66%)]'
 			)}>
 			<h1
 				className={cl(
-					'mb-2 md:mb-8 font-black text-neutral-900',
-					'text-[48px] md:text-[96px] md:leading-[104px] leading-[56px]'
+					'mb-2 md:mb-10 font-black text-neutral-900',
+					'text-[48px] md:text-[56px] md:leading-[64px] leading-[56px]',
+					'whitespace-break-spaces'
 				)}>
-				{'BRAND NEW VAULTS'}
+				{'BRAND NEW\nVAULTS'}
 			</h1>
-			<p className={'mb-10 text-base text-[#F2B7D0] md:mb-8 md:text-xl'}>
-				{'Corn asked for new pretty design for this page, so hope you like it mates <3'}
+			<p className={'mb-4 whitespace-break-spaces text-base text-[#F2B7D0] md:text-lg'}>
+				{'Corn asked for new pretty design for this page,\nso hope you like it mates <3'}
 			</p>
 			<div>
 				<button className={'rounded-3xl bg-white px-12 py-2 font-bold text-[#CE1364]'}>{'Explore more'}</button>
@@ -67,10 +68,10 @@ function V3TVLCard(): ReactElement {
 	return (
 		<div className={'col-span-75 ml-0 mt-4 md:col-span-29 md:ml-6 md:mt-0'}>
 			<div className={'flex w-full flex-col gap-y-0 md:gap-y-6'}>
-				<div className={'relative hidden h-[248px] rounded-3xl bg-neutral-200 md:block'}>
-					<V3Mask className={'absolute bottom-6 right-4'} />
+				<div className={'relative hidden h-[203px] rounded-3xl bg-neutral-200 md:block'}>
+					<V3Mask className={'absolute bottom-8 left-10'} />
 				</div>
-				<div className={'rounded-3xl bg-neutral-200 p-6 md:pb-10'}>
+				<div className={'rounded-3xl bg-neutral-200 p-6 md:px-8 md:py-4'}>
 					<strong className={'mb-2 block text-4xl font-black leading-[48px] text-neutral-900'}>
 						{'TVL'}
 					</strong>
@@ -311,7 +312,7 @@ function Index(): ReactElement {
 		<div className={'z-50 w-full bg-neutral-100 pt-20'}>
 			<div className={'relative mx-auto w-full max-w-6xl'}>
 				<div className={'absolute inset-x-0 top-0 w-full px-4 pt-16'}>
-					<div className={'grid h-[448px] grid-cols-75'}>
+					<div className={'grid h-[368px] grid-cols-75'}>
 						<BrandNewVaultCard />
 						<V3TVLCard />
 					</div>
@@ -323,7 +324,7 @@ function Index(): ReactElement {
 					'relative pb-8 bg-neutral-0 z-50',
 					'min-h-screen',
 					'transition-transform duration-300',
-					isCollapsed ? 'translate-y-[576px]' : 'translate-y-0'
+					isCollapsed ? 'translate-y-[512px]' : 'translate-y-0'
 				)}>
 				<div className={'mx-auto w-full max-w-6xl'}>
 					<div
