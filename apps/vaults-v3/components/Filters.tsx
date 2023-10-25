@@ -121,11 +121,11 @@ export function Filters({
 
 	return (
 		<div className={'relative col-span-12 w-full rounded-3xl bg-neutral-100 p-6 md:col-span-6'}>
-			<strong className={'block pb-2 text-lg font-black text-neutral-900 md:pb-4 md:text-4xl md:leading-[48px]'}>
+			<strong className={'block pb-2 text-3xl font-black text-neutral-900 md:pb-4 md:text-4xl md:leading-[48px]'}>
 				{'Filters'}
 			</strong>
 
-			<div className={'absolute right-8 top-8'}>
+			<div className={'absolute right-10 top-10'}>
 				<VaultListOptions panelClassName={'bg-neutral-100 rounded-lg'} />
 			</div>
 

@@ -48,14 +48,14 @@ export function VaultsListInternalMigrationRow({currentVault}: {currentVault: TY
 					{'To keep earning yield on your assets, migrate to the current vault.'}
 				</div>
 
-				<div className={'mt-6 flex w-full items-center md:ml-auto md:mt-0 md:w-50 md:justify-end'}>
+				<div className={'mt-6 flex w-full items-center md:ml-auto md:mt-0 md:w-56 md:justify-end'}>
 					<Link
 						className={'w-full'}
 						href={`/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`}>
 						<button
 							className={cl(
 								'rounded-lg overflow-hidden flex',
-								'px-[42px] py-2 w-full md:w-50',
+								'px-4 py-2 w-full md:w-56',
 								'relative group',
 								'border-none'
 							)}>

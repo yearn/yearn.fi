@@ -311,8 +311,8 @@ function Index(): ReactElement {
 	return (
 		<div className={'z-50 w-full bg-neutral-100 pt-20'}>
 			<div className={'relative mx-auto w-full max-w-6xl'}>
-				<div className={'absolute inset-x-0 top-0 w-full px-4 pt-16'}>
-					<div className={'grid h-[368px] grid-cols-75'}>
+				<div className={'absolute inset-x-0 top-0 w-full px-4 pt-2 md:pt-16'}>
+					<div className={'grid grid-cols-75'}>
 						<BrandNewVaultCard />
 						<V3TVLCard />
 					</div>
