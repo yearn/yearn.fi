@@ -321,7 +321,7 @@ export async function redeemV3Shares(props: TRedeemV3Shares): Promise<TTxRespons
 		address: props.contractAddress,
 		abi: VAULT_V3_ABI,
 		functionName: 'redeem',
-		args: [props.amount, wagmiProvider.address, wagmiProvider.address, 100n]
+		args: [props.amount, wagmiProvider.address, wagmiProvider.address, 1n]
 	});
 }
 
