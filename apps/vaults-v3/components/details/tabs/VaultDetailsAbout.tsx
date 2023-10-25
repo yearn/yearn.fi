@@ -1,25 +1,14 @@
 import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
-import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
-type TAPRLineItemProps = {
-	label: string;
-	value: number | string;
-	apyType: string;
-	hasUpperLimit?: boolean;
-	tooltip?: string;
-};
-
-function APRLineItem({value, label, tooltip, apyType, hasUpperLimit}: TAPRLineItemProps): ReactElement {
-	const safeValue = Number(value) || 0;
-	const isNew = apyType === 'new' && isZero(safeValue);
-
+function YearnFeesLineItem({children, label, tooltip}: any): ReactElement {
 	return (
-		<div className={'flex flex-row items-center justify-between'}>
+		<div className={'flex flex-col space-y-0 md:space-y-2'}>
+			<p className={'text-xxs text-neutral-600 md:text-xs'}>{label}</p>
 			<div
 				className={cl(
 					tooltip
@@ -38,17 +27,8 @@ function APRLineItem({value, label, tooltip, apyType, hasUpperLimit}: TAPRLineIt
 						</div>
 					</span>
 				) : null}
-				<p className={'text-sm text-neutral-900/50'}>{label}</p>
+				{children}
 			</div>
-			<p
-				className={'font-number text-sm text-neutral-900'}
-				suppressHydrationWarning>
-				{isNew
-					? 'New'
-					: hasUpperLimit
-					? formatPercent(safeValue * 100)
-					: formatPercent(safeValue * 100, 2, 2, 500)}
-			</p>
 		</div>
 	);
 }
@@ -65,7 +45,7 @@ export function VaultDetailsAbout({currentVault}: {currentVault: TYDaemonVault})
 
 	return (
 		<div className={'grid grid-cols-1 gap-10 p-4 md:grid-cols-12 md:p-8'}>
-			<div className={'col-span-6 w-full pr-28'}>
+			<div className={'col-span-7 w-full pr-28'}>
 				<div>
 					<b className={'text-neutral-900'}>{'Description'}</b>
 					<p
@@ -76,65 +56,53 @@ export function VaultDetailsAbout({currentVault}: {currentVault: TYDaemonVault})
 					/>
 				</div>
 			</div>
-			<div className={'col-span-6 w-full space-y-10'}>
-				<div>
-					<div className={'grid grid-cols-1 gap-x-12 md:grid-cols-2'}>
-						<div className={'space-y-4'}>
-							<b className={'text-neutral-900'}>{'APR'}</b>
-							<APRLineItem
-								label={'Weekly APR'}
-								apyType={apr.type}
-								value={apr.points.weekAgo}
-							/>
-							<APRLineItem
-								label={'Monthly APR'}
-								apyType={apr.type}
-								value={apr.points.monthAgo}
-							/>
-							<APRLineItem
-								label={'Inception APR'}
-								apyType={apr.type}
-								value={apr.points.inception}
-							/>
-							{apr.extra.stakingRewardsAPR > 0 && (
-								<APRLineItem
-									hasUpperLimit
-									label={'• Staking Reward APR'}
-									apyType={apr.type}
-									value={apr.extra.stakingRewardsAPR}
-								/>
-							)}
+
+			<div className={'col-span-5 w-full space-y-10'}>
+				<div className={'grid grid-cols-1 gap-x-12 md:grid-cols-1'}>
+					<div>
+						<b className={'text-neutral-900'}>{'Fees'}</b>
+						<div className={'mt-4 flex flex-row space-x-6 md:space-x-8'}>
+							<YearnFeesLineItem label={'Management'}>
+								<b className={'font-number text-xl text-neutral-900'}>
+									{formatPercent((apr.fees.management || 0) / 100, 0)}
+								</b>
+							</YearnFeesLineItem>
+							<YearnFeesLineItem label={'Performance'}>
+								<b className={'font-number text-xl text-neutral-900'}>
+									{formatPercent((apr.fees.performance || 0) / 100, 0)}
+								</b>
+							</YearnFeesLineItem>
+							{currentVault.category === 'Velodrome' || currentVault.category === 'Aerodrome' ? (
+								<YearnFeesLineItem
+									label={'keepVELO'}
+									tooltip={`Percentage of VELO locked in each harvest. This is used to boost ${currentVault.category} vault pools, and is offset via yvOP staking rewards.`}>
+									<b className={'font-number text-xl text-neutral-500'}>
+										{formatPercent(currentVault.apr.fees.keepVelo * 100, 0)}
+									</b>
+								</YearnFeesLineItem>
+							) : null}
 						</div>
+					</div>
 
-						<div className={'space-y-4'}>
-							<b className={'text-neutral-900'}>{'Fees'}</b>
-							<APRLineItem
-								label={'Management fee'}
-								apyType={''}
-								value={apr.fees.management}
-							/>
-							<APRLineItem
-								label={'Performance fee'}
-								apyType={''}
-								value={apr.fees.performance}
-							/>
+					<div className={'mt-10'}>
+						<b className={'text-neutral-900'}>{'APR'}</b>
+						<div className={'mt-4 flex flex-row space-x-6 md:space-x-8'}>
+							<YearnFeesLineItem label={'Last 7 days'}>
+								<b className={'font-number text-xl text-neutral-900'}>
+									{formatPercent(apr.points.weekAgo * 100, 0)}
+								</b>
+							</YearnFeesLineItem>
+							<YearnFeesLineItem label={'Last 30 days'}>
+								<b className={'font-number text-xl text-neutral-900'}>
+									{formatPercent(apr.points.monthAgo * 100, 0)}
+								</b>
+							</YearnFeesLineItem>
 
-							{currentVault.apr.fees.keepCRV > 0 && (
-								<APRLineItem
-									label={'keepCRV'}
-									apyType={''}
-									value={currentVault.apr.fees.keepCRV}
-								/>
-							)}
-							{currentVault.category === 'Velodrome' ||
-								(currentVault.category === 'Aerodrome' && (
-									<APRLineItem
-										label={'KeepVELO'}
-										tooltip={`Percentage of VELO locked in each harvest. This is used to boost ${currentVault.category} vault pools, and is offset via yvOP staking rewards.`}
-										apyType={''}
-										value={currentVault.apr.fees.keepVelo}
-									/>
-								))}
+							<YearnFeesLineItem label={'Inception'}>
+								<b className={'font-number text-xl text-neutral-900'}>
+									{formatPercent(apr.points.inception * 100, 0)}
+								</b>
+							</YearnFeesLineItem>
 						</div>
 					</div>
 				</div>

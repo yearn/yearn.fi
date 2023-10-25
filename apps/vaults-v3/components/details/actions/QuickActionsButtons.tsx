@@ -203,6 +203,13 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 			currentSolver === Solver.enum.PartnerContract || // ... or the user is using the Partner contract ...
 			currentSolver === Solver.enum.OptimismBooster) // ... or the user is using the Optimism Booster ... // ... then we need to approve the from token
 	) {
+		console.log(isButtonBusy, expectedOut, isButtonDisabled);
+		console.log(
+			!address && !provider,
+			isZero(actionParams.amount.raw),
+			toBigInt(actionParams.amount.raw) > toBigInt(maxDepositPossible.raw),
+			isLoadingExpectedOut
+		);
 		return (
 			<Button
 				className={'w-full'}
