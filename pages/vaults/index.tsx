@@ -116,11 +116,13 @@ function ListOfVaults(): ReactElement {
 		}
 		return activeVaults.filter((vault: TYDaemonVault): boolean => {
 			const lowercaseSearch = search.toLowerCase();
-			const splitted =
+			const allSearchWords = lowercaseSearch.split(' ');
+			const currentVaultInfo =
 				`${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${vault.token.address}`
+					.replaceAll('-', ' ')
 					.toLowerCase()
 					.split(' ');
-			return splitted.some((word): boolean => word.startsWith(lowercaseSearch));
+			return allSearchWords.every((word): boolean => currentVaultInfo.some((v): boolean => v.startsWith(word)));
 		});
 	}, [activeVaults, search]);
 

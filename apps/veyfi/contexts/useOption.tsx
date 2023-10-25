@@ -38,13 +38,18 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 	const yfiPrice = useTokenPrice(YFI_ADDRESS);
 
 	const getRequiredEth = useCallback(async (amount: bigint): Promise<bigint> => {
-		return readContract({
-			address: VEYFI_OPTIONS_ADDRESS,
-			abi: VEYFI_OPTIONS_ABI,
-			functionName: 'eth_required',
-			args: [amount],
-			chainId: VEYFI_CHAIN_ID
-		});
+		try {
+			const result = await readContract({
+				address: VEYFI_OPTIONS_ADDRESS,
+				abi: VEYFI_OPTIONS_ABI,
+				functionName: 'eth_required',
+				args: [amount],
+				chainId: VEYFI_CHAIN_ID
+			});
+			return result;
+		} catch (error) {
+			return BIG_ZERO;
+		}
 	}, []);
 
 	const refreshPrice = useAsyncTrigger(async (): Promise<void> => {
@@ -75,7 +80,7 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 		set_position(toNormalizedBN(dYFIBalance));
 	}, [userAddress]);
 
-	const refresh = useAsyncTrigger(async (): Promise<void> => {
+	const refresh = useCallback(async (): Promise<void> => {
 		refreshPrice();
 		refreshPositions();
 	}, [refreshPrice, refreshPositions]);
