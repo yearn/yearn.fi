@@ -225,7 +225,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 	const filteredStrategies = (sortedStrategies || []).filter(hide0DebtStrategyFilter).filter(nameSearchFilter);
 
 	return (
-		<div className={'grid grid-cols-1 bg-neutral-100'}>
+		<div className={'grid grid-cols-1'}>
 			<div className={'col-span-1 w-full space-y-6 p-4 md:p-6'}>
 				<div className={'w-full flex-row items-center justify-between md:flex md:space-x-4'}>
 					<SearchBar
@@ -247,7 +247,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 					</div>
 				</div>
 			</div>
-			<div className={'col-span-1 w-full border-t border-neutral-300'}>
+			<div className={'col-span-1 w-full'}>
 				{filteredStrategies.map(
 					(strategy): ReactElement => (
 						<VaultDetailsStrategy

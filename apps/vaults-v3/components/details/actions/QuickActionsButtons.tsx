@@ -167,6 +167,7 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 		return (
 			<Button
 				className={'w-full'}
+				variant={'v3'}
 				isBusy={txStatusApprove.pending}
 				isDisabled={isButtonDisabled || isZero(expectedOut.raw)}
 				onClick={onApproveFrom}>
@@ -183,6 +184,7 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 		return (
 			<Button
 				onClick={async (): Promise<void> => onExecuteDeposit(set_txStatusExecuteDeposit, onSuccess)}
+				variant={'v3'}
 				className={'w-full'}
 				isBusy={txStatusExecuteDeposit.pending}
 				isDisabled={isButtonDisabled}>
@@ -204,6 +206,7 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 		return (
 			<Button
 				className={'w-full'}
+				variant={'v3'}
 				isBusy={txStatusApprove.pending}
 				isDisabled={isButtonDisabled || isZero(expectedOut.raw)}
 				onClick={onApproveFrom}>
@@ -217,6 +220,7 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 			return (
 				<Button
 					onClick={async (): Promise<void> => onExecuteDeposit(set_txStatusExecuteDeposit, onSuccess)}
+					variant={'v3'}
 					className={'w-full whitespace-nowrap'}
 					isBusy={txStatusExecuteDeposit.pending}
 					isDisabled={
@@ -231,6 +235,7 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 		return (
 			<Button
 				onClick={async (): Promise<void> => onExecuteDeposit(set_txStatusExecuteDeposit, onSuccess)}
+				variant={'v3'}
 				className={'w-full'}
 				isBusy={txStatusExecuteDeposit.pending}
 				isDisabled={isButtonDisabled}>
@@ -242,6 +247,7 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 	return (
 		<Button
 			onClick={async (): Promise<void> => onExecuteWithdraw(set_txStatusExecuteWithdraw, onSuccess)}
+			variant={'v3'}
 			className={'w-full'}
 			isBusy={txStatusExecuteWithdraw.pending}
 			isDisabled={isButtonDisabled}>

@@ -48,13 +48,28 @@
 	--color-neutral-400: 0 0% 50%;
 	--color-neutral-300: 231 51% 19%;
 	--color-neutral-200: 242 54% 27%;
-	--color-neutral-100: 231 100% 6%;
-	--color-neutral-0: 231 100% 11%;
+	--color-neutral-100: 231 100% 11%;
+	--color-neutral-0: 231 100% 6%;
 }
 
 @layer base {
 	#swap {
 		@apply scroll-mt-12 mb-0 md:mb-44;
+	}
+
+	.yearn--header {
+		@apply !mb-0;
+	}
+	.yearn--button {
+		&[data-variant='v3'] {
+			@apply text-neutral-900 bg-[#D21162] rounded-lg font-normal border border-transparent;
+			&:disabled {
+				@apply bg-[#D21162] opacity-40;
+			}
+			&:not(:disabled):not([aria-busy='true']):hover {
+				@apply hover:bg-[#d21162]/80;
+			}
+		}
 	}
 
 	/* 🔵 - Yearn Finance ******************************************************************************

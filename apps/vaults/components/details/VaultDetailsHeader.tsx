@@ -2,12 +2,10 @@ import {useMemo} from 'react';
 import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatUSD} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {copyToClipboard} from '@yearn-finance/web-lib/utils/helpers';
-import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {RenderAmount} from '@common/components/RenderAmount';
 import {useBalance} from '@common/hooks/useBalance';
 import {useFetch} from '@common/hooks/useFetch';
@@ -31,14 +29,14 @@ type TVaultHeaderLineItemProps = {
 function VaultHeaderLineItem({label, children, legend}: TVaultHeaderLineItemProps): ReactElement {
 	return (
 		<div className={'flex flex-col items-center justify-center space-y-1 md:space-y-2'}>
-			<p className={'text-center text-xxs md:text-xs'}>{label}</p>
+			<p className={'text-center text-xxs text-neutral-600 md:text-xs'}>{label}</p>
 			<b
 				className={'font-number text-lg md:text-3xl'}
 				suppressHydrationWarning>
 				{children}
 			</b>
 			<legend
-				className={'font-number text-xxs md:text-xs'}
+				className={'font-number text-xxs text-neutral-600 md:text-xs'}
 				suppressHydrationWarning>
 				{legend ? legend : '\u00A0'}
 			</legend>
@@ -102,7 +100,7 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 	const {address: userAddress} = useWeb3();
 	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: currentVault.chainID});
 	const {address, apr, tvl, decimals, symbol = 'token', token} = currentVault;
-	const chainInfo = getNetwork(currentVault.chainID);
+
 	const {data: earned} = useFetch<TYDaemonEarnedSingle>({
 		endpoint: address && userAddress ? `${yDaemonBaseUri}/earned/${userAddress}/${currentVault.address}` : null,
 		schema: yDaemonSingleEarnedSchema
@@ -112,7 +110,7 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 		const {unrealizedGains} = earned?.earned?.[toAddress(currentVault.address)] || {};
 		const value = toBigInt(unrealizedGains);
 		return toNormalizedBN(value < 0n ? 0n : value);
-	}, [earned?.earned, currentVault.address]);
+	}, [earned?.earned, address]);
 
 	const vaultBalance = useBalance({address, chainID: currentVault.chainID});
 	const vaultPrice = useTokenPrice(address) || currentVault?.tvl?.price || 0;
@@ -124,34 +122,23 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 	return (
 		<div
 			aria-label={'Vault Header'}
-			className={'col-span-12 mt-4 flex w-full flex-col items-center justify-center'}>
-			<strong
-				className={cl(
-					'mx-auto flex w-full flex-row items-center justify-center text-center',
-					'text-4xl md:text-[96px] leading-[56px] md:leading-[104px]',
-					'tabular-nums text-neutral-900 font-black'
-				)}>
-				{vaultName}
-			</strong>
-			<div className={'mb-10 flex flex-col justify-center'}>
+			className={'col-span-12 flex w-full flex-col items-center justify-center'}>
+			<b
+				className={
+					'mx-auto flex w-full flex-row items-center justify-center text-center text-4xl tabular-nums text-neutral-900 md:text-8xl'
+				}>
+				&nbsp;{vaultName}&nbsp;
+			</b>
+			<div className={'mb-10 mt-4 md:mb-14 md:mt-10'}>
 				{address ? (
 					<button onClick={(): void => copyToClipboard(address)}>
-						<p className={'font-number text-center text-xxs text-neutral-900 md:text-xs'}>{address}</p>
+						<p className={'font-number text-xxs text-neutral-500 md:text-xs'}>{address}</p>
 					</button>
 				) : (
-					<p className={'text-xxs md:text-xs'}>&nbsp;</p>
+					<p className={'text-xxs text-neutral-500 md:text-xs'}>&nbsp;</p>
 				)}
-				<div className={'mt-4 flex flex-row space-x-2'}>
-					<div className={'w-fit` rounded-lg bg-neutral-900/30 px-4 py-2'}>
-						<strong className={'text-xl font-black text-neutral-900'}>{currentVault.token.name}</strong>
-					</div>
-					<div className={'w-fit` rounded-lg bg-neutral-900/30 px-4 py-2'}>
-						<strong className={'text-xl font-black text-neutral-900'}>{chainInfo.name}</strong>
-					</div>
-				</div>
 			</div>
-
-			<div className={'grid grid-cols-2 gap-6 md:grid-cols-4 md:gap-14'}>
+			<div className={'grid grid-cols-2 gap-6 md:grid-cols-4 md:gap-12'}>
 				<VaultHeaderLineItem
 					label={`Total deposited, ${token?.symbol || 'tokens'}`}
 					legend={formatUSD(tvl.tvl)}>

@@ -1,12 +1,12 @@
 import {useEffect, useState} from 'react';
 import Link from 'next/link';
 import {useRouter} from 'next/router';
-import {VaultDetailsTabsWrapper} from '@vaults/components/details/tabs/VaultDetailsTabsWrapper';
-import {VaultActionsTabsWrapper} from '@vaults/components/details/VaultActionsTabsWrapper';
-import {VaultDetailsHeader} from '@vaults/components/details/VaultDetailsHeader';
 import {ActionFlowContextApp} from '@vaults/contexts/useActionFlow';
 import {WithSolverContextApp} from '@vaults/contexts/useSolver';
-import {Wrapper} from '@vaults/Wrapper';
+import {VaultActionsTabsWrapper} from '@vaults-v3/components/details/VaultActionsTabsWrapper';
+import {VaultDetailsHeader} from '@vaults-v3/components/details/VaultDetailsHeader';
+import {VaultDetailsTabsWrapper} from '@vaults-v3/components/details/VaultDetailsTabsWrapper';
+import {Wrapper} from '@vaults-v3/Wrapper';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
@@ -80,23 +80,42 @@ function Index(): ReactElement | null {
 	}
 
 	return (
-		<>
+		<div className={'mx-auto w-full max-w-6xl pt-20 md:pt-32'}>
+			<nav className={`mb-4 self-start md:mb-2 md:hidden`}>
+				<Link
+					href={'/vaults-v3'}
+					className={'z-50 w-fit'}>
+					<p
+						className={
+							'flex w-fit text-xs text-neutral-900/70 transition-colors hover:text-neutral-900 md:text-base'
+						}>
+						<span className={'pr-2 leading-[normal]'}>&#10229;</span>
+						{'  Back to vaults'}
+					</p>
+				</Link>
+			</nav>
 			<header
 				className={cl(
 					'h-full rounded-3xl',
-					'pt-6 pb-10 px-8',
+					'pt-6 pb-6 md:pb-10 px-4 md:px-8',
 					'bg-[linear-gradient(73deg,_#D21162_24.91%,_#2C3DA6_99.66%)]',
 					'relative flex flex-col items-center justify-center'
 				)}>
-				<nav className={`mb-2 w-full`}>
-					<Link href={'/vaults-v3'}>
-						<p className={'flex text-neutral-900/70'}>
+				<nav className={`mb-4 hidden self-start md:mb-2 md:block`}>
+					<Link
+						href={'/vaults-v3'}
+						className={'w-fit'}>
+						<p
+							className={
+								'flex w-fit text-xs text-neutral-900/70 transition-colors hover:text-neutral-900 md:text-base'
+							}>
 							<span className={'pr-2 leading-[normal]'}>&#10229;</span>
 							{'  Back to vaults'}
 						</p>
 					</Link>
 				</nav>
 				<TokenIcon
+					className={'h-[56px] w-[56px] md:h-[72px] md:w-[72px]'}
 					chainID={currentVault.chainID}
 					token={currentVault.token}
 				/>
@@ -111,7 +130,7 @@ function Index(): ReactElement | null {
 				</ActionFlowContextApp>
 				<VaultDetailsTabsWrapper currentVault={currentVault} />
 			</section>
-		</>
+		</div>
 	);
 }
 

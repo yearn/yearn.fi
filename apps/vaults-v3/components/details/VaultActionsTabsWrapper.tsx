@@ -1,21 +1,19 @@
 import {Fragment, useEffect, useState} from 'react';
-import Link from 'next/link';
 import {useRouter} from 'next/router';
 import {Listbox, Transition} from '@headlessui/react';
 import {useUpdateEffect} from '@react-hookz/web';
-import {VaultDetailsQuickActionsButtons} from '@vaults/components/details/actions/QuickActionsButtons';
-import {VaultDetailsQuickActionsFrom} from '@vaults/components/details/actions/QuickActionsFrom';
-import {VaultDetailsQuickActionsSwitch} from '@vaults/components/details/actions/QuickActionsSwitch';
-import {VaultDetailsQuickActionsTo} from '@vaults/components/details/actions/QuickActionsTo';
-import {ImageWithOverlay} from '@vaults/components/ImageWithOverlay';
 import {RewardsTab} from '@vaults/components/RewardsTab';
 import {SettingsPopover} from '@vaults/components/SettingsPopover';
 import {Flow, useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
+import {VaultDetailsQuickActionsButtons} from '@vaults-v3/components/details/actions/QuickActionsButtons';
+import {VaultDetailsQuickActionsFrom} from '@vaults-v3/components/details/actions/QuickActionsFrom';
+import {VaultDetailsQuickActionsSwitch} from '@vaults-v3/components/details/actions/QuickActionsSwitch';
+import {VaultDetailsQuickActionsTo} from '@vaults-v3/components/details/actions/QuickActionsTo';
 import {Banner} from '@yearn-finance/web-lib/components/Banner';
-import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useLocalStorage} from '@yearn-finance/web-lib/hooks/useLocalStorage';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {performBatchedUpdates} from '@yearn-finance/web-lib/utils/performBatchedUpdates';
@@ -77,16 +75,11 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 			isRetired: currentVault?.retired
 		})
 	);
-	const [shouldShowLedgerPluginBanner, set_shouldShowLedgerPluginBanner] = useLocalStorage<boolean>(
-		'yearn.fi/ledger-plugin-banner',
-		true
-	);
 	const [shouldShowOpBoostInfo, set_shouldShowOpBoostInfo] = useLocalStorage<boolean>(
 		'yearn.fi/op-boost-banner',
 		true
 	);
 	const router = useRouter();
-	const {isWalletLedger} = useWeb3();
 	const rewardBalance = toNormalizedBN(toBigInt(stakingRewardsPosition?.reward), rewardTokenBalance.decimals);
 
 	useEffect((): void => {
@@ -118,27 +111,8 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 		}
 	}, [currentVault?.migration?.available, currentVault?.retired, actionParams.isReady, hasStakingRewards]);
 
-	const isLedgerPluginVisible = isWalletLedger && shouldShowLedgerPluginBanner;
-
 	return (
 		<>
-			{isLedgerPluginVisible && (
-				<div
-					aria-label={'Ledger Plugin'}
-					className={'col-span-12 mt-10'}>
-					<ImageWithOverlay
-						imageAlt={''}
-						imageWidth={2400}
-						imageHeight={385}
-						imageSrc={'/ledger-plugin-bg.png'}
-						href={'ledgerlive://myledger?installApp=yearn'}
-						onCloseClick={(): void => set_shouldShowLedgerPluginBanner(false)}
-						overlayText={'SIGN IN WITH LEDGER'}
-						buttonText={'DOWNLOAD LEDGER PLUGIN'}
-					/>
-				</div>
-			)}
-
 			{currentVault?.migration?.available && (
 				<div
 					aria-label={'Migration Warning'}
@@ -169,17 +143,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 				</div>
 			)}
 
-			<nav
-				className={`mb-2 w-full ${
-					isLedgerPluginVisible || currentVault?.retired ? 'mt-1 md:mt-4' : 'mt-10 md:mt-20'
-				}`}>
-				<Link href={'/vaults'}>
-					<p className={'yearn--header-nav-item w-full whitespace-nowrap opacity-30'}>{'Back to vaults'}</p>
-				</Link>
-			</nav>
-			<div
-				aria-label={'Vault Actions'}
-				className={'col-span-12 mb-4 flex flex-col bg-neutral-100'}>
+			<div className={'col-span-12 mt-6 flex flex-col rounded-t-3xl bg-neutral-100'}>
 				<div className={'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'}>
 					<nav className={'hidden flex-row items-center space-x-10 md:flex'}>
 						{possibleTabs.map(
@@ -205,7 +169,12 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 									<p
 										title={tab.label}
 										aria-selected={currentTab.value === tab.value}
-										className={'hover-fix tab'}>
+										className={cl(
+											'hover-fix tab',
+											currentTab.value === tab.value
+												? '!text-neutral-900'
+												: '!text-neutral-900/50 hover:!text-neutral-900'
+										)}>
 										{tab.label}
 									</p>
 								</button>
@@ -291,7 +260,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 				) : (
 					<div
 						className={
-							'col-span-12 mb-4 flex flex-col space-x-0 space-y-2 bg-neutral-100 p-4 md:flex-row md:space-x-4 md:space-y-0 md:px-8 md:py-6'
+							'col-span-12 mb-4 flex flex-col space-x-0 space-y-2 bg-neutral-100 p-4 md:flex-row md:space-x-4 md:space-y-0 md:px-8 md:py-10'
 						}>
 						<VaultDetailsQuickActionsFrom />
 						<VaultDetailsQuickActionsSwitch />

@@ -1,6 +1,3 @@
-import {useIsMounted} from '@react-hookz/web';
-import {GraphForVaultEarnings} from '@vaults/components/graphs/GraphForVaultEarnings';
-import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
@@ -8,7 +5,6 @@ import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
-import type {TGraphData} from '@common/types/types';
 
 type TAPRLineItemProps = {
 	label: string;
@@ -29,7 +25,7 @@ function APRLineItem({value, label, apyType, hasUpperLimit}: TAPRLineItemProps):
 
 	return (
 		<div className={'flex flex-row items-center justify-between'}>
-			<p className={'text-sm text-neutral-500'}>{label}</p>
+			<p className={'text-sm text-neutral-900/50'}>{label}</p>
 			<p
 				className={'font-number text-sm text-neutral-900'}
 				suppressHydrationWarning>
@@ -46,7 +42,7 @@ function APRLineItem({value, label, apyType, hasUpperLimit}: TAPRLineItemProps):
 function YearnFeesLineItem({children, label, tooltip}: TYearnFeesLineItem): ReactElement {
 	return (
 		<div className={'flex flex-col space-y-0 md:space-y-2'}>
-			<p className={'text-xxs text-neutral-600 md:text-xs'}>{label}</p>
+			<p className={'text-xxs text-neutral-900/50 md:text-xs'}>{label}</p>
 			<div
 				className={cl(
 					tooltip
@@ -71,14 +67,7 @@ function YearnFeesLineItem({children, label, tooltip}: TYearnFeesLineItem): Reac
 	);
 }
 
-export function VaultDetailsAbout({
-	currentVault,
-	harvestData
-}: {
-	currentVault: TYDaemonVault;
-	harvestData: TGraphData[];
-}): ReactElement {
-	const isMounted = useIsMounted();
+export function VaultDetailsAbout({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {token, apr} = currentVault;
 
 	function getVaultDescription(): string {
@@ -89,17 +78,19 @@ export function VaultDetailsAbout({
 	}
 
 	return (
-		<div className={'grid grid-cols-1 gap-10 bg-neutral-100 p-4 md:grid-cols-2 md:gap-32 md:p-8'}>
+		<div className={'grid grid-cols-1 gap-10 p-4 md:grid-cols-2 md:gap-32 md:p-8'}>
 			<div className={'col-span-1 w-full space-y-6'}>
 				<div>
 					<b className={'text-neutral-900'}>{'Description'}</b>
 					<p
-						className={'mt-4 text-neutral-600'}
+						className={'mt-4 text-neutral-900/50'}
 						dangerouslySetInnerHTML={{
 							__html: getVaultDescription()
 						}}
 					/>
 				</div>
+			</div>
+			<div className={'col-span-1 w-full space-y-10'}>
 				<div>
 					<b className={'text-neutral-900'}>{'APR'}</b>
 					<div className={'mt-4 grid grid-cols-1 gap-x-12 md:grid-cols-2'}>
@@ -146,10 +137,8 @@ export function VaultDetailsAbout({
 						</div>
 					</div>
 				</div>
-			</div>
-			<div className={'col-span-1 w-full space-y-8'}>
 				<div>
-					<b className={'text-neutral-900'}>{'Yearn Fees'}</b>
+					<b className={'text-neutral-900'}>{'Fees'}</b>
 					<div className={'mt-4 flex flex-row space-x-6 md:space-x-8'}>
 						<YearnFeesLineItem label={'Deposit/Withdrawal fee'}>
 							<b className={'font-number text-xl text-neutral-900'}>{formatPercent(0, 0, 0)}</b>
@@ -173,20 +162,6 @@ export function VaultDetailsAbout({
 								</b>
 							</YearnFeesLineItem>
 						) : null}
-					</div>
-				</div>
-				<div>
-					<b className={'text-neutral-900'}>{'Cumulative Earnings'}</b>
-					<div
-						className={'-mx-2 mt-4 flex flex-row border-b border-l border-neutral-300 md:mx-0'}
-						style={{height: 160}}>
-						<Renderable shouldRender={isMounted()}>
-							<GraphForVaultEarnings
-								currentVault={currentVault}
-								harvestData={harvestData}
-								height={160}
-							/>
-						</Renderable>
 					</div>
 				</div>
 			</div>

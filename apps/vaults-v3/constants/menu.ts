@@ -1,4 +1,1 @@
-export const VAULTS_V3_MENU = [
-	{path: '/vaults', label: 'Vaults'},
-	{path: '/vaults/about', label: 'About'}
-];
+export const VAULTS_V3_MENU = [{path: '/vaults-v3', label: 'Vaults'}];

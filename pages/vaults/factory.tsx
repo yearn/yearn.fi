@@ -214,7 +214,7 @@ function Factory(): ReactElement {
 	}
 
 	return (
-		<section>
+		<section className={'pt-20'}>
 			<div className={'mb-4 w-full bg-neutral-100 p-4 md:p-8'}>
 				<div
 					aria-label={'new vault card title'}

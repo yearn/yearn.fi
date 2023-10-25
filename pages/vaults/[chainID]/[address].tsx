@@ -81,7 +81,7 @@ function Index(): ReactElement | null {
 
 	return (
 		<>
-			<header className={'relative z-50 flex w-full items-center justify-center'}>
+			<header className={'relative z-50 flex w-full items-center justify-center pt-24'}>
 				<motion.div
 					key={'vaults'}
 					initial={'initial'}

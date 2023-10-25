@@ -1,5 +1,6 @@
 import React, {Fragment, memo, useCallback, useEffect} from 'react';
 import localFont from 'next/font/local';
+import {usePathname} from 'next/navigation';
 import useSWR from 'swr';
 import {AnimatePresence, domAnimation, LazyMotion, motion} from 'framer-motion';
 import {useIntervalEffect, useIsMounted, useLocalStorageValue} from '@react-hookz/web';
@@ -106,6 +107,7 @@ type TGetLayout = NextComponentType & {
 };
 const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 	const {Component, pageProps, router} = props;
+	const pathName = usePathname();
 	const getLayout = (Component as TGetLayout).getLayout || ((page: ReactElement): ReactElement => page);
 	const {value: shouldHidePopover} = useLocalStorageValue<boolean>('yearn.fi/feedback-popover');
 	const {name} = useCurrentApp(router);
@@ -114,7 +116,7 @@ const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 
 	return (
 		<>
-			<div className={cl('mx-auto mb-0 flex font-aeonik max-w-6xl')}>
+			<div className={cl('mx-auto mb-0 flex font-aeonik max-w-6xl absolute top-0 inset-x-0')}>
 				<AppHeader />
 			</div>
 			<div
@@ -124,11 +126,10 @@ const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 					<LazyMotion features={domAnimation}>
 						<AnimatePresence mode={'wait'}>
 							<motion.div
-								key={name}
+								key={pathName}
 								initial={'initial'}
 								animate={'enter'}
 								exit={'exit'}
-								className={'my-0 h-full md:mb-0 md:mt-16'}
 								variants={variants}>
 								{getLayout(
 									<Component

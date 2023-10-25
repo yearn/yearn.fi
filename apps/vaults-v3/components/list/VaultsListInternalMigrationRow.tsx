@@ -42,18 +42,20 @@ export function VaultsListInternalMigrationRow({currentVault}: {currentVault: TY
 				</div>
 			</div>
 
-			<div className={cl('col-span-9 z-10', 'flex items-center', 'gap-x-7', 'mt-8 md:mt-0')}>
+			<div className={cl('col-span-9 z-10', 'flex flex-col md:flex-row items-center', 'gap-x-7', 'mt-8 md:mt-0')}>
 				<div className={cl('flex justify-between', 'text-left text-neutral-800/80 whitespace-break-spaces')}>
 					{"Looks like you're holding tokens from a previous version of this vault.\n"}
 					{'To keep earning yield on your assets, migrate to the current vault.'}
 				</div>
 
-				<div className={'ml-auto flex w-50 items-center justify-end'}>
-					<Link href={`/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`}>
+				<div className={'mt-6 flex w-full items-center md:ml-auto md:mt-0 md:w-50 md:justify-end'}>
+					<Link
+						className={'w-full'}
+						href={`/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`}>
 						<button
 							className={cl(
 								'rounded-lg overflow-hidden flex',
-								'px-[42px] py-2 w-50',
+								'px-[42px] py-2 w-full md:w-50',
 								'relative group',
 								'border-none'
 							)}>
@@ -64,7 +66,7 @@ export function VaultsListInternalMigrationRow({currentVault}: {currentVault: TY
 									'bg-[linear-gradient(80deg,_#D21162,_#2C3DA6)]'
 								)}
 							/>
-							<p className={'z-10 whitespace-nowrap text-neutral-900 '}>
+							<p className={'z-10 mx-auto whitespace-nowrap text-neutral-900'}>
 								{'Migrate '}
 								{`${formatAmount(balanceToMigrate.normalized)} ${currentVault.token.symbol}`}
 							</p>

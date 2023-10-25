@@ -18,7 +18,7 @@ import type {TWriteTransaction} from '@yearn-finance/web-lib/utils/wagmi/provide
 import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
 
 function getChainID(chainID: number): number {
-	if ((window as any).ethereum.useForknetForMainnet) {
+	if (typeof window !== 'undefined' && (window as any)?.ethereum?.useForknetForMainnet) {
 		if (chainID === 1) {
 			return 1337;
 		}

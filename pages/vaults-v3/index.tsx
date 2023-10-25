@@ -100,7 +100,7 @@ function PortfolioCard(): ReactElement {
 
 	if (!isActive) {
 		return (
-			<div className={'col-span-12 w-full rounded-3xl bg-neutral-0 p-6 md:col-span-6'}>
+			<div className={'col-span-12 w-full rounded-3xl bg-neutral-100 p-6 md:col-span-6'}>
 				<strong
 					className={'block pb-2 text-3xl font-black text-neutral-900 md:pb-4 md:text-4xl md:leading-[48px]'}>
 					{'Portfolio'}
@@ -139,8 +139,8 @@ function PortfolioCard(): ReactElement {
 		);
 	}
 	return (
-		<div className={'col-span-12 w-full rounded-3xl bg-neutral-0 p-6 md:col-span-6'}>
-			<strong className={'block pb-2 text-3xl font-black text-neutral-900 md:pb-6 md:text-4xl md:leading-[48px]'}>
+		<div className={'col-span-12 w-full rounded-3xl bg-neutral-100 p-6 md:col-span-6'}>
+			<strong className={'block pb-2 text-3xl font-black text-neutral-900 md:pb-4 md:text-4xl md:leading-[48px]'}>
 				{'Portfolio'}
 			</strong>
 			<div className={'flex flex-col gap-4 md:flex-row md:gap-32'}>
@@ -245,7 +245,7 @@ function ListOfVaults(): ReactElement {
 				onSearch={onSearch}
 			/>
 
-			<div className={'col-span-12 flex min-h-[240px] w-full flex-col bg-neutral-100'}>
+			<div className={'col-span-12 flex min-h-[240px] w-full flex-col'}>
 				<Renderable shouldRender={retiredVaults?.length > 0}>
 					<div className={'grid gap-4'}>
 						{retiredVaults
@@ -308,7 +308,7 @@ function Index(): ReactElement {
 	}
 
 	return (
-		<div className={'z-50 w-full'}>
+		<div className={'z-50 w-full bg-neutral-100 pt-20'}>
 			<div className={'relative mx-auto w-full max-w-6xl'}>
 				<div className={'absolute inset-x-0 top-0 w-full px-4 pt-16'}>
 					<div className={'grid h-[448px] grid-cols-75'}>
@@ -320,7 +320,7 @@ function Index(): ReactElement {
 
 			<div
 				className={cl(
-					'relative pb-8 bg-neutral-100',
+					'relative pb-8 bg-neutral-0 z-50',
 					'min-h-screen',
 					'transition-transform duration-300',
 					isCollapsed ? 'translate-y-[576px]' : 'translate-y-0'
@@ -329,7 +329,7 @@ function Index(): ReactElement {
 					<div
 						onClick={onClick}
 						className={'absolute inset-x-0 top-0 flex w-full cursor-pointer items-center justify-center'}>
-						<div className={'relative z-50 -mt-8 flex justify-center rounded-t-3xl'}>
+						<div className={'relative -mt-8 flex justify-center rounded-t-3xl'}>
 							<svg
 								xmlns={'http://www.w3.org/2000/svg'}
 								width={'113'}
@@ -352,8 +352,8 @@ function Index(): ReactElement {
 									viewBox={'0 0 24 24'}
 									fill={'none'}>
 									<path
-										fill-rule={'evenodd'}
-										clip-rule={'evenodd'}
+										fillRule={'evenodd'}
+										clipRule={'evenodd'}
 										d={
 											'M4.34151 16.7526C3.92587 16.3889 3.88375 15.7571 4.24744 15.3415L11.2474 7.34148C11.4373 7.12447 11.7117 6.99999 12 6.99999C12.2884 6.99999 12.5627 7.12447 12.7526 7.34148L19.7526 15.3415C20.1163 15.7571 20.0742 16.3889 19.6585 16.7526C19.2429 17.1162 18.6111 17.0741 18.2474 16.6585L12 9.51858L5.75259 16.6585C5.38891 17.0741 4.75715 17.1162 4.34151 16.7526Z'
 										}

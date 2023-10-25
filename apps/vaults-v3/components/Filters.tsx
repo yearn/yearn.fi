@@ -120,7 +120,7 @@ export function Filters({
 	}, [categories]);
 
 	return (
-		<div className={'relative col-span-12 w-full rounded-3xl bg-neutral-0 p-6 md:col-span-6'}>
+		<div className={'relative col-span-12 w-full rounded-3xl bg-neutral-100 p-6 md:col-span-6'}>
 			<strong className={'block pb-2 text-lg font-black text-neutral-900 md:pb-4 md:text-4xl md:leading-[48px]'}>
 				{'Filters'}
 			</strong>

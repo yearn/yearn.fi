@@ -3,6 +3,7 @@ import {useSolver} from '@vaults/contexts/useSolver';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {Dropdown} from '@common/components/TokenDropdown';
@@ -20,6 +21,8 @@ export function VaultDetailsQuickActionsTo(): ReactElement {
 	function renderMultipleOptionsFallback(): ReactElement {
 		return (
 			<Dropdown
+				className={'!w-auto rounded-lg bg-neutral-300'}
+				comboboxOptionsClassName={'bg-neutral-300 rounded-lg'}
 				defaultOption={possibleOptionsTo[0]}
 				options={possibleOptionsTo}
 				selected={actionParams?.selectedOptionTo}
@@ -38,7 +41,7 @@ export function VaultDetailsQuickActionsTo(): ReactElement {
 						{isDepositing || isMigrationAvailable ? 'To vault' : 'To wallet'}
 					</label>
 					<legend
-						className={'font-number inline text-xs text-neutral-600 md:hidden'}
+						className={'font-number inline text-xs text-neutral-900/50 md:hidden'}
 						suppressHydrationWarning>
 						{`APR ${formatPercent(
 							(currentVault.apr.netAPR + currentVault.apr.extra.stakingRewardsAPR) * 100,
@@ -53,7 +56,7 @@ export function VaultDetailsQuickActionsTo(): ReactElement {
 					fallback={renderMultipleOptionsFallback()}>
 					<div
 						className={
-							'flex h-10 w-full items-center justify-between bg-neutral-300 px-2 text-base text-neutral-900 md:px-3'
+							'flex h-10 w-full items-center justify-between rounded-lg bg-neutral-300 px-2 text-base text-neutral-900 md:px-3'
 						}>
 						<div className={'relative flex flex-row items-center truncate'}>
 							<div className={'h-6 w-6 flex-none rounded-full'}>
@@ -69,7 +72,7 @@ export function VaultDetailsQuickActionsTo(): ReactElement {
 					</div>
 				</Renderable>
 				<legend
-					className={'font-number hidden text-xs text-neutral-600 md:inline'}
+					className={'font-number hidden text-xs text-neutral-900/50 md:inline'}
 					suppressHydrationWarning>
 					{isDepositing
 						? formatPercent(
@@ -88,7 +91,7 @@ export function VaultDetailsQuickActionsTo(): ReactElement {
 					className={'hidden text-base text-neutral-600 md:inline'}>
 					{'You will receive'}
 				</label>
-				<div className={'flex h-10 items-center bg-neutral-300 p-2'}>
+				<div className={'flex h-10 items-center rounded-lg bg-neutral-300 p-2'}>
 					<div className={'flex h-10 w-full flex-row items-center justify-between px-0 py-4'}>
 						{isLoadingExpectedOut ? (
 							<div className={'relative h-10 w-full'}>
@@ -99,9 +102,11 @@ export function VaultDetailsQuickActionsTo(): ReactElement {
 						) : (
 							<input
 								id={'toAmount'}
-								className={
-									'w-full cursor-default overflow-x-scroll border-none bg-transparent px-0 py-4 font-bold outline-none scrollbar-none'
-								}
+								className={cl(
+									'w-full cursor-default bg-transparent rounded-lg',
+									'px-0 py-4 font-bold',
+									'overflow-x-scroll border-none outline-none scrollbar-none'
+								)}
 								type={'text'}
 								disabled
 								value={expectedOut?.normalized || 0}
@@ -112,7 +117,7 @@ export function VaultDetailsQuickActionsTo(): ReactElement {
 				</div>
 				<legend
 					suppressHydrationWarning
-					className={'font-number mr-1 text-end text-xs text-neutral-600 md:mr-0 md:text-start'}>
+					className={'font-number mr-1 text-end text-xs text-neutral-900/50 md:mr-0 md:text-start'}>
 					{formatCounterValue(expectedOut?.normalized || 0, selectedOptionToPricePerToken)}
 				</legend>
 			</div>

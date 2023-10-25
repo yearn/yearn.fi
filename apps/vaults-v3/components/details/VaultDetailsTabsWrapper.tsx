@@ -3,26 +3,21 @@ import {useRouter} from 'next/router';
 import {Listbox, Transition} from '@headlessui/react';
 import {useIsMounted} from '@react-hookz/web';
 import * as Sentry from '@sentry/nextjs';
-import {VaultDetailsAbout} from '@vaults/components/details/tabs/VaultDetailsAbout';
-import {VaultDetailsHistorical} from '@vaults/components/details/tabs/VaultDetailsHistorical';
-import {VaultDetailsStrategies} from '@vaults/components/details/tabs/VaultDetailsStrategies';
+import {VaultDetailsAbout} from '@vaults-v3/components/details/tabs/VaultDetailsAbout';
+import {VaultDetailsStrategies} from '@vaults-v3/components/details/tabs/VaultDetailsStrategies';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {IconAddToMetamask} from '@yearn-finance/web-lib/icons/IconAddToMetamask';
 import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
+import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
-import {useFetch} from '@common/hooks/useFetch';
 import {IconChevron} from '@common/icons/IconChevron';
-import {yDaemonVaultHarvestsSchema} from '@common/schemas/yDaemonVaultsSchemas';
 import {assert} from '@common/utils/assert';
-import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault, TYDaemonVaultHarvests} from '@common/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
 type TTabsOptions = {
 	value: number;
@@ -45,8 +40,7 @@ function Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactE
 	const tabs: TTabsOptions[] = useMemo(
 		(): TTabsOptions[] => [
 			{value: 0, label: 'About', slug: 'about'},
-			{value: 1, label: 'Strategies', slug: 'strategies'},
-			{value: 2, label: 'Historical rates', slug: 'historical-rates'}
+			{value: 1, label: 'Strategies', slug: 'strategies'}
 		],
 		[]
 	);
@@ -83,7 +77,12 @@ function Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactE
 							<p
 								title={tab.label}
 								aria-selected={selectedAboutTabIndex === tab.value}
-								className={'hover-fix tab'}>
+								className={cl(
+									'hover-fix tab',
+									selectedAboutTabIndex === tab.value
+										? '!text-neutral-900'
+										: '!text-neutral-900/50 hover:!text-neutral-900'
+								)}>
 								{tab.label}
 							</p>
 						</button>
@@ -139,32 +138,8 @@ function Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactE
 	);
 }
 
-function ExplorerLink({explorerBaseURI, currentVaultAddress}: TExplorerLinkProps): ReactElement | null {
-	const isMounted = useIsMounted();
-
-	if (!explorerBaseURI || !isMounted()) {
-		return null;
-	}
-
-	return (
-		<a
-			href={`${explorerBaseURI}/address/${currentVaultAddress}`}
-			target={'_blank'}
-			rel={'noopener noreferrer'}>
-			<span className={'sr-only'}>{'Open in explorer'}</span>
-			<IconLinkOut
-				className={
-					'h-5 w-5 cursor-alias text-neutral-600 transition-colors hover:text-neutral-900 md:h-6 md:w-6'
-				}
-			/>
-		</a>
-	);
-}
-
-export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+function AddToWalletLink({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {provider} = useWeb3();
-	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: currentVault.chainID});
-	const [selectedAboutTabIndex, set_selectedAboutTabIndex] = useState(0);
 
 	async function onAddTokenToMetamask(
 		address: string,
@@ -190,23 +165,53 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 		}
 	}
 
-	const {data: yDaemonHarvestsData} = useFetch<TYDaemonVaultHarvests>({
-		endpoint: `${yDaemonBaseUri}/vaults/harvests/${currentVault.address}`,
-		schema: yDaemonVaultHarvestsSchema
-	});
+	return (
+		<button
+			onClick={(): void => {
+				onAddTokenToMetamask(
+					currentVault.address,
+					currentVault.symbol,
+					currentVault.decimals,
+					`https://assets.smold.app/api/token/${currentVault.chainID}/${currentVault.address}/logo-128.png`
+				);
+			}}>
+			<span className={'sr-only'}>{'Add to wallet'}</span>
+			<IconAddToMetamask
+				className={'h-5 w-5 text-neutral-900/50 transition-colors hover:text-neutral-900 md:h-6 md:w-6'}
+			/>
+		</button>
+	);
+}
 
-	const harvestData = useMemo((): {name: string; value: number}[] => {
-		const _yDaemonHarvestsData = [...(yDaemonHarvestsData || [])].reverse();
-		return _yDaemonHarvestsData.map((harvest): {name: string; value: number} => ({
-			name: formatDate(Number(harvest.timestamp) * 1000),
-			value: formatToNormalizedValue(toBigInt(harvest.profit) - toBigInt(harvest.loss), currentVault.decimals)
-		}));
-	}, [currentVault.decimals, yDaemonHarvestsData]);
+function ExplorerLink({explorerBaseURI, currentVaultAddress}: TExplorerLinkProps): ReactElement | null {
+	const isMounted = useIsMounted();
+
+	if (!explorerBaseURI || !isMounted()) {
+		return null;
+	}
+
+	return (
+		<a
+			href={`${explorerBaseURI}/address/${currentVaultAddress}`}
+			target={'_blank'}
+			rel={'noopener noreferrer'}>
+			<span className={'sr-only'}>{'Open in explorer'}</span>
+			<IconLinkOut
+				className={
+					'h-5 w-5 cursor-alias text-neutral-900/50 transition-colors hover:text-neutral-900 md:h-6 md:w-6'
+				}
+			/>
+		</a>
+	);
+}
+
+export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+	const [selectedAboutTabIndex, set_selectedAboutTabIndex] = useState(0);
 
 	return (
 		<div
 			aria-label={'Vault Details'}
-			className={'col-span-12 mb-4 flex flex-col bg-neutral-100'}>
+			className={'col-span-12 mb-4 flex flex-col rounded-b-3xl bg-neutral-100'}>
 			<div className={'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'}>
 				<Tabs
 					selectedAboutTabIndex={selectedAboutTabIndex}
@@ -214,22 +219,7 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 				/>
 
 				<div className={'flex flex-row items-center justify-end space-x-2 pb-0 md:pb-4 md:last:space-x-4'}>
-					<button
-						onClick={(): void => {
-							onAddTokenToMetamask(
-								currentVault.address,
-								currentVault.symbol,
-								currentVault.decimals,
-								`https://assets.smold.app/api/token/${currentVault.chainID}/${currentVault.address}/logo-128.png`
-							);
-						}}>
-						<span className={'sr-only'}>{'Add to wallet'}</span>
-						<IconAddToMetamask
-							className={
-								'h-5 w-5 text-neutral-600 transition-colors hover:text-neutral-900 md:h-6 md:w-6'
-							}
-						/>
-					</button>
+					<AddToWalletLink currentVault={currentVault} />
 					<ExplorerLink
 						explorerBaseURI={getNetwork(currentVault.chainID)?.defaultBlockExplorer}
 						currentVaultAddress={currentVault.address}
@@ -240,21 +230,11 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 			<div className={'-mt-0.5 h-0.5 w-full bg-neutral-300'} />
 
 			<Renderable shouldRender={currentVault && isZero(selectedAboutTabIndex)}>
-				<VaultDetailsAbout
-					currentVault={currentVault}
-					harvestData={harvestData}
-				/>
+				<VaultDetailsAbout currentVault={currentVault} />
 			</Renderable>
 
 			<Renderable shouldRender={currentVault && selectedAboutTabIndex === 1}>
 				<VaultDetailsStrategies currentVault={currentVault} />
-			</Renderable>
-
-			<Renderable shouldRender={currentVault && selectedAboutTabIndex === 2}>
-				<VaultDetailsHistorical
-					currentVault={currentVault}
-					harvestData={harvestData}
-				/>
 			</Renderable>
 		</div>
 	);
