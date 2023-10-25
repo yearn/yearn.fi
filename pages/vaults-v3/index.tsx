@@ -45,9 +45,9 @@ function BrandNewVaultCard(): ReactElement {
 			className={cl(
 				'h-full rounded-3xl',
 				'pr-2 pl-4 md:px-10 pb-4 md:pb-8 pt-6 md:pt-10',
-				'col-span-75 md:col-span-46'
-			)}
-			style={{background: 'linear-gradient(73deg, #D21162 24.91%, #2C3DA6 99.66%)'}}>
+				'col-span-75 md:col-span-46',
+				'bg-[linear-gradient(73deg,_#2C3DA6_24.91%,_#D21162_99.66%)]'
+			)}>
 			<h1
 				className={cl(
 					'mb-2 md:mb-8 font-black text-neutral-900',

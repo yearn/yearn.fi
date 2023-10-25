@@ -402,7 +402,7 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 	return (
 		<Link
 			key={`${currentVault.address}`}
-			href={`/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`}>
+			href={`/vaults-v3/${currentVault.chainID}/${toAddress(currentVault.address)}`}>
 			<div
 				className={cl(
 					'grid w-full grid-cols-1 md:grid-cols-12 rounded-3xl',
