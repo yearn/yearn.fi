@@ -1,9 +1,6 @@
 import {useMemo, useState} from 'react';
-import {useIsMounted} from '@react-hookz/web';
 import {findLatestApr} from '@vaults/components/details/tabs/findLatestApr';
-import {GraphForStrategyReports} from '@vaults/components/graphs/GraphForStrategyReports';
 import {yDaemonReportsSchema} from '@vaults/schemas/reportsSchema';
-import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {IconCopy} from '@yearn-finance/web-lib/icons/IconCopy';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -41,7 +38,6 @@ function RiskScoreElement({label, value}: TRiskScoreElementProps): ReactElement 
 
 function VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
 	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: currentVault.chainID});
-	const isMounted = useIsMounted();
 
 	const riskScoreElementsMap = useMemo((): TRiskScoreElementProps[] => {
 		const {riskDetails} = strategy.risk || {};
@@ -101,7 +97,7 @@ function VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
 							className={'text-neutral-600'}
 							dangerouslySetInnerHTML={{
 								__html: parseMarkdown(
-									strategy.description.replaceAll('{{token}}', currentVault.token.symbol)
+									(strategy.description || '').replaceAll('{{token}}', currentVault.token.symbol)
 								)
 							}}
 						/>
@@ -174,22 +170,8 @@ function VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
 							<div className={'col-span-2 flex flex-col space-y-0 md:space-y-2'}>
 								<p className={'text-xxs text-neutral-600 md:text-xs'}>{'Perfomance fee'}</p>
 								<b className={'font-number text-xl text-neutral-600'}>
-									{formatPercent((strategy.details?.performanceFee || 0) * 100, 0)}
+									{`${formatAmount(Number(strategy.details?.performanceFee || 0) / 100, 0, 2)}%`}
 								</b>
-							</div>
-						</div>
-
-						<div className={'mt-auto pt-8'}>
-							<p className={'text-neutral-600'}>{'Historical APR'}</p>
-							<div className={'mt-4 flex flex-row border-b border-l border-neutral-300'}>
-								<Renderable shouldRender={isMounted()}>
-									<GraphForStrategyReports
-										vaultChainID={currentVault.chainID}
-										vaultDecimals={currentVault.decimals}
-										vaultTicker={currentVault?.token?.symbol || 'token'}
-										strategy={strategy}
-									/>
-								</Renderable>
 							</div>
 						</div>
 					</div>

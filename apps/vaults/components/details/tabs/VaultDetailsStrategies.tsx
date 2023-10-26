@@ -101,7 +101,7 @@ function VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
 							className={'text-neutral-600'}
 							dangerouslySetInnerHTML={{
 								__html: parseMarkdown(
-									strategy.description.replaceAll('{{token}}', currentVault.token.symbol)
+									(strategy.description || '').replaceAll('{{token}}', currentVault.token.symbol)
 								)
 							}}
 						/>
