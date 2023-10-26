@@ -1,14 +1,11 @@
 import React, {Fragment, memo, useCallback, useEffect} from 'react';
 import localFont from 'next/font/local';
 import {usePathname} from 'next/navigation';
-import useSWR from 'swr';
 import {AnimatePresence, domAnimation, LazyMotion, motion} from 'framer-motion';
-import {useIntervalEffect, useIsMounted, useLocalStorageValue} from '@react-hookz/web';
+import {useLocalStorageValue} from '@react-hookz/web';
 import {arbitrum, base, fantom, mainnet, optimism, polygon} from '@wagmi/chains';
 import {WithYearn} from '@yearn-finance/web-lib/contexts/WithYearn';
-import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
-import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
 import {localhost} from '@yearn-finance/web-lib/utils/wagmi/networks';
 import {AppHeader} from '@common/components/AppHeader';
 import Meta from '@common/components/Meta';
@@ -17,9 +14,7 @@ import {MenuContextApp} from '@common/contexts/useMenu';
 import {WalletContextApp} from '@common/contexts/useWallet';
 import {YearnContextApp} from '@common/contexts/useYearn';
 import {useCurrentApp} from '@common/hooks/useCurrentApp';
-import {IconSpinner} from '@common/icons/IconSpinner';
 import {variants} from '@common/utils/animations';
-import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 
 import type {NextComponentType} from 'next';
 import type {AppProps} from 'next/app';
@@ -147,68 +142,6 @@ const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 		</>
 	);
 });
-
-/* 🔵 - Yearn Finance ******************************************************************************
- ** The function 'NetworkStatusIndicator' is a React functional component that returns a
- ** ReactElement.
- ** It uses several hooks and functions to fetch and display the status of the network.
- **
- ** The 'useChainID' hook is used to get the current chain ID.
- ** The 'useIsMounted' hook is used to check if the component is currently mounted.
- ** The 'useYDaemonBaseURI' function is used to get the base URI of the yDaemon for the current
- ** chain ID.
- ** The 'useSWR' hook is used to fetch the status of the network from the yDaemon.
- **
- ** The 'useEffect' hook is used to re-fetch the status whenever the chain ID changes.
- ** The 'useIntervalEffect' hook is used to re-fetch the status every 10 seconds if the status is
- ** not 'OK'.
- **
- ** If the component is not mounted, or the status is 'OK' or undefined it returns an empty Fragment
- ** Otherwise, it returns a div with a spinner icon and a message indicating that the data points
- ** are being updated.
- **************************************************************************************************/
-// eslint-disable-next-line unused-imports/no-unused-vars, @typescript-eslint/no-unused-vars
-function NetworkStatusIndicator(): ReactElement {
-	const {safeChainID} = useChainID();
-	const isMounted = useIsMounted();
-	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: 1});
-	const {data: status, mutate} = useSWR<'Not Started' | 'Loading' | 'OK'>(`${yDaemonBaseUri}/status`, baseFetcher, {
-		revalidateOnFocus: true,
-		revalidateOnReconnect: true,
-		revalidateOnMount: true
-	});
-
-	useEffect((): void => {
-		safeChainID;
-		mutate();
-	}, [mutate, safeChainID]);
-
-	useIntervalEffect((): void => {
-		if (status !== 'OK') {
-			mutate();
-		}
-	}, 10000);
-
-	if (!isMounted) {
-		return <Fragment />;
-	}
-	if (status === 'OK') {
-		return <Fragment />;
-	}
-	if (!status) {
-		return <Fragment />;
-	}
-
-	return (
-		<div
-			className={
-				'fixed inset-x-0 bottom-0 flex items-center justify-center space-x-2 bg-yearn-blue py-2 text-center text-sm text-white'
-			}>
-			<IconSpinner className={'h-3 w-3'} />
-			<b>{"Updating data points, data may be inaccurate for a few minutes. Don't panic. DON'T PANIC!!!"}</b>
-		</div>
-	);
-}
 
 /**** 🔵 - Yearn Finance ***************************************************************************
  ** The 'App' function is a React functional component that returns a ReactElement. It uses several
