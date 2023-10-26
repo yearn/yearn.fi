@@ -79,7 +79,7 @@ export function useVaultFilter(
 		[getToken]
 	);
 
-	const v3Vaults = useFilteredVaults(vaults, ({version}): boolean => version.split('.')?.[0] === '3');
+	const v3Vaults = useFilteredVaults(vaults, ({version}): boolean => (version || '')?.split('.')?.[0] === '3');
 	const boostedVaults = useFilteredVaults(vaults, ({apr}): boolean => apr.extra.stakingRewardsAPR > 0);
 	const curveVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Curve');
 	const velodromeVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Velodrome');

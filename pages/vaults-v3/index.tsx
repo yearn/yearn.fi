@@ -65,12 +65,14 @@ function BrandNewVaultCard(): ReactElement {
 					className={cl(
 						'mb-2 md:mb-10 font-black text-neutral-900',
 						'text-[48px] md:text-[56px] md:leading-[64px] leading-[56px]',
-						'whitespace-break-spaces'
+						'whitespace-break-spaces uppercase'
 					)}>
-					{'BRAND NEW\nVAULTS'}
+					{'Discover Brand\nNew Vaults'}
 				</h1>
 				<p className={'mb-4 whitespace-break-spaces text-base text-[#F2B7D0] md:text-lg'}>
-					{'Corn asked for new pretty design for this page,\nso hope you like it mates <3'}
+					{
+						'Yearn v3 is a new yield paradigm offering better automation,\ncomposability and flexibility. Enjoy!'
+					}
 				</p>
 				<div>
 					<button className={'rounded-3xl bg-white px-12 py-2 font-bold text-[#CE1364]'}>

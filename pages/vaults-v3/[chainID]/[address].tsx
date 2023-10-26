@@ -10,7 +10,7 @@ import {Wrapper} from '@vaults-v3/Wrapper';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
-import TokenIcon from '@common/components/TokenIcon';
+import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useWallet} from '@common/contexts/useWallet';
 import {useFetch} from '@common/hooks/useFetch';
 import {type TYDaemonVault, yDaemonVaultSchema} from '@common/schemas/yDaemonVaultsSchemas';
@@ -120,10 +120,12 @@ function Index(): ReactElement | null {
 							'h-16 w-16 md:h-20 md:w-20 rounded-2xl bg-[#FAD1ED7A] backdrop-blur',
 							'flex justify-center items-center'
 						)}>
-						<TokenIcon
+						<ImageWithFallback
 							className={'h-10 w-10 md:h-12 md:w-12'}
-							chainID={currentVault.chainID}
-							address={currentVault.address}
+							src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.address}/logo-128.png`}
+							alt={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.address}/logo-128.png`}
+							width={72}
+							height={72}
 						/>
 					</div>
 				</div>

@@ -170,7 +170,7 @@ const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 function NetworkStatusIndicator(): ReactElement {
 	const {safeChainID} = useChainID();
 	const isMounted = useIsMounted();
-	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: 137});
+	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: 1});
 	const {data: status, mutate} = useSWR<'Not Started' | 'Loading' | 'OK'>(`${yDaemonBaseUri}/status`, baseFetcher, {
 		revalidateOnFocus: true,
 		revalidateOnReconnect: true,

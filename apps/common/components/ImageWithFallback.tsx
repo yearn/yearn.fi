@@ -1,14 +1,13 @@
 import React, {useState} from 'react';
 import Image from 'next/image';
 import {useUpdateEffect} from '@react-hookz/web';
-import {performBatchedUpdates} from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 
 import type {ImageProps} from 'next/image';
 import type {CSSProperties, ReactElement} from 'react';
 
 export function ImageWithFallback(props: ImageProps): ReactElement {
 	const {alt, src, ...rest} = props;
-	const [imageSrc, set_imageSrc] = useState(`${src}?v=1&fallback=true`);
+	const [imageSrc, set_imageSrc] = useState(`${src}?fallback=true`);
 	const [imageStyle, set_imageStyle] = useState<CSSProperties>({});
 
 	useUpdateEffect((): void => {
@@ -22,10 +21,8 @@ export function ImageWithFallback(props: ImageProps): ReactElement {
 			src={imageSrc}
 			style={imageStyle}
 			onError={(): void => {
-				performBatchedUpdates((): void => {
-					set_imageSrc('/placeholder.png');
-					set_imageStyle({filter: 'opacity(0.2)'});
-				});
+				set_imageSrc('/placeholder.png');
+				set_imageStyle({filter: 'opacity(0.2)'});
 			}}
 			{...rest}
 		/>

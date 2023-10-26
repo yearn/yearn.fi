@@ -18,7 +18,6 @@ function TokenIcon({
 	return (
 		<>
 			<ImageWithFallback
-				loading={'eager'}
 				className={className}
 				src={`${process.env.BASE_YEARN_ASSETS_URI}/${chainID}/${toAddress(address)}/logo-128.png`}
 				alt={''}
