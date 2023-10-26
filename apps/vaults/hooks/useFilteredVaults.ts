@@ -21,7 +21,8 @@ export function useFilteredVaults(
 
 export function useVaultFilter(
 	categories: string[],
-	chains: number[]
+	chains: number[],
+	v3?: boolean
 ): {
 	activeVaults: TYDaemonVault[];
 	retiredVaults: TYDaemonVault[];
@@ -78,6 +79,7 @@ export function useVaultFilter(
 		[getToken]
 	);
 
+	const v3Vaults = useFilteredVaults(vaults, ({version}): boolean => version.split('.')?.[0] === '3');
 	const boostedVaults = useFilteredVaults(vaults, ({apr}): boolean => apr.extra.stakingRewardsAPR > 0);
 	const curveVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Curve');
 	const velodromeVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Velodrome');
@@ -105,6 +107,9 @@ export function useVaultFilter(
 	 **********************************************************************************************/
 	const activeVaults = useDeepCompareMemo((): TYDaemonVault[] => {
 		let _vaultList: TYDaemonVault[] = [];
+		if (v3) {
+			return v3Vaults;
+		}
 
 		if (categories.includes('featured')) {
 			_vaultList.sort(
@@ -149,7 +154,9 @@ export function useVaultFilter(
 		);
 		return _vaultList;
 	}, [
+		v3,
 		categories,
+		v3Vaults,
 		curveFactoryVaults,
 		curveVaults,
 		balancerVaults,

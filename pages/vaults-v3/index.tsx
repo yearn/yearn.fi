@@ -193,7 +193,7 @@ function ListOfVaults(): ReactElement {
 		onChangeSortDirection,
 		onChangeSortBy
 	} = useQueryArguments();
-	const {activeVaults, migratableVaults, retiredVaults} = useVaultFilter(categories, chains);
+	const {activeVaults, migratableVaults, retiredVaults} = useVaultFilter(categories, chains, true);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	 **	Then, on the activeVaults list, we apply the search filter. The search filter is
