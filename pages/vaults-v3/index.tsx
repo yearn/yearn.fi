@@ -38,29 +38,47 @@ function Counter({value}: {value: number}): ReactElement {
 	return <motion.span>{display}</motion.span>;
 }
 
+// // After delay
+// animation-delay: 1ms;
+// // Change to: "Color 2";
+// // Animate: Smart animate;
+// animation-timing-function: linear;
+// animation-duration: 2000ms;
+
 function BrandNewVaultCard(): ReactElement {
 	return (
 		<div
 			className={cl(
-				'h-full rounded-3xl',
+				'h-full rounded-3xl relative overflow-hidden',
 				'pr-2 pl-4 pb-4 pt-6 md:p-10',
-				'col-span-75 md:col-span-46',
-				'bg-[linear-gradient(73deg,_#D21162_24.91%,_#2C3DA6_99.66%)]'
+				'col-span-75 md:col-span-46'
 			)}>
-			<h1
-				className={cl(
-					'mb-2 md:mb-10 font-black text-neutral-900',
-					'text-[48px] md:text-[56px] md:leading-[64px] leading-[56px]',
-					'whitespace-break-spaces'
-				)}>
-				{'BRAND NEW\nVAULTS'}
-			</h1>
-			<p className={'mb-4 whitespace-break-spaces text-base text-[#F2B7D0] md:text-lg'}>
-				{'Corn asked for new pretty design for this page,\nso hope you like it mates <3'}
-			</p>
-			<div>
-				<button className={'rounded-3xl bg-white px-12 py-2 font-bold text-[#CE1364]'}>{'Explore more'}</button>
+			<div className={'relative z-10'}>
+				<h1
+					className={cl(
+						'mb-2 md:mb-10 font-black text-neutral-900',
+						'text-[48px] md:text-[56px] md:leading-[64px] leading-[56px]',
+						'whitespace-break-spaces'
+					)}>
+					{'BRAND NEW\nVAULTS'}
+				</h1>
+				<p className={'mb-4 whitespace-break-spaces text-base text-[#F2B7D0] md:text-lg'}>
+					{'Corn asked for new pretty design for this page,\nso hope you like it mates <3'}
+				</p>
+				<div>
+					<button className={'rounded-3xl bg-white px-12 py-2 font-bold text-[#CE1364]'}>
+						{'Explore more'}
+					</button>
+				</div>
 			</div>
+			<div
+				className={cl(
+					'absolute -inset-80 rounded-3xl',
+					'pointer-events-none',
+					'bg-[linear-gradient(73deg,_#D21162_24.91%,_#2C3DA6_99.66%)]',
+					'animate-spin-slow'
+				)}
+			/>
 		</div>
 	);
 }

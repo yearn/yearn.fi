@@ -65,6 +65,19 @@ module.exports = {
 				'3xl': ['32px', '40px'],
 				'7xl': ['64px', '72px'],
 				'8xl': ['88px', '104px']
+			},
+			animation: {
+				'spin-slow': 'spin 4s linear infinite'
+			},
+			keyframes: {
+				'spin-slow': {
+					from: {
+						transform: 'rotate(0deg)'
+					},
+					to: {
+						transform: 'rotate(360deg)'
+					}
+				}
 			}
 		}
 	},
