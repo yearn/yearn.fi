@@ -167,6 +167,7 @@ const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
  ** Otherwise, it returns a div with a spinner icon and a message indicating that the data points
  ** are being updated.
  **************************************************************************************************/
+// eslint-disable-next-line unused-imports/no-unused-vars, @typescript-eslint/no-unused-vars
 function NetworkStatusIndicator(): ReactElement {
 	const {safeChainID} = useChainID();
 	const isMounted = useIsMounted();
@@ -230,23 +231,20 @@ const App = memo(function App(props: AppProps): ReactElement {
 	const {manifest} = useCurrentApp(router);
 
 	return (
-		<>
-			<MenuContextApp>
-				<YearnContextApp>
-					<WalletContextApp>
-						<Fragment>
-							<Meta meta={manifest} />
-							<WithLayout
-								Component={Component}
-								pageProps={pageProps}
-								router={props.router}
-							/>
-						</Fragment>
-					</WalletContextApp>
-				</YearnContextApp>
-			</MenuContextApp>
-			<NetworkStatusIndicator />
-		</>
+		<MenuContextApp>
+			<YearnContextApp>
+				<WalletContextApp>
+					<Fragment>
+						<Meta meta={manifest} />
+						<WithLayout
+							Component={Component}
+							pageProps={pageProps}
+							router={props.router}
+						/>
+					</Fragment>
+				</WalletContextApp>
+			</YearnContextApp>
+		</MenuContextApp>
 	);
 });
 
