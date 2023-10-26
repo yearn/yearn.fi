@@ -258,7 +258,6 @@ export function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}
 						<Renderable
 							shouldRender={!(currentVault.apr?.type === 'new' && hasZeroAPR)}
 							fallback={'New'}>
-							{'⚡️ '}
 							<span
 								className={
 									'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
