@@ -38,13 +38,20 @@ function Counter({value}: {value: number}): ReactElement {
 	return <motion.span>{display}</motion.span>;
 }
 
-// // After delay
-// animation-delay: 1ms;
-// // Change to: "Color 2";
-// // Animate: Smart animate;
-// animation-timing-function: linear;
-// animation-duration: 2000ms;
-
+function Background(): ReactElement {
+	return (
+		<motion.div
+			transition={{duration: 10, delay: 0, repeat: Infinity, ease: 'linear'}}
+			animate={{
+				background: [
+					`linear-gradient(0deg, #D21162 24.91%, #2C3DA6 99.66%)`,
+					`linear-gradient(360deg, #D21162 24.91%, #2C3DA6 99.66%)`
+				]
+			}}
+			className={cl('absolute inset-0', 'pointer-events-none')}
+		/>
+	);
+}
 function BrandNewVaultCard(): ReactElement {
 	return (
 		<div
@@ -71,14 +78,7 @@ function BrandNewVaultCard(): ReactElement {
 					</button>
 				</div>
 			</div>
-			<div
-				className={cl(
-					'absolute -inset-80 rounded-3xl',
-					'pointer-events-none',
-					'bg-[linear-gradient(73deg,_#D21162_24.91%,_#2C3DA6_99.66%)]',
-					'animate-spin-slow'
-				)}
-			/>
+			<Background />
 		</div>
 	);
 }
