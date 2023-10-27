@@ -6,6 +6,7 @@ import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
 import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
 import {setZapOption} from '@vaults/utils/zapOptions';
+import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {VAULT_ABI} from '@yearn-finance/web-lib/utils/abi/vault.abi';
 import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {
@@ -148,6 +149,7 @@ export function ActionFlowContextApp({
 	children: ReactNode;
 	currentVault: TYDaemonVault;
 }): React.ReactElement {
+	const {address} = useWeb3();
 	const {getBalance} = useWallet();
 	const {listTokens: listZapTokens, tokensList} = useWalletForZap();
 	const {zapProvider, isStakingOpBoostedVaults} = useYearn();
@@ -169,7 +171,8 @@ export function ActionFlowContextApp({
 				address: currentVault.address,
 				abi: VAULT_V3_ABI,
 				chainId: currentVault.chainID,
-				functionName: 'deposit_limit'
+				functionName: 'maxDeposit',
+				args: [toAddress(address)]
 			}
 		],
 		select: (results): bigint => decodeAsBigInt(results[0], decodeAsBigInt(results[1], 0n))
