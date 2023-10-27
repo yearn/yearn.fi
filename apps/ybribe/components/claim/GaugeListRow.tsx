@@ -79,22 +79,22 @@ function GaugeRowItemAPR({address, value}: {address: TAddress; value: bigint}): 
 	);
 }
 
-export function GaugeListRow({currentGauge, category}: {currentGauge: TCurveGauge; category: string}): ReactElement {
+export function GaugeListRow({currentGauge}: {currentGauge: TCurveGauge}): ReactElement {
 	const {isActive, provider} = useWeb3();
 	const {currentRewards, nextRewards, claimable, refresh} = useBribes();
 	const [txStatusClaim, set_txStatusClaim] = useState(defaultTxStatus);
 
 	const currentRewardsForCurrentGauge = useMemo((): TDict<bigint> => {
 		return currentRewards?.[currentGauge.gauge] || {};
-	}, [currentGauge.gauge, currentRewards, category]);
+	}, [currentGauge.gauge, currentRewards]);
 
 	const nextRewardsForCurrentGauge = useMemo((): TDict<bigint> => {
 		return nextRewards?.[currentGauge.gauge] || {};
-	}, [currentGauge.gauge, nextRewards, category]);
+	}, [currentGauge.gauge, nextRewards]);
 
 	const claimableForCurrentGauge = useMemo((): TDict<bigint> => {
 		return claimable?.[currentGauge.gauge] || {};
-	}, [currentGauge.gauge, claimable, category]);
+	}, [currentGauge.gauge, claimable]);
 
 	const claimableForCurrentGaugeMap = Object.entries(claimableForCurrentGauge || {}) || [];
 	const currentRewardsForCurrentGaugeMap = Object.entries(currentRewardsForCurrentGauge || {}) || [];
@@ -115,7 +115,7 @@ export function GaugeListRow({currentGauge, category}: {currentGauge: TCurveGaug
 				refresh();
 			}
 		},
-		[provider, refresh]
+		[currentGauge.gauge, provider, refresh]
 	);
 
 	function renderDefaultValueUSDFallback(): ReactElement {

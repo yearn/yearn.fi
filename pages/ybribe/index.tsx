@@ -7,13 +7,13 @@ import {useSessionStorage} from '@yearn-finance/web-lib/hooks/useSessionStorage'
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isTAddress} from '@yearn-finance/web-lib/utils/isTAddress';
-import {ListHead} from '@common/components/ListHead';
-import {ListHero} from '@common/components/ListHero';
 import {useCurve} from '@common/contexts/useCurve';
 import {useYearn} from '@common/contexts/useYearn';
 import {stringSort} from '@common/utils/sort';
 import {GaugeListEmpty} from '@yBribe/components/claim/GaugeListEmpty';
 import {GaugeListRow} from '@yBribe/components/claim/GaugeListRow';
+import {ListHead} from '@yBribe/components/ListHead';
+import {ListHero} from '@yBribe/components/ListHero';
 import {useBribes} from '@yBribe/contexts/useBribes';
 import {Wrapper} from '@yBribe/Wrapper';
 
@@ -180,13 +180,11 @@ function GaugeList(): ReactElement {
 					searchValue={searchValue}
 					set_searchValue={set_searchValue}
 				/>
+
 				<ListHead
 					sortBy={sort.sortBy}
 					sortDirection={sort.sortDirection}
 					onSort={onSort}
-					wrapperClassName={'grid-cols-12'}
-					tokenClassName={'col-span-4'}
-					dataClassName={'col-span-8 grid-cols-8'}
 					items={[
 						{label: 'Gauges', value: 'name', sortable: true},
 						{
@@ -199,7 +197,7 @@ function GaugeList(): ReactElement {
 							label: 'APR',
 							value: 'apr',
 							sortable: false,
-							className: '!col-span-2'
+							className: '!col-span-3'
 						},
 						{
 							label: '$/veCRV',
@@ -232,7 +230,6 @@ function GaugeList(): ReactElement {
 								<GaugeListRow
 									key={gauge.name}
 									currentGauge={gauge}
-									category={category}
 								/>
 							)
 						)}
