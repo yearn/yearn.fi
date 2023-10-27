@@ -172,7 +172,7 @@ export function GaugeListRow({currentGauge}: {currentGauge: TCurveGauge}): React
 							height={40}
 							quality={90}
 							loading={'eager'}
-							src={`${process.env.BASE_YEARN_ASSETS_URI}1/${currentGauge.swap_token}/logo-128.png`}
+							src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${currentGauge.swap_token}/logo-128.png`}
 						/>
 					</div>
 					<p>{currentGauge.name}</p>
