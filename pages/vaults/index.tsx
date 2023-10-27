@@ -7,7 +7,7 @@ import {VaultsListInternalMigrationRow} from '@vaults/components/list/VaultsList
 import {VaultsListRetired} from '@vaults/components/list/VaultsListRetired';
 import {VaultsListRow} from '@vaults/components/list/VaultsListRow';
 import {ListHero} from '@vaults/components/ListHero';
-import {ALL_VAULTS_CATEGORIES} from '@vaults/constants';
+import {ALL_VAULTS_CATEGORIES, ALL_VAULTS_CATEGORIES_KEYS} from '@vaults/constants';
 import {useVaultFilter} from '@vaults/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
@@ -104,7 +104,7 @@ function ListOfVaults(): ReactElement {
 		onChangeChains,
 		onChangeSortDirection,
 		onChangeSortBy
-	} = useQueryArguments();
+	} = useQueryArguments({defaultCategories: ALL_VAULTS_CATEGORIES_KEYS});
 	const {activeVaults, migratableVaults, retiredVaults} = useVaultFilter(categories, chains);
 
 	/* 🔵 - Yearn Finance **************************************************************************

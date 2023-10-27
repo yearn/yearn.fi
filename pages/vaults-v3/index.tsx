@@ -1,5 +1,4 @@
 import {Fragment, useEffect, useMemo, useState} from 'react';
-import {QueryParamProvider} from 'use-query-params';
 import {motion, useSpring, useTransform} from 'framer-motion';
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
 import {VaultsListRetired} from '@vaults/components/list/VaultsListRetired';
@@ -10,6 +9,7 @@ import {Filters} from '@vaults-v3/components/Filters';
 import {VaultsListInternalMigrationRow} from '@vaults-v3/components/list/VaultsListInternalMigrationRow';
 import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
 import {VaultsV3ListRow} from '@vaults-v3/components/list/VaultsV3ListRow';
+import {ALL_CATEGORIES_KEYS} from '@vaults-v3/constants';
 import {V3Mask} from '@vaults-v3/Mark';
 import {Wrapper} from '@vaults-v3/Wrapper';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
@@ -19,7 +19,6 @@ import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
-import {NextQueryParamAdapter} from '@common/utils/QueryParamsProvider';
 
 import type {NextRouter} from 'next/router';
 import type {ReactElement, ReactNode} from 'react';
@@ -65,14 +64,12 @@ function BrandNewVaultCard(): ReactElement {
 					className={cl(
 						'mb-2 md:mb-10 font-black text-neutral-900',
 						'text-[48px] md:text-[56px] md:leading-[64px] leading-[56px]',
-						'whitespace-break-spaces uppercase'
+						'whitespace-break-spaces'
 					)}>
-					{'Discover Brand\nNew Vaults'}
+					{'BRAND NEW\nVAULTS'}
 				</h1>
 				<p className={'mb-4 whitespace-break-spaces text-base text-[#F2B7D0] md:text-lg'}>
-					{
-						'Yearn v3 is a new yield paradigm offering better automation,\ncomposability and flexibility. Enjoy!'
-					}
+					{'Corn asked for new pretty design for this page,\nso hope you like it mates <3'}
 				</p>
 				<div>
 					<button className={'rounded-3xl bg-white px-12 py-2 font-bold text-[#CE1364]'}>
@@ -194,7 +191,7 @@ function ListOfVaults(): ReactElement {
 		onChangeChains,
 		onChangeSortDirection,
 		onChangeSortBy
-	} = useQueryArguments();
+	} = useQueryArguments({defaultCategories: ALL_CATEGORIES_KEYS});
 	const {activeVaults, migratableVaults, retiredVaults} = useVaultFilter(categories, chains, true);
 
 	/* 🔵 - Yearn Finance **************************************************************************
@@ -387,11 +384,7 @@ function Index(): ReactElement {
 
 					<div className={'grid grid-cols-12 gap-4 pt-6 md:gap-6'}>
 						<PortfolioCard />
-						<QueryParamProvider
-							adapter={NextQueryParamAdapter}
-							options={{removeDefaultsFromUrl: true, updateType: 'replaceIn'}}>
-							<ListOfVaults />
-						</QueryParamProvider>
+						<ListOfVaults />
 					</div>
 				</div>
 			</div>

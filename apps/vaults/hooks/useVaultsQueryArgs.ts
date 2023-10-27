@@ -18,7 +18,7 @@ type TQueryArgs = {
 	onChangeSortDirection: (value: TSortDirection) => void;
 	onChangeSortBy: (value: TPossibleSortBy) => void;
 };
-function useQueryArguments(): TQueryArgs {
+function useQueryArguments({defaultCategories}: {defaultCategories?: string[]}): TQueryArgs {
 	const allChains = useSupportedChains().map((chain): number => chain.id);
 
 	/** 🔵 - Yearn *********************************************************************************
@@ -74,7 +74,7 @@ function useQueryArguments(): TQueryArgs {
 		} else {
 			set_categoriesParam(categories);
 		}
-	}, [categoriesParam, categories, set_categoriesParam]);
+	}, [categoriesParam, categories, defaultCategories, set_categoriesParam]);
 
 	/** 🔵 - Yearn *********************************************************************************
 	 **	This useEffect hook is used to synchronize the chains

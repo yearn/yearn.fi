@@ -209,9 +209,7 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 	const [selectedAboutTabIndex, set_selectedAboutTabIndex] = useState(0);
 
 	return (
-		<div
-			aria-label={'Vault Details'}
-			className={'col-span-12 mb-4 flex flex-col rounded-b-3xl bg-neutral-100'}>
+		<div className={'col-span-12 mb-4 flex flex-col rounded-b-3xl bg-neutral-100'}>
 			<div className={'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'}>
 				<Tabs
 					selectedAboutTabIndex={selectedAboutTabIndex}
