@@ -1,6 +1,9 @@
 import {useEffect, useRef} from 'react';
 import {Balancer} from 'react-wrap-balancer';
 import Link from 'next/link';
+import {motion} from 'framer-motion';
+import {V3Mask} from '@vaults-v3/Mark';
+import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {LogoYearn} from '@common/icons/LogoYearn';
@@ -99,7 +102,20 @@ const apps = [
 		)
 	}
 ];
-
+function AnimatedGradientBackgroundForV3(): ReactElement {
+	return (
+		<motion.div
+			transition={{duration: 10, delay: 0, repeat: Infinity, ease: 'linear'}}
+			animate={{
+				background: [
+					`linear-gradient(0deg, #D21162 24.91%, #2C3DA6 99.66%)`,
+					`linear-gradient(360deg, #D21162 24.91%, #2C3DA6 99.66%)`
+				]
+			}}
+			className={cl('absolute inset-0', 'pointer-events-none')}
+		/>
+	);
+}
 function AppBox({app}: {app: (typeof apps)[0]}): ReactElement {
 	useEffect((): VoidFunction => {
 		const featuresEl = document.getElementById(app.href);
@@ -130,6 +146,35 @@ function AppBox({app}: {app: (typeof apps)[0]}): ReactElement {
 		}
 		return (): void => undefined;
 	}, [app.href]);
+
+	if (app.title === 'V3') {
+		return (
+			<Link
+				prefetch={false}
+				key={app.href}
+				href={app.href}>
+				<div
+					id={app.href}
+					className={
+						'relative flex h-full w-full cursor-pointer flex-col items-center overflow-hidden rounded-3xl border border-neutral-300/0 p-6'
+					}>
+					<div className={'z-10 flex w-full flex-col items-center'}>
+						<V3Mask className={'-my-10 w-42'} />
+						<div className={'pt-2 text-center'}>
+							<p
+								className={cl(
+									'font-black text-neutral-900 text-lg',
+									'whitespace-break-spaces uppercase'
+								)}>
+								{`Discover brand new vaults`}
+							</p>
+						</div>
+					</div>
+					<AnimatedGradientBackgroundForV3 />
+				</div>
+			</Link>
+		);
+	}
 
 	return (
 		<Link
