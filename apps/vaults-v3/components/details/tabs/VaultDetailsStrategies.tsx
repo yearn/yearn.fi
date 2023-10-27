@@ -1,6 +1,7 @@
 import {useMemo, useState} from 'react';
 import {findLatestApr} from '@vaults/components/details/tabs/findLatestApr';
 import {yDaemonReportsSchema} from '@vaults/schemas/reportsSchema';
+import {VaultsV3ListRow} from '@vaults-v3/components/list/VaultsV3ListRow';
 import {IconCopy} from '@yearn-finance/web-lib/icons/IconCopy';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -9,6 +10,7 @@ import {formatDuration} from '@yearn-finance/web-lib/utils/format.time';
 import {copyToClipboard, parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
 import {SearchBar} from '@common/components/SearchBar';
 import {Switch} from '@common/components/Switch';
+import {useYearn} from '@common/contexts/useYearn';
 import {useFetch} from '@common/hooks/useFetch';
 import {IconChevron} from '@common/icons/IconChevron';
 import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
@@ -187,6 +189,8 @@ function isExceptionStrategy(strategy: TYDaemonVaultStrategy): boolean {
 }
 
 export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+	const {vaults} = useYearn();
+
 	const [searchValue, set_searchValue] = useState<string>('');
 	const [shouldHide0DebtStrategies, set_shouldHide0DebtStrategies] = useState(true);
 
@@ -229,16 +233,27 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 					</div>
 				</div>
 			</div>
-			<div className={'col-span-1 w-full'}>
-				{filteredStrategies.map(
-					(strategy): ReactElement => (
-						<VaultDetailsStrategy
-							currentVault={currentVault}
-							strategy={strategy}
-							key={strategy.address}
-						/>
-					)
-				)}
+			<div className={'col-span-1 w-full px-6 pb-6'}>
+				<div className={'grid gap-4'}>
+					{filteredStrategies.map((strategy): ReactElement => {
+						const strategyAsVault = vaults[strategy.address];
+						if (!strategyAsVault) {
+							return (
+								<VaultDetailsStrategy
+									currentVault={currentVault}
+									strategy={strategy}
+									key={strategy.address}
+								/>
+							);
+						}
+						return (
+							<VaultsV3ListRow
+								key={strategy.address}
+								currentVault={strategyAsVault}
+							/>
+						);
+					})}
+				</div>
 			</div>
 		</div>
 	);

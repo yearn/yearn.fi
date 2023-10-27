@@ -60,6 +60,7 @@ export const yDaemonVaultSchema = z.object({
 		.or(z.literal('Experimental Yearn Vault'))
 		.or(z.literal('Standard'))
 		.or(z.literal('Yearn Vault')),
+	kind: z.literal('Legacy').or(z.literal('Multi Strategies')).or(z.literal('Single Strategy')),
 	symbol: z.string(),
 	name: z.string(),
 	category: z

@@ -79,7 +79,18 @@ export function useVaultFilter(
 		[getToken]
 	);
 
+	// V3 Filtered Vaults
 	const v3Vaults = useFilteredVaults(vaults, ({version}): boolean => (version || '')?.split('.')?.[0] === '3');
+	const singleVault = useFilteredVaults(
+		vaults,
+		({version, kind}): boolean => (version || '')?.split('.')?.[0] === '3' && kind === 'Single Strategy'
+	);
+	const MultiVault = useFilteredVaults(
+		vaults,
+		({version, kind}): boolean => (version || '')?.split('.')?.[0] === '3' && kind === 'Multi Strategies'
+	);
+
+	//V2 Filtered Vaults
 	const boostedVaults = useFilteredVaults(vaults, ({apr}): boolean => apr.extra.stakingRewardsAPR > 0);
 	const curveVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Curve');
 	const velodromeVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Velodrome');
@@ -108,7 +119,13 @@ export function useVaultFilter(
 	const activeVaults = useDeepCompareMemo((): TYDaemonVault[] => {
 		let _vaultList: TYDaemonVault[] = [];
 		if (v3) {
-			return v3Vaults;
+			if (categories.includes('single')) {
+				_vaultList = [..._vaultList, ...singleVault];
+			}
+			if (categories.includes('multi')) {
+				_vaultList = [..._vaultList, ...MultiVault];
+			}
+			return _vaultList;
 		}
 
 		if (categories.includes('featured')) {

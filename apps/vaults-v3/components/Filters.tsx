@@ -1,6 +1,6 @@
 import {useMemo} from 'react';
 import {VaultListOptions} from '@vaults/components/list/VaultListOptions';
-import {ALL_CATEGORIES} from '@vaults/constants';
+import {ALL_CATEGORIES} from '@vaults-v3/constants';
 import {MultiSelectDropdown} from '@common/components/MultiSelectDropdown';
 import {SearchBar} from '@common/components/SearchBar';
 import {useChainOptions} from '@common/hooks/useChains';
