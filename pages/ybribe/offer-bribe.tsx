@@ -7,13 +7,13 @@ import {useSessionStorage} from '@yearn-finance/web-lib/hooks/useSessionStorage'
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isTAddress} from '@yearn-finance/web-lib/utils/isTAddress';
-import {ListHead} from '@common/components/ListHead';
-import {ListHero} from '@common/components/ListHero';
 import {useCurve} from '@common/contexts/useCurve';
 import {useYearn} from '@common/contexts/useYearn';
 import {stringSort} from '@common/utils/sort';
 import {GaugeListEmpty} from '@yBribe/components/bribe/GaugeListEmpty';
 import {GaugeListRow} from '@yBribe/components/bribe/GaugeListRow';
+import {ListHead} from '@yBribe/components/ListHead';
+import {ListHero} from '@yBribe/components/ListHero';
 import {useBribes} from '@yBribe/contexts/useBribes';
 import {Wrapper} from '@yBribe/Wrapper';
 
@@ -31,7 +31,7 @@ function GaugeList(): ReactElement {
 	const [sort, set_sort] = useSessionStorage<{
 		sortBy: string;
 		sortDirection: TSortDirection;
-	}>('yGaugeListOfferBribeSorting', {sortBy: '', sortDirection: 'desc'});
+	}>('yGaugeListOfferBribeSorting', {sortBy: 'rewards', sortDirection: 'desc'});
 
 	const getRewardValue = useCallback(
 		(address: string, value: bigint): number => {
@@ -66,9 +66,15 @@ function GaugeList(): ReactElement {
 		if (searchValue === '') {
 			return gaugesToSearch;
 		}
-		return gaugesToSearch.filter((gauge): boolean => {
-			const searchString = `${gauge.name} ${gauge.gauge}`;
-			return searchString.toLowerCase().includes(searchValue.toLowerCase());
+		return gaugesToSearch.filter((gauge: TCurveGauge): boolean => {
+			const lowercaseSearch = searchValue.toLowerCase();
+			const allSearchWords = lowercaseSearch.split(' ');
+			const info = `${gauge.name} ${gauge.gauge} ${gauge.shortName} ${gauge.swap_token}`
+				.replaceAll('-', ' ')
+				.replaceAll('+', ' ')
+				.toLowerCase()
+				.split(' ');
+			return allSearchWords.every((word): boolean => info.some((v): boolean => v.startsWith(word)));
 		});
 	}, [filteredGauges, searchValue]);
 
@@ -176,32 +182,37 @@ function GaugeList(): ReactElement {
 					sortBy={sort.sortBy}
 					sortDirection={sort.sortDirection}
 					onSort={onSort}
-					dataClassName={'grid-cols-9'}
 					items={[
 						{label: 'Gauges', value: 'name', sortable: true},
-						{
-							label: 'Weight',
-							value: 'weight',
-							sortable: false,
-							className: 'col-span-1'
-						},
-						{
-							label: 'Current $/veCRV',
-							value: 'rewards',
-							sortable: true,
-							className: 'col-span-3'
-						},
-						{
-							label: 'Pending $/veCRV',
-							value: 'pendingRewards',
-							sortable: true,
-							className: 'col-span-3'
-						},
 						{
 							label: '',
 							value: '',
 							sortable: false,
 							className: 'col-span-1'
+						},
+						{
+							label: 'Weight',
+							value: 'weight',
+							sortable: false,
+							className: '!col-span-3'
+						},
+						{
+							label: 'Current $/veCRV',
+							value: 'rewards',
+							sortable: true,
+							className: '!col-span-2'
+						},
+						{
+							label: 'Pending $/veCRV',
+							value: 'pendingRewards',
+							sortable: true,
+							className: '!col-span-2'
+						},
+						{
+							label: '',
+							value: '',
+							sortable: false,
+							className: '!col-span-1'
 						}
 					]}
 				/>
@@ -212,9 +223,9 @@ function GaugeList(): ReactElement {
 					{sortedGauges
 						.filter((gauge): boolean => !!gauge)
 						.map(
-							(gauge): ReactNode => (
+							(gauge, index): ReactNode => (
 								<GaugeListRow
-									key={gauge.name}
+									key={`${index}_${gauge.gauge}`}
 									currentGauge={gauge}
 								/>
 							)

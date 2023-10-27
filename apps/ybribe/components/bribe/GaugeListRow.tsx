@@ -67,8 +67,11 @@ export function GaugeListRow({currentGauge}: {currentGauge: TCurveGauge}): React
 	}
 
 	return (
-		<div className={'yearn--table-wrapper cursor-pointer transition-colors hover:bg-neutral-300'}>
-			<div className={'yearn--table-token-section'}>
+		<div
+			className={
+				'yearn--table-wrapper !col-span-12 cursor-pointer !grid-cols-12 transition-colors hover:bg-neutral-300'
+			}>
+			<div className={'yearn--table-token-section col-span-4'}>
 				<div className={'yearn--table-token-section-item'}>
 					<div className={'yearn--table-token-section-item-image'}>
 						<ImageWithFallback
@@ -77,7 +80,7 @@ export function GaugeListRow({currentGauge}: {currentGauge: TCurveGauge}): React
 							height={40}
 							quality={90}
 							loading={'eager'}
-							src={`${process.env.BASE_YEARN_ASSETS_URI}1/${currentGauge.swap_token}/logo-128.png`}
+							src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${currentGauge.swap_token}/logo-128.png`}
 						/>
 					</div>
 					<p>{currentGauge.name}</p>
@@ -94,16 +97,16 @@ export function GaugeListRow({currentGauge}: {currentGauge: TCurveGauge}): React
 				</div>
 			</div>
 
-			<div className={'yearn--table-data-section grid-cols-9'}>
+			<div className={'yearn--table-data-section col-span-8'}>
 				<div
-					className={'yearn--table-data-section-item'}
+					className={'yearn--table-data-section-item md:col-span-3'}
 					datatype={'number'}>
 					<label className={'yearn--table-data-section-item-label'}>{'Weight'}</label>
 					<p className={'yearn--table-data-section-item-value'}>{formatPercent(gaugeRelativeWeight * 100)}</p>
 				</div>
 
 				<div
-					className={'yearn--table-data-section-item md:col-span-3'}
+					className={'yearn--table-data-section-item md:col-span-2'}
 					datatype={'number'}>
 					<label className={'yearn--table-data-section-item-label'}>{'Current Bribes'}</label>
 					<Renderable
@@ -122,9 +125,9 @@ export function GaugeListRow({currentGauge}: {currentGauge: TCurveGauge}): React
 				</div>
 
 				<div
-					className={'yearn--table-data-section-item md:col-span-3'}
+					className={'yearn--table-data-section-item md:col-span-2'}
 					datatype={'number'}>
-					<label className={'yearn--table-data-section-item-label'}>{'Current Bribes'}</label>
+					<label className={'yearn--table-data-section-item-label'}>{'Pending Bribes'}</label>
 					<Renderable
 						shouldRender={!!nextRewardsForCurrentGaugeMap && nextRewardsForCurrentGaugeMap.length > 0}
 						fallback={renderDefaultValueUSDFallback()}>
@@ -141,7 +144,7 @@ export function GaugeListRow({currentGauge}: {currentGauge: TCurveGauge}): React
 				</div>
 
 				<div
-					className={'yearn--table-data-section-item md:col-span-2'}
+					className={'yearn--table-data-section-item md:col-span-1'}
 					datatype={'number'}>
 					<div className={'h-14 pt-0'}>
 						<Button

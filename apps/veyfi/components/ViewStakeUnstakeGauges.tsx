@@ -1,7 +1,6 @@
 import {useCallback, useMemo, useState} from 'react';
 import Link from 'next/link';
 import {erc20ABI, useContractRead} from 'wagmi';
-import {useDeepCompareMemo} from '@react-hookz/web';
 import {useGauge} from '@veYFI/contexts/useGauge';
 import {useOption} from '@veYFI/contexts/useOption';
 import {useQueryArguments} from '@veYFI/hooks/useVeYFIQueryArgs';
@@ -159,7 +158,7 @@ export function StakeUnstakeGauges(): ReactElement {
 	const [isLoadingGauges, set_isLoadingGauges] = useState(true);
 	const {search, onSearch} = useQueryArguments();
 
-	const gaugesData = useDeepCompareMemo((): TGaugeData[] => {
+	const gaugesData = useMemo((): TGaugeData[] => {
 		if (!vaults || Object.values(vaults).length === 0) {
 			return [];
 		}
@@ -207,8 +206,13 @@ export function StakeUnstakeGauges(): ReactElement {
 		}
 		return gaugesData.filter((gauge: TGaugeData): boolean => {
 			const lowercaseSearch = search.toLowerCase();
-			const splitted = `${gauge.gaugeAddress} ${gauge.vaultName}`.replaceAll('-', ' ').toLowerCase().split(' ');
-			return splitted.some((word): boolean => word.startsWith(lowercaseSearch));
+			const allSearchWords = lowercaseSearch.split(' ');
+			const currentVaultInfo = `${gauge.vaultName} ${gauge.gaugeAddress} ${gauge.vaultAddress}`
+				.replaceAll('-', ' ')
+				.replaceAll('+', ' ')
+				.toLowerCase()
+				.split(' ');
+			return allSearchWords.every((word): boolean => currentVaultInfo.some((v): boolean => v.startsWith(word)));
 		});
 	}, [gaugesData, search]);
 
