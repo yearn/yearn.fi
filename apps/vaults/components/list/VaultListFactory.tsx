@@ -34,7 +34,6 @@ export function VaultListFactory(): ReactElement {
 	} = useVaultsFactoryQueryArguments();
 	const {activeVaults} = useVaultFilter(categories, chains);
 
-	console.log(categories);
 	/* 🔵 - Yearn Finance **************************************************************************
 	 **	Then, on the activeVaults list, we apply the search filter. The search filter is
 	 **	implemented as a simple string.includes() on the vault name.
