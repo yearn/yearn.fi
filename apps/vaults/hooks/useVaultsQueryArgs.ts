@@ -1,6 +1,6 @@
 import {useEffect, useState} from 'react';
 import {DelimitedArrayParam, DelimitedNumericArrayParam, StringParam, useQueryParam} from 'use-query-params';
-import {ALL_CATEGORIES_KEYS, ALL_CHAINS} from '@vaults/constants';
+import {ALL_CHAINS, ALL_VAULTS_CATEGORIES_KEYS} from '@vaults/constants';
 
 import type {TSortDirection} from '@common/types/types';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
@@ -66,7 +66,7 @@ function useQueryArguments(): TQueryArgs {
 			set_categories(categoriesParam);
 			return;
 		}
-		if (!categories || Object.values(categories).length === ALL_CATEGORIES_KEYS.length) {
+		if (!categories || Object.values(categories).length === ALL_VAULTS_CATEGORIES_KEYS.length) {
 			set_categoriesParam(undefined);
 		} else {
 			set_categoriesParam(categories);
@@ -129,7 +129,7 @@ function useQueryArguments(): TQueryArgs {
 
 	return {
 		search,
-		categories: (categories || ALL_CATEGORIES_KEYS) as string[],
+		categories: (categories || ALL_VAULTS_CATEGORIES_KEYS) as string[],
 		chains: (chains || ALL_CHAINS) as number[],
 		sortDirection: (sortDirection || 'desc') as TSortDirection,
 		sortBy: (sortBy || 'featuringScore') as TPossibleSortBy,
