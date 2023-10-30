@@ -1,6 +1,7 @@
 import {useMemo} from 'react';
+import {useContractRead} from 'wagmi';
 import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
-import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
+import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -10,15 +11,11 @@ import {copyToClipboard} from '@yearn-finance/web-lib/utils/helpers';
 import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {RenderAmount} from '@common/components/RenderAmount';
 import {useBalance} from '@common/hooks/useBalance';
-import {useFetch} from '@common/hooks/useFetch';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
 import {IconQuestion} from '@common/icons/IconQuestion';
-import {yDaemonSingleEarnedSchema} from '@common/schemas/yDaemonEarnedSchema';
 import {getVaultName} from '@common/utils';
-import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonEarnedSingle} from '@common/schemas/yDaemonEarnedSchema';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TNormalizedBN} from '@common/types/types';
 
@@ -98,22 +95,53 @@ function VaultAPR({apr}: {apr: TYDaemonVault['apr']}): ReactElement {
 	);
 }
 
-export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const {address: userAddress} = useWeb3();
-	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: currentVault.chainID});
-	const {address, apr, tvl, decimals, symbol = 'token', token} = currentVault;
-	const chainInfo = getNetwork(currentVault.chainID);
-	const {data: earned} = useFetch<TYDaemonEarnedSingle>({
-		endpoint: address && userAddress ? `${yDaemonBaseUri}/earned/${userAddress}/${currentVault.address}` : null,
-		schema: yDaemonSingleEarnedSchema
+function ValueInToken(props: {currentVault: TYDaemonVault; vaultPrice: number; deposited: bigint}): ReactElement {
+	const {data: convertedToAsset} = useContractRead({
+		address: props.currentVault.address,
+		abi: VAULT_V3_ABI,
+		chainId: props.currentVault.chainID,
+		functionName: 'convertToAssets',
+		args: [props.deposited],
+		select: (r): TNormalizedBN => toNormalizedBN(r, props.currentVault.token.decimals),
+		watch: true,
+		keepPreviousData: true
 	});
 
-	const normalizedVaultEarned = useMemo((): TNormalizedBN => {
-		const {unrealizedGains} = earned?.earned?.[toAddress(currentVault.address)] || {};
-		const value = toBigInt(unrealizedGains);
-		return toNormalizedBN(value < 0n ? 0n : value);
-	}, [earned?.earned, currentVault.address]);
+	return (
+		<VaultHeaderLineItem
+			label={`Value in ${props.currentVault.token.symbol || 'tokens'}`}
+			legend={
+				<span className={'tooltip'}>
+					<div className={'flex flex-row items-center space-x-2'}>
+						<div>{formatCounterValue(convertedToAsset?.normalized || 0, props.vaultPrice)}</div>
+						<IconQuestion className={'hidden md:block'} />
+					</div>
+					<span className={'tooltipLight top-full mt-2'}>
+						<div
+							className={
+								'font-number -mx-12 w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
+							}>
+							<p
+								className={
+									'font-number flex w-full flex-row justify-between text-neutral-400 md:text-xs'
+								}>
+								{`You yield every single block for more ${props.currentVault.token.symbol}!`}
+							</p>
+						</div>
+					</span>
+				</span>
+			}>
+			<RenderAmount
+				value={toBigInt(convertedToAsset?.raw)}
+				decimals={props.currentVault.token.decimals}
+			/>
+		</VaultHeaderLineItem>
+	);
+}
 
+export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+	const {address, apr, tvl, decimals, symbol = 'token', token} = currentVault;
+	const chainInfo = getNetwork(currentVault.chainID);
 	const vaultBalance = useBalance({address, chainID: currentVault.chainID});
 	const vaultPrice = useTokenPrice(address) || currentVault?.tvl?.price || 0;
 	const vaultName = useMemo((): string => getVaultName(currentVault), [currentVault]);
@@ -157,7 +185,7 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 					label={`Total deposited, ${token?.symbol || 'tokens'}`}
 					legend={formatUSD(tvl.tvl)}>
 					<RenderAmount
-						value={tvl?.total_assets}
+						value={toBigInt(tvl.totalAssets)}
 						decimals={decimals}
 					/>
 				</VaultHeaderLineItem>
@@ -173,14 +201,11 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 					/>
 				</VaultHeaderLineItem>
 
-				<VaultHeaderLineItem
-					label={`Earned, ${token?.symbol || 'tokens'}`}
-					legend={formatCounterValue(normalizedVaultEarned.normalized, vaultPrice)}>
-					<RenderAmount
-						value={normalizedVaultEarned.raw}
-						decimals={decimals}
-					/>
-				</VaultHeaderLineItem>
+				<ValueInToken
+					currentVault={currentVault}
+					deposited={depositedAndStaked.raw}
+					vaultPrice={vaultPrice}
+				/>
 			</div>
 		</div>
 	);

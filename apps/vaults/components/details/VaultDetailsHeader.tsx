@@ -143,7 +143,7 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 					label={`Total deposited, ${token?.symbol || 'tokens'}`}
 					legend={formatUSD(tvl.tvl)}>
 					<RenderAmount
-						value={tvl?.total_assets}
+						value={tvl?.totalAssets}
 						decimals={decimals}
 					/>
 				</VaultHeaderLineItem>

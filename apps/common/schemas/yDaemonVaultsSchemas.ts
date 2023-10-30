@@ -73,7 +73,7 @@ export const yDaemonVaultSchema = z.object({
 	chainID: z.number(),
 	token: yDaemonVaultTokenSchema,
 	tvl: z.object({
-		total_assets: z.string().transform((val): bigint => toBigInt(val)),
+		totalAssets: z.string().transform((val): bigint => toBigInt(val)),
 		tvl: z.number().default(0).catch(0),
 		price: z.number().default(0).catch(0)
 	}),
