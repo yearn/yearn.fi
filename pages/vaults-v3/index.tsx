@@ -1,18 +1,15 @@
 import {Fragment, useEffect, useMemo, useState} from 'react';
 import {motion, useSpring, useTransform} from 'framer-motion';
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
-import {VaultsListRetired} from '@vaults/components/list/VaultsListRetired';
 import {useVaultFilter} from '@vaults/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
 import {Filters} from '@vaults-v3/components/Filters';
-import {VaultsListInternalMigrationRow} from '@vaults-v3/components/list/VaultsListInternalMigrationRow';
 import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
 import {VaultsV3ListRow} from '@vaults-v3/components/list/VaultsV3ListRow';
 import {ALL_CATEGORIES_KEYS} from '@vaults-v3/constants';
 import {V3Mask} from '@vaults-v3/Mark';
 import {Wrapper} from '@vaults-v3/Wrapper';
-import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
@@ -194,7 +191,7 @@ function ListOfVaults(): ReactElement {
 		onChangeSortDirection,
 		onChangeSortBy
 	} = useQueryArguments({defaultCategories: ALL_CATEGORIES_KEYS});
-	const {activeVaults, migratableVaults, retiredVaults} = useVaultFilter(categories, chains, true);
+	const {activeVaults} = useVaultFilter(categories, chains, true);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	 **	Then, on the activeVaults list, we apply the search filter. The search filter is
@@ -266,38 +263,6 @@ function ListOfVaults(): ReactElement {
 			/>
 
 			<div className={'col-span-12 flex min-h-[240px] w-full flex-col'}>
-				<Renderable shouldRender={retiredVaults?.length > 0}>
-					<div className={'grid gap-4'}>
-						{retiredVaults
-							.filter((vault): boolean => !!vault)
-							.map(
-								(vault): ReactNode => (
-									<VaultsListRetired
-										key={`${vault.chainID}_${vault.address}`}
-										currentVault={vault}
-									/>
-								)
-							)}
-					</div>
-				</Renderable>
-
-				<Renderable shouldRender={migratableVaults?.length > 0}>
-					<div className={'grid gap-4'}>
-						{migratableVaults
-							.filter((vault): boolean => !!vault)
-							.map(
-								(vault): ReactNode => (
-									<VaultsListInternalMigrationRow
-										key={`${vault.chainID}_${vault.address}`}
-										currentVault={vault}
-									/>
-								)
-							)}
-					</div>
-				</Renderable>
-
-				<div className={'mt-4'} />
-
 				<VaultsV3ListHead
 					sortBy={sortBy}
 					sortDirection={sortDirection}
