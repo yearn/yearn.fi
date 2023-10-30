@@ -102,7 +102,7 @@ function V3TVLCard(): ReactElement {
 	);
 }
 function PortfolioCard(): ReactElement {
-	const {cumulatedValueInVaults} = useWallet();
+	const {cumulatedValueInV3Vaults} = useWallet();
 	const {earned} = useYearn();
 	const {options, isActive, address, openLoginModal, onSwitchChain} = useWeb3();
 
@@ -112,8 +112,8 @@ function PortfolioCard(): ReactElement {
 	}, [earned?.totalUnrealizedGainsUSD]);
 
 	const formatedYouHave = useMemo((): string => {
-		return formatAmount(cumulatedValueInVaults || 0) ?? '';
-	}, [cumulatedValueInVaults]);
+		return formatAmount(cumulatedValueInV3Vaults || 0) ?? '';
+	}, [cumulatedValueInV3Vaults]);
 
 	if (!isActive) {
 		return (

@@ -71,7 +71,8 @@ export type TWalletContext = {
 	getBalance: ({address, chainID}: {address: TAddress; chainID: number}) => TNormalizedBN;
 	getPrice: ({address, chainID}: {address: TAddress; chainID: number}) => TNormalizedBN;
 	balances: TChainTokens;
-	cumulatedValueInVaults: number;
+	cumulatedValueInV2Vaults: number;
+	cumulatedValueInV3Vaults: number;
 	balancesNonce: number;
 	isLoading: boolean;
 	shouldUseForknetBalances: boolean;
@@ -97,7 +98,8 @@ const defaultProps = {
 	getBalance: (): TNormalizedBN => toNormalizedBN(0),
 	getPrice: (): TNormalizedBN => toNormalizedBN(0),
 	balances: {},
-	cumulatedValueInVaults: 0,
+	cumulatedValueInV2Vaults: 0,
+	cumulatedValueInV3Vaults: 0,
 	balancesNonce: 0,
 	isLoading: true,
 	shouldUseForknetBalances: false,
@@ -285,21 +287,31 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 		return _tokens;
 	}, [tokensRaw, shouldUseForknetBalances]);
 
-	const cumulatedValueInVaults = useMemo((): number => {
-		let cumulatedValueInVaults = 0;
+	const [cumulatedValueInV2Vaults, cumulatedValueInV3Vaults] = useMemo((): [number, number] => {
+		let cumulatedValueInV2Vaults = 0;
+		let cumulatedValueInV3Vaults = 0;
 		for (const [, perChain] of Object.entries(tokens)) {
 			for (const [tokenAddress, tokenData] of Object.entries(perChain)) {
 				if (tokenData.value + tokenData.stakingValue === 0) {
 					continue;
 				}
 				if (vaults?.[toAddress(tokenAddress)]) {
-					cumulatedValueInVaults += tokenData.value + tokenData.stakingValue;
+					if (vaults[toAddress(tokenAddress)].version.split('.')?.[0] === '3') {
+						console.log(tokenData);
+						cumulatedValueInV3Vaults += tokenData.value + tokenData.stakingValue;
+					} else {
+						cumulatedValueInV2Vaults += tokenData.value + tokenData.stakingValue;
+					}
 				} else if (vaultsMigrations?.[toAddress(tokenAddress)]) {
-					cumulatedValueInVaults += tokenData.value + tokenData.stakingValue;
+					if (vaultsMigrations[toAddress(tokenAddress)].version.split('.')?.[0] === '3') {
+						cumulatedValueInV3Vaults += tokenData.value + tokenData.stakingValue;
+					} else {
+						cumulatedValueInV2Vaults += tokenData.value + tokenData.stakingValue;
+					}
 				}
 			}
 		}
-		return cumulatedValueInVaults;
+		return [cumulatedValueInV2Vaults, cumulatedValueInV3Vaults];
 	}, [vaults, vaultsMigrations, tokens]);
 
 	const onRefresh = useCallback(
@@ -351,7 +363,8 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 			getPrice,
 			balances: tokens,
 			balancesNonce: nonce,
-			cumulatedValueInVaults,
+			cumulatedValueInV2Vaults,
+			cumulatedValueInV3Vaults,
 			isLoading: isLoading || false,
 			shouldUseForknetBalances,
 			refresh: onRefresh,
@@ -371,7 +384,8 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 			getPrice,
 			tokens,
 			nonce,
-			cumulatedValueInVaults,
+			cumulatedValueInV2Vaults,
+			cumulatedValueInV3Vaults,
 			isLoading,
 			shouldUseForknetBalances,
 			onRefresh
