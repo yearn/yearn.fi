@@ -2,10 +2,10 @@ import {useMemo} from 'react';
 import {VaultListOptions} from '@vaults/components/list/VaultListOptions';
 import {VaultsListRow} from '@vaults/components/list/VaultsListRow';
 import {ListHero} from '@vaults/components/ListHero';
-import {ALL_VAULTS_FACTORY_CATEGORIES} from '@vaults/constants';
+import {ALL_VAULTS_FACTORY_CATEGORIES, ALL_VAULTS_FACTORY_CATEGORIES_KEYS} from '@vaults/constants';
 import {useVaultFilter} from '@vaults/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
-import {useVaultsFactoryQueryArguments} from '@vaults/hooks/useVaultsFactoryQueryArgs';
+import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
 import {IconChain} from '@yearn-finance/web-lib/icons/IconChain';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {ListHead} from '@common/components/ListHead';
@@ -31,7 +31,7 @@ export function VaultListFactory(): ReactElement {
 		onChangeChains,
 		onChangeSortDirection,
 		onChangeSortBy
-	} = useVaultsFactoryQueryArguments();
+	} = useQueryArguments({defaultCategories: ALL_VAULTS_FACTORY_CATEGORIES_KEYS});
 	const {activeVaults} = useVaultFilter(categories, chains);
 
 	/* 🔵 - Yearn Finance **************************************************************************

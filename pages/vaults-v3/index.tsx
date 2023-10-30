@@ -7,7 +7,7 @@ import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
 import {Filters} from '@vaults-v3/components/Filters';
 import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
 import {VaultsV3ListRow} from '@vaults-v3/components/list/VaultsV3ListRow';
-import {ALL_CATEGORIES_KEYS} from '@vaults-v3/constants';
+import {ALL_VAULTSV3_CATEGORIES_KEYS} from '@vaults-v3/constants';
 import {V3Mask} from '@vaults-v3/Mark';
 import {Wrapper} from '@vaults-v3/Wrapper';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -190,7 +190,7 @@ function ListOfVaults(): ReactElement {
 		onChangeChains,
 		onChangeSortDirection,
 		onChangeSortBy
-	} = useQueryArguments({defaultCategories: ALL_CATEGORIES_KEYS});
+	} = useQueryArguments({defaultCategories: ALL_VAULTSV3_CATEGORIES_KEYS});
 	const {activeVaults} = useVaultFilter(categories, chains, true);
 
 	/* 🔵 - Yearn Finance **************************************************************************

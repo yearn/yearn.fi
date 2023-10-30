@@ -1,6 +1,6 @@
 import {useMemo} from 'react';
 import {VaultListOptions} from '@vaults/components/list/VaultListOptions';
-import {ALL_CATEGORIES} from '@vaults-v3/constants';
+import {ALL_VAULTSV3_CATEGORIES} from '@vaults-v3/constants';
 import {MultiSelectDropdown} from '@common/components/MultiSelectDropdown';
 import {SearchBar} from '@common/components/SearchBar';
 import {useChainOptions} from '@common/hooks/useChains';
@@ -27,7 +27,7 @@ export function Filters({
 }: TListHero): ReactElement {
 	const chainOptions = useChainOptions(chains);
 	const categoryOptions = useMemo((): TMultiSelectOptionProps[] => {
-		const options: TMultiSelectOptionProps[] = Object.entries(ALL_CATEGORIES).map(
+		const options: TMultiSelectOptionProps[] = Object.entries(ALL_VAULTSV3_CATEGORIES).map(
 			([key, value]): TMultiSelectOptionProps => ({
 				value: key,
 				label: value.replaceAll(' Vaults', ''),

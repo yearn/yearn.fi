@@ -1,7 +1,6 @@
 import {ALL_CHAINS, ALL_VAULTS_CATEGORIES_KEYS} from '@vaults/constants';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
-import {useSupportedChains} from '@common/hooks/useChains';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVaults} from '@common/schemas/yDaemonVaultsSchemas';
@@ -24,8 +23,6 @@ export function VaultsListEmpty({
 	onChangeChains,
 	isLoading
 }: TVaultListEmpty): ReactElement {
-	const allChains = useSupportedChains().map((chain): number => chain.id);
-
 	if (isLoading && isZero(sortedVaultsToDisplay.length)) {
 		return (
 			<div className={'flex h-96 w-full flex-col items-center justify-center px-10 py-2'}>
