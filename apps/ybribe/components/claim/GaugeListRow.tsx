@@ -28,9 +28,8 @@ function GaugeRowItemWithExtraData({
 	minDecimals?: number;
 }): ReactElement {
 	const {tokens, prices} = useYearn();
-
 	const tokenInfo = tokens?.[address];
-	const tokenPrice = Number(prices?.[address]) / 1000000;
+	const tokenPrice = Number(prices?.[address]) / 1e6;
 	const decimals = tokenInfo?.decimals || 18;
 	const symbol = tokenInfo?.symbol || '???';
 	const bribeAmount = formatToNormalizedValue(toBigInt(value), decimals);

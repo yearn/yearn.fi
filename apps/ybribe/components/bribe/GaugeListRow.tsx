@@ -17,13 +17,12 @@ import type {TCurveGauge} from '@common/schemas/curveSchemas';
 
 function GaugeRowItemWithExtraData({address, value}: {address: TAddress; value: bigint}): ReactElement {
 	const {tokens, prices} = useYearn();
-
 	const tokenInfo = tokens?.[address];
-	const tokenPrice = prices?.[address];
+	const tokenPrice = Number(prices?.[address]) / 1e6;
 	const decimals = tokenInfo?.decimals || 18;
 	const symbol = tokenInfo?.symbol || '???';
 	const bribeAmount = formatToNormalizedValue(toBigInt(value), decimals);
-	const bribeValue = bribeAmount * (Number(tokenPrice || 0) / 100);
+	const bribeValue = bribeAmount * Number(tokenPrice || 0);
 
 	return (
 		<div className={'flex h-auto flex-col items-end pt-0 md:h-14'}>
