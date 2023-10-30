@@ -310,9 +310,11 @@ export async function withdrawShares(props: TWithdrawShares): Promise<TTxRespons
  ******************************************************************************/
 type TRedeemV3Shares = TWriteTransaction & {
 	amount: bigint;
+	maxLoss: bigint;
 };
 export async function redeemV3Shares(props: TRedeemV3Shares): Promise<TTxResponse> {
 	assert(props.amount > 0n, 'Amount is 0');
+	assert(props.maxLoss > 0n && props.maxLoss <= 10000n, 'Max loss is invalid');
 	assertAddress(props.contractAddress);
 	const wagmiProvider = await toWagmiProvider(props.connector);
 	assertAddress(wagmiProvider.address, 'wagmiProvider.address');
@@ -321,7 +323,7 @@ export async function redeemV3Shares(props: TRedeemV3Shares): Promise<TTxRespons
 		address: props.contractAddress,
 		abi: VAULT_V3_ABI,
 		functionName: 'redeem',
-		args: [props.amount, wagmiProvider.address, wagmiProvider.address, 1n]
+		args: [props.amount, wagmiProvider.address, wagmiProvider.address, props.maxLoss]
 	});
 }
 

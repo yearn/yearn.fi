@@ -4,6 +4,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {useYearn} from '@common/contexts/useYearn';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 import {allowanceOf, approveERC20, deposit, redeemV3Shares, withdrawShares} from '@common/utils/actions';
 import {assert} from '@common/utils/assert';
@@ -15,6 +16,7 @@ import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
 
 export function useSolverVanilla(): TSolverContext {
 	const {provider} = useWeb3();
+	const {maxLoss} = useYearn();
 	const latestQuote = useRef<TNormalizedBN>();
 	const request = useRef<TInitSolverArgs>();
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
@@ -149,6 +151,7 @@ export function useSolverVanilla(): TSolverContext {
 					chainID: request.current.chainID,
 					contractAddress: request.current.inputToken.value,
 					amount: request.current.inputAmount,
+					maxLoss: maxLoss,
 					statusHandler: txStatusSetter
 				});
 				if (result.isSuccessful) {
@@ -167,7 +170,7 @@ export function useSolverVanilla(): TSolverContext {
 				onSuccess();
 			}
 		},
-		[provider]
+		[maxLoss, provider]
 	);
 
 	return useMemo(

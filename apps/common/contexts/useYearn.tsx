@@ -9,7 +9,7 @@ import {yDaemonPricesChainSchema} from '@common/schemas/yDaemonPricesSchema';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 import {yDaemonTokensChainSchema} from '@common/schemas/yDaemonTokensSchema';
 import {yDaemonVaultsSchema} from '@common/schemas/yDaemonVaultsSchemas';
-import {DEFAULT_SLIPPAGE} from '@common/utils/constants';
+import {DEFAULT_MAX_LOSS, DEFAULT_SLIPPAGE} from '@common/utils/constants';
 import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 
 import type {ReactElement} from 'react';
@@ -31,9 +31,11 @@ export type TYearnContext = {
 	vaultsRetired: TDict<TYDaemonVault>;
 	isLoadingVaultList: boolean;
 	zapSlippage: number;
+	maxLoss: bigint;
 	zapProvider: TSolver;
 	isStakingOpBoostedVaults: boolean;
 	mutateVaultList: KeyedMutator<TYDaemonVaults>;
+	set_maxLoss: (value: bigint) => void;
 	set_zapSlippage: (value: number) => void;
 	set_zapProvider: (value: TSolver) => void;
 	set_isStakingOpBoostedVaults: (value: boolean) => void;
@@ -52,11 +54,13 @@ const YearnContext = createContext<TYearnContext>({
 	vaultsMigrations: {},
 	vaultsRetired: {},
 	isLoadingVaultList: false,
+	maxLoss: DEFAULT_MAX_LOSS,
 	zapSlippage: 0.1,
 	zapProvider: Solver.enum.Cowswap,
 	isStakingOpBoostedVaults: true,
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	mutateVaultList: (): any => undefined,
+	set_maxLoss: (): void => undefined,
 	set_zapSlippage: (): void => undefined,
 	set_zapProvider: (): void => undefined,
 	set_isStakingOpBoostedVaults: (): void => undefined
@@ -65,6 +69,7 @@ const YearnContext = createContext<TYearnContext>({
 export const YearnContextApp = memo(function YearnContextApp({children}: {children: ReactElement}): ReactElement {
 	const {yDaemonBaseUri: yDaemonBaseUriWithoutChain} = useYDaemonBaseURI();
 	const {address, currentPartner} = useWeb3();
+	const [maxLoss, set_maxLoss] = useLocalStorage<bigint>('yearn.fi/max-loss', DEFAULT_MAX_LOSS);
 	const [zapSlippage, set_zapSlippage] = useLocalStorage<number>('yearn.fi/zap-slippage', DEFAULT_SLIPPAGE);
 	const [zapProvider, set_zapProvider] = useLocalStorage<TSolver>('yearn.fi/zap-provider', Solver.enum.Cowswap);
 	const [isStakingOpBoostedVaults, set_isStakingOpBoostedVaults] = useLocalStorage<boolean>(
@@ -204,6 +209,8 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 			earned,
 			zapSlippage,
 			set_zapSlippage,
+			maxLoss,
+			set_maxLoss,
 			zapProvider,
 			set_zapProvider,
 			isStakingOpBoostedVaults,
@@ -215,21 +222,23 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 			mutateVaultList
 		}),
 		[
-			currentPartner?.id,
+			currentPartner,
 			pricesUpdated,
 			tokens,
 			earned,
 			zapSlippage,
 			set_zapSlippage,
+			maxLoss,
+			set_maxLoss,
 			zapProvider,
 			set_zapProvider,
 			isStakingOpBoostedVaults,
 			set_isStakingOpBoostedVaults,
 			vaultsObject,
 			vaultsMigrationsObject,
+			vaultsRetiredObject,
 			isLoadingVaultList,
-			mutateVaultList,
-			vaultsRetiredObject
+			mutateVaultList
 		]
 	);
 

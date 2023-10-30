@@ -25,6 +25,7 @@ type TTabsOptions = {
 	slug?: string;
 };
 type TTabs = {
+	hasStrategies: boolean;
 	selectedAboutTabIndex: number;
 	set_selectedAboutTabIndex: (arg0: number) => void;
 };
@@ -34,16 +35,18 @@ type TExplorerLinkProps = {
 	currentVaultAddress: string;
 };
 
-function Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactElement {
+function Tabs({hasStrategies, selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactElement {
 	const router = useRouter();
 
-	const tabs: TTabsOptions[] = useMemo(
-		(): TTabsOptions[] => [
-			{value: 0, label: 'About', slug: 'about'},
-			{value: 1, label: 'Strategies', slug: 'strategies'}
-		],
-		[]
-	);
+	const tabs: TTabsOptions[] = useMemo((): TTabsOptions[] => {
+		if (hasStrategies) {
+			return [
+				{value: 0, label: 'About', slug: 'about'},
+				{value: 1, label: 'Vaults', slug: 'vaults'}
+			];
+		}
+		return [{value: 0, label: 'About', slug: 'about'}];
+	}, [hasStrategies]);
 
 	useEffect((): void => {
 		const tab = tabs.find((tab): boolean => tab.slug === router.query.tab);
@@ -207,11 +210,13 @@ function ExplorerLink({explorerBaseURI, currentVaultAddress}: TExplorerLinkProps
 
 export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const [selectedAboutTabIndex, set_selectedAboutTabIndex] = useState(0);
+	const hasStrategies = Number(currentVault.strategies?.length || 0) > 0;
 
 	return (
 		<div className={'col-span-12 mb-4 flex flex-col rounded-b-3xl bg-neutral-100'}>
 			<div className={'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'}>
 				<Tabs
+					hasStrategies={hasStrategies}
 					selectedAboutTabIndex={selectedAboutTabIndex}
 					set_selectedAboutTabIndex={set_selectedAboutTabIndex}
 				/>
@@ -227,11 +232,11 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 
 			<div className={'-mt-0.5 h-0.5 w-full bg-neutral-300'} />
 
-			<Renderable shouldRender={currentVault && isZero(selectedAboutTabIndex)}>
+			<Renderable shouldRender={(currentVault && isZero(selectedAboutTabIndex)) || !hasStrategies}>
 				<VaultDetailsAbout currentVault={currentVault} />
 			</Renderable>
 
-			<Renderable shouldRender={currentVault && selectedAboutTabIndex === 1}>
+			<Renderable shouldRender={currentVault && selectedAboutTabIndex === 1 && hasStrategies}>
 				<VaultDetailsStrategies currentVault={currentVault} />
 			</Renderable>
 		</div>
