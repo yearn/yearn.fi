@@ -1,1 +1,1 @@
-export const YBRIBE_CHAIN_ID = 1;
+export const YBRIBE_SUPPORTED_NETWORK = 1;

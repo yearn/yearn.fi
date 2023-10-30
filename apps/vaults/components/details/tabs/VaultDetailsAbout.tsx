@@ -2,7 +2,7 @@ import {useIsMounted} from '@react-hookz/web';
 import {GraphForVaultEarnings} from '@vaults/components/graphs/GraphForVaultEarnings';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
-import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
+import {formatAmount, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 
@@ -156,12 +156,12 @@ export function VaultDetailsAbout({
 						</YearnFeesLineItem>
 						<YearnFeesLineItem label={'Management fee'}>
 							<b className={'font-number text-xl text-neutral-900'}>
-								{formatPercent((apr.fees.management || 0) / 100, 0)}
+								{`${formatAmount(apr.fees.management * 100, 0, 2)} %`}
 							</b>
 						</YearnFeesLineItem>
 						<YearnFeesLineItem label={'Performance fee'}>
 							<b className={'font-number text-xl text-neutral-500'}>
-								{formatPercent((apr.fees.performance || 0) / 100, 0)}
+								{`${formatAmount(apr.fees.performance * 100, 0, 2)} %`}
 							</b>
 						</YearnFeesLineItem>
 						{currentVault.category === 'Velodrome' || currentVault.category === 'Aerodrome' ? (
@@ -169,7 +169,7 @@ export function VaultDetailsAbout({
 								label={'keepVELO'}
 								tooltip={`Percentage of VELO locked in each harvest. This is used to boost ${currentVault.category} vault pools, and is offset via yvOP staking rewards.`}>
 								<b className={'font-number text-xl text-neutral-500'}>
-									{formatPercent(currentVault.apr.fees.keepVelo * 100, 0)}
+									{formatAmount(currentVault.apr.fees.keepVelo * 100, 0, 2)}
 								</b>
 							</YearnFeesLineItem>
 						) : null}

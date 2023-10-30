@@ -1,4 +1,4 @@
-import React, {createContext, memo, useContext, useState} from 'react';
+import React, {createContext, memo, useCallback, useContext, useState} from 'react';
 import {FixedNumber} from 'ethers';
 import {useDeepCompareMemo} from '@react-hookz/web';
 import {VEYFI_GAUGE_ABI} from '@veYFI/utils/abi/veYFIGauge.abi';
@@ -145,7 +145,7 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 		set_positionsMap(allPositionsAsMap);
 	}, [address, gauges, isActive]);
 
-	const refresh = useAsyncTrigger(async (): Promise<void> => {
+	const refresh = useCallback(async (): Promise<void> => {
 		refreshVotingEscrow();
 		refreshPositions();
 	}, [refreshPositions, refreshVotingEscrow]);

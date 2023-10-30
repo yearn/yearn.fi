@@ -1,5 +1,5 @@
 import {createContext, useCallback, useContext, useEffect, useMemo, useState} from 'react';
-import {useContractRead} from 'wagmi';
+import {useAccount, useContractRead} from 'wagmi';
 import {multicall, prepareWriteContract} from '@wagmi/core';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -9,7 +9,7 @@ import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {useCurve} from '@common/contexts/useCurve';
 import {useAsyncTrigger} from '@common/hooks/useAsyncEffect';
-import {YBRIBE_SUPPORTED_NETWORK} from '@yBribe/constants';
+import {YBRIBE_SUPPORTED_NETWORK} from '@yBribe/constants/index';
 import {getLastThursday, getNextThursday} from '@yBribe/utils';
 import {CURVE_BRIBE_V3_ABI} from '@yBribe/utils/abi/curveBribeV3.abi';
 import {CURVE_BRIBE_V3_HELPER_ABI} from '@yBribe/utils/abi/curveBribeV3Helper.abi';
@@ -39,26 +39,20 @@ const defaultProps: TBribesContext = {
 
 const BribesContext = createContext<TBribesContext>(defaultProps);
 export const BribesContextApp = ({children}: {children: React.ReactElement}): React.ReactElement => {
+	const hasConnector = useAccount().connector !== undefined;
+	const {address, isActive} = useWeb3();
 	const {gauges} = useCurve();
-	const {address} = useWeb3();
 	const [currentRewards, set_currentRewards] = useState<TCurveGaugeVersionRewards>({});
 	const [nextRewards, set_nextRewards] = useState<TCurveGaugeVersionRewards>({});
 	const [claimable, set_claimable] = useState<TCurveGaugeVersionRewards>({});
 	const [isLoading, set_isLoading] = useState<boolean>(true);
 	const [currentPeriod, set_currentPeriod] = useState<number>(getLastThursday());
 	const [nextPeriod, set_nextPeriod] = useState<number>(getNextThursday());
-	const bribeV3BaseContract = useMemo(
-		(): {address: TAddress; abi: typeof CURVE_BRIBE_V3_ABI} => ({
-			address: CURVE_BRIBE_V3_ADDRESS,
-			abi: CURVE_BRIBE_V3_ABI
-		}),
-		[]
-	);
-
 	const {data: _currentPeriod} = useContractRead({
-		...bribeV3BaseContract,
+		address: CURVE_BRIBE_V3_ADDRESS,
+		abi: CURVE_BRIBE_V3_ABI,
 		functionName: 'current_period',
-		chainId: 1
+		chainId: YBRIBE_SUPPORTED_NETWORK
 	});
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -78,7 +72,9 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 		const rewardsPerGaugesCalls = [];
 		for (const gauge of gauges) {
 			rewardsPerGaugesCalls.push({
-				...bribeV3BaseContract,
+				address: CURVE_BRIBE_V3_ADDRESS,
+				abi: CURVE_BRIBE_V3_ABI,
+				chainId: YBRIBE_SUPPORTED_NETWORK,
 				functionName: 'rewards_per_gauge',
 				args: [gauge.gauge]
 			});
@@ -101,7 +97,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 			rewardsPerGauges[gauge.gauge.toString()] = rewardsTokensAddresses;
 		}
 		return rewardsPerGauges;
-	}, [bribeV3BaseContract, gauges]);
+	}, [gauges]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 **	getRewardsPerUser will help you retrieved the claimable and rewards
@@ -118,6 +114,9 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 	};
 	const getRewardsPerUser = useCallback(
 		async (rewardsPerGauges: TDict<TAddress[]>): Promise<TDict<TGetRewardsPerUser>> => {
+			if (!isActive) {
+				return {};
+			}
 			const userAddress = toAddress(address);
 			const rewardsPerTokensPerGaugesCalls = [];
 			const rewardsList: string[] = [];
@@ -131,17 +130,20 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 					rewardsPerTokensPerGaugesCalls.push(
 						...[
 							{
-								...bribeV3BaseContract,
+								address: CURVE_BRIBE_V3_ADDRESS,
+								abi: CURVE_BRIBE_V3_ABI,
 								functionName: 'reward_per_token',
 								args: args
 							},
 							{
-								...bribeV3BaseContract,
+								address: CURVE_BRIBE_V3_ADDRESS,
+								abi: CURVE_BRIBE_V3_ABI,
 								functionName: 'active_period',
 								args: args
 							},
 							{
-								...bribeV3BaseContract,
+								address: CURVE_BRIBE_V3_ADDRESS,
+								abi: CURVE_BRIBE_V3_ABI,
 								functionName: 'claimable',
 								args: [userAddress, ...args]
 							}
@@ -158,26 +160,31 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 			let resultIndex = 0;
 			for (const [gaugeAddress, rewardsTokens] of Object.entries(rewardsPerGauges)) {
 				for (const tokenAsReward of rewardsTokens) {
-					const prepareWriteResult = await prepareWriteContract({
-						...bribeV3BaseContract,
-						chainId: YBRIBE_SUPPORTED_NETWORK,
-						functionName: 'claim_reward_for',
-						args: [userAddress, toAddress(gaugeAddress), toAddress(tokenAsReward)]
-					});
-					rewards[gaugeAddress] = {
-						gaugeAddress: toAddress(gaugeAddress),
-						tokenAddress: toAddress(tokenAsReward),
-						rewardPerToken: decodeAsBigInt(result[resultIndex++]),
-						activePeriod: decodeAsBigInt(result[resultIndex++]),
-						claimable: decodeAsBigInt(result[resultIndex++]),
-						claimRewardFor: prepareWriteResult.result
-					};
+					try {
+						const prepareWriteResult = await prepareWriteContract({
+							address: CURVE_BRIBE_V3_ADDRESS,
+							abi: CURVE_BRIBE_V3_ABI,
+							chainId: YBRIBE_SUPPORTED_NETWORK,
+							functionName: 'claim_reward_for',
+							args: [userAddress, toAddress(gaugeAddress), toAddress(tokenAsReward)]
+						});
+						rewards[gaugeAddress] = {
+							gaugeAddress: toAddress(gaugeAddress),
+							tokenAddress: toAddress(tokenAsReward),
+							rewardPerToken: decodeAsBigInt(result[resultIndex++]),
+							activePeriod: decodeAsBigInt(result[resultIndex++]),
+							claimable: decodeAsBigInt(result[resultIndex++]),
+							claimRewardFor: prepareWriteResult.result
+						};
+					} catch (error) {
+						//
+					}
 				}
 			}
 
 			return rewards;
 		},
-		[address, bribeV3BaseContract]
+		[address, isActive]
 	);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -193,7 +200,6 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 	const getNextPeriodRewards = useCallback(
 		async (rewardsPerGauges: TDict<TAddress[]>): Promise<TDict<TGetNextPeriodRewards>> => {
 			const rewardsPerTokensPerGaugesCalls: Promise<PrepareWriteContractResult>[] = [];
-
 			for (const [gaugeAddress, rewardsTokens] of Object.entries(rewardsPerGauges)) {
 				for (const tokenAsReward of rewardsTokens) {
 					rewardsPerTokensPerGaugesCalls.push(
@@ -208,20 +214,24 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 				}
 			}
 
-			const result = await Promise.all(rewardsPerTokensPerGaugesCalls);
-			const multicallResult: TDict<TGetNextPeriodRewards> = {};
-			let resultIndex = 0;
-			for (const [gaugeAddress, rewardsTokens] of Object.entries(rewardsPerGauges)) {
-				for (const tokenAsReward of rewardsTokens) {
-					multicallResult[gaugeAddress] = {
-						gaugeAddress: toAddress(gaugeAddress),
-						tokenAddress: toAddress(tokenAsReward),
-						nextRewards: toBigInt(result[resultIndex++].result as bigint)
-					};
+			try {
+				const result = await Promise.all(rewardsPerTokensPerGaugesCalls);
+				const multicallResult: TDict<TGetNextPeriodRewards> = {};
+				let resultIndex = 0;
+				for (const [gaugeAddress, rewardsTokens] of Object.entries(rewardsPerGauges)) {
+					for (const tokenAsReward of rewardsTokens) {
+						multicallResult[gaugeAddress] = {
+							gaugeAddress: toAddress(gaugeAddress),
+							tokenAddress: toAddress(tokenAsReward),
+							nextRewards: toBigInt(result[resultIndex++].result as bigint)
+						};
+					}
 				}
+				return multicallResult;
+			} catch (error) {
+				console.error(error);
+				return {};
 			}
-
-			return multicallResult;
 		},
 		[]
 	);
@@ -271,6 +281,9 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 	 **	getBribes will start the process to retrieve the bribe information.
 	 ***************************************************************************/
 	const getBribes = useAsyncTrigger(async (): Promise<void> => {
+		if (!hasConnector) {
+			return;
+		}
 		const rewardsPerGauges = await getRewardsPerGauges();
 		const [rewardsPerUser, nextPeriodRewards] = await Promise.all([
 			getRewardsPerUser(rewardsPerGauges),
@@ -279,8 +292,7 @@ export const BribesContextApp = ({children}: {children: React.ReactElement}): Re
 
 		assignBribes(rewardsPerUser);
 		assignNextRewards(nextPeriodRewards);
-		return;
-	}, [getRewardsPerGauges, getRewardsPerUser, getNextPeriodRewards, assignBribes, assignNextRewards]);
+	}, [hasConnector, getRewardsPerGauges, getRewardsPerUser, getNextPeriodRewards, assignBribes, assignNextRewards]);
 
 	const onRefresh = useCallback(async (): Promise<void> => {
 		await getBribes();

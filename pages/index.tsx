@@ -74,7 +74,7 @@ const apps = [
 	{
 		href: 'https://yeth.yearn.fi',
 		title: 'yETH',
-		description: 'Simple, straight forward, risk adjusted liquid staking yield.',
+		description: 'simple, straight forward, risk adjusted liquid staking yield.',
 		icon: (
 			<ImageWithFallback
 				alt={'yETH'}
