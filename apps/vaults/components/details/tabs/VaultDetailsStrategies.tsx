@@ -180,17 +180,14 @@ function VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
 						</div>
 
 						<div className={'mt-auto pt-8'}>
-							<p className={'text-neutral-600'}>{'Historical APR'}</p>
-							<div className={'mt-4 flex flex-row border-b border-l border-neutral-300'}>
-								<Renderable shouldRender={isMounted()}>
-									<GraphForStrategyReports
-										vaultChainID={currentVault.chainID}
-										vaultDecimals={currentVault.decimals}
-										vaultTicker={currentVault?.token?.symbol || 'token'}
-										strategy={strategy}
-									/>
-								</Renderable>
-							</div>
+							<Renderable shouldRender={isMounted()}>
+								<GraphForStrategyReports
+									vaultChainID={currentVault.chainID}
+									vaultDecimals={currentVault.decimals}
+									vaultTicker={currentVault?.token?.symbol || 'token'}
+									strategy={strategy}
+								/>
+							</Renderable>
 						</div>
 					</div>
 				</div>
@@ -201,20 +198,12 @@ function VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
 
 function isExceptionStrategy(strategy: TYDaemonVaultStrategy): boolean {
 	// Curve DAO Fee and Bribes Reinvest
-	return strategy.address.toString() === '0x23724D764d8b3d26852BA20d3Bc2578093d2B022' && !!strategy.details?.inQueue;
+	return strategy.address.toString() === '0x23724D764d8b3d26852BA20d3Bc2578093d2B022';
 }
 
 export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const [searchValue, set_searchValue] = useState<string>('');
-	const [shouldHide0DebtStrategies, set_shouldHide0DebtStrategies] = useState(true);
-
-	const hide0DebtStrategyFilter = (strategy: TYDaemonVaultStrategy): boolean => {
-		return !shouldHide0DebtStrategies || Number(strategy.details?.totalDebt) > 0 || isExceptionStrategy(strategy);
-	};
-
-	const nameSearchFilter = ({name, displayName}: TYDaemonVaultStrategy): boolean => {
-		return !searchValue || `${name} ${displayName}`.toLowerCase().includes(searchValue);
-	};
+	const [shouldDisplayInactiveStrategies, set_shouldDisplayInactiveStrategies] = useState(true);
 
 	const sortedStrategies = useMemo((): TYDaemonVault['strategies'] => {
 		return (currentVault.strategies || []).sort(
@@ -222,7 +211,21 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 		);
 	}, [currentVault.strategies]);
 
-	const filteredStrategies = (sortedStrategies || []).filter(hide0DebtStrategyFilter).filter(nameSearchFilter);
+	const filteredStrategies = useMemo((): TYDaemonVault['strategies'] => {
+		return (sortedStrategies || [])
+			.filter((strategy): boolean => {
+				if (!searchValue) {
+					return true;
+				}
+				return `${strategy.name} ${strategy.displayName}`.toLowerCase().includes(searchValue);
+			})
+			.filter((strategy): boolean => {
+				if (!shouldDisplayInactiveStrategies) {
+					return Number(strategy.details?.totalDebt) > 0 || isExceptionStrategy(strategy);
+				}
+				return true;
+			});
+	}, [searchValue, shouldDisplayInactiveStrategies, sortedStrategies]);
 
 	return (
 		<div className={'grid grid-cols-1 bg-neutral-100'}>
@@ -239,16 +242,16 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 					<div className={'mt-4 flex h-full min-w-fit flex-row md:mr-4 md:mt-7'}>
 						<small className={'mr-2'}>{'Hide 0 debt strategies'}</small>
 						<Switch
-							isEnabled={shouldHide0DebtStrategies}
+							isEnabled={shouldDisplayInactiveStrategies}
 							onSwitch={(): void => {
-								set_shouldHide0DebtStrategies((prev): boolean => !prev);
+								set_shouldDisplayInactiveStrategies((prev): boolean => !prev);
 							}}
 						/>
 					</div>
 				</div>
 			</div>
 			<div className={'col-span-1 w-full border-t border-neutral-300'}>
-				{filteredStrategies.map(
+				{(filteredStrategies || []).map(
 					(strategy): ReactElement => (
 						<VaultDetailsStrategy
 							currentVault={currentVault}
