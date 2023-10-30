@@ -5,9 +5,9 @@ import {useAppSettings} from '@vaults/contexts/useAppSettings';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
+import {isAutomatedVault, type TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
 import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
-import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
 export function useFilteredVaults(
 	vaultMap: TDict<TYDaemonVault>,
@@ -32,13 +32,13 @@ export function useVaultFilter(
 	const {shouldHideDust} = useAppSettings();
 
 	const filterHoldingsCallback = useCallback(
-		(address: TAddress, chainID: number): boolean => {
-			const holding = getToken({address, chainID});
+		(vault: TYDaemonVault, isFactoryOnly: boolean): boolean => {
+			const holding = getToken({address: vault.address, chainID: vault.chainID});
 
 			// [Optimism] Check if staked vaults have holdings
-			if (chains.includes(10)) {
-				const stakedVaultAddress = STACKING_TO_VAULT[toAddress(address)];
-				const stakedHolding = getToken({address: stakedVaultAddress, chainID});
+			if (chains.includes(10) && !isFactoryOnly) {
+				const stakedVaultAddress = STACKING_TO_VAULT[toAddress(vault.address)];
+				const stakedHolding = getToken({address: stakedVaultAddress, chainID: vault.chainID});
 				const hasValidStakedBalance = stakedHolding.balance.raw > 0n;
 				const stakedBalanceValue = stakedHolding.value || 0;
 				if (hasValidStakedBalance && !(shouldHideDust && stakedBalanceValue < 0.01)) {
@@ -52,6 +52,12 @@ export function useVaultFilter(
 				return false;
 			}
 			if (hasValidBalance) {
+				if (isFactoryOnly) {
+					if (vault.category === 'Curve' && isAutomatedVault(vault)) {
+						return true;
+					}
+					return false;
+				}
 				return true;
 			}
 			return false;
@@ -79,8 +85,11 @@ export function useVaultFilter(
 	const stablesVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Stablecoin');
 	const balancerVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Balancer');
 	const cryptoVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Volatile');
-	const holdingsVaults = useFilteredVaults(vaults, ({address, chainID}): boolean =>
-		filterHoldingsCallback(address, chainID)
+	const holdingsFactoryVaults = useFilteredVaults(vaults, (vault): boolean => filterHoldingsCallback(vault, true));
+	const holdingsVaults = useFilteredVaults(vaults, (vault): boolean => filterHoldingsCallback(vault, false));
+	const curveFactoryVaults = useFilteredVaults(
+		vaults,
+		(vault): boolean => vault.category === 'Curve' && isAutomatedVault(vault)
 	);
 	const migratableVaults = useFilteredVaults(vaultsMigrations, ({address, chainID}): boolean =>
 		filterMigrationCallback(address, chainID)
@@ -102,6 +111,9 @@ export function useVaultFilter(
 				(a, b): number => (b.tvl.tvl || 0) * (b?.apr?.netAPR || 0) - (a.tvl.tvl || 0) * (a?.apr?.netAPR || 0)
 			);
 			_vaultList = _vaultList.slice(0, 10);
+		}
+		if (categories.includes('curveF')) {
+			_vaultList = [..._vaultList, ...curveFactoryVaults];
 		}
 		if (categories.includes('curve')) {
 			_vaultList = [..._vaultList, ...curveVaults];
@@ -127,15 +139,18 @@ export function useVaultFilter(
 		if (categories.includes('holdings')) {
 			_vaultList = [..._vaultList, ...holdingsVaults];
 		}
+		if (categories.includes('holdingsF')) {
+			_vaultList = [..._vaultList, ...holdingsFactoryVaults];
+		}
 
 		//remove duplicates
 		_vaultList = _vaultList.filter(
 			(vault, index, self): boolean => index === self.findIndex((v): boolean => v.address === vault.address)
 		);
-
 		return _vaultList;
 	}, [
 		categories,
+		curveFactoryVaults,
 		curveVaults,
 		balancerVaults,
 		velodromeVaults,
@@ -143,7 +158,8 @@ export function useVaultFilter(
 		boostedVaults,
 		stablesVaults,
 		cryptoVaults,
-		holdingsVaults
+		holdingsVaults,
+		holdingsFactoryVaults
 	]);
 
 	return {activeVaults, migratableVaults, retiredVaults};

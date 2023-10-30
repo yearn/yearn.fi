@@ -1,4 +1,4 @@
-import {ALL_CATEGORIES_KEYS, ALL_CHAINS} from '@vaults/constants';
+import {ALL_CHAINS, ALL_VAULTS_CATEGORIES_KEYS} from '@vaults/constants';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 
@@ -55,7 +55,7 @@ export function VaultsListEmpty({
 		return (
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center gap-4 px-10 py-2 md:w-3/4'}>
 				<b className={'text-center text-lg'}>{'No data, reeeeeeeeeeee'}</b>
-				{currentCategories.length === ALL_CATEGORIES_KEYS.length ? (
+				{currentCategories.length === ALL_VAULTS_CATEGORIES_KEYS.length ? (
 					<p className={'text-center text-neutral-600'}>{`The vault "${currentSearch}" does not exist`}</p>
 				) : (
 					<>
@@ -65,7 +65,7 @@ export function VaultsListEmpty({
 						<Button
 							className={'w-full md:w-48'}
 							onClick={(): void => {
-								onChangeCategories(ALL_CATEGORIES_KEYS);
+								onChangeCategories(ALL_VAULTS_CATEGORIES_KEYS);
 								onChangeChains(ALL_CHAINS);
 							}}>
 							{'Search all vaults'}
@@ -87,7 +87,7 @@ export function VaultsListEmpty({
 					<Button
 						className={'w-full md:w-48'}
 						onClick={(): void => {
-							onChangeCategories(ALL_CATEGORIES_KEYS);
+							onChangeCategories(ALL_VAULTS_CATEGORIES_KEYS);
 							onChangeChains(ALL_CHAINS);
 						}}>
 						{'Search all vaults'}
@@ -115,12 +115,11 @@ export function VaultListEmptyExternalMigration(): ReactElement {
 export function VaultsListEmptyFactory({
 	sortedVaultsToDisplay,
 	currentCategories,
+	currentChains,
+	onChangeCategories,
+	onChangeChains,
 	isLoading
-}: {
-	sortedVaultsToDisplay: TYDaemonVaults;
-	currentCategories: string;
-	isLoading: boolean;
-}): ReactElement {
+}: TVaultListEmpty): ReactElement {
 	if (isLoading && isZero(sortedVaultsToDisplay.length)) {
 		return (
 			<div className={'flex h-96 w-full flex-col items-center justify-center px-10 py-2'}>
@@ -133,7 +132,12 @@ export function VaultsListEmptyFactory({
 		);
 	}
 
-	if (!isLoading && isZero(sortedVaultsToDisplay.length) && currentCategories === 'Holdings') {
+	if (
+		!isLoading &&
+		isZero(sortedVaultsToDisplay.length) &&
+		currentCategories.length === 1 &&
+		currentCategories.includes('holdings')
+	) {
 		return (
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
 				<b className={'text-center text-lg'}>{'Well this is awkward...'}</b>
@@ -154,6 +158,27 @@ export function VaultsListEmptyFactory({
 						'There doesn’t seem to be anything here. It might be because you searched for a token in the wrong category, or because there’s a rodent infestation in our server room. You check the search box, we’ll check the rodents. Deal?'
 					}
 				</p>
+			</div>
+		);
+	}
+	if (!isLoading && currentChains.length === 0) {
+		return (
+			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center gap-4 px-10 py-2 md:w-3/4'}>
+				<b className={'text-center text-lg'}>{'No data, reeeeeeeeeeee'}</b>
+				<>
+					<p
+						className={
+							'text-center text-neutral-600'
+						}>{`Please, select a chain. At least one, just one.`}</p>
+					<Button
+						className={'w-full md:w-48'}
+						onClick={(): void => {
+							onChangeCategories(ALL_VAULTS_CATEGORIES_KEYS);
+							onChangeChains(ALL_CHAINS);
+						}}>
+						{'Search all vaults'}
+					</Button>
+				</>
 			</div>
 		);
 	}

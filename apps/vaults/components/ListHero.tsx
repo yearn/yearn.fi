@@ -1,32 +1,37 @@
 import {useMemo} from 'react';
-import {ALL_CATEGORIES} from '@vaults/constants';
 import {IconArbitrumChain} from '@yearn-finance/web-lib/icons/chains/IconArbitrumChain';
 import {IconBaseChain} from '@yearn-finance/web-lib/icons/chains/IconBaseChain';
 import {IconEtherumChain} from '@yearn-finance/web-lib/icons/chains/IconEtherumChain';
 import {IconFantomChain} from '@yearn-finance/web-lib/icons/chains/IconFantomChain';
 import {IconOptimismChain} from '@yearn-finance/web-lib/icons/chains/IconOptimismChain';
+import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {MultiSelectDropdown} from '@common/components/MultiSelectDropdown';
 import {SearchBar} from '@common/components/SearchBar';
 
 import type {ReactElement} from 'react';
+import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TMultiSelectOptionProps} from '@common/components/MultiSelectDropdown';
 
 type TListHero = {
 	categories: string[];
+	possibleCategories: TDict<string>;
 	chains: number[];
 	searchValue: string;
 	onChangeCategories: (categories: string[]) => void;
 	onChangeChains: (chains: number[]) => void;
 	onSearch: (searchValue: string) => void;
+	shouldHideChainSelector?: boolean;
 };
 
 export function ListHero({
 	categories,
 	onChangeCategories,
+	possibleCategories,
 	searchValue,
 	chains,
 	onSearch,
-	onChangeChains
+	onChangeChains,
+	shouldHideChainSelector
 }: TListHero): ReactElement {
 	const chainOptions = useMemo((): TMultiSelectOptionProps[] => {
 		return [
@@ -64,7 +69,7 @@ export function ListHero({
 	}, [chains]);
 
 	const categoryOptions = useMemo((): TMultiSelectOptionProps[] => {
-		const options: TMultiSelectOptionProps[] = Object.entries(ALL_CATEGORIES).map(
+		const options: TMultiSelectOptionProps[] = Object.entries(possibleCategories).map(
 			([key, value]): TMultiSelectOptionProps => ({
 				value: key,
 				label: value,
@@ -72,12 +77,12 @@ export function ListHero({
 			})
 		);
 		return options;
-	}, [categories]);
+	}, [categories, possibleCategories]);
 
 	return (
 		<div className={'flex flex-col items-start justify-between space-x-0 px-4 pb-2 pt-4 md:px-10 md:pb-8 md:pt-10'}>
 			<div className={'mt-0 flex w-full flex-col items-center justify-between gap-4 md:mt-0 md:flex-row'}>
-				<div className={'w-full md:w-1/3'}>
+				<div className={cl('w-full md:w-1/3', shouldHideChainSelector ? 'invisible pointer-events-none' : '')}>
 					<small>{'Select Blockchain'}</small>
 					<MultiSelectDropdown
 						options={chainOptions}

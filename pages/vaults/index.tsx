@@ -7,6 +7,7 @@ import {VaultsListInternalMigrationRow} from '@vaults/components/list/VaultsList
 import {VaultsListRetired} from '@vaults/components/list/VaultsListRetired';
 import {VaultsListRow} from '@vaults/components/list/VaultsListRow';
 import {ListHero} from '@vaults/components/ListHero';
+import {ALL_VAULTS_CATEGORIES} from '@vaults/constants';
 import {useVaultFilter} from '@vaults/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
@@ -176,6 +177,7 @@ function ListOfVaults(): ReactElement {
 			</div>
 			<ListHero
 				categories={categories}
+				possibleCategories={ALL_VAULTS_CATEGORIES}
 				searchValue={search || ''}
 				chains={chains}
 				onChangeChains={onChangeChains}
