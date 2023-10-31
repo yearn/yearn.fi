@@ -1,11 +1,13 @@
 import {useMemo} from 'react';
 import Link from 'next/link';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
+import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
+import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {RenderAmount} from '@common/components/RenderAmount';
 import {useWallet} from '@common/contexts/useWallet';
@@ -382,7 +384,21 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 								{currentVault.name}
 							</strong>
 							<p className={'mb-2 block text-neutral-800'}>{currentVault.token.name}</p>
-							<VaultChainTag chainID={currentVault.chainID} />
+							<div className={'flex flex-row items-center'}>
+								<VaultChainTag chainID={currentVault.chainID} />
+								<Link
+									href={`${getNetwork(currentVault.chainID)?.defaultBlockExplorer}/address/${
+										currentVault.address
+									}`}
+									onClick={(event): void => event.stopPropagation()}
+									className={'text-neutral-900/50 transition-opacity hover:text-neutral-900'}
+									target={'_blank'}
+									rel={'noopener noreferrer'}>
+									<div className={'px-2'}>
+										<IconLinkOut className={'inline-block h-4 w-4'} />
+									</div>
+								</Link>
+							</div>
 						</div>
 					</div>
 				</div>
