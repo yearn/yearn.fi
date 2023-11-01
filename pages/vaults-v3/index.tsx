@@ -343,7 +343,7 @@ function Index(): ReactElement {
 					</div>
 
 					<div className={'pt-6'}>
-						<div className={'rounded-3xl border border-[#D21162] bg-[#14051A] px-6 py-4 text-[#D21162]'}>
+						<div className={'rounded-3xl border border-[#D21162] bg-[#14051A] px-6 py-4 text-[#FF1678]'}>
 							<b className={'text-lg'}>{'Ape carefully anon!'}</b>
 							<p>
 								{
