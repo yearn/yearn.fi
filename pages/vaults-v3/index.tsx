@@ -301,7 +301,7 @@ function Index(): ReactElement {
 					'relative pb-8 bg-neutral-0 z-50',
 					'min-h-screen',
 					'transition-transform duration-300',
-					isCollapsed ? 'translate-y-[416px] md:translate-y-[512px]' : 'translate-y-0'
+					isCollapsed ? 'translate-y-[416px] md:translate-y-[564px]' : 'translate-y-0'
 				)}>
 				<div className={'mx-auto w-full max-w-6xl'}>
 					<div
