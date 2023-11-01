@@ -125,7 +125,7 @@ function ValueInToken(props: {currentVault: TYDaemonVault; vaultPrice: number; d
 								className={
 									'font-number flex w-full flex-row justify-between text-neutral-400 md:text-xs'
 								}>
-								{`You yield every single block for more ${props.currentVault.token.symbol}!`}
+								{`Your yield is accruing every single block. Go you!`}
 							</p>
 						</div>
 					</span>
