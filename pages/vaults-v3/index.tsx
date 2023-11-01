@@ -63,7 +63,7 @@ function BrandNewVaultCard(): ReactElement {
 						'text-[48px] md:text-[56px] md:leading-[64px] leading-[56px]',
 						'whitespace-break-spaces uppercase'
 					)}>
-					{'Discover brand\nnew vaults'}
+					{'A brave new\nworld for Yield.'}
 				</h1>
 				<p className={'mb-4 whitespace-break-spaces text-base text-[#F2B7D0] md:text-lg'}>
 					{
