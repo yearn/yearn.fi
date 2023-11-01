@@ -80,27 +80,20 @@ function BrandNewVaultCard(): ReactElement {
 		</div>
 	);
 }
-function V3TVLCard(): ReactElement {
+function V3Card(): ReactElement {
 	return (
-		<div className={'col-span-75 ml-0 mt-4 md:col-span-29 md:ml-6 md:mt-0'}>
-			<div className={'flex w-full flex-col gap-y-0 md:gap-y-6'}>
-				<div className={'relative hidden h-[203px] rounded-3xl bg-neutral-200 md:block'}>
-					<V3Mask className={'absolute bottom-8 left-10'} />
-				</div>
-				<div className={'rounded-3xl bg-neutral-200 p-6 md:px-8 md:py-4'}>
-					<strong className={'mb-2 block text-4xl font-black leading-[48px] text-neutral-900'}>
-						{'TVL'}
-					</strong>
-					<b
-						suppressHydrationWarning
-						className={'font-number block text-3xl font-bold text-neutral-900 md:text-4xl'}>
-						{formatAmount(420420690, 0, 0)}
-					</b>
-				</div>
+		<div className={'col-span-75 mb-4 mr-0 hidden md:col-span-29 md:mb-0 md:mr-6 md:block'}>
+			<div
+				className={cl(
+					'flex h-full w-full flex-col items-center justify-center',
+					'gap-y-0 rounded-3xl bg-neutral-200 md:gap-y-6 p-8'
+				)}>
+				<V3Mask className={'h-full w-full'} />
 			</div>
 		</div>
 	);
 }
+
 function PortfolioCard(): ReactElement {
 	const {cumulatedValueInV3Vaults} = useWallet();
 	const {earned} = useYearn();
@@ -297,8 +290,8 @@ function Index(): ReactElement {
 			<div className={'relative mx-auto w-full max-w-6xl'}>
 				<div className={'absolute inset-x-0 top-0 w-full px-4 pt-2 md:pt-16'}>
 					<div className={'grid grid-cols-75'}>
+						<V3Card />
 						<BrandNewVaultCard />
-						<V3TVLCard />
 					</div>
 				</div>
 			</div>
@@ -308,7 +301,7 @@ function Index(): ReactElement {
 					'relative pb-8 bg-neutral-0 z-50',
 					'min-h-screen',
 					'transition-transform duration-300',
-					isCollapsed ? 'translate-y-[512px]' : 'translate-y-0'
+					isCollapsed ? 'translate-y-[416px] md:translate-y-[512px]' : 'translate-y-0'
 				)}>
 				<div className={'mx-auto w-full max-w-6xl'}>
 					<div
