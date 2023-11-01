@@ -349,6 +349,17 @@ function Index(): ReactElement {
 						</div>
 					</div>
 
+					<div className={'pt-6'}>
+						<div className={'rounded-3xl border border-[#D21162] bg-[#14051A] px-6 py-4 text-[#D21162]'}>
+							<b className={'text-lg'}>{'Ape carefully anon!'}</b>
+							<p>
+								{
+									'V3 is truly flexible yield protocol offering everything from the usual Up Only Vaults to all new risky degen strategies.'
+								}
+							</p>
+						</div>
+					</div>
+
 					<div className={'grid grid-cols-12 gap-4 pt-6 md:gap-6'}>
 						<PortfolioCard />
 						<ListOfVaults />
