@@ -209,10 +209,10 @@ export function V3Mask(props: React.SVGProps<SVGSVGElement>): ReactElement {
 					x2={'88.5985'}
 					y2={'193.723'}
 					gradientUnits={'userSpaceOnUse'}>
-					<stop stop-color={'#D21162'} />
+					<stop stopColor={'#D21162'} />
 					<stop
 						offset={'1'}
-						stop-color={'#2C3DA6'}
+						stopColor={'#2C3DA6'}
 					/>
 				</linearGradient>
 				<linearGradient
@@ -222,10 +222,10 @@ export function V3Mask(props: React.SVGProps<SVGSVGElement>): ReactElement {
 					x2={'176.323'}
 					y2={'99.428'}
 					gradientUnits={'userSpaceOnUse'}>
-					<stop stop-color={'white'} />
+					<stop stopColor={'white'} />
 					<stop
 						offset={'1'}
-						stop-color={'white'}
+						stopColor={'white'}
 						stop-opacity={'0.18'}
 					/>
 				</linearGradient>
@@ -236,10 +236,10 @@ export function V3Mask(props: React.SVGProps<SVGSVGElement>): ReactElement {
 					x2={'264.717'}
 					y2={'195.046'}
 					gradientUnits={'userSpaceOnUse'}>
-					<stop stop-color={'#D21162'} />
+					<stop stopColor={'#D21162'} />
 					<stop
 						offset={'1'}
-						stop-color={'#2C3DA6'}
+						stopColor={'#2C3DA6'}
 					/>
 				</linearGradient>
 				<linearGradient
@@ -249,10 +249,10 @@ export function V3Mask(props: React.SVGProps<SVGSVGElement>): ReactElement {
 					x2={'342.179'}
 					y2={'100.795'}
 					gradientUnits={'userSpaceOnUse'}>
-					<stop stop-color={'white'} />
+					<stop stopColor={'white'} />
 					<stop
 						offset={'1'}
-						stop-color={'white'}
+						stopColor={'white'}
 						stop-opacity={'0.18'}
 					/>
 				</linearGradient>
@@ -263,10 +263,10 @@ export function V3Mask(props: React.SVGProps<SVGSVGElement>): ReactElement {
 					x2={'29.7299'}
 					y2={'291.007'}
 					gradientUnits={'userSpaceOnUse'}>
-					<stop stop-color={'#D21162'} />
+					<stop stopColor={'#D21162'} />
 					<stop
 						offset={'1'}
-						stop-color={'#2C3DA6'}
+						stopColor={'#2C3DA6'}
 					/>
 				</linearGradient>
 				<linearGradient
@@ -276,10 +276,10 @@ export function V3Mask(props: React.SVGProps<SVGSVGElement>): ReactElement {
 					x2={'58.836'}
 					y2={'259.686'}
 					gradientUnits={'userSpaceOnUse'}>
-					<stop stop-color={'white'} />
+					<stop stopColor={'white'} />
 					<stop
 						offset={'1'}
-						stop-color={'white'}
+						stopColor={'white'}
 						stop-opacity={'0.1'}
 					/>
 				</linearGradient>
@@ -290,10 +290,10 @@ export function V3Mask(props: React.SVGProps<SVGSVGElement>): ReactElement {
 					x2={'90.0966'}
 					y2={'291.007'}
 					gradientUnits={'userSpaceOnUse'}>
-					<stop stop-color={'#D21162'} />
+					<stop stopColor={'#D21162'} />
 					<stop
 						offset={'1'}
-						stop-color={'#2C3DA6'}
+						stopColor={'#2C3DA6'}
 					/>
 				</linearGradient>
 				<linearGradient
@@ -303,10 +303,10 @@ export function V3Mask(props: React.SVGProps<SVGSVGElement>): ReactElement {
 					x2={'119.189'}
 					y2={'259.699'}
 					gradientUnits={'userSpaceOnUse'}>
-					<stop stop-color={'white'} />
+					<stop stopColor={'white'} />
 					<stop
 						offset={'1'}
-						stop-color={'white'}
+						stopColor={'white'}
 						stop-opacity={'0.1'}
 					/>
 				</linearGradient>
@@ -317,10 +317,10 @@ export function V3Mask(props: React.SVGProps<SVGSVGElement>): ReactElement {
 					x2={'156.05'}
 					y2={'292.306'}
 					gradientUnits={'userSpaceOnUse'}>
-					<stop stop-color={'#D21162'} />
+					<stop stopColor={'#D21162'} />
 					<stop
 						offset={'1'}
-						stop-color={'#2C3DA6'}
+						stopColor={'#2C3DA6'}
 					/>
 				</linearGradient>
 				<linearGradient
@@ -330,10 +330,10 @@ export function V3Mask(props: React.SVGProps<SVGSVGElement>): ReactElement {
 					x2={'185.294'}
 					y2={'260.36'}
 					gradientUnits={'userSpaceOnUse'}>
-					<stop stop-color={'white'} />
+					<stop stopColor={'white'} />
 					<stop
 						offset={'1'}
-						stop-color={'white'}
+						stopColor={'white'}
 						stop-opacity={'0.1'}
 					/>
 				</linearGradient>
@@ -344,10 +344,10 @@ export function V3Mask(props: React.SVGProps<SVGSVGElement>): ReactElement {
 					x2={'221.717'}
 					y2={'291.02'}
 					gradientUnits={'userSpaceOnUse'}>
-					<stop stop-color={'#D21162'} />
+					<stop stopColor={'#D21162'} />
 					<stop
 						offset={'1'}
-						stop-color={'#2C3DA6'}
+						stopColor={'#2C3DA6'}
 					/>
 				</linearGradient>
 				<linearGradient
@@ -357,10 +357,10 @@ export function V3Mask(props: React.SVGProps<SVGSVGElement>): ReactElement {
 					x2={'249.072'}
 					y2={'259.699'}
 					gradientUnits={'userSpaceOnUse'}>
-					<stop stop-color={'white'} />
+					<stop stopColor={'white'} />
 					<stop
 						offset={'1'}
-						stop-color={'white'}
+						stopColor={'white'}
 						stop-opacity={'0.1'}
 					/>
 				</linearGradient>
@@ -371,10 +371,10 @@ export function V3Mask(props: React.SVGProps<SVGSVGElement>): ReactElement {
 					x2={'272.254'}
 					y2={'291.034'}
 					gradientUnits={'userSpaceOnUse'}>
-					<stop stop-color={'#D21162'} />
+					<stop stopColor={'#D21162'} />
 					<stop
 						offset={'1'}
-						stop-color={'#2C3DA6'}
+						stopColor={'#2C3DA6'}
 					/>
 				</linearGradient>
 				<linearGradient
@@ -384,10 +384,10 @@ export function V3Mask(props: React.SVGProps<SVGSVGElement>): ReactElement {
 					x2={'300.193'}
 					y2={'259.699'}
 					gradientUnits={'userSpaceOnUse'}>
-					<stop stop-color={'white'} />
+					<stop stopColor={'white'} />
 					<stop
 						offset={'1'}
-						stop-color={'white'}
+						stopColor={'white'}
 						stop-opacity={'0.1'}
 					/>
 				</linearGradient>
@@ -398,10 +398,10 @@ export function V3Mask(props: React.SVGProps<SVGSVGElement>): ReactElement {
 					x2={'332.786'}
 					y2={'291.02'}
 					gradientUnits={'userSpaceOnUse'}>
-					<stop stop-color={'#D21162'} />
+					<stop stopColor={'#D21162'} />
 					<stop
 						offset={'1'}
-						stop-color={'#2C3DA6'}
+						stopColor={'#2C3DA6'}
 					/>
 				</linearGradient>
 				<linearGradient
@@ -411,10 +411,10 @@ export function V3Mask(props: React.SVGProps<SVGSVGElement>): ReactElement {
 					x2={'359.091'}
 					y2={'259.699'}
 					gradientUnits={'userSpaceOnUse'}>
-					<stop stop-color={'white'} />
+					<stop stopColor={'white'} />
 					<stop
 						offset={'1'}
-						stop-color={'white'}
+						stopColor={'white'}
 						stop-opacity={'0.1'}
 					/>
 				</linearGradient>

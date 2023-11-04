@@ -173,7 +173,7 @@ function BoostRewards(): ReactElement {
 }
 
 function ExitRewards(): ReactElement {
-	const {isActive, provider, address} = useWeb3();
+	const {provider, address} = useWeb3();
 	const yfiPrice = useTokenPrice(YFI_ADDRESS);
 	const [claimable, set_claimable] = useState<TNormalizedBN>(toNormalizedBN(0));
 	const [claimStatus, set_claimStatus] = useState(defaultTxStatus);
@@ -193,10 +193,11 @@ function ExitRewards(): ReactElement {
 			});
 			set_claimable(toNormalizedBN(result, 18));
 		} catch (error) {
+			console.warn(error);
 			console.error(`[err - ExitRewards]: static call reverted when trying to get claimable amount.`);
 			set_claimable(toNormalizedBN(0));
 		}
-	}, [address, isActive, provider]); // eslint-disable-line react-hooks/exhaustive-deps
+	}, [address]);
 
 	const onClaim = useCallback(async (): Promise<void> => {
 		const result = await GaugeActions.claimBoostRewards({
