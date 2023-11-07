@@ -3,7 +3,7 @@ import localFont from 'next/font/local';
 import {usePathname} from 'next/navigation';
 import {AnimatePresence, domAnimation, LazyMotion, motion} from 'framer-motion';
 import {useLocalStorageValue} from '@react-hookz/web';
-import {arbitrum, base, fantom, mainnet, optimism, polygon} from '@wagmi/chains';
+import {arbitrum, base, fantom, mainnet, optimism} from '@wagmi/chains';
 import {WithYearn} from '@yearn-finance/web-lib/contexts/WithYearn';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {localhost} from '@yearn-finance/web-lib/utils/wagmi/networks';
@@ -121,7 +121,7 @@ const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 					<LazyMotion features={domAnimation}>
 						<AnimatePresence mode={'wait'}>
 							<motion.div
-								key={pathName}
+								key={`${name}_${pathName}`}
 								initial={'initial'}
 								animate={'enter'}
 								exit={'exit'}
@@ -197,7 +197,7 @@ function MyApp(props: AppProps): ReactElement {
 	return (
 		<main className={cl(aeonik.className, 'h-full min-h-screen w-full font-aeonik', '')}>
 			<WithYearn
-				supportedChains={[mainnet, optimism, polygon, fantom, base, arbitrum, localhost]}
+				supportedChains={[mainnet, optimism, fantom, base, arbitrum, localhost]}
 				options={{
 					baseSettings: {
 						yDaemonBaseURI: process.env.YDAEMON_BASE_URI as string

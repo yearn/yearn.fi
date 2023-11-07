@@ -1,4 +1,4 @@
-import {Fragment, useMemo} from 'react';
+import {useMemo} from 'react';
 import {VeYfiHeader} from 'apps/veyfi/components/header/VeYfiHeader';
 import homeManifest from 'public/manifest.json';
 import {VaultsHeader} from '@vaults/components/header/VaultsHeader';
@@ -23,10 +23,10 @@ type TCurrentApp = {
 export function useCurrentApp({pathname}: NextRouter): TCurrentApp {
 	return useMemo((): TCurrentApp => {
 		const appMapping: TDict<TCurrentApp> = {
-			'/vaults-v3': {
-				...APPS[AppName.VAULTSV3],
-				header: <Fragment />
-			},
+			// '/vaults-v3': {
+			// 	...APPS[AppName.VAULTSV3],
+			// 	header: <Fragment />
+			// },
 			'/vaults': {
 				...APPS[AppName.VAULTS],
 				header: <VaultsHeader pathname={pathname} />

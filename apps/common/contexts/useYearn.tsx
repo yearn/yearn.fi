@@ -1,7 +1,8 @@
-import {createContext, memo, useContext, useMemo} from 'react';
+import {createContext, memo, useContext} from 'react';
+import {deserialize, serialize} from 'wagmi';
+import {useDeepCompareMemo, useLocalStorageValue} from '@react-hookz/web';
 import {STACKING_TO_VAULT} from '@vaults/constants/optRewards';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {useLocalStorage} from '@yearn-finance/web-lib/hooks/useLocalStorage';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {useFetch} from '@common/hooks/useFetch';
 import {yDaemonEarnedSchema} from '@common/schemas/yDaemonEarnedSchema';
@@ -66,26 +67,113 @@ const YearnContext = createContext<TYearnContext>({
 	set_isStakingOpBoostedVaults: (): void => undefined
 });
 
-export const YearnContextApp = memo(function YearnContextApp({children}: {children: ReactElement}): ReactElement {
+function useYearnPrices(): TYDaemonPrices {
 	const {yDaemonBaseUri: yDaemonBaseUriWithoutChain} = useYDaemonBaseURI();
-	const {address, currentPartner} = useWeb3();
-	const [maxLoss, set_maxLoss] = useLocalStorage<bigint>('yearn.fi/max-loss', DEFAULT_MAX_LOSS);
-	const [zapSlippage, set_zapSlippage] = useLocalStorage<number>('yearn.fi/zap-slippage', DEFAULT_SLIPPAGE);
-	const [zapProvider, set_zapProvider] = useLocalStorage<TSolver>('yearn.fi/zap-provider', Solver.enum.Cowswap);
-	const [isStakingOpBoostedVaults, set_isStakingOpBoostedVaults] = useLocalStorage<boolean>(
-		'yearn.fi/staking-op-boosted-vaults',
-		true
-	);
-
 	const {data: prices} = useFetch<TYDaemonPricesChain>({
 		endpoint: `${yDaemonBaseUriWithoutChain}/prices/all`,
 		schema: yDaemonPricesChainSchema
 	});
 
+	const pricesUpdated = useDeepCompareMemo((): TYDaemonPrices => {
+		if (!prices) {
+			return {};
+		}
+		const allPrices: TYDaemonPrices = {};
+		const allNetworksPrices = Object.values(prices).flat();
+		for (const priceForChain of allNetworksPrices) {
+			if (priceForChain) {
+				for (const [tokenAddress, price] of Object.entries(priceForChain)) {
+					if (price) {
+						allPrices[toAddress(tokenAddress)] = price;
+					}
+				}
+			}
+		}
+		Object.entries(STACKING_TO_VAULT).forEach(([vaultAddress, stackingAddress]): void => {
+			allPrices[toAddress(stackingAddress)] = allPrices[toAddress(vaultAddress)];
+		});
+		return allPrices;
+	}, [prices]);
+
+	return pricesUpdated;
+}
+
+function useYearnTokens(): TYDaemonTokens {
+	const {yDaemonBaseUri: yDaemonBaseUriWithoutChain} = useYDaemonBaseURI();
 	const {data: tokens} = useFetch<TYDaemonTokensChain>({
 		endpoint: `${yDaemonBaseUriWithoutChain}/tokens/all`,
 		schema: yDaemonTokensChainSchema
 	});
+
+	const tokensUpdated = useDeepCompareMemo((): TYDaemonTokens => {
+		if (!tokens) {
+			return {};
+		}
+		const _tokens: TYDaemonTokens = {};
+		for (const [, tokensData] of Object.entries(tokens)) {
+			for (const [tokenAddress, token] of Object.entries(tokensData)) {
+				if (token) {
+					_tokens[toAddress(tokenAddress)] = token;
+				}
+			}
+		}
+		return _tokens;
+	}, [tokens]);
+
+	return tokensUpdated;
+}
+
+function useYearnEarned(): TYDaemonEarned {
+	const {address} = useWeb3();
+	const {yDaemonBaseUri: yDaemonBaseUriWithoutChain} = useYDaemonBaseURI();
+
+	const {data: earned} = useFetch<TYDaemonEarned>({
+		endpoint: address
+			? `${yDaemonBaseUriWithoutChain}/earned/${address}?${new URLSearchParams({
+					chainIDs: [1, 10].join(',')
+			  })}`
+			: null,
+		schema: yDaemonEarnedSchema
+	});
+
+	const memorizedEarned = useDeepCompareMemo((): TYDaemonEarned => {
+		if (!earned) {
+			return {
+				earned: {},
+				totalRealizedGainsUSD: 0,
+				totalUnrealizedGainsUSD: 0
+			};
+		}
+		return earned;
+	}, [earned]);
+
+	return memorizedEarned;
+}
+
+export const YearnContextApp = memo(function YearnContextApp({children}: {children: ReactElement}): ReactElement {
+	const {yDaemonBaseUri: yDaemonBaseUriWithoutChain} = useYDaemonBaseURI();
+	const {currentPartner} = useWeb3();
+	const {value: maxLoss, set: set_maxLoss} = useLocalStorageValue<bigint>('yearn.fi/max-loss', {
+		defaultValue: DEFAULT_MAX_LOSS,
+		parse: (str, fallback): bigint => (str ? deserialize(str) : fallback),
+		stringify: (data): string => serialize(data)
+	});
+	const {value: zapSlippage, set: set_zapSlippage} = useLocalStorageValue<number>('yearn.fi/zap-slippage', {
+		defaultValue: DEFAULT_SLIPPAGE
+	});
+	const {value: zapProvider, set: set_zapProvider} = useLocalStorageValue<TSolver>('yearn.fi/zap-provider', {
+		defaultValue: Solver.enum.Cowswap
+	});
+	const {value: isStakingOpBoostedVaults, set: set_isStakingOpBoostedVaults} = useLocalStorageValue<boolean>(
+		'yearn.fi/staking-op-boosted-vaults',
+		{
+			defaultValue: true
+		}
+	);
+
+	const prices = useYearnPrices();
+	const tokens = useYearnTokens();
+	const earned = useYearnEarned();
 
 	const {
 		data: vaults,
@@ -117,16 +205,7 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 		schema: yDaemonVaultsSchema
 	});
 
-	const {data: earned} = useFetch<TYDaemonEarned>({
-		endpoint: address
-			? `${yDaemonBaseUriWithoutChain}/earned/${address}?${new URLSearchParams({
-					chainIDs: [1, 10].join(',')
-			  })}`
-			: null,
-		schema: yDaemonEarnedSchema
-	});
-
-	const vaultsObject = useMemo((): TDict<TYDaemonVault> => {
+	const vaultsObject = useDeepCompareMemo((): TDict<TYDaemonVault> => {
 		const _vaultsObject = (vaults ?? []).reduce((acc: TDict<TYDaemonVault>, vault): TDict<TYDaemonVault> => {
 			if (!vault.migration.available) {
 				acc[toAddress(vault.address)] = vault;
@@ -136,7 +215,7 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 		return _vaultsObject;
 	}, [vaults]);
 
-	const vaultsMigrationsObject = useMemo((): TDict<TYDaemonVault> => {
+	const vaultsMigrationsObject = useDeepCompareMemo((): TDict<TYDaemonVault> => {
 		const _migratableVaultsObject = (vaultsMigrations ?? []).reduce(
 			(acc: TDict<TYDaemonVault>, vault): TDict<TYDaemonVault> => {
 				if (toAddress(vault.address) !== toAddress(vault.migration.address)) {
@@ -149,7 +228,7 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 		return _migratableVaultsObject;
 	}, [vaultsMigrations]);
 
-	const vaultsRetiredObject = useMemo((): TDict<TYDaemonVault> => {
+	const vaultsRetiredObject = useDeepCompareMemo((): TDict<TYDaemonVault> => {
 		const _retiredVaultsObject = (vaultsRetired ?? []).reduce(
 			(acc: TDict<TYDaemonVault>, vault): TDict<TYDaemonVault> => {
 				acc[toAddress(vault.address)] = vault;
@@ -160,60 +239,24 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 		return _retiredVaultsObject;
 	}, [vaultsRetired]);
 
-	const pricesUpdated = useMemo((): TYDaemonPrices => {
-		if (!prices) {
-			return {};
-		}
-		const allPrices: TYDaemonPrices = {};
-		const allNetworksPrices = Object.values(prices).flat();
-		for (const priceForChain of allNetworksPrices) {
-			if (priceForChain) {
-				for (const [tokenAddress, price] of Object.entries(priceForChain)) {
-					if (price) {
-						allPrices[toAddress(tokenAddress)] = price;
-					}
-				}
-			}
-		}
-		Object.entries(STACKING_TO_VAULT).forEach(([vaultAddress, stackingAddress]): void => {
-			allPrices[toAddress(stackingAddress)] = allPrices[toAddress(vaultAddress)];
-		});
-		return allPrices;
-	}, [prices]);
-
-	const toTokens = (obj: TYDaemonTokensChain | undefined): TYDaemonTokens => {
-		if (!obj) {
-			return {};
-		}
-		const _tokens: TYDaemonTokens = {};
-		for (const [, tokens] of Object.entries(obj)) {
-			for (const [tokenAddress, token] of Object.entries(tokens)) {
-				if (token) {
-					_tokens[toAddress(tokenAddress)] = token;
-				}
-			}
-		}
-		return _tokens;
-	};
-
 	/* 🔵 - Yearn Finance ******************************************************
 	 **	Setup and render the Context provider to use in the app.
 	 ***************************************************************************/
-	const contextValue = useMemo(
+	const contextValue = useDeepCompareMemo(
 		(): TYearnContext => ({
 			currentPartner: currentPartner?.id
 				? toAddress(currentPartner.id)
 				: toAddress(process.env.PARTNER_ID_ADDRESS),
-			prices: pricesUpdated,
-			tokens: toTokens(tokens),
+			prices,
+			tokens,
 			earned,
-			zapSlippage,
+			zapSlippage: zapSlippage ?? DEFAULT_SLIPPAGE,
+			maxLoss: maxLoss ?? DEFAULT_MAX_LOSS,
+			zapProvider: zapProvider ?? Solver.enum.Cowswap,
+			isStakingOpBoostedVaults: isStakingOpBoostedVaults ?? true,
 			set_zapSlippage,
-			maxLoss,
 			set_maxLoss,
-			zapProvider,
 			set_zapProvider,
-			isStakingOpBoostedVaults,
 			set_isStakingOpBoostedVaults,
 			vaults: vaultsObject,
 			vaultsMigrations: vaultsMigrationsObject,
@@ -223,16 +266,16 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 		}),
 		[
 			currentPartner,
-			pricesUpdated,
+			prices,
 			tokens,
 			earned,
 			zapSlippage,
-			set_zapSlippage,
 			maxLoss,
-			set_maxLoss,
 			zapProvider,
-			set_zapProvider,
 			isStakingOpBoostedVaults,
+			set_zapSlippage,
+			set_maxLoss,
+			set_zapProvider,
 			set_isStakingOpBoostedVaults,
 			vaultsObject,
 			vaultsMigrationsObject,

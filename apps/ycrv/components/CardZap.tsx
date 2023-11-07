@@ -7,6 +7,7 @@ import {
 	CRV_TOKEN_ADDRESS,
 	LPYCRV_TOKEN_ADDRESS,
 	LPYCRV_V2_TOKEN_ADDRESS,
+	STYCRV_TOKEN_ADDRESS,
 	YCRV_CURVE_POOL_ADDRESS,
 	YCRV_CURVE_POOL_V2_ADDRESS,
 	YCRV_TOKEN_ADDRESS
@@ -59,6 +60,11 @@ function CardZap(): ReactElement {
 		[prices]
 	);
 
+	const stycrvPrice = useMemo(
+		(): number => formatToNormalizedValue(toBigInt(prices?.[STYCRV_TOKEN_ADDRESS] || 0), 6),
+		[prices]
+	);
+
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** useMemo to get the current possible TO vaults path for the current FROM
 	 **************************************************************************/
@@ -89,7 +95,7 @@ function CardZap(): ReactElement {
 			return possibleOptions;
 		}
 		return ZAP_OPTIONS_TO.filter((option): boolean => option.value !== selectedOptionFrom.value);
-	}, [selectedOptionFrom.value, selectedOptionTo.value, ZAP_OPTIONS_TO]);
+	}, [selectedOptionFrom.value, selectedOptionTo.value, set_selectedOptionTo]);
 
 	function renderButton(): ReactElement {
 		const balanceForInputToken = getBalance({
@@ -223,6 +229,8 @@ function CardZap(): ReactElement {
 								? ycrvPrice || 0
 								: toAddress(selectedOptionFrom.value) === YCRV_CURVE_POOL_ADDRESS
 								? ycrvCurvePoolPrice || 0
+								: toAddress(selectedOptionFrom.value) === STYCRV_TOKEN_ADDRESS
+								? stycrvPrice || 0
 								: Number(
 										getToken({
 											address: selectedOptionFrom.value,

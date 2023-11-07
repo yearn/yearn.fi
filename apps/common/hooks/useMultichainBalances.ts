@@ -43,11 +43,10 @@ export type TUseBalancesReq = {
 
 export type TUseBalancesRes = {
 	data: TChainTokens;
-	update: () => Promise<TChainTokens>;
-	updateSome: (token: TUseBalancesTokens[]) => Promise<TChainTokens>;
+	onUpdate: () => Promise<TChainTokens>;
+	onUpdateSome: (token: TUseBalancesTokens[]) => Promise<TChainTokens>;
 	error?: Error;
 	status: 'error' | 'loading' | 'success' | 'unknown';
-	nonce: number;
 } & TDefaultStatus;
 
 type TDataRef = {
@@ -162,7 +161,6 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	const {address: userAddress} = useWeb3();
 	const chainID = useChainId();
 	const {onLoadStart, onLoadDone} = useUI();
-	const [nonce, set_nonce] = useState(0);
 	const [status, set_status] = useState<TDefaultStatus>(defaultStatus);
 	const [error, set_error] = useState<Error | undefined>(undefined);
 	const [balances, set_balances] = useState<TChainTokens>({});
@@ -200,7 +198,6 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 					}
 				})
 			);
-			set_nonce((n): number => n + 1);
 			return data.current.balances;
 		},
 		[userAddress]
@@ -283,7 +280,6 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 					}
 				})
 			);
-			set_nonce((n): number => n + 1);
 			set_status({...defaultStatus, isSuccess: true, isFetched: true});
 		}
 		onLoadDone();
@@ -361,7 +357,6 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 					}
 				})
 			);
-			set_nonce((n): number => n + 1);
 			set_status({...defaultStatus, isSuccess: true, isFetched: true});
 			onLoadDone();
 			return updated;
@@ -444,9 +439,8 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	const contextValue = useMemo(
 		(): TUseBalancesRes => ({
 			data: assignPrices(balances || {}),
-			nonce,
-			update: onUpdate,
-			updateSome: onUpdateSome,
+			onUpdate: onUpdate,
+			onUpdateSome: onUpdateSome,
 			error,
 			isLoading: status.isLoading,
 			isFetching: status.isFetching,
@@ -466,7 +460,6 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 			assignPrices,
 			balances,
 			error,
-			nonce,
 			onUpdate,
 			onUpdateSome,
 			status.isError,

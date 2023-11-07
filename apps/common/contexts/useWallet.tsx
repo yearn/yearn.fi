@@ -1,4 +1,5 @@
 import {createContext, memo, useCallback, useContext, useEffect, useMemo, useState} from 'react';
+import {useDeepCompareMemo} from '@react-hookz/web';
 import {
 	OPT_YVAGEUR_USDC_STAKING_CONTRACT,
 	OPT_YVALETH_FRXETH_STAKING_CONTRACT,
@@ -39,7 +40,7 @@ import {
 	OPT_YVWUSDRV2_USDC_STAKING_CONTRACT,
 	STACKING_TO_VAULT
 } from '@vaults/constants/optRewards';
-import {useUI} from '@yearn-finance/web-lib/contexts/useUI';
+import {onLoadDone, onLoadStart} from '@yearn-finance/web-lib/contexts/useUI';
 import {toAddress, zeroAddress} from '@yearn-finance/web-lib/utils/address';
 import {
 	BAL_TOKEN_ADDRESS,
@@ -73,7 +74,6 @@ export type TWalletContext = {
 	balances: TChainTokens;
 	cumulatedValueInV2Vaults: number;
 	cumulatedValueInV3Vaults: number;
-	balancesNonce: number;
 	isLoading: boolean;
 	shouldUseForknetBalances: boolean;
 	refresh: (tokenList?: TUseBalancesTokens[]) => Promise<TChainTokens>;
@@ -100,24 +100,15 @@ const defaultProps = {
 	balances: {},
 	cumulatedValueInV2Vaults: 0,
 	cumulatedValueInV3Vaults: 0,
-	balancesNonce: 0,
 	isLoading: true,
 	shouldUseForknetBalances: false,
 	refresh: async (): Promise<TChainTokens> => ({}),
 	triggerForknetBalances: (): void => {}
 };
 
-/* 🔵 - Yearn Finance **********************************************************
- ** This context controls most of the user's wallet data we may need to
- ** interact with our app, aka mostly the balances and the token prices.
- ******************************************************************************/
-const WalletContext = createContext<TWalletContext>(defaultProps);
-export const WalletContextApp = memo(function WalletContextApp({children}: {children: ReactElement}): ReactElement {
-	const {vaults, vaultsMigrations, vaultsRetired, isLoadingVaultList, prices} = useYearn();
-	const {onLoadStart, onLoadDone} = useUI();
-	const [shouldUseForknetBalances, set_shouldUseForknetBalances] = useState<boolean>(false);
+function useYearnTokens({shouldUseForknetBalances}: {shouldUseForknetBalances: boolean}): TUseBalancesTokens[] {
+	const {vaults, vaultsMigrations, vaultsRetired, isLoadingVaultList} = useYearn();
 
-	//List all tokens related to yearn vaults
 	const availableTokens = useMemo((): TUseBalancesTokens[] => {
 		if (isLoadingVaultList) {
 			return [];
@@ -254,19 +245,19 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 		return tokens;
 	}, [availableTokens, migratableTokens, retiredTokens, shouldUseForknetBalances]);
 
-	// Fetch the balances
-	const {
-		data: tokensRaw,
-		update,
-		updateSome,
-		nonce,
-		isLoading
-	} = useBalances({
-		tokens: [...allTokens],
-		prices
-	});
+	return allTokens;
+}
 
-	const tokens = useMemo((): TChainTokens => {
+function useYearnBalances({shouldUseForknetBalances}: {shouldUseForknetBalances: boolean}): {
+	tokens: TChainTokens;
+	isLoading: boolean;
+	onRefresh: (tokenToUpdate?: TUseBalancesTokens[]) => Promise<TChainTokens>;
+} {
+	const {prices} = useYearn();
+	const allTokens = useYearnTokens({shouldUseForknetBalances});
+	const {data: tokensRaw, onUpdate, onUpdateSome, isLoading} = useBalances({tokens: allTokens, prices});
+
+	const tokens = useDeepCompareMemo((): TChainTokens => {
 		const _tokens = {...tokensRaw};
 		for (const [chainIDStr, perChain] of Object.entries(_tokens)) {
 			const chainID = Number(chainIDStr);
@@ -281,11 +272,43 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 		}
 
 		if (shouldUseForknetBalances) {
-			// eslint-disable-next-line prefer-destructuring
-			_tokens[1] = _tokens[1337];
+			_tokens[1] = _tokens[1337]; // eslint-disable-line prefer-destructuring
 		}
 		return _tokens;
 	}, [tokensRaw, shouldUseForknetBalances]);
+
+	const onRefresh = useCallback(
+		async (tokenToUpdate?: TUseBalancesTokens[]): Promise<TChainTokens> => {
+			if (tokenToUpdate) {
+				const updatedBalances = await onUpdateSome(tokenToUpdate);
+				return updatedBalances;
+			}
+			const updatedBalances = await onUpdate();
+			return updatedBalances;
+		},
+		[onUpdate, onUpdateSome]
+	);
+
+	useEffect((): void => {
+		if (isLoading) {
+			onLoadStart();
+		} else {
+			onLoadDone();
+		}
+	}, [isLoading]);
+
+	return {tokens, isLoading, onRefresh};
+}
+
+/* 🔵 - Yearn Finance **********************************************************
+ ** This context controls most of the user's wallet data we may need to
+ ** interact with our app, aka mostly the balances and the token prices.
+ ******************************************************************************/
+const WalletContext = createContext<TWalletContext>(defaultProps);
+export const WalletContextApp = memo(function WalletContextApp({children}: {children: ReactElement}): ReactElement {
+	const {vaults, vaultsMigrations} = useYearn();
+	const [shouldUseForknetBalances, set_shouldUseForknetBalances] = useState<boolean>(false);
+	const {tokens, isLoading, onRefresh} = useYearnBalances({shouldUseForknetBalances});
 
 	const [cumulatedValueInV2Vaults, cumulatedValueInV3Vaults] = useMemo((): [number, number] => {
 		let cumulatedValueInV2Vaults = 0;
@@ -297,7 +320,6 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 				}
 				if (vaults?.[toAddress(tokenAddress)]) {
 					if (vaults[toAddress(tokenAddress)].version.split('.')?.[0] === '3') {
-						console.log(tokenData);
 						cumulatedValueInV3Vaults += tokenData.value + tokenData.stakingValue;
 					} else {
 						cumulatedValueInV2Vaults += tokenData.value + tokenData.stakingValue;
@@ -313,26 +335,6 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 		}
 		return [cumulatedValueInV2Vaults, cumulatedValueInV3Vaults];
 	}, [vaults, vaultsMigrations, tokens]);
-
-	const onRefresh = useCallback(
-		async (tokenToUpdate?: TUseBalancesTokens[]): Promise<TChainTokens> => {
-			if (tokenToUpdate) {
-				const updatedBalances = await updateSome(tokenToUpdate);
-				return updatedBalances;
-			}
-			const updatedBalances = await update();
-			return updatedBalances;
-		},
-		[update, updateSome]
-	);
-
-	useEffect((): void => {
-		if (isLoading) {
-			onLoadStart();
-		} else {
-			onLoadDone();
-		}
-	}, [isLoading, onLoadDone, onLoadStart]);
 
 	const getToken = useCallback(
 		({address, chainID}: {address: TAddress; chainID: number}): TToken => {
@@ -362,7 +364,6 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 			getBalance,
 			getPrice,
 			balances: tokens,
-			balancesNonce: nonce,
 			cumulatedValueInV2Vaults,
 			cumulatedValueInV3Vaults,
 			isLoading: isLoading || false,
@@ -383,7 +384,6 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 			getBalance,
 			getPrice,
 			tokens,
-			nonce,
 			cumulatedValueInV2Vaults,
 			cumulatedValueInV3Vaults,
 			isLoading,

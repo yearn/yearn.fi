@@ -19,8 +19,10 @@ import {IconChain} from '@yearn-finance/web-lib/icons/IconChain';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {ListHead} from '@common/components/ListHead';
+import {Pagination} from '@common/components/Pagination';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
+import {usePagination} from '@common/hooks/usePagination';
 import {NextQueryParamAdapter} from '@common/utils/QueryParamsProvider';
 
 import type {NextRouter} from 'next/router';
@@ -134,38 +136,14 @@ function ListOfVaults(): ReactElement {
 	 **********************************************************************************************/
 	const sortedVaultsToDisplay = useSortVaults([...searchedVaultsToDisplay], sortBy, sortDirection);
 
-	/* 🔵 - Yearn Finance **************************************************************************
-	 **	The VaultList component is memoized to prevent it from being re-created on every render.
-	 **	It contains either the list of vaults, is some are available, or a message to the user.
-	 **********************************************************************************************/
-	const VaultList = useMemo((): ReactNode => {
-		const filteredByChains = sortedVaultsToDisplay.filter(({chainID}): boolean => chains.includes(chainID));
+	const filteredByChains = useMemo((): TYDaemonVault[] => {
+		return sortedVaultsToDisplay.filter(({chainID}): boolean => chains.includes(chainID));
+	}, [chains, sortedVaultsToDisplay]);
 
-		if (isLoadingVaultList || isZero(filteredByChains.length) || chains.length === 0) {
-			return (
-				<VaultsListEmpty
-					isLoading={isLoadingVaultList}
-					sortedVaultsToDisplay={filteredByChains}
-					currentSearch={search || ''}
-					currentCategories={categories}
-					currentChains={chains}
-					onChangeCategories={onChangeCategories}
-					onChangeChains={onChangeChains}
-				/>
-			);
-		}
-		return filteredByChains.map((vault): ReactNode => {
-			if (!vault) {
-				return null;
-			}
-			return (
-				<VaultsListRow
-					key={`${vault.chainID}_${vault.address}`}
-					currentVault={vault}
-				/>
-			);
-		});
-	}, [categories, chains, isLoadingVaultList, onChangeCategories, onChangeChains, search, sortedVaultsToDisplay]);
+	const {currentItems, paginationProps} = usePagination<TYDaemonVault>({
+		data: sortedVaultsToDisplay,
+		itemsPerPage: 60 || sortedVaultsToDisplay.length
+	});
 
 	return (
 		<div
@@ -235,7 +213,35 @@ function ListOfVaults(): ReactElement {
 				]}
 			/>
 
-			{VaultList}
+			{isLoadingVaultList || isZero(filteredByChains.length) || chains.length === 0 ? (
+				<VaultsListEmpty
+					isLoading={isLoadingVaultList}
+					sortedVaultsToDisplay={filteredByChains}
+					currentSearch={search || ''}
+					currentCategories={categories}
+					currentChains={chains}
+					onChangeCategories={onChangeCategories}
+					onChangeChains={onChangeChains}
+				/>
+			) : (
+				currentItems.map((vault): ReactNode => {
+					if (!vault) {
+						return null;
+					}
+					return (
+						<VaultsListRow
+							key={`${vault.chainID}_${vault.address}`}
+							currentVault={vault}
+						/>
+					);
+				})
+			)}
+
+			<div className={'mt-4'}>
+				<div className={'border-t border-neutral-200/60 p-4'}>
+					<Pagination {...paginationProps} />
+				</div>
+			</div>
 		</div>
 	);
 }

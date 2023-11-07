@@ -41,6 +41,7 @@ export const APPS: {[key in AppName]: TApp} = {
 		href: '/vaults-v3',
 		menu: VAULTS_V3_MENU,
 		manifest: vaultsManifest,
+		isDisabled: true,
 		icon: (
 			<LogoYearn
 				className={'h-8 w-8'}
