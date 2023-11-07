@@ -20,6 +20,7 @@ module.exports = {
 		indent: 'off',
 		'no-multi-spaces': ['error', {ignoreEOLComments: false}],
 		'@typescript-eslint/indent': 0,
+		'@typescript-eslint/consistent-type-assertions': 0,
 		'no-mixed-spaces-and-tabs': ['warn', 'smart-tabs'],
 		'object-curly-newline': [
 			'error',

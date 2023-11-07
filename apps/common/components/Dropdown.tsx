@@ -23,9 +23,7 @@ const DropdownOption = (option: TDropdownOption): ReactElement => {
 								alt={label}
 								width={24}
 								height={24}
-								quality={90}
 								src={icon}
-								loading={'eager'}
 							/>
 						</div>
 					)}
@@ -137,9 +135,7 @@ export const Dropdown = ({
 												alt={selected.label}
 												width={24}
 												height={24}
-												quality={90}
 												src={selected.icon}
-												loading={'eager'}
 											/>
 										</div>
 									)}

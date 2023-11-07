@@ -19,11 +19,9 @@ export function HarvestListRow({harvest}: {harvest: TYDaemonVaultHarvest}): Reac
 							alt={toAddress(harvest.vaultAddress) === STYCRV_TOKEN_ADDRESS ? 'st-yCRV' : 'lp-yCRV'}
 							width={40}
 							height={40}
-							quality={90}
 							src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${toAddress(
 								harvest.vaultAddress
 							)}/logo-128.png`}
-							loading={'eager'}
 						/>
 					</div>
 					<p>{toAddress(harvest.vaultAddress) === STYCRV_TOKEN_ADDRESS ? 'st-yCRV' : 'lp-yCRV'}</p>

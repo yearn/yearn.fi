@@ -2,7 +2,7 @@ import {useMemo} from 'react';
 import Link from 'next/link';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
-import TokenIcon from '@common/components/TokenIcon';
+import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useBalance} from '@common/hooks/useBalance';
 import {getVaultName} from '@common/utils';
 
@@ -22,10 +22,13 @@ export function VaultsListRetired({currentVault}: {currentVault: TYDaemonVault})
 				<div className={'yearn--table-token-section'}>
 					<div className={'yearn--table-token-section-item'}>
 						<div className={'yearn--table-token-section-item-image'}>
-							<TokenIcon
-								chainID={currentVault.chainID}
-								size={40}
-								address={currentVault.token.address}
+							<ImageWithFallback
+								src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${toAddress(
+									currentVault.token.address
+								)}/logo-128.png`}
+								alt={''}
+								width={40}
+								height={40}
 							/>
 						</div>
 						<div className={'text-left'}>

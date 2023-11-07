@@ -7,13 +7,11 @@ import {VaultDetailsQuickActionsButtons} from '@vaults/components/details/action
 import {VaultDetailsQuickActionsFrom} from '@vaults/components/details/actions/QuickActionsFrom';
 import {VaultDetailsQuickActionsSwitch} from '@vaults/components/details/actions/QuickActionsSwitch';
 import {VaultDetailsQuickActionsTo} from '@vaults/components/details/actions/QuickActionsTo';
-import {ImageWithOverlay} from '@vaults/components/ImageWithOverlay';
 import {RewardsTab} from '@vaults/components/RewardsTab';
 import {SettingsPopover} from '@vaults/components/SettingsPopover';
 import {Flow, useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {Banner} from '@yearn-finance/web-lib/components/Banner';
-import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useLocalStorage} from '@yearn-finance/web-lib/hooks/useLocalStorage';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
@@ -77,16 +75,11 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 			isRetired: currentVault?.retired
 		})
 	);
-	const [shouldShowLedgerPluginBanner, set_shouldShowLedgerPluginBanner] = useLocalStorage<boolean>(
-		'yearn.fi/ledger-plugin-banner',
-		true
-	);
 	const [shouldShowOpBoostInfo, set_shouldShowOpBoostInfo] = useLocalStorage<boolean>(
 		'yearn.fi/op-boost-banner',
 		true
 	);
 	const router = useRouter();
-	const {isWalletLedger} = useWeb3();
 	const rewardBalance = toNormalizedBN(toBigInt(stakingRewardsPosition?.reward), rewardTokenBalance.decimals);
 
 	useEffect((): void => {
@@ -118,27 +111,8 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 		}
 	}, [currentVault?.migration?.available, currentVault?.retired, actionParams.isReady, hasStakingRewards]);
 
-	const isLedgerPluginVisible = isWalletLedger && shouldShowLedgerPluginBanner;
-
 	return (
 		<>
-			{isLedgerPluginVisible && (
-				<div
-					aria-label={'Ledger Plugin'}
-					className={'col-span-12 mt-10'}>
-					<ImageWithOverlay
-						imageAlt={''}
-						imageWidth={2400}
-						imageHeight={385}
-						imageSrc={'/ledger-plugin-bg.png'}
-						href={'ledgerlive://myledger?installApp=yearn'}
-						onCloseClick={(): void => set_shouldShowLedgerPluginBanner(false)}
-						overlayText={'SIGN IN WITH LEDGER'}
-						buttonText={'DOWNLOAD LEDGER PLUGIN'}
-					/>
-				</div>
-			)}
-
 			{currentVault?.migration?.available && (
 				<div
 					aria-label={'Migration Warning'}
@@ -169,10 +143,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 				</div>
 			)}
 
-			<nav
-				className={`mb-2 w-full ${
-					isLedgerPluginVisible || currentVault?.retired ? 'mt-1 md:mt-4' : 'mt-10 md:mt-20'
-				}`}>
+			<nav className={`mb-2 w-full ${currentVault?.retired ? 'mt-1 md:mt-4' : 'mt-10 md:mt-20'}`}>
 				<Link href={'/vaults'}>
 					<p className={'yearn--header-nav-item w-full whitespace-nowrap opacity-30'}>{'Back to vaults'}</p>
 				</Link>

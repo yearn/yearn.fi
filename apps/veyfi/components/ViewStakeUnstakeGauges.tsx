@@ -261,7 +261,6 @@ export function StakeUnstakeGauges(): ReactElement {
 											height={40}
 											quality={90}
 											src={vaultIcon}
-											loading={'eager'}
 										/>
 									</div>
 									<p>{vaultName}</p>

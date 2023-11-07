@@ -1,5 +1,4 @@
 import {useEffect, useRef} from 'react';
-import {Balancer} from 'react-wrap-balancer';
 import Link from 'next/link';
 import {motion} from 'framer-motion';
 import {V3Mask} from '@vaults-v3/Mark';
@@ -117,36 +116,6 @@ function AnimatedGradientBackgroundForV3(): ReactElement {
 	);
 }
 function AppBox({app}: {app: (typeof apps)[0]}): ReactElement {
-	useEffect((): VoidFunction => {
-		const featuresEl = document.getElementById(app.href);
-		if (featuresEl) {
-			const cleanup = (): void => {
-				featuresEl.removeEventListener('pointermove', pointermove);
-				featuresEl.removeEventListener('pointerleave', pointerleave);
-			};
-
-			const pointermove = (ev: MouseEvent): void => {
-				const rect = featuresEl.getBoundingClientRect();
-				if (featuresEl?.style) {
-					featuresEl.style.setProperty('--opacity', '0.3');
-					featuresEl.style.setProperty('--x', (ev.clientX - rect.left).toString());
-					featuresEl.style.setProperty('--y', (ev.clientY - rect.top).toString());
-				}
-			};
-
-			const pointerleave = (): void => {
-				if (featuresEl?.style) {
-					featuresEl.style.setProperty('--opacity', '0');
-				}
-			};
-
-			featuresEl.addEventListener('pointermove', pointermove);
-			featuresEl.addEventListener('pointerleave', pointerleave);
-			return cleanup;
-		}
-		return (): void => undefined;
-	}, [app.href]);
-
 	if (app.title === 'V3') {
 		return (
 			<Link
@@ -187,9 +156,7 @@ function AppBox({app}: {app: (typeof apps)[0]}): ReactElement {
 				<div>{app.icon}</div>
 				<div className={'pt-6 text-center'}>
 					<b className={'text-lg'}>{app.title}</b>
-					<p>
-						<Balancer>{app.description}</Balancer>
-					</p>
+					<p>{app.description}</p>
 				</div>
 			</div>
 		</Link>

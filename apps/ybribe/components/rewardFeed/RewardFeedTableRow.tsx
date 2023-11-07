@@ -73,9 +73,7 @@ export function RewardFeedTableRow({
 							alt={''}
 							width={40}
 							height={40}
-							quality={90}
 							src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${gaugeItem?.swap_token}/logo-128.png`}
-							loading={'eager'}
 						/>
 					</div>
 				</div>

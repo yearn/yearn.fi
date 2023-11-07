@@ -24,8 +24,8 @@ export function useChainOptions(chains: number[]): TMultiSelectOptionProps[] {
 					<ImageWithFallback
 						src={`${process.env.BASE_YEARN_CHAIN_URI}/${chain.id}/logo-128.png`}
 						alt={chain.name}
-						width={40}
-						height={40}
+						width={32}
+						height={32}
 					/>
 				)
 			});

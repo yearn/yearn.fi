@@ -7,7 +7,6 @@ import {
 	YBAL_TOKEN_ADDRESS,
 	ZAP_YEARN_VE_CRV_ADDRESS
 } from '@yearn-finance/web-lib/utils/constants';
-import SettingsOverwrite from '@common/components/SettingsOverwrite';
 import {useYBal} from '@yBal/contexts/useYBal';
 import {Wrapper} from '@yBal/Wrapper';
 
@@ -211,8 +210,6 @@ export function AboutContent(): ReactElement {
 					</div>
 				</div>
 			</div>
-
-			<SettingsOverwrite />
 		</>
 	);
 }

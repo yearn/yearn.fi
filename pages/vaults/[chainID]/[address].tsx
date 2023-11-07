@@ -9,7 +9,7 @@ import {WithSolverContextApp} from '@vaults/contexts/useSolver';
 import {Wrapper} from '@vaults/Wrapper';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import TokenIcon from '@common/components/TokenIcon';
+import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useWallet} from '@common/contexts/useWallet';
 import {useFetch} from '@common/hooks/useFetch';
 import {type TYDaemonVault, yDaemonVaultSchema} from '@common/schemas/yDaemonVaultsSchemas';
@@ -88,9 +88,13 @@ function Index(): ReactElement | null {
 					animate={'enter'}
 					variants={variants}
 					className={'z-50 -mt-6 h-12 w-12 cursor-pointer md:-mt-36 md:h-[72px] md:w-[72px]'}>
-					<TokenIcon
-						chainID={currentVault.chainID}
-						address={currentVault.token.address}
+					<ImageWithFallback
+						src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${toAddress(
+							currentVault.token.address
+						)}/logo-128.png`}
+						alt={''}
+						width={72}
+						height={72}
 					/>
 				</motion.div>
 			</header>

@@ -1,4 +1,5 @@
 import {useMemo} from 'react';
+import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {MultiSelectDropdown} from '@common/components/MultiSelectDropdown';
 import {SearchBar} from '@common/components/SearchBar';
 import {useChainOptions} from '@common/hooks/useChains';
@@ -6,7 +7,6 @@ import {useChainOptions} from '@common/hooks/useChains';
 import type {ReactElement} from 'react';
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TMultiSelectOptionProps} from '@common/components/MultiSelectDropdown';
-import {cl} from '@yearn-finance/web-lib/utils/cl';
 
 type TListHero = {
 	categories: string[];
