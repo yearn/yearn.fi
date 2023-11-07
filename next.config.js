@@ -19,15 +19,15 @@ const config = {
 		remotePatterns: [
 			{
 				protocol: 'https',
-				hostname: '**.rawcdn.githack.com'
+				hostname: 'rawcdn.githack.com'
 			},
 			{
 				protocol: 'https',
-				hostname: '**.raw.githubusercontent.com'
+				hostname: 'raw.githubusercontent.com'
 			},
 			{
 				protocol: 'https',
-				hostname: '**.assets.smold.app'
+				hostname: 'assets.smold.app'
 			}
 		]
 	},
