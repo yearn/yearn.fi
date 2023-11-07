@@ -253,13 +253,12 @@ export function StakeUnstakeGauges(): ReactElement {
 								<div className={'flex flex-row items-center space-x-4 md:space-x-6'}>
 									<div
 										className={
-											'flex h-8 min-h-[40px] w-8 min-w-[40px] items-center justify-center rounded-full md:h-10 md:w-10'
+											'flex h-10 min-h-[40px] w-10 min-w-[40px] items-center justify-center rounded-full md:h-10 md:w-10'
 										}>
 										<ImageWithFallback
 											alt={vaultName}
 											width={40}
 											height={40}
-											quality={90}
 											src={vaultIcon}
 										/>
 									</div>

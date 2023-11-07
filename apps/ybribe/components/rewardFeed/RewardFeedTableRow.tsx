@@ -71,6 +71,8 @@ export function RewardFeedTableRow({
 					<div className={'flex h-6 w-6 rounded-full md:flex md:h-10 md:w-10'}>
 						<ImageWithFallback
 							alt={''}
+							smWidth={24}
+							smHeight={24}
 							width={40}
 							height={40}
 							src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${gaugeItem?.swap_token}/logo-128.png`}
