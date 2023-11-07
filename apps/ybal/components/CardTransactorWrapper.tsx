@@ -100,7 +100,7 @@ export function CardTransactorContextApp({
 			}
 			return prevAmount;
 		});
-	}, [isActive, selectedOptionFrom.value, getBalance, hasTypedSomething]);
+	}, [isActive, selectedOptionFrom.value, getBalance, hasTypedSomething, selectedOptionFrom.chainID]);
 
 	useUpdateEffect((): void => {
 		if (!isActive) {
@@ -214,9 +214,11 @@ export function CardTransactorContextApp({
 		addToken,
 		amount.raw,
 		dismissAllToasts,
-		expectedOut,
+		expectedOut.minOut,
+		expectedOut.shouldMint,
 		provider,
 		refresh,
+		selectedOptionFrom.chainID,
 		selectedOptionFrom.value,
 		selectedOptionFrom.zapVia,
 		selectedOptionTo.decimals,

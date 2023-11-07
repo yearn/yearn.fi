@@ -20,7 +20,7 @@ export function Pagination(props: TProps): ReactElement {
 
 	return (
 		<>
-			<div className={'flex flex-1 justify-between sm:hidden'}>
+			<div className={'flex flex-1 justify-between md:hidden'}>
 				<a
 					role={'button'}
 					href={'#'}
@@ -38,7 +38,7 @@ export function Pagination(props: TProps): ReactElement {
 					{'Next'}
 				</a>
 			</div>
-			<div className={'hidden sm:flex sm:items-center sm:justify-center'}>
+			<div className={'hidden md:flex md:items-center md:justify-center'}>
 				<div className={'ml-3 flex-1'}>
 					<small className={'text-xs text-[#5B5B5B]'}>
 						{'Showing '}
@@ -57,7 +57,7 @@ export function Pagination(props: TProps): ReactElement {
 					nextLinkClassName={'inline-flex items-center m-2 font-medium'}
 					breakLinkClassName={'text-[#5B5B5B] inline-flex items-center mx-2 my-2 px-0.5 font-medium'}
 					activeLinkClassName={
-						'text-neutral-900 font-meduum border-b-2 items-center mx-2 my-2 px-0.5 md:inline-flex'
+						'text-neutral-900 font-medium border-b-2 items-center mx-2 my-2 px-0.5 md:inline-flex'
 					}
 					disabledLinkClassName={'cursor-not-allowed hover:bg-neutral-100'}
 					disabledClassName={'text-neutral-300'}
@@ -76,7 +76,7 @@ export function Pagination(props: TProps): ReactElement {
 						/>
 					}
 				/>
-				<div className={'sm:flex-1'}></div>
+				<div className={'md:flex-1'}></div>
 			</div>
 		</>
 	);

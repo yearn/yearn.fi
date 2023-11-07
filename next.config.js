@@ -16,8 +16,22 @@ const withBundleAnalyzer = require('@next/bundle-analyzer')({
 
 const config = {
 	images: {
-		domains: ['rawcdn.githack.com', 'raw.githubusercontent.com', 'placehold.co', 'assets.smold.app']
+		remotePatterns: [
+			{
+				protocol: 'https',
+				hostname: '**.rawcdn.githack.com'
+			},
+			{
+				protocol: 'https',
+				hostname: '**.raw.githubusercontent.com'
+			},
+			{
+				protocol: 'https',
+				hostname: '**.assets.smold.app'
+			}
+		]
 	},
+	swcMinify: false,
 	async rewrites() {
 		return [
 			{
