@@ -1,4 +1,4 @@
-import {useCallback, useMemo} from 'react';
+import {useCallback} from 'react';
 import {useDeepCompareMemo} from '@react-hookz/web';
 import {STACKING_TO_VAULT} from '@vaults/constants/optRewards';
 import {useAppSettings} from '@vaults/contexts/useAppSettings';
@@ -13,7 +13,7 @@ export function useFilteredVaults(
 	vaultMap: TDict<TYDaemonVault>,
 	condition: (v: TYDaemonVault) => boolean
 ): TYDaemonVault[] {
-	return useMemo(
+	return useDeepCompareMemo(
 		(): TYDaemonVault[] => Object.values(vaultMap).filter((vault): boolean => condition(vault)),
 		[vaultMap, condition]
 	);
@@ -80,7 +80,6 @@ export function useVaultFilter(
 	);
 
 	// V3 Filtered Vaults
-	const v3Vaults = useFilteredVaults(vaults, ({version}): boolean => (version || '')?.split('.')?.[0] === '3');
 	const singleVault = useFilteredVaults(
 		vaults,
 		({version, kind}): boolean => (version || '')?.split('.')?.[0] === '3' && kind === 'Single Strategy'
@@ -173,7 +172,8 @@ export function useVaultFilter(
 	}, [
 		v3,
 		categories,
-		v3Vaults,
+		singleVault,
+		MultiVault,
 		curveFactoryVaults,
 		curveVaults,
 		balancerVaults,

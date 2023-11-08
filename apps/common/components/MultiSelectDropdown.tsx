@@ -33,6 +33,7 @@ function SelectAllOption(option: TMultiSelectOptionProps): ReactElement {
 				<input
 					type={'checkbox'}
 					checked={option.isSelected}
+					onChange={(): void => {}}
 					className={'checkbox hidden'}
 				/>
 			</div>
@@ -53,6 +54,7 @@ function Option(option: TMultiSelectOptionProps): ReactElement {
 				<input
 					type={'checkbox'}
 					checked={option.isSelected}
+					onChange={(): void => {}}
 					className={'checkbox'}
 					readOnly
 				/>

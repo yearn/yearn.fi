@@ -27,7 +27,7 @@ import {NextQueryParamAdapter} from '@common/utils/QueryParamsProvider';
 
 import type {NextRouter} from 'next/router';
 import type {ReactElement, ReactNode} from 'react';
-import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault, TYDaemonVaults} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TSortDirection} from '@common/types/types';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 
@@ -93,6 +93,44 @@ function HeaderUserPosition(): ReactElement {
 	);
 }
 
+function ListOfRetiredVaults({retiredVaults}: {retiredVaults: TYDaemonVaults}): ReactElement {
+	return (
+		<Renderable shouldRender={retiredVaults?.length > 0}>
+			<div>
+				{retiredVaults
+					.filter((vault): boolean => !!vault)
+					.map(
+						(vault): ReactNode => (
+							<VaultsListRetired
+								key={`${vault.chainID}_${vault.address}`}
+								currentVault={vault}
+							/>
+						)
+					)}
+			</div>
+		</Renderable>
+	);
+}
+
+function ListOfMigratableVaults({migratableVaults}: {migratableVaults: TYDaemonVaults}): ReactElement {
+	return (
+		<Renderable shouldRender={migratableVaults?.length > 0}>
+			<div>
+				{migratableVaults
+					.filter((vault): boolean => !!vault)
+					.map(
+						(vault): ReactNode => (
+							<VaultsListInternalMigrationRow
+								key={`${vault.chainID}_${vault.address}`}
+								currentVault={vault}
+							/>
+						)
+					)}
+			</div>
+		</Renderable>
+	);
+}
+
 function ListOfVaults(): ReactElement {
 	const {isLoadingVaultList} = useYearn();
 	const {
@@ -142,7 +180,7 @@ function ListOfVaults(): ReactElement {
 
 	const {currentItems, paginationProps} = usePagination<TYDaemonVault>({
 		data: filteredByChains,
-		itemsPerPage: 60 || sortedVaultsToDisplay.length
+		itemsPerPage: 50 || sortedVaultsToDisplay.length
 	});
 
 	return (
@@ -163,35 +201,8 @@ function ListOfVaults(): ReactElement {
 				onSearch={onSearch}
 			/>
 
-			<Renderable shouldRender={(categories || []).includes('holdings') && retiredVaults?.length > 0}>
-				<div>
-					{retiredVaults
-						.filter((vault): boolean => !!vault)
-						.map(
-							(vault): ReactNode => (
-								<VaultsListRetired
-									key={`${vault.chainID}_${vault.address}`}
-									currentVault={vault}
-								/>
-							)
-						)}
-				</div>
-			</Renderable>
-
-			<Renderable shouldRender={(categories || []).includes('holdings') && migratableVaults?.length > 0}>
-				<div>
-					{migratableVaults
-						.filter((vault): boolean => !!vault)
-						.map(
-							(vault): ReactNode => (
-								<VaultsListInternalMigrationRow
-									key={`${vault.chainID}_${vault.address}`}
-									currentVault={vault}
-								/>
-							)
-						)}
-				</div>
-			</Renderable>
+			<ListOfRetiredVaults retiredVaults={retiredVaults} />
+			<ListOfMigratableVaults migratableVaults={migratableVaults} />
 
 			<div className={'mt-4'} />
 			<ListHead
