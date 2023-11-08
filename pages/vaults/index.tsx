@@ -141,7 +141,7 @@ function ListOfVaults(): ReactElement {
 	}, [chains, sortedVaultsToDisplay]);
 
 	const {currentItems, paginationProps} = usePagination<TYDaemonVault>({
-		data: sortedVaultsToDisplay,
+		data: filteredByChains,
 		itemsPerPage: 60 || sortedVaultsToDisplay.length
 	});
 
