@@ -1,1 +1,1 @@
-export const YCRV_CHAIN_ID = 1;
+export const YCRV_SUPPORTED_NETWORK = 1;

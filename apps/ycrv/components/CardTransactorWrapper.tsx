@@ -25,7 +25,7 @@ import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import {getAmountWithSlippage, getVaultAPR} from '@common/utils';
 import {approveERC20, deposit} from '@common/utils/actions';
-import {YCRV_SUPPORTED_NETWORK} from '@yCRV/constants';
+import {YCRV_SUPPORTED_NETWORK} from '@yCRV/constants/index';
 import {ZAP_OPTIONS_FROM, ZAP_OPTIONS_TO} from '@yCRV/constants/tokens';
 import {useYCRV} from '@yCRV/contexts/useYCRV';
 import {ZAP_CRV_ABI} from '@yCRV/utils/abi/zapCRV.abi';

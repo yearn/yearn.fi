@@ -1,6 +1,7 @@
 import React, {Fragment, memo, useCallback, useEffect} from 'react';
 import localFont from 'next/font/local';
 import {usePathname} from 'next/navigation';
+import {type NextRouter, useRouter} from 'next/router';
 import {AnimatePresence, domAnimation, LazyMotion, motion} from 'framer-motion';
 import {useLocalStorageValue} from '@react-hookz/web';
 import {arbitrum, base, fantom, mainnet, optimism} from '@wagmi/chains';
@@ -18,7 +19,6 @@ import {variants} from '@common/utils/animations';
 
 import type {NextComponentType} from 'next';
 import type {AppProps} from 'next/app';
-import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
 
 import '../style.css';
@@ -101,7 +101,8 @@ type TGetLayout = NextComponentType & {
 	getLayout: (p: ReactElement, router: NextRouter) => ReactElement;
 };
 const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
-	const {Component, pageProps, router} = props;
+	const router = useRouter();
+	const {Component, pageProps} = props;
 	const pathName = usePathname();
 	const getLayout = (Component as TGetLayout).getLayout || ((page: ReactElement): ReactElement => page);
 	const {value: shouldHidePopover} = useLocalStorageValue<boolean>('yearn.fi/feedback-popover');

@@ -19,7 +19,7 @@ import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import {getVaultAPR} from '@common/utils';
 import {approveERC20, deposit} from '@common/utils/actions';
-import {YBAL_SUPPORTED_NETWORK} from '@yBal/constants';
+import {YBAL_SUPPORTED_NETWORK} from '@yBal/constants/index';
 import {ZAP_OPTIONS_FROM, ZAP_OPTIONS_TO} from '@yBal/constants/tokens';
 import {useYBal} from '@yBal/contexts/useYBal';
 import {simulateZapForMinOut, zapBal} from '@yBal/utils/actions';
