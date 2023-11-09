@@ -356,7 +356,6 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 
 	return (
 		<Link
-			prefetch={false}
 			key={`${currentVault.address}`}
 			href={`/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`}>
 			<div className={'yearn--table-wrapper cursor-pointer transition-colors hover:bg-neutral-300'}>
