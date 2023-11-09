@@ -30,7 +30,7 @@ export function useFetch<T>({endpoint, schema, config}: TUseZodProps<T>): SWRRes
 	const parsedData = schema.safeParse(result.data);
 
 	if (!parsedData.success) {
-		// console.error(endpoint, parsedData.error);
+		console.error(endpoint, parsedData.error);
 		Sentry.captureException(parsedData.error, {tags: {endpoint}});
 		return {...result, isSuccess: false};
 	}

@@ -1,7 +1,6 @@
 import {useCallback, useState} from 'react';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useSolver} from '@vaults/contexts/useSolver';
-import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -23,7 +22,6 @@ import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {refresh} = useWallet();
 	const {refresh: refreshZapBalances} = useWalletForZap();
-	const {refresh: refreshStakingRewards} = useStakingRewards();
 	const {address, provider} = useWeb3();
 	const {isStakingOpBoostedVaults} = useYearn();
 	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
@@ -53,6 +51,7 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 	}, [address, onRetrieveAllowance, hash]);
 
 	const onSuccess = useCallback(async (): Promise<void> => {
+		const {chainID} = currentVault;
 		onChangeAmount(toNormalizedBN(0));
 		if (
 			Solver.enum.Vanilla === currentSolver ||
@@ -61,19 +60,15 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 			Solver.enum.OptimismBooster === currentSolver ||
 			Solver.enum.InternalMigration === currentSolver
 		) {
-			await refresh([
-				{
-					address: toAddress(actionParams?.selectedOptionFrom?.value),
-					chainID: currentVault.chainID
-				},
-				{
-					address: toAddress(actionParams?.selectedOptionTo?.value),
-					chainID: currentVault.chainID
-				}
-			]);
-			if (Solver.enum.OptimismBooster === currentSolver) {
-				await refreshStakingRewards();
+			const toRefresh = [
+				{address: toAddress(actionParams?.selectedOptionFrom?.value), chainID},
+				{address: toAddress(actionParams?.selectedOptionTo?.value), chainID},
+				{address: toAddress(currentVault.address), chainID}
+			];
+			if (currentVault.staking.available) {
+				toRefresh.push({address: toAddress(currentVault.staking.address), chainID});
 			}
+			await refresh(toRefresh);
 		} else if (
 			Solver.enum.Cowswap === currentSolver ||
 			Solver.enum.Portals === currentSolver ||
@@ -82,44 +77,23 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 			if (isDepositing) {
 				//refresh input from zap wallet, refresh output from default
 				await Promise.all([
-					refreshZapBalances([
-						{
-							address: toAddress(actionParams?.selectedOptionFrom?.value),
-							chainID: currentVault.chainID
-						}
-					]),
-					refresh([
-						{
-							address: toAddress(actionParams?.selectedOptionTo?.value),
-							chainID: currentVault.chainID
-						}
-					])
+					refreshZapBalances([{address: toAddress(actionParams?.selectedOptionFrom?.value), chainID}]),
+					refresh([{address: toAddress(actionParams?.selectedOptionTo?.value), chainID}])
 				]);
 			} else {
 				await Promise.all([
-					refreshZapBalances([
-						{
-							address: toAddress(actionParams?.selectedOptionTo?.value),
-							chainID: currentVault.chainID
-						}
-					]),
-					refresh([
-						{
-							address: toAddress(actionParams?.selectedOptionFrom?.value),
-							chainID: currentVault.chainID
-						}
-					])
+					refreshZapBalances([{address: toAddress(actionParams?.selectedOptionTo?.value), chainID}]),
+					refresh([{address: toAddress(actionParams?.selectedOptionFrom?.value), chainID}])
 				]);
 			}
 		}
 	}, [
+		currentVault,
 		onChangeAmount,
 		currentSolver,
-		refresh,
 		actionParams?.selectedOptionFrom?.value,
 		actionParams?.selectedOptionTo?.value,
-		currentVault.chainID,
-		refreshStakingRewards,
+		refresh,
 		isDepositing,
 		refreshZapBalances
 	]);

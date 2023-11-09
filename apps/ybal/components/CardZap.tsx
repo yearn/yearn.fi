@@ -102,7 +102,7 @@ function CardZap(): ReactElement {
 	return (
 		<>
 			<div className={'grid grid-cols-2 gap-4'}>
-				<label className={'relative z-20 flex flex-col space-y-1'}>
+				<div className={'relative z-20 flex flex-col space-y-1'}>
 					<p className={'text-ba text-neutral-600'}>{'Swap from'}</p>
 					<Dropdown
 						defaultOption={ZAP_OPTIONS_FROM[0]}
@@ -125,7 +125,7 @@ function CardZap(): ReactElement {
 						}}
 					/>
 					<p className={'pl-2 !text-xs font-normal !text-green-600'}>{fromVaultAPY}</p>
-				</label>
+				</div>
 				<div className={'flex flex-col space-y-1'}>
 					<label
 						htmlFor={'amount'}
@@ -207,7 +207,7 @@ function CardZap(): ReactElement {
 			</div>
 
 			<div className={'mb-8 mt-4 grid grid-cols-2 gap-4 md:mt-0'}>
-				<label className={'relative z-10 flex flex-col space-y-1'}>
+				<div className={'relative z-10 flex flex-col space-y-1'}>
 					<p className={'text-ba text-neutral-600'}>{'Swap to'}</p>
 					<Dropdown
 						defaultOption={possibleTo[0]}
@@ -216,7 +216,7 @@ function CardZap(): ReactElement {
 						onSelect={(option: TDropdownOption): void => set_selectedOptionTo(option)}
 					/>
 					<p className={'pl-2 !text-xs font-normal !text-green-600'}>{toVaultAPY}</p>
-				</label>
+				</div>
 				<div className={'flex flex-col space-y-1'}>
 					<div>
 						<p className={'text-ba hidden text-neutral-600 md:block'}>{'You will receive minimum'}</p>

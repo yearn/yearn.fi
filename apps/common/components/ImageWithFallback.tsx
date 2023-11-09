@@ -11,7 +11,7 @@ type TImageWithFallback = ImageProps & {
 	smHeight?: number;
 };
 export function ImageWithFallback(props: TImageWithFallback): ReactElement {
-	const {alt, src, ...rest} = props;
+	const {alt, src, smWidth, smHeight, ...rest} = props;
 	const [imageSrc, set_imageSrc] = useState(`${src}?fallback=true`);
 	const [imageStyle, set_imageStyle] = useState<CSSProperties>({});
 
@@ -26,8 +26,8 @@ export function ImageWithFallback(props: TImageWithFallback): ReactElement {
 			src={imageSrc}
 			style={imageStyle}
 			className={cl(
-				`w-[${rest.smWidth ?? rest.width}px] min-w-[${rest.smWidth ?? rest.width}px]`,
-				`h-[${rest.smHeight ?? rest.height}px] min-h-[${rest.smHeight ?? rest.height}px]`,
+				`w-[${smWidth ?? rest.width}px] min-w-[${smWidth ?? rest.width}px]`,
+				`h-[${smHeight ?? rest.height}px] min-h-[${smHeight ?? rest.height}px]`,
 				`md:w-[${rest.width}px] md:h-[${rest.height}px]`,
 				`md:min-w-[${rest.width}px] md:min-h-[${rest.height}px]`
 			)}

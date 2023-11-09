@@ -34,7 +34,7 @@ export function VaultListOptions(props: TVautListOptions): ReactElement {
 							}>
 							<div className={'yearn--shadow overflow-hidden'}>
 								<div className={cl(props.panelClassName, 'relative bg-neutral-0')}>
-									<label
+									<div
 										className={
 											'flex cursor-pointer items-center justify-between p-4 transition-colors hover:bg-neutral-100/40'
 										}>
@@ -43,9 +43,9 @@ export function VaultListOptions(props: TVautListOptions): ReactElement {
 											isEnabled={shouldHideDust}
 											onSwitch={onSwitchHideDust}
 										/>
-									</label>
+									</div>
 
-									<label
+									<div
 										className={
 											'flex cursor-pointer items-center justify-between p-4 transition-colors hover:bg-neutral-100/40'
 										}>
@@ -54,7 +54,7 @@ export function VaultListOptions(props: TVautListOptions): ReactElement {
 											isEnabled={shouldHideLowTVLVaults}
 											onSwitch={onSwitchHideLowTVLVaults}
 										/>
-									</label>
+									</div>
 								</div>
 							</div>
 						</Popover.Panel>

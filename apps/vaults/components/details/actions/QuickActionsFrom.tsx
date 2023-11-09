@@ -56,7 +56,7 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 				)
 			);
 		},
-		[actionParams?.selectedOptionFrom?.value, getToken, onChangeAmount]
+		[actionParams?.selectedOptionFrom, getToken, onChangeAmount]
 	);
 
 	return (
@@ -65,9 +65,7 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 			className={'flex w-full flex-col space-x-0 md:flex-row md:space-x-4'}>
 			<div className={'relative z-10 w-full space-y-2'}>
 				<div className={'flex flex-row items-baseline justify-between'}>
-					<label className={'text-base text-neutral-600'}>
-						{isDepositing ? 'From wallet' : 'From vault'}
-					</label>
+					<p className={'text-base text-neutral-600'}>{isDepositing ? 'From wallet' : 'From vault'}</p>
 					<legend
 						className={'font-number inline text-xs text-neutral-600 md:hidden'}
 						suppressHydrationWarning>

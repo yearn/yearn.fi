@@ -167,7 +167,7 @@ export function GaugeBribeModal({
 			</div>
 			<div className={'mt-6 grid grid-cols-12 gap-4'}>
 				<div className={'relative z-20 col-span-12 flex flex-col space-y-4'}>
-					<label className={'flex flex-col space-y-1 '}>
+					<div className={'flex flex-col space-y-1 '}>
 						<p className={'text-base text-neutral-600'}>{'Reward Token'}</p>
 						<div className={'flex h-10 items-center bg-neutral-100 p-2'}>
 							<div className={'flex h-10 w-full flex-row items-center justify-between px-0 py-4'}>
@@ -194,9 +194,9 @@ export function GaugeBribeModal({
 								/>
 							</div>
 						</div>
-					</label>
+					</div>
 
-					<label className={'flex flex-col space-y-1'}>
+					<div className={'flex flex-col space-y-1'}>
 						<p className={'text-base text-neutral-600'}>{'Reward Amount'}</p>
 						<div className={'flex h-10 items-center bg-neutral-100 p-2'}>
 							<div className={'flex h-10 w-full flex-row items-center justify-between px-0 py-4'}>
@@ -227,7 +227,7 @@ export function GaugeBribeModal({
 								</button>
 							</div>
 						</div>
-					</label>
+					</div>
 
 					<div className={'space-y-1 border-t border-neutral-200 bg-neutral-0 py-6'}>
 						<div className={'flex flex-row items-center justify-between'}>

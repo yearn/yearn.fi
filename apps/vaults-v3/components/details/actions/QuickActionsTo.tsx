@@ -35,9 +35,9 @@ export function VaultDetailsQuickActionsTo(): ReactElement {
 		<section className={'flex w-full flex-col space-x-0 md:flex-row md:space-x-4'}>
 			<div className={'relative z-10 w-full'}>
 				<div className={'flex flex-col items-baseline justify-between pb-2 pl-1 md:flex-row'}>
-					<label className={'text-base text-neutral-600'}>
+					<p className={'text-base text-neutral-600'}>
 						{isDepositing || isMigrationAvailable ? 'To vault' : 'To wallet'}
-					</label>
+					</p>
 					<legend
 						className={'font-number inline text-xs text-neutral-900/50 md:hidden'}
 						suppressHydrationWarning>

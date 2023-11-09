@@ -98,14 +98,14 @@ export function GaugeListRow({currentGauge}: {currentGauge: TCurveGauge}): React
 				<div
 					className={'yearn--table-data-section-item md:col-span-3'}
 					datatype={'number'}>
-					<label className={'yearn--table-data-section-item-label'}>{'Weight'}</label>
+					<p className={'yearn--table-data-section-item-label'}>{'Weight'}</p>
 					<p className={'yearn--table-data-section-item-value'}>{formatPercent(gaugeRelativeWeight * 100)}</p>
 				</div>
 
 				<div
 					className={'yearn--table-data-section-item md:col-span-2'}
 					datatype={'number'}>
-					<label className={'yearn--table-data-section-item-label'}>{'Current Bribes'}</label>
+					<p className={'yearn--table-data-section-item-label'}>{'Current Bribes'}</p>
 					<Renderable
 						shouldRender={!!currentRewardsForCurrentGaugeMap && currentRewardsForCurrentGaugeMap.length > 0}
 						fallback={renderDefaultValueUSDFallback()}>
@@ -124,7 +124,7 @@ export function GaugeListRow({currentGauge}: {currentGauge: TCurveGauge}): React
 				<div
 					className={'yearn--table-data-section-item md:col-span-2'}
 					datatype={'number'}>
-					<label className={'yearn--table-data-section-item-label'}>{'Pending Bribes'}</label>
+					<p className={'yearn--table-data-section-item-label'}>{'Pending Bribes'}</p>
 					<Renderable
 						shouldRender={!!nextRewardsForCurrentGaugeMap && nextRewardsForCurrentGaugeMap.length > 0}
 						fallback={renderDefaultValueUSDFallback()}>

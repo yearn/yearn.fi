@@ -1,8 +1,6 @@
 import {useMemo} from 'react';
 import {useContractRead} from 'wagmi';
-import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
-import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatUSD} from '@yearn-finance/web-lib/utils/format.number';
@@ -140,14 +138,15 @@ function ValueInToken(props: {currentVault: TYDaemonVault; vaultPrice: number; d
 }
 
 export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const {address, apr, tvl, decimals, symbol = 'token', token} = currentVault;
+	const {apr, tvl, decimals, symbol = 'token', token} = currentVault;
 	const chainInfo = getNetwork(currentVault.chainID);
-	const vaultBalance = useBalance({address, chainID: currentVault.chainID});
-	const vaultPrice = useTokenPrice(address) || currentVault?.tvl?.price || 0;
+	const vaultBalance = useBalance({address: currentVault.address, chainID: currentVault.chainID});
+	const stakedBalance = useBalance({address: currentVault.staking.address, chainID: currentVault.chainID});
+	const vaultPrice = useTokenPrice(currentVault.address) || currentVault?.tvl?.price || 0;
 	const vaultName = useMemo((): string => getVaultName(currentVault), [currentVault]);
-	const {stakingRewardsByVault, positionsMap} = useStakingRewards();
-	const stakedBalance = toBigInt(positionsMap[toAddress(stakingRewardsByVault[address])]?.stake);
-	const depositedAndStaked = toNormalizedBN(vaultBalance.raw + stakedBalance, decimals);
+	const depositedAndStaked = currentVault.staking.available
+		? toNormalizedBN(vaultBalance.raw + stakedBalance.raw, decimals)
+		: vaultBalance;
 
 	return (
 		<div className={'col-span-12 mt-4 flex w-full flex-col items-center justify-center'}>
@@ -161,9 +160,11 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 			</strong>
 
 			<div className={'mb-10 mt-6 flex flex-col justify-center md:mt-4'}>
-				{address ? (
-					<button onClick={(): void => copyToClipboard(address)}>
-						<p className={'font-number text-center text-xxs text-neutral-900/70 md:text-xs'}>{address}</p>
+				{currentVault.address ? (
+					<button onClick={(): void => copyToClipboard(currentVault.address)}>
+						<p className={'font-number text-center text-xxs text-neutral-900/70 md:text-xs'}>
+							{currentVault.address}
+						</p>
 					</button>
 				) : (
 					<p className={'text-xxs md:text-xs'}>&nbsp;</p>

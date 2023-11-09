@@ -51,7 +51,7 @@ function QASelect(props: TQASelect): ReactElement {
 	return (
 		<div className={'relative z-10 w-full space-y-2'}>
 			<div className={'flex flex-row items-baseline justify-between'}>
-				<label className={'text-base text-neutral-600'}>{label}</label>
+				<p className={'text-base text-neutral-600'}>{label}</p>
 				<legend
 					className={'font-number inline text-xs text-neutral-600 md:hidden'}
 					suppressHydrationWarning>
@@ -93,8 +93,7 @@ function QASelect(props: TQASelect): ReactElement {
 function QASwitch(): ReactElement {
 	return (
 		<div className={'mx-auto flex w-full justify-center space-y-0 md:mx-none md:block md:w-14 md:space-y-2'}>
-			<label className={'hidden text-base md:inline'}>&nbsp;</label>
-
+			<p className={'hidden text-base md:inline'}>&nbsp;</p>
 			<div className={'flex h-6 w-6 rotate-90 items-center justify-center p-0 md:h-10 md:w-14 md:rotate-0'}>
 				<IconArrowRight className={'w-4 text-neutral-400 md:w-[25px]'} />
 			</div>
@@ -153,7 +152,7 @@ function QAInput(props: TQAInput): ReactElement {
 function QAButton({label, ...props}: TQAButton): ReactElement {
 	return (
 		<div className={'w-full space-y-0 md:w-42 md:min-w-42 md:space-y-2'}>
-			<label className={'hidden text-base md:inline'}>&nbsp;</label>
+			<p className={'hidden text-base md:inline'}>&nbsp;</p>
 			<div>
 				<Button
 					className={'w-full'}

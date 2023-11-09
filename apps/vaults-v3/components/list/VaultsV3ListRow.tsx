@@ -413,27 +413,21 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 					<div
 						className={'yearn--table-data-section-item md:col-span-2'}
 						datatype={'number'}>
-						<label className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>
-							{'Estimated APR'}
-						</label>
+						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Estimated APR'}</p>
 						<VaultForwardAPR currentVault={currentVault} />
 					</div>
 
 					<div
 						className={'yearn--table-data-section-item md:col-span-2'}
 						datatype={'number'}>
-						<label className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>
-							{'Historical APR'}
-						</label>
+						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Historical APR'}</p>
 						<VaultHistoricalAPR currentVault={currentVault} />
 					</div>
 
 					<div
 						className={'yearn--table-data-section-item md:col-span-2'}
 						datatype={'number'}>
-						<label className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>
-							{'Available'}
-						</label>
+						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Available'}</p>
 						<p
 							className={`yearn--table-data-section-item-value ${
 								isZero(availableToDeposit) ? 'text-neutral-400' : 'text-neutral-900'
@@ -450,9 +444,7 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 					<div
 						className={'yearn--table-data-section-item md:col-span-2'}
 						datatype={'number'}>
-						<label className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>
-							{'Deposited'}
-						</label>
+						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Deposited'}</p>
 						<p
 							className={`yearn--table-data-section-item-value ${
 								isZero(staked) ? 'text-neutral-400' : 'text-neutral-900'
@@ -469,7 +461,7 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 					<div
 						className={'yearn--table-data-section-item md:col-span-2'}
 						datatype={'number'}>
-						<label className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'TVL'}</label>
+						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'TVL'}</p>
 						<p className={'yearn--table-data-section-item-value'}>
 							<RenderAmount
 								value={currentVault.tvl?.tvl}

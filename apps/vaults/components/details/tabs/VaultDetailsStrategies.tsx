@@ -77,7 +77,7 @@ function VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
 		<details className={'p-0'}>
 			<summary>
 				<div>
-					<b className={'text-neutral-900'}>{strategy.displayName || strategy.name}</b>
+					<b className={'text-neutral-900'}>{strategy.name}</b>
 				</div>
 				<div>
 					<IconChevron className={'summary-chevron'} />
@@ -217,7 +217,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 				if (!searchValue) {
 					return true;
 				}
-				return `${strategy.name} ${strategy.displayName}`.toLowerCase().includes(searchValue);
+				return strategy.name.toLowerCase().includes(searchValue);
 			})
 			.filter((strategy): boolean => {
 				if (!shouldDisplayInactiveStrategies) {

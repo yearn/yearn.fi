@@ -386,23 +386,21 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 					<div
 						className={'yearn--table-data-section-item md:col-span-2'}
 						datatype={'number'}>
-						<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Estimated APR'}</label>
+						<p className={'yearn--table-data-section-item-label !font-aeonik'}>{'Estimated APR'}</p>
 						<VaultForwardAPR currentVault={currentVault} />
 					</div>
 
 					<div
 						className={'yearn--table-data-section-item md:col-span-2'}
 						datatype={'number'}>
-						<label className={'yearn--table-data-section-item-label !font-aeonik'}>
-							{'Historical APR'}
-						</label>
+						<p className={'yearn--table-data-section-item-label !font-aeonik'}>{'Historical APR'}</p>
 						<VaultHistoricalAPR currentVault={currentVault} />
 					</div>
 
 					<div
 						className={'yearn--table-data-section-item md:col-span-2'}
 						datatype={'number'}>
-						<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Available'}</label>
+						<p className={'yearn--table-data-section-item-label !font-aeonik'}>{'Available'}</p>
 						<p
 							className={`yearn--table-data-section-item-value ${
 								isZero(availableToDeposit) ? 'text-neutral-400' : 'text-neutral-900'
@@ -419,7 +417,7 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 					<div
 						className={'yearn--table-data-section-item md:col-span-2'}
 						datatype={'number'}>
-						<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'Deposited'}</label>
+						<p className={'yearn--table-data-section-item-label !font-aeonik'}>{'Deposited'}</p>
 						<p
 							className={`yearn--table-data-section-item-value ${
 								isZero(staked) ? 'text-neutral-400' : 'text-neutral-900'
@@ -436,7 +434,7 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 					<div
 						className={'yearn--table-data-section-item md:col-span-2'}
 						datatype={'number'}>
-						<label className={'yearn--table-data-section-item-label !font-aeonik'}>{'TVL'}</label>
+						<p className={'yearn--table-data-section-item-label !font-aeonik'}>{'TVL'}</p>
 						<p className={'yearn--table-data-section-item-value'}>
 							<RenderAmount
 								value={currentVault.tvl?.tvl}

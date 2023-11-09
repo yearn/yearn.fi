@@ -2,7 +2,7 @@ import {createContext, useCallback, useContext, useEffect, useMemo, useReducer, 
 import {useRouter} from 'next/router';
 import {useContractReads} from 'wagmi';
 import {useMountEffect, useUpdateEffect} from '@react-hookz/web';
-import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
+import {STACKING_TO_VAULT} from '@vaults/constants/optRewards';
 import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
 import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
 import {setZapOption} from '@vaults/utils/zapOptions';
@@ -153,8 +153,7 @@ export function ActionFlowContextApp({
 	const {getBalance} = useWallet();
 	const {listTokens: listZapTokens, tokensList} = useWalletForZap();
 	const {zapProvider, isStakingOpBoostedVaults} = useYearn();
-	const {stakingRewardsByVault} = useStakingRewards();
-	const hasStakingRewards = !!stakingRewardsByVault[currentVault.address];
+	const hasStakingRewards = !!STACKING_TO_VAULT[currentVault.address];
 	const [possibleOptionsFrom, set_possibleOptionsFrom] = useState<TDropdownOption[]>([]);
 	const [possibleZapOptionsFrom, set_possibleZapOptionsFrom] = useState<TDropdownOption[]>([]);
 	const [possibleOptionsTo, set_possibleOptionsTo] = useState<TDropdownOption[]>([]);

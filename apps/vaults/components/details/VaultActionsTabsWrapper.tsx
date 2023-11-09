@@ -10,14 +10,8 @@ import {VaultDetailsQuickActionsTo} from '@vaults/components/details/actions/Qui
 import {RewardsTab} from '@vaults/components/RewardsTab';
 import {SettingsPopover} from '@vaults/components/SettingsPopover';
 import {Flow, useActionFlow} from '@vaults/contexts/useActionFlow';
-import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
-import {Banner} from '@yearn-finance/web-lib/components/Banner';
-import {useLocalStorage} from '@yearn-finance/web-lib/hooks/useLocalStorage';
-import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {performBatchedUpdates} from '@yearn-finance/web-lib/utils/performBatchedUpdates';
-import {useToken} from '@common/hooks/useToken';
 import {IconChevron} from '@common/icons/IconChevron';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 
@@ -38,8 +32,6 @@ const tabs: TTabsOptions[] = [
 	{value: 3, label: '$OP BOOST', flowAction: Flow.None, slug: 'boost'}
 ];
 
-const DISPLAY_DECIMALS = 10;
-
 function getCurrentTab({
 	isDepositing,
 	hasMigration,
@@ -58,16 +50,8 @@ function getCurrentTab({
 export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {onSwitchSelectedOptions, isDepositing, actionParams, currentSolver} = useActionFlow();
 	const [possibleTabs, set_possibleTabs] = useState<TTabsOptions[]>([tabs[0], tabs[1]]);
-	const {stakingRewardsMap, positionsMap, stakingRewardsByVault} = useStakingRewards();
 	const willDepositAndStake = currentSolver === Solver.enum.OptimismBooster;
-	const stakingRewardsAddress = stakingRewardsByVault[currentVault.address];
-	const stakingRewards = stakingRewardsAddress ? stakingRewardsMap[stakingRewardsAddress] : undefined;
-	const stakingRewardsPosition = stakingRewardsAddress ? positionsMap[stakingRewardsAddress] : undefined;
-	const rewardTokenBalance = useToken({
-		address: toAddress(stakingRewards?.rewardsToken),
-		chainID: currentVault.chainID
-	});
-	const hasStakingRewards = !!stakingRewardsByVault[currentVault.address];
+	const hasStakingRewards = Boolean(currentVault.staking.available);
 	const [currentTab, set_currentTab] = useState<TTabsOptions>(
 		getCurrentTab({
 			isDepositing,
@@ -75,12 +59,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 			isRetired: currentVault?.retired
 		})
 	);
-	const [shouldShowOpBoostInfo, set_shouldShowOpBoostInfo] = useLocalStorage<boolean>(
-		'yearn.fi/op-boost-banner',
-		true
-	);
 	const router = useRouter();
-	const rewardBalance = toNormalizedBN(toBigInt(stakingRewardsPosition?.reward), rewardTokenBalance.decimals);
 
 	useEffect((): void => {
 		const tab = tabs.find((tab): boolean => tab.slug === router.query.action);
@@ -244,19 +223,6 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 				</div>
 				<div className={'-mt-0.5 h-0.5 w-full bg-neutral-300'} />
 
-				{shouldShowOpBoostInfo && !isZero(rewardBalance.normalized) && (
-					<div>
-						<Banner
-							content={`Ser where's my rewards? You have ${Number(rewardBalance.normalized).toFixed(
-								DISPLAY_DECIMALS
-							)} ${
-								rewardTokenBalance.symbol || 'yvOP'
-							} waiting for you in the OP BOOST tab (yep, the one just above here).`}
-							type={'info'}
-							onClose={(): void => set_shouldShowOpBoostInfo(false)}
-						/>
-					</div>
-				)}
 				{currentTab.value === 3 ? (
 					<RewardsTab currentVault={currentVault} />
 				) : (
@@ -268,7 +234,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 						<VaultDetailsQuickActionsSwitch />
 						<VaultDetailsQuickActionsTo />
 						<div className={'w-full space-y-0 md:w-42 md:min-w-42 md:space-y-2'}>
-							<label className={'hidden text-base md:inline'}>&nbsp;</label>
+							<p className={'hidden text-base md:inline'}>&nbsp;</p>
 							<div>
 								<VaultDetailsQuickActionsButtons currentVault={currentVault} />
 							</div>

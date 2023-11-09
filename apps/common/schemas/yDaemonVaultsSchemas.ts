@@ -1,12 +1,12 @@
 import {z} from 'zod';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {addressSchema} from '@yearn-finance/web-lib/utils/schemas/addressSchema';
 
 const yDaemonVaultStrategySchema = z.object({
 	address: addressSchema,
 	name: z.string(),
-	displayName: z.string(),
-	description: z.string(),
+	description: z.string().optional().default(''),
 	details: z
 		.object({
 			totalDebt: z.string(),
@@ -59,21 +59,36 @@ export const yDaemonVaultSchema = z.object({
 		.or(z.literal('Experimental'))
 		.or(z.literal('Experimental Yearn Vault'))
 		.or(z.literal('Standard'))
-		.or(z.literal('Yearn Vault')),
-	kind: z.literal('Legacy').or(z.literal('Multi Strategies')).or(z.literal('Single Strategy')),
+		.or(z.literal('Yearn Vault'))
+		.default('Standard')
+		.catch('Standard'),
+	kind: z
+		.literal('Legacy')
+		.or(z.literal('Multi Strategies'))
+		.or(z.literal('Single Strategy'))
+		.default('Legacy')
+		.catch('Legacy'),
 	symbol: z.string(),
 	name: z.string(),
 	category: z
 		.literal('Curve')
-		.or(z.literal('Volatile').or(z.literal('Balancer')).or(z.literal('Stablecoin')))
+		.or(z.literal('Volatile'))
+		.or(z.literal('Balancer'))
+		.or(z.literal('Stablecoin'))
 		.or(z.literal('Velodrome'))
 		.or(z.literal('Boosted'))
-		.or(z.literal('Aerodrome')),
+		.or(z.literal('Aerodrome'))
+		.default('Volatile')
+		.catch('Volatile'),
 	decimals: z.number(),
 	chainID: z.number(),
 	token: yDaemonVaultTokenSchema,
 	tvl: z.object({
-		totalAssets: z.string().transform((val): bigint => toBigInt(val)),
+		totalAssets: z
+			.string()
+			.default('0')
+			.catch('0')
+			.transform((val): bigint => toBigInt(val)),
 		tvl: z.number().default(0).catch(0),
 		price: z.number().default(0).catch(0)
 	}),
@@ -122,6 +137,19 @@ export const yDaemonVaultSchema = z.object({
 	featuringScore: z.number().default(0).catch(0),
 	retired: z.boolean().default(false).catch(false),
 	strategies: z.array(yDaemonVaultStrategySchema).nullable().default([]),
+	staking: z
+		.object({
+			address: addressSchema,
+			available: z.boolean().default(false).catch(false)
+		})
+		.default({
+			address: toAddress(''),
+			available: false
+		})
+		.catch({
+			address: toAddress(''),
+			available: false
+		}),
 	migration: z.object({
 		available: z.boolean(),
 		address: addressSchema,

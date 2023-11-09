@@ -1,7 +1,7 @@
 import {Fragment, useMemo} from 'react';
 import {Popover, Transition} from '@headlessui/react';
+import {STACKING_TO_VAULT} from '@vaults/constants/optRewards';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
-import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {IconSettings} from '@yearn-finance/web-lib/icons/IconSettings';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
@@ -209,8 +209,7 @@ function ZapSection({chainID}: {chainID: number}): ReactElement {
 
 function StakingSection({vaultAddress}: {vaultAddress: TAddress}): ReactElement | null {
 	const {isStakingOpBoostedVaults, set_isStakingOpBoostedVaults} = useYearn();
-	const {stakingRewardsByVault} = useStakingRewards();
-	const hasStakingRewards = !!stakingRewardsByVault?.[vaultAddress];
+	const hasStakingRewards = !!STACKING_TO_VAULT?.[vaultAddress];
 
 	if (!hasStakingRewards) {
 		return null;

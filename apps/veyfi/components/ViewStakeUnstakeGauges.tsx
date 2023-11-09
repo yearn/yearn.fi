@@ -151,7 +151,7 @@ function StakeUnstakeButtons({vaultAddress, gaugeAddress, vaultDeposited, gaugeS
 
 export function StakeUnstakeGauges(): ReactElement {
 	const {address} = useWeb3();
-	const {gaugesMap, positionsMap} = useGauge();
+	const {gaugesMap, userPositionInGauge} = useGauge();
 	const {vaults, prices} = useYearn();
 	const {getBalance} = useWallet();
 	const {dYFIPrice} = useOption();
@@ -172,7 +172,7 @@ export function StakeUnstakeGauges(): ReactElement {
 
 			const vaultBalance = getBalance({address: vault.address, chainID: vault.chainID});
 			const tokenPrice = formatToNormalizedValue(toBigInt(prices?.[vault.token.address] || 0), 6);
-			const boost = Number(positionsMap[gauge.address]?.boost || 1);
+			const boost = Number(userPositionInGauge[gauge.address]?.boost || 1);
 			let APRFor10xBoost =
 				((Number(gauge?.rewardRate.normalized || 0) * dYFIPrice * SECONDS_PER_YEAR) /
 					Number(gauge?.totalStaked.normalized || 0) /
@@ -192,13 +192,13 @@ export function StakeUnstakeGauges(): ReactElement {
 				vaultDeposited: vaultBalance,
 				gaugeAPR: APRFor10xBoost,
 				gaugeBoost: boost,
-				gaugeStaked: positionsMap[gauge.address]?.deposit ?? toNormalizedBN(0),
+				gaugeStaked: userPositionInGauge[gauge.address]?.deposit ?? toNormalizedBN(0),
 				actions: undefined
 			});
 		}
 		set_isLoadingGauges(false);
 		return data;
-	}, [vaults, gaugesMap, getBalance, prices, positionsMap, dYFIPrice]);
+	}, [vaults, gaugesMap, getBalance, prices, userPositionInGauge, dYFIPrice]);
 
 	const searchedGaugesData = useMemo((): TGaugeData[] => {
 		if (!search) {

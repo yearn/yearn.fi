@@ -98,7 +98,7 @@ export const Dropdown = ({
 	return (
 		<div className={className}>
 			<div className={'relative z-20 flex flex-col space-y-1'}>
-				{label && <label className={'text-base text-neutral-600'}>{label}</label>}
+				{label && <p className={'text-base text-neutral-600'}>{label}</p>}
 				<div>
 					{isOpen ? (
 						<div

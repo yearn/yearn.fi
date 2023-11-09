@@ -147,7 +147,6 @@ function AppBox({app}: {app: (typeof apps)[0]}): ReactElement {
 
 	return (
 		<Link
-			prefetch={false}
 			key={app.href}
 			href={app.href}>
 			<div

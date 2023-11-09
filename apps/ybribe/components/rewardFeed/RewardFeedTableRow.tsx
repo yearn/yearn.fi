@@ -105,9 +105,9 @@ export function RewardFeedTableRow({
 
 			<div className={'col-span-1 flex h-20 w-full justify-end'}>
 				<div className={'flex flex-row pt-6'}>
-					<label className={'block text-sm leading-6 text-neutral-400 md:hidden'}>
+					<p className={'block text-sm leading-6 text-neutral-400 md:hidden'}>
 						{'Current Rewards per veCRV'}
-					</label>
+					</p>
 					<RewardFeedRowItemWithExtraData
 						address={currentRewardAdded.rewardToken}
 						value={toBigInt(currentRewardAdded.amount)}

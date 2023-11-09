@@ -1,7 +1,7 @@
 import {Fragment, useMemo} from 'react';
 import {Popover, Transition} from '@headlessui/react';
+import {STACKING_TO_VAULT} from '@vaults/constants/optRewards';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
-import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {IconSettings} from '@yearn-finance/web-lib/icons/IconSettings';
 import {Switch} from '@common/components/Switch';
@@ -35,10 +35,8 @@ export function SettingsPopover({vault}: TSettingPopover): ReactElement {
 		isStakingOpBoostedVaults,
 		set_isStakingOpBoostedVaults
 	} = useYearn();
-	const {stakingRewardsByVault} = useStakingRewards();
-
 	const {address, chainID} = vault;
-	const hasStakingRewards = !!stakingRewardsByVault?.[address];
+	const hasStakingRewards = !!STACKING_TO_VAULT?.[address];
 
 	const currentZapProvider = useMemo((): TSolver => {
 		if (chainID !== 1 && zapProvider === 'Cowswap') {
@@ -68,7 +66,7 @@ export function SettingsPopover({vault}: TSettingPopover): ReactElement {
 							<div className={'yearn--shadow'}>
 								<div className={'relative bg-neutral-0 p-4'}>
 									<div className={'mb-6 flex flex-col space-y-1'}>
-										<Label>{'Zap Provider'}</Label>
+										<p>{'Zap Provider'}</p>
 										<select
 											id={'zapProvider'}
 											onChange={(e): void => set_zapProvider(e.target.value as TSolver)}

@@ -241,7 +241,7 @@ function Factory(): ReactElement {
 					aria-label={'Available Curve pools'}
 					className={'flex flex-col pb-[52px]'}>
 					<div className={'grid grid-cols-1 gap-x-0 gap-y-5 md:grid-cols-6 md:gap-x-8'}>
-						<label className={'yearn--input relative z-10 col-span-2'}>
+						<div className={'yearn--input relative z-10 col-span-2'}>
 							<p className={'!text-neutral-600'}>{'Available Curve pools'}</p>
 							<Dropdown
 								placeholder={'Select Curve Pool'}
@@ -249,7 +249,7 @@ function Factory(): ReactElement {
 								selected={selectedOption}
 								onSelect={set_selectedOption}
 							/>
-						</label>
+						</div>
 
 						<div className={'col-span-2 w-full space-y-1'}>
 							<p className={'text-neutral-600'}>{'Vault name'}</p>
