@@ -362,20 +362,20 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 			<div className={'yearn--table-wrapper cursor-pointer transition-colors hover:bg-neutral-300'}>
 				<div className={'flex max-w-[32px] flex-row items-center'}>
 					<ImageWithFallback
-						src={`${process.env.BASE_YEARN_CHAIN_URI}/${currentVault.chainID}/logo-128.png`}
+						src={`${process.env.BASE_YEARN_CHAIN_URI}/${currentVault.chainID}/logo-32.png`}
 						alt={`Chain ${currentVault.chainID}`}
-						width={40}
-						height={40}
+						width={32}
+						height={32}
 					/>
 				</div>
-				<div className={'yearn--table-token-section'}>
+				<div className={'yearn--table-token-section -ml-4'}>
 					<div className={'yearn--table-token-section-item'}>
 						<div className={'yearn--table-token-section-item-image'}>
 							<ImageWithFallback
-								src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-128.png`}
-								alt={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-128.png`}
-								width={40}
-								height={40}
+								src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-32.png`}
+								alt={''}
+								width={32}
+								height={32}
 							/>
 						</div>
 						<p>{vaultName}</p>

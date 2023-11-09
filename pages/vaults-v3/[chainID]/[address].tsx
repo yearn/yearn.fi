@@ -123,7 +123,7 @@ function Index(): ReactElement | null {
 						<ImageWithFallback
 							className={'h-10 w-10 md:h-12 md:w-12'}
 							src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.address}/logo-128.png`}
-							alt={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.address}/logo-128.png`}
+							alt={''}
 							smWidth={40}
 							smHeight={40}
 							width={48}

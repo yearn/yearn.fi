@@ -251,14 +251,11 @@ export function StakeUnstakeGauges(): ReactElement {
 							className: 'my-4 md:my-0',
 							transform: ({vaultIcon, vaultName}): ReactElement => (
 								<div className={'flex flex-row items-center space-x-4 md:space-x-6'}>
-									<div
-										className={
-											'flex h-10 min-h-[40px] w-10 min-w-[40px] items-center justify-center rounded-full md:h-10 md:w-10'
-										}>
+									<div className={'flex h-8 min-h-[32px] w-8 min-w-[32px] rounded-full'}>
 										<ImageWithFallback
 											alt={vaultName}
-											width={40}
-											height={40}
+											width={32}
+											height={32}
 											src={vaultIcon}
 										/>
 									</div>

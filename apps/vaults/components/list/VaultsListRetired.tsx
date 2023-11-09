@@ -25,10 +25,10 @@ export function VaultsListRetired({currentVault}: {currentVault: TYDaemonVault})
 							<ImageWithFallback
 								src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${toAddress(
 									currentVault.token.address
-								)}/logo-128.png`}
+								)}/logo-32.png`}
 								alt={''}
-								width={40}
-								height={40}
+								width={32}
+								height={32}
 							/>
 						</div>
 						<div className={'text-left'}>

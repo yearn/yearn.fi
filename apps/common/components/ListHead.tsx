@@ -62,7 +62,7 @@ export function ListHead({
 			<div className={cl('yearn--table-head-wrapper', wrapperClassName)}>
 				<p className={'yearn--table-head-label max-w-[32px]'}>{chain.label}</p>
 
-				<div className={cl('yearn--table-head-token-section', tokenClassName)}>
+				<div className={cl('yearn--table-head-token-section -ml-4', tokenClassName)}>
 					<button
 						onClick={(): void => onSort(token.value, toggleSortDirection(token.value))}
 						className={'yearn--table-head-label-wrapper group'}>

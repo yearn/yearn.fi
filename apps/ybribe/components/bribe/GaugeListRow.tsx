@@ -75,9 +75,9 @@ export function GaugeListRow({currentGauge}: {currentGauge: TCurveGauge}): React
 					<div className={'yearn--table-token-section-item-image'}>
 						<ImageWithFallback
 							alt={''}
-							width={40}
-							height={40}
-							src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${currentGauge.swap_token}/logo-128.png`}
+							width={32}
+							height={32}
+							src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${currentGauge.swap_token}/logo-32.png`}
 						/>
 					</div>
 					<p>{currentGauge.name}</p>

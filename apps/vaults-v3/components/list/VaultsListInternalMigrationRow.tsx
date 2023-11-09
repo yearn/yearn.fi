@@ -24,12 +24,12 @@ export function VaultsListInternalMigrationRow({currentVault}: {currentVault: TY
 			/>
 			<div className={cl('col-span-3 z-10', 'flex flex-row items-center justify-between')}>
 				<div className={'flex flex-row space-x-6'}>
-					<div className={'mt-2.5 h-10 w-10 rounded-full md:flex'}>
+					<div className={'mt-2.5 h-8 w-8 rounded-full md:flex'}>
 						<ImageWithFallback
-							src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-128.png`}
-							alt={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-128.png`}
-							width={40}
-							height={40}
+							src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-32.png`}
+							alt={''}
+							width={32}
+							height={32}
 						/>
 					</div>
 					<div>

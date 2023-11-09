@@ -40,11 +40,11 @@ export function HarvestListRow({harvest}: {harvest: TYDaemonVaultHarvest}): Reac
 					<div className={'yearn--table-token-section-item-image'}>
 						<ImageWithFallback
 							alt={vaultName}
-							width={40}
-							height={40}
+							width={32}
+							height={32}
 							src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${toAddress(
 								harvest.vaultAddress
-							)}/logo-128.png`}
+							)}/logo-32.png`}
 						/>
 					</div>
 					<p>{vaultName}</p>
