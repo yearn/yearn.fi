@@ -24,7 +24,8 @@ export enum AppName {
 	YBAL = 'yBal',
 	VEYFI = 'veYFI',
 	YBRIBE = 'yBribe',
-	YETH = 'yETH'
+	YETH = 'yETH',
+	YPRISMA = 'yPrisma'
 }
 
 type TApp = {
@@ -134,6 +135,22 @@ export const APPS: {[key in AppName]: TApp} = {
 				width={32}
 				height={32}
 				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/0x1BED97CBC3c24A4fb5C069C6E311a967386131f7/logo-128.png`}
+				loading={'eager'}
+				priority
+			/>
+		)
+	},
+	yPrisma: {
+		name: AppName.YPRISMA,
+		href: 'https://yPrisma.yearn.fi',
+		menu: [],
+		manifest: {} as TMetaFile,
+		icon: (
+			<ImageWithFallback
+				alt={'yETH'}
+				width={32}
+				height={32}
+				src={'/apps/yprisma.png'}
 				loading={'eager'}
 				priority
 			/>

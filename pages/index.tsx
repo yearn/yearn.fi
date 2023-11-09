@@ -99,6 +99,21 @@ const apps = [
 				priority
 			/>
 		)
+	},
+	{
+		href: 'https://yprisma.yearn.fi',
+		title: 'yPrisma',
+		description: 'Every rainbow needs a pot of gold.',
+		icon: (
+			<ImageWithFallback
+				alt={'yPrisma'}
+				width={100}
+				height={100}
+				src={'/apps/yprisma.png'}
+				loading={'eager'}
+				priority
+			/>
+		)
 	}
 ];
 function AnimatedGradientBackgroundForV3(): ReactElement {
