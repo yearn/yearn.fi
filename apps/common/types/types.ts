@@ -70,7 +70,6 @@ export type TToken = {
 	stakingValue: number;
 	price: TNormalizedBN;
 	balance: TNormalizedBN;
-	stakingBalance: TNormalizedBN;
 };
 export type TChainTokens = TNDict<TDict<TToken>>;
 

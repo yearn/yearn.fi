@@ -104,7 +104,6 @@ async function performCall(
 			balance: toNormalizedBN(balanceOf, decimals),
 			price: toNormalizedBN(rawPrice, 6),
 			value: toNormalizedValue(balanceOf, decimals) * toNormalizedValue(rawPrice, 6),
-			stakingBalance: toNormalizedBN(0),
 			stakingValue: 0
 		};
 	}

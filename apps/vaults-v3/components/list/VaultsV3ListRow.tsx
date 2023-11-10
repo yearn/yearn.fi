@@ -327,8 +327,40 @@ function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}): Reac
 	);
 }
 
-export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+export function VaultStakedAmount({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {getToken} = useWallet();
+
+	const staked = useMemo((): bigint => {
+		const vaultToken = getToken({chainID: currentVault.chainID, address: currentVault.address});
+		if (currentVault.staking.available) {
+			const stakingToken = getToken({chainID: currentVault.chainID, address: currentVault.staking.address});
+			return vaultToken.balance.raw + stakingToken.balance.raw;
+		}
+		return vaultToken.balance.raw;
+	}, [
+		currentVault.address,
+		currentVault.chainID,
+		currentVault.staking.address,
+		currentVault.staking.available,
+		getToken
+	]);
+
+	return (
+		<p
+			className={`yearn--table-data-section-item-value ${
+				isZero(staked) ? 'text-neutral-400' : 'text-neutral-900'
+			}`}>
+			<RenderAmount
+				value={staked}
+				symbol={currentVault.token.symbol}
+				decimals={currentVault.token.decimals}
+				options={{shouldDisplaySymbol: false, maximumFractionDigits: 4}}
+			/>
+		</p>
+	);
+}
+
+export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const balanceOfWant = useBalance({chainID: currentVault.chainID, address: currentVault.token.address});
 	const balanceOfCoin = useBalance({chainID: currentVault.chainID, address: ETH_TOKEN_ADDRESS});
 	const balanceOfWrappedCoin = useBalance({
@@ -344,12 +376,6 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 		}
 		return balanceOfWant.raw;
 	}, [balanceOfCoin.raw, balanceOfWant.raw, balanceOfWrappedCoin.raw, currentVault.token.address]);
-
-	const staked = useMemo((): bigint => {
-		const token = getToken({chainID: currentVault.chainID, address: currentVault.address});
-		const depositedAndStaked = token.balance.raw + token.stakingBalance.raw;
-		return depositedAndStaked;
-	}, [currentVault.address, currentVault.chainID, getToken]);
 
 	return (
 		<Link
@@ -445,17 +471,7 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 						className={'yearn--table-data-section-item md:col-span-2'}
 						datatype={'number'}>
 						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Deposited'}</p>
-						<p
-							className={`yearn--table-data-section-item-value ${
-								isZero(staked) ? 'text-neutral-400' : 'text-neutral-900'
-							}`}>
-							<RenderAmount
-								value={staked}
-								symbol={currentVault.token.symbol}
-								decimals={currentVault.token.decimals}
-								options={{shouldDisplaySymbol: false, maximumFractionDigits: 4}}
-							/>
-						</p>
+						<VaultStakedAmount currentVault={currentVault} />
 					</div>
 
 					<div
