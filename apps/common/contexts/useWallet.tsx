@@ -37,6 +37,8 @@ import {
 	OPT_YVUSDC_STAKING_CONTRACT,
 	OPT_YVUSDT_STAKING_CONTRACT,
 	OPT_YVVELO_USDC_STAKING_CONTRACT,
+	OPT_YVWSTETH_OP_STAKING_CONTRACT,
+	OPT_YVWSTETH_WETH_STAKING_CONTRACT,
 	OPT_YVWUSDR_USDC_STAKING_CONTRACT,
 	OPT_YVWUSDRV2_USDC_STAKING_CONTRACT,
 	STACKING_TO_VAULT
@@ -193,7 +195,9 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 				{chainID: 10, address: OPT_YVSTERN_ERN_STAKING_CONTRACT, symbol: 'yvVelo-stERN-ERN', decimals: 18},
 				{chainID: 10, address: OPT_YVSTG_USDC_STAKING_CONTRACT, symbol: 'yvVelo-STG-USDC', decimals: 18},
 				{chainID: 10, address: OPT_YVERN_WETH_STAKING_CONTRACT, symbol: 'yvVelo-ERN-WETH', decimals: 18},
-				{chainID: 10, address: OPT_YVOATH_WETH_STAKING_CONTRACT, symbol: 'yvVelo-OATH-WETH', decimals: 18}
+				{chainID: 10, address: OPT_YVOATH_WETH_STAKING_CONTRACT, symbol: 'yvVelo-OATH-WETH', decimals: 18},
+				{chainID: 10, address: OPT_YVWSTETH_WETH_STAKING_CONTRACT, symbol: 'yvVelo-wstETH-WETH', decimals: 18},
+				{chainID: 10, address: OPT_YVWSTETH_OP_STAKING_CONTRACT, symbol: 'yvVelo-OP-wstETH', decimals: 18}
 			]
 		);
 
