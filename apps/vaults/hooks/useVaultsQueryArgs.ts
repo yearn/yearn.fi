@@ -1,6 +1,7 @@
-import {useEffect, useState} from 'react';
-import {DelimitedArrayParam, DelimitedNumericArrayParam, StringParam, useQueryParam} from 'use-query-params';
-import {ALL_CHAINS} from '@vaults/constants';
+import {useCallback, useState} from 'react';
+import {useSearchParams} from 'next/navigation';
+import {useRouter} from 'next/router';
+import {useDeepCompareEffect, useMountEffect} from '@react-hookz/web';
 import {useSupportedChains} from '@common/hooks/useChains';
 
 import type {TSortDirection} from '@common/types/types';
@@ -20,127 +21,137 @@ type TQueryArgs = {
 };
 function useQueryArguments({defaultCategories}: {defaultCategories?: string[]}): TQueryArgs {
 	const allChains = useSupportedChains().map((chain): number => chain.id);
+	const searchParams = useSearchParams();
+	const router = useRouter();
+	const [search, set_search] = useState<string | null>(null);
+	const [categories, set_categories] = useState<string[]>(defaultCategories || []);
+	const [chains, set_chains] = useState<number[]>([]);
+	const [sortDirection, set_sortDirection] = useState<string | null>(null);
+	const [sortBy, set_sortBy] = useState<string | null>(null);
 
-	/** 🔵 - Yearn *********************************************************************************
-	 **	Theses elements are not exported, they are just used to keep the state of the query, which
-	 ** is slower than the state of the component.
-	 *********************************************************************************************/
-	const [searchParam, set_searchParam] = useQueryParam('search', StringParam);
-	const [categoriesParam, set_categoriesParam] = useQueryParam('categories', DelimitedArrayParam);
-	const [chainsParam, set_chainsParam] = useQueryParam('chains', DelimitedNumericArrayParam);
-	const [sortDirectionParam, set_sortDirectionParam] = useQueryParam('sortDir', StringParam);
-	const [sortByParam, set_sortByParam] = useQueryParam('sortBy', StringParam);
+	const handleQuery = useCallback(
+		(_searchParams: URLSearchParams): void => {
+			if (_searchParams.has('search')) {
+				const _search = _searchParams.get('search');
+				if (_search === null) {
+					return;
+				}
+				set_search(_search);
+			}
 
-	/** 🔵 - Yearn *********************************************************************************
-	 **	Theses are our actual state.
-	 *********************************************************************************************/
-	const [search, set_search] = useState(searchParam);
-	const [categories, set_categories] = useState(categoriesParam);
-	const [chains, set_chains] = useState(chainsParam);
-	const [sortDirection, set_sortDirection] = useState(sortDirectionParam);
-	const [sortBy, set_sortBy] = useState(sortByParam);
+			if (_searchParams.has('categories')) {
+				const categoriesParam = _searchParams.get('categories');
+				const categoriesParamArray = categoriesParam?.split('_') || [];
+				if (categoriesParamArray.length === 0) {
+					set_categories(defaultCategories || []);
+					return;
+				}
+				set_categories(categoriesParamArray);
+			} else {
+				set_categories(defaultCategories || []);
+			}
 
-	/** 🔵 - Yearn *********************************************************************************
-	 **	This useEffect hook is used to synchronize the search state with the query parameter
-	 *********************************************************************************************/
-	useEffect((): void | VoidFunction => {
-		if (searchParam === search) {
-			return;
-		}
-		if (search === undefined && searchParam !== undefined) {
-			set_search(searchParam);
-			return;
-		}
-		if (!search) {
-			set_searchParam(undefined);
-		} else {
-			set_searchParam(search);
-		}
-	}, [searchParam, search, set_searchParam]);
+			if (_searchParams.has('chains')) {
+				const chainsParam = _searchParams.get('chains');
+				const chainsParamArray = chainsParam?.split('_') || [];
+				if (chainsParamArray.length === 0) {
+					set_chains(allChains);
+					return;
+				}
+				set_chains(chainsParamArray.map((chain): number => Number(chain)));
+			} else {
+				set_chains(allChains);
+			}
 
-	/** 🔵 - Yearn *********************************************************************************
-	 **	This useEffect hook is used to synchronize the categories
-	 *********************************************************************************************/
-	useEffect((): void => {
-		if (categoriesParam === categories) {
-			return;
-		}
-		if (categories === undefined && categoriesParam !== undefined) {
-			set_categories(categoriesParam);
-			return;
-		}
-		if (!categories || Object.values(categories).length === (defaultCategories || []).length) {
-			set_categoriesParam(undefined);
-		} else {
-			set_categoriesParam(categories);
-		}
-	}, [categoriesParam, categories, defaultCategories, set_categoriesParam]);
+			if (_searchParams.has('sortDirection')) {
+				const _sortDirection = _searchParams.get('sortDirection');
+				if (_sortDirection === null) {
+					return;
+				}
+				set_sortDirection(_sortDirection);
+			}
 
-	/** 🔵 - Yearn *********************************************************************************
-	 **	This useEffect hook is used to synchronize the chains
-	 *********************************************************************************************/
-	useEffect((): void => {
-		if (chainsParam === chains) {
-			return;
-		}
-		if (chains === undefined && chainsParam !== undefined) {
-			set_chains(chainsParam as number[]);
-			return;
-		}
-		if (!chains || Object.values(chains).length === allChains.length) {
-			set_chainsParam(undefined);
-		} else {
-			set_chainsParam(chains);
-		}
-	}, [chainsParam, chains, set_chainsParam, allChains.length]);
+			if (_searchParams.has('sortBy')) {
+				const _sortBy = _searchParams.get('sortBy');
+				if (_sortBy === null) {
+					return;
+				}
+				set_sortDirection(_sortBy);
+			}
+		},
+		[defaultCategories, allChains]
+	);
 
-	/** 🔵 - Yearn *********************************************************************************
-	 **	This useEffect hook is used to synchronize the sortDirection
-	 *********************************************************************************************/
-	useEffect((): void => {
-		if (sortDirectionParam === sortDirection) {
-			return;
-		}
-		if (sortDirection === undefined && sortDirectionParam !== undefined) {
-			set_sortDirection(sortDirectionParam);
-			return;
-		}
-		if (!sortDirection) {
-			set_sortDirectionParam(undefined);
-		} else {
-			set_sortDirectionParam(sortDirection);
-		}
-	}, [sortDirectionParam, sortDirection, set_sortDirectionParam]);
+	useMountEffect((): void | VoidFunction => {
+		const currentPage = new URL(window.location.href);
+		handleQuery(new URLSearchParams(currentPage.search));
+	});
 
-	/** 🔵 - Yearn *********************************************************************************
-	 **	This useEffect hook is used to synchronize the sortOrder
-	 *********************************************************************************************/
-	useEffect((): void => {
-		if (sortByParam === sortBy) {
-			return;
-		}
-		if (sortBy === undefined && sortByParam !== undefined) {
-			set_sortBy(sortByParam);
-			return;
-		}
-		if (!sortBy) {
-			set_sortByParam(undefined);
-		} else {
-			set_sortByParam(sortBy);
-		}
-	}, [sortByParam, sortBy, set_sortByParam]);
+	useDeepCompareEffect((): void | VoidFunction => {
+		handleQuery(searchParams);
+	}, [searchParams]);
 
 	return {
 		search,
 		categories: (categories || defaultCategories || []) as string[],
-		chains: (chains || ALL_CHAINS) as number[],
+		chains: (chains || allChains) as number[],
 		sortDirection: (sortDirection || 'desc') as TSortDirection,
 		sortBy: (sortBy || 'featuringScore') as TPossibleSortBy,
-		onSearch: set_search,
-		onChangeCategories: set_categories,
-		onChangeChains: set_chains,
-		onChangeSortDirection: set_sortDirection,
-		onChangeSortBy: set_sortBy
+		onSearch: (value): void => {
+			set_search(value);
+			const currentURL = new URL(window.location.href);
+			if (value === '') {
+				currentURL.searchParams.delete('search');
+				router.replace(currentURL, {search: currentURL.search}, {shallow: true});
+				return;
+			}
+			currentURL.searchParams.set('search', value);
+			router.replace(currentURL, {search: currentURL.search}, {shallow: true});
+		},
+		onChangeCategories: (value): void => {
+			set_categories(value);
+			const currentURL = new URL(window.location.href);
+			if (value.length === 0) {
+				currentURL.searchParams.delete('categories');
+				router.replace(currentURL, {search: currentURL.search}, {shallow: true});
+				return;
+			}
+			currentURL.searchParams.set('categories', value.join('_'));
+			router.replace(currentURL, {search: currentURL.search}, {shallow: true});
+		},
+		onChangeChains: (value): void => {
+			set_chains(value);
+			const currentURL = new URL(window.location.href);
+			if (value.length === 0) {
+				currentURL.searchParams.delete('chains');
+				router.replace(currentURL, {search: currentURL.search}, {shallow: true});
+				return;
+			}
+			currentURL.searchParams.set('chains', value.join('_'));
+			router.replace(currentURL, {search: currentURL.search}, {shallow: true});
+		},
+		onChangeSortDirection: (value): void => {
+			set_sortDirection(value);
+			const currentURL = new URL(window.location.href);
+			if (value === '') {
+				currentURL.searchParams.delete('sortDirection');
+				router.replace(currentURL, {search: currentURL.search}, {shallow: true});
+				return;
+			}
+			currentURL.searchParams.set('sortDirection', value);
+			router.replace(currentURL, {search: currentURL.search}, {shallow: true});
+		},
+		onChangeSortBy: (value): void => {
+			set_sortBy(value);
+			const currentURL = new URL(window.location.href);
+			if (value === undefined) {
+				currentURL.searchParams.delete('sortBy');
+				router.replace(currentURL, {search: currentURL.search}, {shallow: true});
+				return;
+			}
+			currentURL.searchParams.set('sortBy', value);
+			router.replace(currentURL, {search: currentURL.search}, {shallow: true});
+		}
 	};
 }
 

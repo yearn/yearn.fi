@@ -88,7 +88,6 @@
 		"tailwindcss": "^3.3.5",
 		"ts-loader": "^9.5.0",
 		"typescript": "^5.2.2",
-		"use-query-params": "^2.2.1",
 		"vitest": "^0.34.6",
 		"webpack": "^5.89.0"
 	},

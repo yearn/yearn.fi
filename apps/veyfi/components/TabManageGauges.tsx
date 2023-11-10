@@ -1,6 +1,3 @@
-import {QueryParamProvider} from 'use-query-params';
-import {NextQueryParamAdapter} from '@common/utils/QueryParamsProvider';
-
 import {StakeUnstakeGauges} from './ViewStakeUnstakeGauges';
 import {VoteGauge} from './ViewVoteGauges';
 
@@ -10,11 +7,7 @@ export function TabManageGauges(): ReactElement {
 	return (
 		<div className={'grid gap-10'}>
 			<div>
-				<QueryParamProvider
-					adapter={NextQueryParamAdapter}
-					options={{removeDefaultsFromUrl: true}}>
-					<StakeUnstakeGauges />
-				</QueryParamProvider>
+				<StakeUnstakeGauges />
 			</div>
 			<div className={'h-[1px] w-full bg-neutral-300'} />
 			<VoteGauge />

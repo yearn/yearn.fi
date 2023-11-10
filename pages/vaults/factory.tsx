@@ -1,5 +1,4 @@
 import {useCallback, useMemo, useState} from 'react';
-import {QueryParamProvider} from 'use-query-params';
 import {VaultListFactory} from '@vaults/components/list/VaultListFactory';
 import {YFACTORY_SUPPORTED_NETWORK} from '@vaults/constants';
 import {VAULT_FACTORY_ABI} from '@vaults/utils/abi/vaultFactory.abi';
@@ -23,7 +22,6 @@ import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {CurveContextApp, useCurve} from '@common/contexts/useCurve';
 import {useYearn} from '@common/contexts/useYearn';
 import {useAsyncTrigger} from '@common/hooks/useAsyncEffect';
-import {NextQueryParamAdapter} from '@common/utils/QueryParamsProvider';
 
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
@@ -362,13 +360,7 @@ function Factory(): ReactElement {
 Factory.getLayout = function getLayout(page: ReactElement, router: NextRouter): ReactElement {
 	return (
 		<Wrapper router={router}>
-			<CurveContextApp>
-				<QueryParamProvider
-					adapter={NextQueryParamAdapter}
-					options={{removeDefaultsFromUrl: true}}>
-					{page}
-				</QueryParamProvider>
-			</CurveContextApp>
+			<CurveContextApp>{page}</CurveContextApp>
 		</Wrapper>
 	);
 };

@@ -1,5 +1,4 @@
 import {Fragment, useEffect, useMemo} from 'react';
-import {QueryParamProvider} from 'use-query-params';
 import {motion, useSpring, useTransform} from 'framer-motion';
 import {VaultListOptions} from '@vaults/components/list/VaultListOptions';
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
@@ -23,7 +22,6 @@ import {Pagination} from '@common/components/Pagination';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import {usePagination} from '@common/hooks/usePagination';
-import {NextQueryParamAdapter} from '@common/utils/QueryParamsProvider';
 
 import type {NextRouter} from 'next/router';
 import type {ReactElement, ReactNode} from 'react';
@@ -261,11 +259,7 @@ function Index(): ReactElement {
 	return (
 		<section className={'mt-4 grid w-full grid-cols-12 gap-y-10 pb-10 md:mt-20 md:gap-x-10 md:gap-y-20'}>
 			<HeaderUserPosition />
-			<QueryParamProvider
-				adapter={NextQueryParamAdapter}
-				options={{removeDefaultsFromUrl: true}}>
-				<ListOfVaults />
-			</QueryParamProvider>
+			<ListOfVaults />
 		</section>
 	);
 }

@@ -24,6 +24,7 @@ import type {TUseBalancesTokens} from '@common/hooks/useMultichainBalances';
 function Index(): ReactElement | null {
 	const {address, isActive} = useWeb3();
 	const router = useRouter();
+
 	const {refresh} = useWallet();
 	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: Number(router.query.chainID)});
 	const [currentVault, set_currentVault] = useState<TYDaemonVault | undefined>(undefined);
