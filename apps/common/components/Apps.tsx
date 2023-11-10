@@ -150,7 +150,7 @@ export const APPS: {[key in AppName]: TApp} = {
 				alt={'yETH'}
 				width={32}
 				height={32}
-				src={'/apps/yprisma.png'}
+				src={'https://yprisma.yearn.fi/yPrisma.png'}
 				loading={'eager'}
 				priority
 			/>

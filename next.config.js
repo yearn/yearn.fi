@@ -28,6 +28,10 @@ const config = {
 			{
 				protocol: 'https',
 				hostname: 'assets.smold.app'
+			},
+			{
+				protocol: 'https',
+				hostname: '**.yearn.fi'
 			}
 		]
 	},

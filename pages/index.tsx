@@ -109,7 +109,7 @@ const apps = [
 				alt={'yPrisma'}
 				width={100}
 				height={100}
-				src={'/apps/yprisma.png'}
+				src={'https://yprisma.yearn.fi/yPrisma.png'}
 				loading={'eager'}
 				priority
 			/>
