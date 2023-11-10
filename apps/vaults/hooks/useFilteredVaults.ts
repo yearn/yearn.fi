@@ -1,8 +1,6 @@
 import {useCallback} from 'react';
 import {useDeepCompareMemo} from '@react-hookz/web';
-import {STACKING_TO_VAULT} from '@vaults/constants/optRewards';
 import {useAppSettings} from '@vaults/contexts/useAppSettings';
-import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import {isAutomatedVault, type TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
@@ -34,21 +32,21 @@ export function useVaultFilter(
 
 	const filterHoldingsCallback = useCallback(
 		(vault: TYDaemonVault, isFactoryOnly: boolean): boolean => {
-			const holding = getToken({address: vault.address, chainID: vault.chainID});
+			const vaultHoldings = getToken({address: vault.address, chainID: vault.chainID});
 
 			// [Optimism] Check if staked vaults have holdings
-			if (chains.includes(10) && !isFactoryOnly) {
-				const stakedVaultAddress = STACKING_TO_VAULT[toAddress(vault.address)];
-				const stakedHolding = getToken({address: stakedVaultAddress, chainID: vault.chainID});
-				const hasValidStakedBalance = stakedHolding.balance.raw > 0n;
-				const stakedBalanceValue = stakedHolding.value || 0;
+			if (chains.includes(10) && vault.staking.available) {
+				const stakingdHolding = getToken({address: vault.staking.address, chainID: vault.chainID});
+				const hasValidStakedBalance = stakingdHolding.balance.raw > 0n;
+				const stakedBalanceValue =
+					Number(stakingdHolding.balance.normalized) * Number(vaultHoldings.price.normalized);
 				if (hasValidStakedBalance && !(shouldHideDust && stakedBalanceValue < 0.01)) {
 					return true;
 				}
 			}
 
-			const hasValidBalance = holding.balance.raw > 0n;
-			const balanceValue = holding.value || 0;
+			const hasValidBalance = vaultHoldings.balance.raw > 0n;
+			const balanceValue = vaultHoldings.value || 0;
 			if (shouldHideDust && balanceValue < 0.01) {
 				return false;
 			}

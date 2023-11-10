@@ -2,7 +2,6 @@ import {createContext, useCallback, useContext, useEffect, useMemo, useReducer, 
 import {useRouter} from 'next/router';
 import {useContractReads} from 'wagmi';
 import {useMountEffect, useUpdateEffect} from '@react-hookz/web';
-import {STACKING_TO_VAULT} from '@vaults/constants/optRewards';
 import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
 import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
 import {setZapOption} from '@vaults/utils/zapOptions';
@@ -153,7 +152,6 @@ export function ActionFlowContextApp({
 	const {getBalance} = useWallet();
 	const {listTokens: listZapTokens, tokensList} = useWalletForZap();
 	const {zapProvider, isStakingOpBoostedVaults} = useYearn();
-	const hasStakingRewards = !!STACKING_TO_VAULT[currentVault.address];
 	const [possibleOptionsFrom, set_possibleOptionsFrom] = useState<TDropdownOption[]>([]);
 	const [possibleZapOptionsFrom, set_possibleZapOptionsFrom] = useState<TDropdownOption[]>([]);
 	const [possibleOptionsTo, set_possibleOptionsTo] = useState<TDropdownOption[]>([]);
@@ -254,7 +252,7 @@ export function ActionFlowContextApp({
 			toAddress(actionParams?.selectedOptionFrom?.value) === toAddress(currentVault.token.address);
 
 		// Only use OptimismBooster if the user chose to stake automatically
-		if (hasStakingRewards && isStakingOpBoostedVaults && isDepositing && isUnderlyingToken) {
+		if (currentVault.staking.available && isStakingOpBoostedVaults && isDepositing && isUnderlyingToken) {
 			return Solver.enum.OptimismBooster;
 		}
 
@@ -292,9 +290,9 @@ export function ActionFlowContextApp({
 		currentVault.token.address,
 		currentVault.chainID,
 		currentVault.address,
-		currentVault?.migration?.available,
-		currentVault?.migration?.address,
-		hasStakingRewards,
+		currentVault.migration?.available,
+		currentVault.migration?.address,
+		currentVault.staking.available,
 		isStakingOpBoostedVaults,
 		isDepositing,
 		isUsingPartnerContract,

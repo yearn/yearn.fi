@@ -1,7 +1,6 @@
 import {createContext, memo, useContext} from 'react';
 import {deserialize, serialize} from 'wagmi';
 import {useDeepCompareMemo, useLocalStorageValue} from '@react-hookz/web';
-import {STACKING_TO_VAULT} from '@vaults/constants/optRewards';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {useFetch} from '@common/hooks/useFetch';
@@ -89,9 +88,6 @@ function useYearnPrices(): TYDaemonPrices {
 				}
 			}
 		}
-		Object.entries(STACKING_TO_VAULT).forEach(([vaultAddress, stackingAddress]): void => {
-			allPrices[toAddress(stackingAddress)] = allPrices[toAddress(vaultAddress)];
-		});
 		return allPrices;
 	}, [prices]);
 

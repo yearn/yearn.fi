@@ -1,6 +1,5 @@
 import {Fragment, useMemo} from 'react';
 import {Popover, Transition} from '@headlessui/react';
-import {STACKING_TO_VAULT} from '@vaults/constants/optRewards';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {IconSettings} from '@yearn-finance/web-lib/icons/IconSettings';
@@ -10,7 +9,6 @@ import {useYearn} from '@common/contexts/useYearn';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 
 import type {ReactElement} from 'react';
-import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TSolver} from '@common/schemas/yDaemonTokenListBalances';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
@@ -207,11 +205,10 @@ function ZapSection({chainID}: {chainID: number}): ReactElement {
 	);
 }
 
-function StakingSection({vaultAddress}: {vaultAddress: TAddress}): ReactElement | null {
+function StakingSection({currentVault}: {currentVault: TYDaemonVault}): ReactElement | null {
 	const {isStakingOpBoostedVaults, set_isStakingOpBoostedVaults} = useYearn();
-	const hasStakingRewards = !!STACKING_TO_VAULT?.[vaultAddress];
 
-	if (!hasStakingRewards) {
+	if (!currentVault.staking.available) {
 		return null;
 	}
 
@@ -258,7 +255,7 @@ export function SettingsPopover({vault}: TSettingPopover): ReactElement {
 								<div className={'my-6 h-[1px] w-full bg-neutral-900/20'} />
 								<ZapSection chainID={vault.chainID} />
 								<div className={'my-6 h-[1px] w-full bg-neutral-900/20'} />
-								<StakingSection vaultAddress={vault.address} />
+								<StakingSection currentVault={vault} />
 							</div>
 						</Popover.Panel>
 					</Transition>

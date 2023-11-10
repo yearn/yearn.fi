@@ -34,8 +34,7 @@ const defaultToken: TToken = {
 	value: 0,
 	stakingValue: 0,
 	price: toNormalizedBN(0),
-	balance: toNormalizedBN(0),
-	stakingBalance: toNormalizedBN(0)
+	balance: toNormalizedBN(0)
 };
 
 const defaultProps = {
