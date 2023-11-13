@@ -9784,10 +9784,10 @@ victory-vendor@^36.6.8:
     d3-time "^3.0.0"
     d3-timer "^3.0.1"
 
-viem@^1.0.0, viem@^1.15.4, viem@^1.16.2:
-  version "1.16.6"
-  resolved "https://registry.yarnpkg.com/viem/-/viem-1.16.6.tgz#78118c9269506a59e2bc4deab13f1646e113d3fc"
-  integrity sha512-jcWcFQ+xzIfDwexwPJRvCuCRJKEkK9iHTStG7mpU5MmuSBpACs4nATBDyXNFtUiyYTFzLlVEwWkt68K0nCSImg==
+viem@^1.0.0, viem@^1.15.4, viem@^1.19.0:
+  version "1.19.0"
+  resolved "https://registry.yarnpkg.com/viem/-/viem-1.19.0.tgz#e9f2b5084795d217c4adeb4b1c46d2afa949967c"
+  integrity sha512-Q4gU7D5KMZDK2rarQqjeqW7KmZRdfbDyP+bDlsu0Ia+IWR4Aali+dMbis1s3rC12OWdNfSR5MNmPCHoqoQa5ew==
   dependencies:
     "@adraffy/ens-normalize" "1.9.4"
     "@noble/curves" "1.2.0"
