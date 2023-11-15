@@ -75,7 +75,7 @@ export const APPS: {[key in AppName]: TApp} = {
 				alt={'yCRV'}
 				width={32}
 				height={32}
-				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YCRV_TOKEN_ADDRESS}/logo-128.png`}
+				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YCRV_TOKEN_ADDRESS}/logo-32.png`}
 				loading={'eager'}
 				priority
 			/>
@@ -92,7 +92,7 @@ export const APPS: {[key in AppName]: TApp} = {
 				alt={'yBal'}
 				width={32}
 				height={32}
-				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YBAL_TOKEN_ADDRESS}/logo-128.png`}
+				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YBAL_TOKEN_ADDRESS}/logo-32.png`}
 				loading={'eager'}
 				priority
 			/>
@@ -134,7 +134,7 @@ export const APPS: {[key in AppName]: TApp} = {
 				alt={'yETH'}
 				width={32}
 				height={32}
-				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/0x1BED97CBC3c24A4fb5C069C6E311a967386131f7/logo-128.png`}
+				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/0x1BED97CBC3c24A4fb5C069C6E311a967386131f7/logo-32.png`}
 				loading={'eager'}
 				priority
 			/>
@@ -150,7 +150,7 @@ export const APPS: {[key in AppName]: TApp} = {
 				alt={'yETH'}
 				width={32}
 				height={32}
-				src={'https://assets.smold.app/api/token/1/0xe3668873d944e4a949da05fc8bde419eff543882/logo-32.png'}
+				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/0xe3668873d944e4a949da05fc8bde419eff543882/logo-32.png`}
 				loading={'eager'}
 				priority
 			/>
