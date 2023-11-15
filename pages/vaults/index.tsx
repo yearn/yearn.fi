@@ -173,7 +173,7 @@ function ListOfVaults(): ReactElement {
 	const sortedVaultsToDisplay = useSortVaults([...searchedVaultsToDisplay], sortBy, sortDirection);
 
 	const filteredByChains = useMemo((): TYDaemonVault[] => {
-		return sortedVaultsToDisplay.filter(({chainID}): boolean => chains.includes(chainID));
+		return sortedVaultsToDisplay.filter(({chainID}): boolean => chains?.includes(chainID) || false);
 	}, [chains, sortedVaultsToDisplay]);
 
 	const {currentItems, paginationProps} = usePagination<TYDaemonVault>({
@@ -222,7 +222,7 @@ function ListOfVaults(): ReactElement {
 				]}
 			/>
 
-			{isLoadingVaultList || isZero(filteredByChains.length) || chains.length === 0 ? (
+			{isLoadingVaultList || isZero(filteredByChains.length) || !chains || chains.length === 0 ? (
 				<VaultsListEmpty
 					isLoading={isLoadingVaultList}
 					sortedVaultsToDisplay={filteredByChains}

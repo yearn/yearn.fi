@@ -9,12 +9,12 @@ import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TMultiSelectOptionProps} from '@common/components/MultiSelectDropdown';
 
 type TListHero = {
-	categories: string[];
+	categories: string[] | undefined;
 	possibleCategories: TDict<string>;
-	chains: number[];
+	chains: number[] | undefined;
 	searchValue: string;
-	onChangeCategories: (categories: string[]) => void;
-	onChangeChains: (chains: number[]) => void;
+	onChangeCategories: (categories: string[] | undefined) => void;
+	onChangeChains: (chains: number[] | undefined | undefined) => void;
 	onSearch: (searchValue: string) => void;
 	shouldHideChainSelector?: boolean;
 };
@@ -35,7 +35,7 @@ export function ListHero({
 			([key, value]): TMultiSelectOptionProps => ({
 				value: key,
 				label: value,
-				isSelected: categories.includes(key)
+				isSelected: categories?.includes(key) || false
 			})
 		);
 		return options;
@@ -53,7 +53,7 @@ export function ListHero({
 							const selectedChains = options
 								.filter((o): boolean => o.isSelected)
 								.map((option): number => Number(option.value));
-							onChangeChains(selectedChains);
+							onChangeChains(selectedChains.length === 0 ? undefined : selectedChains);
 						}}
 					/>
 				</div>
@@ -67,7 +67,7 @@ export function ListHero({
 							const selectedCategories = options
 								.filter((o): boolean => o.isSelected)
 								.map((option): string => String(option.value));
-							onChangeCategories(selectedCategories);
+							onChangeCategories(selectedCategories.length === 0 ? undefined : selectedCategories);
 						}}
 					/>
 				</div>

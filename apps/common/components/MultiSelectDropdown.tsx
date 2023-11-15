@@ -1,4 +1,4 @@
-import {Fragment, useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {Fragment, useCallback, useMemo, useRef, useState} from 'react';
 import {Combobox, Transition} from '@headlessui/react';
 import {useClickOutside, useThrottledState} from '@react-hookz/web';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
@@ -120,26 +120,17 @@ const getFilteredOptions = ({
 
 export function MultiSelectDropdown({options, onSelect, placeholder = '', ...props}: TMultiSelectProps): ReactElement {
 	const [isOpen, set_isOpen] = useThrottledState(false, 400);
-	const [currentOptions, set_currentOptions] = useState<TMultiSelectOptionProps[]>(options);
-	const [areAllSelected, set_areAllSelected] = useState(false);
 	const [query, set_query] = useState('');
+	const areAllSelected = useMemo((): boolean => options.every(({isSelected}): boolean => isSelected), [options]);
 	const componentRef = useRef(null);
-
-	useEffect((): void => {
-		set_currentOptions(options);
-	}, [options]);
-
-	useEffect((): void => {
-		set_areAllSelected(currentOptions.every(({isSelected}): boolean => isSelected));
-	}, [currentOptions]);
 
 	useClickOutside(componentRef, (): void => {
 		set_isOpen(false);
 	});
 
 	const filteredOptions = useMemo(
-		(): TMultiSelectOptionProps[] => getFilteredOptions({query, currentOptions}),
-		[currentOptions, query]
+		(): TMultiSelectOptionProps[] => getFilteredOptions({query, currentOptions: options}),
+		[options, query]
 	);
 
 	const getDisplayName = useCallback(
@@ -165,32 +156,29 @@ export function MultiSelectDropdown({options, onSelect, placeholder = '', ...pro
 
 	const handleOnCheckboxClick = useCallback(
 		({value}: TMultiSelectOptionProps): void => {
-			const currentState = currentOptions.map(
+			const currentState = options.map(
 				(o): TMultiSelectOptionProps => (o.value === value ? {...o, isSelected: !o.isSelected} : o)
 			);
-			set_areAllSelected(!currentState.some(({isSelected}): boolean => !isSelected));
-			set_currentOptions(currentState);
 			onSelect(currentState);
 		},
-		[currentOptions, onSelect]
+		[options, onSelect]
 	);
 
 	const handleOnContainerClick = useCallback(
 		({value}: TMultiSelectOptionProps): void => {
-			const currentState = currentOptions.map(
+			const currentState = options.map(
 				(o): TMultiSelectOptionProps =>
 					o.value === value ? {...o, isSelected: true} : {...o, isSelected: false}
 			);
-			set_areAllSelected(false);
 			onSelect(currentState);
 		},
-		[currentOptions, onSelect]
+		[options, onSelect]
 	);
 
 	return (
 		<Combobox
 			ref={componentRef}
-			value={currentOptions}
+			value={options}
 			onChange={(options): void => {
 				// Just used for the select/desect all options
 				const lastIndex = options.length - 1;
@@ -207,9 +195,6 @@ export function MultiSelectDropdown({options, onSelect, placeholder = '', ...pro
 						isSelected: !elementSelected.isSelected
 					})
 				);
-
-				set_areAllSelected(!elementSelected.isSelected);
-				set_currentOptions(currentState);
 				onSelect(currentState);
 			}}
 			multiple>
@@ -246,9 +231,7 @@ export function MultiSelectDropdown({options, onSelect, placeholder = '', ...pro
 					leave={'transition duration-75 ease-out'}
 					leaveFrom={'transform scale-100 opacity-100'}
 					leaveTo={'transform scale-95 opacity-0'}
-					afterLeave={(): void => {
-						set_query('');
-					}}>
+					afterLeave={(): void => set_query('')}>
 					<Combobox.Options
 						className={cl(
 							props.comboboxOptionsClassName,
