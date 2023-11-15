@@ -226,7 +226,7 @@ export function V3Mask(props: React.SVGProps<SVGSVGElement>): ReactElement {
 					<stop
 						offset={'1'}
 						stopColor={'white'}
-						stop-opacity={'0.18'}
+						stopOpacity={'0.18'}
 					/>
 				</linearGradient>
 				<linearGradient
@@ -253,7 +253,7 @@ export function V3Mask(props: React.SVGProps<SVGSVGElement>): ReactElement {
 					<stop
 						offset={'1'}
 						stopColor={'white'}
-						stop-opacity={'0.18'}
+						stopOpacity={'0.18'}
 					/>
 				</linearGradient>
 				<linearGradient
@@ -280,7 +280,7 @@ export function V3Mask(props: React.SVGProps<SVGSVGElement>): ReactElement {
 					<stop
 						offset={'1'}
 						stopColor={'white'}
-						stop-opacity={'0.1'}
+						stopOpacity={'0.1'}
 					/>
 				</linearGradient>
 				<linearGradient
@@ -307,7 +307,7 @@ export function V3Mask(props: React.SVGProps<SVGSVGElement>): ReactElement {
 					<stop
 						offset={'1'}
 						stopColor={'white'}
-						stop-opacity={'0.1'}
+						stopOpacity={'0.1'}
 					/>
 				</linearGradient>
 				<linearGradient
@@ -334,7 +334,7 @@ export function V3Mask(props: React.SVGProps<SVGSVGElement>): ReactElement {
 					<stop
 						offset={'1'}
 						stopColor={'white'}
-						stop-opacity={'0.1'}
+						stopOpacity={'0.1'}
 					/>
 				</linearGradient>
 				<linearGradient
@@ -361,7 +361,7 @@ export function V3Mask(props: React.SVGProps<SVGSVGElement>): ReactElement {
 					<stop
 						offset={'1'}
 						stopColor={'white'}
-						stop-opacity={'0.1'}
+						stopOpacity={'0.1'}
 					/>
 				</linearGradient>
 				<linearGradient
@@ -388,7 +388,7 @@ export function V3Mask(props: React.SVGProps<SVGSVGElement>): ReactElement {
 					<stop
 						offset={'1'}
 						stopColor={'white'}
-						stop-opacity={'0.1'}
+						stopOpacity={'0.1'}
 					/>
 				</linearGradient>
 				<linearGradient
@@ -415,7 +415,7 @@ export function V3Mask(props: React.SVGProps<SVGSVGElement>): ReactElement {
 					<stop
 						offset={'1'}
 						stopColor={'white'}
-						stop-opacity={'0.1'}
+						stopOpacity={'0.1'}
 					/>
 				</linearGradient>
 			</defs>

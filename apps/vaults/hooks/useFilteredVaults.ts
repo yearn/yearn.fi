@@ -18,8 +18,8 @@ export function useFilteredVaults(
 }
 
 export function useVaultFilter(
-	categories: string[],
-	chains: number[],
+	categories: string[] | null,
+	chains: number[] | null,
 	v3?: boolean
 ): {
 	activeVaults: TYDaemonVault[];
@@ -35,7 +35,7 @@ export function useVaultFilter(
 			const vaultHoldings = getToken({address: vault.address, chainID: vault.chainID});
 
 			// [Optimism] Check if staked vaults have holdings
-			if (chains.includes(10) && vault.staking.available) {
+			if (chains?.includes(10) && vault.staking.available) {
 				const stakingdHolding = getToken({address: vault.staking.address, chainID: vault.chainID});
 				const hasValidStakedBalance = stakingdHolding.balance.raw > 0n;
 				const stakedBalanceValue =
@@ -116,49 +116,49 @@ export function useVaultFilter(
 	const activeVaults = useDeepCompareMemo((): TYDaemonVault[] => {
 		let _vaultList: TYDaemonVault[] = [];
 		if (v3) {
-			if (categories.includes('single')) {
+			if (categories?.includes('single')) {
 				_vaultList = [..._vaultList, ...singleVault];
 			}
-			if (categories.includes('multi')) {
+			if (categories?.includes('multi')) {
 				_vaultList = [..._vaultList, ...MultiVault];
 			}
 			return _vaultList;
 		}
 
-		if (categories.includes('featured')) {
+		if (categories?.includes('featured')) {
 			_vaultList.sort(
 				(a, b): number => (b.tvl.tvl || 0) * (b?.apr?.netAPR || 0) - (a.tvl.tvl || 0) * (a?.apr?.netAPR || 0)
 			);
 			_vaultList = _vaultList.slice(0, 10);
 		}
-		if (categories.includes('curveF')) {
+		if (categories?.includes('curveF')) {
 			_vaultList = [..._vaultList, ...curveFactoryVaults];
 		}
-		if (categories.includes('curve')) {
+		if (categories?.includes('curve')) {
 			_vaultList = [..._vaultList, ...curveVaults];
 		}
-		if (categories.includes('balancer')) {
+		if (categories?.includes('balancer')) {
 			_vaultList = [..._vaultList, ...balancerVaults];
 		}
-		if (categories.includes('velodrome')) {
+		if (categories?.includes('velodrome')) {
 			_vaultList = [..._vaultList, ...velodromeVaults];
 		}
-		if (categories.includes('aerodrome')) {
+		if (categories?.includes('aerodrome')) {
 			_vaultList = [..._vaultList, ...aerodromeVaults];
 		}
-		if (categories.includes('boosted')) {
+		if (categories?.includes('boosted')) {
 			_vaultList = [..._vaultList, ...boostedVaults];
 		}
-		if (categories.includes('stables')) {
+		if (categories?.includes('stables')) {
 			_vaultList = [..._vaultList, ...stablesVaults];
 		}
-		if (categories.includes('crypto')) {
+		if (categories?.includes('crypto')) {
 			_vaultList = [..._vaultList, ...cryptoVaults];
 		}
-		if (categories.includes('holdings')) {
+		if (categories?.includes('holdings')) {
 			_vaultList = [..._vaultList, ...holdingsVaults];
 		}
-		if (categories.includes('holdingsF')) {
+		if (categories?.includes('holdingsF')) {
 			_vaultList = [..._vaultList, ...holdingsFactoryVaults];
 		}
 

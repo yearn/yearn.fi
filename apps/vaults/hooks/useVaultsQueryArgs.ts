@@ -9,13 +9,13 @@ import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 
 type TQueryArgs = {
 	search: string | null | undefined;
-	categories: string[];
-	chains: number[];
+	categories: string[] | null;
+	chains: number[] | null;
 	sortDirection: TSortDirection;
 	sortBy: TPossibleSortBy;
 	onSearch: (value: string) => void;
-	onChangeCategories: (value: string[]) => void;
-	onChangeChains: (value: number[]) => void;
+	onChangeCategories: (value: string[] | null) => void;
+	onChangeChains: (value: number[] | null) => void;
 	onChangeSortDirection: (value: TSortDirection) => void;
 	onChangeSortBy: (value: TPossibleSortBy) => void;
 };
@@ -24,8 +24,8 @@ function useQueryArguments({defaultCategories}: {defaultCategories?: string[]}):
 	const searchParams = useSearchParams();
 	const router = useRouter();
 	const [search, set_search] = useState<string | null>(null);
-	const [categories, set_categories] = useState<string[]>(defaultCategories || []);
-	const [chains, set_chains] = useState<number[]>([]);
+	const [categories, set_categories] = useState<string[] | null>(defaultCategories || []);
+	const [chains, set_chains] = useState<number[] | null>(allChains);
 	const [sortDirection, set_sortDirection] = useState<string | null>(null);
 	const [sortBy, set_sortBy] = useState<string | null>(null);
 
@@ -109,6 +109,12 @@ function useQueryArguments({defaultCategories}: {defaultCategories?: string[]}):
 			router.replace(currentURL, {search: currentURL.search}, {shallow: true});
 		},
 		onChangeCategories: (value): void => {
+			if (value === null) {
+				const currentURL = new URL(window.location.href);
+				currentURL.searchParams.set('categories', 'none');
+				router.replace(currentURL, {search: currentURL.search}, {shallow: true});
+				return;
+			}
 			set_categories(value);
 			const currentURL = new URL(window.location.href);
 			if (value.length === 0) {
@@ -120,6 +126,12 @@ function useQueryArguments({defaultCategories}: {defaultCategories?: string[]}):
 			router.replace(currentURL, {search: currentURL.search}, {shallow: true});
 		},
 		onChangeChains: (value): void => {
+			if (value === null) {
+				const currentURL = new URL(window.location.href);
+				currentURL.searchParams.set('chains', '0');
+				router.replace(currentURL, {search: currentURL.search}, {shallow: true});
+				return;
+			}
 			set_chains(value);
 			const currentURL = new URL(window.location.href);
 			if (value.length === 0) {
