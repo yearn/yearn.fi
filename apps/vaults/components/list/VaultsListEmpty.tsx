@@ -8,10 +8,10 @@ import type {TYDaemonVaults} from '@common/schemas/yDaemonVaultsSchemas';
 type TVaultListEmpty = {
 	sortedVaultsToDisplay: TYDaemonVaults;
 	currentSearch: string;
-	currentCategories: string[] | undefined;
-	currentChains: number[] | undefined;
-	onChangeCategories: (value: string[] | undefined) => void;
-	onChangeChains: (value: number[] | undefined) => void;
+	currentCategories: string[] | null;
+	currentChains: number[] | null;
+	onChangeCategories: (value: string[] | null) => void;
+	onChangeChains: (value: number[] | null) => void;
 	isLoading: boolean;
 };
 export function VaultsListEmpty({

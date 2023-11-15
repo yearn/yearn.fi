@@ -9,11 +9,11 @@ import type {ReactElement} from 'react';
 import type {TMultiSelectOptionProps} from '@common/components/MultiSelectDropdown';
 
 type TListHero = {
-	categories: string[] | undefined;
-	chains: number[] | undefined;
+	categories: string[] | null;
+	chains: number[] | null;
 	searchValue: string;
-	onChangeCategories: (categories: string[] | undefined) => void;
-	onChangeChains: (chains: number[] | undefined) => void;
+	onChangeCategories: (categories: string[] | null) => void;
+	onChangeChains: (chains: number[] | null) => void;
 	onSearch: (searchValue: string) => void;
 };
 

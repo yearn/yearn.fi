@@ -9,7 +9,7 @@ import type {Connector} from 'wagmi';
 import type {TMultiSelectOptionProps} from '@common/components/MultiSelectDropdown';
 import type {Chain} from '@wagmi/chains';
 
-export function useChainOptions(chains: number[] | undefined): TMultiSelectOptionProps[] {
+export function useChainOptions(chains: number[] | null): TMultiSelectOptionProps[] {
 	const {connectors} = useConnect();
 
 	const injectedChains = useCustomCompareMemo(
@@ -34,7 +34,6 @@ export function useChainOptions(chains: number[] | undefined): TMultiSelectOptio
 
 	const options = useDeepCompareMemo((): TMultiSelectOptionProps[] => {
 		const _options = [];
-		console.warn(chains);
 		for (const chain of injectedChains || []) {
 			_options.push({
 				label: chain.name,

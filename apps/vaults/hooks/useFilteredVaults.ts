@@ -18,8 +18,8 @@ export function useFilteredVaults(
 }
 
 export function useVaultFilter(
-	categories: string[] | undefined,
-	chains: number[] | undefined,
+	categories: string[] | null,
+	chains: number[] | null,
 	v3?: boolean
 ): {
 	activeVaults: TYDaemonVault[];
