@@ -9,11 +9,11 @@ import type {ReactElement} from 'react';
 import type {TMultiSelectOptionProps} from '@common/components/MultiSelectDropdown';
 
 type TListHero = {
-	categories: string[];
-	chains: number[];
+	categories: string[] | undefined;
+	chains: number[] | undefined;
 	searchValue: string;
-	onChangeCategories: (categories: string[]) => void;
-	onChangeChains: (chains: number[]) => void;
+	onChangeCategories: (categories: string[] | undefined) => void;
+	onChangeChains: (chains: number[] | undefined) => void;
 	onSearch: (searchValue: string) => void;
 };
 
@@ -31,7 +31,7 @@ export function Filters({
 			([key, value]): TMultiSelectOptionProps => ({
 				value: key,
 				label: value.replaceAll(' Vaults', ''),
-				isSelected: categories.includes(key)
+				isSelected: categories?.includes(key) || false
 			})
 		);
 		return options;

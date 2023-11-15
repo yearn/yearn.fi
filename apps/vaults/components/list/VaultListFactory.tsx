@@ -66,9 +66,11 @@ export function VaultListFactory(): ReactElement {
 	 **	It contains either the list of vaults, is some are available, or a message to the user.
 	 **********************************************************************************************/
 	const VaultList = useMemo((): ReactNode => {
-		const filteredByChains = sortedVaultsToDisplay.filter(({chainID}): boolean => chains.includes(chainID));
+		const filteredByChains = sortedVaultsToDisplay.filter(
+			({chainID}): boolean => chains?.includes(chainID) || false
+		);
 
-		if (isLoadingVaultList || isZero(filteredByChains.length) || chains.length === 0) {
+		if (isLoadingVaultList || isZero(filteredByChains.length) || !chains || chains.length === 0) {
 			return (
 				<VaultsListEmptyFactory
 					isLoading={isLoadingVaultList}
