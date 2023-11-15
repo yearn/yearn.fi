@@ -11,6 +11,7 @@
 		"lint": "eslint . --ext .js,.jsx,.ts,.tsx",
 		"prettier": "prettier --check \"./**/**/*.{json,js,ts,tsx,scss}\"",
 		"prettier-format": "prettier --config .prettierrc \"./**/**/*.{json,js,ts,tsx,scss,md}\" --write",
+		"tslint": "tsc -p tsconfig.json --noEmit",
 		"bump": "bump",
 		"prepare": "husky install",
 		"test": "vitest run"
