@@ -150,7 +150,7 @@ export const APPS: {[key in AppName]: TApp} = {
 				alt={'yETH'}
 				width={32}
 				height={32}
-				src={'https://yprisma.yearn.fi/yPrisma.png'}
+				src={'https://assets.smold.app/api/token/1/0xe3668873d944e4a949da05fc8bde419eff543882/logo-32.png'}
 				loading={'eager'}
 				priority
 			/>

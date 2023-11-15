@@ -109,7 +109,7 @@ const apps = [
 				alt={'yPrisma'}
 				width={100}
 				height={100}
-				src={'https://yprisma.yearn.fi/yPrisma.png'}
+				src={`https://assets.smold.app/api/token/1/0xe3668873d944e4a949da05fc8bde419eff543882/logo-128.png`}
 				loading={'eager'}
 				priority
 			/>
