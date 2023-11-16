@@ -14,6 +14,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
+import {InfoTooltip} from '@common/components/InfoTooltip';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 
@@ -161,7 +162,15 @@ function PortfolioCard(): ReactElement {
 					</b>
 				</div>
 				<div>
-					<p className={'pb-0 text-[#757CA6] md:pb-2'}>{'Earnings'}</p>
+					<p className={'pb-0 text-[#757CA6] md:pb-2'}>
+						{'Earnings'}
+						<InfoTooltip
+							text={
+								'Your earning are estimated based on available onchain data and some nerdy maths stuff.'
+							}
+							size={'sm'}
+						/>
+					</p>
 					<b className={'font-number text-xl text-neutral-900 md:text-3xl'}>
 						<Counter value={Number(formatedYouEarned)} />
 					</b>
