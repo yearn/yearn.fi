@@ -1,4 +1,5 @@
 import {cl} from '@yearn-finance/web-lib/utils/cl';
+import {IconQuestion} from '@common/icons/IconQuestion';
 
 import type {ReactElement} from 'react';
 
@@ -10,31 +11,28 @@ type TProps = {
 const getStyle = (
 	size: TProps['size']
 ): {
-	iStyle: string;
+	iconStyle: string;
 	tooltipStyle: string;
 } => {
 	if (size === 'sm') {
 		return {
-			iStyle: 'md:text-xs text-xxs pl-1',
+			iconStyle: 'md:h-3 md:w-3 md:top-0',
 			tooltipStyle: 'p-1 px-2 text-xs'
 		};
 	}
 
 	return {
-		iStyle: 'md:text-md text-sm pl-2',
+		iconStyle: 'md:h-4 md:w-4 md:top-1',
 		tooltipStyle: 'p-2 px-4 text-sm'
 	};
 };
 
 export const InfoTooltip = ({text, size}: TProps): ReactElement => {
-	const {iStyle, tooltipStyle} = getStyle(size);
+	const {iconStyle, tooltipStyle} = getStyle(size);
 
 	return (
-		<sup
-			className={cl(
-				'tooltip underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600 font-light',
-				iStyle
-			)}>
+		<sup className={'tooltip font-light transition-opacity'}>
+			<IconQuestion className={cl('absolute h-3 w-3 md:-right-4 -right-3 top-0', iconStyle)} />
 			<span
 				suppressHydrationWarning
 				className={'tooltiptext bottom-full mb-1'}>
@@ -46,7 +44,6 @@ export const InfoTooltip = ({text, size}: TProps): ReactElement => {
 					{text}
 				</div>
 			</span>
-			{'(i)'}
 		</sup>
 	);
 };
