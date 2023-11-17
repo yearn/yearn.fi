@@ -638,6 +638,9 @@ export function ActionFlowContextApp({
 			if (!tokenListData) {
 				return;
 			}
+			if (tokenData.address === ETH_TOKEN_ADDRESS && !isWithWETH) {
+				return;
+			}
 
 			const duplicateAddresses = [
 				isWithWETH ? WETH_TOKEN_ADDRESS : null,
