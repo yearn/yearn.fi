@@ -166,7 +166,7 @@ function PortfolioCard(): ReactElement {
 						{'Earnings'}
 						<InfoTooltip
 							text={
-								'Your earning are estimated based on available onchain data and some nerdy maths stuff.'
+								'Your earnings are estimated based on available onchain data and some nerdy maths stuff.'
 							}
 							size={'sm'}
 						/>
