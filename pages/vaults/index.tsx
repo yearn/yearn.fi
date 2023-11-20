@@ -17,6 +17,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {IconChain} from '@yearn-finance/web-lib/icons/IconChain';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
+import {InfoTooltip} from '@common/components/InfoTooltip';
 import {ListHead} from '@common/components/ListHead';
 import {Pagination} from '@common/components/Pagination';
 import {useWallet} from '@common/contexts/useWallet';
@@ -82,7 +83,13 @@ function HeaderUserPosition(): ReactElement {
 				</b>
 			</div>
 			<div className={'col-span-12 w-full md:col-span-4'}>
-				<p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl'}>{'Earnings'}</p>
+				<p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl '}>
+					{'Earnings'}
+					<InfoTooltip
+						text={'Your earnings are estimated based on available onchain data and some nerdy maths stuff.'}
+						size={'md'}
+					/>
+				</p>
 				<b className={'font-number text-3xl text-neutral-900 md:text-7xl'}>
 					<Counter value={Number(formatedYouEarned)} />
 				</b>
