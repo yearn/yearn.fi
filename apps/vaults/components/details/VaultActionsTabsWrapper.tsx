@@ -10,10 +10,8 @@ import {VaultDetailsQuickActionsTo} from '@vaults/components/details/actions/Qui
 import {RewardsTab} from '@vaults/components/RewardsTab';
 import {SettingsPopover} from '@vaults/components/SettingsPopover';
 import {Flow, useActionFlow} from '@vaults/contexts/useActionFlow';
-import {isZero} from '@yearn-finance/web-lib/utils/isZero';
-import {performBatchedUpdates} from '@yearn-finance/web-lib/utils/performBatchedUpdates';
+import {useYearn} from '@common/contexts/useYearn';
 import {IconChevron} from '@common/icons/IconChevron';
-import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
@@ -48,9 +46,9 @@ function getCurrentTab({
 }
 
 export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const {onSwitchSelectedOptions, isDepositing, actionParams, currentSolver} = useActionFlow();
+	const {isStakingOpBoostedVaults} = useYearn();
+	const {onSwitchSelectedOptions, isDepositing, actionParams} = useActionFlow();
 	const [possibleTabs, set_possibleTabs] = useState<TTabsOptions[]>([tabs[0], tabs[1]]);
-	const willDepositAndStake = currentSolver === Solver.enum.OptimismBooster;
 	const hasStakingRewards = Boolean(currentVault.staking.available);
 	const [currentTab, set_currentTab] = useState<TTabsOptions>(
 		getCurrentTab({
@@ -70,23 +68,17 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 
 	useUpdateEffect((): void => {
 		if (currentVault?.migration?.available && actionParams.isReady) {
-			performBatchedUpdates((): void => {
-				set_possibleTabs([tabs[1], tabs[2]]);
-				set_currentTab(tabs[2]);
-				onSwitchSelectedOptions(Flow.Migrate);
-			});
+			set_possibleTabs([tabs[1], tabs[2]]);
+			set_currentTab(tabs[2]);
+			onSwitchSelectedOptions(Flow.Migrate);
 		} else if (currentVault?.retired && actionParams.isReady) {
-			performBatchedUpdates((): void => {
-				set_possibleTabs([tabs[1]]);
-				set_currentTab(tabs[1]);
-				onSwitchSelectedOptions(Flow.Withdraw);
-			});
+			set_possibleTabs([tabs[1]]);
+			set_currentTab(tabs[1]);
+			onSwitchSelectedOptions(Flow.Withdraw);
 		}
 
 		if (currentVault.chainID === 10 && hasStakingRewards) {
-			performBatchedUpdates((): void => {
-				set_possibleTabs([tabs[0], tabs[1], tabs[3]]);
-			});
+			set_possibleTabs([tabs[0], tabs[1], tabs[3]]);
 		}
 	}, [currentVault?.migration?.available, currentVault?.retired, actionParams.isReady, hasStakingRewards]);
 
@@ -243,10 +235,10 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 					</div>
 				)}
 
-				{isZero(currentTab.value) &&
+				{currentTab.value === 0 &&
 				currentVault.apr?.forwardAPR?.composite?.boost &&
 				hasStakingRewards &&
-				willDepositAndStake ? (
+				isStakingOpBoostedVaults ? (
 					<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
 						<div className={'w-full bg-[#34A14F] p-2 md:px-6 md:py-4'}>
 							<b className={'text-base text-white'}>
@@ -257,9 +249,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 						</div>
 					</div>
 				) : (
-					isZero(currentTab.value) &&
-					hasStakingRewards &&
-					!willDepositAndStake && (
+					Boolean(currentTab.value === 0 && hasStakingRewards && !isStakingOpBoostedVaults) && (
 						<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
 							<div className={'w-full bg-[#F8A908] p-2 md:px-6 md:py-4'}>
 								<b className={'text-base text-white'}>
