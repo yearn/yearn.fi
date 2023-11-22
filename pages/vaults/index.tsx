@@ -225,7 +225,7 @@ function ListOfVaults(): ReactElement {
 					{label: 'Hist. APR', value: 'apr', sortable: true, className: 'col-span-2'},
 					{label: 'Available', value: 'available', sortable: true, className: 'col-span-2'},
 					{label: 'Deposited', value: 'deposited', sortable: true, className: 'col-span-2'},
-					{label: 'TVL', value: 'tvl', sortable: true, className: 'col-span-2'}
+					{label: 'Staked', value: 'tvl', sortable: true, className: 'col-span-2'}
 				]}
 			/>
 
