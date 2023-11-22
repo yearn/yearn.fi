@@ -29,8 +29,8 @@ export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): 
 					<span className={'tooltip'}>
 						<b className={'yearn--table-data-section-item-value'}>
 							<Renderable
-								shouldRender={!(currentVault.apr?.type === 'new' && hasZeroBoostedAPR)}
-								fallback={'New'}>
+								shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
+								fallback={'NEW'}>
 								{'⚡️ '}
 								<span
 									className={
@@ -87,8 +87,8 @@ export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): 
 			<div className={'flex flex-col text-right'}>
 				<b className={'yearn--table-data-section-item-value'}>
 					<Renderable
-						shouldRender={!(currentVault.apr?.type === 'new' && hasZeroAPR)}
-						fallback={'New'}>
+						shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
+						fallback={'NEW'}>
 						<RenderAmount
 							value={currentVault.apr?.netAPR}
 							shouldHideTooltip={hasZeroAPR}
@@ -111,10 +111,8 @@ export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): 
 							'yearn--table-data-section-item-value underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
 						}>
 						<Renderable
-							shouldRender={
-								!(currentVault.apr?.type === 'new' && isZero(currentVault.apr.forwardAPR.netAPR))
-							}
-							fallback={'New'}>
+							shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
+							fallback={'NEW'}>
 							<RenderAmount
 								shouldHideTooltip
 								value={currentVault.apr.forwardAPR.netAPR}
@@ -175,8 +173,8 @@ export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): 
 				<span className={'tooltip'}>
 					<b className={'yearn--table-data-section-item-value'}>
 						<Renderable
-							shouldRender={!(currentVault.apr?.type === 'new' && hasZeroBoostedAPR)}
-							fallback={'New'}>
+							shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
+							fallback={'NEW'}>
 							{'⚡️ '}
 							<span
 								className={
@@ -236,8 +234,8 @@ export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): 
 		<div className={'flex flex-col text-right'}>
 			<b className={'yearn--table-data-section-item-value'}>
 				<Renderable
-					shouldRender={!(currentVault.apr?.type === 'new' && isZero(currentVault.apr.forwardAPR.netAPR))}
-					fallback={'New'}>
+					shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
+					fallback={'NEW'}>
 					<RenderAmount
 						shouldHideTooltip={hasZeroAPR}
 						value={currentVault.apr.forwardAPR.netAPR}
@@ -250,7 +248,7 @@ export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): 
 	);
 }
 
-export function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const hasZeroAPR =
 		isZero(currentVault.apr?.netAPR) || Number(Number(currentVault.apr?.netAPR || 0).toFixed(2)) === 0;
 
@@ -260,8 +258,8 @@ export function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}
 				<span className={'tooltip'}>
 					<b className={'yearn--table-data-section-item-value'}>
 						<Renderable
-							shouldRender={!(currentVault.apr?.type === 'new' && hasZeroAPR)}
-							fallback={'New'}>
+							shouldRender={!currentVault.apr?.type.includes('new')}
+							fallback={'NEW'}>
 							<span
 								className={
 									'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
@@ -313,8 +311,8 @@ export function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}
 		<div className={'flex flex-col text-right'}>
 			<b className={'yearn--table-data-section-item-value'}>
 				<Renderable
-					shouldRender={!(currentVault.apr?.type === 'new' && hasZeroAPR)}
-					fallback={'New'}>
+					shouldRender={!currentVault.apr?.type.includes('new')}
+					fallback={'NEW'}>
 					<RenderAmount
 						value={currentVault.apr?.netAPR}
 						shouldHideTooltip={hasZeroAPR}

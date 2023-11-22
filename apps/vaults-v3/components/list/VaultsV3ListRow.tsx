@@ -32,8 +32,8 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 					<span className={'tooltip'}>
 						<b className={'yearn--table-data-section-item-value'}>
 							<Renderable
-								shouldRender={!(currentVault.apr?.type === 'new' && hasZeroBoostedAPR)}
-								fallback={'New'}>
+								shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
+								fallback={'NEW'}>
 								{'⚡️ '}
 								<span
 									className={
@@ -90,8 +90,8 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 			<div className={'flex flex-col md:text-right'}>
 				<b className={'yearn--table-data-section-item-value'}>
 					<Renderable
-						shouldRender={!(currentVault.apr?.type === 'new' && hasZeroAPR)}
-						fallback={'New'}>
+						shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
+						fallback={'NEW'}>
 						<RenderAmount
 							value={currentVault.apr?.netAPR}
 							shouldHideTooltip={hasZeroAPR}
@@ -114,10 +114,8 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 							'yearn--table-data-section-item-value underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
 						}>
 						<Renderable
-							shouldRender={
-								!(currentVault.apr?.type === 'new' && isZero(currentVault.apr.forwardAPR.netAPR))
-							}
-							fallback={'New'}>
+							shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
+							fallback={'NEW'}>
 							<RenderAmount
 								shouldHideTooltip
 								value={currentVault.apr.forwardAPR.netAPR}
@@ -178,8 +176,8 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 				<span className={'tooltip'}>
 					<b className={'yearn--table-data-section-item-value'}>
 						<Renderable
-							shouldRender={!(currentVault.apr?.type === 'new' && hasZeroBoostedAPR)}
-							fallback={'New'}>
+							shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
+							fallback={'NEW'}>
 							{'⚡️ '}
 							<span
 								className={
@@ -238,8 +236,8 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 		<div className={'flex flex-col md:text-right'}>
 			<b className={'yearn--table-data-section-item-value'}>
 				<Renderable
-					shouldRender={!(currentVault.apr?.type === 'new' && isZero(currentVault.apr.forwardAPR.netAPR))}
-					fallback={'New'}>
+					shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
+					fallback={'NEW'}>
 					<RenderAmount
 						shouldHideTooltip={hasZeroAPR}
 						value={currentVault.apr.forwardAPR.netAPR}
@@ -261,8 +259,8 @@ function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}): Reac
 				<span className={'tooltip'}>
 					<b className={'yearn--table-data-section-item-value'}>
 						<Renderable
-							shouldRender={!(currentVault.apr?.type === 'new' && hasZeroAPR)}
-							fallback={'New'}>
+							shouldRender={!currentVault.apr?.type.includes('new')}
+							fallback={'NEW'}>
 							<span
 								className={
 									'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
@@ -314,8 +312,8 @@ function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}): Reac
 		<div className={'flex flex-col md:text-right'}>
 			<b className={'yearn--table-data-section-item-value'}>
 				<Renderable
-					shouldRender={!(currentVault.apr?.type === 'new' && hasZeroAPR)}
-					fallback={'New'}>
+					shouldRender={!currentVault.apr?.type.includes('new')}
+					fallback={'NEW'}>
 					<RenderAmount
 						value={currentVault.apr?.netAPR}
 						shouldHideTooltip={hasZeroAPR}
