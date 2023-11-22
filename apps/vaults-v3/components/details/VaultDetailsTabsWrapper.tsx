@@ -1,7 +1,6 @@
 import {Fragment, useEffect, useMemo, useState} from 'react';
 import {useRouter} from 'next/router';
 import {Listbox, Transition} from '@headlessui/react';
-import {useIsMounted} from '@react-hookz/web';
 import * as Sentry from '@sentry/nextjs';
 import {VaultDetailsAbout} from '@vaults-v3/components/details/tabs/VaultDetailsAbout';
 import {VaultDetailsStrategies} from '@vaults-v3/components/details/tabs/VaultDetailsStrategies';
@@ -187,12 +186,6 @@ function AddToWalletLink({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 }
 
 function ExplorerLink({explorerBaseURI, currentVaultAddress}: TExplorerLinkProps): ReactElement | null {
-	const isMounted = useIsMounted();
-
-	if (!explorerBaseURI || !isMounted()) {
-		return null;
-	}
-
 	return (
 		<a
 			href={`${explorerBaseURI}/address/${currentVaultAddress}`}

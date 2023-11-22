@@ -1,7 +1,6 @@
 import {Fragment, useEffect, useMemo, useState} from 'react';
 import {useRouter} from 'next/router';
 import {Listbox, Transition} from '@headlessui/react';
-import {useIsMounted} from '@react-hookz/web';
 import * as Sentry from '@sentry/nextjs';
 import {VaultDetailsAbout} from '@vaults/components/details/tabs/VaultDetailsAbout';
 import {VaultDetailsHistorical} from '@vaults/components/details/tabs/VaultDetailsHistorical';
@@ -140,12 +139,6 @@ function Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactE
 }
 
 function ExplorerLink({explorerBaseURI, currentVaultAddress}: TExplorerLinkProps): ReactElement | null {
-	const isMounted = useIsMounted();
-
-	if (!explorerBaseURI || !isMounted()) {
-		return null;
-	}
-
 	return (
 		<a
 			href={`${explorerBaseURI}/address/${currentVaultAddress}`}
