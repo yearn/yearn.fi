@@ -5,6 +5,7 @@ import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
@@ -478,18 +479,35 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 						className={'yearn--table-data-section-item md:col-span-2'}
 						datatype={'number'}>
 						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'TVL'}</p>
-						<p className={'yearn--table-data-section-item-value'}>
-							<RenderAmount
-								value={currentVault.tvl?.tvl}
-								symbol={'USD'}
-								decimals={0}
-								options={{
-									shouldCompactValue: true,
-									maximumFractionDigits: 2,
-									minimumFractionDigits: 0
-								}}
-							/>
-						</p>
+						<div className={'flex flex-col text-right'}>
+							<p className={'yearn--table-data-section-item-value'}>
+								<RenderAmount
+									value={Number(
+										toNormalizedBN(currentVault.tvl.totalAssets, currentVault.token.decimals)
+											.normalized
+									)}
+									symbol={''}
+									decimals={6}
+									options={{
+										shouldCompactValue: true,
+										maximumFractionDigits: 2,
+										minimumFractionDigits: 2
+									}}
+								/>
+							</p>
+							<small className={'text-xs text-neutral-900/40'}>
+								<RenderAmount
+									value={currentVault.tvl?.tvl}
+									symbol={'USD'}
+									decimals={0}
+									options={{
+										shouldCompactValue: true,
+										maximumFractionDigits: 2,
+										minimumFractionDigits: 0
+									}}
+								/>
+							</small>
+						</div>
 					</div>
 				</div>
 			</div>

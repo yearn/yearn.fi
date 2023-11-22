@@ -166,6 +166,9 @@ export function useVaultFilter(
 		_vaultList = _vaultList.filter(
 			(vault, index, self): boolean => index === self.findIndex((v): boolean => v.address === vault.address)
 		);
+
+		// Remove v3 vaults
+		_vaultList = _vaultList.filter((vault): boolean => !vault.version?.startsWith('3'));
 		return _vaultList;
 	}, [
 		v3,

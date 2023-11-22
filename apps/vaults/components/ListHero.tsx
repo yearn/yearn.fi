@@ -29,7 +29,7 @@ export function ListHero({
 	onChangeChains,
 	shouldHideChainSelector
 }: TListHero): ReactElement {
-	const chainOptions = useChainOptions(chains);
+	const chainOptions = useChainOptions(chains).filter((option): boolean => option.value !== 137);
 	const categoryOptions = useMemo((): TMultiSelectOptionProps[] => {
 		const options: TMultiSelectOptionProps[] = Object.entries(possibleCategories).map(
 			([key, value]): TMultiSelectOptionProps => ({

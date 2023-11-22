@@ -128,8 +128,8 @@ export function VaultListFactory(): ReactElement {
 					{label: 'Est. APR', value: 'estAPR', sortable: true, className: 'col-span-2'},
 					{label: 'Hist. APR', value: 'apr', sortable: true, className: 'col-span-2'},
 					{label: 'Available', value: 'available', sortable: true, className: 'col-span-2'},
-					{label: 'Deposited', value: 'deposited', sortable: true, className: 'col-span-2'},
-					{label: 'TVL', value: 'tvl', sortable: true, className: 'col-span-2'}
+					{label: 'Holdings', value: 'deposited', sortable: true, className: 'col-span-2'},
+					{label: 'Deposits', value: 'tvl', sortable: true, className: 'col-span-2'}
 				]}
 			/>
 

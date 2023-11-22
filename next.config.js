@@ -118,8 +118,8 @@ const config = {
 
 		PARTNER_ID_ADDRESS: '0xFEB4acf3df3cDEA7399794D0869ef76A6EfAff52',
 		SHOULD_USE_PARTNER_CONTRACT: true,
-		YDAEMON_BASE_URI: 'https://ydevmon.ycorpo.com',
-		// YDAEMON_BASE_URI: process.env.YDAEMON_BASE_URI,
+		// YDAEMON_BASE_URI: 'https://ydevmon.ycorpo.com',
+		YDAEMON_BASE_URI: process.env.YDAEMON_BASE_URI,
 		RANGE_LIMIT: 1_000_000,
 
 		// YDAEMON_BASE_URI: 'https://ydaemon.ycorpo.com',

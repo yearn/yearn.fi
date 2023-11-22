@@ -462,13 +462,12 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 									decimals={6}
 									options={{
 										shouldCompactValue: true,
-										maximumFractionDigits: 6,
-										minimumFractionDigits: 6
+										maximumFractionDigits: 2,
+										minimumFractionDigits: 2
 									}}
 								/>
 							</p>
 							<small className={'text-xs text-neutral-900/40'}>
-								{'~'}
 								<RenderAmount
 									value={currentVault.tvl?.tvl}
 									symbol={'USD'}
