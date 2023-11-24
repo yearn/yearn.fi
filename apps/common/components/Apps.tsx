@@ -73,8 +73,9 @@ export const APPS: {[key in AppName]: TApp} = {
 		icon: (
 			<ImageWithFallback
 				alt={'yCRV'}
-				width={32}
-				height={32}
+				width={64}
+				height={64}
+				className={'h-8 w-8'}
 				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YCRV_TOKEN_ADDRESS}/logo-128.png`}
 				loading={'eager'}
 				priority
@@ -90,8 +91,9 @@ export const APPS: {[key in AppName]: TApp} = {
 		icon: (
 			<ImageWithFallback
 				alt={'yBal'}
-				width={32}
-				height={32}
+				width={64}
+				height={64}
+				className={'h-8 w-8'}
 				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YBAL_TOKEN_ADDRESS}/logo-128.png`}
 				loading={'eager'}
 				priority
@@ -132,8 +134,9 @@ export const APPS: {[key in AppName]: TApp} = {
 		icon: (
 			<ImageWithFallback
 				alt={'yETH'}
-				width={32}
-				height={32}
+				width={64}
+				height={64}
+				className={'h-8 w-8'}
 				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/0x1BED97CBC3c24A4fb5C069C6E311a967386131f7/logo-128.png`}
 				loading={'eager'}
 				priority
@@ -147,9 +150,10 @@ export const APPS: {[key in AppName]: TApp} = {
 		manifest: {} as TMetaFile,
 		icon: (
 			<ImageWithFallback
-				alt={'yETH'}
-				width={32}
-				height={32}
+				alt={'yPrisma'}
+				width={64}
+				height={64}
+				className={'h-8 w-8'}
 				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/0xe3668873d944e4a949da05fc8bde419eff543882/logo-128.png`}
 				loading={'eager'}
 				priority
