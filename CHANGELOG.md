@@ -1,3 +1,9 @@
+# 0.3.0 (x/12/2023)
+
+-   Release the V3 vaults
+-   Release the multichain config
+-   Fix the zap balances fetching to use the multichain endpoint rather than the currently connected one
+
 # 0.1.25 (28/08/2023)
 
 -   Gauge voting for veYFI under the `gauge-voting` feature flag
