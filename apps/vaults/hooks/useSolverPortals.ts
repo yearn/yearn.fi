@@ -3,7 +3,7 @@ import {isHex} from 'viem';
 import axios from 'axios';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {isValidPortalsErrorObject} from '@vaults/hooks/helpers/isValidPortalsErrorObject';
-import {getPortalsApproval, getPortalsEstimate, getPortalsTx} from '@vaults/hooks/usePortalsApi';
+import {getPortalsApproval, getPortalsEstimate, getPortalsTx, PORTALS_NETWORK} from '@vaults/hooks/usePortalsApi';
 import {getNetwork, prepareSendTransaction, waitForTransaction} from '@wagmi/core';
 import {toast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -37,25 +37,27 @@ async function getQuote(
 	request: TInitSolverArgs,
 	zapSlippage: number
 ): Promise<{data: TPortalsEstimate | null; error?: Error}> {
-	const params = {
-		sellToken: toAddress(request.inputToken.value),
-		sellAmount: toBigInt(request.inputAmount).toString(),
-		buyToken: toAddress(request.outputToken.value),
-		slippagePercentage: String(zapSlippage / 100)
-	};
+	const network = PORTALS_NETWORK.get(request.chainID);
 
-	if (isZeroAddress(params.sellToken)) {
+	if (isZeroAddress(request.inputToken.value)) {
 		return {data: null, error: new Error('Invalid sell token')};
 	}
-	if (isZeroAddress(params.buyToken)) {
+	if (isZeroAddress(request.outputToken.value)) {
 		return {data: null, error: new Error('Invalid buy token')};
 	}
-	if (isZero(params.sellAmount)) {
+	if (isZero(request.inputAmount)) {
 		return {data: null, error: new Error('Invalid sell amount')};
 	}
 
 	try {
-		return getPortalsEstimate({network: request.chainID, params});
+		return getPortalsEstimate({
+			params: {
+				inputToken: `${network}:${toAddress(request.inputToken.value)}`,
+				outputToken: `${network}:${toAddress(request.outputToken.value)}`,
+				inputAmount: toBigInt(request.inputAmount).toString(),
+				slippageTolerancePercentage: String(zapSlippage)
+			}
+		});
 	} catch (error) {
 		console.error(error);
 		let errorContent = 'Portals.fi zap not possible. Try again later or pick another token.';
@@ -85,6 +87,9 @@ export function useSolverPortals(): TSolverContext {
 	 **********************************************************************************************/
 	const init = useCallback(
 		async (_request: TInitSolverArgs, shouldLogError?: boolean): Promise<TNormalizedBN> => {
+			if (isSolverDisabled(Solver.enum.Portals)) {
+				return toNormalizedBN(0);
+			}
 			/******************************************************************************************
 			 ** First we need to know which token we are selling to the zap. When we are depositing, we
 			 ** are selling the inputToken, when we are withdrawing, we are selling the outputToken.
@@ -96,7 +101,7 @@ export function useSolverPortals(): TSolverContext {
 			/******************************************************************************************
 			 ** This first obvious check is to see if the solver is disabled. If it is, we return 0.
 			 ******************************************************************************************/
-			if (isSolverDisabled(_request.chainID)[Solver.enum.Portals]) {
+			if (isSolverDisabled(Solver.enum.Portals)) {
 				return toNormalizedBN(0);
 			}
 
@@ -142,7 +147,7 @@ export function useSolverPortals(): TSolverContext {
 				return toNormalizedBN(0);
 			}
 			latestQuote.current = data;
-			return toNormalizedBN(data?.minBuyAmount || 0, request?.current?.outputToken?.decimals || 18);
+			return toNormalizedBN(data?.minOutputAmount || 0, request?.current?.outputToken?.decimals || 18);
 		},
 		[zapSlippage]
 	);
@@ -153,7 +158,7 @@ export function useSolverPortals(): TSolverContext {
 	 ** not.
 	 **********************************************************************************************/
 	const execute = useCallback(async (): Promise<TTxResponse> => {
-		if (!request.current || isSolverDisabled(request.current.chainID)[Solver.enum.Portals]) {
+		if (!request.current || isSolverDisabled(Solver.enum.Portals)) {
 			return {isSuccessful: false};
 		}
 
@@ -163,14 +168,14 @@ export function useSolverPortals(): TSolverContext {
 		assert(zapSlippage > 0, 'Slippage cannot be 0');
 
 		try {
+			const network = PORTALS_NETWORK.get(request.current.chainID);
 			const transaction = await getPortalsTx({
-				network: request.current.chainID,
 				params: {
-					takerAddress: toAddress(request.current.from),
-					sellToken: toAddress(request.current.inputToken.value),
-					sellAmount: toBigInt(request.current.inputAmount).toString(),
-					buyToken: toAddress(request.current.outputToken.value),
-					slippagePercentage: String(zapSlippage / 100),
+					sender: toAddress(request.current.from),
+					inputToken: `${network}:${toAddress(request.current.inputToken.value)}`,
+					outputToken: `${network}:${toAddress(request.current.outputToken.value)}`,
+					inputAmount: toBigInt(request.current.inputAmount).toString(),
+					slippageTolerancePercentage: String(zapSlippage / 100),
 					validate: 'true'
 				}
 			});
@@ -230,14 +235,10 @@ export function useSolverPortals(): TSolverContext {
 	 ** process and displayed to the user.
 	 **************************************************************************/
 	const expectedOut = useMemo((): TNormalizedBN => {
-		if (
-			!latestQuote?.current?.minBuyAmount ||
-			!request.current ||
-			isSolverDisabled(request.current.chainID)[Solver.enum.Portals]
-		) {
+		if (!latestQuote?.current?.minOutputAmount || !request.current || isSolverDisabled(Solver.enum.Portals)) {
 			return toNormalizedBN(0);
 		}
-		return toNormalizedBN(latestQuote?.current?.minBuyAmount, request?.current?.outputToken?.decimals || 18);
+		return toNormalizedBN(latestQuote?.current?.minOutputAmount, request?.current?.outputToken?.decimals || 18);
 	}, [latestQuote, request]);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -245,11 +246,7 @@ export function useSolverPortals(): TSolverContext {
 	 ** be used to determine if the user should approve the token or not.
 	 **************************************************************************/
 	const onRetrieveAllowance = useCallback(async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
-		if (
-			!latestQuote?.current ||
-			!request?.current ||
-			isSolverDisabled(request.current.chainID)[Solver.enum.Portals]
-		) {
+		if (!latestQuote?.current || !request?.current || isSolverDisabled(Solver.enum.Portals)) {
 			return toNormalizedBN(0);
 		}
 
@@ -264,13 +261,12 @@ export function useSolverPortals(): TSolverContext {
 		}
 
 		try {
+			const network = PORTALS_NETWORK.get(request.current.chainID);
 			const {data: approval} = await getPortalsApproval({
-				network: request.current.chainID,
 				params: {
-					takerAddress: toAddress(request.current.from),
-					sellToken: toAddress(request.current.inputToken.value),
-					sellAmount: toBigInt(request.current.inputAmount).toString(),
-					buyToken: toAddress(request.current.outputToken.value)
+					sender: toAddress(request.current.from),
+					inputToken: `${network}:${toAddress(request.current.inputToken.value)}`,
+					inputAmount: toBigInt(request.current.inputAmount).toString()
 				}
 			});
 
@@ -300,7 +296,7 @@ export function useSolverPortals(): TSolverContext {
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 			onSuccess: () => Promise<void>
 		): Promise<void> => {
-			if (!request.current || isSolverDisabled(request.current.chainID)[Solver.enum.Portals] || !provider) {
+			if (!request.current || isSolverDisabled(Solver.enum.Portals) || !provider) {
 				return;
 			}
 			assert(request.current, 'Request is not set');
@@ -308,13 +304,12 @@ export function useSolverPortals(): TSolverContext {
 			assert(request.current.inputAmount, 'Input amount is not set');
 
 			try {
+				const network = PORTALS_NETWORK.get(request.current.chainID);
 				const {data: approval} = await getPortalsApproval({
-					network: request.current.chainID,
 					params: {
-						takerAddress: toAddress(request.current.from),
-						sellToken: toAddress(request.current.inputToken.value),
-						sellAmount: toBigInt(request.current.inputAmount).toString(),
-						buyToken: toAddress(request.current.outputToken.value)
+						sender: toAddress(request.current.from),
+						inputToken: `${network}:${toAddress(request.current.inputToken.value)}`,
+						inputAmount: toBigInt(request.current.inputAmount).toString()
 					}
 				});
 

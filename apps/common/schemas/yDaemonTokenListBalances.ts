@@ -9,6 +9,7 @@ const SOLVER = [
 	'OptimismBooster',
 	'Cowswap',
 	'Portals',
+	'Wido',
 	'None'
 ] as const;
 

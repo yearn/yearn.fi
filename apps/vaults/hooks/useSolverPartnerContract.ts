@@ -1,4 +1,5 @@
 import {useCallback, useMemo, useRef} from 'react';
+import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {getVaultEstimateOut} from '@vaults/utils/getVaultEstimateOut';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -28,6 +29,9 @@ export function useSolverPartnerContract(): TSolverContext {
 	 ** call getQuote to get the current quote for the provided request.
 	 **********************************************************************************************/
 	const init = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN> => {
+		if (isSolverDisabled(Solver.enum.PartnerContract)) {
+			return toNormalizedBN(0);
+		}
 		request.current = _request;
 		const estimateOut = await getVaultEstimateOut({
 			inputToken: toAddress(_request.inputToken.value),

@@ -3,6 +3,7 @@ import {ethers} from 'ethers';
 import {BaseError} from 'viem';
 import axios from 'axios';
 import {OrderBookApi, OrderQuoteSide, OrderSigningUtils} from '@cowprotocol/cow-sdk';
+import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {toast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {allowanceKey, isZeroAddress} from '@yearn-finance/web-lib/utils/address';
@@ -106,6 +107,9 @@ export function useSolverCowswap(): TSolverContext {
 	 **********************************************************************************************/
 	const init = useCallback(
 		async (_request: TInitSolverArgs, shouldLogError?: boolean): Promise<TNormalizedBN> => {
+			if (isSolverDisabled(Solver.enum.Cowswap)) {
+				return toNormalizedBN(0);
+			}
 			/******************************************************************************************
 			 ** First we need to know which token we are selling to the zap. When we are depositing, we
 			 ** are selling the inputToken, when we are withdrawing, we are selling the outputToken.

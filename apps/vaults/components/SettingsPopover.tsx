@@ -69,7 +69,7 @@ export function SettingsPopover({vault}: TSettingPopover): ReactElement {
 											id={'zapProvider'}
 											onChange={(e): void => set_zapProvider(e.target.value as TSolver)}
 											value={
-												!isSolverDisabled(vault.chainID)[currentZapProvider]
+												!isSolverDisabled(currentZapProvider)
 													? currentZapProvider
 													: Solver.enum.Portals
 											}
@@ -78,13 +78,13 @@ export function SettingsPopover({vault}: TSettingPopover): ReactElement {
 											}>
 											{vault.chainID === 1 ? (
 												<option
-													disabled={isSolverDisabled(vault.chainID)[Solver.enum.Cowswap]}
+													disabled={isSolverDisabled(Solver.enum.Cowswap)}
 													value={Solver.enum.Cowswap}>
 													{Solver.enum.Cowswap}
 												</option>
 											) : null}
 											<option
-												disabled={isSolverDisabled(vault.chainID)[Solver.enum.Portals]}
+												disabled={isSolverDisabled(Solver.enum.Portals)}
 												value={Solver.enum.Portals}>
 												{Solver.enum.Portals}
 											</option>

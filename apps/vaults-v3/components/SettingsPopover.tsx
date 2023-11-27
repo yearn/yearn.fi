@@ -126,19 +126,19 @@ function ZapSection({chainID}: {chainID: number}): ReactElement {
 				<select
 					id={'zapProvider'}
 					onChange={(e): void => set_zapProvider(e.target.value as TSolver)}
-					value={!isSolverDisabled(chainID)[currentZapProvider] ? currentZapProvider : Solver.enum.Portals}
+					value={!isSolverDisabled(currentZapProvider) ? currentZapProvider : Solver.enum.Portals}
 					className={
 						'mt-1 h-10 w-full overflow-x-scroll rounded-lg border-none bg-neutral-100 p-2 outline-none scrollbar-none'
 					}>
 					{chainID === 1 ? (
 						<option
-							disabled={isSolverDisabled(chainID)[Solver.enum.Cowswap]}
+							disabled={isSolverDisabled(Solver.enum.Cowswap)}
 							value={Solver.enum.Cowswap}>
 							{Solver.enum.Cowswap}
 						</option>
 					) : null}
 					<option
-						disabled={isSolverDisabled(chainID)[Solver.enum.Portals]}
+						disabled={isSolverDisabled(Solver.enum.Portals)}
 						value={Solver.enum.Portals}>
 						{Solver.enum.Portals}
 					</option>

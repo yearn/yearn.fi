@@ -1,4 +1,5 @@
 import {useCallback, useMemo, useRef} from 'react';
+import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {getVaultEstimateOut} from '@vaults/utils/getVaultEstimateOut';
 import {readContract} from '@wagmi/core';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -28,6 +29,9 @@ export function useSolverInternalMigration(): TSolverContext {
 	 ** call getQuote to get the current quote for the provided request.
 	 **********************************************************************************************/
 	const init = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN> => {
+		if (isSolverDisabled(Solver.enum.InternalMigration)) {
+			return toNormalizedBN(0);
+		}
 		request.current = _request;
 		if (request.current.migrator === ZAP_YEARN_VE_CRV_ADDRESS) {
 			const estimateOut = await readContract({
