@@ -38,7 +38,7 @@ export function SettingsPopover({vault}: TSettingPopover): ReactElement {
 
 	const currentZapProvider = useMemo((): TSolver => {
 		if (vault.chainID !== 1 && zapProvider === 'Cowswap') {
-			return 'Wido';
+			return 'Portals';
 		}
 		return zapProvider;
 	}, [vault.chainID, zapProvider]);
@@ -71,7 +71,7 @@ export function SettingsPopover({vault}: TSettingPopover): ReactElement {
 											value={
 												!isSolverDisabled(vault.chainID)[currentZapProvider]
 													? currentZapProvider
-													: Solver.enum.Wido
+													: Solver.enum.Portals
 											}
 											className={
 												'mt-1 h-10 w-full overflow-x-scroll border-none bg-neutral-100 p-2 outline-none scrollbar-none'
@@ -83,11 +83,6 @@ export function SettingsPopover({vault}: TSettingPopover): ReactElement {
 													{Solver.enum.Cowswap}
 												</option>
 											) : null}
-											<option
-												disabled={isSolverDisabled(vault.chainID)[Solver.enum.Wido]}
-												value={Solver.enum.Wido}>
-												{Solver.enum.Wido}
-											</option>
 											<option
 												disabled={isSolverDisabled(vault.chainID)[Solver.enum.Portals]}
 												value={Solver.enum.Portals}>
@@ -107,21 +102,18 @@ export function SettingsPopover({vault}: TSettingPopover): ReactElement {
 												&nbsp;{'using CoW Swap.'}
 											</legend>
 										</Renderable>
-										<Renderable shouldRender={currentZapProvider === Solver.enum.Wido}>
+										<Renderable shouldRender={currentZapProvider === Solver.enum.Portals}>
 											<legend className={'ml-2 text-xs text-neutral-500'}>
 												{'Submit an order via'}&nbsp;
 												<a
 													className={'underline'}
-													href={'https://www.joinwido.com/'}
+													href={'https://portals.fi/'}
 													target={'_blank'}
 													rel={'noreferrer'}>
-													{'Wido'}
+													{'Portals'}
 												</a>
 												&nbsp;{'(0.3% fee).'}
 											</legend>
-										</Renderable>
-										<Renderable shouldRender={currentZapProvider === Solver.enum.Portals}>
-											<legend>&nbsp;</legend>
 										</Renderable>
 									</div>
 									<div className={'flex flex-col space-y-1'}>

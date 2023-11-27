@@ -1,6 +1,6 @@
 {
 	"name": "yearnfi",
-	"version": "0.1.25",
+	"version": "0.2.0",
 	"scripts": {
 		"dev": "next",
 		"inspect": "NODE_OPTIONS='--inspect' next",
@@ -50,7 +50,6 @@
 		"viem": "^1.16.2",
 		"vite": "^4.5.0",
 		"wagmi": "^1.4.3",
-		"wido": "0.4.1",
 		"zod": "^3.22.4"
 	},
 	"devDependencies": {

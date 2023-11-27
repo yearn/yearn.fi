@@ -7,7 +7,6 @@ import {useSolverOptimismBooster} from '@vaults/hooks/useSolverOptimismBooster';
 import {useSolverPartnerContract} from '@vaults/hooks/useSolverPartnerContract';
 import {useSolverPortals} from '@vaults/hooks/useSolverPortals';
 import {useSolverVanilla} from '@vaults/hooks/useSolverVanilla';
-import {useSolverWido} from '@vaults/hooks/useSolverWido';
 import {serialize} from '@wagmi/core';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -29,7 +28,6 @@ export const isSolverDisabled = (vaultChainID: number): TDict<boolean> => {
 		[Solver.enum.InternalMigration]: false,
 		[Solver.enum.OptimismBooster]: false,
 		[Solver.enum.Cowswap]: false,
-		[Solver.enum.Wido]: false,
 		[Solver.enum.Portals]: vaultChainID === 10 || false,
 		[Solver.enum.None]: false
 	};
@@ -61,7 +59,6 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 	const {currentVault, actionParams, currentSolver, isDepositing} = useActionFlow();
 	const executionNonce = useRef<number>(0);
 	const cowswap = useSolverCowswap();
-	const wido = useSolverWido();
 	const vanilla = useSolverVanilla();
 	const portals = useSolverPortals();
 	const chainCoin = useSolverChainCoin();
@@ -131,11 +128,9 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 			};
 
 			switch (currentSolver) {
-				case Solver.enum.Wido:
 				case Solver.enum.Portals:
 				case Solver.enum.Cowswap: {
-					const [widoQuote, cowswapQuote, portalsQuote] = await Promise.allSettled([
-						wido.init(request, currentSolver === Solver.enum.Wido),
+					const [cowswapQuote, portalsQuote] = await Promise.allSettled([
 						cowswap.init(request, currentSolver === Solver.enum.Cowswap),
 						portals.init(request, currentSolver === Solver.enum.Portals)
 					]);
@@ -148,7 +143,6 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 					} = {};
 
 					[
-						{solver: Solver.enum.Wido, quote: widoQuote, ctx: wido},
 						{
 							solver: Solver.enum.Cowswap,
 							quote: cowswapQuote,
@@ -170,12 +164,7 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 						ctx: vanilla
 					};
 
-					const solverPriority = [
-						Solver.enum.Wido,
-						Solver.enum.Cowswap,
-						Solver.enum.Portals,
-						Solver.enum.None
-					];
+					const solverPriority = [Solver.enum.Cowswap, Solver.enum.Portals, Solver.enum.None];
 
 					const newSolverPriority = [
 						currentSolver,
@@ -266,7 +255,6 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 			address,
 			isDepositing,
 			currentSolver,
-			wido,
 			cowswap,
 			portals,
 			vanilla,

@@ -69,11 +69,7 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 				toRefresh.push({address: toAddress(currentVault.staking.address), chainID});
 			}
 			await refresh(toRefresh);
-		} else if (
-			Solver.enum.Cowswap === currentSolver ||
-			Solver.enum.Portals === currentSolver ||
-			Solver.enum.Wido === currentSolver
-		) {
+		} else if (Solver.enum.Cowswap === currentSolver || Solver.enum.Portals === currentSolver) {
 			if (isDepositing) {
 				//refresh input from zap wallet, refresh output from default
 				await Promise.all([
@@ -171,7 +167,6 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 		((isDepositing && currentSolver === Solver.enum.Vanilla) || // ... and the user is depositing with Vanilla ...
 			currentSolver === Solver.enum.InternalMigration || // ... or the user is migrating ...
 			currentSolver === Solver.enum.Cowswap || // ... or the user is using Cowswap ...
-			currentSolver === Solver.enum.Wido || // ... or the user is using Wido ...
 			currentSolver === Solver.enum.Portals || // ... or the user is using Portals ...
 			currentSolver === Solver.enum.PartnerContract || // ... or the user is using the Partner contract ...
 			currentSolver === Solver.enum.OptimismBooster) // ... or the user is using the Optimism Booster ... // ... then we need to approve the from token

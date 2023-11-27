@@ -1,3 +1,7 @@
+# 0.2.0 (27/11/2023)
+
+-   Deprecate Wido due to project end-of-life
+
 # 0.1.25 (28/08/2023)
 
 -   Gauge voting for veYFI under the `gauge-voting` feature flag
