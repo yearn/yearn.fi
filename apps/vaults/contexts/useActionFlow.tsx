@@ -22,7 +22,6 @@ import {decodeAsBigInt} from '@yearn-finance/web-lib/utils/decoder';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isEth} from '@yearn-finance/web-lib/utils/isEth';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
-import {performBatchedUpdates} from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
@@ -306,29 +305,27 @@ export function ActionFlowContextApp({
 			}
 
 			if (nextFlow === Flow.Switch) {
-				performBatchedUpdates((): void => {
-					const _selectedOptionTo = actionParams?.selectedOptionTo;
-					const _possibleOptionsTo = possibleOptionsTo;
-					let _selectedOptionFrom = actionParams?.selectedOptionFrom;
-					if (isDepositing && (actionParams?.selectedOptionFrom?.solveVia || []).length > 0) {
-						// We don't want to be able to withdraw to exotic tokens. If the current from is one of them, take another one.
-						_selectedOptionFrom = possibleOptionsFrom.find(
-							(option: TDropdownOption): boolean =>
-								option.value !== actionParams?.selectedOptionFrom?.value &&
-								isZero((option.solveVia || []).length)
-						);
+				const _selectedOptionTo = actionParams?.selectedOptionTo;
+				const _possibleOptionsTo = possibleOptionsTo;
+				let _selectedOptionFrom = actionParams?.selectedOptionFrom;
+				if (isDepositing && (actionParams?.selectedOptionFrom?.solveVia || []).length > 0) {
+					// We don't want to be able to withdraw to exotic tokens. If the current from is one of them, take another one.
+					_selectedOptionFrom = possibleOptionsFrom.find(
+						(option: TDropdownOption): boolean =>
+							option.value !== actionParams?.selectedOptionFrom?.value &&
+							isZero((option.solveVia || []).length)
+					);
+				}
+				actionParamsDispatcher({
+					type: 'all',
+					payload: {
+						selectedOptionFrom: _selectedOptionTo,
+						selectedOptionTo: _selectedOptionFrom,
+						amount: isDepositing ? toNormalizedBN(0) : maxDepositPossible
 					}
-					actionParamsDispatcher({
-						type: 'all',
-						payload: {
-							selectedOptionFrom: _selectedOptionTo,
-							selectedOptionTo: _selectedOptionFrom,
-							amount: isDepositing ? toNormalizedBN(0) : maxDepositPossible
-						}
-					});
-					set_possibleOptionsTo(possibleOptionsFrom);
-					set_possibleOptionsFrom(_possibleOptionsTo);
 				});
+				set_possibleOptionsTo(possibleOptionsFrom);
+				set_possibleOptionsFrom(_possibleOptionsTo);
 			}
 
 			const vaultUnderlying = setZapOption({

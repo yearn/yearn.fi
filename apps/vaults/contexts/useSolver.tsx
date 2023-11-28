@@ -12,7 +12,6 @@ import {serialize} from '@wagmi/core';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {performBatchedUpdates} from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 import {hash} from '@common/utils';
 
@@ -80,14 +79,12 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 				return;
 			}
 			const requestHash = await hash(serialize({...request, solver, expectedOut: quote.value.raw}));
-			performBatchedUpdates((): void => {
-				set_currentSolverState({
-					...ctx,
-					quote: quote.value,
-					hash: requestHash
-				});
-				set_isLoading(false);
+			set_currentSolverState({
+				...ctx,
+				quote: quote.value,
+				hash: requestHash
 			});
+			set_isLoading(false);
 		},
 		[executionNonce]
 	);
@@ -104,6 +101,10 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 			) {
 				return;
 			}
+			if (actionParams.amount.raw === 0n) {
+				return set_currentSolverState({...vanilla, quote: toNormalizedBN(0)});
+			}
+
 			set_isLoading(true);
 
 			const request: TInitSolverArgs = {
@@ -263,6 +264,9 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 			actionParams.selectedOptionFrom,
 			actionParams.selectedOptionTo,
 			actionParams.amount.raw,
+			currentVault.chainID,
+			currentVault.version,
+			currentVault.migration.contract,
 			address,
 			isDepositing,
 			currentSolver,
@@ -274,7 +278,6 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 			optimismBooster,
 			chainCoin,
 			partnerContract,
-			currentVault.migration.contract,
 			internalMigration
 		]
 	);

@@ -36,8 +36,8 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 	function renderMultipleOptionsFallback(): ReactElement {
 		return (
 			<Dropdown
-				className={'!w-auto rounded-lg bg-neutral-300'}
-				comboboxOptionsClassName={'bg-neutral-300 rounded-lg'}
+				className={'!w-fit rounded-lg bg-neutral-300'}
+				comboboxOptionsClassName={'bg-neutral-300 rounded-lg w-full'}
 				defaultOption={possibleOptionsFrom[0]}
 				options={possibleOptionsFrom}
 				selected={actionParams?.selectedOptionFrom}
@@ -64,7 +64,7 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 	return (
 		<section
 			id={isActive ? 'active' : 'not-active'}
-			className={'flex w-full flex-col space-x-0 md:flex-row md:space-x-4'}>
+			className={'grid w-full grid-cols-2 flex-col space-x-0 md:flex-row md:space-x-4'}>
 			<div className={'relative z-10 w-full'}>
 				<div className={'flex flex-col items-baseline justify-between pb-2 pl-1 md:flex-row'}>
 					<p className={'text-base text-neutral-600'}>{isDepositing ? 'From wallet' : 'From vault'}</p>
@@ -82,7 +82,7 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 					fallback={renderMultipleOptionsFallback()}>
 					<div
 						className={
-							'flex h-10 w-full items-center justify-between rounded-lg bg-neutral-300 px-2 text-base text-neutral-900 md:w-56 md:px-3'
+							'flex h-10 w-full items-center justify-between rounded-lg bg-neutral-300 px-2 text-base text-neutral-900 md:px-3'
 						}>
 						<div className={'relative flex flex-row items-center truncate'}>
 							<div className={'h-6 w-6 flex-none rounded-full'}>{selectedFromIcon}</div>
