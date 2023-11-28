@@ -238,6 +238,7 @@ function ListOfVaults(): ReactElement {
 					currentChains={chains}
 					onChangeCategories={onChangeCategories}
 					onChangeChains={onChangeChains}
+					defaultCategories={ALL_VAULTS_CATEGORIES_KEYS}
 				/>
 			) : (
 				currentItems.map((vault): ReactNode => {

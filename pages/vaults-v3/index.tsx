@@ -226,10 +226,23 @@ function ListOfVaults(): ReactElement {
 					currentChains={chains}
 					onChangeCategories={onChangeCategories}
 					onChangeChains={onChangeChains}
+					defaultCategories={ALL_VAULTSV3_CATEGORIES_KEYS}
 				/>
 			);
 		}
-		return filteredByChains.map((vault): ReactNode => {
+		const sortedByKind = filteredByChains.sort((a, b): number => {
+			if (a.kind === b.kind) {
+				return 0;
+			}
+			if (a.kind === 'Multi Strategies') {
+				return -1;
+			}
+			if (b.kind === 'Single Strategy') {
+				return 1;
+			}
+			return 0;
+		});
+		return sortedByKind.map((vault): ReactNode => {
 			if (!vault) {
 				return null;
 			}
