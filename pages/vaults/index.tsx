@@ -86,7 +86,7 @@ function HeaderUserPosition(): ReactElement {
 				<p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl '}>
 					{'Earnings'}
 					<InfoTooltip
-						text={'Your earnings are estimated based on available onchain data and some nerdy maths stuff.'}
+						text={'Your earnings are estimated based on available onchain data and some nerdy math stuff.'}
 						size={'md'}
 					/>
 				</p>

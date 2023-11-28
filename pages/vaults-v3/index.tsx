@@ -64,18 +64,13 @@ function BrandNewVaultCard(): ReactElement {
 						'text-[48px] md:text-[56px] md:leading-[64px] leading-[56px]',
 						'whitespace-break-spaces uppercase'
 					)}>
-					{'A brave new\nworld for Yield.'}
+					{'A brave new\nworld for Yield'}
 				</h1>
 				<p className={'mb-4 whitespace-break-spaces text-base text-[#F2B7D0] md:text-lg'}>
 					{
 						'Yearn v3 is a new yield paradigm offering better automation,\ncomposability and flexibility. Enjoy!'
 					}
 				</p>
-				<div>
-					<button className={'rounded-3xl bg-white px-12 py-2 font-bold text-[#CE1364]'}>
-						{'Explore more'}
-					</button>
-				</div>
 			</div>
 			<Background />
 		</div>
@@ -87,9 +82,9 @@ function V3Card(): ReactElement {
 			<div
 				className={cl(
 					'flex h-full w-full flex-col items-center justify-center',
-					'gap-y-0 rounded-3xl bg-neutral-200 md:gap-y-6 p-8'
+					'gap-y-0 rounded-3xl bg-neutral-200 md:gap-y-6 p-2'
 				)}>
-				<V3Mask className={'h-full w-full'} />
+				<V3Mask className={'h-[90%] w-[90%]'} />
 			</div>
 		</div>
 	);
@@ -97,13 +92,7 @@ function V3Card(): ReactElement {
 
 function PortfolioCard(): ReactElement {
 	const {cumulatedValueInV3Vaults} = useWallet();
-	const {earned} = useYearn();
 	const {options, isActive, address, openLoginModal, onSwitchChain} = useWeb3();
-
-	const formatedYouEarned = useMemo((): string => {
-		const amount = (earned?.totalUnrealizedGainsUSD || 0) > 0 ? earned?.totalUnrealizedGainsUSD || 0 : 0;
-		return formatAmount(amount) ?? '';
-	}, [earned?.totalUnrealizedGainsUSD]);
 
 	const formatedYouHave = useMemo((): string => {
 		return formatAmount(cumulatedValueInV3Vaults || 0) ?? '';
@@ -166,14 +155,12 @@ function PortfolioCard(): ReactElement {
 						{'Earnings'}
 						<InfoTooltip
 							text={
-								'Your earnings are estimated based on available onchain data and some nerdy maths stuff.'
+								'Your earnings are estimated based on available onchain data and some nerdy math stuff.'
 							}
 							size={'sm'}
 						/>
 					</p>
-					<b className={'font-number text-xl text-neutral-900 md:text-3xl'}>
-						<Counter value={Number(formatedYouEarned)} />
-					</b>
+					<b className={'font-number text-xl text-neutral-900 md:text-3xl'}>{'soon™️'}</b>
 				</div>
 			</div>
 		</div>
@@ -312,7 +299,7 @@ function Index(): ReactElement {
 					'relative pb-8 bg-neutral-0 z-50',
 					'min-h-screen',
 					'transition-transform duration-300',
-					isCollapsed ? 'translate-y-[416px] md:translate-y-[564px]' : 'translate-y-0'
+					isCollapsed ? 'translate-y-[416px] md:translate-y-[464px]' : 'translate-y-0 md:translate-y-[40px]'
 				)}>
 				<div className={'mx-auto w-full max-w-6xl'}>
 					<div
@@ -358,7 +345,7 @@ function Index(): ReactElement {
 							<b className={'text-lg'}>{'Ape carefully anon!'}</b>
 							<p>
 								{
-									'V3 is truly flexible yield protocol offering everything from the usual Up Only Vaults to all new risky degen strategies.'
+									'V3 is a truly flexible yield protocol offering everything from the usual Up Only Vaults to all new risky degen strategies.'
 								}
 							</p>
 						</div>

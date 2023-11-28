@@ -62,7 +62,7 @@ function VaultAPR({apr}: {apr: TYDaemonVault['apr']}): ReactElement {
 				<span className={'tooltip'}>
 					<div className={'flex flex-row items-center space-x-2'}>
 						<div>
-							{'Est. APR - '}
+							{'Est. APR: '}
 							<RenderAmount
 								value={apr.forwardAPR.netAPR + apr.extra.stakingRewardsAPR}
 								symbol={'percent'}

@@ -461,7 +461,15 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 								value={availableToDeposit}
 								symbol={currentVault.token.symbol}
 								decimals={currentVault.token.decimals}
-								options={{shouldDisplaySymbol: false, maximumFractionDigits: 4}}
+								options={{
+									shouldDisplaySymbol: false,
+									maximumFractionDigits:
+										Number(
+											toNormalizedBN(availableToDeposit, currentVault.token.decimals).normalized
+										) > 1000
+											? 2
+											: 4
+								}}
 							/>
 						</p>
 					</div>

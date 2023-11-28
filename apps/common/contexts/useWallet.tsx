@@ -230,12 +230,14 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 				}
 				if (vaults?.[toAddress(tokenAddress)]) {
 					if (vaults[toAddress(tokenAddress)].version.split('.')?.[0] === '3') {
+						console.log(vaults[toAddress(tokenAddress)], tokenData);
 						cumulatedValueInV3Vaults += tokenData.value + tokenData.stakingValue;
 					} else {
 						cumulatedValueInV2Vaults += tokenData.value + tokenData.stakingValue;
 					}
 				} else if (vaultsMigrations?.[toAddress(tokenAddress)]) {
 					if (vaultsMigrations[toAddress(tokenAddress)].version.split('.')?.[0] === '3') {
+						console.log(vaults[toAddress(tokenAddress)], tokenData);
 						cumulatedValueInV3Vaults += tokenData.value + tokenData.stakingValue;
 					} else {
 						cumulatedValueInV2Vaults += tokenData.value + tokenData.stakingValue;
