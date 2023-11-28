@@ -11,7 +11,7 @@ type TVautListOptions = {
 	panelClassName?: string;
 };
 export function VaultListOptions(props: TVautListOptions): ReactElement {
-	const {shouldHideDust, onSwitchHideDust, shouldHideLowTVLVaults, onSwitchHideLowTVLVaults} = useAppSettings();
+	const {shouldHideDust, onSwitchHideDust} = useAppSettings();
 
 	return (
 		<Popover className={'relative flex'}>
@@ -42,17 +42,6 @@ export function VaultListOptions(props: TVautListOptions): ReactElement {
 										<Switch
 											isEnabled={shouldHideDust}
 											onSwitch={onSwitchHideDust}
-										/>
-									</div>
-
-									<div
-										className={
-											'flex cursor-pointer items-center justify-between p-4 transition-colors hover:bg-neutral-100/40'
-										}>
-										<p className={'text-xs'}>{'Hide low TVL'}</p>
-										<Switch
-											isEnabled={shouldHideLowTVLVaults}
-											onSwitch={onSwitchHideLowTVLVaults}
 										/>
 									</div>
 								</div>
