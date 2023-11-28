@@ -132,11 +132,12 @@ export function useSolverPortals(): TSolverContext {
 			request.current = _request;
 			const {data, error} = await getQuote(_request, zapSlippage);
 			if (!data) {
-				console.error(error?.message);
-				if (error && shouldLogError) {
+				const errorMessage = (error as any)?.response?.data?.message || error?.message;
+				if (errorMessage && shouldLogError) {
+					console.error(errorMessage);
 					toast({
 						type: 'error',
-						content: `Portals.fi zap not possible: ${error?.message}`
+						content: `Portals.fi zap not possible: ${errorMessage}`
 					});
 				}
 				return toNormalizedBN(0);
