@@ -32,7 +32,7 @@ export function VaultDetailsQuickActionsTo(): ReactElement {
 	}
 
 	return (
-		<section className={'flex w-full flex-col space-x-0 md:flex-row md:space-x-4'}>
+		<section className={'grid w-full flex-col gap-0 md:grid-cols-2 md:flex-row md:gap-4'}>
 			<div className={'relative z-10 w-full'}>
 				<div className={'flex flex-col items-baseline justify-between pb-2 pl-1 md:flex-row'}>
 					<p className={'text-base text-neutral-600'}>

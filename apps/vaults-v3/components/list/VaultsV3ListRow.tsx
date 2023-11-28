@@ -395,7 +395,7 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 				/>
 
 				<div className={cl('col-span-5 z-10', 'flex flex-row items-center justify-between')}>
-					<div className={'flex flex-row space-x-6'}>
+					<div className={'flex flex-row gap-6'}>
 						<div className={'mt-2.5 h-8 w-8 rounded-full md:flex'}>
 							<ImageWithFallback
 								src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-32.png`}
@@ -405,11 +405,11 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 							/>
 						</div>
 						<div>
-							<strong className={'mb-1 block text-xl font-black text-neutral-800'}>
+							<strong className={'mb-0 block text-[18px] font-black text-neutral-800 md:mb-1 md:text-xl'}>
 								{currentVault.name}
 							</strong>
-							<p className={'mb-2 block text-neutral-800'}>{currentVault.token.name}</p>
-							<div className={'flex flex-row items-center'}>
+							<p className={'mb-0 block text-neutral-800 md:mb-2'}>{currentVault.token.name}</p>
+							<div className={'hidden flex-row items-center md:flex'}>
 								<VaultChainTag chainID={currentVault.chainID} />
 								<Link
 									href={`${getNetwork(currentVault.chainID)?.defaultBlockExplorer}/address/${
@@ -432,25 +432,25 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 					className={cl(
 						'col-span-7 z-10',
 						'grid grid-cols-2 md:grid-cols-10',
-						'gap-4 md:gap-x-7',
-						'mt-8 md:mt-0'
+						'gap-1 md:gap-x-7',
+						'mt-4 md:mt-0'
 					)}>
 					<div
-						className={'yearn--table-data-section-item md:col-span-2'}
+						className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'}
 						datatype={'number'}>
 						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Estimated APR'}</p>
 						<VaultForwardAPR currentVault={currentVault} />
 					</div>
 
 					<div
-						className={'yearn--table-data-section-item md:col-span-2'}
+						className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'}
 						datatype={'number'}>
 						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Historical APR'}</p>
 						<VaultHistoricalAPR currentVault={currentVault} />
 					</div>
 
 					<div
-						className={'yearn--table-data-section-item md:col-span-2'}
+						className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'}
 						datatype={'number'}>
 						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Available'}</p>
 						<p
@@ -475,17 +475,17 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 					</div>
 
 					<div
-						className={'yearn--table-data-section-item md:col-span-2'}
+						className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'}
 						datatype={'number'}>
 						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Deposited'}</p>
 						<VaultStakedAmount currentVault={currentVault} />
 					</div>
 
 					<div
-						className={'yearn--table-data-section-item md:col-span-2'}
+						className={'yearn--table-data-section-item col-span-2 !mt-0 flex-row md:!mt-4 md:flex-col'}
 						datatype={'number'}>
 						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'TVL'}</p>
-						<div className={'flex flex-col text-right'}>
+						<div className={'flex flex-col pt-8 text-right'}>
 							<p className={'yearn--table-data-section-item-value'}>
 								<RenderAmount
 									value={Number(
@@ -515,6 +515,22 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 							</small>
 						</div>
 					</div>
+				</div>
+
+				<div className={'mt-4 flex flex-row items-center border-t border-neutral-900/20 pt-4 md:hidden'}>
+					<VaultChainTag chainID={currentVault.chainID} />
+					<Link
+						href={`${getNetwork(currentVault.chainID)?.defaultBlockExplorer}/address/${
+							currentVault.address
+						}`}
+						onClick={(event): void => event.stopPropagation()}
+						className={'text-neutral-900/50 transition-opacity hover:text-neutral-900'}
+						target={'_blank'}
+						rel={'noopener noreferrer'}>
+						<div className={'px-2'}>
+							<IconLinkOut className={'inline-block h-4 w-4'} />
+						</div>
+					</Link>
 				</div>
 			</div>
 		</Link>

@@ -60,8 +60,8 @@ function BrandNewVaultCard(): ReactElement {
 			<div className={'relative z-10'}>
 				<h1
 					className={cl(
-						'mb-2 md:mb-10 font-black text-neutral-900',
-						'text-[48px] md:text-[56px] md:leading-[64px] leading-[56px]',
+						'mb-2 md:mb-4 lg:mb-10 font-black text-neutral-900',
+						'text-[48px] lg:text-[56px] lg:leading-[64px] leading-[48px]',
 						'whitespace-break-spaces uppercase'
 					)}>
 					{'A brave new\nworld for Yield'}
@@ -299,7 +299,7 @@ function Index(): ReactElement {
 	return (
 		<div className={'z-50 w-full bg-neutral-100 pt-20'}>
 			<div className={'relative mx-auto w-full max-w-6xl'}>
-				<div className={'absolute inset-x-0 top-0 w-full px-4 pt-2 md:pt-16'}>
+				<div className={'absolute inset-x-0 top-0 w-full px-4 pt-6 md:pt-16'}>
 					<div className={'grid grid-cols-75'}>
 						<V3Card />
 						<BrandNewVaultCard />
@@ -312,7 +312,9 @@ function Index(): ReactElement {
 					'relative pb-8 bg-neutral-0 z-50',
 					'min-h-screen',
 					'transition-transform duration-300',
-					isCollapsed ? 'translate-y-[416px] md:translate-y-[464px]' : 'translate-y-0 md:translate-y-[40px]'
+					isCollapsed
+						? 'translate-y-[354px] md:translate-y-[464px]'
+						: 'translate-y-[24px] md:translate-y-[40px]'
 				)}>
 				<div className={'mx-auto w-full max-w-6xl'}>
 					<div
