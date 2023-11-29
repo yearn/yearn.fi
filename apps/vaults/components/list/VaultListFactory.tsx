@@ -30,7 +30,8 @@ export function VaultListFactory(): ReactElement {
 		onChangeCategories,
 		onChangeChains,
 		onChangeSortDirection,
-		onChangeSortBy
+		onChangeSortBy,
+		onReset
 	} = useQueryArguments({defaultCategories: ALL_VAULTS_FACTORY_CATEGORIES_KEYS});
 	const {activeVaults} = useVaultFilter(categories, chains);
 
@@ -78,8 +79,7 @@ export function VaultListFactory(): ReactElement {
 					currentSearch={search || ''}
 					currentCategories={categories}
 					currentChains={chains}
-					onChangeCategories={onChangeCategories}
-					onChangeChains={onChangeChains}
+					onReset={onReset}
 				/>
 			);
 		}
@@ -94,7 +94,7 @@ export function VaultListFactory(): ReactElement {
 				/>
 			);
 		});
-	}, [categories, chains, isLoadingVaultList, onChangeCategories, onChangeChains, search, sortedVaultsToDisplay]);
+	}, [categories, chains, isLoadingVaultList, onReset, search, sortedVaultsToDisplay]);
 
 	return (
 		<div className={'relative col-span-12 flex w-full flex-col bg-neutral-100'}>

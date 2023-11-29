@@ -148,7 +148,8 @@ function ListOfVaults(): ReactElement {
 		onChangeCategories,
 		onChangeChains,
 		onChangeSortDirection,
-		onChangeSortBy
+		onChangeSortBy,
+		onReset
 	} = useQueryArguments({defaultCategories: ALL_VAULTS_CATEGORIES_KEYS});
 	const {activeVaults, migratableVaults, retiredVaults} = useVaultFilter(categories, chains);
 
@@ -236,8 +237,7 @@ function ListOfVaults(): ReactElement {
 					currentSearch={search || ''}
 					currentCategories={categories}
 					currentChains={chains}
-					onChangeCategories={onChangeCategories}
-					onChangeChains={onChangeChains}
+					onReset={onReset}
 					defaultCategories={ALL_VAULTS_CATEGORIES_KEYS}
 				/>
 			) : (

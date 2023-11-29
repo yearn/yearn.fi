@@ -10,6 +10,7 @@
 -   Bump various packages
 -   Fix SearchBar using uncontrolled input
 -   When searching for vaults in a aggregator vault and the search input give no match, the component was moving to "this vault is a strategy" instead of staying in the "no match" state
+-   Add an `onReset` function in the `useQueryArguments` hook to be able to reset the query arguments to their default values
 
 # 0.1.25 (28/08/2023)
 

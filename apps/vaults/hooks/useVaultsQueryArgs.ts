@@ -19,6 +19,7 @@ type TQueryArgs = {
 	onChangeChains: (value: number[] | null) => void;
 	onChangeSortDirection: (value: TSortDirection | '') => void;
 	onChangeSortBy: (value: TPossibleSortBy | '') => void;
+	onReset: () => void;
 };
 function useQueryArguments({defaultCategories}: {defaultCategories?: string[]}): TQueryArgs {
 	const allChains = useSupportedChains().map((chain): number => chain.id);
@@ -234,6 +235,26 @@ function useQueryArguments({defaultCategories}: {defaultCategories?: string[]}):
 				return;
 			}
 			queryArgs.sortBy = value;
+			router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
+		},
+		onReset: (): void => {
+			set_search(null);
+			set_categories(defaultCategories || []);
+			set_chains(allChains || []);
+			set_sortDirection('desc');
+			set_sortBy('featuringScore');
+			const queryArgs: TDict<string | string[] | undefined> = {};
+			for (const key in router.query) {
+				if (
+					key !== 'search' &&
+					key !== 'categories' &&
+					key !== 'chains' &&
+					key !== 'sortDirection' &&
+					key !== 'sortBy'
+				) {
+					queryArgs[key] = router.query[key];
+				}
+			}
 			router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
 		}
 	};

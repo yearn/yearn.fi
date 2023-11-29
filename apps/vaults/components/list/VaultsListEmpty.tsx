@@ -1,4 +1,4 @@
-import {ALL_CHAINS, ALL_VAULTS_CATEGORIES_KEYS} from '@vaults/constants';
+import {ALL_VAULTS_CATEGORIES_KEYS} from '@vaults/constants';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 
@@ -10,8 +10,7 @@ type TVaultListEmpty = {
 	currentSearch: string;
 	currentCategories: string[] | null;
 	currentChains: number[] | null;
-	onChangeCategories: (value: string[] | null) => void;
-	onChangeChains: (value: number[] | null) => void;
+	onReset: () => void;
 	isLoading: boolean;
 	defaultCategories?: string[];
 };
@@ -20,8 +19,7 @@ export function VaultsListEmpty({
 	currentSearch,
 	currentCategories,
 	currentChains,
-	onChangeCategories,
-	onChangeChains,
+	onReset,
 	isLoading,
 	defaultCategories = ALL_VAULTS_CATEGORIES_KEYS
 }: TVaultListEmpty): ReactElement {
@@ -69,10 +67,7 @@ export function VaultsListEmpty({
 						</p>
 						<Button
 							className={'w-full md:w-48'}
-							onClick={(): void => {
-								onChangeCategories(defaultCategories);
-								onChangeChains(ALL_CHAINS);
-							}}>
+							onClick={onReset}>
 							{'Search all vaults'}
 						</Button>
 					</>
@@ -83,10 +78,7 @@ export function VaultsListEmpty({
 						</p>
 						<Button
 							className={'w-full md:w-48'}
-							onClick={(): void => {
-								onChangeCategories(defaultCategories);
-								onChangeChains(ALL_CHAINS);
-							}}>
+							onClick={onReset}>
 							{'Search all vaults'}
 						</Button>
 					</>
@@ -105,10 +97,7 @@ export function VaultsListEmpty({
 						}>{`Please, select a chain. At least one, just one.`}</p>
 					<Button
 						className={'w-full md:w-48'}
-						onClick={(): void => {
-							onChangeCategories(defaultCategories);
-							onChangeChains(ALL_CHAINS);
-						}}>
+						onClick={onReset}>
 						{'Search all vaults'}
 					</Button>
 				</>
@@ -135,8 +124,7 @@ export function VaultsListEmptyFactory({
 	sortedVaultsToDisplay,
 	currentCategories,
 	currentChains,
-	onChangeCategories,
-	onChangeChains,
+	onReset,
 	isLoading
 }: TVaultListEmpty): ReactElement {
 	if (isLoading && isZero(sortedVaultsToDisplay.length)) {
@@ -189,10 +177,7 @@ export function VaultsListEmptyFactory({
 						}>{`Please, select a chain. At least one, just one.`}</p>
 					<Button
 						className={'w-full md:w-48'}
-						onClick={(): void => {
-							onChangeCategories(ALL_VAULTS_CATEGORIES_KEYS);
-							onChangeChains(ALL_CHAINS);
-						}}>
+						onClick={onReset}>
 						{'Search all vaults'}
 					</Button>
 				</>

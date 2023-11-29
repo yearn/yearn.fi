@@ -178,7 +178,8 @@ function ListOfVaults(): ReactElement {
 		onChangeCategories,
 		onChangeChains,
 		onChangeSortDirection,
-		onChangeSortBy
+		onChangeSortBy,
+		onReset
 	} = useQueryArguments({defaultCategories: ALL_VAULTSV3_CATEGORIES_KEYS});
 	const {activeVaults} = useVaultFilter(categories, chains, true);
 
@@ -224,8 +225,7 @@ function ListOfVaults(): ReactElement {
 					currentSearch={search || ''}
 					currentCategories={categories}
 					currentChains={chains}
-					onChangeCategories={onChangeCategories}
-					onChangeChains={onChangeChains}
+					onReset={onReset}
 					defaultCategories={ALL_VAULTSV3_CATEGORIES_KEYS}
 				/>
 			);
@@ -253,7 +253,7 @@ function ListOfVaults(): ReactElement {
 				/>
 			);
 		});
-	}, [categories, chains, isLoadingVaultList, onChangeCategories, onChangeChains, search, sortedVaultsToDisplay]);
+	}, [categories, chains, isLoadingVaultList, onReset, search, sortedVaultsToDisplay]);
 
 	return (
 		<Fragment>
