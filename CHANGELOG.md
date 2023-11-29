@@ -7,6 +7,7 @@
 -   Chore: Add the Changelog commit hook to enforce the changelog update on commit
 -   Deprecate Wido due to project end-of-life
 -   Bump Portals solver to V2 version
+-   Bump various packages
 
 # 0.1.25 (28/08/2023)
 
