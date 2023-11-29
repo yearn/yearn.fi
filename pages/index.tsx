@@ -143,8 +143,8 @@ function AppBox({app}: {app: (typeof apps)[0]}): ReactElement {
 						'relative flex h-full w-full cursor-pointer flex-col items-center overflow-hidden rounded-3xl border border-neutral-300/0 p-6'
 					}>
 					<div className={'z-10 flex w-full flex-col items-center'}>
-						<V3Mask className={'-my-10 w-42'} />
-						<div className={'pt-2 text-center'}>
+						<V3Mask className={'h-32'} />
+						<div className={'pt-4 text-center'}>
 							<p
 								className={cl(
 									'font-black text-neutral-900 text-lg',

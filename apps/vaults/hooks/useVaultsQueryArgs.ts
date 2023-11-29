@@ -4,6 +4,7 @@ import {useRouter} from 'next/router';
 import {useDeepCompareEffect, useMountEffect} from '@react-hookz/web';
 import {useSupportedChains} from '@common/hooks/useChains';
 
+import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TSortDirection} from '@common/types/types';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 
@@ -16,8 +17,8 @@ type TQueryArgs = {
 	onSearch: (value: string) => void;
 	onChangeCategories: (value: string[] | null) => void;
 	onChangeChains: (value: number[] | null) => void;
-	onChangeSortDirection: (value: TSortDirection) => void;
-	onChangeSortBy: (value: TPossibleSortBy) => void;
+	onChangeSortDirection: (value: TSortDirection | '') => void;
+	onChangeSortBy: (value: TPossibleSortBy | '') => void;
 };
 function useQueryArguments({defaultCategories}: {defaultCategories?: string[]}): TQueryArgs {
 	const allChains = useSupportedChains().map((chain): number => chain.id);
@@ -25,7 +26,7 @@ function useQueryArguments({defaultCategories}: {defaultCategories?: string[]}):
 	const router = useRouter();
 	const [search, set_search] = useState<string | null>(null);
 	const [categories, set_categories] = useState<string[] | null>(defaultCategories || []);
-	const [chains, set_chains] = useState<number[] | null>(allChains);
+	const [chains, set_chains] = useState<number[] | null>(allChains || []);
 	const [sortDirection, set_sortDirection] = useState<string | null>(null);
 	const [sortBy, set_sortBy] = useState<string | null>(null);
 
@@ -46,6 +47,17 @@ function useQueryArguments({defaultCategories}: {defaultCategories?: string[]}):
 					set_categories(defaultCategories || []);
 					return;
 				}
+				if (categoriesParamArray.length === defaultCategories?.length) {
+					const isEqual = categoriesParamArray.every((c): boolean => defaultCategories?.includes(c));
+					if (isEqual) {
+						set_categories(defaultCategories);
+						return;
+					}
+				}
+				if (categoriesParamArray[0] === 'none') {
+					set_categories([]);
+					return;
+				}
 				set_categories(categoriesParamArray);
 			} else {
 				set_categories(defaultCategories || []);
@@ -56,6 +68,17 @@ function useQueryArguments({defaultCategories}: {defaultCategories?: string[]}):
 				const chainsParamArray = chainsParam?.split('_') || [];
 				if (chainsParamArray.length === 0) {
 					set_chains(allChains);
+					return;
+				}
+				if (chainsParamArray.length === allChains.length) {
+					const isEqual = chainsParamArray.every((c): boolean => allChains.includes(Number(c)));
+					if (isEqual) {
+						set_chains(allChains);
+						return;
+					}
+				}
+				if (chainsParamArray[0] === '0') {
+					set_chains([]);
 					return;
 				}
 				set_chains(chainsParamArray.map((chain): number => Number(chain)));
@@ -93,76 +116,125 @@ function useQueryArguments({defaultCategories}: {defaultCategories?: string[]}):
 
 	return {
 		search,
-		categories: (categories || defaultCategories || []) as string[],
-		chains: (chains || allChains) as number[],
+		categories: (categories || []) as string[],
+		chains: (chains || []) as number[],
 		sortDirection: (sortDirection || 'desc') as TSortDirection,
 		sortBy: (sortBy || 'featuringScore') as TPossibleSortBy,
 		onSearch: (value): void => {
 			set_search(value);
-			const currentURL = new URL(window.location.href);
+			const queryArgs: TDict<string | string[] | undefined> = {};
+			for (const key in router.query) {
+				if (key !== 'search') {
+					queryArgs[key] = router.query[key];
+				}
+			}
+
 			if (value === '') {
-				currentURL.searchParams.delete('search');
-				router.replace(currentURL, {search: currentURL.search}, {shallow: true});
+				queryArgs.search = undefined;
+				delete queryArgs.search;
+				router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
 				return;
 			}
-			currentURL.searchParams.set('search', value);
-			router.replace(currentURL, {search: currentURL.search}, {shallow: true});
+			queryArgs.search = value;
+			router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
 		},
 		onChangeCategories: (value): void => {
-			if (value === null) {
-				const currentURL = new URL(window.location.href);
-				currentURL.searchParams.set('categories', 'none');
-				router.replace(currentURL, {search: currentURL.search}, {shallow: true});
-				return;
+			const queryArgs: TDict<string | string[] | undefined> = {};
+			for (const key in router.query) {
+				if (key !== 'categories') {
+					queryArgs[key] = router.query[key];
+				}
 			}
+
 			set_categories(value);
-			const currentURL = new URL(window.location.href);
-			if (value.length === 0) {
-				currentURL.searchParams.delete('categories');
-				router.replace(currentURL, {search: currentURL.search}, {shallow: true});
+			if (value === null) {
+				queryArgs.categories = 'none';
+				router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
 				return;
 			}
-			currentURL.searchParams.set('categories', value.join('_'));
-			router.replace(currentURL, {search: currentURL.search}, {shallow: true});
+			if (value.length === 0) {
+				queryArgs.categories = 'none';
+				router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
+				return;
+			}
+			if (value.length === defaultCategories?.length) {
+				const isEqual = value.every((category): boolean => defaultCategories?.includes(category));
+				if (isEqual) {
+					queryArgs.categories = undefined;
+					delete queryArgs.categories;
+					router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
+
+					return;
+				}
+			}
+			queryArgs.categories = value.join('_');
+			router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
 		},
 		onChangeChains: (value): void => {
-			if (value === null) {
-				const currentURL = new URL(window.location.href);
-				currentURL.searchParams.set('chains', '0');
-				router.replace(currentURL, {search: currentURL.search}, {shallow: true});
-				return;
+			const queryArgs: TDict<string | string[] | undefined> = {};
+			for (const key in router.query) {
+				if (key !== 'chains') {
+					queryArgs[key] = router.query[key];
+				}
 			}
 			set_chains(value);
-			const currentURL = new URL(window.location.href);
-			if (value.length === 0) {
-				currentURL.searchParams.delete('chains');
-				router.replace(currentURL, {search: currentURL.search}, {shallow: true});
+			if (value === null) {
+				queryArgs.chains = '0';
+				router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
 				return;
 			}
-			currentURL.searchParams.set('chains', value.join('_'));
-			router.replace(currentURL, {search: currentURL.search}, {shallow: true});
+			if (value.length === 0) {
+				queryArgs.chains = '0';
+				router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
+				return;
+			}
+			if (value.length === allChains.length) {
+				const isEqual = value.every((chain): boolean => allChains.includes(chain));
+				if (isEqual) {
+					queryArgs.chains = undefined;
+					delete queryArgs.chains;
+					router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
+					return;
+				}
+			}
+			queryArgs.chains = value.join('_');
+			router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
 		},
 		onChangeSortDirection: (value): void => {
 			set_sortDirection(value);
-			const currentURL = new URL(window.location.href);
+			const queryArgs: TDict<string | string[] | undefined> = {};
+			for (const key in router.query) {
+				if (key !== 'sortDirection') {
+					queryArgs[key] = router.query[key];
+				}
+			}
+
 			if (value === '') {
-				currentURL.searchParams.delete('sortDirection');
-				router.replace(currentURL, {search: currentURL.search}, {shallow: true});
+				queryArgs.sortDirection = undefined;
+				delete queryArgs.sortDirection;
+				router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
 				return;
 			}
-			currentURL.searchParams.set('sortDirection', value);
-			router.replace(currentURL, {search: currentURL.search}, {shallow: true});
+			queryArgs.sortDirection = value;
+			router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
 		},
 		onChangeSortBy: (value): void => {
 			set_sortBy(value);
-			const currentURL = new URL(window.location.href);
-			if (value === undefined) {
-				currentURL.searchParams.delete('sortBy');
-				router.replace(currentURL, {search: currentURL.search}, {shallow: true});
+			const queryArgs: TDict<string | string[] | undefined> = {};
+			for (const key in router.query) {
+				if (key !== 'sortBy') {
+					queryArgs[key] = router.query[key];
+				}
+			}
+
+			if (value === '') {
+				queryArgs.sortBy = undefined;
+				delete queryArgs.sortBy;
+				router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
 				return;
 			}
-			currentURL.searchParams.set('sortBy', value);
-			router.replace(currentURL, {search: currentURL.search}, {shallow: true});
+			queryArgs.sortBy = value;
+			router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
 		}
 	};
 }

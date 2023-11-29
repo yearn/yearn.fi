@@ -2,7 +2,6 @@ import {createContext, memo, useCallback, useContext, useMemo, useState} from 'r
 import {useDeepCompareEffect} from '@react-hookz/web';
 import {useUI} from '@yearn-finance/web-lib/contexts/useUI';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {useChainID} from '@yearn-finance/web-lib/hooks/useChainID';
 import {isZeroAddress, toAddress, zeroAddress} from '@yearn-finance/web-lib/utils/address';
 import {type TNormalizedBN, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {useWallet} from '@common/contexts/useWallet';
@@ -58,8 +57,7 @@ export const WalletForZapAppContextApp = memo(function WalletForZapAppContextApp
 }): ReactElement {
 	const {address} = useWeb3();
 	const {refresh} = useWallet();
-	const {safeChainID} = useChainID();
-	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: safeChainID});
+	const {yDaemonBaseUri: yDaemonBaseUriWithoutChain} = useYDaemonBaseURI();
 	const {onLoadStart, onLoadDone} = useUI();
 	const [zapTokens, set_zapTokens] = useState<TChainTokens>({});
 
@@ -67,7 +65,7 @@ export const WalletForZapAppContextApp = memo(function WalletForZapAppContextApp
 	 **	Fetching, for this user, the list of tokens available for zaps
 	 ***************************************************************************/
 	const {data: tokensList} = useFetch<TYDaemonTokenListBalances>({
-		endpoint: address ? `${yDaemonBaseUri}/tokenlistbalances/${address}` : null,
+		endpoint: address ? `${yDaemonBaseUriWithoutChain}/balances/${address}` : null,
 		schema: yDaemonTokenListBalances
 	});
 
