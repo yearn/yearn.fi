@@ -25,7 +25,7 @@ export function Filters({
 	onSearch,
 	onChangeChains
 }: TListHero): ReactElement {
-	const chainOptions = useChainOptions(chains);
+	const chainOptions = useChainOptions(chains).filter((option): boolean => option.value === 137);
 	const categoryOptions = useMemo((): TMultiSelectOptionProps[] => {
 		const options: TMultiSelectOptionProps[] = Object.entries(ALL_VAULTSV3_CATEGORIES).map(
 			([key, value]): TMultiSelectOptionProps => ({
