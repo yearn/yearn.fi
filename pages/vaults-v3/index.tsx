@@ -60,22 +60,17 @@ function BrandNewVaultCard(): ReactElement {
 			<div className={'relative z-10'}>
 				<h1
 					className={cl(
-						'mb-2 md:mb-10 font-black text-neutral-900',
-						'text-[48px] md:text-[56px] md:leading-[64px] leading-[56px]',
+						'mb-2 md:mb-4 lg:mb-10 font-black text-neutral-900',
+						'text-[48px] lg:text-[56px] lg:leading-[64px] leading-[48px]',
 						'whitespace-break-spaces uppercase'
 					)}>
-					{'A brave new\nworld for Yield.'}
+					{'A brave new\nworld for Yield'}
 				</h1>
 				<p className={'mb-4 whitespace-break-spaces text-base text-[#F2B7D0] md:text-lg'}>
 					{
 						'Yearn v3 is a new yield paradigm offering better automation,\ncomposability and flexibility. Enjoy!'
 					}
 				</p>
-				<div>
-					<button className={'rounded-3xl bg-white px-12 py-2 font-bold text-[#CE1364]'}>
-						{'Explore more'}
-					</button>
-				</div>
 			</div>
 			<Background />
 		</div>
@@ -87,9 +82,9 @@ function V3Card(): ReactElement {
 			<div
 				className={cl(
 					'flex h-full w-full flex-col items-center justify-center',
-					'gap-y-0 rounded-3xl bg-neutral-200 md:gap-y-6 p-8'
+					'gap-y-0 rounded-3xl bg-neutral-200 md:gap-y-6 p-2'
 				)}>
-				<V3Mask className={'h-full w-full'} />
+				<V3Mask className={'h-[90%] w-[90%]'} />
 			</div>
 		</div>
 	);
@@ -97,13 +92,7 @@ function V3Card(): ReactElement {
 
 function PortfolioCard(): ReactElement {
 	const {cumulatedValueInV3Vaults} = useWallet();
-	const {earned} = useYearn();
 	const {options, isActive, address, openLoginModal, onSwitchChain} = useWeb3();
-
-	const formatedYouEarned = useMemo((): string => {
-		const amount = (earned?.totalUnrealizedGainsUSD || 0) > 0 ? earned?.totalUnrealizedGainsUSD || 0 : 0;
-		return formatAmount(amount) ?? '';
-	}, [earned?.totalUnrealizedGainsUSD]);
 
 	const formatedYouHave = useMemo((): string => {
 		return formatAmount(cumulatedValueInV3Vaults || 0) ?? '';
@@ -166,14 +155,12 @@ function PortfolioCard(): ReactElement {
 						{'Earnings'}
 						<InfoTooltip
 							text={
-								'Your earnings are estimated based on available onchain data and some nerdy maths stuff.'
+								'Your earnings are estimated based on available onchain data and some nerdy math stuff.'
 							}
 							size={'sm'}
 						/>
 					</p>
-					<b className={'font-number text-xl text-neutral-900 md:text-3xl'}>
-						<Counter value={Number(formatedYouEarned)} />
-					</b>
+					<b className={'font-number text-xl text-neutral-900 md:text-3xl'}>{'soon™️'}</b>
 				</div>
 			</div>
 		</div>
@@ -239,10 +226,23 @@ function ListOfVaults(): ReactElement {
 					currentChains={chains}
 					onChangeCategories={onChangeCategories}
 					onChangeChains={onChangeChains}
+					defaultCategories={ALL_VAULTSV3_CATEGORIES_KEYS}
 				/>
 			);
 		}
-		return filteredByChains.map((vault): ReactNode => {
+		const sortedByKind = filteredByChains.sort((a, b): number => {
+			if (a.kind === b.kind) {
+				return 0;
+			}
+			if (a.kind === 'Multi Strategies') {
+				return -1;
+			}
+			if (b.kind === 'Single Strategy') {
+				return 1;
+			}
+			return 0;
+		});
+		return sortedByKind.map((vault): ReactNode => {
 			if (!vault) {
 				return null;
 			}
@@ -299,7 +299,7 @@ function Index(): ReactElement {
 	return (
 		<div className={'z-50 w-full bg-neutral-100 pt-20'}>
 			<div className={'relative mx-auto w-full max-w-6xl'}>
-				<div className={'absolute inset-x-0 top-0 w-full px-4 pt-2 md:pt-16'}>
+				<div className={'absolute inset-x-0 top-0 w-full px-4 pt-6 md:pt-16'}>
 					<div className={'grid grid-cols-75'}>
 						<V3Card />
 						<BrandNewVaultCard />
@@ -312,7 +312,9 @@ function Index(): ReactElement {
 					'relative pb-8 bg-neutral-0 z-50',
 					'min-h-screen',
 					'transition-transform duration-300',
-					isCollapsed ? 'translate-y-[416px] md:translate-y-[564px]' : 'translate-y-0'
+					isCollapsed
+						? 'translate-y-[354px] md:translate-y-[464px]'
+						: 'translate-y-[24px] md:translate-y-[40px]'
 				)}>
 				<div className={'mx-auto w-full max-w-6xl'}>
 					<div
@@ -358,7 +360,7 @@ function Index(): ReactElement {
 							<b className={'text-lg'}>{'Ape carefully anon!'}</b>
 							<p>
 								{
-									'V3 is truly flexible yield protocol offering everything from the usual Up Only Vaults to all new risky degen strategies.'
+									'V3 is a truly flexible yield protocol offering everything from the usual Up Only Vaults to all new risky degen strategies.'
 								}
 							</p>
 						</div>

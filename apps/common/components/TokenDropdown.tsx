@@ -105,7 +105,7 @@ export function Dropdown(props: TDropdownProps): ReactElement {
 						onClick={(): void => set_isOpen((o: boolean): boolean => !o)}
 						className={cl(
 							props.className,
-							'flex h-10 w-full items-center justify-between bg-neutral-0 p-2 text-base text-neutral-900 md:w-56 md:px-3'
+							'flex h-10 w-full items-center justify-between bg-neutral-0 p-2 text-base text-neutral-900 md:px-3'
 						)}>
 						<div className={'relative w-full'}>
 							<div className={'flex w-full items-center'}>

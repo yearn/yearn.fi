@@ -13,6 +13,7 @@ type TVaultListEmpty = {
 	onChangeCategories: (value: string[] | null) => void;
 	onChangeChains: (value: number[] | null) => void;
 	isLoading: boolean;
+	defaultCategories?: string[];
 };
 export function VaultsListEmpty({
 	sortedVaultsToDisplay,
@@ -21,7 +22,8 @@ export function VaultsListEmpty({
 	currentChains,
 	onChangeCategories,
 	onChangeChains,
-	isLoading
+	isLoading,
+	defaultCategories = ALL_VAULTS_CATEGORIES_KEYS
 }: TVaultListEmpty): ReactElement {
 	if (isLoading && isZero(sortedVaultsToDisplay.length)) {
 		return (
@@ -55,8 +57,25 @@ export function VaultsListEmpty({
 		return (
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center gap-4 px-10 py-2 md:w-3/4'}>
 				<b className={'text-center text-lg'}>{'No data, reeeeeeeeeeee'}</b>
-				{currentCategories?.length === ALL_VAULTS_CATEGORIES_KEYS.length ? (
+				{(currentCategories?.length || 0) >= defaultCategories.length && currentSearch !== '' ? (
 					<p className={'text-center text-neutral-600'}>{`The vault "${currentSearch}" does not exist`}</p>
+				) : (currentCategories?.length || 0) < defaultCategories.length && currentSearch !== '' ? (
+					<>
+						<p className={'text-center text-neutral-600'}>
+							{`The vault "${currentSearch}" does not exist.`}
+						</p>
+						<p className={'text-center text-neutral-600'}>
+							{`It might be because you of your filters, or because there’s a rodent infestation in our server room. You check the filters, we’ll check the rodents. Deal?`}
+						</p>
+						<Button
+							className={'w-full md:w-48'}
+							onClick={(): void => {
+								onChangeCategories(defaultCategories);
+								onChangeChains(ALL_CHAINS);
+							}}>
+							{'Search all vaults'}
+						</Button>
+					</>
 				) : (
 					<>
 						<p className={'text-center text-neutral-600'}>
@@ -65,7 +84,7 @@ export function VaultsListEmpty({
 						<Button
 							className={'w-full md:w-48'}
 							onClick={(): void => {
-								onChangeCategories(ALL_VAULTS_CATEGORIES_KEYS);
+								onChangeCategories(defaultCategories);
 								onChangeChains(ALL_CHAINS);
 							}}>
 							{'Search all vaults'}
@@ -87,7 +106,7 @@ export function VaultsListEmpty({
 					<Button
 						className={'w-full md:w-48'}
 						onClick={(): void => {
-							onChangeCategories(ALL_VAULTS_CATEGORIES_KEYS);
+							onChangeCategories(defaultCategories);
 							onChangeChains(ALL_CHAINS);
 						}}>
 						{'Search all vaults'}

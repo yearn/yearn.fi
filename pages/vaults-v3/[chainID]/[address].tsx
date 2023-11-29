@@ -55,7 +55,7 @@ function Index(): ReactElement | null {
 			}
 			refresh(tokensToRefresh);
 		}
-	}, [currentVault?.address, currentVault?.token.address, address, isActive, refresh, currentVault?.chainID]);
+	}, [currentVault?.address, currentVault?.token?.address, address, isActive, refresh, currentVault?.chainID]);
 
 	if (isLoadingVault || !router.query.address) {
 		return (
@@ -122,7 +122,7 @@ function Index(): ReactElement | null {
 						)}>
 						<ImageWithFallback
 							className={'h-10 w-10 md:h-12 md:w-12'}
-							src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.address}/logo-128.png`}
+							src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-128.png`}
 							alt={''}
 							smWidth={40}
 							smHeight={40}

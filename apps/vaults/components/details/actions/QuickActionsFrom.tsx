@@ -79,7 +79,7 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 					fallback={renderMultipleOptionsFallback()}>
 					<div
 						className={
-							'flex h-10 w-full items-center justify-between bg-neutral-300 px-2 text-base text-neutral-900 md:w-56 md:px-3'
+							'flex h-10 w-full items-center justify-between bg-neutral-300 px-2 text-base text-neutral-900 md:px-3'
 						}>
 						<div className={'relative flex flex-row items-center truncate'}>
 							<div className={'h-6 w-6 flex-none rounded-full'}>{selectedFromIcon}</div>

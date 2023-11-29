@@ -70,6 +70,14 @@ export const yDaemonVaultSchema = z.object({
 		.catch('Legacy'),
 	symbol: z.string(),
 	name: z.string(),
+	description: z
+		.string()
+		.default(
+			'Sorry, we don\'t have a description for this asset right now. But did you know the correct word for a blob of toothpaste is a "nurdle". Fascinating! We\'ll work on updating the asset description, but at least you learnt something interesting. Catch ya later nurdles.'
+		)
+		.catch(
+			'Sorry, we don\'t have a description for this asset right now. But did you know the correct word for a blob of toothpaste is a "nurdle". Fascinating! We\'ll work on updating the asset description, but at least you learnt something interesting. Catch ya later nurdles.'
+		),
 	category: z
 		.literal('Curve')
 		.or(z.literal('Volatile'))

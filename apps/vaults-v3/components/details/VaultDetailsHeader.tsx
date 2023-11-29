@@ -1,6 +1,7 @@
 import {useMemo} from 'react';
 import {useContractRead} from 'wagmi';
 import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
+import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatUSD} from '@yearn-finance/web-lib/utils/format.number';
@@ -60,7 +61,7 @@ function VaultAPR({apr}: {apr: TYDaemonVault['apr']}): ReactElement {
 				<span className={'tooltip'}>
 					<div className={'flex flex-row items-center space-x-2'}>
 						<div>
-							{'Est. APR - '}
+							{'Est. APR: '}
 							<RenderAmount
 								value={apr.forwardAPR.netAPR + apr.extra.stakingRewardsAPR}
 								symbol={'percent'}
@@ -84,11 +85,15 @@ function VaultAPR({apr}: {apr: TYDaemonVault['apr']}): ReactElement {
 					</span>
 				</span>
 			}>
-			<RenderAmount
-				value={apr?.netAPR + apr.extra.stakingRewardsAPR}
-				symbol={'percent'}
-				decimals={6}
-			/>
+			<Renderable
+				shouldRender={!apr?.type.includes('new')}
+				fallback={'New'}>
+				<RenderAmount
+					value={apr?.netAPR + apr.extra.stakingRewardsAPR}
+					symbol={'percent'}
+					decimals={6}
+				/>
+			</Renderable>
 		</VaultHeaderLineItem>
 	);
 }

@@ -3,8 +3,6 @@ import {useConnect} from 'wagmi';
 import {useCustomCompareMemo, useDeepCompareMemo} from '@react-hookz/web';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 
-import {useWhyDidYouUpdate} from './useWhyDidYouUpdate';
-
 import type {Connector} from 'wagmi';
 import type {TMultiSelectOptionProps} from '@common/components/MultiSelectDropdown';
 import type {Chain} from '@wagmi/chains';
@@ -51,8 +49,6 @@ export function useChainOptions(chains: number[] | null): TMultiSelectOptionProp
 		}
 		return _options;
 	}, [injectedChains, chains]);
-
-	useWhyDidYouUpdate('useChainOptions', {chains, injectedChains});
 
 	return options;
 }

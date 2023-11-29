@@ -58,7 +58,7 @@
 	}
 
 	.yearn--header {
-		@apply !mb-0;
+		@apply !mb-0 !z-[99999];
 	}
 	.yearn--button {
 		&[data-variant='v3'] {
