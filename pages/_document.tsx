@@ -7,8 +7,21 @@ const modeScript = `
 let darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
 updateMode();
-darkModeMediaQuery.addEventListener('change', updateModeWithoutTransitions);
-window.addEventListener('storage', updateModeWithoutTransitions);
+darkModeMediaQuery.addEventListener('change', updateMode);
+window.addEventListener('storage', updateMode);
+window.addEventListener('beforeunload', updateMode);
+
+const observeUrlChange = () => {
+  let oldHref = document.location.href;
+  const body = document.querySelector("body");
+  const observer = new MutationObserver(mutations => {
+    if (oldHref !== document.location.href) {
+      oldHref = document.location.href;
+      updateMode();
+    }
+  });
+  observer.observe(body, { childList: true, subtree: true });
+};
 
 function updateMode() {
 	let isSystemDarkMode = darkModeMediaQuery.matches;
@@ -30,10 +43,7 @@ function updateMode() {
 		delete window.localStorage.isDarkMode;
 	}
 }
-
-function updateModeWithoutTransitions() {
-	updateMode();
-}
+window.onload = observeUrlChange;
 `;
 
 class MyDocument extends Document {

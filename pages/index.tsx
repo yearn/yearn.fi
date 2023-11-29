@@ -1,6 +1,6 @@
 import {useEffect, useRef} from 'react';
 import Link from 'next/link';
-import {motion} from 'framer-motion';
+import {AnimatedGradientBackgroundForV3} from '@vaults-v3/components/AnimatedGradientBackground';
 import {V3Mask} from '@vaults-v3/Mark';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
@@ -116,20 +116,6 @@ const apps = [
 		)
 	}
 ];
-function AnimatedGradientBackgroundForV3(): ReactElement {
-	return (
-		<motion.div
-			transition={{duration: 10, delay: 0, repeat: Infinity, ease: 'linear'}}
-			animate={{
-				background: [
-					`linear-gradient(0deg, #D21162 24.91%, #2C3DA6 99.66%)`,
-					`linear-gradient(360deg, #D21162 24.91%, #2C3DA6 99.66%)`
-				]
-			}}
-			className={cl('absolute inset-0', 'pointer-events-none')}
-		/>
-	);
-}
 function AppBox({app}: {app: (typeof apps)[0]}): ReactElement {
 	if (app.title === 'V3') {
 		return (

@@ -1,4 +1,4 @@
-import React, {Fragment, memo, useCallback, useEffect} from 'react';
+import React, {Fragment, memo} from 'react';
 import localFont from 'next/font/local';
 import {usePathname} from 'next/navigation';
 import {type NextRouter, useRouter} from 'next/router';
@@ -45,44 +45,6 @@ const aeonik = localFont({
 	]
 });
 
-function useCurrentTheme({name}: {name: string}): void {
-	const switchToPreferedColorScheme = useCallback((): void => {
-		const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-		const isSystemDarkMode = darkModeMediaQuery.matches;
-		const isDarkMode =
-			window.localStorage.isDarkMode === 'true' || (!('isDarkMode' in window.localStorage) && isSystemDarkMode);
-		const isV3 = window.location.pathname.includes('vaults-v3');
-
-		if (isV3) {
-			document.documentElement.classList.add('v3');
-			document.documentElement.classList.remove('dark');
-		} else if (isDarkMode) {
-			document.documentElement.classList.add('dark');
-			document.documentElement.classList.remove('v3');
-		} else {
-			document.documentElement.classList.remove('v3');
-			document.documentElement.classList.remove('dark');
-		}
-
-		if (isDarkMode === isSystemDarkMode) {
-			delete window.localStorage.isDarkMode;
-		}
-	}, []);
-
-	useEffect((): void => {
-		//whevener we reach this page and `name === v3`, add the `.v3` css tag to the root element (html).
-		// otherwise, remove it.
-		if (name === 'V3') {
-			document.documentElement.classList.remove('dark');
-			document.documentElement.classList.add('v3');
-		} else {
-			if (document.documentElement.classList.contains('v3')) {
-				switchToPreferedColorScheme();
-			}
-		}
-	}, [name, switchToPreferedColorScheme]);
-}
-
 /** 🔵 - Yearn Finance ***************************************************************************
  ** The 'WithLayout' function is a React functional component that returns a ReactElement. It is used
  ** to wrap the current page component and provide layout for the page.
@@ -107,8 +69,6 @@ const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 	const getLayout = (Component as TGetLayout).getLayout || ((page: ReactElement): ReactElement => page);
 	const {value: shouldHidePopover} = useLocalStorageValue<boolean>('yearn.fi/feedback-popover');
 	const {name} = useCurrentApp(router);
-
-	useCurrentTheme({name});
 
 	return (
 		<>

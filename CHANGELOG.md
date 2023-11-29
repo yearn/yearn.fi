@@ -15,6 +15,7 @@
 -   On V3, we only display Polygon for now, as the V3 vaults are polygon only
 -   Add Card for V3 on the index page
 -   Minor CSS fixes on TVL display on Mobile for V3
+-   Add the V3 line in the popover menu & fix some hook issue around the V3 color scheme
 
 # 0.1.25 (28/08/2023)
 

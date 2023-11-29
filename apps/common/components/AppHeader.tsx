@@ -4,8 +4,10 @@ import {useRouter} from 'next/router';
 import {AnimatePresence} from 'framer-motion';
 import {Popover, Transition} from '@headlessui/react';
 import {VaultsHeader} from '@vaults/components/header/VaultsHeader';
+import {V3Mask} from '@vaults-v3/Mark';
 import {VeYfiHeader} from '@veYFI/components/header/VeYfiHeader';
 import {Header} from '@yearn-finance/web-lib/components/Header';
+import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {useMenu} from '@common/contexts/useMenu';
 import {useCurrentApp} from '@common/hooks/useCurrentApp';
 import {LogoYearn} from '@common/icons/LogoYearn';
@@ -79,6 +81,35 @@ function LogoPopover(): ReactElement {
 							{[...Object.values(APPS)]
 								.filter(({isDisabled}): boolean => !isDisabled)
 								.map(({name, href, icon}): ReactElement => {
+									if (name === 'V3') {
+										return (
+											<Link
+												prefetch={false}
+												key={name}
+												href={href}
+												className={'col-span-3'}
+												onClick={(): void => set_isShowing(false)}>
+												<div
+													className={cl(
+														'relative flex h-full w-full cursor-pointer flex-col items-center overflow-hidden transition-all',
+														'bg-[#22206a]'
+													)}>
+													<div className={'z-10 flex w-full flex-col items-center p-6'}>
+														<V3Mask className={'h-16'} />
+														<div className={'pt-2 text-center'}>
+															<p
+																className={cl(
+																	'font-black text-neutral-900 text-sm',
+																	'whitespace-break-spaces uppercase'
+																)}>
+																{`Discover brand new vaults`}
+															</p>
+														</div>
+													</div>
+												</div>
+											</Link>
+										);
+									}
 									return (
 										<Link
 											prefetch={false}
