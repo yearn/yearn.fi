@@ -2,7 +2,9 @@
 
 -   Release the V3 vaults
 -   Release the multichain config
--   Fix the zap balances fetching to use the multichain endpoint rather than the currently connected one
+-   Fix: The zap balances fetching to use the multichain endpoint rather than the currently connected one
+-   Fix: On some 404 pages, the error message was positioned incorrectly (top) and needed to be centered
+-   Chore: Add the Changelog commit hook to enforce the changelog update on commit
 -   Deprecate Wido due to project end-of-life
 -   Bump Portals solver to V2 version
 
