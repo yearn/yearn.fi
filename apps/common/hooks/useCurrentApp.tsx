@@ -23,10 +23,10 @@ type TCurrentApp = {
 export function useCurrentApp({pathname}: NextRouter): TCurrentApp {
 	return useMemo((): TCurrentApp => {
 		const appMapping: TDict<TCurrentApp> = {
-			// '/vaults-v3': {
-			// 	...APPS[AppName.VAULTSV3],
-			// 	header: <Fragment />
-			// },
+			'/v3': {
+				...APPS[AppName.VAULTSV3],
+				header: <VaultsHeader pathname={pathname} />
+			},
 			'/vaults': {
 				...APPS[AppName.VAULTS],
 				header: <VaultsHeader pathname={pathname} />

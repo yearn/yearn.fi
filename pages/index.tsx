@@ -11,7 +11,7 @@ import type {ReactElement} from 'react';
 
 const apps = [
 	{
-		href: '/vaults-v3',
+		href: '/v3',
 		title: 'V3',
 		description: 'deposit tokens and receive yield.',
 		icon: (
@@ -131,11 +131,7 @@ function AppBox({app}: {app: (typeof apps)[0]}): ReactElement {
 					<div className={'z-10 flex w-full flex-col items-center'}>
 						<V3Mask className={'h-32'} />
 						<div className={'pt-4 text-center'}>
-							<p
-								className={cl(
-									'font-black text-neutral-900 text-lg',
-									'whitespace-break-spaces uppercase'
-								)}>
+							<p className={cl('font-black text-white text-lg', 'whitespace-break-spaces uppercase')}>
 								{`Discover brand new vaults`}
 							</p>
 						</div>

@@ -378,7 +378,7 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 
 	return (
 		<Link
-			href={`/vaults-v3/${currentVault.chainID}/${toAddress(currentVault.address)}`}
+			href={`/v3/${currentVault.chainID}/${toAddress(currentVault.address)}`}
 			scroll={false}>
 			<div
 				className={cl(

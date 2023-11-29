@@ -40,7 +40,7 @@ type TApp = {
 export const APPS: {[key in AppName]: TApp} = {
 	V3: {
 		name: AppName.VAULTSV3,
-		href: '/vaults-v3',
+		href: '/v3',
 		menu: VAULTS_V3_MENU,
 		manifest: vaultsManifest,
 		isDisabled: false,

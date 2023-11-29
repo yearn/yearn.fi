@@ -83,7 +83,7 @@ function Index(): ReactElement | null {
 		<div className={'mx-auto w-full max-w-6xl pt-20 md:pt-32'}>
 			<nav className={`mb-4 self-start md:mb-2 md:hidden`}>
 				<Link
-					href={'/vaults-v3'}
+					href={'/v3'}
 					className={'z-50 w-fit'}>
 					<p
 						className={
@@ -103,7 +103,7 @@ function Index(): ReactElement | null {
 				)}>
 				<nav className={`mb-4 hidden self-start md:mb-2 md:block`}>
 					<Link
-						href={'/vaults-v3'}
+						href={'/v3'}
 						className={'w-fit'}>
 						<p
 							className={

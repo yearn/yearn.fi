@@ -26,7 +26,7 @@ const observeUrlChange = () => {
 function updateMode() {
 	let isSystemDarkMode = darkModeMediaQuery.matches;
 	let isDarkMode = window.localStorage.isDarkMode === 'true' || (!('isDarkMode' in window.localStorage) && isSystemDarkMode);
-	let isV3 = window.location.pathname.includes('vaults-v3');
+	let isV3 = window.location.pathname.includes('v3');
 
 	if (isV3) {
 		document.documentElement.classList.add('v3');

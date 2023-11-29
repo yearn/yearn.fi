@@ -4,7 +4,7 @@ import {useRouter} from 'next/router';
 import {AnimatePresence} from 'framer-motion';
 import {Popover, Transition} from '@headlessui/react';
 import {VaultsHeader} from '@vaults/components/header/VaultsHeader';
-import {V3Mask} from '@vaults-v3/Mark';
+import {V3Logo} from '@vaults-v3/Mark';
 import {VeYfiHeader} from '@veYFI/components/header/VeYfiHeader';
 import {Header} from '@yearn-finance/web-lib/components/Header';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
@@ -54,86 +54,93 @@ function LogoPopover(): ReactElement {
 	}
 
 	return (
-		<Popover
-			onMouseEnter={(): void => set_isShowing(true)}
-			onMouseLeave={(): void => set_isShowing(false)}
-			className={'relative'}>
-			<Popover.Button className={'flex items-center'}>
-				<Link href={'/'}>
-					<span className={'sr-only'}>{'Back to home'}</span>
-					<Logo />
-				</Link>
-			</Popover.Button>
-			<Transition
-				as={'div'}
-				show={isShowing}
-				enter={'transition ease-out duration-200'}
-				enterFrom={'opacity-0 translate-y-1'}
-				enterTo={'opacity-100 translate-y-0'}
-				leave={'transition ease-in duration-150'}
-				leaveFrom={'opacity-100 translate-y-0'}
-				leaveTo={'opacity-0 translate-y-1'}
-				className={'relative z-[9999999]'}>
-				<Popover.Panel
-					className={'absolute left-1/2 z-10 mt-6 w-80 -translate-x-1/2 px-4 pt-4 sm:px-0 md:w-96'}>
-					<div className={'overflow-hidden border border-neutral-200 shadow-lg'}>
-						<div className={'relative grid grid-cols-2 bg-neutral-0 md:grid-cols-3'}>
-							{[...Object.values(APPS)]
-								.filter(({isDisabled}): boolean => !isDisabled)
-								.map(({name, href, icon}): ReactElement => {
-									if (name === 'V3') {
-										return (
-											<Link
-												prefetch={false}
-												key={name}
-												href={href}
-												className={'col-span-3'}
-												onClick={(): void => set_isShowing(false)}>
-												<div
-													className={cl(
-														'relative flex h-full w-full cursor-pointer flex-col items-center overflow-hidden transition-all',
-														'bg-[#22206a] hover:brightness-125'
-													)}>
-													<div className={'z-10 flex w-full flex-col items-center p-6'}>
-														<V3Mask className={'h-16'} />
+		<>
+			<Popover
+				onMouseEnter={(): void => set_isShowing(true)}
+				onMouseLeave={(): void => set_isShowing(false)}
+				className={'relative'}>
+				<Popover.Button className={'z-20 flex items-center'}>
+					<Link href={'/'}>
+						<span className={'sr-only'}>{'Back to home'}</span>
+						<Logo />
+					</Link>
+				</Popover.Button>
+				<Transition
+					as={'div'}
+					show={isShowing}
+					enter={'transition ease-out duration-200'}
+					enterFrom={'opacity-0 translate-y-1'}
+					enterTo={'opacity-100 translate-y-0'}
+					leave={'transition ease-in duration-150'}
+					leaveFrom={'opacity-100 translate-y-0'}
+					leaveTo={'opacity-0 translate-y-1'}
+					className={'relative z-[9999999]'}>
+					<Popover.Panel
+						className={'absolute left-1/2 z-20 mt-6 w-80 -translate-x-1/2 px-4 pt-4 sm:px-0 md:w-[560px]'}>
+						<div className={'overflow-hidden rounded-sm shadow-xl'}>
+							<div
+								className={
+									'relative grid grid-cols-2 gap-2 border border-neutral-200/60 bg-neutral-0 p-6 md:grid-cols-5'
+								}>
+								<div className={'col-span-3 grid grid-cols-2 gap-2 md:grid-cols-3'}>
+									{[...Object.values(APPS)]
+										.filter(({isDisabled}): boolean => !isDisabled)
+										.filter(({name}): boolean => name !== 'V3')
+										.map(({name, href, icon}): ReactElement => {
+											return (
+												<Link
+													prefetch={false}
+													key={name}
+													href={href}
+													onClick={(): void => set_isShowing(false)}>
+													<div
+														onClick={(): void => set_isShowing(false)}
+														className={cl(
+															'flex cursor-pointer flex-col items-center justify-center transition-colors hover:bg-neutral-200',
+															'p-4 bg-neutral-100/40'
+														)}>
+														<div>{cloneElement(icon, {className: 'w-8 h-8'})}</div>
 														<div className={'pt-2 text-center'}>
-															<p
-																className={cl(
-																	'font-black text-neutral-900 text-sm',
-																	'whitespace-break-spaces uppercase'
-																)}>
-																{`Discover brand new vaults`}
-															</p>
+															<b className={'text-base'}>{name}</b>
 														</div>
 													</div>
-												</div>
-											</Link>
-										);
-									}
-									return (
-										<Link
-											prefetch={false}
-											key={name}
-											href={href}
-											onClick={(): void => set_isShowing(false)}>
-											<div
-												onClick={(): void => set_isShowing(false)}
-												className={
-													'flex cursor-pointer flex-col items-center p-4 transition-colors hover:bg-neutral-200'
-												}>
-												<div>{cloneElement(icon)}</div>
-												<div className={'pt-2 text-center'}>
-													<b className={'text-base'}>{name}</b>
+												</Link>
+											);
+										})}
+								</div>
+								<div className={'col-span-2 grid grid-cols-2 gap-2 md:grid-cols-3'}>
+									<Link
+										prefetch={false}
+										key={name}
+										href={'/v3'}
+										className={'col-span-3 row-span-2'}
+										onClick={(): void => set_isShowing(false)}>
+										<div
+											className={cl(
+												'relative flex h-full w-full cursor-pointer flex-col items-center justify-center transition-all',
+												'bg-[#010A3B] hover:brightness-125 rounded-sm'
+											)}>
+											<div className={'z-10 flex w-full flex-col items-center'}>
+												<V3Logo className={'h-20'} />
+												<div className={'-mb-2 pt-4 text-center'}>
+													<p
+														className={cl(
+															'font-bold text-white text-sm',
+															'whitespace-break-spaces'
+														)}>
+														{`Discover\nBrand New Vaults`}
+													</p>
 												</div>
 											</div>
-										</Link>
-									);
-								})}
+										</div>
+									</Link>
+								</div>
+							</div>
 						</div>
-					</div>
-				</Popover.Panel>
-			</Transition>
-		</Popover>
+					</Popover.Panel>
+				</Transition>
+			</Popover>
+		</>
 	);
 }
 
@@ -151,7 +158,7 @@ export function AppHeader(): ReactElement {
 			return [HOME_MENU, ...APPS[AppName.YBAL].menu];
 		}
 
-		if (pathname.startsWith('/vaults-v3')) {
+		if (pathname.startsWith('/v3')) {
 			return [HOME_MENU, ...APPS[AppName.VAULTSV3].menu];
 		}
 
