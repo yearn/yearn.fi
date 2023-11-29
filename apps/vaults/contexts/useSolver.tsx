@@ -14,22 +14,22 @@ import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 import {hash} from '@common/utils';
 
-import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TSolver} from '@common/schemas/yDaemonTokenListBalances';
 import type {TNormalizedBN} from '@common/types/types';
 import type {TInitSolverArgs, TSolverContext, TWithSolver} from '@vaults/types/solvers';
 
-export const isSolverDisabled = (vaultChainID: number): TDict<boolean> => {
-	return {
+export const isSolverDisabled = (key: TSolver): boolean => {
+	const solverStatus = {
 		[Solver.enum.Vanilla]: false,
 		[Solver.enum.PartnerContract]: false,
 		[Solver.enum.ChainCoin]: false,
 		[Solver.enum.InternalMigration]: false,
 		[Solver.enum.OptimismBooster]: false,
 		[Solver.enum.Cowswap]: false,
-		[Solver.enum.Portals]: vaultChainID === 10 || false,
+		[Solver.enum.Portals]: false,
 		[Solver.enum.None]: false
 	};
+	return solverStatus[key as typeof Solver.enum.Vanilla] || false;
 };
 
 type TUpdateSolverHandler = {
@@ -121,11 +121,7 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 				quote: PromiseSettledResult<TNormalizedBN>;
 				solver: TSolver;
 			}): boolean => {
-				return (
-					quote.status === 'fulfilled' &&
-					quote?.value.raw > 0n &&
-					!isSolverDisabled(currentVault.chainID)[solver]
-				);
+				return quote.status === 'fulfilled' && quote?.value.raw > 0n && !isSolverDisabled(solver);
 			};
 
 			switch (currentSolver) {

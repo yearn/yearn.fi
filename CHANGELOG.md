@@ -4,6 +4,7 @@
 -   Release the multichain config
 -   Fix the zap balances fetching to use the multichain endpoint rather than the currently connected one
 -   Deprecate Wido due to project end-of-life
+-   Bump Portals solver to V2 version
 
 # 0.1.25 (28/08/2023)
 
