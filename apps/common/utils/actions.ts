@@ -54,7 +54,7 @@ export async function isApprovedERC20(
 	spender: TAddress,
 	amount = MAX_UINT_256
 ): Promise<boolean> {
-	const wagmiProvider = await toWagmiProvider(connector);
+	const wagmiProvider = await toWagmiProvider(connector as Connector);
 	const result = await readContract({
 		...wagmiProvider,
 		abi: erc20ABI,

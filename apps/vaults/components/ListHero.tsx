@@ -78,7 +78,7 @@ export function ListHero({
 						className={'md:w-full'}
 						searchPlaceholder={'YFI Vault'}
 						searchValue={searchValue}
-						set_searchValue={onSearch}
+						onSearch={onSearch}
 					/>
 				</div>
 			</div>

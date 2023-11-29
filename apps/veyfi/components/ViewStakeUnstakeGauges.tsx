@@ -235,7 +235,7 @@ export function StakeUnstakeGauges(): ReactElement {
 					<SearchBar
 						searchPlaceholder={'WETH yVault'}
 						searchValue={search || ''}
-						set_searchValue={onSearch}
+						onSearch={onSearch}
 					/>
 				</div>
 			</div>

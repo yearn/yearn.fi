@@ -54,7 +54,7 @@ export function Filters({
 					iconClassName={'text-neutral-900'}
 					searchPlaceholder={'YFI Vault'}
 					searchValue={searchValue}
-					set_searchValue={onSearch}
+					onSearch={onSearch}
 				/>
 			</div>
 			<div className={'grid grid-cols-2 gap-x-6'}>

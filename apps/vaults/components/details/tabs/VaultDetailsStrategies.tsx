@@ -234,7 +234,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 					<SearchBar
 						searchPlaceholder={'Aave'}
 						searchValue={searchValue}
-						set_searchValue={(value): void => {
+						onSearch={(value): void => {
 							set_searchValue(value.toLowerCase());
 						}}
 					/>

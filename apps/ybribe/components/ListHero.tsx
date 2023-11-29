@@ -105,7 +105,7 @@ export function ListHero<T extends string>({
 				<SearchBar
 					searchPlaceholder={searchPlaceholder}
 					searchValue={searchValue}
-					set_searchValue={set_searchValue}
+					onSearch={set_searchValue}
 				/>
 			</div>
 

@@ -5,7 +5,7 @@ import type {ChangeEvent, ReactElement} from 'react';
 type TSearchBar = {
 	searchPlaceholder: string;
 	searchValue: string;
-	set_searchValue: (searchValue: string) => void;
+	onSearch: (searchValue: string) => void;
 	className?: string;
 	iconClassName?: string;
 };
@@ -27,11 +27,9 @@ export function SearchBar(props: TSearchBar): ReactElement {
 						}
 						type={'text'}
 						placeholder={props.searchPlaceholder}
-						value={props.searchValue}
+						value={props.searchValue || ''}
 						onChange={(e: ChangeEvent<HTMLInputElement>): void => {
-							if (props.set_searchValue) {
-								props.set_searchValue(e.target.value);
-							}
+							props.onSearch(e.target.value);
 						}}
 					/>
 					<div className={cl(props.iconClassName, 'absolute right-0 text-neutral-400')}>

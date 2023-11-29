@@ -63,7 +63,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 							iconClassName={'text-neutral-900'}
 							searchPlaceholder={'YFI Vault'}
 							searchValue={search as string}
-							set_searchValue={onSearch}
+							onSearch={onSearch}
 						/>
 					</div>
 				</div>
