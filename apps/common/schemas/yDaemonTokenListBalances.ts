@@ -8,7 +8,6 @@ const SOLVER = [
 	'InternalMigration',
 	'OptimismBooster',
 	'Cowswap',
-	'Wido',
 	'Portals',
 	'None'
 ] as const;

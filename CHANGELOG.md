@@ -3,6 +3,7 @@
 -   Release the V3 vaults
 -   Release the multichain config
 -   Fix the zap balances fetching to use the multichain endpoint rather than the currently connected one
+-   Deprecate Wido due to project end-of-life
 
 # 0.1.25 (28/08/2023)
 

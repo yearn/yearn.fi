@@ -83,7 +83,7 @@ function ZapSection({chainID}: {chainID: number}): ReactElement {
 
 	const currentZapProvider = useMemo((): TSolver => {
 		if (chainID !== 1 && zapProvider === 'Cowswap') {
-			return 'Wido';
+			return 'Portals';
 		}
 		return zapProvider;
 	}, [chainID, zapProvider]);
@@ -110,19 +110,6 @@ function ZapSection({chainID}: {chainID: number}): ReactElement {
 						&nbsp;{'using CoW Swap.'}
 					</legend>
 				</Renderable>
-				<Renderable shouldRender={currentZapProvider === Solver.enum.Wido}>
-					<legend className={'text-xs text-neutral-500'}>
-						{'Submit an order via'}&nbsp;
-						<a
-							className={'underline'}
-							href={'https://www.joinwido.com/'}
-							target={'_blank'}
-							rel={'noreferrer'}>
-							{'Wido'}
-						</a>
-						&nbsp;{'(0.3% fee).'}
-					</legend>
-				</Renderable>
 				<Renderable shouldRender={currentZapProvider === Solver.enum.Portals}>
 					<legend className={'text-xs text-neutral-500'}>
 						{'Submit an order via'}&nbsp;
@@ -139,7 +126,7 @@ function ZapSection({chainID}: {chainID: number}): ReactElement {
 				<select
 					id={'zapProvider'}
 					onChange={(e): void => set_zapProvider(e.target.value as TSolver)}
-					value={!isSolverDisabled(chainID)[currentZapProvider] ? currentZapProvider : Solver.enum.Wido}
+					value={!isSolverDisabled(chainID)[currentZapProvider] ? currentZapProvider : Solver.enum.Portals}
 					className={
 						'mt-1 h-10 w-full overflow-x-scroll rounded-lg border-none bg-neutral-100 p-2 outline-none scrollbar-none'
 					}>
@@ -150,11 +137,6 @@ function ZapSection({chainID}: {chainID: number}): ReactElement {
 							{Solver.enum.Cowswap}
 						</option>
 					) : null}
-					<option
-						disabled={isSolverDisabled(chainID)[Solver.enum.Wido]}
-						value={Solver.enum.Wido}>
-						{Solver.enum.Wido}
-					</option>
 					<option
 						disabled={isSolverDisabled(chainID)[Solver.enum.Portals]}
 						value={Solver.enum.Portals}>

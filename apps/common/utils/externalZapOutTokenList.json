@@ -7,7 +7,7 @@
 		"logoURI": "https://tokens.1inch.io/0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee.png",
 		"decimals": 18,
 		"balance": "0",
-		"supportedZaps": ["Wido", "Portals", "Cowswap"]
+		"supportedZaps": ["Portals", "Cowswap"]
 	},
 	{
 		"chainID": 1,
@@ -17,7 +17,7 @@
 		"logoURI": "https://tokens.1inch.io/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2.png",
 		"decimals": 18,
 		"balance": "0",
-		"supportedZaps": ["Wido", "Portals", "Cowswap"]
+		"supportedZaps": ["Portals", "Cowswap"]
 	},
 	{
 		"chainID": 1,
@@ -27,7 +27,7 @@
 		"logoURI": "https://tokens.1inch.io/0x2260fac5e5542a773aa44fbcfedf7c193bc2c599.png",
 		"decimals": 8,
 		"balance": "0",
-		"supportedZaps": ["Wido", "Portals", "Cowswap"]
+		"supportedZaps": ["Portals", "Cowswap"]
 	},
 	{
 		"chainID": 1,
@@ -37,7 +37,7 @@
 		"logoURI": "https://tokens.1inch.io/0x6b175474e89094c44da98b954eedeac495271d0f.png",
 		"decimals": 18,
 		"balance": "0",
-		"supportedZaps": ["Wido", "Portals", "Cowswap"]
+		"supportedZaps": ["Portals", "Cowswap"]
 	},
 	{
 		"chainID": 1,
@@ -47,7 +47,7 @@
 		"logoURI": "https://tokens.1inch.io/0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.png",
 		"decimals": 6,
 		"balance": "0",
-		"supportedZaps": ["Wido", "Portals", "Cowswap"]
+		"supportedZaps": ["Portals", "Cowswap"]
 	},
 	{
 		"chainID": 1,
@@ -57,7 +57,7 @@
 		"logoURI": "https://tokens.1inch.io/0xdac17f958d2ee523a2206206994597c13d831ec7.png",
 		"decimals": 6,
 		"balance": "0",
-		"supportedZaps": ["Wido", "Portals", "Cowswap"]
+		"supportedZaps": ["Portals", "Cowswap"]
 	},
 	{
 		"chainID": 1,
@@ -67,7 +67,7 @@
 		"logoURI": "https://tokens.1inch.io/0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e.png",
 		"decimals": 18,
 		"balance": "0",
-		"supportedZaps": ["Wido", "Portals", "Cowswap"]
+		"supportedZaps": ["Portals", "Cowswap"]
 	},
 	{
 		"chainID": 1,
@@ -77,6 +77,6 @@
 		"logoURI": "https://tokens.1inch.io/0xd533a949740bb3306d119cc777fa900ba034cd52.png",
 		"decimals": 18,
 		"balance": "0",
-		"supportedZaps": ["Wido", "Portals", "Cowswap"]
+		"supportedZaps": ["Portals", "Cowswap"]
 	}
 ]
