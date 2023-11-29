@@ -1,9 +1,10 @@
-import {cloneElement, Fragment, useMemo, useState} from 'react';
+import {cloneElement, useMemo, useState} from 'react';
 import Link from 'next/link';
 import {useRouter} from 'next/router';
 import {AnimatePresence} from 'framer-motion';
 import {Popover, Transition} from '@headlessui/react';
 import {VaultsHeader} from '@vaults/components/header/VaultsHeader';
+import {VaultsV3Header} from '@vaults-v3/components/header/VaultsHeader';
 import {V3Logo} from '@vaults-v3/Mark';
 import {VeYfiHeader} from '@veYFI/components/header/VeYfiHeader';
 import {Header} from '@yearn-finance/web-lib/components/Header';
@@ -31,6 +32,7 @@ function Logo(): ReactElement {
 			<VaultsHeader pathname={pathname} />
 			<VeYfiHeader pathname={pathname} />
 			<YBribeHeader pathname={pathname} />
+			<VaultsV3Header pathname={pathname} />
 			<MotionDiv
 				name={'yearn'}
 				animate={pathname === '/' ? 'enter' : 'exit'}>
@@ -48,10 +50,6 @@ function LogoPopover(): ReactElement {
 	const [isShowing, set_isShowing] = useState(false);
 	const router = useRouter();
 	const {name} = useCurrentApp(router);
-
-	if (name === 'V3') {
-		return <Fragment />;
-	}
 
 	return (
 		<>
