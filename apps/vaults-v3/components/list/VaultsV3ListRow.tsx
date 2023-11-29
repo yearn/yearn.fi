@@ -485,7 +485,7 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 						className={'yearn--table-data-section-item col-span-2 !mt-0 flex-row md:!mt-4 md:flex-col'}
 						datatype={'number'}>
 						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'TVL'}</p>
-						<div className={'flex flex-col pt-8 text-right'}>
+						<div className={'flex flex-col pt-0 text-right md:pt-8'}>
 							<p className={'yearn--table-data-section-item-value'}>
 								<RenderAmount
 									value={Number(
