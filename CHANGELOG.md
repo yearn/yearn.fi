@@ -9,6 +9,7 @@
 -   Bump Portals solver to V2 version
 -   Bump various packages
 -   Fix SearchBar using uncontrolled input
+-   When searching for vaults in a aggregator vault and the search input give no match, the component was moving to "this vault is a strategy" instead of staying in the "no match" state
 
 # 0.1.25 (28/08/2023)
 

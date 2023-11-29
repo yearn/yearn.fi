@@ -4,6 +4,7 @@ import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
 import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
 import {VaultsV3ListRow} from '@vaults-v3/components/list/VaultsV3ListRow';
 import {ALL_VAULTSV3_CATEGORIES_KEYS} from '@vaults-v3/constants';
+import {Button} from '@yearn-finance/web-lib/components/Button';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {SearchBar} from '@common/components/SearchBar';
 import {useYearn} from '@common/contexts/useYearn';
@@ -98,12 +99,23 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 					</div>
 				</div>
 			</div>
-			<div className={cl(sortedVaultsToDisplay.length === 0 ? '' : 'hidden')}>
+			<div className={cl(sortedVaultsToDisplay.length === 0 && search === '' ? '' : 'hidden')}>
 				<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
 					<b className={'text-center text-lg'}>{'This vault IS the strategy'}</b>
 					<p className={'text-center text-neutral-600'}>
 						{"Surprise! This vault doesn't have any strategies. It is the strategy. #brainexplosion"}
 					</p>
+				</div>
+			</div>
+			<div className={cl(sortedVaultsToDisplay.length === 0 && search !== '' ? '' : 'hidden')}>
+				<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
+					<b className={'text-center text-lg'}>{'No vaults found'}</b>
+					<p className={'text-center text-neutral-600'}>{'Try another search term'}</p>
+					<Button
+						className={'mt-4 w-full md:w-48'}
+						onClick={() => onSearch('')}>
+						{'Clear Search'}
+					</Button>
 				</div>
 			</div>
 		</>

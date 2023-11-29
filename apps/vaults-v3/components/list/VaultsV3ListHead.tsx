@@ -23,8 +23,8 @@ export function VaultsV3ListHead({items, sortBy, sortDirection, onSort}: TListHe
 			? sortDirection === ''
 				? 'desc'
 				: sortDirection === 'desc'
-				? 'asc'
-				: 'desc'
+				  ? 'asc'
+				  : 'desc'
 			: 'desc';
 	};
 
