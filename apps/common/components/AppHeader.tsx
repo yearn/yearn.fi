@@ -92,7 +92,7 @@ function LogoPopover(): ReactElement {
 												<div
 													className={cl(
 														'relative flex h-full w-full cursor-pointer flex-col items-center overflow-hidden transition-all',
-														'bg-[#22206a]'
+														'bg-[#22206a] hover:brightness-125'
 													)}>
 													<div className={'z-10 flex w-full flex-col items-center p-6'}>
 														<V3Mask className={'h-16'} />

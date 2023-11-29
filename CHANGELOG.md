@@ -1,21 +1,21 @@
 # 0.3.0 (x/12/2023)
 
--   Release the V3 vaults
--   Release the multichain config
--   Fix: The zap balances fetching to use the multichain endpoint rather than the currently connected one
--   Fix: On some 404 pages, the error message was positioned incorrectly (top) and needed to be centered
--   Chore: Add the Changelog commit hook to enforce the changelog update on commit
--   Deprecate Wido due to project end-of-life
--   Bump Portals solver to V2 version
--   Bump various packages
--   Fix SearchBar using uncontrolled input
--   When searching for vaults in a aggregator vault and the search input give no match, the component was moving to "this vault is a strategy" instead of staying in the "no match" state
--   Add an `onReset` function in the `useQueryArguments` hook to be able to reset the query arguments to their default values
--   Use `New` for APR when it's tagged as new
--   On V3, we only display Polygon for now, as the V3 vaults are polygon only
--   Add Card for V3 on the index page
--   Minor CSS fixes on TVL display on Mobile for V3
--   Add the V3 line in the popover menu & fix some hook issue around the V3 color scheme
+-   Build: Release the V3 vaults.
+-   Build: Release the multichain config.
+-   Fix: The zap balances fetching to use the multichain endpoint rather than the currently connected one.
+-   Fix: On some 404 pages, the error message was positioned incorrectly (top) and needed to be centered.
+-   Chore: Add the Changelog commit hook to enforce the changelog update on commit.
+-   Deps: Deprecate Wido due to project end-of-life.
+-   Deps: Bump Portals solver to V2 version.
+-   Deps: Bump various packages.
+-   Nit: SearchBar using uncontrolled input.
+-   Fix: When searching for vaults in a aggregator vault and the search input give no match, the component was moving to "this vault is a strategy" instead of staying in the "no match" state.
+-   Fix: Add an `onReset` function in the `useQueryArguments` hook to be able to reset the query arguments to their default values.
+-   Chore: Use `New` for APR when it's tagged as new.
+-   Fix: On V3, we only display Polygon for now, as the V3 vaults are polygon only.
+-   Fix: Add Card for V3 on the index page.
+-   Nit: Minor CSS fixes on TVL display on Mobile for V3.
+-   Fix: Add the V3 line in the popover menu & fix some hook issue around the V3 color scheme.
 
 # 0.1.25 (28/08/2023)
 
