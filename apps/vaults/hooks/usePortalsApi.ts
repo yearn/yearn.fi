@@ -34,33 +34,31 @@ const portalsTxSchema = z.object({
 	to: z.string(),
 	from: z.string().optional(),
 	data: z.string(),
-	value: z
-		.object({
-			type: z.string(),
-			hex: z.string()
-		})
-		.optional(),
-	gasLimit: z.object({
-		type: z.string(),
-		hex: z.string()
-	})
+	value: z.string().optional(),
+	gasLimit: z.string()
 });
 
 const portalsTransactionSchema = z.object({
 	context: z.object({
-		network: z.string(),
-		protocolId: z.string(),
-		sellToken: z.string(),
-		sellAmount: z.string(),
-		intermediateToken: z.string().optional(),
-		buyToken: z.string(),
-		buyAmount: z.string(),
-		minBuyAmount: z.string(),
-		target: z.string(),
+		orderId: z.string(),
+		minOutputAmount: z.string(),
+		minOutputAmountUsd: z.number(),
+		slippageTolerancePercentage: z.number(),
+		gasLimit: z.string(),
+		inputAmount: z.string(),
+		inputAmountUsd: z.number(),
+		inputToken: z.string(),
+		outputToken: z.string(),
+		outputAmount: z.string(),
+		outputAmountUsd: z.number(),
 		partner: z.string(),
-		takerAddress: z.string(),
-		value: z.string(),
-		gasLimit: z.string()
+		feeToken: z.string(),
+		feeAmount: z.string(),
+		feeAmountUsd: z.number(),
+		sender: z.string(),
+		recipient: z.string(),
+		target: z.string(),
+		value: z.string()
 	}),
 	tx: portalsTxSchema
 });
@@ -106,7 +104,6 @@ const BASE_URL = 'https://api.portals.fi/v2';
 export async function getPortalsEstimate({params}: TGetEstimateProps): TFetchReturn<TPortalsEstimate> {
 	const url = `${BASE_URL}/portal/estimate`;
 
-	console.warn(`${url}?${new URLSearchParams(params)}`);
 	return fetch<TPortalsEstimate>({
 		endpoint: `${url}?${new URLSearchParams(params)}`,
 		schema: portalsEstimateResponseSchema

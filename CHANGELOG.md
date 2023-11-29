@@ -17,6 +17,7 @@
 -   Nit: Minor CSS fixes on TVL display on Mobile for V3.
 -   Fix: Add the V3 line in the popover menu & fix some hook issue around the V3 color scheme.
 -   Rename path `vault-v3` to simple `v3`.
+-   Fix: Portals zap slippage too low.
 
 # 0.1.25 (28/08/2023)
 

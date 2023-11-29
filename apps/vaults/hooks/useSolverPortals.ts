@@ -176,7 +176,7 @@ export function useSolverPortals(): TSolverContext {
 					inputToken: `${network}:${toAddress(request.current.inputToken.value)}`,
 					outputToken: `${network}:${toAddress(request.current.outputToken.value)}`,
 					inputAmount: toBigInt(request.current.inputAmount).toString(),
-					slippageTolerancePercentage: String(zapSlippage / 100),
+					slippageTolerancePercentage: String(zapSlippage),
 					validate: 'true'
 				}
 			});
@@ -196,7 +196,7 @@ export function useSolverPortals(): TSolverContext {
 			const tx = await prepareSendTransaction({
 				...wagmiProvider,
 				data,
-				value: toBigInt(value?.hex ?? 0),
+				value: toBigInt(value ?? 0),
 				to: toAddress(to),
 				...rest
 			});
