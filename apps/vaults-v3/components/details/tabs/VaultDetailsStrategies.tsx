@@ -55,19 +55,19 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 
 	return (
 		<>
-			<div className={cl(sortedVaultsToDisplay.length === 0 ? 'hidden' : '')}>
-				<div className={'col-span-12 w-full p-4 md:px-8 md:pb-8'}>
-					<div className={'w-1/2'}>
-						<p className={'pb-2 text-[#757CA6]'}>{'Search'}</p>
-						<SearchBar
-							className={'max-w-none rounded-lg border-none bg-neutral-300 text-neutral-900 md:w-full'}
-							iconClassName={'text-neutral-900'}
-							searchPlaceholder={'YFI Vault'}
-							searchValue={search as string}
-							onSearch={onSearch}
-						/>
-					</div>
+			<div className={'col-span-12 w-full p-4 md:px-8 md:pb-8'}>
+				<div className={'w-1/2'}>
+					<p className={'pb-2 text-[#757CA6]'}>{'Search'}</p>
+					<SearchBar
+						className={'max-w-none rounded-lg border-none bg-neutral-300 text-neutral-900 md:w-full'}
+						iconClassName={'text-neutral-900'}
+						searchPlaceholder={'YFI Vault'}
+						searchValue={search as string}
+						onSearch={onSearch}
+					/>
 				</div>
+			</div>
+			<div className={cl(sortedVaultsToDisplay.length === 0 ? 'hidden' : '')}>
 				<div className={'grid grid-cols-12 px-8 pb-6 md:gap-6'}>
 					<div className={'col-span-12 flex w-full flex-col'}>
 						<VaultsV3ListHead

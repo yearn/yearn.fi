@@ -18,6 +18,7 @@
 -   Fix: Add the V3 line in the popover menu & fix some hook issue around the V3 color scheme. Adapt the color scheme to the Dark, Light and V3.
 -   Rename path `vault-v3` to simple `v3`.
 -   Fix: Portals zap slippage too low.
+-   Fix: Searchbar on the vault details page was removed if the search was not giving any result.
 
 # 0.1.25 (28/08/2023)
 
