@@ -15,7 +15,7 @@
 -   Fix: On V3, we only display Polygon for now, as the V3 vaults are polygon only.
 -   Fix: Add Card for V3 on the index page.
 -   Nit: Minor CSS fixes on TVL display on Mobile for V3.
--   Fix: Add the V3 line in the popover menu & fix some hook issue around the V3 color scheme.
+-   Fix: Add the V3 line in the popover menu & fix some hook issue around the V3 color scheme. Adapt the color scheme to the Dark, Light and V3.
 -   Rename path `vault-v3` to simple `v3`.
 -   Fix: Portals zap slippage too low.
 
