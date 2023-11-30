@@ -142,7 +142,7 @@ export function useSolverPortals(): TSolverContext {
 				return toNormalizedBN(0);
 			}
 			latestQuote.current = data;
-			return toNormalizedBN(data?.minOutputAmount || 0, request?.current?.outputToken?.decimals || 18);
+			return toNormalizedBN(data?.outputAmount || 0, request?.current?.outputToken?.decimals || 18);
 		},
 		[zapSlippage]
 	);
@@ -253,10 +253,10 @@ export function useSolverPortals(): TSolverContext {
 	 ** process and displayed to the user.
 	 **************************************************************************/
 	const expectedOut = useMemo((): TNormalizedBN => {
-		if (!latestQuote?.current?.minOutputAmount || !request.current || isSolverDisabled(Solver.enum.Portals)) {
+		if (!latestQuote?.current?.outputAmount || !request.current || isSolverDisabled(Solver.enum.Portals)) {
 			return toNormalizedBN(0);
 		}
-		return toNormalizedBN(latestQuote?.current?.minOutputAmount, request?.current?.outputToken?.decimals || 18);
+		return toNormalizedBN(latestQuote?.current?.outputAmount, request?.current?.outputToken?.decimals || 18);
 	}, [latestQuote, request]);
 
 	/* 🔵 - Yearn Finance ******************************************************

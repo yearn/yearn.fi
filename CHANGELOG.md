@@ -22,6 +22,7 @@
 -   Feat: Accept native coin for Portals Zap.
 -   Fix: Balance refresh not refreshing properly.
 -   Fix: Update the zap schema from yDaemon
+-   Fix: For portals, uses `OutputValue` instead of `MinOutputValue` for display.
 
 # 0.1.25 (28/08/2023)
 
