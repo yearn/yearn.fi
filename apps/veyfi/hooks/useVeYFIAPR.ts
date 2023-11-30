@@ -117,7 +117,9 @@ function useVeYFIAPR({dYFIPrice}: TUseVeYFIAPR): number {
 					boosted += depositor.balance.raw;
 				}
 			}
-			rate += (rewardRate * (supply - boosted)) / supply;
+			if (supply > 0n) {
+				rate += (rewardRate * (supply - boosted)) / supply;
+			}
 		}
 		set_rate(rate);
 	}, []);

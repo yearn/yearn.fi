@@ -1,4 +1,8 @@
-# 0.3.0 (x/12/2023)
+# 0.3.1 (30/11/2023)
+
+-   Fix: Divisions by 0 in the veYFI rate calculator
+
+# 0.3.0 (30/11/2023)
 
 -   Build: Release the V3 vaults.
 -   Build: Release the multichain config.
