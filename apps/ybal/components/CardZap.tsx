@@ -46,12 +46,12 @@ function CardZap(): ReactElement {
 	} = useCardTransactor();
 
 	const yBalPrice = useMemo(
-		(): number => formatToNormalizedValue(toBigInt(prices?.[YBAL_TOKEN_ADDRESS] || 0), 6),
+		(): number => formatToNormalizedValue(toBigInt(prices?.[1]?.[YBAL_TOKEN_ADDRESS] || 0), 6),
 		[prices]
 	);
 
 	const yBalCurvePoolPrice = useMemo(
-		(): number => formatToNormalizedValue(toBigInt(prices?.[YBAL_BALANCER_POOL_ADDRESS] || 0), 6),
+		(): number => formatToNormalizedValue(toBigInt(prices?.[1]?.[YBAL_BALANCER_POOL_ADDRESS] || 0), 6),
 		[prices]
 	);
 

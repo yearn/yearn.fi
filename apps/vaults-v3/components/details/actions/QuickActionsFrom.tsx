@@ -9,13 +9,12 @@ import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers
 import {Dropdown} from '@common/components/TokenDropdown';
 import {useWallet} from '@common/contexts/useWallet';
 import {useBalance} from '@common/hooks/useBalance';
-import {useTokenPrice} from '@common/hooks/useTokenPrice';
 
 import type {ChangeEvent, ReactElement} from 'react';
 
 export function VaultDetailsQuickActionsFrom(): ReactElement {
 	const {isActive} = useWeb3();
-	const {getToken} = useWallet();
+	const {getToken, getPrice} = useWallet();
 	const {
 		possibleOptionsFrom,
 		actionParams,
@@ -28,7 +27,11 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 		address: toAddress(actionParams?.selectedOptionFrom?.value),
 		chainID: Number(actionParams?.selectedOptionFrom?.chainID)
 	});
-	const selectedOptionFromPricePerToken = useTokenPrice(toAddress(actionParams?.selectedOptionFrom?.value));
+	const selectedOptionFromPricePerToken = getPrice({
+		address: toAddress(actionParams?.selectedOptionFrom?.value),
+		chainID: Number(actionParams?.selectedOptionFrom?.chainID)
+	});
+
 	const hasMultipleInputsToChooseFrom = isActive && isDepositing && possibleOptionsFrom.length > 1;
 	const selectedFromSymbol = actionParams?.selectedOptionFrom?.symbol || 'tokens';
 	const selectedFromIcon = actionParams?.selectedOptionFrom?.icon;
@@ -140,7 +143,10 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 					<legend
 						suppressHydrationWarning
 						className={'font-number hidden text-xs text-neutral-900/50 md:mr-0 md:inline md:text-start'}>
-						{formatCounterValue(actionParams?.amount?.normalized || 0, selectedOptionFromPricePerToken)}
+						{formatCounterValue(
+							actionParams?.amount?.normalized || 0,
+							Number(selectedOptionFromPricePerToken.normalized)
+						)}
 					</legend>
 				</div>
 			</div>

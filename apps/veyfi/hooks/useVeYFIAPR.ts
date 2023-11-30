@@ -20,7 +20,7 @@ type TUseVeYFIAPR = {
 };
 function useVeYFIAPR({dYFIPrice}: TUseVeYFIAPR): number {
 	const [rate, set_rate] = useState<bigint>(0n);
-	const yfiPrice = useTokenPrice(YFI_ADDRESS);
+	const yfiPrice = useTokenPrice({address: YFI_ADDRESS, chainID: VEYFI_CHAIN_ID});
 	const {data: veYFISupply} = useContractRead({
 		address: VEYFI_ADDRESS,
 		abi: VEYFI_ABI,

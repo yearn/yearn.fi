@@ -16,7 +16,7 @@ import type {ReactElement} from 'react';
 import type {KeyedMutator} from 'swr';
 import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 import type {TYDaemonEarned} from '@common/schemas/yDaemonEarnedSchema';
-import type {TYDaemonPrices, TYDaemonPricesChain} from '@common/schemas/yDaemonPricesSchema';
+import type {TYDaemonPricesChain} from '@common/schemas/yDaemonPricesSchema';
 import type {TSolver} from '@common/schemas/yDaemonTokenListBalances';
 import type {TYDaemonTokens, TYDaemonTokensChain} from '@common/schemas/yDaemonTokensSchema';
 import type {TYDaemonVault, TYDaemonVaults} from '@common/schemas/yDaemonVaultsSchemas';
@@ -24,7 +24,7 @@ import type {TYDaemonVault, TYDaemonVaults} from '@common/schemas/yDaemonVaultsS
 export type TYearnContext = {
 	currentPartner: TAddress;
 	earned?: TYDaemonEarned;
-	prices?: TYDaemonPrices;
+	prices?: TYDaemonPricesChain;
 	tokens?: TYDaemonTokens;
 	vaults: TDict<TYDaemonVault>;
 	vaultsMigrations: TDict<TYDaemonVault>;
@@ -66,29 +66,18 @@ const YearnContext = createContext<TYearnContext>({
 	set_isStakingOpBoostedVaults: (): void => undefined
 });
 
-function useYearnPrices(): TYDaemonPrices {
+function useYearnPrices(): TYDaemonPricesChain {
 	const {yDaemonBaseUri: yDaemonBaseUriWithoutChain} = useYDaemonBaseURI();
 	const {data: prices} = useFetch<TYDaemonPricesChain>({
 		endpoint: `${yDaemonBaseUriWithoutChain}/prices/all`,
 		schema: yDaemonPricesChainSchema
 	});
 
-	const pricesUpdated = useDeepCompareMemo((): TYDaemonPrices => {
+	const pricesUpdated = useDeepCompareMemo((): TYDaemonPricesChain => {
 		if (!prices) {
 			return {};
 		}
-		const allPrices: TYDaemonPrices = {};
-		const allNetworksPrices = Object.values(prices).flat();
-		for (const priceForChain of allNetworksPrices) {
-			if (priceForChain) {
-				for (const [tokenAddress, price] of Object.entries(priceForChain)) {
-					if (price) {
-						allPrices[toAddress(tokenAddress)] = price;
-					}
-				}
-			}
-		}
-		return allPrices;
+		return prices;
 	}, [prices]);
 
 	return pricesUpdated;

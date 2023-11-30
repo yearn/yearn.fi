@@ -31,7 +31,7 @@ export function RedeemTab(): ReactElement {
 	const clearLockAmount = (): void => set_redeemAmount(toNormalizedBN(0));
 	const ethBalance = useToken({address: ETH_TOKEN_ADDRESS, chainID: VEYFI_CHAIN_ID}); //VeYFI is on ETH mainnet only
 	const yfiBalance = useBalance({address: YFI_ADDRESS, chainID: VEYFI_CHAIN_ID}); //VeYFI is on ETH mainnet only
-	const yfiPrice = useTokenPrice(YFI_ADDRESS);
+	const yfiPrice = useTokenPrice({address: YFI_ADDRESS, chainID: VEYFI_CHAIN_ID});
 	const [approveRedeemStatus, set_approveRedeemStatus] = useState(defaultTxStatus);
 	const [redeemStatus, set_redeemStatus] = useState(defaultTxStatus);
 	const [ethRequired, set_ethRequired] = useState(toNormalizedBN(0));

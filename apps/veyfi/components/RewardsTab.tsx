@@ -174,7 +174,7 @@ function BoostRewards(): ReactElement {
 
 function ExitRewards(): ReactElement {
 	const {provider, address} = useWeb3();
-	const yfiPrice = useTokenPrice(YFI_ADDRESS);
+	const yfiPrice = useTokenPrice({address: YFI_ADDRESS, chainID: VEYFI_CHAIN_ID});
 	const [claimable, set_claimable] = useState<TNormalizedBN>(toNormalizedBN(0));
 	const [claimStatus, set_claimStatus] = useState(defaultTxStatus);
 

@@ -23,6 +23,7 @@
 -   Fix: Balance refresh not refreshing properly.
 -   Fix: Update the zap schema from yDaemon
 -   Fix: For portals, uses `OutputValue` instead of `MinOutputValue` for display.
+-   Fix: The price system was mixed-chain, not multi-chain
 
 # 0.1.25 (28/08/2023)
 

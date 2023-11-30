@@ -51,17 +51,17 @@ function CardZap(): ReactElement {
 	} = useCardTransactor();
 
 	const ycrvPrice = useMemo(
-		(): number => formatToNormalizedValue(toBigInt(prices?.[YCRV_TOKEN_ADDRESS] || 0), 6),
+		(): number => formatToNormalizedValue(toBigInt(prices?.[1]?.[YCRV_TOKEN_ADDRESS] || 0), 6),
 		[prices]
 	);
 
 	const ycrvCurvePoolPrice = useMemo(
-		(): number => formatToNormalizedValue(toBigInt(prices?.[YCRV_CURVE_POOL_ADDRESS] || 0), 6),
+		(): number => formatToNormalizedValue(toBigInt(prices?.[1]?.[YCRV_CURVE_POOL_ADDRESS] || 0), 6),
 		[prices]
 	);
 
 	const stycrvPrice = useMemo(
-		(): number => formatToNormalizedValue(toBigInt(prices?.[STYCRV_TOKEN_ADDRESS] || 0), 6),
+		(): number => formatToNormalizedValue(toBigInt(prices?.[1]?.[STYCRV_TOKEN_ADDRESS] || 0), 6),
 		[prices]
 	);
 

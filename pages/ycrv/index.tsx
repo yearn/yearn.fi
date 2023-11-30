@@ -29,9 +29,9 @@ function HeaderPosition(): ReactElement {
 	const balanceOfStyCRV = useBalance({address: STYCRV_TOKEN_ADDRESS, chainID: 1}); //yCRV is on ETH mainnet only
 	const balanceOfLpyCRV = useBalance({address: LPYCRV_TOKEN_ADDRESS, chainID: 1}); //yCRV is on ETH mainnet only
 	const balanceOfLpyCRVV2 = useBalance({address: LPYCRV_V2_TOKEN_ADDRESS, chainID: 1}); //yCRV is on ETH mainnet only
-	const stycrvPrice = useTokenPrice(STYCRV_TOKEN_ADDRESS);
-	const lpycrvPrice = useTokenPrice(LPYCRV_TOKEN_ADDRESS);
-	const lpycrvV2Price = useTokenPrice(LPYCRV_V2_TOKEN_ADDRESS);
+	const stycrvPrice = useTokenPrice({address: STYCRV_TOKEN_ADDRESS, chainID: 1});
+	const lpycrvPrice = useTokenPrice({address: LPYCRV_TOKEN_ADDRESS, chainID: 1});
+	const lpycrvV2Price = useTokenPrice({address: LPYCRV_V2_TOKEN_ADDRESS, chainID: 1});
 
 	const formatedYearnHas = useMemo(
 		(): string =>
@@ -92,10 +92,10 @@ function ZapAndStats(): ReactElement {
 
 	const lpCRVAPY = useMemo((): string => getVaultAPR(vaults, LPYCRV_TOKEN_ADDRESS), [vaults]);
 	const lpCRVV2APY = useMemo((): string => getVaultAPR(vaults, LPYCRV_V2_TOKEN_ADDRESS), [vaults]);
-	const ycrvPrice = useTokenPrice(YCRV_TOKEN_ADDRESS);
-	const stycrvPrice = useTokenPrice(STYCRV_TOKEN_ADDRESS);
-	const lpycrvPrice = useTokenPrice(LPYCRV_TOKEN_ADDRESS);
-	const lpycrvV2Price = useTokenPrice(LPYCRV_V2_TOKEN_ADDRESS);
+	const ycrvPrice = useTokenPrice({address: YCRV_TOKEN_ADDRESS, chainID: 1});
+	const stycrvPrice = useTokenPrice({address: STYCRV_TOKEN_ADDRESS, chainID: 1});
+	const lpycrvPrice = useTokenPrice({address: LPYCRV_TOKEN_ADDRESS, chainID: 1});
+	const lpycrvV2Price = useTokenPrice({address: LPYCRV_V2_TOKEN_ADDRESS, chainID: 1});
 	const balanceOfStyCRV = useBalance({address: STYCRV_TOKEN_ADDRESS, chainID: 1}); //yCRV is on ETH mainnet only
 	const balanceOfLpyCRV = useBalance({address: LPYCRV_TOKEN_ADDRESS, chainID: 1}); //yCRV is on ETH mainnet only
 	const balanceOfLpyCRVV2 = useBalance({address: LPYCRV_V2_TOKEN_ADDRESS, chainID: 1}); //yCRV is on ETH mainnet only

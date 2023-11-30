@@ -114,7 +114,8 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 
 	const vaultBalance = useBalance({address: currentVault.address, chainID: currentVault.chainID});
 	const stakedBalance = useBalance({address: currentVault.staking.address, chainID: currentVault.chainID});
-	const vaultPrice = useTokenPrice(currentVault.address) || currentVault?.tvl?.price || 0;
+	const vaultPrice =
+		useTokenPrice({address: currentVault.address, chainID: currentVault.chainID}) || currentVault?.tvl?.price || 0;
 	const vaultName = useMemo((): string => getVaultName(currentVault), [currentVault]);
 	const depositedAndStaked = currentVault.staking.available
 		? toNormalizedBN(vaultBalance.raw + stakedBalance.raw, decimals)

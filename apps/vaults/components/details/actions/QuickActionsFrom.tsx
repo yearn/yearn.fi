@@ -28,7 +28,10 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 		address: toAddress(actionParams?.selectedOptionFrom?.value),
 		chainID: Number(actionParams?.selectedOptionFrom?.chainID)
 	});
-	const selectedOptionFromPricePerToken = useTokenPrice(toAddress(actionParams?.selectedOptionFrom?.value));
+	const selectedOptionFromPricePerToken = useTokenPrice({
+		address: toAddress(actionParams?.selectedOptionFrom?.value),
+		chainID: Number(actionParams?.selectedOptionFrom?.chainID)
+	});
 	const hasMultipleInputsToChooseFrom = isActive && isDepositing && possibleOptionsFrom.length > 1;
 	const selectedFromSymbol = actionParams?.selectedOptionFrom?.symbol || 'tokens';
 	const selectedFromIcon = actionParams?.selectedOptionFrom?.icon;

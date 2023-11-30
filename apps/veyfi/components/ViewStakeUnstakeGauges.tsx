@@ -10,7 +10,7 @@ import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
 import {toAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
-import {formatToNormalizedValue, toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
@@ -152,8 +152,8 @@ function StakeUnstakeButtons({vaultAddress, gaugeAddress, vaultDeposited, gaugeS
 export function StakeUnstakeGauges(): ReactElement {
 	const {address} = useWeb3();
 	const {gaugesMap, userPositionInGauge} = useGauge();
-	const {vaults, prices} = useYearn();
-	const {getBalance} = useWallet();
+	const {vaults} = useYearn();
+	const {getBalance, getPrice} = useWallet();
 	const {dYFIPrice} = useOption();
 	const [isLoadingGauges, set_isLoadingGauges] = useState(true);
 	const {search, onSearch} = useQueryArguments();
@@ -171,14 +171,14 @@ export function StakeUnstakeGauges(): ReactElement {
 			}
 
 			const vaultBalance = getBalance({address: vault.address, chainID: vault.chainID});
-			const tokenPrice = formatToNormalizedValue(toBigInt(prices?.[vault.token.address] || 0), 6);
+			const tokenPrice = getPrice({address: vault.address, chainID: vault.chainID});
 			const boost = Number(userPositionInGauge[gauge.address]?.boost || 1);
 			let APRFor10xBoost =
 				((Number(gauge?.rewardRate.normalized || 0) * dYFIPrice * SECONDS_PER_YEAR) /
 					Number(gauge?.totalStaked.normalized || 0) /
-					tokenPrice) *
+					Number(tokenPrice.normalized || 0)) *
 				100;
-			if (tokenPrice === 0 || Number(gauge?.totalStaked.normalized || 0) === 0) {
+			if (tokenPrice.raw === 0n || Number(gauge?.totalStaked.normalized || 0) === 0) {
 				APRFor10xBoost = 0;
 			}
 
@@ -198,7 +198,7 @@ export function StakeUnstakeGauges(): ReactElement {
 		}
 		set_isLoadingGauges(false);
 		return data;
-	}, [vaults, gaugesMap, getBalance, prices, userPositionInGauge, dYFIPrice]);
+	}, [vaults, gaugesMap, getBalance, getPrice, userPositionInGauge, dYFIPrice]);
 
 	const searchedGaugesData = useMemo((): TGaugeData[] => {
 		if (!search) {

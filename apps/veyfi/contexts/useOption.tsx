@@ -35,7 +35,7 @@ export const OptionContextApp = memo(function OptionContextApp({children}: {chil
 	const [dYFIPrice, set_dYFIPrice] = useState<number>(0);
 	const [position, set_position] = useState<TNormalizedBN>(toNormalizedBN(0));
 	const [discount, set_discount] = useState<TNormalizedBN>(toNormalizedBN(0));
-	const yfiPrice = useTokenPrice(YFI_ADDRESS);
+	const yfiPrice = useTokenPrice({address: YFI_ADDRESS, chainID: VEYFI_CHAIN_ID});
 
 	const getRequiredEth = useCallback(async (amount: bigint): Promise<bigint> => {
 		try {
