@@ -233,7 +233,7 @@ function ListOfVaults(): ReactElement {
 		const single: ReactNode[] = [];
 		const all: ReactNode[] = [];
 		for (const vault of filteredByChains) {
-			if (vault.kind === 'Multi Strategies') {
+			if (vault.kind === 'Multi Strategy') {
 				multi.push(
 					<VaultsV3ListRow
 						key={`${vault.chainID}_${vault.address}`}

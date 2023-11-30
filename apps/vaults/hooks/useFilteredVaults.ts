@@ -84,7 +84,7 @@ export function useVaultFilter(
 	);
 	const MultiVault = useFilteredVaults(
 		vaults,
-		({version, kind}): boolean => (version || '')?.split('.')?.[0] === '3' && kind === 'Multi Strategies'
+		({version, kind}): boolean => (version || '')?.split('.')?.[0] === '3' && kind === 'Multi Strategy'
 	);
 
 	//V2 Filtered Vaults

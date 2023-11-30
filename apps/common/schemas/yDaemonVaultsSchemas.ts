@@ -64,7 +64,7 @@ export const yDaemonVaultSchema = z.object({
 		.catch('Standard'),
 	kind: z
 		.literal('Legacy')
-		.or(z.literal('Multi Strategies'))
+		.or(z.literal('Multi Strategy'))
 		.or(z.literal('Single Strategy'))
 		.default('Legacy')
 		.catch('Legacy'),

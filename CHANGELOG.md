@@ -25,6 +25,7 @@
 -   Fix: For portals, uses `OutputValue` instead of `MinOutputValue` for display.
 -   Fix: The price system was mixed-chain, not multi-chain
 -   Fix: Avoid decimal notations in the OP boost page.
+-   Fix: Hide non-supported tokens in the zap dropdown.
 
 # 0.1.25 (28/08/2023)
 
