@@ -1,11 +1,10 @@
 import {useCallback, useState} from 'react';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useSolver} from '@vaults/contexts/useSolver';
-import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
+import {ETH_TOKEN_ADDRESS, MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isEth} from '@yearn-finance/web-lib/utils/isEth';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
@@ -21,7 +20,6 @@ import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
 export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {refresh} = useWallet();
-	const {refresh: refreshZapBalances} = useWalletForZap();
 	const {address, provider} = useWeb3();
 	const {isStakingOpBoostedVaults} = useYearn();
 	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
@@ -69,19 +67,12 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 				toRefresh.push({address: toAddress(currentVault.staking.address), chainID});
 			}
 			await refresh(toRefresh);
-		} else if (Solver.enum.Cowswap === currentSolver || Solver.enum.Portals === currentSolver) {
-			if (isDepositing) {
-				//refresh input from zap wallet, refresh output from default
-				await Promise.all([
-					refreshZapBalances([{address: toAddress(actionParams?.selectedOptionFrom?.value), chainID}]),
-					refresh([{address: toAddress(actionParams?.selectedOptionTo?.value), chainID}])
-				]);
-			} else {
-				await Promise.all([
-					refreshZapBalances([{address: toAddress(actionParams?.selectedOptionTo?.value), chainID}]),
-					refresh([{address: toAddress(actionParams?.selectedOptionFrom?.value), chainID}])
-				]);
-			}
+		} else {
+			refresh([
+				{address: toAddress(ETH_TOKEN_ADDRESS), chainID},
+				{address: toAddress(actionParams?.selectedOptionFrom?.value), chainID},
+				{address: toAddress(actionParams?.selectedOptionTo?.value), chainID}
+			]);
 		}
 	}, [
 		currentVault,
@@ -89,9 +80,7 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 		currentSolver,
 		actionParams?.selectedOptionFrom?.value,
 		actionParams?.selectedOptionTo?.value,
-		refresh,
-		isDepositing,
-		refreshZapBalances
+		refresh
 	]);
 
 	/* 🔵 - Yearn Finance ******************************************************

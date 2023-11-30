@@ -19,13 +19,18 @@ export type TListHead = {
 
 export function VaultsV3ListHead({items, sortBy, sortDirection, onSort}: TListHead): ReactElement {
 	const toggleSortDirection = (newSortBy: string): TSortDirection => {
-		return sortBy === newSortBy
-			? sortDirection === ''
-				? 'desc'
-				: sortDirection === 'desc'
-				  ? 'asc'
-				  : 'desc'
-			: 'desc';
+		if (sortBy === newSortBy) {
+			if (sortDirection === '') {
+				return 'desc';
+			}
+			if (sortDirection === 'desc') {
+				return 'asc';
+			}
+			if (sortDirection === 'asc') {
+				return '';
+			}
+		}
+		return 'desc';
 	};
 
 	const renderChevron = useCallback(

@@ -47,7 +47,7 @@ function Logo(): ReactElement {
 }
 
 function LogoPopover(): ReactElement {
-	const [isShowing, set_isShowing] = useState(true);
+	const [isShowing, set_isShowing] = useState(false);
 	const router = useRouter();
 	const {name: currentAppName} = useCurrentApp(router);
 

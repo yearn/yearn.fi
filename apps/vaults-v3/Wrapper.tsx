@@ -8,12 +8,14 @@ import type {ReactElement} from 'react';
 
 export function Wrapper({children, router}: {children: ReactElement; router: NextRouter}): ReactElement {
 	const {manifest} = useCurrentApp(router);
-
 	return (
 		<>
 			<Meta meta={manifest} />
 			<AppSettingsContextApp>
-				<WalletForZapAppContextApp>{children}</WalletForZapAppContextApp>
+				<WalletForZapAppContextApp
+					chainID={router?.query?.chainID ? Number(router?.query?.chainID) : undefined}>
+					{children}
+				</WalletForZapAppContextApp>
 			</AppSettingsContextApp>
 		</>
 	);

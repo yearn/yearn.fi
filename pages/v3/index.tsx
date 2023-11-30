@@ -1,4 +1,4 @@
-import {Fragment, useEffect, useMemo, useState} from 'react';
+import {Children, Fragment, useEffect, useMemo, useState} from 'react';
 import {motion, useSpring, useTransform} from 'framer-motion';
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
 import {useVaultFilter} from '@vaults/hooks/useFilteredVaults';
@@ -9,7 +9,6 @@ import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
 import {VaultsV3ListRow} from '@vaults-v3/components/list/VaultsV3ListRow';
 import {ALL_VAULTSV3_CATEGORIES_KEYS} from '@vaults-v3/constants';
 import {V3Mask} from '@vaults-v3/Mark';
-import {Wrapper} from '@vaults-v3/Wrapper';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
@@ -18,7 +17,6 @@ import {InfoTooltip} from '@common/components/InfoTooltip';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 
-import type {NextRouter} from 'next/router';
 import type {ReactElement, ReactNode} from 'react';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TSortDirection} from '@common/types/types';
@@ -212,7 +210,7 @@ function ListOfVaults(): ReactElement {
 	 **	The VaultList component is memoized to prevent it from being re-created on every render.
 	 **	It contains either the list of vaults, is some are available, or a message to the user.
 	 **********************************************************************************************/
-	const VaultList = useMemo((): ReactNode => {
+	const VaultList = useMemo((): [ReactNode, ReactNode, ReactNode] | ReactNode => {
 		const filteredByChains = sortedVaultsToDisplay.filter(
 			({chainID}): boolean => chains?.includes(chainID) || false
 		);
@@ -230,30 +228,57 @@ function ListOfVaults(): ReactElement {
 				/>
 			);
 		}
-		const sortedByKind = filteredByChains.sort((a, b): number => {
-			if (a.kind === b.kind) {
-				return 0;
+
+		const multi: ReactNode[] = [];
+		const single: ReactNode[] = [];
+		const all: ReactNode[] = [];
+		for (const vault of filteredByChains) {
+			if (vault.kind === 'Multi Strategies') {
+				multi.push(
+					<VaultsV3ListRow
+						key={`${vault.chainID}_${vault.address}`}
+						currentVault={vault}
+					/>
+				);
 			}
-			if (a.kind === 'Multi Strategies') {
-				return -1;
+			if (vault.kind === 'Single Strategy') {
+				single.push(
+					<VaultsV3ListRow
+						key={`${vault.chainID}_${vault.address}`}
+						currentVault={vault}
+					/>
+				);
 			}
-			if (b.kind === 'Single Strategy') {
-				return 1;
-			}
-			return 0;
-		});
-		return sortedByKind.map((vault): ReactNode => {
-			if (!vault) {
-				return null;
-			}
-			return (
+			all.push(
 				<VaultsV3ListRow
 					key={`${vault.chainID}_${vault.address}`}
 					currentVault={vault}
 				/>
 			);
-		});
+		}
+
+		return [multi, single, all];
 	}, [categories, chains, isLoadingVaultList, onReset, search, sortedVaultsToDisplay]);
+
+	function renderVaultList(): ReactNode {
+		if (Children.count(VaultList) === 1) {
+			return VaultList as ReactNode;
+		}
+		const possibleLists = VaultList as [ReactNode, ReactNode, ReactNode];
+
+		if (sortBy !== 'featuringScore' && possibleLists[2]) {
+			return possibleLists[2];
+		}
+		return (
+			<Fragment>
+				{possibleLists[0]}
+				{Children.count(possibleLists[0]) > 0 && Children.count(possibleLists[1]) > 0 ? (
+					<div className={'h-px bg-neutral-100'} />
+				) : null}
+				{possibleLists[1]}
+			</Fragment>
+		);
+	}
 
 	return (
 		<Fragment>
@@ -271,6 +296,11 @@ function ListOfVaults(): ReactElement {
 					sortBy={sortBy}
 					sortDirection={sortDirection}
 					onSort={(newSortBy: string, newSortDirection: string): void => {
+						if (newSortDirection === '') {
+							onChangeSortBy('featuringScore');
+							onChangeSortDirection('');
+							return;
+						}
 						onChangeSortBy(newSortBy as TPossibleSortBy);
 						onChangeSortDirection(newSortDirection as TSortDirection);
 					}}
@@ -283,7 +313,7 @@ function ListOfVaults(): ReactElement {
 						{label: 'Deposits', value: 'tvl', sortable: true, className: 'col-span-2'}
 					]}
 				/>
-				<div className={'grid gap-4'}>{VaultList}</div>
+				<div className={'grid gap-4'}>{renderVaultList()}</div>
 			</div>
 		</Fragment>
 	);
@@ -375,9 +405,5 @@ function Index(): ReactElement {
 		</div>
 	);
 }
-
-Index.getLayout = function getLayout(page: ReactElement, router: NextRouter): ReactElement {
-	return <Wrapper router={router}>{page}</Wrapper>;
-};
 
 export default Index;

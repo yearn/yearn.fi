@@ -79,6 +79,7 @@ function useYearnTokens({shouldUseForknetBalances}: {shouldUseForknetBalances: b
 			...[
 				{chainID: 1, address: ETH_TOKEN_ADDRESS},
 				{chainID: 10, address: ETH_TOKEN_ADDRESS},
+				{chainID: 137, address: ETH_TOKEN_ADDRESS},
 				{chainID: 250, address: ETH_TOKEN_ADDRESS},
 				{chainID: 8453, address: ETH_TOKEN_ADDRESS},
 				{chainID: 42161, address: ETH_TOKEN_ADDRESS},

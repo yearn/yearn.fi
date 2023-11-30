@@ -149,7 +149,7 @@ export function ActionFlowContextApp({
 }): React.ReactElement {
 	const {address} = useWeb3();
 	const {getBalance} = useWallet();
-	const {listTokens: listZapTokens, tokensList} = useWalletForZap();
+	const {listTokens: listZapTokens} = useWalletForZap();
 	const {zapProvider, isStakingOpBoostedVaults} = useYearn();
 	const [possibleOptionsFrom, set_possibleOptionsFrom] = useState<TDropdownOption[]>([]);
 	const [possibleZapOptionsFrom, set_possibleZapOptionsFrom] = useState<TDropdownOption[]>([]);
@@ -619,26 +619,13 @@ export function ActionFlowContextApp({
 	 **********************************************************************************************/
 	useUpdateEffect((): void => {
 		const _possibleZapOptionsFrom: TDropdownOption[] = [];
-		const isWithWETH =
-			currentVault.chainID === 1 && currentVault && toAddress(currentVault.token.address) === WETH_TOKEN_ADDRESS;
+		const isWithWETH = currentVault.chainID === 1 && toAddress(currentVault?.token?.address) === WETH_TOKEN_ADDRESS;
 		const isWithWOPT =
-			currentVault.chainID === 10 &&
-			currentVault &&
-			toAddress(currentVault.token.address) === OPT_WETH_TOKEN_ADDRESS;
+			currentVault.chainID === 10 && toAddress(currentVault?.token?.address) === OPT_WETH_TOKEN_ADDRESS;
 		const isWithWFTM =
-			currentVault.chainID === 250 &&
-			currentVault &&
-			toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS;
+			currentVault.chainID === 250 && toAddress(currentVault?.token?.address) === WFTM_TOKEN_ADDRESS;
 
 		Object.values(listZapTokens({chainID: currentVault.chainID})).forEach((tokenData): void => {
-			const tokenListData = tokensList[toAddress(tokenData.address)];
-			if (!tokenListData) {
-				return;
-			}
-			if (tokenData.address === ETH_TOKEN_ADDRESS && !isWithWETH) {
-				return;
-			}
-
 			const duplicateAddresses = [
 				isWithWETH ? WETH_TOKEN_ADDRESS : null,
 				isWithWFTM ? WFTM_TOKEN_ADDRESS : null,
@@ -659,12 +646,12 @@ export function ActionFlowContextApp({
 					address: toAddress(tokenData.address),
 					chainID: currentVault?.chainID === 1337 ? currentVault.chainID : currentVault?.chainID,
 					decimals: tokenData.decimals,
-					solveVia: tokenListData.supportedZaps || []
+					solveVia: tokenData.supportedZaps || []
 				})
 			);
 		});
 		set_possibleZapOptionsFrom(_possibleZapOptionsFrom);
-	}, [currentVault.chainID, tokensList, listZapTokens, currentVault]);
+	}, [currentVault.chainID, listZapTokens, currentVault]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	 ** FLOW: Init the possibleZapOptionsTo array.

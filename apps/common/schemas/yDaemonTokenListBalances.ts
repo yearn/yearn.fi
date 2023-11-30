@@ -1,6 +1,8 @@
 import {z} from 'zod';
 import {addressSchema} from '@yearn-finance/web-lib/utils/schemas/addressSchema';
 
+import type {TDict, TNDict} from '@yearn-finance/web-lib/types';
+
 const SOLVER = [
 	'Vanilla',
 	'PartnerContract',
@@ -29,6 +31,7 @@ const yDaemonTokenListBalance = z.object({
 	supportedZaps: Solver.array().optional()
 });
 
-export const yDaemonTokenListBalances = z.record(addressSchema, yDaemonTokenListBalance);
-
-export type TYDaemonTokenListBalances = z.infer<typeof yDaemonTokenListBalances>;
+export const _yDaemonTokenListBalances = z.record(addressSchema, yDaemonTokenListBalance);
+export const yDaemonTokenListBalances = z.record(z.string(), _yDaemonTokenListBalances);
+export type TYDaemonTokenListBalances = TNDict<TDict<z.infer<typeof yDaemonTokenListBalance>>>;
+export type TSupportedZaps = z.infer<typeof Solver>;

@@ -5,14 +5,15 @@ import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
-import {useBalance} from '@common/hooks/useBalance';
+import {useWallet} from '@common/contexts/useWallet';
 import {IconChevron} from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
 import type {TDropdownItemProps, TDropdownOption, TDropdownProps} from '@common/types/types';
 
 function DropdownItem({option}: TDropdownItemProps): ReactElement {
-	const balance = useBalance({address: option.value, chainID: option.chainID});
+	const {getBalance} = useWallet();
+	const balance = getBalance({address: option.value, chainID: option.chainID});
 
 	return (
 		<Combobox.Option value={option}>

@@ -19,6 +19,9 @@
 -   Rename path `vault-v3` to simple `v3`.
 -   Fix: Portals zap slippage too low.
 -   Fix: Searchbar on the vault details page was removed if the search was not giving any result.
+-   Feat: Accept native coin for Portals Zap.
+-   Fix: Balance refresh not refreshing properly.
+-   Fix: Update the zap schema from yDaemon
 
 # 0.1.25 (28/08/2023)
 
