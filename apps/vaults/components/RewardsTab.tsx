@@ -16,9 +16,6 @@ import {approveERC20} from '@common/utils/actions';
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
-const DISPLAY_DECIMALS = 10;
-const trimAmount = (amount: string | number): string => Number(Number(amount).toFixed(DISPLAY_DECIMALS)).toString();
-
 export function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {provider, isActive} = useWeb3();
 	const {refresh: refreshBalances} = useWallet();
@@ -103,12 +100,13 @@ export function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): React
 					<div className={'flex flex-col gap-4 md:flex-row'}>
 						<Input
 							className={'w-full md:w-1/3'}
-							label={'You have unstaked'}
+							label={`You have unstaked, ${currentVault.symbol}`}
 							legend={formatCounterValue(
 								vaultToken.balance.normalized,
 								Number(vaultToken.price.normalized)
 							)}
-							value={`${trimAmount(vaultToken.balance.normalized)} ${currentVault.symbol}`}
+							value={`${Number(vaultToken.balance.normalized).toFixed(vaultToken.decimals)}`}
+							// value={`${trimAmount(vaultToken.balance.normalized)} ${currentVault.symbol}`}
 							isDisabled
 						/>
 						<Button
@@ -134,14 +132,13 @@ export function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): React
 					<div className={'flex flex-col gap-4 md:flex-row'}>
 						<Input
 							className={'w-full md:w-1/3'}
-							label={'You have unclaimed'}
+							label={`You have unclaimed, ${rewardTokenBalance.symbol || 'yvOP'}`}
 							legend={formatCounterValue(
 								normalizedRewardBalance.normalized,
 								Number(rewardTokenBalance.price.normalized)
 							)}
-							value={`${trimAmount(normalizedRewardBalance.normalized)} ${
-								rewardTokenBalance.symbol || 'yvOP'
-							}`}
+							value={`${Number(normalizedRewardBalance.normalized).toFixed(rewardTokenBalance.decimals)}`}
+							// value={`${trimAmount(normalizedRewardBalance.normalized)}`}
 							isDisabled
 						/>
 						<Button
@@ -167,12 +164,12 @@ export function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): React
 					<div className={'flex flex-col gap-4 md:flex-row'}>
 						<Input
 							className={'w-full md:w-1/3'}
-							label={'You have staked'}
+							label={`You have staked, ${currentVault.symbol}`}
 							legend={formatCounterValue(
 								normalizedStakeBalance.normalized,
 								Number(vaultToken.price.normalized)
 							)}
-							value={`${trimAmount(normalizedStakeBalance.normalized)} ${currentVault.symbol}`}
+							value={`${Number(normalizedStakeBalance.normalized).toFixed(vaultToken.decimals)}`}
 							isDisabled
 						/>
 						<Button
