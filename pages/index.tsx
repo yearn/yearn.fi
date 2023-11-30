@@ -103,7 +103,7 @@ const apps = [
 	{
 		href: 'https://yprisma.yearn.fi',
 		title: 'yPrisma',
-		description: 'Every rainbow needs a pot of gold.',
+		description: 'every rainbow needs a pot of gold.',
 		icon: (
 			<ImageWithFallback
 				alt={'yPrisma'}
