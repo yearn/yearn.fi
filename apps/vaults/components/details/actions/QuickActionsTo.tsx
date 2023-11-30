@@ -14,7 +14,10 @@ export function VaultDetailsQuickActionsTo(): ReactElement {
 	const {isActive} = useWeb3();
 	const {currentVault, possibleOptionsTo, actionParams, onUpdateSelectedOptionTo, isDepositing} = useActionFlow();
 	const {expectedOut, isLoadingExpectedOut} = useSolver();
-	const selectedOptionToPricePerToken = useTokenPrice(toAddress(actionParams?.selectedOptionTo?.value));
+	const selectedOptionToPricePerToken = useTokenPrice({
+		address: toAddress(actionParams?.selectedOptionTo?.value),
+		chainID: Number(actionParams?.selectedOptionTo?.chainID)
+	});
 	const isMigrationAvailable = currentVault?.migration?.available;
 
 	function renderMultipleOptionsFallback(): ReactElement {
@@ -34,9 +37,9 @@ export function VaultDetailsQuickActionsTo(): ReactElement {
 			className={'flex w-full flex-col space-x-0 md:flex-row md:space-x-4'}>
 			<div className={'relative z-10 w-full space-y-2'}>
 				<div className={'flex flex-row items-baseline justify-between'}>
-					<label className={'text-base text-neutral-600'}>
+					<p className={'text-base text-neutral-600'}>
 						{isDepositing || isMigrationAvailable ? 'To vault' : 'To wallet'}
-					</label>
+					</p>
 					<legend
 						className={'font-number inline text-xs text-neutral-600 md:hidden'}
 						suppressHydrationWarning>

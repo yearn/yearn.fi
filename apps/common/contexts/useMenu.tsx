@@ -72,6 +72,7 @@ export const MenuContextApp = ({children}: {children: React.ReactElement}): Reac
 				{(menu?.app || [])?.map(
 					(option): ReactElement => (
 						<Link
+							prefetch={false}
 							key={option.path}
 							href={option.path}>
 							<div

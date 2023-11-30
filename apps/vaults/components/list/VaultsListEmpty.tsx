@@ -1,4 +1,4 @@
-import {ALL_CHAINS, ALL_VAULTS_CATEGORIES_KEYS} from '@vaults/constants';
+import {ALL_VAULTS_CATEGORIES_KEYS} from '@vaults/constants';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 
@@ -8,20 +8,20 @@ import type {TYDaemonVaults} from '@common/schemas/yDaemonVaultsSchemas';
 type TVaultListEmpty = {
 	sortedVaultsToDisplay: TYDaemonVaults;
 	currentSearch: string;
-	currentCategories: string[];
-	currentChains: number[];
-	onChangeCategories: (value: string[]) => void;
-	onChangeChains: (value: number[]) => void;
+	currentCategories: string[] | null;
+	currentChains: number[] | null;
+	onReset: () => void;
 	isLoading: boolean;
+	defaultCategories?: string[];
 };
 export function VaultsListEmpty({
 	sortedVaultsToDisplay,
 	currentSearch,
 	currentCategories,
 	currentChains,
-	onChangeCategories,
-	onChangeChains,
-	isLoading
+	onReset,
+	isLoading,
+	defaultCategories = ALL_VAULTS_CATEGORIES_KEYS
 }: TVaultListEmpty): ReactElement {
 	if (isLoading && isZero(sortedVaultsToDisplay.length)) {
 		return (
@@ -38,8 +38,8 @@ export function VaultsListEmpty({
 	if (
 		!isLoading &&
 		isZero(sortedVaultsToDisplay.length) &&
-		currentCategories.length === 1 &&
-		currentCategories.includes('holdings')
+		currentCategories?.length === 1 &&
+		currentCategories?.includes('holdings')
 	) {
 		return (
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
@@ -55,8 +55,22 @@ export function VaultsListEmpty({
 		return (
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center gap-4 px-10 py-2 md:w-3/4'}>
 				<b className={'text-center text-lg'}>{'No data, reeeeeeeeeeee'}</b>
-				{currentCategories.length === ALL_VAULTS_CATEGORIES_KEYS.length ? (
+				{(currentCategories?.length || 0) >= defaultCategories.length && currentSearch !== '' ? (
 					<p className={'text-center text-neutral-600'}>{`The vault "${currentSearch}" does not exist`}</p>
+				) : (currentCategories?.length || 0) < defaultCategories.length && currentSearch !== '' ? (
+					<>
+						<p className={'text-center text-neutral-600'}>
+							{`The vault "${currentSearch}" does not exist.`}
+						</p>
+						<p className={'text-center text-neutral-600'}>
+							{`It might be because you of your filters, or because there’s a rodent infestation in our server room. You check the filters, we’ll check the rodents. Deal?`}
+						</p>
+						<Button
+							className={'w-full md:w-48'}
+							onClick={onReset}>
+							{'Search all vaults'}
+						</Button>
+					</>
 				) : (
 					<>
 						<p className={'text-center text-neutral-600'}>
@@ -64,10 +78,7 @@ export function VaultsListEmpty({
 						</p>
 						<Button
 							className={'w-full md:w-48'}
-							onClick={(): void => {
-								onChangeCategories(ALL_VAULTS_CATEGORIES_KEYS);
-								onChangeChains(ALL_CHAINS);
-							}}>
+							onClick={onReset}>
 							{'Search all vaults'}
 						</Button>
 					</>
@@ -75,7 +86,7 @@ export function VaultsListEmpty({
 			</div>
 		);
 	}
-	if (!isLoading && currentChains.length === 0) {
+	if (!isLoading && currentChains && currentChains.length > 0) {
 		return (
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center gap-4 px-10 py-2 md:w-3/4'}>
 				<b className={'text-center text-lg'}>{'No data, reeeeeeeeeeee'}</b>
@@ -86,10 +97,7 @@ export function VaultsListEmpty({
 						}>{`Please, select a chain. At least one, just one.`}</p>
 					<Button
 						className={'w-full md:w-48'}
-						onClick={(): void => {
-							onChangeCategories(ALL_VAULTS_CATEGORIES_KEYS);
-							onChangeChains(ALL_CHAINS);
-						}}>
+						onClick={onReset}>
 						{'Search all vaults'}
 					</Button>
 				</>
@@ -116,8 +124,7 @@ export function VaultsListEmptyFactory({
 	sortedVaultsToDisplay,
 	currentCategories,
 	currentChains,
-	onChangeCategories,
-	onChangeChains,
+	onReset,
 	isLoading
 }: TVaultListEmpty): ReactElement {
 	if (isLoading && isZero(sortedVaultsToDisplay.length)) {
@@ -135,16 +142,14 @@ export function VaultsListEmptyFactory({
 	if (
 		!isLoading &&
 		isZero(sortedVaultsToDisplay.length) &&
-		currentCategories.length === 1 &&
-		currentCategories.includes('holdings')
+		currentCategories?.length === 1 &&
+		currentCategories?.includes('holdings')
 	) {
 		return (
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
 				<b className={'text-center text-lg'}>{'Well this is awkward...'}</b>
 				<p className={'text-center text-neutral-600'}>
-					{
-						"You don't appear to have any deposits in our Factory Vaults. There's an easy way to change that 😏"
-					}
+					{"You don't appear to have any deposits in our Vaults. There's an easy way to change that 😏"}
 				</p>
 			</div>
 		);
@@ -161,7 +166,7 @@ export function VaultsListEmptyFactory({
 			</div>
 		);
 	}
-	if (!isLoading && currentChains.length === 0) {
+	if (!isLoading && (!currentChains || currentChains.length === 0)) {
 		return (
 			<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center gap-4 px-10 py-2 md:w-3/4'}>
 				<b className={'text-center text-lg'}>{'No data, reeeeeeeeeeee'}</b>
@@ -172,10 +177,7 @@ export function VaultsListEmptyFactory({
 						}>{`Please, select a chain. At least one, just one.`}</p>
 					<Button
 						className={'w-full md:w-48'}
-						onClick={(): void => {
-							onChangeCategories(ALL_VAULTS_CATEGORIES_KEYS);
-							onChangeChains(ALL_CHAINS);
-						}}>
+						onClick={onReset}>
 						{'Search all vaults'}
 					</Button>
 				</>

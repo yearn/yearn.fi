@@ -7,6 +7,7 @@ import {
 	CRV_TOKEN_ADDRESS,
 	LPYCRV_TOKEN_ADDRESS,
 	LPYCRV_V2_TOKEN_ADDRESS,
+	STYCRV_TOKEN_ADDRESS,
 	YCRV_CURVE_POOL_ADDRESS,
 	YCRV_CURVE_POOL_V2_ADDRESS,
 	YCRV_TOKEN_ADDRESS
@@ -50,12 +51,17 @@ function CardZap(): ReactElement {
 	} = useCardTransactor();
 
 	const ycrvPrice = useMemo(
-		(): number => formatToNormalizedValue(toBigInt(prices?.[YCRV_TOKEN_ADDRESS] || 0), 6),
+		(): number => formatToNormalizedValue(toBigInt(prices?.[1]?.[YCRV_TOKEN_ADDRESS] || 0), 6),
 		[prices]
 	);
 
 	const ycrvCurvePoolPrice = useMemo(
-		(): number => formatToNormalizedValue(toBigInt(prices?.[YCRV_CURVE_POOL_ADDRESS] || 0), 6),
+		(): number => formatToNormalizedValue(toBigInt(prices?.[1]?.[YCRV_CURVE_POOL_ADDRESS] || 0), 6),
+		[prices]
+	);
+
+	const stycrvPrice = useMemo(
+		(): number => formatToNormalizedValue(toBigInt(prices?.[1]?.[STYCRV_TOKEN_ADDRESS] || 0), 6),
 		[prices]
 	);
 
@@ -89,7 +95,7 @@ function CardZap(): ReactElement {
 			return possibleOptions;
 		}
 		return ZAP_OPTIONS_TO.filter((option): boolean => option.value !== selectedOptionFrom.value);
-	}, [selectedOptionFrom.value, selectedOptionTo.value, ZAP_OPTIONS_TO]);
+	}, [selectedOptionFrom.value, selectedOptionTo.value, set_selectedOptionTo]);
 
 	function renderButton(): ReactElement {
 		const balanceForInputToken = getBalance({
@@ -136,7 +142,7 @@ function CardZap(): ReactElement {
 	return (
 		<>
 			<div className={'grid grid-cols-2 gap-4'}>
-				<label className={'relative z-20 flex flex-col space-y-1'}>
+				<div className={'relative z-20 flex flex-col space-y-1'}>
 					<p className={'text-base text-neutral-600'}>{'Swap from'}</p>
 					<Dropdown
 						defaultOption={ZAP_OPTIONS_FROM[0]}
@@ -163,7 +169,7 @@ function CardZap(): ReactElement {
 						className={'pl-2 !text-xs font-normal !text-green-600'}>
 						{fromVaultAPY}
 					</p>
-				</label>
+				</div>
 				<div className={'flex flex-col space-y-1'}>
 					<label
 						htmlFor={'amount'}
@@ -222,15 +228,17 @@ function CardZap(): ReactElement {
 							toAddress(selectedOptionFrom.value) === YCRV_TOKEN_ADDRESS
 								? ycrvPrice || 0
 								: toAddress(selectedOptionFrom.value) === YCRV_CURVE_POOL_ADDRESS
-								? ycrvCurvePoolPrice || 0
-								: Number(
-										getToken({
-											address: selectedOptionFrom.value,
-											chainID: selectedOptionFrom.chainID
-										}).price.normalized
-								  ) ||
-								  vaults?.[toAddress(selectedOptionFrom.value)]?.tvl?.price ||
-								  0
+								  ? ycrvCurvePoolPrice || 0
+								  : toAddress(selectedOptionFrom.value) === STYCRV_TOKEN_ADDRESS
+								    ? stycrvPrice || 0
+								    : Number(
+												getToken({
+													address: selectedOptionFrom.value,
+													chainID: selectedOptionFrom.chainID
+												}).price.normalized
+								      ) ||
+								      vaults?.[toAddress(selectedOptionFrom.value)]?.tvl?.price ||
+								      0
 						)}
 					</p>
 				</div>
@@ -246,7 +254,7 @@ function CardZap(): ReactElement {
 			</div>
 
 			<div className={'mb-8 mt-4 grid grid-cols-2 gap-4 md:mt-0'}>
-				<label className={'relative z-10 flex flex-col space-y-1'}>
+				<div className={'relative z-10 flex flex-col space-y-1'}>
 					<p className={'text-base text-neutral-600'}>{'Swap to'}</p>
 					<Dropdown
 						defaultOption={possibleTo[0]}
@@ -259,7 +267,7 @@ function CardZap(): ReactElement {
 						className={'pl-2 !text-xs font-normal !text-green-600'}>
 						{toVaultAPY}
 					</p>
-				</label>
+				</div>
 				<div className={'flex flex-col space-y-1'}>
 					<div>
 						<p className={'hidden text-base text-neutral-600 md:block'}>{'You will receive minimum'}</p>
@@ -276,13 +284,15 @@ function CardZap(): ReactElement {
 							toAddress(selectedOptionTo.value) === YCRV_TOKEN_ADDRESS
 								? ycrvPrice || 0
 								: toAddress(selectedOptionFrom.value) === YCRV_CURVE_POOL_ADDRESS
-								? ycrvCurvePoolPrice || 0
-								: Number(
-										getToken({address: selectedOptionTo.value, chainID: selectedOptionTo.chainID})
-											.price.normalized
-								  ) ||
-								  vaults?.[toAddress(selectedOptionTo.value)]?.tvl?.price ||
-								  0
+								  ? ycrvCurvePoolPrice || 0
+								  : Number(
+											getToken({
+												address: selectedOptionTo.value,
+												chainID: selectedOptionTo.chainID
+											}).price.normalized
+								    ) ||
+								    vaults?.[toAddress(selectedOptionTo.value)]?.tvl?.price ||
+								    0
 						)}
 					</p>
 				</div>

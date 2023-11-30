@@ -29,10 +29,10 @@ export function setZapOption({
 		chainID,
 		icon: (
 			<ImageWithFallback
-				src={`${process.env.BASE_YEARN_ASSETS_URI}/${chainID}/${address}/logo-128.png`}
+				src={`${process.env.BASE_YEARN_ASSETS_URI}/${chainID}/${address}/logo-32.png`}
 				alt={name}
-				width={36}
-				height={36}
+				width={24}
+				height={24}
 			/>
 		)
 	};

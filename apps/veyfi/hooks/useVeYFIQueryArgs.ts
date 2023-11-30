@@ -1,35 +1,49 @@
-import {useEffect, useState} from 'react';
-import {StringParam, useQueryParam} from 'use-query-params';
+import {useCallback, useState} from 'react';
+import {useSearchParams} from 'next/navigation';
+import {useRouter} from 'next/router';
+import {useDeepCompareEffect, useMountEffect} from '@react-hookz/web';
 
 type TQueryArgs = {
 	search: string | null | undefined;
 	onSearch: (value: string) => void;
 };
 function useQueryArguments(): TQueryArgs {
-	const [searchParam, set_searchParam] = useQueryParam('search', StringParam);
-	const [search, set_search] = useState(searchParam);
+	const searchParams = useSearchParams();
+	const router = useRouter();
+	const [search, set_search] = useState<string | null>(null);
 
-	/** 🔵 - Yearn *********************************************************************************
-	 **	This useEffect hook is used to synchronize the search state with the query parameter
-	 *********************************************************************************************/
-	useEffect((): void => {
-		if (searchParam === search) {
-			return;
+	const handleQuery = useCallback((_searchParams: URLSearchParams): void => {
+		if (_searchParams.has('search')) {
+			const _search = _searchParams.get('search');
+			if (_search === null) {
+				return;
+			}
+			set_search(_search);
 		}
-		if (search === undefined && searchParam !== undefined) {
-			set_search(searchParam);
-			return;
-		}
-		if (!search) {
-			set_searchParam(undefined);
-		} else {
-			set_searchParam(search);
-		}
-	}, [searchParam, search, set_searchParam]);
+	}, []);
+
+	useMountEffect((): void | VoidFunction => {
+		const currentPage = new URL(window.location.href);
+		handleQuery(new URLSearchParams(currentPage.search));
+	});
+
+	useDeepCompareEffect((): void | VoidFunction => {
+		handleQuery(searchParams);
+	}, [searchParams]);
 
 	return {
 		search,
-		onSearch: set_search
+		onSearch: (value): void => {
+			set_search(value);
+			const currentURL = new URL(window.location.href);
+			if (value === '') {
+				currentURL.searchParams.delete('search');
+				router.replace(currentURL, {search: currentURL.search}, {shallow: true});
+				return;
+			}
+			currentURL.searchParams.set('search', value);
+			router.replace(currentURL, {search: currentURL.search}, {shallow: true});
+		}
 	};
 }
 

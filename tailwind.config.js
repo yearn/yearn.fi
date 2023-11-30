@@ -49,7 +49,15 @@ module.exports = {
 				13: 'repeat(13, minmax(0, 1fr))',
 				14: 'repeat(14, minmax(0, 1fr))',
 				20: 'repeat(20, minmax(0, 1fr))',
-				30: 'repeat(30, minmax(0, 1fr))'
+				30: 'repeat(30, minmax(0, 1fr))',
+				75: 'repeat(75, minmax(0, 1fr))'
+			},
+			gridColumn: {
+				'span-75': 'span 75 / span 75',
+				'span-50': 'span 50 / span 50',
+				'span-46': 'span 46 / span 46',
+				'span-29': 'span 29 / span 29',
+				'span-25': 'span 25 / span 25'
 			},
 			fontSize: {
 				xxs: ['10px', '16px'],
@@ -57,6 +65,19 @@ module.exports = {
 				'3xl': ['32px', '40px'],
 				'7xl': ['64px', '72px'],
 				'8xl': ['88px', '104px']
+			},
+			animation: {
+				'spin-slow': 'spin 4s linear infinite'
+			},
+			keyframes: {
+				'spin-slow': {
+					from: {
+						transform: 'rotate(0deg)'
+					},
+					to: {
+						transform: 'rotate(360deg)'
+					}
+				}
 			}
 		}
 	},

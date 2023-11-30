@@ -1,7 +1,6 @@
 import {Fragment, useMemo} from 'react';
 import {Popover, Transition} from '@headlessui/react';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
-import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {IconSettings} from '@yearn-finance/web-lib/icons/IconSettings';
 import {Switch} from '@common/components/Switch';
@@ -35,17 +34,14 @@ export function SettingsPopover({vault}: TSettingPopover): ReactElement {
 		isStakingOpBoostedVaults,
 		set_isStakingOpBoostedVaults
 	} = useYearn();
-	const {stakingRewardsByVault} = useStakingRewards();
-
-	const {address, chainID} = vault;
-	const hasStakingRewards = !!stakingRewardsByVault?.[address];
+	const hasStakingRewards = vault.staking.available;
 
 	const currentZapProvider = useMemo((): TSolver => {
-		if (chainID !== 1 && zapProvider === 'Cowswap') {
-			return 'Wido';
+		if (vault.chainID !== 1 && zapProvider === 'Cowswap') {
+			return 'Portals';
 		}
 		return zapProvider;
-	}, [chainID, zapProvider]);
+	}, [vault.chainID, zapProvider]);
 
 	return (
 		<Popover className={'relative flex'}>
@@ -68,32 +64,27 @@ export function SettingsPopover({vault}: TSettingPopover): ReactElement {
 							<div className={'yearn--shadow'}>
 								<div className={'relative bg-neutral-0 p-4'}>
 									<div className={'mb-6 flex flex-col space-y-1'}>
-										<Label>{'Zap Provider'}</Label>
+										<p>{'Zap Provider'}</p>
 										<select
 											id={'zapProvider'}
 											onChange={(e): void => set_zapProvider(e.target.value as TSolver)}
 											value={
-												!isSolverDisabled(chainID)[currentZapProvider]
+												!isSolverDisabled(currentZapProvider)
 													? currentZapProvider
-													: Solver.enum.Wido
+													: Solver.enum.Portals
 											}
 											className={
 												'mt-1 h-10 w-full overflow-x-scroll border-none bg-neutral-100 p-2 outline-none scrollbar-none'
 											}>
-											{chainID === 1 ? (
+											{vault.chainID === 1 ? (
 												<option
-													disabled={isSolverDisabled(chainID)[Solver.enum.Cowswap]}
+													disabled={isSolverDisabled(Solver.enum.Cowswap)}
 													value={Solver.enum.Cowswap}>
 													{Solver.enum.Cowswap}
 												</option>
 											) : null}
 											<option
-												disabled={isSolverDisabled(chainID)[Solver.enum.Wido]}
-												value={Solver.enum.Wido}>
-												{Solver.enum.Wido}
-											</option>
-											<option
-												disabled={isSolverDisabled(chainID)[Solver.enum.Portals]}
+												disabled={isSolverDisabled(Solver.enum.Portals)}
 												value={Solver.enum.Portals}>
 												{Solver.enum.Portals}
 											</option>
@@ -111,21 +102,18 @@ export function SettingsPopover({vault}: TSettingPopover): ReactElement {
 												&nbsp;{'using CoW Swap.'}
 											</legend>
 										</Renderable>
-										<Renderable shouldRender={currentZapProvider === Solver.enum.Wido}>
+										<Renderable shouldRender={currentZapProvider === Solver.enum.Portals}>
 											<legend className={'ml-2 text-xs text-neutral-500'}>
 												{'Submit an order via'}&nbsp;
 												<a
 													className={'underline'}
-													href={'https://www.joinwido.com/'}
+													href={'https://portals.fi/'}
 													target={'_blank'}
 													rel={'noreferrer'}>
-													{'Wido'}
+													{'Portals'}
 												</a>
 												&nbsp;{'(0.3% fee).'}
 											</legend>
-										</Renderable>
-										<Renderable shouldRender={currentZapProvider === Solver.enum.Portals}>
-											<legend>&nbsp;</legend>
 										</Renderable>
 									</div>
 									<div className={'flex flex-col space-y-1'}>

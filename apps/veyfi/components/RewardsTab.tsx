@@ -25,13 +25,13 @@ import type {TNormalizedBN} from '@common/types/types';
 function GaugeRewards(): ReactElement {
 	const [selectedGauge, set_selectedGauge] = useState<TDropdownOption>();
 	const {provider, isActive} = useWeb3();
-	const {gaugesMap, positionsMap, refresh: refreshGauges} = useGauge();
+	const {gaugesMap, userPositionInGauge, refresh: refreshGauges} = useGauge();
 	const {dYFIPrice} = useOption();
 	const {vaults} = useYearn();
 	const refreshData = useCallback((): unknown => Promise.all([refreshGauges()]), [refreshGauges]);
 	const [claimStatus, set_claimStatus] = useState(defaultTxStatus);
 	const selectedGaugeAddress = toAddress(selectedGauge?.id);
-	const selectedGaugeRewards = positionsMap[selectedGaugeAddress]?.reward ?? toNormalizedBN(0n);
+	const selectedGaugeRewards = userPositionInGauge[selectedGaugeAddress]?.reward ?? toNormalizedBN(0n);
 
 	const onClaim = useCallback(async (): Promise<void> => {
 		const result = await GaugeActions.claimRewards({
@@ -48,7 +48,7 @@ function GaugeRewards(): ReactElement {
 	const gaugeOptions = useMemo((): TDropdownOption[] => {
 		const options: TDropdownOption[] = [];
 		for (const gauge of Object.values(gaugesMap)) {
-			if (!gauge || toBigInt(positionsMap[gauge.address]?.reward?.raw) === 0n) {
+			if (!gauge || toBigInt(userPositionInGauge[gauge.address]?.reward?.raw) === 0n) {
 				continue;
 			}
 			const vault = vaults[toAddress(gauge?.vaultAddress)];
@@ -60,7 +60,7 @@ function GaugeRewards(): ReactElement {
 			});
 		}
 		return options;
-	}, [gaugesMap, positionsMap, vaults]);
+	}, [gaugesMap, userPositionInGauge, vaults]);
 
 	return (
 		<div className={'flex flex-col gap-6 md:gap-10'}>
@@ -173,8 +173,8 @@ function BoostRewards(): ReactElement {
 }
 
 function ExitRewards(): ReactElement {
-	const {isActive, provider, address} = useWeb3();
-	const yfiPrice = useTokenPrice(YFI_ADDRESS);
+	const {provider, address} = useWeb3();
+	const yfiPrice = useTokenPrice({address: YFI_ADDRESS, chainID: VEYFI_CHAIN_ID});
 	const [claimable, set_claimable] = useState<TNormalizedBN>(toNormalizedBN(0));
 	const [claimStatus, set_claimStatus] = useState(defaultTxStatus);
 
@@ -193,10 +193,11 @@ function ExitRewards(): ReactElement {
 			});
 			set_claimable(toNormalizedBN(result, 18));
 		} catch (error) {
+			console.warn(error);
 			console.error(`[err - ExitRewards]: static call reverted when trying to get claimable amount.`);
 			set_claimable(toNormalizedBN(0));
 		}
-	}, [address, isActive, provider]); // eslint-disable-line react-hooks/exhaustive-deps
+	}, [address]);
 
 	const onClaim = useCallback(async (): Promise<void> => {
 		const result = await GaugeActions.claimBoostRewards({

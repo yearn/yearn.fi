@@ -2,19 +2,20 @@ import {cl} from '@yearn-finance/web-lib/utils/cl';
 
 import type {ChangeEvent, ReactElement} from 'react';
 
-export type TSearchBar = {
+type TSearchBar = {
 	searchPlaceholder: string;
 	searchValue: string;
-	set_searchValue: (searchValue: string) => void;
+	onSearch: (searchValue: string) => void;
 	className?: string;
+	iconClassName?: string;
 };
 
-export function SearchBar({searchPlaceholder, searchValue, set_searchValue, className}: TSearchBar): ReactElement {
+export function SearchBar(props: TSearchBar): ReactElement {
 	return (
 		<>
 			<div
 				className={cl(
-					className,
+					props.className,
 					'mt-1 flex h-10 w-full max-w-md items-center border border-neutral-0 bg-neutral-0 p-2 md:w-2/3'
 				)}>
 				<div className={'relative flex h-10 w-full flex-row items-center justify-between'}>
@@ -25,15 +26,13 @@ export function SearchBar({searchPlaceholder, searchValue, set_searchValue, clas
 							'h-10 w-full overflow-x-scroll border-none bg-transparent px-0 py-2 text-base outline-none scrollbar-none placeholder:text-neutral-400'
 						}
 						type={'text'}
-						placeholder={searchPlaceholder}
-						value={searchValue}
+						placeholder={props.searchPlaceholder}
+						value={props.searchValue || ''}
 						onChange={(e: ChangeEvent<HTMLInputElement>): void => {
-							if (set_searchValue) {
-								set_searchValue(e.target.value);
-							}
+							props.onSearch(e.target.value);
 						}}
 					/>
-					<div className={'absolute right-0 text-neutral-400'}>
+					<div className={cl(props.iconClassName, 'absolute right-0 text-neutral-400')}>
 						<svg
 							width={'20'}
 							height={'20'}

@@ -1,10 +1,10 @@
 import {useCallback, useMemo, useRef} from 'react';
-import {isHex} from 'viem';
+import {BaseError, isHex, zeroAddress} from 'viem';
 import axios from 'axios';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {isValidPortalsErrorObject} from '@vaults/hooks/helpers/isValidPortalsErrorObject';
-import {getPortalsApproval, getPortalsEstimate, getPortalsTx} from '@vaults/hooks/usePortalsApi';
-import {getNetwork, prepareSendTransaction, waitForTransaction} from '@wagmi/core';
+import {getPortalsApproval, getPortalsEstimate, getPortalsTx, PORTALS_NETWORK} from '@vaults/hooks/usePortalsApi';
+import {prepareSendTransaction, switchNetwork, waitForTransaction} from '@wagmi/core';
 import {toast} from '@yearn-finance/web-lib/components/yToast';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {allowanceKey, isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
@@ -13,7 +13,7 @@ import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigN
 import {isEth} from '@yearn-finance/web-lib/utils/isEth';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {toWagmiProvider} from '@yearn-finance/web-lib/utils/wagmi/provider';
-import {assertAddress} from '@yearn-finance/web-lib/utils/wagmi/utils';
+import {assertAddress, getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
@@ -37,25 +37,28 @@ async function getQuote(
 	request: TInitSolverArgs,
 	zapSlippage: number
 ): Promise<{data: TPortalsEstimate | null; error?: Error}> {
-	const params = {
-		sellToken: toAddress(request.inputToken.value),
-		sellAmount: toBigInt(request.inputAmount).toString(),
-		buyToken: toAddress(request.outputToken.value),
-		slippagePercentage: String(zapSlippage / 100)
-	};
+	const network = PORTALS_NETWORK.get(request.chainID);
+	let inputToken = request.inputToken.value;
 
-	if (isZeroAddress(params.sellToken)) {
-		return {data: null, error: new Error('Invalid sell token')};
+	if (isEth(request.inputToken.value)) {
+		inputToken = zeroAddress;
 	}
-	if (isZeroAddress(params.buyToken)) {
+	if (isZeroAddress(request.outputToken.value)) {
 		return {data: null, error: new Error('Invalid buy token')};
 	}
-	if (isZero(params.sellAmount)) {
+	if (isZero(request.inputAmount)) {
 		return {data: null, error: new Error('Invalid sell amount')};
 	}
 
 	try {
-		return getPortalsEstimate({network: request.chainID, params});
+		return getPortalsEstimate({
+			params: {
+				inputToken: `${network}:${toAddress(inputToken)}`,
+				outputToken: `${network}:${toAddress(request.outputToken.value)}`,
+				inputAmount: toBigInt(request.inputAmount).toString(),
+				slippageTolerancePercentage: String(zapSlippage)
+			}
+		});
 	} catch (error) {
 		console.error(error);
 		let errorContent = 'Portals.fi zap not possible. Try again later or pick another token.';
@@ -85,6 +88,9 @@ export function useSolverPortals(): TSolverContext {
 	 **********************************************************************************************/
 	const init = useCallback(
 		async (_request: TInitSolverArgs, shouldLogError?: boolean): Promise<TNormalizedBN> => {
+			if (isSolverDisabled(Solver.enum.Portals)) {
+				return toNormalizedBN(0);
+			}
 			/******************************************************************************************
 			 ** First we need to know which token we are selling to the zap. When we are depositing, we
 			 ** are selling the inputToken, when we are withdrawing, we are selling the outputToken.
@@ -96,7 +102,7 @@ export function useSolverPortals(): TSolverContext {
 			/******************************************************************************************
 			 ** This first obvious check is to see if the solver is disabled. If it is, we return 0.
 			 ******************************************************************************************/
-			if (isSolverDisabled(_request.chainID)[Solver.enum.Portals]) {
+			if (isSolverDisabled(Solver.enum.Portals)) {
 				return toNormalizedBN(0);
 			}
 
@@ -107,13 +113,6 @@ export function useSolverPortals(): TSolverContext {
 			 ** a token, you can contact the yDaemon team to add it.
 			 ******************************************************************************************/
 			if (!sellToken.solveVia?.includes(Solver.enum.Portals)) {
-				return toNormalizedBN(0);
-			}
-
-			/******************************************************************************************
-			 ** Then, we check if the sellToken is ETH. If it is, we return 0.
-			 ******************************************************************************************/
-			if (isEth(sellToken.value)) {
 				return toNormalizedBN(0);
 			}
 
@@ -132,17 +131,18 @@ export function useSolverPortals(): TSolverContext {
 			request.current = _request;
 			const {data, error} = await getQuote(_request, zapSlippage);
 			if (!data) {
-				console.error(error?.message);
-				if (error && shouldLogError) {
+				const errorMessage = (error as any)?.response?.data?.message || error?.message;
+				if (errorMessage && shouldLogError) {
+					console.error(errorMessage);
 					toast({
 						type: 'error',
-						content: `Portals.fi zap not possible: ${error?.message}`
+						content: `Portals.fi zap not possible: ${errorMessage}`
 					});
 				}
 				return toNormalizedBN(0);
 			}
 			latestQuote.current = data;
-			return toNormalizedBN(data?.minBuyAmount || 0, request?.current?.outputToken?.decimals || 18);
+			return toNormalizedBN(data?.outputAmount || 0, request?.current?.outputToken?.decimals || 18);
 		},
 		[zapSlippage]
 	);
@@ -153,7 +153,7 @@ export function useSolverPortals(): TSolverContext {
 	 ** not.
 	 **********************************************************************************************/
 	const execute = useCallback(async (): Promise<TTxResponse> => {
-		if (!request.current || isSolverDisabled(request.current.chainID)[Solver.enum.Portals]) {
+		if (!request.current || isSolverDisabled(Solver.enum.Portals)) {
 			return {isSuccessful: false};
 		}
 
@@ -163,14 +163,18 @@ export function useSolverPortals(): TSolverContext {
 		assert(zapSlippage > 0, 'Slippage cannot be 0');
 
 		try {
+			let inputToken = request.current.inputToken.value;
+			if (isEth(request.current.inputToken.value)) {
+				inputToken = zeroAddress;
+			}
+			const network = PORTALS_NETWORK.get(request.current.chainID);
 			const transaction = await getPortalsTx({
-				network: request.current.chainID,
 				params: {
-					takerAddress: toAddress(request.current.from),
-					sellToken: toAddress(request.current.inputToken.value),
-					sellAmount: toBigInt(request.current.inputAmount).toString(),
-					buyToken: toAddress(request.current.outputToken.value),
-					slippagePercentage: String(zapSlippage / 100),
+					sender: toAddress(request.current.from),
+					inputToken: `${network}:${toAddress(inputToken)}`,
+					outputToken: `${network}:${toAddress(request.current.outputToken.value)}`,
+					inputAmount: toBigInt(request.current.inputAmount).toString(),
+					slippageTolerancePercentage: String(zapSlippage),
 					validate: 'true'
 				}
 			});
@@ -184,14 +188,31 @@ export function useSolverPortals(): TSolverContext {
 			} = transaction.data;
 			const wagmiProvider = await toWagmiProvider(provider);
 
+			if (wagmiProvider.chainId !== request.current.chainID) {
+				try {
+					await switchNetwork({chainId: request.current.chainID});
+				} catch (error) {
+					if (!(error instanceof BaseError)) {
+						return {isSuccessful: false, error};
+					}
+					console.error(error.shortMessage);
+					toast({
+						type: 'error',
+						content: `Portals.fi zap not possible: ${error.shortMessage}`
+					});
+					return {isSuccessful: false, error};
+				}
+			}
+
 			assert(isHex(data), 'Data is not hex');
 			assert(wagmiProvider.walletClient, 'Wallet client is not set');
-			const {chain} = getNetwork();
+			const chain = getNetwork(request.current.chainID);
 			const tx = await prepareSendTransaction({
 				...wagmiProvider,
 				data,
-				value: toBigInt(value?.hex ?? 0),
+				value: toBigInt(value ?? 0),
 				to: toAddress(to),
+				chainId: request.current.chainID,
 				...rest
 			});
 			const hash = await wagmiProvider.walletClient.sendTransaction({
@@ -219,6 +240,8 @@ export function useSolverPortals(): TSolverContext {
 					type: 'error',
 					content: `Portals.fi zap not possible: ${errorMessage}`
 				});
+			} else {
+				console.error(error);
 			}
 
 			return {isSuccessful: false};
@@ -230,14 +253,10 @@ export function useSolverPortals(): TSolverContext {
 	 ** process and displayed to the user.
 	 **************************************************************************/
 	const expectedOut = useMemo((): TNormalizedBN => {
-		if (
-			!latestQuote?.current?.minBuyAmount ||
-			!request.current ||
-			isSolverDisabled(request.current.chainID)[Solver.enum.Portals]
-		) {
+		if (!latestQuote?.current?.outputAmount || !request.current || isSolverDisabled(Solver.enum.Portals)) {
 			return toNormalizedBN(0);
 		}
-		return toNormalizedBN(latestQuote?.current?.minBuyAmount, request?.current?.outputToken?.decimals || 18);
+		return toNormalizedBN(latestQuote?.current?.outputAmount, request?.current?.outputToken?.decimals || 18);
 	}, [latestQuote, request]);
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -245,14 +264,13 @@ export function useSolverPortals(): TSolverContext {
 	 ** be used to determine if the user should approve the token or not.
 	 **************************************************************************/
 	const onRetrieveAllowance = useCallback(async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
-		if (
-			!latestQuote?.current ||
-			!request?.current ||
-			isSolverDisabled(request.current.chainID)[Solver.enum.Portals]
-		) {
+		if (!latestQuote?.current || !request?.current || isSolverDisabled(Solver.enum.Portals)) {
 			return toNormalizedBN(0);
 		}
-
+		const inputToken = request.current.inputToken.value;
+		if (isEth(request.current.inputToken.value)) {
+			return toNormalizedBN(MAX_UINT_256);
+		}
 		const key = allowanceKey(
 			request.current.chainID,
 			toAddress(request.current.inputToken.value),
@@ -264,13 +282,12 @@ export function useSolverPortals(): TSolverContext {
 		}
 
 		try {
+			const network = PORTALS_NETWORK.get(request.current.chainID);
 			const {data: approval} = await getPortalsApproval({
-				network: request.current.chainID,
 				params: {
-					takerAddress: toAddress(request.current.from),
-					sellToken: toAddress(request.current.inputToken.value),
-					sellAmount: toBigInt(request.current.inputAmount).toString(),
-					buyToken: toAddress(request.current.outputToken.value)
+					sender: toAddress(request.current.from),
+					inputToken: `${network}:${toAddress(inputToken)}`,
+					inputAmount: toBigInt(request.current.inputAmount).toString()
 				}
 			});
 
@@ -300,7 +317,7 @@ export function useSolverPortals(): TSolverContext {
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 			onSuccess: () => Promise<void>
 		): Promise<void> => {
-			if (!request.current || isSolverDisabled(request.current.chainID)[Solver.enum.Portals] || !provider) {
+			if (!request.current || isSolverDisabled(Solver.enum.Portals) || !provider) {
 				return;
 			}
 			assert(request.current, 'Request is not set');
@@ -308,13 +325,12 @@ export function useSolverPortals(): TSolverContext {
 			assert(request.current.inputAmount, 'Input amount is not set');
 
 			try {
+				const network = PORTALS_NETWORK.get(request.current.chainID);
 				const {data: approval} = await getPortalsApproval({
-					network: request.current.chainID,
 					params: {
-						takerAddress: toAddress(request.current.from),
-						sellToken: toAddress(request.current.inputToken.value),
-						sellAmount: toBigInt(request.current.inputAmount).toString(),
-						buyToken: toAddress(request.current.outputToken.value)
+						sender: toAddress(request.current.from),
+						inputToken: `${network}:${toAddress(request.current.inputToken.value)}`,
+						inputAmount: toBigInt(request.current.inputAmount).toString()
 					}
 				});
 

@@ -19,7 +19,7 @@ import type {ContractFunctionConfig} from 'viem';
 import type {Connector} from 'wagmi';
 import type {TAddress, TDict, TNDict} from '@yearn-finance/web-lib/types';
 import type {TDefaultStatus} from '@yearn-finance/web-lib/types/hooks';
-import type {TYDaemonPrices} from '@yearn-finance/web-lib/utils/schemas/yDaemonPricesSchema';
+import type {TYDaemonPricesChain} from '@common/schemas/yDaemonPricesSchema';
 import type {TChainTokens, TToken} from '@common/types/types';
 
 /* 🔵 - Yearn Finance **********************************************************
@@ -36,18 +36,17 @@ export type TUseBalancesTokens = {
 export type TUseBalancesReq = {
 	key?: string | number;
 	tokens: TUseBalancesTokens[];
-	prices?: TYDaemonPrices;
+	prices?: TYDaemonPricesChain;
 	effectDependencies?: DependencyList;
 	provider?: Connector;
 };
 
 export type TUseBalancesRes = {
 	data: TChainTokens;
-	update: () => Promise<TChainTokens>;
-	updateSome: (token: TUseBalancesTokens[]) => Promise<TChainTokens>;
+	onUpdate: () => Promise<TChainTokens>;
+	onUpdateSome: (token: TUseBalancesTokens[]) => Promise<TChainTokens>;
 	error?: Error;
 	status: 'error' | 'loading' | 'success' | 'unknown';
-	nonce: number;
 } & TDefaultStatus;
 
 type TDataRef = {
@@ -72,7 +71,7 @@ async function performCall(
 	chainID: number,
 	calls: ContractFunctionConfig[],
 	tokens: TUseBalancesTokens[],
-	prices?: TYDaemonPrices
+	prices?: TYDaemonPricesChain
 ): Promise<[TDict<TToken>, Error | undefined]> {
 	const _data: TDict<TToken> = {};
 	const results = await multicall({
@@ -85,7 +84,7 @@ async function performCall(
 		const {address, decimals: injectedDecimals, name: injectedName, symbol: injectedSymbol} = element;
 		const balanceOf = decodeAsBigInt(results[rIndex++]);
 		const decimals = decodeAsNumber(results[rIndex++]) || injectedDecimals || 18;
-		const rawPrice = toBigInt(prices?.[address]);
+		const rawPrice = toBigInt(prices?.[chainID]?.[address]);
 		let symbol = decodeAsString(results[rIndex++]) || injectedSymbol || '';
 		let name = decodeAsString(results[rIndex++]) || injectedName || '';
 		if (isEth(address)) {
@@ -105,7 +104,6 @@ async function performCall(
 			balance: toNormalizedBN(balanceOf, decimals),
 			price: toNormalizedBN(rawPrice, 6),
 			value: toNormalizedValue(balanceOf, decimals) * toNormalizedValue(rawPrice, 6),
-			stakingBalance: toNormalizedBN(0),
 			stakingValue: 0
 		};
 	}
@@ -116,7 +114,7 @@ async function getBalances(
 	chainID: number,
 	address: TAddress,
 	tokens: TUseBalancesTokens[],
-	prices?: TYDaemonPrices
+	prices?: TYDaemonPricesChain
 ): Promise<[TDict<TToken>, Error | undefined]> {
 	let result: TDict<TToken> = {};
 	const calls: ContractFunctionConfig[] = [];
@@ -162,7 +160,6 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	const {address: userAddress} = useWeb3();
 	const chainID = useChainId();
 	const {onLoadStart, onLoadDone} = useUI();
-	const [nonce, set_nonce] = useState(0);
 	const [status, set_status] = useState<TDefaultStatus>(defaultStatus);
 	const [error, set_error] = useState<Error | undefined>(undefined);
 	const [balances, set_balances] = useState<TChainTokens>({});
@@ -200,7 +197,6 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 					}
 				})
 			);
-			set_nonce((n): number => n + 1);
 			return data.current.balances;
 		},
 		[userAddress]
@@ -283,7 +279,6 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 					}
 				})
 			);
-			set_nonce((n): number => n + 1);
 			set_status({...defaultStatus, isSuccess: true, isFetched: true});
 		}
 		onLoadDone();
@@ -361,7 +356,6 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 					}
 				})
 			);
-			set_nonce((n): number => n + 1);
 			set_status({...defaultStatus, isSuccess: true, isFetched: true});
 			onLoadDone();
 			return updated;
@@ -376,7 +370,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 				const chainID = Number(chainIDStr);
 				for (const address of Object.keys(newData[chainID])) {
 					const tokenAddress = toAddress(address);
-					const rawPrice = toBigInt(props?.prices?.[tokenAddress]);
+					const rawPrice = toBigInt(props?.prices?.[chainID]?.[tokenAddress]);
 					if (!newData[chainID]) {
 						newData[chainID] = {};
 					}
@@ -444,9 +438,8 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	const contextValue = useMemo(
 		(): TUseBalancesRes => ({
 			data: assignPrices(balances || {}),
-			nonce,
-			update: onUpdate,
-			updateSome: onUpdateSome,
+			onUpdate: onUpdate,
+			onUpdateSome: onUpdateSome,
 			error,
 			isLoading: status.isLoading,
 			isFetching: status.isFetching,
@@ -457,16 +450,15 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 			status: status.isError
 				? 'error'
 				: status.isLoading || status.isFetching
-				? 'loading'
-				: status.isSuccess
-				? 'success'
-				: 'unknown'
+				  ? 'loading'
+				  : status.isSuccess
+				    ? 'success'
+				    : 'unknown'
 		}),
 		[
 			assignPrices,
 			balances,
 			error,
-			nonce,
 			onUpdate,
 			onUpdateSome,
 			status.isError,

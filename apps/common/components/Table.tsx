@@ -184,9 +184,9 @@ export function Table<T>({
 											className
 										)}>
 										{!fullWidth && (
-											<label className={'inline text-start text-sm text-neutral-500 md:hidden'}>
+											<p className={'inline text-start text-sm text-neutral-500 md:hidden'}>
 												{label}
-											</label>
+											</p>
 										)}
 										<div
 											className={cl(

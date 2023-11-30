@@ -20,8 +20,8 @@ function HeaderPosition(): ReactElement {
 	const {holdings} = useYBal();
 	const balanceOfStyBal = useBalance({address: STYBAL_TOKEN_ADDRESS, chainID: 1}); //yBal is on ETH mainnet only
 	const balanceOfLpyBal = useBalance({address: LPYBAL_TOKEN_ADDRESS, chainID: 1}); //yBal is on ETH mainnet only
-	const styBalPrice = useTokenPrice(STYBAL_TOKEN_ADDRESS);
-	const lpyBalPrice = useTokenPrice(LPYBAL_TOKEN_ADDRESS);
+	const styBalPrice = useTokenPrice({address: STYBAL_TOKEN_ADDRESS, chainID: 1});
+	const lpyBalPrice = useTokenPrice({address: LPYBAL_TOKEN_ADDRESS, chainID: 1});
 
 	const formatedYearnHas = useMemo(
 		(): string =>
@@ -71,9 +71,9 @@ function Holdings(): ReactElement {
 	const {vaults} = useYearn();
 
 	const lpyBalAPY = useMemo((): number => Number(getVaultAPR(vaults, LPYBAL_TOKEN_ADDRESS)), [vaults]);
-	const yBalPrice = useTokenPrice(YBAL_TOKEN_ADDRESS);
-	const styBalPrice = useTokenPrice(STYBAL_TOKEN_ADDRESS);
-	const lpyBalPrice = useTokenPrice(LPYBAL_TOKEN_ADDRESS);
+	const yBalPrice = useTokenPrice({address: YBAL_TOKEN_ADDRESS, chainID: 1});
+	const styBalPrice = useTokenPrice({address: STYBAL_TOKEN_ADDRESS, chainID: 1});
+	const lpyBalPrice = useTokenPrice({address: LPYBAL_TOKEN_ADDRESS, chainID: 1});
 	const balanceOfStyBal = useBalance({address: STYBAL_TOKEN_ADDRESS, chainID: 1}); //yBal is on ETH mainnet only
 	const balanceOfLpyBal = useBalance({address: LPYBAL_TOKEN_ADDRESS, chainID: 1}); //yBal is on ETH mainnet only
 

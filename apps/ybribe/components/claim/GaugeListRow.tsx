@@ -167,11 +167,9 @@ export function GaugeListRow({currentGauge}: {currentGauge: TCurveGauge}): React
 					<div className={'yearn--table-token-section-item-image'}>
 						<ImageWithFallback
 							alt={''}
-							width={40}
-							height={40}
-							quality={90}
-							loading={'eager'}
-							src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${currentGauge.swap_token}/logo-128.png`}
+							width={32}
+							height={32}
+							src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${currentGauge.swap_token}/logo-32.png`}
 						/>
 					</div>
 					<p>{currentGauge.name}</p>
@@ -208,7 +206,7 @@ export function GaugeListRow({currentGauge}: {currentGauge: TCurveGauge}): React
 							className={
 								'mb-4 flex h-auto flex-row items-baseline justify-between pt-0 md:mb-0 md:h-14 md:flex-col md:items-end'
 							}>
-							<label className={'yearn--table-data-section-item-label'}>{'Current APR'}</label>
+							<p className={'yearn--table-data-section-item-label'}>{'Current APR'}</p>
 							<Renderable
 								shouldRender={
 									!!currentRewardsForCurrentGaugeMap && currentRewardsForCurrentGaugeMap.length > 0
@@ -229,7 +227,7 @@ export function GaugeListRow({currentGauge}: {currentGauge: TCurveGauge}): React
 							className={
 								'flex h-auto flex-row items-baseline justify-between pt-0 md:h-14 md:flex-col md:items-end'
 							}>
-							<label className={'yearn--table-data-section-item-label'}>{'Pending APR'}</label>
+							<p className={'yearn--table-data-section-item-label'}>{'Pending APR'}</p>
 							<Renderable
 								shouldRender={
 									!!nextRewardsForCurrentGaugeMap && nextRewardsForCurrentGaugeMap.length > 0
@@ -257,7 +255,7 @@ export function GaugeListRow({currentGauge}: {currentGauge: TCurveGauge}): React
 							className={
 								'mb-4 flex h-auto flex-row items-baseline justify-between pt-0 md:mb-0 md:h-14 md:flex-col md:items-end'
 							}>
-							<label className={'yearn--table-data-section-item-label'}>{'Current $/veCRV'}</label>
+							<p className={'yearn--table-data-section-item-label'}>{'Current $/veCRV'}</p>
 							<Renderable
 								shouldRender={
 									!!currentRewardsForCurrentGaugeMap && currentRewardsForCurrentGaugeMap.length > 0
@@ -278,7 +276,7 @@ export function GaugeListRow({currentGauge}: {currentGauge: TCurveGauge}): React
 							className={
 								'flex h-auto flex-row items-baseline justify-between pt-0 md:h-14 md:flex-col md:items-end'
 							}>
-							<label className={'yearn--table-data-section-item-label'}>{'Pending $/veCRV'}</label>
+							<p className={'yearn--table-data-section-item-label'}>{'Pending $/veCRV'}</p>
 							<Renderable
 								shouldRender={
 									!!nextRewardsForCurrentGaugeMap && nextRewardsForCurrentGaugeMap.length > 0
@@ -306,7 +304,7 @@ export function GaugeListRow({currentGauge}: {currentGauge: TCurveGauge}): React
 							className={
 								'flex h-auto flex-row items-baseline justify-between pt-0 md:h-14 md:flex-col md:items-end'
 							}>
-							<label className={'yearn--table-data-section-item-label'}>{'Claimable'}</label>
+							<p className={'yearn--table-data-section-item-label'}>{'Claimable'}</p>
 							<div className={'flex flex-col gap-2'}>
 								<Renderable
 									shouldRender={

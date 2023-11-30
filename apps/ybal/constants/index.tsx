@@ -1,1 +1,1 @@
-export const YBAL_CHAIN_ID = 1;
+export const YBAL_SUPPORTED_NETWORK = 1;

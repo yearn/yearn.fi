@@ -1,6 +1,8 @@
 import {useEffect, useRef} from 'react';
-import {Balancer} from 'react-wrap-balancer';
 import Link from 'next/link';
+import {AnimatedGradientBackgroundForV3} from '@vaults-v3/components/AnimatedGradientBackground';
+import {V3Mask} from '@vaults-v3/Mark';
+import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {LogoYearn} from '@common/icons/LogoYearn';
@@ -8,6 +10,18 @@ import {LogoYearn} from '@common/icons/LogoYearn';
 import type {ReactElement} from 'react';
 
 const apps = [
+	{
+		href: '/v3',
+		title: 'V3',
+		description: 'deposit tokens and receive yield.',
+		icon: (
+			<LogoYearn
+				className={'h-[100px] w-[100px]'}
+				back={'text-pink-400'}
+				front={'text-white'}
+			/>
+		)
+	},
 	{
 		href: '/vaults',
 		title: 'Vaults',
@@ -85,43 +99,51 @@ const apps = [
 				priority
 			/>
 		)
+	},
+	{
+		href: 'https://yprisma.yearn.fi',
+		title: 'yPrisma',
+		description: 'Every rainbow needs a pot of gold.',
+		icon: (
+			<ImageWithFallback
+				alt={'yPrisma'}
+				width={100}
+				height={100}
+				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/0xe3668873d944e4a949da05fc8bde419eff543882/logo-128.png`}
+				loading={'eager'}
+				priority
+			/>
+		)
 	}
 ];
-
 function AppBox({app}: {app: (typeof apps)[0]}): ReactElement {
-	useEffect((): VoidFunction => {
-		const featuresEl = document.getElementById(app.href);
-		if (featuresEl) {
-			const cleanup = (): void => {
-				featuresEl.removeEventListener('pointermove', pointermove);
-				featuresEl.removeEventListener('pointerleave', pointerleave);
-			};
-
-			const pointermove = (ev: MouseEvent): void => {
-				const rect = featuresEl.getBoundingClientRect();
-				if (featuresEl?.style) {
-					featuresEl.style.setProperty('--opacity', '0.3');
-					featuresEl.style.setProperty('--x', (ev.clientX - rect.left).toString());
-					featuresEl.style.setProperty('--y', (ev.clientY - rect.top).toString());
-				}
-			};
-
-			const pointerleave = (): void => {
-				if (featuresEl?.style) {
-					featuresEl.style.setProperty('--opacity', '0');
-				}
-			};
-
-			featuresEl.addEventListener('pointermove', pointermove);
-			featuresEl.addEventListener('pointerleave', pointerleave);
-			return cleanup;
-		}
-		return (): void => undefined;
-	}, [app.href]);
+	if (app.title === 'V3') {
+		return (
+			<Link
+				prefetch={false}
+				key={app.href}
+				href={app.href}>
+				<div
+					id={app.href}
+					className={
+						'relative flex h-full w-full cursor-pointer flex-col items-center overflow-hidden rounded-3xl border border-neutral-300/0 p-6'
+					}>
+					<div className={'z-10 flex w-full flex-col items-center'}>
+						<V3Mask className={'h-32'} />
+						<div className={'pt-4 text-center'}>
+							<p className={cl('font-black text-white text-lg', 'whitespace-break-spaces uppercase')}>
+								{`Discover brand new vaults`}
+							</p>
+						</div>
+					</div>
+					<AnimatedGradientBackgroundForV3 />
+				</div>
+			</Link>
+		);
+	}
 
 	return (
 		<Link
-			prefetch={false}
 			key={app.href}
 			href={app.href}>
 			<div
@@ -130,9 +152,7 @@ function AppBox({app}: {app: (typeof apps)[0]}): ReactElement {
 				<div>{app.icon}</div>
 				<div className={'pt-6 text-center'}>
 					<b className={'text-lg'}>{app.title}</b>
-					<p>
-						<Balancer>{app.description}</Balancer>
-					</p>
+					<p>{app.description}</p>
 				</div>
 			</div>
 		</Link>
@@ -234,9 +254,9 @@ function TextAnimation(): ReactElement {
 
 function Index(): ReactElement {
 	return (
-		<>
+		<div className={'mx-auto h-full w-full max-w-6xl py-20'}>
 			<div className={'mx-auto mb-10 mt-6 flex flex-col justify-center md:mb-14 md:mt-20'}>
-				<div className={'relative h-12 w-[300px] self-center md:h-[104px] md:w-[600px]'}>
+				<div className={'relative h-12 w-[300px] self-center overflow-hidden md:h-[104px] md:w-[600px]'}>
 					<TextAnimation />
 				</div>
 				<div className={'my-8'}>
@@ -248,11 +268,8 @@ function Index(): ReactElement {
 				</div>
 				<div className={'mb-6'}>
 					<p className={'text-center text-sm text-neutral-500 md:text-base'}>
-						<Balancer>
-							{
-								'Yearn is a decentralized suite of products helping individuals, DAOs, and other protocols\nearn yield on their digital assets.'
-							}
-						</Balancer>
+						{'Yearn is a decentralized suite of products helping individuals, DAOs, and other protocols\n'}
+						{'earn yield on their digital assets.'}
 					</p>
 				</div>
 			</div>
@@ -266,7 +283,7 @@ function Index(): ReactElement {
 					)
 				)}
 			</section>
-		</>
+		</div>
 	);
 }
 

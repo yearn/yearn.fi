@@ -77,7 +77,7 @@ function VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
 		<details className={'p-0'}>
 			<summary>
 				<div>
-					<b className={'text-neutral-900'}>{strategy.displayName || strategy.name}</b>
+					<b className={'text-neutral-900'}>{strategy.name}</b>
 				</div>
 				<div>
 					<IconChevron className={'summary-chevron'} />
@@ -101,7 +101,7 @@ function VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
 							className={'text-neutral-600'}
 							dangerouslySetInnerHTML={{
 								__html: parseMarkdown(
-									strategy.description.replaceAll('{{token}}', currentVault.token.symbol)
+									(strategy.description || '').replaceAll('{{token}}', currentVault.token.symbol)
 								)
 							}}
 						/>
@@ -217,7 +217,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 				if (!searchValue) {
 					return true;
 				}
-				return `${strategy.name} ${strategy.displayName}`.toLowerCase().includes(searchValue);
+				return strategy.name.toLowerCase().includes(searchValue);
 			})
 			.filter((strategy): boolean => {
 				if (!shouldDisplayInactiveStrategies) {
@@ -234,7 +234,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 					<SearchBar
 						searchPlaceholder={'Aave'}
 						searchValue={searchValue}
-						set_searchValue={(value): void => {
+						onSearch={(value): void => {
 							set_searchValue(value.toLowerCase());
 						}}
 					/>

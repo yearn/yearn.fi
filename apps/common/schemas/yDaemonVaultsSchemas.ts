@@ -1,41 +1,19 @@
 import {z} from 'zod';
+import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {addressSchema} from '@yearn-finance/web-lib/utils/schemas/addressSchema';
 
 const yDaemonVaultStrategySchema = z.object({
 	address: addressSchema,
 	name: z.string(),
-	displayName: z.string(),
-	description: z.string(),
+	description: z.string().optional().default(''),
 	details: z
 		.object({
-			keeper: addressSchema,
-			strategist: addressSchema,
-			rewards: addressSchema,
-			healthCheck: addressSchema,
 			totalDebt: z.string(),
 			totalLoss: z.string(),
 			totalGain: z.string(),
-			minDebtPerHarvest: z.string(),
-			maxDebtPerHarvest: z.string(),
-			estimatedTotalAssets: z.string(),
-			creditAvailable: z.string(),
-			debtOutstanding: z.string(),
-			expectedReturn: z.string(),
-			delegatedAssets: z.string(),
-			delegatedValue: z.string(),
-			version: z.string(),
-			protocols: z.array(z.string()).or(z.null()),
-			apr: z.number(),
 			performanceFee: z.number(),
 			lastReport: z.number(),
-			activation: z.number(),
-			keepCRV: z.number(),
-			debtLimit: z.number(),
-			doHealthCheck: z.boolean(),
-			inQueue: z.boolean(),
-			emergencyExit: z.boolean(),
-			isActive: z.boolean(),
 			debtRatio: z.number().optional()
 		})
 		.optional(), // Optional for migratable
@@ -74,26 +52,51 @@ export const yDaemonVaultTokenSchema = z.object({
 
 export const yDaemonVaultSchema = z.object({
 	address: addressSchema,
+	version: z.string(),
 	type: z
 		.literal('Automated')
 		.or(z.literal('Automated Yearn Vault'))
 		.or(z.literal('Experimental'))
 		.or(z.literal('Experimental Yearn Vault'))
 		.or(z.literal('Standard'))
-		.or(z.literal('Yearn Vault')),
+		.or(z.literal('Yearn Vault'))
+		.default('Standard')
+		.catch('Standard'),
+	kind: z
+		.literal('Legacy')
+		.or(z.literal('Multi Strategies'))
+		.or(z.literal('Single Strategy'))
+		.default('Legacy')
+		.catch('Legacy'),
 	symbol: z.string(),
 	name: z.string(),
+	description: z
+		.string()
+		.default(
+			'Sorry, we don\'t have a description for this asset right now. But did you know the correct word for a blob of toothpaste is a "nurdle". Fascinating! We\'ll work on updating the asset description, but at least you learnt something interesting. Catch ya later nurdles.'
+		)
+		.catch(
+			'Sorry, we don\'t have a description for this asset right now. But did you know the correct word for a blob of toothpaste is a "nurdle". Fascinating! We\'ll work on updating the asset description, but at least you learnt something interesting. Catch ya later nurdles.'
+		),
 	category: z
 		.literal('Curve')
-		.or(z.literal('Volatile').or(z.literal('Balancer')).or(z.literal('Stablecoin')))
+		.or(z.literal('Volatile'))
+		.or(z.literal('Balancer'))
+		.or(z.literal('Stablecoin'))
 		.or(z.literal('Velodrome'))
 		.or(z.literal('Boosted'))
-		.or(z.literal('Aerodrome')),
+		.or(z.literal('Aerodrome'))
+		.default('Volatile')
+		.catch('Volatile'),
 	decimals: z.number(),
 	chainID: z.number(),
 	token: yDaemonVaultTokenSchema,
 	tvl: z.object({
-		total_assets: z.string().transform((val): bigint => toBigInt(val)),
+		totalAssets: z
+			.string()
+			.default('0')
+			.catch('0')
+			.transform((val): bigint => toBigInt(val)),
 		tvl: z.number().default(0).catch(0),
 		price: z.number().default(0).catch(0)
 	}),
@@ -142,6 +145,19 @@ export const yDaemonVaultSchema = z.object({
 	featuringScore: z.number().default(0).catch(0),
 	retired: z.boolean().default(false).catch(false),
 	strategies: z.array(yDaemonVaultStrategySchema).nullable().default([]),
+	staking: z
+		.object({
+			address: addressSchema,
+			available: z.boolean().default(false).catch(false)
+		})
+		.default({
+			address: toAddress(''),
+			available: false
+		})
+		.catch({
+			address: toAddress(''),
+			available: false
+		}),
 	migration: z.object({
 		available: z.boolean(),
 		address: addressSchema,

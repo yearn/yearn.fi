@@ -9,7 +9,7 @@ import {WithSolverContextApp} from '@vaults/contexts/useSolver';
 import {Wrapper} from '@vaults/Wrapper';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import TokenIcon from '@common/components/TokenIcon';
+import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useWallet} from '@common/contexts/useWallet';
 import {useFetch} from '@common/hooks/useFetch';
 import {type TYDaemonVault, yDaemonVaultSchema} from '@common/schemas/yDaemonVaultsSchemas';
@@ -24,6 +24,7 @@ import type {TUseBalancesTokens} from '@common/hooks/useMultichainBalances';
 function Index(): ReactElement | null {
 	const {address, isActive} = useWeb3();
 	const router = useRouter();
+
 	const {refresh} = useWallet();
 	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: Number(router.query.chainID)});
 	const [currentVault, set_currentVault] = useState<TYDaemonVault | undefined>(undefined);
@@ -70,7 +71,7 @@ function Index(): ReactElement | null {
 	if (!currentVault) {
 		return (
 			<div className={'relative flex h-14 flex-col items-center justify-center px-4 text-center'}>
-				<div className={'flex h-10 items-center justify-center'}>
+				<div className={'mt-[20%] flex h-10 items-center justify-center'}>
 					<p className={'text-sm text-neutral-900'}>
 						{"We couln't find this vault on the connected network."}
 					</p>
@@ -81,16 +82,22 @@ function Index(): ReactElement | null {
 
 	return (
 		<>
-			<header className={'relative z-50 flex w-full items-center justify-center'}>
+			<header className={'relative z-50 flex w-full items-center justify-center pt-24'}>
 				<motion.div
 					key={'vaults'}
 					initial={'initial'}
 					animate={'enter'}
 					variants={variants}
 					className={'z-50 -mt-6 h-12 w-12 cursor-pointer md:-mt-36 md:h-[72px] md:w-[72px]'}>
-					<TokenIcon
-						chainID={currentVault.chainID}
-						token={currentVault.token}
+					<ImageWithFallback
+						src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${toAddress(
+							currentVault.token.address
+						)}/logo-128.png`}
+						alt={''}
+						smWidth={48}
+						smHeight={48}
+						width={72}
+						height={72}
 					/>
 				</motion.div>
 			</header>

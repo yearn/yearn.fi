@@ -20,7 +20,7 @@ export function Pagination(props: TProps): ReactElement {
 
 	return (
 		<>
-			<div className={'flex flex-1 justify-between sm:hidden'}>
+			<div className={'flex flex-1 justify-between md:hidden'}>
 				<a
 					role={'button'}
 					href={'#'}
@@ -38,15 +38,15 @@ export function Pagination(props: TProps): ReactElement {
 					{'Next'}
 				</a>
 			</div>
-			<div className={'sm-border hidden sm:flex sm:items-center sm:justify-center'}>
+			<div className={'hidden md:flex md:items-center md:justify-center'}>
 				<div className={'ml-3 flex-1'}>
-					<p className={'text-sm text-[#5B5B5B]'}>
+					<small className={'text-xs text-[#5B5B5B]'}>
 						{'Showing '}
 						<span className={'font-medium'}>{from}</span>
 						{' to '}
 						<span className={'font-medium'}>{to}</span>
 						{' of'} <span className={'font-medium'}>{numberOfItems}</span> {'results'}
-					</p>
+					</small>
 				</div>
 				<ReactPaginate
 					className={'inline-flex align-middle'}
@@ -57,7 +57,7 @@ export function Pagination(props: TProps): ReactElement {
 					nextLinkClassName={'inline-flex items-center m-2 font-medium'}
 					breakLinkClassName={'text-[#5B5B5B] inline-flex items-center mx-2 my-2 px-0.5 font-medium'}
 					activeLinkClassName={
-						'text-gray-900 font-bold border-b-2 items-center mx-2 my-2 px-0.5 md:inline-flex'
+						'text-neutral-900 font-medium border-b-2 items-center mx-2 my-2 px-0.5 md:inline-flex'
 					}
 					disabledLinkClassName={'cursor-not-allowed hover:bg-neutral-100'}
 					disabledClassName={'text-neutral-300'}
@@ -65,10 +65,18 @@ export function Pagination(props: TProps): ReactElement {
 					onPageChange={onPageChange}
 					pageRangeDisplayed={3}
 					pageCount={pageCount}
-					previousLabel={<IconPaginationArrow className={'h-5 w-5 transition-transform'} />}
-					nextLabel={<IconPaginationArrow className={'h-5 w-5 -rotate-180 transition-transform'} />}
+					previousLabel={
+						<IconPaginationArrow
+							className={'mt-1 h-3 w-3 opacity-10 transition-opacity hover:opacity-100'}
+						/>
+					}
+					nextLabel={
+						<IconPaginationArrow
+							className={'mt-1 h-3 w-3 -rotate-180 opacity-10 transition-opacity hover:opacity-100'}
+						/>
+					}
 				/>
-				<div className={'sm:flex-1'}></div>
+				<div className={'md:flex-1'}></div>
 			</div>
 		</>
 	);

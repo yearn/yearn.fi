@@ -10,7 +10,7 @@ export function usePrice({address, chainID}: {address: string | TAddress; chainI
 
 	const balance = useMemo((): TNormalizedBN => {
 		return getPrice({address: toAddress(address), chainID: chainID});
-	}, [getPrice, address]);
+	}, [getPrice, address, chainID]);
 
 	return balance;
 }

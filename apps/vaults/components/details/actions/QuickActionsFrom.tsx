@@ -28,7 +28,10 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 		address: toAddress(actionParams?.selectedOptionFrom?.value),
 		chainID: Number(actionParams?.selectedOptionFrom?.chainID)
 	});
-	const selectedOptionFromPricePerToken = useTokenPrice(toAddress(actionParams?.selectedOptionFrom?.value));
+	const selectedOptionFromPricePerToken = useTokenPrice({
+		address: toAddress(actionParams?.selectedOptionFrom?.value),
+		chainID: Number(actionParams?.selectedOptionFrom?.chainID)
+	});
 	const hasMultipleInputsToChooseFrom = isActive && isDepositing && possibleOptionsFrom.length > 1;
 	const selectedFromSymbol = actionParams?.selectedOptionFrom?.symbol || 'tokens';
 	const selectedFromIcon = actionParams?.selectedOptionFrom?.icon;
@@ -56,7 +59,7 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 				)
 			);
 		},
-		[actionParams?.selectedOptionFrom?.value, getToken, onChangeAmount]
+		[actionParams?.selectedOptionFrom, getToken, onChangeAmount]
 	);
 
 	return (
@@ -65,9 +68,7 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 			className={'flex w-full flex-col space-x-0 md:flex-row md:space-x-4'}>
 			<div className={'relative z-10 w-full space-y-2'}>
 				<div className={'flex flex-row items-baseline justify-between'}>
-					<label className={'text-base text-neutral-600'}>
-						{isDepositing ? 'From wallet' : 'From vault'}
-					</label>
+					<p className={'text-base text-neutral-600'}>{isDepositing ? 'From wallet' : 'From vault'}</p>
 					<legend
 						className={'font-number inline text-xs text-neutral-600 md:hidden'}
 						suppressHydrationWarning>
@@ -81,7 +82,7 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 					fallback={renderMultipleOptionsFallback()}>
 					<div
 						className={
-							'flex h-10 w-full items-center justify-between bg-neutral-300 px-2 text-base text-neutral-900 md:w-56 md:px-3'
+							'flex h-10 w-full items-center justify-between bg-neutral-300 px-2 text-base text-neutral-900 md:px-3'
 						}>
 						<div className={'relative flex flex-row items-center truncate'}>
 							<div className={'h-6 w-6 flex-none rounded-full'}>{selectedFromIcon}</div>

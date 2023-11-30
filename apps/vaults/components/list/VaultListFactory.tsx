@@ -2,10 +2,10 @@ import {useMemo} from 'react';
 import {VaultListOptions} from '@vaults/components/list/VaultListOptions';
 import {VaultsListRow} from '@vaults/components/list/VaultsListRow';
 import {ListHero} from '@vaults/components/ListHero';
-import {ALL_VAULTS_FACTORY_CATEGORIES} from '@vaults/constants';
+import {ALL_VAULTS_FACTORY_CATEGORIES, ALL_VAULTS_FACTORY_CATEGORIES_KEYS} from '@vaults/constants';
 import {useVaultFilter} from '@vaults/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
-import {useVaultsFactoryQueryArguments} from '@vaults/hooks/useVaultsFactoryQueryArgs';
+import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
 import {IconChain} from '@yearn-finance/web-lib/icons/IconChain';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {ListHead} from '@common/components/ListHead';
@@ -30,8 +30,9 @@ export function VaultListFactory(): ReactElement {
 		onChangeCategories,
 		onChangeChains,
 		onChangeSortDirection,
-		onChangeSortBy
-	} = useVaultsFactoryQueryArguments();
+		onChangeSortBy,
+		onReset
+	} = useQueryArguments({defaultCategories: ALL_VAULTS_FACTORY_CATEGORIES_KEYS});
 	const {activeVaults} = useVaultFilter(categories, chains);
 
 	/* 🔵 - Yearn Finance **************************************************************************
@@ -66,9 +67,11 @@ export function VaultListFactory(): ReactElement {
 	 **	It contains either the list of vaults, is some are available, or a message to the user.
 	 **********************************************************************************************/
 	const VaultList = useMemo((): ReactNode => {
-		const filteredByChains = sortedVaultsToDisplay.filter(({chainID}): boolean => chains.includes(chainID));
+		const filteredByChains = sortedVaultsToDisplay.filter(
+			({chainID}): boolean => chains?.includes(chainID) || false
+		);
 
-		if (isLoadingVaultList || isZero(filteredByChains.length) || chains.length === 0) {
+		if (isLoadingVaultList || isZero(filteredByChains.length) || !chains || chains.length === 0) {
 			return (
 				<VaultsListEmptyFactory
 					isLoading={isLoadingVaultList}
@@ -76,8 +79,7 @@ export function VaultListFactory(): ReactElement {
 					currentSearch={search || ''}
 					currentCategories={categories}
 					currentChains={chains}
-					onChangeCategories={onChangeCategories}
-					onChangeChains={onChangeChains}
+					onReset={onReset}
 				/>
 			);
 		}
@@ -92,7 +94,7 @@ export function VaultListFactory(): ReactElement {
 				/>
 			);
 		});
-	}, [categories, chains, isLoadingVaultList, onChangeCategories, onChangeChains, search, sortedVaultsToDisplay]);
+	}, [categories, chains, isLoadingVaultList, onReset, search, sortedVaultsToDisplay]);
 
 	return (
 		<div className={'relative col-span-12 flex w-full flex-col bg-neutral-100'}>
@@ -126,8 +128,8 @@ export function VaultListFactory(): ReactElement {
 					{label: 'Est. APR', value: 'estAPR', sortable: true, className: 'col-span-2'},
 					{label: 'Hist. APR', value: 'apr', sortable: true, className: 'col-span-2'},
 					{label: 'Available', value: 'available', sortable: true, className: 'col-span-2'},
-					{label: 'Deposited', value: 'deposited', sortable: true, className: 'col-span-2'},
-					{label: 'TVL', value: 'tvl', sortable: true, className: 'col-span-2'}
+					{label: 'Holdings', value: 'deposited', sortable: true, className: 'col-span-2'},
+					{label: 'Deposits', value: 'tvl', sortable: true, className: 'col-span-2'}
 				]}
 			/>
 

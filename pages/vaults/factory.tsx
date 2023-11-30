@@ -1,5 +1,4 @@
 import {useCallback, useMemo, useState} from 'react';
-import {QueryParamProvider} from 'use-query-params';
 import {VaultListFactory} from '@vaults/components/list/VaultListFactory';
 import {YFACTORY_SUPPORTED_NETWORK} from '@vaults/constants';
 import {VAULT_FACTORY_ABI} from '@vaults/utils/abi/vaultFactory.abi';
@@ -23,7 +22,6 @@ import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {CurveContextApp, useCurve} from '@common/contexts/useCurve';
 import {useYearn} from '@common/contexts/useYearn';
 import {useAsyncTrigger} from '@common/hooks/useAsyncEffect';
-import {NextQueryParamAdapter} from '@common/utils/QueryParamsProvider';
 
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
@@ -107,10 +105,10 @@ function Factory(): ReactElement {
 					label: gauge.gauge_name,
 					icon: (
 						<ImageWithFallback
-							src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${toAddress(gauge.lp_token)}/logo-128.png`}
+							src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${toAddress(gauge.lp_token)}/logo-32.png`}
 							alt={gauge.gauge_name}
-							width={36}
-							height={36}
+							width={32}
+							height={32}
 						/>
 					),
 					value: {
@@ -214,7 +212,7 @@ function Factory(): ReactElement {
 	}
 
 	return (
-		<section>
+		<section className={'pt-20'}>
 			<div className={'mb-4 w-full bg-neutral-100 p-4 md:p-8'}>
 				<div
 					aria-label={'new vault card title'}
@@ -241,7 +239,7 @@ function Factory(): ReactElement {
 					aria-label={'Available Curve pools'}
 					className={'flex flex-col pb-[52px]'}>
 					<div className={'grid grid-cols-1 gap-x-0 gap-y-5 md:grid-cols-6 md:gap-x-8'}>
-						<label className={'yearn--input relative z-10 col-span-2'}>
+						<div className={'yearn--input relative z-10 col-span-2'}>
 							<p className={'!text-neutral-600'}>{'Available Curve pools'}</p>
 							<Dropdown
 								placeholder={'Select Curve Pool'}
@@ -249,7 +247,7 @@ function Factory(): ReactElement {
 								selected={selectedOption}
 								onSelect={set_selectedOption}
 							/>
-						</label>
+						</div>
 
 						<div className={'col-span-2 w-full space-y-1'}>
 							<p className={'text-neutral-600'}>{'Vault name'}</p>
@@ -362,13 +360,7 @@ function Factory(): ReactElement {
 Factory.getLayout = function getLayout(page: ReactElement, router: NextRouter): ReactElement {
 	return (
 		<Wrapper router={router}>
-			<CurveContextApp>
-				<QueryParamProvider
-					adapter={NextQueryParamAdapter}
-					options={{removeDefaultsFromUrl: true}}>
-					{page}
-				</QueryParamProvider>
-			</CurveContextApp>
+			<CurveContextApp>{page}</CurveContextApp>
 		</Wrapper>
 	);
 };

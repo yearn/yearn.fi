@@ -24,7 +24,7 @@ export const BAL = {
 			alt={'Bal'}
 			width={24}
 			height={24}
-			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${BAL_TOKEN_ADDRESS}/logo-128.png`}
+			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${BAL_TOKEN_ADDRESS}/logo-32.png`}
 		/>
 	)
 };
@@ -40,7 +40,7 @@ export const YBAL = {
 			alt={'yBal'}
 			width={24}
 			height={24}
-			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YBAL_TOKEN_ADDRESS}/logo-128.png`}
+			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YBAL_TOKEN_ADDRESS}/logo-32.png`}
 			loading={'eager'}
 			priority
 		/>
@@ -58,7 +58,7 @@ export const BALWETH = {
 			alt={'BAL/wETH'}
 			width={24}
 			height={24}
-			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${BALWETH_TOKEN_ADDRESS}/logo-128.png`}
+			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${BALWETH_TOKEN_ADDRESS}/logo-32.png`}
 			loading={'eager'}
 			priority
 		/>
@@ -76,7 +76,7 @@ export const STYBAL = {
 			alt={'st-yBal'}
 			width={24}
 			height={24}
-			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${STYBAL_TOKEN_ADDRESS}/logo-128.png`}
+			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${STYBAL_TOKEN_ADDRESS}/logo-32.png`}
 			loading={'eager'}
 			priority
 		/>
@@ -94,7 +94,7 @@ export const LPYBAL = {
 			alt={'lp-yBal'}
 			width={24}
 			height={24}
-			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${LPYBAL_TOKEN_ADDRESS}/logo-128.png`}
+			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${LPYBAL_TOKEN_ADDRESS}/logo-32.png`}
 			loading={'eager'}
 			priority
 		/>
@@ -112,7 +112,7 @@ export const WETH = {
 			alt={'wETH'}
 			width={24}
 			height={24}
-			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${WETH_TOKEN_ADDRESS}/logo-128.png`}
+			src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${WETH_TOKEN_ADDRESS}/logo-32.png`}
 		/>
 	)
 };

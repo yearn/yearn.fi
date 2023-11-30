@@ -1,30 +1,31 @@
 import {z} from 'zod';
+import {addressSchema} from '@yearn-finance/web-lib/utils/schemas/addressSchema';
 import {fetch} from '@common/utils/fetch';
 
+import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TFetchReturn} from '@common/utils/fetch';
 
 export const portalsEstimateResponseSchema = z.object({
-	buyToken: z.string(),
-	buyAmount: z.string(),
-	minBuyAmount: z.string(),
-	buyTokenDecimals: z.number()
+	outputToken: z.string(),
+	outputAmount: z.string(),
+	minOutputAmount: z.string(),
+	outputTokenDecimals: z.number()
 });
 
 export type TPortalsEstimate = z.infer<typeof portalsEstimateResponseSchema>;
 
 type TGetEstimateProps = {
-	network: number;
 	params: {
-		sellToken: string;
-		sellAmount: string;
-		buyToken: string;
-		slippagePercentage: string;
+		inputToken: string;
+		inputAmount: string;
+		outputToken: string;
+		slippageTolerancePercentage: string;
 	};
 };
 
 type TGetTransactionProps = Omit<TGetEstimateProps, 'params'> & {
 	params: Required<Pick<TGetEstimateProps, 'params'>['params']> & {
-		takerAddress: string;
+		sender: TAddress;
 		validate?: string;
 	};
 };
@@ -33,71 +34,75 @@ const portalsTxSchema = z.object({
 	to: z.string(),
 	from: z.string().optional(),
 	data: z.string(),
-	value: z
-		.object({
-			type: z.string(),
-			hex: z.string()
-		})
-		.optional(),
-	gasLimit: z.object({
-		type: z.string(),
-		hex: z.string()
-	})
+	value: z.string().optional(),
+	gasLimit: z.string()
 });
 
 const portalsTransactionSchema = z.object({
 	context: z.object({
-		network: z.string(),
-		protocolId: z.string(),
-		sellToken: z.string(),
-		sellAmount: z.string(),
-		intermediateToken: z.string().optional(),
-		buyToken: z.string(),
-		buyAmount: z.string(),
-		minBuyAmount: z.string(),
-		target: z.string(),
+		orderId: z.string(),
+		minOutputAmount: z.string(),
+		minOutputAmountUsd: z.number(),
+		slippageTolerancePercentage: z.number(),
+		gasLimit: z.string(),
+		inputAmount: z.string(),
+		inputAmountUsd: z.number(),
+		inputToken: z.string(),
+		outputToken: z.string(),
+		outputAmount: z.string(),
+		outputAmountUsd: z.number(),
 		partner: z.string(),
-		takerAddress: z.string(),
-		value: z.string(),
-		gasLimit: z.string()
+		feeToken: z.string(),
+		feeAmount: z.string(),
+		feeAmountUsd: z.number(),
+		sender: z.string(),
+		recipient: z.string(),
+		target: z.string(),
+		value: z.string()
 	}),
 	tx: portalsTxSchema
 });
 
 export type TPortalsTransaction = z.infer<typeof portalsTransactionSchema>;
 
-type TGetApprovalProps = Omit<TGetTransactionProps, 'params'> & {
-	params: Omit<TGetTransactionProps['params'], 'slippagePercentage'>;
+type TGetApprovalProps = {
+	params: {
+		sender: TAddress;
+		inputToken: string;
+		inputAmount: string;
+	};
 };
 
 const portalsApprovalSchema = z.object({
 	context: z.object({
-		network: z.string(),
 		allowance: z.string(),
 		approvalAmount: z.string(),
+		canPermit: z.boolean(),
+		network: z.string(),
 		shouldApprove: z.boolean(),
-		spender: z.string(),
-		gasLimit: z.string()
-	}),
-	tx: portalsTxSchema
+		spender: addressSchema,
+		target: addressSchema
+	})
 });
 
 export type TPortalsApproval = z.infer<typeof portalsApprovalSchema>;
 
-const NETWORK = new Map<number, string>([
+export const PORTALS_NETWORK = new Map<number, string>([
 	[1, 'ethereum'],
 	[10, 'optimism'],
-	[250, 'fantom'],
-	[42161, 'arbitrum'],
+	[56, 'bsc'],
+	[100, 'gnosis'],
 	[137, 'polygon'],
-	[43114, 'avalanche'],
-	[56, 'bsc']
+	[250, 'fantom'],
+	[8453, 'base'],
+	[42161, 'arbitrum'],
+	[43114, 'avalanche']
 ]);
 
-const BASE_URL = 'https://api.portals.fi/v1';
+const BASE_URL = 'https://api.portals.fi/v2';
 
-export async function getPortalsEstimate({network, params}: TGetEstimateProps): TFetchReturn<TPortalsEstimate> {
-	const url = `${BASE_URL}/portal/${NETWORK.get(network)}/estimate`;
+export async function getPortalsEstimate({params}: TGetEstimateProps): TFetchReturn<TPortalsEstimate> {
+	const url = `${BASE_URL}/portal/estimate`;
 
 	return fetch<TPortalsEstimate>({
 		endpoint: `${url}?${new URLSearchParams(params)}`,
@@ -105,8 +110,8 @@ export async function getPortalsEstimate({network, params}: TGetEstimateProps): 
 	});
 }
 
-export async function getPortalsTx({network, params}: TGetTransactionProps): TFetchReturn<TPortalsTransaction> {
-	const url = `${BASE_URL}/portal/${NETWORK.get(network)}`;
+export async function getPortalsTx({params}: TGetTransactionProps): TFetchReturn<TPortalsTransaction> {
+	const url = `${BASE_URL}/portal`;
 
 	return fetch<TPortalsTransaction>({
 		endpoint: `${url}?${new URLSearchParams(params)}`,
@@ -114,8 +119,8 @@ export async function getPortalsTx({network, params}: TGetTransactionProps): TFe
 	});
 }
 
-export async function getPortalsApproval({network, params}: TGetApprovalProps): TFetchReturn<TPortalsApproval> {
-	const url = `${BASE_URL}/approval/${NETWORK.get(network)}`;
+export async function getPortalsApproval({params}: TGetApprovalProps): TFetchReturn<TPortalsApproval> {
+	const url = `${BASE_URL}/approval`;
 
 	return fetch<TPortalsApproval>({
 		endpoint: `${url}?${new URLSearchParams(params)}`,

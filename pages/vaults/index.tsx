@@ -1,5 +1,4 @@
 import {Fragment, useEffect, useMemo} from 'react';
-import {QueryParamProvider} from 'use-query-params';
 import {motion, useSpring, useTransform} from 'framer-motion';
 import {VaultListOptions} from '@vaults/components/list/VaultListOptions';
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
@@ -7,7 +6,7 @@ import {VaultsListInternalMigrationRow} from '@vaults/components/list/VaultsList
 import {VaultsListRetired} from '@vaults/components/list/VaultsListRetired';
 import {VaultsListRow} from '@vaults/components/list/VaultsListRow';
 import {ListHero} from '@vaults/components/ListHero';
-import {ALL_VAULTS_CATEGORIES} from '@vaults/constants';
+import {ALL_VAULTS_CATEGORIES, ALL_VAULTS_CATEGORIES_KEYS} from '@vaults/constants';
 import {useVaultFilter} from '@vaults/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
@@ -18,14 +17,16 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {IconChain} from '@yearn-finance/web-lib/icons/IconChain';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
+import {InfoTooltip} from '@common/components/InfoTooltip';
 import {ListHead} from '@common/components/ListHead';
+import {Pagination} from '@common/components/Pagination';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
-import {NextQueryParamAdapter} from '@common/utils/QueryParamsProvider';
+import {usePagination} from '@common/hooks/usePagination';
 
 import type {NextRouter} from 'next/router';
 import type {ReactElement, ReactNode} from 'react';
-import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault, TYDaemonVaults} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TSortDirection} from '@common/types/types';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 
@@ -41,7 +42,7 @@ function Counter({value}: {value: number}): ReactElement {
 }
 
 function HeaderUserPosition(): ReactElement {
-	const {cumulatedValueInVaults} = useWallet();
+	const {cumulatedValueInV2Vaults} = useWallet();
 	const {earned} = useYearn();
 	const {options, isActive, address, openLoginModal, onSwitchChain} = useWeb3();
 
@@ -51,8 +52,8 @@ function HeaderUserPosition(): ReactElement {
 	}, [earned?.totalUnrealizedGainsUSD]);
 
 	const formatedYouHave = useMemo((): string => {
-		return formatAmount(cumulatedValueInVaults || 0) ?? '';
-	}, [cumulatedValueInVaults]);
+		return formatAmount(cumulatedValueInV2Vaults || 0) ?? '';
+	}, [cumulatedValueInV2Vaults]);
 
 	if (!isActive) {
 		return (
@@ -82,12 +83,56 @@ function HeaderUserPosition(): ReactElement {
 				</b>
 			</div>
 			<div className={'col-span-12 w-full md:col-span-4'}>
-				<p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl'}>{'Earnings'}</p>
+				<p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl '}>
+					{'Earnings'}
+					<InfoTooltip
+						text={'Your earnings are estimated based on available onchain data and some nerdy math stuff.'}
+						size={'md'}
+					/>
+				</p>
 				<b className={'font-number text-3xl text-neutral-900 md:text-7xl'}>
 					<Counter value={Number(formatedYouEarned)} />
 				</b>
 			</div>
 		</Fragment>
+	);
+}
+
+function ListOfRetiredVaults({retiredVaults}: {retiredVaults: TYDaemonVaults}): ReactElement {
+	return (
+		<Renderable shouldRender={retiredVaults?.length > 0}>
+			<div>
+				{retiredVaults
+					.filter((vault): boolean => !!vault)
+					.map(
+						(vault): ReactNode => (
+							<VaultsListRetired
+								key={`${vault.chainID}_${vault.address}`}
+								currentVault={vault}
+							/>
+						)
+					)}
+			</div>
+		</Renderable>
+	);
+}
+
+function ListOfMigratableVaults({migratableVaults}: {migratableVaults: TYDaemonVaults}): ReactElement {
+	return (
+		<Renderable shouldRender={migratableVaults?.length > 0}>
+			<div>
+				{migratableVaults
+					.filter((vault): boolean => !!vault)
+					.map(
+						(vault): ReactNode => (
+							<VaultsListInternalMigrationRow
+								key={`${vault.chainID}_${vault.address}`}
+								currentVault={vault}
+							/>
+						)
+					)}
+			</div>
+		</Renderable>
 	);
 }
 
@@ -103,8 +148,9 @@ function ListOfVaults(): ReactElement {
 		onChangeCategories,
 		onChangeChains,
 		onChangeSortDirection,
-		onChangeSortBy
-	} = useQueryArguments();
+		onChangeSortBy,
+		onReset
+	} = useQueryArguments({defaultCategories: ALL_VAULTS_CATEGORIES_KEYS});
 	const {activeVaults, migratableVaults, retiredVaults} = useVaultFilter(categories, chains);
 
 	/* 🔵 - Yearn Finance **************************************************************************
@@ -134,38 +180,14 @@ function ListOfVaults(): ReactElement {
 	 **********************************************************************************************/
 	const sortedVaultsToDisplay = useSortVaults([...searchedVaultsToDisplay], sortBy, sortDirection);
 
-	/* 🔵 - Yearn Finance **************************************************************************
-	 **	The VaultList component is memoized to prevent it from being re-created on every render.
-	 **	It contains either the list of vaults, is some are available, or a message to the user.
-	 **********************************************************************************************/
-	const VaultList = useMemo((): ReactNode => {
-		const filteredByChains = sortedVaultsToDisplay.filter(({chainID}): boolean => chains.includes(chainID));
+	const filteredByChains = useMemo((): TYDaemonVault[] => {
+		return sortedVaultsToDisplay.filter(({chainID}): boolean => chains?.includes(chainID) || false);
+	}, [chains, sortedVaultsToDisplay]);
 
-		if (isLoadingVaultList || isZero(filteredByChains.length) || chains.length === 0) {
-			return (
-				<VaultsListEmpty
-					isLoading={isLoadingVaultList}
-					sortedVaultsToDisplay={filteredByChains}
-					currentSearch={search || ''}
-					currentCategories={categories}
-					currentChains={chains}
-					onChangeCategories={onChangeCategories}
-					onChangeChains={onChangeChains}
-				/>
-			);
-		}
-		return filteredByChains.map((vault): ReactNode => {
-			if (!vault) {
-				return null;
-			}
-			return (
-				<VaultsListRow
-					key={`${vault.chainID}_${vault.address}`}
-					currentVault={vault}
-				/>
-			);
-		});
-	}, [categories, chains, isLoadingVaultList, onChangeCategories, onChangeChains, search, sortedVaultsToDisplay]);
+	const {currentItems, paginationProps} = usePagination<TYDaemonVault>({
+		data: filteredByChains,
+		itemsPerPage: 50 || sortedVaultsToDisplay.length
+	});
 
 	return (
 		<div
@@ -185,35 +207,8 @@ function ListOfVaults(): ReactElement {
 				onSearch={onSearch}
 			/>
 
-			<Renderable shouldRender={(categories || []).includes('holdings') && retiredVaults?.length > 0}>
-				<div>
-					{retiredVaults
-						.filter((vault): boolean => !!vault)
-						.map(
-							(vault): ReactNode => (
-								<VaultsListRetired
-									key={`${vault.chainID}_${vault.address}`}
-									currentVault={vault}
-								/>
-							)
-						)}
-				</div>
-			</Renderable>
-
-			<Renderable shouldRender={(categories || []).includes('holdings') && migratableVaults?.length > 0}>
-				<div>
-					{migratableVaults
-						.filter((vault): boolean => !!vault)
-						.map(
-							(vault): ReactNode => (
-								<VaultsListInternalMigrationRow
-									key={`${vault.chainID}_${vault.address}`}
-									currentVault={vault}
-								/>
-							)
-						)}
-				</div>
-			</Renderable>
+			<ListOfRetiredVaults retiredVaults={retiredVaults} />
+			<ListOfMigratableVaults migratableVaults={migratableVaults} />
 
 			<div className={'mt-4'} />
 			<ListHead
@@ -230,12 +225,40 @@ function ListOfVaults(): ReactElement {
 					{label: 'Est. APR', value: 'estAPR', sortable: true, className: 'col-span-2'},
 					{label: 'Hist. APR', value: 'apr', sortable: true, className: 'col-span-2'},
 					{label: 'Available', value: 'available', sortable: true, className: 'col-span-2'},
-					{label: 'Deposited', value: 'deposited', sortable: true, className: 'col-span-2'},
-					{label: 'TVL', value: 'tvl', sortable: true, className: 'col-span-2'}
+					{label: 'Holdings', value: 'deposited', sortable: true, className: 'col-span-2'},
+					{label: 'Deposits', value: 'tvl', sortable: true, className: 'col-span-2'}
 				]}
 			/>
 
-			{VaultList}
+			{isLoadingVaultList || isZero(filteredByChains.length) || !chains || chains.length === 0 ? (
+				<VaultsListEmpty
+					isLoading={isLoadingVaultList}
+					sortedVaultsToDisplay={filteredByChains}
+					currentSearch={search || ''}
+					currentCategories={categories}
+					currentChains={chains}
+					onReset={onReset}
+					defaultCategories={ALL_VAULTS_CATEGORIES_KEYS}
+				/>
+			) : (
+				currentItems.map((vault): ReactNode => {
+					if (!vault) {
+						return null;
+					}
+					return (
+						<VaultsListRow
+							key={`${vault.chainID}_${vault.address}`}
+							currentVault={vault}
+						/>
+					);
+				})
+			)}
+
+			<div className={'mt-4'}>
+				<div className={'border-t border-neutral-200/60 p-4'}>
+					<Pagination {...paginationProps} />
+				</div>
+			</div>
 		</div>
 	);
 }
@@ -244,11 +267,7 @@ function Index(): ReactElement {
 	return (
 		<section className={'mt-4 grid w-full grid-cols-12 gap-y-10 pb-10 md:mt-20 md:gap-x-10 md:gap-y-20'}>
 			<HeaderUserPosition />
-			<QueryParamProvider
-				adapter={NextQueryParamAdapter}
-				options={{removeDefaultsFromUrl: true}}>
-				<ListOfVaults />
-			</QueryParamProvider>
+			<ListOfVaults />
 		</section>
 	);
 }

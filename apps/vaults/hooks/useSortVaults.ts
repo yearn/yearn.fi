@@ -1,9 +1,7 @@
 import {useCallback, useMemo} from 'react';
-import {useStakingRewards} from '@vaults/contexts/useStakingRewards';
 import {deserialize, serialize} from '@wagmi/core';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {toBigInt, toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {useWallet} from '@common/contexts/useWallet';
 import {getVaultName} from '@common/utils';
 import {numberSort, stringSort} from '@common/utils/sort';
@@ -19,7 +17,6 @@ export function useSortVaults(
 	sortDirection: TSortDirection
 ): TYDaemonVaults {
 	const {getBalance} = useWallet();
-	const {stakingRewardsByVault, positionsMap} = useStakingRewards();
 
 	const sortedByName = useCallback(
 		(): TYDaemonVaults =>
@@ -72,20 +69,22 @@ export function useSortVaults(
 		return vaultList.sort((a, b): number => {
 			const aDepositedBalance = Number(getBalance({address: a.address, chainID: a.chainID})?.normalized || 0);
 			const bDepositedBalance = Number(getBalance({address: b.address, chainID: b.chainID})?.normalized || 0);
-			const aStakedBalance = toNormalizedValue(
-				toBigInt(positionsMap[toAddress(stakingRewardsByVault[a.address])]?.stake),
-				a.decimals
-			);
-			const bStakedBalance = toNormalizedValue(
-				toBigInt(positionsMap[toAddress(stakingRewardsByVault[b.address])]?.stake),
-				b.decimals
-			);
+			let aStakedBalance = 0;
+			let bStakedBalance = 0;
+
+			if (a.staking.available) {
+				aStakedBalance = Number(getBalance({address: a.staking.address, chainID: a.chainID})?.normalized || 0);
+			}
+			if (b.staking.available) {
+				bStakedBalance = Number(getBalance({address: b.staking.address, chainID: b.chainID})?.normalized || 0);
+			}
+
 			if (sortDirection === 'asc') {
 				return aDepositedBalance + aStakedBalance - (bDepositedBalance + bStakedBalance);
 			}
 			return bDepositedBalance + bStakedBalance - (aDepositedBalance + aStakedBalance);
 		});
-	}, [vaultList, getBalance, positionsMap, stakingRewardsByVault, sortDirection]);
+	}, [vaultList, getBalance, sortDirection]);
 
 	const sortedByAvailable = useCallback((): TYDaemonVaults => {
 		return vaultList.sort((a, b): number => {

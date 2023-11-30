@@ -27,9 +27,6 @@ export const AppSettingsContextApp = memo(function AppSettingsContextApp({
 }: {
 	children: ReactElement;
 }): ReactElement {
-	/**
-	 * @deprecated Use use-query-params instead
-	 */
 	const [searchValue, set_searchValue] = useSessionStorage('yearn.fi/vaults-search@0.0.1', '');
 	const [shouldHideDust, set_shouldHideDust] = useLocalStorage('yearn.fi/should-hide-dust@0.0.1', false);
 	const [shouldHideLowTVLVaults, set_shouldHideLowTVLVaults] = useLocalStorage('yearn.fi/hide-low-tvl@0.0.1', false);

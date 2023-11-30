@@ -3,16 +3,17 @@ import {Combobox, Transition} from '@headlessui/react';
 import {useThrottledState} from '@react-hookz/web';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
+import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
-import {performBatchedUpdates} from '@yearn-finance/web-lib/utils/performBatchedUpdates';
-import {useBalance} from '@common/hooks/useBalance';
+import {useWallet} from '@common/contexts/useWallet';
 import {IconChevron} from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
 import type {TDropdownItemProps, TDropdownOption, TDropdownProps} from '@common/types/types';
 
 function DropdownItem({option}: TDropdownItemProps): ReactElement {
-	const balance = useBalance({address: option.value, chainID: option.chainID});
+	const {getBalance} = useWallet();
+	const balance = getBalance({address: option.value, chainID: option.chainID});
 
 	return (
 		<Combobox.Option value={option}>
@@ -70,14 +71,14 @@ function DropdownEmpty({query}: {query: string}): ReactElement {
 	);
 }
 
-export function Dropdown({options, selected, onSelect, placeholder = ''}: TDropdownProps): ReactElement {
+export function Dropdown(props: TDropdownProps): ReactElement {
 	const [isOpen, set_isOpen] = useThrottledState(false, 400);
 	const [query, set_query] = useState('');
 
 	const filteredOptions =
 		query === ''
-			? options
-			: options.filter((option): boolean => {
+			? props.options
+			: props.options.filter((option): boolean => {
 					return option.symbol.toLowerCase().includes(query.toLowerCase());
 			  });
 
@@ -95,26 +96,25 @@ export function Dropdown({options, selected, onSelect, placeholder = ''}: TDropd
 			</Renderable>
 
 			<Combobox
-				value={selected}
+				value={props.selected}
 				onChange={(_selected: TDropdownOption): void => {
-					performBatchedUpdates((): void => {
-						onSelect(_selected);
-						set_isOpen(false);
-					});
+					props.onSelect(_selected);
+					set_isOpen(false);
 				}}>
 				<>
 					<Combobox.Button
 						onClick={(): void => set_isOpen((o: boolean): boolean => !o)}
-						className={
-							'flex h-10 w-full items-center justify-between bg-neutral-0 p-2 text-base text-neutral-900 md:w-56 md:px-3'
-						}>
+						className={cl(
+							props.className,
+							'flex h-10 w-full items-center justify-between bg-neutral-0 p-2 text-base text-neutral-900 md:px-3'
+						)}>
 						<div className={'relative w-full'}>
 							<div className={'flex w-full items-center'}>
 								<div
-									key={selected?.label}
+									key={props.selected?.label}
 									className={'h-6 w-6 flex-none rounded-full'}>
-									{selected?.icon ? (
-										cloneElement(selected.icon)
+									{props.selected?.icon ? (
+										cloneElement(props.selected.icon)
 									) : (
 										<div className={'h-6 w-6 flex-none rounded-full bg-neutral-500'} />
 									)}
@@ -128,13 +128,11 @@ export function Dropdown({options, selected, onSelect, placeholder = ''}: TDropd
 											'w-full cursor-default text-ellipsis border-none bg-transparent p-0 outline-none scrollbar-none'
 										}
 										displayValue={(option: TDropdownOption): string => option.symbol}
-										placeholder={placeholder}
+										placeholder={props.placeholder || ''}
 										spellCheck={false}
 										onChange={(event): void => {
-											performBatchedUpdates((): void => {
-												set_isOpen(true);
-												set_query(event.target.value);
-											});
+											set_isOpen(true);
+											set_query(event.target.value);
 										}}
 									/>
 								</p>
@@ -159,12 +157,10 @@ export function Dropdown({options, selected, onSelect, placeholder = ''}: TDropd
 						leaveFrom={'transform scale-100 opacity-100'}
 						leaveTo={'transform scale-95 opacity-0'}
 						afterLeave={(): void => {
-							performBatchedUpdates((): void => {
-								set_isOpen(false);
-								set_query('');
-							});
+							set_isOpen(false);
+							set_query('');
 						}}>
-						<Combobox.Options className={'yearn--dropdown-menu z-50'}>
+						<Combobox.Options className={cl(props.comboboxOptionsClassName, 'yearn--dropdown-menu z-50')}>
 							<Renderable
 								shouldRender={filteredOptions.length > 0}
 								fallback={<DropdownEmpty query={query} />}>

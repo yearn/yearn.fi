@@ -11,7 +11,7 @@ export function Wrapper({children, router}: {children: ReactElement; router: Nex
 	const {manifest} = useCurrentApp(router);
 
 	return (
-		<>
+		<div className={'mx-auto my-0 max-w-6xl pt-4 md:mb-0 md:mt-16'}>
 			<Meta meta={manifest} />
 			<YBalContextApp>
 				<AnimatePresence mode={'wait'}>
@@ -26,6 +26,6 @@ export function Wrapper({children, router}: {children: ReactElement; router: Nex
 					</motion.div>
 				</AnimatePresence>
 			</YBalContextApp>
-		</>
+		</div>
 	);
 }

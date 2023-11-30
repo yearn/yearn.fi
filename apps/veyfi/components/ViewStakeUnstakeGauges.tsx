@@ -10,7 +10,7 @@ import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
 import {toAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
-import {formatToNormalizedValue, toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
@@ -151,9 +151,9 @@ function StakeUnstakeButtons({vaultAddress, gaugeAddress, vaultDeposited, gaugeS
 
 export function StakeUnstakeGauges(): ReactElement {
 	const {address} = useWeb3();
-	const {gaugesMap, positionsMap} = useGauge();
-	const {vaults, prices} = useYearn();
-	const {getBalance} = useWallet();
+	const {gaugesMap, userPositionInGauge} = useGauge();
+	const {vaults} = useYearn();
+	const {getBalance, getPrice} = useWallet();
 	const {dYFIPrice} = useOption();
 	const [isLoadingGauges, set_isLoadingGauges] = useState(true);
 	const {search, onSearch} = useQueryArguments();
@@ -171,14 +171,14 @@ export function StakeUnstakeGauges(): ReactElement {
 			}
 
 			const vaultBalance = getBalance({address: vault.address, chainID: vault.chainID});
-			const tokenPrice = formatToNormalizedValue(toBigInt(prices?.[vault.token.address] || 0), 6);
-			const boost = Number(positionsMap[gauge.address]?.boost || 1);
+			const tokenPrice = getPrice({address: vault.address, chainID: vault.chainID});
+			const boost = Number(userPositionInGauge[gauge.address]?.boost || 1);
 			let APRFor10xBoost =
 				((Number(gauge?.rewardRate.normalized || 0) * dYFIPrice * SECONDS_PER_YEAR) /
 					Number(gauge?.totalStaked.normalized || 0) /
-					tokenPrice) *
+					Number(tokenPrice.normalized || 0)) *
 				100;
-			if (tokenPrice === 0 || Number(gauge?.totalStaked.normalized || 0) === 0) {
+			if (tokenPrice.raw === 0n || Number(gauge?.totalStaked.normalized || 0) === 0) {
 				APRFor10xBoost = 0;
 			}
 
@@ -192,13 +192,13 @@ export function StakeUnstakeGauges(): ReactElement {
 				vaultDeposited: vaultBalance,
 				gaugeAPR: APRFor10xBoost,
 				gaugeBoost: boost,
-				gaugeStaked: positionsMap[gauge.address]?.deposit ?? toNormalizedBN(0),
+				gaugeStaked: userPositionInGauge[gauge.address]?.deposit ?? toNormalizedBN(0),
 				actions: undefined
 			});
 		}
 		set_isLoadingGauges(false);
 		return data;
-	}, [vaults, gaugesMap, getBalance, prices, positionsMap, dYFIPrice]);
+	}, [vaults, gaugesMap, getBalance, getPrice, userPositionInGauge, dYFIPrice]);
 
 	const searchedGaugesData = useMemo((): TGaugeData[] => {
 		if (!search) {
@@ -235,7 +235,7 @@ export function StakeUnstakeGauges(): ReactElement {
 					<SearchBar
 						searchPlaceholder={'WETH yVault'}
 						searchValue={search || ''}
-						set_searchValue={onSearch}
+						onSearch={onSearch}
 					/>
 				</div>
 			</div>
@@ -251,17 +251,12 @@ export function StakeUnstakeGauges(): ReactElement {
 							className: 'my-4 md:my-0',
 							transform: ({vaultIcon, vaultName}): ReactElement => (
 								<div className={'flex flex-row items-center space-x-4 md:space-x-6'}>
-									<div
-										className={
-											'flex h-8 min-h-[40px] w-8 min-w-[40px] items-center justify-center rounded-full md:h-10 md:w-10'
-										}>
+									<div className={'flex h-8 min-h-[32px] w-8 min-w-[32px] rounded-full'}>
 										<ImageWithFallback
 											alt={vaultName}
-											width={40}
-											height={40}
-											quality={90}
+											width={32}
+											height={32}
 											src={vaultIcon}
-											loading={'eager'}
 										/>
 									</div>
 									<p>{vaultName}</p>

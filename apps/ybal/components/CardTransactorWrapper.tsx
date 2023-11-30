@@ -19,7 +19,7 @@ import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import {getVaultAPR} from '@common/utils';
 import {approveERC20, deposit} from '@common/utils/actions';
-import {YBAL_SUPPORTED_NETWORK} from '@yBal/constants';
+import {YBAL_SUPPORTED_NETWORK} from '@yBal/constants/index';
 import {ZAP_OPTIONS_FROM, ZAP_OPTIONS_TO} from '@yBal/constants/tokens';
 import {useYBal} from '@yBal/contexts/useYBal';
 import {simulateZapForMinOut, zapBal} from '@yBal/utils/actions';
@@ -100,7 +100,7 @@ export function CardTransactorContextApp({
 			}
 			return prevAmount;
 		});
-	}, [isActive, selectedOptionFrom.value, getBalance, hasTypedSomething]);
+	}, [isActive, selectedOptionFrom.value, getBalance, hasTypedSomething, selectedOptionFrom.chainID]);
 
 	useUpdateEffect((): void => {
 		if (!isActive) {
@@ -214,9 +214,11 @@ export function CardTransactorContextApp({
 		addToken,
 		amount.raw,
 		dismissAllToasts,
-		expectedOut,
+		expectedOut.minOut,
+		expectedOut.shouldMint,
 		provider,
 		refresh,
+		selectedOptionFrom.chainID,
 		selectedOptionFrom.value,
 		selectedOptionFrom.zapVia,
 		selectedOptionTo.decimals,

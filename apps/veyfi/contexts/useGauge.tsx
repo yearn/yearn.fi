@@ -34,12 +34,12 @@ export type TGaugePosition = {
 
 export type TGaugeContext = {
 	gaugesMap: TDict<TGauge | undefined>;
-	positionsMap: TDict<TGaugePosition | undefined>;
+	userPositionInGauge: TDict<TGaugePosition | undefined>;
 	refresh: () => void;
 };
 const defaultProps: TGaugeContext = {
 	gaugesMap: {},
-	positionsMap: {},
+	userPositionInGauge: {},
 	refresh: (): void => undefined
 };
 
@@ -47,7 +47,7 @@ const GaugeContext = createContext<TGaugeContext>(defaultProps);
 export const GaugeContextApp = memo(function GaugeContextApp({children}: {children: ReactElement}): ReactElement {
 	const {address, isActive} = useWeb3();
 	const [gauges, set_gauges] = useState<TGauge[]>([]);
-	const [positionsMap, set_positionsMap] = useState<TDict<TGaugePosition>>({});
+	const [userPositionInGauge, set_userPositionInGauge] = useState<TDict<TGaugePosition>>({});
 
 	const refreshVotingEscrow = useAsyncTrigger(async (): Promise<void> => {
 		const gaugePromises = VE_YFI_GAUGES.map(async (gaugeAddress): Promise<TGauge> => {
@@ -142,7 +142,7 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 		for (const positions of allPositions) {
 			allPositionsAsMap[positions.address] = positions;
 		}
-		set_positionsMap(allPositionsAsMap);
+		set_userPositionInGauge(allPositionsAsMap);
 	}, [address, gauges, isActive]);
 
 	const refresh = useCallback(async (): Promise<void> => {
@@ -153,10 +153,10 @@ export const GaugeContextApp = memo(function GaugeContextApp({children}: {childr
 	const contextValue = useDeepCompareMemo(
 		(): TGaugeContext => ({
 			gaugesMap: keyBy(gauges, 'address'),
-			positionsMap: positionsMap,
+			userPositionInGauge: userPositionInGauge,
 			refresh
 		}),
-		[gauges, positionsMap, refresh]
+		[gauges, userPositionInGauge, refresh]
 	);
 
 	return <GaugeContext.Provider value={contextValue}>{children}</GaugeContext.Provider>;

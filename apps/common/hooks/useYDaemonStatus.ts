@@ -14,7 +14,7 @@ export function useYDaemonStatus<T>({chainID}: TProps): SWRResponse<T> | null {
 		revalidateOnFocus: false
 	});
 
-	if (!result.data || result.isLoading || result.isValidating) {
+	if (!result.data || result.isLoading) {
 		return result;
 	}
 

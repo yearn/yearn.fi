@@ -148,7 +148,7 @@ export function Popover(): ReactElement {
 									onChange={({target: {value}}): void => set_telegramHandle(value)}
 									placeholder={'Your telegram handle for follow up'}
 								/>
-								<label className={'max-w-xs items-center justify-end pt-1'}>
+								<p className={'max-w-xs items-center justify-end pt-1'}>
 									<p className={'text-xs'}>
 										{"If you don't have telegram please "}
 										<Link href={'https://discord.gg/yearn'}>{'join our discord'}</Link>
@@ -159,7 +159,7 @@ export function Popover(): ReactElement {
 										</Link>
 										{', admins will never dm first.'}
 									</p>
-								</label>
+								</p>
 								<button
 									disabled={
 										!description || description.length < 10 || isCoolingOff || isSubmitDisabled
@@ -170,15 +170,15 @@ export function Popover(): ReactElement {
 									onClick={async (): Promise<void> => onSubmit(close)}>
 									{!isCoolingOff ? 'Submit' : `Please wait ${timeLeft}`}
 								</button>
-								<label className={'max-w-xs items-center justify-end pt-2'}>
+								<p className={'max-w-xs items-center justify-end pt-2'}>
 									<p className={'text-right text-xs italic text-neutral-200'}>
 										{'Address and screenshot of page will be attached'}
 									</p>
 									<p className={'text-right text-xs italic text-neutral-200'}>
 										{'For internal use only'}
 									</p>
-								</label>
-								<label className={'flex cursor-pointer items-center justify-end'}>
+								</p>
+								<p className={'flex cursor-pointer items-center justify-end'}>
 									<button
 										className={
 											'text-right text-xs text-neutral-200 underline transition-colors hover:text-neutral-400'
@@ -186,7 +186,7 @@ export function Popover(): ReactElement {
 										onClick={(): void => set_hasPopover(!hasPopover)}>
 										{'Hide me forever'}
 									</button>
-								</label>
+								</p>
 							</div>
 						)}
 					</PopoverHeadlessUI.Panel>

@@ -34,9 +34,42 @@
 	font-display: swap;
 }
 
+#main {
+	@apply flex flex-col w-full h-full min-h-screen bg-neutral-0;
+}
+
+:root.v3 {
+	--color-primary: 220 95% 50%;
+	--color-neutral-900: 0 0% 96%;
+	--color-neutral-800: 0 0% 96%;
+	--color-neutral-700: 0 0% 92%;
+	--color-neutral-600: 0 0% 88%;
+	--color-neutral-500: 0 0% 62%;
+	--color-neutral-400: 0 0% 50%;
+	--color-neutral-300: 231 51% 19%;
+	--color-neutral-200: 242 54% 27%;
+	--color-neutral-100: 231 100% 11%;
+	--color-neutral-0: 231 100% 6%;
+}
+
 @layer base {
 	#swap {
 		@apply scroll-mt-12 mb-0 md:mb-44;
+	}
+
+	.yearn--header {
+		@apply !mb-0 !z-[99999];
+	}
+	.yearn--button {
+		&[data-variant='v3'] {
+			@apply text-neutral-900 bg-[#D21162] rounded-lg font-normal border border-transparent;
+			&:disabled {
+				@apply bg-[#D21162] opacity-40;
+			}
+			&:not(:disabled):not([aria-busy='true']):hover {
+				@apply hover:bg-[#d21162]/80;
+			}
+		}
 	}
 
 	/* 🔵 - Yearn Finance ******************************************************************************
@@ -44,28 +77,10 @@
 	** A custom overwrite is required for dark/light mode
 	***************************************************************************************************/
 	.appBox {
-		--x-px: calc(var(--x) * 1px);
-		--y-px: calc(var(--y) * 1px);
-		--opacity: var(--opacity);
-		--color: hsl(var(--color-neutral-300));
-		@apply relative flex aspect-video h-full w-full cursor-pointer flex-col items-center border border-neutral-300/50 p-6 shadow shadow-transparent transition-all duration-[400ms];
-
-		&:before,
-		&:after {
-			@apply pointer-events-none block absolute inset-[0px] z-[-1];
-			content: '';
-			z-index: -1;
-			opacity: var(--opacity);
-			background: radial-gradient(1200px circle at var(--x-px) var(--y-px), var(--color), transparent 40%);
-			transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-		}
-		&:before {
-			@apply pointer-events-none z-[-1];
-		}
+		@apply relative flex aspect-video h-full w-full cursor-pointer flex-col items-center border border-neutral-300/50 p-6 shadow shadow-transparent transition-all duration-[400ms] hover:bg-neutral-100/40;
 	}
 	:root.dark {
 		& .appBox {
-			--color: hsl(var(--color-neutral-100));
 			@apply border-neutral-100/30;
 		}
 	}
@@ -120,7 +135,7 @@
 		@apply flex flex-row items-center space-x-4 md:space-x-6;
 	}
 	.yearn--table-token-section-item-image {
-		@apply h-8 min-h-[32px] w-8 min-w-[32px] rounded-full md:flex md:h-10 md:w-10;
+		@apply h-8 min-h-[32px] w-8 min-w-[32px] rounded-full md:flex;
 	}
 	.yearn--table-data-section {
 		@apply col-span-5 grid grid-cols-1 gap-x-0 md:gap-x-7 md:grid-cols-8 gap-y-0;
@@ -132,11 +147,11 @@
 		@apply text-neutral-900;
 	}
 	.yearn--table-data-section-item {
-		@apply col-span-1 flex h-min flex-row justify-between pt-0 px-0 md:h-14 md:pt-4;
+		@apply col-span-1 flex h-min flex-col md:flex-row justify-between pt-0 px-0 md:h-14 md:pt-4;
 		&[datatype='number'] {
 			@apply md:justify-end;
 			& > .yearn--table-data-section-item-value {
-				@apply font-number text-end;
+				@apply font-number md:text-end;
 			}
 		}
 	}
@@ -278,9 +293,9 @@
 		@apply invisible right-0 absolute z-50 opacity-0 transition-opacity;
 	}
 	.tooltip .tooltiptext {
-		@apply text-xs text-center invisible bg-neutral-0 text-neutral-900 absolute z-50 right-1 opacity-0 transition-opacity p-2;
+		@apply text-xs text-center invisible bg-neutral-0 text-neutral-900 absolute z-50 -right-7 opacity-0 transition-opacity;
 		width: 15rem;
-		top: 110%;
+		top: 130%;
 		margin-right: calc(-122px + 50%);
 		box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.16);
 	}

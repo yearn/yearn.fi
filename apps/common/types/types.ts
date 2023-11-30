@@ -23,6 +23,8 @@ export type TDropdownProps = {
 	defaultOption: TDropdownOption;
 	selected?: TDropdownOption;
 	placeholder?: string;
+	className?: string;
+	comboboxOptionsClassName?: string;
 	onSelect: React.Dispatch<React.SetStateAction<TDropdownOption>> | ((option: TDropdownOption) => void);
 };
 
@@ -68,7 +70,6 @@ export type TToken = {
 	stakingValue: number;
 	price: TNormalizedBN;
 	balance: TNormalizedBN;
-	stakingBalance: TNormalizedBN;
 };
 export type TChainTokens = TNDict<TDict<TToken>>;
 

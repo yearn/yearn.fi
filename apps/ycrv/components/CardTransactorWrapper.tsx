@@ -25,7 +25,7 @@ import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import {getAmountWithSlippage, getVaultAPR} from '@common/utils';
 import {approveERC20, deposit} from '@common/utils/actions';
-import {YCRV_SUPPORTED_NETWORK} from '@yCRV/constants';
+import {YCRV_SUPPORTED_NETWORK} from '@yCRV/constants/index';
 import {ZAP_OPTIONS_FROM, ZAP_OPTIONS_TO} from '@yCRV/constants/tokens';
 import {useYCRV} from '@yCRV/contexts/useYCRV';
 import {ZAP_CRV_ABI} from '@yCRV/utils/abi/zapCRV.abi';
@@ -186,7 +186,7 @@ export function CardTransactorContextApp({
 		if (result.isSuccessful) {
 			await Promise.all([refetchAllowances(), refresh()]);
 		}
-	}, [provider, refresh, refetchAllowances, selectedOptionFrom.value, selectedOptionFrom.zapVia]);
+	}, [provider, selectedOptionFrom, refetchAllowances, refresh]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** CRV token require the allowance to be reset to 0 before being able to
@@ -215,7 +215,7 @@ export function CardTransactorContextApp({
 				await refresh();
 			}
 		}
-	}, [provider, refresh, selectedOptionFrom.value, selectedOptionFrom.zapVia]);
+	}, [provider, refresh, selectedOptionFrom]);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** Execute a zap using the ZAP contract to migrate from a token A to a
@@ -283,12 +283,8 @@ export function CardTransactorContextApp({
 		expectedOut,
 		provider,
 		refresh,
-		selectedOptionFrom.value,
-		selectedOptionFrom.zapVia,
-		selectedOptionTo.decimals,
-		selectedOptionTo.icon?.props.src,
-		selectedOptionTo.symbol,
-		selectedOptionTo.value,
+		selectedOptionFrom,
+		selectedOptionTo,
 		slippage,
 		toast
 	]);

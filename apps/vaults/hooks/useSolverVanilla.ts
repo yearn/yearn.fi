@@ -1,11 +1,13 @@
 import {useCallback, useMemo, useRef} from 'react';
+import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {getVaultEstimateOut} from '@vaults/utils/getVaultEstimateOut';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {useYearn} from '@common/contexts/useYearn';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
-import {allowanceOf, approveERC20, deposit, withdrawShares} from '@common/utils/actions';
+import {allowanceOf, approveERC20, deposit, redeemV3Shares, withdrawShares} from '@common/utils/actions';
 import {assert} from '@common/utils/assert';
 
 import type {TDict} from '@yearn-finance/web-lib/types';
@@ -15,6 +17,7 @@ import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
 
 export function useSolverVanilla(): TSolverContext {
 	const {provider} = useWeb3();
+	const {maxLoss} = useYearn();
 	const latestQuote = useRef<TNormalizedBN>();
 	const request = useRef<TInitSolverArgs>();
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
@@ -25,6 +28,9 @@ export function useSolverVanilla(): TSolverContext {
 	 ** call getQuote to get the current quote for the provided request.
 	 **********************************************************************************************/
 	const init = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN> => {
+		if (isSolverDisabled(Solver.enum.Vanilla)) {
+			return toNormalizedBN(0);
+		}
 		request.current = _request;
 		const estimateOut = await getVaultEstimateOut({
 			inputToken: toAddress(_request.inputToken.value),
@@ -141,7 +147,22 @@ export function useSolverVanilla(): TSolverContext {
 			assert(request.current, 'Request is not set');
 			assert(request.current.inputToken, 'Output token is not set');
 			assert(request.current.inputAmount, 'Input amount is not set');
+			const isV3 = request.current?.version.split('.')?.[0] === '3';
 
+			if (isV3) {
+				const result = await redeemV3Shares({
+					connector: provider,
+					chainID: request.current.chainID,
+					contractAddress: request.current.inputToken.value,
+					amount: request.current.inputAmount,
+					maxLoss: maxLoss,
+					statusHandler: txStatusSetter
+				});
+				if (result.isSuccessful) {
+					onSuccess();
+				}
+				return;
+			}
 			const result = await withdrawShares({
 				connector: provider,
 				chainID: request.current.chainID,
@@ -153,7 +174,7 @@ export function useSolverVanilla(): TSolverContext {
 				onSuccess();
 			}
 		},
-		[provider]
+		[maxLoss, provider]
 	);
 
 	return useMemo(

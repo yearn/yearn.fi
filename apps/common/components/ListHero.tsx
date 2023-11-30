@@ -2,13 +2,9 @@ import {useEffect, useState} from 'react';
 import {Switch as HeadlessSwitch} from '@headlessui/react';
 import {useIsMounted} from '@react-hookz/web';
 import {Button} from '@yearn-finance/web-lib/components/Button';
-import {IconArbitrumChain} from '@yearn-finance/web-lib/icons/chains/IconArbitrumChain';
-import {IconBaseChain} from '@yearn-finance/web-lib/icons/chains/IconBaseChain';
-import {IconEtherumChain} from '@yearn-finance/web-lib/icons/chains/IconEtherumChain';
-import {IconFantomChain} from '@yearn-finance/web-lib/icons/chains/IconFantomChain';
-import {IconOptimismChain} from '@yearn-finance/web-lib/icons/chains/IconOptimismChain';
 import {MultiSelectDropdown} from '@common/components/MultiSelectDropdown';
 import {SearchBar} from '@common/components/SearchBar';
+import {useChainOptions} from '@common/hooks/useChains';
 import {isValidCategory} from '@common/types/category';
 
 import type {ChangeEvent, ReactElement, ReactNode} from 'react';
@@ -124,40 +120,7 @@ export function ListHero<T extends string>({
 	switchProps
 }: TListHero<T>): ReactElement {
 	const chains = JSON.parse(selectedChains || '[]') as number[];
-
-	const OPTIONS = [
-		{
-			label: 'Ethereum',
-			value: 1,
-			isSelected: chains.includes(1),
-			icon: <IconEtherumChain />
-		},
-		{
-			label: 'OP Mainnet',
-			value: 10,
-			isSelected: chains.includes(10),
-			icon: <IconOptimismChain />
-		},
-		{
-			label: 'Fantom',
-			value: 250,
-			isSelected: chains.includes(250),
-			icon: <IconFantomChain />
-		},
-		{
-			label: 'Base',
-			value: 8453,
-			isSelected: chains.includes(8453),
-			icon: <IconBaseChain />
-		},
-		{
-			label: 'Arbitrum One',
-			value: 42161,
-			isSelected: chains.includes(42161),
-			icon: <IconArbitrumChain />
-		}
-	];
-
+	const chainOptions = useChainOptions(chains);
 	const isMounted = useIsMounted();
 
 	return (
@@ -177,7 +140,7 @@ export function ListHero<T extends string>({
 				/>
 
 				<MultiSelectDropdown
-					options={OPTIONS}
+					options={chainOptions}
 					placeholder={'Select chain'}
 					onSelect={(options): void => {
 						const selectedChains = options
@@ -190,7 +153,7 @@ export function ListHero<T extends string>({
 				<SearchBar
 					searchPlaceholder={searchPlaceholder}
 					searchValue={searchValue}
-					set_searchValue={set_searchValue}
+					onSearch={set_searchValue}
 				/>
 
 				{!!switchProps && (

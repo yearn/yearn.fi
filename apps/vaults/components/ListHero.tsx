@@ -1,24 +1,20 @@
 import {useMemo} from 'react';
-import {IconArbitrumChain} from '@yearn-finance/web-lib/icons/chains/IconArbitrumChain';
-import {IconBaseChain} from '@yearn-finance/web-lib/icons/chains/IconBaseChain';
-import {IconEtherumChain} from '@yearn-finance/web-lib/icons/chains/IconEtherumChain';
-import {IconFantomChain} from '@yearn-finance/web-lib/icons/chains/IconFantomChain';
-import {IconOptimismChain} from '@yearn-finance/web-lib/icons/chains/IconOptimismChain';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {MultiSelectDropdown} from '@common/components/MultiSelectDropdown';
 import {SearchBar} from '@common/components/SearchBar';
+import {useChainOptions} from '@common/hooks/useChains';
 
 import type {ReactElement} from 'react';
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TMultiSelectOptionProps} from '@common/components/MultiSelectDropdown';
 
 type TListHero = {
-	categories: string[];
+	categories: string[] | null;
 	possibleCategories: TDict<string>;
-	chains: number[];
+	chains: number[] | null;
 	searchValue: string;
-	onChangeCategories: (categories: string[]) => void;
-	onChangeChains: (chains: number[]) => void;
+	onChangeCategories: (categories: string[] | null) => void;
+	onChangeChains: (chains: number[] | null) => void;
 	onSearch: (searchValue: string) => void;
 	shouldHideChainSelector?: boolean;
 };
@@ -33,47 +29,13 @@ export function ListHero({
 	onChangeChains,
 	shouldHideChainSelector
 }: TListHero): ReactElement {
-	const chainOptions = useMemo((): TMultiSelectOptionProps[] => {
-		return [
-			{
-				label: 'Ethereum',
-				value: 1,
-				isSelected: chains.includes(1),
-				icon: <IconEtherumChain />
-			},
-			{
-				label: 'OP Mainnet',
-				value: 10,
-				isSelected: chains.includes(10),
-				icon: <IconOptimismChain />
-			},
-			{
-				label: 'Fantom',
-				value: 250,
-				isSelected: chains.includes(250),
-				icon: <IconFantomChain />
-			},
-			{
-				label: 'Base',
-				value: 8453,
-				isSelected: chains.includes(8453),
-				icon: <IconBaseChain />
-			},
-			{
-				label: 'Arbitrum One',
-				value: 42161,
-				isSelected: chains.includes(42161),
-				icon: <IconArbitrumChain />
-			}
-		];
-	}, [chains]);
-
+	const chainOptions = useChainOptions(chains).filter((option): boolean => option.value !== 137);
 	const categoryOptions = useMemo((): TMultiSelectOptionProps[] => {
 		const options: TMultiSelectOptionProps[] = Object.entries(possibleCategories).map(
 			([key, value]): TMultiSelectOptionProps => ({
 				value: key,
 				label: value,
-				isSelected: categories.includes(key)
+				isSelected: categories?.includes(key) || false
 			})
 		);
 		return options;
@@ -91,7 +53,7 @@ export function ListHero({
 							const selectedChains = options
 								.filter((o): boolean => o.isSelected)
 								.map((option): number => Number(option.value));
-							onChangeChains(selectedChains);
+							onChangeChains(selectedChains.length === 0 ? null : selectedChains);
 						}}
 					/>
 				</div>
@@ -105,7 +67,7 @@ export function ListHero({
 							const selectedCategories = options
 								.filter((o): boolean => o.isSelected)
 								.map((option): string => String(option.value));
-							onChangeCategories(selectedCategories);
+							onChangeCategories(selectedCategories.length === 0 ? null : selectedCategories);
 						}}
 					/>
 				</div>
@@ -116,7 +78,7 @@ export function ListHero({
 						className={'md:w-full'}
 						searchPlaceholder={'YFI Vault'}
 						searchValue={searchValue}
-						set_searchValue={onSearch}
+						onSearch={onSearch}
 					/>
 				</div>
 			</div>

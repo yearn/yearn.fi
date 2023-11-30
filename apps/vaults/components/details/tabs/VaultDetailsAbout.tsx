@@ -36,8 +36,8 @@ function APRLineItem({value, label, apyType, hasUpperLimit}: TAPRLineItemProps):
 				{isNew
 					? 'New'
 					: hasUpperLimit
-					? formatPercent(safeValue * 100)
-					: formatPercent(safeValue * 100, 2, 2, 500)}
+					  ? formatPercent(safeValue * 100)
+					  : formatPercent(safeValue * 100, 2, 2, 500)}
 			</p>
 		</div>
 	);
@@ -82,10 +82,13 @@ export function VaultDetailsAbout({
 	const {token, apr} = currentVault;
 
 	function getVaultDescription(): string {
-		if (token.description) {
-			return parseMarkdown(token.description);
+		if (currentVault.description) {
+			return parseMarkdown(currentVault.description.replaceAll('{{token}}', currentVault.token.symbol));
 		}
-		return 'Sorry, we don\'t have a description for this asset right now. But did you know the correct word for a blob of toothpaste is a "nurdle". Fascinating! We\'ll work on updating the asset description, but at least you learnt something interesting. Catch ya later nurdles.';
+		if (token.description) {
+			return parseMarkdown(token.description.replaceAll('{{token}}', currentVault.token.symbol));
+		}
+		return currentVault.description;
 	}
 
 	return (

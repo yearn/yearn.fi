@@ -1,143 +1,262 @@
-import {useEffect, useState} from 'react';
-import {DelimitedArrayParam, DelimitedNumericArrayParam, StringParam, useQueryParam} from 'use-query-params';
-import {ALL_CHAINS, ALL_VAULTS_CATEGORIES_KEYS} from '@vaults/constants';
+import {useCallback, useState} from 'react';
+import {useSearchParams} from 'next/navigation';
+import {useRouter} from 'next/router';
+import {useDeepCompareEffect, useMountEffect} from '@react-hookz/web';
+import {useSupportedChains} from '@common/hooks/useChains';
 
+import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TSortDirection} from '@common/types/types';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 
 type TQueryArgs = {
 	search: string | null | undefined;
-	categories: string[];
-	chains: number[];
+	categories: string[] | null;
+	chains: number[] | null;
 	sortDirection: TSortDirection;
 	sortBy: TPossibleSortBy;
 	onSearch: (value: string) => void;
-	onChangeCategories: (value: string[]) => void;
-	onChangeChains: (value: number[]) => void;
-	onChangeSortDirection: (value: TSortDirection) => void;
-	onChangeSortBy: (value: TPossibleSortBy) => void;
+	onChangeCategories: (value: string[] | null) => void;
+	onChangeChains: (value: number[] | null) => void;
+	onChangeSortDirection: (value: TSortDirection | '') => void;
+	onChangeSortBy: (value: TPossibleSortBy | '') => void;
+	onReset: () => void;
 };
-function useQueryArguments(): TQueryArgs {
-	/** 🔵 - Yearn *********************************************************************************
-	 **	Theses elements are not exported, they are just used to keep the state of the query, which
-	 ** is slower than the state of the component.
-	 *********************************************************************************************/
-	const [searchParam, set_searchParam] = useQueryParam('search', StringParam);
-	const [categoriesParam, set_categoriesParam] = useQueryParam('categories', DelimitedArrayParam);
-	const [chainsParam, set_chainsParam] = useQueryParam('chains', DelimitedNumericArrayParam);
-	const [sortDirectionParam, set_sortDirectionParam] = useQueryParam('sortDir', StringParam);
-	const [sortByParam, set_sortByParam] = useQueryParam('sortBy', StringParam);
+function useQueryArguments({defaultCategories}: {defaultCategories?: string[]}): TQueryArgs {
+	const allChains = useSupportedChains().map((chain): number => chain.id);
+	const searchParams = useSearchParams();
+	const router = useRouter();
+	const [search, set_search] = useState<string | null>(null);
+	const [categories, set_categories] = useState<string[] | null>(defaultCategories || []);
+	const [chains, set_chains] = useState<number[] | null>(allChains || []);
+	const [sortDirection, set_sortDirection] = useState<string | null>(null);
+	const [sortBy, set_sortBy] = useState<string | null>(null);
 
-	/** 🔵 - Yearn *********************************************************************************
-	 **	Theses are our actual state.
-	 *********************************************************************************************/
-	const [search, set_search] = useState(searchParam);
-	const [categories, set_categories] = useState(categoriesParam);
-	const [chains, set_chains] = useState(chainsParam);
-	const [sortDirection, set_sortDirection] = useState(sortDirectionParam);
-	const [sortBy, set_sortBy] = useState(sortByParam);
+	const handleQuery = useCallback(
+		(_searchParams: URLSearchParams): void => {
+			if (_searchParams.has('search')) {
+				const _search = _searchParams.get('search');
+				if (_search === null) {
+					return;
+				}
+				set_search(_search);
+			}
 
-	/** 🔵 - Yearn *********************************************************************************
-	 **	This useEffect hook is used to synchronize the search state with the query parameter
-	 *********************************************************************************************/
-	useEffect((): void => {
-		if (searchParam === search) {
-			return;
-		}
-		if (search === undefined && searchParam !== undefined) {
-			set_search(searchParam);
-			return;
-		}
-		if (!search) {
-			set_searchParam(undefined);
-		} else {
-			set_searchParam(search);
-		}
-	}, [searchParam, search, set_searchParam]);
+			if (_searchParams.has('categories')) {
+				const categoriesParam = _searchParams.get('categories');
+				const categoriesParamArray = categoriesParam?.split('_') || [];
+				if (categoriesParamArray.length === 0) {
+					set_categories(defaultCategories || []);
+					return;
+				}
+				if (categoriesParamArray.length === defaultCategories?.length) {
+					const isEqual = categoriesParamArray.every((c): boolean => defaultCategories?.includes(c));
+					if (isEqual) {
+						set_categories(defaultCategories);
+						return;
+					}
+				}
+				if (categoriesParamArray[0] === 'none') {
+					set_categories([]);
+					return;
+				}
+				set_categories(categoriesParamArray);
+			} else {
+				set_categories(defaultCategories || []);
+			}
 
-	/** 🔵 - Yearn *********************************************************************************
-	 **	This useEffect hook is used to synchronize the categories
-	 *********************************************************************************************/
-	useEffect((): void => {
-		if (categoriesParam === categories) {
-			return;
-		}
-		if (categories === undefined && categoriesParam !== undefined) {
-			set_categories(categoriesParam);
-			return;
-		}
-		if (!categories || Object.values(categories).length === ALL_VAULTS_CATEGORIES_KEYS.length) {
-			set_categoriesParam(undefined);
-		} else {
-			set_categoriesParam(categories);
-		}
-	}, [categoriesParam, categories, set_categoriesParam]);
+			if (_searchParams.has('chains')) {
+				const chainsParam = _searchParams.get('chains');
+				const chainsParamArray = chainsParam?.split('_') || [];
+				if (chainsParamArray.length === 0) {
+					set_chains(allChains);
+					return;
+				}
+				if (chainsParamArray.length === allChains.length) {
+					const isEqual = chainsParamArray.every((c): boolean => allChains.includes(Number(c)));
+					if (isEqual) {
+						set_chains(allChains);
+						return;
+					}
+				}
+				if (chainsParamArray[0] === '0') {
+					set_chains([]);
+					return;
+				}
+				set_chains(chainsParamArray.map((chain): number => Number(chain)));
+			} else {
+				set_chains(allChains);
+			}
 
-	/** 🔵 - Yearn *********************************************************************************
-	 **	This useEffect hook is used to synchronize the chains
-	 *********************************************************************************************/
-	useEffect((): void => {
-		if (chainsParam === chains) {
-			return;
-		}
-		if (chains === undefined && chainsParam !== undefined) {
-			set_chains(chainsParam as number[]);
-			return;
-		}
-		if (!chains || Object.values(chains).length === ALL_CHAINS.length) {
-			set_chainsParam(undefined);
-		} else {
-			set_chainsParam(chains);
-		}
-	}, [chainsParam, chains, set_chainsParam]);
+			if (_searchParams.has('sortDirection')) {
+				const _sortDirection = _searchParams.get('sortDirection');
+				if (_sortDirection === null) {
+					return;
+				}
+				set_sortDirection(_sortDirection);
+			}
 
-	/** 🔵 - Yearn *********************************************************************************
-	 **	This useEffect hook is used to synchronize the sortDirection
-	 *********************************************************************************************/
-	useEffect((): void => {
-		if (sortDirectionParam === sortDirection) {
-			return;
-		}
-		if (sortDirection === undefined && sortDirectionParam !== undefined) {
-			set_sortDirection(sortDirectionParam);
-			return;
-		}
-		if (!sortDirection) {
-			set_sortDirectionParam(undefined);
-		} else {
-			set_sortDirectionParam(sortDirection);
-		}
-	}, [sortDirectionParam, sortDirection, set_sortDirectionParam]);
+			if (_searchParams.has('sortBy')) {
+				const _sortBy = _searchParams.get('sortBy');
+				if (_sortBy === null) {
+					return;
+				}
+				set_sortDirection(_sortBy);
+			}
+		},
+		[defaultCategories, allChains]
+	);
 
-	/** 🔵 - Yearn *********************************************************************************
-	 **	This useEffect hook is used to synchronize the sortOrder
-	 *********************************************************************************************/
-	useEffect((): void => {
-		if (sortByParam === sortBy) {
-			return;
-		}
-		if (sortBy === undefined && sortByParam !== undefined) {
-			set_sortBy(sortByParam);
-			return;
-		}
-		if (!sortBy) {
-			set_sortByParam(undefined);
-		} else {
-			set_sortByParam(sortBy);
-		}
-	}, [sortByParam, sortBy, set_sortByParam]);
+	useMountEffect((): void | VoidFunction => {
+		const currentPage = new URL(window.location.href);
+		handleQuery(new URLSearchParams(currentPage.search));
+	});
+
+	useDeepCompareEffect((): void | VoidFunction => {
+		handleQuery(searchParams);
+	}, [searchParams]);
 
 	return {
 		search,
-		categories: (categories || ALL_VAULTS_CATEGORIES_KEYS) as string[],
-		chains: (chains || ALL_CHAINS) as number[],
+		categories: (categories || []) as string[],
+		chains: (chains || []) as number[],
 		sortDirection: (sortDirection || 'desc') as TSortDirection,
 		sortBy: (sortBy || 'featuringScore') as TPossibleSortBy,
-		onSearch: set_search,
-		onChangeCategories: set_categories,
-		onChangeChains: set_chains,
-		onChangeSortDirection: set_sortDirection,
-		onChangeSortBy: set_sortBy
+		onSearch: (value): void => {
+			set_search(value);
+			const queryArgs: TDict<string | string[] | undefined> = {};
+			for (const key in router.query) {
+				if (key !== 'search') {
+					queryArgs[key] = router.query[key];
+				}
+			}
+
+			if (value === '') {
+				queryArgs.search = undefined;
+				delete queryArgs.search;
+				router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
+				return;
+			}
+			queryArgs.search = value;
+			router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
+		},
+		onChangeCategories: (value): void => {
+			const queryArgs: TDict<string | string[] | undefined> = {};
+			for (const key in router.query) {
+				if (key !== 'categories') {
+					queryArgs[key] = router.query[key];
+				}
+			}
+
+			set_categories(value);
+			if (value === null) {
+				queryArgs.categories = 'none';
+				router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
+				return;
+			}
+			if (value.length === 0) {
+				queryArgs.categories = 'none';
+				router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
+				return;
+			}
+			if (value.length === defaultCategories?.length) {
+				const isEqual = value.every((category): boolean => defaultCategories?.includes(category));
+				if (isEqual) {
+					queryArgs.categories = undefined;
+					delete queryArgs.categories;
+					router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
+
+					return;
+				}
+			}
+			queryArgs.categories = value.join('_');
+			router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
+		},
+		onChangeChains: (value): void => {
+			const queryArgs: TDict<string | string[] | undefined> = {};
+			for (const key in router.query) {
+				if (key !== 'chains') {
+					queryArgs[key] = router.query[key];
+				}
+			}
+			set_chains(value);
+			if (value === null) {
+				queryArgs.chains = '0';
+				router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
+				return;
+			}
+			if (value.length === 0) {
+				queryArgs.chains = '0';
+				router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
+				return;
+			}
+			if (value.length === allChains.length) {
+				const isEqual = value.every((chain): boolean => allChains.includes(chain));
+				if (isEqual) {
+					queryArgs.chains = undefined;
+					delete queryArgs.chains;
+					router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
+					return;
+				}
+			}
+			queryArgs.chains = value.join('_');
+			router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
+		},
+		onChangeSortDirection: (value): void => {
+			set_sortDirection(value);
+			const queryArgs: TDict<string | string[] | undefined> = {};
+			for (const key in router.query) {
+				if (key !== 'sortDirection') {
+					queryArgs[key] = router.query[key];
+				}
+			}
+
+			if (value === '') {
+				queryArgs.sortDirection = undefined;
+				delete queryArgs.sortDirection;
+				router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
+				return;
+			}
+			queryArgs.sortDirection = value;
+			router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
+		},
+		onChangeSortBy: (value): void => {
+			set_sortBy(value);
+			const queryArgs: TDict<string | string[] | undefined> = {};
+			for (const key in router.query) {
+				if (key !== 'sortBy') {
+					queryArgs[key] = router.query[key];
+				}
+			}
+
+			if (value === '') {
+				queryArgs.sortBy = undefined;
+				delete queryArgs.sortBy;
+				router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
+				return;
+			}
+			queryArgs.sortBy = value;
+			router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
+		},
+		onReset: (): void => {
+			set_search(null);
+			set_categories(defaultCategories || []);
+			set_chains(allChains || []);
+			set_sortDirection('desc');
+			set_sortBy('featuringScore');
+			const queryArgs: TDict<string | string[] | undefined> = {};
+			for (const key in router.query) {
+				if (
+					key !== 'search' &&
+					key !== 'categories' &&
+					key !== 'chains' &&
+					key !== 'sortDirection' &&
+					key !== 'sortBy'
+				) {
+					queryArgs[key] = router.query[key];
+				}
+			}
+			router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
+		}
 	};
 }
 

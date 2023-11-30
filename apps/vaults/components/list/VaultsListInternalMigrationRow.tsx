@@ -2,7 +2,7 @@ import {useMemo} from 'react';
 import Link from 'next/link';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
-import TokenIcon from '@common/components/TokenIcon';
+import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useBalance} from '@common/hooks/useBalance';
 import {getVaultName} from '@common/utils';
 
@@ -15,16 +15,20 @@ export function VaultsListInternalMigrationRow({currentVault}: {currentVault: TY
 
 	return (
 		<Link
+			prefetch={false}
 			href={`/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`}
 			className={'w-full'}>
 			<div className={'yearn--table-wrapper bg-neutral-900 text-neutral-0'}>
 				<div className={'yearn--table-token-section'}>
 					<div className={'yearn--table-token-section-item'}>
 						<div className={'yearn--table-token-section-item-image'}>
-							<TokenIcon
-								chainID={currentVault.chainID}
-								size={40}
-								token={currentVault.token}
+							<ImageWithFallback
+								src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${toAddress(
+									currentVault.token.address
+								)}/logo-32.png`}
+								alt={''}
+								width={32}
+								height={32}
 							/>
 						</div>
 						<div className={'text-left'}>
