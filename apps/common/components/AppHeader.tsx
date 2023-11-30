@@ -60,7 +60,7 @@ function LogoPopover(): ReactElement {
 					onClick={(): void => set_isShowing(false)}
 					onMouseEnter={(): void => set_isShowing(false)}
 					className={cl(
-						'fixed inset-0 bg-neutral-900 backdrop-blur-sm transition-opacity',
+						'fixed inset-0 bg-black backdrop-blur-sm transition-opacity',
 						!isShowing ? 'opacity-0 pointer-events-none' : 'opacity-50 pointer-events-auto'
 					)}
 				/>
