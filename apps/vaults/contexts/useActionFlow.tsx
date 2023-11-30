@@ -639,6 +639,10 @@ export function ActionFlowContextApp({
 				return; // Do nothing to avoid duplicate token in the list
 			}
 
+			if (tokenData.supportedZaps.length === 0) {
+				return; // Do nothing to avoid token with no zap support in the list
+			}
+
 			_possibleZapOptionsFrom.push(
 				setZapOption({
 					name: tokenData.name,

@@ -26,5 +26,5 @@ export const VE_YFI_GAUGES = [
 	toAddress('0x28da6dE3e804bDdF0aD237CFA6048f2930D0b4Dc'), // dYFI/ETH yVault
 	toAddress('0x107717C98C8125A94D3d2Cc82b86a1b705f3A27C'), // yCRV/CRV yVault
 	toAddress('0x81d93531720d86f0491DeE7D03f30b3b5aC24e59'), // yETH/ETH yVault
-	toAddress('0x6130E6cD924a40b24703407F246966D7435D4998')  // yPrisma/Prisma yVault
+	toAddress('0x6130E6cD924a40b24703407F246966D7435D4998') // yPrisma/Prisma yVault
 ];
