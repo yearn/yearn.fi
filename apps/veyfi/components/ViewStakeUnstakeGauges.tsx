@@ -178,6 +178,7 @@ export function StakeUnstakeGauges(): ReactElement {
 					Number(gauge?.totalStaked.normalized || 0) /
 					Number(tokenPrice.normalized || 0)) *
 				100;
+
 			if (tokenPrice.raw === 0n || Number(gauge?.totalStaked.normalized || 0) === 0) {
 				APRFor10xBoost = 0;
 			}

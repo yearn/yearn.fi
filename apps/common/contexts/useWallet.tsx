@@ -28,9 +28,9 @@ import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TChainTokens, TNormalizedBN, TToken} from '@common/types/types';
 
 export type TWalletContext = {
-	getToken: ({address, chainID}: {address: TAddress; chainID: number}) => TToken;
-	getBalance: ({address, chainID}: {address: TAddress; chainID: number}) => TNormalizedBN;
-	getPrice: ({address, chainID}: {address: TAddress; chainID: number}) => TNormalizedBN;
+	getToken: ({address, chainID}: TTokenAndChain) => TToken;
+	getBalance: ({address, chainID}: TTokenAndChain) => TNormalizedBN;
+	getPrice: ({address, chainID}: TTokenAndChain) => TNormalizedBN;
 	balances: TChainTokens;
 	cumulatedValueInV2Vaults: number;
 	cumulatedValueInV3Vaults: number;
@@ -39,6 +39,7 @@ export type TWalletContext = {
 	refresh: (tokenList?: TUseBalancesTokens[]) => Promise<TChainTokens>;
 	triggerForknetBalances: () => void;
 };
+type TTokenAndChain = {address: TAddress; chainID: number};
 
 const defaultToken: TToken = {
 	address: zeroAddress,
@@ -217,7 +218,7 @@ function useYearnBalances({shouldUseForknetBalances}: {shouldUseForknetBalances:
  ******************************************************************************/
 const WalletContext = createContext<TWalletContext>(defaultProps);
 export const WalletContextApp = memo(function WalletContextApp({children}: {children: ReactElement}): ReactElement {
-	const {vaults, vaultsMigrations} = useYearn();
+	const {vaults, prices, vaultsMigrations} = useYearn();
 	const [shouldUseForknetBalances, set_shouldUseForknetBalances] = useState<boolean>(false);
 	const {tokens, isLoading, onRefresh} = useYearnBalances({shouldUseForknetBalances});
 
@@ -248,22 +249,23 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 	}, [vaults, vaultsMigrations, tokens]);
 
 	const getToken = useCallback(
-		({address, chainID}: {address: TAddress; chainID: number}): TToken => {
-			return tokens?.[chainID || 1]?.[address] || defaultToken;
-		},
+		({address, chainID}: TTokenAndChain): TToken => tokens?.[chainID || 1]?.[address] || defaultToken,
 		[tokens]
 	);
 	const getBalance = useCallback(
-		({address, chainID}: {address: TAddress; chainID: number}): TNormalizedBN => {
-			return tokens?.[chainID || 1]?.[address]?.balance || toNormalizedBN(0);
-		},
+		({address, chainID}: TTokenAndChain): TNormalizedBN =>
+			tokens?.[chainID || 1]?.[address]?.balance || toNormalizedBN(0),
 		[tokens]
 	);
 	const getPrice = useCallback(
-		({address, chainID}: {address: TAddress; chainID: number}): TNormalizedBN => {
-			return tokens?.[chainID || 1]?.[address]?.price || toNormalizedBN(0);
+		({address, chainID}: TTokenAndChain): TNormalizedBN => {
+			const price = tokens?.[chainID || 1]?.[address]?.price;
+			if (!price) {
+				return toNormalizedBN(prices?.[chainID]?.[address] || 0, 6) || toNormalizedBN(0);
+			}
+			return price;
 		},
-		[tokens]
+		[prices, tokens]
 	);
 
 	/* 🔵 - Yearn Finance ******************************************************

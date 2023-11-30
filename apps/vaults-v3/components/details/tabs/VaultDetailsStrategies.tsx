@@ -113,7 +113,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 					<p className={'text-center text-neutral-600'}>{'Try another search term'}</p>
 					<Button
 						className={'mt-4 w-full md:w-48'}
-						onClick={() => onSearch('')}>
+						onClick={(): void => onSearch('')}>
 						{'Clear Search'}
 					</Button>
 				</div>
