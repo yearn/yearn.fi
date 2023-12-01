@@ -145,18 +145,18 @@ export function LockVeYFI(): ReactElement {
 				isDisabled: isApproveDisabled
 		  }
 		: hasLockedAmount
-		  ? {
-					label: 'Lock',
-					onAction: onIncreaseLockAmount,
-					isLoading: increaseLockAmountStatus.pending,
-					isDisabled: isLockDisabled
-		    }
-		  : {
-					label: 'Lock',
-					onAction: onLock,
-					isLoading: lockStatus.pending,
-					isDisabled: isLockDisabled
-		    };
+		? {
+				label: 'Lock',
+				onAction: onIncreaseLockAmount,
+				isLoading: increaseLockAmountStatus.pending,
+				isDisabled: isLockDisabled
+		  }
+		: {
+				label: 'Lock',
+				onAction: onLock,
+				isLoading: lockStatus.pending,
+				isDisabled: isLockDisabled
+		  };
 
 	return (
 		<div className={'grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-16'}>

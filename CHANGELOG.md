@@ -2,6 +2,7 @@
 
 -   Fix: Divisions by 0 in the veYFI rate calculator
 -   Fix: Pricing when wallet isn't connected
+-   Style: code linting
 
 # 0.3.0 (30/11/2023)
 
