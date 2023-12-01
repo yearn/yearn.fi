@@ -1,3 +1,7 @@
+# 0.3.2 (01/12/2023)
+
+-   Fix: description overwritten by default
+
 # 0.3.1 (30/11/2023)
 
 -   Fix: Divisions by 0 in the veYFI rate calculator
