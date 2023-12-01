@@ -35,33 +35,6 @@ const apps = [
 		)
 	},
 	{
-		href: '/ycrv',
-		title: 'yCRV',
-		description: 'get the best CRV yields in DeFi.',
-		icon: (
-			<ImageWithFallback
-				alt={'yCRV'}
-				width={100}
-				height={100}
-				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YCRV_TOKEN_ADDRESS}/logo-128.png`}
-				loading={'eager'}
-				priority
-			/>
-		)
-	},
-	// {
-	// 	href: '/ybal',
-	// 	title: 'yBal',
-	// 	description: 'get the best Balancer yields in DeFi.',
-	// 	icon: <Image
-	// 		alt={'yBal'}
-	// 		width={100}
-	// 		height={100}
-	// 		src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YBAL_TOKEN_ADDRESS}/logo-128.png`}
-	// 		loading={'eager'}
-	// 		priority />
-	// },
-	{
 		href: '/veyfi',
 		title: 'veYFI',
 		description: 'lock YFI\nto take part in governance.',
@@ -74,14 +47,17 @@ const apps = [
 		)
 	},
 	{
-		href: '/ybribe',
-		title: 'yBribe',
-		description: 'sell votes, or buy them.\njust like democracy.',
+		href: '/ycrv',
+		title: 'yCRV',
+		description: 'get the best CRV yields in DeFi.',
 		icon: (
-			<LogoYearn
-				className={'h-[100px] w-[100px]'}
-				back={'text-neutral-900'}
-				front={'text-neutral-0'}
+			<ImageWithFallback
+				alt={'yCRV'}
+				width={100}
+				height={100}
+				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YCRV_TOKEN_ADDRESS}/logo-128.png`}
+				loading={'eager'}
+				priority
 			/>
 		)
 	},
@@ -103,7 +79,7 @@ const apps = [
 	{
 		href: 'https://yprisma.yearn.fi',
 		title: 'yPrisma',
-		description: 'Every rainbow needs a pot of gold.',
+		description: 'every rainbow needs a pot of gold.',
 		icon: (
 			<ImageWithFallback
 				alt={'yPrisma'}
@@ -112,6 +88,18 @@ const apps = [
 				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/0xe3668873d944e4a949da05fc8bde419eff543882/logo-128.png`}
 				loading={'eager'}
 				priority
+			/>
+		)
+	},
+	{
+		href: '/ybribe',
+		title: 'yBribe',
+		description: 'sell votes, or buy them.\njust like democracy.',
+		icon: (
+			<LogoYearn
+				className={'h-[100px] w-[100px]'}
+				back={'text-neutral-900'}
+				front={'text-neutral-0'}
 			/>
 		)
 	}

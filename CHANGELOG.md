@@ -1,6 +1,8 @@
 # 0.3.2 (01/12/2023)
 
 -   Fix: description overwritten by default
+-   Fix: order of Apps on the index page
+-   Fix: typo in `every` (previously `Every`)
 
 # 0.3.1 (30/11/2023)
 

@@ -65,6 +65,19 @@ export const APPS: {[key in AppName]: TApp} = {
 			/>
 		)
 	},
+	veYFI: {
+		name: AppName.VEYFI,
+		menu: VEYFI_MENU,
+		href: '/veyfi',
+		manifest: veyfiManifest,
+		icon: (
+			<LogoYearn
+				className={'h-8 w-8'}
+				back={'text-primary'}
+				front={'text-white'}
+			/>
+		)
+	},
 	yCRV: {
 		name: AppName.YCRV,
 		href: '/ycrv',
@@ -100,32 +113,6 @@ export const APPS: {[key in AppName]: TApp} = {
 			/>
 		)
 	},
-	veYFI: {
-		name: AppName.VEYFI,
-		menu: VEYFI_MENU,
-		href: '/veyfi',
-		manifest: veyfiManifest,
-		icon: (
-			<LogoYearn
-				className={'h-8 w-8'}
-				back={'text-primary'}
-				front={'text-white'}
-			/>
-		)
-	},
-	yBribe: {
-		name: AppName.YBRIBE,
-		href: '/ybribe',
-		menu: YBRIBE_MENU,
-		manifest: ybribeManifest,
-		icon: (
-			<LogoYearn
-				className={'h-8 w-8'}
-				back={'text-neutral-900'}
-				front={'text-neutral-0'}
-			/>
-		)
-	},
 	yETH: {
 		name: AppName.YETH,
 		href: 'https://yeth.yearn.fi',
@@ -157,6 +144,19 @@ export const APPS: {[key in AppName]: TApp} = {
 				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/0xe3668873d944e4a949da05fc8bde419eff543882/logo-128.png`}
 				loading={'eager'}
 				priority
+			/>
+		)
+	},
+	yBribe: {
+		name: AppName.YBRIBE,
+		href: '/ybribe',
+		menu: YBRIBE_MENU,
+		manifest: ybribeManifest,
+		icon: (
+			<LogoYearn
+				className={'h-8 w-8'}
+				back={'text-neutral-900'}
+				front={'text-neutral-0'}
 			/>
 		)
 	}
