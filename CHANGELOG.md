@@ -1,3 +1,7 @@
+# 0.3.3 (11/12/2023)
+
+-   Update copy from `Peg` to `CRV Ratio` in the `yCRV` page
+
 # 0.3.2 (01/12/2023)
 
 -   Fix: description overwritten by default

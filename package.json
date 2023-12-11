@@ -1,6 +1,6 @@
 {
 	"name": "yearnfi",
-	"version": "0.2.0",
+	"version": "0.3.3",
 	"scripts": {
 		"dev": "next",
 		"inspect": "NODE_OPTIONS='--inspect' next",

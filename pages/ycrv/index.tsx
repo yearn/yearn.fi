@@ -144,7 +144,7 @@ function ZapAndStats(): ReactElement {
 						<p
 							suppressHydrationWarning
 							className={'font-number text-sm text-neutral-900'}>
-							{`Price = $${formatAmount(ycrvPrice || 0)} | Peg = ${
+							{`Price = $${formatAmount(ycrvPrice || 0)} | CRV Ratio = ${
 								holdings?.crvYCRVPeg ? formatPercent(crvYCRVPeg * 100) : formatPercent(0)
 							}`}
 						</p>
