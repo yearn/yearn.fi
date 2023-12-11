@@ -140,7 +140,7 @@ function ZapAndStats(): ReactElement {
 			<div className={'col-span-12 flex flex-col gap-4 md:col-span-4'}>
 				<div className={'w-full bg-neutral-100 p-4'}>
 					<div className={'flex flex-row items-baseline justify-between pb-1'}>
-						<span className={'inline text-sm font-normal text-neutral-400'}>{'Price/PEG: '}</span>
+						<span className={'inline text-sm font-normal text-neutral-400'}>{'Price: '}</span>
 						<p
 							suppressHydrationWarning
 							className={'font-number text-sm text-neutral-900'}>
