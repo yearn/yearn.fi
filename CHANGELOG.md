@@ -2,6 +2,7 @@
 
 -   Update copy from `Peg` to `CRV Ratio` in the `yCRV` page.
 -   Change default Vault display to aggregator in V3 pages.
+-   Remove Ledger
 
 # 0.3.2 (01/12/2023)
 
