@@ -178,7 +178,7 @@ function ListOfVaults(): ReactElement {
 		onChangeSortDirection,
 		onChangeSortBy,
 		onReset
-	} = useQueryArguments({defaultCategories: ALL_VAULTSV3_CATEGORIES_KEYS});
+	} = useQueryArguments({defaultCategories: [ALL_VAULTSV3_CATEGORIES_KEYS[0]]});
 	const {activeVaults} = useVaultFilter(categories, chains, true);
 
 	/* 🔵 - Yearn Finance **************************************************************************
