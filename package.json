@@ -43,7 +43,7 @@
     "react-paginate": "^8.2.0",
     "react-popper": "^2.3.0",
     "react-wrap-balancer": "^1.1.0",
-    "recharts": "^2.9.3",
+    "recharts": "^2.10.3",
     "swr": "^2.2.4",
     "telegraf": "^4.13.1",
     "viem": "^1.19.9",
