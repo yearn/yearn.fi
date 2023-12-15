@@ -30,19 +30,11 @@ const tabs: TTabsOptions[] = [
 	{value: 3, label: '$OP BOOST', flowAction: Flow.None, slug: 'boost'}
 ];
 
-function getCurrentTab({
-	isDepositing,
-	hasMigration,
-	isRetired
-}: {
-	isDepositing: boolean;
-	hasMigration: boolean;
-	isRetired: boolean;
-}): TTabsOptions {
-	if (hasMigration || isRetired) {
+function getCurrentTab(props: {isDepositing: boolean; hasMigration: boolean; isRetired: boolean}): TTabsOptions {
+	if (props.hasMigration || props.isRetired) {
 		return tabs[1];
 	}
-	return tabs.find((tab): boolean => tab.value === (isDepositing ? 0 : 1)) as TTabsOptions;
+	return tabs.find((tab): boolean => tab.value === (props.isDepositing ? 0 : 1)) as TTabsOptions;
 }
 
 export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {

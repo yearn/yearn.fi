@@ -1,3 +1,7 @@
+# 0.3.3 (15/12/2023)
+
+-   Fix: balance using incorrect endpoint
+
 # 0.3.3 (14/12/2023)
 
 -   Update copy from `Peg` to `CRV Ratio` in the `yCRV` page.

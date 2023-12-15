@@ -71,7 +71,7 @@ export const WalletForZapAppContextApp = memo(function WalletForZapAppContextApp
 	 **	Fetching, for this user, the list of tokens available for zaps
 	 ***************************************************************************/
 	const {data: tokensList} = useFetch<TYDaemonTokenListBalances>({
-		endpoint: address ? `${yDaemonBaseUri}/balances/${address}` : null,
+		endpoint: address ? `${yDaemonBaseUri}/balancesN/${address}` : null,
 		schema: yDaemonTokenListBalances
 	});
 
