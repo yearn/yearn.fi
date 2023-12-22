@@ -168,7 +168,7 @@ export function useVaultFilter(
 		);
 
 		// Remove v3 vaults
-		_vaultList = _vaultList.filter((vault): boolean => !vault.version?.startsWith('3'));
+		// _vaultList = _vaultList.filter((vault): boolean => !vault.version?.startsWith('3'));
 		return _vaultList;
 	}, [
 		v3,

@@ -1,5 +1,6 @@
 # 0.3.4 (22/12/2023)
 
+-   Fix: display v3 vaults on the V2 app.
 -   Style: update files to match prettier format.
 -   Fix: decimals of unstake in the OP BOOST tab.
 
