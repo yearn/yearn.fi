@@ -80,7 +80,7 @@ export function Dropdown(props: TDropdownProps): ReactElement {
 			? props.options
 			: props.options.filter((option): boolean => {
 					return option.symbol.toLowerCase().includes(query.toLowerCase());
-			  });
+				});
 
 	return (
 		<div>

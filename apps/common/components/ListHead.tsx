@@ -34,8 +34,8 @@ export function ListHead({
 			? sortDirection === ''
 				? 'desc'
 				: sortDirection === 'desc'
-				  ? 'asc'
-				  : 'desc'
+					? 'asc'
+					: 'desc'
 			: 'desc';
 	};
 

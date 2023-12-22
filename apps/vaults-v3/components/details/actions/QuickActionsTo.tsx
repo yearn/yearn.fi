@@ -82,7 +82,7 @@ export function VaultDetailsQuickActionsTo(): ReactElement {
 									2,
 									2,
 									500
-							  )
+								)
 							: ''}
 					</legend>
 				</div>

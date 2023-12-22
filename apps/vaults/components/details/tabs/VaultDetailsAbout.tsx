@@ -36,8 +36,8 @@ function APRLineItem({value, label, apyType, hasUpperLimit}: TAPRLineItemProps):
 				{isNew
 					? 'New'
 					: hasUpperLimit
-					  ? formatPercent(safeValue * 100)
-					  : formatPercent(safeValue * 100, 2, 2, 500)}
+						? formatPercent(safeValue * 100)
+						: formatPercent(safeValue * 100, 2, 2, 500)}
 			</p>
 		</div>
 	);
