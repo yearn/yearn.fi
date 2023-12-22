@@ -22,7 +22,7 @@ export function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): React
 	const [stakingRewards, updateStakingRewards] = useVaultStakingData({currentVault});
 	const vaultToken = useToken({address: currentVault.address, chainID: currentVault.chainID});
 	const rewardTokenBalance = useToken({address: stakingRewards.rewardsToken, chainID: currentVault.chainID});
-	const normalizedStakeBalance = toNormalizedBN(stakingRewards.balanceOf, rewardTokenBalance.decimals);
+	const normalizedStakeBalance = toNormalizedBN(stakingRewards.balanceOf, currentVault.decimals);
 	const normalizedRewardBalance = toNormalizedBN(stakingRewards.earned, rewardTokenBalance.decimals);
 
 	const [approveStakeStatus, set_approveStakeStatus] = useState(defaultTxStatus);

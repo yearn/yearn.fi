@@ -1,3 +1,8 @@
+# 0.3.4 (22/12/2023)
+
+-   Style: update files to match prettier format.
+-   Fix: decimals of unstake in the OP BOOST tab.
+
 # 0.3.3 (15/12/2023)
 
 -   Fix: balance using incorrect endpoint
