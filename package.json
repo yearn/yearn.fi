@@ -27,7 +27,7 @@
 		"dayjs": "^1.11.10",
 		"eslint-config-prettier": "^9.0.0",
 		"eslint-plugin-react-hooks": "^4.6.0",
-		"ethers": "5.7.2",
+		"ethers": "6.9.1",
 		"formidable": "^3.5.1",
 		"framer-motion": "^10.16.5",
 		"graphql": "^16.8.1",
