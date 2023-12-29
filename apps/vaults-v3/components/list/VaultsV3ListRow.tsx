@@ -283,6 +283,8 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 
 function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const hasZeroAPR = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0;
+	const monthlyAPR = currentVault.apr.points.monthAgo;
+	const weeklyAPR = currentVault.apr.points.weekAgo;
 
 	if (currentVault.apr?.extra.stakingRewardsAPR > 0) {
 		return (
@@ -298,7 +300,7 @@ function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}): Reac
 								}>
 								<RenderAmount
 									shouldHideTooltip={hasZeroAPR}
-									value={currentVault.apr?.netAPR}
+									value={isZero(monthlyAPR) ? weeklyAPR : monthlyAPR}
 									symbol={'percent'}
 									decimals={6}
 								/>
@@ -318,7 +320,7 @@ function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}): Reac
 									<p>{'• Base APR '}</p>
 									<RenderAmount
 										shouldHideTooltip
-										value={currentVault.apr.netAPR}
+										value={isZero(monthlyAPR) ? weeklyAPR : monthlyAPR}
 										symbol={'percent'}
 										decimals={6}
 									/>
@@ -346,7 +348,7 @@ function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}): Reac
 					shouldRender={!currentVault.apr?.type.includes('new')}
 					fallback={'NEW'}>
 					<RenderAmount
-						value={currentVault.apr?.netAPR}
+						value={isZero(monthlyAPR) ? weeklyAPR : monthlyAPR}
 						shouldHideTooltip={hasZeroAPR}
 						symbol={'percent'}
 						decimals={6}

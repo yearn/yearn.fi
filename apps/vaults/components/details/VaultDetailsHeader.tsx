@@ -5,6 +5,7 @@ import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigN
 import {formatUSD} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {copyToClipboard} from '@yearn-finance/web-lib/utils/helpers';
+import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {RenderAmount} from '@common/components/RenderAmount';
 import {useBalance} from '@common/hooks/useBalance';
 import {useFetch} from '@common/hooks/useFetch';
@@ -55,6 +56,9 @@ function VaultAPR({apr}: {apr: TYDaemonVault['apr']}): ReactElement {
 			</VaultHeaderLineItem>
 		);
 	}
+
+	const monthlyAPR = apr.netAPR + apr.extra.stakingRewardsAPR;
+	const weeklyAPR = apr.points.weekAgo;
 	return (
 		<VaultHeaderLineItem
 			label={'Historical APR'}
@@ -87,7 +91,7 @@ function VaultAPR({apr}: {apr: TYDaemonVault['apr']}): ReactElement {
 				</span>
 			}>
 			<RenderAmount
-				value={apr?.netAPR + apr.extra.stakingRewardsAPR}
+				value={isZero(monthlyAPR) ? weeklyAPR : monthlyAPR}
 				symbol={'percent'}
 				decimals={6}
 			/>
