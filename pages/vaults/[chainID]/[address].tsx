@@ -34,7 +34,7 @@ function Index(): ReactElement | null {
 					strategiesDetails: 'withDetails',
 					strategiesRisk: 'withRisk',
 					strategiesCondition: 'inQueue'
-				})}`
+			  })}`
 			: null,
 		schema: yDaemonVaultSchema
 	});

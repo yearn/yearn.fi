@@ -23,8 +23,8 @@ export function ListHead({items, sortBy, sortDirection, onSort}: TListHead): Rea
 			? sortDirection === ''
 				? 'desc'
 				: sortDirection === 'desc'
-					? 'asc'
-					: 'desc'
+				? 'asc'
+				: 'desc'
 			: 'desc';
 	};
 

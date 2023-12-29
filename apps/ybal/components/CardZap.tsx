@@ -183,15 +183,15 @@ function CardZap(): ReactElement {
 							toAddress(selectedOptionFrom.value) === YBAL_TOKEN_ADDRESS
 								? yBalPrice || 0
 								: toAddress(selectedOptionFrom.value) === YBAL_BALANCER_POOL_ADDRESS
-									? yBalCurvePoolPrice || 0
-									: Number(
-											getToken({
-												address: selectedOptionFrom.value,
-												chainID: selectedOptionFrom.chainID
-											}).price.normalized
-										) ||
-										vaults?.[toAddress(selectedOptionFrom.value)]?.tvl?.price ||
-										0
+								? yBalCurvePoolPrice || 0
+								: Number(
+										getToken({
+											address: selectedOptionFrom.value,
+											chainID: selectedOptionFrom.chainID
+										}).price.normalized
+								  ) ||
+								  vaults?.[toAddress(selectedOptionFrom.value)]?.tvl?.price ||
+								  0
 						)}
 					</p>
 				</div>
@@ -233,15 +233,15 @@ function CardZap(): ReactElement {
 							toAddress(selectedOptionTo.value) === YBAL_TOKEN_ADDRESS
 								? yBalPrice || 0
 								: toAddress(selectedOptionFrom.value) === YBAL_BALANCER_POOL_ADDRESS
-									? yBalCurvePoolPrice || 0
-									: Number(
-											getToken({
-												address: selectedOptionTo.value,
-												chainID: selectedOptionTo.chainID
-											}).price.normalized
-										) ||
-										vaults?.[toAddress(selectedOptionTo.value)]?.tvl?.price ||
-										0
+								? yBalCurvePoolPrice || 0
+								: Number(
+										getToken({
+											address: selectedOptionTo.value,
+											chainID: selectedOptionTo.chainID
+										}).price.normalized
+								  ) ||
+								  vaults?.[toAddress(selectedOptionTo.value)]?.tvl?.price ||
+								  0
 						)}
 					</p>
 				</div>

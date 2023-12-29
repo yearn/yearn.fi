@@ -87,14 +87,16 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 							]}
 						/>
 						<div className={'grid gap-4'}>
-							{sortedVaultsToDisplay.map(
-								(vault): ReactElement => (
-									<VaultsV3ListRow
-										key={`${vault.chainID}_${vault.address}`}
-										currentVault={vault}
-									/>
-								)
-							)}
+							{sortedVaultsToDisplay
+								.filter((v): boolean => Boolean(v?.chainID))
+								.map(
+									(vault): ReactElement => (
+										<VaultsV3ListRow
+											key={`${vault?.chainID}_${vault.address}`}
+											currentVault={vault}
+										/>
+									)
+								)}
 						</div>
 					</div>
 				</div>

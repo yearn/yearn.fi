@@ -190,7 +190,7 @@ function Holdings(): ReactElement {
 									? formatCounterValue(
 											formatToNormalizedValue(holdings.lpyBalSupply, 18),
 											lpyBalPrice
-										)
+									  )
 									: formatAmount(0)}
 							</p>
 						</div>

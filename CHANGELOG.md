@@ -4,6 +4,7 @@
 -   Feat: For the V3 vaults, display the spot expected APR next to the Net APR.
 -   Feat: Display the weekly APR when the Monthly APR is zero for historical.
 -   Fix: Display only spot expected APR.
+-   Fix: Crash on chainID
 
 # 0.3.4 (22/12/2023)
 

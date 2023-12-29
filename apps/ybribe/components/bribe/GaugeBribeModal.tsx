@@ -243,7 +243,7 @@ export function GaugeBribeModal({
 									? formatCounterValue(
 											amount?.normalized || 0,
 											Number(prices?.[toAddress(tokenAddress)] || 0) / 1000000
-										)
+									  )
 									: '-'}
 							</p>
 						</div>

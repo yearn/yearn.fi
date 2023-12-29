@@ -304,7 +304,7 @@ function ZapAndStats(): ReactElement {
 								? formatCounterValue(
 										formatToNormalizedValue(holdings.lpyCRVV2Supply, 18),
 										lpycrvV2Price
-									)
+								  )
 								: formatAmount(0)}
 						</p>
 					</div>
@@ -360,7 +360,7 @@ function ZapAndStats(): ReactElement {
 									? formatCounterValue(
 											formatToNormalizedValue(holdings.lpyCRVSupply, 18),
 											lpycrvPrice
-										)
+									  )
 									: formatAmount(0)}
 							</p>
 						</div>
