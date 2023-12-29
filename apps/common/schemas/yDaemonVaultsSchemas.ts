@@ -129,7 +129,9 @@ export const yDaemonVaultSchema = z.object({
 						boostedAPR: z.number().default(0).catch(0),
 						baseAPR: z.number().default(0).catch(0),
 						cvxAPR: z.number().default(0).catch(0),
-						rewardsAPR: z.number().default(0).catch(0)
+						rewardsAPR: z.number().default(0).catch(0),
+						v3OracleCurrentAPR: z.number().default(0).catch(0),
+						v3OracleStratRatioAPR: z.number().default(0).catch(0)
 					})
 					.default({})
 			})

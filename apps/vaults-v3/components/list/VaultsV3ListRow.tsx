@@ -231,6 +231,37 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 		);
 	}
 
+	const hasV3Composite =
+		!isZero(currentVault?.apr?.forwardAPR.composite.v3OracleCurrentAPR) &&
+		!isZero(currentVault?.apr?.forwardAPR.composite.v3OracleStratRatioAPR);
+	if (hasV3Composite) {
+		return (
+			<div className={'-mb-0 flex flex-col md:-mb-4 md:text-right'}>
+				<b className={'yearn--table-data-section-item-value transition-opacity'}>
+					<Renderable
+						shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
+						fallback={'NEW'}>
+						<RenderAmount
+							shouldHideTooltip
+							value={currentVault?.apr?.forwardAPR.composite.v3OracleStratRatioAPR}
+							symbol={'percent'}
+							decimals={6}
+						/>
+					</Renderable>
+				</b>
+				<small className={'text-xs text-neutral-900/40'}>
+					{`SPOT: `}
+					<RenderAmount
+						shouldHideTooltip
+						value={currentVault?.apr?.forwardAPR.composite.v3OracleCurrentAPR}
+						symbol={'percent'}
+						decimals={6}
+					/>
+				</small>
+			</div>
+		);
+	}
+
 	const hasZeroAPR = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0;
 	return (
 		<div className={'flex flex-col md:text-right'}>
@@ -240,7 +271,7 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 					fallback={'NEW'}>
 					<RenderAmount
 						shouldHideTooltip={hasZeroAPR}
-						value={currentVault.apr.forwardAPR.netAPR}
+						value={currentVault.apr.netAPR}
 						symbol={'percent'}
 						decimals={6}
 					/>

@@ -1,3 +1,8 @@
+# 0.3.5 (29/12/2023)
+
+-   Feat: Update the vault schema to take into account the new V3 composite elements.
+-   Feat: For the V3 vaults, display the spot expected APR next to the Net APR.
+
 # 0.3.4 (22/12/2023)
 
 -   Fix: display v3 vaults on the V2 app.
