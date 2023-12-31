@@ -1,3 +1,7 @@
+# 0.3.6 (31/12/2023)
+
+-   Fix: BalancesN not being correctly used
+
 # 0.3.5 (29/12/2023)
 
 -   Feat: Update the vault schema to take into account the new V3 composite elements.

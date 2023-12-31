@@ -12,10 +12,7 @@ export function Wrapper({children, router}: {children: ReactElement; router: Nex
 		<>
 			<Meta meta={manifest} />
 			<AppSettingsContextApp>
-				<WalletForZapAppContextApp
-					chainID={router?.query?.chainID ? Number(router?.query?.chainID) : undefined}>
-					{children}
-				</WalletForZapAppContextApp>
+				<WalletForZapAppContextApp>{children}</WalletForZapAppContextApp>
 			</AppSettingsContextApp>
 		</>
 	);

@@ -1,5 +1,4 @@
 import {createContext, memo, useCallback, useContext, useMemo, useState} from 'react';
-import {useRouter} from 'next/router';
 import {useDeepCompareEffect} from '@react-hookz/web';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {isZeroAddress, toAddress, zeroAddress} from '@yearn-finance/web-lib/utils/address';
@@ -52,19 +51,12 @@ const defaultProps = {
  ** interact with our app, aka mostly the balances and the token prices.
  ******************************************************************************/
 const WalletForZap = createContext<TWalletForZap>(defaultProps);
-export const WalletForZapAppContextApp = memo(function WalletForZapAppContextApp({
-	children,
-	chainID
-}: {
+export const WalletForZapAppContextApp = memo(function WalletForZapAppContextApp(props: {
 	children: ReactElement;
-	chainID?: number;
 }): ReactElement {
 	const {address} = useWeb3();
 	const {refresh} = useWallet();
-	const router = useRouter();
-	const {yDaemonBaseUri} = useYDaemonBaseURI(
-		chainID ? {chainID} : router?.query?.chainID ? {chainID: Number(router.query.chainID)} : undefined
-	);
+	const {yDaemonBaseUri} = useYDaemonBaseURI();
 	const [zapTokens, set_zapTokens] = useState<TChainTokens>({});
 
 	/* 🔵 - Yearn Finance ******************************************************
@@ -155,7 +147,7 @@ export const WalletForZapAppContextApp = memo(function WalletForZapAppContextApp
 		[listTokens, getToken, getBalance, getPrice, refresh, tokensList]
 	);
 
-	return <WalletForZap.Provider value={contextValue}>{children}</WalletForZap.Provider>;
+	return <WalletForZap.Provider value={contextValue}>{props.children}</WalletForZap.Provider>;
 });
 
 export const useWalletForZap = (): TWalletForZap => useContext(WalletForZap);
