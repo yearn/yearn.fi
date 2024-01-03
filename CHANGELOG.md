@@ -1,20 +1,15 @@
-# 0.3.6 (31/12/2023)
+# 0.3.7 (31/12/2023)
 
--   Fix: BalancesN not being correctly used
-
-# 0.3.5 (29/12/2023)
-
--   Feat: Update the vault schema to take into account the new V3 composite elements.
--   Feat: For the V3 vaults, display the spot expected APR next to the Net APR.
--   Feat: Display the weekly APR when the Monthly APR is zero for historical.
--   Fix: Display only spot expected APR.
--   Fix: Crash on chainID
-
-# 0.3.4 (22/12/2023)
-
--   Fix: display v3 vaults on the V2 app.
--   Style: update files to match prettier format.
--   Fix: decimals of unstake in the OP BOOST tab.
+-   Fix: Hide V3 Vaults from V2 UI. (03/01/2024)
+-   Fix: BalancesN not being correctly used. (31/12/2023)
+-   Feat: Update the vault schema to take into account the new V3 composite elements. (29/12/2023)
+-   Feat: For the V3 vaults, display the spot expected APR next to the Net APR. (29/12/2023)
+-   Feat: Display the weekly APR when the Monthly APR is zero for historical. (29/12/2023)
+-   Fix: Display only spot expected APR. (29/12/2023)
+-   Fix: Crash on chainID. (29/12/2023)
+-   Fix: display v3 vaults on the V2 app. (22/12/2023)
+-   Style: update files to match prettier format. (22/12/2023)
+-   Fix: decimals of unstake in the OP BOOST tab. (22/12/2023)
 
 # 0.3.3 (15/12/2023)
 
