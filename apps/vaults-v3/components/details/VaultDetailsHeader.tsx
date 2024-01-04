@@ -193,6 +193,12 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 					<div className={'w-full rounded-lg bg-neutral-900/30 px-4 py-2 text-center md:w-fit'}>
 						<strong className={'text-sm font-black text-neutral-900 md:text-xl'}>{chainInfo.name}</strong>
 					</div>
+					{currentVault.boosted ? (
+						<div className={'w-full rounded-lg bg-neutral-900/30 px-4 py-2 text-center md:w-fit'}>
+							<strong
+								className={'text-sm font-black text-neutral-900 md:text-xl'}>{`⚡️ Boosted`}</strong>
+						</div>
+					) : null}
 				</div>
 			</div>
 

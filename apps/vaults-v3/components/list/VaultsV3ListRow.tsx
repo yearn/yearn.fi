@@ -20,6 +20,7 @@ import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
 function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+	console.log(currentVault);
 	const isEthMainnet = currentVault.chainID === 1;
 	if (currentVault.apr.forwardAPR.type === '') {
 		const hasZeroAPR = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0;
@@ -239,6 +240,7 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 					<Renderable
 						shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
 						fallback={'NEW'}>
+						{currentVault.boosted ? '⚡️ ' : ''}
 						<RenderAmount
 							shouldHideTooltip
 							value={currentVault?.apr?.forwardAPR.composite.v3OracleCurrentAPR}
@@ -250,9 +252,11 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 			</div>
 		);
 	}
+
 	const hasV3Composite =
 		!isZero(currentVault?.apr?.forwardAPR.composite.v3OracleCurrentAPR) &&
-		!isZero(currentVault?.apr?.forwardAPR.composite.v3OracleStratRatioAPR);
+		!isZero(currentVault?.apr?.forwardAPR.composite.v3OracleStratRatioAPR) &&
+		false;
 	if (hasV3Composite) {
 		return (
 			<div className={'-mb-0 flex flex-col md:-mb-4 md:text-right'}>
@@ -288,6 +292,7 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 				<Renderable
 					shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
 					fallback={'NEW'}>
+					{currentVault.boosted ? '⚡️ ' : ''}
 					<RenderAmount
 						shouldHideTooltip={hasZeroAPR}
 						value={currentVault.apr.netAPR}
