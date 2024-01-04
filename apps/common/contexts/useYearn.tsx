@@ -116,7 +116,7 @@ function useYearnEarned(): TYDaemonEarned {
 		endpoint: address
 			? `${yDaemonBaseUriWithoutChain}/earned/${address}?${new URLSearchParams({
 					chainIDs: [1, 10].join(',')
-			  })}`
+				})}`
 			: null,
 		schema: yDaemonEarnedSchema
 	});

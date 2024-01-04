@@ -90,6 +90,8 @@ function ZapSection({chainID}: {chainID: number}): ReactElement {
 
 	return (
 		<>
+			<div className={'my-6 h-[1px] w-full bg-neutral-900/20'} />
+
 			<div className={'mb-2 flex flex-col space-y-1'}>
 				<Label>{'Zap Provider & slippage'}</Label>
 				<legend className={'pb-2 text-xs text-neutral-500'}>
@@ -195,18 +197,21 @@ function StakingSection({currentVault}: {currentVault: TYDaemonVault}): ReactEle
 	}
 
 	return (
-		<div className={'mt-6'}>
-			<Label>{'OP Boosted Vaults'}</Label>
-			<div className={'mt-1 flex flex-row space-x-2'}>
-				<div className={'flex grow items-center justify-between'}>
-					<p className={'mr-2 text-sm'}>{'Stake automatically'}</p>
-					<Switch
-						isEnabled={isStakingOpBoostedVaults}
-						onSwitch={(): void => set_isStakingOpBoostedVaults(!isStakingOpBoostedVaults)}
-					/>
+		<>
+			<div className={'my-6 h-[1px] w-full bg-neutral-900/20'} />
+			<div className={'mt-6'}>
+				<Label>{'OP Boosted Vaults'}</Label>
+				<div className={'mt-1 flex flex-row space-x-2'}>
+					<div className={'flex grow items-center justify-between'}>
+						<p className={'mr-2 text-sm'}>{'Stake automatically'}</p>
+						<Switch
+							isEnabled={isStakingOpBoostedVaults}
+							onSwitch={(): void => set_isStakingOpBoostedVaults(!isStakingOpBoostedVaults)}
+						/>
+					</div>
 				</div>
 			</div>
-		</div>
+		</>
 	);
 }
 
@@ -234,9 +239,7 @@ export function SettingsPopover({vault}: TSettingPopover): ReactElement {
 							)}>
 							<div className={'relative p-4'}>
 								<MaxLossSection />
-								<div className={'my-6 h-[1px] w-full bg-neutral-900/20'} />
 								<ZapSection chainID={vault.chainID} />
-								<div className={'my-6 h-[1px] w-full bg-neutral-900/20'} />
 								<StakingSection currentVault={vault} />
 							</div>
 						</Popover.Panel>

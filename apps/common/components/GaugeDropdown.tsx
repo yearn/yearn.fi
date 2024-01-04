@@ -73,7 +73,7 @@ export function Dropdown({options, selected, onSelect, placeholder = ''}: TDropd
 			? orderedOptions
 			: orderedOptions.filter((option): boolean => {
 					return option.label.toLowerCase().includes(query.toLowerCase());
-			  });
+				});
 
 	return (
 		<div>

@@ -1,6 +1,7 @@
 # 0.3.7
 
--   Style: add a message about v3 vaults being boosted. (04/01/2024)
+-   Style: Hide divider when it's the last item in the setting popover. (04/01/2024)
+-   Chores: add a message about v3 vaults being boosted. (04/01/2024)
 -   Style: add rounded border to the deprecated vaults banner. (04/01/2024)
 -   Fix: Hide V3 Vaults from V2 UI. (03/01/2024)
 -   Fix: BalancesN not being correctly used. (31/12/2023)
