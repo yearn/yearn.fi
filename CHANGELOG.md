@@ -1,5 +1,6 @@
 # 0.3.7
 
+-   Fix: Adjust max-loss default parameters. (04/01/2024)
 -   Style: Hide divider when it's the last item in the setting popover. (04/01/2024)
 -   Chores: add a message about v3 vaults being boosted. (04/01/2024)
 -   Style: add rounded border to the deprecated vaults banner. (04/01/2024)
