@@ -1,5 +1,7 @@
-# 0.3.7 (31/12/2023)
+# 0.3.7
 
+-   Style: add a message about v3 vaults being boosted. (04/01/2024)
+-   Style: add rounded border to the deprecated vaults banner. (04/01/2024)
 -   Fix: Hide V3 Vaults from V2 UI. (03/01/2024)
 -   Fix: BalancesN not being correctly used. (31/12/2023)
 -   Feat: Update the vault schema to take into account the new V3 composite elements. (29/12/2023)

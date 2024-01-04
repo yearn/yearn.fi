@@ -290,6 +290,19 @@ function ListOfVaults(): ReactElement {
 				onChangeCategories={onChangeCategories}
 				onSearch={onSearch}
 			/>
+			<div
+				className={
+					'relative col-span-12 flex w-full flex-col overflow-hidden rounded-3xl bg-[linear-gradient(80deg,_#D21162,_#2C3DA6)]'
+				}>
+				<div className={'relative z-10 w-full rounded-3xl p-6 text-neutral-900'}>
+					<b className={'text-lg'}>{'“Oh my god Becky… look at that yield.”'}</b>
+					<p className={'mt-2'}>
+						{
+							'Yep, many V3 Vaults are currently being boosted by auto compounding rewards. So just sit back, relax, and enjoy that APY.'
+						}
+					</p>
+				</div>
+			</div>
 
 			<div className={'col-span-12 flex min-h-[240px] w-full flex-col'}>
 				<VaultsV3ListHead
