@@ -20,7 +20,6 @@ import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
 function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	console.log(currentVault);
 	const isEthMainnet = currentVault.chainID === 1;
 	if (currentVault.apr.forwardAPR.type === '') {
 		const hasZeroAPR = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0;

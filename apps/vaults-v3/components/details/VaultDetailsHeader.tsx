@@ -58,6 +58,8 @@ function VaultAPR({apr}: {apr: TYDaemonVault['apr']}): ReactElement {
 
 	const monthlyAPR = apr.netAPR + apr.extra.stakingRewardsAPR;
 	const weeklyAPR = apr.points.weekAgo;
+	const netAPR = apr.netAPR + apr.extra.stakingRewardsAPR;
+	const currentAPR = apr?.forwardAPR.composite.v3OracleCurrentAPR;
 	return (
 		<VaultHeaderLineItem
 			label={'Historical APR'}
@@ -67,7 +69,8 @@ function VaultAPR({apr}: {apr: TYDaemonVault['apr']}): ReactElement {
 						<div>
 							{'Est. APR: '}
 							<RenderAmount
-								value={apr.forwardAPR.netAPR + apr.extra.stakingRewardsAPR}
+								// value={apr.forwardAPR.netAPR + apr.extra.stakingRewardsAPR}
+								value={isZero(currentAPR) ? netAPR : currentAPR}
 								symbol={'percent'}
 								decimals={6}
 							/>

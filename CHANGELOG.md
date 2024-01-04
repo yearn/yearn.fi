@@ -1,5 +1,6 @@
 # 0.3.7
 
+-   Fix: APR display on details for V3. (04/01/2024)
 -   Feat: Adding boosted property handling. (04/01/2024)
 -   Fix: Adjust max-loss default parameters. (04/01/2024)
 -   Style: Hide divider when it's the last item in the setting popover. (04/01/2024)
