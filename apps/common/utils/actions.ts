@@ -159,8 +159,7 @@ type TDepositEth = TWriteTransaction & {
 export async function depositETH(props: TDepositEth): Promise<TTxResponse> {
 	assert(props.connector, 'No connector');
 	assert(props.amount > 0n, 'Amount is 0');
-	const chainID = await props.connector.getChainId();
-	switch (chainID) {
+	switch (props.chainID) {
 		case 1: {
 			return await handleTx(props, {
 				address: getEthZapperContract(1),
@@ -239,8 +238,7 @@ type TWithdrawEth = TWriteTransaction & {
 export async function withdrawETH(props: TWithdrawEth): Promise<TTxResponse> {
 	assert(props.connector, 'No connector');
 	assert(props.amount > 0n, 'Amount is 0');
-	const chainID = await props.connector.getChainId();
-	switch (chainID) {
+	switch (props.chainID) {
 		case 1: {
 			return await handleTx(props, {
 				address: getEthZapperContract(1),
