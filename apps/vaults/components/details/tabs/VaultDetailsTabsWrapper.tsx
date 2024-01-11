@@ -45,7 +45,7 @@ function Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactE
 		(): TTabsOptions[] => [
 			{value: 0, label: 'About', slug: 'about'},
 			{value: 1, label: 'Strategies', slug: 'strategies'},
-			{value: 2, label: 'Historical rates', slug: 'historical-rates'},
+			{value: 2, label: 'Harvests', slug: 'harvests'},
 			{value: 3, label: 'Info', slug: 'info'}
 		],
 		[]
@@ -246,7 +246,7 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 		}
 	}
 
-	const {data: yDaemonHarvestsData} = useFetch<TYDaemonVaultHarvests>({
+	const {data: yDaemonHarvestsData, isLoading} = useFetch<TYDaemonVaultHarvests>({
 		endpoint: `${yDaemonBaseUri}/vaults/harvests/${currentVault.address}`,
 		schema: yDaemonVaultHarvestsSchema
 	});
@@ -312,7 +312,8 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 			<Renderable shouldRender={currentVault && selectedAboutTabIndex === 2}>
 				<VaultDetailsHistorical
 					currentVault={currentVault}
-					harvestData={harvestData}
+					isLoading={isLoading}
+					harvests={yDaemonHarvestsData}
 				/>
 			</Renderable>
 

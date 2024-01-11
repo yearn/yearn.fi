@@ -1,110 +1,152 @@
-import {useMemo, useState} from 'react';
-import useSWR from 'swr';
-import {useIsMounted} from '@react-hookz/web';
-import {GraphForVaultEarnings} from '@vaults/components/graphs/GraphForVaultEarnings';
-import {GraphForVaultPPSGrowth} from '@vaults/components/graphs/GraphForVaultPPSGrowth';
-import {GraphForVaultTVL} from '@vaults/components/graphs/GraphForVaultTVL';
-import {getMessariSubgraphEndpoint} from '@vaults/utils';
-import {Button} from '@yearn-finance/web-lib/components/Button';
-import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
+import {truncateHex} from '@yearn-finance/web-lib/utils/address';
+import {toBigInt, toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {formatAmount, formatUSD} from '@yearn-finance/web-lib/utils/format.number';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
-import {isZero} from '@yearn-finance/web-lib/utils/isZero';
-import {graphFetcher} from '@common/utils';
+import {IconSpinner} from '@common/icons/IconSpinner';
+import {
+	type TYDaemonVault,
+	type TYDaemonVaultHarvest,
+	type TYDaemonVaultHarvests
+} from '@common/schemas/yDaemonVaultsSchemas';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
-import type {TGraphData, TMessariGraphData} from '@common/types/types';
 
-export function VaultDetailsHistorical({
-	currentVault,
-	harvestData
-}: {
-	currentVault: TYDaemonVault;
-	harvestData: TGraphData[];
-}): ReactElement {
-	const isMounted = useIsMounted();
-	const [selectedViewIndex, set_selectedViewIndex] = useState(0);
-
-	const {data: messariMixedData} = useSWR(
-		currentVault.address
-			? [
-					getMessariSubgraphEndpoint(currentVault.chainID),
-					`{
-			vaultDailySnapshots(
-				where: {vault: "${currentVault.address.toLowerCase()}"}
-				orderBy: timestamp
-				orderDirection: asc
-				first: 1000
-			) {
-				pricePerShare
-				totalValueLockedUSD
-				timestamp
-			}
-		}`
-				]
-			: null,
-		graphFetcher
-	);
-
-	const messariData = useMemo((): TMessariGraphData[] => {
-		const _messariMixedData = [
-			...((messariMixedData?.vaultDailySnapshots as {
-				timestamp: string;
-				totalValueLockedUSD: string;
-				pricePerShare: string;
-			}[]) || [])
-		];
-		return _messariMixedData?.map(
-			(elem): TMessariGraphData => ({
-				name: formatDate(Number(elem.timestamp) * 1000),
-				tvl: Number(elem.totalValueLockedUSD),
-				pps: formatToNormalizedValue(toBigInt(elem.pricePerShare), currentVault.decimals)
-			})
-		);
-	}, [currentVault.decimals, messariMixedData?.vaultDailySnapshots]);
-
+function HarvestListHead(): ReactElement {
 	return (
-		<div className={'bg-neutral-100 p-4 md:p-8'}>
-			<div className={'w-max'}>
-				<div className={'mt-1 flex flex-row space-x-0 divide-x border-x border-neutral-900'}>
-					<Button
-						onClick={(): void => set_selectedViewIndex(0)}
-						variant={isZero(selectedViewIndex) ? 'filled' : 'outlined'}
-						className={'yearn--button-smaller !border-x-0'}>
-						{'TVL'}
-					</Button>
-					<Button
-						onClick={(): void => set_selectedViewIndex(1)}
-						variant={selectedViewIndex === 1 ? 'filled' : 'outlined'}
-						className={'yearn--button-smaller !border-x-0'}>
-						{'Growth'}
-					</Button>
-					<Button
-						onClick={(): void => set_selectedViewIndex(2)}
-						variant={selectedViewIndex === 2 ? 'filled' : 'outlined'}
-						className={'yearn--button-smaller !border-x-0'}>
-						{'Earnings'}
-					</Button>
+		<div className={'grid grid-cols-12 border-b border-neutral-200 px-10 pb-2'}>
+			<div
+				className={'col-span-3'}
+				datatype={'number'}>
+				<p className={'yearn--table-head-label'}>{'Date'}</p>
+			</div>
+
+			<div
+				className={'col-span-3'}
+				datatype={'number'}>
+				<p className={'yearn--table-head-label'}>{'Gain'}</p>
+			</div>
+
+			<div
+				className={'col-span-2'}
+				datatype={'number'}>
+				<p className={'yearn--table-head-label'}>{'Value'}</p>
+			</div>
+
+			<div
+				className={'col-span-4'}
+				datatype={'number'}>
+				<p className={'yearn--table-head-label md:text-right'}>{'Transaction'}</p>
+			</div>
+		</div>
+	);
+}
+
+function HarvestListRow({
+	harvest,
+	currentVault
+}: {
+	harvest: TYDaemonVaultHarvest;
+	currentVault: TYDaemonVault;
+}): ReactElement {
+	return (
+		<div className={'grid grid-cols-1 border-b border-neutral-200 px-10 pb-4 md:grid-cols-12'}>
+			<div
+				className={'col-span-3'}
+				datatype={'number'}>
+				<p className={'yearn--table-data-section-item-label'}>{'Date'}</p>
+				<p
+					className={'yearn--table-data-section-item-value font-number'}
+					style={{lineHeight: '24px'}}>
+					{formatDate(Number(harvest.timestamp) * 1000)}
+				</p>
+			</div>
+
+			<div
+				className={'col-span-3'}
+				datatype={'number'}>
+				<p className={'yearn--table-data-section-item-label'}>{'Gain'}</p>
+				<div>
+					<b className={'yearn--table-data-section-item-value font-number'}>
+						{toBigInt(harvest.profit) - toBigInt(harvest.loss) > 0n ? '+' : '-'}
+						&nbsp;
+						{formatAmount(
+							toNormalizedValue(
+								toBigInt(harvest.profit) - toBigInt(harvest.loss),
+								currentVault.token.decimals
+							),
+							currentVault.token.decimals,
+							currentVault.token.decimals
+						)}
+					</b>
 				</div>
 			</div>
+
 			<div
-				className={'mt-4 flex flex-row space-x-8 border-b border-l border-neutral-300'}
-				style={{height: 312}}>
-				<Renderable shouldRender={isMounted() && isZero(selectedViewIndex)}>
-					<GraphForVaultTVL messariData={messariData} />
-				</Renderable>
+				className={'col-span-2'}
+				datatype={'number'}>
+				<p className={'yearn--table-data-section-item-label'}>{'Value'}</p>
+				<p className={'yearn--table-data-section-item-value font-number'}>
+					{formatUSD(Number(harvest.profitValue) - Number(harvest.lossValue))}
+				</p>
+			</div>
 
-				<Renderable shouldRender={isMounted() && selectedViewIndex === 1}>
-					<GraphForVaultPPSGrowth messariData={messariData} />
-				</Renderable>
+			<div className={'col-span-4'}>
+				<p className={'yearn--table-data-section-item-label'}>{'Hash'}</p>
+				<a
+					href={`https://etherscan.io/tx/${harvest.txHash}`}
+					target={'_blank'}
+					rel={'noreferrer'}>
+					<div
+						className={'font-number flex flex-row items-center space-x-2 text-neutral-900 md:justify-end'}
+						style={{lineHeight: '24px'}}>
+						{truncateHex(harvest.txHash, 12)}
+						<IconLinkOut className={'ml-2 h-4 w-4 md:ml-4'} />
+					</div>
+				</a>
+			</div>
+		</div>
+	);
+}
 
-				<Renderable shouldRender={isMounted() && selectedViewIndex === 2}>
-					<GraphForVaultEarnings
-						currentVault={currentVault}
-						harvestData={harvestData}
-					/>
-				</Renderable>
+export function VaultDetailsHistorical({
+	harvests,
+	isLoading,
+	currentVault
+}: {
+	harvests: TYDaemonVaultHarvests | undefined;
+	isLoading: boolean;
+	currentVault: TYDaemonVault;
+}): ReactElement {
+	if (isLoading) {
+		return (
+			<div className={'mt-6 flex flex-row items-center justify-center pb-12 pt-6'}>
+				<IconSpinner className={'!h-6 !w-6 !text-neutral-400'} />
+			</div>
+		);
+	}
+
+	if (!harvests || harvests.length === 0) {
+		return (
+			<div className={'mt-6 flex flex-row items-center justify-center pb-12 pt-6'}>
+				<p className={'text-neutral-500'}>{'No harvests yet'}</p>
+			</div>
+		);
+	}
+
+	return (
+		<div className={'col-span-12 flex w-full flex-col bg-neutral-100'}>
+			<div className={'mt-6 grid w-full grid-cols-1 gap-4 pb-6'}>
+				<HarvestListHead />
+				{(harvests || [])?.map((harvest: TYDaemonVaultHarvest, index: number): ReactElement => {
+					return (
+						<HarvestListRow
+							key={`${harvest.timestamp}_${harvest.vaultAddress}_${index}`}
+							currentVault={currentVault}
+							harvest={harvest}
+						/>
+					);
+				})}
 			</div>
 		</div>
 	);
