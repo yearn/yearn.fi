@@ -1,5 +1,6 @@
 # 0.3.7
 
+-   Feat: Add info tab in the vault details page. (11/01/2024)
 -   Fix: APR display on details for V3. (04/01/2024)
 -   Feat: Adding boosted property handling. (04/01/2024)
 -   Fix: Adjust max-loss default parameters. (04/01/2024)

@@ -45,7 +45,8 @@ function Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactE
 		(): TTabsOptions[] => [
 			{value: 0, label: 'About', slug: 'about'},
 			{value: 1, label: 'Strategies', slug: 'strategies'},
-			{value: 2, label: 'Historical rates', slug: 'historical-rates'}
+			{value: 2, label: 'Historical rates', slug: 'historical-rates'},
+			{value: 3, label: 'Info', slug: 'info'}
 		],
 		[]
 	);
@@ -154,6 +155,68 @@ function ExplorerLink({explorerBaseURI, currentVaultAddress}: TExplorerLinkProps
 	);
 }
 
+export function VaultInfo({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+	const blockExplorer = getNetwork(currentVault.chainID).blockExplorers?.etherscan?.url;
+
+	return (
+		<div className={'grid w-2/3 grid-cols-1 gap-10 bg-neutral-100 p-4 md:p-8'}>
+			<div className={'col-span-1 grid w-full gap-1'}>
+				<div className={'flex flex-col items-center md:flex-row'}>
+					<p className={'w-full text-sm text-neutral-500 md:w-44'}>{'Vault Contract Address'}</p>
+					<a
+						className={'font-number text-sm text-neutral-900 hover:underline'}
+						href={`${blockExplorer}/address/${currentVault.address}`}
+						target={'_blank'}
+						rel={'noopener noreferrer'}
+						suppressHydrationWarning>
+						{currentVault.address}
+					</a>
+				</div>
+
+				<div className={'flex flex-col items-center md:flex-row'}>
+					<p className={'w-full text-sm text-neutral-500 md:w-44'}>{'Token Contract Address'}</p>
+					<a
+						href={`${blockExplorer}/address/${currentVault.token.address}`}
+						target={'_blank'}
+						rel={'noopener noreferrer'}
+						className={'font-number text-sm text-neutral-900 hover:underline'}
+						suppressHydrationWarning>
+						{currentVault.token.address}
+					</a>
+				</div>
+
+				{currentVault.staking.available ? (
+					<div className={'flex flex-col items-center md:flex-row'}>
+						<p className={'w-full text-sm text-neutral-500 md:w-44'}>{'Staking Contract Address'}</p>
+						<a
+							href={`${blockExplorer}/address/${currentVault.staking.address}`}
+							target={'_blank'}
+							rel={'noopener noreferrer'}
+							className={'font-number text-sm text-neutral-900 hover:underline'}
+							suppressHydrationWarning>
+							{currentVault.staking.address}
+						</a>
+					</div>
+				) : null}
+
+				{currentVault.info.sourceURL.includes('curve.fi') ? (
+					<div className={'flex flex-col items-center md:flex-row'}>
+						<p className={'w-full text-sm text-neutral-500 md:w-44'}>{'Curve deposit URI'}</p>
+						<a
+							href={currentVault.info.sourceURL}
+							target={'_blank'}
+							rel={'noopener noreferrer'}
+							className={'font-number text-sm text-neutral-900 hover:underline'}
+							suppressHydrationWarning>
+							{currentVault.info.sourceURL}
+						</a>
+					</div>
+				) : null}
+			</div>
+		</div>
+	);
+}
+
 export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {provider} = useWeb3();
 	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: currentVault.chainID});
@@ -206,7 +269,10 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 					set_selectedAboutTabIndex={set_selectedAboutTabIndex}
 				/>
 
-				<div className={'flex flex-row items-center justify-end space-x-2 pb-0 md:pb-4 md:last:space-x-4'}>
+				<div
+					className={
+						'flex flex-col items-center justify-end space-x-2 pb-0 md:flex-row md:pb-4 md:last:space-x-4'
+					}>
 					<button
 						onClick={(): void => {
 							onAddTokenToMetamask(
@@ -248,6 +314,10 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 					currentVault={currentVault}
 					harvestData={harvestData}
 				/>
+			</Renderable>
+
+			<Renderable shouldRender={currentVault && selectedAboutTabIndex === 3}>
+				<VaultInfo currentVault={currentVault} />
 			</Renderable>
 		</div>
 	);

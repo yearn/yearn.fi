@@ -158,6 +158,9 @@ export const yDaemonVaultSchema = z.object({
 		available: z.boolean(),
 		address: addressSchema,
 		contract: addressSchema
+	}),
+	info: z.object({
+		sourceURL: z.string().optional().default('').catch('')
 	})
 });
 

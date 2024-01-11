@@ -2,6 +2,7 @@ import {Fragment, useEffect, useMemo, useState} from 'react';
 import {useRouter} from 'next/router';
 import {Listbox, Transition} from '@headlessui/react';
 import * as Sentry from '@sentry/nextjs';
+import {VaultInfo} from '@vaults/components/details/tabs/VaultDetailsTabsWrapper';
 import {VaultDetailsAbout} from '@vaults-v3/components/details/tabs/VaultDetailsAbout';
 import {VaultDetailsStrategies} from '@vaults-v3/components/details/tabs/VaultDetailsStrategies';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
@@ -41,7 +42,8 @@ function Tabs({hasStrategies, selectedAboutTabIndex, set_selectedAboutTabIndex}:
 		if (hasStrategies) {
 			return [
 				{value: 0, label: 'About', slug: 'about'},
-				{value: 1, label: 'Vaults', slug: 'vaults'}
+				{value: 1, label: 'Vaults', slug: 'vaults'},
+				{value: 2, label: 'Info', slug: 'info'}
 			];
 		}
 		return [{value: 0, label: 'About', slug: 'about'}];
@@ -231,6 +233,10 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 
 			<Renderable shouldRender={currentVault && selectedAboutTabIndex === 1 && hasStrategies}>
 				<VaultDetailsStrategies currentVault={currentVault} />
+			</Renderable>
+
+			<Renderable shouldRender={currentVault && selectedAboutTabIndex === 2}>
+				<VaultInfo currentVault={currentVault} />
 			</Renderable>
 		</div>
 	);
