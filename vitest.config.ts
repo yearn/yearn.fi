@@ -9,7 +9,6 @@ export default {
 	resolve: {
 		alias: {
 			'@vaults': path.resolve(__dirname, './apps/vaults'),
-			'@yBal': path.resolve(__dirname, './apps/ybal'),
 			'@common': path.resolve(__dirname, './apps/common'),
 			'@veYFI': path.resolve(__dirname, './apps/veyfi'),
 			'@yBribe': path.resolve(__dirname, './apps/ybribe'),
