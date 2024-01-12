@@ -36,7 +36,7 @@ const curveGaugeSchema = z.object({
 	swap_data: z.object({virtual_price: z.string().or(z.number().optional())}).optional(),
 	gauge_data: z
 		.object({
-			inflation_rate: z.string().optional(),
+			inflation_rate: z.number().or(z.string()).optional().default('0'),
 			working_supply: z.string().optional()
 		})
 		.optional(),
@@ -44,7 +44,7 @@ const curveGaugeSchema = z.object({
 		.object({
 			gauge_relative_weight: z.string().optional(),
 			get_gauge_weight: z.string().optional(),
-			inflation_rate: z.string().optional()
+			inflation_rate: z.number().or(z.string()).optional().default('0')
 		})
 		.optional(),
 	factory: z.boolean(),
@@ -76,7 +76,7 @@ export const curveGaugeFromYearnSchema = z.object({
 		.optional(),
 	lp_token: z.string().optional().transform(toAddress),
 	weight: z.string().optional().default('0'),
-	inflation_rate: z.string().default('0'),
+	inflation_rate: z.string().or(z.number()).optional().default('0'),
 	working_supply: z.string().default('0'),
 	apy: z.object({
 		type: z.string(),
