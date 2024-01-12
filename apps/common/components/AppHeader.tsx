@@ -166,10 +166,6 @@ export function AppHeader(): ReactElement {
 			return [HOME_MENU, ...APPS[AppName.YCRV].menu];
 		}
 
-		if (pathname.startsWith('/ybal')) {
-			return [HOME_MENU, ...APPS[AppName.YBAL].menu];
-		}
-
 		if (pathname.startsWith('/v3')) {
 			return [HOME_MENU, ...APPS[AppName.VAULTSV3].menu];
 		}
