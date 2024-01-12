@@ -9,8 +9,6 @@ import {VeYfiHeader} from '@veYFI/components/header/VeYfiHeader';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {useCurrentApp} from '@common/hooks/useCurrentApp';
 import {LogoYearn} from '@common/icons/LogoYearn';
-import {YBribeHeader} from '@yBribe/components/header/YBribeHeader';
-import {YCrvHeader} from '@yCRV/components/header/YCrvHeader';
 
 import {APPS} from './Apps';
 import {MotionDiv} from './MotionDiv';
@@ -22,10 +20,8 @@ function Logo(): ReactElement {
 
 	return (
 		<>
-			<YCrvHeader pathname={pathname} />
 			<VaultsHeader pathname={pathname} />
 			<VeYfiHeader pathname={pathname} />
-			<YBribeHeader pathname={pathname} />
 			<VaultsV3Header pathname={pathname} />
 			<MotionDiv
 				name={'yearn'}

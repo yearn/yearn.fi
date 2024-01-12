@@ -1,3 +1,7 @@
+# 0.4.0
+
+-   Chores: Move yBribe out to https://yBribe.yearn.fi. (12/01/2024)
+
 # 0.3.7
 
 -   Fix: Disable the partnerContract for V3 vaults deposits. (15/01/2024)

@@ -54,9 +54,8 @@ const config = {
 	redirects() {
 		return [
 			{
-				source: '/:path*',
-				has: [{type: 'host', value: 'ybribe.com'}],
-				destination: 'https://yearn.fi/ybribe/:path*',
+				source: '/ybribe/:path*',
+				destination: 'https://ybribe.yearn.fi/:path*',
 				permanent: true
 			},
 			{

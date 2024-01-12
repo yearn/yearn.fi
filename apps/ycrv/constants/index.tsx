@@ -1,1 +1,0 @@
-export const YCRV_SUPPORTED_NETWORK = 1;

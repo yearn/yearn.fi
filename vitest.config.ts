@@ -11,7 +11,6 @@ export default {
 			'@vaults': path.resolve(__dirname, './apps/vaults'),
 			'@common': path.resolve(__dirname, './apps/common'),
 			'@veYFI': path.resolve(__dirname, './apps/veyfi'),
-			'@yBribe': path.resolve(__dirname, './apps/ybribe'),
 			'@yCRV': path.resolve(__dirname, './apps/ycrv')
 		}
 	},

@@ -35,8 +35,6 @@ export const MenuContextApp = ({children}: {children: React.ReactElement}): Reac
 			set_menu({app: APPS[AppName.YCRV].menu, isOpen: true});
 		} else if (pathname.startsWith('/vaults')) {
 			set_menu({app: APPS[AppName.VAULTS].menu, isOpen: true});
-		} else if (pathname.startsWith('/ybribe')) {
-			set_menu({app: APPS[AppName.YBRIBE].menu, isOpen: true});
 		} else {
 			set_menu({
 				app: [

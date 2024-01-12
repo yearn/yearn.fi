@@ -108,7 +108,7 @@ const apps = [
 		)
 	},
 	{
-		href: '/ybribe',
+		href: 'https://yBribe.yearn.fi',
 		title: 'yBribe',
 		description: 'sell votes, or buy them.\njust like democracy.',
 		icon: (
