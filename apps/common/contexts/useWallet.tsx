@@ -3,16 +3,11 @@ import {useDeepCompareMemo} from '@react-hookz/web';
 import {onLoadDone, onLoadStart} from '@yearn-finance/web-lib/contexts/useUI';
 import {toAddress, zeroAddress} from '@yearn-finance/web-lib/utils/address';
 import {
-	BAL_TOKEN_ADDRESS,
-	BALWETH_TOKEN_ADDRESS,
 	CRV_TOKEN_ADDRESS,
 	CVXCRV_TOKEN_ADDRESS,
 	ETH_TOKEN_ADDRESS,
-	LPYBAL_TOKEN_ADDRESS,
 	LPYCRV_TOKEN_ADDRESS,
 	LPYCRV_V2_TOKEN_ADDRESS,
-	STYBAL_TOKEN_ADDRESS,
-	YBAL_TOKEN_ADDRESS,
 	YCRV_CURVE_POOL_V2_ADDRESS,
 	YCRV_TOKEN_ADDRESS,
 	YVBOOST_TOKEN_ADDRESS,
@@ -90,11 +85,6 @@ function useYearnTokens({shouldUseForknetBalances}: {shouldUseForknetBalances: b
 				{chainID: 1, address: YVBOOST_TOKEN_ADDRESS},
 				{chainID: 1, address: YVECRV_TOKEN_ADDRESS},
 				{chainID: 1, address: CVXCRV_TOKEN_ADDRESS},
-				{chainID: 1, address: BAL_TOKEN_ADDRESS},
-				{chainID: 1, address: YBAL_TOKEN_ADDRESS},
-				{chainID: 1, address: BALWETH_TOKEN_ADDRESS},
-				{chainID: 1, address: STYBAL_TOKEN_ADDRESS},
-				{chainID: 1, address: LPYBAL_TOKEN_ADDRESS},
 				{chainID: 1, address: YCRV_CURVE_POOL_V2_ADDRESS},
 				{chainID: 1, address: LPYCRV_V2_TOKEN_ADDRESS}
 			]
