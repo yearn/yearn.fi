@@ -1,7 +1,6 @@
 import vaultsManifest from 'public/apps/vaults-manifest.json';
 import veyfiManifest from 'public/apps/veyfi-manifest.json';
 import yBalManifest from 'public/apps/ybal-manifest.json';
-import ybribeManifest from 'public/apps/ybribe-manifest.json';
 import ycrvManifest from 'public/apps/ycrv-manifest.json';
 import {VAULTS_MENU} from '@vaults/constants/menu';
 import {VAULTS_V3_MENU} from '@vaults-v3/constants/menu';
@@ -10,7 +9,6 @@ import {YBAL_TOKEN_ADDRESS, YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/uti
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {LogoYearn} from '@common/icons/LogoYearn';
 import {YBAL_MENU} from '@yBal/constants/menu';
-import {YBRIBE_MENU} from '@yBribe/constants/menu';
 import {YCRV_MENU} from '@yCRV/constants/menu';
 
 import type {ReactElement} from 'react';
@@ -149,9 +147,9 @@ export const APPS: {[key in AppName]: TApp} = {
 	},
 	yBribe: {
 		name: AppName.YBRIBE,
-		href: '/ybribe',
-		menu: YBRIBE_MENU,
-		manifest: ybribeManifest,
+		href: 'https://yBribe.yearn.fi',
+		menu: [],
+		manifest: {} as TMetaFile,
 		icon: (
 			<LogoYearn
 				className={'h-8 w-8'}

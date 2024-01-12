@@ -4,7 +4,6 @@ import homeManifest from 'public/manifest.json';
 import {VaultsHeader} from '@vaults/components/header/VaultsHeader';
 import {AppName, APPS} from '@common/components/Apps';
 import {YBalHeader} from '@yBal/components/header/YBalHeader';
-import {YBribeHeader} from '@yBribe/components/header/YBribeHeader';
 import {YCrvHeader} from '@yCRV/components/header/YCrvHeader';
 
 import type {NextRouter} from 'next/router';
@@ -30,10 +29,6 @@ export function useCurrentApp({pathname}: NextRouter): TCurrentApp {
 			'/vaults': {
 				...APPS[AppName.VAULTS],
 				header: <VaultsHeader pathname={pathname} />
-			},
-			'/ybribe': {
-				...APPS[AppName.YBRIBE],
-				header: <YBribeHeader pathname={pathname} />
 			},
 			'/ycrv': {
 				...APPS[AppName.YCRV],

@@ -13,7 +13,6 @@ import {useMenu} from '@common/contexts/useMenu';
 import {useCurrentApp} from '@common/hooks/useCurrentApp';
 import {LogoYearn} from '@common/icons/LogoYearn';
 import {YBalHeader} from '@yBal/components/header/YBalHeader';
-import {YBribeHeader} from '@yBribe/components/header/YBribeHeader';
 import {YCrvHeader} from '@yCRV/components/header/YCrvHeader';
 
 import {AppName, APPS} from './Apps';
@@ -31,7 +30,6 @@ function Logo(): ReactElement {
 			<YBalHeader pathname={pathname} />
 			<VaultsHeader pathname={pathname} />
 			<VeYfiHeader pathname={pathname} />
-			<YBribeHeader pathname={pathname} />
 			<VaultsV3Header pathname={pathname} />
 			<MotionDiv
 				name={'yearn'}
@@ -184,9 +182,6 @@ export function AppHeader(): ReactElement {
 			return [HOME_MENU, ...APPS[AppName.VEYFI].menu];
 		}
 
-		if (pathname.startsWith('/ybribe')) {
-			return [HOME_MENU, ...APPS[AppName.YBRIBE].menu];
-		}
 		return [
 			HOME_MENU,
 			{

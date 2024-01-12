@@ -1,3 +1,7 @@
+# 0.4.0
+
+-   Chores: Move yBribe out to https://yBribe.yearn.fi. (12/01/2024)
+
 # 0.3.7
 
 -   Feat: Add info tab in the vault details page. (11/01/2024)

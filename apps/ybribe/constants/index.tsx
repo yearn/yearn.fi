@@ -1,1 +1,0 @@
-export const YBRIBE_SUPPORTED_NETWORK = 1;

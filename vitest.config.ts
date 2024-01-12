@@ -12,7 +12,6 @@ export default {
 			'@yBal': path.resolve(__dirname, './apps/ybal'),
 			'@common': path.resolve(__dirname, './apps/common'),
 			'@veYFI': path.resolve(__dirname, './apps/veyfi'),
-			'@yBribe': path.resolve(__dirname, './apps/ybribe'),
 			'@yCRV': path.resolve(__dirname, './apps/ycrv')
 		}
 	},
