@@ -1,5 +1,7 @@
 import {useCallback, useMemo, useRef} from 'react';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
+import {ZAP_CRV_ABI} from '@vaults/utils/abi/zapCRV.abi';
+import {zapCRV} from '@vaults/utils/actions';
 import {getVaultEstimateOut} from '@vaults/utils/getVaultEstimateOut';
 import {readContract} from '@wagmi/core';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
@@ -9,8 +11,6 @@ import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigN
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 import {allowanceOf, approveERC20, migrateShares} from '@common/utils/actions';
 import {assert} from '@common/utils/assert';
-import {ZAP_CRV_ABI} from '@yCRV/utils/abi/zapCRV.abi';
-import {zapCRV} from '@yCRV/utils/actions';
 
 import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';

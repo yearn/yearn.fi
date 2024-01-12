@@ -6,8 +6,7 @@
 			"@common/*": ["apps/common/*"],
 			"@vaults/*": ["apps/vaults/*"],
 			"@vaults-v3/*": ["apps/vaults-v3/*"],
-			"@veYFI/*": ["apps/veyfi/*"],
-			"@yCRV/*": ["apps/ycrv/*"]
+			"@veYFI/*": ["apps/veyfi/*"]
 		},
 		/* Basic Options */
 		"target": "esnext",
