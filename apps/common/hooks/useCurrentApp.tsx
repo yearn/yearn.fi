@@ -3,7 +3,6 @@ import {VeYfiHeader} from 'apps/veyfi/components/header/VeYfiHeader';
 import homeManifest from 'public/manifest.json';
 import {VaultsHeader} from '@vaults/components/header/VaultsHeader';
 import {AppName, APPS} from '@common/components/Apps';
-import {YBalHeader} from '@yBal/components/header/YBalHeader';
 import {YCrvHeader} from '@yCRV/components/header/YCrvHeader';
 
 import type {NextRouter} from 'next/router';
@@ -33,10 +32,6 @@ export function useCurrentApp({pathname}: NextRouter): TCurrentApp {
 			'/ycrv': {
 				...APPS[AppName.YCRV],
 				header: <YCrvHeader pathname={pathname} />
-			},
-			'/ybal': {
-				...APPS[AppName.YBAL],
-				header: <YBalHeader pathname={pathname} />
 			},
 			'/veyfi': {
 				...APPS[AppName.VEYFI],

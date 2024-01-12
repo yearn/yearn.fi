@@ -124,7 +124,8 @@ const config = {
 		// YDAEMON_BASE_URI: 'http://localhost:8080',
 		// YDAEMON_BASE_URI: 'https://api.ycorpo.com',
 		BASE_YEARN_ASSETS_URI: 'https://assets.smold.app/api/token',
-		BASE_YEARN_CHAIN_URI: 'https://assets.smold.app/api/chain'
+		BASE_YEARN_CHAIN_URI: 'https://assets.smold.app/api/chain',
+		SMOL_ASSETS_URL: 'https://assets.smold.app/api'
 	}
 };
 

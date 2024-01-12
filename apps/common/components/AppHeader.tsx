@@ -12,7 +12,6 @@ import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {useMenu} from '@common/contexts/useMenu';
 import {useCurrentApp} from '@common/hooks/useCurrentApp';
 import {LogoYearn} from '@common/icons/LogoYearn';
-import {YBalHeader} from '@yBal/components/header/YBalHeader';
 import {YCrvHeader} from '@yCRV/components/header/YCrvHeader';
 
 import {AppName, APPS} from './Apps';
@@ -27,7 +26,6 @@ function Logo(): ReactElement {
 	return (
 		<>
 			<YCrvHeader pathname={pathname} />
-			<YBalHeader pathname={pathname} />
 			<VaultsHeader pathname={pathname} />
 			<VeYfiHeader pathname={pathname} />
 			<VaultsV3Header pathname={pathname} />
@@ -164,10 +162,6 @@ export function AppHeader(): ReactElement {
 
 		if (pathname.startsWith('/ycrv')) {
 			return [HOME_MENU, ...APPS[AppName.YCRV].menu];
-		}
-
-		if (pathname.startsWith('/ybal')) {
-			return [HOME_MENU, ...APPS[AppName.YBAL].menu];
 		}
 
 		if (pathname.startsWith('/v3')) {
