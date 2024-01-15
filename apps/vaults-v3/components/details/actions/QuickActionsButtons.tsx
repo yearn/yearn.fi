@@ -6,11 +6,9 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ETH_TOKEN_ADDRESS, MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {isEth} from '@yearn-finance/web-lib/utils/isEth';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useWallet} from '@common/contexts/useWallet';
-import {useYearn} from '@common/contexts/useYearn';
 import {useAsyncTrigger} from '@common/hooks/useAsyncEffect';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 
@@ -21,7 +19,6 @@ import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {refresh} = useWallet();
 	const {address, provider} = useWeb3();
-	const {isStakingOpBoostedVaults} = useYearn();
 	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
 	const [txStatusExecuteDeposit, set_txStatusExecuteDeposit] = useState(defaultTxStatus);
 	const [txStatusExecuteWithdraw, set_txStatusExecuteWithdraw] = useState(defaultTxStatus);
@@ -37,7 +34,6 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 		isLoadingExpectedOut,
 		hash
 	} = useSolver();
-	const isWithdrawing = !isDepositing;
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	 ** SWR hook to get the expected out for a given in/out pair with a specific amount. This hook is
@@ -114,43 +110,6 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 	 ** Wrapper to decide if we should use the partner contract or not
 	 **************************************************************************/
 	const isAboveAllowance = toBigInt(actionParams.amount.raw) > toBigInt(allowanceFrom?.raw);
-
-	if (
-		isWithdrawing && //If user is withdrawing ...
-		currentSolver === Solver.enum.ChainCoin && // ... and the solver is ChainCoin ...
-		isEth(actionParams?.selectedOptionTo?.value) && // ... and the output is ETH ...
-		isAboveAllowance // ... and the amount is above the allowance
-	) {
-		// ... then we need to approve the ChainCoin contract
-		return (
-			<Button
-				variant={'v3'}
-				className={'w-full'}
-				isBusy={txStatusApprove.pending}
-				isDisabled={isButtonDisabled || isZero(expectedOut.raw)}
-				onClick={onApproveFrom}>
-				{'Approve'}
-			</Button>
-		);
-	}
-
-	if (
-		isDepositing && //If user is depositing ...
-		currentSolver === Solver.enum.ChainCoin // ... and the solver is ChainCoin ...
-	) {
-		// ... then we can deposit without approval
-		return (
-			<Button
-				variant={'v3'}
-				onClick={async (): Promise<void> => onExecuteDeposit(set_txStatusExecuteDeposit, onSuccess)}
-				className={'w-full'}
-				isBusy={txStatusExecuteDeposit.pending}
-				isDisabled={isButtonDisabled}>
-				{'Deposit'}
-			</Button>
-		);
-	}
-
 	if (
 		(txStatusApprove.pending || isAboveAllowance) && //If the button is busy or the amount is above the allowance ...
 		((isDepositing && currentSolver === Solver.enum.Vanilla) || // ... and the user is depositing with Vanilla ...
@@ -173,22 +132,6 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 	}
 
 	if (isDepositing || currentSolver === Solver.enum.InternalMigration) {
-		if (currentSolver === Solver.enum.OptimismBooster && isStakingOpBoostedVaults) {
-			return (
-				<Button
-					variant={'v3'}
-					onClick={async (): Promise<void> => onExecuteDeposit(set_txStatusExecuteDeposit, onSuccess)}
-					className={'w-full whitespace-nowrap'}
-					isBusy={txStatusExecuteDeposit.pending}
-					isDisabled={
-						(!address && !provider) ||
-						isZero(actionParams.amount.raw) ||
-						toBigInt(actionParams.amount.raw) > toBigInt(maxDepositPossible.raw)
-					}>
-					{'Deposit and Stake'}
-				</Button>
-			);
-		}
 		return (
 			<Button
 				variant={'v3'}

@@ -1,5 +1,6 @@
 # 0.3.7
 
+-   Fix: Disable the partnerContract for V3 vaults deposits. (15/01/2024)
 -   Feat: Add info tab in the vault details page. (11/01/2024)
 -   Fix: APR display on details for V3. (04/01/2024)
 -   Feat: Adding boosted property handling. (04/01/2024)

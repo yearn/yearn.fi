@@ -255,6 +255,7 @@ export function ActionFlowContextApp({
 			return Solver.enum.OptimismBooster;
 		}
 
+		const isV3 = currentVault?.version.split('.')?.[0] === '3';
 		const isInputTokenEth = isEth(actionParams?.selectedOptionFrom?.value);
 		const isOutputTokenEth = isEth(actionParams?.selectedOptionTo?.value);
 		const isVaultTokenWrappedCoin =
@@ -277,7 +278,7 @@ export function ActionFlowContextApp({
 		if (!isDepositing && (actionParams?.selectedOptionTo?.solveVia?.length || 0) > 0) {
 			return zapProvider;
 		}
-		if (isDepositing && isUsingPartnerContract) {
+		if (isDepositing && isUsingPartnerContract && !isV3) {
 			return Solver.enum.PartnerContract;
 		}
 		return Solver.enum.Vanilla;
@@ -287,11 +288,12 @@ export function ActionFlowContextApp({
 		actionParams?.selectedOptionTo?.value,
 		actionParams?.selectedOptionTo?.solveVia?.length,
 		currentVault.token.address,
+		currentVault.staking.available,
+		currentVault?.version,
 		currentVault.chainID,
 		currentVault.address,
-		currentVault.migration?.available,
-		currentVault.migration?.address,
-		currentVault.staking.available,
+		currentVault?.migration?.available,
+		currentVault?.migration?.address,
 		isStakingOpBoostedVaults,
 		isDepositing,
 		isUsingPartnerContract,

@@ -162,7 +162,6 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 					};
 
 					const solverPriority = [Solver.enum.Cowswap, Solver.enum.Portals, Solver.enum.None];
-
 					const newSolverPriority = [
 						currentSolver,
 						...solverPriority.filter((solver): boolean => solver !== currentSolver)
