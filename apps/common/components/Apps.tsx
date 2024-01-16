@@ -1,9 +1,7 @@
 import Image from 'next/image';
 import vaultsManifest from 'public/apps/vaults-manifest.json';
-import veyfiManifest from 'public/apps/veyfi-manifest.json';
 import {VAULTS_MENU} from '@vaults/constants/menu';
 import {VAULTS_V3_MENU} from '@vaults-v3/constants/menu';
-import {VEYFI_MENU} from '@veYFI/constants/menu';
 import {YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {LogoYearn} from '@common/icons/LogoYearn';
@@ -79,9 +77,9 @@ export const APPS: {[key in AppName]: TApp} = {
 	},
 	veYFI: {
 		name: AppName.VEYFI,
-		menu: VEYFI_MENU,
-		href: '/veyfi',
-		manifest: veyfiManifest,
+		menu: [],
+		href: 'https://veyfi.yearn.fi',
+		manifest: {} as TMetaFile,
 		icon: (
 			<LogoYearn
 				className={'size-8'}

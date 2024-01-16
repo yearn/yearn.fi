@@ -5,8 +5,7 @@
 		"paths": {
 			"@common/*": ["apps/common/*"],
 			"@vaults/*": ["apps/vaults/*"],
-			"@vaults-v3/*": ["apps/vaults-v3/*"],
-			"@veYFI/*": ["apps/veyfi/*"]
+			"@vaults-v3/*": ["apps/vaults-v3/*"]
 		},
 		/* Basic Options */
 		"target": "esnext",

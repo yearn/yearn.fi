@@ -51,7 +51,7 @@ const apps = [
 		)
 	},
 	{
-		href: '/veyfi',
+		href: 'https://veyfi.yearn.fi',
 		title: 'veYFI',
 		description: 'lock YFI\nto take part in governance.',
 		icon: (
@@ -63,7 +63,7 @@ const apps = [
 		)
 	},
 	{
-		href: '/ycrv',
+		href: 'https://ycrv.yearn.fi',
 		title: 'yCRV',
 		description: 'get the best CRV yields in DeFi.',
 		icon: (

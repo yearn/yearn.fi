@@ -1,5 +1,4 @@
 import {useMemo} from 'react';
-import {VeYfiHeader} from 'apps/veyfi/components/header/VeYfiHeader';
 import homeManifest from 'public/manifest.json';
 import {VaultsHeader} from '@vaults/components/header/VaultsHeader';
 import {AppName, APPS} from '@common/components/Apps';
@@ -27,10 +26,6 @@ export function useCurrentApp({pathname}: NextRouter): TCurrentApp {
 			'/vaults': {
 				...APPS[AppName.VAULTS],
 				header: <VaultsHeader pathname={pathname} />
-			},
-			'/veyfi': {
-				...APPS[AppName.VEYFI],
-				header: <VeYfiHeader pathname={pathname} />
 			}
 		};
 

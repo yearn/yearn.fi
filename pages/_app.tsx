@@ -5,7 +5,6 @@ import {usePathname} from 'next/navigation';
 import {type NextRouter, useRouter} from 'next/router';
 import {AnimatePresence, domAnimation, LazyMotion, motion} from 'framer-motion';
 import {WithMom} from '@builtbymom/web3/contexts/WithMom';
-import {useLocalStorageValue} from '@react-hookz/web';
 import {arbitrum, base, fantom, mainnet, optimism, polygon} from '@wagmi/chains';
 import {IconAlertCritical} from '@yearn-finance/web-lib/icons/IconAlertCritical';
 import {IconAlertError} from '@yearn-finance/web-lib/icons/IconAlertError';
@@ -14,7 +13,6 @@ import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {localhost} from '@yearn-finance/web-lib/utils/wagmi/networks';
 import AppHeader from '@common/components/Header';
 import Meta from '@common/components/Meta';
-import {Popover} from '@common/components/Popover';
 import {MenuContextApp} from '@common/contexts/useMenu';
 import {WalletContextApp} from '@common/contexts/useWallet';
 import {YearnContextApp} from '@common/contexts/useYearn';
@@ -71,7 +69,6 @@ const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 	const {Component, pageProps} = props;
 	const pathName = usePathname();
 	const getLayout = (Component as TGetLayout).getLayout || ((page: ReactElement): ReactElement => page);
-	const {value: shouldHidePopover} = useLocalStorageValue<boolean>('yearn.fi/feedback-popover');
 	const {name} = useCurrentApp(router);
 
 	return (
@@ -98,7 +95,6 @@ const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 									/>,
 									router
 								)}
-								{!shouldHidePopover && <Popover />}
 							</motion.div>
 						</AnimatePresence>
 					</LazyMotion>

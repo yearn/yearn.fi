@@ -1,12 +1,11 @@
 import {cloneElement, useState} from 'react';
 import Link from 'next/link';
 import {useRouter} from 'next/router';
+import {cl} from '@builtbymom/web3/utils';
 import {Popover, Transition} from '@headlessui/react';
 import {VaultsHeader} from '@vaults/components/header/VaultsHeader';
 import {VaultsV3Header} from '@vaults-v3/components/header/VaultsHeader';
 import {V3Logo} from '@vaults-v3/Mark';
-import {VeYfiHeader} from '@veYFI/components/header/VeYfiHeader';
-import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {useCurrentApp} from '@common/hooks/useCurrentApp';
 import {LogoYearn} from '@common/icons/LogoYearn';
 
@@ -21,7 +20,6 @@ function Logo(): ReactElement {
 	return (
 		<>
 			<VaultsHeader pathname={pathname} />
-			<VeYfiHeader pathname={pathname} />
 			<VaultsV3Header pathname={pathname} />
 			<MotionDiv
 				name={'yearn'}
