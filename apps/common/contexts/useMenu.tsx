@@ -31,9 +31,7 @@ export const MenuContextApp = ({children}: {children: React.ReactElement}): Reac
 	const [menu, set_menu] = useState<TCurrentMenu>(defaultProps.menu);
 
 	const onOpenMenu = useCallback((): void => {
-		if (pathname.startsWith('/ycrv')) {
-			set_menu({app: APPS[AppName.YCRV].menu, isOpen: true});
-		} else if (pathname.startsWith('/vaults')) {
+		if (pathname.startsWith('/vaults')) {
 			set_menu({app: APPS[AppName.VAULTS].menu, isOpen: true});
 		} else {
 			set_menu({

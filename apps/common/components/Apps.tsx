@@ -1,14 +1,12 @@
 import Image from 'next/image';
 import vaultsManifest from 'public/apps/vaults-manifest.json';
 import veyfiManifest from 'public/apps/veyfi-manifest.json';
-import ycrvManifest from 'public/apps/ycrv-manifest.json';
 import {VAULTS_MENU} from '@vaults/constants/menu';
 import {VAULTS_V3_MENU} from '@vaults-v3/constants/menu';
 import {VEYFI_MENU} from '@veYFI/constants/menu';
 import {YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {LogoYearn} from '@common/icons/LogoYearn';
-import {YCRV_MENU} from '@yCRV/constants/menu';
 
 import type {ReactElement} from 'react';
 import type {TMenu} from '@yearn-finance/web-lib/components/Header';
@@ -94,9 +92,9 @@ export const APPS: {[key in AppName]: TApp} = {
 	},
 	yCRV: {
 		name: AppName.YCRV,
-		href: '/ycrv',
-		menu: YCRV_MENU,
-		manifest: ycrvManifest,
+		href: 'https://ycrv.yearn.fi',
+		menu: [],
+		manifest: {} as TMetaFile,
 		icon: (
 			<ImageWithFallback
 				alt={'yCRV'}

@@ -10,8 +10,7 @@ export default {
 		alias: {
 			'@vaults': path.resolve(__dirname, './apps/vaults'),
 			'@common': path.resolve(__dirname, './apps/common'),
-			'@veYFI': path.resolve(__dirname, './apps/veyfi'),
-			'@yCRV': path.resolve(__dirname, './apps/ycrv')
+			'@veYFI': path.resolve(__dirname, './apps/veyfi')
 		}
 	},
 	test: {
