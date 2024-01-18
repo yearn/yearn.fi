@@ -12,6 +12,7 @@ const VAULT_CATEGORIES = [
 	'Stables Vaults',
 	'Boosted Vaults',
 	'Curve Vaults',
+	'Prisma Vaults',
 	'Balancer Vaults',
 	'Velodrome Vaults',
 	'Aerodrome Vaults',

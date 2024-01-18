@@ -90,6 +90,7 @@ export function useVaultFilter(
 	//V2 Filtered Vaults
 	const boostedVaults = useFilteredVaults(vaults, ({apr}): boolean => apr.extra.stakingRewardsAPR > 0);
 	const curveVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Curve');
+	const prismaVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Prisma');
 	const velodromeVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Velodrome');
 	const aerodromeVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Aerodrome');
 	const stablesVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Stablecoin');
@@ -136,6 +137,9 @@ export function useVaultFilter(
 		}
 		if (categories?.includes('curve')) {
 			_vaultList = [..._vaultList, ...curveVaults];
+		}
+		if (categories?.includes('prisma')) {
+			_vaultList = [..._vaultList, ...prismaVaults];
 		}
 		if (categories?.includes('balancer')) {
 			_vaultList = [..._vaultList, ...balancerVaults];

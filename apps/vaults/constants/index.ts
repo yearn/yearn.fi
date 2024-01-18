@@ -6,6 +6,7 @@ export const ALL_VAULTS_CATEGORIES = {
 	crypto: 'Crypto Vaults',
 	stables: 'Stables Vaults',
 	curve: 'Curve Vaults',
+	prisma: 'Prisma Vaults',
 	// balancer: 'Balancer Vaults',
 	boosted: 'Boosted Vaults',
 	velodrome: 'Velodrome Vaults',

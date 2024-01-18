@@ -79,6 +79,7 @@ export const yDaemonVaultSchema = z.object({
 		.or(z.literal('Velodrome'))
 		.or(z.literal('Boosted'))
 		.or(z.literal('Aerodrome'))
+		.or(z.literal('Prisma'))
 		.default('Volatile')
 		.catch('Volatile'),
 	decimals: z.number(),
