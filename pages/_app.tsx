@@ -158,7 +158,7 @@ function MyApp(props: AppProps): ReactElement {
 	return (
 		<main className={cl(aeonik.className, 'h-full min-h-screen w-full font-aeonik', '')}>
 			<WithYearn
-				supportedChains={[mainnet, optimism, polygon, fantom, base, arbitrum, localhost]}
+				supportedChains={[base]}
 				options={{
 					baseSettings: {
 						yDaemonBaseURI: process.env.YDAEMON_BASE_URI as string
