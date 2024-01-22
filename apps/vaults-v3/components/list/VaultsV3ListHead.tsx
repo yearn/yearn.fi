@@ -65,7 +65,7 @@ export function VaultsV3ListHead({items, sortBy, sortDirection, onSort}: TListHe
 				)}>
 				<div
 					className={cl(
-						'col-span-5',
+						'col-span-4',
 						'flex flex-row items-center justify-between',
 						'mb-2 py-4 md:mb-0 md:py-0'
 					)}>
@@ -77,7 +77,7 @@ export function VaultsV3ListHead({items, sortBy, sortDirection, onSort}: TListHe
 					</button>
 				</div>
 
-				<div className={cl('col-span-7', 'grid grid-cols-1 md:grid-cols-10', 'gap-0 md:gap-x-7')}>
+				<div className={cl('col-span-8', 'grid grid-cols-1 md:grid-cols-7', 'gap-0 md:gap-x-7')}>
 					{rest.map(
 						(item, index): ReactElement => (
 							<button
@@ -88,7 +88,7 @@ export function VaultsV3ListHead({items, sortBy, sortDirection, onSort}: TListHe
 								datatype={'number'}>
 								<p
 									className={cl(
-										'yearn--table-head-label',
+										'yearn--table-head-label whitespace-nowrap',
 										'transition-colors',
 										sortBy === item.value
 											? 'text-neutral-800'

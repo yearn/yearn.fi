@@ -242,7 +242,7 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 						{currentVault.boosted ? '⚡️ ' : ''}
 						<RenderAmount
 							shouldHideTooltip
-							value={currentVault?.apr?.forwardAPR.composite.v3OracleCurrentAPR}
+							value={currentVault?.apr?.forwardAPR.composite.v3OracleStratRatioAPR}
 							symbol={'percent'}
 							decimals={6}
 						/>
@@ -258,20 +258,24 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 		false;
 	if (hasV3Composite) {
 		return (
-			<div className={'-mb-0 flex flex-col md:-mb-4 md:text-right'}>
-				<b className={'yearn--table-data-section-item-value transition-opacity'}>
+			<div className={'flex flex-col md:text-right'}>
+				<b
+					className={
+						'yearn--table-data-section-item-value flex justify-end whitespace-nowrap text-right transition-opacity'
+					}>
 					<Renderable
 						shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
 						fallback={'NEW'}>
+						{currentVault.boosted ? '⚡️ ' : ''}
 						<RenderAmount
 							shouldHideTooltip
-							value={currentVault?.apr?.forwardAPR.composite.v3OracleStratRatioAPR}
+							value={currentVault?.apr?.forwardAPR.composite.v3OracleCurrentAPR}
 							symbol={'percent'}
 							decimals={6}
 						/>
 					</Renderable>
 				</b>
-				<small className={'text-xs text-neutral-900/40'}>
+				{/* <small className={'text-xs text-neutral-900/40'}>
 					{`SPOT: `}
 					<RenderAmount
 						shouldHideTooltip
@@ -279,7 +283,7 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 						symbol={'percent'}
 						decimals={6}
 					/>
-				</small>
+				</small> */}
 			</div>
 		);
 	}
@@ -304,7 +308,8 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 	);
 }
 
-function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+//TODO: Check if still relevant
+export function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const hasZeroAPR = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0;
 	const monthlyAPR = currentVault.apr.points.monthAgo;
 	const weeklyAPR = currentVault.apr.points.weekAgo;
@@ -372,6 +377,73 @@ function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}): Reac
 					fallback={'NEW'}>
 					<RenderAmount
 						value={isZero(monthlyAPR) ? weeklyAPR : monthlyAPR}
+						shouldHideTooltip={hasZeroAPR}
+						symbol={'percent'}
+						decimals={6}
+					/>
+				</Renderable>
+			</b>
+		</div>
+	);
+}
+
+function Vault7DaysAPR({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+	const hasZeroAPR = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0;
+	const weeklyAPR = currentVault.apr.points.weekAgo;
+	const isNew = currentVault.apr?.type.includes('new') && isZero(weeklyAPR);
+
+	return (
+		<div className={'flex flex-col md:text-right'}>
+			<b className={'yearn--table-data-section-item-value'}>
+				<Renderable
+					shouldRender={!isNew}
+					fallback={'NEW'}>
+					<RenderAmount
+						value={weeklyAPR}
+						shouldHideTooltip={hasZeroAPR}
+						symbol={'percent'}
+						decimals={6}
+					/>
+				</Renderable>
+			</b>
+		</div>
+	);
+}
+function Vault30DaysAPR({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+	const hasZeroAPR = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0;
+	const monthly = currentVault.apr.points.monthAgo;
+	const isNew = currentVault.apr?.type.includes('new') && isZero(monthly);
+
+	return (
+		<div className={'flex flex-col md:text-right'}>
+			<b className={'yearn--table-data-section-item-value'}>
+				<Renderable
+					shouldRender={!isNew}
+					fallback={'NEW'}>
+					<RenderAmount
+						value={monthly}
+						shouldHideTooltip={hasZeroAPR}
+						symbol={'percent'}
+						decimals={6}
+					/>
+				</Renderable>
+			</b>
+		</div>
+	);
+}
+
+function VaultSpotAPR({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+	const hasZeroAPR = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0;
+	const spotAPR = currentVault?.apr?.forwardAPR.composite.v3OracleCurrentAPR;
+
+	return (
+		<div className={'flex flex-col md:text-right'}>
+			<b className={'yearn--table-data-section-item-value'}>
+				<Renderable
+					shouldRender={!currentVault.apr?.type.includes('new')}
+					fallback={'NEW'}>
+					<RenderAmount
+						value={spotAPR}
 						shouldHideTooltip={hasZeroAPR}
 						symbol={'percent'}
 						decimals={6}
@@ -450,7 +522,7 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 					)}
 				/>
 
-				<div className={cl('col-span-5 z-10', 'flex flex-row items-center justify-between')}>
+				<div className={cl('col-span-4 z-10', 'flex flex-row items-center justify-between')}>
 					<div className={'flex flex-row gap-6'}>
 						<div className={'mt-2.5 h-8 w-8 rounded-full md:flex'}>
 							<ImageWithFallback
@@ -486,27 +558,41 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 
 				<div
 					className={cl(
-						'col-span-7 z-10',
-						'grid grid-cols-2 md:grid-cols-10',
+						'col-span-8 z-10',
+						'grid grid-cols-2 md:grid-cols-7',
 						'gap-1 md:gap-x-7',
 						'mt-4 md:mt-0'
 					)}>
 					<div
-						className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'}
+						className={'yearn--table-data-section-item col-span-1 flex-row md:flex-col'}
 						datatype={'number'}>
 						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Estimated APR'}</p>
 						<VaultForwardAPR currentVault={currentVault} />
 					</div>
 
 					<div
-						className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'}
+						className={'yearn--table-data-section-item col-span-1 flex-row md:flex-col'}
 						datatype={'number'}>
 						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Historical APR'}</p>
-						<VaultHistoricalAPR currentVault={currentVault} />
+						<VaultSpotAPR currentVault={currentVault} />
 					</div>
 
 					<div
-						className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'}
+						className={'yearn--table-data-section-item col-span-1 flex-row md:flex-col'}
+						datatype={'number'}>
+						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'7 days APR'}</p>
+						<Vault7DaysAPR currentVault={currentVault} />
+					</div>
+
+					<div
+						className={'yearn--table-data-section-item col-span-1 flex-row md:flex-col'}
+						datatype={'number'}>
+						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'30 days APR'}</p>
+						<Vault30DaysAPR currentVault={currentVault} />
+					</div>
+
+					<div
+						className={'yearn--table-data-section-item col-span-1 flex-row md:flex-col'}
 						datatype={'number'}>
 						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Available'}</p>
 						<p
@@ -531,14 +617,14 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 					</div>
 
 					<div
-						className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'}
+						className={'yearn--table-data-section-item col-span-1 flex-row md:flex-col'}
 						datatype={'number'}>
 						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Deposited'}</p>
 						<VaultStakedAmount currentVault={currentVault} />
 					</div>
 
 					<div
-						className={'yearn--table-data-section-item col-span-2 !mt-0 flex-row md:!mt-4 md:flex-col'}
+						className={'yearn--table-data-section-item col-span-1 !mt-0 flex-row md:!mt-4 md:flex-col'}
 						datatype={'number'}>
 						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'TVL'}</p>
 						<div className={'flex flex-col pt-0 text-right md:pt-8'}>

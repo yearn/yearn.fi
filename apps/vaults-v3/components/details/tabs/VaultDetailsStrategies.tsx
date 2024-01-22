@@ -78,12 +78,14 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 								onChangeSortDirection(newSortDirection as TSortDirection);
 							}}
 							items={[
-								{label: 'Vault', value: 'name', sortable: true, className: 'col-span-2'},
-								{label: 'Est. APR', value: 'estAPR', sortable: true, className: 'col-span-2'},
-								{label: 'Hist. APR', value: 'apr', sortable: true, className: 'col-span-2'},
-								{label: 'Available', value: 'available', sortable: true, className: 'col-span-2'},
-								{label: 'Holdings', value: 'deposited', sortable: true, className: 'col-span-2'},
-								{label: 'Deposits', value: 'tvl', sortable: true, className: 'col-span-2'}
+								{label: 'Vault', value: 'name', sortable: true, className: 'col-span-5'},
+								{label: 'Est. APR', value: 'estAPR', sortable: true, className: 'col-span-1'},
+								{label: 'Spot APR', value: 'estAPR', sortable: true, className: 'col-span-1'},
+								{label: '7d APR', value: 'apr', sortable: true, className: 'col-span-1'},
+								{label: '30d APR', value: 'apr', sortable: true, className: 'col-span-1'},
+								{label: 'Available', value: 'available', sortable: true, className: 'col-span-1'},
+								{label: 'Holdings', value: 'deposited', sortable: true, className: 'col-span-1'},
+								{label: 'Deposits', value: 'tvl', sortable: true, className: 'col-span-1'}
 							]}
 						/>
 						<div className={'grid gap-4'}>
