@@ -12,9 +12,9 @@ import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
 import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {useFetch} from '@common/hooks/useFetch';
+import {useYDaemonBaseURI} from '@common/hooks/useYDaemonBaseURI';
 import {IconChevron} from '@common/icons/IconChevron';
 import {yDaemonVaultHarvestsSchema} from '@common/schemas/yDaemonVaultsSchemas';
-import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault, TYDaemonVaultHarvests} from '@common/schemas/yDaemonVaultsSchemas';

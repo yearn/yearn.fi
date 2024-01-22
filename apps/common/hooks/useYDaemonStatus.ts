@@ -1,6 +1,6 @@
 import useSWR from 'swr';
 import {baseFetcher} from '@yearn-finance/web-lib/utils/fetchers';
-import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
+import {useYDaemonBaseURI} from '@common/hooks/useYDaemonBaseURI';
 
 import type {SWRResponse} from 'swr';
 

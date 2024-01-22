@@ -60,19 +60,6 @@ export function getVaultName(vault: TYDaemonVault): string {
 	return baseName;
 }
 
-export function formatDateShort(value: number): string {
-	let locale = 'fr-FR';
-	if (typeof navigator !== 'undefined') {
-		locale = navigator.language || 'fr-FR';
-	}
-
-	return new Intl.DateTimeFormat([locale, 'en-US'], {
-		year: 'numeric',
-		month: 'short',
-		day: '2-digit'
-	}).format(value);
-}
-
 /* 🔵 - Yearn Finance **************************************************************************
  **	Returns an object composed of each element of an array, using one of the elements
  **  properties as its key

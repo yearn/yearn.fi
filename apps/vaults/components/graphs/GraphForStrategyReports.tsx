@@ -4,7 +4,7 @@ import {formatAmount, formatPercent, isZero, toBigInt, toNormalizedValue} from '
 import {yDaemonReportsSchema} from '@vaults/schemas/reportsSchema';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
 import {useFetch} from '@common/hooks/useFetch';
-import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
+import {useYDaemonBaseURI} from '@common/hooks/useYDaemonBaseURI';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVaultStrategy} from '@common/schemas/yDaemonVaultsSchemas';

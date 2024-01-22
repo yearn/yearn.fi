@@ -7,10 +7,10 @@ import {RenderAmount} from '@common/components/RenderAmount';
 import {useBalance} from '@common/hooks/useBalance';
 import {useFetch} from '@common/hooks/useFetch';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
+import {useYDaemonBaseURI} from '@common/hooks/useYDaemonBaseURI';
 import {IconQuestion} from '@common/icons/IconQuestion';
 import {yDaemonSingleEarnedSchema} from '@common/schemas/yDaemonEarnedSchema';
 import {getVaultName} from '@common/utils';
-import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 
 import type {ReactElement} from 'react';
 import type {TNormalizedBN} from '@builtbymom/web3/types';

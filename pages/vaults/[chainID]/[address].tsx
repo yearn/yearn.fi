@@ -12,9 +12,9 @@ import {Wrapper} from '@vaults/Wrapper';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useWallet} from '@common/contexts/useWallet';
 import {useFetch} from '@common/hooks/useFetch';
+import {useYDaemonBaseURI} from '@common/hooks/useYDaemonBaseURI';
 import {type TYDaemonVault, yDaemonVaultSchema} from '@common/schemas/yDaemonVaultsSchemas';
 import {variants} from '@common/utils/animations';
-import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 
 import type {GetStaticPaths, GetStaticProps} from 'next';
 import type {NextRouter} from 'next/router';

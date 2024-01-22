@@ -4,8 +4,8 @@ import {isZeroAddress, toAddress, toNormalizedBN} from '@builtbymom/web3/utils';
 import {useDeepCompareEffect} from '@react-hookz/web';
 import {useWallet} from '@common/contexts/useWallet';
 import {useFetch} from '@common/hooks/useFetch';
+import {useYDaemonBaseURI} from '@common/hooks/useYDaemonBaseURI';
 import {yDaemonTokenListBalances} from '@common/schemas/yDaemonTokenListBalances';
-import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 
 import type {ReactElement} from 'react';
 import type {TAddress, TDict, TNormalizedBN} from '@builtbymom/web3/types';

@@ -4,13 +4,13 @@ import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {toAddress} from '@builtbymom/web3/utils';
 import {useDeepCompareMemo, useLocalStorageValue} from '@react-hookz/web';
 import {useFetch} from '@common/hooks/useFetch';
+import {useYDaemonBaseURI} from '@common/hooks/useYDaemonBaseURI';
 import {yDaemonEarnedSchema} from '@common/schemas/yDaemonEarnedSchema';
 import {yDaemonPricesChainSchema} from '@common/schemas/yDaemonPricesSchema';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 import {yDaemonTokensChainSchema} from '@common/schemas/yDaemonTokensSchema';
 import {yDaemonVaultsSchema} from '@common/schemas/yDaemonVaultsSchemas';
 import {DEFAULT_MAX_LOSS, DEFAULT_SLIPPAGE} from '@common/utils/constants';
-import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 
 import type {ReactElement} from 'react';
 import type {KeyedMutator} from 'swr';

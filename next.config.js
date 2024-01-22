@@ -59,6 +59,21 @@ const config = {
 				permanent: true
 			},
 			{
+				source: '/ycrv/:path*',
+				destination: 'https://ycrv.yearn.fi/:path*',
+				permanent: true
+			},
+			{
+				source: '/veyfi/:path*',
+				destination: 'https://veyfi.yearn.fi/:path*',
+				permanent: true
+			},
+			{
+				source: '/vaults/factory/:path*',
+				destination: 'https://factory.yearn.fi/:path*',
+				permanent: true
+			},
+			{
 				source: '/:path*',
 				has: [{type: 'host', value: 'vote.yearn.fi'}],
 				destination: 'https://yearn.fi/veyfi/:path*',
@@ -88,6 +103,11 @@ const config = {
 			{
 				source: '/snapshot',
 				destination: 'https://snapshot.org/#/veyfi.eth',
+				permanent: true
+			},
+			{
+				source: '/github',
+				destination: 'https://github.com/yearn/yearn.fi',
 				permanent: true
 			}
 		];
