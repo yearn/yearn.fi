@@ -1,7 +1,6 @@
 import {Fragment, useEffect, useMemo, useState} from 'react';
 import {useRouter} from 'next/router';
 import {Listbox, Transition} from '@headlessui/react';
-import * as Sentry from '@sentry/nextjs';
 import {VaultInfo} from '@vaults/components/details/tabs/VaultDetailsTabsWrapper';
 import {VaultDetailsAbout} from '@vaults-v3/components/details/tabs/VaultDetailsAbout';
 import {VaultDetailsStrategies} from '@vaults-v3/components/details/tabs/VaultDetailsStrategies';
@@ -164,7 +163,7 @@ function AddToWalletLink({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 				}
 			});
 		} catch (error) {
-			Sentry.captureException(error);
+			console.error(error);
 			// Token has not been added to MetaMask.
 		}
 	}

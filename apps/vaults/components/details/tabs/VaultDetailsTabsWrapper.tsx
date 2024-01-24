@@ -1,7 +1,6 @@
 import {Fragment, useEffect, useMemo, useState} from 'react';
 import {useRouter} from 'next/router';
 import {Listbox, Transition} from '@headlessui/react';
-import * as Sentry from '@sentry/nextjs';
 import {VaultDetailsAbout} from '@vaults/components/details/tabs/VaultDetailsAbout';
 import {VaultDetailsHistorical} from '@vaults/components/details/tabs/VaultDetailsHistorical';
 import {VaultDetailsStrategies} from '@vaults/components/details/tabs/VaultDetailsStrategies';
@@ -241,7 +240,7 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 				}
 			});
 		} catch (error) {
-			Sentry.captureException(error);
+			console.error(error);
 			// Token has not been added to MetaMask.
 		}
 	}

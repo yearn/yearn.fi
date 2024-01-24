@@ -54,7 +54,6 @@
 	"devDependencies": {
 		"@next/bundle-analyzer": "^14.0.3",
 		"@next/eslint-plugin-next": "^14.0.3",
-		"@sentry/nextjs": "^7.83.0",
 		"@testing-library/react": "^14.1.2",
 		"@types/node": "^20.10.0",
 		"@types/react": "^18.2.39",
