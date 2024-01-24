@@ -80,7 +80,7 @@ function LogoPopover(): ReactElement {
 						leaveTo={'opacity-0 translate-y-1'}
 						className={'relative z-[9999999]'}>
 						<Popover.Panel
-							className={'absolute left-1/2 z-20 w-80 -translate-x-1/2 px-4 pt-6 sm:px-0 md:w-[560px]'}>
+							className={'absolute left-1/2 z-20 w-80 -translate-x-1/2 px-4 pt-6 sm:px-0 md:w-[800px]'}>
 							<div className={'overflow-hidden pt-4 shadow-xl'}>
 								<div
 									className={cl(

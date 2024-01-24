@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import vaultsManifest from 'public/apps/vaults-manifest.json';
 import veyfiManifest from 'public/apps/veyfi-manifest.json';
 import ybribeManifest from 'public/apps/ybribe-manifest.json';
@@ -22,11 +23,12 @@ export enum AppName {
 	VEYFI = 'veYFI',
 	YBRIBE = 'yBribe',
 	YETH = 'yETH',
-	YPRISMA = 'yPrisma'
+	YPRISMA = 'yPrisma',
+	JUICED = 'Juiced'
 }
 
 type TApp = {
-	name: AppName;
+	name: AppName | string;
 	href: string;
 	menu: TMenu[];
 	manifest: TMetaFile;
@@ -49,8 +51,25 @@ export const APPS: {[key in AppName]: TApp} = {
 			/>
 		)
 	},
+	Juiced: {
+		name: `${AppName.JUICED} Vaults`,
+		href: 'https://juiced.yearn.fi',
+		menu: [],
+		manifest: {} as TMetaFile,
+		icon: (
+			<Image
+				className={'h-8 w-8'}
+				src={'/juiced.png'}
+				width={64}
+				height={64}
+				alt={'juiced'}
+				loading={'eager'}
+				priority
+			/>
+		)
+	},
 	Vaults: {
-		name: AppName.VAULTS,
+		name: `${AppName.VAULTS} V2`,
 		href: '/vaults',
 		menu: VAULTS_MENU,
 		manifest: vaultsManifest,

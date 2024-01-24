@@ -1,4 +1,5 @@
 import {useEffect, useRef} from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import {AnimatedGradientBackgroundForV3} from '@vaults-v3/components/AnimatedGradientBackground';
 import {V3Mask} from '@vaults-v3/Mark';
@@ -23,8 +24,23 @@ const apps = [
 		)
 	},
 	{
+		href: 'https://juiced.yearn.fi',
+		title: 'Juiced Vaults',
+		description: 'freshly squeezed and bursting with yield.',
+		icon: (
+			<ImageWithFallback
+				alt={'Juiced'}
+				width={100}
+				height={100}
+				src={'/juiced.png'}
+				loading={'eager'}
+				priority
+			/>
+		)
+	},
+	{
 		href: '/vaults',
-		title: 'Vaults',
+		title: 'Vaults V2',
 		description: 'deposit tokens and receive yield.',
 		icon: (
 			<LogoYearn
@@ -126,6 +142,23 @@ function AppBox({app}: {app: (typeof apps)[0]}): ReactElement {
 					</div>
 					<AnimatedGradientBackgroundForV3 />
 				</div>
+			</Link>
+		);
+	}
+
+	if (app.title === 'Juiced Vaults') {
+		return (
+			<Link
+				prefetch={false}
+				key={app.href}
+				href={app.href}>
+				<Image
+					src={'/juicedOG.png'}
+					className={'h-full w-full rounded-3xl'}
+					width={1000}
+					height={500}
+					alt={''}
+				/>
 			</Link>
 		);
 	}
