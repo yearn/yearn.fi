@@ -1,12 +1,12 @@
 import {useCallback, useState} from 'react';
+import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {toBigInt, toNormalizedBN} from '@builtbymom/web3/utils';
+import {defaultTxStatus} from '@builtbymom/web3/utils/wagmi';
 import {useVotingEscrow} from '@veYFI/contexts/useVotingEscrow';
 import {withdrawLockedVeYFI} from '@veYFI/utils/actions';
 import {VEYFI_CHAIN_ID} from '@veYFI/utils/constants';
 import {Button} from '@yearn-finance/web-lib/components/Button';
-import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {getTimeUntil, toWeeks} from '@yearn-finance/web-lib/utils/time';
-import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {AmountInput} from '@common/components/AmountInput';
 import {useWallet} from '@common/contexts/useWallet';
 

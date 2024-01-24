@@ -1,4 +1,4 @@
-import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
+import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {useBribes} from '@yBribe/contexts/useBribes';
 
 import type {ReactElement} from 'react';

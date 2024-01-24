@@ -1,5 +1,5 @@
 import {createContext, useContext, useMemo} from 'react';
-import {isZeroAddress} from '@yearn-finance/web-lib/utils/address';
+import {isZeroAddress} from '@builtbymom/web3/utils';
 import {useFetch} from '@common/hooks/useFetch';
 import {coinGeckoPricesSchema} from '@common/schemas/coinGeckoSchemas';
 import {curveAllGaugesSchema, curveGaugesFromYearnSchema, curveWeeklyFeesSchema} from '@common/schemas/curveSchemas';

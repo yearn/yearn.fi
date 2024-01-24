@@ -10,8 +10,8 @@ import {SearchBar} from '@common/components/SearchBar';
 import {useYearn} from '@common/contexts/useYearn';
 
 import type {ReactElement} from 'react';
+import type {TSortDirection} from '@builtbymom/web3/types';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
-import type {TSortDirection} from '@common/types/types';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 
 export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVault}): ReactElement {

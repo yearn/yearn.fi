@@ -1,7 +1,7 @@
 /* eslint-disable no-irregular-whitespace */
 import {useCallback, useEffect, useRef} from 'react';
+import {formatAmount} from '@builtbymom/web3/utils';
 import {useMountEffect} from '@react-hookz/web';
-import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 
 import type {ReactElement} from 'react';
 

@@ -1,5 +1,5 @@
+import {formatPercent} from '@builtbymom/web3/utils';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
-import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
 
 import type {ReactElement} from 'react';

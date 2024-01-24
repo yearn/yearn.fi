@@ -4,8 +4,7 @@ import {useRouter} from 'next/router';
 import {useDeepCompareEffect, useMountEffect} from '@react-hookz/web';
 import {useSupportedChains} from '@common/hooks/useChains';
 
-import type {TDict} from '@yearn-finance/web-lib/types';
-import type {TSortDirection} from '@common/types/types';
+import type {TDict, TSortDirection} from '@builtbymom/web3/types';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 
 type TQueryArgs = {

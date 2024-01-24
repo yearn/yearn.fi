@@ -1,7 +1,7 @@
-import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {toAddress} from '@builtbymom/web3/utils';
 
-import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TWeeks} from '@yearn-finance/web-lib/utils/time';
+import type {TAddress} from '@builtbymom/web3/types';
 
 export const VEYFI_CHAIN_ID = 1;
 

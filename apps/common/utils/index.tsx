@@ -1,6 +1,6 @@
 import {request} from 'graphql-request';
 import {formatUnits, parseUnits} from 'viem';
-import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {formatPercent, toAddress, toBigInt, toNormalizedValue} from '@builtbymom/web3/utils';
 import {
 	LPYCRV_TOKEN_ADDRESS,
 	LPYCRV_V2_TOKEN_ADDRESS,
@@ -8,11 +8,9 @@ import {
 	YVBOOST_TOKEN_ADDRESS,
 	YVECRV_TOKEN_ADDRESS
 } from '@yearn-finance/web-lib/utils/constants';
-import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 
 import type {GraphQLResponse} from 'graphql-request/build/esm/types';
-import type {TDict} from '@yearn-finance/web-lib/types';
+import type {TDict} from '@builtbymom/web3/types';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
 export function max(input: bigint, balance: bigint): bigint {
@@ -51,9 +49,9 @@ export function getAmountWithSlippage(from: string, to: string, value: bigint, s
 	if (hasLP && !isDirectDeposit) {
 		const minAmountStr = Number(formatUnits(toBigInt(value), 18));
 		const minAmountWithSlippage = parseUnits((minAmountStr * (1 - slippage / 100)).toFixed(18) as `${number}`, 18);
-		return formatToNormalizedValue(toBigInt(minAmountWithSlippage), 18);
+		return toNormalizedValue(toBigInt(minAmountWithSlippage), 18);
 	}
-	return formatToNormalizedValue(value, 18);
+	return toNormalizedValue(value, 18);
 }
 
 export function getVaultName(vault: TYDaemonVault): string {

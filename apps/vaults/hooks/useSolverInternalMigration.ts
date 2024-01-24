@@ -1,20 +1,18 @@
 import {useCallback, useMemo, useRef} from 'react';
+import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {assert, toAddress, toBigInt, toNormalizedBN} from '@builtbymom/web3/utils';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {getVaultEstimateOut} from '@vaults/utils/getVaultEstimateOut';
 import {readContract} from '@wagmi/core';
-import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
 import {MAX_UINT_256, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 import {allowanceOf, approveERC20, migrateShares} from '@common/utils/actions';
-import {assert} from '@common/utils/assert';
 import {ZAP_CRV_ABI} from '@yCRV/utils/abi/zapCRV.abi';
 import {zapCRV} from '@yCRV/utils/actions';
 
-import type {TDict} from '@yearn-finance/web-lib/types';
-import type {TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
-import type {TNormalizedBN} from '@common/types/types';
+import type {TDict, TNormalizedBN} from '@builtbymom/web3/types';
+import type {TTxStatus} from '@builtbymom/web3/utils/wagmi';
 import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
 
 export function useSolverInternalMigration(): TSolverContext {

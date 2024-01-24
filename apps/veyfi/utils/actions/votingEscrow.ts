@@ -1,18 +1,15 @@
 import {stringToHex} from 'viem';
+import {assert, assertAddress, toBigInt} from '@builtbymom/web3/utils';
+import {handleTx} from '@builtbymom/web3/utils/wagmi';
 import {SNAPSHOT_DELEGATE_REGISTRY_ABI} from '@veYFI/utils/abi/SnapshotDelegateRegistry.abi';
 import {VEYFI_ABI} from '@veYFI/utils/abi/veYFI.abi';
 import {YEARN_SNAPSHOT_SPACE} from '@veYFI/utils/constants';
 import {prepareWriteContract} from '@wagmi/core';
 import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
-import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {handleTx} from '@yearn-finance/web-lib/utils/wagmi/provider';
-import {assertAddress} from '@yearn-finance/web-lib/utils/wagmi/utils';
-import {assert} from '@common/utils/assert';
 
-import type {TAddress} from '@yearn-finance/web-lib/types';
 import type {TSeconds} from '@yearn-finance/web-lib/utils/time';
-import type {TWriteTransaction} from '@yearn-finance/web-lib/utils/wagmi/provider';
-import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
+import type {TAddress} from '@builtbymom/web3/types';
+import type {TTxResponse, TWriteTransaction} from '@builtbymom/web3/utils/wagmi';
 
 type TApproveLock = TWriteTransaction & {
 	votingEscrowAddress: TAddress;

@@ -1,8 +1,8 @@
-import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {toBigInt} from '@builtbymom/web3/utils';
 import {roundToWeek, toSeconds, YEAR} from '@yearn-finance/web-lib/utils/time';
 
-import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TMilliseconds, TSeconds} from '@yearn-finance/web-lib/utils/time';
+import type {TDict} from '@builtbymom/web3/types';
 
 const MAX_LOCK: TSeconds = toSeconds(roundToWeek(YEAR * 4));
 

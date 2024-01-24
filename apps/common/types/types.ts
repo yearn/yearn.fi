@@ -1,7 +1,6 @@
 import type {ReactElement} from 'react';
-import type {TAddress, TDict, TNDict} from '@yearn-finance/web-lib/types';
-import type {TSolver} from '@common/schemas/yDaemonTokenListBalances';
-import type {multicall} from '@wagmi/core';
+import type {TAddress, TDict, TNDict, TToken as TToken} from '@builtbymom/web3/types';
+import type {TSolver, TSupportedZaps} from '@common/schemas/yDaemonTokenListBalances';
 
 export type TDropdownOption = {
 	label: string;
@@ -54,24 +53,11 @@ export type TDropdownGaugeItemProps = {
 	option: TDropdownGaugeOption;
 };
 
-export type TNormalizedBN = {
-	raw: bigint;
-	normalized: number | string;
-};
-
-export type TToken = {
-	address: TAddress;
-	name: string;
-	symbol: string;
-	decimals: number;
-	chainID: number;
-	logoURI?: string;
-	value: number;
+export type TYToken = TToken & {
+	supportedZaps: TSupportedZaps[];
 	stakingValue: number;
-	price: TNormalizedBN;
-	balance: TNormalizedBN;
 };
-export type TChainTokens = TNDict<TDict<TToken>>;
+export type TYChainTokens = TNDict<TDict<TYToken>>;
 
 export type TGraphData = {
 	name: string;
@@ -83,7 +69,3 @@ export type TMessariGraphData = {
 	tvl: number;
 	pps: number;
 };
-
-export type TSortDirection = 'asc' | 'desc' | '';
-
-export type TMulticallContract = Parameters<typeof multicall>[0]['contracts'][0];

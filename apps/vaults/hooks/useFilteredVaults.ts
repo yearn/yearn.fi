@@ -5,7 +5,7 @@ import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import {isAutomatedVault, type TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
-import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
+import type {TAddress, TDict} from '@builtbymom/web3/types';
 
 export function useFilteredVaults(
 	vaultMap: TDict<TYDaemonVault>,

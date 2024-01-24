@@ -1,7 +1,5 @@
+import {formatAmount, formatUSD, toBigInt, toNormalizedValue, truncateHex} from '@builtbymom/web3/utils';
 import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
-import {truncateHex} from '@yearn-finance/web-lib/utils/address';
-import {toBigInt, toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {formatAmount, formatUSD} from '@yearn-finance/web-lib/utils/format.number';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
 import {IconSpinner} from '@common/icons/IconSpinner';
 import {

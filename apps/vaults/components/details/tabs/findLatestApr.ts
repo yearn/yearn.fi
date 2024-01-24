@@ -1,4 +1,4 @@
-import {isZero} from '@yearn-finance/web-lib/utils/isZero';
+import {isZero} from '@builtbymom/web3/utils';
 
 import type {TYDaemonReport, TYDaemonReports} from '@vaults/schemas/reportsSchema';
 

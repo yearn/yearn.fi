@@ -1,9 +1,9 @@
 import {type ReactElement, useMemo} from 'react';
+import {isZero} from '@builtbymom/web3/utils';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {amountV2} from '@yearn-finance/web-lib/utils/format.number';
-import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 
-import type {TAmount} from '@yearn-finance/web-lib/utils/format.number';
+import type {TAmount} from '@builtbymom/web3/utils';
 
 export function RenderAmount(props: TAmount & {shouldHideTooltip?: boolean}): ReactElement {
 	const normalizedRawValue = useMemo((): string => {

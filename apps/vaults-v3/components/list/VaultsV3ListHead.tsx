@@ -3,7 +3,7 @@ import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {IconChevronPlain} from '@common/icons/IconChevronPlain';
 
 import type {ReactElement} from 'react';
-import type {TSortDirection} from '@common/types/types';
+import type {TSortDirection} from '@builtbymom/web3/types';
 
 export type TListHead = {
 	items: {

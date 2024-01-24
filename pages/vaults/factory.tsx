@@ -1,4 +1,8 @@
 import {useCallback, useMemo, useState} from 'react';
+import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {useAsyncTrigger} from '@builtbymom/web3/hooks/useAsyncTrigger';
+import {decodeAsBoolean, decodeAsString, formatAmount, isZero, isZeroAddress, toAddress} from '@builtbymom/web3/utils';
+import {defaultTxStatus} from '@builtbymom/web3/utils/wagmi';
 import {VaultListFactory} from '@vaults/components/list/VaultListFactory';
 import {YFACTORY_SUPPORTED_NETWORK} from '@vaults/constants';
 import {VAULT_FACTORY_ABI} from '@vaults/utils/abi/vaultFactory.abi';
@@ -8,24 +12,17 @@ import {erc20ABI, multicall} from '@wagmi/core';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {toast} from '@yearn-finance/web-lib/components/yToast';
-import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
-import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {VAULT_FACTORY_ADDRESS, ZERO_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {decodeAsBoolean, decodeAsString} from '@yearn-finance/web-lib/utils/decoder';
-import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
-import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
-import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {Dropdown} from '@common/components/GaugeDropdown';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {CurveContextApp, useCurve} from '@common/contexts/useCurve';
 import {useYearn} from '@common/contexts/useYearn';
-import {useAsyncTrigger} from '@common/hooks/useAsyncEffect';
 
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
-import type {TAddress} from '@yearn-finance/web-lib/types';
+import type {TAddress} from '@builtbymom/web3/types';
 import type {TCurveGaugeFromYearn, TCurveGaugesFromYearn} from '@common/schemas/curveSchemas';
 import type {TDropdownGaugeOption} from '@common/types/types';
 
@@ -288,9 +285,10 @@ function Factory(): ReactElement {
 												: toAddress(gaugeDisplayData?.poolAddress)}
 										</p>
 										<a
-											href={`${
-												getNetwork(YFACTORY_SUPPORTED_NETWORK)?.defaultBlockExplorer
-											}/address/${toAddress(gaugeDisplayData?.poolAddress)}`}
+											href={`${getNetwork(YFACTORY_SUPPORTED_NETWORK)
+												?.defaultBlockExplorer}/address/${toAddress(
+												gaugeDisplayData?.poolAddress
+											)}`}
 											target={'_blank'}
 											rel={'noreferrer'}
 											className={'ml-4 cursor-pointer text-neutral-900'}>
@@ -317,9 +315,10 @@ function Factory(): ReactElement {
 												: toAddress(gaugeDisplayData?.gaugeAddress)}
 										</p>
 										<a
-											href={`${
-												getNetwork(YFACTORY_SUPPORTED_NETWORK)?.defaultBlockExplorer
-											}/address/${toAddress(gaugeDisplayData?.gaugeAddress)}`}
+											href={`${getNetwork(YFACTORY_SUPPORTED_NETWORK)
+												?.defaultBlockExplorer}/address/${toAddress(
+												gaugeDisplayData?.gaugeAddress
+											)}`}
 											target={'_blank'}
 											rel={'noreferrer'}
 											className={'ml-4 cursor-pointer text-neutral-900'}>

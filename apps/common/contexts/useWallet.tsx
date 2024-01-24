@@ -1,7 +1,7 @@
 import {createContext, memo, useCallback, useContext, useEffect, useMemo, useState} from 'react';
+import {toAddress, toNormalizedBN} from '@builtbymom/web3/utils';
 import {useDeepCompareMemo} from '@react-hookz/web';
 import {onLoadDone, onLoadStart} from '@yearn-finance/web-lib/contexts/useUI';
-import {toAddress, zeroAddress} from '@yearn-finance/web-lib/utils/address';
 import {
 	CRV_TOKEN_ADDRESS,
 	CVXCRV_TOKEN_ADDRESS,
@@ -13,31 +13,30 @@ import {
 	YVBOOST_TOKEN_ADDRESS,
 	YVECRV_TOKEN_ADDRESS
 } from '@yearn-finance/web-lib/utils/constants';
-import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {useYearn} from '@common/contexts/useYearn';
 import {type TUseBalancesTokens, useBalances} from '@common/hooks/useMultichainBalances';
 
 import type {ReactElement} from 'react';
-import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
+import type {TAddress, TDict, TNormalizedBN} from '@builtbymom/web3/types';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
-import type {TChainTokens, TNormalizedBN, TToken} from '@common/types/types';
+import type {TYChainTokens, TYToken} from '@common/types/types';
 
 export type TWalletContext = {
-	getToken: ({address, chainID}: TTokenAndChain) => TToken;
+	getToken: ({address, chainID}: TTokenAndChain) => TYToken;
 	getBalance: ({address, chainID}: TTokenAndChain) => TNormalizedBN;
 	getPrice: ({address, chainID}: TTokenAndChain) => TNormalizedBN;
-	balances: TChainTokens;
+	balances: TYChainTokens;
 	cumulatedValueInV2Vaults: number;
 	cumulatedValueInV3Vaults: number;
 	isLoading: boolean;
 	shouldUseForknetBalances: boolean;
-	refresh: (tokenList?: TUseBalancesTokens[]) => Promise<TChainTokens>;
+	refresh: (tokenList?: TUseBalancesTokens[]) => Promise<TYChainTokens>;
 	triggerForknetBalances: () => void;
 };
 type TTokenAndChain = {address: TAddress; chainID: number};
 
-const defaultToken: TToken = {
-	address: zeroAddress,
+const defaultToken: TYToken = {
+	address: toAddress(''),
 	name: '',
 	symbol: '',
 	decimals: 18,
@@ -45,11 +44,12 @@ const defaultToken: TToken = {
 	value: 0,
 	stakingValue: 0,
 	price: toNormalizedBN(0),
-	balance: toNormalizedBN(0)
+	balance: toNormalizedBN(0),
+	supportedZaps: []
 };
 
 const defaultProps = {
-	getToken: (): TToken => defaultToken,
+	getToken: (): TYToken => defaultToken,
 	getBalance: (): TNormalizedBN => toNormalizedBN(0),
 	getPrice: (): TNormalizedBN => toNormalizedBN(0),
 	balances: {},
@@ -57,7 +57,7 @@ const defaultProps = {
 	cumulatedValueInV3Vaults: 0,
 	isLoading: true,
 	shouldUseForknetBalances: false,
-	refresh: async (): Promise<TChainTokens> => ({}),
+	refresh: async (): Promise<TYChainTokens> => ({}),
 	triggerForknetBalances: (): void => {}
 };
 
@@ -163,15 +163,15 @@ function useYearnTokens({shouldUseForknetBalances}: {shouldUseForknetBalances: b
 }
 
 function useYearnBalances({shouldUseForknetBalances}: {shouldUseForknetBalances: boolean}): {
-	tokens: TChainTokens;
+	tokens: TYChainTokens;
 	isLoading: boolean;
-	onRefresh: (tokenToUpdate?: TUseBalancesTokens[]) => Promise<TChainTokens>;
+	onRefresh: (tokenToUpdate?: TUseBalancesTokens[]) => Promise<TYChainTokens>;
 } {
 	const {prices} = useYearn();
 	const allTokens = useYearnTokens({shouldUseForknetBalances});
 	const {data: tokensRaw, onUpdate, onUpdateSome, isLoading} = useBalances({tokens: allTokens, prices});
 
-	const tokens = useDeepCompareMemo((): TChainTokens => {
+	const tokens = useDeepCompareMemo((): TYChainTokens => {
 		const _tokens = {...tokensRaw};
 		if (shouldUseForknetBalances) {
 			_tokens[1] = _tokens[1337]; // eslint-disable-line prefer-destructuring
@@ -180,7 +180,7 @@ function useYearnBalances({shouldUseForknetBalances}: {shouldUseForknetBalances:
 	}, [tokensRaw, shouldUseForknetBalances]);
 
 	const onRefresh = useCallback(
-		async (tokenToUpdate?: TUseBalancesTokens[]): Promise<TChainTokens> => {
+		async (tokenToUpdate?: TUseBalancesTokens[]): Promise<TYChainTokens> => {
 			if (tokenToUpdate) {
 				const updatedBalances = await onUpdateSome(tokenToUpdate);
 				return updatedBalances;
@@ -239,7 +239,7 @@ export const WalletContextApp = memo(function WalletContextApp({children}: {chil
 	}, [vaults, vaultsMigrations, tokens]);
 
 	const getToken = useCallback(
-		({address, chainID}: TTokenAndChain): TToken => tokens?.[chainID || 1]?.[address] || defaultToken,
+		({address, chainID}: TTokenAndChain): TYToken => tokens?.[chainID || 1]?.[address] || defaultToken,
 		[tokens]
 	);
 	const getBalance = useCallback(

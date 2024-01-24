@@ -1,7 +1,7 @@
 import {cloneElement, Fragment, useMemo, useState} from 'react';
+import {formatPercent} from '@builtbymom/web3/utils';
 import {Combobox, Transition} from '@headlessui/react';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {IconChevron} from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';

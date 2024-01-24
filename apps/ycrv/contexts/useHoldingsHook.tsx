@@ -5,6 +5,7 @@
 import {useMemo} from 'react';
 import {parseEther} from 'viem';
 import {useContractReads} from 'wagmi';
+import {decodeAsBigInt, toBigInt} from '@builtbymom/web3/utils';
 import {
 	LPYCRV_TOKEN_ADDRESS,
 	LPYCRV_V2_TOKEN_ADDRESS,
@@ -15,8 +16,6 @@ import {
 	YCRV_TOKEN_ADDRESS,
 	YVECRV_TOKEN_ADDRESS
 } from '@yearn-finance/web-lib/utils/constants';
-import {decodeAsBigInt} from '@yearn-finance/web-lib/utils/decoder';
-import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {CURVE_CRV_YCRV_LP} from '@yCRV/utils/abi/curveCrvYCrvLp.abi';
 import {STYCRV_ABI} from '@yCRV/utils/abi/styCRV.abi';
 import {YVECRV_ABI} from '@yCRV/utils/abi/yveCRV.abi';

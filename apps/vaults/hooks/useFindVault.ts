@@ -1,6 +1,6 @@
 import {useMemo} from 'react';
 
-import type {TDict} from '@yearn-finance/web-lib/types';
+import type {TDict} from '@builtbymom/web3/types';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
 export function useFindVault(

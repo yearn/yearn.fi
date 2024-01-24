@@ -1,13 +1,11 @@
 import {useCallback, useState} from 'react';
+import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {isZero, toAddress, toBigInt, toNormalizedBN} from '@builtbymom/web3/utils';
+import {defaultTxStatus} from '@builtbymom/web3/utils/wagmi';
 import {useVaultStakingData} from '@vaults/hooks/useVaultStakingData';
 import {claim as claimAction, stake as stakeAction, unstake as unstakeAction} from '@vaults/utils/actions';
 import {Button} from '@yearn-finance/web-lib/components/Button';
-import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
-import {isZero} from '@yearn-finance/web-lib/utils/isZero';
-import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {Input} from '@common/components/Input';
 import {useWallet} from '@common/contexts/useWallet';
 import {useToken} from '@common/hooks/useToken';

@@ -1,15 +1,22 @@
 import {useCallback, useMemo, useState} from 'react';
 import {erc20ABI, useContractReads} from 'wagmi';
+import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {
+	decodeAsBigInt,
+	decodeAsNumber,
+	decodeAsString,
+	handleInputChangeValue,
+	isZero,
+	isZeroAddress,
+	toAddress,
+	toBigInt,
+	toNormalizedBN,
+	toNormalizedValue
+} from '@builtbymom/web3/utils';
+import {defaultTxStatus} from '@builtbymom/web3/utils/wagmi';
 import {Button} from '@yearn-finance/web-lib/components/Button';
-import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {CURVE_BRIBE_V3_ADDRESS, ZERO_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {decodeAsBigInt, decodeAsNumber, decodeAsString} from '@yearn-finance/web-lib/utils/decoder';
-import {formatToNormalizedValue, toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
-import {handleInputChangeValue} from '@yearn-finance/web-lib/utils/handler';
-import {isZero} from '@yearn-finance/web-lib/utils/isZero';
-import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
 import {approveERC20} from '@common/utils/actions';
 import {YBRIBE_SUPPORTED_NETWORK} from '@yBribe/constants';
@@ -17,9 +24,8 @@ import {useBribes} from '@yBribe/contexts/useBribes';
 import {addReward} from '@yBribe/utils/actions';
 
 import type {ChangeEvent, ReactElement} from 'react';
-import type {TAddress} from '@yearn-finance/web-lib/types';
+import type {TAddress, TNormalizedBN} from '@builtbymom/web3/types';
 import type {TCurveGauge} from '@common/schemas/curveSchemas';
-import type {TNormalizedBN} from '@common/types/types';
 
 type TExpectedOutFetcher = {
 	name: string;
@@ -81,7 +87,7 @@ export function GaugeBribeModal({
 			symbol: decodeAsString(data[1]),
 			decimals: decodeAsNumber(data[2]) || Number(decodeAsBigInt(data[2])),
 			raw: decodeAsBigInt(data[3]),
-			normalized: formatToNormalizedValue(decodeAsBigInt(data[3]), decodeAsNumber(data[2])),
+			normalized: toNormalizedValue(decodeAsBigInt(data[3]), decodeAsNumber(data[2])),
 			allowance: decodeAsBigInt(data[4])
 		};
 	}, [data, isSuccess]);

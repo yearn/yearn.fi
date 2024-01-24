@@ -1,17 +1,17 @@
 import {createContext, memo, useCallback, useContext, useMemo} from 'react';
 import {erc20ABI, useContractRead, useContractReads} from 'wagmi';
+import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {decodeAsBigInt, decodeAsNumber, decodeAsString, isZeroAddress, toAddress} from '@builtbymom/web3/utils';
 import {VEYFI_ABI} from '@veYFI/utils/abi/veYFI.abi';
 import {VEYFI_POSITION_HELPER_ABI} from '@veYFI/utils/abi/veYFIPositionHelper.abi';
 import {VEYFI_CHAIN_ID} from '@veYFI/utils/constants';
-import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {allowanceKey, isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
 import {VEYFI_ADDRESS, VEYFI_POSITION_HELPER_ADDRESS, YFI_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {decodeAsBigInt, decodeAsNumber, decodeAsString} from '@yearn-finance/web-lib/utils/decoder';
 import {toMilliseconds} from '@yearn-finance/web-lib/utils/time';
 
 import type {ReactElement} from 'react';
-import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
 import type {TMilliseconds} from '@yearn-finance/web-lib/utils/time';
+import type {TAddress, TDict} from '@builtbymom/web3/types';
 
 export type TVotingEscrow = {
 	address: TAddress;

@@ -1,12 +1,14 @@
 import {createContext, useCallback, useContext, useEffect, useMemo, useState} from 'react';
+import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {formatPercent, isZero, toAddress, toBigInt, toNormalizedBN} from '@builtbymom/web3/utils';
+import {defaultTxStatus} from '@builtbymom/web3/utils/wagmi';
 import {useAsync, useIntervalEffect} from '@react-hookz/web';
 import {readContract} from '@wagmi/core';
 import {yToast} from '@yearn-finance/web-lib/components/yToast';
-import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {useAddToken} from '@yearn-finance/web-lib/hooks/useAddToken';
 import {useDismissToasts} from '@yearn-finance/web-lib/hooks/useDismissToasts';
 import {VAULT_ABI} from '@yearn-finance/web-lib/utils/abi/vault.abi';
-import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
 import {
 	LPYCRV_TOKEN_ADDRESS,
 	LPYCRV_V2_TOKEN_ADDRESS,
@@ -17,10 +19,6 @@ import {
 	YCRV_TOKEN_ADDRESS,
 	ZAP_YEARN_VE_CRV_ADDRESS
 } from '@yearn-finance/web-lib/utils/constants';
-import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {formatPercent} from '@yearn-finance/web-lib/utils/format.number';
-import {isZero} from '@yearn-finance/web-lib/utils/isZero';
-import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 import {getAmountWithSlippage, getVaultAPR} from '@common/utils';
@@ -32,8 +30,8 @@ import {ZAP_CRV_ABI} from '@yCRV/utils/abi/zapCRV.abi';
 import {zapCRV} from '@yCRV/utils/actions';
 
 import type {ReactElement} from 'react';
-import type {TAddress, VoidPromiseFunction} from '@yearn-finance/web-lib/types';
-import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
+import type {TAddress, TNormalizedBN} from '@builtbymom/web3/types';
+import type {TDropdownOption} from '@common/types/types';
 
 type TCardTransactor = {
 	selectedOptionFrom: TDropdownOption;
@@ -49,9 +47,9 @@ type TCardTransactor = {
 	set_selectedOptionTo: (option: TDropdownOption) => void;
 	set_amount: (amount: TNormalizedBN) => void;
 	set_hasTypedSomething: (hasTypedSomething: boolean) => void;
-	onApproveFrom: VoidPromiseFunction;
-	onIncreaseCRVAllowance: VoidPromiseFunction;
-	onZap: VoidPromiseFunction;
+	onApproveFrom: () => Promise<void>;
+	onIncreaseCRVAllowance: () => Promise<void>;
+	onZap: () => Promise<void>;
 };
 
 const CardTransactorContext = createContext<TCardTransactor>({

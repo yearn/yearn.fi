@@ -1,17 +1,17 @@
 import React, {createContext, memo, useCallback, useContext, useState} from 'react';
+import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {useAsyncTrigger} from '@builtbymom/web3/hooks/useAsyncTrigger';
+import {toNormalizedBN} from '@builtbymom/web3/utils';
 import {useDeepCompareMemo} from '@react-hookz/web';
 import {VEYFI_DYFI_ABI} from '@veYFI/utils/abi/veYFIdYFI.abi';
 import {VEYFI_OPTIONS_ABI} from '@veYFI/utils/abi/veYFIOptions.abi';
 import {VEYFI_CHAIN_ID, VEYFI_DYFI_ADDRESS, VEYFI_OPTIONS_ADDRESS} from '@veYFI/utils/constants';
 import {readContract} from '@wagmi/core';
-import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {BIG_ZERO, YFI_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {useAsyncTrigger} from '@common/hooks/useAsyncEffect';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
 
 import type {ReactElement} from 'react';
-import type {TNormalizedBN} from '@common/types/types';
+import type {TNormalizedBN} from '@builtbymom/web3/types';
 
 export type TOptionContext = {
 	getRequiredEth: (amount: bigint) => Promise<bigint>;

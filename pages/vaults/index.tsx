@@ -1,5 +1,7 @@
 import {Fragment, useEffect, useMemo} from 'react';
 import {motion, useSpring, useTransform} from 'framer-motion';
+import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {formatAmount, isZero} from '@builtbymom/web3/utils';
 import {VaultListOptions} from '@vaults/components/list/VaultListOptions';
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
 import {VaultsListInternalMigrationRow} from '@vaults/components/list/VaultsListInternalMigrationRow';
@@ -13,10 +15,7 @@ import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
 import {Wrapper} from '@vaults/Wrapper';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {IconChain} from '@yearn-finance/web-lib/icons/IconChain';
-import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
-import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {InfoTooltip} from '@common/components/InfoTooltip';
 import {ListHead} from '@common/components/ListHead';
 import {Pagination} from '@common/components/Pagination';
@@ -26,8 +25,8 @@ import {usePagination} from '@common/hooks/usePagination';
 
 import type {NextRouter} from 'next/router';
 import type {ReactElement, ReactNode} from 'react';
+import type {TSortDirection} from '@builtbymom/web3/types';
 import type {TYDaemonVault, TYDaemonVaults} from '@common/schemas/yDaemonVaultsSchemas';
-import type {TSortDirection} from '@common/types/types';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 
 function Counter({value}: {value: number}): ReactElement {
@@ -44,7 +43,7 @@ function Counter({value}: {value: number}): ReactElement {
 function HeaderUserPosition(): ReactElement {
 	const {cumulatedValueInV2Vaults} = useWallet();
 	const {earned} = useYearn();
-	const {options, isActive, address, openLoginModal, onSwitchChain} = useWeb3();
+	const {isActive, address, openLoginModal, onSwitchChain} = useWeb3();
 
 	const formatedYouEarned = useMemo((): string => {
 		const amount = (earned?.totalUnrealizedGainsUSD || 0) > 0 ? earned?.totalUnrealizedGainsUSD || 0 : 0;
@@ -63,7 +62,7 @@ function HeaderUserPosition(): ReactElement {
 					<Button
 						onClick={(): void => {
 							if (!isActive && address) {
-								onSwitchChain(options?.defaultChainID || 1);
+								onSwitchChain(1);
 							} else {
 								openLoginModal();
 							}

@@ -1,11 +1,8 @@
 import {useMemo} from 'react';
-import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {formatUSD} from '@yearn-finance/web-lib/utils/format.number';
+import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {formatUSD, isZero, toAddress, toBigInt, toNormalizedBN} from '@builtbymom/web3/utils';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {copyToClipboard} from '@yearn-finance/web-lib/utils/helpers';
-import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {RenderAmount} from '@common/components/RenderAmount';
 import {useBalance} from '@common/hooks/useBalance';
 import {useFetch} from '@common/hooks/useFetch';
@@ -16,9 +13,9 @@ import {getVaultName} from '@common/utils';
 import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 
 import type {ReactElement} from 'react';
+import type {TNormalizedBN} from '@builtbymom/web3/types';
 import type {TYDaemonEarnedSingle} from '@common/schemas/yDaemonEarnedSchema';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
-import type {TNormalizedBN} from '@common/types/types';
 
 type TVaultHeaderLineItemProps = {
 	label: string;

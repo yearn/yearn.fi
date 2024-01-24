@@ -1,5 +1,6 @@
 import {Fragment, useEffect, useState} from 'react';
 import {useRouter} from 'next/router';
+import {isZero} from '@builtbymom/web3/utils';
 import {Listbox, Transition} from '@headlessui/react';
 import {useUpdateEffect} from '@react-hookz/web';
 import {RewardsTab} from '@vaults/components/RewardsTab';
@@ -10,7 +11,6 @@ import {VaultDetailsQuickActionsSwitch} from '@vaults-v3/components/details/acti
 import {VaultDetailsQuickActionsTo} from '@vaults-v3/components/details/actions/QuickActionsTo';
 import {SettingsPopover} from '@vaults-v3/components/SettingsPopover';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
-import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {IconChevron} from '@common/icons/IconChevron';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 

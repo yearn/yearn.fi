@@ -1,8 +1,6 @@
+import {formatAmount, formatUSD, toAddress, toBigInt, toNormalizedValue, truncateHex} from '@builtbymom/web3/utils';
 import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
-import {toAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
 import {STYCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {formatAmount, formatUSD} from '@yearn-finance/web-lib/utils/format.number';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 
@@ -34,7 +32,7 @@ export function HarvestListRow({harvest}: {harvest: TYDaemonVaultHarvest}): Reac
 					datatype={'number'}>
 					<p className={'yearn--table-data-section-item-label'}>{'Gain'}</p>
 					<b className={'yearn--table-data-section-item-value'}>
-						{formatAmount(formatToNormalizedValue(toBigInt(harvest.profit) - toBigInt(harvest.loss), 18))}
+						{formatAmount(toNormalizedValue(toBigInt(harvest.profit) - toBigInt(harvest.loss), 18))}
 					</b>
 				</div>
 

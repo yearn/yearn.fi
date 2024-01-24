@@ -1,25 +1,21 @@
-import {cloneElement, useMemo, useState} from 'react';
+import {cloneElement, useState} from 'react';
 import Link from 'next/link';
 import {useRouter} from 'next/router';
-import {AnimatePresence} from 'framer-motion';
 import {Popover, Transition} from '@headlessui/react';
 import {VaultsHeader} from '@vaults/components/header/VaultsHeader';
 import {VaultsV3Header} from '@vaults-v3/components/header/VaultsHeader';
 import {V3Logo} from '@vaults-v3/Mark';
 import {VeYfiHeader} from '@veYFI/components/header/VeYfiHeader';
-import {Header} from '@yearn-finance/web-lib/components/Header';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
-import {useMenu} from '@common/contexts/useMenu';
 import {useCurrentApp} from '@common/hooks/useCurrentApp';
 import {LogoYearn} from '@common/icons/LogoYearn';
 import {YBribeHeader} from '@yBribe/components/header/YBribeHeader';
 import {YCrvHeader} from '@yCRV/components/header/YCrvHeader';
 
-import {AppName, APPS} from './Apps';
+import {APPS} from './Apps';
 import {MotionDiv} from './MotionDiv';
 
 import type {ReactElement} from 'react';
-import type {TMenu} from '@yearn-finance/web-lib/components/Header';
 
 function Logo(): ReactElement {
 	const {pathname} = useRouter();
@@ -44,7 +40,7 @@ function Logo(): ReactElement {
 	);
 }
 
-function LogoPopover(): ReactElement {
+export function LogoPopover(): ReactElement {
 	const [isShowing, set_isShowing] = useState(false);
 	const router = useRouter();
 	const {name: currentAppName} = useCurrentApp(router);
@@ -59,7 +55,7 @@ function LogoPopover(): ReactElement {
 					onMouseEnter={(): void => set_isShowing(false)}
 					className={cl(
 						'fixed inset-0 bg-black backdrop-blur-sm transition-opacity',
-						!isShowing ? 'opacity-0 pointer-events-none' : 'opacity-50 pointer-events-auto'
+						!isShowing ? 'opacity-0 pointer-events-none' : 'opacity-0 pointer-events-auto'
 					)}
 				/>
 				<Popover.Button className={'z-20 flex items-center'}>
@@ -153,58 +149,5 @@ function LogoPopover(): ReactElement {
 				</Transition.Root>
 			</Popover>
 		</>
-	);
-}
-
-export function AppHeader(): ReactElement {
-	const {pathname} = useRouter();
-	const {onOpenMenu} = useMenu();
-	const menu = useMemo((): TMenu[] => {
-		const HOME_MENU = {path: '/', label: 'Home'};
-
-		if (pathname.startsWith('/ycrv')) {
-			return [HOME_MENU, ...APPS[AppName.YCRV].menu];
-		}
-
-		if (pathname.startsWith('/v3')) {
-			return [HOME_MENU, ...APPS[AppName.VAULTSV3].menu];
-		}
-
-		if (pathname.startsWith('/vaults')) {
-			return [HOME_MENU, ...APPS[AppName.VAULTS].menu];
-		}
-
-		if (pathname.startsWith('/veyfi')) {
-			return [HOME_MENU, ...APPS[AppName.VEYFI].menu];
-		}
-
-		if (pathname.startsWith('/ybribe')) {
-			return [HOME_MENU, ...APPS[AppName.YBRIBE].menu];
-		}
-		return [
-			HOME_MENU,
-			{
-				path: 'https://gov.yearn.fi/',
-				label: 'Governance',
-				target: '_blank'
-			},
-			{path: 'https://blog.yearn.fi/', label: 'Blog', target: '_blank'},
-			{path: 'https://docs.yearn.fi/', label: 'Docs', target: '_blank'}
-		];
-	}, [pathname]);
-
-	return (
-		<Header
-			showNetworkSelector={false}
-			linkComponent={<Link href={''} />}
-			currentPathName={pathname}
-			onOpenMenuMobile={onOpenMenu}
-			nav={menu}
-			logo={
-				<AnimatePresence mode={'wait'}>
-					<LogoPopover />
-				</AnimatePresence>
-			}
-		/>
 	);
 }

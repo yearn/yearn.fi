@@ -1,11 +1,9 @@
+import {assert, assertAddress} from '@builtbymom/web3/utils';
+import {handleTx} from '@builtbymom/web3/utils/wagmi';
 import {VEYFI_OPTIONS_ABI} from '@veYFI/utils/abi/veYFIOptions.abi';
-import {handleTx} from '@yearn-finance/web-lib/utils/wagmi/provider';
-import {assertAddress} from '@yearn-finance/web-lib/utils/wagmi/utils';
-import {assert} from '@common/utils/assert';
 
-import type {TAddress} from '@yearn-finance/web-lib/types';
-import type {TWriteTransaction} from '@yearn-finance/web-lib/utils/wagmi/provider';
-import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
+import type {TAddress} from '@builtbymom/web3/types';
+import type {TTxResponse, TWriteTransaction} from '@builtbymom/web3/utils/wagmi';
 
 type TRedeem = TWriteTransaction & {
 	accountAddress: TAddress;

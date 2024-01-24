@@ -1,13 +1,11 @@
 import {useMemo} from 'react';
 import {useContractRead} from 'wagmi';
+import {formatUSD,isZero,toBigInt, toNormalizedBN} from '@builtbymom/web3/utils';
 import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
-import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {formatUSD} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {copyToClipboard} from '@yearn-finance/web-lib/utils/helpers';
-import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {RenderAmount} from '@common/components/RenderAmount';
 import {useBalance} from '@common/hooks/useBalance';
@@ -16,8 +14,8 @@ import {IconQuestion} from '@common/icons/IconQuestion';
 import {getVaultName} from '@common/utils';
 
 import type {ReactElement} from 'react';
+import type {TNormalizedBN} from '@builtbymom/web3/types';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
-import type {TNormalizedBN} from '@common/types/types';
 
 type TVaultHeaderLineItemProps = {
 	label: string;

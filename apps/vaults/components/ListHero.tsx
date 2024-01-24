@@ -5,7 +5,7 @@ import {SearchBar} from '@common/components/SearchBar';
 import {useChainOptions} from '@common/hooks/useChains';
 
 import type {ReactElement} from 'react';
-import type {TDict} from '@yearn-finance/web-lib/types';
+import type {TDict} from '@builtbymom/web3/types';
 import type {TMultiSelectOptionProps} from '@common/components/MultiSelectDropdown';
 
 type TListHero = {

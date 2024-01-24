@@ -1,5 +1,7 @@
 import {Children, Fragment, useEffect, useMemo, useState} from 'react';
 import {motion, useSpring, useTransform} from 'framer-motion';
+import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {formatAmount, isZero} from '@builtbymom/web3/utils';
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
 import {useVaultFilter} from '@vaults/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
@@ -9,17 +11,14 @@ import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
 import {VaultsV3ListRow} from '@vaults-v3/components/list/VaultsV3ListRow';
 import {ALL_VAULTSV3_CATEGORIES_KEYS} from '@vaults-v3/constants';
 import {V3Mask} from '@vaults-v3/Mark';
-import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
-import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
-import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {InfoTooltip} from '@common/components/InfoTooltip';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
 
 import type {ReactElement, ReactNode} from 'react';
+import type {TSortDirection} from '@builtbymom/web3/types';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
-import type {TSortDirection} from '@common/types/types';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 
 function Counter({value}: {value: number}): ReactElement {
@@ -90,7 +89,7 @@ function V3Card(): ReactElement {
 
 function PortfolioCard(): ReactElement {
 	const {cumulatedValueInV3Vaults} = useWallet();
-	const {options, isActive, address, openLoginModal, onSwitchChain} = useWeb3();
+	const {isActive, address, openLoginModal, onSwitchChain} = useWeb3();
 
 	const formatedYouHave = useMemo((): string => {
 		return formatAmount(cumulatedValueInV3Vaults || 0) ?? '';
@@ -117,7 +116,7 @@ function PortfolioCard(): ReactElement {
 							)}
 							onClick={(): void => {
 								if (!isActive && address) {
-									onSwitchChain(options?.defaultChainID || 1);
+									onSwitchChain(1);
 								} else {
 									openLoginModal();
 								}
@@ -149,7 +148,7 @@ function PortfolioCard(): ReactElement {
 					</b>
 				</div>
 				<div>
-					<p className={'pb-0 text-[#757CA6] md:pb-2'}>
+					<div className={'pb-0 text-[#757CA6] md:pb-2'}>
 						{'Earnings'}
 						<InfoTooltip
 							text={
@@ -157,7 +156,7 @@ function PortfolioCard(): ReactElement {
 							}
 							size={'sm'}
 						/>
-					</p>
+					</div>
 					<b className={'font-number text-xl text-neutral-900 md:text-3xl'}>{'soon™️'}</b>
 				</div>
 			</div>

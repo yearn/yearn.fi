@@ -1,12 +1,12 @@
 import {useCallback, useState} from 'react';
 import Link from 'next/link';
+import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {toAddress} from '@builtbymom/web3/utils';
+import {defaultTxStatus} from '@builtbymom/web3/utils/wagmi';
 import {delegateVote} from '@veYFI/utils/actions/votingEscrow';
 import {SNAPSHOT_DELEGATE_REGISTRY_ADDRESS, VEYFI_CHAIN_ID} from '@veYFI/utils/constants';
 import {validateAddress} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
-import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {Input} from '@common/components/Input';
 
 import type {ReactElement} from 'react';
