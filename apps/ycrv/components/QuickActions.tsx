@@ -69,7 +69,7 @@ function QASelect(props: TQASelect): ReactElement {
 					<div className={'relative flex flex-row items-center'}>
 						<div
 							key={selected?.value}
-							className={'h-6 w-6 flex-none rounded-full'}>
+							className={'size-6 flex-none rounded-full'}>
 							{selected?.icon}
 						</div>
 						<p
@@ -94,7 +94,7 @@ function QASwitch(): ReactElement {
 	return (
 		<div className={'mx-auto flex w-full justify-center space-y-0 md:mx-none md:block md:w-14 md:space-y-2'}>
 			<p className={'hidden text-base md:inline'}>&nbsp;</p>
-			<div className={'flex h-6 w-6 rotate-90 items-center justify-center p-0 md:h-10 md:w-14 md:rotate-0'}>
+			<div className={'flex size-6 rotate-90 items-center justify-center p-0 md:h-10 md:w-14 md:rotate-0'}>
 				<IconArrowRight className={'w-4 text-neutral-400 md:w-[25px]'} />
 			</div>
 			<legend className={'hidden text-xs md:inline'}>&nbsp;</legend>

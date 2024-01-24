@@ -252,7 +252,7 @@ export function StakeUnstakeGauges(): ReactElement {
 							className: 'my-4 md:my-0',
 							transform: ({vaultIcon, vaultName}): ReactElement => (
 								<div className={'flex flex-row items-center space-x-4 md:space-x-6'}>
-									<div className={'flex h-8 min-h-[32px] w-8 min-w-[32px] rounded-full'}>
+									<div className={'flex size-8 min-h-[32px] min-w-[32px] rounded-full'}>
 										<ImageWithFallback
 											alt={vaultName}
 											width={32}
@@ -335,7 +335,7 @@ export function StakeUnstakeGauges(): ReactElement {
 												isDisabled={!address}
 												className={'h-8 w-full cursor-alias text-xs'}>
 												{'Deposit in vault'}
-												<IconLinkOut className={'ml-2 h-4 w-4'} />
+												<IconLinkOut className={'ml-2 size-4'} />
 											</Button>
 										</Link>
 									);

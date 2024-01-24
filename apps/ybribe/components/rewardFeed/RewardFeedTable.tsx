@@ -97,8 +97,8 @@ export function RewardFeedTable(): ReactElement | null {
 							onPageChange={handlePageClick}
 							pageRangeDisplayed={5}
 							pageCount={pageCount}
-							nextLabel={<IconChevron className={'h-5 w-5 -rotate-90 transition-transform'} />}
-							previousLabel={<IconChevron className={'h-5 w-5 rotate-90 transition-transform'} />}
+							nextLabel={<IconChevron className={'size-5 -rotate-90 transition-transform'} />}
+							previousLabel={<IconChevron className={'size-5 rotate-90 transition-transform'} />}
 						/>
 					</div>
 				</div>

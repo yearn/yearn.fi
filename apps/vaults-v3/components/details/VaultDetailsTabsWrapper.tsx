@@ -107,7 +107,7 @@ function Tabs({hasStrategies, selectedAboutTabIndex, set_selectedAboutTabIndex}:
 								</div>
 								<div className={'absolute right-0'}>
 									<IconChevron
-										className={`h-6 w-6 transition-transform ${open ? '-rotate-180' : 'rotate-0'}`}
+										className={`size-6 transition-transform${open ? '-rotate-180' : 'rotate-0'}`}
 									/>
 								</div>
 							</Listbox.Button>
@@ -180,7 +180,7 @@ function AddToWalletLink({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 			}}>
 			<span className={'sr-only'}>{'Add to wallet'}</span>
 			<IconAddToMetamask
-				className={'h-5 w-5 text-neutral-900/50 transition-colors hover:text-neutral-900 md:h-6 md:w-6'}
+				className={'size-5 text-neutral-900/50 transition-colors hover:text-neutral-900 md:size-6'}
 			/>
 		</button>
 	);
@@ -195,7 +195,7 @@ function ExplorerLink({explorerBaseURI, currentVaultAddress}: TExplorerLinkProps
 			<span className={'sr-only'}>{'Open in explorer'}</span>
 			<IconLinkOut
 				className={
-					'h-5 w-5 cursor-alias text-neutral-900/50 transition-colors hover:text-neutral-900 md:h-6 md:w-6'
+					'size-5 cursor-alias text-neutral-900/50 transition-colors hover:text-neutral-900 md:size-6'
 				}
 			/>
 		</a>

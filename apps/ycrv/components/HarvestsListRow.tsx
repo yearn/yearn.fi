@@ -70,7 +70,7 @@ export function HarvestListRow({harvest}: {harvest: TYDaemonVaultHarvest}): Reac
 							className={'font-number flex flex-row items-center space-x-2 text-neutral-900'}
 							style={{lineHeight: '24px'}}>
 							{truncateHex(harvest.txHash, 6)}
-							<IconLinkOut className={'ml-2 h-4 w-4 md:ml-4'} />
+							<IconLinkOut className={'ml-2 size-4 md:ml-4'} />
 						</div>
 					</a>
 				</div>

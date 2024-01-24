@@ -21,7 +21,7 @@ function DropdownItem({option}: TDropdownItemProps): ReactElement {
 				<div
 					data-active={active}
 					className={'yearn--dropdown-menu-item w-full hover:bg-neutral-0/40'}>
-					<div className={'h-6 w-6 flex-none rounded-full'}>{option?.icon ? option.icon : null}</div>
+					<div className={'size-6 flex-none rounded-full'}>{option?.icon ? option.icon : null}</div>
 					<div>
 						<p className={`${option.icon ? 'pl-2' : 'pl-0'} font-normal text-neutral-900`}>
 							{option.symbol}
@@ -112,11 +112,11 @@ export function Dropdown(props: TDropdownProps): ReactElement {
 							<div className={'flex w-full items-center'}>
 								<div
 									key={props.selected?.label}
-									className={'h-6 w-6 flex-none rounded-full'}>
+									className={'size-6 flex-none rounded-full'}>
 									{props.selected?.icon ? (
 										cloneElement(props.selected.icon)
 									) : (
-										<div className={'h-6 w-6 flex-none rounded-full bg-neutral-500'} />
+										<div className={'size-6 flex-none rounded-full bg-neutral-500'} />
 									)}
 								</div>
 								<p
@@ -139,7 +139,7 @@ export function Dropdown(props: TDropdownProps): ReactElement {
 								<div className={'ml-auto'}>
 									<IconChevron
 										aria-hidden={'true'}
-										className={`h-6 w-6 transition-transform ${
+										className={`size-6 transition-transform${
 											isOpen ? '-rotate-180' : 'rotate-0'
 										}`}
 									/>

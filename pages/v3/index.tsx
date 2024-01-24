@@ -82,7 +82,7 @@ function V3Card(): ReactElement {
 					'flex h-full w-full flex-col items-center justify-center',
 					'gap-y-0 rounded-3xl bg-neutral-200 md:gap-y-6 p-2'
 				)}>
-				<V3Mask className={'h-[90%] w-[90%]'} />
+				<V3Mask className={'size-[90%]'} />
 			</div>
 		</div>
 	);

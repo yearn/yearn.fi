@@ -7,7 +7,7 @@ import {CURVE_BRIBE_V3_ADDRESS, ZERO_ADDRESS} from '@yearn-finance/web-lib/utils
 import {decodeAsBigInt, decodeAsNumber, decodeAsString} from '@yearn-finance/web-lib/utils/decoder';
 import {formatToNormalizedValue, toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
-import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
+import {handleInputChangeValue} from '@yearn-finance/web-lib/utils/handler';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {useYearn} from '@common/contexts/useYearn';
@@ -209,7 +209,7 @@ export function GaugeBribeModal({
 									value={amount.normalized}
 									onChange={(e: ChangeEvent<HTMLInputElement>): void => {
 										set_amount(
-											handleInputChangeEventValue(e.target.value, selectedToken?.decimals || 18)
+											handleInputChangeValue(e.target.value, selectedToken?.decimals || 18)
 										);
 									}}
 								/>

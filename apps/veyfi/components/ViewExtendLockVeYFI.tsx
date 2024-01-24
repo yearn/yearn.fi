@@ -7,7 +7,7 @@ import {validateAmount} from '@veYFI/utils/validations';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
+import {handleInputChangeValue} from '@yearn-finance/web-lib/utils/handler';
 import {fromWeeks, getTimeUntil, toSeconds, toTime, toWeeks} from '@yearn-finance/web-lib/utils/time';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {AmountInput} from '@common/components/AmountInput';
@@ -85,7 +85,7 @@ export function ExtendLockVeYFI(): ReactElement {
 						label={'Increase lock period (weeks)'}
 						amount={lockTime}
 						onAmountChange={(v: string): void => {
-							const inputed = handleInputChangeEventValue(v, 0);
+							const inputed = handleInputChangeValue(v, 0);
 							if (Number(inputed.normalized) > maxTime) {
 								set_lockTime(toNormalizedBN(maxTime, 0));
 							} else {

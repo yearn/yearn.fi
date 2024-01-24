@@ -168,7 +168,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 										</div>
 										<div className={'absolute right-0'}>
 											<IconChevron
-												className={`h-6 w-6 transition-transform ${
+												className={`size-6 transition-transform${
 													open ? '-rotate-180' : 'rotate-0'
 												}`}
 											/>

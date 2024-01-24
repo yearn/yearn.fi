@@ -93,7 +93,7 @@ function VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
 								onClick={(): void => copyToClipboard(strategy.address)}
 								className={'cursor-copy'}>
 								<IconCopy
-									className={'h-4 w-4 text-neutral-600 transition-colors hover:text-neutral-900'}
+									className={'size-4 text-neutral-600 transition-colors hover:text-neutral-900'}
 								/>
 							</button>
 						</div>
@@ -157,7 +157,7 @@ function VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
 							</div>
 						</div>
 					</div>
-					<div className={'col-span-12 flex h-full w-full flex-col justify-between md:col-span-6'}>
+					<div className={'col-span-12 flex size-full flex-col justify-between md:col-span-6'}>
 						<div className={'grid grid-cols-6 gap-6 md:gap-8'}>
 							<div className={'col-span-2 flex flex-col space-y-0 md:space-y-2'}>
 								<p className={'text-xxs text-neutral-600 md:text-xs'}>{'APR'}</p>

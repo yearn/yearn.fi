@@ -5,7 +5,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
-import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
+import {handleInputChangeValue} from '@yearn-finance/web-lib/utils/handler';
 import {Dropdown} from '@common/components/TokenDropdown';
 import {useWallet} from '@common/contexts/useWallet';
 import {useBalance} from '@common/hooks/useBalance';
@@ -50,7 +50,7 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 	const onChangeInput = useCallback(
 		(e: ChangeEvent<HTMLInputElement>): void => {
 			onChangeAmount(
-				handleInputChangeEventValue(
+				handleInputChangeValue(
 					e.target.value,
 					getToken({
 						address: toAddress(actionParams?.selectedOptionFrom?.value),
@@ -85,7 +85,7 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 							'flex h-10 w-full items-center justify-between bg-neutral-300 px-2 text-base text-neutral-900 md:px-3'
 						}>
 						<div className={'relative flex flex-row items-center truncate'}>
-							<div className={'h-6 w-6 flex-none rounded-full'}>{selectedFromIcon}</div>
+							<div className={'size-6 flex-none rounded-full'}>{selectedFromIcon}</div>
 							<p
 								className={
 									'truncate whitespace-nowrap pl-2 font-normal text-neutral-900 scrollbar-none'

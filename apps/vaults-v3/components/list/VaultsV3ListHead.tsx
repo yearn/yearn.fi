@@ -36,17 +36,17 @@ export function VaultsV3ListHead({items, sortBy, sortDirection, onSort}: TListHe
 	const renderChevron = useCallback(
 		(shouldSortBy: boolean): ReactElement => {
 			if (shouldSortBy && sortDirection === 'desc') {
-				return <IconChevronPlain className={'h-4 w-4 min-w-[16px] cursor-pointer text-neutral-800'} />;
+				return <IconChevronPlain className={'size-4 min-w-[16px] cursor-pointer text-neutral-800'} />;
 			}
 			if (shouldSortBy && sortDirection === 'asc') {
 				return (
-					<IconChevronPlain className={'h-4 w-4 min-w-[16px] rotate-180 cursor-pointer text-neutral-800'} />
+					<IconChevronPlain className={'size-4 min-w-[16px] rotate-180 cursor-pointer text-neutral-800'} />
 				);
 			}
 			return (
 				<IconChevronPlain
 					className={
-						'h-4 w-4 min-w-[16px] cursor-pointer text-neutral-800/60 transition-colors group-hover:text-neutral-800'
+						'size-4 min-w-[16px] cursor-pointer text-neutral-800/60 transition-colors group-hover:text-neutral-800'
 					}
 				/>
 			);

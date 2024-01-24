@@ -75,7 +75,7 @@ function HarvestListRow({
 								toBigInt(harvest.profit) - toBigInt(harvest.loss),
 								currentVault.token.decimals
 							),
-							currentVault.token.decimals,
+							6,
 							currentVault.token.decimals
 						)}
 					</b>
@@ -101,7 +101,7 @@ function HarvestListRow({
 						className={'font-number flex flex-row items-center space-x-2 text-neutral-900 md:justify-end'}
 						style={{lineHeight: '24px'}}>
 						{truncateHex(harvest.txHash, 12)}
-						<IconLinkOut className={'ml-2 h-4 w-4 md:ml-4'} />
+						<IconLinkOut className={'ml-2 size-4 md:ml-4'} />
 					</div>
 				</a>
 			</div>

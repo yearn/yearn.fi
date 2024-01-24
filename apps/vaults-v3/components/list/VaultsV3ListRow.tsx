@@ -452,7 +452,7 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 
 				<div className={cl('col-span-5 z-10', 'flex flex-row items-center justify-between')}>
 					<div className={'flex flex-row gap-6'}>
-						<div className={'mt-2.5 h-8 w-8 rounded-full md:flex'}>
+						<div className={'mt-2.5 size-8 rounded-full md:flex'}>
 							<ImageWithFallback
 								src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-32.png`}
 								alt={``}
@@ -476,7 +476,7 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 									target={'_blank'}
 									rel={'noopener noreferrer'}>
 									<div className={'px-2'}>
-										<IconLinkOut className={'inline-block h-4 w-4'} />
+										<IconLinkOut className={'inline-block size-4'} />
 									</div>
 								</Link>
 							</div>
@@ -584,7 +584,7 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 						target={'_blank'}
 						rel={'noopener noreferrer'}>
 						<div className={'px-2'}>
-							<IconLinkOut className={'inline-block h-4 w-4'} />
+							<IconLinkOut className={'inline-block size-4'} />
 						</div>
 					</Link>
 				</div>

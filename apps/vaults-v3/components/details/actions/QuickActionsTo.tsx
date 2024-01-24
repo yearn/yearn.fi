@@ -60,7 +60,7 @@ export function VaultDetailsQuickActionsTo(): ReactElement {
 							'flex h-10 w-full items-center justify-between rounded-lg bg-neutral-300 px-2 text-base text-neutral-900 md:px-3'
 						}>
 						<div className={'relative flex flex-row items-center truncate'}>
-							<div className={'h-6 w-6 flex-none rounded-full'}>
+							<div className={'size-6 flex-none rounded-full'}>
 								{actionParams?.selectedOptionTo?.icon}
 							</div>
 							<p

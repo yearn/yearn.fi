@@ -92,7 +92,7 @@ export function Popover(): ReactElement {
 			<PopoverHeadlessUI className={'relative z-50'}>
 				<PopoverHeadlessUI.Button
 					className={
-						'fixed bottom-5 right-5 flex h-10 w-10 items-center justify-center rounded-full bg-orange-500'
+						'fixed bottom-5 right-5 flex size-10 items-center justify-center rounded-full bg-orange-500'
 					}
 					ref={set_referenceElement}>
 					<MessageIcon />

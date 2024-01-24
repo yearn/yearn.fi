@@ -88,7 +88,7 @@ function Index(): ReactElement | null {
 					initial={'initial'}
 					animate={'enter'}
 					variants={variants}
-					className={'z-50 -mt-6 h-12 w-12 cursor-pointer md:-mt-36 md:h-[72px] md:w-[72px]'}>
+					className={'z-50 -mt-6 size-12 cursor-pointer md:-mt-36 md:size-[72px]'}>
 					<ImageWithFallback
 						src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${toAddress(
 							currentVault.token.address

@@ -14,9 +14,8 @@ import {
 } from '@yearn-finance/web-lib/utils/constants';
 import {formatToNormalizedValue, toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
-import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
+import {handleInputChangeValue} from '@yearn-finance/web-lib/utils/handler';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
-import {performBatchedUpdates} from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {Dropdown} from '@common/components/TokenDropdown';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
@@ -149,19 +148,17 @@ function CardZap(): ReactElement {
 						options={ZAP_OPTIONS_FROM}
 						selected={selectedOptionFrom}
 						onSelect={(option: TDropdownOption): void => {
-							performBatchedUpdates((): void => {
-								if (option.value === selectedOptionTo.value) {
-									set_selectedOptionTo(
-										ZAP_OPTIONS_TO.find(
-											(o: TDropdownOption): boolean => o.value !== option.value
-										) as TDropdownOption
-									);
-								}
-								set_selectedOptionFrom(option);
-								set_amount(
-									toNormalizedBN(getBalance({address: option.value, chainID: option.chainID}).raw)
+							if (option.value === selectedOptionTo.value) {
+								set_selectedOptionTo(
+									ZAP_OPTIONS_TO.find(
+										(o: TDropdownOption): boolean => o.value !== option.value
+									) as TDropdownOption
 								);
-							});
+							}
+							set_selectedOptionFrom(option);
+							set_amount(
+								toNormalizedBN(getBalance({address: option.value, chainID: option.chainID}).raw)
+							);
 						}}
 					/>
 					<p
@@ -188,18 +185,16 @@ function CardZap(): ReactElement {
 								disabled={!isActive}
 								value={amount.normalized}
 								onChange={(e: ChangeEvent<HTMLInputElement>): void => {
-									performBatchedUpdates((): void => {
-										set_amount(
-											handleInputChangeEventValue(
-												e.target.value,
-												getToken({
-													address: selectedOptionFrom.value,
-													chainID: selectedOptionFrom.chainID
-												}).decimals || 18
-											)
-										);
-										set_hasTypedSomething(true);
-									});
+									set_amount(
+										handleInputChangeValue(
+											e.target.value,
+											getToken({
+												address: selectedOptionFrom.value,
+												chainID: selectedOptionFrom.chainID
+											}).decimals || 18
+										)
+									);
+									set_hasTypedSomething(true);
 								}}
 							/>
 							<button

@@ -14,7 +14,7 @@ function DropdownItem({option}: TDropdownGaugeItemProps): ReactElement {
 				<div
 					data-active={active}
 					className={'yearn--dropdown-menu-item w-full hover:bg-neutral-0/40'}>
-					<div className={'h-6 w-6 flex-none rounded-full'}>
+					<div className={'size-6 flex-none rounded-full'}>
 						{option?.icon ? cloneElement(option.icon) : null}
 					</div>
 					<div className={'flex w-full flex-row items-center justify-between'}>
@@ -100,11 +100,11 @@ export function Dropdown({options, selected, onSelect, placeholder = ''}: TDropd
 						<div className={'relative flex flex-row items-center'}>
 							<div
 								key={selected?.label}
-								className={'h-6 w-6 flex-none rounded-full'}>
+								className={'size-6 flex-none rounded-full'}>
 								{selected?.icon ? (
 									cloneElement(selected.icon)
 								) : (
-									<div className={'h-6 w-6 flex-none rounded-full bg-neutral-500'} />
+									<div className={'size-6 flex-none rounded-full bg-neutral-500'} />
 								)}
 							</div>
 							<p
@@ -125,7 +125,7 @@ export function Dropdown({options, selected, onSelect, placeholder = ''}: TDropd
 						<div className={'absolute right-2 md:right-3'}>
 							<IconChevron
 								aria-hidden={'true'}
-								className={`h-6 w-6 transition-transform ${isOpen ? '-rotate-180' : 'rotate-0'}`}
+								className={`size-6 transition-transform${isOpen ? '-rotate-180' : 'rotate-0'}`}
 							/>
 						</div>
 					</Combobox.Button>

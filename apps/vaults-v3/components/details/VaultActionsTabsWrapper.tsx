@@ -11,7 +11,6 @@ import {VaultDetailsQuickActionsTo} from '@vaults-v3/components/details/actions/
 import {SettingsPopover} from '@vaults-v3/components/SettingsPopover';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
-import {performBatchedUpdates} from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {IconChevron} from '@common/icons/IconChevron';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 
@@ -70,23 +69,17 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 
 	useUpdateEffect((): void => {
 		if (currentVault?.migration?.available && actionParams.isReady) {
-			performBatchedUpdates((): void => {
-				set_possibleTabs([tabs[1], tabs[2]]);
-				set_currentTab(tabs[2]);
-				onSwitchSelectedOptions(Flow.Migrate);
-			});
+			set_possibleTabs([tabs[1], tabs[2]]);
+			set_currentTab(tabs[2]);
+			onSwitchSelectedOptions(Flow.Migrate);
 		} else if (currentVault?.retired && actionParams.isReady) {
-			performBatchedUpdates((): void => {
-				set_possibleTabs([tabs[1]]);
-				set_currentTab(tabs[1]);
-				onSwitchSelectedOptions(Flow.Withdraw);
-			});
+			set_possibleTabs([tabs[1]]);
+			set_currentTab(tabs[1]);
+			onSwitchSelectedOptions(Flow.Withdraw);
 		}
 
 		if (currentVault.chainID === 10 && hasStakingRewards) {
-			performBatchedUpdates((): void => {
-				set_possibleTabs([tabs[0], tabs[1], tabs[3]]);
-			});
+			set_possibleTabs([tabs[0], tabs[1], tabs[3]]);
 		}
 	}, [currentVault?.migration?.available, currentVault?.retired, actionParams.isReady, hasStakingRewards]);
 
@@ -182,7 +175,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 										</div>
 										<div className={'absolute right-0'}>
 											<IconChevron
-												className={`h-6 w-6 transition-transform ${
+												className={`size-6 transition-transform${
 													open ? '-rotate-180' : 'rotate-0'
 												}`}
 											/>

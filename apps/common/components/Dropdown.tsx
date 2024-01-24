@@ -2,7 +2,6 @@ import React, {Fragment, useState} from 'react';
 import {Combobox, Transition} from '@headlessui/react';
 import {useThrottledState} from '@react-hookz/web';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
-import {performBatchedUpdates} from '@yearn-finance/web-lib/utils/performBatchedUpdates';
 import {IconChevron} from '@common/icons/IconChevron';
 
 import {ImageWithFallback} from './ImageWithFallback';
@@ -18,7 +17,7 @@ const DropdownOption = (option: TDropdownOption): ReactElement => {
 					data-active={active}
 					className={'yearn--dropdown-menu-item w-full hover:bg-neutral-0/40'}>
 					{icon && (
-						<div className={'h-6 w-6 rounded-full'}>
+						<div className={'size-6 rounded-full'}>
 							<ImageWithFallback
 								alt={label}
 								width={24}
@@ -113,12 +112,10 @@ export const Dropdown = ({
 					<Combobox
 						value={selected}
 						onChange={(option: TDropdownOption): void => {
-							performBatchedUpdates((): void => {
-								if (onChange) {
-									onChange(option);
-								}
-								set_isOpen(false);
-							});
+							if (onChange) {
+								onChange(option);
+							}
+							set_isOpen(false);
 						}}
 						disabled={isDisabled}>
 						<>
@@ -130,7 +127,7 @@ export const Dropdown = ({
 								)}>
 								<div className={'relative flex flex-row items-center'}>
 									{selected?.icon && (
-										<div className={'h-6 w-6 rounded-full'}>
+										<div className={'size-6 rounded-full'}>
 											<ImageWithFallback
 												alt={selected.label}
 												width={24}
@@ -152,10 +149,8 @@ export const Dropdown = ({
 											displayValue={(option?: TDropdownOption): string => option?.label ?? '-'}
 											spellCheck={false}
 											onChange={(event): void => {
-												performBatchedUpdates((): void => {
-													set_isOpen(true);
-													set_search(event.target.value);
-												});
+												set_isOpen(true);
+												set_search(event.target.value);
 											}}
 										/>
 									</p>
@@ -163,7 +158,7 @@ export const Dropdown = ({
 								<div className={'absolute right-2 md:right-3'}>
 									<IconChevron
 										aria-hidden={'true'}
-										className={`h-6 w-6 transition-transform ${
+										className={`size-6 transition-transform${
 											isOpen ? '-rotate-180' : 'rotate-0'
 										}`}
 									/>

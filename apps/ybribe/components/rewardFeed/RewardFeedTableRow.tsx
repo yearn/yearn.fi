@@ -68,7 +68,7 @@ export function RewardFeedTableRow({
 		<div className={'grid w-full grid-cols-2 border-t border-neutral-200 px-4 md:grid-cols-3 md:px-10'}>
 			<div className={'col-span-1 flex h-20 w-full space-x-4'}>
 				<div className={'flex flex-row items-start pt-6'}>
-					<div className={'flex h-6 w-6 rounded-full md:flex md:h-8 md:w-8'}>
+					<div className={'flex size-6 rounded-full md:flex md:size-8'}>
 						<ImageWithFallback
 							alt={''}
 							smWidth={24}

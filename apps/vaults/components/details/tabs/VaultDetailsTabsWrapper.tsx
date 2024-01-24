@@ -104,7 +104,7 @@ function Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactE
 								</div>
 								<div className={'absolute right-0'}>
 									<IconChevron
-										className={`h-6 w-6 transition-transform ${open ? '-rotate-180' : 'rotate-0'}`}
+										className={`size-6 transition-transform${open ? '-rotate-180' : 'rotate-0'}`}
 									/>
 								</div>
 							</Listbox.Button>
@@ -147,7 +147,7 @@ function ExplorerLink({explorerBaseURI, currentVaultAddress}: TExplorerLinkProps
 			<span className={'sr-only'}>{'Open in explorer'}</span>
 			<IconLinkOut
 				className={
-					'h-5 w-5 cursor-alias text-neutral-600 transition-colors hover:text-neutral-900 md:h-6 md:w-6'
+					'size-5 cursor-alias text-neutral-600 transition-colors hover:text-neutral-900 md:size-6'
 				}
 			/>
 		</a>
@@ -284,7 +284,7 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 						<span className={'sr-only'}>{'Add to wallet'}</span>
 						<IconAddToMetamask
 							className={
-								'h-5 w-5 text-neutral-600 transition-colors hover:text-neutral-900 md:h-6 md:w-6'
+								'size-5 text-neutral-600 transition-colors hover:text-neutral-900 md:size-6'
 							}
 						/>
 					</button>

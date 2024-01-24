@@ -67,12 +67,12 @@ export function Pagination(props: TProps): ReactElement {
 					pageCount={pageCount}
 					previousLabel={
 						<IconPaginationArrow
-							className={'mt-1 h-3 w-3 opacity-10 transition-opacity hover:opacity-100'}
+							className={'mt-1 size-3 opacity-10 transition-opacity hover:opacity-100'}
 						/>
 					}
 					nextLabel={
 						<IconPaginationArrow
-							className={'mt-1 h-3 w-3 -rotate-180 opacity-10 transition-opacity hover:opacity-100'}
+							className={'mt-1 size-3 -rotate-180 opacity-10 transition-opacity hover:opacity-100'}
 						/>
 					}
 				/>

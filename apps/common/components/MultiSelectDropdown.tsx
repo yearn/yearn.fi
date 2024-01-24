@@ -51,7 +51,7 @@ function Option(option: TMultiSelectOptionProps): ReactElement {
 			className={'transition-colors hover:bg-neutral-100'}>
 			<div className={'flex w-full items-center justify-between p-2'}>
 				<div className={'flex items-center'}>
-					{option?.icon ? <div className={'h-8 w-8 overflow-hidden rounded-full'}>{option.icon}</div> : null}
+					{option?.icon ? <div className={'size-8 overflow-hidden rounded-full'}>{option.icon}</div> : null}
 					<p className={`${option.icon ? 'pl-2' : 'pl-0'} font-normal text-neutral-900`}>{option.label}</p>
 				</div>
 				<input
@@ -219,7 +219,7 @@ export function MultiSelectDropdown({options, onSelect, placeholder = '', ...pro
 					/>
 					<IconChevron
 						aria-hidden={'true'}
-						className={`h-6 w-6 transition-transform ${isOpen ? '-rotate-180' : 'rotate-0'}`}
+						className={`size-6 transition-transform${isOpen ? '-rotate-180' : 'rotate-0'}`}
 					/>
 				</Combobox.Button>
 				<Transition

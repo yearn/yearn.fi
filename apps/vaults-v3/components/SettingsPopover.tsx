@@ -229,7 +229,7 @@ export function SettingsPopover({vault}: TSettingPopover): ReactElement {
 				<>
 					<Popover.Button>
 						<span className={'sr-only'}>{'Settings'}</span>
-						<IconSettings className={'transition-color h-4 w-4 text-neutral-400 hover:text-neutral-900'} />
+						<IconSettings className={'transition-color size-4 text-neutral-400 hover:text-neutral-900'} />
 					</Popover.Button>
 					<Transition
 						as={Fragment}

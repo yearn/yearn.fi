@@ -11,7 +11,7 @@ import {ETH_TOKEN_ADDRESS, YFI_ADDRESS} from '@yearn-finance/web-lib/utils/const
 import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
-import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
+import {handleInputChangeValue} from '@yearn-finance/web-lib/utils/handler';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {AmountInput} from '@common/components/AmountInput';
 import {useWallet} from '@common/contexts/useWallet';
@@ -94,7 +94,7 @@ export function RedeemTab(): ReactElement {
 	});
 
 	const onChangeInput = useCallback((value: string): void => {
-		set_redeemAmount(handleInputChangeEventValue(value, 18));
+		set_redeemAmount(handleInputChangeValue(value, 18));
 	}, []);
 
 	return (

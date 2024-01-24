@@ -45,7 +45,7 @@ export const APPS: {[key in AppName]: TApp} = {
 		isDisabled: false,
 		icon: (
 			<LogoYearn
-				className={'h-8 w-8'}
+				className={'size-8'}
 				back={'text-pink-400'}
 				front={'text-white'}
 			/>
@@ -58,7 +58,7 @@ export const APPS: {[key in AppName]: TApp} = {
 		manifest: {} as TMetaFile,
 		icon: (
 			<Image
-				className={'h-8 w-8'}
+				className={'size-8'}
 				src={'/juiced.png'}
 				width={64}
 				height={64}
@@ -75,7 +75,7 @@ export const APPS: {[key in AppName]: TApp} = {
 		manifest: vaultsManifest,
 		icon: (
 			<LogoYearn
-				className={'h-8 w-8'}
+				className={'size-8'}
 				back={'text-pink-400'}
 				front={'text-white'}
 			/>
@@ -88,7 +88,7 @@ export const APPS: {[key in AppName]: TApp} = {
 		manifest: veyfiManifest,
 		icon: (
 			<LogoYearn
-				className={'h-8 w-8'}
+				className={'size-8'}
 				back={'text-primary'}
 				front={'text-white'}
 			/>
@@ -104,7 +104,7 @@ export const APPS: {[key in AppName]: TApp} = {
 				alt={'yCRV'}
 				width={64}
 				height={64}
-				className={'h-8 w-8'}
+				className={'size-8'}
 				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/${YCRV_TOKEN_ADDRESS}/logo-128.png`}
 				loading={'eager'}
 				priority
@@ -121,7 +121,7 @@ export const APPS: {[key in AppName]: TApp} = {
 				alt={'yETH'}
 				width={64}
 				height={64}
-				className={'h-8 w-8'}
+				className={'size-8'}
 				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/0x1BED97CBC3c24A4fb5C069C6E311a967386131f7/logo-128.png`}
 				loading={'eager'}
 				priority
@@ -138,7 +138,7 @@ export const APPS: {[key in AppName]: TApp} = {
 				alt={'yPrisma'}
 				width={64}
 				height={64}
-				className={'h-8 w-8'}
+				className={'size-8'}
 				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/0xe3668873d944e4a949da05fc8bde419eff543882/logo-128.png`}
 				loading={'eager'}
 				priority
@@ -152,7 +152,7 @@ export const APPS: {[key in AppName]: TApp} = {
 		manifest: ybribeManifest,
 		icon: (
 			<LogoYearn
-				className={'h-8 w-8'}
+				className={'size-8'}
 				back={'text-neutral-900'}
 				front={'text-neutral-0'}
 			/>

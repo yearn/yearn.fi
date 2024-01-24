@@ -121,7 +121,7 @@ function Index(): ReactElement | null {
 							'flex justify-center items-center'
 						)}>
 						<ImageWithFallback
-							className={'h-10 w-10 md:h-12 md:w-12'}
+							className={'size-10 md:size-12'}
 							src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-128.png`}
 							alt={''}
 							smWidth={40}

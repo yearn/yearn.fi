@@ -9,7 +9,7 @@ import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
-import {handleInputChangeEventValue} from '@yearn-finance/web-lib/utils/handlers/handleInputChangeEventValue';
+import {handleInputChangeValue} from '@yearn-finance/web-lib/utils/handler';
 import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {fromWeeks, getTimeUntil, toSeconds, toTime, toWeeks} from '@yearn-finance/web-lib/utils/time';
 import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
@@ -180,7 +180,7 @@ export function LockVeYFI(): ReactElement {
 						label={'YFI'}
 						amount={lockAmount}
 						maxAmount={tokenBalance}
-						onAmountChange={(amount): void => set_lockAmount(handleInputChangeEventValue(amount, 18))}
+						onAmountChange={(amount): void => set_lockAmount(handleInputChangeValue(amount, 18))}
 						onLegendClick={(): void => set_lockAmount(tokenBalance)}
 						onMaxClick={(): void => set_lockAmount(tokenBalance)}
 						legend={`Available: ${formatAmount(tokenBalance.normalized, 4)} YFI`}
@@ -193,7 +193,7 @@ export function LockVeYFI(): ReactElement {
 							0
 						)}
 						onAmountChange={(v: string): void => {
-							const inputed = handleInputChangeEventValue(v, 0);
+							const inputed = handleInputChangeValue(v, 0);
 							if (Number(inputed.normalized) > MAX_LOCK_TIME + 1) {
 								set_lockTime((MAX_LOCK_TIME + 1).toString());
 							} else {

@@ -35,7 +35,7 @@ function Logo(): ReactElement {
 				name={'yearn'}
 				animate={pathname === '/' ? 'enter' : 'exit'}>
 				<LogoYearn
-					className={'h-8 w-8'}
+					className={'size-8'}
 					back={'text-neutral-900'}
 					front={'text-neutral-0'}
 				/>

@@ -93,7 +93,7 @@ export function Tabs({items, className}: TTabsProps): ReactElement {
 								</div>
 								<div className={'absolute right-4'}>
 									<IconChevron
-										className={`h-6 w-6 transition-transform ${open ? '-rotate-180' : 'rotate-0'}`}
+										className={`size-6 transition-transform${open ? '-rotate-180' : 'rotate-0'}`}
 									/>
 								</div>
 							</Listbox.Button>
