@@ -13,7 +13,7 @@ import type {TDict} from '@yearn-finance/web-lib/types';
 import type {TMetaFile} from '@common/components/Meta';
 
 type TCurrentApp = {
-	name: AppName | 'Home';
+	name: AppName | 'Home' | string;
 	manifest: TMetaFile;
 	header?: ReactElement;
 	menu: TMenu[];
