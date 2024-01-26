@@ -4,10 +4,10 @@ import {assert, assertAddress, toAddress, toNormalizedBN} from '@builtbymom/web3
 import {getNetwork} from '@builtbymom/web3/utils/wagmi';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {getVaultEstimateOut} from '@vaults/utils/getVaultEstimateOut';
-import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
 import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {useYearn} from '@common/contexts/useYearn';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
+import {allowanceKey} from '@common/utils';
 import {allowanceOf, approveERC20, depositViaPartner, withdrawShares} from '@common/utils/actions';
 
 import type {TDict, TNormalizedBN} from '@builtbymom/web3/types';

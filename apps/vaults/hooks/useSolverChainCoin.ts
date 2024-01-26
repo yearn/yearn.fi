@@ -4,10 +4,10 @@ import {assert, toAddress, toNormalizedBN} from '@builtbymom/web3/utils';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {getEthZapperContract, getNativeTokenWrapperContract} from '@vaults/utils';
 import {getVaultEstimateOut} from '@vaults/utils/getVaultEstimateOut';
-import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
 import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {isEth} from '@yearn-finance/web-lib/utils/isEth';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
+import {allowanceKey} from '@common/utils';
 import {allowanceOf, approveERC20, depositETH, withdrawETH} from '@common/utils/actions';
 
 import type {TDict, TNormalizedBN} from '@builtbymom/web3/types';

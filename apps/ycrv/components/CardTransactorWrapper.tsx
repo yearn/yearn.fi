@@ -8,7 +8,6 @@ import {yToast} from '@yearn-finance/web-lib/components/yToast';
 import {useAddToken} from '@yearn-finance/web-lib/hooks/useAddToken';
 import {useDismissToasts} from '@yearn-finance/web-lib/hooks/useDismissToasts';
 import {VAULT_ABI} from '@yearn-finance/web-lib/utils/abi/vault.abi';
-import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
 import {
 	LPYCRV_TOKEN_ADDRESS,
 	LPYCRV_V2_TOKEN_ADDRESS,
@@ -21,7 +20,7 @@ import {
 } from '@yearn-finance/web-lib/utils/constants';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
-import {getAmountWithSlippage, getVaultAPR} from '@common/utils';
+import {allowanceKey, getAmountWithSlippage, getVaultAPR} from '@common/utils';
 import {approveERC20, deposit} from '@common/utils/actions';
 import {YCRV_SUPPORTED_NETWORK} from '@yCRV/constants/index';
 import {ZAP_OPTIONS_FROM, ZAP_OPTIONS_TO} from '@yCRV/constants/tokens';

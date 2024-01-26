@@ -3,10 +3,10 @@ import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {assert, toAddress, toNormalizedBN} from '@builtbymom/web3/utils';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {getVaultEstimateOut} from '@vaults/utils/getVaultEstimateOut';
-import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
 import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {useYearn} from '@common/contexts/useYearn';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
+import {allowanceKey} from '@common/utils';
 import {allowanceOf, approveERC20, deposit, redeemV3Shares, withdrawShares} from '@common/utils/actions';
 
 import type {TDict, TNormalizedBN} from '@builtbymom/web3/types';

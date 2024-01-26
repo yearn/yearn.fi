@@ -5,9 +5,9 @@ import {decodeAsBigInt, decodeAsNumber, decodeAsString, isZeroAddress, toAddress
 import {VEYFI_ABI} from '@veYFI/utils/abi/veYFI.abi';
 import {VEYFI_POSITION_HELPER_ABI} from '@veYFI/utils/abi/veYFIPositionHelper.abi';
 import {VEYFI_CHAIN_ID} from '@veYFI/utils/constants';
-import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
 import {VEYFI_ADDRESS, VEYFI_POSITION_HELPER_ADDRESS, YFI_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {toMilliseconds} from '@yearn-finance/web-lib/utils/time';
+import {allowanceKey} from '@common/utils';
 
 import type {ReactElement} from 'react';
 import type {TMilliseconds} from '@yearn-finance/web-lib/utils/time';

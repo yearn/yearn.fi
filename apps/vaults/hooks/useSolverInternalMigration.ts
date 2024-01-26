@@ -4,9 +4,9 @@ import {assert, toAddress, toBigInt, toNormalizedBN} from '@builtbymom/web3/util
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {getVaultEstimateOut} from '@vaults/utils/getVaultEstimateOut';
 import {readContract} from '@wagmi/core';
-import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
 import {MAX_UINT_256, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
+import {allowanceKey} from '@common/utils';
 import {allowanceOf, approveERC20, migrateShares} from '@common/utils/actions';
 import {ZAP_CRV_ABI} from '@yCRV/utils/abi/zapCRV.abi';
 import {zapCRV} from '@yCRV/utils/actions';

@@ -10,7 +10,7 @@ import {
 } from '@yearn-finance/web-lib/utils/constants';
 
 import type {GraphQLResponse} from 'graphql-request/build/esm/types';
-import type {TDict} from '@builtbymom/web3/types';
+import type {TAddress, TDict} from '@builtbymom/web3/types';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
 export function max(input: bigint, balance: bigint): bigint {
@@ -101,4 +101,12 @@ export function handleSettle<T>(data: PromiseSettledResult<unknown>, fallback: T
 		return fallback;
 	}
 	return data.value as T;
+}
+
+/* 🔵 - Yearn Finance ******************************************************
+ ** allowanceKey is used to access the unique allowance key matching one
+ ** token with one spender
+ **************************************************************************/
+export function allowanceKey(chainID: number, token: TAddress, spender: TAddress, owner: TAddress): string {
+	return `${chainID}_${token}_${spender}_${owner}`;
 }

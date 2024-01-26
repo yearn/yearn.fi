@@ -1,6 +1,6 @@
 import {useMemo} from 'react';
 import {useContractRead} from 'wagmi';
-import {formatUSD,isZero,toBigInt, toNormalizedBN} from '@builtbymom/web3/utils';
+import {formatUSD, isZero, toBigInt, toNormalizedBN} from '@builtbymom/web3/utils';
 import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {cl} from '@yearn-finance/web-lib/utils/cl';

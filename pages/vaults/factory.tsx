@@ -285,10 +285,9 @@ function Factory(): ReactElement {
 												: toAddress(gaugeDisplayData?.poolAddress)}
 										</p>
 										<a
-											href={`${getNetwork(YFACTORY_SUPPORTED_NETWORK)
-												?.defaultBlockExplorer}/address/${toAddress(
-												gaugeDisplayData?.poolAddress
-											)}`}
+											href={`${
+												getNetwork(YFACTORY_SUPPORTED_NETWORK)?.defaultBlockExplorer
+											}/address/${toAddress(gaugeDisplayData?.poolAddress)}`}
 											target={'_blank'}
 											rel={'noreferrer'}
 											className={'ml-4 cursor-pointer text-neutral-900'}>
@@ -315,10 +314,9 @@ function Factory(): ReactElement {
 												: toAddress(gaugeDisplayData?.gaugeAddress)}
 										</p>
 										<a
-											href={`${getNetwork(YFACTORY_SUPPORTED_NETWORK)
-												?.defaultBlockExplorer}/address/${toAddress(
-												gaugeDisplayData?.gaugeAddress
-											)}`}
+											href={`${
+												getNetwork(YFACTORY_SUPPORTED_NETWORK)?.defaultBlockExplorer
+											}/address/${toAddress(gaugeDisplayData?.gaugeAddress)}`}
 											target={'_blank'}
 											rel={'noreferrer'}
 											className={'ml-4 cursor-pointer text-neutral-900'}>

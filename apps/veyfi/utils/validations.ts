@@ -1,6 +1,6 @@
 import {isAddress} from 'viem';
 import {isZero} from '@builtbymom/web3/utils';
-import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
+import {allowanceKey} from '@common/utils';
 
 import type {TAddress, TDict} from '@builtbymom/web3/types';
 
