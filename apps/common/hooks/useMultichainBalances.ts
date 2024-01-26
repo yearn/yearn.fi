@@ -1,6 +1,7 @@
 import {useCallback, useMemo, useRef, useState} from 'react';
 import {erc20ABI, useChainId} from 'wagmi';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {useAsyncTrigger} from '@builtbymom/web3/hooks/useAsyncTrigger';
 import {
 	decodeAsBigInt,
 	decodeAsNumber,
@@ -18,8 +19,6 @@ import {AGGREGATE3_ABI} from '@yearn-finance/web-lib/utils/abi/aggregate.abi';
 import {MULTICALL3_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {isEth} from '@yearn-finance/web-lib/utils/isEth';
 import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
-
-import {useAsyncTrigger} from './useAsyncEffect';
 
 import type {DependencyList} from 'react';
 import type {ContractFunctionConfig} from 'viem';
