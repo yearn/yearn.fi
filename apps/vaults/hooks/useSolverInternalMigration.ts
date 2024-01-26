@@ -7,7 +7,7 @@ import {zapCRV} from '@vaults/utils/actions';
 import {getVaultEstimateOut} from '@vaults/utils/getVaultEstimateOut';
 import {readContract} from '@wagmi/core';
 import {MAX_UINT_256, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {Solver} from '@common/schemas/yDaemonTokenListBalances';
+import {Solver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
 import {allowanceKey} from '@common/utils';
 import {allowanceOf, approveERC20, migrateShares} from '@common/utils/actions';
 

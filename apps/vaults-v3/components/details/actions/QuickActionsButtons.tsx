@@ -6,16 +6,16 @@ import {defaultTxStatus} from '@builtbymom/web3/utils/wagmi';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useSolver} from '@vaults/contexts/useSolver';
 import {Button} from '@yearn-finance/web-lib/components/Button';
+import {useYearnWallet} from '@yearn-finance/web-lib/contexts/useYearnWallet';
 import {ETH_TOKEN_ADDRESS, MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
-import {useWallet} from '@common/contexts/useWallet';
-import {Solver} from '@common/schemas/yDaemonTokenListBalances';
+import {Solver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
 
 import type {ReactElement} from 'react';
+import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TNormalizedBN} from '@builtbymom/web3/types';
-import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
 export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const {refresh} = useWallet();
+	const {onRefresh} = useYearnWallet();
 	const {address, provider} = useWeb3();
 	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
 	const [txStatusExecuteDeposit, set_txStatusExecuteDeposit] = useState(defaultTxStatus);
@@ -60,9 +60,9 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 			if (currentVault.staking.available) {
 				toRefresh.push({address: toAddress(currentVault.staking.address), chainID});
 			}
-			await refresh(toRefresh);
+			await onRefresh(toRefresh);
 		} else {
-			refresh([
+			onRefresh([
 				{address: toAddress(ETH_TOKEN_ADDRESS), chainID},
 				{address: toAddress(actionParams?.selectedOptionFrom?.value), chainID},
 				{address: toAddress(actionParams?.selectedOptionTo?.value), chainID}
@@ -74,7 +74,7 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 		currentSolver,
 		actionParams?.selectedOptionFrom?.value,
 		actionParams?.selectedOptionTo?.value,
-		refresh
+		onRefresh
 	]);
 
 	/* 🔵 - Yearn Finance ******************************************************

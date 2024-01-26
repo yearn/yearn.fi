@@ -2,15 +2,15 @@ import {Fragment, useMemo} from 'react';
 import {Popover, Transition} from '@headlessui/react';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
+import {useYearn} from '@yearn-finance/web-lib/contexts/useYearn';
 import {IconSettings} from '@yearn-finance/web-lib/icons/IconSettings';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
+import {Solver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
 import {Switch} from '@common/components/Switch';
-import {useYearn} from '@common/contexts/useYearn';
-import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 
 import type {ReactElement} from 'react';
-import type {TSolver} from '@common/schemas/yDaemonTokenListBalances';
-import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
+import type {TSolver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
+import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 
 type TSettingPopover = {
 	vault: TYDaemonVault;

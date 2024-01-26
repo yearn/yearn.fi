@@ -3,7 +3,7 @@ import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 
 function YearnFeesLineItem({children, label, tooltip}: any): ReactElement {
 	return (

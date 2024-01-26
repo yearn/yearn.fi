@@ -17,12 +17,12 @@ import {isValidPortalsErrorObject} from '@vaults/hooks/helpers/isValidPortalsErr
 import {getPortalsApproval, getPortalsEstimate, getPortalsTx, PORTALS_NETWORK} from '@vaults/hooks/usePortalsApi';
 import {prepareSendTransaction, switchNetwork, waitForTransaction} from '@wagmi/core';
 import {toast} from '@yearn-finance/web-lib/components/yToast';
+import {useYearn} from '@yearn-finance/web-lib/contexts/useYearn';
+import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
 import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {isEth} from '@yearn-finance/web-lib/utils/isEth';
+import {Solver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
 import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
-import {useYearn} from '@common/contexts/useYearn';
-import {Solver} from '@common/schemas/yDaemonTokenListBalances';
-import {allowanceKey} from '@common/utils';
 import {allowanceOf, approveERC20} from '@common/utils/actions';
 
 import type {Transaction} from 'viem';

@@ -5,21 +5,21 @@ import {defaultTxStatus} from '@builtbymom/web3/utils/wagmi';
 import {useVaultStakingData} from '@vaults/hooks/useVaultStakingData';
 import {claim as claimAction, stake as stakeAction, unstake as unstakeAction} from '@vaults/utils/actions';
 import {Button} from '@yearn-finance/web-lib/components/Button';
+import {useYearnWallet} from '@yearn-finance/web-lib/contexts/useYearnWallet';
+import {useYearnToken} from '@yearn-finance/web-lib/hooks/useYearnToken';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {Input} from '@common/components/Input';
-import {useWallet} from '@common/contexts/useWallet';
-import {useToken} from '@common/hooks/useToken';
 import {approveERC20} from '@common/utils/actions';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 
 export function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {provider, isActive} = useWeb3();
-	const {refresh: refreshBalances} = useWallet();
+	const {onRefresh: refreshBalances} = useYearnWallet();
 	const [stakingRewards, updateStakingRewards] = useVaultStakingData({currentVault});
-	const vaultToken = useToken({address: currentVault.address, chainID: currentVault.chainID});
-	const rewardTokenBalance = useToken({address: stakingRewards.rewardsToken, chainID: currentVault.chainID});
+	const vaultToken = useYearnToken({address: currentVault.address, chainID: currentVault.chainID});
+	const rewardTokenBalance = useYearnToken({address: stakingRewards.rewardsToken, chainID: currentVault.chainID});
 	const normalizedStakeBalance = toNormalizedBN(stakingRewards.balanceOf, currentVault.decimals);
 	const normalizedRewardBalance = toNormalizedBN(stakingRewards.earned, rewardTokenBalance.decimals);
 

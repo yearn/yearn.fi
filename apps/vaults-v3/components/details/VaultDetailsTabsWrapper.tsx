@@ -14,7 +14,7 @@ import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {IconChevron} from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 
 type TTabsOptions = {
 	value: number;

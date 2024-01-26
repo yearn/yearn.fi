@@ -1,13 +1,13 @@
 import {useCallback, useMemo} from 'react';
 import {toAddress} from '@builtbymom/web3/utils';
 import {deserialize, serialize} from '@wagmi/core';
+import {useYearnWallet} from '@yearn-finance/web-lib/contexts/useYearnWallet';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {useWallet} from '@common/contexts/useWallet';
 import {getVaultName} from '@common/utils';
 import {numberSort, stringSort} from '@common/utils/sort';
 
+import type {TYDaemonVaults} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TSortDirection} from '@builtbymom/web3/types';
-import type {TYDaemonVaults} from '@common/schemas/yDaemonVaultsSchemas';
 
 export type TPossibleSortBy = 'apr' | 'estAPR' | 'tvl' | 'name' | 'deposited' | 'available' | 'featuringScore';
 
@@ -16,7 +16,7 @@ export function useSortVaults(
 	sortBy: TPossibleSortBy,
 	sortDirection: TSortDirection
 ): TYDaemonVaults {
-	const {getBalance} = useWallet();
+	const {getBalance} = useYearnWallet();
 
 	const sortedByName = useCallback(
 		(): TYDaemonVaults =>

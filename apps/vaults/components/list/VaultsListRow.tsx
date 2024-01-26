@@ -2,15 +2,15 @@ import {useMemo} from 'react';
 import Link from 'next/link';
 import {formatAmount, isZero, toAddress, toNormalizedBN} from '@builtbymom/web3/utils';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
+import {useYearnWallet} from '@yearn-finance/web-lib/contexts/useYearnWallet';
+import {useYearnBalance} from '@yearn-finance/web-lib/hooks/useYearnBalance';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {RenderAmount} from '@common/components/RenderAmount';
-import {useWallet} from '@common/contexts/useWallet';
-import {useBalance} from '@common/hooks/useBalance';
 import {getVaultName} from '@common/utils';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 
 export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const isEthMainnet = currentVault.chainID === 1;
@@ -325,7 +325,7 @@ function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}): Reac
 }
 
 export function VaultStakedAmount({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const {getToken} = useWallet();
+	const {getToken} = useYearnWallet();
 
 	const staked = useMemo((): bigint => {
 		const vaultToken = getToken({chainID: currentVault.chainID, address: currentVault.address});
@@ -358,9 +358,9 @@ export function VaultStakedAmount({currentVault}: {currentVault: TYDaemonVault})
 }
 
 export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const balanceOfWant = useBalance({chainID: currentVault.chainID, address: currentVault.token.address});
-	const balanceOfCoin = useBalance({chainID: currentVault.chainID, address: ETH_TOKEN_ADDRESS});
-	const balanceOfWrappedCoin = useBalance({
+	const balanceOfWant = useYearnBalance({chainID: currentVault.chainID, address: currentVault.token.address});
+	const balanceOfCoin = useYearnBalance({chainID: currentVault.chainID, address: ETH_TOKEN_ADDRESS});
+	const balanceOfWrappedCoin = useYearnBalance({
 		chainID: currentVault.chainID,
 		address: toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS ? WFTM_TOKEN_ADDRESS : WETH_TOKEN_ADDRESS //TODO: Create a wagmi Chain upgrade to add the chain wrapper token address
 	});

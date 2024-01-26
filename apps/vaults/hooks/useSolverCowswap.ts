@@ -8,12 +8,12 @@ import {defaultTxStatus} from '@builtbymom/web3/utils/wagmi';
 import {OrderBookApi, OrderQuoteSide, OrderSigningUtils} from '@cowprotocol/cow-sdk';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {toast} from '@yearn-finance/web-lib/components/yToast';
+import {useYearn} from '@yearn-finance/web-lib/contexts/useYearn';
+import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
 import {MAX_UINT_256, SOLVER_COW_VAULT_RELAYER_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {isEth} from '@yearn-finance/web-lib/utils/isEth';
+import {Solver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
 import {getEthersSigner} from '@yearn-finance/web-lib/utils/wagmi/ethersAdapter';
-import {useYearn} from '@common/contexts/useYearn';
-import {Solver} from '@common/schemas/yDaemonTokenListBalances';
-import {allowanceKey} from '@common/utils';
 import {allowanceOf, approveERC20, isApprovedERC20} from '@common/utils/actions';
 
 import type {TDict, TNormalizedBN} from '@builtbymom/web3/types';

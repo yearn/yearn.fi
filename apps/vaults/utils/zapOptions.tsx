@@ -1,8 +1,8 @@
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 
+import type {TDropdownOption} from '@yearn-finance/web-lib/types';
+import type {TSolver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
 import type {TAddress} from '@builtbymom/web3/types';
-import type {TSolver} from '@common/schemas/yDaemonTokenListBalances';
-import type {TDropdownOption} from '@common/types/types';
 
 type TSetZapOptionProps = {
 	name: string;

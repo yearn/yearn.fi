@@ -1,16 +1,16 @@
 import Link from 'next/link';
 import {formatAmount, toAddress} from '@builtbymom/web3/utils';
+import {useYearnBalance} from '@yearn-finance/web-lib/hooks/useYearnBalance';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
-import {useBalance} from '@common/hooks/useBalance';
 
 import {VaultChainTag} from '../VaultChainTag';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 
 export function VaultsListInternalMigrationRow({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const balanceToMigrate = useBalance({address: currentVault.address, chainID: currentVault.chainID});
+	const balanceToMigrate = useYearnBalance({address: currentVault.address, chainID: currentVault.chainID});
 
 	return (
 		<div className={cl('grid w-full grid-cols-1 md:grid-cols-12 rounded-3xl', 'p-6 pt-2 md:pr-10', 'relative')}>
@@ -23,7 +23,7 @@ export function VaultsListInternalMigrationRow({currentVault}: {currentVault: TY
 			/>
 			<div className={cl('col-span-3 z-10', 'flex flex-row items-center justify-between')}>
 				<div className={'flex flex-row space-x-6'}>
-					<div className={'mt-2.5 size-8 rounded-full md:flex'}>
+					<div className={'size-8 mt-2.5 rounded-full md:flex'}>
 						<ImageWithFallback
 							src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-32.png`}
 							alt={''}

@@ -5,7 +5,7 @@ import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {depositAndStake} from '@vaults/utils/actions';
 import {getVaultEstimateOut} from '@vaults/utils/getVaultEstimateOut';
 import {MAX_UINT_256, STAKING_REWARDS_ZAP_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {Solver} from '@common/schemas/yDaemonTokenListBalances';
+import {Solver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
 import {allowanceKey} from '@common/utils';
 import {allowanceOf, approveERC20} from '@common/utils/actions';
 

@@ -8,8 +8,8 @@ import {
 	YVECRV_TOKEN_ADDRESS
 } from '@yearn-finance/web-lib/utils/constants';
 
+import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TAddress, TDict} from '@builtbymom/web3/types';
-import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
 export function max(input: bigint, balance: bigint): bigint {
 	if (input > balance) {

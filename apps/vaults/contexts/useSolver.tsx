@@ -10,11 +10,11 @@ import {useSolverPartnerContract} from '@vaults/hooks/useSolverPartnerContract';
 import {useSolverPortals} from '@vaults/hooks/useSolverPortals';
 import {useSolverVanilla} from '@vaults/hooks/useSolverVanilla';
 import {serialize} from '@wagmi/core';
-import {Solver} from '@common/schemas/yDaemonTokenListBalances';
+import {Solver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
 import {hash} from '@common/utils';
 
+import type {TSolver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
 import type {TNormalizedBN} from '@builtbymom/web3/types';
-import type {TSolver} from '@common/schemas/yDaemonTokenListBalances';
 import type {TInitSolverArgs, TSolverContext, TWithSolver} from '@vaults/types/solvers';
 
 export const isSolverDisabled = (key: TSolver): boolean => {

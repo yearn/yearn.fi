@@ -15,18 +15,18 @@ import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
 import {Wrapper} from '@vaults/Wrapper';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
+import {useYearn} from '@yearn-finance/web-lib/contexts/useYearn';
+import {useYearnWallet} from '@yearn-finance/web-lib/contexts/useYearnWallet';
+import {usePagination} from '@yearn-finance/web-lib/hooks/usePagination';
 import {IconChain} from '@yearn-finance/web-lib/icons/IconChain';
 import {InfoTooltip} from '@common/components/InfoTooltip';
 import {ListHead} from '@common/components/ListHead';
 import {Pagination} from '@common/components/Pagination';
-import {useWallet} from '@common/contexts/useWallet';
-import {useYearn} from '@common/contexts/useYearn';
-import {usePagination} from '@common/hooks/usePagination';
 
 import type {NextRouter} from 'next/router';
 import type {ReactElement, ReactNode} from 'react';
+import type {TYDaemonVault, TYDaemonVaults} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TSortDirection} from '@builtbymom/web3/types';
-import type {TYDaemonVault, TYDaemonVaults} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 
 function Counter({value}: {value: number}): ReactElement {
@@ -41,7 +41,7 @@ function Counter({value}: {value: number}): ReactElement {
 }
 
 function HeaderUserPosition(): ReactElement {
-	const {cumulatedValueInV2Vaults} = useWallet();
+	const {cumulatedValueInV2Vaults} = useYearnWallet();
 	const {earned} = useYearn();
 	const {isActive, address, openLoginModal, onSwitchChain} = useWeb3();
 

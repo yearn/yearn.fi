@@ -1,21 +1,21 @@
 import {useMemo, useState} from 'react';
+import {useFetch} from '@builtbymom/web3/hooks/useFetch';
 import {formatAmount, formatPercent, toAddress, toBigInt, toNormalizedValue} from '@builtbymom/web3/utils';
 import {useIsMounted} from '@react-hookz/web';
 import {findLatestApr} from '@vaults/components/details/tabs/findLatestApr';
 import {GraphForStrategyReports} from '@vaults/components/graphs/GraphForStrategyReports';
 import {yDaemonReportsSchema} from '@vaults/schemas/reportsSchema';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
+import {useYDaemonBaseURI} from '@yearn-finance/web-lib/hooks/useYDaemonBaseURI';
 import {IconCopy} from '@yearn-finance/web-lib/icons/IconCopy';
 import {formatDuration} from '@yearn-finance/web-lib/utils/format.time';
 import {copyToClipboard, parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
 import {SearchBar} from '@common/components/SearchBar';
 import {Switch} from '@common/components/Switch';
-import {useFetch} from '@common/hooks/useFetch';
-import {useYDaemonBaseURI} from '@common/hooks/useYDaemonBaseURI';
 import {IconChevron} from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault, TYDaemonVaultStrategy} from '@common/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault, TYDaemonVaultStrategy} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TYDaemonReports} from '@vaults/schemas/reportsSchema';
 
 type TProps = {
@@ -155,7 +155,7 @@ function VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
 							</div>
 						</div>
 					</div>
-					<div className={'col-span-12 flex size-full flex-col justify-between md:col-span-6'}>
+					<div className={'size-full col-span-12 flex flex-col justify-between md:col-span-6'}>
 						<div className={'grid grid-cols-6 gap-6 md:gap-8'}>
 							<div className={'col-span-2 flex flex-col space-y-0 md:space-y-2'}>
 								<p className={'text-xxs text-neutral-600 md:text-xs'}>{'APR'}</p>

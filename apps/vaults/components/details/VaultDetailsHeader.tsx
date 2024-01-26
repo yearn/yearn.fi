@@ -1,21 +1,21 @@
 import {useMemo} from 'react';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {useFetch} from '@builtbymom/web3/hooks/useFetch';
 import {formatUSD, isZero, toAddress, toBigInt, toNormalizedBN} from '@builtbymom/web3/utils';
+import {useYDaemonBaseURI} from '@yearn-finance/web-lib/hooks/useYDaemonBaseURI';
+import {useYearnBalance} from '@yearn-finance/web-lib/hooks/useYearnBalance';
+import {useYearnTokenPrice} from '@yearn-finance/web-lib/hooks/useYearnTokenPrice';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {copyToClipboard} from '@yearn-finance/web-lib/utils/helpers';
+import {yDaemonSingleEarnedSchema} from '@yearn-finance/web-lib/utils/schemas/yDaemonEarnedSchema';
 import {RenderAmount} from '@common/components/RenderAmount';
-import {useBalance} from '@common/hooks/useBalance';
-import {useFetch} from '@common/hooks/useFetch';
-import {useTokenPrice} from '@common/hooks/useTokenPrice';
-import {useYDaemonBaseURI} from '@common/hooks/useYDaemonBaseURI';
 import {IconQuestion} from '@common/icons/IconQuestion';
-import {yDaemonSingleEarnedSchema} from '@common/schemas/yDaemonEarnedSchema';
 import {getVaultName} from '@common/utils';
 
 import type {ReactElement} from 'react';
+import type {TYDaemonEarnedSingle} from '@yearn-finance/web-lib/utils/schemas/yDaemonEarnedSchema';
+import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TNormalizedBN} from '@builtbymom/web3/types';
-import type {TYDaemonEarnedSingle} from '@common/schemas/yDaemonEarnedSchema';
-import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
 type TVaultHeaderLineItemProps = {
 	label: string;
@@ -113,10 +113,12 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 		return toNormalizedBN(value < 0n ? 0n : value);
 	}, [earned?.earned, currentVault.address]);
 
-	const vaultBalance = useBalance({address: currentVault.address, chainID: currentVault.chainID});
-	const stakedBalance = useBalance({address: currentVault.staking.address, chainID: currentVault.chainID});
+	const vaultBalance = useYearnBalance({address: currentVault.address, chainID: currentVault.chainID});
+	const stakedBalance = useYearnBalance({address: currentVault.staking.address, chainID: currentVault.chainID});
 	const vaultPrice =
-		useTokenPrice({address: currentVault.address, chainID: currentVault.chainID}) || currentVault?.tvl?.price || 0;
+		useYearnTokenPrice({address: currentVault.address, chainID: currentVault.chainID}) ||
+		currentVault?.tvl?.price ||
+		0;
 	const vaultName = useMemo((): string => getVaultName(currentVault), [currentVault]);
 	const depositedAndStaked = currentVault.staking.available
 		? toNormalizedBN(vaultBalance.raw + stakedBalance.raw, decimals)

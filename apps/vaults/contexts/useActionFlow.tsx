@@ -7,6 +7,8 @@ import {useMountEffect, useUpdateEffect} from '@react-hookz/web';
 import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
 import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
 import {setZapOption} from '@vaults/utils/zapOptions';
+import {useYearn} from '@yearn-finance/web-lib/contexts/useYearn';
+import {useYearnWallet} from '@yearn-finance/web-lib/contexts/useYearnWallet';
 import {VAULT_ABI} from '@yearn-finance/web-lib/utils/abi/vault.abi';
 import {
 	ETH_TOKEN_ADDRESS,
@@ -19,18 +21,16 @@ import {
 	YVWFTM_ADDRESS
 } from '@yearn-finance/web-lib/utils/constants';
 import {isEth} from '@yearn-finance/web-lib/utils/isEth';
+import {Solver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
 import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
-import {useWallet} from '@common/contexts/useWallet';
-import {useYearn} from '@common/contexts/useYearn';
-import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 
 import externalzapOutTokenList from '../../common/utils/externalZapOutTokenList.json';
 
 import type {ReactNode} from 'react';
+import type {TDropdownOption} from '@yearn-finance/web-lib/types';
+import type {TSolver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
+import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TAddress, TNormalizedBN} from '@builtbymom/web3/types';
-import type {TSolver} from '@common/schemas/yDaemonTokenListBalances';
-import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
-import type {TDropdownOption} from '@common/types/types';
 
 export enum Flow {
 	Deposit = 'deposit',
@@ -145,7 +145,7 @@ export function ActionFlowContextApp({
 	currentVault: TYDaemonVault;
 }): React.ReactElement {
 	const {address} = useWeb3();
-	const {getBalance} = useWallet();
+	const {getBalance} = useYearnWallet();
 	const {listTokens: listZapTokens} = useWalletForZap();
 	const {zapProvider, isStakingOpBoostedVaults} = useYearn();
 	const [possibleOptionsFrom, set_possibleOptionsFrom] = useState<TDropdownOption[]>([]);

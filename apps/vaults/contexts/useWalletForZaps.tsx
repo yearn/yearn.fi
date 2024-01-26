@@ -1,22 +1,25 @@
 import {createContext, memo, useCallback, useContext, useMemo, useState} from 'react';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {useFetch} from '@builtbymom/web3/hooks/useFetch';
 import {isZeroAddress, toAddress, toNormalizedBN} from '@builtbymom/web3/utils';
 import {useDeepCompareEffect} from '@react-hookz/web';
-import {useWallet} from '@common/contexts/useWallet';
-import {useFetch} from '@common/hooks/useFetch';
-import {useYDaemonBaseURI} from '@common/hooks/useYDaemonBaseURI';
-import {yDaemonTokenListBalances} from '@common/schemas/yDaemonTokenListBalances';
+import {useYearnWallet} from '@yearn-finance/web-lib/contexts/useYearnWallet';
+import {useYDaemonBaseURI} from '@yearn-finance/web-lib/hooks/useYDaemonBaseURI';
+import {
+	type TSupportedZaps,
+	type TYDaemonTokenListBalances,
+	yDaemonTokenListBalances
+} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
 
 import type {ReactElement} from 'react';
+import type {TYChainTokens, TYToken} from '@yearn-finance/web-lib/types';
+import type {TUseBalancesTokens} from '@builtbymom/web3/hooks/useBalances.multichains';
 import type {TAddress, TDict, TNormalizedBN} from '@builtbymom/web3/types';
-import type {TUseBalancesTokens} from '@common/hooks/useMultichainBalances';
-import type {TSupportedZaps, TYDaemonTokenListBalances} from '@common/schemas/yDaemonTokenListBalances';
-import type {TYChainTokens, TYToken} from '@common/types/types';
 
 export type TWalletForZap = {
 	tokensList: TYDaemonTokenListBalances;
-	listTokens: ({chainID}: {chainID: number}) => TDict<TYToken & {supportedZaps: TSupportedZaps[]}>;
-	getToken: ({address, chainID}: {address: TAddress; chainID: number}) => TYToken & {supportedZaps: TSupportedZaps[]};
+	listTokens: ({chainID}: {chainID: number}) => TDict<TYToken>;
+	getToken: ({address, chainID}: {address: TAddress; chainID: number}) => TYToken;
 	getBalance: ({address, chainID}: {address: TAddress; chainID: number}) => TNormalizedBN;
 	getPrice: ({address, chainID}: {address: TAddress; chainID: number}) => TNormalizedBN;
 	refresh: (tokenList?: TUseBalancesTokens[]) => Promise<TYChainTokens>;
@@ -53,7 +56,7 @@ export const WalletForZapAppContextApp = memo(function WalletForZapAppContextApp
 	children: ReactElement;
 }): ReactElement {
 	const {address} = useWeb3();
-	const {refresh} = useWallet();
+	const {onRefresh} = useYearnWallet();
 	const {yDaemonBaseUri} = useYDaemonBaseURI();
 	const [zapTokens, set_zapTokens] = useState<TYChainTokens>({});
 
@@ -83,7 +86,7 @@ export const WalletForZapAppContextApp = memo(function WalletForZapAppContextApp
 
 	useDeepCompareEffect((): void => {
 		const allToRefresh = availableTokens.map(({address, chainID}): TUseBalancesTokens => ({address, chainID}));
-		refresh(allToRefresh).then((results): void => {
+		onRefresh(allToRefresh).then((results): void => {
 			for (const item of Object.values(results)) {
 				for (const element of Object.values(item)) {
 					const {address, chainID} = element;
@@ -102,7 +105,7 @@ export const WalletForZapAppContextApp = memo(function WalletForZapAppContextApp
 
 			set_zapTokens(prev => ({...prev, ...(results as TYChainTokens)}));
 		});
-	}, [availableTokens, refresh, tokensList]);
+	}, [availableTokens, onRefresh, tokensList]);
 
 	const listTokens = useCallback(
 		({chainID}: {chainID: number}): TDict<TYToken & {supportedZaps: TSupportedZaps[]}> => {
@@ -140,9 +143,9 @@ export const WalletForZapAppContextApp = memo(function WalletForZapAppContextApp
 			getToken,
 			getBalance,
 			getPrice,
-			refresh: refresh as TWalletForZap['refresh']
+			refresh: onRefresh
 		}),
-		[listTokens, getToken, getBalance, getPrice, refresh, tokensList]
+		[listTokens, getToken, getBalance, getPrice, onRefresh, tokensList]
 	);
 
 	return <WalletForZap.Provider value={contextValue}>{props.children}</WalletForZap.Provider>;

@@ -7,18 +7,18 @@ import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useSolver} from '@vaults/contexts/useSolver';
 import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
 import {Button} from '@yearn-finance/web-lib/components/Button';
+import {useYearn} from '@yearn-finance/web-lib/contexts/useYearn';
+import {useYearnWallet} from '@yearn-finance/web-lib/contexts/useYearnWallet';
 import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {isEth} from '@yearn-finance/web-lib/utils/isEth';
-import {useWallet} from '@common/contexts/useWallet';
-import {useYearn} from '@common/contexts/useYearn';
-import {Solver} from '@common/schemas/yDaemonTokenListBalances';
+import {Solver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
 
 import type {ReactElement} from 'react';
+import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TNormalizedBN} from '@builtbymom/web3/types';
-import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
 export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const {refresh} = useWallet();
+	const {onRefresh} = useYearnWallet();
 	const {refresh: refreshZapBalances} = useWalletForZap();
 	const {address, provider} = useWeb3();
 	const {isStakingOpBoostedVaults} = useYearn();
@@ -66,18 +66,18 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 			if (currentVault.staking.available) {
 				toRefresh.push({address: toAddress(currentVault.staking.address), chainID});
 			}
-			await refresh(toRefresh);
+			await onRefresh(toRefresh);
 		} else if (Solver.enum.Cowswap === currentSolver || Solver.enum.Portals === currentSolver) {
 			if (isDepositing) {
 				//refresh input from zap wallet, refresh output from default
 				await Promise.all([
 					refreshZapBalances([{address: toAddress(actionParams?.selectedOptionFrom?.value), chainID}]),
-					refresh([{address: toAddress(actionParams?.selectedOptionTo?.value), chainID}])
+					onRefresh([{address: toAddress(actionParams?.selectedOptionTo?.value), chainID}])
 				]);
 			} else {
 				await Promise.all([
 					refreshZapBalances([{address: toAddress(actionParams?.selectedOptionTo?.value), chainID}]),
-					refresh([{address: toAddress(actionParams?.selectedOptionFrom?.value), chainID}])
+					onRefresh([{address: toAddress(actionParams?.selectedOptionFrom?.value), chainID}])
 				]);
 			}
 		}
@@ -87,7 +87,7 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 		currentVault,
 		actionParams?.selectedOptionFrom?.value,
 		actionParams?.selectedOptionTo?.value,
-		refresh,
+		onRefresh,
 		isDepositing,
 		refreshZapBalances
 	]);

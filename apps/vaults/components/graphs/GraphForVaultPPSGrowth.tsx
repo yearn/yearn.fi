@@ -3,7 +3,7 @@ import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recha
 import {formatAmount, formatPercent, isZero} from '@builtbymom/web3/utils';
 
 import type {ReactElement} from 'react';
-import type {TMessariGraphData} from '@common/types/types';
+import type {TMessariGraphData} from '@yearn-finance/web-lib/types';
 
 export type TGraphForVaultPPSGrowthProps = {
 	messariData: TMessariGraphData[];

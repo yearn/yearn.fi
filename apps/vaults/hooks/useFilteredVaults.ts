@@ -1,10 +1,11 @@
 import {useCallback} from 'react';
 import {useDeepCompareMemo} from '@react-hookz/web';
 import {useAppSettings} from '@vaults/contexts/useAppSettings';
-import {useWallet} from '@common/contexts/useWallet';
-import {useYearn} from '@common/contexts/useYearn';
-import {isAutomatedVault, type TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
+import {useYearn} from '@yearn-finance/web-lib/contexts/useYearn';
+import {useYearnWallet} from '@yearn-finance/web-lib/contexts/useYearnWallet';
+import {isAutomatedVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 
+import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TAddress, TDict} from '@builtbymom/web3/types';
 
 export function useFilteredVaults(
@@ -27,7 +28,7 @@ export function useVaultFilter(
 	migratableVaults: TYDaemonVault[];
 } {
 	const {vaults, vaultsMigrations, vaultsRetired} = useYearn();
-	const {getToken} = useWallet();
+	const {getToken} = useYearnWallet();
 	const {shouldHideDust} = useAppSettings();
 
 	const filterHoldingsCallback = useCallback(

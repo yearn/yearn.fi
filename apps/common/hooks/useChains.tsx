@@ -1,4 +1,3 @@
-import {useMemo} from 'react';
 import {useConnect} from 'wagmi';
 import {useCustomCompareMemo, useDeepCompareMemo} from '@react-hookz/web';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
@@ -51,19 +50,4 @@ export function useChainOptions(chains: number[] | null): TMultiSelectOptionProp
 	}, [injectedChains, chains]);
 
 	return options;
-}
-
-export function useSupportedChains(): Chain[] {
-	const {connectors} = useConnect();
-
-	const supportedChains = useMemo((): Chain[] => {
-		const injectedConnector = connectors.find((e): boolean => e.id.toLocaleLowerCase() === 'injected');
-		if (!injectedConnector) {
-			return [];
-		}
-		const noFork = injectedConnector.chains.filter(({id}): boolean => id !== 1337);
-		return noFork;
-	}, [connectors]);
-
-	return supportedChains;
 }

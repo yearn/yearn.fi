@@ -5,7 +5,9 @@ import {usePathname} from 'next/navigation';
 import {type NextRouter, useRouter} from 'next/router';
 import {AnimatePresence, domAnimation, LazyMotion, motion} from 'framer-motion';
 import {WithMom} from '@builtbymom/web3/contexts/WithMom';
+import {WalletForZapAppContextApp} from '@vaults/contexts/useWalletForZaps';
 import {arbitrum, base, fantom, mainnet, optimism, polygon} from '@wagmi/chains';
+import {YearnContextApp} from '@yearn-finance/web-lib/contexts/useYearn';
 import {IconAlertCritical} from '@yearn-finance/web-lib/icons/IconAlertCritical';
 import {IconAlertError} from '@yearn-finance/web-lib/icons/IconAlertError';
 import {IconCheckmark} from '@yearn-finance/web-lib/icons/IconCheckmark';
@@ -14,8 +16,6 @@ import {localhost} from '@yearn-finance/web-lib/utils/wagmi/networks';
 import AppHeader from '@common/components/Header';
 import Meta from '@common/components/Meta';
 import {MenuContextApp} from '@common/contexts/useMenu';
-import {WalletContextApp} from '@common/contexts/useWallet';
-import {YearnContextApp} from '@common/contexts/useYearn';
 import {useCurrentApp} from '@common/hooks/useCurrentApp';
 import {variants} from '@common/utils/animations';
 
@@ -129,12 +129,12 @@ function MyApp(props: AppProps): ReactElement {
 				]}>
 				<MenuContextApp>
 					<YearnContextApp>
-						<WalletContextApp>
+						<WalletForZapAppContextApp>
 							<Fragment>
 								<Meta meta={manifest} />
 								<WithLayout {...props} />
 							</Fragment>
-						</WalletContextApp>
+						</WalletForZapAppContextApp>
 					</YearnContextApp>
 				</MenuContextApp>
 			</WithMom>

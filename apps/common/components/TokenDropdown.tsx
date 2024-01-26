@@ -4,15 +4,15 @@ import {formatAmount} from '@builtbymom/web3/utils';
 import {Combobox, Transition} from '@headlessui/react';
 import {useThrottledState} from '@react-hookz/web';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
+import {useYearnWallet} from '@yearn-finance/web-lib/contexts/useYearnWallet';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
-import {useWallet} from '@common/contexts/useWallet';
 import {IconChevron} from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
-import type {TDropdownItemProps, TDropdownOption, TDropdownProps} from '@common/types/types';
+import type {TDropdownItemProps, TDropdownOption, TDropdownProps} from '@yearn-finance/web-lib/types';
 
 function DropdownItem({option}: TDropdownItemProps): ReactElement {
-	const {getBalance} = useWallet();
+	const {getBalance} = useYearnWallet();
 	const balance = getBalance({address: option.value, chainID: option.chainID});
 
 	return (

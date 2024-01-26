@@ -3,8 +3,8 @@ import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recha
 import {formatAmount, formatWithUnit, isZero} from '@builtbymom/web3/utils';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
-import type {TGraphData} from '@common/types/types';
+import type {TGraphData} from '@yearn-finance/web-lib/types';
+import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 
 export type TGraphForVaultEarningsProps = {
 	currentVault: TYDaemonVault;
