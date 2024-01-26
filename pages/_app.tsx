@@ -1,14 +1,18 @@
 import React, {Fragment, memo} from 'react';
+import {Toaster} from 'react-hot-toast';
 import localFont from 'next/font/local';
 import {usePathname} from 'next/navigation';
 import {type NextRouter, useRouter} from 'next/router';
 import {AnimatePresence, domAnimation, LazyMotion, motion} from 'framer-motion';
+import {WithMom} from '@builtbymom/web3/contexts/WithMom';
 import {useLocalStorageValue} from '@react-hookz/web';
 import {arbitrum, base, fantom, mainnet, optimism, polygon} from '@wagmi/chains';
-import {WithYearn} from '@yearn-finance/web-lib/contexts/WithYearn';
+import {IconAlertCritical} from '@yearn-finance/web-lib/icons/IconAlertCritical';
+import {IconAlertError} from '@yearn-finance/web-lib/icons/IconAlertError';
+import {IconCheckmark} from '@yearn-finance/web-lib/icons/IconCheckmark';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {localhost} from '@yearn-finance/web-lib/utils/wagmi/networks';
-import {AppHeader} from '@common/components/AppHeader';
+import AppHeader from '@common/components/Header';
 import Meta from '@common/components/Meta';
 import {Popover} from '@common/components/Popover';
 import {MenuContextApp} from '@common/contexts/useMenu';
@@ -78,7 +82,7 @@ const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 			<div
 				id={'app'}
 				className={cl('mx-auto mb-0 flex font-aeonik')}>
-				<div className={'block size-full min-h-max'}>
+				<div className={'size-full block min-h-max'}>
 					<LazyMotion features={domAnimation}>
 						<AnimatePresence mode={'wait'}>
 							<motion.div
@@ -105,44 +109,6 @@ const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 });
 
 /**** 🔵 - Yearn Finance ***************************************************************************
- ** The 'App' function is a React functional component that returns a ReactElement. It uses several
- ** hooks and components to build the main structure of the application.
- **
- ** The 'useCurrentApp' hook is used to get the current app manifest.
- **
- ** The 'MenuContextApp', 'YearnContextApp', and 'WalletContextApp' are context providers that
- ** provide global state for the menu, Yearn, and wallet respectively.
- ** The 'Meta' component is used to set the meta tags for the page.
- ** The 'WithLayout' component is a higher-order component that wraps the current page component
- ** and provides layout for the page.
- **
- ** The 'NetworkStatusIndicator' component is used to display the network status.
- ** The returned JSX structure is wrapped with the context providers and includes the meta tags,
- ** layout, and network status indicator.
- **************************************************************************************************/
-const App = memo(function App(props: AppProps): ReactElement {
-	const {Component, pageProps, router} = props;
-	const {manifest} = useCurrentApp(router);
-
-	return (
-		<MenuContextApp>
-			<YearnContextApp>
-				<WalletContextApp>
-					<Fragment>
-						<Meta meta={manifest} />
-						<WithLayout
-							Component={Component}
-							pageProps={pageProps}
-							router={props.router}
-						/>
-					</Fragment>
-				</WalletContextApp>
-			</YearnContextApp>
-		</MenuContextApp>
-	);
-});
-
-/**** 🔵 - Yearn Finance ***************************************************************************
  ** The 'MyApp' function is a React functional component that returns a ReactElement. It is the main
  ** entry point of the application.
  **
@@ -155,18 +121,53 @@ const App = memo(function App(props: AppProps): ReactElement {
  ** The returned JSX structure is a main element with the 'WithYearn' and 'App' components.
  **************************************************************************************************/
 function MyApp(props: AppProps): ReactElement {
+	const {manifest} = useCurrentApp(props.router);
+
 	return (
 		<main className={cl(aeonik.className, 'h-full min-h-screen w-full font-aeonik', '')}>
-			<WithYearn
+			<WithMom
 				supportedChains={[mainnet, optimism, polygon, fantom, base, arbitrum, localhost]}
-				options={{
-					baseSettings: {
-						yDaemonBaseURI: process.env.YDAEMON_BASE_URI as string
+				tokenLists={[
+					'https://raw.githubusercontent.com/SmolDapp/tokenLists/main/lists/yearn.json',
+					'https://raw.githubusercontent.com/SmolDapp/tokenLists/main/lists/portals.json'
+				]}>
+				<MenuContextApp>
+					<YearnContextApp>
+						<WalletContextApp>
+							<Fragment>
+								<Meta meta={manifest} />
+								<WithLayout {...props} />
+							</Fragment>
+						</WalletContextApp>
+					</YearnContextApp>
+				</MenuContextApp>
+			</WithMom>
+			<Toaster
+				toastOptions={{
+					duration: 5000,
+					className: 'toast',
+					error: {
+						icon: <IconAlertCritical className={'ml-3'} />,
+						style: {
+							backgroundColor: '#C73203',
+							color: 'white'
+						}
 					},
-					ui: {shouldUseThemes: false}
-				}}>
-				<App {...props} />
-			</WithYearn>
+					success: {
+						icon: <IconCheckmark className={'ml-3'} />,
+						style: {
+							backgroundColor: '#00796D',
+							color: 'white'
+						}
+					},
+					icon: <IconAlertError className={'ml-3'} />,
+					style: {
+						backgroundColor: '#0657F9',
+						color: 'white'
+					}
+				}}
+				position={'bottom-right'}
+			/>
 		</main>
 	);
 }

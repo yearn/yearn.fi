@@ -1,31 +1,29 @@
 import {createContext, memo, useCallback, useContext, useMemo, useState} from 'react';
+import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {isZeroAddress, toAddress, toNormalizedBN} from '@builtbymom/web3/utils';
 import {useDeepCompareEffect} from '@react-hookz/web';
-import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {isZeroAddress, toAddress, zeroAddress} from '@yearn-finance/web-lib/utils/address';
-import {type TNormalizedBN, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {useWallet} from '@common/contexts/useWallet';
 import {useFetch} from '@common/hooks/useFetch';
 import {yDaemonTokenListBalances} from '@common/schemas/yDaemonTokenListBalances';
 import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 
 import type {ReactElement} from 'react';
-import type {TAddress, TDict, TNDict} from '@yearn-finance/web-lib/types';
+import type {TAddress, TDict, TNormalizedBN} from '@builtbymom/web3/types';
 import type {TUseBalancesTokens} from '@common/hooks/useMultichainBalances';
 import type {TSupportedZaps, TYDaemonTokenListBalances} from '@common/schemas/yDaemonTokenListBalances';
-import type {TToken} from '@common/types/types';
+import type {TYChainTokens, TYToken} from '@common/types/types';
 
 export type TWalletForZap = {
 	tokensList: TYDaemonTokenListBalances;
-	listTokens: ({chainID}: {chainID: number}) => TDict<TToken & {supportedZaps: TSupportedZaps[]}>;
-	getToken: ({address, chainID}: {address: TAddress; chainID: number}) => TToken & {supportedZaps: TSupportedZaps[]};
+	listTokens: ({chainID}: {chainID: number}) => TDict<TYToken & {supportedZaps: TSupportedZaps[]}>;
+	getToken: ({address, chainID}: {address: TAddress; chainID: number}) => TYToken & {supportedZaps: TSupportedZaps[]};
 	getBalance: ({address, chainID}: {address: TAddress; chainID: number}) => TNormalizedBN;
 	getPrice: ({address, chainID}: {address: TAddress; chainID: number}) => TNormalizedBN;
-	refresh: (tokenList?: TUseBalancesTokens[]) => Promise<TChainTokens>;
+	refresh: (tokenList?: TUseBalancesTokens[]) => Promise<TYChainTokens>;
 };
-export type TChainTokens = TNDict<TDict<TToken & {supportedZaps: TSupportedZaps[]}>>;
 
-const defaultToken: TToken & {supportedZaps: TSupportedZaps[]} = {
-	address: zeroAddress,
+const defaultToken: TYToken & {supportedZaps: TSupportedZaps[]} = {
+	address: toAddress(''),
 	name: '',
 	symbol: '',
 	decimals: 18,
@@ -39,11 +37,11 @@ const defaultToken: TToken & {supportedZaps: TSupportedZaps[]} = {
 
 const defaultProps = {
 	tokensList: {},
-	listTokens: (): TDict<TToken & {supportedZaps: TSupportedZaps[]}> => ({}),
-	getToken: (): TToken & {supportedZaps: TSupportedZaps[]} => ({...defaultToken, supportedZaps: []}),
+	listTokens: (): TDict<TYToken & {supportedZaps: TSupportedZaps[]}> => ({}),
+	getToken: (): TYToken & {supportedZaps: TSupportedZaps[]} => ({...defaultToken, supportedZaps: []}),
 	getBalance: (): TNormalizedBN => toNormalizedBN(0),
 	getPrice: (): TNormalizedBN => toNormalizedBN(0),
-	refresh: async (): Promise<TChainTokens> => ({})
+	refresh: async (): Promise<TYChainTokens> => ({})
 };
 
 /* 🔵 - Yearn Finance **********************************************************
@@ -57,7 +55,7 @@ export const WalletForZapAppContextApp = memo(function WalletForZapAppContextApp
 	const {address} = useWeb3();
 	const {refresh} = useWallet();
 	const {yDaemonBaseUri} = useYDaemonBaseURI();
-	const [zapTokens, set_zapTokens] = useState<TChainTokens>({});
+	const [zapTokens, set_zapTokens] = useState<TYChainTokens>({});
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 **	Fetching, for this user, the list of tokens available for zaps
@@ -96,25 +94,25 @@ export const WalletForZapAppContextApp = memo(function WalletForZapAppContextApp
 					if (!token) {
 						continue;
 					}
-					const supportedZapsElement = element as TToken & {supportedZaps: TSupportedZaps[]};
+					const supportedZapsElement = element as TYToken & {supportedZaps: TSupportedZaps[]};
 					supportedZapsElement.supportedZaps = token.supportedZaps || [];
 					results[chainID][address] = supportedZapsElement;
 				}
 			}
 
-			set_zapTokens(prev => ({...prev, ...(results as TChainTokens)}));
+			set_zapTokens(prev => ({...prev, ...(results as TYChainTokens)}));
 		});
 	}, [availableTokens, refresh, tokensList]);
 
 	const listTokens = useCallback(
-		({chainID}: {chainID: number}): TDict<TToken & {supportedZaps: TSupportedZaps[]}> => {
+		({chainID}: {chainID: number}): TDict<TYToken & {supportedZaps: TSupportedZaps[]}> => {
 			return zapTokens?.[chainID || 1] || {};
 		},
 		[zapTokens]
 	);
 
 	const getToken = useCallback(
-		({address, chainID}: {address: TAddress; chainID: number}): TToken & {supportedZaps: TSupportedZaps[]} => {
+		({address, chainID}: {address: TAddress; chainID: number}): TYToken & {supportedZaps: TSupportedZaps[]} => {
 			return zapTokens?.[chainID || 1]?.[address] || defaultToken;
 		},
 		[zapTokens]

@@ -1,13 +1,10 @@
 import {useMemo} from 'react';
 import Link from 'next/link';
+import {formatAmount, isZero, toAddress, toNormalizedBN} from '@builtbymom/web3/utils';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
-import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
-import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {RenderAmount} from '@common/components/RenderAmount';
@@ -452,7 +449,7 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 
 				<div className={cl('col-span-5 z-10', 'flex flex-row items-center justify-between')}>
 					<div className={'flex flex-row gap-6'}>
-						<div className={'mt-2.5 size-8 rounded-full md:flex'}>
+						<div className={'size-8 mt-2.5 rounded-full md:flex'}>
 							<ImageWithFallback
 								src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-32.png`}
 								alt={``}
@@ -476,7 +473,7 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 									target={'_blank'}
 									rel={'noopener noreferrer'}>
 									<div className={'px-2'}>
-										<IconLinkOut className={'inline-block size-4'} />
+										<IconLinkOut className={'size-4 inline-block'} />
 									</div>
 								</Link>
 							</div>
@@ -584,7 +581,7 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 						target={'_blank'}
 						rel={'noopener noreferrer'}>
 						<div className={'px-2'}>
-							<IconLinkOut className={'inline-block size-4'} />
+							<IconLinkOut className={'size-4 inline-block'} />
 						</div>
 					</Link>
 				</div>

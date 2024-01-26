@@ -1,8 +1,8 @@
 import {createContext, memo, useContext} from 'react';
 import {deserialize, serialize} from 'wagmi';
+import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {toAddress} from '@builtbymom/web3/utils';
 import {useDeepCompareMemo, useLocalStorageValue} from '@react-hookz/web';
-import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {useFetch} from '@common/hooks/useFetch';
 import {yDaemonEarnedSchema} from '@common/schemas/yDaemonEarnedSchema';
 import {yDaemonPricesChainSchema} from '@common/schemas/yDaemonPricesSchema';
@@ -14,7 +14,7 @@ import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 
 import type {ReactElement} from 'react';
 import type {KeyedMutator} from 'swr';
-import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
+import type {TAddress, TDict} from '@builtbymom/web3/types';
 import type {TYDaemonEarned} from '@common/schemas/yDaemonEarnedSchema';
 import type {TYDaemonPricesChain} from '@common/schemas/yDaemonPricesSchema';
 import type {TSolver} from '@common/schemas/yDaemonTokenListBalances';
@@ -137,11 +137,10 @@ function useYearnEarned(): TYDaemonEarned {
 
 export const YearnContextApp = memo(function YearnContextApp({children}: {children: ReactElement}): ReactElement {
 	const {yDaemonBaseUri: yDaemonBaseUriWithoutChain} = useYDaemonBaseURI();
-	const {currentPartner} = useWeb3();
 	const {value: maxLoss, set: set_maxLoss} = useLocalStorageValue<bigint>('yearn.fi/max-loss', {
 		defaultValue: DEFAULT_MAX_LOSS,
-		parse: (str, fallback): bigint => (str ? deserialize(str) : fallback),
-		stringify: (data): string => serialize(data)
+		parse: (str: string, fallback: bigint): bigint => (str ? deserialize(str) : fallback),
+		stringify: (data: bigint): string => serialize(data)
 	});
 	const {value: zapSlippage, set: set_zapSlippage} = useLocalStorageValue<number>('yearn.fi/zap-slippage', {
 		defaultValue: DEFAULT_SLIPPAGE
@@ -229,9 +228,7 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 	 ***************************************************************************/
 	const contextValue = useDeepCompareMemo(
 		(): TYearnContext => ({
-			currentPartner: currentPartner?.id
-				? toAddress(currentPartner.id)
-				: toAddress(process.env.PARTNER_ID_ADDRESS),
+			currentPartner: toAddress(process.env.PARTNER_ID_ADDRESS),
 			prices,
 			tokens,
 			earned,
@@ -250,7 +247,6 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 			mutateVaultList
 		}),
 		[
-			currentPartner,
 			prices,
 			tokens,
 			earned,

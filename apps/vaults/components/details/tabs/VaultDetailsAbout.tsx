@@ -1,10 +1,9 @@
+import {formatAmount, formatPercent, isZero} from '@builtbymom/web3/utils';
 import {useIsMounted} from '@react-hookz/web';
 import {GraphForVaultEarnings} from '@vaults/components/graphs/GraphForVaultEarnings';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
-import {formatAmount, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
-import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';

@@ -1,6 +1,6 @@
+import {isZero} from '@builtbymom/web3/utils';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {Dropdown} from '@common/components/TokenDropdown';
 import {IconArrowRight} from '@common/icons/IconArrowRight';
 

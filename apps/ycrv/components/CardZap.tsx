@@ -1,7 +1,14 @@
 import {useMemo} from 'react';
+import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {
+	handleInputChangeValue,
+	isZero,
+	toAddress,
+	toBigInt,
+	toNormalizedBN,
+	toNormalizedValue
+} from '@builtbymom/web3/utils';
 import {Button} from '@yearn-finance/web-lib/components/Button';
-import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {
 	CRV_TOKEN_ADDRESS,
@@ -12,10 +19,7 @@ import {
 	YCRV_CURVE_POOL_V2_ADDRESS,
 	YCRV_TOKEN_ADDRESS
 } from '@yearn-finance/web-lib/utils/constants';
-import {formatToNormalizedValue, toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
-import {handleInputChangeValue} from '@yearn-finance/web-lib/utils/handler';
-import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {Dropdown} from '@common/components/TokenDropdown';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
@@ -50,17 +54,17 @@ function CardZap(): ReactElement {
 	} = useCardTransactor();
 
 	const ycrvPrice = useMemo(
-		(): number => formatToNormalizedValue(toBigInt(prices?.[1]?.[YCRV_TOKEN_ADDRESS] || 0), 6),
+		(): number => toNormalizedValue(toBigInt(prices?.[1]?.[YCRV_TOKEN_ADDRESS] || 0), 6),
 		[prices]
 	);
 
 	const ycrvCurvePoolPrice = useMemo(
-		(): number => formatToNormalizedValue(toBigInt(prices?.[1]?.[YCRV_CURVE_POOL_ADDRESS] || 0), 6),
+		(): number => toNormalizedValue(toBigInt(prices?.[1]?.[YCRV_CURVE_POOL_ADDRESS] || 0), 6),
 		[prices]
 	);
 
 	const stycrvPrice = useMemo(
-		(): number => formatToNormalizedValue(toBigInt(prices?.[1]?.[STYCRV_TOKEN_ADDRESS] || 0), 6),
+		(): number => toNormalizedValue(toBigInt(prices?.[1]?.[STYCRV_TOKEN_ADDRESS] || 0), 6),
 		[prices]
 	);
 

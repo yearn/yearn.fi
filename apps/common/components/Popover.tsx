@@ -6,10 +6,10 @@ import dayjs from 'dayjs';
 import html2canvas from 'html2canvas';
 import {useAccount} from 'wagmi';
 import axios from 'axios';
+import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {toAddress, truncateHex} from '@builtbymom/web3/utils';
 import {Popover as PopoverHeadlessUI, Portal, Transition} from '@headlessui/react';
 import {useLocalStorageValue} from '@react-hookz/web';
-import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {toAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
 import {useTimer} from '@common/hooks/useTimer';
 import {MessageIcon} from '@common/icons/MessageIcon';
 
@@ -92,7 +92,7 @@ export function Popover(): ReactElement {
 			<PopoverHeadlessUI className={'relative z-50'}>
 				<PopoverHeadlessUI.Button
 					className={
-						'fixed bottom-5 right-5 flex size-10 items-center justify-center rounded-full bg-orange-500'
+						'size-10 fixed bottom-5 right-5 flex items-center justify-center rounded-full bg-orange-500'
 					}
 					ref={set_referenceElement}>
 					<MessageIcon />

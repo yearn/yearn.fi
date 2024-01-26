@@ -1,7 +1,7 @@
 import {z} from 'zod';
 import {addressSchema} from '@yearn-finance/web-lib/utils/schemas/addressSchema';
 
-import type {TDict, TNDict} from '@yearn-finance/web-lib/types';
+import type {TDict, TNDict} from '@builtbymom/web3/types';
 
 const SOLVER = [
 	'Vanilla',

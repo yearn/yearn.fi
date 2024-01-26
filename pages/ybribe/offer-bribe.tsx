@@ -1,12 +1,10 @@
 import {useCallback, useMemo, useState} from 'react';
 import {Balancer} from 'react-wrap-balancer';
 import Link from 'next/link';
+import {isTAddress, toAddress, toBigInt, toNormalizedValue} from '@builtbymom/web3/utils';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {useSessionStorage} from '@yearn-finance/web-lib/hooks/useSessionStorage';
-import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {isTAddress} from '@yearn-finance/web-lib/utils/isTAddress';
 import {useCurve} from '@common/contexts/useCurve';
 import {useYearn} from '@common/contexts/useYearn';
 import {stringSort} from '@common/utils/sort';
@@ -19,8 +17,8 @@ import {Wrapper} from '@yBribe/Wrapper';
 
 import type {NextRouter} from 'next/router';
 import type {ReactElement, ReactNode} from 'react';
+import type {TSortDirection} from '@builtbymom/web3/types';
 import type {TCurveGauge} from '@common/schemas/curveSchemas';
-import type {TSortDirection} from '@common/types/types';
 
 function GaugeList(): ReactElement {
 	const {tokens, prices} = useYearn();
@@ -41,7 +39,7 @@ function GaugeList(): ReactElement {
 			const tokenInfo = tokens?.[address];
 			const tokenPrice = prices?.[address];
 			const decimals = tokenInfo?.decimals || 18;
-			const bribeAmount = formatToNormalizedValue(toBigInt(value), decimals);
+			const bribeAmount = toNormalizedValue(toBigInt(value), decimals);
 			const bribeValue = bribeAmount * (Number(tokenPrice || 0) / 100);
 			return bribeValue;
 		},

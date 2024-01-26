@@ -12,7 +12,7 @@ import {defaultHoldings, useHoldings} from '@yCRV/contexts/useHoldingsHook';
 
 import type {ReactElement} from 'react';
 import type {TCRVHoldings} from '@yCRV/contexts/useHoldingsHook';
-import type {TDict} from '@yearn-finance/web-lib/types';
+import type {TDict} from '@builtbymom/web3/types';
 import type {TYDaemonVault, TYDaemonVaultHarvests} from '@common/schemas/yDaemonVaultsSchemas';
 
 type TYCRVContext = {

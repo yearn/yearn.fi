@@ -1,10 +1,10 @@
 import {cloneElement, Fragment, useState} from 'react';
+import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {formatAmount} from '@builtbymom/web3/utils';
 import {Combobox, Transition} from '@headlessui/react';
 import {useThrottledState} from '@react-hookz/web';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
-import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {useWallet} from '@common/contexts/useWallet';
 import {IconChevron} from '@common/icons/IconChevron';
 
@@ -139,9 +139,7 @@ export function Dropdown(props: TDropdownProps): ReactElement {
 								<div className={'ml-auto'}>
 									<IconChevron
 										aria-hidden={'true'}
-										className={`size-6 transition-transform${
-											isOpen ? '-rotate-180' : 'rotate-0'
-										}`}
+										className={`size-6 transition-transform${isOpen ? '-rotate-180' : 'rotate-0'}`}
 									/>
 								</div>
 							</div>

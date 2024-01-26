@@ -1,29 +1,33 @@
 import {useCallback, useMemo, useRef} from 'react';
 import {BaseError, isHex, zeroAddress} from 'viem';
 import axios from 'axios';
+import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {
+	assert,
+	assertAddress,
+	isZero,
+	isZeroAddress,
+	toAddress,
+	toBigInt,
+	toNormalizedBN
+} from '@builtbymom/web3/utils';
+import {defaultTxStatus, toWagmiProvider} from '@builtbymom/web3/utils/wagmi';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {isValidPortalsErrorObject} from '@vaults/hooks/helpers/isValidPortalsErrorObject';
 import {getPortalsApproval, getPortalsEstimate, getPortalsTx, PORTALS_NETWORK} from '@vaults/hooks/usePortalsApi';
 import {prepareSendTransaction, switchNetwork, waitForTransaction} from '@wagmi/core';
 import {toast} from '@yearn-finance/web-lib/components/yToast';
-import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {allowanceKey, isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
 import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
-import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isEth} from '@yearn-finance/web-lib/utils/isEth';
-import {isZero} from '@yearn-finance/web-lib/utils/isZero';
-import {toWagmiProvider} from '@yearn-finance/web-lib/utils/wagmi/provider';
-import {assertAddress, getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
-import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
+import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {useYearn} from '@common/contexts/useYearn';
 import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 import {allowanceOf, approveERC20} from '@common/utils/actions';
-import {assert} from '@common/utils/assert';
 
 import type {Transaction} from 'viem';
-import type {TDict} from '@yearn-finance/web-lib/types';
-import type {TTxResponse, TTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
-import type {TNormalizedBN} from '@common/types/types';
+import type {TDict, TNormalizedBN} from '@builtbymom/web3/types';
+import type {TTxResponse, TTxStatus} from '@builtbymom/web3/utils/wagmi';
 import type {TPortalsEstimate} from '@vaults/hooks/usePortalsApi';
 import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
 

@@ -1,6 +1,6 @@
-import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import {toNormalizedBN} from '@builtbymom/web3/utils';
 
-import type {TSortDirection} from '@common/types/types';
+import type {TSortDirection} from '@builtbymom/web3/types';
 
 export const stringSort = ({a, b, sortDirection}: {a: string; b: string; sortDirection: TSortDirection}): number =>
 	sortDirection === 'desc' ? a.localeCompare(b) : b.localeCompare(a);

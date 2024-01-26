@@ -1,17 +1,14 @@
 import {erc20ABI} from 'wagmi';
+import {assert, assertAddress, toAddress} from '@builtbymom/web3/utils';
+import {handleTx, toWagmiProvider} from '@builtbymom/web3/utils/wagmi';
 import {VEYFI_CLAIM_REWARDS_ZAP_ABI} from '@veYFI/utils/abi/veYFIClaimRewardsZap.abi';
 import {VEYFI_GAUGE_ABI} from '@veYFI/utils/abi/veYFIGauge.abi';
-import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {handleTx, toWagmiProvider} from '@yearn-finance/web-lib/utils/wagmi/provider';
-import {assertAddress} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {allowanceOf} from '@common/utils/actions';
-import {assert} from '@common/utils/assert';
 
 import {YFI_REWARD_POOL_ABI} from '../abi/YFIRewardPool.abi';
 
-import type {TAddress} from '@yearn-finance/web-lib/types';
-import type {TWriteTransaction} from '@yearn-finance/web-lib/utils/wagmi/provider';
-import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
+import type {TAddress} from '@builtbymom/web3/types';
+import type {TTxResponse, TWriteTransaction} from '@builtbymom/web3/utils/wagmi';
 
 type TApproveAndStake = TWriteTransaction & {
 	vaultAddress: TAddress;

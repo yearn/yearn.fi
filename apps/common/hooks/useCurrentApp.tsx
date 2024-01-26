@@ -9,7 +9,7 @@ import {YCrvHeader} from '@yCRV/components/header/YCrvHeader';
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
 import type {TMenu} from '@yearn-finance/web-lib/components/Header';
-import type {TDict} from '@yearn-finance/web-lib/types';
+import type {TDict} from '@builtbymom/web3/types';
 import type {TMetaFile} from '@common/components/Meta';
 
 type TCurrentApp = {

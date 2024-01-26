@@ -1,6 +1,6 @@
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 
-import type {TAddress} from '@yearn-finance/web-lib/types';
+import type {TAddress} from '@builtbymom/web3/types';
 import type {TSolver} from '@common/schemas/yDaemonTokenListBalances';
 import type {TDropdownOption} from '@common/types/types';
 

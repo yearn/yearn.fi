@@ -1,19 +1,16 @@
 import {useMemo, useState} from 'react';
 import {useContractRead} from 'wagmi';
+import {useAsyncTrigger} from '@builtbymom/web3/hooks/useAsyncTrigger';
+import {decodeAsBigInt, toAddress, toBigInt, toNormalizedBN} from '@builtbymom/web3/utils';
 import {VEYFI_ABI} from '@veYFI/utils/abi/veYFI.abi';
 import {VEYFI_GAUGE_ABI} from '@veYFI/utils/abi/veYFIGauge.abi';
 import {SECONDS_PER_YEAR, VE_YFI_GAUGES, VEYFI_CHAIN_ID} from '@veYFI/utils/constants';
 import {readContracts} from '@wagmi/core';
-import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {VEYFI_ADDRESS, YFI_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {decodeAsBigInt} from '@yearn-finance/web-lib/utils/decoder';
-import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {getClient} from '@yearn-finance/web-lib/utils/wagmi/utils';
-import {useAsyncTrigger} from '@common/hooks/useAsyncEffect';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
 
-import type {TAddress} from '@yearn-finance/web-lib/types';
-import type {TNormalizedBN} from '@common/types/types';
+import type {TAddress, TNormalizedBN} from '@builtbymom/web3/types';
 
 type TUseVeYFIAPR = {
 	dYFIPrice: number;

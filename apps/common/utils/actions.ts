@@ -1,3 +1,5 @@
+import {assert, assertAddress, toAddress} from '@builtbymom/web3/utils';
+import {handleTx, toWagmiProvider} from '@builtbymom/web3/utils/wagmi';
 import {getEthZapperContract} from '@vaults/utils';
 import {VAULT_MIGRATOR_ABI} from '@vaults/utils/abi/vaultMigrator.abi';
 import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
@@ -7,16 +9,11 @@ import {PARTNER_VAULT_ABI} from '@yearn-finance/web-lib/utils/abi/partner.vault.
 import {VAULT_ABI} from '@yearn-finance/web-lib/utils/abi/vault.abi';
 import {ZAP_ETH_TO_YVETH_ABI} from '@yearn-finance/web-lib/utils/abi/zapEthToYvEth.abi';
 import {ZAP_FTM_TO_YVFTM_ABI} from '@yearn-finance/web-lib/utils/abi/zapFtmToYvFTM.abi';
-import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
-import {handleTx, toWagmiProvider} from '@yearn-finance/web-lib/utils/wagmi/provider';
-import {assertAddress} from '@yearn-finance/web-lib/utils/wagmi/utils';
-import {assert} from '@common/utils/assert';
 
 import type {Connector} from 'wagmi';
-import type {TAddress} from '@yearn-finance/web-lib/types';
-import type {TWriteTransaction} from '@yearn-finance/web-lib/utils/wagmi/provider';
-import type {TTxResponse} from '@yearn-finance/web-lib/utils/web3/transaction';
+import type {TAddress} from '@builtbymom/web3/types';
+import type {TTxResponse, TWriteTransaction} from '@builtbymom/web3/utils/wagmi';
 
 function getChainID(chainID: number): number {
 	if (typeof window !== 'undefined' && (window as any)?.ethereum?.useForknetForMainnet) {

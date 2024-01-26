@@ -4,8 +4,9 @@
 
 import {useMemo} from 'react';
 import {erc20ABI, useContractReads} from 'wagmi';
-import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {decodeAsBigInt, toAddress} from '@builtbymom/web3/utils';
+import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
 import {
 	CRV_TOKEN_ADDRESS,
 	CVXCRV_TOKEN_ADDRESS,
@@ -20,9 +21,8 @@ import {
 	YVECRV_TOKEN_ADDRESS,
 	ZAP_YEARN_VE_CRV_ADDRESS
 } from '@yearn-finance/web-lib/utils/constants';
-import {decodeAsBigInt} from '@yearn-finance/web-lib/utils/decoder';
 
-import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
+import type {TAddress, TDict} from '@builtbymom/web3/types';
 
 /* 🔵 - Yearn Finance **********************************************************
  ** This context controls the allowances computation for the yCRV app

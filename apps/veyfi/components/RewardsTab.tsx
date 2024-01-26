@@ -1,4 +1,8 @@
 import {useCallback, useMemo, useState} from 'react';
+import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {useAsyncTrigger} from '@builtbymom/web3/hooks/useAsyncTrigger';
+import {isZeroAddress, toAddress, toBigInt, toNormalizedBN, truncateHex} from '@builtbymom/web3/utils';
+import {defaultTxStatus} from '@builtbymom/web3/utils/wagmi';
 import {useGauge} from '@veYFI/contexts/useGauge';
 import {useOption} from '@veYFI/contexts/useOption';
 import {YFI_REWARD_POOL_ABI} from '@veYFI/utils/abi/YFIRewardPool.abi';
@@ -6,21 +10,16 @@ import * as GaugeActions from '@veYFI/utils/actions/gauge';
 import {VEYFI_CHAIN_ID, VEYFI_DYFI_REWARD_POOL, VEYFI_YFI_REWARD_POOL} from '@veYFI/utils/constants';
 import {prepareWriteContract} from '@wagmi/core';
 import {Button} from '@yearn-finance/web-lib/components/Button';
-import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {isZeroAddress, toAddress, truncateHex} from '@yearn-finance/web-lib/utils/address';
 import {YFI_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
-import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {AmountInput} from '@common/components/AmountInput';
 import {Dropdown} from '@common/components/Dropdown';
 import {useYearn} from '@common/contexts/useYearn';
-import {useAsyncTrigger} from '@common/hooks/useAsyncEffect';
 import {useTokenPrice} from '@common/hooks/useTokenPrice';
 
 import type {ReactElement} from 'react';
+import type {TNormalizedBN} from '@builtbymom/web3/types';
 import type {TDropdownOption} from '@common/components/Dropdown';
-import type {TNormalizedBN} from '@common/types/types';
 
 function GaugeRewards(): ReactElement {
 	const [selectedGauge, set_selectedGauge] = useState<TDropdownOption>();

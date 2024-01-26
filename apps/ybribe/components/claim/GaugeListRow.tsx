@@ -1,13 +1,18 @@
 import {useCallback, useMemo, useState} from 'react';
+import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {
+	formatAmount,
+	formatPercent,
+	formatUSD,
+	isZero,
+	toAddress,
+	toBigInt,
+	toNormalizedValue
+} from '@builtbymom/web3/utils';
+import {defaultTxStatus} from '@builtbymom/web3/utils/wagmi';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {CRV_TOKEN_ADDRESS, CURVE_BRIBE_V3_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {formatAmount, formatPercent, formatUSD} from '@yearn-finance/web-lib/utils/format.number';
-import {isZero} from '@yearn-finance/web-lib/utils/isZero';
-import {defaultTxStatus} from '@yearn-finance/web-lib/utils/web3/transaction';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useYearn} from '@common/contexts/useYearn';
 import {YBRIBE_SUPPORTED_NETWORK} from '@yBribe/constants';
@@ -15,7 +20,7 @@ import {useBribes} from '@yBribe/contexts/useBribes';
 import {claimRewardV3} from '@yBribe/utils/actions';
 
 import type {ReactElement} from 'react';
-import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
+import type {TAddress, TDict} from '@builtbymom/web3/types';
 import type {TCurveGauge} from '@common/schemas/curveSchemas';
 
 function GaugeRowItemWithExtraData({
@@ -32,7 +37,7 @@ function GaugeRowItemWithExtraData({
 	const tokenPrice = Number(prices?.[address]) / 1e6;
 	const decimals = tokenInfo?.decimals || 18;
 	const symbol = tokenInfo?.symbol || '???';
-	const bribeAmount = formatToNormalizedValue(toBigInt(value), decimals);
+	const bribeAmount = toNormalizedValue(toBigInt(value), decimals);
 	const bribeValue = bribeAmount * Number(tokenPrice || 0);
 
 	return (
@@ -68,7 +73,7 @@ function GaugeRowItemAPR({address, value}: {address: TAddress; value: bigint}): 
 		if (isZero(tokenPrice) || isZero(crvPrice)) {
 			return 0;
 		}
-		return ((formatToNormalizedValue(value, decimals) * tokenPrice) / crvPrice) * 52 * 100;
+		return ((toNormalizedValue(value, decimals) * tokenPrice) / crvPrice) * 52 * 100;
 	}, [address, crvPrice, tokenPrice, tokens, value]);
 
 	return (

@@ -1,7 +1,6 @@
 import Link from 'next/link';
-import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {formatAmount, toAddress} from '@builtbymom/web3/utils';
 import {cl} from '@yearn-finance/web-lib/utils/cl';
-import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useBalance} from '@common/hooks/useBalance';
 

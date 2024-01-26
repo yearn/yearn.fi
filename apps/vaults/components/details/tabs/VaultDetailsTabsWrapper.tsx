@@ -1,22 +1,19 @@
 import {Fragment, useEffect, useMemo, useState} from 'react';
 import {useRouter} from 'next/router';
+import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {assert, isZero, toAddress, toBigInt, toNormalizedValue} from '@builtbymom/web3/utils';
 import {Listbox, Transition} from '@headlessui/react';
 import {VaultDetailsAbout} from '@vaults/components/details/tabs/VaultDetailsAbout';
 import {VaultDetailsHistorical} from '@vaults/components/details/tabs/VaultDetailsHistorical';
 import {VaultDetailsStrategies} from '@vaults/components/details/tabs/VaultDetailsStrategies';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {IconAddToMetamask} from '@yearn-finance/web-lib/icons/IconAddToMetamask';
 import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
-import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
-import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {useFetch} from '@common/hooks/useFetch';
 import {IconChevron} from '@common/icons/IconChevron';
 import {yDaemonVaultHarvestsSchema} from '@common/schemas/yDaemonVaultsSchemas';
-import {assert} from '@common/utils/assert';
 import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 
 import type {ReactElement} from 'react';
@@ -146,9 +143,7 @@ function ExplorerLink({explorerBaseURI, currentVaultAddress}: TExplorerLinkProps
 			rel={'noopener noreferrer'}>
 			<span className={'sr-only'}>{'Open in explorer'}</span>
 			<IconLinkOut
-				className={
-					'size-5 cursor-alias text-neutral-600 transition-colors hover:text-neutral-900 md:size-6'
-				}
+				className={'size-5 md:size-6 cursor-alias text-neutral-600 transition-colors hover:text-neutral-900'}
 			/>
 		</a>
 	);
@@ -254,7 +249,7 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 		const _yDaemonHarvestsData = [...(yDaemonHarvestsData || [])].reverse();
 		return _yDaemonHarvestsData.map((harvest): {name: string; value: number} => ({
 			name: formatDate(Number(harvest.timestamp) * 1000),
-			value: formatToNormalizedValue(toBigInt(harvest.profit) - toBigInt(harvest.loss), currentVault.decimals)
+			value: toNormalizedValue(toBigInt(harvest.profit) - toBigInt(harvest.loss), currentVault.decimals)
 		}));
 	}, [currentVault.decimals, yDaemonHarvestsData]);
 
@@ -283,9 +278,7 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 						}}>
 						<span className={'sr-only'}>{'Add to wallet'}</span>
 						<IconAddToMetamask
-							className={
-								'size-5 text-neutral-600 transition-colors hover:text-neutral-900 md:size-6'
-							}
+							className={'size-5 md:size-6 text-neutral-600 transition-colors hover:text-neutral-900'}
 						/>
 					</button>
 					<ExplorerLink

@@ -1,13 +1,13 @@
 import {createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState} from 'react';
 import {useRouter} from 'next/router';
 import {useContractReads} from 'wagmi';
+import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {decodeAsBigInt, isZero, isZeroAddress, toAddress, toBigInt, toNormalizedBN} from '@builtbymom/web3/utils';
 import {useMountEffect, useUpdateEffect} from '@react-hookz/web';
 import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
 import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
 import {setZapOption} from '@vaults/utils/zapOptions';
-import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {VAULT_ABI} from '@yearn-finance/web-lib/utils/abi/vault.abi';
-import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {
 	ETH_TOKEN_ADDRESS,
 	LPYCRV_TOKEN_ADDRESS,
@@ -18,10 +18,7 @@ import {
 	YVWETH_OPT_ADDRESS,
 	YVWFTM_ADDRESS
 } from '@yearn-finance/web-lib/utils/constants';
-import {decodeAsBigInt} from '@yearn-finance/web-lib/utils/decoder';
-import {toBigInt, toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isEth} from '@yearn-finance/web-lib/utils/isEth';
-import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {useWallet} from '@common/contexts/useWallet';
 import {useYearn} from '@common/contexts/useYearn';
@@ -30,10 +27,10 @@ import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 import externalzapOutTokenList from '../../common/utils/externalZapOutTokenList.json';
 
 import type {ReactNode} from 'react';
-import type {TAddress} from '@yearn-finance/web-lib/types';
+import type {TAddress, TNormalizedBN} from '@builtbymom/web3/types';
 import type {TSolver} from '@common/schemas/yDaemonTokenListBalances';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
-import type {TDropdownOption, TNormalizedBN} from '@common/types/types';
+import type {TDropdownOption} from '@common/types/types';
 
 export enum Flow {
 	Deposit = 'deposit',

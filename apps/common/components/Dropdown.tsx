@@ -158,9 +158,7 @@ export const Dropdown = ({
 								<div className={'absolute right-2 md:right-3'}>
 									<IconChevron
 										aria-hidden={'true'}
-										className={`size-6 transition-transform${
-											isOpen ? '-rotate-180' : 'rotate-0'
-										}`}
+										className={`size-6 transition-transform${isOpen ? '-rotate-180' : 'rotate-0'}`}
 									/>
 								</div>
 							</Combobox.Button>

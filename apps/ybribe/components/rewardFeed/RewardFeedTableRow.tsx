@@ -1,14 +1,12 @@
 import {useMemo} from 'react';
-import {truncateHex} from '@yearn-finance/web-lib/utils/address';
-import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {formatAmount, formatUSD} from '@yearn-finance/web-lib/utils/format.number';
+import {formatAmount, formatUSD, toBigInt, toNormalizedValue, truncateHex} from '@builtbymom/web3/utils';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useCurve} from '@common/contexts/useCurve';
 import {useYearn} from '@common/contexts/useYearn';
 
 import type {ReactElement} from 'react';
-import type {TAddress} from '@yearn-finance/web-lib/types';
+import type {TAddress} from '@builtbymom/web3/types';
 import type {TCurveGauge} from '@common/schemas/curveSchemas';
 import type {TYDaemonGaugeRewardsFeed} from '@common/schemas/yDaemonGaugeRewardsFeedSchema';
 
@@ -26,7 +24,7 @@ function RewardFeedRowItemWithExtraData({
 	const tokenPrice = Number(prices?.[address]) / 1000000;
 	const decimals = tokenInfo?.decimals || 18;
 	const symbol = tokenInfo?.symbol || '???';
-	const bribeAmount = formatToNormalizedValue(toBigInt(value), decimals);
+	const bribeAmount = toNormalizedValue(toBigInt(value), decimals);
 	const bribeValue = bribeAmount * Number(tokenPrice || 0);
 
 	return (

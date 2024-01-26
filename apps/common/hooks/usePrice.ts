@@ -1,9 +1,8 @@
 import {useMemo} from 'react';
-import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {toAddress} from '@builtbymom/web3/utils';
 import {useWallet} from '@common/contexts/useWallet';
 
-import type {TAddress} from '@yearn-finance/web-lib/types';
-import type {TNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
+import type {TAddress, TNormalizedBN} from '@builtbymom/web3/types';
 
 export function usePrice({address, chainID}: {address: string | TAddress; chainID: number}): TNormalizedBN {
 	const {getPrice} = useWallet();

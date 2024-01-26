@@ -1,10 +1,8 @@
 import {Fragment, useMemo} from 'react';
 import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
+import {formatAmount, formatPercent, isZero, toBigInt, toNormalizedValue} from '@builtbymom/web3/utils';
 import {yDaemonReportsSchema} from '@vaults/schemas/reportsSchema';
-import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {formatAmount, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
-import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {useFetch} from '@common/hooks/useFetch';
 import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 
@@ -117,7 +115,7 @@ export function GraphForStrategyReports({
 									const [{value, payload: innerPayload}] = payload;
 									const {gain, loss} = innerPayload;
 									const diff = toBigInt(gain) - toBigInt(loss);
-									const normalizedDiff = formatToNormalizedValue(diff, vaultDecimals);
+									const normalizedDiff = toNormalizedValue(diff, vaultDecimals);
 
 									return (
 										<div className={'recharts-tooltip'}>

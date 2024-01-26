@@ -1,13 +1,11 @@
 import {useMemo, useState} from 'react';
+import {formatAmount, formatPercent, toAddress, toBigInt, toNormalizedValue} from '@builtbymom/web3/utils';
 import {useIsMounted} from '@react-hookz/web';
 import {findLatestApr} from '@vaults/components/details/tabs/findLatestApr';
 import {GraphForStrategyReports} from '@vaults/components/graphs/GraphForStrategyReports';
 import {yDaemonReportsSchema} from '@vaults/schemas/reportsSchema';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {IconCopy} from '@yearn-finance/web-lib/icons/IconCopy';
-import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatToNormalizedValue, toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {formatAmount, formatPercent} from '@yearn-finance/web-lib/utils/format.number';
 import {formatDuration} from '@yearn-finance/web-lib/utils/format.time';
 import {copyToClipboard, parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
 import {SearchBar} from '@common/components/SearchBar';
@@ -116,7 +114,7 @@ function VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
 								<p className={'text-base text-neutral-600'}>{'Capital Allocation'}</p>
 								<b className={'font-number text-lg text-neutral-900'}>
 									{`${formatAmount(
-										formatToNormalizedValue(
+										toNormalizedValue(
 											toBigInt(strategy.details?.totalDebt),
 											currentVault?.decimals
 										),
@@ -130,7 +128,7 @@ function VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
 								<p className={'text-base text-neutral-600'}>{'Total Gain'}</p>
 								<b className={'font-number text-lg text-neutral-900'}>
 									{`${formatAmount(
-										formatToNormalizedValue(
+										toNormalizedValue(
 											toBigInt(strategy.details?.totalGain) -
 												toBigInt(strategy.details?.totalLoss),
 											currentVault?.decimals

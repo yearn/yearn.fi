@@ -1,10 +1,9 @@
 import {erc20ABI, useContractReads} from 'wagmi';
+import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {isZeroAddress, toAddress, toBigInt} from '@builtbymom/web3/utils';
 import {STAKING_REWARDS_ABI} from '@vaults/utils/abi/stakingRewards.abi';
-import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
-import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
 
-import type {TAddress} from '@yearn-finance/web-lib/types';
+import type {TAddress} from '@builtbymom/web3/types';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
 type TStakingInfo = {

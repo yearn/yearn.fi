@@ -1,4 +1,5 @@
 import {useMemo} from 'react';
+import {isZero} from '@builtbymom/web3/utils';
 import {VaultListOptions} from '@vaults/components/list/VaultListOptions';
 import {VaultsListRow} from '@vaults/components/list/VaultsListRow';
 import {ListHero} from '@vaults/components/ListHero';
@@ -7,15 +8,14 @@ import {useVaultFilter} from '@vaults/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
 import {IconChain} from '@yearn-finance/web-lib/icons/IconChain';
-import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {ListHead} from '@common/components/ListHead';
 import {useYearn} from '@common/contexts/useYearn';
 
 import {VaultsListEmptyFactory} from './VaultsListEmpty';
 
 import type {ReactElement, ReactNode} from 'react';
+import type {TSortDirection} from '@builtbymom/web3/types';
 import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
-import type {TSortDirection} from '@common/types/types';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 
 export function VaultListFactory(): ReactElement {

@@ -1,19 +1,23 @@
 import React, {createContext, memo, useCallback, useContext, useState} from 'react';
 import {FixedNumber} from 'ethers';
+import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {useAsyncTrigger} from '@builtbymom/web3/hooks/useAsyncTrigger';
+import {
+	decodeAsAddress,
+	decodeAsBigInt,
+	decodeAsNumber,
+	decodeAsString,
+	toAddress,
+	toNormalizedBN
+} from '@builtbymom/web3/utils';
 import {useDeepCompareMemo} from '@react-hookz/web';
 import {VEYFI_GAUGE_ABI} from '@veYFI/utils/abi/veYFIGauge.abi';
 import {VE_YFI_GAUGES, VEYFI_CHAIN_ID} from '@veYFI/utils/constants';
 import {readContracts} from '@wagmi/core';
-import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {decodeAsAddress, decodeAsBigInt, decodeAsNumber, decodeAsString} from '@yearn-finance/web-lib/utils/decoder';
-import {toNormalizedBN} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {useAsyncTrigger} from '@common/hooks/useAsyncEffect';
 import {keyBy} from '@common/utils';
 
 import type {ReactElement} from 'react';
-import type {TAddress, TDict} from '@yearn-finance/web-lib/types';
-import type {TNormalizedBN} from '@common/types/types';
+import type {TAddress, TDict, TNormalizedBN} from '@builtbymom/web3/types';
 
 export type TGauge = {
 	address: TAddress;

@@ -1,15 +1,22 @@
 import {useCallback, useMemo, useRef, useState} from 'react';
 import {erc20ABI, useChainId} from 'wagmi';
+import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {
+	decodeAsBigInt,
+	decodeAsNumber,
+	decodeAsString,
+	isZero,
+	isZeroAddress,
+	toAddress,
+	toBigInt,
+	toNormalizedBN,
+	toNormalizedValue
+} from '@builtbymom/web3/utils';
 import {deserialize, multicall, serialize} from '@wagmi/core';
 import {useUI} from '@yearn-finance/web-lib/contexts/useUI';
-import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
 import {AGGREGATE3_ABI} from '@yearn-finance/web-lib/utils/abi/aggregate.abi';
-import {isZeroAddress, toAddress} from '@yearn-finance/web-lib/utils/address';
 import {MULTICALL3_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {decodeAsBigInt, decodeAsNumber, decodeAsString} from '@yearn-finance/web-lib/utils/decoder';
-import {toBigInt, toNormalizedBN, toNormalizedValue} from '@yearn-finance/web-lib/utils/format.bigNumber';
 import {isEth} from '@yearn-finance/web-lib/utils/isEth';
-import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
 
 import {useAsyncTrigger} from './useAsyncEffect';
@@ -17,10 +24,10 @@ import {useAsyncTrigger} from './useAsyncEffect';
 import type {DependencyList} from 'react';
 import type {ContractFunctionConfig} from 'viem';
 import type {Connector} from 'wagmi';
-import type {TAddress, TDict, TNDict} from '@yearn-finance/web-lib/types';
 import type {TDefaultStatus} from '@yearn-finance/web-lib/types/hooks';
+import type {TAddress, TDict, TNDict} from '@builtbymom/web3/types';
 import type {TYDaemonPricesChain} from '@common/schemas/yDaemonPricesSchema';
-import type {TChainTokens, TToken} from '@common/types/types';
+import type {TYChainTokens, TYToken} from '@common/types/types';
 
 /* 🔵 - Yearn Finance **********************************************************
  ** Request, Response and helpers for the useBalances hook.
@@ -42,9 +49,9 @@ export type TUseBalancesReq = {
 };
 
 export type TUseBalancesRes = {
-	data: TChainTokens;
-	onUpdate: () => Promise<TChainTokens>;
-	onUpdateSome: (token: TUseBalancesTokens[]) => Promise<TChainTokens>;
+	data: TYChainTokens;
+	onUpdate: () => Promise<TYChainTokens>;
+	onUpdateSome: (token: TUseBalancesTokens[]) => Promise<TYChainTokens>;
 	error?: Error;
 	status: 'error' | 'loading' | 'success' | 'unknown';
 } & TDefaultStatus;
@@ -52,7 +59,7 @@ export type TUseBalancesRes = {
 type TDataRef = {
 	nonce: number;
 	address: TAddress;
-	balances: TChainTokens;
+	balances: TYChainTokens;
 };
 
 /* 🔵 - Yearn Finance **********************************************************
@@ -72,8 +79,8 @@ async function performCall(
 	calls: ContractFunctionConfig[],
 	tokens: TUseBalancesTokens[],
 	prices?: TYDaemonPricesChain
-): Promise<[TDict<TToken>, Error | undefined]> {
-	const _data: TDict<TToken> = {};
+): Promise<[TDict<TYToken>, Error | undefined]> {
+	const _data: TDict<TYToken> = {};
 	const results = await multicall({
 		contracts: calls as never[],
 		chainId: chainID
@@ -104,7 +111,8 @@ async function performCall(
 			balance: toNormalizedBN(balanceOf, decimals),
 			price: toNormalizedBN(rawPrice, 6),
 			value: toNormalizedValue(balanceOf, decimals) * toNormalizedValue(rawPrice, 6),
-			stakingValue: 0
+			stakingValue: 0,
+			supportedZaps: []
 		};
 	}
 	return [_data, undefined];
@@ -115,8 +123,8 @@ async function getBalances(
 	address: TAddress,
 	tokens: TUseBalancesTokens[],
 	prices?: TYDaemonPricesChain
-): Promise<[TDict<TToken>, Error | undefined]> {
-	let result: TDict<TToken> = {};
+): Promise<[TDict<TYToken>, Error | undefined]> {
+	let result: TDict<TYToken> = {};
 	const calls: ContractFunctionConfig[] = [];
 
 	for (const element of tokens) {
@@ -162,12 +170,12 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	const {onLoadStart, onLoadDone} = useUI();
 	const [status, set_status] = useState<TDefaultStatus>(defaultStatus);
 	const [error, set_error] = useState<Error | undefined>(undefined);
-	const [balances, set_balances] = useState<TChainTokens>({});
+	const [balances, set_balances] = useState<TYChainTokens>({});
 	const data = useRef<TDataRef>({nonce: 0, address: toAddress(), balances: {}});
 	const stringifiedTokens = useMemo((): string => serialize(props?.tokens || []), [props?.tokens]);
 
 	const updateBalancesCall = useCallback(
-		(chainID: number, newRawData: TDict<TToken>): TChainTokens => {
+		(chainID: number, newRawData: TDict<TYToken>): TYChainTokens => {
 			if (toAddress(userAddress) !== data?.current?.address) {
 				data.current = {
 					address: toAddress(userAddress),
@@ -189,7 +197,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 			data.current.nonce += 1;
 
 			set_balances(
-				(b): TChainTokens => ({
+				(b): TYChainTokens => ({
 					...b,
 					[chainID]: {
 						...(b[chainID] || {}),
@@ -208,7 +216,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	 ** This takes the whole list and is not optimized for performance, aka not
 	 ** send in a worker.
 	 **************************************************************************/
-	const onUpdate = useCallback(async (): Promise<TChainTokens> => {
+	const onUpdate = useCallback(async (): Promise<TYChainTokens> => {
 		if (!userAddress) {
 			return {};
 		}
@@ -233,7 +241,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 			tokensPerChainID[token.chainID].push(token);
 		}
 
-		const updated: TChainTokens = {};
+		const updated: TYChainTokens = {};
 		for (const [chainIDStr, tokens] of Object.entries(tokensPerChainID)) {
 			const chainID = Number(chainIDStr);
 			const chunks = [];
@@ -271,7 +279,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 			}
 
 			set_balances(
-				(b): TChainTokens => ({
+				(b): TYChainTokens => ({
 					...b,
 					[chainID]: {
 						...(b[chainID] || {}),
@@ -292,7 +300,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	 ** issue as it should only be used for a little list of tokens.
 	 **************************************************************************/
 	const onUpdateSome = useCallback(
-		async (tokenList: TUseBalancesTokens[]): Promise<TChainTokens> => {
+		async (tokenList: TUseBalancesTokens[]): Promise<TYChainTokens> => {
 			set_status({
 				...defaultStatus,
 				isLoading: true,
@@ -309,7 +317,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 				tokensPerChainID[token.chainID].push(token);
 			}
 
-			const updated: TChainTokens = {};
+			const updated: TYChainTokens = {};
 			for (const [chainIDStr, tokens] of Object.entries(tokensPerChainID)) {
 				const chainID = Number(chainIDStr);
 				const chunks = [];
@@ -348,7 +356,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 			}
 
 			set_balances(
-				(b): TChainTokens => ({
+				(b): TYChainTokens => ({
 					...b,
 					[chainID]: {
 						...(b[chainID] || {}),
@@ -364,7 +372,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	);
 
 	const assignPrices = useCallback(
-		(_rawData: TChainTokens): TChainTokens => {
+		(_rawData: TYChainTokens): TYChainTokens => {
 			const newData = {..._rawData};
 			for (const chainIDStr of Object.keys(newData)) {
 				const chainID = Number(chainIDStr);

@@ -1,20 +1,18 @@
 import {createContext, useCallback, useContext, useEffect, useMemo, useState} from 'react';
 import {useAccount, useContractRead} from 'wagmi';
+import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {useAsyncTrigger} from '@builtbymom/web3/hooks/useAsyncTrigger';
+import {decodeAsBigInt, isZero, toAddress, toBigInt} from '@builtbymom/web3/utils';
 import {multicall, prepareWriteContract} from '@wagmi/core';
-import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {allowanceKey, toAddress} from '@yearn-finance/web-lib/utils/address';
+import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
 import {CURVE_BRIBE_V3_ADDRESS, CURVE_BRIBE_V3_HELPER_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {decodeAsBigInt} from '@yearn-finance/web-lib/utils/decoder';
-import {toBigInt} from '@yearn-finance/web-lib/utils/format.bigNumber';
-import {isZero} from '@yearn-finance/web-lib/utils/isZero';
 import {useCurve} from '@common/contexts/useCurve';
-import {useAsyncTrigger} from '@common/hooks/useAsyncEffect';
 import {YBRIBE_SUPPORTED_NETWORK} from '@yBribe/constants/index';
 import {getLastThursday, getNextThursday} from '@yBribe/utils';
 import {CURVE_BRIBE_V3_ABI} from '@yBribe/utils/abi/curveBribeV3.abi';
 import {CURVE_BRIBE_V3_HELPER_ABI} from '@yBribe/utils/abi/curveBribeV3Helper.abi';
 
-import type {TAddress, TDict, VoidPromiseFunction} from '@yearn-finance/web-lib/types';
+import type {TAddress, TDict} from '@builtbymom/web3/types';
 import type {TCurveGaugeVersionRewards} from '@common/types/curves';
 import type {PrepareWriteContractResult} from '@wagmi/core';
 
@@ -25,7 +23,7 @@ export type TBribesContext = {
 	currentPeriod: number;
 	nextPeriod: number;
 	isLoading: boolean;
-	refresh: VoidPromiseFunction;
+	refresh: () => Promise<void>;
 };
 const defaultProps: TBribesContext = {
 	currentRewards: {},

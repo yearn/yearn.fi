@@ -1,14 +1,14 @@
 import {useEffect, useState} from 'react';
 import {useRouter} from 'next/router';
 import {motion} from 'framer-motion';
+import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {toAddress} from '@builtbymom/web3/utils';
 import {VaultDetailsTabsWrapper} from '@vaults/components/details/tabs/VaultDetailsTabsWrapper';
 import {VaultActionsTabsWrapper} from '@vaults/components/details/VaultActionsTabsWrapper';
 import {VaultDetailsHeader} from '@vaults/components/details/VaultDetailsHeader';
 import {ActionFlowContextApp} from '@vaults/contexts/useActionFlow';
 import {WithSolverContextApp} from '@vaults/contexts/useSolver';
 import {Wrapper} from '@vaults/Wrapper';
-import {useWeb3} from '@yearn-finance/web-lib/contexts/useWeb3';
-import {toAddress} from '@yearn-finance/web-lib/utils/address';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useWallet} from '@common/contexts/useWallet';
 import {useFetch} from '@common/hooks/useFetch';
@@ -88,7 +88,7 @@ function Index(): ReactElement | null {
 					initial={'initial'}
 					animate={'enter'}
 					variants={variants}
-					className={'z-50 -mt-6 size-12 cursor-pointer md:-mt-36 md:size-[72px]'}>
+					className={'size-12 md:size-[72px] z-50 -mt-6 cursor-pointer md:-mt-36'}>
 					<ImageWithFallback
 						src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${toAddress(
 							currentVault.token.address

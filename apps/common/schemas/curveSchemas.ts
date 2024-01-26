@@ -1,5 +1,5 @@
 import {z} from 'zod';
-import {toAddress} from '@yearn-finance/web-lib/utils/address';
+import {toAddress} from '@builtbymom/web3/utils';
 
 export const curveWeeklyFeesSchema = z.object({
 	success: z.boolean().optional(),

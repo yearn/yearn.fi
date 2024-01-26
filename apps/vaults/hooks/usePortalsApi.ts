@@ -2,7 +2,7 @@ import {z} from 'zod';
 import {addressSchema} from '@yearn-finance/web-lib/utils/schemas/addressSchema';
 import {fetch} from '@common/utils/fetch';
 
-import type {TAddress} from '@yearn-finance/web-lib/types';
+import type {TAddress} from '@builtbymom/web3/types';
 import type {TFetchReturn} from '@common/utils/fetch';
 
 export const portalsEstimateResponseSchema = z.object({

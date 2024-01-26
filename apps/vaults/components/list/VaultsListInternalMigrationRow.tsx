@@ -1,7 +1,6 @@
 import {useMemo} from 'react';
 import Link from 'next/link';
-import {toAddress} from '@yearn-finance/web-lib/utils/address';
-import {formatAmount} from '@yearn-finance/web-lib/utils/format.number';
+import {formatAmount, toAddress} from '@builtbymom/web3/utils';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useBalance} from '@common/hooks/useBalance';
 import {getVaultName} from '@common/utils';
