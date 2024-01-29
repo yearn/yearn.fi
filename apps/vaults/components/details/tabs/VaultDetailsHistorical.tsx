@@ -1,4 +1,5 @@
-import {formatAmount, formatUSD, toBigInt, toNormalizedValue, truncateHex} from '@builtbymom/web3/utils';
+import {formatAmount, formatUSD, toBigInt, toNormalizedValue} from '@builtbymom/web3/utils';
+import {truncateHexTx} from '@vaults/utils';
 import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
 import {IconSpinner} from '@common/icons/IconSpinner';
@@ -98,8 +99,8 @@ function HarvestListRow({
 					<div
 						className={'font-number flex flex-row items-center space-x-2 text-neutral-900 md:justify-end'}
 						style={{lineHeight: '24px'}}>
-						{truncateHex(harvest.txHash, 12)}
-						<IconLinkOut className={'ml-2 size-4 md:ml-4'} />
+						{truncateHexTx(harvest.txHash, 12)}
+						<IconLinkOut className={'size-4 ml-2 md:ml-4'} />
 					</div>
 				</a>
 			</div>

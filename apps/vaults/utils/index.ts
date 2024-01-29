@@ -10,6 +10,7 @@ import {
 } from '@yearn-finance/web-lib/utils/constants';
 
 import type {TAddress} from '@builtbymom/web3/types';
+import {zeroAddress} from 'viem';
 
 export function getMessariSubgraphEndpoint(chainID: number): string {
 	switch (chainID) {
@@ -79,4 +80,20 @@ export function getNativeTokenWrapperName(chainID: number): string {
 		default:
 			return 'ETH';
 	}
+}
+
+export function truncateHexTx(hash: string | undefined, size: number): string {
+	if (hash !== undefined) {
+		if (size === 0) {
+			return hash;
+		}
+		if (hash.length <= size * 2 + 4) {
+			return hash;
+		}
+		return `0x${hash.slice(2, size + 2)}...${hash.slice(-size)}`;
+	}
+	if (size === 0) {
+		return zeroAddress;
+	}
+	return `0x${zeroAddress.slice(2, size)}...${zeroAddress.slice(-size)}`;
 }
