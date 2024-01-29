@@ -17,7 +17,7 @@
 		"test": "vitest run"
 	},
 	"dependencies": {
-		"@builtbymom/web3": "^0.0.19",
+		"@builtbymom/web3": "^0.0.21",
 		"@cowprotocol/cow-sdk": "2.1.0",
 		"@headlessui/react": "1.7.17",
 		"@popperjs/core": "^2.11.8",
