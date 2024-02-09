@@ -1,9 +1,9 @@
 import {Fragment, useCallback, useMemo, useRef, useState} from 'react';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {cl} from '@builtbymom/web3/utils';
 import {Combobox, Transition} from '@headlessui/react';
 import {useClickOutside, useThrottledState} from '@react-hookz/web';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {IconChevron} from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';

@@ -1,11 +1,10 @@
 import {useMemo} from 'react';
 import Link from 'next/link';
-import {formatAmount, isZero, toAddress, toNormalizedBN} from '@builtbymom/web3/utils';
+import {cl, formatAmount, isZero, toAddress, toNormalizedBN} from '@builtbymom/web3/utils';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {useYearnWallet} from '@yearn-finance/web-lib/contexts/useYearnWallet';
 import {useYearnBalance} from '@yearn-finance/web-lib/hooks/useYearnBalance';
 import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
-import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
@@ -449,7 +448,7 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 
 				<div className={cl('col-span-5 z-10', 'flex flex-row items-center justify-between')}>
 					<div className={'flex flex-row gap-6'}>
-						<div className={'size-8 mt-2.5 rounded-full md:flex'}>
+						<div className={'mt-2.5 size-8 rounded-full md:flex'}>
 							<ImageWithFallback
 								src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-32.png`}
 								alt={``}
@@ -473,7 +472,7 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 									target={'_blank'}
 									rel={'noopener noreferrer'}>
 									<div className={'px-2'}>
-										<IconLinkOut className={'size-4 inline-block'} />
+										<IconLinkOut className={'inline-block size-4'} />
 									</div>
 								</Link>
 							</div>
@@ -581,7 +580,7 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 						target={'_blank'}
 						rel={'noopener noreferrer'}>
 						<div className={'px-2'}>
-							<IconLinkOut className={'size-4 inline-block'} />
+							<IconLinkOut className={'inline-block size-4'} />
 						</div>
 					</Link>
 				</div>

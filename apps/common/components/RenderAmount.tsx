@@ -1,13 +1,11 @@
 import {type ReactElement, useMemo} from 'react';
-import {isZero} from '@builtbymom/web3/utils';
-import {cl} from '@yearn-finance/web-lib/utils/cl';
-import {amountV2} from '@yearn-finance/web-lib/utils/format.number';
+import {cl, formatTAmount, isZero} from '@builtbymom/web3/utils';
 
 import type {TAmount} from '@builtbymom/web3/utils';
 
 export function RenderAmount(props: TAmount & {shouldHideTooltip?: boolean}): ReactElement {
 	const normalizedRawValue = useMemo((): string => {
-		return amountV2({
+		return formatTAmount({
 			...props,
 			options: {
 				...props.options,
@@ -20,7 +18,7 @@ export function RenderAmount(props: TAmount & {shouldHideTooltip?: boolean}): Re
 	}, [props]);
 
 	if (props.shouldHideTooltip) {
-		return <span className={'font-number'}>{amountV2(props)}</span>;
+		return <span className={'font-number'}>{formatTAmount(props)}</span>;
 	}
 
 	const shouldShowTooltip =
@@ -50,7 +48,7 @@ export function RenderAmount(props: TAmount & {shouldHideTooltip?: boolean}): Re
 			) : (
 				<span />
 			)}
-			{amountV2(props)}
+			{formatTAmount(props)}
 		</span>
 	);
 }

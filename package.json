@@ -17,13 +17,13 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@builtbymom/web3": "0.0.21",
+    "@builtbymom/web3": "^0.0.37",
     "@cowprotocol/cow-sdk": "2.1.0",
     "@headlessui/react": "1.7.17",
     "@rainbow-me/rainbowkit": "^1.3.0",
     "@tailwindcss/typography": "^0.5.10",
     "@wagmi/core": "^1.4.7",
-    "@yearn-finance/web-lib": "3.0.131",
+    "@yearn-finance/web-lib": "^3.0.134",
     "axios": "^1.6.2",
     "ethers": "5.7.2",
     "framer-motion": "^10.16.5",

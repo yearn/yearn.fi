@@ -1,7 +1,7 @@
 import {createContext, memo, useCallback, useContext, useMemo, useState} from 'react';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {useFetch} from '@builtbymom/web3/hooks/useFetch';
-import {isZeroAddress, toAddress, toNormalizedBN} from '@builtbymom/web3/utils';
+import {isZeroAddress, toAddress, zeroNormalizedBN} from '@builtbymom/web3/utils';
 import {useDeepCompareEffect} from '@react-hookz/web';
 import {useYearnWallet} from '@yearn-finance/web-lib/contexts/useYearnWallet';
 import {useYDaemonBaseURI} from '@yearn-finance/web-lib/hooks/useYDaemonBaseURI';
@@ -33,8 +33,8 @@ const defaultToken: TYToken & {supportedZaps: TSupportedZaps[]} = {
 	chainID: 1,
 	value: 0,
 	stakingValue: 0,
-	price: toNormalizedBN(0),
-	balance: toNormalizedBN(0),
+	price: zeroNormalizedBN,
+	balance: zeroNormalizedBN,
 	supportedZaps: []
 };
 
@@ -42,8 +42,8 @@ const defaultProps = {
 	tokensList: {},
 	listTokens: (): TDict<TYToken & {supportedZaps: TSupportedZaps[]}> => ({}),
 	getToken: (): TYToken & {supportedZaps: TSupportedZaps[]} => ({...defaultToken, supportedZaps: []}),
-	getBalance: (): TNormalizedBN => toNormalizedBN(0),
-	getPrice: (): TNormalizedBN => toNormalizedBN(0),
+	getBalance: (): TNormalizedBN => zeroNormalizedBN,
+	getPrice: (): TNormalizedBN => zeroNormalizedBN,
 	refresh: async (): Promise<TYChainTokens> => ({})
 };
 
@@ -122,13 +122,13 @@ export const WalletForZapAppContextApp = memo(function WalletForZapAppContextApp
 	);
 	const getBalance = useCallback(
 		({address, chainID}: {address: TAddress; chainID: number}): TNormalizedBN => {
-			return zapTokens?.[chainID || 1]?.[address]?.balance || toNormalizedBN(0);
+			return zapTokens?.[chainID || 1]?.[address]?.balance || zeroNormalizedBN;
 		},
 		[zapTokens]
 	);
 	const getPrice = useCallback(
 		({address, chainID}: {address: TAddress; chainID: number}): TNormalizedBN => {
-			return zapTokens?.[chainID || 1]?.[address]?.price || toNormalizedBN(0);
+			return zapTokens?.[chainID || 1]?.[address]?.price || zeroNormalizedBN;
 		},
 		[zapTokens]
 	);

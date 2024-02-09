@@ -9,4 +9,4 @@ export const numberSort = ({a, b, sortDirection}: {a?: number; b?: number; sortD
 	sortDirection === 'desc' ? (b ?? 0) - (a ?? 0) : (a ?? 0) - (b ?? 0);
 
 export const bigNumberSort = ({a, b, sortDirection}: {a: bigint; b: bigint; sortDirection: TSortDirection}): number =>
-	Number(toNormalizedBN(sortDirection === 'desc' ? b - a : a - b).normalized);
+	Number(toNormalizedBN(sortDirection === 'desc' ? b - a : a - b, 18).normalized);

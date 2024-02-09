@@ -1,7 +1,7 @@
 import {Children, Fragment, useEffect, useMemo, useState} from 'react';
 import {motion, useSpring, useTransform} from 'framer-motion';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {formatAmount, isZero} from '@builtbymom/web3/utils';
+import {cl, formatAmount, isZero} from '@builtbymom/web3/utils';
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
 import {useVaultFilter} from '@vaults/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
@@ -13,7 +13,6 @@ import {ALL_VAULTSV3_CATEGORIES_KEYS} from '@vaults-v3/constants';
 import {V3Mask} from '@vaults-v3/Mark';
 import {useYearn} from '@yearn-finance/web-lib/contexts/useYearn';
 import {useYearnWallet} from '@yearn-finance/web-lib/contexts/useYearnWallet';
-import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {InfoTooltip} from '@common/components/InfoTooltip';
 
 import type {ReactElement, ReactNode} from 'react';

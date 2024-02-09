@@ -1,11 +1,10 @@
 import {useMemo} from 'react';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {useFetch} from '@builtbymom/web3/hooks/useFetch';
-import {formatUSD, isZero, toAddress, toBigInt, toNormalizedBN} from '@builtbymom/web3/utils';
+import {formatCounterValue, formatUSD, isZero, toAddress, toBigInt, toNormalizedBN} from '@builtbymom/web3/utils';
 import {useYDaemonBaseURI} from '@yearn-finance/web-lib/hooks/useYDaemonBaseURI';
 import {useYearnBalance} from '@yearn-finance/web-lib/hooks/useYearnBalance';
 import {useYearnTokenPrice} from '@yearn-finance/web-lib/hooks/useYearnTokenPrice';
-import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {copyToClipboard} from '@yearn-finance/web-lib/utils/helpers';
 import {yDaemonSingleEarnedSchema} from '@yearn-finance/web-lib/utils/schemas/yDaemonEarnedSchema';
 import {RenderAmount} from '@common/components/RenderAmount';
@@ -110,8 +109,8 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 	const normalizedVaultEarned = useMemo((): TNormalizedBN => {
 		const {unrealizedGains} = earned?.earned?.[toAddress(currentVault.address)] || {};
 		const value = toBigInt(unrealizedGains);
-		return toNormalizedBN(value < 0n ? 0n : value);
-	}, [earned?.earned, currentVault.address]);
+		return toNormalizedBN(value < 0n ? 0n : value, currentVault.decimals);
+	}, [earned?.earned, currentVault.address, currentVault.decimals]);
 
 	const vaultBalance = useYearnBalance({address: currentVault.address, chainID: currentVault.chainID});
 	const stakedBalance = useYearnBalance({address: currentVault.staking.address, chainID: currentVault.chainID});

@@ -1,6 +1,6 @@
 import {useCallback, useMemo, useRef} from 'react';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {assert, toAddress, toBigInt, toNormalizedBN} from '@builtbymom/web3/utils';
+import {assert, toAddress, toBigInt, toNormalizedBN, zeroNormalizedBN} from '@builtbymom/web3/utils';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {ZAP_CRV_ABI} from '@vaults/utils/abi/zapCRV.abi';
 import {zapCRV} from '@vaults/utils/actions';
@@ -28,7 +28,7 @@ export function useSolverInternalMigration(): TSolverContext {
 	 **********************************************************************************************/
 	const init = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN> => {
 		if (isSolverDisabled(Solver.enum.InternalMigration)) {
-			return toNormalizedBN(0);
+			return zeroNormalizedBN;
 		}
 		request.current = _request;
 		if (request.current.migrator === ZAP_YEARN_VE_CRV_ADDRESS) {
@@ -40,7 +40,7 @@ export function useSolverInternalMigration(): TSolverContext {
 				args: [request.current.inputToken.value, request.current.outputToken.value, request.current.inputAmount]
 			});
 			const minAmountWithSlippage = estimateOut - (estimateOut * 6n) / 10_000n;
-			latestQuote.current = toNormalizedBN(minAmountWithSlippage);
+			latestQuote.current = toNormalizedBN(minAmountWithSlippage, request.current.outputToken.decimals);
 			return latestQuote.current;
 		}
 		const estimateOut = await getVaultEstimateOut({
@@ -63,7 +63,7 @@ export function useSolverInternalMigration(): TSolverContext {
 	const onRetrieveAllowance = useCallback(
 		async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
 			if (!request?.current || !provider) {
-				return toNormalizedBN(0);
+				return zeroNormalizedBN;
 			}
 
 			const key = allowanceKey(
@@ -177,7 +177,7 @@ export function useSolverInternalMigration(): TSolverContext {
 	return useMemo(
 		(): TSolverContext => ({
 			type: Solver.enum.InternalMigration,
-			quote: latestQuote?.current || toNormalizedBN(0),
+			quote: latestQuote?.current || zeroNormalizedBN,
 			init,
 			onRetrieveAllowance,
 			onApprove,

@@ -3,17 +3,16 @@ import {ethers} from 'ethers';
 import {BaseError} from 'viem';
 import axios from 'axios';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {assert, isZeroAddress, toBigInt, toNormalizedBN} from '@builtbymom/web3/utils';
+import {assert, isEthAddress, isZeroAddress, toBigInt, toNormalizedBN, zeroNormalizedBN} from '@builtbymom/web3/utils';
 import {defaultTxStatus} from '@builtbymom/web3/utils/wagmi';
+import {getEthersSigner} from '@builtbymom/web3/utils/wagmi/ethersAdapter';
 import {OrderBookApi, OrderQuoteSide, OrderSigningUtils} from '@cowprotocol/cow-sdk';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {toast} from '@yearn-finance/web-lib/components/yToast';
 import {useYearn} from '@yearn-finance/web-lib/contexts/useYearn';
-import {allowanceKey} from '@yearn-finance/web-lib/utils/address';
 import {MAX_UINT_256, SOLVER_COW_VAULT_RELAYER_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {isEth} from '@yearn-finance/web-lib/utils/isEth';
+import {allowanceKey} from '@yearn-finance/web-lib/utils/helpers';
 import {Solver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
-import {getEthersSigner} from '@yearn-finance/web-lib/utils/wagmi/ethersAdapter';
 import {allowanceOf, approveERC20, isApprovedERC20} from '@common/utils/actions';
 
 import type {TDict, TNormalizedBN} from '@builtbymom/web3/types';
@@ -106,7 +105,7 @@ export function useSolverCowswap(): TSolverContext {
 	const init = useCallback(
 		async (_request: TInitSolverArgs, shouldLogError?: boolean): Promise<TNormalizedBN> => {
 			if (isSolverDisabled(Solver.enum.Cowswap)) {
-				return toNormalizedBN(0);
+				return zeroNormalizedBN;
 			}
 			/******************************************************************************************
 			 ** First we need to know which token we are selling to the zap. When we are depositing, we
@@ -120,7 +119,7 @@ export function useSolverCowswap(): TSolverContext {
 			 ** This first obvious check is to see if the solver is disabled. If it is, we return 0.
 			 ******************************************************************************************/
 			if (_request.chainID !== 1) {
-				return toNormalizedBN(0);
+				return zeroNormalizedBN;
 			}
 
 			/******************************************************************************************
@@ -130,7 +129,7 @@ export function useSolverCowswap(): TSolverContext {
 			 ** a token, you can contact the yDaemon team to add it.
 			 ******************************************************************************************/
 			if (!sellToken.solveVia?.includes(Solver.enum.Cowswap)) {
-				return toNormalizedBN(0);
+				return zeroNormalizedBN;
 			}
 
 			/******************************************************************************************
@@ -138,8 +137,8 @@ export function useSolverCowswap(): TSolverContext {
 			 ** sell ETH, but can be used to buy ETH. So, if we are selling ETH (aka depositing ETH vs
 			 ** a vault token) we return 0.
 			 ******************************************************************************************/
-			if (_request.isDepositing && isEth(sellToken.value)) {
-				return toNormalizedBN(0);
+			if (_request.isDepositing && isEthAddress(sellToken.value)) {
+				return zeroNormalizedBN;
 			}
 
 			/******************************************************************************************
@@ -162,7 +161,7 @@ export function useSolverCowswap(): TSolverContext {
 						});
 					}
 				}
-				return toNormalizedBN(0);
+				return zeroNormalizedBN;
 			}
 			latestQuote.current = data;
 			const buyAmountWithSlippage = getBuyAmountWithSlippage(data, _request?.outputToken?.decimals || 18);
@@ -284,7 +283,7 @@ export function useSolverCowswap(): TSolverContext {
 	 **************************************************************************/
 	const expectedOut = useMemo((): TNormalizedBN => {
 		if (!latestQuote?.current?.quote?.buyAmount || !request?.current || request.current.chainID !== 1) {
-			return toNormalizedBN(0);
+			return zeroNormalizedBN;
 		}
 		return toNormalizedBN(
 			toBigInt(latestQuote?.current?.quote?.buyAmount),
@@ -299,7 +298,7 @@ export function useSolverCowswap(): TSolverContext {
 	const onRetrieveAllowance = useCallback(
 		async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
 			if (!request?.current || request.current.chainID !== 1 || !provider) {
-				return toNormalizedBN(0);
+				return zeroNormalizedBN;
 			}
 			assert(request.current, 'Request is not defined');
 			assert(

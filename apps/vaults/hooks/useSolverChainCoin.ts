@@ -1,11 +1,10 @@
 import {useCallback, useMemo, useRef} from 'react';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {assert, toAddress, toNormalizedBN} from '@builtbymom/web3/utils';
+import {assert, isEthAddress, toAddress, toNormalizedBN, zeroNormalizedBN} from '@builtbymom/web3/utils';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {getEthZapperContract, getNativeTokenWrapperContract} from '@vaults/utils';
 import {getVaultEstimateOut} from '@vaults/utils/getVaultEstimateOut';
 import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
-import {isEth} from '@yearn-finance/web-lib/utils/isEth';
 import {Solver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
 import {allowanceKey} from '@common/utils';
 import {allowanceOf, approveERC20, depositETH, withdrawETH} from '@common/utils/actions';
@@ -27,7 +26,7 @@ export function useSolverChainCoin(): TSolverContext {
 	 **********************************************************************************************/
 	const init = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN> => {
 		if (isSolverDisabled(Solver.enum.ChainCoin)) {
-			return toNormalizedBN(0);
+			return zeroNormalizedBN;
 		}
 		request.current = _request;
 		const wrapperToken = getNativeTokenWrapperContract(_request.chainID);
@@ -52,7 +51,7 @@ export function useSolverChainCoin(): TSolverContext {
 	const onRetrieveAllowance = useCallback(
 		async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
 			if (!request?.current || !provider) {
-				return toNormalizedBN(0);
+				return zeroNormalizedBN;
 			}
 
 			const key = allowanceKey(
@@ -65,7 +64,7 @@ export function useSolverChainCoin(): TSolverContext {
 				return existingAllowances.current[key];
 			}
 
-			assert(isEth(request.current.outputToken.value), 'Out is not ETH');
+			assert(isEthAddress(request.current.outputToken.value), 'Out is not ETH');
 			const allowance = await allowanceOf({
 				connector: provider,
 				chainID: request.current.inputToken.chainID,
@@ -162,7 +161,7 @@ export function useSolverChainCoin(): TSolverContext {
 	return useMemo(
 		(): TSolverContext => ({
 			type: Solver.enum.ChainCoin,
-			quote: latestQuote?.current || toNormalizedBN(0),
+			quote: latestQuote?.current || zeroNormalizedBN,
 			init,
 			onRetrieveAllowance,
 			onApprove,

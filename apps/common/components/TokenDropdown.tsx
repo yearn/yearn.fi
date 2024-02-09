@@ -1,11 +1,10 @@
 import {cloneElement, Fragment, useState} from 'react';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {formatAmount} from '@builtbymom/web3/utils';
+import {cl, formatAmount} from '@builtbymom/web3/utils';
 import {Combobox, Transition} from '@headlessui/react';
 import {useThrottledState} from '@react-hookz/web';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {useYearnWallet} from '@yearn-finance/web-lib/contexts/useYearnWallet';
-import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {IconChevron} from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';

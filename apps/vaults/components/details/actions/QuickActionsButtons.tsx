@@ -1,7 +1,7 @@
 import {useCallback, useState} from 'react';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {useAsyncTrigger} from '@builtbymom/web3/hooks/useAsyncTrigger';
-import {isZero, toAddress, toBigInt, toNormalizedBN} from '@builtbymom/web3/utils';
+import {isEthAddress, isZero, toAddress, toBigInt, zeroNormalizedBN} from '@builtbymom/web3/utils';
 import {defaultTxStatus} from '@builtbymom/web3/utils/wagmi';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useSolver} from '@vaults/contexts/useSolver';
@@ -10,7 +10,6 @@ import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useYearn} from '@yearn-finance/web-lib/contexts/useYearn';
 import {useYearnWallet} from '@yearn-finance/web-lib/contexts/useYearnWallet';
 import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
-import {isEth} from '@yearn-finance/web-lib/utils/isEth';
 import {Solver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
 
 import type {ReactElement} from 'react';
@@ -25,7 +24,7 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
 	const [txStatusExecuteDeposit, set_txStatusExecuteDeposit] = useState(defaultTxStatus);
 	const [txStatusExecuteWithdraw, set_txStatusExecuteWithdraw] = useState(defaultTxStatus);
-	const [allowanceFrom, set_allowanceFrom] = useState<TNormalizedBN>(toNormalizedBN(0));
+	const [allowanceFrom, set_allowanceFrom] = useState<TNormalizedBN>(zeroNormalizedBN);
 	const {actionParams, onChangeAmount, maxDepositPossible, isDepositing} = useActionFlow();
 	const {
 		onApprove,
@@ -50,7 +49,7 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 
 	const onSuccess = useCallback(async (): Promise<void> => {
 		const {chainID} = currentVault;
-		onChangeAmount(toNormalizedBN(0));
+		onChangeAmount(zeroNormalizedBN);
 		if (
 			Solver.enum.Vanilla === currentSolver ||
 			Solver.enum.ChainCoin === currentSolver ||
@@ -127,7 +126,7 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 	if (
 		isWithdrawing && //If user is withdrawing ...
 		currentSolver === Solver.enum.ChainCoin && // ... and the solver is ChainCoin ...
-		isEth(actionParams?.selectedOptionTo?.value) && // ... and the output is ETH ...
+		isEthAddress(actionParams?.selectedOptionTo?.value) && // ... and the output is ETH ...
 		isAboveAllowance // ... and the amount is above the allowance
 	) {
 		// ... then we need to approve the ChainCoin contract

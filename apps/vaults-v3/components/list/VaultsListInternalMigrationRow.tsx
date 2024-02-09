@@ -1,7 +1,6 @@
 import Link from 'next/link';
-import {formatAmount, toAddress} from '@builtbymom/web3/utils';
+import {cl, formatAmount, toAddress} from '@builtbymom/web3/utils';
 import {useYearnBalance} from '@yearn-finance/web-lib/hooks/useYearnBalance';
-import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 
 import {VaultChainTag} from '../VaultChainTag';
@@ -23,7 +22,7 @@ export function VaultsListInternalMigrationRow({currentVault}: {currentVault: TY
 			/>
 			<div className={cl('col-span-3 z-10', 'flex flex-row items-center justify-between')}>
 				<div className={'flex flex-row space-x-6'}>
-					<div className={'size-8 mt-2.5 rounded-full md:flex'}>
+					<div className={'mt-2.5 size-8 rounded-full md:flex'}>
 						<ImageWithFallback
 							src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-32.png`}
 							alt={''}

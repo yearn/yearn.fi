@@ -1,12 +1,10 @@
 import {useMemo} from 'react';
 import {useContractRead} from 'wagmi';
-import {formatUSD, isZero, toBigInt, toNormalizedBN} from '@builtbymom/web3/utils';
+import {cl, formatCounterValue, formatUSD, isZero, toBigInt, toNormalizedBN} from '@builtbymom/web3/utils';
 import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {useYearnBalance} from '@yearn-finance/web-lib/hooks/useYearnBalance';
 import {useYearnTokenPrice} from '@yearn-finance/web-lib/hooks/useYearnTokenPrice';
-import {cl} from '@yearn-finance/web-lib/utils/cl';
-import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {copyToClipboard} from '@yearn-finance/web-lib/utils/helpers';
 import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {RenderAmount} from '@common/components/RenderAmount';

@@ -5,14 +5,15 @@ import {usePathname} from 'next/navigation';
 import {type NextRouter, useRouter} from 'next/router';
 import {AnimatePresence, domAnimation, LazyMotion, motion} from 'framer-motion';
 import {WithMom} from '@builtbymom/web3/contexts/WithMom';
+import {cl} from '@builtbymom/web3/utils';
+import {localhost} from '@builtbymom/web3/utils/wagmi';
 import {WalletForZapAppContextApp} from '@vaults/contexts/useWalletForZaps';
 import {arbitrum, base, fantom, mainnet, optimism, polygon} from '@wagmi/chains';
 import {YearnContextApp} from '@yearn-finance/web-lib/contexts/useYearn';
+import {YearnWalletContextApp} from '@yearn-finance/web-lib/contexts/useYearnWallet';
 import {IconAlertCritical} from '@yearn-finance/web-lib/icons/IconAlertCritical';
 import {IconAlertError} from '@yearn-finance/web-lib/icons/IconAlertError';
 import {IconCheckmark} from '@yearn-finance/web-lib/icons/IconCheckmark';
-import {cl} from '@yearn-finance/web-lib/utils/cl';
-import {localhost} from '@yearn-finance/web-lib/utils/wagmi/networks';
 import AppHeader from '@common/components/Header';
 import Meta from '@common/components/Meta';
 import {MenuContextApp} from '@common/contexts/useMenu';
@@ -79,7 +80,7 @@ const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 			<div
 				id={'app'}
 				className={cl('mx-auto mb-0 flex font-aeonik')}>
-				<div className={'size-full block min-h-max'}>
+				<div className={'block size-full min-h-max'}>
 					<LazyMotion features={domAnimation}>
 						<AnimatePresence mode={'wait'}>
 							<motion.div
@@ -128,14 +129,16 @@ function MyApp(props: AppProps): ReactElement {
 					'https://raw.githubusercontent.com/SmolDapp/tokenLists/main/lists/portals.json'
 				]}>
 				<MenuContextApp>
-					<YearnContextApp>
-						<WalletForZapAppContextApp>
-							<Fragment>
-								<Meta meta={manifest} />
-								<WithLayout {...props} />
-							</Fragment>
-						</WalletForZapAppContextApp>
-					</YearnContextApp>
+					<YearnWalletContextApp>
+						<YearnContextApp>
+							<WalletForZapAppContextApp>
+								<Fragment>
+									<Meta meta={manifest} />
+									<WithLayout {...props} />
+								</Fragment>
+							</WalletForZapAppContextApp>
+						</YearnContextApp>
+					</YearnWalletContextApp>
 				</MenuContextApp>
 			</WithMom>
 			<Toaster

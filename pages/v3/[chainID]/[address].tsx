@@ -3,7 +3,7 @@ import Link from 'next/link';
 import {useRouter} from 'next/router';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {useFetch} from '@builtbymom/web3/hooks/useFetch';
-import {toAddress} from '@builtbymom/web3/utils';
+import {cl, toAddress} from '@builtbymom/web3/utils';
 import {ActionFlowContextApp} from '@vaults/contexts/useActionFlow';
 import {WithSolverContextApp} from '@vaults/contexts/useSolver';
 import {VaultActionsTabsWrapper} from '@vaults-v3/components/details/VaultActionsTabsWrapper';
@@ -12,7 +12,6 @@ import {VaultDetailsTabsWrapper} from '@vaults-v3/components/details/VaultDetail
 import {Wrapper} from '@vaults-v3/Wrapper';
 import {useYearnWallet} from '@yearn-finance/web-lib/contexts/useYearnWallet';
 import {useYDaemonBaseURI} from '@yearn-finance/web-lib/hooks/useYDaemonBaseURI';
-import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {yDaemonVaultSchema} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 

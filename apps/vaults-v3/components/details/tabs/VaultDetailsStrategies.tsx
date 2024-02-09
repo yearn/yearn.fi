@@ -1,4 +1,5 @@
 import {useMemo} from 'react';
+import {cl} from '@builtbymom/web3/utils';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
 import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
@@ -6,7 +7,6 @@ import {VaultsV3ListRow} from '@vaults-v3/components/list/VaultsV3ListRow';
 import {ALL_VAULTSV3_CATEGORIES_KEYS} from '@vaults-v3/constants';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useYearn} from '@yearn-finance/web-lib/contexts/useYearn';
-import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {SearchBar} from '@common/components/SearchBar';
 
 import type {ReactElement} from 'react';

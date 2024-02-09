@@ -1,12 +1,11 @@
 import {useCallback} from 'react';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {formatAmount, handleInputChangeValue, toAddress} from '@builtbymom/web3/utils';
+import {formatAmount, formatCounterValue, handleInputChangeValue, toAddress} from '@builtbymom/web3/utils';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {useYearnWallet} from '@yearn-finance/web-lib/contexts/useYearnWallet';
 import {useYearnBalance} from '@yearn-finance/web-lib/hooks/useYearnBalance';
 import {useYearnTokenPrice} from '@yearn-finance/web-lib/hooks/useYearnTokenPrice';
-import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
 import {Dropdown} from '@common/components/TokenDropdown';
 
 import type {ChangeEvent, ReactElement} from 'react';
