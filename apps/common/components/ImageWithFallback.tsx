@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
 import Image from 'next/image';
+import {cl} from '@builtbymom/web3/utils';
 import {useUpdateEffect} from '@react-hookz/web';
-import {cl} from '@yearn-finance/web-lib/utils/cl';
 
 import type {ImageProps} from 'next/image';
 import type {CSSProperties, ReactElement} from 'react';

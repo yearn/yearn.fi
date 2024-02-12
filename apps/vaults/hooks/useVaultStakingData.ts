@@ -3,8 +3,8 @@ import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {isZeroAddress, toAddress, toBigInt} from '@builtbymom/web3/utils';
 import {STAKING_REWARDS_ABI} from '@vaults/utils/abi/stakingRewards.abi';
 
+import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TAddress} from '@builtbymom/web3/types';
-import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
 type TStakingInfo = {
 	address: TAddress;

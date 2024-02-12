@@ -1,23 +1,23 @@
 import {Fragment, useEffect, useMemo, useState} from 'react';
 import {useRouter} from 'next/router';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {useFetch} from '@builtbymom/web3/hooks/useFetch';
 import {assert, isZero, toAddress, toBigInt, toNormalizedValue} from '@builtbymom/web3/utils';
 import {Listbox, Transition} from '@headlessui/react';
 import {VaultDetailsAbout} from '@vaults/components/details/tabs/VaultDetailsAbout';
 import {VaultDetailsHistorical} from '@vaults/components/details/tabs/VaultDetailsHistorical';
 import {VaultDetailsStrategies} from '@vaults/components/details/tabs/VaultDetailsStrategies';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
+import {useYDaemonBaseURI} from '@yearn-finance/web-lib/hooks/useYDaemonBaseURI';
 import {IconAddToMetamask} from '@yearn-finance/web-lib/icons/IconAddToMetamask';
 import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
+import {yDaemonVaultHarvestsSchema} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
-import {useFetch} from '@common/hooks/useFetch';
 import {IconChevron} from '@common/icons/IconChevron';
-import {yDaemonVaultHarvestsSchema} from '@common/schemas/yDaemonVaultsSchemas';
-import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault, TYDaemonVaultHarvests} from '@common/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault, TYDaemonVaultHarvests} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 
 type TTabsOptions = {
 	value: number;

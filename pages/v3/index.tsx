@@ -1,7 +1,7 @@
 import {Children, Fragment, useEffect, useMemo, useState} from 'react';
 import {motion, useSpring, useTransform} from 'framer-motion';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {formatAmount, isZero} from '@builtbymom/web3/utils';
+import {cl, formatAmount, isZero} from '@builtbymom/web3/utils';
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
 import {useVaultFilter} from '@vaults/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
@@ -11,14 +11,13 @@ import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
 import {VaultsV3ListRow} from '@vaults-v3/components/list/VaultsV3ListRow';
 import {ALL_VAULTSV3_CATEGORIES_KEYS} from '@vaults-v3/constants';
 import {V3Mask} from '@vaults-v3/Mark';
-import {cl} from '@yearn-finance/web-lib/utils/cl';
+import {useYearn} from '@yearn-finance/web-lib/contexts/useYearn';
+import {useYearnWallet} from '@yearn-finance/web-lib/contexts/useYearnWallet';
 import {InfoTooltip} from '@common/components/InfoTooltip';
-import {useWallet} from '@common/contexts/useWallet';
-import {useYearn} from '@common/contexts/useYearn';
 
 import type {ReactElement, ReactNode} from 'react';
+import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TSortDirection} from '@builtbymom/web3/types';
-import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 
 function Counter({value}: {value: number}): ReactElement {
@@ -88,7 +87,7 @@ function V3Card(): ReactElement {
 }
 
 function PortfolioCard(): ReactElement {
-	const {cumulatedValueInV3Vaults} = useWallet();
+	const {cumulatedValueInV3Vaults} = useYearnWallet();
 	const {isActive, address, openLoginModal, onSwitchChain} = useWeb3();
 
 	const formatedYouHave = useMemo((): string => {

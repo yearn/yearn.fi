@@ -2,11 +2,22 @@ import {createContext, useCallback, useContext, useEffect, useMemo, useReducer, 
 import {useRouter} from 'next/router';
 import {useContractReads} from 'wagmi';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {decodeAsBigInt, isZero, isZeroAddress, toAddress, toBigInt, toNormalizedBN} from '@builtbymom/web3/utils';
+import {
+	decodeAsBigInt,
+	isEthAddress,
+	isZero,
+	isZeroAddress,
+	toAddress,
+	toBigInt,
+	toNormalizedBN,
+	zeroNormalizedBN
+} from '@builtbymom/web3/utils';
 import {useMountEffect, useUpdateEffect} from '@react-hookz/web';
 import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
 import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
 import {setZapOption} from '@vaults/utils/zapOptions';
+import {useYearn} from '@yearn-finance/web-lib/contexts/useYearn';
+import {useYearnWallet} from '@yearn-finance/web-lib/contexts/useYearnWallet';
 import {VAULT_ABI} from '@yearn-finance/web-lib/utils/abi/vault.abi';
 import {
 	ETH_TOKEN_ADDRESS,
@@ -18,19 +29,16 @@ import {
 	YVWETH_OPT_ADDRESS,
 	YVWFTM_ADDRESS
 } from '@yearn-finance/web-lib/utils/constants';
-import {isEth} from '@yearn-finance/web-lib/utils/isEth';
+import {Solver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
 import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
-import {useWallet} from '@common/contexts/useWallet';
-import {useYearn} from '@common/contexts/useYearn';
-import {Solver} from '@common/schemas/yDaemonTokenListBalances';
 
 import externalzapOutTokenList from '../../common/utils/externalZapOutTokenList.json';
 
 import type {ReactNode} from 'react';
+import type {TDropdownOption} from '@yearn-finance/web-lib/types';
+import type {TSolver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
+import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TAddress, TNormalizedBN} from '@builtbymom/web3/types';
-import type {TSolver} from '@common/schemas/yDaemonTokenListBalances';
-import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
-import type {TDropdownOption} from '@common/types/types';
 
 export enum Flow {
 	Deposit = 'deposit',
@@ -68,7 +76,7 @@ const DefaultActionFlowContext: TActionFlowContext = {
 	possibleOptionsTo: [],
 	actionParams: {
 		isReady: false,
-		amount: toNormalizedBN(0),
+		amount: zeroNormalizedBN,
 		selectedOptionFrom: undefined,
 		selectedOptionTo: undefined,
 		possibleOptionsFrom: [],
@@ -79,7 +87,7 @@ const DefaultActionFlowContext: TActionFlowContext = {
 	onUpdateSelectedOptionTo: (): void => undefined,
 	onSwitchSelectedOptions: (): void => undefined,
 	isDepositing: true,
-	maxDepositPossible: toNormalizedBN(0),
+	maxDepositPossible: zeroNormalizedBN,
 	currentSolver: Solver.enum.Vanilla || 'Vanilla'
 };
 
@@ -145,7 +153,7 @@ export function ActionFlowContextApp({
 	currentVault: TYDaemonVault;
 }): React.ReactElement {
 	const {address} = useWeb3();
-	const {getBalance} = useWallet();
+	const {getBalance} = useYearnWallet();
 	const {listTokens: listZapTokens} = useWalletForZap();
 	const {zapProvider, isStakingOpBoostedVaults} = useYearn();
 	const [possibleOptionsFrom, set_possibleOptionsFrom] = useState<TDropdownOption[]>([]);
@@ -184,7 +192,7 @@ export function ActionFlowContextApp({
 				case 'amount':
 					return {
 						...state,
-						amount: action.payload.amount || toNormalizedBN(0)
+						amount: action.payload.amount || zeroNormalizedBN
 					};
 				case 'options':
 					return {
@@ -201,7 +209,7 @@ export function ActionFlowContextApp({
 						isReady: true,
 						selectedOptionFrom: action.payload.selectedOptionFrom,
 						selectedOptionTo: action.payload.selectedOptionTo,
-						amount: action.payload.amount || toNormalizedBN(0)
+						amount: action.payload.amount || zeroNormalizedBN
 					};
 				default:
 					return state;
@@ -213,7 +221,7 @@ export function ActionFlowContextApp({
 			selectedOptionTo: undefined,
 			possibleOptionsFrom: [],
 			possibleOptionsTo: [],
-			amount: toNormalizedBN(0)
+			amount: zeroNormalizedBN
 		}
 	);
 
@@ -253,8 +261,8 @@ export function ActionFlowContextApp({
 		}
 
 		const isV3 = currentVault?.version.split('.')?.[0] === '3';
-		const isInputTokenEth = isEth(actionParams?.selectedOptionFrom?.value);
-		const isOutputTokenEth = isEth(actionParams?.selectedOptionTo?.value);
+		const isInputTokenEth = isEthAddress(actionParams?.selectedOptionFrom?.value);
+		const isOutputTokenEth = isEthAddress(actionParams?.selectedOptionTo?.value);
 		const isVaultTokenWrappedCoin =
 			(currentVault.chainID === 1 && currentVault.address === YVWETH_ADDRESS) ||
 			(currentVault.chainID === 10 && currentVault.address === YVWETH_OPT_ADDRESS) ||
@@ -320,7 +328,7 @@ export function ActionFlowContextApp({
 					payload: {
 						selectedOptionFrom: _selectedOptionTo,
 						selectedOptionTo: _selectedOptionFrom,
-						amount: isDepositing ? toNormalizedBN(0) : maxDepositPossible
+						amount: isDepositing ? zeroNormalizedBN : maxDepositPossible
 					}
 				});
 				set_possibleOptionsTo(possibleOptionsFrom);
@@ -350,7 +358,7 @@ export function ActionFlowContextApp({
 						selectedOptionTo: vaultToken,
 						possibleOptionsFrom: possibleOptionsFrom,
 						possibleOptionsTo: possibleOptionsTo,
-						amount: toNormalizedBN(0)
+						amount: zeroNormalizedBN
 					}
 				});
 			} else if (nextFlow === Flow.Withdraw) {
@@ -361,7 +369,7 @@ export function ActionFlowContextApp({
 						selectedOptionTo: vaultUnderlying,
 						possibleOptionsFrom: possibleOptionsTo,
 						possibleOptionsTo: possibleOptionsFrom,
-						amount: toNormalizedBN(0)
+						amount: zeroNormalizedBN
 					}
 				});
 			} else if (nextFlow === Flow.Migrate) {

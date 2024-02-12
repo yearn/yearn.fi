@@ -1,8 +1,8 @@
 import {useCallback, useState} from 'react';
 import {useSearchParams} from 'next/navigation';
 import {useRouter} from 'next/router';
+import {useSupportedChains} from '@builtbymom/web3/hooks/useSupportedChains';
 import {useDeepCompareEffect, useMountEffect} from '@react-hookz/web';
-import {useSupportedChains} from '@common/hooks/useChains';
 
 import type {TDict, TSortDirection} from '@builtbymom/web3/types';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';

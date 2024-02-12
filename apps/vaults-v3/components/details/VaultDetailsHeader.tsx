@@ -1,21 +1,19 @@
 import {useMemo} from 'react';
 import {useContractRead} from 'wagmi';
-import {formatUSD, isZero, toBigInt, toNormalizedBN} from '@builtbymom/web3/utils';
+import {cl, formatCounterValue, formatUSD, isZero, toBigInt, toNormalizedBN} from '@builtbymom/web3/utils';
 import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {cl} from '@yearn-finance/web-lib/utils/cl';
-import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
+import {useYearnBalance} from '@yearn-finance/web-lib/hooks/useYearnBalance';
+import {useYearnTokenPrice} from '@yearn-finance/web-lib/hooks/useYearnTokenPrice';
 import {copyToClipboard} from '@yearn-finance/web-lib/utils/helpers';
 import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {RenderAmount} from '@common/components/RenderAmount';
-import {useBalance} from '@common/hooks/useBalance';
-import {useTokenPrice} from '@common/hooks/useTokenPrice';
 import {IconQuestion} from '@common/icons/IconQuestion';
 import {getVaultName} from '@common/utils';
 
 import type {ReactElement} from 'react';
+import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TNormalizedBN} from '@builtbymom/web3/types';
-import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
 
 type TVaultHeaderLineItemProps = {
 	label: string;
@@ -150,10 +148,10 @@ function ValueInToken(props: {currentVault: TYDaemonVault; vaultPrice: number; d
 export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {apr, tvl, decimals, symbol = 'token', token} = currentVault;
 	const chainInfo = getNetwork(currentVault.chainID);
-	const vaultBalance = useBalance({address: currentVault.address, chainID: currentVault.chainID});
-	const stakedBalance = useBalance({address: currentVault.staking.address, chainID: currentVault.chainID});
+	const vaultBalance = useYearnBalance({address: currentVault.address, chainID: currentVault.chainID});
+	const stakedBalance = useYearnBalance({address: currentVault.staking.address, chainID: currentVault.chainID});
 	const vaultPrice =
-		useTokenPrice({
+		useYearnTokenPrice({
 			address: currentVault.address,
 			chainID: currentVault.chainID
 		}) ||

@@ -1,7 +1,7 @@
+import type {TDropdownOption} from '@yearn-finance/web-lib/types';
+import type {TSolver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
 import type {TAddress, TNormalizedBN} from '@builtbymom/web3/types';
 import type {TTxStatus} from '@builtbymom/web3/utils/wagmi';
-import type {TSolver} from '@common/schemas/yDaemonTokenListBalances';
-import type {TDropdownOption} from '@common/types/types';
 
 /* 🔵 - Yearn Finance ******************************************************
  **	Generic type of the WithSolver interface.

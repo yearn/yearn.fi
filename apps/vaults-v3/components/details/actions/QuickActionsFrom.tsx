@@ -1,18 +1,17 @@
 import {useCallback} from 'react';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {formatAmount, handleInputChangeValue, toAddress} from '@builtbymom/web3/utils';
+import {formatAmount, formatCounterValue, handleInputChangeValue, toAddress} from '@builtbymom/web3/utils';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
+import {useYearnWallet} from '@yearn-finance/web-lib/contexts/useYearnWallet';
+import {useYearnBalance} from '@yearn-finance/web-lib/hooks/useYearnBalance';
 import {Dropdown} from '@common/components/TokenDropdown';
-import {useWallet} from '@common/contexts/useWallet';
-import {useBalance} from '@common/hooks/useBalance';
 
 import type {ChangeEvent, ReactElement} from 'react';
 
 export function VaultDetailsQuickActionsFrom(): ReactElement {
 	const {isActive} = useWeb3();
-	const {getToken, getPrice} = useWallet();
+	const {getToken, getPrice} = useYearnWallet();
 	const {
 		possibleOptionsFrom,
 		actionParams,
@@ -21,7 +20,7 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 		maxDepositPossible,
 		isDepositing
 	} = useActionFlow();
-	const selectedFromBalance = useBalance({
+	const selectedFromBalance = useYearnBalance({
 		address: toAddress(actionParams?.selectedOptionFrom?.value),
 		chainID: Number(actionParams?.selectedOptionFrom?.chainID)
 	});

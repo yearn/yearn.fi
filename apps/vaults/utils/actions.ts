@@ -1,10 +1,10 @@
-import {assert, assertAddress, toBigInt} from '@builtbymom/web3/utils';
-import {handleTx, toWagmiProvider} from '@builtbymom/web3/utils/wagmi';
+import {assert, assertAddress} from '@builtbymom/web3/utils';
+import {handleTx} from '@builtbymom/web3/utils/wagmi';
 import {STAKING_REWARDS_ABI} from '@vaults/utils/abi/stakingRewards.abi';
 import {STAKING_REWARDS_ZAP_ABI} from '@vaults/utils/abi/stakingRewardsZap.abi';
-import {VAULT_FACTORY_ABI} from '@vaults/utils/abi/vaultFactory.abi';
-import {getPublicClient} from '@wagmi/core';
-import {STAKING_REWARDS_ZAP_ADDRESS, VAULT_FACTORY_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {STAKING_REWARDS_ZAP_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+
+import {ZAP_CRV_ABI} from './abi/zapCRV.abi';
 
 import type {TAddress} from '@builtbymom/web3/types';
 import type {TTxResponse, TWriteTransaction} from '@builtbymom/web3/utils/wagmi';
@@ -91,51 +91,36 @@ export async function claim(props: TClaim): Promise<TTxResponse> {
 }
 
 /* 🔵 - Yearn Finance **********************************************************
- ** createNewVaultsAndStrategies is a _WRITE_ function that creates a new vault
- ** and strategy for the given gauge.
+ ** zapCRV is a _WRITE_ function that can be used to zap some supported tokens
+ ** from the Curve ecosystem into one of the Yearn's yCRV ecosystem.
  **
- ** @app - Vaults (veCRV)
- ** @param gaugeAddress - the base gauge address
+ ** @app - yCRV
+ ** @param inputToken - Token to be zapped from curve
+ ** @param outputToken - Token to be zapped into Yearn's yCRV ecosystem
+ ** @param amount - Amount of inputToken to be zapped
+ ** @param minAmount - Minimum amount of outputToken to be received
+ ** @param slippage - Slippage tolerance
  ******************************************************************************/
-type TCreateNewVaultsAndStrategies = TWriteTransaction & {
-	gaugeAddress: TAddress | undefined;
+type TZapYCRV = TWriteTransaction & {
+	inputToken: TAddress | undefined;
+	outputToken: TAddress | undefined;
+	amount: bigint;
+	minAmount: bigint;
+	slippage: bigint;
 };
-export async function createNewVaultsAndStrategies(props: TCreateNewVaultsAndStrategies): Promise<TTxResponse> {
-	assertAddress(VAULT_FACTORY_ADDRESS, 'VAULT_FACTORY_ADDRESS');
-	assertAddress(props.gaugeAddress, 'gaugeAddress');
+export async function zapCRV(props: TZapYCRV): Promise<TTxResponse> {
+	const minAmountWithSlippage = props.minAmount - (props.minAmount * props.slippage) / 10_000n;
+
+	assertAddress(ZAP_YEARN_VE_CRV_ADDRESS, 'ZAP_YEARN_VE_CRV_ADDRESS');
+	assertAddress(props.inputToken, 'inputToken');
+	assertAddress(props.outputToken, 'outputToken');
+	assert(props.amount > 0n, 'Amount must be greater than 0');
+	assert(props.minAmount > 0n, 'Min amount must be greater than 0');
 
 	return await handleTx(props, {
-		address: VAULT_FACTORY_ADDRESS,
-		abi: VAULT_FACTORY_ABI,
-		functionName: 'createNewVaultsAndStrategies',
-		args: [props.gaugeAddress]
+		address: ZAP_YEARN_VE_CRV_ADDRESS,
+		abi: ZAP_CRV_ABI,
+		functionName: 'zap',
+		args: [props.inputToken, props.outputToken, props.amount, minAmountWithSlippage]
 	});
-}
-
-/* 🔵 - Yearn Finance **********************************************************
- ** gasOfCreateNewVaultsAndStrategies is a _READ_ function that estimate the gas
- ** of the createNewVaultsAndStrategies function.
- **
- ** @app - Vaults (veCRV)
- ** @param gaugeAddress - the base gauge address
- ******************************************************************************/
-export async function gasOfCreateNewVaultsAndStrategies(props: TCreateNewVaultsAndStrategies): Promise<bigint> {
-	try {
-		assertAddress(props.contractAddress, 'contractAddress');
-		assertAddress(props.gaugeAddress, 'gaugeAddress');
-
-		const wagmiProvider = await toWagmiProvider(props.connector);
-		const client = await getPublicClient({chainId: wagmiProvider.chainId});
-		const gas = await client.estimateContractGas({
-			address: VAULT_FACTORY_ADDRESS,
-			abi: VAULT_FACTORY_ABI,
-			functionName: 'createNewVaultsAndStrategies',
-			args: [props.gaugeAddress],
-			account: wagmiProvider.address
-		});
-		return toBigInt(gas);
-	} catch (error) {
-		console.error(error);
-		return toBigInt(0);
-	}
 }

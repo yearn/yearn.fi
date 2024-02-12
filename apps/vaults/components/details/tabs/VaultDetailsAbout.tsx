@@ -1,13 +1,12 @@
-import {formatAmount, formatPercent, isZero} from '@builtbymom/web3/utils';
+import {cl, formatAmount, formatPercent, isZero} from '@builtbymom/web3/utils';
 import {useIsMounted} from '@react-hookz/web';
 import {GraphForVaultEarnings} from '@vaults/components/graphs/GraphForVaultEarnings';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
-import type {TGraphData} from '@common/types/types';
+import type {TGraphData} from '@yearn-finance/web-lib/types';
+import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 
 type TAPRLineItemProps = {
 	label: string;

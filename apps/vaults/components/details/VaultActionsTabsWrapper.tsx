@@ -10,11 +10,11 @@ import {VaultDetailsQuickActionsTo} from '@vaults/components/details/actions/Qui
 import {RewardsTab} from '@vaults/components/RewardsTab';
 import {SettingsPopover} from '@vaults/components/SettingsPopover';
 import {Flow, useActionFlow} from '@vaults/contexts/useActionFlow';
-import {useYearn} from '@common/contexts/useYearn';
+import {useYearn} from '@yearn-finance/web-lib/contexts/useYearn';
 import {IconChevron} from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 
 type TTabsOptions = {
 	value: number;

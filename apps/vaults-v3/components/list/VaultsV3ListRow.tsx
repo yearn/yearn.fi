@@ -1,20 +1,19 @@
 import {useMemo} from 'react';
 import Link from 'next/link';
-import {formatAmount, isZero, toAddress, toNormalizedBN} from '@builtbymom/web3/utils';
+import {cl, formatAmount, isZero, toAddress, toNormalizedBN} from '@builtbymom/web3/utils';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
+import {useYearnWallet} from '@yearn-finance/web-lib/contexts/useYearnWallet';
+import {useYearnBalance} from '@yearn-finance/web-lib/hooks/useYearnBalance';
 import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
-import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {RenderAmount} from '@common/components/RenderAmount';
-import {useWallet} from '@common/contexts/useWallet';
-import {useBalance} from '@common/hooks/useBalance';
 
 import {VaultChainTag} from '../VaultChainTag';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 
 function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const isEthMainnet = currentVault.chainID === 1;
@@ -380,7 +379,7 @@ function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}): Reac
 }
 
 export function VaultStakedAmount({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const {getToken} = useWallet();
+	const {getToken} = useYearnWallet();
 
 	const staked = useMemo((): bigint => {
 		const vaultToken = getToken({chainID: currentVault.chainID, address: currentVault.address});
@@ -413,9 +412,9 @@ export function VaultStakedAmount({currentVault}: {currentVault: TYDaemonVault})
 }
 
 export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const balanceOfWant = useBalance({chainID: currentVault.chainID, address: currentVault.token.address});
-	const balanceOfCoin = useBalance({chainID: currentVault.chainID, address: ETH_TOKEN_ADDRESS});
-	const balanceOfWrappedCoin = useBalance({
+	const balanceOfWant = useYearnBalance({chainID: currentVault.chainID, address: currentVault.token.address});
+	const balanceOfCoin = useYearnBalance({chainID: currentVault.chainID, address: ETH_TOKEN_ADDRESS});
+	const balanceOfWrappedCoin = useYearnBalance({
 		chainID: currentVault.chainID,
 		address: toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS ? WFTM_TOKEN_ADDRESS : WETH_TOKEN_ADDRESS //TODO: Create a wagmi Chain upgrade to add the chain wrapper token address
 	});
@@ -449,7 +448,7 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 
 				<div className={cl('col-span-5 z-10', 'flex flex-row items-center justify-between')}>
 					<div className={'flex flex-row gap-6'}>
-						<div className={'size-8 mt-2.5 rounded-full md:flex'}>
+						<div className={'mt-2.5 size-8 rounded-full md:flex'}>
 							<ImageWithFallback
 								src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-32.png`}
 								alt={``}
@@ -473,7 +472,7 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 									target={'_blank'}
 									rel={'noopener noreferrer'}>
 									<div className={'px-2'}>
-										<IconLinkOut className={'size-4 inline-block'} />
+										<IconLinkOut className={'inline-block size-4'} />
 									</div>
 								</Link>
 							</div>
@@ -581,7 +580,7 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 						target={'_blank'}
 						rel={'noopener noreferrer'}>
 						<div className={'px-2'}>
-							<IconLinkOut className={'size-4 inline-block'} />
+							<IconLinkOut className={'inline-block size-4'} />
 						</div>
 					</Link>
 				</div>

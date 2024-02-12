@@ -9,7 +9,7 @@
 	"editor.wordWrap": "off",
 	"editor.autoIndent": "keep",
 	"editor.codeActionsOnSave": {
-		"source.fixAll": true
+		"source.fixAll": "explicit"
 	},
 	"editor.quickSuggestions": {
 		"strings": true

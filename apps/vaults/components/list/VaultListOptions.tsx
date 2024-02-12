@@ -1,8 +1,8 @@
 import {Fragment} from 'react';
+import {cl} from '@builtbymom/web3/utils';
 import {Popover, Transition} from '@headlessui/react';
 import {useAppSettings} from '@vaults/contexts/useAppSettings';
 import {IconSettings} from '@yearn-finance/web-lib/icons/IconSettings';
-import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {Switch} from '@common/components/Switch';
 
 import type {ReactElement} from 'react';

@@ -1,7 +1,7 @@
 import {Fragment, useEffect, useMemo, useState} from 'react';
 import {useRouter} from 'next/router';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {assert, isZero, toAddress} from '@builtbymom/web3/utils';
+import {assert, cl, isZero, toAddress} from '@builtbymom/web3/utils';
 import {Listbox, Transition} from '@headlessui/react';
 import {VaultInfo} from '@vaults/components/details/tabs/VaultDetailsTabsWrapper';
 import {VaultDetailsAbout} from '@vaults-v3/components/details/tabs/VaultDetailsAbout';
@@ -9,12 +9,11 @@ import {VaultDetailsStrategies} from '@vaults-v3/components/details/tabs/VaultDe
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {IconAddToMetamask} from '@yearn-finance/web-lib/icons/IconAddToMetamask';
 import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
-import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {IconChevron} from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 
 type TTabsOptions = {
 	value: number;
@@ -178,7 +177,7 @@ function AddToWalletLink({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 			}}>
 			<span className={'sr-only'}>{'Add to wallet'}</span>
 			<IconAddToMetamask
-				className={'size-5 md:size-6 text-neutral-900/50 transition-colors hover:text-neutral-900'}
+				className={'size-5 text-neutral-900/50 transition-colors hover:text-neutral-900 md:size-6'}
 			/>
 		</button>
 	);
@@ -192,7 +191,7 @@ function ExplorerLink({explorerBaseURI, currentVaultAddress}: TExplorerLinkProps
 			rel={'noopener noreferrer'}>
 			<span className={'sr-only'}>{'Open in explorer'}</span>
 			<IconLinkOut
-				className={'size-5 md:size-6 cursor-alias text-neutral-900/50 transition-colors hover:text-neutral-900'}
+				className={'size-5 cursor-alias text-neutral-900/50 transition-colors hover:text-neutral-900 md:size-6'}
 			/>
 		</a>
 	);

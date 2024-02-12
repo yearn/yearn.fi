@@ -1,16 +1,10 @@
 import Image from 'next/image';
 import vaultsManifest from 'public/apps/vaults-manifest.json';
-import veyfiManifest from 'public/apps/veyfi-manifest.json';
-import ybribeManifest from 'public/apps/ybribe-manifest.json';
-import ycrvManifest from 'public/apps/ycrv-manifest.json';
 import {VAULTS_MENU} from '@vaults/constants/menu';
 import {VAULTS_V3_MENU} from '@vaults-v3/constants/menu';
-import {VEYFI_MENU} from '@veYFI/constants/menu';
-import {YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {VEYFI_DYFI_ADDRESS, YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {LogoYearn} from '@common/icons/LogoYearn';
-import {YBRIBE_MENU} from '@yBribe/constants/menu';
-import {YCRV_MENU} from '@yCRV/constants/menu';
 
 import type {ReactElement} from 'react';
 import type {TMenu} from '@yearn-finance/web-lib/components/Header';
@@ -83,22 +77,26 @@ export const APPS: {[key in AppName]: TApp} = {
 	},
 	veYFI: {
 		name: AppName.VEYFI,
-		menu: VEYFI_MENU,
-		href: '/veyfi',
-		manifest: veyfiManifest,
+		menu: [],
+		href: 'https://veyfi.yearn.fi',
+		manifest: {} as TMetaFile,
 		icon: (
-			<LogoYearn
+			<ImageWithFallback
+				alt={'veYFI'}
 				className={'size-8'}
-				back={'text-primary'}
-				front={'text-white'}
+				width={64}
+				height={64}
+				src={`${process.env.SMOL_ASSETS_URL}/token/1/${VEYFI_DYFI_ADDRESS}/logo-128.png`}
+				loading={'eager'}
+				priority
 			/>
 		)
 	},
 	yCRV: {
 		name: AppName.YCRV,
-		href: '/ycrv',
-		menu: YCRV_MENU,
-		manifest: ycrvManifest,
+		href: 'https://ycrv.yearn.fi',
+		menu: [],
+		manifest: {} as TMetaFile,
 		icon: (
 			<ImageWithFallback
 				alt={'yCRV'}
@@ -147,9 +145,9 @@ export const APPS: {[key in AppName]: TApp} = {
 	},
 	yBribe: {
 		name: AppName.YBRIBE,
-		href: '/ybribe',
-		menu: YBRIBE_MENU,
-		manifest: ybribeManifest,
+		href: 'https://yBribe.yearn.fi',
+		menu: [],
+		manifest: {} as TMetaFile,
 		icon: (
 			<LogoYearn
 				className={'size-8'}

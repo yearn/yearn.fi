@@ -5,11 +5,13 @@ import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {
 	assert,
 	assertAddress,
+	isEthAddress,
 	isZero,
 	isZeroAddress,
 	toAddress,
 	toBigInt,
-	toNormalizedBN
+	toNormalizedBN,
+	zeroNormalizedBN
 } from '@builtbymom/web3/utils';
 import {defaultTxStatus, toWagmiProvider} from '@builtbymom/web3/utils/wagmi';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
@@ -17,12 +19,11 @@ import {isValidPortalsErrorObject} from '@vaults/hooks/helpers/isValidPortalsErr
 import {getPortalsApproval, getPortalsEstimate, getPortalsTx, PORTALS_NETWORK} from '@vaults/hooks/usePortalsApi';
 import {prepareSendTransaction, switchNetwork, waitForTransaction} from '@wagmi/core';
 import {toast} from '@yearn-finance/web-lib/components/yToast';
+import {useYearn} from '@yearn-finance/web-lib/contexts/useYearn';
 import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
-import {isEth} from '@yearn-finance/web-lib/utils/isEth';
+import {allowanceKey} from '@yearn-finance/web-lib/utils/helpers';
+import {Solver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
 import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
-import {useYearn} from '@common/contexts/useYearn';
-import {Solver} from '@common/schemas/yDaemonTokenListBalances';
-import {allowanceKey} from '@common/utils';
 import {allowanceOf, approveERC20} from '@common/utils/actions';
 
 import type {Transaction} from 'viem';
@@ -44,7 +45,7 @@ async function getQuote(
 	const network = PORTALS_NETWORK.get(request.chainID);
 	let inputToken = request.inputToken.value;
 
-	if (isEth(request.inputToken.value)) {
+	if (isEthAddress(request.inputToken.value)) {
 		inputToken = zeroAddress;
 	}
 	if (isZeroAddress(request.outputToken.value)) {
@@ -93,7 +94,7 @@ export function useSolverPortals(): TSolverContext {
 	const init = useCallback(
 		async (_request: TInitSolverArgs, shouldLogError?: boolean): Promise<TNormalizedBN> => {
 			if (isSolverDisabled(Solver.enum.Portals)) {
-				return toNormalizedBN(0);
+				return zeroNormalizedBN;
 			}
 			/******************************************************************************************
 			 ** First we need to know which token we are selling to the zap. When we are depositing, we
@@ -107,7 +108,7 @@ export function useSolverPortals(): TSolverContext {
 			 ** This first obvious check is to see if the solver is disabled. If it is, we return 0.
 			 ******************************************************************************************/
 			if (isSolverDisabled(Solver.enum.Portals)) {
-				return toNormalizedBN(0);
+				return zeroNormalizedBN;
 			}
 
 			/******************************************************************************************
@@ -117,14 +118,14 @@ export function useSolverPortals(): TSolverContext {
 			 ** a token, you can contact the yDaemon team to add it.
 			 ******************************************************************************************/
 			if (!sellToken.solveVia?.includes(Solver.enum.Portals)) {
-				return toNormalizedBN(0);
+				return zeroNormalizedBN;
 			}
 
 			/******************************************************************************************
 			 ** Same is the amount is 0. If it is, we return 0.
 			 ******************************************************************************************/
 			if (isZero(_request.inputAmount)) {
-				return toNormalizedBN(0);
+				return zeroNormalizedBN;
 			}
 
 			/******************************************************************************************
@@ -143,7 +144,7 @@ export function useSolverPortals(): TSolverContext {
 						content: `Portals.fi zap not possible: ${errorMessage}`
 					});
 				}
-				return toNormalizedBN(0);
+				return zeroNormalizedBN;
 			}
 			latestQuote.current = data;
 			return toNormalizedBN(data?.outputAmount || 0, request?.current?.outputToken?.decimals || 18);
@@ -168,7 +169,7 @@ export function useSolverPortals(): TSolverContext {
 
 		try {
 			let inputToken = request.current.inputToken.value;
-			if (isEth(request.current.inputToken.value)) {
+			if (isEthAddress(request.current.inputToken.value)) {
 				inputToken = zeroAddress;
 			}
 			const network = PORTALS_NETWORK.get(request.current.chainID);
@@ -258,7 +259,7 @@ export function useSolverPortals(): TSolverContext {
 	 **************************************************************************/
 	const expectedOut = useMemo((): TNormalizedBN => {
 		if (!latestQuote?.current?.outputAmount || !request.current || isSolverDisabled(Solver.enum.Portals)) {
-			return toNormalizedBN(0);
+			return zeroNormalizedBN;
 		}
 		return toNormalizedBN(latestQuote?.current?.outputAmount, request?.current?.outputToken?.decimals || 18);
 	}, [latestQuote, request]);
@@ -269,11 +270,11 @@ export function useSolverPortals(): TSolverContext {
 	 **************************************************************************/
 	const onRetrieveAllowance = useCallback(async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
 		if (!latestQuote?.current || !request?.current || isSolverDisabled(Solver.enum.Portals)) {
-			return toNormalizedBN(0);
+			return zeroNormalizedBN;
 		}
 		const inputToken = request.current.inputToken.value;
-		if (isEth(request.current.inputToken.value)) {
-			return toNormalizedBN(MAX_UINT_256);
+		if (isEthAddress(request.current.inputToken.value)) {
+			return toNormalizedBN(MAX_UINT_256, 18);
 		}
 		const key = allowanceKey(
 			request.current.chainID,
@@ -300,13 +301,13 @@ export function useSolverPortals(): TSolverContext {
 			}
 
 			existingAllowances.current[key] = toNormalizedBN(
-				approval.context.allowance,
+				toBigInt(approval.context.allowance),
 				request.current.inputToken.decimals
 			);
 			return existingAllowances.current[key];
 		} catch (error) {
 			console.error(error);
-			return {raw: 0n, normalized: 0};
+			return zeroNormalizedBN;
 		}
 	}, []);
 

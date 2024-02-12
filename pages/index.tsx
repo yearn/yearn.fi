@@ -1,9 +1,9 @@
 import {useEffect, useRef} from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import {cl} from '@builtbymom/web3/utils';
 import {AnimatedGradientBackgroundForV3} from '@vaults-v3/components/AnimatedGradientBackground';
 import {V3Mask} from '@vaults-v3/Mark';
-import {cl} from '@yearn-finance/web-lib/utils/cl';
 import {YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {LogoYearn} from '@common/icons/LogoYearn';
@@ -51,7 +51,7 @@ const apps = [
 		)
 	},
 	{
-		href: '/veyfi',
+		href: 'https://veyfi.yearn.fi',
 		title: 'veYFI',
 		description: 'lock YFI\nto take part in governance.',
 		icon: (
@@ -63,7 +63,7 @@ const apps = [
 		)
 	},
 	{
-		href: '/ycrv',
+		href: 'https://ycrv.yearn.fi',
 		title: 'yCRV',
 		description: 'get the best CRV yields in DeFi.',
 		icon: (
@@ -108,7 +108,7 @@ const apps = [
 		)
 	},
 	{
-		href: '/ybribe',
+		href: 'https://yBribe.yearn.fi',
 		title: 'yBribe',
 		description: 'sell votes, or buy them.\njust like democracy.',
 		icon: (
@@ -130,7 +130,7 @@ function AppBox({app}: {app: (typeof apps)[0]}): ReactElement {
 				<div
 					id={app.href}
 					className={
-						'size-full relative flex cursor-pointer flex-col items-center overflow-hidden rounded-3xl border border-neutral-300/0 p-6'
+						'relative flex size-full cursor-pointer flex-col items-center overflow-hidden rounded-3xl border border-neutral-300/0 p-6'
 					}>
 					<div className={'z-10 flex w-full flex-col items-center'}>
 						<V3Mask className={'h-32'} />
@@ -275,7 +275,7 @@ function TextAnimation(): ReactElement {
 
 function Index(): ReactElement {
 	return (
-		<div className={'size-full mx-auto max-w-6xl py-20'}>
+		<div className={'mx-auto size-full max-w-6xl py-20'}>
 			<div className={'mx-auto mb-10 mt-6 flex flex-col justify-center md:mb-14 md:mt-20'}>
 				<div className={'relative h-12 w-[300px] self-center overflow-hidden md:h-[104px] md:w-[600px]'}>
 					<TextAnimation />

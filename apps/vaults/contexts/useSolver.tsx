@@ -1,6 +1,6 @@
 import {createContext, useCallback, useContext, useEffect, useMemo, useRef, useState} from 'react';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {toAddress, toNormalizedBN} from '@builtbymom/web3/utils';
+import {toAddress, zeroNormalizedBN} from '@builtbymom/web3/utils';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useSolverChainCoin} from '@vaults/hooks/useSolverChainCoin';
 import {useSolverCowswap} from '@vaults/hooks/useSolverCowswap';
@@ -10,11 +10,11 @@ import {useSolverPartnerContract} from '@vaults/hooks/useSolverPartnerContract';
 import {useSolverPortals} from '@vaults/hooks/useSolverPortals';
 import {useSolverVanilla} from '@vaults/hooks/useSolverVanilla';
 import {serialize} from '@wagmi/core';
-import {Solver} from '@common/schemas/yDaemonTokenListBalances';
+import {Solver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
 import {hash} from '@common/utils';
 
+import type {TSolver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
 import type {TNormalizedBN} from '@builtbymom/web3/types';
-import type {TSolver} from '@common/schemas/yDaemonTokenListBalances';
 import type {TInitSolverArgs, TSolverContext, TWithSolver} from '@vaults/types/solvers';
 
 export const isSolverDisabled = (key: TSolver): boolean => {
@@ -42,10 +42,10 @@ type TUpdateSolverHandler = {
 const DefaultWithSolverContext: TWithSolver = {
 	currentSolver: Solver.enum.Vanilla,
 	effectiveSolver: Solver.enum.Vanilla,
-	expectedOut: toNormalizedBN(0),
+	expectedOut: zeroNormalizedBN,
 	hash: undefined,
 	isLoadingExpectedOut: false,
-	onRetrieveAllowance: async (): Promise<TNormalizedBN> => toNormalizedBN(0),
+	onRetrieveAllowance: async (): Promise<TNormalizedBN> => zeroNormalizedBN,
 	onApprove: async (): Promise<void> => Promise.resolve(),
 	onExecuteDeposit: async (): Promise<void> => Promise.resolve(),
 	onExecuteWithdraw: async (): Promise<void> => Promise.resolve()
@@ -98,7 +98,7 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 				return;
 			}
 			if (actionParams.amount.raw === 0n) {
-				return set_currentSolverState({...vanilla, quote: toNormalizedBN(0)});
+				return set_currentSolverState({...vanilla, quote: zeroNormalizedBN});
 			}
 
 			set_isLoading(true);
@@ -156,7 +156,7 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 					});
 
 					solvers[Solver.enum.None] = {
-						quote: {status: 'fulfilled', value: toNormalizedBN(0)},
+						quote: {status: 'fulfilled', value: zeroNormalizedBN},
 						ctx: vanilla
 					};
 
@@ -273,7 +273,7 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 		(): TWithSolver => ({
 			currentSolver: currentSolver,
 			effectiveSolver: currentSolverState?.type,
-			expectedOut: currentSolverState?.quote || toNormalizedBN(0),
+			expectedOut: currentSolverState?.quote || zeroNormalizedBN,
 			hash: currentSolverState?.hash,
 			isLoadingExpectedOut: isLoading,
 			onRetrieveAllowance: currentSolverState.onRetrieveAllowance,

@@ -1,16 +1,15 @@
 import Link from 'next/link';
-import {formatAmount, toAddress} from '@builtbymom/web3/utils';
-import {cl} from '@yearn-finance/web-lib/utils/cl';
+import {cl, formatAmount, toAddress} from '@builtbymom/web3/utils';
+import {useYearnBalance} from '@yearn-finance/web-lib/hooks/useYearnBalance';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
-import {useBalance} from '@common/hooks/useBalance';
 
 import {VaultChainTag} from '../VaultChainTag';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@common/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 
 export function VaultsListInternalMigrationRow({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const balanceToMigrate = useBalance({address: currentVault.address, chainID: currentVault.chainID});
+	const balanceToMigrate = useYearnBalance({address: currentVault.address, chainID: currentVault.chainID});
 
 	return (
 		<div className={cl('grid w-full grid-cols-1 md:grid-cols-12 rounded-3xl', 'p-6 pt-2 md:pr-10', 'relative')}>

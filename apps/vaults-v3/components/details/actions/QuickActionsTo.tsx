@@ -1,12 +1,10 @@
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {formatPercent, toAddress} from '@builtbymom/web3/utils';
+import {cl, formatCounterValue, formatPercent, toAddress} from '@builtbymom/web3/utils';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useSolver} from '@vaults/contexts/useSolver';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {cl} from '@yearn-finance/web-lib/utils/cl';
-import {formatCounterValue} from '@yearn-finance/web-lib/utils/format.value';
+import {useYearnTokenPrice} from '@yearn-finance/web-lib/hooks/useYearnTokenPrice';
 import {Dropdown} from '@common/components/TokenDropdown';
-import {useTokenPrice} from '@common/hooks/useTokenPrice';
 
 import type {ReactElement} from 'react';
 
@@ -14,7 +12,7 @@ export function VaultDetailsQuickActionsTo(): ReactElement {
 	const {isActive} = useWeb3();
 	const {currentVault, possibleOptionsTo, actionParams, onUpdateSelectedOptionTo, isDepositing} = useActionFlow();
 	const {expectedOut, isLoadingExpectedOut} = useSolver();
-	const selectedOptionToPricePerToken = useTokenPrice({
+	const selectedOptionToPricePerToken = useYearnTokenPrice({
 		address: toAddress(actionParams?.selectedOptionTo?.value),
 		chainID: Number(actionParams?.selectedOptionTo?.chainID)
 	});

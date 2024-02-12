@@ -2,29 +2,29 @@ import {useEffect, useState} from 'react';
 import Link from 'next/link';
 import {useRouter} from 'next/router';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {toAddress} from '@builtbymom/web3/utils';
+import {useFetch} from '@builtbymom/web3/hooks/useFetch';
+import {cl, toAddress} from '@builtbymom/web3/utils';
 import {ActionFlowContextApp} from '@vaults/contexts/useActionFlow';
 import {WithSolverContextApp} from '@vaults/contexts/useSolver';
 import {VaultActionsTabsWrapper} from '@vaults-v3/components/details/VaultActionsTabsWrapper';
 import {VaultDetailsHeader} from '@vaults-v3/components/details/VaultDetailsHeader';
 import {VaultDetailsTabsWrapper} from '@vaults-v3/components/details/VaultDetailsTabsWrapper';
 import {Wrapper} from '@vaults-v3/Wrapper';
-import {cl} from '@yearn-finance/web-lib/utils/cl';
+import {useYearnWallet} from '@yearn-finance/web-lib/contexts/useYearnWallet';
+import {useYDaemonBaseURI} from '@yearn-finance/web-lib/hooks/useYDaemonBaseURI';
+import {yDaemonVaultSchema} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
-import {useWallet} from '@common/contexts/useWallet';
-import {useFetch} from '@common/hooks/useFetch';
-import {type TYDaemonVault, yDaemonVaultSchema} from '@common/schemas/yDaemonVaultsSchemas';
-import {useYDaemonBaseURI} from '@common/utils/getYDaemonBaseURI';
 
 import type {GetStaticPaths, GetStaticProps} from 'next';
 import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
-import type {TUseBalancesTokens} from '@common/hooks/useMultichainBalances';
+import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TUseBalancesTokens} from '@builtbymom/web3/hooks/useBalances.multichains';
 
 function Index(): ReactElement | null {
 	const {address, isActive} = useWeb3();
 	const router = useRouter();
-	const {refresh} = useWallet();
+	const {onRefresh} = useYearnWallet();
 	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: Number(router.query.chainID)});
 	const [currentVault, set_currentVault] = useState<TYDaemonVault | undefined>(undefined);
 	const {data: vault, isLoading: isLoadingVault} = useFetch<TYDaemonVault>({
@@ -53,9 +53,9 @@ function Index(): ReactElement | null {
 			if (currentVault?.token?.address) {
 				tokensToRefresh.push({address: currentVault.token.address, chainID: currentVault.chainID});
 			}
-			refresh(tokensToRefresh);
+			onRefresh(tokensToRefresh);
 		}
-	}, [currentVault?.address, currentVault?.token?.address, address, isActive, refresh, currentVault?.chainID]);
+	}, [currentVault?.address, currentVault?.token?.address, address, isActive, onRefresh, currentVault?.chainID]);
 
 	if (isLoadingVault || !router.query.address) {
 		return (

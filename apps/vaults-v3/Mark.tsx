@@ -488,10 +488,10 @@ export function V3Logo(props: React.SVGProps<SVGSVGElement>): ReactElement {
 					x2={'31.4116'}
 					y2={'67.5286'}
 					gradientUnits={'userSpaceOnUse'}>
-					<stop stop-color={'#D21162'} />
+					<stop stopColor={'#D21162'} />
 					<stop
 						offset={'1'}
-						stop-color={'#2C3DA6'}
+						stopColor={'#2C3DA6'}
 					/>
 				</linearGradient>
 				<linearGradient
@@ -501,11 +501,11 @@ export function V3Logo(props: React.SVGProps<SVGSVGElement>): ReactElement {
 					x2={'61.9914'}
 					y2={'34.6589'}
 					gradientUnits={'userSpaceOnUse'}>
-					<stop stop-color={'white'} />
+					<stop stopColor={'white'} />
 					<stop
 						offset={'1'}
-						stop-color={'white'}
-						stop-opacity={'0.18'}
+						stopColor={'white'}
+						stopOpacity={'0.18'}
 					/>
 				</linearGradient>
 				<linearGradient
@@ -515,10 +515,10 @@ export function V3Logo(props: React.SVGProps<SVGSVGElement>): ReactElement {
 					x2={'92.8053'}
 					y2={'67.9893'}
 					gradientUnits={'userSpaceOnUse'}>
-					<stop stop-color={'#D21162'} />
+					<stop stopColor={'#D21162'} />
 					<stop
 						offset={'1'}
-						stop-color={'#2C3DA6'}
+						stopColor={'#2C3DA6'}
 					/>
 				</linearGradient>
 				<linearGradient
@@ -528,11 +528,11 @@ export function V3Logo(props: React.SVGProps<SVGSVGElement>): ReactElement {
 					x2={'119.807'}
 					y2={'35.1353'}
 					gradientUnits={'userSpaceOnUse'}>
-					<stop stop-color={'white'} />
+					<stop stopColor={'white'} />
 					<stop
 						offset={'1'}
-						stop-color={'white'}
-						stop-opacity={'0.18'}
+						stopColor={'white'}
+						stopOpacity={'0.18'}
 					/>
 				</linearGradient>
 			</defs>
