@@ -83,13 +83,13 @@ function Index(): ReactElement | null {
 
 	return (
 		<>
-			<header className={'relative z-50 flex w-full items-center justify-center pt-24'}>
+			<header className={'pointer-events-none flex w-full items-center justify-center'}>
 				<motion.div
-					key={'vaults'}
+					key={'Vaults'}
 					initial={'initial'}
 					animate={'enter'}
 					variants={variants}
-					className={'size-12 md:size-[72px] z-50 -mt-6 cursor-pointer md:-mt-36'}>
+					className={'pointer-events-none -mt-16 size-12 cursor-pointer md:size-[72px]'}>
 					<ImageWithFallback
 						src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${toAddress(
 							currentVault.token.address
@@ -103,7 +103,7 @@ function Index(): ReactElement | null {
 				</motion.div>
 			</header>
 
-			<section className={'mt-4 grid w-full grid-cols-12 pb-10 md:mt-0'}>
+			<section className={'mt-4 grid w-full grid-cols-12 pb-10 md:mt-10'}>
 				<VaultDetailsHeader currentVault={currentVault} />
 				<ActionFlowContextApp currentVault={currentVault}>
 					<WithSolverContextApp>

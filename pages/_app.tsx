@@ -84,20 +84,20 @@ const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 				<div className={'block size-full min-h-max'}>
 					<LazyMotion features={domAnimation}>
 						<AnimatePresence mode={'wait'}>
-							<motion.div
-								key={`${name}_${pathName}`}
-								initial={'initial'}
-								animate={'enter'}
-								exit={'exit'}
-								variants={variants}>
-								{getLayout(
+							{getLayout(
+								<motion.div
+									key={`${name}_${pathName}`}
+									initial={'initial'}
+									animate={'enter'}
+									exit={'exit'}
+									variants={variants}>
 									<Component
 										router={props.router}
 										{...pageProps}
-									/>,
-									router
-								)}
-							</motion.div>
+									/>
+								</motion.div>,
+								router
+							)}
 						</AnimatePresence>
 					</LazyMotion>
 				</div>
