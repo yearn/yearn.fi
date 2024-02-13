@@ -11,9 +11,10 @@ import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
 import {VaultsV3ListRow} from '@vaults-v3/components/list/VaultsV3ListRow';
 import {ALL_VAULTSV3_CATEGORIES_KEYS} from '@vaults-v3/constants';
 import {V3Mask} from '@vaults-v3/Mark';
+import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useYearn} from '@yearn-finance/web-lib/contexts/useYearn';
 import {useYearnWallet} from '@yearn-finance/web-lib/contexts/useYearnWallet';
-import {InfoTooltip} from '@common/components/InfoTooltip';
+import {Switch} from '@common/components/Switch';
 
 import type {ReactElement, ReactNode} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
@@ -86,7 +87,13 @@ function V3Card(): ReactElement {
 	);
 }
 
-function PortfolioCard(): ReactElement {
+function PortfolioCard({
+	shouldGoHardcore,
+	set_shouldGoHardcore
+}: {
+	shouldGoHardcore: boolean;
+	set_shouldGoHardcore: (v: boolean) => void;
+}): ReactElement {
 	const {cumulatedValueInV3Vaults} = useYearnWallet();
 	const {isActive, address, openLoginModal, onSwitchChain} = useWeb3();
 
@@ -135,33 +142,40 @@ function PortfolioCard(): ReactElement {
 		);
 	}
 	return (
-		<div className={'col-span-12 w-full rounded-3xl bg-neutral-100 p-6 md:col-span-6'}>
-			<strong className={'block pb-2 text-3xl font-black text-neutral-900 md:pb-4 md:text-4xl md:leading-[48px]'}>
-				{'Portfolio'}
-			</strong>
-			<div className={'flex flex-col gap-4 md:flex-row md:gap-32'}>
-				<div>
-					<p className={'pb-0 text-[#757CA6] md:pb-2'}>{'Deposited'}</p>
-					<b className={'font-number text-xl text-neutral-900 md:text-3xl'}>
-						<Counter value={Number(formatedYouHave)} />
-					</b>
+		<>
+			<div className={'col-span-12 w-full rounded-3xl bg-neutral-100 p-6 md:col-span-6'}>
+				<strong
+					className={'block pb-2 text-3xl font-black text-neutral-900 md:pb-4 md:text-4xl md:leading-[48px]'}>
+					{'Portfolio'}
+				</strong>
+				<div className={'flex flex-col gap-4 md:flex-row md:gap-32'}>
+					<div>
+						<p className={'pb-0 text-[#757CA6] md:pb-2'}>{'Deposited'}</p>
+						<b className={'font-number text-xl text-neutral-900 md:text-3xl'}>
+							<Counter value={Number(formatedYouHave)} />
+						</b>
+					</div>
 				</div>
-				<div>
-					<div className={'pb-0 text-[#757CA6] md:pb-2'}>
-						{'Earnings'}
-						<InfoTooltip
-							text={
-								'Your earnings are estimated based on available onchain data and some nerdy math stuff.'
-							}
-							size={'sm'}
+				<div className={'mt-6 border-t border-neutral-200 pt-4'}>
+					<div
+						className={
+							'flex cursor-pointer items-center justify-between transition-colors hover:bg-neutral-100/40'
+						}>
+						<div>
+							<p className={'text-sm'}>{'Danger Mode'}</p>
+							<small className={'text-xs text-neutral-400'}>{'This will enable dead-only vaults'}</small>
+						</div>
+						<Switch
+							isEnabled={shouldGoHardcore}
+							onSwitch={(): void => set_shouldGoHardcore(!shouldGoHardcore)}
 						/>
 					</div>
-					<b className={'font-number text-xl text-neutral-900 md:text-3xl'}>{'soon™️'}</b>
 				</div>
 			</div>
-		</div>
+		</>
 	);
 }
+
 function ListOfVaults(): ReactElement {
 	const {isLoadingVaultList} = useYearn();
 	const {
@@ -332,88 +346,125 @@ function ListOfVaults(): ReactElement {
 
 function Index(): ReactElement {
 	const [isCollapsed, set_isCollapsed] = useState(true);
+	const [shouldGoHardcore, set_shouldGoHardcore] = useState(false);
 
 	function onClick(): void {
 		set_isCollapsed(!isCollapsed);
 	}
 
 	return (
-		<div className={'z-50 w-full bg-neutral-100 pt-20'}>
-			<div className={'relative mx-auto w-full max-w-6xl'}>
-				<div className={'absolute inset-x-0 top-0 w-full px-4 pt-6 md:pt-16'}>
-					<div className={'grid grid-cols-75'}>
-						<V3Card />
-						<BrandNewVaultCard />
-					</div>
+		<>
+			<div
+				onClick={(): void => set_shouldGoHardcore(!shouldGoHardcore)}
+				className={cl(
+					'fixed inset-0 z-[1000] flex size-full items-start justify-center bg-red-900/70 backdrop-blur-sm',
+					'pt-[20%] transition-all cursor-no-drop',
+					shouldGoHardcore ? 'opacity-100' : 'opacity-0 pointer-events-none'
+				)}>
+				<div
+					onClick={(e): void => e.stopPropagation()}
+					className={'mx-auto w-full max-w-2xl cursor-default rounded-lg bg-white p-4'}>
+					<h2 className={'text-2xl font-bold text-neutral-0'}>{'You are about to enter the DANGER AREA'}</h2>
+					<p className={'pb-6 pt-10 text-base text-neutral-200'}>
+						{
+							'The Danger Vaults are a collection of high risk, high reward strategies. These vaults are not for the faint of heart. They are not recommended for the average user. You have been warned.'
+						}
+					</p>
+					<p className={'text-base text-neutral-200'}>
+						{
+							'You might lose all your money. You might lose more than all your money. You might lose your house. You might lose your wife. You might lose your kids. You might lose your dog. You might lose your dignity. You might lose your sanity. You might lose your life. You might lose your soul. You might lose your mind. You might lose your will to live. You might lose your will to die'
+						}
+					</p>
+					<Button
+						className={'button mt-10 rounded-lg'}
+						variant={'v3'}>
+						{'I understand, let me in'}
+					</Button>
 				</div>
 			</div>
+			<div className={'z-50 w-full bg-neutral-100 pt-20'}>
+				<div className={'relative mx-auto w-full max-w-6xl'}>
+					<div className={'absolute inset-x-0 top-0 w-full px-4 pt-6 md:pt-16'}>
+						<div className={'grid grid-cols-75'}>
+							<V3Card />
+							<BrandNewVaultCard />
+						</div>
+					</div>
+				</div>
 
-			<div
-				className={cl(
-					'relative pb-8 bg-neutral-0 z-50',
-					'min-h-screen',
-					'transition-transform duration-300',
-					isCollapsed
-						? 'translate-y-[354px] md:translate-y-[464px]'
-						: 'translate-y-[24px] md:translate-y-[40px]'
-				)}>
-				<div className={'mx-auto w-full max-w-6xl'}>
-					<div
-						onClick={onClick}
-						className={'absolute inset-x-0 top-0 flex w-full cursor-pointer items-center justify-center'}>
-						<div className={'relative -mt-8 flex justify-center rounded-t-3xl'}>
-							<svg
-								xmlns={'http://www.w3.org/2000/svg'}
-								width={'113'}
-								height={'32'}
-								viewBox={'0 0 113 32'}
-								fill={'none'}>
-								<path
-									d={'M0 32C37.9861 32 20.9837 0 56 0C91.0057 0 74.388 32 113 32H0Z'}
-									fill={'#000520'}
-								/>
-							</svg>
-							<div
-								className={`absolute mt-2 flex justify-center transition-transform ${
-									isCollapsed ? '' : '-rotate-180'
-								}`}>
+				<div
+					className={cl(
+						'relative pb-8 bg-neutral-0 z-50',
+						'min-h-screen',
+						'transition-transform duration-300',
+						isCollapsed
+							? 'translate-y-[354px] md:translate-y-[464px]'
+							: 'translate-y-[24px] md:translate-y-[40px]'
+					)}>
+					<div className={'mx-auto w-full max-w-6xl'}>
+						<div
+							onClick={onClick}
+							className={
+								'absolute inset-x-0 top-0 flex w-full cursor-pointer items-center justify-center'
+							}>
+							<div className={'relative -mt-8 flex justify-center rounded-t-3xl'}>
 								<svg
 									xmlns={'http://www.w3.org/2000/svg'}
-									width={'24'}
-									height={'24'}
-									viewBox={'0 0 24 24'}
+									width={'113'}
+									height={'32'}
+									viewBox={'0 0 113 32'}
 									fill={'none'}>
 									<path
-										fillRule={'evenodd'}
-										clipRule={'evenodd'}
-										d={
-											'M4.34151 16.7526C3.92587 16.3889 3.88375 15.7571 4.24744 15.3415L11.2474 7.34148C11.4373 7.12447 11.7117 6.99999 12 6.99999C12.2884 6.99999 12.5627 7.12447 12.7526 7.34148L19.7526 15.3415C20.1163 15.7571 20.0742 16.3889 19.6585 16.7526C19.2429 17.1162 18.6111 17.0741 18.2474 16.6585L12 9.51858L5.75259 16.6585C5.38891 17.0741 4.75715 17.1162 4.34151 16.7526Z'
-										}
-										fill={'white'}
+										d={'M0 32C37.9861 32 20.9837 0 56 0C91.0057 0 74.388 32 113 32H0Z'}
+										fill={'#000520'}
 									/>
 								</svg>
+								<div
+									className={`absolute mt-2 flex justify-center transition-transform ${
+										isCollapsed ? '' : '-rotate-180'
+									}`}>
+									<svg
+										xmlns={'http://www.w3.org/2000/svg'}
+										width={'24'}
+										height={'24'}
+										viewBox={'0 0 24 24'}
+										fill={'none'}>
+										<path
+											fillRule={'evenodd'}
+											clipRule={'evenodd'}
+											d={
+												'M4.34151 16.7526C3.92587 16.3889 3.88375 15.7571 4.24744 15.3415L11.2474 7.34148C11.4373 7.12447 11.7117 6.99999 12 6.99999C12.2884 6.99999 12.5627 7.12447 12.7526 7.34148L19.7526 15.3415C20.1163 15.7571 20.0742 16.3889 19.6585 16.7526C19.2429 17.1162 18.6111 17.0741 18.2474 16.6585L12 9.51858L5.75259 16.6585C5.38891 17.0741 4.75715 17.1162 4.34151 16.7526Z'
+											}
+											fill={'white'}
+										/>
+									</svg>
+								</div>
 							</div>
 						</div>
-					</div>
 
-					<div className={'pt-6'}>
-						<div className={'rounded-3xl border border-[#D21162] bg-[#14051A] px-6 py-4 text-[#FF1678]'}>
-							<b className={'text-lg'}>{'Ape carefully anon!'}</b>
-							<p>
-								{
-									'V3 is a truly flexible yield protocol offering everything from the usual Up Only Vaults to all new risky degen strategies.'
-								}
-							</p>
+						<div className={'pt-6'}>
+							<div
+								className={'rounded-3xl border border-[#D21162] bg-[#14051A] px-6 py-4 text-[#FF1678]'}>
+								<b className={'text-lg'}>{'Ape carefully anon!'}</b>
+								<p>
+									{
+										'V3 is a truly flexible yield protocol offering everything from the usual Up Only Vaults to all new risky degen strategies.'
+									}
+								</p>
+							</div>
 						</div>
-					</div>
 
-					<div className={'grid grid-cols-12 gap-4 pt-6 md:gap-6'}>
-						<PortfolioCard />
-						<ListOfVaults />
+						<div className={'grid grid-cols-12 gap-4 pt-6 md:gap-6'}>
+							<PortfolioCard
+								shouldGoHardcore={shouldGoHardcore}
+								set_shouldGoHardcore={set_shouldGoHardcore}
+							/>
+							<ListOfVaults />
+						</div>
 					</div>
 				</div>
 			</div>
-		</div>
+		</>
 	);
 }
 

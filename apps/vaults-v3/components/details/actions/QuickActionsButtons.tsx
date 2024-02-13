@@ -21,7 +21,7 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 	const [txStatusExecuteDeposit, set_txStatusExecuteDeposit] = useState(defaultTxStatus);
 	const [txStatusExecuteWithdraw, set_txStatusExecuteWithdraw] = useState(defaultTxStatus);
 	const [allowanceFrom, set_allowanceFrom] = useState<TNormalizedBN>(zeroNormalizedBN);
-	const {actionParams, onChangeAmount, maxDepositPossible, isDepositing} = useActionFlow();
+	const {actionParams, onChangeAmount, maxDepositPossible, isDepositing, areAllCheckCompleted} = useActionFlow();
 	const {
 		onApprove,
 		onExecuteDeposit,
@@ -103,6 +103,17 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 		isZero(actionParams.amount.raw) ||
 		toBigInt(actionParams.amount.raw) > toBigInt(maxDepositPossible.raw) ||
 		isLoadingExpectedOut;
+
+	if (!areAllCheckCompleted) {
+		return (
+			<Button
+				variant={'v3'}
+				className={'w-full'}
+				isDisabled>
+				{'Check the box'}
+			</Button>
+		);
+	}
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** Wrapper to decide if we should use the partner contract or not

@@ -66,9 +66,11 @@ type TActionFlowContext = {
 	onUpdateSelectedOptionFrom: (option: TDropdownOption) => void;
 	onUpdateSelectedOptionTo: (option: TDropdownOption) => void;
 	onSwitchSelectedOptions: (nextFlow?: Flow) => void;
+	onCompleteChecks: (areCompleted: boolean) => void;
 	isDepositing: boolean;
 	maxDepositPossible: TNormalizedBN;
 	currentSolver: TSolver;
+	areAllCheckCompleted: undefined | boolean; //Used to indicate if the user checked all the possible boxes to be able to deposit.
 };
 const DefaultActionFlowContext: TActionFlowContext = {
 	currentVault: {} as TYDaemonVault, // eslint-disable-line @typescript-eslint/consistent-type-assertions
@@ -86,9 +88,11 @@ const DefaultActionFlowContext: TActionFlowContext = {
 	onUpdateSelectedOptionFrom: (): void => undefined,
 	onUpdateSelectedOptionTo: (): void => undefined,
 	onSwitchSelectedOptions: (): void => undefined,
+	onCompleteChecks: (): void => undefined,
 	isDepositing: true,
 	maxDepositPossible: zeroNormalizedBN,
-	currentSolver: Solver.enum.Vanilla || 'Vanilla'
+	currentSolver: Solver.enum.Vanilla || 'Vanilla',
+	areAllCheckCompleted: undefined
 };
 
 type TUseContextualIs = {
@@ -160,6 +164,12 @@ export function ActionFlowContextApp({
 	const [possibleZapOptionsFrom, set_possibleZapOptionsFrom] = useState<TDropdownOption[]>([]);
 	const [possibleOptionsTo, set_possibleOptionsTo] = useState<TDropdownOption[]>([]);
 	const [possibleZapOptionsTo, set_possibleZapOptionsTo] = useState<TDropdownOption[]>([]);
+	const [areAllCheckCompleted, set_areAllCheckCompleted] = useState<boolean | undefined>(undefined);
+
+	useEffect(() => {
+		set_areAllCheckCompleted(currentVault.retired);
+	}, [currentVault.retired]);
+
 	const {data: depositLimit} = useContractReads({
 		contracts: [
 			{
@@ -716,17 +726,20 @@ export function ActionFlowContextApp({
 			onSwitchSelectedOptions,
 			isDepositing,
 			maxDepositPossible,
-			currentSolver
+			currentSolver,
+			areAllCheckCompleted,
+			onCompleteChecks: set_areAllCheckCompleted
 		}),
 		[
 			currentVault,
+			actionParams,
 			possibleZapOptionsFrom,
 			possibleZapOptionsTo,
-			actionParams,
 			onSwitchSelectedOptions,
 			isDepositing,
 			maxDepositPossible,
 			currentSolver,
+			areAllCheckCompleted,
 			updateParams
 		]
 	);

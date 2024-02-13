@@ -46,7 +46,7 @@ function getCurrentTab({
 }
 
 export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const {onSwitchSelectedOptions, isDepositing, actionParams, currentSolver} = useActionFlow();
+	const {onSwitchSelectedOptions, isDepositing, actionParams, onCompleteChecks, currentSolver} = useActionFlow();
 	const [possibleTabs, set_possibleTabs] = useState<TTabsOptions[]>([tabs[0], tabs[1]]);
 	const willDepositAndStake = currentSolver === Solver.enum.OptimismBooster;
 	const hasStakingRewards = Boolean(currentVault.staking.available);
@@ -216,21 +216,45 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 				{currentTab.value === 3 ? (
 					<RewardsTab currentVault={currentVault} />
 				) : (
-					<div
-						className={
-							'col-span-12 flex flex-col space-x-0 space-y-2 bg-neutral-100 p-4 md:flex-row md:space-x-4 md:space-y-0 md:px-8 md:py-10'
-						}>
-						<VaultDetailsQuickActionsFrom />
-						<VaultDetailsQuickActionsSwitch />
-						<VaultDetailsQuickActionsTo />
-						<div className={'w-full space-y-0 md:w-42 md:min-w-42 md:space-y-2'}>
-							<p className={'hidden text-base md:inline'}>&nbsp;</p>
-							<div>
-								<VaultDetailsQuickActionsButtons currentVault={currentVault} />
+					<>
+						<div
+							className={
+								'col-span-12 flex flex-col space-x-0 space-y-2 bg-neutral-100 p-4 md:flex-row md:space-x-4 md:space-y-0 md:px-8 md:py-10'
+							}>
+							<VaultDetailsQuickActionsFrom />
+							<VaultDetailsQuickActionsSwitch />
+							<VaultDetailsQuickActionsTo />
+							<div className={'w-full space-y-0 md:w-42 md:min-w-42 md:space-y-2'}>
+								<p className={'hidden text-base md:inline'}>&nbsp;</p>
+								<div>
+									<VaultDetailsQuickActionsButtons currentVault={currentVault} />
+								</div>
+								<legend className={'hidden text-xs md:inline'}>&nbsp;</legend>
 							</div>
-							<legend className={'hidden text-xs md:inline'}>&nbsp;</legend>
 						</div>
-					</div>
+						<div
+							aria-label={'Deprecation Warning'}
+							className={'col-span-12 px-10 pb-10'}>
+							<div className={'w-full rounded-lg bg-neutral-900 p-6 text-neutral-0'}>
+								<b className={'text-lg'}>{'If you deposit, you are going to die'}</b>
+								<p className={'mt-2'}>
+									{
+										"This vault isn't an UP-ONLY vault. It can be DOWN-ONLY, imagine, you could lose everything. Check the box to confirm you are ready to get rekt."
+									}
+								</p>
+								<div className={'flex flex-row items-center gap-x-4'}>
+									<input
+										onClick={e => {
+											console.log(e.currentTarget.checked);
+											onCompleteChecks(e.currentTarget.checked);
+										}}
+										type={'checkbox'}
+									/>
+									<p>{'I am ready to die'}</p>
+								</div>
+							</div>
+						</div>
+					</>
 				)}
 
 				{isZero(currentTab.value) &&

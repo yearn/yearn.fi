@@ -7,6 +7,7 @@ import {AnimatePresence, domAnimation, LazyMotion, motion} from 'framer-motion';
 import {WithMom} from '@builtbymom/web3/contexts/WithMom';
 import {cl} from '@builtbymom/web3/utils';
 import {localhost} from '@builtbymom/web3/utils/wagmi';
+import {AppSettingsContextApp} from '@vaults/contexts/useAppSettings';
 import {WalletForZapAppContextApp} from '@vaults/contexts/useWalletForZaps';
 import {arbitrum, base, fantom, mainnet, optimism, polygon} from '@wagmi/chains';
 import {YearnContextApp} from '@yearn-finance/web-lib/contexts/useYearn';
@@ -128,18 +129,20 @@ function MyApp(props: AppProps): ReactElement {
 					'https://raw.githubusercontent.com/SmolDapp/tokenLists/main/lists/yearn.json',
 					'https://raw.githubusercontent.com/SmolDapp/tokenLists/main/lists/portals.json'
 				]}>
-				<MenuContextApp>
-					<YearnWalletContextApp>
-						<YearnContextApp>
-							<WalletForZapAppContextApp>
-								<Fragment>
-									<Meta meta={manifest} />
-									<WithLayout {...props} />
-								</Fragment>
-							</WalletForZapAppContextApp>
-						</YearnContextApp>
-					</YearnWalletContextApp>
-				</MenuContextApp>
+				<AppSettingsContextApp>
+					<MenuContextApp>
+						<YearnWalletContextApp>
+							<YearnContextApp>
+								<WalletForZapAppContextApp>
+									<Fragment>
+										<Meta meta={manifest} />
+										<WithLayout {...props} />
+									</Fragment>
+								</WalletForZapAppContextApp>
+							</YearnContextApp>
+						</YearnWalletContextApp>
+					</MenuContextApp>
+				</AppSettingsContextApp>
 			</WithMom>
 			<Toaster
 				toastOptions={{
