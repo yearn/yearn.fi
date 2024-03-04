@@ -165,12 +165,12 @@ export function VaultDetailsAbout({
 								{`${formatAmount(apr.fees.performance * 100, 0, 2)} %`}
 							</b>
 						</YearnFeesLineItem>
-						{currentVault.category === 'Velodrome' || currentVault.category === 'Aerodrome' ? (
+						{(currentVault.apr.forwardAPR.composite?.keepVELO || 0) > 0 ? (
 							<YearnFeesLineItem
 								label={'keepVELO'}
 								tooltip={`Percentage of VELO locked in each harvest. This is used to boost ${currentVault.category} vault pools, and is offset via yvOP staking rewards.`}>
 								<b className={'font-number text-xl text-neutral-500'}>
-									{formatAmount(currentVault.apr.fees.keepVelo * 100, 0, 2)}
+									{`${formatAmount((currentVault.apr.forwardAPR.composite?.keepVELO || 0) * 100, 0, 2)} %`}
 								</b>
 							</YearnFeesLineItem>
 						) : null}
