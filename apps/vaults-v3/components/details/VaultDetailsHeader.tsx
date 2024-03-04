@@ -23,7 +23,10 @@ type TVaultHeaderLineItemProps = {
 
 function VaultHeaderLineItem({label, children, legend}: TVaultHeaderLineItemProps): ReactElement {
 	return (
-		<div className={'flex flex-col items-center justify-center space-y-1 md:space-y-2'}>
+		<div
+			className={
+				'flex flex-col items-center justify-center space-y-1 overflow-hidden md:space-y-2 md:overflow-visible'
+			}>
 			<p className={'text-center text-xs text-neutral-900/70'}>{label}</p>
 			<b
 				className={'font-number text-base md:text-3xl'}
