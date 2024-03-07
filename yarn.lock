@@ -3364,10 +3364,10 @@
   resolved "https://registry.yarnpkg.com/@xtuc/long/-/long-4.2.2.tgz#d291c6a4e97989b5c61d9acf396ae4fe133a718d"
   integrity sha512-NuHqBY1PB/D8xU6s/thBgOAiAP7HOYDQ32+BFZILJ8ivkUkAHQnWfn6WhL79Owj1qmUnoN/YPhktdIoucipkAQ==
 
-"@yearn-finance/web-lib@^3.0.175":
-  version "3.0.175"
-  resolved "https://registry.yarnpkg.com/@yearn-finance/web-lib/-/web-lib-3.0.175.tgz#7c1445a7d4f9eb5b464450f2a50a84222c7b06c7"
-  integrity sha512-SdPyrY4Juig5ZRaOprd0nSpkIZZIpjiEJn+VAWwXAdljf3VfjwgWaWvEcnX8SsshR7L+UwlclNMNusr6+5yKqw==
+"@yearn-finance/web-lib@^3.0.176":
+  version "3.0.176"
+  resolved "https://registry.yarnpkg.com/@yearn-finance/web-lib/-/web-lib-3.0.176.tgz#4a0c529c48013f7783c2eaf6b246204166074166"
+  integrity sha512-mCsNzNi+iMfqmCWqJOArl67EieltqdrSsTXus9hjHI8+O1lOLJVjLK2T9Kj4BMBrlvY/63UUdBGr/B3sI4ll6Q==
   dependencies:
     "@builtbymom/web3" "^0.0.37"
     "@headlessui/react" "^1.7.18"
