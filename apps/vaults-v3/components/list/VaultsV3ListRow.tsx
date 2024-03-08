@@ -164,13 +164,17 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 		);
 	}
 
-	if (currentVault.apr?.extra.stakingRewardsAPR > 0) {
-		const boostedAPR = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.forwardAPR.netAPR;
+	/**********************************************************************************************
+	 ** Display the APR including the rewards APR if the rewards APR is greater than 0.
+	 **********************************************************************************************/
+	const sumOfRewardsAPR = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.extra.gammaRewardAPR;
+	if (sumOfRewardsAPR > 0) {
+		const boostedAPR = sumOfRewardsAPR + currentVault.apr.forwardAPR.netAPR;
 		const hasZeroBoostedAPR = isZero(boostedAPR) || Number(boostedAPR.toFixed(2)) === 0;
 		return (
 			<div className={'flex flex-col md:text-right'}>
 				<span className={'tooltip'}>
-					<b className={'yearn--table-data-section-item-value'}>
+					<b className={'yearn--table-data-section-item-value whitespace-nowrap'}>
 						<Renderable
 							shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
 							fallback={'NEW'}>
@@ -214,7 +218,7 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 									<p>{'• Rewards APR '}</p>
 									<RenderAmount
 										shouldHideTooltip
-										value={currentVault.apr.extra.stakingRewardsAPR}
+										value={sumOfRewardsAPR}
 										symbol={'percent'}
 										decimals={6}
 									/>
@@ -227,6 +231,10 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 		);
 	}
 
+	/**********************************************************************************************
+	 ** Display the current spot APR, retrieved from the V3Oracle, only if the current APR is
+	 ** greater than 0.
+	 **********************************************************************************************/
 	const hasCurrentAPR = !isZero(currentVault?.apr?.forwardAPR.composite.v3OracleCurrentAPR);
 	if (hasCurrentAPR) {
 		return (

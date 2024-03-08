@@ -187,14 +187,15 @@ function ListOfVaults(): ReactElement {
 		if (!search) {
 			return activeVaults;
 		}
-		return activeVaults.filter((vault: TYDaemonVault): boolean => {
+		const filtered = activeVaults.filter((vault: TYDaemonVault): boolean => {
 			const lowercaseSearch = search.toLowerCase();
 			const splitted =
 				`${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${vault.token.address}`
 					.toLowerCase()
 					.split(' ');
-			return splitted.some((word): boolean => word.startsWith(lowercaseSearch));
+			return splitted.some((word): boolean => word.includes(lowercaseSearch));
 		});
+		return filtered;
 	}, [activeVaults, search]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
