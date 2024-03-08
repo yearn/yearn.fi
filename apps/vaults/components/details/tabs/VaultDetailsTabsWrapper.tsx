@@ -143,7 +143,7 @@ function ExplorerLink({explorerBaseURI, currentVaultAddress}: TExplorerLinkProps
 			rel={'noopener noreferrer'}>
 			<span className={'sr-only'}>{'Open in explorer'}</span>
 			<IconLinkOut
-				className={'size-5 md:size-6 cursor-alias text-neutral-600 transition-colors hover:text-neutral-900'}
+				className={'size-5 cursor-alias text-neutral-600 transition-colors hover:text-neutral-900 md:size-6'}
 			/>
 		</a>
 	);
@@ -278,7 +278,7 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 						}}>
 						<span className={'sr-only'}>{'Add to wallet'}</span>
 						<IconAddToMetamask
-							className={'size-5 md:size-6 text-neutral-600 transition-colors hover:text-neutral-900'}
+							className={'size-5 text-neutral-600 transition-colors hover:text-neutral-900 md:size-6'}
 						/>
 					</button>
 					<ExplorerLink

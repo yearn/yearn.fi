@@ -1,4 +1,5 @@
 import {formatAmount, formatUSD, toBigInt, toNormalizedValue} from '@builtbymom/web3/utils';
+import {getNetwork} from '@builtbymom/web3/utils/wagmi';
 import {truncateHexTx} from '@vaults/utils';
 import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
@@ -48,6 +49,8 @@ function HarvestListRow({
 	harvest: TYDaemonVaultHarvest;
 	currentVault: TYDaemonVault;
 }): ReactElement {
+	const blockExplorer = getNetwork(currentVault.chainID).blockExplorers?.etherscan?.url;
+
 	return (
 		<div className={'grid grid-cols-1 border-b border-neutral-200 px-10 pb-4 md:grid-cols-12'}>
 			<div
@@ -93,7 +96,7 @@ function HarvestListRow({
 			<div className={'col-span-4'}>
 				<p className={'yearn--table-data-section-item-label'}>{'Hash'}</p>
 				<a
-					href={`https://etherscan.io/tx/${harvest.txHash}`}
+					href={`${blockExplorer}/tx/${harvest.txHash}`}
 					target={'_blank'}
 					rel={'noreferrer'}>
 					<div
