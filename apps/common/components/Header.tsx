@@ -11,6 +11,7 @@ import {IconWallet} from '@yearn-finance/web-lib/icons/IconWallet';
 import {AppName, APPS} from './Apps';
 
 import type {ReactElement} from 'react';
+import type {Chain} from 'viem';
 
 type TMenu = {path: string; label: string | ReactElement; target?: string};
 type TNavbar = {nav: TMenu[]; currentPathName: string};
@@ -86,7 +87,7 @@ function WalletSelector(): ReactElement {
 	);
 }
 
-function AppHeader(): ReactElement {
+function AppHeader(props: {supportedNetworks: Chain[]}): ReactElement {
 	const {pathname} = useRouter();
 	const [isMenuOpen, set_isMenuOpen] = useState<boolean>(false);
 
@@ -183,7 +184,8 @@ function AppHeader(): ReactElement {
 				shouldUseWallets={true}
 				shouldUseNetworks={true}
 				isOpen={isMenuOpen}
-				onClose={(): void => set_isMenuOpen(false)}>
+				onClose={(): void => set_isMenuOpen(false)}
+				supportedNetworks={props.supportedNetworks}>
 				{menu?.map(
 					(option): ReactElement => (
 						<Link

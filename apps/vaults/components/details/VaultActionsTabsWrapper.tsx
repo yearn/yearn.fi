@@ -10,7 +10,7 @@ import {VaultDetailsQuickActionsTo} from '@vaults/components/details/actions/Qui
 import {RewardsTab} from '@vaults/components/RewardsTab';
 import {SettingsPopover} from '@vaults/components/SettingsPopover';
 import {Flow, useActionFlow} from '@vaults/contexts/useActionFlow';
-import {useYearn} from '@yearn-finance/web-lib/contexts/useYearn';
+import {useYearn} from '@common/contexts/useYearn';
 import {IconChevron} from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';

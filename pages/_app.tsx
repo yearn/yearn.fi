@@ -10,20 +10,19 @@ import {localhost} from '@builtbymom/web3/utils/wagmi';
 import {AppSettingsContextApp} from '@vaults/contexts/useAppSettings';
 import {WalletForZapAppContextApp} from '@vaults/contexts/useWalletForZaps';
 import {arbitrum, base, fantom, mainnet, optimism, polygon} from '@wagmi/chains';
-import {YearnContextApp} from '@yearn-finance/web-lib/contexts/useYearn';
-import {YearnWalletContextApp} from '@yearn-finance/web-lib/contexts/useYearnWallet';
 import {IconAlertCritical} from '@yearn-finance/web-lib/icons/IconAlertCritical';
 import {IconAlertError} from '@yearn-finance/web-lib/icons/IconAlertError';
 import {IconCheckmark} from '@yearn-finance/web-lib/icons/IconCheckmark';
 import AppHeader from '@common/components/Header';
 import Meta from '@common/components/Meta';
-import {MenuContextApp} from '@common/contexts/useMenu';
+import {YearnContextApp} from '@common/contexts/useYearn';
 import {useCurrentApp} from '@common/hooks/useCurrentApp';
 import {variants} from '@common/utils/animations';
 
 import type {NextComponentType} from 'next';
 import type {AppProps} from 'next/app';
 import type {ReactElement} from 'react';
+import type {Chain} from 'viem';
 
 import '../style.css';
 
@@ -66,7 +65,7 @@ const aeonik = localFont({
 type TGetLayout = NextComponentType & {
 	getLayout: (p: ReactElement, router: NextRouter) => ReactElement;
 };
-const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
+const WithLayout = memo(function WithLayout(props: {supportedNetworks: Chain[]} & AppProps): ReactElement {
 	const router = useRouter();
 	const {Component, pageProps} = props;
 	const pathName = usePathname();
@@ -76,7 +75,7 @@ const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
 	return (
 		<>
 			<div className={cl('mx-auto mb-0 flex font-aeonik max-w-6xl absolute top-0 inset-x-0')}>
-				<AppHeader />
+				<AppHeader supportedNetworks={props.supportedNetworks} />
 			</div>
 			<div
 				id={'app'}
@@ -120,28 +119,28 @@ const WithLayout = memo(function WithLayout(props: AppProps): ReactElement {
  **************************************************************************************************/
 function MyApp(props: AppProps): ReactElement {
 	const {manifest} = useCurrentApp(props.router);
+	const supportedNetworks = [mainnet, optimism, polygon, fantom, base, arbitrum, localhost];
 
 	return (
 		<main className={cl(aeonik.className, 'h-full min-h-screen w-full font-aeonik', '')}>
 			<WithMom
-				supportedChains={[mainnet, optimism, polygon, fantom, base, arbitrum, localhost]}
+				supportedChains={supportedNetworks}
 				tokenLists={[
 					'https://raw.githubusercontent.com/SmolDapp/tokenLists/main/lists/yearn.json',
 					'https://raw.githubusercontent.com/SmolDapp/tokenLists/main/lists/portals.json'
 				]}>
 				<AppSettingsContextApp>
-					<MenuContextApp>
-						<YearnWalletContextApp>
-							<YearnContextApp>
-								<WalletForZapAppContextApp>
-									<Fragment>
-										<Meta meta={manifest} />
-										<WithLayout {...props} />
-									</Fragment>
-								</WalletForZapAppContextApp>
-							</YearnContextApp>
-						</YearnWalletContextApp>
-					</MenuContextApp>
+					<YearnContextApp>
+						<WalletForZapAppContextApp>
+							<Fragment>
+								<Meta meta={manifest} />
+								<WithLayout
+									supportedNetworks={supportedNetworks}
+									{...props}
+								/>
+							</Fragment>
+						</WalletForZapAppContextApp>
+					</YearnContextApp>
 				</AppSettingsContextApp>
 			</WithMom>
 			<Toaster

@@ -3,16 +3,16 @@ import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {formatAmount, formatCounterValue, handleInputChangeValue, toAddress} from '@builtbymom/web3/utils';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {useYearnWallet} from '@yearn-finance/web-lib/contexts/useYearnWallet';
 import {useYearnBalance} from '@yearn-finance/web-lib/hooks/useYearnBalance';
 import {useYearnTokenPrice} from '@yearn-finance/web-lib/hooks/useYearnTokenPrice';
 import {Dropdown} from '@common/components/TokenDropdown';
+import {useYearn} from '@common/contexts/useYearn';
 
 import type {ChangeEvent, ReactElement} from 'react';
 
 export function VaultDetailsQuickActionsFrom(): ReactElement {
 	const {isActive} = useWeb3();
-	const {getToken} = useYearnWallet();
+	const {getToken} = useYearn();
 	const {
 		possibleOptionsFrom,
 		actionParams,

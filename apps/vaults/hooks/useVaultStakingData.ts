@@ -1,4 +1,5 @@
-import {erc20ABI, useContractReads} from 'wagmi';
+import {erc20Abi} from 'viem';
+import {useReadContracts} from 'wagmi';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {isZeroAddress, toAddress, toBigInt} from '@builtbymom/web3/utils';
 import {STAKING_REWARDS_ABI} from '@vaults/utils/abi/stakingRewards.abi';
@@ -17,7 +18,7 @@ type TStakingInfo = {
 };
 export function useVaultStakingData({currentVault}: {currentVault: TYDaemonVault}): [TStakingInfo, VoidFunction] {
 	const {address} = useWeb3();
-	const {data, refetch} = useContractReads({
+	const {data, refetch} = useReadContracts({
 		contracts: [
 			{
 				address: toAddress(currentVault.staking.address),
@@ -53,13 +54,15 @@ export function useVaultStakingData({currentVault}: {currentVault: TYDaemonVault
 			},
 			{
 				address: toAddress(currentVault.address),
-				abi: erc20ABI,
+				abi: erc20Abi,
 				chainId: currentVault.chainID,
 				functionName: 'allowance',
 				args: [toAddress(address), toAddress(currentVault.staking.address)]
 			}
 		],
-		enabled: currentVault.staking.available
+		query: {
+			enabled: currentVault.staking.available
+		}
 	});
 
 	return [

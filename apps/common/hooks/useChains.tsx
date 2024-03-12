@@ -1,24 +1,23 @@
 import {useConnect} from 'wagmi';
+import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
 import {useCustomCompareMemo, useDeepCompareMemo} from '@react-hookz/web';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 
+import type {Chain} from 'viem';
 import type {Connector} from 'wagmi';
 import type {TMultiSelectOptionProps} from '@common/components/MultiSelectDropdown';
-import type {Chain} from '@wagmi/chains';
 
 export function useChainOptions(chains: number[] | null): TMultiSelectOptionProps[] {
 	const {connectors} = useConnect();
 
 	const injectedChains = useCustomCompareMemo(
 		(): Chain[] | undefined => {
-			const injectedConnector = connectors.find((e): boolean => e.id.toLocaleLowerCase() === 'injected');
-			if (!injectedConnector) {
-				return [];
-			}
-			const noFork = injectedConnector.chains.filter(({id}): boolean => id !== 1337);
+			connectors; //Hard trigger re-render when connectors change
+			const config = retrieveConfig();
+			const noFork = config.chains.filter(({id}): boolean => id !== 1337);
 			return noFork;
 		},
-		[connectors],
+		[connectors as any],
 		(savedDeps: [Connector[]], deps: [Connector[]]): boolean => {
 			for (const savedDep of savedDeps[0]) {
 				if (!deps[0].find((dep): boolean => dep.id === savedDep.id)) {

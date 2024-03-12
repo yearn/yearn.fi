@@ -13,20 +13,23 @@ import {
 	toNormalizedBN,
 	zeroNormalizedBN
 } from '@builtbymom/web3/utils';
-import {defaultTxStatus, toWagmiProvider} from '@builtbymom/web3/utils/wagmi';
+import {
+	allowanceOf,
+	approveERC20,
+	defaultTxStatus,
+	retrieveConfig,
+	toWagmiProvider
+} from '@builtbymom/web3/utils/wagmi';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {isValidPortalsErrorObject} from '@vaults/hooks/helpers/isValidPortalsErrorObject';
 import {getPortalsApproval, getPortalsEstimate, getPortalsTx, PORTALS_NETWORK} from '@vaults/hooks/usePortalsApi';
-import {prepareSendTransaction, switchNetwork, waitForTransaction} from '@wagmi/core';
+import {sendTransaction, switchChain, waitForTransactionReceipt} from '@wagmi/core';
 import {toast} from '@yearn-finance/web-lib/components/yToast';
-import {useYearn} from '@yearn-finance/web-lib/contexts/useYearn';
 import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {allowanceKey} from '@yearn-finance/web-lib/utils/helpers';
 import {Solver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
-import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
-import {allowanceOf, approveERC20} from '@common/utils/actions';
+import {useYearn} from '@common/contexts/useYearn';
 
-import type {Transaction} from 'viem';
 import type {TDict, TNormalizedBN} from '@builtbymom/web3/types';
 import type {TTxResponse, TTxStatus} from '@builtbymom/web3/utils/wagmi';
 import type {TPortalsEstimate} from '@vaults/hooks/usePortalsApi';
@@ -73,10 +76,6 @@ async function getQuote(
 		}
 		return {data: null, error: new Error(errorContent)};
 	}
-}
-
-function isEip2930(txType?: Transaction['type']): txType is 'eip2930' {
-	return txType === 'eip2930';
 }
 
 export function useSolverPortals(): TSolverContext {
@@ -195,7 +194,7 @@ export function useSolverPortals(): TSolverContext {
 
 			if (wagmiProvider.chainId !== request.current.chainID) {
 				try {
-					await switchNetwork({chainId: request.current.chainID});
+					await switchChain(retrieveConfig(), {chainId: request.current.chainID});
 				} catch (error) {
 					if (!(error instanceof BaseError)) {
 						return {isSuccessful: false, error};
@@ -211,24 +210,14 @@ export function useSolverPortals(): TSolverContext {
 
 			assert(isHex(data), 'Data is not hex');
 			assert(wagmiProvider.walletClient, 'Wallet client is not set');
-			const chain = getNetwork(request.current.chainID);
-			const tx = await prepareSendTransaction({
-				...wagmiProvider,
-				data,
+			const hash = await sendTransaction(retrieveConfig(), {
 				value: toBigInt(value ?? 0),
 				to: toAddress(to),
+				data,
 				chainId: request.current.chainID,
 				...rest
 			});
-			const hash = await wagmiProvider.walletClient.sendTransaction({
-				...tx,
-				type: isEip2930(tx.type) ? tx.type : undefined,
-				maxFeePerGas: undefined,
-				maxPriorityFeePerGas: undefined,
-				gasPrice: undefined,
-				chain
-			});
-			const receipt = await waitForTransaction({
+			const receipt = await waitForTransactionReceipt(retrieveConfig(), {
 				chainId: wagmiProvider.chainId,
 				hash
 			});

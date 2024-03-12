@@ -11,9 +11,8 @@ import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
 import {VaultsV3ListRow} from '@vaults-v3/components/list/VaultsV3ListRow';
 import {ALL_VAULTSV3_CATEGORIES_KEYS} from '@vaults-v3/constants';
 import {V3Mask} from '@vaults-v3/Mark';
-import {useYearn} from '@yearn-finance/web-lib/contexts/useYearn';
-import {useYearnWallet} from '@yearn-finance/web-lib/contexts/useYearnWallet';
 import {InfoTooltip} from '@common/components/InfoTooltip';
+import {useYearn} from '@common/contexts/useYearn';
 
 import type {ReactElement, ReactNode} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
@@ -87,7 +86,7 @@ function V3Card(): ReactElement {
 }
 
 function PortfolioCard(): ReactElement {
-	const {cumulatedValueInV3Vaults} = useYearnWallet();
+	const {cumulatedValueInV3Vaults} = useYearn();
 	const {isActive, address, openLoginModal, onSwitchChain} = useWeb3();
 
 	const formatedYouHave = useMemo((): string => {

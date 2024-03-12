@@ -114,6 +114,17 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 				</div>
 			)}
 
+			{currentVault?.info.uiNotice && (
+				<div
+					aria-label={'Migration Warning'}
+					className={'col-span-12 mt-10'}>
+					<div className={'w-full rounded-3xl bg-neutral-900 p-6 text-neutral-0'}>
+						<b className={'text-lg'}>{'Oh look, an important message for you to read!'}</b>
+						<p className={'mt-2'}>{currentVault?.info.uiNotice}</p>
+					</div>
+				</div>
+			)}
+
 			<div className={'col-span-12 mt-6 flex flex-col rounded-t-3xl bg-neutral-100'}>
 				<div className={'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'}>
 					<nav className={'hidden flex-row items-center space-x-10 md:flex'}>

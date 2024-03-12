@@ -3,10 +3,10 @@ import {cl} from '@builtbymom/web3/utils';
 import {Popover, Transition} from '@headlessui/react';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {useYearn} from '@yearn-finance/web-lib/contexts/useYearn';
 import {IconSettings} from '@yearn-finance/web-lib/icons/IconSettings';
 import {Solver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
 import {Switch} from '@common/components/Switch';
+import {useYearn} from '@common/contexts/useYearn';
 
 import type {ReactElement} from 'react';
 import type {TSolver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';

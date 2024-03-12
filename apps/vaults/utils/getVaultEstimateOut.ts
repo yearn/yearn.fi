@@ -1,4 +1,5 @@
 import {assert, assertAddress, toBigInt, toNormalizedBN, zeroNormalizedBN} from '@builtbymom/web3/utils';
+import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
 import {readContract} from '@wagmi/core';
 import {VAULT_ABI} from '@yearn-finance/web-lib/utils/abi/vault.abi';
 
@@ -26,7 +27,7 @@ export async function getVaultEstimateOut(props: TGetVaultEstimateOutProps): Pro
 	const inputDecimals = toBigInt(props.inputDecimals || 18);
 	const powerDecimals = toBigInt(10) ** inputDecimals;
 	const contractAddress = props.isDepositing ? props.outputToken : props.inputToken;
-	const pps = await readContract({
+	const pps = await readContract(retrieveConfig(), {
 		abi: VAULT_ABI,
 		address: contractAddress,
 		functionName: 'pricePerShare',

@@ -28,7 +28,7 @@ function useQueryArguments({defaultCategories}: {defaultCategories?: string[]}):
 	const [categories, set_categories] = useState<string[] | null>(defaultCategories || []);
 	const [chains, set_chains] = useState<number[] | null>(allChains || []);
 	const [sortDirection, set_sortDirection] = useState<string | null>(null);
-	const [sortBy, set_sortBy] = useState<string | null>(null);
+	const [sortBy, set_sortBy] = useState<string | null>('deposited');
 
 	const handleQuery = useCallback(
 		(_searchParams: URLSearchParams): void => {

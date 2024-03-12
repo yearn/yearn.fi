@@ -15,13 +15,12 @@ import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
 import {Wrapper} from '@vaults/Wrapper';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {useYearn} from '@yearn-finance/web-lib/contexts/useYearn';
-import {useYearnWallet} from '@yearn-finance/web-lib/contexts/useYearnWallet';
 import {usePagination} from '@yearn-finance/web-lib/hooks/usePagination';
 import {IconChain} from '@yearn-finance/web-lib/icons/IconChain';
 import {InfoTooltip} from '@common/components/InfoTooltip';
 import {ListHead} from '@common/components/ListHead';
 import {Pagination} from '@common/components/Pagination';
+import {useYearn} from '@common/contexts/useYearn';
 
 import type {NextRouter} from 'next/router';
 import type {ReactElement, ReactNode} from 'react';
@@ -41,7 +40,7 @@ function Counter({value}: {value: number}): ReactElement {
 }
 
 function HeaderUserPosition(): ReactElement {
-	const {cumulatedValueInV2Vaults} = useYearnWallet();
+	const {cumulatedValueInV2Vaults} = useYearn();
 	const {earned} = useYearn();
 	const {isActive, address, openLoginModal, onSwitchChain} = useWeb3();
 

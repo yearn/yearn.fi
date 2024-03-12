@@ -6,8 +6,8 @@ import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
 import {VaultsV3ListRow} from '@vaults-v3/components/list/VaultsV3ListRow';
 import {ALL_VAULTSV3_CATEGORIES_KEYS} from '@vaults-v3/constants';
 import {Button} from '@yearn-finance/web-lib/components/Button';
-import {useYearn} from '@yearn-finance/web-lib/contexts/useYearn';
 import {SearchBar} from '@common/components/SearchBar';
+import {useYearn} from '@common/contexts/useYearn';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';

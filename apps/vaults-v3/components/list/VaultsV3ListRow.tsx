@@ -1,14 +1,14 @@
 import {useMemo} from 'react';
 import Link from 'next/link';
-import {cl, formatAmount, isZero, toAddress, toNormalizedBN} from '@builtbymom/web3/utils';
+import {cl, formatAmount, isZero, toAddress, toBigInt, toNormalizedBN} from '@builtbymom/web3/utils';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {useYearnWallet} from '@yearn-finance/web-lib/contexts/useYearnWallet';
 import {useYearnBalance} from '@yearn-finance/web-lib/hooks/useYearnBalance';
 import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {RenderAmount} from '@common/components/RenderAmount';
+import {useYearn} from '@common/contexts/useYearn';
 
 import {VaultChainTag} from '../VaultChainTag';
 
@@ -387,7 +387,7 @@ function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}): Reac
 }
 
 export function VaultStakedAmount({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const {getToken} = useYearnWallet();
+	const {getToken} = useYearn();
 
 	const staked = useMemo((): bigint => {
 		const vaultToken = getToken({chainID: currentVault.chainID, address: currentVault.address});
@@ -420,6 +420,7 @@ export function VaultStakedAmount({currentVault}: {currentVault: TYDaemonVault})
 }
 
 export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+	const da = useYearn();
 	const balanceOfWant = useYearnBalance({chainID: currentVault.chainID, address: currentVault.token.address});
 	const balanceOfCoin = useYearnBalance({chainID: currentVault.chainID, address: ETH_TOKEN_ADDRESS});
 	const balanceOfWrappedCoin = useYearnBalance({
@@ -435,6 +436,11 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 		}
 		return balanceOfWant.raw;
 	}, [balanceOfCoin.raw, balanceOfWant.raw, balanceOfWrappedCoin.raw, currentVault.token.address]);
+
+	console.log(
+		da,
+		Object.values(da?.balances?.[137] || {})?.filter(e => toBigInt(e.balance.raw) > 0n)
+	);
 
 	return (
 		<Link

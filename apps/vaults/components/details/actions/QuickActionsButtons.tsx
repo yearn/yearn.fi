@@ -7,17 +7,16 @@ import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useSolver} from '@vaults/contexts/useSolver';
 import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
 import {Button} from '@yearn-finance/web-lib/components/Button';
-import {useYearn} from '@yearn-finance/web-lib/contexts/useYearn';
-import {useYearnWallet} from '@yearn-finance/web-lib/contexts/useYearnWallet';
 import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {Solver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
+import {useYearn} from '@common/contexts/useYearn';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TNormalizedBN} from '@builtbymom/web3/types';
 
 export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const {onRefresh} = useYearnWallet();
+	const {onRefresh} = useYearn();
 	const {refresh: refreshZapBalances} = useWalletForZap();
 	const {address, provider} = useWeb3();
 	const {isStakingOpBoostedVaults} = useYearn();

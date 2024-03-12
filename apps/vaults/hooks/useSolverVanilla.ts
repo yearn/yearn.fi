@@ -1,13 +1,14 @@
 import {useCallback, useMemo, useRef} from 'react';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {assert, toAddress, toNormalizedBN, zeroNormalizedBN} from '@builtbymom/web3/utils';
+import {allowanceOf, approveERC20} from '@builtbymom/web3/utils/wagmi';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {getVaultEstimateOut} from '@vaults/utils/getVaultEstimateOut';
-import {useYearn} from '@yearn-finance/web-lib/contexts/useYearn';
 import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {allowanceKey} from '@yearn-finance/web-lib/utils/helpers';
 import {Solver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
-import {allowanceOf, approveERC20, deposit, redeemV3Shares, withdrawShares} from '@common/utils/actions';
+import {useYearn} from '@common/contexts/useYearn';
+import {deposit, redeemV3Shares, withdrawShares} from '@common/utils/actions';
 
 import type {TDict, TNormalizedBN} from '@builtbymom/web3/types';
 import type {TTxStatus} from '@builtbymom/web3/utils/wagmi';
