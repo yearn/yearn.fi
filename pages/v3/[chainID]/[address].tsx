@@ -1,5 +1,4 @@
 import {useEffect, useState} from 'react';
-import Link from 'next/link';
 import {useRouter} from 'next/router';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {useFetch} from '@builtbymom/web3/hooks/useFetch';
@@ -82,17 +81,17 @@ function Index(): ReactElement | null {
 	return (
 		<div className={'mx-auto w-full max-w-6xl pt-20 md:pt-32'}>
 			<nav className={`mb-4 self-start md:mb-2 md:hidden`}>
-				<Link
-					href={'/v3'}
-					className={'z-50 w-fit'}>
+				<button
+					className={'z-50 w-fit'}
+					onClick={() => router.back()}>
 					<p
 						className={
 							'flex w-fit text-xs text-neutral-900/70 transition-colors hover:text-neutral-900 md:text-base'
 						}>
 						<span className={'pr-2 leading-[normal]'}>&#10229;</span>
-						{'  Back to vaults'}
+						{'  Back'}
 					</p>
-				</Link>
+				</button>
 			</nav>
 			<header
 				className={cl(
@@ -102,17 +101,17 @@ function Index(): ReactElement | null {
 					'relative flex flex-col items-center justify-center'
 				)}>
 				<nav className={`mb-4 hidden self-start md:mb-2 md:block`}>
-					<Link
-						href={'/v3'}
-						className={'w-fit'}>
+					<button
+						className={'w-fit'}
+						onClick={() => router.back()}>
 						<p
 							className={
 								'flex w-fit text-xs text-neutral-900/70 transition-colors hover:text-neutral-900 md:text-base'
 							}>
 							<span className={'pr-2 leading-[normal]'}>&#10229;</span>
-							{'  Back to vaults'}
+							{'  Back'}
 						</p>
-					</Link>
+					</button>
 				</nav>
 				<div className={'absolute -top-10 md:-top-6'}>
 					<div

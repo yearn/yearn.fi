@@ -20,12 +20,12 @@ type TQueryArgs = {
 	onChangeSortBy: (value: TPossibleSortBy | '') => void;
 	onReset: () => void;
 };
-function useQueryArguments({defaultCategories}: {defaultCategories?: string[]}): TQueryArgs {
+function useQueryArguments(props: {defaultCategories?: string[]; defaultPathname?: string}): TQueryArgs {
 	const allChains = useSupportedChains().map((chain): number => chain.id);
 	const searchParams = useSearchParams();
 	const router = useRouter();
 	const [search, set_search] = useState<string | null>(null);
-	const [categories, set_categories] = useState<string[] | null>(defaultCategories || []);
+	const [categories, set_categories] = useState<string[] | null>(props.defaultCategories || []);
 	const [chains, set_chains] = useState<number[] | null>(allChains || []);
 	const [sortDirection, set_sortDirection] = useState<string | null>(null);
 	const [sortBy, set_sortBy] = useState<string | null>('deposited');
@@ -44,13 +44,15 @@ function useQueryArguments({defaultCategories}: {defaultCategories?: string[]}):
 				const categoriesParam = _searchParams.get('categories');
 				const categoriesParamArray = categoriesParam?.split('_') || [];
 				if (categoriesParamArray.length === 0) {
-					set_categories(defaultCategories || []);
+					set_categories(props.defaultCategories || []);
 					return;
 				}
-				if (categoriesParamArray.length === defaultCategories?.length) {
-					const isEqual = categoriesParamArray.every((c): boolean => defaultCategories?.includes(c));
+				if (categoriesParamArray.length === props.defaultCategories?.length) {
+					const isEqual = categoriesParamArray.every((c): boolean =>
+						Boolean(props.defaultCategories?.includes(c))
+					);
 					if (isEqual) {
-						set_categories(defaultCategories);
+						set_categories(props.defaultCategories);
 						return;
 					}
 				}
@@ -60,7 +62,7 @@ function useQueryArguments({defaultCategories}: {defaultCategories?: string[]}):
 				}
 				set_categories(categoriesParamArray);
 			} else {
-				set_categories(defaultCategories || []);
+				set_categories(props.defaultCategories || []);
 			}
 
 			if (_searchParams.has('chains')) {
@@ -102,7 +104,7 @@ function useQueryArguments({defaultCategories}: {defaultCategories?: string[]}):
 				set_sortDirection(_sortBy);
 			}
 		},
-		[defaultCategories, allChains]
+		[props.defaultCategories, allChains]
 	);
 
 	useMountEffect((): void | VoidFunction => {
@@ -111,7 +113,9 @@ function useQueryArguments({defaultCategories}: {defaultCategories?: string[]}):
 	});
 
 	useDeepCompareEffect((): void | VoidFunction => {
-		handleQuery(searchParams);
+		if (!props.defaultPathname || props.defaultPathname === router.pathname) {
+			handleQuery(searchParams);
+		}
 	}, [searchParams]);
 
 	return {
@@ -157,8 +161,10 @@ function useQueryArguments({defaultCategories}: {defaultCategories?: string[]}):
 				router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
 				return;
 			}
-			if (value.length === defaultCategories?.length) {
-				const isEqual = value.every((category): boolean => defaultCategories?.includes(category));
+			if (value.length === props.defaultCategories?.length) {
+				const isEqual = value.every((category): boolean =>
+					Boolean(props.defaultCategories?.includes(category))
+				);
 				if (isEqual) {
 					queryArgs.categories = undefined;
 					delete queryArgs.categories;
@@ -238,7 +244,7 @@ function useQueryArguments({defaultCategories}: {defaultCategories?: string[]}):
 		},
 		onReset: (): void => {
 			set_search(null);
-			set_categories(defaultCategories || []);
+			set_categories(props.defaultCategories || []);
 			set_chains(allChains || []);
 			set_sortDirection('desc');
 			set_sortBy('featuringScore');

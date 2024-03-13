@@ -1,6 +1,6 @@
 import {useMemo} from 'react';
 import Link from 'next/link';
-import {cl, formatAmount, isZero, toAddress, toBigInt, toNormalizedBN} from '@builtbymom/web3/utils';
+import {cl, formatAmount, isZero, toAddress, toNormalizedBN} from '@builtbymom/web3/utils';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {useYearnBalance} from '@yearn-finance/web-lib/hooks/useYearnBalance';
 import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
@@ -420,7 +420,6 @@ export function VaultStakedAmount({currentVault}: {currentVault: TYDaemonVault})
 }
 
 export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const da = useYearn();
 	const balanceOfWant = useYearnBalance({chainID: currentVault.chainID, address: currentVault.token.address});
 	const balanceOfCoin = useYearnBalance({chainID: currentVault.chainID, address: ETH_TOKEN_ADDRESS});
 	const balanceOfWrappedCoin = useYearnBalance({
@@ -436,11 +435,6 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 		}
 		return balanceOfWant.raw;
 	}, [balanceOfCoin.raw, balanceOfWant.raw, balanceOfWrappedCoin.raw, currentVault.token.address]);
-
-	console.log(
-		da,
-		Object.values(da?.balances?.[137] || {})?.filter(e => toBigInt(e.balance.raw) > 0n)
-	);
 
 	return (
 		<Link

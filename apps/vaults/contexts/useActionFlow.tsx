@@ -334,6 +334,7 @@ export function ActionFlowContextApp({
 				});
 				set_possibleOptionsTo(possibleOptionsFrom);
 				set_possibleOptionsFrom(_possibleOptionsTo);
+				return;
 			}
 
 			const vaultUnderlying = setZapOption({
@@ -661,6 +662,11 @@ export function ActionFlowContextApp({
 					solveVia: tokenData.supportedZaps || []
 				})
 			);
+		});
+		_possibleZapOptionsFrom.sort((a, b): number => {
+			const aBalance = getBalance({address: toAddress(a.value), chainID: currentVault.chainID}).normalized;
+			const bBalance = getBalance({address: toAddress(b.value), chainID: currentVault.chainID}).normalized;
+			return bBalance - aBalance;
 		});
 		set_possibleZapOptionsFrom(_possibleZapOptionsFrom);
 	}, [currentVault.chainID, listZapTokens, currentVault]);

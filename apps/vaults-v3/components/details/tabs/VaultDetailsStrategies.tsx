@@ -17,7 +17,8 @@ import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {vaults} = useYearn();
 	const {sortDirection, sortBy, search, onSearch, onChangeSortDirection, onChangeSortBy} = useQueryArguments({
-		defaultCategories: ALL_VAULTSV3_CATEGORIES_KEYS
+		defaultCategories: ALL_VAULTSV3_CATEGORIES_KEYS,
+		defaultPathname: '/v3/[chainID]/[address]'
 	});
 
 	const vaultList = useMemo((): TYDaemonVault[] => {
