@@ -3613,7 +3613,7 @@
   version "3.0.181"
   resolved "https://registry.yarnpkg.com/@yearn-finance/web-lib/-/web-lib-3.0.181.tgz#faa76317acc3412bcf8f03f30198ecf9af45d707"
   integrity sha512-uB73pFrTMsc/0yFXmK/Zcr8N6/SzWXIpbAR4VEhbZq04+UimPKWMDGB3vG2LBt+tLqHZ7y2V71KCCayvacL3eA==
-  dependencies:
+ dependencies:
     "@builtbymom/web3" "^0.0.43"
     "@headlessui/react" "^1.7.18"
     "@rainbow-me/rainbowkit" "^2.0.1"
