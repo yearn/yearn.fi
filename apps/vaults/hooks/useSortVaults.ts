@@ -1,5 +1,5 @@
 import {useCallback, useMemo} from 'react';
-import {toAddress} from '@builtbymom/web3/utils';
+import {isZero, toAddress} from '@builtbymom/web3/utils';
 import {deserialize, serialize} from '@wagmi/core';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {useYearn} from '@common/contexts/useYearn';
@@ -32,19 +32,47 @@ export function useSortVaults(
 
 	const sortedByForwardAPR = useCallback(
 		(): TYDaemonVaults =>
-			vaultList.sort((a, b): number =>
-				numberSort({
-					a:
-						a.apr?.forwardAPR?.type === ''
-							? (a.apr?.netAPR || 0) + (a.apr?.extra?.stakingRewardsAPR || 0)
-							: (a.apr?.forwardAPR?.netAPR || 0) + (a.apr?.extra?.stakingRewardsAPR || 0),
-					b:
-						b.apr?.forwardAPR?.type === ''
-							? (b.apr?.netAPR || 0) + (b.apr?.extra?.stakingRewardsAPR || 0)
-							: (b.apr?.forwardAPR?.netAPR || 0) + (b.apr?.extra?.stakingRewardsAPR || 0),
+			vaultList.sort((a, b): number => {
+				let aAPR = 0;
+				if (a.apr.forwardAPR.type === '') {
+					aAPR = a.apr.extra.stakingRewardsAPR + a.apr.netAPR;
+				} else if (a.chainID === 1 && a.apr.forwardAPR.composite.boost > 0 && !a.apr.extra.stakingRewardsAPR) {
+					aAPR = a.apr.forwardAPR.netAPR;
+				} else {
+					const sumOfRewardsAPR = a.apr.extra.stakingRewardsAPR + a.apr.extra.gammaRewardAPR;
+					const hasCurrentAPR = !isZero(a?.apr?.forwardAPR.composite.v3OracleCurrentAPR);
+					if (sumOfRewardsAPR > 0) {
+						aAPR = sumOfRewardsAPR + a.apr.forwardAPR.netAPR;
+					} else if (hasCurrentAPR) {
+						aAPR = a.apr.forwardAPR.composite.v3OracleCurrentAPR;
+					} else {
+						aAPR = a.apr.netAPR;
+					}
+				}
+
+				let bAPR = 0;
+				if (b.apr.forwardAPR.type === '') {
+					bAPR = b.apr.extra.stakingRewardsAPR + b.apr.netAPR;
+				} else if (b.chainID === 1 && b.apr.forwardAPR.composite.boost > 0 && !b.apr.extra.stakingRewardsAPR) {
+					bAPR = b.apr.forwardAPR.netAPR;
+				} else {
+					const sumOfRewardsAPR = b.apr.extra.stakingRewardsAPR + b.apr.extra.gammaRewardAPR;
+					const hasCurrentAPR = !isZero(b?.apr?.forwardAPR.composite.v3OracleCurrentAPR);
+					if (sumOfRewardsAPR > 0) {
+						bAPR = sumOfRewardsAPR + b.apr.forwardAPR.netAPR;
+					} else if (hasCurrentAPR) {
+						bAPR = b.apr.forwardAPR.composite.v3OracleCurrentAPR;
+					} else {
+						bAPR = b.apr.netAPR;
+					}
+				}
+
+				return numberSort({
+					a: aAPR,
+					b: bAPR,
 					sortDirection
-				})
-			),
+				});
+			}),
 		[sortDirection, vaultList]
 	);
 
