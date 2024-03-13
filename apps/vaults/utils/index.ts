@@ -1,3 +1,4 @@
+import {zeroAddress} from 'viem';
 import {
 	ARB_WETH_TOKEN_ADDRESS,
 	OPT_WETH_TOKEN_ADDRESS,
@@ -10,7 +11,6 @@ import {
 } from '@yearn-finance/web-lib/utils/constants';
 
 import type {TAddress} from '@builtbymom/web3/types';
-import {zeroAddress} from 'viem';
 
 export function getMessariSubgraphEndpoint(chainID: number): string {
 	switch (chainID) {

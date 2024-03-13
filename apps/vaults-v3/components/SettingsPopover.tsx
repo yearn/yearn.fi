@@ -97,7 +97,7 @@ function ZapSection({chainID}: {chainID: number}): ReactElement {
 
 	return (
 		<>
-			<div className={'my-6 h-[1px] w-full bg-neutral-900/20'} />
+			<div className={'my-6 h-px w-full bg-neutral-900/20'} />
 
 			<div className={'mb-2 flex flex-col space-y-1'}>
 				<Label>{'Zap Provider & slippage'}</Label>
@@ -205,7 +205,7 @@ function StakingSection({currentVault}: {currentVault: TYDaemonVault}): ReactEle
 
 	return (
 		<>
-			<div className={'my-6 h-[1px] w-full bg-neutral-900/20'} />
+			<div className={'my-6 h-px w-full bg-neutral-900/20'} />
 			<div className={'mt-6'}>
 				<Label>{'OP Boosted Vaults'}</Label>
 				<div className={'mt-1 flex flex-row space-x-2'}>
