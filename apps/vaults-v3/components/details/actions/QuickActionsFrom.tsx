@@ -3,9 +3,9 @@ import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {formatAmount, formatCounterValue, handleInputChangeValue, toAddress} from '@builtbymom/web3/utils';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {useYearnBalance} from '@yearn-finance/web-lib/hooks/useYearnBalance';
 import {Dropdown} from '@common/components/TokenDropdown';
 import {useYearn} from '@common/contexts/useYearn';
+import {useYearnBalance} from '@common/hooks/useYearnBalance';
 
 import type {ChangeEvent, ReactElement} from 'react';
 

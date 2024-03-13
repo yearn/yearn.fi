@@ -3,8 +3,8 @@ import {cl, formatCounterValue, formatPercent, toAddress} from '@builtbymom/web3
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useSolver} from '@vaults/contexts/useSolver';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {useYearnTokenPrice} from '@yearn-finance/web-lib/hooks/useYearnTokenPrice';
 import {Dropdown} from '@common/components/TokenDropdown';
+import {useYearnTokenPrice} from '@common/hooks/useYearnTokenPrice';
 
 import type {ReactElement} from 'react';
 

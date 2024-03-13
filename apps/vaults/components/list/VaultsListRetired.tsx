@@ -1,8 +1,8 @@
 import {useMemo} from 'react';
 import Link from 'next/link';
 import {formatAmount, toAddress} from '@builtbymom/web3/utils';
-import {useYearnBalance} from '@yearn-finance/web-lib/hooks/useYearnBalance';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
+import {useYearnBalance} from '@common/hooks/useYearnBalance';
 import {getVaultName} from '@common/utils';
 
 import type {ReactElement} from 'react';

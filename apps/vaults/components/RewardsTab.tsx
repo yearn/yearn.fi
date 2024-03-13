@@ -5,9 +5,9 @@ import {approveERC20, defaultTxStatus} from '@builtbymom/web3/utils/wagmi';
 import {useVaultStakingData} from '@vaults/hooks/useVaultStakingData';
 import {claim as claimAction, stake as stakeAction, unstake as unstakeAction} from '@vaults/utils/actions';
 import {Button} from '@yearn-finance/web-lib/components/Button';
-import {useYearnToken} from '@yearn-finance/web-lib/hooks/useYearnToken';
 import {Input} from '@common/components/Input';
 import {useYearn} from '@common/contexts/useYearn';
+import {useYearnToken} from '@common/hooks/useYearnToken';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';

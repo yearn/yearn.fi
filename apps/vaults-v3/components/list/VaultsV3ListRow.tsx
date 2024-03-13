@@ -2,13 +2,13 @@ import {useMemo} from 'react';
 import Link from 'next/link';
 import {cl, formatAmount, isZero, toAddress, toNormalizedBN} from '@builtbymom/web3/utils';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {useYearnBalance} from '@yearn-finance/web-lib/hooks/useYearnBalance';
 import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {RenderAmount} from '@common/components/RenderAmount';
 import {useYearn} from '@common/contexts/useYearn';
+import {useYearnBalance} from '@common/hooks/useYearnBalance';
 
 import {VaultChainTag} from '../VaultChainTag';
 

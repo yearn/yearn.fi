@@ -3,11 +3,11 @@ import {useBlockNumber, useReadContract} from 'wagmi';
 import {cl, formatCounterValue, formatUSD, isZero, toBigInt, toNormalizedBN} from '@builtbymom/web3/utils';
 import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {useYearnBalance} from '@yearn-finance/web-lib/hooks/useYearnBalance';
-import {useYearnTokenPrice} from '@yearn-finance/web-lib/hooks/useYearnTokenPrice';
 import {copyToClipboard} from '@yearn-finance/web-lib/utils/helpers';
 import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {RenderAmount} from '@common/components/RenderAmount';
+import {useYearnBalance} from '@common/hooks/useYearnBalance';
+import {useYearnTokenPrice} from '@common/hooks/useYearnTokenPrice';
 import {IconQuestion} from '@common/icons/IconQuestion';
 import {getVaultName} from '@common/utils';
 
