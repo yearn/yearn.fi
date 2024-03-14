@@ -6,8 +6,8 @@ import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
 import {VaultsV3ListRow} from '@vaults-v3/components/list/VaultsV3ListRow';
 import {ALL_VAULTSV3_CATEGORIES_KEYS} from '@vaults-v3/constants';
 import {Button} from '@yearn-finance/web-lib/components/Button';
-import {useYearn} from '@yearn-finance/web-lib/contexts/useYearn';
 import {SearchBar} from '@common/components/SearchBar';
+import {useYearn} from '@common/contexts/useYearn';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
@@ -17,7 +17,8 @@ import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {vaults} = useYearn();
 	const {sortDirection, sortBy, search, onSearch, onChangeSortDirection, onChangeSortBy} = useQueryArguments({
-		defaultCategories: ALL_VAULTSV3_CATEGORIES_KEYS
+		defaultCategories: ALL_VAULTSV3_CATEGORIES_KEYS,
+		defaultPathname: '/v3/[chainID]/[address]'
 	});
 
 	const vaultList = useMemo((): TYDaemonVault[] => {

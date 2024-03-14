@@ -3,13 +3,13 @@ import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {useFetch} from '@builtbymom/web3/hooks/useFetch';
 import {isZeroAddress, toAddress, zeroNormalizedBN} from '@builtbymom/web3/utils';
 import {useDeepCompareEffect} from '@react-hookz/web';
-import {useYearnWallet} from '@yearn-finance/web-lib/contexts/useYearnWallet';
 import {useYDaemonBaseURI} from '@yearn-finance/web-lib/hooks/useYDaemonBaseURI';
 import {
 	type TSupportedZaps,
 	type TYDaemonTokenListBalances,
 	yDaemonTokenListBalances
 } from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
+import {useYearn} from '@common/contexts/useYearn';
 
 import type {ReactElement} from 'react';
 import type {TYChainTokens, TYToken} from '@yearn-finance/web-lib/types';
@@ -56,7 +56,7 @@ export const WalletForZapAppContextApp = memo(function WalletForZapAppContextApp
 	children: ReactElement;
 }): ReactElement {
 	const {address} = useWeb3();
-	const {onRefresh} = useYearnWallet();
+	const {onRefresh} = useYearn();
 	const {yDaemonBaseUri} = useYDaemonBaseURI();
 	const [zapTokens, set_zapTokens] = useState<TYChainTokens>({});
 

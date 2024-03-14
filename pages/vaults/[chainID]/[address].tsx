@@ -10,10 +10,10 @@ import {VaultDetailsHeader} from '@vaults/components/details/VaultDetailsHeader'
 import {ActionFlowContextApp} from '@vaults/contexts/useActionFlow';
 import {WithSolverContextApp} from '@vaults/contexts/useSolver';
 import {Wrapper} from '@vaults/Wrapper';
-import {useYearnWallet} from '@yearn-finance/web-lib/contexts/useYearnWallet';
 import {useYDaemonBaseURI} from '@yearn-finance/web-lib/hooks/useYDaemonBaseURI';
 import {yDaemonVaultSchema} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
+import {useYearn} from '@common/contexts/useYearn';
 import {variants} from '@common/utils/animations';
 
 import type {GetStaticPaths, GetStaticProps} from 'next';
@@ -26,7 +26,7 @@ function Index(): ReactElement | null {
 	const {address, isActive} = useWeb3();
 	const router = useRouter();
 
-	const {onRefresh} = useYearnWallet();
+	const {onRefresh} = useYearn();
 	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: Number(router.query.chainID)});
 	const [currentVault, set_currentVault] = useState<TYDaemonVault | undefined>(undefined);
 	const {data: vault, isLoading: isLoadingVault} = useFetch<TYDaemonVault>({
@@ -61,7 +61,7 @@ function Index(): ReactElement | null {
 
 	if (isLoadingVault || !router.query.address) {
 		return (
-			<div className={'relative flex min-h-[100dvh] flex-col px-4 text-center'}>
+			<div className={'relative flex min-h-dvh flex-col px-4 text-center'}>
 				<div className={'mt-[20%] flex h-10 items-center justify-center'}>
 					<span className={'loader'} />
 				</div>

@@ -155,7 +155,7 @@ function VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
 							</div>
 						</div>
 					</div>
-					<div className={'size-full col-span-12 flex flex-col justify-between md:col-span-6'}>
+					<div className={'col-span-12 flex size-full flex-col justify-between md:col-span-6'}>
 						<div className={'grid grid-cols-6 gap-6 md:gap-8'}>
 							<div className={'col-span-2 flex flex-col space-y-0 md:space-y-2'}>
 								<p className={'text-xxs text-neutral-600 md:text-xs'}>{'APR'}</p>

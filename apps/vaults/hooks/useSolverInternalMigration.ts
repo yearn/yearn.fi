@@ -1,6 +1,7 @@
 import {useCallback, useMemo, useRef} from 'react';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {assert, toAddress, toBigInt, toNormalizedBN, zeroNormalizedBN} from '@builtbymom/web3/utils';
+import {allowanceOf, approveERC20, retrieveConfig} from '@builtbymom/web3/utils/wagmi';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {ZAP_CRV_ABI} from '@vaults/utils/abi/zapCRV.abi';
 import {zapCRV} from '@vaults/utils/actions';
@@ -9,7 +10,7 @@ import {readContract} from '@wagmi/core';
 import {MAX_UINT_256, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {Solver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
 import {allowanceKey} from '@common/utils';
-import {allowanceOf, approveERC20, migrateShares} from '@common/utils/actions';
+import {migrateShares} from '@common/utils/actions';
 
 import type {TDict, TNormalizedBN} from '@builtbymom/web3/types';
 import type {TTxStatus} from '@builtbymom/web3/utils/wagmi';
@@ -32,7 +33,7 @@ export function useSolverInternalMigration(): TSolverContext {
 		}
 		request.current = _request;
 		if (request.current.migrator === ZAP_YEARN_VE_CRV_ADDRESS) {
-			const estimateOut = await readContract({
+			const estimateOut = await readContract(retrieveConfig(), {
 				address: ZAP_YEARN_VE_CRV_ADDRESS,
 				abi: ZAP_CRV_ABI,
 				chainId: request.current.chainID,
@@ -131,7 +132,7 @@ export function useSolverInternalMigration(): TSolverContext {
 			assert(request.current, 'Request is not set');
 
 			if (request.current.migrator === ZAP_YEARN_VE_CRV_ADDRESS) {
-				const _expectedOut = await readContract({
+				const _expectedOut = await readContract(retrieveConfig(), {
 					address: ZAP_YEARN_VE_CRV_ADDRESS,
 					abi: ZAP_CRV_ABI,
 					chainId: request.current.chainID,

@@ -3,11 +3,11 @@ import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {useFetch} from '@builtbymom/web3/hooks/useFetch';
 import {formatCounterValue, formatUSD, isZero, toAddress, toBigInt, toNormalizedBN} from '@builtbymom/web3/utils';
 import {useYDaemonBaseURI} from '@yearn-finance/web-lib/hooks/useYDaemonBaseURI';
-import {useYearnBalance} from '@yearn-finance/web-lib/hooks/useYearnBalance';
-import {useYearnTokenPrice} from '@yearn-finance/web-lib/hooks/useYearnTokenPrice';
 import {copyToClipboard} from '@yearn-finance/web-lib/utils/helpers';
 import {yDaemonSingleEarnedSchema} from '@yearn-finance/web-lib/utils/schemas/yDaemonEarnedSchema';
 import {RenderAmount} from '@common/components/RenderAmount';
+import {useYearnBalance} from '@common/hooks/useYearnBalance';
+import {useYearnTokenPrice} from '@common/hooks/useYearnTokenPrice';
 import {IconQuestion} from '@common/icons/IconQuestion';
 import {getVaultName} from '@common/utils';
 

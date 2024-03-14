@@ -1,13 +1,13 @@
-import {useMemo} from 'react';
-import {useContractRead} from 'wagmi';
+import {useEffect, useMemo} from 'react';
+import {useBlockNumber, useReadContract} from 'wagmi';
 import {cl, formatCounterValue, formatUSD, isZero, toBigInt, toNormalizedBN} from '@builtbymom/web3/utils';
 import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {useYearnBalance} from '@yearn-finance/web-lib/hooks/useYearnBalance';
-import {useYearnTokenPrice} from '@yearn-finance/web-lib/hooks/useYearnTokenPrice';
 import {copyToClipboard} from '@yearn-finance/web-lib/utils/helpers';
 import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {RenderAmount} from '@common/components/RenderAmount';
+import {useYearnBalance} from '@common/hooks/useYearnBalance';
+import {useYearnTokenPrice} from '@common/hooks/useYearnTokenPrice';
 import {IconQuestion} from '@common/icons/IconQuestion';
 import {getVaultName} from '@common/utils';
 
@@ -106,16 +106,22 @@ function VaultAPR({apr}: {apr: TYDaemonVault['apr']}): ReactElement {
 }
 
 function ValueInToken(props: {currentVault: TYDaemonVault; vaultPrice: number; deposited: bigint}): ReactElement {
-	const {data: convertedToAsset} = useContractRead({
+	const {data: blockNumber} = useBlockNumber({watch: true});
+
+	const {data: convertedToAsset, refetch} = useReadContract({
 		address: props.currentVault.address,
 		abi: VAULT_V3_ABI,
 		chainId: props.currentVault.chainID,
 		functionName: 'convertToAssets',
 		args: [props.deposited],
-		select: (r): TNormalizedBN => toNormalizedBN(r, props.currentVault.token.decimals),
-		watch: true,
-		keepPreviousData: true
+		query: {
+			select: (r): TNormalizedBN => toNormalizedBN(r, props.currentVault.token.decimals)
+		}
 	});
+
+	useEffect(() => {
+		refetch();
+	}, [blockNumber, refetch]);
 
 	return (
 		<VaultHeaderLineItem

@@ -3,10 +3,10 @@ import {cl} from '@builtbymom/web3/utils';
 import {Popover, Transition} from '@headlessui/react';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {useYearn} from '@yearn-finance/web-lib/contexts/useYearn';
 import {IconSettings} from '@yearn-finance/web-lib/icons/IconSettings';
 import {Solver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
 import {Switch} from '@common/components/Switch';
+import {useYearn} from '@common/contexts/useYearn';
 
 import type {ReactElement} from 'react';
 import type {TSolver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
@@ -97,7 +97,7 @@ function ZapSection({chainID}: {chainID: number}): ReactElement {
 
 	return (
 		<>
-			<div className={'my-6 h-[1px] w-full bg-neutral-900/20'} />
+			<div className={'my-6 h-px w-full bg-neutral-900/20'} />
 
 			<div className={'mb-2 flex flex-col space-y-1'}>
 				<Label>{'Zap Provider & slippage'}</Label>
@@ -205,7 +205,7 @@ function StakingSection({currentVault}: {currentVault: TYDaemonVault}): ReactEle
 
 	return (
 		<>
-			<div className={'my-6 h-[1px] w-full bg-neutral-900/20'} />
+			<div className={'my-6 h-px w-full bg-neutral-900/20'} />
 			<div className={'mt-6'}>
 				<Label>{'OP Boosted Vaults'}</Label>
 				<div className={'mt-1 flex flex-row space-x-2'}>

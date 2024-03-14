@@ -11,9 +11,7 @@ import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
 import {VaultsV3ListRow} from '@vaults-v3/components/list/VaultsV3ListRow';
 import {ALL_VAULTSV3_CATEGORIES_KEYS} from '@vaults-v3/constants';
 import {V3Mask} from '@vaults-v3/Mark';
-import {useYearn} from '@yearn-finance/web-lib/contexts/useYearn';
-import {useYearnWallet} from '@yearn-finance/web-lib/contexts/useYearnWallet';
-import {InfoTooltip} from '@common/components/InfoTooltip';
+import {useYearn} from '@common/contexts/useYearn';
 
 import type {ReactElement, ReactNode} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
@@ -87,7 +85,7 @@ function V3Card(): ReactElement {
 }
 
 function PortfolioCard(): ReactElement {
-	const {cumulatedValueInV3Vaults} = useYearnWallet();
+	const {cumulatedValueInV3Vaults} = useYearn();
 	const {isActive, address, openLoginModal, onSwitchChain} = useWeb3();
 
 	const formatedYouHave = useMemo((): string => {
@@ -146,18 +144,6 @@ function PortfolioCard(): ReactElement {
 						<Counter value={Number(formatedYouHave)} />
 					</b>
 				</div>
-				<div>
-					<div className={'pb-0 text-[#757CA6] md:pb-2'}>
-						{'Earnings'}
-						<InfoTooltip
-							text={
-								'Your earnings are estimated based on available onchain data and some nerdy math stuff.'
-							}
-							size={'sm'}
-						/>
-					</div>
-					<b className={'font-number text-xl text-neutral-900 md:text-3xl'}>{'soon™️'}</b>
-				</div>
 			</div>
 		</div>
 	);
@@ -176,7 +162,10 @@ function ListOfVaults(): ReactElement {
 		onChangeSortDirection,
 		onChangeSortBy,
 		onReset
-	} = useQueryArguments({defaultCategories: [ALL_VAULTSV3_CATEGORIES_KEYS[0]]});
+	} = useQueryArguments({
+		defaultCategories: [ALL_VAULTSV3_CATEGORIES_KEYS[0]],
+		defaultPathname: `/v3`
+	});
 	const {activeVaults} = useVaultFilter(categories, chains, true);
 
 	/* 🔵 - Yearn Finance **************************************************************************

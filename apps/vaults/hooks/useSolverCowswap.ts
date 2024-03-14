@@ -4,16 +4,21 @@ import {BaseError} from 'viem';
 import axios from 'axios';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {assert, isEthAddress, isZeroAddress, toBigInt, toNormalizedBN, zeroNormalizedBN} from '@builtbymom/web3/utils';
-import {defaultTxStatus} from '@builtbymom/web3/utils/wagmi';
+import {
+	allowanceOf,
+	approveERC20,
+	defaultTxStatus,
+	isApprovedERC20,
+	retrieveConfig
+} from '@builtbymom/web3/utils/wagmi';
 import {getEthersSigner} from '@builtbymom/web3/utils/wagmi/ethersAdapter';
 import {OrderBookApi, OrderQuoteSide, OrderSigningUtils} from '@cowprotocol/cow-sdk';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {toast} from '@yearn-finance/web-lib/components/yToast';
-import {useYearn} from '@yearn-finance/web-lib/contexts/useYearn';
 import {MAX_UINT_256, SOLVER_COW_VAULT_RELAYER_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {allowanceKey} from '@yearn-finance/web-lib/utils/helpers';
 import {Solver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
-import {allowanceOf, approveERC20, isApprovedERC20} from '@common/utils/actions';
+import {useYearn} from '@common/contexts/useYearn';
 
 import type {TDict, TNormalizedBN} from '@builtbymom/web3/types';
 import type {TTxResponse, TTxStatus} from '@builtbymom/web3/utils/wagmi';
@@ -187,7 +192,7 @@ export function useSolverCowswap(): TSolverContext {
 			}
 
 			assert(provider, 'Provider is not set');
-			const signer = await getEthersSigner({chainId: chainID});
+			const signer = await getEthersSigner(retrieveConfig());
 			assert(signer, 'No signer available');
 
 			const rawSignature = await OrderSigningUtils.signOrder({...(quote as UnsignedOrder)}, chainID, signer);

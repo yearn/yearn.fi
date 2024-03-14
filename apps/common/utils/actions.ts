@@ -1,15 +1,15 @@
+import {erc20Abi} from 'viem';
 import {assert, assertAddress, toAddress} from '@builtbymom/web3/utils';
-import {handleTx, toWagmiProvider} from '@builtbymom/web3/utils/wagmi';
+import {handleTx, retrieveConfig, toWagmiProvider} from '@builtbymom/web3/utils/wagmi';
 import {getEthZapperContract} from '@vaults/utils';
 import {VAULT_MIGRATOR_ABI} from '@vaults/utils/abi/vaultMigrator.abi';
 import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
 import {ZAP_OPT_ETH_TO_YVETH_ABI} from '@vaults/utils/abi/zapOptEthToYvEth';
-import {erc20ABI, readContract} from '@wagmi/core';
+import {readContract} from '@wagmi/core';
 import {PARTNER_VAULT_ABI} from '@yearn-finance/web-lib/utils/abi/partner.vault.abi';
 import {VAULT_ABI} from '@yearn-finance/web-lib/utils/abi/vault.abi';
 import {ZAP_ETH_TO_YVETH_ABI} from '@yearn-finance/web-lib/utils/abi/zapEthToYvEth.abi';
 import {ZAP_FTM_TO_YVFTM_ABI} from '@yearn-finance/web-lib/utils/abi/zapFtmToYvFTM.abi';
-import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 
 import type {Connector} from 'wagmi';
 import type {TAddress} from '@builtbymom/web3/types';
@@ -24,45 +24,6 @@ function getChainID(chainID: number): number {
 	return chainID;
 }
 
-//Because USDT do not return a boolean on approve, we need to use this ABI
-const ALTERNATE_ERC20_APPROVE_ABI = [
-	{
-		constant: false,
-		inputs: [
-			{name: '_spender', type: 'address'},
-			{name: '_value', type: 'uint256'}
-		],
-		name: 'approve',
-		outputs: [],
-		payable: false,
-		stateMutability: 'nonpayable',
-		type: 'function'
-	}
-] as const;
-
-/* 🔵 - Yearn Finance **********************************************************
- ** isApprovedERC20 is a _VIEW_ function that checks if a token is approved for
- ** a spender.
- ******************************************************************************/
-export async function isApprovedERC20(
-	connector: Connector | undefined,
-	chainID: number,
-	tokenAddress: TAddress,
-	spender: TAddress,
-	amount = MAX_UINT_256
-): Promise<boolean> {
-	const wagmiProvider = await toWagmiProvider(connector as Connector);
-	const result = await readContract({
-		...wagmiProvider,
-		abi: erc20ABI,
-		chainId: getChainID(chainID),
-		address: tokenAddress,
-		functionName: 'allowance',
-		args: [wagmiProvider.address, spender]
-	});
-	return (result || 0n) >= amount;
-}
-
 /* 🔵 - Yearn Finance **********************************************************
  ** allowanceOf is a _VIEW_ function that returns the amount of a token that is
  ** approved for a spender.
@@ -75,47 +36,15 @@ type TAllowanceOf = {
 };
 export async function allowanceOf(props: TAllowanceOf): Promise<bigint> {
 	const wagmiProvider = await toWagmiProvider(props.connector);
-	const result = await readContract({
+	const result = await readContract(retrieveConfig(), {
 		...wagmiProvider,
 		chainId: getChainID(props.chainID),
-		abi: erc20ABI,
+		abi: erc20Abi,
 		address: props.tokenAddress,
 		functionName: 'allowance',
 		args: [wagmiProvider.address, props.spenderAddress]
 	});
 	return result || 0n;
-}
-
-/* 🔵 - Yearn Finance **********************************************************
- ** approveERC20 is a _WRITE_ function that approves a token for a spender.
- **
- ** @param spenderAddress - The address of the spender.
- ** @param amount - The amount of collateral to deposit.
- ******************************************************************************/
-type TApproveERC20 = TWriteTransaction & {
-	spenderAddress: TAddress | undefined;
-	amount: bigint;
-};
-export async function approveERC20(props: TApproveERC20): Promise<TTxResponse> {
-	assertAddress(props.spenderAddress, 'spenderAddress');
-	assertAddress(props.contractAddress);
-
-	props.onTrySomethingElse = async (): Promise<TTxResponse> => {
-		assertAddress(props.spenderAddress, 'spenderAddress');
-		return await handleTx(props, {
-			address: props.contractAddress,
-			abi: ALTERNATE_ERC20_APPROVE_ABI,
-			functionName: 'approve',
-			args: [props.spenderAddress, props.amount]
-		});
-	};
-
-	return await handleTx(props, {
-		address: props.contractAddress,
-		abi: erc20ABI,
-		functionName: 'approve',
-		args: [props.spenderAddress, props.amount]
-	});
 }
 
 /* 🔵 - Yearn Finance **********************************************************

@@ -7,6 +7,7 @@
 -   Chores: Move yCRV out to https://ycrv.yearn.fi. (13/01/2024)
 -   Chores: Move yETH out to https://yeth.yearn.fi. (13/01/2024)
 -   Chores: Update the dependencies to use BuiltByMom and WebLib upgraded. (13/02/2024)
+-   Chores: Various minor improvements
 
 # 0.3.7
 

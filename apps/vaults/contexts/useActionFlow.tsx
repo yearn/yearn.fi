@@ -16,8 +16,6 @@ import {useMountEffect, useUpdateEffect} from '@react-hookz/web';
 import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
 import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
 import {setZapOption} from '@vaults/utils/zapOptions';
-import {useYearn} from '@yearn-finance/web-lib/contexts/useYearn';
-import {useYearnWallet} from '@yearn-finance/web-lib/contexts/useYearnWallet';
 import {VAULT_ABI} from '@yearn-finance/web-lib/utils/abi/vault.abi';
 import {
 	ETH_TOKEN_ADDRESS,
@@ -31,6 +29,7 @@ import {
 } from '@yearn-finance/web-lib/utils/constants';
 import {Solver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
 import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
+import {useYearn} from '@common/contexts/useYearn';
 
 import externalzapOutTokenList from '../../common/utils/externalZapOutTokenList.json';
 
@@ -153,7 +152,7 @@ export function ActionFlowContextApp({
 	currentVault: TYDaemonVault;
 }): React.ReactElement {
 	const {address} = useWeb3();
-	const {getBalance} = useYearnWallet();
+	const {getBalance} = useYearn();
 	const {listTokens: listZapTokens} = useWalletForZap();
 	const {zapProvider, isStakingOpBoostedVaults} = useYearn();
 	const [possibleOptionsFrom, set_possibleOptionsFrom] = useState<TDropdownOption[]>([]);
@@ -176,7 +175,9 @@ export function ActionFlowContextApp({
 				args: [toAddress(address)]
 			}
 		],
-		select: (results): bigint => decodeAsBigInt(results[0], decodeAsBigInt(results[1], 0n))
+		query: {
+			select: (results): bigint => decodeAsBigInt(results[0], decodeAsBigInt(results[1], 0n))
+		}
 	});
 
 	//Combine selectedOptionFrom, selectedOptionTo and amount in a useReducer
@@ -333,6 +334,7 @@ export function ActionFlowContextApp({
 				});
 				set_possibleOptionsTo(possibleOptionsFrom);
 				set_possibleOptionsFrom(_possibleOptionsTo);
+				return;
 			}
 
 			const vaultUnderlying = setZapOption({
@@ -660,6 +662,11 @@ export function ActionFlowContextApp({
 					solveVia: tokenData.supportedZaps || []
 				})
 			);
+		});
+		_possibleZapOptionsFrom.sort((a, b): number => {
+			const aBalance = getBalance({address: toAddress(a.value), chainID: currentVault.chainID}).normalized;
+			const bBalance = getBalance({address: toAddress(b.value), chainID: currentVault.chainID}).normalized;
+			return bBalance - aBalance;
 		});
 		set_possibleZapOptionsFrom(_possibleZapOptionsFrom);
 	}, [currentVault.chainID, listZapTokens, currentVault]);

@@ -1,12 +1,15 @@
 import {Fragment, useEffect, useMemo, useState} from 'react';
 import {useRouter} from 'next/router';
+import {watchAsset} from 'viem/actions';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {useFetch} from '@builtbymom/web3/hooks/useFetch';
 import {assert, isZero, toAddress, toBigInt, toNormalizedValue} from '@builtbymom/web3/utils';
+import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
 import {Listbox, Transition} from '@headlessui/react';
 import {VaultDetailsAbout} from '@vaults/components/details/tabs/VaultDetailsAbout';
 import {VaultDetailsHistorical} from '@vaults/components/details/tabs/VaultDetailsHistorical';
 import {VaultDetailsStrategies} from '@vaults/components/details/tabs/VaultDetailsStrategies';
+import {getConnectorClient} from '@wagmi/core';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {useYDaemonBaseURI} from '@yearn-finance/web-lib/hooks/useYDaemonBaseURI';
 import {IconAddToMetamask} from '@yearn-finance/web-lib/icons/IconAddToMetamask';
@@ -224,8 +227,8 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 	): Promise<void> {
 		try {
 			assert(provider, 'Provider is not set');
-			const walletClient = await provider.getWalletClient();
-			await walletClient.watchAsset({
+			const walletClient = getConnectorClient(retrieveConfig()) as any;
+			await watchAsset(walletClient, {
 				type: 'ERC20',
 				options: {
 					address: toAddress(address),
