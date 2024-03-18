@@ -235,7 +235,7 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 	 ** Display the current spot APR, retrieved from the V3Oracle, only if the current APR is
 	 ** greater than 0.
 	 **********************************************************************************************/
-	const hasCurrentAPR = !isZero(currentVault?.apr?.forwardAPR.composite.v3OracleCurrentAPR);
+	const hasCurrentAPR = !isZero(currentVault?.apr.forwardAPR.netAPR);
 	if (hasCurrentAPR) {
 		return (
 			<div className={'flex flex-col md:text-right'}>
@@ -246,7 +246,7 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 						{currentVault.boosted ? '⚡️ ' : ''}
 						<RenderAmount
 							shouldHideTooltip
-							value={currentVault?.apr?.forwardAPR.composite.v3OracleCurrentAPR}
+							value={currentVault?.apr.forwardAPR.netAPR}
 							symbol={'percent'}
 							decimals={6}
 						/>

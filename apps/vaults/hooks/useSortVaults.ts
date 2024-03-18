@@ -40,11 +40,11 @@ export function useSortVaults(
 					aAPR = a.apr.forwardAPR.netAPR;
 				} else {
 					const sumOfRewardsAPR = a.apr.extra.stakingRewardsAPR + a.apr.extra.gammaRewardAPR;
-					const hasCurrentAPR = !isZero(a?.apr?.forwardAPR.composite.v3OracleCurrentAPR);
+					const hasCurrentAPR = !isZero(a?.apr.forwardAPR.netAPR);
 					if (sumOfRewardsAPR > 0) {
 						aAPR = sumOfRewardsAPR + a.apr.forwardAPR.netAPR;
 					} else if (hasCurrentAPR) {
-						aAPR = a.apr.forwardAPR.composite.v3OracleCurrentAPR;
+						aAPR = a.apr.forwardAPR.netAPR;
 					} else {
 						aAPR = a.apr.netAPR;
 					}
@@ -57,11 +57,11 @@ export function useSortVaults(
 					bAPR = b.apr.forwardAPR.netAPR;
 				} else {
 					const sumOfRewardsAPR = b.apr.extra.stakingRewardsAPR + b.apr.extra.gammaRewardAPR;
-					const hasCurrentAPR = !isZero(b?.apr?.forwardAPR.composite.v3OracleCurrentAPR);
+					const hasCurrentAPR = !isZero(b?.apr.forwardAPR.netAPR);
 					if (sumOfRewardsAPR > 0) {
 						bAPR = sumOfRewardsAPR + b.apr.forwardAPR.netAPR;
 					} else if (hasCurrentAPR) {
-						bAPR = b.apr.forwardAPR.composite.v3OracleCurrentAPR;
+						bAPR = b.apr.forwardAPR.netAPR;
 					} else {
 						bAPR = b.apr.netAPR;
 					}

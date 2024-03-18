@@ -47,7 +47,7 @@ function VaultAPR({apr}: {apr: TYDaemonVault['apr']}): ReactElement {
 	const monthlyAPR = apr.netAPR + apr.extra.stakingRewardsAPR;
 	const weeklyAPR = apr.points.weekAgo;
 	const netAPR = apr.netAPR + extraAPR;
-	const currentAPR = apr?.forwardAPR.composite.v3OracleCurrentAPR;
+	const currentAPR = apr.forwardAPR.netAPR;
 
 	if (apr.forwardAPR.type === '' && extraAPR === 0) {
 		return (
