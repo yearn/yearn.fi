@@ -209,6 +209,20 @@ export function VaultInfo({currentVault}: {currentVault: TYDaemonVault}): ReactE
 						</a>
 					</div>
 				) : null}
+
+				{currentVault.info.sourceURL.includes('gamma') ? (
+					<div className={'flex flex-col items-center md:flex-row'}>
+						<p className={'w-full text-sm text-neutral-500 md:w-44'}>{'Gamma Pair'}</p>
+						<a
+							href={currentVault.info.sourceURL}
+							target={'_blank'}
+							rel={'noopener noreferrer'}
+							className={'font-number whitespace-nowrap text-sm text-neutral-900 hover:underline'}
+							suppressHydrationWarning>
+							{currentVault.info.sourceURL}
+						</a>
+					</div>
+				) : null}
 			</div>
 		</div>
 	);
