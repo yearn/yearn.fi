@@ -26,7 +26,7 @@
 		"@yearn-finance/web-lib": "^3.0.181",
 		"axios": "^1.6.7",
 		"ethers": "5.7.2",
-		"framer-motion": "^11.0.10",
+		"framer-motion": "^11.0.14",
 		"graphql": "^16.8.1",
 		"graphql-request": "^6.1.0",
 		"next": "^14.0.4",
