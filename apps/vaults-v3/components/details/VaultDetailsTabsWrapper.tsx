@@ -2,7 +2,7 @@ import {Fragment, useEffect, useMemo, useState} from 'react';
 import {useRouter} from 'next/router';
 import {watchAsset} from 'viem/actions';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {assert, cl, isZero, toAddress} from '@builtbymom/web3/utils';
+import {assert, cl, toAddress} from '@builtbymom/web3/utils';
 import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
 import {Listbox, Transition} from '@headlessui/react';
 import {VaultInfo} from '@vaults/components/details/tabs/VaultDetailsTabsWrapper';
@@ -45,7 +45,10 @@ function Tabs({hasStrategies, selectedAboutTabIndex, set_selectedAboutTabIndex}:
 				{value: 2, label: 'Info', slug: 'info'}
 			];
 		}
-		return [{value: 0, label: 'About', slug: 'about'}];
+		return [
+			{value: 0, label: 'About', slug: 'about'},
+			{value: 2, label: 'Info', slug: 'info'}
+		];
 	}, [hasStrategies]);
 
 	useEffect((): void => {
@@ -224,11 +227,11 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 
 			<div className={'-mt-0.5 h-0.5 w-full bg-neutral-300'} />
 
-			<Renderable shouldRender={(currentVault && isZero(selectedAboutTabIndex)) || !hasStrategies}>
+			<Renderable shouldRender={currentVault && selectedAboutTabIndex === 0}>
 				<VaultDetailsAbout currentVault={currentVault} />
 			</Renderable>
 
-			<Renderable shouldRender={currentVault && selectedAboutTabIndex === 1 && hasStrategies}>
+			<Renderable shouldRender={currentVault && selectedAboutTabIndex === 1}>
 				<VaultDetailsStrategies currentVault={currentVault} />
 			</Renderable>
 
