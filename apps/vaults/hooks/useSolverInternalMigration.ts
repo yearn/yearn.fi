@@ -133,7 +133,7 @@ export function useSolverInternalMigration(): TSolverContext {
 
 			if (request.current.migrator === ZAP_YEARN_VE_CRV_ADDRESS) {
 				const _expectedOut = await readContract(retrieveConfig(), {
-					address: ZAP_YEARN_VE_CRV_ADDRESS,
+					address: request.current.migrator,
 					abi: ZAP_CRV_ABI,
 					chainId: request.current.chainID,
 					functionName: 'calc_expected_out',
@@ -146,7 +146,7 @@ export function useSolverInternalMigration(): TSolverContext {
 				const result = await zapCRV({
 					connector: provider,
 					chainID: request.current.chainID,
-					contractAddress: ZAP_YEARN_VE_CRV_ADDRESS,
+					contractAddress: request.current.migrator,
 					inputToken: request.current.inputToken.value, //_input_token
 					outputToken: request.current.outputToken.value, //_output_token
 					amount: request.current.inputAmount, //_amount

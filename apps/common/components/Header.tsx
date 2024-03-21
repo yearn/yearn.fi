@@ -110,9 +110,6 @@ function AppHeader(props: {supportedNetworks: Chain[]}): ReactElement {
 			return [HOME_MENU, ...APPS[AppName.VEYFI].menu];
 		}
 
-		if (pathname.startsWith('/ybribe')) {
-			return [HOME_MENU, ...APPS[AppName.YBRIBE].menu];
-		}
 		return [
 			HOME_MENU,
 			{

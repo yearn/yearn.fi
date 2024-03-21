@@ -106,18 +106,6 @@ const apps = [
 				priority
 			/>
 		)
-	},
-	{
-		href: 'https://yBribe.yearn.fi',
-		title: 'yBribe',
-		description: 'sell votes, or buy them.\njust like democracy.',
-		icon: (
-			<LogoYearn
-				className={'size-[100px]'}
-				back={'text-neutral-900'}
-				front={'text-neutral-0'}
-			/>
-		)
 	}
 ];
 function AppBox({app}: {app: (typeof apps)[0]}): ReactElement {

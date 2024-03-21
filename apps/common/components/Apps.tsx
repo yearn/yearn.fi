@@ -15,7 +15,6 @@ export enum AppName {
 	VAULTS = 'Vaults',
 	YCRV = 'yCRV',
 	VEYFI = 'veYFI',
-	YBRIBE = 'yBribe',
 	YETH = 'yETH',
 	YPRISMA = 'yPrisma',
 	JUICED = 'Juiced'
@@ -140,19 +139,6 @@ export const APPS: {[key in AppName]: TApp} = {
 				src={`${process.env.BASE_YEARN_ASSETS_URI}/1/0xe3668873d944e4a949da05fc8bde419eff543882/logo-128.png`}
 				loading={'eager'}
 				priority
-			/>
-		)
-	},
-	yBribe: {
-		name: AppName.YBRIBE,
-		href: 'https://yBribe.yearn.fi',
-		menu: [],
-		manifest: {} as TMetaFile,
-		icon: (
-			<LogoYearn
-				className={'size-8'}
-				back={'text-neutral-900'}
-				front={'text-neutral-0'}
 			/>
 		)
 	}

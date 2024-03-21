@@ -2,7 +2,7 @@ import {assert, assertAddress} from '@builtbymom/web3/utils';
 import {handleTx} from '@builtbymom/web3/utils/wagmi';
 import {STAKING_REWARDS_ABI} from '@vaults/utils/abi/stakingRewards.abi';
 import {STAKING_REWARDS_ZAP_ABI} from '@vaults/utils/abi/stakingRewardsZap.abi';
-import {STAKING_REWARDS_ZAP_ADDRESS, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {STAKING_REWARDS_ZAP_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 
 import {ZAP_CRV_ABI} from './abi/zapCRV.abi';
 
@@ -111,14 +111,14 @@ type TZapYCRV = TWriteTransaction & {
 export async function zapCRV(props: TZapYCRV): Promise<TTxResponse> {
 	const minAmountWithSlippage = props.minAmount - (props.minAmount * props.slippage) / 10_000n;
 
-	assertAddress(ZAP_YEARN_VE_CRV_ADDRESS, 'ZAP_YEARN_VE_CRV_ADDRESS');
+	assertAddress(props.contractAddress, 'props.contractAddress');
 	assertAddress(props.inputToken, 'inputToken');
 	assertAddress(props.outputToken, 'outputToken');
 	assert(props.amount > 0n, 'Amount must be greater than 0');
 	assert(props.minAmount > 0n, 'Min amount must be greater than 0');
 
 	return await handleTx(props, {
-		address: ZAP_YEARN_VE_CRV_ADDRESS,
+		address: props.contractAddress,
 		abi: ZAP_CRV_ABI,
 		functionName: 'zap',
 		args: [props.inputToken, props.outputToken, props.amount, minAmountWithSlippage]
