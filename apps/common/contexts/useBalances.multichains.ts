@@ -13,7 +13,6 @@ import {getNetwork} from '@builtbymom/web3/utils/wagmi/utils';
 import {useDeepCompareMemo} from '@react-hookz/web';
 import {deserialize, multicall, serialize} from '@wagmi/core';
 import {type MulticallParameters} from '@wagmi/core';
-import {useWhyDidYouUpdate} from '@common/hooks/useWhyDidYouUpdate';
 
 import type {DependencyList} from 'react';
 import type {Connector} from 'wagmi';
@@ -54,7 +53,7 @@ type TDataRef = {
 	balances: TChainTokens;
 };
 
-type TUpdates = TDict<TToken & {lastUpdate: number}>; // key=chainID/address, value=timestamp
+type TUpdates = TDict<TToken & {lastUpdate: number; owner: TAddress}>; // key=chainID/address, value=timestamp
 const TOKEN_UPDATE: TUpdates = {};
 
 /*******************************************************************************
@@ -73,8 +72,8 @@ async function performCall(
 	chainID: number,
 	calls: MulticallParameters['contracts'][],
 	tokens: TUseBalancesTokens[],
-	prices?: TPricesChain,
-	hasOwnerAddress = true
+	ownerAddress: TAddress,
+	prices?: TPricesChain
 ): Promise<[TDict<TToken>, Error | undefined]> {
 	const _data: TDict<TToken> = {};
 	const results = await multicall(retrieveConfig(), {
@@ -86,6 +85,7 @@ async function performCall(
 	for (const element of tokens) {
 		const {address, decimals: injectedDecimals, name: injectedName, symbol: injectedSymbol} = element;
 		let balanceOf = 0n;
+		const hasOwnerAddress = Boolean(ownerAddress) && !isZeroAddress(ownerAddress);
 		if (hasOwnerAddress) {
 			balanceOf = decodeAsBigInt(results[rIndex++]);
 		}
@@ -113,6 +113,7 @@ async function performCall(
 		};
 		TOKEN_UPDATE[`${chainID}/${address}`] = {
 			..._data[address],
+			owner: toAddress(ownerAddress),
 			lastUpdate: Date.now()
 		};
 	}
@@ -157,13 +158,8 @@ async function getBalances(
 	}
 
 	try {
-		const [callResult] = await performCall(
-			chainID,
-			calls,
-			tokens,
-			prices,
-			Boolean(ownerAddress) && !isZeroAddress(ownerAddress)
-		);
+		// console.warn(`Retrieving balances for ${calls.length} tokens on chain ${chainID}`);
+		const [callResult] = await performCall(chainID, calls, tokens, toAddress(ownerAddress), prices);
 		result = {...result, ...callResult};
 		return [result, undefined];
 	} catch (_error) {
@@ -249,24 +245,30 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 		const updated: TChainTokens = {};
 		for (const [chainIDStr, tokens] of Object.entries(tokensPerChainID)) {
 			const chainID = Number(chainIDStr);
-			const tokenUpdateLastUpdate = TOKEN_UPDATE[`${chainID}/${toAddress(userAddress)}`]?.lastUpdate;
-			if (tokenUpdateLastUpdate && Date.now() - tokenUpdateLastUpdate < 60_000) {
-				const tokenData = TOKEN_UPDATE[`${chainID}/${toAddress(userAddress)}`];
-				const {lastUpdate, ...noTimeStamp} = tokenData;
-				lastUpdate;
-				if (!data.current.balances[chainID]) {
-					data.current.balances[chainID] = {};
+			const relevantTokens = [];
+			for (const token of tokens) {
+				const tokenUpdateInfo = TOKEN_UPDATE[`${chainID}/${toAddress(token.address)}`];
+				if (tokenUpdateInfo?.lastUpdate && Date.now() - tokenUpdateInfo?.lastUpdate < 60_000) {
+					if (toAddress(tokenUpdateInfo.owner) === toAddress(userAddress)) {
+						const tokenData = TOKEN_UPDATE[`${chainID}/${toAddress(token.address)}`];
+						if (tokenData) {
+							if (!data.current.balances[chainID]) {
+								data.current.balances[chainID] = {};
+							}
+							data.current.balances[chainID][tokenData.address] = {
+								...data.current.balances[chainID][tokenData.address],
+								...tokenData
+							};
+							continue;
+						}
+					}
 				}
-				data.current.balances[chainID][noTimeStamp.address] = {
-					...data.current.balances[chainID][noTimeStamp.address],
-					...noTimeStamp
-				};
-				continue;
+				relevantTokens.push(token);
 			}
 
 			const chunks = [];
-			for (let i = 0; i < tokens.length; i += 5_000) {
-				chunks.push(tokens.slice(i, i + 5_000));
+			for (let i = 0; i < relevantTokens.length; i += 5_000) {
+				chunks.push(relevantTokens.slice(i, i + 5_000));
 			}
 
 			for (const chunkTokens of chunks) {
@@ -344,24 +346,31 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 			const updated: TChainTokens = {};
 			for (const [chainIDStr, tokens] of Object.entries(tokensPerChainID)) {
 				const chainID = Number(chainIDStr);
-				const tokenUpdateLastUpdate = TOKEN_UPDATE[`${chainID}/${toAddress(userAddress)}`]?.lastUpdate;
-				if (tokenUpdateLastUpdate && Date.now() - tokenUpdateLastUpdate < 60_000) {
-					const tokenData = TOKEN_UPDATE[`${chainID}/${toAddress(userAddress)}`];
-					const {lastUpdate, ...noTimeStamp} = tokenData;
-					lastUpdate;
-					if (!data.current.balances[chainID]) {
-						data.current.balances[chainID] = {};
+				const relevantTokens = [];
+
+				for (const token of tokens) {
+					const tokenUpdateInfo = TOKEN_UPDATE[`${chainID}/${toAddress(token.address)}`];
+					if (tokenUpdateInfo?.lastUpdate && Date.now() - tokenUpdateInfo?.lastUpdate < 60_000) {
+						if (toAddress(tokenUpdateInfo.owner) === toAddress(userAddress)) {
+							const tokenData = TOKEN_UPDATE[`${chainID}/${toAddress(token.address)}`];
+							if (tokenData) {
+								if (!data.current.balances[chainID]) {
+									data.current.balances[chainID] = {};
+								}
+								data.current.balances[chainID][tokenData.address] = {
+									...data.current.balances[chainID][tokenData.address],
+									...tokenData
+								};
+								continue;
+							}
+						}
 					}
-					data.current.balances[chainID][noTimeStamp.address] = {
-						...data.current.balances[chainID][noTimeStamp.address],
-						...noTimeStamp
-					};
-					continue;
+					relevantTokens.push(token);
 				}
 
 				const chunks = [];
-				for (let i = 0; i < tokens.length; i += 5_000) {
-					chunks.push(tokens.slice(i, i + 5_000));
+				for (let i = 0; i < relevantTokens.length; i += 5_000) {
+					chunks.push(relevantTokens.slice(i, i + 5_000));
 				}
 				for (const chunkTokens of chunks) {
 					const [newRawData, err] = await getBalances(chainID || 1, toAddress(userAddress), chunkTokens);
@@ -433,8 +442,6 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 		[props?.prices]
 	);
 
-	useWhyDidYouUpdate('useBalances', {stringifiedTokens});
-
 	/***************************************************************************
 	 ** Everytime the stringifiedTokens change, we need to update the balances.
 	 ** This is the main hook and is optimized for performance, using a worker
@@ -459,24 +466,31 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 
 		for (const [chainIDStr, tokens] of Object.entries(tokensPerChainID)) {
 			const chainID = Number(chainIDStr);
-			const tokenUpdateLastUpdate = TOKEN_UPDATE[`${chainID}/${toAddress(userAddress)}`]?.lastUpdate;
-			if (tokenUpdateLastUpdate && Date.now() - tokenUpdateLastUpdate < 60_000) {
-				const tokenData = TOKEN_UPDATE[`${chainID}/${toAddress(userAddress)}`];
-				const {lastUpdate, ...noTimeStamp} = tokenData;
-				lastUpdate;
-				if (!data.current.balances[chainID]) {
-					data.current.balances[chainID] = {};
+			const relevantTokens = [];
+
+			for (const token of tokens) {
+				const tokenUpdateInfo = TOKEN_UPDATE[`${chainID}/${toAddress(token.address)}`];
+				if (tokenUpdateInfo?.lastUpdate && Date.now() - tokenUpdateInfo?.lastUpdate < 60_000) {
+					if (toAddress(tokenUpdateInfo.owner) === toAddress(userAddress)) {
+						const tokenData = TOKEN_UPDATE[`${chainID}/${toAddress(token.address)}`];
+						if (tokenData) {
+							if (!data.current.balances[chainID]) {
+								data.current.balances[chainID] = {};
+							}
+							data.current.balances[chainID][tokenData.address] = {
+								...data.current.balances[chainID][tokenData.address],
+								...tokenData
+							};
+							continue;
+						}
+					}
 				}
-				data.current.balances[chainID][noTimeStamp.address] = {
-					...data.current.balances[chainID][noTimeStamp.address],
-					...noTimeStamp
-				};
-				continue;
+				relevantTokens.push(token);
 			}
 
 			const chunks = [];
-			for (let i = 0; i < tokens.length; i += 5_000) {
-				chunks.push(tokens.slice(i, i + 5_000));
+			for (let i = 0; i < relevantTokens.length; i += 5_000) {
+				chunks.push(relevantTokens.slice(i, i + 5_000));
 			}
 			const allPromises = [];
 			for (const chunkTokens of chunks) {
