@@ -24,7 +24,7 @@
 		"@tailwindcss/typography": "^0.5.10",
 		"@wagmi/core": "^2.6.5",
 		"@yearn-finance/web-lib": "^3.0.182",
-		"axios": "^1.6.7",
+		"axios": "^1.6.8",
 		"ethers": "5.7.2",
 		"framer-motion": "^11.0.10",
 		"graphql": "^16.8.1",
