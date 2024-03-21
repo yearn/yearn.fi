@@ -267,8 +267,8 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 			}
 
 			const chunks = [];
-			for (let i = 0; i < relevantTokens.length; i += 5_000) {
-				chunks.push(relevantTokens.slice(i, i + 5_000));
+			for (let i = 0; i < relevantTokens.length; i += 500) {
+				chunks.push(relevantTokens.slice(i, i + 500));
 			}
 
 			for (const chunkTokens of chunks) {
@@ -369,8 +369,8 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 				}
 
 				const chunks = [];
-				for (let i = 0; i < relevantTokens.length; i += 5_000) {
-					chunks.push(relevantTokens.slice(i, i + 5_000));
+				for (let i = 0; i < relevantTokens.length; i += 500) {
+					chunks.push(relevantTokens.slice(i, i + 500));
 				}
 				for (const chunkTokens of chunks) {
 					const [newRawData, err] = await getBalances(chainID || 1, toAddress(userAddress), chunkTokens);
@@ -489,8 +489,8 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 			}
 
 			const chunks = [];
-			for (let i = 0; i < relevantTokens.length; i += 5_000) {
-				chunks.push(relevantTokens.slice(i, i + 5_000));
+			for (let i = 0; i < relevantTokens.length; i += 500) {
+				chunks.push(relevantTokens.slice(i, i + 500));
 			}
 			const allPromises = [];
 			for (const chunkTokens of chunks) {
