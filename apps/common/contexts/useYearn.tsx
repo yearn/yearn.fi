@@ -154,36 +154,11 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 		onRefresh(tokensToRefresh);
 	}, [tokens, onRefresh]);
 
-	const [cumulatedValueInV2Vaults, cumulatedValueInV3Vaults] = useMemo((): [number, number] => {
-		let cumulatedValueInV2Vaults = 0;
-		let cumulatedValueInV3Vaults = 0;
-		for (const [, perChain] of Object.entries(balances)) {
-			for (const [tokenAddress, tokenData] of Object.entries(perChain)) {
-				if (tokenData.value + tokenData.stakingValue === 0) {
-					continue;
-				}
-				if (vaults?.[toAddress(tokenAddress)]) {
-					if (vaults[toAddress(tokenAddress)].version.split('.')?.[0] === '3') {
-						cumulatedValueInV3Vaults += tokenData.value + tokenData.stakingValue;
-					} else {
-						cumulatedValueInV2Vaults += tokenData.value + tokenData.stakingValue;
-					}
-				} else if (vaultsMigrations?.[toAddress(tokenAddress)]) {
-					if (vaultsMigrations[toAddress(tokenAddress)].version.split('.')?.[0] === '3') {
-						cumulatedValueInV3Vaults += tokenData.value + tokenData.stakingValue;
-					} else {
-						cumulatedValueInV2Vaults += tokenData.value + tokenData.stakingValue;
-					}
-				}
-			}
-		}
-		return [cumulatedValueInV2Vaults, cumulatedValueInV3Vaults];
-	}, [vaults, vaultsMigrations, balances]);
-
 	const getToken = useCallback(
 		({address, chainID}: TTokenAndChain): TYToken => balances?.[chainID || 1]?.[address] || defaultToken,
 		[balances]
 	);
+
 	const getBalance = useCallback(
 		({address, chainID}: TTokenAndChain): TNormalizedBN => {
 			if (isZeroAddress(userAddress)) {
@@ -204,6 +179,44 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 		},
 		[prices, balances]
 	);
+
+	const [cumulatedValueInV2Vaults, cumulatedValueInV3Vaults] = useMemo((): [number, number] => {
+		let cumulatedValueInV2Vaults = 0;
+		let cumulatedValueInV3Vaults = 0;
+		for (const [, perChain] of Object.entries(balances)) {
+			for (const [tokenAddress, tokenData] of Object.entries(perChain)) {
+				if (!vaults?.[toAddress(tokenData.address)] || tokenData.value + tokenData.stakingValue === 0) {
+					continue;
+				}
+				const tokenBalance = getBalance({address: tokenData.address, chainID: tokenData.chainID});
+				const tokenPrice = getPrice({address: tokenData.address, chainID: tokenData.chainID});
+				const tokenValue = tokenBalance.normalized * tokenPrice.normalized;
+
+				let stakingValue = 0;
+				const hasStaking = vaults[toAddress(tokenData.address)].staking.available;
+				if (hasStaking) {
+					const stakingAddress = vaults[toAddress(tokenAddress)].staking.address;
+					const stakingBalance = getBalance({address: stakingAddress, chainID: tokenData.chainID});
+					stakingValue = stakingBalance.normalized * tokenPrice.normalized;
+				}
+
+				if (vaults?.[toAddress(tokenAddress)]) {
+					if (vaults[toAddress(tokenAddress)].version.split('.')?.[0] === '3') {
+						cumulatedValueInV3Vaults += tokenValue + stakingValue;
+					} else {
+						cumulatedValueInV2Vaults += tokenValue + stakingValue;
+					}
+				} else if (vaultsMigrations?.[toAddress(tokenAddress)]) {
+					if (vaultsMigrations[toAddress(tokenAddress)].version.split('.')?.[0] === '3') {
+						cumulatedValueInV3Vaults += tokenValue + stakingValue;
+					} else {
+						cumulatedValueInV2Vaults += tokenValue + stakingValue;
+					}
+				}
+			}
+		}
+		return [cumulatedValueInV2Vaults, cumulatedValueInV3Vaults];
+	}, [balances, getBalance, getPrice, vaults, vaultsMigrations]);
 
 	return (
 		<YearnContext.Provider
