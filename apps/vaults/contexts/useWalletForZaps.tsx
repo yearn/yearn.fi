@@ -1,8 +1,8 @@
-import {createContext, memo, useCallback, useContext, useMemo, useState} from 'react';
+import {createContext, memo, useCallback, useContext, useMemo, useRef, useState} from 'react';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {useAsyncTrigger} from '@builtbymom/web3/hooks/useAsyncTrigger';
 import {useFetch} from '@builtbymom/web3/hooks/useFetch';
 import {isZeroAddress, toAddress, zeroNormalizedBN} from '@builtbymom/web3/utils';
-import {useDeepCompareEffect} from '@react-hookz/web';
 import {useYDaemonBaseURI} from '@yearn-finance/web-lib/hooks/useYDaemonBaseURI';
 import {
 	type TSupportedZaps,
@@ -59,6 +59,7 @@ export const WalletForZapAppContextApp = memo(function WalletForZapAppContextApp
 	const {onRefresh} = useYearn();
 	const {yDaemonBaseUri} = useYDaemonBaseURI();
 	const [zapTokens, set_zapTokens] = useState<TYChainTokens>({});
+	const refreshNonce = useRef<number>(0);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 **	Fetching, for this user, the list of tokens available for zaps
@@ -84,28 +85,41 @@ export const WalletForZapAppContextApp = memo(function WalletForZapAppContextApp
 		return tokens;
 	}, [tokensList]);
 
-	useDeepCompareEffect((): void => {
-		const allToRefresh = availableTokens.map(({address, chainID}): TUseBalancesTokens => ({address, chainID}));
-		onRefresh(allToRefresh).then((results): void => {
-			for (const item of Object.values(results)) {
-				for (const element of Object.values(item)) {
-					const {address, chainID} = element;
-					if (!tokensList) {
-						continue;
-					}
-					const token = tokensList[chainID || 1]?.[address];
-					if (!token) {
-						continue;
-					}
-					const supportedZapsElement = element as TYToken & {supportedZaps: TSupportedZaps[]};
-					supportedZapsElement.supportedZaps = token.supportedZaps || [];
-					results[chainID][address] = supportedZapsElement;
-				}
-			}
+	const availableTokenHash = useMemo((): string => {
+		const tokens = availableTokens.map(({address, chainID}): TUseBalancesTokens => ({address, chainID}));
+		return JSON.stringify(tokens);
+	}, [availableTokens]);
 
-			set_zapTokens(prev => ({...prev, ...(results as TYChainTokens)}));
-		});
-	}, [availableTokens, onRefresh, tokensList]);
+	useAsyncTrigger(async () => {
+		const thisNonce = ++refreshNonce.current;
+		const allToRefresh = JSON.parse(availableTokenHash);
+		if (allToRefresh.length === 0) {
+			return;
+		}
+
+		if (thisNonce !== refreshNonce.current) {
+			return;
+		}
+
+		const results = await onRefresh(allToRefresh);
+		for (const item of Object.values(results || {})) {
+			for (const element of Object.values(item)) {
+				const {address, chainID} = element;
+				if (!tokensList) {
+					continue;
+				}
+				const token = tokensList[chainID || 1]?.[address];
+				if (!token) {
+					continue;
+				}
+				const supportedZapsElement = element as TYToken & {supportedZaps: TSupportedZaps[]};
+				supportedZapsElement.supportedZaps = token.supportedZaps || [];
+				results[chainID][address] = supportedZapsElement;
+			}
+		}
+
+		set_zapTokens(prev => ({...prev, ...(results as TYChainTokens)}));
+	}, [availableTokenHash]);
 
 	const listTokens = useCallback(
 		({chainID}: {chainID: number}): TDict<TYToken & {supportedZaps: TSupportedZaps[]}> => {

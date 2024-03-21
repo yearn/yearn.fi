@@ -1,6 +1,5 @@
 import {useCallback, useMemo, useState} from 'react';
 import {useTokenList} from '@builtbymom/web3/contexts/WithTokenList';
-import {useBalances} from '@builtbymom/web3/hooks/useBalances.multichains';
 import {useChainID} from '@builtbymom/web3/hooks/useChainID';
 import {toAddress} from '@builtbymom/web3/utils';
 import {getNetwork} from '@builtbymom/web3/utils/wagmi';
@@ -17,6 +16,8 @@ import {
 	YVBOOST_TOKEN_ADDRESS,
 	YVECRV_TOKEN_ADDRESS
 } from '@yearn-finance/web-lib/utils/constants';
+
+import {useBalances} from './useBalances.multichains';
 
 import type {TYChainTokens} from '@yearn-finance/web-lib/types';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
@@ -193,7 +194,14 @@ export function useYearnBalances({
 	onRefresh: (tokenToUpdate?: TUseBalancesTokens[]) => Promise<TYChainTokens>;
 } {
 	const allTokens = useYearnTokens({vaults, vaultsMigrations, vaultsRetired, isLoadingVaultList});
-	const {data: tokensRaw, onUpdate, onUpdateSome, isLoading} = useBalances({tokens: allTokens});
+	const {
+		data: tokensRaw,
+		onUpdate,
+		onUpdateSome,
+		isLoading
+	} = useBalances({
+		tokens: allTokens
+	});
 
 	const balances = useDeepCompareMemo((): TYChainTokens => {
 		const _tokens = {...tokensRaw};

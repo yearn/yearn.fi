@@ -1,5 +1,4 @@
 import {type NextRouter} from 'next/router';
-import {WalletForZapAppContextApp} from '@vaults/contexts/useWalletForZaps';
 import Meta from '@common/components/Meta';
 import {useCurrentApp} from '@common/hooks/useCurrentApp';
 
@@ -11,7 +10,7 @@ export function Wrapper({children, router}: {children: ReactElement; router: Nex
 	return (
 		<div className={'mx-auto my-0 max-w-6xl pt-4 md:mb-0 md:mt-16'}>
 			<Meta meta={manifest} />
-			<WalletForZapAppContextApp>{children}</WalletForZapAppContextApp>
+			{children}
 		</div>
 	);
 }
