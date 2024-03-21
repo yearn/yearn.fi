@@ -1,6 +1,9 @@
 import {useCallback, useMemo} from 'react';
+import {useTokenList} from '@builtbymom/web3/contexts/WithTokenList';
 import {useBalances} from '@builtbymom/web3/hooks/useBalances.multichains';
+import {useChainID} from '@builtbymom/web3/hooks/useChainID';
 import {toAddress} from '@builtbymom/web3/utils';
+import {getNetwork} from '@builtbymom/web3/utils/wagmi';
 import {useDeepCompareMemo} from '@react-hookz/web';
 import {
 	CRV_TOKEN_ADDRESS,
@@ -21,8 +24,50 @@ import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVa
 import type {TUseBalancesTokens} from '@builtbymom/web3/hooks/useBalances.multichains';
 import type {TDict} from '@builtbymom/web3/types';
 
-export function useYearnTokens({shouldUseForknetBalances}: {shouldUseForknetBalances: boolean}): TUseBalancesTokens[] {
-	const {vaults, vaultsMigrations, vaultsRetired, isLoadingVaultList} = useYearn();
+export function useYearnTokens({
+	vaults,
+	vaultsMigrations,
+	vaultsRetired,
+	isLoadingVaultList
+}: {
+	vaults: TDict<TYDaemonVault>;
+	vaultsMigrations: TDict<TYDaemonVault>;
+	vaultsRetired: TDict<TYDaemonVault>;
+	isLoadingVaultList: boolean;
+}): TUseBalancesTokens[] {
+	const {currentNetworkTokenList} = useTokenList();
+	const {safeChainID} = useChainID();
+
+	/**************************************************************************
+	 ** Define the list of available tokens. This list is retrieved from the
+	 ** tokenList context and filtered to only keep the tokens of the current
+	 ** network.
+	 **************************************************************************/
+	const availableTokenListTokens = useMemo((): TUseBalancesTokens[] => {
+		const withTokenList = [...Object.values(currentNetworkTokenList)];
+		const tokens: TUseBalancesTokens[] = [];
+		withTokenList.forEach((token): void => {
+			tokens.push({
+				address: toAddress(token.address),
+				chainID: token.chainID,
+				decimals: Number(token.decimals),
+				name: token.name,
+				symbol: token.symbol
+			});
+		});
+
+		const {wrappedToken} = getNetwork(safeChainID).contracts;
+		if (wrappedToken) {
+			tokens.push({
+				address: toAddress(ETH_TOKEN_ADDRESS),
+				chainID: safeChainID,
+				decimals: wrappedToken.decimals,
+				name: wrappedToken.coinName,
+				symbol: wrappedToken.coinSymbol
+			});
+		}
+		return tokens;
+	}, [safeChainID, currentNetworkTokenList]);
 
 	const availableTokens = useMemo((): TUseBalancesTokens[] => {
 		if (isLoadingVaultList) {
@@ -106,39 +151,36 @@ export function useYearnTokens({shouldUseForknetBalances}: {shouldUseForknetBala
 	}, [vaultsRetired]);
 
 	const allTokens = useMemo((): TUseBalancesTokens[] => {
-		const tokens = [...availableTokens, ...migratableTokens, ...retiredTokens];
-		if (!shouldUseForknetBalances) {
-			return tokens;
-		}
-		for (const token of tokens) {
-			if (token.chainID === 1) {
-				//remove it
-				tokens.push({...token, chainID: 1337});
-			}
-		}
+		const tokens = [...availableTokens, ...migratableTokens, ...retiredTokens, ...availableTokenListTokens];
 		return tokens;
-	}, [availableTokens, migratableTokens, retiredTokens, shouldUseForknetBalances]);
+	}, [availableTokens, migratableTokens, retiredTokens, availableTokenListTokens]);
 
 	return allTokens;
 }
 
-export function useYearnBalances({shouldUseForknetBalances}: {shouldUseForknetBalances: boolean}): {
+export function useYearnBalances({
+	vaults,
+	vaultsMigrations,
+	vaultsRetired,
+	isLoadingVaultList
+}: {
+	vaults: TDict<TYDaemonVault>;
+	vaultsMigrations: TDict<TYDaemonVault>;
+	vaultsRetired: TDict<TYDaemonVault>;
+	isLoadingVaultList: boolean;
+}): {
 	tokens: TYChainTokens;
 	isLoading: boolean;
 	onRefresh: (tokenToUpdate?: TUseBalancesTokens[]) => Promise<TYChainTokens>;
 } {
 	const {prices} = useYearn();
-	const allTokens = useYearnTokens({shouldUseForknetBalances});
+	const allTokens = useYearnTokens({vaults, vaultsMigrations, vaultsRetired, isLoadingVaultList});
 	const {data: tokensRaw, onUpdate, onUpdateSome, isLoading} = useBalances({tokens: allTokens, prices});
 
 	const tokens = useDeepCompareMemo((): TYChainTokens => {
 		const _tokens = {...tokensRaw};
-		if (shouldUseForknetBalances) {
-			_tokens[1] = _tokens[1337]; // eslint-disable-line prefer-destructuring
-		}
-
 		return _tokens as TYChainTokens;
-	}, [tokensRaw, shouldUseForknetBalances]);
+	}, [tokensRaw]);
 
 	const onRefresh = useCallback(
 		async (tokenToUpdate?: TUseBalancesTokens[]): Promise<TYChainTokens> => {

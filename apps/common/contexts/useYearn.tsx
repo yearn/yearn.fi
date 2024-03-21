@@ -1,7 +1,7 @@
-import {createContext, memo, useCallback, useContext, useEffect, useMemo, useState} from 'react';
+import {createContext, memo, useCallback, useContext, useEffect, useMemo} from 'react';
 import {deserialize, serialize} from 'wagmi';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {isZeroAddress, toAddress, toNormalizedBN, zeroNormalizedBN} from '@builtbymom/web3/utils';
+import {isZeroAddress, toAddress, toBigInt, toNormalizedBN, zeroNormalizedBN} from '@builtbymom/web3/utils';
 import {useLocalStorageValue} from '@react-hookz/web';
 import {useFetchYearnEarnedForUser} from '@yearn-finance/web-lib/hooks/useFetchYearnEarnedForUser';
 import {useFetchYearnPrices} from '@yearn-finance/web-lib/hooks/useFetchYearnPrices';
@@ -53,9 +53,7 @@ export type TYearnContext = {
 	cumulatedValueInV2Vaults: number;
 	cumulatedValueInV3Vaults: number;
 	isLoading: boolean;
-	shouldUseForknetBalances: boolean;
 	onRefresh: (tokenList?: TUseBalancesTokens[]) => Promise<TYChainTokens>;
-	triggerForknetBalances: () => void;
 };
 
 const defaultToken: TYToken = {
@@ -103,14 +101,11 @@ const YearnContext = createContext<TYearnContext>({
 	cumulatedValueInV2Vaults: 0,
 	cumulatedValueInV3Vaults: 0,
 	isLoading: true,
-	shouldUseForknetBalances: false,
-	onRefresh: async (): Promise<TYChainTokens> => ({}),
-	triggerForknetBalances: (): void => {}
+	onRefresh: async (): Promise<TYChainTokens> => ({})
 });
 
 export const YearnContextApp = memo(function YearnContextApp({children}: {children: ReactElement}): ReactElement {
 	const {address: userAddress} = useWeb3();
-	const [shouldUseForknetBalances, set_shouldUseForknetBalances] = useState<boolean>(false);
 	const {value: maxLoss, set: set_maxLoss} = useLocalStorageValue<bigint>('yearn.fi/max-loss', {
 		defaultValue: DEFAULT_MAX_LOSS,
 		parse: (str, fallback): bigint => (str ? deserialize(str) : fallback ?? DEFAULT_MAX_LOSS),
@@ -133,7 +128,16 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 	const tokens = useFetchYearnTokens();
 	const earned = useFetchYearnEarnedForUser();
 	const {vaults, vaultsMigrations, vaultsRetired, isLoading, mutate} = useFetchYearnVaults();
-	const {tokens: balances, isLoading: isLoadingBalances, onRefresh} = useYearnBalances({shouldUseForknetBalances});
+	const {
+		tokens: balances,
+		isLoading: isLoadingBalances,
+		onRefresh
+	} = useYearnBalances({
+		vaults,
+		vaultsMigrations,
+		vaultsRetired,
+		isLoadingVaultList: isLoading
+	});
 
 	useEffect(() => {
 		const tokensToRefresh: TUseBalancesTokens[] = [];
@@ -193,7 +197,7 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 	const getPrice = useCallback(
 		({address, chainID}: TTokenAndChain): TNormalizedBN => {
 			const price = balances?.[chainID || 1]?.[address]?.price;
-			if (!price) {
+			if (!price || toBigInt(price.raw) === 0n) {
 				return toNormalizedBN(prices?.[chainID]?.[address] || 0, 6) || zeroNormalizedBN;
 			}
 			return price;
@@ -228,17 +232,7 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 				cumulatedValueInV2Vaults,
 				cumulatedValueInV3Vaults,
 				isLoading: isLoadingBalances || false,
-				shouldUseForknetBalances,
-				onRefresh,
-				triggerForknetBalances: (): void =>
-					set_shouldUseForknetBalances((s): boolean => {
-						const isEnabled = !s;
-						if (!(window as any).ethereum) {
-							(window as any).ethereum = {};
-						}
-						(window as any).ethereum.useForknetForMainnet = isEnabled;
-						return isEnabled;
-					})
+				onRefresh
 			}}>
 			{children}
 		</YearnContext.Provider>

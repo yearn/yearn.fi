@@ -1,4 +1,4 @@
-import {useCallback, useState} from 'react';
+import {useCallback, useMemo, useState} from 'react';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {formatCounterValue, isZero, toAddress, toBigInt, toNormalizedBN} from '@builtbymom/web3/utils';
 import {approveERC20, defaultTxStatus} from '@builtbymom/web3/utils/wagmi';
@@ -14,18 +14,16 @@ import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVa
 
 export function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {provider, isActive} = useWeb3();
-	const {onRefresh: refreshBalances} = useYearn();
+	const {onRefresh: refreshBalances, getPrice} = useYearn();
 	const [stakingRewards, updateStakingRewards] = useVaultStakingData({currentVault});
 	const vaultToken = useYearnToken({address: currentVault.address, chainID: currentVault.chainID});
 	const rewardTokenBalance = useYearnToken({address: stakingRewards.rewardsToken, chainID: currentVault.chainID});
 	const normalizedStakeBalance = toNormalizedBN(stakingRewards.balanceOf, currentVault.decimals);
 	const normalizedRewardBalance = toNormalizedBN(stakingRewards.earned, rewardTokenBalance.decimals);
-
 	const [approveStakeStatus, set_approveStakeStatus] = useState(defaultTxStatus);
 	const [stakeStatus, set_stakeStatus] = useState(defaultTxStatus);
 	const [claimStatus, set_claimStatus] = useState(defaultTxStatus);
 	const [unstakeStatus, set_unstakeStatus] = useState(defaultTxStatus);
-
 	const isApproved = toBigInt(stakingRewards.allowance) >= vaultToken.balance.raw;
 
 	const refreshData = useCallback(async (): Promise<void> => {
@@ -83,6 +81,15 @@ export function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): React
 		}
 	}, [provider, refreshData, stakingRewards?.address, currentVault.chainID]);
 
+	const rewardTokenPrice = useMemo(
+		() => getPrice({address: rewardTokenBalance.address, chainID: rewardTokenBalance.chainID}),
+		[getPrice, rewardTokenBalance]
+	);
+	const vaultTokenPrice = useMemo(
+		() => getPrice({address: vaultToken.address, chainID: vaultToken.chainID}),
+		[getPrice, vaultToken]
+	);
+
 	return (
 		<>
 			<div className={'flex flex-col gap-6 bg-neutral-100 p-4 md:gap-10 md:p-8'}>
@@ -102,7 +109,6 @@ export function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): React
 								Number(vaultToken.price.normalized)
 							)}
 							value={`${Number(vaultToken.balance.normalized).toFixed(vaultToken.decimals)}`}
-							// value={`${trimAmount(vaultToken.balance.normalized)} ${currentVault.symbol}`}
 							isDisabled
 						/>
 						<Button
@@ -129,12 +135,8 @@ export function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): React
 						<Input
 							className={'w-full md:w-1/3'}
 							label={`You have unclaimed, ${rewardTokenBalance.symbol || 'yvOP'}`}
-							legend={formatCounterValue(
-								normalizedRewardBalance.normalized,
-								Number(rewardTokenBalance.price.normalized)
-							)}
+							legend={formatCounterValue(normalizedRewardBalance.normalized, rewardTokenPrice.normalized)}
 							value={`${Number(normalizedRewardBalance.normalized).toFixed(rewardTokenBalance.decimals)}`}
-							// value={`${trimAmount(normalizedRewardBalance.normalized)}`}
 							isDisabled
 						/>
 						<Button
@@ -161,10 +163,7 @@ export function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): React
 						<Input
 							className={'w-full md:w-1/3'}
 							label={`You have staked, ${currentVault.symbol}`}
-							legend={formatCounterValue(
-								normalizedStakeBalance.normalized,
-								Number(vaultToken.price.normalized)
-							)}
+							legend={formatCounterValue(normalizedStakeBalance.normalized, vaultTokenPrice.normalized)}
 							value={`${Number(normalizedStakeBalance.normalized).toFixed(vaultToken.decimals)}`}
 							isDisabled
 						/>
