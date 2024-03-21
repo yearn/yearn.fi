@@ -1,5 +1,6 @@
 import {useMemo} from 'react';
 import {cl} from '@builtbymom/web3/utils';
+import {VaultDetailsStrategy} from '@vaults/components/details/tabs/VaultDetailsStrategies';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
 import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
@@ -10,7 +11,7 @@ import {SearchBar} from '@common/components/SearchBar';
 import {useYearn} from '@common/contexts/useYearn';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault, TYDaemonVaultStrategy} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TSortDirection} from '@builtbymom/web3/types';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 
@@ -28,6 +29,18 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 		}
 		return _vaultList;
 	}, [vaults, currentVault]);
+
+	const strategyList = useMemo((): TYDaemonVaultStrategy[] => {
+		const _stratList = [];
+		for (const strategy of currentVault?.strategies || []) {
+			if (!vaults[strategy.address]) {
+				_stratList.push(strategy);
+			}
+		}
+		return _stratList;
+	}, [vaults, currentVault]);
+
+	console.log(currentVault?.strategies);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	 **	Then, on the activeVaults list, we apply the search filter. The search filter is
@@ -100,6 +113,22 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 								)}
 						</div>
 					</div>
+				</div>
+			</div>
+			<div className={'col-span-12 w-full p-4 md:px-8 md:pb-8'}>
+				<div className={'w-1/2'}>
+					<p className={'pb-2 text-[#757CA6]'}>{'Other strategies'}</p>
+				</div>
+				<div className={'col-span-1 w-full border-t border-neutral-300'}>
+					{(strategyList || []).map(
+						(strategy): ReactElement => (
+							<VaultDetailsStrategy
+								currentVault={currentVault}
+								strategy={strategy}
+								key={strategy.address}
+							/>
+						)
+					)}
 				</div>
 			</div>
 			<div className={cl(sortedVaultsToDisplay.length === 0 && search === '' ? '' : 'hidden')}>

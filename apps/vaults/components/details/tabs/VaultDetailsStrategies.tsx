@@ -1,6 +1,6 @@
 import {useMemo, useState} from 'react';
 import {useFetch} from '@builtbymom/web3/hooks/useFetch';
-import {formatAmount, formatPercent, toAddress, toBigInt, toNormalizedValue} from '@builtbymom/web3/utils';
+import {formatAmount, formatPercent, toAddress, toBigInt, toNormalizedValue, truncateHex} from '@builtbymom/web3/utils';
 import {useIsMounted} from '@react-hookz/web';
 import {findLatestApr} from '@vaults/components/details/tabs/findLatestApr';
 import {GraphForStrategyReports} from '@vaults/components/graphs/GraphForStrategyReports';
@@ -37,7 +37,7 @@ function RiskScoreElement({label, value}: TRiskScoreElementProps): ReactElement 
 	);
 }
 
-function VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
+export function VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
 	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: currentVault.chainID});
 	const isMounted = useIsMounted();
 
@@ -75,7 +75,7 @@ function VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
 		<details className={'p-0'}>
 			<summary>
 				<div>
-					<b className={'text-neutral-900'}>{strategy.name}</b>
+					<b className={'text-neutral-900'}>{strategy.name || truncateHex(strategy.address, 6)}</b>
 				</div>
 				<div>
 					<IconChevron className={'summary-chevron'} />
