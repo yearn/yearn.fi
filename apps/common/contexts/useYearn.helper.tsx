@@ -1,10 +1,11 @@
-import {useCallback, useMemo} from 'react';
+import {useCallback, useMemo, useState} from 'react';
 import {useTokenList} from '@builtbymom/web3/contexts/WithTokenList';
 import {useBalances} from '@builtbymom/web3/hooks/useBalances.multichains';
 import {useChainID} from '@builtbymom/web3/hooks/useChainID';
 import {toAddress} from '@builtbymom/web3/utils';
 import {getNetwork} from '@builtbymom/web3/utils/wagmi';
 import {useDeepCompareMemo} from '@react-hookz/web';
+import {useFetchYearnTokens} from '@yearn-finance/web-lib/hooks/useFetchYearnTokens';
 import {
 	CRV_TOKEN_ADDRESS,
 	CVXCRV_TOKEN_ADDRESS,
@@ -16,8 +17,6 @@ import {
 	YVBOOST_TOKEN_ADDRESS,
 	YVECRV_TOKEN_ADDRESS
 } from '@yearn-finance/web-lib/utils/constants';
-
-import {useYearn} from './useYearn';
 
 import type {TYChainTokens} from '@yearn-finance/web-lib/types';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
@@ -35,8 +34,10 @@ export function useYearnTokens({
 	vaultsRetired: TDict<TYDaemonVault>;
 	isLoadingVaultList: boolean;
 }): TUseBalancesTokens[] {
+	const yearnTokens = useFetchYearnTokens();
 	const {currentNetworkTokenList} = useTokenList();
 	const {safeChainID} = useChainID();
+	const [isReady, set_isReady] = useState(false);
 
 	/**************************************************************************
 	 ** Define the list of available tokens. This list is retrieved from the
@@ -69,8 +70,9 @@ export function useYearnTokens({
 		return tokens;
 	}, [safeChainID, currentNetworkTokenList]);
 
+	//List available tokens
 	const availableTokens = useMemo((): TUseBalancesTokens[] => {
-		if (isLoadingVaultList) {
+		if (isLoadingVaultList || !yearnTokens) {
 			return [];
 		}
 		const tokens: TUseBalancesTokens[] = [];
@@ -96,7 +98,7 @@ export function useYearnTokens({
 		);
 
 		for (const token of extraTokens) {
-			tokensExists[token.address] = true;
+			tokensExists[toAddress(token.address)] = true;
 			tokens.push(token);
 		}
 
@@ -114,18 +116,31 @@ export function useYearnTokens({
 			}
 			if (vault?.staking?.available && !tokensExists[toAddress(vault?.staking?.address)]) {
 				tokens.push({
-					address: vault?.staking?.address,
+					address: toAddress(vault?.staking?.address),
 					chainID: vault.chainID,
 					symbol: vault.symbol,
 					decimals: vault.decimals,
 					name: vault.name
 				});
-				tokensExists[vault?.staking?.address] = true;
+				tokensExists[toAddress(vault?.staking?.address)] = true;
 			}
 		});
 
+		for (const [chainID, tokensData] of Object.entries(yearnTokens)) {
+			if (tokensData) {
+				for (const [address, token] of Object.entries(tokensData)) {
+					if (token && !tokensExists[toAddress(address)]) {
+						// tokensToRefresh.push({address: toAddress(address), chainID: Number(chainID)});
+						tokens.push({address: toAddress(address), chainID: Number(chainID)});
+						tokensExists[toAddress(address)] = true;
+					}
+				}
+			}
+		}
+
+		set_isReady(true);
 		return tokens;
-	}, [isLoadingVaultList, vaults]);
+	}, [isLoadingVaultList, vaults, yearnTokens]);
 
 	//List all vaults with a possible migration
 	const migratableTokens = useMemo((): TUseBalancesTokens[] => {
@@ -139,6 +154,7 @@ export function useYearnTokens({
 		return tokens;
 	}, [vaultsMigrations]);
 
+	//List retried tokens
 	const retiredTokens = useMemo((): TUseBalancesTokens[] => {
 		const tokens: TUseBalancesTokens[] = [];
 		Object.values(vaultsRetired || {}).forEach((vault?: TYDaemonVault): void => {
@@ -151,9 +167,12 @@ export function useYearnTokens({
 	}, [vaultsRetired]);
 
 	const allTokens = useMemo((): TUseBalancesTokens[] => {
+		if (!isReady) {
+			return [];
+		}
 		const tokens = [...availableTokens, ...migratableTokens, ...retiredTokens, ...availableTokenListTokens];
 		return tokens;
-	}, [availableTokens, migratableTokens, retiredTokens, availableTokenListTokens]);
+	}, [isReady, availableTokens, migratableTokens, retiredTokens, availableTokenListTokens]);
 
 	return allTokens;
 }
@@ -169,15 +188,14 @@ export function useYearnBalances({
 	vaultsRetired: TDict<TYDaemonVault>;
 	isLoadingVaultList: boolean;
 }): {
-	tokens: TYChainTokens;
-	isLoading: boolean;
+	balances: TYChainTokens;
+	isLoadingBalances: boolean;
 	onRefresh: (tokenToUpdate?: TUseBalancesTokens[]) => Promise<TYChainTokens>;
 } {
-	const {prices} = useYearn();
 	const allTokens = useYearnTokens({vaults, vaultsMigrations, vaultsRetired, isLoadingVaultList});
-	const {data: tokensRaw, onUpdate, onUpdateSome, isLoading} = useBalances({tokens: allTokens, prices});
+	const {data: tokensRaw, onUpdate, onUpdateSome, isLoading} = useBalances({tokens: allTokens});
 
-	const tokens = useDeepCompareMemo((): TYChainTokens => {
+	const balances = useDeepCompareMemo((): TYChainTokens => {
 		const _tokens = {...tokensRaw};
 		return _tokens as TYChainTokens;
 	}, [tokensRaw]);
@@ -194,5 +212,5 @@ export function useYearnBalances({
 		[onUpdate, onUpdateSome]
 	);
 
-	return {tokens, isLoading, onRefresh};
+	return {balances, isLoadingBalances: isLoading, onRefresh};
 }
