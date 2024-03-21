@@ -115,7 +115,6 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 	const vaultBalance = useYearnBalance({address: currentVault.address, chainID: currentVault.chainID});
 	const stakedBalance = useYearnBalance({address: currentVault.staking.address, chainID: currentVault.chainID});
 
-	console.warn(stakedBalance);
 	const vaultPrice =
 		useYearnTokenPrice({address: currentVault.address, chainID: currentVault.chainID}) ||
 		currentVault?.tvl?.price ||
