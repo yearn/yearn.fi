@@ -40,8 +40,6 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 		return _stratList;
 	}, [vaults, currentVault]);
 
-	console.log(currentVault?.strategies);
-
 	/* 🔵 - Yearn Finance **************************************************************************
 	 **	Then, on the activeVaults list, we apply the search filter. The search filter is
 	 **	implemented as a simple string.includes() on the vault name.
@@ -115,22 +113,24 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 					</div>
 				</div>
 			</div>
-			<div className={'col-span-12 w-full p-4 md:px-8 md:pb-8'}>
-				<div className={'w-1/2'}>
-					<p className={'pb-2 text-[#757CA6]'}>{'Other strategies'}</p>
+			{strategyList.length > 0 ? (
+				<div className={'col-span-12 w-full p-4 md:px-8 md:pb-8'}>
+					<div className={'w-1/2'}>
+						<p className={'pb-2 text-[#757CA6]'}>{'Other strategies'}</p>
+					</div>
+					<div className={'col-span-1 w-full border-t border-neutral-300'}>
+						{(strategyList || []).map(
+							(strategy): ReactElement => (
+								<VaultDetailsStrategy
+									currentVault={currentVault}
+									strategy={strategy}
+									key={strategy.address}
+								/>
+							)
+						)}
+					</div>
 				</div>
-				<div className={'col-span-1 w-full border-t border-neutral-300'}>
-					{(strategyList || []).map(
-						(strategy): ReactElement => (
-							<VaultDetailsStrategy
-								currentVault={currentVault}
-								strategy={strategy}
-								key={strategy.address}
-							/>
-						)
-					)}
-				</div>
-			</div>
+			) : null}
 			<div className={cl(sortedVaultsToDisplay.length === 0 && search === '' ? '' : 'hidden')}>
 				<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
 					<b className={'text-center text-lg'}>{'This vault IS the strategy'}</b>
