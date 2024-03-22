@@ -1,6 +1,6 @@
 import {createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState} from 'react';
 import {useRouter} from 'next/router';
-import {useContractReads} from 'wagmi';
+import {useReadContracts} from 'wagmi';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {
 	decodeAsBigInt,
@@ -159,7 +159,7 @@ export function ActionFlowContextApp({
 	const [possibleZapOptionsFrom, set_possibleZapOptionsFrom] = useState<TDropdownOption[]>([]);
 	const [possibleOptionsTo, set_possibleOptionsTo] = useState<TDropdownOption[]>([]);
 	const [possibleZapOptionsTo, set_possibleZapOptionsTo] = useState<TDropdownOption[]>([]);
-	const {data: depositLimit} = useContractReads({
+	const {data: depositLimit} = useReadContracts({
 		contracts: [
 			{
 				address: currentVault.address,
