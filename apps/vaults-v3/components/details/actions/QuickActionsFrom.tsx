@@ -1,6 +1,6 @@
 import {useCallback} from 'react';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {formatAmount, formatCounterValue, handleInputChangeValue, toAddress} from '@builtbymom/web3/utils';
+import {formatAmount, formatCounterValue, handleInputChangeEventValue, toAddress} from '@builtbymom/web3/utils';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {Dropdown} from '@common/components/TokenDropdown';
@@ -8,6 +8,7 @@ import {useYearn} from '@common/contexts/useYearn';
 import {useYearnBalance} from '@common/hooks/useYearnBalance';
 
 import type {ChangeEvent, ReactElement} from 'react';
+import type {TNormalizedBN} from '@builtbymom/web3/types';
 
 export function VaultDetailsQuickActionsFrom(): ReactElement {
 	const {isActive} = useWeb3();
@@ -48,15 +49,20 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 
 	const onChangeInput = useCallback(
 		(e: ChangeEvent<HTMLInputElement>): void => {
-			onChangeAmount(
-				handleInputChangeValue(
-					e.target.value,
-					getToken({
-						address: toAddress(actionParams?.selectedOptionFrom?.value),
-						chainID: Number(actionParams?.selectedOptionFrom?.chainID)
-					}).decimals
-				)
-			);
+			let newAmount: TNormalizedBN | undefined = undefined;
+			const {decimals} = getToken({
+				address: toAddress(actionParams?.selectedOptionFrom?.value),
+				chainID: Number(actionParams?.selectedOptionFrom?.chainID)
+			});
+
+			if (e.target.value === '') {
+				newAmount = undefined;
+				onChangeAmount(newAmount);
+			} else {
+				const expectedNewValue = handleInputChangeEventValue(e, decimals);
+				console.log(expectedNewValue);
+				onChangeAmount(expectedNewValue);
+			}
 		},
 		[actionParams?.selectedOptionFrom?.chainID, actionParams?.selectedOptionFrom?.value, getToken, onChangeAmount]
 	);
@@ -121,10 +127,13 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 							className={`w-full overflow-x-scroll border-none bg-transparent px-0 py-4 font-bold outline-none scrollbar-none ${
 								isActive ? '' : 'cursor-not-allowed'
 							}`}
-							type={'text'}
+							type={'number'}
+							inputMode={'numeric'}
+							min={0}
+							pattern={'^((?:0|[1-9]+)(?:.(?:d+?[1-9]|[1-9]))?)$'}
 							autoComplete={'off'}
 							disabled={!isActive}
-							value={actionParams?.amount.normalized}
+							value={actionParams?.amount === undefined ? '' : actionParams?.amount.normalized}
 							onChange={onChangeInput}
 						/>
 						<button

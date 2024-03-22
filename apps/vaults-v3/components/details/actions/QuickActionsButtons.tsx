@@ -90,24 +90,24 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 			currentSolver === Solver.enum.Vanilla ||
 			currentSolver === Solver.enum.InternalMigration;
 		onApprove(
-			shouldApproveInfinite ? MAX_UINT_256 : actionParams?.amount.raw,
+			shouldApproveInfinite ? MAX_UINT_256 : toBigInt(actionParams.amount?.raw),
 			set_txStatusApprove,
 			async (): Promise<void> => {
 				await triggerRetrieveAllowance();
 			}
 		);
-	}, [actionParams?.amount.raw, triggerRetrieveAllowance, currentSolver, onApprove]);
+	}, [actionParams.amount, triggerRetrieveAllowance, currentSolver, onApprove]);
 
 	const isButtonDisabled =
 		(!address && !provider) ||
-		isZero(actionParams.amount.raw) ||
-		toBigInt(actionParams.amount.raw) > toBigInt(maxDepositPossible.raw) ||
+		isZero(toBigInt(actionParams.amount?.raw)) ||
+		toBigInt(actionParams.amount?.raw) > toBigInt(maxDepositPossible.raw) ||
 		isLoadingExpectedOut;
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** Wrapper to decide if we should use the partner contract or not
 	 **************************************************************************/
-	const isAboveAllowance = toBigInt(actionParams.amount.raw) > toBigInt(allowanceFrom?.raw);
+	const isAboveAllowance = toBigInt(actionParams.amount?.raw) > toBigInt(allowanceFrom?.raw);
 	if (
 		(txStatusApprove.pending || isAboveAllowance) && //If the button is busy or the amount is above the allowance ...
 		((isDepositing && currentSolver === Solver.enum.Vanilla) || // ... and the user is depositing with Vanilla ...
@@ -122,7 +122,7 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 				variant={'v3'}
 				className={'w-full'}
 				isBusy={txStatusApprove.pending}
-				isDisabled={isButtonDisabled || isZero(expectedOut.raw)}
+				isDisabled={isButtonDisabled || isZero(toBigInt(expectedOut?.raw))}
 				onClick={onApproveFrom}>
 				{'Approve'}
 			</Button>

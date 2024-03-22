@@ -10,7 +10,7 @@ import type {TTxStatus} from '@builtbymom/web3/utils/wagmi';
 export type TWithSolver = {
 	currentSolver: TSolver;
 	effectiveSolver: TSolver;
-	expectedOut: TNormalizedBN;
+	expectedOut: TNormalizedBN | undefined;
 	hash?: string;
 	isLoadingExpectedOut: boolean;
 	onRetrieveAllowance: (shouldForceRefetch?: boolean) => Promise<TNormalizedBN>;
@@ -42,8 +42,8 @@ export type TInitSolverArgs = {
 
 export type TSolverContext = {
 	type: TSolver;
-	quote: TNormalizedBN;
-	init: (args: TInitSolverArgs, shouldLogError?: boolean) => Promise<TNormalizedBN>;
+	quote: TNormalizedBN | undefined;
+	init: (args: TInitSolverArgs, shouldLogError?: boolean) => Promise<TNormalizedBN | undefined>;
 	onRetrieveAllowance: (shouldForceRefetch?: boolean) => Promise<TNormalizedBN>;
 	onApprove: (
 		amount: bigint,

@@ -103,24 +103,24 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 			currentSolver === Solver.enum.Vanilla ||
 			currentSolver === Solver.enum.InternalMigration;
 		onApprove(
-			shouldApproveInfinite ? MAX_UINT_256 : actionParams?.amount.raw,
+			shouldApproveInfinite ? MAX_UINT_256 : toBigInt(actionParams.amount?.raw),
 			set_txStatusApprove,
 			async (): Promise<void> => {
 				await triggerRetrieveAllowance();
 			}
 		);
-	}, [actionParams?.amount.raw, triggerRetrieveAllowance, currentSolver, onApprove]);
+	}, [actionParams.amount?.raw, triggerRetrieveAllowance, currentSolver, onApprove]);
 
 	const isButtonDisabled =
 		(!address && !provider) ||
-		isZero(actionParams.amount.raw) ||
-		toBigInt(actionParams.amount.raw) > toBigInt(maxDepositPossible.raw) ||
+		isZero(toBigInt(actionParams.amount?.raw)) ||
+		toBigInt(actionParams.amount?.raw) > toBigInt(maxDepositPossible.raw) ||
 		isLoadingExpectedOut;
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** Wrapper to decide if we should use the partner contract or not
 	 **************************************************************************/
-	const isAboveAllowance = toBigInt(actionParams.amount.raw) > toBigInt(allowanceFrom?.raw);
+	const isAboveAllowance = toBigInt(actionParams.amount?.raw) > toBigInt(allowanceFrom?.raw);
 
 	if (
 		isWithdrawing && //If user is withdrawing ...
@@ -133,7 +133,7 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 			<Button
 				className={'w-full'}
 				isBusy={txStatusApprove.pending}
-				isDisabled={isButtonDisabled || isZero(expectedOut.raw)}
+				isDisabled={isButtonDisabled || isZero(toBigInt(expectedOut?.raw))}
 				onClick={onApproveFrom}>
 				{'Approve'}
 			</Button>
@@ -169,7 +169,7 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 			<Button
 				className={'w-full'}
 				isBusy={txStatusApprove.pending}
-				isDisabled={isButtonDisabled || isZero(expectedOut.raw)}
+				isDisabled={isButtonDisabled || isZero(toBigInt(expectedOut?.raw))}
 				onClick={onApproveFrom}>
 				{'Approve'}
 			</Button>
@@ -185,8 +185,8 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 					isBusy={txStatusExecuteDeposit.pending}
 					isDisabled={
 						(!address && !provider) ||
-						isZero(actionParams.amount.raw) ||
-						toBigInt(actionParams.amount.raw) > toBigInt(maxDepositPossible.raw)
+						isZero(toBigInt(actionParams.amount?.raw)) ||
+						toBigInt(toBigInt(actionParams.amount?.raw)) > toBigInt(maxDepositPossible.raw)
 					}>
 					{'Deposit and Stake'}
 				</Button>

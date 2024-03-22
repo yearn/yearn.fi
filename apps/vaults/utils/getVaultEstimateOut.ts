@@ -1,4 +1,4 @@
-import {assert, assertAddress, toBigInt, toNormalizedBN, zeroNormalizedBN} from '@builtbymom/web3/utils';
+import {assert, assertAddress, toBigInt, toNormalizedBN} from '@builtbymom/web3/utils';
 import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
 import {readContract} from '@wagmi/core';
 import {VAULT_ABI} from '@yearn-finance/web-lib/utils/abi/vault.abi';
@@ -14,14 +14,14 @@ type TGetVaultEstimateOutProps = {
 	isDepositing: boolean;
 	chainID: number;
 };
-export async function getVaultEstimateOut(props: TGetVaultEstimateOutProps): Promise<TNormalizedBN> {
+export async function getVaultEstimateOut(props: TGetVaultEstimateOutProps): Promise<TNormalizedBN | undefined> {
 	assertAddress(props.inputToken, 'inputToken');
 	assertAddress(props.outputToken, 'outputToken');
 	assert(props.inputDecimals > 0, 'inputDecimals must be greater than 0');
 	assert(props.outputDecimals > 0, 'outputDecimals must be greater than 0');
 
 	if (props.inputAmount <= 0n) {
-		return zeroNormalizedBN;
+		return undefined;
 	}
 
 	const inputDecimals = toBigInt(props.inputDecimals || 18);

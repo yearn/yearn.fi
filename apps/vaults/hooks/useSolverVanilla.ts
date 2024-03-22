@@ -26,9 +26,9 @@ export function useSolverVanilla(): TSolverContext {
 	 ** It will set the request to the provided value, as it's required to get the quote, and will
 	 ** call getQuote to get the current quote for the provided request.
 	 **********************************************************************************************/
-	const init = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN> => {
+	const init = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN | undefined> => {
 		if (isSolverDisabled(Solver.enum.Vanilla)) {
-			return zeroNormalizedBN;
+			return undefined;
 		}
 		request.current = _request;
 		const estimateOut = await getVaultEstimateOut({

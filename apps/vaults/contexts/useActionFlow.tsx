@@ -50,7 +50,7 @@ export enum Flow {
 
 type TActionParams = {
 	isReady: boolean;
-	amount: TNormalizedBN;
+	amount: undefined | TNormalizedBN;
 	selectedOptionFrom: TDropdownOption | undefined;
 	selectedOptionTo: TDropdownOption | undefined;
 	possibleOptionsFrom: TDropdownOption[];
@@ -61,7 +61,7 @@ type TActionFlowContext = {
 	possibleOptionsFrom: TDropdownOption[];
 	possibleOptionsTo: TDropdownOption[];
 	actionParams: TActionParams;
-	onChangeAmount: (amount: TNormalizedBN) => void;
+	onChangeAmount: (amount: TNormalizedBN | undefined) => void;
 	onUpdateSelectedOptionFrom: (option: TDropdownOption) => void;
 	onUpdateSelectedOptionTo: (option: TDropdownOption) => void;
 	onSwitchSelectedOptions: (nextFlow?: Flow) => void;
@@ -193,7 +193,7 @@ export function ActionFlowContextApp({
 				case 'amount':
 					return {
 						...state,
-						amount: action.payload.amount || zeroNormalizedBN
+						amount: action.payload.amount
 					};
 				case 'options':
 					return {
@@ -708,7 +708,7 @@ export function ActionFlowContextApp({
 			possibleOptionsFrom: [...actionParams.possibleOptionsFrom, ...possibleZapOptionsFrom],
 			possibleOptionsTo: [...actionParams.possibleOptionsTo, ...possibleZapOptionsTo],
 			actionParams,
-			onChangeAmount: (newAmount: TNormalizedBN): void => {
+			onChangeAmount: (newAmount: TNormalizedBN | undefined): void => {
 				actionParamsDispatcher({
 					type: 'amount',
 					payload: {amount: newAmount}

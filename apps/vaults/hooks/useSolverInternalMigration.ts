@@ -27,9 +27,9 @@ export function useSolverInternalMigration(): TSolverContext {
 	 ** It will set the request to the provided value, as it's required to get the quote, and will
 	 ** call getQuote to get the current quote for the provided request.
 	 **********************************************************************************************/
-	const init = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN> => {
+	const init = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN | undefined> => {
 		if (isSolverDisabled(Solver.enum.InternalMigration)) {
-			return zeroNormalizedBN;
+			return undefined;
 		}
 		request.current = _request;
 		if (request.current.migrator === ZAP_YEARN_VE_CRV_ADDRESS) {

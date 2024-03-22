@@ -91,9 +91,9 @@ export function useSolverPortals(): TSolverContext {
 	 ** call getQuote to get the current quote for the provided request.current.
 	 **********************************************************************************************/
 	const init = useCallback(
-		async (_request: TInitSolverArgs, shouldLogError?: boolean): Promise<TNormalizedBN> => {
+		async (_request: TInitSolverArgs, shouldLogError?: boolean): Promise<TNormalizedBN | undefined> => {
 			if (isSolverDisabled(Solver.enum.Portals)) {
-				return zeroNormalizedBN;
+				return undefined;
 			}
 			/******************************************************************************************
 			 ** First we need to know which token we are selling to the zap. When we are depositing, we
@@ -107,7 +107,7 @@ export function useSolverPortals(): TSolverContext {
 			 ** This first obvious check is to see if the solver is disabled. If it is, we return 0.
 			 ******************************************************************************************/
 			if (isSolverDisabled(Solver.enum.Portals)) {
-				return zeroNormalizedBN;
+				return undefined;
 			}
 
 			/******************************************************************************************
@@ -117,14 +117,14 @@ export function useSolverPortals(): TSolverContext {
 			 ** a token, you can contact the yDaemon team to add it.
 			 ******************************************************************************************/
 			if (!sellToken.solveVia?.includes(Solver.enum.Portals)) {
-				return zeroNormalizedBN;
+				return undefined;
 			}
 
 			/******************************************************************************************
 			 ** Same is the amount is 0. If it is, we return 0.
 			 ******************************************************************************************/
 			if (isZero(_request.inputAmount)) {
-				return zeroNormalizedBN;
+				return undefined;
 			}
 
 			/******************************************************************************************
@@ -143,7 +143,7 @@ export function useSolverPortals(): TSolverContext {
 						content: `Portals.fi zap not possible: ${errorMessage}`
 					});
 				}
-				return zeroNormalizedBN;
+				return undefined;
 			}
 			latestQuote.current = data;
 			return toNormalizedBN(data?.outputAmount || 0, request?.current?.outputToken?.decimals || 18);

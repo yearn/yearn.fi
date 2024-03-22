@@ -1,6 +1,6 @@
 import {createContext, useCallback, useContext, useEffect, useMemo, useRef, useState} from 'react';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {toAddress, zeroNormalizedBN} from '@builtbymom/web3/utils';
+import {toAddress, toBigInt, zeroNormalizedBN} from '@builtbymom/web3/utils';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useSolverChainCoin} from '@vaults/hooks/useSolverChainCoin';
 import {useSolverCowswap} from '@vaults/hooks/useSolverCowswap';
@@ -34,7 +34,7 @@ export const isSolverDisabled = (key: TSolver): boolean => {
 type TUpdateSolverHandler = {
 	currentNonce: number;
 	request: TInitSolverArgs;
-	quote: PromiseSettledResult<TNormalizedBN>;
+	quote: PromiseSettledResult<TNormalizedBN | undefined>;
 	solver: TSolver;
 	ctx: TSolverContext;
 };
@@ -42,7 +42,7 @@ type TUpdateSolverHandler = {
 const DefaultWithSolverContext: TWithSolver = {
 	currentSolver: Solver.enum.Vanilla,
 	effectiveSolver: Solver.enum.Vanilla,
-	expectedOut: zeroNormalizedBN,
+	expectedOut: undefined,
 	hash: undefined,
 	isLoadingExpectedOut: false,
 	onRetrieveAllowance: async (): Promise<TNormalizedBN> => zeroNormalizedBN,
@@ -74,7 +74,7 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 			if (currentNonce !== executionNonce.current) {
 				return;
 			}
-			const requestHash = await hash(serialize({...request, solver, expectedOut: quote.value.raw}));
+			const requestHash = await hash(serialize({...request, solver, expectedOut: toBigInt(quote.value?.raw)}));
 			set_currentSolverState({
 				...ctx,
 				quote: quote.value,
@@ -93,7 +93,7 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 			if (
 				!actionParams?.selectedOptionFrom ||
 				!actionParams?.selectedOptionTo ||
-				actionParams?.amount.raw === undefined
+				actionParams?.amount === undefined
 			) {
 				return;
 			}
@@ -117,10 +117,10 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 				quote,
 				solver
 			}: {
-				quote: PromiseSettledResult<TNormalizedBN>;
+				quote: PromiseSettledResult<TNormalizedBN | undefined>;
 				solver: TSolver;
 			}): boolean => {
-				return quote.status === 'fulfilled' && quote?.value.raw > 0n && !isSolverDisabled(solver);
+				return quote.status === 'fulfilled' && toBigInt(quote.value?.raw) > 0n && !isSolverDisabled(solver);
 			};
 
 			switch (currentSolver) {
@@ -133,7 +133,7 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 
 					const solvers: {
 						[key in TSolver]?: {
-							quote: PromiseSettledResult<TNormalizedBN>;
+							quote: PromiseSettledResult<TNormalizedBN | undefined>;
 							ctx: TSolverContext;
 						};
 					} = {};
@@ -246,7 +246,7 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 		[
 			actionParams.selectedOptionFrom,
 			actionParams.selectedOptionTo,
-			actionParams.amount.raw,
+			actionParams.amount,
 			currentVault.chainID,
 			currentVault.version,
 			currentVault.migration.contract,
@@ -273,7 +273,7 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 		(): TWithSolver => ({
 			currentSolver: currentSolver,
 			effectiveSolver: currentSolverState?.type,
-			expectedOut: currentSolverState?.quote || zeroNormalizedBN,
+			expectedOut: currentSolverState?.quote,
 			hash: currentSolverState?.hash,
 			isLoadingExpectedOut: isLoading,
 			onRetrieveAllowance: currentSolverState.onRetrieveAllowance,

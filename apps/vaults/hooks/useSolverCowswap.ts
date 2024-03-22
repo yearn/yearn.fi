@@ -108,9 +108,9 @@ export function useSolverCowswap(): TSolverContext {
 	 ** call getQuote to get the current quote for the provided request.current.
 	 **********************************************************************************************/
 	const init = useCallback(
-		async (_request: TInitSolverArgs, shouldLogError?: boolean): Promise<TNormalizedBN> => {
+		async (_request: TInitSolverArgs, shouldLogError?: boolean): Promise<TNormalizedBN | undefined> => {
 			if (isSolverDisabled(Solver.enum.Cowswap)) {
-				return zeroNormalizedBN;
+				return undefined;
 			}
 			/******************************************************************************************
 			 ** First we need to know which token we are selling to the zap. When we are depositing, we
@@ -124,7 +124,7 @@ export function useSolverCowswap(): TSolverContext {
 			 ** This first obvious check is to see if the solver is disabled. If it is, we return 0.
 			 ******************************************************************************************/
 			if (_request.chainID !== 1) {
-				return zeroNormalizedBN;
+				return undefined;
 			}
 
 			/******************************************************************************************
@@ -134,7 +134,7 @@ export function useSolverCowswap(): TSolverContext {
 			 ** a token, you can contact the yDaemon team to add it.
 			 ******************************************************************************************/
 			if (!sellToken.solveVia?.includes(Solver.enum.Cowswap)) {
-				return zeroNormalizedBN;
+				return undefined;
 			}
 
 			/******************************************************************************************
@@ -143,7 +143,7 @@ export function useSolverCowswap(): TSolverContext {
 			 ** a vault token) we return 0.
 			 ******************************************************************************************/
 			if (_request.isDepositing && isEthAddress(sellToken.value)) {
-				return zeroNormalizedBN;
+				return undefined;
 			}
 
 			/******************************************************************************************
@@ -166,7 +166,7 @@ export function useSolverCowswap(): TSolverContext {
 						});
 					}
 				}
-				return zeroNormalizedBN;
+				return undefined;
 			}
 			latestQuote.current = data;
 			const buyAmountWithSlippage = getBuyAmountWithSlippage(data, _request?.outputToken?.decimals || 18);
