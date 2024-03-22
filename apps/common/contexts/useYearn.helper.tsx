@@ -20,9 +20,10 @@ import {
 import {useBalances} from './useBalances.multichains';
 
 import type {TYChainTokens} from '@yearn-finance/web-lib/types';
+import type {TYDaemonToken} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokensSchema';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TUseBalancesTokens} from '@builtbymom/web3/hooks/useBalances.multichains';
-import type {TDict} from '@builtbymom/web3/types';
+import type {TDict, TNDict} from '@builtbymom/web3/types';
 
 export function useYearnTokens({
 	vaults,
@@ -35,7 +36,7 @@ export function useYearnTokens({
 	vaultsRetired: TDict<TYDaemonVault>;
 	isLoadingVaultList: boolean;
 }): TUseBalancesTokens[] {
-	const yearnTokens = useFetchYearnTokens();
+	const yearnTokens = useFetchYearnTokens() as unknown as TNDict<TDict<TYDaemonToken>>;
 	const {currentNetworkTokenList} = useTokenList();
 	const {safeChainID} = useChainID();
 	const [isReady, set_isReady] = useState(false);
@@ -108,11 +109,23 @@ export function useYearnTokens({
 				return;
 			}
 			if (vault?.address && !tokensExists[toAddress(vault?.address)]) {
-				tokens.push({address: vault.address, chainID: vault.chainID});
+				tokens.push({
+					address: vault.address,
+					chainID: vault.chainID,
+					symbol: vault.symbol,
+					decimals: vault.decimals,
+					name: vault.name
+				});
 				tokensExists[vault.address] = true;
 			}
 			if (vault?.token?.address && !tokensExists[toAddress(vault?.token?.address)]) {
-				tokens.push({address: vault.token.address, chainID: vault.chainID});
+				tokens.push({
+					address: vault.token.address,
+					chainID: vault.chainID,
+					symbol: vault.symbol,
+					decimals: vault.decimals,
+					name: vault.name
+				});
 				tokensExists[vault.token.address] = true;
 			}
 			if (vault?.staking?.available && !tokensExists[toAddress(vault?.staking?.address)]) {
@@ -131,8 +144,13 @@ export function useYearnTokens({
 			if (tokensData) {
 				for (const [address, token] of Object.entries(tokensData)) {
 					if (token && !tokensExists[toAddress(address)]) {
-						// tokensToRefresh.push({address: toAddress(address), chainID: Number(chainID)});
-						tokens.push({address: toAddress(address), chainID: Number(chainID)});
+						tokens.push({
+							address: toAddress(address),
+							chainID: Number(chainID),
+							decimals: token.decimals,
+							name: token.name,
+							symbol: token.symbol
+						});
 						tokensExists[toAddress(address)] = true;
 					}
 				}

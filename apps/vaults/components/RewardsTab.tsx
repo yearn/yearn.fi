@@ -104,10 +104,7 @@ export function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): React
 						<Input
 							className={'w-full md:w-1/3'}
 							label={`You have unstaked, ${currentVault.symbol}`}
-							legend={formatCounterValue(
-								vaultToken.balance.normalized,
-								Number(vaultToken.price.normalized)
-							)}
+							legend={formatCounterValue(vaultToken.balance.normalized, vaultTokenPrice.normalized)}
 							value={`${Number(vaultToken.balance.normalized).toFixed(vaultToken.decimals)}`}
 							isDisabled
 						/>

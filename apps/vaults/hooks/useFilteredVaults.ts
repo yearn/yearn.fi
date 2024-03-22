@@ -19,7 +19,7 @@ export function useFilteredVaults(
 
 export function useVaultFilter(
 	categories: string[] | null,
-	chains: number[] | null,
+	_chains: number[] | null,
 	v3?: boolean
 ): {
 	activeVaults: TYDaemonVault[];
@@ -27,26 +27,26 @@ export function useVaultFilter(
 	migratableVaults: TYDaemonVault[];
 } {
 	const {vaults, vaultsMigrations, vaultsRetired} = useYearn();
-	const {getToken} = useYearn();
+	const {getBalance, getPrice} = useYearn();
 	const {shouldHideDust} = useAppSettings();
 
 	const filterHoldingsCallback = useCallback(
 		(vault: TYDaemonVault, isFactoryOnly: boolean): boolean => {
-			const vaultHoldings = getToken({address: vault.address, chainID: vault.chainID});
+			const vaultBalance = getBalance({address: vault.address, chainID: vault.chainID});
+			const vaultPrice = getPrice({address: vault.address, chainID: vault.chainID});
 
-			// [Optimism] Check if staked vaults have holdings
-			if (chains?.includes(10) && vault.staking.available) {
-				const stakingdHolding = getToken({address: vault.staking.address, chainID: vault.chainID});
-				const hasValidStakedBalance = stakingdHolding.balance.raw > 0n;
-				const stakedBalanceValue =
-					Number(stakingdHolding.balance.normalized) * Number(vaultHoldings.price.normalized);
+			// Check the staking balance
+			if (vault.staking.available) {
+				const stakingBalance = getBalance({address: vault.staking.address, chainID: vault.chainID});
+				const hasValidStakedBalance = stakingBalance.raw > 0n;
+				const stakedBalanceValue = Number(stakingBalance.normalized) * vaultPrice.normalized;
 				if (hasValidStakedBalance && !(shouldHideDust && stakedBalanceValue < 0.01)) {
 					return true;
 				}
 			}
 
-			const hasValidBalance = vaultHoldings.balance.raw > 0n;
-			const balanceValue = vaultHoldings.value || 0;
+			const hasValidBalance = vaultBalance.raw > 0n;
+			const balanceValue = vaultBalance.normalized * vaultPrice.normalized;
 			if (shouldHideDust && balanceValue < 0.01) {
 				return false;
 			}
@@ -61,20 +61,22 @@ export function useVaultFilter(
 			}
 			return false;
 		},
-		[getToken, chains, shouldHideDust]
+		[shouldHideDust, getBalance, getPrice]
 	);
 
 	const filterMigrationCallback = useCallback(
 		(address: TAddress, chainID: number): boolean => {
-			const holding = getToken({address, chainID});
-			const hasValidPrice = holding.price.raw > 0n;
-			const hasValidBalance = holding.balance.raw > 0n;
-			if (hasValidBalance && (hasValidPrice ? (holding?.value || 0) >= 0.01 : true)) {
+			const holdingBalance = getBalance({address, chainID});
+			const holdingPrice = getPrice({address, chainID});
+			const hasValidPrice = holdingPrice.raw > 0n;
+			const hasValidBalance = holdingBalance.raw > 0n;
+			const holdingValue = holdingBalance.normalized * holdingPrice.normalized;
+			if (hasValidBalance && (hasValidPrice ? holdingValue >= 0.01 : true)) {
 				return true;
 			}
 			return false;
 		},
-		[getToken]
+		[getBalance, getPrice]
 	);
 
 	// V3 Filtered Vaults

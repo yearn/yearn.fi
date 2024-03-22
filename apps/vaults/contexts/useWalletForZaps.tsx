@@ -21,7 +21,6 @@ export type TWalletForZap = {
 	listTokens: ({chainID}: {chainID: number}) => TDict<TYToken>;
 	getToken: ({address, chainID}: {address: TAddress; chainID: number}) => TYToken;
 	getBalance: ({address, chainID}: {address: TAddress; chainID: number}) => TNormalizedBN;
-	getPrice: ({address, chainID}: {address: TAddress; chainID: number}) => TNormalizedBN;
 	refresh: (tokenList?: TUseBalancesTokens[]) => Promise<TYChainTokens>;
 };
 
@@ -33,7 +32,6 @@ const defaultToken: TYToken & {supportedZaps: TSupportedZaps[]} = {
 	chainID: 1,
 	value: 0,
 	stakingValue: 0,
-	price: zeroNormalizedBN,
 	balance: zeroNormalizedBN,
 	supportedZaps: []
 };
@@ -43,7 +41,6 @@ const defaultProps = {
 	listTokens: (): TDict<TYToken & {supportedZaps: TSupportedZaps[]}> => ({}),
 	getToken: (): TYToken & {supportedZaps: TSupportedZaps[]} => ({...defaultToken, supportedZaps: []}),
 	getBalance: (): TNormalizedBN => zeroNormalizedBN,
-	getPrice: (): TNormalizedBN => zeroNormalizedBN,
 	refresh: async (): Promise<TYChainTokens> => ({})
 };
 
@@ -140,12 +137,6 @@ export const WalletForZapAppContextApp = memo(function WalletForZapAppContextApp
 		},
 		[zapTokens]
 	);
-	const getPrice = useCallback(
-		({address, chainID}: {address: TAddress; chainID: number}): TNormalizedBN => {
-			return zapTokens?.[chainID || 1]?.[address]?.price || zeroNormalizedBN;
-		},
-		[zapTokens]
-	);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 **	Setup and render the Context provider to use in the app.
@@ -156,10 +147,9 @@ export const WalletForZapAppContextApp = memo(function WalletForZapAppContextApp
 			listTokens,
 			getToken,
 			getBalance,
-			getPrice,
 			refresh: onRefresh
 		}),
-		[listTokens, getToken, getBalance, getPrice, onRefresh, tokensList]
+		[listTokens, getToken, getBalance, onRefresh, tokensList]
 	);
 
 	return <WalletForZap.Provider value={contextValue}>{props.children}</WalletForZap.Provider>;

@@ -1,7 +1,7 @@
 import {createContext, memo, useCallback, useContext, useMemo} from 'react';
 import {deserialize, serialize} from 'wagmi';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {isZeroAddress, toAddress, toBigInt, toNormalizedBN, zeroNormalizedBN} from '@builtbymom/web3/utils';
+import {isZeroAddress, toAddress, toNormalizedBN, zeroNormalizedBN} from '@builtbymom/web3/utils';
 import {useLocalStorageValue} from '@react-hookz/web';
 import {useFetchYearnEarnedForUser} from '@yearn-finance/web-lib/hooks/useFetchYearnEarnedForUser';
 import {useFetchYearnPrices} from '@yearn-finance/web-lib/hooks/useFetchYearnPrices';
@@ -61,7 +61,6 @@ const defaultToken: TYToken = {
 	chainID: 1,
 	value: 0,
 	stakingValue: 0,
-	price: zeroNormalizedBN,
 	balance: zeroNormalizedBN,
 	supportedZaps: []
 };
@@ -147,13 +146,9 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 
 	const getPrice = useCallback(
 		({address, chainID}: TTokenAndChain): TNormalizedBN => {
-			const price = balances?.[chainID || 1]?.[address]?.price;
-			if (!price || toBigInt(price.raw) === 0n) {
-				return toNormalizedBN(prices?.[chainID]?.[address] || 0, 6) || zeroNormalizedBN;
-			}
-			return price;
+			return toNormalizedBN(prices?.[chainID]?.[address] || 0, 6) || zeroNormalizedBN;
 		},
-		[prices, balances]
+		[prices]
 	);
 
 	const [cumulatedValueInV2Vaults, cumulatedValueInV3Vaults] = useMemo((): [number, number] => {

@@ -5,7 +5,7 @@ import {useAsyncTrigger} from '@builtbymom/web3/hooks/useAsyncTrigger';
 import {AGGREGATE3_ABI} from '@builtbymom/web3/utils/abi/aggregate.abi';
 import {MULTICALL3_ADDRESS} from '@builtbymom/web3/utils/constants';
 import {decodeAsBigInt, decodeAsNumber, decodeAsString} from '@builtbymom/web3/utils/decoder';
-import {toBigInt, toNormalizedBN, toNormalizedValue} from '@builtbymom/web3/utils/format';
+import {toNormalizedBN} from '@builtbymom/web3/utils/format';
 import {toAddress} from '@builtbymom/web3/utils/tools.address';
 import {isEthAddress, isZero, isZeroAddress} from '@builtbymom/web3/utils/tools.is';
 import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
@@ -18,7 +18,6 @@ import type {DependencyList} from 'react';
 import type {Connector} from 'wagmi';
 import type {TAddress} from '@builtbymom/web3/types/address';
 import type {TChainTokens, TDefaultStatus, TDict, TNDict, TToken} from '@builtbymom/web3/types/mixed';
-import type {TPricesChain} from '@builtbymom/web3/types/prices';
 
 /*******************************************************************************
  ** Request, Response and helpers for the useBalances hook.
@@ -34,7 +33,6 @@ export type TUseBalancesTokens = {
 export type TUseBalancesReq = {
 	key?: string | number;
 	tokens: TUseBalancesTokens[];
-	prices?: TPricesChain;
 	effectDependencies?: DependencyList;
 	provider?: Connector;
 };
@@ -53,7 +51,7 @@ type TDataRef = {
 	balances: TChainTokens;
 };
 
-type TUpdates = TDict<TToken & {lastUpdate: number; owner: TAddress}>; // key=chainID/address, value=timestamp
+type TUpdates = TDict<TToken & {lastUpdate: number; owner: TAddress}>; // key=chainID/address
 const TOKEN_UPDATE: TUpdates = {};
 
 /*******************************************************************************
@@ -70,68 +68,133 @@ const defaultStatus = {
 
 async function performCall(
 	chainID: number,
-	calls: MulticallParameters['contracts'][],
+	chunckCalls: MulticallParameters['contracts'],
 	tokens: TUseBalancesTokens[],
-	ownerAddress: TAddress,
-	prices?: TPricesChain
+	ownerAddress: TAddress
 ): Promise<[TDict<TToken>, Error | undefined]> {
-	const _data: TDict<TToken> = {};
 	const results = await multicall(retrieveConfig(), {
-		contracts: calls as never[],
+		contracts: chunckCalls as never[],
 		chainId: chainID
 	});
 
-	let rIndex = 0;
-	for (const element of tokens) {
-		const {address, decimals: injectedDecimals, name: injectedName, symbol: injectedSymbol} = element;
-		let balanceOf = 0n;
-		const hasOwnerAddress = Boolean(ownerAddress) && !isZeroAddress(ownerAddress);
-		if (hasOwnerAddress) {
-			balanceOf = decodeAsBigInt(results[rIndex++]);
-		}
-		const decimals = decodeAsNumber(results[rIndex++]) || injectedDecimals || 18;
-		const rawPrice = toBigInt(prices?.[chainID]?.[address]);
-		let symbol = decodeAsString(results[rIndex++]) || injectedSymbol || '';
-		let name = decodeAsString(results[rIndex++]) || injectedName || '';
-		if (isEthAddress(address)) {
-			const nativeTokenWrapper = getNetwork(chainID)?.contracts?.wrappedToken;
-			if (nativeTokenWrapper) {
-				symbol = nativeTokenWrapper.coinSymbol;
-				name = nativeTokenWrapper.coinName;
-			}
+	const _data: TDict<TToken> = {};
+	const hasOwnerAddress = Boolean(ownerAddress) && !isZeroAddress(ownerAddress);
+	const tokensAsObject: TDict<TUseBalancesTokens> = {};
+	for (const token of tokens) {
+		tokensAsObject[toAddress(token.address)] = token;
+	}
+
+	const callAndResult: {
+		call: (typeof chunckCalls)[0];
+		result: (typeof results)[0];
+	}[] = [];
+	for (let i = 0; i < chunckCalls.length; i++) {
+		const call = chunckCalls[i];
+		const result = results[i];
+		callAndResult.push({call, result});
+	}
+
+	for (const {call, result} of callAndResult) {
+		const element = tokensAsObject[toAddress(call.address)];
+		if (!element) {
+			continue;
 		}
 
-		_data[address] = {
-			address: address,
-			name: name,
-			symbol: symbol,
-			decimals: decimals,
-			chainID: chainID,
-			balance: toNormalizedBN(balanceOf, decimals),
-			price: toNormalizedBN(rawPrice, 6),
-			value: toNormalizedValue(balanceOf, decimals) * toNormalizedValue(rawPrice, 6)
-		};
-		TOKEN_UPDATE[`${chainID}/${address}`] = {
-			..._data[address],
+		/******************************************************************************************
+		 ** Retrieve the existing data and populate our return object with the existing data if they
+		 ** exist, or just populate the object with the default ones
+		 ******************************************************************************************/
+		const {address, decimals: injectedDecimals, name: injectedName, symbol: injectedSymbol} = element;
+		if (!_data[toAddress(address)]) {
+			_data[toAddress(address)] = {
+				address: address,
+				name: injectedName || '',
+				symbol: injectedSymbol || '',
+				decimals: injectedDecimals || 18,
+				chainID: chainID,
+				balance: toNormalizedBN(0n, injectedDecimals || 18),
+				value: 0
+			};
+		}
+		const decimals = _data[toAddress(address)].decimals || injectedDecimals || 0;
+		const symbol = _data[toAddress(address)].symbol || injectedSymbol || '';
+		const name = _data[toAddress(address)].name || injectedName || '';
+
+		/******************************************************************************************
+		 ** Based on the type of call, we will populate the data object with the results of the call
+		 ** and update the TOKEN_UPDATE object with the new data.
+		 ******************************************************************************************/
+		if (call.functionName === 'name') {
+			if (name === undefined || name === '') {
+				if (isEthAddress(address)) {
+					const nativeTokenWrapper = getNetwork(chainID)?.contracts?.wrappedToken;
+					if (nativeTokenWrapper) {
+						_data[toAddress(address)].name = nativeTokenWrapper.coinName;
+					}
+				} else {
+					_data[toAddress(address)].name = decodeAsString(result) || name;
+				}
+			}
+		} else if (call.functionName === 'symbol') {
+			if (symbol === undefined || symbol === '') {
+				if (isEthAddress(address)) {
+					const nativeTokenWrapper = getNetwork(chainID)?.contracts?.wrappedToken;
+					if (nativeTokenWrapper) {
+						_data[toAddress(address)].symbol = nativeTokenWrapper.coinSymbol;
+					}
+				} else {
+					_data[toAddress(address)].symbol = decodeAsString(result) || symbol;
+				}
+			}
+		} else if (call.functionName === 'decimals') {
+			if (decimals === undefined || decimals === 0) {
+				if (isEthAddress(address)) {
+					const nativeTokenWrapper = getNetwork(chainID)?.contracts?.wrappedToken;
+					if (nativeTokenWrapper) {
+						_data[toAddress(address)].decimals = nativeTokenWrapper.decimals;
+					}
+				} else {
+					_data[toAddress(address)].decimals = decodeAsNumber(result) || decimals;
+				}
+			}
+		} else if (call.functionName === 'balanceOf' && hasOwnerAddress) {
+			const balanceOf = decodeAsBigInt(result);
+			_data[toAddress(address)].balance = toNormalizedBN(balanceOf, decimals);
+		}
+
+		/******************************************************************************************
+		 ** Store the last update and the owner address for the token in the TOKEN_UPDATE object.
+		 ** This will be used to skip fetching the same token for the same owner in the next 60s.
+		 ******************************************************************************************/
+		TOKEN_UPDATE[`${chainID}/${toAddress(address)}`] = {
+			..._data[toAddress(address)],
 			owner: toAddress(ownerAddress),
 			lastUpdate: Date.now()
 		};
 	}
+
 	return [_data, undefined];
 }
 
 async function getBalances(
 	chainID: number,
 	address: TAddress | undefined,
-	tokens: TUseBalancesTokens[],
-	prices?: TPricesChain
+	tokens: TUseBalancesTokens[]
 ): Promise<[TDict<TToken>, Error | undefined]> {
 	let result: TDict<TToken> = {};
-	const calls: MulticallParameters['contracts'][] = [];
 	const ownerAddress = address;
+	const calls: any[] = [];
 
 	for (const element of tokens) {
 		const {address: token} = element;
+
+		const tokenUpdateInfo = TOKEN_UPDATE[`${chainID}/${toAddress(element.address)}`];
+		if (tokenUpdateInfo?.lastUpdate && Date.now() - tokenUpdateInfo?.lastUpdate < 60_000) {
+			if (toAddress(tokenUpdateInfo.owner) === toAddress(ownerAddress)) {
+				continue;
+			}
+		}
+
 		if (isEthAddress(token)) {
 			const nativeTokenWrapper = toAddress(getNetwork(chainID)?.contracts?.wrappedToken?.address);
 			if (isZeroAddress(nativeTokenWrapper)) {
@@ -140,26 +203,37 @@ async function getBalances(
 			}
 			const multicall3Contract = {address: MULTICALL3_ADDRESS, abi: AGGREGATE3_ABI};
 			const baseContract = {address: nativeTokenWrapper, abi: erc20Abi};
+			if (element.decimals === undefined || element.decimals === 0) {
+				calls.push({...baseContract, functionName: 'decimals'} as never);
+			}
+			if (element.symbol === undefined || element.symbol === '') {
+				calls.push({...baseContract, functionName: 'symbol'} as never);
+			}
+			if (element.name === undefined || element.name === '') {
+				calls.push({...baseContract, functionName: 'name'} as never);
+			}
 			if (ownerAddress) {
 				calls.push({...multicall3Contract, functionName: 'getEthBalance', args: [ownerAddress]} as never);
 			}
-			calls.push({...baseContract, functionName: 'decimals'} as never);
-			calls.push({...baseContract, functionName: 'symbol'} as never);
-			calls.push({...baseContract, functionName: 'name'} as never);
 		} else {
 			const baseContract = {address: token, abi: erc20Abi};
+			if (element.decimals === undefined || element.decimals === 0) {
+				calls.push({...baseContract, functionName: 'decimals'} as never);
+			}
+			if (element.symbol === undefined || element.symbol === '') {
+				calls.push({...baseContract, functionName: 'symbol'} as never);
+			}
+			if (element.name === undefined || element.name === '') {
+				calls.push({...baseContract, functionName: 'name'} as never);
+			}
 			if (ownerAddress) {
 				calls.push({...baseContract, functionName: 'balanceOf', args: [ownerAddress]} as never);
 			}
-			calls.push({...baseContract, functionName: 'decimals'} as never);
-			calls.push({...baseContract, functionName: 'symbol'} as never);
-			calls.push({...baseContract, functionName: 'name'} as never);
 		}
 	}
 
 	try {
-		// console.warn(`Retrieving balances for ${calls.length} tokens on chain ${chainID}`);
-		const [callResult] = await performCall(chainID, calls, tokens, toAddress(ownerAddress), prices);
+		const [callResult] = await performCall(chainID, calls, tokens, toAddress(ownerAddress));
 		result = {...result, ...callResult};
 		return [result, undefined];
 	} catch (_error) {
@@ -235,40 +309,28 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 		});
 
 		const tokensPerChainID: TNDict<TUseBalancesTokens[]> = {};
+		const alreadyAdded: TNDict<TDict<boolean>> = {};
 		for (const token of tokens) {
 			if (!tokensPerChainID[token.chainID]) {
 				tokensPerChainID[token.chainID] = [];
 			}
+			if (!alreadyAdded[token.chainID]) {
+				alreadyAdded[token.chainID] = {};
+			}
+			if (alreadyAdded[token.chainID][toAddress(token.address)]) {
+				continue;
+			}
 			tokensPerChainID[token.chainID].push(token);
+			alreadyAdded[token.chainID][toAddress(token.address)] = true;
 		}
 
 		const updated: TChainTokens = {};
 		for (const [chainIDStr, tokens] of Object.entries(tokensPerChainID)) {
 			const chainID = Number(chainIDStr);
-			const relevantTokens = [];
-			for (const token of tokens) {
-				const tokenUpdateInfo = TOKEN_UPDATE[`${chainID}/${toAddress(token.address)}`];
-				if (tokenUpdateInfo?.lastUpdate && Date.now() - tokenUpdateInfo?.lastUpdate < 60_000) {
-					if (toAddress(tokenUpdateInfo.owner) === toAddress(userAddress)) {
-						const tokenData = TOKEN_UPDATE[`${chainID}/${toAddress(token.address)}`];
-						if (tokenData) {
-							if (!data.current.balances[chainID]) {
-								data.current.balances[chainID] = {};
-							}
-							data.current.balances[chainID][tokenData.address] = {
-								...data.current.balances[chainID][tokenData.address],
-								...tokenData
-							};
-							continue;
-						}
-					}
-				}
-				relevantTokens.push(token);
-			}
 
 			const chunks = [];
-			for (let i = 0; i < relevantTokens.length; i += 500) {
-				chunks.push(relevantTokens.slice(i, i + 500));
+			for (let i = 0; i < tokens.length; i += 500) {
+				chunks.push(tokens.slice(i, i + 500));
 			}
 
 			for (const chunkTokens of chunks) {
@@ -333,11 +395,21 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 			const chains: number[] = [];
 			const tokens = tokenList.filter(({address}: TUseBalancesTokens): boolean => !isZeroAddress(address));
 			const tokensPerChainID: TNDict<TUseBalancesTokens[]> = {};
+			const alreadyAdded: TNDict<TDict<boolean>> = {};
+
 			for (const token of tokens) {
 				if (!tokensPerChainID[token.chainID]) {
 					tokensPerChainID[token.chainID] = [];
 				}
+				if (!alreadyAdded[token.chainID]) {
+					alreadyAdded[token.chainID] = {};
+				}
+				if (alreadyAdded[token.chainID][toAddress(token.address)]) {
+					continue;
+				}
+
 				tokensPerChainID[token.chainID].push(token);
+				alreadyAdded[token.chainID][toAddress(token.address)] = true;
 				if (!chains.includes(token.chainID)) {
 					chains.push(token.chainID);
 				}
@@ -346,31 +418,10 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 			const updated: TChainTokens = {};
 			for (const [chainIDStr, tokens] of Object.entries(tokensPerChainID)) {
 				const chainID = Number(chainIDStr);
-				const relevantTokens = [];
-
-				for (const token of tokens) {
-					const tokenUpdateInfo = TOKEN_UPDATE[`${chainID}/${toAddress(token.address)}`];
-					if (tokenUpdateInfo?.lastUpdate && Date.now() - tokenUpdateInfo?.lastUpdate < 60_000) {
-						if (toAddress(tokenUpdateInfo.owner) === toAddress(userAddress)) {
-							const tokenData = TOKEN_UPDATE[`${chainID}/${toAddress(token.address)}`];
-							if (tokenData) {
-								if (!data.current.balances[chainID]) {
-									data.current.balances[chainID] = {};
-								}
-								data.current.balances[chainID][tokenData.address] = {
-									...data.current.balances[chainID][tokenData.address],
-									...tokenData
-								};
-								continue;
-							}
-						}
-					}
-					relevantTokens.push(token);
-				}
 
 				const chunks = [];
-				for (let i = 0; i < relevantTokens.length; i += 500) {
-					chunks.push(relevantTokens.slice(i, i + 500));
+				for (let i = 0; i < tokens.length; i += 500) {
+					chunks.push(tokens.slice(i, i + 500));
 				}
 				for (const chunkTokens of chunks) {
 					const [newRawData, err] = await getBalances(chainID || 1, toAddress(userAddress), chunkTokens);
@@ -417,31 +468,6 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 		[userAddress]
 	);
 
-	const assignPrices = useCallback(
-		(_rawData: TChainTokens): TChainTokens => {
-			const newData = {..._rawData};
-			for (const chainIDStr of Object.keys(newData)) {
-				const chainID = Number(chainIDStr);
-				for (const address of Object.keys(newData[chainID])) {
-					const tokenAddress = toAddress(address);
-					const rawPrice = toBigInt(props?.prices?.[chainID]?.[tokenAddress]);
-					if (!newData[chainID]) {
-						newData[chainID] = {};
-					}
-					newData[chainID][tokenAddress] = {
-						...newData[chainID][tokenAddress],
-						price: toNormalizedBN(rawPrice, 6),
-						value:
-							Number(newData?.[chainID]?.[tokenAddress]?.balance?.normalized || 0) *
-							toNormalizedValue(rawPrice, 6)
-					};
-				}
-			}
-			return newData;
-		},
-		[props?.prices]
-	);
-
 	/***************************************************************************
 	 ** Everytime the stringifiedTokens change, we need to update the balances.
 	 ** This is the main hook and is optimized for performance, using a worker
@@ -457,40 +483,27 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 
 		const tokens = (JSON.parse(stringifiedTokens) || []) as TUseBalancesTokens[];
 		const tokensPerChainID: TNDict<TUseBalancesTokens[]> = {};
+		const alreadyAdded: TNDict<TDict<boolean>> = {};
 		for (const token of tokens) {
 			if (!tokensPerChainID[token.chainID]) {
 				tokensPerChainID[token.chainID] = [];
 			}
+			if (!alreadyAdded[token.chainID]) {
+				alreadyAdded[token.chainID] = {};
+			}
+			if (alreadyAdded[token.chainID][toAddress(token.address)]) {
+				continue;
+			}
 			tokensPerChainID[token.chainID].push(token);
+			alreadyAdded[token.chainID][toAddress(token.address)] = true;
 		}
 
 		for (const [chainIDStr, tokens] of Object.entries(tokensPerChainID)) {
 			const chainID = Number(chainIDStr);
-			const relevantTokens = [];
-
-			for (const token of tokens) {
-				const tokenUpdateInfo = TOKEN_UPDATE[`${chainID}/${toAddress(token.address)}`];
-				if (tokenUpdateInfo?.lastUpdate && Date.now() - tokenUpdateInfo?.lastUpdate < 60_000) {
-					if (toAddress(tokenUpdateInfo.owner) === toAddress(userAddress)) {
-						const tokenData = TOKEN_UPDATE[`${chainID}/${toAddress(token.address)}`];
-						if (tokenData) {
-							if (!data.current.balances[chainID]) {
-								data.current.balances[chainID] = {};
-							}
-							data.current.balances[chainID][tokenData.address] = {
-								...data.current.balances[chainID][tokenData.address],
-								...tokenData
-							};
-							continue;
-						}
-					}
-				}
-				relevantTokens.push(token);
-			}
 
 			const chunks = [];
-			for (let i = 0; i < relevantTokens.length; i += 500) {
-				chunks.push(relevantTokens.slice(i, i + 500));
+			for (let i = 0; i < tokens.length; i += 500) {
+				chunks.push(tokens.slice(i, i + 500));
 			}
 			const allPromises = [];
 			for (const chunkTokens of chunks) {
@@ -503,12 +516,13 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 			}
 			await Promise.all(allPromises);
 		}
+
 		set_status({...defaultStatus, isSuccess: true, isFetched: true});
 	}, [stringifiedTokens, userAddress, updateBalancesCall]);
 
 	const contextValue = useDeepCompareMemo(
 		(): TUseBalancesRes => ({
-			data: assignPrices(balances || {}),
+			data: balances || {},
 			onUpdate: onUpdate,
 			onUpdateSome: onUpdateSome,
 			error,
@@ -527,7 +541,6 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 						: 'unknown'
 		}),
 		[
-			assignPrices,
 			balances,
 			error,
 			onUpdate,

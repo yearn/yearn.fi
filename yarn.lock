@@ -980,32 +980,10 @@
     "@babel/helper-validator-identifier" "^7.22.20"
     to-fast-properties "^2.0.0"
 
-"@builtbymom/web3@^0.0.43":
-  version "0.0.43"
-  resolved "https://registry.yarnpkg.com/@builtbymom/web3/-/web3-0.0.43.tgz#f402959b4cee26960ce8b0eb0dff64a627ed6434"
-  integrity sha512-ikXThfH0Yn9XaAtUkGJKu3KB25nxog+3O0uxdMlgUvjY817U1ywsSOFaO247dRGEYK+PkZ2uObVu6ighIFE4Qw==
-  dependencies:
-    "@rainbow-me/rainbowkit" "^2.0.1"
-    "@react-hookz/web" "^24.0.4"
-    "@tanstack/react-query" "^5.25.0"
-    "@total-typescript/ts-reset" "^0.5.1"
-    "@wagmi/core" "^2.6.5"
-    bun-types "^1.0.30"
-    ethers "5.7.2"
-    eventemitter3 "^5.0.1"
-    lint-staged "^15.2.2"
-    next "^14.0.4"
-    prettier "^3.2.5"
-    react-hot-toast "2.4.1"
-    swr "^2.2.5"
-    viem "^2.7.20"
-    wagmi "^2.5.7"
-    zod "^3.22.4"
-
-"@builtbymom/web3@^0.0.58":
-  version "0.0.58"
-  resolved "https://registry.yarnpkg.com/@builtbymom/web3/-/web3-0.0.58.tgz#3d480cf33be8567a508f4ae05d378b75caad1088"
-  integrity sha512-ptQMC81WnZVpLCgtXabLlghbC/W3uXgcTBxUtSz+bm7ZAxQ6SBGwrkqWUD/93TaCk8gED1ir/LJBBcpcbPNQOw==
+"@builtbymom/web3@^0.0.59":
+  version "0.0.59"
+  resolved "https://registry.yarnpkg.com/@builtbymom/web3/-/web3-0.0.59.tgz#a909ec5138dc90a9f284b57fc91d3d61ae1bd510"
+  integrity sha512-gwjDfdmRxvW1q9ROME98yrJDIW4i3qUo+okpGxRXRZoqIRftQx/3XkqekLscGLNBZIUZ6/gH5Lw51DpSqGAoiw==
   dependencies:
     "@rainbow-me/rainbowkit" "^2.0.2"
     "@react-hookz/web" "^24.0.4"
@@ -2646,7 +2624,7 @@
   resolved "https://registry.yarnpkg.com/@tanstack/query-core/-/query-core-5.28.6.tgz#a3bdb108f9f8d4e2ba3163068dbe6ff55b905a81"
   integrity sha512-hnhotV+DnQtvtR3jPvbQMPNMW4KEK0J4k7c609zJ8muiNknm+yoDyMHmxTWM5ZnlZpsz0zOxYFr+mzRJNHWJsA==
 
-"@tanstack/react-query@^5.25.0", "@tanstack/react-query@^5.28.2":
+"@tanstack/react-query@^5.28.2":
   version "5.28.6"
   resolved "https://registry.yarnpkg.com/@tanstack/react-query/-/react-query-5.28.6.tgz#0d52b0a98a1d842debf9c65496e20a9981a23bc4"
   integrity sha512-/DdYuDBSsA21Qbcder1R8Cr/3Nx0ZnA2lgtqKsLMvov8wL4+g0HBz/gWYZPlIsof7iyfQafyhg4wUVUsS3vWZw==
@@ -3587,12 +3565,12 @@
   resolved "https://registry.yarnpkg.com/@xtuc/long/-/long-4.2.2.tgz#d291c6a4e97989b5c61d9acf396ae4fe133a718d"
   integrity sha512-NuHqBY1PB/D8xU6s/thBgOAiAP7HOYDQ32+BFZILJ8ivkUkAHQnWfn6WhL79Owj1qmUnoN/YPhktdIoucipkAQ==
 
-"@yearn-finance/web-lib@^3.0.182":
-  version "3.0.182"
-  resolved "https://registry.yarnpkg.com/@yearn-finance/web-lib/-/web-lib-3.0.182.tgz#88216a49705d4c2ab0b451ac31ea0bf68b2c212a"
-  integrity sha512-ppc4JwIIbwuh7+zKo3DkeWFTL1FusFRe5YJ41UrhlEHRHU6DPvolGNTn3xh2ixt8oIOdo3AYfPy5KPKINi4sdw==
+"@yearn-finance/web-lib@^3.0.184":
+  version "3.0.184"
+  resolved "https://registry.yarnpkg.com/@yearn-finance/web-lib/-/web-lib-3.0.184.tgz#7fc9b833cd917cfa6632674d0c4337260b373390"
+  integrity sha512-f024c0ZILsEf5Nv209eUVcgyTUObPvLGKS1ECCwT2tdPKGJRrYzEpqKR2Wf4HaeZkFKg6dIcHN1/lUMtjMOhgQ==
   dependencies:
-    "@builtbymom/web3" "^0.0.43"
+    "@builtbymom/web3" "^0.0.59"
     "@headlessui/react" "^1.7.18"
     "@rainbow-me/rainbowkit" "^2.0.1"
     "@react-hookz/web" "^24.0.4"
@@ -9617,7 +9595,7 @@ viem@^1.0.0, viem@^1.1.4:
     isows "1.0.3"
     ws "8.13.0"
 
-viem@^2.7.20, viem@^2.7.22, viem@^2.8.4, viem@^2.8.9:
+viem@^2.7.22, viem@^2.8.4, viem@^2.8.9:
   version "2.8.16"
   resolved "https://registry.yarnpkg.com/viem/-/viem-2.8.16.tgz#30370390a6f109657b57c1a01b2793c4056b4e95"
   integrity sha512-J8tu1aP7TfI2HT/IEmyJ+n+WInrA/cuMuJtfgvYhYgHBobxhYGc2SojHm5lZBWcWgErN1Ld7VcKUwTmPh4ToQA==
