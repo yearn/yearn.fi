@@ -5,17 +5,7 @@ import {toAddress} from '@builtbymom/web3/utils';
 import {getNetwork} from '@builtbymom/web3/utils/wagmi';
 import {useDeepCompareMemo} from '@react-hookz/web';
 import {useFetchYearnTokens} from '@yearn-finance/web-lib/hooks/useFetchYearnTokens';
-import {
-	CRV_TOKEN_ADDRESS,
-	CVXCRV_TOKEN_ADDRESS,
-	ETH_TOKEN_ADDRESS,
-	LPYCRV_TOKEN_ADDRESS,
-	LPYCRV_V2_TOKEN_ADDRESS,
-	YCRV_CURVE_POOL_V2_ADDRESS,
-	YCRV_TOKEN_ADDRESS,
-	YVBOOST_TOKEN_ADDRESS,
-	YVECRV_TOKEN_ADDRESS
-} from '@yearn-finance/web-lib/utils/constants';
+import {ETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 
 import {useBalances} from './useBalances.multichains';
 
@@ -73,85 +63,134 @@ export function useYearnTokens({
 	}, [safeChainID, currentNetworkTokenList]);
 
 	//List available tokens
-	const availableTokens = useMemo((): TUseBalancesTokens[] => {
+	const availableTokens = useMemo((): TDict<TUseBalancesTokens> => {
 		if (isLoadingVaultList || !yearnTokens) {
-			return [];
+			return {};
 		}
-		const tokens: TUseBalancesTokens[] = [];
-		const tokensExists: TDict<boolean> = {};
+		const tokens: TDict<TUseBalancesTokens> = {};
 		const extraTokens: TUseBalancesTokens[] = [];
 		extraTokens.push(
 			...[
-				{chainID: 1, address: ETH_TOKEN_ADDRESS},
-				{chainID: 10, address: ETH_TOKEN_ADDRESS},
-				{chainID: 137, address: ETH_TOKEN_ADDRESS},
-				{chainID: 250, address: ETH_TOKEN_ADDRESS},
-				{chainID: 8453, address: ETH_TOKEN_ADDRESS},
-				{chainID: 42161, address: ETH_TOKEN_ADDRESS},
-				{chainID: 1, address: YCRV_TOKEN_ADDRESS},
-				{chainID: 1, address: LPYCRV_TOKEN_ADDRESS},
-				{chainID: 1, address: CRV_TOKEN_ADDRESS},
-				{chainID: 1, address: YVBOOST_TOKEN_ADDRESS},
-				{chainID: 1, address: YVECRV_TOKEN_ADDRESS},
-				{chainID: 1, address: CVXCRV_TOKEN_ADDRESS},
-				{chainID: 1, address: YCRV_CURVE_POOL_V2_ADDRESS},
-				{chainID: 1, address: LPYCRV_V2_TOKEN_ADDRESS}
+				{chainID: 1, address: ETH_TOKEN_ADDRESS, decimals: 18, name: 'Ether', symbol: 'ETH'},
+				{chainID: 10, address: ETH_TOKEN_ADDRESS, decimals: 18, name: 'Ether', symbol: 'ETH'},
+				{chainID: 137, address: ETH_TOKEN_ADDRESS, decimals: 18, name: 'Matic', symbol: 'POL'},
+				{chainID: 250, address: ETH_TOKEN_ADDRESS, decimals: 18, name: 'Fantom', symbol: 'FTM'},
+				{chainID: 8453, address: ETH_TOKEN_ADDRESS, decimals: 18, name: 'Ether', symbol: 'ETH'},
+				{chainID: 42161, address: ETH_TOKEN_ADDRESS, decimals: 18, name: 'Ether', symbol: 'ETH'}
 			]
 		);
 
 		for (const token of extraTokens) {
-			tokensExists[toAddress(token.address)] = true;
-			tokens.push(token);
+			const key = `${token.chainID}/${toAddress(token.address)}`;
+			tokens[key] = token;
 		}
 
 		Object.values(vaults || {}).forEach((vault?: TYDaemonVault): void => {
 			if (!vault) {
 				return;
 			}
-			if (vault?.address && !tokensExists[toAddress(vault?.address)]) {
-				tokens.push({
+
+			if (vault?.address && !tokens[`${vault.chainID}/${toAddress(vault.address)}`]) {
+				const newToken = {
 					address: vault.address,
 					chainID: vault.chainID,
 					symbol: vault.symbol,
 					decimals: vault.decimals,
 					name: vault.name
-				});
-				tokensExists[vault.address] = true;
+				};
+
+				tokens[`${vault.chainID}/${toAddress(vault.address)}`] = newToken;
+			} else {
+				const existingToken = tokens[`${vault.chainID}/${toAddress(vault.address)}`];
+				if (existingToken) {
+					if (!existingToken?.name && vault.name) {
+						tokens[`${vault.chainID}/${toAddress(vault.address)}`].name = vault.name;
+					}
+					if (!existingToken?.symbol && vault.symbol) {
+						tokens[`${vault.chainID}/${toAddress(vault.address)}`].symbol = vault.symbol;
+					}
+					if (!existingToken?.decimals && vault.decimals) {
+						tokens[`${vault.chainID}/${toAddress(vault.address)}`].decimals = vault.decimals;
+					}
+				}
 			}
-			if (vault?.token?.address && !tokensExists[toAddress(vault?.token?.address)]) {
-				tokens.push({
+
+			// Add vaults tokens
+			if (vault?.token?.address && !tokens[`${vault.chainID}/${toAddress(vault?.token.address)}`]) {
+				const newToken = {
 					address: vault.token.address,
 					chainID: vault.chainID,
 					symbol: vault.symbol,
 					decimals: vault.decimals,
 					name: vault.name
-				});
-				tokensExists[vault.token.address] = true;
+				};
+
+				tokens[`${vault.chainID}/${toAddress(vault?.token.address)}`] = newToken;
+			} else {
+				const existingToken = tokens[`${vault.chainID}/${toAddress(vault?.token.address)}`];
+				if (existingToken) {
+					if (!existingToken?.name && vault.name) {
+						tokens[`${vault.chainID}/${toAddress(vault?.token.address)}`].name = vault.name;
+					}
+					if (!existingToken?.symbol && vault.symbol) {
+						tokens[`${vault.chainID}/${toAddress(vault?.token.address)}`].symbol = vault.symbol;
+					}
+					if (!existingToken?.decimals && vault.decimals) {
+						tokens[`${vault.chainID}/${toAddress(vault?.token.address)}`].decimals = vault.decimals;
+					}
+				}
 			}
-			if (vault?.staking?.available && !tokensExists[toAddress(vault?.staking?.address)]) {
-				tokens.push({
+
+			// Add staking token
+			if (vault?.staking?.available && !tokens[`${vault.chainID}/${toAddress(vault?.staking.address)}`]) {
+				const newToken = {
 					address: toAddress(vault?.staking?.address),
 					chainID: vault.chainID,
 					symbol: vault.symbol,
 					decimals: vault.decimals,
 					name: vault.name
-				});
-				tokensExists[toAddress(vault?.staking?.address)] = true;
+				};
+				tokens[`${vault.chainID}/${toAddress(vault?.staking.address)}`] = newToken;
+			} else {
+				const existingToken = tokens[`${vault.chainID}/${toAddress(vault?.staking.address)}`];
+				if (existingToken) {
+					if (!existingToken?.name && vault.name) {
+						tokens[`${vault.chainID}/${toAddress(vault?.staking.address)}`].name = vault.name;
+					}
+					if (!existingToken?.symbol && vault.symbol) {
+						tokens[`${vault.chainID}/${toAddress(vault?.staking.address)}`].symbol = vault.symbol;
+					}
+					if (!existingToken?.decimals && vault.decimals) {
+						tokens[`${vault.chainID}/${toAddress(vault?.staking.address)}`].decimals = vault.decimals;
+					}
+				}
 			}
 		});
 
 		for (const [chainID, tokensData] of Object.entries(yearnTokens)) {
 			if (tokensData) {
 				for (const [address, token] of Object.entries(tokensData)) {
-					if (token && !tokensExists[toAddress(address)]) {
-						tokens.push({
+					if (token && !tokens[`${token.chainID}/${toAddress(address)}`]) {
+						tokens[`${token.chainID}/${toAddress(address)}`] = {
 							address: toAddress(address),
 							chainID: Number(chainID),
 							decimals: token.decimals,
 							name: token.name,
 							symbol: token.symbol
-						});
-						tokensExists[toAddress(address)] = true;
+						};
+					} else {
+						const existingToken = tokens[`${token.chainID}/${toAddress(address)}`];
+						if (existingToken) {
+							if (!existingToken?.name && token.name) {
+								tokens[`${token.chainID}/${toAddress(address)}`].name = token.name;
+							}
+							if (!existingToken?.symbol && token.symbol) {
+								tokens[`${token.chainID}/${toAddress(address)}`].symbol = token.symbol;
+							}
+							if (!existingToken?.decimals && token.decimals) {
+								tokens[`${token.chainID}/${toAddress(address)}`].decimals = token.decimals;
+							}
+						}
 					}
 				}
 			}
@@ -168,7 +207,13 @@ export function useYearnTokens({
 			if (!vault) {
 				return;
 			}
-			tokens.push({address: vault.address, chainID: vault.chainID});
+			tokens.push({
+				address: vault.address,
+				chainID: vault.chainID,
+				symbol: vault.symbol,
+				name: vault.name,
+				decimals: vault.decimals
+			});
 		});
 		return tokens;
 	}, [vaultsMigrations]);
@@ -180,7 +225,13 @@ export function useYearnTokens({
 			if (!vault) {
 				return;
 			}
-			tokens.push({address: vault.address, chainID: vault.chainID});
+			tokens.push({
+				address: vault.address,
+				chainID: vault.chainID,
+				symbol: vault.symbol,
+				name: vault.name,
+				decimals: vault.decimals
+			});
 		});
 		return tokens;
 	}, [vaultsRetired]);
@@ -189,7 +240,8 @@ export function useYearnTokens({
 		if (!isReady) {
 			return [];
 		}
-		const tokens = [...availableTokens, ...migratableTokens, ...retiredTokens, ...availableTokenListTokens];
+		const fromAvailableTokens = Object.values(availableTokens);
+		const tokens = [...fromAvailableTokens, ...migratableTokens, ...retiredTokens, ...availableTokenListTokens];
 		return tokens;
 	}, [isReady, availableTokens, migratableTokens, retiredTokens, availableTokenListTokens]);
 
