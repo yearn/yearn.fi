@@ -3,7 +3,7 @@ import {erc20Abi} from 'viem';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {useAsyncTrigger} from '@builtbymom/web3/hooks/useAsyncTrigger';
 import {AGGREGATE3_ABI} from '@builtbymom/web3/utils/abi/aggregate.abi';
-import {MULTICALL3_ADDRESS} from '@builtbymom/web3/utils/constants';
+import {ETH_TOKEN_ADDRESS, MULTICALL3_ADDRESS} from '@builtbymom/web3/utils/constants';
 import {decodeAsBigInt, decodeAsNumber, decodeAsString} from '@builtbymom/web3/utils/decoder';
 import {toNormalizedBN} from '@builtbymom/web3/utils/format';
 import {toAddress} from '@builtbymom/web3/utils/tools.address';
@@ -95,9 +95,13 @@ async function performCall(
 	}
 
 	for (const {call, result} of callAndResult) {
-		const element = tokensAsObject[toAddress(call.address)];
+		let element = tokensAsObject[toAddress(call.address)];
 		if (!element) {
-			continue;
+			if (call.functionName === 'getEthBalance') {
+				element = tokensAsObject[toAddress(ETH_TOKEN_ADDRESS)];
+			} else {
+				continue;
+			}
 		}
 
 		/******************************************************************************************
@@ -158,6 +162,9 @@ async function performCall(
 				}
 			}
 		} else if (call.functionName === 'balanceOf' && hasOwnerAddress) {
+			const balanceOf = decodeAsBigInt(result);
+			_data[toAddress(address)].balance = toNormalizedBN(balanceOf, decimals);
+		} else if (call.functionName === 'getEthBalance' && hasOwnerAddress) {
 			const balanceOf = decodeAsBigInt(result);
 			_data[toAddress(address)].balance = toNormalizedBN(balanceOf, decimals);
 		}
