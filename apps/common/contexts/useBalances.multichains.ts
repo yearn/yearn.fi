@@ -131,10 +131,7 @@ async function performCall(
 		if (call.functionName === 'name') {
 			if (name === undefined || name === '') {
 				if (isEthAddress(address)) {
-					const nativeTokenWrapper = getNetwork(chainID)?.contracts?.wrappedToken;
-					if (nativeTokenWrapper) {
-						_data[toAddress(address)].name = nativeTokenWrapper.coinName;
-					}
+					_data[toAddress(address)].name = getNetwork(chainID).nativeCurrency.name;
 				} else {
 					_data[toAddress(address)].name = decodeAsString(result) || name;
 				}
@@ -142,10 +139,7 @@ async function performCall(
 		} else if (call.functionName === 'symbol') {
 			if (symbol === undefined || symbol === '') {
 				if (isEthAddress(address)) {
-					const nativeTokenWrapper = getNetwork(chainID)?.contracts?.wrappedToken;
-					if (nativeTokenWrapper) {
-						_data[toAddress(address)].symbol = nativeTokenWrapper.coinSymbol;
-					}
+					_data[toAddress(address)].name = getNetwork(chainID).nativeCurrency.symbol;
 				} else {
 					_data[toAddress(address)].symbol = decodeAsString(result) || symbol;
 				}
@@ -153,10 +147,7 @@ async function performCall(
 		} else if (call.functionName === 'decimals') {
 			if (decimals === undefined || decimals === 0) {
 				if (isEthAddress(address)) {
-					const nativeTokenWrapper = getNetwork(chainID)?.contracts?.wrappedToken;
-					if (nativeTokenWrapper) {
-						_data[toAddress(address)].decimals = nativeTokenWrapper.decimals;
-					}
+					_data[toAddress(address)].decimals = getNetwork(chainID).nativeCurrency.decimals;
 				} else {
 					_data[toAddress(address)].decimals = decodeAsNumber(result) || decimals;
 				}
@@ -169,6 +160,9 @@ async function performCall(
 			_data[toAddress(address)].balance = toNormalizedBN(balanceOf, decimals);
 		}
 
+		if (_data[toAddress(address)].decimals === 0) {
+			_data[toAddress(address)].decimals = 18;
+		}
 		/******************************************************************************************
 		 ** Store the last update and the owner address for the token in the TOKEN_UPDATE object.
 		 ** This will be used to skip fetching the same token for the same owner in the next 60s.
@@ -203,13 +197,8 @@ async function getBalances(
 		}
 
 		if (isEthAddress(token)) {
-			const nativeTokenWrapper = toAddress(getNetwork(chainID)?.contracts?.wrappedToken?.address);
-			if (isZeroAddress(nativeTokenWrapper)) {
-				console.error('No native token wrapper found for chainID', chainID);
-				continue;
-			}
 			const multicall3Contract = {address: MULTICALL3_ADDRESS, abi: AGGREGATE3_ABI};
-			const baseContract = {address: nativeTokenWrapper, abi: erc20Abi};
+			const baseContract = {address: ETH_TOKEN_ADDRESS, abi: erc20Abi};
 			if (element.decimals === undefined || element.decimals === 0) {
 				calls.push({...baseContract, functionName: 'decimals'} as never);
 			}

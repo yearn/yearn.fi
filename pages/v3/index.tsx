@@ -1,5 +1,5 @@
-import {Children, Fragment, useEffect, useMemo, useState} from 'react';
-import {motion, useSpring, useTransform} from 'framer-motion';
+import {Children, Fragment, useLayoutEffect, useMemo, useRef, useState} from 'react';
+import {animate, motion} from 'framer-motion';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {cl, formatAmount, isZero} from '@builtbymom/web3/utils';
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
@@ -18,15 +18,33 @@ import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVa
 import type {TSortDirection} from '@builtbymom/web3/types';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 
-function Counter({value}: {value: number}): ReactElement {
-	const v = useSpring(value, {mass: 1, stiffness: 75, damping: 15});
-	const display = useTransform(v, (current): string => `$${formatAmount(current)}`);
+export function Counter({value, decimals = 18}: {value: number; decimals: number}): ReactElement {
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const nodeRef = useRef<any>();
+	const valueRef = useRef(value || 0);
 
-	useEffect((): void => {
-		v.set(value);
-	}, [v, value]);
+	useLayoutEffect((): (() => void) => {
+		const node = nodeRef.current;
+		if (node) {
+			const controls = animate(Number(valueRef.current || 0), value, {
+				duration: 1,
+				onUpdate(value) {
+					valueRef.current = value;
+					node.textContent = formatAmount(value.toFixed(decimals), decimals, decimals);
+				}
+			});
+			return () => controls.stop();
+		}
+		return () => undefined;
+	}, [value, decimals]);
 
-	return <motion.span>{display}</motion.span>;
+	return (
+		<span
+			className={'font-number'}
+			suppressHydrationWarning
+			ref={nodeRef}
+		/>
+	);
 }
 
 function Background(): ReactElement {
@@ -88,10 +106,6 @@ function PortfolioCard(): ReactElement {
 	const {cumulatedValueInV3Vaults} = useYearn();
 	const {isActive, address, openLoginModal, onSwitchChain} = useWeb3();
 
-	const formatedYouHave = useMemo((): string => {
-		return formatAmount(cumulatedValueInV3Vaults || 0) ?? '';
-	}, [cumulatedValueInV3Vaults]);
-
 	if (!isActive) {
 		return (
 			<div className={'col-span-12 w-full rounded-3xl bg-neutral-100 p-6 md:col-span-6'}>
@@ -141,7 +155,11 @@ function PortfolioCard(): ReactElement {
 				<div>
 					<p className={'pb-0 text-[#757CA6] md:pb-2'}>{'Deposited'}</p>
 					<b className={'font-number text-xl text-neutral-900 md:text-3xl'}>
-						<Counter value={Number(formatedYouHave)} />
+						{'$'}
+						<Counter
+							value={cumulatedValueInV3Vaults}
+							decimals={2}
+						/>
 					</b>
 				</div>
 			</div>
