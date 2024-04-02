@@ -210,6 +210,8 @@ export function ActionFlowContextApp({
 						isReady: true,
 						selectedOptionFrom: action.payload.selectedOptionFrom,
 						selectedOptionTo: action.payload.selectedOptionTo,
+						possibleOptionsFrom: action.payload.possibleOptionsFrom || [],
+						possibleOptionsTo: action.payload.possibleOptionsTo || [],
 						amount: action.payload.amount || zeroNormalizedBN
 					};
 				default:
