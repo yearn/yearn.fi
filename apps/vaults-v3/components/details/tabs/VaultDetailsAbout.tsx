@@ -63,7 +63,7 @@ export function VaultDetailsAbout({currentVault}: {currentVault: TYDaemonVault})
 				<div className={'grid grid-cols-1 gap-x-12 md:grid-cols-1'}>
 					<div className={'mb-4 md:mb-10'}>
 						<b className={'text-neutral-900'}>{'APR'}</b>
-						<div className={'mt-4 grid grid-cols-4 gap-8'}>
+						<div className={'mt-4 grid grid-cols-3 gap-8'}>
 							<YearnFeesLineItem label={'Last 7 days'}>
 								<b className={'font-number text-xl text-neutral-900'}>
 									{apr.type.includes('new') ? 'New' : formatPercent(apr.points.weekAgo * 100, 0)}
