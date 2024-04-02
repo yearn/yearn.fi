@@ -1002,6 +1002,28 @@
     wagmi "^2.5.7"
     zod "^3.22.4"
 
+"@builtbymom/web3@^0.0.67":
+  version "0.0.67"
+  resolved "https://registry.yarnpkg.com/@builtbymom/web3/-/web3-0.0.67.tgz#fb97fdcd26797f8b61afc9c9557c167d64175994"
+  integrity sha512-6zWmUO8ZWJAC2IssMe22OZxuPzC6LWbPhsoSfkAZETHaPMfMYV1KVIujyWbv8G1PaqbCEvLhr9gNF0BHegG+zw==
+  dependencies:
+    "@rainbow-me/rainbowkit" "^2.0.2"
+    "@react-hookz/web" "^24.0.4"
+    "@tanstack/react-query" "^5.28.2"
+    "@total-typescript/ts-reset" "^0.5.1"
+    "@wagmi/core" "^2.6.5"
+    bun-types "^1.0.30"
+    ethers "5.7.2"
+    eventemitter3 "^5.0.1"
+    lint-staged "^15.2.2"
+    next "^14.1.3"
+    prettier "^3.2.5"
+    react-hot-toast "2.4.1"
+    swr "^2.2.5"
+    viem "^2.8.9"
+    wagmi "^2.5.7"
+    zod "^3.22.4"
+
 "@coinbase/wallet-sdk@3.9.1":
   version "3.9.1"
   resolved "https://registry.yarnpkg.com/@coinbase/wallet-sdk/-/wallet-sdk-3.9.1.tgz#503a14671bb392d653623ef2340934e213ac971f"
@@ -10032,6 +10054,7 @@ workbox-window@6.6.1, workbox-window@^6.5.4:
     workbox-core "6.6.1"
 
 "wrap-ansi-cjs@npm:wrap-ansi@^7.0.0", wrap-ansi@^7.0.0:
+  name wrap-ansi-cjs
   version "7.0.0"
   resolved "https://registry.yarnpkg.com/wrap-ansi/-/wrap-ansi-7.0.0.tgz#67e145cff510a6a6984bdf1152911d69d2eb9e43"
   integrity sha512-YVGIj2kamLSTxw6NsZjoBxfSwsn0ycdesmc4p+Q21c5zPuZ1pl+NfxVdxPtdHvmNVOQ6XSYG4AUtyt/Fi7D16Q==
