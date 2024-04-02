@@ -14,6 +14,7 @@ import {VaultChainTag} from '../VaultChainTag';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TNormalizedBN} from '@builtbymom/web3/types';
 
 function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const isEthMainnet = currentVault.chainID === 1;
@@ -355,15 +356,19 @@ function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}): Reac
 }
 
 export function VaultStakedAmount({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const {getToken} = useYearn();
+	const {getToken, getPrice} = useYearn();
 
-	const staked = useMemo((): bigint => {
+	const tokenPrice = useMemo(
+		() => getPrice({address: currentVault.address, chainID: currentVault.chainID}),
+		[currentVault.address, currentVault.chainID]
+	);
+	const staked = useMemo((): TNormalizedBN => {
 		const vaultToken = getToken({chainID: currentVault.chainID, address: currentVault.address});
 		if (currentVault.staking.available) {
 			const stakingToken = getToken({chainID: currentVault.chainID, address: currentVault.staking.address});
-			return vaultToken.balance.raw + stakingToken.balance.raw;
+			return toNormalizedBN(vaultToken.balance.raw + stakingToken.balance.raw, vaultToken.decimals);
 		}
-		return vaultToken.balance.raw;
+		return toNormalizedBN(vaultToken.balance.raw, vaultToken.decimals);
 	}, [
 		currentVault.address,
 		currentVault.chainID,
@@ -373,17 +378,31 @@ export function VaultStakedAmount({currentVault}: {currentVault: TYDaemonVault})
 	]);
 
 	return (
-		<p
-			className={`yearn--table-data-section-item-value ${
-				isZero(staked) ? 'text-neutral-400' : 'text-neutral-900'
-			}`}>
-			<RenderAmount
-				value={staked}
-				symbol={currentVault.token.symbol}
-				decimals={currentVault.token.decimals}
-				options={{shouldDisplaySymbol: false, maximumFractionDigits: 4}}
-			/>
-		</p>
+		<div className={'flex flex-col pt-0 text-right md:pt-8'}>
+			<p
+				className={`yearn--table-data-section-item-value ${
+					isZero(staked.raw) ? 'text-neutral-400' : 'text-neutral-900'
+				}`}>
+				<RenderAmount
+					value={staked.raw}
+					symbol={currentVault.token.symbol}
+					decimals={currentVault.token.decimals}
+					options={{shouldDisplaySymbol: false, maximumFractionDigits: 4}}
+				/>
+			</p>
+			<small className={cl('text-xs text-neutral-900/40', staked.raw === 0n ? 'invisible' : 'visible')}>
+				<RenderAmount
+					value={staked.normalized * tokenPrice.normalized}
+					symbol={'USD'}
+					decimals={0}
+					options={{
+						shouldCompactValue: true,
+						maximumFractionDigits: 2,
+						minimumFractionDigits: 0
+					}}
+				/>
+			</small>
+		</div>
 	);
 }
 
@@ -503,7 +522,7 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 					</div>
 
 					<div
-						className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'}
+						className={'yearn--table-data-section-item col-span-2 !mt-0 flex-row md:!mt-4 md:flex-col'}
 						datatype={'number'}>
 						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Deposited'}</p>
 						<VaultStakedAmount currentVault={currentVault} />
