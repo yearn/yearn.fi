@@ -20,7 +20,7 @@
 		"@builtbymom/web3": "^0.0.59",
 		"@cowprotocol/cow-sdk": "2.1.0",
 		"@headlessui/react": "^1.7.18",
-		"@rainbow-me/rainbowkit": "^2.0.2",
+		"@rainbow-me/rainbowkit": "^2.0.4",
 		"@tailwindcss/typography": "^0.5.10",
 		"@wagmi/core": "^2.6.5",
 		"@yearn-finance/web-lib": "^3.0.184",
