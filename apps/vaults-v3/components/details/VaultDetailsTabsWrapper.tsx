@@ -155,8 +155,8 @@ function AddToWalletLink({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 	): Promise<void> {
 		try {
 			assert(provider, 'Provider is not set');
-			const walletClient = getConnectorClient(retrieveConfig()) as any;
-			await watchAsset(walletClient, {
+			const walletClient = await getConnectorClient(retrieveConfig());
+			watchAsset(walletClient, {
 				type: 'ERC20',
 				options: {
 					address: toAddress(address),
