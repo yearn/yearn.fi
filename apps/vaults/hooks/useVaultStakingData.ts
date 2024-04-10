@@ -1,5 +1,6 @@
+import {useEffect} from 'react';
 import {erc20Abi} from 'viem';
-import {useReadContracts} from 'wagmi';
+import {useBlockNumber, useReadContracts} from 'wagmi';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {isZeroAddress, toAddress, toBigInt} from '@builtbymom/web3/utils';
 import {STAKING_REWARDS_ABI} from '@vaults/utils/abi/stakingRewards.abi';
@@ -18,6 +19,7 @@ type TStakingInfo = {
 };
 export function useVaultStakingData({currentVault}: {currentVault: TYDaemonVault}): [TStakingInfo, VoidFunction] {
 	const {address} = useWeb3();
+	const {data: blockNumber} = useBlockNumber({watch: true});
 	const {data, refetch} = useReadContracts({
 		contracts: [
 			{
@@ -64,6 +66,10 @@ export function useVaultStakingData({currentVault}: {currentVault: TYDaemonVault
 			enabled: currentVault.staking.available
 		}
 	});
+
+	useEffect(() => {
+		refetch();
+	}, [blockNumber, refetch]);
 
 	return [
 		{
