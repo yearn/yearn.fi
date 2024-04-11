@@ -1,3 +1,5 @@
+import {cl} from '@builtbymom/web3/utils';
+
 import type {ReactElement, ReactNode} from 'react';
 
 type TAmountInputProps = {
@@ -51,9 +53,12 @@ export function FakeInput(
 			{label && <p className={'mb-1 w-full truncate text-base text-neutral-600'}>{label}</p>}
 			<div className={'relative flex w-full items-center justify-center'}>
 				<div
-					className={`h-10 w-full border-0 border-none bg-neutral-300 p-2 font-mono text-base font-normal outline-none`}
+					className={cl(
+						`h-10 w-full border-0 border-none bg-neutral-300 p-2 font-mono text-base font-normal outline-none`,
+						value === undefined ? 'text-neutral-600/60' : ''
+					)}
 					aria-label={label}>
-					{value}
+					{value || '0.00'}
 				</div>
 			</div>
 			{legend && (

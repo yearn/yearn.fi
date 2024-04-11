@@ -1,9 +1,10 @@
 import {assert, assertAddress} from '@builtbymom/web3/utils';
-import {handleTx} from '@builtbymom/web3/utils/wagmi';
+import {handleTx, toWagmiProvider} from '@builtbymom/web3/utils/wagmi';
 import {STAKING_REWARDS_ABI} from '@vaults/utils/abi/stakingRewards.abi';
 import {STAKING_REWARDS_ZAP_ABI} from '@vaults/utils/abi/stakingRewardsZap.abi';
 import {STAKING_REWARDS_ZAP_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 
+import {VEYFI_GAUGE_ABI} from './abi/veYFIGauge.abi.ts';
 import {ZAP_CRV_ABI} from './abi/zapCRV.abi';
 
 import type {TAddress} from '@builtbymom/web3/types';
@@ -57,6 +58,25 @@ export async function stake(props: TStake): Promise<TTxResponse> {
 }
 
 /* 🔵 - Yearn Finance **********************************************************
+ ** stake is a _WRITE_ function that stakes a given amount of the underlying
+ ** asset into the veYFI gauge.
+ **
+ ** @app - veYFI
+ ** @param amount - The amount of the underlying asset to deposit.
+ ******************************************************************************/
+export async function stakeVeYFIGauge(props: TStake): Promise<TTxResponse> {
+	assertAddress(props.contractAddress);
+	assert(props.amount > 0n, 'Amount is 0');
+
+	return await handleTx(props, {
+		address: props.contractAddress,
+		abi: VEYFI_GAUGE_ABI,
+		functionName: 'deposit',
+		args: [props.amount]
+	});
+}
+
+/* 🔵 - Yearn Finance **********************************************************
  ** stake is a _WRITE_ function that unstake the shares of the vault from the
  ** staking contract.
  **
@@ -70,6 +90,31 @@ export async function unstake(props: TUnstake): Promise<TTxResponse> {
 		address: props.contractAddress,
 		abi: STAKING_REWARDS_ABI,
 		functionName: 'exit'
+	});
+}
+
+/* 🔵 - Yearn Finance **********************************************************
+ ** unstake is a _WRITE_ function that unstakes a given amount of the underlying
+ ** asset.
+ **
+ ** @app - veYFI
+ ******************************************************************************/
+type TUnstakeVeYFIGauge = TWriteTransaction & {
+	amount: bigint;
+	willClaim: boolean;
+};
+export async function unstakeVeYFIGauge(props: TUnstakeVeYFIGauge): Promise<TTxResponse> {
+	assertAddress(props.contractAddress);
+	assert(props.amount > 0n, 'Amount is 0');
+
+	const wagmiProvider = await toWagmiProvider(props.connector);
+	assertAddress(wagmiProvider.address, 'ownerAddress');
+
+	return await handleTx(props, {
+		address: props.contractAddress,
+		abi: VEYFI_GAUGE_ABI,
+		functionName: 'withdraw',
+		args: [props.amount, wagmiProvider.address, wagmiProvider.address, props.willClaim]
 	});
 }
 

@@ -4,9 +4,15 @@ import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {formatAmount, formatCounterValue, isZero, toAddress, toBigInt, toNormalizedBN} from '@builtbymom/web3/utils';
 import {approveERC20, defaultTxStatus} from '@builtbymom/web3/utils/wagmi';
 import {useVaultStakingData} from '@vaults/hooks/useVaultStakingData';
-import {claim as claimAction, stake as stakeAction, unstake as unstakeAction} from '@vaults/utils/actions';
+import {
+	claim as claimAction,
+	stake as stakeAction,
+	stakeVeYFIGauge as stakeVeYFIAction,
+	unstake as unstakeAction,
+	unstakeVeYFIGauge as unstakeVeYFIAction
+} from '@vaults/utils/actions';
 import {Button} from '@yearn-finance/web-lib/components/Button';
-import {FakeInput, Input} from '@common/components/Input';
+import {FakeInput} from '@common/components/Input';
 import {useYearn} from '@common/contexts/useYearn';
 import {useYearnToken} from '@common/hooks/useYearnToken';
 
@@ -127,19 +133,45 @@ export function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): React
 	 ** the stakeAction function to stake the user's yVault tokens into the staking rewards
 	 ** contract. If the stake is successful, the user's balances and staking rewards data will be
 	 ** refreshed.
+	 ** Depending on the staking source, we will use either the stake function or the
+	 ** stakeVeYFIGauge function.
 	 *********************************************************************************************/
 	const onStake = useCallback(async (): Promise<void> => {
-		const result = await stakeAction({
-			connector: provider,
-			chainID: vaultToken.chainID,
-			contractAddress: toAddress(stakingRewards?.address),
-			amount: vaultToken.balance.raw,
-			statusHandler: set_stakeStatus
-		});
-		if (result.isSuccessful) {
-			refreshData();
+		if (currentVault.staking.source === 'VeYFI') {
+			const result = await stakeVeYFIAction({
+				connector: provider,
+				chainID: currentVault.chainID,
+				contractAddress: toAddress(stakingRewards?.address),
+				amount: vaultToken.balance.raw,
+				statusHandler: set_stakeStatus
+			});
+			if (result.isSuccessful) {
+				refreshData();
+				updateStakingRewards();
+			}
+		} else {
+			const result = await stakeAction({
+				connector: provider,
+				chainID: vaultToken.chainID,
+				contractAddress: toAddress(stakingRewards?.address),
+				amount: vaultToken.balance.raw,
+				statusHandler: set_stakeStatus
+			});
+			if (result.isSuccessful) {
+				refreshData();
+				updateStakingRewards();
+			}
 		}
-	}, [provider, refreshData, stakingRewards?.address, vaultToken]);
+	}, [
+		currentVault.staking.source,
+		currentVault.chainID,
+		provider,
+		stakingRewards?.address,
+		vaultToken.balance.raw,
+		vaultToken.chainID,
+		refreshData,
+		updateStakingRewards
+	]);
 
 	/**********************************************************************************************
 	 ** The onUnstake function will be called when the user clicks the "Unstake" button. It will
@@ -147,18 +179,44 @@ export function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): React
 	 ** rewards contract. If the unstake is successful, the user's balances and staking rewards
 	 ** data will be refreshed.
 	 ** Note: this will also claim the user's staking rewards.
+	 ** Depending on the staking source, we will use either the unstake function or the
+	 ** unstakeVeYFIGauge function.
 	 *********************************************************************************************/
 	const onUnstake = useCallback(async (): Promise<void> => {
-		const result = await unstakeAction({
-			connector: provider,
-			chainID: currentVault.chainID,
-			contractAddress: toAddress(stakingRewards?.address),
-			statusHandler: set_unstakeStatus
-		});
-		if (result.isSuccessful) {
-			refreshData();
+		if (currentVault.staking.source === 'VeYFI') {
+			const result = await unstakeVeYFIAction({
+				connector: provider,
+				chainID: currentVault.chainID,
+				contractAddress: toAddress(stakingRewards?.address),
+				amount: normalizedStakeBalance.raw,
+				willClaim: true,
+				statusHandler: set_unstakeStatus
+			});
+			if (result.isSuccessful) {
+				refreshData();
+				updateStakingRewards();
+			}
+		} else {
+			const result = await unstakeAction({
+				connector: provider,
+				chainID: currentVault.chainID,
+				contractAddress: toAddress(stakingRewards?.address),
+				statusHandler: set_unstakeStatus
+			});
+			if (result.isSuccessful) {
+				refreshData();
+				updateStakingRewards();
+			}
 		}
-	}, [provider, refreshData, stakingRewards?.address, currentVault.chainID]);
+	}, [
+		currentVault.staking.source,
+		currentVault.chainID,
+		provider,
+		stakingRewards?.address,
+		normalizedStakeBalance.raw,
+		refreshData,
+		updateStakingRewards
+	]);
 
 	/**********************************************************************************************
 	 ** The onClaim function will be called when the user clicks the "Claim" button. It will call
@@ -202,7 +260,7 @@ export function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): React
 						<div className={'font-bold'}>{'Stake'}</div>
 					</div>
 					<div className={'flex flex-col gap-4 md:flex-row'}>
-						<Input
+						<FakeInput
 							className={'w-full md:w-1/3'}
 							legend={
 								<div className={'flex items-center justify-between'}>
@@ -210,9 +268,16 @@ export function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): React
 									<p>{`${formatCounterValue(vaultToken.balance.normalized, vaultTokenPrice.normalized)}`}</p>
 								</div>
 							}
-							value={`${Number(vaultToken.balance.normalized).toFixed(vaultToken.decimals)}`}
-							isDisabled
+							value={
+								toBigInt(vaultToken.balance.raw) === 0n ? undefined : (
+									<Counter
+										value={Number(vaultToken.balance.normalized)}
+										decimals={18}
+									/>
+								)
+							}
 						/>
+
 						<Button
 							className={'w-full md:w-[200px]'}
 							onClick={(): unknown => (isApproved ? onStake() : onApprove())}
@@ -240,10 +305,12 @@ export function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): React
 								</div>
 							}
 							value={
-								<Counter
-									value={Number(normalizedRewardBalance.normalized)}
-									decimals={18}
-								/>
+								toBigInt(normalizedRewardBalance.raw) === 0n ? undefined : (
+									<Counter
+										value={Number(normalizedRewardBalance.normalized)}
+										decimals={18}
+									/>
+								)
 							}
 						/>
 						<Button

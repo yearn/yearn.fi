@@ -4,6 +4,7 @@ import {useBlockNumber, useReadContracts} from 'wagmi';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {isZeroAddress, toAddress, toBigInt} from '@builtbymom/web3/utils';
 import {STAKING_REWARDS_ABI} from '@vaults/utils/abi/stakingRewards.abi';
+import {VEYFI_GAUGE_ABI} from '@vaults/utils/abi/veYFIGauge.abi.ts';
 
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TAddress} from '@builtbymom/web3/types';
@@ -17,53 +18,55 @@ type TStakingInfo = {
 	earned: bigint;
 	allowance: bigint;
 };
-export function useVaultStakingData({currentVault}: {currentVault: TYDaemonVault}): [TStakingInfo, VoidFunction] {
+export function useVaultStakingData(props: {currentVault: TYDaemonVault}): [TStakingInfo, VoidFunction] {
 	const {address} = useWeb3();
 	const {data: blockNumber} = useBlockNumber({watch: true});
+	const stakingType = props.currentVault.staking.source as 'OP Boost' | 'VeYFI';
+
 	const {data, refetch} = useReadContracts({
 		contracts: [
 			{
-				address: toAddress(currentVault.staking.address),
-				abi: STAKING_REWARDS_ABI,
-				chainId: currentVault.chainID,
-				functionName: 'stakingToken'
+				address: toAddress(props.currentVault.staking.address),
+				chainId: props.currentVault.chainID,
+				abi: stakingType === 'OP Boost' ? STAKING_REWARDS_ABI : VEYFI_GAUGE_ABI,
+				functionName: stakingType === 'OP Boost' ? 'stakingToken' : 'asset'
 			},
 			{
-				address: toAddress(currentVault.staking.address),
-				abi: STAKING_REWARDS_ABI,
-				chainId: currentVault.chainID,
-				functionName: 'rewardsToken'
+				address: toAddress(props.currentVault.staking.address),
+				chainId: props.currentVault.chainID,
+				abi: stakingType === 'OP Boost' ? STAKING_REWARDS_ABI : VEYFI_GAUGE_ABI,
+				functionName: stakingType === 'OP Boost' ? 'rewardsToken' : 'REWARD_TOKEN'
 			},
 			{
-				address: toAddress(currentVault.staking.address),
+				address: toAddress(props.currentVault.staking.address),
 				abi: STAKING_REWARDS_ABI,
-				chainId: currentVault.chainID,
+				chainId: props.currentVault.chainID,
 				functionName: 'totalSupply'
 			},
 			{
-				address: toAddress(currentVault.staking.address),
+				address: toAddress(props.currentVault.staking.address),
 				abi: STAKING_REWARDS_ABI,
-				chainId: currentVault.chainID,
+				chainId: props.currentVault.chainID,
 				functionName: 'balanceOf',
 				args: [toAddress(address)]
 			},
 			{
-				address: toAddress(currentVault.staking.address),
+				address: toAddress(props.currentVault.staking.address),
 				abi: STAKING_REWARDS_ABI,
-				chainId: currentVault.chainID,
+				chainId: props.currentVault.chainID,
 				functionName: 'earned',
 				args: [toAddress(address)]
 			},
 			{
-				address: toAddress(currentVault.address),
+				address: toAddress(props.currentVault.address),
 				abi: erc20Abi,
-				chainId: currentVault.chainID,
+				chainId: props.currentVault.chainID,
 				functionName: 'allowance',
-				args: [toAddress(address), toAddress(currentVault.staking.address)]
+				args: [toAddress(address), toAddress(props.currentVault.staking.address)]
 			}
 		],
 		query: {
-			enabled: currentVault.staking.available
+			enabled: props.currentVault.staking.available
 		}
 	});
 
@@ -73,7 +76,7 @@ export function useVaultStakingData({currentVault}: {currentVault: TYDaemonVault
 
 	return [
 		{
-			address: toAddress(currentVault.staking.address),
+			address: toAddress(props.currentVault.staking.address),
 			stakingToken: toAddress(data?.[0].result),
 			rewardsToken: toAddress(data?.[1].result),
 			totalStaked: toBigInt(data?.[2].result),

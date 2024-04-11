@@ -245,6 +245,26 @@ export function useYearnTokens({
 		return tokens;
 	}, [isReady, availableTokens, migratableTokens, retiredTokens, availableTokenListTokens]);
 
+	/**************************************************************************************************
+	 ** The following function can be used to clone the tokens list for the forknet. This is useful
+	 ** for debuging purpose and should not be used in production.
+	 *************************************************************************************************/
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars, unused-imports/no-unused-vars
+	function cloneForForknet(tokens: TUseBalancesTokens[]): TUseBalancesTokens[] {
+		const clonedTokens: TUseBalancesTokens[] = [];
+		tokens.forEach((token): void => {
+			clonedTokens.push({...token});
+			if (token.chainID === 1) {
+				clonedTokens.push({...token, chainID: 1337});
+			}
+		});
+		return clonedTokens;
+	}
+	const shouldEnableForknet = true;
+	if (shouldEnableForknet) {
+		return cloneForForknet(allTokens);
+	}
+
 	return allTokens;
 }
 
