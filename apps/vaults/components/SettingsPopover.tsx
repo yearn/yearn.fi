@@ -34,7 +34,7 @@ export function SettingsPopover({vault}: TSettingPopover): ReactElement {
 		isStakingOpBoostedVaults,
 		set_isStakingOpBoostedVaults
 	} = useYearn();
-	const hasStakingRewards = vault.staking.available;
+	const hasStakingRewards = Boolean(vault.staking.available) && vault.staking.source === 'OP Boost';
 
 	const currentZapProvider = useMemo((): TSolver => {
 		if (vault.chainID !== 1 && zapProvider === 'Cowswap') {

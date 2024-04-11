@@ -49,7 +49,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 	const {onSwitchSelectedOptions, isDepositing, actionParams, currentSolver} = useActionFlow();
 	const [possibleTabs, set_possibleTabs] = useState<TTabsOptions[]>([tabs[0], tabs[1]]);
 	const willDepositAndStake = currentSolver === Solver.enum.OptimismBooster;
-	const hasStakingRewards = Boolean(currentVault.staking.available);
+	const hasStakingRewards = Boolean(currentVault.staking.available) && currentVault.staking.source === 'OP Boost';
 	const [currentTab, set_currentTab] = useState<TTabsOptions>(
 		getCurrentTab({
 			isDepositing,
