@@ -3,29 +3,30 @@ import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {assert, toAddress, toNormalizedBN, zeroNormalizedBN} from '@builtbymom/web3/utils';
 import {allowanceOf, approveERC20} from '@builtbymom/web3/utils/wagmi';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
+import {Solver} from '@vaults/types/solvers';
 import {depositAndStake} from '@vaults/utils/actions';
 import {getVaultEstimateOut} from '@vaults/utils/getVaultEstimateOut';
-import {MAX_UINT_256, STAKING_REWARDS_ZAP_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {Solver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
+import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {allowanceKey} from '@common/utils';
+import {YGAUGES_ZAP_ADDRESS} from '@common/utils/constants';
 
 import type {TDict, TNormalizedBN} from '@builtbymom/web3/types';
 import type {TTxStatus} from '@builtbymom/web3/utils/wagmi';
 import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
 
-export function useSolverOptimismBooster(): TSolverContext {
+export function useSolverGaugeStakingBooster(): TSolverContext {
 	const {provider} = useWeb3();
 	const latestQuote = useRef<TNormalizedBN>();
 	const request = useRef<TInitSolverArgs>();
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
 
-	/* 🔵 - Yearn Finance **************************************************************************
-	 ** init will be called when the optimism booster should be used to perform the desired deposit.
-	 ** It will set the request to the provided value, as it's required to get the quote, and will
-	 ** call getQuote to get the current quote for the provided request.
-	 **********************************************************************************************/
+	/**********************************************************************************************
+	 ** init will be called when the gauge staking booster should be used to perform the desired
+	 ** deposit. It will set the request to the provided value, as it's required to get the quote,
+	 ** and will call getQuote to get the current quote for the provided request.
+	 *********************************************************************************************/
 	const init = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN | undefined> => {
-		if (isSolverDisabled(Solver.enum.OptimismBooster)) {
+		if (isSolverDisabled(Solver.enum.GaugeStakingBooster)) {
 			return undefined;
 		}
 		request.current = _request;
@@ -42,10 +43,10 @@ export function useSolverOptimismBooster(): TSolverContext {
 		return latestQuote.current;
 	}, []);
 
-	/* 🔵 - Yearn Finance ******************************************************
-	 ** Retrieve the allowance for the token to be used by the solver. This will
-	 ** be used to determine if the user should approve the token or not.
-	 **************************************************************************/
+	/**********************************************************************************************
+	 ** Retrieve the allowance for the token to be used by the solver. This will be used to
+	 ** determine if the user should approve the token or not.
+	 *********************************************************************************************/
 	const onRetrieveAllowance = useCallback(
 		async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
 			if (!request?.current || !provider) {
@@ -66,7 +67,7 @@ export function useSolverOptimismBooster(): TSolverContext {
 				connector: provider,
 				chainID: request.current.inputToken.chainID,
 				tokenAddress: toAddress(request.current.inputToken.value),
-				spenderAddress: toAddress(STAKING_REWARDS_ZAP_ADDRESS)
+				spenderAddress: toAddress(YGAUGES_ZAP_ADDRESS)
 			});
 			existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals);
 			return existingAllowances.current[key];
@@ -74,11 +75,11 @@ export function useSolverOptimismBooster(): TSolverContext {
 		[request, provider]
 	);
 
-	/* 🔵 - Yearn Finance ******************************************************
+	/**********************************************************************************************
 	 ** Trigger an approve web3 action
-	 ** This approve can not be triggered if the wallet is not active
-	 ** (not connected) or if the tx is still pending.
-	 **************************************************************************/
+	 ** This approve can not be triggered if the wallet is not active (not connected) or if the tx
+	 ** is still pending.
+	 *********************************************************************************************/
 	const onApprove = useCallback(
 		async (
 			amount = MAX_UINT_256,
@@ -92,7 +93,7 @@ export function useSolverOptimismBooster(): TSolverContext {
 				connector: provider,
 				chainID: request.current.chainID,
 				contractAddress: request.current.inputToken.value,
-				spenderAddress: STAKING_REWARDS_ZAP_ADDRESS,
+				spenderAddress: YGAUGES_ZAP_ADDRESS,
 				amount: amount,
 				statusHandler: txStatusSetter
 			});
@@ -103,10 +104,10 @@ export function useSolverOptimismBooster(): TSolverContext {
 		[provider]
 	);
 
-	/* 🔵 - Yearn Finance ******************************************************
-	 ** Trigger a deposit and stake web3 action, simply trying to zap `amount`
-	 ** tokens via the Staking Rewards Zap Contract, to the selected vault.
-	 **************************************************************************/
+	/**********************************************************************************************
+	 ** Trigger a deposit and stake web3 action, simply trying to zap `amount` tokens via the
+	 ** Staking Rewards Zap Contract, to the selected vault.
+	 *********************************************************************************************/
 	const onExecuteDeposit = useCallback(
 		async (
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
@@ -118,8 +119,10 @@ export function useSolverOptimismBooster(): TSolverContext {
 			const result = await depositAndStake({
 				connector: provider,
 				chainID: request.current.chainID,
-				contractAddress: STAKING_REWARDS_ZAP_ADDRESS,
+				contractAddress: YGAUGES_ZAP_ADDRESS,
 				vaultAddress: request.current.outputToken.value,
+				vaultVersion: request.current.version,
+				stakingPoolAddress: request.current.stakingPoolAddress,
 				amount: request.current.inputAmount,
 				statusHandler: txStatusSetter
 			});
@@ -132,7 +135,7 @@ export function useSolverOptimismBooster(): TSolverContext {
 
 	return useMemo(
 		(): TSolverContext => ({
-			type: Solver.enum.OptimismBooster,
+			type: Solver.enum.GaugeStakingBooster,
 			quote: latestQuote?.current || zeroNormalizedBN,
 			init,
 			onRetrieveAllowance,

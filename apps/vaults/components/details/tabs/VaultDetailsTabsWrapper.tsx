@@ -196,7 +196,7 @@ export function VaultInfo({currentVault}: {currentVault: TYDaemonVault}): ReactE
 					</div>
 				) : null}
 
-				{currentVault.info.sourceURL.includes('curve.fi') ? (
+				{(currentVault.info?.sourceURL || '')?.includes('curve.fi') ? (
 					<div className={'flex flex-col items-center md:flex-row'}>
 						<p className={'w-full text-sm text-neutral-500 md:w-44'}>{'Curve deposit URI'}</p>
 						<a
@@ -210,7 +210,7 @@ export function VaultInfo({currentVault}: {currentVault: TYDaemonVault}): ReactE
 					</div>
 				) : null}
 
-				{currentVault.info.sourceURL.includes('gamma') ? (
+				{(currentVault.info?.sourceURL || '')?.includes('gamma') ? (
 					<div className={'flex flex-col items-center md:flex-row'}>
 						<p className={'w-full text-sm text-neutral-500 md:w-44'}>{'Gamma Pair'}</p>
 						<a

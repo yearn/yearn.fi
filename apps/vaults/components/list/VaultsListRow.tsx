@@ -14,10 +14,12 @@ import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVa
 
 export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const isEthMainnet = currentVault.chainID === 1;
+	const extraAPR = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.extra.gammaRewardAPR;
+
 	if (currentVault.apr.forwardAPR.type === '') {
 		const hasZeroAPR =
 			isZero(currentVault.apr?.netAPR) || Number(Number(currentVault.apr?.netAPR || 0).toFixed(2)) === 0;
-		const boostedAPR = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.netAPR;
+		const boostedAPR = extraAPR + currentVault.apr.netAPR;
 		const hasZeroBoostedAPR = isZero(boostedAPR) || Number(boostedAPR.toFixed(2)) === 0;
 
 		if (currentVault.apr?.extra.stakingRewardsAPR > 0) {
@@ -68,7 +70,7 @@ export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): 
 										<p>{'• Rewards APR '}</p>
 										<RenderAmount
 											shouldHideTooltip
-											value={currentVault.apr.extra.stakingRewardsAPR}
+											value={extraAPR}
 											symbol={'percent'}
 											decimals={6}
 										/>
@@ -98,7 +100,7 @@ export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): 
 		);
 	}
 
-	if (isEthMainnet && currentVault.apr.forwardAPR.composite?.boost > 0 && !currentVault.apr.extra.stakingRewardsAPR) {
+	if (isEthMainnet && currentVault.apr.forwardAPR.composite?.boost > 0 && !extraAPR) {
 		const unBoostedAPR = currentVault.apr.forwardAPR.netAPR / currentVault.apr.forwardAPR.composite.boost;
 		return (
 			<span className={'tooltip'}>
@@ -121,9 +123,7 @@ export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): 
 					<small className={'text-xs text-neutral-900'}>
 						<Renderable
 							shouldRender={
-								isEthMainnet &&
-								currentVault.apr.forwardAPR.composite?.boost > 0 &&
-								!currentVault.apr.extra.stakingRewardsAPR
+								isEthMainnet && currentVault.apr.forwardAPR.composite?.boost > 0 && !extraAPR
 							}>
 							{`BOOST ${formatAmount(currentVault.apr.forwardAPR.composite?.boost, 2, 2)}x`}
 						</Renderable>
@@ -162,8 +162,8 @@ export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): 
 		);
 	}
 
-	if (currentVault.apr?.extra.stakingRewardsAPR > 0) {
-		const boostedAPR = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.forwardAPR.netAPR;
+	if (extraAPR > 0) {
+		const boostedAPR = extraAPR + currentVault.apr.forwardAPR.netAPR;
 		const hasZeroBoostedAPR = isZero(boostedAPR) || Number(boostedAPR.toFixed(2)) === 0;
 		return (
 			<div className={'flex flex-col text-right'}>
@@ -212,7 +212,7 @@ export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): 
 									<p>{'• Rewards APR '}</p>
 									<RenderAmount
 										shouldHideTooltip
-										value={currentVault.apr.extra.stakingRewardsAPR}
+										value={extraAPR}
 										symbol={'percent'}
 										decimals={6}
 									/>

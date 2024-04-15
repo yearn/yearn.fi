@@ -2,15 +2,15 @@ import {Fragment, useMemo} from 'react';
 import {cl} from '@builtbymom/web3/utils';
 import {Popover, Transition} from '@headlessui/react';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
+import {Solver} from '@vaults/types/solvers';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {IconSettings} from '@yearn-finance/web-lib/icons/IconSettings';
-import {Solver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
 import {Switch} from '@common/components/Switch';
 import {useYearn} from '@common/contexts/useYearn';
 
 import type {ReactElement} from 'react';
-import type {TSolver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TSolver} from '@vaults/types/solvers';
 
 type TSettingPopover = {
 	vault: TYDaemonVault;
@@ -197,7 +197,7 @@ function ZapSection({chainID}: {chainID: number}): ReactElement {
 }
 
 function StakingSection({currentVault}: {currentVault: TYDaemonVault}): ReactElement | null {
-	const {isStakingOpBoostedVaults, set_isStakingOpBoostedVaults} = useYearn();
+	const {isAutoStakingEnabled, set_isAutoStakingEnabled} = useYearn();
 
 	if (!currentVault.staking.available) {
 		return null;
@@ -207,13 +207,18 @@ function StakingSection({currentVault}: {currentVault: TYDaemonVault}): ReactEle
 		<>
 			<div className={'my-6 h-px w-full bg-neutral-900/20'} />
 			<div className={'mt-6'}>
-				<Label>{'OP Boosted Vaults'}</Label>
+				<Label>{'Staking Vaults'}</Label>
+				<legend className={'pb-2 text-xs text-neutral-500'}>
+					{
+						'Some Vaults offer boosted yields or token rewards via staking. Enable automatic staking to (you guessed it) automatically stake for these boosts.'
+					}
+				</legend>
 				<div className={'mt-1 flex flex-row space-x-2'}>
 					<div className={'flex grow items-center justify-between'}>
 						<p className={'mr-2 text-sm'}>{'Stake automatically'}</p>
 						<Switch
-							isEnabled={isStakingOpBoostedVaults}
-							onSwitch={(): void => set_isStakingOpBoostedVaults(!isStakingOpBoostedVaults)}
+							isEnabled={isAutoStakingEnabled}
+							onSwitch={(): void => set_isAutoStakingEnabled(!isAutoStakingEnabled)}
 						/>
 					</div>
 				</div>

@@ -23,11 +23,11 @@ import {
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {isValidPortalsErrorObject} from '@vaults/hooks/helpers/isValidPortalsErrorObject';
 import {getPortalsApproval, getPortalsEstimate, getPortalsTx, PORTALS_NETWORK} from '@vaults/hooks/usePortalsApi';
+import {Solver} from '@vaults/types/solvers';
 import {sendTransaction, switchChain, waitForTransactionReceipt} from '@wagmi/core';
 import {toast} from '@yearn-finance/web-lib/components/yToast';
 import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {allowanceKey} from '@yearn-finance/web-lib/utils/helpers';
-import {Solver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
 import {useYearn} from '@common/contexts/useYearn';
 
 import type {TDict, TNormalizedBN} from '@builtbymom/web3/types';
@@ -78,6 +78,14 @@ async function getQuote(
 	}
 }
 
+/**************************************************************************************************
+ ** The Portals solver is used to deposit and withdraw tokens to/from the vaults when the token the
+ ** user wants to deposit or withdraw is not the underlying/expected token. This is for example
+ ** when the user wants to deposit DAI into an USDC vault. This solver offer a quick and easy way
+ ** to deposit it by swapping the DAI for yvUSDC.
+ ** This is NOT a vanilla deposit/withdraw, but a swap using the Portals protocol, which require a
+ ** third party to execute the swap, in an asynchronous way, with fees and slippage.
+ *************************************************************************************************/
 export function useSolverPortals(): TSolverContext {
 	const {provider} = useWeb3();
 	const request = useRef<TInitSolverArgs>();
@@ -85,7 +93,7 @@ export function useSolverPortals(): TSolverContext {
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
 	const {zapSlippage} = useYearn();
 
-	/* 🔵 - Yearn Finance **************************************************************************
+	/**********************************************************************************************
 	 ** init will be called when the Portals solver should be used to perform the desired swap.
 	 ** It will set the request to the provided value, as it's required to get the quote, and will
 	 ** call getQuote to get the current quote for the provided request.current.

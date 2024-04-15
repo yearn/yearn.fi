@@ -1,3 +1,4 @@
+import {useRouter} from 'next/router';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {cl, formatCounterValue, formatPercent, toAddress} from '@builtbymom/web3/utils';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
@@ -12,17 +13,19 @@ export function VaultDetailsQuickActionsTo(): ReactElement {
 	const {isActive} = useWeb3();
 	const {currentVault, possibleOptionsTo, actionParams, onUpdateSelectedOptionTo, isDepositing} = useActionFlow();
 	const {expectedOut, isLoadingExpectedOut} = useSolver();
+	const {pathname} = useRouter();
+	const isV3Page = pathname.startsWith(`/v3`);
+	const isMigrationAvailable = currentVault?.migration?.available;
 	const selectedOptionToPricePerToken = useYearnTokenPrice({
 		address: toAddress(actionParams?.selectedOptionTo?.value),
 		chainID: Number(actionParams?.selectedOptionTo?.chainID)
 	});
-	const isMigrationAvailable = currentVault?.migration?.available;
 
 	function renderMultipleOptionsFallback(): ReactElement {
 		return (
 			<Dropdown
-				className={'!w-auto rounded-lg bg-neutral-300'}
-				comboboxOptionsClassName={'bg-neutral-300 rounded-lg'}
+				className={isV3Page ? '!w-fit rounded-lg bg-neutral-300' : 'rounded-lg'}
+				comboboxOptionsClassName={isV3Page ? 'bg-neutral-300 w-full rounded-lg' : 'rounded-lg'}
 				defaultOption={possibleOptionsTo[0]}
 				options={possibleOptionsTo}
 				selected={actionParams?.selectedOptionTo}

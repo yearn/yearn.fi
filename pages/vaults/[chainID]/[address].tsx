@@ -6,10 +6,10 @@ import {useFetch} from '@builtbymom/web3/hooks/useFetch';
 import {toAddress} from '@builtbymom/web3/utils';
 import {VaultDetailsTabsWrapper} from '@vaults/components/details/tabs/VaultDetailsTabsWrapper';
 import {VaultActionsTabsWrapper} from '@vaults/components/details/VaultActionsTabsWrapper';
-import {VaultDetailsHeader} from '@vaults/components/details/VaultDetailsHeader';
 import {ActionFlowContextApp} from '@vaults/contexts/useActionFlow';
 import {WithSolverContextApp} from '@vaults/contexts/useSolver';
 import {Wrapper} from '@vaults/Wrapper';
+import {VaultDetailsHeader} from '@vaults-v3/components/details/VaultDetailsHeader';
 import {useYDaemonBaseURI} from '@yearn-finance/web-lib/hooks/useYDaemonBaseURI';
 import {yDaemonVaultSchema} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
@@ -89,7 +89,7 @@ function Index(): ReactElement | null {
 					initial={'initial'}
 					animate={'enter'}
 					variants={variants}
-					className={'pointer-events-none -mt-16 size-12 cursor-pointer md:size-[72px]'}>
+					className={'pointer-events-none -mt-16 size-12 cursor-pointer md:-mt-0 md:size-[72px]'}>
 					<ImageWithFallback
 						src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${toAddress(
 							currentVault.token.address

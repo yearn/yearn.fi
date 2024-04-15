@@ -1,47 +1,36 @@
 import {Fragment, useEffect, useState} from 'react';
 import Link from 'next/link';
 import {useRouter} from 'next/router';
+import {cl} from '@builtbymom/web3/utils';
 import {Listbox, Transition} from '@headlessui/react';
 import {useUpdateEffect} from '@react-hookz/web';
-import {VaultDetailsQuickActionsButtons} from '@vaults/components/details/actions/QuickActionsButtons';
-import {VaultDetailsQuickActionsFrom} from '@vaults/components/details/actions/QuickActionsFrom';
-import {VaultDetailsQuickActionsSwitch} from '@vaults/components/details/actions/QuickActionsSwitch';
-import {VaultDetailsQuickActionsTo} from '@vaults/components/details/actions/QuickActionsTo';
-import {RewardsTab} from '@vaults/components/RewardsTab';
 import {SettingsPopover} from '@vaults/components/SettingsPopover';
 import {Flow, useActionFlow} from '@vaults/contexts/useActionFlow';
-import {useYearn} from '@common/contexts/useYearn';
+import {VaultDetailsQuickActionsButtons} from '@vaults-v3/components/details/actions/QuickActionsButtons';
+import {VaultDetailsQuickActionsFrom} from '@vaults-v3/components/details/actions/QuickActionsFrom';
+import {VaultDetailsQuickActionsSwitch} from '@vaults-v3/components/details/actions/QuickActionsSwitch';
+import {VaultDetailsQuickActionsTo} from '@vaults-v3/components/details/actions/QuickActionsTo';
+import {RewardsTab} from '@vaults-v3/components/details/RewardsTab';
+import {
+	BoostMessage,
+	getCurrentTab,
+	tabs,
+	VaultDetailsTab
+} from '@vaults-v3/components/details/VaultActionsTabsWrapper';
 import {IconChevron} from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TTabsOptions} from '@vaults-v3/components/details/VaultActionsTabsWrapper';
 
-type TTabsOptions = {
-	value: number;
-	label: string;
-	flowAction: Flow;
-	slug?: string;
-};
-
-const tabs: TTabsOptions[] = [
-	{value: 0, label: 'Deposit', flowAction: Flow.Deposit, slug: 'deposit'},
-	{value: 1, label: 'Withdraw', flowAction: Flow.Withdraw, slug: 'withdraw'},
-	{value: 2, label: 'Migrate', flowAction: Flow.Migrate, slug: 'migrate'},
-	{value: 3, label: '$OP BOOST', flowAction: Flow.None, slug: 'boost'}
-];
-
-function getCurrentTab(props: {isDepositing: boolean; hasMigration: boolean; isRetired: boolean}): TTabsOptions {
-	if (props.hasMigration || props.isRetired) {
-		return tabs[1];
-	}
-	return tabs.find((tab): boolean => tab.value === (props.isDepositing ? 0 : 1)) as TTabsOptions;
-}
-
+/**************************************************************************************************
+ ** The VaultActionsTabsWrapper wraps the different components that are part of the Vault Actions
+ ** section. It will display the different tabs available for the current vault and the
+ ** corresponding actions that can be taken.
+ *************************************************************************************************/
 export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const {isStakingOpBoostedVaults} = useYearn();
 	const {onSwitchSelectedOptions, isDepositing, actionParams} = useActionFlow();
 	const [possibleTabs, set_possibleTabs] = useState<TTabsOptions[]>([tabs[0], tabs[1]]);
-	const hasStakingRewards = Boolean(currentVault.staking.available) && currentVault.staking.source === 'OP Boost';
 	const [currentTab, set_currentTab] = useState<TTabsOptions>(
 		getCurrentTab({
 			isDepositing,
@@ -50,7 +39,13 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 		})
 	);
 	const router = useRouter();
+	const hasStakingRewards = Boolean(currentVault.staking.available);
 
+	/**********************************************************************************************
+	 ** Update the current state based on the query parameter action. This will allow the user to
+	 ** navigate between the different tabs by changing the URL, or directly access a specific tab
+	 ** based on the URL.
+	 *********************************************************************************************/
 	useEffect((): void => {
 		const tab = tabs.find((tab): boolean => tab.slug === router.query.action);
 		if (tab?.value) {
@@ -58,6 +53,15 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 		}
 	}, [router.query.action, set_currentTab]);
 
+	/**********************************************************************************************
+	 ** UpdateEffect to define which tabs are available based on the current state of the vault.
+	 ** - If the vault has been migrated, only the withdraw and migrate tabs will be available,
+	 ** with the focus set on the migrate tab.
+	 ** - If the vault is retired, only the withdraw tab will be available.
+	 ** - If the vault has staking rewards, the deposit, withdraw, and boost tabs will be
+	 ** available.
+	 ** - Otherwise we keep the default, aka deposit and withdraw tabs.
+	 *********************************************************************************************/
 	useUpdateEffect((): void => {
 		if (currentVault?.migration?.available && actionParams.isReady) {
 			set_possibleTabs([tabs[1], tabs[2]]);
@@ -69,7 +73,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 			onSwitchSelectedOptions(Flow.Withdraw);
 		}
 
-		if (currentVault.chainID === 10 && hasStakingRewards) {
+		if (hasStakingRewards) {
 			set_possibleTabs([tabs[0], tabs[1], tabs[3]]);
 		}
 	}, [currentVault?.migration?.available, currentVault?.retired, actionParams.isReady, hasStakingRewards]);
@@ -106,43 +110,46 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 				</div>
 			)}
 
-			<nav className={`mb-2 w-full ${currentVault?.retired ? 'mt-1 md:mt-4' : 'mt-10 md:mt-20'}`}>
+			{currentVault?.info.uiNotice && (
+				<div
+					aria-label={'Migration Warning'}
+					className={'col-span-12 mt-10'}>
+					<div className={'w-full rounded-3xl bg-neutral-900 p-6 text-neutral-0'}>
+						<b className={'text-lg'}>{'Oh look, an important message for you to read!'}</b>
+						<p className={'mt-2'}>{currentVault?.info.uiNotice}</p>
+					</div>
+				</div>
+			)}
+
+			<nav
+				className={cl(
+					`mb-2 w-full`,
+					currentVault?.retired
+						? 'mt-1 md:mt-4'
+						: currentVault?.info.uiNotice
+							? 'mt-10 md:mt-10'
+							: 'mt-10 md:mt-20'
+				)}>
 				<Link href={'/vaults'}>
 					<p className={'yearn--header-nav-item w-full whitespace-nowrap opacity-30'}>{'Back to vaults'}</p>
 				</Link>
 			</nav>
-			<div
-				aria-label={'Vault Actions'}
-				className={'col-span-12 mb-4 flex flex-col bg-neutral-100'}>
+
+			<div className={'col-span-12 mb-4 flex flex-col bg-neutral-100'}>
 				<div className={'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'}>
 					<nav className={'hidden flex-row items-center space-x-10 md:flex'}>
 						{possibleTabs.map(
 							(tab): ReactElement => (
-								<button
-									key={`desktop-${tab.value}`}
-									onClick={(): void => {
-										set_currentTab(tab);
-										router.replace(
-											{
-												query: {
-													...router.query,
-													action: tab.slug
-												}
-											},
-											undefined,
-											{
-												shallow: true
-											}
-										);
-										onSwitchSelectedOptions(tab.flowAction);
-									}}>
-									<p
-										title={tab.label}
-										aria-selected={currentTab.value === tab.value}
-										className={'hover-fix tab'}>
-										{tab.label}
-									</p>
-								</button>
+								<VaultDetailsTab
+									currentVault={currentVault}
+									key={tab.value}
+									tab={tab}
+									selectedTab={currentTab}
+									onSwitchTab={newTab => {
+										set_currentTab(newTab);
+										onSwitchSelectedOptions(newTab.flowAction);
+									}}
+								/>
 							)
 						)}
 					</nav>
@@ -227,33 +234,10 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 					</div>
 				)}
 
-				{currentTab.value === 0 && hasStakingRewards && (
-					<Fragment>
-						{isStakingOpBoostedVaults && currentVault.apr?.forwardAPR?.composite?.boost ? (
-							<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
-								<div className={'w-full bg-[#34A14F] p-2 md:px-6 md:py-4'}>
-									<b className={'text-base text-white'}>
-										{
-											'Great news! This Vault is receiving an Optimism Boost. Deposit and stake your tokens to receive OP rewards. Nice!'
-										}
-									</b>
-								</div>
-							</div>
-						) : (
-							Boolean(!isStakingOpBoostedVaults) && (
-								<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
-									<div className={'w-full bg-[#F8A908] p-2 md:px-6 md:py-4'}>
-										<b className={'text-base text-white'}>
-											{
-												"This Vault is receiving an Optimism Boost. To zap into it for additional OP rewards, you'll have to stake your yVault tokens manually on the $OP BOOST tab after you deposit. Sorry anon, it's just how it works."
-											}
-										</b>
-									</div>
-								</div>
-							)
-						)}
-					</Fragment>
-				)}
+				<BoostMessage
+					currentVault={currentVault}
+					currentTab={currentTab.value}
+				/>
 			</div>
 		</>
 	);

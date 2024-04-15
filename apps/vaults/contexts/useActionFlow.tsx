@@ -14,6 +14,7 @@ import {
 } from '@builtbymom/web3/utils';
 import {useMountEffect, useUpdateEffect} from '@react-hookz/web';
 import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
+import {Solver} from '@vaults/types/solvers';
 import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
 import {setZapOption} from '@vaults/utils/zapOptions';
 import {VAULT_ABI} from '@yearn-finance/web-lib/utils/abi/vault.abi';
@@ -27,7 +28,6 @@ import {
 	YVWETH_OPT_ADDRESS,
 	YVWFTM_ADDRESS
 } from '@yearn-finance/web-lib/utils/constants';
-import {Solver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
 import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {useYearn} from '@common/contexts/useYearn';
 
@@ -35,9 +35,9 @@ import externalzapOutTokenList from '../../common/utils/externalZapOutTokenList.
 
 import type {ReactNode} from 'react';
 import type {TDropdownOption} from '@yearn-finance/web-lib/types';
-import type {TSolver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TAddress, TNormalizedBN} from '@builtbymom/web3/types';
+import type {TSolver} from '@vaults/types/solvers';
 
 export enum Flow {
 	Deposit = 'deposit',
@@ -154,7 +154,7 @@ export function ActionFlowContextApp({
 	const {address} = useWeb3();
 	const {getBalance} = useYearn();
 	const {listTokens: listZapTokens} = useWalletForZap();
-	const {zapProvider, isStakingOpBoostedVaults} = useYearn();
+	const {zapProvider, isAutoStakingEnabled} = useYearn();
 	const [possibleOptionsFrom, set_possibleOptionsFrom] = useState<TDropdownOption[]>([]);
 	const [possibleZapOptionsFrom, set_possibleZapOptionsFrom] = useState<TDropdownOption[]>([]);
 	const [possibleOptionsTo, set_possibleOptionsTo] = useState<TDropdownOption[]>([]);
@@ -258,9 +258,26 @@ export function ActionFlowContextApp({
 		const isUnderlyingToken =
 			toAddress(actionParams?.selectedOptionFrom?.value) === toAddress(currentVault.token.address);
 
-		// Only use OptimismBooster if the user chose to stake automatically
-		if (currentVault.staking.available && isStakingOpBoostedVaults && isDepositing && isUnderlyingToken) {
+		// Only use OptimismBooster if the user chose to stake automatically and the vault is staking with OP Boost
+		if (
+			currentVault.staking.available &&
+			currentVault.staking.source === 'OP Boost' &&
+			isAutoStakingEnabled &&
+			isDepositing &&
+			isUnderlyingToken
+		) {
 			return Solver.enum.OptimismBooster;
+		}
+
+		// Only use GaugeStakingBooster if the user chose to stake automatically and the vault is staking with VeYFI
+		if (
+			currentVault.staking.available &&
+			currentVault.staking.source === 'VeYFI' &&
+			isAutoStakingEnabled &&
+			isDepositing &&
+			isUnderlyingToken
+		) {
+			return Solver.enum.GaugeStakingBooster;
 		}
 
 		const isV3 = currentVault?.version.split('.')?.[0] === '3';
@@ -297,12 +314,13 @@ export function ActionFlowContextApp({
 		actionParams?.selectedOptionTo?.solveVia?.length,
 		currentVault.token.address,
 		currentVault.staking.available,
+		currentVault.staking.source,
 		currentVault?.version,
 		currentVault.chainID,
 		currentVault.address,
 		currentVault?.migration?.available,
 		currentVault?.migration?.address,
-		isStakingOpBoostedVaults,
+		isAutoStakingEnabled,
 		isDepositing,
 		isUsingPartnerContract,
 		zapProvider

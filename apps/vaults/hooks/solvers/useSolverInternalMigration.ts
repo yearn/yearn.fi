@@ -1,20 +1,26 @@
 import {useCallback, useMemo, useRef} from 'react';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {assert, isEthAddress, toAddress, toNormalizedBN, zeroNormalizedBN} from '@builtbymom/web3/utils';
-import {allowanceOf, approveERC20} from '@builtbymom/web3/utils/wagmi';
+import {assert, toAddress, toBigInt, toNormalizedBN, zeroNormalizedBN} from '@builtbymom/web3/utils';
+import {allowanceOf, approveERC20, retrieveConfig} from '@builtbymom/web3/utils/wagmi';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
-import {getEthZapperContract, getNativeTokenWrapperContract} from '@vaults/utils';
+import {Solver} from '@vaults/types/solvers';
+import {ZAP_CRV_ABI} from '@vaults/utils/abi/zapCRV.abi';
+import {zapCRV} from '@vaults/utils/actions';
 import {getVaultEstimateOut} from '@vaults/utils/getVaultEstimateOut';
-import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
-import {Solver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
+import {readContract} from '@wagmi/core';
+import {MAX_UINT_256, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {allowanceKey} from '@common/utils';
-import {depositETH, withdrawETH} from '@common/utils/actions';
+import {migrateShares} from '@common/utils/actions';
 
 import type {TDict, TNormalizedBN} from '@builtbymom/web3/types';
 import type {TTxStatus} from '@builtbymom/web3/utils/wagmi';
 import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
 
-export function useSolverChainCoin(): TSolverContext {
+/**************************************************************************************************
+ ** The InternalMigration solver is a special solver used to migrate from one vault to another. It
+ ** is used when a new version of a vault is released, and the user wants to migrate their funds.
+ *************************************************************************************************/
+export function useSolverInternalMigration(): TSolverContext {
 	const {provider} = useWeb3();
 	const latestQuote = useRef<TNormalizedBN>();
 	const request = useRef<TInitSolverArgs>();
@@ -26,14 +32,25 @@ export function useSolverChainCoin(): TSolverContext {
 	 ** call getQuote to get the current quote for the provided request.
 	 **********************************************************************************************/
 	const init = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN | undefined> => {
-		if (isSolverDisabled(Solver.enum.ChainCoin)) {
+		if (isSolverDisabled(Solver.enum.InternalMigration)) {
 			return undefined;
 		}
 		request.current = _request;
-		const wrapperToken = getNativeTokenWrapperContract(_request.chainID);
+		if (request.current.migrator === ZAP_YEARN_VE_CRV_ADDRESS) {
+			const estimateOut = await readContract(retrieveConfig(), {
+				address: ZAP_YEARN_VE_CRV_ADDRESS,
+				abi: ZAP_CRV_ABI,
+				chainId: request.current.chainID,
+				functionName: 'calc_expected_out',
+				args: [request.current.inputToken.value, request.current.outputToken.value, request.current.inputAmount]
+			});
+			const minAmountWithSlippage = estimateOut - (estimateOut * 6n) / 10_000n;
+			latestQuote.current = toNormalizedBN(minAmountWithSlippage, request.current.outputToken.decimals);
+			return latestQuote.current;
+		}
 		const estimateOut = await getVaultEstimateOut({
-			inputToken: _request.isDepositing ? toAddress(wrapperToken) : toAddress(_request.inputToken.value),
-			outputToken: _request.isDepositing ? toAddress(_request.outputToken.value) : toAddress(wrapperToken),
+			inputToken: toAddress(_request.inputToken.value),
+			outputToken: toAddress(_request.outputToken.value),
 			inputDecimals: _request.inputToken.decimals,
 			outputDecimals: _request.outputToken.decimals,
 			inputAmount: _request.inputAmount,
@@ -47,7 +64,6 @@ export function useSolverChainCoin(): TSolverContext {
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** Retrieve the allowance for the token to be used by the solver. This will
 	 ** be used to determine if the user should approve the token or not.
-	 ** No allowance required if depositing chainCoin, so set it to infinity.
 	 **************************************************************************/
 	const onRetrieveAllowance = useCallback(
 		async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
@@ -65,22 +81,23 @@ export function useSolverChainCoin(): TSolverContext {
 				return existingAllowances.current[key];
 			}
 
-			assert(isEthAddress(request.current.outputToken.value), 'Out is not ETH');
 			const allowance = await allowanceOf({
 				connector: provider,
 				chainID: request.current.inputToken.chainID,
 				tokenAddress: toAddress(request.current.inputToken.value),
-				spenderAddress: toAddress(getEthZapperContract(request.current.chainID))
+				spenderAddress: toAddress(request.current.migrator)
 			});
 			existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals);
 			return existingAllowances.current[key];
 		},
-		[provider]
+		[request, provider]
 	);
 
 	/* 🔵 - Yearn Finance ******************************************************
-	 ** When we want to withdraw a yvWrappedCoin to the base chain coin, we first
-	 ** need to approve the yvWrappedCoin to be used by the zap contract.
+	 ** Trigger an approve web3 action, simply trying to approve `amount` tokens
+	 ** to be used by the migration contract, in charge of migrating the tokens.
+	 ** This approve can not be triggered if the wallet is not active
+	 ** (not connected) or if the tx is still pending.
 	 **************************************************************************/
 	const onApprove = useCallback(
 		async (
@@ -88,13 +105,15 @@ export function useSolverChainCoin(): TSolverContext {
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 			onSuccess: () => Promise<void>
 		): Promise<void> => {
-			assert(request?.current?.inputToken, 'Input token is not set');
+			assert(request.current, 'Request is not set');
+			assert(request.current.inputToken, 'Input token is not defined');
+			assert(request.current.migrator, 'Input token is not defined');
 
 			const result = await approveERC20({
 				connector: provider,
 				chainID: request.current.chainID,
 				contractAddress: toAddress(request.current.inputToken.value),
-				spenderAddress: getEthZapperContract(request.current.chainID),
+				spenderAddress: request.current.migrator,
 				amount: amount,
 				statusHandler: txStatusSetter
 			});
@@ -106,50 +125,51 @@ export function useSolverChainCoin(): TSolverContext {
 	);
 
 	/* 🔵 - Yearn Finance ******************************************************
-	 ** Trigger a deposit web3 action using the ETH zap contract to deposit ETH
-	 ** to the selected yvETH vault. The contract will first convert ETH to WETH,
-	 ** aka the vault underlying token, and then deposit it to the vault.
+	 ** Trigger a deposit web3 action, simply trying to deposit `amount` tokens to
+	 ** the selected vault.
 	 **************************************************************************/
-	const onExecuteDeposit = useCallback(
+	const onExecuteMigration = useCallback(
 		async (
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 			onSuccess: () => Promise<void>
 		): Promise<void> => {
 			assert(request.current, 'Request is not set');
-			assert(request.current.inputAmount, 'Input amount is not set');
 
-			const result = await depositETH({
-				connector: provider,
-				chainID: request.current.chainID,
-				contractAddress: getEthZapperContract(request.current.chainID),
-				amount: request.current.inputAmount,
-				statusHandler: txStatusSetter
-			});
-			if (result.isSuccessful) {
-				onSuccess();
+			if (request.current.migrator === ZAP_YEARN_VE_CRV_ADDRESS) {
+				const _expectedOut = await readContract(retrieveConfig(), {
+					address: request.current.migrator,
+					abi: ZAP_CRV_ABI,
+					chainId: request.current.chainID,
+					functionName: 'calc_expected_out',
+					args: [
+						request.current.inputToken.value,
+						request.current.outputToken.value,
+						request.current.inputAmount
+					]
+				});
+				const result = await zapCRV({
+					connector: provider,
+					chainID: request.current.chainID,
+					contractAddress: request.current.migrator,
+					inputToken: request.current.inputToken.value, //_input_token
+					outputToken: request.current.outputToken.value, //_output_token
+					amount: request.current.inputAmount, //_amount
+					minAmount: toBigInt(_expectedOut), //_min_out
+					slippage: toBigInt(0.06 * 100),
+					statusHandler: txStatusSetter
+				});
+				if (result.isSuccessful) {
+					onSuccess();
+				}
+				return;
 			}
-		},
-		[provider]
-	);
 
-	/* 🔵 - Yearn Finance ******************************************************
-	 ** Trigger a withdraw web3 action using the ETH zap contract to take back
-	 ** some ETH from the selected yvETH vault. The contract will first convert
-	 ** yvETH to wETH, unwrap the wETH and send them to the user.
-	 **************************************************************************/
-	const onExecuteWithdraw = useCallback(
-		async (
-			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
-			onSuccess: () => Promise<void>
-		): Promise<void> => {
-			assert(request.current, 'Request is not set');
-			assert(request.current.inputAmount, 'Input amount is not set');
-
-			const result = await withdrawETH({
+			const result = await migrateShares({
 				connector: provider,
 				chainID: request.current.chainID,
-				contractAddress: getEthZapperContract(request.current.chainID),
-				amount: request.current.inputAmount,
+				contractAddress: request.current.migrator,
+				fromVault: request.current.inputToken.value,
+				toVault: request.current.outputToken.value,
 				statusHandler: txStatusSetter
 			});
 			if (result.isSuccessful) {
@@ -161,14 +181,14 @@ export function useSolverChainCoin(): TSolverContext {
 
 	return useMemo(
 		(): TSolverContext => ({
-			type: Solver.enum.ChainCoin,
+			type: Solver.enum.InternalMigration,
 			quote: latestQuote?.current || zeroNormalizedBN,
 			init,
 			onRetrieveAllowance,
 			onApprove,
-			onExecuteDeposit,
-			onExecuteWithdraw
+			onExecuteDeposit: onExecuteMigration,
+			onExecuteWithdraw: async (): Promise<void> => Promise.reject()
 		}),
-		[latestQuote, init, onApprove, onExecuteDeposit, onExecuteWithdraw, onRetrieveAllowance]
+		[latestQuote, init, onApprove, onExecuteMigration, onRetrieveAllowance]
 	);
 }

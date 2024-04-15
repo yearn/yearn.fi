@@ -1,7 +1,11 @@
+import {Solver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
+
 import type {TDropdownOption} from '@yearn-finance/web-lib/types';
 import type {TSolver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
 import type {TAddress, TNormalizedBN} from '@builtbymom/web3/types';
 import type {TTxStatus} from '@builtbymom/web3/utils/wagmi';
+
+export {Solver, TSolver};
 
 /* 🔵 - Yearn Finance ******************************************************
  **	Generic type of the WithSolver interface.
@@ -38,6 +42,7 @@ export type TInitSolverArgs = {
 	inputAmount: bigint;
 	isDepositing: boolean;
 	migrator?: TAddress;
+	stakingPoolAddress?: TAddress; //Address of the staking pool, for veYFI zap in
 };
 
 export type TSolverContext = {
