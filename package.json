@@ -17,21 +17,13 @@
 		"test": "vitest run"
 	},
 	"dependencies": {
-<<<<<<< HEAD
-		"@builtbymom/web3": "^0.0.70",
-=======
 		"@builtbymom/web3": "^0.0.74",
->>>>>>> 28dcd9f (fix: package lint)
 		"@cowprotocol/cow-sdk": "2.1.0",
 		"@headlessui/react": "^1.7.18",
 		"@rainbow-me/rainbowkit": "^2.0.2",
 		"@tailwindcss/typography": "^0.5.10",
 		"@wagmi/core": "^2.6.5",
-<<<<<<< HEAD
-		"@yearn-finance/web-lib": "^3.0.185",
-=======
 		"@yearn-finance/web-lib": "3.0.186",
->>>>>>> 28dcd9f (fix: package lint)
 		"axios": "^1.6.7",
 		"ethers": "5.7.2",
 		"framer-motion": "^11.0.10",
