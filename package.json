@@ -22,7 +22,7 @@
 		"@headlessui/react": "^1.7.18",
 		"@rainbow-me/rainbowkit": "^2.0.2",
 		"@tailwindcss/typography": "^0.5.10",
-		"@wagmi/core": "^2.6.5",
+		"@wagmi/core": "^2.6.16",
 		"@yearn-finance/web-lib": "3.0.186",
 		"axios": "^1.6.7",
 		"ethers": "5.7.2",
