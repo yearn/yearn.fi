@@ -14,10 +14,10 @@ import {
 import {getEthersSigner} from '@builtbymom/web3/utils/wagmi/ethersAdapter';
 import {OrderBookApi, OrderQuoteSide, OrderSigningUtils} from '@cowprotocol/cow-sdk';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
+import {Solver} from '@vaults/types/solvers';
 import {toast} from '@yearn-finance/web-lib/components/yToast';
 import {MAX_UINT_256, SOLVER_COW_VAULT_RELAYER_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {allowanceKey} from '@yearn-finance/web-lib/utils/helpers';
-import {Solver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
 import {useYearn} from '@common/contexts/useYearn';
 
 import type {TDict, TNormalizedBN} from '@builtbymom/web3/types';
@@ -72,6 +72,14 @@ async function getQuote(
 	}
 }
 
+/**************************************************************************************************
+ ** The Cowswap solver is used to deposit and withdraw tokens to/from the vaults when the token the
+ ** user wants to deposit or withdraw is not the underlying/expected token. This is for example
+ ** when the user wants to deposit DAI into an USDC vault. This solver offer a quick and easy way
+ ** to deposit it by swapping the DAI for yvUSDC.
+ ** This is NOT a vanilla deposit/withdraw, but a swap using the Cowswap protocol, which require a
+ ** third party to execute the swap, in an asynchronous way, with fees and slippage.
+ *************************************************************************************************/
 export function useSolverCowswap(): TSolverContext {
 	const {zapSlippage} = useYearn();
 	const {provider} = useWeb3();
@@ -81,11 +89,11 @@ export function useSolverCowswap(): TSolverContext {
 	const latestQuote = useRef<OrderQuoteResponse>();
 	const existingAllowances = useRef<TDict<TNormalizedBN>>({});
 
-	/* 🔵 - Yearn Finance **************************************************************************
+	/**********************************************************************************************
 	 ** A slippage of 1% per default is set to avoid the transaction to fail due to price
 	 ** fluctuations. The buyAmountWithSlippage is used to request this amount instead of the
 	 ** original buyAmount.
-	 **********************************************************************************************/
+	 *********************************************************************************************/
 	const getBuyAmountWithSlippage = useCallback(
 		(currentQuote: OrderQuoteResponse, decimals: number): string => {
 			if (!currentQuote) {
@@ -102,11 +110,11 @@ export function useSolverCowswap(): TSolverContext {
 		[zapSlippage]
 	);
 
-	/* 🔵 - Yearn Finance **************************************************************************
+	/**********************************************************************************************
 	 ** init will be called when the cowswap solver should be used to perform the desired swap.
 	 ** It will set the request to the provided value, as it's required to get the quote, and will
 	 ** call getQuote to get the current quote for the provided request.current.
-	 **********************************************************************************************/
+	 *********************************************************************************************/
 	const init = useCallback(
 		async (_request: TInitSolverArgs, shouldLogError?: boolean): Promise<TNormalizedBN | undefined> => {
 			if (isSolverDisabled(Solver.enum.Cowswap)) {
@@ -175,12 +183,12 @@ export function useSolverCowswap(): TSolverContext {
 		[getBuyAmountWithSlippage]
 	);
 
-	/* 🔵 - Yearn Finance **************************************************************************
+	/**********************************************************************************************
 	 ** signCowswapOrder is used to sign the order with the user's wallet. The signature is used
 	 ** to execute the order.
 	 ** If shouldUsePresign is set to true, the signature is not required and the approval is
 	 ** skipped. This should only be used for debugging purposes.
-	 **********************************************************************************************/
+	 *********************************************************************************************/
 	const signCowswapOrder = useCallback(
 		async (chainID: number, quote: Order): Promise<SigningResult> => {
 			if (shouldUsePresign) {
@@ -201,12 +209,12 @@ export function useSolverCowswap(): TSolverContext {
 		[shouldUsePresign, provider]
 	);
 
-	/* 🔵 - Yearn Finance **************************************************************************
+	/**********************************************************************************************
 	 ** Cowswap orders have a validity period and the return value on submit is not the execution
 	 ** status of the order. This method is used to check the status of the order and returns a
 	 ** boolean value indicating whether the order was successful or not.
 	 ** It will timeout once the order is no longer valid or after 50 minutes (max should be 30mn)
-	 **********************************************************************************************/
+	 *********************************************************************************************/
 	async function checkOrderStatus(
 		orderUID: string,
 		validTo: number
@@ -237,11 +245,11 @@ export function useSolverCowswap(): TSolverContext {
 		};
 	}
 
-	/* 🔵 - Yearn Finance **************************************************************************
+	/**********************************************************************************************
 	 ** execute will send the post request to execute the order and wait for it to be executed, no
 	 ** matter the result. It returns a boolean value indicating whether the order was successful or
 	 ** not.
-	 **********************************************************************************************/
+	 *********************************************************************************************/
 	const execute = useCallback(async (): Promise<TTxResponse> => {
 		if (!request?.current || request.current.chainID !== 1) {
 			return {isSuccessful: false};

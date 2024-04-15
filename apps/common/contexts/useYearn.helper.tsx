@@ -260,7 +260,7 @@ export function useYearnTokens({
 		});
 		return clonedTokens;
 	}
-	const shouldEnableForknet = true;
+	const shouldEnableForknet = false;
 	if (shouldEnableForknet) {
 		return cloneForForknet(allTokens);
 	}

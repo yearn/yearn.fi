@@ -1,3 +1,8 @@
+# 0.4.1
+
+-   Feat: Refresh vault data on every block
+-   Feat: Add veYFI quick deposit
+
 # 0.4.0
 
 -   Fix: Add a missing context in the \_app file (settings). (13/01/2024)

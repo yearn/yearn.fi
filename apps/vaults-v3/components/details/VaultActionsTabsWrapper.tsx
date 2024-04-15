@@ -3,12 +3,12 @@ import {useRouter} from 'next/router';
 import {cl, formatAmount} from '@builtbymom/web3/utils';
 import {Listbox, Transition} from '@headlessui/react';
 import {useUpdateEffect} from '@react-hookz/web';
-import {RewardsTab} from '@vaults/components/RewardsTab';
 import {Flow, useActionFlow} from '@vaults/contexts/useActionFlow';
 import {VaultDetailsQuickActionsButtons} from '@vaults-v3/components/details/actions/QuickActionsButtons';
 import {VaultDetailsQuickActionsFrom} from '@vaults-v3/components/details/actions/QuickActionsFrom';
 import {VaultDetailsQuickActionsSwitch} from '@vaults-v3/components/details/actions/QuickActionsSwitch';
 import {VaultDetailsQuickActionsTo} from '@vaults-v3/components/details/actions/QuickActionsTo';
+import {RewardsTab} from '@vaults-v3/components/details/RewardsTab';
 import {SettingsPopover} from '@vaults-v3/components/SettingsPopover';
 import {useYearn} from '@common/contexts/useYearn';
 import {IconChevron} from '@common/icons/IconChevron';
@@ -16,21 +16,21 @@ import {IconChevron} from '@common/icons/IconChevron';
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 
-type TTabsOptions = {
+export type TTabsOptions = {
 	value: number;
 	label: string;
 	flowAction: Flow;
 	slug?: string;
 };
 
-const tabs: TTabsOptions[] = [
+export const tabs: TTabsOptions[] = [
 	{value: 0, label: 'Deposit', flowAction: Flow.Deposit, slug: 'deposit'},
 	{value: 1, label: 'Withdraw', flowAction: Flow.Withdraw, slug: 'withdraw'},
 	{value: 2, label: 'Migrate', flowAction: Flow.Migrate, slug: 'migrate'},
 	{value: 3, label: 'Boost', flowAction: Flow.None, slug: 'boost'}
 ];
 
-function getCurrentTab(props: {isDepositing: boolean; hasMigration: boolean; isRetired: boolean}): TTabsOptions {
+export function getCurrentTab(props: {isDepositing: boolean; hasMigration: boolean; isRetired: boolean}): TTabsOptions {
 	if (props.hasMigration || props.isRetired) {
 		return tabs[1];
 	}
@@ -44,17 +44,17 @@ function getCurrentTab(props: {isDepositing: boolean; hasMigration: boolean; isR
  ** An empty span will be returned if the current tab is not the 'Boost' tab or if no staking
  ** rewards are available.
  *************************************************************************************************/
-function BoostMessage(props: {currentVault: TYDaemonVault; currentTab: number}): ReactElement {
-	const {isStakingOpBoostedVaults} = useYearn();
+export function BoostMessage(props: {currentVault: TYDaemonVault; currentTab: number}): ReactElement {
+	const {isAutoStakingEnabled} = useYearn();
 	const hasStakingRewards = Boolean(props.currentVault.staking.available);
 	const stakingRewardSource = props.currentVault.staking.source;
 	const extraAPR = props.currentVault.apr.extra.stakingRewardsAPR;
 
 	if (props.currentTab === 0 && hasStakingRewards && stakingRewardSource === 'OP Boost') {
-		if (isStakingOpBoostedVaults) {
+		if (isAutoStakingEnabled) {
 			return (
 				<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
-					<div className={'w-full bg-[#34A14F] p-2 md:px-6 md:py-4'}>
+					<div className={'w-full rounded-lg bg-[#34A14F] p-2 md:px-6 md:py-4'}>
 						<b className={'text-base text-white'}>
 							{
 								'Great news! This Vault is receiving an Optimism Boost. Deposit and stake your tokens to receive OP rewards. Nice!'
@@ -66,7 +66,7 @@ function BoostMessage(props: {currentVault: TYDaemonVault; currentTab: number}):
 		}
 		return (
 			<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
-				<div className={'w-full bg-[#F8A908] p-2 md:px-6 md:py-4'}>
+				<div className={'w-full rounded-lg bg-[#F8A908] p-2 md:px-6 md:py-4'}>
 					<b className={'text-base text-white'}>
 						{
 							"This Vault is receiving an Optimism Boost. To zap into it for additional OP rewards, you'll have to stake your yVault tokens manually on the $OP BOOST tab after you deposit. Sorry anon, it's just how it works."
@@ -80,11 +80,11 @@ function BoostMessage(props: {currentVault: TYDaemonVault; currentTab: number}):
 	if (props.currentTab === 0 && hasStakingRewards && stakingRewardSource === 'VeYFI') {
 		return (
 			<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
-				<div className={'w-full bg-[#34A14F] p-2 md:px-6 md:py-4'}>
+				<div className={'w-full rounded-lg bg-[#34A14F] p-2 md:px-6 md:py-4'}>
 					<b className={'text-base text-white'}>
 						{`You can earn from ${formatAmount(extraAPR * 10)}% to ${formatAmount(extraAPR * 100)}% extra APR by depositing your tokens into the veYFI gauge!`}
 					</b>
-					<b className={'block'}>
+					<b className={'block text-white'}>
 						{'Learn more about veYFI rewards in the '}
 						<a
 							className={'underline'}
@@ -109,13 +109,14 @@ function BoostMessage(props: {currentVault: TYDaemonVault; currentTab: number}):
  ** A special case exists when the current vault has staking rewards, because the name of the tab
  ** will be different depending on the source of the rewards.
  *************************************************************************************************/
-function Tab(props: {
+export function VaultDetailsTab(props: {
 	currentVault: TYDaemonVault;
 	tab: TTabsOptions;
 	selectedTab: TTabsOptions;
 	onSwitchTab: (tab: TTabsOptions) => void;
 }): ReactElement {
 	const router = useRouter();
+	const isV3Page = router.pathname.startsWith(`/v3`);
 	const stakingRewardSource = props.currentVault.staking.source;
 	const tabLabel = useMemo(() => {
 		if (props.tab.label === 'Boost' && stakingRewardSource === 'VeYFI') {
@@ -148,9 +149,11 @@ function Tab(props: {
 				aria-selected={props.selectedTab.value === props.tab.value}
 				className={cl(
 					'hover-fix tab',
-					props.selectedTab.value === props.tab.value
-						? '!text-neutral-900'
-						: '!text-neutral-900/50 hover:!text-neutral-900'
+					isV3Page
+						? props.selectedTab.value === props.tab.value
+							? '!text-neutral-900'
+							: '!text-neutral-900/50 hover:!text-neutral-900'
+						: ''
 				)}>
 				{tabLabel}
 			</p>
@@ -208,7 +211,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 			onSwitchSelectedOptions(Flow.Withdraw);
 		}
 
-		if (currentVault.chainID === 10 && hasStakingRewards) {
+		if (hasStakingRewards) {
 			set_possibleTabs([tabs[0], tabs[1], tabs[3]]);
 		}
 	}, [currentVault?.migration?.available, currentVault?.retired, actionParams.isReady, hasStakingRewards]);
@@ -261,7 +264,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 					<nav className={'hidden flex-row items-center space-x-10 md:flex'}>
 						{possibleTabs.map(
 							(tab): ReactElement => (
-								<Tab
+								<VaultDetailsTab
 									currentVault={currentVault}
 									key={tab.value}
 									tab={tab}

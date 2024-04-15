@@ -1,7 +1,6 @@
-import {Fragment, useLayoutEffect, useMemo, useRef} from 'react';
-import {animate} from 'framer-motion';
+import {Fragment, useMemo} from 'react';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {formatAmount, isZero} from '@builtbymom/web3/utils';
+import {isZero} from '@builtbymom/web3/utils';
 import {VaultListOptions} from '@vaults/components/list/VaultListOptions';
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
 import {VaultsListInternalMigrationRow} from '@vaults/components/list/VaultsListInternalMigrationRow';
@@ -17,6 +16,7 @@ import {Button} from '@yearn-finance/web-lib/components/Button';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {usePagination} from '@yearn-finance/web-lib/hooks/usePagination';
 import {IconChain} from '@yearn-finance/web-lib/icons/IconChain';
+import {Counter} from '@common/components/Counter';
 import {InfoTooltip} from '@common/components/InfoTooltip';
 import {ListHead} from '@common/components/ListHead';
 import {Pagination} from '@common/components/Pagination';
@@ -27,35 +27,6 @@ import type {ReactElement, ReactNode} from 'react';
 import type {TYDaemonVault, TYDaemonVaults} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TSortDirection} from '@builtbymom/web3/types';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
-
-export function Counter({value, decimals = 18}: {value: number; decimals: number}): ReactElement {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const nodeRef = useRef<any>();
-	const valueRef = useRef(value || 0);
-
-	useLayoutEffect((): (() => void) => {
-		const node = nodeRef.current;
-		if (node) {
-			const controls = animate(Number(valueRef.current || 0), value, {
-				duration: 1,
-				onUpdate(value) {
-					valueRef.current = value;
-					node.textContent = formatAmount(value.toFixed(decimals), decimals, decimals);
-				}
-			});
-			return () => controls.stop();
-		}
-		return () => undefined;
-	}, [value, decimals]);
-
-	return (
-		<span
-			className={'font-number'}
-			suppressHydrationWarning
-			ref={nodeRef}
-		/>
-	);
-}
 
 function HeaderUserPosition(): ReactElement {
 	const {cumulatedValueInV2Vaults} = useYearn();

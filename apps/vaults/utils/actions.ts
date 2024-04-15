@@ -1,8 +1,10 @@
-import {assert, assertAddress} from '@builtbymom/web3/utils';
+import {assert, assertAddress, toAddress} from '@builtbymom/web3/utils';
 import {handleTx, toWagmiProvider} from '@builtbymom/web3/utils/wagmi';
 import {STAKING_REWARDS_ABI} from '@vaults/utils/abi/stakingRewards.abi';
 import {STAKING_REWARDS_ZAP_ABI} from '@vaults/utils/abi/stakingRewardsZap.abi';
+import {YGAUGE_ZAP_ABI} from '@vaults-v3/utils/abi/yGaugeZap.abi';
 import {STAKING_REWARDS_ZAP_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {YGAUGES_ZAP_ADDRESS} from '@common/utils/constants';
 
 import {VEYFI_GAUGE_ABI} from './abi/veYFIGauge.abi.ts';
 import {ZAP_CRV_ABI} from './abi/zapCRV.abi';
@@ -14,25 +16,54 @@ import type {TTxResponse, TWriteTransaction} from '@builtbymom/web3/utils/wagmi'
  ** depositAndStake is a _WRITE_ function that deposit the underlying asset into
  ** the vault and stake the resulting shares into the staking contract.
  **
- ** @app - Vaults (optimism)
+ ** @app - Vaults
  ** @param vaultAddress - The address of the vault to deposit into.
  ** @param amount - The amount of the underlying asset to deposit.
+ ** @param vaultVersion - The version of the vault to deposit into.
+ ** @param stakingPoolAddress - The address of the staking pool to stake into.
+ **		For VeYFI vaults only, ignored for Optimism.
  ******************************************************************************/
 type TDepositAndStake = TWriteTransaction & {
 	vaultAddress: TAddress | undefined;
+	stakingPoolAddress?: TAddress | undefined;
+	vaultVersion?: string | undefined;
 	amount: bigint;
 };
 export async function depositAndStake(props: TDepositAndStake): Promise<TTxResponse> {
-	assertAddress(STAKING_REWARDS_ZAP_ADDRESS, 'STAKING_REWARDS_ZAP_ADDRESS');
+	assertAddress(props.contractAddress, 'contractAddress');
 	assertAddress(props.vaultAddress, 'vaultAddress');
 	assert(props.amount > 0n, 'Amount is 0');
 
-	return await handleTx(props, {
-		address: STAKING_REWARDS_ZAP_ADDRESS,
-		abi: STAKING_REWARDS_ZAP_ABI,
-		functionName: 'zapIn',
-		args: [props.vaultAddress, props.amount]
-	});
+	// If we are depositing into the Optimism Booster
+	if (props.chainID === 10 && toAddress(props.contractAddress) === toAddress(STAKING_REWARDS_ZAP_ADDRESS)) {
+		return await handleTx(props, {
+			address: props.contractAddress,
+			abi: STAKING_REWARDS_ZAP_ABI,
+			functionName: 'zapIn',
+			args: [props.vaultAddress, props.amount]
+		});
+	}
+
+	// If we are depositing into the VeYFI gauge
+	if (toAddress(props.contractAddress) === toAddress(YGAUGES_ZAP_ADDRESS)) {
+		assertAddress(props.stakingPoolAddress, 'stakingPoolAddress');
+		if ((props.vaultVersion || '').startsWith('3')) {
+			return await handleTx(props, {
+				address: props.contractAddress,
+				abi: YGAUGE_ZAP_ABI,
+				functionName: 'zapIn',
+				args: [props.vaultAddress, props.amount, props.stakingPoolAddress]
+			});
+		}
+
+		return await handleTx(props, {
+			address: props.contractAddress,
+			abi: YGAUGE_ZAP_ABI,
+			functionName: 'zapInLegacy',
+			args: [props.vaultAddress, props.amount, props.stakingPoolAddress]
+		});
+	}
+	throw new Error('Invalid contract address');
 }
 
 /* 🔵 - Yearn Finance **********************************************************

@@ -1,158 +1,27 @@
-import {Fragment, useEffect, useMemo, useState} from 'react';
+import {Fragment, useEffect, useState} from 'react';
 import Link from 'next/link';
 import {useRouter} from 'next/router';
-import {formatAmount} from '@builtbymom/web3/utils';
+import {cl} from '@builtbymom/web3/utils';
 import {Listbox, Transition} from '@headlessui/react';
 import {useUpdateEffect} from '@react-hookz/web';
-import {VaultDetailsQuickActionsButtons} from '@vaults/components/details/actions/QuickActionsButtons';
-import {VaultDetailsQuickActionsFrom} from '@vaults/components/details/actions/QuickActionsFrom';
-import {VaultDetailsQuickActionsSwitch} from '@vaults/components/details/actions/QuickActionsSwitch';
-import {VaultDetailsQuickActionsTo} from '@vaults/components/details/actions/QuickActionsTo';
-import {RewardsTab} from '@vaults/components/RewardsTab';
 import {SettingsPopover} from '@vaults/components/SettingsPopover';
 import {Flow, useActionFlow} from '@vaults/contexts/useActionFlow';
-import {useYearn} from '@common/contexts/useYearn';
+import {VaultDetailsQuickActionsButtons} from '@vaults-v3/components/details/actions/QuickActionsButtons';
+import {VaultDetailsQuickActionsFrom} from '@vaults-v3/components/details/actions/QuickActionsFrom';
+import {VaultDetailsQuickActionsSwitch} from '@vaults-v3/components/details/actions/QuickActionsSwitch';
+import {VaultDetailsQuickActionsTo} from '@vaults-v3/components/details/actions/QuickActionsTo';
+import {RewardsTab} from '@vaults-v3/components/details/RewardsTab';
+import {
+	BoostMessage,
+	getCurrentTab,
+	tabs,
+	VaultDetailsTab
+} from '@vaults-v3/components/details/VaultActionsTabsWrapper';
 import {IconChevron} from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
-
-type TTabsOptions = {
-	value: number;
-	label: string;
-	flowAction: Flow;
-	slug?: string;
-};
-
-const tabs: TTabsOptions[] = [
-	{value: 0, label: 'Deposit', flowAction: Flow.Deposit, slug: 'deposit'},
-	{value: 1, label: 'Withdraw', flowAction: Flow.Withdraw, slug: 'withdraw'},
-	{value: 2, label: 'Migrate', flowAction: Flow.Migrate, slug: 'migrate'},
-	{value: 3, label: 'Boost', flowAction: Flow.None, slug: 'boost'}
-];
-
-function getCurrentTab(props: {isDepositing: boolean; hasMigration: boolean; isRetired: boolean}): TTabsOptions {
-	if (props.hasMigration || props.isRetired) {
-		return tabs[1];
-	}
-	return tabs.find((tab): boolean => tab.value === (props.isDepositing ? 0 : 1)) as TTabsOptions;
-}
-
-/**************************************************************************************************
- ** The BoostMessage component will display a message to the user if the current vault has staking
- ** rewards and the source of the rewards is either 'OP Boost' or 'VeYFI'. More source might be
- ** added in the future.
- ** An empty span will be returned if the current tab is not the 'Boost' tab or if no staking
- ** rewards are available.
- *************************************************************************************************/
-function BoostMessage(props: {currentVault: TYDaemonVault; currentTab: number}): ReactElement {
-	const {isStakingOpBoostedVaults} = useYearn();
-	const hasStakingRewards = Boolean(props.currentVault.staking.available);
-	const stakingRewardSource = props.currentVault.staking.source;
-	const extraAPR = props.currentVault.apr.extra.stakingRewardsAPR;
-
-	if (props.currentTab === 0 && hasStakingRewards && stakingRewardSource === 'OP Boost') {
-		if (isStakingOpBoostedVaults) {
-			return (
-				<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
-					<div className={'w-full bg-[#34A14F] p-2 md:px-6 md:py-4'}>
-						<b className={'text-base text-white'}>
-							{
-								'Great news! This Vault is receiving an Optimism Boost. Deposit and stake your tokens to receive OP rewards. Nice!'
-							}
-						</b>
-					</div>
-				</div>
-			);
-		}
-		return (
-			<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
-				<div className={'w-full bg-[#F8A908] p-2 md:px-6 md:py-4'}>
-					<b className={'text-base text-white'}>
-						{
-							"This Vault is receiving an Optimism Boost. To zap into it for additional OP rewards, you'll have to stake your yVault tokens manually on the $OP BOOST tab after you deposit. Sorry anon, it's just how it works."
-						}
-					</b>
-				</div>
-			</div>
-		);
-	}
-
-	if (props.currentTab === 0 && hasStakingRewards && stakingRewardSource === 'VeYFI') {
-		return (
-			<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
-				<div className={'w-full bg-[#34A14F] p-2 md:px-6 md:py-4'}>
-					<b className={'text-base text-white'}>
-						{`You can earn from ${formatAmount(extraAPR * 10)}% to ${formatAmount(extraAPR * 100)}% extra APR by depositing your tokens into the veYFI gauge!`}
-					</b>
-					<b className={'block'}>
-						{'Learn more about veYFI rewards in the '}
-						<a
-							className={'underline'}
-							href={'https://docs.yearn.fi/getting-started/products/veyfi'}
-							target={'_blank'}
-							rel={'noreferrer'}>
-							{'FAQ'}
-						</a>
-						{'.'}
-					</b>
-				</div>
-			</div>
-		);
-	}
-
-	return <span />;
-}
-
-/**************************************************************************************************
- ** The Tab component will be used to display the tab buttons to navigate between the different
- ** actions available for the current vault.
- ** A special case exists when the current vault has staking rewards, because the name of the tab
- ** will be different depending on the source of the rewards.
- *************************************************************************************************/
-function Tab(props: {
-	currentVault: TYDaemonVault;
-	tab: TTabsOptions;
-	selectedTab: TTabsOptions;
-	onSwitchTab: (tab: TTabsOptions) => void;
-}): ReactElement {
-	const router = useRouter();
-	const stakingRewardSource = props.currentVault.staking.source;
-	const tabLabel = useMemo(() => {
-		if (props.tab.label === 'Boost' && stakingRewardSource === 'VeYFI') {
-			return 'veYFI BOOST';
-		}
-		if (props.tab.label === 'Boost' && stakingRewardSource === 'OP Boost') {
-			return '$OP BOOST';
-		}
-		return props.tab.label;
-	}, [props.tab.label, stakingRewardSource]);
-
-	return (
-		<button
-			key={`desktop-${props.tab.value}`}
-			onClick={(): void => {
-				router.replace(
-					{
-						query: {
-							...router.query,
-							action: props.tab.slug
-						}
-					},
-					undefined,
-					{shallow: true}
-				);
-				props.onSwitchTab(props.tab);
-			}}>
-			<p
-				title={tabLabel}
-				aria-selected={props.selectedTab.value === props.tab.value}
-				className={'hover-fix tab'}>
-				{tabLabel}
-			</p>
-		</button>
-	);
-}
+import type {TTabsOptions} from '@vaults-v3/components/details/VaultActionsTabsWrapper';
 
 /**************************************************************************************************
  ** The VaultActionsTabsWrapper wraps the different components that are part of the Vault Actions
@@ -241,19 +110,37 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 				</div>
 			)}
 
-			<nav className={`mb-2 w-full ${currentVault?.retired ? 'mt-1 md:mt-4' : 'mt-10 md:mt-20'}`}>
+			{currentVault?.info.uiNotice && (
+				<div
+					aria-label={'Migration Warning'}
+					className={'col-span-12 mt-10'}>
+					<div className={'w-full rounded-3xl bg-neutral-900 p-6 text-neutral-0'}>
+						<b className={'text-lg'}>{'Oh look, an important message for you to read!'}</b>
+						<p className={'mt-2'}>{currentVault?.info.uiNotice}</p>
+					</div>
+				</div>
+			)}
+
+			<nav
+				className={cl(
+					`mb-2 w-full`,
+					currentVault?.retired
+						? 'mt-1 md:mt-4'
+						: currentVault?.info.uiNotice
+							? 'mt-10 md:mt-10'
+							: 'mt-10 md:mt-20'
+				)}>
 				<Link href={'/vaults'}>
 					<p className={'yearn--header-nav-item w-full whitespace-nowrap opacity-30'}>{'Back to vaults'}</p>
 				</Link>
 			</nav>
-			<div
-				aria-label={'Vault Actions'}
-				className={'col-span-12 mb-4 flex flex-col bg-neutral-100'}>
+
+			<div className={'col-span-12 mb-4 flex flex-col bg-neutral-100'}>
 				<div className={'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'}>
 					<nav className={'hidden flex-row items-center space-x-10 md:flex'}>
 						{possibleTabs.map(
 							(tab): ReactElement => (
-								<Tab
+								<VaultDetailsTab
 									currentVault={currentVault}
 									key={tab.value}
 									tab={tab}

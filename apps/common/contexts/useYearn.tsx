@@ -3,10 +3,10 @@ import {deserialize, serialize} from 'wagmi';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {isZeroAddress, toAddress, toNormalizedBN, zeroNormalizedBN} from '@builtbymom/web3/utils';
 import {useLocalStorageValue} from '@react-hookz/web';
+import {Solver, type TSolver} from '@vaults/types/solvers';
 import {useFetchYearnEarnedForUser} from '@yearn-finance/web-lib/hooks/useFetchYearnEarnedForUser';
 import {useFetchYearnPrices} from '@yearn-finance/web-lib/hooks/useFetchYearnPrices';
 import {useFetchYearnVaults} from '@yearn-finance/web-lib/hooks/useFetchYearnVaults';
-import {Solver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
 
 import {useYearnBalances} from './useYearn.helper';
 
@@ -15,7 +15,6 @@ import type {KeyedMutator} from 'swr';
 import type {TYChainTokens, TYToken} from '@yearn-finance/web-lib/types';
 import type {TYDaemonEarned} from '@yearn-finance/web-lib/utils/schemas/yDaemonEarnedSchema';
 import type {TYDaemonPricesChain} from '@yearn-finance/web-lib/utils/schemas/yDaemonPricesSchema';
-import type {TSolver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
 import type {TYDaemonVault, TYDaemonVaults} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TUseBalancesTokens} from '@builtbymom/web3/hooks/useBalances.multichains';
 import type {TAddress, TDict, TNormalizedBN} from '@builtbymom/web3/types';
@@ -35,12 +34,12 @@ export type TYearnContext = {
 	zapSlippage: number;
 	maxLoss: bigint;
 	zapProvider: TSolver;
-	isStakingOpBoostedVaults: boolean;
+	isAutoStakingEnabled: boolean;
 	mutateVaultList: KeyedMutator<TYDaemonVaults>;
 	set_maxLoss: (value: bigint) => void;
 	set_zapSlippage: (value: number) => void;
 	set_zapProvider: (value: TSolver) => void;
-	set_isStakingOpBoostedVaults: (value: boolean) => void;
+	set_isAutoStakingEnabled: (value: boolean) => void;
 	//
 	//Yearn wallet context
 	getToken: ({address, chainID}: TTokenAndChain) => TYToken;
@@ -80,13 +79,13 @@ const YearnContext = createContext<TYearnContext>({
 	maxLoss: DEFAULT_MAX_LOSS,
 	zapSlippage: 0.1,
 	zapProvider: Solver.enum.Cowswap,
-	isStakingOpBoostedVaults: true,
+	isAutoStakingEnabled: true,
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	mutateVaultList: (): any => undefined,
 	set_maxLoss: (): void => undefined,
 	set_zapSlippage: (): void => undefined,
 	set_zapProvider: (): void => undefined,
-	set_isStakingOpBoostedVaults: (): void => undefined,
+	set_isAutoStakingEnabled: (): void => undefined,
 	//
 	//Yearn wallet context
 	getToken: (): TYToken => defaultToken,
@@ -112,7 +111,7 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 	const {value: zapProvider, set: set_zapProvider} = useLocalStorageValue<TSolver>('yearn.fi/zap-provider', {
 		defaultValue: Solver.enum.Cowswap
 	});
-	const {value: isStakingOpBoostedVaults, set: set_isStakingOpBoostedVaults} = useLocalStorageValue<boolean>(
+	const {value: isAutoStakingEnabled, set: set_isAutoStakingEnabled} = useLocalStorageValue<boolean>(
 		'yearn.fi/staking-op-boosted-vaults',
 		{
 			defaultValue: true
@@ -121,7 +120,16 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 
 	const prices = useFetchYearnPrices();
 	const earned = useFetchYearnEarnedForUser();
-	const {vaults, vaultsMigrations, vaultsRetired, isLoading, mutate} = useFetchYearnVaults();
+	const {vaults: rawVaults, vaultsMigrations, vaultsRetired, isLoading, mutate} = useFetchYearnVaults();
+
+	const vaults = useMemo(() => {
+		const vaults: TDict<TYDaemonVault> = {};
+		for (const vault of Object.values(rawVaults)) {
+			vaults[toAddress(vault.address)] = {...vault};
+		}
+		return vaults;
+	}, [rawVaults]);
+
 	const {balances, isLoadingBalances, onRefresh} = useYearnBalances({
 		vaults,
 		vaultsMigrations,
@@ -200,11 +208,11 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 				zapSlippage: zapSlippage ?? DEFAULT_SLIPPAGE,
 				maxLoss: maxLoss ?? DEFAULT_MAX_LOSS,
 				zapProvider: zapProvider ?? Solver.enum.Cowswap,
-				isStakingOpBoostedVaults: isStakingOpBoostedVaults ?? true,
+				isAutoStakingEnabled: isAutoStakingEnabled ?? true,
 				set_zapSlippage,
 				set_maxLoss,
 				set_zapProvider,
-				set_isStakingOpBoostedVaults,
+				set_isAutoStakingEnabled,
 				vaults,
 				vaultsMigrations,
 				vaultsRetired,

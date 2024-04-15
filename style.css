@@ -61,6 +61,14 @@
 		@apply !mb-0 !z-[99999];
 	}
 	.yearn--button {
+		@apply rounded-lg;
+		&[data-variant='filled'],
+		&[data-variant='light'],
+		&[data-variant='outlined'],
+		&[data-variant='reverted'],
+		&[data-variant='filled'] {
+			@apply rounded-lg;
+		}
 		&[data-variant='v3'] {
 			@apply text-neutral-900 bg-[#D21162] rounded-lg font-normal border border-transparent;
 			&:disabled {

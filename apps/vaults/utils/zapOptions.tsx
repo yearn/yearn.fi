@@ -1,8 +1,8 @@
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 
 import type {TDropdownOption} from '@yearn-finance/web-lib/types';
-import type {TSolver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
 import type {TAddress} from '@builtbymom/web3/types';
+import type {TSolver} from '@vaults/types/solvers';
 
 type TSetZapOptionProps = {
 	name: string;
@@ -25,7 +25,7 @@ export function setZapOption({
 		symbol,
 		value: address,
 		decimals,
-		solveVia,
+		solveVia: solveVia as any,
 		chainID,
 		icon: (
 			<ImageWithFallback

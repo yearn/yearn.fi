@@ -1,7 +1,7 @@
-import {Children, Fragment, useLayoutEffect, useMemo, useRef, useState} from 'react';
-import {animate, motion} from 'framer-motion';
+import {Children, Fragment, useMemo, useState} from 'react';
+import {motion} from 'framer-motion';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {cl, formatAmount, isZero} from '@builtbymom/web3/utils';
+import {cl, isZero} from '@builtbymom/web3/utils';
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
 import {useVaultFilter} from '@vaults/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
@@ -11,41 +11,13 @@ import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
 import {VaultsV3ListRow} from '@vaults-v3/components/list/VaultsV3ListRow';
 import {ALL_VAULTSV3_CATEGORIES_KEYS} from '@vaults-v3/constants';
 import {V3Mask} from '@vaults-v3/Mark';
+import {Counter} from '@common/components/Counter';
 import {useYearn} from '@common/contexts/useYearn';
 
 import type {ReactElement, ReactNode} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TSortDirection} from '@builtbymom/web3/types';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
-
-export function Counter({value, decimals = 18}: {value: number; decimals: number}): ReactElement {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const nodeRef = useRef<any>();
-	const valueRef = useRef(value || 0);
-
-	useLayoutEffect((): (() => void) => {
-		const node = nodeRef.current;
-		if (node) {
-			const controls = animate(Number(valueRef.current || 0), value, {
-				duration: 1,
-				onUpdate(value) {
-					valueRef.current = value;
-					node.textContent = formatAmount(value.toFixed(decimals), decimals, decimals);
-				}
-			});
-			return () => controls.stop();
-		}
-		return () => undefined;
-	}, [value, decimals]);
-
-	return (
-		<span
-			className={'font-number'}
-			suppressHydrationWarning
-			ref={nodeRef}
-		/>
-	);
-}
 
 function Background(): ReactElement {
 	return (

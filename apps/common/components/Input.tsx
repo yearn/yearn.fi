@@ -54,7 +54,7 @@ export function FakeInput(
 			<div className={'relative flex w-full items-center justify-center'}>
 				<div
 					className={cl(
-						`h-10 w-full border-0 border-none bg-neutral-300 p-2 font-mono text-base font-normal outline-none`,
+						`h-10 w-full border-0 border-none rounded-lg bg-neutral-300 p-2 font-mono text-base font-normal outline-none`,
 						value === undefined ? 'text-neutral-600/60' : ''
 					)}
 					aria-label={label}>
