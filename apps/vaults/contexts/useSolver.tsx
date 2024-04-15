@@ -87,8 +87,6 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 		[executionNonce]
 	);
 
-	console.log(currentSolver);
-
 	/* 🔵 - Yearn Finance **************************************************************************
 	 ** Based on the currentSolver, we initialize the solver with the required parameters.
 	 **********************************************************************************************/

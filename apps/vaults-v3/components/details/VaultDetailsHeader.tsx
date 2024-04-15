@@ -378,21 +378,21 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 		const result = await readContracts(retrieveConfig(), {
 			contracts: [
 				{
-					address: currentVault.address,
+					address: toAddress(currentVault.address),
 					abi: VAULT_V3_ABI,
 					chainId: currentVault.chainID,
 					functionName: 'balanceOf',
 					args: [toAddress(address)]
 				},
 				{
-					address: currentVault.staking.address,
+					address: toAddress(currentVault.staking.address),
 					abi: erc20Abi,
 					chainId: currentVault.chainID,
 					functionName: 'balanceOf',
 					args: [toAddress(address)]
 				},
 				{
-					address: currentVault.address,
+					address: toAddress(currentVault.address),
 					abi: VAULT_V3_ABI,
 					chainId: currentVault.chainID,
 					functionName: 'pricePerShare'
