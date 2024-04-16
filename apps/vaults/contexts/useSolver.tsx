@@ -6,6 +6,7 @@ import {useSolverChainCoin} from '@vaults/hooks/solvers/useSolverChainCoin';
 import {useSolverCowswap} from '@vaults/hooks/solvers/useSolverCowswap';
 import {useSolverGaugeStakingBooster} from '@vaults/hooks/solvers/useSolverGaugeStakingBooster';
 import {useSolverInternalMigration} from '@vaults/hooks/solvers/useSolverInternalMigration';
+import {useSolverJuicedStakingBooster} from '@vaults/hooks/solvers/useSolverJuicedStakingBooster';
 import {useSolverOptimismBooster} from '@vaults/hooks/solvers/useSolverOptimismBooster';
 import {useSolverPartnerContract} from '@vaults/hooks/solvers/useSolverPartnerContract';
 import {useSolverPortals} from '@vaults/hooks/solvers/useSolverPortals';
@@ -25,6 +26,7 @@ export const isSolverDisabled = (key: TSolver): boolean => {
 		[Solver.enum.InternalMigration]: false,
 		[Solver.enum.OptimismBooster]: false,
 		[Solver.enum.GaugeStakingBooster]: false,
+		[Solver.enum.JuicedStakingBooster]: false,
 		[Solver.enum.Cowswap]: false,
 		[Solver.enum.Portals]: false,
 		[Solver.enum.None]: false
@@ -65,6 +67,7 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 	const internalMigration = useSolverInternalMigration();
 	const optimismBooster = useSolverOptimismBooster();
 	const veYFIGaugeStakingBooster = useSolverGaugeStakingBooster();
+	const juicedStakingBooster = useSolverJuicedStakingBooster();
 	const [currentSolverState, set_currentSolverState] = useState<TSolverContext & {hash?: string}>(vanilla);
 	const [isLoading, set_isLoading] = useState(false);
 
@@ -114,7 +117,8 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 				inputAmount: actionParams.amount.raw,
 				isDepositing: isDepositing,
 				stakingPoolAddress:
-					currentVault.staking.available && currentVault.staking.source === 'VeYFI'
+					currentVault.staking.available &&
+					(currentVault.staking.source === 'VeYFI' || currentVault.staking.source === 'Juiced')
 						? toAddress(currentVault.staking.address)
 						: undefined
 			};
@@ -214,6 +218,17 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 					});
 					break;
 				}
+				case Solver.enum.JuicedStakingBooster: {
+					const [quote] = await Promise.allSettled([juicedStakingBooster.init(request)]);
+					await handleUpdateSolver({
+						currentNonce,
+						request,
+						quote,
+						solver: Solver.enum.JuicedStakingBooster,
+						ctx: juicedStakingBooster
+					});
+					break;
+				}
 				case Solver.enum.ChainCoin: {
 					const [quote] = await Promise.allSettled([chainCoin.init(request)]);
 					await handleUpdateSolver({
@@ -266,16 +281,20 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 			actionParams.amount,
 			currentVault.chainID,
 			currentVault.version,
+			currentVault.staking.available,
+			currentVault.staking.source,
+			currentVault.staking.address,
 			currentVault.migration.contract,
 			address,
 			isDepositing,
 			currentSolver,
+			vanilla,
 			cowswap,
 			portals,
-			vanilla,
 			handleUpdateSolver,
 			optimismBooster,
 			veYFIGaugeStakingBooster,
+			juicedStakingBooster,
 			chainCoin,
 			partnerContract,
 			internalMigration

@@ -280,6 +280,20 @@ export function ActionFlowContextApp({
 			return Solver.enum.GaugeStakingBooster;
 		}
 
+		// Only use JuicedStakingBooster if the user chose to stake automatically and the vault is staking with Juiced
+		// Disabled until we figure out the zap
+		const canUseJuicedDirectDeposits = false;
+		if (
+			currentVault.staking.available &&
+			currentVault.staking.source === 'Juiced' &&
+			isAutoStakingEnabled &&
+			isDepositing &&
+			isUnderlyingToken &&
+			canUseJuicedDirectDeposits
+		) {
+			return Solver.enum.JuicedStakingBooster;
+		}
+
 		const isV3 = currentVault?.version.split('.')?.[0] === '3';
 		const isInputTokenEth = isEthAddress(actionParams?.selectedOptionFrom?.value);
 		const isOutputTokenEth = isEthAddress(actionParams?.selectedOptionTo?.value);

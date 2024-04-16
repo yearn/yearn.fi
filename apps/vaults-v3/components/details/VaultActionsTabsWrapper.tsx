@@ -1,20 +1,27 @@
 import {Fragment, useEffect, useMemo, useState} from 'react';
 import {useRouter} from 'next/router';
-import {cl, formatAmount} from '@builtbymom/web3/utils';
+import {useBlockNumber} from 'wagmi';
+import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {useAsyncTrigger} from '@builtbymom/web3/hooks/useAsyncTrigger';
+import {cl, formatAmount, toAddress, toBigInt, toNormalizedBN} from '@builtbymom/web3/utils';
+import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
 import {Listbox, Transition} from '@headlessui/react';
 import {useUpdateEffect} from '@react-hookz/web';
 import {Flow, useActionFlow} from '@vaults/contexts/useActionFlow';
+import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
 import {VaultDetailsQuickActionsButtons} from '@vaults-v3/components/details/actions/QuickActionsButtons';
 import {VaultDetailsQuickActionsFrom} from '@vaults-v3/components/details/actions/QuickActionsFrom';
 import {VaultDetailsQuickActionsSwitch} from '@vaults-v3/components/details/actions/QuickActionsSwitch';
 import {VaultDetailsQuickActionsTo} from '@vaults-v3/components/details/actions/QuickActionsTo';
 import {RewardsTab} from '@vaults-v3/components/details/RewardsTab';
 import {SettingsPopover} from '@vaults-v3/components/SettingsPopover';
+import {readContract} from '@wagmi/core';
 import {useYearn} from '@common/contexts/useYearn';
 import {IconChevron} from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TNormalizedBN} from '@builtbymom/web3/types';
 
 export type TTabsOptions = {
 	value: number;
@@ -82,7 +89,7 @@ export function BoostMessage(props: {currentVault: TYDaemonVault; currentTab: nu
 			<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
 				<div className={'w-full rounded-lg bg-[#34A14F] p-2 md:px-6 md:py-4'}>
 					<b className={'text-base text-white'}>
-						{`You can earn from ${formatAmount(extraAPR * 10)}% to ${formatAmount(extraAPR * 100)}% extra APR by depositing your tokens into the veYFI gauge!`}
+						{`This Vault has an active veYFI gauge which boosts your APR from ${formatAmount(extraAPR * 10)}% to ${formatAmount(extraAPR * 100)}%. Simply deposit and stake to start earning.`}
 					</b>
 					<b className={'block text-white'}>
 						{'Learn more about veYFI rewards in the '}
@@ -94,6 +101,28 @@ export function BoostMessage(props: {currentVault: TYDaemonVault; currentTab: nu
 							{'FAQ'}
 						</a>
 						{'.'}
+					</b>
+				</div>
+			</div>
+		);
+	}
+	if (props.currentTab === 0 && hasStakingRewards && stakingRewardSource === 'Juiced') {
+		return (
+			<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
+				<div className={'w-full rounded-lg bg-[#34A14F] p-2 md:px-6 md:py-4'}>
+					<b className={'text-base text-white'}>
+						{`This Vault can be juiced for even more yield. Simply deposit and stake to receive juiced APRs of ${formatAmount(extraAPR * 100)}%.`}
+					</b>
+					<b className={'block text-white'}>
+						{'Visit '}
+						<a
+							className={'underline'}
+							href={'https://juiced.app'}
+							target={'_blank'}
+							rel={'noreferrer'}>
+							{'juiced.app'}
+						</a>
+						{' to learn more'}
 					</b>
 				</div>
 			</div>
@@ -113,6 +142,7 @@ export function VaultDetailsTab(props: {
 	currentVault: TYDaemonVault;
 	tab: TTabsOptions;
 	selectedTab: TTabsOptions;
+	unstakedBalance: TNormalizedBN | undefined;
 	onSwitchTab: (tab: TTabsOptions) => void;
 }): ReactElement {
 	const router = useRouter();
@@ -124,6 +154,9 @@ export function VaultDetailsTab(props: {
 		}
 		if (props.tab.label === 'Boost' && stakingRewardSource === 'OP Boost') {
 			return '$OP BOOST';
+		}
+		if (props.tab.label === 'Boost' && stakingRewardSource === 'Juiced') {
+			return 'Juiced BOOST';
 		}
 		return props.tab.label;
 	}, [props.tab.label, stakingRewardSource]);
@@ -148,7 +181,7 @@ export function VaultDetailsTab(props: {
 				title={tabLabel}
 				aria-selected={props.selectedTab.value === props.tab.value}
 				className={cl(
-					'hover-fix tab',
+					'hover-fix tab relative',
 					isV3Page
 						? props.selectedTab.value === props.tab.value
 							? '!text-neutral-900'
@@ -156,6 +189,14 @@ export function VaultDetailsTab(props: {
 						: ''
 				)}>
 				{tabLabel}
+				{props.tab.label === 'Boost' && toBigInt(props.unstakedBalance?.raw) > 0n ? (
+					<span className={'absolute -right-3 -top-1 z-10 flex size-2.5'}>
+						<span
+							className={'absolute inline-flex size-full animate-ping rounded-full bg-primary opacity-75'}
+						/>
+						<span className={'relative inline-flex size-2.5 rounded-full bg-primary'} />
+					</span>
+				) : null}
 			</p>
 		</button>
 	);
@@ -168,6 +209,9 @@ export function VaultDetailsTab(props: {
  *************************************************************************************************/
 export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {onSwitchSelectedOptions, isDepositing, actionParams} = useActionFlow();
+	const {address} = useWeb3();
+	const router = useRouter();
+	const [unstakedBalance, set_unstakedBalance] = useState<TNormalizedBN | undefined>(undefined);
 	const [possibleTabs, set_possibleTabs] = useState<TTabsOptions[]>([tabs[0], tabs[1]]);
 	const [currentTab, set_currentTab] = useState<TTabsOptions>(
 		getCurrentTab({
@@ -176,8 +220,34 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 			isRetired: currentVault?.retired
 		})
 	);
-	const router = useRouter();
 	const hasStakingRewards = Boolean(currentVault.staking.available);
+
+	const {data: blockNumber} = useBlockNumber({watch: true});
+	/**********************************************************************************************
+	 ** Retrieve some data from the vault and the staking contract to display a comprehensive view
+	 ** of the user's holdings in the vault.
+	 **********************************************************************************************/
+	const refetch = useAsyncTrigger(async (): Promise<void> => {
+		if (!currentVault.staking.available) {
+			return;
+		}
+		const result = await readContract(retrieveConfig(), {
+			address: toAddress(currentVault.address),
+			abi: VAULT_V3_ABI,
+			chainId: currentVault.chainID,
+			functionName: 'balanceOf',
+			args: [toAddress(address)]
+		});
+		set_unstakedBalance(toNormalizedBN(result, currentVault.decimals));
+	}, [currentVault, address]);
+
+	/**********************************************************************************************
+	 ** As we want live data, we want the data to be refreshed every time the block number changes.
+	 ** This way, the user will always have the most up-to-date data.
+	 **********************************************************************************************/
+	useEffect(() => {
+		refetch();
+	}, [blockNumber, refetch]);
 
 	/**********************************************************************************************
 	 ** Update the current state based on the query parameter action. This will allow the user to
@@ -269,6 +339,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 									key={tab.value}
 									tab={tab}
 									selectedTab={currentTab}
+									unstakedBalance={unstakedBalance}
 									onSwitchTab={newTab => {
 										set_currentTab(newTab);
 										onSwitchSelectedOptions(newTab.flowAction);

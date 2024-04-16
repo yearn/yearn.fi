@@ -60,10 +60,10 @@ function BoostMessage(props: {currentVault: TYDaemonVault}): ReactElement {
 					<b className={'text-lg'}>{'Yield is good, but more yield is good-er!'}</b>
 					<div className={'mt-2 flex flex-col gap-2'}>
 						<p>
-							{`You can earn a boost of up to ${formatAmount(extraAPR * 100)}% extra APR by staking your Vault tokens in the veYFI gauge for dYFI rewards.`}
+							{`This Vault has an active veYFI gauge which boosts your APR from ${formatAmount(extraAPR * 10)}% to ${formatAmount(extraAPR * 100)}%. Simply deposit and stake to start earning.`}
 						</p>
 						<p className={'block'}>
-							{'Learn more about veYFI and gauge staking in the '}
+							{'Learn more about veYFI rewards in the '}
 							<a
 								className={'underline'}
 								href={'https://docs.yearn.fi/getting-started/products/veyfi'}
@@ -72,6 +72,33 @@ function BoostMessage(props: {currentVault: TYDaemonVault}): ReactElement {
 								{'FAQ'}
 							</a>
 							{'.'}
+						</p>
+					</div>
+				</div>
+			</div>
+		);
+	}
+
+	if (hasVaultData && vaultDataource === 'Juiced') {
+		return (
+			<div className={'col-span-12 mt-0'}>
+				<div
+					className={cl('w-full bg-neutral-900 rounded-lg p-6 text-neutral-0', isV3Page ? 'rounded-lg' : '')}>
+					<b className={'text-lg'}>{'Yield is good, but more yield is good-er!'}</b>
+					<div className={'mt-2 flex flex-col gap-2'}>
+						<p>
+							{`This Vault can be juiced for even more yield. Simply deposit and stake to receive juiced APRs of ${formatAmount(extraAPR * 100)}%.`}
+						</p>
+						<p className={'block'}>
+							{'Visit '}
+							<a
+								className={'underline'}
+								href={'https://juiced.app'}
+								target={'_blank'}
+								rel={'noreferrer'}>
+								{'juiced.app'}
+							</a>
+							{' to learn more'}
 						</p>
 					</div>
 				</div>
@@ -278,11 +305,7 @@ export function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): React
 							className={'w-full md:w-[200px]'}
 							onClick={(): unknown => (isApproved ? onStake() : onApprove())}
 							isBusy={stakeStatus.pending || approveStakeStatus.pending}
-							isDisabled={
-								!isActive ||
-								Number(vaultData.vaultBalanceOf.normalized) <= 0 ||
-								vaultData.vaultAllowance.raw > vaultData.vaultBalanceOf.raw
-							}>
+							isDisabled={!isActive || toBigInt(vaultData.vaultBalanceOf.raw) <= 0n}>
 							{isApproved ? 'Stake' : 'Approve'}
 						</Button>
 					</div>

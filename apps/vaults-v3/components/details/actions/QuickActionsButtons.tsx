@@ -62,6 +62,7 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 			Solver.enum.PartnerContract === currentSolver ||
 			Solver.enum.OptimismBooster === currentSolver ||
 			Solver.enum.GaugeStakingBooster === currentSolver ||
+			Solver.enum.JuicedStakingBooster === currentSolver ||
 			Solver.enum.InternalMigration === currentSolver
 		) {
 			const toRefresh = [
@@ -189,7 +190,8 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 			currentSolver === Solver.enum.Portals || // ... or the user is using Portals ...
 			currentSolver === Solver.enum.PartnerContract || // ... or the user is using the Partner contract ...
 			currentSolver === Solver.enum.OptimismBooster || // ... or the user is using the Optimism Booster
-			currentSolver === Solver.enum.GaugeStakingBooster) // ... or the user is using the Gauge Staking Booster
+			currentSolver === Solver.enum.GaugeStakingBooster || // ... or the user is using the Gauge Staking Booster
+			currentSolver === Solver.enum.JuicedStakingBooster) // ... or the user is using the Juiced Staking Booster
 		// ... then we need to approve the from token
 	) {
 		return (
@@ -206,7 +208,9 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 
 	if (isDepositing || currentSolver === Solver.enum.InternalMigration) {
 		if (
-			(currentSolver === Solver.enum.OptimismBooster || currentSolver === Solver.enum.GaugeStakingBooster) &&
+			(currentSolver === Solver.enum.OptimismBooster ||
+				currentSolver === Solver.enum.GaugeStakingBooster ||
+				currentSolver === Solver.enum.JuicedStakingBooster) &&
 			isAutoStakingEnabled
 		) {
 			return (

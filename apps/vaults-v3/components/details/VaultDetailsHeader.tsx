@@ -1,5 +1,5 @@
 import {useEffect, useState} from 'react';
-import {erc20Abi} from 'viem';
+import {erc20Abi, zeroAddress} from 'viem';
 import {useBlockNumber} from 'wagmi';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {useAsyncTrigger} from '@builtbymom/web3/hooks/useAsyncTrigger';
@@ -18,10 +18,11 @@ import {
 	zeroNormalizedBN
 } from '@builtbymom/web3/utils';
 import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
+import {JUICED_STAKING_REWARDS_ABI} from '@vaults/utils/abi/juicedStakingRewards.abi';
 import {STAKING_REWARDS_ABI} from '@vaults/utils/abi/stakingRewards.abi';
 import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
 import {VEYFI_GAUGE_ABI} from '@vaults/utils/abi/veYFIGauge.abi.ts';
-import {readContracts} from '@wagmi/core';
+import {readContract, readContracts} from '@wagmi/core';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {copyToClipboard} from '@yearn-finance/web-lib/utils/helpers';
 import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
@@ -34,7 +35,7 @@ import {getVaultName} from '@common/utils';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TNormalizedBN} from '@builtbymom/web3/types';
+import type {TAddress, TNormalizedBN} from '@builtbymom/web3/types';
 
 type TVaultHeaderLineItemProps = {
 	label: string;
@@ -279,7 +280,7 @@ function ValueInVaultAsToken(props: {
 			<Counter
 				value={props.valueInToken.normalized}
 				decimals={props.currentVault.decimals}
-				idealDecimals={6}
+				idealDecimals={2}
 				decimalsToDisplay={[6, 8, 10, 12]}
 			/>
 		</VaultHeaderLineItem>
@@ -333,7 +334,7 @@ function ValueEarned(props: {
 				<Counter
 					value={props.earnedAmount.normalized}
 					decimals={props.rewardTokenDecimal}
-					idealDecimals={6}
+					idealDecimals={2}
 					decimalsToDisplay={[8, 10, 12, 16, 18]}
 				/>
 			</span>
@@ -367,6 +368,12 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 	 ** of the user's holdings in the vault.
 	 **********************************************************************************************/
 	const refetch = useAsyncTrigger(async (): Promise<void> => {
+		const stakingSource = currentVault.staking.source;
+		let balanceOf = 0n;
+		let stakingBalance = 0n;
+		let pps = 0n;
+		let rewardsToken: TAddress = zeroAddress;
+		let earned = 0n;
 		/******************************************************************************************
 		 ** To have the most up-to-date data, we fetch a few informations directly onChain, such as:
 		 ** - The user's balance in the vault
@@ -375,48 +382,97 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 		 ** - The address of the rewards token
 		 ** - The amount of rewards earned by the user
 		 ******************************************************************************************/
-		const result = await readContracts(retrieveConfig(), {
-			contracts: [
-				{
-					address: toAddress(currentVault.address),
-					abi: VAULT_V3_ABI,
-					chainId: currentVault.chainID,
-					functionName: 'balanceOf',
-					args: [toAddress(address)]
-				},
-				{
-					address: toAddress(currentVault.staking.address),
-					abi: erc20Abi,
-					chainId: currentVault.chainID,
-					functionName: 'balanceOf',
-					args: [toAddress(address)]
-				},
-				{
-					address: toAddress(currentVault.address),
-					abi: VAULT_V3_ABI,
-					chainId: currentVault.chainID,
-					functionName: 'pricePerShare'
-				},
-				{
-					address: toAddress(currentVault.staking.address),
-					chainId: currentVault.chainID,
-					abi: currentVault.staking.source === 'OP Boost' ? STAKING_REWARDS_ABI : VEYFI_GAUGE_ABI,
-					functionName: currentVault.staking.source === 'OP Boost' ? 'rewardsToken' : 'REWARD_TOKEN'
-				},
-				{
-					address: toAddress(currentVault.staking.address),
-					abi: STAKING_REWARDS_ABI,
-					chainId: currentVault.chainID,
-					functionName: 'earned',
-					args: [toAddress(address)]
-				}
-			]
-		});
-		const balanceOf = decodeAsBigInt(result[0]);
-		const stakingBalance = decodeAsBigInt(result[1]);
-		const pps = decodeAsBigInt(result[2]);
-		const rewardsToken = decodeAsAddress(result[3]);
-		const earned = decodeAsBigInt(result[4]);
+		if (stakingSource === 'OP Boost' || stakingSource === 'VeYFI') {
+			const result = await readContracts(retrieveConfig(), {
+				contracts: [
+					{
+						address: toAddress(currentVault.address),
+						abi: VAULT_V3_ABI,
+						chainId: currentVault.chainID,
+						functionName: 'balanceOf',
+						args: [toAddress(address)]
+					},
+					{
+						address: toAddress(currentVault.staking.address),
+						abi: erc20Abi,
+						chainId: currentVault.chainID,
+						functionName: 'balanceOf',
+						args: [toAddress(address)]
+					},
+					{
+						address: toAddress(currentVault.address),
+						abi: VAULT_V3_ABI,
+						chainId: currentVault.chainID,
+						functionName: 'pricePerShare'
+					},
+					{
+						address: toAddress(currentVault.staking.address),
+						chainId: currentVault.chainID,
+						abi: stakingSource === 'OP Boost' ? STAKING_REWARDS_ABI : VEYFI_GAUGE_ABI,
+						functionName: stakingSource === 'OP Boost' ? 'rewardsToken' : 'REWARD_TOKEN'
+					},
+					{
+						address: toAddress(currentVault.staking.address),
+						abi: STAKING_REWARDS_ABI,
+						chainId: currentVault.chainID,
+						functionName: 'earned',
+						args: [toAddress(address)]
+					}
+				]
+			});
+			balanceOf = decodeAsBigInt(result[0]);
+			stakingBalance = decodeAsBigInt(result[1]);
+			pps = decodeAsBigInt(result[2]);
+			console.log(result[3]);
+			rewardsToken = decodeAsAddress(result[3]);
+			earned = decodeAsBigInt(result[4]);
+		} else if (stakingSource === 'Juiced') {
+			const result = await readContracts(retrieveConfig(), {
+				contracts: [
+					{
+						address: toAddress(currentVault.address),
+						abi: VAULT_V3_ABI,
+						chainId: currentVault.chainID,
+						functionName: 'balanceOf',
+						args: [toAddress(address)]
+					},
+					{
+						address: toAddress(currentVault.staking.address),
+						abi: erc20Abi,
+						chainId: currentVault.chainID,
+						functionName: 'balanceOf',
+						args: [toAddress(address)]
+					},
+					{
+						address: toAddress(currentVault.address),
+						abi: VAULT_V3_ABI,
+						chainId: currentVault.chainID,
+						functionName: 'pricePerShare'
+					},
+					{
+						address: toAddress(currentVault.staking.address),
+						chainId: currentVault.chainID,
+						abi: JUICED_STAKING_REWARDS_ABI,
+						functionName: 'rewardTokens',
+						args: [0n]
+					}
+				]
+			});
+			balanceOf = decodeAsBigInt(result[0]);
+			stakingBalance = decodeAsBigInt(result[1]);
+			pps = decodeAsBigInt(result[2]);
+			rewardsToken = decodeAsAddress(result[3]);
+
+			const earnedRaw = await readContract(retrieveConfig(), {
+				address: toAddress(currentVault.staking.address),
+				abi: JUICED_STAKING_REWARDS_ABI,
+				chainId: currentVault.chainID,
+				functionName: 'earned',
+				args: [toAddress(address), rewardsToken]
+			});
+
+			earned = earnedRaw;
+		}
 		const total = balanceOf + stakingBalance;
 
 		/******************************************************************************************
