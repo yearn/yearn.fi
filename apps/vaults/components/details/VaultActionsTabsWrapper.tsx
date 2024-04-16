@@ -1,11 +1,16 @@
 import {Fragment, useEffect, useState} from 'react';
 import Link from 'next/link';
 import {useRouter} from 'next/router';
-import {cl} from '@builtbymom/web3/utils';
+import {useBlockNumber} from 'wagmi';
+import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {useAsyncTrigger} from '@builtbymom/web3/hooks/useAsyncTrigger';
+import {cl, toAddress, toNormalizedBN} from '@builtbymom/web3/utils';
+import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
 import {Listbox, Transition} from '@headlessui/react';
 import {useUpdateEffect} from '@react-hookz/web';
 import {SettingsPopover} from '@vaults/components/SettingsPopover';
 import {Flow, useActionFlow} from '@vaults/contexts/useActionFlow';
+import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
 import {VaultDetailsQuickActionsButtons} from '@vaults-v3/components/details/actions/QuickActionsButtons';
 import {VaultDetailsQuickActionsFrom} from '@vaults-v3/components/details/actions/QuickActionsFrom';
 import {VaultDetailsQuickActionsSwitch} from '@vaults-v3/components/details/actions/QuickActionsSwitch';
@@ -17,10 +22,12 @@ import {
 	tabs,
 	VaultDetailsTab
 } from '@vaults-v3/components/details/VaultActionsTabsWrapper';
+import {readContract} from '@wagmi/core';
 import {IconChevron} from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TNormalizedBN} from '@builtbymom/web3/types';
 import type {TTabsOptions} from '@vaults-v3/components/details/VaultActionsTabsWrapper';
 
 /**************************************************************************************************
@@ -29,8 +36,11 @@ import type {TTabsOptions} from '@vaults-v3/components/details/VaultActionsTabsW
  ** corresponding actions that can be taken.
  *************************************************************************************************/
 export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+	const router = useRouter();
+	const {address} = useWeb3();
 	const {onSwitchSelectedOptions, isDepositing, actionParams} = useActionFlow();
 	const [possibleTabs, set_possibleTabs] = useState<TTabsOptions[]>([tabs[0], tabs[1]]);
+	const [unstakedBalance, set_unstakedBalance] = useState<TNormalizedBN | undefined>(undefined);
 	const [currentTab, set_currentTab] = useState<TTabsOptions>(
 		getCurrentTab({
 			isDepositing,
@@ -38,8 +48,34 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 			isRetired: currentVault?.retired
 		})
 	);
-	const router = useRouter();
 	const hasStakingRewards = Boolean(currentVault.staking.available);
+
+	const {data: blockNumber} = useBlockNumber({watch: true});
+	/**********************************************************************************************
+	 ** Retrieve some data from the vault and the staking contract to display a comprehensive view
+	 ** of the user's holdings in the vault.
+	 **********************************************************************************************/
+	const refetch = useAsyncTrigger(async (): Promise<void> => {
+		if (!currentVault.staking.available) {
+			return;
+		}
+		const result = await readContract(retrieveConfig(), {
+			address: toAddress(currentVault.address),
+			abi: VAULT_V3_ABI,
+			chainId: currentVault.chainID,
+			functionName: 'balanceOf',
+			args: [toAddress(address)]
+		});
+		set_unstakedBalance(toNormalizedBN(result, currentVault.decimals));
+	}, [currentVault, address]);
+
+	/**********************************************************************************************
+	 ** As we want live data, we want the data to be refreshed every time the block number changes.
+	 ** This way, the user will always have the most up-to-date data.
+	 **********************************************************************************************/
+	useEffect(() => {
+		refetch();
+	}, [blockNumber, refetch]);
 
 	/**********************************************************************************************
 	 ** Update the current state based on the query parameter action. This will allow the user to
@@ -145,6 +181,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 									key={tab.value}
 									tab={tab}
 									selectedTab={currentTab}
+									unstakedBalance={unstakedBalance}
 									onSwitchTab={newTab => {
 										set_currentTab(newTab);
 										onSwitchSelectedOptions(newTab.flowAction);
