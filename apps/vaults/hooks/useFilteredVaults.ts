@@ -32,7 +32,13 @@ export function useVaultFilter(
 	const {shouldHideDust} = useAppSettings();
 
 	const filterHoldingsCallback = useCallback(
-		(vault: TYDaemonVault, isFactoryOnly: boolean): boolean => {
+		(vault: TYDaemonVault, isFactoryOnly: boolean, isForV3: boolean): boolean => {
+			if (isForV3 && !vault.version?.startsWith('3')) {
+				return false;
+			}
+			if (!isForV3 && vault.version?.startsWith('3')) {
+				return false;
+			}
 			const vaultBalance = getBalance({address: vault.address, chainID: vault.chainID});
 			const vaultPrice = getPrice({address: vault.address, chainID: vault.chainID});
 
@@ -82,6 +88,8 @@ export function useVaultFilter(
 
 	// Specific filter
 	const hightlightedVaults = useFilteredVaults(vaults, ({info}): boolean => info.isHighlighted);
+	const holdingsVaults = useFilteredVaults(vaults, (vault): boolean => filterHoldingsCallback(vault, false, false));
+	const holdingsV3Vaults = useFilteredVaults(vaults, (vault): boolean => filterHoldingsCallback(vault, false, true));
 
 	// V3 Filtered Vaults
 	const singleVaults = useFilteredVaults(
@@ -102,7 +110,6 @@ export function useVaultFilter(
 	const stablesVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Stablecoin');
 	const balancerVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Balancer');
 	const cryptoVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Volatile');
-	const holdingsVaults = useFilteredVaults(vaults, (vault): boolean => filterHoldingsCallback(vault, false));
 	const curveFactoryVaults = useFilteredVaults(
 		vaults,
 		(vault): boolean => vault.category === 'Curve' && isAutomatedVault(vault)
@@ -135,7 +142,7 @@ export function useVaultFilter(
 			//Remove duplicates
 			const alreadyInList: TDict<boolean> = {};
 			const noDuplicateVaultList = [];
-			for (const vault of holdingsVaults) {
+			for (const vault of holdingsV3Vaults) {
 				if (!alreadyInList[`${toAddress(vault.address)}${vault.chainID}`]) {
 					noDuplicateVaultList.push(vault);
 					alreadyInList[`${toAddress(vault.address)}${vault.chainID}`] = true;
@@ -212,6 +219,7 @@ export function useVaultFilter(
 		v3,
 		categories,
 		holdingsVaults,
+		holdingsV3Vaults,
 		hightlightedVaults,
 		singleVaults,
 		MultiVaults,
