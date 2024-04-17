@@ -1,4 +1,5 @@
 import {useCallback} from 'react';
+import {toAddress} from '@builtbymom/web3/utils';
 import {useDeepCompareMemo} from '@react-hookz/web';
 import {useAppSettings} from '@vaults/contexts/useAppSettings';
 import {isAutomatedVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
@@ -79,12 +80,15 @@ export function useVaultFilter(
 		[getBalance, getPrice]
 	);
 
+	// Specific filter
+	const hightlightedVaults = useFilteredVaults(vaults, ({info}): boolean => info.isHighlighted);
+
 	// V3 Filtered Vaults
-	const singleVault = useFilteredVaults(
+	const singleVaults = useFilteredVaults(
 		vaults,
 		({version, kind}): boolean => (version || '')?.split('.')?.[0] === '3' && kind === 'Single Strategy'
 	);
-	const MultiVault = useFilteredVaults(
+	const MultiVaults = useFilteredVaults(
 		vaults,
 		({version, kind}): boolean => (version || '')?.split('.')?.[0] === '3' && kind === 'Multi Strategy'
 	);
@@ -118,13 +122,34 @@ export function useVaultFilter(
 	const activeVaults = useDeepCompareMemo((): TYDaemonVault[] => {
 		let _vaultList: TYDaemonVault[] = [];
 		if (v3) {
+			if (categories?.includes('highlight')) {
+				_vaultList = [..._vaultList, ...hightlightedVaults];
+			}
 			if (categories?.includes('single')) {
-				_vaultList = [..._vaultList, ...singleVault];
+				_vaultList = [..._vaultList, ...singleVaults];
 			}
 			if (categories?.includes('multi')) {
-				_vaultList = [..._vaultList, ...MultiVault];
+				_vaultList = [..._vaultList, ...MultiVaults];
 			}
-			return _vaultList;
+
+			//Remove duplicates
+			const alreadyInList: TDict<boolean> = {};
+			const noDuplicateVaultList = [];
+			for (const vault of holdingsVaults) {
+				if (!alreadyInList[`${toAddress(vault.address)}${vault.chainID}`]) {
+					noDuplicateVaultList.push(vault);
+					alreadyInList[`${toAddress(vault.address)}${vault.chainID}`] = true;
+				}
+			}
+
+			for (const vault of _vaultList) {
+				if (!alreadyInList[`${toAddress(vault.address)}${vault.chainID}`]) {
+					noDuplicateVaultList.push(vault);
+					alreadyInList[`${toAddress(vault.address)}${vault.chainID}`] = true;
+				}
+			}
+			_vaultList = noDuplicateVaultList;
+			return [..._vaultList];
 		}
 
 		if (categories?.includes('featured')) {
@@ -171,12 +196,25 @@ export function useVaultFilter(
 
 		// Remove v3 vaults
 		_vaultList = _vaultList.filter((vault): boolean => !vault.version?.startsWith('3'));
+
+		// Remove duplicates
+		const alreadyInList: TDict<boolean> = {};
+		const noDuplicateVaultList = [];
+		for (const vault of _vaultList) {
+			if (!alreadyInList[`${toAddress(vault.address)}${vault.chainID}`]) {
+				noDuplicateVaultList.push(vault);
+				alreadyInList[`${toAddress(vault.address)}${vault.chainID}`] = true;
+			}
+		}
+		_vaultList = noDuplicateVaultList;
 		return _vaultList;
 	}, [
 		v3,
 		categories,
-		singleVault,
-		MultiVault,
+		holdingsVaults,
+		hightlightedVaults,
+		singleVaults,
+		MultiVaults,
 		curveFactoryVaults,
 		curveVaults,
 		prismaVaults,
@@ -185,8 +223,7 @@ export function useVaultFilter(
 		aerodromeVaults,
 		boostedVaults,
 		stablesVaults,
-		cryptoVaults,
-		holdingsVaults
+		cryptoVaults
 	]);
 
 	return {activeVaults, migratableVaults, retiredVaults};

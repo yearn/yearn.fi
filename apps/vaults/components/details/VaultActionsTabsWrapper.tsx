@@ -45,7 +45,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 		getCurrentTab({
 			isDepositing,
 			hasMigration: currentVault?.migration?.available,
-			isRetired: currentVault?.retired
+			isRetired: currentVault?.info?.isRetired
 		})
 	);
 	const hasStakingRewards = Boolean(currentVault.staking.available);
@@ -103,7 +103,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 			set_possibleTabs([tabs[1], tabs[2]]);
 			set_currentTab(tabs[2]);
 			onSwitchSelectedOptions(Flow.Migrate);
-		} else if (currentVault?.retired && actionParams.isReady) {
+		} else if (currentVault?.info?.isRetired && actionParams.isReady) {
 			set_possibleTabs([tabs[1]]);
 			set_currentTab(tabs[1]);
 			onSwitchSelectedOptions(Flow.Withdraw);
@@ -112,7 +112,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 		if (hasStakingRewards) {
 			set_possibleTabs([tabs[0], tabs[1], tabs[3]]);
 		}
-	}, [currentVault?.migration?.available, currentVault?.retired, actionParams.isReady, hasStakingRewards]);
+	}, [currentVault?.migration?.available, currentVault?.info?.isRetired, actionParams.isReady, hasStakingRewards]);
 
 	return (
 		<>
@@ -131,7 +131,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 				</div>
 			)}
 
-			{!currentVault?.migration.available && currentVault?.retired && (
+			{!currentVault?.migration.available && currentVault?.info?.isRetired && (
 				<div
 					aria-label={'Deprecation Warning'}
 					className={'col-span-12 mt-10'}>
@@ -160,7 +160,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 			<nav
 				className={cl(
 					`mb-2 w-full`,
-					currentVault?.retired
+					currentVault?.info?.isRetired
 						? 'mt-1 md:mt-4'
 						: currentVault?.info.uiNotice
 							? 'mt-10 md:mt-10'

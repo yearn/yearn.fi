@@ -1,4 +1,5 @@
 export const ALL_VAULTSV3_CATEGORIES = {
+	highlight: 'Fancy',
 	multi: 'Multi Strategy',
 	single: 'Single Strategy'
 };

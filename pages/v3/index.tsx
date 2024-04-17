@@ -80,7 +80,7 @@ function PortfolioCard(): ReactElement {
 
 	if (!isActive) {
 		return (
-			<div className={'col-span-12 w-full rounded-3xl bg-neutral-100 p-6 md:col-span-6'}>
+			<div className={'col-span-12 w-full rounded-3xl bg-neutral-100 p-6 md:col-span-5'}>
 				<strong
 					className={'block pb-2 text-3xl font-black text-neutral-900 md:pb-4 md:text-4xl md:leading-[48px]'}>
 					{'Portfolio'}
@@ -119,7 +119,7 @@ function PortfolioCard(): ReactElement {
 		);
 	}
 	return (
-		<div className={'col-span-12 w-full rounded-3xl bg-neutral-100 p-6 md:col-span-6'}>
+		<div className={'col-span-12 w-full rounded-3xl bg-neutral-100 p-6 md:col-span-5'}>
 			<strong className={'block pb-2 text-3xl font-black text-neutral-900 md:pb-4 md:text-4xl md:leading-[48px]'}>
 				{'Portfolio'}
 			</strong>
@@ -139,6 +139,7 @@ function PortfolioCard(): ReactElement {
 	);
 }
 function ListOfVaults(): ReactElement {
+	const {getBalance} = useYearn();
 	const {isLoadingVaultList} = useYearn();
 	const {
 		search,
@@ -188,7 +189,7 @@ function ListOfVaults(): ReactElement {
 	 **	The VaultList component is memoized to prevent it from being re-created on every render.
 	 **	It contains either the list of vaults, is some are available, or a message to the user.
 	 **********************************************************************************************/
-	const VaultList = useMemo((): [ReactNode, ReactNode, ReactNode] | ReactNode => {
+	const VaultList = useMemo((): [ReactNode, ReactNode, ReactNode, ReactNode] | ReactNode => {
 		const filteredByChains = sortedVaultsToDisplay.filter(
 			({chainID}): boolean => chains?.includes(chainID) || false
 		);
@@ -207,10 +208,23 @@ function ListOfVaults(): ReactElement {
 			);
 		}
 
+		const holdings: ReactNode[] = [];
 		const multi: ReactNode[] = [];
 		const single: ReactNode[] = [];
 		const all: ReactNode[] = [];
 		for (const vault of filteredByChains) {
+			const hasBalance = getBalance({address: vault.address, chainID: vault.chainID}).raw > 0n;
+			const hasStakingBalance = getBalance({address: vault.staking.address, chainID: vault.chainID}).raw > 0n;
+			if (hasBalance || hasStakingBalance) {
+				holdings.push(
+					<VaultsV3ListRow
+						key={`${vault.chainID}_${vault.address}`}
+						currentVault={vault}
+					/>
+				);
+				continue;
+			}
+
 			if (vault.kind === 'Multi Strategy') {
 				multi.push(
 					<VaultsV3ListRow
@@ -235,25 +249,52 @@ function ListOfVaults(): ReactElement {
 			);
 		}
 
-		return [multi, single, all];
-	}, [categories, chains, isLoadingVaultList, onReset, search, sortedVaultsToDisplay]);
+		return [holdings, multi, single, all];
+	}, [categories, chains, getBalance, isLoadingVaultList, onReset, search, sortedVaultsToDisplay]);
 
 	function renderVaultList(): ReactNode {
 		if (Children.count(VaultList) === 1) {
 			return VaultList as ReactNode;
 		}
-		const possibleLists = VaultList as [ReactNode, ReactNode, ReactNode];
+		const possibleLists = VaultList as [ReactNode, ReactNode, ReactNode, ReactNode];
+		const hasHoldings = Children.count(possibleLists[0]) > 0;
 
-		if (sortBy !== 'featuringScore' && possibleLists[2]) {
-			return possibleLists[2];
+		if (sortBy !== 'featuringScore' && possibleLists[3]) {
+			return (
+				<Fragment>
+					{hasHoldings && (
+						<div className={'relative grid h-fit gap-4'}>
+							<p className={'absolute -left-20 top-1/2 -rotate-90 text-xs text-neutral-400'}>
+								&nbsp;&nbsp;&nbsp;{'Your holdings'}&nbsp;&nbsp;&nbsp;
+							</p>
+							{possibleLists[0]}
+						</div>
+					)}
+					{Children.count(possibleLists[0]) > 0 && Children.count(possibleLists[3]) > 0 ? (
+						<div className={'my-2 h-1 rounded-lg bg-neutral-200'} />
+					) : null}
+					{possibleLists[3]}
+				</Fragment>
+			);
 		}
 		return (
 			<Fragment>
-				{possibleLists[0]}
+				{hasHoldings && (
+					<div className={'relative grid h-fit gap-4'}>
+						<p className={'absolute -left-20 top-1/2 -rotate-90 text-xs text-neutral-400'}>
+							&nbsp;&nbsp;&nbsp;{'Your holdings'}&nbsp;&nbsp;&nbsp;
+						</p>
+						{possibleLists[0]}
+					</div>
+				)}
 				{Children.count(possibleLists[0]) > 0 && Children.count(possibleLists[1]) > 0 ? (
-					<div className={'h-px bg-neutral-100'} />
+					<div className={'my-2 h-1 rounded-lg bg-neutral-200'} />
 				) : null}
 				{possibleLists[1]}
+				{Children.count(possibleLists[1]) > 1 && Children.count(possibleLists[2]) > 0 ? (
+					<div className={'my-2 h-1 rounded-lg bg-neutral-200'} />
+				) : null}
+				{possibleLists[2]}
 			</Fragment>
 		);
 	}

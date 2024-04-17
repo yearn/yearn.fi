@@ -244,7 +244,7 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 					<Renderable
 						shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
 						fallback={'NEW'}>
-						{currentVault.boosted ? '⚡️ ' : ''}
+						{currentVault?.info?.isBoosted ? '⚡️ ' : ''}
 						<RenderAmount
 							shouldHideTooltip
 							value={currentVault?.apr.forwardAPR.netAPR}
@@ -264,7 +264,7 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 				<Renderable
 					shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
 					fallback={'NEW'}>
-					{currentVault.boosted ? '⚡️ ' : ''}
+					{currentVault?.info?.isBoosted ? '⚡️ ' : ''}
 					<RenderAmount
 						shouldHideTooltip={hasZeroAPR}
 						value={currentVault.apr.netAPR}
