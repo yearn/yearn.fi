@@ -1002,10 +1002,10 @@
     wagmi "^2.5.7"
     zod "^3.22.4"
 
-"@builtbymom/web3@^0.0.74":
-  version "0.0.74"
-  resolved "https://registry.yarnpkg.com/@builtbymom/web3/-/web3-0.0.74.tgz#b5c501d2906918ba2641b4f3d35ee71e85e5657e"
-  integrity sha512-0oZ64Ium8kRnEehwJ8xUte4zXh9wwZPq24ykL3+kZwjAdFrj4sMBsegXUQWpzu034Oco4v2ocIkO9pDeeeb7jQ==
+"@builtbymom/web3@^0.0.78":
+  version "0.0.78"
+  resolved "https://registry.yarnpkg.com/@builtbymom/web3/-/web3-0.0.78.tgz#e519dcba9977034bc4f186bcb0092b0f873aefe4"
+  integrity sha512-8q5iCC8zM4TTHp+4C2Nk772nC/S9X+4aI6OW96fW/QYTkQ7kvZUHyBknAKVK/37/u+ev9dRC5FPNoS4c20GCFQ==
   dependencies:
     "@rainbow-me/rainbowkit" "^2.0.2"
     "@react-hookz/web" "^24.0.4"
@@ -3185,10 +3185,19 @@
     "@walletconnect/ethereum-provider" "2.11.2"
     "@walletconnect/modal" "2.6.2"
 
-"@wagmi/core@2.6.9", "@wagmi/core@^2.6.5":
+"@wagmi/core@2.6.9":
   version "2.6.9"
   resolved "https://registry.yarnpkg.com/@wagmi/core/-/core-2.6.9.tgz#6b2659c7a4420c1d3876902a051ac9487aa604eb"
   integrity sha512-AbNbHK+m60mfMTds0flv5YYJGp+JSz8O8ikzX+T7MdemFrYA9tZr6G+iSEnf+JLtcgiaCgQqUwac/WmmTkDiMA==
+  dependencies:
+    eventemitter3 "5.0.1"
+    mipd "0.0.5"
+    zustand "4.4.1"
+
+"@wagmi/core@^2.6.17", "@wagmi/core@^2.6.5":
+  version "2.6.17"
+  resolved "https://registry.yarnpkg.com/@wagmi/core/-/core-2.6.17.tgz#46445d12bc46b1fa59d50165ccb50280eac34957"
+  integrity sha512-Ghr7PlD5HO1YJrsaC52j/csgaigBAiTR7cFiwrY7WdwvWLsR5na4Dv6KfHTU3d3al0CKDLanQdRS5nB4mX1M+g==
   dependencies:
     eventemitter3 "5.0.1"
     mipd "0.0.5"
@@ -3587,10 +3596,10 @@
   resolved "https://registry.yarnpkg.com/@xtuc/long/-/long-4.2.2.tgz#d291c6a4e97989b5c61d9acf396ae4fe133a718d"
   integrity sha512-NuHqBY1PB/D8xU6s/thBgOAiAP7HOYDQ32+BFZILJ8ivkUkAHQnWfn6WhL79Owj1qmUnoN/YPhktdIoucipkAQ==
 
-"@yearn-finance/web-lib@3.0.186":
-  version "3.0.186"
-  resolved "https://registry.yarnpkg.com/@yearn-finance/web-lib/-/web-lib-3.0.186.tgz#5be2bee544c164ccc45f72c463cece427f1e8893"
-  integrity sha512-xx0DmuzIq0y9Zy8+4WlnMfr/9xOYJjeEr/zPoirVaT6tSOQEShtj3T/HpO6HRxqh+BiP1b0WUp5XUJZYo2FxyQ==
+"@yearn-finance/web-lib@3.0.190":
+  version "3.0.190"
+  resolved "https://registry.yarnpkg.com/@yearn-finance/web-lib/-/web-lib-3.0.190.tgz#027bcebe4e0203aa6406fe669fd82a68b35b472a"
+  integrity sha512-Vuq1PjxI4gZaBIFIhHPGsF+S1u0lEw7VQyVfqENQu00q0mdHFOSwTTG2JqBwC9jD7V6nT1KhJCkzr3nj2lLM5A==
   dependencies:
     "@builtbymom/web3" "^0.0.59"
     "@headlessui/react" "^1.7.18"
