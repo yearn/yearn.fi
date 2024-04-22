@@ -471,6 +471,34 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 			});
 
 			earned = earnedRaw;
+		} else {
+			const result = await readContracts(retrieveConfig(), {
+				contracts: [
+					{
+						address: toAddress(currentVault.address),
+						abi: VAULT_V3_ABI,
+						chainId: currentVault.chainID,
+						functionName: 'balanceOf',
+						args: [toAddress(address)]
+					},
+					{
+						address: toAddress(currentVault.staking.address),
+						abi: erc20Abi,
+						chainId: currentVault.chainID,
+						functionName: 'balanceOf',
+						args: [toAddress(address)]
+					},
+					{
+						address: toAddress(currentVault.address),
+						abi: VAULT_V3_ABI,
+						chainId: currentVault.chainID,
+						functionName: 'pricePerShare'
+					}
+				]
+			});
+			balanceOf = decodeAsBigInt(result[0]);
+			stakingBalance = decodeAsBigInt(result[1]);
+			pps = decodeAsBigInt(result[2]);
 		}
 		const total = balanceOf + stakingBalance;
 
