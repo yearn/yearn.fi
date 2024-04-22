@@ -423,7 +423,6 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 			balanceOf = decodeAsBigInt(result[0]);
 			stakingBalance = decodeAsBigInt(result[1]);
 			pps = decodeAsBigInt(result[2]);
-			console.log(result[3]);
 			rewardsToken = decodeAsAddress(result[3]);
 			earned = decodeAsBigInt(result[4]);
 		} else if (stakingSource === 'Juiced') {

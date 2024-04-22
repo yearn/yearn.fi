@@ -179,7 +179,6 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 					const stakingBalance = getBalance({address: stakingAddress, chainID: tokenData.chainID});
 					stakingValue = stakingBalance.normalized * tokenPrice.normalized;
 				}
-				// console.log(tokenValue, stakingValue, tokenBalance.normalized, tokenPrice.normalized);
 
 				if (vaults?.[toAddress(tokenAddress)]) {
 					if (vaults[toAddress(tokenAddress)].version.split('.')?.[0] === '3') {

@@ -40,14 +40,6 @@ function Index(): ReactElement | null {
 		schema: yDaemonVaultSchema
 	});
 
-	console.log(
-		`${yDaemonBaseUri}/vaults/${toAddress(router.query.address as string)}?${new URLSearchParams({
-			strategiesDetails: 'withDetails',
-			strategiesRisk: 'withRisk',
-			strategiesCondition: 'inQueue'
-		})}`
-	);
-
 	useEffect((): void => {
 		if (vault && !currentVault) {
 			set_currentVault(vault);

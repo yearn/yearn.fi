@@ -66,7 +66,7 @@ type TActionFlowContext = {
 	onUpdateSelectedOptionTo: (option: TDropdownOption) => void;
 	onSwitchSelectedOptions: (nextFlow?: Flow) => void;
 	isDepositing: boolean;
-	maxDepositPossible: TNormalizedBN;
+	maxDepositPossible: (address: TAddress) => TNormalizedBN;
 	currentSolver: TSolver;
 };
 const DefaultActionFlowContext: TActionFlowContext = {
@@ -86,7 +86,7 @@ const DefaultActionFlowContext: TActionFlowContext = {
 	onUpdateSelectedOptionTo: (): void => undefined,
 	onSwitchSelectedOptions: (): void => undefined,
 	isDepositing: true,
-	maxDepositPossible: zeroNormalizedBN,
+	maxDepositPossible: (): TNormalizedBN => zeroNormalizedBN,
 	currentSolver: Solver.enum.Vanilla || 'Vanilla'
 };
 
@@ -233,26 +233,26 @@ export function ActionFlowContextApp({
 		currentVault
 	});
 
-	const maxDepositPossible = useMemo((): TNormalizedBN => {
-		return getMaxDepositPossible({
-			vault: currentVault,
-			fromToken: toAddress(actionParams?.selectedOptionFrom?.value),
-			fromDecimals: actionParams?.selectedOptionFrom?.decimals || currentVault?.token?.decimals || 18,
-			fromTokenBalance: getBalance({
-				address: toAddress(actionParams?.selectedOptionFrom?.value),
+	const maxDepositPossible = useCallback(
+		(tokenAddress: TAddress): TNormalizedBN => {
+			if (isZeroAddress(tokenAddress)) {
+				return zeroNormalizedBN;
+			}
+			const tokenBalance = getBalance({
+				address: toAddress(tokenAddress),
 				chainID: currentVault.chainID
-			}).raw,
-			isDepositing,
-			depositLimit: depositLimit || 0n
-		});
-	}, [
-		actionParams?.selectedOptionFrom?.decimals,
-		actionParams?.selectedOptionFrom?.value,
-		getBalance,
-		currentVault,
-		depositLimit,
-		isDepositing
-	]);
+			});
+			return getMaxDepositPossible({
+				vault: currentVault,
+				fromToken: toAddress(tokenAddress),
+				fromDecimals: actionParams?.selectedOptionFrom?.decimals || currentVault?.token?.decimals || 18,
+				fromTokenBalance: tokenBalance.raw,
+				isDepositing,
+				depositLimit: depositLimit || 0n
+			});
+		},
+		[actionParams?.selectedOptionFrom?.decimals, getBalance, currentVault, depositLimit, isDepositing]
+	);
 
 	const currentSolver = useMemo((): TSolver => {
 		const isUnderlyingToken =
@@ -363,7 +363,9 @@ export function ActionFlowContextApp({
 					payload: {
 						selectedOptionFrom: _selectedOptionTo,
 						selectedOptionTo: _selectedOptionFrom,
-						amount: isDepositing ? zeroNormalizedBN : maxDepositPossible
+						amount: isDepositing
+							? zeroNormalizedBN
+							: maxDepositPossible(toAddress(_selectedOptionFrom?.value))
 					}
 				});
 				set_possibleOptionsTo(possibleOptionsFrom);
@@ -518,7 +520,8 @@ export function ActionFlowContextApp({
 		if (
 			currentVault.chainID === 1 &&
 			currentVault &&
-			toAddress(currentVault.token.address) === WETH_TOKEN_ADDRESS
+			toAddress(currentVault.token.address) === WETH_TOKEN_ADDRESS &&
+			toAddress(currentVault.address) === YVWETH_ADDRESS
 		) {
 			payloadFrom.push(
 				...[
@@ -541,7 +544,8 @@ export function ActionFlowContextApp({
 		} else if (
 			currentVault.chainID === 250 &&
 			currentVault &&
-			toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS
+			toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS &&
+			toAddress(currentVault.address) === YVWFTM_ADDRESS
 		) {
 			payloadFrom.push(
 				...[
@@ -564,7 +568,8 @@ export function ActionFlowContextApp({
 		} else if (
 			currentVault.chainID === 10 &&
 			currentVault &&
-			toAddress(currentVault.token.address) === OPT_WETH_TOKEN_ADDRESS
+			toAddress(currentVault.token.address) === OPT_WETH_TOKEN_ADDRESS &&
+			currentVault.address === YVWETH_OPT_ADDRESS
 		) {
 			payloadFrom.push(
 				...[

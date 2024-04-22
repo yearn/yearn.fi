@@ -10,11 +10,15 @@ import {
 	formatAmount,
 	formatCounterValue,
 	handleInputChangeEventValue,
+	isEthAddress,
 	isZeroAddress,
+	MULTICALL3_ADDRESS,
 	toAddress,
 	toNormalizedBN,
 	zeroNormalizedBN
 } from '@builtbymom/web3/utils';
+import {AGGREGATE3_ABI} from '@builtbymom/web3/utils/abi/aggregate.abi';
+import {getNetwork} from '@builtbymom/web3/utils/wagmi';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {Dropdown} from '@common/components/TokenDropdown';
@@ -25,7 +29,7 @@ import type {ChangeEvent, ReactElement} from 'react';
 import type {TNormalizedBN} from '@builtbymom/web3/types';
 
 export function VaultDetailsQuickActionsFrom(): ReactElement {
-	const {address, isActive} = useWeb3();
+	const {address, isActive, chainID} = useWeb3();
 	const {getToken, getPrice} = useYearn();
 	const {data: blockNumber} = useBlockNumber({watch: true});
 	const {pathname} = useRouter();
@@ -55,9 +59,11 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 	const {data: onChainBalance, refetch} = useReadContracts({
 		contracts: [
 			{
-				abi: erc20Abi,
-				functionName: 'balanceOf',
-				address: toAddress(actionParams?.selectedOptionFrom?.value),
+				abi: isEthAddress(actionParams?.selectedOptionFrom?.value) ? AGGREGATE3_ABI : erc20Abi,
+				functionName: isEthAddress(actionParams?.selectedOptionFrom?.value) ? 'getEthBalance' : 'balanceOf',
+				address: isEthAddress(actionParams?.selectedOptionFrom?.value)
+					? getNetwork(chainID).contracts.multicall3?.address || MULTICALL3_ADDRESS
+					: toAddress(actionParams?.selectedOptionFrom?.value),
 				args: [toAddress(address)],
 				chainId: Number(actionParams?.selectedOptionFrom?.chainID)
 			},
@@ -72,7 +78,7 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 			enabled: !isZeroAddress(address) && !isZeroAddress(actionParams?.selectedOptionFrom?.value),
 			select(data) {
 				const balanceOf = decodeAsBigInt(data[0]);
-				const decimals = decodeAsNumber(data[1]);
+				const decimals = isEthAddress(actionParams?.selectedOptionFrom?.value) ? 18 : decodeAsNumber(data[1]);
 				return toNormalizedBN(balanceOf, decimals);
 			}
 		}
@@ -203,7 +209,13 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 							onChange={onChangeInput}
 						/>
 						<button
-							onClick={(): void => onChangeAmount(isDepositing ? maxDepositPossible : userBalance)}
+							onClick={(): void =>
+								onChangeAmount(
+									isDepositing
+										? maxDepositPossible(toAddress(actionParams?.selectedOptionFrom?.value))
+										: userBalance
+								)
+							}
 							className={
 								'ml-2 cursor-pointer rounded-[4px] bg-neutral-800/20 px-2 py-1 text-xs text-neutral-900 transition-colors hover:bg-neutral-800/50'
 							}>

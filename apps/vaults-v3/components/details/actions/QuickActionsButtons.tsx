@@ -133,7 +133,9 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 	const isButtonDisabled =
 		(!address && !provider) ||
 		isZero(toBigInt(actionParams.amount?.raw)) ||
-		(isDepositing && toBigInt(actionParams.amount?.raw) > toBigInt(maxDepositPossible.raw)) ||
+		(isDepositing &&
+			toBigInt(actionParams.amount?.raw) >
+				toBigInt(maxDepositPossible(toAddress(actionParams?.selectedOptionFrom?.value)).raw)) ||
 		isLoadingExpectedOut;
 
 	/**********************************************************************************************
@@ -222,7 +224,8 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 					isDisabled={
 						(!address && !provider) ||
 						isZero(toBigInt(actionParams.amount?.raw)) ||
-						toBigInt(toBigInt(actionParams.amount?.raw)) > toBigInt(maxDepositPossible.raw)
+						toBigInt(toBigInt(actionParams.amount?.raw)) >
+							toBigInt(maxDepositPossible(toAddress(actionParams?.selectedOptionFrom?.value)).raw)
 					}>
 					{'Deposit and Stake'}
 				</Button>
