@@ -246,9 +246,7 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 	return (
 		<Button
 			variant={isV3Page ? 'v3' : undefined}
-			onClick={async (): Promise<void> =>
-				onExecuteWithdraw(set_txStatusExecuteWithdraw, onSuccess, maxWithdrawPossible().isLimited)
-			}
+			onClick={async (): Promise<void> => onExecuteWithdraw(set_txStatusExecuteWithdraw, onSuccess)}
 			className={'w-full'}
 			isBusy={txStatusExecuteWithdraw.pending}
 			isDisabled={isButtonDisabled}>
