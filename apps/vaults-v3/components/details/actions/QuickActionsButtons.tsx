@@ -24,7 +24,7 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 	const [txStatusExecuteDeposit, set_txStatusExecuteDeposit] = useState(defaultTxStatus);
 	const [txStatusExecuteWithdraw, set_txStatusExecuteWithdraw] = useState(defaultTxStatus);
 	const [allowanceFrom, set_allowanceFrom] = useState<TNormalizedBN>(zeroNormalizedBN);
-	const {actionParams, onChangeAmount, maxDepositPossible, maxWithdrawPossible, isDepositing} = useActionFlow();
+	const {actionParams, onChangeAmount, maxDepositPossible, isDepositing} = useActionFlow();
 	const {pathname} = useRouter();
 	const isV3Page = pathname.startsWith(`/v3`);
 	const {
