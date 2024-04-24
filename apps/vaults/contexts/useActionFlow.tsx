@@ -67,6 +67,7 @@ type TActionFlowContext = {
 	onSwitchSelectedOptions: (nextFlow?: Flow) => void;
 	isDepositing: boolean;
 	maxDepositPossible: (address: TAddress) => TNormalizedBN;
+	maxWithdrawPossible: () => {limit: TNormalizedBN; safeLimit: TNormalizedBN; isLimited: boolean};
 	currentSolver: TSolver;
 };
 const DefaultActionFlowContext: TActionFlowContext = {
@@ -87,6 +88,11 @@ const DefaultActionFlowContext: TActionFlowContext = {
 	onSwitchSelectedOptions: (): void => undefined,
 	isDepositing: true,
 	maxDepositPossible: (): TNormalizedBN => zeroNormalizedBN,
+	maxWithdrawPossible: () => ({
+		limit: zeroNormalizedBN,
+		safeLimit: zeroNormalizedBN,
+		isLimited: false
+	}),
 	currentSolver: Solver.enum.Vanilla || 'Vanilla'
 };
 
@@ -95,6 +101,11 @@ type TUseContextualIs = {
 	currentVault: TYDaemonVault;
 };
 
+/**************************************************************************************************
+ ** The useContextualIs hook is used to determine if the user is depositing or withdrawing from a
+ ** vault, and if the partner contract should be used.
+ ** It's a simple helper to make the code more readable in the main context.
+ *************************************************************************************************/
 function useContextualIs({selectedTo, currentVault}: TUseContextualIs): [boolean, boolean] {
 	const router = useRouter();
 
@@ -121,6 +132,12 @@ function useContextualIs({selectedTo, currentVault}: TUseContextualIs): [boolean
 	return [isDepositing, isUsingPartnerContract];
 }
 
+/**************************************************************************************************
+ ** The getMaxDepositPossible function is used to determine the maximum amount the user can deposit
+ ** into the vault.
+ ** This function performs no external calls and will just try to determine the maximum amount
+ ** based on the provided parameters.
+ *************************************************************************************************/
 type TGetMaxDepositPossible = {
 	vault: TYDaemonVault;
 	fromToken: TAddress;
@@ -143,44 +160,84 @@ function getMaxDepositPossible(props: TGetMaxDepositPossible): TNormalizedBN {
 	return toNormalizedBN(userBalance, fromDecimals);
 }
 
+/**************************************************************************************************
+ ** The ActionFlowContext is a context provider specific to the vault page, aiming to orchestrate
+ ** the deposit, withdraw, and migration flows.
+ ** This groups the different deposit options, the different withdraw options, the inputed amount,
+ ** and more elements, and this tries to put limits and determine the best solvers for the user.
+ ** Limits might be the maximum amount the user can deposit for example, based on the vault onchain
+ ** data, or it could be the maxRedeem value for the user.
+ ** The solvers are the different strategies that can be used to perform the deposit or withdrawal,
+ ** like the OptimismBooster, the GaugeStakingBooster, the JuicedStakingBooster, etc, which leads
+ ** to different way of depositing/withdrawing.
+ *************************************************************************************************/
 const ActionFlowContext = createContext<TActionFlowContext>(DefaultActionFlowContext);
-export function ActionFlowContextApp({
-	children,
-	currentVault
-}: {
-	children: ReactNode;
-	currentVault: TYDaemonVault;
-}): React.ReactElement {
+export function ActionFlowContextApp(props: {children: ReactNode; currentVault: TYDaemonVault}): React.ReactElement {
 	const {address} = useWeb3();
-	const {getBalance} = useYearn();
+	const {getBalance, maxLoss} = useYearn();
 	const {listTokens: listZapTokens} = useWalletForZap();
 	const {zapProvider, isAutoStakingEnabled} = useYearn();
 	const [possibleOptionsFrom, set_possibleOptionsFrom] = useState<TDropdownOption[]>([]);
 	const [possibleZapOptionsFrom, set_possibleZapOptionsFrom] = useState<TDropdownOption[]>([]);
 	const [possibleOptionsTo, set_possibleOptionsTo] = useState<TDropdownOption[]>([]);
 	const [possibleZapOptionsTo, set_possibleZapOptionsTo] = useState<TDropdownOption[]>([]);
-	const {data: depositLimit} = useReadContracts({
+
+	/**********************************************************************************************
+	 ** Based on the onchain data, the vault might have different limits both in general and for
+	 ** the user. We need to determine what is the maximum amount the user can deposit and the
+	 ** maximum amount the user can withdraw.
+	 ** Once the raw numbers are fetched, we are using a simple fallback strategy:
+	 ** - maxDeposit -> vault.depositLimit() or vault.maxDeposit(user)
+	 ** - maxRedeem -> vault.maxRedeem(user, maxLoss) or vault.balanceOf(user)
+	 *********************************************************************************************/
+	const {data: limits} = useReadContracts({
 		contracts: [
 			{
-				address: currentVault.address,
+				address: props.currentVault.address,
 				abi: VAULT_ABI,
-				chainId: currentVault.chainID,
+				chainId: props.currentVault.chainID,
 				functionName: 'depositLimit'
 			},
 			{
-				address: currentVault.address,
+				address: props.currentVault.address,
 				abi: VAULT_V3_ABI,
-				chainId: currentVault.chainID,
+				chainId: props.currentVault.chainID,
 				functionName: 'maxDeposit',
+				args: [toAddress(address)]
+			},
+			{
+				address: props.currentVault.address,
+				abi: VAULT_V3_ABI,
+				chainId: props.currentVault.chainID,
+				functionName: 'maxRedeem',
+				args: [toAddress(address), toBigInt(maxLoss)]
+			},
+			{
+				address: props.currentVault.address,
+				abi: VAULT_V3_ABI,
+				chainId: props.currentVault.chainID,
+				functionName: 'balanceOf',
 				args: [toAddress(address)]
 			}
 		],
 		query: {
-			select: (results): bigint => decodeAsBigInt(results[0], decodeAsBigInt(results[1], 0n))
+			select: (results): {maxDeposit: bigint; maxRedeem: bigint} => ({
+				maxDeposit: decodeAsBigInt(results[0], decodeAsBigInt(results[1], 0n)),
+				maxRedeem: decodeAsBigInt(results[2], decodeAsBigInt(results[3], 0n))
+			})
 		}
 	});
 
-	//Combine selectedOptionFrom, selectedOptionTo and amount in a useReducer
+	/**********************************************************************************************
+	 ** This reducer is used to manage the actionParams state variable and update the different
+	 ** elements in one go rather than multiple set_state. This was done to avoid the multiple
+	 ** re-render we had with the previous method.
+	 ** 3 actions are available:
+	 ** - amount: update the amount when the user types in the input
+	 ** - options: update the selectedOptionFrom, selectedOptionTo, possibleOptionsFrom, and
+	 **   possibleOptionsTo when the user selects a token from the dropdown
+	 ** - all: update everything at once
+	 *********************************************************************************************/
 	const [actionParams, actionParamsDispatcher] = useReducer(
 		(
 			state: TActionParams,
@@ -228,11 +285,47 @@ export function ActionFlowContextApp({
 		}
 	);
 
+	/**********************************************************************************************
+	 ** Simple helper to determine if the user is depositing or withdrawing from the vault, and if
+	 ** the partner contract should be used.
+	 *********************************************************************************************/
 	const [isDepositing, isUsingPartnerContract] = useContextualIs({
 		selectedTo: actionParams?.selectedOptionTo,
-		currentVault
+		currentVault: props.currentVault
 	});
 
+	/**********************************************************************************************
+	 ** Callback function used to get the maximum amount a specific user can withdraw from the
+	 ** vault. This is based on the maxRedeem value from the vault and the user balance:
+	 ** If the user balance is greater than the maxRedeem value, the user can only withdraw the
+	 ** maxRedeem value, and as this means that the vault has a limit on this, and as this limit
+	 ** can slightly change on every blocks, using this raw number might lead to revert. To prevent
+	 ** this, we are using a safeLimit which is 99% of the maxRedeem value.
+	 ** If the user balance is less than the maxRedeem value, the user can withdraw the full
+	 ** balance and we don't need to care about the safeLimit.
+	 ** The safeLimit specificity is only available for V3 vaults.
+	 *********************************************************************************************/
+	const maxWithdrawPossible = useCallback(() => {
+		const vaultBalance = getBalance({
+			address: toAddress(props.currentVault.address),
+			chainID: props.currentVault.chainID
+		});
+
+		if (props.currentVault.version.startsWith('3')) {
+			const safeLimit = (toBigInt(limits?.maxRedeem) * 99n) / 100n;
+			return {
+				limit: toNormalizedBN(toBigInt(limits?.maxRedeem), props.currentVault.token.decimals),
+				safeLimit: toNormalizedBN(safeLimit, props.currentVault.token.decimals),
+				isLimited: vaultBalance.raw > toBigInt(limits?.maxRedeem)
+			};
+		}
+		return {limit: vaultBalance, safeLimit: vaultBalance, isLimited: false};
+	}, [getBalance, props.currentVault, limits?.maxRedeem]);
+
+	/**********************************************************************************************
+	 ** Callback function used to get the maximum amount a specific user can deposit into the
+	 ** vault. This is based on the maxDeposit value from the vault and the user balance.
+	 *********************************************************************************************/
 	const maxDepositPossible = useCallback(
 		(tokenAddress: TAddress): TNormalizedBN => {
 			if (isZeroAddress(tokenAddress)) {
@@ -240,28 +333,33 @@ export function ActionFlowContextApp({
 			}
 			const tokenBalance = getBalance({
 				address: toAddress(tokenAddress),
-				chainID: currentVault.chainID
+				chainID: props.currentVault.chainID
 			});
+
 			return getMaxDepositPossible({
-				vault: currentVault,
+				vault: props.currentVault,
 				fromToken: toAddress(tokenAddress),
-				fromDecimals: actionParams?.selectedOptionFrom?.decimals || currentVault?.token?.decimals || 18,
+				fromDecimals: actionParams?.selectedOptionFrom?.decimals || props.currentVault?.token?.decimals || 18,
 				fromTokenBalance: tokenBalance.raw,
 				isDepositing,
-				depositLimit: depositLimit || 0n
+				depositLimit: toBigInt(limits?.maxDeposit)
 			});
 		},
-		[actionParams?.selectedOptionFrom?.decimals, getBalance, currentVault, depositLimit, isDepositing]
+		[getBalance, props.currentVault, actionParams?.selectedOptionFrom?.decimals, isDepositing, limits?.maxDeposit]
 	);
 
+	/**********************************************************************************************
+	 ** The currentSolver is a memoized value that determines which solver should be used based on
+	 ** the current context.
+	 *********************************************************************************************/
 	const currentSolver = useMemo((): TSolver => {
 		const isUnderlyingToken =
-			toAddress(actionParams?.selectedOptionFrom?.value) === toAddress(currentVault.token.address);
+			toAddress(actionParams?.selectedOptionFrom?.value) === toAddress(props.currentVault.token.address);
 
 		// Only use OptimismBooster if the user chose to stake automatically and the vault is staking with OP Boost
 		if (
-			currentVault.staking.available &&
-			currentVault.staking.source === 'OP Boost' &&
+			props.currentVault.staking.available &&
+			props.currentVault.staking.source === 'OP Boost' &&
 			isAutoStakingEnabled &&
 			isDepositing &&
 			isUnderlyingToken
@@ -271,8 +369,8 @@ export function ActionFlowContextApp({
 
 		// Only use GaugeStakingBooster if the user chose to stake automatically and the vault is staking with VeYFI
 		if (
-			currentVault.staking.available &&
-			currentVault.staking.source === 'VeYFI' &&
+			props.currentVault.staking.available &&
+			props.currentVault.staking.source === 'VeYFI' &&
 			isAutoStakingEnabled &&
 			isDepositing &&
 			isUnderlyingToken
@@ -284,8 +382,8 @@ export function ActionFlowContextApp({
 		// Disabled until we figure out the zap
 		const canUseJuicedDirectDeposits = false;
 		if (
-			currentVault.staking.available &&
-			currentVault.staking.source === 'Juiced' &&
+			props.currentVault.staking.available &&
+			props.currentVault.staking.source === 'Juiced' &&
 			isAutoStakingEnabled &&
 			isDepositing &&
 			isUnderlyingToken &&
@@ -294,20 +392,20 @@ export function ActionFlowContextApp({
 			return Solver.enum.JuicedStakingBooster;
 		}
 
-		const isV3 = currentVault?.version.split('.')?.[0] === '3';
+		const isV3 = props.currentVault?.version.split('.')?.[0] === '3';
 		const isInputTokenEth = isEthAddress(actionParams?.selectedOptionFrom?.value);
 		const isOutputTokenEth = isEthAddress(actionParams?.selectedOptionTo?.value);
 		const isVaultTokenWrappedCoin =
-			(currentVault.chainID === 1 && currentVault.address === YVWETH_ADDRESS) ||
-			(currentVault.chainID === 10 && currentVault.address === YVWETH_OPT_ADDRESS) ||
-			(currentVault.chainID === 250 && currentVault.address === YVWFTM_ADDRESS);
+			(props.currentVault.chainID === 1 && props.currentVault.address === YVWETH_ADDRESS) ||
+			(props.currentVault.chainID === 10 && props.currentVault.address === YVWETH_OPT_ADDRESS) ||
+			(props.currentVault.chainID === 250 && props.currentVault.address === YVWFTM_ADDRESS);
 
 		if (isVaultTokenWrappedCoin && (isInputTokenEth || isOutputTokenEth)) {
 			return Solver.enum.ChainCoin;
 		}
 		if (
-			currentVault?.migration?.available &&
-			toAddress(actionParams?.selectedOptionTo?.value) === toAddress(currentVault?.migration?.address)
+			props.currentVault?.migration?.available &&
+			toAddress(actionParams?.selectedOptionTo?.value) === toAddress(props.currentVault?.migration?.address)
 		) {
 			return Solver.enum.InternalMigration;
 		}
@@ -326,20 +424,25 @@ export function ActionFlowContextApp({
 		actionParams?.selectedOptionFrom?.solveVia?.length,
 		actionParams?.selectedOptionTo?.value,
 		actionParams?.selectedOptionTo?.solveVia?.length,
-		currentVault.token.address,
-		currentVault.staking.available,
-		currentVault.staking.source,
-		currentVault?.version,
-		currentVault.chainID,
-		currentVault.address,
-		currentVault?.migration?.available,
-		currentVault?.migration?.address,
+		props.currentVault.token.address,
+		props.currentVault.staking.available,
+		props.currentVault.staking.source,
+		props.currentVault?.version,
+		props.currentVault.chainID,
+		props.currentVault.address,
+		props.currentVault?.migration?.available,
+		props.currentVault?.migration?.address,
 		isAutoStakingEnabled,
 		isDepositing,
 		isUsingPartnerContract,
 		zapProvider
 	]);
 
+	/**********************************************************************************************
+	 ** The onSwitchSelectedOptions function is a callback function used to switch the selected
+	 ** options from and to in the actionParams state variable, and adapt the possibleOptionsFrom
+	 ** and possibleOptionsTo arrays accordingly.
+	 *********************************************************************************************/
 	const onSwitchSelectedOptions = useCallback(
 		(nextFlow = Flow.Switch): void => {
 			if (nextFlow === Flow.None) {
@@ -374,18 +477,18 @@ export function ActionFlowContextApp({
 			}
 
 			const vaultUnderlying = setZapOption({
-				name: currentVault?.token?.name,
-				symbol: currentVault?.token?.symbol,
-				address: toAddress(currentVault.token.address),
-				chainID: currentVault.chainID,
-				decimals: currentVault?.token?.decimals || 18
+				name: props.currentVault?.token?.name,
+				symbol: props.currentVault?.token?.symbol,
+				address: toAddress(props.currentVault.token.address),
+				chainID: props.currentVault.chainID,
+				decimals: props.currentVault?.token?.decimals || 18
 			});
 			const vaultToken = setZapOption({
-				name: currentVault?.name,
-				symbol: currentVault.symbol,
-				address: toAddress(currentVault.address),
-				chainID: currentVault.chainID,
-				decimals: currentVault?.decimals || 18
+				name: props.currentVault?.name,
+				symbol: props.currentVault.symbol,
+				address: toAddress(props.currentVault.address),
+				chainID: props.currentVault.chainID,
+				decimals: props.currentVault?.decimals || 18
 			});
 
 			if (nextFlow === Flow.Deposit) {
@@ -412,22 +515,22 @@ export function ActionFlowContextApp({
 				});
 			} else if (nextFlow === Flow.Migrate) {
 				const userBalance = getBalance({
-					address: toAddress(currentVault?.address),
-					chainID: currentVault?.chainID
+					address: toAddress(props.currentVault?.address),
+					chainID: props.currentVault?.chainID
 				}).raw;
 				const _amount = toNormalizedBN(
 					userBalance,
-					currentVault?.decimals || currentVault?.token?.decimals || 18
+					props.currentVault?.decimals || props.currentVault?.token?.decimals || 18
 				);
 				const selectedOptionTo = {
-					name: currentVault?.name,
-					symbol: currentVault?.symbol,
-					address: currentVault?.migration?.address,
-					chainID: currentVault?.chainID,
-					decimals: currentVault?.token?.decimals
+					name: props.currentVault?.name,
+					symbol: props.currentVault?.symbol,
+					address: props.currentVault?.migration?.address,
+					chainID: props.currentVault?.chainID,
+					decimals: props.currentVault?.token?.decimals
 				};
 
-				if (currentVault?.address === LPYCRV_TOKEN_ADDRESS) {
+				if (props.currentVault?.address === LPYCRV_TOKEN_ADDRESS) {
 					selectedOptionTo.name = 'lp-yCRV V2';
 					selectedOptionTo.symbol = 'lp-yCRV V2';
 				}
@@ -451,12 +554,12 @@ export function ActionFlowContextApp({
 			possibleOptionsFrom,
 			isDepositing,
 			maxDepositPossible,
-			currentVault,
+			props.currentVault,
 			getBalance
 		]
 	);
 
-	/* 🔵 - Yearn Finance **************************************************************************
+	/**********************************************************************************************
 	 ** FLOW: Update From/To/Amount in one unique re-render
 	 **
 	 ** The `updateParams` function is a callback function used to update the parameters (amount,
@@ -470,13 +573,16 @@ export function ActionFlowContextApp({
 		(_selectedFrom: TDropdownOption, _selectedTo: TDropdownOption): void => {
 			const userBalance = getBalance({
 				address: toAddress(_selectedFrom?.value),
-				chainID: currentVault.chainID
+				chainID: props.currentVault.chainID
 			}).raw;
-			let _amount = toNormalizedBN(userBalance, _selectedFrom?.decimals || currentVault?.token?.decimals || 18);
+			let _amount = toNormalizedBN(
+				userBalance,
+				_selectedFrom?.decimals || props.currentVault?.token?.decimals || 18
+			);
 			if (isDepositing) {
-				if (_selectedFrom?.value === currentVault?.token?.address) {
-					if (userBalance > toBigInt(depositLimit)) {
-						_amount = toNormalizedBN(toBigInt(depositLimit), currentVault.token.decimals);
+				if (_selectedFrom?.value === props.currentVault?.token?.address) {
+					if (userBalance > toBigInt(limits?.maxDeposit)) {
+						_amount = toNormalizedBN(toBigInt(limits?.maxDeposit), props.currentVault.token.decimals);
 					}
 				}
 			}
@@ -492,15 +598,15 @@ export function ActionFlowContextApp({
 		},
 		[
 			getBalance,
-			currentVault.chainID,
-			currentVault.token.decimals,
-			currentVault.token?.address,
+			props.currentVault.chainID,
+			props.currentVault.token.decimals,
+			props.currentVault.token?.address,
 			isDepositing,
-			depositLimit
+			limits?.maxDeposit
 		]
 	);
 
-	/* 🔵 - Yearn Finance **************************************************************************
+	/**********************************************************************************************
 	 ** FLOW: Init the possibleOptionsFrom and possibleOptionsTo arrays and the selectedOptionFrom
 	 ** and selectedOptionTo.
 	 **
@@ -518,10 +624,10 @@ export function ActionFlowContextApp({
 		 ** Init possibleOptionsFrom and possibleOptionsTo arrays.
 		 ******************************************************************************************/
 		if (
-			currentVault.chainID === 1 &&
-			currentVault &&
-			toAddress(currentVault.token.address) === WETH_TOKEN_ADDRESS &&
-			toAddress(currentVault.address) === YVWETH_ADDRESS
+			props.currentVault.chainID === 1 &&
+			props.currentVault &&
+			toAddress(props.currentVault.token.address) === WETH_TOKEN_ADDRESS &&
+			toAddress(props.currentVault.address) === YVWETH_ADDRESS
 		) {
 			payloadFrom.push(
 				...[
@@ -529,23 +635,23 @@ export function ActionFlowContextApp({
 						name: 'ETH',
 						symbol: 'ETH',
 						address: ETH_TOKEN_ADDRESS,
-						chainID: currentVault.chainID,
+						chainID: props.currentVault.chainID,
 						decimals: 18
 					}),
 					setZapOption({
 						name: 'wETH',
 						symbol: 'wETH',
 						address: WETH_TOKEN_ADDRESS,
-						chainID: currentVault.chainID,
+						chainID: props.currentVault.chainID,
 						decimals: 18
 					})
 				]
 			);
 		} else if (
-			currentVault.chainID === 250 &&
-			currentVault &&
-			toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS &&
-			toAddress(currentVault.address) === YVWFTM_ADDRESS
+			props.currentVault.chainID === 250 &&
+			props.currentVault &&
+			toAddress(props.currentVault.token.address) === WFTM_TOKEN_ADDRESS &&
+			toAddress(props.currentVault.address) === YVWFTM_ADDRESS
 		) {
 			payloadFrom.push(
 				...[
@@ -553,23 +659,23 @@ export function ActionFlowContextApp({
 						name: 'FTM',
 						symbol: 'FTM',
 						address: ETH_TOKEN_ADDRESS,
-						chainID: currentVault.chainID,
+						chainID: props.currentVault.chainID,
 						decimals: 18
 					}),
 					setZapOption({
 						name: 'wFTM',
 						symbol: 'wFTM',
 						address: WFTM_TOKEN_ADDRESS,
-						chainID: currentVault.chainID,
+						chainID: props.currentVault.chainID,
 						decimals: 18
 					})
 				]
 			);
 		} else if (
-			currentVault.chainID === 10 &&
-			currentVault &&
-			toAddress(currentVault.token.address) === OPT_WETH_TOKEN_ADDRESS &&
-			currentVault.address === YVWETH_OPT_ADDRESS
+			props.currentVault.chainID === 10 &&
+			props.currentVault &&
+			toAddress(props.currentVault.token.address) === OPT_WETH_TOKEN_ADDRESS &&
+			props.currentVault.address === YVWETH_OPT_ADDRESS
 		) {
 			payloadFrom.push(
 				...[
@@ -577,14 +683,14 @@ export function ActionFlowContextApp({
 						name: 'ETH',
 						symbol: 'ETH',
 						address: ETH_TOKEN_ADDRESS,
-						chainID: currentVault.chainID,
+						chainID: props.currentVault.chainID,
 						decimals: 18
 					}),
 					setZapOption({
 						name: 'wETH',
 						symbol: 'wETH',
 						address: OPT_WETH_TOKEN_ADDRESS,
-						chainID: currentVault.chainID,
+						chainID: props.currentVault.chainID,
 						decimals: 18
 					})
 				]
@@ -592,20 +698,22 @@ export function ActionFlowContextApp({
 		} else {
 			payloadFrom.push(
 				setZapOption({
-					name: currentVault?.token?.name,
-					symbol: currentVault?.token?.symbol,
-					address: toAddress(currentVault.token.address),
-					chainID: currentVault?.chainID === 1337 ? currentVault.chainID : currentVault?.chainID,
-					decimals: currentVault?.token?.decimals || 18
+					name: props.currentVault?.token?.name,
+					symbol: props.currentVault?.token?.symbol,
+					address: toAddress(props.currentVault.token.address),
+					chainID:
+						props.currentVault?.chainID === 1337 ? props.currentVault.chainID : props.currentVault?.chainID,
+					decimals: props.currentVault?.token?.decimals || 18
 				})
 			);
 			payloadTo.push(
 				setZapOption({
-					name: currentVault?.name,
-					symbol: currentVault?.symbol,
-					address: toAddress(currentVault.address),
-					chainID: currentVault?.chainID === 1337 ? currentVault.chainID : currentVault?.chainID,
-					decimals: currentVault?.decimals || 18
+					name: props.currentVault?.name,
+					symbol: props.currentVault?.symbol,
+					address: toAddress(props.currentVault.address),
+					chainID:
+						props.currentVault?.chainID === 1337 ? props.currentVault.chainID : props.currentVault?.chainID,
+					decimals: props.currentVault?.decimals || 18
 				})
 			);
 		}
@@ -614,18 +722,18 @@ export function ActionFlowContextApp({
 		 ** Init selectedFrom and selectedTo as default, aka underlyingToken to vaultToken.
 		 ******************************************************************************************/
 		const _selectedFrom = setZapOption({
-			name: currentVault?.token?.name,
-			symbol: currentVault?.token?.symbol,
-			address: toAddress(currentVault.token.address),
-			chainID: currentVault?.chainID === 1337 ? currentVault.chainID : currentVault?.chainID,
-			decimals: currentVault?.token?.decimals || 18
+			name: props.currentVault?.token?.name,
+			symbol: props.currentVault?.token?.symbol,
+			address: toAddress(props.currentVault.token.address),
+			chainID: props.currentVault?.chainID === 1337 ? props.currentVault.chainID : props.currentVault?.chainID,
+			decimals: props.currentVault?.token?.decimals || 18
 		});
 		const _selectedTo = setZapOption({
-			name: currentVault?.name,
-			symbol: currentVault.symbol,
-			address: toAddress(currentVault.address),
-			chainID: currentVault?.chainID === 1337 ? currentVault.chainID : currentVault?.chainID,
-			decimals: currentVault?.decimals || 18
+			name: props.currentVault?.name,
+			symbol: props.currentVault.symbol,
+			address: toAddress(props.currentVault.address),
+			chainID: props.currentVault?.chainID === 1337 ? props.currentVault.chainID : props.currentVault?.chainID,
+			decimals: props.currentVault?.decimals || 18
 		});
 
 		/* 🔵 - Yearn Finance **********************************************************************
@@ -656,7 +764,7 @@ export function ActionFlowContextApp({
 		}
 	});
 
-	/* 🔵 - Yearn Finance **************************************************************************
+	/**********************************************************************************************
 	 ** FLOW: Init the possibleZapOptionsFrom array.
 	 **
 	 ** This array will be used to populate the dropdown list of tokens to deposit via the zap
@@ -667,20 +775,22 @@ export function ActionFlowContextApp({
 	 **********************************************************************************************/
 	useUpdateEffect((): void => {
 		const _possibleZapOptionsFrom: TDropdownOption[] = [];
-		const isWithWETH = currentVault.chainID === 1 && toAddress(currentVault?.token?.address) === WETH_TOKEN_ADDRESS;
+		const isWithWETH =
+			props.currentVault.chainID === 1 && toAddress(props.currentVault?.token?.address) === WETH_TOKEN_ADDRESS;
 		const isWithWOPT =
-			currentVault.chainID === 10 && toAddress(currentVault?.token?.address) === OPT_WETH_TOKEN_ADDRESS;
+			props.currentVault.chainID === 10 &&
+			toAddress(props.currentVault?.token?.address) === OPT_WETH_TOKEN_ADDRESS;
 		const isWithWFTM =
-			currentVault.chainID === 250 && toAddress(currentVault?.token?.address) === WFTM_TOKEN_ADDRESS;
+			props.currentVault.chainID === 250 && toAddress(props.currentVault?.token?.address) === WFTM_TOKEN_ADDRESS;
 
-		Object.values(listZapTokens({chainID: currentVault.chainID})).forEach((tokenData): void => {
+		Object.values(listZapTokens({chainID: props.currentVault.chainID})).forEach((tokenData): void => {
 			const duplicateAddresses = [
 				isWithWETH ? WETH_TOKEN_ADDRESS : null,
 				isWithWFTM ? WFTM_TOKEN_ADDRESS : null,
 				isWithWOPT ? ETH_TOKEN_ADDRESS : null,
 				isWithWOPT ? OPT_WETH_TOKEN_ADDRESS : null,
-				toAddress(currentVault?.token?.address),
-				toAddress(currentVault?.address)
+				toAddress(props.currentVault?.token?.address),
+				toAddress(props.currentVault?.address)
 			].filter(Boolean);
 
 			if (duplicateAddresses.includes(toAddress(tokenData.address))) {
@@ -696,21 +806,22 @@ export function ActionFlowContextApp({
 					name: tokenData.name,
 					symbol: tokenData.symbol,
 					address: toAddress(tokenData.address),
-					chainID: currentVault?.chainID === 1337 ? currentVault.chainID : currentVault?.chainID,
+					chainID:
+						props.currentVault?.chainID === 1337 ? props.currentVault.chainID : props.currentVault?.chainID,
 					decimals: tokenData.decimals,
 					solveVia: tokenData.supportedZaps || []
 				})
 			);
 		});
 		_possibleZapOptionsFrom.sort((a, b): number => {
-			const aBalance = getBalance({address: toAddress(a.value), chainID: currentVault.chainID}).normalized;
-			const bBalance = getBalance({address: toAddress(b.value), chainID: currentVault.chainID}).normalized;
+			const aBalance = getBalance({address: toAddress(a.value), chainID: props.currentVault.chainID}).normalized;
+			const bBalance = getBalance({address: toAddress(b.value), chainID: props.currentVault.chainID}).normalized;
 			return bBalance - aBalance;
 		});
 		set_possibleZapOptionsFrom(_possibleZapOptionsFrom);
-	}, [currentVault.chainID, listZapTokens, currentVault]);
+	}, [props.currentVault.chainID, listZapTokens, props.currentVault]);
 
-	/* 🔵 - Yearn Finance **************************************************************************
+	/**********************************************************************************************
 	 ** FLOW: Init the possibleZapOptionsTo array.
 	 **
 	 ** This array will be used to populate the dropdown list of tokens to withdraw via the zap
@@ -721,29 +832,32 @@ export function ActionFlowContextApp({
 		const _possibleZapOptionsTo: TDropdownOption[] = [];
 
 		externalzapOutTokenList
-			.filter((): boolean => currentVault.chainID === currentVault?.chainID) // Disable if we are on the wrong chain
-			.filter((token): boolean => token.chainID === (currentVault?.chainID || currentVault.chainID))
+			.filter((): boolean => props.currentVault.chainID === props.currentVault?.chainID) // Disable if we are on the wrong chain
+			.filter((token): boolean => token.chainID === (props.currentVault?.chainID || props.currentVault.chainID))
 			.forEach((tokenListData): void => {
 				_possibleZapOptionsTo.push(
 					setZapOption({
 						name: tokenListData?.name,
 						symbol: tokenListData?.symbol,
 						address: toAddress(tokenListData?.address),
-						chainID: currentVault?.chainID === 1337 ? currentVault.chainID : currentVault?.chainID,
+						chainID:
+							props.currentVault?.chainID === 1337
+								? props.currentVault.chainID
+								: props.currentVault?.chainID,
 						decimals: tokenListData?.decimals,
 						solveVia: (tokenListData?.supportedZaps as TSolver[]) || []
 					})
 				);
 			});
 		set_possibleZapOptionsTo(_possibleZapOptionsTo);
-	}, [currentVault.chainID]);
+	}, [props.currentVault.chainID]);
 
-	/* 🔵 - Yearn Finance **************************************************************************
+	/**********************************************************************************************
 	 ** FLOW: Store the value from that context in a Memoized variable to avoid useless re-renders
 	 **********************************************************************************************/
 	const contextValue = useMemo(
 		(): TActionFlowContext => ({
-			currentVault,
+			currentVault: props.currentVault,
 			possibleOptionsFrom: [...actionParams.possibleOptionsFrom, ...possibleZapOptionsFrom],
 			possibleOptionsTo: [...actionParams.possibleOptionsTo, ...possibleZapOptionsTo],
 			actionParams,
@@ -762,22 +876,24 @@ export function ActionFlowContextApp({
 			onSwitchSelectedOptions,
 			isDepositing,
 			maxDepositPossible,
+			maxWithdrawPossible,
 			currentSolver
 		}),
 		[
-			currentVault,
+			props.currentVault,
 			possibleZapOptionsFrom,
 			possibleZapOptionsTo,
 			actionParams,
 			onSwitchSelectedOptions,
 			isDepositing,
 			maxDepositPossible,
+			maxWithdrawPossible,
 			currentSolver,
 			updateParams
 		]
 	);
 
-	return <ActionFlowContext.Provider value={contextValue}>{children}</ActionFlowContext.Provider>;
+	return <ActionFlowContext.Provider value={contextValue}>{props.children}</ActionFlowContext.Provider>;
 }
 
 export const useActionFlow = (): TActionFlowContext => useContext(ActionFlowContext);

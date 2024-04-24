@@ -55,7 +55,9 @@ export function useSolverInternalMigration(): TSolverContext {
 			outputDecimals: _request.outputToken.decimals,
 			inputAmount: _request.inputAmount,
 			isDepositing: _request.isDepositing,
-			chainID: _request.chainID
+			chainID: _request.chainID,
+			version: _request.version,
+			from: toAddress(_request.from)
 		});
 		latestQuote.current = estimateOut;
 		return latestQuote.current;

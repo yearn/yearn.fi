@@ -24,9 +24,50 @@ import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {Dropdown} from '@common/components/TokenDropdown';
 import {useYearn} from '@common/contexts/useYearn';
 import {useYearnBalance} from '@common/hooks/useYearnBalance';
+import {IconQuestion} from '@common/icons/IconQuestion';
 
 import type {ChangeEvent, ReactElement} from 'react';
 import type {TNormalizedBN} from '@builtbymom/web3/types';
+
+function AmountWithOptionalTooltip(props: {
+	canOnlyWithdrawSome: boolean;
+	maxPossibleToWithdraw: TNormalizedBN;
+	tokenSymbol: string;
+}): ReactElement {
+	if (props.canOnlyWithdrawSome) {
+		return (
+			<div className={'flex flex-row items-center justify-between space-x-2'}>
+				<label
+					htmlFor={'fromAmount'}
+					className={'hidden text-base text-neutral-600 md:inline'}>
+					{'Amount'}
+				</label>
+				<span className={'tooltip'}>
+					<IconQuestion className={'hidden opacity-40 md:block'} />
+					<span className={'tooltipLight top-full w-full pt-1'}>
+						<div
+							className={
+								'font-number mr-[-360px] max-w-sm border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
+							}>
+							<p className={'font-number whitespace-pre text-wrap text-left text-neutral-400 md:text-xs'}>
+								{`This Vault is not always totally liquid (don’t worry anon, funds are Safu).\n\nYou can currently withdraw up to ${formatAmount(props.maxPossibleToWithdraw.normalized, 6)} ${props.tokenSymbol}.\n\nLike the best things in life, liquidity comes and goes so feel free to check back later.`}
+							</p>
+						</div>
+					</span>
+				</span>
+			</div>
+		);
+	}
+	return (
+		<div>
+			<label
+				htmlFor={'fromAmount'}
+				className={'hidden text-base text-neutral-600 md:inline'}>
+				{'Amount'}
+			</label>
+		</div>
+	);
+}
 
 export function VaultDetailsQuickActionsFrom(): ReactElement {
 	const {address, isActive, chainID} = useWeb3();
@@ -40,6 +81,7 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 		onUpdateSelectedOptionFrom,
 		onChangeAmount,
 		maxDepositPossible,
+		maxWithdrawPossible,
 		isDepositing
 	} = useActionFlow();
 	const hasMultipleInputsToChooseFrom = isActive && isDepositing && possibleOptionsFrom.length > 1;
@@ -181,11 +223,11 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 			</div>
 			<div className={'w-full'}>
 				<div className={'pb-2 pl-1'}>
-					<label
-						htmlFor={'fromAmount'}
-						className={'hidden text-base text-neutral-600 md:inline'}>
-						{'Amount'}
-					</label>
+					<AmountWithOptionalTooltip
+						canOnlyWithdrawSome={!isDepositing && maxWithdrawPossible().isLimited}
+						maxPossibleToWithdraw={maxWithdrawPossible().safeLimit}
+						tokenSymbol={actionParams?.selectedOptionFrom?.symbol || 'tokens'}
+					/>
 				</div>
 				<div
 					className={cl(
@@ -213,7 +255,7 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 								onChangeAmount(
 									isDepositing
 										? maxDepositPossible(toAddress(actionParams?.selectedOptionFrom?.value))
-										: userBalance
+										: maxWithdrawPossible().safeLimit
 								)
 							}
 							className={

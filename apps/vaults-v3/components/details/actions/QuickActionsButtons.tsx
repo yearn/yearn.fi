@@ -24,7 +24,7 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 	const [txStatusExecuteDeposit, set_txStatusExecuteDeposit] = useState(defaultTxStatus);
 	const [txStatusExecuteWithdraw, set_txStatusExecuteWithdraw] = useState(defaultTxStatus);
 	const [allowanceFrom, set_allowanceFrom] = useState<TNormalizedBN>(zeroNormalizedBN);
-	const {actionParams, onChangeAmount, maxDepositPossible, isDepositing} = useActionFlow();
+	const {actionParams, onChangeAmount, maxDepositPossible, maxWithdrawPossible, isDepositing} = useActionFlow();
 	const {pathname} = useRouter();
 	const isV3Page = pathname.startsWith(`/v3`);
 	const {
@@ -246,7 +246,9 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 	return (
 		<Button
 			variant={isV3Page ? 'v3' : undefined}
-			onClick={async (): Promise<void> => onExecuteWithdraw(set_txStatusExecuteWithdraw, onSuccess)}
+			onClick={async (): Promise<void> =>
+				onExecuteWithdraw(set_txStatusExecuteWithdraw, onSuccess, maxWithdrawPossible().isLimited)
+			}
 			className={'w-full'}
 			isBusy={txStatusExecuteWithdraw.pending}
 			isDisabled={isButtonDisabled}>

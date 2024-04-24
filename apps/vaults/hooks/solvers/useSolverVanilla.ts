@@ -26,23 +26,29 @@ export function useSolverVanilla(): TSolverContext {
 	 ** It will set the request to the provided value, as it's required to get the quote, and will
 	 ** call getQuote to get the current quote for the provided request.
 	 **********************************************************************************************/
-	const init = useCallback(async (_request: TInitSolverArgs): Promise<TNormalizedBN | undefined> => {
-		if (isSolverDisabled(Solver.enum.Vanilla)) {
-			return undefined;
-		}
-		request.current = _request;
-		const estimateOut = await getVaultEstimateOut({
-			inputToken: toAddress(_request.inputToken.value),
-			outputToken: toAddress(_request.outputToken.value),
-			inputDecimals: _request.inputToken.decimals,
-			outputDecimals: _request.outputToken.decimals,
-			inputAmount: _request.inputAmount,
-			isDepositing: _request.isDepositing,
-			chainID: _request.chainID
-		});
-		latestQuote.current = estimateOut;
-		return latestQuote.current;
-	}, []);
+	const init = useCallback(
+		async (_request: TInitSolverArgs): Promise<TNormalizedBN | undefined> => {
+			if (isSolverDisabled(Solver.enum.Vanilla)) {
+				return undefined;
+			}
+			request.current = _request;
+			const estimateOut = await getVaultEstimateOut({
+				inputToken: toAddress(_request.inputToken.value),
+				outputToken: toAddress(_request.outputToken.value),
+				inputDecimals: _request.inputToken.decimals,
+				outputDecimals: _request.outputToken.decimals,
+				inputAmount: _request.inputAmount,
+				isDepositing: _request.isDepositing,
+				chainID: _request.chainID,
+				version: _request.version,
+				from: toAddress(_request.from),
+				maxLoss: maxLoss
+			});
+			latestQuote.current = estimateOut;
+			return latestQuote.current;
+		},
+		[maxLoss]
+	);
 
 	/* 🔵 - Yearn Finance ******************************************************
 	 ** Retrieve the allowance for the token to be used by the solver. This will
