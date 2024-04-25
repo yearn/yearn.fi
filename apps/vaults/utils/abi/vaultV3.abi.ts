@@ -106,8 +106,26 @@ export const VAULT_V3_ABI = [
 		type: 'event'
 	},
 	{
+		name: 'UpdateDepositLimitModule',
+		inputs: [{name: 'deposit_limit_module', type: 'address', indexed: true}],
+		anonymous: false,
+		type: 'event'
+	},
+	{
+		name: 'UpdateWithdrawLimitModule',
+		inputs: [{name: 'withdraw_limit_module', type: 'address', indexed: true}],
+		anonymous: false,
+		type: 'event'
+	},
+	{
 		name: 'UpdateDefaultQueue',
 		inputs: [{name: 'new_default_queue', type: 'address[]', indexed: false}],
+		anonymous: false,
+		type: 'event'
+	},
+	{
+		name: 'UpdateUseDefaultQueue',
+		inputs: [{name: 'use_default_queue', type: 'bool', indexed: false}],
 		anonymous: false,
 		type: 'event'
 	},
@@ -178,8 +196,29 @@ export const VAULT_V3_ABI = [
 	{
 		stateMutability: 'nonpayable',
 		type: 'function',
+		name: 'set_use_default_queue',
+		inputs: [{name: 'use_default_queue', type: 'bool'}],
+		outputs: []
+	},
+	{
+		stateMutability: 'nonpayable',
+		type: 'function',
 		name: 'set_deposit_limit',
 		inputs: [{name: 'deposit_limit', type: 'uint256'}],
+		outputs: []
+	},
+	{
+		stateMutability: 'nonpayable',
+		type: 'function',
+		name: 'set_deposit_limit_module',
+		inputs: [{name: 'deposit_limit_module', type: 'address'}],
+		outputs: []
+	},
+	{
+		stateMutability: 'nonpayable',
+		type: 'function',
+		name: 'set_withdraw_limit_module',
+		inputs: [{name: 'withdraw_limit_module', type: 'address'}],
 		outputs: []
 	},
 	{
@@ -192,7 +231,7 @@ export const VAULT_V3_ABI = [
 	{
 		stateMutability: 'nonpayable',
 		type: 'function',
-		name: 'set_profit_max_unlock_time',
+		name: 'setProfitMaxUnlockTime',
 		inputs: [{name: 'new_profit_max_unlock_time', type: 'uint256'}],
 		outputs: []
 	},
@@ -200,6 +239,26 @@ export const VAULT_V3_ABI = [
 		stateMutability: 'nonpayable',
 		type: 'function',
 		name: 'set_role',
+		inputs: [
+			{name: 'account', type: 'address'},
+			{name: 'role', type: 'uint256'}
+		],
+		outputs: []
+	},
+	{
+		stateMutability: 'nonpayable',
+		type: 'function',
+		name: 'add_role',
+		inputs: [
+			{name: 'account', type: 'address'},
+			{name: 'role', type: 'uint256'}
+		],
+		outputs: []
+	},
+	{
+		stateMutability: 'nonpayable',
+		type: 'function',
+		name: 'remove_role',
 		inputs: [
 			{name: 'account', type: 'address'},
 			{name: 'role', type: 'uint256'}
@@ -228,10 +287,11 @@ export const VAULT_V3_ABI = [
 		outputs: []
 	},
 	{stateMutability: 'nonpayable', type: 'function', name: 'accept_role_manager', inputs: [], outputs: []},
+	{stateMutability: 'view', type: 'function', name: 'isShutdown', inputs: [], outputs: [{name: '', type: 'bool'}]},
 	{
 		stateMutability: 'view',
 		type: 'function',
-		name: 'unlocked_shares',
+		name: 'unlockedShares',
 		inputs: [],
 		outputs: [{name: '', type: 'uint256'}]
 	},
@@ -239,13 +299,6 @@ export const VAULT_V3_ABI = [
 		stateMutability: 'view',
 		type: 'function',
 		name: 'pricePerShare',
-		inputs: [],
-		outputs: [{name: '', type: 'uint256'}]
-	},
-	{
-		stateMutability: 'view',
-		type: 'function',
-		name: 'availableDepositLimit',
 		inputs: [],
 		outputs: [{name: '', type: 'uint256'}]
 	},
@@ -553,8 +606,50 @@ export const VAULT_V3_ABI = [
 	{
 		stateMutability: 'view',
 		type: 'function',
+		name: 'maxWithdraw',
+		inputs: [
+			{name: 'owner', type: 'address'},
+			{name: 'max_loss', type: 'uint256'}
+		],
+		outputs: [{name: '', type: 'uint256'}]
+	},
+	{
+		stateMutability: 'view',
+		type: 'function',
+		name: 'maxWithdraw',
+		inputs: [
+			{name: 'owner', type: 'address'},
+			{name: 'max_loss', type: 'uint256'},
+			{name: 'strategies', type: 'address[]'}
+		],
+		outputs: [{name: '', type: 'uint256'}]
+	},
+	{
+		stateMutability: 'view',
+		type: 'function',
 		name: 'maxRedeem',
 		inputs: [{name: 'owner', type: 'address'}],
+		outputs: [{name: '', type: 'uint256'}]
+	},
+	{
+		stateMutability: 'view',
+		type: 'function',
+		name: 'maxRedeem',
+		inputs: [
+			{name: 'owner', type: 'address'},
+			{name: 'max_loss', type: 'uint256'}
+		],
+		outputs: [{name: '', type: 'uint256'}]
+	},
+	{
+		stateMutability: 'view',
+		type: 'function',
+		name: 'maxRedeem',
+		inputs: [
+			{name: 'owner', type: 'address'},
+			{name: 'max_loss', type: 'uint256'},
+			{name: 'strategies', type: 'address[]'}
+		],
 		outputs: [{name: '', type: 'uint256'}]
 	},
 	{
@@ -571,7 +666,7 @@ export const VAULT_V3_ABI = [
 		inputs: [{name: 'shares', type: 'uint256'}],
 		outputs: [{name: '', type: 'uint256'}]
 	},
-	{stateMutability: 'view', type: 'function', name: 'api_version', inputs: [], outputs: [{name: '', type: 'string'}]},
+	{stateMutability: 'view', type: 'function', name: 'apiVersion', inputs: [], outputs: [{name: '', type: 'string'}]},
 	{
 		stateMutability: 'view',
 		type: 'function',
@@ -646,6 +741,13 @@ export const VAULT_V3_ABI = [
 	{
 		stateMutability: 'view',
 		type: 'function',
+		name: 'use_default_queue',
+		inputs: [],
+		outputs: [{name: '', type: 'bool'}]
+	},
+	{
+		stateMutability: 'view',
+		type: 'function',
 		name: 'allowance',
 		inputs: [
 			{name: 'arg0', type: 'address'},
@@ -678,6 +780,20 @@ export const VAULT_V3_ABI = [
 	{
 		stateMutability: 'view',
 		type: 'function',
+		name: 'deposit_limit_module',
+		inputs: [],
+		outputs: [{name: '', type: 'address'}]
+	},
+	{
+		stateMutability: 'view',
+		type: 'function',
+		name: 'withdraw_limit_module',
+		inputs: [],
+		outputs: [{name: '', type: 'address'}]
+	},
+	{
+		stateMutability: 'view',
+		type: 'function',
 		name: 'roles',
 		inputs: [{name: 'arg0', type: 'address'}],
 		outputs: [{name: '', type: 'uint256'}]
@@ -703,7 +819,6 @@ export const VAULT_V3_ABI = [
 		inputs: [],
 		outputs: [{name: '', type: 'address'}]
 	},
-	{stateMutability: 'view', type: 'function', name: 'shutdown', inputs: [], outputs: [{name: '', type: 'bool'}]},
 	{stateMutability: 'view', type: 'function', name: 'name', inputs: [], outputs: [{name: '', type: 'string'}]},
 	{stateMutability: 'view', type: 'function', name: 'symbol', inputs: [], outputs: [{name: '', type: 'string'}]},
 	{
