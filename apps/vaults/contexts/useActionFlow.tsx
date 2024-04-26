@@ -315,7 +315,10 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 			const safeLimit = (toBigInt(limits?.maxRedeem) * 99n) / 100n;
 			return {
 				limit: toNormalizedBN(toBigInt(limits?.maxRedeem), props.currentVault.token.decimals),
-				safeLimit: toNormalizedBN(safeLimit, props.currentVault.token.decimals),
+				safeLimit:
+					vaultBalance.raw > toBigInt(limits?.maxRedeem)
+						? toNormalizedBN(safeLimit, props.currentVault.token.decimals)
+						: toNormalizedBN(toBigInt(limits?.maxRedeem), props.currentVault.token.decimals),
 				isLimited: vaultBalance.raw > toBigInt(limits?.maxRedeem)
 			};
 		}

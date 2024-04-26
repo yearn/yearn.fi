@@ -355,13 +355,12 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 		rewardTokenDecimal: 0,
 		earnedValue: 0
 	});
-	const vaultPrice =
+
+	const tokenPrice =
 		useYearnTokenPrice({
-			address: currentVault.address,
+			address: currentVault.token.address,
 			chainID: currentVault.chainID
-		}) ||
-		currentVault?.tvl?.price ||
-		0;
+		}) || 0;
 
 	/**********************************************************************************************
 	 ** Retrieve some data from the vault and the staking contract to display a comprehensive view
@@ -618,7 +617,7 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 					<ValueInVaultAsToken
 						currentVault={currentVault}
 						valueInToken={vaultData.valueInToken}
-						vaultPrice={vaultPrice}
+						vaultPrice={tokenPrice}
 					/>
 				</div>
 
