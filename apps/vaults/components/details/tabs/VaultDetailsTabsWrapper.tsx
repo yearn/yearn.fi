@@ -153,7 +153,9 @@ function ExplorerLink({explorerBaseURI, currentVaultAddress}: TExplorerLinkProps
 }
 
 export function VaultInfo({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const blockExplorer = getNetwork(currentVault.chainID).blockExplorers?.etherscan?.url;
+	const blockExplorer =
+		getNetwork(currentVault.chainID).blockExplorers?.etherscan?.url ||
+		getNetwork(currentVault.chainID).blockExplorers?.default.url;
 
 	return (
 		<div className={'grid w-2/3 grid-cols-1 gap-10 bg-neutral-100 p-4 md:p-8'}>

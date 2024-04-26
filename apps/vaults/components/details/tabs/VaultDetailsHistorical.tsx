@@ -49,7 +49,9 @@ function HarvestListRow({
 	harvest: TYDaemonVaultHarvest;
 	currentVault: TYDaemonVault;
 }): ReactElement {
-	const blockExplorer = getNetwork(currentVault.chainID).blockExplorers?.etherscan?.url;
+	const blockExplorer =
+		getNetwork(currentVault.chainID).blockExplorers?.etherscan?.url ||
+		getNetwork(currentVault.chainID).blockExplorers?.default.url;
 
 	return (
 		<div className={'grid grid-cols-1 border-b border-neutral-200 px-10 pb-4 md:grid-cols-12'}>
