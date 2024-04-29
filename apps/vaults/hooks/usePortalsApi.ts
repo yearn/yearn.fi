@@ -26,6 +26,7 @@ type TGetTransactionProps = Omit<TGetEstimateProps, 'params'> & {
 	params: Required<Pick<TGetEstimateProps, 'params'>['params']> & {
 		sender: TAddress;
 		validate?: string;
+		feePercentage?: string;
 	};
 };
 

@@ -187,6 +187,7 @@ export function useSolverPortals(): TSolverContext {
 					outputToken: `${network}:${toAddress(request.current.outputToken.value)}`,
 					inputAmount: toBigInt(request.current.inputAmount).toString(),
 					slippageTolerancePercentage: String(zapSlippage),
+					feePercentage: '0',
 					validate: 'true'
 				}
 			});
