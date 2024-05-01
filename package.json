@@ -19,7 +19,7 @@
   "dependencies": {
     "@builtbymom/web3": "^0.0.78",
     "@cowprotocol/cow-sdk": "2.1.0",
-    "@headlessui/react": "^1.7.18",
+    "@headlessui/react": "^1.7.19",
     "@rainbow-me/rainbowkit": "^2.0.2",
     "@tailwindcss/typography": "^0.5.10",
     "@wagmi/core": "^2.6.5",
