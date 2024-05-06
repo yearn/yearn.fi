@@ -39,13 +39,9 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 			<div className={'col-span-12 mt-0'}>
 				<div
 					className={cl('w-full bg-neutral-900 rounded-lg p-6 text-neutral-0', isV3Page ? 'rounded-lg' : '')}>
-					<b className={'text-lg'}>{'No extra, you are extra!'}</b>
+					<b className={'text-lg'}>{"Oh no... we're all out of rewards!"}</b>
 					<div className={'mt-2 flex flex-col gap-2'}>
-						<p>
-							{
-								'All the extra rewards have been distributed. You are still earning the base yield, so keep on staking!'
-							}
-						</p>
+						<p>{"But fear not, you're still earning that juicy base yield so keep on staking."}</p>
 					</div>
 				</div>
 			</div>
