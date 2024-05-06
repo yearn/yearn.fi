@@ -68,7 +68,7 @@ export function BoostMessage(props: {
 				<div className={'w-full rounded-lg bg-[#F8A908] p-2 md:px-6 md:py-4'}>
 					<b className={'text-base text-white'}>
 						{
-							"This vault is no longer receiving an extra rewards. But don't worry, you are still earning normal yield."
+							"This Vault is no longer reciving any extra rewards. But don't worry, you are still earning the normal yield!"
 						}
 					</b>
 				</div>
