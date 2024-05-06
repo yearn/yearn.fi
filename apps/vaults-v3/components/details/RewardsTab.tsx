@@ -27,12 +27,30 @@ import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVa
  ** An empty span will be returned if the current tab is not the 'Boost' tab or if no staking
  ** rewards are available.
  *************************************************************************************************/
-function BoostMessage(props: {currentVault: TYDaemonVault}): ReactElement {
+function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive: boolean}): ReactElement {
 	const hasVaultData = Boolean(props.currentVault.staking.available);
 	const vaultDataource = props.currentVault.staking.source;
 	const extraAPR = props.currentVault.apr.extra.stakingRewardsAPR;
 	const {pathname} = useRouter();
 	const isV3Page = pathname.startsWith(`/v3`);
+
+	if (hasVaultData && !props.hasStakingRewardsLive) {
+		return (
+			<div className={'col-span-12 mt-0'}>
+				<div
+					className={cl('w-full bg-neutral-900 rounded-lg p-6 text-neutral-0', isV3Page ? 'rounded-lg' : '')}>
+					<b className={'text-lg'}>{'No extra, you are extra!'}</b>
+					<div className={'mt-2 flex flex-col gap-2'}>
+						<p>
+							{
+								'All the extra rewards have been distributed. You are still earning the base yield, so keep on staking!'
+							}
+						</p>
+					</div>
+				</div>
+			</div>
+		);
+	}
 
 	if (hasVaultData && vaultDataource === 'OP Boost') {
 		return (
@@ -113,7 +131,13 @@ function BoostMessage(props: {currentVault: TYDaemonVault}): ReactElement {
  ** allow the user to stake, unstake, and claim rewards from the staking rewards contract.
  ** Based on the staking source, the UI might change a bit to display the correct information.
  *************************************************************************************************/
-export function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+export function RewardsTab({
+	currentVault,
+	hasStakingRewardsLive
+}: {
+	currentVault: TYDaemonVault;
+	hasStakingRewardsLive: boolean;
+}): ReactElement {
 	const {provider, isActive} = useWeb3();
 	const {getPrice} = useYearn();
 	const {vaultData, updateVaultData} = useVaultStakingData({currentVault});
@@ -276,7 +300,10 @@ export function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): React
 	return (
 		<>
 			<div className={'flex flex-col gap-6 bg-neutral-100 p-4 md:gap-4 md:p-8'}>
-				<BoostMessage currentVault={currentVault} />
+				<BoostMessage
+					hasStakingRewardsLive={hasStakingRewardsLive}
+					currentVault={currentVault}
+				/>
 
 				<div className={'flex flex-col gap-2'}>
 					<div>
@@ -305,7 +332,9 @@ export function RewardsTab({currentVault}: {currentVault: TYDaemonVault}): React
 							className={'w-full md:w-[200px]'}
 							onClick={(): unknown => (isApproved ? onStake() : onApprove())}
 							isBusy={stakeStatus.pending || approveStakeStatus.pending}
-							isDisabled={!isActive || toBigInt(vaultData.vaultBalanceOf.raw) <= 0n}>
+							isDisabled={
+								!isActive || toBigInt(vaultData.vaultBalanceOf.raw) <= 0n || !hasStakingRewardsLive
+							}>
 							{isApproved ? 'Stake' : 'Approve'}
 						</Button>
 					</div>

@@ -4,12 +4,13 @@ import {useRouter} from 'next/router';
 import {useBlockNumber} from 'wagmi';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {useAsyncTrigger} from '@builtbymom/web3/hooks/useAsyncTrigger';
-import {cl, toAddress, toNormalizedBN} from '@builtbymom/web3/utils';
+import {cl, decodeAsBigInt, toAddress, toNormalizedBN} from '@builtbymom/web3/utils';
 import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
 import {Listbox, Transition} from '@headlessui/react';
 import {useUpdateEffect} from '@react-hookz/web';
 import {SettingsPopover} from '@vaults/components/SettingsPopover';
 import {Flow, useActionFlow} from '@vaults/contexts/useActionFlow';
+import {STAKING_REWARDS_ABI} from '@vaults/utils/abi/stakingRewards.abi';
 import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
 import {VaultDetailsQuickActionsButtons} from '@vaults-v3/components/details/actions/QuickActionsButtons';
 import {VaultDetailsQuickActionsFrom} from '@vaults-v3/components/details/actions/QuickActionsFrom';
@@ -22,7 +23,7 @@ import {
 	tabs,
 	VaultDetailsTab
 } from '@vaults-v3/components/details/VaultActionsTabsWrapper';
-import {readContract} from '@wagmi/core';
+import {readContracts} from '@wagmi/core';
 import {IconChevron} from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
@@ -41,6 +42,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 	const {onSwitchSelectedOptions, isDepositing, actionParams} = useActionFlow();
 	const [possibleTabs, set_possibleTabs] = useState<TTabsOptions[]>([tabs[0], tabs[1]]);
 	const [unstakedBalance, set_unstakedBalance] = useState<TNormalizedBN | undefined>(undefined);
+	const [hasStakingRewardsLive, set_hasStakingRewardsLive] = useState(true);
 	const [currentTab, set_currentTab] = useState<TTabsOptions>(
 		getCurrentTab({
 			isDepositing,
@@ -59,14 +61,25 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 		if (!currentVault.staking.available) {
 			return;
 		}
-		const result = await readContract(retrieveConfig(), {
-			address: toAddress(currentVault.address),
-			abi: VAULT_V3_ABI,
-			chainId: currentVault.chainID,
-			functionName: 'balanceOf',
-			args: [toAddress(address)]
+		const result = await readContracts(retrieveConfig(), {
+			contracts: [
+				{
+					address: toAddress(currentVault.address),
+					abi: VAULT_V3_ABI,
+					chainId: currentVault.chainID,
+					functionName: 'balanceOf',
+					args: [toAddress(address)]
+				},
+				{
+					address: toAddress(currentVault.staking.address),
+					abi: STAKING_REWARDS_ABI,
+					chainId: currentVault.chainID,
+					functionName: 'periodFinish'
+				}
+			]
 		});
-		set_unstakedBalance(toNormalizedBN(result, currentVault.decimals));
+		set_unstakedBalance(toNormalizedBN(decodeAsBigInt(result[0]), currentVault.decimals));
+		set_hasStakingRewardsLive(decodeAsBigInt(result[1]) > Math.floor(Date.now() / 1000));
 	}, [currentVault, address]);
 
 	/**********************************************************************************************
@@ -252,7 +265,10 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 				<div className={'-mt-0.5 h-0.5 w-full bg-neutral-300'} />
 
 				{currentTab.value === 3 ? (
-					<RewardsTab currentVault={currentVault} />
+					<RewardsTab
+						currentVault={currentVault}
+						hasStakingRewardsLive={hasStakingRewardsLive}
+					/>
 				) : (
 					<div
 						className={
@@ -274,6 +290,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 				<BoostMessage
 					currentVault={currentVault}
 					currentTab={currentTab.value}
+					hasStakingRewardsLive={hasStakingRewardsLive}
 				/>
 			</div>
 		</>
