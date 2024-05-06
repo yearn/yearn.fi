@@ -62,7 +62,12 @@ export function BoostMessage(props: {
 	const stakingRewardSource = props.currentVault.staking.source;
 	const extraAPR = props.currentVault.apr.extra.stakingRewardsAPR;
 
-	if (props.currentTab === 0 && hasStakingRewards && !props.hasStakingRewardsLive) {
+	if (
+		props.currentTab === 0 &&
+		hasStakingRewards &&
+		!props.hasStakingRewardsLive &&
+		stakingRewardSource !== 'VeYFI'
+	) {
 		return (
 			<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
 				<div className={'w-full rounded-lg bg-[#F8A908] p-2 md:px-6 md:py-4'}>

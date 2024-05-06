@@ -34,7 +34,7 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 	const {pathname} = useRouter();
 	const isV3Page = pathname.startsWith(`/v3`);
 
-	if (hasVaultData && !props.hasStakingRewardsLive) {
+	if (hasVaultData && !props.hasStakingRewardsLive && vaultDataource !== 'VeYFI') {
 		return (
 			<div className={'col-span-12 mt-0'}>
 				<div
