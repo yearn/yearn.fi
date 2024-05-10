@@ -118,7 +118,8 @@ function AppHeader(props: {supportedNetworks: Chain[]}): ReactElement {
 				target: '_blank'
 			},
 			{path: 'https://blog.yearn.fi/', label: 'Blog', target: '_blank'},
-			{path: 'https://docs.yearn.fi/', label: 'Docs', target: '_blank'}
+			{path: 'https://docs.yearn.fi/', label: 'Docs', target: '_blank'},
+			{path: 'https://discord.gg/yearn', label: 'Support', target: '_blank'}
 		];
 	}, [pathname]);
 
