@@ -5,7 +5,7 @@ import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
 import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
 import {VaultsV3ListRow} from '@vaults-v3/components/list/VaultsV3ListRow';
-import {ALL_VAULTSV3_CATEGORIES_KEYS} from '@vaults-v3/constants';
+import {ALL_VAULTSV3_KINDS_KEYS} from '@vaults-v3/constants';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {SearchBar} from '@common/components/SearchBar';
 import {useYearn} from '@common/contexts/useYearn';
@@ -18,7 +18,7 @@ import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {vaults} = useYearn();
 	const {sortDirection, sortBy, search, onSearch, onChangeSortDirection, onChangeSortBy} = useQueryArguments({
-		defaultCategories: ALL_VAULTSV3_CATEGORIES_KEYS,
+		defaultTypes: ALL_VAULTSV3_KINDS_KEYS,
 		defaultPathname: '/v3/[chainID]/[address]'
 	});
 

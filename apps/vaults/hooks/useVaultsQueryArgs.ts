@@ -9,22 +9,29 @@ import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 
 type TQueryArgs = {
 	search: string | null | undefined;
+	types: string[] | null;
 	categories: string[] | null;
 	chains: number[] | null;
 	sortDirection: TSortDirection;
 	sortBy: TPossibleSortBy;
 	onSearch: (value: string) => void;
+	onChangeTypes: (value: string[] | null) => void;
 	onChangeCategories: (value: string[] | null) => void;
 	onChangeChains: (value: number[] | null) => void;
 	onChangeSortDirection: (value: TSortDirection | '') => void;
 	onChangeSortBy: (value: TPossibleSortBy | '') => void;
 	onReset: () => void;
 };
-function useQueryArguments(props: {defaultCategories?: string[]; defaultPathname?: string}): TQueryArgs {
+function useQueryArguments(props: {
+	defaultTypes?: string[];
+	defaultCategories?: string[];
+	defaultPathname?: string;
+}): TQueryArgs {
 	const allChains = useSupportedChains().map((chain): number => chain.id);
 	const searchParams = useSearchParams();
 	const router = useRouter();
 	const [search, set_search] = useState<string | null>(null);
+	const [types, set_types] = useState<string[] | null>(props.defaultTypes || []);
 	const [categories, set_categories] = useState<string[] | null>(props.defaultCategories || []);
 	const [chains, set_chains] = useState<number[] | null>(allChains || []);
 	const [sortDirection, set_sortDirection] = useState<string | null>(null);
@@ -38,6 +45,29 @@ function useQueryArguments(props: {defaultCategories?: string[]; defaultPathname
 					return;
 				}
 				set_search(_search);
+			}
+
+			if (_searchParams.has('types')) {
+				const typesParam = _searchParams.get('types');
+				const typesParamArray = typesParam?.split('_') || [];
+				if (typesParamArray.length === 0) {
+					set_types(props.defaultTypes || []);
+					return;
+				}
+				if (typesParamArray.length === props.defaultTypes?.length) {
+					const isEqual = typesParamArray.every((c): boolean => Boolean(props.defaultTypes?.includes(c)));
+					if (isEqual) {
+						set_types(props.defaultTypes);
+						return;
+					}
+				}
+				if (typesParamArray[0] === 'none') {
+					set_types([]);
+					return;
+				}
+				set_types(typesParamArray);
+			} else {
+				set_types(props.defaultTypes || []);
 			}
 
 			if (_searchParams.has('categories')) {
@@ -104,7 +134,7 @@ function useQueryArguments(props: {defaultCategories?: string[]; defaultPathname
 				set_sortDirection(_sortBy);
 			}
 		},
-		[props.defaultCategories, allChains]
+		[props.defaultTypes, props.defaultCategories, allChains]
 	);
 
 	useMountEffect((): void | VoidFunction => {
@@ -120,6 +150,7 @@ function useQueryArguments(props: {defaultCategories?: string[]; defaultPathname
 
 	return {
 		search,
+		types: (types || []) as string[],
 		categories: (categories || []) as string[],
 		chains: (chains || []) as number[],
 		sortDirection: (sortDirection || 'desc') as TSortDirection,
@@ -142,6 +173,38 @@ function useQueryArguments(props: {defaultCategories?: string[]; defaultPathname
 			queryArgs.search = value;
 			router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
 		},
+		onChangeTypes: (value): void => {
+			const queryArgs: TDict<string | string[] | undefined> = {};
+			for (const key in router.query) {
+				if (key !== 'types') {
+					queryArgs[key] = router.query[key];
+				}
+			}
+
+			set_types(value);
+			if (value === null) {
+				queryArgs.types = 'none';
+				router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
+				return;
+			}
+			if (value.length === 0) {
+				queryArgs.types = 'none';
+				router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
+				return;
+			}
+			if (value.length === props.defaultTypes?.length) {
+				const isEqual = value.every((category): boolean => Boolean(props.defaultTypes?.includes(category)));
+				if (isEqual) {
+					queryArgs.types = undefined;
+					delete queryArgs.types;
+					router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
+
+					return;
+				}
+			}
+			queryArgs.types = value.join('_');
+			router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
+		},
 		onChangeCategories: (value): void => {
 			const queryArgs: TDict<string | string[] | undefined> = {};
 			for (const key in router.query) {
@@ -161,15 +224,12 @@ function useQueryArguments(props: {defaultCategories?: string[]; defaultPathname
 				router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
 				return;
 			}
-			if (value.length === props.defaultCategories?.length) {
-				const isEqual = value.every((category): boolean =>
-					Boolean(props.defaultCategories?.includes(category))
-				);
+			if (value.length === props.defaultTypes?.length) {
+				const isEqual = value.every((category): boolean => Boolean(props.defaultTypes?.includes(category)));
 				if (isEqual) {
 					queryArgs.categories = undefined;
 					delete queryArgs.categories;
 					router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
-
 					return;
 				}
 			}
@@ -244,6 +304,7 @@ function useQueryArguments(props: {defaultCategories?: string[]; defaultPathname
 		},
 		onReset: (): void => {
 			set_search(null);
+			set_types(props.defaultTypes || []);
 			set_categories(props.defaultCategories || []);
 			set_chains(allChains || []);
 			set_sortDirection('desc');
@@ -252,6 +313,7 @@ function useQueryArguments(props: {defaultCategories?: string[]; defaultPathname
 			for (const key in router.query) {
 				if (
 					key !== 'search' &&
+					key !== 'types' &&
 					key !== 'categories' &&
 					key !== 'chains' &&
 					key !== 'sortDirection' &&

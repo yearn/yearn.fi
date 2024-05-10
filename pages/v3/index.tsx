@@ -9,7 +9,7 @@ import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
 import {Filters} from '@vaults-v3/components/Filters';
 import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
 import {VaultsV3ListRow} from '@vaults-v3/components/list/VaultsV3ListRow';
-import {ALL_VAULTSV3_CATEGORIES_KEYS} from '@vaults-v3/constants';
+import {ALL_VAULTSV3_CATEGORIES_KEYS, ALL_VAULTSV3_KINDS_KEYS} from '@vaults-v3/constants';
 import {V3Mask} from '@vaults-v3/Mark';
 import {Counter} from '@common/components/Counter';
 import {useYearn} from '@common/contexts/useYearn';
@@ -80,7 +80,7 @@ function PortfolioCard(): ReactElement {
 
 	if (!isActive) {
 		return (
-			<div className={'col-span-12 w-full rounded-3xl bg-neutral-100 p-6 md:col-span-5'}>
+			<div className={'col-span-12 w-full rounded-3xl bg-neutral-100 p-6 md:col-span-4'}>
 				<strong
 					className={'block pb-2 text-3xl font-black text-neutral-900 md:pb-4 md:text-4xl md:leading-[48px]'}>
 					{'Portfolio'}
@@ -119,7 +119,7 @@ function PortfolioCard(): ReactElement {
 		);
 	}
 	return (
-		<div className={'col-span-12 w-full rounded-3xl bg-neutral-100 p-6 md:col-span-5'}>
+		<div className={'col-span-12 w-full rounded-3xl bg-neutral-100 p-6 md:col-span-4'}>
 			<strong className={'block pb-2 text-3xl font-black text-neutral-900 md:pb-4 md:text-4xl md:leading-[48px]'}>
 				{'Portfolio'}
 			</strong>
@@ -143,26 +143,29 @@ function ListOfVaults(): ReactElement {
 	const {isLoadingVaultList} = useYearn();
 	const {
 		search,
-		categories,
+		types,
 		chains,
+		categories,
 		sortDirection,
 		sortBy,
 		onSearch,
+		onChangeTypes,
 		onChangeCategories,
 		onChangeChains,
 		onChangeSortDirection,
 		onChangeSortBy,
 		onReset
 	} = useQueryArguments({
-		defaultCategories: [ALL_VAULTSV3_CATEGORIES_KEYS[0]],
+		defaultTypes: [ALL_VAULTSV3_KINDS_KEYS[0]],
+		defaultCategories: ALL_VAULTSV3_CATEGORIES_KEYS,
 		defaultPathname: `/v3`
 	});
-	const {activeVaults} = useVaultFilter(categories, chains, true);
+	const {activeVaults} = useVaultFilter(types, chains, true);
 
-	/* 🔵 - Yearn Finance **************************************************************************
+	/**********************************************************************************************
 	 **	Then, on the activeVaults list, we apply the search filter. The search filter is
 	 **	implemented as a simple string.includes() on the vault name.
-	 **********************************************************************************************/
+	 *********************************************************************************************/
 	const searchedVaultsToDisplay = useMemo((): TYDaemonVault[] => {
 		if (!search) {
 			return activeVaults;
@@ -178,32 +181,35 @@ function ListOfVaults(): ReactElement {
 		return filtered;
 	}, [activeVaults, search]);
 
-	/* 🔵 - Yearn Finance **************************************************************************
+	/**********************************************************************************************
 	 **	Then, once we have reduced the list of vaults to display, we can sort them. The sorting
 	 **	is done via a custom method that will sort the vaults based on the sortBy and
 	 **	sortDirection values.
-	 **********************************************************************************************/
+	 *********************************************************************************************/
 	const sortedVaultsToDisplay = useSortVaults([...searchedVaultsToDisplay], sortBy, sortDirection);
 
-	/* 🔵 - Yearn Finance **************************************************************************
+	/**********************************************************************************************
 	 **	The VaultList component is memoized to prevent it from being re-created on every render.
 	 **	It contains either the list of vaults, is some are available, or a message to the user.
-	 **********************************************************************************************/
+	 *********************************************************************************************/
 	const VaultList = useMemo((): [ReactNode, ReactNode, ReactNode, ReactNode] | ReactNode => {
 		const filteredByChains = sortedVaultsToDisplay.filter(
 			({chainID}): boolean => chains?.includes(chainID) || false
 		);
+		const filteredByCategories = filteredByChains.filter(
+			({category}): boolean => categories?.includes(category) || false
+		);
 
-		if (isLoadingVaultList || isZero(filteredByChains.length) || !chains || chains.length === 0) {
+		if (isLoadingVaultList || isZero(filteredByCategories.length) || !chains || chains.length === 0) {
 			return (
 				<VaultsListEmpty
 					isLoading={isLoadingVaultList}
-					sortedVaultsToDisplay={filteredByChains}
+					sortedVaultsToDisplay={filteredByCategories}
 					currentSearch={search || ''}
-					currentCategories={categories}
+					currentCategories={types}
 					currentChains={chains}
 					onReset={onReset}
-					defaultCategories={ALL_VAULTSV3_CATEGORIES_KEYS}
+					defaultCategories={ALL_VAULTSV3_KINDS_KEYS}
 				/>
 			);
 		}
@@ -212,7 +218,7 @@ function ListOfVaults(): ReactElement {
 		const multi: ReactNode[] = [];
 		const single: ReactNode[] = [];
 		const all: ReactNode[] = [];
-		for (const vault of filteredByChains) {
+		for (const vault of filteredByCategories) {
 			const hasBalance = getBalance({address: vault.address, chainID: vault.chainID}).raw > 0n;
 			const hasStakingBalance = getBalance({address: vault.staking.address, chainID: vault.chainID}).raw > 0n;
 			if (hasBalance || hasStakingBalance) {
@@ -250,7 +256,7 @@ function ListOfVaults(): ReactElement {
 		}
 
 		return [holdings, multi, single, all];
-	}, [categories, chains, getBalance, isLoadingVaultList, onReset, search, sortedVaultsToDisplay]);
+	}, [types, categories, chains, getBalance, isLoadingVaultList, onReset, search, sortedVaultsToDisplay]);
 
 	function renderVaultList(): ReactNode {
 		if (Children.count(VaultList) === 1) {
@@ -302,10 +308,12 @@ function ListOfVaults(): ReactElement {
 	return (
 		<Fragment>
 			<Filters
+				types={types}
 				categories={categories}
 				searchValue={search || ''}
 				chains={chains}
 				onChangeChains={onChangeChains}
+				onChangeTypes={onChangeTypes}
 				onChangeCategories={onChangeCategories}
 				onSearch={onSearch}
 			/>

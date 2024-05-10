@@ -128,21 +128,21 @@ function ListOfVaults(): ReactElement {
 	const {isLoadingVaultList} = useYearn();
 	const {
 		search,
-		categories,
+		types,
 		chains,
 		sortDirection,
 		sortBy,
 		onSearch,
-		onChangeCategories,
+		onChangeTypes,
 		onChangeChains,
 		onChangeSortDirection,
 		onChangeSortBy,
 		onReset
 	} = useQueryArguments({
-		defaultCategories: ALL_VAULTS_CATEGORIES_KEYS,
+		defaultTypes: ALL_VAULTS_CATEGORIES_KEYS,
 		defaultPathname: '/vaults'
 	});
-	const {activeVaults, migratableVaults, retiredVaults} = useVaultFilter(categories, chains);
+	const {activeVaults, migratableVaults, retiredVaults} = useVaultFilter(types, chains);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	 **	Then, on the activeVaults list, we apply the search filter. The search filter is
@@ -189,12 +189,12 @@ function ListOfVaults(): ReactElement {
 				<VaultListOptions />
 			</div>
 			<ListHero
-				categories={categories}
+				categories={types}
 				possibleCategories={ALL_VAULTS_CATEGORIES}
 				searchValue={search || ''}
 				chains={chains}
 				onChangeChains={onChangeChains}
-				onChangeCategories={onChangeCategories}
+				onChangeCategories={onChangeTypes}
 				onSearch={onSearch}
 			/>
 
@@ -226,7 +226,7 @@ function ListOfVaults(): ReactElement {
 					isLoading={isLoadingVaultList}
 					sortedVaultsToDisplay={filteredByChains}
 					currentSearch={search || ''}
-					currentCategories={categories}
+					currentCategories={types}
 					currentChains={chains}
 					onReset={onReset}
 					defaultCategories={ALL_VAULTS_CATEGORIES_KEYS}
