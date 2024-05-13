@@ -153,7 +153,7 @@ export function useSortVaults(
 	const stringifiedVaultList = serialize(vaultList);
 	const sortedVaults = useMemo((): TYDaemonVaults => {
 		const sortResult = deserialize(stringifiedVaultList) as TYDaemonVaults;
-		console.log(sortBy);
+
 		if (sortDirection === '') {
 			return sortResult;
 		}
