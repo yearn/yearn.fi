@@ -1,7 +1,7 @@
 import {createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState} from 'react';
 import {useRouter} from 'next/router';
-import {useReadContracts} from 'wagmi';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {useAsyncTrigger} from '@builtbymom/web3/hooks/useAsyncTrigger';
 import {
 	decodeAsBigInt,
 	isEthAddress,
@@ -12,11 +12,13 @@ import {
 	toNormalizedBN,
 	zeroNormalizedBN
 } from '@builtbymom/web3/utils';
+import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
 import {useMountEffect, useUpdateEffect} from '@react-hookz/web';
 import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
 import {Solver} from '@vaults/types/solvers';
 import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
 import {setZapOption} from '@vaults/utils/zapOptions';
+import {readContracts, simulateContract} from '@wagmi/core';
 import {VAULT_ABI} from '@yearn-finance/web-lib/utils/abi/vault.abi';
 import {
 	ETH_TOKEN_ADDRESS,
@@ -181,6 +183,7 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 	const [possibleZapOptionsFrom, set_possibleZapOptionsFrom] = useState<TDropdownOption[]>([]);
 	const [possibleOptionsTo, set_possibleOptionsTo] = useState<TDropdownOption[]>([]);
 	const [possibleZapOptionsTo, set_possibleZapOptionsTo] = useState<TDropdownOption[]>([]);
+	const [limits, set_limits] = useState<{maxDeposit: bigint; maxRedeem: bigint} | undefined>(undefined);
 
 	/**********************************************************************************************
 	 ** Based on the onchain data, the vault might have different limits both in general and for
@@ -190,43 +193,71 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 	 ** - maxDeposit -> vault.depositLimit() or vault.maxDeposit(user)
 	 ** - maxRedeem -> vault.maxRedeem(user, maxLoss) or vault.balanceOf(user)
 	 *********************************************************************************************/
-	const {data: limits} = useReadContracts({
-		contracts: [
-			{
-				address: props.currentVault.address,
+	useAsyncTrigger(async (): Promise<void> => {
+		if (!address || isZeroAddress(address) || !props.currentVault) {
+			return;
+		}
+		const results = await readContracts(retrieveConfig(), {
+			contracts: [
+				{
+					address: props.currentVault.address,
+					abi: VAULT_ABI,
+					chainId: props.currentVault.chainID,
+					functionName: 'depositLimit'
+				},
+				{
+					address: props.currentVault.address,
+					abi: VAULT_V3_ABI,
+					chainId: props.currentVault.chainID,
+					functionName: 'maxDeposit',
+					args: [toAddress(address)]
+				},
+				{
+					address: props.currentVault.address,
+					abi: VAULT_V3_ABI,
+					chainId: props.currentVault.chainID,
+					functionName: 'maxRedeem',
+					args: [toAddress(address), toBigInt(maxLoss)]
+				},
+				{
+					address: props.currentVault.address,
+					abi: VAULT_V3_ABI,
+					chainId: props.currentVault.chainID,
+					functionName: 'balanceOf',
+					args: [toAddress(address)]
+				}
+			]
+		});
+		const balanceOf = decodeAsBigInt(results[3], 0n);
+		try {
+			const maxEffectiveWithdraw = await simulateContract(retrieveConfig(), {
 				abi: VAULT_ABI,
-				chainId: props.currentVault.chainID,
-				functionName: 'depositLimit'
-			},
-			{
 				address: props.currentVault.address,
-				abi: VAULT_V3_ABI,
 				chainId: props.currentVault.chainID,
-				functionName: 'maxDeposit',
-				args: [toAddress(address)]
-			},
-			{
-				address: props.currentVault.address,
-				abi: VAULT_V3_ABI,
-				chainId: props.currentVault.chainID,
-				functionName: 'maxRedeem',
-				args: [toAddress(address), toBigInt(maxLoss)]
-			},
-			{
-				address: props.currentVault.address,
-				abi: VAULT_V3_ABI,
-				chainId: props.currentVault.chainID,
-				functionName: 'balanceOf',
-				args: [toAddress(address)]
+				functionName: 'withdraw',
+				args: [balanceOf]
+			});
+
+			if (props.currentVault.version.startsWith('3')) {
+				set_limits({
+					maxDeposit: decodeAsBigInt(results[0], decodeAsBigInt(results[1], 0n)),
+					maxRedeem: decodeAsBigInt(results[2], decodeAsBigInt(results[3], 0n))
+				});
+			} else {
+				set_limits({
+					maxDeposit: decodeAsBigInt(results[0], decodeAsBigInt(results[1], 0n)),
+					maxRedeem: maxEffectiveWithdraw
+						? maxEffectiveWithdraw.result
+						: decodeAsBigInt(results[2], decodeAsBigInt(results[3], 0n))
+				});
 			}
-		],
-		query: {
-			select: (results): {maxDeposit: bigint; maxRedeem: bigint} => ({
+		} catch (error) {
+			set_limits({
 				maxDeposit: decodeAsBigInt(results[0], decodeAsBigInt(results[1], 0n)),
 				maxRedeem: decodeAsBigInt(results[2], decodeAsBigInt(results[3], 0n))
-			})
+			});
 		}
-	});
+	}, [props.currentVault, address, maxLoss]);
 
 	/**********************************************************************************************
 	 ** This reducer is used to manage the actionParams state variable and update the different
@@ -320,6 +351,13 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 						? toNormalizedBN(safeLimit, props.currentVault.token.decimals)
 						: toNormalizedBN(toBigInt(limits?.maxRedeem), props.currentVault.token.decimals),
 				isLimited: vaultBalance.raw > toBigInt(limits?.maxRedeem)
+			};
+		}
+		if (toBigInt(limits?.maxRedeem) < toBigInt(vaultBalance.raw)) {
+			return {
+				limit: toNormalizedBN(toBigInt(limits?.maxRedeem), props.currentVault.token.decimals),
+				safeLimit: toNormalizedBN(toBigInt(limits?.maxRedeem), props.currentVault.token.decimals),
+				isLimited: true
 			};
 		}
 		return {limit: vaultBalance, safeLimit: vaultBalance, isLimited: false};
@@ -610,6 +648,18 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 	);
 
 	/**********************************************************************************************
+	 ** FLOW: Update selectedOptionFrom
+	 **
+	 ** Update the amount property with the new one provided by the user.
+	 **********************************************************************************************/
+	const onChangeAmount = useCallback((newAmount: TNormalizedBN | undefined): void => {
+		actionParamsDispatcher({
+			type: 'amount',
+			payload: {amount: newAmount}
+		});
+	}, []);
+
+	/**********************************************************************************************
 	 ** FLOW: Init the possibleOptionsFrom and possibleOptionsTo arrays and the selectedOptionFrom
 	 ** and selectedOptionTo.
 	 **
@@ -864,12 +914,7 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 			possibleOptionsFrom: [...actionParams.possibleOptionsFrom, ...possibleZapOptionsFrom],
 			possibleOptionsTo: [...actionParams.possibleOptionsTo, ...possibleZapOptionsTo],
 			actionParams,
-			onChangeAmount: (newAmount: TNormalizedBN | undefined): void => {
-				actionParamsDispatcher({
-					type: 'amount',
-					payload: {amount: newAmount}
-				});
-			},
+			onChangeAmount,
 			onUpdateSelectedOptionFrom: (newSelectedOptionFrom: TDropdownOption): void => {
 				updateParams(newSelectedOptionFrom, actionParams?.selectedOptionTo as TDropdownOption);
 			},
@@ -887,6 +932,7 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 			possibleZapOptionsFrom,
 			possibleZapOptionsTo,
 			actionParams,
+			onChangeAmount,
 			onSwitchSelectedOptions,
 			isDepositing,
 			maxDepositPossible,
