@@ -16,7 +16,7 @@ export function useSortVaults(
 	sortBy: TPossibleSortBy,
 	sortDirection: TSortDirection
 ): TYDaemonVaults {
-	const {getBalance} = useYearn();
+	const {getBalance, getPrice} = useYearn();
 
 	const sortedByName = useCallback(
 		(): TYDaemonVaults =>
@@ -100,6 +100,9 @@ export function useSortVaults(
 			let aStakedBalance = 0;
 			let bStakedBalance = 0;
 
+			let aStakedValue = 0;
+			let bStakedValue = 0;
+
 			if (a.staking.available) {
 				aStakedBalance = Number(getBalance({address: a.staking.address, chainID: a.chainID})?.normalized || 0);
 			}
@@ -107,12 +110,22 @@ export function useSortVaults(
 				bStakedBalance = Number(getBalance({address: b.staking.address, chainID: b.chainID})?.normalized || 0);
 			}
 
-			if (sortDirection === 'asc') {
-				return aDepositedBalance + aStakedBalance - (bDepositedBalance + bStakedBalance);
+			if (aStakedBalance) {
+				const aPrice = getPrice({address: a.address, chainID: a.chainID}).normalized || 0;
+				aStakedValue = aPrice * (aDepositedBalance + aStakedBalance);
 			}
-			return bDepositedBalance + bStakedBalance - (aDepositedBalance + aStakedBalance);
+
+			if (bStakedBalance) {
+				const bPrice = getPrice({address: b.address, chainID: b.chainID}).normalized || 0;
+				bStakedValue = bPrice * (bDepositedBalance + bStakedBalance);
+			}
+
+			if (sortDirection === 'asc') {
+				return aStakedValue - bStakedValue;
+			}
+			return bStakedValue - aStakedValue;
 		});
-	}, [vaultList, getBalance, sortDirection]);
+	}, [vaultList, getBalance, sortDirection, getPrice]);
 
 	const sortedByAvailable = useCallback((): TYDaemonVaults => {
 		return vaultList.sort((a, b): number => {
@@ -140,6 +153,7 @@ export function useSortVaults(
 	const stringifiedVaultList = serialize(vaultList);
 	const sortedVaults = useMemo((): TYDaemonVaults => {
 		const sortResult = deserialize(stringifiedVaultList) as TYDaemonVaults;
+
 		if (sortDirection === '') {
 			return sortResult;
 		}
