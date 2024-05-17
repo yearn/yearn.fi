@@ -340,7 +340,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 				</div>
 			)}
 
-			{!currentVault?.migration.available && currentVault?.info?.isRetired && (
+			{!currentVault?.migration.available && currentVault?.info?.isRetired && !currentVault.info.uiNotice && (
 				<div
 					aria-label={'Deprecation Warning'}
 					className={'col-span-12 mt-10'}>
