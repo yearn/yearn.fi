@@ -6,7 +6,7 @@ import {isAutomatedVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaul
 import {useYearn} from '@common/contexts/useYearn';
 
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TAddress, TDict} from '@builtbymom/web3/types';
+import type {TDict} from '@builtbymom/web3/types';
 
 export function useFilteredVaults(
 	vaultMap: TDict<TYDaemonVault>,
@@ -72,12 +72,21 @@ export function useVaultFilter(
 	);
 
 	const filterMigrationCallback = useCallback(
-		(address: TAddress, chainID: number): boolean => {
-			const holdingBalance = getBalance({address, chainID});
-			const holdingPrice = getPrice({address, chainID});
-			const hasValidPrice = holdingPrice.raw > 0n;
-			const hasValidBalance = holdingBalance.raw > 0n;
-			const holdingValue = holdingBalance.normalized * holdingPrice.normalized;
+		(vault: TYDaemonVault): boolean => {
+			const vaultBalance = getBalance({address: vault.address, chainID: vault.chainID});
+			const vaultPrice = getPrice({address: vault.address, chainID: vault.chainID});
+
+			if (vault.staking.available) {
+				const stakingBalance = getBalance({address: vault.staking.address, chainID: vault.chainID});
+				const hasValidStakedBalance = stakingBalance.raw > 0n;
+				if (hasValidStakedBalance) {
+					return true;
+				}
+			}
+
+			const hasValidPrice = vaultPrice.raw > 0n;
+			const hasValidBalance = vaultBalance.raw > 0n;
+			const holdingValue = vaultBalance.normalized * vaultPrice.normalized;
 			if (hasValidBalance && (hasValidPrice ? holdingValue >= 0.01 : true)) {
 				return true;
 			}
@@ -102,24 +111,20 @@ export function useVaultFilter(
 	);
 
 	//V2 Filtered Vaults
-	const boostedVaults = useFilteredVaults(vaults, ({apr}): boolean => apr.extra.stakingRewardsAPR > 0);
-	const curveVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Curve');
-	const prismaVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Prisma');
-	const velodromeVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Velodrome');
-	const aerodromeVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Aerodrome');
-	const stablesVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Stablecoin');
-	const balancerVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Balancer');
-	const cryptoVaults = useFilteredVaults(vaults, ({category}): boolean => category === 'Volatile');
+	const boostedVaults = useFilteredVaults(vaults, ({apr}) => apr.extra.stakingRewardsAPR > 0);
+	const curveVaults = useFilteredVaults(vaults, ({category}) => category === 'Curve');
+	const prismaVaults = useFilteredVaults(vaults, ({category}) => category === 'Prisma');
+	const velodromeVaults = useFilteredVaults(vaults, ({category}) => category === 'Velodrome');
+	const aerodromeVaults = useFilteredVaults(vaults, ({category}) => category === 'Aerodrome');
+	const stablesVaults = useFilteredVaults(vaults, ({category}) => category === 'Stablecoin');
+	const balancerVaults = useFilteredVaults(vaults, ({category}) => category === 'Balancer');
+	const cryptoVaults = useFilteredVaults(vaults, ({category}) => category === 'Volatile');
 	const curveFactoryVaults = useFilteredVaults(
 		vaults,
-		(vault): boolean => vault.category === 'Curve' && isAutomatedVault(vault)
+		vault => vault.category === 'Curve' && isAutomatedVault(vault)
 	);
-	const migratableVaults = useFilteredVaults(vaultsMigrations, ({address, chainID}): boolean =>
-		filterMigrationCallback(address, chainID)
-	);
-	const retiredVaults = useFilteredVaults(vaultsRetired, ({address, chainID}): boolean =>
-		filterMigrationCallback(address, chainID)
-	);
+	const migratableVaults = useFilteredVaults(vaultsMigrations, v => filterMigrationCallback(v));
+	const retiredVaults = useFilteredVaults(vaultsRetired, v => filterMigrationCallback(v));
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	 **	First, we need to determine in which category we are. The activeVaults function will
