@@ -30,6 +30,14 @@ export function useYearnTokens({
 	const {currentNetworkTokenList} = useTokenList();
 	const {safeChainID} = useChainID();
 	const [isReady, set_isReady] = useState(false);
+	const allVaults = useMemo(
+		(): TYDaemonVault[] => [
+			...Object.values(vaults),
+			...Object.values(vaultsMigrations),
+			...Object.values(vaultsRetired)
+		],
+		[vaults, vaultsMigrations, vaultsRetired]
+	);
 
 	/**************************************************************************
 	 ** Define the list of available tokens. This list is retrieved from the
@@ -85,7 +93,7 @@ export function useYearnTokens({
 			tokens[key] = token;
 		}
 
-		Object.values(vaults || {}).forEach((vault?: TYDaemonVault): void => {
+		allVaults.forEach((vault?: TYDaemonVault): void => {
 			if (!vault) {
 				return;
 			}
@@ -198,52 +206,16 @@ export function useYearnTokens({
 
 		set_isReady(true);
 		return tokens;
-	}, [isLoadingVaultList, vaults, yearnTokens]);
-
-	//List all vaults with a possible migration
-	const migratableTokens = useMemo((): TUseBalancesTokens[] => {
-		const tokens: TUseBalancesTokens[] = [];
-		Object.values(vaultsMigrations || {}).forEach((vault?: TYDaemonVault): void => {
-			if (!vault) {
-				return;
-			}
-			tokens.push({
-				address: vault.address,
-				chainID: vault.chainID,
-				symbol: vault.symbol,
-				name: vault.name,
-				decimals: vault.decimals
-			});
-		});
-		return tokens;
-	}, [vaultsMigrations]);
-
-	//List retried tokens
-	const retiredTokens = useMemo((): TUseBalancesTokens[] => {
-		const tokens: TUseBalancesTokens[] = [];
-		Object.values(vaultsRetired || {}).forEach((vault?: TYDaemonVault): void => {
-			if (!vault) {
-				return;
-			}
-			tokens.push({
-				address: vault.address,
-				chainID: vault.chainID,
-				symbol: vault.symbol,
-				name: vault.name,
-				decimals: vault.decimals
-			});
-		});
-		return tokens;
-	}, [vaultsRetired]);
+	}, [isLoadingVaultList, allVaults, yearnTokens]);
 
 	const allTokens = useMemo((): TUseBalancesTokens[] => {
 		if (!isReady) {
 			return [];
 		}
 		const fromAvailableTokens = Object.values(availableTokens);
-		const tokens = [...fromAvailableTokens, ...migratableTokens, ...retiredTokens, ...availableTokenListTokens];
+		const tokens = [...fromAvailableTokens, ...availableTokenListTokens];
 		return tokens;
-	}, [isReady, availableTokens, migratableTokens, retiredTokens, availableTokenListTokens]);
+	}, [isReady, availableTokens, availableTokenListTokens]);
 
 	/**************************************************************************************************
 	 ** The following function can be used to clone the tokens list for the forknet. This is useful

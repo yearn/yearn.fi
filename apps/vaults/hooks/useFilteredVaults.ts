@@ -74,8 +74,6 @@ export function useVaultFilter(
 	const filterMigrationCallback = useCallback(
 		(vault: TYDaemonVault): boolean => {
 			const vaultBalance = getBalance({address: vault.address, chainID: vault.chainID});
-			const vaultPrice = getPrice({address: vault.address, chainID: vault.chainID});
-
 			if (vault.staking.available) {
 				const stakingBalance = getBalance({address: vault.staking.address, chainID: vault.chainID});
 				const hasValidStakedBalance = stakingBalance.raw > 0n;
@@ -84,15 +82,13 @@ export function useVaultFilter(
 				}
 			}
 
-			const hasValidPrice = vaultPrice.raw > 0n;
 			const hasValidBalance = vaultBalance.raw > 0n;
-			const holdingValue = vaultBalance.normalized * vaultPrice.normalized;
-			if (hasValidBalance && (hasValidPrice ? holdingValue >= 0.01 : true)) {
+			if (hasValidBalance) {
 				return true;
 			}
 			return false;
 		},
-		[getBalance, getPrice]
+		[getBalance]
 	);
 
 	// Specific filter
