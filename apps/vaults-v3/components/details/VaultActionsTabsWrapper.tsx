@@ -324,8 +324,8 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 	}, [currentVault?.migration?.available, currentVault?.info?.isRetired, actionParams.isReady, hasStakingRewards]);
 
 	const isSonneRetiredVault =
-		toAddress(address) === toAddress(`0x5b977577eb8a480f63e11fc615d6753adb8652ae`) ||
-		toAddress(address) === toAddress(`0xad17a225074191d5c8a37b50fda1ae278a2ee6a2`);
+		toAddress(currentVault.address) === toAddress(`0x5b977577eb8a480f63e11fc615d6753adb8652ae`) ||
+		toAddress(currentVault.address) === toAddress(`0xad17a225074191d5c8a37b50fda1ae278a2ee6a2`);
 	return (
 		<>
 			{currentVault?.migration?.available && (
