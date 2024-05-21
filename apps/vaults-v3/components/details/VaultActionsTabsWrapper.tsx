@@ -323,6 +323,9 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 		}
 	}, [currentVault?.migration?.available, currentVault?.info?.isRetired, actionParams.isReady, hasStakingRewards]);
 
+	const isSonneRetiredVault =
+		toAddress(address) === toAddress(`0x5b977577eb8a480f63e11fc615d6753adb8652ae`) ||
+		toAddress(address) === toAddress(`0xad17a225074191d5c8a37b50fda1ae278a2ee6a2`);
 	return (
 		<>
 			{currentVault?.migration?.available && (
@@ -340,20 +343,23 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 				</div>
 			)}
 
-			{!currentVault?.migration.available && currentVault?.info?.isRetired && !currentVault.info.uiNotice && (
-				<div
-					aria-label={'Deprecation Warning'}
-					className={'col-span-12 mt-10'}>
-					<div className={'w-full rounded-3xl bg-neutral-900 p-6 text-neutral-0'}>
-						<b className={'text-lg'}>{'This Vault is no longer supported (oh no).'}</b>
-						<p className={'mt-2'}>
-							{
-								'They say all good things must come to an end, and sadly this vault is deprecated and will no longer earn yield or be supported by Yearn. Please withdraw your funds (which you could deposit into another Vault. Just saying…)'
-							}
-						</p>
+			{!currentVault?.migration.available &&
+				currentVault?.info?.isRetired &&
+				!currentVault.info.uiNotice &&
+				!isSonneRetiredVault && (
+					<div
+						aria-label={'Deprecation Warning'}
+						className={'col-span-12 mt-10'}>
+						<div className={'w-full rounded-3xl bg-neutral-900 p-6 text-neutral-0'}>
+							<b className={'text-lg'}>{'This Vault is no longer supported (oh no).'}</b>
+							<p className={'mt-2'}>
+								{
+									'They say all good things must come to an end, and sadly this vault is deprecated and will no longer earn yield or be supported by Yearn. Please withdraw your funds (which you could deposit into another Vault. Just saying…)'
+								}
+							</p>
+						</div>
 					</div>
-				</div>
-			)}
+				)}
 
 			{currentVault?.info.uiNotice && (
 				<div

@@ -127,6 +127,9 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 		}
 	}, [currentVault?.migration?.available, currentVault?.info?.isRetired, actionParams.isReady, hasStakingRewards]);
 
+	const isSonneRetiredVault =
+		toAddress(address) === toAddress(`0x5b977577eb8a480f63e11fc615d6753adb8652ae`) ||
+		toAddress(address) === toAddress(`0xad17a225074191d5c8a37b50fda1ae278a2ee6a2`);
 	return (
 		<>
 			{currentVault?.migration?.available && (
@@ -144,7 +147,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 				</div>
 			)}
 
-			{!currentVault?.migration.available && currentVault?.info?.isRetired && (
+			{!currentVault?.migration.available && currentVault?.info?.isRetired && !isSonneRetiredVault && (
 				<div
 					aria-label={'Deprecation Warning'}
 					className={'col-span-12 mt-10'}>

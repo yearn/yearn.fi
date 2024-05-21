@@ -1,6 +1,6 @@
 import {Fragment, useMemo} from 'react';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {isZero} from '@builtbymom/web3/utils';
+import {isZero, toAddress} from '@builtbymom/web3/utils';
 import {VaultListOptions} from '@vaults/components/list/VaultListOptions';
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
 import {VaultsListInternalMigrationRow} from '@vaults/components/list/VaultsListInternalMigrationRow';
@@ -92,6 +92,11 @@ function ListOfRetiredVaults({retiredVaults}: {retiredVaults: TYDaemonVaults}): 
 			<div>
 				{retiredVaults
 					.filter((vault): boolean => !!vault)
+					.filter(
+						({address}): boolean =>
+							toAddress(address) !== toAddress(`0x5b977577eb8a480f63e11fc615d6753adb8652ae`) ||
+							toAddress(address) !== toAddress(`0xad17a225074191d5c8a37b50fda1ae278a2ee6a2`)
+					)
 					.map(
 						(vault): ReactNode => (
 							<VaultsListRetired
