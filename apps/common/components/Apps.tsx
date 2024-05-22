@@ -8,7 +8,6 @@ import {LogoYearn} from '@common/icons/LogoYearn';
 
 import type {ReactElement} from 'react';
 import type {TMenu} from '@yearn-finance/web-lib/components/Header';
-import type {TMetaFile} from './Meta';
 
 export enum AppName {
 	VAULTSV3 = 'V3',
@@ -24,7 +23,7 @@ type TApp = {
 	name: AppName | string;
 	href: string;
 	menu: TMenu[];
-	manifest: TMetaFile;
+	manifest: any;
 	icon: ReactElement;
 	isDisabled?: boolean;
 };
@@ -48,7 +47,7 @@ export const APPS: {[key in AppName]: TApp} = {
 		name: `${AppName.JUICED} Vaults`,
 		href: 'https://juiced.yearn.fi',
 		menu: [],
-		manifest: {} as TMetaFile,
+		manifest: {},
 		icon: (
 			<Image
 				className={'size-8'}
@@ -78,7 +77,7 @@ export const APPS: {[key in AppName]: TApp} = {
 		name: AppName.VEYFI,
 		menu: [],
 		href: 'https://veyfi.yearn.fi',
-		manifest: {} as TMetaFile,
+		manifest: {},
 		icon: (
 			<ImageWithFallback
 				alt={'veYFI'}
@@ -95,7 +94,7 @@ export const APPS: {[key in AppName]: TApp} = {
 		name: AppName.YCRV,
 		href: 'https://ycrv.yearn.fi',
 		menu: [],
-		manifest: {} as TMetaFile,
+		manifest: {},
 		icon: (
 			<ImageWithFallback
 				alt={'yCRV'}
@@ -112,7 +111,7 @@ export const APPS: {[key in AppName]: TApp} = {
 		name: AppName.YETH,
 		href: 'https://yeth.yearn.fi',
 		menu: [],
-		manifest: {} as TMetaFile,
+		manifest: {},
 		icon: (
 			<ImageWithFallback
 				alt={'yETH'}
@@ -129,7 +128,7 @@ export const APPS: {[key in AppName]: TApp} = {
 		name: AppName.YPRISMA,
 		href: 'https://yPrisma.yearn.fi',
 		menu: [],
-		manifest: {} as TMetaFile,
+		manifest: {},
 		icon: (
 			<ImageWithFallback
 				alt={'yPrisma'}

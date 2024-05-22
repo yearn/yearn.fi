@@ -17,7 +17,6 @@ import {useYearn} from '@common/contexts/useYearn';
 import {variants} from '@common/utils/animations';
 
 import type {GetStaticPaths, GetStaticProps} from 'next';
-import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TUseBalancesTokens} from '@builtbymom/web3/hooks/useBalances.multichains';
@@ -131,8 +130,8 @@ export const getStaticProps: GetStaticProps = async () => {
 	};
 };
 
-Index.getLayout = function getLayout(page: ReactElement, router: NextRouter): ReactElement {
-	return <Wrapper router={router}>{page}</Wrapper>;
+Index.getLayout = function getLayout(page: ReactElement): ReactElement {
+	return <Wrapper>{page}</Wrapper>;
 };
 
 export default Index;

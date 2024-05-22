@@ -22,7 +22,6 @@ import {ListHead} from '@common/components/ListHead';
 import {Pagination} from '@common/components/Pagination';
 import {useYearn} from '@common/contexts/useYearn';
 
-import type {NextRouter} from 'next/router';
 import type {ReactElement, ReactNode} from 'react';
 import type {TYDaemonVault, TYDaemonVaults} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TSortDirection} from '@builtbymom/web3/types';
@@ -268,8 +267,8 @@ function Index(): ReactElement {
 	);
 }
 
-Index.getLayout = function getLayout(page: ReactElement, router: NextRouter): ReactElement {
-	return <Wrapper router={router}>{page}</Wrapper>;
+Index.getLayout = function getLayout(page: ReactElement): ReactElement {
+	return <Wrapper>{page}</Wrapper>;
 };
 
 export default Index;
