@@ -3,6 +3,7 @@ import {Toaster} from 'react-hot-toast';
 import localFont from 'next/font/local';
 import {usePathname} from 'next/navigation';
 import {type NextRouter, useRouter} from 'next/router';
+import PlausibleProvider from 'next-plausible';
 import {AnimatePresence, domAnimation, LazyMotion, motion} from 'framer-motion';
 import {WithMom} from '@builtbymom/web3/contexts/WithMom';
 import {cl} from '@builtbymom/web3/utils';
@@ -123,26 +124,30 @@ function MyApp(props: AppProps): ReactElement {
 
 	return (
 		<main className={cl(aeonik.className, 'h-full min-h-screen w-full font-aeonik', '')}>
-			<WithMom
-				supportedChains={supportedNetworks}
-				tokenLists={[
-					'https://raw.githubusercontent.com/SmolDapp/tokenLists/main/lists/yearn.json'
-					// 'https://raw.githubusercontent.com/SmolDapp/tokenLists/main/lists/portals.json'
-				]}>
-				<AppSettingsContextApp>
-					<YearnContextApp>
-						<WalletForZapAppContextApp>
-							<Fragment>
-								<Meta meta={manifest} />
-								<WithLayout
-									supportedNetworks={supportedNetworks}
-									{...props}
-								/>
-							</Fragment>
-						</WalletForZapAppContextApp>
-					</YearnContextApp>
-				</AppSettingsContextApp>
-			</WithMom>
+			<PlausibleProvider
+				domain={'yearn.fi'}
+				enabled={true}>
+				<WithMom
+					supportedChains={supportedNetworks}
+					tokenLists={[
+						'https://raw.githubusercontent.com/SmolDapp/tokenLists/main/lists/yearn.json'
+						// 'https://raw.githubusercontent.com/SmolDapp/tokenLists/main/lists/portals.json'
+					]}>
+					<AppSettingsContextApp>
+						<YearnContextApp>
+							<WalletForZapAppContextApp>
+								<Fragment>
+									<Meta meta={manifest} />
+									<WithLayout
+										supportedNetworks={supportedNetworks}
+										{...props}
+									/>
+								</Fragment>
+							</WalletForZapAppContextApp>
+						</YearnContextApp>
+					</AppSettingsContextApp>
+				</WithMom>
+			</PlausibleProvider>
 			<Toaster
 				toastOptions={{
 					duration: 5000,
