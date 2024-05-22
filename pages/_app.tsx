@@ -1,6 +1,5 @@
-import React, {Fragment, memo} from 'react';
+import React, {memo} from 'react';
 import {Toaster} from 'react-hot-toast';
-import localFont from 'next/font/local';
 import {usePathname} from 'next/navigation';
 import {type NextRouter, useRouter} from 'next/router';
 import PlausibleProvider from 'next-plausible';
@@ -15,7 +14,8 @@ import {IconAlertCritical} from '@yearn-finance/web-lib/icons/IconAlertCritical'
 import {IconAlertError} from '@yearn-finance/web-lib/icons/IconAlertError';
 import {IconCheckmark} from '@yearn-finance/web-lib/icons/IconCheckmark';
 import AppHeader from '@common/components/Header';
-import Meta from '@common/components/Meta';
+import {Meta} from '@common/components/Meta';
+import {WithFonts} from '@common/components/WithFonts';
 import {YearnContextApp} from '@common/contexts/useYearn';
 import {useCurrentApp} from '@common/hooks/useCurrentApp';
 import {variants} from '@common/utils/animations';
@@ -26,28 +26,6 @@ import type {ReactElement} from 'react';
 import type {Chain} from 'viem';
 
 import '../style.css';
-
-const aeonik = localFont({
-	variable: '--font-aeonik',
-	display: 'swap',
-	src: [
-		{
-			path: '../public/fonts/Aeonik-Regular.woff2',
-			weight: '400',
-			style: 'normal'
-		},
-		{
-			path: '../public/fonts/Aeonik-Bold.woff2',
-			weight: '700',
-			style: 'normal'
-		},
-		{
-			path: '../public/fonts/Aeonik-Black.ttf',
-			weight: '900',
-			style: 'normal'
-		}
-	]
-});
 
 /** 🔵 - Yearn Finance ***************************************************************************
  ** The 'WithLayout' function is a React functional component that returns a ReactElement. It is used
@@ -123,58 +101,65 @@ function MyApp(props: AppProps): ReactElement {
 	const supportedNetworks = [mainnet, optimism, polygon, fantom, base, arbitrum, localhost];
 
 	return (
-		<main className={cl(aeonik.className, 'h-full min-h-screen w-full font-aeonik', '')}>
-			<PlausibleProvider
-				domain={'yearn.fi'}
-				enabled={true}>
-				<WithMom
-					supportedChains={supportedNetworks}
-					tokenLists={[
-						'https://raw.githubusercontent.com/SmolDapp/tokenLists/main/lists/yearn.json'
-						// 'https://raw.githubusercontent.com/SmolDapp/tokenLists/main/lists/portals.json'
-					]}>
-					<AppSettingsContextApp>
-						<YearnContextApp>
-							<WalletForZapAppContextApp>
-								<Fragment>
-									<Meta meta={manifest} />
+		<WithFonts>
+			<Meta
+				title={manifest.name || 'Yearn'}
+				description={manifest.description || 'The yield protocol for digital assets'}
+				titleColor={'#ffffff'}
+				themeColor={'#000000'}
+				og={manifest.og || 'https://yearn.fi/og.png'}
+				uri={manifest.uri || 'https://yearn.fi'}
+			/>
+			<main className={cl('h-full min-h-screen w-full font-aeonik', '')}>
+				<PlausibleProvider
+					domain={'yearn.fi'}
+					enabled={true}>
+					<WithMom
+						supportedChains={supportedNetworks}
+						tokenLists={[
+							'https://raw.githubusercontent.com/SmolDapp/tokenLists/main/lists/yearn.json'
+							// 'https://raw.githubusercontent.com/SmolDapp/tokenLists/main/lists/portals.json'
+						]}>
+						<AppSettingsContextApp>
+							<YearnContextApp>
+								<WalletForZapAppContextApp>
 									<WithLayout
 										supportedNetworks={supportedNetworks}
 										{...props}
 									/>
-								</Fragment>
-							</WalletForZapAppContextApp>
-						</YearnContextApp>
-					</AppSettingsContextApp>
-				</WithMom>
-			</PlausibleProvider>
-			<Toaster
-				toastOptions={{
-					duration: 5000,
-					className: 'toast',
-					error: {
-						icon: <IconAlertCritical className={'ml-3'} />,
+								</WalletForZapAppContextApp>
+							</YearnContextApp>
+						</AppSettingsContextApp>
+					</WithMom>
+				</PlausibleProvider>
+				<Toaster
+					toastOptions={{
+						duration: 5000,
+						className: 'toast',
+						error: {
+							icon: <IconAlertCritical className={'ml-3'} />,
+							style: {
+								backgroundColor: '#C73203',
+								color: 'white'
+							}
+						},
+						success: {
+							icon: <IconCheckmark className={'ml-3'} />,
+							style: {
+								backgroundColor: '#00796D',
+								color: 'white'
+							}
+						},
+						icon: <IconAlertError className={'ml-3'} />,
 						style: {
-							backgroundColor: '#C73203',
+							backgroundColor: '#0657F9',
 							color: 'white'
 						}
-					},
-					success: {
-						icon: <IconCheckmark className={'ml-3'} />,
-						style: {
-							backgroundColor: '#00796D',
-							color: 'white'
-						}
-					},
-					icon: <IconAlertError className={'ml-3'} />,
-					style: {
-						backgroundColor: '#0657F9',
-						color: 'white'
-					}
-				}}
-				position={'bottom-right'}
-			/>
-		</main>
+					}}
+					position={'bottom-right'}
+				/>
+			</main>
+		</WithFonts>
 	);
 }
 

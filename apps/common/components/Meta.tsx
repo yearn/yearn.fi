@@ -1,205 +1,182 @@
+import React from 'react';
 import Head from 'next/head';
-import Script from 'next/script';
-import {DefaultSeo} from 'next-seo';
 
 import type {ReactElement} from 'react';
 
-export type TMetaFile = {
-	name: string;
-	short_name: string;
+type TMeta = {
+	title: string;
+	titleColor: string;
+	themeColor: string;
 	description: string;
-	iconPath: string;
-	locale: string;
-	uri: string;
 	og: string;
-	twitter: string;
-	github: string;
-	icons: {
-		src: string;
-		sizes: string;
-		type: string;
-		purpose?: string;
-	}[];
-	theme_color: string;
-	background_color: string;
-	title_color: string;
-	start_url: string;
-	display: string;
-	orientation: string;
+	uri: string;
 };
 
-function Meta({meta}: {meta: TMetaFile}): ReactElement {
+export function Meta(meta: TMeta): ReactElement {
 	return (
-		<>
-			<Head>
-				<title>{meta.name}</title>
-				<meta
-					httpEquiv={'X-UA-Compatible'}
-					content={'IE=edge'}
-				/>
-				<meta
-					name={'viewport'}
-					content={
-						'minimum-scale=1, initial-scale=1, width=device-width, shrink-to-fit=no, viewport-fit=cover'
-					}
-				/>
-				<meta
-					name={'description'}
-					content={meta.name}
-				/>
-				<meta
-					name={'msapplication-TileColor'}
-					content={meta.title_color}
-				/>
-				<meta
-					name={'theme-color'}
-					content={meta.theme_color}
-				/>
-				<meta
-					name={'git-url'}
-					content={meta.github}
-				/>
-
-				<meta
-					name={'application-name'}
-					content={meta.name}
-				/>
-				<meta
-					name={'apple-mobile-web-app-title'}
-					content={meta.name}
-				/>
-				<meta
-					name={'apple-mobile-web-app-capable'}
-					content={'yes'}
-				/>
-				<meta
-					name={'apple-mobile-web-app-status-bar-style'}
-					content={'default'}
-				/>
-				<meta
-					name={'format-detection'}
-					content={'telephone=no'}
-				/>
-				<meta
-					name={'mobile-web-app-capable'}
-					content={'yes'}
-				/>
-				<meta
-					name={'msapplication-config'}
-					content={'/favicons/browserconfig.xml'}
-				/>
-				<meta
-					name={'msapplication-tap-highlight'}
-					content={'no'}
-				/>
-
-				<link
-					rel={'manifest'}
-					href={'/manifest.json'}
-				/>
-				<link
-					rel={'mask-icon'}
-					href={'/favicons/safari-pinned-tab.svg'}
-					color={meta.theme_color}
-				/>
-
-				<link
-					rel={'shortcut icon'}
-					type={'image/x-icon'}
-					href={'/favicons/favicon.ico'}
-				/>
-				<link
-					rel={'icon'}
-					type={'image/png'}
-					sizes={'32x32'}
-					href={'/favicons/favicon-32x32.png'}
-				/>
-				<link
-					rel={'icon'}
-					type={'image/png'}
-					sizes={'16x16'}
-					href={'/favicons/favicon-16x16.png'}
-				/>
-				<link
-					rel={'icon'}
-					type={'image/png'}
-					sizes={'512x512'}
-					href={'/favicons/android-icon-512x512.png'}
-				/>
-				<link
-					rel={'icon'}
-					type={'image/png'}
-					sizes={'192x192'}
-					href={'/favicons/android-icon-192x192.png'}
-				/>
-				<link
-					rel={'icon'}
-					type={'image/png'}
-					sizes={'144x144'}
-					href={'/favicons/android-icon-144x144.png'}
-				/>
-				<link
-					rel={'apple-touch-icon'}
-					href={'/favicons/apple-icon.png'}
-				/>
-				<link
-					rel={'apple-touch-icon'}
-					sizes={'152x152'}
-					href={'/favicons/apple-icon-152x152.png'}
-				/>
-				<link
-					rel={'apple-touch-icon'}
-					sizes={'180x180'}
-					href={'/favicons/apple-icon-180x180.png'}
-				/>
-				<link
-					rel={'apple-touch-icon'}
-					sizes={'167x167'}
-					href={'/favicons/apple-icon-167x167.png'}
-				/>
-			</Head>
-			<Script
-				defer
-				data-domain={'yearn.fi'}
-				src={'/js/script.js'}
+		<Head>
+			<title>{meta.title}</title>
+			<meta
+				httpEquiv={'X-UA-Compatible'}
+				content={'IE=edge'}
 			/>
 			<meta
-				name={'robots'}
-				content={'index,nofollow'}
+				name={'viewport'}
+				content={'minimum-scale=1, initial-scale=1, width=device-width, shrink-to-fit=no, viewport-fit=cover'}
+			/>
+			<meta
+				name={'description'}
+				content={meta.description}
+			/>
+			<meta
+				name={'msapplication-TileColor'}
+				content={meta.titleColor}
+			/>
+			<meta
+				name={'theme-color'}
+				content={meta.themeColor}
+			/>
+
+			<meta
+				name={'application-name'}
+				content={meta.title}
+			/>
+			<meta
+				name={'apple-mobile-web-app-title'}
+				content={meta.title}
+			/>
+			<meta
+				name={'apple-mobile-web-app-capable'}
+				content={'yes'}
+			/>
+			<meta
+				name={'apple-mobile-web-app-status-bar-style'}
+				content={'default'}
+			/>
+			<meta
+				name={'format-detection'}
+				content={'telephone=no'}
+			/>
+			<meta
+				name={'mobile-web-app-capable'}
+				content={'yes'}
+			/>
+			<meta
+				name={'msapplication-config'}
+				content={'/favicons/browserconfig.xml'}
+			/>
+			<meta
+				name={'msapplication-tap-highlight'}
+				content={'no'}
+			/>
+
+			<link
+				rel={'manifest'}
+				href={'/manifest.json'}
+			/>
+			<link
+				rel={'mask-icon'}
+				href={'/favicons/safari-pinned-tab.svg'}
+				color={meta.themeColor}
+			/>
+			<link
+				rel={'shortcut icon'}
+				type={'image/x-icon'}
+				href={'/favicons/favicon.ico'}
+			/>
+			<link
+				rel={'icon'}
+				type={'image/png'}
+				sizes={'32x32'}
+				href={'/favicons/favicon-32x32.png'}
+			/>
+			<link
+				rel={'icon'}
+				type={'image/png'}
+				sizes={'16x16'}
+				href={'/favicons/favicon-16x16.png'}
+			/>
+			<link
+				rel={'icon'}
+				type={'image/png'}
+				sizes={'512x512'}
+				href={'/favicons/favicon-512x512.png'}
+			/>
+			<link
+				rel={'icon'}
+				type={'image/png'}
+				sizes={'192x192'}
+				href={'/favicons/android-icon-192x192.png'}
+			/>
+			<link
+				rel={'icon'}
+				type={'image/png'}
+				sizes={'144x144'}
+				href={'/favicons/android-icon-144x144.png'}
+			/>
+			<link
+				rel={'apple-touch-icon'}
+				href={'/favicons/apple-icon.png'}
+			/>
+			<link
+				rel={'apple-touch-icon'}
+				sizes={'152x152'}
+				href={'/favicons/apple-icon-152x152.png'}
+			/>
+			<link
+				rel={'apple-touch-icon'}
+				sizes={'180x180'}
+				href={'/favicons/apple-icon-180x180.png'}
+			/>
+			<link
+				rel={'apple-touch-icon'}
+				sizes={'167x167'}
+				href={'/favicons/apple-icon-167x167.png'}
+			/>
+			<link
+				rel={'icon'}
+				type={'image/png'}
+				sizes={'512x512'}
+				href={'/favicons/favicon-512x512.png'}
 			/>
 			<meta
 				name={'googlebot'}
 				content={'index,nofollow'}
 			/>
 			<meta charSet={'utf-8'} />
-			<DefaultSeo
-				title={meta.name}
-				defaultTitle={meta.name}
-				description={meta.description}
-				openGraph={{
-					type: 'website',
-					locale: meta.locale,
-					url: meta.uri,
-					site_name: meta.name,
-					title: meta.name,
-					description: meta.description,
-					images: [
-						{
-							url: meta.og,
-							width: 1200,
-							height: 675,
-							alt: meta.name
-						}
-					]
-				}}
-				twitter={{
-					handle: meta.twitter,
-					site: meta.twitter,
-					cardType: 'summary_large_image'
-				}}
+			<meta
+				property={'twitter:image'}
+				content={meta.og}
 			/>
-		</>
+			<meta
+				property={'twitter:card'}
+				content={'summary_large_image'}
+			/>
+			<meta
+				property={'twitter:title'}
+				content={meta.title}
+			/>
+			<meta
+				property={'twitter:description'}
+				content={meta.description}
+			/>
+
+			<meta
+				property={'og:image'}
+				content={meta.og}
+			/>
+			<meta
+				property={'og:url'}
+				content={meta.uri}
+			/>
+			<meta
+				property={'og:title'}
+				content={meta.title}
+			/>
+			<meta
+				property={'og:description'}
+				content={meta.description}
+			/>
+		</Head>
 	);
 }
-
-export default Meta;
