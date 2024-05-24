@@ -127,17 +127,11 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
  ** allow the user to stake, unstake, and claim rewards from the staking rewards contract.
  ** Based on the staking source, the UI might change a bit to display the correct information.
  *************************************************************************************************/
-export function RewardsTab({
-	currentVault,
-	hasStakingRewardsLive
-}: {
-	currentVault: TYDaemonVault;
-	hasStakingRewardsLive: boolean;
-}): ReactElement {
+export function RewardsTab(props: {currentVault: TYDaemonVault; hasStakingRewardsLive: boolean}): ReactElement {
 	const {provider, isActive} = useWeb3();
 	const {getPrice} = useYearn();
-	const {vaultData, updateVaultData} = useVaultStakingData({currentVault});
-	const rewardTokenBalance = useYearnToken({address: vaultData.rewardsToken, chainID: currentVault.chainID});
+	const {vaultData, updateVaultData} = useVaultStakingData({currentVault: props.currentVault});
+	const rewardTokenBalance = useYearnToken({address: vaultData.rewardsToken, chainID: props.currentVault.chainID});
 	const [approveStakeStatus, set_approveStakeStatus] = useState(defaultTxStatus);
 	const [stakeStatus, set_stakeStatus] = useState(defaultTxStatus);
 	const [claimStatus, set_claimStatus] = useState(defaultTxStatus);
@@ -161,8 +155,8 @@ export function RewardsTab({
 	const onApprove = useCallback(async (): Promise<void> => {
 		const result = await approveERC20({
 			connector: provider,
-			chainID: currentVault.chainID,
-			contractAddress: currentVault.address,
+			chainID: props.currentVault.chainID,
+			contractAddress: props.currentVault.address,
 			spenderAddress: toAddress(vaultData?.address),
 			amount: vaultData.vaultBalanceOf.raw,
 			statusHandler: set_approveStakeStatus
@@ -170,7 +164,7 @@ export function RewardsTab({
 		if (result.isSuccessful) {
 			updateVaultData();
 		}
-	}, [currentVault, provider, updateVaultData, vaultData?.address, vaultData.vaultBalanceOf.raw]);
+	}, [props.currentVault, provider, updateVaultData, vaultData?.address, vaultData.vaultBalanceOf.raw]);
 
 	/**********************************************************************************************
 	 ** The onStake function will be called when the user clicks the "Stake" button. It will call
@@ -181,10 +175,10 @@ export function RewardsTab({
 	 ** stakeVeYFIGauge function.
 	 *********************************************************************************************/
 	const onStake = useCallback(async (): Promise<void> => {
-		if (currentVault.staking.source === 'VeYFI') {
+		if (props.currentVault.staking.source === 'VeYFI') {
 			const result = await stakeVeYFIAction({
 				connector: provider,
-				chainID: currentVault.chainID,
+				chainID: props.currentVault.chainID,
 				contractAddress: toAddress(vaultData?.address),
 				amount: vaultData.vaultBalanceOf.raw,
 				statusHandler: set_stakeStatus
@@ -196,7 +190,7 @@ export function RewardsTab({
 		} else {
 			const result = await stakeAction({
 				connector: provider,
-				chainID: currentVault.chainID,
+				chainID: props.currentVault.chainID,
 				contractAddress: toAddress(vaultData?.address),
 				amount: vaultData.vaultBalanceOf.raw,
 				statusHandler: set_stakeStatus
@@ -207,8 +201,8 @@ export function RewardsTab({
 			}
 		}
 	}, [
-		currentVault.staking.source,
-		currentVault.chainID,
+		props.currentVault.staking.source,
+		props.currentVault.chainID,
 		provider,
 		vaultData?.address,
 		vaultData.vaultBalanceOf.raw,
@@ -226,10 +220,10 @@ export function RewardsTab({
 	 ** unstakeVeYFIGauge function.
 	 *********************************************************************************************/
 	const onUnstake = useCallback(async (): Promise<void> => {
-		if (currentVault.staking.source === 'VeYFI') {
+		if (props.currentVault.staking.source === 'VeYFI') {
 			const result = await unstakeVeYFIAction({
 				connector: provider,
-				chainID: currentVault.chainID,
+				chainID: props.currentVault.chainID,
 				contractAddress: toAddress(vaultData?.address),
 				amount: vaultData.stakedBalanceOf.raw,
 				willClaim: true,
@@ -242,7 +236,7 @@ export function RewardsTab({
 		} else {
 			const result = await unstakeAction({
 				connector: provider,
-				chainID: currentVault.chainID,
+				chainID: props.currentVault.chainID,
 				contractAddress: toAddress(vaultData?.address),
 				statusHandler: set_unstakeStatus
 			});
@@ -252,8 +246,8 @@ export function RewardsTab({
 			}
 		}
 	}, [
-		currentVault.staking.source,
-		currentVault.chainID,
+		props.currentVault.staking.source,
+		props.currentVault.chainID,
 		provider,
 		vaultData?.address,
 		vaultData.stakedBalanceOf.raw,
@@ -270,14 +264,14 @@ export function RewardsTab({
 	const onClaim = useCallback(async (): Promise<void> => {
 		const result = await claimAction({
 			connector: provider,
-			chainID: currentVault.chainID,
+			chainID: props.currentVault.chainID,
 			contractAddress: toAddress(vaultData?.address),
 			statusHandler: set_claimStatus
 		});
 		if (result.isSuccessful) {
 			refreshData();
 		}
-	}, [provider, refreshData, vaultData?.address, currentVault.chainID]);
+	}, [provider, refreshData, vaultData?.address, props.currentVault.chainID]);
 
 	/**********************************************************************************************
 	 ** In order to display the counter value of the user's staking rewards and yVault tokens, we
@@ -289,16 +283,16 @@ export function RewardsTab({
 		[getPrice, rewardTokenBalance]
 	);
 	const vaultTokenPrice = useMemo(
-		() => getPrice({address: currentVault.address, chainID: currentVault.chainID}),
-		[getPrice, currentVault]
+		() => getPrice({address: props.currentVault.address, chainID: props.currentVault.chainID}),
+		[getPrice, props.currentVault]
 	);
 
 	return (
 		<>
 			<div className={'flex flex-col gap-6 bg-neutral-100 p-4 md:gap-4 md:p-8'}>
 				<BoostMessage
-					hasStakingRewardsLive={hasStakingRewardsLive}
-					currentVault={currentVault}
+					hasStakingRewardsLive={props.hasStakingRewardsLive}
+					currentVault={props.currentVault}
 				/>
 
 				<div className={'flex flex-col gap-2'}>
@@ -310,7 +304,7 @@ export function RewardsTab({
 							className={'w-full md:w-1/3'}
 							legend={
 								<div className={'flex items-center justify-between'}>
-									<p>{`${formatAmount(vaultData.vaultBalanceOf.normalized, 6)} ${currentVault.symbol} available to stake`}</p>
+									<p>{`${formatAmount(vaultData.vaultBalanceOf.normalized, 6)} ${props.currentVault.symbol} available to stake`}</p>
 									<p>{`${formatCounterValue(vaultData.vaultBalanceOf.normalized, vaultTokenPrice.normalized)}`}</p>
 								</div>
 							}
@@ -329,7 +323,9 @@ export function RewardsTab({
 							onClick={(): unknown => (isApproved ? onStake() : onApprove())}
 							isBusy={stakeStatus.pending || approveStakeStatus.pending}
 							isDisabled={
-								!isActive || toBigInt(vaultData.vaultBalanceOf.raw) <= 0n || !hasStakingRewardsLive
+								!isActive ||
+								toBigInt(vaultData.vaultBalanceOf.raw) <= 0n ||
+								(!props.hasStakingRewardsLive && props.currentVault.staking.source !== 'VeYFI')
 							}>
 							{isApproved ? 'Stake' : 'Approve'}
 						</Button>
