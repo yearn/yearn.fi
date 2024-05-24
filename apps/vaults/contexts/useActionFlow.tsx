@@ -342,18 +342,19 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 			chainID: props.currentVault.chainID
 		});
 
+		const balanceWithRounding = toBigInt(vaultBalance.raw) - 10n;
 		if (props.currentVault.version.startsWith('3')) {
 			const safeLimit = (toBigInt(limits?.maxRedeem) * 99n) / 100n;
 			return {
 				limit: toNormalizedBN(toBigInt(limits?.maxRedeem), props.currentVault.token.decimals),
 				safeLimit:
-					vaultBalance.raw > toBigInt(limits?.maxRedeem)
+					balanceWithRounding > toBigInt(limits?.maxRedeem)
 						? toNormalizedBN(safeLimit, props.currentVault.token.decimals)
 						: toNormalizedBN(toBigInt(limits?.maxRedeem), props.currentVault.token.decimals),
-				isLimited: vaultBalance.raw > toBigInt(limits?.maxRedeem)
+				isLimited: balanceWithRounding > toBigInt(limits?.maxRedeem)
 			};
 		}
-		if (toBigInt(limits?.maxRedeem) < toBigInt(vaultBalance.raw)) {
+		if (toBigInt(limits?.maxRedeem) < balanceWithRounding) {
 			return {
 				limit: toNormalizedBN(toBigInt(limits?.maxRedeem), props.currentVault.token.decimals),
 				safeLimit: toNormalizedBN(toBigInt(limits?.maxRedeem), props.currentVault.token.decimals),
