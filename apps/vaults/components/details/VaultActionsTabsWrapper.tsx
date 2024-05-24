@@ -113,17 +113,25 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 	 *********************************************************************************************/
 	useUpdateEffect((): void => {
 		if (currentVault?.migration?.available && actionParams.isReady) {
-			set_possibleTabs([tabs[1], tabs[2]]);
+			const tabsToDisplay = [tabs[1], tabs[2]];
+			if (hasStakingRewards) {
+				tabsToDisplay.push(tabs[3]);
+			}
+			set_possibleTabs(tabsToDisplay);
 			set_currentTab(tabs[2]);
 			onSwitchSelectedOptions(Flow.Migrate);
 		} else if (currentVault?.info?.isRetired && actionParams.isReady) {
-			set_possibleTabs([tabs[1]]);
+			const tabsToDisplay = [tabs[1]];
+			if (hasStakingRewards) {
+				tabsToDisplay.push(tabs[3]);
+			}
+			set_possibleTabs(tabsToDisplay);
 			set_currentTab(tabs[1]);
 			onSwitchSelectedOptions(Flow.Withdraw);
-		}
-
-		if (hasStakingRewards) {
+		} else if (hasStakingRewards) {
 			set_possibleTabs([tabs[0], tabs[1], tabs[3]]);
+		} else {
+			set_possibleTabs([tabs[0], tabs[1]]);
 		}
 	}, [currentVault?.migration?.available, currentVault?.info?.isRetired, actionParams.isReady, hasStakingRewards]);
 
