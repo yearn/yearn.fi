@@ -325,7 +325,9 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 
 	const isSonneRetiredVault =
 		toAddress(currentVault.address) === toAddress(`0x5b977577eb8a480f63e11fc615d6753adb8652ae`) ||
-		toAddress(currentVault.address) === toAddress(`0xad17a225074191d5c8a37b50fda1ae278a2ee6a2`);
+		toAddress(currentVault.address) === toAddress(`0xad17a225074191d5c8a37b50fda1ae278a2ee6a2`) ||
+		toAddress(currentVault.address) === toAddress(`0x65343f414ffd6c97b0f6add33d16f6845ac22bac`) ||
+		toAddress(currentVault.address) === toAddress(`0xfaee21d0f0af88ee72bb6d68e54a90e6ec2616de`);
 	return (
 		<>
 			{currentVault?.migration?.available && (
