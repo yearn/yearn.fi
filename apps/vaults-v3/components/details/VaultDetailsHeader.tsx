@@ -83,7 +83,7 @@ function VaultAPR({apr}: {apr: TYDaemonVault['apr']}): ReactElement {
 		);
 	}
 
-	if (apr.forwardAPR.type === '' && extraAPR !== 0) {
+	if (apr.forwardAPR.type !== '' && extraAPR !== 0) {
 		const boostedAPR = apr.netAPR + extraAPR;
 		return (
 			<VaultHeaderLineItem
