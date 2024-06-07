@@ -84,7 +84,7 @@ function VaultAPR({apr}: {apr: TYDaemonVault['apr']}): ReactElement {
 	}
 
 	if (apr.forwardAPR.type !== '' && extraAPR !== 0) {
-		const boostedAPR = apr.netAPR + extraAPR;
+		const boostedAPR = apr.forwardAPR.netAPR + extraAPR;
 		return (
 			<VaultHeaderLineItem
 				label={'Historical APR'}
@@ -120,7 +120,7 @@ function VaultAPR({apr}: {apr: TYDaemonVault['apr']}): ReactElement {
 									<p>{'• Base APR '}</p>
 									<RenderAmount
 										shouldHideTooltip
-										value={apr.netAPR}
+										value={apr.forwardAPR.netAPR}
 										symbol={'percent'}
 										decimals={6}
 									/>
