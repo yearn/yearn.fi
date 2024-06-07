@@ -109,6 +109,11 @@ module.exports = withPlausibleProxy({
 					source: '/github',
 					destination: 'https://github.com/yearn/yearn.fi',
 					permanent: true
+				},
+				{
+					source: '/static/tokenlist.json',
+					destination: 'https://raw.githubusercontent.com/SmolDapp/tokenLists/main/lists/yearn.json',
+					permanent: true
 				}
 			];
 		},
