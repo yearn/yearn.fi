@@ -172,7 +172,7 @@ export function VaultDetailsStrategy({currentVault, strategy}: TProps): ReactEle
 							<div className={'col-span-2 flex flex-col space-y-0 md:space-y-2'}>
 								<p className={'text-xxs text-neutral-600 md:text-xs'}>{'Perfomance fee'}</p>
 								<b className={'font-number text-xl text-neutral-600'}>
-									{formatPercent((strategy.details?.performanceFee || 0) * 100, 0)}
+									{formatPercent(strategy.details?.performanceFee || 0, 0)}
 								</b>
 							</div>
 						</div>
