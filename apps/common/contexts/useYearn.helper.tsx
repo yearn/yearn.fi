@@ -57,14 +57,14 @@ export function useYearnTokens({
 			});
 		});
 
-		const {wrappedToken} = getNetwork(safeChainID).contracts;
-		if (wrappedToken) {
+		const {nativeCurrency} = getNetwork(safeChainID);
+		if (nativeCurrency) {
 			tokens.push({
 				address: toAddress(ETH_TOKEN_ADDRESS),
 				chainID: safeChainID,
-				decimals: wrappedToken.decimals,
-				name: wrappedToken.coinName,
-				symbol: wrappedToken.coinSymbol
+				decimals: nativeCurrency.decimals,
+				name: nativeCurrency.name,
+				symbol: nativeCurrency.symbol
 			});
 		}
 		return tokens;
