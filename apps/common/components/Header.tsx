@@ -38,7 +38,7 @@ function Navbar({nav, currentPathName}: TNavbar): ReactElement {
 function WalletSelector(): ReactElement {
 	const {openAccountModal} = useAccountModal();
 	const {openChainModal} = useChainModal();
-	const {isActive, address, ens, lensProtocolHandle, openLoginModal} = useWeb3();
+	const {isActive, address, ens, clusters, lensProtocolHandle, openLoginModal} = useWeb3();
 	const [walletIdentity, set_walletIdentity] = useState<string | undefined>(undefined);
 
 	useEffect((): void => {
@@ -46,6 +46,8 @@ function WalletSelector(): ReactElement {
 			set_walletIdentity('Invalid Network');
 		} else if (ens) {
 			set_walletIdentity(ens);
+		} else if (clusters) {
+			set_walletIdentity(clusters.name);
 		} else if (lensProtocolHandle) {
 			set_walletIdentity(lensProtocolHandle);
 		} else if (address) {
@@ -53,7 +55,7 @@ function WalletSelector(): ReactElement {
 		} else {
 			set_walletIdentity(undefined);
 		}
-	}, [ens, lensProtocolHandle, address, isActive]);
+	}, [ens, clusters, lensProtocolHandle, address, isActive]);
 
 	return (
 		<div
