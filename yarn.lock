@@ -991,10 +991,10 @@
     "@babel/helper-validator-identifier" "^7.24.7"
     to-fast-properties "^2.0.0"
 
-"@builtbymom/web3@0.0.120":
-  version "0.0.120"
-  resolved "https://registry.yarnpkg.com/@builtbymom/web3/-/web3-0.0.120.tgz#616cb63c5d68fa9ce5dfa294096e68c443ea0207"
-  integrity sha512-Cf2bbe1TanHluk4Y/5ieA+4dOSsMrmub4pR4kT3Dgu1UEQWx5G9qeMSbpMl0MM9X593CSgn7dptDDb5WWqgOug==
+"@builtbymom/web3@^0.0.121":
+  version "0.0.121"
+  resolved "https://registry.yarnpkg.com/@builtbymom/web3/-/web3-0.0.121.tgz#ad3c07af929f25758bc08d6717eb4494be3b4238"
+  integrity sha512-xKF2QDRoUSNzXNrFoLGWXeKN0EmA0prhFmitexWbhikaYBzXpqiMEBCqhj2vvBVAVPMqSue3jUe9MHmd99t3xg==
   dependencies:
     "@clustersxyz/sdk" "^0.2.1"
     "@rainbow-me/rainbowkit" "^2.1.2"
@@ -10015,6 +10015,7 @@ workbox-window@6.6.1, workbox-window@^6.5.4:
     workbox-core "6.6.1"
 
 "wrap-ansi-cjs@npm:wrap-ansi@^7.0.0", wrap-ansi@^7.0.0:
+  name wrap-ansi-cjs
   version "7.0.0"
   resolved "https://registry.yarnpkg.com/wrap-ansi/-/wrap-ansi-7.0.0.tgz#67e145cff510a6a6984bdf1152911d69d2eb9e43"
   integrity sha512-YVGIj2kamLSTxw6NsZjoBxfSwsn0ycdesmc4p+Q21c5zPuZ1pl+NfxVdxPtdHvmNVOQ6XSYG4AUtyt/Fi7D16Q==
