@@ -12,6 +12,7 @@ export const ALL_VAULTSV3_CATEGORIES = {
 	Curve: 'Curve',
 	Gamma: 'Gamma',
 	Pendle: 'Pendle',
+	['Pendle Autorollover']: 'Pendle Autorollover',
 	Prisma: 'Prisma',
 	Velodrome: 'Velodrome',
 	Volatile: 'Volatile'
