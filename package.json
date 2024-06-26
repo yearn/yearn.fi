@@ -17,12 +17,12 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@builtbymom/web3": "^0.0.121",
+    "@builtbymom/web3": "^0.0.122",
     "@cowprotocol/cow-sdk": "2.1.0",
     "@headlessui/react": "^2.0.4",
     "@rainbow-me/rainbowkit": "^2.1.2",
     "@tailwindcss/typography": "^0.5.13",
-    "@wagmi/core": "^2.11.2",
+    "@wagmi/core": "^2.11.5",
     "@yearn-finance/web-lib": "^4.0.2",
     "axios": "^1.7.2",
     "ethers": "5.7.2",
@@ -38,9 +38,9 @@
     "react-paginate": "^8.2.0",
     "recharts": "^2.12.7",
     "swr": "^2.2.5",
-    "viem": "^2.13.10",
+    "viem": "^2.16.2",
     "vite": "^5.2.13",
-    "wagmi": "^2.10.2",
+    "wagmi": "^2.10.7",
     "zod": "^3.23.8"
   },
   "devDependencies": {
