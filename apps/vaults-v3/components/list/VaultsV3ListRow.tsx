@@ -262,7 +262,9 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 		<div className={'flex flex-col md:text-right'}>
 			<b className={'yearn--table-data-section-item-value'}>
 				<Renderable
-					shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
+					shouldRender={
+						!currentVault.apr.forwardAPR?.type.includes('new') && !currentVault.apr.type.includes('new')
+					}
 					fallback={'NEW'}>
 					{currentVault?.info?.isBoosted ? '⚡️ ' : ''}
 					<RenderAmount
