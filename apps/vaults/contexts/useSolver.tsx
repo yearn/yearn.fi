@@ -10,6 +10,7 @@ import {useSolverJuicedStakingBooster} from '@vaults/hooks/solvers/useSolverJuic
 import {useSolverOptimismBooster} from '@vaults/hooks/solvers/useSolverOptimismBooster';
 import {useSolverPartnerContract} from '@vaults/hooks/solvers/useSolverPartnerContract';
 import {useSolverPortals} from '@vaults/hooks/solvers/useSolverPortals';
+import {useSolverV3StakingBooster} from '@vaults/hooks/solvers/useSolverV3StakingBooster';
 import {useSolverVanilla} from '@vaults/hooks/solvers/useSolverVanilla';
 import {Solver} from '@vaults/types/solvers';
 import {serialize} from '@wagmi/core';
@@ -27,6 +28,7 @@ export const isSolverDisabled = (key: TSolver): boolean => {
 		[Solver.enum.OptimismBooster]: false,
 		[Solver.enum.GaugeStakingBooster]: false,
 		[Solver.enum.JuicedStakingBooster]: false,
+		[Solver.enum.V3StakingBooster]: false,
 		[Solver.enum.Cowswap]: false,
 		[Solver.enum.Portals]: false,
 		[Solver.enum.None]: false
@@ -68,6 +70,7 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 	const optimismBooster = useSolverOptimismBooster();
 	const veYFIGaugeStakingBooster = useSolverGaugeStakingBooster();
 	const juicedStakingBooster = useSolverJuicedStakingBooster();
+	const v3StakingBooster = useSolverV3StakingBooster();
 	const [currentSolverState, set_currentSolverState] = useState<TSolverContext & {hash?: string}>(vanilla);
 	const [isLoading, set_isLoading] = useState(false);
 
@@ -229,6 +232,17 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 					});
 					break;
 				}
+				case Solver.enum.V3StakingBooster: {
+					const [quote] = await Promise.allSettled([v3StakingBooster.init(request)]);
+					await handleUpdateSolver({
+						currentNonce,
+						request,
+						quote,
+						solver: Solver.enum.V3StakingBooster,
+						ctx: v3StakingBooster
+					});
+					break;
+				}
 				case Solver.enum.ChainCoin: {
 					const [quote] = await Promise.allSettled([chainCoin.init(request)]);
 					await handleUpdateSolver({
@@ -295,6 +309,7 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 			optimismBooster,
 			veYFIGaugeStakingBooster,
 			juicedStakingBooster,
+			v3StakingBooster,
 			chainCoin,
 			partnerContract,
 			internalMigration

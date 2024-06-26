@@ -23,7 +23,7 @@
     "@rainbow-me/rainbowkit": "^2.1.2",
     "@tailwindcss/typography": "^0.5.13",
     "@wagmi/core": "^2.11.2",
-    "@yearn-finance/web-lib": "^3.0.191",
+    "@yearn-finance/web-lib": "^4.0.2",
     "axios": "^1.7.2",
     "ethers": "5.7.2",
     "framer-motion": "^11.2.10",

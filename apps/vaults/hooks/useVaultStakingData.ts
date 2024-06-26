@@ -9,13 +9,15 @@ import {
 	decodeAsNumber,
 	isZeroAddress,
 	toAddress,
+	toBigInt,
 	toNormalizedBN,
 	zeroNormalizedBN
 } from '@builtbymom/web3/utils';
 import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
 import {JUICED_STAKING_REWARDS_ABI} from '@vaults/utils/abi/juicedStakingRewards.abi';
 import {STAKING_REWARDS_ABI} from '@vaults/utils/abi/stakingRewards.abi';
-import {VEYFI_GAUGE_ABI} from '@vaults/utils/abi/veYFIGauge.abi.ts';
+import {V3_STAKING_REWARDS_ABI} from '@vaults/utils/abi/V3StakingRewards.abi';
+import {VEYFI_GAUGE_ABI} from '@vaults/utils/abi/veYFIGauge.abi';
 import {readContract, readContracts} from '@wagmi/core';
 
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
@@ -37,7 +39,7 @@ export function useVaultStakingData(props: {currentVault: TYDaemonVault}): {
 } {
 	const {address} = useWeb3();
 	const {data: blockNumber} = useBlockNumber({watch: true});
-	const stakingType = props.currentVault.staking.source as 'OP Boost' | 'VeYFI' | 'Juiced';
+	const stakingType = props.currentVault.staking.source as 'OP Boost' | 'VeYFI' | 'Juiced' | 'V3 Staking';
 	const [vaultData, set_vaultData] = useState<TStakingInfo>({
 		address: toAddress(props.currentVault.staking.address),
 		stakingToken: toAddress(''),
@@ -133,7 +135,7 @@ export function useVaultStakingData(props: {currentVault: TYDaemonVault}): {
 			earned = isZeroAddress(address) ? 0n : decodeAsBigInt(data[4]);
 			allowance = isZeroAddress(address) ? 0n : decodeAsBigInt(data[5]);
 			vaultBalanceOf = isZeroAddress(address) ? 0n : decodeAsBigInt(data[6]);
-		} else {
+		} else if (stakingType === 'Juiced') {
 			const data = await readContracts(retrieveConfig(), {
 				contracts: [
 					{
@@ -188,6 +190,77 @@ export function useVaultStakingData(props: {currentVault: TYDaemonVault}): {
 			const earnedRaw = await readContract(retrieveConfig(), {
 				address: toAddress(props.currentVault.staking.address),
 				abi: JUICED_STAKING_REWARDS_ABI,
+				chainId: props.currentVault.chainID,
+				functionName: 'earned',
+				args: [toAddress(address), rewardsToken]
+			});
+			earned = isZeroAddress(address) ? 0n : earnedRaw;
+		} else if (stakingType === 'V3 Staking') {
+			const rewardTokensLength = await readContract(retrieveConfig(), {
+				address: toAddress(props.currentVault.staking.address),
+				chainId: props.currentVault.chainID,
+				abi: V3_STAKING_REWARDS_ABI,
+				functionName: 'rewardTokensLength'
+			});
+
+			const rewardTokensCalls = [] as any[];
+			for (let i = 0; i < Number(rewardTokensLength); i++) {
+				rewardTokensCalls.push({
+					address: toAddress(props.currentVault.staking.address),
+					chainId: props.currentVault.chainID,
+					abi: V3_STAKING_REWARDS_ABI,
+					functionName: 'rewardTokens',
+					args: [toBigInt(i)]
+				});
+			}
+			const data = await readContracts(retrieveConfig(), {
+				contracts: [
+					{
+						address: toAddress(props.currentVault.staking.address),
+						chainId: props.currentVault.chainID,
+						abi: V3_STAKING_REWARDS_ABI,
+						functionName: 'stakingToken'
+					},
+					{
+						address: toAddress(props.currentVault.staking.address),
+						abi: V3_STAKING_REWARDS_ABI,
+						chainId: props.currentVault.chainID,
+						functionName: 'totalSupply'
+					},
+					{
+						address: toAddress(props.currentVault.staking.address),
+						abi: V3_STAKING_REWARDS_ABI,
+						chainId: props.currentVault.chainID,
+						functionName: 'balanceOf',
+						args: [toAddress(address)]
+					},
+					{
+						address: toAddress(props.currentVault.address),
+						abi: erc20Abi,
+						chainId: props.currentVault.chainID,
+						functionName: 'allowance',
+						args: [toAddress(address), toAddress(props.currentVault.staking.address)]
+					},
+					{
+						address: toAddress(props.currentVault.address),
+						abi: erc20Abi,
+						chainId: props.currentVault.chainID,
+						functionName: 'balanceOf',
+						args: [toAddress(address)]
+					},
+					...rewardTokensCalls
+				]
+			});
+			stakingToken = decodeAsAddress(data[0]);
+			totalStaked = decodeAsBigInt(data[1]);
+			balanceOf = isZeroAddress(address) ? 0n : decodeAsBigInt(data[2]);
+			allowance = isZeroAddress(address) ? 0n : decodeAsBigInt(data[3]);
+			vaultBalanceOf = isZeroAddress(address) ? 0n : decodeAsBigInt(data[4]);
+			rewardsToken = decodeAsAddress(data[5]);
+
+			const earnedRaw = await readContract(retrieveConfig(), {
+				address: toAddress(props.currentVault.staking.address),
+				abi: V3_STAKING_REWARDS_ABI,
 				chainId: props.currentVault.chainID,
 				functionName: 'earned',
 				args: [toAddress(address), rewardsToken]

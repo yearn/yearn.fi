@@ -62,6 +62,7 @@ export function BoostMessage(props: {
 	const stakingRewardSource = props.currentVault.staking.source;
 	const extraAPR = props.currentVault.apr.extra.stakingRewardsAPR;
 
+	console.log(props.currentVault.staking);
 	if (
 		props.currentTab === 0 &&
 		hasStakingRewards &&
@@ -107,7 +108,6 @@ export function BoostMessage(props: {
 			</div>
 		);
 	}
-
 	if (props.currentTab === 0 && hasStakingRewards && stakingRewardSource === 'VeYFI') {
 		return (
 			<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
@@ -152,7 +152,32 @@ export function BoostMessage(props: {
 			</div>
 		);
 	}
-
+	if (props.currentTab === 0 && hasStakingRewards && stakingRewardSource === 'V3 Staking') {
+		if (isAutoStakingEnabled) {
+			return (
+				<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
+					<div className={'w-full rounded-lg bg-[#34A14F] p-2 md:px-6 md:py-4'}>
+						<b className={'text-base text-white'}>
+							{
+								'Great news! This Vault is receiving a Staking Boost. Deposit and stake your tokens to receive extra rewards. Nice!'
+							}
+						</b>
+					</div>
+				</div>
+			);
+		}
+		return (
+			<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
+				<div className={'w-full rounded-lg bg-[#F8A908] p-2 md:px-6 md:py-4'}>
+					<b className={'text-base text-white'}>
+						{
+							"This Vault is receiving a Staking Boost. To zap into it for additional rewards, you'll have to stake your yVault tokens manually on the BOOST tab after you deposit. Sorry anon, it's just how it works."
+						}
+					</b>
+				</div>
+			</div>
+		);
+	}
 	return <span />;
 }
 
@@ -181,6 +206,9 @@ export function VaultDetailsTab(props: {
 		}
 		if (props.tab.label === 'Boost' && stakingRewardSource === 'Juiced') {
 			return 'Juiced BOOST';
+		}
+		if (props.tab.label === 'Boost' && stakingRewardSource === 'V3 Staking') {
+			return 'Staking BOOST';
 		}
 		return props.tab.label;
 	}, [props.tab.label, stakingRewardSource]);
@@ -248,6 +276,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 	const hasStakingRewards = Boolean(currentVault.staking.available);
 
 	const {data: blockNumber} = useBlockNumber({watch: true});
+
 	/**********************************************************************************************
 	 ** Retrieve some data from the vault and the staking contract to display a comprehensive view
 	 ** of the user's holdings in the vault.
@@ -274,8 +303,10 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 				}
 			]
 		});
+		const hasLiveRewards = decodeAsBigInt(result[1]) > Math.floor(Date.now() / 1000);
+		const hasLiveRewardsFromYDaemon = (currentVault.staking.rewards || []).some(e => !e.isFinished);
 		set_unstakedBalance(toNormalizedBN(decodeAsBigInt(result[0]), currentVault.decimals));
-		set_hasStakingRewardsLive(decodeAsBigInt(result[1]) > Math.floor(Date.now() / 1000));
+		set_hasStakingRewardsLive(hasLiveRewards || hasLiveRewardsFromYDaemon);
 	}, [currentVault, address]);
 
 	/**********************************************************************************************

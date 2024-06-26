@@ -119,6 +119,24 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 			</div>
 		);
 	}
+
+	if (hasVaultData && vaultDataource === 'V3 Staking') {
+		return (
+			<div className={'col-span-12 mt-0'}>
+				<div
+					className={cl('w-full bg-neutral-900 rounded-lg p-6 text-neutral-0', isV3Page ? 'rounded-lg' : '')}>
+					<b className={'text-lg'}>{'Great news everybody!'}</b>
+					<div className={'mt-2 flex flex-col gap-2'}>
+						<p>
+							{
+								'This Vault is receiving an Staking Boost. Simply stake your Vault tokens to earn extra rewards. Fancy!'
+							}
+						</p>
+					</div>
+				</div>
+			</div>
+		);
+	}
 	return <span />;
 }
 
@@ -340,7 +358,7 @@ export function RewardsTab(props: {currentVault: TYDaemonVault; hasStakingReward
 							className={'w-full md:w-1/3'}
 							legend={
 								<div className={'flex items-center justify-between'}>
-									<p>{`${formatAmount(vaultData.stakedEarned.normalized, 6)} ${rewardTokenBalance.symbol || 'yvOP'} available to claim`}</p>
+									<p>{`${formatAmount(vaultData.stakedEarned.normalized, 6)} ${rewardTokenBalance.symbol || (props.currentVault.staking.rewards || [])[0].symbol || ''} available to claim`}</p>
 									<p>{`${formatCounterValue(vaultData.stakedEarned.normalized, rewardTokenPrice.normalized)}`}</p>
 								</div>
 							}

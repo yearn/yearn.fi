@@ -20,8 +20,9 @@ import {
 import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
 import {JUICED_STAKING_REWARDS_ABI} from '@vaults/utils/abi/juicedStakingRewards.abi';
 import {STAKING_REWARDS_ABI} from '@vaults/utils/abi/stakingRewards.abi';
+import {V3_STAKING_REWARDS_ABI} from '@vaults/utils/abi/V3StakingRewards.abi';
 import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
-import {VEYFI_GAUGE_ABI} from '@vaults/utils/abi/veYFIGauge.abi.ts';
+import {VEYFI_GAUGE_ABI} from '@vaults/utils/abi/veYFIGauge.abi';
 import {readContract, readContracts} from '@wagmi/core';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {copyToClipboard} from '@yearn-finance/web-lib/utils/helpers';
@@ -470,6 +471,62 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 			});
 
 			earned = earnedRaw;
+		} else if (stakingSource === 'V3 Staking') {
+			const rewardTokensLength = await readContract(retrieveConfig(), {
+				address: toAddress(currentVault.staking.address),
+				chainId: currentVault.chainID,
+				abi: V3_STAKING_REWARDS_ABI,
+				functionName: 'rewardTokensLength'
+			});
+
+			const rewardTokensCalls = [] as any[];
+			for (let i = 0; i < Number(rewardTokensLength); i++) {
+				rewardTokensCalls.push({
+					address: toAddress(currentVault.staking.address),
+					chainId: currentVault.chainID,
+					abi: V3_STAKING_REWARDS_ABI,
+					functionName: 'rewardTokens',
+					args: [toBigInt(i)]
+				});
+			}
+			const result = await readContracts(retrieveConfig(), {
+				contracts: [
+					{
+						address: toAddress(currentVault.address),
+						abi: VAULT_V3_ABI,
+						chainId: currentVault.chainID,
+						functionName: 'balanceOf',
+						args: [toAddress(address)]
+					},
+					{
+						address: toAddress(currentVault.staking.address),
+						abi: erc20Abi,
+						chainId: currentVault.chainID,
+						functionName: 'balanceOf',
+						args: [toAddress(address)]
+					},
+					{
+						address: toAddress(currentVault.address),
+						abi: VAULT_V3_ABI,
+						chainId: currentVault.chainID,
+						functionName: 'pricePerShare'
+					},
+					...rewardTokensCalls
+				]
+			});
+			balanceOf = decodeAsBigInt(result[0]);
+			stakingBalance = decodeAsBigInt(result[1]);
+			pps = decodeAsBigInt(result[2]);
+			rewardsToken = decodeAsAddress(result[3]);
+
+			const earnedRaw = await readContract(retrieveConfig(), {
+				address: toAddress(currentVault.staking.address),
+				abi: V3_STAKING_REWARDS_ABI,
+				chainId: currentVault.chainID,
+				functionName: 'earned',
+				args: [toAddress(address), rewardsToken]
+			});
+			earned = isZeroAddress(address) ? 0n : earnedRaw;
 		} else {
 			const result = await readContracts(retrieveConfig(), {
 				contracts: [

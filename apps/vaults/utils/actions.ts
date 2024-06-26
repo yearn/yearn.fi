@@ -4,9 +4,10 @@ import {STAKING_REWARDS_ABI} from '@vaults/utils/abi/stakingRewards.abi';
 import {STAKING_REWARDS_ZAP_ABI} from '@vaults/utils/abi/stakingRewardsZap.abi';
 import {YGAUGE_ZAP_ABI} from '@vaults-v3/utils/abi/yGaugeZap.abi';
 import {STAKING_REWARDS_ZAP_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
-import {YGAUGES_ZAP_ADDRESS} from '@common/utils/constants';
+import {V3_STAKING_ZAP_ADDRESS, YGAUGES_ZAP_ADDRESS} from '@common/utils/constants';
 
-import {VEYFI_GAUGE_ABI} from './abi/veYFIGauge.abi.ts';
+import {V3_REWARDS_ZAP_ABI} from './abi/V3RewardsZap.abi';
+import {VEYFI_GAUGE_ABI} from './abi/veYFIGauge.abi';
 import {ZAP_CRV_ABI} from './abi/zapCRV.abi';
 
 import type {TAddress} from '@builtbymom/web3/types';
@@ -39,6 +40,15 @@ export async function depositAndStake(props: TDepositAndStake): Promise<TTxRespo
 		return await handleTx(props, {
 			address: props.contractAddress,
 			abi: STAKING_REWARDS_ZAP_ABI,
+			functionName: 'zapIn',
+			args: [props.vaultAddress, props.amount]
+		});
+	}
+	// If we are depositing into the V3 Staking
+	if (props.chainID === 42161 && toAddress(props.contractAddress) === toAddress(V3_STAKING_ZAP_ADDRESS)) {
+		return await handleTx(props, {
+			address: props.contractAddress,
+			abi: V3_REWARDS_ZAP_ABI,
 			functionName: 'zapIn',
 			args: [props.vaultAddress, props.amount]
 		});

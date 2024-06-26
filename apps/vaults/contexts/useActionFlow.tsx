@@ -436,6 +436,17 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 			return Solver.enum.JuicedStakingBooster;
 		}
 
+		// Only use V3StakingBooster if the user chose to stake automatically and the vault is staking with V3 Staking
+		if (
+			props.currentVault.staking.available &&
+			props.currentVault.staking.source === 'V3 Staking' &&
+			isAutoStakingEnabled &&
+			isDepositing &&
+			isUnderlyingToken
+		) {
+			return Solver.enum.V3StakingBooster;
+		}
+
 		const isV3 = props.currentVault?.version.split('.')?.[0] === '3';
 		const isInputTokenEth = isEthAddress(actionParams?.selectedOptionFrom?.value);
 		const isOutputTokenEth = isEthAddress(actionParams?.selectedOptionTo?.value);
