@@ -443,7 +443,7 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 
 				<div className={cl('col-span-5 z-10', 'flex flex-row items-center justify-between')}>
 					<div className={'flex flex-row gap-6'}>
-						<div className={'mt-2.5 size-8 rounded-full md:flex'}>
+						<div className={'mt-2.5 size-8 min-h-8 min-w-8 rounded-full md:flex'}>
 							<ImageWithFallback
 								src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-128.png`}
 								alt={``}
