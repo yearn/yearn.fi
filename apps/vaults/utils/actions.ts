@@ -50,7 +50,7 @@ export async function depositAndStake(props: TDepositAndStake): Promise<TTxRespo
 			address: props.contractAddress,
 			abi: V3_REWARDS_ZAP_ABI,
 			functionName: 'zapIn',
-			args: [props.vaultAddress, props.amount]
+			args: [props.vaultAddress, props.amount, false]
 		});
 	}
 

@@ -93,7 +93,7 @@ export const V3_REWARDS_ZAP_ABI = [
 	{
 		inputs: [],
 		name: 'stakingPoolRegistry',
-		outputs: [{internalType: 'address', name: '', type: 'address'}],
+		outputs: [{internalType: 'contract IRegistry', name: '', type: 'address'}],
 		stateMutability: 'view',
 		type: 'function'
 	},
@@ -107,7 +107,8 @@ export const V3_REWARDS_ZAP_ABI = [
 	{
 		inputs: [
 			{internalType: 'address', name: '_targetVault', type: 'address'},
-			{internalType: 'uint256', name: '_underlyingAmount', type: 'uint256'}
+			{internalType: 'uint256', name: '_underlyingAmount', type: 'uint256'},
+			{internalType: 'bool', name: '_isLegacy', type: 'bool'}
 		],
 		name: 'zapIn',
 		outputs: [{internalType: 'uint256', name: 'toStake', type: 'uint256'}],
@@ -116,32 +117,13 @@ export const V3_REWARDS_ZAP_ABI = [
 	},
 	{
 		inputs: [
-			{internalType: 'address', name: '_targetVault', type: 'address'},
-			{internalType: 'uint256', name: '_underlyingAmount', type: 'uint256'}
-		],
-		name: 'zapInLegacy',
-		outputs: [{internalType: 'uint256', name: 'toStake', type: 'uint256'}],
-		stateMutability: 'nonpayable',
-		type: 'function'
-	},
-	{
-		inputs: [
 			{internalType: 'address', name: '_vault', type: 'address'},
 			{internalType: 'uint256', name: '_vaultTokenAmount', type: 'uint256'},
+			{internalType: 'uint256', name: '_maxLoss', type: 'uint256'},
+			{internalType: 'bool', name: '_isLegacy', type: 'bool'},
 			{internalType: 'bool', name: '_exit', type: 'bool'}
 		],
 		name: 'zapOut',
-		outputs: [{internalType: 'uint256', name: 'underlyingAmount', type: 'uint256'}],
-		stateMutability: 'nonpayable',
-		type: 'function'
-	},
-	{
-		inputs: [
-			{internalType: 'address', name: '_vault', type: 'address'},
-			{internalType: 'uint256', name: '_vaultTokenAmount', type: 'uint256'},
-			{internalType: 'bool', name: '_exit', type: 'bool'}
-		],
-		name: 'zapOutLegacy',
 		outputs: [{internalType: 'uint256', name: 'underlyingAmount', type: 'uint256'}],
 		stateMutability: 'nonpayable',
 		type: 'function'
