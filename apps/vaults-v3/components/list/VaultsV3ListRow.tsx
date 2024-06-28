@@ -18,6 +18,11 @@ import type {TNormalizedBN} from '@builtbymom/web3/types';
 
 function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const isEthMainnet = currentVault.chainID === 1;
+	const hasPendleArbRewards =
+		currentVault.address === toAddress('0x044E75fCbF7BD3f8f4577FF317554e9c0037F145') ||
+		currentVault.address === toAddress('0x0F2ae7531A83982F15ff1D26B165E2bF3D7566da') ||
+		currentVault.address === toAddress('0x1Dd930ADD968ff5913C3627dAA1e6e6FCC9dc544');
+
 	if (currentVault.apr.forwardAPR.type === '') {
 		const hasZeroAPR = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0;
 		const boostedAPR = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.netAPR;
@@ -30,6 +35,7 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 						<b className={'yearn--table-data-section-item-value'}>
 							<Renderable
 								shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
+								/* TEMPORARY CODE TO NOTIFY 1000 ARB PER WEEK REWARD FOR SOME VAULTS */
 								fallback={'NEW'}>
 								{'⚡️ '}
 								<span
@@ -80,6 +86,14 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 							</div>
 						</span>
 					</span>
+					{/* TEMPORARY CODE TO NOTIFY 1000 ARB PER WEEK REWARD FOR SOME VAULTS */}
+					<small
+						className={cl(
+							'whitespace-nowrap text-xs text-neutral-800 self-end',
+							hasPendleArbRewards ? '-mb-4' : ''
+						)}>
+						<Renderable shouldRender={hasPendleArbRewards}>{`+ 1000 ARB per week 🚀`}</Renderable>
+					</small>
 				</div>
 			);
 		}
@@ -88,6 +102,7 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 				<b className={'yearn--table-data-section-item-value'}>
 					<Renderable
 						shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
+						/* TEMPORARY CODE TO NOTIFY 1000 ARB PER WEEK REWARD FOR SOME VAULTS */
 						fallback={'NEW'}>
 						<RenderAmount
 							value={currentVault.apr?.netAPR}
@@ -97,6 +112,14 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 						/>
 					</Renderable>
 				</b>
+				{/* TEMPORARY CODE TO NOTIFY 1000 ARB PER WEEK REWARD FOR SOME VAULTS */}
+				<small
+					className={cl(
+						'whitespace-nowrap text-xs text-neutral-800 self-end',
+						hasPendleArbRewards ? '-mb-4' : ''
+					)}>
+					<Renderable shouldRender={hasPendleArbRewards}>{`+ 1000 ARB per week 🚀`}</Renderable>
+				</small>
 			</div>
 		);
 	}
@@ -178,6 +201,7 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 					<b className={'yearn--table-data-section-item-value whitespace-nowrap'}>
 						<Renderable
 							shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
+							/* TEMPORARY CODE TO NOTIFY 1000 ARB PER WEEK REWARD FOR SOME VAULTS */
 							fallback={'NEW'}>
 							{'⚡️ '}
 							<span
@@ -228,6 +252,14 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 						</div>
 					</span>
 				</span>
+				{/* TEMPORARY CODE TO NOTIFY 1000 ARB PER WEEK REWARD FOR SOME VAULTS */}
+				<small
+					className={cl(
+						'whitespace-nowrap text-xs text-neutral-800 self-end',
+						hasPendleArbRewards ? '-mb-4' : ''
+					)}>
+					<Renderable shouldRender={hasPendleArbRewards}>{`+ 1000 ARB per week 🚀`}</Renderable>
+				</small>
 			</div>
 		);
 	}
@@ -243,6 +275,7 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 				<b className={'yearn--table-data-section-item-value'}>
 					<Renderable
 						shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
+						/* TEMPORARY CODE TO NOTIFY 1000 ARB PER WEEK REWARD FOR SOME VAULTS */
 						fallback={'NEW'}>
 						{currentVault?.info?.isBoosted ? '⚡️ ' : ''}
 						<RenderAmount
@@ -253,6 +286,14 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 						/>
 					</Renderable>
 				</b>
+				{/* TEMPORARY CODE TO NOTIFY 1000 ARB PER WEEK REWARD FOR SOME VAULTS */}
+				<small
+					className={cl(
+						'whitespace-nowrap text-xs text-neutral-800 self-end',
+						hasPendleArbRewards ? '-mb-4' : ''
+					)}>
+					<Renderable shouldRender={hasPendleArbRewards}>{`+ 1000 ARB per week 🚀`}</Renderable>
+				</small>
 			</div>
 		);
 	}
@@ -265,6 +306,7 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 					shouldRender={
 						!currentVault.apr.forwardAPR?.type.includes('new') && !currentVault.apr.type.includes('new')
 					}
+					/* TEMPORARY CODE TO NOTIFY 1000 ARB PER WEEK REWARD FOR SOME VAULTS */
 					fallback={'NEW'}>
 					{currentVault?.info?.isBoosted ? '⚡️ ' : ''}
 					<RenderAmount
@@ -275,6 +317,14 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 					/>
 				</Renderable>
 			</b>
+			{/* TEMPORARY CODE TO NOTIFY 1000 ARB PER WEEK REWARD FOR SOME VAULTS */}
+			<small
+				className={cl(
+					'whitespace-nowrap text-xs text-neutral-800 self-end',
+					hasPendleArbRewards ? '-mb-4' : ''
+				)}>
+				<Renderable shouldRender={hasPendleArbRewards}>{`+ 1000 ARB per week 🚀`}</Renderable>
+			</small>
 		</div>
 	);
 }
