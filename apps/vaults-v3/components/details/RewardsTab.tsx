@@ -305,6 +305,17 @@ export function RewardsTab(props: {currentVault: TYDaemonVault; hasStakingReward
 		[getPrice, props.currentVault]
 	);
 
+	if (props.currentVault.staking.rewards?.length === 0) {
+		return (
+			<div className={'flex flex-col gap-6 bg-neutral-100 p-4 md:gap-4 md:p-8'}>
+				<BoostMessage
+					hasStakingRewardsLive={props.hasStakingRewardsLive}
+					currentVault={props.currentVault}
+				/>
+			</div>
+		);
+	}
+
 	return (
 		<>
 			<div className={'flex flex-col gap-6 bg-neutral-100 p-4 md:gap-4 md:p-8'}>
