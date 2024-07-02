@@ -1,3 +1,7 @@
+# 0.4.2
+
+-   Feat: Show Only label in combobox
+
 # 0.4.1
 
 -   Feat: Refresh vault data on every block

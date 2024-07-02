@@ -44,15 +44,22 @@ function SelectAllOption(option: TMultiSelectOptionProps): ReactElement {
 }
 
 function Option(option: TMultiSelectOptionProps): ReactElement {
+	const [isHovered, set_isHovered] = useState(false);
+
 	return (
 		<Combobox.Option
 			onClick={option.onContainerClick}
 			value={option}
 			className={'transition-colors hover:bg-neutral-100'}>
-			<div className={'flex w-full items-center justify-between p-2'}>
+			<div
+				className={'flex w-full items-center justify-between p-2'}
+				onMouseEnter={() => set_isHovered(true)}
+				onMouseLeave={() => set_isHovered(false)}>
 				<div className={'flex items-center'}>
 					{option?.icon ? <div className={'size-8 overflow-hidden rounded-full'}>{option.icon}</div> : null}
-					<p className={`${option.icon ? 'pl-2' : 'pl-0'} font-normal text-neutral-900`}>{option.label}</p>
+					<p className={`${option.icon ? 'pl-2' : 'pl-0'} font-normal text-neutral-900`}>
+						{option.label} <span className={`font-bold ${isHovered ? '' : 'invisible'}`}>{'Only'}</span>
+					</p>
 				</div>
 				<input
 					type={'checkbox'}
