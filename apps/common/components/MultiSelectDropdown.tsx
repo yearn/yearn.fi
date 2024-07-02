@@ -58,10 +58,16 @@ function Option(option: TMultiSelectOptionProps): ReactElement {
 				<div className={'flex items-center'}>
 					{option?.icon ? <div className={'size-8 overflow-hidden rounded-full'}>{option.icon}</div> : null}
 					<p className={`${option.icon ? 'pl-2' : 'pl-0'} font-normal text-neutral-900`}>
-						{option.label} <span className={`font-bold ${isHovered ? '' : 'invisible'}`}>{'Only'}</span>
+						{option.label}{' '}
+						<span
+							className={`pl-1 text-xs text-neutral-900 transition-opacity ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
+							{'(only)'}
+						</span>
 					</p>
 				</div>
 				<input
+					onMouseEnter={() => set_isHovered(false)}
+					onMouseLeave={() => set_isHovered(true)}
 					type={'checkbox'}
 					checked={option.isSelected}
 					onChange={(): void => {}}
