@@ -3,7 +3,15 @@ import {useRouter} from 'next/router';
 import {useBlockNumber} from 'wagmi';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {useAsyncTrigger} from '@builtbymom/web3/hooks/useAsyncTrigger';
-import {cl, decodeAsBigInt, formatAmount, toAddress, toBigInt, toNormalizedBN} from '@builtbymom/web3/utils';
+import {
+	cl,
+	decodeAsBigInt,
+	formatAmount,
+	parseMarkdown,
+	toAddress,
+	toBigInt,
+	toNormalizedBN
+} from '@builtbymom/web3/utils';
 import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
 import {Listbox, Transition} from '@headlessui/react';
 import {useUpdateEffect} from '@react-hookz/web';
@@ -408,7 +416,11 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 					className={'col-span-12 mt-10'}>
 					<div className={'w-full rounded-3xl bg-neutral-900 p-6 text-neutral-0'}>
 						<b className={'text-lg'}>{'Oh look, an important message for you to read!'}</b>
-						<p className={'mt-2'}>{currentVault?.info.uiNotice}</p>
+						<p className={'mt-2'}>
+							{parseMarkdown(
+								currentVault?.info.uiNotice.replaceAll('{{token}}', currentVault.token.symbol)
+							)}
+						</p>
 					</div>
 				</div>
 			)}
