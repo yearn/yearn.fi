@@ -179,11 +179,14 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 					className={'col-span-12 mt-10'}>
 					<div className={'w-full rounded-3xl bg-neutral-900 p-6 text-neutral-0'}>
 						<b className={'text-lg'}>{'Oh look, an important message for you to read!'}</b>
-						<p className={'mt-2'}>
-							{parseMarkdown(
-								currentVault?.info.uiNotice.replaceAll('{{token}}', currentVault.token.symbol)
-							)}
-						</p>
+						<p
+							className={'mt-2'}
+							dangerouslySetInnerHTML={{
+								__html: parseMarkdown(
+									currentVault?.info.uiNotice.replaceAll('{{token}}', currentVault.token.symbol)
+								)
+							}}
+						/>
 					</div>
 				</div>
 			)}
