@@ -24,6 +24,7 @@ import {
 	VaultDetailsTab
 } from '@vaults-v3/components/details/VaultActionsTabsWrapper';
 import {readContracts} from '@wagmi/core';
+import {parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
 import {IconChevron} from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
@@ -178,7 +179,10 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 					className={'col-span-12 mt-10'}>
 					<div className={'w-full rounded-3xl bg-neutral-900 p-6 text-neutral-0'}>
 						<b className={'text-lg'}>{'Oh look, an important message for you to read!'}</b>
-						<p className={'mt-2'}>{currentVault?.info.uiNotice}</p>
+						<p
+							className={'mt-2'}
+							dangerouslySetInnerHTML={{__html: parseMarkdown(currentVault?.info.uiNotice)}}
+						/>
 					</div>
 				</div>
 			)}

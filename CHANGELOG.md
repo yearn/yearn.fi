@@ -1,3 +1,7 @@
+# 0.4.3
+
+-   Fix: Use Markdown for uiNotice
+
 # 0.4.2
 
 -   Feat: Show Only label in combobox
