@@ -70,7 +70,6 @@ export function BoostMessage(props: {
 	const stakingRewardSource = props.currentVault.staking.source;
 	const extraAPR = props.currentVault.apr.extra.stakingRewardsAPR;
 
-	console.log(props.currentVault.staking);
 	if (
 		props.currentTab === 0 &&
 		hasStakingRewards &&
