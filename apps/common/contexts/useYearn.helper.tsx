@@ -1,4 +1,5 @@
 import {useCallback, useMemo, useState} from 'react';
+import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {useTokenList} from '@builtbymom/web3/contexts/WithTokenList';
 import {useChainID} from '@builtbymom/web3/hooks/useChainID';
 import {toAddress} from '@builtbymom/web3/utils';
@@ -255,6 +256,7 @@ export function useYearnBalances({
 	isLoadingBalances: boolean;
 	onRefresh: (tokenToUpdate?: TUseBalancesTokens[]) => Promise<TYChainTokens>;
 } {
+	const {chainID} = useWeb3();
 	const allTokens = useYearnTokens({vaults, vaultsMigrations, vaultsRetired, isLoadingVaultList});
 	const {
 		data: tokensRaw,
@@ -262,7 +264,8 @@ export function useYearnBalances({
 		onUpdateSome,
 		isLoading
 	} = useBalances({
-		tokens: allTokens
+		tokens: allTokens,
+		priorityChainID: chainID
 	});
 
 	const balances = useDeepCompareMemo((): TYChainTokens => {

@@ -1,5 +1,6 @@
-import {useCallback, useMemo, useRef, useState} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {erc20Abi} from 'viem';
+import XXH from 'xxhashjs';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {useAsyncTrigger} from '@builtbymom/web3/hooks/useAsyncTrigger';
 import {AGGREGATE3_ABI} from '@builtbymom/web3/utils/abi/aggregate.abi';
@@ -19,6 +20,11 @@ import type {Connector} from 'wagmi';
 import type {TAddress} from '@builtbymom/web3/types/address';
 import type {TChainTokens, TDefaultStatus, TDict, TNDict, TToken} from '@builtbymom/web3/types/mixed';
 
+export function createUniqueID(msg: string): string {
+	const hash = XXH.h32(0x536d6f6c).update(msg).digest().toString(16);
+	return hash;
+}
+
 /*******************************************************************************
  ** Request, Response and helpers for the useBalances hook.
  ******************************************************************************/
@@ -33,17 +39,25 @@ export type TUseBalancesTokens = {
 export type TUseBalancesReq = {
 	key?: string | number;
 	tokens: TUseBalancesTokens[];
+	priorityChainID?: number;
 	effectDependencies?: DependencyList;
 	provider?: Connector;
 };
 
+export type TChainStatus = {
+	chainLoadingStatus: TNDict<boolean>;
+	chainSuccessStatus: TNDict<boolean>;
+	chainErrorStatus: TNDict<boolean>;
+};
+
 export type TUseBalancesRes = {
 	data: TChainTokens;
-	onUpdate: () => Promise<TChainTokens>;
-	onUpdateSome: (token: TUseBalancesTokens[]) => Promise<TChainTokens>;
+	onUpdate: (shouldForceFetch?: boolean) => Promise<TChainTokens>;
+	onUpdateSome: (token: TUseBalancesTokens[], shouldForceFetch?: boolean) => Promise<TChainTokens>;
 	error?: Error;
 	status: 'error' | 'loading' | 'success' | 'unknown';
-} & TDefaultStatus;
+} & Omit<TDefaultStatus, 'isFetched' | 'isRefetching' | 'isFetching'> &
+	TChainStatus;
 
 type TDataRef = {
 	nonce: number;
@@ -66,16 +80,39 @@ const defaultStatus = {
 	isRefetching: false
 };
 
-async function performCall(
+const defaultChainStatus = {
+	chainLoadingStatus: {},
+	chainSuccessStatus: {},
+	chainErrorStatus: {}
+};
+
+export async function performCall(
 	chainID: number,
 	chunckCalls: MulticallParameters['contracts'],
 	tokens: TUseBalancesTokens[],
 	ownerAddress: TAddress
 ): Promise<[TDict<TToken>, Error | undefined]> {
-	const results = await multicall(retrieveConfig(), {
-		contracts: chunckCalls as never[],
-		chainId: chainID
-	});
+	let results: (
+		| {
+				error?: undefined;
+				result: never;
+				status: 'success';
+		  }
+		| {
+				error: Error;
+				result?: undefined;
+				status: 'failure';
+		  }
+	)[] = [];
+	try {
+		results = await multicall(retrieveConfig(), {
+			contracts: chunckCalls as never[],
+			chainId: chainID
+		});
+	} catch (error) {
+		console.error(`Failed to trigger multicall on chain ${chainID}`, error);
+		return [{}, error as Error];
+	}
 
 	const _data: TDict<TToken> = {};
 	const hasOwnerAddress = Boolean(ownerAddress) && !isZeroAddress(ownerAddress);
@@ -177,10 +214,11 @@ async function performCall(
 	return [_data, undefined];
 }
 
-async function getBalances(
+export async function getBalances(
 	chainID: number,
 	address: TAddress | undefined,
-	tokens: TUseBalancesTokens[]
+	tokens: TUseBalancesTokens[],
+	shouldForceFetch = false
 ): Promise<[TDict<TToken>, Error | undefined]> {
 	let result: TDict<TToken> = {};
 	const ownerAddress = address;
@@ -190,14 +228,19 @@ async function getBalances(
 		const {address: token} = element;
 
 		const tokenUpdateInfo = TOKEN_UPDATE[`${chainID}/${toAddress(element.address)}`];
-		if (tokenUpdateInfo?.lastUpdate && Date.now() - tokenUpdateInfo?.lastUpdate < 60_000) {
+		if (tokenUpdateInfo?.lastUpdate && Date.now() - tokenUpdateInfo?.lastUpdate < 60_000 && !shouldForceFetch) {
 			if (toAddress(tokenUpdateInfo.owner) === toAddress(ownerAddress)) {
+				result[toAddress(token)] = tokenUpdateInfo;
 				continue;
 			}
 		}
 
 		if (isEthAddress(token)) {
-			const multicall3Contract = {address: MULTICALL3_ADDRESS, abi: AGGREGATE3_ABI};
+			const network = getNetwork(chainID);
+			const multicall3Contract = {
+				address: network.contracts.multicall3?.address || MULTICALL3_ADDRESS,
+				abi: AGGREGATE3_ABI
+			};
 			const baseContract = {address: ETH_TOKEN_ADDRESS, abi: erc20Abi};
 			if (element.decimals === undefined || element.decimals === 0) {
 				calls.push({...baseContract, functionName: 'decimals'} as never);
@@ -244,14 +287,45 @@ async function getBalances(
 export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	const {address: userAddress} = useWeb3();
 	const [status, set_status] = useState<TDefaultStatus>(defaultStatus);
+	const [someStatus, set_someStatus] = useState<TDefaultStatus>(defaultStatus);
+	const [updateStatus, set_updateStatus] = useState<TDefaultStatus>(defaultStatus);
 	const [error, set_error] = useState<Error | undefined>(undefined);
 	const [balances, set_balances] = useState<TChainTokens>({});
+	const [chainStatus, set_chainStatus] = useState<TChainStatus>(defaultChainStatus);
+
 	const data = useRef<TDataRef>({nonce: 0, address: toAddress(), balances: {}});
 	const stringifiedTokens = useMemo((): string => serialize(props?.tokens || []), [props?.tokens]);
+	const currentlyConnectedAddress = useRef<TAddress | undefined>(undefined);
+	const currentIdentifier = useRef<string | undefined>();
+
+	useEffect(() => {
+		if (toAddress(userAddress) !== toAddress(currentlyConnectedAddress.current)) {
+			currentlyConnectedAddress.current = toAddress(userAddress);
+			set_balances({});
+			data.current = {
+				address: toAddress(userAddress),
+				balances: {},
+				nonce: 0
+			};
+			const resetChainStatus: TChainStatus = defaultChainStatus;
+			const config = retrieveConfig();
+			for (const network of config.chains) {
+				resetChainStatus.chainLoadingStatus[network.id] = true;
+				resetChainStatus.chainSuccessStatus[network.id] = false;
+				resetChainStatus.chainErrorStatus[network.id] = false;
+			}
+			set_status({...defaultStatus, isLoading: true});
+			set_chainStatus(resetChainStatus);
+		}
+	}, [userAddress]);
 
 	const updateBalancesCall = useCallback(
 		(currentUserAddress: TAddress, chainID: number, newRawData: TDict<TToken>): TChainTokens => {
-			if (toAddress(currentUserAddress) !== data?.current?.address) {
+			if (currentlyConnectedAddress.current !== currentUserAddress) {
+				return {};
+			}
+
+			if (toAddress(currentUserAddress) !== toAddress(data?.current?.address)) {
 				data.current = {
 					address: toAddress(currentUserAddress),
 					balances: {},
@@ -271,15 +345,15 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 			}
 			data.current.nonce += 1;
 
-			set_balances(
-				(b): TChainTokens => ({
+			set_balances((b): TChainTokens => {
+				return {
 					...b,
 					[chainID]: {
 						...(b[chainID] || {}),
 						...data.current.balances[chainID]
 					}
-				})
-			);
+				};
+			});
 			return data.current.balances;
 		},
 		[]
@@ -291,89 +365,96 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	 ** This takes the whole list and is not optimized for performance, aka not
 	 ** send in a worker.
 	 **************************************************************************/
-	const onUpdate = useCallback(async (): Promise<TChainTokens> => {
-		const tokenList = (deserialize(stringifiedTokens) || []) as TUseBalancesTokens[];
-		const tokens = tokenList.filter(({address}: TUseBalancesTokens): boolean => !isZeroAddress(address));
-		if (isZero(tokens.length)) {
-			return {};
-		}
-		set_status({
-			...defaultStatus,
-			isLoading: true,
-			isFetching: true,
-			isRefetching: defaultStatus.isFetched
-		});
-
-		const tokensPerChainID: TNDict<TUseBalancesTokens[]> = {};
-		const alreadyAdded: TNDict<TDict<boolean>> = {};
-		for (const token of tokens) {
-			if (!tokensPerChainID[token.chainID]) {
-				tokensPerChainID[token.chainID] = [];
+	const onUpdate = useCallback(
+		async (shouldForceFetch?: boolean): Promise<TChainTokens> => {
+			const tokenList = (deserialize(stringifiedTokens) || []) as TUseBalancesTokens[];
+			const tokens = tokenList.filter(({address}: TUseBalancesTokens): boolean => !isZeroAddress(address));
+			if (isZero(tokens.length)) {
+				return {};
 			}
-			if (!alreadyAdded[token.chainID]) {
-				alreadyAdded[token.chainID] = {};
-			}
-			if (alreadyAdded[token.chainID][toAddress(token.address)]) {
-				continue;
-			}
-			tokensPerChainID[token.chainID].push(token);
-			alreadyAdded[token.chainID][toAddress(token.address)] = true;
-		}
+			set_updateStatus({...defaultStatus, isLoading: true});
 
-		const updated: TChainTokens = {};
-		for (const [chainIDStr, tokens] of Object.entries(tokensPerChainID)) {
-			const chainID = Number(chainIDStr);
-
-			const chunks = [];
-			for (let i = 0; i < tokens.length; i += 500) {
-				chunks.push(tokens.slice(i, i + 500));
+			const tokensPerChainID: TNDict<TUseBalancesTokens[]> = {};
+			const alreadyAdded: TNDict<TDict<boolean>> = {};
+			for (const token of tokens) {
+				if (!tokensPerChainID[token.chainID]) {
+					tokensPerChainID[token.chainID] = [];
+				}
+				if (!alreadyAdded[token.chainID]) {
+					alreadyAdded[token.chainID] = {};
+				}
+				if (alreadyAdded[token.chainID][toAddress(token.address)]) {
+					continue;
+				}
+				tokensPerChainID[token.chainID].push(token);
+				alreadyAdded[token.chainID][toAddress(token.address)] = true;
 			}
 
-			for (const chunkTokens of chunks) {
-				const [newRawData, err] = await getBalances(chainID || 1, userAddress, chunkTokens);
-				if (err) {
-					set_error(err as Error);
+			const updated: TChainTokens = {};
+			const chainIDs = retrieveConfig().chains.map(({id}) => id);
+			for (const [chainIDStr, tokens] of Object.entries(tokensPerChainID)) {
+				const chainID = Number(chainIDStr);
+				if (!chainIDs.includes(chainID)) {
+					continue;
 				}
 
-				if (toAddress(userAddress) !== data?.current?.address) {
-					data.current = {
-						address: toAddress(userAddress),
-						balances: {},
-						nonce: 0
-					};
+				const chunks = [];
+				for (let i = 0; i < tokens.length; i += 200) {
+					chunks.push(tokens.slice(i, i + 200));
 				}
-				data.current.address = toAddress(userAddress);
-				for (const [address, element] of Object.entries(newRawData)) {
-					if (!updated[chainID]) {
-						updated[chainID] = {};
-					}
-					updated[chainID][address] = element;
 
-					if (!data.current.balances[chainID]) {
-						data.current.balances[chainID] = {};
+				for (const chunkTokens of chunks) {
+					const [newRawData, err] = await getBalances(
+						chainID || 1,
+						userAddress,
+						chunkTokens,
+						shouldForceFetch
+					);
+					if (err) {
+						set_error(err as Error);
 					}
-					data.current.balances[chainID][address] = {
-						...data.current.balances[chainID][address],
-						...element
-					};
+
+					if (toAddress(userAddress) !== data?.current?.address) {
+						data.current = {
+							address: toAddress(userAddress),
+							balances: {},
+							nonce: 0
+						};
+					}
+					data.current.address = toAddress(userAddress);
+					for (const [address, element] of Object.entries(newRawData)) {
+						if (!updated[chainID]) {
+							updated[chainID] = {};
+						}
+						updated[chainID][address] = element;
+
+						if (!data.current.balances[chainID]) {
+							data.current.balances[chainID] = {};
+						}
+						data.current.balances[chainID][address] = {
+							...data.current.balances[chainID][address],
+							...element
+						};
+					}
+					data.current.nonce += 1;
 				}
-				data.current.nonce += 1;
+
+				set_balances(
+					(b): TChainTokens => ({
+						...b,
+						[chainID]: {
+							...(b[chainID] || {}),
+							...data.current.balances[chainID]
+						}
+					})
+				);
+				set_updateStatus({...defaultStatus, isSuccess: true});
 			}
 
-			set_balances(
-				(b): TChainTokens => ({
-					...b,
-					[chainID]: {
-						...(b[chainID] || {}),
-						...data.current.balances[chainID]
-					}
-				})
-			);
-			set_status({...defaultStatus, isSuccess: true, isFetched: true});
-		}
-
-		return updated;
-	}, [stringifiedTokens, userAddress]);
+			return updated;
+		},
+		[stringifiedTokens, userAddress]
+	);
 
 	/***************************************************************************
 	 ** onUpdateSome takes a list of tokens and fetches the balances for each
@@ -381,13 +462,8 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	 ** issue as it should only be used for a little list of tokens.
 	 **************************************************************************/
 	const onUpdateSome = useCallback(
-		async (tokenList: TUseBalancesTokens[]): Promise<TChainTokens> => {
-			set_status({
-				...defaultStatus,
-				isLoading: true,
-				isFetching: true,
-				isRefetching: defaultStatus.isFetched
-			});
+		async (tokenList: TUseBalancesTokens[], shouldForceFetch?: boolean): Promise<TChainTokens> => {
+			set_someStatus({...defaultStatus, isLoading: true});
 			const chains: number[] = [];
 			const tokens = tokenList.filter(({address}: TUseBalancesTokens): boolean => !isZeroAddress(address));
 			const tokensPerChainID: TNDict<TUseBalancesTokens[]> = {};
@@ -412,15 +488,24 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 			}
 
 			const updated: TChainTokens = {};
+			const chainIDs = retrieveConfig().chains.map(({id}) => id);
 			for (const [chainIDStr, tokens] of Object.entries(tokensPerChainID)) {
 				const chainID = Number(chainIDStr);
+				if (!chainIDs.includes(chainID)) {
+					continue;
+				}
 
 				const chunks = [];
-				for (let i = 0; i < tokens.length; i += 500) {
-					chunks.push(tokens.slice(i, i + 500));
+				for (let i = 0; i < tokens.length; i += 200) {
+					chunks.push(tokens.slice(i, i + 200));
 				}
 				for (const chunkTokens of chunks) {
-					const [newRawData, err] = await getBalances(chainID || 1, toAddress(userAddress), chunkTokens);
+					const [newRawData, err] = await getBalances(
+						chainID || 1,
+						toAddress(userAddress),
+						chunkTokens,
+						shouldForceFetch
+					);
 					if (err) {
 						set_error(err as Error);
 					}
@@ -458,7 +543,7 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 				}
 				return updated;
 			});
-			set_status({...defaultStatus, isSuccess: true, isFetched: true});
+			set_someStatus({...defaultStatus, isSuccess: true});
 			return updated;
 		},
 		[userAddress]
@@ -470,12 +555,15 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 	 ** to fetch the balances, preventing the UI to freeze.
 	 **************************************************************************/
 	useAsyncTrigger(async (): Promise<void> => {
-		set_status({
-			...defaultStatus,
-			isLoading: true,
-			isFetching: true,
-			isRefetching: defaultStatus.isFetched
-		});
+		set_status({...defaultStatus, isLoading: true});
+
+		/******************************************************************************************
+		 ** Everytime this function is re-triggered, we will create a unique identifier based on
+		 ** the stringified tokens and the user address. This will allow us to prevent multiple
+		 ** final setState that might jump the UI.
+		 *****************************************************************************************/
+		const identifier = createUniqueID(serialize({stringifiedTokens, userAddress}));
+		currentIdentifier.current = identifier;
 
 		const tokens = (JSON.parse(stringifiedTokens) || []) as TUseBalancesTokens[];
 		const tokensPerChainID: TNDict<TUseBalancesTokens[]> = {};
@@ -494,12 +582,60 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 			alreadyAdded[token.chainID][toAddress(token.address)] = true;
 		}
 
+		if (props?.priorityChainID) {
+			const chainID = props.priorityChainID;
+			set_chainStatus(prev => ({
+				chainLoadingStatus: {...(prev?.chainLoadingStatus || {}), [chainID]: true},
+				chainSuccessStatus: {...(prev?.chainSuccessStatus || {}), [chainID]: false},
+				chainErrorStatus: {...(prev?.chainErrorStatus || {}), [chainID]: false}
+			}));
+
+			const tokens = tokensPerChainID[chainID] || [];
+			if (tokens.length > 0) {
+				const chunks = [];
+				for (let i = 0; i < tokens.length; i += 200) {
+					chunks.push(tokens.slice(i, i + 200));
+				}
+				const allPromises = [];
+				for (const chunkTokens of chunks) {
+					allPromises.push(
+						getBalances(chainID, userAddress, chunkTokens).then(
+							async ([newRawData, err]): Promise<void> => {
+								updateBalancesCall(toAddress(userAddress), chainID, newRawData);
+								set_error(err);
+							}
+						)
+					);
+				}
+				await Promise.all(allPromises);
+				if (currentIdentifier.current === identifier) {
+					set_chainStatus(prev => ({
+						chainLoadingStatus: {...(prev?.chainLoadingStatus || {}), [chainID]: false},
+						chainSuccessStatus: {...(prev?.chainSuccessStatus || {}), [chainID]: true},
+						chainErrorStatus: {...(prev?.chainErrorStatus || {}), [chainID]: false}
+					}));
+				}
+			}
+		}
+
+		const chainIDs = retrieveConfig().chains.map(({id}) => id);
 		for (const [chainIDStr, tokens] of Object.entries(tokensPerChainID)) {
 			const chainID = Number(chainIDStr);
+			if (!chainIDs.includes(chainID)) {
+				continue;
+			}
+			if (props?.priorityChainID && chainID === props.priorityChainID) {
+				continue;
+			}
+			set_chainStatus(prev => ({
+				chainLoadingStatus: {...(prev?.chainLoadingStatus || {}), [chainID]: true},
+				chainSuccessStatus: {...(prev?.chainSuccessStatus || {}), [chainID]: false},
+				chainErrorStatus: {...(prev?.chainErrorStatus || {}), [chainID]: false}
+			}));
 
 			const chunks = [];
-			for (let i = 0; i < tokens.length; i += 500) {
-				chunks.push(tokens.slice(i, i + 500));
+			for (let i = 0; i < tokens.length; i += 200) {
+				chunks.push(tokens.slice(i, i + 200));
 			}
 			const allPromises = [];
 			for (const chunkTokens of chunks) {
@@ -511,10 +647,24 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 				);
 			}
 			await Promise.all(allPromises);
+			if (currentIdentifier.current === identifier) {
+				set_chainStatus(prev => ({
+					chainLoadingStatus: {...(prev?.chainLoadingStatus || {}), [chainID]: false},
+					chainSuccessStatus: {...(prev?.chainSuccessStatus || {}), [chainID]: true},
+					chainErrorStatus: {...(prev?.chainErrorStatus || {}), [chainID]: false}
+				}));
+			}
 		}
 
-		set_status({...defaultStatus, isSuccess: true, isFetched: true});
-	}, [stringifiedTokens, userAddress, updateBalancesCall]);
+		/******************************************************************************************
+		 ** If the current identifier is the same as the one we created, we can set the status to
+		 ** success and fetched. This will prevent the UI to jump if the user changes the tokens
+		 ** or the address.
+		 *****************************************************************************************/
+		if (currentIdentifier.current === identifier) {
+			set_status({...defaultStatus, isSuccess: true});
+		}
+	}, [stringifiedTokens, userAddress, updateBalancesCall, props?.priorityChainID]);
 
 	const contextValue = useDeepCompareMemo(
 		(): TUseBalancesRes => ({
@@ -522,31 +672,38 @@ export function useBalances(props?: TUseBalancesReq): TUseBalancesRes {
 			onUpdate: onUpdate,
 			onUpdateSome: onUpdateSome,
 			error,
-			isLoading: status.isLoading,
-			isFetching: status.isFetching,
-			isSuccess: status.isSuccess,
-			isError: status.isError,
-			isFetched: status.isFetched,
-			isRefetching: status.isRefetching,
-			status: status.isError
-				? 'error'
-				: status.isLoading || status.isFetching
-					? 'loading'
-					: status.isSuccess
-						? 'success'
-						: 'unknown'
+			isLoading: status.isLoading || someStatus.isLoading || updateStatus.isLoading,
+			isSuccess: status.isSuccess && someStatus.isSuccess && updateStatus.isSuccess,
+			isError: status.isError || someStatus.isError || updateStatus.isError,
+			chainErrorStatus: chainStatus.chainErrorStatus,
+			chainLoadingStatus: chainStatus.chainLoadingStatus,
+			chainSuccessStatus: chainStatus.chainSuccessStatus,
+			status:
+				status.isError || someStatus.isError || updateStatus.isError
+					? 'error'
+					: status.isLoading || someStatus.isLoading || updateStatus.isLoading
+						? 'loading'
+						: status.isSuccess && someStatus.isSuccess && updateStatus.isSuccess
+							? 'success'
+							: 'unknown'
 		}),
 		[
 			balances,
 			error,
 			onUpdate,
 			onUpdateSome,
+			someStatus.isError,
+			someStatus.isLoading,
+			someStatus.isSuccess,
 			status.isError,
-			status.isFetched,
-			status.isFetching,
 			status.isLoading,
-			status.isRefetching,
-			status.isSuccess
+			status.isSuccess,
+			updateStatus.isError,
+			updateStatus.isLoading,
+			updateStatus.isSuccess,
+			chainStatus.chainErrorStatus,
+			chainStatus.chainLoadingStatus,
+			chainStatus.chainSuccessStatus
 		]
 	);
 
