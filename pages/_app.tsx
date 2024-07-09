@@ -6,7 +6,6 @@ import PlausibleProvider from 'next-plausible';
 import {AnimatePresence, domAnimation, LazyMotion, motion} from 'framer-motion';
 import {WithMom} from '@builtbymom/web3/contexts/WithMom';
 import {cl} from '@builtbymom/web3/utils';
-import {localhost} from '@builtbymom/web3/utils/wagmi';
 import {AppSettingsContextApp} from '@vaults/contexts/useAppSettings';
 import {WalletForZapAppContextApp} from '@vaults/contexts/useWalletForZaps';
 import {arbitrum, base, fantom, mainnet, optimism, polygon} from '@wagmi/chains';
@@ -98,7 +97,7 @@ const WithLayout = memo(function WithLayout(props: {supportedNetworks: Chain[]} 
  **************************************************************************************************/
 function MyApp(props: AppProps): ReactElement {
 	const {manifest} = useCurrentApp(props.router);
-	const supportedNetworks = [mainnet, optimism, polygon, fantom, base, arbitrum, localhost];
+	const supportedNetworks = [mainnet, optimism, polygon, fantom, base, arbitrum];
 
 	return (
 		<WithFonts>
