@@ -1,5 +1,3 @@
-import {Wrapper} from '@vaults/Wrapper';
-
 import type {ReactElement} from 'react';
 
 function About(): ReactElement {
@@ -141,9 +139,5 @@ function About(): ReactElement {
 		</section>
 	);
 }
-
-About.getLayout = function getLayout(page: ReactElement): ReactElement {
-	return <Wrapper>{page}</Wrapper>;
-};
 
 export default About;
