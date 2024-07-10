@@ -1,14 +1,13 @@
 import React, {memo} from 'react';
 import {Toaster} from 'react-hot-toast';
 import {usePathname} from 'next/navigation';
-import {type NextRouter, useRouter} from 'next/router';
+import {useRouter} from 'next/router';
 import PlausibleProvider from 'next-plausible';
 import {AnimatePresence, domAnimation, LazyMotion, motion} from 'framer-motion';
 import {WithMom} from '@builtbymom/web3/contexts/WithMom';
 import {cl} from '@builtbymom/web3/utils';
 import {AppSettingsContextApp} from '@vaults/contexts/useAppSettings';
 import {WalletForZapAppContextApp} from '@vaults/contexts/useWalletForZaps';
-import {arbitrum, base, fantom, mainnet, optimism, polygon} from '@wagmi/chains';
 import {IconAlertCritical} from '@yearn-finance/web-lib/icons/IconAlertCritical';
 import {IconAlertError} from '@yearn-finance/web-lib/icons/IconAlertError';
 import {IconCheckmark} from '@yearn-finance/web-lib/icons/IconCheckmark';
@@ -18,8 +17,8 @@ import {WithFonts} from '@common/components/WithFonts';
 import {YearnContextApp} from '@common/contexts/useYearn';
 import {useCurrentApp} from '@common/hooks/useCurrentApp';
 import {variants} from '@common/utils/animations';
+import {SUPPORTED_NETWORKS} from '@common/utils/constants';
 
-import type {NextComponentType} from 'next';
 import type {AppProps} from 'next/app';
 import type {ReactElement} from 'react';
 import type {Chain} from 'viem';
@@ -40,14 +39,10 @@ import '../style.css';
  ** The returned JSX structure is a div with the 'AppHeader' component, the current page component
  ** wrapped with layout, and the feedback popover if it should not be hidden.
  **************************************************************************************************/
-type TGetLayout = NextComponentType & {
-	getLayout: (p: ReactElement, router: NextRouter) => ReactElement;
-};
 const WithLayout = memo(function WithLayout(props: {supportedNetworks: Chain[]} & AppProps): ReactElement {
 	const router = useRouter();
 	const {Component, pageProps} = props;
 	const pathName = usePathname();
-	const getLayout = (Component as TGetLayout).getLayout || ((page: ReactElement): ReactElement => page);
 	const {name} = useCurrentApp(router);
 
 	return (
@@ -61,20 +56,17 @@ const WithLayout = memo(function WithLayout(props: {supportedNetworks: Chain[]} 
 				<div className={'block size-full min-h-max'}>
 					<LazyMotion features={domAnimation}>
 						<AnimatePresence mode={'wait'}>
-							{getLayout(
-								<motion.div
-									key={`${name}_${pathName}`}
-									initial={'initial'}
-									animate={'enter'}
-									exit={'exit'}
-									variants={variants}>
-									<Component
-										router={props.router}
-										{...pageProps}
-									/>
-								</motion.div>,
-								router
-							)}
+							<motion.div
+								key={`${name}_${pathName}`}
+								initial={'initial'}
+								animate={'enter'}
+								exit={'exit'}
+								variants={variants}>
+								<Component
+									router={props.router}
+									{...pageProps}
+								/>
+							</motion.div>
 						</AnimatePresence>
 					</LazyMotion>
 				</div>
@@ -97,7 +89,6 @@ const WithLayout = memo(function WithLayout(props: {supportedNetworks: Chain[]} 
  **************************************************************************************************/
 function MyApp(props: AppProps): ReactElement {
 	const {manifest} = useCurrentApp(props.router);
-	const supportedNetworks = [mainnet, optimism, polygon, fantom, base, arbitrum];
 
 	return (
 		<WithFonts>
@@ -114,7 +105,7 @@ function MyApp(props: AppProps): ReactElement {
 					domain={'yearn.fi'}
 					enabled={true}>
 					<WithMom
-						supportedChains={supportedNetworks}
+						supportedChains={SUPPORTED_NETWORKS}
 						tokenLists={[
 							'https://raw.githubusercontent.com/SmolDapp/tokenLists/main/lists/yearn.json',
 							'https://raw.githubusercontent.com/SmolDapp/tokenLists/main/lists/portals.json'
@@ -123,7 +114,7 @@ function MyApp(props: AppProps): ReactElement {
 							<YearnContextApp>
 								<WalletForZapAppContextApp>
 									<WithLayout
-										supportedNetworks={supportedNetworks}
+										supportedNetworks={SUPPORTED_NETWORKS}
 										{...props}
 									/>
 								</WalletForZapAppContextApp>

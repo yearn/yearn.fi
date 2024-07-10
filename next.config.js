@@ -1,13 +1,9 @@
-/* eslint-disable @typescript-eslint/explicit-function-return-type */
-const runtimeCaching = require('next-pwa/cache');
 // eslint-disable-next-line unused-imports/no-unused-vars, @typescript-eslint/no-unused-vars
 const {withPlausibleProxy} = require('next-plausible');
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
 const withPWA = require('next-pwa')({
 	dest: 'public',
-	register: true,
-	skipWaiting: true,
-	runtimeCaching,
-	buildExcludes: [/middleware-manifest.json$/]
+	disable: process.env.NODE_ENV !== 'production'
 });
 
 module.exports = withPlausibleProxy({
@@ -35,10 +31,6 @@ module.exports = withPlausibleProxy({
 				}
 			]
 		},
-		experimental: {
-			webpackBuildWorker: true
-		},
-		swcMinify: false,
 		async rewrites() {
 			return [
 				{

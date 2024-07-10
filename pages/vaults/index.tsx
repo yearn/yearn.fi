@@ -11,7 +11,6 @@ import {ALL_VAULTS_CATEGORIES, ALL_VAULTS_CATEGORIES_KEYS} from '@vaults/constan
 import {useVaultFilter} from '@vaults/hooks/useFilteredVaults';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
-import {Wrapper} from '@vaults/Wrapper';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {usePagination} from '@yearn-finance/web-lib/hooks/usePagination';
@@ -266,9 +265,5 @@ function Index(): ReactElement {
 		</section>
 	);
 }
-
-Index.getLayout = function getLayout(page: ReactElement): ReactElement {
-	return <Wrapper>{page}</Wrapper>;
-};
 
 export default Index;

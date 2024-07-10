@@ -8,7 +8,6 @@ import {VaultDetailsTabsWrapper} from '@vaults/components/details/tabs/VaultDeta
 import {VaultActionsTabsWrapper} from '@vaults/components/details/VaultActionsTabsWrapper';
 import {ActionFlowContextApp} from '@vaults/contexts/useActionFlow';
 import {WithSolverContextApp} from '@vaults/contexts/useSolver';
-import {Wrapper} from '@vaults/Wrapper';
 import {VaultDetailsHeader} from '@vaults-v3/components/details/VaultDetailsHeader';
 import {useYDaemonBaseURI} from '@yearn-finance/web-lib/hooks/useYDaemonBaseURI';
 import {yDaemonVaultSchema} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
@@ -128,10 +127,6 @@ export const getStaticProps: GetStaticProps = async () => {
 	return {
 		props: {}
 	};
-};
-
-Index.getLayout = function getLayout(page: ReactElement): ReactElement {
-	return <Wrapper>{page}</Wrapper>;
 };
 
 export default Index;
