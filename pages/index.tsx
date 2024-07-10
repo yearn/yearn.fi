@@ -4,7 +4,6 @@ import Link from 'next/link';
 import {cl} from '@builtbymom/web3/utils';
 import {AnimatedGradientBackgroundForV3} from '@vaults-v3/components/AnimatedGradientBackground';
 import {V3Mask} from '@vaults-v3/Mark';
-import {Button} from '@yearn-finance/web-lib/components/Button';
 import {YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {LogoYearn} from '@common/icons/LogoYearn';
@@ -283,9 +282,6 @@ function Index(): ReactElement {
 					</p>
 				</div>
 			</div>
-			<Link href={`/?random=${Math.random().toString(36).substring(7)}`}>
-				<Button>{'CLICK'}</Button>
-			</Link>
 			<section className={'grid grid-cols-1 gap-10 md:grid-cols-3 lg:grid-cols-3'}>
 				{apps.map(
 					(app): ReactElement => (
