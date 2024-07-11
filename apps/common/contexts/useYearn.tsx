@@ -6,7 +6,7 @@ import {useLocalStorageValue} from '@react-hookz/web';
 import {Solver, type TSolver} from '@vaults/types/solvers';
 import {useFetchYearnEarnedForUser} from '@yearn-finance/web-lib/hooks/useFetchYearnEarnedForUser';
 import {useFetchYearnPrices} from '@yearn-finance/web-lib/hooks/useFetchYearnPrices';
-import {useFetchYearnVaults} from '@yearn-finance/web-lib/hooks/useFetchYearnVaults';
+import {useFetchYearnVaults} from '@common/hooks/useFetchYearnVaults';
 
 import {useYearnBalances} from './useYearn.helper';
 
