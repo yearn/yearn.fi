@@ -170,7 +170,7 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 	function renderMultipleOptionsFallback(): ReactElement {
 		return (
 			<Dropdown
-				className={isV3Page ? '!w-fit rounded-lg bg-neutral-300' : 'rounded-lg'}
+				className={isV3Page ? 'w-full rounded-lg bg-neutral-300 md:!w-fit' : 'rounded-lg'}
 				comboboxOptionsClassName={isV3Page ? 'bg-neutral-300 w-full rounded-lg' : 'rounded-lg'}
 				defaultOption={possibleOptionsFrom[0]}
 				options={possibleOptionsFrom}
@@ -258,7 +258,7 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 				</div>
 				<div
 					className={cl(
-						'flex h-10 items-center rounded-lg p-2',
+						'flex h-10 items-center rounded-lg p-2 w-full',
 						isV3Page ? 'bg-neutral-300' : 'bg-neutral-0'
 					)}>
 					<div className={'flex h-10 w-full flex-row items-center justify-between px-0 py-4'}>
