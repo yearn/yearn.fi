@@ -86,7 +86,7 @@ export function Filters({
 			<div
 				className={cl(
 					'grid grid-cols-1 gap-6 md:grid-cols-3',
-					shouldExpandFilters ? 'h-auto' : 'h-0 overflow-hidden md:h-auto md:overflow-auto'
+					shouldExpandFilters ? 'h-auto' : 'h-0 overflow-hidden md:h-auto md:overflow-visible'
 				)}>
 				<div className={'w-full'}>
 					<p className={'pb-2 text-[#757CA6]'}>{'Select Blockchain'}</p>
