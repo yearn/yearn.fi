@@ -24,6 +24,7 @@ function Index(): ReactElement | null {
 	const {onRefresh} = useYearn();
 	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: Number(router.query.chainID)});
 	const [currentVault, set_currentVault] = useState<TYDaemonVault | undefined>(undefined);
+	const [isInit, set_isInit] = useState(false);
 	const {data: vault, isLoading: isLoadingVault} = useFetch<TYDaemonVault>({
 		endpoint: router.query.address
 			? `${yDaemonBaseUri}/vaults/${toAddress(router.query.address as string)}?${new URLSearchParams({
@@ -37,6 +38,7 @@ function Index(): ReactElement | null {
 	useEffect((): void => {
 		if (vault && !currentVault) {
 			set_currentVault(vault);
+			set_isInit(true);
 		}
 	}, [currentVault, vault]);
 
@@ -53,7 +55,7 @@ function Index(): ReactElement | null {
 		}
 	}, [currentVault?.address, currentVault?.token?.address, address, isActive, onRefresh, currentVault?.chainID]);
 
-	if (isLoadingVault || !router.query.address) {
+	if (isLoadingVault || !router.query.address || !isInit) {
 		return (
 			<div className={'relative flex min-h-dvh flex-col px-4 text-center'}>
 				<div className={'mt-[20%] flex h-10 items-center justify-center'}>

@@ -868,7 +868,7 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 		const isWithWFTM =
 			props.currentVault.chainID === 250 && toAddress(props.currentVault?.token?.address) === WFTM_TOKEN_ADDRESS;
 
-		Object.values(tokenLists[props.currentVault.chainID]).forEach((tokenData): void => {
+		Object.values(tokenLists?.[props.currentVault.chainID] || []).forEach((tokenData): void => {
 			const duplicateAddresses = [
 				isWithWETH ? WETH_TOKEN_ADDRESS : null,
 				isWithWFTM ? WFTM_TOKEN_ADDRESS : null,
