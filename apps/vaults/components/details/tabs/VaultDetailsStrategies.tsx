@@ -23,44 +23,9 @@ type TProps = {
 	strategy: TYDaemonVaultStrategy;
 };
 
-type TRiskScoreElementProps = {
-	label: string;
-	value?: number;
-};
-
-function RiskScoreElement({label, value}: TRiskScoreElementProps): ReactElement {
-	return (
-		<div className={'flex flex-row items-center justify-between'}>
-			<p className={'text-sm text-neutral-500'}>{label}</p>
-			<p className={'font-number text-sm text-neutral-900'}>{value}</p>
-		</div>
-	);
-}
-
 export function VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
 	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: currentVault.chainID});
 	const isMounted = useIsMounted();
-
-	const riskScoreElementsMap = useMemo((): TRiskScoreElementProps[] => {
-		const {riskDetails} = strategy.risk || {};
-
-		return [
-			{label: 'TVL Impact', value: riskDetails?.TVLImpact},
-			{label: 'Audit Score', value: riskDetails?.auditScore},
-			{label: 'Code Review Score', value: riskDetails?.codeReviewScore},
-			{label: 'Complexity Score', value: riskDetails?.complexityScore},
-			{label: 'Longevity Impact', value: riskDetails?.longevityImpact},
-			{
-				label: 'Protocol Safety Score',
-				value: riskDetails?.protocolSafetyScore
-			},
-			{
-				label: 'Team Knowledge Score',
-				value: riskDetails?.teamKnowledgeScore
-			},
-			{label: 'Testing Score', value: riskDetails?.testingScore}
-		];
-	}, [strategy]);
 
 	const {data: reports} = useFetch<TYDaemonReports>({
 		endpoint: `${yDaemonBaseUri}/reports/${strategy.address}`,
@@ -137,21 +102,6 @@ export function VaultDetailsStrategy({currentVault, strategy}: TProps): ReactEle
 										0
 									)} ${currentVault.token.symbol}`}
 								</b>
-							</div>
-						</div>
-
-						<div className={'flex flex-col space-y-4 bg-neutral-200 p-2 md:p-4'}>
-							<p className={'text-base text-neutral-600'}>{'Risk score'}</p>
-							<div className={'mt-0 grid grid-cols-1 gap-x-12 gap-y-2 md:grid-cols-2'}>
-								{riskScoreElementsMap.map(
-									({label, value}): ReactElement => (
-										<RiskScoreElement
-											key={label}
-											label={label}
-											value={value || 0}
-										/>
-									)
-								)}
 							</div>
 						</div>
 					</div>

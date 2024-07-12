@@ -28,7 +28,6 @@ function Index(): ReactElement | null {
 		endpoint: router.query.address
 			? `${yDaemonBaseUri}/vaults/${toAddress(router.query.address as string)}?${new URLSearchParams({
 					strategiesDetails: 'withDetails',
-					strategiesRisk: 'withRisk',
 					strategiesCondition: 'inQueue'
 				})}`
 			: null,

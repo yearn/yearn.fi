@@ -31,37 +31,6 @@ function About(): ReactElement {
 
 				<div className={'w-full bg-neutral-100 p-10'}>
 					<div
-						aria-label={'Risk Score'}
-						className={'flex flex-col pb-6'}>
-						<h2 className={'text-3xl font-bold'}>{'Risk Score'}</h2>
-					</div>
-					<div aria-label={'Risk Score details'}>
-						<p className={'pb-4 text-neutral-600'}>
-							{
-								'In order to give users the best risk-adjusted yields in DeFi, Yearn uses a comprehensive risk assessment framework for each strategy within a Vault. This framework combines to give each Vault a holistic Risk Score.'
-							}
-						</p>
-						<p className={'pb-4 text-neutral-600'}>
-							{
-								'Strategies are assessed against eight different factors; Audit, Code Review, Complexity, Longevity, Protocol Safety, Team Knowledge, Testing Score, TVL Impact. Since Vaults use multiple strategies, riskier strategies can be paired with more conservative ones to ensure the Vault has a robust and balanced Risk Score.'
-							}
-						</p>
-						<p className={'text-neutral-600'}>
-							{'For a full breakdown read more about our '}
-							<a
-								href={'https://docs.yearn.fi/resources/risks/risk-score'}
-								target={'_blank'}
-								className={'text-neutral-900 underline'}
-								rel={'noreferrer'}>
-								{'Risk Scores'}
-							</a>
-							{'.'}
-						</p>
-					</div>
-				</div>
-
-				<div className={'w-full bg-neutral-100 p-10'}>
-					<div
 						aria-label={'Fees'}
 						className={'flex flex-col pb-6'}>
 						<h2 className={'text-3xl font-bold'}>{'Fees'}</h2>
