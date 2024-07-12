@@ -5,6 +5,7 @@ import {useTokenList} from '@builtbymom/web3/contexts/WithTokenList';
 import {useAsyncTrigger} from '@builtbymom/web3/hooks/useAsyncTrigger';
 import {
 	decodeAsBigInt,
+	isEthAddress,
 	isZero,
 	isZeroAddress,
 	toAddress,
@@ -721,7 +722,8 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 						symbol: 'ETH',
 						address: ETH_TOKEN_ADDRESS,
 						chainID: props.currentVault.chainID,
-						decimals: 18
+						decimals: 18,
+						solveVia: ['Portals']
 					}),
 					setZapOption({
 						name: 'wETH',
@@ -745,7 +747,8 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 						symbol: 'FTM',
 						address: ETH_TOKEN_ADDRESS,
 						chainID: props.currentVault.chainID,
-						decimals: 18
+						decimals: 18,
+						solveVia: ['Portals']
 					}),
 					setZapOption({
 						name: 'wFTM',
@@ -769,7 +772,8 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 						symbol: 'ETH',
 						address: ETH_TOKEN_ADDRESS,
 						chainID: props.currentVault.chainID,
-						decimals: 18
+						decimals: 18,
+						solveVia: ['Portals']
 					}),
 					setZapOption({
 						name: 'wETH',
@@ -895,7 +899,10 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 					address: toAddress(tokenData.address),
 					chainID: tokenData.chainID,
 					decimals: tokenData.decimals,
-					solveVia: tokenData.chainID === 1 ? ['Portals', 'Cowswap'] : ['Portals']
+					solveVia:
+						tokenData.chainID === 1 && !isEthAddress(tokenData.address)
+							? ['Portals', 'Cowswap']
+							: ['Portals']
 				})
 			);
 		});
