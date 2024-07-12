@@ -190,7 +190,7 @@ export function useSolverCowswap(): TSolverContext {
 	 ** skipped. This should only be used for debugging purposes.
 	 *********************************************************************************************/
 	const signCowswapOrder = useCallback(
-		async (chainID: number, quote: Order): Promise<SigningResult> => {
+		async (chainID: number, quote: Order, buyAmountWithSlippage: string): Promise<SigningResult> => {
 			if (shouldUsePresign) {
 				await new Promise(async (resolve): Promise<NodeJS.Timeout> => setTimeout(resolve, 1000));
 				return {
@@ -200,10 +200,19 @@ export function useSolverCowswap(): TSolverContext {
 			}
 
 			assert(provider, 'Provider is not set');
-			const signer = await getEthersSigner(retrieveConfig());
+			const signer = await getEthersSigner(retrieveConfig(), {chainId: 1});
 			assert(signer, 'No signer available');
 
-			const rawSignature = await OrderSigningUtils.signOrder({...(quote as UnsignedOrder)}, chainID, signer);
+			const rawSignature = await OrderSigningUtils.signOrder(
+				{
+					...(quote as UnsignedOrder),
+					feeAmount: '0',
+					buyAmount: buyAmountWithSlippage,
+					sellAmount: (toBigInt(quote.sellAmount) + toBigInt(quote.feeAmount)).toString()
+				},
+				chainID,
+				signer
+			);
 			return rawSignature;
 		},
 		[shouldUsePresign, provider]
@@ -264,11 +273,17 @@ export function useSolverCowswap(): TSolverContext {
 			request.current.outputToken.decimals
 		);
 		quote.buyAmount = buyAmountWithSlippage;
-		const {signature, signingScheme} = await signCowswapOrder(request.current.chainID, quote as Order);
+		const {signature, signingScheme} = await signCowswapOrder(
+			request.current.chainID,
+			quote as Order,
+			buyAmountWithSlippage
+		);
 		const orderCreation: OrderCreation = {
 			...quote,
-			buyAmount: buyAmountWithSlippage,
+			buyAmount: buyAmountWithSlippage.toString(),
 			from: from,
+			feeAmount: '0',
+			sellAmount: (toBigInt(quote.sellAmount) + toBigInt(quote.feeAmount)).toString(),
 			quoteId: id,
 			signature: signature,
 			signingScheme: (shouldUsePresign ? 'presign' : signingScheme) as string as SigningScheme

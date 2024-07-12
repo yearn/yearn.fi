@@ -2,11 +2,10 @@ import {useCallback, useState} from 'react';
 import {useRouter} from 'next/router';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {useAsyncTrigger} from '@builtbymom/web3/hooks/useAsyncTrigger';
-import {isEthAddress, isZero, toAddress, toBigInt, zeroNormalizedBN} from '@builtbymom/web3/utils';
+import {isZero, toAddress, toBigInt, zeroNormalizedBN} from '@builtbymom/web3/utils';
 import {defaultTxStatus} from '@builtbymom/web3/utils/wagmi';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useSolver} from '@vaults/contexts/useSolver';
-import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
 import {Solver} from '@vaults/types/solvers';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {ETH_TOKEN_ADDRESS, MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
@@ -18,7 +17,6 @@ import type {TNormalizedBN} from '@builtbymom/web3/types';
 
 export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {onRefresh, isAutoStakingEnabled} = useYearn();
-	const {refresh: refreshZapBalances} = useWalletForZap();
 	const {address, provider} = useWeb3();
 	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
 	const [txStatusExecuteDeposit, set_txStatusExecuteDeposit] = useState(defaultTxStatus);
@@ -37,7 +35,6 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 		isLoadingExpectedOut,
 		hash
 	} = useSolver();
-	const isWithdrawing = !isDepositing;
 
 	/**********************************************************************************************
 	 ** SWR hook to get the expected out for a given in/out pair with a specific amount. This hook
@@ -58,7 +55,6 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 		onChangeAmount(zeroNormalizedBN);
 		if (
 			Solver.enum.Vanilla === currentSolver ||
-			Solver.enum.ChainCoin === currentSolver ||
 			Solver.enum.PartnerContract === currentSolver ||
 			Solver.enum.OptimismBooster === currentSolver ||
 			Solver.enum.GaugeStakingBooster === currentSolver ||
@@ -77,16 +73,9 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 			await onRefresh(toRefresh);
 		} else if (Solver.enum.Cowswap === currentSolver || Solver.enum.Portals === currentSolver) {
 			if (isDepositing) {
-				//refresh input from zap wallet, refresh output from default
-				await Promise.all([
-					refreshZapBalances([{address: toAddress(actionParams?.selectedOptionFrom?.value), chainID}]),
-					onRefresh([{address: toAddress(actionParams?.selectedOptionTo?.value), chainID}])
-				]);
+				onRefresh([{address: toAddress(actionParams?.selectedOptionTo?.value), chainID}]);
 			} else {
-				await Promise.all([
-					refreshZapBalances([{address: toAddress(actionParams?.selectedOptionTo?.value), chainID}]),
-					onRefresh([{address: toAddress(actionParams?.selectedOptionFrom?.value), chainID}])
-				]);
+				onRefresh([{address: toAddress(actionParams?.selectedOptionFrom?.value), chainID}]);
 			}
 		} else {
 			onRefresh([
@@ -102,8 +91,7 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 		actionParams?.selectedOptionFrom?.value,
 		actionParams?.selectedOptionTo?.value,
 		onRefresh,
-		isDepositing,
-		refreshZapBalances
+		isDepositing
 	]);
 
 	/**********************************************************************************************
@@ -145,44 +133,6 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 	 ** button to migrate.
 	 *********************************************************************************************/
 	const isAboveAllowance = toBigInt(actionParams.amount?.raw) > toBigInt(allowanceFrom?.raw);
-
-	// Solver: chainCoin, Action: withdraw
-	if (
-		isWithdrawing && //If user is withdrawing ...
-		currentSolver === Solver.enum.ChainCoin && // ... and the solver is ChainCoin ...
-		isEthAddress(actionParams?.selectedOptionTo?.value) && // ... and the output is ETH ...
-		isAboveAllowance // ... and the amount is above the allowance
-	) {
-		// ... then we need to approve the ChainCoin contract
-		return (
-			<Button
-				variant={isV3Page ? 'v3' : undefined}
-				className={'w-full'}
-				isBusy={txStatusApprove.pending}
-				isDisabled={isButtonDisabled || isZero(toBigInt(expectedOut?.raw))}
-				onClick={onApproveFrom}>
-				{'Approve'}
-			</Button>
-		);
-	}
-
-	// Solver: chainCoin, Action: deposit
-	if (
-		isDepositing && //If user is depositing ...
-		currentSolver === Solver.enum.ChainCoin // ... and the solver is ChainCoin ...
-	) {
-		// ... then we can deposit without approval
-		return (
-			<Button
-				variant={isV3Page ? 'v3' : undefined}
-				onClick={async (): Promise<void> => onExecuteDeposit(set_txStatusExecuteDeposit, onSuccess)}
-				className={'w-full'}
-				isBusy={txStatusExecuteDeposit.pending}
-				isDisabled={isButtonDisabled}>
-				{'Deposit'}
-			</Button>
-		);
-	}
 
 	// Solver: a lot, Action: approve
 	if (

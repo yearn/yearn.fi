@@ -5,16 +5,14 @@ import {useChainID} from '@builtbymom/web3/hooks/useChainID';
 import {toAddress} from '@builtbymom/web3/utils';
 import {getNetwork} from '@builtbymom/web3/utils/wagmi';
 import {useDeepCompareMemo} from '@react-hookz/web';
-import {useFetchYearnTokens} from '@yearn-finance/web-lib/hooks/useFetchYearnTokens';
 import {ETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 
 import {useBalances} from './useBalances.multichains';
 
 import type {TYChainTokens} from '@yearn-finance/web-lib/types';
-import type {TYDaemonToken} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokensSchema';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TUseBalancesTokens} from '@builtbymom/web3/hooks/useBalances.multichains';
-import type {TDict, TNDict} from '@builtbymom/web3/types';
+import type {TDict} from '@builtbymom/web3/types';
 
 export function useYearnTokens({
 	vaults,
@@ -27,7 +25,6 @@ export function useYearnTokens({
 	vaultsRetired: TDict<TYDaemonVault>;
 	isLoadingVaultList: boolean;
 }): TUseBalancesTokens[] {
-	const yearnTokens = useFetchYearnTokens() as unknown as TNDict<TDict<TYDaemonToken>>;
 	const {currentNetworkTokenList} = useTokenList();
 	const {safeChainID} = useChainID();
 	const [isReady, set_isReady] = useState(false);
@@ -73,7 +70,7 @@ export function useYearnTokens({
 
 	//List available tokens
 	const availableTokens = useMemo((): TDict<TUseBalancesTokens> => {
-		if (isLoadingVaultList || !yearnTokens) {
+		if (isLoadingVaultList) {
 			return {};
 		}
 		const tokens: TDict<TUseBalancesTokens> = {};
@@ -176,38 +173,9 @@ export function useYearnTokens({
 			}
 		});
 
-		for (const [chainID, tokensData] of Object.entries(yearnTokens)) {
-			if (tokensData) {
-				for (const [address, token] of Object.entries(tokensData)) {
-					if (token && !tokens[`${token.chainID}/${toAddress(address)}`]) {
-						tokens[`${token.chainID}/${toAddress(address)}`] = {
-							address: toAddress(address),
-							chainID: Number(chainID),
-							decimals: token.decimals,
-							name: token.name,
-							symbol: token.symbol
-						};
-					} else {
-						const existingToken = tokens[`${token.chainID}/${toAddress(address)}`];
-						if (existingToken) {
-							if (!existingToken?.name && token.name) {
-								tokens[`${token.chainID}/${toAddress(address)}`].name = token.name;
-							}
-							if (!existingToken?.symbol && token.symbol) {
-								tokens[`${token.chainID}/${toAddress(address)}`].symbol = token.symbol;
-							}
-							if (!existingToken?.decimals && token.decimals) {
-								tokens[`${token.chainID}/${toAddress(address)}`].decimals = token.decimals;
-							}
-						}
-					}
-				}
-			}
-		}
-
 		set_isReady(true);
 		return tokens;
-	}, [isLoadingVaultList, allVaults, yearnTokens]);
+	}, [isLoadingVaultList, allVaults]);
 
 	const allTokens = useMemo((): TUseBalancesTokens[] => {
 		if (!isReady) {

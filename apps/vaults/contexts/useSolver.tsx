@@ -2,7 +2,6 @@ import {createContext, useCallback, useContext, useEffect, useMemo, useRef, useS
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {toAddress, toBigInt, zeroNormalizedBN} from '@builtbymom/web3/utils';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
-import {useSolverChainCoin} from '@vaults/hooks/solvers/useSolverChainCoin';
 import {useSolverCowswap} from '@vaults/hooks/solvers/useSolverCowswap';
 import {useSolverGaugeStakingBooster} from '@vaults/hooks/solvers/useSolverGaugeStakingBooster';
 import {useSolverInternalMigration} from '@vaults/hooks/solvers/useSolverInternalMigration';
@@ -23,7 +22,7 @@ export const isSolverDisabled = (key: TSolver): boolean => {
 	const solverStatus = {
 		[Solver.enum.Vanilla]: false,
 		[Solver.enum.PartnerContract]: false,
-		[Solver.enum.ChainCoin]: false,
+		[Solver.enum.ChainCoin]: true,
 		[Solver.enum.InternalMigration]: false,
 		[Solver.enum.OptimismBooster]: false,
 		[Solver.enum.GaugeStakingBooster]: false,
@@ -64,7 +63,6 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 	const cowswap = useSolverCowswap();
 	const vanilla = useSolverVanilla();
 	const portals = useSolverPortals();
-	const chainCoin = useSolverChainCoin();
 	const partnerContract = useSolverPartnerContract();
 	const internalMigration = useSolverInternalMigration();
 	const optimismBooster = useSolverOptimismBooster();
@@ -137,10 +135,8 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 			};
 
 			switch (currentSolver) {
-				case Solver.enum.Portals:
-				case Solver.enum.Cowswap: {
-					const [cowswapQuote, portalsQuote] = await Promise.allSettled([
-						cowswap.init(request, currentSolver === Solver.enum.Cowswap),
+				case Solver.enum.Portals: {
+					const [portalsQuote] = await Promise.allSettled([
 						portals.init(request, currentSolver === Solver.enum.Portals)
 					]);
 
@@ -152,11 +148,6 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 					} = {};
 
 					[
-						{
-							solver: Solver.enum.Cowswap,
-							quote: cowswapQuote,
-							ctx: cowswap
-						},
 						{
 							solver: Solver.enum.Portals,
 							quote: portalsQuote,
@@ -173,7 +164,62 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 						ctx: vanilla
 					};
 
-					const solverPriority = [Solver.enum.Cowswap, Solver.enum.Portals, Solver.enum.None];
+					const solverPriority = [Solver.enum.Portals, Solver.enum.None];
+					const newSolverPriority = [
+						currentSolver,
+						...solverPriority.filter((solver): boolean => solver !== currentSolver)
+					];
+
+					for (const solver of newSolverPriority) {
+						if (!solvers[solver]) {
+							continue;
+						}
+
+						const result = solvers[solver] ?? solvers[Solver.enum.None];
+						if (result) {
+							const {quote, ctx} = result;
+							await handleUpdateSolver({
+								currentNonce,
+								request,
+								quote,
+								solver,
+								ctx
+							});
+						}
+						return;
+					}
+					break;
+				}
+				case Solver.enum.Cowswap: {
+					const [cowswapQuote] = await Promise.allSettled([
+						cowswap.init(request, currentSolver === Solver.enum.Cowswap)
+					]);
+
+					const solvers: {
+						[key in TSolver]?: {
+							quote: PromiseSettledResult<TNormalizedBN | undefined>;
+							ctx: TSolverContext;
+						};
+					} = {};
+
+					[
+						{
+							solver: Solver.enum.Cowswap,
+							quote: cowswapQuote,
+							ctx: cowswap
+						}
+					].forEach(({solver, quote, ctx}): void => {
+						if (isValidSolver({quote, solver})) {
+							solvers[solver] = {quote, ctx};
+						}
+					});
+
+					solvers[Solver.enum.None] = {
+						quote: {status: 'fulfilled', value: zeroNormalizedBN},
+						ctx: vanilla
+					};
+
+					const solverPriority = [Solver.enum.Cowswap, Solver.enum.None];
 					const newSolverPriority = [
 						currentSolver,
 						...solverPriority.filter((solver): boolean => solver !== currentSolver)
@@ -243,17 +289,6 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 					});
 					break;
 				}
-				case Solver.enum.ChainCoin: {
-					const [quote] = await Promise.allSettled([chainCoin.init(request)]);
-					await handleUpdateSolver({
-						currentNonce,
-						request,
-						quote,
-						solver: Solver.enum.ChainCoin,
-						ctx: chainCoin
-					});
-					break;
-				}
 				case Solver.enum.PartnerContract: {
 					const [quote] = await Promise.allSettled([partnerContract.init(request)]);
 					await handleUpdateSolver({
@@ -310,7 +345,6 @@ export function WithSolverContextApp({children}: {children: React.ReactElement})
 			veYFIGaugeStakingBooster,
 			juicedStakingBooster,
 			v3StakingBooster,
-			chainCoin,
 			partnerContract,
 			internalMigration
 		]

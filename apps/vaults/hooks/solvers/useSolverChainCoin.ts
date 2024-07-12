@@ -22,6 +22,8 @@ import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
  ** transaction, thanks to a Zap Contract.
  ** An example of this zap contract is available here:
  ** https://etherscan.io/address/0xd1791428c38e25d459d5b01fb25e942d4ad83a25#code
+ **
+ ** Note: DISABLED
  *************************************************************************************************/
 export function useSolverChainCoin(): TSolverContext {
 	const {provider} = useWeb3();

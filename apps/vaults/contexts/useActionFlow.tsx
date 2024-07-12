@@ -1,10 +1,10 @@
 import {createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState} from 'react';
 import {useRouter} from 'next/router';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {useTokenList} from '@builtbymom/web3/contexts/WithTokenList';
 import {useAsyncTrigger} from '@builtbymom/web3/hooks/useAsyncTrigger';
 import {
 	decodeAsBigInt,
-	isEthAddress,
 	isZero,
 	isZeroAddress,
 	toAddress,
@@ -13,12 +13,11 @@ import {
 	zeroNormalizedBN
 } from '@builtbymom/web3/utils';
 import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
-import {useMountEffect, useUpdateEffect} from '@react-hookz/web';
-import {useWalletForZap} from '@vaults/contexts/useWalletForZaps';
+import {useMountEffect} from '@react-hookz/web';
 import {Solver} from '@vaults/types/solvers';
 import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
 import {setZapOption} from '@vaults/utils/zapOptions';
-import {readContracts, simulateContract} from '@wagmi/core';
+import {readContracts, serialize, simulateContract} from '@wagmi/core';
 import {VAULT_ABI} from '@yearn-finance/web-lib/utils/abi/vault.abi';
 import {
 	ETH_TOKEN_ADDRESS,
@@ -31,6 +30,7 @@ import {
 	YVWFTM_ADDRESS
 } from '@yearn-finance/web-lib/utils/constants';
 import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
+import {createUniqueID} from '@common/contexts/useBalances.multichains';
 import {useYearn} from '@common/contexts/useYearn';
 
 import externalzapOutTokenList from '../../common/utils/externalZapOutTokenList.json';
@@ -177,13 +177,23 @@ const ActionFlowContext = createContext<TActionFlowContext>(DefaultActionFlowCon
 export function ActionFlowContextApp(props: {children: ReactNode; currentVault: TYDaemonVault}): React.ReactElement {
 	const {address} = useWeb3();
 	const {getBalance, maxLoss} = useYearn();
-	const {listTokens: listZapTokens} = useWalletForZap();
+	const {tokenLists} = useTokenList();
 	const {zapProvider, isAutoStakingEnabled} = useYearn();
 	const [possibleOptionsFrom, set_possibleOptionsFrom] = useState<TDropdownOption[]>([]);
 	const [possibleZapOptionsFrom, set_possibleZapOptionsFrom] = useState<TDropdownOption[]>([]);
 	const [possibleOptionsTo, set_possibleOptionsTo] = useState<TDropdownOption[]>([]);
 	const [possibleZapOptionsTo, set_possibleZapOptionsTo] = useState<TDropdownOption[]>([]);
 	const [limits, set_limits] = useState<{maxDeposit: bigint; maxRedeem: bigint} | undefined>(undefined);
+
+	/**********************************************************************************************
+	 ** currentNetworkTokenList is an object with multiple level of depth. We want to create a
+	 ** unique hash from it to know when it changes. This new hash will be used to trigger the
+	 ** useEffect hook.
+	 *********************************************************************************************/
+	const currentTokenListIdentifier = useMemo(() => {
+		const hash = createUniqueID(serialize(tokenLists?.[props.currentVault.chainID] || []));
+		return hash;
+	}, [props.currentVault.chainID, tokenLists]);
 
 	/**********************************************************************************************
 	 ** Based on the onchain data, the vault might have different limits both in general and for
@@ -448,43 +458,51 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 		}
 
 		const isV3 = props.currentVault?.version.split('.')?.[0] === '3';
-		const isInputTokenEth = isEthAddress(actionParams?.selectedOptionFrom?.value);
-		const isOutputTokenEth = isEthAddress(actionParams?.selectedOptionTo?.value);
-		const isVaultTokenWrappedCoin =
-			(props.currentVault.chainID === 1 && props.currentVault.address === YVWETH_ADDRESS) ||
-			(props.currentVault.chainID === 10 && props.currentVault.address === YVWETH_OPT_ADDRESS) ||
-			(props.currentVault.chainID === 250 && props.currentVault.address === YVWFTM_ADDRESS);
-
-		if (isVaultTokenWrappedCoin && (isInputTokenEth || isOutputTokenEth)) {
-			return Solver.enum.ChainCoin;
-		}
 		if (
 			props.currentVault?.migration?.available &&
 			toAddress(actionParams?.selectedOptionTo?.value) === toAddress(props.currentVault?.migration?.address)
 		) {
 			return Solver.enum.InternalMigration;
 		}
-		if (isDepositing && (actionParams?.selectedOptionFrom?.solveVia?.length || 0) > 0) {
-			return zapProvider;
+		if (
+			isDepositing &&
+			toAddress(actionParams?.selectedOptionTo?.value) === toAddress(props.currentVault?.token?.address)
+		) {
+			return Solver.enum.Vanilla;
 		}
-		if (!isDepositing && (actionParams?.selectedOptionTo?.solveVia?.length || 0) > 0) {
-			return zapProvider;
+		if (
+			isDepositing &&
+			actionParams?.selectedOptionFrom?.solveVia &&
+			(actionParams.selectedOptionFrom.solveVia.length || 0) > 0
+		) {
+			if (actionParams.selectedOptionFrom.solveVia.includes(zapProvider)) {
+				return zapProvider;
+			}
+			return actionParams?.selectedOptionFrom?.solveVia[0];
+		}
+		if (
+			!isDepositing &&
+			actionParams?.selectedOptionTo?.solveVia &&
+			(actionParams.selectedOptionTo.solveVia.length || 0) > 0
+		) {
+			if (actionParams.selectedOptionTo.solveVia.includes(zapProvider)) {
+				return zapProvider;
+			}
+			return actionParams?.selectedOptionTo?.solveVia[0];
 		}
 		if (isDepositing && isUsingPartnerContract && !isV3) {
 			return Solver.enum.PartnerContract;
 		}
 		return Solver.enum.Vanilla;
 	}, [
-		actionParams?.selectedOptionFrom?.value,
-		actionParams?.selectedOptionFrom?.solveVia?.length,
-		actionParams?.selectedOptionTo?.value,
-		actionParams?.selectedOptionTo?.solveVia?.length,
+		actionParams.selectedOptionFrom?.value,
+		actionParams.selectedOptionFrom?.solveVia,
+		actionParams.selectedOptionTo?.value,
+		actionParams.selectedOptionTo?.solveVia,
 		props.currentVault.token.address,
 		props.currentVault.staking.available,
 		props.currentVault.staking.source,
 		props.currentVault?.version,
-		props.currentVault.chainID,
-		props.currentVault.address,
 		props.currentVault?.migration?.available,
 		props.currentVault?.migration?.address,
 		isAutoStakingEnabled,
@@ -840,7 +858,7 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 	 ** The underlying token is not included in the list if the vault is already using it.
 	 ** The vault token is not included in the list because this has no sense.
 	 **********************************************************************************************/
-	useUpdateEffect((): void => {
+	useEffect((): void => {
 		const _possibleZapOptionsFrom: TDropdownOption[] = [];
 		const isWithWETH =
 			props.currentVault.chainID === 1 && toAddress(props.currentVault?.token?.address) === WETH_TOKEN_ADDRESS;
@@ -850,7 +868,7 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 		const isWithWFTM =
 			props.currentVault.chainID === 250 && toAddress(props.currentVault?.token?.address) === WFTM_TOKEN_ADDRESS;
 
-		Object.values(listZapTokens({chainID: props.currentVault.chainID})).forEach((tokenData): void => {
+		Object.values(tokenLists[props.currentVault.chainID]).forEach((tokenData): void => {
 			const duplicateAddresses = [
 				isWithWETH ? WETH_TOKEN_ADDRESS : null,
 				isWithWFTM ? WFTM_TOKEN_ADDRESS : null,
@@ -863,9 +881,11 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 			if (duplicateAddresses.includes(toAddress(tokenData.address))) {
 				return; // Do nothing to avoid duplicate token in the list
 			}
-
-			if (tokenData.supportedZaps.length === 0) {
-				return; // Do nothing to avoid token with no zap support in the list
+			if (getBalance({address: toAddress(tokenData.address), chainID: tokenData.chainID}).raw === 0n) {
+				return; // Do nothing to avoid empty token in the list
+			}
+			if (toAddress(tokenData.address) === toAddress(props.currentVault.token.address)) {
+				return; // Do nothing to avoid the underlying token in the list
 			}
 
 			_possibleZapOptionsFrom.push(
@@ -873,10 +893,9 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 					name: tokenData.name,
 					symbol: tokenData.symbol,
 					address: toAddress(tokenData.address),
-					chainID:
-						props.currentVault?.chainID === 1337 ? props.currentVault.chainID : props.currentVault?.chainID,
+					chainID: tokenData.chainID,
 					decimals: tokenData.decimals,
-					solveVia: tokenData.supportedZaps || []
+					solveVia: tokenData.chainID === 1 ? ['Portals', 'Cowswap'] : ['Portals']
 				})
 			);
 		});
@@ -885,8 +904,20 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 			const bBalance = getBalance({address: toAddress(b.value), chainID: props.currentVault.chainID}).normalized;
 			return bBalance - aBalance;
 		});
-		set_possibleZapOptionsFrom(_possibleZapOptionsFrom);
-	}, [props.currentVault.chainID, listZapTokens, props.currentVault]);
+		set_possibleZapOptionsFrom([
+			setZapOption({
+				name: props.currentVault.token.name,
+				symbol: props.currentVault.token.symbol,
+				address: toAddress(props.currentVault.token.address),
+				chainID: props.currentVault.chainID,
+				decimals: props.currentVault.token.decimals,
+				solveVia: ['Vanilla']
+			}),
+			..._possibleZapOptionsFrom
+		]);
+		currentTokenListIdentifier;
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [props.currentVault.chainID, tokenLists, currentTokenListIdentifier, props.currentVault]);
 
 	/**********************************************************************************************
 	 ** FLOW: Init the possibleZapOptionsTo array.
@@ -919,13 +950,31 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 		set_possibleZapOptionsTo(_possibleZapOptionsTo);
 	}, [props.currentVault.chainID]);
 
+	const cleanPossibleOptionsFrom = useMemo((): TDropdownOption[] => {
+		const uniqueTokens: TDropdownOption[] = [];
+		const allOptions = [...actionParams.possibleOptionsFrom, ...possibleZapOptionsFrom];
+		allOptions.forEach((option): void => {
+			if (isZeroAddress(option.value)) {
+				return;
+			}
+			if (toAddress(option.value) === '0x0000000000000000000000000000000000001010') {
+				return; // Matic as ERC20
+			}
+			const isDuplicate = uniqueTokens.some((uniqueOption): boolean => uniqueOption.value === option.value);
+			if (!isDuplicate) {
+				uniqueTokens.push(option);
+			}
+		});
+		return uniqueTokens;
+	}, [actionParams.possibleOptionsFrom, possibleZapOptionsFrom]);
+
 	/**********************************************************************************************
 	 ** FLOW: Store the value from that context in a Memoized variable to avoid useless re-renders
 	 **********************************************************************************************/
 	const contextValue = useMemo(
 		(): TActionFlowContext => ({
 			currentVault: props.currentVault,
-			possibleOptionsFrom: [...actionParams.possibleOptionsFrom, ...possibleZapOptionsFrom],
+			possibleOptionsFrom: cleanPossibleOptionsFrom,
 			possibleOptionsTo: [...actionParams.possibleOptionsTo, ...possibleZapOptionsTo],
 			actionParams,
 			onChangeAmount,
@@ -943,9 +992,9 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 		}),
 		[
 			props.currentVault,
-			possibleZapOptionsFrom,
-			possibleZapOptionsTo,
+			cleanPossibleOptionsFrom,
 			actionParams,
+			possibleZapOptionsTo,
 			onChangeAmount,
 			onSwitchSelectedOptions,
 			isDepositing,

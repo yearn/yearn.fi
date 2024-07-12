@@ -7,7 +7,6 @@ import {AnimatePresence, domAnimation, LazyMotion, motion} from 'framer-motion';
 import {WithMom} from '@builtbymom/web3/contexts/WithMom';
 import {cl} from '@builtbymom/web3/utils';
 import {AppSettingsContextApp} from '@vaults/contexts/useAppSettings';
-import {WalletForZapAppContextApp} from '@vaults/contexts/useWalletForZaps';
 import {IconAlertCritical} from '@yearn-finance/web-lib/icons/IconAlertCritical';
 import {IconAlertError} from '@yearn-finance/web-lib/icons/IconAlertError';
 import {IconCheckmark} from '@yearn-finance/web-lib/icons/IconCheckmark';
@@ -108,16 +107,14 @@ function MyApp(props: AppProps): ReactElement {
 						supportedChains={SUPPORTED_NETWORKS}
 						tokenLists={[
 							'https://raw.githubusercontent.com/SmolDapp/tokenLists/main/lists/yearn.json',
-							'https://raw.githubusercontent.com/SmolDapp/tokenLists/main/lists/portals.json'
+							'https://raw.githubusercontent.com/SmolDapp/tokenLists/main/lists/popular.json'
 						]}>
 						<AppSettingsContextApp>
 							<YearnContextApp>
-								<WalletForZapAppContextApp>
-									<WithLayout
-										supportedNetworks={SUPPORTED_NETWORKS}
-										{...props}
-									/>
-								</WalletForZapAppContextApp>
+								<WithLayout
+									supportedNetworks={SUPPORTED_NETWORKS}
+									{...props}
+								/>
 							</YearnContextApp>
 						</AppSettingsContextApp>
 					</WithMom>

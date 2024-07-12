@@ -126,7 +126,7 @@ export function Dropdown(props: TDropdownProps): ReactElement {
 										className={
 											'w-full cursor-default text-ellipsis border-none bg-transparent p-0 outline-none scrollbar-none'
 										}
-										displayValue={(option: TDropdownOption): string => option.symbol}
+										displayValue={(option: TDropdownOption): string => option?.symbol}
 										placeholder={props.placeholder || ''}
 										spellCheck={false}
 										onChange={(event): void => {
