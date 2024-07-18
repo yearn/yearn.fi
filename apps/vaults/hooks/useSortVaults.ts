@@ -9,7 +9,15 @@ import {numberSort, stringSort} from '@common/utils/sort';
 import type {TYDaemonVaults} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TSortDirection} from '@builtbymom/web3/types';
 
-export type TPossibleSortBy = 'apr' | 'estAPR' | 'tvl' | 'name' | 'deposited' | 'available' | 'featuringScore';
+export type TPossibleSortBy =
+	| 'apr'
+	| 'estAPR'
+	| 'tvl'
+	| 'name'
+	| 'deposited'
+	| 'available'
+	| 'featuringScore'
+	| 'score';
 
 export function useSortVaults(
 	vaultList: TYDaemonVaults,
@@ -18,82 +26,90 @@ export function useSortVaults(
 ): TYDaemonVaults {
 	const {getBalance, getPrice} = useYearn();
 
-	const sortedByName = useCallback(
-		(): TYDaemonVaults =>
-			vaultList.sort((a, b): number =>
-				stringSort({
-					a: getVaultName(a),
-					b: getVaultName(b),
-					sortDirection
-				})
-			),
-		[sortDirection, vaultList]
-	);
+	const sortedByName = useCallback((): TYDaemonVaults => {
+		if (sortBy !== 'estAPR') {
+			return vaultList;
+		}
+		return vaultList.sort((a, b): number =>
+			stringSort({
+				a: getVaultName(a),
+				b: getVaultName(b),
+				sortDirection
+			})
+		);
+	}, [sortBy, sortDirection, vaultList]);
 
-	const sortedByForwardAPR = useCallback(
-		(): TYDaemonVaults =>
-			vaultList.sort((a, b): number => {
-				let aAPR = 0;
-				if (a.apr.forwardAPR.type === '') {
-					aAPR = a.apr.extra.stakingRewardsAPR + a.apr.netAPR;
-				} else if (a.chainID === 1 && a.apr.forwardAPR.composite.boost > 0 && !a.apr.extra.stakingRewardsAPR) {
+	const sortedByForwardAPR = useCallback((): TYDaemonVaults => {
+		if (sortBy !== 'estAPR') {
+			return vaultList;
+		}
+		return vaultList.sort((a, b): number => {
+			let aAPR = 0;
+			if (a.apr.forwardAPR.type === '') {
+				aAPR = a.apr.extra.stakingRewardsAPR + a.apr.netAPR;
+			} else if (a.chainID === 1 && a.apr.forwardAPR.composite.boost > 0 && !a.apr.extra.stakingRewardsAPR) {
+				aAPR = a.apr.forwardAPR.netAPR;
+			} else {
+				const sumOfRewardsAPR = a.apr.extra.stakingRewardsAPR + a.apr.extra.gammaRewardAPR;
+				const hasCurrentAPR = !isZero(a?.apr.forwardAPR.netAPR);
+				if (sumOfRewardsAPR > 0) {
+					aAPR = sumOfRewardsAPR + a.apr.forwardAPR.netAPR;
+				} else if (hasCurrentAPR) {
 					aAPR = a.apr.forwardAPR.netAPR;
 				} else {
-					const sumOfRewardsAPR = a.apr.extra.stakingRewardsAPR + a.apr.extra.gammaRewardAPR;
-					const hasCurrentAPR = !isZero(a?.apr.forwardAPR.netAPR);
-					if (sumOfRewardsAPR > 0) {
-						aAPR = sumOfRewardsAPR + a.apr.forwardAPR.netAPR;
-					} else if (hasCurrentAPR) {
-						aAPR = a.apr.forwardAPR.netAPR;
-					} else {
-						aAPR = a.apr.netAPR;
-					}
+					aAPR = a.apr.netAPR;
 				}
+			}
 
-				let bAPR = 0;
-				if (b.apr.forwardAPR.type === '') {
-					bAPR = b.apr.extra.stakingRewardsAPR + b.apr.netAPR;
-				} else if (b.chainID === 1 && b.apr.forwardAPR.composite.boost > 0 && !b.apr.extra.stakingRewardsAPR) {
+			let bAPR = 0;
+			if (b.apr.forwardAPR.type === '') {
+				bAPR = b.apr.extra.stakingRewardsAPR + b.apr.netAPR;
+			} else if (b.chainID === 1 && b.apr.forwardAPR.composite.boost > 0 && !b.apr.extra.stakingRewardsAPR) {
+				bAPR = b.apr.forwardAPR.netAPR;
+			} else {
+				const sumOfRewardsAPR = b.apr.extra.stakingRewardsAPR + b.apr.extra.gammaRewardAPR;
+				const hasCurrentAPR = !isZero(b?.apr.forwardAPR.netAPR);
+				if (sumOfRewardsAPR > 0) {
+					bAPR = sumOfRewardsAPR + b.apr.forwardAPR.netAPR;
+				} else if (hasCurrentAPR) {
 					bAPR = b.apr.forwardAPR.netAPR;
 				} else {
-					const sumOfRewardsAPR = b.apr.extra.stakingRewardsAPR + b.apr.extra.gammaRewardAPR;
-					const hasCurrentAPR = !isZero(b?.apr.forwardAPR.netAPR);
-					if (sumOfRewardsAPR > 0) {
-						bAPR = sumOfRewardsAPR + b.apr.forwardAPR.netAPR;
-					} else if (hasCurrentAPR) {
-						bAPR = b.apr.forwardAPR.netAPR;
-					} else {
-						bAPR = b.apr.netAPR;
-					}
+					bAPR = b.apr.netAPR;
 				}
+			}
 
-				return numberSort({
-					a: aAPR,
-					b: bAPR,
-					sortDirection
-				});
-			}),
-		[sortDirection, vaultList]
-	);
+			return numberSort({
+				a: aAPR,
+				b: bAPR,
+				sortDirection
+			});
+		});
+	}, [sortDirection, vaultList, sortBy]);
 
-	const sortedByAPR = useCallback(
-		(): TYDaemonVaults =>
-			vaultList.sort((a, b): number =>
-				numberSort({
-					a: a.apr?.netAPR || 0,
-					b: b.apr?.netAPR || 0,
-					sortDirection
-				})
-			),
-		[sortDirection, vaultList]
-	);
+	const sortedByAPR = useCallback((): TYDaemonVaults => {
+		if (sortBy !== 'apr') {
+			return vaultList;
+		}
+		return vaultList.sort((a, b): number =>
+			numberSort({
+				a: a.apr?.netAPR || 0,
+				b: b.apr?.netAPR || 0,
+				sortDirection
+			})
+		);
+	}, [sortDirection, vaultList, sortBy]);
 
-	const sortedByTVL = useCallback(
-		(): TYDaemonVaults => vaultList.sort((a, b): number => numberSort({a: a.tvl.tvl, b: b.tvl.tvl, sortDirection})),
-		[sortDirection, vaultList]
-	);
+	const sortedByTVL = useCallback((): TYDaemonVaults => {
+		if (sortBy !== 'tvl') {
+			return vaultList;
+		}
+		return vaultList.sort((a, b): number => numberSort({a: a.tvl.tvl, b: b.tvl.tvl, sortDirection}));
+	}, [sortDirection, vaultList, sortBy]);
 
 	const sortedByDeposited = useCallback((): TYDaemonVaults => {
+		if (sortBy !== 'deposited') {
+			return vaultList;
+		}
 		return vaultList.sort((a, b): number => {
 			const aDepositedBalance = Number(getBalance({address: a.address, chainID: a.chainID})?.normalized || 0);
 			const bDepositedBalance = Number(getBalance({address: b.address, chainID: b.chainID})?.normalized || 0);
@@ -125,9 +141,12 @@ export function useSortVaults(
 			}
 			return bStakedValue - aStakedValue;
 		});
-	}, [vaultList, getBalance, sortDirection, getPrice]);
+	}, [vaultList, getBalance, sortDirection, getPrice, sortBy]);
 
 	const sortedByAvailable = useCallback((): TYDaemonVaults => {
+		if (sortBy !== 'available') {
+			return vaultList;
+		}
 		return vaultList.sort((a, b): number => {
 			let aBalance = Number(getBalance({address: a.token.address, chainID: a.chainID})?.normalized || 0);
 			let bBalance = Number(getBalance({address: b.token.address, chainID: b.chainID})?.normalized || 0);
@@ -142,13 +161,28 @@ export function useSortVaults(
 			}
 			return bBalance - aBalance;
 		});
-	}, [getBalance, sortDirection, vaultList]);
+	}, [getBalance, sortBy, sortDirection, vaultList]);
 
-	const sortedByFeaturingScore = useCallback(
-		(): TYDaemonVaults =>
-			vaultList.sort((a, b): number => numberSort({a: a.featuringScore, b: b.featuringScore, sortDirection})),
-		[sortDirection, vaultList]
-	);
+	const sortedByFeaturingScore = useCallback((): TYDaemonVaults => {
+		if (sortBy !== 'featuringScore') {
+			return vaultList;
+		}
+		return vaultList.sort((a, b): number => numberSort({a: a.featuringScore, b: b.featuringScore, sortDirection}));
+	}, [sortBy, sortDirection, vaultList]);
+
+	const sortByScore = useCallback((): TYDaemonVaults => {
+		if (sortBy !== 'score') {
+			return vaultList;
+		}
+		return vaultList.sort((a, b): number => {
+			const aScore = a.info.riskLevel;
+			const bScore = b.info.riskLevel;
+			if (sortDirection === 'asc') {
+				return aScore - bScore;
+			}
+			return bScore - aScore;
+		});
+	}, [sortBy, sortDirection, vaultList]);
 
 	const stringifiedVaultList = serialize(vaultList);
 	const sortedVaults = useMemo((): TYDaemonVaults => {
@@ -178,6 +212,9 @@ export function useSortVaults(
 		if (sortBy === 'featuringScore') {
 			return sortedByFeaturingScore();
 		}
+		if (sortBy === 'score') {
+			return sortByScore();
+		}
 
 		return sortResult;
 	}, [
@@ -186,11 +223,12 @@ export function useSortVaults(
 		sortBy,
 		sortedByName,
 		sortedByForwardAPR,
-		sortedByTVL,
 		sortedByAPR,
+		sortedByTVL,
 		sortedByDeposited,
 		sortedByAvailable,
-		sortedByFeaturingScore
+		sortedByFeaturingScore,
+		sortByScore
 	]);
 
 	return sortedVaults;

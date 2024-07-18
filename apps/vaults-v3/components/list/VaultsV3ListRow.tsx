@@ -445,6 +445,30 @@ function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}): Reac
 	);
 }
 
+function VaultRiskScoreTag({riskLevel}: {riskLevel: number}): ReactElement {
+	const level = riskLevel < 0 ? 0 : riskLevel > 5 ? 5 : riskLevel;
+	const riskColor = [`transparent`, `#63C532`, `#F8A908`, `#F8A908`, `#C73203`, `#C73203`];
+	return (
+		<div className={'col-span-2 flex flex-row justify-center md:col-span-1 md:flex-col'}>
+			<p className={'inline whitespace-nowrap text-start text-xs text-neutral-800/60 md:hidden'}>
+				{'Risk Score'}
+			</p>
+			<div className={'flex w-full items-center justify-end gap-4 md:justify-center'}>
+				<div className={'mt-[6px] h-3 w-6 min-w-6 rounded-sm border-2 border-good-ol-grey-700 p-[2px]'}>
+					<div
+						className={'h-1 rounded-[1px]'}
+						style={{
+							backgroundColor: riskColor.length > level ? riskColor[level] : riskColor[0],
+							width: `${(level / 5) * 100}%`
+						}}
+					/>
+				</div>
+				<p className={'border-b border-dashed font-mono text-base text-white'}>{level}</p>
+			</div>
+		</div>
+	);
+}
+
 export function VaultStakedAmount({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {getToken, getPrice} = useYearn();
 
@@ -488,7 +512,7 @@ export function VaultStakedAmount({currentVault}: {currentVault: TYDaemonVault})
 					options={{
 						shouldCompactValue: true,
 						maximumFractionDigits: 2,
-						minimumFractionDigits: 0
+						minimumFractionDigits: 2
 					}}
 				/>
 			</small>
@@ -531,8 +555,8 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 					)}
 				/>
 
-				<div className={cl('col-span-5 z-10', 'flex flex-row items-center justify-between')}>
-					<div className={'flex flex-row gap-6'}>
+				<div className={cl('col-span-4 z-10', 'flex flex-row items-center justify-between')}>
+					<div className={'flex flex-row gap-6 overflow-hidden'}>
 						<div className={'mt-2.5 size-8 min-h-8 min-w-8 rounded-full md:flex'}>
 							<ImageWithFallback
 								src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-128.png`}
@@ -541,11 +565,15 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 								height={32}
 							/>
 						</div>
-						<div>
-							<strong className={'mb-0 block text-[18px] font-black text-neutral-800 md:mb-1 md:text-xl'}>
+						<div className={'truncate'}>
+							<strong
+								title={currentVault.name}
+								className={'block truncate font-black text-neutral-800 md:-mb-0.5 md:text-lg'}>
 								{currentVault.name}
 							</strong>
-							<p className={'mb-0 block text-neutral-800 md:mb-2'}>{currentVault.token.name}</p>
+							<p className={'mb-0 block text-sm text-neutral-800/60 md:mb-2'}>
+								{currentVault.token.name}
+							</p>
 							<div className={'hidden flex-row items-center md:flex'}>
 								<VaultChainTag chainID={currentVault.chainID} />
 								<Link
@@ -565,13 +593,11 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 					</div>
 				</div>
 
-				<div
-					className={cl(
-						'col-span-7 z-10',
-						'grid grid-cols-2 md:grid-cols-10',
-						'gap-1 md:gap-x-7',
-						'mt-4 md:mt-0'
-					)}>
+				<div className={'col-span-1'} />
+
+				<div className={cl('col-span-7 z-10', 'grid grid-cols-2 md:grid-cols-11 gap-1', 'mt-4 md:mt-0')}>
+					<VaultRiskScoreTag riskLevel={currentVault.info.riskLevel} />
+
 					<div
 						className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'}
 						datatype={'number'}>

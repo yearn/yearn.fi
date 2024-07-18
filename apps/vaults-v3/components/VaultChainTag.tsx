@@ -19,7 +19,7 @@ function VaultChainTag({chainID}: {chainID: number}): ReactElement {
 				<div className={'w-fit'}>
 					<div
 						style={{background: 'linear-gradient(244deg, #7B3FE4 5.89%, #A726C1 94.11%)'}}
-						className={'rounded-2xl px-3.5 py-1 text-neutral-900'}>
+						className={'rounded-2xl px-3.5 py-1 text-xs text-neutral-900'}>
 						{'Polygon PoS'}
 					</div>
 				</div>

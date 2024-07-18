@@ -1,16 +1,17 @@
 import {useMemo} from 'react';
 import Link from 'next/link';
-import {formatAmount, isZero, toAddress, toNormalizedBN} from '@builtbymom/web3/utils';
+import {cl, formatAmount, isZero, toAddress, toNormalizedBN} from '@builtbymom/web3/utils';
+import {getNetwork} from '@builtbymom/web3/utils/wagmi';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {RenderAmount} from '@common/components/RenderAmount';
 import {useYearn} from '@common/contexts/useYearn';
 import {useYearnBalance} from '@common/hooks/useYearnBalance';
-import {getVaultName} from '@common/utils';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TNormalizedBN} from '@builtbymom/web3/types';
 
 export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const isEthMainnet = currentVault.chainID === 1;
@@ -325,15 +326,19 @@ function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}): Reac
 }
 
 export function VaultStakedAmount({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const {getToken} = useYearn();
+	const {getToken, getPrice} = useYearn();
 
-	const staked = useMemo((): bigint => {
+	const tokenPrice = useMemo(
+		() => getPrice({address: currentVault.address, chainID: currentVault.chainID}),
+		[currentVault.address, currentVault.chainID]
+	);
+	const staked = useMemo((): TNormalizedBN => {
 		const vaultToken = getToken({chainID: currentVault.chainID, address: currentVault.address});
 		if (currentVault.staking.available) {
 			const stakingToken = getToken({chainID: currentVault.chainID, address: currentVault.staking.address});
-			return vaultToken.balance.raw + stakingToken.balance.raw;
+			return toNormalizedBN(vaultToken.balance.raw + stakingToken.balance.raw, vaultToken.decimals);
 		}
-		return vaultToken.balance.raw;
+		return toNormalizedBN(vaultToken.balance.raw, vaultToken.decimals);
 	}, [
 		currentVault.address,
 		currentVault.chainID,
@@ -343,17 +348,31 @@ export function VaultStakedAmount({currentVault}: {currentVault: TYDaemonVault})
 	]);
 
 	return (
-		<p
-			className={`yearn--table-data-section-item-value ${
-				isZero(staked) ? 'text-neutral-400' : 'text-neutral-900'
-			}`}>
-			<RenderAmount
-				value={staked}
-				symbol={currentVault.token.symbol}
-				decimals={currentVault.token.decimals}
-				options={{shouldDisplaySymbol: false, maximumFractionDigits: 4}}
-			/>
-		</p>
+		<div className={'flex flex-col pt-0 text-right'}>
+			<p
+				className={`yearn--table-data-section-item-value ${
+					isZero(staked.raw) ? 'text-neutral-400' : 'text-neutral-900'
+				}`}>
+				<RenderAmount
+					value={staked.raw}
+					symbol={currentVault.token.symbol}
+					decimals={currentVault.token.decimals}
+					options={{shouldDisplaySymbol: false, maximumFractionDigits: 4}}
+				/>
+			</p>
+			<small className={cl('text-xs text-neutral-900/40', staked.raw === 0n ? 'invisible' : 'visible')}>
+				<RenderAmount
+					value={staked.normalized * tokenPrice.normalized}
+					symbol={'USD'}
+					decimals={0}
+					options={{
+						shouldCompactValue: true,
+						maximumFractionDigits: 2,
+						minimumFractionDigits: 2
+					}}
+				/>
+			</small>
+		</div>
 	);
 }
 
@@ -364,15 +383,11 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 		chainID: currentVault.chainID,
 		address: toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS ? WFTM_TOKEN_ADDRESS : WETH_TOKEN_ADDRESS //TODO: Create a wagmi Chain upgrade to add the chain wrapper token address
 	});
-	const vaultName = useMemo((): string => getVaultName(currentVault), [currentVault]);
-
 	const availableToDeposit = useMemo((): bigint => {
 		if (toAddress(currentVault.token.address) === WETH_TOKEN_ADDRESS) {
-			// Handle ETH native coin
 			return balanceOfWrappedCoin.raw + balanceOfCoin.raw;
 		}
 		if (toAddress(currentVault.token.address) === WFTM_TOKEN_ADDRESS) {
-			// Handle FTM native coin
 			return balanceOfWrappedCoin.raw + balanceOfCoin.raw;
 		}
 		return balanceOfWant.raw;
@@ -382,46 +397,69 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 		<Link
 			key={`${currentVault.address}`}
 			href={`/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`}>
-			<div className={'yearn--table-wrapper cursor-pointer transition-colors hover:bg-neutral-300'}>
-				<div className={'flex max-w-[32px] flex-row items-center'}>
-					<ImageWithFallback
-						src={`${process.env.BASE_YEARN_CHAIN_URI}/${currentVault.chainID}/logo-32.png`}
-						alt={`Chain ${currentVault.chainID}`}
-						width={32}
-						height={32}
-					/>
-				</div>
-				<div className={'yearn--table-token-section -ml-4'}>
-					<div className={'yearn--table-token-section-item'}>
-						<div className={'yearn--table-token-section-item-image'}>
+			<div
+				className={cl(
+					'grid w-full grid-cols-1 md:grid-cols-12 rounded-3xl',
+					'p-6 pt-2 md:px-10',
+					'cursor-pointer relative group'
+				)}>
+				<div
+					className={cl(
+						'absolute inset-0 rounded-3xl',
+						'opacity-20 transition-opacity group-hover:opacity-100 pointer-events-none'
+					)}
+				/>
+
+				<div className={cl('col-span-4 z-10', 'flex flex-row items-center justify-between')}>
+					<div className={'flex flex-row gap-6 overflow-hidden'}>
+						<div className={'mt-2.5 size-8 min-h-8 min-w-8 rounded-full md:flex'}>
 							<ImageWithFallback
-								src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-32.png`}
-								alt={''}
+								src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-128.png`}
+								alt={``}
 								width={32}
 								height={32}
 							/>
 						</div>
-						<p>{vaultName}</p>
+						<div className={'truncate'}>
+							<strong
+								title={currentVault.name}
+								className={'block truncate font-black text-neutral-800 md:-mb-0.5 md:text-lg'}>
+								{currentVault.name}
+							</strong>
+							<div className={'flex flex-row items-center gap-1'}>
+								<ImageWithFallback
+									src={`${process.env.BASE_YEARN_CHAIN_URI}/${currentVault.chainID}/logo-32.png`}
+									alt={`Chain ${currentVault.chainID}`}
+									width={14}
+									height={14}
+								/>
+								<p className={'block text-sm text-neutral-800/60'}>
+									{currentVault.chainID === 10 ? 'Optimism' : getNetwork(currentVault.chainID).name}
+								</p>
+							</div>
+						</div>
 					</div>
 				</div>
 
-				<div className={'col-span-5 grid grid-cols-1 gap-0 md:grid-cols-10 md:gap-x-7'}>
+				<div className={'col-span-1'} />
+
+				<div className={cl('col-span-7 z-10', 'grid grid-cols-2 md:grid-cols-10 gap-1', 'mt-4 md:mt-0')}>
 					<div
-						className={'yearn--table-data-section-item md:col-span-2'}
+						className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'}
 						datatype={'number'}>
 						<p className={'yearn--table-data-section-item-label !font-aeonik'}>{'Estimated APR'}</p>
 						<VaultForwardAPR currentVault={currentVault} />
 					</div>
 
 					<div
-						className={'yearn--table-data-section-item md:col-span-2'}
+						className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'}
 						datatype={'number'}>
 						<p className={'yearn--table-data-section-item-label !font-aeonik'}>{'Historical APR'}</p>
 						<VaultHistoricalAPR currentVault={currentVault} />
 					</div>
 
 					<div
-						className={'yearn--table-data-section-item md:col-span-2'}
+						className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'}
 						datatype={'number'}>
 						<p className={'yearn--table-data-section-item-label !font-aeonik'}>{'Available'}</p>
 						<p
@@ -438,14 +476,14 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 					</div>
 
 					<div
-						className={'yearn--table-data-section-item md:col-span-2'}
+						className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'}
 						datatype={'number'}>
 						<p className={'yearn--table-data-section-item-label !font-aeonik'}>{'Deposited'}</p>
 						<VaultStakedAmount currentVault={currentVault} />
 					</div>
 
 					<div
-						className={'yearn--table-data-section-item md:col-span-2'}
+						className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'}
 						datatype={'number'}>
 						<p className={'yearn--table-data-section-item-label !font-aeonik'}>{'TVL'}</p>
 						<div className={'flex flex-col text-right'}>

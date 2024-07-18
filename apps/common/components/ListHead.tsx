@@ -59,10 +59,9 @@ export function ListHead({
 	const [chain, token, ...rest] = items;
 	return (
 		<div className={'mt-4 grid w-full grid-cols-1 md:mt-0'}>
-			<div className={cl('yearn--table-head-wrapper', wrapperClassName)}>
-				<p className={'yearn--table-head-label max-w-[32px]'}>{chain.label}</p>
-
-				<div className={cl('yearn--table-head-token-section -ml-4', tokenClassName)}>
+			<div className={cl('mb-2 hidden w-full px-10 md:grid md:grid-cols-12', wrapperClassName)}>
+				<div className={cl('col-span-4 flex gap-6', tokenClassName)}>
+					<p className={'yearn--table-head-label max-w-[32px]'}>{chain.label}</p>
 					<button
 						onClick={(): void => onSort(token.value, toggleSortDirection(token.value))}
 						className={'yearn--table-head-label-wrapper group'}>
@@ -71,7 +70,9 @@ export function ListHead({
 					</button>
 				</div>
 
-				<div className={cl('yearn--table-head-data-section', dataClassName)}>
+				<div />
+
+				<div className={cl('col-span-7 grid grid-cols-10 gap-x-7 pl-6', dataClassName)}>
 					{rest.map(
 						(item, index): ReactElement => (
 							<button
