@@ -8,6 +8,7 @@ type TSearchBar = {
 	onSearch: (searchValue: string) => void;
 	className?: string;
 	iconClassName?: string;
+	inputClassName?: string;
 };
 
 export function SearchBar(props: TSearchBar): ReactElement {
@@ -22,9 +23,10 @@ export function SearchBar(props: TSearchBar): ReactElement {
 					<input
 						id={'search'}
 						suppressHydrationWarning
-						className={
+						className={cl(
+							props.inputClassName,
 							'h-10 w-full overflow-x-scroll border-none bg-transparent px-0 py-2 text-base outline-none scrollbar-none placeholder:text-neutral-400'
-						}
+						)}
 						type={'text'}
 						placeholder={props.searchPlaceholder}
 						value={props.searchValue || ''}

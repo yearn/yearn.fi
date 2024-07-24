@@ -408,3 +408,43 @@
 		@apply border-red-200 bg-red-200 text-red-200 accent-red-200 focus:outline-red-200;
 	}
 }
+
+/* 🔵 - Yearn Finance ******************************************************************************
+** Custom style for landing search input
+***************************************************************************************************/
+.yearn--landing-input {
+	@apply bg-[#F4F4F4];
+	input:-webkit-autofill,
+	input:-webkit-autofill:hover,
+	input:-webkit-autofill:focus,
+	input:-webkit-autofill:active {
+		color: black !important;
+		-webkit-text-fill-color: black !important;
+		caret-color: black !important;
+	}
+}
+:root.dark {
+	& .yearn--landing-input {
+		@apply bg-[#282828];
+		input:-webkit-autofill,
+		input:-webkit-autofill:hover,
+		input:-webkit-autofill:focus,
+		input:-webkit-autofill:active {
+			color: white !important;
+			-webkit-text-fill-color: white !important;
+			caret-color: white !important;
+		}
+	}
+}
+
+/* 🔵 - Yearn Finance ******************************************************************************
+** Custom style for autofilled text color
+***************************************************************************************************/
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+	color: white !important;
+	-webkit-text-fill-color: white !important;
+	caret-color: white !important;
+}

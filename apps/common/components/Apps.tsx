@@ -16,7 +16,8 @@ export enum AppName {
 	VEYFI = 'veYFI',
 	YETH = 'yETH',
 	YPRISMA = 'yPrisma',
-	JUICED = 'Juiced'
+	JUICED = 'Juiced',
+	GIMME = 'Gimme'
 }
 
 type TApp = {
@@ -55,6 +56,23 @@ export const APPS: {[key in AppName]: TApp} = {
 				width={64}
 				height={64}
 				alt={'juiced'}
+				loading={'eager'}
+				priority
+			/>
+		)
+	},
+	Gimme: {
+		name: `${AppName.GIMME} Vaults`,
+		href: 'https://gimme.mom',
+		menu: [],
+		manifest: {},
+		icon: (
+			<Image
+				className={'size-8'}
+				src={'/gimme.png'}
+				width={64}
+				height={64}
+				alt={'gimme'}
 				loading={'eager'}
 				priority
 			/>
