@@ -60,8 +60,7 @@ const defaultToken: TYToken = {
 	chainID: 1,
 	value: 0,
 	stakingValue: 0,
-	balance: zeroNormalizedBN,
-	supportedZaps: []
+	balance: zeroNormalizedBN
 };
 
 const YearnContext = createContext<TYearnContext>({
@@ -102,7 +101,7 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 	const {address: userAddress} = useWeb3();
 	const {value: maxLoss, set: set_maxLoss} = useLocalStorageValue<bigint>('yearn.fi/max-loss', {
 		defaultValue: DEFAULT_MAX_LOSS,
-		parse: (str, fallback): bigint => (str ? deserialize(str) : fallback ?? DEFAULT_MAX_LOSS),
+		parse: (str, fallback): bigint => (str ? deserialize(str) : (fallback ?? DEFAULT_MAX_LOSS)),
 		stringify: (data: bigint): string => serialize(data)
 	});
 	const {value: zapSlippage, set: set_zapSlippage} = useLocalStorageValue<number>('yearn.fi/zap-slippage', {
