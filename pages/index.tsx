@@ -1,8 +1,7 @@
-import {useEffect, useMemo, useRef, useState} from 'react';
+import {useEffect, useRef} from 'react';
 import Link from 'next/link';
 import {YCRV_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
-import {SearchBar} from '@common/components/SearchBar';
 import {LogoYearn} from '@common/icons/LogoYearn';
 
 import type {ReactElement} from 'react';
@@ -234,19 +233,6 @@ function TextAnimation(): ReactElement {
 }
 
 function Index(): ReactElement {
-	const [searchValue, set_searchValue] = useState<string>('');
-
-	const filteredApps = useMemo(() => {
-		if (!searchValue) {
-			return apps;
-		}
-		return apps.filter((app): boolean => {
-			const lowercaseSearch = searchValue.toLowerCase();
-			const splitted = `${app.title} ${app.description}`.toLowerCase().split(' ');
-			return splitted.some((word): boolean => word.startsWith(lowercaseSearch));
-		});
-	}, [searchValue]);
-
 	return (
 		<div className={'mx-auto size-full max-w-6xl py-20'}>
 			<div className={'mx-auto mt-6 flex flex-col justify-center md:mt-20'}>
@@ -260,40 +246,17 @@ function Index(): ReactElement {
 						{'earn yield on their digital assets.'}
 					</p>
 				</div>
-
-				<div className={'mb-20 flex justify-center'}>
-					<SearchBar
-						className={'yearn--landing-input !p-0'}
-						inputClassName={
-							'!border-solid border-0 border-b-2 !px-2 border-transparent !outline-none focus:!border-neutral-900 !transition-all'
-						}
-						iconClassName={'!right-2'}
-						searchValue={searchValue}
-						searchPlaceholder={'Search'}
-						onSearch={(value): void => {
-							set_searchValue(value);
-						}}
-					/>
-				</div>
-				{!searchValue && <p className={'mb-6 text-center text-lg font-bold'}>{'Official Apps'}</p>}
 			</div>
-			{filteredApps.length ? (
-				<section className={'grid grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-4'}>
-					{filteredApps.map(
-						(app): ReactElement => (
-							<AppBox
-								key={app.href}
-								app={app}
-							/>
-						)
-					)}
-				</section>
-			) : (
-				<div className={'mx-auto'}>
-					<p className={'text-center text-xl font-bold'}>{`No result for "${searchValue}"`}</p>
-					<p className={'text-center text-neutral-400'}>{'Try searching for another term'}</p>
-				</div>
-			)}
+			<section className={'grid grid-cols-1 gap-6 md:grid-cols-3 lg:grid-cols-4'}>
+				{apps.map(
+					(app): ReactElement => (
+						<AppBox
+							key={app.href}
+							app={app}
+						/>
+					)
+				)}
+			</section>
 		</div>
 	);
 }
