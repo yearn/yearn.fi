@@ -12,6 +12,7 @@ import {IconAlertError} from '@yearn-finance/web-lib/icons/IconAlertError';
 import {IconCheckmark} from '@yearn-finance/web-lib/icons/IconCheckmark';
 import AppHeader from '@common/components/Header';
 import {Meta} from '@common/components/Meta';
+import {Sidebar} from '@common/components/Sidebar';
 import {WithFonts} from '@common/components/WithFonts';
 import {YearnContextApp} from '@common/contexts/useYearn';
 import {useCurrentApp} from '@common/hooks/useCurrentApp';
@@ -43,6 +44,46 @@ const WithLayout = memo(function WithLayout(props: {supportedNetworks: Chain[]} 
 	const {Component, pageProps} = props;
 	const pathName = usePathname();
 	const {name} = useCurrentApp(router);
+
+	const isOnLanding = pathName?.startsWith('/home/') || pathName === '/';
+
+	if (isOnLanding) {
+		return (
+			<>
+				<div
+					id={'app'}
+					className={cl('mb-0 bg-landing-bg min-h-screen flex font-aeonik')}>
+					<div className={'flex w-full'}>
+						<motion.nav className={'p-4'}>
+							<Sidebar
+								tabs={[
+									{title: 'Home', route: '/'},
+									{title: 'Community Apps', route: 'community'},
+									{title: 'Yearn X Projects', route: 'yearn-x'}
+								]}
+							/>
+						</motion.nav>
+						<LazyMotion features={domAnimation}>
+							<AnimatePresence mode={'wait'}>
+								<motion.div
+									key={`${name}_${pathName}`}
+									initial={'initial'}
+									animate={'enter'}
+									exit={'exit'}
+									variants={variants}
+									className={'w-full'}>
+									<Component
+										router={props.router}
+										{...pageProps}
+									/>
+								</motion.div>
+							</AnimatePresence>
+						</LazyMotion>
+					</div>
+				</div>
+			</>
+		);
+	}
 
 	return (
 		<>
