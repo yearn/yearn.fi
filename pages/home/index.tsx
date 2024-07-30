@@ -1,6 +1,6 @@
 import {type ReactElement} from 'react';
 
-export function Home(): ReactElement {
+export default function Home(): ReactElement {
 	return (
 		<div className={'my-20 flex w-full justify-center'}>
 			<div className={'w-full max-w-6xl'}>

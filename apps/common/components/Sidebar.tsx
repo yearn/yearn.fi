@@ -25,7 +25,7 @@ export function Sidebar(props: TSidebarProps): ReactElement {
 	const [searchValue, set_searchValue] = useState('');
 	const pathName = usePathname();
 
-	const currentTab = pathName.startsWith('/home/') ? pathName.split('/')[2] : '/';
+	const currentTab = pathName?.startsWith('/home/') ? pathName?.split('/')[2] : '/';
 
 	return (
 		<div

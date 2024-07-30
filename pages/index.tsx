@@ -1,4 +1,4 @@
-import {Home} from './home';
+import Home from './home';
 
 import type {ReactElement} from 'react';
 

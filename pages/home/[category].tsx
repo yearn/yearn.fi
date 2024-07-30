@@ -11,7 +11,7 @@ const TitlesDictionary: {[key: string]: string} = {
 export default function Index(): ReactElement {
 	const pathName = usePathname();
 
-	const currentTab = pathName.startsWith('/home/') ? pathName.split('/')[2] : '/';
+	const currentTab = pathName?.startsWith('/home/') ? pathName?.split('/')[2] : '/';
 
 	return (
 		<div className={'my-20 flex w-full justify-center'}>
