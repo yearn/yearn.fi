@@ -436,7 +436,7 @@ export function VaultStakedAmount({currentVault}: {currentVault: TYDaemonVault})
 					isZero(staked.raw) ? 'text-neutral-400' : 'text-neutral-900'
 				}`}>
 				<RenderAmount
-					value={staked.raw}
+					value={staked.normalized}
 					symbol={currentVault.token.symbol}
 					decimals={currentVault.token.decimals}
 					options={{shouldDisplaySymbol: false, maximumFractionDigits: 4}}
@@ -593,6 +593,7 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 									)}
 									symbol={''}
 									decimals={6}
+									shouldFormatDust
 									options={{
 										shouldCompactValue: true,
 										maximumFractionDigits: 2,
