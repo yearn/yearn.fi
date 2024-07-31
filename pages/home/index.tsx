@@ -1,8 +1,8 @@
 import {type ReactElement} from 'react';
 import {useRouter} from 'next/navigation';
 import {useMountEffect} from '@react-hookz/web';
+import {AppsCarousel} from '@common/components/AppsCarousel';
 import {CategorySection} from '@common/components/CategorySection';
-import {FeaturedApp} from '@common/components/FeaturedApp';
 import {useSearch} from '@common/contexts/useSearch';
 import {COMMUNITY_APPS, FEATURED_APPS, YEARN_X_APPS} from '@common/utils/constants';
 
@@ -36,11 +36,7 @@ export default function Home(): ReactElement {
 
 					<div>
 						<h1 className={'mb-6  text-lg text-white'}>{'Featured Apps'}</h1>
-						<div className={'flex gap-x-6'}>
-							{FEATURED_APPS.map(app => (
-								<FeaturedApp app={app} />
-							))}
-						</div>
+						<AppsCarousel apps={FEATURED_APPS} />
 					</div>
 
 					<div className={'flex flex-col gap-[64px]'}>
