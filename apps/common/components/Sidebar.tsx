@@ -1,8 +1,10 @@
-import {type ReactElement, useState} from 'react';
+import {type ReactElement} from 'react';
 import Link from 'next/link';
-import {usePathname} from 'next/navigation';
+import {usePathname, useRouter} from 'next/navigation';
 import {cl} from '@builtbymom/web3/utils';
+import {useSearch} from '@common/contexts/useSearch';
 import {LogoYearn} from '@common/icons/LogoYearn';
+import {LANDING_SIDEBAR_LINKS} from '@common/utils/constants';
 
 import {SearchBar} from './SearchBar';
 
@@ -10,27 +12,17 @@ type TSidebarProps = {
 	tabs: {route: string; title: string; isAcitve?: boolean}[];
 };
 
-const links = [
-	{title: 'Governance', href: 'https://gov.yearn.fi/'},
-	{title: 'API', href: 'https://github.com/yearn/ydaemon'},
-	{title: 'Docs', href: 'https://docs.yearn.fi/'},
-	{title: 'Blog', href: 'https://blog.yearn.fi/'},
-	{title: 'Support', href: 'https://discord.com/invite/yearn'},
-	{title: 'Discord', href: 'https://discord.com/invite/yearn'},
-	{title: 'Paragraph', href: ''},
-	{title: 'Twitter', href: 'https://twitter.com/yearnfi'}
-];
-
 export function Sidebar(props: TSidebarProps): ReactElement {
-	const [searchValue, set_searchValue] = useState('');
 	const pathName = usePathname();
+	const router = useRouter();
+	const {configuration, dispatch} = useSearch();
 
 	const currentTab = pathName?.startsWith('/home/') ? pathName?.split('/')[2] : '/';
 
 	return (
 		<div
 			className={
-				'flex h-full w-72 flex-col justify-between border border-[#29292980] bg-white/5 px-4 py-6 text-white'
+				'flex h-full w-72 flex-col justify-between border border-gray-800/50 bg-white/5 p-4 py-6 text-white'
 			}>
 			<div>
 				<LogoYearn
@@ -39,10 +31,19 @@ export function Sidebar(props: TSidebarProps): ReactElement {
 					front={'text-white'}
 				/>
 				<SearchBar
-					className={'!w-full border-none !bg-gray-800'}
+					className={'!w-full !border-x-0 !border-b-2 !border-t-0 !border-white !bg-gray-800 '}
 					searchPlaceholder={'Search Apps'}
-					searchValue={searchValue}
-					onSearch={set_searchValue}
+					searchValue={configuration.searchValue}
+					onSearch={(value: string) => {
+						dispatch({type: 'SET_SEARCH', payload: value});
+					}}
+					shouldSearchByClick
+					onSearchClick={() => {
+						if (!configuration.searchValue) {
+							return;
+						}
+						router.push(`/home/search?query=${configuration.searchValue}`);
+					}}
 				/>
 
 				<div className={'ml-2 mt-8 flex flex-col'}>
@@ -61,7 +62,7 @@ export function Sidebar(props: TSidebarProps): ReactElement {
 			</div>
 
 			<div className={'flex flex-wrap gap-x-3 gap-y-4 px-2'}>
-				{links.map(link => (
+				{LANDING_SIDEBAR_LINKS.map(link => (
 					<Link
 						className={'text-xs text-gray-400'}
 						target={'_blank'}

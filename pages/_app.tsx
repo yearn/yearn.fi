@@ -14,6 +14,7 @@ import AppHeader from '@common/components/Header';
 import {Meta} from '@common/components/Meta';
 import {Sidebar} from '@common/components/Sidebar';
 import {WithFonts} from '@common/components/WithFonts';
+import {SearchContextApp} from '@common/contexts/useSearch';
 import {YearnContextApp} from '@common/contexts/useYearn';
 import {useCurrentApp} from '@common/hooks/useCurrentApp';
 import {variants} from '@common/utils/animations';
@@ -49,12 +50,12 @@ const WithLayout = memo(function WithLayout(props: {supportedNetworks: Chain[]} 
 
 	if (isOnLanding) {
 		return (
-			<>
+			<SearchContextApp>
 				<div
 					id={'app'}
-					className={cl('mb-0 bg-landing-bg min-h-screen flex font-aeonik')}>
-					<div className={'flex w-full'}>
-						<motion.nav className={'p-4'}>
+					className={cl('mb-0 bg-gray-900 justify-center min-h-screen flex font-aeonik')}>
+					<div className={'flex w-full max-w-[1480px] justify-start'}>
+						<motion.nav className={'sticky py-4 pl-4'}>
 							<Sidebar
 								tabs={[
 									{title: 'Home', route: '/'},
@@ -71,7 +72,7 @@ const WithLayout = memo(function WithLayout(props: {supportedNetworks: Chain[]} 
 									animate={'enter'}
 									exit={'exit'}
 									variants={variants}
-									className={'w-full'}>
+									className={'ml-[100px] w-full'}>
 									<Component
 										router={props.router}
 										{...pageProps}
@@ -81,7 +82,7 @@ const WithLayout = memo(function WithLayout(props: {supportedNetworks: Chain[]} 
 						</LazyMotion>
 					</div>
 				</div>
-			</>
+			</SearchContextApp>
 		);
 	}
 

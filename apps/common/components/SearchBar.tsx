@@ -9,6 +9,8 @@ type TSearchBar = {
 	className?: string;
 	iconClassName?: string;
 	inputClassName?: string;
+	shouldSearchByClick?: boolean;
+	onSearchClick?: () => void;
 };
 
 export function SearchBar(props: TSearchBar): ReactElement {
@@ -33,8 +35,17 @@ export function SearchBar(props: TSearchBar): ReactElement {
 						onChange={(e: ChangeEvent<HTMLInputElement>): void => {
 							props.onSearch(e.target.value);
 						}}
+						onKeyDown={e => {
+							if (!props.shouldSearchByClick) return;
+							if (e.key === 'Enter') {
+								return props.onSearchClick?.();
+							}
+						}}
 					/>
-					<div className={cl(props.iconClassName, 'absolute right-0 text-neutral-400')}>
+					<div
+						role={props.shouldSearchByClick ? 'button' : 'div'}
+						onClick={() => props.onSearchClick?.()}
+						className={cl(props.iconClassName, 'absolute right-0 text-neutral-400')}>
 						<svg
 							width={'20'}
 							height={'20'}

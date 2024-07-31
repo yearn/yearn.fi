@@ -21,14 +21,15 @@ module.exports = {
 				transparent: 'transparent',
 				inherit: 'inherit',
 				primary: '#0657F9',
-				'landing-bg': '#0C0C0C',
 				gray: {
 					400: '#9D9D9D',
-					800: '#282828'
+					800: '#282828',
+					900: '#0C0C0C'
 				},
 				blue: {
 					500: '#0657F9'
-				}
+				},
+				fallback: '#808080'
 			},
 			fontFamily: {
 				aeonik: ['var(--font-aeonik)', 'Aeonik', ...defaultTheme.fontFamily.sans],
