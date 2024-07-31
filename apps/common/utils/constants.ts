@@ -65,6 +65,12 @@ export const FEATURED_APPS = [
 		description: 'Product description example text product description example text',
 		image: '/juiced-bg.png'
 	},
+
+	{
+		title: 'Juiced',
+		description: 'Product description example text product description example text',
+		image: '/juiced-bg.png'
+	},
 	{
 		title: 'Gimme',
 		description: 'Product description example text product description example text',

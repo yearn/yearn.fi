@@ -55,7 +55,7 @@ const WithLayout = memo(function WithLayout(props: {supportedNetworks: Chain[]} 
 					id={'app'}
 					className={cl('mb-0 bg-gray-900 justify-center min-h-screen flex font-aeonik')}>
 					<div className={'flex w-full max-w-[1480px] justify-start'}>
-						<motion.nav className={'sticky py-4 pl-4'}>
+						<motion.nav className={'fixed top-0 z-20 h-screen py-4 pl-4'}>
 							<Sidebar
 								tabs={[
 									{title: 'Home', route: '/'},
@@ -72,7 +72,7 @@ const WithLayout = memo(function WithLayout(props: {supportedNetworks: Chain[]} 
 									animate={'enter'}
 									exit={'exit'}
 									variants={variants}
-									className={'ml-[100px] w-full'}>
+									className={'ml-[388px] w-full overflow-x-hidden'}>
 									<Component
 										router={props.router}
 										{...pageProps}

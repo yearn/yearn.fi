@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import {IconShare} from '@common/icons/IconShare';
 
 import type {TApp} from 'pages/home/[category]';
 import type {ReactElement} from 'react';
@@ -12,8 +13,14 @@ export function AppCard(props: TAppCardProps): ReactElement {
 	return (
 		<Link
 			href={props.app.link ?? ''}
-			className={'bg-grey-900 border border-gray-800/50 p-6 hover:bg-[#29292966]'}>
+			className={'bg-grey-900 group relative border border-gray-500/50 p-6 hover:bg-gray-600/40'}>
 			<div className={'mb-10'}>
+				<div
+					className={
+						'absolute right-2 top-2 hidden size-10 items-center justify-center bg-gray-900 group-hover:flex'
+					}>
+					<IconShare className={'size-[10px]'} />
+				</div>
 				{props.app.image ? (
 					<Image
 						src={props.app.image}

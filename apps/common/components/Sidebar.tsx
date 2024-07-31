@@ -22,35 +22,36 @@ export function Sidebar(props: TSidebarProps): ReactElement {
 	return (
 		<div
 			className={
-				'flex h-full w-72 flex-col justify-between border border-gray-800/50 bg-white/5 p-4 py-6 text-white'
+				'flex h-full w-72 flex-col justify-between border border-gray-500/50 bg-white/5 py-6 text-white'
 			}>
 			<div>
-				<LogoYearn
-					className={'mb-10 size-10 pl-[10px]'}
-					back={'text-blue-500'}
-					front={'text-white'}
-				/>
-				<SearchBar
-					className={'!w-full !border-x-0 !border-b-2 !border-t-0 !border-white !bg-gray-800 '}
-					searchPlaceholder={'Search Apps'}
-					searchValue={configuration.searchValue}
-					onSearch={(value: string) => {
-						dispatch({type: 'SET_SEARCH', payload: value});
-					}}
-					shouldSearchByClick
-					onSearchClick={() => {
-						if (!configuration.searchValue) {
-							return;
-						}
-						router.push(`/home/search?query=${configuration.searchValue}`);
-					}}
-				/>
-
-				<div className={'ml-2 mt-8 flex flex-col'}>
+				<div className={'px-4'}>
+					<LogoYearn
+						className={'mb-10 size-10 pl-[10px]'}
+						back={'text-blue-500'}
+						front={'text-white'}
+					/>
+					<SearchBar
+						className={'!w-full !border-x-0 !border-b-2 !border-t-0 !border-white !bg-gray-500 '}
+						searchPlaceholder={'Search Apps'}
+						searchValue={configuration.searchValue}
+						onSearch={(value: string) => {
+							dispatch({type: 'SET_SEARCH', payload: value});
+						}}
+						shouldSearchByClick
+						onSearchClick={() => {
+							if (!configuration.searchValue) {
+								return;
+							}
+							router.push(`/home/search?query=${configuration.searchValue}`);
+						}}
+					/>
+				</div>
+				<div className={'mt-8 flex flex-col'}>
 					{props.tabs.map(tab => (
 						<Link
 							className={cl(
-								'py-2 text-base',
+								'py-2 px-6 text-base hover:bg-gray-600/40',
 								currentTab === tab.route ? 'text-white font-bold' : 'text-gray-400'
 							)}
 							href={tab.route === '/' ? tab.route : `/home/${tab.route}`}
@@ -61,7 +62,7 @@ export function Sidebar(props: TSidebarProps): ReactElement {
 				</div>
 			</div>
 
-			<div className={'flex flex-wrap gap-x-3 gap-y-4 px-2'}>
+			<div className={'flex flex-wrap gap-x-3 gap-y-4 px-6'}>
 				{LANDING_SIDEBAR_LINKS.map(link => (
 					<Link
 						className={'text-xs text-gray-400'}

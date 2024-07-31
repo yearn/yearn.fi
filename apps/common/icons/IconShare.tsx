@@ -18,7 +18,7 @@ export function IconShare(props: React.SVGProps<SVGSVGElement>): ReactElement {
 			/>
 			<path
 				d={'M11 1L1 11'}
-				stroke={'currentcolor'}
+				stroke={'white'}
 				strokeWidth={'2'}
 				strokeLinecap={'round'}
 				strokeLinejoin={'round'}
