@@ -21,7 +21,8 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 	const hasPendleArbRewards =
 		currentVault.address === toAddress('0x044E75fCbF7BD3f8f4577FF317554e9c0037F145') ||
 		currentVault.address === toAddress('0x0F2ae7531A83982F15ff1D26B165E2bF3D7566da') ||
-		currentVault.address === toAddress('0x1Dd930ADD968ff5913C3627dAA1e6e6FCC9dc544');
+		currentVault.address === toAddress('0x1Dd930ADD968ff5913C3627dAA1e6e6FCC9dc544') ||
+		currentVault.address === toAddress('0x34a2b066AF16409648eF15d239E656edB8790ca0');
 
 	if (currentVault.apr.forwardAPR.type === '') {
 		const hasZeroAPR = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0;
