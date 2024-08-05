@@ -1,4 +1,4 @@
-import React, {memo} from 'react';
+import React, {memo, useState} from 'react';
 import {Toaster} from 'react-hot-toast';
 import {usePathname} from 'next/navigation';
 import {useRouter} from 'next/router';
@@ -12,13 +12,15 @@ import {IconAlertError} from '@yearn-finance/web-lib/icons/IconAlertError';
 import {IconCheckmark} from '@yearn-finance/web-lib/icons/IconCheckmark';
 import AppHeader from '@common/components/Header';
 import {Meta} from '@common/components/Meta';
+import {MobileNavbar} from '@common/components/MobileNavbar';
+import {MobileTopNav} from '@common/components/MobileTopNav';
 import {Sidebar} from '@common/components/Sidebar';
 import {WithFonts} from '@common/components/WithFonts';
 import {SearchContextApp} from '@common/contexts/useSearch';
 import {YearnContextApp} from '@common/contexts/useYearn';
 import {useCurrentApp} from '@common/hooks/useCurrentApp';
 import {variants} from '@common/utils/animations';
-import {SUPPORTED_NETWORKS} from '@common/utils/constants';
+import {MENU_TABS, SUPPORTED_NETWORKS} from '@common/utils/constants';
 
 import type {AppProps} from 'next/app';
 import type {ReactElement} from 'react';
@@ -45,6 +47,8 @@ const WithLayout = memo(function WithLayout(props: {supportedNetworks: Chain[]} 
 	const {Component, pageProps} = props;
 	const pathName = usePathname();
 	const {name} = useCurrentApp(router);
+	const [isSearchOpen, set_isSearchOpen] = useState(false);
+	const [isNavbarOpen, set_isNavbarOpen] = useState(false);
 
 	const isOnLanding = pathName?.startsWith('/home/') || pathName === '/';
 
@@ -53,26 +57,44 @@ const WithLayout = memo(function WithLayout(props: {supportedNetworks: Chain[]} 
 			<SearchContextApp>
 				<div
 					id={'app'}
-					className={cl('mb-0 bg-gray-900 justify-center min-h-screen flex font-aeonik')}>
+					className={cl('mb-0 scrollbar-none bg-gray-900 justify-center min-h-screen flex font-aeonik')}>
 					<div className={'flex w-full max-w-[1480px] justify-start'}>
-						<motion.nav className={'fixed top-0 z-20 h-screen py-4 pl-4'}>
-							<Sidebar
-								tabs={[
-									{title: 'Home', route: '/'},
-									{title: 'Community Apps', route: 'community'},
-									{title: 'Yearn X Projects', route: 'yearn-x'}
-								]}
+						<motion.nav className={'fixed z-50 w-full md:hidden'}>
+							<MobileTopNav
+								isSearchOpen={isSearchOpen}
+								set_isSearchOpen={set_isSearchOpen}
+								set_isNavbarOpen={set_isNavbarOpen}
 							/>
+						</motion.nav>
+						{isNavbarOpen && (
+							<motion.nav
+								className={'sticky top-20 z-50 h-[calc(100vh-80px)] w-screen md:hidden'}
+								initial={{y: '100%'}} // Start from below the screen
+								animate={{y: 0}} // Animate to the original position
+								exit={{y: '100%'}} // Exit back to below the screen
+								transition={{type: 'tween', stiffness: 300, damping: 30}} // Add transition for smooth animation
+							>
+								<MobileNavbar
+									set_isNavbarOpen={set_isNavbarOpen}
+									set_isSearchOpen={set_isSearchOpen}
+								/>
+							</motion.nav>
+						)}
+						<motion.nav className={'top-0 z-20 hidden h-screen py-4 pl-4 md:fixed md:block'}>
+							<Sidebar tabs={MENU_TABS} />
 						</motion.nav>
 						<LazyMotion features={domAnimation}>
 							<AnimatePresence mode={'wait'}>
 								<motion.div
 									key={`${name}_${pathName}`}
-									initial={'initial'}
-									animate={'enter'}
-									exit={'exit'}
+									initial={{opacity: 1}} // Start with full opacity
+									animate={{opacity: isNavbarOpen ? 0 : 1}} // Gradually fade out when navbar is open
+									transition={{duration: 1.2}} // Adjust duration as needed
 									variants={variants}
-									className={'ml-[388px] w-full overflow-x-hidden'}>
+									className={cl(
+										'w-full overflow-x-hidden md:ml-[305px] scrollbar-none',
+										isSearchOpen ? 'mt-16' : ''
+									)}>
 									<Component
 										router={props.router}
 										{...pageProps}
@@ -141,7 +163,7 @@ function MyApp(props: AppProps): ReactElement {
 				og={manifest.og || 'https://yearn.fi/og.png'}
 				uri={manifest.uri || 'https://yearn.fi'}
 			/>
-			<main className={cl('h-full min-h-screen w-full font-aeonik', '')}>
+			<main className={'size-full min-h-screen font-aeonik'}>
 				<PlausibleProvider
 					domain={'yearn.fi'}
 					enabled={true}>

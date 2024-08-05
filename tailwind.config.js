@@ -22,6 +22,7 @@ module.exports = {
 				inherit: 'inherit',
 				primary: '#0657F9',
 				gray: {
+					300: '#E1E1E1',
 					400: '#9D9D9D',
 					500: '#282828',
 					600: '#292929',

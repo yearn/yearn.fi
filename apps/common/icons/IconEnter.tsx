@@ -9,7 +9,7 @@ export function IconEnter(props: React.SVGProps<SVGSVGElement>): ReactElement {
 			viewBox={'0 0 12 12'}
 			fill={'none'}
 			xmlns={'http://www.w3.org/2000/svg'}>
-			<g clip-path={'url(#clip0_2013_717)'}>
+			<g clipPath={'url(#clip0_2013_717)'}>
 				<path
 					d={'M4 5L1 8L4 11'}
 					stroke={'#9D9D9D'}
