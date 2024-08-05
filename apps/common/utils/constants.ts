@@ -11,71 +11,83 @@ export const SUPPORTED_NETWORKS = [mainnet, optimism, polygon, fantom, base, arb
 
 export const COMMUNITY_APPS: TApp[] = [
 	{
-		title: 'Product name',
+		name: 'Product name',
 		description: 'Product description example text product description example text',
-		image: ''
+		logoURI: '/v3-bg.png',
+		appURI: 'https://gimme.mom/'
 	},
 	{
-		title: 'Product name',
+		name: 'Product name',
 		description: 'Product description example text product description example text',
-		image: ''
+		logoURI: '/v3-bg.png',
+		appURI: 'https://gimme.mom/'
 	},
 	{
-		title: 'Product name',
+		name: 'Product name',
 		description: 'Product description example text product description example text',
-		image: ''
+		logoURI: '/v3-bg.png',
+		appURI: 'https://gimme.mom/'
 	},
 	{
-		title: 'Product name',
+		name: 'Product name',
 		description: 'Product description example text product description example text',
-		image: ''
+		logoURI: '/v3-bg.png',
+		appURI: 'https://gimme.mom/'
 	}
 ];
 
-export const YEARN_X_APPS = [
+export const YEARN_X_APPS: TApp[] = [
 	{
-		title: 'Pendle',
+		name: 'Pendle',
 		description: 'Product description example text product description example text',
-		image: ''
+		logoURI: '/v3-bg.png',
+		appURI: 'https://gimme.mom/'
 	},
 	{
-		title: 'Ajna',
+		name: 'Ajna',
 		description: 'Product description example text product description example text',
-		image: ''
+		logoURI: '/v3-bg.png',
+		appURI: 'https://gimme.mom/'
 	},
 	{
-		title: 'Optimism',
+		name: 'Optimism',
 		description: 'Product description example text product description example text',
-		image: ''
+		logoURI: '/v3-bg.png',
+		appURI: 'https://gimme.mom/'
 	},
 	{
-		title: 'Pool Together',
+		name: 'Pool Together',
 		description: 'Product description example text product description example text',
-		image: ''
+		logoURI: '/v3-bg.png',
+		appURI: 'https://gimme.mom/'
 	}
 ];
 
 export const FEATURED_APPS = [
 	{
-		title: 'Juiced',
+		name: 'Juiced',
 		description: 'Product description example text product description example text',
-		image: '/juiced-bg.png'
+		logoURI: '/juiced-bg.png',
+		appURI: 'https://gimme.mom/'
 	},
 
 	{
-		title: 'Juiced',
+		name: 'Juiced',
 		description: 'Product description example text product description example text',
-		image: '/juiced-bg.png'
+		logoURI: '/juiced-bg.png',
+		appURI: 'https://gimme.mom/'
 	},
 	{
-		title: 'Gimme',
+		name: 'Gimme',
 		description: 'Product description example text product description example text',
-		image: '/gimme-bg.png'
+		logoURI: '/gimme-bg.png',
+		appURI: 'https://gimme.mom/'
 	},
 	{
-		title: 'V3 valuts',
+		name: 'V3 valuts',
 		description: 'Product description example text product description example text',
-		image: '/v3-bg.png'
+		logoURI: '/v3-bg.png',
+		appURI: 'https://gimme.mom/'
 	}
 ];
 
@@ -114,4 +126,10 @@ export const LANDING_SIDEBAR_LINKS = [
 	{title: 'Discord', href: 'https://discord.com/invite/yearn'},
 	{title: 'Paragraph', href: ''},
 	{title: 'Twitter', href: 'https://twitter.com/yearnfi'}
+];
+
+export const MENU_TABS = [
+	{title: 'Home', route: '/'},
+	{title: 'Community Apps', route: 'community'},
+	{title: 'Yearn X Projects', route: 'yearn-x'}
 ];

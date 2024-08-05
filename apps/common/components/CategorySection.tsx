@@ -23,9 +23,12 @@ export function CategorySection(props: TAppSectionProps): ReactElement {
 					<IconChevron className={'size-6 -rotate-90 text-white'} />
 				</button>
 			</div>
-			<div className={'grid grid-cols-4 grid-rows-1 gap-6'}>
-				{props.apps.slice(0, 4).map(app => (
-					<AppCard app={app} />
+			<div className={'flex grid-rows-1 flex-col gap-6 md:grid md:grid-cols-2 lg:grid-cols-4'}>
+				{props.apps.slice(0, 4).map((app, i) => (
+					<AppCard
+						key={app.name + i}
+						app={app}
+					/>
 				))}
 			</div>
 		</div>

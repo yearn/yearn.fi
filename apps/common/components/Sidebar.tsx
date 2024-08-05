@@ -1,4 +1,4 @@
-import {type ReactElement} from 'react';
+import {type ReactElement, useCallback} from 'react';
 import Link from 'next/link';
 import {usePathname, useRouter} from 'next/navigation';
 import {cl} from '@builtbymom/web3/utils';
@@ -19,10 +19,17 @@ export function Sidebar(props: TSidebarProps): ReactElement {
 
 	const currentTab = pathName?.startsWith('/home/') ? pathName?.split('/')[2] : '/';
 
+	const onSearchClick = useCallback(() => {
+		if (!configuration.searchValue) {
+			return;
+		}
+		router.push(`/home/search?query=${configuration.searchValue}`);
+	}, [configuration.searchValue, router]);
+
 	return (
 		<div
 			className={
-				'flex h-full w-72 flex-col justify-between border border-gray-500/50 bg-white/5 py-6 text-white'
+				'flex h-full w-72 flex-col justify-between border border-gray-500/50 bg-gradient-to-b from-gray-900 to-[#1A1A1A] py-6 text-white'
 			}>
 			<div>
 				<div className={'px-4'}>
@@ -32,19 +39,17 @@ export function Sidebar(props: TSidebarProps): ReactElement {
 						front={'text-white'}
 					/>
 					<SearchBar
-						className={'!w-full !border-x-0 !border-b-2 !border-t-0 !border-white !bg-gray-500 '}
+						className={cl(
+							'!w-full !border-x-0 !border-t-0 !border-white !bg-gray-500 ',
+							configuration.searchValue ? '!border-b-2' : '!border-b-0'
+						)}
 						searchPlaceholder={'Search Apps'}
 						searchValue={configuration.searchValue}
 						onSearch={(value: string) => {
 							dispatch({type: 'SET_SEARCH', payload: value});
 						}}
 						shouldSearchByClick
-						onSearchClick={() => {
-							if (!configuration.searchValue) {
-								return;
-							}
-							router.push(`/home/search?query=${configuration.searchValue}`);
-						}}
+						onSearchClick={onSearchClick}
 					/>
 				</div>
 				<div className={'mt-8 flex flex-col'}>
@@ -65,7 +70,7 @@ export function Sidebar(props: TSidebarProps): ReactElement {
 			<div className={'flex flex-wrap gap-x-3 gap-y-4 px-6'}>
 				{LANDING_SIDEBAR_LINKS.map(link => (
 					<Link
-						className={'text-xs text-gray-400'}
+						className={'text-xs text-gray-400 hover:text-white'}
 						target={'_blank'}
 						href={link.href}
 						key={link.title}>
