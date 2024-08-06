@@ -57,7 +57,7 @@ const WithLayout = memo(function WithLayout(props: {supportedNetworks: Chain[]} 
 			<SearchContextApp>
 				<div
 					id={'app'}
-					className={cl('mb-0 scrollbar-none bg-gray-900 justify-center min-h-screen flex font-aeonik')}>
+					className={'mb-0 flex min-h-screen justify-center bg-gray-900 font-aeonik'}>
 					<div className={'flex w-full max-w-[1480px] justify-start'}>
 						<motion.nav className={'fixed z-50 w-full md:hidden'}>
 							<MobileTopNav
@@ -92,7 +92,7 @@ const WithLayout = memo(function WithLayout(props: {supportedNetworks: Chain[]} 
 									transition={{duration: 1.2}} // Adjust duration as needed
 									variants={variants}
 									className={cl(
-										'w-full overflow-x-hidden md:ml-[305px] scrollbar-none',
+										'w-full overflow-x-hidden md:ml-[305px]',
 										isSearchOpen ? 'mt-16' : ''
 									)}>
 									<Component
