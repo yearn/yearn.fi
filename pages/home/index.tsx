@@ -5,6 +5,7 @@ import {AppsCarousel} from '@common/components/AppsCarousel';
 import {CategorySection} from '@common/components/CategorySection';
 import {Cutaway} from '@common/components/Cutaway';
 import {useSearch} from '@common/contexts/useSearch';
+import {IconChevron} from '@common/icons/IconChevron';
 import {LogoDiscord} from '@common/icons/LogoDiscord';
 import {LogoTwitter} from '@common/icons/LogoTwitter';
 import {COMMUNITY_APPS, FEATURED_APPS, YEARN_X_APPS} from '@common/utils/constants';
@@ -106,13 +107,25 @@ export default function Home(): ReactElement {
 	const router = useRouter();
 	const {dispatch} = useSearch();
 
+	const carouselRef = useRef<HTMLDivElement | null>(null);
+
+	const scrollBack = (): void => {
+		if (!carouselRef.current) return;
+		carouselRef.current.scrollLeft -= 400;
+	};
+
+	const scrollForward = (): void => {
+		if (!carouselRef.current) return;
+		carouselRef.current.scrollLeft += 400;
+	};
+
 	useMountEffect(() => {
 		dispatch({type: 'SET_SEARCH', payload: ''});
 	});
 
 	return (
-		<div className={'mb-4 mt-20 flex w-full justify-center'}>
-			<div className={'w-full p-6 md:max-w-6xl md:p-0 md:pl-28 lg:pl-36'}>
+		<div className={'relative mb-4 mt-20 flex w-full justify-center'}>
+			<div className={'w-full p-6 pb-24 pt-0 md:max-w-6xl md:px-2 md:pl-28 lg:pl-36'}>
 				<div className={'flex flex-col gap-y-6'}>
 					<div
 						className={
@@ -130,12 +143,34 @@ export default function Home(): ReactElement {
 						</p>
 					</div>
 
-					<div>
-						<h1 className={'mb-6 text-lg text-white'}>{'Featured Apps'}</h1>
-						<AppsCarousel apps={FEATURED_APPS} />
+					<div className={''}>
+						<div className={'flex w-full justify-between'}>
+							<h1 className={'mb-6 text-lg text-white'}>{'Featured Apps'}</h1>
+							<div className={'hidden gap-3 md:flex'}>
+								<button
+									onClick={scrollBack}
+									className={
+										'flex !h-8 items-center px-4 text-white outline !outline-1 outline-white hover:!outline-[3px]'
+									}>
+									<IconChevron className={'rotate-90'} />
+								</button>
+								<button
+									onClick={scrollForward}
+									className={
+										'flex !h-8 items-center px-4 text-white outline !outline-1 outline-white hover:!outline-[3px]'
+									}>
+									<IconChevron className={' -rotate-90'} />
+								</button>
+							</div>
+						</div>
+
+						<AppsCarousel
+							ref={carouselRef}
+							apps={FEATURED_APPS}
+						/>
 					</div>
 
-					<div className={'flex flex-col gap-[64px]'}>
+					<div className={'flex flex-col  gap-[64px] md:mt-[520px]'}>
 						<CategorySection
 							title={'Community Apps'}
 							onExpandClick={() => router.push('/home/community')}
