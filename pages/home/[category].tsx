@@ -13,10 +13,10 @@ export default function Index(props: {router: NextRouter}): ReactElement {
 	}, [props.router.asPath]);
 
 	return (
-		<div className={'mt-24 flex w-full justify-start px-4 !pl-8 md:mt-10'}>
+		<div className={'mt-24 flex w-full justify-start px-4 !pl-8 pb-14 md:mt-10'}>
 			<div className={'flex w-full max-w-4xl flex-col'}>
 				<div className={'mb-10 flex w-full flex-col justify-start'}>
-					<p className={'text-3xl font-bold leading-[64px] text-white md:text-[64px]'}>
+					<p className={'text-3xl font-bold text-white md:text-[64px] md:leading-[64px]'}>
 						{currentCatrgory?.categoryName}
 					</p>
 
