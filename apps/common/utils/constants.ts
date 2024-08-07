@@ -170,7 +170,14 @@ export const FEATURED_APPS = [
 	}
 ];
 
-export const ALL_APPS = [...FEATURED_APPS, ...FRONTENDS_APPS, ...YEARN_X_APPS];
+export const ALL_APPS = [
+	...FEATURED_APPS,
+	...FRONTENDS_APPS,
+	...LOCKERS_APPS,
+	...YEARN_X_APPS,
+	...POOLS_APPS,
+	...INTEGRATIONS_APPS
+];
 
 export const CATEGORIES_DICT = {
 	'featured-apps': {
@@ -230,8 +237,11 @@ export const LANDING_SIDEBAR_LINKS = [
 
 export const MENU_TABS = [
 	{title: 'Home', route: '/'},
-	{title: 'Community Apps', route: 'community'},
-	{title: 'Yearn X Projects', route: 'yearn-x'}
+	{title: 'Frontends', route: 'frontends'},
+	{title: 'Lockers', route: 'lockers'},
+	{title: 'Pools', route: 'pools'},
+	{title: 'Yearn X Projects', route: 'yearn-x'},
+	{title: 'Integrations', route: 'integrations'}
 ];
 
 export const CATEGORY_PAGE_FILTERS = [
