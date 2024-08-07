@@ -46,7 +46,7 @@ export function Sidebar(props: TSidebarProps): ReactElement {
 						searchPlaceholder={'Search Apps'}
 						searchValue={configuration.searchValue}
 						onSearch={(value: string) => {
-							dispatch({type: 'SET_SEARCH', payload: value});
+							dispatch({searchValue: value});
 						}}
 						shouldSearchByClick
 						onSearchClick={onSearchClick}

@@ -3,8 +3,8 @@ import Link from 'next/link';
 import {cl} from '@builtbymom/web3/utils';
 import {IconShare} from '@common/icons/IconShare';
 
-import type {TApp} from 'pages/home/[category]';
 import type {ReactElement} from 'react';
+import type {TApp} from '@common/types/category';
 
 export function FeaturedApp(props: {app: TApp}): ReactElement {
 	return (
@@ -12,7 +12,7 @@ export function FeaturedApp(props: {app: TApp}): ReactElement {
 			href={props.app.appURI}
 			target={'_blank'}
 			className={cl(
-				'group relative flex h-[376px] w-full min-w-[280px] cursor-pointer flex-col justify-end px-6 py-10 z-20 overflow-hidden outline outline-1 outline-gray-500/50  md:h-[520px] md:min-w-[384px]'
+				'group relative flex h-[376px] w-full min-w-[280px] cursor-pointer flex-col justify-end px-6 py-10 z-20 overflow-hidden outline outline-1 outline-gray-500/50 md:h-[520px] md:min-w-[384px]'
 			)}>
 			<Image
 				src={props.app.logoURI}
@@ -20,7 +20,7 @@ export function FeaturedApp(props: {app: TApp}): ReactElement {
 				width={1400}
 				height={2000}
 				className={
-					'absolute right-0 top-0 size-full bg-center object-cover transition-shadow duration-200 group-hover:scale-105'
+					'absolute right-0 top-0 size-full bg-center object-cover transition-all duration-200 group-hover:scale-105'
 				}
 			/>
 			<div

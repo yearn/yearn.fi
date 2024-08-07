@@ -1,22 +1,17 @@
-import {createContext, useContext, useReducer} from 'react';
+import {createContext, useContext, useState} from 'react';
 import {useDeepCompareMemo} from '@react-hookz/web';
 import {optionalRenderProps} from '@common/types/optionalRenderProps';
 
-import type {Dispatch, ReactElement} from 'react';
+import type {Dispatch, ReactElement, SetStateAction} from 'react';
 import type {TOptionalRenderProps} from '@common/types/optionalRenderProps';
 
 type TSearchContext = {
 	configuration: TSearchConfiguration;
-	dispatch: Dispatch<TSearchActions>;
+	dispatch: Dispatch<SetStateAction<TSearchConfiguration>>;
 };
 
 type TSearchConfiguration = {
 	searchValue: string;
-};
-
-type TSearchActions = {
-	type: 'SET_SEARCH';
-	payload: string;
 };
 
 const defaultProps = {
@@ -26,22 +21,18 @@ const defaultProps = {
 	dispatch: (): void => undefined
 };
 
-const configurationReducer = (state: TSearchConfiguration, action: TSearchActions): TSearchConfiguration => {
-	switch (action.type) {
-		case 'SET_SEARCH':
-			return {...state, searchValue: action.payload};
-	}
-};
-
 const SearchContext = createContext<TSearchContext>(defaultProps);
 export const SearchContextApp = ({
 	children
 }: {
 	children: TOptionalRenderProps<TSearchContext, ReactElement>;
 }): ReactElement => {
-	const [configuration, dispatch] = useReducer(configurationReducer, defaultProps.configuration);
+	const [configuration, set_configuration] = useState(defaultProps.configuration);
 
-	const contextValue = useDeepCompareMemo((): TSearchContext => ({configuration, dispatch}), [configuration]);
+	const contextValue = useDeepCompareMemo(
+		(): TSearchContext => ({configuration, dispatch: set_configuration}),
+		[configuration]
+	);
 
 	return (
 		<SearchContext.Provider value={contextValue}>
