@@ -17,7 +17,7 @@ export default function SeachResults(): ReactElement {
 	}, [searchValue]);
 
 	return (
-		<div className={' mt-20 flex w-full justify-center'}>
+		<div className={'mt-24 flex w-full justify-center md:mt-10'}>
 			<div className={'w-full max-w-6xl !pl-8'}>
 				<div className={'mb-10 flex w-full max-w-full flex-col justify-start'}>
 					<p
