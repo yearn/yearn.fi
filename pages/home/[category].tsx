@@ -1,15 +1,16 @@
-import {usePathname} from 'next/navigation';
+import {type ReactElement, useMemo} from 'react';
 import {AppCard} from '@common/components/AppCard';
 import {FilterBar} from '@common/components/FilterBar';
 import {SortingBar} from '@common/components/SortingBar';
 import {CATEGORIES_DICT} from '@common/utils/constants';
 
-import type {ReactElement} from 'react';
+import type {NextRouter} from 'next/router';
 
-export default function Index(): ReactElement {
-	const pathName = usePathname();
-	const currentTab = pathName?.startsWith('/home/') ? pathName?.split('/')[2] : '/';
-	const currentCatrgory = CATEGORIES_DICT[currentTab as keyof typeof CATEGORIES_DICT];
+export default function Index(props: {router: NextRouter}): ReactElement {
+	const currentCatrgory = useMemo(() => {
+		const currentTab = props.router.asPath?.startsWith('/home/') ? props.router.asPath?.split('/')[2] : '/';
+		return CATEGORIES_DICT[currentTab as keyof typeof CATEGORIES_DICT];
+	}, [props.router.asPath]);
 
 	return (
 		<div className={'my-20 flex w-full justify-start px-4 md:pl-28 lg:pl-36'}>
