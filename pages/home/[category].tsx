@@ -9,7 +9,7 @@ import type {ReactElement} from 'react';
 export default function Index(): ReactElement {
 	const pathName = usePathname();
 	const currentTab = pathName?.startsWith('/home/') ? pathName?.split('/')[2] : '/';
-	const currentCatrgory = CATEGORIES_DICT[currentTab as 'community' | 'yearn-x'];
+	const currentCatrgory = CATEGORIES_DICT[currentTab as keyof typeof CATEGORIES_DICT];
 
 	return (
 		<div className={'my-20 flex w-full justify-start px-4 md:pl-28 lg:pl-36'}>
