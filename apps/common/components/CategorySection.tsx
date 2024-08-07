@@ -2,8 +2,8 @@ import {IconChevron} from '@common/icons/IconChevron';
 
 import {AppCard} from './AppCard';
 
-import type {TApp} from 'pages/home/[category]';
 import type {ReactElement} from 'react';
+import type {TApp} from '@common/types/category';
 
 type TAppSectionProps = {
 	title: string;

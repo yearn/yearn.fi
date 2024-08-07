@@ -2,8 +2,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import {IconShare} from '@common/icons/IconShare';
 
-import type {TApp} from 'pages/home/[category]';
 import type {ReactElement} from 'react';
+import type {TApp} from '@common/types/category';
 
 type TAppCardProps = {
 	app: TApp;
