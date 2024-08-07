@@ -1,7 +1,7 @@
 import {arbitrum, base, fantom, mainnet, optimism, polygon} from 'viem/chains';
 import {toAddress} from '@builtbymom/web3/utils';
 
-import type {TApp} from 'pages/home/[category]';
+import type {TApp} from '@common/types/category';
 
 export const DEFAULT_SLIPPAGE = 0.5;
 export const DEFAULT_MAX_LOSS = 1n;
@@ -132,4 +132,11 @@ export const MENU_TABS = [
 	{title: 'Home', route: '/'},
 	{title: 'Community Apps', route: 'community'},
 	{title: 'Yearn X Projects', route: 'yearn-x'}
+];
+
+export const CATEGORY_PAGE_FILTERS = [
+	{title: 'All', value: 'all'},
+	{title: 'Filter', value: 'filter'},
+	{title: 'Tab', value: 'tab'},
+	{title: 'Large Filter', value: 'large-filter'}
 ];

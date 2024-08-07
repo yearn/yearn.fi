@@ -1,5 +1,7 @@
 import {usePathname} from 'next/navigation';
 import {AppCard} from '@common/components/AppCard';
+import {FilterBar} from '@common/components/FilterBar';
+import {SortingBar} from '@common/components/SortingBar';
 import {CATEGORIES_DICT} from '@common/utils/constants';
 
 import type {ReactElement} from 'react';
@@ -20,6 +22,17 @@ export default function Index(): ReactElement {
 					<p className={'mt-4 max-w-[610px] text-base text-gray-400'}>
 						{currentCatrgory?.categoryDescription}
 					</p>
+				</div>
+
+				<div className={'relative mb-10 hidden w-full flex-col justify-between gap-7  md:flex-row md:gap-0'}>
+					<FilterBar
+						selectedFilter={{
+							title: 'Filter',
+							value: 'filter'
+						}}
+					/>
+
+					<SortingBar />
 				</div>
 
 				<div className={'flex grid-rows-1 flex-col gap-6 md:grid md:grid-cols-2 lg:grid-cols-4'}>
