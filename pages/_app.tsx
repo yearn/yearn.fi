@@ -1,7 +1,5 @@
 import React, {memo, useState} from 'react';
 import {Toaster} from 'react-hot-toast';
-import {usePathname} from 'next/navigation';
-import {useRouter} from 'next/router';
 import PlausibleProvider from 'next-plausible';
 import {AnimatePresence, domAnimation, LazyMotion, motion} from 'framer-motion';
 import {WithMom} from '@builtbymom/web3/contexts/WithMom';
@@ -23,6 +21,7 @@ import {variants} from '@common/utils/animations';
 import {MENU_TABS, SUPPORTED_NETWORKS} from '@common/utils/constants';
 
 import type {AppProps} from 'next/app';
+import type {NextRouter} from 'next/router';
 import type {ReactElement} from 'react';
 import type {Chain} from 'viem';
 
@@ -42,15 +41,14 @@ import '../style.css';
  ** The returned JSX structure is a div with the 'AppHeader' component, the current page component
  ** wrapped with layout, and the feedback popover if it should not be hidden.
  **************************************************************************************************/
-const WithLayout = memo(function WithLayout(props: {supportedNetworks: Chain[]} & AppProps): ReactElement {
-	const router = useRouter();
+const WithLayout = memo(function WithLayout(
+	props: {router: NextRouter; supportedNetworks: Chain[]} & AppProps
+): ReactElement {
 	const {Component, pageProps} = props;
-	const pathName = usePathname();
-	const {name} = useCurrentApp(router);
+	const {name} = useCurrentApp(props.router);
 	const [isSearchOpen, set_isSearchOpen] = useState(false);
 	const [isNavbarOpen, set_isNavbarOpen] = useState(false);
-
-	const isOnLanding = pathName?.startsWith('/home/') || pathName === '/';
+	const isOnLanding = props.router.asPath?.startsWith('/home/') || props.router.asPath === '/';
 
 	if (isOnLanding) {
 		return (
@@ -85,25 +83,21 @@ const WithLayout = memo(function WithLayout(props: {supportedNetworks: Chain[]} 
 						<motion.nav className={'top-0 z-20 hidden h-screen py-4 pl-4 md:fixed md:block'}>
 							<Sidebar tabs={MENU_TABS} />
 						</motion.nav>
-						<LazyMotion features={domAnimation}>
-							<AnimatePresence mode={'wait'}>
-								<motion.div
-									key={`${name}_${pathName}`}
-									initial={{opacity: 1}} // Start with full opacity
-									animate={{opacity: isNavbarOpen ? 0 : 1}} // Gradually fade out when navbar is open
-									transition={{duration: 1.2}} // Adjust duration as needed
-									variants={variants}
-									className={cl(
-										'w-full overflow-x-hidden md:ml-[305px]',
-										isSearchOpen ? 'mt-16' : ''
-									)}>
-									<Component
-										router={props.router}
-										{...pageProps}
-									/>
-								</motion.div>
-							</AnimatePresence>
-						</LazyMotion>
+						<AnimatePresence mode={'wait'}>
+							<motion.div
+								key={props.router.asPath}
+								initial={'initial'}
+								animate={'enter'}
+								exit={'exit'}
+								variants={variants}
+								className={cl('w-full overflow-x-hidden md:ml-[305px]', isSearchOpen ? 'mt-16' : '')}>
+								<Component
+									key={`app_${props.router.asPath}`}
+									router={props.router}
+									{...pageProps}
+								/>
+							</motion.div>
+						</AnimatePresence>
 					</div>
 				</div>
 			</SearchContextApp>
@@ -122,7 +116,7 @@ const WithLayout = memo(function WithLayout(props: {supportedNetworks: Chain[]} 
 					<LazyMotion features={domAnimation}>
 						<AnimatePresence mode={'wait'}>
 							<motion.div
-								key={`${name}_${pathName}`}
+								key={`${name}_${props.router.asPath}`}
 								initial={'initial'}
 								animate={'enter'}
 								exit={'exit'}
