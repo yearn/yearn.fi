@@ -75,8 +75,10 @@ const WithLayout = memo(function WithLayout(props: {supportedNetworks: Chain[]} 
 								transition={{type: 'tween', stiffness: 300, damping: 30}} // Add transition for smooth animation
 							>
 								<MobileNavbar
-									set_isNavbarOpen={set_isNavbarOpen}
-									set_isSearchOpen={set_isSearchOpen}
+									onClose={() => {
+										set_isNavbarOpen(false);
+										set_isSearchOpen(false);
+									}}
 								/>
 							</motion.nav>
 						)}

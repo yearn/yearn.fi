@@ -2,7 +2,7 @@ import {type ForwardedRef, forwardRef, type ReactElement} from 'react';
 
 import {FeaturedApp} from './FeaturedApp';
 
-import type {TApp} from 'pages/home/[category]';
+import type {TApp} from '@common/types/category';
 
 export const AppsCarousel = forwardRef((props: {apps: TApp[]}, ref: ForwardedRef<HTMLDivElement>): ReactElement => {
 	return (

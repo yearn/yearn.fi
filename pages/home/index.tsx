@@ -120,7 +120,7 @@ export default function Home(): ReactElement {
 	};
 
 	useMountEffect(() => {
-		dispatch({type: 'SET_SEARCH', payload: ''});
+		dispatch({searchValue: ''});
 	});
 
 	return (

@@ -17,13 +17,7 @@ const iconsDict = {
 	'yearn-x': <IconYearnXApps />
 };
 
-export function MobileNavbar({
-	set_isNavbarOpen,
-	set_isSearchOpen
-}: {
-	set_isNavbarOpen: (value: boolean) => void;
-	set_isSearchOpen: (value: boolean) => void;
-}): ReactElement {
+export function MobileNavbar({onClose}: {onClose: VoidFunction}): ReactElement {
 	const pathName = usePathname();
 
 	const currentTab = pathName?.startsWith('/home/') ? pathName?.split('/')[2] : '/';
@@ -39,10 +33,7 @@ export function MobileNavbar({
 							'text-base flex items-center gap-x-2 py-2 text-gray-400',
 							currentTab === tab.route ? 'text-white' : 'text-gray-400'
 						)}
-						onClick={() => {
-							set_isSearchOpen(false);
-							set_isNavbarOpen(false);
-						}}
+						onClick={onClose}
 						href={tab.route === '/' ? tab.route : `/home/${tab.route}`}>
 						<div className={'flex size-6 items-center justify-center'}>
 							{iconsDict[tab.route as '/' | 'community' | 'yearn-x']}

@@ -4,13 +4,6 @@ import {CATEGORIES_DICT} from '@common/utils/constants';
 
 import type {ReactElement} from 'react';
 
-export type TApp = {
-	name: string;
-	description?: string;
-	logoURI: string;
-	appURI: string;
-};
-
 export default function Index(): ReactElement {
 	const pathName = usePathname();
 	const currentTab = pathName?.startsWith('/home/') ? pathName?.split('/')[2] : '/';
