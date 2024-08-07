@@ -18,12 +18,12 @@ export function CategorySection(props: TAppSectionProps): ReactElement {
 				<div className={'text-lg font-bold text-white'}>{props.title}</div>
 				<button
 					onClick={props.onExpandClick}
-					className={'flex px-4 py-2 outline !outline-1 outline-white hover:!outline-[3px]'}>
+					className={'flex rounded-[4px] px-4 py-2 outline !outline-1 outline-white hover:!outline-[3px]'}>
 					<span className={'mr-1 text-white'}>{'View all'}</span>
 					<IconChevron className={'size-6 -rotate-90 text-white'} />
 				</button>
 			</div>
-			<div className={'flex grid-rows-1 flex-col gap-6 md:grid md:grid-cols-2 lg:grid-cols-4'}>
+			<div className={'flex grid-rows-1 flex-col gap-4 md:grid md:grid-cols-2 lg:grid-cols-4'}>
 				{props.apps.slice(0, 4).map((app, i) => (
 					<AppCard
 						key={app.name + i}

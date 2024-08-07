@@ -16,12 +16,12 @@ export function AppCard(props: TAppCardProps): ReactElement {
 				href={props.app.appURI ?? ''}
 				target={(props.app.appURI || '').startsWith('/') ? '' : '_blank'}
 				className={
-					'bg-grey-900 group relative hidden border border-gray-500/50 p-6 hover:bg-gray-600/40 md:block'
+					'bg-grey-900 group relative hidden rounded-lg border border-gray-700/50 p-6 hover:bg-gray-600/40 md:block'
 				}>
 				<div className={'mb-10'}>
 					<div
 						className={
-							'absolute right-2 top-2 hidden size-10 items-center justify-center bg-gray-900 group-hover:flex'
+							'absolute right-2 top-2 hidden size-10 items-center justify-center rounded-lg bg-gray-900 group-hover:flex'
 						}>
 						<IconShare className={'size-[10px]'} />
 					</div>

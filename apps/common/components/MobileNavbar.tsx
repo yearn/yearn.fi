@@ -43,7 +43,7 @@ export function MobileNavbar({onClose}: {onClose: VoidFunction}): ReactElement {
 				))}
 			</div>
 
-			<div className={'w-full border-t border-gray-500 p-6'}>
+			<div className={'w-full border-t border-gray-700 p-6'}>
 				<div className={'flex w-full justify-between'}>
 					{LANDING_SIDEBAR_LINKS.slice(0, 5).map(link => (
 						<Link

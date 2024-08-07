@@ -6,6 +6,7 @@ import {useSearch} from '@common/contexts/useSearch';
 import {LogoYearn} from '@common/icons/LogoYearn';
 import {LANDING_SIDEBAR_LINKS} from '@common/utils/constants';
 
+import {PromoPoster} from './PromoPoster';
 import {SearchBar} from './SearchBar';
 
 type TSidebarProps = {
@@ -29,20 +30,20 @@ export function Sidebar(props: TSidebarProps): ReactElement {
 	return (
 		<div
 			className={
-				'flex h-full w-72 flex-col justify-between border border-gray-500/50 bg-gradient-to-b from-gray-900 to-[#1A1A1A] py-6 text-white'
+				'flex h-full w-72 flex-col justify-between rounded-lg border border-gray-700/50 bg-gradient-to-b from-gray-900 to-[#1A1A1A] py-6 text-white'
 			}>
 			<div>
 				<div className={'px-4'}>
 					<LogoYearn
-						className={'mb-10 size-10 pl-[10px]'}
+						className={'mb-6 size-10 pl-[10px]'}
 						back={'text-blue-500'}
 						front={'text-white'}
 					/>
+					<div className={'mb-6'}>
+						<PromoPoster />
+					</div>
 					<SearchBar
-						className={cl(
-							'!w-full !border-x-0 !border-t-0 !border-white !bg-gray-500 ',
-							configuration.searchValue ? '!border-b-2' : '!border-b-0'
-						)}
+						className={cl('!w-full !border-0 rounded-lg !border-white !bg-gray-700')}
 						searchPlaceholder={'Search Apps'}
 						searchValue={configuration.searchValue}
 						onSearch={(value: string) => {
@@ -52,11 +53,11 @@ export function Sidebar(props: TSidebarProps): ReactElement {
 						onSearchClick={onSearchClick}
 					/>
 				</div>
-				<div className={'mt-8 flex flex-col'}>
+				<div className={'mt-6 flex flex-col'}>
 					{props.tabs.map(tab => (
 						<Link
 							className={cl(
-								'py-2 px-6 text-base hover:bg-gray-600/40',
+								'py-2 px-[28px] text-base hover:bg-gray-600/40',
 								currentTab === tab.route ? 'text-white font-bold' : 'text-gray-400'
 							)}
 							href={tab.route === '/' ? tab.route : `/home/${tab.route}`}

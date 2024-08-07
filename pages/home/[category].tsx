@@ -13,8 +13,8 @@ export default function Index(props: {router: NextRouter}): ReactElement {
 	}, [props.router.asPath]);
 
 	return (
-		<div className={'my-20 flex w-full justify-start px-4 md:pl-28 lg:pl-36'}>
-			<div className={'flex w-full max-w-5xl flex-col'}>
+		<div className={'mt-10 flex w-full justify-start px-4 !pl-8'}>
+			<div className={'flex w-full max-w-4xl flex-col'}>
 				<div className={'mb-10 flex w-full flex-col justify-start'}>
 					<p className={'text-3xl font-bold leading-[64px] text-white md:text-[64px]'}>
 						{currentCatrgory?.categoryName}
@@ -36,7 +36,7 @@ export default function Index(props: {router: NextRouter}): ReactElement {
 					<SortingBar />
 				</div>
 
-				<div className={'flex grid-rows-1 flex-col gap-6 md:grid md:grid-cols-2 lg:grid-cols-4'}>
+				<div className={'flex grid-rows-1 flex-col gap-4 md:grid md:grid-cols-2 lg:grid-cols-4'}>
 					{currentCatrgory?.apps.map(app => <AppCard app={app} />)}
 				</div>
 			</div>
