@@ -59,6 +59,7 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 			if (isDeposit) {
 				plausible(PLAUSIBLE_EVENTS.DEPOSIT, {
 					props: {
+						chainID: currentVault.chainID,
 						vaultAddress: currentVault.address,
 						vaultSymbol: currentVault.symbol,
 						amountToDeposit: actionParams.amount?.display,
@@ -70,6 +71,7 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 			} else {
 				plausible(PLAUSIBLE_EVENTS.WITHDRAW, {
 					props: {
+						chainID: currentVault.chainID,
 						vaultAddress: currentVault.address,
 						vaultSymbol: currentVault.symbol,
 						sharesToWithdraw: actionParams.amount?.display,
