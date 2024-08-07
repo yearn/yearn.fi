@@ -28,6 +28,10 @@ module.exports = withPlausibleProxy({
 				{
 					protocol: 'https',
 					hostname: '**.yearn.fi'
+				},
+				{
+					protocol: 'https',
+					hostname: '**.gimme.mom'
 				}
 			]
 		},

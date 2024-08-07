@@ -8,7 +8,14 @@ import {useSearch} from '@common/contexts/useSearch';
 import {IconChevron} from '@common/icons/IconChevron';
 import {LogoDiscord} from '@common/icons/LogoDiscord';
 import {LogoTwitter} from '@common/icons/LogoTwitter';
-import {COMMUNITY_APPS, FEATURED_APPS, YEARN_X_APPS} from '@common/utils/constants';
+import {
+	FEATURED_APPS,
+	FRONTENDS_APPS,
+	INTEGRATIONS_APPS,
+	LOCKERS_APPS,
+	POOLS_APPS,
+	YEARN_X_APPS
+} from '@common/utils/constants';
 
 function TextAnimation(): ReactElement {
 	const hasBeenTriggerd = useRef<boolean>(false);
@@ -172,15 +179,33 @@ export default function Home(): ReactElement {
 
 					<div className={'mt-[376px] flex flex-col gap-[64px] md:mt-[520px]'}>
 						<CategorySection
-							title={'Community Apps'}
-							onExpandClick={() => router.push('/home/community')}
-							apps={COMMUNITY_APPS}
+							title={'Frontends'}
+							onExpandClick={() => router.push('/home/frontends')}
+							apps={FRONTENDS_APPS}
+						/>
+
+						<CategorySection
+							title={'Lockers'}
+							onExpandClick={() => router.push('/home/lockers')}
+							apps={LOCKERS_APPS}
 						/>
 
 						<CategorySection
 							title={'Yearn X Projects'}
 							onExpandClick={() => router.push('/home/yearn-x')}
 							apps={YEARN_X_APPS}
+						/>
+
+						<CategorySection
+							title={'Pools'}
+							onExpandClick={() => router.push('/home/pools')}
+							apps={POOLS_APPS}
+						/>
+
+						<CategorySection
+							title={'Integrations'}
+							onExpandClick={() => router.push('/home/integrations')}
+							apps={INTEGRATIONS_APPS}
 						/>
 					</div>
 				</div>

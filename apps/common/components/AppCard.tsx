@@ -14,7 +14,7 @@ export function AppCard(props: TAppCardProps): ReactElement {
 		<>
 			<Link
 				href={props.app.appURI ?? ''}
-				target={'_blank'}
+				target={(props.app.appURI || '').startsWith('/') ? '' : '_blank'}
 				className={
 					'bg-grey-900 group relative hidden border border-gray-500/50 p-6 hover:bg-gray-600/40 md:block'
 				}>
@@ -29,9 +29,10 @@ export function AppCard(props: TAppCardProps): ReactElement {
 						<Image
 							src={props.app.logoURI}
 							alt={props.app.name}
+							unoptimized
 							width={240}
 							height={240}
-							className={'size-[120px] rounded-[32px] object-cover'}
+							className={'size-[120px] rounded-[32px] object-contain'}
 						/>
 					) : (
 						<div className={'size-[120px] rounded-[32px] bg-fallback'} />
@@ -52,6 +53,7 @@ export function AppCard(props: TAppCardProps): ReactElement {
 								alt={props.app.name}
 								width={300}
 								height={300}
+								unoptimized
 								className={'size-full rounded-2xl bg-center object-cover md:rounded-[32px]'}
 							/>
 						</div>
