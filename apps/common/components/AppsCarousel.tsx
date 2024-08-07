@@ -19,7 +19,7 @@ export const AppsCarousel = forwardRef((props: {apps: TApp[]}, ref: ForwardedRef
 			/>
 			<div
 				ref={ref}
-				className={'flex  gap-x-6 overflow-x-auto pb-1 pr-1 scrollbar-none md:pl-28 lg:pl-36'}>
+				className={'flex  gap-x-6 overflow-x-auto pb-1 pr-1 scrollbar-none md:pl-28 lg:pl-[148px]'}>
 				{props.apps.map((app, i) => (
 					<FeaturedApp
 						key={app.name + i}
