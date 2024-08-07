@@ -149,13 +149,6 @@ export const FEATURED_APPS = [
 		logoURI: '/juiced-bg.png',
 		appURI: 'https://gimme.mom/'
 	},
-
-	{
-		name: 'Juiced',
-		description: 'Product description example text product description example text',
-		logoURI: '/juiced-bg.png',
-		appURI: 'https://gimme.mom/'
-	},
 	{
 		name: 'Gimme',
 		description: 'Product description example text product description example text',

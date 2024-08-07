@@ -49,7 +49,7 @@ export function SearchBar(props: TSearchBar): ReactElement {
 						onClick={() => props.onSearchClick?.()}
 						className={cl(props.iconClassName, 'absolute right-0 text-neutral-400')}>
 						{props.shouldSearchByClick && props.searchValue ? (
-							<div className={'rounded-md border border-gray-700 p-[6px]'}>
+							<div className={'rounded-md border border-gray-500 p-[6px]'}>
 								<IconEnter className={'size-3'} />
 							</div>
 						) : (
