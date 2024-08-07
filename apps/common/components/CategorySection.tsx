@@ -14,7 +14,7 @@ type TAppSectionProps = {
 export function CategorySection(props: TAppSectionProps): ReactElement {
 	return (
 		<div className={'flex flex-col gap-y-6 overflow-hidden'}>
-			<div className={'flex h-12 w-full items-center justify-between px-1'}>
+			<div className={'flex h-12 w-full items-center justify-between pr-px'}>
 				<div className={'text-lg font-bold text-white'}>{props.title}</div>
 				<button
 					onClick={props.onExpandClick}
