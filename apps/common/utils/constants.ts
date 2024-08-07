@@ -9,57 +9,136 @@ export const YGAUGES_ZAP_ADDRESS = toAddress('0x1104215963474A0FA0Ac09f4E212EF72
 export const V3_STAKING_ZAP_ADDRESS = toAddress('0x1E789A49902370E5858Fae67518aF49d8deA299c'); //Address of the zap to deposit & stake for the v3 staking on arbitrum
 export const SUPPORTED_NETWORKS = [mainnet, optimism, polygon, fantom, base, arbitrum];
 
-export const COMMUNITY_APPS: TApp[] = [
+export const FRONTENDS_APPS: TApp[] = [
 	{
-		name: 'Product name',
-		description: 'Product description example text product description example text',
-		logoURI: '/v3-bg.png',
+		name: 'Gimme',
+		description: 'DeFi yields, designed for everyone.',
+		logoURI: 'https://gimme.mom/favicons/favicon-96x96.png',
 		appURI: 'https://gimme.mom/'
 	},
 	{
-		name: 'Product name',
+		name: 'Yearn V3',
 		description: 'Product description example text product description example text',
-		logoURI: '/v3-bg.png',
-		appURI: 'https://gimme.mom/'
+		logoURI: '/v3.png',
+		appURI: '/v3'
 	},
 	{
-		name: 'Product name',
+		name: 'Yearn V2',
 		description: 'Product description example text product description example text',
-		logoURI: '/v3-bg.png',
-		appURI: 'https://gimme.mom/'
+		logoURI: '/v2.png',
+		appURI: '/vaults'
 	},
 	{
-		name: 'Product name',
+		name: 'Superform',
+		description: 'Earn Yield & Distribute Vaults',
+		logoURI: 'https://www.superform.xyz/icon.png',
+		appURI: 'https://www.superform.xyz'
+	}
+];
+
+export const LOCKERS_APPS: TApp[] = [
+	{
+		name: 'veYFI',
+		description: 'Stake YFI to earn yield, boost gauges, and take part in governance.',
+		logoURI: 'https://assets.smold.app/api/token/1/0x41252E8691e964f7DE35156B68493bAb6797a275/logo-128.png',
+		appURI: 'https://veyfi.yearn.fi'
+	},
+	{
+		name: 'yCRV',
+		description: 'Put your yCRV to work',
+		logoURI: 'https://ycrv.yearn.fi/ycrv-logo.svg',
+		appURI: 'https://ycrv.yearn.fi'
+	},
+	{
+		name: 'yPrisma',
+		description: 'Put your yPRISMA to work',
+		logoURI: 'https://assets.smold.app/api/token/1/0xe3668873d944e4a949da05fc8bde419eff543882/logo-128.png',
+		appURI: 'https://yprisma.yearn.fi'
+	},
+	{
+		name: 'Cove',
+		description: 'Earn the best yields on-chain without the hassle of managing a portfolio.',
+		logoURI:
+			'https://assets-global.website-files.com/651af12fcd3055636b6ac9ad/66242dbf1d6e7ff1b18336c4_Twitter%20pp%20-%20Logo%202.png',
+		appURI: 'https://cove.finance/'
+	},
+	{
+		name: '1UP',
 		description: 'Product description example text product description example text',
-		logoURI: '/v3-bg.png',
-		appURI: 'https://gimme.mom/'
+		logoURI: 'https://1up.tokyo/logo.svg',
+		appURI: 'https://1up.tokyo/'
+	},
+	{
+		name: 'StakeDAO',
+		description: 'Stake DAO is a non-custodial liquid staking platform focused on governance tokens.',
+		logoURI: 'https://www.stakedao.org/logo.png',
+		appURI: 'https://www.stakedao.org'
 	}
 ];
 
 export const YEARN_X_APPS: TApp[] = [
 	{
+		name: 'PoolTogether',
+		description: 'Product description example text product description example text',
+		logoURI: 'https://pooltogether.yearn.space/favicons/favicon-512x512.png',
+		appURI: 'https://pooltogether.yearn.space'
+	},
+	{
 		name: 'Pendle',
 		description: 'Product description example text product description example text',
-		logoURI: '/v3-bg.png',
-		appURI: 'https://gimme.mom/'
+		logoURI: 'https://pendle.yearn.space/favicons/favicon-512x512.png',
+		appURI: 'https://pendle.yearn.space'
 	},
 	{
-		name: 'Ajna',
+		name: 'AJNA',
 		description: 'Product description example text product description example text',
-		logoURI: '/v3-bg.png',
-		appURI: 'https://gimme.mom/'
+		logoURI: 'https://ajna.yearn.space/favicons/favicon-512x512.png',
+		appURI: 'https://ajna.yearn.space'
 	},
 	{
-		name: 'Optimism',
+		name: 'Velodrome',
 		description: 'Product description example text product description example text',
-		logoURI: '/v3-bg.png',
-		appURI: 'https://gimme.mom/'
+		logoURI: 'https://velodrome.yearn.space/favicons/favicon-512x512.png',
+		appURI: 'https://velodrome.yearn.space/'
 	},
 	{
-		name: 'Pool Together',
+		name: 'Aerodrome',
 		description: 'Product description example text product description example text',
-		logoURI: '/v3-bg.png',
-		appURI: 'https://gimme.mom/'
+		logoURI: 'https://aerodrome.yearn.space/favicons/favicon-512x512.png',
+		appURI: 'https://aerodrome.yearn.space/'
+	},
+	{
+		name: 'Curve',
+		description: 'Product description example text product description example text',
+		logoURI: 'https://curve.yearn.space/favicons/favicon-512x512.png',
+		appURI: 'https://curve.yearn.space/'
+	}
+];
+
+export const POOLS_APPS: TApp[] = [
+	{
+		name: 'yETH',
+		description:
+			'A basket of LSTs in a single token. Simple, straight forward, risk adjusted liquid staking yield.',
+		logoURI: 'https://yeth.yearn.fi/favicons/favicon-96x96.png',
+		appURI: 'https://yeth.yearn.fi/'
+	}
+];
+
+export const INTEGRATIONS_APPS: TApp[] = [
+	{
+		name: 'Sturdy',
+		description:
+			'Isolated lending with shared liquidity. Permissionlessly create a liquid money market for any asset.',
+		logoURI: 'https://v2.sturdy.finance/apple-icon.png',
+		appURI: 'https://v2.sturdy.finance'
+	},
+	{
+		name: 'PWN',
+		description: 'PWN is a hub for peer-to-peer (P2P) loans backed by digital assets.',
+		logoURI:
+			'https://3238501125-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FtZYbaMzoeA7Kw4Stxzvw%2Ficon%2F89KZ4VyGSZ33cSf5QBmo%2Fpwn.svg?alt=media',
+		appURI: 'https://app.pwn.xyz/'
 	}
 ];
 
@@ -91,7 +170,7 @@ export const FEATURED_APPS = [
 	}
 ];
 
-export const ALL_APPS = [...FEATURED_APPS, ...COMMUNITY_APPS, ...YEARN_X_APPS];
+export const ALL_APPS = [...FEATURED_APPS, ...FRONTENDS_APPS, ...YEARN_X_APPS];
 
 export const CATEGORIES_DICT = {
 	'featured-apps': {
@@ -101,12 +180,33 @@ export const CATEGORIES_DICT = {
 		catrgorySlug: 'featured-apps',
 		apps: FEATURED_APPS
 	},
-	community: {
-		categoryName: 'Community Apps',
+	frontends: {
+		categoryName: 'Frontends',
 		categoryDescription:
 			'Yearn is a decentralized suite of products helping individuals, DAOs, and other protocols earn yield on their digital assets.',
-		catrgorySlug: 'community-apps',
-		apps: COMMUNITY_APPS
+		catrgorySlug: 'frontend',
+		apps: FRONTENDS_APPS
+	},
+	lockers: {
+		categoryName: 'Lockers',
+		categoryDescription:
+			'Yearn is a decentralized suite of products helping individuals, DAOs, and other protocols earn yield on their digital assets.',
+		catrgorySlug: 'lockers',
+		apps: LOCKERS_APPS
+	},
+	pools: {
+		categoryName: 'Pools',
+		categoryDescription:
+			'Yearn is a decentralized suite of products helping individuals, DAOs, and other protocols earn yield on their digital assets.',
+		catrgorySlug: 'pools',
+		apps: POOLS_APPS
+	},
+	integrations: {
+		categoryName: 'Integrations',
+		categoryDescription:
+			'Yearn is a decentralized suite of products helping individuals, DAOs, and other protocols earn yield on their digital assets.',
+		catrgorySlug: 'integrations',
+		apps: INTEGRATIONS_APPS
 	},
 	'yearn-x': {
 		categoryName: 'Yearn X Projects',
