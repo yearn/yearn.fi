@@ -170,7 +170,7 @@ export default function Home(): ReactElement {
 						/>
 					</div>
 
-					<div className={'flex flex-col  gap-[64px] md:mt-[520px]'}>
+					<div className={'mt-[376px] flex flex-col gap-[64px] md:mt-[520px]'}>
 						<CategorySection
 							title={'Community Apps'}
 							onExpandClick={() => router.push('/home/community')}
