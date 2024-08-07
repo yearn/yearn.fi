@@ -63,7 +63,7 @@ export function MobileTopNav({
 					<SearchBar
 						className={'!max-w-none !border-0 !border-white !bg-gray-500 text-white '}
 						searchValue={configuration.searchValue}
-						onSearch={(value: string) => dispatch({type: 'SET_SEARCH', payload: value})}
+						onSearch={(value: string) => dispatch({searchValue: value})}
 						searchPlaceholder={'Search Apps'}
 						onSearchClick={onSearchClick}
 						shouldSearchByClick
