@@ -1,4 +1,4 @@
-import {useEffect, useState} from 'react';
+import {Fragment, useEffect, useState} from 'react';
 import {erc20Abi, zeroAddress} from 'viem';
 import {useBlockNumber} from 'wagmi';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
@@ -65,12 +65,13 @@ function VaultHeaderLineItem({label, children, legend}: TVaultHeaderLineItemProp
 	);
 }
 
-function VaultAPR({apr}: {apr: TYDaemonVault['apr']}): ReactElement {
+function VaultAPR({apr, source}: {apr: TYDaemonVault['apr']; source: string}): ReactElement {
 	const extraAPR = apr.extra.stakingRewardsAPR + apr.extra.gammaRewardAPR;
 	const monthlyAPR = apr.points.monthAgo;
 	const weeklyAPR = apr.points.weekAgo;
 	const netAPR = apr.netAPR + extraAPR;
 	const currentAPR = apr.forwardAPR.netAPR + extraAPR;
+	const isSourceVeYFI = source === 'VeYFI';
 
 	if (apr.forwardAPR.type === '' && extraAPR === 0) {
 		return (
@@ -84,7 +85,7 @@ function VaultAPR({apr}: {apr: TYDaemonVault['apr']}): ReactElement {
 		);
 	}
 
-	if (apr.forwardAPR.type !== '' && extraAPR !== 0) {
+	if (apr.forwardAPR.type !== '' && extraAPR !== 0 && !isSourceVeYFI) {
 		const boostedAPR = apr.forwardAPR.netAPR + extraAPR;
 		return (
 			<VaultHeaderLineItem
@@ -138,6 +139,104 @@ function VaultAPR({apr}: {apr: TYDaemonVault['apr']}): ReactElement {
 										symbol={'percent'}
 										decimals={6}
 									/>
+								</div>
+							</div>
+						</span>
+					</span>
+				}>
+				<Renderable
+					shouldRender={!apr?.type.includes('new')}
+					fallback={'New'}>
+					<RenderAmount
+						value={isZero(monthlyAPR) ? weeklyAPR : monthlyAPR}
+						symbol={'percent'}
+						decimals={6}
+					/>
+				</Renderable>
+			</VaultHeaderLineItem>
+		);
+	}
+
+	if (isSourceVeYFI) {
+		const sumOfRewardsAPR = apr.extra.stakingRewardsAPR + apr.extra.gammaRewardAPR;
+		const veYFIRange = [apr.extra.stakingRewardsAPR / 10 + apr.extra.gammaRewardAPR, sumOfRewardsAPR] as [
+			number,
+			number
+		];
+		const estAPRRange = [veYFIRange[0] + apr.forwardAPR.netAPR, veYFIRange[1] + apr.forwardAPR.netAPR] as [
+			number,
+			number
+		];
+		return (
+			<VaultHeaderLineItem
+				label={'Historical APR'}
+				legend={
+					<span className={'tooltip'}>
+						<div className={'flex flex-row items-center space-x-2'}>
+							<div>
+								{'Est. APR: '}
+								<Fragment>
+									<RenderAmount
+										shouldHideTooltip
+										value={estAPRRange[0]}
+										symbol={'percent'}
+										decimals={6}
+									/>
+									&nbsp;&rarr;&nbsp;
+									<RenderAmount
+										shouldHideTooltip
+										value={estAPRRange[1]}
+										symbol={'percent'}
+										decimals={6}
+									/>
+								</Fragment>
+							</div>
+							<IconQuestion className={'hidden md:block'} />
+						</div>
+						<span className={'tooltipLight top-full mt-2'}>
+							<div
+								className={
+									'font-number -mx-12 w-fit border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
+								}>
+								<p
+									className={
+										'font-number flex w-full flex-row justify-between text-wrap text-left text-neutral-400 md:w-80 md:text-xs'
+									}>
+									{'Estimated APR for the next period based on current data.'}
+								</p>
+								<div
+									className={
+										'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap py-1 text-neutral-400 md:text-xs'
+									}>
+									<p>{'• Base APR '}</p>
+									<RenderAmount
+										shouldHideTooltip
+										value={apr.forwardAPR.netAPR}
+										symbol={'percent'}
+										decimals={6}
+									/>
+								</div>
+
+								<div
+									className={
+										'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
+									}>
+									<p>{'• Rewards APR '}</p>
+									<div>
+										<RenderAmount
+											shouldHideTooltip
+											value={veYFIRange[0]}
+											symbol={'percent'}
+											decimals={6}
+										/>
+										&nbsp;&rarr;&nbsp;
+										<RenderAmount
+											shouldHideTooltip
+											value={veYFIRange[1]}
+											symbol={'percent'}
+											decimals={6}
+										/>
+									</div>
 								</div>
 							</div>
 						</span>
@@ -667,7 +766,10 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 				</div>
 
 				<div className={'w-full'}>
-					<VaultAPR apr={apr} />
+					<VaultAPR
+						apr={apr}
+						source={currentVault.staking.source}
+					/>
 				</div>
 
 				<div className={'w-full'}>
