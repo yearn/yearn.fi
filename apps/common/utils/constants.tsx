@@ -1,5 +1,12 @@
 import {arbitrum, base, fantom, mainnet, optimism, polygon} from 'viem/chains';
 import {toAddress} from '@builtbymom/web3/utils';
+import {IconAbout} from '@common/icons/IconAbout';
+import {IconFrontends} from '@common/icons/IconFrontends';
+import {IconIntegrations} from '@common/icons/IconIntegrations';
+import {IconLock} from '@common/icons/IconLock';
+import {IconPools} from '@common/icons/IconPools';
+import {IconYearn} from '@common/icons/IconYearn';
+import {IconYearnXApps} from '@common/icons/IconYearnXApps';
 
 import type {TAddress, TNDict} from '@builtbymom/web3/types';
 import type {TApp} from '@common/types/category';
@@ -234,6 +241,7 @@ export const LANDING_SIDEBAR_LINKS = [
 
 export const MENU_TABS = [
 	{title: 'Home', route: '/'},
+	{title: 'About', route: 'about'},
 	{title: 'Frontends', route: 'frontends'},
 	{title: 'Lockers', route: 'lockers'},
 	{title: 'Pools', route: 'pools'},
@@ -247,3 +255,13 @@ export const CATEGORY_PAGE_FILTERS = [
 	{title: 'Tab', value: 'tab'},
 	{title: 'Large Filter', value: 'large-filter'}
 ];
+
+export const iconsDict = {
+	'/': <IconYearn />,
+	about: <IconAbout />,
+	frontends: <IconFrontends />,
+	lockers: <IconLock />,
+	pools: <IconPools />,
+	'yearn-x': <IconYearnXApps />,
+	integrations: <IconIntegrations />
+};

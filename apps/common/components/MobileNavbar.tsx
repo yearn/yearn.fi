@@ -1,21 +1,12 @@
 import Link from 'next/link';
 import {usePathname} from 'next/navigation';
 import {cl} from '@builtbymom/web3/utils';
-import {IconCommunity} from '@common/icons/IconCommunity';
-import {IconYearn} from '@common/icons/IconYearn';
-import {IconYearnXApps} from '@common/icons/IconYearnXApps';
 import {LogoDiscordRound} from '@common/icons/LogoDiscordRound';
 import {LogoParagraphRound} from '@common/icons/LogoParagraphRound';
 import {LogoTwitterRound} from '@common/icons/LogoTwitterRound';
-import {LANDING_SIDEBAR_LINKS, MENU_TABS} from '@common/utils/constants';
+import {iconsDict, LANDING_SIDEBAR_LINKS, MENU_TABS} from '@common/utils/constants';
 
 import type {ReactElement} from 'react';
-
-const iconsDict = {
-	'/': <IconYearn />,
-	community: <IconCommunity />,
-	'yearn-x': <IconYearnXApps />
-};
 
 export function MobileNavbar({onClose}: {onClose: VoidFunction}): ReactElement {
 	const pathName = usePathname();
@@ -36,7 +27,18 @@ export function MobileNavbar({onClose}: {onClose: VoidFunction}): ReactElement {
 						onClick={onClose}
 						href={tab.route === '/' ? tab.route : `/home/${tab.route}`}>
 						<div className={'flex size-6 items-center justify-center'}>
-							{iconsDict[tab.route as '/' | 'community' | 'yearn-x']}
+							{
+								iconsDict[
+									tab.route as
+										| '/'
+										| 'yearn-x'
+										| 'about'
+										| 'frontends'
+										| 'lockers'
+										| 'integrations'
+										| 'pools'
+								]
+							}
 						</div>
 						<p>{tab.title}</p>
 					</Link>
