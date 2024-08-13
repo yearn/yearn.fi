@@ -11,7 +11,7 @@ export function PromoPoster(): ReactElement {
 				'border-1 relative flex flex-col rounded-lg border border-gray-600/50 bg-gradient-to-b from-gray-900 to-[#1A1A1A] p-6 hover:from-[#1A1A1A] hover:to-[#262626]'
 			}>
 			<div className={'mb-4 flex w-full justify-start text-[40px] font-bold uppercase leading-[40px] text-white'}>
-				{'stack'}
+				{'earn'}
 				<br /> {'with yearn'}
 			</div>
 
