@@ -108,13 +108,11 @@ export default function Home(): ReactElement {
 				<div className={'mt-16 flex w-full flex-col gap-6 md:flex-row'}>
 					<Cutaway
 						title={'Follow us on X'}
-						description={'Product description example text product description example text'}
 						icon={<LogoTwitter className={'text-white'} />}
 						link={'https://yearn.finance/twitter'}
 					/>
 					<Cutaway
 						title={'Join our Discord'}
-						description={'Product description example text product description example text'}
 						icon={<LogoDiscord className={'text-white'} />}
 						link={'https://discord.com/invite/yearn'}
 					/>

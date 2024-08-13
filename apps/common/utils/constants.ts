@@ -21,14 +21,14 @@ export const FRONTENDS_APPS: TApp[] = [
 		appURI: 'https://gimme.mom/'
 	},
 	{
-		name: 'Yearn V3',
-		description: 'Product description example text product description example text',
+		name: 'Vaults',
+		description: 'The full Yearn experience with all Vaults, for sophisticated users.',
 		logoURI: '/v3.png',
 		appURI: '/v3'
 	},
 	{
-		name: 'Yearn V2',
-		description: 'Product description example text product description example text',
+		name: 'Vaults V2',
+		description: "Discover Vaults from Yearn's v2 era.",
 		logoURI: '/v2.png',
 		appURI: '/vaults'
 	},
@@ -68,7 +68,7 @@ export const LOCKERS_APPS: TApp[] = [
 	},
 	{
 		name: '1UP',
-		description: 'Product description example text product description example text',
+		description: '1UP is a public good liquid locker for YFI.',
 		logoURI: 'https://1up.tokyo/logo.svg',
 		appURI: 'https://1up.tokyo/'
 	},
@@ -83,37 +83,37 @@ export const LOCKERS_APPS: TApp[] = [
 export const YEARN_X_APPS: TApp[] = [
 	{
 		name: 'PoolTogether',
-		description: 'Product description example text product description example text',
+		description: 'Get the best risk adjusted PoolTogether yields, with Yearn.',
 		logoURI: 'https://pooltogether.yearn.space/favicons/favicon-512x512.png',
 		appURI: 'https://pooltogether.yearn.space'
 	},
 	{
 		name: 'Pendle',
-		description: 'Product description example text product description example text',
+		description: 'The best Pendle yields, with auto-rolling functionality.',
 		logoURI: 'https://pendle.yearn.space/favicons/favicon-512x512.png',
 		appURI: 'https://pendle.yearn.space'
 	},
 	{
 		name: 'AJNA',
-		description: 'Product description example text product description example text',
+		description: 'Get the best risk adjusted Ajna yields, with Yearn.',
 		logoURI: 'https://ajna.yearn.space/favicons/favicon-512x512.png',
 		appURI: 'https://ajna.yearn.space'
 	},
 	{
 		name: 'Velodrome',
-		description: 'Product description example text product description example text',
+		description: 'Get the best risk adjusted Velodrome yields, with Yearn.',
 		logoURI: 'https://velodrome.yearn.space/favicons/favicon-512x512.png',
 		appURI: 'https://velodrome.yearn.space/'
 	},
 	{
 		name: 'Aerodrome',
-		description: 'Product description example text product description example text',
+		description: 'Get the best risk adjusted Aerodrome yields, with Yearn.',
 		logoURI: 'https://aerodrome.yearn.space/favicons/favicon-512x512.png',
 		appURI: 'https://aerodrome.yearn.space/'
 	},
 	{
 		name: 'Curve',
-		description: 'Product description example text product description example text',
+		description: 'Get the best risk adjusted Curve yields, with Yearn.',
 		logoURI: 'https://curve.yearn.space/favicons/favicon-512x512.png',
 		appURI: 'https://curve.yearn.space/'
 	}
@@ -149,19 +149,19 @@ export const INTEGRATIONS_APPS: TApp[] = [
 export const FEATURED_APPS = [
 	{
 		name: 'Juiced',
-		description: 'Product description example text product description example text',
+		description: 'Discover yields juiced with extra token rewards.',
 		logoURI: '/juiced-bg.png',
 		appURI: 'https://gimme.mom/'
 	},
 	{
 		name: 'Gimme',
-		description: 'Product description example text product description example text',
+		description: 'DeFi yields, designed for everyone.',
 		logoURI: '/gimme-bg.png',
 		appURI: 'https://gimme.mom/'
 	},
 	{
-		name: 'V3 valuts',
-		description: 'Product description example text product description example text',
+		name: 'Valuts',
+		description: 'The full Yearn experience with all Vaults, for sophisticated users.',
 		logoURI: '/v3-bg.png',
 		appURI: 'https://gimme.mom/'
 	}
