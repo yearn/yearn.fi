@@ -4,7 +4,7 @@ import {usePathname, useRouter} from 'next/navigation';
 import {cl} from '@builtbymom/web3/utils';
 import {useSearch} from '@common/contexts/useSearch';
 import {LogoYearn} from '@common/icons/LogoYearn';
-import {LANDING_SIDEBAR_LINKS} from '@common/utils/constants';
+import {iconsDict, LANDING_SIDEBAR_LINKS} from '@common/utils/constants';
 
 import {PromoPoster} from './PromoPoster';
 import {SearchBar} from './SearchBar';
@@ -57,12 +57,26 @@ export function Sidebar(props: TSidebarProps): ReactElement {
 					{props.tabs.map(tab => (
 						<Link
 							className={cl(
-								'py-2 px-[28px] text-base hover:bg-gray-600/40',
+								'py-2 px-[28px] flex gap-4 text-base hover:bg-gray-600/40',
 								currentTab === tab.route ? 'text-white font-bold' : 'text-gray-400'
 							)}
 							href={tab.route === '/' ? tab.route : `/home/${tab.route}`}
 							key={tab.route}>
-							{tab.title}
+							<div className={'flex size-6 items-center justify-center'}>
+								{
+									iconsDict[
+										tab.route as
+											| '/'
+											| 'yearn-x'
+											| 'about'
+											| 'frontends'
+											| 'lockers'
+											| 'integrations'
+											| 'pools'
+									]
+								}
+							</div>
+							<p>{tab.title}</p>
 						</Link>
 					))}
 				</div>
