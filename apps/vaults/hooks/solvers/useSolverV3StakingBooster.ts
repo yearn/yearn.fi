@@ -1,6 +1,6 @@
 import {useCallback, useMemo, useRef} from 'react';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {assert, toAddress, toNormalizedBN, zeroNormalizedBN} from '@builtbymom/web3/utils';
+import {assert, isAddress, toAddress, toNormalizedBN, zeroNormalizedBN} from '@builtbymom/web3/utils';
 import {allowanceOf, approveERC20} from '@builtbymom/web3/utils/wagmi';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {Solver} from '@vaults/types/solvers';
@@ -51,7 +51,7 @@ export function useSolverV3StakingBooster(): TSolverContext {
 	 *********************************************************************************************/
 	const onRetrieveAllowance = useCallback(
 		async (shouldForceRefetch?: boolean): Promise<TNormalizedBN> => {
-			if (!request?.current || !provider) {
+			if (!request?.current || !provider || !V3_STAKING_ZAP_ADDRESS[request?.current?.outputToken?.chainID]) {
 				return zeroNormalizedBN;
 			}
 
@@ -69,7 +69,7 @@ export function useSolverV3StakingBooster(): TSolverContext {
 				connector: provider,
 				chainID: request.current.inputToken.chainID,
 				tokenAddress: toAddress(request.current.inputToken.value),
-				spenderAddress: toAddress(V3_STAKING_ZAP_ADDRESS)
+				spenderAddress: V3_STAKING_ZAP_ADDRESS[request?.current?.outputToken?.chainID]
 			});
 			existingAllowances.current[key] = toNormalizedBN(allowance, request.current.inputToken.decimals);
 			return existingAllowances.current[key];
@@ -90,12 +90,13 @@ export function useSolverV3StakingBooster(): TSolverContext {
 		): Promise<void> => {
 			assert(request.current, 'Request is not set');
 			assert(request.current.inputToken, 'Input token is not set');
+			assert(isAddress(V3_STAKING_ZAP_ADDRESS[request?.current?.outputToken?.chainID]), 'Invalid zap contract');
 
 			const result = await approveERC20({
 				connector: provider,
 				chainID: request.current.chainID,
 				contractAddress: request.current.inputToken.value,
-				spenderAddress: V3_STAKING_ZAP_ADDRESS,
+				spenderAddress: V3_STAKING_ZAP_ADDRESS[request?.current?.outputToken?.chainID],
 				amount: amount,
 				statusHandler: txStatusSetter
 			});
@@ -117,11 +118,12 @@ export function useSolverV3StakingBooster(): TSolverContext {
 		): Promise<void> => {
 			assert(request.current, 'Request is not set');
 			assert(request.current.inputAmount, 'Input amount is not set');
+			assert(isAddress(V3_STAKING_ZAP_ADDRESS[request?.current?.outputToken?.chainID]), 'Invalid zap contract');
 
 			const result = await depositAndStake({
 				connector: provider,
 				chainID: request.current.chainID,
-				contractAddress: V3_STAKING_ZAP_ADDRESS,
+				contractAddress: V3_STAKING_ZAP_ADDRESS[request?.current?.outputToken?.chainID],
 				vaultAddress: request.current.outputToken.value,
 				amount: request.current.inputAmount,
 				statusHandler: txStatusSetter
