@@ -109,7 +109,7 @@ function APRTooltip(props: {
 								'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
 							}>
 							<p>{'• Extra ARB '}</p>
-							<p>{`1 500/week`}</p>
+							<p>{`2 500/week`}</p>
 						</div>
 					) : null}
 				</div>
