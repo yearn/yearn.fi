@@ -126,7 +126,8 @@ function AppBox({app}: {app: (typeof apps)[0]}): ReactElement {
 	return (
 		<Link
 			key={app.href}
-			href={app.href}>
+			href={app.href}
+			target={app.href.startsWith('/') ? '_self' : '_blank'}>
 			<div
 				id={app.href}
 				className={'appBox'}>
