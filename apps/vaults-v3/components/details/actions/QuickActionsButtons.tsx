@@ -66,7 +66,7 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 						tokenAddress: actionParams?.selectedOptionFrom?.value,
 						tokenSymbol: actionParams?.selectedOptionFrom?.symbol,
 						isZap: Solver.enum.Cowswap === currentSolver || Solver.enum.Portals === currentSolver,
-						action: `Deposit ${actionParams.amount?.display} ${currentVault?.symbol} -> ${currentVault.symbol} on chain ${currentVault.chainID}`
+						action: `Deposit ${actionParams.amount?.display} ${actionParams?.selectedOptionFrom?.symbol} -> ${currentVault.symbol} on chain ${currentVault.chainID}`
 					}
 				});
 			} else {
