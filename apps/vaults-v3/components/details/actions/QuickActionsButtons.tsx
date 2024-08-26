@@ -65,7 +65,8 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 						amountToDeposit: actionParams.amount?.display,
 						tokenAddress: actionParams?.selectedOptionFrom?.value,
 						tokenSymbol: actionParams?.selectedOptionFrom?.symbol,
-						isZap: Solver.enum.Cowswap === currentSolver || Solver.enum.Portals === currentSolver
+						isZap: Solver.enum.Cowswap === currentSolver || Solver.enum.Portals === currentSolver,
+						action: `Deposit ${actionParams.amount?.display} ${actionParams?.selectedOptionFrom?.symbol} -> ${currentVault.symbol} on chain ${currentVault.chainID}`
 					}
 				});
 			} else {
@@ -75,9 +76,10 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 						vaultAddress: currentVault.address,
 						vaultSymbol: currentVault.symbol,
 						sharesToWithdraw: actionParams.amount?.display,
-						tokenAddress: actionParams?.selectedOptionFrom?.value,
-						tokenSymbol: actionParams?.selectedOptionFrom?.symbol,
-						isZap: Solver.enum.Cowswap === currentSolver || Solver.enum.Portals === currentSolver
+						tokenAddress: actionParams?.selectedOptionTo?.value,
+						tokenSymbol: actionParams?.selectedOptionTo?.symbol,
+						isZap: Solver.enum.Cowswap === currentSolver || Solver.enum.Portals === currentSolver,
+						action: `Withdraw ${actionParams.amount?.display} ${currentVault?.symbol} -> ${actionParams?.selectedOptionTo?.symbol} on chain ${actionParams?.selectedOptionTo?.chainID}`
 					}
 				});
 			}
