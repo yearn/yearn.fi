@@ -8,12 +8,16 @@ import {IconPools} from '@common/icons/IconPools';
 import {IconYearn} from '@common/icons/IconYearn';
 import {IconYearnXApps} from '@common/icons/IconYearnXApps';
 
+import type {TAddress, TNDict} from '@builtbymom/web3/types';
 import type {TApp} from '@common/types/category';
 
 export const DEFAULT_SLIPPAGE = 0.5;
 export const DEFAULT_MAX_LOSS = 1n;
 export const YGAUGES_ZAP_ADDRESS = toAddress('0x1104215963474A0FA0Ac09f4E212EF7282F2A0bC'); //Address of the zap to deposit & stake in the veYFI gauge
-export const V3_STAKING_ZAP_ADDRESS = toAddress('0x1E789A49902370E5858Fae67518aF49d8deA299c'); //Address of the zap to deposit & stake for the v3 staking on arbitrum
+export const V3_STAKING_ZAP_ADDRESS: TNDict<TAddress> = {
+	[mainnet.id]: toAddress('0x5435cA9b6D9468A6e0404a4819D39ebbF036DB1E'),
+	[arbitrum.id]: toAddress('0x1E789A49902370E5858Fae67518aF49d8deA299c')
+}; //Address of the zap to deposit & stake for the v3 staking
 export const SUPPORTED_NETWORKS = [mainnet, optimism, polygon, fantom, base, arbitrum];
 
 export const FRONTENDS_APPS: TApp[] = [
@@ -153,19 +157,55 @@ export const FEATURED_APPS = [
 	{
 		name: 'Juiced',
 		description: 'Discover yields juiced with extra token rewards.',
-		logoURI: '/juiced-bg.png',
+		logoURI: '/juiced-bg.jpg',
 		appURI: 'https://gimme.mom/'
 	},
 	{
 		name: 'Gimme',
 		description: 'DeFi yields, designed for everyone.',
-		logoURI: '/gimme-bg.png',
+		logoURI: '/gimme-bg.jpg',
 		appURI: 'https://gimme.mom/'
 	},
 	{
-		name: 'Valuts',
+		name: 'Vaults',
 		description: 'The full Yearn experience with all Vaults, for sophisticated users.',
-		logoURI: '/v3-bg.png',
+		logoURI: '/v3-bg.jpg',
+		appURI: 'https://gimme.mom/'
+	},
+	{
+		name: 'Juiced',
+		description: 'Discover yields juiced with extra token rewards.',
+		logoURI: '/juiced-bg.jpg',
+		appURI: 'https://gimme.mom/'
+	},
+	{
+		name: 'Gimme',
+		description: 'DeFi yields, designed for everyone.',
+		logoURI: '/gimme-bg.jpg',
+		appURI: 'https://gimme.mom/'
+	},
+	{
+		name: 'Vaults',
+		description: 'The full Yearn experience with all Vaults, for sophisticated users.',
+		logoURI: '/v3-bg.jpg',
+		appURI: 'https://gimme.mom/'
+	},
+	{
+		name: 'Juiced',
+		description: 'Discover yields juiced with extra token rewards.',
+		logoURI: '/juiced-bg.jpg',
+		appURI: 'https://gimme.mom/'
+	},
+	{
+		name: 'Gimme',
+		description: 'DeFi yields, designed for everyone.',
+		logoURI: '/gimme-bg.jpg',
+		appURI: 'https://gimme.mom/'
+	},
+	{
+		name: 'Vaults',
+		description: 'The full Yearn experience with all Vaults, for sophisticated users.',
+		logoURI: '/v3-bg.jpg',
 		appURI: 'https://gimme.mom/'
 	}
 ];

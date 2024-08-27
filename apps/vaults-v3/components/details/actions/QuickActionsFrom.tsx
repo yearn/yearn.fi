@@ -10,6 +10,7 @@ import {
 	formatAmount,
 	formatCounterValue,
 	handleInputChangeEventValue,
+	isAddress,
 	isEthAddress,
 	isZeroAddress,
 	MULTICALL3_ADDRESS,
@@ -156,10 +157,12 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 		address: toAddress(actionParams?.selectedOptionFrom?.value),
 		chainID: Number(actionParams?.selectedOptionFrom?.chainID)
 	});
-	const userBalance = useMemo(
-		() => (!onChainBalance ? cachedBalance : onChainBalance),
-		[cachedBalance, onChainBalance]
-	);
+	const userBalance = useMemo(() => {
+		if (!isAddress(address)) {
+			return zeroNormalizedBN;
+		}
+		return !onChainBalance ? cachedBalance : onChainBalance;
+	}, [address, cachedBalance, onChainBalance]);
 	useEffect(() => {
 		refetch();
 	}, [blockNumber, refetch]);

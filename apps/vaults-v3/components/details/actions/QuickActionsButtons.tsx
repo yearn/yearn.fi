@@ -1,5 +1,6 @@
 import {useCallback, useState} from 'react';
 import {useRouter} from 'next/router';
+import {usePlausible} from 'next-plausible';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {useAsyncTrigger} from '@builtbymom/web3/hooks/useAsyncTrigger';
 import {isZero, toAddress, toBigInt, zeroNormalizedBN} from '@builtbymom/web3/utils';
@@ -10,12 +11,14 @@ import {Solver} from '@vaults/types/solvers';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {ETH_TOKEN_ADDRESS, MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {useYearn} from '@common/contexts/useYearn';
+import {PLAUSIBLE_EVENTS} from '@common/utils/plausible';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TNormalizedBN} from '@builtbymom/web3/types';
 
 export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+	const plausible = usePlausible();
 	const {onRefresh, isAutoStakingEnabled} = useYearn();
 	const {address, provider} = useWeb3();
 	const [txStatusApprove, set_txStatusApprove] = useState(defaultTxStatus);
@@ -50,49 +53,83 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 	 ** refreshes the vaults, the staking contract if available and the user's wallet balances
 	 ** on the from and to tokens.
 	 *********************************************************************************************/
-	const onSuccess = useCallback(async (): Promise<void> => {
-		const {chainID} = currentVault;
-		onChangeAmount(zeroNormalizedBN);
-		if (
-			Solver.enum.Vanilla === currentSolver ||
-			Solver.enum.PartnerContract === currentSolver ||
-			Solver.enum.OptimismBooster === currentSolver ||
-			Solver.enum.GaugeStakingBooster === currentSolver ||
-			Solver.enum.JuicedStakingBooster === currentSolver ||
-			Solver.enum.V3StakingBooster === currentSolver ||
-			Solver.enum.InternalMigration === currentSolver
-		) {
-			const toRefresh = [
-				{address: toAddress(actionParams?.selectedOptionFrom?.value), chainID},
-				{address: toAddress(actionParams?.selectedOptionTo?.value), chainID},
-				{address: toAddress(currentVault.address), chainID}
-			];
-			if (currentVault.staking.available) {
-				toRefresh.push({address: toAddress(currentVault.staking.address), chainID});
-			}
-			await onRefresh(toRefresh);
-		} else if (Solver.enum.Cowswap === currentSolver || Solver.enum.Portals === currentSolver) {
-			if (isDepositing) {
-				onRefresh([{address: toAddress(actionParams?.selectedOptionTo?.value), chainID}]);
+	const onSuccess = useCallback(
+		async (isDeposit: boolean): Promise<void> => {
+			const {chainID} = currentVault;
+			if (isDeposit) {
+				plausible(PLAUSIBLE_EVENTS.DEPOSIT, {
+					props: {
+						chainID: currentVault.chainID,
+						vaultAddress: currentVault.address,
+						vaultSymbol: currentVault.symbol,
+						amountToDeposit: actionParams.amount?.display,
+						tokenAddress: actionParams?.selectedOptionFrom?.value,
+						tokenSymbol: actionParams?.selectedOptionFrom?.symbol,
+						isZap: Solver.enum.Cowswap === currentSolver || Solver.enum.Portals === currentSolver,
+						action: `Deposit ${actionParams.amount?.display} ${actionParams?.selectedOptionFrom?.symbol} -> ${currentVault.symbol} on chain ${currentVault.chainID}`
+					}
+				});
 			} else {
-				onRefresh([{address: toAddress(actionParams?.selectedOptionFrom?.value), chainID}]);
+				plausible(PLAUSIBLE_EVENTS.WITHDRAW, {
+					props: {
+						chainID: currentVault.chainID,
+						vaultAddress: currentVault.address,
+						vaultSymbol: currentVault.symbol,
+						sharesToWithdraw: actionParams.amount?.display,
+						tokenAddress: actionParams?.selectedOptionTo?.value,
+						tokenSymbol: actionParams?.selectedOptionTo?.symbol,
+						isZap: Solver.enum.Cowswap === currentSolver || Solver.enum.Portals === currentSolver,
+						action: `Withdraw ${actionParams.amount?.display} ${currentVault?.symbol} -> ${actionParams?.selectedOptionTo?.symbol} on chain ${actionParams?.selectedOptionTo?.chainID}`
+					}
+				});
 			}
-		} else {
-			onRefresh([
-				{address: toAddress(ETH_TOKEN_ADDRESS), chainID},
-				{address: toAddress(actionParams?.selectedOptionFrom?.value), chainID},
-				{address: toAddress(actionParams?.selectedOptionTo?.value), chainID}
-			]);
-		}
-	}, [
-		currentVault,
-		onChangeAmount,
-		currentSolver,
-		actionParams?.selectedOptionFrom?.value,
-		actionParams?.selectedOptionTo?.value,
-		onRefresh,
-		isDepositing
-	]);
+
+			if (
+				Solver.enum.Vanilla === currentSolver ||
+				Solver.enum.PartnerContract === currentSolver ||
+				Solver.enum.OptimismBooster === currentSolver ||
+				Solver.enum.GaugeStakingBooster === currentSolver ||
+				Solver.enum.JuicedStakingBooster === currentSolver ||
+				Solver.enum.V3StakingBooster === currentSolver ||
+				Solver.enum.InternalMigration === currentSolver
+			) {
+				const toRefresh = [
+					{address: toAddress(actionParams?.selectedOptionFrom?.value), chainID},
+					{address: toAddress(actionParams?.selectedOptionTo?.value), chainID},
+					{address: toAddress(currentVault.address), chainID}
+				];
+				if (currentVault.staking.available) {
+					toRefresh.push({address: toAddress(currentVault.staking.address), chainID});
+				}
+				await onRefresh(toRefresh);
+			} else if (Solver.enum.Cowswap === currentSolver || Solver.enum.Portals === currentSolver) {
+				if (isDepositing) {
+					onRefresh([{address: toAddress(actionParams?.selectedOptionTo?.value), chainID}]);
+				} else {
+					onRefresh([{address: toAddress(actionParams?.selectedOptionFrom?.value), chainID}]);
+				}
+			} else {
+				onRefresh([
+					{address: toAddress(ETH_TOKEN_ADDRESS), chainID},
+					{address: toAddress(actionParams?.selectedOptionFrom?.value), chainID},
+					{address: toAddress(actionParams?.selectedOptionTo?.value), chainID}
+				]);
+			}
+			onChangeAmount(zeroNormalizedBN);
+		},
+		[
+			currentVault,
+			onChangeAmount,
+			currentSolver,
+			plausible,
+			actionParams.amount?.display,
+			actionParams?.selectedOptionFrom?.value,
+			actionParams?.selectedOptionFrom?.symbol,
+			actionParams?.selectedOptionTo?.value,
+			onRefresh,
+			isDepositing
+		]
+	);
 
 	/**********************************************************************************************
 	 ** Trigger an approve web3 action, simply trying to approve `amount` tokens to be used by the
@@ -171,7 +208,9 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 			return (
 				<Button
 					variant={isV3Page ? 'v3' : undefined}
-					onClick={async (): Promise<void> => onExecuteDeposit(set_txStatusExecuteDeposit, onSuccess)}
+					onClick={async (): Promise<void> =>
+						onExecuteDeposit(set_txStatusExecuteDeposit, async () => onSuccess(true))
+					}
 					className={'w-full whitespace-nowrap'}
 					isBusy={txStatusExecuteDeposit.pending}
 					isDisabled={
@@ -187,7 +226,9 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 		return (
 			<Button
 				variant={isV3Page ? 'v3' : undefined}
-				onClick={async (): Promise<void> => onExecuteDeposit(set_txStatusExecuteDeposit, onSuccess)}
+				onClick={async (): Promise<void> =>
+					onExecuteDeposit(set_txStatusExecuteDeposit, async () => onSuccess(true))
+				}
 				className={'w-full'}
 				isBusy={txStatusExecuteDeposit.pending}
 				isDisabled={isButtonDisabled}>
@@ -199,7 +240,9 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 	return (
 		<Button
 			variant={isV3Page ? 'v3' : undefined}
-			onClick={async (): Promise<void> => onExecuteWithdraw(set_txStatusExecuteWithdraw, onSuccess)}
+			onClick={async (): Promise<void> =>
+				onExecuteWithdraw(set_txStatusExecuteWithdraw, async () => onSuccess(false))
+			}
 			className={'w-full'}
 			isBusy={txStatusExecuteWithdraw.pending}
 			isDisabled={isButtonDisabled}>

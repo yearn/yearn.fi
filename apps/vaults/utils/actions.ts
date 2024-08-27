@@ -45,7 +45,10 @@ export async function depositAndStake(props: TDepositAndStake): Promise<TTxRespo
 		});
 	}
 	// If we are depositing into the V3 Staking
-	if (props.chainID === 42161 && toAddress(props.contractAddress) === toAddress(V3_STAKING_ZAP_ADDRESS)) {
+	if (
+		V3_STAKING_ZAP_ADDRESS[props.chainID] &&
+		toAddress(props.contractAddress) === toAddress(V3_STAKING_ZAP_ADDRESS[props.chainID])
+	) {
 		return await handleTx(props, {
 			address: props.contractAddress,
 			abi: V3_REWARDS_ZAP_ABI,

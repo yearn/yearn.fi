@@ -3,7 +3,7 @@ import {cl, formatTAmount, isZero} from '@builtbymom/web3/utils';
 
 import type {TAmount} from '@builtbymom/web3/utils';
 
-export function RenderAmount(props: TAmount & {shouldHideTooltip?: boolean}): ReactElement {
+export function RenderAmount(props: TAmount & {shouldHideTooltip?: boolean; shouldFormatDust?: boolean}): ReactElement {
 	const normalizedRawValue = useMemo((): string => {
 		return formatTAmount({
 			...props,
@@ -48,7 +48,9 @@ export function RenderAmount(props: TAmount & {shouldHideTooltip?: boolean}): Re
 			) : (
 				<span />
 			)}
-			{formatTAmount(props)}
+			{Number(props.value) !== 0 && Number(props.value) < 0.0001 && props.shouldFormatDust
+				? '< 0.0001'
+				: formatTAmount(props)}
 		</span>
 	);
 }
