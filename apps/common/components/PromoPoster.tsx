@@ -8,11 +8,11 @@ export function PromoPoster(): ReactElement {
 		<Link
 			href={'/'}
 			className={
-				'border-1 relative flex flex-col rounded-lg border border-gray-600/50 bg-gradient-to-b from-gray-900 to-[#1A1A1A] p-6 hover:from-[#1A1A1A] hover:to-[#262626]'
+				'border-1 relative flex flex-col rounded-lg border border-gray-600/50 bg-gradient-to-b from-gray-900 to-[#1A1A1A] p-4 hover:from-[#1A1A1A] hover:to-[#262626]'
 			}>
-			<div className={'mb-4 flex w-full justify-start text-[40px] font-bold uppercase leading-[40px] text-white'}>
-				{'earn'}
-				<br /> {'with yearn'}
+			<div className={'mb-4 flex w-full justify-start text-3xl font-bold uppercase leading-[40px] text-white'}>
+				{'earn with'}
+				<br /> {'yearn'}
 			</div>
 
 			<div className={'absolute right-2 top-2 flex size-10 items-center justify-center rounded-lg'}>

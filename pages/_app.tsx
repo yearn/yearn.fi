@@ -67,7 +67,7 @@ const WithLayout = memo(function WithLayout(
 						</motion.nav>
 						{isNavbarOpen && (
 							<motion.nav
-								className={'sticky top-20 z-50 h-[calc(100vh-80px)] w-screen md:hidden'}
+								className={'sticky top-16 z-50 h-[calc(100vh-80px)] w-screen md:hidden'}
 								initial={{y: '100%'}} // Start from below the screen
 								animate={{y: 0}} // Animate to the original position
 								exit={{y: '100%'}} // Exit back to below the screen

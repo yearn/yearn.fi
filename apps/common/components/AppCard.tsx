@@ -32,20 +32,20 @@ export function AppCard(props: TAppCardProps): ReactElement {
 							unoptimized
 							width={240}
 							height={240}
-							className={'size-[120px] rounded-[32px] object-contain'}
+							className={'size-[80px] rounded-full object-contain'}
 						/>
 					) : (
-						<div className={'size-[120px] rounded-[32px] bg-fallback'} />
+						<div className={'size-[80px] rounded-full bg-fallback'} />
 					)}
 				</div>
-				<div className={'mb-2 text-2xl font-bold text-white'}>{props.app.name}</div>
+				<div className={'mb-2 text-lg font-bold text-white'}>{props.app.name}</div>
 
-				<p className={'text-base text-gray-400'}>{props.app.description}</p>
+				<p className={'text-sm text-gray-400'}>{props.app.description}</p>
 			</Link>
 			<Link
 				href={props.app.appURI}
 				className={'flex items-center md:hidden'}>
-				<div className={''}>
+				<div>
 					{props.app.logoURI ? (
 						<div className={'size-16 rounded-2xl md:rounded-[32px]'}>
 							<Image

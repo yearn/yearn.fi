@@ -46,23 +46,23 @@ export default function Home(): ReactElement {
 						<PromoPoster />
 					</div>
 
-					<div className={''}>
+					<div>
 						<div className={'flex w-full justify-between'}>
 							<h1 className={'mb-6 text-lg text-white'}>{'Featured Apps'}</h1>
 							<div className={'hidden gap-3 md:flex'}>
 								<button
 									onClick={scrollBack}
 									className={
-										'flex !h-8 items-center rounded-[4px] px-4 text-white outline !outline-1 outline-white hover:!outline-[3px]'
+										'flex !h-8 items-center rounded-[4px] px-4 text-white outline !outline-1 outline-gray-600/50 hover:bg-gray-600/40'
 									}>
-									<IconChevron className={'rotate-90'} />
+									<IconChevron className={'size-3 rotate-90'} />
 								</button>
 								<button
 									onClick={scrollForward}
 									className={
-										'flex !h-8 items-center rounded-[4px] px-4 text-white outline !outline-1 outline-white hover:!outline-[3px]'
+										'flex !h-8 items-center rounded-[4px] px-4 text-white outline !outline-1 outline-gray-600/50 hover:bg-gray-600/40'
 									}>
-									<IconChevron className={' -rotate-90'} />
+									<IconChevron className={'size-3 -rotate-90'} />
 								</button>
 							</div>
 						</div>
@@ -73,7 +73,7 @@ export default function Home(): ReactElement {
 						/>
 					</div>
 
-					<div className={'mt-[300px] flex flex-col gap-[64px]'}>
+					<div className={'mt-[300px] flex flex-col gap-10'}>
 						<CategorySection
 							title={'Frontends'}
 							onExpandClick={() => router.push('/home/frontends')}

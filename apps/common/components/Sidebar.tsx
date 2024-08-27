@@ -34,17 +34,19 @@ export function Sidebar(props: TSidebarProps): ReactElement {
 			}>
 			<div>
 				<div className={'px-4'}>
-					<LogoYearn
-						className={'mb-6 size-10 pl-[10px]'}
-						back={'text-blue-500'}
-						front={'text-white'}
-					/>
-					<div className={'mb-6'}>
+					<div className={'mb-4 ml-2'}>
+						<LogoYearn
+							className={'size-10'}
+							back={'text-blue-500'}
+							front={'text-white'}
+						/>
+					</div>
+					<div className={'mb-4'}>
 						<PromoPoster />
 					</div>
 					<SearchBar
 						className={cl('!w-full !border-0 rounded-lg !border-white !bg-gray-700')}
-						searchPlaceholder={'Search Apps'}
+						searchPlaceholder={'Search App'}
 						searchValue={configuration.searchValue}
 						onSearch={(value: string) => {
 							dispatch({searchValue: value});

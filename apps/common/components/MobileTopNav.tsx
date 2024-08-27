@@ -31,7 +31,7 @@ export function MobileTopNav({
 
 	return (
 		<div className={'z-50 bg-gray-900'}>
-			<div className={'flex w-full items-center justify-between bg-gray-900 p-6'}>
+			<div className={'flex w-full items-center justify-between bg-gray-900 p-4'}>
 				<div className={'flex items-center'}>
 					<button
 						className={'mr-4 flex size-6 items-center justify-center'}
@@ -55,7 +55,7 @@ export function MobileTopNav({
 						set_isNavbarOpen(false);
 						set_isSearchOpen(prev => !prev);
 					}}>
-					<IconSearch />
+					<IconSearch className={'text-white'} />
 				</button>
 			</div>
 
@@ -67,7 +67,7 @@ export function MobileTopNav({
 						}
 						searchValue={configuration.searchValue}
 						onSearch={(value: string) => dispatch({searchValue: value})}
-						searchPlaceholder={'Search Apps'}
+						searchPlaceholder={'Search App'}
 						onSearchClick={onSearchClick}
 						shouldSearchByClick
 					/>
