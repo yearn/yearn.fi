@@ -157,55 +157,55 @@ export const FEATURED_APPS = [
 	{
 		name: 'Juiced',
 		description: 'Discover yields juiced with extra token rewards.',
-		logoURI: '/juiced-bg.png',
+		logoURI: '/juiced-bg.jpg',
 		appURI: 'https://gimme.mom/'
 	},
 	{
 		name: 'Gimme',
 		description: 'DeFi yields, designed for everyone.',
-		logoURI: '/gimme-bg.png',
+		logoURI: '/gimme-bg.jpg',
 		appURI: 'https://gimme.mom/'
 	},
 	{
 		name: 'Vaults',
 		description: 'The full Yearn experience with all Vaults, for sophisticated users.',
-		logoURI: '/v3-bg.png',
+		logoURI: '/v3-bg.jpg',
 		appURI: 'https://gimme.mom/'
 	},
 	{
 		name: 'Juiced',
 		description: 'Discover yields juiced with extra token rewards.',
-		logoURI: '/juiced-bg.png',
+		logoURI: '/juiced-bg.jpg',
 		appURI: 'https://gimme.mom/'
 	},
 	{
 		name: 'Gimme',
 		description: 'DeFi yields, designed for everyone.',
-		logoURI: '/gimme-bg.png',
+		logoURI: '/gimme-bg.jpg',
 		appURI: 'https://gimme.mom/'
 	},
 	{
 		name: 'Vaults',
 		description: 'The full Yearn experience with all Vaults, for sophisticated users.',
-		logoURI: '/v3-bg.png',
+		logoURI: '/v3-bg.jpg',
 		appURI: 'https://gimme.mom/'
 	},
 	{
 		name: 'Juiced',
 		description: 'Discover yields juiced with extra token rewards.',
-		logoURI: '/juiced-bg.png',
+		logoURI: '/juiced-bg.jpg',
 		appURI: 'https://gimme.mom/'
 	},
 	{
 		name: 'Gimme',
 		description: 'DeFi yields, designed for everyone.',
-		logoURI: '/gimme-bg.png',
+		logoURI: '/gimme-bg.jpg',
 		appURI: 'https://gimme.mom/'
 	},
 	{
 		name: 'Vaults',
 		description: 'The full Yearn experience with all Vaults, for sophisticated users.',
-		logoURI: '/v3-bg.png',
+		logoURI: '/v3-bg.jpg',
 		appURI: 'https://gimme.mom/'
 	}
 ];
