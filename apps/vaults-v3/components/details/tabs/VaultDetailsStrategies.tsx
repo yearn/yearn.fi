@@ -91,7 +91,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 							}}
 							items={[
 								{label: 'Vault', value: 'name', sortable: true, className: 'col-span-2'},
-								{label: 'Score', value: 'score', sortable: true, className: 'col-span-1'},
+								{label: 'Risk Level', value: 'score', sortable: true, className: 'col-span-1'},
 								{label: 'Est. APR', value: 'estAPR', sortable: true, className: 'col-span-2'},
 								{label: 'Hist. APR', value: 'apr', sortable: true, className: 'col-span-2'},
 								{label: 'Available', value: 'available', sortable: true, className: 'col-span-2'},

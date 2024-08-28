@@ -15,6 +15,8 @@ import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
 import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {IconChevron} from '@common/icons/IconChevron';
 
+import {VaultRiskInfo} from './tabs/VaultRiskInfo';
+
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 
@@ -25,6 +27,7 @@ type TTabsOptions = {
 };
 type TTabs = {
 	hasStrategies: boolean;
+	hasRisk: boolean;
 	selectedAboutTabIndex: number;
 	set_selectedAboutTabIndex: (arg0: number) => void;
 };
@@ -34,22 +37,21 @@ type TExplorerLinkProps = {
 	currentVaultAddress: string;
 };
 
-function Tabs({hasStrategies, selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactElement {
+function Tabs({hasStrategies, hasRisk, selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactElement {
 	const router = useRouter();
 
 	const tabs: TTabsOptions[] = useMemo((): TTabsOptions[] => {
+		const tabs = [{value: 0, label: 'About', slug: 'about'}];
 		if (hasStrategies) {
-			return [
-				{value: 0, label: 'About', slug: 'about'},
-				{value: 1, label: 'Vaults', slug: 'vaults'},
-				{value: 2, label: 'Info', slug: 'info'}
-			];
+			tabs.push({value: 1, label: 'Vaults', slug: 'vaults'});
 		}
-		return [
-			{value: 0, label: 'About', slug: 'about'},
-			{value: 2, label: 'Info', slug: 'info'}
-		];
-	}, [hasStrategies]);
+		tabs.push({value: 2, label: 'Info', slug: 'info'});
+		if (hasRisk) {
+			tabs.push({value: 3, label: 'Risk', slug: 'risk'});
+		}
+
+		return tabs;
+	}, [hasStrategies, hasRisk]);
 
 	useEffect((): void => {
 		const tab = tabs.find((tab): boolean => tab.slug === router.query.tab);
@@ -212,6 +214,7 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 			<div className={'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'}>
 				<Tabs
 					hasStrategies={hasStrategies}
+					hasRisk={true}
 					selectedAboutTabIndex={selectedAboutTabIndex}
 					set_selectedAboutTabIndex={set_selectedAboutTabIndex}
 				/>
@@ -237,6 +240,10 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 
 			<Renderable shouldRender={currentVault && selectedAboutTabIndex === 2}>
 				<VaultInfo currentVault={currentVault} />
+			</Renderable>
+
+			<Renderable shouldRender={currentVault && selectedAboutTabIndex === 3}>
+				<VaultRiskInfo currentVault={currentVault} />
 			</Renderable>
 		</div>
 	);

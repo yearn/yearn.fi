@@ -19,8 +19,8 @@ import type {TNormalizedBN} from '@builtbymom/web3/types';
 function APRSubline({hasPendleArbRewards}: {hasPendleArbRewards: boolean}): ReactElement {
 	if (hasPendleArbRewards) {
 		return (
-			<small className={cl('whitespace-nowrap text-xs text-neutral-800 self-end -mb-4')}>
-				{`+ 2500 ARB per week 🚀`}
+			<small className={cl('whitespace-nowrap text-xs text-neutral-800 self-end -mb-5 pt-1 -mr-1')}>
+				{`+ 2500 ARB/week 🚀`}
 			</small>
 		);
 	}
@@ -449,12 +449,12 @@ function VaultRiskScoreTag({riskLevel}: {riskLevel: number}): ReactElement {
 	const level = riskLevel < 0 ? 0 : riskLevel > 5 ? 5 : riskLevel;
 	const riskColor = [`transparent`, `#63C532`, `#F8A908`, `#F8A908`, `#C73203`, `#C73203`];
 	return (
-		<div className={'col-span-2 flex flex-row justify-center md:col-span-1 md:flex-col'}>
+		<div className={'col-span-2 flex flex-row justify-center md:col-span-2 md:flex-col'}>
 			<p className={'inline whitespace-nowrap text-start text-xs text-neutral-800/60 md:hidden'}>
 				{'Risk Score'}
 			</p>
-			<div className={'flex w-full items-center justify-end gap-4 md:justify-center'}>
-				<div className={'mt-[6px] h-3 w-6 min-w-6 rounded-sm border-2 border-good-ol-grey-700 p-[2px]'}>
+			<div className={cl('flex w-fit items-center justify-end gap-4 md:justify-center', 'tooltip relative z-50')}>
+				<div className={'mt-[6px] h-3 w-10 min-w-10 rounded-sm border-2 border-neutral-400 p-[2px]'}>
 					<div
 						className={'h-1 rounded-[1px]'}
 						style={{
@@ -463,7 +463,20 @@ function VaultRiskScoreTag({riskLevel}: {riskLevel: number}): ReactElement {
 						}}
 					/>
 				</div>
-				<p className={'border-b border-dashed font-mono text-base text-white'}>{level}</p>
+				<span
+					suppressHydrationWarning
+					className={'tooltiptext top-full mt-1'}
+					style={{marginRight: 'calc(-94px + 50%)'}}>
+					<div
+						className={
+							'font-number relative border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
+						}>
+						<p>
+							<b className={'text-xs font-semibold'}>{`${level} / 5 :`}</b>
+							{` This reflects the vault's security, with 1 being most secure and 5 least secure, based on strategy complexity, loss exposure, and external dependencies.`}
+						</p>
+					</div>
+				</span>
 			</div>
 		</div>
 	);
@@ -595,7 +608,7 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 
 				<div className={'col-span-1'} />
 
-				<div className={cl('col-span-7 z-10', 'grid grid-cols-2 md:grid-cols-11 gap-1', 'mt-4 md:mt-0')}>
+				<div className={cl('col-span-7 z-10', 'grid grid-cols-2 md:grid-cols-12 gap-4', 'mt-4 md:mt-0')}>
 					<VaultRiskScoreTag riskLevel={currentVault.info.riskLevel} />
 
 					<div
