@@ -45,7 +45,7 @@ export function Sidebar(props: TSidebarProps): ReactElement {
 						<PromoPoster />
 					</div>
 					<SearchBar
-						className={cl('!w-full !border-0 rounded-lg !border-white !bg-gray-700')}
+						className={cl('!w-full !border-0 rounded-lg !border-white !bg-gray-600/40')}
 						searchPlaceholder={'Search App'}
 						searchValue={configuration.searchValue}
 						onSearch={(value: string) => {
