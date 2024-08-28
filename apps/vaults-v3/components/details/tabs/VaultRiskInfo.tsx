@@ -124,7 +124,7 @@ export function VaultRiskInfo({currentVault}: {currentVault: TYDaemonVault}): Re
 							<p>{'External Protocol Centralisation'}</p>
 							<small className={'whitespace-break-spaces text-xs text-neutral-900/40'}>
 								{
-									"Measurement of the centralization score of the external protocols. Contracts owner = CO.\n\t\t1 → CO is a multisig with known trusted people with Timelock OR Contracts are governanceless, immutable OR CO can't do any harm to our strategy by setting parameters in external protocol contracts\n\t\t2 → CO is a multisig with known trusted people\n\t\t3 → CO is a multisig with known people but multisig threshold is very low\n\t\t4 → CO is a multisig but the addresses are not known/hidden OR CO can harm our strategy by setting parameters in external protocol contracts up to some degree\n\t\t5 → CO is an EOA or a multisig with less than 4 members OR Contracts are not verified OR Contracts owner can harm our strategy completely'
+									"Measurement of the centralization score of the external protocols. Contracts owner = CO.\n\t\t1 → CO is a multisig with known trusted people with Timelock OR Contracts are governanceless, immutable OR CO can't do any harm to our strategy by setting parameters in external protocol contracts\n\t\t2 → CO is a multisig with known trusted people\n\t\t3 → CO is a multisig with known people but multisig threshold is very low\n\t\t4 → CO is a multisig but the addresses are not known/hidden OR CO can harm our strategy by setting parameters in external protocol contracts up to some degree\n\t\t5 → CO is an EOA or a multisig with less than 4 members OR Contracts are not verified OR Contracts owner can harm our strategy completely"
 								}
 							</small>
 						</div>
@@ -160,7 +160,7 @@ export function VaultRiskInfo({currentVault}: {currentVault: TYDaemonVault}): Re
 							<p>{'External Protocol Type'}</p>
 							<small className={'whitespace-break-spaces text-xs text-neutral-900/40'}>
 								{
-									"This is a rough estimate of evaluating a protocol's purpose.\n\t\t1 → Blue-chip protocols such as AAVE, Compound, Uniswap, Curve, Convex, and Balancer.\n\t\t2 → Slightly modified forked blue-chip protocols\n\t\t3 → AMM lending/borrowing protocols that are not forks of blue-chip protocols, leveraged farming protocols, as well as newly conceptualized protocols\n\t\t4 → Cross-chain applications, like cross-chain bridges, cross-chain yield aggregators, and cross-chain lending/borrowing protocols\n\t\t5 → The main expertise of the protocol lies in off-chain operations, such as RWA protocols'
+									"This is a rough estimate of evaluating a protocol's purpose.\n\t\t1 → Blue-chip protocols such as AAVE, Compound, Uniswap, Curve, Convex, and Balancer.\n\t\t2 → Slightly modified forked blue-chip protocols\n\t\t3 → AMM lending/borrowing protocols that are not forks of blue-chip protocols, leveraged farming protocols, as well as newly conceptualized protocols\n\t\t4 → Cross-chain applications, like cross-chain bridges, cross-chain yield aggregators, and cross-chain lending/borrowing protocols\n\t\t5 → The main expertise of the protocol lies in off-chain operations, such as RWA protocols"
 								}
 							</small>
 						</div>
