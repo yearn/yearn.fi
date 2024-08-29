@@ -35,11 +35,13 @@ export function Sidebar(props: TSidebarProps): ReactElement {
 			<div>
 				<div className={'px-4'}>
 					<div className={'mb-4 ml-2'}>
-						<LogoYearn
-							className={'size-10'}
-							back={'text-blue-500'}
-							front={'text-white'}
-						/>
+						<Link href={'/'}>
+							<LogoYearn
+								className={'size-10'}
+								back={'text-blue-500'}
+								front={'text-white'}
+							/>
+						</Link>
 					</div>
 					<div className={'mb-4'}>
 						<PromoPoster />

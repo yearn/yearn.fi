@@ -41,7 +41,7 @@ export const FRONTENDS_APPS: TApp[] = [
 	},
 	{
 		name: 'Superform',
-		description: 'Earn Yield & Distribute Vaults',
+		description: 'Earn Yield & Distribute Vaults.',
 		logoURI: 'https://www.superform.xyz/icon.png',
 		appURI: 'https://www.superform.xyz'
 	}
@@ -56,13 +56,13 @@ export const LOCKERS_APPS: TApp[] = [
 	},
 	{
 		name: 'yCRV',
-		description: 'Put your yCRV to work',
+		description: 'Put your yCRV to work.',
 		logoURI: 'https://ycrv.yearn.fi/ycrv-logo.svg',
 		appURI: 'https://ycrv.yearn.fi'
 	},
 	{
 		name: 'yPrisma',
-		description: 'Put your yPRISMA to work',
+		description: 'Put your yPRISMA to work.',
 		logoURI: 'https://assets.smold.app/api/token/1/0xe3668873d944e4a949da05fc8bde419eff543882/logo-128.png',
 		appURI: 'https://yprisma.yearn.fi'
 	},

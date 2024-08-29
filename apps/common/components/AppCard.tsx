@@ -32,7 +32,7 @@ export function AppCard(props: TAppCardProps): ReactElement {
 							unoptimized
 							width={240}
 							height={240}
-							className={'size-[80px] rounded-full object-contain'}
+							className={'size-[80px] rounded-full border border-[#29292980] object-contain'}
 						/>
 					) : (
 						<div className={'size-[80px] rounded-full bg-fallback'} />
@@ -47,7 +47,7 @@ export function AppCard(props: TAppCardProps): ReactElement {
 				className={'flex items-center md:hidden'}>
 				<div>
 					{props.app.logoURI ? (
-						<div className={'size-16 rounded-2xl md:rounded-[32px]'}>
+						<div className={'size-16 rounded-2xl border border-[#29292980] md:rounded-[32px]'}>
 							<Image
 								src={props.app.logoURI}
 								alt={props.app.name}

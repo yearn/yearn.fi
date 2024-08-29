@@ -21,7 +21,7 @@ export function CategorySection(props: TAppSectionProps): ReactElement {
 					className={
 						'flex items-center rounded-[4px] px-4 py-2 outline !outline-1 outline-gray-600/50 hover:bg-gray-600/40'
 					}>
-					<span className={'mr-1 text-xs text-white'}>{'View all'}</span>
+					<span className={'mr-2 text-xs text-white'}>{'View all'}</span>
 					<IconChevron className={'size-3 -rotate-90 text-white'} />
 				</button>
 			</div>
