@@ -141,7 +141,7 @@ export const INTEGRATIONS_APPS: TApp[] = [
 		name: 'Sturdy',
 		description:
 			'Isolated lending with shared liquidity. Permissionlessly create a liquid money market for any asset.',
-		logoURI: 'https://v2.sturdy.finance/apple-icon.png',
+		logoURI: 'https://avatars.githubusercontent.com/u/90377574?s=200&v=4',
 		appURI: 'https://v2.sturdy.finance'
 	},
 	{
@@ -157,55 +157,55 @@ export const FEATURED_APPS = [
 	{
 		name: 'Juiced',
 		description: 'Discover yields juiced with extra token rewards.',
-		logoURI: '/juiced-featured.png',
+		logoURI: '/juiced-featured.jpg',
 		appURI: 'https://juiced.app/'
 	},
 	{
 		name: 'Gimme',
 		description: 'DeFi yields, designed for everyone.',
-		logoURI: '/gimme-featured.png',
+		logoURI: '/gimme-featured.jpg',
 		appURI: 'https://gimme.mom/'
 	},
 	{
 		name: 'Vaults',
 		description: 'The full Yearn experience with all Vaults, for sophisticated users.',
-		logoURI: '/v3-featured.png',
+		logoURI: '/v3-featured.jpg',
 		appURI: '/v3'
 	},
 	{
 		name: 'Juiced',
 		description: 'Discover yields juiced with extra token rewards.',
-		logoURI: '/juiced-featured.png',
+		logoURI: '/juiced-featured.jpg',
 		appURI: 'https://juiced.app/'
 	},
 	{
 		name: 'Gimme',
 		description: 'DeFi yields, designed for everyone.',
-		logoURI: '/gimme-featured.png',
+		logoURI: '/gimme-featured.jpg',
 		appURI: 'https://gimme.mom/'
 	},
 	{
 		name: 'Vaults',
 		description: 'The full Yearn experience with all Vaults, for sophisticated users.',
-		logoURI: '/v3-featured.png',
+		logoURI: '/v3-featured.jpg',
 		appURI: '/v3'
 	},
 	{
 		name: 'Juiced',
 		description: 'Discover yields juiced with extra token rewards.',
-		logoURI: '/juiced-featured.png',
+		logoURI: '/juiced-featured.jpg',
 		appURI: 'https://juiced.app/'
 	},
 	{
 		name: 'Gimme',
 		description: 'DeFi yields, designed for everyone.',
-		logoURI: '/gimme-featured.png',
+		logoURI: '/gimme-featured.jpg',
 		appURI: 'https://gimme.mom/'
 	},
 	{
 		name: 'Vaults',
 		description: 'The full Yearn experience with all Vaults, for sophisticated users.',
-		logoURI: '/v3-featured.png',
+		logoURI: '/v3-featured.jpg',
 		appURI: '/v3'
 	}
 ];
