@@ -41,7 +41,7 @@ export default function Home(): ReactElement {
 	return (
 		<div className={'relative mb-4 mt-24 flex w-full justify-start md:mt-10'}>
 			<div className={'md:max-w- w-full p-6 !pl-8 pb-24 pt-0 md:px-2'}>
-				<div className={'flex flex-col gap-y-6'}>
+				<div className={'flex flex-col gap-y-16'}>
 					<div className={'md:hidden'}>
 						<PromoPoster />
 					</div>
