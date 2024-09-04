@@ -1,13 +1,56 @@
+import {Fragment, type ReactElement} from 'react';
 import {useRouter} from 'next/router';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {cl, formatCounterValue, formatPercent, toAddress} from '@builtbymom/web3/utils';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useSolver} from '@vaults/contexts/useSolver';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
+import {RenderAmount} from '@common/components/RenderAmount';
 import {Dropdown} from '@common/components/TokenDropdown';
+import {useYearn} from '@common/contexts/useYearn';
 import {useYearnTokenPrice} from '@common/hooks/useYearnTokenPrice';
 
-import type {ReactElement} from 'react';
+import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+
+function VaultAPY({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+	const isSourceVeYFI = currentVault.staking.source === 'VeYFI';
+	const {isAutoStakingEnabled} = useYearn();
+
+	if (isSourceVeYFI && isAutoStakingEnabled) {
+		const sumOfRewardsAPY = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.extra.gammaRewardAPR;
+		const veYFIRange = [
+			currentVault.apr.extra.stakingRewardsAPR / 10 + currentVault.apr.extra.gammaRewardAPR,
+			sumOfRewardsAPY
+		] as [number, number];
+		const estAPYRange = [
+			veYFIRange[0] + currentVault.apr.forwardAPR.netAPR,
+			veYFIRange[1] + currentVault.apr.forwardAPR.netAPR
+		] as [number, number];
+		return (
+			<Fragment>
+				<RenderAmount
+					shouldHideTooltip
+					value={estAPYRange[0]}
+					symbol={'percent'}
+					decimals={6}
+				/>
+				&nbsp;&rarr;&nbsp;
+				<RenderAmount
+					shouldHideTooltip
+					value={estAPYRange[1]}
+					symbol={'percent'}
+					decimals={6}
+				/>
+			</Fragment>
+		);
+	}
+
+	return (
+		<Fragment>
+			{formatPercent((currentVault.apr.netAPR + currentVault.apr.extra.stakingRewardsAPR) * 100, 2, 2, 500)}
+		</Fragment>
+	);
+}
 
 export function VaultDetailsQuickActionsTo(): ReactElement {
 	const {isActive} = useWeb3();
@@ -44,12 +87,7 @@ export function VaultDetailsQuickActionsTo(): ReactElement {
 					<legend
 						className={'font-number inline text-xs text-neutral-900/50 md:hidden'}
 						suppressHydrationWarning>
-						{`APR ${formatPercent(
-							(currentVault.apr.netAPR + currentVault.apr.extra.stakingRewardsAPR) * 100,
-							2,
-							2,
-							500
-						)}`}
+						<VaultAPY currentVault={currentVault} />
 					</legend>
 				</div>
 				<Renderable
@@ -76,14 +114,7 @@ export function VaultDetailsQuickActionsTo(): ReactElement {
 					<legend
 						className={'font-number hidden text-xs text-neutral-900/50 md:inline'}
 						suppressHydrationWarning>
-						{isDepositing
-							? formatPercent(
-									(currentVault.apr.netAPR + currentVault.apr.extra.stakingRewardsAPR) * 100,
-									2,
-									2,
-									500
-								)
-							: ''}
+						{isDepositing ? <VaultAPY currentVault={currentVault} /> : ''}
 					</legend>
 				</div>
 			</div>

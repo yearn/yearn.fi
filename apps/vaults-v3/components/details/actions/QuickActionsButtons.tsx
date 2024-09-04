@@ -119,13 +119,15 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 		},
 		[
 			currentVault,
-			onChangeAmount,
 			currentSolver,
+			onChangeAmount,
 			plausible,
 			actionParams.amount?.display,
 			actionParams?.selectedOptionFrom?.value,
 			actionParams?.selectedOptionFrom?.symbol,
 			actionParams?.selectedOptionTo?.value,
+			actionParams?.selectedOptionTo?.symbol,
+			actionParams?.selectedOptionTo?.chainID,
 			onRefresh,
 			isDepositing
 		]

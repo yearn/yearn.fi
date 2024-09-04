@@ -30,7 +30,7 @@ import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVa
 function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive: boolean}): ReactElement {
 	const hasVaultData = Boolean(props.currentVault.staking.available);
 	const vaultDataource = props.currentVault.staking.source;
-	const extraAPR = props.currentVault.apr.extra.stakingRewardsAPR;
+	const extraAPY = props.currentVault.apr.extra.stakingRewardsAPR;
 	const {pathname} = useRouter();
 	const isV3Page = pathname.startsWith(`/v3`);
 
@@ -74,7 +74,7 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 					<b className={'text-lg'}>{'Yield is good, but more yield is good-er!'}</b>
 					<div className={'mt-2 flex flex-col gap-2'}>
 						<p>
-							{`This Vault has an active veYFI gauge which boosts your APR from ${formatAmount(extraAPR * 10)}% to ${formatAmount(extraAPR * 100)}%. Simply deposit and stake to start earning.`}
+							{`This Vault has an active veYFI gauge which boosts your APY from ${formatAmount(extraAPY * 10)}% to ${formatAmount(extraAPY * 100)}% depending on the veYFI you have locked. Simply deposit and stake to start earning.`}
 						</p>
 						<p className={'block'}>
 							{'Learn more about veYFI rewards in the '}
@@ -101,7 +101,7 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 					<b className={'text-lg'}>{'Yield is good, but more yield is good-er!'}</b>
 					<div className={'mt-2 flex flex-col gap-2'}>
 						<p>
-							{`This Vault can be juiced for even more yield. Simply deposit and stake to receive juiced APRs of ${formatAmount(extraAPR * 100)}%.`}
+							{`This Vault can be juiced for even more yield. Simply deposit and stake to receive juiced APYs of ${formatAmount(extraAPY * 100)}%.`}
 						</p>
 						<p className={'block'}>
 							{'Visit '}
