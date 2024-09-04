@@ -120,7 +120,7 @@ export function BoostMessage(props: {
 			<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
 				<div className={'w-full rounded-lg bg-[#34A14F] p-2 md:px-6 md:py-4'}>
 					<b className={'text-base text-white'}>
-						{`This Vault has an active veYFI gauge which boosts your APY from ${formatAmount(extraAPY * 10)}% to ${formatAmount(extraAPY * 100)}%. Simply deposit and stake to start earning.`}
+						{`This Vault has an active veYFI gauge which boosts your APY from ${formatAmount(extraAPY * 10)}% to ${formatAmount(extraAPY * 100)}% depending on the veYFI you have locked. Simply deposit and stake to start earning.`}
 					</b>
 					<b className={'block text-white'}>
 						{'Learn more about veYFI rewards in the '}

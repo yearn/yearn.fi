@@ -74,7 +74,7 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 					<b className={'text-lg'}>{'Yield is good, but more yield is good-er!'}</b>
 					<div className={'mt-2 flex flex-col gap-2'}>
 						<p>
-							{`This Vault has an active veYFI gauge which boosts your APY from ${formatAmount(extraAPY * 10)}% to ${formatAmount(extraAPY * 100)}%. Simply deposit and stake to start earning.`}
+							{`This Vault has an active veYFI gauge which boosts your APY from ${formatAmount(extraAPY * 10)}% to ${formatAmount(extraAPY * 100)}% depending on the veYFI you have locked. Simply deposit and stake to start earning.`}
 						</p>
 						<p className={'block'}>
 							{'Learn more about veYFI rewards in the '}
