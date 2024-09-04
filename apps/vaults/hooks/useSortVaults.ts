@@ -9,7 +9,7 @@ import {numberSort, stringSort} from '@common/utils/sort';
 import type {TYDaemonVaults} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TSortDirection} from '@builtbymom/web3/types';
 
-export type TPossibleSortBy = 'apr' | 'estAPR' | 'tvl' | 'name' | 'deposited' | 'available' | 'featuringScore';
+export type TPossibleSortBy = 'APY' | 'estAPY' | 'tvl' | 'name' | 'deposited' | 'available' | 'featuringScore';
 
 export function useSortVaults(
 	vaultList: TYDaemonVaults,
@@ -30,53 +30,53 @@ export function useSortVaults(
 		[sortDirection, vaultList]
 	);
 
-	const sortedByForwardAPR = useCallback(
+	const sortedByForwardAPY = useCallback(
 		(): TYDaemonVaults =>
 			vaultList.sort((a, b): number => {
-				let aAPR = 0;
+				let aAPY = 0;
 				if (a.apr.forwardAPR.type === '') {
-					aAPR = a.apr.extra.stakingRewardsAPR + a.apr.netAPR;
+					aAPY = a.apr.extra.stakingRewardsAPR + a.apr.netAPR;
 				} else if (a.chainID === 1 && a.apr.forwardAPR.composite.boost > 0 && !a.apr.extra.stakingRewardsAPR) {
-					aAPR = a.apr.forwardAPR.netAPR;
+					aAPY = a.apr.forwardAPR.netAPR;
 				} else {
-					const sumOfRewardsAPR = a.apr.extra.stakingRewardsAPR + a.apr.extra.gammaRewardAPR;
-					const hasCurrentAPR = !isZero(a?.apr.forwardAPR.netAPR);
-					if (sumOfRewardsAPR > 0) {
-						aAPR = sumOfRewardsAPR + a.apr.forwardAPR.netAPR;
-					} else if (hasCurrentAPR) {
-						aAPR = a.apr.forwardAPR.netAPR;
+					const sumOfRewardsAPY = a.apr.extra.stakingRewardsAPR + a.apr.extra.gammaRewardAPR;
+					const hasCurrentAPY = !isZero(a?.apr.forwardAPR.netAPR);
+					if (sumOfRewardsAPY > 0) {
+						aAPY = sumOfRewardsAPY + a.apr.forwardAPR.netAPR;
+					} else if (hasCurrentAPY) {
+						aAPY = a.apr.forwardAPR.netAPR;
 					} else {
-						aAPR = a.apr.netAPR;
+						aAPY = a.apr.netAPR;
 					}
 				}
 
-				let bAPR = 0;
+				let bAPY = 0;
 				if (b.apr.forwardAPR.type === '') {
-					bAPR = b.apr.extra.stakingRewardsAPR + b.apr.netAPR;
+					bAPY = b.apr.extra.stakingRewardsAPR + b.apr.netAPR;
 				} else if (b.chainID === 1 && b.apr.forwardAPR.composite.boost > 0 && !b.apr.extra.stakingRewardsAPR) {
-					bAPR = b.apr.forwardAPR.netAPR;
+					bAPY = b.apr.forwardAPR.netAPR;
 				} else {
-					const sumOfRewardsAPR = b.apr.extra.stakingRewardsAPR + b.apr.extra.gammaRewardAPR;
-					const hasCurrentAPR = !isZero(b?.apr.forwardAPR.netAPR);
-					if (sumOfRewardsAPR > 0) {
-						bAPR = sumOfRewardsAPR + b.apr.forwardAPR.netAPR;
-					} else if (hasCurrentAPR) {
-						bAPR = b.apr.forwardAPR.netAPR;
+					const sumOfRewardsAPY = b.apr.extra.stakingRewardsAPR + b.apr.extra.gammaRewardAPR;
+					const hasCurrentAPY = !isZero(b?.apr.forwardAPR.netAPR);
+					if (sumOfRewardsAPY > 0) {
+						bAPY = sumOfRewardsAPY + b.apr.forwardAPR.netAPR;
+					} else if (hasCurrentAPY) {
+						bAPY = b.apr.forwardAPR.netAPR;
 					} else {
-						bAPR = b.apr.netAPR;
+						bAPY = b.apr.netAPR;
 					}
 				}
 
 				return numberSort({
-					a: aAPR,
-					b: bAPR,
+					a: aAPY,
+					b: bAPY,
 					sortDirection
 				});
 			}),
 		[sortDirection, vaultList]
 	);
 
-	const sortedByAPR = useCallback(
+	const sortedByAPY = useCallback(
 		(): TYDaemonVaults =>
 			vaultList.sort((a, b): number =>
 				numberSort({
@@ -160,11 +160,11 @@ export function useSortVaults(
 		if (sortBy === 'name') {
 			return sortedByName();
 		}
-		if (sortBy === 'estAPR') {
-			return sortedByForwardAPR();
+		if (sortBy === 'estAPY') {
+			return sortedByForwardAPY();
 		}
-		if (sortBy === 'apr') {
-			return sortedByAPR();
+		if (sortBy === 'APY') {
+			return sortedByAPY();
 		}
 		if (sortBy === 'tvl') {
 			return sortedByTVL();
@@ -185,9 +185,9 @@ export function useSortVaults(
 		sortDirection,
 		sortBy,
 		sortedByName,
-		sortedByForwardAPR,
+		sortedByForwardAPY,
 		sortedByTVL,
-		sortedByAPR,
+		sortedByAPY,
 		sortedByDeposited,
 		sortedByAvailable,
 		sortedByFeaturingScore

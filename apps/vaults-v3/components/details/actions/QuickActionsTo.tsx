@@ -44,7 +44,7 @@ export function VaultDetailsQuickActionsTo(): ReactElement {
 					<legend
 						className={'font-number inline text-xs text-neutral-900/50 md:hidden'}
 						suppressHydrationWarning>
-						{`APR ${formatPercent(
+						{`APY ${formatPercent(
 							(currentVault.apr.netAPR + currentVault.apr.extra.stakingRewardsAPR) * 100,
 							2,
 							2,

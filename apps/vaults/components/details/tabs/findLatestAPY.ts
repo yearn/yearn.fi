@@ -2,7 +2,7 @@ import {isZero} from '@builtbymom/web3/utils';
 
 import type {TYDaemonReport, TYDaemonReports} from '@vaults/schemas/reportsSchema';
 
-export function findLatestApr(reports?: TYDaemonReports): number {
+export function findLatestAPY(reports?: TYDaemonReports): number {
 	if (!reports?.length) {
 		return 0;
 	}
