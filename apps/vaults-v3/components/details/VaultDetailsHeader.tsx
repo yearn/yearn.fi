@@ -65,19 +65,19 @@ function VaultHeaderLineItem({label, children, legend}: TVaultHeaderLineItemProp
 	);
 }
 
-function VaultAPR({apr, source}: {apr: TYDaemonVault['apr']; source: string}): ReactElement {
-	const extraAPR = apr.extra.stakingRewardsAPR + apr.extra.gammaRewardAPR;
-	const monthlyAPR = apr.points.monthAgo;
-	const weeklyAPR = apr.points.weekAgo;
-	const netAPR = apr.netAPR + extraAPR;
-	const currentAPR = apr.forwardAPR.netAPR + extraAPR;
+function VaultAPY({apr, source}: {apr: TYDaemonVault['apr']; source: string}): ReactElement {
+	const extraAPY = apr.extra.stakingRewardsAPR + apr.extra.gammaRewardAPR;
+	const monthlyAPY = apr.points.monthAgo;
+	const weeklyAPY = apr.points.weekAgo;
+	const netAPY = apr.netAPR + extraAPY;
+	const currentAPY = apr.forwardAPR.netAPR + extraAPY;
 	const isSourceVeYFI = source === 'VeYFI';
 
-	if (apr.forwardAPR.type === '' && extraAPR === 0) {
+	if (apr.forwardAPR.type === '' && extraAPY === 0) {
 		return (
-			<VaultHeaderLineItem label={'Historical APR'}>
+			<VaultHeaderLineItem label={'Historical APY'}>
 				<RenderAmount
-					value={apr.netAPR + extraAPR}
+					value={netAPY}
 					symbol={'percent'}
 					decimals={6}
 				/>
@@ -85,19 +85,19 @@ function VaultAPR({apr, source}: {apr: TYDaemonVault['apr']; source: string}): R
 		);
 	}
 
-	if (apr.forwardAPR.type !== '' && extraAPR !== 0 && !isSourceVeYFI) {
-		const boostedAPR = apr.forwardAPR.netAPR + extraAPR;
+	if (apr.forwardAPR.type !== '' && extraAPY !== 0 && !isSourceVeYFI) {
+		const boostedAPY = apr.forwardAPR.netAPR + extraAPY;
 		return (
 			<VaultHeaderLineItem
-				label={'Historical APR'}
+				label={'Historical APY'}
 				legend={
 					<span className={'tooltip'}>
 						<div className={'flex flex-row items-center space-x-2'}>
 							<div>
-								{'Est. APR: '}
+								{'Est. APY: '}
 								<RenderAmount
-									shouldHideTooltip={boostedAPR === 0}
-									value={boostedAPR}
+									shouldHideTooltip={boostedAPY === 0}
+									value={boostedAPY}
 									symbol={'percent'}
 									decimals={6}
 								/>
@@ -113,13 +113,13 @@ function VaultAPR({apr, source}: {apr: TYDaemonVault['apr']; source: string}): R
 									className={
 										'font-number flex w-full flex-row justify-between text-wrap text-left text-neutral-400 md:w-80 md:text-xs'
 									}>
-									{'Estimated APR for the next period based on current data.'}
+									{'Estimated APY for the next period based on current data.'}
 								</p>
 								<div
 									className={
 										'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap py-1 text-neutral-400 md:text-xs'
 									}>
-									<p>{'• Base APR '}</p>
+									<p>{'• Base APY '}</p>
 									<RenderAmount
 										shouldHideTooltip
 										value={apr.forwardAPR.netAPR}
@@ -132,10 +132,10 @@ function VaultAPR({apr, source}: {apr: TYDaemonVault['apr']; source: string}): R
 									className={
 										'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
 									}>
-									<p>{'• Rewards APR '}</p>
+									<p>{'• Rewards APY '}</p>
 									<RenderAmount
 										shouldHideTooltip
-										value={extraAPR}
+										value={extraAPY}
 										symbol={'percent'}
 										decimals={6}
 									/>
@@ -148,7 +148,7 @@ function VaultAPR({apr, source}: {apr: TYDaemonVault['apr']; source: string}): R
 					shouldRender={!apr?.type.includes('new')}
 					fallback={'New'}>
 					<RenderAmount
-						value={isZero(monthlyAPR) ? weeklyAPR : monthlyAPR}
+						value={isZero(monthlyAPY) ? weeklyAPY : monthlyAPY}
 						symbol={'percent'}
 						decimals={6}
 					/>
@@ -158,34 +158,34 @@ function VaultAPR({apr, source}: {apr: TYDaemonVault['apr']; source: string}): R
 	}
 
 	if (isSourceVeYFI) {
-		const sumOfRewardsAPR = apr.extra.stakingRewardsAPR + apr.extra.gammaRewardAPR;
-		const veYFIRange = [apr.extra.stakingRewardsAPR / 10 + apr.extra.gammaRewardAPR, sumOfRewardsAPR] as [
+		const sumOfRewardsAPY = apr.extra.stakingRewardsAPR + apr.extra.gammaRewardAPR;
+		const veYFIRange = [apr.extra.stakingRewardsAPR / 10 + apr.extra.gammaRewardAPR, sumOfRewardsAPY] as [
 			number,
 			number
 		];
-		const estAPRRange = [veYFIRange[0] + apr.forwardAPR.netAPR, veYFIRange[1] + apr.forwardAPR.netAPR] as [
+		const estAPYRange = [veYFIRange[0] + apr.forwardAPR.netAPR, veYFIRange[1] + apr.forwardAPR.netAPR] as [
 			number,
 			number
 		];
 		return (
 			<VaultHeaderLineItem
-				label={'Historical APR'}
+				label={'Historical APY'}
 				legend={
 					<span className={'tooltip'}>
 						<div className={'flex flex-row items-center space-x-2'}>
 							<div>
-								{'Est. APR: '}
+								{'Est. APY: '}
 								<Fragment>
 									<RenderAmount
 										shouldHideTooltip
-										value={estAPRRange[0]}
+										value={estAPYRange[0]}
 										symbol={'percent'}
 										decimals={6}
 									/>
 									&nbsp;&rarr;&nbsp;
 									<RenderAmount
 										shouldHideTooltip
-										value={estAPRRange[1]}
+										value={estAPYRange[1]}
 										symbol={'percent'}
 										decimals={6}
 									/>
@@ -202,13 +202,13 @@ function VaultAPR({apr, source}: {apr: TYDaemonVault['apr']; source: string}): R
 									className={
 										'font-number flex w-full flex-row justify-between text-wrap text-left text-neutral-400 md:w-80 md:text-xs'
 									}>
-									{'Estimated APR for the next period based on current data.'}
+									{'Estimated APY for the next period based on current data.'}
 								</p>
 								<div
 									className={
 										'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap py-1 text-neutral-400 md:text-xs'
 									}>
-									<p>{'• Base APR '}</p>
+									<p>{'• Base APY '}</p>
 									<RenderAmount
 										shouldHideTooltip
 										value={apr.forwardAPR.netAPR}
@@ -221,7 +221,7 @@ function VaultAPR({apr, source}: {apr: TYDaemonVault['apr']; source: string}): R
 									className={
 										'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
 									}>
-									<p>{'• Rewards APR '}</p>
+									<p>{'• Rewards APY '}</p>
 									<div>
 										<RenderAmount
 											shouldHideTooltip
@@ -246,7 +246,7 @@ function VaultAPR({apr, source}: {apr: TYDaemonVault['apr']; source: string}): R
 					shouldRender={!apr?.type.includes('new')}
 					fallback={'New'}>
 					<RenderAmount
-						value={isZero(monthlyAPR) ? weeklyAPR : monthlyAPR}
+						value={isZero(monthlyAPY) ? weeklyAPY : monthlyAPY}
 						symbol={'percent'}
 						decimals={6}
 					/>
@@ -257,14 +257,14 @@ function VaultAPR({apr, source}: {apr: TYDaemonVault['apr']; source: string}): R
 
 	return (
 		<VaultHeaderLineItem
-			label={'Historical APR'}
+			label={'Historical APY'}
 			legend={
 				<span className={'tooltip'}>
 					<div className={'flex flex-row items-center space-x-2'}>
 						<div>
-							{'Est. APR: '}
+							{'Est. APY: '}
 							<RenderAmount
-								value={isZero(currentAPR) ? netAPR : currentAPR}
+								value={isZero(currentAPY) ? netAPY : currentAPY}
 								symbol={'percent'}
 								decimals={6}
 							/>
@@ -280,16 +280,16 @@ function VaultAPR({apr, source}: {apr: TYDaemonVault['apr']; source: string}): R
 								className={
 									'font-number flex w-full flex-row justify-between text-wrap text-left text-neutral-400 md:w-80 md:text-xs'
 								}>
-								{'Estimated APR for the next period based on current data.'}
+								{'Estimated APY for the next period based on current data.'}
 							</p>
 							<div
 								className={
 									'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap py-1 text-neutral-400 md:text-xs'
 								}>
-								<p>{'• Base APR '}</p>
+								<p>{'• Base APY '}</p>
 								<RenderAmount
 									shouldHideTooltip
-									value={isZero(currentAPR) ? netAPR : currentAPR}
+									value={isZero(currentAPY) ? netAPY : currentAPY}
 									symbol={'percent'}
 									decimals={6}
 								/>
@@ -299,7 +299,7 @@ function VaultAPR({apr, source}: {apr: TYDaemonVault['apr']; source: string}): R
 								className={
 									'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
 								}>
-								<p>{'• Rewards APR '}</p>
+								<p>{'• Rewards APY '}</p>
 								<p>{'N/A'}</p>
 							</div>
 						</div>
@@ -310,7 +310,7 @@ function VaultAPR({apr, source}: {apr: TYDaemonVault['apr']; source: string}): R
 				shouldRender={!apr?.type.includes('new')}
 				fallback={'New'}>
 				<RenderAmount
-					value={isZero(monthlyAPR) ? weeklyAPR : monthlyAPR}
+					value={isZero(monthlyAPY) ? weeklyAPY : monthlyAPY}
 					symbol={'percent'}
 					decimals={6}
 				/>
@@ -766,7 +766,7 @@ export function VaultDetailsHeader({currentVault}: {currentVault: TYDaemonVault}
 				</div>
 
 				<div className={'w-full'}>
-					<VaultAPR
+					<VaultAPY
 						apr={apr}
 						source={currentVault.staking.source}
 					/>

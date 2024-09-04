@@ -8,7 +8,7 @@ import type {ReactElement} from 'react';
 import type {TGraphData} from '@yearn-finance/web-lib/types';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 
-type TAPRLineItemProps = {
+type TAPYLineItemProps = {
 	label: string;
 	value: number | string;
 	apyType: string;
@@ -21,7 +21,7 @@ type TYearnFeesLineItem = {
 	tooltip?: string;
 };
 
-function APRLineItem({value, label, apyType, hasUpperLimit}: TAPRLineItemProps): ReactElement {
+function APYLineItem({value, label, apyType, hasUpperLimit}: TAPYLineItemProps): ReactElement {
 	const safeValue = Number(value) || 0;
 	const isNew = apyType === 'new' && isZero(safeValue);
 
@@ -102,43 +102,43 @@ export function VaultDetailsAbout({
 					/>
 				</div>
 				<div>
-					<b className={'text-neutral-900'}>{'APR'}</b>
+					<b className={'text-neutral-900'}>{'APY'}</b>
 					<div className={'mt-4 grid grid-cols-1 gap-x-12 md:grid-cols-2'}>
 						<div className={'space-y-2'}>
-							<APRLineItem
-								label={'Weekly APR'}
+							<APYLineItem
+								label={'Weekly APY'}
 								apyType={apr.type}
 								value={apr.points.weekAgo}
 							/>
-							<APRLineItem
-								label={'Monthly APR'}
+							<APYLineItem
+								label={'Monthly APY'}
 								apyType={apr.type}
 								value={apr.points.monthAgo}
 							/>
-							<APRLineItem
-								label={'Inception APR'}
+							<APYLineItem
+								label={'Inception APY'}
 								apyType={apr.type}
 								value={apr.points.inception}
 							/>
 						</div>
 						<div className={'mt-2 space-y-0 md:mt-0'}>
-							<APRLineItem
+							<APYLineItem
 								hasUpperLimit
-								label={'Net APR'}
+								label={'Net APY'}
 								apyType={apr.type}
 								value={apr.netAPR + apr.extra.stakingRewardsAPR}
 							/>
 							{apr.extra.stakingRewardsAPR > 0 && (
 								<div className={'pl-2'}>
-									<APRLineItem
+									<APYLineItem
 										hasUpperLimit
-										label={'• Base APR'}
+										label={'• Base APY'}
 										apyType={apr.type}
 										value={apr.netAPR}
 									/>
-									<APRLineItem
+									<APYLineItem
 										hasUpperLimit
-										label={'• Staking Reward APR'}
+										label={'• Staking Reward APY'}
 										apyType={apr.type}
 										value={apr.extra.stakingRewardsAPR}
 									/>

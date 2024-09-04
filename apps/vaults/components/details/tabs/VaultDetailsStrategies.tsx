@@ -2,7 +2,7 @@ import {useMemo, useState} from 'react';
 import {useFetch} from '@builtbymom/web3/hooks/useFetch';
 import {formatAmount, formatPercent, toAddress, toBigInt, toNormalizedValue, truncateHex} from '@builtbymom/web3/utils';
 import {useIsMounted} from '@react-hookz/web';
-import {findLatestApr} from '@vaults/components/details/tabs/findLatestApr';
+import {findLatestAPY} from '@vaults/components/details/tabs/findLatestAPY';
 import {GraphForStrategyReports} from '@vaults/components/graphs/GraphForStrategyReports';
 import {yDaemonReportsSchema} from '@vaults/schemas/reportsSchema';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
@@ -32,7 +32,7 @@ export function VaultDetailsStrategy({currentVault, strategy}: TProps): ReactEle
 		schema: yDaemonReportsSchema
 	});
 
-	const latestApr = useMemo((): number => findLatestApr(reports), [reports]);
+	const latestApr = useMemo((): number => findLatestAPY(reports), [reports]);
 	const {lastReport} = strategy.details || {};
 	const lastReportTime = lastReport ? formatDuration(lastReport * 1000 - new Date().valueOf(), true) : 'N/A';
 
@@ -108,7 +108,7 @@ export function VaultDetailsStrategy({currentVault, strategy}: TProps): ReactEle
 					<div className={'col-span-12 flex size-full flex-col justify-between md:col-span-6'}>
 						<div className={'grid grid-cols-6 gap-6 md:gap-8'}>
 							<div className={'col-span-2 flex flex-col space-y-0 md:space-y-2'}>
-								<p className={'text-xxs text-neutral-600 md:text-xs'}>{'APR'}</p>
+								<p className={'text-xxs text-neutral-600 md:text-xs'}>{'APY'}</p>
 								<b className={'font-number text-xl text-neutral-900'}>{formatPercent(latestApr, 0)}</b>
 							</div>
 
