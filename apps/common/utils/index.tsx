@@ -1,13 +1,3 @@
-import {formatUnits, parseUnits} from 'viem';
-import {formatPercent, toAddress, toBigInt, toNormalizedValue} from '@builtbymom/web3/utils';
-import {
-	LPYCRV_TOKEN_ADDRESS,
-	LPYCRV_V2_TOKEN_ADDRESS,
-	YCRV_CURVE_POOL_ADDRESS,
-	YVBOOST_TOKEN_ADDRESS,
-	YVECRV_TOKEN_ADDRESS
-} from '@yearn-finance/web-lib/utils/constants';
-
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TAddress, TDict} from '@builtbymom/web3/types';
 
