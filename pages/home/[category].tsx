@@ -1,16 +1,32 @@
-import {type ReactElement, useMemo} from 'react';
+import {type ReactElement, useMemo, useState} from 'react';
+import {useMountEffect} from '@react-hookz/web';
 import {AppCard} from '@common/components/AppCard';
 import {FilterBar} from '@common/components/FilterBar';
 import {SortingBar} from '@common/components/SortingBar';
 import {CATEGORIES_DICT} from '@common/utils/constants';
 
 import type {NextRouter} from 'next/router';
+import type {TApp} from '@common/types/category';
 
 export default function Index(props: {router: NextRouter}): ReactElement {
+	const [shuffledApps, set_shuffledApps] = useState<TApp[]>();
 	const currentCatrgory = useMemo(() => {
 		const currentTab = props.router.asPath?.startsWith('/home/') ? props.router.asPath?.split('/')[2] : '/';
 		return CATEGORIES_DICT[currentTab as keyof typeof CATEGORIES_DICT];
 	}, [props.router.asPath]);
+
+	/**********************************************************************************************
+	 ** On component mount we shuffle the array of Integration Apps to avoid any bias.
+	 **********************************************************************************************/
+	useMountEffect(() => {
+		if (currentCatrgory.apps.length < 1) {
+			return;
+		}
+		if (currentCatrgory.categoryName === 'Integrations') {
+			set_shuffledApps(currentCatrgory.apps.toSorted(() => 0.5 - Math.random()));
+		}
+		set_shuffledApps(currentCatrgory.apps);
+	});
 
 	return (
 		<div className={'mt-24 flex w-full justify-start px-4 !pl-8 pb-14 md:mt-10'}>
@@ -37,7 +53,7 @@ export default function Index(props: {router: NextRouter}): ReactElement {
 				</div>
 
 				<div className={'flex grid-rows-1 flex-col gap-4 md:grid md:grid-cols-2 lg:grid-cols-4'}>
-					{currentCatrgory?.apps.map(app => <AppCard app={app} />)}
+					{shuffledApps?.map(app => <AppCard app={app} />)}
 				</div>
 			</div>
 		</div>

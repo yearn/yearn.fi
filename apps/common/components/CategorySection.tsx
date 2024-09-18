@@ -1,23 +1,39 @@
+import {type ReactElement, useState} from 'react';
+import {useMountEffect} from '@react-hookz/web';
 import {IconChevron} from '@common/icons/IconChevron';
 
 import {AppCard} from './AppCard';
 
-import type {ReactElement} from 'react';
 import type {TApp} from '@common/types/category';
 
 type TAppSectionProps = {
 	title: string;
 	onExpandClick: () => void;
 	apps: TApp[];
+	shouldRandomize?: boolean;
 };
 
-export function CategorySection(props: TAppSectionProps): ReactElement {
+export function CategorySection({title, onExpandClick, apps, shouldRandomize = false}: TAppSectionProps): ReactElement {
+	const [shuffledApps, set_shuffledApps] = useState<TApp[]>([]);
+
+	/**********************************************************************************************
+	 ** On component mount we shuffle the array of Partners to avoid any bias.
+	 **********************************************************************************************/
+	useMountEffect(() => {
+		if (apps.length < 1) {
+			return;
+		}
+		if (!shouldRandomize) {
+			return set_shuffledApps(apps);
+		}
+		set_shuffledApps(apps.toSorted(() => 0.5 - Math.random()));
+	});
 	return (
 		<div className={'flex flex-col gap-y-6 overflow-hidden'}>
 			<div className={'flex h-10 w-full items-center justify-between pr-1'}>
-				<div className={'text-lg font-bold text-white'}>{props.title}</div>
+				<div className={'text-lg font-bold text-white'}>{title}</div>
 				<button
-					onClick={props.onExpandClick}
+					onClick={onExpandClick}
 					className={
 						'flex items-center rounded-[4px] px-4 py-2 outline !outline-1 outline-gray-600/50 hover:bg-gray-600/40'
 					}>
@@ -26,7 +42,7 @@ export function CategorySection(props: TAppSectionProps): ReactElement {
 				</button>
 			</div>
 			<div className={'flex grid-rows-1 flex-col gap-4 md:grid md:grid-cols-2 lg:grid-cols-4'}>
-				{props.apps.slice(0, 4).map((app, i) => (
+				{shuffledApps.slice(0, 4).map((app, i) => (
 					<AppCard
 						key={app.name + i}
 						app={app}

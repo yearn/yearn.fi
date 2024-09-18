@@ -99,6 +99,7 @@ export default function Home(): ReactElement {
 						/>
 
 						<CategorySection
+							shouldRandomize={true}
 							title={'Integrations'}
 							onExpandClick={() => router.push('/home/integrations')}
 							apps={INTEGRATIONS_APPS}
