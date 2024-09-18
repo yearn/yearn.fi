@@ -16,7 +16,19 @@ import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TNormalizedBN} from '@builtbymom/web3/types';
 
-function APYSubline({hasPendleArbRewards}: {hasPendleArbRewards: boolean}): ReactElement {
+type TAPYSublineProps = {
+	hasPendleArbRewards: boolean;
+	hasKelpNEngenlayer: boolean;
+};
+
+function APYSubline({hasPendleArbRewards, hasKelpNEngenlayer}: TAPYSublineProps): ReactElement {
+	if (hasKelpNEngenlayer) {
+		return (
+			<small className={cl('whitespace-nowrap text-xs text-neutral-800 self-end -mb-4')}>
+				{`+1x Kelp Miles | +1x EigenLayer Points 🚀`}
+			</small>
+		);
+	}
 	if (hasPendleArbRewards) {
 		return (
 			<small className={cl('whitespace-nowrap text-xs text-neutral-800 self-end -mb-4')}>
@@ -33,6 +45,7 @@ function APYTooltip(props: {
 	boost?: number;
 	range?: [number, number];
 	hasPendleArbRewards?: boolean;
+	hasKelpNEngenlayer?: boolean;
 }): ReactElement {
 	return (
 		<span className={'tooltipLight bottom-full mb-1'}>
@@ -112,6 +125,25 @@ function APYTooltip(props: {
 							<p>{`2 500/week`}</p>
 						</div>
 					) : null}
+
+					{props.hasKelpNEngenlayer ? (
+						<>
+							<div
+								className={
+									'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
+								}>
+								<p>{'• Extra Kelp Miles '}</p>
+								<p>{`1x`}</p>
+							</div>
+							<div
+								className={
+									'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
+								}>
+								<p>{'• Extra EigenLayer Points '}</p>
+								<p>{`1x`}</p>
+							</div>
+						</>
+					) : null}
 				</div>
 			</div>
 		</span>
@@ -125,6 +157,7 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 		currentVault.address === toAddress('0x0F2ae7531A83982F15ff1D26B165E2bF3D7566da') ||
 		currentVault.address === toAddress('0x1Dd930ADD968ff5913C3627dAA1e6e6FCC9dc544') ||
 		currentVault.address === toAddress('0x34a2b066AF16409648eF15d239E656edB8790ca0');
+	const hasKelpNEngenlayer = currentVault.address === toAddress('0xDDa02A2FA0bb0ee45Ba9179a3fd7e65E5D3B2C90');
 
 	/**********************************************************************************************
 	 ** If there is no forwardAPY, we only have the historical APY to display.
@@ -160,10 +193,14 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 						<APYTooltip
 							baseAPY={currentVault.apr.netAPR}
 							hasPendleArbRewards={hasPendleArbRewards}
+							hasKelpNEngenlayer={hasKelpNEngenlayer}
 							rewardsAPY={currentVault.apr.extra.stakingRewardsAPR}
 						/>
 					</span>
-					<APYSubline hasPendleArbRewards={hasPendleArbRewards} />
+					<APYSubline
+						hasPendleArbRewards={hasPendleArbRewards}
+						hasKelpNEngenlayer={hasKelpNEngenlayer}
+					/>
 				</div>
 			);
 		}
@@ -182,7 +219,10 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 						/>
 					</Renderable>
 				</b>
-				<APYSubline hasPendleArbRewards={hasPendleArbRewards} />
+				<APYSubline
+					hasPendleArbRewards={hasPendleArbRewards}
+					hasKelpNEngenlayer={hasKelpNEngenlayer}
+				/>
 			</div>
 		);
 	}
@@ -224,6 +264,7 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 					<APYTooltip
 						baseAPY={unBoostedAPY}
 						hasPendleArbRewards={hasPendleArbRewards}
+						hasKelpNEngenlayer={hasKelpNEngenlayer}
 						boost={currentVault.apr.forwardAPR.composite.boost}
 					/>
 				</div>
@@ -308,10 +349,14 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 						baseAPY={currentVault.apr.forwardAPR.netAPR}
 						rewardsAPY={veYFIRange ? undefined : sumOfRewardsAPY}
 						hasPendleArbRewards={hasPendleArbRewards}
+						hasKelpNEngenlayer={hasKelpNEngenlayer}
 						range={veYFIRange}
 					/>
 				</span>
-				<APYSubline hasPendleArbRewards={hasPendleArbRewards} />
+				<APYSubline
+					hasPendleArbRewards={hasPendleArbRewards}
+					hasKelpNEngenlayer={hasKelpNEngenlayer}
+				/>
 			</div>
 		);
 	}
@@ -338,7 +383,10 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 						/>
 					</Renderable>
 				</b>
-				<APYSubline hasPendleArbRewards={hasPendleArbRewards} />
+				<APYSubline
+					hasPendleArbRewards={hasPendleArbRewards}
+					hasKelpNEngenlayer={hasKelpNEngenlayer}
+				/>
 			</div>
 		);
 	}
@@ -362,7 +410,10 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 					/>
 				</Renderable>
 			</b>
-			<APYSubline hasPendleArbRewards={hasPendleArbRewards} />
+			<APYSubline
+				hasPendleArbRewards={hasPendleArbRewards}
+				hasKelpNEngenlayer={hasKelpNEngenlayer}
+			/>
 		</div>
 	);
 }
