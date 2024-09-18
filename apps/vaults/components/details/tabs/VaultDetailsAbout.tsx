@@ -3,16 +3,19 @@ import {useIsMounted} from '@react-hookz/web';
 import {GraphForVaultEarnings} from '@vaults/components/graphs/GraphForVaultEarnings';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
+import {RenderAmount} from '@common/components/RenderAmount';
 
 import type {ReactElement} from 'react';
 import type {TGraphData} from '@yearn-finance/web-lib/types';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 
-type TAPRLineItemProps = {
+type TAPYLineItemProps = {
+	currentVault: TYDaemonVault;
 	label: string;
 	value: number | string;
 	apyType: string;
 	hasUpperLimit?: boolean;
+	isStaking?: boolean;
 };
 
 type TYearnFeesLineItem = {
@@ -21,9 +24,44 @@ type TYearnFeesLineItem = {
 	tooltip?: string;
 };
 
-function APRLineItem({value, label, apyType, hasUpperLimit}: TAPRLineItemProps): ReactElement {
+function APYLineItem({currentVault, value, label, apyType, isStaking, hasUpperLimit}: TAPYLineItemProps): ReactElement {
+	const isSourceVeYFI = currentVault.staking.source === 'VeYFI';
 	const safeValue = Number(value) || 0;
 	const isNew = apyType === 'new' && isZero(safeValue);
+
+	if (isSourceVeYFI && isStaking) {
+		const sumOfRewardsAPY = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.extra.gammaRewardAPR;
+		const veYFIRange = [
+			currentVault.apr.extra.stakingRewardsAPR / 10 + currentVault.apr.extra.gammaRewardAPR,
+			sumOfRewardsAPY
+		] as [number, number];
+		const estAPYRange = [
+			veYFIRange[0] + currentVault.apr.forwardAPR.netAPR,
+			veYFIRange[1] + currentVault.apr.forwardAPR.netAPR
+		] as [number, number];
+		return (
+			<div className={'flex flex-row items-center justify-between'}>
+				<p className={'text-sm text-neutral-500'}>{label}</p>
+				<p
+					className={'font-number text-sm text-neutral-900'}
+					suppressHydrationWarning>
+					<RenderAmount
+						shouldHideTooltip
+						value={estAPYRange[0]}
+						symbol={'percent'}
+						decimals={6}
+					/>
+					&nbsp;&rarr;&nbsp;
+					<RenderAmount
+						shouldHideTooltip
+						value={estAPYRange[1]}
+						symbol={'percent'}
+						decimals={6}
+					/>
+				</p>
+			</div>
+		);
+	}
 
 	return (
 		<div className={'flex flex-row items-center justify-between'}>
@@ -102,43 +140,54 @@ export function VaultDetailsAbout({
 					/>
 				</div>
 				<div>
-					<b className={'text-neutral-900'}>{'APR'}</b>
+					<b className={'text-neutral-900'}>{'APY'}</b>
 					<div className={'mt-4 grid grid-cols-1 gap-x-12 md:grid-cols-2'}>
 						<div className={'space-y-2'}>
-							<APRLineItem
-								label={'Weekly APR'}
+							<APYLineItem
+								currentVault={currentVault}
+								label={'Weekly APY'}
 								apyType={apr.type}
 								value={apr.points.weekAgo}
 							/>
-							<APRLineItem
-								label={'Monthly APR'}
+							<APYLineItem
+								currentVault={currentVault}
+								label={'Monthly APY'}
 								apyType={apr.type}
 								value={apr.points.monthAgo}
 							/>
-							<APRLineItem
-								label={'Inception APR'}
+							<APYLineItem
+								currentVault={currentVault}
+								label={'Inception APY'}
 								apyType={apr.type}
 								value={apr.points.inception}
 							/>
 						</div>
 						<div className={'mt-2 space-y-0 md:mt-0'}>
-							<APRLineItem
+							<APYLineItem
+								currentVault={currentVault}
 								hasUpperLimit
-								label={'Net APR'}
+								label={'Net APY'}
 								apyType={apr.type}
 								value={apr.netAPR + apr.extra.stakingRewardsAPR}
 							/>
 							{apr.extra.stakingRewardsAPR > 0 && (
 								<div className={'pl-2'}>
-									<APRLineItem
+									<APYLineItem
+										currentVault={currentVault}
 										hasUpperLimit
-										label={'• Base APR'}
+										label={'• Base APY'}
 										apyType={apr.type}
 										value={apr.netAPR}
 									/>
-									<APRLineItem
+									<APYLineItem
+										currentVault={currentVault}
+										isStaking
 										hasUpperLimit
-										label={'• Staking Reward APR'}
+										label={
+											currentVault.staking.source === 'VeYFI'
+												? '• veYFI APR'
+												: '• Staking Reward APY'
+										}
 										apyType={apr.type}
 										value={apr.extra.stakingRewardsAPR}
 									/>

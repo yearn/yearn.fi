@@ -12,15 +12,15 @@ import {getVaultName} from '@common/utils';
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 
-export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+export function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const isEthMainnet = currentVault.chainID === 1;
-	const extraAPR = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.extra.gammaRewardAPR;
+	const extraAPY = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.extra.gammaRewardAPR;
 
 	if (currentVault.apr.forwardAPR.type === '') {
-		const hasZeroAPR =
+		const hasZeroAPY =
 			isZero(currentVault.apr?.netAPR) || Number(Number(currentVault.apr?.netAPR || 0).toFixed(2)) === 0;
-		const boostedAPR = extraAPR + currentVault.apr.netAPR;
-		const hasZeroBoostedAPR = isZero(boostedAPR) || Number(boostedAPR.toFixed(2)) === 0;
+		const boostedAPY = extraAPY + currentVault.apr.netAPR;
+		const hasZeroBoostedAPY = isZero(boostedAPY) || Number(boostedAPY.toFixed(2)) === 0;
 
 		if (currentVault.apr?.extra.stakingRewardsAPR > 0) {
 			return (
@@ -36,8 +36,8 @@ export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): 
 										'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
 									}>
 									<RenderAmount
-										shouldHideTooltip={hasZeroBoostedAPR}
-										value={boostedAPR}
+										shouldHideTooltip={hasZeroBoostedAPY}
+										value={boostedAPY}
 										symbol={'percent'}
 										decimals={6}
 									/>
@@ -54,7 +54,7 @@ export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): 
 										className={
 											'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
 										}>
-										<p>{'• Base APR '}</p>
+										<p>{'• Base APY '}</p>
 										<RenderAmount
 											shouldHideTooltip
 											value={currentVault.apr.netAPR}
@@ -67,10 +67,10 @@ export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): 
 										className={
 											'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
 										}>
-										<p>{'• Rewards APR '}</p>
+										<p>{'• Rewards APY '}</p>
 										<RenderAmount
 											shouldHideTooltip
-											value={extraAPR}
+											value={extraAPY}
 											symbol={'percent'}
 											decimals={6}
 										/>
@@ -90,7 +90,7 @@ export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): 
 						fallback={'NEW'}>
 						<RenderAmount
 							value={currentVault.apr?.netAPR}
-							shouldHideTooltip={hasZeroAPR}
+							shouldHideTooltip={hasZeroAPY}
 							symbol={'percent'}
 							decimals={6}
 						/>
@@ -100,8 +100,8 @@ export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): 
 		);
 	}
 
-	if (isEthMainnet && currentVault.apr.forwardAPR.composite?.boost > 0 && !extraAPR) {
-		const unBoostedAPR = currentVault.apr.forwardAPR.netAPR / currentVault.apr.forwardAPR.composite.boost;
+	if (isEthMainnet && currentVault.apr.forwardAPR.composite?.boost > 0 && !extraAPY) {
+		const unBoostedAPY = currentVault.apr.forwardAPR.netAPR / currentVault.apr.forwardAPR.composite.boost;
 		return (
 			<span className={'tooltip'}>
 				<div className={'flex flex-col text-right'}>
@@ -123,7 +123,7 @@ export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): 
 					<small className={'text-xs text-neutral-900'}>
 						<Renderable
 							shouldRender={
-								isEthMainnet && currentVault.apr.forwardAPR.composite?.boost > 0 && !extraAPR
+								isEthMainnet && currentVault.apr.forwardAPR.composite?.boost > 0 && !extraAPY
 							}>
 							{`BOOST ${formatAmount(currentVault.apr.forwardAPR.composite?.boost, 2, 2)}x`}
 						</Renderable>
@@ -138,10 +138,10 @@ export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): 
 									className={
 										'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
 									}>
-									<p>{'• Base APR '}</p>
+									<p>{'• Base APY '}</p>
 									<RenderAmount
 										shouldHideTooltip
-										value={unBoostedAPR}
+										value={unBoostedAPY}
 										symbol={'percent'}
 										decimals={6}
 									/>
@@ -162,9 +162,9 @@ export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): 
 		);
 	}
 
-	if (extraAPR > 0) {
-		const boostedAPR = extraAPR + currentVault.apr.forwardAPR.netAPR;
-		const hasZeroBoostedAPR = isZero(boostedAPR) || Number(boostedAPR.toFixed(2)) === 0;
+	if (extraAPY > 0) {
+		const boostedAPY = extraAPY + currentVault.apr.forwardAPR.netAPR;
+		const hasZeroBoostedAPY = isZero(boostedAPY) || Number(boostedAPY.toFixed(2)) === 0;
 		return (
 			<div className={'flex flex-col text-right'}>
 				<span className={'tooltip'}>
@@ -178,8 +178,8 @@ export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): 
 									'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
 								}>
 								<RenderAmount
-									shouldHideTooltip={hasZeroBoostedAPR}
-									value={boostedAPR}
+									shouldHideTooltip={hasZeroBoostedAPY}
+									value={boostedAPY}
 									symbol={'percent'}
 									decimals={6}
 								/>
@@ -196,7 +196,7 @@ export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): 
 									className={
 										'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
 									}>
-									<p>{'• Base APR '}</p>
+									<p>{'• Base APY '}</p>
 									<RenderAmount
 										shouldHideTooltip
 										value={currentVault.apr.forwardAPR.netAPR}
@@ -209,10 +209,10 @@ export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): 
 									className={
 										'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
 									}>
-									<p>{'• Rewards APR '}</p>
+									<p>{'• Rewards APY '}</p>
 									<RenderAmount
 										shouldHideTooltip
-										value={extraAPR}
+										value={extraAPY}
 										symbol={'percent'}
 										decimals={6}
 									/>
@@ -225,7 +225,7 @@ export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): 
 		);
 	}
 
-	const hasZeroAPR =
+	const hasZeroAPY =
 		isZero(currentVault.apr?.netAPR) || Number(Number(currentVault.apr?.netAPR || 0).toFixed(2)) === 0;
 	return (
 		<div className={'flex flex-col text-right'}>
@@ -234,7 +234,7 @@ export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): 
 					shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
 					fallback={'NEW'}>
 					<RenderAmount
-						shouldHideTooltip={hasZeroAPR}
+						shouldHideTooltip={hasZeroAPY}
 						value={currentVault.apr.forwardAPR.netAPR}
 						symbol={'percent'}
 						decimals={6}
@@ -245,11 +245,11 @@ export function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): 
 	);
 }
 
-function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const hasZeroAPR =
+function VaultHistoricalAPY({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+	const hasZeroAPY =
 		isZero(currentVault.apr?.netAPR) || Number(Number(currentVault.apr?.netAPR || 0).toFixed(2)) === 0;
-	const monthlyAPR = currentVault.apr.points.monthAgo;
-	const weeklyAPR = currentVault.apr.points.weekAgo;
+	const monthlyAPY = currentVault.apr.points.monthAgo;
+	const weeklyAPY = currentVault.apr.points.weekAgo;
 
 	if (currentVault.apr?.extra.stakingRewardsAPR > 0) {
 		return (
@@ -264,8 +264,8 @@ function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}): Reac
 									'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
 								}>
 								<RenderAmount
-									shouldHideTooltip={hasZeroAPR}
-									value={isZero(monthlyAPR) ? weeklyAPR : monthlyAPR}
+									shouldHideTooltip={hasZeroAPY}
+									value={isZero(monthlyAPY) ? weeklyAPY : monthlyAPY}
 									symbol={'percent'}
 									decimals={6}
 								/>
@@ -282,10 +282,10 @@ function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}): Reac
 									className={
 										'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
 									}>
-									<p>{'• Base APR '}</p>
+									<p>{'• Base APY '}</p>
 									<RenderAmount
 										shouldHideTooltip
-										value={isZero(monthlyAPR) ? weeklyAPR : monthlyAPR}
+										value={isZero(monthlyAPY) ? weeklyAPY : monthlyAPY}
 										symbol={'percent'}
 										decimals={6}
 									/>
@@ -295,7 +295,7 @@ function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}): Reac
 									className={
 										'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
 									}>
-									<p>{'• Rewards APR '}</p>
+									<p>{'• Rewards APY '}</p>
 									<p>{'N/A'}</p>
 								</div>
 							</div>
@@ -313,8 +313,8 @@ function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}): Reac
 					shouldRender={!currentVault.apr?.type.includes('new')}
 					fallback={'NEW'}>
 					<RenderAmount
-						value={isZero(monthlyAPR) ? weeklyAPR : monthlyAPR}
-						shouldHideTooltip={hasZeroAPR}
+						value={isZero(monthlyAPY) ? weeklyAPY : monthlyAPY}
+						shouldHideTooltip={hasZeroAPY}
 						symbol={'percent'}
 						decimals={6}
 					/>
@@ -409,15 +409,15 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 					<div
 						className={'yearn--table-data-section-item md:col-span-2'}
 						datatype={'number'}>
-						<p className={'yearn--table-data-section-item-label !font-aeonik'}>{'Estimated APR'}</p>
-						<VaultForwardAPR currentVault={currentVault} />
+						<p className={'yearn--table-data-section-item-label !font-aeonik'}>{'Estimated APY'}</p>
+						<VaultForwardAPY currentVault={currentVault} />
 					</div>
 
 					<div
 						className={'yearn--table-data-section-item md:col-span-2'}
 						datatype={'number'}>
-						<p className={'yearn--table-data-section-item-label !font-aeonik'}>{'Historical APR'}</p>
-						<VaultHistoricalAPR currentVault={currentVault} />
+						<p className={'yearn--table-data-section-item-label !font-aeonik'}>{'Historical APY'}</p>
+						<VaultHistoricalAPY currentVault={currentVault} />
 					</div>
 
 					<div

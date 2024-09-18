@@ -16,7 +16,19 @@ import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TNormalizedBN} from '@builtbymom/web3/types';
 
-function APRSubline({hasPendleArbRewards}: {hasPendleArbRewards: boolean}): ReactElement {
+type TAPYSublineProps = {
+	hasPendleArbRewards: boolean;
+	hasKelpNEngenlayer: boolean;
+};
+
+function APYSubline({hasPendleArbRewards, hasKelpNEngenlayer}: TAPYSublineProps): ReactElement {
+	if (hasKelpNEngenlayer) {
+		return (
+			<small className={cl('whitespace-nowrap text-xs text-neutral-800 self-end -mb-4')}>
+				{`+1x Kelp Miles | +1x EigenLayer Points 🚀`}
+			</small>
+		);
+	}
 	if (hasPendleArbRewards) {
 		return (
 			<small className={cl('whitespace-nowrap text-xs text-neutral-800 self-end -mb-4')}>
@@ -27,12 +39,13 @@ function APRSubline({hasPendleArbRewards}: {hasPendleArbRewards: boolean}): Reac
 	return <Fragment />;
 }
 
-function APRTooltip(props: {
-	baseAPR: number;
-	rewardsAPR?: number;
+function APYTooltip(props: {
+	baseAPY: number;
+	rewardsAPY?: number;
 	boost?: number;
 	range?: [number, number];
 	hasPendleArbRewards?: boolean;
+	hasKelpNEngenlayer?: boolean;
 }): ReactElement {
 	return (
 		<span className={'tooltipLight bottom-full mb-1'}>
@@ -45,24 +58,24 @@ function APRTooltip(props: {
 						className={
 							'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
 						}>
-						<p>{'• Base APR '}</p>
+						<p>{'• Base APY '}</p>
 						<RenderAmount
 							shouldHideTooltip
-							value={props.baseAPR}
+							value={props.baseAPY}
 							symbol={'percent'}
 							decimals={6}
 						/>
 					</div>
 
-					{props.rewardsAPR ? (
+					{props.rewardsAPY ? (
 						<div
 							className={
 								'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
 							}>
-							<p>{'• Rewards APR '}</p>
+							<p>{'• Rewards APY '}</p>
 							<RenderAmount
 								shouldHideTooltip
-								value={props.rewardsAPR}
+								value={props.rewardsAPY}
 								symbol={'percent'}
 								decimals={6}
 							/>
@@ -84,7 +97,7 @@ function APRTooltip(props: {
 							className={
 								'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
 							}>
-							<p>{'• Rewards APR '}</p>
+							<p>{'• Rewards APY '}</p>
 							<div>
 								<RenderAmount
 									shouldHideTooltip
@@ -112,27 +125,47 @@ function APRTooltip(props: {
 							<p>{`2 500/week`}</p>
 						</div>
 					) : null}
+
+					{props.hasKelpNEngenlayer ? (
+						<>
+							<div
+								className={
+									'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
+								}>
+								<p>{'• Extra Kelp Miles '}</p>
+								<p>{`1x`}</p>
+							</div>
+							<div
+								className={
+									'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
+								}>
+								<p>{'• Extra EigenLayer Points '}</p>
+								<p>{`1x`}</p>
+							</div>
+						</>
+					) : null}
 				</div>
 			</div>
 		</span>
 	);
 }
 
-function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const isEthMainnet = currentVault.chainID === 1;
 	const hasPendleArbRewards =
 		currentVault.address === toAddress('0x044E75fCbF7BD3f8f4577FF317554e9c0037F145') ||
 		currentVault.address === toAddress('0x0F2ae7531A83982F15ff1D26B165E2bF3D7566da') ||
 		currentVault.address === toAddress('0x1Dd930ADD968ff5913C3627dAA1e6e6FCC9dc544') ||
 		currentVault.address === toAddress('0x34a2b066AF16409648eF15d239E656edB8790ca0');
+	const hasKelpNEngenlayer = currentVault.address === toAddress('0xDDa02A2FA0bb0ee45Ba9179a3fd7e65E5D3B2C90');
 
 	/**********************************************************************************************
-	 ** If there is no forwardAPR, we only have the historical APR to display.
+	 ** If there is no forwardAPY, we only have the historical APY to display.
 	 **********************************************************************************************/
 	if (currentVault.apr.forwardAPR.type === '') {
-		const hasZeroAPR = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0;
-		const boostedAPR = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.netAPR;
-		const hasZeroBoostedAPR = isZero(boostedAPR) || Number(boostedAPR.toFixed(2)) === 0;
+		const hasZeroAPY = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0;
+		const boostedAPY = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.netAPR;
+		const hasZeroBoostedAPY = isZero(boostedAPY) || Number(boostedAPY.toFixed(2)) === 0;
 
 		if (currentVault.apr?.extra.stakingRewardsAPR > 0) {
 			return (
@@ -149,21 +182,25 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 										'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
 									}>
 									<RenderAmount
-										shouldHideTooltip={hasZeroBoostedAPR}
-										value={boostedAPR}
+										shouldHideTooltip={hasZeroBoostedAPY}
+										value={boostedAPY}
 										symbol={'percent'}
 										decimals={6}
 									/>
 								</span>
 							</Renderable>
 						</b>
-						<APRTooltip
-							baseAPR={currentVault.apr.netAPR}
+						<APYTooltip
+							baseAPY={currentVault.apr.netAPR}
 							hasPendleArbRewards={hasPendleArbRewards}
-							rewardsAPR={currentVault.apr.extra.stakingRewardsAPR}
+							hasKelpNEngenlayer={hasKelpNEngenlayer}
+							rewardsAPY={currentVault.apr.extra.stakingRewardsAPR}
 						/>
 					</span>
-					<APRSubline hasPendleArbRewards={hasPendleArbRewards} />
+					<APYSubline
+						hasPendleArbRewards={hasPendleArbRewards}
+						hasKelpNEngenlayer={hasKelpNEngenlayer}
+					/>
 				</div>
 			);
 		}
@@ -176,23 +213,26 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 						fallback={'NEW'}>
 						<RenderAmount
 							value={currentVault.apr?.netAPR}
-							shouldHideTooltip={hasZeroAPR}
+							shouldHideTooltip={hasZeroAPY}
 							symbol={'percent'}
 							decimals={6}
 						/>
 					</Renderable>
 				</b>
-				<APRSubline hasPendleArbRewards={hasPendleArbRewards} />
+				<APYSubline
+					hasPendleArbRewards={hasPendleArbRewards}
+					hasKelpNEngenlayer={hasKelpNEngenlayer}
+				/>
 			</div>
 		);
 	}
 
 	/**********************************************************************************************
-	 ** If we are on eth mainnet and the vault has a boost, we display the APR with the boost.
+	 ** If we are on eth mainnet and the vault has a boost, we display the APY with the boost.
 	 ** This is mostly valid for Curve vaults.
 	 **********************************************************************************************/
 	if (isEthMainnet && currentVault.apr.forwardAPR.composite?.boost > 0 && !currentVault.apr.extra.stakingRewardsAPR) {
-		const unBoostedAPR = currentVault.apr.forwardAPR.netAPR / currentVault.apr.forwardAPR.composite.boost;
+		const unBoostedAPY = currentVault.apr.forwardAPR.netAPR / currentVault.apr.forwardAPR.composite.boost;
 		return (
 			<span className={'tooltip'}>
 				<div className={'flex flex-col items-end md:text-right'}>
@@ -221,9 +261,10 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 							{`BOOST ${formatAmount(currentVault.apr.forwardAPR.composite?.boost, 2, 2)}x`}
 						</Renderable>
 					</small>
-					<APRTooltip
-						baseAPR={unBoostedAPR}
+					<APYTooltip
+						baseAPY={unBoostedAPY}
 						hasPendleArbRewards={hasPendleArbRewards}
+						hasKelpNEngenlayer={hasKelpNEngenlayer}
 						boost={currentVault.apr.forwardAPR.composite.boost}
 					/>
 				</div>
@@ -232,30 +273,30 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 	}
 
 	/**********************************************************************************************
-	 ** Display the APR including the rewards APR if the rewards APR is greater than 0.
+	 ** Display the APY including the rewards APY if the rewards APY is greater than 0.
 	 **********************************************************************************************/
-	const sumOfRewardsAPR = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.extra.gammaRewardAPR;
+	const sumOfRewardsAPY = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.extra.gammaRewardAPR;
 	const isSourceVeYFI = currentVault.staking.source === 'VeYFI';
-	if (sumOfRewardsAPR > 0) {
+	if (sumOfRewardsAPY > 0) {
 		let veYFIRange: [number, number] | undefined = undefined;
-		let estAPRRange: [number, number] | undefined = undefined;
-		let boostedAPR: number;
-		let hasZeroBoostedAPR: boolean;
+		let estAPYRange: [number, number] | undefined = undefined;
+		let boostedAPY: number;
+		let hasZeroBoostedAPY: boolean;
 
 		if (isSourceVeYFI) {
 			veYFIRange = [
 				currentVault.apr.extra.stakingRewardsAPR / 10 + currentVault.apr.extra.gammaRewardAPR,
-				sumOfRewardsAPR
+				sumOfRewardsAPY
 			] as [number, number];
-			boostedAPR = veYFIRange[0] + currentVault.apr.forwardAPR.netAPR;
-			hasZeroBoostedAPR = isZero(boostedAPR) || Number(boostedAPR.toFixed(2)) === 0;
-			estAPRRange = [
+			boostedAPY = veYFIRange[0] + currentVault.apr.forwardAPR.netAPR;
+			hasZeroBoostedAPY = isZero(boostedAPY) || Number(boostedAPY.toFixed(2)) === 0;
+			estAPYRange = [
 				veYFIRange[0] + currentVault.apr.forwardAPR.netAPR,
 				veYFIRange[1] + currentVault.apr.forwardAPR.netAPR
 			] as [number, number];
 		} else {
-			boostedAPR = sumOfRewardsAPR + currentVault.apr.forwardAPR.netAPR;
-			hasZeroBoostedAPR = isZero(boostedAPR) || Number(boostedAPR.toFixed(2)) === 0;
+			boostedAPY = sumOfRewardsAPY + currentVault.apr.forwardAPR.netAPR;
+			hasZeroBoostedAPY = isZero(boostedAPY) || Number(boostedAPY.toFixed(2)) === 0;
 		}
 
 		return (
@@ -272,31 +313,31 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 									'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
 								}>
 								{/* <RenderAmount
-									shouldHideTooltip={hasZeroBoostedAPR}
-									value={boostedAPR}
+									shouldHideTooltip={hasZeroBoostedAPY}
+									value={boostedAPY}
 									symbol={'percent'}
 									decimals={6}
 								/> */}
-								{estAPRRange ? (
+								{estAPYRange ? (
 									<Fragment>
 										<RenderAmount
 											shouldHideTooltip
-											value={estAPRRange[0]}
+											value={estAPYRange[0]}
 											symbol={'percent'}
 											decimals={6}
 										/>
 										&nbsp;&rarr;&nbsp;
 										<RenderAmount
 											shouldHideTooltip
-											value={estAPRRange[1]}
+											value={estAPYRange[1]}
 											symbol={'percent'}
 											decimals={6}
 										/>
 									</Fragment>
 								) : (
 									<RenderAmount
-										shouldHideTooltip={hasZeroBoostedAPR}
-										value={boostedAPR}
+										shouldHideTooltip={hasZeroBoostedAPY}
+										value={boostedAPY}
 										symbol={'percent'}
 										decimals={6}
 									/>
@@ -304,24 +345,28 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 							</span>
 						</Renderable>
 					</b>
-					<APRTooltip
-						baseAPR={currentVault.apr.forwardAPR.netAPR}
-						rewardsAPR={veYFIRange ? undefined : sumOfRewardsAPR}
+					<APYTooltip
+						baseAPY={currentVault.apr.forwardAPR.netAPR}
+						rewardsAPY={veYFIRange ? undefined : sumOfRewardsAPY}
 						hasPendleArbRewards={hasPendleArbRewards}
+						hasKelpNEngenlayer={hasKelpNEngenlayer}
 						range={veYFIRange}
 					/>
 				</span>
-				<APRSubline hasPendleArbRewards={hasPendleArbRewards} />
+				<APYSubline
+					hasPendleArbRewards={hasPendleArbRewards}
+					hasKelpNEngenlayer={hasKelpNEngenlayer}
+				/>
 			</div>
 		);
 	}
 
 	/**********************************************************************************************
-	 ** Display the current spot APR, retrieved from the V3Oracle, only if the current APR is
+	 ** Display the current spot APY, retrieved from the V3Oracle, only if the current APY is
 	 ** greater than 0.
 	 **********************************************************************************************/
-	const hasCurrentAPR = !isZero(currentVault?.apr.forwardAPR.netAPR);
-	if (hasCurrentAPR) {
+	const hasCurrentAPY = !isZero(currentVault?.apr.forwardAPR.netAPR);
+	if (hasCurrentAPY) {
 		return (
 			<div className={'flex flex-col items-end md:text-right'}>
 				<b className={'yearn--table-data-section-item-value'}>
@@ -338,12 +383,15 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 						/>
 					</Renderable>
 				</b>
-				<APRSubline hasPendleArbRewards={hasPendleArbRewards} />
+				<APYSubline
+					hasPendleArbRewards={hasPendleArbRewards}
+					hasKelpNEngenlayer={hasKelpNEngenlayer}
+				/>
 			</div>
 		);
 	}
 
-	const hasZeroAPR = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0;
+	const hasZeroAPY = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0;
 	return (
 		<div className={'flex flex-col items-end md:text-right'}>
 			<b className={'yearn--table-data-section-item-value'}>
@@ -355,22 +403,25 @@ function VaultForwardAPR({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 					fallback={'NEW'}>
 					{currentVault?.info?.isBoosted ? '⚡️ ' : ''}
 					<RenderAmount
-						shouldHideTooltip={hasZeroAPR}
+						shouldHideTooltip={hasZeroAPY}
 						value={currentVault.apr.netAPR}
 						symbol={'percent'}
 						decimals={6}
 					/>
 				</Renderable>
 			</b>
-			<APRSubline hasPendleArbRewards={hasPendleArbRewards} />
+			<APYSubline
+				hasPendleArbRewards={hasPendleArbRewards}
+				hasKelpNEngenlayer={hasKelpNEngenlayer}
+			/>
 		</div>
 	);
 }
 
-function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const hasZeroAPR = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0;
-	const monthlyAPR = currentVault.apr.points.monthAgo;
-	const weeklyAPR = currentVault.apr.points.weekAgo;
+function VaultHistoricalAPY({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+	const hasZeroAPY = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0;
+	const monthlyAPY = currentVault.apr.points.monthAgo;
+	const weeklyAPY = currentVault.apr.points.weekAgo;
 
 	if (currentVault.apr?.extra.stakingRewardsAPR > 0) {
 		return (
@@ -385,8 +436,8 @@ function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}): Reac
 									'underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
 								}>
 								<RenderAmount
-									shouldHideTooltip={hasZeroAPR}
-									value={isZero(monthlyAPR) ? weeklyAPR : monthlyAPR}
+									shouldHideTooltip={hasZeroAPY}
+									value={isZero(monthlyAPY) ? weeklyAPY : monthlyAPY}
 									symbol={'percent'}
 									decimals={6}
 								/>
@@ -403,10 +454,10 @@ function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}): Reac
 									className={
 										'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
 									}>
-									<p>{'• Base APR '}</p>
+									<p>{'• Base APY '}</p>
 									<RenderAmount
 										shouldHideTooltip
-										value={isZero(monthlyAPR) ? weeklyAPR : monthlyAPR}
+										value={isZero(monthlyAPY) ? weeklyAPY : monthlyAPY}
 										symbol={'percent'}
 										decimals={6}
 									/>
@@ -416,7 +467,7 @@ function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}): Reac
 									className={
 										'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
 									}>
-									<p>{'• Rewards APR '}</p>
+									<p>{'• Rewards APY '}</p>
 									<p>{'N/A'}</p>
 								</div>
 							</div>
@@ -434,8 +485,8 @@ function VaultHistoricalAPR({currentVault}: {currentVault: TYDaemonVault}): Reac
 					shouldRender={!currentVault.apr?.type.includes('new')}
 					fallback={'NEW'}>
 					<RenderAmount
-						value={isZero(monthlyAPR) ? weeklyAPR : monthlyAPR}
-						shouldHideTooltip={hasZeroAPR}
+						value={isZero(monthlyAPY) ? weeklyAPY : monthlyAPY}
+						shouldHideTooltip={hasZeroAPY}
 						symbol={'percent'}
 						decimals={6}
 					/>
@@ -575,15 +626,15 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 					<div
 						className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'}
 						datatype={'number'}>
-						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Estimated APR'}</p>
-						<VaultForwardAPR currentVault={currentVault} />
+						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Estimated APY'}</p>
+						<VaultForwardAPY currentVault={currentVault} />
 					</div>
 
 					<div
 						className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'}
 						datatype={'number'}>
-						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Historical APR'}</p>
-						<VaultHistoricalAPR currentVault={currentVault} />
+						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Historical APY'}</p>
+						<VaultHistoricalAPY currentVault={currentVault} />
 					</div>
 
 					<div
