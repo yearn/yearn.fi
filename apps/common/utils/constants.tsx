@@ -277,12 +277,12 @@ export const LANDING_SIDEBAR_LINKS = [
 
 export const MENU_TABS = [
 	{title: 'Home', route: '/'},
-	{title: 'About', route: 'about'},
 	{title: 'Frontends', route: 'frontends'},
 	{title: 'Lockers', route: 'lockers'},
 	{title: 'Pools', route: 'pools'},
 	{title: 'Yearn X Projects', route: 'yearn-x'},
-	{title: 'Integrations', route: 'integrations'}
+	{title: 'Integrations', route: 'integrations'},
+	{title: 'About', route: 'about'}
 ];
 
 export const CATEGORY_PAGE_FILTERS = [
