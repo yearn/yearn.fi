@@ -47,8 +47,8 @@ export default function Home(): ReactElement {
 					</div>
 
 					<div>
-						<div className={'flex w-full justify-between'}>
-							<h1 className={'mb-6 text-lg text-white'}>{'Featured Apps'}</h1>
+						<div className={'mb-6 flex w-full justify-between'}>
+							<div />
 							<div className={'hidden gap-3 md:flex'}>
 								<button
 									onClick={scrollBack}
