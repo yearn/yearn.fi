@@ -10,7 +10,7 @@ export function PromoPoster(): ReactElement {
 			className={
 				'border-1 relative flex flex-col rounded-lg border border-gray-600/50 bg-gradient-to-b from-gray-900 to-[#1A1A1A] p-4 hover:from-[#1A1A1A] hover:to-[#262626]'
 			}>
-			<div className={'mb-4 flex w-full justify-start text-3xl font-bold uppercase leading-[40px] text-white'}>
+			<div className={'mb-4 flex w-full justify-start text-3xl font-bold uppercase text-white'}>
 				{'earn with'}
 				<br /> {'yearn'}
 			</div>
@@ -20,7 +20,7 @@ export function PromoPoster(): ReactElement {
 			</div>
 
 			<div className={'max-w-[610px]'}>
-				<p className={'text-base text-gray-400'}>
+				<p className={'text-sm text-gray-400'}>
 					{
 						'Yearn is a decentralized suite of products helping individuals, DAOs, and other protocols earn yield on their digital assets.'
 					}

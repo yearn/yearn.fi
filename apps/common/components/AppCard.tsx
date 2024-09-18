@@ -18,7 +18,7 @@ export function AppCard(props: TAppCardProps): ReactElement {
 				className={
 					'bg-grey-900 group relative hidden rounded-lg border border-gray-700/50 p-6 hover:bg-gray-600/40 md:block'
 				}>
-				<div className={'mb-10'}>
+				<div className={'mb-4'}>
 					<div
 						className={
 							'absolute right-2 top-2 hidden size-10 items-center justify-center rounded-lg bg-gray-900 group-hover:flex'
@@ -32,13 +32,13 @@ export function AppCard(props: TAppCardProps): ReactElement {
 							unoptimized
 							width={240}
 							height={240}
-							className={'size-[80px] rounded-full object-contain'}
+							className={'size-[80px] rounded-full border border-[#29292980] object-contain'}
 						/>
 					) : (
 						<div className={'size-[80px] rounded-full bg-fallback'} />
 					)}
 				</div>
-				<div className={'mb-2 text-lg font-bold text-white'}>{props.app.name}</div>
+				<div className={'mb-1 text-lg font-bold text-white'}>{props.app.name}</div>
 
 				<p className={'text-sm text-gray-400'}>{props.app.description}</p>
 			</Link>
@@ -47,7 +47,7 @@ export function AppCard(props: TAppCardProps): ReactElement {
 				className={'flex items-center md:hidden'}>
 				<div>
 					{props.app.logoURI ? (
-						<div className={'size-16 rounded-2xl md:rounded-[32px]'}>
+						<div className={'size-16 rounded-2xl border border-[#29292980] md:rounded-[32px]'}>
 							<Image
 								src={props.app.logoURI}
 								alt={props.app.name}

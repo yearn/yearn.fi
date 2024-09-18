@@ -41,7 +41,7 @@ export const FRONTENDS_APPS: TApp[] = [
 	},
 	{
 		name: 'Superform',
-		description: 'Earn Yield & Distribute Vaults',
+		description: 'Earn Yield & Distribute Vaults.',
 		logoURI: 'https://www.superform.xyz/icon.png',
 		appURI: 'https://www.superform.xyz'
 	}
@@ -56,13 +56,13 @@ export const LOCKERS_APPS: TApp[] = [
 	},
 	{
 		name: 'yCRV',
-		description: 'Put your yCRV to work',
+		description: 'Put your yCRV to work.',
 		logoURI: 'https://ycrv.yearn.fi/ycrv-logo.svg',
 		appURI: 'https://ycrv.yearn.fi'
 	},
 	{
 		name: 'yPrisma',
-		description: 'Put your yPRISMA to work',
+		description: 'Put your yPRISMA to work.',
 		logoURI: 'https://assets.smold.app/api/token/1/0xe3668873d944e4a949da05fc8bde419eff543882/logo-128.png',
 		appURI: 'https://yprisma.yearn.fi'
 	},
@@ -141,7 +141,7 @@ export const INTEGRATIONS_APPS: TApp[] = [
 		name: 'Sturdy',
 		description:
 			'Isolated lending with shared liquidity. Permissionlessly create a liquid money market for any asset.',
-		logoURI: 'https://v2.sturdy.finance/apple-icon.png',
+		logoURI: 'https://avatars.githubusercontent.com/u/90377574?s=200&v=4',
 		appURI: 'https://v2.sturdy.finance'
 	},
 	{
@@ -157,55 +157,55 @@ export const FEATURED_APPS = [
 	{
 		name: 'Juiced',
 		description: 'Discover yields juiced with extra token rewards.',
-		logoURI: '/juiced-featured.png',
+		logoURI: '/juiced-featured.jpg',
 		appURI: 'https://juiced.app/'
 	},
 	{
 		name: 'Gimme',
 		description: 'DeFi yields, designed for everyone.',
-		logoURI: '/gimme-featured.png',
+		logoURI: '/gimme-featured.jpg',
 		appURI: 'https://gimme.mom/'
 	},
 	{
 		name: 'Vaults',
 		description: 'The full Yearn experience with all Vaults, for sophisticated users.',
-		logoURI: '/v3-featured.png',
+		logoURI: '/v3-featured.jpg',
 		appURI: '/v3'
 	},
 	{
 		name: 'Juiced',
 		description: 'Discover yields juiced with extra token rewards.',
-		logoURI: '/juiced-featured.png',
+		logoURI: '/juiced-featured.jpg',
 		appURI: 'https://juiced.app/'
 	},
 	{
 		name: 'Gimme',
 		description: 'DeFi yields, designed for everyone.',
-		logoURI: '/gimme-featured.png',
+		logoURI: '/gimme-featured.jpg',
 		appURI: 'https://gimme.mom/'
 	},
 	{
 		name: 'Vaults',
 		description: 'The full Yearn experience with all Vaults, for sophisticated users.',
-		logoURI: '/v3-featured.png',
+		logoURI: '/v3-featured.jpg',
 		appURI: '/v3'
 	},
 	{
 		name: 'Juiced',
 		description: 'Discover yields juiced with extra token rewards.',
-		logoURI: '/juiced-featured.png',
+		logoURI: '/juiced-featured.jpg',
 		appURI: 'https://juiced.app/'
 	},
 	{
 		name: 'Gimme',
 		description: 'DeFi yields, designed for everyone.',
-		logoURI: '/gimme-featured.png',
+		logoURI: '/gimme-featured.jpg',
 		appURI: 'https://gimme.mom/'
 	},
 	{
 		name: 'Vaults',
 		description: 'The full Yearn experience with all Vaults, for sophisticated users.',
-		logoURI: '/v3-featured.png',
+		logoURI: '/v3-featured.jpg',
 		appURI: '/v3'
 	}
 ];
