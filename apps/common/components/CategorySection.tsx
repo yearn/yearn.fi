@@ -10,10 +10,9 @@ type TAppSectionProps = {
 	title: string;
 	onExpandClick: () => void;
 	apps: TApp[];
-	shouldRandomize?: boolean;
 };
 
-export function CategorySection({title, onExpandClick, apps, shouldRandomize = false}: TAppSectionProps): ReactElement {
+export function CategorySection({title, onExpandClick, apps}: TAppSectionProps): ReactElement {
 	const [shuffledApps, set_shuffledApps] = useState<TApp[]>([]);
 
 	/**********************************************************************************************
@@ -22,9 +21,6 @@ export function CategorySection({title, onExpandClick, apps, shouldRandomize = f
 	useMountEffect(() => {
 		if (apps.length < 1) {
 			return;
-		}
-		if (!shouldRandomize) {
-			return set_shuffledApps(apps);
 		}
 		set_shuffledApps(apps.toSorted(() => 0.5 - Math.random()));
 	});

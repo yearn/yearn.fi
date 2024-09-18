@@ -16,16 +16,13 @@ export default function Index(props: {router: NextRouter}): ReactElement {
 	}, [props.router.asPath]);
 
 	/**********************************************************************************************
-	 ** On component mount we shuffle the array of Integration Apps to avoid any bias.
+	 ** On component mount we shuffle the array of Apps to avoid any bias.
 	 **********************************************************************************************/
 	useMountEffect(() => {
 		if (currentCatrgory.apps.length < 1) {
 			return;
 		}
-		if (currentCatrgory.categoryName === 'Integrations') {
-			set_shuffledApps(currentCatrgory.apps.toSorted(() => 0.5 - Math.random()));
-		}
-		set_shuffledApps(currentCatrgory.apps);
+		set_shuffledApps(currentCatrgory.apps.toSorted(() => 0.5 - Math.random()));
 	});
 
 	return (
