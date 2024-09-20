@@ -76,17 +76,7 @@ export function BoostMessage(props: {
 		!props.hasStakingRewardsLive &&
 		stakingRewardSource !== 'VeYFI'
 	) {
-		return (
-			<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
-				<div className={'w-full rounded-lg bg-[#F8A908] p-2 md:px-6 md:py-4'}>
-					<b className={'text-base text-white'}>
-						{
-							"This Vault is no longer reciving any extra rewards. But don't worry, you are still earning the normal yield!"
-						}
-					</b>
-				</div>
-			</div>
-		);
+		return <Fragment />;
 	}
 
 	if (props.currentTab === 0 && hasStakingRewards && stakingRewardSource === 'OP Boost') {
