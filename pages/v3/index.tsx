@@ -335,7 +335,7 @@ function ListOfVaults(): ReactElement {
 				<VaultsV3ListHead
 					sortBy={sortBy}
 					sortDirection={sortDirection}
-					onSort={(newSortBy: string, newSortDirection: string): void => {
+					onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {
 						if (newSortDirection === '') {
 							onChangeSortBy('featuringScore');
 							onChangeSortDirection('');

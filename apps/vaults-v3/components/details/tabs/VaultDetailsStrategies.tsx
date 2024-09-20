@@ -85,7 +85,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 						<VaultsV3ListHead
 							sortBy={sortBy}
 							sortDirection={sortDirection}
-							onSort={(newSortBy: string, newSortDirection: string): void => {
+							onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {
 								onChangeSortBy(newSortBy as TPossibleSortBy);
 								onChangeSortDirection(newSortDirection as TSortDirection);
 							}}
