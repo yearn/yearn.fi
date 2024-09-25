@@ -9,7 +9,15 @@ import {numberSort, stringSort} from '@common/utils/sort';
 import type {TYDaemonVaults} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TSortDirection} from '@builtbymom/web3/types';
 
-export type TPossibleSortBy = 'APY' | 'estAPY' | 'tvl' | 'name' | 'deposited' | 'available' | 'featuringScore' | 'score';
+export type TPossibleSortBy =
+	| 'APY'
+	| 'estAPY'
+	| 'tvl'
+	| 'name'
+	| 'deposited'
+	| 'available'
+	| 'featuringScore'
+	| 'score';
 
 export function useSortVaults(
 	vaultList: TYDaemonVaults,
@@ -17,7 +25,6 @@ export function useSortVaults(
 	sortDirection: TSortDirection
 ): TYDaemonVaults {
 	const {getBalance, getPrice} = useYearn();
-
 
 	const sortedByName = useCallback((): TYDaemonVaults => {
 		if (sortBy !== 'estAPY') {
@@ -32,43 +39,42 @@ export function useSortVaults(
 		);
 	}, [sortBy, sortDirection, vaultList]);
 
-  const sortedByForwardAPR = useCallback((): TYDaemonVaults => {
+	const sortedByForwardAPY = useCallback((): TYDaemonVaults => {
 		if (sortBy !== 'estAPY') {
 			return vaultList;
 		}
 		return vaultList.sort((a, b): number => {
-				let aAPY = 0;
-				if (a.apr.forwardAPR.type === '') {
-					aAPY = a.apr.extra.stakingRewardsAPR + a.apr.netAPR;
-				} else if (a.chainID === 1 && a.apr.forwardAPR.composite.boost > 0 && !a.apr.extra.stakingRewardsAPR) {
+			let aAPY = 0;
+			if (a.apr.forwardAPR.type === '') {
+				aAPY = a.apr.extra.stakingRewardsAPR + a.apr.netAPR;
+			} else if (a.chainID === 1 && a.apr.forwardAPR.composite.boost > 0 && !a.apr.extra.stakingRewardsAPR) {
+				aAPY = a.apr.forwardAPR.netAPR;
+			} else {
+				const sumOfRewardsAPY = a.apr.extra.stakingRewardsAPR + a.apr.extra.gammaRewardAPR;
+				const hasCurrentAPY = !isZero(a?.apr.forwardAPR.netAPR);
+				if (sumOfRewardsAPY > 0) {
+					aAPY = sumOfRewardsAPY + a.apr.forwardAPR.netAPR;
+				} else if (hasCurrentAPY) {
 					aAPY = a.apr.forwardAPR.netAPR;
 				} else {
-					const sumOfRewardsAPY = a.apr.extra.stakingRewardsAPR + a.apr.extra.gammaRewardAPR;
-					const hasCurrentAPY = !isZero(a?.apr.forwardAPR.netAPR);
-					if (sumOfRewardsAPY > 0) {
-						aAPY = sumOfRewardsAPY + a.apr.forwardAPR.netAPR;
-					} else if (hasCurrentAPY) {
-						aAPY = a.apr.forwardAPR.netAPR;
-					} else {
-						aAPY = a.apr.netAPR;
-					}
+					aAPY = a.apr.netAPR;
 				}
+			}
 
-				let bAPY = 0;
-				if (b.apr.forwardAPR.type === '') {
-					bAPY = b.apr.extra.stakingRewardsAPR + b.apr.netAPR;
-				} else if (b.chainID === 1 && b.apr.forwardAPR.composite.boost > 0 && !b.apr.extra.stakingRewardsAPR) {
+			let bAPY = 0;
+			if (b.apr.forwardAPR.type === '') {
+				bAPY = b.apr.extra.stakingRewardsAPR + b.apr.netAPR;
+			} else if (b.chainID === 1 && b.apr.forwardAPR.composite.boost > 0 && !b.apr.extra.stakingRewardsAPR) {
+				bAPY = b.apr.forwardAPR.netAPR;
+			} else {
+				const sumOfRewardsAPY = b.apr.extra.stakingRewardsAPR + b.apr.extra.gammaRewardAPR;
+				const hasCurrentAPY = !isZero(b?.apr.forwardAPR.netAPR);
+				if (sumOfRewardsAPY > 0) {
+					bAPY = sumOfRewardsAPY + b.apr.forwardAPR.netAPR;
+				} else if (hasCurrentAPY) {
 					bAPY = b.apr.forwardAPR.netAPR;
 				} else {
-					const sumOfRewardsAPY = b.apr.extra.stakingRewardsAPR + b.apr.extra.gammaRewardAPR;
-					const hasCurrentAPY = !isZero(b?.apr.forwardAPR.netAPR);
-					if (sumOfRewardsAPY > 0) {
-						bAPY = sumOfRewardsAPY + b.apr.forwardAPR.netAPR;
-					} else if (hasCurrentAPY) {
-						bAPY = b.apr.forwardAPR.netAPR;
-					} else {
-						bAPY = b.apr.netAPR;
-					}
+					bAPY = b.apr.netAPR;
 				}
 			}
 
@@ -80,16 +86,16 @@ export function useSortVaults(
 		});
 	}, [sortDirection, vaultList, sortBy]);
 
-  const sortedByAPR = useCallback((): TYDaemonVaults => {
+	const sortedByAPY = useCallback((): TYDaemonVaults => {
 		if (sortBy !== 'APY') {
 			return vaultList;
 		}
 		return vaultList.sort((a, b): number =>
-				numberSort({
-					a: a.apr?.netAPR || 0,
-					b: b.apr?.netAPR || 0,
-					sortDirection
-				})
+			numberSort({
+				a: a.apr?.netAPR || 0,
+				b: b.apr?.netAPR || 0,
+				sortDirection
+			})
 		);
 	}, [sortDirection, vaultList, sortBy]);
 
