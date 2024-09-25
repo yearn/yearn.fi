@@ -37,6 +37,19 @@ export function VaultRiskInfo({currentVault}: {currentVault: TYDaemonVault}): Re
 						</div>
 					</div>
 
+					<div
+						className={cl(
+							'grid w-full grid-cols-12 items-center mb-6',
+							currentVault.info.riskScoreComment ? '' : 'hidden'
+						)}>
+						<div className={'col-span-10'}>
+							<p>{'Comment'}</p>
+							<small className={'whitespace-break-spaces text-xs text-neutral-900/40'}>
+								{currentVault.info.riskScoreComment}
+							</small>
+						</div>
+					</div>
+
 					<div className={cl('grid w-full grid-cols-12 items-center gap-6', hasRiskScore ? '' : 'hidden')}>
 						<div className={'col-span-10'}>
 							<p>{'Review'}</p>
