@@ -335,7 +335,7 @@ function ListOfVaults(): ReactElement {
 				<VaultsV3ListHead
 					sortBy={sortBy}
 					sortDirection={sortDirection}
-					onSort={(newSortBy: string, newSortDirection: string): void => {
+					onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {
 						if (newSortDirection === '') {
 							onChangeSortBy('featuringScore');
 							onChangeSortDirection('');
@@ -352,8 +352,8 @@ function ListOfVaults(): ReactElement {
 							sortable: true,
 							className: 'col-span-1 whitespace-nowrap'
 						},
-						{label: 'Est. APR', value: 'estAPR', sortable: true, className: 'col-span-2'},
-						{label: 'Hist. APR', value: 'apr', sortable: true, className: 'col-span-2'},
+						{label: 'Est. APY', value: 'estAPY', sortable: true, className: 'col-span-2'},
+						{label: 'Hist. APY', value: 'APY', sortable: true, className: 'col-span-2'},
 						{label: 'Available', value: 'available', sortable: true, className: 'col-span-2'},
 						{label: 'Holdings', value: 'deposited', sortable: true, className: 'col-span-2'},
 						{label: 'Deposits', value: 'tvl', sortable: true, className: 'col-span-2'}

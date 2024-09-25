@@ -13,11 +13,10 @@
     "prettier-format": "prettier --config .prettierrc \"./**/**/*.{json,js,ts,tsx,scss,md}\" --write",
     "tslint": "tsc -p tsconfig.json --noEmit",
     "bump": "bump",
-    "prepare": "husky install",
     "test": "vitest run"
   },
   "dependencies": {
-    "@builtbymom/web3": "0.0.157",
+    "@builtbymom/web3": "0.0.202",
     "@cowprotocol/cow-sdk": "2.1.0",
     "@headlessui/react": "^2.0.4",
     "@rainbow-me/rainbowkit": "2.1.3",

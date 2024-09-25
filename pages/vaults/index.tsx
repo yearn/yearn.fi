@@ -180,7 +180,7 @@ function ListOfVaults(): ReactElement {
 
 	const {currentItems, paginationProps} = usePagination<TYDaemonVault>({
 		data: filteredByChains,
-		itemsPerPage: 50 || sortedVaultsToDisplay.length
+		itemsPerPage: sortedVaultsToDisplay.length || 50
 	});
 
 	return (
@@ -209,15 +209,15 @@ function ListOfVaults(): ReactElement {
 				dataClassName={'grid-cols-10'}
 				sortBy={sortBy}
 				sortDirection={sortDirection}
-				onSort={(newSortBy: string, newSortDirection: string): void => {
+				onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {
 					onChangeSortBy(newSortBy as TPossibleSortBy);
 					onChangeSortDirection(newSortDirection as TSortDirection);
 				}}
 				items={[
 					{label: <IconChain />, value: 'chain', sortable: false, className: 'col-span-1'},
 					{label: 'Token', value: 'name', sortable: true},
-					{label: 'Est. APR', value: 'estAPR', sortable: true, className: 'col-span-2'},
-					{label: 'Hist. APR', value: 'apr', sortable: true, className: 'col-span-2'},
+					{label: 'Est. APY', value: 'estAPY', sortable: true, className: 'col-span-2'},
+					{label: 'Hist. APY', value: 'APY', sortable: true, className: 'col-span-2'},
 					{label: 'Available', value: 'available', sortable: true, className: 'col-span-2'},
 					{label: 'Holdings', value: 'deposited', sortable: true, className: 'col-span-2'},
 					{label: 'Deposits', value: 'tvl', sortable: true, className: 'col-span-2'}

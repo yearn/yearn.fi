@@ -63,7 +63,7 @@ export function GraphForStrategyReports({
 
 	return (
 		<>
-			<p className={'text-neutral-600'}>{'Historical APR'}</p>
+			<p className={'text-neutral-600'}>{'Historical APY'}</p>
 			<div className={'mt-4 flex flex-row border-b border-l border-neutral-300'}>
 				<ResponsiveContainer
 					width={'100%'}
@@ -123,7 +123,7 @@ export function GraphForStrategyReports({
 												<p className={'text-xs'}>{formatDate(label)}</p>
 											</div>
 											<div className={'flex flex-row items-center justify-between'}>
-												<p className={'text-xs text-neutral-600'}>{'APR'}</p>
+												<p className={'text-xs text-neutral-600'}>{'APY'}</p>
 												<b className={'font-number text-xs font-bold text-neutral-900'}>
 													{formatPercent(Number(value))}
 												</b>

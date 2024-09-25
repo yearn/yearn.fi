@@ -68,7 +68,7 @@ export function BoostMessage(props: {
 	const {isAutoStakingEnabled} = useYearn();
 	const hasStakingRewards = Boolean(props.currentVault.staking.available);
 	const stakingRewardSource = props.currentVault.staking.source;
-	const extraAPR = props.currentVault.apr.extra.stakingRewardsAPR;
+	const extraAPY = props.currentVault.apr.extra.stakingRewardsAPR;
 
 	if (
 		props.currentTab === 0 &&
@@ -76,17 +76,7 @@ export function BoostMessage(props: {
 		!props.hasStakingRewardsLive &&
 		stakingRewardSource !== 'VeYFI'
 	) {
-		return (
-			<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
-				<div className={'w-full rounded-lg bg-[#F8A908] p-2 md:px-6 md:py-4'}>
-					<b className={'text-base text-white'}>
-						{
-							"This Vault is no longer reciving any extra rewards. But don't worry, you are still earning the normal yield!"
-						}
-					</b>
-				</div>
-			</div>
-		);
+		return <Fragment />;
 	}
 
 	if (props.currentTab === 0 && hasStakingRewards && stakingRewardSource === 'OP Boost') {
@@ -120,7 +110,7 @@ export function BoostMessage(props: {
 			<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
 				<div className={'w-full rounded-lg bg-[#34A14F] p-2 md:px-6 md:py-4'}>
 					<b className={'text-base text-white'}>
-						{`This Vault has an active veYFI gauge which boosts your APR from ${formatAmount(extraAPR * 10)}% to ${formatAmount(extraAPR * 100)}%. Simply deposit and stake to start earning.`}
+						{`This Vault has an active veYFI gauge which boosts your APY from ${formatAmount(extraAPY * 10)}% to ${formatAmount(extraAPY * 100)}% depending on the veYFI you have locked. Simply deposit and stake to start earning.`}
 					</b>
 					<b className={'block text-white'}>
 						{'Learn more about veYFI rewards in the '}
@@ -142,7 +132,7 @@ export function BoostMessage(props: {
 			<div className={'col-span-12 flex p-4 pt-0 md:px-8 md:pb-6'}>
 				<div className={'w-full rounded-lg bg-[#34A14F] p-2 md:px-6 md:py-4'}>
 					<b className={'text-base text-white'}>
-						{`This Vault can be juiced for even more yield. Simply deposit and stake to receive juiced APRs of ${formatAmount(extraAPR * 100)}%.`}
+						{`This Vault can be juiced for even more yield. Simply deposit and stake to receive juiced APYs of ${formatAmount(extraAPY * 100)}%.`}
 					</b>
 					<b className={'block text-white'}>
 						{'Visit '}

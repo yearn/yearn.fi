@@ -62,7 +62,7 @@ export function VaultDetailsAbout({currentVault}: {currentVault: TYDaemonVault})
 			<div className={'col-span-12 mt-6 w-full space-y-10 md:col-span-5 md:mt-0'}>
 				<div className={'grid grid-cols-1 gap-x-12 md:grid-cols-1'}>
 					<div className={'mb-4 md:mb-10'}>
-						<b className={'text-neutral-900'}>{'APR'}</b>
+						<b className={'text-neutral-900'}>{'APY'}</b>
 						<div className={'mt-4 grid grid-cols-3 gap-8'}>
 							<YearnFeesLineItem label={'Last 7 days'}>
 								<b className={'font-number text-xl text-neutral-900'}>

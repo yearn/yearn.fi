@@ -146,7 +146,12 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 		],
 		query: {
 			enabled: !isZeroAddress(address) && !isZeroAddress(actionParams?.selectedOptionFrom?.value),
-			select(data) {
+			select(
+				data: (
+					| {error: Error; result?: undefined; status: 'failure'}
+					| {error?: undefined; result: unknown; status: 'success'}
+				)[]
+			) {
 				const balanceOf = decodeAsBigInt(data[0]);
 				const decimals = isEthAddress(actionParams?.selectedOptionFrom?.value) ? 18 : decodeAsNumber(data[1]);
 				return toNormalizedBN(balanceOf, decimals);
