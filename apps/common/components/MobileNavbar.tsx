@@ -27,18 +27,7 @@ export function MobileNavbar({onClose}: {onClose: VoidFunction}): ReactElement {
 						onClick={onClose}
 						href={tab.route === '/' ? tab.route : `/home/${tab.route}`}>
 						<div className={'flex size-6 items-center justify-center'}>
-							{
-								iconsDict[
-									tab.route as
-										| '/'
-										| 'yearn-x'
-										| 'about'
-										| 'frontends'
-										| 'lockers'
-										| 'integrations'
-										| 'pools'
-								]
-							}
+							{iconsDict[tab.route as keyof typeof iconsDict]}
 						</div>
 						<p>{tab.title}</p>
 					</Link>
