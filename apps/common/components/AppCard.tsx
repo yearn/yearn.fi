@@ -14,9 +14,9 @@ export function AppCard(props: TAppCardProps): ReactElement {
 		<>
 			<Link
 				href={props.app.appURI ?? ''}
-				target={(props.app.appURI || '').startsWith('/') ? '' : '_blank'}
+				target={'_blank'}
 				className={
-					'bg-grey-900 group relative hidden rounded-lg border border-gray-700/50 p-6 hover:bg-gray-600/40 md:block'
+					'bg-grey-900 group relative hidden h-[240px] min-w-[208px] max-w-[208px] overflow-hidden rounded-lg border border-gray-700/50 p-6 hover:bg-gray-600/40 md:block'
 				}>
 				<div className={'mb-4'}>
 					<div
@@ -32,7 +32,7 @@ export function AppCard(props: TAppCardProps): ReactElement {
 							unoptimized
 							width={240}
 							height={240}
-							className={'size-[80px] rounded-full border border-[#29292980] object-contain'}
+							className={'size-[80px] rounded-full border border-[#292929]/80 object-contain'}
 						/>
 					) : (
 						<div className={'size-[80px] rounded-full bg-fallback'} />
@@ -40,7 +40,7 @@ export function AppCard(props: TAppCardProps): ReactElement {
 				</div>
 				<div className={'mb-1 text-lg font-bold text-white'}>{props.app.name}</div>
 
-				<p className={'text-sm text-gray-400'}>{props.app.description}</p>
+				<p className={'max-h-[60px] whitespace-normal text-sm text-gray-400'}>{props.app.description}</p>
 			</Link>
 			<Link
 				href={props.app.appURI}

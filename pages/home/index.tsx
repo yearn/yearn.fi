@@ -1,22 +1,15 @@
 import {type ReactElement, useRef} from 'react';
 import {useRouter} from 'next/navigation';
 import {useMountEffect} from '@react-hookz/web';
+import {CarouselSlideArrows} from '@common/CarouselSlideArrows';
 import {AppsCarousel} from '@common/components/AppsCarousel';
 import {CategorySection} from '@common/components/CategorySection';
 import {Cutaway} from '@common/components/Cutaway';
 import {PromoPoster} from '@common/components/PromoPoster';
 import {useSearch} from '@common/contexts/useSearch';
-import {IconChevron} from '@common/icons/IconChevron';
 import {LogoDiscord} from '@common/icons/LogoDiscord';
 import {LogoTwitter} from '@common/icons/LogoTwitter';
-import {
-	FEATURED_APPS,
-	FRONTENDS_APPS,
-	INTEGRATIONS_APPS,
-	LOCKERS_APPS,
-	POOLS_APPS,
-	YEARN_X_APPS
-} from '@common/utils/constants';
+import {APPS, FEATURED_APPS, INTEGRATIONS_APPS, VAULTS_APPS, YEARN_X_APPS} from '@common/utils/constants';
 
 export default function Home(): ReactElement {
 	const router = useRouter();
@@ -24,12 +17,12 @@ export default function Home(): ReactElement {
 
 	const carouselRef = useRef<HTMLDivElement | null>(null);
 
-	const scrollBack = (): void => {
+	const onScrollBack = (): void => {
 		if (!carouselRef.current) return;
 		carouselRef.current.scrollLeft -= 400;
 	};
 
-	const scrollForward = (): void => {
+	const onScrollForward = (): void => {
 		if (!carouselRef.current) return;
 		carouselRef.current.scrollLeft += 400;
 	};
@@ -47,57 +40,35 @@ export default function Home(): ReactElement {
 					</div>
 
 					<div>
-						<div className={'mb-6 flex w-full justify-between'}>
-							<div />
-							<div className={'hidden gap-3 md:flex'}>
-								<button
-									onClick={scrollBack}
-									className={
-										'flex !h-8 items-center rounded-[4px] px-4 text-white outline !outline-1 outline-gray-600/50 hover:bg-gray-600/40'
-									}>
-									<IconChevron className={'size-3 rotate-90'} />
-								</button>
-								<button
-									onClick={scrollForward}
-									className={
-										'flex !h-8 items-center rounded-[4px] px-4 text-white outline !outline-1 outline-gray-600/50 hover:bg-gray-600/40'
-									}>
-									<IconChevron className={'size-3 -rotate-90'} />
-								</button>
-							</div>
-						</div>
+						<CarouselSlideArrows
+							onScrollBack={onScrollBack}
+							onScrollForward={onScrollForward}
+							className={'mb-6'}
+						/>
 
 						<AppsCarousel
 							ref={carouselRef}
 							apps={FEATURED_APPS}
+							isUsingFeatured={true}
 						/>
 					</div>
 
 					<div className={'flex flex-col gap-10'}>
 						<CategorySection
-							title={'Frontends'}
-							onExpandClick={() => router.push('/home/frontends')}
-							apps={FRONTENDS_APPS}
-						/>
-
-						<CategorySection
-							title={'Lockers'}
+							title={'Vaults'}
 							onExpandClick={() => router.push('/home/lockers')}
-							apps={LOCKERS_APPS}
+							apps={VAULTS_APPS}
 						/>
-
+						<CategorySection
+							title={'Apps'}
+							onExpandClick={() => router.push('/home/apps')}
+							apps={APPS}
+						/>
 						<CategorySection
 							title={'Yearn X Projects'}
 							onExpandClick={() => router.push('/home/yearn-x')}
 							apps={YEARN_X_APPS}
 						/>
-
-						<CategorySection
-							title={'Pools'}
-							onExpandClick={() => router.push('/home/pools')}
-							apps={POOLS_APPS}
-						/>
-
 						<CategorySection
 							title={'Integrations'}
 							onExpandClick={() => router.push('/home/integrations')}

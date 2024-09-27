@@ -3,8 +3,7 @@ import {toAddress} from '@builtbymom/web3/utils';
 import {IconAbout} from '@common/icons/IconAbout';
 import {IconFrontends} from '@common/icons/IconFrontends';
 import {IconIntegrations} from '@common/icons/IconIntegrations';
-import {IconLock} from '@common/icons/IconLock';
-import {IconPools} from '@common/icons/IconPools';
+import {IconVaults} from '@common/icons/IconVaults';
 import {IconYearn} from '@common/icons/IconYearn';
 import {IconYearnXApps} from '@common/icons/IconYearnXApps';
 
@@ -20,7 +19,7 @@ export const V3_STAKING_ZAP_ADDRESS: TNDict<TAddress> = {
 }; //Address of the zap to deposit & stake for the v3 staking
 export const SUPPORTED_NETWORKS = [mainnet, optimism, polygon, fantom, base, arbitrum];
 
-export const FRONTENDS_APPS: TApp[] = [
+export const VAULTS_APPS: TApp[] = [
 	{
 		name: 'Gimme',
 		description: 'DeFi yields, designed for everyone.',
@@ -31,23 +30,30 @@ export const FRONTENDS_APPS: TApp[] = [
 		name: 'Vaults',
 		description: 'The full Yearn experience with all Vaults, for sophisticated users.',
 		logoURI: '/v3.png',
-		appURI: '/v3'
+		appURI: 'https://yearn.fi/v3'
 	},
 	{
 		name: 'Vaults V2',
 		description: "Discover Vaults from Yearn's v2 era.",
 		logoURI: '/v2.png',
-		appURI: '/vaults'
+		appURI: 'https://yearn.fi/vaults'
 	},
 	{
-		name: 'Superform',
-		description: 'Earn Yield & Distribute Vaults.',
-		logoURI: 'https://www.superform.xyz/icon.png',
-		appURI: 'https://www.superform.xyz'
+		name: 'Juiced',
+		description: 'Discover yields juiced with extra token rewards.',
+		logoURI: '/juiced-featured.jpg',
+		appURI: 'https://juiced.app/'
 	}
 ];
 
-export const LOCKERS_APPS: TApp[] = [
+export const APPS: TApp[] = [
+	{
+		name: 'yETH',
+		description:
+			'A basket of LSTs in a single token. Simple, straight forward, risk adjusted liquid staking yield.',
+		logoURI: 'https://yeth.yearn.fi/favicons/favicon-96x96.png',
+		appURI: 'https://yeth.yearn.fi/'
+	},
 	{
 		name: 'veYFI',
 		description: 'Stake YFI to earn yield, boost gauges, and take part in governance.',
@@ -65,25 +71,6 @@ export const LOCKERS_APPS: TApp[] = [
 		description: 'Put your yPRISMA to work.',
 		logoURI: 'https://assets.smold.app/api/token/1/0xe3668873d944e4a949da05fc8bde419eff543882/logo-128.png',
 		appURI: 'https://yprisma.yearn.fi'
-	},
-	{
-		name: 'Cove',
-		description: 'Earn the best yields on-chain without the hassle of managing a portfolio.',
-		logoURI:
-			'https://assets-global.website-files.com/651af12fcd3055636b6ac9ad/66242dbf1d6e7ff1b18336c4_Twitter%20pp%20-%20Logo%202.png',
-		appURI: 'https://cove.finance/'
-	},
-	{
-		name: '1UP',
-		description: '1UP is a public good liquid locker for YFI.',
-		logoURI: 'https://1up.tokyo/logo.svg',
-		appURI: 'https://1up.tokyo/'
-	},
-	{
-		name: 'StakeDAO',
-		description: 'Stake DAO is a non-custodial liquid staking platform focused on governance tokens.',
-		logoURI: 'https://www.stakedao.org/logo.png',
-		appURI: 'https://www.stakedao.org'
 	}
 ];
 
@@ -126,17 +113,28 @@ export const YEARN_X_APPS: TApp[] = [
 	}
 ];
 
-export const POOLS_APPS: TApp[] = [
-	{
-		name: 'yETH',
-		description:
-			'A basket of LSTs in a single token. Simple, straight forward, risk adjusted liquid staking yield.',
-		logoURI: 'https://yeth.yearn.fi/favicons/favicon-96x96.png',
-		appURI: 'https://yeth.yearn.fi/'
-	}
-];
+export const POOLS_APPS: TApp[] = [];
 
 export const INTEGRATIONS_APPS: TApp[] = [
+	{
+		name: 'Cove',
+		description: 'Earn the best yields on-chain without the hassle of managing a portfolio.',
+		logoURI:
+			'https://assets-global.website-files.com/651af12fcd3055636b6ac9ad/66242dbf1d6e7ff1b18336c4_Twitter%20pp%20-%20Logo%202.png',
+		appURI: 'https://cove.finance/'
+	},
+	{
+		name: '1UP',
+		description: '1UP is a public good liquid locker for YFI.',
+		logoURI: 'https://1up.tokyo/logo.svg',
+		appURI: 'https://1up.tokyo/'
+	},
+	{
+		name: 'StakeDAO',
+		description: 'Stake DAO is a non-custodial liquid staking platform focused on governance tokens.',
+		logoURI: 'https://www.stakedao.org/logo.png',
+		appURI: 'https://www.stakedao.org'
+	},
 	{
 		name: 'Sturdy',
 		description:
@@ -150,6 +148,12 @@ export const INTEGRATIONS_APPS: TApp[] = [
 		logoURI:
 			'https://3238501125-files.gitbook.io/~/files/v0/b/gitbook-x-prod.appspot.com/o/spaces%2FtZYbaMzoeA7Kw4Stxzvw%2Ficon%2F89KZ4VyGSZ33cSf5QBmo%2Fpwn.svg?alt=media',
 		appURI: 'https://app.pwn.xyz/'
+	},
+	{
+		name: 'Superform',
+		description: 'Earn Yield & Distribute Vaults',
+		logoURI: 'https://www.superform.xyz/icon.png',
+		appURI: 'https://www.superform.xyz'
 	}
 ];
 
@@ -210,14 +214,7 @@ export const FEATURED_APPS = [
 	}
 ];
 
-export const ALL_APPS = [
-	...FEATURED_APPS,
-	...FRONTENDS_APPS,
-	...LOCKERS_APPS,
-	...YEARN_X_APPS,
-	...POOLS_APPS,
-	...INTEGRATIONS_APPS
-];
+export const ALL_APPS = [...FEATURED_APPS, ...VAULTS_APPS, ...APPS, ...YEARN_X_APPS, ...INTEGRATIONS_APPS];
 
 export const CATEGORIES_DICT = {
 	'featured-apps': {
@@ -227,33 +224,19 @@ export const CATEGORIES_DICT = {
 		catrgorySlug: 'featured-apps',
 		apps: FEATURED_APPS
 	},
-	frontends: {
-		categoryName: 'Frontends',
+	vaults: {
+		categoryName: 'Vaults',
 		categoryDescription:
 			'Yearn is a decentralized suite of products helping individuals, DAOs, and other protocols earn yield on their digital assets.',
-		catrgorySlug: 'frontend',
-		apps: FRONTENDS_APPS
+		catrgorySlug: 'vaults',
+		apps: VAULTS_APPS
 	},
-	lockers: {
-		categoryName: 'Lockers',
+	apps: {
+		categoryName: 'Apps',
 		categoryDescription:
 			'Yearn is a decentralized suite of products helping individuals, DAOs, and other protocols earn yield on their digital assets.',
-		catrgorySlug: 'lockers',
-		apps: LOCKERS_APPS
-	},
-	pools: {
-		categoryName: 'Pools',
-		categoryDescription:
-			'Yearn is a decentralized suite of products helping individuals, DAOs, and other protocols earn yield on their digital assets.',
-		catrgorySlug: 'pools',
-		apps: POOLS_APPS
-	},
-	integrations: {
-		categoryName: 'Integrations',
-		categoryDescription:
-			'Yearn is a decentralized suite of products helping individuals, DAOs, and other protocols earn yield on their digital assets.',
-		catrgorySlug: 'integrations',
-		apps: INTEGRATIONS_APPS
+		catrgorySlug: 'apps',
+		apps: APPS
 	},
 	'yearn-x': {
 		categoryName: 'Yearn X Projects',
@@ -261,6 +244,13 @@ export const CATEGORIES_DICT = {
 			'Yearn is a decentralized suite of products helping individuals, DAOs, and other protocols earn yield on their digital assets.',
 		catrgorySlug: 'yearn-x',
 		apps: YEARN_X_APPS
+	},
+	integrations: {
+		categoryName: 'Integrations',
+		categoryDescription:
+			'Yearn is a decentralized suite of products helping individuals, DAOs, and other protocols earn yield on their digital assets.',
+		catrgorySlug: 'integrations',
+		apps: INTEGRATIONS_APPS
 	}
 };
 
@@ -277,12 +267,11 @@ export const LANDING_SIDEBAR_LINKS = [
 
 export const MENU_TABS = [
 	{title: 'Home', route: '/'},
-	{title: 'Frontends', route: 'frontends'},
-	{title: 'Lockers', route: 'lockers'},
-	{title: 'Pools', route: 'pools'},
+	{title: 'Vaults', route: 'vaults'},
+	{title: 'Apps', route: 'apps'},
 	{title: 'Yearn X Projects', route: 'yearn-x'},
-	{title: 'Integrations', route: 'integrations'},
-	{title: 'About', route: 'about'}
+	{title: 'Integrations', route: 'integrations'}
+	// {title: 'About', route: 'about'}
 ];
 
 export const CATEGORY_PAGE_FILTERS = [
@@ -295,9 +284,8 @@ export const CATEGORY_PAGE_FILTERS = [
 export const iconsDict = {
 	'/': <IconYearn />,
 	about: <IconAbout />,
-	frontends: <IconFrontends />,
-	lockers: <IconLock />,
-	pools: <IconPools />,
+	vaults: <IconVaults />,
+	apps: <IconFrontends />,
 	'yearn-x': <IconYearnXApps />,
 	integrations: <IconIntegrations />
 };
