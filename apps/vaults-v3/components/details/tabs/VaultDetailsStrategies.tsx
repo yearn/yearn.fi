@@ -85,12 +85,13 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 						<VaultsV3ListHead
 							sortBy={sortBy}
 							sortDirection={sortDirection}
-							onSort={(newSortBy: string, newSortDirection: string): void => {
+							onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {
 								onChangeSortBy(newSortBy as TPossibleSortBy);
 								onChangeSortDirection(newSortDirection as TSortDirection);
 							}}
 							items={[
 								{label: 'Vault', value: 'name', sortable: true, className: 'col-span-2'},
+								{label: 'Risk Level', value: 'score', sortable: true, className: 'col-span-1'},
 								{label: 'Est. APY', value: 'estAPY', sortable: true, className: 'col-span-2'},
 								{label: 'Hist. APY', value: 'APY', sortable: true, className: 'col-span-2'},
 								{label: 'Available', value: 'available', sortable: true, className: 'col-span-2'},

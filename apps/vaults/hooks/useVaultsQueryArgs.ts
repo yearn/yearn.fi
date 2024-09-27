@@ -281,7 +281,7 @@ function useQueryArguments(props: {
 				router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
 				return;
 			}
-			queryArgs.sortDirection = value;
+			queryArgs.sortDirection = value as string;
 			router.replace({pathname: router.pathname, query: queryArgs}, undefined, {shallow: true});
 		},
 		onChangeSortBy: (value): void => {

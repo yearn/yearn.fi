@@ -19,9 +19,10 @@ import type {TNormalizedBN} from '@builtbymom/web3/types';
 type TAPYSublineProps = {
 	hasPendleArbRewards: boolean;
 	hasKelpNEngenlayer: boolean;
+	hasKelp: boolean;
 };
 
-function APYSubline({hasPendleArbRewards, hasKelpNEngenlayer}: TAPYSublineProps): ReactElement {
+function APYSubline({hasPendleArbRewards, hasKelpNEngenlayer, hasKelp}: TAPYSublineProps): ReactElement {
 	if (hasKelpNEngenlayer) {
 		return (
 			<small className={cl('whitespace-nowrap text-xs text-neutral-800 self-end -mb-4')}>
@@ -29,10 +30,17 @@ function APYSubline({hasPendleArbRewards, hasKelpNEngenlayer}: TAPYSublineProps)
 			</small>
 		);
 	}
-	if (hasPendleArbRewards) {
+	if (hasKelp) {
 		return (
 			<small className={cl('whitespace-nowrap text-xs text-neutral-800 self-end -mb-4')}>
-				{`+ 2500 ARB per week 🚀`}
+				{`+ 1x Kelp Miles 🚀`}
+			</small>
+		);
+	}
+	if (hasPendleArbRewards) {
+		return (
+			<small className={cl('whitespace-nowrap text-xs text-neutral-800 self-end -mb-5 pt-1 -mr-1')}>
+				{`+ 2500 ARB/week 🚀`}
 			</small>
 		);
 	}
@@ -46,6 +54,7 @@ function APYTooltip(props: {
 	range?: [number, number];
 	hasPendleArbRewards?: boolean;
 	hasKelpNEngenlayer?: boolean;
+	hasKelp?: boolean;
 }): ReactElement {
 	return (
 		<span className={'tooltipLight bottom-full mb-1'}>
@@ -126,6 +135,16 @@ function APYTooltip(props: {
 						</div>
 					) : null}
 
+					{props.hasKelp ? (
+						<div
+							className={
+								'font-number flex w-full flex-row justify-between space-x-4 whitespace-nowrap text-neutral-400 md:text-xs'
+							}>
+							<p>{'• Extra Kelp Miles '}</p>
+							<p>{`1x`}</p>
+						</div>
+					) : null}
+
 					{props.hasKelpNEngenlayer ? (
 						<>
 							<div
@@ -152,12 +171,9 @@ function APYTooltip(props: {
 
 function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const isEthMainnet = currentVault.chainID === 1;
-	const hasPendleArbRewards =
-		currentVault.address === toAddress('0x044E75fCbF7BD3f8f4577FF317554e9c0037F145') ||
-		currentVault.address === toAddress('0x0F2ae7531A83982F15ff1D26B165E2bF3D7566da') ||
-		currentVault.address === toAddress('0x1Dd930ADD968ff5913C3627dAA1e6e6FCC9dc544') ||
-		currentVault.address === toAddress('0x34a2b066AF16409648eF15d239E656edB8790ca0');
+	const hasPendleArbRewards = currentVault.address === toAddress('0x1Dd930ADD968ff5913C3627dAA1e6e6FCC9dc544');
 	const hasKelpNEngenlayer = currentVault.address === toAddress('0xDDa02A2FA0bb0ee45Ba9179a3fd7e65E5D3B2C90');
+	const hasKelp = currentVault.address === toAddress('0x1Dd930ADD968ff5913C3627dAA1e6e6FCC9dc544');
 
 	/**********************************************************************************************
 	 ** If there is no forwardAPY, we only have the historical APY to display.
@@ -193,6 +209,7 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 						<APYTooltip
 							baseAPY={currentVault.apr.netAPR}
 							hasPendleArbRewards={hasPendleArbRewards}
+							hasKelp={hasKelp}
 							hasKelpNEngenlayer={hasKelpNEngenlayer}
 							rewardsAPY={currentVault.apr.extra.stakingRewardsAPR}
 						/>
@@ -200,6 +217,7 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 					<APYSubline
 						hasPendleArbRewards={hasPendleArbRewards}
 						hasKelpNEngenlayer={hasKelpNEngenlayer}
+						hasKelp={hasKelp}
 					/>
 				</div>
 			);
@@ -222,6 +240,7 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 				<APYSubline
 					hasPendleArbRewards={hasPendleArbRewards}
 					hasKelpNEngenlayer={hasKelpNEngenlayer}
+					hasKelp={hasKelp}
 				/>
 			</div>
 		);
@@ -265,6 +284,7 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 						baseAPY={unBoostedAPY}
 						hasPendleArbRewards={hasPendleArbRewards}
 						hasKelpNEngenlayer={hasKelpNEngenlayer}
+						hasKelp={hasKelp}
 						boost={currentVault.apr.forwardAPR.composite.boost}
 					/>
 				</div>
@@ -350,11 +370,13 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 						rewardsAPY={veYFIRange ? undefined : sumOfRewardsAPY}
 						hasPendleArbRewards={hasPendleArbRewards}
 						hasKelpNEngenlayer={hasKelpNEngenlayer}
+						hasKelp={hasKelp}
 						range={veYFIRange}
 					/>
 				</span>
 				<APYSubline
 					hasPendleArbRewards={hasPendleArbRewards}
+					hasKelp={hasKelp}
 					hasKelpNEngenlayer={hasKelpNEngenlayer}
 				/>
 			</div>
@@ -385,6 +407,7 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 				</b>
 				<APYSubline
 					hasPendleArbRewards={hasPendleArbRewards}
+					hasKelp={hasKelp}
 					hasKelpNEngenlayer={hasKelpNEngenlayer}
 				/>
 			</div>
@@ -412,6 +435,7 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 			</b>
 			<APYSubline
 				hasPendleArbRewards={hasPendleArbRewards}
+				hasKelp={hasKelp}
 				hasKelpNEngenlayer={hasKelpNEngenlayer}
 			/>
 		</div>
@@ -496,6 +520,43 @@ function VaultHistoricalAPY({currentVault}: {currentVault: TYDaemonVault}): Reac
 	);
 }
 
+function VaultRiskScoreTag({riskLevel}: {riskLevel: number}): ReactElement {
+	const level = riskLevel < 0 ? 0 : riskLevel > 5 ? 5 : riskLevel;
+	const riskColor = [`transparent`, `#63C532`, `#F8A908`, `#F8A908`, `#C73203`, `#C73203`];
+	return (
+		<div className={'col-span-2 flex flex-row justify-between md:col-span-2 md:flex-col md:justify-center'}>
+			<p className={'inline whitespace-nowrap text-start text-xs text-neutral-800/60 md:hidden'}>
+				{'Risk Score'}
+			</p>
+			<div className={cl('flex w-fit items-center justify-end gap-4 md:justify-center', 'tooltip relative z-50')}>
+				<div className={'mt-[6px] h-3 w-10 min-w-10 rounded-sm border-2 border-neutral-400 p-[2px]'}>
+					<div
+						className={'h-1 rounded-[1px]'}
+						style={{
+							backgroundColor: riskColor.length > level ? riskColor[level] : riskColor[0],
+							width: `${(level / 5) * 100}%`
+						}}
+					/>
+				</div>
+				<span
+					suppressHydrationWarning
+					className={'tooltiptext top-full mt-1'}
+					style={{marginRight: 'calc(-94px + 50%)'}}>
+					<div
+						className={
+							'font-number relative border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
+						}>
+						<p>
+							<b className={'text-xs font-semibold'}>{`${level} / 5 :`}</b>
+							{` This reflects the vault's security, with 1 being most secure and 5 least secure, based on strategy complexity, loss exposure, and external dependencies.`}
+						</p>
+					</div>
+				</span>
+			</div>
+		</div>
+	);
+}
+
 export function VaultStakedAmount({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {getToken, getPrice} = useYearn();
 
@@ -539,7 +600,7 @@ export function VaultStakedAmount({currentVault}: {currentVault: TYDaemonVault})
 					options={{
 						shouldCompactValue: true,
 						maximumFractionDigits: 2,
-						minimumFractionDigits: 0
+						minimumFractionDigits: 2
 					}}
 				/>
 			</small>
@@ -582,8 +643,8 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 					)}
 				/>
 
-				<div className={cl('col-span-5 z-10', 'flex flex-row items-center justify-between')}>
-					<div className={'flex flex-row gap-6'}>
+				<div className={cl('col-span-4 z-10', 'flex flex-row items-center justify-between')}>
+					<div className={'flex flex-row gap-6 overflow-hidden'}>
 						<div className={'mt-2.5 size-8 min-h-8 min-w-8 rounded-full md:flex'}>
 							<ImageWithFallback
 								src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-128.png`}
@@ -592,11 +653,15 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 								height={32}
 							/>
 						</div>
-						<div>
-							<strong className={'mb-0 block text-[18px] font-black text-neutral-800 md:mb-1 md:text-xl'}>
+						<div className={'truncate'}>
+							<strong
+								title={currentVault.name}
+								className={'block truncate font-black text-neutral-800 md:-mb-0.5 md:text-lg'}>
 								{currentVault.name}
 							</strong>
-							<p className={'mb-0 block text-neutral-800 md:mb-2'}>{currentVault.token.name}</p>
+							<p className={'mb-0 block text-sm text-neutral-800/60 md:mb-2'}>
+								{currentVault.token.name}
+							</p>
 							<div className={'hidden flex-row items-center md:flex'}>
 								<VaultChainTag chainID={currentVault.chainID} />
 								<Link
@@ -616,13 +681,11 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 					</div>
 				</div>
 
-				<div
-					className={cl(
-						'col-span-7 z-10',
-						'grid grid-cols-2 md:grid-cols-10',
-						'gap-1 md:gap-x-7',
-						'mt-4 md:mt-0'
-					)}>
+				<div className={'col-span-1'} />
+
+				<div className={cl('col-span-7 z-10', 'grid grid-cols-2 md:grid-cols-12 gap-4', 'mt-4 md:mt-0')}>
+					<VaultRiskScoreTag riskLevel={currentVault.info.riskLevel} />
+
 					<div
 						className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'}
 						datatype={'number'}>

@@ -4,7 +4,7 @@ import {parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 
-function YearnFeesLineItem({children, label, tooltip}: any): ReactElement {
+export function YearnFeesLineItem({children, label, tooltip}: any): ReactElement {
 	return (
 		<div className={'flex flex-col space-y-0 md:space-y-2'}>
 			<p className={'text-xxs text-neutral-600 md:text-xs'}>{label}</p>

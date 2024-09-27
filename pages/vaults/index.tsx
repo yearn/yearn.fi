@@ -209,7 +209,7 @@ function ListOfVaults(): ReactElement {
 				dataClassName={'grid-cols-10'}
 				sortBy={sortBy}
 				sortDirection={sortDirection}
-				onSort={(newSortBy: string, newSortDirection: string): void => {
+				onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {
 					onChangeSortBy(newSortBy as TPossibleSortBy);
 					onChangeSortDirection(newSortDirection as TSortDirection);
 				}}
