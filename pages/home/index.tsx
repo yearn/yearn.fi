@@ -56,7 +56,7 @@ export default function Home(): ReactElement {
 					<div className={'flex flex-col gap-10'}>
 						<CategorySection
 							title={'Vaults'}
-							onExpandClick={() => router.push('/home/lockers')}
+							onExpandClick={() => router.push('/home/vaults')}
 							apps={VAULTS_APPS}
 						/>
 						<CategorySection
