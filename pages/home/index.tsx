@@ -9,7 +9,7 @@ import {PromoPoster} from '@common/components/PromoPoster';
 import {useSearch} from '@common/contexts/useSearch';
 import {LogoDiscord} from '@common/icons/LogoDiscord';
 import {LogoTwitter} from '@common/icons/LogoTwitter';
-import {APPS, FEATURED_APPS, INTEGRATIONS_APPS, VAULTS_APPS, YEARN_X_APPS} from '@common/utils/constants';
+import {COMMUNITY_APPS, FEATURED_APPS, INTEGRATIONS_APPS, VAULTS_APPS, YEARN_X_APPS} from '@common/utils/constants';
 
 export default function Home(): ReactElement {
 	const router = useRouter();
@@ -60,9 +60,9 @@ export default function Home(): ReactElement {
 							apps={VAULTS_APPS}
 						/>
 						<CategorySection
-							title={'Apps'}
-							onExpandClick={() => router.push('/home/apps')}
-							apps={APPS}
+							title={'Community Apps'}
+							onExpandClick={() => router.push('/home/community-apps')}
+							apps={COMMUNITY_APPS}
 						/>
 						<CategorySection
 							title={'Yearn X Projects'}

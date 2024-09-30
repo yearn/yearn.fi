@@ -46,11 +46,10 @@ export const VAULTS_APPS: TApp[] = [
 	}
 ];
 
-export const APPS: TApp[] = [
+export const COMMUNITY_APPS: TApp[] = [
 	{
 		name: 'yETH',
-		description:
-			'A basket of LSTs in a single token. Simple, straight forward, risk adjusted liquid staking yield.',
+		description: 'A basket of LSTs in a single token.',
 		logoURI: 'https://yeth.yearn.fi/favicons/favicon-96x96.png',
 		appURI: 'https://yeth.yearn.fi/'
 	},
@@ -131,14 +130,13 @@ export const INTEGRATIONS_APPS: TApp[] = [
 	},
 	{
 		name: 'StakeDAO',
-		description: 'Stake DAO is a non-custodial liquid staking platform focused on governance tokens.',
+		description: 'A non-custodial liquid staking platform focused on governance tokens.',
 		logoURI: 'https://www.stakedao.org/logo.png',
 		appURI: 'https://www.stakedao.org'
 	},
 	{
 		name: 'Sturdy',
-		description:
-			'Isolated lending with shared liquidity. Permissionlessly create a liquid money market for any asset.',
+		description: 'Isolated lending with shared liquidity.',
 		logoURI: 'https://avatars.githubusercontent.com/u/90377574?s=200&v=4',
 		appURI: 'https://v2.sturdy.finance'
 	},
@@ -214,7 +212,7 @@ export const FEATURED_APPS = [
 	}
 ];
 
-export const ALL_APPS = [...FEATURED_APPS, ...VAULTS_APPS, ...APPS, ...YEARN_X_APPS, ...INTEGRATIONS_APPS];
+export const ALL_APPS = [...FEATURED_APPS, ...VAULTS_APPS, ...COMMUNITY_APPS, ...YEARN_X_APPS, ...INTEGRATIONS_APPS];
 
 export const CATEGORIES_DICT = {
 	'featured-apps': {
@@ -231,12 +229,12 @@ export const CATEGORIES_DICT = {
 		catrgorySlug: 'vaults',
 		apps: VAULTS_APPS
 	},
-	apps: {
-		categoryName: 'Apps',
+	'community-apps': {
+		categoryName: 'Community Apps',
 		categoryDescription:
 			'Yearn is a decentralized suite of products helping individuals, DAOs, and other protocols earn yield on their digital assets.',
-		catrgorySlug: 'apps',
-		apps: APPS
+		catrgorySlug: 'community-apps',
+		apps: COMMUNITY_APPS
 	},
 	'yearn-x': {
 		categoryName: 'Yearn X Projects',
@@ -268,7 +266,7 @@ export const LANDING_SIDEBAR_LINKS = [
 export const MENU_TABS = [
 	{title: 'Home', route: '/'},
 	{title: 'Vaults', route: 'vaults'},
-	{title: 'Apps', route: 'apps'},
+	{title: 'Community Apps', route: 'community-apps'},
 	{title: 'Yearn X Projects', route: 'yearn-x'},
 	{title: 'Integrations', route: 'integrations'}
 	// {title: 'About', route: 'about'}
@@ -285,7 +283,7 @@ export const iconsDict = {
 	'/': <IconYearn />,
 	about: <IconAbout />,
 	vaults: <IconVaults />,
-	apps: <IconFrontends />,
+	'community-apps': <IconFrontends />,
 	'yearn-x': <IconYearnXApps />,
 	integrations: <IconIntegrations />
 };
