@@ -67,7 +67,7 @@ export function Sidebar(props: TSidebarProps): ReactElement {
 							href={tab.route === '/' ? tab.route : `/home/${tab.route}`}
 							key={tab.route}>
 							<div className={'flex size-6 items-center justify-center'}>
-								{iconsDict[tab.route as '/' | 'apps' | 'vaults' | 'yearn-x' | 'integrations']}
+								{iconsDict[tab.route as '/' | 'community-apps' | 'vaults' | 'yearn-x' | 'integrations']}
 							</div>
 							<p>{tab.title}</p>
 						</Link>
