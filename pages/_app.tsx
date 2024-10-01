@@ -84,21 +84,25 @@ const WithLayout = memo(function WithLayout(
 						<motion.nav className={'top-0 z-20 hidden h-screen py-4 pl-4 md:fixed md:block'}>
 							<Sidebar tabs={MENU_TABS} />
 						</motion.nav>
-						<AnimatePresence mode={'wait'}>
-							<motion.div
-								key={props.router.asPath}
-								initial={'initial'}
-								animate={'enter'}
-								exit={'exit'}
-								variants={variants}
-								className={cl('w-full overflow-x-hidden md:ml-[305px]', isSearchOpen ? 'mt-16' : '')}>
-								<Component
-									key={`app_${props.router.asPath}`}
-									router={props.router}
-									{...pageProps}
-								/>
-							</motion.div>
-						</AnimatePresence>
+						<LazyMotion features={domAnimation}>
+							<AnimatePresence mode={'wait'}>
+								<motion.div
+									key={`${props.router.asPath}-${props.router.query.query}`}
+									initial={'initial'}
+									animate={'enter'}
+									exit={'exit'}
+									variants={variants}
+									className={cl(
+										'w-full overflow-x-hidden md:ml-[305px]',
+										isSearchOpen ? 'mt-16' : ''
+									)}>
+									<Component
+										router={props.router}
+										{...pageProps}
+									/>
+								</motion.div>
+							</AnimatePresence>
+						</LazyMotion>
 					</div>
 				</div>
 			</SearchContextApp>

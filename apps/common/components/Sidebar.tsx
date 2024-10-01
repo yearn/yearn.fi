@@ -1,6 +1,7 @@
 import {type ReactElement, useCallback} from 'react';
 import Link from 'next/link';
-import {usePathname, useRouter} from 'next/navigation';
+import {usePathname} from 'next/navigation';
+import {useRouter} from 'next/router';
 import {cl} from '@builtbymom/web3/utils';
 import {useSearch} from '@common/contexts/useSearch';
 import {LogoYearn} from '@common/icons/LogoYearn';
@@ -24,7 +25,7 @@ export function Sidebar(props: TSidebarProps): ReactElement {
 		if (!configuration.searchValue) {
 			return;
 		}
-		router.push(`/home/search?query=${configuration.searchValue}`);
+		router.push(`/home/search/${encodeURIComponent(configuration.searchValue)}`);
 	}, [configuration.searchValue, router]);
 
 	return (
@@ -50,9 +51,7 @@ export function Sidebar(props: TSidebarProps): ReactElement {
 						className={cl('!w-full !border-0 rounded-lg !border-white !bg-gray-600/40')}
 						searchPlaceholder={'Search App'}
 						searchValue={configuration.searchValue}
-						onSearch={(value: string) => {
-							dispatch({searchValue: value});
-						}}
+						onSearch={(value: string) => dispatch({searchValue: value})}
 						shouldSearchByClick
 						onSearchClick={onSearchClick}
 					/>

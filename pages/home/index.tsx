@@ -1,5 +1,5 @@
 import {type ReactElement, useRef} from 'react';
-import {useRouter} from 'next/navigation';
+import {useRouter} from 'next/router';
 import {useMountEffect} from '@react-hookz/web';
 import {CarouselSlideArrows} from '@common/CarouselSlideArrows';
 import {AppsCarousel} from '@common/components/AppsCarousel';
@@ -56,22 +56,22 @@ export default function Home(): ReactElement {
 					<div className={'flex flex-col gap-10'}>
 						<CategorySection
 							title={'Vaults'}
-							onExpandClick={() => router.push('/home/vaults')}
+							onExpandClick={async () => router.push('/home/vaults')}
 							apps={VAULTS_APPS}
 						/>
 						<CategorySection
 							title={'Community Apps'}
-							onExpandClick={() => router.push('/home/community-apps')}
+							onExpandClick={async () => router.push('/home/community-apps')}
 							apps={COMMUNITY_APPS}
 						/>
 						<CategorySection
 							title={'Yearn X Projects'}
-							onExpandClick={() => router.push('/home/yearn-x')}
+							onExpandClick={async () => router.push('/home/yearn-x')}
 							apps={YEARN_X_APPS}
 						/>
 						<CategorySection
 							title={'Integrations'}
-							onExpandClick={() => router.push('/home/integrations')}
+							onExpandClick={async () => router.push('/home/integrations')}
 							apps={INTEGRATIONS_APPS}
 						/>
 					</div>

@@ -7,7 +7,6 @@ import {ALL_APPS} from '@common/utils/constants';
 
 export default function SeachResults(): ReactElement {
 	const searchParams = useSearchParams();
-
 	const searchValue = searchParams.get('query') ?? '';
 	const searchFilteredApps = useMemo(() => {
 		if (!searchValue) {

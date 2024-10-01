@@ -1,5 +1,5 @@
 import {type ReactElement, useCallback} from 'react';
-import {useRouter} from 'next/navigation';
+import {useRouter} from 'next/router';
 import {useSearch} from '@common/contexts/useSearch';
 import {IconBurger} from '@common/icons/IconBurger';
 import {IconCross} from '@common/icons/IconCross';
