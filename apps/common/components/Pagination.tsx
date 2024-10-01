@@ -25,7 +25,7 @@ export function Pagination(props: TProps): ReactElement {
 					role={'button'}
 					href={'#'}
 					className={
-						'border-gray-300 text-gray-700 hover:bg-gray-50 relative inline-flex items-center rounded-md border px-4 py-2 text-sm font-medium'
+						'hover:bg-gray-50 relative inline-flex items-center rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-500'
 					}>
 					{'Previous'}
 				</a>
@@ -33,7 +33,7 @@ export function Pagination(props: TProps): ReactElement {
 					role={'button'}
 					href={'#'}
 					className={
-						'border-gray-300 text-gray-700 hover:bg-gray-50 relative ml-3 inline-flex items-center rounded-md border px-4 py-2 text-sm font-medium'
+						'hover:bg-gray-50 relative ml-3 inline-flex items-center rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-500'
 					}>
 					{'Next'}
 				</a>

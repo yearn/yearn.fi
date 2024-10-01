@@ -18,3 +18,10 @@ export type TVaultListHeroCategory = (typeof VAULT_CATEGORIES)[number];
 export function isValidCategory<T extends string>(input: string): input is T {
 	return VAULT_CATEGORIES.includes(input as TVaultListHeroCategory);
 }
+
+export type TApp = {
+	name: string;
+	description?: string;
+	logoURI: string;
+	appURI: string;
+};

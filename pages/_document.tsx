@@ -47,16 +47,21 @@ window.onload = observeUrlChange;
 `;
 
 class MyDocument extends Document {
-	static async getInitialProps(ctx: DocumentContext): Promise<DocumentInitialProps> {
+	static async getInitialProps(ctx: DocumentContext): Promise<DocumentInitialProps & {route: string}> {
 		const initialProps = await Document.getInitialProps(ctx);
-		return {...initialProps};
+
+		// Determine the route from context
+		const route = ctx.pathname;
+		return {route, ...initialProps};
 	}
 
 	render(): ReactElement {
+		const {route} = this.props as any;
+		const isLanding = route === '/' || route.startsWith('/home/');
 		return (
 			<Html
 				lang={'en'}
-				className={'bg-neutral-0 transition-colors duration-150'}>
+				className={`duration-150', bg-neutral-0 transition-colors ${isLanding && 'scrollbar-none'}`}>
 				<Head>
 					<script dangerouslySetInnerHTML={{__html: modeScript}} />
 				</Head>
