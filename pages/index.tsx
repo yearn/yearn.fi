@@ -127,15 +127,12 @@ function AppBox({app}: {app: (typeof apps)[0]}): ReactElement {
 		<Link
 			key={app.href}
 			href={app.href}
-			target={app.href.startsWith('/') ? '_self' : '_blank'}>
-			<div
-				id={app.href}
-				className={'appBox'}>
-				<div>{app.icon}</div>
-				<div className={'pt-6 text-center'}>
-					<b className={'text-lg'}>{app.title}</b>
-					<p className={'text-neutral-600'}>{app.description}</p>
-				</div>
+			target={app.href.startsWith('/') ? '_self' : '_blank'}
+			className={'appBox h-60'}>
+			<div>{app.icon}</div>
+			<div className={'pt-6 text-center'}>
+				<b className={'text-lg'}>{app.title}</b>
+				<p className={'text-neutral-600'}>{app.description}</p>
 			</div>
 		</Link>
 	);
