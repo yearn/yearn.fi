@@ -1,5 +1,6 @@
 import {type ReactElement, useMemo} from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import {cl} from '@builtbymom/web3/utils';
 import {AppCard} from '@common/components/AppCard';
 import {useInitialQueryParam} from '@common/hooks/useInitialQueryParam';
@@ -13,7 +14,7 @@ export default function SeachResults(): ReactElement {
 		if (!searchValue) {
 			return [];
 		}
-		return [...ALL_APPS].filter(app => app.name.toLowerCase().includes(searchValue.toLowerCase()));
+		return ALL_APPS.filter(app => app.name.toLowerCase().includes(searchValue.toLowerCase()));
 	}, [searchValue]);
 
 	return (
@@ -27,17 +28,13 @@ export default function SeachResults(): ReactElement {
 						)}>{`Results for "${searchValue}"`}</p>
 					{searchFilteredApps.length < 1 ? (
 						<div>
-							<p
-								className={
-									'flex w-full justify-center text-center text-base text-gray-400 md:justify-start'
-								}>
-								{'Nothing to display'}
-							</p>
-							<p
-								className={
-									'flex w-full justify-center text-center text-base text-gray-400 md:justify-start'
-								}>
-								{'Try searching for another term'}
+							<p className={'text-base text-gray-400'}>
+								{`Hmm, we couldn't find what you're looking for, did you spell it right? Try again or go`}{' '}
+								<Link
+									className={'text-white hover:underline'}
+									href={'/'}>
+									{'home'}
+								</Link>
 							</p>
 
 							<Image

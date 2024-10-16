@@ -23,6 +23,7 @@ export function Sidebar(props: TSidebarProps): ReactElement {
 
 	const onSearchClick = useCallback(() => {
 		if (!configuration.searchValue) {
+			router.push('/');
 			return;
 		}
 		router.push(`/home/search/${encodeURIComponent(configuration.searchValue)}`);
