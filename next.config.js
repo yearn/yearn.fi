@@ -110,6 +110,11 @@ module.exports = withPlausibleProxy({
 					source: '/static/tokenlist.json',
 					destination: 'https://raw.githubusercontent.com/SmolDapp/tokenLists/main/lists/yearn.json',
 					permanent: true
+				},
+				{
+					source: '/home/search',
+					destination: '/',
+					permanent: true
 				}
 			];
 		},
