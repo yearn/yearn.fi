@@ -25,6 +25,7 @@ import {VaultDetailsQuickActionsTo} from '@vaults-v3/components/details/actions/
 import {RewardsTab} from '@vaults-v3/components/details/RewardsTab';
 import {SettingsPopover} from '@vaults-v3/components/SettingsPopover';
 import {readContracts} from '@wagmi/core';
+import {Switch} from '@common/components/Switch';
 import {useYearn} from '@common/contexts/useYearn';
 import {IconChevron} from '@common/icons/IconChevron';
 
@@ -260,6 +261,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 	const {onSwitchSelectedOptions, isDepositing, actionParams} = useActionFlow();
 	const {address} = useWeb3();
 	const router = useRouter();
+	const {isAutoStakingEnabled, set_isAutoStakingEnabled} = useYearn();
 	const [unstakedBalance, set_unstakedBalance] = useState<TNormalizedBN | undefined>(undefined);
 	const [possibleTabs, set_possibleTabs] = useState<TTabsOptions[]>([tabs[0], tabs[1]]);
 	const [hasStakingRewardsLive, set_hasStakingRewardsLive] = useState(true);
@@ -514,8 +516,20 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 							<p className={'hidden text-base md:inline'}>&nbsp;</p>
 							<div>
 								<VaultDetailsQuickActionsButtons currentVault={currentVault} />
+								{hasStakingRewards && (
+									<div className={'mt-1 flex justify-between'}>
+										<legend className={'font-number text-xs text-neutral-900/50'}>
+											{'Deposit only'}
+										</legend>
+										<div className={isAutoStakingEnabled ? 'opacity-50' : ''}>
+											<Switch
+												isEnabled={!isAutoStakingEnabled}
+												onSwitch={(): void => set_isAutoStakingEnabled(!isAutoStakingEnabled)}
+											/>
+										</div>
+									</div>
+								)}
 							</div>
-							<legend className={'hidden text-xs md:inline'}>&nbsp;</legend>
 						</div>
 					</div>
 				)}
