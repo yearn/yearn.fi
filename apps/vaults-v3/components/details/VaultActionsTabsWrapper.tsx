@@ -25,7 +25,6 @@ import {VaultDetailsQuickActionsTo} from '@vaults-v3/components/details/actions/
 import {RewardsTab} from '@vaults-v3/components/details/RewardsTab';
 import {SettingsPopover} from '@vaults-v3/components/SettingsPopover';
 import {readContracts} from '@wagmi/core';
-import {Switch} from '@common/components/Switch';
 import {useYearn} from '@common/contexts/useYearn';
 import {IconChevron} from '@common/icons/IconChevron';
 
@@ -518,15 +517,11 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 								<VaultDetailsQuickActionsButtons currentVault={currentVault} />
 								{hasStakingRewards && (
 									<div className={'mt-1 flex justify-between'}>
-										<legend className={'font-number text-xs text-neutral-900/50'}>
-											{'Deposit only'}
-										</legend>
-										<div className={isAutoStakingEnabled ? 'opacity-50' : ''}>
-											<Switch
-												isEnabled={!isAutoStakingEnabled}
-												onSwitch={(): void => set_isAutoStakingEnabled(!isAutoStakingEnabled)}
-											/>
-										</div>
+										<button
+											className={'font-number text-xs text-neutral-900/50'}
+											onClick={(): void => set_isAutoStakingEnabled(!isAutoStakingEnabled)}>
+											{isAutoStakingEnabled ? 'Deposit only' : 'Deposit and Stake'}
+										</button>
 									</div>
 								)}
 							</div>
