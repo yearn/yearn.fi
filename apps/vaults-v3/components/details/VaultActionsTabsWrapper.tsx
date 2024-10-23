@@ -301,6 +301,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 				}
 			]
 		});
+
 		const hasLiveRewards = decodeAsBigInt(result[1]) > Math.floor(Date.now() / 1000);
 		const hasLiveRewardsFromYDaemon = (currentVault.staking.rewards || []).some(e => !e.isFinished);
 		set_unstakedBalance(toNormalizedBN(decodeAsBigInt(result[0]), currentVault.decimals));
@@ -359,6 +360,15 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 			set_possibleTabs([tabs[0], tabs[1]]);
 		}
 	}, [currentVault?.migration?.available, currentVault?.info?.isRetired, actionParams.isReady, hasStakingRewards]);
+
+	useEffect(() => {
+		const finishedAt = 1729022801; // temporary value
+		if (!hasStakingRewardsLive && Math.floor(Date.now() / 1000) - finishedAt > 60 * 60 * 24 * 7) {
+			set_isAutoStakingEnabled(false);
+			return;
+		}
+		set_isAutoStakingEnabled(true);
+	}, [hasStakingRewardsLive, set_isAutoStakingEnabled]);
 
 	const isSonneRetiredVault =
 		toAddress(currentVault.address) === toAddress(`0x5b977577eb8a480f63e11fc615d6753adb8652ae`) ||
@@ -515,7 +525,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 							<p className={'hidden text-base md:inline'}>&nbsp;</p>
 							<div>
 								<VaultDetailsQuickActionsButtons currentVault={currentVault} />
-								{hasStakingRewards && (
+								{!hasStakingRewardsLive && (
 									<div className={'mt-1 flex justify-between'}>
 										<button
 											className={'font-number text-xxs text-neutral-900/50'}
