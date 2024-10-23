@@ -518,7 +518,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 								{hasStakingRewards && (
 									<div className={'mt-1 flex justify-between'}>
 										<button
-											className={'font-number text-xs text-neutral-900/50'}
+											className={'font-number text-xxs text-neutral-900/50'}
 											onClick={(): void => set_isAutoStakingEnabled(!isAutoStakingEnabled)}>
 											{isAutoStakingEnabled ? 'Deposit only' : 'Deposit and Stake'}
 										</button>
