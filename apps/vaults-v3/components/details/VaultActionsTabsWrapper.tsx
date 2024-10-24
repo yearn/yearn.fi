@@ -361,14 +361,26 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 		}
 	}, [currentVault?.migration?.available, currentVault?.info?.isRetired, actionParams.isReady, hasStakingRewards]);
 
+	/************************************************************************************************
+	 * This effect manages the auto-staking feature based on staking rewards availability.
+	 * It disables auto-staking if there are no staking rewards and the last reward ended over a week ago.
+	 * Otherwise, it enables auto-staking.
+	 *
+	 * The check for rewards ending over a week ago helps prevent unnecessary auto-staking
+	 * for vaults with expired or long-inactive staking programs.
+	 ************************************************************************************************/
 	useEffect(() => {
-		const finishedAt = 1729022801; // temporary value
-		if (!hasStakingRewardsLive && Math.floor(Date.now() / 1000) - finishedAt > 60 * 60 * 24 * 7) {
+		if (
+			!hasStakingRewards &&
+			currentVault.staking.rewards?.some(
+				el => Math.floor(Date.now() / 1000) - (el.finishedAt ?? 0) > 60 * 60 * 24 * 7
+			)
+		) {
 			set_isAutoStakingEnabled(false);
 			return;
 		}
 		set_isAutoStakingEnabled(true);
-	}, [hasStakingRewardsLive, set_isAutoStakingEnabled]);
+	}, [currentVault.staking.rewards, hasStakingRewards, hasStakingRewardsLive, set_isAutoStakingEnabled]);
 
 	const isSonneRetiredVault =
 		toAddress(currentVault.address) === toAddress(`0x5b977577eb8a480f63e11fc615d6753adb8652ae`) ||
