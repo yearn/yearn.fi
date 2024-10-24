@@ -25,6 +25,7 @@ import {
 } from '@vaults-v3/components/details/VaultActionsTabsWrapper';
 import {readContracts} from '@wagmi/core';
 import {parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
+import {useYearn} from '@common/contexts/useYearn';
 import {IconChevron} from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
@@ -39,6 +40,7 @@ import type {TTabsOptions} from '@vaults-v3/components/details/VaultActionsTabsW
  *************************************************************************************************/
 export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const router = useRouter();
+	const {isAutoStakingEnabled, set_isAutoStakingEnabled} = useYearn();
 	const {address} = useWeb3();
 	const {onSwitchSelectedOptions, isDepositing, actionParams} = useActionFlow();
 	const [possibleTabs, set_possibleTabs] = useState<TTabsOptions[]>([tabs[0], tabs[1]]);
@@ -135,6 +137,27 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 			set_possibleTabs([tabs[0], tabs[1]]);
 		}
 	}, [currentVault?.migration?.available, currentVault?.info?.isRetired, actionParams.isReady, hasStakingRewards]);
+
+	/************************************************************************************************
+	 * This effect manages the auto-staking feature based on staking rewards availability.
+	 * It disables auto-staking if there are no staking rewards and the last reward ended over a week ago.
+	 * Otherwise, it enables auto-staking.
+	 *
+	 * The check for rewards ending over a week ago helps prevent unnecessary auto-staking
+	 * for vaults with expired or long-inactive staking programs.
+	 ************************************************************************************************/
+	useEffect(() => {
+		if (
+			!hasStakingRewards &&
+			currentVault.staking.rewards?.some(
+				el => Math.floor(Date.now() / 1000) - (el.finishedAt ?? 0) > 60 * 60 * 24 * 7
+			)
+		) {
+			set_isAutoStakingEnabled(false);
+			return;
+		}
+		set_isAutoStakingEnabled(true);
+	}, [currentVault.staking.rewards, hasStakingRewards, hasStakingRewardsLive, set_isAutoStakingEnabled]);
 
 	const isSonneRetiredVault =
 		toAddress(currentVault.address) === toAddress(`0x5b977577eb8a480f63e11fc615d6753adb8652ae`) ||
@@ -302,8 +325,16 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 							<p className={'hidden text-base md:inline'}>&nbsp;</p>
 							<div>
 								<VaultDetailsQuickActionsButtons currentVault={currentVault} />
+								{!hasStakingRewardsLive && (
+									<div className={'mt-1 flex justify-between'}>
+										<button
+											className={'font-number text-xxs text-neutral-900/50'}
+											onClick={(): void => set_isAutoStakingEnabled(!isAutoStakingEnabled)}>
+											{isAutoStakingEnabled ? 'Deposit only' : 'Deposit and Stake'}
+										</button>
+									</div>
+								)}
 							</div>
-							<legend className={'hidden text-xs md:inline'}>&nbsp;</legend>
 						</div>
 					</div>
 				)}
