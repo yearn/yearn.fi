@@ -1,4 +1,5 @@
 import {useCallback, useMemo, useRef} from 'react';
+import {maxUint256} from 'viem';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {assert, isEthAddress, toAddress, toNormalizedBN, zeroNormalizedBN} from '@builtbymom/web3/utils';
 import {allowanceOf, approveERC20} from '@builtbymom/web3/utils/wagmi';
@@ -6,7 +7,6 @@ import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {Solver} from '@vaults/types/solvers';
 import {getEthZapperContract, getNativeTokenWrapperContract} from '@vaults/utils';
 import {getVaultEstimateOut} from '@vaults/utils/getVaultEstimateOut';
-import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {allowanceKey} from '@common/utils';
 import {depositETH, withdrawETH} from '@common/utils/actions';
 
@@ -97,7 +97,7 @@ export function useSolverChainCoin(): TSolverContext {
 	 *********************************************************************************************/
 	const onApprove = useCallback(
 		async (
-			amount = MAX_UINT_256,
+			amount = maxUint256,
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 			onSuccess: () => Promise<void>
 		): Promise<void> => {
