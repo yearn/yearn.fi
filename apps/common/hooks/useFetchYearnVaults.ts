@@ -1,3 +1,4 @@
+import {useEffect, useState} from 'react';
 import {useFetch} from '@builtbymom/web3/hooks/useFetch';
 import {toAddress} from '@builtbymom/web3/utils';
 import {useDeepCompareMemo} from '@react-hookz/web';
@@ -24,6 +25,9 @@ function useFetchYearnVaults(chainIDs?: number[] | undefined): {
 	mutate: KeyedMutator<TYDaemonVaults>;
 } {
 	const {yDaemonBaseUri: yDaemonBaseUriWithoutChain} = useYDaemonBaseURI();
+	const [allVaults, set_allVaults] = useState<TYDaemonVaults>([]);
+	const [currentPage, set_currentPage] = useState<number>(1);
+	const limit = 200;
 
 	const {
 		data: vaults,
@@ -37,10 +41,24 @@ function useFetchYearnVaults(chainIDs?: number[] | undefined): {
 			strategiesDetails: 'withDetails',
 			strategiesCondition: 'inQueue',
 			chainIDs: chainIDs ? chainIDs.join(',') : [1, 10, 137, 250, 8453, 42161].join(','),
-			limit: '2500'
+			limit: limit.toString(),
+			page: currentPage.toString()
 		})}`,
 		schema: yDaemonVaultsSchema
 	});
+
+	useEffect(() => {
+		let hasMore = true;
+		if (vaults) {
+			if (vaults.length < limit) {
+				hasMore = false;
+			}
+			set_allVaults(prev => [...prev, ...vaults]);
+			if (hasMore) {
+				set_currentPage(prev => prev + 1);
+			}
+		}
+	}, [vaults]);
 
 	// const vaultsMigrations: TYDaemonVaults = useMemo(() => [], []);
 	const {data: vaultsMigrations} = useFetch<TYDaemonVaults>({
@@ -58,17 +76,17 @@ function useFetchYearnVaults(chainIDs?: number[] | undefined): {
 	});
 
 	const vaultsObject = useDeepCompareMemo((): TDict<TYDaemonVault> => {
-		if (!vaults) {
+		if (!allVaults) {
 			return {};
 		}
-		const _vaultsObject = (vaults || []).reduce((acc: TDict<TYDaemonVault>, vault): TDict<TYDaemonVault> => {
+		const _vaultsObject = (allVaults || []).reduce((acc: TDict<TYDaemonVault>, vault): TDict<TYDaemonVault> => {
 			if (!vault.migration.available) {
 				acc[toAddress(vault.address)] = vault;
 			}
 			return acc;
 		}, {});
 		return _vaultsObject;
-	}, [vaults]);
+	}, [allVaults]);
 
 	const vaultsMigrationsObject = useDeepCompareMemo((): TDict<TYDaemonVault> => {
 		if (!vaultsMigrations) {
