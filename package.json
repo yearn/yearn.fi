@@ -16,7 +16,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@builtbymom/web3": "0.0.202",
+    "@builtbymom/web3": "0.0.218",
     "@cowprotocol/cow-sdk": "2.1.0",
     "@headlessui/react": "^2.0.4",
     "@rainbow-me/rainbowkit": "2.1.3",
