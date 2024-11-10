@@ -1,22 +1,17 @@
 import React, {useState} from 'react';
 import Image from 'next/image';
-import {cl} from '@builtbymom/web3/utils';
 import {useUpdateEffect} from '@react-hookz/web';
 
 import type {ImageProps} from 'next/image';
 import type {CSSProperties, ReactElement} from 'react';
 
-type TImageWithFallback = ImageProps & {
-	smWidth?: number;
-	smHeight?: number;
-};
-export function ImageWithFallback(props: TImageWithFallback): ReactElement {
-	const {alt, src, smWidth, smHeight, ...rest} = props;
-	const [imageSrc, set_imageSrc] = useState(`${src}?fallback=true`);
+function ImageWithFallback(props: ImageProps & {altSrc?: string}): ReactElement {
+	const {alt, src, altSrc, ...rest} = props;
+	const [imageSrc, set_imageSrc] = useState(altSrc ? src : `${src}?fallback=true`);
 	const [imageStyle, set_imageStyle] = useState<CSSProperties>({});
 
 	useUpdateEffect((): void => {
-		set_imageSrc(`${src}?fallback=true`);
+		set_imageSrc(altSrc ? src : `${src}?fallback=true`);
 		set_imageStyle({});
 	}, [src]);
 
@@ -24,14 +19,21 @@ export function ImageWithFallback(props: TImageWithFallback): ReactElement {
 		<Image
 			alt={alt}
 			src={imageSrc}
-			style={imageStyle}
-			className={cl(
-				`w-[${smWidth ?? rest.width}px] min-w-[${smWidth ?? rest.width}px]`,
-				`h-[${smHeight ?? rest.height}px] min-h-[${smHeight ?? rest.height}px]`,
-				`md:w-[${rest.width}px] md:h-[${rest.height}px]`,
-				`md:min-w-[${rest.width}px] md:min-h-[${rest.height}px]`
-			)}
+			loading={'eager'}
+			className={'animate-fadeIn'}
+			style={{
+				minWidth: props.width,
+				minHeight: props.height,
+				maxWidth: props.width,
+				maxHeight: props.height,
+				...imageStyle
+			}}
 			onError={(): void => {
+				if (altSrc && imageSrc !== `${altSrc}?fallback=true`) {
+					console.warn('using placeholder');
+					set_imageSrc(`${altSrc}?fallback=true`);
+					return;
+				}
 				set_imageSrc('/placeholder.png');
 				set_imageStyle({filter: 'opacity(0.2)'});
 			}}
@@ -39,3 +41,5 @@ export function ImageWithFallback(props: TImageWithFallback): ReactElement {
 		/>
 	);
 }
+
+export {ImageWithFallback};
