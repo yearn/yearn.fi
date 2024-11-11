@@ -9,6 +9,11 @@ const aeonik = localFont({
 	display: 'swap',
 	src: [
 		{
+			path: '../../../public/fonts/Aeonik-Light.ttf',
+			weight: '300',
+			style: 'normal'
+		},
+		{
 			path: '../../../public/fonts/Aeonik-Regular.woff2',
 			weight: '400',
 			style: 'normal'

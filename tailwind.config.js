@@ -20,7 +20,8 @@ module.exports = {
 				white: 'rgb(255, 255, 255)',
 				transparent: 'transparent',
 				inherit: 'inherit',
-				primary: '#0657F9'
+				primary: '#0657F9',
+				grey: {400: '#9D9D9D', 800: '#282828', 900: '#0C0C0C'}
 			},
 			fontFamily: {
 				aeonik: ['var(--font-aeonik)', 'Aeonik', ...defaultTheme.fontFamily.sans],

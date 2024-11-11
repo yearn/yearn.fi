@@ -3,6 +3,7 @@ import {Toaster} from 'react-hot-toast';
 import {usePathname} from 'next/navigation';
 import {useRouter} from 'next/router';
 import PlausibleProvider from 'next-plausible';
+import {LandingAppHeader} from 'apps/landing/components/common/Header';
 import {AnimatePresence, domAnimation, LazyMotion, motion} from 'framer-motion';
 import {WithMom} from '@builtbymom/web3/contexts/WithMom';
 import {cl} from '@builtbymom/web3/utils';
@@ -47,7 +48,11 @@ const WithLayout = memo(function WithLayout(props: {supportedNetworks: Chain[]} 
 	return (
 		<>
 			<div className={cl('mx-auto mb-0 flex font-aeonik max-w-6xl absolute top-0 inset-x-0')}>
-				<AppHeader supportedNetworks={props.supportedNetworks} />
+				{pathName === '/landing' ? (
+					<LandingAppHeader />
+				) : (
+					<AppHeader supportedNetworks={props.supportedNetworks} />
+				)}
 			</div>
 			<div
 				id={'app'}
