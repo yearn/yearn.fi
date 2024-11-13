@@ -19,7 +19,7 @@ export function Hero(): ReactElement {
 				<div className={'mt-[88px] text-center'}>
 					<p className={'text-[80px] font-bold leading-[80px] text-white'}>{'THE DEFI WAY'}</p>
 					<p className={'text-[80px] font-bold leading-[80px] text-white'}>{'TO EARN CRYPTO'}</p>
-					<p className={'text-grey-400 mt-4'}>
+					<p className={'mt-4 text-grey-400'}>
 						{'Yearn is DeFi’s longest running, most battle tested, and most trusted yield protocol.'}
 					</p>
 				</div>
