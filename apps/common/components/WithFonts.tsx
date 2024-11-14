@@ -31,6 +31,18 @@ const aeonik = localFont({
 	]
 });
 
+const aeonikFono = localFont({
+	variable: '--font-aeonik-fono',
+	display: 'swap',
+	src: [
+		{
+			path: '../../../public/fonts/AeonikFono-Regular.otf',
+			weight: '400',
+			style: 'normal'
+		}
+	]
+});
+
 const sourceCodePro = Source_Code_Pro({
 	weight: ['400', '500', '600', '700'],
 	subsets: ['latin'],
@@ -40,13 +52,17 @@ const sourceCodePro = Source_Code_Pro({
 
 export function WithFonts({children}: {children: ReactNode}): ReactElement {
 	return (
-		<div style={{fontFamily: `${aeonik.style.fontFamily}, ${sourceCodePro.style.fontFamily}`}}>
+		<div
+			style={{
+				fontFamily: `${aeonik.style.fontFamily}, ${aeonikFono.style.fontFamily}, ${sourceCodePro.style.fontFamily}`
+			}}>
 			<style
 				jsx
 				global>
 				{`
 					:root {
 						--font-aeonik: ${aeonik.style.fontFamily};
+						--font-aeonik-fono: ${aeonikFono.style.fontFamily};
 						--scp-font: ${sourceCodePro.style.fontFamily};
 					}
 				`}
