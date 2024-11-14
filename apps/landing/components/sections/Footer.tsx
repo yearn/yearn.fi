@@ -33,7 +33,7 @@ export function Footer(): ReactElement {
 		<div className={'flex w-full justify-center '}>
 			<div
 				style={{
-					backgroundImage: "url('/landing/footer.png')",
+					backgroundImage: "url('/landing/footer-background.png')",
 					backgroundRepeat: 'no-repeat',
 					backgroundSize: 'auto 100%',
 					backgroundPosition: 'center'

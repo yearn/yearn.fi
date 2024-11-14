@@ -8,7 +8,7 @@ export function Hero(): ReactElement {
 		<div className={'flex w-full justify-center'}>
 			<div
 				style={{
-					backgroundImage: "url('/landing/hero.png')",
+					backgroundImage: "url('/landing/hero-background.png')",
 					backgroundRepeat: 'no-repeat',
 					backgroundSize: 'auto 100%',
 					backgroundPosition: 'center'
