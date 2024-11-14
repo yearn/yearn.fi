@@ -2,8 +2,7 @@ import {type ReactElement, useMemo, useState} from 'react';
 import Link from 'next/link';
 import {useRouter} from 'next/router';
 import {AppName, APPS} from '@common/components/Apps';
-
-import {IconYearnLogo} from '../icons/IconYearnLogo';
+import {LogoYearn} from '@common/icons/LogoYearn';
 
 type TMenu = {path: string; label: string | ReactElement; target?: string};
 type TNavbar = {nav: TMenu[]; currentPathName: string};
@@ -107,7 +106,10 @@ export function LandingAppHeader(): ReactElement {
 						</button>
 					</div>
 					<div className={'flex justify-center'}>
-						<IconYearnLogo />
+						<LogoYearn
+							className={'size-10'}
+							front={'text-black'}
+						/>
 					</div>
 					<Navbar
 						currentPathName={pathname || ''}
