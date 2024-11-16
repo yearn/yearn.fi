@@ -15,8 +15,8 @@ export function EarnCard(props: {title: string; info: string; logoSrc: string; h
 					? '#0657F9'
 					: 'linear-gradient(180deg, rgba(12, 12, 12, 0.8) 0%, rgba(26, 26, 26, 0.8) 100%)'
 			}}
-			className={'group relative flex h-full overflow-hidden p-6'}>
-			<div className={'mt-auto flex items-end'}>
+			className={'group relative z-30 flex h-full overflow-hidden rounded-lg border border-[#292929] p-6'}>
+			<div className={'flex md:mt-auto md:items-end'}>
 				<div>
 					<p className={'text-[24px] group-hover:text-grey-900'}>{props.title}</p>
 					<p className={'text-grey-400 group-hover:text-grey-900'}>{props.info}</p>
@@ -26,19 +26,33 @@ export function EarnCard(props: {title: string; info: string; logoSrc: string; h
 				</div>
 			</div>
 			<Image
-				className={'absolute -top-12 right-10'}
+				className={'absolute -bottom-20 left-0 -z-10 md:-top-12 md:left-auto md:right-10'}
 				src={props.hoverLogoSrc}
 				width={200}
 				height={200}
 				alt={'app-logo'}
 			/>
 			<Image
-				className={'absolute -top-12 right-10 group-hover:opacity-0'}
+				className={'absolute -bottom-20 left-0 -z-10 group-hover:opacity-0 md:-top-12 md:left-auto md:right-10'}
 				src={props.logoSrc}
 				width={200}
 				height={200}
 				alt={'app-logo'}
 			/>
+			{/* <Image
+					className={'absolute '}
+					src={props.hoverLogoSrc}
+					width={200}
+					height={200}
+					alt={'app-logo'}
+				/>
+				<Image
+					className={'absolute '}
+					src={props.logoSrc}
+					width={200}
+					height={200}
+					alt={'app-logo'}
+				/> */}
 		</div>
 	);
 }

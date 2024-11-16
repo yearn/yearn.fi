@@ -67,7 +67,7 @@ export function LandingAppHeader(): ReactElement {
 			id={'head'}
 			className={'inset-x-0 top-0 z-50 mt-7 w-full'}>
 			<div className={'w-full'}>
-				<header className={'yearn--header mx-auto max-w-6xl !px-0'}>
+				<header className={'yearn--header mx-auto max-w-6xl md:!px-10'}>
 					<div className={'flex md:hidden'}>
 						<button onClick={(): void => set_isMenuOpen(!isMenuOpen)}>
 							<span className={'sr-only'}>{'Open menu'}</span>
