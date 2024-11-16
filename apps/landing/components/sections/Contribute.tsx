@@ -20,7 +20,7 @@ function ContributeCard(props: {title: string; description: string}): ReactEleme
 					: 'linear-gradient(180deg, rgba(12, 12, 12, 0.8) 0%, rgba(26, 26, 26, 0.8) 100%)'
 			}}
 			className={
-				'flex h-[360px] flex-col justify-between rounded-lg border border-[#292929] px-8 pb-8 pt-10 text-white transition-all hover:text-black'
+				'flex h-[240px] flex-col justify-between rounded-lg border border-[#292929] px-8 pb-8 pt-10 text-white transition-all hover:text-black md:h-[360px]'
 			}>
 			<div>
 				<div className={'mb-2 text-xl'}>{props.title}</div>
@@ -37,9 +37,14 @@ function ContributeCard(props: {title: string; description: string}): ReactEleme
 
 export function Contribute(): ReactElement {
 	return (
-		<div className={'max-w-6xl pt-[160px]'}>
-			<p className={'text-center text-5xl font-light text-white'}>{'CONTRIBUTE AND HELP BUILD THE YEARN DAO'}</p>
-			<div className={'mt-10 grid grid-cols-4 gap-6'}>
+		<div className={'max-w-6xl px-6 pt-[104px] md:pt-[160px]'}>
+			<p className={'text-left font-aeonikFono text-3xl font-light text-white md:text-center md:text-5xl'}>
+				{'CONTRIBUTE AND HELP BUILD THE YEARN DAO'}
+			</p>
+			<div
+				className={
+					'mt-10 grid grid-flow-col grid-cols-1 grid-rows-4 gap-6 sm:grid-cols-2 sm:grid-rows-2 md:grid-flow-row md:grid-cols-4 md:grid-rows-1'
+				}>
 				{CARDS.map(card => (
 					<ContributeCard {...card} />
 				))}

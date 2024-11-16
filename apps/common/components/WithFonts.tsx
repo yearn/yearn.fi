@@ -36,6 +36,11 @@ const aeonikFono = localFont({
 	display: 'swap',
 	src: [
 		{
+			path: '../../../public/fonts/AeonikFono-Light.otf',
+			weight: '300',
+			style: 'normal'
+		},
+		{
 			path: '../../../public/fonts/AeonikFono-Regular.otf',
 			weight: '400',
 			style: 'normal'

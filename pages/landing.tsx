@@ -17,9 +17,11 @@ function Landing(): ReactElement {
 				<About />
 				<Partners />
 				<Contribute />
-				<Form />
+				<div id={'form'}>
+					<Form />
+				</div>
 			</main>
-			<footer className={'flex w-full flex-col items-center bg-[#080A0C] pt-[136px]'}>
+			<footer className={'flex w-full flex-col items-center bg-[#080A0C] pt-[104px] md:pt-[160px]'}>
 				<Footer />
 			</footer>
 		</div>

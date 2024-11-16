@@ -13,7 +13,9 @@ export function Button(
 	const {variant = 'primary', ...rest} = props;
 
 	return (
-		<button className={cl('py-3 px-4 rounded-[4px] transition-colors', STYLE[variant], rest.className)}>
+		<button
+			{...rest}
+			className={cl('py-3 px-4 rounded-[4px] transition-colors', STYLE[variant], rest.className)}>
 			{rest.children}
 		</button>
 	);

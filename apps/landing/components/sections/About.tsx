@@ -5,18 +5,23 @@ export function About(): ReactElement {
 	const [isReadMore, set_isReadMore] = useState(false);
 	return (
 		<div
-			className={'mt-[160px] h-[444px] w-full max-w-[1920px]'}
+			className={'mt-[160px] flex w-full max-w-[1920px] justify-center px-6 pb-10 md:h-[430px] md:pb-0'}
 			style={{
 				backgroundImage: "url('/landing/about_bg.png')",
 				backgroundRepeat: 'no-repeat',
 				backgroundSize: 'auto 100%',
 				backgroundPosition: 'center'
 			}}>
-			<div className={'relative ml-[22%]'}>
-				<p className={'mb-10 text-left text-5xl font-light text-white'}>{'WTF IS YEARN VAULT?'}</p>
+			<div className={'relative lg:mr-[400px]'}>
+				<p
+					className={
+						'mb-10 text-left font-aeonikFono text-3xl font-light text-white md:text-center md:text-5xl'
+					}>
+					{'WTF IS YEARN VAULT?'}
+				</p>
 				<div
 					className={cl(
-						'max-w-[720px] text-lg transition-all overflow-hidden leading-7',
+						'md:max-w-[720px] text-lg transition-all overflow-hidden leading-7',
 						isReadMore ? 'max-h-screen' : 'max-h-[160px] gradient-mask-b-10'
 					)}>
 					<p className={cl('text-grey-400 to-indigo-400')}>

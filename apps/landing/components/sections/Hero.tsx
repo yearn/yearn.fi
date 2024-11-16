@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import {scrollToHash} from 'apps/landing/utils/scrollToHash';
 import {motion} from 'framer-motion';
 
 import {Button} from '../common/Button';
@@ -8,7 +9,6 @@ import type {ReactElement} from 'react';
 function AnimatedLogos(): ReactElement {
 	return (
 		<>
-			{' '}
 			<motion.div
 				className={'absolute'}
 				style={{
@@ -134,6 +134,7 @@ export function Hero(): ReactElement {
 					<div className={'mt-[72px] flex gap-2'}>
 						<Button className={'w-[192px] px-[15px]'}>{'DISCOVER PRODUCTS'}</Button>
 						<Button
+							onClick={() => scrollToHash('form')}
 							variant={'secondary'}
 							className={'w-[192px]'}>
 							{'SUBMIT YOUR APP'}
@@ -166,7 +167,11 @@ export function Hero(): ReactElement {
 				</div>
 				<div className={'mt-10 flex w-full flex-col gap-2'}>
 					<Button className={'px-[15px]'}>{'DISCOVER PRODUCTS'}</Button>
-					<Button variant={'secondary'}>{'SUBMIT YOUR APP'}</Button>
+					<Button
+						variant={'secondary'}
+						onClick={() => scrollToHash('form')}>
+						{'SUBMIT YOUR APP'}
+					</Button>
 				</div>
 			</div>
 		</>
