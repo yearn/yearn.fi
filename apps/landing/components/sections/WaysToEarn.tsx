@@ -1,9 +1,9 @@
 import {type ReactElement, useState} from 'react';
 import Image from 'next/image';
+import {IconArrow} from '@common/icons/IconArrow';
 
 import {Button} from '../common/Button';
 import {EarnCard} from '../common/EarnCard';
-import {IconArrow} from '../icons/IconArrow';
 
 export function WaysToEarn(): ReactElement {
 	const [isHovering, set_isHovering] = useState(false);

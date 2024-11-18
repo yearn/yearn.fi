@@ -1,7 +1,6 @@
 import {type ReactElement, useState} from 'react';
 import Image from 'next/image';
-
-import {IconArrow} from '../icons/IconArrow';
+import {IconArrow} from '@common/icons/IconArrow';
 
 export function EarnCard(props: {title: string; info: string; logoSrc: string; hoverLogoSrc: string}): ReactElement {
 	const [isHovering, set_isHovering] = useState(false);
@@ -39,20 +38,6 @@ export function EarnCard(props: {title: string; info: string; logoSrc: string; h
 				height={200}
 				alt={'app-logo'}
 			/>
-			{/* <Image
-					className={'absolute '}
-					src={props.hoverLogoSrc}
-					width={200}
-					height={200}
-					alt={'app-logo'}
-				/>
-				<Image
-					className={'absolute '}
-					src={props.logoSrc}
-					width={200}
-					height={200}
-					alt={'app-logo'}
-				/> */}
 		</div>
 	);
 }

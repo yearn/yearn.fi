@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import Link from 'next/link';
 import {scrollToHash} from 'apps/landing/utils/scrollToHash';
 import {motion} from 'framer-motion';
 
@@ -166,7 +167,11 @@ export function Hero(): ReactElement {
 					</p>
 				</div>
 				<div className={'mt-10 flex w-full flex-col gap-2'}>
-					<Button className={'px-[15px]'}>{'DISCOVER PRODUCTS'}</Button>
+					<Link
+						className={'w-full'}
+						href={'/'}>
+						<Button className={'w-full px-[15px]'}>{'DISCOVER PRODUCTS'}</Button>
+					</Link>
 					<Button
 						variant={'secondary'}
 						onClick={() => scrollToHash('form')}>
