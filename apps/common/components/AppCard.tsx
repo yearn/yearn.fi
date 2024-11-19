@@ -47,7 +47,7 @@ export function AppCard(props: TAppCardProps): ReactElement {
 				className={'flex items-center md:hidden'}>
 				<div>
 					{props.app.logoURI ? (
-						<div className={'size-16 rounded-2xl border border-[#29292980] md:rounded-[32px]'}>
+						<div className={'size-16 rounded-[32px]'}>
 							<Image
 								src={props.app.logoURI}
 								alt={props.app.name}
@@ -64,7 +64,7 @@ export function AppCard(props: TAppCardProps): ReactElement {
 
 				<div className={'ml-4'}>
 					<div className={'mb-1 text-base font-bold text-gray-300'}>{props.app.name}</div>
-					<p className={'line-clamp-2 h-12 text-base text-gray-400'}>{props.app.description}</p>
+					<p className={'line-clamp-2 h-12 text-xs text-gray-400 md:text-base'}>{props.app.description}</p>
 				</div>
 			</Link>
 		</>

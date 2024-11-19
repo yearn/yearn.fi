@@ -13,7 +13,7 @@ export const AppsCarousel = forwardRef(
 		ref: ForwardedRef<HTMLDivElement>
 	): ReactElement => {
 		return (
-			<div className={'h-[262px]'}>
+			<div className={props.isUsingFeatured ? 'h-[262px]' : 'h-[360px] md:h-[262px]'}>
 				<section className={'absolute left-0 -mx-1 w-full'}>
 					<div
 						className={
@@ -29,10 +29,35 @@ export const AppsCarousel = forwardRef(
 						ref={ref}
 						onScroll={props.onScroll}
 						className={cl(
-							'flex overflow-x-auto pb-1 pl-[38px] scrollbar-none max-sm:pr-6',
-							props.isUsingFeatured ? 'gap-x-8' : 'gap-x-4 overflow-y-hidden'
+							'hidden md:flex overflow-x-auto pb-1 pl-[38px] scrollbar-none max-sm:pr-6',
+							props.isUsingFeatured ? 'gap-x-8' : 'flex-col md:flex-row gap-x-4 overflow-y-hidden'
 						)}>
 						{props.apps?.map((app, i) => {
+							return (
+								<React.Fragment key={app.appURI + i}>
+									{props.isUsingFeatured ? (
+										<FeaturedApp
+											key={app.name + i}
+											app={app}
+										/>
+									) : (
+										<AppCard
+											app={app}
+											key={app.name + i}
+										/>
+									)}
+								</React.Fragment>
+							);
+						})}
+					</div>
+					<div
+						ref={ref}
+						onScroll={props.onScroll}
+						className={cl(
+							'flex md:hidden overflow-x-auto pb-1 pl-[38px] scrollbar-none max-sm:pr-6',
+							props.isUsingFeatured ? 'gap-x-8' : 'flex-col md:flex-row gap-y-4 overflow-y-hidden'
+						)}>
+						{props.apps?.slice(0, 4).map((app, i) => {
 							return (
 								<React.Fragment key={app.appURI + i}>
 									{props.isUsingFeatured ? (
