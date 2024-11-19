@@ -1,11 +1,11 @@
 import {useCallback, useMemo, useRef} from 'react';
+import {maxUint256} from 'viem';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {assert, assertAddress, toAddress, toNormalizedBN, zeroNormalizedBN} from '@builtbymom/web3/utils';
 import {allowanceOf, approveERC20, getNetwork} from '@builtbymom/web3/utils/wagmi';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {Solver} from '@vaults/types/solvers';
 import {getVaultEstimateOut} from '@vaults/utils/getVaultEstimateOut';
-import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {allowanceKey} from '@yearn-finance/web-lib/utils/helpers';
 import {useYearn} from '@common/contexts/useYearn';
 import {depositViaPartner, withdrawShares} from '@common/utils/actions';
@@ -87,7 +87,7 @@ export function useSolverPartnerContract(): TSolverContext {
 	 **************************************************************************/
 	const onApprove = useCallback(
 		async (
-			amount = MAX_UINT_256,
+			amount = maxUint256,
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 			onSuccess: () => Promise<void>
 		): Promise<void> => {

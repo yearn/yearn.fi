@@ -80,7 +80,7 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 							{'Learn more about veYFI rewards in the '}
 							<a
 								className={'underline'}
-								href={'https://docs.yearn.fi/getting-started/products/veyfi'}
+								href={'https://docs.yearn.fi/contributing/governance/veyfi-intro'}
 								target={'_blank'}
 								rel={'noreferrer'}>
 								{'FAQ'}

@@ -1,6 +1,7 @@
 import {useCallback, useState} from 'react';
 import {useRouter} from 'next/router';
 import {usePlausible} from 'next-plausible';
+import {maxUint256} from 'viem';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {useAsyncTrigger} from '@builtbymom/web3/hooks/useAsyncTrigger';
 import {isZero, toAddress, toBigInt, zeroNormalizedBN} from '@builtbymom/web3/utils';
@@ -9,7 +10,7 @@ import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useSolver} from '@vaults/contexts/useSolver';
 import {Solver} from '@vaults/types/solvers';
 import {Button} from '@yearn-finance/web-lib/components/Button';
-import {ETH_TOKEN_ADDRESS, MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
+import {ETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {useYearn} from '@common/contexts/useYearn';
 import {PLAUSIBLE_EVENTS} from '@common/utils/plausible';
 
@@ -145,7 +146,7 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 			currentSolver === Solver.enum.Vanilla ||
 			currentSolver === Solver.enum.InternalMigration;
 		onApprove(
-			shouldApproveInfinite ? MAX_UINT_256 : toBigInt(actionParams.amount?.raw),
+			shouldApproveInfinite ? maxUint256 : toBigInt(actionParams.amount?.raw),
 			set_txStatusApprove,
 			async (): Promise<void> => {
 				await triggerRetrieveAllowance();

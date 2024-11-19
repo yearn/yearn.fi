@@ -92,8 +92,6 @@ function Index(): ReactElement | null {
 							currentVault.token.address
 						)}/logo-128.png`}
 						alt={''}
-						smWidth={48}
-						smHeight={48}
 						width={72}
 						height={72}
 					/>

@@ -122,8 +122,6 @@ function Index(): ReactElement | null {
 							className={'size-10 md:size-12'}
 							src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-128.png`}
 							alt={''}
-							smWidth={40}
-							smHeight={40}
 							width={48}
 							height={48}
 						/>

@@ -1,5 +1,5 @@
 import {useCallback, useMemo, useRef} from 'react';
-import {BaseError, isHex, zeroAddress} from 'viem';
+import {BaseError, isHex, maxUint256, zeroAddress} from 'viem';
 import axios from 'axios';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {
@@ -26,7 +26,6 @@ import {getPortalsApproval, getPortalsEstimate, getPortalsTx, PORTALS_NETWORK} f
 import {Solver} from '@vaults/types/solvers';
 import {sendTransaction, switchChain, waitForTransactionReceipt} from '@wagmi/core';
 import {toast} from '@yearn-finance/web-lib/components/yToast';
-import {MAX_UINT_256} from '@yearn-finance/web-lib/utils/constants';
 import {allowanceKey} from '@yearn-finance/web-lib/utils/helpers';
 import {useYearn} from '@common/contexts/useYearn';
 
@@ -272,7 +271,7 @@ export function useSolverPortals(): TSolverContext {
 		}
 		const inputToken = request.current.inputToken.value;
 		if (isEthAddress(request.current.inputToken.value)) {
-			return toNormalizedBN(MAX_UINT_256, 18);
+			return toNormalizedBN(maxUint256, 18);
 		}
 		const key = allowanceKey(
 			request.current.chainID,
@@ -316,7 +315,7 @@ export function useSolverPortals(): TSolverContext {
 	 **************************************************************************/
 	const onApprove = useCallback(
 		async (
-			amount = MAX_UINT_256,
+			amount = maxUint256,
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 			onSuccess: () => Promise<void>
 		): Promise<void> => {

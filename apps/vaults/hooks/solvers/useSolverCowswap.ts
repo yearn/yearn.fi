@@ -1,6 +1,6 @@
 import {useCallback, useMemo, useRef} from 'react';
 import {ethers} from 'ethers';
-import {BaseError} from 'viem';
+import {BaseError, maxUint256} from 'viem';
 import axios from 'axios';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {assert, isEthAddress, isZeroAddress, toBigInt, toNormalizedBN, zeroNormalizedBN} from '@builtbymom/web3/utils';
@@ -16,7 +16,7 @@ import {OrderBookApi, OrderQuoteSide, OrderSigningUtils} from '@cowprotocol/cow-
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {Solver} from '@vaults/types/solvers';
 import {toast} from '@yearn-finance/web-lib/components/yToast';
-import {MAX_UINT_256, SOLVER_COW_VAULT_RELAYER_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {SOLVER_COW_VAULT_RELAYER_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {allowanceKey} from '@yearn-finance/web-lib/utils/helpers';
 import {useYearn} from '@common/contexts/useYearn';
 
@@ -362,7 +362,7 @@ export function useSolverCowswap(): TSolverContext {
 	 **************************************************************************/
 	const onApprove = useCallback(
 		async (
-			amount = MAX_UINT_256,
+			amount = maxUint256,
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 			onSuccess: () => Promise<void>
 		): Promise<void> => {

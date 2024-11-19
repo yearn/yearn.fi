@@ -1,4 +1,5 @@
 import {useCallback, useMemo, useRef} from 'react';
+import {maxUint256} from 'viem';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {assert, toAddress, toBigInt, toNormalizedBN, zeroNormalizedBN} from '@builtbymom/web3/utils';
 import {allowanceOf, approveERC20, retrieveConfig} from '@builtbymom/web3/utils/wagmi';
@@ -8,7 +9,7 @@ import {ZAP_CRV_ABI} from '@vaults/utils/abi/zapCRV.abi';
 import {zapCRV} from '@vaults/utils/actions';
 import {getVaultEstimateOut} from '@vaults/utils/getVaultEstimateOut';
 import {readContract} from '@wagmi/core';
-import {MAX_UINT_256, ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {ZAP_YEARN_VE_CRV_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {allowanceKey} from '@common/utils';
 import {migrateShares} from '@common/utils/actions';
 
@@ -103,7 +104,7 @@ export function useSolverInternalMigration(): TSolverContext {
 	 **************************************************************************/
 	const onApprove = useCallback(
 		async (
-			amount = MAX_UINT_256,
+			amount = maxUint256,
 			txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
 			onSuccess: () => Promise<void>
 		): Promise<void> => {
