@@ -122,7 +122,7 @@ export function ModalMobileMenu(props: TModalMobileMenu): ReactElement {
 						leave={'ease-in duration-200'}
 						leaveFrom={'opacity-100 translate-y-0'}
 						leaveTo={'opacity-0 translate-y-full'}>
-						<div className={`yearn--modal fixed bottom-0 h-full`}>
+						<div className={`yearn--modal fixed bottom-0 mb-0 h-full max-w-full`}>
 							<div className={'flex items-center justify-between border-b border-[#292929] p-6'}>
 								<button onClick={onClose}>
 									<IconClose />
@@ -140,7 +140,7 @@ export function ModalMobileMenu(props: TModalMobileMenu): ReactElement {
 									background:
 										'linear-gradient(180deg, rgba(12, 12, 12, 0.8) 0%, rgba(26, 26, 26, 0.8) 100%)'
 								}}
-								className={'flex h-[calc(100vh-88px)] w-full flex-col justify-end px-6 pb-[66px]'}>
+								className={'flex h-[calc(100vh-88px)] w-full flex-col justify-end px-6 pb-[104px]'}>
 								<FooterNav />
 							</div>
 						</div>
