@@ -21,7 +21,7 @@ function ContributeCard(props: {title: string; description: string}): ReactEleme
 					: 'linear-gradient(180deg, rgba(12, 12, 12, 0.8) 0%, rgba(26, 26, 26, 0.8) 100%)'
 			}}
 			className={
-				'flex h-[240px] flex-col justify-between rounded-lg border border-[#292929] px-8 pb-8 pt-10 text-white transition-all hover:text-black md:h-[360px]'
+				'flex h-[240px] flex-col justify-between rounded-lg border border-[#292929] px-8 pb-8 pt-10 text-white transition-all hover:text-white md:h-[360px] md:hover:text-black'
 			}>
 			<div>
 				<div className={'mb-2 text-xl'}>{props.title}</div>

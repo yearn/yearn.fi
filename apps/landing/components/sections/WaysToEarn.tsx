@@ -27,7 +27,10 @@ export function WaysToEarn(): ReactElement {
 					}>
 					<div className={'flex h-full flex-col justify-between'}>
 						<div>
-							<p className={'text-md mb-4 text-white group-hover:text-grey-900 md:text-[32px]'}>
+							<p
+								className={
+									'text-md mb-4 text-white  group-hover:text-white md:text-[32px] md:group-hover:text-grey-900'
+								}>
 								{'VAULTS PUT YOUR CRYPTO TO WORK, SO YOU DONT HAVE TO.'}
 							</p>
 							<p className={'z-20 text-grey-400 group-hover:text-grey-900'}>
