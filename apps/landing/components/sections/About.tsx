@@ -13,10 +13,7 @@ export function About(): ReactElement {
 				backgroundPosition: 'center'
 			}}>
 			<div className={'relative lg:mr-[400px]'}>
-				<p
-					className={
-						'mb-10 text-left font-aeonikFono text-3xl font-light text-white md:text-center md:text-5xl'
-					}>
+				<p className={'mb-10 text-left font-aeonikFono text-3xl font-light text-white md:text-5xl'}>
 					{'WTF IS YEARN VAULT?'}
 				</p>
 				<div

@@ -64,6 +64,7 @@ export function LandingAppHeader(): ReactElement {
 							<LogoYearn
 								className={'size-10'}
 								front={'text-black'}
+								back={'text-white'}
 							/>
 						</Link>
 					</div>

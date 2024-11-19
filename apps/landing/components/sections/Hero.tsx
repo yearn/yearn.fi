@@ -125,14 +125,14 @@ export function Hero(): ReactElement {
 						'relative mx-6 mt-6 flex h-[568px] w-[2365px] max-w-[2352px] flex-col items-center self-center rounded-lg border border-[#292929]'
 					}>
 					<AnimatedLogos />
-					<div className={'z-20 mt-[88px] text-center'}>
+					<div className={'z-20 mt-[88px] text-center md:mt-[160px]'}>
 						<p className={'text-[80px] font-bold leading-[80px] text-white'}>{'THE DEFI WAY'}</p>
 						<p className={'text-[80px] font-bold leading-[80px] text-white'}>{'TO EARN ON CRYPTO'}</p>
 						<p className={'mt-4 text-grey-400'}>
 							{'Yearn is DeFi’s longest running, most battle tested, and most trusted yield protocol.'}
 						</p>
 					</div>
-					<div className={'mt-[72px] flex gap-2'}>
+					<div className={'mt-[72px] flex gap-2 md:mt-[48px] lg:mt-[72px]'}>
 						<Button className={'w-[192px] px-[15px]'}>{'DISCOVER PRODUCTS'}</Button>
 						<Button
 							onClick={() => scrollToHash('form')}

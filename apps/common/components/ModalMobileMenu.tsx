@@ -97,8 +97,7 @@ export function ModalMobileMenu(props: TModalMobileMenu): ReactElement {
 				className={'fixed inset-0 overflow-y-auto md:hidden'}
 				style={{zIndex: 88}}
 				onClose={onClose}>
-				<div
-					className={`relative flex min-h-screen items-end justify-end px-0 pb-0 pt-4 text-center sm:block sm:p-0`}>
+				<div className={`relative flex min-h-screen items-end justify-end px-0 pb-0 pt-4 text-center`}>
 					<TransitionChild
 						as={Fragment}
 						enter={'ease-out duration-300'}
@@ -111,7 +110,7 @@ export function ModalMobileMenu(props: TModalMobileMenu): ReactElement {
 					</TransitionChild>
 
 					<span
-						className={'hidden sm:inline-block sm:h-screen sm:align-bottom'}
+						className={'hidden'}
 						aria-hidden={'true'}>
 						&#8203;
 					</span>
@@ -132,6 +131,7 @@ export function ModalMobileMenu(props: TModalMobileMenu): ReactElement {
 									<LogoYearn
 										className={'size-10'}
 										front={'text-black'}
+										back={'text-white'}
 									/>
 								</Link>
 							</div>
@@ -140,7 +140,7 @@ export function ModalMobileMenu(props: TModalMobileMenu): ReactElement {
 									background:
 										'linear-gradient(180deg, rgba(12, 12, 12, 0.8) 0%, rgba(26, 26, 26, 0.8) 100%)'
 								}}
-								className={'flex h-[calc(100vh-88px)] flex-col justify-end px-6 pb-[66px]'}>
+								className={'flex h-[calc(100vh-88px)] w-full flex-col justify-end px-6 pb-[66px]'}>
 								<FooterNav />
 							</div>
 						</div>

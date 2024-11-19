@@ -17,7 +17,7 @@ export function EarnCard(props: {title: string; info: string; logoSrc: string; h
 			className={'group relative z-30 flex h-full overflow-hidden rounded-lg border border-[#292929] p-6'}>
 			<div className={'flex md:mt-auto md:items-end'}>
 				<div>
-					<p className={'text-[24px] group-hover:text-grey-900'}>{props.title}</p>
+					<p className={'text-[24px] text-white group-hover:text-grey-900'}>{props.title}</p>
 					<p className={'text-grey-400 group-hover:text-grey-900'}>{props.info}</p>
 				</div>
 				<div>

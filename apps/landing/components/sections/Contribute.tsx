@@ -1,5 +1,6 @@
 import {type ReactElement, useState} from 'react';
 import Link from 'next/link';
+import {IconArrow} from '@common/icons/IconArrow';
 
 const CARDS = [
 	{title: 'BUG BOUNTY.', description: 'Bugs?! Ew! Report a bug and you might earn $$.'},
@@ -26,11 +27,14 @@ function ContributeCard(props: {title: string; description: string}): ReactEleme
 				<div className={'mb-2 text-xl'}>{props.title}</div>
 				<div className={'opacity-60'}>{props.description}</div>
 			</div>
-			<Link
-				className={'leading-6 underline opacity-70 transition-opacity hover:opacity-100'}
-				href={'/'}>
-				{'Read more'}
-			</Link>
+			<div className={'flex justify-between gap-2'}>
+				<Link
+					className={'leading-6 underline opacity-70 transition-opacity hover:opacity-100'}
+					href={'/'}>
+					{'Read more'}
+				</Link>
+				{isHovering && <IconArrow className={'text-black'} />}
+			</div>
 		</div>
 	);
 }
