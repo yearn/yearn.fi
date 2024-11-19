@@ -27,13 +27,10 @@ export function WaysToEarn(): ReactElement {
 					}>
 					<div className={'flex h-full flex-col justify-between'}>
 						<div>
-							<p
-								className={
-									'text-md mb-4 text-white  group-hover:text-white md:text-[32px] md:group-hover:text-grey-900'
-								}>
+							<p className={'text-md mb-4 text-white md:text-[32px] md:group-hover:text-grey-900'}>
 								{'VAULTS PUT YOUR CRYPTO TO WORK, SO YOU DONT HAVE TO.'}
 							</p>
-							<p className={'z-20 text-grey-400 group-hover:text-grey-900'}>
+							<p className={'z-20 text-grey-400 md:group-hover:text-grey-900'}>
 								{
 									'The DeFi economy offers loads of way to earn yield on your capital. Yearn Vaults automatically take advantage of these opportunities to give you the best risk adjusted yields without you having to lift a finger.'
 								}

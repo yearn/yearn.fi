@@ -17,17 +17,15 @@ export function EarnCard(props: {title: string; info: string; logoSrc: string; h
 			className={'group relative z-30 flex h-full overflow-hidden rounded-lg border border-[#292929] p-6'}>
 			<div className={'flex md:mt-auto md:items-end'}>
 				<div>
-					<p className={'text-[24px] text-white group-hover:text-white md:group-hover:text-grey-900'}>
-						{props.title}
-					</p>
-					<p className={'text-grey-400 group-hover:text-grey-900'}>{props.info}</p>
+					<p className={'text-[24px] text-white md:group-hover:text-grey-900'}>{props.title}</p>
+					<p className={'text-grey-400 md:group-hover:text-grey-900'}>{props.info}</p>
 				</div>
 				<div>
 					<IconArrow className={'size-6 group-hover:text-grey-900'} />
 				</div>
 			</div>
 			<Image
-				className={'absolute -bottom-20 left-0 -z-10 md:-top-12 md:left-auto md:right-10'}
+				className={'absolute -bottom-20 left-0 -z-10 hidden md:-top-12 md:left-auto md:right-10 md:block'}
 				src={props.hoverLogoSrc}
 				width={200}
 				height={200}
