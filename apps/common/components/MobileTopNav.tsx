@@ -7,6 +7,7 @@ import {IconSearch} from '@common/icons/IconSearch';
 import {LogoYearn} from '@common/icons/LogoYearn';
 
 import {SearchBar} from './SearchBar';
+import {IconBurgerPlain} from '@common/icons/IconBurgerPlain';
 
 export function MobileTopNav({
 	isSearchOpen,
@@ -36,7 +37,7 @@ export function MobileTopNav({
 					<button
 						className={'mr-4 flex size-6 items-center justify-center'}
 						onClick={() => set_isNavbarOpen(prev => !prev)}>
-						{isNavbarOpen ? <IconCross /> : <IconBurger />}
+						{isNavbarOpen ? <IconCross /> : <IconBurgerPlain />}
 					</button>
 					<button
 						onClick={() => {
