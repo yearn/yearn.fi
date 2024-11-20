@@ -51,7 +51,6 @@ export const AppsCarousel = forwardRef(
 						})}
 					</div>
 					<div
-						ref={ref}
 						onScroll={props.onScroll}
 						className={cl(
 							'flex md:hidden overflow-x-auto pb-1 pl-[38px] scrollbar-none max-sm:pr-6',
