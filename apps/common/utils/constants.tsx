@@ -264,7 +264,7 @@ export const LANDING_SIDEBAR_LINKS = [
 ];
 
 export const MENU_TABS = [
-	{title: 'Home', route: '/'},
+	{title: 'Home', route: 'apps'},
 	{title: 'Vaults', route: 'vaults'},
 	{title: 'Community Apps', route: 'community-apps'},
 	{title: 'Yearn X Projects', route: 'yearn-x'},
@@ -280,7 +280,7 @@ export const CATEGORY_PAGE_FILTERS = [
 ];
 
 export const iconsDict = {
-	'/apps': <IconYearn />,
+	apps: <IconYearn />,
 	about: <IconAbout />,
 	vaults: <IconVaults />,
 	'community-apps': <IconFrontends />,

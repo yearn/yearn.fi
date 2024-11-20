@@ -69,7 +69,7 @@ export function Sidebar(props: TSidebarProps): ReactElement {
 							<div className={'flex size-6 items-center justify-center'}>
 								{
 									iconsDict[
-										tab.route as '/apps' | 'community-apps' | 'vaults' | 'yearn-x' | 'integrations'
+										tab.route as 'apps' | 'community-apps' | 'vaults' | 'yearn-x' | 'integrations'
 									]
 								}
 							</div>

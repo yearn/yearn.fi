@@ -36,7 +36,7 @@ export function FooterNav(): ReactElement {
 				{menu.map(link => (
 					<Link
 						className={
-							'flex items-center justify-between gap-x-4 text-3xl transition-colors hover:text-primary md:justify-start'
+							'flex items-center justify-between gap-x-4 text-3xl text-white transition-colors hover:text-primary md:justify-start'
 						}
 						key={link.path}
 						target={link.target}
