@@ -1,5 +1,6 @@
 import React, {memo, useState} from 'react';
 import {Toaster} from 'react-hot-toast';
+import {usePathname} from 'next/navigation';
 import PlausibleProvider from 'next-plausible';
 import {LandingAppHeader} from 'apps/landing/components/common/Header';
 import {AnimatePresence, domAnimation, LazyMotion, motion} from 'framer-motion';
@@ -27,7 +28,6 @@ import type {ReactElement} from 'react';
 import type {Chain} from 'viem';
 
 import '../style.css';
-import {usePathname} from 'next/navigation';
 
 /** 🔵 - Yearn Finance ***************************************************************************
  ** The 'WithLayout' function is a React functional component that returns a ReactElement. It is used
@@ -58,7 +58,7 @@ const WithLayout = memo(function WithLayout(
 			<SearchContextApp>
 				<div
 					id={'app'}
-					className={'mb-0 flex min-h-screen justify-center bg-gray-900 font-aeonik'}>
+					className={'font-aeonik mb-0 flex min-h-screen justify-center bg-gray-900'}>
 					<div className={'flex w-full max-w-[1230px] justify-start'}>
 						<motion.nav className={'fixed z-50 w-full md:hidden'}>
 							<MobileTopNav
@@ -167,7 +167,7 @@ function MyApp(props: AppProps): ReactElement {
 				og={manifest.og || 'https://yearn.fi/og.png'}
 				uri={manifest.uri || 'https://yearn.fi'}
 			/>
-			<main className={'size-full min-h-screen font-aeonik'}>
+			<main className={'font-aeonik size-full min-h-screen'}>
 				<PlausibleProvider
 					domain={'yearn.fi'}
 					enabled={true}>
