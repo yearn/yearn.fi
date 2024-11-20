@@ -39,7 +39,7 @@ export default function SeachResults(): ReactElement {
 
 							<Image
 								className={'mt-40 hidden md:hidden lg:block'}
-								src={'/empty-lg.png '}
+								src={'/empty-lg.png'}
 								alt={'nothing-to-display'}
 								width={2000}
 								height={500}
