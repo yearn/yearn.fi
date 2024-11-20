@@ -16,7 +16,7 @@ export function AppCard(props: TAppCardProps): ReactElement {
 				href={props.app.appURI ?? ''}
 				target={'_blank'}
 				className={
-					'bg-grey-900 group relative hidden h-[240px] min-w-[208px] max-w-[208px] overflow-hidden rounded-lg border border-gray-700/50 p-6 hover:bg-gray-600/40 md:block'
+					'group relative hidden h-[240px] min-w-[208px] max-w-[208px] overflow-hidden rounded-lg border border-gray-700/50 bg-gray-900 p-6 hover:bg-gray-600/40 md:block'
 				}>
 				<div className={'mb-4'}>
 					<div

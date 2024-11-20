@@ -30,10 +30,10 @@ export function WaysToEarn(): ReactElement {
 					<div>
 						<div className={'flex h-full flex-col justify-between'}>
 							<div>
-								<p className={'text-md mb-4 text-white md:text-[32px] md:group-hover:text-grey-900'}>
+								<p className={'text-md mb-4 text-white md:text-[32px] md:group-hover:text-gray-900'}>
 									{'VAULTS PUT YOUR CRYPTO TO WORK, SO YOU DONT HAVE TO.'}
 								</p>
-								<p className={'z-20 text-grey-400 md:group-hover:text-grey-900'}>
+								<p className={'z-20 text-gray-400 md:group-hover:text-gray-900'}>
 									{
 										'The DeFi economy offers loads of way to earn yield on your capital. Yearn Vaults automatically take advantage of these opportunities to give you the best risk adjusted yields without you having to lift a finger.'
 									}
@@ -61,7 +61,7 @@ export function WaysToEarn(): ReactElement {
 							</div>
 							<Button
 								className={
-									'absolute bottom-10 right-10 z-20 hidden w-[160px] hover:!bg-grey-800 group-hover:bg-grey-900 md:block'
+									'absolute bottom-10 right-10 z-20 hidden w-[160px] hover:!bg-gray-700 group-hover:bg-gray-900 md:block'
 								}>
 								<div className={'flex items-center justify-between'}>
 									<p>{'DISCOVER'}</p>
@@ -69,7 +69,7 @@ export function WaysToEarn(): ReactElement {
 								</div>
 							</Button>
 							<IconArrow
-								className={'absolute bottom-6 right-6 size-6 group-hover:text-grey-900 md:hidden'}
+								className={'absolute bottom-6 right-6 size-6 group-hover:text-gray-900 md:hidden'}
 							/>
 						</div>
 					</div>

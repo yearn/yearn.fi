@@ -21,8 +21,7 @@ module.exports = {
 				transparent: 'transparent',
 				inherit: 'inherit',
 				primary: '#0657F9',
-				// TODO: Merge colors
-				grey: {400: '#9D9D9D', 800: '#282828', 900: '#0C0C0C'},
+
 				gray: {
 					300: '#E1E1E1',
 					400: '#9D9D9D',
