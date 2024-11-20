@@ -10,8 +10,10 @@ import type {TApp} from '@common/types/category';
 
 export default function Index(props: {router: NextRouter}): ReactElement {
 	const [shuffledApps, set_shuffledApps] = useState<TApp[]>();
-	const currentCatrgory = useMemo(() => {
-		const currentTab = props.router.asPath?.startsWith('/apps') ? props.router.asPath?.split('/')[2] : '/';
+	const currentCategory = useMemo(() => {
+		const currentTab = props.router.asPath?.startsWith('/apps/')
+			? props.router.asPath?.split('/')[2]
+			: 'featured-apps';
 		return CATEGORIES_DICT[currentTab as keyof typeof CATEGORIES_DICT];
 	}, [props.router.asPath]);
 
@@ -19,10 +21,10 @@ export default function Index(props: {router: NextRouter}): ReactElement {
 	 ** On component mount we shuffle the array of Apps to avoid any bias.
 	 **********************************************************************************************/
 	useMountEffect(() => {
-		if (currentCatrgory?.apps.length < 1) {
+		if (currentCategory?.apps.length < 1) {
 			return;
 		}
-		set_shuffledApps(currentCatrgory?.apps.toSorted(() => 0.5 - Math.random()));
+		set_shuffledApps(currentCategory?.apps.toSorted(() => 0.5 - Math.random()));
 	});
 
 	return (
@@ -30,11 +32,11 @@ export default function Index(props: {router: NextRouter}): ReactElement {
 			<div className={'flex w-full max-w-4xl flex-col'}>
 				<div className={'mb-10 flex w-full flex-col justify-start'}>
 					<p className={'text-3xl font-bold text-white md:text-[64px] md:leading-[64px]'}>
-						{currentCatrgory?.categoryName}
+						{currentCategory?.categoryName}
 					</p>
 
 					<p className={'mt-4 max-w-[610px] text-base text-gray-400'}>
-						{currentCatrgory?.categoryDescription}
+						{currentCategory?.categoryDescription}
 					</p>
 				</div>
 

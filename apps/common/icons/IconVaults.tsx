@@ -26,35 +26,35 @@ export function IconVaults(props: React.SVGProps<SVGSVGElement>): ReactElement {
 				width={'16'}
 				height={'16'}
 				rx={'3'}
-				stroke={'#9D9D9D'}
+				stroke={'currentColor'}
 				strokeWidth={'1.5'}
 				strokeLinecap={'round'}
 				strokeLinejoin={'round'}
 			/>
 			<path
 				d={'M12.7763 9.10264L13.0352 8.13672'}
-				stroke={'#9D9D9D'}
+				stroke={'currentColor'}
 				strokeWidth={'1.5'}
 				strokeLinecap={'round'}
 				strokeLinejoin={'round'}
 			/>
 			<path
 				d={'M10.9648 15.8634L11.2236 14.8975'}
-				stroke={'#9D9D9D'}
+				stroke={'currentColor'}
 				strokeWidth={'1.5'}
 				strokeLinecap={'round'}
 				strokeLinejoin={'round'}
 			/>
 			<path
 				d={'M14.8974 12.7763L15.8633 13.0352'}
-				stroke={'#9D9D9D'}
+				stroke={'currentColor'}
 				strokeWidth={'1.5'}
 				strokeLinecap={'round'}
 				strokeLinejoin={'round'}
 			/>
 			<path
 				d={'M8.13661 10.9648L9.10254 11.2236'}
-				stroke={'#9D9D9D'}
+				stroke={'currentColor'}
 				strokeWidth={'1.5'}
 				strokeLinecap={'round'}
 				strokeLinejoin={'round'}

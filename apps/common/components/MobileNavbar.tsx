@@ -11,7 +11,8 @@ import type {ReactElement} from 'react';
 export function MobileNavbar({onClose}: {onClose: VoidFunction}): ReactElement {
 	const pathName = usePathname();
 
-	const currentTab = pathName?.startsWith('/apps') ? pathName?.split('/')[2] : '/';
+	const currentTab = pathName?.startsWith('/apps/') ? pathName?.split('/')[2] : 'apps';
+
 	return (
 		<div
 			className={
@@ -25,7 +26,7 @@ export function MobileNavbar({onClose}: {onClose: VoidFunction}): ReactElement {
 							currentTab === tab.route ? 'text-white' : 'text-gray-400'
 						)}
 						onClick={onClose}
-						href={tab.route === '/apps' ? tab.route : `/apps/${tab.route}`}>
+						href={tab.route === 'apps' ? `/${tab.route}` : `/apps/${tab.route}`}>
 						<div className={'flex size-6 items-center justify-center'}>
 							{iconsDict[tab.route as keyof typeof iconsDict]}
 						</div>

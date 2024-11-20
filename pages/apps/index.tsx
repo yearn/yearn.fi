@@ -40,11 +40,14 @@ export default function Home(): ReactElement {
 					</div>
 
 					<div>
-						<CarouselSlideArrows
-							onScrollBack={onScrollBack}
-							onScrollForward={onScrollForward}
-							className={'mb-6'}
-						/>
+						<div className={'mb-6 flex items-start justify-between'}>
+							<p className={'text-lg font-bold text-white'}>{'Featured Apps'}</p>
+							<CarouselSlideArrows
+								onScrollBack={onScrollBack}
+								onScrollForward={onScrollForward}
+								className={'w-auto'}
+							/>
+						</div>
 
 						<AppsCarousel
 							ref={carouselRef}

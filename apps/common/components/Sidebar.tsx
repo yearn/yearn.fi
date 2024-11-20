@@ -19,7 +19,7 @@ export function Sidebar(props: TSidebarProps): ReactElement {
 	const router = useRouter();
 	const {configuration, dispatch} = useSearch();
 
-	const currentTab = pathName?.startsWith('/apps') ? pathName?.split('/')[2] : '/';
+	const currentTab = pathName?.startsWith('/apps/') ? pathName?.split('/')[2] : 'apps';
 
 	const onSearchClick = useCallback(() => {
 		if (!configuration.searchValue) {
@@ -58,24 +58,24 @@ export function Sidebar(props: TSidebarProps): ReactElement {
 					/>
 				</div>
 				<div className={'mt-6 flex flex-col'}>
-					{props.tabs.map(tab => (
-						<Link
-							className={cl(
-								'py-2 px-[28px] flex gap-4 text-base hover:bg-gray-600/40',
-								currentTab === tab.route ? 'text-white font-bold' : 'text-gray-400'
-							)}
-							href={tab.route === '/apps' ? tab.route : `/apps/${tab.route}`}
-							key={tab.route}>
-							<div className={'flex size-6 items-center justify-center'}>
-								{
-									iconsDict[
-										tab.route as 'apps' | 'community-apps' | 'vaults' | 'yearn-x' | 'integrations'
-									]
-								}
-							</div>
-							<p>{tab.title}</p>
-						</Link>
-					))}
+					{props.tabs.map(tab => {
+						const href = tab.route === 'apps' ? `/${tab.route}` : `/apps/${tab.route}`;
+						return (
+							<Link
+								className={cl(
+									'py-2 px-[28px] flex gap-4 text-base hover:bg-gray-600/40',
+									currentTab === tab.route ? 'text-white font-bold' : 'text-gray-400'
+								)}
+								shallow
+								href={href}
+								key={tab.route}>
+								<div className={'flex size-6 items-center justify-center'}>
+									{iconsDict[tab.route as keyof typeof iconsDict]}
+								</div>
+								<p>{tab.title}</p>
+							</Link>
+						);
+					})}
 				</div>
 			</div>
 
