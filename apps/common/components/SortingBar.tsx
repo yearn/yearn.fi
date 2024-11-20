@@ -15,7 +15,7 @@ export function SortingBar(): ReactElement {
 				<p className={'mr-2 text-xs text-white'}>{'Sort by Popularity'}</p>
 				<IconChevron className={`size-6 text-white ${isOpen && 'rotate-180'}`} />
 			</button>
-			{isOpen && (
+			{isOpen ? (
 				<div
 					className={
 						'border-1 absolute top-28 z-30 w-80 border border-gray-700 bg-gray-500 py-2 text-white max-sm:left-0 md:right-1 md:top-10'
@@ -24,12 +24,13 @@ export function SortingBar(): ReactElement {
 						.fill('List Item')
 						.map((item, i) => (
 							<SortItem
+								key={i}
 								isActive={i === 2}
 								title={item}
 							/>
 						))}
 				</div>
-			)}
+			) : null}
 		</>
 	);
 }

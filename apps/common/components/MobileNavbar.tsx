@@ -1,9 +1,9 @@
 import Link from 'next/link';
 import {usePathname} from 'next/navigation';
 import {cl} from '@builtbymom/web3/utils';
-import {LogoDiscordRound} from '@common/icons/LogoDiscordRound';
-import {LogoParagraphRound} from '@common/icons/LogoParagraphRound';
-import {LogoTwitterRound} from '@common/icons/LogoTwitterRound';
+import {IconDiscord} from '@common/icons/IconDiscord';
+import {IconParagraph} from '@common/icons/IconParagraph';
+import {IconTwitter} from '@common/icons/IconTwitter';
 import {iconsDict, LANDING_SIDEBAR_LINKS, MENU_TABS} from '@common/utils/constants';
 
 import type {ReactElement} from 'react';
@@ -16,11 +16,12 @@ export function MobileNavbar({onClose}: {onClose: VoidFunction}): ReactElement {
 	return (
 		<div
 			className={
-				'flex h-full w-screen flex-col justify-end border-t border-gray-600/50 bg-gradient-to-b from-gray-900 to-[#1A1A1A] '
+				'flex h-full w-screen flex-col justify-end border-t border-gray-600/50 bg-gradient-to-b from-gray-900 to-[#1A1A1A]'
 			}>
 			<div className={'flex flex-col items-start gap-y-2 bg-transparent p-6 pb-4'}>
 				{MENU_TABS.map(tab => (
 					<Link
+						key={tab.route}
 						className={cl(
 							'text-base flex items-center gap-x-2 py-2 text-gray-400',
 							currentTab === tab.route ? 'text-white' : 'text-gray-400'
@@ -35,10 +36,11 @@ export function MobileNavbar({onClose}: {onClose: VoidFunction}): ReactElement {
 				))}
 			</div>
 
-			<div className={'w-full border-t border-gray-700 p-6'}>
+			<div className={'w-full border-t border-gray-700 p-6 pb-[104px]'}>
 				<div className={'flex w-full justify-between'}>
 					{LANDING_SIDEBAR_LINKS.slice(0, 5).map(link => (
 						<Link
+							key={link.href}
 							href={link.href}
 							className={'text-sm text-gray-400'}
 							target={'_blank'}>
@@ -51,17 +53,17 @@ export function MobileNavbar({onClose}: {onClose: VoidFunction}): ReactElement {
 					<Link
 						target={'_blank'}
 						href={'https://discord.com/invite/yearn'}>
-						<LogoDiscordRound />
+						<IconDiscord />
 					</Link>
 					<Link
 						target={'_blank'}
-						href={''}>
-						<LogoParagraphRound />
+						href={'https://paragraph.xyz/@yearn'}>
+						<IconParagraph />
 					</Link>
 					<Link
 						target={'_blank'}
 						href={'https://twitter.com/yearnfi'}>
-						<LogoTwitterRound />
+						<IconTwitter />
 					</Link>
 				</div>
 			</div>

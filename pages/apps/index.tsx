@@ -41,7 +41,7 @@ export default function Home(): ReactElement {
 
 					<div>
 						<div className={'mb-6 flex items-start justify-between'}>
-							<p className={'text-lg font-bold text-white'}>{'Featured Apps'}</p>
+							<p className={'w-full text-lg font-bold text-white'}>{'Featured Apps'}</p>
 							<CarouselSlideArrows
 								onScrollBack={onScrollBack}
 								onScrollForward={onScrollForward}

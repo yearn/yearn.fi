@@ -25,7 +25,9 @@ export default function SeachResults(): ReactElement {
 						className={cl(
 							'hidden truncate text-[64px] font-bold leading-[84px] text-white md:block',
 							searchFilteredApps.length < 1 ? 'mb-4' : 'mb-10'
-						)}>{`Results for "${searchValue}"`}</p>
+						)}>
+						{`Results for "${searchValue}"`}
+					</p>
 					{searchFilteredApps.length < 1 ? (
 						<div>
 							<p className={'text-base text-gray-400'}>

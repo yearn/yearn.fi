@@ -45,7 +45,7 @@ export function About(): ReactElement {
 						{'at all times.'}
 					</p>
 				</div>
-				{!isReadMore && (
+				{isReadMore ? null : (
 					<button
 						className={'mt-6 text-lg font-light text-primary'}
 						onClick={() => set_isReadMore(true)}>

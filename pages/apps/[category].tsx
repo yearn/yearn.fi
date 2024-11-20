@@ -52,7 +52,12 @@ export default function Index(props: {router: NextRouter}): ReactElement {
 				</div>
 
 				<div className={'flex grid-rows-1 flex-col gap-4 md:grid md:grid-cols-2 lg:grid-cols-4'}>
-					{shuffledApps?.map(app => <AppCard app={app} />)}
+					{shuffledApps?.map(app => (
+						<AppCard
+							app={app}
+							key={app.appURI}
+						/>
+					))}
 				</div>
 			</div>
 		</div>

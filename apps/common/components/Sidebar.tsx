@@ -37,7 +37,9 @@ export function Sidebar(props: TSidebarProps): ReactElement {
 			<div>
 				<div className={'px-4'}>
 					<div className={'mb-4 ml-2'}>
-						<Link href={'/'}>
+						<Link
+							href={'/'}
+							className={'flex w-fit'}>
 							<LogoYearn
 								className={'size-10'}
 								back={'text-blue-500'}

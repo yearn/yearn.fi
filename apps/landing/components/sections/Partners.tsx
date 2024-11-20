@@ -25,7 +25,9 @@ export function Partners(): ReactElement {
 					pauseOnHover={true}
 					className={'grid h-full overflow-hidden'}>
 					{PARTNERS.map(partner => (
-						<div className={'mx-5 flex h-full max-h-[32px] flex-col items-center justify-center pr-10'}>
+						<div
+							className={'mx-5 flex h-full max-h-[32px] flex-col items-center justify-center pr-10'}
+							key={partner.src}>
 							<Image
 								src={partner.src}
 								alt={'partner'}

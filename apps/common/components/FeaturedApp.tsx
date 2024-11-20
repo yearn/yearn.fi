@@ -20,7 +20,7 @@ export function FeaturedApp(props: {app: TApp}): ReactElement {
 				<Image
 					src={props.app.logoURI}
 					alt={props.app.name}
-					priority={true}
+					priority
 					width={2000}
 					height={2000}
 					className={'right-0 top-0 size-full bg-center object-cover  '}

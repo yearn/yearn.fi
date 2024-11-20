@@ -51,7 +51,7 @@ function ContributeCard(props: {title: string; description: string; href: string
 			</div>
 			<div className={'flex justify-between gap-2'}>
 				<p className={'leading-6 underline opacity-70 transition-opacity hover:opacity-100'}>{'Read more'}</p>
-				{isHovering && <IconArrow className={'text-black'} />}
+				{isHovering ? <IconArrow className={'text-black'} /> : null}
 			</div>
 		</Link>
 	);
@@ -68,7 +68,10 @@ export function Contribute(): ReactElement {
 					'mt-10 grid grid-flow-col grid-cols-1 grid-rows-4 gap-6 sm:grid-cols-2 sm:grid-rows-2 md:grid-flow-row md:grid-cols-4 md:grid-rows-1'
 				}>
 				{CARDS.map(card => (
-					<ContributeCard {...card} />
+					<ContributeCard
+						key={card.title}
+						{...card}
+					/>
 				))}
 			</div>
 		</div>

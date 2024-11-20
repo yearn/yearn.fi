@@ -54,7 +54,7 @@ export function FooterNav(): ReactElement {
 					<IconParagraph className={'size-8 text-white transition-colors hover:text-primary'} />
 				</Link>
 				<Link
-					href={'https://discord.com/invite/b8ENPNqG5c'}
+					href={'https://discord.com/invite/yearn'}
 					target={'_blank'}
 					className={'flex items-center gap-x-4'}>
 					<IconDiscord className={'size-8 text-white transition-colors hover:text-primary'} />
