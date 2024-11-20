@@ -1,7 +1,7 @@
 import {type ReactElement, useCallback} from 'react';
 import {useRouter} from 'next/router';
 import {useSearch} from '@common/contexts/useSearch';
-import {IconBurger} from '@common/icons/IconBurger';
+import {IconBurgerPlain} from '@common/icons/IconBurgerPlain';
 import {IconCross} from '@common/icons/IconCross';
 import {IconSearch} from '@common/icons/IconSearch';
 import {LogoYearn} from '@common/icons/LogoYearn';
@@ -24,9 +24,10 @@ export function MobileTopNav({
 
 	const onSearchClick = useCallback(() => {
 		if (!configuration.searchValue) {
+			router.push('/apps');
 			return;
 		}
-		router.push(`/home/search?query=${configuration.searchValue}`);
+		router.push(`/apps/search/${encodeURIComponent(configuration.searchValue)}`);
 	}, [configuration.searchValue, router]);
 
 	return (
@@ -36,7 +37,7 @@ export function MobileTopNav({
 					<button
 						className={'mr-4 flex size-6 items-center justify-center'}
 						onClick={() => set_isNavbarOpen(prev => !prev)}>
-						{isNavbarOpen ? <IconCross /> : <IconBurger />}
+						{isNavbarOpen ? <IconCross /> : <IconBurgerPlain />}
 					</button>
 					<button
 						onClick={() => {

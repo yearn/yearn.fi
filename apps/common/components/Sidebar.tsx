@@ -19,14 +19,14 @@ export function Sidebar(props: TSidebarProps): ReactElement {
 	const router = useRouter();
 	const {configuration, dispatch} = useSearch();
 
-	const currentTab = pathName?.startsWith('/home/') ? pathName?.split('/')[2] : '/';
+	const currentTab = pathName?.startsWith('/apps') ? pathName?.split('/')[2] : '/';
 
 	const onSearchClick = useCallback(() => {
 		if (!configuration.searchValue) {
-			router.push('/');
+			router.push('/apps');
 			return;
 		}
-		router.push(`/home/search/${encodeURIComponent(configuration.searchValue)}`);
+		router.push(`/apps/search/${encodeURIComponent(configuration.searchValue)}`);
 	}, [configuration.searchValue, router]);
 
 	return (
@@ -64,10 +64,14 @@ export function Sidebar(props: TSidebarProps): ReactElement {
 								'py-2 px-[28px] flex gap-4 text-base hover:bg-gray-600/40',
 								currentTab === tab.route ? 'text-white font-bold' : 'text-gray-400'
 							)}
-							href={tab.route === '/' ? tab.route : `/home/${tab.route}`}
+							href={tab.route === '/apps' ? tab.route : `/apps/${tab.route}`}
 							key={tab.route}>
 							<div className={'flex size-6 items-center justify-center'}>
-								{iconsDict[tab.route as '/' | 'community-apps' | 'vaults' | 'yearn-x' | 'integrations']}
+								{
+									iconsDict[
+										tab.route as '/apps' | 'community-apps' | 'vaults' | 'yearn-x' | 'integrations'
+									]
+								}
 							</div>
 							<p>{tab.title}</p>
 						</Link>

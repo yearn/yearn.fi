@@ -1,6 +1,8 @@
 import React, {memo, useState} from 'react';
 import {Toaster} from 'react-hot-toast';
+import {usePathname} from 'next/navigation';
 import PlausibleProvider from 'next-plausible';
+import {LandingAppHeader} from 'apps/landing/components/common/Header';
 import {AnimatePresence, domAnimation, LazyMotion, motion} from 'framer-motion';
 import {WithMom} from '@builtbymom/web3/contexts/WithMom';
 import {cl} from '@builtbymom/web3/utils';
@@ -48,9 +50,10 @@ const WithLayout = memo(function WithLayout(
 	const {name} = useCurrentApp(props.router);
 	const [isSearchOpen, set_isSearchOpen] = useState(false);
 	const [isNavbarOpen, set_isNavbarOpen] = useState(false);
-	const isOnLanding = props.router.asPath?.startsWith('/home/') || props.router.asPath === '/';
+	const isAppsPage = props.router.asPath?.startsWith('/apps');
+	const pathName = usePathname();
 
-	if (isOnLanding) {
+	if (isAppsPage) {
 		return (
 			<SearchContextApp>
 				<div
@@ -112,7 +115,7 @@ const WithLayout = memo(function WithLayout(
 	return (
 		<>
 			<div className={cl('mx-auto mb-0 flex font-aeonik max-w-6xl absolute top-0 inset-x-0')}>
-				<AppHeader supportedNetworks={props.supportedNetworks} />
+				{pathName === '/' ? <LandingAppHeader /> : <AppHeader supportedNetworks={props.supportedNetworks} />}
 			</div>
 			<div
 				id={'app'}

@@ -280,7 +280,7 @@ export const CATEGORY_PAGE_FILTERS = [
 ];
 
 export const iconsDict = {
-	'/': <IconYearn />,
+	'/apps': <IconYearn />,
 	about: <IconAbout />,
 	vaults: <IconVaults />,
 	'community-apps': <IconFrontends />,
