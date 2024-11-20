@@ -24,6 +24,7 @@ export function MobileTopNav({
 
 	const onSearchClick = useCallback(() => {
 		if (!configuration.searchValue) {
+			router.push('/apps');
 			return;
 		}
 		router.push(`/apps/search/${encodeURIComponent(configuration.searchValue)}`);
