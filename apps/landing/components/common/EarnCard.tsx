@@ -1,12 +1,20 @@
 import {type ReactElement, useState} from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import {IconArrow} from '@common/icons/IconArrow';
 
-export function EarnCard(props: {title: string; info: string; logoSrc: string; hoverLogoSrc: string}): ReactElement {
+export function EarnCard(props: {
+	title: string;
+	info: string;
+	logoSrc: string;
+	hoverLogoSrc: string;
+	href: string;
+}): ReactElement {
 	const [isHovering, set_isHovering] = useState(false);
 
 	return (
-		<div
+		<Link
+			href={props.href}
 			onMouseEnter={() => set_isHovering(true)}
 			onMouseLeave={() => set_isHovering(false)}
 			style={{
@@ -38,6 +46,6 @@ export function EarnCard(props: {title: string; info: string; logoSrc: string; h
 				height={200}
 				alt={'app-logo'}
 			/>
-		</div>
+		</Link>
 	);
 }

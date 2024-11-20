@@ -133,7 +133,9 @@ export function Hero(): ReactElement {
 						</p>
 					</div>
 					<div className={'mt-[72px] flex gap-2 md:mt-[48px] lg:mt-[72px]'}>
-						<Button className={'w-[192px] px-[15px]'}>{'DISCOVER PRODUCTS'}</Button>
+						<Link href={'/home'}>
+							<Button className={'w-[192px] px-[15px]'}>{'DISCOVER PRODUCTS'}</Button>
+						</Link>
 						<Button
 							onClick={() => scrollToHash('form')}
 							variant={'secondary'}

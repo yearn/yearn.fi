@@ -3,16 +3,38 @@ import Link from 'next/link';
 import {IconArrow} from '@common/icons/IconArrow';
 
 const CARDS = [
-	{title: 'BUG BOUNTY.', description: 'Bugs?! Ew! Report a bug and you might earn $$.'},
-	{title: 'LEAVE FEEDBACK.', description: "Thoughts? Ideas? Improvements? Let's hear it!"},
-	{title: 'WRITE DOCS.', description: 'Want to help write docs for Yearn, be our guest!'},
-	{title: 'BUILD.', description: 'Yearn is open source, anyone can contribute to its future!'}
+	{
+		title: 'BUG BOUNTY.',
+		description: 'Bugs?! Ew! Report a bug and you might earn $$.',
+		href: 'https://immunefi.com/bug-bounty/yearnfinance/information/',
+		target: '_blank'
+	},
+	{
+		title: 'LEAVE FEEDBACK.',
+		description: "Thoughts? Ideas? Improvements? Let's hear it!",
+		href: 'https://gov.yearn.fi/c/general-chat/feedback/2',
+		target: '_blank'
+	},
+	{
+		title: 'WRITE DOCS.',
+		description: 'Want to help write docs for Yearn, be our guest!',
+		href: 'https://docs.yearn.fi/',
+		target: '_blank'
+	},
+	{
+		title: 'BUILD.',
+		description: 'Yearn is open source, anyone can contribute to its future!',
+		href: 'https://github.com/yearn',
+		target: '_blank'
+	}
 ];
 
-function ContributeCard(props: {title: string; description: string}): ReactElement {
+function ContributeCard(props: {title: string; description: string; href: string; target: string}): ReactElement {
 	const [isHovering, set_isHovering] = useState(false);
 	return (
-		<div
+		<Link
+			href={props.href}
+			target={props.target}
 			onMouseEnter={() => set_isHovering(true)}
 			onMouseLeave={() => set_isHovering(false)}
 			style={{
@@ -28,14 +50,10 @@ function ContributeCard(props: {title: string; description: string}): ReactEleme
 				<div className={'opacity-60'}>{props.description}</div>
 			</div>
 			<div className={'flex justify-between gap-2'}>
-				<Link
-					className={'leading-6 underline opacity-70 transition-opacity hover:opacity-100'}
-					href={'/'}>
-					{'Read more'}
-				</Link>
+				<p className={'leading-6 underline opacity-70 transition-opacity hover:opacity-100'}>{'Read more'}</p>
 				{isHovering && <IconArrow className={'text-black'} />}
 			</div>
-		</div>
+		</Link>
 	);
 }
 

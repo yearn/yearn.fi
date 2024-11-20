@@ -27,6 +27,7 @@ import type {ReactElement} from 'react';
 import type {Chain} from 'viem';
 
 import '../style.css';
+import {usePathname} from 'next/navigation';
 
 /** 🔵 - Yearn Finance ***************************************************************************
  ** The 'WithLayout' function is a React functional component that returns a ReactElement. It is used
@@ -49,9 +50,10 @@ const WithLayout = memo(function WithLayout(
 	const {name} = useCurrentApp(props.router);
 	const [isSearchOpen, set_isSearchOpen] = useState(false);
 	const [isNavbarOpen, set_isNavbarOpen] = useState(false);
-	const isOnLanding = props.router.asPath?.startsWith('/home/') || props.router.asPath === '/';
+	const isHomepage = props.router.asPath?.startsWith('/home');
+	const pathName = usePathname();
 
-	if (isOnLanding) {
+	if (isHomepage) {
 		return (
 			<SearchContextApp>
 				<div
@@ -113,11 +115,7 @@ const WithLayout = memo(function WithLayout(
 	return (
 		<>
 			<div className={cl('mx-auto mb-0 flex font-aeonik max-w-6xl absolute top-0 inset-x-0')}>
-				{pathName === '/landing' ? (
-					<LandingAppHeader />
-				) : (
-					<AppHeader supportedNetworks={props.supportedNetworks} />
-				)}
+				{pathName === '/' ? <LandingAppHeader /> : <AppHeader supportedNetworks={props.supportedNetworks} />}
 			</div>
 			<div
 				id={'app'}
