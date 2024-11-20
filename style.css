@@ -34,6 +34,16 @@
 	font-display: swap;
 }
 
+@font-face {
+	font-family: 'Aeonik Fono';
+	src: url('public/fonts/AeonikFono-Regular.otf');
+	src: local('Aeonik Fono Regular'), local('AeonikFono-Regular');
+
+	font-weight: normal;
+	font-style: normal;
+	font-display: swap;
+}
+
 #main {
 	@apply flex flex-col w-full h-full min-h-screen bg-neutral-0;
 }

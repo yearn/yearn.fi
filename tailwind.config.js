@@ -20,10 +20,25 @@ module.exports = {
 				white: 'rgb(255, 255, 255)',
 				transparent: 'transparent',
 				inherit: 'inherit',
-				primary: '#0657F9'
+				primary: '#0657F9',
+
+				gray: {
+					300: '#E1E1E1',
+					400: '#9D9D9D',
+					500: '#424242',
+					600: '#292929',
+					700: '#282828',
+					800: '#181818',
+					900: '#0C0C0C'
+				},
+				blue: {
+					500: '#0657F9'
+				},
+				fallback: '#808080'
 			},
 			fontFamily: {
 				aeonik: ['var(--font-aeonik)', 'Aeonik', ...defaultTheme.fontFamily.sans],
+				aeonikFono: ['var(--font-aeonik-fono)', 'Aeonik Fono', ...defaultTheme.fontFamily.sans],
 				mono: ['Aeonik Mono', ...defaultTheme.fontFamily.mono]
 			},
 			width: {
@@ -81,5 +96,5 @@ module.exports = {
 			}
 		}
 	},
-	plugins: []
+	plugins: [require('tailwind-gradient-mask-image')]
 };

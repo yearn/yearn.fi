@@ -1,4 +1,5 @@
 import {useMemo} from 'react';
+import landingManifest from 'public/apps/landing-manifest.json';
 import homeManifest from 'public/manifest.json';
 import {VaultsHeader} from '@vaults/components/header/VaultsHeader';
 import {AppName, APPS} from '@common/components/Apps';
@@ -25,6 +26,11 @@ export function useCurrentApp({pathname}: NextRouter): TCurrentApp {
 			'/vaults': {
 				...APPS[AppName.VAULTS],
 				header: <VaultsHeader pathname={pathname} />
+			},
+			'/landing': {
+				name: 'Home',
+				manifest: landingManifest,
+				menu: []
 			}
 		};
 
