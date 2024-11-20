@@ -51,19 +51,19 @@ export function FooterNav(): ReactElement {
 					href={'https://paragraph.xyz/@yearn'}
 					target={'_blank'}
 					className={'flex items-center gap-x-4'}>
-					<IconParagraph className={'size-8 transition-colors hover:text-primary'} />
+					<IconParagraph className={'size-8 text-white transition-colors hover:text-primary'} />
 				</Link>
 				<Link
 					href={'https://discord.com/invite/b8ENPNqG5c'}
 					target={'_blank'}
 					className={'flex items-center gap-x-4'}>
-					<IconDiscord className={'size-8 transition-colors hover:text-primary'} />
+					<IconDiscord className={'size-8 text-white transition-colors hover:text-primary'} />
 				</Link>
 				<Link
 					href={'https://x.com/yearnfi'}
 					target={'_blank'}
 					className={'flex items-center gap-x-4'}>
-					<IconTwitter className={'size-8 transition-colors hover:text-primary'} />
+					<IconTwitter className={'size-8 text-white transition-colors hover:text-primary'} />
 				</Link>
 			</div>
 		</div>

@@ -34,6 +34,7 @@ function AnimatedLogos(): ReactElement {
 				style={{
 					backgroundImage: "url('/landing/yfi-top-right.png')",
 					backgroundRepeat: 'no-repeat',
+					backgroundSize: '100% 100%',
 					width: '240px',
 					height: '240px'
 				}}
