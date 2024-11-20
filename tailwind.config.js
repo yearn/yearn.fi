@@ -21,7 +21,21 @@ module.exports = {
 				transparent: 'transparent',
 				inherit: 'inherit',
 				primary: '#0657F9',
-				grey: {400: '#9D9D9D', 800: '#282828', 900: '#0C0C0C'}
+				// TODO: Merge colors
+				grey: {400: '#9D9D9D', 800: '#282828', 900: '#0C0C0C'},
+				gray: {
+					300: '#E1E1E1',
+					400: '#9D9D9D',
+					500: '#424242',
+					600: '#292929',
+					700: '#282828',
+					800: '#181818',
+					900: '#0C0C0C'
+				},
+				blue: {
+					500: '#0657F9'
+				},
+				fallback: '#808080'
 			},
 			fontFamily: {
 				aeonik: ['var(--font-aeonik)', 'Aeonik', ...defaultTheme.fontFamily.sans],
