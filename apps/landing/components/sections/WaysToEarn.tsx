@@ -16,7 +16,7 @@ export function WaysToEarn(): ReactElement {
 			</p>
 			<div className={'mt-10 grid grid-flow-row grid-cols-12 grid-rows-10 gap-6 md:h-[480px] md:grid-flow-col'}>
 				<Link
-					href={'/home'}
+					href={'/apps'}
 					className={
 						'group relative col-span-12 row-span-4 overflow-hidden rounded-lg border border-[#292929] p-6 transition-colors md:col-span-7 md:row-span-12 md:p-10'
 					}
@@ -79,18 +79,18 @@ export function WaysToEarn(): ReactElement {
 						title={'COMMUNITY APPS.'}
 						info={'Apps built on Yearn vaults by contributors and the wider community!'}
 						logoSrc={'/landing/community-logo.png'}
-						href={'/home/community-apps'}
+						href={'/apps/community-apps'}
 						hoverLogoSrc={'/landing/community-hover.png'}
 					/>
 				</div>
 				<div className={'col-span-12 row-span-3 md:col-span-5 md:row-span-6'}>
 					<EarnCard
-						title={'INTEGRATIONS'}
+						title={'INTEGRATIONS.'}
 						info={
 							'Yearn Vaults are a core part of DeFi, and you can access them through many popular apps and UIs.'
 						}
 						logoSrc={'/landing/integrations.png'}
-						href={'/home/integrations'}
+						href={'/apps/integrations'}
 						hoverLogoSrc={'/landing/integrations-hover.png'}
 					/>
 				</div>

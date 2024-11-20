@@ -50,15 +50,15 @@ const WithLayout = memo(function WithLayout(
 	const {name} = useCurrentApp(props.router);
 	const [isSearchOpen, set_isSearchOpen] = useState(false);
 	const [isNavbarOpen, set_isNavbarOpen] = useState(false);
-	const isHomepage = props.router.asPath?.startsWith('/home');
+	const isAppsPage = props.router.asPath?.startsWith('/apps');
 	const pathName = usePathname();
 
-	if (isHomepage) {
+	if (isAppsPage) {
 		return (
 			<SearchContextApp>
 				<div
 					id={'app'}
-					className={'font-aeonik mb-0 flex min-h-screen justify-center bg-gray-900'}>
+					className={'mb-0 flex min-h-screen justify-center bg-gray-900 font-aeonik'}>
 					<div className={'flex w-full max-w-[1230px] justify-start'}>
 						<motion.nav className={'fixed z-50 w-full md:hidden'}>
 							<MobileTopNav
@@ -167,7 +167,7 @@ function MyApp(props: AppProps): ReactElement {
 				og={manifest.og || 'https://yearn.fi/og.png'}
 				uri={manifest.uri || 'https://yearn.fi'}
 			/>
-			<main className={'font-aeonik size-full min-h-screen'}>
+			<main className={'size-full min-h-screen font-aeonik'}>
 				<PlausibleProvider
 					domain={'yearn.fi'}
 					enabled={true}>

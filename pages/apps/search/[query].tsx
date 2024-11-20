@@ -32,7 +32,7 @@ export default function SeachResults(): ReactElement {
 								{`Hmm, we couldn't find what you're looking for, did you spell it right? Try again or go`}{' '}
 								<Link
 									className={'text-white hover:underline'}
-									href={'/'}>
+									href={'/apps'}>
 									{'home'}
 								</Link>
 							</p>

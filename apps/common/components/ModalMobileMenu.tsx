@@ -15,7 +15,7 @@ import type {TMenu} from '@yearn-finance/web-lib/components/Header';
 
 export function FooterNav(): ReactElement {
 	const menu = useMemo((): TMenu[] => {
-		const HOME_MENU = {path: '/', label: 'Home'};
+		const HOME_MENU = {path: '/apps', label: 'Apps'};
 
 		return [
 			HOME_MENU,
@@ -48,19 +48,19 @@ export function FooterNav(): ReactElement {
 			</div>
 			<div className={'flex items-center gap-6'}>
 				<Link
-					href={'/'}
+					href={'https://paragraph.xyz/@yearn'}
 					target={'_blank'}
 					className={'flex items-center gap-x-4'}>
 					<IconParagraph className={'size-8 transition-colors hover:text-primary'} />
 				</Link>
 				<Link
-					href={'/'}
+					href={'https://discord.com/invite/b8ENPNqG5c'}
 					target={'_blank'}
 					className={'flex items-center gap-x-4'}>
 					<IconDiscord className={'size-8 transition-colors hover:text-primary'} />
 				</Link>
 				<Link
-					href={'/'}
+					href={'https://x.com/yearnfi'}
 					target={'_blank'}
 					className={'flex items-center gap-x-4'}>
 					<IconTwitter className={'size-8 transition-colors hover:text-primary'} />

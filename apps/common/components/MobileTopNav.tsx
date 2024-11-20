@@ -1,12 +1,12 @@
 import {type ReactElement, useCallback} from 'react';
 import {useRouter} from 'next/router';
 import {useSearch} from '@common/contexts/useSearch';
+import {IconBurgerPlain} from '@common/icons/IconBurgerPlain';
 import {IconCross} from '@common/icons/IconCross';
 import {IconSearch} from '@common/icons/IconSearch';
 import {LogoYearn} from '@common/icons/LogoYearn';
 
 import {SearchBar} from './SearchBar';
-import {IconBurgerPlain} from '@common/icons/IconBurgerPlain';
 
 export function MobileTopNav({
 	isSearchOpen,
@@ -26,7 +26,7 @@ export function MobileTopNav({
 		if (!configuration.searchValue) {
 			return;
 		}
-		router.push(`/home/search?query=${configuration.searchValue}`);
+		router.push(`/apps/search/${encodeURIComponent(configuration.searchValue)}`);
 	}, [configuration.searchValue, router]);
 
 	return (

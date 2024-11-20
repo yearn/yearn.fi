@@ -11,7 +11,7 @@ import type {TApp} from '@common/types/category';
 export default function Index(props: {router: NextRouter}): ReactElement {
 	const [shuffledApps, set_shuffledApps] = useState<TApp[]>();
 	const currentCatrgory = useMemo(() => {
-		const currentTab = props.router.asPath?.startsWith('/home/') ? props.router.asPath?.split('/')[2] : '/';
+		const currentTab = props.router.asPath?.startsWith('/apps') ? props.router.asPath?.split('/')[2] : '/';
 		return CATEGORIES_DICT[currentTab as keyof typeof CATEGORIES_DICT];
 	}, [props.router.asPath]);
 

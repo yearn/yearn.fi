@@ -95,7 +95,7 @@ function AppHeader(props: {supportedNetworks: Chain[]}): ReactElement {
 	const [isMenuOpen, set_isMenuOpen] = useState<boolean>(false);
 
 	const menu = useMemo((): TMenu[] => {
-		const HOME_MENU = {path: '/', label: 'Home'};
+		const HOME_MENU = {path: '/apps', label: 'Apps'};
 
 		if (pathname.startsWith('/ycrv')) {
 			return [HOME_MENU, ...APPS[AppName.YCRV].menu];

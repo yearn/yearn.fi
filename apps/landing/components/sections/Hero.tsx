@@ -133,7 +133,7 @@ export function Hero(): ReactElement {
 						</p>
 					</div>
 					<div className={'mt-[72px] flex gap-2 md:mt-[48px] lg:mt-[72px]'}>
-						<Link href={'/home'}>
+						<Link href={'/apps'}>
 							<Button className={'w-[192px] px-[15px]'}>{'DISCOVER PRODUCTS'}</Button>
 						</Link>
 						<Button
@@ -171,7 +171,7 @@ export function Hero(): ReactElement {
 				<div className={'mt-10 flex w-full flex-col gap-2'}>
 					<Link
 						className={'w-full'}
-						href={'/'}>
+						href={'/apps'}>
 						<Button className={'w-full px-[15px]'}>{'DISCOVER PRODUCTS'}</Button>
 					</Link>
 					<Button

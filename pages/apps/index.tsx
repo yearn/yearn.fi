@@ -56,22 +56,22 @@ export default function Home(): ReactElement {
 					<div className={'flex flex-col gap-10'}>
 						<CategorySection
 							title={'Vaults'}
-							onExpandClick={async () => router.push('/home/vaults')}
+							onExpandClick={async () => router.push('/apps/vaults')}
 							apps={VAULTS_APPS}
 						/>
 						<CategorySection
 							title={'Community Apps'}
-							onExpandClick={async () => router.push('/home/community-apps')}
+							onExpandClick={async () => router.push('/apps/community-apps')}
 							apps={COMMUNITY_APPS}
 						/>
 						<CategorySection
 							title={'Yearn X Projects'}
-							onExpandClick={async () => router.push('/home/yearn-x')}
+							onExpandClick={async () => router.push('/apps/yearn-x')}
 							apps={YEARN_X_APPS}
 						/>
 						<CategorySection
 							title={'Integrations'}
-							onExpandClick={async () => router.push('/home/integrations')}
+							onExpandClick={async () => router.push('/apps/integrations')}
 							apps={INTEGRATIONS_APPS}
 						/>
 					</div>
