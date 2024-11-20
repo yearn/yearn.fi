@@ -25,26 +25,24 @@ export function About(): ReactElement {
 						{
 							'In ‘traditional finance’ (boo, hiss) you can earn yield on your savings by depositing them in a bank'
 						}
-						{'- who use the capital for loans and other productive money growing means.'}
+						{' - who use the capital for loans and other productive money growing means.'}
 					</p>
 					<br />
 					<div className={cl('text-gray-400')}>
 						<p>{'Yearn Vaults are like crypto savings accounts floating in cyberspace. You deposit'}</p>{' '}
 						<p className={cl('text-gray-400')}>
-							{'your assets, andYearn puts them to work within the DeFi ecosystem, returning the earned'}
+							{'your assets, andYearn puts them to work within the DeFi ecosystem, returning the earned '}
 							{'yield back to you.'}
 						</p>
 					</div>
 					<br />
 
 					<p className={cl('text-gray-400')}>
+						{'Unlike a bank account - none of this takes place behind closed doors (no offence to doors).'}
 						{
-							'Unlike a bank account - none of this takes place behind closed doors (no offence to doors). DeFi'
+							'DeFiruns on public blockchains, so you are in control of your assets and can see where they are'
 						}
-						{
-							'runs on public blockchains, so you are in control of your assets and can see where they are at all'
-						}
-						{'times.'}
+						{'at all times.'}
 					</p>
 				</div>
 				{!isReadMore && (
