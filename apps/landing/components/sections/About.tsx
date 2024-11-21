@@ -14,12 +14,14 @@ export function About(): ReactElement {
 			}}>
 			<div className={'relative lg:mr-[400px]'}>
 				<p className={'mb-10 text-left font-aeonikFono text-3xl font-light text-white md:text-5xl'}>
-					{'WTF IS YEARN VAULT?'}
+					{'WTF IS A YEARN VAULT?'}
 				</p>
 				<div
 					className={cl(
 						'md:max-w-[720px] text-lg transition-all overflow-hidden leading-7',
-						isReadMore ? 'max-h-screen' : 'max-h-[160px] gradient-mask-b-10'
+						isReadMore
+							? 'max-h-screen'
+							: 'max-h-[160px] md:max-h-screen gradient-mask-b-10 md:gradient-mask-none'
 					)}>
 					<p className={cl('text-gray-400 to-indigo-400')}>
 						{
@@ -38,16 +40,16 @@ export function About(): ReactElement {
 					<br />
 
 					<p className={cl('text-gray-400')}>
-						{'Unlike a bank account - none of this takes place behind closed doors (no offence to doors).'}
+						{'Unlike a bank account - none of this takes place behind closed doors (no offence to doors). '}
 						{
-							'DeFiruns on public blockchains, so you are in control of your assets and can see where they are'
+							'DeFi runs on public blockchains, so you are in control of your assets and can see where they are'
 						}
 						{'at all times.'}
 					</p>
 				</div>
 				{isReadMore ? null : (
 					<button
-						className={'mt-6 text-lg font-light text-primary'}
+						className={'mt-6 text-lg font-light text-primary md:hidden'}
 						onClick={() => set_isReadMore(true)}>
 						{'Read more'}
 					</button>

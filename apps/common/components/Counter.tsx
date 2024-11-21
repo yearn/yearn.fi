@@ -27,6 +27,12 @@ export function Counter({
 				onUpdate(value) {
 					let hasBeenSet = false;
 					valueRef.current = value;
+
+					if (value < 0.00001 && value > 0) {
+						node.textContent = '<0.00001';
+						return;
+					}
+
 					if (Number.isNaN(value) || value === 0) {
 						const formatedValue = formatAmount(0, idealDecimals, idealDecimals);
 						node.textContent = formatedValue;
