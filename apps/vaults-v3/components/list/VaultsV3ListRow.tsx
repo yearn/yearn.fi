@@ -578,7 +578,6 @@ export function VaultStakedAmount({currentVault}: {currentVault: TYDaemonVault})
 		currentVault.staking.available,
 		getToken
 	]);
-	console.log(staked);
 	return (
 		<div className={'flex flex-col pt-0 text-right md:pt-8'}>
 			<p
