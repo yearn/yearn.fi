@@ -30,13 +30,13 @@ export const VAULTS_APPS: TApp[] = [
 		name: 'Vaults',
 		description: 'The full Yearn experience with all Vaults, for sophisticated users.',
 		logoURI: '/v3.png',
-		appURI: 'https://yearn.fi/v3'
+		appURI: '/v3'
 	},
 	{
 		name: 'Vaults V2',
 		description: "Discover Vaults from Yearn's v2 era.",
 		logoURI: '/v2.png',
-		appURI: 'https://yearn.fi/vaults'
+		appURI: '/vaults'
 	},
 	{
 		name: 'Juiced',
