@@ -368,7 +368,7 @@ export function RewardsTab(props: {currentVault: TYDaemonVault; hasStakingReward
 						className={'w-full md:w-1/3'}
 						legend={
 							<div className={'flex items-center justify-between'}>
-								<p>{`${formatAmount(vaultData.stakedEarned.normalized, 6)} ${rewardTokenBalance.symbol || (props.currentVault.staking.rewards || [])[0].symbol || ''} available to claim`}</p>
+								<p>{`${formatAmount(vaultData.stakedEarned.normalized, 6)} ${rewardTokenBalance.symbol || (props.currentVault.staking.rewards || [])[0]?.symbol || ''} available to claim`}</p>
 								<p>{`${formatCounterValue(vaultData.stakedEarned.normalized, rewardTokenPrice.normalized)}`}</p>
 							</div>
 						}

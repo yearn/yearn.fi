@@ -266,9 +266,9 @@ export function VaultDetailsTab(props: {
 				{props.tab.label === 'Boost' && toBigInt(props.unstakedBalance?.raw) > 0n ? (
 					<span className={'absolute -right-3 -top-1 z-10 flex size-2.5'}>
 						<span
-							className={'bg-primary absolute inline-flex size-full animate-ping rounded-full opacity-75'}
+							className={'absolute inline-flex size-full animate-ping rounded-full bg-primary opacity-75'}
 						/>
-						<span className={'bg-primary relative inline-flex size-2.5 rounded-full'} />
+						<span className={'relative inline-flex size-2.5 rounded-full bg-primary'} />
 					</span>
 				) : null}
 			</p>
@@ -493,7 +493,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 				<div
 					aria-label={'Migration Warning'}
 					className={'col-span-12 mt-10'}>
-					<div className={'text-neutral-0 w-full rounded-3xl bg-neutral-900 p-6'}>
+					<div className={'w-full rounded-3xl bg-neutral-900 p-6 text-neutral-0'}>
 						<b className={'text-lg'}>{'Looks like this is an old vault.'}</b>
 						<p className={'mt-2'}>
 							{
@@ -511,7 +511,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 					<div
 						aria-label={'Deprecation Warning'}
 						className={'col-span-12 mt-10'}>
-						<div className={'text-neutral-0 w-full rounded-3xl bg-neutral-900 p-6'}>
+						<div className={'w-full rounded-3xl bg-neutral-900 p-6 text-neutral-0'}>
 							<b className={'text-lg'}>{'This Vault is no longer supported (oh no).'}</b>
 							<p className={'mt-2'}>
 								{
@@ -526,7 +526,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 				<div
 					aria-label={'Migration Warning'}
 					className={'col-span-12 mt-10'}>
-					<div className={'text-neutral-0 w-full rounded-3xl bg-neutral-900 p-6'}>
+					<div className={'w-full rounded-3xl bg-neutral-900 p-6 text-neutral-0'}>
 						<b className={'text-lg'}>{'Oh look, an important message for you to read!'}</b>
 						<p
 							className={'mt-2'}
@@ -635,7 +635,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 						<VaultDetailsQuickActionsFrom />
 						<VaultDetailsQuickActionsSwitch />
 						<VaultDetailsQuickActionsTo />
-						<div className={'md:w-42 md:min-w-42 w-full space-y-0 md:space-y-2'}>
+						<div className={'w-full space-y-0 md:w-42 md:min-w-42 md:space-y-2'}>
 							<p className={'hidden text-base md:inline'}>&nbsp;</p>
 							<div>
 								<VaultDetailsQuickActionsButtons currentVault={currentVault} />
@@ -652,7 +652,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 						</div>
 					</div>
 				)}
-				{currentTab.value !== 3 && (
+				{currentTab.value !== 3 && currentVault.staking.rewards && (
 					<Fragment>
 						<div className={'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'}>
 							<VaultRewardsTabs
