@@ -13,7 +13,7 @@ export function About(): ReactElement {
 				backgroundPosition: 'center'
 			}}>
 			<div className={'relative lg:mr-[400px]'}>
-				<p className={'mb-10 text-left font-aeonikFono text-3xl font-light text-white md:text-5xl'}>
+				<p className={'font-aeonikFono mb-10 text-left text-3xl font-light text-white md:text-5xl'}>
 					{'WTF IS A YEARN VAULT?'}
 				</p>
 				<div
@@ -33,7 +33,9 @@ export function About(): ReactElement {
 					<div className={cl('text-gray-400')}>
 						<p>{'Yearn Vaults are like crypto savings accounts floating in cyberspace. You deposit'}</p>{' '}
 						<p className={cl('text-gray-400')}>
-							{'your assets, andYearn puts them to work within the DeFi ecosystem, returning the earned '}
+							{
+								'your assets, and Yearn puts them to work within the DeFi ecosystem, returning the earned '
+							}
 							{'yield back to you.'}
 						</p>
 					</div>
@@ -49,7 +51,7 @@ export function About(): ReactElement {
 				</div>
 				{isReadMore ? null : (
 					<button
-						className={'mt-6 text-lg font-light text-primary md:hidden'}
+						className={'text-primary mt-6 text-lg font-light md:hidden'}
 						onClick={() => set_isReadMore(true)}>
 						{'Read more'}
 					</button>
