@@ -432,9 +432,7 @@ export function useSolverCowswap(): TSolverContext {
 					errorMessage: 'Transaction rejected'
 				});
 			} finally {
-				setTimeout((): void => {
-					txStatusSetter({...defaultTxStatus});
-				}, 3000);
+				setTimeout((): void => txStatusSetter(defaultTxStatus), 3000);
 			}
 		},
 		[execute, provider]
