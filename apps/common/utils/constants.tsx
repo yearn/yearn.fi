@@ -149,7 +149,7 @@ export const INTEGRATIONS_APPS: TApp[] = [
 	},
 	{
 		name: 'Superform',
-		description: 'Earn Yield & Distribute Vaults',
+		description: 'Superform grows your onchain wealth. Earn the best returns on your crypto.',
 		logoURI: 'https://www.superform.xyz/icon.png',
 		appURI: 'https://www.superform.xyz'
 	}
