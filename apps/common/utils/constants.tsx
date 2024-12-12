@@ -157,10 +157,10 @@ export const INTEGRATIONS_APPS: TApp[] = [
 
 export const FEATURED_APPS = [
 	{
-		name: 'Juiced',
-		description: 'Discover yields juiced with extra token rewards.',
-		logoURI: '/juiced-featured.jpg',
-		appURI: 'https://juiced.app/'
+		name: 'yCRV',
+		description: "Let Yearn's veCRV position boost your CRV yield, while you chill.",
+		logoURI: '/ycrv-featured.jpg',
+		appURI: 'https://ycrv.yearn.fi/'
 	},
 	{
 		name: 'Gimme',
@@ -175,10 +175,10 @@ export const FEATURED_APPS = [
 		appURI: '/v3'
 	},
 	{
-		name: 'Juiced',
-		description: 'Discover yields juiced with extra token rewards.',
-		logoURI: '/juiced-featured.jpg',
-		appURI: 'https://juiced.app/'
+		name: 'yCRV',
+		description: "Let Yearn's veCRV position boost your CRV yield, while you chill.",
+		logoURI: '/ycrv-featured.jpg',
+		appURI: 'https://ycrv.yearn.fi/'
 	},
 	{
 		name: 'Gimme',
@@ -193,10 +193,10 @@ export const FEATURED_APPS = [
 		appURI: '/v3'
 	},
 	{
-		name: 'Juiced',
-		description: 'Discover yields juiced with extra token rewards.',
-		logoURI: '/juiced-featured.jpg',
-		appURI: 'https://juiced.app/'
+		name: 'yCRV',
+		description: "Let Yearn's veCRV position boost your CRV yield, while you chill.",
+		logoURI: '/ycrv-featured.jpg',
+		appURI: 'https://ycrv.yearn.fi/'
 	},
 	{
 		name: 'Gimme',
