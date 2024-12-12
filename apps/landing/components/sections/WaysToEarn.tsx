@@ -76,11 +76,11 @@ export function WaysToEarn(): ReactElement {
 				</Link>
 				<div className={'col-span-12 row-span-3 md:col-span-5 md:row-span-6'}>
 					<EarnCard
-						title={'COMMUNITY APPS.'}
+						title={'YEARN APPS.'}
 						info={'Apps built on Yearn vaults by contributors and the wider community!'}
-						logoSrc={'/landing/community-logo.png'}
-						href={'/apps/community-apps'}
-						hoverLogoSrc={'/landing/community-hover.png'}
+						logoSrc={'/landing/yearn-apps-logo.png'}
+						href={'/apps/yearn-apps'}
+						hoverLogoSrc={'/landing/yearn-apps-hover.png'}
 					/>
 				</div>
 				<div className={'col-span-12 row-span-3 md:col-span-5 md:row-span-6'}>
