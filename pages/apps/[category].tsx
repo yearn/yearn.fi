@@ -51,7 +51,10 @@ export default function Index(props: {router: NextRouter}): ReactElement {
 					<SortingBar />
 				</div>
 
-				<div className={'flex grid-rows-1 flex-col gap-4 md:grid md:grid-cols-2 lg:grid-cols-4'}>
+				<div
+					className={
+						'flex grid-rows-1 gap-4 max-md:flex-col md:grid-cols-2 md:flex-wrap lg:grid lg:grid-cols-4'
+					}>
 					{shuffledApps?.map(app => (
 						<AppCard
 							app={app}

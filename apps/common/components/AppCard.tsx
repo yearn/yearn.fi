@@ -16,7 +16,7 @@ export function AppCard(props: TAppCardProps): ReactElement {
 				href={props.app.appURI ?? ''}
 				target={props.app.appURI.startsWith('/') ? '_self' : '_blank'}
 				className={
-					'group relative hidden h-[240px] min-w-[208px] max-w-[208px] overflow-hidden rounded-lg border border-gray-700/50 bg-gray-900 p-6 hover:bg-gray-600/40 md:block'
+					'group relative hidden min-w-[208px] max-w-[208px] overflow-hidden rounded-lg border border-gray-700/50 bg-gray-900 p-6 hover:bg-gray-600/40 md:block'
 				}>
 				<div className={'mb-4'}>
 					<div
@@ -35,12 +35,12 @@ export function AppCard(props: TAppCardProps): ReactElement {
 							className={'size-[80px] rounded-full border border-[#292929]/80 object-contain'}
 						/>
 					) : (
-						<div className={'bg-fallback size-[80px] rounded-full'} />
+						<div className={'size-[80px] rounded-full bg-fallback'} />
 					)}
 				</div>
 				<div className={'mb-1 text-lg font-bold text-white'}>{props.app.name}</div>
 
-				<p className={'max-h-[60px] whitespace-normal text-sm text-gray-400'}>{props.app.description}</p>
+				<p className={'whitespace-normal text-sm text-gray-400'}>{props.app.description}</p>
 			</Link>
 			<Link
 				href={props.app.appURI}
@@ -59,7 +59,7 @@ export function AppCard(props: TAppCardProps): ReactElement {
 							/>
 						</div>
 					) : (
-						<div className={'bg-fallback size-16 rounded-2xl md:rounded-[32px]'} />
+						<div className={'size-16 rounded-2xl bg-fallback md:rounded-[32px]'} />
 					)}
 				</div>
 

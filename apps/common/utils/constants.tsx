@@ -46,7 +46,7 @@ export const VAULTS_APPS: TApp[] = [
 	}
 ];
 
-export const COMMUNITY_APPS: TApp[] = [
+export const YEARN_APPS: TApp[] = [
 	{
 		name: 'yETH',
 		description: 'A basket of LSTs in a single token.',
@@ -149,7 +149,7 @@ export const INTEGRATIONS_APPS: TApp[] = [
 	},
 	{
 		name: 'Superform',
-		description: 'Earn Yield & Distribute Vaults',
+		description: 'Superform grows your onchain wealth. Earn the best returns on your crypto.',
 		logoURI: 'https://www.superform.xyz/icon.png',
 		appURI: 'https://www.superform.xyz'
 	}
@@ -157,10 +157,10 @@ export const INTEGRATIONS_APPS: TApp[] = [
 
 export const FEATURED_APPS = [
 	{
-		name: 'Juiced',
-		description: 'Discover yields juiced with extra token rewards.',
-		logoURI: '/juiced-featured.jpg',
-		appURI: 'https://juiced.app/'
+		name: 'yCRV',
+		description: "Let Yearn's veCRV position boost your CRV yield, while you chill.",
+		logoURI: '/ycrv-featured.jpg',
+		appURI: 'https://ycrv.yearn.fi/'
 	},
 	{
 		name: 'Gimme',
@@ -175,10 +175,10 @@ export const FEATURED_APPS = [
 		appURI: '/v3'
 	},
 	{
-		name: 'Juiced',
-		description: 'Discover yields juiced with extra token rewards.',
-		logoURI: '/juiced-featured.jpg',
-		appURI: 'https://juiced.app/'
+		name: 'yCRV',
+		description: "Let Yearn's veCRV position boost your CRV yield, while you chill.",
+		logoURI: '/ycrv-featured.jpg',
+		appURI: 'https://ycrv.yearn.fi/'
 	},
 	{
 		name: 'Gimme',
@@ -193,10 +193,10 @@ export const FEATURED_APPS = [
 		appURI: '/v3'
 	},
 	{
-		name: 'Juiced',
-		description: 'Discover yields juiced with extra token rewards.',
-		logoURI: '/juiced-featured.jpg',
-		appURI: 'https://juiced.app/'
+		name: 'yCRV',
+		description: "Let Yearn's veCRV position boost your CRV yield, while you chill.",
+		logoURI: '/ycrv-featured.jpg',
+		appURI: 'https://ycrv.yearn.fi/'
 	},
 	{
 		name: 'Gimme',
@@ -212,7 +212,7 @@ export const FEATURED_APPS = [
 	}
 ];
 
-export const ALL_APPS = [...FEATURED_APPS, ...VAULTS_APPS, ...COMMUNITY_APPS, ...YEARN_X_APPS, ...INTEGRATIONS_APPS];
+export const ALL_APPS = [...FEATURED_APPS, ...VAULTS_APPS, ...YEARN_APPS, ...YEARN_X_APPS, ...INTEGRATIONS_APPS];
 
 export const CATEGORIES_DICT = {
 	'featured-apps': {
@@ -229,12 +229,12 @@ export const CATEGORIES_DICT = {
 		catrgorySlug: 'vaults',
 		apps: VAULTS_APPS
 	},
-	'community-apps': {
-		categoryName: 'Community Apps',
+	'yearn-apps': {
+		categoryName: 'Yearn Apps',
 		categoryDescription:
 			'Yearn is a decentralized suite of products helping individuals, DAOs, and other protocols earn yield on their digital assets.',
-		catrgorySlug: 'community-apps',
-		apps: COMMUNITY_APPS
+		catrgorySlug: 'yearn-apps',
+		apps: YEARN_APPS
 	},
 	'yearn-x': {
 		categoryName: 'Yearn X Projects',
@@ -266,7 +266,7 @@ export const LANDING_SIDEBAR_LINKS = [
 export const MENU_TABS = [
 	{title: 'Home', route: 'apps'},
 	{title: 'Vaults', route: 'vaults'},
-	{title: 'Community Apps', route: 'community-apps'},
+	{title: 'Yearn Apps', route: 'yearn-apps'},
 	{title: 'Yearn X Projects', route: 'yearn-x'},
 	{title: 'Integrations', route: 'integrations'}
 	// {title: 'About', route: 'about'}
@@ -283,7 +283,7 @@ export const iconsDict = {
 	apps: <IconYearn />,
 	about: <IconAbout />,
 	vaults: <IconVaults />,
-	'community-apps': <IconFrontends />,
+	'yearn-apps': <IconFrontends />,
 	'yearn-x': <IconYearnXApps />,
 	integrations: <IconIntegrations />
 };
