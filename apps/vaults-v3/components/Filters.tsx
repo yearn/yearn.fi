@@ -32,7 +32,8 @@ export function Filters({
 }: TListHero): ReactElement {
 	const [shouldExpandFilters, set_shouldExpandFilters] = useState(false);
 	const chainOptions = useChainOptions(chains).filter(
-		(option): boolean => option.value === 1 || option.value === 137 || option.value === 42161
+		(option): boolean =>
+			option.value === 1 || option.value === 137 || option.value === 42161 || option.value === 8453
 	);
 	const typeOptions = useMemo((): TMultiSelectOptionProps[] => {
 		const options: TMultiSelectOptionProps[] = Object.entries(ALL_VAULTSV3_KINDS).map(
