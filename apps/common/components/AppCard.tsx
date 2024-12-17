@@ -14,9 +14,9 @@ export function AppCard(props: TAppCardProps): ReactElement {
 		<>
 			<Link
 				href={props.app.appURI ?? ''}
-				target={'_blank'}
+				target={props.app.appURI.startsWith('/') ? '_self' : '_blank'}
 				className={
-					'group relative hidden h-[240px] min-w-[208px] max-w-[208px] overflow-hidden rounded-lg border border-gray-700/50 bg-gray-900 p-6 hover:bg-gray-600/40 md:block'
+					'group relative hidden min-w-[208px] max-w-[208px] overflow-hidden rounded-lg border border-gray-700/50 bg-gray-900 p-6 hover:bg-gray-600/40 md:block'
 				}>
 				<div className={'mb-4'}>
 					<div
@@ -40,10 +40,11 @@ export function AppCard(props: TAppCardProps): ReactElement {
 				</div>
 				<div className={'mb-1 text-lg font-bold text-white'}>{props.app.name}</div>
 
-				<p className={'max-h-[60px] whitespace-normal text-sm text-gray-400'}>{props.app.description}</p>
+				<p className={'whitespace-normal text-sm text-gray-400'}>{props.app.description}</p>
 			</Link>
 			<Link
 				href={props.app.appURI}
+				target={props.app.appURI.startsWith('/') ? '_self' : '_blank'}
 				className={'flex items-center md:hidden'}>
 				<div>
 					{props.app.logoURI ? (

@@ -158,7 +158,7 @@ export function VaultInfo({currentVault}: {currentVault: TYDaemonVault}): ReactE
 		getNetwork(currentVault.chainID).blockExplorers?.default.url;
 
 	return (
-		<div className={'grid w-2/3 grid-cols-1 gap-10 bg-neutral-100 p-4 md:p-8'}>
+		<div className={'grid w-2/3 grid-cols-1 gap-10 p-4 md:p-8'}>
 			<div className={'col-span-1 grid w-full gap-1'}>
 				<div className={'flex flex-col items-center md:flex-row'}>
 					<p className={'w-full text-sm text-neutral-500 md:w-44'}>{'Vault Contract Address'}</p>
@@ -273,9 +273,7 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 	}, [currentVault.decimals, yDaemonHarvestsData]);
 
 	return (
-		<div
-			aria-label={'Vault Details'}
-			className={'col-span-12 mb-4 flex flex-col bg-neutral-100'}>
+		<div className={'col-span-12 mb-4 flex flex-col rounded-3xl bg-neutral-100 py-2'}>
 			<div className={'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'}>
 				<Tabs
 					selectedAboutTabIndex={selectedAboutTabIndex}

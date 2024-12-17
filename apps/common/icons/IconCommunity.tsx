@@ -1,6 +1,6 @@
 import type {ReactElement} from 'react';
 
-export function IconCommunity(props: React.SVGProps<SVGSVGElement>): ReactElement {
+export function IconYearnApps(props: React.SVGProps<SVGSVGElement>): ReactElement {
 	return (
 		<svg
 			{...props}

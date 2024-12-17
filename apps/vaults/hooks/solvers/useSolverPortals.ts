@@ -384,12 +384,18 @@ export function useSolverPortals(): TSolverContext {
 			assert(provider, 'Provider is not set');
 
 			txStatusSetter({...defaultTxStatus, pending: true});
-			const status = await execute();
-			if (status.isSuccessful) {
-				txStatusSetter({...defaultTxStatus, success: true});
-				await onSuccess();
-			} else {
+			try {
+				const status = await execute();
+				if (status.isSuccessful) {
+					txStatusSetter({...defaultTxStatus, success: true});
+					await onSuccess();
+				} else {
+					txStatusSetter({...defaultTxStatus, error: true});
+				}
+			} catch (error) {
 				txStatusSetter({...defaultTxStatus, error: true});
+			} finally {
+				setTimeout((): void => txStatusSetter(defaultTxStatus), 3000);
 			}
 		},
 		[execute, provider]

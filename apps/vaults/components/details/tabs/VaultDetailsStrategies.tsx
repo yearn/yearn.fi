@@ -176,7 +176,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 	}, [searchValue, shouldDisplayInactiveStrategies, sortedStrategies]);
 
 	return (
-		<div className={'grid grid-cols-1 bg-neutral-100'}>
+		<div className={'grid grid-cols-1'}>
 			<div className={'col-span-1 w-full space-y-6 p-4 md:p-6'}>
 				<div className={'w-full flex-row items-center justify-between md:flex md:space-x-4'}>
 					<SearchBar

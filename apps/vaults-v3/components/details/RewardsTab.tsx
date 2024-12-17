@@ -1,9 +1,11 @@
 import {useCallback, useMemo, useState} from 'react';
 import {useRouter} from 'next/router';
+import {useReadContract} from 'wagmi';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {cl, formatAmount, formatCounterValue, isZero, toAddress, toBigInt} from '@builtbymom/web3/utils';
 import {approveERC20, defaultTxStatus} from '@builtbymom/web3/utils/wagmi';
 import {useVaultStakingData} from '@vaults/hooks/useVaultStakingData';
+import {VEYFI_GAUGE_ABI} from '@vaults/utils/abi/veYFIGauge.abi';
 import {
 	claim as claimAction,
 	stake as stakeAction,
@@ -156,6 +158,13 @@ export function RewardsTab(props: {currentVault: TYDaemonVault; hasStakingReward
 	const [unstakeStatus, set_unstakeStatus] = useState(defaultTxStatus);
 	const isApproved = vaultData.vaultAllowance.raw >= vaultData.vaultBalanceOf.raw;
 
+	const {data: symbol} = useReadContract({
+		address: vaultData.address,
+		abi: VEYFI_GAUGE_ABI,
+		functionName: 'symbol',
+		chainId: props.currentVault.chainID
+	});
+
 	/**********************************************************************************************
 	 ** The refreshData function will be called when the user interacts with the stake, unstake, or
 	 ** claim buttons. It will refresh the user's balances and the staking rewards data so the app
@@ -307,7 +316,7 @@ export function RewardsTab(props: {currentVault: TYDaemonVault; hasStakingReward
 
 	if (props.currentVault.staking.rewards?.length === 0) {
 		return (
-			<div className={'flex flex-col gap-6 bg-neutral-100 p-4 md:gap-4 md:p-8'}>
+			<div className={'flex flex-col gap-6 rounded-b-3xl p-4 md:gap-4 md:p-8'}>
 				<BoostMessage
 					hasStakingRewardsLive={props.hasStakingRewardsLive}
 					currentVault={props.currentVault}
@@ -317,36 +326,35 @@ export function RewardsTab(props: {currentVault: TYDaemonVault; hasStakingReward
 	}
 
 	return (
-		<>
-			<div className={'flex flex-col gap-6 bg-neutral-100 p-4 md:gap-4 md:p-8'}>
-				<BoostMessage
-					hasStakingRewardsLive={props.hasStakingRewardsLive}
-					currentVault={props.currentVault}
-				/>
+		<div className={'flex flex-col gap-6 rounded-b-3xl p-4 md:gap-4 md:p-8'}>
+			<BoostMessage
+				hasStakingRewardsLive={props.hasStakingRewardsLive}
+				currentVault={props.currentVault}
+			/>
 
-				<div className={'flex flex-col gap-2'}>
+			<div className={'flex flex-col gap-2'}>
+				<div>
+					<div className={'font-bold'}>{'Stake'}</div>
+				</div>
+				<div className={'flex flex-col gap-4 md:flex-row'}>
+					<FakeInput
+						className={'w-full md:w-1/3'}
+						legend={
+							<div className={'flex items-center justify-between'}>
+								<p>{`${formatAmount(vaultData.vaultBalanceOf.normalized, 6)} ${props.currentVault.symbol} available to stake`}</p>
+								<p>{`${formatCounterValue(vaultData.vaultBalanceOf.normalized, vaultTokenPrice.normalized)}`}</p>
+							</div>
+						}
+						value={
+							toBigInt(vaultData.vaultBalanceOf.raw) === 0n ? undefined : (
+								<Counter
+									value={Number(vaultData.vaultBalanceOf.normalized)}
+									decimals={18}
+								/>
+							)
+						}
+					/>
 					<div>
-						<div className={'font-bold'}>{'Stake'}</div>
-					</div>
-					<div className={'flex flex-col gap-4 md:flex-row'}>
-						<FakeInput
-							className={'w-full md:w-1/3'}
-							legend={
-								<div className={'flex items-center justify-between'}>
-									<p>{`${formatAmount(vaultData.vaultBalanceOf.normalized, 6)} ${props.currentVault.symbol} available to stake`}</p>
-									<p>{`${formatCounterValue(vaultData.vaultBalanceOf.normalized, vaultTokenPrice.normalized)}`}</p>
-								</div>
-							}
-							value={
-								toBigInt(vaultData.vaultBalanceOf.raw) === 0n ? undefined : (
-									<Counter
-										value={Number(vaultData.vaultBalanceOf.normalized)}
-										decimals={18}
-									/>
-								)
-							}
-						/>
-
 						<Button
 							className={'w-full md:w-[200px]'}
 							onClick={(): unknown => (isApproved ? onStake() : onApprove())}
@@ -356,49 +364,75 @@ export function RewardsTab(props: {currentVault: TYDaemonVault; hasStakingReward
 								toBigInt(vaultData.vaultBalanceOf.raw) <= 0n ||
 								(!props.hasStakingRewardsLive && props.currentVault.staking.source !== 'VeYFI')
 							}>
-							{isApproved ? 'Stake' : 'Approve'}
-						</Button>
-					</div>
-				</div>
-				<div className={'flex flex-col gap-2'}>
-					<div>
-						<div className={'font-bold'}>{'Claim Rewards'}</div>
-					</div>
-					<div className={'flex flex-col gap-4 md:flex-row'}>
-						<FakeInput
-							className={'w-full md:w-1/3'}
-							legend={
-								<div className={'flex items-center justify-between'}>
-									<p>{`${formatAmount(vaultData.stakedEarned.normalized, 6)} ${rewardTokenBalance.symbol || (props.currentVault.staking.rewards || [])[0].symbol || ''} available to claim`}</p>
-									<p>{`${formatCounterValue(vaultData.stakedEarned.normalized, rewardTokenPrice.normalized)}`}</p>
-								</div>
-							}
-							value={
-								toBigInt(vaultData.stakedEarned.raw) === 0n ? undefined : (
-									<Counter
-										value={Number(vaultData.stakedEarned.normalized)}
-										decimals={18}
-									/>
-								)
-							}
-						/>
-						<Button
-							className={'w-full md:w-[200px]'}
-							onClick={onUnstake}
-							isBusy={unstakeStatus.pending}
-							isDisabled={!isActive || Number(vaultData.stakedBalanceOf.normalized) <= 0}>
-							{'Claim & Exit'}
-						</Button>
-						<Button
-							className={'w-full md:w-[200px]'}
-							onClick={onClaim}
-							isBusy={claimStatus.pending}
-							isDisabled={!isActive || isZero(vaultData.stakedEarned.raw)}>
-							{'Claim'}
+							{isApproved ? 'Stake' : 'Approve & Stake'}
 						</Button>
 					</div>
 				</div>
 			</div>
-		</>
+			<div className={'flex flex-col gap-2'}>
+				<div>
+					<div className={'font-bold'}>{'Unstake'}</div>
+				</div>
+				<div className={'flex flex-col gap-4 md:flex-row'}>
+					<FakeInput
+						className={'w-full md:w-1/3'}
+						legend={
+							<div className={'flex items-center justify-between'}>
+								<p>{`${formatAmount(vaultData.stakedBalanceOf.normalized, 6)} ${symbol} staked`}</p>
+								<p>{`${formatCounterValue(vaultData.stakedBalanceOf.normalized, vaultTokenPrice.normalized)}`}</p>
+							</div>
+						}
+						value={
+							toBigInt(vaultData.stakedBalanceOf.raw) === 0n ? undefined : (
+								<Counter
+									value={Number(vaultData.stakedBalanceOf.normalized)}
+									decimals={18}
+								/>
+							)
+						}
+					/>
+
+					<Button
+						className={'w-full md:w-[200px]'}
+						onClick={onUnstake}
+						isBusy={unstakeStatus.pending}
+						isDisabled={!isActive || Number(vaultData.stakedBalanceOf.normalized) <= 0}>
+						{'Claim & Exit'}
+					</Button>
+				</div>
+			</div>
+			<div className={'flex flex-col gap-2'}>
+				<div>
+					<div className={'font-bold'}>{'Claim Rewards'}</div>
+				</div>
+				<div className={'flex flex-col gap-4 md:flex-row'}>
+					<FakeInput
+						className={'w-full md:w-1/3'}
+						legend={
+							<div className={'flex items-center justify-between'}>
+								<p>{`${formatAmount(vaultData.stakedEarned.normalized, 6)} ${rewardTokenBalance.symbol || (props.currentVault.staking.rewards || [])[0]?.symbol || ''} available to claim`}</p>
+								<p>{`${formatCounterValue(vaultData.stakedEarned.normalized, rewardTokenPrice.normalized)}`}</p>
+							</div>
+						}
+						value={
+							toBigInt(vaultData.stakedEarned.raw) === 0n ? undefined : (
+								<Counter
+									value={Number(vaultData.stakedEarned.normalized)}
+									decimals={18}
+								/>
+							)
+						}
+					/>
+
+					<Button
+						className={'w-full md:w-[200px]'}
+						onClick={onClaim}
+						isBusy={claimStatus.pending}
+						isDisabled={!isActive || isZero(vaultData.stakedEarned.raw)}>
+						{'Claim'}
+					</Button>
+				</div>
+			</div>
+		</div>
 	);
 }

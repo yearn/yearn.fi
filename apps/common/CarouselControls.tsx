@@ -19,7 +19,7 @@ export function CarouselControls({
 	}
 
 	return (
-		<div className={'hidden w-full justify-center md:flex'}>
+		<div className={'mt-4 hidden w-full justify-center md:flex'}>
 			<div className={'flex gap-x-3'}>
 				{Array(numberOfControls)
 					.fill('')

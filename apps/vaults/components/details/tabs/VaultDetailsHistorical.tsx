@@ -139,7 +139,7 @@ export function VaultDetailsHistorical({
 	}
 
 	return (
-		<div className={'col-span-12 flex w-full flex-col bg-neutral-100'}>
+		<div className={'col-span-12 flex w-full flex-col'}>
 			<div className={'mt-6 grid w-full grid-cols-1 gap-4 pb-6'}>
 				<HarvestListHead />
 				{(harvests || [])?.map((harvest: TYDaemonVaultHarvest, index: number): ReactElement => {

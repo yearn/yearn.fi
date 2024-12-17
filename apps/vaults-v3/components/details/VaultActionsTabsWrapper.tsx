@@ -32,13 +32,33 @@ import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TNormalizedBN} from '@builtbymom/web3/types';
 
-export type TTabsOptions = {
+/**************************************************************************************************
+ ** Base type for tab options containing value, label and optional slug
+ *************************************************************************************************/
+type TTabsOptionsBase = {
 	value: number;
 	label: string;
-	flowAction: Flow;
 	slug?: string;
 };
 
+/**************************************************************************************************
+ ** Extended tab options type that includes flow action
+ *************************************************************************************************/
+export type TTabsOptions = TTabsOptionsBase & {
+	flowAction: Flow;
+};
+
+/**************************************************************************************************
+ ** Type for tab state management including selected index and setter function
+ *************************************************************************************************/
+export type TTabs = {
+	selectedAboutTabIndex: number;
+	set_selectedAboutTabIndex: (arg0: number) => void;
+};
+
+/**************************************************************************************************
+ ** Available tabs for vault actions with their respective values, labels and flow actions
+ *************************************************************************************************/
 export const tabs: TTabsOptions[] = [
 	{value: 0, label: 'Deposit', flowAction: Flow.Deposit, slug: 'deposit'},
 	{value: 1, label: 'Withdraw', flowAction: Flow.Withdraw, slug: 'withdraw'},
@@ -46,6 +66,11 @@ export const tabs: TTabsOptions[] = [
 	{value: 3, label: 'Boost', flowAction: Flow.None, slug: 'boost'}
 ];
 
+/**************************************************************************************************
+ ** Determines the current tab based on deposit status, migration availability and retirement status
+ ** Returns the withdraw tab if vault is migrated or retired, otherwise returns deposit/withdraw tab
+ ** based on isDepositing flag
+ *************************************************************************************************/
 export function getCurrentTab(props: {isDepositing: boolean; hasMigration: boolean; isRetired: boolean}): TTabsOptions {
 	if (props.hasMigration || props.isRetired) {
 		return tabs[1];
@@ -251,6 +276,81 @@ export function VaultDetailsTab(props: {
 	);
 }
 
+export function VaultRewardsTabs(props: {currentVault: TYDaemonVault; tab: TTabsOptions}): ReactElement {
+	const stakingRewardSource = props.currentVault.staking.source;
+	const tabLabel = useMemo(() => {
+		if (props.tab.label === 'Boost' && stakingRewardSource === 'VeYFI') {
+			return 'veYFI BOOST';
+		}
+		if (props.tab.label === 'Boost' && stakingRewardSource === 'OP Boost') {
+			return '$OP BOOST';
+		}
+		if (props.tab.label === 'Boost' && stakingRewardSource === 'Juiced') {
+			return 'Juiced BOOST';
+		}
+		if (props.tab.label === 'Boost' && stakingRewardSource === 'V3 Staking') {
+			return 'Staking BOOST';
+		}
+		return props.tab.label;
+	}, [props.tab.label, stakingRewardSource]);
+
+	return (
+		<>
+			<nav className={'hidden flex-row items-center space-x-10 md:flex'}>
+				<button key={`desktop-${props.tab.value}`}>
+					<p
+						title={tabLabel}
+						aria-selected={true}
+						className={'hover-fix tab'}>
+						{tabLabel}
+					</p>
+				</button>
+			</nav>
+			<div className={'relative z-50'}>
+				<Listbox value={props.tab.value}>
+					{({open}): ReactElement => (
+						<>
+							<Listbox.Button
+								className={
+									'flex h-10 w-40 flex-row items-center border-0 border-b-2 border-neutral-900 bg-neutral-100 p-0 font-bold focus:border-neutral-900 md:hidden'
+								}>
+								<div className={'relative flex flex-row items-center'}>{props.tab.label || 'Menu'}</div>
+								<div className={'absolute right-0'}>
+									<IconChevron
+										className={`size-6 transition-transform${open ? '-rotate-180' : 'rotate-0'}`}
+									/>
+								</div>
+							</Listbox.Button>
+							<Transition
+								as={Fragment}
+								show={open}
+								enter={'transition duration-100 ease-out'}
+								enterFrom={'transform scale-95 opacity-0'}
+								enterTo={'transform scale-100 opacity-100'}
+								leave={'transition duration-75 ease-out'}
+								leaveFrom={'transform scale-100 opacity-100'}
+								leaveTo={'transform scale-95 opacity-0'}>
+								<Listbox.Options className={'yearn--listbox-menu'}>
+									{tabs.map(
+										(tab): ReactElement => (
+											<Listbox.Option
+												className={'yearn--listbox-menu-item'}
+												key={tab.value}
+												value={tab.value}>
+												{tab.label}
+											</Listbox.Option>
+										)
+									)}
+								</Listbox.Options>
+							</Transition>
+						</>
+					)}
+				</Listbox>
+			</div>
+		</>
+	);
+}
+
 /**************************************************************************************************
  ** The VaultActionsTabsWrapper wraps the different components that are part of the Vault Actions
  ** section. It will display the different tabs available for the current vault and the
@@ -440,24 +540,26 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 				</div>
 			)}
 
-			<div className={'col-span-12 mt-6 flex flex-col rounded-t-3xl bg-neutral-100'}>
+			<div className={'col-span-12 mt-6 flex flex-col rounded-3xl bg-neutral-100'}>
 				<div className={'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'}>
 					<nav className={'hidden flex-row items-center space-x-10 md:flex'}>
-						{possibleTabs.map(
-							(tab): ReactElement => (
-								<VaultDetailsTab
-									currentVault={currentVault}
-									key={tab.value}
-									tab={tab}
-									selectedTab={currentTab}
-									unstakedBalance={unstakedBalance}
-									onSwitchTab={newTab => {
-										set_currentTab(newTab);
-										onSwitchSelectedOptions(newTab.flowAction);
-									}}
-								/>
-							)
-						)}
+						{(possibleTabs as TTabsOptions[])
+							.filter(tab => tab.value !== 3)
+							.map(
+								(tab): ReactElement => (
+									<VaultDetailsTab
+										currentVault={currentVault}
+										key={tab.value}
+										tab={tab}
+										selectedTab={currentTab}
+										unstakedBalance={unstakedBalance}
+										onSwitchTab={newTab => {
+											set_currentTab(newTab);
+											onSwitchSelectedOptions(newTab.flowAction);
+										}}
+									/>
+								)
+							)}
 					</nav>
 					<div className={'relative z-50'}>
 						<Listbox
@@ -528,7 +630,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 				) : (
 					<div
 						className={
-							'col-span-12 flex flex-col space-x-0 space-y-2 bg-neutral-100 p-4 md:flex-row md:space-x-4 md:space-y-0 md:px-8 md:py-10'
+							'col-span-12 flex flex-col space-x-0 space-y-2 p-4 md:flex-row md:space-x-4 md:space-y-0 md:px-8 md:py-10'
 						}>
 						<VaultDetailsQuickActionsFrom />
 						<VaultDetailsQuickActionsSwitch />
@@ -550,12 +652,23 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 						</div>
 					</div>
 				)}
-
-				<BoostMessage
-					currentVault={currentVault}
-					currentTab={currentTab.value}
-					hasStakingRewardsLive={hasStakingRewardsLive}
-				/>
+				{currentTab.value !== 3 && currentVault.staking.rewards && (
+					<Fragment>
+						<div className={'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'}>
+							<VaultRewardsTabs
+								currentVault={currentVault}
+								tab={tabs[3]}
+							/>
+						</div>
+						<div>
+							<div className={'-mt-0.5 h-0.5 w-full bg-neutral-300'} />
+							<RewardsTab
+								currentVault={currentVault}
+								hasStakingRewardsLive={hasStakingRewardsLive}
+							/>
+						</div>
+					</Fragment>
+				)}
 			</div>
 		</>
 	);

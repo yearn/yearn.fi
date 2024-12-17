@@ -18,10 +18,10 @@ import {VaultDetailsQuickActionsSwitch} from '@vaults-v3/components/details/acti
 import {VaultDetailsQuickActionsTo} from '@vaults-v3/components/details/actions/QuickActionsTo';
 import {RewardsTab} from '@vaults-v3/components/details/RewardsTab';
 import {
-	BoostMessage,
 	getCurrentTab,
 	tabs,
-	VaultDetailsTab
+	VaultDetailsTab,
+	VaultRewardsTabs
 } from '@vaults-v3/components/details/VaultActionsTabsWrapper';
 import {readContracts} from '@wagmi/core';
 import {parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
@@ -164,6 +164,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 		toAddress(currentVault.address) === toAddress(`0xad17a225074191d5c8a37b50fda1ae278a2ee6a2`) ||
 		toAddress(currentVault.address) === toAddress(`0x65343f414ffd6c97b0f6add33d16f6845ac22bac`) ||
 		toAddress(currentVault.address) === toAddress(`0xfaee21d0f0af88ee72bb6d68e54a90e6ec2616de`);
+
 	return (
 		<>
 			{currentVault?.migration?.available && (
@@ -228,24 +229,26 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 				</Link>
 			</nav>
 
-			<div className={'col-span-12 mb-4 flex flex-col bg-neutral-100'}>
+			<div className={'col-span-12 mb-4 flex flex-col rounded-3xl bg-neutral-100 py-2'}>
 				<div className={'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'}>
 					<nav className={'hidden flex-row items-center space-x-10 md:flex'}>
-						{possibleTabs.map(
-							(tab): ReactElement => (
-								<VaultDetailsTab
-									currentVault={currentVault}
-									key={tab.value}
-									tab={tab}
-									selectedTab={currentTab}
-									unstakedBalance={unstakedBalance}
-									onSwitchTab={newTab => {
-										set_currentTab(newTab);
-										onSwitchSelectedOptions(newTab.flowAction);
-									}}
-								/>
-							)
-						)}
+						{possibleTabs
+							.filter(tab => tab.value !== 3)
+							.map(
+								(tab): ReactElement => (
+									<VaultDetailsTab
+										currentVault={currentVault}
+										key={tab.value}
+										tab={tab}
+										selectedTab={currentTab}
+										unstakedBalance={unstakedBalance}
+										onSwitchTab={newTab => {
+											set_currentTab(newTab);
+											onSwitchSelectedOptions(newTab.flowAction);
+										}}
+									/>
+								)
+							)}
 					</nav>
 					<div className={'relative z-50'}>
 						<Listbox
@@ -338,12 +341,23 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 						</div>
 					</div>
 				)}
-
-				<BoostMessage
-					currentVault={currentVault}
-					currentTab={currentTab.value}
-					hasStakingRewardsLive={hasStakingRewardsLive}
-				/>
+				{currentTab.value !== 3 && currentVault.staking.rewards && (
+					<Fragment>
+						<div className={'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'}>
+							<VaultRewardsTabs
+								currentVault={currentVault}
+								tab={tabs[3]}
+							/>
+						</div>
+						<div>
+							<div className={'-mt-0.5 h-0.5 w-full bg-neutral-300'} />
+							<RewardsTab
+								currentVault={currentVault}
+								hasStakingRewardsLive={hasStakingRewardsLive}
+							/>
+						</div>
+					</Fragment>
+				)}
 			</div>
 		</>
 	);
