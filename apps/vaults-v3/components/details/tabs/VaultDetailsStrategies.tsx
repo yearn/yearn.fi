@@ -27,7 +27,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 		for (const strategy of currentVault?.strategies || []) {
 			_vaultList.push(vaults[strategy.address]);
 		}
-		return _vaultList;
+		return _vaultList.filter(Boolean);
 	}, [vaults, currentVault]);
 
 	const strategyList = useMemo((): TYDaemonVaultStrategy[] => {
@@ -64,22 +64,26 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 	 **	sortDirection values.
 	 **********************************************************************************************/
 	const sortedVaultsToDisplay = useSortVaults([...searchedVaultsToDisplay], sortBy, sortDirection);
+	const isVaultListEmpty = sortedVaultsToDisplay.length === 0;
 
 	return (
 		<>
-			<div className={'col-span-12 w-full p-4 md:px-8 md:pb-8'}>
-				<div className={'w-1/2'}>
-					<p className={'pb-2 text-[#757CA6]'}>{'Search'}</p>
-					<SearchBar
-						className={'max-w-none rounded-lg border-none bg-neutral-300 text-neutral-900 md:w-full'}
-						iconClassName={'text-neutral-900'}
-						searchPlaceholder={'YFI Vault'}
-						searchValue={search as string}
-						onSearch={onSearch}
-					/>
+			{isVaultListEmpty ? null : (
+				<div className={'col-span-12 w-full p-4 md:px-8 md:pb-8'}>
+					<div className={'w-1/2'}>
+						<p className={'pb-2 text-[#757CA6]'}>{'Search'}</p>
+						<SearchBar
+							className={'max-w-none rounded-lg border-none bg-neutral-300 text-neutral-900 md:w-full'}
+							iconClassName={'text-neutral-900'}
+							searchPlaceholder={'YFI Vault'}
+							searchValue={search as string}
+							onSearch={onSearch}
+						/>
+					</div>
 				</div>
-			</div>
-			<div className={cl(sortedVaultsToDisplay.length === 0 ? 'hidden' : '')}>
+			)}
+
+			<div className={cl(isVaultListEmpty ? 'hidden' : '')}>
 				<div className={'grid grid-cols-12 px-8 pb-6 md:gap-6'}>
 					<div className={'col-span-12 flex w-full flex-col'}>
 						<VaultsV3ListHead
@@ -91,7 +95,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 							}}
 							items={[
 								{label: 'Vault', value: 'name', sortable: true, className: 'col-span-2'},
-								{label: 'Risk Level', value: 'score', sortable: true, className: 'col-span-1'},
+								{label: 'Risk Level', value: 'score', sortable: true, className: 'col-span-2'},
 								{label: 'Est. APY', value: 'estAPY', sortable: true, className: 'col-span-2'},
 								{label: 'Hist. APY', value: 'APY', sortable: true, className: 'col-span-2'},
 								{label: 'Available', value: 'available', sortable: true, className: 'col-span-2'},
@@ -132,7 +136,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 					</div>
 				</div>
 			) : null}
-			<div className={cl(sortedVaultsToDisplay.length === 0 && search === '' ? '' : 'hidden')}>
+			<div className={cl(isVaultListEmpty && search === null ? '' : 'hidden')}>
 				<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
 					<b className={'text-center text-lg'}>{'This vault IS the strategy'}</b>
 					<p className={'text-center text-neutral-600'}>
@@ -140,7 +144,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 					</p>
 				</div>
 			</div>
-			<div className={cl(sortedVaultsToDisplay.length === 0 && search !== '' ? '' : 'hidden')}>
+			<div className={cl(isVaultListEmpty && search ? '' : 'hidden')}>
 				<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
 					<b className={'text-center text-lg'}>{'No vaults found'}</b>
 					<p className={'text-center text-neutral-600'}>{'Try another search term'}</p>
