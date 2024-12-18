@@ -529,7 +529,7 @@ function VaultRiskScoreTag({riskLevel}: {riskLevel: number}): ReactElement {
 				{'Risk Score'}
 			</p>
 			<div className={cl('flex w-fit items-center justify-end gap-4 md:justify-center', 'tooltip relative z-50')}>
-				<div className={'mt-[6px] h-3 w-10 min-w-10 rounded-sm border-2 border-neutral-400 p-[2px]'}>
+				<div className={'h-3 w-10 min-w-10 rounded-sm border-2 border-neutral-400 p-[2px]'}>
 					<div
 						className={'h-1 rounded-[1px]'}
 						style={{
