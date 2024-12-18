@@ -524,10 +524,7 @@ function VaultRiskScoreTag({riskLevel}: {riskLevel: number}): ReactElement {
 	const level = riskLevel < 0 ? 0 : riskLevel > 5 ? 5 : riskLevel;
 	const riskColor = [`transparent`, `#63C532`, `#F8A908`, `#F8A908`, `#C73203`, `#C73203`];
 	return (
-		<div
-			className={
-				'col-span-2 flex flex-row justify-between md:col-span-2 md:flex-col  md:items-end md:justify-center'
-			}>
+		<div className={'col-span-2 flex flex-row justify-between md:col-span-2 md:flex-col md:justify-center'}>
 			<p className={'inline whitespace-nowrap text-start text-xs text-neutral-800/60 md:hidden'}>
 				{'Risk Score'}
 			</p>
