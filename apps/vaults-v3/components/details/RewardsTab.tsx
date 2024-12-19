@@ -1,4 +1,6 @@
-import {useCallback, useMemo, useState} from 'react';
+import {Fragment, useCallback, useMemo, useState} from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
 import {useRouter} from 'next/router';
 import {useReadContract} from 'wagmi';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
@@ -21,6 +23,74 @@ import {useYearnToken} from '@common/hooks/useYearnToken';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+
+const OneUp = (
+	<Link
+		href={'https://1up.tokyo/stake'}
+		target={'_blank'}
+		rel={'noreferrer'}>
+		<div
+			className={
+				'flex items-center justify-center gap-2 rounded-lg bg-white/5 p-3 transition-colors hover:bg-[#D21162]'
+			}>
+			<Image
+				className={'rounded-full'}
+				src={'https://1up.tokyo/logo.svg'}
+				alt={'1UP'}
+				width={32}
+				height={32}
+				unoptimized
+			/>
+			<p className={'text-base font-bold text-white'}>{'1UP'}</p>
+		</div>
+	</Link>
+);
+
+const Cove = (
+	<Link
+		href={'https://boosties.cove.finance/boosties'}
+		target={'_blank'}
+		rel={'noreferrer'}>
+		<div
+			className={
+				'flex items-center justify-center gap-2 rounded-lg bg-white/5 p-3 transition-colors hover:bg-[#D21162]'
+			}>
+			<Image
+				className={'rounded-full'}
+				src={
+					'https://assets-global.website-files.com/651af12fcd3055636b6ac9ad/66242dbf1d6e7ff1b18336c4_Twitter%20pp%20-%20Logo%202.png'
+				}
+				alt={'Cove'}
+				width={32}
+				height={32}
+				unoptimized
+			/>
+			<p className={'text-base font-bold text-white'}>{'Cove'}</p>
+		</div>
+	</Link>
+);
+
+const StakeDAO = (
+	<Link
+		href={'https://www.stakedao.org/yield?protocol=yearn'}
+		target={'_blank'}
+		rel={'noreferrer'}>
+		<div
+			className={
+				'flex items-center justify-center gap-2 rounded-lg bg-white/5 p-3 transition-colors hover:bg-[#D21162]'
+			}>
+			<Image
+				className={'rounded-full'}
+				src={'https://www.stakedao.org/logo.png'}
+				alt={'StakeDAO'}
+				width={32}
+				height={32}
+				unoptimized
+			/>
+			<p className={'text-base font-bold text-white'}>{'StakeDAO'}</p>
+		</div>
+	</Link>
+);
 
 /**************************************************************************************************
  ** The BoostMessage component will display a message to the user if the current vault has staking
@@ -70,7 +140,7 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 
 	if (hasVaultData && vaultDataource === 'VeYFI') {
 		return (
-			<div className={'col-span-12 mt-0'}>
+			<div className={'col-span-12 mt-0 hidden'}>
 				<div
 					className={cl('w-full bg-neutral-900 rounded-lg p-6 text-neutral-0', isV3Page ? 'rounded-lg' : '')}>
 					<b className={'text-lg'}>{'Yield is good, but more yield is good-er!'}</b>
@@ -140,6 +210,56 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 		);
 	}
 	return <span />;
+}
+
+function VeYFIBoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive: boolean}): ReactElement {
+	const vaultDataource = props.currentVault.staking.source;
+	const extraAPY = props.currentVault.apr.extra.stakingRewardsAPR;
+
+	const randomOrder = useMemo(() => {
+		const apps = [OneUp, Cove, StakeDAO];
+		function shuffle(array: ReactElement[]): ReactElement[] {
+			for (let i = array.length - 1; i > 0; i--) {
+				const j = Math.floor(Math.random() * (i + 1));
+				[array[i], array[j]] = [array[j], array[i]];
+			}
+			return array;
+		}
+		return shuffle(apps);
+	}, []);
+
+	if (vaultDataource !== 'VeYFI') {
+		return <Fragment />;
+	}
+
+	return (
+		<div className={'flex w-full flex-col rounded-2xl bg-[#211F69] p-6'}>
+			<b className={'text-lg'}>{'Yield is good, but more yield is good-er!'}</b>
+			<div className={'flex flex-col gap-2 py-4 text-[#908FB4]'}>
+				<p>
+					{`This Vault has an active veYFI gauge which boosts your APY from `}
+					<span className={'font-bold text-white'}>{`${formatAmount(extraAPY * 10)}%`}</span>
+					{` to `}
+					<span className={'font-bold text-white'}>{`${formatAmount(extraAPY * 100)}%`}</span>
+					{` depending on the veYFI you have locked. Simply deposit and stake to start earning. `}
+					<a
+						className={'underline'}
+						href={'https://docs.yearn.fi/contributing/governance/veyfi-intro'}
+						target={'_blank'}
+						rel={'noreferrer'}>
+						{'Learn more'}
+					</a>
+					{'.'}
+				</p>
+				<p>{"Don't have veYFI? Deposit with a liquid locker to earn boosted rewards today!"}</p>
+			</div>
+			<div className={'grid grid-cols-2 gap-2 pt-6 md:grid-cols-3'}>
+				{randomOrder.map((item, index) => (
+					<Fragment key={index}>{item}</Fragment>
+				))}
+			</div>
+		</div>
+	);
 }
 
 /**************************************************************************************************
@@ -326,112 +446,119 @@ export function RewardsTab(props: {currentVault: TYDaemonVault; hasStakingReward
 	}
 
 	return (
-		<div className={'flex flex-col gap-6 rounded-b-3xl p-4 md:gap-4 md:p-8'}>
-			<BoostMessage
-				hasStakingRewardsLive={props.hasStakingRewardsLive}
-				currentVault={props.currentVault}
-			/>
-
-			<div className={'flex flex-col gap-2'}>
-				<div>
-					<div className={'font-bold'}>{'Stake'}</div>
-				</div>
-				<div className={'flex flex-col gap-4 md:flex-row'}>
-					<FakeInput
-						className={'w-full md:w-1/3'}
-						legend={
-							<div className={'flex items-center justify-between'}>
-								<p>{`${formatAmount(vaultData.vaultBalanceOf.normalized, 6)} ${props.currentVault.symbol} available to stake`}</p>
-								<p>{`${formatCounterValue(vaultData.vaultBalanceOf.normalized, vaultTokenPrice.normalized)}`}</p>
-							</div>
-						}
-						value={
-							toBigInt(vaultData.vaultBalanceOf.raw) === 0n ? undefined : (
-								<Counter
-									value={Number(vaultData.vaultBalanceOf.normalized)}
-									decimals={18}
-								/>
-							)
-						}
-					/>
+		<div className={'grid grid-cols-1 md:grid-cols-2'}>
+			<div className={'flex flex-col gap-6 rounded-b-3xl p-4 md:gap-4 md:p-8 md:pr-0'}>
+				<BoostMessage
+					hasStakingRewardsLive={props.hasStakingRewardsLive}
+					currentVault={props.currentVault}
+				/>
+				<div className={'flex flex-col gap-2'}>
 					<div>
+						<div className={'font-bold'}>{'Stake'}</div>
+					</div>
+					<div className={'flex flex-col gap-4 md:flex-row'}>
+						<FakeInput
+							className={'w-full'}
+							legend={
+								<div className={'flex items-center justify-between'}>
+									<p>{`${formatAmount(vaultData.vaultBalanceOf.normalized, 6)} ${props.currentVault.symbol} available to stake`}</p>
+									<p>{`${formatCounterValue(vaultData.vaultBalanceOf.normalized, vaultTokenPrice.normalized)}`}</p>
+								</div>
+							}
+							value={
+								toBigInt(vaultData.vaultBalanceOf.raw) === 0n ? undefined : (
+									<Counter
+										value={Number(vaultData.vaultBalanceOf.normalized)}
+										decimals={18}
+									/>
+								)
+							}
+						/>
+						<div>
+							<Button
+								className={'w-full md:w-[180px] md:min-w-[180px]'}
+								onClick={(): unknown => (isApproved ? onStake() : onApprove())}
+								isBusy={stakeStatus.pending || approveStakeStatus.pending}
+								isDisabled={
+									!isActive ||
+									toBigInt(vaultData.vaultBalanceOf.raw) <= 0n ||
+									(!props.hasStakingRewardsLive && props.currentVault.staking.source !== 'VeYFI')
+								}>
+								{isApproved ? 'Stake' : 'Approve & Stake'}
+							</Button>
+						</div>
+					</div>
+				</div>
+				<div className={'flex flex-col gap-2'}>
+					<div>
+						<div className={'font-bold'}>{'Unstake'}</div>
+					</div>
+					<div className={'flex flex-col gap-4 md:flex-row'}>
+						<FakeInput
+							className={'w-full'}
+							legend={
+								<div className={'flex items-center justify-between'}>
+									<p>{`${formatAmount(vaultData.stakedBalanceOf.normalized, 6)} ${symbol} staked`}</p>
+									<p>{`${formatCounterValue(vaultData.stakedBalanceOf.normalized, vaultTokenPrice.normalized)}`}</p>
+								</div>
+							}
+							value={
+								toBigInt(vaultData.stakedBalanceOf.raw) === 0n ? undefined : (
+									<Counter
+										value={Number(vaultData.stakedBalanceOf.normalized)}
+										decimals={18}
+									/>
+								)
+							}
+						/>
+
 						<Button
-							className={'w-full md:w-[200px]'}
-							onClick={(): unknown => (isApproved ? onStake() : onApprove())}
-							isBusy={stakeStatus.pending || approveStakeStatus.pending}
-							isDisabled={
-								!isActive ||
-								toBigInt(vaultData.vaultBalanceOf.raw) <= 0n ||
-								(!props.hasStakingRewardsLive && props.currentVault.staking.source !== 'VeYFI')
-							}>
-							{isApproved ? 'Stake' : 'Approve & Stake'}
+							className={'w-full md:w-[180px] md:min-w-[180px]'}
+							onClick={onUnstake}
+							isBusy={unstakeStatus.pending}
+							isDisabled={!isActive || Number(vaultData.stakedBalanceOf.normalized) <= 0}>
+							{'Claim & Exit'}
+						</Button>
+					</div>
+				</div>
+				<div className={'flex flex-col gap-2'}>
+					<div>
+						<div className={'font-bold'}>{'Claim Rewards'}</div>
+					</div>
+					<div className={'flex flex-col gap-4 md:flex-row'}>
+						<FakeInput
+							className={'w-full'}
+							legend={
+								<div className={'flex items-center justify-between'}>
+									<p>{`${formatAmount(vaultData.stakedEarned.normalized, 6)} ${rewardTokenBalance.symbol || (props.currentVault.staking.rewards || [])[0]?.symbol || ''} available to claim`}</p>
+									<p>{`${formatCounterValue(vaultData.stakedEarned.normalized, rewardTokenPrice.normalized)}`}</p>
+								</div>
+							}
+							value={
+								toBigInt(vaultData.stakedEarned.raw) === 0n ? undefined : (
+									<Counter
+										value={Number(vaultData.stakedEarned.normalized)}
+										decimals={18}
+									/>
+								)
+							}
+						/>
+
+						<Button
+							className={'w-full md:w-[180px] md:min-w-[180px]'}
+							onClick={onClaim}
+							isBusy={claimStatus.pending}
+							isDisabled={!isActive || isZero(vaultData.stakedEarned.raw)}>
+							{'Claim'}
 						</Button>
 					</div>
 				</div>
 			</div>
-			<div className={'flex flex-col gap-2'}>
-				<div>
-					<div className={'font-bold'}>{'Unstake'}</div>
-				</div>
-				<div className={'flex flex-col gap-4 md:flex-row'}>
-					<FakeInput
-						className={'w-full md:w-1/3'}
-						legend={
-							<div className={'flex items-center justify-between'}>
-								<p>{`${formatAmount(vaultData.stakedBalanceOf.normalized, 6)} ${symbol} staked`}</p>
-								<p>{`${formatCounterValue(vaultData.stakedBalanceOf.normalized, vaultTokenPrice.normalized)}`}</p>
-							</div>
-						}
-						value={
-							toBigInt(vaultData.stakedBalanceOf.raw) === 0n ? undefined : (
-								<Counter
-									value={Number(vaultData.stakedBalanceOf.normalized)}
-									decimals={18}
-								/>
-							)
-						}
-					/>
-
-					<Button
-						className={'w-full md:w-[200px]'}
-						onClick={onUnstake}
-						isBusy={unstakeStatus.pending}
-						isDisabled={!isActive || Number(vaultData.stakedBalanceOf.normalized) <= 0}>
-						{'Claim & Exit'}
-					</Button>
-				</div>
-			</div>
-			<div className={'flex flex-col gap-2'}>
-				<div>
-					<div className={'font-bold'}>{'Claim Rewards'}</div>
-				</div>
-				<div className={'flex flex-col gap-4 md:flex-row'}>
-					<FakeInput
-						className={'w-full md:w-1/3'}
-						legend={
-							<div className={'flex items-center justify-between'}>
-								<p>{`${formatAmount(vaultData.stakedEarned.normalized, 6)} ${rewardTokenBalance.symbol || (props.currentVault.staking.rewards || [])[0]?.symbol || ''} available to claim`}</p>
-								<p>{`${formatCounterValue(vaultData.stakedEarned.normalized, rewardTokenPrice.normalized)}`}</p>
-							</div>
-						}
-						value={
-							toBigInt(vaultData.stakedEarned.raw) === 0n ? undefined : (
-								<Counter
-									value={Number(vaultData.stakedEarned.normalized)}
-									decimals={18}
-								/>
-							)
-						}
-					/>
-
-					<Button
-						className={'w-full md:w-[200px]'}
-						onClick={onClaim}
-						isBusy={claimStatus.pending}
-						isDisabled={!isActive || isZero(vaultData.stakedEarned.raw)}>
-						{'Claim'}
-					</Button>
-				</div>
+			<div className={'flex flex-col gap-6 rounded-b-3xl p-4 md:gap-4 md:p-8'}>
+				<VeYFIBoostMessage
+					currentVault={props.currentVault}
+					hasStakingRewardsLive={props.hasStakingRewardsLive}
+				/>
 			</div>
 		</div>
 	);
