@@ -77,9 +77,7 @@ export function VaultsV3ListHead({items, sortBy, sortDirection, onSort}: TListHe
 					</button>
 				</div>
 
-				<div />
-
-				<div className={cl('col-span-7 z-10', 'grid grid-cols-2 md:grid-cols-11 gap-1', 'mt-4 md:mt-0')}>
+				<div className={cl('col-span-8 z-10', 'grid grid-cols-2 md:grid-cols-12 gap-1', 'mt-4 md:mt-0')}>
 					{rest.map(
 						(item, index): ReactElement => (
 							<button

@@ -85,27 +85,32 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 
 			<div className={cl(isVaultListEmpty ? 'hidden' : '')}>
 				<div className={'grid grid-cols-12 px-8 pb-6 md:gap-6'}>
-					<div className={'col-span-12 flex w-full flex-col'}>
+					<div className={'col-span-12 flex min-h-[240px] w-full flex-col'}>
 						<VaultsV3ListHead
 							sortBy={sortBy}
 							sortDirection={sortDirection}
 							onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {
+								if (newSortDirection === '') {
+									onChangeSortBy('featuringScore');
+									onChangeSortDirection('');
+									return;
+								}
 								onChangeSortBy(newSortBy as TPossibleSortBy);
 								onChangeSortDirection(newSortDirection as TSortDirection);
 							}}
 							items={[
-								{label: 'Vault', value: 'name', sortable: true, className: 'col-span-2'},
+								{label: 'Vault', value: 'name', sortable: true, className: 'col-span-4'},
+								{label: 'Est. APY', value: 'estAPY', sortable: true, className: 'col-span-2'},
+								{label: 'Hist. APY', value: 'APY', sortable: true, className: 'col-span-2'},
 								{
 									label: 'Risk Level',
 									value: 'score',
 									sortable: true,
-									className: 'col-span-1 text-nowrap'
+									className: 'col-span-2 whitespace-nowrap'
 								},
-								{label: 'Est. APY', value: 'estAPY', sortable: true, className: 'col-span-2'},
-								{label: 'Hist. APY', value: 'APY', sortable: true, className: 'col-span-2'},
 								{label: 'Available', value: 'available', sortable: true, className: 'col-span-2'},
 								{label: 'Holdings', value: 'deposited', sortable: true, className: 'col-span-2'},
-								{label: 'Deposits', value: 'tvl', sortable: true, className: 'col-span-2'}
+								{label: 'Deposits', value: 'tvl', sortable: true, className: 'col-span-2 justify-end'}
 							]}
 						/>
 						<div className={'grid gap-4'}>

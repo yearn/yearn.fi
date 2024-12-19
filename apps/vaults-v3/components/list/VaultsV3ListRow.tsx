@@ -25,22 +25,24 @@ type TAPYSublineProps = {
 function APYSubline({hasPendleArbRewards, hasKelpNEngenlayer, hasKelp}: TAPYSublineProps): ReactElement {
 	if (hasKelpNEngenlayer) {
 		return (
-			<small className={cl('whitespace-nowrap text-xs text-neutral-800 self-end -mb-4')}>
-				{`+1x Kelp Miles | +1x EigenLayer Points 🚀`}
+			<small className={cl('whitespace-nowrap text-xs text-neutral-400 self-end -mb-4 absolute top-6')}>
+				{`+1x Kelp Miles`}
+				<br />
+				{'+1x EigenLayer Points'}
 			</small>
 		);
 	}
 	if (hasKelp) {
 		return (
-			<small className={cl('whitespace-nowrap text-xs text-neutral-800 self-end -mb-4')}>
-				{`+ 1x Kelp Miles 🚀`}
+			<small className={cl('whitespace-nowrap text-xs text-neutral-400 self-end -mb-4 absolute top-6')}>
+				{`+ 1x Kelp Miles`}
 			</small>
 		);
 	}
 	if (hasPendleArbRewards) {
 		return (
-			<small className={cl('whitespace-nowrap text-xs text-neutral-800 self-end -mb-5 pt-1 -mr-1')}>
-				{`+ 2500 ARB/week 🚀`}
+			<small className={cl('whitespace-nowrap text-xs text-neutral-400 self-end -mb-4 absolute top-6')}>
+				{`+ 2500 ARB/week`}
 			</small>
 		);
 	}
@@ -185,7 +187,7 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 
 		if (currentVault.apr?.extra.stakingRewardsAPR > 0) {
 			return (
-				<div className={'flex flex-col items-end md:text-right'}>
+				<div className={'relative flex flex-col items-end md:text-right'}>
 					<span className={'tooltip'}>
 						<b className={'yearn--table-data-section-item-value'}>
 							<Renderable
@@ -223,7 +225,7 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 			);
 		}
 		return (
-			<div className={'flex flex-col items-end md:text-right'}>
+			<div className={'relative flex flex-col items-end md:text-right'}>
 				<b className={'yearn--table-data-section-item-value'}>
 					<Renderable
 						shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
@@ -320,7 +322,7 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 		}
 
 		return (
-			<div className={'flex flex-col items-end md:text-right'}>
+			<div className={'relative flex flex-col items-end md:text-right'}>
 				<span className={'tooltip'}>
 					<b className={'yearn--table-data-section-item-value whitespace-nowrap'}>
 						<Renderable
@@ -390,7 +392,7 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 	const hasCurrentAPY = !isZero(currentVault?.apr.forwardAPR.netAPR);
 	if (hasCurrentAPY) {
 		return (
-			<div className={'flex flex-col items-end md:text-right'}>
+			<div className={'relative flex flex-col items-end md:text-right'}>
 				<b className={'yearn--table-data-section-item-value'}>
 					<Renderable
 						shouldRender={!currentVault.apr.forwardAPR?.type.includes('new')}
@@ -416,7 +418,7 @@ function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactEl
 
 	const hasZeroAPY = isZero(currentVault.apr?.netAPR) || Number((currentVault.apr?.netAPR || 0).toFixed(2)) === 0;
 	return (
-		<div className={'flex flex-col items-end md:text-right'}>
+		<div className={'relative flex flex-col items-end md:text-right'}>
 			<b className={'yearn--table-data-section-item-value'}>
 				<Renderable
 					shouldRender={
@@ -524,7 +526,7 @@ function VaultRiskScoreTag({riskLevel}: {riskLevel: number}): ReactElement {
 	const level = riskLevel < 0 ? 0 : riskLevel > 5 ? 5 : riskLevel;
 	const riskColor = [`transparent`, `#63C532`, `#F8A908`, `#F8A908`, `#C73203`, `#C73203`];
 	return (
-		<div className={'col-span-2 flex flex-row justify-between md:col-span-2 md:flex-col md:justify-center'}>
+		<div className={'col-span-2 flex flex-row items-end justify-between md:flex-col md:justify-center'}>
 			<p className={'inline whitespace-nowrap text-start text-xs text-neutral-800/60 md:hidden'}>
 				{'Risk Score'}
 			</p>
@@ -644,7 +646,7 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 				/>
 
 				<div className={cl('col-span-4 z-10', 'flex flex-row items-center justify-between')}>
-					<div className={'flex flex-row gap-6 overflow-hidden'}>
+					<div className={'flex flex-row gap-6 overflow-hidden pr-10'}>
 						<div className={'mt-2.5 size-8 min-h-8 min-w-8 rounded-full md:flex'}>
 							<ImageWithFallback
 								src={`${process.env.BASE_YEARN_ASSETS_URI}/${currentVault.chainID}/${currentVault.token.address}/logo-128.png`}
@@ -681,11 +683,7 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 					</div>
 				</div>
 
-				<div className={'col-span-1'} />
-
-				<div className={cl('col-span-7 z-10', 'grid grid-cols-2 md:grid-cols-12 gap-4', 'mt-4 md:mt-0')}>
-					<VaultRiskScoreTag riskLevel={currentVault.info.riskLevel} />
-
+				<div className={cl('col-span-8 z-10', 'grid grid-cols-2 md:grid-cols-12 gap-4', 'mt-4 md:mt-0')}>
 					<div
 						className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'}
 						datatype={'number'}>
@@ -699,6 +697,8 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Historical APY'}</p>
 						<VaultHistoricalAPY currentVault={currentVault} />
 					</div>
+
+					<VaultRiskScoreTag riskLevel={currentVault.info.riskLevel} />
 
 					<div
 						className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'}
