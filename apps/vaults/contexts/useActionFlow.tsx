@@ -423,15 +423,15 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 		}
 
 		// Only use GaugeStakingBooster if the user chose to stake automatically and the vault is staking with VeYFI
-		if (
-			props.currentVault.staking.available &&
-			props.currentVault.staking.source === 'VeYFI' &&
-			isAutoStakingEnabled &&
-			isDepositing &&
-			isUnderlyingToken
-		) {
-			return Solver.enum.GaugeStakingBooster;
-		}
+		// if (
+		// 	props.currentVault.staking.available &&
+		// 	props.currentVault.staking.source === 'VeYFI' &&
+		// 	isAutoStakingEnabled &&
+		// 	isDepositing &&
+		// 	isUnderlyingToken
+		// ) {
+		// 	return Solver.enum.GaugeStakingBooster;
+		// }
 
 		// Only use JuicedStakingBooster if the user chose to stake automatically and the vault is staking with Juiced
 		// Disabled until we figure out the zap
