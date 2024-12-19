@@ -1,5 +1,6 @@
 import {createContext, useCallback, useContext, useEffect, useMemo, useReducer, useState} from 'react';
 import {useRouter} from 'next/router';
+import {useReadContract} from 'wagmi';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {useTokenList} from '@builtbymom/web3/contexts/WithTokenList';
 import {useAsyncTrigger} from '@builtbymom/web3/hooks/useAsyncTrigger';
@@ -17,6 +18,7 @@ import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
 import {useMountEffect} from '@react-hookz/web';
 import {Solver} from '@vaults/types/solvers';
 import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
+import {VEYFI_ABI} from '@vaults/utils/abi/veYFI.abi';
 import {setZapOption} from '@vaults/utils/zapOptions';
 import {readContracts, serialize, simulateContract} from '@wagmi/core';
 import {VAULT_ABI} from '@yearn-finance/web-lib/utils/abi/vault.abi';
@@ -24,6 +26,7 @@ import {
 	ETH_TOKEN_ADDRESS,
 	LPYCRV_TOKEN_ADDRESS,
 	OPT_WETH_TOKEN_ADDRESS,
+	VEYFI_ADDRESS,
 	WETH_TOKEN_ADDRESS,
 	WFTM_TOKEN_ADDRESS,
 	YVWETH_ADDRESS,
@@ -403,6 +406,19 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 		[getBalance, props.currentVault, actionParams?.selectedOptionFrom?.decimals, isDepositing, limits?.maxDeposit]
 	);
 
+	const currentTimestamp = Math.floor(Date.now() / 1000);
+	const {data} = useReadContract({
+		address: toAddress(VEYFI_ADDRESS),
+		abi: VEYFI_ABI,
+		functionName: 'locked',
+		args: [toAddress(address)],
+		query: {
+			enabled: !isZeroAddress(address) && props.currentVault.staking.source === 'VeYFI'
+		}
+	});
+
+	const {amount: veYFIBalance = 0n, end: lockEnds = 0n} = (data as {amount: bigint; end: bigint} | undefined) || {};
+
 	/**********************************************************************************************
 	 ** The currentSolver is a memoized value that determines which solver should be used based on
 	 ** the current context.
@@ -422,16 +438,18 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 			return Solver.enum.OptimismBooster;
 		}
 
-		// Only use GaugeStakingBooster if the user chose to stake automatically and the vault is staking with VeYFI
-		// if (
-		// 	props.currentVault.staking.available &&
-		// 	props.currentVault.staking.source === 'VeYFI' &&
-		// 	isAutoStakingEnabled &&
-		// 	isDepositing &&
-		// 	isUnderlyingToken
-		// ) {
-		// 	return Solver.enum.GaugeStakingBooster;
-		// }
+		// Only use GaugeStakingBooster if the user chose to stake automatically, the vault is staking with VeYFI, and user has veYFI balance
+		if (
+			props.currentVault.staking.available &&
+			props.currentVault.staking.source === 'VeYFI' &&
+			isAutoStakingEnabled &&
+			isDepositing &&
+			isUnderlyingToken &&
+			lockEnds > currentTimestamp &&
+			veYFIBalance > 0n
+		) {
+			return Solver.enum.GaugeStakingBooster;
+		}
 
 		// Only use JuicedStakingBooster if the user chose to stake automatically and the vault is staking with Juiced
 		// Disabled until we figure out the zap
@@ -508,6 +526,9 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 		props.currentVault?.migration?.address,
 		isAutoStakingEnabled,
 		isDepositing,
+		lockEnds,
+		currentTimestamp,
+		veYFIBalance,
 		isUsingPartnerContract,
 		zapProvider
 	]);
