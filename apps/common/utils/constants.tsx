@@ -13,6 +13,7 @@ import type {TApp} from '@common/types/category';
 export const DEFAULT_SLIPPAGE = 0.5;
 export const DEFAULT_MAX_LOSS = 1n;
 export const YGAUGES_ZAP_ADDRESS = toAddress('0x1104215963474A0FA0Ac09f4E212EF7282F2A0bC'); //Address of the zap to deposit & stake in the veYFI gauge
+export const VEYFI_ADDRESS = toAddress('0x90c1f9220d90d3966FbeE24045EDd73E1d588aD5'); //Address of the veYFI contract
 export const V3_STAKING_ZAP_ADDRESS: TNDict<TAddress> = {
 	[mainnet.id]: toAddress('0x5435cA9b6D9468A6e0404a4819D39ebbF036DB1E'),
 	[arbitrum.id]: toAddress('0x1E789A49902370E5858Fae67518aF49d8deA299c')
