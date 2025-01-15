@@ -27,6 +27,8 @@ type TStakingInfo = {
 	address: TAddress;
 	stakingToken: TAddress;
 	rewardsToken: TAddress;
+	rewardDecimals: number | undefined;
+	stakingDecimals: number | undefined;
 	totalStaked: TNormalizedBN;
 	stakedBalanceOf: TNormalizedBN;
 	stakedEarned: TNormalizedBN;
@@ -44,6 +46,8 @@ export function useVaultStakingData(props: {currentVault: TYDaemonVault}): {
 		address: toAddress(props.currentVault.staking.address),
 		stakingToken: toAddress(''),
 		rewardsToken: toAddress(''),
+		rewardDecimals: undefined,
+		stakingDecimals: undefined,
 		totalStaked: zeroNormalizedBN,
 		stakedBalanceOf: zeroNormalizedBN,
 		stakedEarned: zeroNormalizedBN,
@@ -273,24 +277,33 @@ export function useVaultStakingData(props: {currentVault: TYDaemonVault}): {
 		 ** view of the user's holdings in the vault: we need to know what is the reward token. This
 		 ** means we need to retrieve the token's symbol and decimals.
 		 ******************************************************************************************/
-		const rewardResult = await readContracts(retrieveConfig(), {
+		const decimalsResult = await readContracts(retrieveConfig(), {
 			contracts: [
 				{
 					address: rewardsToken,
 					abi: erc20Abi,
 					chainId: props.currentVault.chainID,
 					functionName: 'decimals'
+				},
+				{
+					address: stakingToken,
+					abi: erc20Abi,
+					chainId: props.currentVault.chainID,
+					functionName: 'decimals'
 				}
 			]
 		});
-		const rewardDecimals = decodeAsNumber(rewardResult[0]);
+		const rewardDecimals = decodeAsNumber(decimalsResult[0]);
+		const stakingDecimals = decodeAsNumber(decimalsResult[1]);
 
 		set_vaultData({
 			address: toAddress(props.currentVault.staking.address),
 			stakingToken,
 			rewardsToken,
-			totalStaked: toNormalizedBN(totalStaked, rewardDecimals),
-			stakedBalanceOf: toNormalizedBN(balanceOf, rewardDecimals),
+			rewardDecimals,
+			stakingDecimals,
+			totalStaked: toNormalizedBN(totalStaked, stakingDecimals),
+			stakedBalanceOf: toNormalizedBN(balanceOf, stakingDecimals),
 			stakedEarned: toNormalizedBN(earned, rewardDecimals),
 			vaultAllowance: toNormalizedBN(allowance, props.currentVault.decimals),
 			vaultBalanceOf: toNormalizedBN(vaultBalanceOf, props.currentVault.decimals)

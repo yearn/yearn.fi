@@ -506,7 +506,7 @@ export function RewardsTab(props: {currentVault: TYDaemonVault; hasStakingReward
 								toBigInt(vaultData.stakedBalanceOf.raw) === 0n ? undefined : (
 									<Counter
 										value={Number(vaultData.stakedBalanceOf.normalized)}
-										decimals={18}
+										decimals={vaultData.stakingDecimals || 18}
 									/>
 								)
 							}
@@ -538,7 +538,7 @@ export function RewardsTab(props: {currentVault: TYDaemonVault; hasStakingReward
 								toBigInt(vaultData.stakedEarned.raw) === 0n ? undefined : (
 									<Counter
 										value={Number(vaultData.stakedEarned.normalized)}
-										decimals={18}
+										decimals={vaultData.rewardDecimals || 18}
 									/>
 								)
 							}
