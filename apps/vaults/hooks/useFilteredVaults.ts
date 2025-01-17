@@ -33,10 +33,10 @@ export function useVaultFilter(
 
 	const filterHoldingsCallback = useCallback(
 		(vault: TYDaemonVault, isFactoryOnly: boolean, isForV3: boolean): boolean => {
-			if (isForV3 && !vault.version?.startsWith('3')) {
+			if (isForV3 && !vault.version?.startsWith('3') && !vault.version?.startsWith('~3')) {
 				return false;
 			}
-			if (!isForV3 && vault.version?.startsWith('3')) {
+			if (!isForV3 && vault.version?.startsWith('3') && !vault.version?.startsWith('~3')) {
 				return false;
 			}
 			const vaultBalance = getBalance({address: vault.address, chainID: vault.chainID});
@@ -99,11 +99,15 @@ export function useVaultFilter(
 	// V3 Filtered Vaults
 	const singleVaults = useFilteredVaults(
 		vaults,
-		({version, kind}): boolean => (version || '')?.split('.')?.[0] === '3' && kind === 'Single Strategy'
+		({version, kind}): boolean =>
+			(version || '')?.split('.')?.[0] === '3' ||
+			((version || '')?.split('.')?.[0] === '~3' && kind === 'Single Strategy')
 	);
 	const MultiVaults = useFilteredVaults(
 		vaults,
-		({version, kind}): boolean => (version || '')?.split('.')?.[0] === '3' && kind === 'Multi Strategy'
+		({version, kind}): boolean =>
+			(version || '')?.split('.')?.[0] === '3' ||
+			((version || '')?.split('.')?.[0] === '~3' && kind === 'Multi Strategy')
 	);
 
 	//V2 Filtered Vaults
@@ -203,7 +207,9 @@ export function useVaultFilter(
 		);
 
 		// Remove v3 vaults
-		_vaultList = _vaultList.filter((vault): boolean => !vault.version?.startsWith('3'));
+		_vaultList = _vaultList.filter(
+			(vault): boolean => !vault.version?.startsWith('3') && !vault.version?.startsWith('~3')
+		);
 
 		// Remove duplicates
 		const alreadyInList: TDict<boolean> = {};

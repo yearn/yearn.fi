@@ -180,13 +180,19 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 				}
 
 				if (vaults?.[toAddress(tokenAddress)]) {
-					if (vaults[toAddress(tokenAddress)].version.split('.')?.[0] === '3') {
+					if (
+						vaults[toAddress(tokenAddress)].version.split('.')?.[0] === '3' ||
+						vaults[toAddress(tokenAddress)].version.split('.')?.[0] === '~3'
+					) {
 						cumulatedValueInV3Vaults += tokenValue + stakingValue;
 					} else {
 						cumulatedValueInV2Vaults += tokenValue + stakingValue;
 					}
 				} else if (vaultsMigrations?.[toAddress(tokenAddress)]) {
-					if (vaultsMigrations[toAddress(tokenAddress)].version.split('.')?.[0] === '3') {
+					if (
+						vaultsMigrations[toAddress(tokenAddress)].version.split('.')?.[0] === '3' ||
+						vaultsMigrations[toAddress(tokenAddress)].version.split('.')?.[0] === '~3'
+					) {
 						cumulatedValueInV3Vaults += tokenValue + stakingValue;
 					} else {
 						cumulatedValueInV2Vaults += tokenValue + stakingValue;

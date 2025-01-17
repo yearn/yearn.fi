@@ -3,6 +3,8 @@ import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
 import {readContract} from '@wagmi/core';
 import {VAULT_ABI} from '@yearn-finance/web-lib/utils/abi/vault.abi';
 
+import {VAULT_V3_ABI} from './abi/vaultV3.abi';
+
 import type {TAddress, TNormalizedBN} from '@builtbymom/web3/types';
 
 type TGetVaultEstimateOutProps = {
@@ -40,17 +42,41 @@ export async function getVaultEstimateOut(props: TGetVaultEstimateOutProps): Pro
 	const inputDecimals = toBigInt(props.inputDecimals || 18);
 	const powerDecimals = toBigInt(10) ** inputDecimals;
 	const contractAddress = props.isDepositing ? props.outputToken : props.inputToken;
-	const pps = await readContract(retrieveConfig(), {
-		abi: VAULT_ABI,
-		address: contractAddress,
-		functionName: 'pricePerShare',
-		chainId: props.chainID
-	});
-	if (props.isDepositing) {
-		const expectedOutFetched = (props.inputAmount * powerDecimals) / pps;
-		return toNormalizedBN(expectedOutFetched, Number(inputDecimals));
+
+	try {
+		const pps = await readContract(retrieveConfig(), {
+			abi: VAULT_ABI,
+			address: contractAddress,
+			functionName: 'pricePerShare',
+			chainId: props.chainID
+		});
+
+		if (props.isDepositing) {
+			const expectedOutFetched = (props.inputAmount * powerDecimals) / pps;
+			return toNormalizedBN(expectedOutFetched, Number(inputDecimals));
+		}
+		const outputDecimals = toBigInt(props.outputDecimals || 18);
+		const expectedOutFetched = (props.inputAmount * pps) / powerDecimals;
+		return toNormalizedBN(expectedOutFetched, Number(outputDecimals));
+	} catch (error) {
+		if (props.isDepositing) {
+			const convertedShares = await readContract(retrieveConfig(), {
+				abi: VAULT_V3_ABI,
+				address: contractAddress,
+				functionName: 'convertToShares',
+				chainId: props.chainID,
+				args: [props.inputAmount]
+			});
+			return toNormalizedBN(convertedShares, Number(inputDecimals));
+		}
+		const convertedAssets = await readContract(retrieveConfig(), {
+			abi: VAULT_V3_ABI,
+			address: contractAddress,
+			functionName: 'convertToAssets',
+			chainId: props.chainID,
+			args: [props.inputAmount]
+		});
+		const outputDecimals = toBigInt(props.outputDecimals || 18);
+		return toNormalizedBN(convertedAssets, Number(outputDecimals));
 	}
-	const outputDecimals = toBigInt(props.outputDecimals || 18);
-	const expectedOutFetched = (props.inputAmount * pps) / powerDecimals;
-	return toNormalizedBN(expectedOutFetched, Number(outputDecimals));
 }

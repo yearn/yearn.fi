@@ -252,7 +252,7 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 				args: [balanceOf]
 			});
 
-			if (props.currentVault.version.startsWith('3')) {
+			if (props.currentVault.version.startsWith('3') || props.currentVault.version.startsWith('~3')) {
 				set_limits({
 					maxDeposit: decodeAsBigInt(results[0], decodeAsBigInt(results[1], 0n)),
 					maxRedeem: decodeAsBigInt(results[2], decodeAsBigInt(results[3], 0n))
@@ -359,7 +359,7 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 		const balance = toBigInt(vaultBalance.raw);
 		const maxRedeemWithRoundingSafety = toBigInt(limits?.maxRedeem) + 10n;
 
-		if (props.currentVault.version.startsWith('3')) {
+		if (props.currentVault.version.startsWith('3') || props.currentVault.version.startsWith('~3')) {
 			const safeLimit = (toBigInt(limits?.maxRedeem) * 99n) / 100n;
 			return {
 				limit: toNormalizedBN(toBigInt(limits?.maxRedeem), props.currentVault.token.decimals),
@@ -476,7 +476,8 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 			return Solver.enum.V3StakingBooster;
 		}
 
-		const isV3 = props.currentVault?.version.split('.')?.[0] === '3';
+		const isV3 =
+			props.currentVault?.version.split('.')?.[0] === '3' || props.currentVault?.version.split('.')?.[0] === '~3';
 		if (
 			props.currentVault?.migration?.available &&
 			toAddress(actionParams?.selectedOptionTo?.value) === toAddress(props.currentVault?.migration?.address)

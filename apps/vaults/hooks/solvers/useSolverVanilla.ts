@@ -152,7 +152,8 @@ export function useSolverVanilla(): TSolverContext {
 			assert(request.current, 'Request is not set');
 			assert(request.current.inputToken, 'Output token is not set');
 			assert(request.current.inputAmount, 'Input amount is not set');
-			const isV3 = request.current?.version.split('.')?.[0] === '3';
+			const isV3 =
+				request.current?.version.split('.')?.[0] === '3' || request.current?.version.split('.')?.[0] === '~3';
 
 			if (isV3) {
 				const result = await redeemV3Shares({

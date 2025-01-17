@@ -60,7 +60,7 @@ export async function depositAndStake(props: TDepositAndStake): Promise<TTxRespo
 	// If we are depositing into the VeYFI gauge
 	if (toAddress(props.contractAddress) === toAddress(YGAUGES_ZAP_ADDRESS)) {
 		assertAddress(props.stakingPoolAddress, 'stakingPoolAddress');
-		if ((props.vaultVersion || '').startsWith('3')) {
+		if ((props.vaultVersion || '').startsWith('3') || (props.vaultVersion || '').startsWith('~3')) {
 			return await handleTx(props, {
 				address: props.contractAddress,
 				abi: YGAUGE_ZAP_ABI,
