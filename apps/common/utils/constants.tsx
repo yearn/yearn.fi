@@ -110,6 +110,12 @@ export const YEARN_X_APPS: TApp[] = [
 		description: 'Get the best risk adjusted Curve yields, with Yearn.',
 		logoURI: 'https://curve.yearn.space/favicons/favicon-512x512.png',
 		appURI: 'https://curve.yearn.space/'
+	},
+	{
+		name: 'Morpho',
+		description: 'Time to feel the 🦋 effect!',
+		logoURI: 'https://morpho.yearn.space/favicons/favicon-512x512.png',
+		appURI: 'https://morpho.yearn.space'
 	}
 ];
 
