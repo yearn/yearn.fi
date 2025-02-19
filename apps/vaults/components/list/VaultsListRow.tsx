@@ -399,17 +399,10 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 			href={`/vaults/${currentVault.chainID}/${toAddress(currentVault.address)}`}>
 			<div
 				className={cl(
-					'grid w-full grid-cols-1 md:grid-cols-12 rounded-3xl',
-					'p-6 pt-2 md:px-10',
+					'grid w-full grid-cols-1 md:grid-cols-12',
+					'p-6 pt-2 md:px-10 bg-neutral-100 hover:bg-neutral-200 transition-colors',
 					'cursor-pointer relative group'
 				)}>
-				<div
-					className={cl(
-						'absolute inset-0 rounded-3xl',
-						'opacity-20 transition-opacity group-hover:opacity-100 pointer-events-none'
-					)}
-				/>
-
 				<div className={cl('col-span-4 z-10', 'flex flex-row items-center justify-between')}>
 					<div className={'flex flex-row gap-6 overflow-hidden'}>
 						<div className={'mt-2.5 size-8 min-h-8 min-w-8 rounded-full md:flex'}>
