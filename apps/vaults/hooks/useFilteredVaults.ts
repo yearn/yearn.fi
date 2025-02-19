@@ -100,13 +100,13 @@ export function useVaultFilter(
 	const singleVaults = useFilteredVaults(
 		vaults,
 		({version, kind}): boolean =>
-			(version || '')?.split('.')?.[0] === '3' ||
+			((version || '')?.split('.')?.[0] === '3' && kind === 'Single Strategy') ||
 			((version || '')?.split('.')?.[0] === '~3' && kind === 'Single Strategy')
 	);
 	const MultiVaults = useFilteredVaults(
 		vaults,
 		({version, kind}): boolean =>
-			(version || '')?.split('.')?.[0] === '3' ||
+			((version || '')?.split('.')?.[0] === '3' && kind === 'Multi Strategy') ||
 			((version || '')?.split('.')?.[0] === '~3' && kind === 'Multi Strategy')
 	);
 
