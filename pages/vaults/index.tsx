@@ -16,7 +16,6 @@ import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {usePagination} from '@yearn-finance/web-lib/hooks/usePagination';
 import {IconChain} from '@yearn-finance/web-lib/icons/IconChain';
 import {Counter} from '@common/components/Counter';
-import {InfoTooltip} from '@common/components/InfoTooltip';
 import {ListHead} from '@common/components/ListHead';
 import {Pagination} from '@common/components/Pagination';
 import {useYearn} from '@common/contexts/useYearn';
@@ -28,7 +27,6 @@ import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 
 function HeaderUserPosition(): ReactElement {
 	const {cumulatedValueInV2Vaults} = useYearn();
-	const {earned} = useYearn();
 	const {isActive, address, openLoginModal, onSwitchChain} = useWeb3();
 
 	if (!isActive) {
@@ -58,24 +56,6 @@ function HeaderUserPosition(): ReactElement {
 					{'$'}
 					<Counter
 						value={Number(cumulatedValueInV2Vaults)}
-						decimals={2}
-					/>
-				</b>
-			</div>
-			<div className={'col-span-12 w-full md:col-span-4'}>
-				<p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl '}>
-					{'Earnings'}
-					<InfoTooltip
-						text={'Your earnings are estimated based on available onchain data and some nerdy math stuff.'}
-						size={'md'}
-					/>
-				</p>
-				<b className={'font-number text-3xl text-neutral-900 md:text-7xl'}>
-					{'$'}
-					<Counter
-						value={Number(
-							(earned?.totalUnrealizedGainsUSD || 0) > 0 ? earned?.totalUnrealizedGainsUSD || 0 : 0
-						)}
 						decimals={2}
 					/>
 				</b>
