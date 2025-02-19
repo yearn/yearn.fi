@@ -1,6 +1,6 @@
 import {Children, Fragment, useMemo, useState} from 'react';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {isZero, toAddress} from '@builtbymom/web3/utils';
+import {toAddress} from '@builtbymom/web3/utils';
 import {VaultListOptions} from '@vaults/components/list/VaultListOptions';
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
 import {VaultsListInternalMigrationRow} from '@vaults/components/list/VaultsListInternalMigrationRow';
@@ -13,7 +13,6 @@ import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {usePagination} from '@yearn-finance/web-lib/hooks/usePagination';
 import {IconChain} from '@yearn-finance/web-lib/icons/IconChain';
 import {Counter} from '@common/components/Counter';
 import {ListHead} from '@common/components/ListHead';
