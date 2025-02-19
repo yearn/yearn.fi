@@ -441,9 +441,8 @@ export function VaultsListRow({currentVault}: {currentVault: TYDaemonVault}): Re
 					</div>
 				</div>
 
-				<div className={'col-span-1'} />
-
-				<div className={cl('col-span-7 z-10', 'grid grid-cols-2 md:grid-cols-12 gap-1', 'mt-4 md:mt-0')}>
+				<div />
+				<div className={cl('col-span-7 z-10', 'grid grid-cols-2 md:grid-cols-10 gap-1', 'mt-4 md:mt-0')}>
 					<div
 						className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'}
 						datatype={'number'}>
