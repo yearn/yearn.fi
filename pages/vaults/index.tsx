@@ -1,6 +1,6 @@
-import {Fragment, useMemo} from 'react';
+import {Children, Fragment, useMemo, useState} from 'react';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {isZero, toAddress} from '@builtbymom/web3/utils';
+import {toAddress} from '@builtbymom/web3/utils';
 import {VaultListOptions} from '@vaults/components/list/VaultListOptions';
 import {VaultsListEmpty} from '@vaults/components/list/VaultsListEmpty';
 import {VaultsListInternalMigrationRow} from '@vaults/components/list/VaultsListInternalMigrationRow';
@@ -13,10 +13,8 @@ import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {usePagination} from '@yearn-finance/web-lib/hooks/usePagination';
 import {IconChain} from '@yearn-finance/web-lib/icons/IconChain';
 import {Counter} from '@common/components/Counter';
-import {InfoTooltip} from '@common/components/InfoTooltip';
 import {ListHead} from '@common/components/ListHead';
 import {Pagination} from '@common/components/Pagination';
 import {useYearn} from '@common/contexts/useYearn';
@@ -28,7 +26,6 @@ import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 
 function HeaderUserPosition(): ReactElement {
 	const {cumulatedValueInV2Vaults} = useYearn();
-	const {earned} = useYearn();
 	const {isActive, address, openLoginModal, onSwitchChain} = useWeb3();
 
 	if (!isActive) {
@@ -58,24 +55,6 @@ function HeaderUserPosition(): ReactElement {
 					{'$'}
 					<Counter
 						value={Number(cumulatedValueInV2Vaults)}
-						decimals={2}
-					/>
-				</b>
-			</div>
-			<div className={'col-span-12 w-full md:col-span-4'}>
-				<p className={'pb-2 text-lg text-neutral-900 md:pb-6 md:text-3xl '}>
-					{'Earnings'}
-					<InfoTooltip
-						text={'Your earnings are estimated based on available onchain data and some nerdy math stuff.'}
-						size={'md'}
-					/>
-				</p>
-				<b className={'font-number text-3xl text-neutral-900 md:text-7xl'}>
-					{'$'}
-					<Counter
-						value={Number(
-							(earned?.totalUnrealizedGainsUSD || 0) > 0 ? earned?.totalUnrealizedGainsUSD || 0 : 0
-						)}
 						decimals={2}
 					/>
 				</b>
@@ -128,7 +107,7 @@ function ListOfMigratableVaults({migratableVaults}: {migratableVaults: TYDaemonV
 }
 
 function ListOfVaults(): ReactElement {
-	const {isLoadingVaultList} = useYearn();
+	const {getBalance, isLoadingVaultList} = useYearn();
 	const {
 		search,
 		types,
@@ -146,6 +125,7 @@ function ListOfVaults(): ReactElement {
 		defaultPathname: '/vaults'
 	});
 	const {activeVaults, migratableVaults, retiredVaults} = useVaultFilter(types, chains);
+	const [page, set_page] = useState(1);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	 **	Then, on the activeVaults list, we apply the search filter. The search filter is
@@ -167,21 +147,57 @@ function ListOfVaults(): ReactElement {
 		});
 	}, [activeVaults, search]);
 
-	/* 🔵 - Yearn Finance **************************************************************************
-	 **	Then, once we have reduced the list of vaults to display, we can sort them. The sorting
-	 **	is done via a custom method that will sort the vaults based on the sortBy and
-	 **	sortDirection values.
-	 **********************************************************************************************/
 	const sortedVaultsToDisplay = useSortVaults([...searchedVaultsToDisplay], sortBy, sortDirection);
 
-	const filteredByChains = useMemo((): TYDaemonVault[] => {
-		return sortedVaultsToDisplay.filter(({chainID}): boolean => chains?.includes(chainID) || false);
-	}, [chains, sortedVaultsToDisplay]);
+	const VaultList = useMemo((): [ReactNode, ReactNode, ReactNode, ReactNode] | ReactNode => {
+		const filteredByChains = sortedVaultsToDisplay.filter(
+			({chainID}): boolean => chains?.includes(chainID) || false
+		);
 
-	const {currentItems, paginationProps} = usePagination<TYDaemonVault>({
-		data: filteredByChains,
-		itemsPerPage: 50
-	});
+		if (isLoadingVaultList || !chains || chains.length === 0) {
+			return (
+				<VaultsListEmpty
+					isLoading={isLoadingVaultList}
+					sortedVaultsToDisplay={filteredByChains}
+					currentSearch={search || ''}
+					currentCategories={types}
+					currentChains={chains}
+					onReset={onReset}
+					defaultCategories={ALL_VAULTS_CATEGORIES_KEYS}
+				/>
+			);
+		}
+
+		const holdings: ReactNode[] = [];
+		const all: ReactNode[] = [];
+		for (const vault of filteredByChains) {
+			const hasBalance = getBalance({address: vault.address, chainID: vault.chainID}).raw > 0n;
+			const hasStakingBalance = getBalance({address: vault.staking.address, chainID: vault.chainID}).raw > 0n;
+			if (hasBalance || hasStakingBalance) {
+				holdings.push(
+					<VaultsListRow
+						key={`${vault.chainID}_${vault.address}`}
+						currentVault={vault}
+					/>
+				);
+				continue;
+			}
+
+			all.push(
+				<VaultsListRow
+					key={`${vault.chainID}_${vault.address}`}
+					currentVault={vault}
+				/>
+			);
+		}
+
+		return [holdings, all];
+	}, [types, chains, getBalance, isLoadingVaultList, onReset, search]);
+
+	const possibleLists = VaultList as [ReactNode, ReactNode];
+	const hasHoldings = Children.count(possibleLists[0]) > 0;
+	const totalVaults = Children.count(possibleLists[1]);
+	const pageSize = 20;
 
 	return (
 		<div
@@ -224,33 +240,31 @@ function ListOfVaults(): ReactElement {
 				]}
 			/>
 
-			{isLoadingVaultList || isZero(filteredByChains.length) || !chains || chains.length === 0 ? (
-				<VaultsListEmpty
-					isLoading={isLoadingVaultList}
-					sortedVaultsToDisplay={filteredByChains}
-					currentSearch={search || ''}
-					currentCategories={types}
-					currentChains={chains}
-					onReset={onReset}
-					defaultCategories={ALL_VAULTS_CATEGORIES_KEYS}
-				/>
-			) : (
-				currentItems.map((vault): ReactNode => {
-					if (!vault) {
-						return null;
-					}
-					return (
-						<VaultsListRow
-							key={`${vault.chainID}_${vault.address}`}
-							currentVault={vault}
-						/>
-					);
-				})
-			)}
+			<div className={'grid gap-0'}>
+				<Fragment>
+					{hasHoldings && (
+						<div className={'relative grid h-fit'}>
+							<p className={'absolute -left-20 top-1/2 -rotate-90 text-xs text-neutral-400'}>
+								&nbsp;&nbsp;&nbsp;{'Your holdings'}&nbsp;&nbsp;&nbsp;
+							</p>
+							{possibleLists[0]}
+						</div>
+					)}
+					{Children.count(possibleLists[0]) > 0 && Children.count(possibleLists[1]) > 0 ? (
+						<div className={'h-1 rounded-lg bg-neutral-200'} />
+					) : null}
+					{((possibleLists[1] || []) as ReactNode[]).slice(page * pageSize, (page + 1) * pageSize)}
+				</Fragment>
+			</div>
 
 			<div className={'mt-4'}>
 				<div className={'border-t border-neutral-200/60 p-4'}>
-					<Pagination {...paginationProps} />
+					<Pagination
+						range={[0, totalVaults]}
+						pageCount={totalVaults / pageSize}
+						numberOfItems={totalVaults}
+						onPageChange={(newPage): void => set_page(newPage.selected)}
+					/>
 				</div>
 			</div>
 		</div>

@@ -24,74 +24,6 @@ import {useYearnToken} from '@common/hooks/useYearnToken';
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 
-const OneUp = (
-	<Link
-		href={'https://1up.tokyo/stake'}
-		target={'_blank'}
-		rel={'noreferrer'}>
-		<div
-			className={
-				'flex items-center justify-center gap-2 rounded-lg bg-white/5 p-3 transition-colors hover:bg-[#D21162]'
-			}>
-			<Image
-				className={'rounded-full'}
-				src={'https://1up.tokyo/logo.svg'}
-				alt={'1UP'}
-				width={32}
-				height={32}
-				unoptimized
-			/>
-			<p className={'text-base font-bold text-white'}>{'1UP'}</p>
-		</div>
-	</Link>
-);
-
-const Cove = (
-	<Link
-		href={'https://boosties.cove.finance/boosties'}
-		target={'_blank'}
-		rel={'noreferrer'}>
-		<div
-			className={
-				'flex items-center justify-center gap-2 rounded-lg bg-white/5 p-3 transition-colors hover:bg-[#D21162]'
-			}>
-			<Image
-				className={'rounded-full'}
-				src={
-					'https://assets-global.website-files.com/651af12fcd3055636b6ac9ad/66242dbf1d6e7ff1b18336c4_Twitter%20pp%20-%20Logo%202.png'
-				}
-				alt={'Cove'}
-				width={32}
-				height={32}
-				unoptimized
-			/>
-			<p className={'text-base font-bold text-white'}>{'Cove'}</p>
-		</div>
-	</Link>
-);
-
-const StakeDAO = (
-	<Link
-		href={'https://www.stakedao.org/yield?protocol=yearn'}
-		target={'_blank'}
-		rel={'noreferrer'}>
-		<div
-			className={
-				'flex items-center justify-center gap-2 rounded-lg bg-white/5 p-3 transition-colors hover:bg-[#D21162]'
-			}>
-			<Image
-				className={'rounded-full'}
-				src={'https://www.stakedao.org/logo.png'}
-				alt={'StakeDAO'}
-				width={32}
-				height={32}
-				unoptimized
-			/>
-			<p className={'text-base font-bold text-white'}>{'StakeDAO'}</p>
-		</div>
-	</Link>
-);
-
 /**************************************************************************************************
  ** The BoostMessage component will display a message to the user if the current vault has staking
  ** rewards and the source of the rewards is either 'OP Boost' or 'VeYFI'. More source might be
@@ -110,7 +42,7 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 		return (
 			<div className={'col-span-12 mt-0'}>
 				<div
-					className={cl('w-full bg-neutral-900 rounded-lg p-6 text-neutral-0', isV3Page ? 'rounded-lg' : '')}>
+					className={cl('w-full rounded-lg p-6 text-neutral-0', isV3Page ? 'rounded-lg bg-neutral-900' : '')}>
 					<b className={'text-lg'}>{"Oh no... we're all out of rewards!"}</b>
 					<div className={'mt-2 flex flex-col gap-2'}>
 						<p>{"But fear not, you're still earning that juicy base yield so keep on staking."}</p>
@@ -124,7 +56,7 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 		return (
 			<div className={'col-span-12 mt-0'}>
 				<div
-					className={cl('w-full bg-neutral-900 rounded-lg p-6 text-neutral-0', isV3Page ? 'rounded-lg' : '')}>
+					className={cl('w-full rounded-lg p-6 text-neutral-0', isV3Page ? 'rounded-lg bg-neutral-900' : '')}>
 					<b className={'text-lg'}>{'Great news everybody!'}</b>
 					<div className={'mt-2 flex flex-col gap-2'}>
 						<p>
@@ -142,7 +74,7 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 		return (
 			<div className={'col-span-12 mt-0 hidden'}>
 				<div
-					className={cl('w-full bg-neutral-900 rounded-lg p-6 text-neutral-0', isV3Page ? 'rounded-lg' : '')}>
+					className={cl('w-full rounded-lg p-6 text-neutral-0', isV3Page ? 'rounded-lg bg-neutral-900' : '')}>
 					<b className={'text-lg'}>{'Yield is good, but more yield is good-er!'}</b>
 					<div className={'mt-2 flex flex-col gap-2'}>
 						<p>
@@ -169,7 +101,7 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 		return (
 			<div className={'col-span-12 mt-0'}>
 				<div
-					className={cl('w-full bg-neutral-900 rounded-lg p-6 text-neutral-0', isV3Page ? 'rounded-lg' : '')}>
+					className={cl('w-full rounded-lg p-6 text-neutral-0', isV3Page ? 'rounded-lg bg-neutral-900' : '')}>
 					<b className={'text-lg'}>{'Yield is good, but more yield is good-er!'}</b>
 					<div className={'mt-2 flex flex-col gap-2'}>
 						<p>
@@ -196,7 +128,7 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 		return (
 			<div className={'col-span-12 mt-0'}>
 				<div
-					className={cl('w-full bg-neutral-900 rounded-lg p-6 text-neutral-0', isV3Page ? 'rounded-lg' : '')}>
+					className={cl('w-full rounded-lg p-6 text-neutral-0', isV3Page ? 'rounded-lg bg-neutral-900' : '')}>
 					<b className={'text-lg'}>{'Great news everybody!'}</b>
 					<div className={'mt-2 flex flex-col gap-2'}>
 						<p>
@@ -215,6 +147,83 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 function VeYFIBoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive: boolean}): ReactElement {
 	const vaultDataource = props.currentVault.staking.source;
 	const extraAPY = props.currentVault.apr.extra.stakingRewardsAPR;
+	const {pathname} = useRouter();
+	const isV3Page = pathname.startsWith(`/v3`);
+
+	if (vaultDataource !== 'VeYFI') {
+		return <Fragment />;
+	}
+
+	const OneUp = (
+		<Link
+			href={'https://1up.tokyo/stake'}
+			target={'_blank'}
+			rel={'noreferrer'}>
+			<div
+				className={cl(
+					'flex items-center justify-center gap-2 rounded-lg p-3 transition-colors hover:bg-[#D21162]',
+					isV3Page ? 'bg-white/5' : 'bg-neutral-100/5'
+				)}>
+				<Image
+					className={'rounded-full'}
+					src={'https://1up.tokyo/logo.svg'}
+					alt={'1UP'}
+					width={32}
+					height={32}
+					unoptimized
+				/>
+				<p className={cl('text-base font-bold', 'text-neutral-100')}>{'1UP'}</p>
+			</div>
+		</Link>
+	);
+
+	const Cove = (
+		<Link
+			href={'https://boosties.cove.finance/boosties'}
+			target={'_blank'}
+			rel={'noreferrer'}>
+			<div
+				className={cl(
+					'flex items-center justify-center gap-2 rounded-lg p-3 transition-colors hover:bg-[#D21162]',
+					isV3Page ? 'bg-white/5' : 'bg-neutral-100/5'
+				)}>
+				<Image
+					className={'rounded-full'}
+					src={
+						'https://assets-global.website-files.com/651af12fcd3055636b6ac9ad/66242dbf1d6e7ff1b18336c4_Twitter%20pp%20-%20Logo%202.png'
+					}
+					alt={'Cove'}
+					width={32}
+					height={32}
+					unoptimized
+				/>
+				<p className={cl('text-base font-bold', 'text-neutral-100')}>{'Cove'}</p>
+			</div>
+		</Link>
+	);
+
+	const StakeDAO = (
+		<Link
+			href={'https://www.stakedao.org/yield?protocol=yearn'}
+			target={'_blank'}
+			rel={'noreferrer'}>
+			<div
+				className={cl(
+					'flex items-center justify-center gap-2 rounded-lg p-3 transition-colors hover:bg-[#D21162]',
+					isV3Page ? 'bg-white/5' : 'bg-neutral-100/5'
+				)}>
+				<Image
+					className={'rounded-full'}
+					src={'https://www.stakedao.org/logo.png'}
+					alt={'StakeDAO'}
+					width={32}
+					height={32}
+					unoptimized
+				/>
+				<p className={cl('text-base font-bold', 'text-neutral-100')}>{'StakeDAO'}</p>
+			</div>
+		</Link>
+	);
 
 	const randomOrder = useMemo(() => {
 		const apps = [OneUp, Cove, StakeDAO];
@@ -228,19 +237,25 @@ function VeYFIBoostMessage(props: {currentVault: TYDaemonVault; hasStakingReward
 		return shuffle(apps);
 	}, []);
 
-	if (vaultDataource !== 'VeYFI') {
-		return <Fragment />;
-	}
-
 	return (
-		<div className={'flex w-full flex-col rounded-2xl bg-[#211F69] p-6'}>
-			<b className={'text-lg'}>{'Yield is good, but more yield is good-er!'}</b>
-			<div className={'flex flex-col gap-2 py-4 text-[#908FB4]'}>
+		<div
+			className={cl(
+				'flex w-full flex-col rounded-2xl p-6',
+				isV3Page ? 'bg-[#211F69]' : 'dark:bg-neutral-900 bg-neutral-900'
+			)}>
+			<b className={cl('text-lg', isV3Page ? '' : 'text-neutral-100')}>
+				{'Yield is good, but more yield is good-er!'}
+			</b>
+			<div className={cl(`flex flex-col gap-2 py-4`, isV3Page ? 'text-[#908FB4]' : 'text-neutral-400')}>
 				<p>
 					{`This Vault has an active veYFI gauge which boosts your APY from `}
-					<span className={'font-bold text-white'}>{`${formatAmount(extraAPY * 10)}%`}</span>
+					<span className={cl('font-bold', isV3Page ? 'text-white' : 'text-neutral-100')}>
+						{`${formatAmount(extraAPY * 10)}%`}
+					</span>
 					{` to `}
-					<span className={'font-bold text-white'}>{`${formatAmount(extraAPY * 100)}%`}</span>
+					<span className={cl('font-bold', isV3Page ? 'text-white' : 'text-neutral-100')}>
+						{`${formatAmount(extraAPY * 100)}%`}
+					</span>
 					{` depending on the veYFI you have locked. Simply deposit and stake to start earning. `}
 					<a
 						className={'underline'}

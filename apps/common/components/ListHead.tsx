@@ -71,8 +71,7 @@ export function ListHead({
 				</div>
 
 				<div />
-
-				<div className={cl('col-span-7 grid grid-cols-10 gap-x-7 pl-6', dataClassName)}>
+				<div className={cl('col-span-7 grid grid-cols-10 gap-1', dataClassName)}>
 					{rest.map(
 						(item, index): ReactElement => (
 							<button
@@ -81,7 +80,7 @@ export function ListHead({
 								disabled={!item.sortable}
 								className={cl('yearn--table-head-label-wrapper group', item.className)}
 								datatype={'number'}>
-								<p className={'yearn--table-head-label'}>&nbsp;{item.label}</p>
+								<p className={'yearn--table-head-label whitespace-nowrap'}>&nbsp;{item.label}</p>
 								{item.sortable ? renderChevron(sortBy === item.value) : null}
 							</button>
 						)
