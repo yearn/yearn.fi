@@ -183,7 +183,9 @@ function VeYFIBoostMessage(props: {currentVault: TYDaemonVault; hasStakingReward
 					height={32}
 					unoptimized
 				/>
-				<p className={cl('text-base font-bold', 'text-neutral-100')}>{'1UP'}</p>
+				<p className={cl('text-base font-bold', !isV3Page ? 'text-neutral-100' : 'text-neutral-900')}>
+					{'1UP'}
+				</p>
 			</div>
 		</Link>
 	);
@@ -208,7 +210,9 @@ function VeYFIBoostMessage(props: {currentVault: TYDaemonVault; hasStakingReward
 					height={32}
 					unoptimized
 				/>
-				<p className={cl('text-base font-bold', 'text-neutral-100')}>{'Cove'}</p>
+				<p className={cl('text-base font-bold', !isV3Page ? 'text-neutral-100' : 'text-neutral-900')}>
+					{'Cove'}
+				</p>
 			</div>
 		</Link>
 	);
@@ -231,7 +235,9 @@ function VeYFIBoostMessage(props: {currentVault: TYDaemonVault; hasStakingReward
 					height={32}
 					unoptimized
 				/>
-				<p className={cl('text-base font-bold', 'text-neutral-100')}>{'StakeDAO'}</p>
+				<p className={cl('text-base font-bold', !isV3Page ? 'text-neutral-100' : 'text-neutral-900')}>
+					{'StakeDAO'}
+				</p>
 			</div>
 		</Link>
 	);
