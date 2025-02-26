@@ -246,7 +246,7 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 					</div>
 				</Renderable>
 
-				<div className={'mt-1 pl-1'}>
+				<div className={'mt-2 pl-1'}>
 					<legend
 						className={'font-number hidden text-xs text-neutral-900/50 md:inline'}
 						suppressHydrationWarning>
@@ -300,7 +300,7 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 						</button>
 					</div>
 				</div>
-				<div className={'mt-1 pl-1'}>
+				<div className={'mt-2 pl-1'}>
 					<legend
 						suppressHydrationWarning
 						className={'font-number hidden text-xs text-neutral-900/50 md:mr-0 md:inline md:text-start'}>

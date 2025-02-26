@@ -25,6 +25,8 @@ import {VaultDetailsQuickActionsTo} from '@vaults-v3/components/details/actions/
 import {RewardsTab} from '@vaults-v3/components/details/RewardsTab';
 import {SettingsPopover} from '@vaults-v3/components/SettingsPopover';
 import {readContracts} from '@wagmi/core';
+import {LegendTooltip} from '@common/components/LegendTooltip';
+import {Switch} from '@common/components/Switch';
 import {useYearn} from '@common/contexts/useYearn';
 import {IconChevron} from '@common/icons/IconChevron';
 
@@ -497,7 +499,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 						<b className={'text-lg'}>{'Looks like this is an old vault.'}</b>
 						<p className={'mt-2'}>
 							{
-								'This Vault is no longer earning yield, but good news, there’s a shiny up to date version just waiting for you to deposit your tokens into. Click migrate, and your tokens will be migrated to the current Vault, which will be mi-great!'
+								"This Vault is no longer earning yield, but good news, there's a shiny up to date version just waiting for you to deposit your tokens into. Click migrate, and your tokens will be migrated to the current Vault, which will be mi-great!"
 							}
 						</p>
 					</div>
@@ -639,15 +641,27 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 							<p className={'hidden text-base md:inline'}>&nbsp;</p>
 							<div>
 								<VaultDetailsQuickActionsButtons currentVault={currentVault} />
-								{!hasStakingRewardsLive && isDepositing && (
-									<div className={'mt-1 flex justify-between'}>
-										<button
-											className={'font-number text-xxs text-neutral-900/50'}
-											onClick={(): void => set_isAutoStakingEnabled(!isAutoStakingEnabled)}>
-											{isAutoStakingEnabled ? 'Deposit only' : 'Deposit and Stake'}
-										</button>
+								<div className={'mt-2 pr-1'}>
+									<div className={'flex flex-row justify-end space-x-2 whitespace-nowrap'}>
+										<label className={'flex grow items-center justify-between'}>
+											<LegendTooltip
+												content={
+													'Some Vaults offer boosted yields or token rewards via staking. Enable automatic staking to (you guessed it) automatically stake for these boosts.'
+												}>
+												<legend
+													className={
+														'font-number mr-2 hidden cursor-help text-xs text-neutral-900/50 md:inline'
+													}>
+													{`Deposit ${isAutoStakingEnabled ? '& Stake' : 'only'}`}
+												</legend>
+											</LegendTooltip>
+											<Switch
+												isEnabled={isAutoStakingEnabled}
+												onSwitch={(): void => set_isAutoStakingEnabled(!isAutoStakingEnabled)}
+											/>
+										</label>
 									</div>
-								)}
+								</div>
 							</div>
 						</div>
 					</div>
