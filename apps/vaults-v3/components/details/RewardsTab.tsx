@@ -42,7 +42,10 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 		return (
 			<div className={'col-span-12 mt-0'}>
 				<div
-					className={cl('w-full rounded-lg p-6 text-neutral-0', isV3Page ? 'rounded-lg bg-neutral-900' : '')}>
+					className={cl(
+						'w-full rounded-lg p-6 text-neutral-0',
+						isV3Page ? 'bg-[#211F69]' : 'dark:bg-neutral-900 bg-neutral-900'
+					)}>
 					<b className={'text-lg'}>{"Oh no... we're all out of rewards!"}</b>
 					<div className={'mt-2 flex flex-col gap-2'}>
 						<p>{"But fear not, you're still earning that juicy base yield so keep on staking."}</p>
@@ -56,7 +59,10 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 		return (
 			<div className={'col-span-12 mt-0'}>
 				<div
-					className={cl('w-full rounded-lg p-6 text-neutral-0', isV3Page ? 'rounded-lg bg-neutral-900' : '')}>
+					className={cl(
+						'w-full rounded-lg p-6 text-neutral-0',
+						isV3Page ? 'bg-[#211F69]' : 'dark:bg-neutral-900 bg-neutral-900'
+					)}>
 					<b className={'text-lg'}>{'Great news everybody!'}</b>
 					<div className={'mt-2 flex flex-col gap-2'}>
 						<p>
@@ -74,7 +80,10 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 		return (
 			<div className={'col-span-12 mt-0 hidden'}>
 				<div
-					className={cl('w-full rounded-lg p-6 text-neutral-0', isV3Page ? 'rounded-lg bg-neutral-900' : '')}>
+					className={cl(
+						'w-full rounded-lg p-6 text-neutral-0',
+						isV3Page ? 'bg-[#211F69]' : 'dark:bg-neutral-900 bg-neutral-900'
+					)}>
 					<b className={'text-lg'}>{'Yield is good, but more yield is good-er!'}</b>
 					<div className={'mt-2 flex flex-col gap-2'}>
 						<p>
@@ -101,7 +110,10 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 		return (
 			<div className={'col-span-12 mt-0'}>
 				<div
-					className={cl('w-full rounded-lg p-6 text-neutral-0', isV3Page ? 'rounded-lg bg-neutral-900' : '')}>
+					className={cl(
+						'w-full rounded-lg p-6 text-neutral-0',
+						isV3Page ? 'bg-[#211F69]' : 'dark:bg-neutral-900 bg-neutral-900'
+					)}>
 					<b className={'text-lg'}>{'Yield is good, but more yield is good-er!'}</b>
 					<div className={'mt-2 flex flex-col gap-2'}>
 						<p>
@@ -128,7 +140,10 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 		return (
 			<div className={'col-span-12 mt-0'}>
 				<div
-					className={cl('w-full rounded-lg p-6 text-neutral-0', isV3Page ? 'rounded-lg bg-neutral-900' : '')}>
+					className={cl(
+						'w-full rounded-lg p-6 text-neutral-0',
+						isV3Page ? 'bg-[#211F69]' : 'dark:bg-neutral-900 bg-neutral-900'
+					)}>
 					<b className={'text-lg'}>{'Great news everybody!'}</b>
 					<div className={'mt-2 flex flex-col gap-2'}>
 						<p>
@@ -149,10 +164,6 @@ function VeYFIBoostMessage(props: {currentVault: TYDaemonVault; hasStakingReward
 	const extraAPY = props.currentVault.apr.extra.stakingRewardsAPR;
 	const {pathname} = useRouter();
 	const isV3Page = pathname.startsWith(`/v3`);
-
-	if (vaultDataource !== 'VeYFI') {
-		return <Fragment />;
-	}
 
 	const OneUp = (
 		<Link
@@ -236,6 +247,10 @@ function VeYFIBoostMessage(props: {currentVault: TYDaemonVault; hasStakingReward
 		}
 		return shuffle(apps);
 	}, []);
+
+	if (vaultDataource !== 'VeYFI') {
+		return <Fragment />;
+	}
 
 	return (
 		<div
