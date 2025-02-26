@@ -1,4 +1,4 @@
-import {Children, Fragment, useMemo, useState} from 'react';
+import {Children, Fragment, useEffect, useMemo, useState} from 'react';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {toAddress} from '@builtbymom/web3/utils';
 import {VaultListOptions} from '@vaults/components/list/VaultListOptions';
@@ -125,26 +125,69 @@ function ListOfVaults(): ReactElement {
 		defaultPathname: '/vaults'
 	});
 	const {activeVaults, migratableVaults, retiredVaults} = useVaultFilter(types, chains);
-	const [page, set_page] = useState(1);
+	const [page, set_page] = useState(0);
 
 	/* 🔵 - Yearn Finance **************************************************************************
-	 **	Then, on the activeVaults list, we apply the search filter. The search filter is
-	 **	implemented as a simple string.includes() on the vault name.
+	 **	Enhanced search filter implementation that performs case-insensitive partial matching
+	 **	on multiple vault properties. The search supports multi-word queries and handles special
+	 **	characters intelligently to improve matching quality.
 	 **********************************************************************************************/
 	const searchedVaultsToDisplay = useMemo((): TYDaemonVault[] => {
 		if (!search) {
 			return activeVaults;
 		}
-		return activeVaults.filter((vault: TYDaemonVault): boolean => {
-			const lowercaseSearch = search.toLowerCase();
-			const allSearchWords = lowercaseSearch.split(' ');
-			const currentVaultInfo =
-				`${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${vault.token.address}`
-					.replaceAll('-', ' ')
-					.toLowerCase()
-					.split(' ');
-			return allSearchWords.every((word): boolean => currentVaultInfo.some((v): boolean => v.startsWith(word)));
+
+		const searchResults = activeVaults.filter((vault: TYDaemonVault): boolean => {
+			const lowercaseSearch = search.toLowerCase().trim();
+			// If searching for a specific address
+			if (
+				lowercaseSearch.length > 30 &&
+				(vault.address.toLowerCase().includes(lowercaseSearch) ||
+					vault.token.address.toLowerCase().includes(lowercaseSearch))
+			) {
+				return true;
+			}
+
+			// Normalize search terms
+			const allSearchWords = lowercaseSearch
+				.split(' ')
+				.filter(word => word.length > 0)
+				.map(word => word.trim());
+
+			if (allSearchWords.length === 0) {
+				return false;
+			}
+
+			// Create a normalized string containing all searchable vault properties
+			const vaultInfoString = `${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol}`
+				.toLowerCase()
+				.replaceAll('-', ' ')
+				.replaceAll('_', ' ')
+				.replaceAll('.', ' ')
+				.replaceAll(',', ' ')
+				.replaceAll('+', ' ')
+				.replaceAll('/', ' ');
+
+			// More flexible matching based on search term count
+			if (allSearchWords.length === 1) {
+				// For single word searches, just check if it appears anywhere
+				return vaultInfoString.includes(allSearchWords[0]);
+			}
+			// For multi-word searches, try both OR and AND logic based on what makes more sense
+			const isAllWordsMatch = allSearchWords.every(word => vaultInfoString.includes(word));
+			const isAnyWordMatches = allSearchWords.some(word => vaultInfoString.includes(word));
+
+			// If all words match, this is clearly a good result
+			if (isAllWordsMatch) return true;
+
+			// If any word matches and it's a significant portion of the search, return it
+			const fullSearchString = allSearchWords.join(' ');
+			if (isAnyWordMatches && vaultInfoString.includes(fullSearchString)) return true;
+
+			return isAnyWordMatches;
 		});
+
+		return searchResults;
 	}, [activeVaults, search]);
 
 	const sortedVaultsToDisplay = useSortVaults([...searchedVaultsToDisplay], sortBy, sortDirection);
@@ -192,12 +235,25 @@ function ListOfVaults(): ReactElement {
 		}
 
 		return [holdings, all];
-	}, [types, chains, getBalance, isLoadingVaultList, onReset, search]);
+	}, [sortedVaultsToDisplay, isLoadingVaultList, chains, search, types, onReset, getBalance]);
 
 	const possibleLists = VaultList as [ReactNode, ReactNode];
 	const hasHoldings = Children.count(possibleLists[0]) > 0;
 	const totalVaults = Children.count(possibleLists[1]);
 	const pageSize = 20;
+
+	/* 🔵 - Yearn Finance **************************************************************************
+	 **	This effect ensures that the pagination resets properly when search results change,
+	 **	especially when a search returns fewer results than would fill the current page.
+	 **********************************************************************************************/
+	useEffect(() => {
+		const totalPages = Math.ceil(Children.count(possibleLists[1]) / pageSize);
+
+		// If current page is beyond available pages, reset to first page
+		if (page >= totalPages && totalPages > 0) {
+			set_page(0);
+		}
+	}, [searchedVaultsToDisplay, page, possibleLists]);
 
 	return (
 		<div
