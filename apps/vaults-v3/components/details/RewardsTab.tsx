@@ -44,7 +44,7 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 				<div
 					className={cl(
 						'w-full rounded-lg p-6 text-neutral-0',
-						isV3Page ? 'bg-[#211F69]' : 'dark:bg-neutral-900 bg-neutral-900'
+						isV3Page ? 'bg-neutral-900' : 'dark:bg-neutral-900 bg-neutral-900'
 					)}>
 					<b className={'text-lg'}>{"Oh no... we're all out of rewards!"}</b>
 					<div className={'mt-2 flex flex-col gap-2'}>
@@ -61,7 +61,7 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 				<div
 					className={cl(
 						'w-full rounded-lg p-6 text-neutral-0',
-						isV3Page ? 'bg-[#211F69]' : 'dark:bg-neutral-900 bg-neutral-900'
+						isV3Page ? 'bg-neutral-900' : 'dark:bg-neutral-900 bg-neutral-900'
 					)}>
 					<b className={'text-lg'}>{'Great news everybody!'}</b>
 					<div className={'mt-2 flex flex-col gap-2'}>
@@ -82,7 +82,7 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 				<div
 					className={cl(
 						'w-full rounded-lg p-6 text-neutral-0',
-						isV3Page ? 'bg-[#211F69]' : 'dark:bg-neutral-900 bg-neutral-900'
+						isV3Page ? 'bg-neutral-900' : 'dark:bg-neutral-900 bg-neutral-900'
 					)}>
 					<b className={'text-lg'}>{'Yield is good, but more yield is good-er!'}</b>
 					<div className={'mt-2 flex flex-col gap-2'}>
@@ -112,7 +112,7 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 				<div
 					className={cl(
 						'w-full rounded-lg p-6 text-neutral-0',
-						isV3Page ? 'bg-[#211F69]' : 'dark:bg-neutral-900 bg-neutral-900'
+						isV3Page ? 'bg-neutral-900' : 'dark:bg-neutral-900 bg-neutral-900'
 					)}>
 					<b className={'text-lg'}>{'Yield is good, but more yield is good-er!'}</b>
 					<div className={'mt-2 flex flex-col gap-2'}>
@@ -142,7 +142,7 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 				<div
 					className={cl(
 						'w-full rounded-lg p-6 text-neutral-0',
-						isV3Page ? 'bg-[#211F69]' : 'dark:bg-neutral-900 bg-neutral-900'
+						isV3Page ? 'bg-neutral-900' : 'dark:bg-neutral-900 bg-neutral-900'
 					)}>
 					<b className={'text-lg'}>{'Great news everybody!'}</b>
 					<div className={'mt-2 flex flex-col gap-2'}>
@@ -262,7 +262,7 @@ function VeYFIBoostMessage(props: {currentVault: TYDaemonVault; hasStakingReward
 		<div
 			className={cl(
 				'flex w-full flex-col rounded-2xl p-6',
-				isV3Page ? 'bg-[#211F69]' : 'dark:bg-neutral-900 bg-neutral-900'
+				isV3Page ? 'bg-neutral-900' : 'dark:bg-neutral-900 bg-neutral-900'
 			)}>
 			<b className={cl('text-lg', isV3Page ? '' : 'text-neutral-100')}>
 				{'Yield is good, but more yield is good-er!'}
