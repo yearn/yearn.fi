@@ -328,7 +328,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 							<p className={'hidden text-base md:inline'}>&nbsp;</p>
 							<div>
 								<VaultDetailsQuickActionsButtons currentVault={currentVault} />
-								{!hasStakingRewardsLive && (
+								{!hasStakingRewardsLive && isDepositing && (
 									<div className={'mt-1 flex justify-between'}>
 										<button
 											className={'font-number text-xxs text-neutral-900/50'}
