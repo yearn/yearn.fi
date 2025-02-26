@@ -526,11 +526,15 @@ function VaultRiskScoreTag({riskLevel}: {riskLevel: number}): ReactElement {
 	const level = riskLevel < 0 ? 0 : riskLevel > 5 ? 5 : riskLevel;
 	const riskColor = [`transparent`, `#63C532`, `#F8A908`, `#F8A908`, `#C73203`, `#C73203`];
 	return (
-		<div className={'col-span-2 flex flex-row items-end justify-between md:flex-col md:justify-center'}>
+		<div className={'md:justify-centere col-span-2 flex flex-row items-end justify-between md:flex-col md:pt-4'}>
 			<p className={'inline whitespace-nowrap text-start text-xs text-neutral-800/60 md:hidden'}>
 				{'Risk Score'}
 			</p>
-			<div className={cl('flex w-fit items-center justify-end gap-4 md:justify-center', 'tooltip relative z-50')}>
+			<div
+				className={cl(
+					'flex w-fit items-center justify-end gap-4 md:justify-center',
+					'tooltip relative z-50 h-6'
+				)}>
 				<div className={'h-3 w-10 min-w-10 rounded-sm border-2 border-neutral-400 p-[2px]'}>
 					<div
 						className={'h-1 rounded-[1px]'}
@@ -581,7 +585,7 @@ export function VaultStakedAmount({currentVault}: {currentVault: TYDaemonVault})
 		getToken
 	]);
 	return (
-		<div className={'flex flex-col pt-0 text-right md:pt-8'}>
+		<div className={'flex flex-col pt-0 text-right'}>
 			<p
 				className={`yearn--table-data-section-item-value ${
 					isZero(staked.raw) ? 'text-neutral-400' : 'text-neutral-900'
@@ -726,17 +730,17 @@ export function VaultsV3ListRow({currentVault}: {currentVault: TYDaemonVault}): 
 					</div>
 
 					<div
-						className={'yearn--table-data-section-item col-span-2 !mt-0 flex-row md:!mt-4 md:flex-col'}
+						className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'}
 						datatype={'number'}>
 						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Deposited'}</p>
 						<VaultStakedAmount currentVault={currentVault} />
 					</div>
 
 					<div
-						className={'yearn--table-data-section-item col-span-2 !mt-0 flex-row md:!mt-4 md:flex-col'}
+						className={'yearn--table-data-section-item col-span-2 flex-row md:flex-col'}
 						datatype={'number'}>
 						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'TVL'}</p>
-						<div className={'flex flex-col pt-0 text-right md:pt-8'}>
+						<div className={'flex flex-col pt-0 text-right'}>
 							<p className={'yearn--table-data-section-item-value'}>
 								<RenderAmount
 									value={Number(
