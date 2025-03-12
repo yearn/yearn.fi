@@ -262,7 +262,7 @@ function VeYFIBoostMessage(props: {currentVault: TYDaemonVault; hasStakingReward
 		<div
 			className={cl(
 				'flex w-full flex-col rounded-2xl p-6',
-				isV3Page ? 'bg-neutral-900' : 'dark:bg-neutral-900 bg-neutral-900'
+				isV3Page ? 'bg-neutral-100' : 'dark:bg-neutral-900 bg-neutral-900'
 			)}>
 			<b className={cl('text-lg', isV3Page ? '' : 'text-neutral-100')}>
 				{'Yield is good, but more yield is good-er!'}
