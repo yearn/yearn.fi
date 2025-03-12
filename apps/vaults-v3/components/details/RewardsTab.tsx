@@ -270,13 +270,9 @@ function VeYFIBoostMessage(props: {currentVault: TYDaemonVault; hasStakingReward
 			<div className={cl(`flex flex-col gap-2 py-4`, isV3Page ? 'text-[#908FB4]' : 'text-neutral-400')}>
 				<p>
 					{`This Vault has an active veYFI gauge which boosts your APY from `}
-					<span className={cl('font-bold', isV3Page ? 'text-white' : 'text-neutral-100')}>
-						{`${formatAmount(extraAPY * 10)}%`}
-					</span>
+					<span className={cl('font-bold text-neutral-900')}>{`${formatAmount(extraAPY * 10)}%`}</span>
 					{` to `}
-					<span className={cl('font-bold', isV3Page ? 'text-white' : 'text-neutral-100')}>
-						{`${formatAmount(extraAPY * 100)}%`}
-					</span>
+					<span className={cl('font-bold text-neutral-900')}>{`${formatAmount(extraAPY * 100)}%`}</span>
 					{` depending on the veYFI you have locked. Simply deposit and stake to start earning. `}
 					<a
 						className={'underline'}
