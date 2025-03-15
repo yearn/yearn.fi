@@ -173,7 +173,7 @@ function VeYFIBoostMessage(props: {currentVault: TYDaemonVault; hasStakingReward
 			<div
 				className={cl(
 					'flex items-center justify-center gap-2 rounded-lg p-3 transition-colors hover:bg-[#D21162]',
-					isV3Page ? 'bg-white/5' : 'bg-neutral-100/5'
+					'bg-neutral-100/5'
 				)}>
 				<Image
 					className={'rounded-full'}
@@ -183,9 +183,7 @@ function VeYFIBoostMessage(props: {currentVault: TYDaemonVault; hasStakingReward
 					height={32}
 					unoptimized
 				/>
-				<p className={cl('text-base font-bold', !isV3Page ? 'text-neutral-100' : 'text-neutral-900')}>
-					{'1UP'}
-				</p>
+				<p className={cl('text-base font-bold text-neutral-100')}>{'1UP'}</p>
 			</div>
 		</Link>
 	);
@@ -198,7 +196,7 @@ function VeYFIBoostMessage(props: {currentVault: TYDaemonVault; hasStakingReward
 			<div
 				className={cl(
 					'flex items-center justify-center gap-2 rounded-lg p-3 transition-colors hover:bg-[#D21162]',
-					isV3Page ? 'bg-white/5' : 'bg-neutral-100/5'
+					'bg-neutral-100/5'
 				)}>
 				<Image
 					className={'rounded-full'}
@@ -210,9 +208,7 @@ function VeYFIBoostMessage(props: {currentVault: TYDaemonVault; hasStakingReward
 					height={32}
 					unoptimized
 				/>
-				<p className={cl('text-base font-bold', !isV3Page ? 'text-neutral-100' : 'text-neutral-900')}>
-					{'Cove'}
-				</p>
+				<p className={cl('text-base font-bold text-neutral-100')}>{'Cove'}</p>
 			</div>
 		</Link>
 	);
@@ -225,7 +221,7 @@ function VeYFIBoostMessage(props: {currentVault: TYDaemonVault; hasStakingReward
 			<div
 				className={cl(
 					'flex items-center justify-center gap-2 rounded-lg p-3 transition-colors hover:bg-[#D21162]',
-					isV3Page ? 'bg-white/5' : 'bg-neutral-100/5'
+					'bg-neutral-100/5'
 				)}>
 				<Image
 					className={'rounded-full'}
@@ -235,9 +231,7 @@ function VeYFIBoostMessage(props: {currentVault: TYDaemonVault; hasStakingReward
 					height={32}
 					unoptimized
 				/>
-				<p className={cl('text-base font-bold', !isV3Page ? 'text-neutral-100' : 'text-neutral-900')}>
-					{'StakeDAO'}
-				</p>
+				<p className={cl('text-base font-bold text-neutral-100')}>{'StakeDAO'}</p>
 			</div>
 		</Link>
 	);
@@ -259,24 +253,14 @@ function VeYFIBoostMessage(props: {currentVault: TYDaemonVault; hasStakingReward
 	}
 
 	return (
-		<div
-			className={cl(
-				'flex w-full flex-col rounded-2xl p-6',
-				isV3Page ? 'bg-neutral-900' : 'dark:bg-neutral-900 bg-neutral-900'
-			)}>
-			<b className={cl('text-lg', isV3Page ? '' : 'text-neutral-100')}>
-				{'Yield is good, but more yield is good-er!'}
-			</b>
+		<div className={cl('flex w-full flex-col rounded-2xl p-6', 'bg-neutral-900')}>
+			<b className={cl('text-lg text-neutral-100')}>{'Yield is good, but more yield is good-er!'}</b>
 			<div className={cl(`flex flex-col gap-2 py-4`, isV3Page ? 'text-[#908FB4]' : 'text-neutral-400')}>
 				<p>
 					{`This Vault has an active veYFI gauge which boosts your APY from `}
-					<span className={cl('font-bold', isV3Page ? 'text-white' : 'text-neutral-100')}>
-						{`${formatAmount(extraAPY * 10)}%`}
-					</span>
+					<span className={cl('font-bold text-neutral-100')}>{`${formatAmount(extraAPY * 10)}%`}</span>
 					{` to `}
-					<span className={cl('font-bold', isV3Page ? 'text-white' : 'text-neutral-100')}>
-						{`${formatAmount(extraAPY * 100)}%`}
-					</span>
+					<span className={cl('font-bold text-neutral-100')}>{`${formatAmount(extraAPY * 100)}%`}</span>
 					{` depending on the veYFI you have locked. Simply deposit and stake to start earning. `}
 					<a
 						className={'underline'}
