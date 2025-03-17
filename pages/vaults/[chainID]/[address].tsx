@@ -79,7 +79,7 @@ function Index(): ReactElement | null {
 	}
 
 	return (
-		<div className={'mx-auto my-0 max-w-6xl pt-4 md:mb-0 md:mt-16'}>
+		<div className={'mx-auto my-0 max-w-6xl pt-4 md:mb-0 md:mt-24'}>
 			<header className={'pointer-events-none flex w-full items-center justify-center'}>
 				<motion.div
 					key={'Vaults'}
