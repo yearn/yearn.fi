@@ -27,11 +27,12 @@ function updateMode() {
 	let isSystemDarkMode = darkModeMediaQuery.matches;
 	let isDarkMode = window.localStorage.isDarkMode === 'true' || (!('isDarkMode' in window.localStorage) && isSystemDarkMode);
 	let isV3 = window.location.pathname.includes('v3');
+	let isHomePage = window.location.pathname === '/';
 
 	if (isV3) {
 		document.documentElement.classList.add('v3');
 		document.documentElement.classList.remove('dark');
-	} else if (isDarkMode) {
+	} else if (isDarkMode || isHomePage) {
 		document.documentElement.classList.add('dark');
 		document.documentElement.classList.remove('v3');
 	} else {
@@ -39,7 +40,7 @@ function updateMode() {
 		document.documentElement.classList.remove('dark');
 	}
 
-	if (isDarkMode === isSystemDarkMode) {
+	if (isDarkMode === isSystemDarkMode && !isHomePage) {
 		delete window.localStorage.isDarkMode;
 	}
 }
