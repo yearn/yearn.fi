@@ -3,9 +3,8 @@ import {useRouter} from 'next/router';
 import {watchAsset} from 'viem/actions';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {useFetch} from '@builtbymom/web3/hooks/useFetch';
-import {assert, isZero, toAddress, toBigInt, toNormalizedValue} from '@builtbymom/web3/utils';
+import {assert, cl, isZero, toAddress, toBigInt, toNormalizedValue} from '@builtbymom/web3/utils';
 import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
-import {Listbox, Transition} from '@headlessui/react';
 import {VaultDetailsAbout} from '@vaults/components/details/tabs/VaultDetailsAbout';
 import {VaultDetailsHistorical} from '@vaults/components/details/tabs/VaultDetailsHistorical';
 import {VaultDetailsStrategies} from '@vaults/components/details/tabs/VaultDetailsStrategies';
@@ -17,7 +16,6 @@ import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
 import {formatDate} from '@yearn-finance/web-lib/utils/format.time';
 import {yDaemonVaultHarvestsSchema} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
-import {IconChevron} from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault, TYDaemonVaultHarvests} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
@@ -26,6 +24,7 @@ type TTabsOptions = {
 	value: number;
 	label: string;
 	slug?: string;
+	mobileLabel?: string;
 };
 type TTabs = {
 	selectedAboutTabIndex: number;
@@ -37,13 +36,37 @@ type TExplorerLinkProps = {
 	currentVaultAddress: string;
 };
 
+/**************************************************************************************************
+ ** The MobileTabButtons component will be used to display the tab buttons to navigate between the
+ ** different tabs on mobile devices.
+ *************************************************************************************************/
+function MobileTabButton(props: {
+	selected: boolean;
+	selectedIndex: number;
+	currentTab: TTabsOptions;
+	set_currentTab: (index: number) => void;
+}): ReactElement {
+	return (
+		<button
+			onClick={() => {
+				props.set_currentTab(props.selectedIndex);
+			}}
+			className={cl(
+				'flex h-10 overflow-hidden pr-4 transition-all duration-300 flex-row items-center border-0 bg-neutral-100 p-0 font-bold focus:border-neutral-900 md:hidden',
+				props.selected ? 'border-b-2 border-neutral-900' : 'border-b-2 border-neutral-300'
+			)}>
+			<span>{props.currentTab.mobileLabel || props.currentTab.label}</span>
+		</button>
+	);
+}
+
 function Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactElement {
 	const router = useRouter();
 
 	const tabs: TTabsOptions[] = useMemo(
 		(): TTabsOptions[] => [
 			{value: 0, label: 'About', slug: 'about'},
-			{value: 1, label: 'Strategies', slug: 'strategies'},
+			{value: 1, label: 'Strategies', slug: 'strategies', mobileLabel: 'Strats'},
 			{value: 2, label: 'Harvests', slug: 'harvests'},
 			{value: 3, label: 'Info', slug: 'info'}
 		],
@@ -90,49 +113,34 @@ function Tabs({selectedAboutTabIndex, set_selectedAboutTabIndex}: TTabs): ReactE
 				)}
 			</nav>
 			<div className={'relative z-50'}>
-				<Listbox
-					value={selectedAboutTabIndex}
-					onChange={(value): void => set_selectedAboutTabIndex(value)}>
-					{({open}): ReactElement => (
-						<>
-							<Listbox.Button
-								className={
-									'flex h-10 w-40 flex-row items-center border-0 border-b-2 border-neutral-900 bg-neutral-100 p-0 font-bold focus:border-neutral-900 md:hidden'
-								}>
-								<div className={'relative flex flex-row items-center'}>
-									{tabs[selectedAboutTabIndex]?.label || 'Menu'}
-								</div>
-								<div className={'absolute right-0'}>
-									<IconChevron
-										className={`size-6 transition-transform${open ? '-rotate-180' : 'rotate-0'}`}
-									/>
-								</div>
-							</Listbox.Button>
-							<Transition
-								as={Fragment}
-								show={open}
-								enter={'transition duration-100 ease-out'}
-								enterFrom={'transform scale-95 opacity-0'}
-								enterTo={'transform scale-100 opacity-100'}
-								leave={'transition duration-75 ease-out'}
-								leaveFrom={'transform scale-100 opacity-100'}
-								leaveTo={'transform scale-95 opacity-0'}>
-								<Listbox.Options className={'yearn--listbox-menu'}>
-									{tabs.map(
-										(tab): ReactElement => (
-											<Listbox.Option
-												className={'yearn--listbox-menu-item'}
-												key={tab.value}
-												value={tab.value}>
-												{tab.label}
-											</Listbox.Option>
-										)
-									)}
-								</Listbox.Options>
-							</Transition>
-						</>
+				<div className={'flex items-center space-x-2'}>
+					{tabs.map(
+						(tab): ReactElement => (
+							<Fragment key={`mobile-${tab.value}`}>
+								<MobileTabButton
+									selected={selectedAboutTabIndex === tab.value}
+									currentTab={tab}
+									selectedIndex={tab.value}
+									set_currentTab={(): void => {
+										router.replace(
+											{
+												query: {
+													...router.query,
+													tab: tab.slug
+												}
+											},
+											undefined,
+											{
+												shallow: true
+											}
+										);
+										set_selectedAboutTabIndex(tab.value);
+									}}
+								/>
+							</Fragment>
+						)
 					)}
-				</Listbox>
+				</div>
 			</div>
 		</>
 	);
@@ -280,10 +288,7 @@ export function VaultDetailsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 					set_selectedAboutTabIndex={set_selectedAboutTabIndex}
 				/>
 
-				<div
-					className={
-						'flex flex-col items-center justify-end space-x-2 pb-0 md:flex-row md:pb-4 md:last:space-x-4'
-					}>
+				<div className={'flex items-center justify-end space-x-2 pb-0 md:flex-row md:pb-4 md:last:space-x-4'}>
 					<button
 						onClick={(): void => {
 							onAddTokenToMetamask(
