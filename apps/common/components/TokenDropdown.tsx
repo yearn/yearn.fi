@@ -138,7 +138,7 @@ export function Dropdown(props: TDropdownProps): ReactElement {
 								<div className={'ml-auto'}>
 									<IconChevron
 										aria-hidden={'true'}
-										className={`size-6 transition-transform${isOpen ? '-rotate-180' : 'rotate-0'}`}
+										className={`size-4 text-neutral-900/50 transition-transform${isOpen ? '-rotate-180' : 'rotate-0'}`}
 									/>
 								</div>
 							</div>

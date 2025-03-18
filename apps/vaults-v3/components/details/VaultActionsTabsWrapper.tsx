@@ -1,4 +1,4 @@
-import {Fragment, useEffect, useMemo, useState} from 'react';
+import {Fragment, useCallback, useEffect, useMemo, useState} from 'react';
 import {useRouter} from 'next/router';
 import {useBlockNumber} from 'wagmi';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
@@ -13,7 +13,6 @@ import {
 	toNormalizedBN
 } from '@builtbymom/web3/utils';
 import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
-import {Listbox, Transition} from '@headlessui/react';
 import {useUpdateEffect} from '@react-hookz/web';
 import {Flow, useActionFlow} from '@vaults/contexts/useActionFlow';
 import {STAKING_REWARDS_ABI} from '@vaults/utils/abi/stakingRewards.abi';
@@ -26,7 +25,6 @@ import {RewardsTab} from '@vaults-v3/components/details/RewardsTab';
 import {SettingsPopover} from '@vaults-v3/components/SettingsPopover';
 import {readContracts} from '@wagmi/core';
 import {useYearn} from '@common/contexts/useYearn';
-import {IconChevron} from '@common/icons/IconChevron';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
@@ -204,6 +202,33 @@ export function BoostMessage(props: {
 }
 
 /**************************************************************************************************
+ ** The MobileTabButtons component will be used to display the tab buttons to navigate between the
+ ** different tabs on mobile devices.
+ *************************************************************************************************/
+function MobileTabButtons(props: {
+	currentTab: TTabsOptions;
+	selectedTab: TTabsOptions;
+	set_currentTab: (tab: TTabsOptions) => void;
+	onSwitchSelectedOptions: (flow: Flow) => void;
+}): ReactElement {
+	return (
+		<button
+			onClick={() => {
+				props.set_currentTab(props.currentTab);
+				props.onSwitchSelectedOptions(props.currentTab.flowAction);
+			}}
+			className={cl(
+				'flex h-10 pr-4 transition-all duration-300 flex-row items-center border-0 bg-neutral-100 p-0 font-bold focus:border-neutral-900 md:hidden',
+				props.selectedTab.value === props.currentTab.value
+					? 'border-b-2 border-neutral-900'
+					: 'border-b-2 border-neutral-300'
+			)}>
+			{props.currentTab.label}
+		</button>
+	);
+}
+
+/**************************************************************************************************
  ** The Tab component will be used to display the tab buttons to navigate between the different
  ** actions available for the current vault.
  ** A special case exists when the current vault has staking rewards, because the name of the tab
@@ -276,81 +301,6 @@ export function VaultDetailsTab(props: {
 	);
 }
 
-export function VaultRewardsTabs(props: {currentVault: TYDaemonVault; tab: TTabsOptions}): ReactElement {
-	const stakingRewardSource = props.currentVault.staking.source;
-	const tabLabel = useMemo(() => {
-		if (props.tab.label === 'Boost' && stakingRewardSource === 'VeYFI') {
-			return 'veYFI BOOST';
-		}
-		if (props.tab.label === 'Boost' && stakingRewardSource === 'OP Boost') {
-			return '$OP BOOST';
-		}
-		if (props.tab.label === 'Boost' && stakingRewardSource === 'Juiced') {
-			return 'Juiced BOOST';
-		}
-		if (props.tab.label === 'Boost' && stakingRewardSource === 'V3 Staking') {
-			return 'Staking BOOST';
-		}
-		return props.tab.label;
-	}, [props.tab.label, stakingRewardSource]);
-
-	return (
-		<>
-			<nav className={'hidden flex-row items-center space-x-10 md:flex'}>
-				<button key={`desktop-${props.tab.value}`}>
-					<p
-						title={tabLabel}
-						aria-selected={true}
-						className={'hover-fix tab'}>
-						{tabLabel}
-					</p>
-				</button>
-			</nav>
-			<div className={'relative z-50'}>
-				<Listbox value={props.tab.value}>
-					{({open}): ReactElement => (
-						<>
-							<Listbox.Button
-								className={
-									'flex h-10 w-40 flex-row items-center border-0 border-b-2 border-neutral-900 bg-neutral-100 p-0 font-bold focus:border-neutral-900 md:hidden'
-								}>
-								<div className={'relative flex flex-row items-center'}>{props.tab.label || 'Menu'}</div>
-								<div className={'absolute right-0'}>
-									<IconChevron
-										className={`size-6 transition-transform${open ? '-rotate-180' : 'rotate-0'}`}
-									/>
-								</div>
-							</Listbox.Button>
-							<Transition
-								as={Fragment}
-								show={open}
-								enter={'transition duration-100 ease-out'}
-								enterFrom={'transform scale-95 opacity-0'}
-								enterTo={'transform scale-100 opacity-100'}
-								leave={'transition duration-75 ease-out'}
-								leaveFrom={'transform scale-100 opacity-100'}
-								leaveTo={'transform scale-95 opacity-0'}>
-								<Listbox.Options className={'yearn--listbox-menu'}>
-									{tabs.map(
-										(tab): ReactElement => (
-											<Listbox.Option
-												className={'yearn--listbox-menu-item'}
-												key={tab.value}
-												value={tab.value}>
-												{tab.label}
-											</Listbox.Option>
-										)
-									)}
-								</Listbox.Options>
-							</Transition>
-						</>
-					)}
-				</Listbox>
-			</div>
-		</>
-	);
-}
-
 /**************************************************************************************************
  ** The VaultActionsTabsWrapper wraps the different components that are part of the Vault Actions
  ** section. It will display the different tabs available for the current vault and the
@@ -372,6 +322,22 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 		})
 	);
 	const hasStakingRewards = Boolean(currentVault.staking.available);
+
+	const getTabLabel = useCallback((): string => {
+		if (currentVault.staking.source === 'VeYFI') {
+			return 'veYFI BOOST';
+		}
+		if (currentVault.staking.source === 'OP Boost') {
+			return '$OP BOOST';
+		}
+		if (currentVault.staking.source === 'Juiced') {
+			return 'Juiced BOOST';
+		}
+		if (currentVault.staking.source === 'V3 Staking') {
+			return 'Staking BOOST';
+		}
+		return 'Boost';
+	}, [currentVault.staking.source]);
 
 	const {data: blockNumber} = useBlockNumber({watch: true});
 
@@ -562,58 +528,20 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 							)}
 					</nav>
 					<div className={'relative z-50'}>
-						<Listbox
-							value={currentTab.label}
-							onChange={(value): void => {
-								const newTab = tabs.find((tab): boolean => tab.value === Number(value));
-								if (!newTab) {
-									return;
-								}
-								set_currentTab(newTab);
-								onSwitchSelectedOptions(newTab.flowAction);
-							}}>
-							{({open}): ReactElement => (
-								<>
-									<Listbox.Button
-										className={
-											'flex h-10 w-40 flex-row items-center border-0 border-b-2 border-neutral-900 bg-neutral-100 p-0 font-bold focus:border-neutral-900 md:hidden'
-										}>
-										<div className={'relative flex flex-row items-center'}>
-											{currentTab?.label || 'Menu'}
-										</div>
-										<div className={'absolute right-0'}>
-											<IconChevron
-												className={`size-6 transition-transform${
-													open ? '-rotate-180' : 'rotate-0'
-												}`}
-											/>
-										</div>
-									</Listbox.Button>
-									<Transition
-										as={Fragment}
-										show={open}
-										enter={'transition duration-100 ease-out'}
-										enterFrom={'transform scale-95 opacity-0'}
-										enterTo={'transform scale-100 opacity-100'}
-										leave={'transition duration-75 ease-out'}
-										leaveFrom={'transform scale-100 opacity-100'}
-										leaveTo={'transform scale-95 opacity-0'}>
-										<Listbox.Options className={'yearn--listbox-menu'}>
-											{possibleTabs.map(
-												(tab): ReactElement => (
-													<Listbox.Option
-														className={'yearn--listbox-menu-item'}
-														key={tab.value}
-														value={tab.value}>
-														{tab.label}
-													</Listbox.Option>
-												)
-											)}
-										</Listbox.Options>
-									</Transition>
-								</>
-							)}
-						</Listbox>
+						<div className={'flex gap-4'}>
+							<MobileTabButtons
+								currentTab={tabs[0]}
+								selectedTab={currentTab}
+								set_currentTab={set_currentTab}
+								onSwitchSelectedOptions={onSwitchSelectedOptions}
+							/>
+							<MobileTabButtons
+								currentTab={tabs[1]}
+								selectedTab={currentTab}
+								set_currentTab={set_currentTab}
+								onSwitchSelectedOptions={onSwitchSelectedOptions}
+							/>
+						</div>
 					</div>
 
 					<div className={'flex flex-row items-center justify-end space-x-2 pb-0 md:pb-4 md:last:space-x-4'}>
@@ -654,11 +582,16 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 				)}
 				{currentTab.value !== 3 && currentVault.staking.rewards && (
 					<Fragment>
-						<div className={'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'}>
-							<VaultRewardsTabs
-								currentVault={currentVault}
-								tab={tabs[3]}
-							/>
+						<div className={'flex flex-row items-center justify-between pl-4 md:px-8'}>
+							<div
+								className={cl(
+									'flex h-10 min-w-28 z-10 flex-row items-center bg-neutral-100 p-0 font-bold md:hidden border-b-2 border-neutral-900'
+								)}>
+								{'Boost'}
+							</div>
+							<div className={'z-10 hidden border-b-2 border-neutral-900 pb-4 font-bold md:block'}>
+								{getTabLabel()}
+							</div>
 						</div>
 						<div>
 							<div className={'-mt-0.5 h-0.5 w-full bg-neutral-300'} />

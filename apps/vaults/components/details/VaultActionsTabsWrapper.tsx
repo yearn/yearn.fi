@@ -1,4 +1,4 @@
-import {Fragment, useEffect, useState} from 'react';
+import {Fragment, useEffect, useMemo, useState} from 'react';
 import Link from 'next/link';
 import {useRouter} from 'next/router';
 import {useBlockNumber} from 'wagmi';
@@ -17,12 +17,7 @@ import {VaultDetailsQuickActionsFrom} from '@vaults-v3/components/details/action
 import {VaultDetailsQuickActionsSwitch} from '@vaults-v3/components/details/actions/QuickActionsSwitch';
 import {VaultDetailsQuickActionsTo} from '@vaults-v3/components/details/actions/QuickActionsTo';
 import {RewardsTab} from '@vaults-v3/components/details/RewardsTab';
-import {
-	getCurrentTab,
-	tabs,
-	VaultDetailsTab,
-	VaultRewardsTabs
-} from '@vaults-v3/components/details/VaultActionsTabsWrapper';
+import {getCurrentTab, tabs, VaultDetailsTab} from '@vaults-v3/components/details/VaultActionsTabsWrapper';
 import {readContracts} from '@wagmi/core';
 import {parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
 import {useYearn} from '@common/contexts/useYearn';
@@ -32,6 +27,81 @@ import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TNormalizedBN} from '@builtbymom/web3/types';
 import type {TTabsOptions} from '@vaults-v3/components/details/VaultActionsTabsWrapper';
+
+export function VaultRewardsTabs(props: {currentVault: TYDaemonVault; tab: TTabsOptions}): ReactElement {
+	const stakingRewardSource = props.currentVault.staking.source;
+	const tabLabel = useMemo(() => {
+		if (props.tab.label === 'Boost' && stakingRewardSource === 'VeYFI') {
+			return 'veYFI BOOST';
+		}
+		if (props.tab.label === 'Boost' && stakingRewardSource === 'OP Boost') {
+			return '$OP BOOST';
+		}
+		if (props.tab.label === 'Boost' && stakingRewardSource === 'Juiced') {
+			return 'Juiced BOOST';
+		}
+		if (props.tab.label === 'Boost' && stakingRewardSource === 'V3 Staking') {
+			return 'Staking BOOST';
+		}
+		return props.tab.label;
+	}, [props.tab.label, stakingRewardSource]);
+
+	return (
+		<>
+			<nav className={'hidden flex-row items-center space-x-10 md:flex'}>
+				<button key={`desktop-${props.tab.value}`}>
+					<p
+						title={tabLabel}
+						aria-selected={true}
+						className={'hover-fix tab'}>
+						{tabLabel}
+					</p>
+				</button>
+			</nav>
+			<div className={'relative z-50'}>
+				<Listbox value={props.tab.value}>
+					{({open}): ReactElement => (
+						<>
+							<Listbox.Button
+								className={
+									'flex h-10 w-40 flex-row items-center border-0 border-b-2 border-neutral-900 bg-neutral-100 p-0 font-bold focus:border-neutral-900 md:hidden'
+								}>
+								<div className={'relative flex flex-row items-center'}>{props.tab.label || 'Menu'}</div>
+								<div className={'absolute right-0'}>
+									<IconChevron
+										className={`size-3 transition-transform${open ? '-rotate-180' : 'rotate-0'}`}
+									/>
+								</div>
+							</Listbox.Button>
+							<Transition
+								as={Fragment}
+								show={open}
+								enter={'transition duration-100 ease-out'}
+								enterFrom={'transform scale-95 opacity-0'}
+								enterTo={'transform scale-100 opacity-100'}
+								leave={'transition duration-75 ease-out'}
+								leaveFrom={'transform scale-100 opacity-100'}
+								leaveTo={'transform scale-95 opacity-0'}>
+								<Listbox.Options className={'yearn--listbox-menu'}>
+									{tabs.map(
+										(tab): ReactElement => (
+											<Listbox.Option
+												className={'yearn--listbox-menu-item'}
+												key={tab.value}
+												value={tab.value}>
+												{tab.label}
+											</Listbox.Option>
+										)
+									)}
+								</Listbox.Options>
+							</Transition>
+						</>
+					)}
+				</Listbox>
+			</div>
+		</>
+	);
+}
 
 /**************************************************************************************************
  ** The VaultActionsTabsWrapper wraps the different components that are part of the Vault Actions
