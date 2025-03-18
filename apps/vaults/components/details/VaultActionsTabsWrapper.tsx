@@ -1,4 +1,4 @@
-import {useEffect, useState} from 'react';
+import {Fragment, useCallback, useEffect, useState} from 'react';
 import Link from 'next/link';
 import {useRouter} from 'next/router';
 import {useBlockNumber} from 'wagmi';
@@ -185,6 +185,22 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 		toAddress(currentVault.address) === toAddress(`0x65343f414ffd6c97b0f6add33d16f6845ac22bac`) ||
 		toAddress(currentVault.address) === toAddress(`0xfaee21d0f0af88ee72bb6d68e54a90e6ec2616de`);
 
+	const getTabLabel = useCallback((): string => {
+		if (currentVault.staking.source === 'VeYFI') {
+			return 'veYFI BOOST';
+		}
+		if (currentVault.staking.source === 'OP Boost') {
+			return '$OP BOOST';
+		}
+		if (currentVault.staking.source === 'Juiced') {
+			return 'Juiced BOOST';
+		}
+		if (currentVault.staking.source === 'V3 Staking') {
+			return 'Staking BOOST';
+		}
+		return 'Boost';
+	}, [currentVault.staking.source]);
+
 	return (
 		<>
 			{currentVault?.migration?.available && (
@@ -322,6 +338,28 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 							</div>
 						</div>
 					</div>
+				)}
+				{currentTab.value !== 3 && currentVault.staking.rewards && (
+					<Fragment>
+						<div className={'relative flex w-full flex-row items-center justify-between px-4 pt-4 md:px-8'}>
+							<div
+								className={cl(
+									'flex h-10 min-w-28 z-10 flex-row items-center bg-neutral-100 p-0 font-bold md:hidden border-b-2 border-neutral-900'
+								)}>
+								{'Boost'}
+							</div>
+							<div className={'z-10 hidden border-b-2 border-neutral-900 pb-4 font-bold md:block'}>
+								{getTabLabel()}
+							</div>
+						</div>
+						<div>
+							<div className={'-mt-0.5 h-0.5 w-full bg-neutral-300'} />
+							<RewardsTab
+								currentVault={currentVault}
+								hasStakingRewardsLive={hasStakingRewardsLive}
+							/>
+						</div>
+					</Fragment>
 				)}
 			</div>
 		</>
