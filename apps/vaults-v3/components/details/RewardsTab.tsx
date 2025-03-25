@@ -4,7 +4,15 @@ import Link from 'next/link';
 import {useRouter} from 'next/router';
 import {useReadContract} from 'wagmi';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {cl, formatAmount, formatCounterValue, isZero, toAddress, toBigInt} from '@builtbymom/web3/utils';
+import {
+	cl,
+	formatAmount,
+	formatCounterValue,
+	fromNormalized,
+	isZero,
+	toAddress,
+	toBigInt
+} from '@builtbymom/web3/utils';
 import {approveERC20, defaultTxStatus} from '@builtbymom/web3/utils/wagmi';
 import {useVaultStakingData} from '@vaults/hooks/useVaultStakingData';
 import {VEYFI_GAUGE_ABI} from '@vaults/utils/abi/veYFIGauge.abi';
@@ -21,7 +29,7 @@ import {FakeInput} from '@common/components/Input';
 import {useYearn} from '@common/contexts/useYearn';
 import {useYearnToken} from '@common/hooks/useYearnToken';
 
-import type {ReactElement} from 'react';
+import type {ChangeEvent, ReactElement} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 
 /**************************************************************************************************
@@ -296,6 +304,12 @@ export function RewardsTab(props: {currentVault: TYDaemonVault; hasStakingReward
 	const [stakeStatus, set_stakeStatus] = useState(defaultTxStatus);
 	const [claimStatus, set_claimStatus] = useState(defaultTxStatus);
 	const [unstakeStatus, set_unstakeStatus] = useState(defaultTxStatus);
+
+	const [unstakeAmount, set_unstakeAmount] = useState<string>(vaultData.stakedBalanceOf.display);
+
+	const isUnstakingMax =
+		fromNormalized(unstakeAmount, vaultData.stakingDecimals || 18) === vaultData.stakedBalanceOf.raw;
+
 	const isApproved = vaultData.vaultAllowance.raw >= vaultData.vaultBalanceOf.raw;
 
 	const {data: symbol} = useReadContract({
@@ -392,8 +406,8 @@ export function RewardsTab(props: {currentVault: TYDaemonVault; hasStakingReward
 				connector: provider,
 				chainID: props.currentVault.chainID,
 				contractAddress: toAddress(vaultData?.address),
-				amount: vaultData.stakedBalanceOf.raw,
-				willClaim: true,
+				amount: fromNormalized(unstakeAmount, vaultData.stakingDecimals || 18),
+				willClaim: isUnstakingMax,
 				statusHandler: set_unstakeStatus
 			});
 			if (result.isSuccessful) {
@@ -514,30 +528,51 @@ export function RewardsTab(props: {currentVault: TYDaemonVault; hasStakingReward
 						<div className={'font-bold'}>{'Unstake'}</div>
 					</div>
 					<div className={'flex flex-col gap-4 md:flex-row'}>
-						<FakeInput
-							className={'w-full'}
-							legend={
+						<div className={'w-full'}>
+							<div className={cl('flex h-10 items-center rounded-lg p-2 w-full', 'bg-neutral-300')}>
+								<div className={'flex h-10 w-full flex-row items-center justify-between px-0 py-4'}>
+									<input
+										id={'fromAmount'}
+										className={cl(
+											'w-full overflow-x-scroll border-none bg-transparent px-0 py-4 font-bold outline-none scrollbar-none',
+											isActive ? '' : 'cursor-not-allowed'
+										)}
+										type={'number'}
+										inputMode={'numeric'}
+										min={0}
+										pattern={'^((?:0|[1-9]+)(?:.(?:d+?[1-9]|[1-9]))?)$'}
+										autoComplete={'off'}
+										disabled={!isActive}
+										value={unstakeAmount}
+										onChange={(e: ChangeEvent<HTMLInputElement>): void =>
+											set_unstakeAmount(e.target.value)
+										}
+									/>
+
+									<button
+										onClick={(): void => set_unstakeAmount(vaultData.stakedBalanceOf.display)}
+										className={
+											'ml-2 cursor-pointer rounded-[4px] bg-neutral-800/20 px-2 py-1 text-xs text-neutral-900 transition-colors hover:bg-neutral-800/50'
+										}>
+										{'Max'}
+									</button>
+								</div>
+							</div>
+							<legend
+								className={`mt-1 pl-0.5 text-xs text-neutral-600 opacity-70 md:mr-0`}
+								suppressHydrationWarning>
 								<div className={'flex items-center justify-between'}>
 									<p>{`${formatAmount(vaultData.stakedBalanceOf.normalized, 6)} ${symbol} staked`}</p>
 									<p>{`${formatCounterValue(vaultData.stakedBalanceOf.normalized, vaultTokenPrice.normalized)}`}</p>
 								</div>
-							}
-							value={
-								toBigInt(vaultData.stakedBalanceOf.raw) === 0n ? undefined : (
-									<Counter
-										value={Number(vaultData.stakedBalanceOf.normalized)}
-										decimals={vaultData.stakingDecimals || 18}
-									/>
-								)
-							}
-						/>
-
+							</legend>
+						</div>
 						<Button
 							className={'w-full md:w-[180px] md:min-w-[180px]'}
 							onClick={onUnstake}
 							isBusy={unstakeStatus.pending}
-							isDisabled={!isActive || Number(vaultData.stakedBalanceOf.normalized) <= 0}>
-							{'Claim & Exit'}
+							isDisabled={!isActive || Number(unstakeAmount) <= 0}>
+							{isUnstakingMax ? 'Claim & Exit' : 'Unstake'}
 						</Button>
 					</div>
 				</div>
