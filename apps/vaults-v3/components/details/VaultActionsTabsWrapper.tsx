@@ -15,7 +15,6 @@ import {
 import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
 import {useUpdateEffect} from '@react-hookz/web';
 import {Flow, useActionFlow} from '@vaults/contexts/useActionFlow';
-import {useSolver} from '@vaults/contexts/useSolver';
 import {STAKING_REWARDS_ABI} from '@vaults/utils/abi/stakingRewards.abi';
 import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
 import {VaultDetailsQuickActionsButtons} from '@vaults-v3/components/details/actions/QuickActionsButtons';
@@ -25,7 +24,6 @@ import {VaultDetailsQuickActionsTo} from '@vaults-v3/components/details/actions/
 import {RewardsTab} from '@vaults-v3/components/details/RewardsTab';
 import {SettingsPopover} from '@vaults-v3/components/SettingsPopover';
 import {readContracts} from '@wagmi/core';
-import {Solver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
 import {useYearn} from '@common/contexts/useYearn';
 import {DISABLED_VEYFI_GAUGES_VAULTS_LIST} from '@common/utils/constants';
 
