@@ -249,14 +249,14 @@ export function VaultDetailsQuickActionsFrom(props: {vaultData: TStakingInfo}): 
 
 				<div className={'mt-1 pl-1'}>
 					<legend
-						className={'font-number hidden text-xs text-neutral-900/50 md:inline'}
+						className={'hidden text-xs text-neutral-900/50 md:inline'}
 						suppressHydrationWarning>
 						<div>
-							<p>{`You have ${formatAmount((userBalance || zeroNormalizedBN).normalized)} ${
+							<p className="font-number">{`You have ${formatAmount((userBalance || zeroNormalizedBN).normalized)} ${
 								actionParams?.selectedOptionFrom?.symbol || 'tokens'
 							}`}</p>
 							{props.vaultData?.stakedBalanceOf.raw > 0n && (
-								<p>{`(+${formatAmount(props.vaultData.stakedBalanceOf.normalized, 6)} ${actionParams?.selectedOptionFrom?.symbol} staked)`}</p>
+								<p className="font-number">{`(+${formatAmount(props.vaultData.stakedBalanceOf.normalized, 6)} ${actionParams?.selectedOptionFrom?.symbol} staked)`}</p>
 							)}
 						</div>
 					</legend>
