@@ -368,7 +368,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 					args: [toAddress(address)]
 				},
 				{
-					address: toAddress(currentVault.address),
+					address: toAddress(currentVault.staking.address),
 					abi: STAKING_REWARDS_ABI,
 					chainId: currentVault.chainID,
 					functionName: 'periodFinish',
@@ -581,21 +581,15 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 									currentVault={currentVault}
 									hasStakingRewardsLive={hasStakingRewardsLive}
 								/>
-								{(currentSolver === Solver.enum.OptimismBooster ||
-									currentSolver === Solver.enum.GaugeStakingBooster ||
-									currentSolver === Solver.enum.JuicedStakingBooster ||
-									currentSolver === Solver.enum.V3StakingBooster) &&
-									isAutoStakingEnabled &&
-									hasStakingRewardsLive &&
-									isDepositing && (
-										<div className={'mt-1 flex justify-between'}>
-											<button
-												className={'font-number text-xxs text-neutral-900/50'}
-												onClick={(): void => set_isAutoStakingEnabled(!isAutoStakingEnabled)}>
-												{isAutoStakingEnabled ? 'Deposit only' : 'Deposit and Stake'}
-											</button>
-										</div>
-									)}
+								{hasStakingRewardsLive && isDepositing && (
+									<div className={'mt-1 flex justify-between'}>
+										<button
+											className={'font-number text-xxs text-neutral-900/50'}
+											onClick={(): void => set_isAutoStakingEnabled(!isAutoStakingEnabled)}>
+											{isAutoStakingEnabled ? 'Deposit only' : 'Deposit and Stake'}
+										</button>
+									</div>
+								)}
 							</div>
 						</div>
 					</div>
