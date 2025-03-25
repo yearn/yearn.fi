@@ -15,6 +15,7 @@ import {
 import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
 import {useUpdateEffect} from '@react-hookz/web';
 import {Flow, useActionFlow} from '@vaults/contexts/useActionFlow';
+import {useSolver} from '@vaults/contexts/useSolver';
 import {STAKING_REWARDS_ABI} from '@vaults/utils/abi/stakingRewards.abi';
 import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
 import {VaultDetailsQuickActionsButtons} from '@vaults-v3/components/details/actions/QuickActionsButtons';
@@ -24,6 +25,7 @@ import {VaultDetailsQuickActionsTo} from '@vaults-v3/components/details/actions/
 import {RewardsTab} from '@vaults-v3/components/details/RewardsTab';
 import {SettingsPopover} from '@vaults-v3/components/SettingsPopover';
 import {readContracts} from '@wagmi/core';
+import {Solver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
 import {useYearn} from '@common/contexts/useYearn';
 import {DISABLED_VEYFI_GAUGES_VAULTS_LIST} from '@common/utils/constants';
 
@@ -325,6 +327,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 		})
 	);
 	const hasStakingRewards = Boolean(currentVault.staking.available);
+	const {currentSolver} = useSolver();
 
 	const shouldForceDisplayBoostTab = !!DISABLED_VEYFI_GAUGES_VAULTS_LIST.find(
 		vault => vault.address === currentVault.address
@@ -375,9 +378,8 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 		});
 
 		const hasLiveRewards = decodeAsBigInt(result[1]) > Math.floor(Date.now() / 1000);
-		const hasLiveRewardsFromYDaemon = (currentVault.staking.rewards || []).some(e => !e.isFinished);
 		set_unstakedBalance(toNormalizedBN(decodeAsBigInt(result[0]), currentVault.decimals));
-		set_hasStakingRewardsLive(hasLiveRewards || hasLiveRewardsFromYDaemon);
+		set_hasStakingRewardsLive(hasLiveRewards);
 	}, [currentVault, address]);
 
 	/**********************************************************************************************
@@ -575,16 +577,25 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 						<div className={'w-full space-y-0 md:w-42 md:min-w-42 md:space-y-2'}>
 							<p className={'hidden text-base md:inline'}>&nbsp;</p>
 							<div>
-								<VaultDetailsQuickActionsButtons currentVault={currentVault} />
-								{!hasStakingRewardsLive && isDepositing && (
-									<div className={'mt-1 flex justify-between'}>
-										<button
-											className={'font-number text-xxs text-neutral-900/50'}
-											onClick={(): void => set_isAutoStakingEnabled(!isAutoStakingEnabled)}>
-											{isAutoStakingEnabled ? 'Deposit only' : 'Deposit and Stake'}
-										</button>
-									</div>
-								)}
+								<VaultDetailsQuickActionsButtons
+									currentVault={currentVault}
+									hasStakingRewardsLive={hasStakingRewardsLive}
+								/>
+								{(currentSolver === Solver.enum.OptimismBooster ||
+									currentSolver === Solver.enum.GaugeStakingBooster ||
+									currentSolver === Solver.enum.JuicedStakingBooster ||
+									currentSolver === Solver.enum.V3StakingBooster) &&
+									isAutoStakingEnabled &&
+									hasStakingRewardsLive &&
+									isDepositing && (
+										<div className={'mt-1 flex justify-between'}>
+											<button
+												className={'font-number text-xxs text-neutral-900/50'}
+												onClick={(): void => set_isAutoStakingEnabled(!isAutoStakingEnabled)}>
+												{isAutoStakingEnabled ? 'Deposit only' : 'Deposit and Stake'}
+											</button>
+										</div>
+									)}
 							</div>
 						</div>
 					</div>

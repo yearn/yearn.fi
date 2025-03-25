@@ -18,7 +18,13 @@ import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TNormalizedBN} from '@builtbymom/web3/types';
 
-export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+export function VaultDetailsQuickActionsButtons({
+	currentVault,
+	hasStakingRewardsLive
+}: {
+	currentVault: TYDaemonVault;
+	hasStakingRewardsLive: boolean;
+}): ReactElement {
 	const plausible = usePlausible();
 	const {onRefresh, isAutoStakingEnabled} = useYearn();
 	const {address, provider} = useWeb3();
@@ -206,7 +212,8 @@ export function VaultDetailsQuickActionsButtons({currentVault}: {currentVault: T
 				currentSolver === Solver.enum.GaugeStakingBooster ||
 				currentSolver === Solver.enum.JuicedStakingBooster ||
 				currentSolver === Solver.enum.V3StakingBooster) &&
-			isAutoStakingEnabled
+			isAutoStakingEnabled &&
+			hasStakingRewardsLive
 		) {
 			return (
 				<Button
