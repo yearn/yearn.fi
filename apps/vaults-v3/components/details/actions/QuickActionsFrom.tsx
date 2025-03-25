@@ -29,6 +29,7 @@ import {IconQuestion} from '@common/icons/IconQuestion';
 
 import type {ChangeEvent, ReactElement} from 'react';
 import type {TNormalizedBN} from '@builtbymom/web3/types';
+import {TStakingInfo} from '@vaults/hooks/useVaultStakingData';
 
 function AmountWithOptionalTooltip(props: {
 	canOnlyWithdrawSome: boolean;
@@ -97,7 +98,7 @@ function AmountWithOptionalTooltip(props: {
 	);
 }
 
-export function VaultDetailsQuickActionsFrom(): ReactElement {
+export function VaultDetailsQuickActionsFrom(props: {vaultData: TStakingInfo}): ReactElement {
 	const {address, isActive, chainID} = useWeb3();
 	const {getToken, getPrice} = useYearn();
 	const {data: blockNumber} = useBlockNumber({watch: true});
@@ -250,9 +251,14 @@ export function VaultDetailsQuickActionsFrom(): ReactElement {
 					<legend
 						className={'font-number hidden text-xs text-neutral-900/50 md:inline'}
 						suppressHydrationWarning>
-						{`You have ${formatAmount((userBalance || zeroNormalizedBN).normalized)} ${
-							actionParams?.selectedOptionFrom?.symbol || 'tokens'
-						}`}
+						<div>
+							<p>{`You have ${formatAmount((userBalance || zeroNormalizedBN).normalized)} ${
+								actionParams?.selectedOptionFrom?.symbol || 'tokens'
+							}`}</p>
+							{props.vaultData?.stakedBalanceOf.raw > 0n && (
+								<p>{`(+${formatAmount(props.vaultData.stakedBalanceOf.normalized, 6)} ${actionParams?.selectedOptionFrom?.symbol} staked)`}</p>
+							)}
+						</div>
 					</legend>
 				</div>
 			</div>

@@ -25,6 +25,7 @@ import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TNormalizedBN} from '@builtbymom/web3/types';
 import type {TTabsOptions} from '@vaults-v3/components/details/VaultActionsTabsWrapper';
+import {useVaultStakingData} from '@vaults/hooks/useVaultStakingData';
 
 /**************************************************************************************************
  ** The MobileTabButtons component will be used to display the tab buttons to navigate between the
@@ -62,6 +63,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 	const router = useRouter();
 	const {isAutoStakingEnabled, set_isAutoStakingEnabled} = useYearn();
 	const {address} = useWeb3();
+	const {vaultData, updateVaultData} = useVaultStakingData({currentVault});
 	const {onSwitchSelectedOptions, isDepositing, actionParams} = useActionFlow();
 	const [possibleTabs, set_possibleTabs] = useState<TTabsOptions[]>([tabs[0], tabs[1]]);
 	const [unstakedBalance, set_unstakedBalance] = useState<TNormalizedBN | undefined>(undefined);
@@ -312,6 +314,8 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 				{currentTab.value === 3 ? (
 					<RewardsTab
 						currentVault={currentVault}
+						vaultData={vaultData}
+						updateVaultData={updateVaultData}
 						hasStakingRewardsLive={hasStakingRewardsLive}
 					/>
 				) : (
@@ -319,7 +323,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 						className={
 							'col-span-12 mb-4 flex flex-col space-x-0 space-y-2 bg-neutral-100 p-4 md:flex-row md:space-x-4 md:space-y-0 md:px-8 md:py-6'
 						}>
-						<VaultDetailsQuickActionsFrom />
+						<VaultDetailsQuickActionsFrom vaultData={vaultData} />
 						<VaultDetailsQuickActionsSwitch />
 						<VaultDetailsQuickActionsTo />
 						<div className={'w-full space-y-0 md:w-42 md:min-w-42 md:space-y-2'}>
@@ -356,6 +360,8 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 							<div className={'-mt-0.5 h-0.5 w-full bg-neutral-300'} />
 							<RewardsTab
 								currentVault={currentVault}
+								vaultData={vaultData}
+								updateVaultData={updateVaultData}
 								hasStakingRewardsLive={hasStakingRewardsLive}
 							/>
 						</div>

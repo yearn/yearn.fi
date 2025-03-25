@@ -14,7 +14,7 @@ import {
 	toBigInt
 } from '@builtbymom/web3/utils';
 import {approveERC20, defaultTxStatus} from '@builtbymom/web3/utils/wagmi';
-import {useVaultStakingData} from '@vaults/hooks/useVaultStakingData';
+import {TStakingInfo} from '@vaults/hooks/useVaultStakingData';
 import {VEYFI_GAUGE_ABI} from '@vaults/utils/abi/veYFIGauge.abi';
 import {
 	claim as claimAction,
@@ -295,10 +295,15 @@ function VeYFIBoostMessage(props: {currentVault: TYDaemonVault; hasStakingReward
  ** allow the user to stake, unstake, and claim rewards from the staking rewards contract.
  ** Based on the staking source, the UI might change a bit to display the correct information.
  *************************************************************************************************/
-export function RewardsTab(props: {currentVault: TYDaemonVault; hasStakingRewardsLive: boolean}): ReactElement {
+export function RewardsTab(props: {
+	currentVault: TYDaemonVault;
+	hasStakingRewardsLive: boolean;
+	vaultData: TStakingInfo;
+	updateVaultData: VoidFunction;
+}): ReactElement {
 	const {provider, isActive} = useWeb3();
 	const {getPrice} = useYearn();
-	const {vaultData, updateVaultData} = useVaultStakingData({currentVault: props.currentVault});
+	const {vaultData, updateVaultData} = props;
 	const rewardTokenBalance = useYearnToken({address: vaultData.rewardsToken, chainID: props.currentVault.chainID});
 	const [approveStakeStatus, set_approveStakeStatus] = useState(defaultTxStatus);
 	const [stakeStatus, set_stakeStatus] = useState(defaultTxStatus);

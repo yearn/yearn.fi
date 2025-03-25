@@ -23,7 +23,7 @@ import {readContract, readContracts} from '@wagmi/core';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TAddress, TNormalizedBN} from '@builtbymom/web3/types';
 
-type TStakingInfo = {
+export type TStakingInfo = {
 	address: TAddress;
 	stakingToken: TAddress;
 	rewardsToken: TAddress;

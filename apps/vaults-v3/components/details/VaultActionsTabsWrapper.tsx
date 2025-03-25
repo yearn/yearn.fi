@@ -29,6 +29,7 @@ import {useYearn} from '@common/contexts/useYearn';
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TNormalizedBN} from '@builtbymom/web3/types';
+import {useVaultStakingData} from '@vaults/hooks/useVaultStakingData';
 
 /**************************************************************************************************
  ** Base type for tab options containing value, label and optional slug
@@ -311,6 +312,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 	const {address} = useWeb3();
 	const router = useRouter();
 	const {isAutoStakingEnabled, set_isAutoStakingEnabled} = useYearn();
+	const {vaultData, updateVaultData} = useVaultStakingData({currentVault});
 	const [unstakedBalance, set_unstakedBalance] = useState<TNormalizedBN | undefined>(undefined);
 	const [possibleTabs, set_possibleTabs] = useState<TTabsOptions[]>([tabs[0], tabs[1]]);
 	const [hasStakingRewardsLive, set_hasStakingRewardsLive] = useState(true);
@@ -554,13 +556,15 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 					<RewardsTab
 						currentVault={currentVault}
 						hasStakingRewardsLive={hasStakingRewardsLive}
+						vaultData={vaultData}
+						updateVaultData={updateVaultData}
 					/>
 				) : (
 					<div
 						className={
 							'col-span-12 flex flex-col space-x-0 space-y-2 p-4 md:flex-row md:space-x-4 md:space-y-0 md:px-8 md:py-10'
 						}>
-						<VaultDetailsQuickActionsFrom />
+						<VaultDetailsQuickActionsFrom vaultData={vaultData} />
 						<VaultDetailsQuickActionsSwitch />
 						<VaultDetailsQuickActionsTo />
 						<div className={'w-full space-y-0 md:w-42 md:min-w-42 md:space-y-2'}>
@@ -598,6 +602,8 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 							<RewardsTab
 								currentVault={currentVault}
 								hasStakingRewardsLive={hasStakingRewardsLive}
+								vaultData={vaultData}
+								updateVaultData={updateVaultData}
 							/>
 						</div>
 					</Fragment>
