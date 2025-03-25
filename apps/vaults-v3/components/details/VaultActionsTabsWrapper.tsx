@@ -24,6 +24,8 @@ import {VaultDetailsQuickActionsTo} from '@vaults-v3/components/details/actions/
 import {RewardsTab} from '@vaults-v3/components/details/RewardsTab';
 import {SettingsPopover} from '@vaults-v3/components/SettingsPopover';
 import {readContracts} from '@wagmi/core';
+import {InfoTooltip} from '@common/components/InfoTooltip';
+import {Switch} from '@common/components/Switch';
 import {useYearn} from '@common/contexts/useYearn';
 import {DISABLED_VEYFI_GAUGES_VAULTS_LIST} from '@common/utils/constants';
 
@@ -571,21 +573,34 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 						<VaultDetailsQuickActionsSwitch />
 						<VaultDetailsQuickActionsTo />
 						<div className={'w-full space-y-0 md:w-42 md:min-w-42 md:space-y-2'}>
-							<p className={'hidden text-base md:inline'}>&nbsp;</p>
 							<div>
+								{hasStakingRewardsLive && isDepositing ? (
+									<div className={'mt-1 flex justify-between pb-[10px]'}>
+										<div className={'flex items-center gap-5'}>
+											<InfoTooltip
+												text={
+													isAutoStakingEnabled
+														? 'Automatically deposit your tokens without staking them for additional rewards.'
+														: 'Automatically stake your tokens after depositing to earn additional rewards.'
+												}
+												size={'sm'}
+											/>
+											<p className={'text-xs text-neutral-600'}>
+												{isAutoStakingEnabled ? 'Deposit and Stake' : 'Deposit only'}
+											</p>
+										</div>
+										<Switch
+											isEnabled={isAutoStakingEnabled}
+											onSwitch={(): void => set_isAutoStakingEnabled(!isAutoStakingEnabled)}
+										/>
+									</div>
+								) : (
+									<div className={'h-8'} />
+								)}
 								<VaultDetailsQuickActionsButtons
 									currentVault={currentVault}
 									hasStakingRewardsLive={hasStakingRewardsLive}
 								/>
-								{hasStakingRewardsLive && isDepositing && (
-									<div className={'mt-1 flex justify-between'}>
-										<button
-											className={'font-number text-xxs text-neutral-900/50'}
-											onClick={(): void => set_isAutoStakingEnabled(!isAutoStakingEnabled)}>
-											{isAutoStakingEnabled ? 'Deposit only' : 'Deposit and Stake'}
-										</button>
-									</div>
-								)}
 							</div>
 						</div>
 					</div>

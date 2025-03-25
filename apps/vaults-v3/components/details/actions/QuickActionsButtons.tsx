@@ -2,6 +2,7 @@ import {useCallback, useState} from 'react';
 import {useRouter} from 'next/router';
 import {usePlausible} from 'next-plausible';
 import {maxUint256} from 'viem';
+import {motion} from 'framer-motion';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {useAsyncTrigger} from '@builtbymom/web3/hooks/useAsyncTrigger';
 import {isZero, toAddress, toBigInt, zeroNormalizedBN} from '@builtbymom/web3/utils';
@@ -229,7 +230,14 @@ export function VaultDetailsQuickActionsButtons({
 						toBigInt(toBigInt(actionParams.amount?.raw)) >
 							toBigInt(maxDepositPossible(toAddress(actionParams?.selectedOptionFrom?.value)).raw)
 					}>
-					{'Deposit and Stake'}
+					<motion.div
+						key={isAutoStakingEnabled ? 'deposit-stake' : 'deposit-only'}
+						initial={{opacity: 0, y: 10}}
+						animate={{opacity: 1, y: 0}}
+						exit={{opacity: 0, y: -10}}
+						transition={{duration: 0.3}}>
+						{'Deposit and Stake'}
+					</motion.div>
 				</Button>
 			);
 		}
@@ -242,7 +250,14 @@ export function VaultDetailsQuickActionsButtons({
 				className={'w-full'}
 				isBusy={txStatusExecuteDeposit.pending}
 				isDisabled={isButtonDisabled}>
-				{isDepositing ? 'Deposit' : 'Migrate'}
+				<motion.div
+					key={isDepositing ? 'deposit' : 'migrate'}
+					initial={{opacity: 0, y: 10}}
+					animate={{opacity: 1, y: 0}}
+					exit={{opacity: 0, y: -10}}
+					transition={{duration: 0.3}}>
+					{isDepositing ? 'Deposit' : 'Migrate'}
+				</motion.div>
 			</Button>
 		);
 	}
