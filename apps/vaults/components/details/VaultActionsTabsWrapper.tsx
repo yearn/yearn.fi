@@ -365,7 +365,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 								)}>
 								{'Boost'}
 							</div>
-							<div className={'z-10 hidden border-b-2 border-neutral-900 pb-4 font-bold md:block'}>
+							<div className={'hidden border-b-2 border-neutral-900 pb-4 font-bold md:block'}>
 								{getTabLabel()}
 							</div>
 						</div>
