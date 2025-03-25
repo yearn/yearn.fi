@@ -318,7 +318,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 	const {vaultData, updateVaultData} = useVaultStakingData({currentVault});
 	const [unstakedBalance, set_unstakedBalance] = useState<TNormalizedBN | undefined>(undefined);
 	const [possibleTabs, set_possibleTabs] = useState<TTabsOptions[]>([tabs[0], tabs[1]]);
-	const [hasStakingRewardsLive, set_hasStakingRewardsLive] = useState(true);
+	const [hasStakingRewardsLive, set_hasStakingRewardsLive] = useState(false);
 	const [currentTab, set_currentTab] = useState<TTabsOptions>(
 		getCurrentTab({
 			isDepositing,
@@ -327,7 +327,6 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 		})
 	);
 	const hasStakingRewards = Boolean(currentVault.staking.available);
-	const {currentSolver} = useSolver();
 
 	const shouldForceDisplayBoostTab = !!DISABLED_VEYFI_GAUGES_VAULTS_LIST.find(
 		vault => vault.address === currentVault.address
@@ -381,7 +380,6 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 		set_unstakedBalance(toNormalizedBN(decodeAsBigInt(result[0]), currentVault.decimals));
 		set_hasStakingRewardsLive(hasLiveRewards);
 	}, [currentVault, address]);
-
 	/**********************************************************************************************
 	 ** As we want live data, we want the data to be refreshed every time the block number changes.
 	 ** This way, the user will always have the most up-to-date data.

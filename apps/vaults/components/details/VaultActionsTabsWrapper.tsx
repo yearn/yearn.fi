@@ -9,7 +9,6 @@ import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
 import {useUpdateEffect} from '@react-hookz/web';
 import {SettingsPopover} from '@vaults/components/SettingsPopover';
 import {Flow, useActionFlow} from '@vaults/contexts/useActionFlow';
-import {useSolver} from '@vaults/contexts/useSolver';
 import {STAKING_REWARDS_ABI} from '@vaults/utils/abi/stakingRewards.abi';
 import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
 import {VaultDetailsQuickActionsButtons} from '@vaults-v3/components/details/actions/QuickActionsButtons';
@@ -20,7 +19,6 @@ import {RewardsTab} from '@vaults-v3/components/details/RewardsTab';
 import {getCurrentTab, tabs, VaultDetailsTab} from '@vaults-v3/components/details/VaultActionsTabsWrapper';
 import {readContracts} from '@wagmi/core';
 import {parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
-import {Solver} from '@yearn-finance/web-lib/utils/schemas/yDaemonTokenListBalances';
 import {useYearn} from '@common/contexts/useYearn';
 
 import type {ReactElement} from 'react';
@@ -69,7 +67,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 	const {onSwitchSelectedOptions, isDepositing, actionParams} = useActionFlow();
 	const [possibleTabs, set_possibleTabs] = useState<TTabsOptions[]>([tabs[0], tabs[1]]);
 	const [unstakedBalance, set_unstakedBalance] = useState<TNormalizedBN | undefined>(undefined);
-	const [hasStakingRewardsLive, set_hasStakingRewardsLive] = useState(true);
+	const [hasStakingRewardsLive, set_hasStakingRewardsLive] = useState(false);
 	const [currentTab, set_currentTab] = useState<TTabsOptions>(
 		getCurrentTab({
 			isDepositing,
@@ -78,8 +76,6 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 		})
 	);
 	const hasStakingRewards = Boolean(currentVault.staking.available);
-
-	const {currentSolver} = useSolver();
 
 	const {data: blockNumber} = useBlockNumber({watch: true});
 	/**********************************************************************************************
@@ -206,7 +202,6 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 		}
 		return 'Boost';
 	}, [currentVault.staking.source]);
-
 	return (
 		<>
 			{currentVault?.migration?.available && (
