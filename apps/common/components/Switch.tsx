@@ -7,10 +7,11 @@ import type {KeyboardEvent, ReactElement} from 'react';
 type TSwitch = {
 	isEnabled: boolean;
 	onSwitch?: () => void;
+	isDisabled?: boolean;
 };
 
 export function Switch(props: TSwitch): ReactElement {
-	const {isEnabled, onSwitch} = props;
+	const {isEnabled, onSwitch, isDisabled = false} = props;
 	const [isEnabledState, set_isEnabledState] = useState(isEnabled);
 
 	function safeOnSwitch(): void {
@@ -33,6 +34,7 @@ export function Switch(props: TSwitch): ReactElement {
 				checked={isChecked}
 				onChange={safeOnSwitch}
 				onKeyDown={handleOnKeyDown}
+				disabled={isDisabled}
 				className={'yearn--next-switch'}>
 				<span className={'sr-only'}>{'Use setting'}</span>
 				<div

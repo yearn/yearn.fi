@@ -311,7 +311,7 @@ export function VaultDetailsTab(props: {
  ** corresponding actions that can be taken.
  *************************************************************************************************/
 export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const {onSwitchSelectedOptions, isDepositing, actionParams} = useActionFlow();
+	const {onSwitchSelectedOptions, isDepositing, actionParams, hasVeYFIBalance} = useActionFlow();
 	const {address} = useWeb3();
 	const router = useRouter();
 	const {isAutoStakingEnabled, set_isAutoStakingEnabled} = useYearn();
@@ -435,19 +435,17 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 
 	/************************************************************************************************
 	 * This effect manages the auto-staking feature based on staking rewards availability.
-	 * It disables auto-staking if there are no staking rewards and the last reward ended over a week ago.
+	 * It disables auto-staking if there are no staking rewards and the last reward ended over a week ago or if the user doesn't have veYFI balance.
 	 * Otherwise, it enables auto-staking.
 	 *
 	 * The check for rewards ending over a week ago helps prevent unnecessary auto-staking
 	 * for vaults with expired or long-inactive staking programs.
 	 ************************************************************************************************/
 	useEffect(() => {
-		if (
-			!hasStakingRewards &&
-			currentVault.staking.rewards?.some(
-				el => Math.floor(Date.now() / 1000) - (el.finishedAt ?? 0) > 60 * 60 * 24 * 7
-			)
-		) {
+		const hasStakingRewardsEndedOverAWeekAgo = currentVault.staking.rewards?.some(
+			el => Math.floor(Date.now() / 1000) - (el.finishedAt ?? 0) > 60 * 60 * 24 * 7
+		);
+		if ((!hasStakingRewards && hasStakingRewardsEndedOverAWeekAgo) || !hasVeYFIBalance) {
 			set_isAutoStakingEnabled(false);
 			return;
 		}
@@ -459,6 +457,16 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 		toAddress(currentVault.address) === toAddress(`0xad17a225074191d5c8a37b50fda1ae278a2ee6a2`) ||
 		toAddress(currentVault.address) === toAddress(`0x65343f414ffd6c97b0f6add33d16f6845ac22bac`) ||
 		toAddress(currentVault.address) === toAddress(`0xfaee21d0f0af88ee72bb6d68e54a90e6ec2616de`);
+
+	const tooltipText = useMemo(() => {
+		if (!hasVeYFIBalance) {
+			return 'You need to lock some YFI to enable auto-staking.';
+		}
+		if (isAutoStakingEnabled) {
+			return 'Deposit your tokens and automatically stake them to earn additional rewards.';
+		}
+		return 'Deposit your tokens without automatically staking them for additional rewards.';
+	}, [hasVeYFIBalance, isAutoStakingEnabled]);
 
 	return (
 		<>
@@ -575,24 +583,27 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 						<div className={'w-full space-y-0 md:w-42 md:min-w-42 md:space-y-2'}>
 							<div>
 								{hasStakingRewardsLive && isDepositing ? (
-									<div className={'mt-1 flex justify-between pb-[10px]'}>
+									<div className={cl('mt-1 flex justify-between pb-[10px]')}>
 										<div className={'flex items-center gap-5'}>
 											<InfoTooltip
-												className="max-sm:left-1"
-												text={
-													isAutoStakingEnabled
-														? 'Deposit your tokens without automatically staking them for additional rewards.'
-														: 'Deposit your tokens and automatically stake them to earn additional rewards.'
-												}
+												iconClassName={!hasVeYFIBalance ? 'opacity-40' : ''}
+												className="max-sm:left"
+												text={tooltipText}
 												size={'sm'}
 											/>
-											<p className={'text-xs text-neutral-600'}>
+											<p
+												className={cl(
+													'text-xs text-neutral-600',
+													!hasVeYFIBalance ? 'opacity-40' : ''
+												)}>
 												{isAutoStakingEnabled ? 'Deposit and Stake' : 'Deposit only'}
 											</p>
 										</div>
+
 										<Switch
 											isEnabled={isAutoStakingEnabled}
 											onSwitch={(): void => set_isAutoStakingEnabled(!isAutoStakingEnabled)}
+											isDisabled={!hasVeYFIBalance}
 										/>
 									</div>
 								) : (

@@ -75,6 +75,7 @@ type TActionFlowContext = {
 	maxDepositPossible: (address: TAddress) => TNormalizedBN;
 	maxWithdrawPossible: () => {limit: TNormalizedBN; safeLimit: TNormalizedBN; isLimited: boolean};
 	currentSolver: TSolver;
+	hasVeYFIBalance: boolean;
 };
 const DefaultActionFlowContext: TActionFlowContext = {
 	currentVault: {} as TYDaemonVault, // eslint-disable-line @typescript-eslint/consistent-type-assertions
@@ -99,7 +100,8 @@ const DefaultActionFlowContext: TActionFlowContext = {
 		safeLimit: zeroNormalizedBN,
 		isLimited: false
 	}),
-	currentSolver: Solver.enum.Vanilla || 'Vanilla'
+	currentSolver: Solver.enum.Vanilla || 'Vanilla',
+	hasVeYFIBalance: false
 };
 
 type TUseContextualIs = {
@@ -418,6 +420,7 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 	});
 
 	const {amount: veYFIBalance = 0n, end: lockEnds = 0n} = (data as {amount: bigint; end: bigint} | undefined) || {};
+	const hasVeYFIBalance = veYFIBalance > 0n && lockEnds > currentTimestamp;
 
 	/**********************************************************************************************
 	 ** The currentSolver is a memoized value that determines which solver should be used based on
@@ -445,8 +448,7 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 			isAutoStakingEnabled &&
 			isDepositing &&
 			isUnderlyingToken &&
-			lockEnds > currentTimestamp &&
-			veYFIBalance > 0n
+			hasVeYFIBalance
 		) {
 			return Solver.enum.GaugeStakingBooster;
 		}
@@ -1017,7 +1019,8 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 			isDepositing,
 			maxDepositPossible,
 			maxWithdrawPossible,
-			currentSolver
+			currentSolver,
+			hasVeYFIBalance
 		}),
 		[
 			props.currentVault,
