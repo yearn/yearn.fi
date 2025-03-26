@@ -578,10 +578,11 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 									<div className={'mt-1 flex justify-between pb-[10px]'}>
 										<div className={'flex items-center gap-5'}>
 											<InfoTooltip
+												className="max-sm:left-1"
 												text={
 													isAutoStakingEnabled
-														? 'Automatically deposit your tokens without staking them for additional rewards.'
-														: 'Automatically stake your tokens after depositing to earn additional rewards.'
+														? 'Deposit your tokens without automatically staking them for additional rewards.'
+														: 'Deposit your tokens and automatically stake them to earn additional rewards.'
 												}
 												size={'sm'}
 											/>
