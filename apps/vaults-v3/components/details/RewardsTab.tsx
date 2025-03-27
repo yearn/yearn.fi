@@ -14,7 +14,6 @@ import {
 	toBigInt
 } from '@builtbymom/web3/utils';
 import {approveERC20, defaultTxStatus} from '@builtbymom/web3/utils/wagmi';
-import {TStakingInfo} from '@vaults/hooks/useVaultStakingData';
 import {VEYFI_GAUGE_ABI} from '@vaults/utils/abi/veYFIGauge.abi';
 import {
 	claim as claimAction,
@@ -31,6 +30,7 @@ import {useYearnToken} from '@common/hooks/useYearnToken';
 
 import type {ChangeEvent, ReactElement} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TStakingInfo} from '@vaults/hooks/useVaultStakingData';
 
 /**************************************************************************************************
  ** The BoostMessage component will display a message to the user if the current vault has staking
@@ -434,11 +434,13 @@ export function RewardsTab(props: {
 			}
 		}
 	}, [
+		unstakeAmount,
+		vaultData.stakingDecimals,
+		vaultData?.address,
 		props.currentVault.staking.source,
 		props.currentVault.chainID,
 		provider,
-		vaultData?.address,
-		vaultData.stakedBalanceOf.raw,
+		isUnstakingMax,
 		refreshData,
 		updateVaultData
 	]);
