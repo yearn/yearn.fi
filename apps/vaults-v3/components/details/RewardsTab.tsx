@@ -314,6 +314,8 @@ export function RewardsTab(props: {
 
 	const isUnstakingMax =
 		fromNormalized(unstakeAmount, vaultData.stakingDecimals || 18) === vaultData.stakedBalanceOf.raw;
+	const isLargerThanStakedBalance =
+		fromNormalized(unstakeAmount, vaultData.stakingDecimals || 18) > vaultData.stakedBalanceOf.raw;
 
 	const isApproved = vaultData.vaultAllowance.raw >= vaultData.vaultBalanceOf.raw;
 
@@ -576,7 +578,7 @@ export function RewardsTab(props: {
 							className={'w-full md:w-[180px] md:min-w-[180px]'}
 							onClick={onUnstake}
 							isBusy={unstakeStatus.pending}
-							isDisabled={!isActive || Number(unstakeAmount) <= 0}>
+							isDisabled={!isActive || Number(unstakeAmount) <= 0 || isLargerThanStakedBalance}>
 							{isUnstakingMax ? 'Claim & Exit' : 'Unstake'}
 						</Button>
 					</div>
