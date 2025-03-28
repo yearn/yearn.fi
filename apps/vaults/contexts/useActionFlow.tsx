@@ -447,8 +447,7 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 			props.currentVault.staking.source === 'VeYFI' &&
 			isAutoStakingEnabled &&
 			isDepositing &&
-			isUnderlyingToken &&
-			hasVeYFIBalance
+			isUnderlyingToken
 		) {
 			return Solver.enum.GaugeStakingBooster;
 		}

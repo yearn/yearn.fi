@@ -12,11 +12,17 @@ import {useYearnTokenPrice} from '@common/hooks/useYearnTokenPrice';
 
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 
-function VaultAPY({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+function VaultAPY({
+	currentVault,
+	hasVeYFIBalance
+}: {
+	currentVault: TYDaemonVault;
+	hasVeYFIBalance: boolean;
+}): ReactElement {
 	const isSourceVeYFI = currentVault.staking.source === 'VeYFI';
 	const {isAutoStakingEnabled} = useYearn();
 
-	if (isSourceVeYFI && isAutoStakingEnabled) {
+	if (isSourceVeYFI && isAutoStakingEnabled && hasVeYFIBalance) {
 		const sumOfRewardsAPY = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.extra.gammaRewardAPR;
 		const veYFIRange = [
 			currentVault.apr.extra.stakingRewardsAPR / 10 + currentVault.apr.extra.gammaRewardAPR,
@@ -54,7 +60,8 @@ function VaultAPY({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 
 export function VaultDetailsQuickActionsTo(): ReactElement {
 	const {isActive} = useWeb3();
-	const {currentVault, possibleOptionsTo, actionParams, onUpdateSelectedOptionTo, isDepositing} = useActionFlow();
+	const {currentVault, possibleOptionsTo, actionParams, onUpdateSelectedOptionTo, isDepositing, hasVeYFIBalance} =
+		useActionFlow();
 	const {expectedOut, isLoadingExpectedOut} = useSolver();
 	const {pathname} = useRouter();
 	const isV3Page = pathname.startsWith(`/v3`);
@@ -87,7 +94,10 @@ export function VaultDetailsQuickActionsTo(): ReactElement {
 					<legend
 						className={'font-number inline text-xs text-neutral-900/50 md:hidden'}
 						suppressHydrationWarning>
-						<VaultAPY currentVault={currentVault} />
+						<VaultAPY
+							currentVault={currentVault}
+							hasVeYFIBalance={hasVeYFIBalance}
+						/>
 					</legend>
 				</div>
 				<Renderable
@@ -114,7 +124,14 @@ export function VaultDetailsQuickActionsTo(): ReactElement {
 					<legend
 						className={'font-number hidden text-xs text-neutral-900/50 md:inline'}
 						suppressHydrationWarning>
-						{isDepositing ? <VaultAPY currentVault={currentVault} /> : ''}
+						{isDepositing ? (
+							<VaultAPY
+								currentVault={currentVault}
+								hasVeYFIBalance={hasVeYFIBalance}
+							/>
+						) : (
+							''
+						)}
 					</legend>
 				</div>
 			</div>

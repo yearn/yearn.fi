@@ -164,7 +164,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 
 	/************************************************************************************************
 	 * This effect manages the auto-staking feature based on staking rewards availability.
-	 * It disables auto-staking if there are no staking rewards and the last reward ended over a week ago or if the user doesn't have veYFI balance.
+	 * It disables auto-staking if there are no staking rewards and the last reward ended over a week ago.
 	 * Otherwise, it enables auto-staking.
 	 *
 	 * The check for rewards ending over a week ago helps prevent unnecessary auto-staking
@@ -174,7 +174,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 		const hasStakingRewardsEndedOverAWeekAgo = currentVault.staking.rewards?.some(
 			el => Math.floor(Date.now() / 1000) - (el.finishedAt ?? 0) > 60 * 60 * 24 * 7
 		);
-		if ((!hasStakingRewards && hasStakingRewardsEndedOverAWeekAgo) || !hasVeYFIBalance) {
+		if (!hasStakingRewards && hasStakingRewardsEndedOverAWeekAgo) {
 			set_isAutoStakingEnabled(false);
 			return;
 		}
@@ -204,14 +204,11 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 	}, [currentVault.staking.source]);
 
 	const tooltipText = useMemo(() => {
-		if (!hasVeYFIBalance) {
-			return 'You need to lock some YFI to enable auto-staking.';
-		}
 		if (isAutoStakingEnabled) {
 			return 'Deposit your tokens and automatically stake them to earn additional rewards.';
 		}
 		return 'Deposit your tokens without automatically staking them for additional rewards.';
-	}, [hasVeYFIBalance, isAutoStakingEnabled]);
+	}, [isAutoStakingEnabled]);
 
 	return (
 		<>
@@ -339,11 +336,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 						<div className={'w-full space-y-0 md:w-42 md:min-w-42 md:space-y-2'}>
 							<div>
 								{hasStakingRewardsLive && isDepositing ? (
-									<div
-										className={cl(
-											'mt-1 flex justify-between pb-[10px]',
-											!hasVeYFIBalance ? 'opacity-40' : ''
-										)}>
+									<div className={cl('mt-1 flex justify-between pb-[10px]')}>
 										<div className={'flex items-center gap-5'}>
 											<InfoTooltip
 												iconClassName={!hasVeYFIBalance ? 'opacity-40' : ''}
@@ -358,7 +351,6 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 										<Switch
 											isEnabled={isAutoStakingEnabled}
 											onSwitch={(): void => set_isAutoStakingEnabled(!isAutoStakingEnabled)}
-											isDisabled={!hasVeYFIBalance}
 										/>
 									</div>
 								) : (
