@@ -164,7 +164,7 @@ function BoostMessage(props: {currentVault: TYDaemonVault; hasStakingRewardsLive
 function VeYFIBoostMessage(props: {
 	currentVault: TYDaemonVault;
 	hasStakingRewardsLive: boolean;
-	shouldForceAllowUnstake: boolean;
+	shouldForceUnstake: boolean;
 }): ReactElement {
 	const vaultDataource = props.currentVault.staking.source;
 	const extraAPY = props.currentVault.apr.extra.stakingRewardsAPR;
@@ -254,7 +254,7 @@ function VeYFIBoostMessage(props: {
 		return shuffle(apps);
 	}, []);
 
-	if (props.shouldForceAllowUnstake) {
+	if (props.shouldForceUnstake) {
 		return (
 			<div className={cl('flex w-full flex-col rounded-2xl p-6 my-auto', 'bg-neutral-900')}>
 				<b className={cl('text-lg text-neutral-100')}>{'This gauge is no longer active'}</b>
@@ -319,7 +319,7 @@ export function RewardsTab(props: {currentVault: TYDaemonVault; hasStakingReward
 	 ** Check if the current vault is in the list of disabled veYFI gauges. If it is, we should make
 	 ** it possible to withdraw the rewards and display a corresponding message to the user.
 	 *************************************************************************************************/
-	const shouldForceAllowUnstake = DISABLED_VEYFI_GAUGES_VAULTS_LIST.includes(props.currentVault.address);
+	const shouldForceUnstake = DISABLED_VEYFI_GAUGES_VAULTS_LIST.includes(props.currentVault.address);
 
 	const {data: symbol} = useReadContract({
 		address: vaultData.address,
@@ -495,43 +495,46 @@ export function RewardsTab(props: {currentVault: TYDaemonVault; hasStakingReward
 					hasStakingRewardsLive={props.hasStakingRewardsLive}
 					currentVault={props.currentVault}
 				/>
-				<div className={'flex flex-col gap-2'}>
-					<div>
-						<div className={'font-bold'}>{'Stake'}</div>
-					</div>
-					<div className={'flex flex-col gap-4 md:flex-row'}>
-						<FakeInput
-							className={'w-full'}
-							legend={
-								<div className={'flex items-center justify-between'}>
-									<p>{`${formatAmount(vaultData.vaultBalanceOf.normalized, 6)} ${props.currentVault.symbol} available to stake`}</p>
-									<p>{`${formatCounterValue(vaultData.vaultBalanceOf.normalized, vaultTokenPrice.normalized)}`}</p>
-								</div>
-							}
-							value={
-								toBigInt(vaultData.vaultBalanceOf.raw) === 0n ? undefined : (
-									<Counter
-										value={Number(vaultData.vaultBalanceOf.normalized)}
-										decimals={18}
-									/>
-								)
-							}
-						/>
+				{!shouldForceUnstake && (
+					<div className={'flex flex-col gap-2'}>
 						<div>
-							<Button
-								className={'w-full md:w-[180px] md:min-w-[180px]'}
-								onClick={(): unknown => (isApproved ? onStake() : onApprove())}
-								isBusy={stakeStatus.pending || approveStakeStatus.pending}
-								isDisabled={
-									!isActive ||
-									toBigInt(vaultData.vaultBalanceOf.raw) <= 0n ||
-									(!props.hasStakingRewardsLive && props.currentVault.staking.source !== 'VeYFI')
-								}>
-								{isApproved ? 'Stake' : 'Approve & Stake'}
-							</Button>
+							<div className={'font-bold'}>{'Stake'}</div>
+						</div>
+
+						<div className={'flex flex-col gap-4 md:flex-row'}>
+							<FakeInput
+								className={'w-full'}
+								legend={
+									<div className={'flex items-center justify-between'}>
+										<p>{`${formatAmount(vaultData.vaultBalanceOf.normalized, 6)} ${props.currentVault.symbol} available to stake`}</p>
+										<p>{`${formatCounterValue(vaultData.vaultBalanceOf.normalized, vaultTokenPrice.normalized)}`}</p>
+									</div>
+								}
+								value={
+									toBigInt(vaultData.vaultBalanceOf.raw) === 0n ? undefined : (
+										<Counter
+											value={Number(vaultData.vaultBalanceOf.normalized)}
+											decimals={18}
+										/>
+									)
+								}
+							/>
+							<div>
+								<Button
+									className={'w-full md:w-[180px] md:min-w-[180px]'}
+									onClick={(): unknown => (isApproved ? onStake() : onApprove())}
+									isBusy={stakeStatus.pending || approveStakeStatus.pending}
+									isDisabled={
+										!isActive ||
+										toBigInt(vaultData.vaultBalanceOf.raw) <= 0n ||
+										(!props.hasStakingRewardsLive && props.currentVault.staking.source !== 'VeYFI')
+									}>
+									{isApproved ? 'Stake' : 'Approve & Stake'}
+								</Button>
+							</div>
 						</div>
 					</div>
-				</div>
+				)}
 				<div className={'flex flex-col gap-2'}>
 					<div>
 						<div className={'font-bold'}>{'Unstake'}</div>
@@ -564,44 +567,46 @@ export function RewardsTab(props: {currentVault: TYDaemonVault; hasStakingReward
 						</Button>
 					</div>
 				</div>
-				<div className={'flex flex-col gap-2'}>
-					<div>
-						<div className={'font-bold'}>{'Claim Rewards'}</div>
-					</div>
-					<div className={'flex flex-col gap-4 md:flex-row'}>
-						<FakeInput
-							className={'w-full'}
-							legend={
-								<div className={'flex items-center justify-between'}>
-									<p>{`${formatAmount(vaultData.stakedEarned.normalized, 6)} ${rewardTokenBalance.symbol || (props.currentVault.staking.rewards || [])[0]?.symbol || ''} available to claim`}</p>
-									<p>{`${formatCounterValue(vaultData.stakedEarned.normalized, rewardTokenPrice.normalized)}`}</p>
-								</div>
-							}
-							value={
-								toBigInt(vaultData.stakedEarned.raw) === 0n ? undefined : (
-									<Counter
-										value={Number(vaultData.stakedEarned.normalized)}
-										decimals={vaultData.rewardDecimals || 18}
-									/>
-								)
-							}
-						/>
+				{!shouldForceUnstake && (
+					<div className={'flex flex-col gap-2'}>
+						<div>
+							<div className={'font-bold'}>{'Claim Rewards'}</div>
+						</div>
+						<div className={'flex flex-col gap-4 md:flex-row'}>
+							<FakeInput
+								className={'w-full'}
+								legend={
+									<div className={'flex items-center justify-between'}>
+										<p>{`${formatAmount(vaultData.stakedEarned.normalized, 6)} ${rewardTokenBalance.symbol || (props.currentVault.staking.rewards || [])[0]?.symbol || ''} available to claim`}</p>
+										<p>{`${formatCounterValue(vaultData.stakedEarned.normalized, rewardTokenPrice.normalized)}`}</p>
+									</div>
+								}
+								value={
+									toBigInt(vaultData.stakedEarned.raw) === 0n ? undefined : (
+										<Counter
+											value={Number(vaultData.stakedEarned.normalized)}
+											decimals={vaultData.rewardDecimals || 18}
+										/>
+									)
+								}
+							/>
 
-						<Button
-							className={'w-full md:w-[180px] md:min-w-[180px]'}
-							onClick={onClaim}
-							isBusy={claimStatus.pending}
-							isDisabled={!isActive || isZero(vaultData.stakedEarned.raw)}>
-							{'Claim'}
-						</Button>
+							<Button
+								className={'w-full md:w-[180px] md:min-w-[180px]'}
+								onClick={onClaim}
+								isBusy={claimStatus.pending}
+								isDisabled={!isActive || isZero(vaultData.stakedEarned.raw)}>
+								{'Claim'}
+							</Button>
+						</div>
 					</div>
-				</div>
+				)}
 			</div>
 			<div className={'flex flex-col gap-6 rounded-b-3xl p-4 md:gap-4 md:p-8'}>
 				<VeYFIBoostMessage
 					currentVault={props.currentVault}
 					hasStakingRewardsLive={props.hasStakingRewardsLive}
-					shouldForceAllowUnstake={shouldForceAllowUnstake}
+					shouldForceUnstake={shouldForceUnstake}
 				/>
 			</div>
 		</div>
