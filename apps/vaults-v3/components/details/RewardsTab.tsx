@@ -487,7 +487,7 @@ export function RewardsTab(props: {currentVault: TYDaemonVault; hasStakingReward
 			</div>
 		);
 	}
-
+	console.log(props.currentVault);
 	if (shouldForceUnstake)
 		return (
 			<div className={'grid grid-cols-1 md:grid-cols-2'}>
@@ -506,7 +506,7 @@ export function RewardsTab(props: {currentVault: TYDaemonVault; hasStakingReward
 								className={'w-full'}
 								legend={
 									<div className={'flex items-center justify-between'}>
-										<p>{`${formatAmount(vaultData.stakedBalanceOf.normalized, 6)} ${symbol} staked`}</p>
+										<p>{`${formatAmount(vaultData.stakedBalanceOf.normalized, 6)} ${symbol || props.currentVault.symbol} staked`}</p>
 										<p>{`${formatCounterValue(vaultData.stakedBalanceOf.normalized, vaultTokenPrice.normalized)}`}</p>
 									</div>
 								}
@@ -594,7 +594,7 @@ export function RewardsTab(props: {currentVault: TYDaemonVault; hasStakingReward
 							className={'w-full'}
 							legend={
 								<div className={'flex items-center justify-between'}>
-									<p>{`${formatAmount(vaultData.stakedBalanceOf.normalized, 6)} ${symbol} staked`}</p>
+									<p>{`${formatAmount(vaultData.stakedBalanceOf.normalized, 6)} ${symbol || props.currentVault.symbol} staked`}</p>
 									<p>{`${formatCounterValue(vaultData.stakedBalanceOf.normalized, vaultTokenPrice.normalized)}`}</p>
 								</div>
 							}
