@@ -25,6 +25,7 @@ import {RewardsTab} from '@vaults-v3/components/details/RewardsTab';
 import {SettingsPopover} from '@vaults-v3/components/SettingsPopover';
 import {readContracts} from '@wagmi/core';
 import {useYearn} from '@common/contexts/useYearn';
+import {DISABLED_VEYFI_GAUGES_VAULTS_LIST} from '@common/utils/constants';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
@@ -323,6 +324,8 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 	);
 	const hasStakingRewards = Boolean(currentVault.staking.available);
 
+	const shouldForceDisplayBoostTab = DISABLED_VEYFI_GAUGES_VAULTS_LIST.includes(currentVault.address);
+
 	const getTabLabel = useCallback((): string => {
 		if (currentVault.staking.source === 'VeYFI') {
 			return 'veYFI BOOST';
@@ -453,6 +456,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 		toAddress(currentVault.address) === toAddress(`0xad17a225074191d5c8a37b50fda1ae278a2ee6a2`) ||
 		toAddress(currentVault.address) === toAddress(`0x65343f414ffd6c97b0f6add33d16f6845ac22bac`) ||
 		toAddress(currentVault.address) === toAddress(`0xfaee21d0f0af88ee72bb6d68e54a90e6ec2616de`);
+
 	return (
 		<>
 			{currentVault?.migration?.available && (
@@ -580,7 +584,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 						</div>
 					</div>
 				)}
-				{currentTab.value !== 3 && currentVault.staking.rewards && (
+				{(currentTab.value !== 3 && currentVault.staking.rewards) || shouldForceDisplayBoostTab ? (
 					<Fragment>
 						<div className={'flex flex-row items-center justify-between pl-4 md:px-8'}>
 							<div
@@ -601,7 +605,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 							/>
 						</div>
 					</Fragment>
-				)}
+				) : null}
 			</div>
 		</>
 	);
