@@ -319,8 +319,9 @@ export function RewardsTab(props: {currentVault: TYDaemonVault; hasStakingReward
 	 ** Check if the current vault is in the list of disabled veYFI gauges. If it is, we should make
 	 ** it possible to withdraw the rewards and display a corresponding message to the user.
 	 *************************************************************************************************/
-	const shouldForceUnstake = DISABLED_VEYFI_GAUGES_VAULTS_LIST.includes(props.currentVault.address);
-
+	const shouldForceUnstake = !!DISABLED_VEYFI_GAUGES_VAULTS_LIST.find(
+		vault => vault.address === props.currentVault.address
+	);
 	const {data: symbol} = useReadContract({
 		address: vaultData.address,
 		abi: VEYFI_GAUGE_ABI,
@@ -410,7 +411,7 @@ export function RewardsTab(props: {currentVault: TYDaemonVault; hasStakingReward
 	 ** unstakeVeYFIGauge function.
 	 *********************************************************************************************/
 	const onUnstake = useCallback(async (): Promise<void> => {
-		if (props.currentVault.staking.source === 'VeYFI') {
+		if (props.currentVault.staking.source === 'VeYFI' || shouldForceUnstake) {
 			const result = await unstakeVeYFIAction({
 				connector: provider,
 				chainID: props.currentVault.chainID,
@@ -438,6 +439,7 @@ export function RewardsTab(props: {currentVault: TYDaemonVault; hasStakingReward
 	}, [
 		props.currentVault.staking.source,
 		props.currentVault.chainID,
+		shouldForceUnstake,
 		provider,
 		vaultData?.address,
 		vaultData.stakedBalanceOf.raw,
@@ -487,7 +489,7 @@ export function RewardsTab(props: {currentVault: TYDaemonVault; hasStakingReward
 			</div>
 		);
 	}
-	console.log(props.currentVault);
+
 	if (shouldForceUnstake)
 		return (
 			<div className={'grid grid-cols-1 md:grid-cols-2'}>

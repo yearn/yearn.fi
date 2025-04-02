@@ -19,6 +19,7 @@ import {STAKING_REWARDS_ABI} from '@vaults/utils/abi/stakingRewards.abi';
 import {V3_STAKING_REWARDS_ABI} from '@vaults/utils/abi/V3StakingRewards.abi';
 import {VEYFI_GAUGE_ABI} from '@vaults/utils/abi/veYFIGauge.abi';
 import {readContract, readContracts} from '@wagmi/core';
+import {DISABLED_VEYFI_GAUGES_VAULTS_LIST} from '@common/utils/constants';
 
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TAddress, TNormalizedBN} from '@builtbymom/web3/types';
@@ -41,9 +42,20 @@ export function useVaultStakingData(props: {currentVault: TYDaemonVault}): {
 } {
 	const {address} = useWeb3();
 	const {data: blockNumber} = useBlockNumber({watch: true});
+
+	/**************************************************************************************************
+	 ** Check if the current vault is in the list of disabled veYFI gauges. If it is, we should make
+	 ** it possible to withdraw the rewards and display a corresponding message to the user.
+	 *************************************************************************************************/
+	const foundVaultWithDisabledStaking = DISABLED_VEYFI_GAUGES_VAULTS_LIST.find(
+		vault => vault.address === props.currentVault.address
+	)?.staking;
+
 	const stakingType = props.currentVault.staking.source as 'OP Boost' | 'VeYFI' | 'Juiced' | 'V3 Staking';
 	const [vaultData, set_vaultData] = useState<TStakingInfo>({
-		address: toAddress(props.currentVault.staking.address),
+		address: isZeroAddress(props.currentVault.staking.address)
+			? props.currentVault.staking.address
+			: toAddress(foundVaultWithDisabledStaking),
 		stakingToken: toAddress(''),
 		rewardsToken: toAddress(''),
 		rewardDecimals: undefined,
@@ -60,9 +72,13 @@ export function useVaultStakingData(props: {currentVault: TYDaemonVault}): {
 	 ** the data. It will fetch the most up-to-date data from the blockchain and update the state.
 	 *********************************************************************************************/
 	const refetch = useAsyncTrigger(async () => {
-		if (!props.currentVault.staking.available) {
+		if (!props.currentVault.staking.available && !foundVaultWithDisabledStaking) {
 			return;
 		}
+
+		const stakingAddress = foundVaultWithDisabledStaking
+			? toAddress(foundVaultWithDisabledStaking)
+			: toAddress(props.currentVault.staking.address);
 
 		let stakingToken: TAddress = zeroAddress;
 		let rewardsToken: TAddress = zeroAddress;
@@ -81,47 +97,47 @@ export function useVaultStakingData(props: {currentVault: TYDaemonVault}): {
 		 ** - the user's allowance for the vault token to be spent by the staking contract
 		 ** - the user's balance in the vault contract
 		 ******************************************************************************************/
-		if (stakingType === 'OP Boost' || stakingType === 'VeYFI') {
+		if (stakingType === 'OP Boost' || stakingType === 'VeYFI' || foundVaultWithDisabledStaking) {
 			const data = await readContracts(retrieveConfig(), {
 				contracts: [
 					{
-						address: toAddress(props.currentVault.staking.address),
+						address: toAddress(stakingAddress),
 						chainId: props.currentVault.chainID,
 						abi: stakingType === 'OP Boost' ? STAKING_REWARDS_ABI : VEYFI_GAUGE_ABI,
 						functionName: stakingType === 'OP Boost' ? 'stakingToken' : 'asset'
 					},
 					{
-						address: toAddress(props.currentVault.staking.address),
+						address: toAddress(stakingAddress),
 						chainId: props.currentVault.chainID,
 						abi: stakingType === 'OP Boost' ? STAKING_REWARDS_ABI : VEYFI_GAUGE_ABI,
 						functionName: stakingType === 'OP Boost' ? 'rewardsToken' : 'REWARD_TOKEN'
 					},
 					{
-						address: toAddress(props.currentVault.staking.address),
+						address: toAddress(stakingAddress),
 						abi: STAKING_REWARDS_ABI,
 						chainId: props.currentVault.chainID,
 						functionName: 'totalSupply'
 					},
 					{
-						address: toAddress(props.currentVault.staking.address),
+						address: toAddress(stakingAddress),
 						abi: STAKING_REWARDS_ABI,
 						chainId: props.currentVault.chainID,
 						functionName: 'balanceOf',
 						args: [toAddress(address)]
 					},
 					{
-						address: toAddress(props.currentVault.staking.address),
+						address: toAddress(stakingAddress),
 						abi: STAKING_REWARDS_ABI,
 						chainId: props.currentVault.chainID,
 						functionName: 'earned',
 						args: [toAddress(address)]
 					},
 					{
-						address: toAddress(props.currentVault.address),
+						address: toAddress(stakingAddress),
 						abi: erc20Abi,
 						chainId: props.currentVault.chainID,
 						functionName: 'allowance',
-						args: [toAddress(address), toAddress(props.currentVault.staking.address)]
+						args: [toAddress(address), toAddress(stakingAddress)]
 					},
 					{
 						address: toAddress(props.currentVault.address),
@@ -297,7 +313,7 @@ export function useVaultStakingData(props: {currentVault: TYDaemonVault}): {
 		const stakingDecimals = decodeAsNumber(decimalsResult[1]);
 
 		set_vaultData({
-			address: toAddress(props.currentVault.staking.address),
+			address: toAddress(stakingAddress),
 			stakingToken,
 			rewardsToken,
 			rewardDecimals,
@@ -310,6 +326,7 @@ export function useVaultStakingData(props: {currentVault: TYDaemonVault}): {
 		});
 	}, [
 		address,
+		foundVaultWithDisabledStaking,
 		props.currentVault.address,
 		props.currentVault.chainID,
 		props.currentVault.decimals,
