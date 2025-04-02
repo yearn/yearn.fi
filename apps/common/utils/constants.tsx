@@ -299,4 +299,6 @@ export const iconsDict = {
  ** List of vaults with disabled veYFI gauge. Hardcoded so users could still unstake/claim and
  ** exit.
  *************************************************************************************************/
-export const DISABLED_VEYFI_GAUGES_VAULTS_LIST = ['0x42842754aBce504E12C20E434Af8960FDf85C833'];
+export const DISABLED_VEYFI_GAUGES_VAULTS_LIST = [
+	{address: '0x42842754aBce504E12C20E434Af8960FDf85C833', staking: '0xb98343536e584cf686427a54574567ba5bda8070'}
+];

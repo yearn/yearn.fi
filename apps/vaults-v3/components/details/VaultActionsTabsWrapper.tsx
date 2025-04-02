@@ -324,8 +324,9 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 	);
 	const hasStakingRewards = Boolean(currentVault.staking.available);
 
-	const shouldForceDisplayBoostTab = DISABLED_VEYFI_GAUGES_VAULTS_LIST.includes(currentVault.address);
-
+	const shouldForceDisplayBoostTab = !!DISABLED_VEYFI_GAUGES_VAULTS_LIST.find(
+		vault => vault.address === currentVault.address
+	);
 	const getTabLabel = useCallback((): string => {
 		if (currentVault.staking.source === 'VeYFI') {
 			return 'veYFI BOOST';
