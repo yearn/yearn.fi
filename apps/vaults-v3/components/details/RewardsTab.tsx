@@ -1,4 +1,4 @@
-import {Fragment, useCallback, useMemo, useState} from 'react';
+import {Fragment, useCallback, useEffect, useMemo, useState} from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import {useRouter} from 'next/router';
@@ -326,8 +326,7 @@ export function RewardsTab(props: {
 	const [stakeStatus, set_stakeStatus] = useState(defaultTxStatus);
 	const [claimStatus, set_claimStatus] = useState(defaultTxStatus);
 	const [unstakeStatus, set_unstakeStatus] = useState(defaultTxStatus);
-
-	const [unstakeAmount, set_unstakeAmount] = useState<string>(vaultData.stakedBalanceOf.display);
+	const [unstakeAmount, set_unstakeAmount] = useState<string>('-1');
 
 	const isUnstakingMax =
 		fromNormalized(unstakeAmount, vaultData.stakingDecimals || 18) === vaultData.stakedBalanceOf.raw;
@@ -501,6 +500,12 @@ export function RewardsTab(props: {
 		() => getPrice({address: props.currentVault.address, chainID: props.currentVault.chainID}),
 		[getPrice, props.currentVault]
 	);
+
+	useEffect(() => {
+		if (unstakeAmount === '-1') {
+			set_unstakeAmount(vaultData.stakedBalanceOf.display);
+		}
+	}, [vaultData.stakedBalanceOf.display, unstakeAmount]);
 
 	if (props.currentVault.staking.rewards?.length === 0) {
 		return (
