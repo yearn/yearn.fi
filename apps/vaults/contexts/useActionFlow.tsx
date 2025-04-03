@@ -75,6 +75,7 @@ type TActionFlowContext = {
 	maxDepositPossible: (address: TAddress) => TNormalizedBN;
 	maxWithdrawPossible: () => {limit: TNormalizedBN; safeLimit: TNormalizedBN; isLimited: boolean};
 	currentSolver: TSolver;
+	veYFIBalance: TNormalizedBN;
 	hasVeYFIBalance: boolean;
 };
 const DefaultActionFlowContext: TActionFlowContext = {
@@ -101,6 +102,7 @@ const DefaultActionFlowContext: TActionFlowContext = {
 		isLimited: false
 	}),
 	currentSolver: Solver.enum.Vanilla || 'Vanilla',
+	veYFIBalance: zeroNormalizedBN,
 	hasVeYFIBalance: false
 };
 
@@ -528,9 +530,6 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 		props.currentVault?.migration?.address,
 		isAutoStakingEnabled,
 		isDepositing,
-		lockEnds,
-		currentTimestamp,
-		veYFIBalance,
 		isUsingPartnerContract,
 		zapProvider
 	]);
@@ -1019,6 +1018,7 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 			maxDepositPossible,
 			maxWithdrawPossible,
 			currentSolver,
+			veYFIBalance: toNormalizedBN(veYFIBalance, 18),
 			hasVeYFIBalance
 		}),
 		[
@@ -1032,6 +1032,8 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 			maxDepositPossible,
 			maxWithdrawPossible,
 			currentSolver,
+			veYFIBalance,
+			hasVeYFIBalance,
 			updateParams
 		]
 	);

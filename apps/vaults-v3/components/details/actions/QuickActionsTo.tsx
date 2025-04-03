@@ -1,14 +1,19 @@
 import {Fragment, type ReactElement} from 'react';
 import {useRouter} from 'next/router';
+import {useReadContract} from 'wagmi';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {cl, formatCounterValue, formatPercent, toAddress} from '@builtbymom/web3/utils';
+import {cl, formatCounterValue, formatPercent, toAddress, toNormalizedValue} from '@builtbymom/web3/utils';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useSolver} from '@vaults/contexts/useSolver';
+import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
+import {VEYFI_ABI} from '@vaults/utils/abi/veYFI.abi';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
+import {VEYFI_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {RenderAmount} from '@common/components/RenderAmount';
 import {Dropdown} from '@common/components/TokenDropdown';
 import {useYearn} from '@common/contexts/useYearn';
 import {useYearnTokenPrice} from '@common/hooks/useYearnTokenPrice';
+import {calculateBoostFromVeYFI} from '@common/utils/calculations';
 
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 
@@ -22,6 +27,35 @@ function VaultAPY({
 	const isSourceVeYFI = currentVault.staking.source === 'VeYFI';
 	const {isAutoStakingEnabled} = useYearn();
 
+	const {veYFIBalance, actionParams} = useActionFlow();
+	const {data: veYFITotalSupplyData} = useReadContract({
+		address: toAddress(VEYFI_ADDRESS),
+		abi: VEYFI_ABI,
+		functionName: 'totalSupply',
+		query: {
+			enabled: isSourceVeYFI && isAutoStakingEnabled && hasVeYFIBalance
+		}
+	});
+
+	const veYFITotalSupply = veYFITotalSupplyData ? toNormalizedValue(veYFITotalSupplyData as bigint, 18) : 0;
+	const {data: gaugeTotalSupplyData} = useReadContract({
+		address: currentVault.staking.address,
+		abi: VAULT_V3_ABI,
+		functionName: 'totalAssets',
+		query: {
+			enabled: isSourceVeYFI && isAutoStakingEnabled && hasVeYFIBalance
+		}
+	});
+
+	const gaugeTotalSupply = gaugeTotalSupplyData ? toNormalizedValue(gaugeTotalSupplyData as bigint, 18) : 0;
+
+	const currentVaultBoost = calculateBoostFromVeYFI(
+		veYFIBalance.normalized,
+		veYFITotalSupply,
+		gaugeTotalSupply,
+		actionParams.amount?.normalized || 0
+	);
+
 	if (isSourceVeYFI && isAutoStakingEnabled && hasVeYFIBalance) {
 		const sumOfRewardsAPY = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.extra.gammaRewardAPR;
 		const veYFIRange = [
@@ -32,6 +66,19 @@ function VaultAPY({
 			veYFIRange[0] + currentVault.apr.forwardAPR.netAPR,
 			veYFIRange[1] + currentVault.apr.forwardAPR.netAPR
 		] as [number, number];
+
+		if (currentVaultBoost > 1) {
+			return (
+				<Fragment>
+					<RenderAmount
+						value={currentVaultBoost * estAPYRange[0]}
+						symbol={'percent'}
+						decimals={6}
+					/>
+				</Fragment>
+			);
+		}
+
 		return (
 			<Fragment>
 				<RenderAmount
