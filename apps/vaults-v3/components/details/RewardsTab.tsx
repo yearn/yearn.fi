@@ -326,7 +326,8 @@ export function RewardsTab(props: {
 	const [stakeStatus, set_stakeStatus] = useState(defaultTxStatus);
 	const [claimStatus, set_claimStatus] = useState(defaultTxStatus);
 	const [unstakeStatus, set_unstakeStatus] = useState(defaultTxStatus);
-	const [unstakeAmount, set_unstakeAmount] = useState<string>('-1');
+	const [unstakeAmount, set_unstakeAmount] = useState<string>(vaultData.stakedBalanceOf.display);
+	const [isUnstakeAmountDirty, set_isUnstakeAmountDirty] = useState(false);
 
 	const isUnstakingMax =
 		fromNormalized(unstakeAmount, vaultData.stakingDecimals || 18) === vaultData.stakedBalanceOf.raw;
@@ -502,10 +503,10 @@ export function RewardsTab(props: {
 	);
 
 	useEffect(() => {
-		if (unstakeAmount === '-1') {
+		if (!isUnstakeAmountDirty) {
 			set_unstakeAmount(vaultData.stakedBalanceOf.display);
 		}
-	}, [vaultData.stakedBalanceOf.display, unstakeAmount]);
+	}, [vaultData.stakedBalanceOf.display, unstakeAmount, isUnstakeAmountDirty]);
 
 	if (props.currentVault.staking.rewards?.length === 0) {
 		return (
@@ -636,13 +637,17 @@ export function RewardsTab(props: {
 										autoComplete={'off'}
 										disabled={!isActive}
 										value={unstakeAmount}
-										onChange={(e: ChangeEvent<HTMLInputElement>): void =>
-											set_unstakeAmount(e.target.value)
-										}
+										onChange={(e: ChangeEvent<HTMLInputElement>): void => {
+											set_unstakeAmount(e.target.value);
+											set_isUnstakeAmountDirty(true);
+										}}
 									/>
 
 									<button
-										onClick={(): void => set_unstakeAmount(vaultData.stakedBalanceOf.display)}
+										onClick={(): void => {
+											set_unstakeAmount(vaultData.stakedBalanceOf.display);
+											set_isUnstakeAmountDirty(true);
+										}}
 										className={
 											'ml-2 cursor-pointer rounded-[4px] bg-neutral-800/20 px-2 py-1 text-xs text-neutral-900 transition-colors hover:bg-neutral-800/50'
 										}>
