@@ -576,7 +576,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 						}>
 						<VaultDetailsQuickActionsFrom vaultData={vaultData} />
 						<VaultDetailsQuickActionsSwitch />
-						<VaultDetailsQuickActionsTo />
+						<VaultDetailsQuickActionsTo vaultData={vaultData} />
 						<div className={'w-full space-y-0 md:w-42 md:min-w-42 md:space-y-2'}>
 							<div>
 								{hasStakingRewardsLive && isDepositing ? (

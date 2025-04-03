@@ -1,4 +1,4 @@
-import {Fragment, type ReactElement} from 'react';
+import {Fragment, type ReactElement, useMemo} from 'react';
 import {useRouter} from 'next/router';
 import {useReadContract} from 'wagmi';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
@@ -16,13 +16,16 @@ import {useYearnTokenPrice} from '@common/hooks/useYearnTokenPrice';
 import {calculateBoostFromVeYFI} from '@common/utils/calculations';
 
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TStakingInfo} from '@vaults/hooks/useVaultStakingData';
 
 function VaultAPY({
 	currentVault,
-	hasVeYFIBalance
+	hasVeYFIBalance,
+	vaultData
 }: {
 	currentVault: TYDaemonVault;
 	hasVeYFIBalance: boolean;
+	vaultData: TStakingInfo;
 }): ReactElement {
 	const isSourceVeYFI = currentVault.staking.source === 'VeYFI';
 	const {isAutoStakingEnabled} = useYearn();
@@ -49,11 +52,15 @@ function VaultAPY({
 
 	const gaugeTotalSupply = gaugeTotalSupplyData ? toNormalizedValue(gaugeTotalSupplyData as bigint, 18) : 0;
 
-	const currentVaultBoost = calculateBoostFromVeYFI(
-		veYFIBalance.normalized,
-		veYFITotalSupply,
-		gaugeTotalSupply,
-		actionParams.amount?.normalized || 0
+	const currentVaultBoost = useMemo(
+		() =>
+			calculateBoostFromVeYFI(
+				veYFIBalance.normalized,
+				veYFITotalSupply,
+				gaugeTotalSupply,
+				(actionParams.amount?.normalized || 0) + vaultData.stakedBalanceOf.normalized
+			),
+		[veYFIBalance.normalized, veYFITotalSupply, gaugeTotalSupply, actionParams.amount?.normalized, vaultData]
 	);
 
 	if (isSourceVeYFI && isAutoStakingEnabled && hasVeYFIBalance) {
@@ -68,10 +75,15 @@ function VaultAPY({
 		] as [number, number];
 
 		if (currentVaultBoost > 1) {
+			const displayValue = Math.min(
+				currentVaultBoost * estAPYRange[0],
+				veYFIRange[1] + currentVault.apr.forwardAPR.netAPR
+			);
+
 			return (
 				<Fragment>
 					<RenderAmount
-						value={currentVaultBoost * estAPYRange[0]}
+						value={displayValue}
 						symbol={'percent'}
 						decimals={6}
 					/>
@@ -105,7 +117,7 @@ function VaultAPY({
 	);
 }
 
-export function VaultDetailsQuickActionsTo(): ReactElement {
+export function VaultDetailsQuickActionsTo(props: {vaultData: TStakingInfo}): ReactElement {
 	const {isActive} = useWeb3();
 	const {currentVault, possibleOptionsTo, actionParams, onUpdateSelectedOptionTo, isDepositing, hasVeYFIBalance} =
 		useActionFlow();
@@ -144,6 +156,7 @@ export function VaultDetailsQuickActionsTo(): ReactElement {
 						<VaultAPY
 							currentVault={currentVault}
 							hasVeYFIBalance={hasVeYFIBalance}
+							vaultData={props.vaultData}
 						/>
 					</legend>
 				</div>
@@ -175,6 +188,7 @@ export function VaultDetailsQuickActionsTo(): ReactElement {
 							<VaultAPY
 								currentVault={currentVault}
 								hasVeYFIBalance={hasVeYFIBalance}
+								vaultData={props.vaultData}
 							/>
 						) : (
 							''
