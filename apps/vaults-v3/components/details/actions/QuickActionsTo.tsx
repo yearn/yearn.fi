@@ -63,8 +63,8 @@ function VaultAPY({
 		[veYFIBalance.normalized, veYFITotalSupply, gaugeTotalSupply, actionParams.amount?.normalized, vaultData]
 	);
 
+	const sumOfRewardsAPY = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.extra.gammaRewardAPR;
 	if (isSourceVeYFI && isAutoStakingEnabled && hasVeYFIBalance) {
-		const sumOfRewardsAPY = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.extra.gammaRewardAPR;
 		const veYFIRange = [
 			currentVault.apr.extra.stakingRewardsAPR / 10 + currentVault.apr.extra.gammaRewardAPR,
 			sumOfRewardsAPY
@@ -111,9 +111,7 @@ function VaultAPY({
 	}
 
 	return (
-		<Fragment>
-			{formatPercent((currentVault.apr.netAPR + currentVault.apr.extra.stakingRewardsAPR) * 100, 2, 2, 500)}
-		</Fragment>
+		<Fragment>{formatPercent((sumOfRewardsAPY + currentVault.apr.forwardAPR.netAPR) * 100, 2, 2, 500)}</Fragment>
 	);
 }
 
