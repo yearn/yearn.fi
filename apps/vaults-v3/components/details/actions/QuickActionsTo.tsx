@@ -44,7 +44,7 @@ function VaultAPY({
 		veYFIRange[1] + currentVault.apr.forwardAPR.netAPR
 	] as [number, number];
 
-	if (!address) {
+	if (!address && isAutoStakingEnabled) {
 		return (
 			<Fragment>
 				<RenderAmount
