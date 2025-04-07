@@ -106,7 +106,7 @@ function VaultAPY({
 		);
 	}
 
-	return <Fragment>{formatPercent(estAPYRange[0] * 100, 2, 2, 500)}</Fragment>;
+	return <Fragment>{formatPercent(currentVault.apr.forwardAPR.netAPR * 100, 2, 2, 500)}</Fragment>;
 }
 
 export function VaultDetailsQuickActionsTo(props: {
