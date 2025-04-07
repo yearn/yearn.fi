@@ -82,7 +82,7 @@ function AmountWithOptionalTooltip(props: {
 								'font-number mr-[-360px] max-w-sm border border-neutral-300 bg-neutral-100 p-1 px-2 text-center text-xxs text-neutral-900'
 							}>
 							<p className={'font-number whitespace-pre text-wrap text-left text-neutral-400 md:text-xs'}>
-								{`This Vault is not always totally liquid (don’t worry anon, funds are Safu).\n\nYou can currently withdraw up to ${formatAmount(props.maxPossibleToWithdraw.normalized, 6)} ${props.tokenSymbol}.\n\nLike the best things in life, liquidity comes and goes so feel free to check back later.`}
+								{`This Vault is not always totally liquid (don't worry anon, funds are Safu).\n\nYou can currently withdraw up to ${formatAmount(props.maxPossibleToWithdraw.normalized, 6)} ${props.tokenSymbol}.\n\nLike the best things in life, liquidity comes and goes so feel free to check back later.`}
 							</p>
 						</div>
 					</span>
@@ -338,11 +338,15 @@ export function VaultDetailsQuickActionsFrom(props: {
 				<div className={'mt-1 pl-1'}>
 					<legend
 						suppressHydrationWarning
-						className={'font-number hidden text-xs text-neutral-900/50 md:mr-0 md:inline md:text-start'}>
-						{formatCounterValue(
-							actionParams?.amount?.normalized || 0,
-							Number(selectedOptionFromPricePerToken.normalized)
-						)}
+						className={'hidden text-xs text-neutral-900/50 md:inline'}>
+						<div>
+							<p className={'font-number'}>
+								{formatCounterValue(
+									actionParams?.amount?.normalized || 0,
+									Number(selectedOptionFromPricePerToken.normalized)
+								)}
+							</p>
+						</div>
 					</legend>
 				</div>
 			</div>
