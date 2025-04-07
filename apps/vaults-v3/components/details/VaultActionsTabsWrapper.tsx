@@ -1,6 +1,6 @@
 import {Fragment, useCallback, useEffect, useMemo, useState} from 'react';
 import {useRouter} from 'next/router';
-import {useBlockNumber} from 'wagmi';
+import {useBlockNumber, useReadContract} from 'wagmi';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {useAsyncTrigger} from '@builtbymom/web3/hooks/useAsyncTrigger';
 import {
@@ -10,13 +10,16 @@ import {
 	parseMarkdown,
 	toAddress,
 	toBigInt,
-	toNormalizedBN
+	toNormalizedBN,
+	toNormalizedValue
 } from '@builtbymom/web3/utils';
 import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
 import {useUpdateEffect} from '@react-hookz/web';
 import {Flow, useActionFlow} from '@vaults/contexts/useActionFlow';
+import {useVaultStakingData} from '@vaults/hooks/useVaultStakingData';
 import {STAKING_REWARDS_ABI} from '@vaults/utils/abi/stakingRewards.abi';
 import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
+import {VEYFI_ABI} from '@vaults/utils/abi/veYFI.abi';
 import {VaultDetailsQuickActionsButtons} from '@vaults-v3/components/details/actions/QuickActionsButtons';
 import {VaultDetailsQuickActionsFrom} from '@vaults-v3/components/details/actions/QuickActionsFrom';
 import {VaultDetailsQuickActionsSwitch} from '@vaults-v3/components/details/actions/QuickActionsSwitch';
@@ -24,6 +27,7 @@ import {VaultDetailsQuickActionsTo} from '@vaults-v3/components/details/actions/
 import {RewardsTab} from '@vaults-v3/components/details/RewardsTab';
 import {SettingsPopover} from '@vaults-v3/components/SettingsPopover';
 import {readContracts} from '@wagmi/core';
+import {VEYFI_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {InfoTooltip} from '@common/components/InfoTooltip';
 import {Switch} from '@common/components/Switch';
 import {useYearn} from '@common/contexts/useYearn';
@@ -32,7 +36,6 @@ import {DISABLED_VEYFI_GAUGES_VAULTS_LIST} from '@common/utils/constants';
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TNormalizedBN} from '@builtbymom/web3/types';
-import {useVaultStakingData} from '@vaults/hooks/useVaultStakingData';
 
 /**************************************************************************************************
  ** Base type for tab options containing value, label and optional slug
@@ -311,7 +314,7 @@ export function VaultDetailsTab(props: {
  ** corresponding actions that can be taken.
  *************************************************************************************************/
 export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const {onSwitchSelectedOptions, isDepositing, actionParams} = useActionFlow();
+	const {onSwitchSelectedOptions, isDepositing, actionParams, veYFIBalance, hasVeYFIBalance} = useActionFlow();
 	const {address} = useWeb3();
 	const router = useRouter();
 	const {isAutoStakingEnabled, set_isAutoStakingEnabled} = useYearn();
@@ -331,6 +334,32 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 	const shouldForceDisplayBoostTab = !!DISABLED_VEYFI_GAUGES_VAULTS_LIST.find(
 		vault => vault.address === currentVault.address
 	);
+
+	const isSourceVeYFI = currentVault.staking.source === 'VeYFI';
+
+	/**********************************************************************************************
+	 ** Retrieve some data for correct display of APR
+	 **********************************************************************************************/
+	const {data: veYFITotalSupplyData} = useReadContract({
+		address: toAddress(VEYFI_ADDRESS),
+		abi: VEYFI_ABI,
+		functionName: 'totalSupply',
+		query: {
+			enabled: isSourceVeYFI && isAutoStakingEnabled && hasVeYFIBalance
+		}
+	});
+
+	const veYFITotalSupply = veYFITotalSupplyData ? toNormalizedValue(veYFITotalSupplyData as bigint, 18) : 0;
+	const {data: gaugeTotalSupplyData} = useReadContract({
+		address: currentVault.staking.address,
+		abi: VAULT_V3_ABI,
+		functionName: 'totalAssets',
+		query: {
+			enabled: isSourceVeYFI && isAutoStakingEnabled && hasVeYFIBalance
+		}
+	});
+	const gaugeTotalSupply = gaugeTotalSupplyData ? toNormalizedValue(gaugeTotalSupplyData as bigint, 18) : 0;
+
 	const getTabLabel = useCallback((): string => {
 		if (currentVault.staking.source === 'VeYFI') {
 			return 'veYFI BOOST';
@@ -574,9 +603,20 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 						className={
 							'col-span-12 flex flex-col space-x-0 space-y-2 p-4 md:flex-row md:space-x-4 md:space-y-0 md:px-8 md:py-10'
 						}>
-						<VaultDetailsQuickActionsFrom vaultData={vaultData} />
+						<VaultDetailsQuickActionsFrom
+							currentVault={currentVault}
+							vaultData={vaultData}
+							veYFIBalance={veYFIBalance}
+							veYFITotalSupply={veYFITotalSupply}
+							gaugeTotalSupply={gaugeTotalSupply}
+						/>
 						<VaultDetailsQuickActionsSwitch />
-						<VaultDetailsQuickActionsTo />
+						<VaultDetailsQuickActionsTo
+							vaultData={vaultData}
+							veYFIBalance={veYFIBalance}
+							veYFITotalSupply={veYFITotalSupply}
+							gaugeTotalSupply={gaugeTotalSupply}
+						/>
 						<div className={'w-full space-y-0 md:w-42 md:min-w-42 md:space-y-2'}>
 							<div>
 								{hasStakingRewardsLive && isDepositing ? (
