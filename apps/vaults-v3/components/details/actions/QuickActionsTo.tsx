@@ -18,15 +18,21 @@ import type {TStakingInfo} from '@vaults/hooks/useVaultStakingData';
 function VaultAPY({
 	currentVault,
 	hasVeYFIBalance,
-	currentVaultBoost
+	currentVaultBoost,
+	vaultData,
+	stakedVaultBoost
 }: {
 	currentVault: TYDaemonVault;
 	hasVeYFIBalance: boolean;
 	currentVaultBoost: number;
+	vaultData: TStakingInfo;
+	stakedVaultBoost: number;
 }): ReactElement {
 	const isSourceVeYFI = currentVault.staking.source === 'VeYFI';
 	const {isAutoStakingEnabled} = useYearn();
 	const {address} = useWeb3();
+
+	const stakedBalance = vaultData.stakedBalanceOf.normalized;
 
 	const sumOfRewardsAPY = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.extra.gammaRewardAPR;
 	const veYFIRange = [
@@ -59,15 +65,40 @@ function VaultAPY({
 	}
 
 	if (isSourceVeYFI && isAutoStakingEnabled && hasVeYFIBalance && currentVaultBoost > 1) {
-		const displayValue = Math.min(
+		const currentVaultAPY = Math.min(
 			currentVaultBoost * (currentVault.apr.extra.stakingRewardsAPR / 10) + currentVault.apr.forwardAPR.netAPR,
 			veYFIRange[1] + currentVault.apr.forwardAPR.netAPR
 		);
+		const stakedVaultAPY = Math.min(
+			stakedVaultBoost * (currentVault.apr.extra.stakingRewardsAPR / 10) + currentVault.apr.forwardAPR.netAPR
+		);
+
+		if (stakedBalance > 0 && stakedVaultAPY !== currentVaultAPY) {
+			return (
+				<Fragment>
+					<span className={'line-through'}>
+						<RenderAmount
+							shouldHideTooltip
+							value={stakedVaultAPY}
+							symbol={'percent'}
+							decimals={6}
+						/>
+					</span>
+					&nbsp;&rarr;&nbsp;
+					<RenderAmount
+						shouldHideTooltip
+						value={currentVaultAPY}
+						symbol={'percent'}
+						decimals={6}
+					/>
+				</Fragment>
+			);
+		}
 
 		return (
 			<Fragment>
 				<RenderAmount
-					value={displayValue}
+					value={currentVaultAPY}
 					symbol={'percent'}
 					decimals={6}
 				/>
@@ -113,6 +144,17 @@ export function VaultDetailsQuickActionsTo(props: {
 		]
 	);
 
+	const stakedVaultBoost = useMemo(
+		() =>
+			calculateBoostFromVeYFI(
+				props.veYFIBalance.normalized,
+				props.veYFITotalSupply,
+				props.gaugeTotalSupply,
+				props.vaultData.stakedBalanceOf.normalized
+			),
+		[props.veYFIBalance.normalized, props.veYFITotalSupply, props.gaugeTotalSupply, props.vaultData]
+	);
+
 	function renderMultipleOptionsFallback(): ReactElement {
 		return (
 			<Dropdown
@@ -140,6 +182,8 @@ export function VaultDetailsQuickActionsTo(props: {
 							currentVault={currentVault}
 							hasVeYFIBalance={hasVeYFIBalance}
 							currentVaultBoost={currentVaultBoost}
+							stakedVaultBoost={stakedVaultBoost}
+							vaultData={props.vaultData}
 						/>
 					</legend>
 				</div>
@@ -172,6 +216,8 @@ export function VaultDetailsQuickActionsTo(props: {
 								currentVault={currentVault}
 								hasVeYFIBalance={hasVeYFIBalance}
 								currentVaultBoost={currentVaultBoost}
+								stakedVaultBoost={stakedVaultBoost}
+								vaultData={props.vaultData}
 							/>
 						) : (
 							''
