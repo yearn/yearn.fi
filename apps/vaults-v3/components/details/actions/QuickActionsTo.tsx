@@ -1,14 +1,10 @@
 import {Fragment, type ReactElement, useMemo} from 'react';
 import {useRouter} from 'next/router';
-import {useReadContract} from 'wagmi';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {cl, formatCounterValue, formatPercent, toAddress, toNormalizedValue} from '@builtbymom/web3/utils';
+import {cl, formatCounterValue, formatPercent, toAddress} from '@builtbymom/web3/utils';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useSolver} from '@vaults/contexts/useSolver';
-import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
-import {VEYFI_ABI} from '@vaults/utils/abi/veYFI.abi';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {VEYFI_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {RenderAmount} from '@common/components/RenderAmount';
 import {Dropdown} from '@common/components/TokenDropdown';
 import {useYearn} from '@common/contexts/useYearn';
@@ -16,81 +12,33 @@ import {useYearnTokenPrice} from '@common/hooks/useYearnTokenPrice';
 import {calculateBoostFromVeYFI} from '@common/utils/calculations';
 
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TNormalizedBN} from '@builtbymom/web3/types';
 import type {TStakingInfo} from '@vaults/hooks/useVaultStakingData';
 
 function VaultAPY({
 	currentVault,
 	hasVeYFIBalance,
-	vaultData
+	currentVaultBoost
 }: {
 	currentVault: TYDaemonVault;
 	hasVeYFIBalance: boolean;
-	vaultData: TStakingInfo;
+	currentVaultBoost: number;
 }): ReactElement {
 	const isSourceVeYFI = currentVault.staking.source === 'VeYFI';
 	const {isAutoStakingEnabled} = useYearn();
-
-	const {veYFIBalance, actionParams} = useActionFlow();
-	const {data: veYFITotalSupplyData} = useReadContract({
-		address: toAddress(VEYFI_ADDRESS),
-		abi: VEYFI_ABI,
-		functionName: 'totalSupply',
-		query: {
-			enabled: isSourceVeYFI && isAutoStakingEnabled && hasVeYFIBalance
-		}
-	});
-
-	const veYFITotalSupply = veYFITotalSupplyData ? toNormalizedValue(veYFITotalSupplyData as bigint, 18) : 0;
-	const {data: gaugeTotalSupplyData} = useReadContract({
-		address: currentVault.staking.address,
-		abi: VAULT_V3_ABI,
-		functionName: 'totalAssets',
-		query: {
-			enabled: isSourceVeYFI && isAutoStakingEnabled && hasVeYFIBalance
-		}
-	});
-
-	const gaugeTotalSupply = gaugeTotalSupplyData ? toNormalizedValue(gaugeTotalSupplyData as bigint, 18) : 0;
-
-	const currentVaultBoost = useMemo(
-		() =>
-			calculateBoostFromVeYFI(
-				veYFIBalance.normalized,
-				veYFITotalSupply,
-				gaugeTotalSupply,
-				(actionParams.amount?.normalized || 0) + vaultData.stakedBalanceOf.normalized
-			),
-		[veYFIBalance.normalized, veYFITotalSupply, gaugeTotalSupply, actionParams.amount?.normalized, vaultData]
-	);
+	const {address} = useWeb3();
 
 	const sumOfRewardsAPY = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.extra.gammaRewardAPR;
-	if (isSourceVeYFI && isAutoStakingEnabled && hasVeYFIBalance) {
-		const veYFIRange = [
-			currentVault.apr.extra.stakingRewardsAPR / 10 + currentVault.apr.extra.gammaRewardAPR,
-			sumOfRewardsAPY
-		] as [number, number];
-		const estAPYRange = [
-			veYFIRange[0] + currentVault.apr.forwardAPR.netAPR,
-			veYFIRange[1] + currentVault.apr.forwardAPR.netAPR
-		] as [number, number];
+	const veYFIRange = [
+		currentVault.apr.extra.stakingRewardsAPR / 10 + currentVault.apr.extra.gammaRewardAPR,
+		sumOfRewardsAPY
+	] as [number, number];
+	const estAPYRange = [
+		veYFIRange[0] + currentVault.apr.forwardAPR.netAPR,
+		veYFIRange[1] + currentVault.apr.forwardAPR.netAPR
+	] as [number, number];
 
-		if (currentVaultBoost > 1) {
-			const displayValue = Math.min(
-				currentVaultBoost * estAPYRange[0],
-				veYFIRange[1] + currentVault.apr.forwardAPR.netAPR
-			);
-
-			return (
-				<Fragment>
-					<RenderAmount
-						value={displayValue}
-						symbol={'percent'}
-						decimals={6}
-					/>
-				</Fragment>
-			);
-		}
-
+	if (!address) {
 		return (
 			<Fragment>
 				<RenderAmount
@@ -110,12 +58,32 @@ function VaultAPY({
 		);
 	}
 
-	return (
-		<Fragment>{formatPercent((sumOfRewardsAPY + currentVault.apr.forwardAPR.netAPR) * 100, 2, 2, 500)}</Fragment>
-	);
+	if (isSourceVeYFI && isAutoStakingEnabled && hasVeYFIBalance && currentVaultBoost > 1) {
+		const displayValue = Math.min(
+			currentVaultBoost * (currentVault.apr.extra.stakingRewardsAPR / 10) + currentVault.apr.forwardAPR.netAPR,
+			veYFIRange[1] + currentVault.apr.forwardAPR.netAPR
+		);
+
+		return (
+			<Fragment>
+				<RenderAmount
+					value={displayValue}
+					symbol={'percent'}
+					decimals={6}
+				/>
+			</Fragment>
+		);
+	}
+
+	return <Fragment>{formatPercent(estAPYRange[0] * 100, 2, 2, 500)}</Fragment>;
 }
 
-export function VaultDetailsQuickActionsTo(props: {vaultData: TStakingInfo}): ReactElement {
+export function VaultDetailsQuickActionsTo(props: {
+	vaultData: TStakingInfo;
+	veYFIBalance: TNormalizedBN;
+	veYFITotalSupply: number;
+	gaugeTotalSupply: number;
+}): ReactElement {
 	const {isActive} = useWeb3();
 	const {currentVault, possibleOptionsTo, actionParams, onUpdateSelectedOptionTo, isDepositing, hasVeYFIBalance} =
 		useActionFlow();
@@ -127,6 +95,23 @@ export function VaultDetailsQuickActionsTo(props: {vaultData: TStakingInfo}): Re
 		address: toAddress(actionParams?.selectedOptionTo?.value),
 		chainID: Number(actionParams?.selectedOptionTo?.chainID)
 	});
+
+	const currentVaultBoost = useMemo(
+		() =>
+			calculateBoostFromVeYFI(
+				props.veYFIBalance.normalized,
+				props.veYFITotalSupply,
+				props.gaugeTotalSupply,
+				(actionParams.amount?.normalized || 0) + props.vaultData.stakedBalanceOf.normalized
+			),
+		[
+			props.veYFIBalance.normalized,
+			props.veYFITotalSupply,
+			props.gaugeTotalSupply,
+			actionParams.amount?.normalized,
+			props.vaultData
+		]
+	);
 
 	function renderMultipleOptionsFallback(): ReactElement {
 		return (
@@ -154,7 +139,7 @@ export function VaultDetailsQuickActionsTo(props: {vaultData: TStakingInfo}): Re
 						<VaultAPY
 							currentVault={currentVault}
 							hasVeYFIBalance={hasVeYFIBalance}
-							vaultData={props.vaultData}
+							currentVaultBoost={currentVaultBoost}
 						/>
 					</legend>
 				</div>
@@ -186,7 +171,7 @@ export function VaultDetailsQuickActionsTo(props: {vaultData: TStakingInfo}): Re
 							<VaultAPY
 								currentVault={currentVault}
 								hasVeYFIBalance={hasVeYFIBalance}
-								vaultData={props.vaultData}
+								currentVaultBoost={currentVaultBoost}
 							/>
 						) : (
 							''

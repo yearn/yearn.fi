@@ -9,6 +9,7 @@ import {
 	decodeAsNumber,
 	formatAmount,
 	formatCounterValue,
+	formatPercent,
 	handleInputChangeEventValue,
 	isAddress,
 	isEthAddress,
@@ -26,8 +27,10 @@ import {Dropdown} from '@common/components/TokenDropdown';
 import {useYearn} from '@common/contexts/useYearn';
 import {useYearnBalance} from '@common/hooks/useYearnBalance';
 import {IconQuestion} from '@common/icons/IconQuestion';
+import {calculateBoostFromVeYFI} from '@common/utils/calculations';
 
 import type {ChangeEvent, ReactElement} from 'react';
+import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TNormalizedBN} from '@builtbymom/web3/types';
 import type {TStakingInfo} from '@vaults/hooks/useVaultStakingData';
 
@@ -98,7 +101,13 @@ function AmountWithOptionalTooltip(props: {
 	);
 }
 
-export function VaultDetailsQuickActionsFrom(props: {vaultData: TStakingInfo}): ReactElement {
+export function VaultDetailsQuickActionsFrom(props: {
+	currentVault: TYDaemonVault;
+	vaultData: TStakingInfo;
+	veYFIBalance: TNormalizedBN;
+	veYFITotalSupply: number;
+	gaugeTotalSupply: number;
+}): ReactElement {
 	const {address, isActive, chainID} = useWeb3();
 	const {getToken, getPrice} = useYearn();
 	const {data: blockNumber} = useBlockNumber({watch: true});
@@ -120,6 +129,20 @@ export function VaultDetailsQuickActionsFrom(props: {vaultData: TStakingInfo}): 
 		address: toAddress(actionParams?.selectedOptionFrom?.value),
 		chainID: Number(actionParams?.selectedOptionFrom?.chainID)
 	});
+
+	const currentVaultBoost = useMemo(
+		() =>
+			calculateBoostFromVeYFI(
+				props.veYFIBalance.normalized,
+				props.veYFITotalSupply,
+				props.gaugeTotalSupply,
+				props.vaultData.stakedBalanceOf.normalized
+			),
+		[props.veYFIBalance.normalized, props.veYFITotalSupply, props.gaugeTotalSupply, props.vaultData]
+	);
+	const currentStakedAPR =
+		currentVaultBoost * (props.currentVault.apr.extra.stakingRewardsAPR / 10) +
+		props.currentVault.apr.forwardAPR.netAPR;
 
 	/**********************************************************************************************
 	 ** In order to be sure we have the user's balance, we fetch it from the blockchain. Most of
@@ -262,7 +285,7 @@ export function VaultDetailsQuickActionsFrom(props: {vaultData: TStakingInfo}): 
 								<p
 									className={
 										'font-number'
-									}>{`(+${formatAmount(props.vaultData.stakedBalanceOf.normalized, 6)} ${actionParams?.selectedOptionFrom?.symbol} staked)`}</p>
+									}>{`(+${formatAmount(props.vaultData.stakedBalanceOf.normalized, 6)} ${actionParams?.selectedOptionFrom?.symbol} staked earning ${formatPercent(currentStakedAPR * 100, 2, 2, 500)} APR)`}</p>
 							)}
 						</div>
 					</legend>
