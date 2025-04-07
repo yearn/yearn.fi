@@ -314,7 +314,7 @@ export function VaultDetailsTab(props: {
  ** corresponding actions that can be taken.
  *************************************************************************************************/
 export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const {onSwitchSelectedOptions, isDepositing, actionParams} = useActionFlow();
+	const {onSwitchSelectedOptions, isDepositing, actionParams, veYFIBalance, hasVeYFIBalance} = useActionFlow();
 	const {address} = useWeb3();
 	const router = useRouter();
 	const {isAutoStakingEnabled, set_isAutoStakingEnabled} = useYearn();
@@ -340,7 +340,6 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 	/**********************************************************************************************
 	 ** Retrieve some data for correct display of APR
 	 **********************************************************************************************/
-	const {veYFIBalance, hasVeYFIBalance} = useActionFlow();
 	const {data: veYFITotalSupplyData} = useReadContract({
 		address: toAddress(VEYFI_ADDRESS),
 		abi: VEYFI_ABI,
