@@ -244,19 +244,23 @@ export function VaultDetailsQuickActionsTo(props: {
 				</Renderable>
 				<div className={'mt-1 pl-1'}>
 					<legend
-						className={'font-number hidden text-xs text-neutral-900/50 md:inline'}
+						className={'hidden text-xs text-neutral-900/50 md:inline'}
 						suppressHydrationWarning>
-						{isDepositing ? (
-							<VaultAPY
-								currentVault={currentVault}
-								hasVeYFIBalance={hasVeYFIBalance}
-								currentVaultBoost={currentVaultBoost}
-								stakedVaultBoost={stakedVaultBoost}
-								vaultData={props.vaultData}
-							/>
-						) : (
-							''
-						)}
+						<div>
+							<p className={'font-number'}>
+								{isDepositing ? (
+									<VaultAPY
+										currentVault={currentVault}
+										hasVeYFIBalance={hasVeYFIBalance}
+										currentVaultBoost={currentVaultBoost}
+										stakedVaultBoost={stakedVaultBoost}
+										vaultData={props.vaultData}
+									/>
+								) : (
+									''
+								)}
+							</p>
+						</div>
 					</legend>
 				</div>
 			</div>
@@ -296,8 +300,12 @@ export function VaultDetailsQuickActionsTo(props: {
 				<div className={'mt-1 pl-1'}>
 					<legend
 						suppressHydrationWarning
-						className={'font-number hidden text-xs text-neutral-900/50 md:mr-0 md:inline md:text-start'}>
-						{formatCounterValue(expectedOut?.normalized || 0, selectedOptionToPricePerToken)}
+						className={'hidden text-xs text-neutral-900/50 md:inline'}>
+						<div>
+							<p className={'font-number'}>
+								{formatCounterValue(expectedOut?.normalized || 0, selectedOptionToPricePerToken)}
+							</p>
+						</div>
 					</legend>
 				</div>
 			</div>
