@@ -32,6 +32,8 @@ function VaultAPY({
 	const {isAutoStakingEnabled} = useYearn();
 	const {address} = useWeb3();
 
+	const {actionParams} = useActionFlow();
+	const inputAmount = actionParams?.amount?.normalized || 0;
 	const stakedBalance = vaultData.stakedBalanceOf.normalized;
 
 	const sumOfRewardsAPY = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.extra.gammaRewardAPR;
@@ -44,7 +46,16 @@ function VaultAPY({
 		veYFIRange[1] + currentVault.apr.forwardAPR.netAPR
 	] as [number, number];
 
-	if (!address && isAutoStakingEnabled) {
+	/******************************************************************************************
+	 ** There are 2 cases where we show the estimated APY range:
+	 ** 1. Wallet is not connected and auto-staking is enabled.
+	 ** 2. User has VeYFI balance, has no staked balance, auto-staking is enabled, and the amount input is 0/initial
+	 ** state.
+	 ******************************************************************************************/
+	if (
+		(!address && isAutoStakingEnabled) ||
+		(isSourceVeYFI && isAutoStakingEnabled && hasVeYFIBalance && !inputAmount && stakedBalance === 0)
+	) {
 		return (
 			<Fragment>
 				<RenderAmount
@@ -64,15 +75,32 @@ function VaultAPY({
 		);
 	}
 
+	/******************************************************************************************
+	 ** If the user has a VeYFI balance, staking source is VeYFI, auto-staking is enabled,
+	 ** and the boost differs from the default value, we show the current calculated APY.
+	 ******************************************************************************************/
 	if (isSourceVeYFI && isAutoStakingEnabled && hasVeYFIBalance && currentVaultBoost > 1) {
+		/******************************************************************************************
+		 ** APY that is calculated based on input amount. AKA the APY that the user will get if
+		 ** they deposit the full amount.
+		 ******************************************************************************************/
 		const currentVaultAPY = Math.min(
 			currentVaultBoost * (currentVault.apr.extra.stakingRewardsAPR / 10) + currentVault.apr.forwardAPR.netAPR,
 			veYFIRange[1] + currentVault.apr.forwardAPR.netAPR
 		);
+
+		/******************************************************************************************
+		 ** APY that is calculated based on the already staked balance. AKA the APY that the user
+		 ** is already earning.
+		 ******************************************************************************************/
 		const stakedVaultAPY = Math.min(
 			stakedVaultBoost * (currentVault.apr.extra.stakingRewardsAPR / 10) + currentVault.apr.forwardAPR.netAPR
 		);
 
+		/******************************************************************************************
+		 ** If the user has a staked balance, and the APYs are different, we show the difference
+		 ** between the 2 APY's in case of depositing.
+		 ******************************************************************************************/
 		if (stakedBalance > 0 && stakedVaultAPY !== currentVaultAPY) {
 			return (
 				<Fragment>
@@ -106,6 +134,13 @@ function VaultAPY({
 		);
 	}
 
+	/******************************************************************************************
+	 ** Display this if any of the following is true:
+	 ** 1. Auto-staking is disabled.
+	 ** 2. User does not have a VeYFI balance.
+	 ** 3. Vault doesn't support staking.
+	 ** 4. The boost is the default value.
+	 ******************************************************************************************/
 	return <Fragment>{formatPercent(currentVault.apr.forwardAPR.netAPR * 100, 2, 2, 500)}</Fragment>;
 }
 
