@@ -15,6 +15,7 @@ import {
 import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
 import {useUpdateEffect} from '@react-hookz/web';
 import {Flow, useActionFlow} from '@vaults/contexts/useActionFlow';
+import {useVaultStakingData} from '@vaults/hooks/useVaultStakingData';
 import {STAKING_REWARDS_ABI} from '@vaults/utils/abi/stakingRewards.abi';
 import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
 import {VaultDetailsQuickActionsButtons} from '@vaults-v3/components/details/actions/QuickActionsButtons';
@@ -30,7 +31,6 @@ import {DISABLED_VEYFI_GAUGES_VAULTS_LIST} from '@common/utils/constants';
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TNormalizedBN} from '@builtbymom/web3/types';
-import {useVaultStakingData} from '@vaults/hooks/useVaultStakingData';
 
 /**************************************************************************************************
  ** Base type for tab options containing value, label and optional slug

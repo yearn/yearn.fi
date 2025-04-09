@@ -4,16 +4,108 @@ import {VaultDetailsStrategy} from '@vaults/components/details/tabs/VaultDetails
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
 import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
-import {VaultsV3ListRow} from '@vaults-v3/components/list/VaultsV3ListRow';
+import {VaultsV3ListStrategy} from '@vaults-v3/components/list/VaultsV3ListStrategy';
 import {ALL_VAULTSV3_KINDS_KEYS} from '@vaults-v3/constants';
 import {Button} from '@yearn-finance/web-lib/components/Button';
-import {SearchBar} from '@common/components/SearchBar';
 import {useYearn} from '@common/contexts/useYearn';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault, TYDaemonVaultStrategy} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TSortDirection} from '@builtbymom/web3/types';
+import type {TAddress, TSortDirection} from '@builtbymom/web3/types';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
+
+/************************************************************************************************
+ * AllocationPercentage Component
+ * Displays a donut chart representing the allocation percentages of various strategies
+ * Uses SVG to create the circular chart with gaps to match the design
+ * Shows "allocation %" text in the center of the chart
+ ************************************************************************************************/
+function AllocationPercentage({allocationPercentage}: {allocationPercentage: {[key: TAddress]: number}}): ReactElement {
+	// Calculate the segments for the circular chart
+	const segments = useMemo(() => {
+		const entries = Object.entries(allocationPercentage);
+		let currentAngle = 0;
+
+		// Return array of segment data with start angle, end angle, and percentage
+		return entries.map(([address, percentage], index) => {
+			const segmentAngle = percentage * 360;
+			const startAngle = currentAngle;
+			currentAngle += segmentAngle;
+
+			return {
+				address,
+				percentage,
+				startAngle,
+				endAngle: currentAngle,
+				color: `hsl(${(index * 60) % 360}, 70%, 60%)`
+			};
+		});
+	}, [allocationPercentage]);
+
+	// Chart dimensions
+	const size = 200;
+	const radius = size / 2;
+	const strokeWidth = 20;
+	const innerRadius = radius - strokeWidth;
+
+	// Calculate the SVG path for each segment
+	const createSegmentPath = (startAngle: number, endAngle: number): string => {
+		// Convert angles to radians and calculate x,y coordinates
+		const startRad = (startAngle - 90) * (Math.PI / 180);
+		const endRad = (endAngle - 90) * (Math.PI / 180);
+
+		// Calculate the arc path
+		const x1 = radius + innerRadius * Math.cos(startRad);
+		const y1 = radius + innerRadius * Math.sin(startRad);
+		const x2 = radius + innerRadius * Math.cos(endRad);
+		const y2 = radius + innerRadius * Math.sin(endRad);
+
+		// Determine if the arc should be drawn the long way around
+		const largeArcFlag = endAngle - startAngle > 180 ? 1 : 0;
+
+		// Create SVG path
+		return `M ${x1} ${y1} A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 1 ${x2} ${y2}`;
+	};
+
+	return (
+		<div className={'mt-8 flex size-full flex-col items-center justify-center'}>
+			<div className={'relative size-[200px]'}>
+				{/* Background circle - light gray */}
+
+				{/* Segments */}
+				<svg
+					width={size}
+					height={size}
+					className={'absolute left-0 top-0'}>
+					{segments.map((segment, index) => {
+						// Add a small gap between segments
+						const gapAngle = 5;
+						const adjustedStartAngle = segment.startAngle + gapAngle / 2;
+						const adjustedEndAngle = segment.endAngle - gapAngle / 2;
+
+						// Skip segments that are too small after adding gaps
+						if (adjustedEndAngle <= adjustedStartAngle) return null;
+
+						return (
+							<path
+								key={`segment-${index}`}
+								d={createSegmentPath(adjustedStartAngle, adjustedEndAngle)}
+								stroke={'#FFFFFF'} // White color for all segments to match design
+								strokeWidth={strokeWidth}
+								fill={'none'}
+							/>
+						);
+					})}
+				</svg>
+
+				{/* Center text */}
+				<div className={'absolute inset-0 flex items-center justify-center'}>
+					<span className={'text-center font-normal text-white'}>{'allocation %'}</span>
+				</div>
+			</div>
+		</div>
+	);
+}
 
 export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {vaults} = useYearn();
@@ -41,51 +133,28 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 	}, [vaults, currentVault]);
 
 	/* 🔵 - Yearn Finance **************************************************************************
-	 **	Then, on the activeVaults list, we apply the search filter. The search filter is
-	 **	implemented as a simple string.includes() on the vault name.
-	 **********************************************************************************************/
-	const searchedVaultsToDisplay = useMemo((): TYDaemonVault[] => {
-		if (!search) {
-			return vaultList;
-		}
-		return vaultList.filter((vault: TYDaemonVault): boolean => {
-			const lowercaseSearch = search.toLowerCase();
-			const splitted =
-				`${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${vault.token.address}`
-					.toLowerCase()
-					.split(' ');
-			return splitted.some((word): boolean => word.startsWith(lowercaseSearch));
-		});
-	}, [vaultList, search]);
-
-	/* 🔵 - Yearn Finance **************************************************************************
 	 **	Then, once we have reduced the list of vaults to display, we can sort them. The sorting
 	 **	is done via a custom method that will sort the vaults based on the sortBy and
 	 **	sortDirection values.
 	 **********************************************************************************************/
-	const sortedVaultsToDisplay = useSortVaults([...searchedVaultsToDisplay], sortBy, sortDirection);
+	const sortedVaultsToDisplay = useSortVaults([...vaultList], sortBy, sortDirection);
 	const isVaultListEmpty = sortedVaultsToDisplay.length === 0;
+
+	const totalAllocation = useMemo(() => {
+		return sortedVaultsToDisplay.reduce((acc, vault) => acc + vault.tvl.tvl, 0);
+	}, [sortedVaultsToDisplay]);
+
+	const allocationPercentageList = useMemo(() => {
+		return sortedVaultsToDisplay.reduce((acc, vault) => {
+			return {...acc, [vault.address]: vault.tvl.tvl / totalAllocation};
+		}, {});
+	}, [sortedVaultsToDisplay, totalAllocation]);
 
 	return (
 		<>
-			{isVaultListEmpty ? null : (
-				<div className={'col-span-12 w-full p-4 md:px-8 md:pb-8'}>
-					<div className={'w-1/2'}>
-						<p className={'pb-2 text-[#757CA6]'}>{'Search'}</p>
-						<SearchBar
-							className={'max-w-none rounded-lg border-none bg-neutral-300 text-neutral-900 md:w-full'}
-							iconClassName={'text-neutral-900'}
-							searchPlaceholder={'YFI Vault'}
-							searchValue={search as string}
-							onSearch={onSearch}
-						/>
-					</div>
-				</div>
-			)}
-
 			<div className={cl(isVaultListEmpty ? 'hidden' : '')}>
-				<div className={'grid grid-cols-12 px-8 pb-6 md:gap-6'}>
-					<div className={'col-span-12 flex min-h-[240px] w-full flex-col'}>
+				<div className={'grid grid-cols-1 px-8 pb-6 md:gap-6 lg:grid-cols-12'}>
+					<div className={'col-span-9 mt-8 flex min-h-[240px] w-full flex-col'}>
 						<VaultsV3ListHead
 							sortBy={sortBy}
 							sortDirection={sortDirection}
@@ -99,18 +168,20 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 								onChangeSortDirection(newSortDirection as TSortDirection);
 							}}
 							items={[
-								{label: 'Vault', value: 'name', sortable: true, className: 'col-span-4'},
-								{label: 'Est. APY', value: 'estAPY', sortable: true, className: 'col-span-2'},
-								{label: 'Hist. APY', value: 'APY', sortable: true, className: 'col-span-2'},
+								{label: 'Vault', value: 'name', sortable: true, className: 'ml-24'},
 								{
-									label: 'Risk Level',
-									value: 'score',
+									label: 'Allocation %',
+									value: 'tvl',
 									sortable: true,
-									className: 'col-span-2 whitespace-nowrap'
+									className: 'col-span-4'
 								},
-								{label: 'Available', value: 'available', sortable: true, className: 'col-span-2'},
-								{label: 'Holdings', value: 'deposited', sortable: true, className: 'col-span-2'},
-								{label: 'Deposits', value: 'tvl', sortable: true, className: 'col-span-2 justify-end'}
+								{label: 'Allocation $', value: 'tvl', sortable: true, className: 'col-span-4'},
+								{
+									label: 'Est. APY',
+									value: 'estAPY',
+									sortable: true,
+									className: 'col-span-4 justify-end'
+								}
 							]}
 						/>
 						<div className={'grid gap-4'}>
@@ -118,13 +189,21 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 								.filter((v): boolean => Boolean(v?.chainID))
 								.map(
 									(vault): ReactElement => (
-										<VaultsV3ListRow
+										<VaultsV3ListStrategy
 											key={`${vault?.chainID}_${vault.address}`}
+											allocationPercentage={
+												allocationPercentageList[
+													vault.address as keyof typeof allocationPercentageList
+												]
+											}
 											currentVault={vault}
 										/>
 									)
 								)}
 						</div>
+					</div>
+					<div className={'col-span-3 flex min-h-[240px] w-full flex-col'}>
+						<AllocationPercentage allocationPercentage={allocationPercentageList} />
 					</div>
 				</div>
 			</div>

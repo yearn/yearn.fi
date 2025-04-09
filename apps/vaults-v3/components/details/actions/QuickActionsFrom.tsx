@@ -29,7 +29,7 @@ import {IconQuestion} from '@common/icons/IconQuestion';
 
 import type {ChangeEvent, ReactElement} from 'react';
 import type {TNormalizedBN} from '@builtbymom/web3/types';
-import {TStakingInfo} from '@vaults/hooks/useVaultStakingData';
+import type {TStakingInfo} from '@vaults/hooks/useVaultStakingData';
 
 function AmountWithOptionalTooltip(props: {
 	canOnlyWithdrawSome: boolean;
@@ -252,11 +252,17 @@ export function VaultDetailsQuickActionsFrom(props: {vaultData: TStakingInfo}): 
 						className={'hidden text-xs text-neutral-900/50 md:inline'}
 						suppressHydrationWarning>
 						<div>
-							<p className="font-number">{`You have ${formatAmount((userBalance || zeroNormalizedBN).normalized)} ${
+							<p
+								className={
+									'font-number'
+								}>{`You have ${formatAmount((userBalance || zeroNormalizedBN).normalized)} ${
 								actionParams?.selectedOptionFrom?.symbol || 'tokens'
 							}`}</p>
 							{props.vaultData?.stakedBalanceOf.raw > 0n && (
-								<p className="font-number">{`(+${formatAmount(props.vaultData.stakedBalanceOf.normalized, 6)} ${actionParams?.selectedOptionFrom?.symbol} staked)`}</p>
+								<p
+									className={
+										'font-number'
+									}>{`(+${formatAmount(props.vaultData.stakedBalanceOf.normalized, 6)} ${actionParams?.selectedOptionFrom?.symbol} staked)`}</p>
 							)}
 						</div>
 					</legend>
