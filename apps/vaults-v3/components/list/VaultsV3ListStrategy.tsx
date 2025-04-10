@@ -74,7 +74,7 @@ export function VaultsV3ListStrategy({
 	allocationPercentage: number;
 }): ReactElement {
 	const [isExpanded, set_isExpanded] = useState(false);
-	console.log(currentVault);
+
 	const expandAnimation = {
 		initial: {
 			opacity: 0,

@@ -13,6 +13,7 @@ export type TPossibleSortBy =
 	| 'APY'
 	| 'estAPY'
 	| 'tvl'
+	| 'allocationPercentage'
 	| 'name'
 	| 'deposited'
 	| 'available'
@@ -100,7 +101,7 @@ export function useSortVaults(
 	}, [sortDirection, vaultList, sortBy]);
 
 	const sortedByTVL = useCallback((): TYDaemonVaults => {
-		if (sortBy !== 'tvl') {
+		if (sortBy !== 'tvl' && sortBy !== 'allocationPercentage') {
 			return vaultList;
 		}
 		return vaultList.sort((a, b): number => numberSort({a: a.tvl.tvl, b: b.tvl.tvl, sortDirection}));
@@ -200,7 +201,7 @@ export function useSortVaults(
 		if (sortBy === 'APY') {
 			return sortedByAPY();
 		}
-		if (sortBy === 'tvl') {
+		if (sortBy === 'tvl' || sortBy === 'allocationPercentage') {
 			return sortedByTVL();
 		}
 		if (sortBy === 'deposited') {

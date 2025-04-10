@@ -171,7 +171,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 								{label: 'Vault', value: 'name', sortable: true, className: 'ml-24'},
 								{
 									label: 'Allocation %',
-									value: 'tvl',
+									value: 'allocationPercentage',
 									sortable: true,
 									className: 'col-span-4'
 								},
