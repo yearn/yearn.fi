@@ -1,9 +1,10 @@
 import {useMemo, useState} from 'react';
 import Link from 'next/link';
 import {motion} from 'framer-motion';
-import {cl, isZero, toNormalizedBN, truncateHex} from '@builtbymom/web3/utils';
+import {cl, formatPercent, isZero, toNormalizedBN, truncateHex} from '@builtbymom/web3/utils';
 import {getChainBgColor} from '@vaults-v3/utils';
 import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
+import {formatDuration} from '@yearn-finance/web-lib/utils/format.time';
 import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {RenderAmount} from '@common/components/RenderAmount';
@@ -12,7 +13,7 @@ import {useYearn} from '@common/contexts/useYearn';
 import {VaultChainTag} from '../VaultChainTag';
 
 import type {ReactElement} from 'react';
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TYDaemonVault, TYDaemonVaultStrategy} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TNormalizedBN} from '@builtbymom/web3/types';
 
 export function VaultStakedAmount({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
@@ -70,7 +71,7 @@ export function VaultsV3ListStrategy({
 	currentVault,
 	allocationPercentage
 }: {
-	currentVault: TYDaemonVault;
+	currentVault: TYDaemonVault & {details: TYDaemonVaultStrategy['details']};
 	allocationPercentage: number;
 }): ReactElement {
 	const [isExpanded, set_isExpanded] = useState(false);
@@ -108,6 +109,9 @@ export function VaultsV3ListStrategy({
 	};
 
 	const chainBgColor = getChainBgColor(currentVault.chainID);
+	const lastReportTime = currentVault.details?.lastReport
+		? formatDuration(currentVault.details.lastReport * 1000 - new Date().valueOf(), true)
+		: 'N/A';
 
 	return (
 		<div
@@ -264,23 +268,17 @@ export function VaultsV3ListStrategy({
 								<div className={'flex flex-col gap-2'}>
 									<div className={'flex flex-row gap-2'}>
 										<span className={''}>{'Management Fee:'}</span>
-										<span>{'0%'}</span>
+										<span>{formatPercent((currentVault.apr.fees.management || 0) * 100, 0)}</span>
 									</div>
 									<div className={'flex flex-row gap-2'}>
 										<span className={''}>{'Performance Fee:'}</span>
-										<span>{'5%'}</span>
+										<span>
+											{formatPercent((currentVault.details?.performanceFee || 0) / 100, 0)}
+										</span>
 									</div>
 									<div className={'flex flex-row gap-2'}>
 										<span className={''}>{'Last Report:'}</span>
-										<Link
-											href={`#`}
-											onClick={(event): void => event.stopPropagation()}
-											className={'flex items-center gap-1 text-white hover:opacity-60'}
-											target={'_blank'}
-											rel={'noopener noreferrer'}>
-											{'3 days ago'}
-											<IconLinkOut className={'inline-block size-3'} />
-										</Link>
+										{lastReportTime}
 									</div>
 								</div>
 							</div>

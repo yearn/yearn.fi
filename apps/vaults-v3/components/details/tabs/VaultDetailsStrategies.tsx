@@ -117,9 +117,9 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 	const vaultList = useMemo((): TYDaemonVault[] => {
 		const _vaultList = [];
 		for (const strategy of currentVault?.strategies || []) {
-			_vaultList.push(vaults[strategy.address]);
+			_vaultList.push({...vaults[strategy.address], details: strategy.details});
 		}
-		return _vaultList.filter(Boolean);
+		return _vaultList.filter(vault => !!vault.address);
 	}, [vaults, currentVault]);
 
 	const strategyList = useMemo((): TYDaemonVaultStrategy[] => {
@@ -196,13 +196,18 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 													vault.address as keyof typeof allocationPercentageList
 												]
 											}
-											currentVault={vault}
+											currentVault={
+												vault as TYDaemonVault & {details: TYDaemonVaultStrategy['details']}
+											}
 										/>
 									)
 								)}
 						</div>
 					</div>
-					<div className={'col-span-3 flex min-h-[240px] w-full flex-col'}>
+					<div
+						className={
+							'col-span-9 my-auto flex size-full min-h-[240px] flex-col items-center lg:col-span-3'
+						}>
 						<AllocationPercentage allocationPercentage={allocationPercentageList} />
 					</div>
 				</div>

@@ -55,6 +55,7 @@ export function VaultsV3ListHead({items, sortBy, sortDirection, onSort}: TListHe
 	);
 
 	const [token, ...rest] = items;
+
 	return (
 		<div className={'mt-4 hidden w-full grid-cols-1 md:mt-0 md:grid'}>
 			<div
@@ -72,8 +73,17 @@ export function VaultsV3ListHead({items, sortBy, sortDirection, onSort}: TListHe
 					)}>
 					<button
 						onClick={(): void => onSort(token.value, toggleSortDirection(token.value))}
-						className={cl('yearn--table-head-label-wrapper group')}>
-						<p className={'yearn--table-head-label'}>{token.label}</p>
+						className={cl('yearn--table-head-label-wrapper group hover:text-white')}>
+						<p
+							className={cl(
+								'yearn--table-head-label',
+								'transition-colors',
+								sortBy === token.value
+									? 'text-neutral-800'
+									: 'text-neutral-800/60 group-hover:text-neutral-800'
+							)}>
+							{token.label}
+						</p>
 						{renderChevron(sortBy === token.value)}
 					</button>
 				</div>
