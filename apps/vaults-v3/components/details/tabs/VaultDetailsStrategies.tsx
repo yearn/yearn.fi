@@ -68,7 +68,7 @@ function AllocationPercentage({allocationPercentage}: {allocationPercentage: {[k
 	};
 
 	return (
-		<div className={'mt-8 flex size-full flex-col items-center justify-center'}>
+		<div className={'flex size-full flex-col items-center justify-center'}>
 			<div className={'relative size-[200px]'}>
 				{/* Background circle - light gray */}
 
@@ -153,8 +153,8 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 	return (
 		<>
 			<div className={cl(isVaultListEmpty ? 'hidden' : '')}>
-				<div className={'grid grid-cols-1 px-8 pb-6 md:gap-6 lg:grid-cols-12'}>
-					<div className={'col-span-9 mt-8 flex min-h-[240px] w-full flex-col'}>
+				<div className={'grid grid-cols-1 px-8 pb-6 pt-8 md:gap-6 lg:grid-cols-12'}>
+					<div className={'col-span-9 flex min-h-[240px] w-full flex-col'}>
 						<VaultsV3ListHead
 							sortBy={sortBy}
 							sortDirection={sortDirection}

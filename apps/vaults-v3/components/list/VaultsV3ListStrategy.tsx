@@ -74,7 +74,7 @@ export function VaultsV3ListStrategy({
 	allocationPercentage: number;
 }): ReactElement {
 	const [isExpanded, set_isExpanded] = useState(false);
-
+	console.log(currentVault);
 	const expandAnimation = {
 		initial: {
 			opacity: 0,
@@ -130,9 +130,11 @@ export function VaultsV3ListStrategy({
 			/>
 			{/* Collapsible header - always visible */}
 			<div
-				className={cl('grid grid-cols-12 items-center w-full py-3 px-8 cursor-pointer justify-between')}
+				className={cl(
+					'grid grid-cols-1 md:grid-cols-12 items-center w-full py-3 px-8 cursor-pointer justify-between'
+				)}
 				onClick={() => set_isExpanded(!isExpanded)}>
-				<div className={cl('col-span-4 flex flex-row items-center gap-4 z-10')}>
+				<div className={cl('col-span-5 flex flex-row items-center gap-4 z-10')}>
 					<div className={'flex items-center justify-center'}>
 						<button
 							className={cl(
@@ -153,14 +155,14 @@ export function VaultsV3ListStrategy({
 					</div>
 					<strong
 						title={currentVault.name}
-						className={'ml-4 block whitespace-nowrap font-bold'}>
+						className={'block truncate font-bold'}>
 						{currentVault.name}
 					</strong>
 				</div>
 
-				<div className={cl('col-span-8 z-10', 'grid grid-cols-2 md:grid-cols-12 gap-4', 'mt-4 md:mt-0')}>
+				<div className={cl('md:col-span-7 z-10', 'grid grid-cols-3 md:grid-cols-12 gap-4', 'mt-4 md:mt-0')}>
 					<div
-						className={'yearn--table-data-section-item col-span-4 flex-row md:flex-col'}
+						className={'flex-row md:col-span-3 md:flex-col md:text-right'}
 						datatype={'number'}>
 						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Estimated APY'}</p>
 						<p>
@@ -173,7 +175,7 @@ export function VaultsV3ListStrategy({
 						</p>
 					</div>
 					<div
-						className={'yearn--table-data-section-item col-span-4 flex-row md:flex-col'}
+						className={'mr-[-20px] flex-row md:col-span-4 md:flex-col md:text-right'}
 						datatype={'number'}>
 						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Estimated APY'}</p>
 						<p>
@@ -193,7 +195,7 @@ export function VaultsV3ListStrategy({
 						</p>
 					</div>
 					<div
-						className={'yearn--table-data-section-item col-span-4 flex-row md:flex-col'}
+						className={'mr-[3px] flex-row md:col-span-5 md:flex-col md:text-right'}
 						datatype={'number'}>
 						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Estimated APY'}</p>
 						<p>
@@ -217,7 +219,7 @@ export function VaultsV3ListStrategy({
 					animate={'enter'}
 					exit={'exit'}>
 					<div className={'h-px w-full bg-[#606770]'} />
-					<div className={cl('w-full py-4 pl-20 rounded-b-3xl')}>
+					<div className={cl('w-full py-4 md:pl-20 pl-8 rounded-b-3xl')}>
 						<motion.div
 							className={'grid grid-cols-1 gap-6 md:grid-cols-2'}
 							variants={{
@@ -234,9 +236,9 @@ export function VaultsV3ListStrategy({
 									<Link
 										href={`/v3/${currentVault.chainID}/${currentVault.address}`}
 										onClick={(event): void => event.stopPropagation()}
+										style={{background: chainBgColor}} // needed for polygon vaults
 										className={cl(
-											'rounded-2xl px-3.5 py-1 flex gap-2 items-center text-xs text-neutral-800 hover:opacity-80 ',
-											`bg-[${chainBgColor}]`
+											'rounded-2xl px-3.5 py-1 flex gap-2 items-center text-xs text-neutral-800 hover:opacity-80 '
 										)}
 										target={'_blank'}
 										rel={'noopener noreferrer'}>
@@ -248,9 +250,9 @@ export function VaultsV3ListStrategy({
 											currentVault.address
 										}`}
 										onClick={(event): void => event.stopPropagation()}
+										style={{background: chainBgColor}} // needed for polygon vaults
 										className={cl(
-											'rounded-2xl px-3.5 py-1 flex gap-2 items-center text-xs text-neutral-800 hover:opacity-80',
-											`bg-[${chainBgColor}]`
+											'rounded-2xl px-3.5 py-1 flex gap-2 items-center text-xs text-neutral-800 hover:opacity-80'
 										)}
 										target={'_blank'}
 										rel={'noopener noreferrer'}>
