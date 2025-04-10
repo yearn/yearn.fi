@@ -72,7 +72,7 @@ export function VaultsV3ListStrategy({
 	allocationPercentage
 }: {
 	currentVault: TYDaemonVault & {details: TYDaemonVaultStrategy['details']};
-	allocationPercentage: number;
+	allocationPercentage: {percentage: number; name: string};
 }): ReactElement {
 	const [isExpanded, set_isExpanded] = useState(false);
 
@@ -112,7 +112,7 @@ export function VaultsV3ListStrategy({
 	const lastReportTime = currentVault.details?.lastReport
 		? formatDuration(currentVault.details.lastReport * 1000 - new Date().valueOf(), true)
 		: 'N/A';
-
+	console.log(currentVault, allocationPercentage);
 	return (
 		<div
 			className={cl(
@@ -168,11 +168,11 @@ export function VaultsV3ListStrategy({
 					<div
 						className={'flex-row md:col-span-3 md:flex-col md:text-right'}
 						datatype={'number'}>
-						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Estimated APY'}</p>
+						<p className={'inline text-start text-xs text-neutral-800/60 md:hidden'}>{'Allocation %'}</p>
 						<p>
 							<RenderAmount
 								shouldHideTooltip
-								value={allocationPercentage}
+								value={allocationPercentage.percentage}
 								symbol={'percent'}
 								decimals={6}
 							/>

@@ -1,4 +1,4 @@
-import {useMemo} from 'react';
+import {useMemo, useRef, useState} from 'react';
 import {cl} from '@builtbymom/web3/utils';
 import {VaultDetailsStrategy} from '@vaults/components/details/tabs/VaultDetailsStrategies';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
@@ -9,7 +9,7 @@ import {ALL_VAULTSV3_KINDS_KEYS} from '@vaults-v3/constants';
 import {Button} from '@yearn-finance/web-lib/components/Button';
 import {useYearn} from '@common/contexts/useYearn';
 
-import type {ReactElement} from 'react';
+import type {MouseEvent, ReactElement} from 'react';
 import type {TYDaemonVault, TYDaemonVaultStrategy} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TAddress, TSortDirection} from '@builtbymom/web3/types';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
@@ -17,91 +17,206 @@ import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 /************************************************************************************************
  * AllocationPercentage Component
  * Displays a donut chart representing the allocation percentages of various strategies
- * Uses SVG to create the circular chart with gaps to match the design
+ * Uses SVG arcs for visual rendering with improved mouse position tracking
  * Shows "allocation %" text in the center of the chart
+ * Displays vault name in a tooltip when hovering over a segment
  ************************************************************************************************/
-function AllocationPercentage({allocationPercentage}: {allocationPercentage: {[key: TAddress]: number}}): ReactElement {
-	// Calculate the segments for the circular chart
+function AllocationPercentage({
+	allocationPercentage
+}: {
+	allocationPercentage: {[key: TAddress]: {percentage: number; name: string}};
+}): ReactElement {
+	const [hoveredSegment, set_hoveredSegment] = useState<{
+		address: TAddress;
+		name: string;
+		percentage: number;
+		x: number;
+		y: number;
+	} | null>(null);
+
+	const chartRef = useRef<HTMLDivElement>(null);
+
+	// Calculate the segments for the pie chart
 	const segments = useMemo(() => {
 		const entries = Object.entries(allocationPercentage);
-		let currentAngle = 0;
+		let cumulativePercentage = 0;
 
-		// Return array of segment data with start angle, end angle, and percentage
-		return entries.map(([address, percentage], index) => {
-			const segmentAngle = percentage * 360;
-			const startAngle = currentAngle;
-			currentAngle += segmentAngle;
+		return entries.map(([address, {percentage, name}]) => {
+			const startPercentage = cumulativePercentage;
+			cumulativePercentage += percentage;
 
 			return {
-				address,
+				address: address as TAddress,
+				name,
 				percentage,
-				startAngle,
-				endAngle: currentAngle,
-				color: `hsl(${(index * 60) % 360}, 70%, 60%)`
+				startPercentage,
+				endPercentage: cumulativePercentage
 			};
 		});
 	}, [allocationPercentage]);
 
-	// Chart dimensions
-	const size = 200;
-	const radius = size / 2;
-	const strokeWidth = 20;
-	const innerRadius = radius - strokeWidth;
+	// Handle mouse movement over the chart area
+	const handleMouseMove = (event: MouseEvent): void => {
+		if (!chartRef.current) return;
 
-	// Calculate the SVG path for each segment
-	const createSegmentPath = (startAngle: number, endAngle: number): string => {
-		// Convert angles to radians and calculate x,y coordinates
-		const startRad = (startAngle - 90) * (Math.PI / 180);
-		const endRad = (endAngle - 90) * (Math.PI / 180);
+		const rect = chartRef.current.getBoundingClientRect();
+		const x = event.clientX - rect.left;
+		const y = event.clientY - rect.top;
 
-		// Calculate the arc path
-		const x1 = radius + innerRadius * Math.cos(startRad);
-		const y1 = radius + innerRadius * Math.sin(startRad);
-		const x2 = radius + innerRadius * Math.cos(endRad);
-		const y2 = radius + innerRadius * Math.sin(endRad);
+		// Calculate the center point of the chart
+		const centerX = rect.width / 2;
+		const centerY = rect.height / 2;
 
-		// Determine if the arc should be drawn the long way around
-		const largeArcFlag = endAngle - startAngle > 180 ? 1 : 0;
+		// Calculate distance from center (to check if within donut ring)
+		const distanceFromCenter = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
 
-		// Create SVG path
-		return `M ${x1} ${y1} A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 1 ${x2} ${y2}`;
+		// Chart radius and donut thickness
+		const radius = rect.width / 2;
+		const innerRadius = radius * 0.7; // 70% for inner hole
+
+		// Check if cursor is within the donut ring
+		if (distanceFromCenter > innerRadius && distanceFromCenter < radius) {
+			// Calculate angle in radians, then convert to percentage around the circle
+			let angle = Math.atan2(y - centerY, x - centerX);
+
+			// Convert angle to 0-360 degrees, starting from top (negative Y axis)
+			angle = angle * (180 / Math.PI); // Convert to degrees
+			if (angle < 0) angle += 360; // Convert to 0-360 range
+			angle = (angle + 90) % 360; // Rotate to start from top
+
+			// Find which segment this angle belongs to
+			const percentage = angle / 360;
+
+			// Find the segment containing this percentage
+			for (const segment of segments) {
+				if (percentage >= segment.startPercentage && percentage <= segment.endPercentage) {
+					set_hoveredSegment({
+						address: segment.address,
+						name: segment.name,
+						percentage: segment.percentage,
+						x,
+						y
+					});
+					return;
+				}
+			}
+		}
+
+		// Not over any segment
+		set_hoveredSegment(null);
+	};
+
+	const handleMouseLeave = (): void => {
+		set_hoveredSegment(null);
+	};
+
+	// SVG path generation
+	const createArcPath = (
+		startPercentage: number,
+		endPercentage: number,
+		radius: number,
+		thickness: number
+	): string => {
+		// Add small gap between segments
+		const gapAngle = 0.005; // 0.5% gap
+		const adjustedStartPercentage = startPercentage + gapAngle;
+		const adjustedEndPercentage = endPercentage - gapAngle;
+
+		// Skip tiny segments
+		if (adjustedEndPercentage <= adjustedStartPercentage) return '';
+
+		const startAngle = adjustedStartPercentage * Math.PI * 2 - Math.PI / 2;
+		const endAngle = adjustedEndPercentage * Math.PI * 2 - Math.PI / 2;
+
+		const innerRadius = radius - thickness;
+		const outerRadius = radius;
+
+		// Calculate points
+		const startOuterX = 100 + outerRadius * Math.cos(startAngle);
+		const startOuterY = 100 + outerRadius * Math.sin(startAngle);
+		const endOuterX = 100 + outerRadius * Math.cos(endAngle);
+		const endOuterY = 100 + outerRadius * Math.sin(endAngle);
+
+		const startInnerX = 100 + innerRadius * Math.cos(startAngle);
+		const startInnerY = 100 + innerRadius * Math.sin(startAngle);
+		const endInnerX = 100 + innerRadius * Math.cos(endAngle);
+		const endInnerY = 100 + innerRadius * Math.sin(endAngle);
+
+		// Determine if the arc is more than 180 degrees
+		const largeArcFlag = endAngle - startAngle > Math.PI ? 1 : 0;
+
+		// Create path
+		return `
+			M ${startOuterX} ${startOuterY}
+			A ${outerRadius} ${outerRadius} 0 ${largeArcFlag} 1 ${endOuterX} ${endOuterY}
+			L ${endInnerX} ${endInnerY}
+			A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 0 ${startInnerX} ${startInnerY}
+			Z
+		`;
 	};
 
 	return (
 		<div className={'flex size-full flex-col items-center justify-center'}>
-			<div className={'relative size-[200px]'}>
-				{/* Background circle - light gray */}
-
-				{/* Segments */}
+			<div
+				ref={chartRef}
+				className={'relative size-[200px]'}
+				onMouseMove={handleMouseMove}
+				onMouseLeave={handleMouseLeave}>
+				{/* SVG donut chart */}
 				<svg
-					width={size}
-					height={size}
-					className={'absolute left-0 top-0'}>
+					className={'pointer-events-none size-full'}
+					viewBox={'0 0 200 200'}>
 					{segments.map((segment, index) => {
-						// Add a small gap between segments
-						const gapAngle = 5;
-						const adjustedStartAngle = segment.startAngle + gapAngle / 2;
-						const adjustedEndAngle = segment.endAngle - gapAngle / 2;
-
-						// Skip segments that are too small after adding gaps
-						if (adjustedEndAngle <= adjustedStartAngle) return null;
+						const arcPath = createArcPath(segment.startPercentage, segment.endPercentage, 90, 20);
+						if (!arcPath) return null;
 
 						return (
 							<path
 								key={`segment-${index}`}
-								d={createSegmentPath(adjustedStartAngle, adjustedEndAngle)}
-								stroke={'#FFFFFF'} // White color for all segments to match design
-								strokeWidth={strokeWidth}
-								fill={'none'}
+								d={arcPath}
+								fill={'white'}
 							/>
 						);
 					})}
 				</svg>
 
-				{/* Center text */}
-				<div className={'absolute inset-0 flex items-center justify-center'}>
-					<span className={'text-center font-normal text-white'}>{'allocation %'}</span>
+				{/* Donut hole */}
+				<div
+					className={
+						'pointer-events-none absolute left-1/2 top-1/2 size-[140px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-transparent'
+					}>
+					{/* Center text */}
+					<div className={'flex size-full items-center justify-center'}>
+						<span className={'text-center font-normal text-white'}>{'allocation %'}</span>
+					</div>
 				</div>
+
+				{/* Tooltip */}
+				{hoveredSegment && (
+					<div
+						className={
+							'pointer-events-none absolute z-10 rounded bg-neutral-300 px-3 py-2 text-xs text-white shadow-lg'
+						}
+						style={{
+							bottom: -hoveredSegment.y + 200,
+							left: hoveredSegment.x,
+							right: -hoveredSegment.x
+						}}>
+						<ul className={'flex flex-col gap-1'}>
+							<li className={'flex items-center gap-2'}>
+								<div className={'size-1.5 min-w-1.5 shrink-0 rounded-full bg-white'} />
+								<p className={'max-w-[200px]  font-medium'}>{hoveredSegment.name}</p>
+							</li>
+							<li className={'flex items-center gap-2'}>
+								<div className={'size-1.5 min-w-1.5 shrink-0 rounded-full bg-white'} />
+								<p>
+									{(hoveredSegment.percentage * 100).toFixed(2)}
+									{'%'}
+								</p>
+							</li>
+						</ul>
+					</div>
+				)}
 			</div>
 		</div>
 	);
@@ -146,7 +261,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 
 	const allocationPercentageList = useMemo(() => {
 		return sortedVaultsToDisplay.reduce((acc, vault) => {
-			return {...acc, [vault.address]: vault.tvl.tvl / totalAllocation};
+			return {...acc, [vault.address]: {percentage: vault.tvl.tvl / totalAllocation, name: vault.name}};
 		}, {});
 	}, [sortedVaultsToDisplay, totalAllocation]);
 
