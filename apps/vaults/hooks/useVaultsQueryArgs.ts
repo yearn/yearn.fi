@@ -25,6 +25,7 @@ type TQueryArgs = {
 function useQueryArguments(props: {
 	defaultTypes?: string[];
 	defaultCategories?: string[];
+	defaultSortBy?: TPossibleSortBy;
 	defaultPathname?: string;
 }): TQueryArgs {
 	const allChains = useSupportedChains().map((chain): number => chain.id);
@@ -35,7 +36,9 @@ function useQueryArguments(props: {
 	const [categories, set_categories] = useState<string[] | null>(props.defaultCategories || []);
 	const [chains, set_chains] = useState<number[] | null>(allChains || []);
 	const [sortDirection, set_sortDirection] = useState<string | null>(null);
-	const [sortBy, set_sortBy] = useState<string | null>('deposited');
+
+	const defaultSortBy = props.defaultSortBy || 'deposited';
+	const [sortBy, set_sortBy] = useState<string | null>(defaultSortBy);
 
 	const handleQuery = useCallback(
 		(_searchParams: URLSearchParams): void => {
@@ -308,7 +311,7 @@ function useQueryArguments(props: {
 			set_categories(props.defaultCategories || []);
 			set_chains(allChains || []);
 			set_sortDirection('desc');
-			set_sortBy('featuringScore');
+			set_sortBy(defaultSortBy);
 			const queryArgs: TDict<string | string[] | undefined> = {};
 			for (const key in router.query) {
 				if (

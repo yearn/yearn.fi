@@ -112,7 +112,7 @@ export function VaultsV3ListStrategy({
 	const lastReportTime = currentVault.details?.lastReport
 		? formatDuration(currentVault.details.lastReport * 1000 - new Date().valueOf(), true)
 		: 'N/A';
-	console.log(currentVault, allocationPercentage);
+
 	return (
 		<div
 			className={cl(
@@ -124,7 +124,7 @@ export function VaultsV3ListStrategy({
 			)}>
 			<div
 				className={cl(
-					'absolute inset-0 rounded-3xl',
+					'absolute inset-0 rounded-2xl',
 					'opacity-20 transition-opacity  pointer-events-none',
 
 					isExpanded
