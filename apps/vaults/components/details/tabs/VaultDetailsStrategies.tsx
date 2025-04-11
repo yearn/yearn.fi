@@ -1,214 +1,131 @@
-import {useMemo, useState} from 'react';
-import {useFetch} from '@builtbymom/web3/hooks/useFetch';
-import {formatAmount, formatPercent, toAddress, toBigInt, toNormalizedValue, truncateHex} from '@builtbymom/web3/utils';
-import {useIsMounted} from '@react-hookz/web';
-import {findLatestAPY} from '@vaults/components/details/tabs/findLatestAPY';
-import {GraphForStrategyReports} from '@vaults/components/graphs/GraphForStrategyReports';
-import {yDaemonReportsSchema} from '@vaults/schemas/reportsSchema';
-import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {useYDaemonBaseURI} from '@yearn-finance/web-lib/hooks/useYDaemonBaseURI';
-import {IconCopy} from '@yearn-finance/web-lib/icons/IconCopy';
-import {formatDuration} from '@yearn-finance/web-lib/utils/format.time';
-import {copyToClipboard, parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
-import {SearchBar} from '@common/components/SearchBar';
-import {Switch} from '@common/components/Switch';
-import {IconChevron} from '@common/icons/IconChevron';
+import {useMemo} from 'react';
+import {cl, formatCounterValue, toNormalizedBN} from '@builtbymom/web3/utils';
+import {useSortVaults} from '@vaults/hooks/useSortVaults';
+import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
+import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
+import {AllocationPercentage} from '@common/components/AllocationPercentage';
+import {VaultsListStrategy} from '@common/components/VaultsListStraregy';
+import {useYearn} from '@common/contexts/useYearn';
+import {useYearnTokenPrice} from '@common/hooks/useYearnTokenPrice';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault, TYDaemonVaultStrategy} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TYDaemonReports} from '@vaults/schemas/reportsSchema';
-
-type TProps = {
-	currentVault: TYDaemonVault;
-	strategy: TYDaemonVaultStrategy;
-};
-
-export function VaultDetailsStrategy({currentVault, strategy}: TProps): ReactElement {
-	const {yDaemonBaseUri} = useYDaemonBaseURI({chainID: currentVault.chainID});
-	const isMounted = useIsMounted();
-
-	const {data: reports} = useFetch<TYDaemonReports>({
-		endpoint: `${yDaemonBaseUri}/reports/${strategy.address}`,
-		schema: yDaemonReportsSchema
-	});
-
-	const latestApr = useMemo((): number => findLatestAPY(reports), [reports]);
-	const {lastReport} = strategy.details || {};
-	const lastReportTime = lastReport ? formatDuration(lastReport * 1000 - new Date().valueOf(), true) : 'N/A';
-
-	return (
-		<details className={'p-0'}>
-			<summary>
-				<div>
-					<b className={'text-neutral-900'}>{strategy.name || truncateHex(strategy.address, 6)}</b>
-				</div>
-				<div>
-					<IconChevron className={'summary-chevron'} />
-				</div>
-			</summary>
-
-			<div className={'bg-neutral-100 px-4 md:px-6'}>
-				<div className={'-mt-6 mb-6 w-full space-y-6'}>
-					<div>
-						<div className={'flex flex-row items-center justify-start space-x-2 pb-4'}>
-							<p className={'text-xxs text-neutral-900 md:text-xs'}>{toAddress(strategy.address)}</p>
-							<button
-								onClick={(): void => copyToClipboard(strategy.address)}
-								className={'cursor-copy'}>
-								<IconCopy
-									className={'size-4 text-neutral-600 transition-colors hover:text-neutral-900'}
-								/>
-							</button>
-						</div>
-						<p
-							className={'text-neutral-600'}
-							dangerouslySetInnerHTML={{
-								__html: parseMarkdown(
-									(strategy.description || '').replaceAll('{{token}}', currentVault.token.symbol)
-								)
-							}}
-						/>
-						<p className={'text-neutral-600'}>{`Last report ${lastReportTime}.`}</p>
-					</div>
-				</div>
-
-				<div className={'grid grid-cols-12 gap-4 pb-8 md:gap-10 lg:gap-24'}>
-					<div className={'col-span-12 w-full space-y-4 md:col-span-6'}>
-						<div className={'grid grid-cols-4 gap-4'}>
-							<div className={'col-span-2 flex flex-col space-y-2 bg-neutral-200 p-2 md:p-4'}>
-								<p className={'text-base text-neutral-600'}>{'Capital Allocation'}</p>
-								<b className={'font-number text-lg text-neutral-900'}>
-									{`${formatAmount(
-										toNormalizedValue(
-											toBigInt(strategy.details?.totalDebt),
-											currentVault?.decimals
-										),
-										0,
-										0
-									)} ${currentVault.token.symbol}`}
-								</b>
-							</div>
-
-							<div className={'col-span-2 flex flex-col space-y-2 bg-neutral-200 p-2 md:p-4'}>
-								<p className={'text-base text-neutral-600'}>{'Total Gain'}</p>
-								<b className={'font-number text-lg text-neutral-900'}>
-									{`${formatAmount(
-										toNormalizedValue(
-											toBigInt(strategy.details?.totalGain) -
-												toBigInt(strategy.details?.totalLoss),
-											currentVault?.decimals
-										),
-										0,
-										0
-									)} ${currentVault.token.symbol}`}
-								</b>
-							</div>
-						</div>
-					</div>
-					<div className={'col-span-12 flex size-full flex-col justify-between md:col-span-6'}>
-						<div className={'grid grid-cols-6 gap-6 md:gap-8'}>
-							<div className={'col-span-2 flex flex-col space-y-0 md:space-y-2'}>
-								<p className={'text-xxs text-neutral-600 md:text-xs'}>{'APY'}</p>
-								<b className={'font-number text-xl text-neutral-900'}>{formatPercent(latestApr, 0)}</b>
-							</div>
-
-							<div className={'col-span-2 flex flex-col space-y-0 md:space-y-2'}>
-								<p className={'text-xxs text-neutral-600 md:text-xs'}>{'Allocation'}</p>
-								<b className={'font-number text-xl text-neutral-900'}>
-									{formatPercent((strategy.details?.debtRatio || 0) / 100, 0)}
-								</b>
-							</div>
-
-							<div className={'col-span-2 flex flex-col space-y-0 md:space-y-2'}>
-								<p className={'text-xxs text-neutral-600 md:text-xs'}>{'Perfomance fee'}</p>
-								<b className={'font-number text-xl text-neutral-600'}>
-									{formatPercent((strategy.details?.performanceFee || 0) / 100, 0)}
-								</b>
-							</div>
-						</div>
-
-						<div className={'mt-auto pt-8'}>
-							<Renderable shouldRender={isMounted()}>
-								<GraphForStrategyReports
-									vaultChainID={currentVault.chainID}
-									vaultDecimals={currentVault.decimals}
-									vaultTicker={currentVault?.token?.symbol || 'token'}
-									strategy={strategy}
-								/>
-							</Renderable>
-						</div>
-					</div>
-				</div>
-			</div>
-		</details>
-	);
-}
-
-function isExceptionStrategy(strategy: TYDaemonVaultStrategy): boolean {
-	// Curve DAO Fee and Bribes Reinvest
-	return strategy.address.toString() === '0x23724D764d8b3d26852BA20d3Bc2578093d2B022';
-}
+import type {TSortDirection} from '@builtbymom/web3/types';
+import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 
 export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const [searchValue, set_searchValue] = useState<string>('');
-	const [shouldDisplayInactiveStrategies, set_shouldDisplayInactiveStrategies] = useState(true);
+	const {vaults} = useYearn();
+	const {sortDirection, sortBy, search, onChangeSortDirection, onChangeSortBy} = useQueryArguments({
+		defaultSortBy: 'allocationPercentage',
+		defaultPathname: '/vaults/[chainID]/[address]'
+	});
 
-	const sortedStrategies = useMemo((): TYDaemonVault['strategies'] => {
-		return (currentVault.strategies || []).sort(
-			(a, b): number => (b.details?.debtRatio || 0) - (a.details?.debtRatio || 0)
-		);
-	}, [currentVault.strategies]);
+	const tokenPrice = useYearnTokenPrice({address: currentVault.token.address, chainID: currentVault.chainID});
 
-	const filteredStrategies = useMemo((): TYDaemonVault['strategies'] => {
-		return (sortedStrategies || [])
-			.filter((strategy): boolean => {
-				if (!searchValue) {
-					return true;
-				}
-				return strategy.name.toLowerCase().includes(searchValue);
-			})
-			.filter((strategy): boolean => {
-				if (!shouldDisplayInactiveStrategies) {
-					return Number(strategy.details?.totalDebt) > 0 || isExceptionStrategy(strategy);
-				}
-				return true;
-			});
-	}, [searchValue, shouldDisplayInactiveStrategies, sortedStrategies]);
+	const strategyList = useMemo((): TYDaemonVaultStrategy[] => {
+		const _stratList = [];
+		for (const strategy of currentVault?.strategies || []) {
+			if (!vaults[strategy.address]) {
+				_stratList.push(strategy);
+			}
+		}
+		return _stratList;
+	}, [vaults, currentVault]);
+
+	/* 🔵 - Yearn Finance **************************************************************************
+	 **	Then, once we have reduced the list of vaults to display, we can sort them. The sorting
+	 **	is done via a custom method that will sort the vaults based on the sortBy and
+	 **	sortDirection values.
+	 **********************************************************************************************/
+	const sortedVaultsToDisplay = useSortVaults(
+		strategyList as (TYDaemonVault & {details: TYDaemonVaultStrategy['details']})[],
+		sortBy,
+		sortDirection
+	) as (TYDaemonVault & {
+		details: TYDaemonVaultStrategy['details'];
+	})[];
+	const isVaultListEmpty = sortedVaultsToDisplay.length === 0;
 
 	return (
-		<div className={'grid grid-cols-1'}>
-			<div className={'col-span-1 w-full space-y-6 p-4 md:p-6'}>
-				<div className={'w-full flex-row items-center justify-between md:flex md:space-x-4'}>
-					<SearchBar
-						searchPlaceholder={'Aave'}
-						searchValue={searchValue}
-						onSearch={(value): void => {
-							set_searchValue(value.toLowerCase());
-						}}
-					/>
-
-					<div className={'mt-4 flex h-full min-w-fit flex-row md:mr-4 md:mt-7'}>
-						<small className={'mr-2'}>{'Hide 0 debt strategies'}</small>
-						<Switch
-							isEnabled={shouldDisplayInactiveStrategies}
-							onSwitch={(): void => {
-								set_shouldDisplayInactiveStrategies((prev): boolean => !prev);
+		<>
+			<div className={cl(isVaultListEmpty ? 'hidden ' : '')}>
+				<div className={'grid grid-cols-1 px-8 pb-6 pt-8 md:gap-6 lg:grid-cols-12 '}>
+					<div className={'col-span-9 flex w-full flex-col rounded-[4px] border border-fallback'}>
+						<VaultsV3ListHead
+							sortBy={sortBy}
+							sortDirection={sortDirection}
+							onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {
+								if (newSortDirection === '') {
+									onChangeSortBy('featuringScore');
+									onChangeSortDirection('');
+									return;
+								}
+								onChangeSortBy(newSortBy as TPossibleSortBy);
+								onChangeSortDirection(newSortDirection as TSortDirection);
 							}}
+							items={[
+								{label: 'Vault', value: 'name', sortable: true, className: 'ml-20'},
+								{
+									label: 'Allocation %',
+									value: 'allocationPercentage',
+									sortable: true,
+									className: 'col-span-4'
+								},
+								{label: 'Allocation $', value: 'allocation', sortable: true, className: 'col-span-4'},
+								{
+									label: 'Est. APY',
+									value: 'estAPY',
+									sortable: true,
+									className: 'col-span-4 justify-end'
+								}
+							]}
 						/>
+						<div className={'grid'}>
+							{(strategyList || []).map(
+								(strategy): ReactElement => (
+									<VaultsListStrategy
+										key={`${currentVault?.chainID}_${strategy.address}`}
+										details={strategy.details}
+										chainId={currentVault.chainID}
+										address={strategy.address}
+										variant={'v2'}
+										name={strategy.name}
+										tokenAddress={currentVault.token.address}
+										allocation={formatCounterValue(
+											toNormalizedBN(
+												strategy.details?.totalDebt || 0,
+												currentVault.token?.decimals
+											).display,
+											tokenPrice
+										)}
+										apr={undefined}
+										fees={{
+											performance: strategy.details?.performanceFee || 0,
+											withdrawal: 0,
+											management: 0
+										}}
+									/>
+								)
+							)}
+						</div>
+					</div>
+					<div
+						className={
+							'col-span-9 row-span-2 my-auto flex size-full min-h-[240px] flex-col items-center lg:col-span-3'
+						}>
+						<AllocationPercentage allocationList={strategyList} />
 					</div>
 				</div>
 			</div>
-			<div className={'col-span-1 w-full border-t border-neutral-300'}>
-				{(filteredStrategies || []).map(
-					(strategy): ReactElement => (
-						<VaultDetailsStrategy
-							currentVault={currentVault}
-							strategy={strategy}
-							key={strategy.address}
-						/>
-					)
-				)}
+
+			<div className={cl(isVaultListEmpty && search === null ? '' : 'hidden')}>
+				<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
+					<b className={'text-center text-lg'}>{'This vault IS the strategy'}</b>
+					<p className={'text-center text-neutral-600'}>
+						{"Surprise! This vault doesn't have any strategies. It is the strategy. #brainexplosion"}
+					</p>
+				</div>
 			</div>
-		</div>
+		</>
 	);
 }

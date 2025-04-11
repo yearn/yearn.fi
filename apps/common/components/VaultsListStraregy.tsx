@@ -5,6 +5,7 @@ import {useFetch} from '@builtbymom/web3/hooks/useFetch';
 import {cl, formatPercent, truncateHex} from '@builtbymom/web3/utils';
 import {findLatestAPY} from '@vaults/components/details/tabs/findLatestAPY';
 import {yDaemonReportsSchema} from '@vaults/schemas/reportsSchema';
+import {VaultChainTag} from '@vaults-v3/components/VaultChainTag';
 import {getChainBgColor} from '@vaults-v3/utils';
 import {useYDaemonBaseURI} from '@yearn-finance/web-lib/hooks/useYDaemonBaseURI';
 import {IconLinkOut} from '@yearn-finance/web-lib/icons/IconLinkOut';
@@ -13,21 +14,19 @@ import {getNetwork} from '@yearn-finance/web-lib/utils/wagmi/utils';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {RenderAmount} from '@common/components/RenderAmount';
 
-import {VaultChainTag} from '../VaultChainTag';
-
 import type {ReactElement} from 'react';
 import type {TYDaemonVault, TYDaemonVaultStrategy} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TAddress} from '@builtbymom/web3/types';
 import type {TYDaemonReports} from '@vaults/schemas/reportsSchema';
 
-export function VaultsV3ListStrategy({
+export function VaultsListStrategy({
 	details,
 	chainId,
 	allocation,
 	name,
-	variant = 'v3',
 	tokenAddress,
 	address,
+	variant = 'v3',
 	apr,
 	fees
 }: {
@@ -36,8 +35,8 @@ export function VaultsV3ListStrategy({
 	allocation: string;
 	name: string;
 	tokenAddress: TAddress;
-	variant: 'v2' | 'v3';
 	address: TAddress;
+	variant: 'v2' | 'v3';
 	apr: number | undefined;
 	fees: TYDaemonVault['apr']['fees'];
 }): ReactElement {
@@ -101,22 +100,26 @@ export function VaultsV3ListStrategy({
 
 				'text-white',
 				isExpanded ? 'rounded-b-none' : '',
-				variant === 'v2' ? '' : 'rounded-3xl'
+				variant === 'v2' ? '' : 'rounded-3xl',
+				isExpanded && variant === 'v2' ? 'bg-[#97979724] bg-opacity-[14]' : ''
 			)}>
-			<div
-				className={cl(
-					'absolute inset-0 rounded-2xl',
-					'opacity-20 transition-opacity  pointer-events-none',
+			{variant === 'v3' && (
+				<div
+					className={cl(
+						'absolute inset-0 rounded-2xl',
+						'opacity-20 transition-opacity  pointer-events-none',
 
-					isExpanded
-						? 'bg-[#474592]'
-						: 'bg-[linear-gradient(80deg,_#2C3DA6,_#D21162)] group-hover:opacity-100'
-				)}
-			/>
+						isExpanded
+							? 'bg-[#474592]'
+							: 'bg-[linear-gradient(80deg,_#2C3DA6,_#D21162)] group-hover:opacity-100'
+					)}
+				/>
+			)}
 			{/* Collapsible header - always visible */}
 			<div
 				className={cl(
-					'grid grid-cols-1 md:grid-cols-12 items-center w-full py-3 px-8 cursor-pointer justify-between'
+					'grid grid-cols-1 md:grid-cols-12 text-neutral-900 items-center w-full py-3 px-8 cursor-pointer justify-between',
+					variant === 'v3' ? '' : 'border-t border-[#606770]'
 				)}
 				onClick={() => set_isExpanded(!isExpanded)}>
 				<div className={cl('col-span-5 flex flex-row items-center gap-4 z-10')}>
@@ -140,7 +143,7 @@ export function VaultsV3ListStrategy({
 					</div>
 					<strong
 						title={name}
-						className={'block truncate font-bold'}>
+						className={'block truncate font-bold '}>
 						{name}
 					</strong>
 				</div>
@@ -183,7 +186,7 @@ export function VaultsV3ListStrategy({
 					animate={'enter'}
 					exit={'exit'}>
 					<div className={'h-px w-full bg-[#606770]'} />
-					<div className={cl('w-full py-4 md:pl-20 pl-8 rounded-b-3xl')}>
+					<div className={cl('w-full py-4 md:pl-20 pl-8 rounded-b-3xl text-neutral-900')}>
 						<motion.div
 							className={'grid grid-cols-1 gap-6 md:grid-cols-2'}
 							variants={{
@@ -197,18 +200,20 @@ export function VaultsV3ListStrategy({
 									<div className={'shrink-0'}>
 										<VaultChainTag chainID={chainId} />
 									</div>
-									<Link
-										href={`/v3/${chainId}/${address}`}
-										onClick={(event): void => event.stopPropagation()}
-										style={{background: chainBgColor}} // needed for polygon vaults
-										className={cl(
-											'rounded-2xl px-3.5 py-1 flex gap-2 items-center text-xs text-neutral-800 hover:opacity-80 '
-										)}
-										target={'_blank'}
-										rel={'noopener noreferrer'}>
-										{'Vault'}
-										<IconLinkOut className={'inline-block size-4'} />
-									</Link>
+									{variant === 'v3' ? (
+										<Link
+											href={`/v3/${chainId}/${address}`}
+											onClick={(event): void => event.stopPropagation()}
+											style={{background: chainBgColor}} // needed for polygon vaults
+											className={cl(
+												'rounded-2xl px-3.5 py-1 flex gap-2 items-center text-xs text-neutral-800 hover:opacity-80 '
+											)}
+											target={'_blank'}
+											rel={'noopener noreferrer'}>
+											{'Vault'}
+											<IconLinkOut className={'inline-block size-4'} />
+										</Link>
+									) : null}
 									<Link
 										href={`${getNetwork(chainId)?.defaultBlockExplorer}/address/${address}`}
 										onClick={(event): void => event.stopPropagation()}

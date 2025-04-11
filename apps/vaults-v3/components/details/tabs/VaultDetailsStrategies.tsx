@@ -1,226 +1,19 @@
-import {useMemo, useRef, useState} from 'react';
-import {cl} from '@builtbymom/web3/utils';
-import {VaultDetailsStrategy} from '@vaults/components/details/tabs/VaultDetailsStrategies';
+import {useMemo} from 'react';
+import {cl, formatCounterValue, toNormalizedBN} from '@builtbymom/web3/utils';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
 import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
-import {VaultsV3ListStrategy} from '@vaults-v3/components/list/VaultsV3ListStrategy';
 import {ALL_VAULTSV3_KINDS_KEYS} from '@vaults-v3/constants';
 import {Button} from '@yearn-finance/web-lib/components/Button';
+import {AllocationPercentage} from '@common/components/AllocationPercentage';
+import {VaultsListStrategy} from '@common/components/VaultsListStraregy';
 import {useYearn} from '@common/contexts/useYearn';
+import {useYearnTokenPrice} from '@common/hooks/useYearnTokenPrice';
 
-import type {MouseEvent, ReactElement} from 'react';
+import type {ReactElement} from 'react';
 import type {TYDaemonVault, TYDaemonVaultStrategy} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TAddress, TSortDirection} from '@builtbymom/web3/types';
+import type {TSortDirection} from '@builtbymom/web3/types';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
-
-/************************************************************************************************
- * AllocationPercentage Component
- * Displays a donut chart representing the allocation percentages of various strategies
- * Uses SVG arcs for visual rendering with improved mouse position tracking
- * Shows "allocation %" text in the center of the chart
- * Displays vault name in a tooltip when hovering over a segment
- ************************************************************************************************/
-function AllocationPercentage({
-	allocationPercentage
-}: {
-	allocationPercentage: {[key: TAddress]: {percentage: number; name: string}};
-}): ReactElement {
-	const [hoveredSegment, set_hoveredSegment] = useState<{
-		address: TAddress;
-		name: string;
-		percentage: number;
-		x: number;
-		y: number;
-	} | null>(null);
-
-	const chartRef = useRef<HTMLDivElement>(null);
-
-	// Calculate the segments for the pie chart
-	const segments = useMemo(() => {
-		const entries = Object.entries(allocationPercentage);
-		let cumulativePercentage = 0;
-
-		return entries.map(([address, {percentage, name}]) => {
-			const startPercentage = cumulativePercentage;
-			cumulativePercentage += percentage;
-
-			return {
-				address: address as TAddress,
-				name,
-				percentage,
-				startPercentage,
-				endPercentage: cumulativePercentage
-			};
-		});
-	}, [allocationPercentage]);
-
-	// Handle mouse movement over the chart area
-	const handleMouseMove = (event: MouseEvent): void => {
-		if (!chartRef.current) return;
-
-		const rect = chartRef.current.getBoundingClientRect();
-		const x = event.clientX - rect.left;
-		const y = event.clientY - rect.top;
-
-		// Calculate the center point of the chart
-		const centerX = rect.width / 2;
-		const centerY = rect.height / 2;
-
-		// Calculate distance from center (to check if within donut ring)
-		const distanceFromCenter = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
-
-		// Chart radius and donut thickness
-		const radius = rect.width / 2;
-		const innerRadius = radius * 0.7; // 70% for inner hole
-
-		// Check if cursor is within the donut ring
-		if (distanceFromCenter > innerRadius && distanceFromCenter < radius) {
-			// Calculate angle in radians, then convert to percentage around the circle
-			let angle = Math.atan2(y - centerY, x - centerX);
-
-			// Convert angle to 0-360 degrees, starting from top (negative Y axis)
-			angle = angle * (180 / Math.PI); // Convert to degrees
-			if (angle < 0) angle += 360; // Convert to 0-360 range
-			angle = (angle + 90) % 360; // Rotate to start from top
-
-			// Find which segment this angle belongs to
-			const percentage = angle / 360;
-
-			// Find the segment containing this percentage
-			for (const segment of segments) {
-				if (percentage >= segment.startPercentage && percentage <= segment.endPercentage) {
-					set_hoveredSegment({
-						address: segment.address,
-						name: segment.name,
-						percentage: segment.percentage,
-						x,
-						y
-					});
-					return;
-				}
-			}
-		}
-
-		// Not over any segment
-		set_hoveredSegment(null);
-	};
-
-	const handleMouseLeave = (): void => {
-		set_hoveredSegment(null);
-	};
-
-	// SVG path generation
-	const createArcPath = (
-		startPercentage: number,
-		endPercentage: number,
-		radius: number,
-		thickness: number
-	): string => {
-		// Add small gap between segments
-		const gapAngle = 0.005; // 0.5% gap
-		const adjustedStartPercentage = startPercentage + gapAngle;
-		const adjustedEndPercentage = endPercentage - gapAngle;
-
-		// Skip tiny segments
-		if (adjustedEndPercentage <= adjustedStartPercentage) return '';
-
-		const startAngle = adjustedStartPercentage * Math.PI * 2 - Math.PI / 2;
-		const endAngle = adjustedEndPercentage * Math.PI * 2 - Math.PI / 2;
-
-		const innerRadius = radius - thickness;
-		const outerRadius = radius;
-
-		// Calculate points
-		const startOuterX = 100 + outerRadius * Math.cos(startAngle);
-		const startOuterY = 100 + outerRadius * Math.sin(startAngle);
-		const endOuterX = 100 + outerRadius * Math.cos(endAngle);
-		const endOuterY = 100 + outerRadius * Math.sin(endAngle);
-
-		const startInnerX = 100 + innerRadius * Math.cos(startAngle);
-		const startInnerY = 100 + innerRadius * Math.sin(startAngle);
-		const endInnerX = 100 + innerRadius * Math.cos(endAngle);
-		const endInnerY = 100 + innerRadius * Math.sin(endAngle);
-
-		// Determine if the arc is more than 180 degrees
-		const largeArcFlag = endAngle - startAngle > Math.PI ? 1 : 0;
-
-		// Create path
-		return `
-			M ${startOuterX} ${startOuterY}
-			A ${outerRadius} ${outerRadius} 0 ${largeArcFlag} 1 ${endOuterX} ${endOuterY}
-			L ${endInnerX} ${endInnerY}
-			A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 0 ${startInnerX} ${startInnerY}
-			Z
-		`;
-	};
-
-	return (
-		<div className={'flex size-full flex-col items-center justify-center'}>
-			<div
-				ref={chartRef}
-				className={'relative size-[200px]'}
-				onMouseMove={handleMouseMove}
-				onMouseLeave={handleMouseLeave}>
-				{/* SVG donut chart */}
-				<svg
-					className={'pointer-events-none size-full'}
-					viewBox={'0 0 200 200'}>
-					{segments.map((segment, index) => {
-						const arcPath = createArcPath(segment.startPercentage, segment.endPercentage, 90, 20);
-						if (!arcPath) return null;
-
-						return (
-							<path
-								key={`segment-${index}`}
-								d={arcPath}
-								fill={'white'}
-							/>
-						);
-					})}
-				</svg>
-
-				{/* Donut hole */}
-				<div
-					className={
-						'pointer-events-none absolute left-1/2 top-1/2 size-[140px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-transparent'
-					}>
-					{/* Center text */}
-					<div className={'flex size-full items-center justify-center'}>
-						<span className={'text-center font-normal text-white'}>{'allocation %'}</span>
-					</div>
-				</div>
-
-				{/* Tooltip */}
-				{hoveredSegment && (
-					<div
-						className={
-							'pointer-events-none absolute z-10 rounded bg-neutral-300 px-3 py-2 text-xs text-white shadow-lg'
-						}
-						style={{
-							bottom: -hoveredSegment.y + 200,
-							left: hoveredSegment.x,
-							right: -hoveredSegment.x
-						}}>
-						<ul className={'flex flex-col gap-1'}>
-							<li className={'flex items-center gap-2'}>
-								<div className={'size-1.5 min-w-1.5 shrink-0 rounded-full bg-white'} />
-								<p className={'max-w-[200px]  font-medium'}>{hoveredSegment.name}</p>
-							</li>
-							<li className={'flex items-center gap-2'}>
-								<div className={'size-1.5 min-w-1.5 shrink-0 rounded-full bg-white'} />
-								<p>
-									{(hoveredSegment.percentage * 100).toFixed(2)}
-									{'%'}
-								</p>
-							</li>
-						</ul>
-					</div>
-				)}
-			</div>
-		</div>
-	);
-}
 
 export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {vaults} = useYearn();
@@ -229,6 +22,8 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 		defaultTypes: ALL_VAULTSV3_KINDS_KEYS,
 		defaultPathname: '/v3/[chainID]/[address]'
 	});
+
+	const tokenPrice = useYearnTokenPrice({address: currentVault.token.address, chainID: currentVault.chainID});
 
 	const vaultList = useMemo((): TYDaemonVault[] => {
 		const _vaultList = [];
@@ -253,18 +48,12 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 	 **	is done via a custom method that will sort the vaults based on the sortBy and
 	 **	sortDirection values.
 	 **********************************************************************************************/
-	const sortedVaultsToDisplay = useSortVaults([...vaultList], sortBy, sortDirection);
+	const sortedVaultsToDisplay = useSortVaults([...vaultList], sortBy, sortDirection) as (TYDaemonVault & {
+		details: TYDaemonVaultStrategy['details'];
+	})[];
 	const isVaultListEmpty = sortedVaultsToDisplay.length === 0;
 
-	const totalAllocation = useMemo(() => {
-		return sortedVaultsToDisplay.reduce((acc, vault) => acc + vault.tvl.tvl, 0);
-	}, [sortedVaultsToDisplay]);
-
-	const allocationPercentageList = useMemo(() => {
-		return sortedVaultsToDisplay.reduce((acc, vault) => {
-			return {...acc, [vault.address]: {percentage: vault.tvl.tvl / totalAllocation, name: vault.name}};
-		}, {});
-	}, [sortedVaultsToDisplay, totalAllocation]);
+	const allocationList = [...vaultList, ...strategyList];
 
 	return (
 		<>
@@ -284,14 +73,14 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 								onChangeSortDirection(newSortDirection as TSortDirection);
 							}}
 							items={[
-								{label: 'Vault', value: 'name', sortable: true, className: 'ml-24'},
+								{label: 'Vault', value: 'name', sortable: true, className: 'ml-20'},
 								{
 									label: 'Allocation %',
 									value: 'allocationPercentage',
 									sortable: true,
 									className: 'col-span-4'
 								},
-								{label: 'Allocation $', value: 'tvl', sortable: true, className: 'col-span-4'},
+								{label: 'Allocation $', value: 'allocation', sortable: true, className: 'col-span-4'},
 								{
 									label: 'Est. APY',
 									value: 'estAPY',
@@ -305,16 +94,21 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 								.filter((v): boolean => Boolean(v?.chainID))
 								.map(
 									(vault): ReactElement => (
-										<VaultsV3ListStrategy
+										<VaultsListStrategy
 											key={`${vault?.chainID}_${vault.address}`}
-											allocationPercentage={
-												allocationPercentageList[
-													vault.address as keyof typeof allocationPercentageList
-												]
-											}
-											currentVault={
-												vault as TYDaemonVault & {details: TYDaemonVaultStrategy['details']}
-											}
+											details={vault.details}
+											chainId={vault.chainID}
+											variant={'v3'}
+											address={vault.address}
+											name={vault.name}
+											tokenAddress={vault.token.address}
+											allocation={formatCounterValue(
+												toNormalizedBN(vault.details?.totalDebt || 0, vault.token?.decimals)
+													.display,
+												tokenPrice
+											)}
+											apr={vault.apr.forwardAPR.netAPR || vault.apr?.netAPR}
+											fees={vault.apr.fees}
 										/>
 									)
 								)}
@@ -322,30 +116,51 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 					</div>
 					<div
 						className={
-							'col-span-9 my-auto flex size-full min-h-[240px] flex-col items-center lg:col-span-3'
+							'col-span-9 row-span-2 my-auto flex size-full min-h-[240px] flex-col items-center lg:col-span-3'
 						}>
-						<AllocationPercentage allocationPercentage={allocationPercentageList} />
+						<AllocationPercentage allocationList={allocationList} />
+					</div>
+					<div className={'col-span-9 flex min-h-[240px] w-full flex-col'}>
+						{strategyList.length > 0 ? (
+							<div className={'col-span-12 w-full md:pb-8'}>
+								<div className={'w-1/2'}>
+									<p className={'pb-2 text-[#757CA6]'}>{'Other strategies'}</p>
+								</div>
+								<div className={'col-span-1 w-full border-t border-neutral-300'}></div>
+							</div>
+						) : null}
+						<div className={'grid gap-4'}>
+							{(strategyList || []).map(
+								(strategy): ReactElement => (
+									<VaultsListStrategy
+										key={`${currentVault?.chainID}_${strategy.address}`}
+										details={strategy.details}
+										variant={'v3'}
+										chainId={currentVault.chainID}
+										address={strategy.address}
+										name={strategy.name}
+										tokenAddress={currentVault.token.address}
+										allocation={formatCounterValue(
+											toNormalizedBN(
+												strategy.details?.totalDebt || 0,
+												currentVault.token?.decimals
+											).display,
+											tokenPrice
+										)}
+										apr={undefined}
+										fees={{
+											performance: strategy.details?.performanceFee || 0,
+											withdrawal: 0,
+											management: 0
+										}}
+									/>
+								)
+							)}
+						</div>
 					</div>
 				</div>
 			</div>
-			{strategyList.length > 0 ? (
-				<div className={'col-span-12 w-full p-4 md:px-8 md:pb-8'}>
-					<div className={'w-1/2'}>
-						<p className={'pb-2 text-[#757CA6]'}>{'Other strategies'}</p>
-					</div>
-					<div className={'col-span-1 w-full border-t border-neutral-300'}>
-						{(strategyList || []).map(
-							(strategy): ReactElement => (
-								<VaultDetailsStrategy
-									currentVault={currentVault}
-									strategy={strategy}
-									key={strategy.address}
-								/>
-							)
-						)}
-					</div>
-				</div>
-			) : null}
+
 			<div className={cl(isVaultListEmpty && search === null ? '' : 'hidden')}>
 				<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
 					<b className={'text-center text-lg'}>{'This vault IS the strategy'}</b>
