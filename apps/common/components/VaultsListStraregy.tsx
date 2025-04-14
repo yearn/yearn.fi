@@ -126,7 +126,7 @@ export function VaultsListStrategy({
 					<div className={'flex items-center justify-center'}>
 						<button
 							className={cl(
-								'text-sm font-bold transition-all duration-300 ease-in-out text-[#787878]',
+								'text-sm font-bold transition-all duration-300 ease-in-out',
 								isExpanded ? '' : 'rotate-[-90deg]'
 							)}
 							aria-label={isExpanded ? 'Collapse' : 'Expand'}>
@@ -172,7 +172,6 @@ export function VaultsListStrategy({
 								symbol={'percent'}
 								decimals={6}
 							/>
-							&nbsp;&nbsp;&nbsp;{'APY'}
 						</p>
 					</div>
 				</div>
@@ -208,7 +207,6 @@ export function VaultsListStrategy({
 											className={cl(
 												'rounded-2xl px-3.5 py-1 flex gap-2 items-center text-xs text-neutral-800 hover:opacity-80 '
 											)}
-											target={'_blank'}
 											rel={'noopener noreferrer'}>
 											{'Vault'}
 											<IconLinkOut className={'inline-block size-4'} />

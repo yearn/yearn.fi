@@ -114,10 +114,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 								)}
 						</div>
 					</div>
-					<div
-						className={
-							'col-span-9 row-span-2 my-auto flex size-full min-h-[240px] flex-col items-center lg:col-span-3'
-						}>
+					<div className={'col-span-9 flex size-full lg:col-span-3'}>
 						<AllocationPercentage allocationList={allocationList} />
 					</div>
 					<div className={'col-span-9 flex min-h-[240px] w-full flex-col'}>
@@ -126,7 +123,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 								<div className={'w-1/2'}>
 									<p className={'pb-2 text-[#757CA6]'}>{'Other strategies'}</p>
 								</div>
-								<div className={'col-span-1 w-full border-t border-neutral-300'}></div>
+								<div className={'-mt-0.5 h-0.5 w-full bg-neutral-300'}></div>
 							</div>
 						) : null}
 						<div className={'grid gap-4'}>

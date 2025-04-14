@@ -140,7 +140,7 @@ export function AllocationPercentage({allocationList}: {allocationList: TYDaemon
 	};
 
 	return (
-		<div className={'flex size-full flex-col items-center justify-center'}>
+		<div className={'flex size-full flex-col items-center justify-start'}>
 			<div
 				ref={chartRef}
 				className={'relative size-[200px]'}

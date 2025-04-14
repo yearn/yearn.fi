@@ -50,7 +50,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 		<>
 			<div className={cl(isVaultListEmpty ? 'hidden ' : '')}>
 				<div className={'grid grid-cols-1 px-8 pb-6 pt-8 md:gap-6 lg:grid-cols-12 '}>
-					<div className={'col-span-9 flex w-full flex-col rounded-[4px] border border-fallback'}>
+					<div className={'col-span-9 flex w-full flex-col self-start rounded-[4px] border border-fallback'}>
 						<VaultsV3ListHead
 							sortBy={sortBy}
 							sortDirection={sortDirection}
@@ -109,10 +109,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 							)}
 						</div>
 					</div>
-					<div
-						className={
-							'col-span-9 row-span-2 my-auto flex size-full min-h-[240px] flex-col items-center lg:col-span-3'
-						}>
+					<div className={'col-span-9 flex size-full lg:col-span-3'}>
 						<AllocationPercentage allocationList={strategyList} />
 					</div>
 				</div>
