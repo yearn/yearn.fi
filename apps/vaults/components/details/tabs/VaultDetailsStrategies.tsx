@@ -44,6 +44,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 	) as (TYDaemonVault & {
 		details: TYDaemonVaultStrategy['details'];
 	})[];
+
 	const isVaultListEmpty = sortedVaultsToDisplay.length === 0;
 
 	return (

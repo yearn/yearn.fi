@@ -4,7 +4,6 @@ import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
 import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
 import {ALL_VAULTSV3_KINDS_KEYS} from '@vaults-v3/constants';
-import {Button} from '@yearn-finance/web-lib/components/Button';
 import {AllocationPercentage} from '@common/components/AllocationPercentage';
 import {VaultsListStrategy} from '@common/components/VaultsListStraregy';
 import {useYearn} from '@common/contexts/useYearn';
@@ -17,7 +16,7 @@ import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 
 export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {vaults} = useYearn();
-	const {sortDirection, sortBy, search, onSearch, onChangeSortDirection, onChangeSortBy} = useQueryArguments({
+	const {sortDirection, sortBy, onChangeSortDirection, onChangeSortBy} = useQueryArguments({
 		defaultSortBy: 'allocationPercentage',
 		defaultTypes: ALL_VAULTSV3_KINDS_KEYS,
 		defaultPathname: '/v3/[chainID]/[address]'
@@ -43,17 +42,27 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 		return _stratList;
 	}, [vaults, currentVault]);
 
+	const filteredVaultList = useMemo(() => {
+		return [...vaultList, ...strategyList].filter(
+			vault => (vault as TYDaemonVault & {details: TYDaemonVaultStrategy['details']}).details?.totalDebt !== '0'
+		);
+	}, [vaultList, strategyList]);
+
 	/* 🔵 - Yearn Finance **************************************************************************
 	 **	Then, once we have reduced the list of vaults to display, we can sort them. The sorting
 	 **	is done via a custom method that will sort the vaults based on the sortBy and
 	 **	sortDirection values.
 	 **********************************************************************************************/
-	const sortedVaultsToDisplay = useSortVaults([...vaultList], sortBy, sortDirection) as (TYDaemonVault & {
+	const sortedVaultsToDisplay = useSortVaults(
+		filteredVaultList as (TYDaemonVault & {
+			details: TYDaemonVaultStrategy['details'];
+		})[],
+		sortBy,
+		sortDirection
+	) as (TYDaemonVault & {
 		details: TYDaemonVaultStrategy['details'];
 	})[];
 	const isVaultListEmpty = sortedVaultsToDisplay.length === 0;
-
-	const allocationList = [...vaultList, ...strategyList];
 
 	return (
 		<>
@@ -115,66 +124,17 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 						</div>
 					</div>
 					<div className={'col-span-9 flex size-full lg:col-span-3'}>
-						<AllocationPercentage allocationList={allocationList} />
-					</div>
-					<div className={'col-span-9 flex min-h-[240px] w-full flex-col'}>
-						{strategyList.length > 0 ? (
-							<div className={'col-span-12 w-full md:pb-8'}>
-								<div className={'w-1/2'}>
-									<p className={'pb-2 text-[#757CA6]'}>{'Other strategies'}</p>
-								</div>
-								<div className={'-mt-0.5 h-0.5 w-full bg-neutral-300'}></div>
-							</div>
-						) : null}
-						<div className={'grid gap-4'}>
-							{(strategyList || []).map(
-								(strategy): ReactElement => (
-									<VaultsListStrategy
-										key={`${currentVault?.chainID}_${strategy.address}`}
-										details={strategy.details}
-										variant={'v3'}
-										chainId={currentVault.chainID}
-										address={strategy.address}
-										name={strategy.name}
-										tokenAddress={currentVault.token.address}
-										allocation={formatCounterValue(
-											toNormalizedBN(
-												strategy.details?.totalDebt || 0,
-												currentVault.token?.decimals
-											).display,
-											tokenPrice
-										)}
-										apr={undefined}
-										fees={{
-											performance: strategy.details?.performanceFee || 0,
-											withdrawal: 0,
-											management: 0
-										}}
-									/>
-								)
-							)}
-						</div>
+						<AllocationPercentage allocationList={filteredVaultList} />
 					</div>
 				</div>
 			</div>
 
-			<div className={cl(isVaultListEmpty && search === null ? '' : 'hidden')}>
+			<div className={cl(isVaultListEmpty ? '' : 'hidden')}>
 				<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
 					<b className={'text-center text-lg'}>{'This vault IS the strategy'}</b>
 					<p className={'text-center text-neutral-600'}>
 						{"Surprise! This vault doesn't have any strategies. It is the strategy. #brainexplosion"}
 					</p>
-				</div>
-			</div>
-			<div className={cl(isVaultListEmpty && search ? '' : 'hidden')}>
-				<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
-					<b className={'text-center text-lg'}>{'No vaults found'}</b>
-					<p className={'text-center text-neutral-600'}>{'Try another search term'}</p>
-					<Button
-						className={'mt-4 w-full md:w-48'}
-						onClick={(): void => onSearch('')}>
-						{'Clear Search'}
-					</Button>
 				</div>
 			</div>
 		</>
