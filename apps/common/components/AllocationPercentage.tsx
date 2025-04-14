@@ -1,9 +1,9 @@
 import {useMemo, useRef, useState} from 'react';
+import {useRouter} from 'next/router';
 
 import type {MouseEvent, ReactElement} from 'react';
 import type {TYDaemonVaultStrategy} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TAddress} from '@builtbymom/web3/types';
-
 /************************************************************************************************
  * AllocationPercentage Component
  * Displays a donut chart representing the allocation percentages of various strategies
@@ -12,6 +12,9 @@ import type {TAddress} from '@builtbymom/web3/types';
  * Displays vault name in a tooltip when hovering over a segment
  ************************************************************************************************/
 export function AllocationPercentage({allocationList}: {allocationList: TYDaemonVaultStrategy[]}): ReactElement {
+	const router = useRouter();
+	const isV3Page = router.pathname.startsWith(`/v3`);
+
 	const [hoveredSegment, set_hoveredSegment] = useState<{
 		address: TAddress;
 		name: string;
@@ -159,7 +162,7 @@ export function AllocationPercentage({allocationList}: {allocationList: TYDaemon
 								key={`segment-${index}`}
 								d={arcPath}
 								fill={'currentColor'}
-								className={'text-[#000838] dark:text-white'}
+								className={isV3Page ? 'text-white' : 'text-[#000838] dark:text-white'}
 							/>
 						);
 					})}
