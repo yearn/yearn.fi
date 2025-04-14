@@ -62,7 +62,9 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 	) as (TYDaemonVault & {
 		details: TYDaemonVaultStrategy['details'];
 	})[];
-	const isVaultListEmpty = sortedVaultsToDisplay.length === 0;
+
+	const isVaultListEmpty = [...vaultList, ...strategyList].length === 0;
+	const isFilteredVaultListEmpty = filteredVaultList.length === 0;
 
 	return (
 		<>
@@ -129,11 +131,15 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 				</div>
 			</div>
 
-			<div className={cl(isVaultListEmpty ? '' : 'hidden')}>
+			<div className={cl(isFilteredVaultListEmpty ? '' : 'hidden')}>
 				<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
-					<b className={'text-center text-lg'}>{'This vault IS the strategy'}</b>
+					<b className={'text-center text-lg'}>
+						{isVaultListEmpty ? 'This vault IS the strategy' : 'No strategies found'}
+					</b>
 					<p className={'text-center text-neutral-600'}>
-						{"Surprise! This vault doesn't have any strategies. It is the strategy. #brainexplosion"}
+						{isVaultListEmpty
+							? "Surprise! This vault doesn't have any strategies. It is the strategy. #brainexplosion"
+							: "Surprise! This vault doesn't have any strategies."}
 					</p>
 				</div>
 			</div>

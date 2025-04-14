@@ -1,5 +1,6 @@
 import {useMemo, useRef, useState} from 'react';
 import {useRouter} from 'next/router';
+import {cl} from '@builtbymom/web3/utils';
 
 import type {MouseEvent, ReactElement} from 'react';
 import type {TYDaemonVaultStrategy} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
@@ -182,9 +183,10 @@ export function AllocationPercentage({allocationList}: {allocationList: TYDaemon
 				{/* Tooltip */}
 				{hoveredSegment && (
 					<div
-						className={
-							'pointer-events-none absolute z-10 rounded bg-neutral-900 px-3 py-2 text-xs text-white shadow-lg dark:bg-neutral-300'
-						}
+						className={cl(
+							'pointer-events-none absolute z-10 rounded px-3 py-2 text-xs text-white shadow-lg',
+							isV3Page ? 'bg-neutral-300' : 'bg-neutral-900 dark:bg-neutral-300'
+						)}
 						style={{
 							bottom: -hoveredSegment.y + 200,
 							left: hoveredSegment.x,

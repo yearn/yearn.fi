@@ -15,7 +15,7 @@ import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 
 export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const {vaults} = useYearn();
-	const {sortDirection, sortBy, search, onChangeSortDirection, onChangeSortBy} = useQueryArguments({
+	const {sortDirection, sortBy, onChangeSortDirection, onChangeSortBy} = useQueryArguments({
 		defaultSortBy: 'allocationPercentage',
 		defaultPathname: '/vaults/[chainID]/[address]'
 	});
@@ -32,24 +32,27 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 		return _stratList;
 	}, [vaults, currentVault]);
 
+	const filteredStrategyList = useMemo(() => {
+		return strategyList.filter(strategy => strategy.details?.totalDebt !== '0') as (TYDaemonVault & {
+			details: TYDaemonVaultStrategy['details'];
+		})[];
+	}, [strategyList]);
+
 	/* 🔵 - Yearn Finance **************************************************************************
 	 **	Then, once we have reduced the list of vaults to display, we can sort them. The sorting
 	 **	is done via a custom method that will sort the vaults based on the sortBy and
 	 **	sortDirection values.
 	 **********************************************************************************************/
-	const sortedVaultsToDisplay = useSortVaults(
-		strategyList as (TYDaemonVault & {details: TYDaemonVaultStrategy['details']})[],
-		sortBy,
-		sortDirection
-	) as (TYDaemonVault & {
+	const sortedVaultsToDisplay = useSortVaults(filteredStrategyList, sortBy, sortDirection) as (TYDaemonVault & {
 		details: TYDaemonVaultStrategy['details'];
 	})[];
 
-	const isVaultListEmpty = sortedVaultsToDisplay.length === 0;
+	const isVaultListEmpty = strategyList.length === 0;
+	const isFilteredVaultListEmpty = filteredStrategyList.length === 0;
 
 	return (
 		<>
-			<div className={cl(isVaultListEmpty ? 'hidden ' : '')}>
+			<div className={cl(isFilteredVaultListEmpty ? 'hidden ' : '')}>
 				<div className={'grid grid-cols-1 px-8 pb-6 pt-8 md:gap-6 lg:grid-cols-12 '}>
 					<div className={'col-span-9 flex w-full flex-col self-start rounded-[4px] border border-fallback'}>
 						<VaultsV3ListHead
@@ -82,7 +85,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 							]}
 						/>
 						<div className={'grid'}>
-							{(strategyList || []).map(
+							{(sortedVaultsToDisplay || []).map(
 								(strategy): ReactElement => (
 									<VaultsListStrategy
 										key={`${currentVault?.chainID}_${strategy.address}`}
@@ -116,11 +119,15 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 				</div>
 			</div>
 
-			<div className={cl(isVaultListEmpty && search === null ? '' : 'hidden')}>
+			<div className={cl(isFilteredVaultListEmpty ? '' : 'hidden')}>
 				<div className={'mx-auto flex h-96 w-full flex-col items-center justify-center px-10 py-2 md:w-3/4'}>
-					<b className={'text-center text-lg'}>{'This vault IS the strategy'}</b>
+					<b className={'text-center text-lg'}>
+						{isVaultListEmpty ? 'This vault IS the strategy' : 'No strategies found'}
+					</b>
 					<p className={'text-center text-neutral-600'}>
-						{"Surprise! This vault doesn't have any strategies. It is the strategy. #brainexplosion"}
+						{isVaultListEmpty
+							? "Surprise! This vault doesn't have any strategies. It is the strategy. #brainexplosion"
+							: "Surprise! This vault doesn't have any strategies."}
 					</p>
 				</div>
 			</div>
