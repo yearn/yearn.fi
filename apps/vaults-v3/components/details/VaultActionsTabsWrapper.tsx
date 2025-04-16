@@ -1,6 +1,6 @@
 import {Fragment, useCallback, useEffect, useMemo, useState} from 'react';
 import {useRouter} from 'next/router';
-import {useBlockNumber} from 'wagmi';
+import {useBlockNumber, useReadContract} from 'wagmi';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {useAsyncTrigger} from '@builtbymom/web3/hooks/useAsyncTrigger';
 import {
@@ -10,13 +10,16 @@ import {
 	parseMarkdown,
 	toAddress,
 	toBigInt,
-	toNormalizedBN
+	toNormalizedBN,
+	toNormalizedValue
 } from '@builtbymom/web3/utils';
 import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
 import {useUpdateEffect} from '@react-hookz/web';
 import {Flow, useActionFlow} from '@vaults/contexts/useActionFlow';
+import {useVaultStakingData} from '@vaults/hooks/useVaultStakingData';
 import {STAKING_REWARDS_ABI} from '@vaults/utils/abi/stakingRewards.abi';
 import {VAULT_V3_ABI} from '@vaults/utils/abi/vaultV3.abi';
+import {VEYFI_ABI} from '@vaults/utils/abi/veYFI.abi';
 import {VaultDetailsQuickActionsButtons} from '@vaults-v3/components/details/actions/QuickActionsButtons';
 import {VaultDetailsQuickActionsFrom} from '@vaults-v3/components/details/actions/QuickActionsFrom';
 import {VaultDetailsQuickActionsSwitch} from '@vaults-v3/components/details/actions/QuickActionsSwitch';
@@ -24,13 +27,15 @@ import {VaultDetailsQuickActionsTo} from '@vaults-v3/components/details/actions/
 import {RewardsTab} from '@vaults-v3/components/details/RewardsTab';
 import {SettingsPopover} from '@vaults-v3/components/SettingsPopover';
 import {readContracts} from '@wagmi/core';
+import {VEYFI_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
+import {InfoTooltip} from '@common/components/InfoTooltip';
+import {Switch} from '@common/components/Switch';
 import {useYearn} from '@common/contexts/useYearn';
 import {DISABLED_VEYFI_GAUGES_VAULTS_LIST} from '@common/utils/constants';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TNormalizedBN} from '@builtbymom/web3/types';
-import {useVaultStakingData} from '@vaults/hooks/useVaultStakingData';
 
 /**************************************************************************************************
  ** Base type for tab options containing value, label and optional slug
@@ -309,14 +314,14 @@ export function VaultDetailsTab(props: {
  ** corresponding actions that can be taken.
  *************************************************************************************************/
 export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
-	const {onSwitchSelectedOptions, isDepositing, actionParams} = useActionFlow();
+	const {onSwitchSelectedOptions, isDepositing, actionParams, veYFIBalance, hasVeYFIBalance} = useActionFlow();
 	const {address} = useWeb3();
 	const router = useRouter();
 	const {isAutoStakingEnabled, set_isAutoStakingEnabled} = useYearn();
 	const {vaultData, updateVaultData} = useVaultStakingData({currentVault});
 	const [unstakedBalance, set_unstakedBalance] = useState<TNormalizedBN | undefined>(undefined);
 	const [possibleTabs, set_possibleTabs] = useState<TTabsOptions[]>([tabs[0], tabs[1]]);
-	const [hasStakingRewardsLive, set_hasStakingRewardsLive] = useState(true);
+	const [hasStakingRewardsLive, set_hasStakingRewardsLive] = useState(false);
 	const [currentTab, set_currentTab] = useState<TTabsOptions>(
 		getCurrentTab({
 			isDepositing,
@@ -329,6 +334,32 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 	const shouldForceDisplayBoostTab = !!DISABLED_VEYFI_GAUGES_VAULTS_LIST.find(
 		vault => vault.address === currentVault.address
 	);
+
+	const isSourceVeYFI = currentVault.staking.source === 'VeYFI';
+
+	/**********************************************************************************************
+	 ** Retrieve some data for correct display of APR
+	 **********************************************************************************************/
+	const {data: veYFITotalSupplyData} = useReadContract({
+		address: toAddress(VEYFI_ADDRESS),
+		abi: VEYFI_ABI,
+		functionName: 'totalSupply',
+		query: {
+			enabled: isSourceVeYFI && isAutoStakingEnabled && hasVeYFIBalance
+		}
+	});
+
+	const veYFITotalSupply = veYFITotalSupplyData ? toNormalizedValue(veYFITotalSupplyData as bigint, 18) : 0;
+	const {data: gaugeTotalSupplyData} = useReadContract({
+		address: currentVault.staking.address,
+		abi: VAULT_V3_ABI,
+		functionName: 'totalAssets',
+		query: {
+			enabled: isSourceVeYFI && isAutoStakingEnabled && hasVeYFIBalance
+		}
+	});
+	const gaugeTotalSupply = gaugeTotalSupplyData ? toNormalizedValue(gaugeTotalSupplyData as bigint, 18) : 0;
+
 	const getTabLabel = useCallback((): string => {
 		if (currentVault.staking.source === 'VeYFI') {
 			return 'veYFI BOOST';
@@ -365,7 +396,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 					args: [toAddress(address)]
 				},
 				{
-					address: toAddress(currentVault.address),
+					address: toAddress(currentVault.staking.address),
 					abi: STAKING_REWARDS_ABI,
 					chainId: currentVault.chainID,
 					functionName: 'periodFinish',
@@ -375,11 +406,9 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 		});
 
 		const hasLiveRewards = decodeAsBigInt(result[1]) > Math.floor(Date.now() / 1000);
-		const hasLiveRewardsFromYDaemon = (currentVault.staking.rewards || []).some(e => !e.isFinished);
 		set_unstakedBalance(toNormalizedBN(decodeAsBigInt(result[0]), currentVault.decimals));
-		set_hasStakingRewardsLive(hasLiveRewards || hasLiveRewardsFromYDaemon);
+		set_hasStakingRewardsLive(hasLiveRewards);
 	}, [currentVault, address]);
-
 	/**********************************************************************************************
 	 ** As we want live data, we want the data to be refreshed every time the block number changes.
 	 ** This way, the user will always have the most up-to-date data.
@@ -442,12 +471,10 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 	 * for vaults with expired or long-inactive staking programs.
 	 ************************************************************************************************/
 	useEffect(() => {
-		if (
-			!hasStakingRewards &&
-			currentVault.staking.rewards?.some(
-				el => Math.floor(Date.now() / 1000) - (el.finishedAt ?? 0) > 60 * 60 * 24 * 7
-			)
-		) {
+		const hasStakingRewardsEndedOverAWeekAgo = currentVault.staking.rewards?.some(
+			el => Math.floor(Date.now() / 1000) - (el.finishedAt ?? 0) > 60 * 60 * 24 * 7
+		);
+		if (!hasStakingRewards && hasStakingRewardsEndedOverAWeekAgo) {
 			set_isAutoStakingEnabled(false);
 			return;
 		}
@@ -459,6 +486,13 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 		toAddress(currentVault.address) === toAddress(`0xad17a225074191d5c8a37b50fda1ae278a2ee6a2`) ||
 		toAddress(currentVault.address) === toAddress(`0x65343f414ffd6c97b0f6add33d16f6845ac22bac`) ||
 		toAddress(currentVault.address) === toAddress(`0xfaee21d0f0af88ee72bb6d68e54a90e6ec2616de`);
+
+	const tooltipText = useMemo(() => {
+		if (isAutoStakingEnabled) {
+			return 'Deposit your tokens and automatically stake them to earn additional rewards.';
+		}
+		return 'Deposit your tokens without automatically staking them for additional rewards.';
+	}, [isAutoStakingEnabled]);
 
 	return (
 		<>
@@ -569,22 +603,47 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 						className={
 							'col-span-12 flex flex-col space-x-0 space-y-2 p-4 md:flex-row md:space-x-4 md:space-y-0 md:px-8 md:py-10'
 						}>
-						<VaultDetailsQuickActionsFrom vaultData={vaultData} />
+						<VaultDetailsQuickActionsFrom
+							currentVault={currentVault}
+							vaultData={vaultData}
+							veYFIBalance={veYFIBalance}
+							veYFITotalSupply={veYFITotalSupply}
+							gaugeTotalSupply={gaugeTotalSupply}
+						/>
 						<VaultDetailsQuickActionsSwitch />
-						<VaultDetailsQuickActionsTo />
+						<VaultDetailsQuickActionsTo
+							vaultData={vaultData}
+							veYFIBalance={veYFIBalance}
+							veYFITotalSupply={veYFITotalSupply}
+							gaugeTotalSupply={gaugeTotalSupply}
+						/>
 						<div className={'w-full space-y-0 md:w-42 md:min-w-42 md:space-y-2'}>
-							<p className={'hidden text-base md:inline'}>&nbsp;</p>
 							<div>
-								<VaultDetailsQuickActionsButtons currentVault={currentVault} />
-								{!hasStakingRewardsLive && isDepositing && (
-									<div className={'mt-1 flex justify-between'}>
-										<button
-											className={'font-number text-xxs text-neutral-900/50'}
-											onClick={(): void => set_isAutoStakingEnabled(!isAutoStakingEnabled)}>
-											{isAutoStakingEnabled ? 'Deposit only' : 'Deposit and Stake'}
-										</button>
+								{hasStakingRewardsLive && isDepositing ? (
+									<div className={cl('mt-1 flex justify-between pb-[10px]')}>
+										<div className={'flex items-center gap-5'}>
+											<InfoTooltip
+												className={'max-sm:left'}
+												text={tooltipText}
+												size={'sm'}
+											/>
+											<p className={cl('text-xs text-neutral-600')}>
+												{isAutoStakingEnabled ? 'Deposit and Stake' : 'Deposit only'}
+											</p>
+										</div>
+
+										<Switch
+											isEnabled={isAutoStakingEnabled}
+											onSwitch={(): void => set_isAutoStakingEnabled(!isAutoStakingEnabled)}
+										/>
 									</div>
+								) : (
+									<div className={'h-8'} />
 								)}
+								<VaultDetailsQuickActionsButtons
+									currentVault={currentVault}
+									hasStakingRewardsLive={hasStakingRewardsLive}
+								/>
 							</div>
 						</div>
 					</div>
@@ -598,7 +657,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 								)}>
 								{'Boost'}
 							</div>
-							<div className={'z-10 hidden border-b-2 border-neutral-900 pb-4 font-bold md:block'}>
+							<div className={'hidden border-b-2 border-neutral-900 pb-4 font-bold md:block'}>
 								{getTabLabel()}
 							</div>
 						</div>

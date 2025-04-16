@@ -183,6 +183,10 @@
 			}
 		}
 
+		&[disabled] {
+			@apply opacity-40 cursor-not-allowed;
+		}
+
 		& > div {
 			@apply mx-1 pointer-events-none inline-block h-2 w-2 rounded-full transition ease-in-out duration-200;
 		}

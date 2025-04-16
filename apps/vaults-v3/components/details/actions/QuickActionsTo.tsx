@@ -1,4 +1,4 @@
-import {Fragment, type ReactElement} from 'react';
+import {Fragment, type ReactElement, useMemo} from 'react';
 import {useRouter} from 'next/router';
 import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
 import {cl, formatCounterValue, formatPercent, toAddress} from '@builtbymom/web3/utils';
@@ -9,23 +9,53 @@ import {RenderAmount} from '@common/components/RenderAmount';
 import {Dropdown} from '@common/components/TokenDropdown';
 import {useYearn} from '@common/contexts/useYearn';
 import {useYearnTokenPrice} from '@common/hooks/useYearnTokenPrice';
+import {calculateBoostFromVeYFI} from '@common/utils/calculations';
 
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {TNormalizedBN} from '@builtbymom/web3/types';
+import type {TStakingInfo} from '@vaults/hooks/useVaultStakingData';
 
-function VaultAPY({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
+function VaultAPY({
+	currentVault,
+	hasVeYFIBalance,
+	currentVaultBoost,
+	vaultData,
+	stakedVaultBoost
+}: {
+	currentVault: TYDaemonVault;
+	hasVeYFIBalance: boolean;
+	currentVaultBoost: number;
+	vaultData: TStakingInfo;
+	stakedVaultBoost: number;
+}): ReactElement {
 	const isSourceVeYFI = currentVault.staking.source === 'VeYFI';
 	const {isAutoStakingEnabled} = useYearn();
+	const {address} = useWeb3();
 
-	if (isSourceVeYFI && isAutoStakingEnabled) {
-		const sumOfRewardsAPY = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.extra.gammaRewardAPR;
-		const veYFIRange = [
-			currentVault.apr.extra.stakingRewardsAPR / 10 + currentVault.apr.extra.gammaRewardAPR,
-			sumOfRewardsAPY
-		] as [number, number];
-		const estAPYRange = [
-			veYFIRange[0] + currentVault.apr.forwardAPR.netAPR,
-			veYFIRange[1] + currentVault.apr.forwardAPR.netAPR
-		] as [number, number];
+	const {actionParams} = useActionFlow();
+	const inputAmount = actionParams?.amount?.normalized || 0;
+	const stakedBalance = vaultData.stakedBalanceOf.normalized;
+
+	const sumOfRewardsAPY = currentVault.apr.extra.stakingRewardsAPR + currentVault.apr.extra.gammaRewardAPR;
+	const veYFIRange = [
+		currentVault.apr.extra.stakingRewardsAPR / 10 + currentVault.apr.extra.gammaRewardAPR,
+		sumOfRewardsAPY
+	] as [number, number];
+	const estAPYRange = [
+		veYFIRange[0] + currentVault.apr.forwardAPR.netAPR,
+		veYFIRange[1] + currentVault.apr.forwardAPR.netAPR
+	] as [number, number];
+
+	/******************************************************************************************
+	 ** There are 2 cases where we show the estimated APY range:
+	 ** 1. Wallet is not connected and auto-staking is enabled.
+	 ** 2. User has VeYFI balance, has no staked balance, auto-staking is enabled, and the amount input is 0/initial
+	 ** state.
+	 ******************************************************************************************/
+	if (
+		(!address && isAutoStakingEnabled) ||
+		(isSourceVeYFI && isAutoStakingEnabled && hasVeYFIBalance && !inputAmount && stakedBalance === 0)
+	) {
 		return (
 			<Fragment>
 				<RenderAmount
@@ -45,16 +75,84 @@ function VaultAPY({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 		);
 	}
 
-	return (
-		<Fragment>
-			{formatPercent((currentVault.apr.netAPR + currentVault.apr.extra.stakingRewardsAPR) * 100, 2, 2, 500)}
-		</Fragment>
-	);
+	/******************************************************************************************
+	 ** If the user has a VeYFI balance, staking source is VeYFI, auto-staking is enabled,
+	 ** and the boost differs from the default value, we show the current calculated APY.
+	 ******************************************************************************************/
+	if (isSourceVeYFI && isAutoStakingEnabled && hasVeYFIBalance && currentVaultBoost > 1) {
+		/******************************************************************************************
+		 ** APY that is calculated based on input amount. AKA the APY that the user will get if
+		 ** they deposit the full amount.
+		 ******************************************************************************************/
+		const currentVaultAPY = Math.min(
+			currentVaultBoost * (currentVault.apr.extra.stakingRewardsAPR / 10) + currentVault.apr.forwardAPR.netAPR,
+			veYFIRange[1] + currentVault.apr.forwardAPR.netAPR
+		);
+
+		/******************************************************************************************
+		 ** APY that is calculated based on the already staked balance. AKA the APY that the user
+		 ** is already earning.
+		 ******************************************************************************************/
+		const stakedVaultAPY = Math.min(
+			stakedVaultBoost * (currentVault.apr.extra.stakingRewardsAPR / 10) + currentVault.apr.forwardAPR.netAPR
+		);
+
+		/******************************************************************************************
+		 ** If the user has a staked balance, and the APYs are different, we show the difference
+		 ** between the 2 APY's in case of depositing.
+		 ******************************************************************************************/
+		if (stakedBalance > 0 && stakedVaultAPY !== currentVaultAPY) {
+			return (
+				<Fragment>
+					<span className={'line-through'}>
+						<RenderAmount
+							shouldHideTooltip
+							value={stakedVaultAPY}
+							symbol={'percent'}
+							decimals={6}
+						/>
+					</span>
+					&nbsp;&rarr;&nbsp;
+					<RenderAmount
+						shouldHideTooltip
+						value={currentVaultAPY}
+						symbol={'percent'}
+						decimals={6}
+					/>
+				</Fragment>
+			);
+		}
+
+		return (
+			<Fragment>
+				<RenderAmount
+					value={currentVaultAPY}
+					symbol={'percent'}
+					decimals={6}
+				/>
+			</Fragment>
+		);
+	}
+
+	/******************************************************************************************
+	 ** Display this if any of the following is true:
+	 ** 1. Auto-staking is disabled.
+	 ** 2. User does not have a VeYFI balance.
+	 ** 3. Vault doesn't support staking.
+	 ** 4. The boost is the default value.
+	 ******************************************************************************************/
+	return <Fragment>{formatPercent(currentVault.apr.forwardAPR.netAPR * 100, 2, 2, 500)}</Fragment>;
 }
 
-export function VaultDetailsQuickActionsTo(): ReactElement {
+export function VaultDetailsQuickActionsTo(props: {
+	vaultData: TStakingInfo;
+	veYFIBalance: TNormalizedBN;
+	veYFITotalSupply: number;
+	gaugeTotalSupply: number;
+}): ReactElement {
 	const {isActive} = useWeb3();
-	const {currentVault, possibleOptionsTo, actionParams, onUpdateSelectedOptionTo, isDepositing} = useActionFlow();
+	const {currentVault, possibleOptionsTo, actionParams, onUpdateSelectedOptionTo, isDepositing, hasVeYFIBalance} =
+		useActionFlow();
 	const {expectedOut, isLoadingExpectedOut} = useSolver();
 	const {pathname} = useRouter();
 	const isV3Page = pathname.startsWith(`/v3`);
@@ -63,6 +161,34 @@ export function VaultDetailsQuickActionsTo(): ReactElement {
 		address: toAddress(actionParams?.selectedOptionTo?.value),
 		chainID: Number(actionParams?.selectedOptionTo?.chainID)
 	});
+
+	const currentVaultBoost = useMemo(
+		() =>
+			calculateBoostFromVeYFI(
+				props.veYFIBalance.normalized,
+				props.veYFITotalSupply,
+				props.gaugeTotalSupply,
+				(actionParams.amount?.normalized || 0) + props.vaultData.stakedBalanceOf.normalized
+			),
+		[
+			props.veYFIBalance.normalized,
+			props.veYFITotalSupply,
+			props.gaugeTotalSupply,
+			actionParams.amount?.normalized,
+			props.vaultData
+		]
+	);
+
+	const stakedVaultBoost = useMemo(
+		() =>
+			calculateBoostFromVeYFI(
+				props.veYFIBalance.normalized,
+				props.veYFITotalSupply,
+				props.gaugeTotalSupply,
+				props.vaultData.stakedBalanceOf.normalized
+			),
+		[props.veYFIBalance.normalized, props.veYFITotalSupply, props.gaugeTotalSupply, props.vaultData]
+	);
 
 	function renderMultipleOptionsFallback(): ReactElement {
 		return (
@@ -79,7 +205,7 @@ export function VaultDetailsQuickActionsTo(): ReactElement {
 
 	return (
 		<section className={'grid w-full flex-col gap-0 md:grid-cols-2 md:flex-row md:gap-4'}>
-			<div className={'relative z-10 w-full'}>
+			<div className={'relative w-full'}>
 				<div className={'flex flex-col items-baseline justify-between pb-2 pl-1 md:flex-row'}>
 					<p className={'text-base text-neutral-600'}>
 						{isDepositing || isMigrationAvailable ? 'To vault' : 'To wallet'}
@@ -87,7 +213,13 @@ export function VaultDetailsQuickActionsTo(): ReactElement {
 					<legend
 						className={'font-number inline text-xs text-neutral-900/50 md:hidden'}
 						suppressHydrationWarning>
-						<VaultAPY currentVault={currentVault} />
+						<VaultAPY
+							currentVault={currentVault}
+							hasVeYFIBalance={hasVeYFIBalance}
+							currentVaultBoost={currentVaultBoost}
+							stakedVaultBoost={stakedVaultBoost}
+							vaultData={props.vaultData}
+						/>
 					</legend>
 				</div>
 				<Renderable
@@ -112,9 +244,23 @@ export function VaultDetailsQuickActionsTo(): ReactElement {
 				</Renderable>
 				<div className={'mt-1 pl-1'}>
 					<legend
-						className={'font-number hidden text-xs text-neutral-900/50 md:inline'}
+						className={'hidden text-xs text-neutral-900/50 md:inline'}
 						suppressHydrationWarning>
-						{isDepositing ? <VaultAPY currentVault={currentVault} /> : ''}
+						<div>
+							<p className={'font-number'}>
+								{isDepositing ? (
+									<VaultAPY
+										currentVault={currentVault}
+										hasVeYFIBalance={hasVeYFIBalance}
+										currentVaultBoost={currentVaultBoost}
+										stakedVaultBoost={stakedVaultBoost}
+										vaultData={props.vaultData}
+									/>
+								) : (
+									''
+								)}
+							</p>
+						</div>
 					</legend>
 				</div>
 			</div>
@@ -154,8 +300,12 @@ export function VaultDetailsQuickActionsTo(): ReactElement {
 				<div className={'mt-1 pl-1'}>
 					<legend
 						suppressHydrationWarning
-						className={'font-number hidden text-xs text-neutral-900/50 md:mr-0 md:inline md:text-start'}>
-						{formatCounterValue(expectedOut?.normalized || 0, selectedOptionToPricePerToken)}
+						className={'hidden text-xs text-neutral-900/50 md:inline'}>
+						<div>
+							<p className={'font-number'}>
+								{formatCounterValue(expectedOut?.normalized || 0, selectedOptionToPricePerToken)}
+							</p>
+						</div>
 					</legend>
 				</div>
 			</div>
