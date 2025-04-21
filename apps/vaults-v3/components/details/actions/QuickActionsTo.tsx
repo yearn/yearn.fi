@@ -153,6 +153,8 @@ export function VaultDetailsQuickActionsTo(props: {
 	const {isActive} = useWeb3();
 	const {currentVault, possibleOptionsTo, actionParams, onUpdateSelectedOptionTo, isDepositing, hasVeYFIBalance} =
 		useActionFlow();
+	const {isAutoStakingEnabled} = useYearn();
+
 	const {expectedOut, isLoadingExpectedOut} = useSolver();
 	const {pathname} = useRouter();
 	const isV3Page = pathname.startsWith(`/v3`);
@@ -161,6 +163,14 @@ export function VaultDetailsQuickActionsTo(props: {
 		address: toAddress(actionParams?.selectedOptionTo?.value),
 		chainID: Number(actionParams?.selectedOptionTo?.chainID)
 	});
+	console.log(currentVault);
+	const selectedOptionToSymbol = useMemo(() => {
+		if (isAutoStakingEnabled) {
+			return props.vaultData.stakedGaugeSymbol;
+		}
+
+		return actionParams?.selectedOptionTo?.symbol;
+	}, [actionParams?.selectedOptionTo?.symbol, isAutoStakingEnabled, props.vaultData.stakedGaugeSymbol]);
 
 	const currentVaultBoost = useMemo(
 		() =>
@@ -237,7 +247,7 @@ export function VaultDetailsQuickActionsTo(props: {
 								className={
 									'truncate whitespace-nowrap pl-2 font-normal text-neutral-900 scrollbar-none'
 								}>
-								{actionParams?.selectedOptionTo?.symbol}
+								{selectedOptionToSymbol}
 							</p>
 						</div>
 					</div>
