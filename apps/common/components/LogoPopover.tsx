@@ -7,7 +7,6 @@ import {useRouter} from 'next/router';
 import {motion} from 'framer-motion';
 import {cl} from '@builtbymom/web3/utils';
 import {Popover, Transition} from '@headlessui/react';
-import {V3Logo} from '@vaults-v3/Mark';
 
 import {APPS} from './YearnApps';
 
@@ -78,6 +77,10 @@ export function LogoPopover(): ReactElement {
 	const isMounted = useIsMounted();
 	const pathname = usePathname();
 
+	const isV3 = pathname.includes('/v3');
+
+	const [isShowingMore, set_isShowingMore] = useState(false);
+
 	const currentHost = useMemo(() => {
 		if (typeof window === 'undefined') {
 			return '';
@@ -133,16 +136,21 @@ export function LogoPopover(): ReactElement {
 						leaveTo={'opacity-0 translate-y-1'}
 						className={'relative z-[9999999]'}>
 						<Popover.Panel
-							className={'absolute left-1/2 z-20 w-80 -translate-x-1/2 px-4 pt-6 sm:px-0 md:w-[800px]'}>
+							className={
+								'absolute left-1/2 z-20 w-[300px] -translate-x-1/2 bg-transparent px-4 pt-6 sm:px-0'
+							}>
 							<div className={cl('overflow-hidden shadow-xl', isVaultPage ? 'pt-4' : 'pt-0')}>
 								<div
 									className={cl(
-										'relative grid grid-cols-2 gap-2 border p-6 md:grid-cols-5 rounded',
-										'bg-[#F4F4F4] dark:bg-neutral-100 border-transparent'
+										'relative gap-2 border p-4 rounded-md',
+										'border-transparent ',
+										isV3
+											? 'border-[#151C40] bg-[#000520]'
+											: 'dark:border-[#010A3B] dark:bg-neutral-300'
 									)}>
-									<div className={'col-span-3 grid grid-cols-2 gap-2 md:grid-cols-3'}>
+									<div className={'grid grid-cols-2 gap-2'}>
 										{[...Object.values(APPS)]
-											.filter(({name}): boolean => name !== 'V3 Vaults')
+											.slice(0, 4)
 											.map(({name, href, icon}): ReactElement => {
 												return (
 													<Link
@@ -153,8 +161,10 @@ export function LogoPopover(): ReactElement {
 														<div
 															onClick={(): void => set_isShowing(false)}
 															className={cl(
-																'flex cursor-pointer flex-col items-center justify-center transition-colors p-4 rounded',
-																'bg-[#EBEBEB] border-transparent hover:bg-[#c3c3c380] dark:bg-[#010A3B] hover:dark:bg-neutral-0'
+																'flex cursor-pointer flex-col items-center justify-center transition-colors p-4 rounded-sm',
+																isV3
+																	? 'hover:bg-neutral-0 border-[#151C40] border bg-[#010A3B]'
+																	: 'bg-[#EBEBEB] dark:border-[#151C40] dark:border hover:bg-[#c3c3c380] dark:bg-neutral-100 hover:dark:bg-neutral-0'
 															)}>
 															<div>
 																{cloneElement(icon, {
@@ -162,7 +172,13 @@ export function LogoPopover(): ReactElement {
 																})}
 															</div>
 															<div className={'pt-2 text-center'}>
-																<b className={'text-base text-black dark:text-white'}>
+																<b
+																	className={cl(
+																		'text-base',
+																		isV3
+																			? 'text-white'
+																			: 'text-black dark:text-white'
+																	)}>
 																	{name}
 																</b>
 															</div>
@@ -171,32 +187,57 @@ export function LogoPopover(): ReactElement {
 												);
 											})}
 									</div>
-									<div className={'col-span-2 grid grid-cols-2 gap-2 md:grid-cols-3'}>
-										<Link
-											prefetch={false}
-											key={APPS.V3.name}
-											href={APPS.V3.href}
-											className={'col-span-3 row-span-2'}
-											onClick={(): void => set_isShowing(false)}>
-											<div
-												className={cl(
-													'relative flex h-full w-full cursor-pointer flex-col items-center justify-center transition-all rounded p-4',
-													'bg-[#EBEBEB] hover:bg-[#c3c3c380] dark:bg-[#010A3B] hover:dark:brightness-125'
-												)}>
-												<div className={'z-10 flex w-full flex-col items-center'}>
-													<V3Logo className={'h-20'} />
-													<div className={'-mb-2 pt-4 text-center'}>
-														<p
+									<div className={'mt-2 grid grid-cols-4 gap-2'}>
+										{[...Object.values(APPS)]
+											.slice(4, isShowingMore ? 10 : 7)
+											.map(({name, href, icon}): ReactElement => {
+												return (
+													<Link
+														prefetch={false}
+														key={name}
+														href={href}
+														onClick={(): void => set_isShowing(false)}>
+														<div
+															onClick={(): void => set_isShowing(false)}
 															className={cl(
-																'font-bold text-black dark:text-white text-sm',
-																'whitespace-break-spaces'
+																'flex cursor-pointer flex-col items-center justify-center transition-colors p-2 rounded-sm',
+																isV3
+																	? 'hover:bg-neutral-0 border-[#151C40] border bg-[#010A3B]'
+																	: 'bg-[#EBEBEB] dark:border-[#151C40] dark:border hover:bg-[#c3c3c380] dark:bg-neutral-100 hover:dark:bg-neutral-0'
 															)}>
-															{'Discover\nBrand New Vaults'}
-														</p>
-													</div>
-												</div>
-											</div>
-										</Link>
+															<div>
+																{cloneElement(icon, {
+																	className:
+																		'w-[22px] h-[22px] min-w-[22px] max-w-[22px] min-h-[22px] max-h-[22px]'
+																})}
+															</div>
+															<div className={'text-center'}>
+																<b
+																	className={cl(
+																		'text-xxs',
+																		isV3
+																			? 'text-white'
+																			: 'text-black dark:text-white'
+																	)}>
+																	{name}
+																</b>
+															</div>
+														</div>
+													</Link>
+												);
+											})}
+										{!isShowingMore && (
+											<button
+												onClick={(): void => set_isShowingMore(true)}
+												className={cl(
+													'flex cursor-pointer text-xxs flex-col items-center justify-center transition-colors p-4 rounded-sm',
+													isV3
+														? 'hover:bg-neutral-0 border-[#151C40] border bg-[#010A3B]'
+														: 'bg-[#EBEBEB] dark:border-[#151C40] dark:border hover:bg-[#c3c3c380] dark:bg-neutral-100 hover:dark:bg-neutral-0'
+												)}>
+												{'More...'}
+											</button>
+										)}
 									</div>
 								</div>
 							</div>

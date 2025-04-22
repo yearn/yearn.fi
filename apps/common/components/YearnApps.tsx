@@ -1,7 +1,6 @@
 import Image from 'next/image';
 import {toAddress} from '@builtbymom/web3/utils';
 import {LogoGimme} from '@common/icons/LogoGimme';
-import {LogoJuiced} from '@common/icons/LogoJuiced';
 
 import {LogoYearn} from '../icons/LogoYearn';
 
@@ -17,24 +16,10 @@ export const APPS = {
 		icon: (
 			<LogoYearn
 				className={'size-8'}
-				back={'text-pink-400'}
+				gradient={{start: '#FB245A', end: '#0657F9'}}
 				front={'text-white'}
 			/>
 		)
-	},
-	Juiced: {
-		name: 'Juiced Vaults',
-		href: 'https://juiced.yearn.fi',
-		host: ['juiced.yearn.fi'],
-		pathname: 'unused',
-		icon: <LogoJuiced className={'size-8'} />
-	},
-	Gimme: {
-		name: 'GIMME',
-		href: 'https://gimme.mom',
-		host: ['gimme.mom'],
-		pathname: 'unused',
-		icon: <LogoGimme className={'size-8'} />
 	},
 	Vaults: {
 		name: 'Vaults',
@@ -67,7 +52,7 @@ export const APPS = {
 		)
 	},
 	veYFI: {
-		name: 'veYFI',
+		name: 'Governance',
 		href: 'https://veyfi.yearn.fi',
 		host: ['veyfi.yearn.fi'],
 		pathname: 'unused',
@@ -80,6 +65,45 @@ export const APPS = {
 				src={`${process.env.SMOL_ASSETS_URL}/token/1/${VEYFI_DYFI_ADDRESS}/logo-128.png`}
 				loading={'eager'}
 				priority
+			/>
+		)
+	},
+	yFactory: {
+		name: 'yFactory',
+		href: 'https://factory.yearn.fi',
+		host: ['factory.yearn.fi'],
+		pathname: 'unused',
+		icon: (
+			<LogoYearn
+				className={'!size-6 !max-h-6 !max-w-6'}
+				back={'text-neutral-0'}
+				front={'text-neutral-900'}
+			/>
+		)
+	},
+	analytics: {
+		name: 'Analytics',
+		href: 'https://yearn-powerglove.vercel.app/',
+		host: ['yearn-powerglove.vercel.app'],
+		pathname: 'unused',
+		icon: (
+			<LogoYearn
+				className={'!size-6 !max-h-6 !max-w-6'}
+				back={'text-white'}
+				front={'text-black'}
+			/>
+		)
+	},
+	docs: {
+		name: 'Docs',
+		href: 'https://docs.yearn.fi',
+		host: ['docs.yearn.fi'],
+		pathname: 'unused',
+		icon: (
+			<LogoYearn
+				className={'!size-6 !max-h-6 !max-w-6'}
+				back={'text-primary'}
+				front={'text-white'}
 			/>
 		)
 	},
@@ -116,17 +140,11 @@ export const APPS = {
 			/>
 		)
 	},
-	yFactory: {
-		name: 'yFactory',
-		href: 'https://factory.yearn.fi',
-		host: ['factory.yearn.fi'],
+	Gimme: {
+		name: 'GIMME',
+		href: 'https://gimme.mom',
+		host: ['gimme.mom'],
 		pathname: 'unused',
-		icon: (
-			<LogoYearn
-				className={'!size-8 !max-h-8 !max-w-8'}
-				back={'text-neutral-0'}
-				front={'text-neutral-900'}
-			/>
-		)
+		icon: <LogoGimme className={'size-8'} />
 	}
 };
