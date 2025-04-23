@@ -52,7 +52,7 @@ export const APPS = {
 		)
 	},
 	veYFI: {
-		name: 'Governance',
+		name: 'veYFI',
 		href: 'https://veyfi.yearn.fi',
 		host: ['veyfi.yearn.fi'],
 		pathname: 'unused',
