@@ -50,14 +50,14 @@ export function Sidebar(props: TSidebarProps): ReactElement {
 					<div className={'mb-4'}>
 						<PromoPoster />
 					</div>
-					<SearchBar
+					{/* <SearchBar
 						className={cl('!w-full !border-0 rounded-lg !border-white !bg-gray-600/40')}
 						searchPlaceholder={'Search App'}
 						searchValue={configuration.searchValue}
 						onSearch={(value: string) => dispatch({searchValue: value})}
 						shouldSearchByClick
 						onSearchClick={onSearchClick}
-					/>
+					/> */}
 				</div>
 				<div className={'mt-6 flex flex-col'}>
 					{props.tabs.map(tab => {

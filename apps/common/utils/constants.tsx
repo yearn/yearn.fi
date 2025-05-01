@@ -22,29 +22,35 @@ export const SUPPORTED_NETWORKS = [mainnet, optimism, polygon, fantom, base, arb
 
 export const VAULTS_APPS: TApp[] = [
 	{
+		name: 'Vaults',
+		description: 'Our newest, shiniest, and yield-iest Vaults.',
+		logoURI: '/v3.png',
+		appURI: '/v3'
+	},
+	{
+		name: 'Vaults V2',
+		description: "Yearn's OG Vaults. Timeless and bursting with yield!",
+		logoURI: '/v2.png',
+		appURI: '/vaults'
+	},
+	{
 		name: 'Gimme',
 		description: 'DeFi yields, designed for everyone.',
 		logoURI: 'https://gimme.mom/favicons/favicon-96x96.png',
 		appURI: 'https://gimme.mom/'
 	},
 	{
-		name: 'Vaults',
-		description: 'The full Yearn experience with all Vaults, for sophisticated users.',
-		logoURI: '/v3.png',
-		appURI: '/v3'
-	},
-	{
-		name: 'Vaults V2',
-		description: "Discover Vaults from Yearn's v2 era.",
-		logoURI: '/v2.png',
-		appURI: '/vaults'
-	},
-	{
-		name: 'Juiced',
-		description: 'Discover yields juiced with extra token rewards.',
-		logoURI: '/juiced-featured.jpg',
-		appURI: 'https://juiced.app/'
+		name: 'Factory',
+		description: 'Permissionlessly deploy Curve Vaults with the Yearn Factory.',
+		logoURI: '/factory-icon.svg',
+		appURI: 'https://factory.yearn.fi'
 	}
+	// {
+	// 	name: 'Juiced',
+	// 	description: 'Discover yields juiced with extra token rewards.',
+	// 	logoURI: '/juiced-featured.jpg',
+	// 	appURI: 'https://juiced.app/'
+	// }
 ];
 
 export const YEARN_APPS: TApp[] = [
@@ -65,13 +71,13 @@ export const YEARN_APPS: TApp[] = [
 		description: 'Put your yCRV to work.',
 		logoURI: 'https://ycrv.yearn.fi/ycrv-logo.svg',
 		appURI: 'https://ycrv.yearn.fi'
-	},
-	{
-		name: 'yPrisma',
-		description: 'Put your yPRISMA to work.',
-		logoURI: 'https://assets.smold.app/api/token/1/0xe3668873d944e4a949da05fc8bde419eff543882/logo-128.png',
-		appURI: 'https://yprisma.yearn.fi'
 	}
+	// {
+	// 	name: 'yPrisma',
+	// 	description: 'Put your yPRISMA to work.',
+	// 	logoURI: 'https://assets.smold.app/api/token/1/0xe3668873d944e4a949da05fc8bde419eff543882/logo-128.png',
+	// 	appURI: 'https://yprisma.yearn.fi'
+	// }
 ];
 
 export const YEARN_X_APPS: TApp[] = [
@@ -163,21 +169,15 @@ export const INTEGRATIONS_APPS: TApp[] = [
 ];
 
 export const FEATURED_APPS = [
-	{
-		name: 'yCRV',
-		description: "Let Yearn's veCRV position boost your CRV yield, while you chill.",
-		logoURI: '/ycrv-featured.jpg',
-		appURI: 'https://ycrv.yearn.fi/'
-	},
-	{
-		name: 'Gimme',
-		description: 'DeFi yields, designed for everyone.',
-		logoURI: '/gimme-featured.jpg',
-		appURI: 'https://gimme.mom/'
-	},
+	// {
+	// 	name: 'Gimme',
+	// 	description: 'DeFi yields, designed for everyone.',
+	// 	logoURI: '/gimme-featured.jpg',
+	// 	appURI: 'https://gimme.mom/'
+	// },
 	{
 		name: 'Vaults',
-		description: 'The full Yearn experience with all Vaults, for sophisticated users.',
+		description: 'Our newest, shiniest, and yield-iest Vaults.',
 		logoURI: '/v3-featured.jpg',
 		appURI: '/v3'
 	},
@@ -186,40 +186,32 @@ export const FEATURED_APPS = [
 		description: "Let Yearn's veCRV position boost your CRV yield, while you chill.",
 		logoURI: '/ycrv-featured.jpg',
 		appURI: 'https://ycrv.yearn.fi/'
-	},
-	{
-		name: 'Gimme',
-		description: 'DeFi yields, designed for everyone.',
-		logoURI: '/gimme-featured.jpg',
-		appURI: 'https://gimme.mom/'
-	},
-	{
-		name: 'Vaults',
-		description: 'The full Yearn experience with all Vaults, for sophisticated users.',
-		logoURI: '/v3-featured.jpg',
-		appURI: '/v3'
-	},
-	{
-		name: 'yCRV',
-		description: "Let Yearn's veCRV position boost your CRV yield, while you chill.",
-		logoURI: '/ycrv-featured.jpg',
-		appURI: 'https://ycrv.yearn.fi/'
-	},
-	{
-		name: 'Gimme',
-		description: 'DeFi yields, designed for everyone.',
-		logoURI: '/gimme-featured.jpg',
-		appURI: 'https://gimme.mom/'
-	},
-	{
-		name: 'Vaults',
-		description: 'The full Yearn experience with all Vaults, for sophisticated users.',
-		logoURI: '/v3-featured.jpg',
-		appURI: '/v3'
 	}
 ];
 
-export const ALL_APPS = [...FEATURED_APPS, ...VAULTS_APPS, ...YEARN_APPS, ...YEARN_X_APPS, ...INTEGRATIONS_APPS];
+export const OLD_APPS: TApp[] = [
+	{
+		name: 'Juiced',
+		description: 'Discover yields juiced with extra token rewards.',
+		logoURI: '/juiced-featured.jpg',
+		appURI: 'https://juiced.app/'
+	},
+	{
+		name: 'yPrisma',
+		description: 'Put your yPRISMA to work.',
+		logoURI: 'https://assets.smold.app/api/token/1/0xe3668873d944e4a949da05fc8bde419eff543882/logo-128.png',
+		appURI: 'https://yprisma.yearn.fi'
+	}
+];
+
+export const ALL_APPS = [
+	...FEATURED_APPS,
+	...VAULTS_APPS,
+	...YEARN_APPS,
+	...YEARN_X_APPS,
+	...INTEGRATIONS_APPS,
+	...OLD_APPS
+];
 
 export const CATEGORIES_DICT = {
 	'featured-apps': {
@@ -256,18 +248,24 @@ export const CATEGORIES_DICT = {
 			'Yearn is a decentralized suite of products helping individuals, DAOs, and other protocols earn yield on their digital assets.',
 		catrgorySlug: 'integrations',
 		apps: INTEGRATIONS_APPS
+	},
+	'old-apps': {
+		categoryName: 'Old Apps',
+		categoryDescription:
+			'Yearn is a decentralized suite of products helping individuals, DAOs, and other protocols earn yield on their digital assets.',
+		catrgorySlug: 'old-stuff',
+		apps: OLD_APPS
 	}
 };
 
 export const LANDING_SIDEBAR_LINKS = [
-	{title: 'Governance', href: 'https://gov.yearn.fi/'},
-	{title: 'API', href: 'https://github.com/yearn/ydaemon'},
+	{title: 'Discourse', href: 'https://gov.yearn.fi/'},
 	{title: 'Docs', href: 'https://docs.yearn.fi/'},
 	{title: 'Blog', href: 'https://blog.yearn.fi/'},
 	{title: 'Support', href: 'https://discord.com/invite/yearn'},
 	{title: 'Discord', href: 'https://discord.com/invite/yearn'},
-	{title: 'Paragraph', href: ''},
-	{title: 'Twitter', href: 'https://twitter.com/yearnfi'}
+	{title: 'Twitter', href: 'https://twitter.com/yearnfi'},
+	{title: 'API', href: 'https://github.com/yearn/ydaemon'}
 ];
 
 export const MENU_TABS = [
@@ -275,7 +273,8 @@ export const MENU_TABS = [
 	{title: 'Vaults', route: 'vaults'},
 	{title: 'Yearn Apps', route: 'yearn-apps'},
 	{title: 'Yearn X Projects', route: 'yearn-x'},
-	{title: 'Integrations', route: 'integrations'}
+	{title: 'Integrations', route: 'integrations'},
+	{title: 'Old Apps', route: 'old-apps'}
 	// {title: 'About', route: 'about'}
 ];
 
@@ -300,5 +299,6 @@ export const iconsDict = {
  ** exit.
  *************************************************************************************************/
 export const DISABLED_VEYFI_GAUGES_VAULTS_LIST = [
-	{address: '0x42842754aBce504E12C20E434Af8960FDf85C833', staking: '0xb98343536e584cf686427a54574567ba5bda8070'}
+	{address: '0x42842754aBce504E12C20E434Af8960FDf85C833', staking: '0xb98343536e584cf686427a54574567ba5bda8070'},
+	{address: '0xbA61BaA1D96c2F4E25205B331306507BcAeA4677', staking: '0x6130E6cD924a40b24703407F246966D7435D4998'}
 ];

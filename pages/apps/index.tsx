@@ -9,7 +9,14 @@ import {PromoPoster} from '@common/components/PromoPoster';
 import {useSearch} from '@common/contexts/useSearch';
 import {LogoDiscord} from '@common/icons/LogoDiscord';
 import {LogoTwitter} from '@common/icons/LogoTwitter';
-import {FEATURED_APPS, INTEGRATIONS_APPS, VAULTS_APPS, YEARN_APPS, YEARN_X_APPS} from '@common/utils/constants';
+import {
+	FEATURED_APPS,
+	INTEGRATIONS_APPS,
+	OLD_APPS,
+	VAULTS_APPS,
+	YEARN_APPS,
+	YEARN_X_APPS
+} from '@common/utils/constants';
 
 export default function Home(): ReactElement {
 	const router = useRouter();
@@ -42,11 +49,13 @@ export default function Home(): ReactElement {
 					<div>
 						<div className={'mb-6 flex items-start justify-between'}>
 							<p className={'w-full text-lg font-bold text-white'}>{'Featured Apps'}</p>
-							<CarouselSlideArrows
-								onScrollBack={onScrollBack}
-								onScrollForward={onScrollForward}
-								className={'w-auto'}
-							/>
+							{FEATURED_APPS?.length > 3 && (
+								<CarouselSlideArrows
+									onScrollBack={onScrollBack}
+									onScrollForward={onScrollForward}
+									className={'w-auto'}
+								/>
+							)}
 						</div>
 
 						<AppsCarousel
@@ -77,6 +86,11 @@ export default function Home(): ReactElement {
 							onExpandClick={async () => router.push('/apps/integrations')}
 							apps={INTEGRATIONS_APPS}
 						/>
+						{/* <CategorySection
+							title={'Old Apps'}
+							onExpandClick={async () => router.push('/apps/deprecated')}
+							apps={OLD_APPS}
+						/> */}
 					</div>
 				</div>
 				<div className={'mt-16 flex w-full flex-col gap-6 md:flex-row'}>
