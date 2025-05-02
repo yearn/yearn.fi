@@ -72,12 +72,6 @@ export const YEARN_APPS: TApp[] = [
 		logoURI: 'https://ycrv.yearn.fi/ycrv-logo.svg',
 		appURI: 'https://ycrv.yearn.fi'
 	}
-	// {
-	// 	name: 'yPrisma',
-	// 	description: 'Put your yPRISMA to work.',
-	// 	logoURI: 'https://assets.smold.app/api/token/1/0xe3668873d944e4a949da05fc8bde419eff543882/logo-128.png',
-	// 	appURI: 'https://yprisma.yearn.fi'
-	// }
 ];
 
 export const YEARN_X_APPS: TApp[] = [
