@@ -2,10 +2,10 @@ import {type ReactElement} from 'react';
 import Link from 'next/link';
 import {usePathname} from 'next/navigation';
 import {cl} from '@builtbymom/web3/utils';
-import {LogoYearn} from '@common/icons/LogoYearn';
+// import { LogoYearn } from '@common/icons/LogoYearn';
 import {iconsDict, LANDING_SIDEBAR_LINKS} from '@common/utils/constants';
 
-import {PromoPoster} from './PromoPoster';
+import {TypeMarkYearn} from '../icons/TypeMarkYearn';
 
 type TSidebarProps = {
 	tabs: {route: string; title: string; isAcitve?: boolean}[];
@@ -26,17 +26,17 @@ export function Sidebar(props: TSidebarProps): ReactElement {
 					<div className={'mb-4 ml-2'}>
 						<Link
 							href={'/'}
-							className={'flex w-fit'}>
-							<LogoYearn
-								className={'size-10'}
-								back={'text-blue-500'}
-								front={'text-white'}
+							className={'flex w-fit items-center'}>
+							<TypeMarkYearn
+								className={'w-32'}
+								color={'white'}
 							/>
+							{/* <span className={'ml-2 text-xl text-white'}>{'Yearn'}</span> */}
 						</Link>
 					</div>
-					<div className={'mb-4'}>
+					{/* <div className={'mb-4'}>
 						<PromoPoster />
-					</div>
+					</div> */}
 					{/* <SearchBar
 						className={cl('!w-full !border-0 rounded-lg !border-white !bg-gray-600/40')}
 						searchPlaceholder={'Search App'}
