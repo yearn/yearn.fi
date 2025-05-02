@@ -22,13 +22,13 @@ export const SUPPORTED_NETWORKS = [mainnet, optimism, polygon, fantom, base, arb
 
 export const VAULTS_APPS: TApp[] = [
 	{
-		name: 'Vaults',
+		name: 'V3 Vaults',
 		description: 'Our newest, shiniest, and yield-iest Vaults.',
 		logoURI: '/v3.png',
 		appURI: '/v3'
 	},
 	{
-		name: 'Vaults V2',
+		name: 'V2 Vaults',
 		description: "Yearn's OG Vaults. Timeless and bursting with yield!",
 		logoURI: '/v2.png',
 		appURI: '/vaults'
@@ -45,12 +45,6 @@ export const VAULTS_APPS: TApp[] = [
 		logoURI: '/factory-icon.svg',
 		appURI: 'https://factory.yearn.fi'
 	}
-	// {
-	// 	name: 'Juiced',
-	// 	description: 'Discover yields juiced with extra token rewards.',
-	// 	logoURI: '/juiced-featured.jpg',
-	// 	appURI: 'https://juiced.app/'
-	// }
 ];
 
 export const YEARN_APPS: TApp[] = [
@@ -71,6 +65,12 @@ export const YEARN_APPS: TApp[] = [
 		description: 'Put your yCRV to work.',
 		logoURI: 'https://ycrv.yearn.fi/ycrv-logo.svg',
 		appURI: 'https://ycrv.yearn.fi'
+	},
+	{
+		name: 'Bearn',
+		description: "BeraChain's Bluest Liquid Locker",
+		logoURI: '/bearn-logo.png',
+		appURI: 'https://bearn.sucks'
 	}
 ];
 
@@ -159,16 +159,16 @@ export const INTEGRATIONS_APPS: TApp[] = [
 		description: 'Superform grows your onchain wealth. Earn the best returns on your crypto.',
 		logoURI: 'https://www.superform.xyz/icon.png',
 		appURI: 'https://www.superform.xyz'
+	},
+	{
+		name: 'Resupply',
+		description: 'A decentralized stablecoin protocol, leveraging the liquidity and stability of lending markets',
+		logoURI: '/resupply-logo.svg',
+		appURI: 'https://www.resupply.fi'
 	}
 ];
 
 export const FEATURED_APPS = [
-	// {
-	// 	name: 'Gimme',
-	// 	description: 'DeFi yields, designed for everyone.',
-	// 	logoURI: '/gimme-featured.jpg',
-	// 	appURI: 'https://gimme.mom/'
-	// },
 	{
 		name: 'Vaults',
 		description: 'Our newest, shiniest, and yield-iest Vaults.',
@@ -209,45 +209,45 @@ export const ALL_APPS = [
 
 export const CATEGORIES_DICT = {
 	'featured-apps': {
-		categoryName: 'Featured apps',
+		categoryName: 'Featured Products',
 		categoryDescription:
 			'Yearn is a decentralized suite of products helping individuals, DAOs, and other protocols earn yield on their digital assets.',
-		catrgorySlug: 'featured-apps',
+		categorySlug: 'featured-apps',
 		apps: FEATURED_APPS
 	},
 	vaults: {
-		categoryName: 'Vaults',
+		categoryName: 'Yearn Vaults',
 		categoryDescription:
 			'Yearn is a decentralized suite of products helping individuals, DAOs, and other protocols earn yield on their digital assets.',
-		catrgorySlug: 'vaults',
+		categorySlug: 'vaults',
 		apps: VAULTS_APPS
 	},
 	'yearn-apps': {
-		categoryName: 'Yearn Apps',
+		categoryName: 'Other Yearn Products',
 		categoryDescription:
 			'Yearn is a decentralized suite of products helping individuals, DAOs, and other protocols earn yield on their digital assets.',
-		catrgorySlug: 'yearn-apps',
+		categorySlug: 'yearn-apps',
 		apps: YEARN_APPS
 	},
 	'yearn-x': {
 		categoryName: 'Yearn X Projects',
 		categoryDescription:
 			'Yearn is a decentralized suite of products helping individuals, DAOs, and other protocols earn yield on their digital assets.',
-		catrgorySlug: 'yearn-x',
+		categorySlug: 'yearn-x',
 		apps: YEARN_X_APPS
 	},
 	integrations: {
 		categoryName: 'Integrations',
 		categoryDescription:
 			'Yearn is a decentralized suite of products helping individuals, DAOs, and other protocols earn yield on their digital assets.',
-		catrgorySlug: 'integrations',
+		categorySlug: 'integrations',
 		apps: INTEGRATIONS_APPS
 	},
 	'old-apps': {
-		categoryName: 'Old Apps',
+		categoryName: 'Old Products',
 		categoryDescription:
 			'Yearn is a decentralized suite of products helping individuals, DAOs, and other protocols earn yield on their digital assets.',
-		catrgorySlug: 'old-stuff',
+		categorySlug: 'old-stuff',
 		apps: OLD_APPS
 	}
 };

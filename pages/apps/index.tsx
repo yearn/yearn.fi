@@ -41,7 +41,7 @@ export default function Home(): ReactElement {
 
 					<div>
 						<div className={'mb-6 flex items-start justify-between'}>
-							<p className={'w-full text-lg font-bold text-white'}>{'Featured Apps'}</p>
+							<p className={'w-full text-lg font-bold text-white'}>{'Featured Products'}</p>
 							{FEATURED_APPS?.length > 3 && (
 								<CarouselSlideArrows
 									onScrollBack={onScrollBack}
@@ -60,12 +60,12 @@ export default function Home(): ReactElement {
 
 					<div className={'flex flex-col gap-10'}>
 						<CategorySection
-							title={'Vaults'}
+							title={'Yearn Vaults'}
 							onExpandClick={async () => router.push('/apps/vaults')}
 							apps={VAULTS_APPS}
 						/>
 						<CategorySection
-							title={'Yearn Apps'}
+							title={'Other Yearn Products'}
 							onExpandClick={async () => router.push('/apps/yearn-apps')}
 							apps={YEARN_APPS}
 						/>
