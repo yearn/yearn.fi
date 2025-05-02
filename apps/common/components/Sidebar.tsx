@@ -1,14 +1,14 @@
-import {type ReactElement, useCallback} from 'react';
+import {type ReactElement} from 'react';
 import Link from 'next/link';
 import {usePathname} from 'next/navigation';
-import {useRouter} from 'next/router';
+// import {useRouter} from 'next/router';
 import {cl} from '@builtbymom/web3/utils';
-import {useSearch} from '@common/contexts/useSearch';
+// import {useSearch} from '@common/contexts/useSearch';
 import {LogoYearn} from '@common/icons/LogoYearn';
 import {iconsDict, LANDING_SIDEBAR_LINKS} from '@common/utils/constants';
 
 import {PromoPoster} from './PromoPoster';
-import {SearchBar} from './SearchBar';
+// import {SearchBar} from './SearchBar';
 
 type TSidebarProps = {
 	tabs: {route: string; title: string; isAcitve?: boolean}[];
@@ -16,18 +16,18 @@ type TSidebarProps = {
 
 export function Sidebar(props: TSidebarProps): ReactElement {
 	const pathName = usePathname();
-	const router = useRouter();
-	const {configuration, dispatch} = useSearch();
+	// const router = useRouter();
+	// const {configuration, dispatch} = useSearch();
 
 	const currentTab = pathName?.startsWith('/apps/') ? pathName?.split('/')[2] : 'apps';
 
-	const onSearchClick = useCallback(() => {
-		if (!configuration.searchValue) {
-			router.push('/apps');
-			return;
-		}
-		router.push(`/apps/search/${encodeURIComponent(configuration.searchValue)}`);
-	}, [configuration.searchValue, router]);
+	// const onSearchClick = useCallback(() => {
+	// 	if (!configuration.searchValue) {
+	// 		router.push('/apps');
+	// 		return;
+	// 	}
+	// 	router.push(`/apps/search/${encodeURIComponent(configuration.searchValue)}`);
+	// }, [configuration.searchValue, router]);
 
 	return (
 		<div
