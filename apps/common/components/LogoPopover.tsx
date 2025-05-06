@@ -152,9 +152,10 @@ export function LogoPopover(): ReactElement {
 									className={cl(
 										'relative gap-2 border p-4 rounded-md',
 										'border-transparent ',
+										// 'bg-white',
 										isV3
 											? 'border-[#151C40] bg-[#000520]'
-											: 'dark:border-[#010A3B] dark:bg-neutral-300'
+											: 'dark:border-[#010A3B] dark:bg-neutral-300 bg-white'
 									)}>
 									<div className={'grid grid-cols-2 gap-2'}>
 										{[...Object.values(APPS)]
