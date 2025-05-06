@@ -160,6 +160,15 @@ export function useVaultStakingData(props: {currentVault: TYDaemonVault}): {
 					}
 				]
 			});
+			// The `data` array contains the following values in order:
+			// [0]: stakingToken (address of the staking token)
+			// [1]: rewardsToken (address of the rewards token)
+			// [2]: stakedGaugeSymbol (symbol of the staked gauge)
+			// [3]: totalStaked (total amount staked, as a BigInt)
+			// [4]: balanceOf (user's balance of staked tokens, as a BigInt)
+			// [5]: earned (user's earned rewards, as a BigInt)
+			// [6]: allowance (user's allowance for staking, as a BigInt)
+			// [7]: vaultBalanceOf (user's balance in the vault, as a BigInt)
 			stakingToken = decodeAsAddress(data[0]);
 			rewardsToken = decodeAsAddress(data[1]);
 			stakedGaugeSymbol = decodeAsString(data[2]);
