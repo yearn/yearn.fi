@@ -6,6 +6,8 @@ import type {ReactElement} from 'react';
 type TProps = {
 	text: string | number;
 	size: 'sm' | 'md';
+	className?: string;
+	iconClassName?: string;
 };
 
 const getStyle = (
@@ -27,15 +29,15 @@ const getStyle = (
 	};
 };
 
-export const InfoTooltip = ({text, size}: TProps): ReactElement => {
+export const InfoTooltip = ({text, size, iconClassName, className}: TProps): ReactElement => {
 	const {iconStyle, tooltipStyle} = getStyle(size);
 
 	return (
 		<sup className={'tooltip font-light transition-opacity'}>
-			<IconQuestion className={cl('absolute h-3 w-3 md:-right-4 -right-3 top-0', iconStyle)} />
+			<IconQuestion className={cl('absolute h-3 w-3 md:-right-4 -right-3 top-0', iconStyle, iconClassName)} />
 			<span
 				suppressHydrationWarning
-				className={'tooltiptext bottom-full mb-1'}>
+				className={cl('tooltiptext bottom-full mb-1', className)}>
 				<div
 					className={cl(
 						'w-fit border border-neutral-300 bg-neutral-100 text-center text-neutral-900',
