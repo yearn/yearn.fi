@@ -80,7 +80,7 @@ export function useVaultStakingData(props: {currentVault: TYDaemonVault}): {
 		}
 
 		const stakingAddress = foundVaultWithDisabledStaking
-			? toAddress(foundVaultWithDisabledStaking)
+			? toAddress(foundVaultWithDisabledStaking || zeroAddress)
 			: toAddress(props.currentVault.staking.address);
 
 		let stakingToken: TAddress = zeroAddress;
@@ -103,80 +103,96 @@ export function useVaultStakingData(props: {currentVault: TYDaemonVault}): {
 		 ** - the user's balance in the vault contract
 		 ******************************************************************************************/
 		if (stakingType === 'OP Boost' || stakingType === 'VeYFI' || foundVaultWithDisabledStaking) {
-			const data = await readContracts(retrieveConfig(), {
-				contracts: [
-					{
-						address: toAddress(stakingAddress),
-						chainId: props.currentVault.chainID,
-						abi: stakingType === 'OP Boost' ? STAKING_REWARDS_ABI : VEYFI_GAUGE_ABI,
-						functionName: stakingType === 'OP Boost' ? 'stakingToken' : 'asset'
-					},
+			const contracts = [
+				{
+					key: 'stakingToken',
+					address: toAddress(stakingAddress),
+					chainId: props.currentVault.chainID,
+					abi: stakingType === 'OP Boost' ? STAKING_REWARDS_ABI : VEYFI_GAUGE_ABI,
+					functionName: stakingType === 'OP Boost' ? 'stakingToken' : 'asset'
+				},
+				{
+					key: 'rewardsToken',
+					address: toAddress(stakingAddress),
+					chainId: props.currentVault.chainID,
+					abi: stakingType === 'OP Boost' ? STAKING_REWARDS_ABI : VEYFI_GAUGE_ABI,
+					functionName: stakingType === 'OP Boost' ? 'rewardsToken' : 'REWARD_TOKEN'
+				},
+				{
+					key: 'stakedGaugeSymbol',
+					address: toAddress(stakingAddress),
+					chainId: props.currentVault.chainID,
+					abi: VEYFI_GAUGE_ABI,
+					functionName: 'symbol'
+				},
+				{
+					key: 'totalStaked',
+					address: toAddress(stakingAddress),
+					abi: STAKING_REWARDS_ABI,
+					chainId: props.currentVault.chainID,
+					functionName: 'totalSupply'
+				},
+				{
+					key: 'balanceOf',
+					address: toAddress(stakingAddress),
+					abi: STAKING_REWARDS_ABI,
+					chainId: props.currentVault.chainID,
+					functionName: 'balanceOf',
+					args: [toAddress(address)]
+				},
+				{
+					key: 'earned',
+					address: toAddress(stakingAddress),
+					abi: STAKING_REWARDS_ABI,
+					chainId: props.currentVault.chainID,
+					functionName: 'earned',
+					args: [toAddress(address)]
+				},
+				{
+					key: 'allowance',
+					address: toAddress(stakingAddress),
+					abi: erc20Abi,
+					chainId: props.currentVault.chainID,
+					functionName: 'allowance',
+					args: [toAddress(address), toAddress(stakingAddress)]
+				},
+				{
+					key: 'vaultBalanceOf',
+					address: toAddress(props.currentVault.address),
+					abi: erc20Abi,
+					chainId: props.currentVault.chainID,
+					functionName: 'balanceOf',
+					args: [toAddress(address)]
+				}
+			];
 
-					{
-						address: toAddress(stakingAddress),
-						chainId: props.currentVault.chainID,
-						abi: stakingType === 'OP Boost' ? STAKING_REWARDS_ABI : VEYFI_GAUGE_ABI,
-						functionName: stakingType === 'OP Boost' ? 'rewardsToken' : 'REWARD_TOKEN'
-					},
-					{
-						address: toAddress(stakingAddress),
-						chainId: props.currentVault.chainID,
-						abi: VEYFI_GAUGE_ABI,
-						functionName: 'symbol'
-					},
-					{
-						address: toAddress(stakingAddress),
-						abi: STAKING_REWARDS_ABI,
-						chainId: props.currentVault.chainID,
-						functionName: 'totalSupply'
-					},
-					{
-						address: toAddress(stakingAddress),
-						abi: STAKING_REWARDS_ABI,
-						chainId: props.currentVault.chainID,
-						functionName: 'balanceOf',
-						args: [toAddress(address)]
-					},
-					{
-						address: toAddress(stakingAddress),
-						abi: STAKING_REWARDS_ABI,
-						chainId: props.currentVault.chainID,
-						functionName: 'earned',
-						args: [toAddress(address)]
-					},
-					{
-						address: toAddress(stakingAddress),
-						abi: erc20Abi,
-						chainId: props.currentVault.chainID,
-						functionName: 'allowance',
-						args: [toAddress(address), toAddress(stakingAddress)]
-					},
-					{
-						address: toAddress(props.currentVault.address),
-						abi: erc20Abi,
-						chainId: props.currentVault.chainID,
-						functionName: 'balanceOf',
-						args: [toAddress(address)]
-					}
-				]
+			/* eslint-disable @typescript-eslint/no-unused-vars */
+			const calls = contracts.map(({key: _key, ...rest}) => rest) as Parameters<
+				typeof readContracts
+			>[1]['contracts'];
+			/* eslint-enable @typescript-eslint/no-unused-vars */
+
+			const data = await readContracts(retrieveConfig(), {
+				contracts: calls
 			});
-			// The `data` array contains the following values in order:
-			// [0]: stakingToken (address of the staking token)
-			// [1]: rewardsToken (address of the rewards token)
-			// [2]: stakedGaugeSymbol (symbol of the staked gauge)
-			// [3]: totalStaked (total amount staked, as a BigInt)
-			// [4]: balanceOf (user's balance of staked tokens, as a BigInt)
-			// [5]: earned (user's earned rewards, as a BigInt)
-			// [6]: allowance (user's allowance for staking, as a BigInt)
-			// [7]: vaultBalanceOf (user's balance in the vault, as a BigInt)
-			stakingToken = decodeAsAddress(data[0]);
-			rewardsToken = decodeAsAddress(data[1]);
-			stakedGaugeSymbol = decodeAsString(data[2]);
-			totalStaked = decodeAsBigInt(data[3]);
-			balanceOf = isZeroAddress(address) ? 0n : decodeAsBigInt(data[4]);
-			earned = isZeroAddress(address) ? 0n : decodeAsBigInt(data[5]);
-			allowance = isZeroAddress(address) ? 0n : decodeAsBigInt(data[6]);
-			vaultBalanceOf = isZeroAddress(address) ? 0n : decodeAsBigInt(data[7]);
+
+			// Map results to keys
+			const resultMap = contracts.reduce(
+				(acc, contract, idx) => {
+					acc[contract.key] = data[idx];
+					return acc;
+				},
+				{} as {[key: string]: any}
+			);
+
+			stakingToken = decodeAsAddress(resultMap.stakingToken);
+			rewardsToken = decodeAsAddress(resultMap.rewardsToken);
+			stakedGaugeSymbol = decodeAsString(resultMap.stakedGaugeSymbol);
+			totalStaked = decodeAsBigInt(resultMap.totalStaked);
+			balanceOf = isZeroAddress(address) ? 0n : decodeAsBigInt(resultMap.balanceOf);
+			earned = isZeroAddress(address) ? 0n : decodeAsBigInt(resultMap.earned);
+			allowance = isZeroAddress(address) ? 0n : decodeAsBigInt(resultMap.allowance);
+			vaultBalanceOf = isZeroAddress(address) ? 0n : decodeAsBigInt(resultMap.vaultBalanceOf);
 		} else if (stakingType === 'Juiced') {
 			const data = await readContracts(retrieveConfig(), {
 				contracts: [
