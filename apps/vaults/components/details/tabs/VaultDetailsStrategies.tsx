@@ -4,7 +4,7 @@ import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
 import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
 import {AllocationPercentage} from '@common/components/AllocationPercentage';
-import {VaultsListStrategy} from '@common/components/VaultsListStraregy';
+import {VaultsListStrategy} from '@common/components/VaultsListStrategy';
 import {useYearn} from '@common/contexts/useYearn';
 import {useYearnTokenPrice} from '@common/hooks/useYearnTokenPrice';
 

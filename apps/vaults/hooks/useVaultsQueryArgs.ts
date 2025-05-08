@@ -134,7 +134,7 @@ function useQueryArguments(props: {
 				if (_sortBy === null) {
 					return;
 				}
-				set_sortDirection(_sortBy);
+				set_sortBy(_sortBy);
 			}
 		},
 		[props.defaultTypes, props.defaultCategories, allChains]
