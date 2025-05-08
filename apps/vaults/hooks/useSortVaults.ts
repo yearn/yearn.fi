@@ -116,7 +116,6 @@ export function useSortVaults(
 		if (sortBy !== 'allocation') {
 			return vaultList;
 		}
-		console.log('here');
 		return vaultList.sort((a, b): number =>
 			numberSort({
 				a: toNormalizedBN(a.details?.totalDebt || 0, a.token?.decimals).normalized,
