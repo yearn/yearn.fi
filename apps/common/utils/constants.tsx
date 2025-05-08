@@ -1,3 +1,4 @@
+import {defineChain} from 'viem';
 import {arbitrum, base, fantom, mainnet, optimism, polygon} from 'viem/chains';
 import {toAddress} from '@builtbymom/web3/utils';
 import {IconAbout} from '@common/icons/IconAbout';
@@ -18,7 +19,37 @@ export const V3_STAKING_ZAP_ADDRESS: TNDict<TAddress> = {
 	[mainnet.id]: toAddress('0x5435cA9b6D9468A6e0404a4819D39ebbF036DB1E'),
 	[arbitrum.id]: toAddress('0x1E789A49902370E5858Fae67518aF49d8deA299c')
 }; //Address of the zap to deposit & stake for the v3 staking
-export const SUPPORTED_NETWORKS = [mainnet, optimism, polygon, fantom, base, arbitrum];
+
+/** custom RPC workaround to prevent type errors and conflicts between viem version
+ *  can be removed when the MOM library is ported.
+ */
+export const sonic = /*#__PURE__*/ defineChain({
+	id: 146,
+	name: 'Sonic',
+	nativeCurrency: {
+		decimals: 18,
+		name: 'Sonic',
+		symbol: 'S'
+	},
+	rpcUrls: {
+		default: {http: ['https://rpc.soniclabs.com']}
+	},
+	blockExplorers: {
+		default: {
+			name: 'Sonic Explorer',
+			url: 'https://sonicscan.org'
+		}
+	},
+	contracts: {
+		multicall3: {
+			address: '0xca11bde05977b3631167028862be2a173976ca11',
+			blockCreated: 60
+		}
+	},
+	testnet: false
+});
+
+export const SUPPORTED_NETWORKS = [mainnet, optimism, polygon, fantom, base, arbitrum, sonic];
 
 export const VAULTS_APPS: TApp[] = [
 	{
