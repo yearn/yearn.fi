@@ -1,26 +1,32 @@
 import {useCallback, useMemo} from 'react';
-import {isZero, toAddress} from '@builtbymom/web3/utils';
+import {isZero, toAddress, toNormalizedBN} from '@builtbymom/web3/utils';
 import {deserialize, serialize} from '@wagmi/core';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {useYearn} from '@common/contexts/useYearn';
 import {getVaultName} from '@common/utils';
 import {numberSort, stringSort} from '@common/utils/sort';
 
-import type {TYDaemonVaults} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
+import type {
+	TYDaemonVault,
+	TYDaemonVaults,
+	TYDaemonVaultStrategy
+} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TSortDirection} from '@builtbymom/web3/types';
 
 export type TPossibleSortBy =
 	| 'APY'
 	| 'estAPY'
 	| 'tvl'
+	| 'allocationPercentage'
 	| 'name'
 	| 'deposited'
 	| 'available'
 	| 'featuringScore'
+	| 'allocation'
 	| 'score';
 
 export function useSortVaults(
-	vaultList: TYDaemonVaults,
+	vaultList: (TYDaemonVault & {details?: TYDaemonVaultStrategy['details']})[],
 	sortBy: TPossibleSortBy,
 	sortDirection: TSortDirection
 ): TYDaemonVaults {
@@ -104,6 +110,28 @@ export function useSortVaults(
 			return vaultList;
 		}
 		return vaultList.sort((a, b): number => numberSort({a: a.tvl.tvl, b: b.tvl.tvl, sortDirection}));
+	}, [sortDirection, vaultList, sortBy]);
+
+	const sortedByAllocation = useCallback((): TYDaemonVaults => {
+		if (sortBy !== 'allocation') {
+			return vaultList;
+		}
+		return vaultList.sort((a, b): number =>
+			numberSort({
+				a: toNormalizedBN(a.details?.totalDebt || 0, a.token?.decimals).normalized,
+				b: toNormalizedBN(b.details?.totalDebt || 0, b.token?.decimals).normalized,
+				sortDirection
+			})
+		);
+	}, [sortDirection, vaultList, sortBy]);
+
+	const sortedByAllocationPercentage = useCallback((): TYDaemonVaults => {
+		if (sortBy !== 'allocationPercentage') {
+			return vaultList;
+		}
+		return vaultList.sort((a, b): number =>
+			numberSort({a: a.details?.debtRatio, b: b.details?.debtRatio, sortDirection})
+		);
 	}, [sortDirection, vaultList, sortBy]);
 
 	const sortedByDeposited = useCallback((): TYDaemonVaults => {
@@ -203,6 +231,12 @@ export function useSortVaults(
 		if (sortBy === 'tvl') {
 			return sortedByTVL();
 		}
+		if (sortBy === 'allocation') {
+			return sortedByAllocation();
+		}
+		if (sortBy === 'allocationPercentage') {
+			return sortedByAllocationPercentage();
+		}
 		if (sortBy === 'deposited') {
 			return sortedByDeposited();
 		}
@@ -223,8 +257,10 @@ export function useSortVaults(
 		sortBy,
 		sortedByName,
 		sortedByForwardAPY,
-		sortedByTVL,
 		sortedByAPY,
+		sortedByTVL,
+		sortedByAllocation,
+		sortedByAllocationPercentage,
 		sortedByDeposited,
 		sortedByAvailable,
 		sortedByFeaturingScore,

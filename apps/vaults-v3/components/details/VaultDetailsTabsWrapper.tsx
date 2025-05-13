@@ -43,7 +43,7 @@ function Tabs({hasStrategies, hasRisk, selectedAboutTabIndex, set_selectedAboutT
 	const tabs: TTabsOptions[] = useMemo((): TTabsOptions[] => {
 		const tabs = [{value: 0, label: 'About', slug: 'about'}];
 		if (hasStrategies) {
-			tabs.push({value: 1, label: 'Vaults', slug: 'vaults'});
+			tabs.push({value: 1, label: 'Strategies', slug: 'strategies'});
 		}
 		tabs.push({value: 2, label: 'Info', slug: 'info'});
 		if (hasRisk) {
