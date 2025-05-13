@@ -63,6 +63,13 @@
 }
 
 @layer base {
+	/* This is to prevent the horizontal scrollbar from appearing on the page. Breaks the scroll. */
+	/* html,
+	body {
+		overflow-x: hidden;
+		width: 100%;
+	} */
+
 	#swap {
 		@apply scroll-mt-12 mb-0 md:mb-44;
 	}
@@ -118,9 +125,9 @@
 	}
 
 	/* 🔵 - Yearn Finance ******************************************************************************
-** Table
-** Fake table properties
-***************************************************************************************************/
+	** Table
+	** Fake table properties
+	***************************************************************************************************/
 	.yearn--table-head-label {
 		@apply text-start text-base text-neutral-400;
 	}
@@ -284,18 +291,18 @@
 	}
 
 	/* 🔵 - Yearn Finance ******************************************************************************
-** Tooltip
-** In some place we need a tooltip to display some information on hover. This style controls the
-** display of that tooltip.
-**
-** Usage:
-**	<div className={'tooltip'}>
-**		{'Something displayed'}
-** 		<span className={'tooltiptext text-xs'}>
-** 			<p>{'Tooltip content'}</p>
-** 		</span>
-** 	</div>
-***************************************************************************************************/
+	** Tooltip
+	** In some place we need a tooltip to display some information on hover. This style controls the
+	** display of that tooltip.
+	**
+	** Usage:
+	**	<div className={'tooltip'}>
+	**		{'Something displayed'}
+	** 		<span className={'tooltiptext text-xs'}>
+	** 			<p>{'Tooltip content'}</p>
+	** 		</span>
+	** 	</div>
+	***************************************************************************************************/
 	.tooltip {
 		@apply relative;
 	}
