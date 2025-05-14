@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {usePathname} from 'next/navigation';
 import {useRouter} from 'next/router';
 import {motion} from 'framer-motion';
-import {cl} from '@builtbymom/web3/utils';
+import {cl} from 'builtbymom-web3-fork/utils';
 import {Popover, Transition} from '@headlessui/react';
 import {V3Logo} from '@vaults-v3/Mark';
 

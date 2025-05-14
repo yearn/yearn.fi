@@ -1,9 +1,9 @@
 import {useCallback, useMemo, useState} from 'react';
-import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {useTokenList} from '@builtbymom/web3/contexts/WithTokenList';
-import {useChainID} from '@builtbymom/web3/hooks/useChainID';
-import {toAddress} from '@builtbymom/web3/utils';
-import {getNetwork} from '@builtbymom/web3/utils/wagmi';
+import {useWeb3} from 'builtbymom-web3-fork/contexts/useWeb3';
+import {useTokenList} from 'builtbymom-web3-fork/contexts/WithTokenList';
+import {useChainID} from 'builtbymom-web3-fork/hooks/useChainID';
+import {toAddress} from 'builtbymom-web3-fork/utils';
+import {getNetwork} from 'builtbymom-web3-fork/utils/wagmi';
 import {useDeepCompareMemo} from '@react-hookz/web';
 import {ETH_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 
@@ -11,8 +11,8 @@ import {useBalances} from './useBalances.multichains';
 
 import type {TYChainTokens} from '@yearn-finance/web-lib/types';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TUseBalancesTokens} from '@builtbymom/web3/hooks/useBalances.multichains';
-import type {TDict} from '@builtbymom/web3/types';
+import type {TUseBalancesTokens} from 'builtbymom-web3-fork/hooks/useBalances.multichains';
+import type {TDict} from 'builtbymom-web3-fork/types';
 
 export function useYearnTokens({
 	vaults,

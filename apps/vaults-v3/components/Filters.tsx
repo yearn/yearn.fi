@@ -1,5 +1,5 @@
 import {useMemo, useState} from 'react';
-import {cl} from '@builtbymom/web3/utils';
+import {cl} from 'builtbymom-web3-fork/utils';
 import {ALL_VAULTSV3_CATEGORIES, ALL_VAULTSV3_KINDS} from '@vaults-v3/constants';
 import {MultiSelectDropdown} from '@common/components/MultiSelectDropdown';
 import {SearchBar} from '@common/components/SearchBar';
@@ -33,7 +33,11 @@ export function Filters({
 	const [shouldExpandFilters, set_shouldExpandFilters] = useState(false);
 	const chainOptions = useChainOptions(chains).filter(
 		(option): boolean =>
-			option.value === 1 || option.value === 137 || option.value === 42161 || option.value === 8453
+			option.value === 1 ||
+			option.value === 137 ||
+			option.value === 42161 ||
+			option.value === 8453 ||
+			option.value === 146
 	);
 	const typeOptions = useMemo((): TMultiSelectOptionProps[] => {
 		const options: TMultiSelectOptionProps[] = Object.entries(ALL_VAULTSV3_KINDS).map(

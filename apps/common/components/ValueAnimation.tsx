@@ -1,6 +1,6 @@
 /* eslint-disable no-irregular-whitespace */
 import {useCallback, useEffect, useRef} from 'react';
-import {formatAmount} from '@builtbymom/web3/utils';
+import {formatAmount} from 'builtbymom-web3-fork/utils';
 import {useMountEffect} from '@react-hookz/web';
 
 import type {ReactElement} from 'react';

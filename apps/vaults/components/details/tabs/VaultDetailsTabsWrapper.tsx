@@ -1,10 +1,10 @@
 import {Fragment, useEffect, useMemo, useState} from 'react';
 import {useRouter} from 'next/router';
+import {useWeb3} from 'builtbymom-web3-fork/contexts/useWeb3';
+import {useFetch} from 'builtbymom-web3-fork/hooks/useFetch';
+import {assert, cl, isZero, toAddress, toBigInt, toNormalizedValue} from 'builtbymom-web3-fork/utils';
+import {retrieveConfig} from 'builtbymom-web3-fork/utils/wagmi';
 import {watchAsset} from 'viem/actions';
-import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {useFetch} from '@builtbymom/web3/hooks/useFetch';
-import {assert, cl, isZero, toAddress, toBigInt, toNormalizedValue} from '@builtbymom/web3/utils';
-import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
 import {VaultDetailsAbout} from '@vaults/components/details/tabs/VaultDetailsAbout';
 import {VaultDetailsHistorical} from '@vaults/components/details/tabs/VaultDetailsHistorical';
 import {VaultDetailsStrategies} from '@vaults/components/details/tabs/VaultDetailsStrategies';

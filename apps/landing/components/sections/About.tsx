@@ -1,5 +1,5 @@
 import {type ReactElement, useState} from 'react';
-import {cl} from '@builtbymom/web3/utils';
+import {cl} from 'builtbymom-web3-fork/utils';
 
 export function About(): ReactElement {
 	const [isReadMore, set_isReadMore] = useState(false);

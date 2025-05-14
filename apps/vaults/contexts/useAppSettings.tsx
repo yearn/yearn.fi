@@ -1,6 +1,6 @@
 import {createContext, memo, useContext, useMemo} from 'react';
-import {useLocalStorage} from '@builtbymom/web3/hooks/useLocalStorage';
-import {useSessionStorage} from '@builtbymom/web3/hooks/useSessionStorage';
+import {useLocalStorage} from 'builtbymom-web3-fork/hooks/useLocalStorage';
+import {useSessionStorage} from 'builtbymom-web3-fork/hooks/useSessionStorage';
 
 import type {ReactElement} from 'react';
 

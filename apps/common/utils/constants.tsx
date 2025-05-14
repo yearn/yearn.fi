@@ -1,6 +1,6 @@
-import {defineChain} from 'viem';
-import {arbitrum, base, fantom, mainnet, optimism, polygon} from 'viem/chains';
-import {toAddress} from '@builtbymom/web3/utils';
+import {toAddress} from 'builtbymom-web3-fork/utils';
+// import {defineChain} from 'viem';
+import {arbitrum, base, fantom, mainnet, optimism, polygon, sonic} from 'viem/chains';
 import {IconAbout} from '@common/icons/IconAbout';
 import {IconFrontends} from '@common/icons/IconFrontends';
 import {IconIntegrations} from '@common/icons/IconIntegrations';
@@ -8,7 +8,7 @@ import {IconVaults} from '@common/icons/IconVaults';
 import {IconYearn} from '@common/icons/IconYearn';
 import {IconYearnXApps} from '@common/icons/IconYearnXApps';
 
-import type {TAddress, TNDict} from '@builtbymom/web3/types';
+import type {TAddress, TNDict} from 'builtbymom-web3-fork/types';
 import type {TApp} from '@common/types/category';
 
 export const DEFAULT_SLIPPAGE = 0.5;
@@ -23,31 +23,31 @@ export const V3_STAKING_ZAP_ADDRESS: TNDict<TAddress> = {
 /** custom RPC workaround to prevent type errors and conflicts between viem version
  *  can be removed when the MOM library is ported.
  */
-export const sonic = /*#__PURE__*/ defineChain({
-	id: 146,
-	name: 'Sonic',
-	nativeCurrency: {
-		decimals: 18,
-		name: 'Sonic',
-		symbol: 'S'
-	},
-	rpcUrls: {
-		default: {http: ['https://rpc.soniclabs.com']}
-	},
-	blockExplorers: {
-		default: {
-			name: 'Sonic Explorer',
-			url: 'https://sonicscan.org'
-		}
-	},
-	contracts: {
-		multicall3: {
-			address: '0xca11bde05977b3631167028862be2a173976ca11',
-			blockCreated: 60
-		}
-	},
-	testnet: false
-});
+// export const sonic = /*#__PURE__*/ defineChain({
+// 	id: 146,
+// 	name: 'Sonic',
+// 	nativeCurrency: {
+// 		decimals: 18,
+// 		name: 'Sonic',
+// 		symbol: 'S'
+// 	},
+// 	rpcUrls: {
+// 		default: {http: ['https://rpc.soniclabs.com']}
+// 	},
+// 	blockExplorers: {
+// 		default: {
+// 			name: 'Sonic Explorer',
+// 			url: 'https://sonicscan.org'
+// 		}
+// 	},
+// 	contracts: {
+// 		multicall3: {
+// 			address: '0xca11bde05977b3631167028862be2a173976ca11',
+// 			blockCreated: 60
+// 		}
+// 	},
+// 	testnet: false
+// });
 
 export const SUPPORTED_NETWORKS = [mainnet, optimism, polygon, fantom, base, arbitrum, sonic];
 

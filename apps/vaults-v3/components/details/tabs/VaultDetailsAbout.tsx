@@ -1,4 +1,4 @@
-import {cl, formatAmount, formatPercent} from '@builtbymom/web3/utils';
+import {cl, formatAmount, formatPercent} from 'builtbymom-web3-fork/utils';
 import {parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
 
 import type {ReactElement} from 'react';

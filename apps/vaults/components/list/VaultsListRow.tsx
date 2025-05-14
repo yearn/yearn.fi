@@ -1,7 +1,7 @@
 import {useMemo} from 'react';
 import Link from 'next/link';
-import {cl, formatAmount, isZero, toAddress, toNormalizedBN} from '@builtbymom/web3/utils';
-import {getNetwork} from '@builtbymom/web3/utils/wagmi';
+import {cl, formatAmount, isZero, toAddress, toNormalizedBN} from 'builtbymom-web3-fork/utils';
+import {getNetwork} from 'builtbymom-web3-fork/utils/wagmi';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS} from '@yearn-finance/web-lib/utils/constants';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
@@ -11,7 +11,7 @@ import {useYearnBalance} from '@common/hooks/useYearnBalance';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TNormalizedBN} from '@builtbymom/web3/types';
+import type {TNormalizedBN} from 'builtbymom-web3-fork/types';
 
 export function VaultForwardAPY({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
 	const isEthMainnet = currentVault.chainID === 1;

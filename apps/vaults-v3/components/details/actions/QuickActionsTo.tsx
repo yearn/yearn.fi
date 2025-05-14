@@ -1,7 +1,7 @@
 import {Fragment, type ReactElement, useMemo} from 'react';
 import {useRouter} from 'next/router';
-import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {cl, formatCounterValue, formatPercent, toAddress} from '@builtbymom/web3/utils';
+import {useWeb3} from 'builtbymom-web3-fork/contexts/useWeb3';
+import {cl, formatCounterValue, formatPercent, toAddress} from 'builtbymom-web3-fork/utils';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useSolver} from '@vaults/contexts/useSolver';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
@@ -12,7 +12,7 @@ import {useYearnTokenPrice} from '@common/hooks/useYearnTokenPrice';
 import {calculateBoostFromVeYFI} from '@common/utils/calculations';
 
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TNormalizedBN} from '@builtbymom/web3/types';
+import type {TNormalizedBN} from 'builtbymom-web3-fork/types';
 import type {TStakingInfo} from '@vaults/hooks/useVaultStakingData';
 
 function VaultAPY({

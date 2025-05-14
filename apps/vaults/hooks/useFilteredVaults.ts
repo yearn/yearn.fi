@@ -1,12 +1,12 @@
 import {useCallback} from 'react';
-import {toAddress} from '@builtbymom/web3/utils';
+import {toAddress} from 'builtbymom-web3-fork/utils';
 import {useDeepCompareMemo} from '@react-hookz/web';
 import {useAppSettings} from '@vaults/contexts/useAppSettings';
 import {isAutomatedVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import {useYearn} from '@common/contexts/useYearn';
 
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TDict} from '@builtbymom/web3/types';
+import type {TDict} from 'builtbymom-web3-fork/types';
 
 export function useFilteredVaults(
 	vaultMap: TDict<TYDaemonVault>,

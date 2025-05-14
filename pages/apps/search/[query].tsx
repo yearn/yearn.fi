@@ -1,7 +1,7 @@
 import {type ReactElement, useMemo} from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import {cl} from '@builtbymom/web3/utils';
+import {cl} from 'builtbymom-web3-fork/utils';
 import {AppCard} from '@common/components/AppCard';
 import {useInitialQueryParam} from '@common/hooks/useInitialQueryParam';
 import {ALL_APPS} from '@common/utils/constants';

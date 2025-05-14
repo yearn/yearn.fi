@@ -1,6 +1,6 @@
-import {toNormalizedBN} from '@builtbymom/web3/utils';
+import {toNormalizedBN} from 'builtbymom-web3-fork/utils';
 
-import type {TSortDirection} from '@builtbymom/web3/types';
+import type {TSortDirection} from 'builtbymom-web3-fork/types';
 
 export const stringSort = ({a, b, sortDirection}: {a: string; b: string; sortDirection: TSortDirection}): number =>
 	sortDirection === 'desc' ? a.localeCompare(b) : b.localeCompare(a);

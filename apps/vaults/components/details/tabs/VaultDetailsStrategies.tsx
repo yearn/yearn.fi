@@ -1,6 +1,13 @@
 import {useMemo, useState} from 'react';
-import {useFetch} from '@builtbymom/web3/hooks/useFetch';
-import {formatAmount, formatPercent, toAddress, toBigInt, toNormalizedValue, truncateHex} from '@builtbymom/web3/utils';
+import {useFetch} from 'builtbymom-web3-fork/hooks/useFetch';
+import {
+	formatAmount,
+	formatPercent,
+	toAddress,
+	toBigInt,
+	toNormalizedValue,
+	truncateHex
+} from 'builtbymom-web3-fork/utils';
 import {useIsMounted} from '@react-hookz/web';
 import {findLatestAPY} from '@vaults/components/details/tabs/findLatestAPY';
 import {GraphForStrategyReports} from '@vaults/components/graphs/GraphForStrategyReports';

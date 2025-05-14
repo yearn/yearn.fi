@@ -1,6 +1,6 @@
 import {type ForwardedRef, forwardRef, type ReactElement} from 'react';
 import React from 'react';
-import {cl} from '@builtbymom/web3/utils';
+import {cl} from 'builtbymom-web3-fork/utils';
 
 import {AppCard} from './AppCard';
 import {FeaturedApp} from './FeaturedApp';

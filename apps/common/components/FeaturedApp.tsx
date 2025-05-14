@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import {cl} from '@builtbymom/web3/utils';
+import {cl} from 'builtbymom-web3-fork/utils';
 
 import type {ReactElement} from 'react';
 import type {TApp} from '@common/types/category';

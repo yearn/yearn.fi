@@ -1,5 +1,5 @@
 import {useMemo} from 'react';
-import {cl} from '@builtbymom/web3/utils';
+import {cl} from 'builtbymom-web3-fork/utils';
 import {VaultDetailsStrategy} from '@vaults/components/details/tabs/VaultDetailsStrategies';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
@@ -12,7 +12,7 @@ import {useYearn} from '@common/contexts/useYearn';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault, TYDaemonVaultStrategy} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TSortDirection} from '@builtbymom/web3/types';
+import type {TSortDirection} from 'builtbymom-web3-fork/types';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 
 export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVault}): ReactElement {

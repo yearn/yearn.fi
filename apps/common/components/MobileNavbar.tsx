@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import {usePathname} from 'next/navigation';
-import {cl} from '@builtbymom/web3/utils';
+import {cl} from 'builtbymom-web3-fork/utils';
 import {IconDiscord} from '@common/icons/IconDiscord';
 import {IconParagraph} from '@common/icons/IconParagraph';
 import {IconTwitter} from '@common/icons/IconTwitter';

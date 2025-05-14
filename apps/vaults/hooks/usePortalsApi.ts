@@ -1,5 +1,5 @@
 import {z} from 'zod';
-import {addressSchema, type TAddress} from '@builtbymom/web3/types';
+import {addressSchema, type TAddress} from 'builtbymom-web3-fork/types';
 import {fetch} from '@common/utils/fetch';
 
 import type {TFetchReturn} from '@common/utils/fetch';
