@@ -1,6 +1,6 @@
 import {useMemo} from 'react';
-import {cl} from 'builtbymom-web3-fork/utils';
-import {VaultDetailsStrategy} from '@vaults/components/details/tabs/VaultDetailsStrategies';
+import {cl, formatCounterValue, toNormalizedBN} from 'builtbymom-web3-fork/utils';
+// import {VaultDetailsStrategy} from '@vaults/components/details/tabs/VaultDetailsStrategies';
 import {useSortVaults} from '@vaults/hooks/useSortVaults';
 import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
 import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
@@ -10,9 +10,9 @@ import {VaultsListStrategy} from '@common/components/VaultsListStrategy';
 import {useYearn} from '@common/contexts/useYearn';
 import {useYearnTokenPrice} from '@common/hooks/useYearnTokenPrice';
 
+import type {TSortDirection} from 'builtbymom-web3-fork/types';
 import type {ReactElement} from 'react';
 import type {TYDaemonVault, TYDaemonVaultStrategy} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TSortDirection} from 'builtbymom-web3-fork/types';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 
 export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVault}): ReactElement {

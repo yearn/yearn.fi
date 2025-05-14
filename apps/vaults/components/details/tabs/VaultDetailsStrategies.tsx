@@ -1,29 +1,16 @@
-import {useMemo, useState} from 'react';
-import {useFetch} from 'builtbymom-web3-fork/hooks/useFetch';
-import {
-	formatAmount,
-	formatPercent,
-	toAddress,
-	toBigInt,
-	toNormalizedValue,
-	truncateHex
-} from 'builtbymom-web3-fork/utils';
-import {useIsMounted} from '@react-hookz/web';
-import {findLatestAPY} from '@vaults/components/details/tabs/findLatestAPY';
-import {GraphForStrategyReports} from '@vaults/components/graphs/GraphForStrategyReports';
-import {yDaemonReportsSchema} from '@vaults/schemas/reportsSchema';
-import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
-import {useYDaemonBaseURI} from '@yearn-finance/web-lib/hooks/useYDaemonBaseURI';
-import {IconCopy} from '@yearn-finance/web-lib/icons/IconCopy';
-import {formatDuration} from '@yearn-finance/web-lib/utils/format.time';
-import {copyToClipboard, parseMarkdown} from '@yearn-finance/web-lib/utils/helpers';
-import {SearchBar} from '@common/components/SearchBar';
-import {Switch} from '@common/components/Switch';
-import {IconChevron} from '@common/icons/IconChevron';
+import {useMemo} from 'react';
+import {cl, formatCounterValue, toNormalizedBN} from 'builtbymom-web3-fork/utils';
+import {useSortVaults} from '@vaults/hooks/useSortVaults';
+import {useQueryArguments} from '@vaults/hooks/useVaultsQueryArgs';
+import {VaultsV3ListHead} from '@vaults-v3/components/list/VaultsV3ListHead';
+import {AllocationPercentage} from '@common/components/AllocationPercentage';
+import {VaultsListStrategy} from '@common/components/VaultsListStrategy';
+import {useYearn} from '@common/contexts/useYearn';
+import {useYearnTokenPrice} from '@common/hooks/useYearnTokenPrice';
 
+import type {TSortDirection} from 'builtbymom-web3-fork/types';
 import type {ReactElement} from 'react';
 import type {TYDaemonVault, TYDaemonVaultStrategy} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TSortDirection} from '@builtbymom/web3/types';
 import type {TPossibleSortBy} from '@vaults/hooks/useSortVaults';
 
 export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVault}): ReactElement {
@@ -71,7 +58,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 						<VaultsV3ListHead
 							sortBy={sortBy}
 							sortDirection={sortDirection}
-							onSort={(newSortBy: string, newSortDirection: TSortDirection): void => {
+							onSort={(newSortBy, newSortDirection) => {
 								if (newSortDirection === '') {
 									onChangeSortBy('featuringScore');
 									onChangeSortDirection('');
