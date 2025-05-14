@@ -13,14 +13,16 @@ export type TPossibleSortBy =
 	| 'APY'
 	| 'estAPY'
 	| 'tvl'
+	| 'allocationPercentage'
 	| 'name'
 	| 'deposited'
 	| 'available'
 	| 'featuringScore'
+	| 'allocation'
 	| 'score';
 
 export function useSortVaults(
-	vaultList: TYDaemonVaults,
+	vaultList: (TYDaemonVault & {details?: TYDaemonVaultStrategy['details']})[],
 	sortBy: TPossibleSortBy,
 	sortDirection: TSortDirection
 ): TYDaemonVaults {
@@ -104,6 +106,28 @@ export function useSortVaults(
 			return vaultList;
 		}
 		return vaultList.sort((a, b): number => numberSort({a: a.tvl.tvl, b: b.tvl.tvl, sortDirection}));
+	}, [sortDirection, vaultList, sortBy]);
+
+	const sortedByAllocation = useCallback((): TYDaemonVaults => {
+		if (sortBy !== 'allocation') {
+			return vaultList;
+		}
+		return vaultList.sort((a, b): number =>
+			numberSort({
+				a: toNormalizedBN(a.details?.totalDebt || 0, a.token?.decimals).normalized,
+				b: toNormalizedBN(b.details?.totalDebt || 0, b.token?.decimals).normalized,
+				sortDirection
+			})
+		);
+	}, [sortDirection, vaultList, sortBy]);
+
+	const sortedByAllocationPercentage = useCallback((): TYDaemonVaults => {
+		if (sortBy !== 'allocationPercentage') {
+			return vaultList;
+		}
+		return vaultList.sort((a, b): number =>
+			numberSort({a: a.details?.debtRatio, b: b.details?.debtRatio, sortDirection})
+		);
 	}, [sortDirection, vaultList, sortBy]);
 
 	const sortedByDeposited = useCallback((): TYDaemonVaults => {
@@ -203,6 +227,12 @@ export function useSortVaults(
 		if (sortBy === 'tvl') {
 			return sortedByTVL();
 		}
+		if (sortBy === 'allocation') {
+			return sortedByAllocation();
+		}
+		if (sortBy === 'allocationPercentage') {
+			return sortedByAllocationPercentage();
+		}
 		if (sortBy === 'deposited') {
 			return sortedByDeposited();
 		}
@@ -223,8 +253,10 @@ export function useSortVaults(
 		sortBy,
 		sortedByName,
 		sortedByForwardAPY,
-		sortedByTVL,
 		sortedByAPY,
+		sortedByTVL,
+		sortedByAllocation,
+		sortedByAllocationPercentage,
 		sortedByDeposited,
 		sortedByAvailable,
 		sortedByFeaturingScore,
