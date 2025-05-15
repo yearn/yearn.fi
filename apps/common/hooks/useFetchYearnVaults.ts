@@ -4,9 +4,9 @@ import {useDeepCompareMemo} from '@react-hookz/web';
 import {useYDaemonBaseURI} from '@yearn-finance/web-lib/hooks/useYDaemonBaseURI';
 import {yDaemonVaultsSchema} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 
+import type {TDict} from 'builtbymom-web3-fork/types';
 import type {KeyedMutator} from 'swr';
 import type {TYDaemonVault, TYDaemonVaults} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TDict} from 'builtbymom-web3-fork/types';
 
 /******************************************************************************
  ** The useFetchYearnVaults hook is used to fetch the vaults from the yDaemon
@@ -37,7 +37,7 @@ function useFetchYearnVaults(chainIDs?: number[] | undefined): {
 			strategiesDetails: 'withDetails',
 			strategiesCondition: 'inQueue',
 
-			chainIDs: chainIDs ? chainIDs.join(',') : [1, 10, 137, 250, 8453, 42161].join(','),
+			chainIDs: chainIDs ? chainIDs.join(',') : [1, 10, 137, 146, 250, 8453, 42161].join(','),
 			limit: '2500'
 		})}`,
 		schema: yDaemonVaultsSchema
@@ -46,7 +46,7 @@ function useFetchYearnVaults(chainIDs?: number[] | undefined): {
 	// const vaultsMigrations: TYDaemonVaults = useMemo(() => [], []);
 	const {data: vaultsMigrations} = useFetch<TYDaemonVaults>({
 		endpoint: `${yDaemonBaseUriWithoutChain}/vaults?${new URLSearchParams({
-			chainIDs: chainIDs ? chainIDs.join(',') : [1, 10, 137, 250, 8453, 42161].join(','),
+			chainIDs: chainIDs ? chainIDs.join(',') : [1, 10, 137, 146, 250, 8453, 42161].join(','),
 			migratable: 'nodust'
 		})}`,
 		schema: yDaemonVaultsSchema

@@ -5,8 +5,8 @@ import {useAppSettings} from '@vaults/contexts/useAppSettings';
 import {isAutomatedVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import {useYearn} from '@common/contexts/useYearn';
 
-import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 import type {TDict} from 'builtbymom-web3-fork/types';
+import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
 
 export function useFilteredVaults(
 	vaultMap: TDict<TYDaemonVault>,
