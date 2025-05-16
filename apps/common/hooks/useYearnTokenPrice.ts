@@ -1,8 +1,8 @@
 import {useMemo} from 'react';
-import {toBigInt, toNormalizedValue} from '@builtbymom/web3/utils';
+import {toBigInt, toNormalizedValue} from 'builtbymom-web3-fork/utils';
 import {useYearn} from '@common/contexts/useYearn';
 
-import type {TAddress} from '@builtbymom/web3/types';
+import type {TAddress} from 'builtbymom-web3-fork/types';
 
 /******************************************************************************
  ** The useYearnTokenPrice hook is used to retrieve the price of a token from

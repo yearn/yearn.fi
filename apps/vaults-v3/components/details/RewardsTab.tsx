@@ -3,7 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import {useRouter} from 'next/router';
 import {useReadContract} from 'wagmi';
-import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {useWeb3} from 'builtbymom-web3-fork/contexts/useWeb3';
 import {
 	cl,
 	formatAmount,
@@ -12,8 +12,8 @@ import {
 	isZero,
 	toAddress,
 	toBigInt
-} from '@builtbymom/web3/utils';
-import {approveERC20, defaultTxStatus} from '@builtbymom/web3/utils/wagmi';
+} from 'builtbymom-web3-fork/utils';
+import {approveERC20, defaultTxStatus} from 'builtbymom-web3-fork/utils/wagmi';
 import {VEYFI_GAUGE_ABI} from '@vaults/utils/abi/veYFIGauge.abi';
 import {
 	claim as claimAction,

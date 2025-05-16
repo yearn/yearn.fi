@@ -1,6 +1,6 @@
 import {Fragment, useMemo} from 'react';
 import {Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis} from 'recharts';
-import {formatAmount, formatWithUnit, isZero} from '@builtbymom/web3/utils';
+import {formatAmount, formatWithUnit, isZero} from 'builtbymom-web3-fork/utils';
 
 import type {ReactElement} from 'react';
 import type {TGraphData} from '@yearn-finance/web-lib/types';

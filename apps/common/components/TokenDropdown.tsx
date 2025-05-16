@@ -1,6 +1,6 @@
 import {cloneElement, Fragment, useState} from 'react';
-import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {cl, formatAmount} from '@builtbymom/web3/utils';
+import {useWeb3} from 'builtbymom-web3-fork/contexts/useWeb3';
+import {cl, formatAmount} from 'builtbymom-web3-fork/utils';
 import {Combobox, Transition} from '@headlessui/react';
 import {useThrottledState} from '@react-hookz/web';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';

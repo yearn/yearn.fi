@@ -1,4 +1,4 @@
-import {cl} from '@builtbymom/web3/utils';
+import {cl} from 'builtbymom-web3-fork/utils';
 import {IconQuestion} from '@common/icons/IconQuestion';
 
 import type {ReactElement} from 'react';
