@@ -1,8 +1,8 @@
 import {useEffect, useState} from 'react';
 import {useRouter} from 'next/router';
-import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {useFetch} from '@builtbymom/web3/hooks/useFetch';
-import {cl, toAddress} from '@builtbymom/web3/utils';
+import {useWeb3} from 'builtbymom-web3-fork/contexts/useWeb3';
+import {useFetch} from 'builtbymom-web3-fork/hooks/useFetch';
+import {cl, toAddress} from 'builtbymom-web3-fork/utils';
 import {ActionFlowContextApp} from '@vaults/contexts/useActionFlow';
 import {WithSolverContextApp} from '@vaults/contexts/useSolver';
 import {VaultActionsTabsWrapper} from '@vaults-v3/components/details/VaultActionsTabsWrapper';
@@ -13,10 +13,10 @@ import {yDaemonVaultSchema} from '@yearn-finance/web-lib/utils/schemas/yDaemonVa
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useYearn} from '@common/contexts/useYearn';
 
+import type {TUseBalancesTokens} from 'builtbymom-web3-fork/hooks/useBalances.multichains';
 import type {GetStaticPaths, GetStaticProps} from 'next';
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TUseBalancesTokens} from '@builtbymom/web3/hooks/useBalances.multichains';
 
 function Index(): ReactElement | null {
 	const {address, isActive} = useWeb3();

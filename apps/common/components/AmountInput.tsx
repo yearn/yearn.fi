@@ -1,7 +1,7 @@
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 
 import type {ReactElement} from 'react';
-import type {TNormalizedBN} from '@builtbymom/web3/types';
+import type {TNormalizedBN} from 'builtbymom-web3-fork/types';
 
 type TAmountInputProps = {
 	amount: TNormalizedBN;
@@ -46,7 +46,7 @@ export function AmountInput({
 					aria-label={label}
 					value={amount.normalized}
 					onChange={onAmountChange ? (e): void => onAmountChange(e.target.value) : undefined}
-					placeholder={loading ? '' : placeholder ?? '0'}
+					placeholder={loading ? '' : (placeholder ?? '0')}
 					disabled={disabled}
 				/>
 				<Renderable shouldRender={!!maxAmount && !disabled}>

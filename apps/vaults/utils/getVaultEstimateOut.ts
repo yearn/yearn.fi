@@ -1,11 +1,11 @@
-import {assert, assertAddress, toBigInt, toNormalizedBN} from '@builtbymom/web3/utils';
-import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
+import {assert, assertAddress, toBigInt, toNormalizedBN} from 'builtbymom-web3-fork/utils';
+import {retrieveConfig} from 'builtbymom-web3-fork/utils/wagmi';
 import {readContract} from '@wagmi/core';
 import {VAULT_ABI} from '@yearn-finance/web-lib/utils/abi/vault.abi';
 
 import {VAULT_V3_ABI} from './abi/vaultV3.abi';
 
-import type {TAddress, TNormalizedBN} from '@builtbymom/web3/types';
+import type {TAddress, TNormalizedBN} from 'builtbymom-web3-fork/types';
 
 type TGetVaultEstimateOutProps = {
 	from: TAddress;

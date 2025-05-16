@@ -1,8 +1,8 @@
 import {useCallback, useMemo, useRef} from 'react';
 import {maxUint256} from 'viem';
-import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {assert, toAddress, toNormalizedBN, zeroNormalizedBN} from '@builtbymom/web3/utils';
-import {allowanceOf, approveERC20} from '@builtbymom/web3/utils/wagmi';
+import {useWeb3} from 'builtbymom-web3-fork/contexts/useWeb3';
+import {assert, toAddress, toNormalizedBN, zeroNormalizedBN} from 'builtbymom-web3-fork/utils';
+import {allowanceOf, approveERC20} from 'builtbymom-web3-fork/utils/wagmi';
 import {isSolverDisabled} from '@vaults/contexts/useSolver';
 import {Solver} from '@vaults/types/solvers';
 import {depositAndStake} from '@vaults/utils/actions';
@@ -10,8 +10,8 @@ import {getVaultEstimateOut} from '@vaults/utils/getVaultEstimateOut';
 import {allowanceKey} from '@common/utils';
 import {YGAUGES_ZAP_ADDRESS} from '@common/utils/constants';
 
-import type {TDict, TNormalizedBN} from '@builtbymom/web3/types';
-import type {TTxStatus} from '@builtbymom/web3/utils/wagmi';
+import type {TDict, TNormalizedBN} from 'builtbymom-web3-fork/types';
+import type {TTxStatus} from 'builtbymom-web3-fork/utils/wagmi';
 import type {TInitSolverArgs, TSolverContext} from '@vaults/types/solvers';
 
 export function useSolverGaugeStakingBooster(): TSolverContext {

@@ -13,4 +13,4 @@ export const ALL_VAULTS_CATEGORIES = {
 };
 export const ALL_VAULTS_CATEGORIES_KEYS = Object.keys(ALL_VAULTS_CATEGORIES);
 
-export const ALL_CHAINS = [1, 10, 137, 250, 8453, 42161];
+export const ALL_CHAINS = [1, 10, 137, 250, 8453, 42161, 146];

@@ -1,5 +1,5 @@
 import {useState} from 'react';
-import {cl} from '@builtbymom/web3/utils';
+import {cl} from 'builtbymom-web3-fork/utils';
 import {Switch as HeadlessSwitch} from '@headlessui/react';
 
 import type {KeyboardEvent, ReactElement} from 'react';

@@ -6,6 +6,16 @@ const {withPlausibleProxy} = require('next-plausible');
 // 	disable: process.env.NODE_ENV !== 'production'
 // });
 
+const withTM = require('next-transpile-modules')([
+  '@yearn-finance/web-lib',
+  'builtbymom-web3-fork'
+])
+
+module.exports = withTM({
+  reactStrictMode: true,
+  swcMinify: true
+})
+
 module.exports = withPlausibleProxy({
 	scriptName: 'script',
 	customDomain: 'https://yearn.fi'

@@ -1,9 +1,9 @@
 import {useCallback} from 'react';
-import {cl} from '@builtbymom/web3/utils';
+import {cl} from 'builtbymom-web3-fork/utils';
 import {IconChevronPlain} from '@common/icons/IconChevronPlain';
 
+import type {TSortDirection} from 'builtbymom-web3-fork/types';
 import type {ReactElement} from 'react';
-import type {TSortDirection} from '@builtbymom/web3/types';
 
 export type TListHead = {
 	items: {

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import {cl, formatAmount, toAddress} from '@builtbymom/web3/utils';
+import {cl, formatAmount, toAddress} from 'builtbymom-web3-fork/utils';
 import {ImageWithFallback} from '@common/components/ImageWithFallback';
 import {useYearnBalance} from '@common/hooks/useYearnBalance';
 

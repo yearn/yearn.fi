@@ -2,7 +2,7 @@ import {useCallback, useEffect, useMemo} from 'react';
 import {useRouter} from 'next/router';
 import {erc20Abi} from 'viem';
 import {useBlockNumber, useReadContracts} from 'wagmi';
-import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
+import {useWeb3} from 'builtbymom-web3-fork/contexts/useWeb3';
 import {
 	cl,
 	decodeAsBigInt,
@@ -18,9 +18,9 @@ import {
 	toAddress,
 	toNormalizedBN,
 	zeroNormalizedBN
-} from '@builtbymom/web3/utils';
-import {AGGREGATE3_ABI} from '@builtbymom/web3/utils/abi/aggregate.abi';
-import {getNetwork} from '@builtbymom/web3/utils/wagmi';
+} from 'builtbymom-web3-fork/utils';
+import {AGGREGATE3_ABI} from 'builtbymom-web3-fork/utils/abi/aggregate.abi';
+import {getNetwork} from 'builtbymom-web3-fork/utils/wagmi';
 import {useActionFlow} from '@vaults/contexts/useActionFlow';
 import {Renderable} from '@yearn-finance/web-lib/components/Renderable';
 import {Dropdown} from '@common/components/TokenDropdown';
@@ -31,7 +31,7 @@ import {calculateBoostFromVeYFI} from '@common/utils/calculations';
 
 import type {ChangeEvent, ReactElement} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TNormalizedBN} from '@builtbymom/web3/types';
+import type {TNormalizedBN} from 'builtbymom-web3-fork/types';
 import type {TStakingInfo} from '@vaults/hooks/useVaultStakingData';
 
 function AmountWithOptionalTooltip(props: {

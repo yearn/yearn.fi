@@ -2,10 +2,10 @@ import {Fragment, useCallback, useEffect, useMemo, useState} from 'react';
 import Link from 'next/link';
 import {useRouter} from 'next/router';
 import {useBlockNumber, useReadContract} from 'wagmi';
-import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {useAsyncTrigger} from '@builtbymom/web3/hooks/useAsyncTrigger';
-import {cl, decodeAsBigInt, toAddress, toNormalizedBN, toNormalizedValue} from '@builtbymom/web3/utils';
-import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
+import {useWeb3} from 'builtbymom-web3-fork/contexts/useWeb3';
+import {useAsyncTrigger} from 'builtbymom-web3-fork/hooks/useAsyncTrigger';
+import {cl, decodeAsBigInt, toAddress, toNormalizedBN, toNormalizedValue} from 'builtbymom-web3-fork/utils';
+import {retrieveConfig} from 'builtbymom-web3-fork/utils/wagmi';
 import {useUpdateEffect} from '@react-hookz/web';
 import {SettingsPopover} from '@vaults/components/SettingsPopover';
 import {Flow, useActionFlow} from '@vaults/contexts/useActionFlow';
@@ -28,7 +28,7 @@ import {VEYFI_ADDRESS} from '@common/utils/constants';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TNormalizedBN} from '@builtbymom/web3/types';
+import type {TNormalizedBN} from 'builtbymom-web3-fork/types';
 import type {TTabsOptions} from '@vaults-v3/components/details/VaultActionsTabsWrapper';
 
 /**************************************************************************************************

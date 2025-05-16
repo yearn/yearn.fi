@@ -2,7 +2,7 @@ import {type ReactElement, useCallback} from 'react';
 import Link from 'next/link';
 import {usePathname} from 'next/navigation';
 import {useRouter} from 'next/router';
-import {cl} from '@builtbymom/web3/utils';
+import {cl} from 'builtbymom-web3-fork/utils';
 import {useSearch} from '@common/contexts/useSearch';
 import {LogoYearn} from '@common/icons/LogoYearn';
 import {iconsDict, LANDING_SIDEBAR_LINKS} from '@common/utils/constants';

@@ -1,8 +1,8 @@
 import {Fragment, useCallback, useEffect, useMemo, useState} from 'react';
 import {useRouter} from 'next/router';
 import {useBlockNumber, useReadContract} from 'wagmi';
-import {useWeb3} from '@builtbymom/web3/contexts/useWeb3';
-import {useAsyncTrigger} from '@builtbymom/web3/hooks/useAsyncTrigger';
+import {useWeb3} from 'builtbymom-web3-fork/contexts/useWeb3';
+import {useAsyncTrigger} from 'builtbymom-web3-fork/hooks/useAsyncTrigger';
 import {
 	cl,
 	decodeAsBigInt,
@@ -12,8 +12,8 @@ import {
 	toBigInt,
 	toNormalizedBN,
 	toNormalizedValue
-} from '@builtbymom/web3/utils';
-import {retrieveConfig} from '@builtbymom/web3/utils/wagmi';
+} from 'builtbymom-web3-fork/utils';
+import {retrieveConfig} from 'builtbymom-web3-fork/utils/wagmi';
 import {useUpdateEffect} from '@react-hookz/web';
 import {Flow, useActionFlow} from '@vaults/contexts/useActionFlow';
 import {useVaultStakingData} from '@vaults/hooks/useVaultStakingData';
@@ -35,7 +35,7 @@ import {DISABLED_VEYFI_GAUGES_VAULTS_LIST} from '@common/utils/constants';
 
 import type {ReactElement} from 'react';
 import type {TYDaemonVault} from '@yearn-finance/web-lib/utils/schemas/yDaemonVaultsSchemas';
-import type {TNormalizedBN} from '@builtbymom/web3/types';
+import type {TNormalizedBN} from 'builtbymom-web3-fork/types';
 
 /**************************************************************************************************
  ** Base type for tab options containing value, label and optional slug
