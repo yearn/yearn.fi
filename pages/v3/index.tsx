@@ -160,7 +160,10 @@ function ListOfVaults(): ReactElement {
 		defaultCategories: ALL_VAULTSV3_CATEGORIES_KEYS,
 		defaultPathname: `/v3`
 	});
-	const {activeVaults} = useVaultFilter(types, chains, true);
+	const {activeVaults, retiredVaults, migratableVaults} = useVaultFilter(types, chains, true);
+	console.log('activeVaults', activeVaults);
+	console.log('retiredVaults', retiredVaults);
+	console.log('migratableVaults', migratableVaults);
 
 	/**********************************************************************************************
 	 **	Then, on the activeVaults list, we apply the search filter. The search filter is
@@ -172,11 +175,11 @@ function ListOfVaults(): ReactElement {
 		}
 		const filtered = activeVaults.filter((vault: TYDaemonVault): boolean => {
 			const lowercaseSearch = search.toLowerCase();
-			const splitted =
+			const searchableFields =
 				`${vault.name} ${vault.symbol} ${vault.token.name} ${vault.token.symbol} ${vault.address} ${vault.token.address}`
 					.toLowerCase()
 					.split(' ');
-			return splitted.some((word): boolean => word.includes(lowercaseSearch));
+			return searchableFields.some((word): boolean => word.includes(lowercaseSearch));
 		});
 		return filtered;
 	}, [activeVaults, search]);

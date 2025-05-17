@@ -28,6 +28,7 @@ export function useVaultFilter(
 	migratableVaults: TYDaemonVault[];
 } {
 	const {vaults, vaultsMigrations, vaultsRetired} = useYearn();
+	console.log('useVaultFilter', {vaults, vaultsMigrations, vaultsRetired});
 	const {getBalance, getPrice} = useYearn();
 	const {shouldHideDust} = useAppSettings();
 
@@ -92,7 +93,7 @@ export function useVaultFilter(
 	);
 
 	// Specific filter
-	const hightlightedVaults = useFilteredVaults(vaults, ({info}): boolean => info.isHighlighted);
+	const highlightedVaults = useFilteredVaults(vaults, ({info}): boolean => info.isHighlighted);
 	const holdingsVaults = useFilteredVaults(vaults, (vault): boolean => filterHoldingsCallback(vault, false, false));
 	const holdingsV3Vaults = useFilteredVaults(vaults, (vault): boolean => filterHoldingsCallback(vault, false, true));
 
@@ -125,6 +126,8 @@ export function useVaultFilter(
 	);
 	const migratableVaults = useFilteredVaults(vaultsMigrations, v => filterMigrationCallback(v));
 	const retiredVaults = useFilteredVaults(vaultsRetired, v => filterMigrationCallback(v));
+	console.log('useVaultFilter - migratableVaults', migratableVaults);
+	console.log('useVaultFilter - retiredVaults', retiredVaults);
 
 	/* 🔵 - Yearn Finance **************************************************************************
 	 **	First, we need to determine in which category we are. The activeVaults function will
@@ -135,7 +138,7 @@ export function useVaultFilter(
 		let _vaultList: TYDaemonVault[] = [];
 		if (v3) {
 			if (categories?.includes('highlight')) {
-				_vaultList = [..._vaultList, ...hightlightedVaults];
+				_vaultList = [..._vaultList, ...highlightedVaults];
 			}
 			if (categories?.includes('single')) {
 				_vaultList = [..._vaultList, ...singleVaults];
@@ -227,7 +230,7 @@ export function useVaultFilter(
 		categories,
 		holdingsVaults,
 		holdingsV3Vaults,
-		hightlightedVaults,
+		highlightedVaults,
 		singleVaults,
 		MultiVaults,
 		curveFactoryVaults,
