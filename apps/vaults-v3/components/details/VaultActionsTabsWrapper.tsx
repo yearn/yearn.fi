@@ -504,7 +504,7 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 						<b className={'text-lg'}>{'Looks like this is an old vault.'}</b>
 						<p className={'mt-2'}>
 							{
-								'This Vault is no longer earning yield, but good news, there’s a shiny up to date version just waiting for you to deposit your tokens into. Click migrate, and your tokens will be migrated to the current Vault, which will be mi-great!'
+								'This Vault has been retired, but there is a migration path to a new Vault that is ready to earn yield for you. Please migrate or withdraw your assets.'
 							}
 						</p>
 					</div>
@@ -529,12 +529,12 @@ export function VaultActionsTabsWrapper({currentVault}: {currentVault: TYDaemonV
 					</div>
 				)}
 
-			{currentVault?.info.uiNotice && (
+			{currentVault?.info.uiNotice && !currentVault?.migration.available && (
 				<div
 					aria-label={'Migration Warning'}
 					className={'col-span-12 mt-10'}>
 					<div className={'w-full rounded-3xl bg-neutral-900 p-6 text-neutral-0'}>
-						<b className={'text-lg'}>{'Oh look, an important message for you to read!'}</b>
+						<b className={'text-lg'}>{'Looks like this is an old vault.'}</b>
 						<p
 							className={'mt-2'}
 							dangerouslySetInnerHTML={{
