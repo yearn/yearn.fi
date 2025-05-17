@@ -41,12 +41,14 @@ export default function Home(): ReactElement {
 
 					<div>
 						<div className={'mb-6 flex items-start justify-between'}>
-							<p className={'w-full text-lg font-bold text-white'}>{'Featured Apps'}</p>
-							<CarouselSlideArrows
-								onScrollBack={onScrollBack}
-								onScrollForward={onScrollForward}
-								className={'w-auto'}
-							/>
+							<p className={'w-full text-lg font-bold text-white'}>{'Featured Products'}</p>
+							{FEATURED_APPS?.length > 3 && (
+								<CarouselSlideArrows
+									onScrollBack={onScrollBack}
+									onScrollForward={onScrollForward}
+									className={'w-auto'}
+								/>
+							)}
 						</div>
 
 						<AppsCarousel
@@ -58,12 +60,12 @@ export default function Home(): ReactElement {
 
 					<div className={'flex flex-col gap-10'}>
 						<CategorySection
-							title={'Vaults'}
+							title={'Yearn Vaults'}
 							onExpandClick={async () => router.push('/apps/vaults')}
 							apps={VAULTS_APPS}
 						/>
 						<CategorySection
-							title={'Yearn Apps'}
+							title={'Other Yearn Products'}
 							onExpandClick={async () => router.push('/apps/yearn-apps')}
 							apps={YEARN_APPS}
 						/>
@@ -77,6 +79,11 @@ export default function Home(): ReactElement {
 							onExpandClick={async () => router.push('/apps/integrations')}
 							apps={INTEGRATIONS_APPS}
 						/>
+						{/* <CategorySection
+							title={'Old Apps'}
+							onExpandClick={async () => router.push('/apps/deprecated')}
+							apps={OLD_APPS}
+						/> */}
 					</div>
 				</div>
 				<div className={'mt-16 flex w-full flex-col gap-6 md:flex-row'}>
