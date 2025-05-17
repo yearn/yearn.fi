@@ -161,9 +161,6 @@ function ListOfVaults(): ReactElement {
 		defaultPathname: `/v3`
 	});
 	const {activeVaults, retiredVaults, migratableVaults} = useVaultFilter(types, chains, true);
-	console.log('activeVaults', activeVaults);
-	console.log('retiredVaults', retiredVaults);
-	console.log('migratableVaults', migratableVaults);
 
 	/**********************************************************************************************
 	 **	Then, on the activeVaults list, we apply the search filter. The search filter is
@@ -203,11 +200,96 @@ function ListOfVaults(): ReactElement {
 			({category}): boolean => categories?.includes(category) || false
 		);
 
-		if (isLoadingVaultList || isZero(filteredByCategories.length) || !chains || chains.length === 0) {
+		const holdings: ReactNode[] = [];
+		const multi: ReactNode[] = [];
+		const single: ReactNode[] = [];
+		const all: ReactNode[] = [];
+		const processedForHoldings = new Set<string>();
+
+		// Add migratable vaults to holdings (guaranteed to have balance)
+		for (const vault of migratableVaults) {
+			const key = `${vault.chainID}_${vault.address}`;
+			holdings.push(
+				<VaultsV3ListRow
+					key={key}
+					currentVault={vault}
+				/>
+			);
+			processedForHoldings.add(key);
+		}
+
+		// Add retired vaults to holdings (guaranteed to have balance)
+		for (const vault of retiredVaults) {
+			const key = `${vault.chainID}_${vault.address}`;
+			if (!processedForHoldings.has(key)) {
+				// Avoid duplicates
+				holdings.push(
+					<VaultsV3ListRow
+						key={key}
+						currentVault={vault}
+					/>
+				);
+				processedForHoldings.add(key);
+			}
+		}
+
+		for (const vault of filteredByCategories) {
+			// Process active vaults
+			const key = `${vault.chainID}_${vault.address}`;
+
+			if (processedForHoldings.has(key)) {
+				// This vault was already added to holdings from migratable/retired lists.
+				// Skip adding to multi, single, or all.
+				continue;
+			}
+
+			const hasBalance = getBalance({address: vault.address, chainID: vault.chainID}).raw > 0n;
+			const hasStakingBalance = getBalance({address: vault.staking.address, chainID: vault.chainID}).raw > 0n;
+			if (hasBalance || hasStakingBalance) {
+				holdings.push(
+					<VaultsV3ListRow
+						key={key}
+						currentVault={vault}
+					/>
+				);
+				// No need to add to processedForHoldings here again as `continue` prevents further processing for this vault.
+				continue;
+			}
+
+			// If not a holding, categorize into multi, single, and all
+			if (vault.kind === 'Multi Strategy') {
+				multi.push(
+					<VaultsV3ListRow
+						key={key}
+						currentVault={vault}
+					/>
+				);
+			}
+			if (vault.kind === 'Single Strategy') {
+				single.push(
+					<VaultsV3ListRow
+						key={key}
+						currentVault={vault}
+					/>
+				);
+			}
+			all.push(
+				// `all` contains active, non-holding vaults
+				<VaultsV3ListRow
+					key={key}
+					currentVault={vault}
+				/>
+			);
+		}
+
+		const shouldShowEmptyState =
+			isLoadingVaultList || !chains || chains.length === 0 || (isZero(holdings.length) && isZero(all.length)); // Show empty if no holdings and no other active vaults
+
+		if (shouldShowEmptyState) {
 			return (
 				<VaultsListEmpty
 					isLoading={isLoadingVaultList}
-					sortedVaultsToDisplay={filteredByCategories}
+					sortedVaultsToDisplay={filteredByCategories} // Represents the set of vaults filters were applied to
 					currentSearch={search || ''}
 					currentCategories={types}
 					currentChains={chains}
@@ -217,49 +299,19 @@ function ListOfVaults(): ReactElement {
 			);
 		}
 
-		const holdings: ReactNode[] = [];
-		const multi: ReactNode[] = [];
-		const single: ReactNode[] = [];
-		const all: ReactNode[] = [];
-		for (const vault of filteredByCategories) {
-			const hasBalance = getBalance({address: vault.address, chainID: vault.chainID}).raw > 0n;
-			const hasStakingBalance = getBalance({address: vault.staking.address, chainID: vault.chainID}).raw > 0n;
-			if (hasBalance || hasStakingBalance) {
-				holdings.push(
-					<VaultsV3ListRow
-						key={`${vault.chainID}_${vault.address}`}
-						currentVault={vault}
-					/>
-				);
-				continue;
-			}
-
-			if (vault.kind === 'Multi Strategy') {
-				multi.push(
-					<VaultsV3ListRow
-						key={`${vault.chainID}_${vault.address}`}
-						currentVault={vault}
-					/>
-				);
-			}
-			if (vault.kind === 'Single Strategy') {
-				single.push(
-					<VaultsV3ListRow
-						key={`${vault.chainID}_${vault.address}`}
-						currentVault={vault}
-					/>
-				);
-			}
-			all.push(
-				<VaultsV3ListRow
-					key={`${vault.chainID}_${vault.address}`}
-					currentVault={vault}
-				/>
-			);
-		}
-
 		return [holdings, multi, single, all];
-	}, [types, categories, chains, getBalance, isLoadingVaultList, onReset, search, sortedVaultsToDisplay]);
+	}, [
+		types,
+		categories,
+		chains,
+		getBalance,
+		isLoadingVaultList,
+		onReset,
+		search,
+		sortedVaultsToDisplay,
+		migratableVaults,
+		retiredVaults
+	]);
 
 	function renderVaultList(): ReactNode {
 		if (Children.count(VaultList) === 1) {
