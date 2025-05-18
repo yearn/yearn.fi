@@ -18,6 +18,7 @@ export type TWithSolver = {
 	hash?: string;
 	isLoadingExpectedOut: boolean;
 	onRetrieveAllowance: (shouldForceRefetch?: boolean) => Promise<TNormalizedBN>;
+	onRetrieveRouterAllowance?: (shouldForceRefetch?: boolean) => Promise<TNormalizedBN>;
 	onApprove: (
 		amount: bigint,
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
@@ -43,6 +44,7 @@ export type TInitSolverArgs = {
 	isDepositing: boolean;
 	migrator?: TAddress;
 	stakingPoolAddress?: TAddress; //Address of the staking pool, for veYFI zap in
+	asset?: `0x${string}`;
 };
 
 export type TSolverContext = {
@@ -50,6 +52,7 @@ export type TSolverContext = {
 	quote: TNormalizedBN | undefined;
 	init: (args: TInitSolverArgs, shouldLogError?: boolean) => Promise<TNormalizedBN | undefined>;
 	onRetrieveAllowance: (shouldForceRefetch?: boolean) => Promise<TNormalizedBN>;
+	onRetrieveRouterAllowance?: (shouldForceRefetch?: boolean) => Promise<TNormalizedBN>;
 	onApprove: (
 		amount: bigint,
 		txStatusSetter: React.Dispatch<React.SetStateAction<TTxStatus>>,
