@@ -33,6 +33,7 @@ export function VaultDetailsQuickActionsButtons({
 	const [txStatusExecuteDeposit, set_txStatusExecuteDeposit] = useState(defaultTxStatus);
 	const [txStatusExecuteWithdraw, set_txStatusExecuteWithdraw] = useState(defaultTxStatus);
 	const [allowanceFrom, set_allowanceFrom] = useState<TNormalizedBN>(zeroNormalizedBN);
+	const [allowanceRouter, set_allowanceRouter] = useState<TNormalizedBN>(zeroNormalizedBN);
 	const {actionParams, onChangeAmount, maxDepositPossible, isDepositing} = useActionFlow();
 	const {pathname} = useRouter();
 	const isV3Page = pathname.startsWith(`/v3`);
@@ -41,6 +42,7 @@ export function VaultDetailsQuickActionsButtons({
 		onExecuteDeposit,
 		onExecuteWithdraw,
 		onRetrieveAllowance,
+		onRetrieveRouterAllowance,
 		currentSolver,
 		expectedOut,
 		isLoadingExpectedOut,
@@ -53,8 +55,9 @@ export function VaultDetailsQuickActionsButtons({
 	 *********************************************************************************************/
 	const triggerRetrieveAllowance = useAsyncTrigger(async (): Promise<void> => {
 		set_allowanceFrom(await onRetrieveAllowance(true));
+		set_allowanceRouter((await onRetrieveRouterAllowance?.(true)) || zeroNormalizedBN);
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [address, onRetrieveAllowance, hash]);
+	}, [address, onRetrieveAllowance, onRetrieveRouterAllowance, hash]);
 
 	/**********************************************************************************************
 	 ** The onSuccess callback is called when the deposit or withdraw action is successful. It
@@ -180,6 +183,14 @@ export function VaultDetailsQuickActionsButtons({
 	 ** button to migrate.
 	 *********************************************************************************************/
 	const isAboveAllowance = toBigInt(actionParams.amount?.raw) > toBigInt(allowanceFrom?.raw);
+
+	if (currentVault.version.startsWith('3') && currentVault.migration.available && allowanceRouter?.raw === 0n && (actionParams.amount?.raw ?? 0n) > 0n) {
+		return (
+			<div className={"rounded-md bg-white p-2 text-xs text-black"}>
+				{'To enable migrations out of this vault, please ask Yearn to approve the 4626 router!'}
+			</div>
+		);
+	}
 
 	// Solver: a lot, Action: approve
 	if (
