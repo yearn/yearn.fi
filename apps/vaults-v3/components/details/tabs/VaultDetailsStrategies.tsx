@@ -21,7 +21,7 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 		defaultTypes: ALL_VAULTSV3_KINDS_KEYS,
 		defaultPathname: '/v3/[chainID]/[address]'
 	});
-
+	console.log('test');
 	const tokenPrice = useYearnTokenPrice({address: currentVault.token.address, chainID: currentVault.chainID});
 
 	const vaultList = useMemo((): TYDaemonVault[] => {
