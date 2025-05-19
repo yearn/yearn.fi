@@ -101,28 +101,26 @@ export function VaultDetailsStrategies({currentVault}: {currentVault: TYDaemonVa
 							]}
 						/>
 						<div className={'grid gap-4'}>
-							{sortedVaultsToDisplay
-								.filter((v): boolean => Boolean(v?.chainID))
-								.map(
-									(vault): ReactElement => (
-										<VaultsListStrategy
-											key={`${vault?.chainID}_${vault.address}`}
-											details={vault.details}
-											chainId={vault.chainID}
-											variant={'v3'}
-											address={vault.address}
-											name={vault.name}
-											tokenAddress={vault.token.address}
-											allocation={formatCounterValue(
-												toNormalizedBN(vault.details?.totalDebt || 0, vault.token?.decimals)
-													.display,
-												tokenPrice
-											)}
-											apr={vault.apr.forwardAPR.netAPR || vault.apr?.netAPR}
-											fees={vault.apr.fees}
-										/>
-									)
-								)}
+							{sortedVaultsToDisplay.map(
+								(vault): ReactElement => (
+									<VaultsListStrategy
+										key={`${vault?.chainID || currentVault.chainID}_${vault.address}`}
+										details={vault.details}
+										chainId={vault.chainID || currentVault.chainID}
+										variant={'v3'}
+										address={vault.address}
+										name={vault.name}
+										tokenAddress={vault.token?.address || currentVault.token.address}
+										allocation={formatCounterValue(
+											toNormalizedBN(vault.details?.totalDebt || 0, vault.token?.decimals)
+												.display,
+											tokenPrice
+										)}
+										apr={vault.apr?.forwardAPR.netAPR || vault.apr?.netAPR}
+										fees={vault.apr?.fees}
+									/>
+								)
+							)}
 						</div>
 					</div>
 					<div className={'col-span-9 flex size-full lg:col-span-3'}>

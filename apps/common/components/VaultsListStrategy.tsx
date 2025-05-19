@@ -229,7 +229,7 @@ export function VaultsListStrategy({
 								<div className={'flex flex-col gap-2'}>
 									<div className={'flex flex-row gap-2'}>
 										<span className={''}>{'Management Fee:'}</span>
-										<span>{formatPercent((fees.management || 0) * 100, 0)}</span>
+										<span>{formatPercent((fees?.management || 0) * 100, 0)}</span>
 									</div>
 									<div className={'flex flex-row gap-2'}>
 										<span className={''}>{'Performance Fee:'}</span>
