@@ -215,7 +215,7 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 		if (!address || isZeroAddress(address) || !props.currentVault) {
 			return;
 		}
-		const results = await readContracts(retrieveConfig(), {
+		const [_depositLimit, _maxDeposit, _maxRedeem, _balance] = await readContracts(retrieveConfig(), {
 			contracts: [
 				{
 					address: props.currentVault.address,
@@ -246,34 +246,36 @@ export function ActionFlowContextApp(props: {children: ReactNode; currentVault: 
 				}
 			]
 		});
-		const balanceOf = decodeAsBigInt(results[3], 0n);
-		try {
-			const maxEffectiveWithdraw = await simulateContract(retrieveConfig(), {
-				abi: VAULT_ABI,
-				address: props.currentVault.address,
-				chainId: props.currentVault.chainID,
-				functionName: 'withdraw',
-				args: [balanceOf]
-			});
 
-			if (props.currentVault.version.startsWith('3') || props.currentVault.version.startsWith('~3')) {
+		const balanceOf = decodeAsBigInt(_balance, 0n);
+		const maxDeposit = decodeAsBigInt(_depositLimit, decodeAsBigInt(_maxDeposit, 0n));
+		const maxRedeemUnchecked = decodeAsBigInt(_maxRedeem, balanceOf);
+
+		// Contract rounds down, if 1n difference, use balanceOf shares.
+		const isRedemptionRounded = maxRedeemUnchecked === balanceOf - 1n;
+		const maxRedeem = isRedemptionRounded ? balanceOf : maxRedeemUnchecked;
+
+		try {
+			// This throws if Vault is V3 as withdraw(balance) does not exist on V3 Vaults.
+			const isV3 = props.currentVault.version.startsWith('3') || props.currentVault.version.startsWith('~3');
+
+			if (!isV3) {
+				const maxEffectiveWithdraw = await simulateContract(retrieveConfig(), {
+					abi: VAULT_ABI,
+					address: props.currentVault.address,
+					chainId: props.currentVault.chainID,
+					functionName: 'withdraw',
+					args: [balanceOf]
+				});
 				set_limits({
-					maxDeposit: decodeAsBigInt(results[0], decodeAsBigInt(results[1], 0n)),
-					maxRedeem: decodeAsBigInt(results[2], decodeAsBigInt(results[3], 0n))
+					maxDeposit,
+					maxRedeem: maxEffectiveWithdraw ? maxEffectiveWithdraw.result : maxRedeem
 				});
 			} else {
-				set_limits({
-					maxDeposit: decodeAsBigInt(results[0], decodeAsBigInt(results[1], 0n)),
-					maxRedeem: maxEffectiveWithdraw
-						? maxEffectiveWithdraw.result
-						: decodeAsBigInt(results[2], decodeAsBigInt(results[3], 0n))
-				});
+				set_limits({maxDeposit, maxRedeem});
 			}
 		} catch (error) {
-			set_limits({
-				maxDeposit: decodeAsBigInt(results[0], decodeAsBigInt(results[1], 0n)),
-				maxRedeem: decodeAsBigInt(results[2], decodeAsBigInt(results[3], 0n))
-			});
+			set_limits({maxDeposit, maxRedeem});
 		}
 	}, [props.currentVault, address, maxLoss]);
 
