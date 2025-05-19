@@ -164,35 +164,49 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 
 		for (const perChain of Object.values(balances)) {
 			for (const [tokenAddress, tokenData] of Object.entries(perChain)) {
-				if (!vaults?.[toAddress(tokenData.address)]) {
+				if (
+					!vaults?.[toAddress(tokenData.address)] &&
+					!vaultsMigrations?.[toAddress(tokenData.address)] &&
+					!vaultsRetired?.[toAddress(tokenData.address)]
+				) {
 					continue;
 				}
-				const tokenBalance = getBalance({address: tokenData.address, chainID: tokenData.chainID});
+				const tokenBalance = tokenData.balance;
 				const tokenPrice = getPrice({address: tokenData.address, chainID: tokenData.chainID});
 				const tokenValue = tokenBalance.normalized * tokenPrice.normalized;
 
 				let stakingValue = 0;
-				const hasStaking = vaults[toAddress(tokenData.address)].staking.available;
-				if (hasStaking) {
-					const stakingAddress = vaults[toAddress(tokenData.address)].staking.address;
-					const stakingBalance = getBalance({address: stakingAddress, chainID: tokenData.chainID});
-					stakingValue = stakingBalance.normalized * tokenPrice.normalized;
+				const vaultDetails = vaults[toAddress(tokenData.address)]; // Attempt to get the vault from the main 'vaults' collection
+
+				if (vaultDetails?.staking) {
+					// Check if vaultDetails and its staking property exist
+					const {staking} = vaultDetails; // Safe to destructure now
+					const hasStaking = staking.available ?? false;
+					if (hasStaking && staking.address) {
+						// Ensure staking.address is also valid
+						const stakingAddress = staking.address;
+						const stakingBalance = getBalance({address: stakingAddress, chainID: tokenData.chainID});
+						stakingValue = stakingBalance.normalized * tokenPrice.normalized;
+					}
 				}
 
 				if (vaults?.[toAddress(tokenAddress)]) {
-					if (
-						vaults[toAddress(tokenAddress)].version.split('.')?.[0] === '3' ||
-						vaults[toAddress(tokenAddress)].version.split('.')?.[0] === '~3'
-					) {
+					const vaultDetail = vaults[toAddress(tokenAddress)];
+					if (vaultDetail.version.split('.')?.[0] === '3' || vaultDetail.version.split('.')?.[0] === '~3') {
 						cumulatedValueInV3Vaults += tokenValue + stakingValue;
 					} else {
 						cumulatedValueInV2Vaults += tokenValue + stakingValue;
 					}
 				} else if (vaultsMigrations?.[toAddress(tokenAddress)]) {
-					if (
-						vaultsMigrations[toAddress(tokenAddress)].version.split('.')?.[0] === '3' ||
-						vaultsMigrations[toAddress(tokenAddress)].version.split('.')?.[0] === '~3'
-					) {
+					const vaultDetail = vaultsMigrations[toAddress(tokenAddress)];
+					if (vaultDetail.version.split('.')?.[0] === '3' || vaultDetail.version.split('.')?.[0] === '~3') {
+						cumulatedValueInV3Vaults += tokenValue + stakingValue;
+					} else {
+						cumulatedValueInV2Vaults += tokenValue + stakingValue;
+					}
+				} else if (vaultsRetired?.[toAddress(tokenAddress)]) {
+					const vaultDetail = vaultsRetired[toAddress(tokenAddress)];
+					if (vaultDetail.version.split('.')?.[0] === '3' || vaultDetail.version.split('.')?.[0] === '~3') {
 						cumulatedValueInV3Vaults += tokenValue + stakingValue;
 					} else {
 						cumulatedValueInV2Vaults += tokenValue + stakingValue;
@@ -201,7 +215,7 @@ export const YearnContextApp = memo(function YearnContextApp({children}: {childr
 			}
 		}
 		return [cumulatedValueInV2Vaults, cumulatedValueInV3Vaults];
-	}, [balances, getBalance, getPrice, vaults, vaultsMigrations]);
+	}, [balances, getBalance, getPrice, vaults, vaultsMigrations, vaultsRetired]);
 
 	return (
 		<YearnContext.Provider
